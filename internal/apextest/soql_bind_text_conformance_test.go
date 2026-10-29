@@ -134,7 +134,7 @@ func TestSOQLBindTextOrgConformance(t *testing.T) {
 		return "compiled"
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			root := t.TempDir()
 			// C002 rejects against known standard schema. An empty schema lets
 			// source inference invent fields; one captured Id field keeps it authoritative,

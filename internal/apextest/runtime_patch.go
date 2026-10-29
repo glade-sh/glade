@@ -428,7 +428,7 @@ func runtimeFromIndexWithSourceDigestsAfter(previous, current typesys.Index, dig
 func runtimeFromIndexWithSourceDigestsAfterAndPerf(previous, current typesys.Index, digests *typesys.SourceDigestSet, sources *sourceCache, diskCacheAllowed bool, counters *runPerfCounters) (runtimeCacheKey, runtimeCacheEntry, error) {
 	planningStarted := time.Now()
 	affected, _ := runtimePatchOneModifiedOwner(previous, current)
-	counters.phases.runtimeKeyNS.Add(time.Since(planningStarted).Nanoseconds())
+	counters.recordObservedPhaseDuration(&counters.phases.runtimeKeyNS, time.Since(planningStarted))
 	key, entry, _, err := runtimeFromIndexTransitionContext(context.Background(), previous, current, digests, sources, diskCacheAllowed, counters, affected)
 	return key, entry, err
 }
@@ -447,13 +447,13 @@ func runtimeFromIndexTransitionContext(ctx context.Context, previous, current ty
 	digestCheckStarted := time.Now()
 	suppliedDigestsValid := digests == nil || runtimePatchDigestSetsEqual(current, digests.Digest)
 	if counters != nil {
-		counters.phases.runtimeKeyNS.Add(time.Since(digestCheckStarted).Nanoseconds())
+		counters.recordObservedPhaseDuration(&counters.phases.runtimeKeyNS, time.Since(digestCheckStarted))
 	}
 	if !suppliedDigestsValid {
 		keyStarted := time.Now()
 		key := runtimeKeyWithDigestLookup(current, current.SourceDigest, os.ReadFile)
 		if counters != nil {
-			counters.phases.runtimeKeyNS.Add(time.Since(keyStarted).Nanoseconds())
+			counters.recordObservedPhaseDuration(&counters.phases.runtimeKeyNS, time.Since(keyStarted))
 		}
 		return key, runtimeCacheEntry{}, runtimePatchOutcome{Key: key}, fmt.Errorf("supplied source digests do not match current immutable index")
 	}
@@ -465,7 +465,7 @@ func runtimeFromIndexTransitionContext(ctx context.Context, previous, current ty
 		keyStarted := time.Now()
 		key := runtimeKeyWithDigestLookup(current, current.SourceDigest, os.ReadFile)
 		if counters != nil {
-			counters.phases.runtimeKeyNS.Add(time.Since(keyStarted).Nanoseconds())
+			counters.recordObservedPhaseDuration(&counters.phases.runtimeKeyNS, time.Since(keyStarted))
 		}
 		evictSnapshotCaches(key)
 		return key, runtimeCacheEntry{}, runtimePatchOutcome{Key: key}, err
@@ -501,7 +501,7 @@ func tryRuntimePatchTransitionContext(ctx context.Context, previous, current typ
 	previousBaseKey := runtimeKeyWithDigestLookup(previous, previous.SourceDigest, os.ReadFile)
 	previousKey := runtimeKeyWithMetadataGeneration(previousBaseKey, generation.metadata)
 	if counters != nil {
-		counters.phases.runtimeKeyNS.Add(time.Since(started).Nanoseconds())
+		counters.recordObservedPhaseDuration(&counters.phases.runtimeKeyNS, time.Since(started))
 	}
 	if !currentOK || !previousOK || len(affected) == 0 || !runtimePatchTransitionShapeSafe(previous, current, affected) {
 		return currentKey, runtimeCacheEntry{}, runtimePatchOutcome{}, false, nil
@@ -512,7 +512,7 @@ func tryRuntimePatchTransitionContext(ctx context.Context, previous, current typ
 	currentPageNames := visualforcePageNames(current)
 	currentAmbientFingerprint, ambientOK := runtimePatchAmbientFingerprint(currentOrg, currentPageNames)
 	if counters != nil {
-		counters.phases.orgBuildNS.Add(time.Since(ambientStarted).Nanoseconds())
+		counters.recordObservedPhaseDuration(&counters.phases.orgBuildNS, time.Since(ambientStarted))
 	}
 	if !ambientOK || sources.sourceSnapshotError() != nil {
 		return currentKey, runtimeCacheEntry{}, runtimePatchOutcome{}, false, nil
@@ -662,7 +662,7 @@ func buildRuntimePatchTransition(previous, current typesys.Index, digests *types
 	previousBaseKey := runtimeKeyWithDigestLookup(previous, previous.SourceDigest, os.ReadFile)
 	previousKey := runtimeKeyWithMetadataGeneration(previousBaseKey, generation.metadata)
 	if counters != nil {
-		counters.phases.runtimeKeyNS.Add(time.Since(started).Nanoseconds())
+		counters.recordObservedPhaseDuration(&counters.phases.runtimeKeyNS, time.Since(started))
 	}
 	if !currentOK || !previousOK || len(affected) == 0 || !runtimePatchTransitionShapeSafe(previous, current, affected) {
 		return currentKey, runtimeCacheEntry{}, runtimePatchOutcome{}, false
@@ -672,7 +672,7 @@ func buildRuntimePatchTransition(previous, current typesys.Index, digests *types
 	currentPageNames := visualforcePageNames(current)
 	currentAmbientFingerprint, ambientOK := runtimePatchAmbientFingerprint(currentOrg, currentPageNames)
 	if counters != nil {
-		counters.phases.orgBuildNS.Add(time.Since(ambientStarted).Nanoseconds())
+		counters.recordObservedPhaseDuration(&counters.phases.orgBuildNS, time.Since(ambientStarted))
 	}
 	if !ambientOK || sources.sourceSnapshotError() != nil {
 		return currentKey, runtimeCacheEntry{}, runtimePatchOutcome{}, false
@@ -713,7 +713,7 @@ func buildRuntimePatchTransition(previous, current typesys.Index, digests *types
 	sourceStarted := time.Now()
 	sourcesValid := runtimePatchValidateAffectedSources(previous, current, previousEntry.patchAuthority, affected, sources)
 	if counters != nil {
-		counters.phases.projectCompileNS.Add(time.Since(sourceStarted).Nanoseconds())
+		counters.recordObservedPhaseDuration(&counters.phases.projectCompileNS, time.Since(sourceStarted))
 	}
 	if !sourcesValid {
 		return currentKey, runtimeCacheEntry{}, runtimePatchOutcome{}, false
@@ -742,7 +742,7 @@ func buildRuntimePatchTransition(previous, current typesys.Index, digests *types
 	registerVisualforcePages(baseMachine, currentPageNames)
 	baseErr := registerBaseRuntime(baseMachine, methods, classes, triggers)
 	if counters != nil {
-		counters.phases.projectCompileNS.Add(time.Since(compileStarted).Nanoseconds())
+		counters.recordObservedPhaseDuration(&counters.phases.projectCompileNS, time.Since(compileStarted))
 	}
 	if baseErr != nil || sources.sourceSnapshotError() != nil {
 		return currentKey, runtimeCacheEntry{}, runtimePatchOutcome{}, false
@@ -751,7 +751,7 @@ func buildRuntimePatchTransition(previous, current typesys.Index, digests *types
 	orgStarted := time.Now()
 	restored := vm.NewRestoredRuntimeTemplate(currentOrg, baseMachine)
 	if counters != nil {
-		counters.phases.orgBuildNS.Add(time.Since(orgStarted).Nanoseconds())
+		counters.recordObservedPhaseDuration(&counters.phases.orgBuildNS, time.Since(orgStarted))
 	}
 	entry := runtimeCacheEntry{
 		Methods:       methods,
@@ -765,7 +765,7 @@ func buildRuntimePatchTransition(previous, current typesys.Index, digests *types
 	authorityStarted := time.Now()
 	patchAuthority := runtimePatchAuthorityFromTransition(current, currentKey, previousKey, previousFingerprint, currentRuntimeInputsFingerprint, previousEntry.patchAuthority, affected, sources, entry, counters)
 	if counters != nil {
-		counters.phases.projectCompileNS.Add(time.Since(authorityStarted).Nanoseconds())
+		counters.recordObservedPhaseDuration(&counters.phases.projectCompileNS, time.Since(authorityStarted))
 	}
 	entry.patchAuthority = patchAuthority
 	if !entry.restored.Valid() || entry.patchAuthority == nil {

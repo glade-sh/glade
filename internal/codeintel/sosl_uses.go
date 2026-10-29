@@ -43,7 +43,7 @@ func CollectSOSLUses(file, source string) []Use {
 			start = end
 			continue
 		}
-		query, err := sosl.Parse(trimmed)
+		query, err := sosl.ParseInline(trimmed)
 		if err != nil {
 			start = end
 			continue

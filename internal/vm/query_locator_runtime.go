@@ -165,6 +165,9 @@ func (vm *VM) databaseQueryHandle(query Value, binds Value, accessLevel Value, c
 	// Normal queries still support COUNT, aggregates, OFFSET and FOR UPDATE.
 	if parsed, err := vm.parseSOQLAt(query.Text); err == nil {
 		if parsed.Count {
+			if !cursor && !mapBinds && accessLevel.Kind == ValueNull {
+				return Null, vm.scalarCountRouteError(query.Text, expand)
+			}
 			return Null, newExceptionError("QueryException", "use countQuery() for [select count()...] queries")
 		}
 		if len(parsed.Aggregates) > 0 || len(parsed.GroupBy) > 0 {

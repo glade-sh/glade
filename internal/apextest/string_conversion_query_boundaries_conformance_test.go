@@ -109,7 +109,7 @@ func TestStringConversionQueryBoundariesConformance(t *testing.T) {
 		t.Fatalf("native cells: %d", cells)
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "StringConversionQueryBoundaries", api)
 			for _, row := range data.Rows {
 				for _, cell := range row.Cells {

@@ -1,0 +1,109 @@
+case_id	api	route	status	result
+CART_SHADOW	62.0	anonymous	RUNTIME_ERROR	System.UnsupportedOperationException: ItemArrange cannot be created outside of a test
+CUSTOM_COMPONENTS_DIRECT	62.0	anonymous	PASS	assertions passed
+CUSTOM_COMPONENTS_GET	62.0	anonymous	PASS	assertions passed
+CUSTOM_FRESH_DIRECT	62.0	anonymous	PASS	assertions passed
+CUSTOM_FRESH_GET	62.0	anonymous	PASS	assertions passed
+CUSTOM_INSERTED_DIRECT	62.0	anonymous	PASS	assertions passed
+CUSTOM_INSERTED_GET	62.0	anonymous	PASS	assertions passed
+CUSTOM_QUERIED_DIRECT	62.0	anonymous	PASS	assertions passed
+CUSTOM_QUERIED_EMPTY	62.0	anonymous	PASS	assertions passed
+CUSTOM_QUERIED_GET	62.0	anonymous	PASS	assertions passed
+DUPLICATE_SHADOW	62.0	anonymous	PASS	assertions passed
+REVERSE_REJECT	62.0	anonymous	REJECT	Illegal assignment from System.Location to System.Address
+SOURCE_BOUNDARY	62.0	anonymous	PASS	assertions passed
+SOURCE_REJECT	62.0	anonymous	REJECT	Illegal assignment from Address to System.Location
+STANDARD_QUERIED_DIRECT	62.0	anonymous	PASS	assertions passed
+STANDARD_QUERIED_GET	62.0	anonymous	PASS	assertions passed
+CART_SHADOW	62.0	istest	PASS	assertions passed
+CUSTOM_COMPONENTS_DIRECT	62.0	istest	PASS	assertions passed
+CUSTOM_COMPONENTS_GET	62.0	istest	PASS	assertions passed
+CUSTOM_FRESH_DIRECT	62.0	istest	PASS	assertions passed
+CUSTOM_FRESH_GET	62.0	istest	PASS	assertions passed
+CUSTOM_INSERTED_DIRECT	62.0	istest	PASS	assertions passed
+CUSTOM_INSERTED_GET	62.0	istest	PASS	assertions passed
+CUSTOM_QUERIED_DIRECT	62.0	istest	PASS	assertions passed
+CUSTOM_QUERIED_EMPTY	62.0	istest	PASS	assertions passed
+CUSTOM_QUERIED_GET	62.0	istest	PASS	assertions passed
+DUPLICATE_SHADOW	62.0	istest	PASS	assertions passed
+REVERSE_REJECT	62.0	istest	REJECT	Illegal assignment from System.Location to System.Address
+SOURCE_BOUNDARY	62.0	istest	PASS	assertions passed
+SOURCE_REJECT	62.0	istest	REJECT	Illegal assignment from Address to System.Location
+STANDARD_QUERIED_DIRECT	62.0	istest	PASS	assertions passed
+STANDARD_QUERIED_GET	62.0	istest	PASS	assertions passed
+CART_SHADOW	67.0	anonymous	RUNTIME_ERROR	System.UnsupportedOperationException: ItemArrange cannot be created outside of a test
+CUSTOM_COMPONENTS_DIRECT	67.0	anonymous	PASS	assertions passed
+CUSTOM_COMPONENTS_GET	67.0	anonymous	PASS	assertions passed
+CUSTOM_FRESH_DIRECT	67.0	anonymous	PASS	assertions passed
+CUSTOM_FRESH_GET	67.0	anonymous	PASS	assertions passed
+CUSTOM_INSERTED_DIRECT	67.0	anonymous	PASS	assertions passed
+CUSTOM_INSERTED_GET	67.0	anonymous	PASS	assertions passed
+CUSTOM_QUERIED_DIRECT	67.0	anonymous	PASS	assertions passed
+CUSTOM_QUERIED_EMPTY	67.0	anonymous	PASS	assertions passed
+CUSTOM_QUERIED_GET	67.0	anonymous	PASS	assertions passed
+DUPLICATE_SHADOW	67.0	anonymous	PASS	assertions passed
+REVERSE_REJECT	67.0	anonymous	REJECT	Illegal assignment from System.Location to System.Address
+SOURCE_BOUNDARY	67.0	anonymous	PASS	assertions passed
+SOURCE_REJECT	67.0	anonymous	REJECT	Illegal assignment from Address to System.Location
+STANDARD_QUERIED_DIRECT	67.0	anonymous	PASS	assertions passed
+STANDARD_QUERIED_GET	67.0	anonymous	PASS	assertions passed
+CART_SHADOW	67.0	istest	PASS	assertions passed
+CUSTOM_COMPONENTS_DIRECT	67.0	istest	PASS	assertions passed
+CUSTOM_COMPONENTS_GET	67.0	istest	PASS	assertions passed
+CUSTOM_FRESH_DIRECT	67.0	istest	PASS	assertions passed
+CUSTOM_FRESH_GET	67.0	istest	PASS	assertions passed
+CUSTOM_INSERTED_DIRECT	67.0	istest	PASS	assertions passed
+CUSTOM_INSERTED_GET	67.0	istest	PASS	assertions passed
+CUSTOM_QUERIED_DIRECT	67.0	istest	PASS	assertions passed
+CUSTOM_QUERIED_EMPTY	67.0	istest	PASS	assertions passed
+CUSTOM_QUERIED_GET	67.0	istest	PASS	assertions passed
+DUPLICATE_SHADOW	67.0	istest	PASS	assertions passed
+REVERSE_REJECT	67.0	istest	REJECT	Illegal assignment from System.Location to System.Address
+SOURCE_BOUNDARY	67.0	istest	PASS	assertions passed
+SOURCE_REJECT	67.0	istest	REJECT	Illegal assignment from Address to System.Location
+STANDARD_QUERIED_DIRECT	67.0	istest	PASS	assertions passed
+STANDARD_QUERIED_GET	67.0	istest	PASS	assertions passed
+DML_CLONE_DIRECT	62.0	anonymous	PASS	assertions passed
+DML_CLONE_LIST	62.0	anonymous	PASS	assertions passed
+DML_COMPONENT_AFTER_COMPOUND	62.0	anonymous	PASS	assertions passed
+DML_CONTROL_NO_COMPOUND	62.0	anonymous	PASS	assertions passed
+DML_CONTROL_STANDARD	62.0	anonymous	PASS	assertions passed
+DML_DELETE_DIRECT	62.0	anonymous	PASS	assertions passed
+DML_DELETE_LIST	62.0	anonymous	PASS	assertions passed
+DML_UPDATE_DIRECT	62.0	anonymous	PASS	assertions passed
+DML_UPDATE_LIST	62.0	anonymous	PASS	assertions passed
+DML_UPSERT_DIRECT	62.0	anonymous	PASS	assertions passed
+DML_UPSERT_LIST	62.0	anonymous	PASS	assertions passed
+DML_CLONE_DIRECT	62.0	istest	PASS	assertions passed
+DML_CLONE_LIST	62.0	istest	PASS	assertions passed
+DML_COMPONENT_AFTER_COMPOUND	62.0	istest	PASS	assertions passed
+DML_CONTROL_NO_COMPOUND	62.0	istest	PASS	assertions passed
+DML_CONTROL_STANDARD	62.0	istest	PASS	assertions passed
+DML_DELETE_DIRECT	62.0	istest	PASS	assertions passed
+DML_DELETE_LIST	62.0	istest	PASS	assertions passed
+DML_UPDATE_DIRECT	62.0	istest	PASS	assertions passed
+DML_UPDATE_LIST	62.0	istest	PASS	assertions passed
+DML_UPSERT_DIRECT	62.0	istest	PASS	assertions passed
+DML_UPSERT_LIST	62.0	istest	PASS	assertions passed
+DML_CLONE_DIRECT	67.0	anonymous	PASS	assertions passed
+DML_CLONE_LIST	67.0	anonymous	PASS	assertions passed
+DML_COMPONENT_AFTER_COMPOUND	67.0	anonymous	PASS	assertions passed
+DML_CONTROL_NO_COMPOUND	67.0	anonymous	PASS	assertions passed
+DML_CONTROL_STANDARD	67.0	anonymous	PASS	assertions passed
+DML_DELETE_DIRECT	67.0	anonymous	PASS	assertions passed
+DML_DELETE_LIST	67.0	anonymous	PASS	assertions passed
+DML_UPDATE_DIRECT	67.0	anonymous	PASS	assertions passed
+DML_UPDATE_LIST	67.0	anonymous	PASS	assertions passed
+DML_UPSERT_DIRECT	67.0	anonymous	PASS	assertions passed
+DML_UPSERT_LIST	67.0	anonymous	PASS	assertions passed
+DML_CLONE_DIRECT	67.0	istest	PASS	assertions passed
+DML_CLONE_LIST	67.0	istest	PASS	assertions passed
+DML_COMPONENT_AFTER_COMPOUND	67.0	istest	PASS	assertions passed
+DML_CONTROL_NO_COMPOUND	67.0	istest	PASS	assertions passed
+DML_CONTROL_STANDARD	67.0	istest	PASS	assertions passed
+DML_DELETE_DIRECT	67.0	istest	PASS	assertions passed
+DML_DELETE_LIST	67.0	istest	PASS	assertions passed
+DML_UPDATE_DIRECT	67.0	istest	PASS	assertions passed
+DML_UPDATE_LIST	67.0	istest	PASS	assertions passed
+DML_UPSERT_DIRECT	67.0	istest	PASS	assertions passed
+DML_UPSERT_LIST	67.0	istest	PASS	assertions passed

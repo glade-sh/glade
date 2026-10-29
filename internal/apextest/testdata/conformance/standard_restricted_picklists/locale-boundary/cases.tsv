@@ -1,0 +1,5 @@
+case	behaviour
+language_prefixes	90 catalog language prefixes tested individually; only explicitly accepted values qualify for the DML-only allowlist
+known_locale	pl_PL remains accepted
+rejection_twins	NotAnAllowedValue, xx and zz reject
+describe_boundary	Accepted language-only aliases are absent from the describe picklist

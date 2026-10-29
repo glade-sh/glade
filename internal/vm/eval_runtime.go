@@ -50,6 +50,14 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 		}
 		return vm.evalBinary(expr.Operator, left, right, result)
 	case ir.ExprCall:
+		if expr.Left != nil && expr.Left.Kind == ir.ExprCall && strings.HasSuffix(expr.Left.Callee, ".getDescribe") {
+			if value, handled, err := vm.evalFieldDescribeScalarChain(&expr, result); handled {
+				return value, err
+			}
+		}
+		if value, handled, err := vm.evalLocalListCall(expr, result); handled {
+			return value, err
+		}
 		if strings.HasPrefix(expr.Callee, "__assign:") {
 			if len(expr.Args) != 1 {
 				return Null, fmt.Errorf("assignment expression requires 1 operand")
@@ -256,6 +264,9 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 			var err error
 			if expr.Left.Kind == ir.ExprSOQL {
 				receiver, err = vm.executeSOQLQuery(expr.Left.Value, result)
+				if err != nil {
+					receiver, err = vm.namedApexReferenceStaticQuery(expr.Left.Value, err)
+				}
 			} else {
 				receiver, err = vm.eval(*expr.Left, result)
 			}
@@ -372,6 +383,89 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 	default:
 		return Null, fmt.Errorf("unsupported expression %q", expr.Kind)
 	}
+}
+
+// Local list reads/writes with literal or exact local operands cannot execute
+// getters or replace their receiver while evaluating arguments. The List
+// dispatcher retains argument values, never the slice, so this bounded buffer
+// stays on the stack. Other call shapes keep the general evaluator and dispatch.
+func (vm *VM) evalLocalListCall(expr ir.Expr, result *Result) (Value, bool, error) {
+	if len(expr.Args) == 0 || len(expr.Args) > 2 || len(expr.NamedArgs) != 0 || len(vm.currentMethod.triggerLocalMethods) != 0 {
+		return Null, false, nil
+	}
+	receiverName, method := "", expr.Callee
+	if expr.Left != nil {
+		if expr.Left.Kind != ir.ExprVariable {
+			return Null, false, nil
+		}
+		receiverName = expr.Left.Name
+	} else {
+		var qualified bool
+		receiverName, method, qualified = strings.Cut(expr.Callee, ".")
+		if !qualified {
+			return Null, false, nil
+		}
+	}
+	if strings.EqualFold(method, "get") && len(expr.Args) == 1 {
+		method = "get"
+	} else if strings.EqualFold(method, "set") && len(expr.Args) == 2 {
+		method = "set"
+	} else {
+		return Null, false, nil
+	}
+	if strings.Contains(receiverName, ".") || strings.EqualFold(receiverName, "this") || strings.EqualFold(receiverName, "super") {
+		return Null, false, nil
+	}
+	receiver, local := vm.Globals[receiverName]
+	declared := vm.VarTypes[receiverName]
+	if !local || receiver.Kind != ValueList || collectionBase(declared) != "List" {
+		return Null, false, nil
+	}
+	if expr.Left == nil {
+		if _, builtin := canonicalBuiltinStaticCall(expr.Callee); builtin || normalizeStaticCallCasing(expr.Callee) != expr.Callee {
+			return Null, false, nil
+		}
+	}
+	for _, arg := range expr.Args {
+		switch arg.Kind {
+		case ir.ExprLiteral:
+		case ir.ExprVariable:
+			if _, local := vm.Globals[arg.Name]; !local || strings.Contains(arg.Name, ".") {
+				return Null, false, nil
+			}
+		default:
+			return Null, false, nil
+		}
+	}
+	if expr.Left != nil {
+		// Bracket/local-expression receivers use lookup's declared view,
+		// even when alias publication left another view in the stored Value.
+		var err error
+		receiver, err = vm.lookup(receiverName)
+		if err != nil {
+			return Null, true, err
+		}
+	}
+	var buffer [2]Value
+	args := buffer[:len(expr.Args)]
+	for i, arg := range expr.Args {
+		value, err := vm.eval(arg, result)
+		if err != nil {
+			return Null, true, err
+		}
+		args[i] = plainNull(value)
+	}
+	if expr.Left == nil {
+		vm.markRootCollectionRefsEscaped(args...)
+	}
+	if receiver.Static == "" {
+		receiver.Static = declared
+	}
+	value, _, err := vm.callListValueMember(receiverName, receiver, method, args, result)
+	if err == nil && expr.Operator == "[]=" {
+		return receiver.List[int(args[0].Int)], true, nil
+	}
+	return value, true, err
 }
 
 // Direct String and List bindings share the member dispatcher without
@@ -840,4 +934,65 @@ func (vm *VM) apexMapsEqual(left, right Value, result *Result, operator bool) (b
 		}
 	}
 	return true, nil
+}
+
+// evalFieldDescribeScalarChain admits only a direct local token and two built-in
+// calls without arguments. No expression is evaluated before eligibility is
+// decided, so every fallback retains the normal evaluation and dispatch order.
+func (vm *VM) evalFieldDescribeScalarChain(expr *ir.Expr, result *Result) (Value, bool, error) {
+	if expr.Left == nil || expr.Operator != "" || len(expr.Args) != 0 || len(expr.NamedArgs) != 0 {
+		return Null, false, nil
+	}
+	switch expr.Callee {
+	case "getName", "getLabel", "getInlineHelpText", "getLocalName", "getCompoundFieldName",
+		"isNillable", "isExternalId", "isUnique", "isEncrypted", "isCalculated", "getCalculatedFormula",
+		"isAutoNumber", "isCaseSensitive", "isNameField", "isCustom", "getLength", "getByteLength",
+		"getPrecision", "getScale", "getDigits", "isHtmlFormatted", "isSortable", "isDefaultedOnCreate",
+		"getRelationshipName", "getRelationshipOrder", "isAccessible", "isCreateable", "isUpdateable",
+		// Enum getters return the stored (or a freshly built) enum value; an
+		// eager describe shares that same stored value with its template.
+		"getType", "getSoapType":
+	default:
+		return Null, false, nil
+	}
+	inner := expr.Left
+	if inner.Kind != ir.ExprCall || inner.Left != nil || inner.Operator != "" ||
+		len(inner.Args) != 0 || len(inner.NamedArgs) != 0 || len(vm.currentMethod.triggerLocalMethods) != 0 {
+		return Null, false, nil
+	}
+	name, method, ok := strings.Cut(inner.Callee, ".")
+	if !ok || method != "getDescribe" || strings.EqualFold(name, "this") || strings.EqualFold(name, "super") {
+		return Null, false, nil
+	}
+	token, local := vm.Globals[name]
+	if !local || !isSObjectFieldTokenType(vm.VarTypes[name]) || token.Kind != ValueObject || token.Type != "Schema.SObjectField" ||
+		token.Runtime != "" || (token.Static != "" && token.Static != token.Type) || token.classInstance || token.projectClass || isStubProxy(token) {
+		return Null, false, nil
+	}
+	if _, builtin := canonicalBuiltinStaticCall(inner.Callee); builtin || normalizeStaticCallCasing(inner.Callee) != inner.Callee {
+		return Null, false, nil
+	}
+	// Registered methods precede the passive platform implementation and can
+	// invoke Apex callbacks. Their initialization/access/dispatch stays eager.
+	// A declaration with no member, supertype or initializer (a source class
+	// that only shadows the short name) offers dispatch nothing to select.
+	for _, name := range []string{"Schema.SObjectField", "SObjectField", "Schema.DescribeFieldResult", "DescribeFieldResult"} {
+		if class, registered := vm.lookupClass(name); registered && !memberlessShadowClass(class) {
+			return Null, false, nil
+		}
+	}
+	describe, _, _, _, err := vm.callSObjectFieldDescribe(token, nil, result, true)
+	if err != nil {
+		return Null, true, err
+	}
+	value, _, _, _, err := vm.callPlatformObjectMember(describe, expr.Callee, nil, result)
+	return value, true, err
+}
+
+func memberlessShadowClass(class Class) bool {
+	return len(class.Methods) == 0 && len(class.Constructors) == 0 &&
+		len(class.Fields) == 0 && len(class.StaticFields) == 0 &&
+		len(class.StaticInitializers) == 0 && len(class.InstanceInitializers) == 0 &&
+		len(class.EnumValues) == 0 && class.SuperClass == "" && len(class.Interfaces) == 0 &&
+		!class.IsInterface && !class.PlatformType
 }

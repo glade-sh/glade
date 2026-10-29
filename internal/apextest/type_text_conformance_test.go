@@ -133,7 +133,7 @@ func TestTypeTextOrgConformance(t *testing.T) {
 		}
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			for _, row := range data.Rows {
 				if row.APIVersion != api {
 					continue

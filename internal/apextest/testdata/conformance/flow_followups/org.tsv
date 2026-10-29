@@ -1,0 +1,125 @@
+source_api	route	id	observation
+62.0	anonymous	AO01	{"dates":[null],"sizes":[1],"success":true,"times":[null]}
+62.0	anonymous	AO02	{"dates":[null],"sizes":[1],"success":true,"times":[null]}
+62.0	anonymous	AO03	{"dates":["2031-03-11"],"sizes":[1],"success":true,"times":["2031-03-11 12:00:00"]}
+62.0	anonymous	AO04	{"dates":["2031-03-13","2031-03-14","2031-03-15"],"sizes":[3],"success":true,"times":["2031-03-13 12:00:00","2031-03-14 12:00:00","2031-03-15 12:00:00"]}
+62.0	anonymous	AO05	{"dates":["2031-03-11"],"sizes":[1],"success":true,"times":["2031-03-11 12:00:00"]}
+62.0	anonymous	AO06	{"dates":[null],"sizes":[1],"success":true,"times":[null]}
+62.0	anonymous	AO07	{"dates":[null,null,null],"sizes":[3],"success":true,"times":[null,null,null]}
+62.0	anonymous	AO08	{"dates":["2031-03-13",null,"2031-03-15"],"sizes":[3],"success":true,"times":["2031-03-13 12:00:00",null,"2031-03-15 12:00:00"]}
+62.0	anonymous	AO09	{"dates":["2031-03-13","2031-03-30","2031-03-14"],"sizes":[3],"success":true,"times":["2031-03-13 12:00:00","2031-03-30 12:00:00","2031-03-14 12:00:00"]}
+62.0	anonymous	AO10	{"dates":[],"sizes":[],"success":true,"times":[]}
+62.0	anonymous	AO11	{"fault":true,"sizes":[1],"status":"FIELD_CUSTOM_VALIDATION_EXCEPTION","success":false}
+62.0	anonymous	AO12	{"fault":true,"sizes":[3],"status":"FIELD_CUSTOM_VALIDATION_EXCEPTION","success":false}
+62.0	anonymous	AO13	{"dates":["2031-03-13","2031-03-15",null],"sizes":[3],"success":true,"times":["2031-03-13 12:00:00","2031-03-15 12:00:00",null]}
+62.0	anonymous	AO14	{"dates":[null,null,null],"sizes":[3],"success":true,"times":[null,null,null]}
+62.0	anonymous	CE_negative_fraction	{"message":"FF_NUM|record=-1,234.5|zero=0|negativeZero=0|","status":"FIELD_CUSTOM_VALIDATION_EXCEPTION"}
+62.0	anonymous	CE_negative_small	{"message":"FF_NUM|record=-0.5|zero=0|negativeZero=0|","status":"FIELD_CUSTOM_VALIDATION_EXCEPTION"}
+62.0	anonymous	CE_negative_whole	{"message":"FF_NUM|record=-1,234|zero=0|negativeZero=0|","status":"FIELD_CUSTOM_VALIDATION_EXCEPTION"}
+62.0	anonymous	CE_negative_zero	{"message":"FF_NUM|record=0|zero=0|negativeZero=0|","status":"FIELD_CUSTOM_VALIDATION_EXCEPTION"}
+62.0	anonymous	CE_nonmatching_start	{"message":null,"status":"SUCCESS"}
+62.0	anonymous	CE_null	{"message":"FF_NUM|record=|zero=0|negativeZero=0|","status":"FIELD_CUSTOM_VALIDATION_EXCEPTION"}
+62.0	anonymous	CE_positive_whole	{"message":"FF_NUM|record=1,234|zero=0|negativeZero=0|","status":"FIELD_CUSTOM_VALIDATION_EXCEPTION"}
+62.0	anonymous	CE_zero	{"message":"FF_NUM|record=0|zero=0|negativeZero=0|","status":"FIELD_CUSTOM_VALIDATION_EXCEPTION"}
+62.0	anonymous	FV_explicit_record_name_twin	{"description":"name-false","site":"number-variable"}
+62.0	anonymous	FV_explicit_record_number_twin	{"description":"name-variable","site":"number-false"}
+62.0	anonymous	FV_name_number_collision	{"description":"name-variable","site":"number-variable"}
+62.0	anonymous	FV_nonmatching_start	{"description":null,"site":null}
+62.0	istest	AO01	{"dates":[null],"sizes":[1],"success":true,"times":[null]}
+62.0	istest	AO02	{"dates":[null],"sizes":[1],"success":true,"times":[null]}
+62.0	istest	AO03	{"dates":["2031-03-11"],"sizes":[1],"success":true,"times":["2031-03-11 12:00:00"]}
+62.0	istest	AO04	{"dates":["2031-03-13","2031-03-14","2031-03-15"],"sizes":[3],"success":true,"times":["2031-03-13 12:00:00","2031-03-14 12:00:00","2031-03-15 12:00:00"]}
+62.0	istest	AO05	{"dates":["2031-03-11"],"sizes":[1],"success":true,"times":["2031-03-11 12:00:00"]}
+62.0	istest	AO06	{"dates":[null],"sizes":[1],"success":true,"times":[null]}
+62.0	istest	AO07	{"dates":[null,null,null],"sizes":[3],"success":true,"times":[null,null,null]}
+62.0	istest	AO08	{"dates":["2031-03-13",null,"2031-03-15"],"sizes":[3],"success":true,"times":["2031-03-13 12:00:00",null,"2031-03-15 12:00:00"]}
+62.0	istest	AO09	{"dates":["2031-03-13","2031-03-30","2031-03-14"],"sizes":[3],"success":true,"times":["2031-03-13 12:00:00","2031-03-30 12:00:00","2031-03-14 12:00:00"]}
+62.0	istest	AO10	{"dates":[],"sizes":[],"success":true,"times":[]}
+62.0	istest	AO11	{"fault":true,"sizes":[1],"status":"FIELD_CUSTOM_VALIDATION_EXCEPTION","success":false}
+62.0	istest	AO12	{"fault":true,"sizes":[3],"status":"FIELD_CUSTOM_VALIDATION_EXCEPTION","success":false}
+62.0	istest	AO13	{"dates":["2031-03-13","2031-03-15",null],"sizes":[3],"success":true,"times":["2031-03-13 12:00:00","2031-03-15 12:00:00",null]}
+62.0	istest	AO14	{"dates":[null,null,null],"sizes":[3],"success":true,"times":[null,null,null]}
+62.0	istest	CE_negative_fraction	{"message":"FF_NUM|record=-1,234.5|zero=0|negativeZero=0|","status":"FIELD_CUSTOM_VALIDATION_EXCEPTION"}
+62.0	istest	CE_negative_small	{"message":"FF_NUM|record=-0.5|zero=0|negativeZero=0|","status":"FIELD_CUSTOM_VALIDATION_EXCEPTION"}
+62.0	istest	CE_negative_whole	{"message":"FF_NUM|record=-1,234|zero=0|negativeZero=0|","status":"FIELD_CUSTOM_VALIDATION_EXCEPTION"}
+62.0	istest	CE_negative_zero	{"message":"FF_NUM|record=0|zero=0|negativeZero=0|","status":"FIELD_CUSTOM_VALIDATION_EXCEPTION"}
+62.0	istest	CE_nonmatching_start	{"message":null,"status":"SUCCESS"}
+62.0	istest	CE_null	{"message":"FF_NUM|record=|zero=0|negativeZero=0|","status":"FIELD_CUSTOM_VALIDATION_EXCEPTION"}
+62.0	istest	CE_positive_whole	{"message":"FF_NUM|record=1,234|zero=0|negativeZero=0|","status":"FIELD_CUSTOM_VALIDATION_EXCEPTION"}
+62.0	istest	CE_zero	{"message":"FF_NUM|record=0|zero=0|negativeZero=0|","status":"FIELD_CUSTOM_VALIDATION_EXCEPTION"}
+62.0	istest	FV_explicit_record_name_twin	{"description":"name-false","site":"number-variable"}
+62.0	istest	FV_explicit_record_number_twin	{"description":"name-variable","site":"number-false"}
+62.0	istest	FV_name_number_collision	{"description":"name-variable","site":"number-variable"}
+62.0	istest	FV_nonmatching_start	{"description":null,"site":null}
+62.0	istest	AR_original_matching_owner	{"queue":"FF_UserQueue","status":"SUCCESS"}
+62.0	istest	AR_original_nonmatching_owner	{"queue":null,"status":"SUCCESS"}
+62.0	istest	AR_original_profile_admin	{"queue":null,"status":"SUCCESS"}
+62.0	istest	AR_restored_matching_owner	{"queue":"FF_UserQueue","status":"SUCCESS"}
+62.0	istest	AR_restored_profile_admin	{"queue":null,"status":"SUCCESS"}
+62.0	istest	AR_runAs_matching_owner	{"queue":"FF_UserQueue","status":"SUCCESS"}
+62.0	istest	AR_runAs_nonmatching_company	{"queue":null,"status":"SUCCESS"}
+62.0	istest	AR_runAs_nonmatching_owner	{"queue":null,"status":"SUCCESS"}
+62.0	istest	AR_runAs_profile_rejection	{"queue":null,"status":"SUCCESS"}
+62.0	istest	AR_runAs_profile_standard	{"queue":"FF_ProfileQueue","status":"SUCCESS"}
+67.0	anonymous	AO01	{"dates":[null],"sizes":[1],"success":true,"times":[null]}
+67.0	anonymous	AO02	{"dates":[null],"sizes":[1],"success":true,"times":[null]}
+67.0	anonymous	AO03	{"dates":["2031-03-11"],"sizes":[1],"success":true,"times":["2031-03-11 12:00:00"]}
+67.0	anonymous	AO04	{"dates":["2031-03-13","2031-03-14","2031-03-15"],"sizes":[3],"success":true,"times":["2031-03-13 12:00:00","2031-03-14 12:00:00","2031-03-15 12:00:00"]}
+67.0	anonymous	AO05	{"dates":["2031-03-11"],"sizes":[1],"success":true,"times":["2031-03-11 12:00:00"]}
+67.0	anonymous	AO06	{"dates":[null],"sizes":[1],"success":true,"times":[null]}
+67.0	anonymous	AO07	{"dates":[null,null,null],"sizes":[3],"success":true,"times":[null,null,null]}
+67.0	anonymous	AO08	{"dates":["2031-03-13",null,"2031-03-15"],"sizes":[3],"success":true,"times":["2031-03-13 12:00:00",null,"2031-03-15 12:00:00"]}
+67.0	anonymous	AO09	{"dates":["2031-03-13","2031-03-30","2031-03-14"],"sizes":[3],"success":true,"times":["2031-03-13 12:00:00","2031-03-30 12:00:00","2031-03-14 12:00:00"]}
+67.0	anonymous	AO10	{"dates":[],"sizes":[],"success":true,"times":[]}
+67.0	anonymous	AO11	{"fault":true,"sizes":[1],"status":"FIELD_CUSTOM_VALIDATION_EXCEPTION","success":false}
+67.0	anonymous	AO12	{"fault":true,"sizes":[3],"status":"FIELD_CUSTOM_VALIDATION_EXCEPTION","success":false}
+67.0	anonymous	AO13	{"dates":["2031-03-13","2031-03-15",null],"sizes":[3],"success":true,"times":["2031-03-13 12:00:00","2031-03-15 12:00:00",null]}
+67.0	anonymous	AO14	{"dates":[null,null,null],"sizes":[3],"success":true,"times":[null,null,null]}
+67.0	anonymous	CE_negative_fraction	{"message":"FF_NUM|record=-1,234.5|zero=0|negativeZero=0|","status":"FIELD_CUSTOM_VALIDATION_EXCEPTION"}
+67.0	anonymous	CE_negative_small	{"message":"FF_NUM|record=-0.5|zero=0|negativeZero=0|","status":"FIELD_CUSTOM_VALIDATION_EXCEPTION"}
+67.0	anonymous	CE_negative_whole	{"message":"FF_NUM|record=-1,234|zero=0|negativeZero=0|","status":"FIELD_CUSTOM_VALIDATION_EXCEPTION"}
+67.0	anonymous	CE_negative_zero	{"message":"FF_NUM|record=0|zero=0|negativeZero=0|","status":"FIELD_CUSTOM_VALIDATION_EXCEPTION"}
+67.0	anonymous	CE_nonmatching_start	{"message":null,"status":"SUCCESS"}
+67.0	anonymous	CE_null	{"message":"FF_NUM|record=|zero=0|negativeZero=0|","status":"FIELD_CUSTOM_VALIDATION_EXCEPTION"}
+67.0	anonymous	CE_positive_whole	{"message":"FF_NUM|record=1,234|zero=0|negativeZero=0|","status":"FIELD_CUSTOM_VALIDATION_EXCEPTION"}
+67.0	anonymous	CE_zero	{"message":"FF_NUM|record=0|zero=0|negativeZero=0|","status":"FIELD_CUSTOM_VALIDATION_EXCEPTION"}
+67.0	anonymous	FV_explicit_record_name_twin	{"description":"name-false","site":"number-variable"}
+67.0	anonymous	FV_explicit_record_number_twin	{"description":"name-variable","site":"number-false"}
+67.0	anonymous	FV_name_number_collision	{"description":"name-variable","site":"number-variable"}
+67.0	anonymous	FV_nonmatching_start	{"description":null,"site":null}
+67.0	istest	AO01	{"dates":[null],"sizes":[1],"success":true,"times":[null]}
+67.0	istest	AO02	{"dates":[null],"sizes":[1],"success":true,"times":[null]}
+67.0	istest	AO03	{"dates":["2031-03-11"],"sizes":[1],"success":true,"times":["2031-03-11 12:00:00"]}
+67.0	istest	AO04	{"dates":["2031-03-13","2031-03-14","2031-03-15"],"sizes":[3],"success":true,"times":["2031-03-13 12:00:00","2031-03-14 12:00:00","2031-03-15 12:00:00"]}
+67.0	istest	AO05	{"dates":["2031-03-11"],"sizes":[1],"success":true,"times":["2031-03-11 12:00:00"]}
+67.0	istest	AO06	{"dates":[null],"sizes":[1],"success":true,"times":[null]}
+67.0	istest	AO07	{"dates":[null,null,null],"sizes":[3],"success":true,"times":[null,null,null]}
+67.0	istest	AO08	{"dates":["2031-03-13",null,"2031-03-15"],"sizes":[3],"success":true,"times":["2031-03-13 12:00:00",null,"2031-03-15 12:00:00"]}
+67.0	istest	AO09	{"dates":["2031-03-13","2031-03-30","2031-03-14"],"sizes":[3],"success":true,"times":["2031-03-13 12:00:00","2031-03-30 12:00:00","2031-03-14 12:00:00"]}
+67.0	istest	AO10	{"dates":[],"sizes":[],"success":true,"times":[]}
+67.0	istest	AO11	{"fault":true,"sizes":[1],"status":"FIELD_CUSTOM_VALIDATION_EXCEPTION","success":false}
+67.0	istest	AO12	{"fault":true,"sizes":[3],"status":"FIELD_CUSTOM_VALIDATION_EXCEPTION","success":false}
+67.0	istest	AO13	{"dates":["2031-03-13","2031-03-15",null],"sizes":[3],"success":true,"times":["2031-03-13 12:00:00","2031-03-15 12:00:00",null]}
+67.0	istest	AO14	{"dates":[null,null,null],"sizes":[3],"success":true,"times":[null,null,null]}
+67.0	istest	CE_negative_fraction	{"message":"FF_NUM|record=-1,234.5|zero=0|negativeZero=0|","status":"FIELD_CUSTOM_VALIDATION_EXCEPTION"}
+67.0	istest	CE_negative_small	{"message":"FF_NUM|record=-0.5|zero=0|negativeZero=0|","status":"FIELD_CUSTOM_VALIDATION_EXCEPTION"}
+67.0	istest	CE_negative_whole	{"message":"FF_NUM|record=-1,234|zero=0|negativeZero=0|","status":"FIELD_CUSTOM_VALIDATION_EXCEPTION"}
+67.0	istest	CE_negative_zero	{"message":"FF_NUM|record=0|zero=0|negativeZero=0|","status":"FIELD_CUSTOM_VALIDATION_EXCEPTION"}
+67.0	istest	CE_nonmatching_start	{"message":null,"status":"SUCCESS"}
+67.0	istest	CE_null	{"message":"FF_NUM|record=|zero=0|negativeZero=0|","status":"FIELD_CUSTOM_VALIDATION_EXCEPTION"}
+67.0	istest	CE_positive_whole	{"message":"FF_NUM|record=1,234|zero=0|negativeZero=0|","status":"FIELD_CUSTOM_VALIDATION_EXCEPTION"}
+67.0	istest	CE_zero	{"message":"FF_NUM|record=0|zero=0|negativeZero=0|","status":"FIELD_CUSTOM_VALIDATION_EXCEPTION"}
+67.0	istest	FV_explicit_record_name_twin	{"description":"name-false","site":"number-variable"}
+67.0	istest	FV_explicit_record_number_twin	{"description":"name-variable","site":"number-false"}
+67.0	istest	FV_name_number_collision	{"description":"name-variable","site":"number-variable"}
+67.0	istest	FV_nonmatching_start	{"description":null,"site":null}
+67.0	istest	AR_original_matching_owner	{"queue":"FF_UserQueue","status":"SUCCESS"}
+67.0	istest	AR_original_nonmatching_owner	{"queue":null,"status":"SUCCESS"}
+67.0	istest	AR_original_profile_admin	{"queue":null,"status":"SUCCESS"}
+67.0	istest	AR_restored_matching_owner	{"queue":"FF_UserQueue","status":"SUCCESS"}
+67.0	istest	AR_restored_profile_admin	{"queue":null,"status":"SUCCESS"}
+67.0	istest	AR_runAs_matching_owner	{"queue":"FF_UserQueue","status":"SUCCESS"}
+67.0	istest	AR_runAs_nonmatching_company	{"queue":null,"status":"SUCCESS"}
+67.0	istest	AR_runAs_nonmatching_owner	{"queue":null,"status":"SUCCESS"}
+67.0	istest	AR_runAs_profile_rejection	{"queue":null,"status":"SUCCESS"}
+67.0	istest	AR_runAs_profile_standard	{"queue":"FF_ProfileQueue","status":"SUCCESS"}

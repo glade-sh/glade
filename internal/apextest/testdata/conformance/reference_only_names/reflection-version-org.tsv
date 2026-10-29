@@ -1,0 +1,13 @@
+source_api	route	case_id	outcome	message
+62.0	isTest	bare	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+62.0	isTest	schema	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+63.0	isTest	bare	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+63.0	isTest	schema	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+64.0	isTest	bare	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+64.0	isTest	schema	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+65.0	isTest	bare	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+65.0	isTest	schema	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+66.0	isTest	bare	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+66.0	isTest	schema	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+67.0	isTest	bare	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	isTest	schema	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true

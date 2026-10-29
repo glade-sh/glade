@@ -1,0 +1,36 @@
+{
+  "orgName": "Standard describe profile PU",
+  "edition": "Developer",
+  "features": [
+    "Communities",
+    "Entitlements",
+    "MultiCurrency",
+    "OrderManagement",
+    "PersonAccounts",
+    "ProductsAndSchedules",
+    "SalesUser",
+    "ServiceCloud",
+    "StateAndCountryPicklist"
+  ],
+  "settings": {
+    "communitiesSettings": {
+      "enableNetworksEnabled": true
+    },
+    "entitlementSettings": {
+      "enableEntitlements": true
+    },
+    "orderManagementSettings": {
+      "enableOrderManagement": true
+    },
+    "orderSettings": {
+      "enableOrders": true
+    },
+    "productSettings": {
+      "enableQuantitySchedule": true,
+      "enableRevenueSchedule": true
+    },
+    "quoteSettings": {
+      "enableQuote": true
+    }
+  }
+}

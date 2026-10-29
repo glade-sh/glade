@@ -1,0 +1,27 @@
+id	lookup_field	criteria_field	operation	value	value_field	optional	reference	category	target_date	source_date	related_state	reject	purpose	target_text	compare_text
+L01	RequiredTarget__c	LookupFilterParent__c.Category__c	equals	Allowed		false	true	Allowed	NULL	NULL	NULL	false	required filter accepts a matching target	NULL	NULL
+L02	RequiredTarget__c	LookupFilterParent__c.Category__c	equals	Allowed		false	true	Blocked	NULL	NULL	NULL	false	required filter rejects a mismatching target	NULL	NULL
+L03	OptionalTarget__c	LookupFilterParent__c.Category__c	equals	Allowed		true	true	Blocked	NULL	NULL	NULL	false	optional filter mismatch during insert	NULL	NULL
+L04	RequiredTarget__c	LookupFilterParent__c.Category__c	equals	Allowed		false	false	NULL	NULL	NULL	NULL	false	missing lookup value with a required filter	NULL	NULL
+L05	RequiredTarget__c	LookupFilterParent__c.Category__c	equals	Allowed		false	true	NULL	NULL	NULL	NULL	false	null target criterion	NULL	NULL
+L06	SourceTarget__c	$Source.SourceDate__c	equals		LookupFilterParent__c.RegionDate__c	false	true	NULL	2026-01-01	2026-01-01	NULL	false	source field equals target field	NULL	NULL
+L07	SourceTarget__c	$Source.SourceDate__c	equals		LookupFilterParent__c.RegionDate__c	false	true	NULL	2026-02-01	2026-01-01	NULL	false	source field differs from target field	NULL	NULL
+L08	SourceTarget__c	$Source.SourceDate__c	equals		LookupFilterParent__c.RegionDate__c	false	true	NULL	NULL	NULL	NULL	false	null source and target fields	NULL	NULL
+L09	FormulaTarget__c	LookupFilterParent__c.FormulaState__c	equals	Ready		false	true	NULL	NULL	NULL	Ready	false	cross-object formula on lookup target matches	NULL	NULL
+L10	FormulaTarget__c	LookupFilterParent__c.FormulaState__c	equals	Ready		false	true	NULL	NULL	NULL	Blocked	false	cross-object formula on lookup target mismatches	NULL	NULL
+L11	DirectTarget__c	LookupFilterParent__c.Related__r.State__c	equals	Ready		false	true	NULL	NULL	NULL	Ready	false	criterion spans from lookup target to a related record	NULL	NULL
+L12	ValidationTarget__c	LookupFilterParent__c.Category__c	equals	Allowed		false	true	Allowed	NULL	NULL	NULL	true	custom validation rule fails while lookup filter matches	NULL	NULL
+L13	ValidationTarget__c	LookupFilterParent__c.Category__c	equals	Allowed		false	true	Blocked	NULL	NULL	NULL	true	lookup filter and custom validation rule both fail	NULL	NULL
+L14	TextEqualsFieldTarget__c	LookupFilterParent__c.RegionText__c	equals		LookupFilterParent__c.CompareText__c	false	true	NULL	NULL	NULL	NULL	false	blank target text fields with equals	NULL	NULL
+L15	TextNotEqualFieldTarget__c	LookupFilterParent__c.RegionText__c	notEqual		LookupFilterParent__c.CompareText__c	false	true	NULL	NULL	NULL	NULL	false	blank target text fields with notEqual	NULL	NULL
+L16	TextEqualsBlankTarget__c	LookupFilterParent__c.RegionText__c	equals			false	true	NULL	NULL	NULL	NULL	false	blank target text field compared with a blank literal	NULL	NULL
+L17	TextNotEqualBlankTarget__c	LookupFilterParent__c.RegionText__c	notEqual			false	true	NULL	NULL	NULL	NULL	false	blank target text field compared with a blank literal using notEqual	NULL	NULL
+L18	DateNotEqualTarget__c	$Source.SourceDate__c	notEqual		LookupFilterParent__c.RegionDate__c	false	true	NULL	NULL	NULL	NULL	false	null source and target date fields with notEqual	NULL	NULL
+L19	TextEqualsFieldTarget__c	LookupFilterParent__c.RegionText__c	equals		LookupFilterParent__c.CompareText__c	false	true	NULL	NULL	NULL	NULL	false	empty target text fields with equals	EMPTY	EMPTY
+L20	TextNotEqualFieldTarget__c	LookupFilterParent__c.RegionText__c	notEqual		LookupFilterParent__c.CompareText__c	false	true	NULL	NULL	NULL	NULL	false	empty target text fields with notEqual	EMPTY	EMPTY
+L21	TextEqualsBlankTarget__c	LookupFilterParent__c.RegionText__c	equals			false	true	NULL	NULL	NULL	NULL	false	empty target text field equals blank literal	EMPTY	EMPTY
+L22	TextNotEqualBlankTarget__c	LookupFilterParent__c.RegionText__c	notEqual			false	true	NULL	NULL	NULL	NULL	false	empty target text field notEqual blank literal	EMPTY	EMPTY
+L23	TextEqualsFieldTarget__c	LookupFilterParent__c.RegionText__c	equals		LookupFilterParent__c.CompareText__c	false	true	NULL	NULL	NULL	NULL	false	matching nonblank target text fields	match	match
+L24	TextNotEqualFieldTarget__c	LookupFilterParent__c.RegionText__c	notEqual		LookupFilterParent__c.CompareText__c	false	true	NULL	NULL	NULL	NULL	false	differing nonblank target text fields	left	right
+L25	TextEqualsBlankTarget__c	LookupFilterParent__c.RegionText__c	equals			false	true	NULL	NULL	NULL	NULL	false	nonblank text field equals blank literal	value	EMPTY
+L26	TextNotEqualBlankTarget__c	LookupFilterParent__c.RegionText__c	notEqual			false	true	NULL	NULL	NULL	NULL	false	nonblank text field notEqual blank literal	value	EMPTY

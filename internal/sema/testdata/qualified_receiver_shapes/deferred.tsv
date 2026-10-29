@@ -1,0 +1,5 @@
+case	reason
+new_missingns_known_type	missingns is undeclared; the capture org lacks it, but offline analysis cannot see installed packages or the deploying org namespace
+new_missingns_missing_type	missingns is undeclared; the capture org lacks it, but offline analysis cannot see installed packages or the deploying org namespace
+missingns_known_nested_instance	missingns is undeclared; the capture org lacks it, but offline analysis cannot see installed packages or the deploying org namespace
+new_deep_known_type	unindexed namespace; native rejection in an org without the package cannot prove offline absence

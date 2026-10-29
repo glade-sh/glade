@@ -832,3 +832,33 @@ func TestBuildArtifactsSourceForTriggerReturnsRecordedLogicalViewWithoutReading(
 		t.Fatalf("normalized = %q, want %q", got, want)
 	}
 }
+
+func TestMatchesProjectSourcesGuards(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "Guarded.cls")
+	writeFile(t, path, "public class Guarded {}")
+	p := project.Project{Root: root, ApexFiles: []string{path}}
+	index, _ := BuildWithArtifacts(p, schema.Schema{})
+	if !MatchesProjectSources(index, p) {
+		t.Fatal("a fresh complete index must match its project sources")
+	}
+
+	subset := index
+	subset.Subset = true
+	if MatchesProjectSources(subset, p) {
+		t.Fatal("a subset index matched project sources")
+	}
+
+	extra := filepath.Join(root, "Extra.cls")
+	writeFile(t, extra, "public class Extra {}")
+	grown := p
+	grown.ApexFiles = []string{path, extra}
+	if MatchesProjectSources(index, grown) {
+		t.Fatal("an index missing a project Apex file matched")
+	}
+
+	writeFile(t, path, "public class Guarded { public void drifted() {} }")
+	if MatchesProjectSources(index, p) {
+		t.Fatal("an index matched after its source changed on disk")
+	}
+}

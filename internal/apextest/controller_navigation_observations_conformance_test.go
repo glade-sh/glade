@@ -81,7 +81,7 @@ func TestControllerNavigationObservationsConformance(t *testing.T) {
 		t.Logf("PENDING %s: %s", control.ID, control.Reason)
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "ControllerNavigation", api)
 			for _, row := range data.Rows {
 				for _, cell := range row.Cells {

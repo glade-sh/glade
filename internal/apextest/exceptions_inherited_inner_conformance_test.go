@@ -138,7 +138,7 @@ func TestExceptionsInheritedInnerOrgConformance(t *testing.T) {
 		return "COMPILE_ERROR\t" + strings.Join(messages, "\n")
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "exceptions", api)
 			loaded := data.Declarations[api]
 			if len(loaded) != 8 {

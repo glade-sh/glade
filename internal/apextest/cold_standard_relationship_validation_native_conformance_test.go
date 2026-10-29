@@ -43,6 +43,10 @@ func TestColdStandardRelationshipValidationNativeConformanceRoutes(t *testing.T)
 				t.Fatalf("project compilation: %v %v", index.Diagnostics, analysis.Diagnostics)
 			}
 			org := orgFromIndex(index)
+			// Match Run's setup order: async/test schema is complete before
+			// freezing. The cold Asset remains explicitly absent below, and
+			// every row still proves that execution preserves its generation.
+			initializeTestOrg(&org)
 			storage.DeleteObject(&org, "Asset")
 			org.ClearRuntimeSchemaStamp()
 			runner := newConformanceRunner(t, index, conformanceRunnerOptions{Org: &org, LinkProject: true})

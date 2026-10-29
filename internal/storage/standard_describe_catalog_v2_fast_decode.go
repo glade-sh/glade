@@ -187,6 +187,8 @@ func (decoder *describeJSONDecoder) describeField(field *standardDescribeField) 
 			bit, ok = 1<<29, decoder.boolPointerInto(&field.NameField)
 		case "extraTypeInfo":
 			bit, ok = 1<<30, decoder.stringInto(&field.ExtraTypeInfo)
+		case "restrictedPicklist":
+			bit, ok = 1<<31, decoder.boolInto(&field.RestrictedPicklist)
 		default:
 			ok = !describeFieldKeyFolds(key) && decoder.skipValue(1)
 		}
@@ -362,7 +364,7 @@ func describeFieldKeyFolds(key []byte) bool {
 	case "name", "label", "type", "length", "precision", "scale", "calculated", "defaultvalue", "defaultvalueformula",
 		"compoundfieldname", "nillable", "defaultedoncreate", "createable", "updateable", "filterable", "groupable",
 		"sortable", "aggregatable", "permissionable", "deprecatedandhidden", "externalid", "unique", "encrypted",
-		"casesensitive", "idlookup", "referenceto", "relationshipname", "polymorphicforeignkey", "picklistvalues", "namefield", "extratypeinfo":
+		"casesensitive", "idlookup", "referenceto", "relationshipname", "polymorphicforeignkey", "picklistvalues", "namefield", "extratypeinfo", "restrictedpicklist":
 		return true
 	}
 	return false

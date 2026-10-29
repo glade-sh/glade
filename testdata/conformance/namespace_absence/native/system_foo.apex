@@ -1,0 +1,1 @@
+System.Foo.bar();

@@ -1,0 +1,17 @@
+{
+  "api": "67.0",
+  "context": "default",
+  "installedPackages": 0,
+  "objects": [
+    {
+      "exported": false,
+      "name": "Knowledge__ka",
+      "namespace": null
+    },
+    {
+      "exported": false,
+      "name": "Knowledge__kav",
+      "namespace": null
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+public class RuntimeSchemaFactoryCases {public static Map<String,Object> observe(){return new Map<String,Object>{'DescribeFieldResult'=>RuntimeSchemaFactoryField.observe(),'DescribeSObjectResult'=>RuntimeSchemaFactoryObject.observe(),'SObjectType'=>RuntimeSchemaFactoryToken.observe(),'SObjectField'=>RuntimeSchemaFactoryMember.observe()};}}

@@ -98,7 +98,7 @@ func TestInlineQueryCoalesceNullOrgConformance(t *testing.T) {
 		seen[row.ID] = true
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			for _, row := range data.CompileRows {
 				t.Run(row.ID, func(t *testing.T) {
 					want, ok := row.ExpectedByAPI[api]

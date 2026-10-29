@@ -81,8 +81,9 @@ type packageLanes struct {
 }
 
 type packageManifest struct {
-	Version int          `json:"version"`
-	Lanes   packageLanes `json:"lanes"`
+	Version              int            `json:"version"`
+	Lanes                packageLanes   `json:"lanes"`
+	ConcurrentTestCounts map[string]int `json:"concurrentTestCounts,omitempty"`
 }
 
 func main() {
@@ -336,6 +337,14 @@ func validatePackageManifest(data []byte, current []string) (map[string][]string
 	}
 	if len(owned) != len(want) {
 		return nil, fmt.Errorf("owned package count %d does not match current package count %d", len(owned), len(want))
+	}
+	for pkg, count := range manifest.ConcurrentTestCounts {
+		if !strings.HasPrefix(pkg, "./internal/") || strings.Contains(pkg, "..") || count <= 0 {
+			return nil, fmt.Errorf("invalid concurrency inventory %q: count %d", pkg, count)
+		}
+		if _, exists := owned["github.com/glade-sh/glade/"+strings.TrimPrefix(pkg, "./")]; !exists {
+			return nil, fmt.Errorf("concurrency inventory package %q is unowned", pkg)
+		}
 	}
 	return lanes, nil
 }

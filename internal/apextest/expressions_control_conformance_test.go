@@ -75,7 +75,7 @@ func TestExpressionsControlOrgConformance(t *testing.T) {
 		return prefix + "try {Object r; " + code + " pq.out('" + tc.ID + "',r);}catch(Exception e){pq.err('" + tc.ID + "',e);}"
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "expressions and control flow", api)
 			root := t.TempDir()
 			names := make([]string, 0, len(data.Declarations)+1)

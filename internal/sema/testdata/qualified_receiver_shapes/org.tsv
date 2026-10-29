@@ -1,0 +1,55 @@
+source_api	case	compiled	message
+62.0	missingns_known_type_static	false	Variable does not exist: missingns.KnownType
+62.0	deep_missing_static_receiver	false	Variable does not exist: a.b.MissingUtility
+62.0	deep_known_static_receiver	false	Variable does not exist: a.b.KnownType
+62.0	missingns_known_inner_static	false	Variable does not exist: missingns.KnownType.Inner
+62.0	known_type_bogus_static_member	false	Variable does not exist: KnownType.Bogus
+62.0	system_bogus_static_member	false	Variable does not exist: System.Bogus
+62.0	namespace_before_system_static	false	Variable does not exist: missingns.System
+62.0	vendor_missing_static	false	Variable does not exist: vendor.MissingUtility
+62.0	known_nested_static	false	Variable does not exist: KnownType.Inner
+62.0	known_nested_instance	true	-
+62.0	missingns_known_nested_instance	false	Invalid type: missingns.KnownType.Nested
+62.0	missingns_known_inner_local_type	false	Invalid type: missingns.KnownType.Inner
+62.0	missingns_known_nested_local_type	false	Invalid type: missingns.KnownType.Nested
+62.0	known_nested_local_type	true	-
+62.0	deep_known_local_type	false	Invalid type: a.b.KnownType
+62.0	known_bogus_local_type	false	Invalid type: KnownType.Bogus
+62.0	new_missingns_known_type	false	Invalid type: missingns.KnownType
+62.0	new_deep_known_type	false	Invalid type: a.b.KnownType
+62.0	new_missingns_missing_type	false	Invalid type: missingns.MissingUtility
+67.0	missingns_known_type_static	false	Variable does not exist: missingns.KnownType
+67.0	deep_missing_static_receiver	false	Variable does not exist: a.b.MissingUtility
+67.0	deep_known_static_receiver	false	Variable does not exist: a.b.KnownType
+67.0	missingns_known_inner_static	false	Variable does not exist: missingns.KnownType.Inner
+67.0	known_type_bogus_static_member	false	Variable does not exist: KnownType.Bogus
+67.0	system_bogus_static_member	false	Variable does not exist: System.Bogus
+67.0	namespace_before_system_static	false	Variable does not exist: missingns.System
+67.0	vendor_missing_static	false	Variable does not exist: vendor.MissingUtility
+67.0	known_nested_static	false	Variable does not exist: KnownType.Inner
+67.0	known_nested_instance	true	-
+67.0	missingns_known_nested_instance	false	Invalid type: missingns.KnownType.Nested
+67.0	missingns_known_inner_local_type	false	Invalid type: missingns.KnownType.Inner
+67.0	missingns_known_nested_local_type	false	Invalid type: missingns.KnownType.Nested
+67.0	known_nested_local_type	true	-
+67.0	deep_known_local_type	false	Invalid type: a.b.KnownType
+67.0	known_bogus_local_type	false	Invalid type: KnownType.Bogus
+67.0	new_missingns_known_type	false	Invalid type: missingns.KnownType
+67.0	new_deep_known_type	false	Invalid type: a.b.KnownType
+67.0	new_missingns_missing_type	false	Invalid type: missingns.MissingUtility
+62.0	schema_address_type	true	-
+62.0	page_reference_method	true	-
+62.0	component_nested_type	true	-
+62.0	rollup_enum_nested_receiver	true	-
+62.0	cache_org_exception_type	true	-
+62.0	schema_sobject_fieldset_path	true	-
+62.0	schema_sobject_contact_fields_path	true	-
+62.0	custom_settings_field_token_path	true	-
+67.0	schema_address_type	true	-
+67.0	page_reference_method	true	-
+67.0	component_nested_type	true	-
+67.0	rollup_enum_nested_receiver	true	-
+67.0	cache_org_exception_type	true	-
+67.0	schema_sobject_fieldset_path	true	-
+67.0	schema_sobject_contact_fields_path	true	-
+67.0	custom_settings_field_token_path	true	-

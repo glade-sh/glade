@@ -42,10 +42,14 @@ func EffectiveSourceAPIVersionFromMetadata(data []byte, fallback string) string 
 type Project struct {
 	PlatformEventChannelMemberFiles []string `json:"platformEventChannelMemberFiles,omitempty"`
 
-	PDF                        config.PDFConfig           `json:"pdf,omitempty"`
-	Test                       config.TestConfig          `json:"test,omitempty"`
-	Root                       string                     `json:"root"`
-	Namespace                  string                     `json:"namespace,omitempty"`
+	PDF       config.PDFConfig  `json:"pdf,omitempty"`
+	Test      config.TestConfig `json:"test,omitempty"`
+	Root      string            `json:"root"`
+	Namespace string            `json:"namespace,omitempty"`
+	// SourceNamespaces lists namespaces declared by sfdx-project.json files
+	// of sub-projects inside the loaded package directories. Their source is
+	// part of this project, so a qualifier naming one names project source.
+	SourceNamespaces           []string                   `json:"sourceNamespaces,omitempty"`
 	SourceAPIVersion           string                     `json:"sourceApiVersion,omitempty"`
 	OrgDomainURL               string                     `json:"orgDomainUrl,omitempty"`
 	SchemaSnapshot             string                     `json:"schemaSnapshot,omitempty"`
@@ -274,6 +278,8 @@ var scratchSettingTriggers = []struct{ block, key, feature string }{
 	{"lightningExperienceSettings", "enableS1DesktopEnabled", "LightningExperience"},
 	{"currencySettings", "enableMultiCurrency", "MultiCurrency"},
 	{"quoteSettings", "enableQuote", "Quotes"},
+	{"commerceSettings", "commerceEnabled", "CommerceEnabled"},
+	{"liveAgentSettings", "enableLiveAgent", "LiveAgentEnabled"},
 }
 
 func scratchSettingsFeatures(settings map[string]any) []string {
@@ -554,6 +560,13 @@ func load(root string, stack map[string]bool, dependency bool, requestedPackages
 		}
 		if err := collectFiles(dir, &p); err != nil {
 			return Project{}, err
+		}
+	}
+	if !dependency {
+		for _, dir := range setupMetadataRoots(absRoot) {
+			if err := collectFiles(dir, &p); err != nil {
+				return Project{}, err
+			}
 		}
 	}
 	dedupeProjectFiles(&p)
@@ -1833,6 +1846,34 @@ func hasCoveredRoot(root string, roots []string) bool {
 	return false
 }
 
+// unpackaged/pre and unpackaged/post hold setup metadata deployed around the
+// source package before tests run (the CumulusCI convention; the stage
+// directory itself is the declaration, with or without cumulusci.yml). Feed
+// those roots through the ordinary collector and schema loader, including
+// mdapi inline fields and recordTypes. Other unpackaged bundles are not
+// deployed by default. Dependency package views keep their selected package
+// boundary; their development setup is not installed.
+// SetupMetadataRoots returns the existing unpackaged setup stage directories
+// under Root. Load collects them for the consumer project only; dependency
+// package views do not load their setup stages.
+func (p Project) SetupMetadataRoots() []string {
+	if strings.TrimSpace(p.Root) == "" {
+		return nil
+	}
+	return setupMetadataRoots(p.Root)
+}
+
+func setupMetadataRoots(root string) []string {
+	var roots []string
+	for _, stage := range []string{"pre", "post"} {
+		dir := filepath.Join(root, "unpackaged", stage)
+		if info, err := os.Stat(dir); err == nil && info.IsDir() {
+			roots = append(roots, dir)
+		}
+	}
+	return roots
+}
+
 func collectFiles(root string, p *Project) error {
 	return filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
@@ -1851,6 +1892,14 @@ func collectFiles(root string, p *Project) error {
 			return nil
 		}
 
+		if d.Name() == "sfdx-project.json" {
+			if dir := filepath.Clean(filepath.Dir(path)); dir != filepath.Clean(p.Root) {
+				if cfg, err := loadSFDXProject(dir); err == nil {
+					p.SourceNamespaces = appendSourceNamespace(p.SourceNamespaces, p.Namespace, cfg.Namespace)
+				}
+			}
+			return nil
+		}
 		lower := strings.ToLower(path)
 		switch {
 		case isStaticResourceContentFile(path):
@@ -1977,6 +2026,21 @@ func collectFiles(root string, p *Project) error {
 		}
 		return nil
 	})
+}
+
+func appendSourceNamespace(namespaces []string, own, namespace string) []string {
+	namespace = strings.TrimSpace(namespace)
+	if namespace == "" || strings.EqualFold(namespace, own) {
+		return namespaces
+	}
+	for _, existing := range namespaces {
+		if strings.EqualFold(existing, namespace) {
+			return namespaces
+		}
+	}
+	namespaces = append(namespaces, namespace)
+	sort.Strings(namespaces)
+	return namespaces
 }
 
 func isFeatureParameterMetadataPath(path string) bool {

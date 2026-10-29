@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>AddrCap</label>
+    <fieldPermissions><editable>true</editable><field>Addr_Test__c.Home__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>true</editable><field>Account.Home__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>true</editable><field>Addr_Test__c.Pick__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>true</editable><field>Addr_Test__c.Ctl__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>true</editable><field>Addr_Test__c.Dep__c</field><readable>true</readable></fieldPermissions>
+    <objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>true</modifyAllRecords><object>Addr_Test__c</object><viewAllRecords>true</viewAllRecords></objectPermissions>
+</PermissionSet>

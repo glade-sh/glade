@@ -92,7 +92,7 @@ func runNativeBoundaryConformance(t *testing.T, file, family string, shapeCount 
 		}
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, family, api)
 			for _, row := range data.Rows {
 				t.Run(row.ID, func(t *testing.T) {

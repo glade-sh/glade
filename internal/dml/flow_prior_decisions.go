@@ -11,7 +11,7 @@ func flowStepsReadPriorDecision(steps []storage.FlowStep, targets map[string][]s
 	valid := flowStepsSatisfy(steps, targets, func(step storage.FlowStep, _ bool) bool {
 		for _, branch := range step.Branches {
 			for _, criterion := range branch.Criteria {
-				if strings.HasPrefix(strings.TrimSpace(criterion.Field), "$Record__Prior.") || strings.EqualFold(strings.TrimSpace(criterion.Operation), "ischanged") {
+				if strings.HasPrefix(strings.TrimSpace(criterion.Field), "$Record__Prior.") || strings.HasPrefix(strings.TrimSpace(criterion.Value), "{!$Record__Prior.") || strings.EqualFold(strings.TrimSpace(criterion.Operation), "ischanged") {
 					readsPrior = true
 				}
 			}
@@ -78,4 +78,49 @@ func flowPriorDecisionValue(item storage.WorkflowCriteriaItem, definition storag
 		return storage.NullValue(), true
 	}
 	return value.Clone(), true
+}
+
+// flowRecordPriorReferenceCriterion compares a direct $Record field with the same
+// field on $Record__Prior under EqualTo or NotEqualTo. Native rows
+// (runtimegaps flow_record_prior_reference, API 62.0 and 67.0) show an update that
+// leaves the field unchanged compares equal, including a partial sObject that
+// omits it; an insert has no prior record, so the prior reads as null.
+func (e *Engine) flowRecordPriorReferenceCriterion(item storage.WorkflowCriteriaItem, source storage.Record, definition storage.ObjectDefinition, frame *flowFrame) (bool, bool, bool) {
+	value := strings.TrimSpace(item.Value)
+	const prefix = "{!$Record__Prior."
+	if frame == nil || !frame.priorDecisions || !strings.HasPrefix(value, prefix) || !strings.HasSuffix(value, "}") {
+		return false, false, false
+	}
+	operation := strings.ToLower(strings.TrimSpace(item.Operation))
+	if operation != "equals" && operation != "notequal" && operation != "notequals" {
+		return false, false, false
+	}
+	priorField := strings.TrimSuffix(strings.TrimPrefix(value, prefix), "}")
+	field := strings.TrimSpace(item.Field)
+	if priorField == "" || strings.Contains(priorField, ".") || field == "" || strings.Contains(field, ".") || strings.HasPrefix(field, "$") {
+		return false, false, false
+	}
+	leftName, ok := storage.ResolveFieldName(definition, e.Org.Namespace, field)
+	if !ok {
+		return false, false, false
+	}
+	rightName, ok := storage.ResolveFieldName(definition, e.Org.Namespace, priorField)
+	if !ok {
+		return false, false, false
+	}
+	left, found := sourceRecordFieldValue(source, leftName)
+	if !found {
+		left = storage.NullValue()
+	}
+	right := storage.NullValue()
+	if prior := frame.records[flowFrameKey("$Record__Prior")]; prior.ID != "" {
+		if priorValue, found := sourceRecordFieldValue(prior, rightName); found {
+			right = priorValue
+		}
+	}
+	equal := storage.ValuesEqual(left, right)
+	if operation == "equals" {
+		return equal, true, true
+	}
+	return !equal, true, true
 }

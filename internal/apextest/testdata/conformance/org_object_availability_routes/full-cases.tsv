@@ -1,0 +1,30 @@
+facet	source
+qd	try { Database.query(q); return true; } catch (Exception e) { return e.getTypeName(); }
+qu	try { Database.query(q,AccessLevel.USER_MODE); return true; } catch (Exception e) { return e.getTypeName(); }
+qs	try { Database.query(q,AccessLevel.SYSTEM_MODE); return true; } catch (Exception e) { return e.getTypeName(); }
+cd	try { Database.countQuery(c); return true; } catch (Exception e) { return e.getTypeName(); }
+cu	try { Database.countQuery(c,AccessLevel.USER_MODE); return true; } catch (Exception e) { return e.getTypeName(); }
+cs	try { Database.countQuery(c,AccessLevel.SYSTEM_MODE); return true; } catch (Exception e) { return e.getTypeName(); }
+ld	try { Database.getQueryLocator(q); return true; } catch (Exception e) { return e.getTypeName(); }
+lu	try { Database.getQueryLocator(q,AccessLevel.USER_MODE); return true; } catch (Exception e) { return e.getTypeName(); }
+ls	try { Database.getQueryLocator(q,AccessLevel.SYSTEM_MODE); return true; } catch (Exception e) { return e.getTypeName(); }
+hd	try { Database.getCursor(q); return true; } catch (Exception e) { return e.getTypeName(); }
+hu	try { Database.getCursor(q,AccessLevel.USER_MODE); return true; } catch (Exception e) { return e.getTypeName(); }
+hs	try { Database.getCursor(q,AccessLevel.SYSTEM_MODE); return true; } catch (Exception e) { return e.getTypeName(); }
+pd	try { Database.getPaginationCursor(q); return true; } catch (Exception e) { return e.getTypeName(); }
+pu	try { Database.getPaginationCursor(q,AccessLevel.USER_MODE); return true; } catch (Exception e) { return e.getTypeName(); }
+ps	try { Database.getPaginationCursor(q,AccessLevel.SYSTEM_MODE); return true; } catch (Exception e) { return e.getTypeName(); }
+qbu	try { Database.queryWithBinds(q,b,AccessLevel.USER_MODE); return true; } catch (Exception e) { return e.getTypeName(); }
+qbs	try { Database.queryWithBinds(q,b,AccessLevel.SYSTEM_MODE); return true; } catch (Exception e) { return e.getTypeName(); }
+cbu	try { Database.countQueryWithBinds(c,b,AccessLevel.USER_MODE); return true; } catch (Exception e) { return e.getTypeName(); }
+cbs	try { Database.countQueryWithBinds(c,b,AccessLevel.SYSTEM_MODE); return true; } catch (Exception e) { return e.getTypeName(); }
+lbu	try { Database.getQueryLocatorWithBinds(q,b,AccessLevel.USER_MODE); return true; } catch (Exception e) { return e.getTypeName(); }
+lbs	try { Database.getQueryLocatorWithBinds(q,b,AccessLevel.SYSTEM_MODE); return true; } catch (Exception e) { return e.getTypeName(); }
+hbu	try { Database.getCursorWithBinds(q,b,AccessLevel.USER_MODE); return true; } catch (Exception e) { return e.getTypeName(); }
+hbs	try { Database.getCursorWithBinds(q,b,AccessLevel.SYSTEM_MODE); return true; } catch (Exception e) { return e.getTypeName(); }
+pbu	try { Database.getPaginationCursorWithBinds(q,b,AccessLevel.USER_MODE); return true; } catch (Exception e) { return e.getTypeName(); }
+pbs	try { Database.getPaginationCursorWithBinds(q,b,AccessLevel.SYSTEM_MODE); return true; } catch (Exception e) { return e.getTypeName(); }
+typeEmpty	return Type.forName('', 'Schema.'+n)!=null;
+typeNull	return Type.forName(null, 'Schema.'+n)!=null;
+describeContains	return Schema.getGlobalDescribe().containsKey(n);
+describeGet	return Schema.getGlobalDescribe().get(n)!=null;

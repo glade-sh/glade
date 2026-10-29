@@ -167,12 +167,18 @@ func isSingleLineTextField(field storage.Field) bool {
 }
 
 func validateFields(definition storage.ObjectDefinition, namespace string, record storage.Record, existing ...storage.Record) error {
+	if err := validateCustomAddressComponents(definition, namespace, record, existing); err != nil {
+		return err
+	}
 	for field := range record.Fields {
 		if field == "Id" {
 			continue
 		}
 		canonical, ok := storage.ResolveFieldName(definition, namespace, field)
 		if !ok {
+			if len(existing) == 0 && storage.StandardObjectInsertInputFieldAllowed(definition.APIName, field) {
+				continue
+			}
 			if shouldStripDMLRelationshipField(definition, namespace, field, record.Fields[field]) {
 				continue
 			}
@@ -193,18 +199,22 @@ func validateFields(definition storage.ObjectDefinition, namespace string, recor
 		if err := validateEmailField(record.Object, canonical, definition.Fields[canonical], record.Fields[field]); err != nil {
 			return err
 		}
+		if isCustomAddressStateCode(definition, canonical) {
+			continue
+		}
 		if err := validateRestrictedPicklistField(record.Object, canonical, definition.Fields[canonical], record.Fields[field]); err != nil {
 			return err
 		}
-		if len(existing) > 0 {
-			if err := validateDependentPicklistField(definition, namespace, record, existing, canonical, record.Fields[field]); err != nil {
-				return err
-			}
+		if err := validateDependentPicklistField(definition, namespace, record, existing, canonical, record.Fields[field]); err != nil {
+			return err
 		}
 	}
 	for field := range record.ExplicitNulls {
 		canonical, ok := storage.ResolveFieldName(definition, namespace, field)
 		if !ok {
+			if len(existing) == 0 && storage.StandardObjectInsertInputFieldAllowed(definition.APIName, field) {
+				continue
+			}
 			if isDMLRelationshipPseudoField(definition, namespace, field) {
 				continue
 			}
@@ -255,7 +265,7 @@ func validateDependentPicklistField(definition storage.ObjectDefinition, namespa
 			}
 		}
 	}
-	return restrictedPicklistValueError(record.Object, fieldName, value.String)
+	return restrictedPicklistValueError(fieldName, value.String)
 }
 
 func validateScaleZeroNumberField(fieldName string, field storage.Field, value storage.Value) error {
@@ -294,6 +304,9 @@ func validateRestrictedPicklistField(objectName, fieldName string, field storage
 	if !field.RestrictedPicklist || (field.Type != storage.FieldPicklist && field.Type != storage.FieldMultiPicklist) {
 		return nil
 	}
+	if field.RestrictedPicklistFromCatalog && storage.StandardPicklistCatalogValidationExcluded(objectName, fieldName) {
+		return nil
+	}
 	if value.Kind == storage.ValueNull {
 		return nil
 	}
@@ -304,8 +317,8 @@ func validateRestrictedPicklistField(objectName, fieldName string, field storage
 		for remaining := value.String; ; {
 			part, rest, found := strings.Cut(remaining, ";")
 			part = strings.TrimSpace(part)
-			if part != "" && !restrictedPicklistValueAllowed(field, part) {
-				return restrictedPicklistValueError(objectName, fieldName, part)
+			if part != "" && !restrictedPicklistValueAllowed(objectName, fieldName, field, part) {
+				return labeledRestrictedPicklistValueError(fieldName, field, part)
 			}
 			if !found {
 				return nil
@@ -313,23 +326,40 @@ func validateRestrictedPicklistField(objectName, fieldName string, field storage
 			remaining = rest
 		}
 	}
-	if strings.TrimSpace(value.String) == "" || restrictedPicklistValueAllowed(field, value.String) {
+	if strings.TrimSpace(value.String) == "" || restrictedPicklistValueAllowed(objectName, fieldName, field, value.String) {
 		return nil
 	}
-	return restrictedPicklistValueError(objectName, fieldName, value.String)
+	return labeledRestrictedPicklistValueError(fieldName, field, value.String)
 }
 
-func restrictedPicklistValueAllowed(field storage.Field, value string) bool {
+// labeledRestrictedPicklistValueError is the native message for a value
+// outside a restricted picklist (custom_address_fields P15/P19).
+func labeledRestrictedPicklistValueError(fieldName string, field storage.Field, value string) error {
+	label := strings.TrimSpace(field.Label)
+	if label == "" {
+		label = fieldName
+	}
+	return dmlErrorf("INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST", []string{fieldName}, "%s: bad value for restricted picklist field: %s", label, value)
+}
+
+func restrictedPicklistValueAllowed(objectName, fieldName string, field storage.Field, value string) bool {
 	for _, picklistValue := range field.PicklistValues {
 		if picklistValue.Active && picklistValue.Value != "" && strings.EqualFold(picklistValue.Value, value) {
 			return true
 		}
 	}
-	return false
+	// project-valuesets/org.tsv rows 2-5 capture a deployed OrderStatus set
+	// whose describe omits Draft while DML still accepts it.
+	return field.RestrictedPicklistFromCatalog && field.StandardValueSetApplied &&
+		strings.EqualFold(objectName, "Order") && strings.EqualFold(fieldName, "Status") && strings.EqualFold(value, "Draft")
 }
 
-func restrictedPicklistValueError(objectName, fieldName, value string) error {
-	return dmlErrorf("INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST", []string{fieldName}, "dml: bad value %q for restricted picklist field %s.%s", value, objectName, fieldName)
+// restrictedPicklistValueError is the native message for a dependent
+// picklist value that its controlling value does not allow. Native names no
+// field label here, unlike the out-of-list message (custom_address_fields
+// followup R04 against R05, R06, R22).
+func restrictedPicklistValueError(fieldName, value string) error {
+	return dmlErrorf("INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST", []string{fieldName}, "bad value for restricted picklist field: %s", value)
 }
 
 func shouldStripDMLRelationshipField(definition storage.ObjectDefinition, namespace, field string, value storage.Value) bool {
@@ -1155,6 +1185,15 @@ func (e *Engine) validateReferencesWithLoadedView(definition storage.ObjectDefin
 			target := e.Org.Objects[canonical]
 			_, parent, ok := storage.LookupRecordByID(target.Records, id)
 			if ok {
+				if strings.EqualFold(name, "RecordTypeId") && strings.EqualFold(canonical, "RecordType") {
+					owner, known := parent.GetField("SobjectType")
+					if known && owner.String != "" && !strings.EqualFold(owner.String, definition.APIName) {
+						if update {
+							return dmlErrorf("INSUFFICIENT_ACCESS_OR_READONLY", nil, "insufficient access rights on object id")
+						}
+						return dmlErrorf("INVALID_CROSS_REFERENCE_KEY", []string{name}, "Record Type ID: this ID value isn't valid for the user: %s", id)
+					}
+				}
 				if !parent.System.IsDeleted || (update && record.ID != "" && loaded && setNull) || (update && e.canRestoreClearedLookup(definition, record, name, id)) {
 					found = true
 					break
@@ -1558,7 +1597,7 @@ func (e *Engine) validateValidationRules(objectName string, definition storage.O
 		return nil
 	}
 	for _, rule := range activeRules {
-		matches, ok := evaluateValidationFormulaInOrgWithNamespace(rule.ErrorConditionFormula, rule.Namespace, e.Org, definition, record, prior, isNew)
+		matches, ok := evaluateValidationFormulaInOrgWithNamespace(rule.ErrorConditionFormula, rule.Namespace, e.Org, definition, record, prior, isNew, e.systemUserID())
 		if !ok || !matches {
 			continue
 		}
@@ -1598,6 +1637,6 @@ func evaluateValidationFormulaInOrg(formula string, org *storage.OrgState, defin
 	return evaluateRecordFormulaInOrgWithContext(formula, org, definition, record, prior, isNew)
 }
 
-func evaluateValidationFormulaInOrgWithNamespace(formula, namespace string, org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record, prior *storage.Record, isNew bool) (bool, bool) {
-	return evaluateRecordFormulaInOrgWithNamespace(formula, namespace, org, definition, record, prior, isNew)
+func evaluateValidationFormulaInOrgWithNamespace(formula, namespace string, org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record, prior *storage.Record, isNew bool, userID storage.ID) (bool, bool) {
+	return evaluateCustomValidationFormulaInOrgWithNamespace(formula, namespace, org, definition, record, prior, isNew, userID)
 }

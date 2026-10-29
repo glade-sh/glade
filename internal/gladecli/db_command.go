@@ -872,7 +872,7 @@ func orgStateFromIndex(root string, p project.Project, index typesys.Index) (sto
 		automation.ApplyToOrg(&org, automationIndex)
 	}
 	storage.EnsureDeterministicPlatformData(&org)
-	storage.ApplyOrgShape(&org, project.OrgShapeFeatures(root))
+	storage.ApplyProjectOrgShape(&org, project.StandardFieldPolicyFeatures(p))
 	if err := resource.ApplyProjectNetworks(&org, p); err != nil {
 		return storage.OrgState{}, err
 	}
@@ -886,6 +886,9 @@ func orgStateFromIndex(root string, p project.Project, index typesys.Index) (sto
 		return storage.OrgState{}, err
 	}
 	if err := resource.ApplyProjectOwnerSharingRules(&org, p); err != nil {
+		return storage.OrgState{}, err
+	}
+	if err := apextest.ApplyProjectProfileMetadata(&org, p); err != nil {
 		return storage.OrgState{}, err
 	}
 	apextest.ApplyProjectPermissionSets(&org, p)

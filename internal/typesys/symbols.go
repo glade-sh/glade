@@ -37,10 +37,17 @@ type Index struct {
 	CodeIntelSymbols      []packageartifact.CodeIntelSymbol `json:"codeIntelSymbols,omitempty"`
 	CodeIntelUses         []packageartifact.CodeIntelUse    `json:"codeIntelUses,omitempty"`
 	Dependencies          []DependencyInfo                  `json:"dependencies,omitempty"`
-	Diagnostics           []diagnostic.Diagnostic           `json:"diagnostics,omitempty"`
-	projectIdentity       string
-	sourceDigests         *SourceDigestSet
-	apexMetadataInputs    map[sourceOccurrenceKey]ApexMetadataInput
+	// SourceNamespaces are namespaces declared by sub-projects whose source
+	// this project loads (project.Project.SourceNamespaces).
+	SourceNamespaces []string                `json:"sourceNamespaces,omitempty"`
+	Diagnostics      []diagnostic.Diagnostic `json:"diagnostics,omitempty"`
+	// Subset marks an index a caller derived by dropping parts of the project
+	// (for example the compile gate's dependency-scoped rerun). It is not the
+	// complete compilation of the project and must not stand in for one.
+	Subset             bool `json:"-"`
+	projectIdentity    string
+	sourceDigests      *SourceDigestSet
+	apexMetadataInputs map[sourceOccurrenceKey]ApexMetadataInput
 }
 
 type ProjectInfo struct {
@@ -170,7 +177,7 @@ func buildWithWorkspaceSources(p project.Project, s schema.Schema, sources *Work
 		sources = NewWorkspaceSources()
 	}
 	artifacts.Sources = sources
-	features := capturedOrgShapeFeatures(p.Root)
+	features := capturedOrgShapeFeatures(p)
 	labelNames, labelsKnown := projectCustomLabels(p)
 	parser := apexast.NewParser()
 	defer parser.Close()
@@ -181,6 +188,7 @@ func buildWithWorkspaceSources(p project.Project, s schema.Schema, sources *Work
 			SourceAPIVersion: p.SourceAPIVersion,
 		},
 		Objects:               s.Objects,
+		SourceNamespaces:      append([]string(nil), p.SourceNamespaces...),
 		VisualforcePageNames:  projectVisualforcePageNames(p),
 		VisualforcePagesKnown: projectVisualforcePagesKnown(p),
 		CustomLabelNames:      labelNames,
@@ -964,6 +972,25 @@ func MatchesProjectIdentity(idx Index, p project.Project) bool {
 		p.SourceAPIVersion == idx.Project.SourceAPIVersion
 }
 
+// MatchesProjectSources reports whether idx is still the exact compilation of
+// p's Apex files: p's Apex file set is covered by the index's captured source
+// digests and every captured source and Apex metadata sidecar still has its
+// captured bytes on disk. MatchesProjectIdentity covers configuration only;
+// object and field metadata are not covered here, so a caller reusing idx
+// accepts the objects idx carries. Subset indexes and indexes without a
+// digest snapshot never match.
+func MatchesProjectSources(idx Index, p project.Project) bool {
+	if idx.Subset || idx.sourceDigests == nil || !MatchesProjectIdentity(idx, p) {
+		return false
+	}
+	for _, path := range p.ApexFiles {
+		if _, ok := idx.sourceDigests.Digest(path); !ok {
+			return false
+		}
+	}
+	return ValidateSourceGeneration(idx, idx.sourceDigests) == nil
+}
+
 // SameProjectIdentity reports whether two immutable indexes were built from
 // the same project configuration and dependency identity.
 func SameProjectIdentity(left, right Index) bool {
@@ -1082,6 +1109,7 @@ type incrementalResolvedSource struct {
 type incrementalProjectConfigIdentity struct {
 	Root                string
 	Namespace           string
+	SourceNamespaces    []string
 	SourceAPIVersion    string
 	PackageDirectories  []project.PackageDirectory
 	NamespaceRemaps     []namespaceremap.Rule
@@ -1151,6 +1179,7 @@ func incrementalProjectConfigForIdentity(p project.Project) incrementalProjectCo
 	return incrementalProjectConfigIdentity{
 		Root:                p.Root,
 		Namespace:           p.Namespace,
+		SourceNamespaces:    p.SourceNamespaces,
 		SourceAPIVersion:    p.SourceAPIVersion,
 		PackageDirectories:  p.PackageDirectories,
 		NamespaceRemaps:     p.NamespaceRemaps,
@@ -1158,18 +1187,20 @@ func incrementalProjectConfigForIdentity(p project.Project) incrementalProjectCo
 	}
 }
 
-func capturedOrgShapeFeatures(root string) []string {
-	if root == "" {
+// The org shape belongs to the effective project, so dependency views that
+// deploy into the same org contribute their declared and evidenced features.
+func capturedOrgShapeFeatures(p project.Project) []string {
+	if p.Root == "" {
 		return nil
 	}
-	features := append([]string(nil), project.OrgShapeFeatures(root)...)
+	features := append([]string(nil), project.StandardFieldPolicyFeatures(p)...)
 	sort.Strings(features)
 	return features
 }
 
 func incrementalProjectIdentity(p project.Project) string {
 	labelNames, labelsKnown := projectCustomLabels(p)
-	return incrementalProjectIdentityWithFeatures(p, capturedOrgShapeFeatures(p.Root), labelNames, labelsKnown)
+	return incrementalProjectIdentityWithFeatures(p, capturedOrgShapeFeatures(p), labelNames, labelsKnown)
 }
 
 func incrementalProjectIdentityWithFeatures(p project.Project, features, labelNames []string, labelsKnown bool) string {

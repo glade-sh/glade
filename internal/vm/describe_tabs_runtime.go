@@ -74,6 +74,7 @@ func (vm *VM) validateDataCategorySObject(value Value) error {
 	return invalidSchemaSObject("describeDataCategoryGroups", value.Text, exists)
 }
 func (vm *VM) schemaDescribeTabs() Value {
+	vm.ensureMetadataCacheGeneration()
 	if vm.describeTabsCache != nil {
 		return *vm.describeTabsCache
 	}

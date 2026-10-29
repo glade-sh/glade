@@ -1,6 +1,7 @@
 package sema
 
 import (
+	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/sobject"
 	"github.com/glade-sh/glade/internal/storage"
@@ -10,7 +11,7 @@ import (
 // Reuse the runtime org-shape field model against an isolated schema view.
 // Features come from the immutable index, not the live project filesystem.
 func enrichIndexWithOrgShapeFields(index typesys.Index) typesys.Index {
-	if len(index.OrgShapeFeatures) == 0 {
+	if len(index.OrgShapeFeatures) == 0 || len(index.OrgShapeFeatures) == 1 && index.OrgShapeFeatures[0] == project.UnspecifiedStandardFieldShape {
 		return index
 	}
 	registry := sobject.BuildDescribeRegistry(schema.Schema{Objects: index.Objects})
@@ -23,7 +24,7 @@ func enrichIndexWithOrgShapeFields(index typesys.Index) typesys.Index {
 	for _, name := range featureObjects {
 		storage.EnsureStandardObject(&org, name)
 	}
-	storage.ApplyOrgShape(&org, index.OrgShapeFeatures)
+	storage.ApplyProjectOrgShape(&org, index.OrgShapeFeatures)
 	objects := append([]schema.Object(nil), index.Objects...)
 	knownObjects := make(map[string]bool, len(objects))
 	for _, object := range objects {

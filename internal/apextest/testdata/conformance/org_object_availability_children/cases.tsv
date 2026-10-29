@@ -1,0 +1,9 @@
+facet	query
+quotesLower	SELECT Id,(SELECT Id FROM quotes) FROM opportunity
+accountQuotes	SELECT Id,(SELECT Id FROM Quotes) FROM Account
+linesLower	SELECT Id,(SELECT Id FROM quotelineitems) FROM quote
+quotes	SELECT Id,(SELECT Id FROM Quotes) FROM Opportunity
+lines	SELECT Id,(SELECT Id FROM QuoteLineItems) FROM Quote
+boundary	SELECT Id,(SELECT Id FROM Contacts) FROM Account
+invalidQuote	SELECT Id,(SELECT Id FROM Quote) FROM Account
+invalidWebStore	SELECT Id,(SELECT Id FROM WebStore) FROM Account

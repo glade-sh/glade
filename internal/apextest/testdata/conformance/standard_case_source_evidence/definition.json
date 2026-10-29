@@ -1,0 +1,12 @@
+{
+  "orgName": "Owned Case source evidence",
+  "edition": "Developer",
+  "features": [
+    "LiveAgent"
+  ],
+  "settings": {
+    "liveAgentSettings": {
+      "enableLiveAgent": true
+    }
+  }
+}

@@ -104,6 +104,34 @@ GLADE_LWC_BROWSER=1 CGO_ENABLED=1 go test -p=1 -count=1 -timeout=25m \
   ./internal/lwcruntime ./internal/lwcbrowser
 ```
 
+`TestL08SalesforceConformance` in `internal/server` also requires this browser
+environment. Ordinary Go runs skip it with an explicit reason; set
+`GLADE_LWC_BROWSER=1` to require it (`GLADE_L08_CAPTURE` also requires it).
+An enabled run fails immediately when Node, the compiler, Playwright or Chromium
+is unavailable. A passing ordinary Go run does not establish L08 browser parity.
+The required Browser workflow runs L08 and rejects missing, skipped or failing
+results. It also runs after changes confined to L08 fixtures or its browser
+harness. The ordinary CI server lane routes L08 to that authority. Provisioned
+race jobs and full server routes (`core`, `test`, `race`, `local-release`, and
+`local-release-lane server-playground` in `scripts/ci-go-test.sh`) enable browser
+coverage and fail when prerequisites are missing; they do not accept an L08 skip.
+Use `npm ci --prefix third_party/lwc` and `npm ci --prefix lwcruntime`, then
+install Chromium with the Playwright version in `lwcruntime`. The compiler's
+postinstall prepares the pinned `@lwc/shared` API identities. Check the selected
+installation without modifying it with
+`node third_party/lwc/scripts/prepare-lwc-shared.mjs --check <third_party/lwc-root>`.
+An older API 67 preparation cannot replay the retained API 68 observations;
+those historical rows do not extend the product's API 59–67 support contract.
+For an archived checkout, point `GLADE_HOME` at a prepared toolchain and set
+`GLADE_LWC_PLAYWRIGHT_MODULE` to the absolute Playwright package directory.
+`GLADE_LWC_BROWSER_EXECUTABLE` optionally selects an installed Chromium binary.
+For a checkout with dependencies installed, run:
+
+```bash
+GLADE_HOME="$PWD" GLADE_LWC_BROWSER=1 CGO_ENABLED=1 go test -p=1 -count=1 -timeout=0 \
+  -run '^TestL08SalesforceConformance$' ./internal/server
+```
+
 LWC family conformance runs one API at a time by default. Set
 `GLADE_LWC_BROWSER_API_PARALLEL=2` and pass `-parallel=2` to opt in to two
 isolated API observations. The mode requires at least 16 GiB of physical host

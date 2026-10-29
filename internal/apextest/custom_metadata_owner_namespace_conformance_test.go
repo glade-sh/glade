@@ -56,7 +56,7 @@ func TestCustomMetadataOwnerNamespaceOrgConformance(t *testing.T) {
 		files[file.Path] = string(raw)
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			root := t.TempDir()
 			for name, text := range files {
 				if strings.HasPrefix(name, "fixture/") {

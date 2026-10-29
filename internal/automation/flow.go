@@ -3,10 +3,12 @@ package automation
 import (
 	"encoding/xml"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/diagnostic"
@@ -14,8 +16,9 @@ import (
 )
 
 type flowXML struct {
-	graphStop string
-	graph     *flowTargetGraph
+	graphStop        string
+	graph            *flowTargetGraph
+	decisionFormulas map[string]string
 
 	APIVersion            string                       `xml:"apiVersion"`
 	Label                 string                       `xml:"label"`
@@ -208,6 +211,9 @@ type flowActionCallXML struct {
 	Connector       flowConnectorXML     `xml:"connector"`
 	FaultConnector  flowConnectorXML     `xml:"faultConnector"`
 	InputParameters []flowActionInputXML `xml:"inputParameters"`
+	// StoreOutputAutomatically exposes a single-output action result under
+	// the action's own name as an elementReference.
+	StoreOutputAutomatically bool `xml:"storeOutputAutomatically"`
 }
 
 type flowActionInputXML struct {
@@ -334,10 +340,11 @@ func loadFlow(path string, definitions ...map[string]storage.ObjectDefinition) (
 		}
 	}
 	flowResolveStandardRelationshipUpdates(&raw, sourceDefinitions...)
-	formulas := flowFormulaMap(raw.Formulas)
+	formulas := flowFormulaMapWithConstants(raw.Formulas, raw.Constants)
 	variables := flowVariableMap(raw.Variables)
+	raw.decisionFormulas = flowDecisionFormulaMap(raw, variables)
 	orderedGraph := flowNormalizeTextDecisionNegation(&raw, variables)
-	orderedGraph = orderedGraph || flowRequiresOrderedGraph(raw)
+	orderedGraph = orderedGraph || flowRequiresOrderedGraph(raw) || raw.decisionFormulas != nil
 	if strings.EqualFold(strings.TrimSpace(raw.Start.TriggerType), "PlatformEvent") {
 		// Preserve the event interview's current-user resource in record inputs.
 		// This binding map is private; globals are not declared Flow variables.
@@ -415,6 +422,16 @@ func loadFlow(path string, definitions ...map[string]storage.ObjectDefinition) (
 		rule.Formula = formula
 		rule.CoreEntryFilterLogic = true
 		rule.Criteria = nil
+	} else if groups, ok := flowStartCriteriaGroups(raw.Start, formulas); ok {
+		if flowHasFilteredTriggerRecordUpdate(raw) {
+			// The flat triggering-record update projection does not retain its
+			// filters. Keep the earlier entry behavior until that shape is modeled.
+			diagnostics = append(diagnostics, flowUnsupported(path, name, "start filter logic with a filtered triggering-record update is not supported; entry conditions are combined with AND"))
+		} else {
+			// Numbered and "or" logic keep every filter's operator and combine the
+			// per-filter results as alternatives at entry (API 62.0, 67.0).
+			rule.CriteriaGroups = groups
+		}
 	} else if formula := flowCriteriaFormula(raw.Start.FilterLogic, formulas); formula != "" {
 		rule.Formula = formula
 		rule.Criteria = nil
@@ -569,7 +586,7 @@ func loadFlow(path string, definitions ...map[string]storage.ObjectDefinition) (
 		rule.RecordDeletes = append(rule.RecordDeletes, recordDelete)
 	}
 	for _, customError := range raw.CustomErrors {
-		ce := modeledFlowCustomError(customError)
+		ce := modeledFlowCustomError(customError, raw.Constants)
 		if ce.Name != "" {
 			rule.CustomErrors = append(rule.CustomErrors, ce)
 		}
@@ -819,8 +836,11 @@ func flowConditionLogicTokens(logic string) []string {
 		case ch == '(' || ch == ')':
 			tokens = append(tokens, string(ch))
 			i++
-		case ch >= '0' && ch <= '9':
+		case (ch >= '0' && ch <= '9') || ((ch == '-' || ch == '+') && i+1 < len(logic) && logic[i+1] >= '0' && logic[i+1] <= '9'):
 			start := i
+			if ch == '-' || ch == '+' {
+				i++
+			}
 			for i < len(logic) && logic[i] >= '0' && logic[i] <= '9' {
 				i++
 			}
@@ -888,14 +908,13 @@ func (p *flowConditionLogicParser) parseFactor() ([][]int, bool) {
 		return nil, false
 	}
 	token := p.tokens[p.pos]
-	index := 0
-	for _, r := range token {
-		if r < '0' || r > '9' {
-			return nil, false
-		}
-		index = index*10 + int(r-'0')
+	// Signed tokens help identify malformed numbered logic at the formula
+	// fallback, but condition indexes themselves must remain unsigned.
+	if token[0] == '-' || token[0] == '+' {
+		return nil, false
 	}
-	if index < 1 || index > p.conditionCount {
+	index, err := strconv.Atoi(token)
+	if err != nil || index < 1 || index > p.conditionCount {
 		return nil, false
 	}
 	p.pos++
@@ -924,6 +943,16 @@ func flowConditionLogicAnd(left, right [][]int) [][]int {
 }
 
 func flowFormulaMap(formulas []flowFormulaXML) map[string]string {
+	return flowFormulaMapWithConstants(formulas, nil)
+}
+
+// flowFormulaMapWithConstants also inlines Number, Boolean and String
+// constants. A constant cannot change, so its literal is exact.
+func flowFormulaMapWithConstants(formulas []flowFormulaXML, constants []flowConstantXML) map[string]string {
+	return flowFormulaMapWithNormalization(formulas, constants, normalizeFlowFormula)
+}
+
+func flowFormulaMapWithNormalization(formulas []flowFormulaXML, constants []flowConstantXML, normalize func(string) string) map[string]string {
 	declared := make(map[string]string, len(formulas))
 	for _, formula := range formulas {
 		name, expression := strings.TrimSpace(formula.Name), strings.TrimSpace(formula.Expression)
@@ -931,11 +960,153 @@ func flowFormulaMap(formulas []flowFormulaXML) map[string]string {
 			declared[strings.ToLower(name)] = expression
 		}
 	}
+	expandable := make(map[string]string, len(declared)+len(constants))
+	for _, constant := range constants {
+		name := strings.ToLower(strings.TrimSpace(constant.Name))
+		if _, formula := declared[name]; name == "" || formula {
+			continue
+		}
+		if literal, ok := flowConstantFormulaLiteral(constant.Value); ok {
+			expandable[name] = literal
+		}
+	}
+	for name, expression := range declared {
+		expandable[name] = expression
+	}
 	out := make(map[string]string, len(declared))
 	for name, expression := range declared {
-		out[name] = normalizeFlowFormula(expandFlowFormulaReferences(expression, declared, map[string]bool{name: true}))
+		out[name] = normalize(expandFlowFormulaReferences(expression, expandable, map[string]bool{name: true}))
 	}
 	return out
+}
+
+// Decision resources that depend on scalars need an interview frame and distinct
+// explicit record bindings. Keep ordinary normalization for other resources.
+func flowDecisionFormulaMap(raw flowXML, variables map[string]flowVariableXML) map[string]string {
+	scalars := make(map[string]bool)
+	for name, variable := range variables {
+		if !variable.IsCollection && !strings.EqualFold(variable.DataType, "SObject") {
+			scalars[strings.ToLower(name)] = true
+		}
+	}
+	if len(scalars) == 0 {
+		return nil
+	}
+	candidate := false
+	for _, formula := range raw.Formulas {
+		if _, found := normalizeFlowDecisionFormula(formula.Expression, scalars); found {
+			candidate = true
+			break
+		}
+	}
+	if !candidate {
+		return nil
+	}
+	formulas := flowFormulaMapWithNormalization(raw.Formulas, raw.Constants, func(expression string) string {
+		normalized, found := normalizeFlowDecisionFormula(expression, scalars)
+		if !found {
+			return normalizeFlowFormula(expression)
+		}
+		return normalized
+	})
+	for _, decision := range raw.Decisions {
+		for _, rule := range decision.Rules {
+			for _, condition := range rule.Conditions {
+				name := strings.ToLower(strings.TrimSpace(condition.LeftValueReference))
+				if _, needsFrame := normalizeFlowDecisionFormula(formulas[name], scalars); needsFrame {
+					return formulas
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func normalizeFlowDecisionFormula(expression string, scalars map[string]bool) (string, bool) {
+	needsFrame := false
+	normalizeReference := func(reference string) string {
+		reference = strings.TrimSpace(reference)
+		for _, prefix := range []string{"$Record.", "Record."} {
+			if len(reference) <= len(prefix) || !strings.EqualFold(reference[:len(prefix)], prefix) {
+				continue
+			}
+			field := reference[len(prefix):]
+			name, _, _ := strings.Cut(field, ".")
+			if scalars[strings.ToLower(name)] {
+				needsFrame = true
+				return "$Record." + field
+			}
+			return field
+		}
+		if scalars[strings.ToLower(reference)] {
+			needsFrame = true
+		}
+		return reference
+	}
+	var out strings.Builder
+	var quote byte
+	for i := 0; i < len(expression); {
+		character := expression[i]
+		if quote != 0 {
+			out.WriteByte(character)
+			i++
+			if character == '\\' && i < len(expression) {
+				out.WriteByte(expression[i])
+				i++
+			} else if character == quote {
+				quote = 0
+			}
+			continue
+		}
+		if character == '\'' || character == '"' {
+			quote = character
+			out.WriteByte(character)
+			i++
+			continue
+		}
+		if strings.HasPrefix(expression[i:], "{!") {
+			if end := strings.IndexByte(expression[i+2:], '}'); end >= 0 {
+				end += i + 2
+				out.WriteString(normalizeReference(expression[i+2 : end]))
+				i = end + 1
+				continue
+			}
+		}
+		if character == '$' || character == '_' || character >= 'a' && character <= 'z' || character >= 'A' && character <= 'Z' {
+			end := i + 1
+			for end < len(expression) {
+				next := expression[end]
+				if next != '$' && next != '_' && next != '.' && !(next >= 'a' && next <= 'z') && !(next >= 'A' && next <= 'Z') && !(next >= '0' && next <= '9') {
+					break
+				}
+				end++
+			}
+			out.WriteString(normalizeReference(expression[i:end]))
+			i = end
+			continue
+		}
+		out.WriteByte(character)
+		i++
+	}
+	return strings.TrimSpace(out.String()), needsFrame
+}
+
+func flowConstantFormulaLiteral(value flowValueXML) (string, bool) {
+	switch {
+	case strings.TrimSpace(value.NumberValue) != "":
+		number, err := strconv.ParseFloat(strings.TrimSpace(value.NumberValue), 64)
+		if err != nil || math.IsInf(number, 0) || math.IsNaN(number) {
+			return "", false
+		}
+		return strconv.FormatFloat(number, 'f', -1, 64), true
+	case strings.EqualFold(strings.TrimSpace(value.BooleanValue), "true"):
+		return "TRUE", true
+	case strings.EqualFold(strings.TrimSpace(value.BooleanValue), "false"):
+		return "FALSE", true
+	case value.StringValue != "" && !strings.ContainsAny(value.StringValue, "\\\"{}"):
+		return `"` + value.StringValue + `"`, true
+	}
+	return "", false
 }
 
 // Expand only references to declared formula resources, before record merge
@@ -1039,6 +1210,31 @@ func flowTextTemplateMap(templates []flowTextTemplateXML) map[string]string {
 	return out
 }
 
+// The compact field-update projection cannot carry Update Records filters.
+// Do not broaden entry for that shape until its filter semantics are modeled.
+func flowHasFilteredTriggerRecordUpdate(raw flowXML) bool {
+	for _, update := range raw.RecordUpdates {
+		if strings.TrimSpace(update.Object) == "" && flowUpdatesTriggeringRecord(update.InputReference) && len(update.Filters) > 0 {
+			return true
+		}
+	}
+	return false
+}
+
+// flowStartCriteriaGroups parses start filterLogic that is "or" or numbered
+// logic over the start filters. A logic string naming a flow formula is not
+// numbered logic.
+func flowStartCriteriaGroups(start flowStartXML, formulas map[string]string) ([][]int, bool) {
+	logic := strings.TrimSpace(start.FilterLogic)
+	if logic == "" || strings.EqualFold(logic, "and") || len(start.Filters) == 0 {
+		return nil, false
+	}
+	if _, named := formulas[strings.ToLower(logic)]; named {
+		return nil, false
+	}
+	return flowConditionLogicGroups(logic, len(start.Filters))
+}
+
 func flowCriteriaFormula(filterLogic string, formulas map[string]string) string {
 	filterLogic = strings.TrimSpace(filterLogic)
 	if filterLogic == "" {
@@ -1046,6 +1242,25 @@ func flowCriteriaFormula(filterLogic string, formulas map[string]string) string 
 	}
 	if expression, ok := formulas[strings.ToLower(filterLogic)]; ok {
 		return expression
+	}
+	// Malformed numbered logic must retain the unsupported-logic warning,
+	// rather than becoming a formula merely because it contains parentheses.
+	tokens := flowConditionLogicTokens(filterLogic)
+	numberedLogic := len(tokens) > 0
+	for _, token := range tokens {
+		switch token {
+		case "(", ")", "AND", "OR", "NOT", "XOR":
+			continue
+		}
+		if (token[0] >= '0' && token[0] <= '9') || token[0] == '-' || token[0] == '+' {
+			continue
+		}
+		// A field/resource or function name retains the legacy formula path.
+		numberedLogic = false
+		break
+	}
+	if numberedLogic {
+		return ""
 	}
 	normalized := normalizeFlowFormula(filterLogic)
 	if strings.ContainsAny(normalized, "=!<>&|()") {
@@ -1700,6 +1915,9 @@ func flowPopulateBranchBody(branch storage.FlowBranch, target, stop string, raw 
 			for _, item := range assignment.Items {
 				item = flowAssignmentItemConstantValue(item, variables, flowConstantMap(raw.Constants))
 				if update, ok := modeledFlowAssignmentUpdate(assignment, item, formulas, variables, raw.RecordLookups); ok {
+					if update.LiteralValue == "" && update.Formula == "" {
+						update.ActionOutput = flowAutomaticApexActionOutput(raw, item.Value)
+					}
 					branch.FieldUpdates = append(branch.FieldUpdates, update)
 					branch.Steps = append(branch.Steps, storage.FlowStep{Kind: "fieldUpdate", FaultTarget: fault, FieldUpdates: []storage.WorkflowFieldUpdate{update}})
 					continue
@@ -1953,7 +2171,7 @@ func flowPopulateBranchBody(branch storage.FlowBranch, target, stop string, raw 
 				continue
 			}
 			modeled = true
-			branch.Steps = append(branch.Steps, storage.FlowStep{Kind: "customError", CustomError: modeledFlowCustomError(customError)})
+			branch.Steps = append(branch.Steps, storage.FlowStep{Kind: "customError", CustomError: modeledFlowCustomError(customError, raw.Constants)})
 			break
 		}
 		if modeled {
@@ -1969,17 +2187,72 @@ func flowPopulateBranchBody(branch storage.FlowBranch, target, stop string, raw 
 	return branch, diagnostics
 }
 
-func modeledFlowCustomError(customError flowCustomErrorXML) storage.FlowCustomError {
+func modeledFlowCustomError(customError flowCustomErrorXML, constants []flowConstantXML) storage.FlowCustomError {
 	ce := storage.FlowCustomError{Name: strings.TrimSpace(customError.Name), Description: strings.TrimSpace(customError.Description)}
 	for _, msg := range customError.Messages {
-		ce.Messages = append(ce.Messages, storage.FlowCustomErrorMessage{Message: strings.TrimSpace(firstNonBlank(msg.ErrorMessage, msg.Message))})
+		text := strings.TrimSpace(firstNonBlank(msg.ErrorMessage, msg.Message))
+		ce.Messages = append(ce.Messages, storage.FlowCustomErrorMessage{Message: inlineFlowConstantMergeFields(text, constants)})
 	}
 	return ce
+}
+
+// inlineFlowConstantMergeFields replaces {!constant} in message text with the
+// constant's value. Other merge fields stay for the interview to resolve.
+func inlineFlowConstantMergeFields(text string, constants []flowConstantXML) string {
+	if !strings.Contains(text, "{!") || len(constants) == 0 {
+		return text
+	}
+	byName := make(map[string]string, len(constants))
+	for _, constant := range constants {
+		name := strings.ToLower(strings.TrimSpace(constant.Name))
+		switch {
+		case name == "":
+		case strings.TrimSpace(constant.Value.NumberValue) != "":
+			// Only the captured range: grouping of larger constants is not observed.
+			if number, err := strconv.ParseFloat(strings.TrimSpace(constant.Value.NumberValue), 64); err == nil && math.Abs(number) < 1000 {
+				byName[name] = strconv.FormatFloat(number, 'f', -1, 64)
+				if number == 0 {
+					byName[name] = "0"
+				}
+			}
+		case strings.EqualFold(strings.TrimSpace(constant.Value.BooleanValue), "true"), strings.EqualFold(strings.TrimSpace(constant.Value.BooleanValue), "false"):
+			byName[name] = strings.ToLower(strings.TrimSpace(constant.Value.BooleanValue))
+		case constant.Value.StringValue != "":
+			byName[name] = constant.Value.StringValue
+		}
+	}
+	var out strings.Builder
+	for offset := 0; offset < len(text); {
+		start := strings.Index(text[offset:], "{!")
+		if start < 0 {
+			out.WriteString(text[offset:])
+			break
+		}
+		start += offset
+		out.WriteString(text[offset:start])
+		end := strings.IndexByte(text[start+2:], '}')
+		if end < 0 {
+			out.WriteString(text[start:])
+			break
+		}
+		end += start + 2
+		if value, ok := byName[strings.ToLower(strings.TrimSpace(text[start+2:end]))]; ok {
+			out.WriteString(value)
+		} else {
+			out.WriteString(text[start : end+1])
+		}
+		offset = end + 1
+	}
+	return out.String()
 }
 
 func modeledFlowStepDecisionBranches(decision flowDecisionXML, raw flowXML, formulas map[string]string, variables map[string]flowVariableXML, visited map[string]bool) ([]storage.FlowBranch, []diagnostic.Diagnostic) {
 	var branches []storage.FlowBranch
 	var diagnostics []diagnostic.Diagnostic
+	decisionFormulas := formulas
+	if raw.decisionFormulas != nil {
+		decisionFormulas = raw.decisionFormulas
+	}
 	for _, rule := range decision.Rules {
 		target := strings.TrimSpace(rule.Connector.TargetReference)
 		groups, ok := flowConditionLogicGroups(rule.ConditionLogic, len(rule.Conditions))
@@ -1992,8 +2265,8 @@ func modeledFlowStepDecisionBranches(decision flowDecisionXML, raw flowXML, form
 			if len(groups) > 1 {
 				branch.Name = fmt.Sprintf("%s#%d", branch.Name, groupIndex+1)
 			}
-			if flowConditionGroupsNeedFormula([][]int{group}, rule.Conditions, formulas) {
-				formula := flowConditionGroupsToFormula([][]int{group}, rule.Conditions, formulas, variables)
+			if flowConditionGroupsNeedFormula([][]int{group}, rule.Conditions, decisionFormulas) {
+				formula := flowConditionGroupsToFormula([][]int{group}, rule.Conditions, decisionFormulas, variables)
 				if formula == "" {
 					diagnostics = append(diagnostics, diagnostic.Diagnostic{Message: fmt.Sprintf("decision %q branch %q condition logic %q is not supported", decision.Name, branch.Name, rule.ConditionLogic)})
 					continue
@@ -2073,6 +2346,22 @@ func modeledFlowAssignmentUpdate(assignment flowAssignmentXML, item flowAssignme
 		Formula:      formula,
 		SourceField:  flowLookupSourceFieldValueUnlessFormula(item.Value, formula, variables, lookups),
 	}, true
+}
+
+// flowAutomaticApexActionOutput names the Apex action whose automatically
+// stored output an assignment value references directly.
+func flowAutomaticApexActionOutput(raw flowXML, value flowValueXML) string {
+	reference := strings.TrimSpace(value.ElementReference)
+	if reference == "" {
+		return ""
+	}
+	for _, action := range raw.ActionCalls {
+		name := firstNonBlank(action.Name, action.Label, action.ActionName)
+		if action.StoreOutputAutomatically && strings.EqualFold(strings.TrimSpace(action.ActionType), "apex") && strings.EqualFold(reference, name) {
+			return name
+		}
+	}
+	return ""
 }
 
 func modeledFlowAssignment(assignment flowAssignmentXML, item flowAssignmentItemXML, formulas map[string]string, variables map[string]flowVariableXML, lookups []flowRecordLookupXML) (storage.FlowAssignment, bool) {
@@ -2199,6 +2488,11 @@ func flowBranchHasEffects(branch storage.FlowBranch) bool {
 }
 
 func flowRequiresOrderedGraph(raw flowXML) bool {
+	for _, lookup := range raw.RecordLookups {
+		if lookup.StoreOutputAutomatically && !lookup.GetFirstRecordOnly && !strings.EqualFold(strings.TrimSpace(raw.Start.TriggerType), "RecordBeforeDelete") {
+			return true
+		}
+	}
 	if raw.Start.Object == "" && strings.EqualFold(raw.ProcessType, "AutoLaunchedFlow") && strings.TrimSpace(raw.Start.Connector.TargetReference) != "" {
 		return true
 	}

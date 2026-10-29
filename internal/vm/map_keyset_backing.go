@@ -9,6 +9,9 @@ type mapKeySetBacking struct {
 	version        uint64
 	members        []Value
 	membersVersion uint64
+	// frozen is set only on field-map holder descriptors (see
+	// describe_field_map_holder.go); key-set backings leave it nil.
+	frozen map[string]Value
 }
 
 type mapKeySetSourceRef = weak.Pointer[mapKeySetBacking]
@@ -56,7 +59,13 @@ func (vm *VM) updateMapKeySetBacking(value Value) {
 // arguments and nested serialization values. This does not invoke Apex code.
 func (keys Value) currentMapKeySet() Value {
 	backing := keys.mapKeySetSource
-	if keys.Kind != ValueSet || backing == nil {
+	if backing == nil {
+		return keys
+	}
+	if keys.Kind == ValueMap {
+		return keys.currentFieldMapHolder()
+	}
+	if keys.Kind != ValueSet {
 		return keys
 	}
 	if backing.membersVersion != backing.version {
@@ -99,6 +108,9 @@ func (vm *VM) writeMapKeySetRemovals(keys Value) error {
 	}
 	source := keys.mapKeySetSource.value
 	previous := snapshotAlias(source)
+	// A key-set removal is a write to its source map. Apply the same
+	// ownership barrier as direct Map members before touching either map.
+	vm.prepareSharedMapMutation(&source)
 	changed := false
 	for _, raw := range orderedValueMapKeys(source) {
 		keep, err := vm.setContainsValue(keys, mapStoredKey(source, raw), &Result{})
@@ -112,6 +124,7 @@ func (vm *VM) writeMapKeySetRemovals(keys Value) error {
 		}
 	}
 	if changed {
+		vm.storeGlobalDescribeCacheEntry(source)
 		vm.propagateCollectionMutationFromSnapshot(previous, source)
 	}
 	return nil

@@ -1,0 +1,3 @@
+case_id	source
+bare	System.assert(false, 'OBS|' + String.valueOf(Type.forName('FieldServiceMobileExtension') == null));
+schema	System.assert(false, 'OBS|' + String.valueOf(Type.forName('Schema.FieldServiceMobileExtension') == null));

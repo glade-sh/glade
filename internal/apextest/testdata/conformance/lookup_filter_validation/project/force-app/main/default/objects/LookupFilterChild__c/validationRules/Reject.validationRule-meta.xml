@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Reject</fullName>
+    <active>true</active>
+    <errorConditionFormula>Reject__c</errorConditionFormula>
+    <errorMessage>synthetic validation rejected the row</errorMessage>
+    <errorDisplayField>Reject__c</errorDisplayField>
+</ValidationRule>

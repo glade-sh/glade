@@ -1,0 +1,11 @@
+case	api	route	probe	native_outcome	native_observation
+flow_get_records_related_field	62.0	apex_istest	Get Records fetches a custom child and its Related_Parent__r.Name	pass	value=Owned Parent API 62
+relationship_soql_selection	62.0	apex_istest	SELECT Related_Parent__r.Name across a custom lookup	pass	value=Owned Parent API 62
+generated_soql_relationship_filter	62.0	apex_dynamic_soql	Database.query filters on Related_Parent__r.Name	pass	rows=1
+generated_soql_account_relationship_filter	62.0	apex_dynamic_soql	Database.query filters Account by Owned_Parent__r.Name	pass	rows=1
+relationship_soql_safe_navigation_bind	62.0	apex_istest	Filter Related_Parent__r.Name using :holder?.Name	pass	count=1;value=Owned Parent API 62
+flow_get_records_related_field	67.0	apex_istest	Get Records fetches a custom child and its Related_Parent__r.Name	pass	value=Owned Parent API 67
+relationship_soql_selection	67.0	apex_istest	SELECT Related_Parent__r.Name across a custom lookup	pass	value=Owned Parent API 67
+generated_soql_relationship_filter	67.0	apex_dynamic_soql	Database.query filters on Related_Parent__r.Name	pass	rows=1
+generated_soql_account_relationship_filter	67.0	apex_dynamic_soql	Database.query filters Account by Owned_Parent__r.Name	pass	rows=1
+relationship_soql_safe_navigation_bind	67.0	apex_istest	Filter Related_Parent__r.Name using :holder?.Name	pass	count=1;value=Owned Parent API 67

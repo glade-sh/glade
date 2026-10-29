@@ -1,0 +1,7 @@
+case	outcome	body
+list_constructor	rejected	CartExtension.CartItemList items = new CartExtension.CartItemList();
+item_as_commerce	accepted	CartExtension.CartItem item = null; CartExtension.CommerceObject value = item; System.assertEquals(null, value);
+group_as_commerce	accepted	CartExtension.CartDeliveryGroup groupValue = null; CartExtension.CommerceObject value = groupValue; System.assertEquals(null, value);
+list_commerce_argument	accepted	CartExtension.CartItemList items = null; CartExtension.CartDeliveryGroup groupValue = null; if (items != null) { items.add(groupValue); items.remove(groupValue); }
+item_constructor	accepted	CartExtension.CartDeliveryGroup groupValue = null; if (groupValue != null) { CartExtension.CartItem item = new CartExtension.CartItem(CartExtension.SalesItemTypeEnum.PRODUCT, groupValue, 'Garden item'); System.assertNotEquals(null, item); }
+list_string_argument	rejected	CartExtension.CartItemList items = null; if (items != null) { items.add('Garden'); items.remove('Garden'); }

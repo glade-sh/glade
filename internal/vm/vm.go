@@ -718,8 +718,8 @@ func (vm *VM) executeObjectForEach(source string, inst ir.Instruction, result *R
 	vm.Globals[iteratorName] = iterator
 	vm.VarTypes[iteratorName] = iterator.Type
 	for iteration := 0; ; iteration++ {
-		if iteration >= maxLoopIterations {
-			return execOutcome{}, fmt.Errorf("enhanced for loop exceeded %d iterations", maxLoopIterations)
+		if err := vm.chargeLoopIteration("enhanced for", iteration); err != nil {
+			return execOutcome{}, err
 		}
 		hasNext, handled, err := vm.callValueMember(iteratorName, vm.Globals[iteratorName], "hasNext", nil, result)
 		if err != nil {
@@ -792,6 +792,41 @@ func ensureObject(org *storage.OrgState, definition storage.ObjectDefinition) {
 		org.Objects = make(map[string]storage.ObjectState)
 	}
 	if existing, ok := org.Objects[definition.APIName]; ok {
+		// This ensure only adds absent fields/relations. Prove that its exact
+		// merge would be a no-op before copying a frozen definition. Record
+		// map initialization does not change schema preparation. A field the
+		// applied standard field policy removed stays removed: re-adding it
+		// would undo EnsureStandardObject on every call.
+		complete := true
+		for name := range definition.Fields {
+			if _, ok := existing.Definition.Fields[name]; !ok && !storage.StandardFieldPolicyRemovesField(existing.Definition, name) {
+				complete = false
+				break
+			}
+		}
+		if complete {
+			for _, relation := range definition.Relations {
+				found := false
+				for _, current := range existing.Definition.Relations {
+					if current.Field == relation.Field {
+						found = true
+						break
+					}
+				}
+				if !found && !storage.StandardFieldPolicyRemovesField(existing.Definition, relation.Field) {
+					complete = false
+					break
+				}
+			}
+		}
+		if complete {
+			if existing.Records == nil {
+				existing.Records = make(map[storage.ID]storage.Record)
+				org.Objects[definition.APIName] = existing
+			}
+			return
+		}
+		org.ClearRuntimeSchemaStamp()
 		existing.Definition = existing.Definition.Clone()
 		if existing.Records == nil {
 			existing.Records = make(map[storage.ID]storage.Record)
@@ -800,7 +835,7 @@ func ensureObject(org *storage.OrgState, definition storage.ObjectDefinition) {
 			existing.Definition.Fields = definition.Fields
 		} else {
 			for name, field := range definition.Fields {
-				if _, ok := existing.Definition.Fields[name]; !ok {
+				if _, ok := existing.Definition.Fields[name]; !ok && !storage.StandardFieldPolicyRemovesField(existing.Definition, name) {
 					existing.Definition.Fields[name] = field
 				}
 			}
@@ -813,13 +848,14 @@ func ensureObject(org *storage.OrgState, definition storage.ObjectDefinition) {
 					break
 				}
 			}
-			if !found {
+			if !found && !storage.StandardFieldPolicyRemovesField(existing.Definition, relation.Field) {
 				existing.Definition.Relations = append(existing.Definition.Relations, relation)
 			}
 		}
 		org.Objects[definition.APIName] = existing
 		return
 	}
+	org.ClearRuntimeSchemaStamp()
 	org.Objects[definition.APIName] = storage.ObjectState{Definition: definition, Records: make(map[storage.ID]storage.Record)}
 }
 
@@ -1774,6 +1810,9 @@ type modeledTimeZone struct {
 
 var supportedNamedTimeZones = map[string]modeledTimeZone{
 	// Owned API62/67/68 factory/offset/display/format snapshots, January/July2026.
+	// Europe/Paris: flow_core action-outputs AO_002 offsets and labels plus the
+	// standard display name in its ORG-RUN.txt (API 62.0, 67.0). Its daylight
+	// display name was not observable at capture and mirrors Europe/Berlin.
 	"Africa/Johannesburg": {id: "Africa/Johannesburg", standardOffset: 2 * time.Hour, standardLabel: "SAST", standardDisplayName: "South Africa Standard Time"},
 	"Australia/Brisbane":  {id: "Australia/Brisbane", standardOffset: 10 * time.Hour, standardLabel: "AEST", standardDisplayName: "Australian Eastern Standard Time"},
 	"America/Los_Angeles": {id: "America/Los_Angeles", standardOffset: -8 * time.Hour, daylightOffset: -7 * time.Hour, standardLabel: "PST", daylightLabel: "PDT", standardDisplayName: "Pacific Standard Time", daylightDisplayName: "Pacific Daylight Time", daylightRule: "us"},
@@ -1785,6 +1824,7 @@ var supportedNamedTimeZones = map[string]modeledTimeZone{
 	"Europe/London":       {id: "Europe/London", standardOffset: 0, daylightOffset: time.Hour, standardLabel: "GMT", daylightLabel: "BST", standardDisplayName: "Greenwich Mean Time", daylightDisplayName: "British Summer Time", daylightRule: "europe"},
 	"Europe/Dublin":       {id: "Europe/Dublin", standardOffset: 0, daylightOffset: time.Hour, standardLabel: "GMT", daylightLabel: "IST", standardDisplayName: "Greenwich Mean Time", daylightDisplayName: "Irish Standard Time", daylightRule: "europe"},
 	"Europe/Berlin":       {id: "Europe/Berlin", standardOffset: time.Hour, daylightOffset: 2 * time.Hour, standardLabel: "CET", daylightLabel: "CEST", standardDisplayName: "Central European Standard Time", daylightDisplayName: "Central European Summer Time", daylightRule: "europe"},
+	"Europe/Paris":        {id: "Europe/Paris", standardOffset: time.Hour, daylightOffset: 2 * time.Hour, standardLabel: "CET", daylightLabel: "CEST", standardDisplayName: "Central European Standard Time", daylightDisplayName: "Central European Summer Time", daylightRule: "europe"},
 	"Europe/Oslo":         {id: "Europe/Oslo", standardOffset: time.Hour, daylightOffset: 2 * time.Hour, standardLabel: "CET", daylightLabel: "CEST", standardDisplayName: "Central European Standard Time", daylightDisplayName: "Central European Summer Time", daylightRule: "europe"},
 	"Asia/Ho_Chi_Minh":    {id: "Asia/Ho_Chi_Minh", standardOffset: 7 * time.Hour, standardLabel: "ICT", standardDisplayName: "Indochina Time"},
 	"Asia/Kolkata":        {id: "Asia/Kolkata", standardOffset: 5*time.Hour + 30*time.Minute, standardLabel: "IST", standardDisplayName: "India Standard Time"},
@@ -3116,17 +3156,31 @@ func typedJSONMapKey(typeName, key string, input jsonTypedInput) (Value, error) 
 }
 
 func (vm *VM) schemaGlobalDescribe() Value {
+	vm.ensureMetadataCacheGeneration()
 	if vm.globalDescribeCache != nil {
 		return *vm.globalDescribeCache
 	}
+	out, shared := vm.sharedGlobalDescribeBuild()
+	if !shared {
+		out = vm.buildSchemaGlobalDescribe()
+	}
+	vm.globalDescribeCache = &out
+	return out
+}
+
+func (vm *VM) buildSchemaGlobalDescribe() Value {
 	out := Map()
 	out.Type = "Schema.GlobalDescribeMap"
+	out.globalDescribeEntriesCanonical = true
 	if vm.Org == nil {
 		return out
 	}
 	names := make([]string, 0, len(vm.Org.Objects))
 	seen := make(map[string]bool, cap(names))
 	for name := range vm.Org.Objects {
+		if !vm.Org.AllowsStandardObject(name) {
+			continue
+		}
 		key := strings.ToLower(strings.TrimSpace(name))
 		if key == "" || seen[key] {
 			continue
@@ -3141,8 +3195,21 @@ func (vm *VM) schemaGlobalDescribe() Value {
 			vm.putSchemaGlobalDescribeAlias(&out, alias, name, token)
 		}
 	}
-	vm.globalDescribeCache = &out
+	fillDescribeMapStoredKeys(&out)
 	return out
+}
+
+// fillDescribeMapStoredKeys stores each key's value on a describe map, exactly
+// as readers derive it from the encoded key, so a typed view can share the
+// storage instead of rebuilding it. Enumeration order is left to the readers.
+func fillDescribeMapStoredKeys(out *Value) {
+	stored := make(map[string]Value, len(out.Map))
+	for key := range out.Map {
+		stored[key] = valueFromMapKey(key)
+	}
+	out.MapKeys = stored
+	out.MapOrder = sortedMapKeys(out.Map)
+	out.mapBackingShared = true
 }
 
 func (vm *VM) putSchemaGlobalDescribeAlias(out *Value, alias, objectName string, token Value) {
@@ -5167,21 +5234,8 @@ func (vm *VM) callCustomNotificationMember(receiver Value, method string, args [
 		if vm.testContext != nil && len(args) == 1 {
 			return Null, receiver, false, true, nil
 		}
-		// Native missing-type validation precedes recipient/target checks.
-		if receiver.Fields["notificationTypeId"].Kind == ValueNull {
-			return Null, receiver, false, true, newExceptionError("HandledException", "Missing required input parameter: customNotifTypeId")
-		}
-		if typeID := receiver.Fields["notificationTypeId"]; typeID.Kind == ValueString && validateApexIDShape(typeID.Text) != nil {
-			return Null, receiver, false, true, newExceptionError("HandledException", "Invalid parameter value for: customNotifTypeId")
-		}
-		if title := receiver.Fields["title"]; title.Kind == ValueNull || (title.Kind == ValueString && title.Text == "") {
-			return Null, receiver, false, true, newExceptionError("HandledException", "Missing required input parameter: title")
-		}
-		if len(args) != 1 || args[0].Kind != ValueSet {
-			return Null, receiver, false, true, fmt.Errorf("Messaging.CustomNotification.send expects Set<String>")
-		}
-		if receiver.Fields["targetId"].Kind == ValueNull && receiver.Fields["targetPageRef"].Kind == ValueNull {
-			return Null, receiver, false, true, newExceptionError("HandledException", "You can't send a custom notification without a navigation target. Specify either a Target ID or Target Page Reference on the Send Custom Notification action.")
+		if err := vm.validateCustomNotificationSend(receiver, args); err != nil {
+			return Null, receiver, false, true, err
 		}
 		return Null, receiver, false, true, newExceptionError("UnsupportedOperationException", "Messaging.CustomNotification.send requires hosted notification delivery")
 	default:

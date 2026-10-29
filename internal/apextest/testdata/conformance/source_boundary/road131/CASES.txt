@@ -1,0 +1,17 @@
+ synthetic dependency-scoped trigger capture
+Source/API matrix: 62.0 and 67.0, one check-only package per scenario.
+Every package includes the independent @IsTest class R131IndependentTest.
+
+invalid-public / valid-public: explicit public class and public static method, illegal String-to-Integer assignment / repaired Integer assignment.
+invalid-default / valid-default: omitted class and method access modifiers, same assignment twins.
+
+Each package contains these distinct trigger source units on Account before insert:
+Call: static method qualifier.
+Type: local type position.
+Constructor: constructor type position.
+CaseCall / CaseType / CaseConstructor: mixed-case class/method spelling twins.
+Literal / Comment: matching name bytes without a bound reference.
+Empty: empty trigger boundary.
+Unreachable: bound reference in a constant-false branch boundary.
+
+The valid-public package is also deployed and exercised through anonymous DML and synchronous @IsTest at both source APIs. The valid-default row repairs only the assignment; omitted top-level class visibility still rejects the class. Invalid and invalid-visibility packages cannot execute natively; their oracle is check-only deployment, not runtime.

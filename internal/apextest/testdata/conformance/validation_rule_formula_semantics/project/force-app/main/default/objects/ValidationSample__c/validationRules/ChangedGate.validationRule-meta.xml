@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>ChangedGate</fullName>
+    <active>true</active>
+    <errorConditionFormula>AND(NOT(ISNEW()), ISCHANGED(TextValue__c), TextValue__c = &quot;change-block&quot;)</errorConditionFormula>
+    <errorMessage>Changed value blocked</errorMessage>
+</ValidationRule>

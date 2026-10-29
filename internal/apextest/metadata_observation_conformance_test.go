@@ -81,7 +81,7 @@ func runMetadataObservationConformance(t *testing.T, file string, runtimeCells, 
 		t.Fatalf("native matrix changed: %v", counts)
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			files := map[string]string{}
 			for path, text := range data.Files {
 				files[path] = strings.ReplaceAll(text, "{{API}}", api)

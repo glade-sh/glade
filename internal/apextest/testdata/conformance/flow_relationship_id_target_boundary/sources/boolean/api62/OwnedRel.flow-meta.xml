@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+<apiVersion>62.0</apiVersion><environments>Default</environments><label>Owned Rel</label><processType>AutoLaunchedFlow</processType><status>Active</status>
+<recordLookups><name>FindRows</name><label>Find Rows</label><locationX>0</locationX><locationY>0</locationY><object>Account</object><getFirstRecordOnly>false</getFirstRecordOnly><storeOutputAutomatically>true</storeOutputAutomatically><connector><targetReference>CopyParent</targetReference></connector></recordLookups>
+<recordUpdates><name>CopyParent</name><label>Copy Parent</label><locationX>0</locationX><locationY>0</locationY><inputReference>$Record</inputReference><inputAssignments><field>HasOptedOutOfEmail</field><value><elementReference>$Record.Account.Id</elementReference></value></inputAssignments></recordUpdates>
+<start><locationX>0</locationX><locationY>0</locationY><object>Contact</object><recordTriggerType>Create</recordTriggerType><triggerType>RecordBeforeSave</triggerType><connector><targetReference>FindRows</targetReference></connector></start>
+</Flow>

@@ -1,0 +1,31 @@
+source_api	route	method	observation
+62.0	isTest	automaticActivity	{"value":{"sent":true,"tasks":1}}
+62.0	isTest	duplicateActivity	{"value":{"sent":true,"tasks":2}}
+62.0	isTest	manualActivity	{"value":{"sent":true,"tasks":1}}
+62.0	isTest	mutateTraversal	{"exceptionType":"System.FinalException","message":"Cannot modify a collection while it is being iterated."}
+62.0	isTest	nameNoGrant	{"value":{"Account":[false,false,false,false,false,false],"BoundaryCard__c":[false,false,false,false,false,false],"BoundarySequence__c":[false,false,false,false,false,false],"auditWrite":[false,false],"optional":[false,false,false]}}
+62.0	isTest	nameObjectGrant	{"value":{"Account":[true,true,true,true,true,true],"BoundaryCard__c":[true,true,true,true,true,true],"BoundarySequence__c":[true,true,true,true,false,false],"auditWrite":[false,false],"optional":[false,false,false]}}
+62.0	isTest	readTraversal	{"value":2}
+62.0	isTest	recordIdentity	{"value":{"factory":"ResidualBoundaryProbe.RecordFactory","record":"Account"}}
+62.0	anonymous	recordIdentity	{"value":{"factory":"ResidualBoundaryProbe.RecordFactory","record":"Account"}}
+62.0	anonymous	automaticActivity	{"value":{"sent":true,"tasks":1}}
+62.0	anonymous	duplicateActivity	{"value":{"sent":true,"tasks":2}}
+62.0	anonymous	manualActivity	{"value":{"sent":true,"tasks":1}}
+62.0	anonymous	readTraversal	{"value":2}
+62.0	anonymous	mutateTraversal	{"exceptionType":"System.FinalException","message":"Cannot modify a collection while it is being iterated."}
+62.0	anonymous	anonymousRunAs	{"exceptionType":"System.TypeException","message":"System.runAs can only be used within a test method:"}
+67.0	isTest	automaticActivity	{"value":{"sent":true,"tasks":1}}
+67.0	isTest	duplicateActivity	{"value":{"sent":true,"tasks":2}}
+67.0	isTest	manualActivity	{"value":{"sent":true,"tasks":1}}
+67.0	isTest	mutateTraversal	{"exceptionType":"System.FinalException","message":"Cannot modify a collection while it is being iterated."}
+67.0	isTest	nameNoGrant	{"value":{"Account":[false,false,false,false,false,false],"BoundaryCard__c":[false,false,false,false,false,false],"BoundarySequence__c":[false,false,false,false,false,false],"auditWrite":[false,false],"optional":[false,false,false]}}
+67.0	isTest	nameObjectGrant	{"value":{"Account":[true,true,true,true,true,true],"BoundaryCard__c":[true,true,true,true,true,true],"BoundarySequence__c":[true,true,true,true,false,false],"auditWrite":[false,false],"optional":[false,false,false]}}
+67.0	isTest	readTraversal	{"value":2}
+67.0	isTest	recordIdentity	{"value":{"factory":"ResidualBoundaryProbe.RecordFactory","record":"Account"}}
+67.0	anonymous	recordIdentity	{"value":{"factory":"ResidualBoundaryProbe.RecordFactory","record":"Account"}}
+67.0	anonymous	automaticActivity	{"value":{"sent":true,"tasks":1}}
+67.0	anonymous	duplicateActivity	{"value":{"sent":true,"tasks":2}}
+67.0	anonymous	manualActivity	{"value":{"sent":true,"tasks":1}}
+67.0	anonymous	readTraversal	{"value":2}
+67.0	anonymous	mutateTraversal	{"exceptionType":"System.FinalException","message":"Cannot modify a collection while it is being iterated."}
+67.0	anonymous	anonymousRunAs	{"exceptionType":"System.TypeException","message":"System.runAs can only be used within a test method:"}

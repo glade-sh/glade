@@ -94,7 +94,7 @@ func TestPlatformCacheOrgConformance(t *testing.T) {
 		return prefix + "try {Object r; " + tc.Code + " pq.out('" + tc.ID + "',r);}catch(Exception e){pq.err('" + tc.ID + "',e);}"
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCounts()
 			defer counts.Log(t, "Platform Cache", api, "")
 			root := t.TempDir()

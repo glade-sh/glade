@@ -141,10 +141,15 @@ func databaseSyncStampInWindow(stamp, start, end time.Time) bool {
 }
 
 func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value, error) {
-	return vm.executeDatabaseDMLWithHistoryTestSeed(op, args, result, true)
+	defaultUpdateOverload := len(args) == 1 || (len(args) == 2 && args[1].Kind == ValueBool)
+	return vm.executeDatabaseDMLWithOptions(op, args, result, true, defaultUpdateOverload, true)
 }
 
-func (vm *VM) executeDatabaseDMLWithHistoryTestSeed(op string, args []Value, result *Result, historyTestSeed bool) (Value, error) {
+func (vm *VM) executeDatabaseDMLWithHistoryTestSeed(op string, args []Value, result *Result, historyTestSeed, ordinaryDatabaseCall bool) (Value, error) {
+	return vm.executeDatabaseDMLWithOptions(op, args, result, historyTestSeed, false, ordinaryDatabaseCall)
+}
+
+func (vm *VM) executeDatabaseDMLWithOptions(op string, args []Value, result *Result, historyTestSeed, updateRowEnvelope, ordinaryDatabaseCall bool) (Value, error) {
 	traceStart, traceStartedAt := traceSpanStart(result)
 	if len(args) == 0 || len(args) > 4 {
 		return Null, fmt.Errorf("Database.%s expects records, optional external id field, and optional allOrNone", op)
@@ -267,6 +272,7 @@ func (vm *VM) executeDatabaseDMLWithHistoryTestSeed(op string, args []Value, res
 	}
 	if op == "insert" {
 		dmlOptions.ApexRecordTypeInsertMode = dmlMode
+		dmlOptions.ApexRejectNullPersonRecordType = ordinaryDatabaseCall
 	}
 	dmlOptions.AllowTestHistoryInsert = historyTestSeed && op == "insert" && vm.allowTestHistoryInsert()
 	results, err := vm.applyDMLWithRecordAccess(op, args[0], allOrNone, externalIDField, dmlOptions, result, dmlMode)
@@ -305,7 +311,9 @@ func (vm *VM) executeDatabaseDMLWithHistoryTestSeed(op string, args []Value, res
 		if op == "insert" && len(args) == 3 && args[0].Kind == ValueList && args[1].Kind == ValueBool && dmlMode == "SYSTEM_MODE" {
 			return Null, statementDMLException(op, results, vm.dmlExceptionObjectTypes(args[0]))
 		}
-		if op == "update" && missingUpdateIDFailure(results) {
+		// Native update_error_messages rows cover default/Boolean Database.update;
+		// options, access levels and aliases retain their uncaptured local envelope.
+		if op == "update" && (missingUpdateIDFailure(results) || (updateRowEnvelope && firstFailureHasRecordID(results))) {
 			return Null, rowDMLException(op, results, vm.dmlExceptionObjectTypes(args[0]))
 		}
 		return Null, databaseDMLException(op, results, vm.dmlExceptionObjectTypes(args[0]))
@@ -344,7 +352,7 @@ func (vm *VM) executeDatabaseAsyncDML(op string, args []Value, result *Result) (
 	if value, handled, err := vm.capturedAccountAsyncInsert(op, args, callback); handled {
 		return value, err
 	}
-	value, err := vm.executeDatabaseDMLWithHistoryTestSeed(op, dmlArgs, result, false)
+	value, err := vm.executeDatabaseDMLWithHistoryTestSeed(op, dmlArgs, result, false, false)
 	if err != nil {
 		return Null, err
 	}
@@ -1494,6 +1502,18 @@ func missingUpdateIDFailure(results []dml.Result) bool {
 	return false
 }
 
+// firstFailureHasRecordID reports that the first failed row carries its record
+// id, which the update statement reports natively as "Update failed. First
+// exception on row N with id ..." (custom_address_fields followup U rows).
+func firstFailureHasRecordID(results []dml.Result) bool {
+	for _, result := range results {
+		if !result.Success && result.Error != "" {
+			return result.ID != ""
+		}
+	}
+	return false
+}
+
 func statementDMLException(op string, results []dml.Result, objectTypes []string) error {
 	if op == "update" {
 		for index, result := range results {
@@ -1508,7 +1528,7 @@ func statementDMLException(op string, results []dml.Result, objectTypes []string
 			}
 		}
 	}
-	if op != "undelete" && op != "insert" && !(op == "upsert" && fieldKeyMissingUpsertResult(results)) && !(op == "update" && missingUpdateIDFailure(results)) {
+	if op != "undelete" && op != "insert" && !(op == "upsert" && fieldKeyMissingUpsertResult(results)) && !(op == "update" && (missingUpdateIDFailure(results) || firstFailureHasRecordID(results))) {
 		return databaseDMLException(op, results, objectTypes)
 	}
 	return rowDMLException(op, results, objectTypes)
@@ -1924,6 +1944,7 @@ func clearDMLResultFields(value *Value, preserveID bool) {
 	}
 	deleteObjectField(value.Fields, sobjectDMLAccessibleField)
 	deleteObjectField(value.Fields, sobjectQueriedFieldsField)
+	deleteObjectField(value.Fields, jsonSObjectQueryProjectionField)
 	for _, field := range []string{"CreatedDate", "CreatedById", "LastModifiedDate", "LastModifiedById", "SystemModstamp"} {
 		deleteObjectField(value.Fields, field)
 	}
@@ -2351,6 +2372,24 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 			}()
 		}
 	}
+	// Ordinary inserts and Id-less default upserts share the captured recipient
+	// rejection. Updates and external-key upserts retain their existing paths.
+	if op == "insert" || op == "upsert" && externalIDField == "" {
+		if failures := vm.emailRecipientInsertFailures(records); hasDMLFailures(failures) {
+			if allOrNone {
+				return failures, nil
+			}
+			records, _, targets = filterDMLInputs(records, nil, targets, failures)
+			if len(records) == 0 {
+				return failures, nil
+			}
+			defer func() {
+				if outErr == nil {
+					out = mergeDMLResults(failures, out)
+				}
+			}()
+		}
+	}
 	if op == "upsert" {
 		return vm.applyUpsertDML(records, targets, allOrNone, externalIDField, options, result)
 	}
@@ -2619,13 +2658,15 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 		}
 		return nil, err
 	}
-	for i, dmlResult := range engineResults {
-		if dmlResult.Success && i < len(targets) && targets[i] != nil {
-			previous := snapshotAlias(*targets[i])
-			vm.populateDMLResultFields(targets[i], engineResults[i:i+1], op)
-			if !bulkPropagate {
-				vm.propagateAliasSnapshotToScope(vm.Globals, previous, *targets[i])
-				vm.propagateAliasSnapshotToStatics(previous, *targets[i])
+	if bulkPropagate || value.Kind != ValueList || len(targets) < 2 || !vm.tryPublishDMLScopeAliasBatch(targets, engineResults, op) {
+		for i, dmlResult := range engineResults {
+			if dmlResult.Success && i < len(targets) && targets[i] != nil {
+				previous := snapshotAlias(*targets[i])
+				vm.populateDMLResultFields(targets[i], engineResults[i:i+1], op)
+				if !bulkPropagate {
+					vm.propagateAliasSnapshotToScope(vm.Globals, previous, *targets[i])
+					vm.propagateAliasSnapshotToStatics(previous, *targets[i])
+				}
 			}
 		}
 	}
@@ -2839,7 +2880,7 @@ func (vm *VM) applySObjectFieldDefaults(records []storage.Record, apexInsertMode
 		}
 		allowRecordTypeDefault := apexInsertMode == "" || !dml.UsesImplicitMasterRecordType(definition)
 		if _, ok := records[i].GetField("RecordTypeId"); allowRecordTypeDefault && !ok && !records[i].HasExplicitNull("RecordTypeId") {
-			if recordTypeID := defaultRecordTypeIDForRecord(objectName, definition, records[i]); recordTypeID != "" {
+			if recordTypeID := vm.defaultRecordTypeIDForRecord(objectName, definition, records[i]); recordTypeID != "" {
 				records[i].Fields["RecordTypeId"] = storage.IDValue(recordTypeID)
 			}
 		}
@@ -2862,9 +2903,9 @@ func (vm *VM) applySObjectFieldDefaults(records []storage.Record, apexInsertMode
 	}
 }
 
-func defaultRecordTypeIDForRecord(objectName string, definition storage.ObjectDefinition, record storage.Record) storage.ID {
+func (vm *VM) defaultRecordTypeIDForRecord(objectName string, definition storage.ObjectDefinition, record storage.Record) storage.ID {
 	if policy := dmlPolicyForObject(objectName); policy != nil && policy.defaultRecordTypeID != nil {
-		if id := policy.defaultRecordTypeID(definition, record); id != "" {
+		if id := policy.defaultRecordTypeID(vm, definition, record); id != "" {
 			if isDescribeOnlyMasterRecordTypeID(id) {
 				return ""
 			}
@@ -2936,7 +2977,10 @@ func (vm *VM) applyStoredDMLDerivedFields(op string, records []storage.Record, r
 		}
 		policy := dmlPolicyForObject(objectName)
 		created := op == "insert" || (op == "upsert" && result.Created)
-		if policy == nil || (policy.storedDMLDerivedFields == nil && (!created || policy.storedInsertDerivedFields == nil)) {
+		insertDerived := created && policy != nil && policy.storedInsertDerivedFields != nil
+		storedDerived := policy != nil && policy.storedDMLDerivedFields != nil
+		testViewDates := op == "insert" && vm.testContext != nil && !vm.testContext.SeeAllData && vm.testContext.RunAsDepth == 0 && testSObjectHasViewDateDefaults(objectName)
+		if !insertDerived && !storedDerived && !testViewDates {
 			continue
 		}
 		id := result.ID
@@ -2955,18 +2999,23 @@ func (vm *VM) applyStoredDMLDerivedFields(op string, records []storage.Record, r
 			continue
 		}
 		vm.recordIsolationJournalMutation(objectName, recordID, record, true)
-		if created && policy.storedInsertDerivedFields != nil {
+		if insertDerived || testViewDates {
 			record = cloneRuntimeSnapshotRecord(record)
+		}
+		if insertDerived {
 			if err := policy.storedInsertDerivedFields(vm, &record); err != nil {
 				return err
 			}
 		}
-		if policy.storedDMLDerivedFields != nil {
+		if storedDerived {
 			policy.storedDMLDerivedFields(vm, &record)
+		}
+		if testViewDates {
+			applyTestSObjectViewDateDefaults(object.Definition, &record)
 		}
 		object.Records[recordID] = record
 		vm.Org.Objects[objectName] = object
-		if created && policy.storedInsertDerivedFields != nil {
+		if insertDerived {
 			storage.RebuildObjectIndexes(vm.Org, objectName)
 		}
 		vm.ensureUserRoleGroup(record)
@@ -3263,6 +3312,7 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 	engine := vm.newDeferredAutomationDMLEngine(result)
 	engine.Options = options
 	engine.Options.AllowBatchUniqueValueSwap = allOrNone
+	engine.Options.EnforceUpsertIDInsertDuplicateRules = true
 	engine.PriorRecords = dmlPriorRecordsByID(before)
 	if !allOrNone && vm.hasAfterTriggerForDML("upsert", records) {
 		ensurePartialAfterTriggerBackup()
@@ -3470,6 +3520,7 @@ func (memo *summarySideEffectIndexMemo) validFor(org *storage.OrgState) bool {
 // a clone whose definitions changed (the mutable-definition path clears the
 // org stamp) builds privately and never builds or reads the shared one.
 func (vm *VM) summarySideEffectObjectIndex() map[string]bool {
+	vm.ensureMetadataCacheGeneration()
 	if vm == nil || vm.Org == nil {
 		return nil
 	}
@@ -3881,6 +3932,14 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 			if _, known := definition.Fields[canonicalField]; !known &&
 				vm.queriedSObjectFieldsIncludes(*value, field) && !explicitField &&
 				!isUserSetSObjectFieldAlias(*value, field) && !isUserSetSObjectFieldAlias(*value, canonicalField) {
+				continue
+			}
+		}
+		// A queried Address compound reads from its stored components and is
+		// never stored itself: update keeps those components and insert of a
+		// clone drops the compound (address_location_review DML_* native rows).
+		if fieldValue.Kind == ValueObject && definition.APIName != "" {
+			if fieldDef, ok := definition.Fields[canonicalField]; ok && fieldDef.Type == storage.FieldAddress {
 				continue
 			}
 		}
@@ -4339,7 +4398,15 @@ func vmFieldIsReference(field storage.Field) bool {
 	if field.Type == storage.FieldReference || len(field.ReferenceTo) > 0 {
 		return true
 	}
-	switch strings.ToLower(strings.TrimSpace(string(field.Type))) {
+	typeName := strings.TrimSpace(string(field.Type))
+	if isASCII(typeName) {
+		switch len(typeName) {
+		case len("lookup"), len("masterdetail"), len("metadatarelationship"):
+		default:
+			return false
+		}
+	}
+	switch strings.ToLower(typeName) {
 	case "lookup", "masterdetail", "metadatarelationship":
 		return true
 	default:
@@ -4473,6 +4540,10 @@ func vmValueFromRecord(record storage.Record) Value {
 }
 
 func (vm *VM) hydrateParentLookupFields(value Value) {
+	vm.hydrateParentLookupFieldsWithStoredValues(value, true)
+}
+
+func (vm *VM) hydrateParentLookupFieldsWithStoredValues(value Value, loadStored bool) {
 	if vm == nil || vm.Org == nil || value.Kind != ValueObject {
 		return
 	}
@@ -4481,7 +4552,7 @@ func (vm *VM) hydrateParentLookupFields(value Value) {
 		return
 	}
 	storedFields := map[string]storage.Value(nil)
-	if id := sObjectIDFromFields(value.Fields); id != "" {
+	if id := sObjectIDFromFields(value.Fields); loadStored && id != "" {
 		if record, ok := vm.findOrgRecord(value.Type, id); ok {
 			storedFields = record.Fields
 		}
@@ -4714,6 +4785,7 @@ func (vm *VM) childRelationshipListType(parentObject, relationship string, recor
 }
 
 func (vm *VM) childRelationshipLookup(parentObject, relationship string) childRelationshipLookup {
+	vm.ensureMetadataCacheGeneration()
 	if vm == nil || vm.Org == nil {
 		return childRelationshipLookup{}
 	}
@@ -4735,7 +4807,8 @@ func (vm *VM) childRelationshipLookup(parentObject, relationship string) childRe
 	}
 	lookup := childRelationshipLookup{}
 	matches := make([]string, 0, 1)
-	for childName, childState := range vm.Org.Objects {
+	for childName, childState := range vm.childRelationshipScanCandidates(canonicalParent) {
+		childRelationshipScanVisits.Add(1)
 		if storage.IsChangeEventObject(childState.Definition) {
 			continue
 		}
@@ -5261,7 +5334,7 @@ func coerceReadSObjectFieldRuntimeValue(receiver, value Value, field storage.Fie
 	if !receiver.classInstance && !receiver.projectClass && field.Type == storage.FieldAddress && value.Kind == ValueMap {
 		// Compound JSON payloads retain their stored map representation. A
 		// schema Address read exposes the platform value and its accessors.
-		address := Object("System.Address")
+		address := newSystemAddress()
 		for encoded, component := range value.Map {
 			key, ok := value.MapKeys[encoded]
 			if !ok || key.Kind != ValueString {
@@ -6050,13 +6123,24 @@ func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, mode i
 		}
 	}
 	if dmlMode == "USER_MODE" {
-		if err := vm.enforceUserModeDMLAccess(op, value, Value{}); err != nil {
+		permissionOp := op
+		if mode == ir.DMLModeDefault && op == "upsert" && externalIDField == "" && value.Kind == ValueObject && strings.EqualFold(vm.canonicalSObjectValueType(value), "Account") {
+			// person_account_profile_routes captures new scalar Account upserts
+			// with read/create but no edit grant. Keep the permission choice
+			// scoped to that default-mode, selector-free insert branch.
+			_, id, hasID := objectFieldValue(value, "Id")
+			if !hasID || id.Kind == ValueNull {
+				permissionOp = "insert"
+			}
+		}
+		if err := vm.enforceUserModeDMLAccess(permissionOp, value, Value{}); err != nil {
 			return err
 		}
 	}
 	traceStart, traceStartedAt = traceSpanStart(result)
 	var results []dml.Result
 	dmlOptions := dml.Options{AllowTestHistoryInsert: op == "insert" && vm.allowTestHistoryInsert()}
+	dmlOptions.ApexRejectNullPersonRecordType = op == "insert" || op == "upsert"
 	if op == "insert" {
 		dmlOptions.ApexRecordTypeInsertMode = dmlMode
 	}

@@ -145,7 +145,7 @@ func runFieldKeyConformance(t *testing.T, cluster string, shapes int) {
 		}
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "FieldKey"+cluster, api)
 			baseIndex := fieldKeyIndex(t, api, nil, metadata)
 			org := fieldKeyOrg(t, baseIndex, api)

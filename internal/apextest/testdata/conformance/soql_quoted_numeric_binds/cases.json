@@ -1,0 +1,752 @@
+[
+  {
+    "id": "mixed_name_in_first",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<SObject> rows=[SELECT Id FROM Account WHERE Name IN (1,:needle)];"
+  },
+  {
+    "id": "mixed_name_in_last",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<SObject> rows=[SELECT Id FROM Account WHERE Name IN (:needle,1)];"
+  },
+  {
+    "id": "mixed_name_in_quoted",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<SObject> rows=[SELECT Id FROM Account WHERE Name IN ('3',:needle)];"
+  },
+  {
+    "id": "mixed_name_in_null",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<SObject> rows=[SELECT Id FROM Account WHERE Name IN (null,:needle)];"
+  },
+  {
+    "id": "mixed_name_not_in_first",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<SObject> rows=[SELECT Id FROM Account WHERE Name NOT IN (1,:needle)];"
+  },
+  {
+    "id": "mixed_name_not_in_last",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<SObject> rows=[SELECT Id FROM Account WHERE Name NOT IN (:needle,1)];"
+  },
+  {
+    "id": "mixed_name_not_in_quoted",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<SObject> rows=[SELECT Id FROM Account WHERE Name NOT IN ('3',:needle)];"
+  },
+  {
+    "id": "mixed_name_not_in_null",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<SObject> rows=[SELECT Id FROM Account WHERE Name NOT IN (null,:needle)];"
+  },
+  {
+    "id": "mixed_industry_in_first",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<SObject> rows=[SELECT Id FROM Account WHERE Industry IN (1,:needle)];"
+  },
+  {
+    "id": "mixed_industry_in_last",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<SObject> rows=[SELECT Id FROM Account WHERE Industry IN (:needle,1)];"
+  },
+  {
+    "id": "mixed_industry_in_quoted",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<SObject> rows=[SELECT Id FROM Account WHERE Industry IN ('3',:needle)];"
+  },
+  {
+    "id": "mixed_industry_in_null",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<SObject> rows=[SELECT Id FROM Account WHERE Industry IN (null,:needle)];"
+  },
+  {
+    "id": "mixed_industry_not_in_first",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<SObject> rows=[SELECT Id FROM Account WHERE Industry NOT IN (1,:needle)];"
+  },
+  {
+    "id": "mixed_industry_not_in_last",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<SObject> rows=[SELECT Id FROM Account WHERE Industry NOT IN (:needle,1)];"
+  },
+  {
+    "id": "mixed_industry_not_in_quoted",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<SObject> rows=[SELECT Id FROM Account WHERE Industry NOT IN ('3',:needle)];"
+  },
+  {
+    "id": "mixed_industry_not_in_null",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<SObject> rows=[SELECT Id FROM Account WHERE Industry NOT IN (null,:needle)];"
+  },
+  {
+    "id": "mixed_id_in_first",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<SObject> rows=[SELECT Id FROM Account WHERE Id IN (1,:needle)];"
+  },
+  {
+    "id": "mixed_id_in_last",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<SObject> rows=[SELECT Id FROM Account WHERE Id IN (:needle,1)];"
+  },
+  {
+    "id": "mixed_id_in_quoted",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<SObject> rows=[SELECT Id FROM Account WHERE Id IN ('001000000000001',:needle)];"
+  },
+  {
+    "id": "mixed_id_in_null",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<SObject> rows=[SELECT Id FROM Account WHERE Id IN (null,:needle)];"
+  },
+  {
+    "id": "mixed_id_not_in_first",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<SObject> rows=[SELECT Id FROM Account WHERE Id NOT IN (1,:needle)];"
+  },
+  {
+    "id": "mixed_id_not_in_last",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<SObject> rows=[SELECT Id FROM Account WHERE Id NOT IN (:needle,1)];"
+  },
+  {
+    "id": "mixed_id_not_in_quoted",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<SObject> rows=[SELECT Id FROM Account WHERE Id NOT IN ('001000000000001',:needle)];"
+  },
+  {
+    "id": "mixed_id_not_in_null",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<SObject> rows=[SELECT Id FROM Account WHERE Id NOT IN (null,:needle)];"
+  },
+  {
+    "id": "inline_index_name",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<List<SObject>> rows=[FIND :terms[0] RETURNING Account(Id WHERE Name IN (1,2))];"
+  },
+  {
+    "id": "inline_index_picklist",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<List<SObject>> rows=[FIND :terms[0] RETURNING Account(Id WHERE Industry IN (1,2))];"
+  },
+  {
+    "id": "inline_index_id",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<List<SObject>> rows=[FIND :terms[0] RETURNING Account(Id WHERE Id IN (1,2))];"
+  },
+  {
+    "id": "inline_index_pickscalar",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<List<SObject>> rows=[FIND :terms[0] RETURNING Account(Id WHERE Industry = 3)];"
+  },
+  {
+    "id": "inline_index_idscalar",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<List<SObject>> rows=[FIND :terms[0] RETURNING Account(Id WHERE Id = 3)];"
+  },
+  {
+    "id": "inline_index_quoted",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<List<SObject>> rows=[FIND :terms[0] RETURNING Account(Id WHERE Name = '3')];"
+  },
+  {
+    "id": "inline_index_null",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<List<SObject>> rows=[FIND :terms[0] RETURNING Account(Id WHERE Name = null)];"
+  },
+  {
+    "id": "inline_paren_name",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<List<SObject>> rows=[FIND :(needle) RETURNING Account(Id WHERE Name IN (1,2))];"
+  },
+  {
+    "id": "inline_paren_picklist",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<List<SObject>> rows=[FIND :(needle) RETURNING Account(Id WHERE Industry IN (1,2))];"
+  },
+  {
+    "id": "inline_paren_id",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<List<SObject>> rows=[FIND :(needle) RETURNING Account(Id WHERE Id IN (1,2))];"
+  },
+  {
+    "id": "inline_paren_pickscalar",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<List<SObject>> rows=[FIND :(needle) RETURNING Account(Id WHERE Industry = 3)];"
+  },
+  {
+    "id": "inline_paren_idscalar",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<List<SObject>> rows=[FIND :(needle) RETURNING Account(Id WHERE Id = 3)];"
+  },
+  {
+    "id": "inline_paren_quoted",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<List<SObject>> rows=[FIND :(needle) RETURNING Account(Id WHERE Name = '3')];"
+  },
+  {
+    "id": "inline_paren_null",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<List<SObject>> rows=[FIND :(needle) RETURNING Account(Id WHERE Name = null)];"
+  },
+  {
+    "id": "inline_call_name",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<List<SObject>> rows=[FIND :terms.get(0) RETURNING Account(Id WHERE Name IN (1,2))];"
+  },
+  {
+    "id": "inline_call_picklist",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<List<SObject>> rows=[FIND :terms.get(0) RETURNING Account(Id WHERE Industry IN (1,2))];"
+  },
+  {
+    "id": "inline_call_id",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<List<SObject>> rows=[FIND :terms.get(0) RETURNING Account(Id WHERE Id IN (1,2))];"
+  },
+  {
+    "id": "inline_call_pickscalar",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<List<SObject>> rows=[FIND :terms.get(0) RETURNING Account(Id WHERE Industry = 3)];"
+  },
+  {
+    "id": "inline_call_idscalar",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<List<SObject>> rows=[FIND :terms.get(0) RETURNING Account(Id WHERE Id = 3)];"
+  },
+  {
+    "id": "inline_call_quoted",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<List<SObject>> rows=[FIND :terms.get(0) RETURNING Account(Id WHERE Name = '3')];"
+  },
+  {
+    "id": "inline_call_null",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<List<SObject>> rows=[FIND :terms.get(0) RETURNING Account(Id WHERE Name = null)];"
+  },
+  {
+    "id": "dynamic_index_name_query",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name IN (1,2) AND Name = :terms[0])'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_index_name_query_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name IN (1,2) AND Name = :terms[0])',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_index_name_find",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name IN (1,2) AND Name = :terms[0])'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_index_name_find_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name IN (1,2) AND Name = :terms[0])',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_index_picklist_query",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Industry IN (1,2) AND Name = :terms[0])'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_index_picklist_query_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Industry IN (1,2) AND Name = :terms[0])',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_index_picklist_find",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Industry IN (1,2) AND Name = :terms[0])'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_index_picklist_find_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Industry IN (1,2) AND Name = :terms[0])',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_index_id_query",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Id IN (1,2) AND Name = :terms[0])'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_index_id_query_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Id IN (1,2) AND Name = :terms[0])',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_index_id_find",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Id IN (1,2) AND Name = :terms[0])'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_index_id_find_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Id IN (1,2) AND Name = :terms[0])',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_index_pickscalar_query",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Industry = 3 AND Name = :terms[0])'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_index_pickscalar_query_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Industry = 3 AND Name = :terms[0])',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_index_pickscalar_find",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Industry = 3 AND Name = :terms[0])'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_index_pickscalar_find_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Industry = 3 AND Name = :terms[0])',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_index_idscalar_query",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Id = 3 AND Name = :terms[0])'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_index_idscalar_query_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Id = 3 AND Name = :terms[0])',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_index_idscalar_find",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Id = 3 AND Name = :terms[0])'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_index_idscalar_find_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Id = 3 AND Name = :terms[0])',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_index_quoted_query",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name = \\'3\\' AND Name = :terms[0])'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_index_quoted_query_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name = \\'3\\' AND Name = :terms[0])',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_index_quoted_find",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name = \\'3\\' AND Name = :terms[0])'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_index_quoted_find_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name = \\'3\\' AND Name = :terms[0])',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_index_null_query",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name = null AND Name = :terms[0])'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_index_null_query_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name = null AND Name = :terms[0])',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_index_null_find",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name = null AND Name = :terms[0])'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_index_null_find_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name = null AND Name = :terms[0])',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_paren_name_query",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name IN (1,2) AND Name = :(needle))'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_paren_name_query_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name IN (1,2) AND Name = :(needle))',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_paren_name_find",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name IN (1,2) AND Name = :(needle))'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_paren_name_find_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name IN (1,2) AND Name = :(needle))',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_paren_picklist_query",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Industry IN (1,2) AND Name = :(needle))'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_paren_picklist_query_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Industry IN (1,2) AND Name = :(needle))',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_paren_picklist_find",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Industry IN (1,2) AND Name = :(needle))'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_paren_picklist_find_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Industry IN (1,2) AND Name = :(needle))',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_paren_id_query",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Id IN (1,2) AND Name = :(needle))'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_paren_id_query_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Id IN (1,2) AND Name = :(needle))',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_paren_id_find",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Id IN (1,2) AND Name = :(needle))'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_paren_id_find_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Id IN (1,2) AND Name = :(needle))',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_paren_pickscalar_query",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Industry = 3 AND Name = :(needle))'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_paren_pickscalar_query_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Industry = 3 AND Name = :(needle))',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_paren_pickscalar_find",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Industry = 3 AND Name = :(needle))'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_paren_pickscalar_find_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Industry = 3 AND Name = :(needle))',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_paren_idscalar_query",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Id = 3 AND Name = :(needle))'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_paren_idscalar_query_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Id = 3 AND Name = :(needle))',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_paren_idscalar_find",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Id = 3 AND Name = :(needle))'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_paren_idscalar_find_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Id = 3 AND Name = :(needle))',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_paren_quoted_query",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name = \\'3\\' AND Name = :(needle))'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_paren_quoted_query_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name = \\'3\\' AND Name = :(needle))',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_paren_quoted_find",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name = \\'3\\' AND Name = :(needle))'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_paren_quoted_find_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name = \\'3\\' AND Name = :(needle))',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_paren_null_query",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name = null AND Name = :(needle))'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_paren_null_query_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name = null AND Name = :(needle))',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_paren_null_find",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name = null AND Name = :(needle))'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_paren_null_find_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name = null AND Name = :(needle))',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_call_name_query",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name IN (1,2) AND Name = :terms.get(0))'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_call_name_query_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name IN (1,2) AND Name = :terms.get(0))',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_call_name_find",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name IN (1,2) AND Name = :terms.get(0))'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_call_name_find_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name IN (1,2) AND Name = :terms.get(0))',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_call_picklist_query",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Industry IN (1,2) AND Name = :terms.get(0))'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_call_picklist_query_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Industry IN (1,2) AND Name = :terms.get(0))',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_call_picklist_find",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Industry IN (1,2) AND Name = :terms.get(0))'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_call_picklist_find_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Industry IN (1,2) AND Name = :terms.get(0))',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_call_id_query",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Id IN (1,2) AND Name = :terms.get(0))'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_call_id_query_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Id IN (1,2) AND Name = :terms.get(0))',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_call_id_find",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Id IN (1,2) AND Name = :terms.get(0))'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_call_id_find_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Id IN (1,2) AND Name = :terms.get(0))',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_call_pickscalar_query",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Industry = 3 AND Name = :terms.get(0))'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_call_pickscalar_query_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Industry = 3 AND Name = :terms.get(0))',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_call_pickscalar_find",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Industry = 3 AND Name = :terms.get(0))'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_call_pickscalar_find_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Industry = 3 AND Name = :terms.get(0))',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_call_idscalar_query",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Id = 3 AND Name = :terms.get(0))'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_call_idscalar_query_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Id = 3 AND Name = :terms.get(0))',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_call_idscalar_find",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Id = 3 AND Name = :terms.get(0))'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_call_idscalar_find_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Id = 3 AND Name = :terms.get(0))',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_call_quoted_query",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name = \\'3\\' AND Name = :terms.get(0))'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_call_quoted_query_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name = \\'3\\' AND Name = :terms.get(0))',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_call_quoted_find",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name = \\'3\\' AND Name = :terms.get(0))'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_call_quoted_find_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name = \\'3\\' AND Name = :terms.get(0))',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_call_null_query",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name = null AND Name = :terms.get(0))'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_call_null_query_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name = null AND Name = :terms.get(0))',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_call_null_find",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name = null AND Name = :terms.get(0))'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_call_null_find_access",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.find('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name = null AND Name = :terms.get(0))',AccessLevel.SYSTEM_MODE); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_plain_bad",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name IN (1,2) AND Name = :needle)'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_plain_quoted",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name = \\'3\\' AND Name = :needle)'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_plain_null",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name = null AND Name = :needle)'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_find_index_name",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND :terms[0] RETURNING Account(Id WHERE Name IN (1,2))'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_find_index_quoted",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND :terms[0] RETURNING Account(Id WHERE Name = \\'3\\')'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_find_index_null",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND :terms[0] RETURNING Account(Id WHERE Name = null)'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_find_call_name",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND :terms.get(0) RETURNING Account(Id WHERE Name IN (1,2))'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_find_call_quoted",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND :terms.get(0) RETURNING Account(Id WHERE Name = \\'3\\')'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_find_call_null",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND :terms.get(0) RETURNING Account(Id WHERE Name = null)'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_find_paren_name",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND :(needle) RETURNING Account(Id WHERE Name IN (1,2))'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_find_paren_quoted",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND :(needle) RETURNING Account(Id WHERE Name = \\'3\\')'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_find_paren_null",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; Object observed; try { Search.query('FIND :(needle) RETURNING Account(Id WHERE Name = null)'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "inline_where_index_name",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<List<SObject>> rows=[FIND 'quotednumericnomatch' RETURNING Account(Id WHERE (Name IN (1,2) OR Name = :terms[0]) AND Industry = 'Technology'),Contact(Id WHERE LastName = :terms[0])];"
+  },
+  {
+    "id": "inline_where_index_quoted",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<List<SObject>> rows=[FIND 'quotednumericnomatch' RETURNING Account(Id WHERE (Name = '3' OR Name = :terms[0]) AND Industry = 'Technology'),Contact(Id WHERE LastName = :terms[0])];"
+  },
+  {
+    "id": "inline_where_call_name",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<List<SObject>> rows=[FIND 'quotednumericnomatch' RETURNING Account(Id WHERE (Name IN (1,2) OR Name = :terms.get(0)) AND Industry = 'Technology'),Contact(Id WHERE LastName = :terms.get(0))];"
+  },
+  {
+    "id": "inline_where_call_quoted",
+    "kind": "compile",
+    "source": "String needle='quotednumericnomatch'; List<String> terms=new List<String>{needle}; List<List<SObject>> rows=[FIND 'quotednumericnomatch' RETURNING Account(Id WHERE (Name = '3' OR Name = :terms.get(0)) AND Industry = 'Technology'),Contact(Id WHERE LastName = :terms.get(0))];"
+  },
+  {
+    "id": "dynamic_mixed_bad",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name IN (1,:needle))'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_mixed_quoted",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name IN (\\'3\\',:needle))'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_mixed_null",
+    "kind": "runtime",
+    "source": "String needle='quotednumericnomatch'; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name IN (null,:needle))'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_nullbind_bad",
+    "kind": "runtime",
+    "source": "String needle=null; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name IN (:needle,1))'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  },
+  {
+    "id": "dynamic_nullbind_quoted",
+    "kind": "runtime",
+    "source": "String needle=null; Object observed; try { Search.query('FIND \\'quotednumericnomatch\\' RETURNING Account(Id WHERE Name IN (:needle,\\'3\\'))'); observed='accepted'; } catch(Exception e) { observed=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()}; } System.debug('OBS|'+JSON.serialize(observed));"
+  }
+]

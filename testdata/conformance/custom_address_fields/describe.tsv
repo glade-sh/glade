@@ -1,0 +1,37 @@
+api	object	name	type	soapType	compoundFieldName	nillable	createable	updateable	filterable	sortable	groupable	aggregatable	length	precision	scale	label	custom	restrictedPicklist	controllerName	picklistValuesN	defaultedOnCreate	calculated	extraTypeInfo
+62.0	Addr_Test__c	Home__Street__s	textarea	xsd:string	Home__c	True	True	True	True	True	True	True	255	0	0	Home (Street)	True	False	None	0	False	False	plaintextarea
+62.0	Addr_Test__c	Home__City__s	string	xsd:string	Home__c	True	True	True	True	True	True	True	40	0	0	Home (City)	True	False	None	0	False	False	None
+62.0	Addr_Test__c	Home__PostalCode__s	string	xsd:string	Home__c	True	True	True	True	True	True	True	20	0	0	Home (ZIP/Postal Code)	True	False	None	0	False	False	None
+62.0	Addr_Test__c	Home__StateCode__s	picklist	xsd:string	Home__c	True	True	True	True	True	True	True	10	0	0	Home (State/Province)	True	True	Home__CountryCode__s	384	False	False	None
+62.0	Addr_Test__c	Home__CountryCode__s	picklist	xsd:string	Home__c	True	True	True	True	True	True	True	10	0	0	Home (Country/Territory)	True	True	None	235	False	False	None
+62.0	Addr_Test__c	Home__Latitude__s	double	xsd:double	Home__c	True	True	True	True	True	False	True	0	18	15	Home (Latitude)	True	False	None	0	False	False	None
+62.0	Addr_Test__c	Home__Longitude__s	double	xsd:double	Home__c	True	True	True	True	True	False	True	0	18	15	Home (Longitude)	True	False	None	0	False	False	None
+62.0	Addr_Test__c	Home__GeocodeAccuracy__s	picklist	xsd:string	Home__c	True	True	True	True	True	True	True	40	0	0	Home (Geocode Accuracy)	True	True	None	11	False	False	None
+62.0	Addr_Test__c	Home__c	address	urn:address	None	True	False	False	True	False	False	False	0	0	0	Home	True	False	None	0	False	False	None
+62.0	Account	Home__Street__s	textarea	xsd:string	Home__c	True	True	True	True	True	True	True	255	0	0	Home (Street)	True	False	None	0	False	False	plaintextarea
+62.0	Account	Home__City__s	string	xsd:string	Home__c	True	True	True	True	True	True	True	40	0	0	Home (City)	True	False	None	0	False	False	None
+62.0	Account	Home__PostalCode__s	string	xsd:string	Home__c	True	True	True	True	True	True	True	20	0	0	Home (ZIP/Postal Code)	True	False	None	0	False	False	None
+62.0	Account	Home__StateCode__s	picklist	xsd:string	Home__c	True	True	True	True	True	True	True	10	0	0	Home (State/Province)	True	True	Home__CountryCode__s	384	False	False	None
+62.0	Account	Home__CountryCode__s	picklist	xsd:string	Home__c	True	True	True	True	True	True	True	10	0	0	Home (Country/Territory)	True	True	None	235	False	False	None
+62.0	Account	Home__Latitude__s	double	xsd:double	Home__c	True	True	True	True	True	False	True	0	18	15	Home (Latitude)	True	False	None	0	False	False	None
+62.0	Account	Home__Longitude__s	double	xsd:double	Home__c	True	True	True	True	True	False	True	0	18	15	Home (Longitude)	True	False	None	0	False	False	None
+62.0	Account	Home__GeocodeAccuracy__s	picklist	xsd:string	Home__c	True	True	True	True	True	True	True	40	0	0	Home (Geocode Accuracy)	True	True	None	11	False	False	None
+62.0	Account	Home__c	address	urn:address	None	True	False	False	True	False	False	False	0	0	0	Home	True	False	None	0	False	False	None
+67.0	Addr_Test__c	Home__Street__s	textarea	xsd:string	Home__c	True	True	True	True	True	True	True	255	0	0	Home (Street)	True	False	None	0	False	False	plaintextarea
+67.0	Addr_Test__c	Home__City__s	string	xsd:string	Home__c	True	True	True	True	True	True	True	40	0	0	Home (City)	True	False	None	0	False	False	None
+67.0	Addr_Test__c	Home__PostalCode__s	string	xsd:string	Home__c	True	True	True	True	True	True	True	20	0	0	Home (ZIP/Postal Code)	True	False	None	0	False	False	None
+67.0	Addr_Test__c	Home__StateCode__s	picklist	xsd:string	Home__c	True	True	True	True	True	True	True	10	0	0	Home (State/Province)	True	True	Home__CountryCode__s	384	False	False	None
+67.0	Addr_Test__c	Home__CountryCode__s	picklist	xsd:string	Home__c	True	True	True	True	True	True	True	10	0	0	Home (Country/Territory)	True	True	None	235	False	False	None
+67.0	Addr_Test__c	Home__Latitude__s	double	xsd:double	Home__c	True	True	True	True	True	False	True	0	18	15	Home (Latitude)	True	False	None	0	False	False	None
+67.0	Addr_Test__c	Home__Longitude__s	double	xsd:double	Home__c	True	True	True	True	True	False	True	0	18	15	Home (Longitude)	True	False	None	0	False	False	None
+67.0	Addr_Test__c	Home__GeocodeAccuracy__s	picklist	xsd:string	Home__c	True	True	True	True	True	True	True	40	0	0	Home (Geocode Accuracy)	True	True	None	11	False	False	None
+67.0	Addr_Test__c	Home__c	address	urn:address	None	True	False	False	True	False	False	False	0	0	0	Home	True	False	None	0	False	False	None
+67.0	Account	Home__Street__s	textarea	xsd:string	Home__c	True	True	True	True	True	True	True	255	0	0	Home (Street)	True	False	None	0	False	False	plaintextarea
+67.0	Account	Home__City__s	string	xsd:string	Home__c	True	True	True	True	True	True	True	40	0	0	Home (City)	True	False	None	0	False	False	None
+67.0	Account	Home__PostalCode__s	string	xsd:string	Home__c	True	True	True	True	True	True	True	20	0	0	Home (ZIP/Postal Code)	True	False	None	0	False	False	None
+67.0	Account	Home__StateCode__s	picklist	xsd:string	Home__c	True	True	True	True	True	True	True	10	0	0	Home (State/Province)	True	True	Home__CountryCode__s	384	False	False	None
+67.0	Account	Home__CountryCode__s	picklist	xsd:string	Home__c	True	True	True	True	True	True	True	10	0	0	Home (Country/Territory)	True	True	None	235	False	False	None
+67.0	Account	Home__Latitude__s	double	xsd:double	Home__c	True	True	True	True	True	False	True	0	18	15	Home (Latitude)	True	False	None	0	False	False	None
+67.0	Account	Home__Longitude__s	double	xsd:double	Home__c	True	True	True	True	True	False	True	0	18	15	Home (Longitude)	True	False	None	0	False	False	None
+67.0	Account	Home__GeocodeAccuracy__s	picklist	xsd:string	Home__c	True	True	True	True	True	True	True	40	0	0	Home (Geocode Accuracy)	True	True	None	11	False	False	None
+67.0	Account	Home__c	address	urn:address	None	True	False	False	True	False	False	False	0	0	0	Home	True	False	None	0	False	False	None

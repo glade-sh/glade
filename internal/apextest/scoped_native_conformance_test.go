@@ -84,7 +84,7 @@ func runScopedNativeConformance(t *testing.T, file, className string, shapes, ce
 		}
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, className, api)
 			classes := map[string]string{}
 			for name, source := range data.Helpers {

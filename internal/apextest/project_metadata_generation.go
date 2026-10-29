@@ -33,6 +33,7 @@ func (cache *sourceCache) captureProjectRuntimeMetadata(index typesys.Index, gen
 			paths = append(paths, loaded.FlowFiles...)
 			paths = append(paths, loaded.NetworkFiles...)
 			paths = append(paths, loaded.PermissionSetGroupFiles...)
+			paths = append(paths, loaded.ProfileFiles...)
 			paths = append(paths, resource.FeatureParameterMetadataFiles(loaded)...)
 			paths = append(paths, resource.SetupRecordMetadataFiles(loaded)...)
 			paths = append(paths, project.EmailServiceMetadataFiles(loaded)...)

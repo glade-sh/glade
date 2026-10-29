@@ -1,0 +1,11 @@
+api	target	route	populated	status	message
+62.0	boolean	metadata		rejected	field integrity exception: unknown (The field "HasOptedOutOfEmail" isn't compatible with the Text element "$Record". "$Record" can't be a Text.)
+62.0	id	anonymous	true	INVALID_FIELD_FOR_INSERT_UPDATE	Invalid target field for field update.
+62.0	id	anonymous	false	INVALID_FIELD_FOR_INSERT_UPDATE	Invalid target field for field update.
+62.0	id	istest	true	INVALID_FIELD_FOR_INSERT_UPDATE	Invalid target field for field update.
+62.0	id	istest	false	INVALID_FIELD_FOR_INSERT_UPDATE	Invalid target field for field update.
+67.0	boolean	metadata		rejected	field integrity exception: unknown (The field "HasOptedOutOfEmail" isn't compatible with the Text element "$Record". "$Record" can't be a Text.)
+67.0	id	anonymous	true	INVALID_FIELD_FOR_INSERT_UPDATE	Invalid target field for field update.
+67.0	id	anonymous	false	INVALID_FIELD_FOR_INSERT_UPDATE	Invalid target field for field update.
+67.0	id	istest	true	INVALID_FIELD_FOR_INSERT_UPDATE	Invalid target field for field update.
+67.0	id	istest	false	INVALID_FIELD_FOR_INSERT_UPDATE	Invalid target field for field update.

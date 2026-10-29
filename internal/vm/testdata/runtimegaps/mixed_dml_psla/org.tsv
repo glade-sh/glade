@@ -1,0 +1,11 @@
+api	route	row	value
+62.0	test	acctThenPsla	psla=DmlException MIXED_DML_OPERATION PermissionSetLicenseAssign, original object: Account
+62.0	test	pslaThenAcct	acct=DmlException MIXED_DML_OPERATION Account, original object: PermissionSetLicenseAssign
+62.0	test	pslaThenPsa	psa=no MIXED_DML_OPERATION (FIELD_INTEGRITY_EXCEPTION license mismatch only)
+62.0	test	psaThenPsla	first psa=no MIXED_DML_OPERATION; then psla=OK
+62.0	test	acctThenPsa	psa=DmlException MIXED_DML_OPERATION PermissionSetAssignment, original object: Account
+67.0	test	acctThenPsla	psla=DmlException MIXED_DML_OPERATION PermissionSetLicenseAssign, original object: Account
+67.0	test	pslaThenAcct	acct=DmlException MIXED_DML_OPERATION Account, original object: PermissionSetLicenseAssign
+67.0	test	pslaThenPsa	psa=no MIXED_DML_OPERATION (FIELD_INTEGRITY_EXCEPTION license mismatch only)
+67.0	test	psaThenPsla	first psa=no MIXED_DML_OPERATION; then psla=OK
+67.0	test	acctThenPsa	psa=DmlException MIXED_DML_OPERATION PermissionSetAssignment, original object: Account

@@ -1,0 +1,13 @@
+route	shape
+typed	typed Flow.Interview constructor
+action	Invocable.Action flow invocation
+subflow	autolaunched parent calls numeric Decision child
+before_update	before-save update
+before_upsert_insert	before-save upsert insert
+before_upsert_update	before-save upsert update
+after_insert	after-save insert
+after_update	after-save update
+after_upsert_insert	after-save upsert insert
+after_upsert_update	after-save upsert update
+before_delete	before-delete Contact observation
+async	committed deferred AsyncAfterCommit execution; suppressed in IsTest

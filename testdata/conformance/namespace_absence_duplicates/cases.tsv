@@ -1,0 +1,11 @@
+reference	context	expected
+CatalogRoot.Unknown	duplicate independent source inventories	defer
+ForeignRoot.Unknown	foreign unique source project all type positions and static-call	defer
+ForeignChild.Inherited	foreign inherited local type	defer
+ForeignRoot.Present.Unknown	foreign nested source static-call	defer
+alphaNs.Unknown	declared symbol namespace beside same-named source class	defer
+UniqueRoot.Unknown	calling project source inventory	reject
+SiblingRoot.Unknown	calling SFDX project across source trees	reject
+FlatRoot.Unknown	marker-free single-project source inventory	reject
+ForeignRoot.Unknown	trigger owner collides with foreign class	defer
+System.Database.Bogus	foreign System class beside calling project	reject exact native receiver fact

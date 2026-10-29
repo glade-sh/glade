@@ -56,7 +56,7 @@ func TestSecurityAccessClassLiteralAnonymousConformance(t *testing.T) {
 		}
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			for _, row := range data.Cases {
 				t.Run(row.ID, func(t *testing.T) {
 					root := t.TempDir()

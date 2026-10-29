@@ -88,6 +88,9 @@ type DMLPerfCounters struct {
 	TemporaryJournalPoints  uint64 `json:"temporaryJournalPoints,omitempty"`
 	RecordConversions       uint64 `json:"recordConversions,omitempty"`
 	TraceRecordPreparations uint64 `json:"traceRecordPreparations,omitempty"`
+	ScopeAliasBatchRows     uint64 `json:"scopeAliasBatchRows,omitempty"`
+	ScopeAliasBatchCalls    uint64 `json:"scopeAliasBatchCalls,omitempty"`
+	ScopeAliasBatchFallback uint64 `json:"scopeAliasBatchFallback,omitempty"`
 }
 
 // PerfRecorder is an opaque, concurrency-safe aggregation session. A runtime
@@ -138,6 +141,9 @@ type PerfRecorder struct {
 		temporaryJournalPoints  atomic.Uint64
 		recordConversions       atomic.Uint64
 		traceRecordPreparations atomic.Uint64
+		scopeAliasBatchRows     atomic.Uint64
+		scopeAliasBatchCalls    atomic.Uint64
+		scopeAliasBatchFallback atomic.Uint64
 	}
 }
 
@@ -436,7 +442,25 @@ func (recorder *PerfRecorder) snapshotDML() DMLPerfCounters {
 		TemporaryJournalPoints:  recorder.dml.temporaryJournalPoints.Load(),
 		RecordConversions:       recorder.dml.recordConversions.Load(),
 		TraceRecordPreparations: recorder.dml.traceRecordPreparations.Load(),
+		ScopeAliasBatchRows:     recorder.dml.scopeAliasBatchRows.Load(),
+		ScopeAliasBatchCalls:    recorder.dml.scopeAliasBatchCalls.Load(),
+		ScopeAliasBatchFallback: recorder.dml.scopeAliasBatchFallback.Load(),
 	}
+}
+
+func (vm *VM) recordDMLScopeAliasBatchTraversal(rowCount int) {
+	if vm == nil || vm.perfRecorder == nil || rowCount < 2 {
+		return
+	}
+	vm.perfRecorder.dml.scopeAliasBatchCalls.Add(1)
+	vm.perfRecorder.dml.scopeAliasBatchRows.Add(uint64(rowCount))
+}
+
+func (vm *VM) recordDMLScopeAliasBatchFallback() {
+	if vm == nil || vm.perfRecorder == nil {
+		return
+	}
+	vm.perfRecorder.dml.scopeAliasBatchFallback.Add(1)
 }
 
 func (vm *VM) recordDMLRecordConversion(tracePreparation bool) {

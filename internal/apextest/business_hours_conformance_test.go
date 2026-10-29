@@ -121,7 +121,7 @@ func TestBusinessHoursOrgConformance(t *testing.T) {
 		t.Fatalf("%s expected <%s> actual <%s>", tc.ID, tc.Expected, observed)
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCounts()
 			defer counts.Log(t, "business hours", api, "")
 			root := t.TempDir()

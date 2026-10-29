@@ -1,0 +1,9 @@
+case_id	container	class	page	enabled
+class_access	PermissionSet	BaseAccessController		true
+page_access	PermissionSet		BaseAccessPage	true
+second_dependency_members	PermissionSet	ExtraAccessController	ExtraAccessPage	true
+disabled_dependency_access	PermissionSet	BaseAccessController	BaseAccessPage	false
+local_access	PermissionSet	ConsumerAccessController	ConsumerAccessPage	true
+missing_class	PermissionSet	AbsentAccessController		true
+missing_page	PermissionSet		AbsentAccessPage	true
+profile_dependency_access	Profile	BaseAccessController	BaseAccessPage	true

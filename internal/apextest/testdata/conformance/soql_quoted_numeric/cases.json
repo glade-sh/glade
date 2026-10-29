@@ -1,0 +1,18 @@
+{
+  "name_eq": "Name = 3",
+  "name_in": "Name IN (1,2)",
+  "name_decimal": "Name = 3.5",
+  "name_quoted_eq": "Name = '3'",
+  "name_quoted_in": "Name IN ('3','2')",
+  "name_null": "Name = null",
+  "picklist_eq": "Industry = 3",
+  "picklist_in": "Industry IN (1,2)",
+  "picklist_quoted": "Industry = 'Technology'",
+  "textarea_eq": "Description = 3",
+  "textarea_quoted": "Description = '3'",
+  "short_textarea_eq": "Note__c = 3",
+  "short_textarea_quoted": "Note__c = '3'",
+  "id_eq": "Id = 3",
+  "id_in": "Id IN (1,2)",
+  "id_null": "Id = null"
+}

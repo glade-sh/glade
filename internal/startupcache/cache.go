@@ -515,10 +515,25 @@ func buildManifestWithSourceDigests(projectRoot string, p project.Project, inclu
 			}
 		}
 	}
+	// Setup stages deploy before tests run; only the consumer project loads them.
+	for _, setupRoot := range p.SetupMetadataRoots() {
+		fp, ok, err := statOptionalDirectory(root, setupRoot)
+		if err != nil {
+			return incompleteManifest(root, p), err
+		}
+		if ok {
+			packageRoots = append(packageRoots, fp)
+		}
+	}
 	paths = deduplicateFileFingerprints(paths)
 	configPaths = deduplicateFileFingerprints(configPaths)
 	sort.Slice(packageRoots, func(i, j int) bool { return packageRoots[i].Path < packageRoots[j].Path })
-	features := append([]string(nil), project.OrgShapeFeatures(root)...)
+	// Dependency views deploy into the same org, so their evidence is part of
+	// the cached shape and its edits invalidate the entry.
+	features := append([]string(nil), project.StandardFieldPolicyFeatures(project.Project{Root: root})...)
+	if p.Root != "" {
+		features = append([]string(nil), project.StandardFieldPolicyFeatures(p)...)
+	}
 	sort.Strings(features)
 	digest, err := semanticProjectDigest(root, p, features)
 	if err != nil {

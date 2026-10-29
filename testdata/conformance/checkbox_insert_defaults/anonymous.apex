@@ -1,0 +1,16 @@
+Contact omitted = new Contact(LastName='Owned Checkbox');
+insert omitted;
+Contact stored = [SELECT First_Probe__c, Second_Probe__c FROM Contact WHERE Id = :omitted.Id];
+System.assertEquals(false, stored.First_Probe__c);
+System.assertEquals(false, stored.Second_Probe__c);
+System.debug('BOOLREQ omitted=false,false');
+Contact supplied = new Contact(LastName='Owned Checkbox True', First_Probe__c=true, Second_Probe__c=true);
+insert supplied;
+Contact storedTrue = [SELECT First_Probe__c, Second_Probe__c FROM Contact WHERE Id = :supplied.Id];
+System.assertEquals(true, storedTrue.First_Probe__c);
+System.assertEquals(true, storedTrue.Second_Probe__c);
+System.debug('BOOLREQ explicit=true,true');
+Database.SaveResult rejected = Database.insert(new Contact(), false);
+System.assertEquals(false, rejected.isSuccess());
+System.assertEquals(StatusCode.REQUIRED_FIELD_MISSING, rejected.getErrors()[0].getStatusCode());
+System.debug('BOOLREQ missing_last_name=REQUIRED_FIELD_MISSING');

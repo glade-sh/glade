@@ -1,0 +1,93 @@
+source_api	case_id	route	outcome	diagnostic
+62.0	privateparam_default	named	accepted	""
+62.0	privateparam_default	anonymous	accepted	""
+62.0	privateparam_explicit	named	rejected	System exception constructor already defined: void <init>()
+62.0	privateparam_super	named	rejected	System exception constructor already defined: void <init>()
+62.0	protectedparam_default	named	accepted	""
+62.0	protectedparam_default	anonymous	accepted	""
+62.0	protectedparam_explicit	named	rejected	System exception constructor already defined: void <init>()
+62.0	publicparam_default	named	accepted	""
+62.0	publicparam_default	anonymous	accepted	""
+62.0	publicparam_explicit	named	rejected	System exception constructor already defined: void <init>()
+62.0	privatezero_default	named	rejected	Method is not visible: void PrivateZeroException.<init>() | Method is not visible: void PrivateZeroException.<init>() | Method is not visible: void PrivateZeroException.<init>() | Method is not visible: void PrivateZeroException.<init>() | System exception constructor already defined: void <init>()
+62.0	privatezero_explicit	named	rejected	System exception constructor already defined: void <init>() | System exception constructor already defined: void <init>() | Method is not visible: void PrivateZeroException.<init>()
+62.0	privatezero_super	named	rejected	System exception constructor already defined: void <init>() | System exception constructor already defined: void <init>() | Method is not visible: void PrivateZeroException.<init>()
+62.0	protectedzero_default	named	rejected	"Dependent class is invalid and needs recompilation:
+ Class ProtectedZeroException : System exception constructor already defined: void <init>() | System exception constructor already defined: void <init>()"
+62.0	protectedzero_explicit	named	rejected	System exception constructor already defined: void <init>() | System exception constructor already defined: void <init>()
+62.0	protectedzero_super	named	rejected	System exception constructor already defined: void <init>() | System exception constructor already defined: void <init>()
+62.0	ordinaryprivatezero_default	named	rejected	Method is not visible: void OrdinaryPrivateZeroBase.<init>()
+62.0	ordinaryprivatezero_explicit	named	rejected	Method is not visible: void OrdinaryPrivateZeroBase.<init>()
+62.0	ordinaryprivatezero_super	named	rejected	Method is not visible: void OrdinaryPrivateZeroBase.<init>()
+62.0	ordinaryprotectedzero_default	named	accepted	""
+62.0	ordinaryprotectedzero_default	anonymous	accepted	""
+62.0	ordinaryprotectedzero_explicit	named	accepted	""
+62.0	ordinaryprotectedzero_explicit	anonymous	accepted	""
+62.0	ordinaryprotectedzero_super	named	accepted	""
+62.0	ordinaryprotectedzero_super	anonymous	accepted	""
+62.0	ordinaryprivateparam_default	named	rejected	No default constructor available in super type: OrdinaryPrivateParamBase
+62.0	ordinaryprivateparam_explicit	named	rejected	No default constructor available in super type: OrdinaryPrivateParamBase
+67.0	privateparam_default	named	accepted	""
+67.0	privateparam_default	anonymous	accepted	""
+67.0	privateparam_explicit	named	rejected	System exception constructor already defined: void <init>()
+67.0	privateparam_super	named	rejected	System exception constructor already defined: void <init>()
+67.0	protectedparam_default	named	accepted	""
+67.0	protectedparam_default	anonymous	accepted	""
+67.0	protectedparam_explicit	named	rejected	System exception constructor already defined: void <init>()
+67.0	publicparam_default	named	accepted	""
+67.0	publicparam_default	anonymous	accepted	""
+67.0	publicparam_explicit	named	rejected	System exception constructor already defined: void <init>()
+67.0	privatezero_default	named	rejected	Method is not visible: void PrivateZeroException.<init>() | Method is not visible: void PrivateZeroException.<init>() | Method is not visible: void PrivateZeroException.<init>() | Method is not visible: void PrivateZeroException.<init>() | System exception constructor already defined: void <init>()
+67.0	privatezero_explicit	named	rejected	System exception constructor already defined: void <init>() | System exception constructor already defined: void <init>() | Method is not visible: void PrivateZeroException.<init>()
+67.0	privatezero_super	named	rejected	System exception constructor already defined: void <init>() | System exception constructor already defined: void <init>() | Method is not visible: void PrivateZeroException.<init>()
+67.0	protectedzero_default	named	rejected	"Dependent class is invalid and needs recompilation:
+ Class ProtectedZeroException : System exception constructor already defined: void <init>() | System exception constructor already defined: void <init>()"
+62.0	privateparam_custom	named	accepted	""
+62.0	privateparam_custom	anonymous	accepted	""
+62.0	privateparam_custom_super	named	accepted	""
+62.0	privateparam_custom_super	anonymous	accepted	""
+62.0	protectedparam_custom	named	accepted	""
+62.0	protectedparam_custom	anonymous	accepted	""
+62.0	protectedparam_custom_super	named	accepted	""
+62.0	protectedparam_custom_super	anonymous	accepted	""
+62.0	publicparam_custom	named	accepted	""
+62.0	publicparam_custom	anonymous	accepted	""
+62.0	publicparam_custom_super	named	accepted	""
+62.0	publicparam_custom_super	anonymous	accepted	""
+67.0	protectedzero_explicit	named	rejected	System exception constructor already defined: void <init>() | System exception constructor already defined: void <init>()
+67.0	protectedzero_super	named	rejected	System exception constructor already defined: void <init>() | System exception constructor already defined: void <init>()
+67.0	ordinaryprivatezero_default	named	rejected	Method is not visible: void OrdinaryPrivateZeroBase.<init>()
+67.0	ordinaryprivatezero_explicit	named	rejected	Method is not visible: void OrdinaryPrivateZeroBase.<init>()
+67.0	ordinaryprivatezero_super	named	rejected	Method is not visible: void OrdinaryPrivateZeroBase.<init>()
+67.0	ordinaryprotectedzero_default	named	accepted	""
+67.0	ordinaryprotectedzero_default	anonymous	accepted	""
+67.0	ordinaryprotectedzero_explicit	named	accepted	""
+67.0	ordinaryprotectedzero_explicit	anonymous	accepted	""
+67.0	ordinaryprotectedzero_super	named	accepted	""
+67.0	ordinaryprotectedzero_super	anonymous	accepted	""
+67.0	ordinaryprivateparam_default	named	rejected	No default constructor available in super type: OrdinaryPrivateParamBase
+67.0	ordinaryprivateparam_explicit	named	rejected	No default constructor available in super type: OrdinaryPrivateParamBase
+67.0	privateparam_custom	named	accepted	""
+67.0	privateparam_custom	anonymous	accepted	""
+67.0	privateparam_custom_super	named	accepted	""
+67.0	privateparam_custom_super	anonymous	accepted	""
+67.0	protectedparam_custom	named	accepted	""
+67.0	protectedparam_custom	anonymous	accepted	""
+67.0	protectedparam_custom_super	named	accepted	""
+67.0	protectedparam_custom_super	anonymous	accepted	""
+67.0	publicparam_custom	named	accepted	""
+67.0	publicparam_custom	anonymous	accepted	""
+67.0	publicparam_custom_super	named	accepted	""
+67.0	publicparam_custom_super	anonymous	accepted	""
+62.0	privateparam_custom_args_super	named	rejected	Method is not visible: void PrivateParamException.<init>(String, Integer)
+62.0	protectedparam_custom_args_super	named	accepted	""
+62.0	protectedparam_custom_args_super	anonymous	accepted	""
+62.0	publicparam_custom_args_super	named	accepted	""
+62.0	publicparam_custom_args_super	anonymous	accepted	""
+62.0	visibility_runtime	isTest	accepted	""
+67.0	privateparam_custom_args_super	named	rejected	Method is not visible: void PrivateParamException.<init>(String, Integer)
+67.0	protectedparam_custom_args_super	named	accepted	""
+67.0	protectedparam_custom_args_super	anonymous	accepted	""
+67.0	publicparam_custom_args_super	named	accepted	""
+67.0	publicparam_custom_args_super	anonymous	accepted	""
+67.0	visibility_runtime	isTest	accepted	""

@@ -1,0 +1,12 @@
+api=67.0
+flow_api=67.0
+context=anonymous
+rows=120
+native_complete=true
+deployment_success=true
+captured_utc=2026-10-26T08:47:38.440116+00:00
+source_sha256:classes/NullCompareProbe.cls=ec791a37e6c5a5649ed40a51597ef077a72307f837771dfd1b79e075a1e5f767
+source_sha256:classes/NullCompareProbeTest.cls=32266d3b051538ddf5ab98fadd08df8cbf41fc0df1a8fa0a05f58247de4f5398
+source_sha256:flows/NullCompareAuto.flow-meta.xml=f65e56e83e8ccca2090eeeecf8e2527b34b2899cf68b0fe7e2c0cb6d7c050941
+source_sha256:flows/NullCompareTrigger.flow-meta.xml=382e356d8385c700e3ab71d8a9af1af98af902d9a361ab8b052d97d965d3da02
+anonymous_source_sha256=304c64239d0d36ad4a3215def411c69bac9d4469c2ed56cbdeca4e1d1eb5458c

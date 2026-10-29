@@ -1,0 +1,5 @@
+shape	purpose
+constructed	Namespaced object and field names in constructed whole-SObject JSON
+queried	Query field order, REST URL, implicit Id and deserialized order
+empty	Empty query boundary
+rejection	Unknown custom field rejection twin

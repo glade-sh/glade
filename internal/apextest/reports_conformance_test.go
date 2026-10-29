@@ -107,7 +107,7 @@ func TestReportsOrgConformance(t *testing.T) {
 		return "ACCEPTED"
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCounts()
 			defer counts.Log(t, "reports", api, "")
 			t.Logf("A45 API %s local-only boundaries: %d per route, excluded from native matches", api, len(data.LocalBoundaries))

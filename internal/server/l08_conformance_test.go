@@ -68,6 +68,10 @@ type l08Table struct {
 // GLADE_L08_REPORT receives the accepted-behaviour before report.
 func TestL08SalesforceConformance(t *testing.T) {
 	capture := os.Getenv("GLADE_L08_CAPTURE") != ""
+	if os.Getenv("GLADE_LWC_BROWSER") == "" && !capture {
+		t.Skip("L08 requires Node, the prepared LWC compiler, Playwright and Chromium; set GLADE_LWC_BROWSER=1 (see docs/AI_SETUP.md)")
+	}
+	repo, playwright := l08BrowserEnvironment(t)
 	data, err := os.ReadFile("testdata/l08_salesforce.json")
 	if err != nil {
 		t.Fatal(err)
@@ -142,23 +146,6 @@ func TestL08SalesforceConformance(t *testing.T) {
 	fixtures := []l08Table{table, controls}
 	caseTotal := len(table.Cases) + len(controls.Cases)
 	runtimeTotal := len(runtimeCases) + controlRuntime
-	// Missing toolchain inputs are infrastructure failures, never compiler matches.
-	repo, err := gladehome.SourceRoot()
-	if err != nil {
-		t.Fatal(err)
-	}
-	toolchain, err := gladehome.LWCToolchainDir()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := exec.LookPath("node"); err != nil {
-		t.Fatal(err)
-	}
-	for _, path := range []string{filepath.Join(repo, "third_party/lwc/compile.mjs"), filepath.Join(toolchain, "node_modules/@lwc/compiler/package.json"), filepath.Join(toolchain, "node_modules/@lwc/engine-dom/dist/index.js"), filepath.Join(toolchain, "node_modules/@lwc/synthetic-shadow/dist/index.js")} {
-		if _, err := os.Stat(path); err != nil {
-			t.Fatal(err)
-		}
-	}
 	type apiObservation struct {
 		dom    map[string]json.RawMessage
 		errors map[string]string
@@ -171,7 +158,7 @@ func TestL08SalesforceConformance(t *testing.T) {
 				runtimeCases = append(runtimeCases, c)
 			}
 		}
-		dom, errors, err := l08ObserveDOM(t, table, api, runtimeCases, repo)
+		dom, errors, err := l08ObserveDOM(t, table, api, runtimeCases, repo, playwright)
 		return apiObservation{dom, errors, err}
 	}
 	var observeAPI func(string) map[string]apiObservation
@@ -318,6 +305,63 @@ func TestL08SalesforceConformance(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+}
+
+// An explicitly requested browser run fails once at the environment boundary.
+// It must never turn missing tooling into hundreds of native-row mismatches.
+func l08BrowserEnvironment(t *testing.T) (repo, playwright string) {
+	t.Helper()
+	if _, err := exec.LookPath("node"); err != nil {
+		t.Fatalf("L08 browser prerequisites: node: %v", err)
+	}
+	repo, err := gladehome.SourceRoot()
+	if err != nil {
+		t.Fatalf("L08 browser prerequisites: source checkout: %v", err)
+	}
+	toolchain, err := gladehome.LWCToolchainDir()
+	if err != nil {
+		t.Fatalf("L08 browser prerequisites: compiler: %v", err)
+	}
+	playwright = os.Getenv("GLADE_LWC_PLAYWRIGHT_MODULE")
+	if playwright == "" {
+		playwright = filepath.Join(repo, "lwcruntime/node_modules/playwright")
+	}
+	if !filepath.IsAbs(playwright) {
+		t.Fatalf("L08 browser prerequisites: GLADE_LWC_PLAYWRIGHT_MODULE must be an absolute package directory, got %q", playwright)
+	}
+	for _, path := range []string{
+		filepath.Join(repo, "third_party/lwc/compile.mjs"),
+		filepath.Join(repo, "internal/server/testdata/l08_browser.mjs"),
+		filepath.Join(toolchain, "node_modules/@lwc/compiler/package.json"),
+		filepath.Join(toolchain, "node_modules/@lwc/engine-dom/dist/index.js"),
+		filepath.Join(toolchain, "node_modules/@lwc/synthetic-shadow/dist/index.js"),
+		filepath.Join(playwright, "package.json"),
+	} {
+		if _, err := os.Stat(path); err != nil {
+			t.Fatalf("L08 browser prerequisites: %v (see docs/AI_SETUP.md)", err)
+		}
+	}
+	check := func(name string, args ...string) {
+		t.Helper()
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		output, err := exec.CommandContext(ctx, "node", args...).CombinedOutput()
+		if err != nil {
+			t.Fatalf("L08 browser prerequisites: %s: %v: %s (see docs/AI_SETUP.md)", name, err, strings.TrimSpace(string(output)))
+		}
+	}
+	// --check is read-only, including when an installation still has the old
+	// API 67 preparation. Never repair a shared toolchain from a Go test.
+	check("prepared compiler", filepath.Join(repo, "third_party/lwc/scripts/prepare-lwc-shared.mjs"), "--check", toolchain)
+	check("Playwright/Chromium", "-e", `
+const {chromium} = require(process.argv[1]);
+(async () => {
+  const browser = await chromium.launch({headless: true, timeout: 15000,
+    ...(process.argv[2] ? {executablePath: process.argv[2]} : {})});
+  await browser.close();
+})().catch(error => { console.error(error.message); process.exitCode = 1; });
+`, playwright, os.Getenv("GLADE_LWC_BROWSER_EXECUTABLE"))
+	return repo, playwright
 }
 
 var (
@@ -621,7 +665,7 @@ func l08OutputBytes(t *testing.T, root string) map[string]string {
 	return files
 }
 
-func l08ObserveDOM(t *testing.T, table l08Table, api string, cases []l08Case, repo string) (map[string]json.RawMessage, map[string]string, error) {
+func l08ObserveDOM(t *testing.T, table l08Table, api string, cases []l08Case, repo, playwright string) (map[string]json.RawMessage, map[string]string, error) {
 	t.Helper()
 	root := t.TempDir()
 	l08WriteProject(t, root, api)
@@ -681,10 +725,6 @@ func l08ObserveDOM(t *testing.T, table l08Table, api string, cases []l08Case, re
 		handler.ServeHTTP(w, r)
 	}))
 	defer host.Close()
-	playwright := os.Getenv("GLADE_LWC_PLAYWRIGHT_MODULE")
-	if playwright == "" {
-		playwright = filepath.Join(repo, "lwcruntime/node_modules/playwright")
-	}
 	config, err := json.Marshal(map[string]any{"url": host.URL, "ids": ids, "playwrightModule": playwright, "executablePath": os.Getenv("GLADE_LWC_BROWSER_EXECUTABLE")})
 	if err != nil {
 		return nil, nil, err

@@ -15,7 +15,7 @@ import (
 
 var disableDiskCache atomic.Bool
 
-const testRuntimeCacheABI = "apextest-runtime-v8"
+const testRuntimeCacheABI = "apextest-runtime-v14"
 
 func DisableDiskCacheForTesting() func() {
 	wasDisabled := disableDiskCache.Load()
@@ -232,12 +232,12 @@ func runtimeCacheEntryFromStartupWithPerf(entry startupcache.Entry, counters *ru
 	baseMachine.SetTraceEnabled(false)
 	registerVisualforcePages(baseMachine, pageNames)
 	baseErr := registerBaseRuntime(baseMachine, runtime.Methods, runtime.Classes, runtime.Triggers)
-	counters.phases.projectCompileNS.Add(time.Since(projectStarted).Nanoseconds())
+	counters.recordObservedPhaseDuration(&counters.phases.projectCompileNS, time.Since(projectStarted))
 
 	orgStarted := time.Now()
 	org := entry.Org
 	restored := vm.NewRestoredRuntimeTemplate(org, baseMachine)
-	counters.phases.orgBuildNS.Add(time.Since(orgStarted).Nanoseconds())
+	counters.recordObservedPhaseDuration(&counters.phases.orgBuildNS, time.Since(orgStarted))
 	return validateRestoredRuntimeEntry(runtimeCacheEntry{
 		Methods:       runtime.Methods,
 		Classes:       runtime.Classes,

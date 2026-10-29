@@ -1,0 +1,42 @@
+case	shape	operator	value	native expectation	glade comparison
+TitleContains	Get Records record field	Contains	guide	matched	compare
+TitleStartsWith	Get Records record field	StartsWith	guide	matched	compare
+TitleEndsWith	Get Records record field	EndsWith	guide	matched	compare
+TitleDoesNotEqual	Get Records record field	NotEqualTo	guide	default	compare
+TitleIsNull	Get Records record field	IsNull	true	matched	compare
+TitleIsNotNull	Get Records record field	IsNull	false	matched	compare
+TitleNullField	Get Records record field	IsNull	true	matched	compare
+TitleIsBlank	Get Records record field	IsBlank	true	matched	compare
+TitleWhitespaceIsNull	Get Records record field	IsNull	true	matched	compare
+ScalarContains	Get Records output assignment	Contains	guide	matched	compare
+ScalarIsNull	Get Records output assignment	IsNull	true	matched	compare
+ScalarIsNotNull	Get Records output assignment	IsNull	false	matched	compare
+RecordIsNull	Get Records record variable	IsNull	true	matched	compare
+RecordIsNotNull	Get Records record variable	IsNull	false	matched	compare
+RecordFieldEqualsScalar	Get Records record field vs output assignment	EqualTo	Guide	matched	compare
+CollectionIsEmpty	Get Records record collection	IsEmpty	true	matched	compare
+CollectionNotEmpty	Get Records record collection	IsEmpty	false	matched	compare
+CollectionIsNull	Get Records record collection	IsNull	true	matched	compare
+CollectionIsNotNull	Get Records record collection	IsNull	false	matched	compare
+AutoLookupTitleContains	autolaunched Get Records record field	Contains	guide	matched	compare
+AfterSaveTitleContains	after-save Get Records record field	Contains	guide	matched	compare
+VariableEqualCase	Get Records output variables compared	EqualTo	guide / Guide	matched	compare
+VariableNotEqualCase	Get Records output variables compared	NotEqualTo	guide / Guide	default	compare
+VariableEqualTrim	Get Records output variables compared	EqualTo	 Guide  / Guide	matched	compare
+VariableNotEqualTrim	Get Records output variables compared	NotEqualTo	 Guide  / Guide	default	compare
+VariableIsNullWhitespace	Get Records String output variable	IsNull	spaces	matched	compare
+LookupNoMatchIsNullTrue	Get Records record field without a match	IsNull	true	matched	compare
+LookupNoMatchIsNullFalse	Get Records record field without a match	IsNull	false	default	compare
+TitleContainsNoMatch	Get Records record field	Contains	missing	default	compare
+DeleteLookupTitleContains	delete-trigger Get Records record field	Contains	guide	matched	native-only
+TitleEqualCaseLiteral	Get Records record field vs literal	EqualTo	guide / Guide	matched	compare
+TitleEqualTrimLiteral	Get Records record field vs literal	EqualTo	 Guide  / Guide	matched	compare
+TitleNotEqualTrimLiteral	Get Records record field vs literal	NotEqualTo	 Guide  / Guide	default	compare
+VariableIsBlankWhitespace	Get Records String output variable	IsBlank	spaces	matched	compare
+AutoVariableEqualCase	autolaunched String variables compared	EqualTo	guide / Guide	matched	compare
+AutoVariableNotEqualCase	autolaunched String variables compared	NotEqualTo	guide / Guide	default	compare
+AutoVariableEqualTrim	autolaunched String variables compared	EqualTo	 Guide  / Guide	matched	compare
+AutoVariableNotEqualTrim	autolaunched String variables compared	NotEqualTo	 Guide  / Guide	default	compare
+AutoVariableIsNullWhitespace	autolaunched String input variable	IsNull	spaces	default	compare
+AutoVariableIsBlankWhitespace	autolaunched String input variable	IsBlank	spaces	matched	compare
+TitleWhitespaceFieldReadback	Contact Title readback after insert	state	whitespace input	null	native-only

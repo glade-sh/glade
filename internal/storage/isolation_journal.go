@@ -138,6 +138,11 @@ func (j *IsolationJournal) Rollback(mark IsolationMark) error {
 			delete(j.org.IDSequences, before.object)
 		}
 	}
+	// Journals can outlive a method through the worker pool. Release truncated
+	// before-images and keys while preserving any outer rollback point.
+	clear(j.inserted[mark.inserted:])
+	clear(j.updated[mark.updated:])
+	clear(j.sequences[mark.sequences:])
 	j.inserted = j.inserted[:mark.inserted]
 	j.updated = j.updated[:mark.updated]
 	j.sequences = j.sequences[:mark.sequences]

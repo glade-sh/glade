@@ -3,6 +3,7 @@ package storage
 import (
 	"fmt"
 	"math/rand"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -11,15 +12,20 @@ import (
 )
 
 // referenceObjectNameCache stands in for the resolved-name cache of the
-// reference resolver. Orgs that share a sync.Map share one of these.
+// reference resolver. The cache belongs to one object map; a shallow fork with
+// another map cannot consume or overwrite the owner's cached results.
 type referenceObjectNameCache struct {
-	names map[string]string
+	names   map[string]string
+	objects map[string]ObjectState
 }
 
 // referenceResolveObjectName is ResolveObjectName before the name index, with
 // one change: it visits objects in sorted order instead of map order, so its
 // first case-insensitive match is the smallest name, as the index picks.
 func referenceResolveObjectName(org OrgState, cache *referenceObjectNameCache, name string) (string, bool) {
+	if cache != nil && reflect.ValueOf(cache.objects).Pointer() != reflect.ValueOf(org.Objects).Pointer() {
+		cache = nil
+	}
 	cacheKey := strings.ToLower(strings.TrimSpace(org.Namespace)) + "|" + strconv.Itoa(len(org.Objects)) + "|" + strings.ToLower(strings.TrimSpace(name))
 	if cache != nil {
 		if resolved, ok := cache.names[cacheKey]; ok && resolved != "" {
@@ -136,8 +142,8 @@ type objectNameHandle struct {
 	ref *referenceObjectNameCache
 }
 
-func newReferenceObjectNameCache() *referenceObjectNameCache {
-	return &referenceObjectNameCache{names: map[string]string{}}
+func newReferenceObjectNameCache(objects map[string]ObjectState) *referenceObjectNameCache {
+	return &referenceObjectNameCache{names: map[string]string{}, objects: objects}
 }
 
 var objectNameTestStems = []string{"Account", "Contact", "Thing", "Widget", "KelvinK", "Straße", "Longſs", "İd", "\xffBad"}
@@ -191,7 +197,7 @@ func TestResolveObjectNameMatchesReferenceAcrossOrgChanges(t *testing.T) {
 		}
 		var ref *referenceObjectNameCache
 		if org.objectNameCache != nil {
-			ref = newReferenceObjectNameCache()
+			ref = newReferenceObjectNameCache(org.Objects)
 		}
 		handles := []objectNameHandle{{org: org, ref: ref}}
 		for step := 0; step < 120; step++ {
@@ -215,7 +221,7 @@ func TestResolveObjectNameMatchesReferenceAcrossOrgChanges(t *testing.T) {
 				}
 				DeleteObject(&handle.org, names[rng.Intn(len(names))])
 				if handle.ref != nil {
-					clear(handle.ref.names)
+					handle.ref = newReferenceObjectNameCache(handle.org.Objects)
 				}
 			case op == 14:
 				handle.org.Namespace = objectNameTestNamespaces[rng.Intn(len(objectNameTestNamespaces))]
@@ -245,14 +251,14 @@ func TestResolveObjectNameMatchesReferenceAcrossOrgChanges(t *testing.T) {
 				if rng.Intn(2) == 0 {
 					handle.org = snapshot
 					if handle.org.objectNameCache != nil {
-						handle.ref = newReferenceObjectNameCache()
+						handle.ref = newReferenceObjectNameCache(handle.org.Objects)
 					}
 				}
 			case op == 21:
 				snapshot := RuntimeTemplate{Org: handle.org}.CloneSnapshotOrg()
 				var snapshotRef *referenceObjectNameCache
 				if snapshot.objectNameCache != nil {
-					snapshotRef = newReferenceObjectNameCache()
+					snapshotRef = newReferenceObjectNameCache(snapshot.Objects)
 				}
 				handles = append(handles, objectNameHandle{org: snapshot, ref: snapshotRef})
 			default:
@@ -271,7 +277,7 @@ func TestResolveObjectNameMatchesReferenceAcrossOrgChanges(t *testing.T) {
 				}
 				var cloneRef *referenceObjectNameCache
 				if clone.objectNameCache != nil {
-					cloneRef = newReferenceObjectNameCache()
+					cloneRef = newReferenceObjectNameCache(clone.Objects)
 				}
 				handles = append(handles, objectNameHandle{org: clone, ref: cloneRef})
 			}

@@ -537,7 +537,7 @@ platformStaticCall:
 		}
 		// Dynamic scalar COUNT() has its own Database route.
 		if vm.inlineSOQLMayReturnScalarCount(args[0].Text) {
-			return Null, newExceptionError("QueryException", "use countQuery() for [select count()...] queries")
+			return Null, vm.scalarCountRouteError(args[0].Text, vm.expandSOQLBinds)
 		}
 		if len(args) == 2 {
 			return vm.executeSOQLWithAccessLevel(args[0].Text, args[1], result)
@@ -575,7 +575,9 @@ platformStaticCall:
 			return Null, err
 		}
 		if query, err := vm.parseSOQLAt(args[0].Text); err == nil && query.Count {
-			return Null, newExceptionError("QueryException", "use countQuery() for [select count()...] queries")
+			return Null, vm.scalarCountRouteError(args[0].Text, func(raw string) (string, error) {
+				return vm.expandSOQLBindsFromMap(raw, args[1])
+			})
 		}
 		return vm.executeSOQLWithBindMapAccessLevel(args[0].Text, args[1], args[2], result)
 	case "Database.countQuery":
@@ -945,7 +947,7 @@ platformStaticCall:
 	case "Database.insertImmediate", "Database.updateImmediate", "Database.deleteImmediate":
 		op := strings.TrimPrefix(callee, "Database.")
 		op = strings.TrimSuffix(op, "Immediate")
-		return vm.executeDatabaseDMLWithHistoryTestSeed(op, args, result, false)
+		return vm.executeDatabaseDMLWithHistoryTestSeed(op, args, result, false, false)
 	case "Database.getAsyncSaveResult", "Database.getAsyncDeleteResult":
 		if len(args) != 1 {
 			return Null, fmt.Errorf("%s expects async operation id or local result", callee)

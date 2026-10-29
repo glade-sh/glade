@@ -1,0 +1,167 @@
+source_api	route	case_id	outcome	message
+62.0	named	FieldServiceMobileExtension_sig_field	SUCCESS	
+62.0	named_anonymous	FieldServiceMobileExtension_sig_field	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+62.0	named	FieldServiceMobileExtension_sig_static_field	SUCCESS	
+62.0	named_anonymous	FieldServiceMobileExtension_sig_static_field	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+62.0	named	FieldServiceMobileExtension_sig_property	SUCCESS	
+62.0	named_anonymous	FieldServiceMobileExtension_sig_property	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+62.0	named	FieldServiceMobileExtension_sig_param	SUCCESS	
+62.0	named_anonymous	FieldServiceMobileExtension_sig_param	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+62.0	named	FieldServiceMobileExtension_sig_return	SUCCESS	
+62.0	named_anonymous	FieldServiceMobileExtension_sig_return	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+62.0	named	FieldServiceMobileExtension_sig_return_new	SUCCESS	
+62.0	named_anonymous	FieldServiceMobileExtension_sig_return_new	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+62.0	named	FieldServiceMobileExtension_sig_list_field	SUCCESS	
+62.0	named_anonymous	FieldServiceMobileExtension_sig_list_field	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|0
+62.0	named	FieldServiceMobileExtension_sig_list_param	SUCCESS	
+62.0	named_anonymous	FieldServiceMobileExtension_sig_list_param	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|-1
+62.0	named	FieldServiceMobileExtension_sig_list_return	SUCCESS	
+62.0	named_anonymous	FieldServiceMobileExtension_sig_list_return	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|0
+62.0	named	FieldServiceMobileExtension_sig_set_field	SUCCESS	
+62.0	named_anonymous	FieldServiceMobileExtension_sig_set_field	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|0
+62.0	named	FieldServiceMobileExtension_sig_map_value_field	SUCCESS	
+62.0	named_anonymous	FieldServiceMobileExtension_sig_map_value_field	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|0
+62.0	anonymous	FieldServiceMobileExtension_soql	COMPILE_ERROR	Invalid type: Schema.FieldServiceMobileExtension
+62.0	anonymous	FieldServiceMobileExtension_soql_count	COMPILE_ERROR	Invalid type: Schema.FieldServiceMobileExtension
+62.0	named	FieldServiceMobileExtension_soql_named	SUCCESS	
+62.0	named_anonymous	FieldServiceMobileExtension_soql_named	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+62.0	named	ActivationTarget_sig_field	COMPILE_ERROR	Invalid type: ActivationTarget
+62.0	named	ActivationTarget_sig_static_field	COMPILE_ERROR	Invalid type: ActivationTarget
+62.0	named	ActivationTarget_sig_property	COMPILE_ERROR	Invalid type: ActivationTarget
+62.0	named	ActivationTarget_sig_param	COMPILE_ERROR	Invalid type: ActivationTarget
+62.0	named	ActivationTarget_sig_return	COMPILE_ERROR	Invalid type: ActivationTarget
+62.0	named	ActivationTarget_sig_return_new	COMPILE_ERROR	Invalid type: ActivationTarget
+62.0	named	ActivationTarget_sig_list_field	COMPILE_ERROR	Invalid type: ActivationTarget
+62.0	named	ActivationTarget_sig_list_param	COMPILE_ERROR	Invalid type: ActivationTarget
+62.0	named	ActivationTarget_sig_list_return	COMPILE_ERROR	Invalid type: ActivationTarget
+62.0	named	ActivationTarget_sig_set_field	COMPILE_ERROR	Invalid type: ActivationTarget
+62.0	named	ActivationTarget_sig_map_value_field	COMPILE_ERROR	Invalid type: ActivationTarget
+62.0	anonymous	ActivationTarget_soql	COMPILE_ERROR	Invalid type: Schema.ActivationTarget
+62.0	isTest	ActivationTarget_soql	COMPILE_ERROR	Invalid type: Schema.ActivationTarget
+62.0	anonymous	ActivationTarget_soql_count	COMPILE_ERROR	Invalid type: Schema.ActivationTarget
+62.0	isTest	ActivationTarget_soql_count	COMPILE_ERROR	Invalid type: Schema.ActivationTarget
+62.0	named	ActivationTarget_soql_named	COMPILE_ERROR	Invalid type: Schema.ActivationTarget
+62.0	named	DataAction_sig_field	COMPILE_ERROR	Invalid type: DataAction
+62.0	named	DataAction_sig_static_field	COMPILE_ERROR	Invalid type: DataAction
+62.0	named	DataAction_sig_property	COMPILE_ERROR	Invalid type: DataAction
+62.0	named	DataAction_sig_param	COMPILE_ERROR	Invalid type: DataAction
+62.0	named	DataAction_sig_return	COMPILE_ERROR	Invalid type: DataAction
+62.0	named	DataAction_sig_return_new	COMPILE_ERROR	Invalid type: DataAction
+62.0	named	DataAction_sig_list_field	COMPILE_ERROR	Invalid type: DataAction
+62.0	named	DataAction_sig_list_param	COMPILE_ERROR	Invalid type: DataAction
+62.0	named	DataAction_sig_list_return	COMPILE_ERROR	Invalid type: DataAction
+62.0	named	DataAction_sig_set_field	COMPILE_ERROR	Invalid type: DataAction
+62.0	named	DataAction_sig_map_value_field	COMPILE_ERROR	Invalid type: DataAction
+62.0	anonymous	DataAction_soql	COMPILE_ERROR	Invalid type: Schema.DataAction
+62.0	isTest	DataAction_soql	COMPILE_ERROR	Invalid type: Schema.DataAction
+62.0	anonymous	DataAction_soql_count	COMPILE_ERROR	Invalid type: Schema.DataAction
+62.0	isTest	DataAction_soql_count	COMPILE_ERROR	Invalid type: Schema.DataAction
+62.0	named	DataAction_soql_named	COMPILE_ERROR	Invalid type: Schema.DataAction
+62.0	named	FieldServiceMobileExtension_soql_typed_named	SUCCESS	
+62.0	named_anonymous	FieldServiceMobileExtension_soql_typed_named	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+62.0	named_isTest	FieldServiceMobileExtension_sig_field	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+62.0	named_isTest	FieldServiceMobileExtension_sig_static_field	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+62.0	named_isTest	FieldServiceMobileExtension_sig_property	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+62.0	named_isTest	FieldServiceMobileExtension_sig_param	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+62.0	named_isTest	FieldServiceMobileExtension_sig_return	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+62.0	named_isTest	FieldServiceMobileExtension_sig_return_new	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+62.0	named_isTest	FieldServiceMobileExtension_sig_list_field	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|0
+62.0	named_isTest	FieldServiceMobileExtension_sig_list_param	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|-1
+62.0	named_isTest	FieldServiceMobileExtension_sig_list_return	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|0
+62.0	named_isTest	FieldServiceMobileExtension_sig_set_field	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|0
+62.0	named_isTest	FieldServiceMobileExtension_sig_map_value_field	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|0
+62.0	isTest	FieldServiceMobileExtension_soql	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|0
+62.0	isTest	FieldServiceMobileExtension_soql_count	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|0
+62.0	named_isTest	FieldServiceMobileExtension_soql_named	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|0
+62.0	named_isTest	FieldServiceMobileExtension_soql_typed_named	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|0
+67.0	named	FieldServiceMobileExtension_sig_field	SUCCESS	
+67.0	named_anonymous	FieldServiceMobileExtension_sig_field	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	named	FieldServiceMobileExtension_sig_static_field	SUCCESS	
+67.0	named_anonymous	FieldServiceMobileExtension_sig_static_field	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	named	FieldServiceMobileExtension_sig_property	SUCCESS	
+67.0	named_anonymous	FieldServiceMobileExtension_sig_property	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	named	FieldServiceMobileExtension_sig_param	SUCCESS	
+67.0	named_anonymous	FieldServiceMobileExtension_sig_param	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	named	FieldServiceMobileExtension_sig_return	SUCCESS	
+67.0	named_anonymous	FieldServiceMobileExtension_sig_return	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	named	FieldServiceMobileExtension_sig_return_new	SUCCESS	
+67.0	named_anonymous	FieldServiceMobileExtension_sig_return_new	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+67.0	named	FieldServiceMobileExtension_sig_list_field	SUCCESS	
+67.0	named_anonymous	FieldServiceMobileExtension_sig_list_field	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|0
+67.0	named	FieldServiceMobileExtension_sig_list_param	SUCCESS	
+67.0	named_anonymous	FieldServiceMobileExtension_sig_list_param	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|-1
+67.0	named	FieldServiceMobileExtension_sig_list_return	SUCCESS	
+67.0	named_anonymous	FieldServiceMobileExtension_sig_list_return	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|0
+67.0	named	FieldServiceMobileExtension_sig_set_field	SUCCESS	
+67.0	named_anonymous	FieldServiceMobileExtension_sig_set_field	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|0
+67.0	named	FieldServiceMobileExtension_sig_map_value_field	SUCCESS	
+67.0	named_anonymous	FieldServiceMobileExtension_sig_map_value_field	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|0
+67.0	anonymous	FieldServiceMobileExtension_soql	COMPILE_ERROR	Invalid type: Schema.FieldServiceMobileExtension
+67.0	anonymous	FieldServiceMobileExtension_soql_count	COMPILE_ERROR	Invalid type: Schema.FieldServiceMobileExtension
+67.0	named	FieldServiceMobileExtension_soql_named	SUCCESS	
+67.0	named_anonymous	FieldServiceMobileExtension_soql_named	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+67.0	named	ActivationTarget_sig_field	COMPILE_ERROR	Invalid type: ActivationTarget
+67.0	named	ActivationTarget_sig_static_field	COMPILE_ERROR	Invalid type: ActivationTarget
+67.0	named	ActivationTarget_sig_property	COMPILE_ERROR	Invalid type: ActivationTarget
+67.0	named	ActivationTarget_sig_param	COMPILE_ERROR	Invalid type: ActivationTarget
+67.0	named	ActivationTarget_sig_return	COMPILE_ERROR	Invalid type: ActivationTarget
+67.0	named	ActivationTarget_sig_return_new	COMPILE_ERROR	Invalid type: ActivationTarget
+67.0	named	ActivationTarget_sig_list_field	COMPILE_ERROR	Invalid type: ActivationTarget
+67.0	named	ActivationTarget_sig_list_param	COMPILE_ERROR	Invalid type: ActivationTarget
+67.0	named	ActivationTarget_sig_list_return	COMPILE_ERROR	Invalid type: ActivationTarget
+67.0	named	ActivationTarget_sig_set_field	COMPILE_ERROR	Invalid type: ActivationTarget
+67.0	named	ActivationTarget_sig_map_value_field	COMPILE_ERROR	Invalid type: ActivationTarget
+67.0	anonymous	ActivationTarget_soql	COMPILE_ERROR	Invalid type: Schema.ActivationTarget
+67.0	isTest	ActivationTarget_soql	COMPILE_ERROR	Invalid type: Schema.ActivationTarget
+67.0	anonymous	ActivationTarget_soql_count	COMPILE_ERROR	Invalid type: Schema.ActivationTarget
+67.0	isTest	ActivationTarget_soql_count	COMPILE_ERROR	Invalid type: Schema.ActivationTarget
+67.0	named	ActivationTarget_soql_named	COMPILE_ERROR	Invalid type: Schema.ActivationTarget
+67.0	named	DataAction_sig_field	COMPILE_ERROR	Invalid type: DataAction
+67.0	named	DataAction_sig_static_field	COMPILE_ERROR	Invalid type: DataAction
+67.0	named	DataAction_sig_property	COMPILE_ERROR	Invalid type: DataAction
+67.0	named	DataAction_sig_param	COMPILE_ERROR	Invalid type: DataAction
+67.0	named	DataAction_sig_return	COMPILE_ERROR	Invalid type: DataAction
+67.0	named	DataAction_sig_return_new	COMPILE_ERROR	Invalid type: DataAction
+67.0	named	DataAction_sig_list_field	COMPILE_ERROR	Invalid type: DataAction
+67.0	named	DataAction_sig_list_param	COMPILE_ERROR	Invalid type: DataAction
+67.0	named	DataAction_sig_list_return	COMPILE_ERROR	Invalid type: DataAction
+67.0	named	DataAction_sig_set_field	COMPILE_ERROR	Invalid type: DataAction
+67.0	named	DataAction_sig_map_value_field	COMPILE_ERROR	Invalid type: DataAction
+67.0	anonymous	DataAction_soql	COMPILE_ERROR	Invalid type: Schema.DataAction
+67.0	isTest	DataAction_soql	COMPILE_ERROR	Invalid type: Schema.DataAction
+67.0	anonymous	DataAction_soql_count	COMPILE_ERROR	Invalid type: Schema.DataAction
+67.0	isTest	DataAction_soql_count	COMPILE_ERROR	Invalid type: Schema.DataAction
+67.0	named	DataAction_soql_named	COMPILE_ERROR	Invalid type: Schema.DataAction
+67.0	named	FieldServiceMobileExtension_soql_typed_named	SUCCESS	
+67.0	named_anonymous	FieldServiceMobileExtension_soql_typed_named	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+67.0	named_isTest	FieldServiceMobileExtension_sig_field	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	named_isTest	FieldServiceMobileExtension_sig_static_field	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	named_isTest	FieldServiceMobileExtension_sig_property	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	named_isTest	FieldServiceMobileExtension_sig_param	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	named_isTest	FieldServiceMobileExtension_sig_return	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	named_isTest	FieldServiceMobileExtension_sig_return_new	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+67.0	named_isTest	FieldServiceMobileExtension_sig_list_field	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|0
+67.0	named_isTest	FieldServiceMobileExtension_sig_list_param	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|-1
+67.0	named_isTest	FieldServiceMobileExtension_sig_list_return	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|0
+67.0	named_isTest	FieldServiceMobileExtension_sig_set_field	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|0
+67.0	named_isTest	FieldServiceMobileExtension_sig_map_value_field	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|0
+67.0	isTest	FieldServiceMobileExtension_soql	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+67.0	isTest	FieldServiceMobileExtension_soql_count	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+67.0	named_isTest	FieldServiceMobileExtension_soql_named	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+67.0	named_isTest	FieldServiceMobileExtension_soql_typed_named	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+62.0	named	FieldServiceMobileExtension_sig_interface	SUCCESS	
+62.0	named_anonymous	FieldServiceMobileExtension_sig_interface	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+62.0	named	ActivationTarget_sig_interface	COMPILE_ERROR	Invalid type: ActivationTarget
+62.0	named_isTest	FieldServiceMobileExtension_sig_interface	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	named	FieldServiceMobileExtension_sig_interface	SUCCESS	
+67.0	named_anonymous	FieldServiceMobileExtension_sig_interface	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	named	ActivationTarget_sig_interface	COMPILE_ERROR	Invalid type: ActivationTarget
+67.0	named_isTest	FieldServiceMobileExtension_sig_interface	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+62.0	named	FieldServiceMobileExtension_sig_inner_field	SUCCESS	
+62.0	named_anonymous	FieldServiceMobileExtension_sig_inner_field	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+62.0	named	ActivationTarget_sig_inner_field	COMPILE_ERROR	Invalid type: ActivationTarget
+62.0	named_isTest	FieldServiceMobileExtension_sig_inner_field	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	named	FieldServiceMobileExtension_sig_inner_field	SUCCESS	
+67.0	named_anonymous	FieldServiceMobileExtension_sig_inner_field	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	named	ActivationTarget_sig_inner_field	COMPILE_ERROR	Invalid type: ActivationTarget
+67.0	named_isTest	FieldServiceMobileExtension_sig_inner_field	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true

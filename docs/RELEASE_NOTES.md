@@ -4,6 +4,275 @@
 
 No unreleased changes.
 
+## v0.3.2
+
+v0.3.2 makes offline test runs use less CPU and memory. It also closes more
+gaps against captured Salesforce results in Apex, Flow, SOQL, standard objects,
+and project loading. API labels list the source versions checked against
+captured results; where a label names two versions, no other was captured. The
+supported windows and hosted boundaries remain in
+[release policy](RELEASE_POLICY.md#salesforce-api-versions).
+
+### Behavior to check when upgrading
+
+- **Caches.** The semantic, platform, test-runtime, and debug-adapter caches
+  carry new versions. The first command after upgrading rebuilds them and runs
+  slower once. If an old compile error persists, run `glade test clear-cache`
+  once.
+- **Scratch-definition features (Apex API 62.0 and 67.0).** A scratch
+  definition now decides whether `WebStore`, `Quote`, and `QuoteLineItem` exist.
+  A plain Developer definition has none. `OrderManagement`, or `B2BCommerce`
+  with `Communities` and `commerceSettings.commerceEnabled`, provides
+  `WebStore`; `Quotes` provides `Quote` and `QuoteLineItem`. `B2BCommerce` with
+  `Communities` alone provides none. A project with no scratch definition keeps
+  all three.
+- **Setup-stage record types (Apex API 62.0 and 67.0).** Record types under
+  `unpackaged/pre` and `unpackaged/post` count as project evidence, with or
+  without `cumulusci.yml`, and make `RecordTypeId` available on the standard
+  object. Without a record type, `RecordTypeId` is still rejected.
+- **Restricted picklists (Apex API 62.0 and 67.0).** Standard restricted
+  picklist fields reject values outside their list on insert and update. A test
+  that saved an undeclared value can now fail with the native error.
+- **CPU time (Apex API 62.0 and 67.0).** `Limits.getCpuTime()` and the CPU limit
+  use a deterministic estimate of Apex work, in milliseconds. A test that
+  compared it with wall-clock time, or expected a given loop count to exhaust
+  the limit, needs rechecking.
+- **Text and order (Apex API 62.0 and 67.0).** `Database.update` failure text,
+  `JSON.serialize` field order, and some compile diagnostics now use the
+  captured forms. Tests that match them exactly may need new values.
+- **Unknown namespaces (Apex API 62.0 and 67.0).** A static call through a
+  namespace the project neither declares nor loads is a compile error. Units
+  that depend on it are excluded and the other tests still run.
+- **EmailMessage (Apex API 62.0 and 67.0).** At source API 67.0, inserting an
+  `EmailMessage` with a non-null `ToIds` fails with
+  `FIELD_INTEGRITY_EXCEPTION`; 62.0 through 66.0 accept it. At 62.0, a message
+  with only `ToIds` no longer gets an extra automatic relation.
+
+### Apex semantics and queries
+
+- **Qualified types (Apex API 62.0 and 67.0).** Type positions such as fields,
+  parameters, generics, and `new` stay deferred. A project class that shadows a
+  platform name does not block `System.<platform type>.Nested`. A class literal
+  with a missing suffix, such as `Known.Missing.class`, resolves to the nearest
+  enclosing type.
+- **Inner types (Apex API 62.0 and 67.0).** Inner classes, interfaces, and
+  exceptions that share a platform type's name keep their own identity in
+  parameters, Map keys, `catch` clauses, and receivers. Invalid uses are
+  rejected with the captured diagnostics.
+- **Exception constructors (Apex API 62.0 and 67.0).** A custom exception
+  subclass compiles when its parent declares only parameterized constructors.
+  An explicit `super(...)` call to a private `(String, Integer)` constructor is
+  rejected; protected and public ones are accepted.
+- **Schema aliases and JSON access (Apex API 62.0 and 67.0).**
+  `DescribeFieldResult.class` equals `Schema.DescribeFieldResult.class`, and
+  `Type.forName` with the short name skips same-named nested source classes,
+  for the four captured aliases. `@JsonAccess` with `never` is enforced for
+  callers in source namespaces and dependencies and for top-level calls on the
+  class itself.
+- **Trigger diagnostics (Apex API 62.0 and 67.0).** An invalid trigger
+  reference keeps its source spelling. A class with omitted visibility reports
+  the native message first. Trigger local types no longer leak into the caller.
+- **Queries (Apex API 62.0 and 67.0).** An invalid `WHERE` clause on a `COUNT()`
+  query reports its error before the scalar-count route rejects the call. An
+  unquoted numeric literal compared with a String, picklist, textarea, or Id
+  field is rejected, including in `IN` lists and SOSL. `getPopulatedFieldsAsMap()`
+  keeps `SELECT` order, and an `AggregateResult` omits unselected `GROUP BY`
+  fields. Using an undeclared custom field on a fully declared object is a
+  compile error.
+- **Record JSON (Apex API 62.0 and 67.0).** `JSON.serialize` on a queried
+  record keeps `SELECT` order, omits untouched null fields, and places parents
+  after scalar fields. Pretty output uses inline array delimiters. Queried
+  currency and coordinate values keep their field scale. A typed round trip
+  does not import a stored foreign key the payload omitted.
+- **Lookup filters (Apex API 62.0 and 67.0).** A literal such as `A, B` matches
+  any listed value, and `notEqual` matches none. Equality against a blank date
+  is rejected. Record type labels that contain commas match.
+- **Regular expressions (Apex API 62.0 and 67.0).** A premature regex timeout,
+  or one from a search suspended in flight, is retried. `String.split` and
+  `Pattern.split` across a process suspend and resume on Linux return their
+  parts. This fixes the v0.3.1 known issue.
+
+### Runtime, DML, and platform APIs
+
+- **DML (Apex API 62.0 and 67.0).** An all-or-none `Database.update` whose first
+  failing row has an Id reports `Update failed. First exception on row N with
+  id ...`, as the `update` statement does; other overloads keep their text. An
+  upsert that inserts a record with an unmatched Id enforces active duplicate
+  rules. Division in custom validation rules follows the captured results.
+- **Default permissions (Apex API 62.0-67.0).** When the running user lacks
+  object-create access, `Security.stripInaccessible(CREATABLE)` removes a
+  custom `Name` field. At API 67.0, `Database.countQuery` on an inaccessible
+  custom object raises `System.SecurityException`.
+- **ObjectPermissions and notifications (Apex API 62.0 and 67.0).** Inserting
+  `ObjectPermissions` with an explicit null `ParentId` fails, and at API 62.0
+  its describe field map hides `PermissionsViewAllFields`. Custom notification
+  sends validate the type Id, title, target, and recipients with the captured
+  messages. Hosted delivery is not provided.
+- **Other platform fixes.** `PermissionSetLicenseAssign` is a setup object for
+  mixed DML (Apex API 62.0 and 67.0). The REST `/limits` payload, including the
+  Composite wrappers, no longer lists `apps`, `glade`, or
+  `DailyBulkV2IngestJobs`. Parallel test methods that rebind the global
+  describe no longer write shared keys, which removes a concurrent map race.
+
+### Schema, metadata, and projects
+
+- **Commerce types (Apex API 62.0 and 67.0).** `WebStore` has the
+  `OptionsAutoFacetingEnabled` field, and a Boolean set to null on it reads
+  `false`. `InventoryCartCalculator` declares `calculate`.
+  `commercestorepricing.ContractResolutionRequest` and `ContractResolutionResponse`
+  are rejected with "Type is not visible". `Case.SourceId` is available.
+- **Standard constructors (Apex API 62.0 and 67.0).** `Contact`, `Lead`, and
+  `PricebookEntry` constructors reject fields absent from the captured org.
+  Configured fields and unqualified object names are still admitted.
+- **Reference-only object names (Apex API 62.0 and 67.0).** 99 standard object
+  names that fields reference but that have no describe, such as
+  `ActivationTarget`, follow captured rows: source references are rejected and
+  lookups return null. `FieldServiceMobileExtension` is accepted in named Apex
+  bodies and rejected in anonymous source.
+- **Custom Address fields (Apex API 62.0 and 67.0).** Custom compound Address
+  fields expose their components, support component and compound `WHERE`
+  filters and `DISTANCE`, and report the captured validation and describe
+  results. A queried compound reads null until selected, and DML on that record
+  keeps it. `Address` converts to `Location`.
+- **Person Accounts (Apex API 62.0 and 67.0).** Profile record type mappings set
+  the default for Person Account and Business Account inserts, and an explicit
+  person record type is kept. An explicit null person `RecordTypeId` is rejected
+  on insert and upsert statements. At API 67.0, a scalar user-mode upsert
+  without an Id checks create access.
+- **Visualforce dependency access (Visualforce API 62.0 and 67.0).** Access
+  metadata may name pages and classes from loaded dependencies with the
+  `ns__Name` spelling. The dotted `ns.Name` spelling is rejected.
+
+### Flows
+
+- **Entry logic (Apex API 62.0 and 67.0).** Start filter logic such as
+  `1 OR (2 AND 3)` is evaluated, with `AND` binding tighter than `OR`. Function
+  forms such as `NOT(1)` and malformed numbered logic warn, and function forms
+  fall back to `AND`.
+- **Null comparisons (Apex API 62.0 and 67.0).** Decisions that compare a Number
+  or Currency variable with null follow the captured results on typed,
+  subflow, before-save, after-save, and async routes. A null Number or Currency
+  operand in `Add` or `Subtract` counts as zero, including loop-item fields.
+- **Formulas (Apex API 62.0 and 67.0).** Constants are inlined, so
+  `TODAY() + {!const}` evaluates. Custom Error text renders merge fields in the
+  captured `en_US` forms. Decision formulas resolve
+  `{!GetRecords.RecordType.DeveloperName}` and interview variables, and a bare
+  name shared by an interview variable and a record field reads the variable.
+  A decision that compares a field with `$Record__Prior` no longer matches
+  every update. Update Records assigns `$Record.Relationship.Id`.
+- **Apex action outputs (Apex API 62.0 and 67.0).** An automatic Apex action
+  output assigns its first list element to a record field, and a DateTime
+  assigned to a Date field keeps its GMT date. Empty, null, extra, and
+  faulting results follow the captured cases. A Create flow batches its Apex
+  action call; three records were captured.
+- **User context (Apex API 62.0 and 67.0).** `$User.Id` and `$Profile.Name` follow
+  `System.runAs` in Flow entry criteria, decision formulas, workflow criteria,
+  validation rules, and assignment rules. A Standard User who created a Lead
+  can read it after an assignment rule moves it to an empty queue.
+- **Subflows and lookups (Apex API 62.0 and 67.0).** Subflows receive selected
+  records, collections, and scalars from the parent. Text converts to Number
+  and Picklist fields as captured. A record type Id of another object is
+  rejected on insert and update.
+- **Scheduled paths and time zones (Apex API 62.0 and 67.0).** Past-due paths
+  run through the post-commit job; test contexts suppress deferred delivery.
+  `Europe/Paris` is supported, with a daylight name mirrored from Berlin.
+
+### Performance
+
+Full project runs use less CPU and memory, and finish about 2.5 to 3 times
+sooner on one quiet macOS arm64 host. The table compares v0.3.2 with v0.3.1 on
+`glade test` over unchanged project inputs: three rounds of base, head, head,
+base per project, medians. Normalized test outcomes were identical in every
+trial (1,449 outcomes for the logging framework, 830 for the rollup library,
+and 322 for the sample-code project), exit codes matched, and peak memory did
+not rise in any trial.
+
+| Open-source project | Instructions | User CPU | Peak memory |
+| --- | ---: | ---: | ---: |
+| Logging framework | 1,985B to 1,151B (-42.0%) | 275.0 s to 108.9 s (-60.4%) | 2,301 to 1,859 MiB (-19.2%) |
+| Rollup library | 2,290B to 765B (-66.6%) | 205.4 s to 66.0 s (-67.9%) | 3,202 to 2,192 MiB (-31.5%) |
+| Sample-code project | 654B to 336B (-48.6%) | 78.8 s to 26.2 s (-66.8%) | 2,151 to 2,046 MiB (-4.9%) |
+
+Individual changes, measured with `glade test --no-cache`. Normalized outcomes
+were identical in each comparison. Gains are not additive.
+
+- **Shared schema and workers.** Test workers share the frozen schema, describe
+  data, and prepared standard definitions, and idle workers join a running
+  class. Against v0.3.1: the logging framework -24.5% instructions and -6.9% peak
+  memory, the rollup library -56.6% and -33.1%, the sample-code project -1.2%
+  and -23.7%.
+- **Bulk DML and VM hot paths.** Bulk DML publishes records in batches, and
+  enum, describe, and exception lookups skip repeated scans. Instructions:
+  logging framework -7.6%, rollup library -6.6%, sample-code project -42.9%.
+- **Describe sharing and ensures.** Field describes share their field maps:
+  logging framework -8.3% instructions and -8.9% peak memory, rollup library
+  -1.2%, sample-code project -1.3%. Ensures on prepared standard objects are
+  no-ops that keep the shared schema: rollup library -16.0%, sample-code
+  project -14.5%, logging framework +0.2%.
+- **Frontend cache.** Warm `glade check` uses 57.0%, 63.7%, and 26.0% fewer
+  instructions, and warm named test runs 32.4%, 30.9%, and 8.2% fewer, on
+  the logging framework, rollup library, and sample-code project. Cold and
+  first runs are within 1%.
+- **Missing dependencies.** `test` and `check` on a project with an unloaded
+  dependency skip unusable graph work: median instructions -30% and peak memory
+  -1.2% to -6.2% on a synthetic project.
+
+### Known issues and verification limits
+
+The permissive custom-object CRUD/FLS defaults described under v0.3.0 remain.
+Do not infer default-deny equivalence from local Standard User tests. The
+default custom object and field permission model for project permission sets is
+not part of this release.
+
+Address custom compound fields whose components are not linked, with a shape
+Glade infers from the project, read null. Linked components work.
+
+Flow bare-token precedence between an interview variable and a same-named
+record field is fixed for decision formulas only. Assignment, record-create,
+and custom-error formulas, and variables without a default, are unchanged.
+
+`Limits.getCpuTime()` is a deterministic work-based estimate in milliseconds,
+not wall-clock time. Its exhaustion message differs from Salesforce's. A bare
+anonymous `@future` call runs inline under the synchronous cap.
+
+`LocaleSidKey` restricted-picklist enforcement is not included and stays
+carried. Restricted-picklist configuration fields such as `Division` are not
+enforced.
+
+`commercestorepricing.ContractResolutionRequest` and `ContractResolutionResponse`
+are rejected as "Type is not visible" at Apex API 62.0 and 67.0. Salesforce
+documents the contract-resolution call from API 68; API 68 and later were not
+captured here and keep the earlier acceptance.
+
+The 99 reference-only standard object names follow captured rows at Apex API
+62.0 and 67.0. Other surfaces are not captured: describe of
+`FieldServiceMobileExtension`, trigger signatures, and mixed API versions.
+
+Flow action routes and before-delete routes with Currency variables, and
+before-delete flows that create records inside decisions, are local
+boundaries. Duplicate-rule enforcement on upsert covers unmatched Id insertion
+only. Package-qualified record type matching keeps its earlier matcher.
+
+Committed platform-event delivery timing, deferred Flow execution, fuzzy and
+cross-object duplicate matching, and transaction and callout boundaries beyond
+the captured cases are not established. Hosted Experience Cloud, approval
+routing, email and notification delivery, and PDF rendering fidelity remain
+outside the local contract. DataWeave, ConnectApi, and Slack remain excluded
+and unsupported. Nested names under a known platform root, such as
+`System.Http.Unknown`, are still accepted at compile time. The v0.3.0
+disclosures remain: the API 62.0 release-notes inventory gap and the anonymous
+Flow fault `Error ID` difference. Execute Anonymous eligibility remains 65.0,
+66.0, 67.0, and 68.0.
+
+### Install and verify
+
+Release archives remain supported on macOS and Linux for AMD64 and ARM64.
+Follow [checksum and attestation verification](INSTALL.md#security-verification).
+Upgrade with `glade update`, then run `glade version` and
+`glade doctor --project .`. Check the cache guidance above before rerunning
+project tests. Publication and artifact verification remain subject to the
+[release gate](RELEASE_POLICY.md#release-gate).
+
 ## v0.3.1
 
 v0.3.1 refines offline Apex, Flow, Visualforce, and LWC behavior against
@@ -461,7 +730,7 @@ unknown tail is still accepted. A stricter rule was withdrawn from this release.
 On Linux, a `String.split` or `Pattern.split` that is running when the host
 process is suspended and resumed can return the unsplit input or an empty list
 instead of the parts. The regex engine's coarse clock stays stale after the
-resume and ends the search early. The fix is planned for v0.3.2.
+resume and ends the search early. Fixed in v0.3.2.
 
 The API 62.0 release-notes inventory gap and anonymous Flow fault `Error ID`
 difference listed under v0.3.0 remain disclosed. Execute Anonymous eligibility

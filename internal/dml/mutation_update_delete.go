@@ -331,7 +331,7 @@ func (e *Engine) deleteRecord(objectName string, id storage.ID, seen map[string]
 	return nil
 }
 
-func (e *Engine) upsertByExternalID(record storage.Record, externalIDField string) (storage.ID, bool, error) {
+func (e *Engine) upsertByExternalID(record storage.Record, externalIDField string, statementStamp *string) (storage.ID, bool, error) {
 	object, objectName, err := e.object(record.Object)
 	if err != nil {
 		return "", false, err
@@ -346,7 +346,7 @@ func (e *Engine) upsertByExternalID(record storage.Record, externalIDField strin
 	if isExplicitIDUpsertField(object.Definition, e.Org.Namespace, externalIDField) {
 		record = recordWithExplicitIDField(object.Definition, e.Org.Namespace, record)
 		if record.ID == "" {
-			id, err := e.insertOne(record, nil)
+			id, err := e.insertUpsertID(record, statementStamp)
 			return id, true, err
 		}
 		if err := e.validateUpsertIDReference(record); err != nil {
@@ -362,7 +362,7 @@ func (e *Engine) upsertByExternalID(record storage.Record, externalIDField strin
 		return "", false, err
 	}
 	if !ok {
-		id, err := e.insertOne(record, nil)
+		id, err := e.insertUpsertID(record, statementStamp)
 		return id, true, err
 	}
 	matches := make([]storage.ID, 0, 1)
@@ -380,6 +380,7 @@ func (e *Engine) upsertByExternalID(record storage.Record, externalIDField strin
 		return "", false, dmlErrorf("DUPLICATE_EXTERNAL_ID", []string{field}, "dml: external id %s.%s matched multiple records", objectName, field)
 	}
 	if len(matches) == 0 {
+		// Custom-key insertion has no captured duplicate-rule contract yet.
 		id, err := e.insertOne(record, nil)
 		return id, true, err
 	}
@@ -388,6 +389,15 @@ func (e *Engine) upsertByExternalID(record storage.Record, externalIDField strin
 		return "", false, err
 	}
 	return record.ID, false, nil
+}
+
+func (e *Engine) insertUpsertID(record storage.Record, statementStamp *string) (storage.ID, error) {
+	previous := e.Options.EnforceDuplicateRules
+	if e.Options.EnforceUpsertIDInsertDuplicateRules {
+		e.Options.EnforceDuplicateRules = true
+	}
+	defer func() { e.Options.EnforceDuplicateRules = previous }()
+	return e.insertOne(record, statementStamp)
 }
 
 func isExplicitIDUpsertField(definition storage.ObjectDefinition, namespace, fieldName string) bool {

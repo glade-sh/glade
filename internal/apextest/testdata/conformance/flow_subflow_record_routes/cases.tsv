@@ -1,0 +1,9 @@
+route	operation	shape
+after-flow	insert,update	record-triggered Get Records -> subflow -> child Get Records
+before-flow	insert,update	before-save inline lookup control; subflow deployment captured separately
+before-invocable	insert,update	Apex trigger -> invocable -> parent Get Records -> subflow
+after-invocable	insert,update	Apex trigger -> invocable -> parent Get Records -> subflow
+before-interview	insert,update	Apex trigger -> interview -> parent Get Records -> subflow
+after-interview	insert,update	Apex trigger -> interview -> parent Get Records -> subflow
+invocable	insert,update	standalone Apex -> invocable -> parent Get Records -> subflow
+interview	insert,update	standalone Apex -> interview -> parent Get Records -> subflow

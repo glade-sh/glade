@@ -1,0 +1,37 @@
+id	behaviour	native_routes
+AO01	Singleton empty list	anonymous,istest
+AO02	Singleton null element	anonymous,istest
+AO03	Singleton surplus outputs	anonymous,istest
+AO04	Three interviews, one invocation	anonymous,istest
+AO05	Singleton value boundary	anonymous,istest
+AO06	Singleton null list	anonymous,istest
+AO07	Bulk empty list	anonymous,istest
+AO08	Bulk null middle element	anonymous,istest
+AO09	Bulk surplus positional outputs	anonymous,istest
+AO10	Empty DML boundary	anonymous,istest
+AO11	Singleton action fault rejection	anonymous,istest
+AO12	Bulk action fault rejection	anonymous,istest
+AO13	Bulk short output list	anonymous,istest
+AO14	Bulk null list	anonymous,istest
+AR_original_matching_owner	AR original matching owner	istest
+AR_original_nonmatching_owner	AR original nonmatching owner	istest
+AR_original_profile_admin	AR original profile admin	istest
+AR_restored_matching_owner	AR restored matching owner	istest
+AR_restored_profile_admin	AR restored profile admin	istest
+AR_runAs_matching_owner	AR runAs matching owner	istest
+AR_runAs_nonmatching_company	AR runAs nonmatching company	istest
+AR_runAs_nonmatching_owner	AR runAs nonmatching owner	istest
+AR_runAs_profile_rejection	AR runAs profile rejection	istest
+AR_runAs_profile_standard	AR runAs profile standard	istest
+CE_negative_fraction	CE negative fraction	anonymous,istest
+CE_negative_small	CE negative small	anonymous,istest
+CE_negative_whole	CE negative whole	anonymous,istest
+CE_negative_zero	CE negative zero	anonymous,istest
+CE_nonmatching_start	CE nonmatching start	anonymous,istest
+CE_null	CE null	anonymous,istest
+CE_positive_whole	CE positive whole	anonymous,istest
+CE_zero	CE zero	anonymous,istest
+FV_explicit_record_name_twin	FV explicit record name twin	anonymous,istest
+FV_explicit_record_number_twin	FV explicit record number twin	anonymous,istest
+FV_name_number_collision	FV name number collision	anonymous,istest
+FV_nonmatching_start	FV nonmatching start	anonymous,istest

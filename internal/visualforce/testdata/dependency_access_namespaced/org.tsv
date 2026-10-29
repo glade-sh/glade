@@ -1,0 +1,25 @@
+api	case_id	actual	diagnostic
+62.0	class_dunder	DEPLOY_OK	
+62.0	class_dot	DEPLOY_ERROR	In field: apexClass - no ApexClass named gladens001.VfDepAccessProbeClass found
+62.0	page_dunder	DEPLOY_OK	
+62.0	page_dot	DEPLOY_ERROR	In field: apexPage - no ApexPage named gladens001.VfDepAccessProbePage found
+62.0	mixed_spellings	DEPLOY_ERROR	In field: apexClass - no ApexClass named gladens001.VfDepAccessProbeClass found
+62.0	wrong_class_namespace	DEPLOY_ERROR	In field: apexClass - no ApexClass named absentns__VfDepAccessProbeClass found
+62.0	wrong_page_namespace	DEPLOY_ERROR	In field: apexPage - no ApexPage named absentns__VfDepAccessProbePage found
+62.0	missing_class	DEPLOY_ERROR	In field: apexClass - no ApexClass named gladens001__VfDepAccessProbeAbsent found
+62.0	missing_page	DEPLOY_ERROR	In field: apexPage - no ApexPage named gladens001__VfDepAccessProbeAbsent found
+62.0	disabled_prefixed	DEPLOY_OK	
+62.0	unprefixed	DEPLOY_OK	
+62.0	both_dunder	DEPLOY_OK	
+67.0	class_dunder	DEPLOY_OK	
+67.0	class_dot	DEPLOY_ERROR	In field: apexClass - no ApexClass named gladens001.VfDepAccessProbeClass found
+67.0	page_dunder	DEPLOY_OK	
+67.0	page_dot	DEPLOY_ERROR	In field: apexPage - no ApexPage named gladens001.VfDepAccessProbePage found
+67.0	mixed_spellings	DEPLOY_ERROR	In field: apexClass - no ApexClass named gladens001.VfDepAccessProbeClass found
+67.0	wrong_class_namespace	DEPLOY_ERROR	In field: apexClass - no ApexClass named absentns__VfDepAccessProbeClass found
+67.0	wrong_page_namespace	DEPLOY_ERROR	In field: apexPage - no ApexPage named absentns__VfDepAccessProbePage found
+67.0	missing_class	DEPLOY_ERROR	In field: apexClass - no ApexClass named gladens001__VfDepAccessProbeAbsent found
+67.0	missing_page	DEPLOY_ERROR	In field: apexPage - no ApexPage named gladens001__VfDepAccessProbeAbsent found
+67.0	disabled_prefixed	DEPLOY_OK	
+67.0	unprefixed	DEPLOY_OK	
+67.0	both_dunder	DEPLOY_OK	

@@ -141,7 +141,7 @@ func runSetNullNumericConformance(t *testing.T, cluster string, shapes, cells, c
 		t.Fatalf("native cells=%d, carried=%d, want=%d/%d", observations, carriedObservations, cells, carried)
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			// Each runtime cell executes on a private clone of the API base.
 			counts := newConformanceCountLog(t, "SetNullNumeric-"+cluster, api)
 			baseIndex := setNullNumericIndex(t, api, nil)

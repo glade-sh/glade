@@ -1,0 +1,64 @@
+{
+  "apis": [
+    "62.0",
+    "67.0"
+  ],
+  "routes": [
+    "anonymous",
+    "named",
+    "test-runner"
+  ],
+  "constructor_complete_objects": [
+    "Contact",
+    "Lead",
+    "PricebookEntry"
+  ],
+  "surface_evidence": "standard_describe_profiles/P0/api{62,67}/granted/describes.json.gz plus default/named-fields.tsv",
+  "cases": [
+    {
+      "object": "Contact",
+      "id": "missing-constructor",
+      "body": "Contact row = new Contact(SyntheticAbsentField = 'x');"
+    },
+    {
+      "object": "Contact",
+      "id": "boundary-constructor",
+      "body": "Contact row = new Contact(LastName = 'Boundary'); System.assertEquals('Boundary', row.LastName);"
+    },
+    {
+      "object": "Contact",
+      "id": "missing-put",
+      "body": "Contact row = new Contact(); String observed = 'accepted'; try { row.put('SyntheticAbsentField', 'x'); } catch (Exception e) { observed = e.getTypeName() + '|' + e.getMessage(); } System.debug('OBSERVED|' + observed);"
+    },
+    {
+      "object": "Lead",
+      "id": "missing-constructor",
+      "body": "Lead row = new Lead(SyntheticAbsentField = 'x');"
+    },
+    {
+      "object": "Lead",
+      "id": "boundary-constructor",
+      "body": "Lead row = new Lead(LastName = 'Boundary', Company = 'Boundary'); System.assertEquals('Boundary', row.Company);"
+    },
+    {
+      "object": "Lead",
+      "id": "missing-put",
+      "body": "Lead row = new Lead(); String observed = 'accepted'; try { row.put('SyntheticAbsentField', 'x'); } catch (Exception e) { observed = e.getTypeName() + '|' + e.getMessage(); } System.debug('OBSERVED|' + observed);"
+    },
+    {
+      "object": "PricebookEntry",
+      "id": "missing-constructor",
+      "body": "PricebookEntry row = new PricebookEntry(SyntheticAbsentField = 'x');"
+    },
+    {
+      "object": "PricebookEntry",
+      "id": "boundary-constructor",
+      "body": "PricebookEntry row = new PricebookEntry(UnitPrice = 1); System.assertEquals(1, row.UnitPrice);"
+    },
+    {
+      "object": "PricebookEntry",
+      "id": "missing-put",
+      "body": "PricebookEntry row = new PricebookEntry(); String observed = 'accepted'; try { row.put('SyntheticAbsentField', 'x'); } catch (Exception e) { observed = e.getTypeName() + '|' + e.getMessage(); } System.debug('OBSERVED|' + observed);"
+    }
+  ]
+}

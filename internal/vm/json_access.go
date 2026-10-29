@@ -14,14 +14,14 @@ func (vm *VM) jsonAccessAllowed(typeName, property string) bool {
 	class, ok := vm.lookupClass(typeName)
 	// C235-C242 and Q001-Q006 cover unpackaged declarations and callers.
 	// Installed-package and cross-namespace policies need their own capture.
-	if !ok || class.Dependency || class.Namespace != "" || vm.currentExecutionNamespace() != "" {
+	if !ok {
 		return true
 	}
-	// Q003/Q005/Q006: calls inside the defining class bypass its external
-	// serialization/deserialization exposure policy.
-	if strings.EqualFold(class.Name, vm.currentClass) {
-		return true
-	}
+	// Q003/Q005/Q006 preserve self calls for anonymous and nested declarations.
+	// The persisted top-level native controls reject self calls at APIs 62/67.
+	// Nested persisted self calls retain their existing behavior until captured.
+	selfAccess := strings.EqualFold(class.Name, vm.currentClass) &&
+		(class.Nested || methodHasModifier(class.Modifiers, AnonymousClassModifier))
 	for _, modifier := range class.Modifiers {
 		if !strings.EqualFold(baseModifierName(modifier), "JsonAccess") {
 			continue
@@ -30,9 +30,15 @@ func (vm *VM) jsonAccessAllowed(typeName, property string) bool {
 			if !strings.EqualFold(match[1], property) {
 				continue
 			}
+			if strings.EqualFold(match[2], "never") {
+				return selfAccess
+			}
+			// Keep uncaptured package policies on their existing paths. The
+			// explicit 'never' policy above applies to every source namespace.
+			if class.Dependency || class.Namespace != "" || vm.currentExecutionNamespace() != "" || strings.EqualFold(class.Name, vm.currentClass) {
+				return true
+			}
 			switch strings.ToLower(match[2]) {
-			case "never":
-				return false
 			case "samepackage":
 				// C241-C242: an unpackaged anonymous type has no package
 				// identity. Installed-package exposure needs its own oracle.

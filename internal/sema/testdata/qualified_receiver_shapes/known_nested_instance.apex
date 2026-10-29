@@ -1,0 +1,1 @@
+new KnownType.Nested().y();

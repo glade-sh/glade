@@ -88,7 +88,7 @@ func TestSObjectGetTemporalOrgConformance(t *testing.T) {
 		}})
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			anonymous := newConformanceRunner(t, typesys.Index{}, conformanceRunnerOptions{})
 			root := t.TempDir()
 			const className = "SObjectGetTemporalOracle"

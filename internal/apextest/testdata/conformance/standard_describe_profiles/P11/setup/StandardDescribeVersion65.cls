@@ -1,0 +1,1 @@
+public class StandardDescribeVersion65 { public static void capture() { for(String objectName : new List<String>{'PermissionSet','Profile'}) { Schema.SObjectType token=Schema.getGlobalDescribe().get(objectName); System.debug(LoggingLevel.ERROR,'VERSION|'+objectName+'|'+token.getDescribe().fields.getMap().containsKey('PermissionsViewLicenseUtilization')); } } }

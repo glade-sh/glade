@@ -14,6 +14,7 @@ import (
 
 func TestDottedCallTypeNamesNativeConformance(t *testing.T) {
 	const fixture = "../../testdata/conformance/type_name_resolution_pins"
+	deferred := namespaceAbsenceDeferrals(t, fixture)
 	rows, err := readTypeNamePinRows(filepath.Join(fixture, "org.tsv"))
 	if err != nil {
 		t.Fatal(err)
@@ -40,7 +41,7 @@ func TestDottedCallTypeNamesNativeConformance(t *testing.T) {
 			}
 			result := Analyze(index)
 			gotCompiled := !result.HasErrors()
-			if gotCompiled != compiled {
+			if gotCompiled != (compiled || deferred[row[2]]) {
 				t.Fatalf("native compiled=%t observation=%q; Glade compiled=%t diagnostics=%+v", compiled, row[4], gotCompiled, result.Diagnostics)
 			}
 		})

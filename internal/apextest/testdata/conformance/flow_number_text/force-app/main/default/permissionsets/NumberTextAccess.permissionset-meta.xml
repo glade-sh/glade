@@ -1,0 +1,1 @@
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata"><label>Number Text Access</label><fieldPermissions><editable>true</editable><field>Product2.Cycle__c</field><readable>true</readable></fieldPermissions><fieldPermissions><editable>true</editable><field>Product2.Tone__c</field><readable>true</readable></fieldPermissions></PermissionSet>

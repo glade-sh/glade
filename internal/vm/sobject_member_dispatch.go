@@ -385,6 +385,11 @@ func (vm *VM) isSObjectLikeType(typeName string) bool {
 	if isCommonSObjectTypeName(typeName) || isCustomObjectLikeName(typeName) {
 		return true
 	}
+	if _, ok := vm.namedApexReferenceObjectName(typeName); ok {
+		if class, owned := vm.lookupClass(typeName); !owned || class.PlatformType {
+			return true
+		}
+	}
 	// Change-event sObjects are standard Salesforce types, but they are not
 	// present in the ordinary object describe catalog. They still expose the
 	// SObject member surface (including get('ChangeEventHeader')).
@@ -661,6 +666,13 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (ou
 			}
 			return Null, true, newExceptionError("SObjectException", "Invalid field "+field+" for "+receiver.Type)
 		}
+		// P12b/P12c: a custom Address compound is not a dynamic put column.
+		if !receiver.classInstance {
+			if _, fieldDef, ok := vm.sObjectFieldDefinition(receiver.Type, field); ok && fieldDef.Type == storage.FieldAddress &&
+				storage.CustomAddressComponentName(fieldDef.APIName, "Latitude") != "" {
+				return Null, true, newExceptionError("SObjectException", "Invalid field "+field+" for "+receiver.Type)
+			}
+		}
 		if err := vm.nonScalarSObjectFieldAssignmentError(receiver, field, args[1]); err != nil {
 			return Null, true, err
 		}
@@ -930,6 +942,15 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (ou
 			out.MapKeys[encoded] = String(field)
 			out.MapOrder = append(out.MapOrder, encoded)
 			added[strings.ToLower(field)] = struct{}{}
+		}
+		// Queried fields follow SELECT order; explicit writes and residual
+		// populated fields are appended by the existing paths below.
+		if selected, ok := receiver.Fields[sobjectQueriedFieldsField]; ok {
+			for _, key := range selected.MapOrder {
+				if actual, value, ok := objectFieldValue(receiver, mapStoredKey(selected, key).String()); ok {
+					addField(actual, value, true)
+				}
+			}
 		}
 		for _, explicit := range explicitSObjectFieldNames(receiver) {
 			actual, value, ok := objectFieldValue(receiver, explicit)

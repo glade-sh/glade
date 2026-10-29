@@ -1,0 +1,8 @@
+case	boundary
+owner	record namespace follows consumer owner
+qualified	qualified record name uses consumer namespace
+bare	bare lookup finds owner record
+qualifiedOwner	owner-qualified lookup returns null
+providerMissing	type-provider namespace does not qualify record
+missing	absent record returns null
+allContains	bare developer name remains getAll key

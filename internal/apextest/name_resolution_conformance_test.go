@@ -315,7 +315,7 @@ func TestNameResolutionOrgConformance(t *testing.T) {
 		return strings.Replace(source, row.Terminal, "System.assert("+conformanceApexString(row.ExpectedRuntime)+".equals("+row.Observed+"), '"+row.ID+" actual <'+("+row.Observed+")+'>');", 1)
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			for _, row := range data.Rows {
 				if row.APIVersion != api {
 					continue

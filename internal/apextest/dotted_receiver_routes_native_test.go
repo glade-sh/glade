@@ -9,6 +9,7 @@ import (
 
 func TestDottedReceiverProjectCompileGateNamedTestAndTriggerRoutes(t *testing.T) {
 	const fixture = "../../testdata/conformance/type_name_resolution_pins"
+	deferred := namespaceAbsenceDeferrals(t, filepath.Join(fixture, "receiver_routes"))
 	cases, err := readTypeNamePinRowsForApextest(filepath.Join(fixture, "receiver_routes/cases.tsv"))
 	if err != nil {
 		t.Fatal(err)
@@ -40,7 +41,17 @@ func TestDottedReceiverProjectCompileGateNamedTestAndTriggerRoutes(t *testing.T)
 			if index.HasErrors() {
 				t.Fatalf("index errors: %v", index.Diagnostics)
 			}
-			run := Run(index, Options{NoDiskCache: true, Parallelism: 1})
+			options := Options{NoDiskCache: true, Parallelism: 1}
+			if deferred[row[2]] {
+				options.SelectedClasses = []string{"DottedReceiverControlTest"}
+			}
+			run := Run(index, options)
+			if deferred[row[2]] {
+				if len(run.ExcludedClasses) != 0 || run.Summary().Passed != 1 {
+					t.Fatalf("offline deferred gate: %+v", run)
+				}
+				return
+			}
 			name := strings.TrimSuffix(filepath.Base(source), filepath.Ext(source))
 			for _, entry := range run.ExcludedClasses {
 				if entry.ClassName == name && strings.Contains(entry.Message, row[4]) {

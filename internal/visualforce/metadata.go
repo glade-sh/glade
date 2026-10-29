@@ -115,14 +115,40 @@ func ValidateVisualforceAccessMetadata(p project.Project) error {
 		return nil
 	}
 	pages, classes := map[string]bool{}, map[string]bool{}
-	for _, path := range p.VisualforcePageFiles {
-		pages[strings.ToLower(nameFromPath(path, ".page"))] = true
+	type projectView struct {
+		source    *project.Project
+		namespace string
 	}
-	for _, path := range p.ApexFiles {
-		if strings.EqualFold(filepath.Ext(path), ".cls") {
-			classes[strings.ToLower(nameFromPath(path, ".cls"))] = true
+	seen := map[projectView]bool{}
+	addName := func(names map[string]bool, name, namespace string) {
+		names[strings.ToLower(name)] = true
+		if namespace != "" {
+			// Access metadata uses the Metadata API spelling, not Apex's dot form.
+			names[strings.ToLower(namespace+"__"+name)] = true
 		}
 	}
+	var collectNames func(projectView)
+	collectNames = func(view projectView) {
+		current := view.source
+		if current == nil || seen[view] {
+			return
+		}
+		seen[view] = true
+		for _, path := range current.VisualforcePageFiles {
+			addName(pages, nameFromPath(path, ".page"), view.namespace)
+		}
+		for _, path := range current.ApexFiles {
+			if strings.EqualFold(filepath.Ext(path), ".cls") {
+				addName(classes, nameFromPath(path, ".cls"), view.namespace)
+			}
+		}
+		for _, dep := range current.ManagedPackageDependencies {
+			if dep.Status == "loaded" {
+				collectNames(projectView{source: dep.Project, namespace: dep.Namespace})
+			}
+		}
+	}
+	collectNames(projectView{source: &p})
 	for _, path := range p.PermissionSetFiles {
 		data, err := os.ReadFile(path)
 		if err != nil {

@@ -24,6 +24,7 @@ import (
 	"github.com/glade-sh/glade/internal/dap"
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/flagparse"
+	"github.com/glade-sh/glade/internal/frontendcache"
 	"github.com/glade-sh/glade/internal/gladehome"
 	"github.com/glade-sh/glade/internal/lsp"
 	"github.com/glade-sh/glade/internal/orgdescribe"
@@ -2133,22 +2134,24 @@ type checkOptions struct {
 }
 
 type checkPerfSummary struct {
-	SchemaVersion  string                 `json:"schemaVersion"`
-	Command        string                 `json:"command"`
-	GeneratedAt    string                 `json:"generatedAt"`
-	Project        string                 `json:"project"`
-	Status         string                 `json:"status"`
-	ExitCode       int                    `json:"exitCode"`
-	TotalMS        int64                  `json:"totalMs"`
-	Summary        sema.Summary           `json:"summary"`
-	ProjectLoadNS  int64                  `json:"projectLoadNs"`
-	SchemaLoadNS   int64                  `json:"schemaLoadNs"`
-	IndexBuildNS   int64                  `json:"indexBuildNs"`
-	OutputNS       int64                  `json:"outputNs"`
-	SemaPerf       checkSemaPerf          `json:"semaPerf"`
-	SemanticCache  checkSemanticCachePerf `json:"semanticCache"`
-	CPUProfilePath string                 `json:"cpuProfilePath,omitempty"`
-	MemProfilePath string                 `json:"memProfilePath,omitempty"`
+	FrontendCacheHit    bool                   `json:"frontendCacheHit"`
+	FrontendIndexBuilds int                    `json:"frontendIndexBuilds"`
+	SchemaVersion       string                 `json:"schemaVersion"`
+	Command             string                 `json:"command"`
+	GeneratedAt         string                 `json:"generatedAt"`
+	Project             string                 `json:"project"`
+	Status              string                 `json:"status"`
+	ExitCode            int                    `json:"exitCode"`
+	TotalMS             int64                  `json:"totalMs"`
+	Summary             sema.Summary           `json:"summary"`
+	ProjectLoadNS       int64                  `json:"projectLoadNs"`
+	SchemaLoadNS        int64                  `json:"schemaLoadNs"`
+	IndexBuildNS        int64                  `json:"indexBuildNs"`
+	OutputNS            int64                  `json:"outputNs"`
+	SemaPerf            checkSemaPerf          `json:"semaPerf"`
+	SemanticCache       checkSemanticCachePerf `json:"semanticCache"`
+	CPUProfilePath      string                 `json:"cpuProfilePath,omitempty"`
+	MemProfilePath      string                 `json:"memProfilePath,omitempty"`
 }
 
 type checkSemanticCachePerf struct {
@@ -2274,6 +2277,8 @@ func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 	}
 	var index typesys.Index
 	var buildArtifacts typesys.BuildArtifacts
+	frontendCacheHit := false
+	frontendIndexBuilds := 1
 	var indexStarted time.Time
 	if perfEnabled {
 		indexStarted = time.Now()
@@ -2296,7 +2301,20 @@ func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 		if err := ctx.Err(); err != nil {
 			return sema.Result{}, err
 		}
-		index, buildArtifacts = typesys.BuildWithArtifacts(p, s)
+		if apextest.ResolveDiskRuntimeCachePolicy(apextest.Options{NoDiskCache: opts.noCache}).Enabled {
+			frontendIndexBuilds = 0
+			frontend := frontendcache.LoadOrBuild(p, s, func() (typesys.Index, typesys.BuildArtifacts) {
+				frontendIndexBuilds++
+				return typesys.BuildWithArtifacts(p, s)
+			})
+			index, buildArtifacts = frontend.Index, frontend.Artifacts
+			frontendCacheHit = frontend.Hit
+			if frontend.Reused {
+				frontendIndexBuilds++
+			}
+		} else {
+			index, buildArtifacts = typesys.BuildWithArtifacts(p, s)
+		}
 	}
 	if err := ctx.Err(); err != nil {
 		return sema.Result{}, err
@@ -2468,6 +2486,7 @@ func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 	}
 	if perfEnabled {
 		if err := writeCheckPerfJSON(opts.perfJSONPath, result, checkPerfSummary{
+			FrontendCacheHit: frontendCacheHit, FrontendIndexBuilds: frontendIndexBuilds,
 			ProjectLoadNS:  projectLoadNS,
 			SchemaLoadNS:   schemaLoadNS,
 			IndexBuildNS:   indexBuildNS,
@@ -2865,6 +2884,9 @@ func runExecWithProjectLoader(ctx context.Context, args []string, w io.Writer, l
 	}
 	vm.PrewarmPlatformIndexes()
 	machine := vm.New(stdout)
+	// glade exec runs anonymous Apex; native anonymous transactions keep their
+	// own reflection boundary inside named helpers (reference_only_names).
+	machine.SetToolingExecuteAnonymous(true)
 	machine.SetTraceEnabled(tracePath != "" || debug || jsonOut || debugLogMode != "" || debugLogPath != "")
 	if limitMode != "" {
 		machine.SetLimitMode(limitMode)

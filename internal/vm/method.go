@@ -47,7 +47,7 @@ func (vm *VM) RegisterMethod(method Method) error {
 	if method.Name == "" {
 		return fmt.Errorf("method name is required")
 	}
-	if vm.runtimeArtifactsShared {
+	if vm.runtimeArtifactsShared.Load() {
 		vm.registerSharedMethod(method)
 		vm.methodCandidates = nil
 		vm.methodResolveCache = nil

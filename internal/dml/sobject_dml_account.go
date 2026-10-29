@@ -141,6 +141,33 @@ func defaultRecordTypeForRecord(objectName string, recordTypes []storage.RecordT
 	return defaultRecordType(recordTypes)
 }
 
+// AccountDefaultRecordType selects the running user's profile default for the
+// account's kind, falling back to the org's record types when none is declared.
+// Both the Apex pre-insert defaults and storage DML use this decision.
+func AccountDefaultRecordType(org *storage.OrgState, userID storage.ID, definition storage.ObjectDefinition, record storage.Record) (storage.RecordTypeInfo, bool) {
+	if org != nil && len(org.Metadata.AccountRecordTypeDefaults) != 0 {
+		if userID == "" {
+			userID = storage.DefaultUserID
+		}
+		_, user, found := storage.LookupRecordByID(org.Objects["User"].Records, userID)
+		if found {
+			profileID := idFromStorageValue(user.Fields["ProfileId"])
+			person := forcePersonAccountRecordType("Account", record)
+			for _, mapping := range org.Metadata.AccountRecordTypeDefaults {
+				if !storage.IDsEqual(mapping.ProfileID, profileID) || mapping.PersonAccount != person {
+					continue
+				}
+				for _, recordType := range definition.RecordTypes {
+					if strings.EqualFold(recordType.DeveloperName, mapping.DeveloperName) && recordType.Active && recordType.Available {
+						return recordType, true
+					}
+				}
+			}
+		}
+	}
+	return defaultRecordTypeForRecord("Account", definition.RecordTypes, record)
+}
+
 func personAccountRecordType(recordTypes []storage.RecordTypeInfo) (storage.RecordTypeInfo, bool) {
 	if recordType, ok := preferredPersonAccountRecordType(recordTypes, false, func(rt storage.RecordTypeInfo) bool {
 		return rt.Active && rt.Available && rt.Default
@@ -182,8 +209,22 @@ func preferredPersonAccountRecordType(recordTypes []storage.RecordTypeInfo, allo
 }
 
 func recordTypeLooksPersonAccount(recordType storage.RecordTypeInfo) bool {
+	if recordType.PersonAccount {
+		return true
+	}
 	name := strings.ToLower(strings.TrimSpace(recordType.Name + " " + recordType.DeveloperName))
 	return strings.Contains(name, "person") || strings.Contains(name, "individual")
+}
+
+// explicitPersonAccountRecordType reports whether id names a record type that
+// belongs to person accounts, whatever its developer name.
+func explicitPersonAccountRecordType(recordTypes []storage.RecordTypeInfo, id storage.ID) bool {
+	for _, recordType := range recordTypes {
+		if recordType.ID != "" && storage.IDsEqual(recordType.ID, id) {
+			return recordType.PersonAccount || recordTypeLooksPersonAccount(recordType)
+		}
+	}
+	return false
 }
 
 func recordTypeLooksGenericPersonAccount(recordType storage.RecordTypeInfo) bool {
@@ -198,22 +239,22 @@ func recordTypeLooksGenericPersonAccount(recordType storage.RecordTypeInfo) bool
 
 func businessAccountRecordType(recordTypes []storage.RecordTypeInfo) (storage.RecordTypeInfo, bool) {
 	for _, recordType := range recordTypes {
-		if recordType.Default && recordType.Active && recordType.Available && !recordTypeLooksPersonAccount(recordType) {
+		if recordType.Default && recordType.Active && recordType.Available && !recordType.PersonAccount && !recordTypeLooksPersonAccount(recordType) {
 			return recordType, true
 		}
 	}
 	for _, recordType := range recordTypes {
-		if recordType.Active && recordType.Available && !recordTypeLooksPersonAccount(recordType) {
+		if recordType.Active && recordType.Available && !recordType.PersonAccount && !recordTypeLooksPersonAccount(recordType) {
 			return recordType, true
 		}
 	}
 	for _, recordType := range recordTypes {
-		if recordType.Active && !recordTypeLooksPersonAccount(recordType) {
+		if recordType.Active && !recordType.PersonAccount && !recordTypeLooksPersonAccount(recordType) {
 			return recordType, true
 		}
 	}
 	for _, recordType := range recordTypes {
-		if !recordTypeLooksPersonAccount(recordType) {
+		if !recordType.PersonAccount && !recordTypeLooksPersonAccount(recordType) {
 			return recordType, true
 		}
 	}

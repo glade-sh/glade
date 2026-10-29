@@ -41,18 +41,21 @@ type SelectExpr struct {
 }
 
 type Condition struct {
-	Field        string
-	Operator     string
-	Value        string
-	Values       []string
-	ValueIsNull  bool
-	ValueQuoted  bool
-	RelativeDate bool
-	NullInList   bool
-	Bind         string
-	Not          bool
-	And          []Condition
-	Or           []Condition
+	Field    string
+	Operator string
+	Value    string
+	Values   []string
+	// UnquotedValues retains literal spelling for filter type validation. The
+	// indexes refer to Values; null entries are tracked separately by NullInList.
+	UnquotedValues map[int]bool
+	ValueIsNull    bool
+	ValueQuoted    bool
+	RelativeDate   bool
+	NullInList     bool
+	Bind           string
+	Not            bool
+	And            []Condition
+	Or             []Condition
 }
 
 type OrderSpec struct {
@@ -106,6 +109,16 @@ type ContractError struct {
 
 func (err *ContractError) Error() string { return err.Message }
 
+// BindSyntaxError retains the native dynamic-bind boundary separately from
+// literal validation. Parenthesized dynamic binds terminate outside Apex catch.
+type BindSyntaxError struct {
+	Message       string
+	Uncatchable   bool
+	InlineMessage string
+}
+
+func (err *BindSyntaxError) Error() string { return err.Message }
+
 // InlineCompileDiagnosticMessage supplies the native compile rejection for
 // captured inline grammar errors. Dynamic calls keep ContractError.Message.
 func InlineCompileDiagnosticMessage(raw string, query Query, err error) string {
@@ -119,6 +132,10 @@ func InlineCompileDiagnosticMessage(raw string, query Query, err error) string {
 	var contract *ContractError
 	if errors.As(err, &contract) {
 		return contract.InlineMessage
+	}
+	var bind *BindSyntaxError
+	if errors.As(err, &bind) {
+		return bind.InlineMessage
 	}
 	if err == nil {
 		for _, spec := range query.Returning {
@@ -175,6 +192,13 @@ type token struct {
 
 func Parse(input string) (Query, error) {
 	parser := parser{tokens: lex(input)}
+	return parser.parse()
+}
+
+// ParseInline preserves Apex member/index/call operands as bind tokens. Dynamic
+// SOSL accepts variable references only and continues to use Parse.
+func ParseInline(input string) (Query, error) {
+	parser := parser{tokens: lexWithInlineBinds(input, true)}
 	return parser.parse()
 }
 
@@ -310,11 +334,11 @@ func (p *parser) parseTerms() ([]SearchTerm, *SearchExpression, string, string, 
 		text = p.next().text
 	case tokenColon:
 		p.next()
-		bind := p.next()
-		if bind.kind != tokenWord {
-			return nil, nil, "", "", "", p.errorf("expected FIND bind")
+		bind, err := p.parseBind("FIND")
+		if err != nil {
+			return nil, nil, "", "", "", err
 		}
-		return []SearchTerm{{Text: ":" + bind.text}}, nil, "", bind.text, "", nil
+		return []SearchTerm{{Text: ":" + bind}}, nil, "", bind, "", nil
 	default:
 		found := p.next().text
 		if found == "" {
@@ -571,33 +595,43 @@ func (p *parser) parseConditionLeaf() (Condition, error) {
 	}
 	if operation == "IN" || operation == "NOT IN" {
 		if p.accept(tokenColon) {
-			bind := p.next()
-			if bind.kind != tokenWord {
-				return Condition{}, p.errorf("expected SOSL WHERE value bind")
+			bind, err := p.parseBind("SOSL WHERE value")
+			if err != nil {
+				return Condition{}, err
 			}
-			return Condition{Field: field.text, Operator: operation, Bind: bind.text}, nil
+			return Condition{Field: field.text, Operator: operation, Bind: bind}, nil
 		}
 		if !p.accept(tokenLParen) {
 			return Condition{}, p.errorf("expected SOSL WHERE IN values")
 		}
 		var values []string
+		var unquotedValues map[int]bool
 		containsNull := false
 		for !p.accept(tokenRParen) {
 			quoted := p.peek().kind == tokenString
 			value, bind, nullValue, err := p.parseValue("SOSL WHERE IN value")
-			if err != nil || bind != "" {
-				return Condition{}, p.errorf("expected SOSL WHERE IN value")
+			if err != nil {
+				return Condition{}, err
+			}
+			if bind != "" {
+				value = ":" + bind
 			}
 			if nullValue && !quoted {
 				containsNull = true
 			} else {
 				values = append(values, value)
+				if !quoted && bind == "" {
+					if unquotedValues == nil {
+						unquotedValues = make(map[int]bool)
+					}
+					unquotedValues[len(values)-1] = true
+				}
 			}
 			if !p.accept(tokenComma) && p.peek().kind != tokenRParen {
 				return Condition{}, p.errorf("expected SOSL WHERE IN comma or end")
 			}
 		}
-		return Condition{Field: field.text, Operator: operation, Values: values, NullInList: containsNull}, nil
+		return Condition{Field: field.text, Operator: operation, Values: values, UnquotedValues: unquotedValues, NullInList: containsNull}, nil
 	}
 	quoted := p.peek().kind == tokenString
 	value, bind, nullValue, err := p.parseValue("SOSL WHERE value")
@@ -661,11 +695,8 @@ func (p *parser) parseWindow(clause string) (Window, error) {
 
 func (p *parser) parseValue(clause string) (string, string, bool, error) {
 	if p.accept(tokenColon) {
-		bind := p.next()
-		if bind.kind != tokenWord {
-			return "", "", false, p.errorf("expected %s bind", clause)
-		}
-		return "", bind.text, false, nil
+		bind, err := p.parseBind(clause)
+		return "", bind, false, err
 	}
 	tok := p.next()
 	if tok.kind != tokenString && tok.kind != tokenWord && tok.kind != tokenNumber {
@@ -684,6 +715,28 @@ func (p *parser) parseValue(clause string) (string, string, bool, error) {
 		return literal, "", false, nil
 	}
 	return tok.text, "", strings.EqualFold(tok.text, "NULL"), nil
+}
+
+func (p *parser) parseBind(clause string) (string, error) {
+	bind := p.next()
+	if bind.kind == tokenLParen {
+		err := &BindSyntaxError{Message: "Only variable references are allowed in dynamic SOQL/SOSL.", Uncatchable: true}
+		if clause == "FIND" {
+			err.InlineMessage = "Unexpected token '<'."
+		}
+		return "", err
+	}
+	if bind.kind != tokenWord {
+		return "", p.errorf("expected %s bind", clause)
+	}
+	if next := p.peek(); next.text == "[" || next.kind == tokenLParen {
+		message := "expecting a right parentheses, found '" + next.text + "'"
+		if clause == "FIND" {
+			message = "unexpected token: " + next.text
+		}
+		return "", &BindSyntaxError{Message: message}
+	}
+	return bind.text, nil
 }
 
 func (p *parser) parseWith(query *Query) error {
@@ -872,6 +925,10 @@ func (p *parser) errorf(format string, args ...any) error {
 }
 
 func lex(input string) []token {
+	return lexWithInlineBinds(input, false)
+}
+
+func lexWithInlineBinds(input string, inline bool) []token {
 	var tokens []token
 	for i := 0; i < len(input); {
 		if unicode.IsSpace(rune(input[i])) {
@@ -914,6 +971,25 @@ func lex(input string) []token {
 		case ':':
 			tokens = append(tokens, token{kind: tokenColon, text: ":"})
 			i++
+			if inline {
+				start := i
+				for start < len(input) && strings.ContainsRune(" \t\r\n", rune(input[start])) {
+					start++
+				}
+				// Preserve the native rejection of an initial parenthesis, and
+				// leave numeric date-literal suffixes to ordinary tokenization.
+				if start < len(input) && (input[start] == '_' || input[start] >= 'A' && input[start] <= 'Z' || input[start] >= 'a' && input[start] <= 'z') {
+					if end, ok := soql.ScanBindExpression(input, start); ok {
+						operand := input[start:end]
+						// Only the captured indexed/call forms acquire inline
+						// support; conditional and safe-navigation binds do not.
+						if strings.ContainsAny(operand, "[(") && !strings.Contains(operand, "?") {
+							tokens = append(tokens, token{kind: tokenWord, text: operand})
+							i = end
+						}
+					}
+				}
+			}
 		case '=':
 			tokens = append(tokens, token{kind: tokenEqual, text: "="})
 			i++

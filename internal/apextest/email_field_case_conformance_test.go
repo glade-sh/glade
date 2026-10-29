@@ -96,7 +96,7 @@ func TestEmailFieldCaseOrgConformance(t *testing.T) {
 		}
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			fixture := data.FixtureSourcesByAPI[api]
 			if len(fixture) != 7 {
 				t.Fatal("captured Email helper/object/two-trigger source matrix incomplete")

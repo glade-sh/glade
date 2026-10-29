@@ -1544,6 +1544,8 @@ func TestCIRaceApextestAggregateRejectsAdversarialEvidence(t *testing.T) {
 	}
 	for _, fixture := range tests {
 		t.Run(fixture.name, func(t *testing.T) {
+			// Each child owns its artifacts, mutations and validator output.
+			t.Parallel()
 			root := t.TempDir()
 			writeApextestAggregateArtifact(t, root, "a", []int{0, 3, 5, 8, 11, 13}, headSHA, 333)
 			writeApextestAggregateArtifact(t, root, "b", []int{4, 7, 12, 15}, headSHA, 333)
@@ -2066,5 +2068,21 @@ if [[ "$lane" != *ordinary-0 ]]; then mkdir -p "$(dirname "$output")"; printf '{
 	data, readErr := os.ReadFile(logPath)
 	if readErr != nil || !strings.Contains(string(data), "start race-internal-playground-group-3") || !strings.Contains(string(data), "start race-internal-playground-ordinary-0") || strings.Contains(string(data), "start race-internal-playground-ordinary-1") {
 		t.Fatalf("ordinary resource failure lane order:\n%s err=%v", data, readErr)
+	}
+}
+
+func TestCIL08RaceRoutesRequireBrowser(t *testing.T) {
+	data, err := os.ReadFile("../.github/workflows/race.yml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	jobs := workflowJobBlocksText(string(data))
+	for _, name := range []string{"race", "race-push"} {
+		t.Run(name, func(t *testing.T) {
+			environment, _, ok := strings.Cut(jobs[name], "    steps:")
+			if !ok || !strings.Contains(environment, "      GLADE_LWC_BROWSER: \"1\"\n") {
+				t.Fatal("provisioned race server route must enable L08 browser conformance")
+			}
+		})
 	}
 }

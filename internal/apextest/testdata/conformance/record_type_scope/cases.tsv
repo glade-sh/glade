@@ -1,0 +1,5 @@
+id	purpose
+foreignInsert	reject foreign object record type on insert
+foreignUpdate	reject foreign object record type on update
+localInsert	accept own record type
+defaultInsert	accept omitted record type

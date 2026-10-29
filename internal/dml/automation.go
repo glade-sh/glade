@@ -48,7 +48,7 @@ func (e *Engine) applyWorkflowFieldUpdates(objectName string, id storage.ID) (bo
 		if !rule.Active {
 			continue
 		}
-		matches, ok := evaluateWorkflowRule(rule, record, object.Definition, e.Org)
+		matches, ok := evaluateWorkflowRuleWithUser(rule, record, object.Definition, e.Org, e.systemUserID())
 		if !ok || !matches {
 			continue
 		}
@@ -591,18 +591,29 @@ func (e *Engine) applyFlowFieldUpdates(objectName string, id storage.ID) (bool, 
 		e.enqueueFlowPaths(objectName, id, deferred)
 		return false, nil
 	}
-	if err := validateRequired(object.Definition, record); err != nil {
+	if err := e.storeFlowFieldUpdates(objectName, previous, record); err != nil {
 		return false, err
+	}
+	e.enqueueFlowPaths(objectName, id, deferred)
+	return true, nil
+}
+
+// storeFlowFieldUpdates completes a selected interview using the same checks
+// and audit fields for individual and batched action execution.
+func (e *Engine) storeFlowFieldUpdates(objectName string, previous, record storage.Record) error {
+	object := e.Org.Objects[objectName]
+	if err := validateRequired(object.Definition, record); err != nil {
+		return err
 	}
 	if err := e.validateReferences(object.Definition, record); err != nil {
-		return false, err
+		return err
 	}
-	priorRecord := e.priorRecordForValidation(id, previous)
+	priorRecord := e.priorRecordForValidation(record.ID, previous)
 	if err := e.validateValidationRules(objectName, object.Definition, record, &priorRecord, false); err != nil {
-		return false, err
+		return err
 	}
 	if err := e.validateUnique(objectName, object.Definition, record, record.ID); err != nil {
-		return false, err
+		return err
 	}
 	if _, cloned := storage.EnsureMutableObjectRecords(e.Org, objectName); cloned {
 		object = e.Org.Objects[objectName]
@@ -611,12 +622,11 @@ func (e *Engine) applyFlowFieldUpdates(objectName string, id storage.ID) (bool, 
 	record.System.LastModifiedDate = stamp
 	record.System.SystemModstamp = stamp
 	record.System.LastModifiedByID = e.systemUserID()
-	object.Records[id] = record
+	object.Records[record.ID] = record
 	e.Org.Objects[objectName] = object
 	e.removeUniqueIndexRecord(objectName, object.Definition, previous)
 	e.addUniqueIndexRecord(objectName, object.Definition, record)
-	e.enqueueFlowPaths(objectName, id, deferred)
-	return true, nil
+	return nil
 }
 
 func sortedFlowRules(rules []storage.FlowRule) []storage.FlowRule {
@@ -747,6 +757,11 @@ func (e *Engine) applyFlowEffects(flowName, objectName string, record *storage.R
 }
 
 func (e *Engine) applyFlowSteps(flowName, objectName string, record *storage.Record, definition storage.ObjectDefinition, steps []storage.FlowStep, textTemplates map[string]string, variables []storage.FlowVariable) (bool, error) {
+	frame := e.newFlowStepFrame(flowName, record, definition, steps, textTemplates, variables)
+	return e.applyFlowStepsWithFrame(flowName, objectName, record, definition, steps, frame)
+}
+
+func (e *Engine) newFlowStepFrame(flowName string, record *storage.Record, definition storage.ObjectDefinition, steps []storage.FlowStep, textTemplates map[string]string, variables []storage.FlowVariable) *flowFrame {
 	frame := newFlowFrame()
 	for _, rule := range definition.FlowRules {
 		if rule.Name == flowName {
@@ -762,7 +777,7 @@ func (e *Engine) applyFlowSteps(flowName, objectName string, record *storage.Rec
 	flowCoreSeedScalarDefaults(variables, frame)
 	seedFlowFrame(e, record, frame)
 	e.seedFlowDecisionPrior(flowName, *record, definition, steps, frame)
-	return e.applyFlowStepsWithFrame(flowName, objectName, record, definition, steps, frame)
+	return frame
 }
 
 type flowRecordCollection struct {
@@ -781,6 +796,7 @@ type flowFrame struct {
 	scalarBeforeSave    bool
 	createDecision      bool
 	lookupOutputs       map[string]flowLookupOutput
+	subflowInputs       map[string]flowLookupOutput
 	lookupCollections   map[string]flowRecordCollection
 	matchedObjects      map[string]bool
 	variables           map[string]storage.FlowVariable
@@ -794,12 +810,25 @@ type flowFrame struct {
 	// autolaunched preserves Email Alert's interview-origin logging behavior.
 	autolaunched            bool
 	outputAssignmentLookups map[string]bool
+	// Automatic single-output Apex results belong to this interview.
+	actionOutputs  map[string]storage.Value
+	preparedAction *flowPreparedAction
+}
+
+// A prepared result is consumed once by the original action node. Nested
+// interviews and subsequent visits cannot reuse another invocation's result.
+type flowPreparedAction struct {
+	name      string
+	output    storage.Value
+	hasOutput bool
+	err       error
 }
 
 func newFlowFrame() *flowFrame {
 	return &flowFrame{
 		activeTargets:      make(map[string]bool),
 		lookupOutputs:      make(map[string]flowLookupOutput),
+		subflowInputs:      make(map[string]flowLookupOutput),
 		lookupCollections:  make(map[string]flowRecordCollection),
 		matchedObjects:     make(map[string]bool),
 		variables:          make(map[string]storage.FlowVariable),
@@ -1101,8 +1130,20 @@ func (e *Engine) applyFlowStep(flowName, objectName string, record *storage.Reco
 			}
 			return false, nil
 		}
+		if prepared := frame.preparedAction; prepared != nil && prepared.name == flowFrameKey(step.Action.Name) {
+			frame.preparedAction = nil
+			receive := frame.actionOutputReceiver(step.Action.Name)
+			if prepared.hasOutput {
+				receive(prepared.output)
+			}
+			if prepared.err != nil {
+				return false, flowActionFailure(step.Action.Name, prepared.err)
+			}
+			return false, nil
+		}
 		if e.FlowActionInvokerWithContext != nil {
 			context := e.flowActionContextFromFrame(frame)
+			context.Output = frame.actionOutputReceiver(step.Action.Name)
 			if err := e.FlowActionInvokerWithContext(step.Action, record.Clone(), context); err != nil {
 				return false, flowActionFailure(step.Action.Name, err)
 			}
@@ -1198,6 +1239,7 @@ func (e *Engine) applyFlowStep(flowName, objectName string, record *storage.Reco
 		if msg == "" {
 			msg = step.CustomError.Name
 		}
+		msg = e.renderFlowCustomErrorText(msg, frame)
 		return false, &flowCustomErrorFailure{cause: dmlErrorf("FIELD_CUSTOM_VALIDATION_EXCEPTION", nil, "%s", msg)}
 	case "transform":
 		if err := e.applyFlowTransformStep(step.Transform, frame); err != nil {
@@ -1269,6 +1311,7 @@ func (e *Engine) applyFlowAssignmentStep(assignment storage.FlowAssignment, fram
 		dot := strings.LastIndex(target, ".")
 		if dot <= 0 || dot == len(target)-1 {
 			if variable, declared := frame.variables[flowFrameKey(target)]; declared && !variable.IsCollection && strings.EqualFold(variable.DataType, "SObject") {
+				delete(frame.subflowInputs, flowFrameKey(target))
 				if output, found := frame.lookupOutputs[flowFrameKey(assignment.SourceField)]; found {
 					frame.records[flowFrameKey(target)] = output.record.Clone()
 					delete(frame.scalars, flowFrameKey(target))
@@ -2243,6 +2286,12 @@ func (e *Engine) evaluateFlowFrameBranch(branch storage.FlowBranch, source stora
 			}
 			continue
 		}
+		if matches, supported, handled := e.flowRecordPriorReferenceCriterion(item, source, definition, frame); handled {
+			if !supported || !matches {
+				return matches, supported
+			}
+			continue
+		}
 		if e.InvocableFlow {
 			if matches, supported, handled := e.invocableFlowRecordCriterion(item, frame); handled {
 				if !supported || !matches {
@@ -2335,6 +2384,32 @@ func (e *Engine) evaluateFlowFrameBranch(branch storage.FlowBranch, source stora
 			}
 			continue
 		}
+		// A Loop's current item is a record variable: a decision reads its fields
+		// as <item>.<Field> (API 62.0, 67.0, record-triggered flows).
+		if name, path, nested := strings.Cut(strings.TrimSpace(item.Field), "."); nested && !strings.HasPrefix(name, "$") && !strings.Contains(path, ".") {
+			if _, isLookup := frame.lookupOutputs[flowFrameKey(name)]; !isLookup {
+				if record, present := frame.records[flowFrameKey(name)]; present {
+					value, ok := e.flowFrameReferenceValue(item.Field, frame)
+					if !ok && e.Org != nil {
+						// An unset field of a modeled record is null.
+						if objectName, modeled := storage.ResolveObjectName(*e.Org, record.Object); modeled {
+							if field, exists := storage.ResolveFieldName(e.Org.Objects[objectName].Definition, e.Org.Namespace, path); exists {
+								if value, ok = record.Fields[field]; !ok {
+									value, ok = storage.NullValue(), true
+								}
+							}
+						}
+					}
+					if ok {
+						matches, supported := evaluateFlowValueCriteria(value, item)
+						if !supported || !matches {
+							return matches, supported
+						}
+						continue
+					}
+				}
+			}
+		}
 		if record, present := frame.records[flowFrameKey(item.Field)]; present && record.ID != "" && strings.EqualFold(item.Operation, "isnull") {
 			if variable, declared := frame.variables[flowFrameKey(item.Field)]; declared && !variable.IsCollection && strings.EqualFold(variable.DataType, "SObject") {
 				matches, supported := evaluateFlowValueCriteria(storage.IDValue(record.ID), item)
@@ -2365,13 +2440,13 @@ func (e *Engine) evaluateFlowFrameBranch(branch storage.FlowBranch, source stora
 		}
 		if collection, ok := frame.lookupCollections[flowFrameKey(item.Field)]; ok {
 			switch strings.ToLower(strings.TrimSpace(item.Operation)) {
-			case "isempty":
+			case "isempty", "isnull":
 				value := storage.StringValue("nonempty")
 				if len(collection.records) == 0 {
 					value = storage.NullValue()
 				}
 				return evaluateFlowValueCriteria(value, item)
-			case "isnull", "isblank":
+			case "isblank":
 				return len(collection.records) == 0, true
 			default:
 				return false, false
@@ -2419,7 +2494,10 @@ func evaluateFlowValueCriteria(value storage.Value, item storage.WorkflowCriteri
 			return strings.EqualFold(value.String, want), true
 		}
 		return workflowValueString(value) == want, true
-	case "notequal", "not equal", "notequals", "not equals", "ne":
+	case "notequal", "notequalto", "not equal", "notequals", "not equals", "ne":
+		if value.Kind == storage.ValueString {
+			return !strings.EqualFold(value.String, want), true
+		}
 		return workflowValueString(value) != want, true
 	case "greaterthan", "greater than", "gt":
 		return compareFormulaValues(flowFormulaValue(value), formulaValue{kind: formulaString, text: want}, ">"), true
@@ -2448,6 +2526,9 @@ func evaluateFlowValueCriteria(value storage.Value, item storage.WorkflowCriteri
 		return strings.HasSuffix(text, comparison), true
 	case "isnull", "isblank", "isempty":
 		blank := value.Kind == storage.ValueNull || (value.Kind != storage.ValueDecimal && workflowValueString(value) == "")
+		if operation == "isblank" && value.Kind == storage.ValueString {
+			blank = strings.TrimSpace(value.String) == ""
+		}
 		if want == "" || strings.EqualFold(want, "true") {
 			return blank, true
 		}
@@ -2507,6 +2588,9 @@ func (e *Engine) applyFlowFieldUpdate(flowName, objectName string, record *stora
 	if !resolved {
 		value, resolved = e.flowIntegerScalarFieldUpdateValue(update, definition.Fields[fieldName], definition, frame)
 	}
+	if !resolved {
+		value, resolved = e.flowNumberScalarFieldUpdateValue(update, definition.Fields[fieldName], definition, frame)
+	}
 	explicitNull := resolved && value.Kind == storage.ValueNull
 	if !resolved && frame != nil && strings.Contains(update.SourceField, ".") {
 		// A Get Records output with no match yields null for its fields,
@@ -2521,8 +2605,17 @@ func (e *Engine) applyFlowFieldUpdate(flowName, objectName string, record *stora
 	}
 	save, _, _ := flowSaveDecisionMode(flowName, definition)
 	if !resolved && save && update.SourceField != "" {
-		value, resolved = e.flowRefsRelationshipValue(update.SourceField, *record, definition)
+		value, resolved = e.flowRefsRelationshipIDValue(update.SourceField, *record, definition, definition.Fields[fieldName])
+		if !resolved {
+			value, resolved = e.flowRefsRelationshipValue(update.SourceField, *record, definition)
+		}
 		explicitNull = resolved && value.Kind == storage.ValueNull
+	}
+	if !resolved && update.ActionOutput != "" && frame != nil {
+		if output, ok := frame.actionOutputs[flowFrameKey(update.ActionOutput)]; ok {
+			value, resolved = flowActionOutputFieldValue(output, definition.Fields[fieldName])
+			explicitNull = resolved && value.Kind == storage.ValueNull
+		}
 	}
 	if !resolved {
 		value, explicitNull, resolved = workflowUpdateValue(definition.Fields[fieldName], *record, update, definition, e.Org)
@@ -2547,6 +2640,42 @@ func (e *Engine) applyFlowFieldUpdate(flowName, objectName string, record *stora
 		"explicitNull": explicitNull,
 	})
 	return true, nil
+}
+
+func (frame *flowFrame) actionOutputReceiver(name string) func(storage.Value) {
+	if frame == nil {
+		return nil
+	}
+	key := flowFrameKey(name)
+	if frame.actionOutputs == nil {
+		frame.actionOutputs = make(map[string]storage.Value)
+	}
+	// A repeated action cannot retain its previous result. The host reports
+	// null for absent positions; unconvertible output types remain unresolved.
+	delete(frame.actionOutputs, key)
+	return func(value storage.Value) { frame.actionOutputs[key] = value.Clone() }
+}
+
+// The captured single-output actions return Datetime values. Date destinations
+// keep the GMT date; missing positions and null elements remain null.
+func flowActionOutputFieldValue(output storage.Value, field storage.Field) (storage.Value, bool) {
+	if field.Type != storage.FieldDateTime && field.Type != storage.FieldDate {
+		return storage.Value{}, false
+	}
+	if output.Kind == storage.ValueNull {
+		return storage.NullValue(), true
+	}
+	if output.Kind != storage.ValueDateTime {
+		return storage.Value{}, false
+	}
+	if field.Type == storage.FieldDateTime {
+		return output.Clone(), true
+	}
+	instant, ok := parseFormulaDateTime(output.String)
+	if !ok {
+		return storage.Value{}, false
+	}
+	return storage.DateValue(instant.UTC().Format("2006-01-02")), true
 }
 
 func flowActionsNeedLookupOutputs(actions []storage.FlowAction) bool {
@@ -2831,8 +2960,9 @@ func normalizeChatterVisibility(visibility string) string {
 }
 
 type flowLookupOutput struct {
-	record     storage.Record
-	definition storage.ObjectDefinition
+	record        storage.Record
+	definition    storage.ObjectDefinition
+	queriedFields []string
 }
 
 func (e *Engine) flowRecordLookupOutputs(lookups []storage.FlowRecordLookup, source storage.Record, sourceDefinition storage.ObjectDefinition) (map[string]flowLookupOutput, map[string]bool, error) {
@@ -2910,7 +3040,7 @@ func (e *Engine) applyFlowRecordLookupStep(lookup storage.FlowRecordLookup, sour
 		if matched {
 			record = records[0]
 		}
-		frame.lookupOutputs[flowFrameKey(lookup.Name)] = flowLookupOutput{record: record, definition: definition}
+		frame.lookupOutputs[flowFrameKey(lookup.Name)] = flowLookupOutput{record: record, definition: definition, queriedFields: lookup.QueriedFields}
 	}
 	if lookup.StoreOutputAutomatically && !lookup.GetFirstRecordOnly {
 		// Preserve an empty collection as a resolvable frame value. Salesforce
@@ -3156,6 +3286,18 @@ func (e *Engine) runSubflow(rule storage.FlowRule, def storage.ObjectDefinition,
 		}
 		value := storage.StringValue(input.LiteralValue)
 		if input.SourceField != "" {
+			key := flowFrameKey(field)
+			sourceKey := flowFrameKey(input.SourceField)
+			_, scalar := frame.scalars[sourceKey]
+			_, record := frame.records[sourceKey]
+			if variable, declared := subflowFrame.variables[key]; declared && !scalar && !record && !variable.IsCollection && strings.EqualFold(variable.DataType, "SObject") {
+				if output, found := frame.lookupOutputs[sourceKey]; found {
+					output.record = flowExplicitLookupRecord(output.record, output.queriedFields, output.definition, e.Org.Namespace)
+					subflowFrame.records[key] = output.record.Clone()
+					subflowFrame.subflowInputs[key] = output
+					continue
+				}
+			}
 			if flowSubflowCarryRecordInput(subflowFrame, field, input.SourceField, frame) {
 				continue
 			}
@@ -3178,6 +3320,10 @@ func (e *Engine) runSubflow(rule storage.FlowRule, def storage.ObjectDefinition,
 		if record, ok := subflowFrame.records[flowFrameKey(sourceName)]; ok {
 			key := flowFrameKey(output.Target)
 			frame.records[key] = record.Clone()
+			delete(frame.subflowInputs, key)
+			if input, found := subflowFrame.subflowInputs[flowFrameKey(sourceName)]; found {
+				frame.subflowInputs[key] = input
+			}
 			delete(frame.scalars, key)
 			delete(frame.nullRecordDefaults, key)
 			frame.assigned[key] = true
@@ -3187,6 +3333,7 @@ func (e *Engine) runSubflow(rule storage.FlowRule, def storage.ObjectDefinition,
 			// Preserve the legacy projection when no source binding is present.
 			if value, ok := subflowFrame.scalars[flowFrameKey(output.Target)]; ok {
 				frame.scalars[flowFrameKey(output.Target)] = value.Clone()
+				frame.assigned[flowFrameKey(output.Target)] = true
 			}
 			continue
 		}
@@ -3195,6 +3342,7 @@ func (e *Engine) runSubflow(rule storage.FlowRule, def storage.ObjectDefinition,
 			return &flowCoreUnknownSubflowOutputError{subflow: subflow.Name, output: sourceName}
 		}
 		frame.scalars[flowFrameKey(output.Target)] = value.Clone()
+		frame.assigned[flowFrameKey(output.Target)] = true
 	}
 	return nil
 }
@@ -3498,6 +3646,11 @@ func (e *Engine) flowRecordLookupRecords(lookup storage.FlowRecordLookup, source
 	if err != nil {
 		return nil, storage.ObjectDefinition{}, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record lookup %s targets unknown object %s", lookup.Name, lookup.ObjectName)
 	}
+	for _, item := range lookup.Criteria {
+		if err := flowSubflowInputFieldError(item.SourceField, frame, e.Org.Namespace); err != nil {
+			return nil, storage.ObjectDefinition{}, err
+		}
+	}
 	var records []storage.Record
 	for _, candidate := range target.Records {
 		if candidate.System.IsDeleted {
@@ -3621,13 +3774,17 @@ func sourceRecordFieldValue(record storage.Record, field string) (storage.Value,
 }
 
 func evaluateWorkflowRule(rule storage.WorkflowRule, record storage.Record, definition storage.ObjectDefinition, org *storage.OrgState) (bool, bool) {
+	return evaluateWorkflowRuleWithUser(rule, record, definition, org, "")
+}
+
+func evaluateWorkflowRuleWithUser(rule storage.WorkflowRule, record storage.Record, definition storage.ObjectDefinition, org *storage.OrgState, userID storage.ID) (bool, bool) {
 	namespace := ""
 	if org != nil {
 		namespace = org.Namespace
 	}
 	if strings.TrimSpace(rule.Formula) != "" {
 		if org != nil {
-			return evaluateValidationFormulaInOrg(rule.Formula, org, definition, record, nil, false)
+			return evaluateRecordFormulaInOrgWithNamespace(rule.Formula, "", org, definition, record, nil, false, userID)
 		}
 		return evaluateValidationFormula(rule.Formula, record)
 	}
@@ -3672,7 +3829,7 @@ func (e *Engine) evaluateFlowRule(rule storage.FlowRule, record storage.Record, 
 					}
 				}
 			}
-			return evaluateValidationFormulaInOrg(rule.Formula, e.Org, definition, record, prior, false)
+			return evaluateRecordFormulaInOrgWithNamespace(rule.Formula, "", e.Org, definition, record, prior, false, e.systemUserID())
 		}
 		return evaluateValidationFormula(rule.Formula, record)
 	}
@@ -3692,6 +3849,31 @@ func (e *Engine) evaluateFlowRule(rule storage.FlowRule, record storage.Record, 
 	triggerType := strings.TrimSpace(rule.TriggerType)
 	created := strings.EqualFold(triggerType, "RecordBeforeSave") && record.ID == "" ||
 		strings.EqualFold(triggerType, "RecordAfterSave") && record.ID != "" && e.activeCreatedAutomationID == record.ID
+	if len(rule.CriteriaGroups) > 0 {
+		unsupported := false
+		for _, group := range rule.CriteriaGroups {
+			groupMatches := true
+			for _, index := range group {
+				if index < 0 || index >= len(rule.Criteria) {
+					continue
+				}
+				matches, ok := evaluateFlowCoreEntryCriteria(rule.Criteria[index], record, definition, namespace, prior, rule, created)
+				if !ok {
+					unsupported = true
+					groupMatches = false
+					break
+				}
+				if !matches {
+					groupMatches = false
+					break
+				}
+			}
+			if groupMatches {
+				return true, true
+			}
+		}
+		return false, !unsupported
+	}
 	for _, item := range rule.Criteria {
 		matches, ok := evaluateFlowCoreEntryCriteria(item, record, definition, namespace, prior, rule, created)
 		if !ok || !matches {
@@ -3704,7 +3886,7 @@ func (e *Engine) evaluateFlowRule(rule storage.FlowRule, record storage.Record, 
 func (e *Engine) evaluateFlowBranch(branch storage.FlowBranch, record storage.Record, definition storage.ObjectDefinition, save bool) (bool, bool) {
 	if strings.TrimSpace(branch.Formula) != "" {
 		if e.Org != nil {
-			matches, ok := evaluateValidationFormulaInOrg(branch.Formula, e.Org, definition, record, e.flowPriorRecord(record.ID), false)
+			matches, ok := evaluateRecordFormulaInOrgWithNamespace(branch.Formula, "", e.Org, definition, record, e.flowPriorRecord(record.ID), false, e.systemUserID())
 			if !ok || !matches {
 				return matches, ok
 			}

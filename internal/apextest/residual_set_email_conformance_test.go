@@ -111,7 +111,7 @@ func TestSetEmailResidualOrgConformance(t *testing.T) {
 		}
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "SetEmailResidual", api)
 			for _, row := range data.Rows {
 				t.Run(row.ID, func(t *testing.T) {

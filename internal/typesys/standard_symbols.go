@@ -1234,7 +1234,8 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 	{Name: "Schema.ChildRelationship", Methods: []StandardMethodSpec{{Name: "getRelationshipName", ReturnType: "String"}, {Name: "getChildSObject", ReturnType: "Schema.SObjectType"}, {Name: "getField", ReturnType: "Schema.SObjectField"}, {Name: "isCascadeDelete", ReturnType: "Boolean"}}},
 	{Name: "Security", Methods: []StandardMethodSpec{{Name: "stripInaccessible", ReturnType: "SObjectAccessDecision", Parameters: []string{"AccessType", "List<SObject>"}, Static: true}, {Name: "stripInaccessible", ReturnType: "SObjectAccessDecision", Parameters: []string{"AccessType", "List<SObject>", "Boolean"}, Static: true}, {Name: "stripInaccessible", ReturnType: "SObjectAccessDecision", Parameters: []string{"AccessType", "List<SObject>", "Boolean", "Id"}, Static: true}}},
 	{Name: "SObjectAccessDecision", Constructors: [][]string{{}}, Methods: []StandardMethodSpec{{Name: "clone", ReturnType: "Object"}, {Name: "getModifiedIndexes", ReturnType: "Set<Integer>"}, {Name: "getRecords", ReturnType: "List<SObject>"}, {Name: "getRemovedFields", ReturnType: "Map<String,Set<String>>"}}},
-	{Name: "Address", Methods: []StandardMethodSpec{{Name: "getStreet", ReturnType: "String"}, {Name: "getCity", ReturnType: "String"}, {Name: "getState", ReturnType: "String"}, {Name: "getStateCode", ReturnType: "String"}, {Name: "getPostalCode", ReturnType: "String"}, {Name: "getCountry", ReturnType: "String"}, {Name: "getCountryCode", ReturnType: "String"}, {Name: "getLatitude", ReturnType: "Double"}, {Name: "getLongitude", ReturnType: "Double"}, {Name: "getGeocodeAccuracy", ReturnType: "String"}}},
+	// Native API 62/67 Address values upcast to System.Location (address_location/org.tsv).
+	{Name: "Address", SuperClass: "System.Location", Methods: []StandardMethodSpec{{Name: "getStreet", ReturnType: "String"}, {Name: "getCity", ReturnType: "String"}, {Name: "getState", ReturnType: "String"}, {Name: "getStateCode", ReturnType: "String"}, {Name: "getPostalCode", ReturnType: "String"}, {Name: "getCountry", ReturnType: "String"}, {Name: "getCountryCode", ReturnType: "String"}, {Name: "getLatitude", ReturnType: "Double"}, {Name: "getLongitude", ReturnType: "Double"}, {Name: "getGeocodeAccuracy", ReturnType: "String"}}},
 	{Name: "Metadata.MetadataType", Kind: apexast.DeclarationEnum, Properties: []StandardPropertySpec{{Name: "CustomMetadata", Type: "Metadata.MetadataType", Static: true}}},
 	{Name: "Metadata.Operations", Methods: []StandardMethodSpec{{Name: "retrieve", ReturnType: "List<Metadata.Metadata>", Parameters: []string{"Metadata.MetadataType", "List<String>"}, Static: true}, {Name: "enqueueDeployment", ReturnType: "Id", Parameters: []string{"Metadata.DeployContainer", "Metadata.DeployCallback"}, Static: true}, {Name: "checkDeployStatus", ReturnType: "Metadata.DeployResult", Parameters: []string{"Id"}, Static: true}}},
 	{Name: "Messaging.SingleEmailMessage", SuperClass: "Messaging.Email", Methods: []StandardMethodSpec{{Name: "setToAddresses", ReturnType: "void", Parameters: []string{"List<String>"}}, {Name: "setSubject", ReturnType: "void", Parameters: []string{"String"}}, {Name: "setPlainTextBody", ReturnType: "void", Parameters: []string{"String"}}, {Name: "setWhatId", ReturnType: "void", Parameters: []string{"Id"}}, {Name: "getCustomHeaders", ReturnType: "Map<String,String>"}, {Name: "setCustomHeaders", ReturnType: "void", Parameters: []string{"Map<String,String>"}}}, Properties: []StandardPropertySpec{{Name: "customHeaders", Type: "Map<String,String>"}}},
@@ -1348,11 +1349,18 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 	{Name: "SObject", Methods: []StandardMethodSpec{{Name: "addError", ReturnType: "void", ParameterSpecs: []StandardParameterSpec{{Name: "exceptionError", Type: "Exception"}, {Name: "escape", Type: "Boolean"}}}}},
 	// Native API 62/67 compilation retains these overridable entry points and
 	// abstract types. CartCalculate's delegation helpers remain non-virtual.
+	// Native API 62/67 rejects direct list construction and accepts both
+	// concrete cart values as CommerceObject arguments and return values.
 	{Name: "CartExtension.CartItemList", ReplaceConstructors: true},
 	{Name: "CartExtension.CartDeliveryGroup", SuperClass: "CartExtension.CommerceObject"},
 	{Name: "CartExtension.CartItem", SuperClass: "CartExtension.CommerceObject"},
 	{Name: "CartExtension.CartCalculate", Modifiers: []string{"virtual"}, Methods: []StandardMethodSpec{
 		{Name: "calculate", ReturnType: "void", Parameters: []string{"CartExtension.CartCalculateOrchestratorRequest"}, Modifiers: []string{"virtual"}},
+	}},
+	// Commerce-enabled API62/67 native rows also expose the inventory
+	// calculator as abstract with a concrete, overridable calculate method.
+	{Name: "CartExtension.InventoryCartCalculator", Modifiers: []string{"abstract"}, Methods: []StandardMethodSpec{
+		{Name: "calculate", ReturnType: "void", Parameters: []string{"CartExtension.CartCalculateCalculatorRequest"}, Modifiers: []string{"virtual"}},
 	}},
 	{Name: "CartExtension.PricingCartCalculator", Modifiers: []string{"abstract"}, Methods: []StandardMethodSpec{
 		{Name: "calculate", ReturnType: "void", Parameters: []string{"CartExtension.CartCalculateCalculatorRequest"}, Modifiers: []string{"virtual"}},

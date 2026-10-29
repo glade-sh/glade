@@ -10,8 +10,8 @@ import (
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
-// Require path-aware Flow target references and reject expanded paths.
-const dapCacheVersion = 10
+// Require the captured business-default fallback in the restored org.
+const dapCacheVersion = 11
 
 func loadDAPStartupState(projectRoot string) (storage.OrgState, apextest.CompiledProjectRuntime, string, error) {
 	root, err := filepath.Abs(projectRoot)

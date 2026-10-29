@@ -106,7 +106,7 @@ func TestSharingClassNamesOrgConformance(t *testing.T) {
 		t.Fatalf("captured row/API pairs: %d", pairs)
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			for _, row := range data.Rows {
 				expected, captured := row.Expected[api]
 				if !captured {

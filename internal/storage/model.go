@@ -77,7 +77,7 @@ type OrgState struct {
 	APIVersion             string                 `json:"apiVersion,omitempty"`
 	Namespace              string                 `json:"namespace,omitempty"`
 	DomainURL              string                 `json:"domainUrl,omitempty"`
-	Features               []string               `json:"features,omitempty"`
+	Features               []string               `json:"features,omitzero"`
 	Metadata               MetadataRegistry       `json:"metadata,omitempty"`
 	Objects                map[string]ObjectState `json:"objects"`
 	IDSequences            map[string]uint64      `json:"idSequences,omitempty"`
@@ -187,6 +187,12 @@ func (o *OrgState) InvalidateRuntimeGeneration() {
 		return
 	}
 	o.runtimeGeneration = newOrgRuntimeGeneration()
+	// Resolved names, folded-name tables and misses are also schema-derived.
+	// Detach the complete graph: a same-count replacement or a definition
+	// change can alter lookup preference without changing any old cache key.
+	if o.objectNameCache != nil {
+		o.objectNameCache = newObjectNameCache(o.Objects)
+	}
 }
 
 // SchemaGeneration counts ClearRuntimeSchemaStamp calls on this org value.
@@ -208,11 +214,15 @@ func (o *OrgState) ClearRuntimeSchemaStamp() {
 		o.keyPrefixesValidatedObjectCount = 0
 		o.keyPrefixesValidatedPrefixes = nil
 		o.keyPrefixesValidatedGeneration = 0
-		o.runtimeGeneration = newOrgRuntimeGeneration()
+		o.InvalidateRuntimeGeneration()
 	}
 }
 
 type MetadataRegistry struct {
+	// AccountRecordTypeDefaults keeps the separate business/person defaults
+	// declared by each profile. Runtime clones share this immutable metadata.
+	AccountRecordTypeDefaults []AccountRecordTypeDefault `json:"accountRecordTypeDefaults,omitempty"`
+
 	// ChangeEventEntities are selected by deployed ChangeEvents channel members.
 	ChangeEventEntities []string `json:"changeEventEntities,omitempty"`
 
@@ -234,6 +244,12 @@ type MetadataRegistry struct {
 	MessageChannels        []MessageChannelMetadata    `json:"messageChannels,omitempty"`
 	FeatureParameters      []FeatureParameterMetadata  `json:"featureParameters,omitempty"`
 	Layouts                []LayoutMetadata            `json:"layouts,omitempty"`
+}
+
+type AccountRecordTypeDefault struct {
+	ProfileID     ID     `json:"profileId"`
+	DeveloperName string `json:"developerName"`
+	PersonAccount bool   `json:"personAccount,omitempty"`
 }
 
 type FeatureParameterMetadata struct {
@@ -478,6 +494,11 @@ type Field struct {
 	// not be filled back in by a catalog overlay when the object is described.
 	PicklistValuesConfigured bool `json:"picklistValuesConfigured,omitempty"`
 
+	// Distinguish catalog describe restrictions from explicit project or native
+	// validation rules. A missing marker preserves existing persisted rules.
+	RestrictedPicklistFromCatalog bool `json:"restrictedPicklistFromCatalog,omitempty"`
+	StandardValueSetApplied       bool `json:"standardValueSetApplied,omitempty"`
+
 	MetadataRelationshipControllingField string `json:"metadataRelationshipControllingField,omitempty"`
 }
 
@@ -520,9 +541,12 @@ type SummaryFilterItem struct {
 }
 
 func EnsureRecordTypeIDField(definition *ObjectDefinition) {
-	if definition == nil || len(definition.RecordTypes) == 0 {
+	if definition == nil || len(definition.RecordTypes) == 0 || !StandardObjectRecordTypeFieldEnabled(*definition) {
 		return
 	}
+	// This helper also runs before the standard overlay in describe/fixture
+	// imports. Record the declared field set before synthesizing its lookup.
+	snapshotConfiguredStandardPolicyFields(definition)
 	if definition.Fields == nil {
 		definition.Fields = make(map[string]Field)
 	}
@@ -560,6 +584,9 @@ type RecordTypeInfo struct {
 	Default          bool              `json:"default,omitempty"`
 	Description      string            `json:"description,omitempty"`
 	PicklistDefaults map[string]string `json:"picklistDefaults,omitempty"`
+	// PersonAccount marks a record type declared under the PersonAccount
+	// metadata object. Its developer name need not mention "person".
+	PersonAccount bool `json:"personAccount,omitempty"`
 }
 
 type ValidationRule struct {
@@ -608,6 +635,9 @@ type WorkflowFieldUpdate struct {
 	LiteralValue string `json:"literalValue,omitempty"`
 	Formula      string `json:"formula,omitempty"`
 	SourceField  string `json:"sourceField,omitempty"`
+	// ActionOutput names a Flow Apex action whose automatically stored
+	// output supplies the value.
+	ActionOutput string `json:"actionOutput,omitempty"`
 }
 
 type WorkflowEmailAlert struct {
@@ -640,17 +670,21 @@ type FlowRule struct {
 	CoreEntryFilterLogic bool                   `json:"coreEntryFilterLogic,omitempty"`
 	TextTemplates        map[string]string      `json:"textTemplates,omitempty"`
 	Criteria             []WorkflowCriteriaItem `json:"criteria,omitempty"`
-	Branches             []FlowBranch           `json:"branches,omitempty"`
-	Steps                []FlowStep             `json:"steps,omitempty"`
-	Paths                []FlowPath             `json:"paths,omitempty"`
-	FieldUpdates         []WorkflowFieldUpdate  `json:"fieldUpdates,omitempty"`
-	Actions              []FlowAction           `json:"actions,omitempty"`
-	RecordLookups        []FlowRecordLookup     `json:"recordLookups,omitempty"`
-	RecordCreates        []FlowRecordCreate     `json:"recordCreates,omitempty"`
-	RecordDeletes        []FlowRecordDelete     `json:"recordDeletes,omitempty"`
-	CustomErrors         []FlowCustomError      `json:"customErrors,omitempty"`
-	ApexPlugins          []FlowApexPluginCall   `json:"apexPlugins,omitempty"`
-	Variables            []FlowVariable         `json:"variables,omitempty"`
+	// CriteriaGroups holds start-filter logic other than AND as alternatives:
+	// each group lists indexes into Criteria that must all match, and the
+	// entry matches when any group does ("or", "1 OR (2 AND 3)").
+	CriteriaGroups [][]int               `json:"criteriaGroups,omitempty"`
+	Branches       []FlowBranch          `json:"branches,omitempty"`
+	Steps          []FlowStep            `json:"steps,omitempty"`
+	Paths          []FlowPath            `json:"paths,omitempty"`
+	FieldUpdates   []WorkflowFieldUpdate `json:"fieldUpdates,omitempty"`
+	Actions        []FlowAction          `json:"actions,omitempty"`
+	RecordLookups  []FlowRecordLookup    `json:"recordLookups,omitempty"`
+	RecordCreates  []FlowRecordCreate    `json:"recordCreates,omitempty"`
+	RecordDeletes  []FlowRecordDelete    `json:"recordDeletes,omitempty"`
+	CustomErrors   []FlowCustomError     `json:"customErrors,omitempty"`
+	ApexPlugins    []FlowApexPluginCall  `json:"apexPlugins,omitempty"`
+	Variables      []FlowVariable        `json:"variables,omitempty"`
 	// StepTargets stores shared connector targets once. Reference steps name a
 	// target instead of recursively embedding its continuation.
 	StepTargets map[string][]FlowStep `json:"stepTargets,omitempty"`
@@ -1347,10 +1381,11 @@ const (
 )
 
 func NewOrgState() OrgState {
+	objects := make(map[string]ObjectState)
 	return OrgState{
-		Objects:           make(map[string]ObjectState),
+		Objects:           objects,
 		IDSequences:       make(map[string]uint64),
-		objectNameCache:   &sync.Map{},
+		objectNameCache:   newObjectNameCache(objects),
 		runtimeGeneration: newOrgRuntimeGeneration(),
 	}
 }
@@ -1367,6 +1402,7 @@ func StripNamespaceToken(namespace, name string) string {
 }
 
 func ResolveObjectName(org OrgState, name string) (string, bool) {
+	org.objectNameCache = ownedObjectNameCache(org)
 	cacheKey := strings.ToLower(strings.TrimSpace(org.Namespace)) + "|" + strconv.Itoa(len(org.Objects)) + "|" + strings.ToLower(strings.TrimSpace(name))
 	if org.objectNameCache != nil {
 		if cached, ok := org.objectNameCache.Load(cacheKey); ok {
@@ -1510,6 +1546,15 @@ func ResolveFieldName(definition ObjectDefinition, namespace, name string) (stri
 	}
 	if resolved, ok := resolveLocationComponentField(definition, namespace, name); ok {
 		return resolved, true
+	}
+	// Custom Address components (<Base>__<Part>__s) carry the package
+	// namespace of their compound field, like __c names.
+	if namespace != "" && hasAPISuffix(name, "__s") && StripNamespaceToken(namespace, name) == name {
+		component := namespace + "__" + name
+		if _, ok := definition.Fields[component]; ok {
+			return component, true
+		}
+		prefixed = component
 	}
 	for candidate := range definition.Fields {
 		if strings.EqualFold(candidate, name) || strings.EqualFold(candidate, prefixed) || strings.EqualFold(candidate, stripped) {
@@ -2112,7 +2157,7 @@ func (i IndexSet) Clone() IndexSet {
 
 func (o OrgState) Clone() OrgState {
 	out := o
-	out.Features = append([]string(nil), o.Features...)
+	out.Features = slices.Clone(o.Features)
 	out.Metadata.FeatureParameters = append([]FeatureParameterMetadata(nil), o.Metadata.FeatureParameters...)
 	out.Metadata.Flows = cloneFlowRules(o.Metadata.Flows)
 	out.Metadata.FlowDeclarations = cloneFlowRules(o.Metadata.FlowDeclarations)
@@ -2145,7 +2190,7 @@ func (o OrgState) Clone() OrgState {
 func (o OrgState) CloneRuntime() OrgState {
 	cloneStats.cloneRuntime.Add(1)
 	out := o
-	out.Features = append([]string(nil), o.Features...)
+	out.Features = slices.Clone(o.Features)
 	out.Metadata.FeatureParameters = append([]FeatureParameterMetadata(nil), o.Metadata.FeatureParameters...)
 	out.Metadata.Flows = cloneFlowRules(o.Metadata.Flows)
 	out.Metadata.FlowDeclarations = cloneFlowRules(o.Metadata.FlowDeclarations)
@@ -2180,7 +2225,7 @@ func (o OrgState) CloneRuntime() OrgState {
 func (o OrgState) CloneRuntimeFrozenDefinition() OrgState {
 	cloneStats.cloneRuntime.Add(1)
 	out := o
-	out.Features = append([]string(nil), o.Features...)
+	out.Features = slices.Clone(o.Features)
 	out.Metadata.FeatureParameters = append([]FeatureParameterMetadata(nil), o.Metadata.FeatureParameters...)
 	out.Metadata.Flows = cloneFlowRules(o.Metadata.Flows)
 	out.Metadata.FlowDeclarations = cloneFlowRules(o.Metadata.FlowDeclarations)
@@ -2241,7 +2286,7 @@ func IsImmutableMetadataObject(objectName string) bool {
 func (o OrgState) CloneRuntimeFrozenShared() OrgState {
 	cloneStats.cloneRuntime.Add(1)
 	out := o
-	out.Features = append([]string(nil), o.Features...)
+	out.Features = slices.Clone(o.Features)
 	out.Metadata.FeatureParameters = append([]FeatureParameterMetadata(nil), o.Metadata.FeatureParameters...)
 	if o.Objects != nil {
 		out.Objects = make(map[string]ObjectState, len(o.Objects))

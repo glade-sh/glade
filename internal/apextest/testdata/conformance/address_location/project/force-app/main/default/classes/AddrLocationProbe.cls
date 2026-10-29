@@ -1,0 +1,7 @@
+public class AddrLocationProbe {
+ public static void NULL_UPCAST() { System.Address a; System.Location l = a; System.assertEquals(null,l); }
+ public static void STANDARD() { Account r = new Account(Name='Standard',BillingStreet='One',BillingLatitude=12.5,BillingLongitude=25.0); insert r; r=[SELECT BillingAddress FROM Account WHERE Id=:r.Id]; System.Address a=r.BillingAddress; System.Location l=a; System.assertEquals(12.5,l.getLatitude()); System.assertEquals(25.0,l.getLongitude()); System.assertEquals(0.0,a.getDistance(l,'km')); System.assertEquals(0.0,Location.getDistance(a,l,'mi')); Object o=a; System.assert(o instanceof Location); System.assert(o instanceof System.Address); System.assertEquals(a,(System.Address)l); }
+ public static void CUSTOM() { Account r = new Account(Name='Custom',Site__Street__s='Two',Site__Latitude__s=12.5,Site__Longitude__s=25.0); insert r; r=[SELECT Site__c FROM Account WHERE Id=:r.Id]; Address a=r.Site__c; Location l=a; System.assertEquals(12.5,a.getLatitude()); System.assertEquals(25.0,a.getLongitude()); System.assertEquals(0.0,l.getDistance(a,'mi')); Object o=a; System.assert(o instanceof System.Location); }
+ public static void NULL_INSTANCE() { System.Address a; Object o=a; System.assertEquals(false,o instanceof System.Location); }
+ public static void REVERSE_CAST() { System.Location l=System.Location.newInstance(0,0); try { System.Address a=(System.Address)l; System.assert(false); } catch (System.TypeException e) { System.assert(true); } }
+}

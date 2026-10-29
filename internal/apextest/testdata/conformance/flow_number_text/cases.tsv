@@ -1,0 +1,9 @@
+id	purpose
+River	positive Number to String
+Lake	zero Number to String
+Hill	null Number to String
+changed	update Number to String
+RiverTone	Picklist to String, corresponding Number case
+LakeTone	Picklist to String, corresponding Number case
+HillTone	Picklist to String, corresponding Number case
+changedTone	Picklist to String, corresponding Number case

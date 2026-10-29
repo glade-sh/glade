@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>StandardOnly</fullName><active>true</active><errorConditionFormula>AND(Name = &quot;standard-only&quot;, $Profile.Name &lt;&gt; &quot;Standard User&quot;)</errorConditionFormula><errorMessage>Standard profile required</errorMessage></ValidationRule>

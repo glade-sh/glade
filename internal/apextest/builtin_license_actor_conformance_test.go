@@ -67,7 +67,7 @@ func TestBuiltinLicenseActorOrgConformance(t *testing.T) {
 		t.Fatal("missing independent profile or actor row")
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			source, ok := data.SourcesByAPI[api]
 			if !ok {
 				t.Fatal("missing captured API source")

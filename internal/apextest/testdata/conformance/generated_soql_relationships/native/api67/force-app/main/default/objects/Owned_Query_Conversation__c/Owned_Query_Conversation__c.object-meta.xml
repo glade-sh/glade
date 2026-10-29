@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <description>Owned two-hop relationship query fixture</description>
+    <enableActivities>false</enableActivities>
+    <enableBulkApi>true</enableBulkApi>
+    <enableFeeds>false</enableFeeds>
+    <enableHistory>false</enableHistory>
+    <enableReports>false</enableReports>
+    <enableSearch>true</enableSearch>
+    <label>Owned Query Conversation</label>
+    <nameField>
+        <label>Owned Query Conversation Name</label>
+        <type>Text</type>
+    </nameField>
+    <pluralLabel>Owned Query Conversations</pluralLabel>
+    <sharingModel>ReadWrite</sharingModel>
+</CustomObject>

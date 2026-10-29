@@ -95,3 +95,33 @@ func (e *Engine) flowTypedUserBooleanDecisionValue(reference string, source stor
 	}
 	return value.Clone(), true
 }
+
+// flowRefsRelationshipIDValue reads <Relationship>.Id of the triggering record
+// as the lookup's own Id. Native rows (flow_relationship_id_update, API 62.0 and
+// 67.0): a before-save Update Records assignment of $Record.Parent.Id stored the
+// 18-character parent Id in a text field and null when the lookup was empty.
+// Native self-lookup assignments also succeed for populated and empty values
+// (flow_relationship_id_target_boundary/org.tsv, API 62.0 and 67.0).
+func (e *Engine) flowRefsRelationshipIDValue(reference string, record storage.Record, definition storage.ObjectDefinition, target storage.Field) (storage.Value, bool) {
+	parts := strings.Split(strings.TrimSpace(reference), ".")
+	if e == nil || e.Org == nil || len(parts) != 2 || !strings.EqualFold(parts[1], "Id") {
+		return storage.Value{}, false
+	}
+	lookup, ok := relationshipLookupField(definition, e.Org.Namespace, parts[0])
+	if !ok || lookup.Type != storage.FieldReference {
+		return storage.Value{}, false
+	}
+	value, present := sourceRecordFieldValue(record, lookup.APIName)
+	if !present || value.Kind == storage.ValueNull {
+		return storage.NullValue(), true
+	}
+	id := idFromStorageValue(value)
+	if storage.ValidateID(id) != nil {
+		return storage.Value{}, false
+	}
+	if target.Type == storage.FieldString {
+		// Stored Ids are 15 characters; native text carries the 18-character form.
+		return storage.StringValue(formulaCaseSafeID(string(id))), true
+	}
+	return storage.IDValue(id), true
+}

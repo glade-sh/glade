@@ -764,8 +764,8 @@ func TestEnsureStandardObjectFieldsRemovesEventNameOverlay(t *testing.T) {
 	if field, ok := definition.Fields["Type"]; !ok || field.Type != FieldPicklist || !FieldFlagValue(field.Createable, false) {
 		t.Fatalf("Event.Type field = %#v, %v", field, ok)
 	}
-	if field, ok := definition.Fields["IsClosed"]; !ok || field.Type != FieldBoolean {
-		t.Fatalf("Event.IsClosed field = %#v, %v", field, ok)
+	if _, ok := definition.Fields["IsClosed"]; ok {
+		t.Fatal("native Event describe has no IsClosed field")
 	}
 }
 
@@ -890,14 +890,10 @@ func TestEnsureStandardObjectFieldsAddsUserProfileBreadthFields(t *testing.T) {
 
 	EnsureStandardObjectFields(&definition)
 
-	if field, ok := definition.Fields["AssistantName"]; !ok || field.Type != FieldString {
-		t.Fatalf("User.AssistantName = %#v, %v", field, ok)
-	}
-	if field, ok := definition.Fields["LeadSource"]; !ok || field.Type != FieldPicklist {
-		t.Fatalf("User.LeadSource = %#v, %v", field, ok)
-	}
-	if field, ok := definition.Fields["Salutation"]; !ok || field.Type != FieldPicklist {
-		t.Fatalf("User.Salutation = %#v, %v", field, ok)
+	for _, field := range []string{"AssistantName", "LeadSource", "Salutation"} {
+		if _, ok := definition.Fields[field]; ok {
+			t.Fatalf("native User describe has no %s field", field)
+		}
 	}
 	for _, fieldName := range []string{"Alias", "Email", "EmailEncodingKey", "IsActive", "LanguageLocaleKey", "LocaleSidKey", "ProfileId", "Username"} {
 		if field := definition.Fields[fieldName]; field.DefaultValue == "" {
@@ -1225,8 +1221,10 @@ func TestEnsureStandardObjectAddsSalesCloudStandardObjectShape(t *testing.T) {
 	if field, ok := org.Objects["Opportunity"].Definition.Fields["TotalOpportunityQuantity"]; !ok || field.Type != FieldDecimal {
 		t.Fatalf("Opportunity.TotalOpportunityQuantity field = %#v, %v", field, ok)
 	}
-	if field, ok := org.Objects["Opportunity"].Definition.Fields["RecordTypeId"]; !ok || field.Type != FieldReference {
-		t.Fatalf("Opportunity.RecordTypeId field = %#v, %v", field, ok)
+	// Native bare membership is absent at API62/67; see the derived rows in
+	// standard_field_policy_review/org.tsv:10-11 and its ORG-RUN.txt.
+	if _, ok := org.Objects["Opportunity"].Definition.Fields["RecordTypeId"]; ok {
+		t.Fatal("bare Opportunity exposes native-absent RecordTypeId")
 	}
 	if field, ok := org.Objects["OpportunityContactRole"].Definition.Fields["ContactId"]; !ok || field.Type != FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "Contact" {
 		t.Fatalf("OpportunityContactRole.ContactId field = %#v, %v", field, ok)
@@ -1406,6 +1404,12 @@ func TestEnsureStandardObjectAddsRecordTypeIdFromGeneratedRecordTypes(t *testing
 	definition := ObjectDefinition{APIName: "Account"}
 
 	EnsureStandardObjectFields(&definition)
+
+	// Native P0 has no Account.RecordTypeId; isolated P2 adds it at both APIs.
+	if _, exists := definition.Fields["RecordTypeId"]; exists {
+		t.Fatal("feature-off baseline exposes Account.RecordTypeId")
+	}
+	EnsureStandardObjectFieldsForFeatures(&definition, []string{"PersonAccounts"})
 
 	if len(definition.RecordTypes) == 0 {
 		t.Fatalf("Account record types = %#v", definition.RecordTypes)

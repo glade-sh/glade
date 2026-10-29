@@ -20,6 +20,15 @@ var observedPlatformSourceTypeAvailability = map[string]apexversion.Range{
 	"richmessaging.catalogsection":     {Since: 66},
 }
 
+// Observed visibility failures do not establish release introduction dates.
+// commerce_extension_shapes/org.tsv:31-32,46-47,92-93,107-108 captures these
+// declaration and anonymous rejections in a Commerce-enabled scratch org.
+// Leave unprobed source versions and other names in the partial catalog alone.
+var observedPlatformSourceTypeRejections = map[string]map[string]bool{
+	"commercestorepricing.contractresolutionrequest":  {"62.0": true, "67.0": true},
+	"commercestorepricing.contractresolutionresponse": {"62.0": true, "67.0": true},
+}
+
 // Messaging C019 compiles this callback at API 65 as well as 66/67.
 var observedPlatformSourceMemberAvailability = map[string]apexversion.Range{
 	"richmessaging.processformhandler.processformrequest": {Since: 65},
@@ -46,9 +55,28 @@ var observedPlatformSourceExactAvailability = map[string]apexversion.Range{
 }
 
 func semaPlatformTypeUnavailable(version, typeName string) bool {
+	return semaPlatformTypeUnavailableInModel(version, typeName, nil)
+}
+
+func semaPlatformTypeUnavailableInModel(version, typeName string, model *semaTypeMemberView) bool {
 	for _, key := range semaPlatformTypeKeys(typeName) {
 		if semaPlatformExplicitlyUnsupported("apex:" + key) {
 			return true
+		}
+		if versions, ok := observedPlatformSourceTypeRejections[key]; ok {
+			if resolved, err := apexversion.PreserveSource(version); err == nil && versions[resolved] {
+				// A declared source or dependency type can have the same
+				// qualified name. Only skip this platform observation; ordinary
+				// source constructor and method checks still apply.
+				sourceOwned := false
+				if model != nil {
+					members, _, found := semaLookupTypeMembers(model, typeName)
+					sourceOwned = found && !members.platform && !members.sobject
+				}
+				if !sourceOwned {
+					return true
+				}
+			}
 		}
 		if rng, ok := observedPlatformSourceTypeAvailability[key]; ok {
 			return !semaVersionAllows(version, rng)

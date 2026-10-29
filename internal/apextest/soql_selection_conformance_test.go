@@ -148,7 +148,7 @@ func TestSOQLSelectionOrgConformance(t *testing.T) {
 		return "ACCEPTED"
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "SOQL selection", api)
 			root := t.TempDir()
 			names := make([]string, 0, len(data.Declarations)+1)

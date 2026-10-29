@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionCalls>
+        <name>Add_Days</name>
+        <label>Add Days</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <actionName>FlowCoreAOAddDays</actionName>
+        <actionType>apex</actionType>
+        <connector>
+            <targetReference>Set_due</targetReference>
+        </connector>
+        <faultConnector><targetReference>Action_fault</targetReference></faultConnector>
+        <flowTransactionModel>Automatic</flowTransactionModel>
+        <inputParameters>
+            <name>mode</name>
+            <value>
+                <elementReference>$Record.Unit__c</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>startDateTime</name>
+            <value>
+                <elementReference>$Record.Start__c</elementReference>
+            </value>
+        </inputParameters>
+        <nameSegment>FlowCoreAOAddDays</nameSegment>
+        <offset>0</offset>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </actionCalls>
+    <apiVersion>62.0</apiVersion>
+    <assignments>
+        <name>Set_due</name>
+        <label>Set due</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <assignmentItems>
+            <assignToReference>$Record.DueDate__c</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>Add_Days</elementReference>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>$Record.DueDateTime__c</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>Add_Days</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Save_record</targetReference>
+        </connector>
+    </assignments>
+    <customErrors><name>Action_fault</name><label>Action fault</label><locationX>0</locationX><locationY>0</locationY><customErrorMessages><errorMessage>synthetic action fault</errorMessage><isFieldError>false</isFieldError></customErrorMessages></customErrors>
+    <environments>Default</environments>
+    <interviewLabel>Flow Core AO Output {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Flow Core AO Output</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <recordUpdates>
+        <name>Save_record</name>
+        <label>Save record</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <inputReference>$Record</inputReference>
+    </recordUpdates>
+    <start>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Add_Days</targetReference>
+        </connector>
+        <object>FlowCoreAORecord__c</object>
+        <recordTriggerType>Create</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+</Flow>

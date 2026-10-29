@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>ParentGate</fullName>
+    <active>true</active>
+    <errorConditionFormula>AND(Parent__r.Gate__c, TextValue__c = &quot;parent-block&quot;)</errorConditionFormula>
+    <errorMessage>Parent gate blocked</errorMessage>
+</ValidationRule>

@@ -1,0 +1,21 @@
+case_id	query_shape
+scalar_ungrouped	NOT Id IN :ids AND Id IN :scope
+semi_ungrouped	NOT Id IN (SELECT AccountId FROM Contact WHERE Id IN :contactScope) AND Id IN :scope
+scalar_inner_group	NOT (Id IN :ids) AND Id IN :scope
+semi_inner_group	NOT (Id IN (SELECT AccountId FROM Contact WHERE Id IN :contactScope)) AND Id IN :scope
+scalar_group	(NOT (Id IN :ids)) AND Id IN :scope
+semi_group	(NOT (Id IN (SELECT AccountId FROM Contact WHERE Id IN :contactScope))) AND Id IN :scope
+scalar_lower	(not (id in :ids)) and id in :scope
+semi_lower	(not (id in (select accountid from contact where id in :contactScope))) and id in :scope
+scalar_ungrouped_lower	not id in :ids and id in :scope
+semi_ungrouped_lower	not id in (select accountid from contact where id in :contactScope) and id in :scope
+scalar_empty	(NOT (Id IN :emptyIds)) AND Id IN :scope
+semi_empty	(NOT (Id IN (SELECT AccountId FROM Contact WHERE Id IN :emptyContacts))) AND Id IN :scope
+scalar_empty_scope	(NOT (Id IN :ids)) AND Id IN :emptyIds
+semi_empty_scope	(NOT (Id IN (SELECT AccountId FROM Contact WHERE Id IN :contactScope))) AND Id IN :emptyIds
+scalar_and_false	(NOT (Id IN :ids)) AND Name='Absent' AND Id IN :scope
+semi_and_false	(NOT (Id IN (SELECT AccountId FROM Contact WHERE Id IN :contactScope))) AND Name='Absent' AND Id IN :scope
+scalar_standalone	NOT (Id IN :ids)
+semi_standalone	NOT (Id IN (SELECT AccountId FROM Contact WHERE Id IN :contactScope))
+scalar_inline	inline twin of scalar_group
+semi_inline	inline twin of semi_group

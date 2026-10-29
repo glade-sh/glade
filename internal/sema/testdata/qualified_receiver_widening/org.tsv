@@ -1,0 +1,57 @@
+api	shape	compiled	message
+62.0	schema_address_type	true	-
+62.0	page_reference_method	true	-
+62.0	component_nested_type	true	-
+62.0	rollup_enum_nested_receiver	true	-
+62.0	cache_org_exception_type	true	-
+62.0	schema_sobject_fieldset_path	true	-
+62.0	schema_sobject_contact_fields_path	true	-
+62.0	custom_settings_field_token_path	true	-
+62.0	metadata_deploy_status	true	-
+62.0	system_logging_level	true	-
+62.0	auth_jwt_validation_exception	true	-
+62.0	cache_session_exception	true	-
+62.0	boolean_class_literal	true	-
+62.0	schema_class_literal	true	-
+62.0	account_field_token	true	-
+62.0	schema_account_sobject_type	true	-
+62.0	schema_account_fieldsets_getmap	true	-
+62.0	custom_fieldsets_getmap	true	-
+62.0	static_instance_property	true	-
+62.0	dependency_bogus_member	false	Compilation failed at Line 1 column 14 with the error: |  | Variable does not exist: Dep.Known.Bogus
+62.0	system_database_bogus_member	false	Compilation failed at Line 1 column 14 with the error: |  | Variable does not exist: System.Database.Bogus
+62.0	schema_missing_object_fields	false	Compilation failed at Line 1 column 14 with the error: |  | Variable does not exist: Schema.SObjectType.Missing__c.fields
+62.0	schema_unknown_object_fields_getmap	false	Compilation failed at Line 1 column 14 with the error: |  | Variable does not exist: Schema.Thing__c.fields
+62.0	account_sobject_fields_getmap_reject	false	Method does not exist or incorrect signature: void getMap() from the type Schema.SObjectField
+62.0	account_sobject_fields_get	false	Method does not exist or incorrect signature: void get(String) from the type Schema.SObjectField
+62.0	account_fieldsets_getmap_reject	false	Variable does not exist: Account.SObjectType.fieldSets
+62.0	account_named_fieldset_reject	false	Variable does not exist: Account.SObjectType.FieldSets.AccountSummary
+62.0	namespaced_label_receiver_reject	false	External string does not exist: Hello
+67.0	schema_address_type	true	-
+67.0	page_reference_method	true	-
+67.0	component_nested_type	true	-
+67.0	rollup_enum_nested_receiver	true	-
+67.0	cache_org_exception_type	true	-
+67.0	schema_sobject_fieldset_path	true	-
+67.0	schema_sobject_contact_fields_path	true	-
+67.0	custom_settings_field_token_path	true	-
+67.0	metadata_deploy_status	true	-
+67.0	system_logging_level	true	-
+67.0	auth_jwt_validation_exception	true	-
+67.0	cache_session_exception	true	-
+67.0	boolean_class_literal	true	-
+67.0	schema_class_literal	true	-
+67.0	account_field_token	true	-
+67.0	schema_account_sobject_type	true	-
+67.0	schema_account_fieldsets_getmap	true	-
+67.0	custom_fieldsets_getmap	true	-
+67.0	static_instance_property	true	-
+67.0	dependency_bogus_member	false	Compilation failed at Line 1 column 14 with the error: |  | Variable does not exist: Dep.Known.Bogus
+67.0	system_database_bogus_member	false	Compilation failed at Line 1 column 14 with the error: |  | Variable does not exist: System.Database.Bogus
+67.0	schema_missing_object_fields	false	Compilation failed at Line 1 column 14 with the error: |  | Variable does not exist: Schema.SObjectType.Missing__c.fields
+67.0	schema_unknown_object_fields_getmap	false	Compilation failed at Line 1 column 14 with the error: |  | Variable does not exist: Schema.Thing__c.fields
+67.0	account_sobject_fields_getmap_reject	false	Method does not exist or incorrect signature: void getMap() from the type Schema.SObjectField
+67.0	account_sobject_fields_get	false	Method does not exist or incorrect signature: void get(String) from the type Schema.SObjectField
+67.0	account_fieldsets_getmap_reject	false	Variable does not exist: Account.SObjectType.fieldSets
+67.0	account_named_fieldset_reject	false	Variable does not exist: Account.SObjectType.FieldSets.AccountSummary
+67.0	namespaced_label_receiver_reject	false	External string does not exist: Hello

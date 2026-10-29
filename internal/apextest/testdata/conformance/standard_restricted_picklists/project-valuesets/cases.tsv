@@ -1,0 +1,4 @@
+case	input	observation
+Contract.Status	CustomStatus / Draft / NotAnAllowedValue	declared, omitted baseline, bad insert/update
+Order.Status	CustomOrder / Draft / NotAnAllowedValue	declared, omitted baseline, bad insert/update
+Task.Status	CustomTask / Not Started / NotAnAllowedValue	unrestricted control and effective describe values

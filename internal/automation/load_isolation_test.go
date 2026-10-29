@@ -2,6 +2,7 @@ package automation
 
 import (
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -115,7 +116,7 @@ func TestLoadProjectWarnsOnUnsupportedStartFilterLogic(t *testing.T) {
     <triggerType>RecordBeforeSave</triggerType>
     <filters><field>Name</field><operator>EqualTo</operator><value><stringValue>Acme</stringValue></value></filters>
     <filters><field>Name</field><operator>EqualTo</operator><value><stringValue>Beta</stringValue></value></filters>
-    <filterLogic>or</filterLogic>
+    <filterLogic>1 XOR 2</filterLogic>
     <connector><targetReference>Set_Status</targetReference></connector>
   </start>
   <assignments>
@@ -138,7 +139,56 @@ func TestLoadProjectWarnsOnUnsupportedStartFilterLogic(t *testing.T) {
 		t.Fatalf("flows = %#v", idx.Flows)
 	}
 	if len(idx.Diagnostics) != 1 || idx.Diagnostics[0].Code != "GLADEAUTO002" || idx.Diagnostics[0].File != path ||
-		!strings.Contains(idx.Diagnostics[0].Message, "Widget_Either") || !strings.Contains(idx.Diagnostics[0].Message, `start filter logic "or"`) {
+		!strings.Contains(idx.Diagnostics[0].Message, "Widget_Either") || !strings.Contains(idx.Diagnostics[0].Message, `start filter logic "1 XOR 2"`) {
 		t.Fatalf("diagnostics = %#v", idx.Diagnostics)
+	}
+}
+
+func TestLoadProjectKeepsStartFilterOrAndCustomLogicAsAlternatives(t *testing.T) {
+	for _, tc := range []struct {
+		logic string
+		want  [][]int
+	}{
+		{"or", [][]int{{0}, {1}, {2}}},
+		{"1 OR (2 AND 3)", [][]int{{0}, {1, 2}}},
+		{"(1 OR 2) AND 3", [][]int{{0, 2}, {1, 2}}},
+	} {
+		t.Run(tc.logic, func(t *testing.T) {
+			root := t.TempDir()
+			path := filepath.Join(root, "force-app/main/default/flows/Widget_Either.flow-meta.xml")
+			writeWorkflowTestFile(t, path, `<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+  <processType>AutoLaunchedFlow</processType>
+  <status>Active</status>
+  <start>
+    <object>Widget__c</object>
+    <triggerType>RecordBeforeSave</triggerType>
+    <recordTriggerType>Create</recordTriggerType>
+    <filters><field>Name</field><operator>EqualTo</operator><value><stringValue>Acme</stringValue></value></filters>
+    <filters><field>Size__c</field><operator>LessThan</operator><value><numberValue>5</numberValue></value></filters>
+    <filters><field>Kind__c</field><operator>NotEqualTo</operator><value><stringValue>x</stringValue></value></filters>
+    <filterLogic>`+tc.logic+`</filterLogic>
+    <connector><targetReference>Set_Status</targetReference></connector>
+  </start>
+  <assignments>
+    <name>Set_Status</name>
+    <assignmentItems>
+      <assignToReference>$Record.Status__c</assignToReference>
+      <operator>Assign</operator>
+      <value><stringValue>flowed</stringValue></value>
+    </assignmentItems>
+  </assignments>
+</Flow>`)
+			idx, err := LoadProject(project.Project{FlowFiles: []string{path}})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(idx.Diagnostics) != 0 || len(idx.Flows) != 1 || len(idx.Flows[0].Rules) != 1 {
+				t.Fatalf("diagnostics = %#v flows = %#v", idx.Diagnostics, idx.Flows)
+			}
+			rule := idx.Flows[0].Rules[0]
+			if len(rule.Criteria) != 3 || rule.Formula != "" || !reflect.DeepEqual(rule.CriteriaGroups, tc.want) {
+				t.Fatalf("criteria=%d formula=%q groups=%v, want %v", len(rule.Criteria), rule.Formula, rule.CriteriaGroups, tc.want)
+			}
+		})
 	}
 }

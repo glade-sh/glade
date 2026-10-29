@@ -1,0 +1,32 @@
+@IsTest public class QueryShapeProbeTest {
+ @IsTest static void count_missing_query() { System.assert(false,'OBS|'+JSON.serialize(QueryShapeProbe.observe('count_missing','query'))); }
+ @IsTest static void count_missing_queryWithBinds() { System.assert(false,'OBS|'+JSON.serialize(QueryShapeProbe.observe('count_missing','queryWithBinds'))); }
+ @IsTest static void count_missing_countQuery() { System.assert(false,'OBS|'+JSON.serialize(QueryShapeProbe.observe('count_missing','countQuery'))); }
+ @IsTest static void count_missing_locator() { System.assert(false,'OBS|'+JSON.serialize(QueryShapeProbe.observe('count_missing','locator'))); }
+ @IsTest static void count_parent_missing_query() { System.assert(false,'OBS|'+JSON.serialize(QueryShapeProbe.observe('count_parent_missing','query'))); }
+ @IsTest static void count_parent_missing_queryWithBinds() { System.assert(false,'OBS|'+JSON.serialize(QueryShapeProbe.observe('count_parent_missing','queryWithBinds'))); }
+ @IsTest static void count_parent_missing_countQuery() { System.assert(false,'OBS|'+JSON.serialize(QueryShapeProbe.observe('count_parent_missing','countQuery'))); }
+ @IsTest static void count_parent_missing_locator() { System.assert(false,'OBS|'+JSON.serialize(QueryShapeProbe.observe('count_parent_missing','locator'))); }
+ @IsTest static void count_bad_type_query() { System.assert(false,'OBS|'+JSON.serialize(QueryShapeProbe.observe('count_bad_type','query'))); }
+ @IsTest static void count_bad_type_queryWithBinds() { System.assert(false,'OBS|'+JSON.serialize(QueryShapeProbe.observe('count_bad_type','queryWithBinds'))); }
+ @IsTest static void count_bad_type_countQuery() { System.assert(false,'OBS|'+JSON.serialize(QueryShapeProbe.observe('count_bad_type','countQuery'))); }
+ @IsTest static void count_bad_type_locator() { System.assert(false,'OBS|'+JSON.serialize(QueryShapeProbe.observe('count_bad_type','locator'))); }
+ @IsTest static void count_valid_query() { System.assert(false,'OBS|'+JSON.serialize(QueryShapeProbe.observe('count_valid','query'))); }
+ @IsTest static void count_valid_queryWithBinds() { System.assert(false,'OBS|'+JSON.serialize(QueryShapeProbe.observe('count_valid','queryWithBinds'))); }
+ @IsTest static void count_valid_countQuery() { System.assert(false,'OBS|'+JSON.serialize(QueryShapeProbe.observe('count_valid','countQuery'))); }
+ @IsTest static void count_valid_locator() { System.assert(false,'OBS|'+JSON.serialize(QueryShapeProbe.observe('count_valid','locator'))); }
+ @IsTest static void count_empty_query() { System.assert(false,'OBS|'+JSON.serialize(QueryShapeProbe.observe('count_empty','query'))); }
+ @IsTest static void count_empty_queryWithBinds() { System.assert(false,'OBS|'+JSON.serialize(QueryShapeProbe.observe('count_empty','queryWithBinds'))); }
+ @IsTest static void count_empty_countQuery() { System.assert(false,'OBS|'+JSON.serialize(QueryShapeProbe.observe('count_empty','countQuery'))); }
+ @IsTest static void count_empty_locator() { System.assert(false,'OBS|'+JSON.serialize(QueryShapeProbe.observe('count_empty','locator'))); }
+ @IsTest static void group_hidden_query() { System.assert(false,'OBS|'+JSON.serialize(QueryShapeProbe.observe('group_hidden','query'))); }
+ @IsTest static void group_selected_query() { System.assert(false,'OBS|'+JSON.serialize(QueryShapeProbe.observe('group_selected','query'))); }
+ @IsTest static void group_other_hidden_query() { System.assert(false,'OBS|'+JSON.serialize(QueryShapeProbe.observe('group_other_hidden','query'))); }
+ @IsTest static void group_alias_query() { System.assert(false,'OBS|'+JSON.serialize(QueryShapeProbe.observe('group_alias','query'))); }
+ @IsTest static void group_only_query() { System.assert(false,'OBS|'+JSON.serialize(QueryShapeProbe.observe('group_only','query'))); }
+ @IsTest static void order_name_id_query() { System.assert(false,'OBS|'+JSON.serialize(QueryShapeProbe.observe('order_name_id','query'))); }
+ @IsTest static void order_id_name_query() { System.assert(false,'OBS|'+JSON.serialize(QueryShapeProbe.observe('order_id_name','query'))); }
+ @IsTest static void order_three_query() { System.assert(false,'OBS|'+JSON.serialize(QueryShapeProbe.observe('order_three','query'))); }
+ @IsTest static void order_three_reverse_query() { System.assert(false,'OBS|'+JSON.serialize(QueryShapeProbe.observe('order_three_reverse','query'))); }
+ @IsTest static void order_null_query() { System.assert(false,'OBS|'+JSON.serialize(QueryShapeProbe.observe('order_null','query'))); }
+}

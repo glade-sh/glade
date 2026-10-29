@@ -280,7 +280,7 @@ func TestClassesLifecycleOrgConformance(t *testing.T) {
 		}
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "classes and lifecycle", api)
 			rows := rows
 			toolingCaptured := api != "68.0"

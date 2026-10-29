@@ -1,0 +1,7 @@
+id	route	result	value1	value2	value3
+nonnegative	anonymous	PASS	1	127	10000
+work	anonymous	PASS	1	127	10000
+wait	anonymous	PASS	2122	2	200
+reset	IsTest	PASS	fresh<=after	parent>=after	10000
+async	IsTest/Queueable	PASS	nonnegative	60000	PASS
+exhaustion	anonymous	System.LimitException	Apex CPU time limit exceeded	uncatchable	10000

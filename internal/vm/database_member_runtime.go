@@ -204,7 +204,7 @@ func (vm *VM) callDatabaseUnitOfWorkMember(receiver Value, method string, args [
 			if !ok {
 				continue
 			}
-			applied, err := vm.executeDatabaseDMLWithHistoryTestSeed(opValue.Text, []Value{records, Bool(false)}, result, false)
+			applied, err := vm.executeDatabaseDMLWithHistoryTestSeed(opValue.Text, []Value{records, Bool(false)}, result, false, false)
 			if err != nil {
 				return Null, receiver, false, true, err
 			}

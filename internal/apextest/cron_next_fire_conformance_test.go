@@ -102,7 +102,7 @@ func TestCronNextFireNativeConformance(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "CronNextFire", api)
 			classes := map[string]string{"CronNextFireObservation": data.TestClass}
 			for name, source := range data.Helpers {

@@ -38,6 +38,10 @@ func TestChangeEventFieldShapesNativeOrgInstallationAPIRoutes(t *testing.T) {
 				t.Run(api+"/"+context+"/"+install, func(t *testing.T) {
 					org := testDataOrg()
 					org.APIVersion = api
+					// The features-on capture configures Division and a Business
+					// record type (followups/org.tsv:107-108; cases.json:26).
+					configureStandardField(&org, "Account", "Division")
+					configureStandardField(&org, "Account", "RecordTypeId")
 					storage.EnsureStandardObject(&org, "Account")
 					machine := New(nil)
 					if install == "register_after_org" {

@@ -123,7 +123,7 @@ func TestAnnotationsOrgConformance(t *testing.T) {
 		return "compiled"
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			expected := func(row familyCase) string {
 				if api == "68.0" {
 					return *row.CeilingExpected

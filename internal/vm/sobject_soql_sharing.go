@@ -24,7 +24,38 @@ func (vm *VM) userModeRecordVisible(objectName string, record storage.Record, us
 	if vm == nil || vm.soqlObjectHasPublicReadSharing(objectName) || vm.currentUserBypassesRecordSharing() || vm.currentUserObjectRecordGrant(objectName, "PermissionsViewAllRecords", "PermissionsModifyAllRecords") || userID == "" {
 		return true
 	}
-	return vm.controlledParentHasPublicReadSharing(objectName, record) || record.System.OwnerID == "" || storage.IDsEqual(record.System.OwnerID, storage.ID(userID)) || vm.currentUserCanSeeSharedRecord(objectName, record, userID)
+	return vm.controlledParentHasPublicReadSharing(objectName, record) || record.System.OwnerID == "" || storage.IDsEqual(record.System.OwnerID, storage.ID(userID)) || vm.currentUserCanSeeSharedRecord(objectName, record, userID) || vm.leadCreatorReadsFromEmptyQueue(objectName, record, userID)
+}
+
+// flow_followups/org.tsv:63,125 observe one read: a Standard User who created
+// a Lead still reads it after assignment moves it to an empty queue. That is
+// the whole grant. It needs an omitted sharing model, the reading Standard User
+// as creator, and an owner that is a Queue without members. No row covers a
+// reader who neither owns nor created the Lead, so those reads are unchanged.
+func (vm *VM) leadCreatorReadsFromEmptyQueue(objectName string, record storage.Record, userID string) bool {
+	if vm == nil || vm.Org == nil || userID == "" || record.System.OwnerID == "" || !storage.IDsEqual(record.System.CreatedByID, storage.ID(userID)) {
+		return false
+	}
+	canonical, ok := vm.resolveObjectName(objectName)
+	if !ok || !strings.EqualFold(canonical, "Lead") || strings.TrimSpace(vm.Org.Objects[canonical].Definition.SharingModel) != "" {
+		return false
+	}
+	if !strings.EqualFold(vm.currentUserInfoField("UserType", ""), "Standard") {
+		return false
+	}
+	_, group, ok := storage.LookupRecordByID(vm.Org.Objects["Group"].Records, record.System.OwnerID)
+	if !ok || group.System.IsDeleted || !strings.EqualFold(group.Fields["Type"].String, "Queue") {
+		return false
+	}
+	for _, member := range vm.Org.Objects["GroupMember"].Records {
+		if member.System.IsDeleted {
+			continue
+		}
+		if memberGroup, ok := member.GetField("GroupId"); ok && storage.IDsEqual(storage.ID(storageValueIDText(memberGroup)), group.ID) {
+			return false
+		}
+	}
+	return true
 }
 
 // A controlled detail inherits read access from its master, including the

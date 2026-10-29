@@ -1,0 +1,8 @@
+{
+  "orgName": "Owned standard field combination",
+  "edition": "Developer",
+  "features": [
+    "PersonAccounts",
+    "StateAndCountryPicklist"
+  ]
+}

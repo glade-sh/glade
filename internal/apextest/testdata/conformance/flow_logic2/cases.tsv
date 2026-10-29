@@ -1,0 +1,10 @@
+id	left	right	purpose
+left_null	null	5	assigned null left operand
+right_null	8	null	explicit null right operand
+both_null	null	null	both operands null
+positive	8	5	non-null control
+zero	0	0	zero boundary
+negative	-2	-3	signed control
+fractional	null	1.25	fractional null-left boundary
+right_omitted	8	omitted	never-assigned right resource
+left_omitted	omitted	5	never-assigned source of left assignment

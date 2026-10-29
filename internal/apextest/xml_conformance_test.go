@@ -110,7 +110,7 @@ func TestXMLOrgConformance(t *testing.T) {
 		return prefix + "Object r; " + code + " pq.out('" + tc.ID + "',r);"
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "XML", api)
 			apiRows := rows
 			if api == "68.0" {

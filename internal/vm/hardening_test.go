@@ -130,6 +130,7 @@ total = total + 2;
 total = total + 3;
 total = total + 4;
 System.assertEquals(10, total);
+for (Integer i = 0; i < 3000; i++) { total++; }
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -148,8 +149,8 @@ System.assertEquals(10, total);
 	if result.LimitViolations[0].Used <= caps.CPUTimeMS {
 		t.Fatalf("cpu violation used = %d, want over limit %d", result.LimitViolations[0].Used, caps.CPUTimeMS)
 	}
-	if result.LimitViolations[0].Used != machine.cpuBudgetUsed {
-		t.Fatalf("cpu violation used = %d, budget counter = %d", result.LimitViolations[0].Used, machine.cpuBudgetUsed)
+	if result.LimitViolations[0].Used != result.Limits.CPUTimeMS {
+		t.Fatalf("cpu violation used = %d, reported milliseconds = %d", result.LimitViolations[0].Used, result.Limits.CPUTimeMS)
 	}
 }
 

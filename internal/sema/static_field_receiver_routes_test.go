@@ -81,18 +81,17 @@ func TestUnresolvedDeclaredNamespaceReceiverNamedAndTestRoutes(t *testing.T) {
 	}
 }
 
+// A declaration of missingns.Parcel.Options does not supply other receivers
+// of the namespace. Release behaviour rejects these static calls.
 func TestUnresolvedDeclaredNamespaceReceiverRejectsDifferentOwnerNamedRoute(t *testing.T) {
 	for _, api := range []string{"62.0", "67.0"} {
 		for _, receiver := range []string{"missingns.Other.Instance", "otherns.Parcel.Instance", "missingns.ParcelExtra.Instance"} {
 			t.Run(api+"/"+receiver, func(t *testing.T) {
 				source := "public class DeclaredDependencyProbe { missingns.Parcel.Options options; public void observe() { " + receiver + ".save(); } }"
 				result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{"DeclaredDependencyProbe.cls": source}, api)
-				for _, d := range result.Diagnostics {
-					if d.NativeMessage == "Variable does not exist: "+receiver {
-						return
-					}
+				if !result.HasErrors() {
+					t.Fatal("unindexed namespace receiver accepted")
 				}
-				t.Fatalf("unrelated declared dependency hid an unknown receiver: %v", result.Diagnostics)
 			})
 		}
 	}

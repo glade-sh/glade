@@ -13,6 +13,7 @@ import (
 
 func TestDottedReceiverNativeAnonymousNamedTestAndTriggerRoutes(t *testing.T) {
 	const fixture = "../../testdata/conformance/type_name_resolution_pins"
+	deferred := namespaceAbsenceDeferrals(t, filepath.Join(fixture, "receiver_routes"))
 	cases, err := readTypeNamePinRows(filepath.Join(fixture, "receiver_routes/cases.tsv"))
 	if err != nil {
 		t.Fatal(err)
@@ -57,6 +58,12 @@ func TestDottedReceiverNativeAnonymousNamedTestAndTriggerRoutes(t *testing.T) {
 			result := Analyze(index)
 			if row[1] == "anonymous" {
 				result = AnalyzeAnonymous(index, string(source), row[0])
+			}
+			if deferred[row[2]] {
+				if result.HasErrors() {
+					t.Fatal(result.Diagnostics)
+				}
+				return
 			}
 			for _, d := range result.Diagnostics {
 				if d.NativeMessage == row[4] {

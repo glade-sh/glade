@@ -1,0 +1,101 @@
+[
+  {
+    "name": "dependency-path-person-record-type",
+    "enabled": true,
+    "call": "PersonEvidenceHelper.sample();",
+    "files": {
+      "consumer/sfdx-project.json": "{\"sourceApiVersion\":\"{{API}}\",\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true,\"dependencies\":[{\"package\":\"PersonBase\"}]}]}",
+      "consumer/glade.yml": "project:\n  dependencyPaths: [\"../base\"]\n",
+      "base/sfdx-project.json": "{\"sourceApiVersion\":\"{{API}}\",\"packageDirectories\":[{\"path\":\"base-app\",\"default\":true,\"package\":\"PersonBase\"}]}",
+      "base/base-app/main/default/objects/PersonAccount/recordTypes/PersonAccount.recordType-meta.xml": "<RecordType xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>PersonAccount</fullName><active>true</active><label>Person Account</label></RecordType>",
+      "base/base-app/main/default/classes/PersonEvidenceHelper.cls": "public class PersonEvidenceHelper { public static void sample(){{{OBSERVE}}} }"
+    }
+  },
+  {
+    "name": "dependency-path-account-person-record-type",
+    "enabled": true,
+    "call": "PersonEvidenceHelper.sample();",
+    "files": {
+      "consumer/sfdx-project.json": "{\"sourceApiVersion\":\"{{API}}\",\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true,\"dependencies\":[{\"package\":\"PersonBase\"}]}]}",
+      "consumer/glade.yml": "project:\n  dependencyPaths: [\"../base\"]\n",
+      "base/sfdx-project.json": "{\"sourceApiVersion\":\"{{API}}\",\"packageDirectories\":[{\"path\":\"base-app\",\"default\":true,\"package\":\"PersonBase\"}]}",
+      "base/base-app/main/default/objects/Account/recordTypes/PersonAccount.recordType-meta.xml": "<RecordType xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>PersonAccount</fullName><active>true</active><label>Person Account</label></RecordType>",
+      "base/base-app/main/default/classes/PersonEvidenceHelper.cls": "public class PersonEvidenceHelper { public static void sample(){{{OBSERVE}}} }"
+    }
+  },
+  {
+    "name": "dependency-path-scratch-feature",
+    "enabled": true,
+    "call": "PersonEvidenceHelper.sample();",
+    "files": {
+      "consumer/sfdx-project.json": "{\"sourceApiVersion\":\"{{API}}\",\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true,\"dependencies\":[{\"package\":\"PersonBase\"}]}]}",
+      "consumer/glade.yml": "project:\n  dependencyPaths: [\"../base\"]\n",
+      "base/sfdx-project.json": "{\"sourceApiVersion\":\"{{API}}\",\"packageDirectories\":[{\"path\":\"base-app\",\"default\":true,\"package\":\"PersonBase\"}]}",
+      "base/config/project-scratch-def.json": "{\"features\":[\"PersonAccounts\"]}",
+      "base/base-app/main/default/classes/PersonEvidenceHelper.cls": "public class PersonEvidenceHelper { public static void sample(){{{OBSERVE}}} }"
+    }
+  },
+  {
+    "name": "managed-package-source",
+    "enabled": true,
+    "call": "pevid.PersonEvidenceHelper.sample();",
+    "files": {
+      "consumer/sfdx-project.json": "{\"sourceApiVersion\":\"{{API}}\",\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true}]}",
+      "consumer/glade.yml": "project:\n  managedPackageDependencies: [\"pevid:../managed\"]\n",
+      "managed/sfdx-project.json": "{\"namespace\":\"pevid\",\"sourceApiVersion\":\"{{API}}\",\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true}]}",
+      "managed/force-app/main/default/objects/PersonAccount/recordTypes/PersonAccount.recordType-meta.xml": "<RecordType xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>PersonAccount</fullName><active>true</active><label>Person Account</label></RecordType>",
+      "managed/force-app/main/default/classes/PersonEvidenceHelper.cls": "global class PersonEvidenceHelper { global static void sample(){{{OBSERVE}}} }"
+    }
+  },
+  {
+    "name": "two-dependency-levels",
+    "enabled": true,
+    "call": "PersonEvidenceHelper.sample();",
+    "files": {
+      "consumer/sfdx-project.json": "{\"sourceApiVersion\":\"{{API}}\",\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true,\"dependencies\":[{\"package\":\"PersonMid\"}]}]}",
+      "consumer/glade.yml": "project:\n  dependencyPaths: [\"../mid\"]\n",
+      "mid/sfdx-project.json": "{\"sourceApiVersion\":\"{{API}}\",\"packageDirectories\":[{\"path\":\"mid-app\",\"default\":true,\"package\":\"PersonMid\",\"dependencies\":[{\"package\":\"PersonLeaf\"}]}]}",
+      "mid/glade.yml": "project:\n  dependencyPaths: [\"../leaf\"]\n",
+      "mid/mid-app/main/default/classes/PersonEvidenceHelper.cls": "public class PersonEvidenceHelper { public static void sample(){{{OBSERVE}}} }",
+      "leaf/sfdx-project.json": "{\"sourceApiVersion\":\"{{API}}\",\"packageDirectories\":[{\"path\":\"leaf-app\",\"default\":true,\"package\":\"PersonLeaf\"}]}",
+      "leaf/config/project-scratch-def.json": "{\"features\":[\"PersonAccounts\"]}",
+      "leaf/leaf-app/main/default/classes/PersonLeafMarker.cls": "public class PersonLeafMarker {}"
+    }
+  },
+  {
+    "name": "main-only-evidence",
+    "enabled": true,
+    "call": "PersonEvidenceHelper.sample();",
+    "files": {
+      "consumer/sfdx-project.json": "{\"sourceApiVersion\":\"{{API}}\",\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true,\"dependencies\":[{\"package\":\"PersonBase\"}]}]}",
+      "consumer/glade.yml": "project:\n  dependencyPaths: [\"../base\"]\n",
+      "consumer/force-app/main/default/objects/PersonAccount/recordTypes/PersonAccount.recordType-meta.xml": "<RecordType xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>PersonAccount</fullName><active>true</active><label>Person Account</label></RecordType>",
+      "base/sfdx-project.json": "{\"sourceApiVersion\":\"{{API}}\",\"packageDirectories\":[{\"path\":\"base-app\",\"default\":true,\"package\":\"PersonBase\"}]}",
+      "base/base-app/main/default/classes/PersonEvidenceHelper.cls": "public class PersonEvidenceHelper { public static void sample(){{{OBSERVE}}} }"
+    }
+  },
+  {
+    "name": "no-evidence-in-main-or-dependencies",
+    "enabled": false,
+    "rejection": "warning",
+    "call": "PersonEvidenceHelper.sample();",
+    "files": {
+      "consumer/sfdx-project.json": "{\"sourceApiVersion\":\"{{API}}\",\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true,\"dependencies\":[{\"package\":\"PersonBase\"}]}]}",
+      "consumer/glade.yml": "project:\n  dependencyPaths: [\"../base\"]\n",
+      "base/sfdx-project.json": "{\"sourceApiVersion\":\"{{API}}\",\"packageDirectories\":[{\"path\":\"base-app\",\"default\":true,\"package\":\"PersonBase\"}]}",
+      "base/base-app/main/default/objects/Account/recordTypes/Business.recordType-meta.xml": "<RecordType xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Business</fullName><active>true</active><label>Business</label></RecordType>",
+      "base/base-app/main/default/classes/PersonEvidenceHelper.cls": "public class PersonEvidenceHelper { public static void sample(){{{OBSERVE}}} }"
+    }
+  },
+  {
+    "name": "undeclared-sibling-evidence",
+    "enabled": false,
+    "rejection": "error",
+    "call": "",
+    "files": {
+      "consumer/sfdx-project.json": "{\"sourceApiVersion\":\"{{API}}\",\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true}]}",
+      "other/sfdx-project.json": "{\"sourceApiVersion\":\"{{API}}\",\"packageDirectories\":[{\"path\":\"other-app\",\"default\":true,\"package\":\"PersonOther\"}]}",
+      "other/config/project-scratch-def.json": "{\"features\":[\"PersonAccounts\"]}"
+    }
+  }
+]

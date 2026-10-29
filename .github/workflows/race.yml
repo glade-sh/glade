@@ -476,6 +476,7 @@ jobs:
         package: ${{ fromJSON(needs.plan.outputs.generic-packages) }}
     env:
       GOMAXPROCS: "2"
+      GLADE_LWC_BROWSER: "1"
       GLADE_LWC_PLAYWRIGHT_MODULE: ${{ github.workspace }}/lwcruntime/node_modules/playwright
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -673,6 +674,7 @@ jobs:
     env:
       CGO_ENABLED: "1"
       GOMAXPROCS: "2"
+      GLADE_LWC_BROWSER: "1"
       GLADE_LWC_PLAYWRIGHT_MODULE: ${{ github.workspace }}/lwcruntime/node_modules/playwright
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3

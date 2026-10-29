@@ -79,7 +79,7 @@ func TestResidualBoundaryNativeEvidenceCarries(t *testing.T) {
 		t.Fatalf("missing carry shapes: %v", wantIDs)
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "BoundaryEvidence", api)
 			for _, row := range data.Rows {
 				for _, route := range data.Routes {

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>TextPickValueGate</fullName>
+    <active>true</active>
+    <errorConditionFormula>TEXT(PickValue__c) = &quot;BlockTwo&quot;</errorConditionFormula>
+    <errorMessage>Text pick value blocked</errorMessage>
+</ValidationRule>

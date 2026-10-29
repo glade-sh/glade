@@ -1,0 +1,6 @@
+case	behaviour
+match	Current profile and user match in flow entry, decision resource and workflow criteria
+wrong_profile	Opposite expected profile rejects all three routes
+wrong_user	Different expected user rejects all three routes
+ordinary	Outside flow/workflow scope remains unchanged
+restore	After Standard User runAs, caller profile and user are restored

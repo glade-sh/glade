@@ -1,0 +1,17 @@
+id	shape	routes	apis
+S01	past without start/stop	anonymous,istest,project	62.0,67.0
+S02	past within start/stop	anonymous,istest,project	62.0,67.0
+S03	past before start/stop	anonymous,istest,project	62.0,67.0
+S04	future within start/stop	anonymous,istest,project	62.0,67.0
+S05	null within start/stop	anonymous,istest,project	62.0,67.0
+I01	two argument async	anonymous,istest,project	62.0,67.0
+I02	empty namespace async	anonymous,istest,project	62.0,67.0
+I03	null namespace async	anonymous,istest,project	62.0,67.0
+I04	missing namespace async	anonymous,istest,project	62.0,67.0
+I05	empty namespace scheduled	anonymous,istest,project	62.0,67.0
+I06	null namespace scheduled	anonymous,istest,project	62.0,67.0
+I07	missing namespace scheduled	anonymous,istest,project	62.0,67.0
+I08	empty namespace renamed async	anonymous,istest,project	62.0,67.0
+I09	null namespace renamed async	anonymous,istest,project	62.0,67.0
+I10	missing namespace renamed async	anonymous,istest,project	62.0,67.0
+I11	two argument qualified missing	anonymous,istest,project	62.0,67.0

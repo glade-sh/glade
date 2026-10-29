@@ -1807,8 +1807,8 @@ func TestRuntimeKeyIncludesSemanticMetadata(t *testing.T) {
 }
 
 func TestRunWithSourceDigestsPersistsExactV7RuntimeKey(t *testing.T) {
-	if testRuntimeCacheABI != "apextest-runtime-v8" {
-		t.Fatalf("test runtime ABI = %q, want apextest-runtime-v8", testRuntimeCacheABI)
+	if testRuntimeCacheABI != "apextest-runtime-v14" {
+		t.Fatalf("test runtime ABI = %q, want apextest-runtime-v14", testRuntimeCacheABI)
 	}
 	wasDisabled := disableDiskCache.Load()
 	disableDiskCache.Store(false)
@@ -9484,6 +9484,29 @@ func TestMethodParallelismSharesClassWorkerBudget(t *testing.T) {
 				t.Fatalf("methodParallelismForClassRun(%d, %d, %d, %d) = %d, want %d", tt.totalParallelism, tt.classParallelism, tt.methods, tt.unfinishedClasses, got, tt.want)
 			}
 		})
+	}
+}
+
+func TestMethodWorkersGrowWhenClassesFinish(t *testing.T) {
+	allowed := 1
+	grow := func() int { return allowed }
+	// Twelve class workers started this class with one method worker; the
+	// other classes finish while it runs, so the budget rises.
+	if shouldGrowMethodWorkers(1, 3, grow) {
+		t.Fatal("grew with an unchanged budget")
+	}
+	allowed = 12
+	if !shouldGrowMethodWorkers(1, 3, grow) {
+		t.Fatal("did not grow when the budget rose and jobs remain")
+	}
+	if shouldGrowMethodWorkers(3, 3, grow) {
+		t.Fatal("grew beyond the number of remaining jobs")
+	}
+	if shouldGrowMethodWorkers(12, 20, grow) {
+		t.Fatal("grew beyond the allowed budget")
+	}
+	if shouldGrowMethodWorkers(1, 3, nil) {
+		t.Fatal("grew without a budget callback")
 	}
 }
 

@@ -403,6 +403,9 @@ func (vm *VM) passiveGeneratedMethodReturn(method Method, frame map[string]Value
 			}
 		}
 		bindPassiveMethodArgs(&object, method, frame)
+		if strings.EqualFold(methodName, "build") && len(method.Params) == 0 {
+			vm.normalizeBuiltPassivePlatformDTO(&object)
+		}
 		return object
 	default:
 		return defaultValue(returnType, Null)

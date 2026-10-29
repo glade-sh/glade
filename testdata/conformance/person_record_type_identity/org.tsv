@@ -1,0 +1,41 @@
+api	route	case	input	outcome
+62.0	metadata	force-app	developer identities	ACCEPTED
+62.0	metadata	profile-source	developer identities	ACCEPTED
+62.0	metadata	permission-source	developer identities	ACCEPTED
+62.0	anonymous	Care	identity	true|true|true
+62.0	anonymous	Care	business	true|true|false
+62.0	anonymous	Care	person	true|true|true
+62.0	anonymous	Care	missingLastName	REQUIRED_FIELD_MISSING
+62.0	anonymous	Member	identity	true|true|true
+62.0	anonymous	Member	business	true|true|false
+62.0	anonymous	Member	person	true|true|true
+62.0	anonymous	Member	missingLastName	REQUIRED_FIELD_MISSING
+62.0	anonymous	Provider	identity	true|true|true
+62.0	anonymous	Provider	business	true|true|false
+62.0	anonymous	Provider	person	true|true|true
+62.0	anonymous	Provider	missingLastName	REQUIRED_FIELD_MISSING
+62.0	@IsTest	identity	12 anonymous rows	PASS
+62.0	metadata	label	Profiles	REJECTED: In field: recordType - no RecordType named PersonAccount.Care Label found
+62.0	metadata	label	PermissionSets	REJECTED: In field: recordType - no RecordType named PersonAccount.Care Label found
+62.0	metadata	namespace	Profiles	REJECTED: In field: recordType - no RecordType named PersonAccount.pkg__Care found
+62.0	metadata	namespace	PermissionSets	REJECTED: In field: recordType - no RecordType named PersonAccount.pkg__Care found
+67.0	metadata	force-app	developer identities	ACCEPTED
+67.0	metadata	permission-source	developer identities	ACCEPTED
+67.0	metadata	profile-source	developer identities	ACCEPTED
+67.0	anonymous	Care	identity	true|true|true
+67.0	anonymous	Care	business	true|true|false
+67.0	anonymous	Care	person	true|true|true
+67.0	anonymous	Care	missingLastName	REQUIRED_FIELD_MISSING
+67.0	anonymous	Member	identity	true|true|true
+67.0	anonymous	Member	business	true|true|false
+67.0	anonymous	Member	person	true|true|true
+67.0	anonymous	Member	missingLastName	REQUIRED_FIELD_MISSING
+67.0	anonymous	Provider	identity	true|true|true
+67.0	anonymous	Provider	business	true|true|false
+67.0	anonymous	Provider	person	true|true|true
+67.0	anonymous	Provider	missingLastName	REQUIRED_FIELD_MISSING
+67.0	@IsTest	identity	12 anonymous rows	PASS
+67.0	metadata	label	Profiles	REJECTED: In field: recordType - no RecordType named PersonAccount.Care Label found
+67.0	metadata	label	PermissionSets	REJECTED: In field: recordType - no RecordType named PersonAccount.Care Label found
+67.0	metadata	namespace	Profiles	REJECTED: In field: recordType - no RecordType named PersonAccount.pkg__Care found
+67.0	metadata	namespace	PermissionSets	REJECTED: In field: recordType - no RecordType named PersonAccount.pkg__Care found

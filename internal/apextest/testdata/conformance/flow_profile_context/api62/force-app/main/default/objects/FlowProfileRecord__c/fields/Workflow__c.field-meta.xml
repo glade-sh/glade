@@ -1,0 +1,1 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Workflow__c</fullName><label>Workflow</label><defaultValue>false</defaultValue><type>Checkbox</type></CustomField>

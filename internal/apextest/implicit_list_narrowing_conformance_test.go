@@ -114,7 +114,7 @@ func TestImplicitListNarrowingOrgConformance(t *testing.T) {
 		}
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			objects := data.ObjectsByAPI[api]
 			if len(objects) != 2 {
 				t.Fatal("missing native fixture objects")

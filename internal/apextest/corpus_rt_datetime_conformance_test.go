@@ -86,7 +86,7 @@ func TestCorpusRTDatetimeConformance(t *testing.T) {
 	}
 	versions := append(append([]string{}, data.APIVersions...), data.IntermediateAPIVersions...)
 	for _, api := range versions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCounts()
 			defer counts.Log(t, "date and time", api, "corpus-datetime")
 			endpoint := api == "62.0" || api == "67.0"

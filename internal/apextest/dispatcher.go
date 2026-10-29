@@ -5,6 +5,8 @@ import (
 	"os"
 	"sort"
 	"sync"
+
+	"github.com/glade-sh/glade/internal/typesys"
 )
 
 // classDispatcher orders test classes by an evolving cost score so that
@@ -174,6 +176,18 @@ func (h *classScoreHeap) Pop() any {
 	item := old[n-1]
 	*h = old[:n-1]
 	return item
+}
+
+// testCaseCostHintForType returns the coarse cost signal for a test class
+// without rereading the file when the parsed declaration extent is known.
+// The top-level declaration spans essentially the whole source file, so its
+// end offset carries the same size signal as the on-disk length with no
+// syscall per discovered test method.
+func testCaseCostHintForType(typ typesys.TypeSymbol) int64 {
+	if end := int64(typ.Range.End.Offset); end > 0 && typ.HasSourceSnapshot() {
+		return end
+	}
+	return testCaseCostHint(typ.File)
 }
 
 // testCaseCostHint returns a coarse, history-free cost signal for a test

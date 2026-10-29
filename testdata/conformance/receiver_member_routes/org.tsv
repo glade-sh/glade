@@ -1,0 +1,97 @@
+api	route	case	compiled	diagnostic
+62.0	anonymous	static_instance_text	true	-
+62.0	named	static_instance_text	true	-
+62.0	istest	static_instance_text	true	-
+62.0	trigger	static_instance_text	true	-
+62.0	anonymous	inner_member_chain	true	-
+62.0	named	inner_member_chain	true	-
+62.0	istest	inner_member_chain	true	-
+62.0	trigger	inner_member_chain	true	-
+62.0	anonymous	inner_enum_constant	true	-
+62.0	named	inner_enum_constant	true	-
+62.0	istest	inner_enum_constant	true	-
+62.0	trigger	inner_enum_constant	true	-
+62.0	anonymous	inherited_method	true	-
+62.0	named	inherited_method	true	-
+62.0	istest	inherited_method	true	-
+62.0	trigger	inherited_method	true	-
+62.0	anonymous	overload_string	true	-
+62.0	named	overload_string	true	-
+62.0	istest	overload_string	true	-
+62.0	trigger	overload_string	true	-
+62.0	anonymous	overload_integer	true	-
+62.0	named	overload_integer	true	-
+62.0	istest	overload_integer	true	-
+62.0	trigger	overload_integer	true	-
+62.0	anonymous	inner_cast_instanceof	true	-
+62.0	named	inner_cast_instanceof	true	-
+62.0	istest	inner_cast_instanceof	true	-
+62.0	trigger	inner_cast_instanceof	true	-
+62.0	anonymous	short_fields_getmap	false	Method does not exist or incorrect signature: void getMap() from the type Schema.SObjectField
+62.0	named	short_fields_getmap	false	Method does not exist or incorrect signature: void getMap() from the type Schema.SObjectField
+62.0	istest	short_fields_getmap	false	Method does not exist or incorrect signature: void getMap() from the type Schema.SObjectField
+62.0	trigger	short_fields_getmap	false	Method does not exist or incorrect signature: void getMap() from the type Schema.SObjectField
+62.0	anonymous	short_fields_get	false	Method does not exist or incorrect signature: void get(String) from the type Schema.SObjectField
+62.0	named	short_fields_get	false	Method does not exist or incorrect signature: void get(String) from the type Schema.SObjectField
+62.0	istest	short_fields_get	false	Method does not exist or incorrect signature: void get(String) from the type Schema.SObjectField
+62.0	trigger	short_fields_get	false	Method does not exist or incorrect signature: void get(String) from the type Schema.SObjectField
+62.0	anonymous	missing_inner_receiver	false	Variable does not exist: ReceiverOwner.Absent
+62.0	named	missing_inner_receiver	false	Variable does not exist: ReceiverOwner.Absent
+62.0	istest	missing_inner_receiver	false	Variable does not exist: ReceiverOwner.Absent
+62.0	trigger	missing_inner_receiver	false	Variable does not exist: ReceiverOwner.Absent
+67.0	anonymous	static_instance_text	true	-
+67.0	named	static_instance_text	true	-
+67.0	istest	static_instance_text	true	-
+67.0	trigger	static_instance_text	true	-
+67.0	anonymous	inner_member_chain	true	-
+67.0	named	inner_member_chain	true	-
+67.0	istest	inner_member_chain	true	-
+67.0	trigger	inner_member_chain	true	-
+67.0	anonymous	inner_enum_constant	true	-
+67.0	named	inner_enum_constant	true	-
+67.0	istest	inner_enum_constant	true	-
+67.0	trigger	inner_enum_constant	true	-
+67.0	anonymous	inherited_method	true	-
+67.0	named	inherited_method	true	-
+67.0	istest	inherited_method	true	-
+67.0	trigger	inherited_method	true	-
+67.0	anonymous	overload_string	true	-
+67.0	named	overload_string	true	-
+67.0	istest	overload_string	true	-
+67.0	trigger	overload_string	true	-
+67.0	anonymous	overload_integer	true	-
+67.0	named	overload_integer	true	-
+67.0	istest	overload_integer	true	-
+67.0	trigger	overload_integer	true	-
+67.0	anonymous	inner_cast_instanceof	true	-
+67.0	named	inner_cast_instanceof	true	-
+67.0	istest	inner_cast_instanceof	true	-
+67.0	trigger	inner_cast_instanceof	true	-
+67.0	anonymous	short_fields_getmap	false	Method does not exist or incorrect signature: void getMap() from the type Schema.SObjectField
+67.0	named	short_fields_getmap	false	Method does not exist or incorrect signature: void getMap() from the type Schema.SObjectField
+67.0	istest	short_fields_getmap	false	Method does not exist or incorrect signature: void getMap() from the type Schema.SObjectField
+67.0	trigger	short_fields_getmap	false	Method does not exist or incorrect signature: void getMap() from the type Schema.SObjectField
+67.0	anonymous	short_fields_get	false	Method does not exist or incorrect signature: void get(String) from the type Schema.SObjectField
+67.0	named	short_fields_get	false	Method does not exist or incorrect signature: void get(String) from the type Schema.SObjectField
+67.0	istest	short_fields_get	false	Method does not exist or incorrect signature: void get(String) from the type Schema.SObjectField
+67.0	trigger	short_fields_get	false	Method does not exist or incorrect signature: void get(String) from the type Schema.SObjectField
+67.0	anonymous	missing_inner_receiver	false	Variable does not exist: ReceiverOwner.Absent
+67.0	named	missing_inner_receiver	false	Variable does not exist: ReceiverOwner.Absent
+67.0	istest	missing_inner_receiver	false	Variable does not exist: ReceiverOwner.Absent
+67.0	trigger	missing_inner_receiver	false	Variable does not exist: ReceiverOwner.Absent
+62.0	anonymous	short_named_fieldset	false	Variable does not exist: Account.SObjectType.FieldSets.AccountSummary
+62.0	named	short_named_fieldset	false	Variable does not exist: Account.SObjectType.FieldSets.AccountSummary
+62.0	istest	short_named_fieldset	false	Variable does not exist: Account.SObjectType.FieldSets.AccountSummary
+62.0	trigger	short_named_fieldset	false	Variable does not exist: Account.SObjectType.FieldSets.AccountSummary
+62.0	anonymous	missing_static_namespace	false	Variable does not exist: pkgx.GatewayService.Instance
+62.0	named	missing_static_namespace	false	Variable does not exist: pkgx.GatewayService.Instance
+62.0	istest	missing_static_namespace	false	Variable does not exist: pkgx.GatewayService.Instance
+62.0	trigger	missing_static_namespace	false	Variable does not exist: pkgx.GatewayService.Instance
+67.0	anonymous	short_named_fieldset	false	Variable does not exist: Account.SObjectType.FieldSets.AccountSummary
+67.0	named	short_named_fieldset	false	Variable does not exist: Account.SObjectType.FieldSets.AccountSummary
+67.0	istest	short_named_fieldset	false	Variable does not exist: Account.SObjectType.FieldSets.AccountSummary
+67.0	trigger	short_named_fieldset	false	Variable does not exist: Account.SObjectType.FieldSets.AccountSummary
+67.0	anonymous	missing_static_namespace	false	Variable does not exist: pkgx.GatewayService.Instance
+67.0	named	missing_static_namespace	false	Variable does not exist: pkgx.GatewayService.Instance
+67.0	istest	missing_static_namespace	false	Variable does not exist: pkgx.GatewayService.Instance
+67.0	trigger	missing_static_namespace	false	Variable does not exist: pkgx.GatewayService.Instance

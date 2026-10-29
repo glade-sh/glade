@@ -102,7 +102,7 @@ func runReceiverDependencyConformance(t *testing.T, cluster string, cells int) {
 		}
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "ReceiverDependency-"+cluster, api)
 			index := receiverDependencyIndex(t, api, receiverDependencySource{}, files)
 			org := orgFromIndex(index)

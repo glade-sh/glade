@@ -44,7 +44,7 @@ func TestInvocableFlowActionStringNativeConformance(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			root := t.TempDir()
 			writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"sourceApiVersion":"`+api+`","packageDirectories":[{"path":"force-app","default":true}]}`)
 			flowPath := filepath.Join(root, "force-app/main/default/flows/ProbeTextEcho.flow-meta.xml")

@@ -1,0 +1,25 @@
+id	api	route	status	observed
+CUSTOM	62.0	anonymous	PASS	assertions passed
+NULL_INSTANCE	62.0	anonymous	PASS	assertions passed
+NULL_UPCAST	62.0	anonymous	PASS	assertions passed
+REVERSE_ASSIGN	62.0	anonymous	REJECT	Compilation failed at Line 1 column 68 with the error: Illegal assignment from System.Location to System.Address
+REVERSE_CAST	62.0	anonymous	PASS	assertions passed
+STANDARD	62.0	anonymous	PASS	assertions passed
+CUSTOM	62.0	istest	PASS	assertions passed
+NULL_INSTANCE	62.0	istest	PASS	assertions passed
+NULL_UPCAST	62.0	istest	PASS	assertions passed
+REVERSE_ASSIGN	62.0	istest	REJECT	Illegal assignment from System.Location to System.Address
+REVERSE_CAST	62.0	istest	PASS	assertions passed
+STANDARD	62.0	istest	PASS	assertions passed
+CUSTOM	67.0	anonymous	PASS	assertions passed
+NULL_INSTANCE	67.0	anonymous	PASS	assertions passed
+NULL_UPCAST	67.0	anonymous	PASS	assertions passed
+REVERSE_ASSIGN	67.0	anonymous	REJECT	Compilation failed at Line 1 column 68 with the error: Illegal assignment from System.Location to System.Address
+REVERSE_CAST	67.0	anonymous	PASS	assertions passed
+STANDARD	67.0	anonymous	PASS	assertions passed
+CUSTOM	67.0	istest	PASS	assertions passed
+NULL_INSTANCE	67.0	istest	PASS	assertions passed
+NULL_UPCAST	67.0	istest	PASS	assertions passed
+REVERSE_ASSIGN	67.0	istest	REJECT	Illegal assignment from System.Location to System.Address
+REVERSE_CAST	67.0	istest	PASS	assertions passed
+STANDARD	67.0	istest	PASS	assertions passed

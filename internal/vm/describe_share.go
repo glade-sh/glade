@@ -32,10 +32,12 @@ import (
 // private copy into that VM's wrapper. Tokens that Apex code can write are
 // therefore never shared between clones.
 type describeShareCache struct {
-	stamp       string
-	mu          sync.Mutex
-	definitions map[string]weak.Pointer[describeShareDefinition]
-	fieldMaps   map[describeShareFieldMapKey]weak.Pointer[describeShareFieldMap]
+	globalMaps           map[string]Value
+	globalProjectionKeys map[string]globalDescribeKeyMetadata
+	stamp                string
+	mu                   sync.Mutex
+	definitions          map[string]weak.Pointer[describeShareDefinition]
+	fieldMaps            map[describeShareFieldMapKey]weak.Pointer[describeShareFieldMap]
 }
 
 // Entries are built under their own lock by the first VM that needs them. A
@@ -86,6 +88,7 @@ func describeShareSource(definition storage.ObjectDefinition) uintptr {
 // the installed org, definition is that object's definition, and the org still
 // carries the cache's schema stamp.
 func (vm *VM) sharedDescribeFor(name string, definition storage.ObjectDefinition) (*describeShareCache, uintptr) {
+	vm.ensureMetadataCacheGeneration()
 	if vm == nil || vm.describeShare == nil || vm.Org == nil {
 		return nil, 0
 	}
@@ -169,18 +172,37 @@ func describeFieldMapIdentity(fields Value) uintptr {
 // between runtime clones is replaced in the wrapper by this VM's own copy, so
 // every holder of the wrapper in this VM sees the same map and field tokens,
 // as when the VM built them itself, and no other VM sees this VM's writes.
+//
+// A proven SObject field map is frozen here, before any route can publish it,
+// so getMap holders can share its storage copy-on-write within this VM. A
+// write through the wrapper's own aliases detaches it; the wrapper then adopts
+// the detached storage, as its aliases did in place before.
 func (vm *VM) privateDescribeFieldMap(owner Value) (Value, bool) {
 	mapField, ok := owner.Fields["map"]
-	if !ok || vm == nil || len(vm.sharedDescribeFieldMaps) == 0 || mapField.Kind != ValueMap {
+	if !ok || vm == nil || mapField.Kind != ValueMap {
 		return mapField, ok
 	}
-	if _, shared := vm.sharedDescribeFieldMaps[describeFieldMapIdentity(mapField)]; !shared {
-		return mapField, true
+	if current := mapField.currentFieldMapHolder(); !sameMapIdentity(current.Map, mapField.Map) {
+		owner.Fields["map"] = current
+		return current, true
 	}
-	private := copySharedDescribeFieldMap(mapField)
-	owner.Fields["map"] = private
-	vm.rememberPublishedObjectFieldRefs(owner, mapField, private)
-	return private, true
+	if len(vm.sharedDescribeFieldMaps) != 0 {
+		if _, shared := vm.sharedDescribeFieldMaps[describeFieldMapIdentity(mapField)]; shared {
+			private := copySharedDescribeFieldMap(mapField)
+			private.mapKeySetSource = nil
+			if provenSObjectFieldMap(owner, private) {
+				private = frozenFieldMapParticipant(private)
+			}
+			owner.Fields["map"] = private
+			vm.rememberPublishedObjectFieldRefs(owner, mapField, private)
+			return private, true
+		}
+	}
+	if fieldMapHolderDescriptor(mapField) == nil && provenSObjectFieldMap(owner, mapField) {
+		mapField = frozenFieldMapParticipant(mapField)
+		owner.Fields["map"] = mapField
+	}
+	return mapField, true
 }
 
 // copySharedDescribeFieldMap copies a shared field map and its field tokens.

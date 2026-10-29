@@ -26,6 +26,9 @@ func (vm *VM) displayString(value Value, result *Result) (string, error) {
 }
 
 func (vm *VM) displayStringValue(value Value, result *Result) (Value, error) {
+	if value.Kind == ValueMap && value.mapKeySetSource != nil {
+		value = value.currentFieldMapHolder()
+	}
 	if idText, ok := typedIDValueText(value); ok {
 		return String(displayIDText(idText)), nil
 	}
@@ -431,7 +434,7 @@ const (
 )
 
 func isInternalSObjectField(field string) bool {
-	if field == sobjectPublishedEventIDField || field == jsonCapturedOwnerProjectionField || field == databaseAsyncLocatorField || isLexicalInstanceFieldStorage(field) {
+	if field == sobjectPublishedEventIDField || field == jsonCapturedOwnerProjectionField || field == jsonSObjectQueryProjectionField || field == databaseAsyncLocatorField || isLexicalInstanceFieldStorage(field) {
 		return true
 	}
 	return field == sobjectLoadedReferencesField || field == sobjectErrorsField || field == sobjectReadOnlyField || field == sobjectQueriedFieldsField || field == sobjectModifiedSinceQueryField || field == sobjectSubqueryProjectionField || field == sobjectExplicitFieldsField || field == sobjectSetFieldsField || field == sobjectUserSetFieldsField || field == sobjectDefaultedFieldsField || field == sobjectDMLOptionsField || field == sobjectDMLAccessibleField || field == sobjectTriggerField || field == sobjectParentProjectionField || field == sobjectStrippedChildRelationshipsField || field == sobjectCloneMarkerField || field == sobjectCloneSourceIDField || field == sobjectEventOperationIDField
@@ -857,6 +860,7 @@ func unmarkQueriedSObjectField(value *Value, field string) {
 	if value == nil || value.Kind != ValueObject || value.Fields == nil || strings.TrimSpace(field) == "" {
 		return
 	}
+	deleteObjectField(value.Fields[jsonSObjectQueryProjectionField].Fields, field)
 	selected, ok := value.Fields[sobjectQueriedFieldsField]
 	if !ok || selected.Kind != ValueMap {
 		return
@@ -1150,6 +1154,7 @@ func (vm *VM) lazyChildRelationshipValue(receiver Value, field string) (Value, b
 }
 
 func (vm *VM) lazyChildRelationshipLookup(parentObject, field string) lazyChildRelationshipLookup {
+	vm.ensureMetadataCacheGeneration()
 	key := strings.ToLower(strings.TrimSpace(parentObject)) + "\x00" + strings.ToLower(strings.TrimSpace(field))
 	if vm.lazyChildRelCache == nil {
 		vm.lazyChildRelCache = newLazyChildRelationshipLookupCache()
@@ -1159,8 +1164,10 @@ func (vm *VM) lazyChildRelationshipLookup(parentObject, field string) lazyChildR
 	}
 	lookup := lazyChildRelationshipLookup{}
 	childMatches := []string(nil)
-	for childName, childState := range vm.Org.Objects {
-		if storage.IsChangeEventObject(childState.Definition) {
+	for _, childName := range vm.childRelationshipCandidateNames(parentObject) {
+		childRelationshipScanVisits.Add(1)
+		childState, ok := vm.Org.Objects[childName]
+		if !ok || storage.IsChangeEventObject(childState.Definition) {
 			continue
 		}
 		for _, relation := range childState.Definition.Relations {
@@ -1304,6 +1311,7 @@ func (vm *VM) loadedChildRelationshipValue(receiver Value, field string) (string
 }
 
 func (vm *VM) loadedChildRelationshipLookup(receiverType, parentObject, field string) loadedChildRelationshipLookup {
+	vm.ensureMetadataCacheGeneration()
 	key := strings.ToLower(strings.TrimSpace(receiverType)) + "\x00" + strings.ToLower(strings.TrimSpace(parentObject)) + "\x00" + strings.ToLower(strings.TrimSpace(field))
 	if vm.loadedChildRelCache == nil {
 		vm.loadedChildRelCache = newLoadedChildRelationshipLookupCache()
@@ -1314,8 +1322,10 @@ func (vm *VM) loadedChildRelationshipLookup(receiverType, parentObject, field st
 	lookup := loadedChildRelationshipLookup{
 		ParentRelationshipExists: vm.sObjectParentRelationshipField(receiverType, field),
 	}
-	for childName, childState := range vm.Org.Objects {
-		if storage.IsChangeEventObject(childState.Definition) {
+	for _, childName := range vm.loadedChildRelationshipCandidateNames(parentObject) {
+		childRelationshipScanVisits.Add(1)
+		childState, ok := vm.Org.Objects[childName]
+		if !ok || storage.IsChangeEventObject(childState.Definition) {
 			continue
 		}
 		for _, relation := range childState.Definition.Relations {
@@ -1632,6 +1642,18 @@ func dmlExceptionDetail(receiver Value, method string, args []Value) (Value, err
 }
 
 func (vm *VM) resolveObjectName(name string) (string, bool) {
+	vm.ensureMetadataCacheGeneration()
+	if vm == nil || vm.Org == nil {
+		return "", false
+	}
+	return vm.resolveObjectNameForCaller(name, vm.currentCallerNamespace())
+}
+
+// resolveObjectNameForCaller is resolveObjectName for an already resolved
+// caller namespace. The caller namespace is a pure function of the current
+// frame, so one loop over many names may resolve it once.
+func (vm *VM) resolveObjectNameForCaller(name, caller string) (string, bool) {
+	vm.ensureMetadataCacheGeneration()
 	if vm == nil || vm.Org == nil {
 		return "", false
 	}
@@ -1643,7 +1665,7 @@ func (vm *VM) resolveObjectName(name string) (string, bool) {
 		name = rest
 		key = apexlang.LowerName(strings.TrimSpace(name))
 	}
-	namespace := apexlang.LowerName(strings.TrimSpace(vm.currentCallerNamespace()))
+	namespace := apexlang.LowerName(strings.TrimSpace(caller))
 	cacheKey := objectNameLookupKey{Namespace: namespace, Name: key}
 	if vm.objectNameCache == nil {
 		vm.objectNameCache = make(map[objectNameLookupKey]objectNameLookup)
@@ -1651,7 +1673,7 @@ func (vm *VM) resolveObjectName(name string) (string, bool) {
 	if cached, ok := vm.objectNameCache[cacheKey]; ok {
 		return cached.Name, cached.OK
 	}
-	if resolved, ok := vm.resolveObjectNameInExecutionNamespace(name); ok {
+	if resolved, ok := vm.resolveObjectNameInNamespace(name, caller); ok {
 		vm.objectNameCache[cacheKey] = objectNameLookup{Name: resolved, OK: true}
 		return resolved, true
 	}
@@ -1664,7 +1686,14 @@ func (vm *VM) resolveObjectNameInExecutionNamespace(name string) (string, bool) 
 	if vm == nil || vm.Org == nil {
 		return "", false
 	}
-	namespace := strings.TrimSpace(vm.currentCallerNamespace())
+	return vm.resolveObjectNameInNamespace(name, vm.currentCallerNamespace())
+}
+
+func (vm *VM) resolveObjectNameInNamespace(name, caller string) (string, bool) {
+	if vm == nil || vm.Org == nil {
+		return "", false
+	}
+	namespace := strings.TrimSpace(caller)
 	if namespace == "" {
 		return "", false
 	}
@@ -2029,7 +2058,18 @@ func (vm *VM) storedSObjectFieldValue(receiver Value, field string) (Value, bool
 	return Null, false
 }
 
+// Native CUSTOM_FRESH/INSERTED and CUSTOM_COMPONENTS rows: components alone
+// do not materialize a custom Address. DML accessibility also marks unqueried
+// records, so a selected-field marker by itself is insufficient.
+func (vm *VM) customCompoundAddressSelected(receiver Value, field string) bool {
+	return !strings.HasSuffix(strings.ToLower(field), "__c") ||
+		(!dmlAccessibleSObject(receiver) && vm.queriedSObjectFieldsIncludes(receiver, field))
+}
+
 func (vm *VM) sObjectCompoundAddressValue(receiver Value, field string) (Value, bool) {
+	if !vm.customCompoundAddressSelected(receiver, field) {
+		return Null, false
+	}
 	definition, fieldDef, ok := vm.sObjectFieldDefinition(receiver.Type, field)
 	if !ok {
 		return vm.sObjectCompoundAddressValueByPrefix(receiver, field)
@@ -2037,7 +2077,12 @@ func (vm *VM) sObjectCompoundAddressValue(receiver Value, field string) (Value, 
 	if fieldDef.Type != storage.FieldAddress {
 		return Null, false
 	}
-	address := Object("Address")
+	customCompound := storage.CustomAddressComponentName(fieldDef.APIName, "StateCode") != ""
+	// Custom Address compounds read null until SOQL selects them (P02).
+	if customCompound && !vm.queriedSObjectFieldsIncludes(receiver, fieldDef.APIName) {
+		return Null, false
+	}
+	address := newSystemAddress()
 	for componentName, component := range definition.Fields {
 		if !strings.EqualFold(component.CompoundFieldName, fieldDef.APIName) && !strings.EqualFold(component.CompoundFieldName, field) {
 			continue
@@ -2052,18 +2097,65 @@ func (vm *VM) sObjectCompoundAddressValue(receiver Value, field string) (Value, 
 		}
 		address.Fields[addressField] = value
 	}
+	if customCompound {
+		if len(address.Fields) == 0 {
+			return Null, false
+		}
+		customAddressStateCountryLabels(&address)
+		// A custom Address always reports its code components in JSON.
+		for _, code := range []string{"stateCode", "countryCode"} {
+			if _, ok := address.Fields[code]; !ok {
+				address.Fields[code] = Null
+			}
+		}
+		return address, true
+	}
 	if len(address.Fields) == 0 {
 		return vm.sObjectCompoundAddressValueByPrefix(receiver, field)
 	}
 	return address, true
 }
 
+// Custom Address fields store only State/Country codes. System.Address
+// reports the matching State and Country picklist labels as state/country.
+func customAddressStateCountryLabels(address *Value) {
+	country, _ := address.Fields["countryCode"]
+	if country.Kind != ValueString {
+		return
+	}
+	if label, ok := storage.CustomAddressCountryLabel(country.Text); ok {
+		address.Fields["country"] = String(label)
+	}
+	if state, _ := address.Fields["stateCode"]; state.Kind == ValueString {
+		if label, ok := storage.CustomAddressStateLabel(country.Text, state.Text); ok {
+			address.Fields["state"] = String(label)
+		}
+	}
+}
+
 func (vm *VM) sObjectCompoundAddressValueByPrefix(receiver Value, field string) (Value, bool) {
-	prefix := strings.TrimSuffix(field, "Address")
-	if prefix == field || prefix == "" {
+	if !vm.customCompoundAddressSelected(receiver, field) {
 		return Null, false
 	}
-	address := Object("Address")
+	prefix := strings.TrimSuffix(field, "Address")
+	componentSuffix := ""
+	if strings.HasSuffix(strings.ToLower(field), "__c") {
+		// Custom compound components need not have separate field definitions.
+		// Only a declared Address field owns these component names.
+		_, definition, ok := vm.sObjectFieldDefinition(receiver.Type, field)
+		if !ok || definition.Type != storage.FieldAddress {
+			return Null, false
+		}
+		name := definition.APIName
+		if !strings.HasSuffix(strings.ToLower(name), "__c") {
+			name = field
+		}
+		prefix = name[:len(name)-len("__c")] + "__"
+		componentSuffix = "__s"
+	} else if prefix == field || prefix == "" {
+		return Null, false
+	}
+	address := newSystemAddress()
 	for _, component := range []struct {
 		suffix string
 		field  string
@@ -2079,7 +2171,7 @@ func (vm *VM) sObjectCompoundAddressValueByPrefix(receiver Value, field string) 
 		{"Longitude", "longitude"},
 		{"GeocodeAccuracy", "geocodeAccuracy"},
 	} {
-		value, ok := vm.sObjectComponentFieldValue(receiver, prefix+component.suffix)
+		value, ok := vm.sObjectComponentFieldValue(receiver, prefix+component.suffix+componentSuffix)
 		if !ok || value.Kind == ValueNull {
 			continue
 		}
@@ -2127,11 +2219,24 @@ func (vm *VM) storedSObjectFieldValueIgnoringProjection(receiver Value, field st
 }
 
 func compoundAddressComponentField(componentName, compoundName string) (string, bool) {
+	if key, ok := storage.CustomAddressComponentKey(compoundName, componentName); ok {
+		return key, true
+	}
 	prefix := strings.TrimSuffix(compoundName, "Address")
+	custom := strings.HasSuffix(strings.ToLower(compoundName), "__c")
+	if custom {
+		prefix = compoundName[:len(compoundName)-len("__c")] + "__"
+	}
 	if prefix == "" || !hasPrefixFold(componentName, prefix) {
 		return "", false
 	}
 	suffix := componentName[len(prefix):]
+	if custom {
+		if !strings.HasSuffix(strings.ToLower(suffix), "__s") {
+			return "", false
+		}
+		suffix = suffix[:len(suffix)-len("__s")]
+	}
 	switch strings.ToLower(suffix) {
 	case "street":
 		return "street", true

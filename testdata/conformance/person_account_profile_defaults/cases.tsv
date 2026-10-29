@@ -1,0 +1,7 @@
+case	purpose
+person_omitted	LastName with omitted RecordTypeId selects profile person default
+business_omitted	Name with omitted RecordTypeId selects profile business default
+person_explicit	Explicit non-default person type is preserved
+person_missing_last	Rejection twin: explicit person type requires LastName
+empty	Boundary: no person fields requires Name
+person_null	Boundary: explicit null RecordTypeId is rejected

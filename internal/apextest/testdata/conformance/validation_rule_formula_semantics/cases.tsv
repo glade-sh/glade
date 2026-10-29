@@ -1,0 +1,29 @@
+id	shape	operation	input
+N001	ISNEW	insert	TextValue__c=new-block
+N002	ISNEW control	insert	TextValue__c=ready
+N003	cross-object reference	insert	Parent__r.Gate__c=true; TextValue__c=parent-block
+N004	cross-object control	insert	Parent__r.Gate__c=false; TextValue__c=parent-block
+N005	ISPICKVAL	insert	PickValue__c=BlockOne
+N006	TEXT on picklist	insert	PickValue__c=BlockTwo
+N007	picklist control	insert	PickValue__c=Open
+N008	INCLUDES	insert	MultiValue__c=Sensitive;Open
+N009	multi-select control	insert	MultiValue__c=Open
+N010	division	insert	NumberValue__c=22
+N011	division control	insert	NumberValue__c=20
+N012	PRIORVALUE on insert	insert	TextValue__c=insert-block
+N013	ISCHANGED on insert	insert	TextValue__c=change-insert
+N014	division with blank number	insert	NumberValue__c=null
+N015	division by zero	insert	NumberValue__c=0
+N016	ISPICKVAL with blank value	insert	PickValue__c=null
+N017	cross-object reference with blank parent	insert	Parent__r=null; TextValue__c=orphan-block
+N018	division by zero with lower comparison	insert	NumberValue__c=0
+N019	division by zero with negative numerator	insert	NumberValue__c=0
+N020	zero divided by zero	insert	NumberValue__c=0
+U001	ISCHANGED	update	TextValue__c=ready to change-block
+U002	ISCHANGED control	update	TextValue__c=change-block to change-block
+U003	PRIORVALUE	update	TextValue__c=prior-block to current
+U004	PRIORVALUE control	update	TextValue__c=other to current
+U005	ISCHANGED from blank	update	TextValue__c=blank to change-block
+U006	PRIORVALUE blank	update	TextValue__c=blank to current
+U007	PRIORVALUE picklist	update	PickValue__c=Open to BlockOne
+U008	ISCHANGED cross-object reference	update	Parent__c=open to blocked

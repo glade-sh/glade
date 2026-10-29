@@ -1,0 +1,17 @@
+api	target	route	populated	success	same	null
+62.0	self	anonymous	true	true	true	false
+62.0	self	anonymous	false	true	false	true
+62.0	self	istest	true	true	true	false
+62.0	self	istest	false	true	false	true
+67.0	self	anonymous	true	true	true	false
+67.0	self	anonymous	false	true	false	true
+67.0	self	istest	true	true	true	false
+67.0	self	istest	false	true	false	true
+62.0	other	anonymous	true	true	true	false
+62.0	other	anonymous	false	true	false	true
+62.0	other	istest	true	true	true	false
+62.0	other	istest	false	true	false	true
+67.0	other	anonymous	true	true	true	false
+67.0	other	anonymous	false	true	false	true
+67.0	other	istest	true	true	true	false
+67.0	other	istest	false	true	false	true

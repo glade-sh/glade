@@ -38,9 +38,12 @@ func enrichIndexWithProjectReferencedSchemaFieldsWithSources(index typesys.Index
 	return index
 }
 
+// The result is always a fresh slice: inference writes inferred fields into
+// it, and the caller's index (shared with runtime org construction) must not
+// observe source-inferred placeholders.
 func semaMergeEquivalentSchemaObjects(objects []schema.Object) []schema.Object {
 	if len(objects) < 2 {
-		return objects
+		return append([]schema.Object(nil), objects...)
 	}
 	merged := make([]schema.Object, 0, len(objects))
 	indexes := make(map[string]int, len(objects))

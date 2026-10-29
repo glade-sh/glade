@@ -39,3 +39,39 @@ func TestCIRacePackageRunnerFixtureScheduling(t *testing.T) {
 		t.Fatalf("fixture scheduling: paused=%d continued=%d passed=%d; want 10 each\n%s", paused, continued, passed, out)
 	}
 }
+
+// Aggregate validation writes only to each subtest's temporary fixture and to
+// private temporary summary directories. Check the real children, including
+// their terminal results, rather than using a timing threshold.
+func TestCIRaceAggregateFixtureScheduling(t *testing.T) {
+	binary, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	const parent = "TestCIRaceApextestAggregateRejectsAdversarialEvidence"
+	// Three early rejection routes keep this scheduling check inexpensive; the
+	// parent itself still executes all eleven adversarial evidence fixtures.
+	cmd := exec.Command(binary, "-test.run=^"+parent+"$/^(missing_runner_c|mismatched_head|mismatched_package)$", "-test.v", "-test.parallel=2", "-test.timeout=30s")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("aggregate fixtures: %v\n%s", err, out)
+	}
+	paused, continued, passed := 0, 0, 0
+	for line := range strings.SplitSeq(string(out), "\n") {
+		line = strings.TrimSpace(line)
+		switch {
+		case strings.HasPrefix(line, "=== PAUSE "+parent+"/"):
+			paused++
+		case strings.HasPrefix(line, "=== CONT  "+parent+"/"):
+			if paused != 3 {
+				t.Fatalf("aggregate fixture started before all three paused:\n%s", out)
+			}
+			continued++
+		case strings.HasPrefix(line, "--- PASS: "+parent+"/"):
+			passed++
+		}
+	}
+	if paused != 3 || continued != 3 || passed != 3 {
+		t.Fatalf("aggregate scheduling: paused=%d continued=%d passed=%d; want 3 each\n%s", paused, continued, passed, out)
+	}
+}

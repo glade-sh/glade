@@ -125,7 +125,7 @@ func TestSchemaProfilesOrgConformance(t *testing.T) {
 		return prefix + "try {Object r; " + tc.Code + " pq.out('" + tc.ID + "',r);}catch(Exception e){pq.err('" + tc.ID + "',e);}"
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			cases := data.Cases
 			if api == "68.0" {
 				cases = nil
@@ -327,7 +327,7 @@ func TestSchemaProfileNumberPutFromStringField(t *testing.T) {
 		t.Fatal("missing numeric-text native answer")
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			root := t.TempDir()
 			for path, source := range data.Metadata {
 				writeFile(t, filepath.Join(root, path), source)

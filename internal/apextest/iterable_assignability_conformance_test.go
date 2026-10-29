@@ -201,7 +201,7 @@ func TestIterableAssignabilityOrgConformance(t *testing.T) {
 		return "COMPILE_ERROR\t" + strings.Join(messages, "; ")
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			build := func(t *testing.T, sources map[string]string) typesys.Index {
 				t.Helper()
 				root := t.TempDir()

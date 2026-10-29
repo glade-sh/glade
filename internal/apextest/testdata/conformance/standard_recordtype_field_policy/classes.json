@@ -1,0 +1,6 @@
+{
+  "RecordTypeFieldPolicy62": "public class RecordTypeFieldPolicy62 { public static String observe() { Map<String,Schema.SObjectField> fields=Account.SObjectType.getDescribe().fields.getMap(); if(!fields.containsKey('RecordTypeId')) return 'MISSING'; Schema.DescribeFieldResult field=fields.get('RecordTypeId').getDescribe(); return String.valueOf(field.getType())+'|'+field.isCreateable()+'|'+field.isUpdateable()+'|'+String.valueOf(field.getReferenceTo()[0]); } }",
+  "RecordTypeFieldPolicy62Test": "@IsTest private class RecordTypeFieldPolicy62Test { @IsTest static void sample() { System.assert(false,'OBSERVED|'+RecordTypeFieldPolicy62.observe()); } }",
+  "RecordTypeFieldPolicy67": "public class RecordTypeFieldPolicy67 { public static String observe() { Map<String,Schema.SObjectField> fields=Account.SObjectType.getDescribe().fields.getMap(); if(!fields.containsKey('RecordTypeId')) return 'MISSING'; Schema.DescribeFieldResult field=fields.get('RecordTypeId').getDescribe(); return String.valueOf(field.getType())+'|'+field.isCreateable()+'|'+field.isUpdateable()+'|'+String.valueOf(field.getReferenceTo()[0]); } }",
+  "RecordTypeFieldPolicy67Test": "@IsTest private class RecordTypeFieldPolicy67Test { @IsTest static void sample() { System.assert(false,'OBSERVED|'+RecordTypeFieldPolicy67.observe()); } }"
+}

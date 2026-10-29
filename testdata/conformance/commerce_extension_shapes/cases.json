@@ -1,0 +1,248 @@
+[
+  {
+    "id": "orchestrator_override",
+    "name": "G32CommerceOrchestratorOverride",
+    "kind": "override",
+    "base": "CartCalculate",
+    "source": "global class G32CommerceOrchestratorOverride extends CartExtension.CartCalculate {\n  private static Integer calls = 0;\n  global override void calculate(CartExtension.CartCalculateOrchestratorRequest request) { calls++; }\n  public static Boolean observe() { calls=0; CartExtension.CartCalculate value=new G32CommerceOrchestratorOverride(); value.calculate(null); return calls==1; }\n}\n",
+    "anonymous": "System.debug('SURFACE|' + G32CommerceOrchestratorOverride.observe());\n"
+  },
+  {
+    "id": "inventory_override",
+    "name": "G32CommerceInventoryOverride",
+    "kind": "override",
+    "base": "InventoryCartCalculator",
+    "source": "global class G32CommerceInventoryOverride extends CartExtension.InventoryCartCalculator {\n  private static Integer calls = 0;\n  global override void calculate(CartExtension.CartCalculateCalculatorRequest request) { calls++; }\n  public static Boolean observe() { calls=0; CartExtension.InventoryCartCalculator value=new G32CommerceInventoryOverride(); value.calculate(null); return calls==1; }\n}\n",
+    "anonymous": "System.debug('SURFACE|' + G32CommerceInventoryOverride.observe());\n"
+  },
+  {
+    "id": "inventory_empty",
+    "name": "G32CommerceInventoryEmpty",
+    "kind": "empty",
+    "base": "InventoryCartCalculator",
+    "source": "global class G32CommerceInventoryEmpty extends CartExtension.InventoryCartCalculator {}\n"
+  },
+  {
+    "id": "inventory_construct",
+    "name": "G32CommerceInventoryConstruct",
+    "kind": "construct",
+    "base": "InventoryCartCalculator",
+    "source": "public class G32CommerceInventoryConstruct { public static Object make() { return new CartExtension.InventoryCartCalculator(); } }\n"
+  },
+  {
+    "id": "pricing_override",
+    "name": "G32CommercePricingOverride",
+    "kind": "override",
+    "base": "PricingCartCalculator",
+    "source": "global class G32CommercePricingOverride extends CartExtension.PricingCartCalculator {\n  private static Integer calls = 0;\n  global override void calculate(CartExtension.CartCalculateCalculatorRequest request) { calls++; }\n  public static Boolean observe() { calls=0; CartExtension.PricingCartCalculator value=new G32CommercePricingOverride(); value.calculate(null); return calls==1; }\n}\n",
+    "anonymous": "System.debug('SURFACE|' + G32CommercePricingOverride.observe());\n"
+  },
+  {
+    "id": "pricing_empty",
+    "name": "G32CommercePricingEmpty",
+    "kind": "empty",
+    "base": "PricingCartCalculator",
+    "source": "global class G32CommercePricingEmpty extends CartExtension.PricingCartCalculator {}\n"
+  },
+  {
+    "id": "pricing_construct",
+    "name": "G32CommercePricingConstruct",
+    "kind": "construct",
+    "base": "PricingCartCalculator",
+    "source": "public class G32CommercePricingConstruct { public static Object make() { return new CartExtension.PricingCartCalculator(); } }\n"
+  },
+  {
+    "id": "promotions_override",
+    "name": "G32CommercePromotionsOverride",
+    "kind": "override",
+    "base": "PromotionsCartCalculator",
+    "source": "global class G32CommercePromotionsOverride extends CartExtension.PromotionsCartCalculator {\n  private static Integer calls = 0;\n  global override void calculate(CartExtension.CartCalculateCalculatorRequest request) { calls++; }\n  public static Boolean observe() { calls=0; CartExtension.PromotionsCartCalculator value=new G32CommercePromotionsOverride(); value.calculate(null); return calls==1; }\n}\n",
+    "anonymous": "System.debug('SURFACE|' + G32CommercePromotionsOverride.observe());\n"
+  },
+  {
+    "id": "promotions_empty",
+    "name": "G32CommercePromotionsEmpty",
+    "kind": "empty",
+    "base": "PromotionsCartCalculator",
+    "source": "global class G32CommercePromotionsEmpty extends CartExtension.PromotionsCartCalculator {}\n"
+  },
+  {
+    "id": "promotions_construct",
+    "name": "G32CommercePromotionsConstruct",
+    "kind": "construct",
+    "base": "PromotionsCartCalculator",
+    "source": "public class G32CommercePromotionsConstruct { public static Object make() { return new CartExtension.PromotionsCartCalculator(); } }\n"
+  },
+  {
+    "id": "shipping_override",
+    "name": "G32CommerceShippingOverride",
+    "kind": "override",
+    "base": "ShippingCartCalculator",
+    "source": "global class G32CommerceShippingOverride extends CartExtension.ShippingCartCalculator {\n  private static Integer calls = 0;\n  global override void calculate(CartExtension.CartCalculateCalculatorRequest request) { calls++; }\n  public static Boolean observe() { calls=0; CartExtension.ShippingCartCalculator value=new G32CommerceShippingOverride(); value.calculate(null); return calls==1; }\n}\n",
+    "anonymous": "System.debug('SURFACE|' + G32CommerceShippingOverride.observe());\n"
+  },
+  {
+    "id": "shipping_empty",
+    "name": "G32CommerceShippingEmpty",
+    "kind": "empty",
+    "base": "ShippingCartCalculator",
+    "source": "global class G32CommerceShippingEmpty extends CartExtension.ShippingCartCalculator {}\n"
+  },
+  {
+    "id": "shipping_construct",
+    "name": "G32CommerceShippingConstruct",
+    "kind": "construct",
+    "base": "ShippingCartCalculator",
+    "source": "public class G32CommerceShippingConstruct { public static Object make() { return new CartExtension.ShippingCartCalculator(); } }\n"
+  },
+  {
+    "id": "tax_override",
+    "name": "G32CommerceTaxOverride",
+    "kind": "override",
+    "base": "TaxCartCalculator",
+    "source": "global class G32CommerceTaxOverride extends CartExtension.TaxCartCalculator {\n  private static Integer calls = 0;\n  global override void calculate(CartExtension.CartCalculateCalculatorRequest request) { calls++; }\n  public static Boolean observe() { calls=0; CartExtension.TaxCartCalculator value=new G32CommerceTaxOverride(); value.calculate(null); return calls==1; }\n}\n",
+    "anonymous": "System.debug('SURFACE|' + G32CommerceTaxOverride.observe());\n"
+  },
+  {
+    "id": "tax_empty",
+    "name": "G32CommerceTaxEmpty",
+    "kind": "empty",
+    "base": "TaxCartCalculator",
+    "source": "global class G32CommerceTaxEmpty extends CartExtension.TaxCartCalculator {}\n"
+  },
+  {
+    "id": "tax_construct",
+    "name": "G32CommerceTaxConstruct",
+    "kind": "construct",
+    "base": "TaxCartCalculator",
+    "source": "public class G32CommerceTaxConstruct { public static Object make() { return new CartExtension.TaxCartCalculator(); } }\n"
+  },
+  {
+    "id": "order_override",
+    "name": "G32CommerceOrderOverride",
+    "kind": "override",
+    "base": "CheckoutCreateOrder",
+    "source": "global class G32CommerceOrderOverride extends CartExtension.CheckoutCreateOrder {\n  private static Integer calls = 0;\n  global override CartExtension.CreateOrderResponse createOrder(CartExtension.CreateOrderRequest request) { calls++; return null; }\n  public static Boolean observe() { calls=0; CartExtension.CheckoutCreateOrder value=new G32CommerceOrderOverride(); value.createOrder(null); return calls==1; }\n}\n",
+    "anonymous": "System.debug('SURFACE|' + G32CommerceOrderOverride.observe());\n"
+  },
+  {
+    "id": "split_override",
+    "name": "G32CommerceSplitOverride",
+    "kind": "override",
+    "base": "SplitShipmentService",
+    "source": "global class G32CommerceSplitOverride extends CartExtension.SplitShipmentService {\n  private static Integer calls = 0;\n  global override void arrangeItems(CartExtension.ItemArrangementRequest request) { calls++; }\n  public static Boolean observe() { calls=0; CartExtension.SplitShipmentService value=new G32CommerceSplitOverride(); value.arrangeItems(null); return calls==1; }\n}\n",
+    "anonymous": "System.debug('SURFACE|' + G32CommerceSplitOverride.observe());\n"
+  },
+  {
+    "id": "split_mock_override",
+    "name": "G32CommerceSplitMockOverride",
+    "kind": "override",
+    "base": "SplitShipmentServiceMock",
+    "source": "global class G32CommerceSplitMockOverride extends CartExtension.SplitShipmentServiceMock {\n  private static Integer calls = 0;\n  global override void arrangeItems(CartExtension.ItemArrangementRequest request) { calls++; }\n  public static Boolean observe() { calls=0; CartExtension.SplitShipmentServiceMock value=new G32CommerceSplitMockOverride(); value.arrangeItems(null); return calls==1; }\n}\n",
+    "anonymous": "System.debug('SURFACE|' + G32CommerceSplitMockOverride.observe());\n"
+  },
+  {
+    "id": "split_mock_empty",
+    "name": "G32CommerceSplitMockEmpty",
+    "kind": "empty",
+    "base": "SplitShipmentServiceMock",
+    "source": "global class G32CommerceSplitMockEmpty extends CartExtension.SplitShipmentServiceMock {}\n"
+  },
+  {
+    "id": "split_mock_construct",
+    "name": "G32CommerceSplitMockConstruct",
+    "kind": "construct",
+    "base": "SplitShipmentServiceMock",
+    "source": "public class G32CommerceSplitMockConstruct { public static Object make() { return new CartExtension.SplitShipmentServiceMock(); } }\n"
+  },
+  {
+    "id": "helper_prices",
+    "name": "G32CommerceHelperPrices",
+    "kind": "helper",
+    "base": "CartCalculate",
+    "source": "global class G32CommerceHelperPrices extends CartExtension.CartCalculate { global override void prices(CartExtension.CartCalculateCalculatorRequest request) {} }\n"
+  },
+  {
+    "id": "helper_promotions",
+    "name": "G32CommerceHelperPromotions",
+    "kind": "helper",
+    "base": "CartCalculate",
+    "source": "global class G32CommerceHelperPromotions extends CartExtension.CartCalculate { global override void promotions(CartExtension.CartCalculateCalculatorRequest request) {} }\n"
+  },
+  {
+    "id": "helper_inventory",
+    "name": "G32CommerceHelperInventory",
+    "kind": "helper",
+    "base": "CartCalculate",
+    "source": "global class G32CommerceHelperInventory extends CartExtension.CartCalculate { global override void inventory(CartExtension.CartCalculateCalculatorRequest request) {} }\n"
+  },
+  {
+    "id": "helper_shipping",
+    "name": "G32CommerceHelperShipping",
+    "kind": "helper",
+    "base": "CartCalculate",
+    "source": "global class G32CommerceHelperShipping extends CartExtension.CartCalculate { global override void shipping(CartExtension.CartCalculateCalculatorRequest request) {} }\n"
+  },
+  {
+    "id": "helper_taxes",
+    "name": "G32CommerceHelperTaxes",
+    "kind": "helper",
+    "base": "CartCalculate",
+    "source": "global class G32CommerceHelperTaxes extends CartExtension.CartCalculate { global override void taxes(CartExtension.CartCalculateCalculatorRequest request) {} }\n"
+  },
+  {
+    "id": "helper_postshipping",
+    "name": "G32CommerceHelperPostshipping",
+    "kind": "helper",
+    "base": "CartCalculate",
+    "source": "global class G32CommerceHelperPostshipping extends CartExtension.CartCalculate { global override void postShipping(CartExtension.CartCalculateCalculatorRequest request) {} }\n"
+  },
+  {
+    "id": "checkout_validate_override",
+    "name": "G32CommerceValidate",
+    "kind": "override",
+    "source": "public class G32CommerceValidate extends CartExtension.CheckoutPlaceOrder {\n private static Integer calls = 0;\n public override CartExtension.PlaceOrderResponse validate(CartExtension.PlaceOrderRequest request, List<String> domains) { calls++; return null; }\n public static Boolean observe() { calls=0; CartExtension.CheckoutPlaceOrder x=new G32CommerceValidate(); x.validate(null,new List<String>()); return calls==1; }\n}",
+    "anonymous": "System.assertEquals(true,G32CommerceValidate.observe());"
+  },
+  {
+    "id": "checkout_validate_bad_signature",
+    "name": "G32CommerceBadValidate",
+    "kind": "rejection",
+    "source": "public class G32CommerceBadValidate extends CartExtension.CheckoutPlaceOrder { public override CartExtension.PlaceOrderResponse validate(CartExtension.PlaceOrderRequest request) { return null; } }"
+  },
+  {
+    "id": "pricing_contract_request",
+    "name": "G32CommerceContractRequest",
+    "kind": "visibility",
+    "source": "public class G32CommerceContractRequest { public commercestorepricing.ContractResolutionRequest value; }",
+    "anonymous": "commercestorepricing.ContractResolutionRequest value;"
+  },
+  {
+    "id": "pricing_contract_response",
+    "name": "G32CommerceContractResponse",
+    "kind": "visibility",
+    "source": "public class G32CommerceContractResponse { public commercestorepricing.ContractResolutionResponse value; }",
+    "anonymous": "commercestorepricing.ContractResolutionResponse value;"
+  },
+  {
+    "id": "webstore_fields",
+    "name": "G32CommerceWebStore",
+    "kind": "observation",
+    "source": "public class G32CommerceWebStore {\n public static Boolean observe() {\n  WebStore value = new WebStore(Name='Synthetic store', OptionsAutoFacetingEnabled=true);\n  System.assertEquals(true,value.OptionsAutoFacetingEnabled);\n  value.OptionsAutoFacetingEnabled=false; System.assertEquals(false,value.OptionsAutoFacetingEnabled);\n  value.put('OptionsAutoFacetingEnabled', true); System.assertEquals(true,value.get('OptionsAutoFacetingEnabled'));\n  Map<String,Schema.SObjectField> fields=Schema.SObjectType.WebStore.fields.getMap();\n  System.assertEquals(true,fields.containsKey('OptionsAutoFacetingEnabled'));\n  System.assertEquals(false,fields.containsKey('OptionsSyntheticMissing'));\n  Schema.DescribeFieldResult d=fields.get('OptionsAutoFacetingEnabled').getDescribe();\n  System.assertEquals(Schema.DisplayType.BOOLEAN,d.getType());\n  System.assertEquals(false,d.isNillable());\n  return true;\n }\n}",
+    "anonymous": "System.assertEquals(true,G32CommerceWebStore.observe());"
+  },
+  {
+    "id": "webstore_missing_field",
+    "name": "G32CommerceMissingField",
+    "kind": "rejection",
+    "source": "public class G32CommerceMissingField { public static WebStore make(){ return new WebStore(OptionsSyntheticMissing=true); } }",
+    "anonymous": "WebStore x=new WebStore(OptionsSyntheticMissing=true);"
+  },
+  {
+    "id": "webstore_null_boundary",
+    "name": "G32CommerceNullField",
+    "kind": "observation",
+    "source": "public class G32CommerceNullField { public static Boolean observe(){ WebStore x=new WebStore(OptionsAutoFacetingEnabled=null); System.assertEquals(false,x.OptionsAutoFacetingEnabled); return true; } }",
+    "anonymous": "System.assertEquals(true,G32CommerceNullField.observe());"
+  }
+]

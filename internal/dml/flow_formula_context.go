@@ -33,6 +33,10 @@ func (e *Engine) flowContextFormulaValue(expression string, frame *flowFrame) (s
 		bound = append(bound, token)
 	}
 	resolve := func(reference string) (formulaValue, bool, bool) {
+		if strings.EqualFold(reference, "$Profile.Name") && e.Org != nil {
+			parser := formulaParser{org: e.Org, userID: e.systemUserID()}
+			return parser.profileNameValue(), true, true
+		}
 		if strings.EqualFold(reference, "$User.Id") {
 			value, ok := e.flowCurrentUserID()
 			return formulaStorageValue(value), true, ok

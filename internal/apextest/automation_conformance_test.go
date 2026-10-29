@@ -140,7 +140,7 @@ func TestAutomationOrgConformance(t *testing.T) {
 		}
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "automation", api)
 			apiCases := data.Cases
 			if api == "68.0" {

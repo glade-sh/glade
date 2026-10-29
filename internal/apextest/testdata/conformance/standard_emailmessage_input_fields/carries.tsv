@@ -1,0 +1,5 @@
+api	case	route	reason	source_sha256
+67.0	toids-list-insert	named	Native typed DML rejects the non-null list; value validation is outside this field-admission fix	a603aaceef438d79d657fce581a30173e86e90ae34353af3c018ce2f0b89d5ea
+67.0	toids-list-insert	test-runner	Native typed DML rejects the non-null list; value validation is outside this field-admission fix	d78106929c2870e59a7ad065ae5365a2f99c26ffd7234b78e072f03c0e82aae4
+67.0	toids-setter-insert	named	Native typed DML rejects the non-null list; value validation is outside this field-admission fix	ecbe8980c7daac871771aa1138f487a722440dc60d3b6713b51fb125196e5683
+67.0	toids-setter-insert	test-runner	Native typed DML rejects the non-null list; value validation is outside this field-admission fix	9f1a20506110b26ddf531ecbfac5d5e78b437b50fab957adf3133c649e4848e2

@@ -48,16 +48,21 @@ func TestLookupFilterRecordTypeLiteralUsesCriterionObject(t *testing.T) {
 		for _, matching := range []bool{true, false} {
 			t.Run(path+"/"+map[bool]string{true: "matching", false: "different"}[matching], func(t *testing.T) {
 				org := testOrg()
-				storage.EnsureStandardObject(&org, "Contact")
 				for _, name := range []string{"Account", "Contact"} {
 					object := org.Objects[name]
+					if object.Definition.APIName == "" {
+						object.Definition.APIName = name
+					}
 					object.Definition.RecordTypes = []storage.RecordTypeInfo{
 						{DeveloperName: "Allowed", Name: "Allowed Display Label", Active: true, Available: true},
 						{DeveloperName: "Other", Name: "Other Display Label", Active: true, Available: true},
 					}
+					// The reference must come from the declared non-Master metadata.
+					delete(object.Definition.Fields, "RecordTypeId")
 					storage.EnsureRecordTypeIDField(&object.Definition)
 					org.Objects[name] = object
 				}
+				storage.EnsureStandardObject(&org, "Contact")
 				storage.EnsureDeterministicPlatformData(&org)
 				contact := org.Objects["Contact"]
 				field := contact.Definition.Fields["AccountId"]
@@ -186,5 +191,50 @@ func TestLookupFilterSparseUpdateUsesRetainedFields(t *testing.T) {
 	}
 	if got := org.Objects["Contact"].Records[child[0].ID].Fields["LastName"].String; got != "original" {
 		t.Fatalf("failed sparse update persisted %q", got)
+	}
+}
+
+func TestLookupFilterLiteralListMatchesAnyAlternative(t *testing.T) {
+	for _, tc := range []struct {
+		name, operation, value string
+		wantPass               bool
+	}{
+		{"equalsListHit", "equals", "Other, Allowed", true},
+		{"equalsListMiss", "equals", "Other, Third", false},
+		{"notEqualListHit", "notEqual", "Other, Allowed", false},
+		{"notEqualListMiss", "notEqual", "Other, Third", true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			org := testOrg()
+			storage.EnsureStandardObject(&org, "Contact")
+			for _, name := range []string{"Account", "Contact"} {
+				object := org.Objects[name]
+				object.Definition.RecordTypes = []storage.RecordTypeInfo{
+					{DeveloperName: "Allowed", Name: "Allowed", Active: true, Available: true},
+					{DeveloperName: "Other", Name: "Other", Active: true, Available: true},
+					{DeveloperName: "Third", Name: "Third", Active: true, Available: true},
+				}
+				storage.EnsureRecordTypeIDField(&object.Definition)
+				org.Objects[name] = object
+			}
+			storage.EnsureDeterministicPlatformData(&org)
+			contact := org.Objects["Contact"]
+			field := contact.Definition.Fields["AccountId"]
+			field.FilteredLookupInfo = storage.FilteredLookupInfo{Active: true, FilterItems: []storage.LookupFilterItem{{Field: "$Source.RecordTypeId", Operation: tc.operation, Value: tc.value}}}
+			contact.Definition.Fields["AccountId"] = field
+			org.Objects["Contact"] = contact
+			engine := NewEngine(&org)
+			parent := engine.Insert([]storage.Record{{Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("target")}}})
+			if !parent[0].Success {
+				t.Fatal(parent)
+			}
+			result := engine.Insert([]storage.Record{{Object: "Contact", Fields: map[string]storage.Value{
+				"LastName": storage.StringValue("source"), "AccountId": storage.IDValue(parent[0].ID),
+				"RecordTypeId": storage.IDValue(contact.Definition.RecordTypes[0].ID),
+			}}})
+			if result[0].Success != tc.wantPass {
+				t.Fatalf("insert = %#v; want success %v", result, tc.wantPass)
+			}
+		})
 	}
 }

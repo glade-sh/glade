@@ -116,7 +116,7 @@ func TestNullOverloadOrgConformance(t *testing.T) {
 		t.Logf("%s @IsTest diagnostic difference owned by %s: %s; native rows retained without assertions", row.ID, row.Owner, row.Reason)
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			build := func(extra map[string]string) typesys.Index {
 				t.Helper()
 				root := t.TempDir()

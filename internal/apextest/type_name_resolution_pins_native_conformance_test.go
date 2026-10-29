@@ -16,6 +16,7 @@ import (
 
 func TestTypeNameResolutionPinsNativeConformance(t *testing.T) {
 	const fixture = "../../testdata/conformance/type_name_resolution_pins"
+	deferred := namespaceAbsenceDeferrals(t, fixture)
 	rows, err := readTypeNamePinRowsForApextest(filepath.Join(fixture, "org.tsv"))
 	if err != nil {
 		t.Fatal(err)
@@ -67,7 +68,7 @@ func TestTypeNameResolutionPinsNativeConformance(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		wantCompiled := row[3] == "true"
+		wantCompiled := row[3] == "true" || deferred[row[2]]
 		if row[3] != "true" && row[3] != "false" {
 			t.Fatalf("invalid compile result: %v", row)
 		}

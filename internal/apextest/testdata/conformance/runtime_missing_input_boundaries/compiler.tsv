@@ -1,0 +1,5 @@
+source_api	route	case	observed
+62.0	anonymous	void_value	Illegal assignment from void to String
+62.0	anonymous	void_statement	compiled
+67.0	anonymous	void_value	Illegal assignment from void to String
+67.0	anonymous	void_statement	compiled

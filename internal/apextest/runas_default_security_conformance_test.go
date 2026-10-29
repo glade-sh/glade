@@ -124,6 +124,7 @@ func TestRunAsDefaultSecurityConformance(t *testing.T) {
 	if !reflect.DeepEqual(actual, wantCounts) {
 		t.Fatalf("native cells = %v, want %v", actual, wantCounts)
 	}
+	projects := newConformanceProjectCache(t)
 	for _, api := range data.APIVersions {
 		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "RunAsDefaultSecurity", api)
@@ -133,7 +134,7 @@ func TestRunAsDefaultSecurityConformance(t *testing.T) {
 				metadata[path] = strings.ReplaceAll(source, "[URL]", "http://soap.sforce.com/2006/04/metadata")
 			}
 			fixture := userModeInaccessibleFixture{Names: map[string]string{"running": f.Permission}, Metadata: metadata}
-			baseIndex := userModeInaccessibleIndex(t, api, fixture, nil)
+			baseIndex := userModeInaccessibleIndex(t, api, fixture, nil, projects)
 			orgs := map[string]storage.OrgState{}
 			bases := map[string]*conformanceRunner{}
 			for _, route := range []string{"anonymous", "istest"} {
@@ -163,7 +164,7 @@ func TestRunAsDefaultSecurityConformance(t *testing.T) {
 					for name, source := range row.Source.Classes {
 						classes[name] = bind.Replace(source)
 					}
-					index := userModeInaccessibleIndex(t, api, fixture, classes)
+					index := userModeInaccessibleIndex(t, api, fixture, classes, projects)
 					org := orgs[row.Route]
 					runner := newConformanceRunner(t, index, conformanceRunnerOptions{Base: bases[row.Route], LinkProject: true, Org: &org})
 					source := row.Source

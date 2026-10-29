@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CommerceSettings xmlns="http://soap.sforce.com/2006/04/metadata">
+    <buyerGroupExtensibility>false</buyerGroupExtensibility>
+    <commerceAppEnabled>false</commerceAppEnabled>
+    <commerceContractPricing>true</commerceContractPricing>
+    <commerceDiscoveryExpansion>false</commerceDiscoveryExpansion>
+    <commerceEnabled>true</commerceEnabled>
+    <commerceHighPrecisionQtyNGP>false</commerceHighPrecisionQtyNGP>
+    <commerceProcedurePlan>false</commerceProcedurePlan>
+    <extendCommerceContext>false</extendCommerceContext>
+    <lowestUnitPriceTracking>false</lowestUnitPriceTracking>
+</CommerceSettings>

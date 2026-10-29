@@ -1,0 +1,9 @@
+api	object	field	accessible	permissionable	observation
+62.0	Account	Tier	false	false	named-map-only-after-grant
+62.0	Event	ActivityRecurrence2ExceptionId	false	false	named-map-only-after-grant
+62.0	Event	ActivityRecurrence2Id	false	false	named-map-only-after-grant
+62.0	Opportunity	IqScore	false	false	named-map-only-after-grant
+67.0	Account	Tier	false	false	named-map-only-after-grant
+67.0	Event	ActivityRecurrence2ExceptionId	false	false	named-map-only-after-grant
+67.0	Event	ActivityRecurrence2Id	false	false	named-map-only-after-grant
+67.0	Opportunity	IqScore	false	false	named-map-only-after-grant

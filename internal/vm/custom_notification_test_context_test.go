@@ -144,3 +144,23 @@ func TestCustomNotificationNonTestSendKeepsHostedBoundary(t *testing.T) {
 		t.Fatalf("non-test boundary: handled=%t, err=%v", handled, err)
 	}
 }
+
+// An offline schema can describe this standard object without supplying a
+// notification-type catalog. Keep that existing hosted-service boundary;
+// native configured delivery is recorded by hosted_boundaries/org.tsv.
+func TestCustomNotificationUncataloguedHostedBoundary(t *testing.T) {
+	for _, schemaOnly := range []bool{false, true} {
+		t.Run(fmt.Sprintf("schemaOnly=%t", schemaOnly), func(t *testing.T) {
+			machine := New(nil)
+			if schemaOnly {
+				org := storage.NewOrgState()
+				storage.EnsureStandardObject(&org, "CustomNotificationType")
+				machine.SetOrg(&org)
+			}
+			_, _, _, handled, err := machine.callCustomNotificationMember(configuredTestNotification(), "send", []Value{Set(String("005000000000001"))}, &Result{})
+			if !handled || err == nil || !strings.Contains(err.Error(), "requires hosted notification delivery") {
+				t.Fatalf("uncatalogued boundary: handled=%t, err=%v", handled, err)
+			}
+		})
+	}
+}

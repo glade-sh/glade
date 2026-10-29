@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata"><label>Checkbox Probe</label><fieldPermissions><editable>true</editable><field>Contact.First_Probe__c</field><readable>true</readable></fieldPermissions><fieldPermissions><editable>true</editable><field>Contact.Second_Probe__c</field><readable>true</readable></fieldPermissions></PermissionSet>

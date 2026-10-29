@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>TextEqualsBlankTarget__c</fullName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <label>Text Equals Blank Target</label>
+    <lookupFilter>
+        <active>true</active>
+        <errorMessage>text value must be blank</errorMessage>
+        <filterItems>
+            <field>LookupFilterParent__c.RegionText__c</field>
+            <operation>equals</operation>
+            <value></value>
+        </filterItems>
+        <isOptional>false</isOptional>
+    </lookupFilter>
+    <referenceTo>LookupFilterParent__c</referenceTo>
+    <relationshipLabel>Text Equals Blank Filter Children</relationshipLabel>
+    <relationshipName>TextEqualsBlankFilterChildren</relationshipName>
+    <type>Lookup</type>
+</CustomField>

@@ -94,7 +94,7 @@ func runScaleZeroNumberConformance(t *testing.T, group string, shapes int) {
 		t.Fatalf("cluster %s: %d shapes, want %d", group, len(rows), shapes)
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "ScaleZeroNumber_"+group, api)
 			root := t.TempDir()
 			writeFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"sourceApiVersion":%q,"packageDirectories":[{"path":"force-app","default":true}]}`, api))

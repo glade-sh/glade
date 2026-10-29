@@ -12,12 +12,12 @@ import (
 
 // Metadata errors are checked before candidate filtering, including empty
 // results. SOSL shares SELECT's field and relationship resolver.
-func (vm *VM) validateSOSLSelections(query sosl.Query) error {
+func (vm *VM) validateSOSLSelections(query sosl.Query, original *sosl.Query) error {
 	metadataVM := vm.soslMetadataVM(query)
 	if query.Limit.HasValue && query.Limit.Value > 2000 {
 		return newExceptionError("QueryException", "maximum limit of search results is 2000")
 	}
-	for _, spec := range query.Returning {
+	for returningIndex, spec := range query.Returning {
 		if spec.Limit.HasValue {
 			if spec.Limit.Value < 0 {
 				return newExceptionError("QueryException", "Limit must be a non-negative value")
@@ -57,29 +57,61 @@ func (vm *VM) validateSOSLSelections(query sosl.Query) error {
 			}
 			return newExceptionError("QueryException", message)
 		}
-		var check func(*soql.Condition) error
-		check = func(condition *soql.Condition) error {
+		var check func(*soql.Condition, *sosl.Condition) error
+		check = func(condition *soql.Condition, source *sosl.Condition) error {
 			if condition == nil {
 				return nil
 			}
 			for i := range condition.And {
-				if err := check(&condition.And[i]); err != nil {
+				var childSource *sosl.Condition
+				if source != nil && i < len(source.And) {
+					childSource = &source.And[i]
+				}
+				if err := check(&condition.And[i], childSource); err != nil {
 					return err
 				}
 			}
 			for i := range condition.Or {
-				if err := check(&condition.Or[i]); err != nil {
+				var childSource *sosl.Condition
+				if source != nil && i < len(source.Or) {
+					childSource = &source.Or[i]
+				}
+				if err := check(&condition.Or[i], childSource); err != nil {
 					return err
 				}
 			}
-			// SOSL's existing IN representation does not retain each value's
-			// quoting. R102 backs scalar literal validation only.
 			if condition.Op == "IN" || condition.Op == "NOT IN" {
-				return nil
+				definition := metadataVM.Org.Objects[object].Definition
+				if name, ok := storage.ResolveFieldName(definition, metadataVM.Org.Namespace, condition.Field); ok {
+					if field := definition.Fields[name]; field.Filterable != nil && !*field.Filterable {
+						return nil // No native rows for unfilterable-field IN precedence.
+					}
+				}
+				// Only numeric list literals have native type-rejection rows.
+				// Preserve the existing treatment of other list member types.
+				literal := *condition
+				literal.Values = nil
+				if source != nil {
+					// Read literals before expansion: a null or collection bind
+					// can change the number and positions of expanded members.
+					for _, value := range soslSelectionCondition(source).Values {
+						if value.Kind == storage.ValueInteger || value.Kind == storage.ValueDecimal {
+							literal.Values = append(literal.Values, value)
+						}
+					}
+				}
+				if len(literal.Values) == 0 {
+					return nil
+				}
+				return metadataVM.validateSOQLSelectionLiteral(object, &literal)
 			}
-			return metadataVM.validateSOQLSelectionLiteral(object, condition)
+			return metadataVM.validateSOQLSelectionLiteralSource(object, condition, source != nil && source.Bind == "")
 		}
-		if err := check(selection.Where); err != nil {
+		var source *sosl.Condition
+		if original != nil && returningIndex < len(original.Returning) {
+			source = original.Returning[returningIndex].Where
+		}
+		if err := check(selection.Where, source); err != nil {
 			return err
 		}
 	}
@@ -171,8 +203,16 @@ func soslSelectionCondition(condition *sosl.Condition) *soql.Condition {
 			out.Value = storage.StringValue(condition.Value)
 		}
 	}
-	for _, value := range condition.Values {
-		out.Values = append(out.Values, storage.StringValue(value))
+	for i, value := range condition.Values {
+		literal := storage.StringValue(value)
+		if condition.UnquotedValues[i] {
+			if n, err := strconv.ParseInt(value, 10, 64); err == nil {
+				literal = storage.IntegerValue(n)
+			} else if _, err := strconv.ParseFloat(value, 64); err == nil {
+				literal = storage.DecimalValue(value)
+			}
+		}
+		out.Values = append(out.Values, literal)
 	}
 	return out
 }

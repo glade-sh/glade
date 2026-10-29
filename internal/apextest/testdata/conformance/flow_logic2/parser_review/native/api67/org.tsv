@@ -1,0 +1,21 @@
+context	id	observation
+deployment	not	{"accepted":false,"messages":["field integrity exception: unknown (Invalid condition logic: Some filter conditions are defined but not referenced in your filter logic.)"]}
+deployment	xor	{"accepted":false,"messages":["field integrity exception: unknown (Invalid condition logic: Check the spelling in your filter logic.)"]}
+deployment	unclosed	{"accepted":false,"messages":["field integrity exception: unknown (Invalid condition logic: Check the spelling in your filter logic.)"]}
+deployment	unopened	{"accepted":false,"messages":["field integrity exception: unknown (Invalid condition logic: Check the spelling in your filter logic.)"]}
+deployment	empty_nested	{"accepted":false,"messages":["field integrity exception: unknown (Invalid condition logic: Some filter conditions are defined but not referenced in your filter logic.)"]}
+deployment	zero	{"accepted":false,"messages":["field integrity exception: unknown (Invalid condition logic: The filter logic references an undefined filter: 0.)"]}
+deployment	too_large	{"accepted":false,"messages":["field integrity exception: unknown (Invalid condition logic: The filter logic references an undefined filter: 3.)"]}
+deployment	overflow	{"accepted":false,"messages":["field integrity exception: unknown (Invalid condition logic: The filter logic references an undefined filter: 18446744073709551617.)"]}
+deployment	nested_not	{"accepted":true,"messages":[]}
+deployment	wrapped_xor	{"accepted":false,"messages":["field integrity exception: unknown (Invalid condition logic: Check the spelling in your filter logic.)"]}
+deployment	negative_rhs	{"accepted":false,"messages":["field integrity exception: unknown (Invalid condition logic: Check the spelling in your filter logic.)"]}
+deployment	negative_lhs	{"accepted":false,"messages":["field integrity exception: unknown (Invalid condition logic: Check the spelling in your filter logic.)"]}
+deployment	not_negative	{"accepted":false,"messages":["field integrity exception: unknown (Invalid condition logic: Check the spelling in your filter logic.)"]}
+deployment	positive_large	{"accepted":false,"messages":["field integrity exception: unknown (Invalid condition logic: The filter logic references an undefined filter: 3.)"]}
+deployment	positive_in_range	{"accepted":false,"messages":["field integrity exception: unknown (Invalid condition logic: Check the spelling in your filter logic.)"]}
+deployment	open_only	{"accepted":false,"messages":["field integrity exception: unknown (Invalid condition logic: Some filter conditions are defined but not referenced in your filter logic.)"]}
+deployment	close_only	{"accepted":false,"messages":["field integrity exception: unknown (Invalid condition logic: Some filter conditions are defined but not referenced in your filter logic.)"]}
+deployment	empty	{"accepted":false,"messages":["field integrity exception: unknown (Invalid condition logic: Some filter conditions are defined but not referenced in your filter logic.)"]}
+deployment	nested_valid	{"accepted":true,"messages":[]}
+deployment	whitespace_valid	{"accepted":true,"messages":[]}

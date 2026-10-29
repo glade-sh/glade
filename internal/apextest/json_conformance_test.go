@@ -118,7 +118,7 @@ func TestJSONOrgConformance(t *testing.T) {
 		return declarations + " try { Object r; " + code + observation + " } catch(Exception e) { observedText='EXC|'+e.getTypeName()+'|'+e.getMessage(); } System.assert(" + comparison + ", " + conformanceApexString(tc.ID) + " + ' expected <' + expectedText + '> actual <' + observedText + '>');"
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCounts()
 			defer counts.Log(t, "JSON", api, "")
 			if api == "68.0" {

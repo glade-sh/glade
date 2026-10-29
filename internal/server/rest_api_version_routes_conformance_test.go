@@ -109,7 +109,9 @@ func TestRESTAPIVersionRouteConformance(t *testing.T) {
 		t.Fatalf("floor versions %v must straddle the oldest native version: %v", table.FloorAPIVersions, nativeServed)
 	}
 	org := testOrg()
-	handler := New(&org)
+	// Tooling discovery/query needs project source metadata, as in the CLI
+	// server. A bare server has no local Tooling model and rejects these reads.
+	handler := NewWithSource(&org, testSourceMetadata(t))
 	get := func(path string) *httptest.ResponseRecorder {
 		rec := httptest.NewRecorder()
 		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))

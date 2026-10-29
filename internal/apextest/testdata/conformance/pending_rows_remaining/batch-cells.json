@@ -1,0 +1,170 @@
+[
+  {
+    "id": "C13-08",
+    "api": "62.0",
+    "route": "anonymous",
+    "testContext": "anonymous",
+    "native": {
+      "completed": true,
+      "errors": 0,
+      "eventCount": 0,
+      "events": [],
+      "finishWitnessCount": 1,
+      "job": "[ID]",
+      "jobStatus": "Completed",
+      "processed": 1,
+      "seen": [],
+      "seenCount": 0,
+      "total": 1,
+      "triggerErrorCount": 0,
+      "triggerErrors": []
+    },
+    "nativeSHA256": "8f9916b9cb1471f343be018d16f12f0b84dc31af75bf2b54bf34dda1c2af9ff1",
+    "bindings": {
+      "TraceEmitter": "C51A62TraceEmitter",
+      "SignalRelay": "C51A62SignalRelay",
+      "FaultWave": "C51A62FaultWave",
+      "QuietFaultWave": "C51A62QuietFaultWave",
+      "FaultSink": "C51A62FaultSink",
+      "SignalPulse__e": "C51A62Signal__e",
+      "SyntheticCellTag": "C51A62-C13-08-anonymous",
+      "SyntheticOwnerKey": "E51_OWNER_C51A62",
+      "SyntheticBusKey": "E51_BUS_C51A62",
+      "SyntheticEventPrefix": "E51_EVENT_C51A62_",
+      "SyntheticEventErrorPrefix": "E51_EVENT_ERR_C51A62_",
+      "SyntheticEventSeenKey": "E51_EVENT_SEEN_C51A62"
+    },
+    "capturedSources": {
+      "anonymous": "Map<String,Object> r=new Map<String,Object>();try{Id job=Database.executeBatch(new FaultWave('NONE','SyntheticCellTag'),1);insert new Account(Name='SyntheticCellTag ENQUEUE',Description=String.valueOf(job));r.put('completed',true);}catch(Exception fault){r.put('exceptionType',fault.getTypeName());r.put('exceptionMessage',fault.getMessage());r.put('stack',fault.getStackTraceString());}System.assert(false,'C126_RESULT|C13-08|'+JSON.serialize(r));"
+    },
+    "enqueueSource": "Id job=Database.executeBatch(new C51A62FaultWave('NONE','C51A62-C13-08-anonymous'),1);insert new Account(Name='C51A62-C13-08-anonymous ENQUEUE',Description=String.valueOf(job));",
+    "source": "Map<String,Object> r=new Map<String,Object>();AsyncApexJob observed=[SELECT Status,NumberOfErrors,JobItemsProcessed,TotalJobItems FROM AsyncApexJob WHERE Id=:job];r.put('job',job);r.put('jobStatus',observed.Status);r.put('errors',observed.NumberOfErrors);r.put('processed',observed.JobItemsProcessed);r.put('total',observed.TotalJobItems);String eventPrefix='E51_EVENT_C51A62_';String eventPattern=eventPrefix+'%';List<Account> eventCandidates=[SELECT Name,Description FROM Account WHERE Name LIKE :eventPattern];List<Account> events=new List<Account>();for(Account eventCandidate:eventCandidates){if(eventCandidate.Name.startsWith(eventPrefix)){String eventSuffix=eventCandidate.Name.substring(eventPrefix.length());if((eventSuffix.length()==15 || eventSuffix.length()==18) && Id.valueOf(eventSuffix)==job) events.add(eventCandidate);}}List<Object> payloads=new List<Object>();for(Account eventRow:events){payloads.add(JSON.deserializeUntyped(eventRow.Description));}r.put('events',payloads);r.put('eventCount',events.size());String witnessKey='C51A62-C13-08-anonymous';r.put('finishWitnessCount',[SELECT COUNT() FROM Account WHERE Name=:witnessKey]);String triggerErrorPrefix='E51_EVENT_ERR_C51A62_';String triggerErrorPattern=triggerErrorPrefix+'%';List<Account> triggerErrorCandidates=[SELECT Name,Description FROM Account WHERE Name LIKE :triggerErrorPattern];List<Account> triggerErrorRows=new List<Account>();for(Account triggerErrorCandidate:triggerErrorCandidates){if(triggerErrorCandidate.Name.startsWith(triggerErrorPrefix)){String triggerErrorSuffix=triggerErrorCandidate.Name.substring(triggerErrorPrefix.length());if((triggerErrorSuffix.length()==15 || triggerErrorSuffix.length()==18) && Id.valueOf(triggerErrorSuffix)==job) triggerErrorRows.add(triggerErrorCandidate);}}r.put('triggerErrorCount',triggerErrorRows.size());List<Object> triggerErrors=new List<Object>();for(Account triggerErrorRow:triggerErrorRows){triggerErrors.add(JSON.deserializeUntyped(triggerErrorRow.Description));}r.put('triggerErrors',triggerErrors);String seenKey='E51_EVENT_SEEN_C51A62';List<Account> seenRows=[SELECT Name,Description FROM Account WHERE Name=:seenKey];List<Object> seen=new List<Object>();for(Account seenRow:seenRows){Map<String,Object> seenPayload=(Map<String,Object>)JSON.deserializeUntyped(seenRow.Description);String seenJob=String.valueOf(seenPayload.get('job'));if((seenJob.length()==15 || seenJob.length()==18) && Id.valueOf(seenJob)==job) seen.add(seenPayload);}r.put('seenCount',seen.size());r.put('seen',seen);r.put('completed',true);System.assert(false,'C126_RESULT|C13-08|'+JSON.serialize(r));",
+    "sourceSHA256": "52b24d5829dee82e868d8e2cce3fad6b2a84debbfce4f4cc9824028743dc103d"
+  },
+  {
+    "id": "C13-10",
+    "api": "62.0",
+    "route": "anonymous",
+    "testContext": "anonymous",
+    "native": {
+      "completed": true,
+      "errors": 1,
+      "eventCount": 0,
+      "events": [],
+      "finishWitnessCount": 1,
+      "job": "[ID]",
+      "jobStatus": "Completed",
+      "processed": 1,
+      "seen": [],
+      "seenCount": 0,
+      "total": 1,
+      "triggerErrorCount": 0,
+      "triggerErrors": []
+    },
+    "nativeSHA256": "e5e0353794b7505a65ad95091718bcdb6150e216776d9717234a25f150b10ba6",
+    "bindings": {
+      "TraceEmitter": "C51A62TraceEmitter",
+      "SignalRelay": "C51A62SignalRelay",
+      "FaultWave": "C51A62FaultWave",
+      "QuietFaultWave": "C51A62QuietFaultWave",
+      "FaultSink": "C51A62FaultSink",
+      "SignalPulse__e": "C51A62Signal__e",
+      "SyntheticCellTag": "C51A62-C13-10-anonymous",
+      "SyntheticOwnerKey": "E51_OWNER_C51A62",
+      "SyntheticBusKey": "E51_BUS_C51A62",
+      "SyntheticEventPrefix": "E51_EVENT_C51A62_",
+      "SyntheticEventErrorPrefix": "E51_EVENT_ERR_C51A62_",
+      "SyntheticEventSeenKey": "E51_EVENT_SEEN_C51A62"
+    },
+    "capturedSources": {
+      "anonymous": "Map<String,Object> r=new Map<String,Object>();try{Id job=Database.executeBatch(new QuietFaultWave('EXECUTE','SyntheticCellTag'),1);insert new Account(Name='SyntheticCellTag ENQUEUE',Description=String.valueOf(job));r.put('completed',true);}catch(Exception fault){r.put('exceptionType',fault.getTypeName());r.put('exceptionMessage',fault.getMessage());r.put('stack',fault.getStackTraceString());}System.assert(false,'C126_RESULT|C13-10|'+JSON.serialize(r));"
+    },
+    "enqueueSource": "Id job=Database.executeBatch(new C51A62QuietFaultWave('EXECUTE','C51A62-C13-10-anonymous'),1);insert new Account(Name='C51A62-C13-10-anonymous ENQUEUE',Description=String.valueOf(job));",
+    "source": "Map<String,Object> r=new Map<String,Object>();AsyncApexJob observed=[SELECT Status,NumberOfErrors,JobItemsProcessed,TotalJobItems FROM AsyncApexJob WHERE Id=:job];r.put('job',job);r.put('jobStatus',observed.Status);r.put('errors',observed.NumberOfErrors);r.put('processed',observed.JobItemsProcessed);r.put('total',observed.TotalJobItems);String eventPrefix='E51_EVENT_C51A62_';String eventPattern=eventPrefix+'%';List<Account> eventCandidates=[SELECT Name,Description FROM Account WHERE Name LIKE :eventPattern];List<Account> events=new List<Account>();for(Account eventCandidate:eventCandidates){if(eventCandidate.Name.startsWith(eventPrefix)){String eventSuffix=eventCandidate.Name.substring(eventPrefix.length());if((eventSuffix.length()==15 || eventSuffix.length()==18) && Id.valueOf(eventSuffix)==job) events.add(eventCandidate);}}List<Object> payloads=new List<Object>();for(Account eventRow:events){payloads.add(JSON.deserializeUntyped(eventRow.Description));}r.put('events',payloads);r.put('eventCount',events.size());String witnessKey='C51A62-C13-10-anonymous';r.put('finishWitnessCount',[SELECT COUNT() FROM Account WHERE Name=:witnessKey]);String triggerErrorPrefix='E51_EVENT_ERR_C51A62_';String triggerErrorPattern=triggerErrorPrefix+'%';List<Account> triggerErrorCandidates=[SELECT Name,Description FROM Account WHERE Name LIKE :triggerErrorPattern];List<Account> triggerErrorRows=new List<Account>();for(Account triggerErrorCandidate:triggerErrorCandidates){if(triggerErrorCandidate.Name.startsWith(triggerErrorPrefix)){String triggerErrorSuffix=triggerErrorCandidate.Name.substring(triggerErrorPrefix.length());if((triggerErrorSuffix.length()==15 || triggerErrorSuffix.length()==18) && Id.valueOf(triggerErrorSuffix)==job) triggerErrorRows.add(triggerErrorCandidate);}}r.put('triggerErrorCount',triggerErrorRows.size());List<Object> triggerErrors=new List<Object>();for(Account triggerErrorRow:triggerErrorRows){triggerErrors.add(JSON.deserializeUntyped(triggerErrorRow.Description));}r.put('triggerErrors',triggerErrors);String seenKey='E51_EVENT_SEEN_C51A62';List<Account> seenRows=[SELECT Name,Description FROM Account WHERE Name=:seenKey];List<Object> seen=new List<Object>();for(Account seenRow:seenRows){Map<String,Object> seenPayload=(Map<String,Object>)JSON.deserializeUntyped(seenRow.Description);String seenJob=String.valueOf(seenPayload.get('job'));if((seenJob.length()==15 || seenJob.length()==18) && Id.valueOf(seenJob)==job) seen.add(seenPayload);}r.put('seenCount',seen.size());r.put('seen',seen);r.put('completed',true);System.assert(false,'C126_RESULT|C13-10|'+JSON.serialize(r));",
+    "sourceSHA256": "c018ac09dd72ecb1550df14187702318eec9cd063eb7f51ed74552378998ad2d"
+  },
+  {
+    "id": "C13-08",
+    "api": "67.0",
+    "route": "anonymous",
+    "testContext": "anonymous",
+    "native": {
+      "completed": true,
+      "errors": 0,
+      "eventCount": 0,
+      "events": [],
+      "finishWitnessCount": 1,
+      "job": "[ID]",
+      "jobStatus": "Completed",
+      "processed": 1,
+      "seen": [],
+      "seenCount": 0,
+      "total": 1,
+      "triggerErrorCount": 0,
+      "triggerErrors": []
+    },
+    "nativeSHA256": "8f9916b9cb1471f343be018d16f12f0b84dc31af75bf2b54bf34dda1c2af9ff1",
+    "bindings": {
+      "TraceEmitter": "C51A67TraceEmitter",
+      "SignalRelay": "C51A67SignalRelay",
+      "FaultWave": "C51A67FaultWave",
+      "QuietFaultWave": "C51A67QuietFaultWave",
+      "FaultSink": "C51A67FaultSink",
+      "SignalPulse__e": "C51A67Signal__e",
+      "SyntheticCellTag": "C51A67-C13-08-anonymous",
+      "SyntheticOwnerKey": "E51_OWNER_C51A67",
+      "SyntheticBusKey": "E51_BUS_C51A67",
+      "SyntheticEventPrefix": "E51_EVENT_C51A67_",
+      "SyntheticEventErrorPrefix": "E51_EVENT_ERR_C51A67_",
+      "SyntheticEventSeenKey": "E51_EVENT_SEEN_C51A67"
+    },
+    "capturedSources": {
+      "anonymous": "Map<String,Object> r=new Map<String,Object>();try{Id job=Database.executeBatch(new FaultWave('NONE','SyntheticCellTag'),1);insert new Account(Name='SyntheticCellTag ENQUEUE',Description=String.valueOf(job));r.put('completed',true);}catch(Exception fault){r.put('exceptionType',fault.getTypeName());r.put('exceptionMessage',fault.getMessage());r.put('stack',fault.getStackTraceString());}System.assert(false,'C126_RESULT|C13-08|'+JSON.serialize(r));"
+    },
+    "enqueueSource": "Id job=Database.executeBatch(new C51A67FaultWave('NONE','C51A67-C13-08-anonymous'),1);insert new Account(Name='C51A67-C13-08-anonymous ENQUEUE',Description=String.valueOf(job));",
+    "source": "Map<String,Object> r=new Map<String,Object>();AsyncApexJob observed=[SELECT Status,NumberOfErrors,JobItemsProcessed,TotalJobItems FROM AsyncApexJob WHERE Id=:job];r.put('job',job);r.put('jobStatus',observed.Status);r.put('errors',observed.NumberOfErrors);r.put('processed',observed.JobItemsProcessed);r.put('total',observed.TotalJobItems);String eventPrefix='E51_EVENT_C51A67_';String eventPattern=eventPrefix+'%';List<Account> eventCandidates=[SELECT Name,Description FROM Account WHERE Name LIKE :eventPattern];List<Account> events=new List<Account>();for(Account eventCandidate:eventCandidates){if(eventCandidate.Name.startsWith(eventPrefix)){String eventSuffix=eventCandidate.Name.substring(eventPrefix.length());if((eventSuffix.length()==15 || eventSuffix.length()==18) && Id.valueOf(eventSuffix)==job) events.add(eventCandidate);}}List<Object> payloads=new List<Object>();for(Account eventRow:events){payloads.add(JSON.deserializeUntyped(eventRow.Description));}r.put('events',payloads);r.put('eventCount',events.size());String witnessKey='C51A67-C13-08-anonymous';r.put('finishWitnessCount',[SELECT COUNT() FROM Account WHERE Name=:witnessKey]);String triggerErrorPrefix='E51_EVENT_ERR_C51A67_';String triggerErrorPattern=triggerErrorPrefix+'%';List<Account> triggerErrorCandidates=[SELECT Name,Description FROM Account WHERE Name LIKE :triggerErrorPattern];List<Account> triggerErrorRows=new List<Account>();for(Account triggerErrorCandidate:triggerErrorCandidates){if(triggerErrorCandidate.Name.startsWith(triggerErrorPrefix)){String triggerErrorSuffix=triggerErrorCandidate.Name.substring(triggerErrorPrefix.length());if((triggerErrorSuffix.length()==15 || triggerErrorSuffix.length()==18) && Id.valueOf(triggerErrorSuffix)==job) triggerErrorRows.add(triggerErrorCandidate);}}r.put('triggerErrorCount',triggerErrorRows.size());List<Object> triggerErrors=new List<Object>();for(Account triggerErrorRow:triggerErrorRows){triggerErrors.add(JSON.deserializeUntyped(triggerErrorRow.Description));}r.put('triggerErrors',triggerErrors);String seenKey='E51_EVENT_SEEN_C51A67';List<Account> seenRows=[SELECT Name,Description FROM Account WHERE Name=:seenKey];List<Object> seen=new List<Object>();for(Account seenRow:seenRows){Map<String,Object> seenPayload=(Map<String,Object>)JSON.deserializeUntyped(seenRow.Description);String seenJob=String.valueOf(seenPayload.get('job'));if((seenJob.length()==15 || seenJob.length()==18) && Id.valueOf(seenJob)==job) seen.add(seenPayload);}r.put('seenCount',seen.size());r.put('seen',seen);r.put('completed',true);System.assert(false,'C126_RESULT|C13-08|'+JSON.serialize(r));",
+    "sourceSHA256": "d37b38b192eb34af212eae2d73281750c89e17a11f774a7f76c1c0fcb4b58573"
+  },
+  {
+    "id": "C13-10",
+    "api": "67.0",
+    "route": "anonymous",
+    "testContext": "anonymous",
+    "native": {
+      "completed": true,
+      "errors": 1,
+      "eventCount": 0,
+      "events": [],
+      "finishWitnessCount": 1,
+      "job": "[ID]",
+      "jobStatus": "Completed",
+      "processed": 1,
+      "seen": [],
+      "seenCount": 0,
+      "total": 1,
+      "triggerErrorCount": 0,
+      "triggerErrors": []
+    },
+    "nativeSHA256": "e5e0353794b7505a65ad95091718bcdb6150e216776d9717234a25f150b10ba6",
+    "bindings": {
+      "TraceEmitter": "C51A67TraceEmitter",
+      "SignalRelay": "C51A67SignalRelay",
+      "FaultWave": "C51A67FaultWave",
+      "QuietFaultWave": "C51A67QuietFaultWave",
+      "FaultSink": "C51A67FaultSink",
+      "SignalPulse__e": "C51A67Signal__e",
+      "SyntheticCellTag": "C51A67-C13-10-anonymous",
+      "SyntheticOwnerKey": "E51_OWNER_C51A67",
+      "SyntheticBusKey": "E51_BUS_C51A67",
+      "SyntheticEventPrefix": "E51_EVENT_C51A67_",
+      "SyntheticEventErrorPrefix": "E51_EVENT_ERR_C51A67_",
+      "SyntheticEventSeenKey": "E51_EVENT_SEEN_C51A67"
+    },
+    "capturedSources": {
+      "anonymous": "Map<String,Object> r=new Map<String,Object>();try{Id job=Database.executeBatch(new QuietFaultWave('EXECUTE','SyntheticCellTag'),1);insert new Account(Name='SyntheticCellTag ENQUEUE',Description=String.valueOf(job));r.put('completed',true);}catch(Exception fault){r.put('exceptionType',fault.getTypeName());r.put('exceptionMessage',fault.getMessage());r.put('stack',fault.getStackTraceString());}System.assert(false,'C126_RESULT|C13-10|'+JSON.serialize(r));"
+    },
+    "enqueueSource": "Id job=Database.executeBatch(new C51A67QuietFaultWave('EXECUTE','C51A67-C13-10-anonymous'),1);insert new Account(Name='C51A67-C13-10-anonymous ENQUEUE',Description=String.valueOf(job));",
+    "source": "Map<String,Object> r=new Map<String,Object>();AsyncApexJob observed=[SELECT Status,NumberOfErrors,JobItemsProcessed,TotalJobItems FROM AsyncApexJob WHERE Id=:job];r.put('job',job);r.put('jobStatus',observed.Status);r.put('errors',observed.NumberOfErrors);r.put('processed',observed.JobItemsProcessed);r.put('total',observed.TotalJobItems);String eventPrefix='E51_EVENT_C51A67_';String eventPattern=eventPrefix+'%';List<Account> eventCandidates=[SELECT Name,Description FROM Account WHERE Name LIKE :eventPattern];List<Account> events=new List<Account>();for(Account eventCandidate:eventCandidates){if(eventCandidate.Name.startsWith(eventPrefix)){String eventSuffix=eventCandidate.Name.substring(eventPrefix.length());if((eventSuffix.length()==15 || eventSuffix.length()==18) && Id.valueOf(eventSuffix)==job) events.add(eventCandidate);}}List<Object> payloads=new List<Object>();for(Account eventRow:events){payloads.add(JSON.deserializeUntyped(eventRow.Description));}r.put('events',payloads);r.put('eventCount',events.size());String witnessKey='C51A67-C13-10-anonymous';r.put('finishWitnessCount',[SELECT COUNT() FROM Account WHERE Name=:witnessKey]);String triggerErrorPrefix='E51_EVENT_ERR_C51A67_';String triggerErrorPattern=triggerErrorPrefix+'%';List<Account> triggerErrorCandidates=[SELECT Name,Description FROM Account WHERE Name LIKE :triggerErrorPattern];List<Account> triggerErrorRows=new List<Account>();for(Account triggerErrorCandidate:triggerErrorCandidates){if(triggerErrorCandidate.Name.startsWith(triggerErrorPrefix)){String triggerErrorSuffix=triggerErrorCandidate.Name.substring(triggerErrorPrefix.length());if((triggerErrorSuffix.length()==15 || triggerErrorSuffix.length()==18) && Id.valueOf(triggerErrorSuffix)==job) triggerErrorRows.add(triggerErrorCandidate);}}r.put('triggerErrorCount',triggerErrorRows.size());List<Object> triggerErrors=new List<Object>();for(Account triggerErrorRow:triggerErrorRows){triggerErrors.add(JSON.deserializeUntyped(triggerErrorRow.Description));}r.put('triggerErrors',triggerErrors);String seenKey='E51_EVENT_SEEN_C51A67';List<Account> seenRows=[SELECT Name,Description FROM Account WHERE Name=:seenKey];List<Object> seen=new List<Object>();for(Account seenRow:seenRows){Map<String,Object> seenPayload=(Map<String,Object>)JSON.deserializeUntyped(seenRow.Description);String seenJob=String.valueOf(seenPayload.get('job'));if((seenJob.length()==15 || seenJob.length()==18) && Id.valueOf(seenJob)==job) seen.add(seenPayload);}r.put('seenCount',seen.size());r.put('seen',seen);r.put('completed',true);System.assert(false,'C126_RESULT|C13-10|'+JSON.serialize(r));",
+    "sourceSHA256": "3750435aff907341aec8da7c8b800daced560ce78930dd61862b842531054823"
+  }
+]

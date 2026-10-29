@@ -1,0 +1,7 @@
+case_id	route	outcome	observation
+AO_001	anonymous	runtime	{"dueDate":"2026-01-17","dueDateTime":"2026-01-17 12:00:00","start":"2026-01-15 12:00:00"}
+AO_001	istest	runtime	{"dueDate":"2026-01-17","dueDateTime":"2026-01-17 12:00:00","start":"2026-01-15 12:00:00"}
+AO_002	anonymous	runtime	{"id":"Europe/Paris","summerFormat":"2026-07-16 00:30 CEST","summerOffset":7200000,"winterFormat":"2026-01-16 00:30 CET","winterOffset":3600000}
+AO_002	istest	runtime	{"id":"Europe/Paris","summerFormat":"2026-07-16 00:30 CEST","summerOffset":7200000,"winterFormat":"2026-01-16 00:30 CET","winterOffset":3600000}
+AO_003	anonymous	runtime	{"dueDate":"2026-01-17","dueDateTime":"2026-01-17 23:30:00","start":"2026-01-15 23:30:00","summerDate":"2026-07-15","winterDate":"2026-01-15","winterDay":"Thu"}
+AO_003	istest	runtime	{"dueDate":"2026-01-17","dueDateTime":"2026-01-17 23:30:00","start":"2026-01-15 23:30:00","summerDate":"2026-07-16","winterDate":"2026-01-16","winterDay":"Fri"}

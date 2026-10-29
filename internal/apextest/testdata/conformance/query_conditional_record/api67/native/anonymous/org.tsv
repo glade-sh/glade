@@ -1,0 +1,8 @@
+id	group	route	status	value
+left	query_conditional_record	anonymous	ok	"empty"
+listControl	query_conditional_record	anonymous	ok	1
+local	query_conditional_record	anonymous	ok	"local"
+nullLeft	query_conditional_record	anonymous	ok	true
+nullRight	query_conditional_record	anonymous	ok	true
+reverse	query_conditional_record	anonymous	ok	"observed"
+right	query_conditional_record	anonymous	ok	"observed"

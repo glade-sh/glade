@@ -49,7 +49,7 @@ func TestFinalLocalScopeNativeConformance(t *testing.T) {
 		seen[row.ID] = true
 	}
 	for _, api := range table.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "A01-final-local", api)
 			for _, row := range table.Rows {
 				t.Run(row.ID, func(t *testing.T) {

@@ -41,7 +41,7 @@ func TestRecordListViewsOrgConformance(t *testing.T) {
 		t.Fatal("incomplete record-list observation matrix")
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "RecordListViews", api)
 			base := conformanceSchemaBase(t, nativeBoundaryIndex(t, api, nil, nil), api)
 			for _, pending := range data.UnobservedShapes {

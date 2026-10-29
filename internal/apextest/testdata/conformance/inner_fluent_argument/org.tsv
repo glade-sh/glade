@@ -1,0 +1,17 @@
+case	api	route	compiled	success	outcome
+accept	62.0	anonymous	true	true	pass
+boundary	62.0	anonymous	true	true	pass
+reject	62.0	anonymous	false	false	Method does not exist or incorrect signature: void missing() from the type ReceiverFixture.Value
+collision_reject	62.0	anonymous	false	false	Method does not exist or incorrect signature: void addString(String) from the type ReceiverFixture.Builder
+accept	62.0	isTest	true	true	pass
+boundary	62.0	isTest	true	true	pass
+reject	62.0	isTest	false	false	Method does not exist or incorrect signature: void missing() from the type ReceiverFixture.Value
+collision_reject	62.0	isTest	false	false	Method does not exist or incorrect signature: void addString(String) from the type ReceiverFixture.Builder
+accept	67.0	anonymous	true	true	pass
+boundary	67.0	anonymous	true	true	pass
+reject	67.0	anonymous	false	false	Method does not exist or incorrect signature: void missing() from the type ReceiverFixture.Value
+collision_reject	67.0	anonymous	false	false	Method does not exist or incorrect signature: void addString(String) from the type ReceiverFixture.Builder
+accept	67.0	isTest	true	true	pass
+boundary	67.0	isTest	true	true	pass
+reject	67.0	isTest	false	false	Method does not exist or incorrect signature: void missing() from the type ReceiverFixture.Value
+collision_reject	67.0	isTest	false	false	Method does not exist or incorrect signature: void addString(String) from the type ReceiverFixture.Builder

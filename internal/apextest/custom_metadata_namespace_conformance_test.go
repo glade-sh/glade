@@ -116,7 +116,7 @@ func runMetadataNamespaceConformance(t *testing.T, group string, shapes int) {
 		t.Fatal("incomplete native cluster")
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "CustomMetadataNamespace_"+group, api)
 			baseIndex := metadataNamespaceIndex(t, api, nil, data)
 			org := orgFromIndex(baseIndex)

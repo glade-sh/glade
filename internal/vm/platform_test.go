@@ -4494,26 +4494,30 @@ System.assert(after > before);
 func TestExecCPULimitAccountsForSOQLAndDMLRows(t *testing.T) {
 	program, err := CompileAnonymous(`
 Integer start = Limits.getCpuTime();
-List<Account> rows = new List<Account>{
-	new Account(Name = 'A'),
-	new Account(Name = 'B'),
-	new Account(Name = 'C')
-};
 insert rows;
 Integer afterDml = Limits.getCpuTime();
-System.assert(afterDml >= start);
+System.assert(afterDml > start);
 List<Account> queried = [SELECT Id FROM Account];
 Integer afterQuery = Limits.getCpuTime();
-System.assert(afterQuery >= afterDml);
+System.assert(afterQuery > afterDml);
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	machine := New(nil)
+	rows := make([]Value, 2000)
+	for i := range rows {
+		rows[i] = Object("Account")
+		rows[i].Fields["Name"] = String("CPU row")
+	}
+	rowList := typedList("List<Account>")
+	rowList.List = rows
+	machine.Globals["rows"] = rowList
+	machine.VarTypes["rows"] = "List<Account>"
 	org := testDataOrg()
 	machine.SetOrg(&org)
 	caps := defaultLimitCaps()
-	caps.CPUTimeMS = 4
+	caps.CPUTimeMS = 1
 	machine.SetLimitCaps(caps)
 	result, err := machine.Execute(program)
 	if err != nil {
@@ -4522,8 +4526,8 @@ System.assert(afterQuery >= afterDml);
 	if len(result.LimitViolations) == 0 {
 		t.Fatalf("expected CPU budget violation from instruction and row costs")
 	}
-	if result.LimitViolations[0].Used != machine.cpuBudgetUsed {
-		t.Fatalf("CPU budget violation used = %d, budget counter = %d", result.LimitViolations[0].Used, machine.cpuBudgetUsed)
+	if result.LimitViolations[0].Used != result.Limits.CPUTimeMS {
+		t.Fatalf("CPU budget violation used = %d, reported milliseconds = %d", result.LimitViolations[0].Used, result.Limits.CPUTimeMS)
 	}
 }
 
@@ -9945,7 +9949,8 @@ try {
     Object value = t.newInstance();
     System.assert(false, 'expected TypeException');
 } catch (Exception e) {
-    System.assert(e.getMessage().contains('cannot instantiate abstract class'));
+    System.assertEquals('System.TypeException', e.getTypeName());
+    System.assertEquals('AbstractThing cannot be constructed', e.getMessage());
 }
 `)
 	if err != nil {

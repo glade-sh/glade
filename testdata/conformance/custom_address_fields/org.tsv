@@ -1,0 +1,137 @@
+api	route	case	observation
+62.0	anonymous	P01	Springfield
+62.0	anonymous	P02	null
+62.0	anonymous	P02b	37.5
+62.0	anonymous	P02c	Springfield
+62.0	anonymous	P03	inserted
+62.0	anonymous	P04	1 Main St/Springfield/94105/CA/US/37.500000000000000/-122.250000000000000/null
+62.0	anonymous	P05	1 Main St/Springfield/94105/California/CA/United States/US/37.5/-122.25/null
+62.0	anonymous	P06	1 Main St/Springfield/94105/California/CA/United States/US/37.5/-122.25/null
+62.0	anonymous	P07	EXC|System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Addr_Test__c.Home__City__s
+62.0	anonymous	P07b	(Id, Home__c)
+62.0	anonymous	P08	EXC|System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Addr_Test__c.Home__c
+62.0	anonymous	P08b	(Id, Home__City__s, Home__CountryCode__s)
+62.0	anonymous	P09	1
+62.0	anonymous	P09b	1
+62.0	anonymous	P10	EXC|System.QueryException|Address fields can only be filtered using Distance expressions
+62.0	anonymous	P10c	1
+62.0	anonymous	P10d	(AggregateResult:{c=Springfield, n=1})
+62.0	anonymous	P10e	1
+62.0	anonymous	P10f	EXC|System.QueryException|No such column 'Home__State__s' on entity 'Addr_Test__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	anonymous	P11	Springfield
+62.0	anonymous	P11b	Springfield
+62.0	anonymous	P11c	true
+62.0	anonymous	P11d	true
+62.0	anonymous	P12	Shelbyville
+62.0	anonymous	P12b	EXC|System.SObjectException|Invalid field Home__c for Addr_Test__c
+62.0	anonymous	P12c	EXC|System.SObjectException|Invalid field Home__c for Addr_Test__c
+62.0	anonymous	P12d	EXC|System.SObjectException|Invalid field Home__Bogus__s for Addr_Test__c
+62.0	anonymous	P13	Shelbyville
+62.0	anonymous	P14	Home__City__s="Shelbyville";Home__CountryCode__s="US";Home__c={"street":"1 Main St","stateCode":"CA","state":"California","postalCode":"94105","longitude":-122.25,"latitude":37.5,"geocodeAccuracy":null,"countryCode":"US","country":"United States","city":"Shelbyville"}
+62.0	anonymous	P15	EXC|System.DmlException|Insert failed. First exception on row 0; first error: INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST, Home (Country/Territory): bad value for restricted picklist field: ZZ: [Home__CountryCode__s]|INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST|(Home__CountryCode__s)
+62.0	anonymous	P16	EXC|System.DmlException|Insert failed. First exception on row 0; first error: FIELD_INTEGRITY_EXCEPTION, A country/territory must be specified before specifying a state value for field: [Home__StateCode__s]|FIELD_INTEGRITY_EXCEPTION|(Home__StateCode__s)
+62.0	anonymous	P17	EXC|System.DmlException|Insert failed. First exception on row 0; first error: STRING_TOO_LONG, Home (City): data value too large: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx (max length=40): [Home__City__s]|STRING_TOO_LONG|(Home__City__s)
+62.0	anonymous	P18	EXC|System.DmlException|Insert failed. First exception on row 0; first error: NUMBER_OUTSIDE_VALID_RANGE, Home (Latitude): value outside of valid range on numeric field: 91: [Home__Latitude__s]|NUMBER_OUTSIDE_VALID_RANGE|(Home__Latitude__s)
+62.0	anonymous	P19	EXC|System.DmlException|Insert failed. First exception on row 0; first error: INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST, Home (Geocode Accuracy): bad value for restricted picklist field: Bogus: [Home__GeocodeAccuracy__s]|INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST|(Home__GeocodeAccuracy__s)
+62.0	anonymous	P20	EXC|System.DmlException|Insert failed. First exception on row 0; first error: FIELD_INTEGRITY_EXCEPTION, The Home__StateCode__s field contains XX, which isn't an available state. Your administrator can add it for you.: [Home__StateCode__s]|FIELD_INTEGRITY_EXCEPTION|(Home__StateCode__s)
+62.0	anonymous	P21	EXC|System.DmlException|Insert failed. First exception on row 0; first error: FIELD_INTEGRITY_EXCEPTION, Longitude value is missing : Home (Longitude): [Home__Longitude__s]|FIELD_INTEGRITY_EXCEPTION|(Home__Longitude__s)
+62.0	anonymous	P22	inserted
+62.0	anonymous	D01	(home__c, home__city__s, home__countrycode__s, home__geocodeaccuracy__s, home__latitude__s, home__longitude__s, home__postalcode__s, home__statecode__s, home__street__s)
+62.0	anonymous	D02.home__c	Home__c,ADDRESS,ADDRESS,null,false,false,true,0,0,0,true,false,false,true,Home,null,false,0
+62.0	anonymous	D02.home__city__s	Home__City__s,STRING,STRING,Home__c,true,true,true,40,0,0,true,true,true,true,Home (City),null,false,0
+62.0	anonymous	D02.home__countrycode__s	Home__CountryCode__s,PICKLIST,STRING,Home__c,true,true,true,10,0,0,true,true,true,true,Home (Country/Territory),null,true,235
+62.0	anonymous	D02.home__geocodeaccuracy__s	Home__GeocodeAccuracy__s,PICKLIST,STRING,Home__c,true,true,true,40,0,0,true,true,true,true,Home (Geocode Accuracy),null,true,11
+62.0	anonymous	D02.home__latitude__s	Home__Latitude__s,DOUBLE,DOUBLE,Home__c,true,true,true,0,18,15,true,true,false,true,Home (Latitude),null,false,0
+62.0	anonymous	D02.home__longitude__s	Home__Longitude__s,DOUBLE,DOUBLE,Home__c,true,true,true,0,18,15,true,true,false,true,Home (Longitude),null,false,0
+62.0	anonymous	D02.home__postalcode__s	Home__PostalCode__s,STRING,STRING,Home__c,true,true,true,20,0,0,true,true,true,true,Home (ZIP/Postal Code),null,false,0
+62.0	anonymous	D02.home__statecode__s	Home__StateCode__s,PICKLIST,STRING,Home__c,true,true,true,10,0,0,true,true,true,true,Home (State/Province),Home__CountryCode__s,true,384
+62.0	anonymous	D02.home__street__s	Home__Street__s,TEXTAREA,STRING,Home__c,true,true,true,255,0,0,true,true,true,true,Home (Street),null,false,0
+62.0	anonymous	D03	Home__City__s
+62.0	anonymous	D04	Home__c,ADDRESS,ADDRESS,null,false,false,true,0,0,0,true,false,false,true,Home,null,false,0
+62.0	anonymous	A01	inserted
+62.0	anonymous	A02	Kelowna/BC/2 Side/Kelowna/null/British Columbia/BC/Canada/CA/null/null/null/null
+62.0	anonymous	A03	Home__Street__s,TEXTAREA,STRING,Home__c,true,true,true,255,0,0,true,true,true,true,Home (Street),null,false,0
+62.0	anonymous	A04	1
+67.0	anonymous	P01	Springfield
+67.0	anonymous	P02	null
+67.0	anonymous	P02b	37.5
+67.0	anonymous	P02c	Springfield
+67.0	anonymous	P03	inserted
+67.0	anonymous	P04	1 Main St/Springfield/94105/CA/US/37.500000000000000/-122.250000000000000/null
+67.0	anonymous	P05	1 Main St/Springfield/94105/California/CA/United States/US/37.5/-122.25/null
+67.0	anonymous	P06	1 Main St/Springfield/94105/California/CA/United States/US/37.5/-122.25/null
+67.0	anonymous	P07	EXC|System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Addr_Test__c.Home__City__s
+67.0	anonymous	P07b	(Id, Home__c)
+67.0	anonymous	P08	EXC|System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Addr_Test__c.Home__c
+67.0	anonymous	P08b	(Id, Home__City__s, Home__CountryCode__s)
+67.0	anonymous	P09	1
+67.0	anonymous	P09b	1
+67.0	anonymous	P10	EXC|System.QueryException|Address fields can only be filtered using Distance expressions
+67.0	anonymous	P10c	1
+67.0	anonymous	P10d	(AggregateResult:{c=Springfield, n=1})
+67.0	anonymous	P10e	1
+67.0	anonymous	P10f	EXC|System.QueryException|No such column 'Home__State__s' on entity 'Addr_Test__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+67.0	anonymous	P11	Springfield
+67.0	anonymous	P11b	Springfield
+67.0	anonymous	P11c	true
+67.0	anonymous	P11d	true
+67.0	anonymous	P12	Shelbyville
+67.0	anonymous	P12b	EXC|System.SObjectException|Invalid field Home__c for Addr_Test__c
+67.0	anonymous	P12c	EXC|System.SObjectException|Invalid field Home__c for Addr_Test__c
+67.0	anonymous	P12d	EXC|System.SObjectException|Invalid field Home__Bogus__s for Addr_Test__c
+67.0	anonymous	P13	Shelbyville
+67.0	anonymous	P14	Home__City__s="Shelbyville";Home__CountryCode__s="US";Home__c={"street":"1 Main St","stateCode":"CA","state":"California","postalCode":"94105","longitude":-122.25,"latitude":37.5,"geocodeAccuracy":null,"countryCode":"US","country":"United States","city":"Shelbyville"}
+67.0	anonymous	P15	EXC|System.DmlException|Insert failed. First exception on row 0; first error: INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST, Home (Country/Territory): bad value for restricted picklist field: ZZ: [Home__CountryCode__s]|INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST|(Home__CountryCode__s)
+67.0	anonymous	P16	EXC|System.DmlException|Insert failed. First exception on row 0; first error: FIELD_INTEGRITY_EXCEPTION, A country/territory must be specified before specifying a state value for field: [Home__StateCode__s]|FIELD_INTEGRITY_EXCEPTION|(Home__StateCode__s)
+67.0	anonymous	P17	EXC|System.DmlException|Insert failed. First exception on row 0; first error: STRING_TOO_LONG, Home (City): data value too large: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx (max length=40): [Home__City__s]|STRING_TOO_LONG|(Home__City__s)
+67.0	anonymous	P18	EXC|System.DmlException|Insert failed. First exception on row 0; first error: NUMBER_OUTSIDE_VALID_RANGE, Home (Latitude): value outside of valid range on numeric field: 91: [Home__Latitude__s]|NUMBER_OUTSIDE_VALID_RANGE|(Home__Latitude__s)
+67.0	anonymous	P19	EXC|System.DmlException|Insert failed. First exception on row 0; first error: INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST, Home (Geocode Accuracy): bad value for restricted picklist field: Bogus: [Home__GeocodeAccuracy__s]|INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST|(Home__GeocodeAccuracy__s)
+67.0	anonymous	P20	EXC|System.DmlException|Insert failed. First exception on row 0; first error: FIELD_INTEGRITY_EXCEPTION, The Home__StateCode__s field contains XX, which isn't an available state. Your administrator can add it for you.: [Home__StateCode__s]|FIELD_INTEGRITY_EXCEPTION|(Home__StateCode__s)
+67.0	anonymous	P21	EXC|System.DmlException|Insert failed. First exception on row 0; first error: FIELD_INTEGRITY_EXCEPTION, Longitude value is missing : Home (Longitude): [Home__Longitude__s]|FIELD_INTEGRITY_EXCEPTION|(Home__Longitude__s)
+67.0	anonymous	P22	inserted
+67.0	anonymous	D01	(home__c, home__city__s, home__countrycode__s, home__geocodeaccuracy__s, home__latitude__s, home__longitude__s, home__postalcode__s, home__statecode__s, home__street__s)
+67.0	anonymous	D02.home__c	Home__c,ADDRESS,ADDRESS,null,false,false,true,0,0,0,true,false,false,true,Home,null,false,0
+67.0	anonymous	D02.home__city__s	Home__City__s,STRING,STRING,Home__c,true,true,true,40,0,0,true,true,true,true,Home (City),null,false,0
+67.0	anonymous	D02.home__countrycode__s	Home__CountryCode__s,PICKLIST,STRING,Home__c,true,true,true,10,0,0,true,true,true,true,Home (Country/Territory),null,true,235
+67.0	anonymous	D02.home__geocodeaccuracy__s	Home__GeocodeAccuracy__s,PICKLIST,STRING,Home__c,true,true,true,40,0,0,true,true,true,true,Home (Geocode Accuracy),null,true,11
+67.0	anonymous	D02.home__latitude__s	Home__Latitude__s,DOUBLE,DOUBLE,Home__c,true,true,true,0,18,15,true,true,false,true,Home (Latitude),null,false,0
+67.0	anonymous	D02.home__longitude__s	Home__Longitude__s,DOUBLE,DOUBLE,Home__c,true,true,true,0,18,15,true,true,false,true,Home (Longitude),null,false,0
+67.0	anonymous	D02.home__postalcode__s	Home__PostalCode__s,STRING,STRING,Home__c,true,true,true,20,0,0,true,true,true,true,Home (ZIP/Postal Code),null,false,0
+67.0	anonymous	D02.home__statecode__s	Home__StateCode__s,PICKLIST,STRING,Home__c,true,true,true,10,0,0,true,true,true,true,Home (State/Province),Home__CountryCode__s,true,384
+67.0	anonymous	D02.home__street__s	Home__Street__s,TEXTAREA,STRING,Home__c,true,true,true,255,0,0,true,true,true,true,Home (Street),null,false,0
+67.0	anonymous	D03	Home__City__s
+67.0	anonymous	D04	Home__c,ADDRESS,ADDRESS,null,false,false,true,0,0,0,true,false,false,true,Home,null,false,0
+67.0	anonymous	A01	inserted
+67.0	anonymous	A02	Kelowna/BC/2 Side/Kelowna/null/British Columbia/BC/Canada/CA/null/null/null/null
+67.0	anonymous	A03	Home__Street__s,TEXTAREA,STRING,Home__c,true,true,true,255,0,0,true,true,true,true,Home (Street),null,false,0
+67.0	anonymous	A04	1
+62.0	compile	C01	COMPILE|Field is not writeable: Addr_Test__c.Home__c
+62.0	compile	C02	COMPILE|Field is not writeable: Addr_Test__c.Home__c
+62.0	compile	C03	COMPILE|No such column 'Home__Bogus__s' on entity 'Addr_Test__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	compile	C04	OK|C04|null
+62.0	compile	C05	OK|C05|null
+62.0	compile	C06	COMPILE|Variable does not exist: Home__State__s
+62.0	compile	C07	COMPILE|Variable does not exist: Home__Country__s
+62.0	compile	C08	OK|
+62.0	compile	C09	COMPILE|Address fields can only be filtered using Distance expressions
+62.0	compile	C10	COMPILE|No such column 'Home__State__s' on entity 'Addr_Test__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	compile	C11	OK|C11|y
+62.0	compile	C12	OK|C12|true
+62.0	compile	C13	COMPILE|Illegal assignment from String to Decimal
+62.0	compile	C14	COMPILE|Illegal assignment from Integer to String
+62.0	compile	U01	UNCAUGHT|System.UnexpectedException: field 'Home__c' can not be sorted in a query call
+67.0	compile	C01	COMPILE|Field is not writeable: Addr_Test__c.Home__c
+67.0	compile	C02	COMPILE|Field is not writeable: Addr_Test__c.Home__c
+67.0	compile	C03	COMPILE|No such column 'Home__Bogus__s' on entity 'Addr_Test__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+67.0	compile	C04	OK|C04|null
+67.0	compile	C05	OK|C05|null
+67.0	compile	C06	COMPILE|Variable does not exist: Home__State__s
+67.0	compile	C07	COMPILE|Variable does not exist: Home__Country__s
+67.0	compile	C08	OK|
+67.0	compile	C09	COMPILE|Address fields can only be filtered using Distance expressions
+67.0	compile	C10	COMPILE|No such column 'Home__State__s' on entity 'Addr_Test__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+67.0	compile	C11	OK|C11|y
+67.0	compile	C12	OK|C12|true
+67.0	compile	C13	COMPILE|Illegal assignment from String to Decimal
+67.0	compile	C14	COMPILE|Illegal assignment from Integer to String
+67.0	compile	U01	UNCAUGHT|System.UnexpectedException: field 'Home__c' can not be sorted in a query call

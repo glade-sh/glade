@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>PriorNullGate</fullName>
+    <active>true</active>
+    <errorConditionFormula>AND(NOT(ISNEW()), ISBLANK(PRIORVALUE(TextValue__c)), TextValue__c = &quot;current&quot;)</errorConditionFormula>
+    <errorMessage>Blank prior value blocked</errorMessage>
+</ValidationRule>

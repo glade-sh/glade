@@ -1,0 +1,13 @@
+{
+  "orgName": "Standard describe profile P6",
+  "edition": "Developer",
+  "features": [
+    "ProductsAndSchedules"
+  ],
+  "settings": {
+    "productSettings": {
+      "enableQuantitySchedule": true,
+      "enableRevenueSchedule": true
+    }
+  }
+}

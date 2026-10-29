@@ -1,0 +1,1 @@
+Map<String,Object> row=new Map<String,Object>();for(String n:new List<String>{'CedarNote__c','cedarcard__c'}){Schema.DescribeSObjectResult d=Schema.getGlobalDescribe().get(n).getDescribe();row.put(n,new List<Boolean>{d.isAccessible(),d.isCreateable(),d.isUpdateable(),d.isDeletable()});}System.debug('OBSERVED|anonymous|'+JSON.serialize(row));

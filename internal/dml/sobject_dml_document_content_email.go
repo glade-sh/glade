@@ -202,6 +202,11 @@ func (e *Engine) afterInsertContentDistribution(id storage.ID) {
 }
 
 func (e *Engine) afterInsertEmailMessage(message storage.Record) error {
+	// API 62 native outgoing, incoming and client-managed controls create no
+	// recipient relationship from ToIds alone when ToAddress is absent.
+	if address, ok := message.GetField("ToAddress"); !ok || address.String == "" {
+		return nil
+	}
 	toIDs, ok := message.GetField("ToIds")
 	if !ok || toIDs.Kind != storage.ValueList {
 		return nil

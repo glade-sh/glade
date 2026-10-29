@@ -1,0 +1,565 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "cluster": "action-outputs",
+  "shapeCount": 3,
+  "nativeObservationCount": 12,
+  "carriedObservationCount": 0,
+  "rows": [
+    {
+      "id": "AO_001",
+      "byAPI": {
+        "62.0": {
+          "rejectedFlowFiles": [],
+          "files": {
+            "sfdx-project.json": "{\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true}],\"namespace\":\"\",\"sfdcLoginUrl\":\"https://login.salesforce.com\",\"sourceApiVersion\":\"62.0\"}\n",
+            "force-app/main/default/objects/FlowCoreAORecord__c/FlowCoreAORecord__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Flow Core AO Record</label><pluralLabel>Flow Core AO Records</pluralLabel><nameField><label>Flow Core AO Record Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>\n",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/Unit__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Unit__c</fullName><label>Unit</label><length>80</length><type>Text</type></CustomField>\n",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/Start__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Start__c</fullName><label>Start</label><type>DateTime</type></CustomField>\n",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/DueDate__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>DueDate__c</fullName><label>Due Date</label><type>Date</type></CustomField>\n",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/DueDateTime__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>DueDateTime__c</fullName><label>Due Date Time</label><type>DateTime</type></CustomField>\n",
+            "force-app/main/default/permissionsets/FlowCoreAOCaptureAccess.permissionset-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <label>Flow Core AO Capture Access</label>\n  <objectPermissions><allowCreate>true</allowCreate><allowDelete>false</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>FlowCoreAORecord__c</object><viewAllRecords>true</viewAllRecords></objectPermissions>\n  <fieldPermissions><editable>true</editable><field>FlowCoreAORecord__c.Unit__c</field><readable>true</readable></fieldPermissions>\n  <fieldPermissions><editable>true</editable><field>FlowCoreAORecord__c.Start__c</field><readable>true</readable></fieldPermissions>\n  <fieldPermissions><editable>true</editable><field>FlowCoreAORecord__c.DueDate__c</field><readable>true</readable></fieldPermissions>\n  <fieldPermissions><editable>true</editable><field>FlowCoreAORecord__c.DueDateTime__c</field><readable>true</readable></fieldPermissions>\n</PermissionSet>\n",
+            "force-app/main/default/flows/FlowCoreAOOutput.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <actionCalls>\n        <name>Add_Days</name>\n        <label>Add Days</label>\n        <locationX>0</locationX>\n        <locationY>0</locationY>\n        <actionName>FlowCoreAOAddDays</actionName>\n        <actionType>apex</actionType>\n        <connector>\n            <targetReference>Set_due</targetReference>\n        </connector>\n        <flowTransactionModel>Automatic</flowTransactionModel>\n        <inputParameters>\n            <name>daysToAdd</name>\n            <value>\n                <numberValue>2.0</numberValue>\n            </value>\n        </inputParameters>\n        <inputParameters>\n            <name>startDateTime</name>\n            <value>\n                <elementReference>$Record.Start__c</elementReference>\n            </value>\n        </inputParameters>\n        <nameSegment>FlowCoreAOAddDays</nameSegment>\n        <offset>0</offset>\n        <storeOutputAutomatically>true</storeOutputAutomatically>\n    </actionCalls>\n    <apiVersion>62.0</apiVersion>\n    <assignments>\n        <name>Set_due</name>\n        <label>Set due</label>\n        <locationX>0</locationX>\n        <locationY>0</locationY>\n        <assignmentItems>\n            <assignToReference>$Record.DueDate__c</assignToReference>\n            <operator>Assign</operator>\n            <value>\n                <elementReference>Add_Days</elementReference>\n            </value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>$Record.DueDateTime__c</assignToReference>\n            <operator>Assign</operator>\n            <value>\n                <elementReference>Add_Days</elementReference>\n            </value>\n        </assignmentItems>\n        <connector>\n            <targetReference>Save_record</targetReference>\n        </connector>\n    </assignments>\n    <environments>Default</environments>\n    <interviewLabel>Flow Core AO Output {!$Flow.CurrentDateTime}</interviewLabel>\n    <label>Flow Core AO Output</label>\n    <processMetadataValues>\n        <name>BuilderType</name>\n        <value>\n            <stringValue>LightningFlowBuilder</stringValue>\n        </value>\n    </processMetadataValues>\n    <processMetadataValues>\n        <name>CanvasMode</name>\n        <value>\n            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>\n        </value>\n    </processMetadataValues>\n    <processMetadataValues>\n        <name>OriginBuilderType</name>\n        <value>\n            <stringValue>LightningFlowBuilder</stringValue>\n        </value>\n    </processMetadataValues>\n    <processType>AutoLaunchedFlow</processType>\n    <recordUpdates>\n        <name>Save_record</name>\n        <label>Save record</label>\n        <locationX>0</locationX>\n        <locationY>0</locationY>\n        <inputReference>$Record</inputReference>\n    </recordUpdates>\n    <start>\n        <locationX>0</locationX>\n        <locationY>0</locationY>\n        <connector>\n            <targetReference>Add_Days</targetReference>\n        </connector>\n        <filterLogic>or</filterLogic>\n        <filters>\n            <field>DueDateTime__c</field>\n            <operator>IsNull</operator>\n            <value>\n                <booleanValue>true</booleanValue>\n            </value>\n        </filters>\n        <filters>\n            <field>Unit__c</field>\n            <operator>EqualTo</operator>\n            <value>\n                <stringValue>never</stringValue>\n            </value>\n        </filters>\n        <object>FlowCoreAORecord__c</object>\n        <recordTriggerType>CreateAndUpdate</recordTriggerType>\n        <triggerType>RecordAfterSave</triggerType>\n    </start>\n    <status>Active</status>\n</Flow>\n",
+            "force-app/main/default/classes/FlowCoreAOAddDays.cls": "public with sharing class FlowCoreAOAddDays {\n    @InvocableMethod(label='Flow Core AO Add Days')\n    public static List<Datetime> addDays(List<Request> requests) {\n        List<Datetime> results = new List<Datetime>();\n        for (Request request : requests) {\n            results.add(request.startDateTime.addDays(request.daysToAdd));\n        }\n        return results;\n    }\n    public class Request {\n        @InvocableVariable(required=true)\n        public Datetime startDateTime;\n        @InvocableVariable(required=true)\n        public Integer daysToAdd;\n    }\n}\n",
+            "force-app/main/default/classes/FlowCoreAOAddDays.cls-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n"
+          },
+          "sourceSha256": {
+            "sfdx-project.json": "b7e8426cfb79d35a1fef46652341959f4b1ecc656b12cd4bcada9e7fc4ff704f",
+            "force-app/main/default/objects/FlowCoreAORecord__c/FlowCoreAORecord__c.object-meta.xml": "70a6047fc166b23ac6d8d77182ce1f7bd16d6e9d35cbc5987ed434d326490d96",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/Unit__c.field-meta.xml": "6219be06afcbb88beee7f8359756efa029ca8d44612f97410521d3ce228534b5",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/Start__c.field-meta.xml": "90fba805a9ea60ecc07b43903d65143a48889e73e639b9dddad826809e7bd6c4",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/DueDate__c.field-meta.xml": "57576052c7936d7167be4989360020ada397f70fb83b8a450acc090105a9a9d9",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/DueDateTime__c.field-meta.xml": "df7e2f1e817dbb22ed1db646304066a4bfa6c5d94baf056d97aa33e1971ceaeb",
+            "force-app/main/default/permissionsets/FlowCoreAOCaptureAccess.permissionset-meta.xml": "466fce5cbce4f4dbb21e02f5245b218aa04812c13b4f39484f913fe7879d499c",
+            "force-app/main/default/flows/FlowCoreAOOutput.flow-meta.xml": "255b8074a30a01a778149dfb4b9ec57b3b19ba6f46fd40a7a2a1ed2f6468b932",
+            "force-app/main/default/classes/FlowCoreAOAddDays.cls": "79c36c5526cec86124707020b1f6d4174c6a981f5b3671866adb272f71176afa",
+            "force-app/main/default/classes/FlowCoreAOAddDays.cls-meta.xml": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "String unitName = 'AO_001-' + String.valueOf(DateTime.now().getTime());\nFlowCoreAORecord__c subject = new FlowCoreAORecord__c(Name = 'subject', Unit__c = unitName, Start__c = Datetime.newInstanceGmt(2026, 1, 15, 12, 0, 0));\ninsert subject;\nsubject = [SELECT DueDate__c, DueDateTime__c, Start__c FROM FlowCoreAORecord__c WHERE Id = :subject.Id];\nMap<String, Object> payload = new Map<String, Object>{\n    'dueDate' => subject.DueDate__c == null ? null : String.valueOf(subject.DueDate__c),\n    'dueDateTime' => subject.DueDateTime__c == null ? null : subject.DueDateTime__c.formatGmt('yyyy-MM-dd HH:mm:ss'),\n    'start' => subject.Start__c.formatGmt('yyyy-MM-dd HH:mm:ss')\n};\nSystem.assert(false, 'FLOW_CORE_RESULT|AO_001|' + JSON.serialize(payload));\n",
+              "classes": {},
+              "tests": [],
+              "sourceSha256": {
+                "anonymous": "20554489bf4cc0dcdb9d8df7ce5ad1935e55a6bbf5c4e4858e1b0325cef279ae"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "start": "2026-01-15 12:00:00",
+                  "dueDateTime": "2026-01-17 12:00:00",
+                  "dueDate": "2026-01-17"
+                },
+                "native": {
+                  "start": "2026-01-15 12:00:00",
+                  "dueDateTime": "2026-01-17 12:00:00",
+                  "dueDate": "2026-01-17"
+                },
+                "primary": "",
+                "carryReason": "",
+                "exceptionType": "",
+                "message": ""
+              }
+            },
+            "istest": {
+              "anonymous": "",
+              "classes": {
+                "FlowCoreAO001ObservationTest": "@IsTest\nprivate class FlowCoreAO001ObservationTest {\n    @IsTest\n    static void observe() {\n        String unitName = 'AO_001-' + String.valueOf(DateTime.now().getTime());\n        FlowCoreAORecord__c subject = new FlowCoreAORecord__c(Name = 'subject', Unit__c = unitName, Start__c = Datetime.newInstanceGmt(2026, 1, 15, 12, 0, 0));\n        insert subject;\n        subject = [SELECT DueDate__c, DueDateTime__c, Start__c FROM FlowCoreAORecord__c WHERE Id = :subject.Id];\n        Map<String, Object> payload = new Map<String, Object>{\n            'dueDate' => subject.DueDate__c == null ? null : String.valueOf(subject.DueDate__c),\n            'dueDateTime' => subject.DueDateTime__c == null ? null : subject.DueDateTime__c.formatGmt('yyyy-MM-dd HH:mm:ss'),\n            'start' => subject.Start__c.formatGmt('yyyy-MM-dd HH:mm:ss')\n        };\n        System.assert(false, 'FLOW_CORE_RESULT|AO_001|' + JSON.serialize(payload));\n    }\n}\n"
+              },
+              "tests": [
+                "FlowCoreAO001ObservationTest"
+              ],
+              "sourceSha256": {
+                "FlowCoreAO001ObservationTest": "45af46a241c7b27307a0c3ec934e9245676a2837c5aa536bab634fcfc7c0b11d"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "start": "2026-01-15 12:00:00",
+                  "dueDateTime": "2026-01-17 12:00:00",
+                  "dueDate": "2026-01-17"
+                },
+                "native": {
+                  "start": "2026-01-15 12:00:00",
+                  "dueDateTime": "2026-01-17 12:00:00",
+                  "dueDate": "2026-01-17"
+                },
+                "primary": "",
+                "carryReason": "",
+                "exceptionType": "",
+                "message": ""
+              }
+            }
+          }
+        },
+        "67.0": {
+          "rejectedFlowFiles": [],
+          "files": {
+            "sfdx-project.json": "{\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true}],\"namespace\":\"\",\"sfdcLoginUrl\":\"https://login.salesforce.com\",\"sourceApiVersion\":\"67.0\"}\n",
+            "force-app/main/default/objects/FlowCoreAORecord__c/FlowCoreAORecord__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Flow Core AO Record</label><pluralLabel>Flow Core AO Records</pluralLabel><nameField><label>Flow Core AO Record Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>\n",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/Unit__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Unit__c</fullName><label>Unit</label><length>80</length><type>Text</type></CustomField>\n",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/Start__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Start__c</fullName><label>Start</label><type>DateTime</type></CustomField>\n",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/DueDate__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>DueDate__c</fullName><label>Due Date</label><type>Date</type></CustomField>\n",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/DueDateTime__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>DueDateTime__c</fullName><label>Due Date Time</label><type>DateTime</type></CustomField>\n",
+            "force-app/main/default/permissionsets/FlowCoreAOCaptureAccess.permissionset-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <label>Flow Core AO Capture Access</label>\n  <objectPermissions><allowCreate>true</allowCreate><allowDelete>false</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>FlowCoreAORecord__c</object><viewAllRecords>true</viewAllRecords></objectPermissions>\n  <fieldPermissions><editable>true</editable><field>FlowCoreAORecord__c.Unit__c</field><readable>true</readable></fieldPermissions>\n  <fieldPermissions><editable>true</editable><field>FlowCoreAORecord__c.Start__c</field><readable>true</readable></fieldPermissions>\n  <fieldPermissions><editable>true</editable><field>FlowCoreAORecord__c.DueDate__c</field><readable>true</readable></fieldPermissions>\n  <fieldPermissions><editable>true</editable><field>FlowCoreAORecord__c.DueDateTime__c</field><readable>true</readable></fieldPermissions>\n</PermissionSet>\n",
+            "force-app/main/default/flows/FlowCoreAOOutput.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <actionCalls>\n        <name>Add_Days</name>\n        <label>Add Days</label>\n        <locationX>0</locationX>\n        <locationY>0</locationY>\n        <actionName>FlowCoreAOAddDays</actionName>\n        <actionType>apex</actionType>\n        <connector>\n            <targetReference>Set_due</targetReference>\n        </connector>\n        <flowTransactionModel>Automatic</flowTransactionModel>\n        <inputParameters>\n            <name>daysToAdd</name>\n            <value>\n                <numberValue>2.0</numberValue>\n            </value>\n        </inputParameters>\n        <inputParameters>\n            <name>startDateTime</name>\n            <value>\n                <elementReference>$Record.Start__c</elementReference>\n            </value>\n        </inputParameters>\n        <nameSegment>FlowCoreAOAddDays</nameSegment>\n        <offset>0</offset>\n        <storeOutputAutomatically>true</storeOutputAutomatically>\n    </actionCalls>\n    <apiVersion>67.0</apiVersion>\n    <assignments>\n        <name>Set_due</name>\n        <label>Set due</label>\n        <locationX>0</locationX>\n        <locationY>0</locationY>\n        <assignmentItems>\n            <assignToReference>$Record.DueDate__c</assignToReference>\n            <operator>Assign</operator>\n            <value>\n                <elementReference>Add_Days</elementReference>\n            </value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>$Record.DueDateTime__c</assignToReference>\n            <operator>Assign</operator>\n            <value>\n                <elementReference>Add_Days</elementReference>\n            </value>\n        </assignmentItems>\n        <connector>\n            <targetReference>Save_record</targetReference>\n        </connector>\n    </assignments>\n    <environments>Default</environments>\n    <interviewLabel>Flow Core AO Output {!$Flow.CurrentDateTime}</interviewLabel>\n    <label>Flow Core AO Output</label>\n    <processMetadataValues>\n        <name>BuilderType</name>\n        <value>\n            <stringValue>LightningFlowBuilder</stringValue>\n        </value>\n    </processMetadataValues>\n    <processMetadataValues>\n        <name>CanvasMode</name>\n        <value>\n            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>\n        </value>\n    </processMetadataValues>\n    <processMetadataValues>\n        <name>OriginBuilderType</name>\n        <value>\n            <stringValue>LightningFlowBuilder</stringValue>\n        </value>\n    </processMetadataValues>\n    <processType>AutoLaunchedFlow</processType>\n    <recordUpdates>\n        <name>Save_record</name>\n        <label>Save record</label>\n        <locationX>0</locationX>\n        <locationY>0</locationY>\n        <inputReference>$Record</inputReference>\n    </recordUpdates>\n    <start>\n        <locationX>0</locationX>\n        <locationY>0</locationY>\n        <connector>\n            <targetReference>Add_Days</targetReference>\n        </connector>\n        <filterLogic>or</filterLogic>\n        <filters>\n            <field>DueDateTime__c</field>\n            <operator>IsNull</operator>\n            <value>\n                <booleanValue>true</booleanValue>\n            </value>\n        </filters>\n        <filters>\n            <field>Unit__c</field>\n            <operator>EqualTo</operator>\n            <value>\n                <stringValue>never</stringValue>\n            </value>\n        </filters>\n        <object>FlowCoreAORecord__c</object>\n        <recordTriggerType>CreateAndUpdate</recordTriggerType>\n        <triggerType>RecordAfterSave</triggerType>\n    </start>\n    <status>Active</status>\n</Flow>\n",
+            "force-app/main/default/classes/FlowCoreAOAddDays.cls": "public with sharing class FlowCoreAOAddDays {\n    @InvocableMethod(label='Flow Core AO Add Days')\n    public static List<Datetime> addDays(List<Request> requests) {\n        List<Datetime> results = new List<Datetime>();\n        for (Request request : requests) {\n            results.add(request.startDateTime.addDays(request.daysToAdd));\n        }\n        return results;\n    }\n    public class Request {\n        @InvocableVariable(required=true)\n        public Datetime startDateTime;\n        @InvocableVariable(required=true)\n        public Integer daysToAdd;\n    }\n}\n",
+            "force-app/main/default/classes/FlowCoreAOAddDays.cls-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n"
+          },
+          "sourceSha256": {
+            "sfdx-project.json": "d61b0974aa1209f8c42b0c8ee5c67db39431e3014e2a29dd0b5d0c0634a01eca",
+            "force-app/main/default/objects/FlowCoreAORecord__c/FlowCoreAORecord__c.object-meta.xml": "70a6047fc166b23ac6d8d77182ce1f7bd16d6e9d35cbc5987ed434d326490d96",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/Unit__c.field-meta.xml": "6219be06afcbb88beee7f8359756efa029ca8d44612f97410521d3ce228534b5",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/Start__c.field-meta.xml": "90fba805a9ea60ecc07b43903d65143a48889e73e639b9dddad826809e7bd6c4",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/DueDate__c.field-meta.xml": "57576052c7936d7167be4989360020ada397f70fb83b8a450acc090105a9a9d9",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/DueDateTime__c.field-meta.xml": "df7e2f1e817dbb22ed1db646304066a4bfa6c5d94baf056d97aa33e1971ceaeb",
+            "force-app/main/default/permissionsets/FlowCoreAOCaptureAccess.permissionset-meta.xml": "466fce5cbce4f4dbb21e02f5245b218aa04812c13b4f39484f913fe7879d499c",
+            "force-app/main/default/flows/FlowCoreAOOutput.flow-meta.xml": "0627bbfcd97bbbdb869df7696aa951d0d5a64ba9236d4e64f77891bcd9c34846",
+            "force-app/main/default/classes/FlowCoreAOAddDays.cls": "79c36c5526cec86124707020b1f6d4174c6a981f5b3671866adb272f71176afa",
+            "force-app/main/default/classes/FlowCoreAOAddDays.cls-meta.xml": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "String unitName = 'AO_001-' + String.valueOf(DateTime.now().getTime());\nFlowCoreAORecord__c subject = new FlowCoreAORecord__c(Name = 'subject', Unit__c = unitName, Start__c = Datetime.newInstanceGmt(2026, 1, 15, 12, 0, 0));\ninsert subject;\nsubject = [SELECT DueDate__c, DueDateTime__c, Start__c FROM FlowCoreAORecord__c WHERE Id = :subject.Id];\nMap<String, Object> payload = new Map<String, Object>{\n    'dueDate' => subject.DueDate__c == null ? null : String.valueOf(subject.DueDate__c),\n    'dueDateTime' => subject.DueDateTime__c == null ? null : subject.DueDateTime__c.formatGmt('yyyy-MM-dd HH:mm:ss'),\n    'start' => subject.Start__c.formatGmt('yyyy-MM-dd HH:mm:ss')\n};\nSystem.assert(false, 'FLOW_CORE_RESULT|AO_001|' + JSON.serialize(payload));\n",
+              "classes": {},
+              "tests": [],
+              "sourceSha256": {
+                "anonymous": "20554489bf4cc0dcdb9d8df7ce5ad1935e55a6bbf5c4e4858e1b0325cef279ae"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "start": "2026-01-15 12:00:00",
+                  "dueDateTime": "2026-01-17 12:00:00",
+                  "dueDate": "2026-01-17"
+                },
+                "native": {
+                  "start": "2026-01-15 12:00:00",
+                  "dueDateTime": "2026-01-17 12:00:00",
+                  "dueDate": "2026-01-17"
+                },
+                "primary": "",
+                "carryReason": "",
+                "exceptionType": "",
+                "message": ""
+              }
+            },
+            "istest": {
+              "anonymous": "",
+              "classes": {
+                "FlowCoreAO001ObservationTest": "@IsTest\nprivate class FlowCoreAO001ObservationTest {\n    @IsTest\n    static void observe() {\n        String unitName = 'AO_001-' + String.valueOf(DateTime.now().getTime());\n        FlowCoreAORecord__c subject = new FlowCoreAORecord__c(Name = 'subject', Unit__c = unitName, Start__c = Datetime.newInstanceGmt(2026, 1, 15, 12, 0, 0));\n        insert subject;\n        subject = [SELECT DueDate__c, DueDateTime__c, Start__c FROM FlowCoreAORecord__c WHERE Id = :subject.Id];\n        Map<String, Object> payload = new Map<String, Object>{\n            'dueDate' => subject.DueDate__c == null ? null : String.valueOf(subject.DueDate__c),\n            'dueDateTime' => subject.DueDateTime__c == null ? null : subject.DueDateTime__c.formatGmt('yyyy-MM-dd HH:mm:ss'),\n            'start' => subject.Start__c.formatGmt('yyyy-MM-dd HH:mm:ss')\n        };\n        System.assert(false, 'FLOW_CORE_RESULT|AO_001|' + JSON.serialize(payload));\n    }\n}\n"
+              },
+              "tests": [
+                "FlowCoreAO001ObservationTest"
+              ],
+              "sourceSha256": {
+                "FlowCoreAO001ObservationTest": "45af46a241c7b27307a0c3ec934e9245676a2837c5aa536bab634fcfc7c0b11d"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "start": "2026-01-15 12:00:00",
+                  "dueDateTime": "2026-01-17 12:00:00",
+                  "dueDate": "2026-01-17"
+                },
+                "native": {
+                  "start": "2026-01-15 12:00:00",
+                  "dueDateTime": "2026-01-17 12:00:00",
+                  "dueDate": "2026-01-17"
+                },
+                "primary": "",
+                "carryReason": "",
+                "exceptionType": "",
+                "message": ""
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "AO_002",
+      "byAPI": {
+        "62.0": {
+          "rejectedFlowFiles": [],
+          "files": {
+            "sfdx-project.json": "{\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true}],\"namespace\":\"\",\"sfdcLoginUrl\":\"https://login.salesforce.com\",\"sourceApiVersion\":\"62.0\"}\n",
+            "force-app/main/default/objects/FlowCoreAORecord__c/FlowCoreAORecord__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Flow Core AO Record</label><pluralLabel>Flow Core AO Records</pluralLabel><nameField><label>Flow Core AO Record Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>\n",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/Unit__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Unit__c</fullName><label>Unit</label><length>80</length><type>Text</type></CustomField>\n",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/Start__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Start__c</fullName><label>Start</label><type>DateTime</type></CustomField>\n",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/DueDate__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>DueDate__c</fullName><label>Due Date</label><type>Date</type></CustomField>\n",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/DueDateTime__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>DueDateTime__c</fullName><label>Due Date Time</label><type>DateTime</type></CustomField>\n",
+            "force-app/main/default/permissionsets/FlowCoreAOCaptureAccess.permissionset-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <label>Flow Core AO Capture Access</label>\n  <objectPermissions><allowCreate>true</allowCreate><allowDelete>false</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>FlowCoreAORecord__c</object><viewAllRecords>true</viewAllRecords></objectPermissions>\n  <fieldPermissions><editable>true</editable><field>FlowCoreAORecord__c.Unit__c</field><readable>true</readable></fieldPermissions>\n  <fieldPermissions><editable>true</editable><field>FlowCoreAORecord__c.Start__c</field><readable>true</readable></fieldPermissions>\n  <fieldPermissions><editable>true</editable><field>FlowCoreAORecord__c.DueDate__c</field><readable>true</readable></fieldPermissions>\n  <fieldPermissions><editable>true</editable><field>FlowCoreAORecord__c.DueDateTime__c</field><readable>true</readable></fieldPermissions>\n</PermissionSet>\n",
+            "force-app/main/default/flows/FlowCoreAOOutput.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <actionCalls>\n        <name>Add_Days</name>\n        <label>Add Days</label>\n        <locationX>0</locationX>\n        <locationY>0</locationY>\n        <actionName>FlowCoreAOAddDays</actionName>\n        <actionType>apex</actionType>\n        <connector>\n            <targetReference>Set_due</targetReference>\n        </connector>\n        <flowTransactionModel>Automatic</flowTransactionModel>\n        <inputParameters>\n            <name>daysToAdd</name>\n            <value>\n                <numberValue>2.0</numberValue>\n            </value>\n        </inputParameters>\n        <inputParameters>\n            <name>startDateTime</name>\n            <value>\n                <elementReference>$Record.Start__c</elementReference>\n            </value>\n        </inputParameters>\n        <nameSegment>FlowCoreAOAddDays</nameSegment>\n        <offset>0</offset>\n        <storeOutputAutomatically>true</storeOutputAutomatically>\n    </actionCalls>\n    <apiVersion>62.0</apiVersion>\n    <assignments>\n        <name>Set_due</name>\n        <label>Set due</label>\n        <locationX>0</locationX>\n        <locationY>0</locationY>\n        <assignmentItems>\n            <assignToReference>$Record.DueDate__c</assignToReference>\n            <operator>Assign</operator>\n            <value>\n                <elementReference>Add_Days</elementReference>\n            </value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>$Record.DueDateTime__c</assignToReference>\n            <operator>Assign</operator>\n            <value>\n                <elementReference>Add_Days</elementReference>\n            </value>\n        </assignmentItems>\n        <connector>\n            <targetReference>Save_record</targetReference>\n        </connector>\n    </assignments>\n    <environments>Default</environments>\n    <interviewLabel>Flow Core AO Output {!$Flow.CurrentDateTime}</interviewLabel>\n    <label>Flow Core AO Output</label>\n    <processMetadataValues>\n        <name>BuilderType</name>\n        <value>\n            <stringValue>LightningFlowBuilder</stringValue>\n        </value>\n    </processMetadataValues>\n    <processMetadataValues>\n        <name>CanvasMode</name>\n        <value>\n            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>\n        </value>\n    </processMetadataValues>\n    <processMetadataValues>\n        <name>OriginBuilderType</name>\n        <value>\n            <stringValue>LightningFlowBuilder</stringValue>\n        </value>\n    </processMetadataValues>\n    <processType>AutoLaunchedFlow</processType>\n    <recordUpdates>\n        <name>Save_record</name>\n        <label>Save record</label>\n        <locationX>0</locationX>\n        <locationY>0</locationY>\n        <inputReference>$Record</inputReference>\n    </recordUpdates>\n    <start>\n        <locationX>0</locationX>\n        <locationY>0</locationY>\n        <connector>\n            <targetReference>Add_Days</targetReference>\n        </connector>\n        <filterLogic>or</filterLogic>\n        <filters>\n            <field>DueDateTime__c</field>\n            <operator>IsNull</operator>\n            <value>\n                <booleanValue>true</booleanValue>\n            </value>\n        </filters>\n        <filters>\n            <field>Unit__c</field>\n            <operator>EqualTo</operator>\n            <value>\n                <stringValue>never</stringValue>\n            </value>\n        </filters>\n        <object>FlowCoreAORecord__c</object>\n        <recordTriggerType>CreateAndUpdate</recordTriggerType>\n        <triggerType>RecordAfterSave</triggerType>\n    </start>\n    <status>Active</status>\n</Flow>\n",
+            "force-app/main/default/classes/FlowCoreAOAddDays.cls": "public with sharing class FlowCoreAOAddDays {\n    @InvocableMethod(label='Flow Core AO Add Days')\n    public static List<Datetime> addDays(List<Request> requests) {\n        List<Datetime> results = new List<Datetime>();\n        for (Request request : requests) {\n            results.add(request.startDateTime.addDays(request.daysToAdd));\n        }\n        return results;\n    }\n    public class Request {\n        @InvocableVariable(required=true)\n        public Datetime startDateTime;\n        @InvocableVariable(required=true)\n        public Integer daysToAdd;\n    }\n}\n",
+            "force-app/main/default/classes/FlowCoreAOAddDays.cls-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n"
+          },
+          "sourceSha256": {
+            "sfdx-project.json": "b7e8426cfb79d35a1fef46652341959f4b1ecc656b12cd4bcada9e7fc4ff704f",
+            "force-app/main/default/objects/FlowCoreAORecord__c/FlowCoreAORecord__c.object-meta.xml": "70a6047fc166b23ac6d8d77182ce1f7bd16d6e9d35cbc5987ed434d326490d96",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/Unit__c.field-meta.xml": "6219be06afcbb88beee7f8359756efa029ca8d44612f97410521d3ce228534b5",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/Start__c.field-meta.xml": "90fba805a9ea60ecc07b43903d65143a48889e73e639b9dddad826809e7bd6c4",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/DueDate__c.field-meta.xml": "57576052c7936d7167be4989360020ada397f70fb83b8a450acc090105a9a9d9",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/DueDateTime__c.field-meta.xml": "df7e2f1e817dbb22ed1db646304066a4bfa6c5d94baf056d97aa33e1971ceaeb",
+            "force-app/main/default/permissionsets/FlowCoreAOCaptureAccess.permissionset-meta.xml": "466fce5cbce4f4dbb21e02f5245b218aa04812c13b4f39484f913fe7879d499c",
+            "force-app/main/default/flows/FlowCoreAOOutput.flow-meta.xml": "255b8074a30a01a778149dfb4b9ec57b3b19ba6f46fd40a7a2a1ed2f6468b932",
+            "force-app/main/default/classes/FlowCoreAOAddDays.cls": "79c36c5526cec86124707020b1f6d4174c6a981f5b3671866adb272f71176afa",
+            "force-app/main/default/classes/FlowCoreAOAddDays.cls-meta.xml": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "TimeZone zone = TimeZone.getTimeZone('Europe/Paris');\nDatetime winter = Datetime.newInstanceGmt(2026, 1, 15, 23, 30, 0);\nDatetime summer = Datetime.newInstanceGmt(2026, 7, 15, 22, 30, 0);\nMap<String, Object> payload = new Map<String, Object>{\n    'id' => zone.getID(),\n    'winterOffset' => zone.getOffset(winter),\n    'summerOffset' => zone.getOffset(summer),\n    'winterFormat' => winter.format('yyyy-MM-dd HH:mm z', 'Europe/Paris'),\n    'summerFormat' => summer.format('yyyy-MM-dd HH:mm z', 'Europe/Paris')\n};\nSystem.assert(false, 'FLOW_CORE_RESULT|AO_002|' + JSON.serialize(payload));\n",
+              "classes": {},
+              "tests": [],
+              "sourceSha256": {
+                "anonymous": "b0ecee203bb7891355b640317b42e601cf3f4f76ef0e4669d6173d56122810f0"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "summerFormat": "2026-07-16 00:30 CEST",
+                  "winterFormat": "2026-01-16 00:30 CET",
+                  "summerOffset": 7200000,
+                  "winterOffset": 3600000,
+                  "id": "Europe/Paris"
+                },
+                "native": {
+                  "summerFormat": "2026-07-16 00:30 CEST",
+                  "winterFormat": "2026-01-16 00:30 CET",
+                  "summerOffset": 7200000,
+                  "winterOffset": 3600000,
+                  "id": "Europe/Paris"
+                },
+                "primary": "",
+                "carryReason": "",
+                "exceptionType": "",
+                "message": ""
+              }
+            },
+            "istest": {
+              "anonymous": "",
+              "classes": {
+                "FlowCoreAO002ObservationTest": "@IsTest\nprivate class FlowCoreAO002ObservationTest {\n    @IsTest\n    static void observe() {\n        TimeZone zone = TimeZone.getTimeZone('Europe/Paris');\n        Datetime winter = Datetime.newInstanceGmt(2026, 1, 15, 23, 30, 0);\n        Datetime summer = Datetime.newInstanceGmt(2026, 7, 15, 22, 30, 0);\n        Map<String, Object> payload = new Map<String, Object>{\n            'id' => zone.getID(),\n            'winterOffset' => zone.getOffset(winter),\n            'summerOffset' => zone.getOffset(summer),\n            'winterFormat' => winter.format('yyyy-MM-dd HH:mm z', 'Europe/Paris'),\n            'summerFormat' => summer.format('yyyy-MM-dd HH:mm z', 'Europe/Paris')\n        };\n        System.assert(false, 'FLOW_CORE_RESULT|AO_002|' + JSON.serialize(payload));\n    }\n}\n"
+              },
+              "tests": [
+                "FlowCoreAO002ObservationTest"
+              ],
+              "sourceSha256": {
+                "FlowCoreAO002ObservationTest": "76c63237686c93183254802cf476ba8b23a830c5d1f3778b0ebf9c1072c28499"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "summerFormat": "2026-07-16 00:30 CEST",
+                  "winterFormat": "2026-01-16 00:30 CET",
+                  "summerOffset": 7200000,
+                  "winterOffset": 3600000,
+                  "id": "Europe/Paris"
+                },
+                "native": {
+                  "summerFormat": "2026-07-16 00:30 CEST",
+                  "winterFormat": "2026-01-16 00:30 CET",
+                  "summerOffset": 7200000,
+                  "winterOffset": 3600000,
+                  "id": "Europe/Paris"
+                },
+                "primary": "",
+                "carryReason": "",
+                "exceptionType": "",
+                "message": ""
+              }
+            }
+          }
+        },
+        "67.0": {
+          "rejectedFlowFiles": [],
+          "files": {
+            "sfdx-project.json": "{\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true}],\"namespace\":\"\",\"sfdcLoginUrl\":\"https://login.salesforce.com\",\"sourceApiVersion\":\"67.0\"}\n",
+            "force-app/main/default/objects/FlowCoreAORecord__c/FlowCoreAORecord__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Flow Core AO Record</label><pluralLabel>Flow Core AO Records</pluralLabel><nameField><label>Flow Core AO Record Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>\n",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/Unit__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Unit__c</fullName><label>Unit</label><length>80</length><type>Text</type></CustomField>\n",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/Start__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Start__c</fullName><label>Start</label><type>DateTime</type></CustomField>\n",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/DueDate__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>DueDate__c</fullName><label>Due Date</label><type>Date</type></CustomField>\n",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/DueDateTime__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>DueDateTime__c</fullName><label>Due Date Time</label><type>DateTime</type></CustomField>\n",
+            "force-app/main/default/permissionsets/FlowCoreAOCaptureAccess.permissionset-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <label>Flow Core AO Capture Access</label>\n  <objectPermissions><allowCreate>true</allowCreate><allowDelete>false</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>FlowCoreAORecord__c</object><viewAllRecords>true</viewAllRecords></objectPermissions>\n  <fieldPermissions><editable>true</editable><field>FlowCoreAORecord__c.Unit__c</field><readable>true</readable></fieldPermissions>\n  <fieldPermissions><editable>true</editable><field>FlowCoreAORecord__c.Start__c</field><readable>true</readable></fieldPermissions>\n  <fieldPermissions><editable>true</editable><field>FlowCoreAORecord__c.DueDate__c</field><readable>true</readable></fieldPermissions>\n  <fieldPermissions><editable>true</editable><field>FlowCoreAORecord__c.DueDateTime__c</field><readable>true</readable></fieldPermissions>\n</PermissionSet>\n",
+            "force-app/main/default/flows/FlowCoreAOOutput.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <actionCalls>\n        <name>Add_Days</name>\n        <label>Add Days</label>\n        <locationX>0</locationX>\n        <locationY>0</locationY>\n        <actionName>FlowCoreAOAddDays</actionName>\n        <actionType>apex</actionType>\n        <connector>\n            <targetReference>Set_due</targetReference>\n        </connector>\n        <flowTransactionModel>Automatic</flowTransactionModel>\n        <inputParameters>\n            <name>daysToAdd</name>\n            <value>\n                <numberValue>2.0</numberValue>\n            </value>\n        </inputParameters>\n        <inputParameters>\n            <name>startDateTime</name>\n            <value>\n                <elementReference>$Record.Start__c</elementReference>\n            </value>\n        </inputParameters>\n        <nameSegment>FlowCoreAOAddDays</nameSegment>\n        <offset>0</offset>\n        <storeOutputAutomatically>true</storeOutputAutomatically>\n    </actionCalls>\n    <apiVersion>67.0</apiVersion>\n    <assignments>\n        <name>Set_due</name>\n        <label>Set due</label>\n        <locationX>0</locationX>\n        <locationY>0</locationY>\n        <assignmentItems>\n            <assignToReference>$Record.DueDate__c</assignToReference>\n            <operator>Assign</operator>\n            <value>\n                <elementReference>Add_Days</elementReference>\n            </value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>$Record.DueDateTime__c</assignToReference>\n            <operator>Assign</operator>\n            <value>\n                <elementReference>Add_Days</elementReference>\n            </value>\n        </assignmentItems>\n        <connector>\n            <targetReference>Save_record</targetReference>\n        </connector>\n    </assignments>\n    <environments>Default</environments>\n    <interviewLabel>Flow Core AO Output {!$Flow.CurrentDateTime}</interviewLabel>\n    <label>Flow Core AO Output</label>\n    <processMetadataValues>\n        <name>BuilderType</name>\n        <value>\n            <stringValue>LightningFlowBuilder</stringValue>\n        </value>\n    </processMetadataValues>\n    <processMetadataValues>\n        <name>CanvasMode</name>\n        <value>\n            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>\n        </value>\n    </processMetadataValues>\n    <processMetadataValues>\n        <name>OriginBuilderType</name>\n        <value>\n            <stringValue>LightningFlowBuilder</stringValue>\n        </value>\n    </processMetadataValues>\n    <processType>AutoLaunchedFlow</processType>\n    <recordUpdates>\n        <name>Save_record</name>\n        <label>Save record</label>\n        <locationX>0</locationX>\n        <locationY>0</locationY>\n        <inputReference>$Record</inputReference>\n    </recordUpdates>\n    <start>\n        <locationX>0</locationX>\n        <locationY>0</locationY>\n        <connector>\n            <targetReference>Add_Days</targetReference>\n        </connector>\n        <filterLogic>or</filterLogic>\n        <filters>\n            <field>DueDateTime__c</field>\n            <operator>IsNull</operator>\n            <value>\n                <booleanValue>true</booleanValue>\n            </value>\n        </filters>\n        <filters>\n            <field>Unit__c</field>\n            <operator>EqualTo</operator>\n            <value>\n                <stringValue>never</stringValue>\n            </value>\n        </filters>\n        <object>FlowCoreAORecord__c</object>\n        <recordTriggerType>CreateAndUpdate</recordTriggerType>\n        <triggerType>RecordAfterSave</triggerType>\n    </start>\n    <status>Active</status>\n</Flow>\n",
+            "force-app/main/default/classes/FlowCoreAOAddDays.cls": "public with sharing class FlowCoreAOAddDays {\n    @InvocableMethod(label='Flow Core AO Add Days')\n    public static List<Datetime> addDays(List<Request> requests) {\n        List<Datetime> results = new List<Datetime>();\n        for (Request request : requests) {\n            results.add(request.startDateTime.addDays(request.daysToAdd));\n        }\n        return results;\n    }\n    public class Request {\n        @InvocableVariable(required=true)\n        public Datetime startDateTime;\n        @InvocableVariable(required=true)\n        public Integer daysToAdd;\n    }\n}\n",
+            "force-app/main/default/classes/FlowCoreAOAddDays.cls-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n"
+          },
+          "sourceSha256": {
+            "sfdx-project.json": "d61b0974aa1209f8c42b0c8ee5c67db39431e3014e2a29dd0b5d0c0634a01eca",
+            "force-app/main/default/objects/FlowCoreAORecord__c/FlowCoreAORecord__c.object-meta.xml": "70a6047fc166b23ac6d8d77182ce1f7bd16d6e9d35cbc5987ed434d326490d96",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/Unit__c.field-meta.xml": "6219be06afcbb88beee7f8359756efa029ca8d44612f97410521d3ce228534b5",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/Start__c.field-meta.xml": "90fba805a9ea60ecc07b43903d65143a48889e73e639b9dddad826809e7bd6c4",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/DueDate__c.field-meta.xml": "57576052c7936d7167be4989360020ada397f70fb83b8a450acc090105a9a9d9",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/DueDateTime__c.field-meta.xml": "df7e2f1e817dbb22ed1db646304066a4bfa6c5d94baf056d97aa33e1971ceaeb",
+            "force-app/main/default/permissionsets/FlowCoreAOCaptureAccess.permissionset-meta.xml": "466fce5cbce4f4dbb21e02f5245b218aa04812c13b4f39484f913fe7879d499c",
+            "force-app/main/default/flows/FlowCoreAOOutput.flow-meta.xml": "0627bbfcd97bbbdb869df7696aa951d0d5a64ba9236d4e64f77891bcd9c34846",
+            "force-app/main/default/classes/FlowCoreAOAddDays.cls": "79c36c5526cec86124707020b1f6d4174c6a981f5b3671866adb272f71176afa",
+            "force-app/main/default/classes/FlowCoreAOAddDays.cls-meta.xml": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "TimeZone zone = TimeZone.getTimeZone('Europe/Paris');\nDatetime winter = Datetime.newInstanceGmt(2026, 1, 15, 23, 30, 0);\nDatetime summer = Datetime.newInstanceGmt(2026, 7, 15, 22, 30, 0);\nMap<String, Object> payload = new Map<String, Object>{\n    'id' => zone.getID(),\n    'winterOffset' => zone.getOffset(winter),\n    'summerOffset' => zone.getOffset(summer),\n    'winterFormat' => winter.format('yyyy-MM-dd HH:mm z', 'Europe/Paris'),\n    'summerFormat' => summer.format('yyyy-MM-dd HH:mm z', 'Europe/Paris')\n};\nSystem.assert(false, 'FLOW_CORE_RESULT|AO_002|' + JSON.serialize(payload));\n",
+              "classes": {},
+              "tests": [],
+              "sourceSha256": {
+                "anonymous": "b0ecee203bb7891355b640317b42e601cf3f4f76ef0e4669d6173d56122810f0"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "summerFormat": "2026-07-16 00:30 CEST",
+                  "winterFormat": "2026-01-16 00:30 CET",
+                  "summerOffset": 7200000,
+                  "winterOffset": 3600000,
+                  "id": "Europe/Paris"
+                },
+                "native": {
+                  "summerFormat": "2026-07-16 00:30 CEST",
+                  "winterFormat": "2026-01-16 00:30 CET",
+                  "summerOffset": 7200000,
+                  "winterOffset": 3600000,
+                  "id": "Europe/Paris"
+                },
+                "primary": "",
+                "carryReason": "",
+                "exceptionType": "",
+                "message": ""
+              }
+            },
+            "istest": {
+              "anonymous": "",
+              "classes": {
+                "FlowCoreAO002ObservationTest": "@IsTest\nprivate class FlowCoreAO002ObservationTest {\n    @IsTest\n    static void observe() {\n        TimeZone zone = TimeZone.getTimeZone('Europe/Paris');\n        Datetime winter = Datetime.newInstanceGmt(2026, 1, 15, 23, 30, 0);\n        Datetime summer = Datetime.newInstanceGmt(2026, 7, 15, 22, 30, 0);\n        Map<String, Object> payload = new Map<String, Object>{\n            'id' => zone.getID(),\n            'winterOffset' => zone.getOffset(winter),\n            'summerOffset' => zone.getOffset(summer),\n            'winterFormat' => winter.format('yyyy-MM-dd HH:mm z', 'Europe/Paris'),\n            'summerFormat' => summer.format('yyyy-MM-dd HH:mm z', 'Europe/Paris')\n        };\n        System.assert(false, 'FLOW_CORE_RESULT|AO_002|' + JSON.serialize(payload));\n    }\n}\n"
+              },
+              "tests": [
+                "FlowCoreAO002ObservationTest"
+              ],
+              "sourceSha256": {
+                "FlowCoreAO002ObservationTest": "76c63237686c93183254802cf476ba8b23a830c5d1f3778b0ebf9c1072c28499"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "summerFormat": "2026-07-16 00:30 CEST",
+                  "winterFormat": "2026-01-16 00:30 CET",
+                  "summerOffset": 7200000,
+                  "winterOffset": 3600000,
+                  "id": "Europe/Paris"
+                },
+                "native": {
+                  "summerFormat": "2026-07-16 00:30 CEST",
+                  "winterFormat": "2026-01-16 00:30 CET",
+                  "summerOffset": 7200000,
+                  "winterOffset": 3600000,
+                  "id": "Europe/Paris"
+                },
+                "primary": "",
+                "carryReason": "",
+                "exceptionType": "",
+                "message": ""
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "AO_003",
+      "byAPI": {
+        "62.0": {
+          "rejectedFlowFiles": [],
+          "files": {
+            "sfdx-project.json": "{\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true}],\"namespace\":\"\",\"sfdcLoginUrl\":\"https://login.salesforce.com\",\"sourceApiVersion\":\"62.0\"}\n",
+            "force-app/main/default/objects/FlowCoreAORecord__c/FlowCoreAORecord__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Flow Core AO Record</label><pluralLabel>Flow Core AO Records</pluralLabel><nameField><label>Flow Core AO Record Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>\n",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/Unit__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Unit__c</fullName><label>Unit</label><length>80</length><type>Text</type></CustomField>\n",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/Start__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Start__c</fullName><label>Start</label><type>DateTime</type></CustomField>\n",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/DueDate__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>DueDate__c</fullName><label>Due Date</label><type>Date</type></CustomField>\n",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/DueDateTime__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>DueDateTime__c</fullName><label>Due Date Time</label><type>DateTime</type></CustomField>\n",
+            "force-app/main/default/permissionsets/FlowCoreAOCaptureAccess.permissionset-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <label>Flow Core AO Capture Access</label>\n  <objectPermissions><allowCreate>true</allowCreate><allowDelete>false</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>FlowCoreAORecord__c</object><viewAllRecords>true</viewAllRecords></objectPermissions>\n  <fieldPermissions><editable>true</editable><field>FlowCoreAORecord__c.Unit__c</field><readable>true</readable></fieldPermissions>\n  <fieldPermissions><editable>true</editable><field>FlowCoreAORecord__c.Start__c</field><readable>true</readable></fieldPermissions>\n  <fieldPermissions><editable>true</editable><field>FlowCoreAORecord__c.DueDate__c</field><readable>true</readable></fieldPermissions>\n  <fieldPermissions><editable>true</editable><field>FlowCoreAORecord__c.DueDateTime__c</field><readable>true</readable></fieldPermissions>\n</PermissionSet>\n",
+            "force-app/main/default/flows/FlowCoreAOOutput.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <actionCalls>\n        <name>Add_Days</name>\n        <label>Add Days</label>\n        <locationX>0</locationX>\n        <locationY>0</locationY>\n        <actionName>FlowCoreAOAddDays</actionName>\n        <actionType>apex</actionType>\n        <connector>\n            <targetReference>Set_due</targetReference>\n        </connector>\n        <flowTransactionModel>Automatic</flowTransactionModel>\n        <inputParameters>\n            <name>daysToAdd</name>\n            <value>\n                <numberValue>2.0</numberValue>\n            </value>\n        </inputParameters>\n        <inputParameters>\n            <name>startDateTime</name>\n            <value>\n                <elementReference>$Record.Start__c</elementReference>\n            </value>\n        </inputParameters>\n        <nameSegment>FlowCoreAOAddDays</nameSegment>\n        <offset>0</offset>\n        <storeOutputAutomatically>true</storeOutputAutomatically>\n    </actionCalls>\n    <apiVersion>62.0</apiVersion>\n    <assignments>\n        <name>Set_due</name>\n        <label>Set due</label>\n        <locationX>0</locationX>\n        <locationY>0</locationY>\n        <assignmentItems>\n            <assignToReference>$Record.DueDate__c</assignToReference>\n            <operator>Assign</operator>\n            <value>\n                <elementReference>Add_Days</elementReference>\n            </value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>$Record.DueDateTime__c</assignToReference>\n            <operator>Assign</operator>\n            <value>\n                <elementReference>Add_Days</elementReference>\n            </value>\n        </assignmentItems>\n        <connector>\n            <targetReference>Save_record</targetReference>\n        </connector>\n    </assignments>\n    <environments>Default</environments>\n    <interviewLabel>Flow Core AO Output {!$Flow.CurrentDateTime}</interviewLabel>\n    <label>Flow Core AO Output</label>\n    <processMetadataValues>\n        <name>BuilderType</name>\n        <value>\n            <stringValue>LightningFlowBuilder</stringValue>\n        </value>\n    </processMetadataValues>\n    <processMetadataValues>\n        <name>CanvasMode</name>\n        <value>\n            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>\n        </value>\n    </processMetadataValues>\n    <processMetadataValues>\n        <name>OriginBuilderType</name>\n        <value>\n            <stringValue>LightningFlowBuilder</stringValue>\n        </value>\n    </processMetadataValues>\n    <processType>AutoLaunchedFlow</processType>\n    <recordUpdates>\n        <name>Save_record</name>\n        <label>Save record</label>\n        <locationX>0</locationX>\n        <locationY>0</locationY>\n        <inputReference>$Record</inputReference>\n    </recordUpdates>\n    <start>\n        <locationX>0</locationX>\n        <locationY>0</locationY>\n        <connector>\n            <targetReference>Add_Days</targetReference>\n        </connector>\n        <filterLogic>or</filterLogic>\n        <filters>\n            <field>DueDateTime__c</field>\n            <operator>IsNull</operator>\n            <value>\n                <booleanValue>true</booleanValue>\n            </value>\n        </filters>\n        <filters>\n            <field>Unit__c</field>\n            <operator>EqualTo</operator>\n            <value>\n                <stringValue>never</stringValue>\n            </value>\n        </filters>\n        <object>FlowCoreAORecord__c</object>\n        <recordTriggerType>CreateAndUpdate</recordTriggerType>\n        <triggerType>RecordAfterSave</triggerType>\n    </start>\n    <status>Active</status>\n</Flow>\n",
+            "force-app/main/default/classes/FlowCoreAOAddDays.cls": "public with sharing class FlowCoreAOAddDays {\n    @InvocableMethod(label='Flow Core AO Add Days')\n    public static List<Datetime> addDays(List<Request> requests) {\n        List<Datetime> results = new List<Datetime>();\n        for (Request request : requests) {\n            results.add(request.startDateTime.addDays(request.daysToAdd));\n        }\n        return results;\n    }\n    public class Request {\n        @InvocableVariable(required=true)\n        public Datetime startDateTime;\n        @InvocableVariable(required=true)\n        public Integer daysToAdd;\n    }\n}\n",
+            "force-app/main/default/classes/FlowCoreAOAddDays.cls-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n"
+          },
+          "sourceSha256": {
+            "sfdx-project.json": "b7e8426cfb79d35a1fef46652341959f4b1ecc656b12cd4bcada9e7fc4ff704f",
+            "force-app/main/default/objects/FlowCoreAORecord__c/FlowCoreAORecord__c.object-meta.xml": "70a6047fc166b23ac6d8d77182ce1f7bd16d6e9d35cbc5987ed434d326490d96",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/Unit__c.field-meta.xml": "6219be06afcbb88beee7f8359756efa029ca8d44612f97410521d3ce228534b5",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/Start__c.field-meta.xml": "90fba805a9ea60ecc07b43903d65143a48889e73e639b9dddad826809e7bd6c4",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/DueDate__c.field-meta.xml": "57576052c7936d7167be4989360020ada397f70fb83b8a450acc090105a9a9d9",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/DueDateTime__c.field-meta.xml": "df7e2f1e817dbb22ed1db646304066a4bfa6c5d94baf056d97aa33e1971ceaeb",
+            "force-app/main/default/permissionsets/FlowCoreAOCaptureAccess.permissionset-meta.xml": "466fce5cbce4f4dbb21e02f5245b218aa04812c13b4f39484f913fe7879d499c",
+            "force-app/main/default/flows/FlowCoreAOOutput.flow-meta.xml": "255b8074a30a01a778149dfb4b9ec57b3b19ba6f46fd40a7a2a1ed2f6468b932",
+            "force-app/main/default/classes/FlowCoreAOAddDays.cls": "79c36c5526cec86124707020b1f6d4174c6a981f5b3671866adb272f71176afa",
+            "force-app/main/default/classes/FlowCoreAOAddDays.cls-meta.xml": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "String unitName = 'AO_003-' + String.valueOf(DateTime.now().getTime());\nFlowCoreAORecord__c subject = new FlowCoreAORecord__c(Name = 'subject', Unit__c = unitName, Start__c = Datetime.newInstanceGmt(2026, 1, 15, 23, 30, 0));\ninsert subject;\nsubject = [SELECT DueDate__c, DueDateTime__c, Start__c FROM FlowCoreAORecord__c WHERE Id = :subject.Id];\nMap<String, Object> payload = new Map<String, Object>{\n    'dueDate' => subject.DueDate__c == null ? null : String.valueOf(subject.DueDate__c),\n    'dueDateTime' => subject.DueDateTime__c == null ? null : subject.DueDateTime__c.formatGmt('yyyy-MM-dd HH:mm:ss'),\n    'start' => subject.Start__c.formatGmt('yyyy-MM-dd HH:mm:ss')\n};\nDatetime winter = Datetime.newInstanceGmt(2026, 1, 15, 23, 30, 0);\nDatetime summer = Datetime.newInstanceGmt(2026, 7, 15, 22, 30, 0);\npayload.put('winterDate', String.valueOf(winter.date()));\npayload.put('winterDay', winter.format('E'));\npayload.put('summerDate', String.valueOf(summer.date()));\nSystem.assert(false, 'FLOW_CORE_RESULT|AO_003|' + JSON.serialize(payload));\n",
+              "classes": {},
+              "tests": [],
+              "sourceSha256": {
+                "anonymous": "c27f55b42ef4a2d7c2df22c12dd4eac3a5597618e67d941df504942f26f5e562"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "summerDate": "2026-07-15",
+                  "winterDay": "Thu",
+                  "winterDate": "2026-01-15",
+                  "start": "2026-01-15 23:30:00",
+                  "dueDateTime": "2026-01-17 23:30:00",
+                  "dueDate": "2026-01-17"
+                },
+                "native": {
+                  "summerDate": "2026-07-15",
+                  "winterDay": "Thu",
+                  "winterDate": "2026-01-15",
+                  "start": "2026-01-15 23:30:00",
+                  "dueDateTime": "2026-01-17 23:30:00",
+                  "dueDate": "2026-01-17"
+                },
+                "primary": "",
+                "carryReason": "",
+                "exceptionType": "",
+                "message": ""
+              }
+            },
+            "istest": {
+              "anonymous": "",
+              "classes": {
+                "FlowCoreAO003ObservationTest": "@IsTest\nprivate class FlowCoreAO003ObservationTest {\n    @IsTest\n    static void observe() {\n        User actor = new User(Alias = 'aoparis', Email = 'flow-core-ao@example.invalid', EmailEncodingKey = 'UTF-8', LastName = 'Flow Core AO', LanguageLocaleKey = 'en_US', LocaleSidKey = 'en_US', ProfileId = UserInfo.getProfileId(), TimeZoneSidKey = 'Europe/Paris', Username = 'flow-core-ao-' + UserInfo.getOrganizationId() + '@example.invalid');\n        insert actor;\n        insert new PermissionSetAssignment(AssigneeId = actor.Id, PermissionSetId = [SELECT Id FROM PermissionSet WHERE Name = 'FlowCoreAOCaptureAccess'].Id);\n        Map<String, Object> payload;\n        System.runAs(actor) {\n            payload = observeAsActor();\n        }\n        System.assert(false, 'FLOW_CORE_RESULT|AO_003|' + JSON.serialize(payload));\n    }\n    static Map<String, Object> observeAsActor() {\n        String unitName = 'AO_003-' + String.valueOf(DateTime.now().getTime());\n        FlowCoreAORecord__c subject = new FlowCoreAORecord__c(Name = 'subject', Unit__c = unitName, Start__c = Datetime.newInstanceGmt(2026, 1, 15, 23, 30, 0));\n        insert subject;\n        subject = [SELECT DueDate__c, DueDateTime__c, Start__c FROM FlowCoreAORecord__c WHERE Id = :subject.Id];\n        Map<String, Object> payload = new Map<String, Object>{\n            'dueDate' => subject.DueDate__c == null ? null : String.valueOf(subject.DueDate__c),\n            'dueDateTime' => subject.DueDateTime__c == null ? null : subject.DueDateTime__c.formatGmt('yyyy-MM-dd HH:mm:ss'),\n            'start' => subject.Start__c.formatGmt('yyyy-MM-dd HH:mm:ss')\n        };\n        Datetime winter = Datetime.newInstanceGmt(2026, 1, 15, 23, 30, 0);\n        Datetime summer = Datetime.newInstanceGmt(2026, 7, 15, 22, 30, 0);\n        payload.put('winterDate', String.valueOf(winter.date()));\n        payload.put('winterDay', winter.format('E'));\n        payload.put('summerDate', String.valueOf(summer.date()));\n        return payload;\n    }\n}\n"
+              },
+              "tests": [
+                "FlowCoreAO003ObservationTest"
+              ],
+              "sourceSha256": {
+                "FlowCoreAO003ObservationTest": "14c50dd8203aab5d3fd72a80c9ad3cd8a25a4a26d019c38b1e9056350533b14b"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "summerDate": "2026-07-16",
+                  "winterDay": "Fri",
+                  "winterDate": "2026-01-16",
+                  "start": "2026-01-15 23:30:00",
+                  "dueDateTime": "2026-01-17 23:30:00",
+                  "dueDate": "2026-01-17"
+                },
+                "native": {
+                  "summerDate": "2026-07-16",
+                  "winterDay": "Fri",
+                  "winterDate": "2026-01-16",
+                  "start": "2026-01-15 23:30:00",
+                  "dueDateTime": "2026-01-17 23:30:00",
+                  "dueDate": "2026-01-17"
+                },
+                "primary": "",
+                "carryReason": "",
+                "exceptionType": "",
+                "message": ""
+              }
+            }
+          }
+        },
+        "67.0": {
+          "rejectedFlowFiles": [],
+          "files": {
+            "sfdx-project.json": "{\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true}],\"namespace\":\"\",\"sfdcLoginUrl\":\"https://login.salesforce.com\",\"sourceApiVersion\":\"67.0\"}\n",
+            "force-app/main/default/objects/FlowCoreAORecord__c/FlowCoreAORecord__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Flow Core AO Record</label><pluralLabel>Flow Core AO Records</pluralLabel><nameField><label>Flow Core AO Record Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>\n",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/Unit__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Unit__c</fullName><label>Unit</label><length>80</length><type>Text</type></CustomField>\n",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/Start__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Start__c</fullName><label>Start</label><type>DateTime</type></CustomField>\n",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/DueDate__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>DueDate__c</fullName><label>Due Date</label><type>Date</type></CustomField>\n",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/DueDateTime__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>DueDateTime__c</fullName><label>Due Date Time</label><type>DateTime</type></CustomField>\n",
+            "force-app/main/default/permissionsets/FlowCoreAOCaptureAccess.permissionset-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <label>Flow Core AO Capture Access</label>\n  <objectPermissions><allowCreate>true</allowCreate><allowDelete>false</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>FlowCoreAORecord__c</object><viewAllRecords>true</viewAllRecords></objectPermissions>\n  <fieldPermissions><editable>true</editable><field>FlowCoreAORecord__c.Unit__c</field><readable>true</readable></fieldPermissions>\n  <fieldPermissions><editable>true</editable><field>FlowCoreAORecord__c.Start__c</field><readable>true</readable></fieldPermissions>\n  <fieldPermissions><editable>true</editable><field>FlowCoreAORecord__c.DueDate__c</field><readable>true</readable></fieldPermissions>\n  <fieldPermissions><editable>true</editable><field>FlowCoreAORecord__c.DueDateTime__c</field><readable>true</readable></fieldPermissions>\n</PermissionSet>\n",
+            "force-app/main/default/flows/FlowCoreAOOutput.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <actionCalls>\n        <name>Add_Days</name>\n        <label>Add Days</label>\n        <locationX>0</locationX>\n        <locationY>0</locationY>\n        <actionName>FlowCoreAOAddDays</actionName>\n        <actionType>apex</actionType>\n        <connector>\n            <targetReference>Set_due</targetReference>\n        </connector>\n        <flowTransactionModel>Automatic</flowTransactionModel>\n        <inputParameters>\n            <name>daysToAdd</name>\n            <value>\n                <numberValue>2.0</numberValue>\n            </value>\n        </inputParameters>\n        <inputParameters>\n            <name>startDateTime</name>\n            <value>\n                <elementReference>$Record.Start__c</elementReference>\n            </value>\n        </inputParameters>\n        <nameSegment>FlowCoreAOAddDays</nameSegment>\n        <offset>0</offset>\n        <storeOutputAutomatically>true</storeOutputAutomatically>\n    </actionCalls>\n    <apiVersion>67.0</apiVersion>\n    <assignments>\n        <name>Set_due</name>\n        <label>Set due</label>\n        <locationX>0</locationX>\n        <locationY>0</locationY>\n        <assignmentItems>\n            <assignToReference>$Record.DueDate__c</assignToReference>\n            <operator>Assign</operator>\n            <value>\n                <elementReference>Add_Days</elementReference>\n            </value>\n        </assignmentItems>\n        <assignmentItems>\n            <assignToReference>$Record.DueDateTime__c</assignToReference>\n            <operator>Assign</operator>\n            <value>\n                <elementReference>Add_Days</elementReference>\n            </value>\n        </assignmentItems>\n        <connector>\n            <targetReference>Save_record</targetReference>\n        </connector>\n    </assignments>\n    <environments>Default</environments>\n    <interviewLabel>Flow Core AO Output {!$Flow.CurrentDateTime}</interviewLabel>\n    <label>Flow Core AO Output</label>\n    <processMetadataValues>\n        <name>BuilderType</name>\n        <value>\n            <stringValue>LightningFlowBuilder</stringValue>\n        </value>\n    </processMetadataValues>\n    <processMetadataValues>\n        <name>CanvasMode</name>\n        <value>\n            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>\n        </value>\n    </processMetadataValues>\n    <processMetadataValues>\n        <name>OriginBuilderType</name>\n        <value>\n            <stringValue>LightningFlowBuilder</stringValue>\n        </value>\n    </processMetadataValues>\n    <processType>AutoLaunchedFlow</processType>\n    <recordUpdates>\n        <name>Save_record</name>\n        <label>Save record</label>\n        <locationX>0</locationX>\n        <locationY>0</locationY>\n        <inputReference>$Record</inputReference>\n    </recordUpdates>\n    <start>\n        <locationX>0</locationX>\n        <locationY>0</locationY>\n        <connector>\n            <targetReference>Add_Days</targetReference>\n        </connector>\n        <filterLogic>or</filterLogic>\n        <filters>\n            <field>DueDateTime__c</field>\n            <operator>IsNull</operator>\n            <value>\n                <booleanValue>true</booleanValue>\n            </value>\n        </filters>\n        <filters>\n            <field>Unit__c</field>\n            <operator>EqualTo</operator>\n            <value>\n                <stringValue>never</stringValue>\n            </value>\n        </filters>\n        <object>FlowCoreAORecord__c</object>\n        <recordTriggerType>CreateAndUpdate</recordTriggerType>\n        <triggerType>RecordAfterSave</triggerType>\n    </start>\n    <status>Active</status>\n</Flow>\n",
+            "force-app/main/default/classes/FlowCoreAOAddDays.cls": "public with sharing class FlowCoreAOAddDays {\n    @InvocableMethod(label='Flow Core AO Add Days')\n    public static List<Datetime> addDays(List<Request> requests) {\n        List<Datetime> results = new List<Datetime>();\n        for (Request request : requests) {\n            results.add(request.startDateTime.addDays(request.daysToAdd));\n        }\n        return results;\n    }\n    public class Request {\n        @InvocableVariable(required=true)\n        public Datetime startDateTime;\n        @InvocableVariable(required=true)\n        public Integer daysToAdd;\n    }\n}\n",
+            "force-app/main/default/classes/FlowCoreAOAddDays.cls-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n"
+          },
+          "sourceSha256": {
+            "sfdx-project.json": "d61b0974aa1209f8c42b0c8ee5c67db39431e3014e2a29dd0b5d0c0634a01eca",
+            "force-app/main/default/objects/FlowCoreAORecord__c/FlowCoreAORecord__c.object-meta.xml": "70a6047fc166b23ac6d8d77182ce1f7bd16d6e9d35cbc5987ed434d326490d96",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/Unit__c.field-meta.xml": "6219be06afcbb88beee7f8359756efa029ca8d44612f97410521d3ce228534b5",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/Start__c.field-meta.xml": "90fba805a9ea60ecc07b43903d65143a48889e73e639b9dddad826809e7bd6c4",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/DueDate__c.field-meta.xml": "57576052c7936d7167be4989360020ada397f70fb83b8a450acc090105a9a9d9",
+            "force-app/main/default/objects/FlowCoreAORecord__c/fields/DueDateTime__c.field-meta.xml": "df7e2f1e817dbb22ed1db646304066a4bfa6c5d94baf056d97aa33e1971ceaeb",
+            "force-app/main/default/permissionsets/FlowCoreAOCaptureAccess.permissionset-meta.xml": "466fce5cbce4f4dbb21e02f5245b218aa04812c13b4f39484f913fe7879d499c",
+            "force-app/main/default/flows/FlowCoreAOOutput.flow-meta.xml": "0627bbfcd97bbbdb869df7696aa951d0d5a64ba9236d4e64f77891bcd9c34846",
+            "force-app/main/default/classes/FlowCoreAOAddDays.cls": "79c36c5526cec86124707020b1f6d4174c6a981f5b3671866adb272f71176afa",
+            "force-app/main/default/classes/FlowCoreAOAddDays.cls-meta.xml": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "String unitName = 'AO_003-' + String.valueOf(DateTime.now().getTime());\nFlowCoreAORecord__c subject = new FlowCoreAORecord__c(Name = 'subject', Unit__c = unitName, Start__c = Datetime.newInstanceGmt(2026, 1, 15, 23, 30, 0));\ninsert subject;\nsubject = [SELECT DueDate__c, DueDateTime__c, Start__c FROM FlowCoreAORecord__c WHERE Id = :subject.Id];\nMap<String, Object> payload = new Map<String, Object>{\n    'dueDate' => subject.DueDate__c == null ? null : String.valueOf(subject.DueDate__c),\n    'dueDateTime' => subject.DueDateTime__c == null ? null : subject.DueDateTime__c.formatGmt('yyyy-MM-dd HH:mm:ss'),\n    'start' => subject.Start__c.formatGmt('yyyy-MM-dd HH:mm:ss')\n};\nDatetime winter = Datetime.newInstanceGmt(2026, 1, 15, 23, 30, 0);\nDatetime summer = Datetime.newInstanceGmt(2026, 7, 15, 22, 30, 0);\npayload.put('winterDate', String.valueOf(winter.date()));\npayload.put('winterDay', winter.format('E'));\npayload.put('summerDate', String.valueOf(summer.date()));\nSystem.assert(false, 'FLOW_CORE_RESULT|AO_003|' + JSON.serialize(payload));\n",
+              "classes": {},
+              "tests": [],
+              "sourceSha256": {
+                "anonymous": "c27f55b42ef4a2d7c2df22c12dd4eac3a5597618e67d941df504942f26f5e562"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "summerDate": "2026-07-15",
+                  "winterDay": "Thu",
+                  "winterDate": "2026-01-15",
+                  "start": "2026-01-15 23:30:00",
+                  "dueDateTime": "2026-01-17 23:30:00",
+                  "dueDate": "2026-01-17"
+                },
+                "native": {
+                  "summerDate": "2026-07-15",
+                  "winterDay": "Thu",
+                  "winterDate": "2026-01-15",
+                  "start": "2026-01-15 23:30:00",
+                  "dueDateTime": "2026-01-17 23:30:00",
+                  "dueDate": "2026-01-17"
+                },
+                "primary": "",
+                "carryReason": "",
+                "exceptionType": "",
+                "message": ""
+              }
+            },
+            "istest": {
+              "anonymous": "",
+              "classes": {
+                "FlowCoreAO003ObservationTest": "@IsTest\nprivate class FlowCoreAO003ObservationTest {\n    @IsTest\n    static void observe() {\n        User actor = new User(Alias = 'aoparis', Email = 'flow-core-ao@example.invalid', EmailEncodingKey = 'UTF-8', LastName = 'Flow Core AO', LanguageLocaleKey = 'en_US', LocaleSidKey = 'en_US', ProfileId = UserInfo.getProfileId(), TimeZoneSidKey = 'Europe/Paris', Username = 'flow-core-ao-' + UserInfo.getOrganizationId() + '@example.invalid');\n        insert actor;\n        insert new PermissionSetAssignment(AssigneeId = actor.Id, PermissionSetId = [SELECT Id FROM PermissionSet WHERE Name = 'FlowCoreAOCaptureAccess'].Id);\n        Map<String, Object> payload;\n        System.runAs(actor) {\n            payload = observeAsActor();\n        }\n        System.assert(false, 'FLOW_CORE_RESULT|AO_003|' + JSON.serialize(payload));\n    }\n    static Map<String, Object> observeAsActor() {\n        String unitName = 'AO_003-' + String.valueOf(DateTime.now().getTime());\n        FlowCoreAORecord__c subject = new FlowCoreAORecord__c(Name = 'subject', Unit__c = unitName, Start__c = Datetime.newInstanceGmt(2026, 1, 15, 23, 30, 0));\n        insert subject;\n        subject = [SELECT DueDate__c, DueDateTime__c, Start__c FROM FlowCoreAORecord__c WHERE Id = :subject.Id];\n        Map<String, Object> payload = new Map<String, Object>{\n            'dueDate' => subject.DueDate__c == null ? null : String.valueOf(subject.DueDate__c),\n            'dueDateTime' => subject.DueDateTime__c == null ? null : subject.DueDateTime__c.formatGmt('yyyy-MM-dd HH:mm:ss'),\n            'start' => subject.Start__c.formatGmt('yyyy-MM-dd HH:mm:ss')\n        };\n        Datetime winter = Datetime.newInstanceGmt(2026, 1, 15, 23, 30, 0);\n        Datetime summer = Datetime.newInstanceGmt(2026, 7, 15, 22, 30, 0);\n        payload.put('winterDate', String.valueOf(winter.date()));\n        payload.put('winterDay', winter.format('E'));\n        payload.put('summerDate', String.valueOf(summer.date()));\n        return payload;\n    }\n}\n"
+              },
+              "tests": [
+                "FlowCoreAO003ObservationTest"
+              ],
+              "sourceSha256": {
+                "FlowCoreAO003ObservationTest": "14c50dd8203aab5d3fd72a80c9ad3cd8a25a4a26d019c38b1e9056350533b14b"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "summerDate": "2026-07-16",
+                  "winterDay": "Fri",
+                  "winterDate": "2026-01-16",
+                  "start": "2026-01-15 23:30:00",
+                  "dueDateTime": "2026-01-17 23:30:00",
+                  "dueDate": "2026-01-17"
+                },
+                "native": {
+                  "summerDate": "2026-07-16",
+                  "winterDay": "Fri",
+                  "winterDate": "2026-01-16",
+                  "start": "2026-01-15 23:30:00",
+                  "dueDateTime": "2026-01-17 23:30:00",
+                  "dueDate": "2026-01-17"
+                },
+                "primary": "",
+                "carryReason": "",
+                "exceptionType": "",
+                "message": ""
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

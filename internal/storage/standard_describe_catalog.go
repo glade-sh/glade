@@ -142,6 +142,7 @@ func standardDescribeFieldForName(objectName, fieldName string) (standardDescrib
 }
 
 type standardDescribeField struct {
+	RestrictedPicklist  bool                            `json:"restrictedPicklist,omitempty"`
 	Name                string                          `json:"name"`
 	NameField           *bool                           `json:"nameField"`
 	Label               string                          `json:"label"`
@@ -382,7 +383,9 @@ func describeField(field standardDescribeField) Field {
 		ReferenceTo:         append([]string(nil), field.ReferenceTo...),
 		RelationshipName:    field.RelationshipName,
 		PicklistValues:      describePicklistValues(field.PicklistValues),
+		RestrictedPicklist:  field.RestrictedPicklist,
 	}
+	out.RestrictedPicklistFromCatalog = field.RestrictedPicklist
 	if field.DefaultValue != nil {
 		out.DefaultValue = strings.TrimSpace(strings.Trim(strings.TrimSpace(toStorageString(field.DefaultValue)), `"`))
 	}

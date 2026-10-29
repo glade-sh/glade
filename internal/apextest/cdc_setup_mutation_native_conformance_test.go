@@ -137,7 +137,7 @@ func TestCdcSetupAndMutationNativeRows(t *testing.T) {
 func TestCdcSetupAndMutationNativeConformance(t *testing.T) {
 	capture, native := readCdcSetupMutationCapture(t)
 	for _, api := range capture.APIs {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			root := t.TempDir()
 			sourceRoot := filepath.Join(cdcSetupMutationFixture, "project")
 			if err := filepath.WalkDir(sourceRoot, func(path string, entry fs.DirEntry, err error) error {

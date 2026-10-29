@@ -1,0 +1,664 @@
+[
+  {
+    "api": "62.0",
+    "id": "invalid-public",
+    "route": "checkOnly",
+    "classes": {
+      "R131Helper": "public class R131Helper { public static Integer value() { Integer n = 'invalid'; return n; } }",
+      "R131IndependentTest": "@IsTest private class R131IndependentTest { @IsTest static void observe() { System.assertEquals(2, 1 + 1); } }"
+    },
+    "triggers": {
+      "R131Call": "trigger R131Call on Account (before insert) { R131Helper.value(); }",
+      "R131Type": "trigger R131Type on Account (before insert) { R131Helper sample; }",
+      "R131Constructor": "trigger R131Constructor on Account (before insert) { Object sample = new R131Helper(); }",
+      "R131CaseCall": "trigger R131CaseCall on Account (before insert) { r131hELPER.vALue(); }",
+      "R131CaseType": "trigger R131CaseType on Account (before insert) { r131hELPER sample; }",
+      "R131CaseConstructor": "trigger R131CaseConstructor on Account (before insert) { Object sample = new r131hELPER(); }",
+      "R131Literal": "trigger R131Literal on Account (before insert) { String sample = 'R131Helper'; }",
+      "R131Comment": "trigger R131Comment on Account (before insert) { /* R131Helper.value(); */ Integer sample = 1; }",
+      "R131Empty": "trigger R131Empty on Account (before insert) {  }",
+      "R131Unreachable": "trigger R131Unreachable on Account (before insert) { if (false) { R131Helper.value(); } }"
+    },
+    "native": {
+      "success": false,
+      "failures": [
+        {
+          "fullName": "R131Helper",
+          "componentType": "ApexClass",
+          "problem": "Illegal assignment from String to Integer",
+          "lineNumber": 1,
+          "columnNumber": 67
+        },
+        {
+          "fullName": "R131Call",
+          "componentType": "ApexTrigger",
+          "problem": "Variable does not exist: R131Helper",
+          "lineNumber": 1,
+          "columnNumber": 47
+        },
+        {
+          "fullName": "R131CaseCall",
+          "componentType": "ApexTrigger",
+          "problem": "Variable does not exist: r131hELPER",
+          "lineNumber": 1,
+          "columnNumber": 51
+        },
+        {
+          "fullName": "R131CaseConstructor",
+          "componentType": "ApexTrigger",
+          "problem": "Invalid type: r131hELPER",
+          "lineNumber": 1,
+          "columnNumber": 74
+        },
+        {
+          "fullName": "R131CaseType",
+          "componentType": "ApexTrigger",
+          "problem": "Invalid type: r131hELPER",
+          "lineNumber": 1,
+          "columnNumber": 51
+        },
+        {
+          "fullName": "R131Constructor",
+          "componentType": "ApexTrigger",
+          "problem": "Invalid type: R131Helper",
+          "lineNumber": 1,
+          "columnNumber": 70
+        },
+        {
+          "fullName": "R131Type",
+          "componentType": "ApexTrigger",
+          "problem": "Invalid type: R131Helper",
+          "lineNumber": 1,
+          "columnNumber": 47
+        },
+        {
+          "fullName": "R131Unreachable",
+          "componentType": "ApexTrigger",
+          "problem": "Variable does not exist: R131Helper",
+          "lineNumber": 1,
+          "columnNumber": 67
+        }
+      ]
+    }
+  },
+  {
+    "api": "62.0",
+    "id": "invalid-default",
+    "route": "checkOnly",
+    "classes": {
+      "R131Helper": "class R131Helper { static Integer value() { Integer n = 'invalid'; return n; } }",
+      "R131IndependentTest": "@IsTest private class R131IndependentTest { @IsTest static void observe() { System.assertEquals(2, 1 + 1); } }"
+    },
+    "triggers": {
+      "R131Call": "trigger R131Call on Account (before insert) { R131Helper.value(); }",
+      "R131Type": "trigger R131Type on Account (before insert) { R131Helper sample; }",
+      "R131Constructor": "trigger R131Constructor on Account (before insert) { Object sample = new R131Helper(); }",
+      "R131CaseCall": "trigger R131CaseCall on Account (before insert) { r131hELPER.vALue(); }",
+      "R131CaseType": "trigger R131CaseType on Account (before insert) { r131hELPER sample; }",
+      "R131CaseConstructor": "trigger R131CaseConstructor on Account (before insert) { Object sample = new r131hELPER(); }",
+      "R131Literal": "trigger R131Literal on Account (before insert) { String sample = 'R131Helper'; }",
+      "R131Comment": "trigger R131Comment on Account (before insert) { /* R131Helper.value(); */ Integer sample = 1; }",
+      "R131Empty": "trigger R131Empty on Account (before insert) {  }",
+      "R131Unreachable": "trigger R131Unreachable on Account (before insert) { if (false) { R131Helper.value(); } }"
+    },
+    "native": {
+      "success": false,
+      "failures": [
+        {
+          "fullName": "R131Helper",
+          "componentType": "ApexClass",
+          "problem": "Top-level type must have public or global visibility",
+          "lineNumber": 1,
+          "columnNumber": 7
+        },
+        {
+          "fullName": "R131Call",
+          "componentType": "ApexTrigger",
+          "problem": "Variable does not exist: R131Helper",
+          "lineNumber": 1,
+          "columnNumber": 47
+        },
+        {
+          "fullName": "R131CaseCall",
+          "componentType": "ApexTrigger",
+          "problem": "Variable does not exist: r131hELPER",
+          "lineNumber": 1,
+          "columnNumber": 51
+        },
+        {
+          "fullName": "R131CaseConstructor",
+          "componentType": "ApexTrigger",
+          "problem": "Invalid type: r131hELPER",
+          "lineNumber": 1,
+          "columnNumber": 74
+        },
+        {
+          "fullName": "R131CaseType",
+          "componentType": "ApexTrigger",
+          "problem": "Invalid type: r131hELPER",
+          "lineNumber": 1,
+          "columnNumber": 51
+        },
+        {
+          "fullName": "R131Constructor",
+          "componentType": "ApexTrigger",
+          "problem": "Invalid type: R131Helper",
+          "lineNumber": 1,
+          "columnNumber": 70
+        },
+        {
+          "fullName": "R131Type",
+          "componentType": "ApexTrigger",
+          "problem": "Invalid type: R131Helper",
+          "lineNumber": 1,
+          "columnNumber": 47
+        },
+        {
+          "fullName": "R131Unreachable",
+          "componentType": "ApexTrigger",
+          "problem": "Variable does not exist: R131Helper",
+          "lineNumber": 1,
+          "columnNumber": 67
+        }
+      ]
+    }
+  },
+  {
+    "api": "62.0",
+    "id": "valid-public",
+    "route": "checkOnly",
+    "classes": {
+      "R131Helper": "public class R131Helper { public static Integer value() { Integer n = 1; return n; } }",
+      "R131IndependentTest": "@IsTest private class R131IndependentTest { @IsTest static void observe() { System.assertEquals(2, 1 + 1); } }",
+      "R131TriggerTest": "@IsTest private class R131TriggerTest { @IsTest static void observe() { Account sample = new Account(Name='Owned dependency probe'); insert sample; System.assertNotEquals(null, sample.Id); } }"
+    },
+    "triggers": {
+      "R131Call": "trigger R131Call on Account (before insert) { R131Helper.value(); }",
+      "R131Type": "trigger R131Type on Account (before insert) { R131Helper sample; }",
+      "R131Constructor": "trigger R131Constructor on Account (before insert) { Object sample = new R131Helper(); }",
+      "R131CaseCall": "trigger R131CaseCall on Account (before insert) { r131hELPER.vALue(); }",
+      "R131CaseType": "trigger R131CaseType on Account (before insert) { r131hELPER sample; }",
+      "R131CaseConstructor": "trigger R131CaseConstructor on Account (before insert) { Object sample = new r131hELPER(); }",
+      "R131Literal": "trigger R131Literal on Account (before insert) { String sample = 'R131Helper'; }",
+      "R131Comment": "trigger R131Comment on Account (before insert) { /* R131Helper.value(); */ Integer sample = 1; }",
+      "R131Empty": "trigger R131Empty on Account (before insert) {  }",
+      "R131Unreachable": "trigger R131Unreachable on Account (before insert) { if (false) { R131Helper.value(); } }"
+    },
+    "native": {
+      "success": true,
+      "failures": []
+    }
+  },
+  {
+    "api": "62.0",
+    "id": "valid-default",
+    "route": "checkOnly",
+    "classes": {
+      "R131Helper": "class R131Helper { static Integer value() { Integer n = 1; return n; } }",
+      "R131IndependentTest": "@IsTest private class R131IndependentTest { @IsTest static void observe() { System.assertEquals(2, 1 + 1); } }"
+    },
+    "triggers": {
+      "R131Call": "trigger R131Call on Account (before insert) { R131Helper.value(); }",
+      "R131Type": "trigger R131Type on Account (before insert) { R131Helper sample; }",
+      "R131Constructor": "trigger R131Constructor on Account (before insert) { Object sample = new R131Helper(); }",
+      "R131CaseCall": "trigger R131CaseCall on Account (before insert) { r131hELPER.vALue(); }",
+      "R131CaseType": "trigger R131CaseType on Account (before insert) { r131hELPER sample; }",
+      "R131CaseConstructor": "trigger R131CaseConstructor on Account (before insert) { Object sample = new r131hELPER(); }",
+      "R131Literal": "trigger R131Literal on Account (before insert) { String sample = 'R131Helper'; }",
+      "R131Comment": "trigger R131Comment on Account (before insert) { /* R131Helper.value(); */ Integer sample = 1; }",
+      "R131Empty": "trigger R131Empty on Account (before insert) {  }",
+      "R131Unreachable": "trigger R131Unreachable on Account (before insert) { if (false) { R131Helper.value(); } }"
+    },
+    "native": {
+      "success": false,
+      "failures": [
+        {
+          "fullName": "R131Helper",
+          "componentType": "ApexClass",
+          "problem": "Top-level type must have public or global visibility",
+          "lineNumber": 1,
+          "columnNumber": 7
+        },
+        {
+          "fullName": "R131Call",
+          "componentType": "ApexTrigger",
+          "problem": "Variable does not exist: R131Helper",
+          "lineNumber": 1,
+          "columnNumber": 47
+        },
+        {
+          "fullName": "R131CaseCall",
+          "componentType": "ApexTrigger",
+          "problem": "Variable does not exist: r131hELPER",
+          "lineNumber": 1,
+          "columnNumber": 51
+        },
+        {
+          "fullName": "R131CaseConstructor",
+          "componentType": "ApexTrigger",
+          "problem": "Invalid type: r131hELPER",
+          "lineNumber": 1,
+          "columnNumber": 74
+        },
+        {
+          "fullName": "R131CaseType",
+          "componentType": "ApexTrigger",
+          "problem": "Invalid type: r131hELPER",
+          "lineNumber": 1,
+          "columnNumber": 51
+        },
+        {
+          "fullName": "R131Constructor",
+          "componentType": "ApexTrigger",
+          "problem": "Invalid type: R131Helper",
+          "lineNumber": 1,
+          "columnNumber": 70
+        },
+        {
+          "fullName": "R131Type",
+          "componentType": "ApexTrigger",
+          "problem": "Invalid type: R131Helper",
+          "lineNumber": 1,
+          "columnNumber": 47
+        },
+        {
+          "fullName": "R131Unreachable",
+          "componentType": "ApexTrigger",
+          "problem": "Variable does not exist: R131Helper",
+          "lineNumber": 1,
+          "columnNumber": 67
+        }
+      ]
+    }
+  },
+  {
+    "api": "67.0",
+    "id": "invalid-public",
+    "route": "checkOnly",
+    "classes": {
+      "R131Helper": "public class R131Helper { public static Integer value() { Integer n = 'invalid'; return n; } }",
+      "R131IndependentTest": "@IsTest private class R131IndependentTest { @IsTest static void observe() { System.assertEquals(2, 1 + 1); } }"
+    },
+    "triggers": {
+      "R131Call": "trigger R131Call on Account (before insert) { R131Helper.value(); }",
+      "R131Type": "trigger R131Type on Account (before insert) { R131Helper sample; }",
+      "R131Constructor": "trigger R131Constructor on Account (before insert) { Object sample = new R131Helper(); }",
+      "R131CaseCall": "trigger R131CaseCall on Account (before insert) { r131hELPER.vALue(); }",
+      "R131CaseType": "trigger R131CaseType on Account (before insert) { r131hELPER sample; }",
+      "R131CaseConstructor": "trigger R131CaseConstructor on Account (before insert) { Object sample = new r131hELPER(); }",
+      "R131Literal": "trigger R131Literal on Account (before insert) { String sample = 'R131Helper'; }",
+      "R131Comment": "trigger R131Comment on Account (before insert) { /* R131Helper.value(); */ Integer sample = 1; }",
+      "R131Empty": "trigger R131Empty on Account (before insert) {  }",
+      "R131Unreachable": "trigger R131Unreachable on Account (before insert) { if (false) { R131Helper.value(); } }"
+    },
+    "native": {
+      "success": false,
+      "failures": [
+        {
+          "fullName": "R131Helper",
+          "componentType": "ApexClass",
+          "problem": "Illegal assignment from String to Integer",
+          "lineNumber": 1,
+          "columnNumber": 67
+        },
+        {
+          "fullName": "R131Call",
+          "componentType": "ApexTrigger",
+          "problem": "Variable does not exist: R131Helper",
+          "lineNumber": 1,
+          "columnNumber": 47
+        },
+        {
+          "fullName": "R131CaseCall",
+          "componentType": "ApexTrigger",
+          "problem": "Variable does not exist: r131hELPER",
+          "lineNumber": 1,
+          "columnNumber": 51
+        },
+        {
+          "fullName": "R131CaseConstructor",
+          "componentType": "ApexTrigger",
+          "problem": "Invalid type: r131hELPER",
+          "lineNumber": 1,
+          "columnNumber": 74
+        },
+        {
+          "fullName": "R131CaseType",
+          "componentType": "ApexTrigger",
+          "problem": "Invalid type: r131hELPER",
+          "lineNumber": 1,
+          "columnNumber": 51
+        },
+        {
+          "fullName": "R131Constructor",
+          "componentType": "ApexTrigger",
+          "problem": "Invalid type: R131Helper",
+          "lineNumber": 1,
+          "columnNumber": 70
+        },
+        {
+          "fullName": "R131Type",
+          "componentType": "ApexTrigger",
+          "problem": "Invalid type: R131Helper",
+          "lineNumber": 1,
+          "columnNumber": 47
+        },
+        {
+          "fullName": "R131Unreachable",
+          "componentType": "ApexTrigger",
+          "problem": "Variable does not exist: R131Helper",
+          "lineNumber": 1,
+          "columnNumber": 67
+        }
+      ]
+    }
+  },
+  {
+    "api": "67.0",
+    "id": "invalid-default",
+    "route": "checkOnly",
+    "classes": {
+      "R131Helper": "class R131Helper { static Integer value() { Integer n = 'invalid'; return n; } }",
+      "R131IndependentTest": "@IsTest private class R131IndependentTest { @IsTest static void observe() { System.assertEquals(2, 1 + 1); } }"
+    },
+    "triggers": {
+      "R131Call": "trigger R131Call on Account (before insert) { R131Helper.value(); }",
+      "R131Type": "trigger R131Type on Account (before insert) { R131Helper sample; }",
+      "R131Constructor": "trigger R131Constructor on Account (before insert) { Object sample = new R131Helper(); }",
+      "R131CaseCall": "trigger R131CaseCall on Account (before insert) { r131hELPER.vALue(); }",
+      "R131CaseType": "trigger R131CaseType on Account (before insert) { r131hELPER sample; }",
+      "R131CaseConstructor": "trigger R131CaseConstructor on Account (before insert) { Object sample = new r131hELPER(); }",
+      "R131Literal": "trigger R131Literal on Account (before insert) { String sample = 'R131Helper'; }",
+      "R131Comment": "trigger R131Comment on Account (before insert) { /* R131Helper.value(); */ Integer sample = 1; }",
+      "R131Empty": "trigger R131Empty on Account (before insert) {  }",
+      "R131Unreachable": "trigger R131Unreachable on Account (before insert) { if (false) { R131Helper.value(); } }"
+    },
+    "native": {
+      "success": false,
+      "failures": [
+        {
+          "fullName": "R131Helper",
+          "componentType": "ApexClass",
+          "problem": "Top-level type must have public or global visibility",
+          "lineNumber": 1,
+          "columnNumber": 7
+        },
+        {
+          "fullName": "R131Call",
+          "componentType": "ApexTrigger",
+          "problem": "Variable does not exist: R131Helper",
+          "lineNumber": 1,
+          "columnNumber": 47
+        },
+        {
+          "fullName": "R131CaseCall",
+          "componentType": "ApexTrigger",
+          "problem": "Variable does not exist: r131hELPER",
+          "lineNumber": 1,
+          "columnNumber": 51
+        },
+        {
+          "fullName": "R131CaseConstructor",
+          "componentType": "ApexTrigger",
+          "problem": "Invalid type: r131hELPER",
+          "lineNumber": 1,
+          "columnNumber": 74
+        },
+        {
+          "fullName": "R131CaseType",
+          "componentType": "ApexTrigger",
+          "problem": "Invalid type: r131hELPER",
+          "lineNumber": 1,
+          "columnNumber": 51
+        },
+        {
+          "fullName": "R131Constructor",
+          "componentType": "ApexTrigger",
+          "problem": "Invalid type: R131Helper",
+          "lineNumber": 1,
+          "columnNumber": 70
+        },
+        {
+          "fullName": "R131Type",
+          "componentType": "ApexTrigger",
+          "problem": "Invalid type: R131Helper",
+          "lineNumber": 1,
+          "columnNumber": 47
+        },
+        {
+          "fullName": "R131Unreachable",
+          "componentType": "ApexTrigger",
+          "problem": "Variable does not exist: R131Helper",
+          "lineNumber": 1,
+          "columnNumber": 67
+        }
+      ]
+    }
+  },
+  {
+    "api": "67.0",
+    "id": "valid-public",
+    "route": "checkOnly",
+    "classes": {
+      "R131Helper": "public class R131Helper { public static Integer value() { Integer n = 1; return n; } }",
+      "R131IndependentTest": "@IsTest private class R131IndependentTest { @IsTest static void observe() { System.assertEquals(2, 1 + 1); } }",
+      "R131TriggerTest": "@IsTest private class R131TriggerTest { @IsTest static void observe() { Account sample = new Account(Name='Owned dependency probe'); insert sample; System.assertNotEquals(null, sample.Id); } }"
+    },
+    "triggers": {
+      "R131Call": "trigger R131Call on Account (before insert) { R131Helper.value(); }",
+      "R131Type": "trigger R131Type on Account (before insert) { R131Helper sample; }",
+      "R131Constructor": "trigger R131Constructor on Account (before insert) { Object sample = new R131Helper(); }",
+      "R131CaseCall": "trigger R131CaseCall on Account (before insert) { r131hELPER.vALue(); }",
+      "R131CaseType": "trigger R131CaseType on Account (before insert) { r131hELPER sample; }",
+      "R131CaseConstructor": "trigger R131CaseConstructor on Account (before insert) { Object sample = new r131hELPER(); }",
+      "R131Literal": "trigger R131Literal on Account (before insert) { String sample = 'R131Helper'; }",
+      "R131Comment": "trigger R131Comment on Account (before insert) { /* R131Helper.value(); */ Integer sample = 1; }",
+      "R131Empty": "trigger R131Empty on Account (before insert) {  }",
+      "R131Unreachable": "trigger R131Unreachable on Account (before insert) { if (false) { R131Helper.value(); } }"
+    },
+    "native": {
+      "success": true,
+      "failures": []
+    }
+  },
+  {
+    "api": "67.0",
+    "id": "valid-default",
+    "route": "checkOnly",
+    "classes": {
+      "R131Helper": "class R131Helper { static Integer value() { Integer n = 1; return n; } }",
+      "R131IndependentTest": "@IsTest private class R131IndependentTest { @IsTest static void observe() { System.assertEquals(2, 1 + 1); } }"
+    },
+    "triggers": {
+      "R131Call": "trigger R131Call on Account (before insert) { R131Helper.value(); }",
+      "R131Type": "trigger R131Type on Account (before insert) { R131Helper sample; }",
+      "R131Constructor": "trigger R131Constructor on Account (before insert) { Object sample = new R131Helper(); }",
+      "R131CaseCall": "trigger R131CaseCall on Account (before insert) { r131hELPER.vALue(); }",
+      "R131CaseType": "trigger R131CaseType on Account (before insert) { r131hELPER sample; }",
+      "R131CaseConstructor": "trigger R131CaseConstructor on Account (before insert) { Object sample = new r131hELPER(); }",
+      "R131Literal": "trigger R131Literal on Account (before insert) { String sample = 'R131Helper'; }",
+      "R131Comment": "trigger R131Comment on Account (before insert) { /* R131Helper.value(); */ Integer sample = 1; }",
+      "R131Empty": "trigger R131Empty on Account (before insert) {  }",
+      "R131Unreachable": "trigger R131Unreachable on Account (before insert) { if (false) { R131Helper.value(); } }"
+    },
+    "native": {
+      "success": false,
+      "failures": [
+        {
+          "fullName": "R131Helper",
+          "componentType": "ApexClass",
+          "problem": "Top-level type must have public or global visibility",
+          "lineNumber": 1,
+          "columnNumber": 7
+        },
+        {
+          "fullName": "R131Call",
+          "componentType": "ApexTrigger",
+          "problem": "Variable does not exist: R131Helper",
+          "lineNumber": 1,
+          "columnNumber": 47
+        },
+        {
+          "fullName": "R131CaseCall",
+          "componentType": "ApexTrigger",
+          "problem": "Variable does not exist: r131hELPER",
+          "lineNumber": 1,
+          "columnNumber": 51
+        },
+        {
+          "fullName": "R131CaseConstructor",
+          "componentType": "ApexTrigger",
+          "problem": "Invalid type: r131hELPER",
+          "lineNumber": 1,
+          "columnNumber": 74
+        },
+        {
+          "fullName": "R131CaseType",
+          "componentType": "ApexTrigger",
+          "problem": "Invalid type: r131hELPER",
+          "lineNumber": 1,
+          "columnNumber": 51
+        },
+        {
+          "fullName": "R131Constructor",
+          "componentType": "ApexTrigger",
+          "problem": "Invalid type: R131Helper",
+          "lineNumber": 1,
+          "columnNumber": 70
+        },
+        {
+          "fullName": "R131Type",
+          "componentType": "ApexTrigger",
+          "problem": "Invalid type: R131Helper",
+          "lineNumber": 1,
+          "columnNumber": 47
+        },
+        {
+          "fullName": "R131Unreachable",
+          "componentType": "ApexTrigger",
+          "problem": "Variable does not exist: R131Helper",
+          "lineNumber": 1,
+          "columnNumber": 67
+        }
+      ]
+    }
+  },
+  {
+    "api": "62.0",
+    "id": "valid-public-dml",
+    "route": "anonymous",
+    "source": "Account sample = new Account(Name='Owned anonymous probe'); insert sample; System.assertNotEquals(null, sample.Id);",
+    "classes": {
+      "R131Helper": "public class R131Helper { public static Integer value() { Integer n = 1; return n; } }",
+      "R131IndependentTest": "@IsTest private class R131IndependentTest { @IsTest static void observe() { System.assertEquals(2, 1 + 1); } }",
+      "R131TriggerTest": "@IsTest private class R131TriggerTest { @IsTest static void observe() { Account sample = new Account(Name='Owned dependency probe'); insert sample; System.assertNotEquals(null, sample.Id); } }"
+    },
+    "triggers": {
+      "R131Call": "trigger R131Call on Account (before insert) { R131Helper.value(); }",
+      "R131Type": "trigger R131Type on Account (before insert) { R131Helper sample; }",
+      "R131Constructor": "trigger R131Constructor on Account (before insert) { Object sample = new R131Helper(); }",
+      "R131CaseCall": "trigger R131CaseCall on Account (before insert) { r131hELPER.vALue(); }",
+      "R131CaseType": "trigger R131CaseType on Account (before insert) { r131hELPER sample; }",
+      "R131CaseConstructor": "trigger R131CaseConstructor on Account (before insert) { Object sample = new r131hELPER(); }",
+      "R131Literal": "trigger R131Literal on Account (before insert) { String sample = 'R131Helper'; }",
+      "R131Comment": "trigger R131Comment on Account (before insert) { /* R131Helper.value(); */ Integer sample = 1; }",
+      "R131Empty": "trigger R131Empty on Account (before insert) {  }",
+      "R131Unreachable": "trigger R131Unreachable on Account (before insert) { if (false) { R131Helper.value(); } }"
+    },
+    "native": {
+      "compiled": true,
+      "success": true,
+      "compileProblem": "",
+      "exceptionMessage": ""
+    }
+  },
+  {
+    "api": "62.0",
+    "id": "valid-public-dml",
+    "route": "isTest",
+    "className": "R131TriggerTest",
+    "classes": {
+      "R131Helper": "public class R131Helper { public static Integer value() { Integer n = 1; return n; } }",
+      "R131IndependentTest": "@IsTest private class R131IndependentTest { @IsTest static void observe() { System.assertEquals(2, 1 + 1); } }",
+      "R131TriggerTest": "@IsTest private class R131TriggerTest { @IsTest static void observe() { Account sample = new Account(Name='Owned dependency probe'); insert sample; System.assertNotEquals(null, sample.Id); } }"
+    },
+    "triggers": {
+      "R131Call": "trigger R131Call on Account (before insert) { R131Helper.value(); }",
+      "R131Type": "trigger R131Type on Account (before insert) { R131Helper sample; }",
+      "R131Constructor": "trigger R131Constructor on Account (before insert) { Object sample = new R131Helper(); }",
+      "R131CaseCall": "trigger R131CaseCall on Account (before insert) { r131hELPER.vALue(); }",
+      "R131CaseType": "trigger R131CaseType on Account (before insert) { r131hELPER sample; }",
+      "R131CaseConstructor": "trigger R131CaseConstructor on Account (before insert) { Object sample = new r131hELPER(); }",
+      "R131Literal": "trigger R131Literal on Account (before insert) { String sample = 'R131Helper'; }",
+      "R131Comment": "trigger R131Comment on Account (before insert) { /* R131Helper.value(); */ Integer sample = 1; }",
+      "R131Empty": "trigger R131Empty on Account (before insert) {  }",
+      "R131Unreachable": "trigger R131Unreachable on Account (before insert) { if (false) { R131Helper.value(); } }"
+    },
+    "native": [
+      {
+        "MethodName": "observe",
+        "Outcome": "Pass",
+        "Message": ""
+      }
+    ]
+  },
+  {
+    "api": "67.0",
+    "id": "valid-public-dml",
+    "route": "anonymous",
+    "source": "Account sample = new Account(Name='Owned anonymous probe'); insert sample; System.assertNotEquals(null, sample.Id);",
+    "classes": {
+      "R131Helper": "public class R131Helper { public static Integer value() { Integer n = 1; return n; } }",
+      "R131IndependentTest": "@IsTest private class R131IndependentTest { @IsTest static void observe() { System.assertEquals(2, 1 + 1); } }",
+      "R131TriggerTest": "@IsTest private class R131TriggerTest { @IsTest static void observe() { Account sample = new Account(Name='Owned dependency probe'); insert sample; System.assertNotEquals(null, sample.Id); } }"
+    },
+    "triggers": {
+      "R131Call": "trigger R131Call on Account (before insert) { R131Helper.value(); }",
+      "R131Type": "trigger R131Type on Account (before insert) { R131Helper sample; }",
+      "R131Constructor": "trigger R131Constructor on Account (before insert) { Object sample = new R131Helper(); }",
+      "R131CaseCall": "trigger R131CaseCall on Account (before insert) { r131hELPER.vALue(); }",
+      "R131CaseType": "trigger R131CaseType on Account (before insert) { r131hELPER sample; }",
+      "R131CaseConstructor": "trigger R131CaseConstructor on Account (before insert) { Object sample = new r131hELPER(); }",
+      "R131Literal": "trigger R131Literal on Account (before insert) { String sample = 'R131Helper'; }",
+      "R131Comment": "trigger R131Comment on Account (before insert) { /* R131Helper.value(); */ Integer sample = 1; }",
+      "R131Empty": "trigger R131Empty on Account (before insert) {  }",
+      "R131Unreachable": "trigger R131Unreachable on Account (before insert) { if (false) { R131Helper.value(); } }"
+    },
+    "native": {
+      "compiled": true,
+      "success": true,
+      "compileProblem": "",
+      "exceptionMessage": ""
+    }
+  },
+  {
+    "api": "67.0",
+    "id": "valid-public-dml",
+    "route": "isTest",
+    "className": "R131TriggerTest",
+    "classes": {
+      "R131Helper": "public class R131Helper { public static Integer value() { Integer n = 1; return n; } }",
+      "R131IndependentTest": "@IsTest private class R131IndependentTest { @IsTest static void observe() { System.assertEquals(2, 1 + 1); } }",
+      "R131TriggerTest": "@IsTest private class R131TriggerTest { @IsTest static void observe() { Account sample = new Account(Name='Owned dependency probe'); insert sample; System.assertNotEquals(null, sample.Id); } }"
+    },
+    "triggers": {
+      "R131Call": "trigger R131Call on Account (before insert) { R131Helper.value(); }",
+      "R131Type": "trigger R131Type on Account (before insert) { R131Helper sample; }",
+      "R131Constructor": "trigger R131Constructor on Account (before insert) { Object sample = new R131Helper(); }",
+      "R131CaseCall": "trigger R131CaseCall on Account (before insert) { r131hELPER.vALue(); }",
+      "R131CaseType": "trigger R131CaseType on Account (before insert) { r131hELPER sample; }",
+      "R131CaseConstructor": "trigger R131CaseConstructor on Account (before insert) { Object sample = new r131hELPER(); }",
+      "R131Literal": "trigger R131Literal on Account (before insert) { String sample = 'R131Helper'; }",
+      "R131Comment": "trigger R131Comment on Account (before insert) { /* R131Helper.value(); */ Integer sample = 1; }",
+      "R131Empty": "trigger R131Empty on Account (before insert) {  }",
+      "R131Unreachable": "trigger R131Unreachable on Account (before insert) { if (false) { R131Helper.value(); } }"
+    },
+    "native": [
+      {
+        "MethodName": "observe",
+        "Outcome": "Pass",
+        "Message": ""
+      }
+    ]
+  }
+]

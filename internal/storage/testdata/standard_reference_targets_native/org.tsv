@@ -1,0 +1,21 @@
+apiVersion	orgState	object	describe	fieldCount	keyPrefix	hasAssessmentStagedDataId
+62.0	without-features	Assessment	absent			
+62.0	without-features	AssessmentStagedData	absent			
+62.0	without-features	DocumentGenerationProcess	absent			
+62.0	without-features	DocGenerationBatchProcess	absent			
+62.0	without-features	RecordAccessEvent__e	absent			
+67.0	without-features	Assessment	absent			
+67.0	without-features	AssessmentStagedData	absent			
+67.0	without-features	DocumentGenerationProcess	absent			
+67.0	without-features	DocGenerationBatchProcess	absent			
+67.0	without-features	RecordAccessEvent__e	absent			
+62.0	industries-assessment-enabled	Assessment	present	26	0U3	false
+62.0	industries-assessment-enabled	AssessmentStagedData	absent			
+62.0	industries-assessment-enabled	DocumentGenerationProcess	absent			
+62.0	industries-assessment-enabled	DocGenerationBatchProcess	absent			
+62.0	industries-assessment-enabled	RecordAccessEvent__e	absent			
+67.0	industries-assessment-enabled	Assessment	present	31	0U3	false
+67.0	industries-assessment-enabled	AssessmentStagedData	absent			
+67.0	industries-assessment-enabled	DocumentGenerationProcess	absent			
+67.0	industries-assessment-enabled	DocGenerationBatchProcess	absent			
+67.0	industries-assessment-enabled	RecordAccessEvent__e	absent			

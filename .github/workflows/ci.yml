@@ -160,7 +160,7 @@ jobs:
             ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
       - name: Check cache workflow invariants
         run: scripts/ci-cache-check.sh
-      - run: go vet -trimpath ./...
+      - run: scripts/ci-go-test.sh local-release-lane vet
       - name: Save Go module cache
         if: success()
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0

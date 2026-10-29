@@ -351,7 +351,22 @@ func (vm *VM) applySOQLRecordProjection(value *Value, record storage.Record, que
 			if vm.Org != nil {
 				if object, known := vm.Org.Objects[record.Object]; known {
 					if selected, err := soql.ExpandFieldsFunctions(object.Definition, []string{field}); err == nil {
-						paths = append(paths, selected...)
+
+						remaining := make(map[string]bool, len(selected))
+						for _, name := range selected {
+							remaining[name] = true
+						}
+						storage.VisitStandardFields(record.Object, func(name string) {
+							if remaining[name] {
+								paths = append(paths, name)
+								delete(remaining, name)
+							}
+						})
+						for _, name := range selected {
+							if remaining[name] {
+								paths = append(paths, name)
+							}
+						}
 						continue
 					}
 				}
@@ -408,6 +423,7 @@ func (vm *VM) applySOQLRecordProjection(value *Value, record storage.Record, que
 				if strings.EqualFold(relationship, child.Relationship) && i < len(records) {
 					vm.applySOQLRecordProjection(&rows.List[i], records[i], child.Query)
 					rows.List[i].Fields[sobjectSubqueryProjectionField] = Bool(true)
+					vm.markJSONSubqueryProjection(&rows.List[i], record.Object, child.Relationship, record.ID)
 					break
 				}
 			}
@@ -452,6 +468,8 @@ func (vm *VM) applySOQLRecordProjection(value *Value, record storage.Record, que
 			value.Fields[definition.APIName] = address
 		}
 	}
+	vm.materializeJSONQueryLocations(value, record, fields)
+	vm.applyJSONQueryFunctions(value, query.Fields)
 	for field := range value.Fields {
 		if isInternalSObjectField(field) || vm.queriedSObjectFieldsIncludes(*value, field) {
 			continue
@@ -472,6 +490,59 @@ func (vm *VM) applySOQLRecordProjection(value *Value, record storage.Record, que
 			vm.markQueriedParentRelationshipPath(value, record.Object, parts)
 		}
 	}
+	jsonPaths := append([]string(nil), paths...)
+	typedParents := make(map[string]bool, len(query.Typeofs))
+	for _, spec := range query.Typeofs {
+		typedParents[strings.ToLower(spec.Relationship)] = true
+	}
+	// Expression aliases have slots after the implicit identity.
+	var aliases []string
+	for _, field := range query.Fields {
+		if alias, ok := parseSelectedFunctionAlias(field); ok {
+			aliases = append(aliases, alias.Alias)
+		}
+	}
+	if len(aliases) > 0 {
+		filtered := jsonPaths[:0]
+		for _, path := range jsonPaths {
+			isAlias := false
+			for _, alias := range aliases {
+				if strings.EqualFold(path, alias) {
+					isAlias = true
+					break
+				}
+			}
+			if !isAlias {
+				filtered = append(filtered, path)
+			}
+		}
+		jsonPaths = append(filtered, "Id")
+		jsonPaths = append(jsonPaths, aliases...)
+	}
+	vm.markJSONQueryProjection(value, jsonPaths, query.ChildQueries, typedParents)
+	vm.applyTestTaskOwnerProjection(value, jsonPaths, typedParents)
+}
+
+// soqlConditionFiltersCustomAddress reports a WHERE operand that names a
+// custom Address compound directly; only DISTANCE may filter one.
+func soqlConditionFiltersCustomAddress(definition storage.ObjectDefinition, namespace string, condition soql.Condition) bool {
+	if condition.Field != "" && !strings.Contains(condition.Field, "(") {
+		if name, ok := storage.ResolveFieldName(definition, namespace, condition.Field); ok &&
+			definition.Fields[name].Type == storage.FieldAddress && storage.CustomAddressComponentName(name, "Latitude") != "" {
+			return true
+		}
+	}
+	for _, child := range condition.And {
+		if soqlConditionFiltersCustomAddress(definition, namespace, child) {
+			return true
+		}
+	}
+	for _, child := range condition.Or {
+		if soqlConditionFiltersCustomAddress(definition, namespace, child) {
+			return true
+		}
+	}
+	return false
 }
 
 func (vm *VM) resolveSOQLParentRuntimeType(parent *Value, objectName, relationship string) {
@@ -530,6 +601,25 @@ func (vm *VM) aggregateResultFromRecord(record storage.Record, query soql.Query)
 		fieldValue.Static = "Object"
 		out.Fields[name] = fieldValue
 	}
+	// Keep selected group fields and aliases ahead of residual internal keys
+	// when the SObject exposes its populated map.
+	for _, selection := range query.Fields {
+		parts := strings.Fields(selection)
+		if len(parts) > 0 {
+			if name, _, ok := objectFieldValue(out, parts[len(parts)-1]); ok {
+				markExplicitSObjectField(&out, name)
+			}
+		}
+	}
+	unnamed = 0
+	for _, aggregate := range query.Aggregates {
+		name := aggregate.Alias
+		if name == "" {
+			name = fmt.Sprintf("expr%d", unnamed)
+			unnamed++
+		}
+		markExplicitSObjectField(&out, name)
+	}
 	return out
 }
 
@@ -560,6 +650,9 @@ func (vm *VM) validateSOQLSelection(query soql.Query, beforeExpansion bool) erro
 				if field.Sortable != nil && !*field.Sortable {
 					return &RuntimeError{Type: "System.UnexpectedException", Message: "field '" + name + "' can not be sorted in a query call"}
 				}
+			}
+			if query.Where != nil && soqlConditionFiltersCustomAddress(definition, vm.Org.Namespace, *query.Where) {
+				return newExceptionError("QueryException", "Address fields can only be filtered using Distance expressions")
 			}
 		}
 	}
@@ -619,6 +712,11 @@ func (vm *VM) validateSOQLSelection(query soql.Query, beforeExpansion bool) erro
 }
 
 func (vm *VM) validateSOQLSelectionLiteral(objectName string, condition *soql.Condition) error {
+	literalSource := condition.Value.Kind != storage.ValueID || !strings.HasPrefix(string(condition.Value.ID), ":")
+	return vm.validateSOQLSelectionLiteralSource(objectName, condition, literalSource)
+}
+
+func (vm *VM) validateSOQLSelectionLiteralSource(objectName string, condition *soql.Condition, literalSource bool) error {
 	if vm.Org == nil {
 		return nil
 	}
@@ -632,8 +730,13 @@ func (vm *VM) validateSOQLSelectionLiteral(objectName string, condition *soql.Co
 		return nil
 	}
 	field := definition.Fields[name]
+	collection := condition.Op == "IN" || condition.Op == "NOT IN"
+	// The captured unfilterable-field precedence is for scalar comparisons.
+	if literalSource && !collection && field.Filterable != nil && !*field.Filterable {
+		return newExceptionError("QueryException", "field '"+condition.Field+"' can not be filtered in a query call")
+	}
 	values := []storage.Value{condition.Value}
-	if condition.Op == "IN" || condition.Op == "NOT IN" {
+	if collection {
 		values = condition.Values
 	}
 	for _, value := range values {
@@ -642,6 +745,9 @@ func (vm *VM) validateSOQLSelectionLiteral(objectName string, condition *soql.Co
 		}
 		if field.Type == storage.FieldDecimal && value.Kind == storage.ValueString {
 			return newExceptionError("QueryException", "value of filter criterion for field '"+condition.Field+"' must be of type double and should not be enclosed in quotes")
+		}
+		if (field.Type == storage.FieldString || literalSource && (field.Type == storage.FieldPicklist || field.Type == storage.FieldID)) && (value.Kind == storage.ValueInteger || value.Kind == storage.ValueDecimal) {
+			return newExceptionError("QueryException", "value of filter criterion for field '"+condition.Field+"' must be of type string and should be enclosed in quotes")
 		}
 		if field.Type == storage.FieldDate && value.Kind == storage.ValueID {
 			text := string(value.ID)
@@ -803,6 +909,7 @@ func soqlBindMapValue(binds Value, name string) (Value, error) {
 }
 
 func (vm *VM) soqlExecutionCacheForOrg(org *storage.OrgState) *soql.ExecutionCache {
+	vm.ensureMetadataCacheGeneration()
 	if vm == nil || org == nil || vm.Org == nil || org != vm.Org {
 		return nil
 	}
@@ -1177,11 +1284,22 @@ func (vm *VM) enforceOrgShapeObjectAvailability(query soql.Query) error {
 	if resolved, ok := vm.resolveObjectName(objectName); ok {
 		objectName = resolved
 	}
-	if strings.EqualFold(objectName, "DatedConversionRate") && !vm.Org.HasFeature("MultiCurrency") {
-		return newExceptionError("QueryException", "sObject type 'DatedConversionRate' is not supported")
+	if !vm.Org.AllowsStandardObject(objectName) ||
+		strings.EqualFold(objectName, "DatedConversionRate") && !vm.Org.HasFeature("MultiCurrency") {
+		return newExceptionError("QueryException", "sObject type '"+objectName+"' is not supported")
 	}
 	for _, child := range query.ChildQueries {
-		if err := vm.enforceOrgShapeObjectAvailability(child.Query); err != nil {
+		childQuery := child.Query
+		childObject, known := vm.soqlChildRelationshipObject(objectName, child.Relationship)
+		if !known {
+			if _, parent, ok := vm.describeObjectDefinition(objectName); ok {
+				childObject, _, known = storage.LookupPlatformChildRelationship(parent, child.Relationship)
+			}
+		}
+		if known {
+			childQuery.Object = childObject
+		}
+		if err := vm.enforceOrgShapeObjectAvailability(childQuery); err != nil {
 			return err
 		}
 	}
@@ -1270,6 +1388,9 @@ func (vm *VM) searchQuery(args []Value) (Value, error) {
 			return Null, newExceptionError("NullPointerException", "Argument 2 cannot be null")
 		}
 		accessLevel = args[1]
+		if err := vm.validateExplicitAccessLevel(accessLevel); err != nil {
+			return Null, err
+		}
 	}
 	return vm.executeSOSLWithAccessLevel(args[0].Text, nil, accessLevel)
 }
@@ -1293,6 +1414,9 @@ func (vm *VM) searchFind(args []Value) (Value, error) {
 			return Null, newExceptionError("NullPointerException", "Argument 2 cannot be null")
 		}
 		accessLevel = args[1]
+		if err := vm.validateExplicitAccessLevel(accessLevel); err != nil {
+			return Null, err
+		}
 	}
 	if !isDatabaseAccessLevelValue(accessLevel) {
 		accessLevel = vm.defaultAccessLevel()
@@ -1405,6 +1529,13 @@ func isSearchSuggestionOptionValue(value Value) bool {
 }
 
 func (vm *VM) soslParseError(err error) error {
+	var bind *sosl.BindSyntaxError
+	if errors.As(err, &bind) {
+		if bind.Uncatchable {
+			return &RuntimeError{Message: bind.Message}
+		}
+		return newExceptionError("QueryException", bind.Message)
+	}
 	var contract *sosl.ContractError
 	if errors.As(err, &contract) {
 		return newExceptionError(contract.Type, contract.Message)
@@ -1466,6 +1597,13 @@ func (vm *VM) parseSOSLQuery(raw string) (string, sosl.Query, error) {
 
 func (vm *VM) parseSOSLQuerySource(raw string, inline bool) (string, sosl.Query, error) {
 	original, originalErr := sosl.Parse(raw)
+	if inline {
+		original, originalErr = sosl.ParseInline(raw)
+	} else if originalErr != nil {
+		// Native dynamic syntax errors precede literal typing. Expansion
+		// must not repair an unsupported expression into a valid query.
+		return "", sosl.Query{}, vm.soslParseError(originalErr)
+	}
 	if originalErr == nil && original.SearchBind != "" {
 		value, lookupErr := vm.lookup(original.SearchBind)
 		if lookupErr == nil && value.Kind == ValueNull {
@@ -1497,7 +1635,11 @@ func (vm *VM) parseSOSLQuerySource(raw string, inline bool) (string, sosl.Query,
 	default:
 		return "", sosl.Query{}, newExceptionError("SearchException", "Invalid IN fields group: "+strings.TrimSuffix(string(query.Scope), " FIELDS"))
 	}
-	if err := vm.validateSOSLSelections(query); err != nil {
+	var literalQuery *sosl.Query
+	if originalErr == nil {
+		literalQuery = &original
+	}
+	if err := vm.validateSOSLSelections(query, literalQuery); err != nil {
 		return "", sosl.Query{}, err
 	}
 	if err := validateSOSLRuntimeFeatures(query); err != nil {
@@ -2662,6 +2804,20 @@ func (vm *VM) markQueriedParentRelationshipPath(value *Value, objectName string,
 		return
 	}
 	actualName, relationshipValue, ok := objectFieldValue(*value, relationship)
+	if (!ok || relationshipValue.Kind != ValueObject) && len(parts) > 2 {
+		if lookup, known := vm.parentRelationshipField(objectName, relationship); known {
+			if _, idValue, present := objectFieldValue(*value, lookup); present {
+				if id, idOK := idValueText(idValue); idOK {
+					if _, exists := vm.findOrgRecord(parentObject, storage.ID(id)); exists {
+						actualName = relationship
+						relationshipValue = Object(parentObject)
+						relationshipValue.Fields["Id"] = idValue
+						ok = true
+					}
+				}
+			}
+		}
+	}
 	if !ok || relationshipValue.Kind != ValueObject {
 		return
 	}
@@ -3914,7 +4070,9 @@ func (vm *VM) executeSOQLWithAccessLevel(raw string, accessLevel Value, execResu
 func (vm *VM) executeInlineSOQL(raw string, execResult *Result) (Value, error) {
 	value, err := vm.executeSOQL(raw, execResult)
 	if err != nil {
-		return Null, err
+		if value, err = vm.namedApexReferenceStaticQuery(raw, err); err != nil {
+			return Null, err
+		}
 	}
 	tagSOQLQueryList(&value, raw)
 	if vm.inlineSOQLMayReturnScalarCount(raw) {
@@ -4032,7 +4190,9 @@ func (vm *VM) soqlResultObjectName(raw string) string {
 func (vm *VM) executeSOQLForType(raw, typeName string, result *Result) (Value, error) {
 	value, err := vm.executeSOQLQuery(raw, result)
 	if err != nil {
-		return Null, err
+		if value, err = vm.namedApexReferenceStaticQuery(raw, err); err != nil {
+			return Null, err
+		}
 	}
 	if collectionBase(typeName) == "List" || typeName == "Object" {
 		if typeName == "Object" && vm.inlineSOQLMayReturnScalarCount(raw) {

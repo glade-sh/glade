@@ -1,0 +1,49 @@
+api	route	case	outcome	diagnostic
+62.0	named	item_as_commerce	accepted	
+62.0	istest	item_as_commerce	accepted	
+62.0	trigger	item_as_commerce	accepted	
+62.0	named	group_as_commerce	accepted	
+62.0	istest	group_as_commerce	accepted	
+62.0	trigger	group_as_commerce	accepted	
+62.0	named	list_commerce_argument	accepted	
+62.0	istest	list_commerce_argument	accepted	
+62.0	trigger	list_commerce_argument	accepted	
+62.0	named	item_constructor	accepted	
+62.0	istest	item_constructor	accepted	
+62.0	trigger	item_constructor	accepted	
+62.0	named	list_constructor	rejected	Constructor not defined: [CartExtension.CartItemList].<Constructor>()
+62.0	istest	list_constructor	rejected	Constructor not defined: [CartExtension.CartItemList].<Constructor>()
+62.0	trigger	list_constructor	rejected	Constructor not defined: [CartExtension.CartItemList].<Constructor>()
+62.0	named	list_string_argument	rejected	Method does not exist or incorrect signature: void add(String) from the type CartExtension.CartItemList | Method does not exist or incorrect signature: void remove(String) from the type CartExtension.CartItemList
+62.0	istest	list_string_argument	rejected	Method does not exist or incorrect signature: void add(String) from the type CartExtension.CartItemList | Method does not exist or incorrect signature: void remove(String) from the type CartExtension.CartItemList
+62.0	trigger	list_string_argument	rejected	Method does not exist or incorrect signature: void add(String) from the type CartExtension.CartItemList
+62.0	anonymous	list_constructor	rejected	Constructor not defined: [CartExtension.CartItemList].<Constructor>()
+62.0	anonymous	item_as_commerce	accepted	
+62.0	anonymous	group_as_commerce	accepted	
+62.0	anonymous	list_commerce_argument	accepted	
+62.0	anonymous	item_constructor	accepted	
+62.0	anonymous	list_string_argument	rejected	Method does not exist or incorrect signature: void add(String) from the type CartExtension.CartItemList
+67.0	named	item_as_commerce	accepted	
+67.0	istest	item_as_commerce	accepted	
+67.0	trigger	item_as_commerce	accepted	
+67.0	named	group_as_commerce	accepted	
+67.0	istest	group_as_commerce	accepted	
+67.0	trigger	group_as_commerce	accepted	
+67.0	named	list_commerce_argument	accepted	
+67.0	istest	list_commerce_argument	accepted	
+67.0	trigger	list_commerce_argument	accepted	
+67.0	named	item_constructor	accepted	
+67.0	istest	item_constructor	accepted	
+67.0	trigger	item_constructor	accepted	
+67.0	named	list_constructor	rejected	Constructor not defined: [CartExtension.CartItemList].<Constructor>()
+67.0	istest	list_constructor	rejected	Constructor not defined: [CartExtension.CartItemList].<Constructor>()
+67.0	trigger	list_constructor	rejected	Constructor not defined: [CartExtension.CartItemList].<Constructor>()
+67.0	named	list_string_argument	rejected	Method does not exist or incorrect signature: void add(String) from the type CartExtension.CartItemList | Method does not exist or incorrect signature: void remove(String) from the type CartExtension.CartItemList
+67.0	istest	list_string_argument	rejected	Method does not exist or incorrect signature: void add(String) from the type CartExtension.CartItemList | Method does not exist or incorrect signature: void remove(String) from the type CartExtension.CartItemList
+67.0	trigger	list_string_argument	rejected	Method does not exist or incorrect signature: void add(String) from the type CartExtension.CartItemList
+67.0	anonymous	list_constructor	rejected	Constructor not defined: [CartExtension.CartItemList].<Constructor>()
+67.0	anonymous	item_as_commerce	accepted	
+67.0	anonymous	group_as_commerce	accepted	
+67.0	anonymous	list_commerce_argument	accepted	
+67.0	anonymous	item_constructor	accepted	
+67.0	anonymous	list_string_argument	rejected	Method does not exist or incorrect signature: void add(String) from the type CartExtension.CartItemList

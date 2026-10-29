@@ -1,0 +1,10 @@
+public with sharing class BarLocals {
+    public static void run() {
+        bar.Logger.log('sending');
+        bar.LogBuilder builder = new bar.LogBuilder();
+        bar.Wrapper request = new bar.Wrapper();
+        List<bar.OtherWrapper> responses = new List<bar.OtherWrapper>();
+        fooNs.LocalThing owned = new fooNs.LocalThing();
+        fooNs.Unknown absent = null;
+    }
+}

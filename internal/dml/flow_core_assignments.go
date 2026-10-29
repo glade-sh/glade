@@ -38,6 +38,15 @@ func (e *Engine) flowCoreApplyDeclaredAssignment(assignment storage.FlowAssignme
 	left, right := frame.scalars[key], storage.Value{}
 	var ok bool
 	right, ok = e.flowFrameValue(assignment, frame)
+	// A null operand contributes nothing: an unassigned Number or Currency
+	// variable starts at null, and a loop item field may be null (API 62.0,
+	// 67.0 record-triggered flows over a Get Records loop).
+	if left.Kind == storage.ValueNull || left.Kind == "" {
+		left = storage.IntegerValue(0)
+	}
+	if ok && right.Kind == storage.ValueNull {
+		right = storage.IntegerValue(0)
+	}
 	if !ok || (left.Kind != storage.ValueInteger && left.Kind != storage.ValueDecimal) || (right.Kind != storage.ValueInteger && right.Kind != storage.ValueDecimal) {
 		return false, nil
 	}

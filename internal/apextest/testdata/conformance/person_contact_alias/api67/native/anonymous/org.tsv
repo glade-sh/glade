@@ -1,0 +1,11 @@
+id	group	route	status	value
+booleanExists	person_contact_alias	anonymous	ok	true
+booleanType	person_contact_alias	anonymous	ok	"BOOLEAN"
+cleared	person_contact_alias	anonymous	ok	true
+constructed	person_contact_alias	anonymous	ok	"alpha:true"
+missingAbsent	person_contact_alias	anonymous	ok	true
+queried	person_contact_alias	anonymous	ok	"alpha:true"
+textExists	person_contact_alias	anonymous	ok	true
+textLength	person_contact_alias	anonymous	ok	24
+textType	person_contact_alias	anonymous	ok	"STRING"
+updated	person_contact_alias	anonymous	ok	"beta:false"

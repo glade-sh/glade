@@ -3,7 +3,6 @@ package vm
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/glade-sh/glade/internal/apexversion"
 )
@@ -177,8 +176,6 @@ func (vm *VM) ResetLimits() {
 	vm.limits = Limits{}
 	vm.limitViolations = nil
 	vm.cpuBudgetUsed = 0
-	vm.cpuStartedAt = time.Time{}
-	vm.cpuRunning = false
 }
 
 func (vm *VM) incrementLimit(name string, delta int) error {
@@ -268,26 +265,21 @@ func (vm *VM) incrementLimit(name string, delta int) error {
 	}
 }
 
-func (vm *VM) startCPUClock() {
-	if vm.cpuRunning {
-		return
-	}
-	vm.cpuStartedAt = time.Now()
-	vm.cpuRunning = true
-}
+// CPU samples use a deterministic estimate of Apex work, rather than host
+// elapsed or interpreter CPU time. Each instruction, loop iteration and
+// existing SOQL/DML row charge contributes one microsecond. This preserves
+// work-based progress without charging host waits, unrelated goroutines or
+// differences in interpreter speed. Native CPU milliseconds are not emulated.
+// Sampling and governor enforcement both use the resulting milliseconds.
+const cpuBudgetUnitsPerMillisecond = 1000
 
 func (vm *VM) sampleCPUTimeMS() int {
-	if !vm.cpuRunning || vm.cpuStartedAt.IsZero() {
-		return vm.limits.CPUTimeMS
-	}
-	ms := int(time.Since(vm.cpuStartedAt).Milliseconds())
-	if ms <= 0 {
+	ms := vm.cpuBudgetUsed / cpuBudgetUnitsPerMillisecond
+	if ms == 0 && vm.cpuBudgetUsed > 0 {
 		ms = 1
 	}
-	if ms > vm.limits.CPUTimeMS {
-		vm.limits.CPUTimeMS = ms
-	}
-	return vm.limits.CPUTimeMS
+	vm.limits.CPUTimeMS = ms
+	return ms
 }
 
 func (vm *VM) incrementCPUBudget(delta int) error {
@@ -295,8 +287,7 @@ func (vm *VM) incrementCPUBudget(delta int) error {
 		return nil
 	}
 	vm.cpuBudgetUsed += delta
-	vm.sampleCPUTimeMS()
-	return vm.checkLimit("cpuTime", vm.cpuBudgetUsed, vm.limitCaps.CPUTimeMS)
+	return vm.checkLimit("cpuTime", vm.sampleCPUTimeMS(), vm.limitCaps.CPUTimeMS)
 }
 
 func (vm *VM) checkLimit(name string, used, cap int) error {

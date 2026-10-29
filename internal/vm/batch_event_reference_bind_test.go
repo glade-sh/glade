@@ -33,6 +33,7 @@ System.assertEquals(1, [SELECT COUNT() FROM ServiceResource WHERE RelatedRecordI
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			org := testDataOrg()
+			configureStandardField(&org, "Event", "RecordTypeId")
 			storage.EnsureStandardObject(&org, "Event")
 			storage.EnsureStandardObject(&org, "ServiceResource")
 			event := org.Objects["Event"]

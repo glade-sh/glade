@@ -29,7 +29,7 @@ func TestSuperFieldNativeConformance(t *testing.T) {
 		t.Fatal("incomplete native fixture")
 	}
 	for _, api := range fixture.APIs {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			root := t.TempDir()
 			writeFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"sourceApiVersion":%q,"packageDirectories":[{"path":"force-app","default":true}]}`, api))
 			base := filepath.Join(root, "force-app/main/default/classes")

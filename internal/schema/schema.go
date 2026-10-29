@@ -121,10 +121,15 @@ type Field struct {
 	PicklistController            string             `json:"picklistController,omitempty"`
 	PicklistValueSettings         []PicklistSetting  `json:"picklistValueSettings,omitempty"`
 	ValueSetName                  string             `json:"valueSetName,omitempty"`
+	StandardValueSetApplied       bool               `json:"standardValueSetApplied,omitempty"`
 	RestrictedPicklist            bool               `json:"restrictedPicklist,omitempty"`
 	PicklistValues                []PicklistValue    `json:"picklistValues,omitempty"`
 
 	MetadataRelationshipControllingField string `json:"metadataRelationshipControllingField,omitempty"`
+
+	// CompoundFieldName names the custom Address field that generated this
+	// component field; source metadata never declares components.
+	CompoundFieldName string `json:"compoundFieldName,omitempty"`
 }
 
 type FilteredLookupInfo struct {
@@ -457,6 +462,8 @@ func LoadProject(p project.Project) (Schema, error) {
 	if err := addCustomTabAccessFields(p, byName); err != nil {
 		return Schema{}, err
 	}
+	addCustomAddressComponentFields(byName)
+	addPersonContactAliases(byName, project.OrgShapeFeatures(p.Root))
 	addReferencedCustomObjects(byName)
 
 	records := make([]CustomMetadataRecord, 0, len(p.CustomMetadataFiles))
@@ -478,6 +485,7 @@ func LoadProject(p project.Project) (Schema, error) {
 		return records[i].File < records[j].File
 	})
 
+	bindProjectStandardValueSets(p, byName, valueSets)
 	out := Schema{Objects: make([]Object, 0, len(byName)), CustomMetadataRecords: records}
 	for _, object := range byName {
 		for i := range object.Fields {
@@ -1122,14 +1130,15 @@ func loadValueSet(path string) ([]PicklistValue, error) {
 }
 
 func applyValueSet(field *Field, valueSets map[string][]PicklistValue) {
-	if field == nil || len(field.PicklistValues) > 0 || strings.TrimSpace(field.ValueSetName) == "" {
+	if field == nil || strings.TrimSpace(field.ValueSetName) == "" {
 		return
 	}
-	values := valueSets[strings.ToLower(field.ValueSetName)]
-	if len(values) == 0 {
+	values, ok := valueSets[strings.ToLower(field.ValueSetName)]
+	if !ok || len(values) == 0 {
 		return
 	}
-	field.PicklistValues = append([]PicklistValue(nil), values...)
+	field.PicklistValues = make([]PicklistValue, len(values))
+	copy(field.PicklistValues, values)
 }
 
 func summaryFiltersFromXML(raw []summaryFilterXML) []SummaryFilter {

@@ -1,0 +1,109 @@
+source_api	route	case_id	observation
+62.0	istest	NV001	{"returned":true}
+62.0	istest	NV002	{"returned":true}
+62.0	istest	NV003	{"returned":true}
+62.0	istest	NV004	{"returned":true}
+62.0	istest	NV005	{"returned":true}
+62.0	istest	NV006	{"returned":true}
+62.0	istest	NV007	{"returned":true}
+62.0	istest	NV008	{"returned":true}
+62.0	istest	NV009	{"returned":true}
+62.0	istest	NV010	{"returned":true}
+62.0	istest	NV011	{"returned":true}
+62.0	istest	NV012	{"returned":true}
+62.0	istest	NV013	{"returned":true}
+62.0	istest	NV014	{"returned":true}
+62.0	istest	NV015	{"returned":true}
+62.0	istest	NV016	{"returned":true}
+62.0	istest	NV017	{"returned":true}
+62.0	istest	NV018	{"returned":true}
+62.0	istest	NV019	{"returned":true}
+62.0	istest	NV020	{"returned":true}
+62.0	istest	NV021	{"returned":true}
+62.0	istest	NV022	{"returned":true}
+62.0	istest	NV023	{"returned":true}
+62.0	istest	NV024	{"returned":true}
+62.0	istest	NV025	{"returned":true}
+62.0	istest	OP_1	{"parentEmailSingle":false,"parentOmitted":false,"stored":{"PermissionsCreate":false,"PermissionsDelete":false,"PermissionsEdit":false,"PermissionsModifyAllRecords":false,"PermissionsRead":true,"PermissionsViewAllRecords":false},"success":true,"viewAllFieldsAvailable":false}
+62.0	istest	OP_2	{"parentEmailSingle":false,"parentOmitted":false,"stored":{"PermissionsCreate":true,"PermissionsDelete":true,"PermissionsEdit":true,"PermissionsModifyAllRecords":false,"PermissionsRead":true,"PermissionsViewAllRecords":false},"success":true,"viewAllFieldsAvailable":false}
+62.0	istest	OP_3	{"parentEmailSingle":false,"parentOmitted":false,"stored":{"PermissionsCreate":false,"PermissionsDelete":false,"PermissionsEdit":false,"PermissionsModifyAllRecords":false,"PermissionsRead":true,"PermissionsViewAllRecords":false},"success":true,"viewAllFieldsAvailable":false}
+62.0	istest	OP_R	{"errors":["INVALID_CROSS_REFERENCE_KEY"],"parentEmailSingle":false,"parentOmitted":false,"success":false,"viewAllFieldsAvailable":false}
+62.0	anonymous	OP_1	{"parentEmailSingle":false,"parentOmitted":false,"stored":{"PermissionsCreate":false,"PermissionsDelete":false,"PermissionsEdit":false,"PermissionsModifyAllRecords":false,"PermissionsRead":true,"PermissionsViewAllRecords":false},"success":true,"viewAllFieldsAvailable":false}
+62.0	anonymous	OP_2	{"parentEmailSingle":false,"parentOmitted":false,"stored":{"PermissionsCreate":true,"PermissionsDelete":true,"PermissionsEdit":true,"PermissionsModifyAllRecords":false,"PermissionsRead":true,"PermissionsViewAllRecords":false},"success":true,"viewAllFieldsAvailable":false}
+62.0	anonymous	OP_3	{"parentEmailSingle":false,"parentOmitted":false,"stored":{"PermissionsCreate":false,"PermissionsDelete":false,"PermissionsEdit":false,"PermissionsModifyAllRecords":false,"PermissionsRead":true,"PermissionsViewAllRecords":false},"success":true,"viewAllFieldsAvailable":false}
+62.0	anonymous	OP_R	{"errors":["INVALID_CROSS_REFERENCE_KEY"],"parentEmailSingle":false,"parentOmitted":false,"success":false,"viewAllFieldsAvailable":false}
+67.0	istest	NV001	{"returned":true}
+67.0	istest	NV002	{"returned":true}
+67.0	istest	NV003	{"returned":true}
+67.0	istest	NV004	{"returned":true}
+67.0	istest	NV005	{"returned":true}
+67.0	istest	NV006	{"returned":true}
+67.0	istest	NV007	{"returned":true}
+67.0	istest	NV008	{"returned":true}
+67.0	istest	NV009	{"returned":true}
+67.0	istest	NV010	{"returned":true}
+67.0	istest	NV011	{"returned":true}
+67.0	istest	NV012	{"returned":true}
+67.0	istest	NV013	{"returned":true}
+67.0	istest	NV014	{"returned":true}
+67.0	istest	NV015	{"returned":true}
+67.0	istest	NV016	{"returned":true}
+67.0	istest	NV017	{"returned":true}
+67.0	istest	NV018	{"returned":true}
+67.0	istest	NV019	{"returned":true}
+67.0	istest	NV020	{"returned":true}
+67.0	istest	NV021	{"returned":true}
+67.0	istest	NV022	{"returned":true}
+67.0	istest	NV023	{"returned":true}
+67.0	istest	NV024	{"returned":true}
+67.0	istest	NV025	{"returned":true}
+67.0	istest	OP_1	{"parentEmailSingle":false,"parentOmitted":false,"stored":{"PermissionsCreate":false,"PermissionsDelete":false,"PermissionsEdit":false,"PermissionsModifyAllRecords":false,"PermissionsRead":true,"PermissionsViewAllFields":false,"PermissionsViewAllRecords":false},"success":true,"viewAllFieldsAvailable":true}
+67.0	istest	OP_2	{"parentEmailSingle":false,"parentOmitted":false,"stored":{"PermissionsCreate":true,"PermissionsDelete":true,"PermissionsEdit":true,"PermissionsModifyAllRecords":false,"PermissionsRead":true,"PermissionsViewAllFields":false,"PermissionsViewAllRecords":false},"success":true,"viewAllFieldsAvailable":true}
+67.0	istest	OP_3	{"parentEmailSingle":false,"parentOmitted":false,"stored":{"PermissionsCreate":false,"PermissionsDelete":false,"PermissionsEdit":false,"PermissionsModifyAllRecords":false,"PermissionsRead":true,"PermissionsViewAllFields":false,"PermissionsViewAllRecords":false},"success":true,"viewAllFieldsAvailable":true}
+67.0	istest	OP_R	{"errors":["INVALID_CROSS_REFERENCE_KEY"],"parentEmailSingle":false,"parentOmitted":false,"success":false,"viewAllFieldsAvailable":true}
+67.0	anonymous	OP_1	{"parentEmailSingle":false,"parentOmitted":false,"stored":{"PermissionsCreate":false,"PermissionsDelete":false,"PermissionsEdit":false,"PermissionsModifyAllRecords":false,"PermissionsRead":true,"PermissionsViewAllFields":false,"PermissionsViewAllRecords":false},"success":true,"viewAllFieldsAvailable":true}
+67.0	anonymous	OP_2	{"parentEmailSingle":false,"parentOmitted":false,"stored":{"PermissionsCreate":true,"PermissionsDelete":true,"PermissionsEdit":true,"PermissionsModifyAllRecords":false,"PermissionsRead":true,"PermissionsViewAllFields":false,"PermissionsViewAllRecords":false},"success":true,"viewAllFieldsAvailable":true}
+67.0	anonymous	OP_3	{"parentEmailSingle":false,"parentOmitted":false,"stored":{"PermissionsCreate":false,"PermissionsDelete":false,"PermissionsEdit":false,"PermissionsModifyAllRecords":false,"PermissionsRead":true,"PermissionsViewAllFields":false,"PermissionsViewAllRecords":false},"success":true,"viewAllFieldsAvailable":true}
+67.0	anonymous	OP_R	{"errors":["INVALID_CROSS_REFERENCE_KEY"],"parentEmailSingle":false,"parentOmitted":false,"success":false,"viewAllFieldsAvailable":true}
+62.0	anonymous	NV002	{"exceptionMessage":"Missing required input parameter: customNotifTypeId","exceptionType":"System.HandledException","stage":"send"}
+62.0	anonymous	NV003	{"exceptionMessage":"Missing required input parameter: customNotifTypeId","exceptionType":"System.HandledException","stage":"send"}
+62.0	anonymous	NV004	{"exceptionMessage":"Invalid parameter value for: customNotifTypeId","exceptionType":"System.HandledException","stage":"send"}
+62.0	anonymous	NV005	{"exceptionMessage":"Missing required input parameter: title","exceptionType":"System.HandledException","stage":"send"}
+62.0	anonymous	NV006	{"exceptionMessage":"Missing required input parameter: title","exceptionType":"System.HandledException","stage":"send"}
+62.0	anonymous	NV007	{"returned":true}
+62.0	anonymous	NV008	{"exceptionMessage":"Missing required input parameter: body","exceptionType":"System.HandledException","stage":"send"}
+62.0	anonymous	NV009	{"exceptionMessage":"Missing required input parameter: body","exceptionType":"System.HandledException","stage":"send"}
+62.0	anonymous	NV010	{"returned":true}
+62.0	anonymous	NV011	{"exceptionMessage":"You can't send a custom notification without a navigation target. Specify either a Target ID or Target Page Reference on the Send Custom Notification action.","exceptionType":"System.HandledException","stage":"send"}
+62.0	anonymous	NV012	{"exceptionMessage":"You can't send a custom notification without a navigation target. Specify either a Target ID or Target Page Reference on the Send Custom Notification action.","exceptionType":"System.HandledException","stage":"send"}
+62.0	anonymous	NV013	{"exceptionMessage":"Invalid parameter value for: targetId","exceptionType":"System.HandledException","stage":"send"}
+62.0	anonymous	NV014	{"exceptionMessage":"Missing required input parameter: recipientIds","exceptionType":"System.HandledException","stage":"send"}
+62.0	anonymous	NV015	{"exceptionMessage":"Missing parameter: recipientIds","exceptionType":"System.HandledException","stage":"send"}
+62.0	anonymous	NV016	{"exceptionMessage":"Limit exceeded. Number of recipientIds must be 500 or less.","exceptionType":"System.HandledException","stage":"send"}
+62.0	anonymous	NV017	{"exceptionMessage":"Invalid parameter value for: recipientIds","exceptionType":"System.HandledException","stage":"send"}
+62.0	anonymous	NV018	{"exceptionMessage":"Invalid parameter value for: recipientIds","exceptionType":"System.HandledException","stage":"send"}
+62.0	anonymous	NV019	{"exceptionMessage":"Invalid parameter value for: senderId","exceptionType":"System.HandledException","stage":"send"}
+62.0	anonymous	NV022	{"exceptionMessage":"Missing required input parameter: title","exceptionType":"System.HandledException","stage":"send"}
+62.0	anonymous	NV024	{"exceptionMessage":"Invalid parameter value for: customNotifTypeId","exceptionType":"System.HandledException","stage":"send"}
+62.0	anonymous	NV025	{"exceptionMessage":"Invalid parameter value for: targetPageRef","exceptionType":"System.HandledException","stage":"send"}
+67.0	anonymous	NV002	{"exceptionMessage":"Missing required input parameter: customNotifTypeId","exceptionType":"System.HandledException","stage":"send"}
+67.0	anonymous	NV003	{"exceptionMessage":"Missing required input parameter: customNotifTypeId","exceptionType":"System.HandledException","stage":"send"}
+67.0	anonymous	NV004	{"exceptionMessage":"Invalid parameter value for: customNotifTypeId","exceptionType":"System.HandledException","stage":"send"}
+67.0	anonymous	NV005	{"exceptionMessage":"Missing required input parameter: title","exceptionType":"System.HandledException","stage":"send"}
+67.0	anonymous	NV006	{"exceptionMessage":"Missing required input parameter: title","exceptionType":"System.HandledException","stage":"send"}
+67.0	anonymous	NV007	{"returned":true}
+67.0	anonymous	NV008	{"exceptionMessage":"Missing required input parameter: body","exceptionType":"System.HandledException","stage":"send"}
+67.0	anonymous	NV009	{"exceptionMessage":"Missing required input parameter: body","exceptionType":"System.HandledException","stage":"send"}
+67.0	anonymous	NV010	{"returned":true}
+67.0	anonymous	NV011	{"exceptionMessage":"You can't send a custom notification without a navigation target. Specify either a Target ID or Target Page Reference on the Send Custom Notification action.","exceptionType":"System.HandledException","stage":"send"}
+67.0	anonymous	NV012	{"exceptionMessage":"You can't send a custom notification without a navigation target. Specify either a Target ID or Target Page Reference on the Send Custom Notification action.","exceptionType":"System.HandledException","stage":"send"}
+67.0	anonymous	NV013	{"exceptionMessage":"Invalid parameter value for: targetId","exceptionType":"System.HandledException","stage":"send"}
+67.0	anonymous	NV014	{"exceptionMessage":"Missing required input parameter: recipientIds","exceptionType":"System.HandledException","stage":"send"}
+67.0	anonymous	NV015	{"exceptionMessage":"Missing parameter: recipientIds","exceptionType":"System.HandledException","stage":"send"}
+67.0	anonymous	NV016	{"exceptionMessage":"Limit exceeded. Number of recipientIds must be 500 or less.","exceptionType":"System.HandledException","stage":"send"}
+67.0	anonymous	NV017	{"exceptionMessage":"Invalid parameter value for: recipientIds","exceptionType":"System.HandledException","stage":"send"}
+67.0	anonymous	NV018	{"exceptionMessage":"Invalid parameter value for: recipientIds","exceptionType":"System.HandledException","stage":"send"}
+67.0	anonymous	NV019	{"exceptionMessage":"Invalid parameter value for: senderId","exceptionType":"System.HandledException","stage":"send"}
+67.0	anonymous	NV022	{"exceptionMessage":"Missing required input parameter: title","exceptionType":"System.HandledException","stage":"send"}
+67.0	anonymous	NV024	{"exceptionMessage":"Invalid parameter value for: customNotifTypeId","exceptionType":"System.HandledException","stage":"send"}
+67.0	anonymous	NV025	{"exceptionMessage":"Invalid parameter value for: targetPageRef","exceptionType":"System.HandledException","stage":"send"}

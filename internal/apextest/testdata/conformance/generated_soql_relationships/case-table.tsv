@@ -1,0 +1,12 @@
+case_id	behavior	source_shape	observation_key	expected_json
+account_filter_parent_name	relationship predicate on Account	Related_Person__r.Name in WHERE	accountFilterParentNameCount	1
+account_filter_parent_custom_field	custom parent field predicate on Account	Related_Person__r.External_Key__c in WHERE	accountFilterParentCustomFieldCount	1
+dynamic_query_parent_custom_field_filter	dynamic generated query relationship predicate	Database.query with a parent custom-field IN bind and a second AND predicate	dynamicRelationshipFilterCount	1
+dynamic_query_two_hop_parent_filter	dynamic generated query two-hop relationship predicate	Database.query from a custom child through two lookup relationships with a custom-field IN bind and a second AND predicate	twoHopDynamicRelationshipFilterCount	1
+account_project_parent_fields	one-hop relationship projection	Related_Person__r fields in SELECT followed by safe-navigation dereference	accountProjectedSafeName	"Probe Person"
+case_project_nested_parent_field	two-hop relationship projection	Account.Related_Person__r field in SELECT followed by a three-member safe-navigation chain	caseProjectedSafeKey	"CODE-123"
+flow_get_records_parent_field	Flow Get Records relationship output	Get Account output referenced as Related_Person__r.External_Key__c	flowGetRecordsRelatedKey	"CODE-123"
+flow_get_records_two_hop_parent_field	Flow Get Records two-hop relationship output	Get Conversation output through Related_Account__r.Related_Person__r.External_Key__c with OR lookup/id filters	twoHopFlowGetRecordsRelatedKey	"CODE-123"
+record_type_query_result_safe_navigation	query result safe navigation	RecordType single-row query follows a safe-navigation metadata bind and ends with ?.Id	recordTypeQueryResultSafeNavigation	true
+record_type_safe_navigation_bind	SOQL bind safe navigation	RecordType filter uses :setting?.Record_Type_Name__c	recordTypeBindName	"Native_Probe"
+user_nested_parent_field	three-part relationship projection	User.Account.Related_Person__r.External_Key__c with a safe-navigation chain	userNestedRelatedKey	null

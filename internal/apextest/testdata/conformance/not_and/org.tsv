@@ -1,0 +1,121 @@
+source_api	route	case_id	observation
+62.0	anonymous	scalar_and_false	[]
+62.0	anonymous	scalar_empty	["Aster","Birch","Cedar"]
+62.0	anonymous	scalar_empty_scope	[]
+62.0	anonymous	scalar_group	["Cedar"]
+62.0	anonymous	scalar_inline	["Cedar"]
+62.0	anonymous	scalar_inner_group	{"message":"unexpected token: 'AND'","type":"System.QueryException"}
+62.0	anonymous	scalar_lower	["Cedar"]
+62.0	anonymous	scalar_standalone	["Cedar"]
+62.0	anonymous	scalar_ungrouped	{"message":"unexpected token: 'AND'","type":"System.QueryException"}
+62.0	anonymous	scalar_ungrouped_lower	{"message":"unexpected token: 'and'","type":"System.QueryException"}
+62.0	anonymous	semi_and_false	[]
+62.0	anonymous	semi_empty	[]
+62.0	anonymous	semi_empty_scope	[]
+62.0	anonymous	semi_group	[]
+62.0	anonymous	semi_inline	[]
+62.0	anonymous	semi_inner_group	{"message":"unexpected token: 'AND'","type":"System.QueryException"}
+62.0	anonymous	semi_lower	[]
+62.0	anonymous	semi_standalone	{"message":"'NOT' operator cannot be combined with semi/anti join subqueries","type":"System.QueryException"}
+62.0	anonymous	semi_ungrouped	{"message":"unexpected token: 'AND'","type":"System.QueryException"}
+62.0	anonymous	semi_ungrouped_lower	{"message":"unexpected token: 'and'","type":"System.QueryException"}
+62.0	isTest_explicit	scalar_and_false	[]
+62.0	isTest_explicit	scalar_empty	["Aster","Birch","Cedar"]
+62.0	isTest_explicit	scalar_empty_scope	[]
+62.0	isTest_explicit	scalar_group	["Cedar"]
+62.0	isTest_explicit	scalar_inline	["Cedar"]
+62.0	isTest_explicit	scalar_inner_group	{"message":"unexpected token: 'AND'","type":"System.QueryException"}
+62.0	isTest_explicit	scalar_lower	["Cedar"]
+62.0	isTest_explicit	scalar_standalone	["Cedar"]
+62.0	isTest_explicit	scalar_ungrouped	{"message":"unexpected token: 'AND'","type":"System.QueryException"}
+62.0	isTest_explicit	scalar_ungrouped_lower	{"message":"unexpected token: 'and'","type":"System.QueryException"}
+62.0	isTest_explicit	semi_and_false	[]
+62.0	isTest_explicit	semi_empty	[]
+62.0	isTest_explicit	semi_empty_scope	[]
+62.0	isTest_explicit	semi_group	[]
+62.0	isTest_explicit	semi_inline	[]
+62.0	isTest_explicit	semi_inner_group	{"message":"unexpected token: 'AND'","type":"System.QueryException"}
+62.0	isTest_explicit	semi_lower	[]
+62.0	isTest_explicit	semi_standalone	{"message":"'NOT' operator cannot be combined with semi/anti join subqueries","type":"System.QueryException"}
+62.0	isTest_explicit	semi_ungrouped	{"message":"unexpected token: 'AND'","type":"System.QueryException"}
+62.0	isTest_explicit	semi_ungrouped_lower	{"message":"unexpected token: 'and'","type":"System.QueryException"}
+62.0	isTest_default	scalar_and_false	[]
+62.0	isTest_default	scalar_empty	["Aster","Birch","Cedar"]
+62.0	isTest_default	scalar_empty_scope	[]
+62.0	isTest_default	scalar_group	["Cedar"]
+62.0	isTest_default	scalar_inline	["Cedar"]
+62.0	isTest_default	scalar_inner_group	{"message":"unexpected token: 'AND'","type":"System.QueryException"}
+62.0	isTest_default	scalar_lower	["Cedar"]
+62.0	isTest_default	scalar_standalone	["Cedar"]
+62.0	isTest_default	scalar_ungrouped	{"message":"unexpected token: 'AND'","type":"System.QueryException"}
+62.0	isTest_default	scalar_ungrouped_lower	{"message":"unexpected token: 'and'","type":"System.QueryException"}
+62.0	isTest_default	semi_and_false	[]
+62.0	isTest_default	semi_empty	[]
+62.0	isTest_default	semi_empty_scope	[]
+62.0	isTest_default	semi_group	[]
+62.0	isTest_default	semi_inline	[]
+62.0	isTest_default	semi_inner_group	{"message":"unexpected token: 'AND'","type":"System.QueryException"}
+62.0	isTest_default	semi_lower	[]
+62.0	isTest_default	semi_standalone	{"message":"'NOT' operator cannot be combined with semi/anti join subqueries","type":"System.QueryException"}
+62.0	isTest_default	semi_ungrouped	{"message":"unexpected token: 'AND'","type":"System.QueryException"}
+62.0	isTest_default	semi_ungrouped_lower	{"message":"unexpected token: 'and'","type":"System.QueryException"}
+67.0	anonymous	scalar_and_false	[]
+67.0	anonymous	scalar_empty	["Aster","Birch","Cedar"]
+67.0	anonymous	scalar_empty_scope	[]
+67.0	anonymous	scalar_group	["Cedar"]
+67.0	anonymous	scalar_inline	["Cedar"]
+67.0	anonymous	scalar_inner_group	{"message":"unexpected token: 'AND'","type":"System.QueryException"}
+67.0	anonymous	scalar_lower	["Cedar"]
+67.0	anonymous	scalar_standalone	["Cedar"]
+67.0	anonymous	scalar_ungrouped	{"message":"unexpected token: 'AND'","type":"System.QueryException"}
+67.0	anonymous	scalar_ungrouped_lower	{"message":"unexpected token: 'and'","type":"System.QueryException"}
+67.0	anonymous	semi_and_false	[]
+67.0	anonymous	semi_empty	[]
+67.0	anonymous	semi_empty_scope	[]
+67.0	anonymous	semi_group	[]
+67.0	anonymous	semi_inline	[]
+67.0	anonymous	semi_inner_group	{"message":"unexpected token: 'AND'","type":"System.QueryException"}
+67.0	anonymous	semi_lower	[]
+67.0	anonymous	semi_standalone	{"message":"'NOT' operator cannot be combined with semi/anti join subqueries","type":"System.QueryException"}
+67.0	anonymous	semi_ungrouped	{"message":"unexpected token: 'AND'","type":"System.QueryException"}
+67.0	anonymous	semi_ungrouped_lower	{"message":"unexpected token: 'and'","type":"System.QueryException"}
+67.0	isTest_explicit	scalar_and_false	[]
+67.0	isTest_explicit	scalar_empty	["Aster","Birch","Cedar"]
+67.0	isTest_explicit	scalar_empty_scope	[]
+67.0	isTest_explicit	scalar_group	["Cedar"]
+67.0	isTest_explicit	scalar_inline	["Cedar"]
+67.0	isTest_explicit	scalar_inner_group	{"message":"unexpected token: 'AND'","type":"System.QueryException"}
+67.0	isTest_explicit	scalar_lower	["Cedar"]
+67.0	isTest_explicit	scalar_standalone	["Cedar"]
+67.0	isTest_explicit	scalar_ungrouped	{"message":"unexpected token: 'AND'","type":"System.QueryException"}
+67.0	isTest_explicit	scalar_ungrouped_lower	{"message":"unexpected token: 'and'","type":"System.QueryException"}
+67.0	isTest_explicit	semi_and_false	[]
+67.0	isTest_explicit	semi_empty	[]
+67.0	isTest_explicit	semi_empty_scope	[]
+67.0	isTest_explicit	semi_group	[]
+67.0	isTest_explicit	semi_inline	[]
+67.0	isTest_explicit	semi_inner_group	{"message":"unexpected token: 'AND'","type":"System.QueryException"}
+67.0	isTest_explicit	semi_lower	[]
+67.0	isTest_explicit	semi_standalone	{"message":"'NOT' operator cannot be combined with semi/anti join subqueries","type":"System.QueryException"}
+67.0	isTest_explicit	semi_ungrouped	{"message":"unexpected token: 'AND'","type":"System.QueryException"}
+67.0	isTest_explicit	semi_ungrouped_lower	{"message":"unexpected token: 'and'","type":"System.QueryException"}
+67.0	isTest_default	scalar_and_false	[]
+67.0	isTest_default	scalar_empty	["Aster","Birch","Cedar"]
+67.0	isTest_default	scalar_empty_scope	[]
+67.0	isTest_default	scalar_group	["Cedar"]
+67.0	isTest_default	scalar_inline	["Cedar"]
+67.0	isTest_default	scalar_inner_group	{"message":"unexpected token: 'AND'","type":"System.QueryException"}
+67.0	isTest_default	scalar_lower	["Cedar"]
+67.0	isTest_default	scalar_standalone	["Cedar"]
+67.0	isTest_default	scalar_ungrouped	{"message":"unexpected token: 'AND'","type":"System.QueryException"}
+67.0	isTest_default	scalar_ungrouped_lower	{"message":"unexpected token: 'and'","type":"System.QueryException"}
+67.0	isTest_default	semi_and_false	[]
+67.0	isTest_default	semi_empty	[]
+67.0	isTest_default	semi_empty_scope	[]
+67.0	isTest_default	semi_group	[]
+67.0	isTest_default	semi_inline	[]
+67.0	isTest_default	semi_inner_group	{"message":"unexpected token: 'AND'","type":"System.QueryException"}
+67.0	isTest_default	semi_lower	[]
+67.0	isTest_default	semi_standalone	{"message":"'NOT' operator cannot be combined with semi/anti join subqueries","type":"System.QueryException"}
+67.0	isTest_default	semi_ungrouped	{"message":"unexpected token: 'AND'","type":"System.QueryException"}
+67.0	isTest_default	semi_ungrouped_lower	{"message":"unexpected token: 'and'","type":"System.QueryException"}

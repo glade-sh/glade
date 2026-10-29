@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>PriorPickGate</fullName>
+    <active>true</active>
+    <errorConditionFormula>AND(NOT(ISNEW()), ISCHANGED(PickValue__c), ISPICKVAL(PRIORVALUE(PickValue__c), &quot;Open&quot;), ISPICKVAL(PickValue__c, &quot;BlockOne&quot;))</errorConditionFormula>
+    <errorMessage>Prior picklist value blocked</errorMessage>
+</ValidationRule>

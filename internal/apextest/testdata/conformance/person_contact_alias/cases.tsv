@@ -1,0 +1,11 @@
+id	purpose
+textExists	Contact Text field creates Account alias
+booleanExists	Contact Checkbox field creates Account alias
+missingAbsent	Undeclared fields remain absent
+textType	Preserve Text type
+textLength	Preserve Text length
+booleanType	Preserve Checkbox type
+constructed	Static constructor and read
+queried	Insert and static query
+updated	Update and query
+cleared	Clear and query

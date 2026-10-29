@@ -1,0 +1,1772 @@
+[
+  {
+    "code": "",
+    "object": "Account",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AccountBrand",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AccountBrandShare",
+    "status": 200
+  },
+  {
+    "code": "NOT_FOUND",
+    "object": "AccountContactRelation",
+    "status": 404
+  },
+  {
+    "code": "NOT_FOUND",
+    "object": "AccountTeamMember",
+    "status": 404
+  },
+  {
+    "code": "",
+    "object": "ApexClass",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApexTrigger",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Asset",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AsyncApexJob",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AsyncOperationTracker",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AsyncOperationTrackerShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Attachment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Audience",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BusinessHours",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BuyerAccount",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BuyerAccountFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BuyerAccountHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BuyerAccountShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BuyerCriteria",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BuyerCriteriaFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BuyerCriteriaHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BuyerCriteriaShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BuyerGroup",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BuyerGroupBuyerCriteria",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BuyerGroupBuyerCriteriaChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BuyerGroupBuyerCriteriaHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BuyerGroupFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BuyerGroupHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BuyerGroupMember",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BuyerGroupMemberShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BuyerGroupPricebook",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BuyerGroupPricebookFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BuyerGroupRelatedObject",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BuyerGroupRelatedObjectFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BuyerGroupRelatedObjectHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BuyerGroupShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CalculatedInsightRangeBound",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CalculatedInsightRangeBoundShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Campaign",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CampaignMember",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CartCheckoutSession",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CartDeliveryGroup",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CartDeliveryGroupChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CartDeliveryGroupMethod",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CartDeliveryGroupMethodAdj",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CartItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CartItemChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CartItemPriceAdjustment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CartItemPriceAdjustmentChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CartRelatedItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CartRelatedItemChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CartTax",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CartTaxChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CartValidationOutput",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CartValidationOutputChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Case",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CaseComment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChannelProgram",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChannelProgramFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChannelProgramHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChannelProgramLevel",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChannelProgramLevelFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChannelProgramLevelHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChannelProgramLevelShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChannelProgramMember",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChannelProgramMemberFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChannelProgramMemberHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChannelProgramMemberShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChannelProgramShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CollaborationGroup",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CommerceConfigRelatedRecord",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CommerceConfigRelatedRecordShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CommerceDiagnosticEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CommerceEntitlementBuyerGroup",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CommerceEntitlementBuyerGroupChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CommerceEntitlementPolicy",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CommerceEntitlementPolicyChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CommerceEntitlementPolicyFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CommerceEntitlementPolicyHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CommerceEntitlementPolicyShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CommerceEntitlementProduct",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CommerceEntitlementProductChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Contact",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentDocument",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentDocumentLink",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentVersion",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Contract",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Coupon",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CouponChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CouponCodeRedemption",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CouponCodeRedemptionShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CouponFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CouponHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CouponShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CronTrigger",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Dashboard",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DelegatedAccount",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DelegatedAccountFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DelegatedAccountHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DelegatedAccountShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Document",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ElectronicMediaGroup",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ElectronicMediaGroupHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ElectronicMediaGroupShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ElectronicMediaUse",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EmailMessage",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EmailTemplate",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Entitlement",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EntitySubscription",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Event",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExperienceDiagnosticEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FOStatusChangedEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FeedItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Folder",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FulfillOrdItemQtyChgEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FulfillmentLineRel",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FulfillmentOrder",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FulfillmentOrderChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FulfillmentOrderFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FulfillmentOrderItemAdjustment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FulfillmentOrderItemAdjustmentFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FulfillmentOrderItemTax",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FulfillmentOrderItemTaxChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FulfillmentOrderItemTaxFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FulfillmentOrderLineItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FulfillmentOrderLineItemChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FulfillmentOrderLineItemFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FulfillmentOrderShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "GeoCountry",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "GeoCountryShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "GeoState",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "GoalAssignment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "GoalAssignmentFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "GoalAssignmentHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "GoalAssignmentRecommendation",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "GoalAssignmentRecommendationShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "GoalAssignmentShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "GoalDefinition",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "GoalDefinitionFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "GoalDefinitionHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "GoalDefinitionShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Group",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "GroupMember",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "GuestBuyerProfile",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Individual",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "InventoryItemReservation",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "InventoryReservation",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "InventoryReservationShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Lead",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ListView",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Location",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MobSecurityCertPinConfig",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MobileSecurityAssignment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MobileSecurityPolicy",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MobileSecurityUserMetric",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NavigationLinkSet",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NavigationMenuItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Network",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NetworkActivityAudit",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NetworkAffinity",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NetworkAuthApiSettings",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NetworkDataCategory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NetworkDiscoverableLogin",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NetworkEmailTmplAllowlist",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NetworkFeedResponseMetric",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NetworkMember",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NetworkMemberGroup",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NetworkModeration",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NetworkPageOverride",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NetworkSelfRegistration",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NetworkUserHistoryRecent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Note",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ObjectMetadataTag",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ObjectRelatedUrl",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ObjectRelatedUrlChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Opportunity",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OpportunityContactRole",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OpportunityLineItem",
+    "status": 200
+  },
+  {
+    "code": "NOT_FOUND",
+    "object": "OpportunityTeamMember",
+    "status": 404
+  },
+  {
+    "code": "",
+    "object": "Order",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OrderItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Organization",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Partner",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerFundAllocation",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerFundAllocationFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerFundAllocationHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerFundAllocationShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerFundClaim",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerFundClaimFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerFundClaimHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerFundClaimShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerFundRequest",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerFundRequestFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerFundRequestHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerFundRequestShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerMarketingBudget",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerMarketingBudgetFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerMarketingBudgetHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerMarketingBudgetShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PendingOrdSumProcEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PendingOrderSummary",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PendingOrderSummaryChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PermissionSet",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PermissionSetAssignment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PersonAccountOwnerPowerUser",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PersonalizationTargetInfo",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PortalDelegablePermissionSet",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PriceAdjustmentSchedule",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PriceAdjustmentScheduleFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PriceAdjustmentScheduleHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PriceAdjustmentScheduleShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PriceAdjustmentTier",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PriceAdjustmentTierFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PriceAdjustmentTierHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Pricebook2",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PricebookEntry",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PricebookEntryAdjustment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProcessInstance",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProcessInstanceWorkitem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Product2",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductAttribute",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductAttributeChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductAttributeSet",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductAttributeSetItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductAttributeSetProduct",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductCatalog",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductCatalogChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductCatalogFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductCatalogHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductCatalogShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductCategory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductCategoryChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductCategoryFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductCategoryHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductCategoryMedia",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductCategoryMediaHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductCategoryProduct",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductCategoryProductChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductCategoryProductHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductMedia",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductMediaChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductMediaHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductQuantityRule",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductRelatedComponent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductRelatedComponentChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductRelationshipType",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductSellingModel",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductSellingModelFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductSellingModelHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductSellingModelOption",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Profile",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Promotion",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionLineItemRule",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionLineItemRuleShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionMarketSegment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionMarketSegmentChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionMarketSegmentFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionMarketSegmentHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionQualifier",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionQualifierFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionQualifierHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionSegment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionSegmentBuyerGroup",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionSegmentBuyerGroupFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionSegmentBuyerGroupHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionSegmentFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionSegmentHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionSegmentSalesStore",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionSegmentSalesStoreFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionSegmentSalesStoreHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionSegmentShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionTarget",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionTargetFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionTargetHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionTier",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionTierFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionTierHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProrationPolicy",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PurchaseQuantityRule",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PurchaseQuantityRuleFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PurchaseQuantityRuleHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PurchaseQuantityRuleShare",
+    "status": 200
+  },
+  {
+    "code": "NOT_FOUND",
+    "object": "Quote",
+    "status": 404
+  },
+  {
+    "code": "NOT_FOUND",
+    "object": "QuoteLineItem",
+    "status": 404
+  },
+  {
+    "code": "",
+    "object": "RecordType",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "RegisteredExternalService",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Report",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ReputationLevel",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ReputationPointsRule",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SalesStore",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SalesStoreCatalog",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceContract",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SharingSet",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShippingCarrier",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShippingCarrierFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShippingCarrierHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShippingCarrierMethod",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShippingCarrierMethodFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShippingCarrierMethodHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShippingCarrierMethodShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShippingCarrierShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShippingConfigSetProduct",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShippingConfigurationSet",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShippingConfigurationSetShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShippingRateArea",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShippingRateGroup",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SiteMarketingDataExtensionMapping",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "StandardShippingRate",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "StaticResource",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "StoreIntegratedService",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Task",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "TaxEngine",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "TaxGeoConfig",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "TaxGeoConfigShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "TaxPolicy",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "TaxRate",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "TaxRateShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "TaxTreatment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Topic",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "User",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserCustomBadge",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserRole",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebCart",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebCartAdjustmentBasis",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebCartAdjustmentBasisChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebCartAdjustmentGroup",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebCartAdjustmentGroupChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebCartChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebCartHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebCartShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebStore",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebStoreBuyerGroup",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebStoreBuyerGroupChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebStoreCatalog",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebStoreCatalogChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebStoreCatalogHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebStoreChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebStoreConfig",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebStoreInventorySource",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebStoreNetwork",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebStorePricebook",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebStorePricebookFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebStoreSearchProdSettings",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebStoreSearchProdSettingsChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebStoreShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebStoreUserCreatedEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Wishlist",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WishlistItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WishlistShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkOrder",
+    "status": 200
+  }
+]

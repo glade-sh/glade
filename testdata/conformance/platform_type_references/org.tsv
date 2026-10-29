@@ -1,0 +1,11 @@
+api	route	case	compiled	success	message
+62.0	anonymous	platform_types	true	true	-
+62.0	anonymous	invalid_system	false	false	Invalid type: System.NotAType
+62.0	named	platform_types	true	true	-
+62.0	istest	platform_types	true	true	-
+62.0	istest	invalid_system	false	false	Invalid type: System.NotAType
+67.0	anonymous	platform_types	true	true	-
+67.0	anonymous	invalid_system	false	false	Invalid type: System.NotAType
+67.0	named	platform_types	true	true	-
+67.0	istest	platform_types	true	true	-
+67.0	istest	invalid_system	false	false	Invalid type: System.NotAType

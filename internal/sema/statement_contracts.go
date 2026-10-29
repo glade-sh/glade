@@ -147,7 +147,10 @@ func (a *Analyzer) checkIRStatementContracts(typ typesys.TypeSymbol, member type
 							diagnostics = append(diagnostics, d)
 						}
 						seenCatchTypes[key] = true
-						if !semaAssignableToType("Exception", catchType, model) {
+						resolvedCatch := resolveNestedTypeReference(model, typ.Name, catchType)
+						deferredCatch := semaUnknownExternalType(model, resolvedCatch) &&
+							semaTypeReferenceKnownAtVersion(a, model, typ.Name, catchType, typ.EffectiveAPIVersion)
+						if !deferredCatch && !semaAssignableToType("Exception", catchType, model) {
 							d := statementContractDiagnostic(typ, member, "catch requires an Exception type", bodyOffset+catchClause.Pos, source)
 							d.NativeMessage = "Catch block variable must be of type exception: " + catchType
 							diagnostics = append(diagnostics, d)

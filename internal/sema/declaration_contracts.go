@@ -73,8 +73,12 @@ func declarationModifierDiagnostics(typ typesys.TypeSymbol) []diagnostic.Diagnos
 				// Native authorization and request context access_controller_private at API 59/67.
 				message = "Top-level type must have public or global visibility"
 			}
-			diagnostics = append(diagnostics, declarationContractDiagnostic(typ, typ.Range,
-				message))
+			d := declarationContractDiagnostic(typ, typ.Range, message)
+			if typ.Kind == apexast.DeclarationClass && !hasAnyAccessModifier(mods) {
+				// Native source_boundary/road131 default-access twins, API 62/67.
+				d.NativeMessage = "Top-level type must have public or global visibility"
+			}
+			diagnostics = append(diagnostics, d)
 		}
 	}
 	if typ.NestingDepth > 1 && (typ.Kind == apexast.DeclarationClass || typ.Kind == apexast.DeclarationInterface || typ.Kind == apexast.DeclarationEnum) {

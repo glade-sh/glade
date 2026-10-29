@@ -4,9 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/glade-sh/glade/internal/project"
 )
 
 type Fixture struct {
@@ -21,7 +24,7 @@ type FixtureOrg struct {
 	APIVersion string   `json:"apiVersion,omitempty"`
 	Namespace  string   `json:"namespace,omitempty"`
 	DomainURL  string   `json:"domainUrl,omitempty"`
-	Features   []string `json:"features,omitempty"`
+	Features   []string `json:"features,omitzero"`
 }
 
 type FixtureObject struct {
@@ -90,7 +93,7 @@ func FixtureFromOrg(org OrgState) Fixture {
 			APIVersion: org.APIVersion,
 			Namespace:  org.Namespace,
 			DomainURL:  org.DomainURL,
-			Features:   append([]string(nil), org.Features...),
+			Features:   slices.Clone(org.Features),
 		},
 		IDSequences: copySequences(org.IDSequences),
 	}
@@ -303,6 +306,27 @@ func containsString(values []string, want string) bool {
 	return false
 }
 
+// ApplyProjectOrgShape replaces the project field-policy certainty while
+// preserving the existing additive capability contract of ApplyOrgShape.
+// Project loaders pass a complete policy profile, including uncertainty when
+// the consumer has not declared its target shape.
+func ApplyProjectOrgShape(org *OrgState, features []string) {
+	if org == nil {
+		return
+	}
+	org.ensureFeatureProfile()
+	previous := make([]string, 0, len(org.Features))
+	for _, feature := range org.Features {
+		if feature != project.UnspecifiedStandardFieldShape {
+			previous = append(previous, feature)
+		}
+	}
+	org.Features = previous
+	ApplyOrgShape(org, features)
+}
+
+// ApplyOrgShape adds capabilities. Adding one feature does not establish the
+// absence of unrelated fields in an otherwise unspecified project shape.
 func ApplyOrgShape(org *OrgState, features []string) {
 	if org == nil {
 		return
@@ -339,6 +363,7 @@ func applyOrgShape(org *OrgState, features []string) {
 			applyAddCustomApps(org, featureArgumentInt(f, 0))
 		}
 	}
+	refreshOrgFeatureObjects(org)
 	refreshOrgFeatureFields(org)
 	if _, ok := org.Objects["RecordType"]; ok {
 		ensureRecordTypeRecords(org)

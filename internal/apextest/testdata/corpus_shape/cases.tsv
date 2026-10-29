@@ -15,6 +15,8 @@ queueable to queueable	queueableToQueueable	submitted callback runs; child enque
 Person Account __pc	personAccountFields	skipped	Person Account __pc field synthesis is not implemented yet
 explicit System.LoggingLevel values beside a project LoggingLevel class	project check and anonymousSchemaSObjectTypes	zero diagnostics	sema/testdata/enum_value_methods/org.tsv:64-67,72-77,144-147
 platform enum name() and ordinal() (Quiddity, JSONToken, DisplayType, LoggingLevel), unqualified and qualified, top-level and inner	project check and anonymousSchemaSObjectTypes	zero diagnostics	sema/testdata/enum_value_methods/org.tsv:64-67,144-147
+Schema-qualified standard and setup objects (Contact, Account, Group, User; generic arguments)	project check and anonymousSchemaSObjectTypes	zero diagnostics	sema/testdata/schema_relationship_gate/org.tsv:301,307,319,325 (apex_explicit_schema)
+unqualified SObjectType.<object>.fields describe forms, standard and custom	project check and anonymousSchemaSObjectTypes	zero diagnostics	conformance/qualified_receivers/cases.tsv:7,8,11,20,21,24 and org.tsv; rejected forms stay receiver_member_routes/org.tsv:30-37,70-77
 platform class constant instance methods, bare and System qualified	project check and enumReceivers	zero diagnostics; runner smoke	conformance/dispatch_followups/org.tsv:12-13; native/org.tsv:6,11
 inner subclass instanceof and casts, duplicate short names, @IsTest inner subclass	project check and enumReceivers/lexicalSystemNames	zero diagnostics; runner smoke	conformance/inner_type_shapes/org.tsv:34-41,64-67,72-73
 simple-name inner instanceof and cast	innerSubclassTargets; anonymous	both true	conformance/dated_dispatch_cache/org.tsv:2-5; conformance/inner_type_shapes/org.tsv:34-41

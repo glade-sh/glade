@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>62.0</apiVersion>
+    <interviewLabel>Cedar_ScalarParent</interviewLabel>
+    <label>Cedar_ScalarParent</label>
+    <processType>AutoLaunchedFlow</processType>
+    <subflows>
+        <name>CallChild</name>
+        <label>CallChild</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <flowName>Cedar_ScalarChild</flowName>
+        <inputAssignments>
+            <name>accountId</name>
+            <value>
+                <elementReference>accountId</elementReference>
+            </value>
+        </inputAssignments>
+    </subflows>
+    <start>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>CallChild</targetReference>
+        </connector>
+    </start>
+    <variables>
+        <name>accountId</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <status>Active</status>
+</Flow>

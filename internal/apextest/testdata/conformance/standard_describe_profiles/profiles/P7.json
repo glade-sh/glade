@@ -1,0 +1,12 @@
+{
+  "orgName": "Standard describe profile P7",
+  "edition": "Developer",
+  "features": [
+    "Entitlements"
+  ],
+  "settings": {
+    "entitlementSettings": {
+      "enableEntitlements": true
+    }
+  }
+}

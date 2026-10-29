@@ -136,7 +136,7 @@ func (e *Engine) applyDefaultRecordTypeID(objectName string, definition storage.
 	}
 	personSignal := forcePersonAccountRecordType(objectName, *record)
 	if value, ok := record.GetField("RecordTypeId"); ok {
-		if personSignal {
+		if personSignal && !explicitPersonAccountRecordType(definition.RecordTypes, idFromStorageValue(value)) {
 			if recordType, found := personAccountRecordType(definition.RecordTypes); found && recordType.ID != "" && idFromStorageValue(value) != recordType.ID {
 				record.Fields["RecordTypeId"] = storage.IDValue(recordType.ID)
 			}
@@ -150,6 +150,9 @@ func (e *Engine) applyDefaultRecordTypeID(objectName string, definition storage.
 		return
 	}
 	recordType, ok := defaultRecordTypeForRecord(objectName, definition.RecordTypes, *record)
+	if strings.EqualFold(objectName, "Account") {
+		recordType, ok = AccountDefaultRecordType(e.Org, e.systemUserID(), definition, *record)
+	}
 	if !ok || recordType.ID == "" || isDescribeOnlyMasterRecordTypeID(recordType.ID) {
 		return
 	}

@@ -1,0 +1,5 @@
+api	case	type	message
+62.0	R065	Metadata.AsyncResult	Invalid type: Metadata.AsyncResult
+62.0	R067	Metadata.CustomField	Invalid type: Metadata.CustomField
+67.0	R065	Metadata.AsyncResult	Invalid type: Metadata.AsyncResult
+67.0	R067	Metadata.CustomField	Invalid type: Metadata.CustomField

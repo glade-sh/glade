@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>IsNewGate</fullName>
+    <active>true</active>
+    <errorConditionFormula>AND(ISNEW(), TextValue__c = &quot;new-block&quot;)</errorConditionFormula>
+    <errorMessage>New record blocked</errorMessage>
+</ValidationRule>

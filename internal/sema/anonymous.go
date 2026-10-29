@@ -30,7 +30,7 @@ func AnalyzeAnonymous(index typesys.Index, source, apiVersion string) Result {
 	setup := anonymousSetupFor(index, apiVersion)
 	analyzer := setup.analyzer()
 	index = setup.index
-	model := setup.typeMembers.view()
+	model := setup.typeMembers.anonymousView()
 	typ, member := anonymousExecuteSymbols(apiVersion, rng)
 	queryChecker := setup.newQueryChecker()
 	queryChecker.apiVersion, _ = apexversion.Major(apiVersion)
@@ -73,7 +73,7 @@ func ApprovedAnonymousPrefixStatements(index typesys.Index, source, apiVersion s
 	rng := diagnostic.Range{Start: diagnostic.Position{Line: 1, Column: 1, Offset: 0}, End: diagnostic.Position{Line: 1, Column: 1 + len(source), Offset: len(source)}}
 	typ, member := anonymousExecuteSymbols(apiVersion, rng)
 	approved := map[int]bool{}
-	if _, compiled := setup.analyzer().checkBodyIRWithScopeOptions(typ, member, source, 0, source, map[string]string{}, setup.typeMembers.view(), buildConstructability(setup.index), true, approved); !compiled || len(approved) == 0 {
+	if _, compiled := setup.analyzer().checkBodyIRWithScopeOptions(typ, member, source, 0, source, map[string]string{}, setup.typeMembers.anonymousView(), buildConstructability(setup.index), true, approved); !compiled || len(approved) == 0 {
 		return nil
 	}
 	return approved

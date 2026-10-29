@@ -31,6 +31,9 @@ type Engine struct {
 	// assignments and lookups for an Apex action. The legacy invoker remains
 	// available for callers that only model the triggering record.
 	FlowActionInvokerWithContext func(storage.FlowAction, storage.Record, FlowActionContext) error
+	// FlowActionBatchInvoker invokes one Apex action for an ordered cohort of
+	// interviews. Each request's Output callback receives its own result.
+	FlowActionBatchInvoker func(storage.FlowAction, []FlowActionRequest) error
 	// InvocableFlowRecordCreator routes scalar Create Records through
 	// the caller's Apex trigger orchestration. Other engines use insertOne.
 	InvocableFlowRecordCreator func(storage.Record) (Result, error)
@@ -77,6 +80,14 @@ type FlowActionContext struct {
 	Scalars           map[string]storage.Value
 	LookupOutputs     map[string]storage.Record
 	LookupCollections map[string][]storage.Record
+	// Output receives this interview's element of the action's returned list.
+	// Missing elements become null. It may be nil.
+	Output func(storage.Value)
+}
+
+type FlowActionRequest struct {
+	Record  storage.Record
+	Context FlowActionContext
 }
 
 // FlowInterviewInput contains the values supplied to an autolaunched Flow
@@ -139,9 +150,15 @@ type Options struct {
 	// Apex insert/update statements enforce duplicate rules; explicit
 	// Database.DMLOptions.DuplicateRuleHeader.allowSave saves Allow+Alert matches.
 	EnforceDuplicateRules, AllowDuplicateSave bool
+	// Captured Apex upsert duplicate rules cover unmatched Id insertion only.
+	// Custom-key inserts and matched updates retain their existing policy.
+	EnforceUpsertIDInsertDuplicateRules bool
 	// Resolved access mode for captured Apex custom-object insert contracts.
 	// Empty preserves non-Apex engine callers' existing record-type defaults.
 	ApexRecordTypeInsertMode string
+	// Captured Apex insert routes reject an explicitly null person-account
+	// record type, independently of their resolved access mode.
+	ApexRejectNullPersonRecordType bool
 	// Consumed by the VM after successful Task DML; it records a notification
 	// request, not delivery or a Messaging.sendEmail invocation.
 	CaptureTaskAssignmentEmail bool
@@ -459,9 +476,12 @@ func (e *Engine) upsert(records []storage.Record, externalIDField string) []Resu
 	results := make([]Result, len(records))
 	restoreUniqueBatch := e.beginUniqueBatchContext(records)
 	defer restoreUniqueBatch()
+	statementStamp := ""
 	for i, record := range records {
 		if record.ID == "" {
-			id, created, err := e.upsertByExternalID(record, externalIDField)
+			// Share duplicate statement identity while retaining per-row audit clocks.
+			statementStamp = ""
+			id, created, err := e.upsertByExternalID(record, externalIDField, &statementStamp)
 			if err != nil {
 				results[i] = resultFromError(record.ID, err)
 				results[i].UpsertCreated = created
@@ -892,6 +912,7 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string) (stora
 	e.applyContractNumberDefault(objectName, &record)
 	applyCustomSettingInsertDefaults(e.Org, object.Definition, &record)
 	applySetupInsertDefaults(objectName, object.Definition, &record)
+	applyOmittedRequiredCheckboxDefaults(object.Definition, &record)
 	e.applyPermissionSetAssignmentDefaults(objectName, &record)
 	e.applyUserContactAccountDefault(objectName, object.Definition, &record)
 	e.applyFileInsertDefaults(objectName, object.Definition, &record)
@@ -929,6 +950,12 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string) (stora
 	}
 	if err := e.validateApexRecordTypeInsert(object.Definition, record); err != nil {
 		return "", err
+	}
+	if strings.EqualFold(objectName, "ObjectPermissions") {
+		parent, supplied := record.GetField("ParentId")
+		if record.HasExplicitNull("ParentId") || supplied && parent.Kind == storage.ValueNull {
+			return "", dmlErrorf("INVALID_CROSS_REFERENCE_KEY", nil, "dml: null ObjectPermissions parent reference")
+		}
 	}
 	if err := e.validateReferences(object.Definition, record); err != nil {
 		return "", err

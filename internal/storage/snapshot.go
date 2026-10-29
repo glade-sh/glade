@@ -1,11 +1,14 @@
 package storage
 
-import "reflect"
+import (
+	"reflect"
+	"slices"
+)
 
 func (t RuntimeTemplate) CloneSnapshotOrg() OrgState {
 	cloneStats.cloneRuntime.Add(1)
 	out := t.Org
-	out.Features = append([]string(nil), t.Org.Features...)
+	out.Features = slices.Clone(t.Org.Features)
 	if t.Org.Objects != nil {
 		out.Objects = make(map[string]ObjectState, len(t.Org.Objects))
 		for name, object := range t.Org.Objects {
@@ -36,7 +39,7 @@ func SnapshotRuntimeOrg(org *OrgState) OrgState {
 		return OrgState{}
 	}
 	out := *org
-	out.Features = append([]string(nil), org.Features...)
+	out.Features = slices.Clone(org.Features)
 	if org.Objects != nil {
 		out.Objects = make(map[string]ObjectState, len(org.Objects))
 		for name, object := range org.Objects {

@@ -73,7 +73,7 @@ func TestSObjectValuesOrgConformance(t *testing.T) {
 	rows = append(rows, data.Cases...)
 	rows = append(rows, data.Controls...)
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "SObject values", api)
 			emptyRoot := t.TempDir()
 			emptyIndex := typesys.Build(project.Project{Root: emptyRoot, SourceAPIVersion: api}, gladeschema.Schema{})

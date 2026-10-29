@@ -23,8 +23,10 @@ func (vm *VM) rememberPublishedObjectFieldRefs(parent, previous, value Value) {
 	}
 	locations := vm.staticValueRefFields[parent.Ref]
 	locations.forEach(func(location staticFieldRef) {
-		vm.forgetStaticAliasChildHintsInField(location)
-		vm.forgetStaticAliasDirectChildrenInField(location)
-		vm.collectStaticFieldValueRefsInField(value, location)
+		// The write publishes exactly this subtree. Only refs inside it can gain
+		// another occurrence in the field; hints and direct-child entries for
+		// untouched refs keep their verified-unique slot, and removals self-heal
+		// because replay re-verifies containment before replacing.
+		vm.collectStaticFieldValueRefsInFieldForgettingHints(value, location, staticAliasChildHint{}, false)
 	})
 }

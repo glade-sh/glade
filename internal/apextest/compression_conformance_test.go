@@ -115,7 +115,7 @@ func TestCompressionOrgConformance(t *testing.T) {
 		return prefix + "try {Object r; " + code + " pq.out('" + tc.ID + "',r);}catch(Exception e){pq.err('" + tc.ID + "',e);}"
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "compression", api)
 			if api == "68.0" {
 				t.Log("API 68: 263 captured anonymous rows; 18 compiler diagnostic text carries; @IsTest checks retain anonymous-backed local assertions without native named-route capture")

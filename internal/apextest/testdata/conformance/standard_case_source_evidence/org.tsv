@@ -1,0 +1,25 @@
+api	route	case	compiled	observation	source_sha256
+62.0	anonymous	membership	true	"{""HasCommentsUnreadByOwner"":false,""IsVisibleInSelfService"":false,""OwnedMissing__c"":false,""SourceId"":true,""Subject"":true}"	bfebe03d66e999b768f2296cddcf5b3a1f6717d6e48bbdc3c46eaa4e2bab9ffd
+62.0	named	membership	true	"{""HasCommentsUnreadByOwner"":false,""IsVisibleInSelfService"":false,""OwnedMissing__c"":false,""SourceId"":true,""Subject"":true}"	a80096a5b567e31cf5878e751819fabb9c27b8e8598aee0c235db977c06080cc
+62.0	test-runner	membership	true	"{""HasCommentsUnreadByOwner"":false,""IsVisibleInSelfService"":false,""OwnedMissing__c"":false,""SourceId"":true,""Subject"":true}"	fe648a74628faf4abe100c318d47af16730db550383c4c470ccc8687f50ba120
+62.0	anonymous	query	true	accepted	1d0499108b061601a9cb1cc6b9322bc19f463403dc1367b97fb8c3239795b537
+62.0	anonymous	missing-query	false	"Compilation failed at Line 1 column 17 with the error:
+
+
+SELECT OwnedMissing__c FROM Case LIMIT
+       ^
+ERROR at Row:1:Column:8
+No such column 'OwnedMissing__c' on entity 'Case'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."	469d3cd84fd045bbf6b53ffe0146bee7fd68e4c5d7f3fdc1f8ec706b3bf27dea
+62.0	anonymous	boundary-query	true	accepted	7f3fa91be37309a2638fbec5c4963b4f8a733e399d1a9f6ca35dc6ba4723ed0c
+67.0	anonymous	membership	true	"{""HasCommentsUnreadByOwner"":false,""IsVisibleInSelfService"":false,""OwnedMissing__c"":false,""SourceId"":true,""Subject"":true}"	bfebe03d66e999b768f2296cddcf5b3a1f6717d6e48bbdc3c46eaa4e2bab9ffd
+67.0	named	membership	true	"{""HasCommentsUnreadByOwner"":false,""IsVisibleInSelfService"":false,""OwnedMissing__c"":false,""SourceId"":true,""Subject"":true}"	4d6a4062350c529c6e84db90b68051142cd1a096e9a14254a3fc2b34bb730ae6
+67.0	test-runner	membership	true	"{""HasCommentsUnreadByOwner"":false,""IsVisibleInSelfService"":false,""OwnedMissing__c"":false,""SourceId"":true,""Subject"":true}"	5fc41cae6541f1bd3f50dcd8fe67157e1ceadb05dd7f9401a7e3605fc23d23a5
+67.0	anonymous	query	true	accepted	1d0499108b061601a9cb1cc6b9322bc19f463403dc1367b97fb8c3239795b537
+67.0	anonymous	missing-query	false	"Compilation failed at Line 1 column 17 with the error:
+
+
+SELECT OwnedMissing__c FROM Case LIMIT
+       ^
+ERROR at Row:1:Column:8
+No such column 'OwnedMissing__c' on entity 'Case'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."	469d3cd84fd045bbf6b53ffe0146bee7fd68e4c5d7f3fdc1f8ec706b3bf27dea
+67.0	anonymous	boundary-query	true	accepted	7f3fa91be37309a2638fbec5c4963b4f8a733e399d1a9f6ca35dc6ba4723ed0c

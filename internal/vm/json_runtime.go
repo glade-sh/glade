@@ -7,7 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"maps"
+	"iter"
 	"math"
 	"math/big"
 	"reflect"
@@ -17,6 +17,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+	"unicode"
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/apexversion"
@@ -26,6 +27,10 @@ import (
 const jsonCyclicConversionMessage = "Glade: cyclic object reference cannot be converted to JSON (native behaviour not yet captured)"
 
 var jsonChildRelationshipIndexBuilds atomic.Uint64
+
+// childRelationshipObjectStateCopies counts ObjectState values copied into a
+// temporary candidate map. Parent-plan construction must stay at zero.
+var childRelationshipObjectStateCopies atomic.Uint64
 
 // jsonConversionFailure crosses legacy converters and overload scoring whose
 // signatures cannot return an Apex exception. VM execution boundaries recover
@@ -135,8 +140,14 @@ func (w *jsonValueWalker) convert(value Value, suppressObjectNulls bool) any {
 		}
 		return out
 	case ValueObject:
+		if compound, ok := jsonCompoundFromValue(value, suppressObjectNulls, w.convert); ok {
+			return compound
+		}
 		if scalar, ok := jsonPlatformScalarFromValue(value); ok {
 			return scalar
+		}
+		if address, ok := jsonAddressFromValue(value, suppressObjectNulls, w.convert); ok {
+			return address
 		}
 		return jsonSObjectFromValue(value, suppressObjectNulls, w.convert, storage.DefaultRESTAPIVersion, value.Type)
 	default:
@@ -379,8 +390,18 @@ func (vm *VM) jsonFromValueForSerializeWithState(value Value, suppressObjectNull
 				return t.UTC().Format("2006-01-02T15:04:05.000Z")
 			}
 		}
+		if compound, ok := jsonCompoundFromValue(value, suppressObjectNulls, func(item Value, suppress bool) any {
+			return vm.jsonFromValueForSerializeWithState(item, suppress, state)
+		}); ok {
+			return compound
+		}
 		if scalar, ok := jsonPlatformScalarFromValue(value); ok {
 			return scalar
+		}
+		if address, ok := jsonAddressFromValue(value, suppressObjectNulls, func(item Value, suppress bool) any {
+			return vm.jsonFromValueForSerializeWithState(item, suppress, state)
+		}); ok {
+			return address
 		}
 		if serialized, handled := vm.invocableFlowActionJSONValue(value, suppressObjectNulls, state.active); handled {
 			return serialized
@@ -394,11 +415,11 @@ func (vm *VM) jsonFromValueForSerializeWithState(value Value, suppressObjectNull
 				version = vm.Org.APIVersion
 			}
 			urlType := value.Type
-			if value.Type == "Name" && value.Fields[jsonCapturedOwnerProjectionField].Bool {
+			if value.Type == "Name" && (value.Fields[jsonCapturedOwnerProjectionField].Bool || value.Fields[jsonSObjectQueryProjectionField].Runtime == "Name") {
 				// The observed projection retains Name as its SObject type, while
 				// its REST URL names the concrete object identified by its ID.
 				if id, ok := idValueText(value.Fields["Id"]); ok {
-					if concrete, known := vm.sObjectNameForID(id); known && concrete == "User" {
+					if concrete, known := vm.sObjectNameForID(id); known && (concrete == "User" || value.Fields[jsonSObjectQueryProjectionField].Runtime == "Name") {
 						urlType = concrete
 					}
 				}
@@ -406,6 +427,7 @@ func (vm *VM) jsonFromValueForSerializeWithState(value Value, suppressObjectNull
 			// Salesforce preserves null SObject fields for JSON.serialize, even
 			// when the overload's Boolean argument is true. That flag only
 			// suppresses nulls on Apex objects and collections.
+			value = vm.jsonCompoundSObjectValue(value)
 			return jsonSObjectFromValue(value, false, func(item Value, suppress bool) any {
 				return vm.jsonFromValueForSerializeWithState(item, suppress, state)
 			}, version, urlType)
@@ -526,108 +548,82 @@ func (vm *VM) isEnumObjectValue(value Value) bool {
 	return false
 }
 
+// Salesforce indents object fields, while array delimiters and separators stay
+// inline. Native rows include sobject_json queryChildren and
+// json_circular_references dag/deep (source APIs 62 and 67).
 func formatSalesforcePrettyJSON(data []byte) string {
 	var out bytes.Buffer
 	out.Grow(len(data))
-	inString := false
-	escaped := false
+	var containers []byte
+	depth := 0
+	previous := byte(0)
+	inString, escaped := false, false
+	newline := func() {
+		out.WriteByte('\n')
+		for i := 0; i < depth; i++ {
+			out.WriteString("  ")
+		}
+	}
 	for _, b := range data {
 		if inString {
 			out.WriteByte(b)
 			if escaped {
 				escaped = false
-				continue
-			}
-			switch b {
-			case '\\':
+			} else if b == '\\' {
 				escaped = true
-			case '"':
+			} else if b == '"' {
 				inString = false
 			}
+			previous = b
 			continue
+		}
+		if b == ' ' || b == '\t' || b == '\r' || b == '\n' {
+			continue
+		}
+		if previous == '{' && b != '}' {
+			newline()
 		}
 		switch b {
 		case '"':
 			inString = true
 			out.WriteByte(b)
-		case '}', ']':
-			// Native pretty output separates empty delimiters, including nested
-			// values. String contents are handled above and remain unchanged.
-			if out.Len() > 0 {
-				previous := out.Bytes()[out.Len()-1]
-				if b == '}' && previous == '{' || b == ']' && previous == '[' {
-					out.WriteByte(' ')
-				}
-			}
+		case '{':
+			containers = append(containers, b)
+			depth++
 			out.WriteByte(b)
-		case ':':
-			if out.Len() > 0 && out.Bytes()[out.Len()-1] != ' ' {
+		case '}':
+			depth--
+			if previous == '{' {
+				out.WriteByte(' ')
+			} else {
+				newline()
+			}
+			containers = containers[:len(containers)-1]
+			out.WriteByte(b)
+		case '[':
+			containers = append(containers, b)
+			out.WriteString("[ ")
+		case ']':
+			if previous != '[' {
 				out.WriteByte(' ')
 			}
+			containers = containers[:len(containers)-1]
 			out.WriteByte(b)
+		case ',':
+			out.WriteByte(b)
+			if containers[len(containers)-1] == '{' {
+				newline()
+			} else {
+				out.WriteByte(' ')
+			}
+		case ':':
+			out.WriteString(" : ")
 		default:
 			out.WriteByte(b)
 		}
+		previous = b
 	}
-	return collapseSalesforcePrettyPrimitiveArrays(out.String())
-}
-
-func collapseSalesforcePrettyPrimitiveArrays(text string) string {
-	lines := strings.Split(text, "\n")
-	out := make([]string, 0, len(lines))
-	for i := 0; i < len(lines); i++ {
-		line := lines[i]
-		trimmed := strings.TrimSpace(line)
-		if !strings.HasSuffix(trimmed, "[") {
-			out = append(out, line)
-			continue
-		}
-		indent := line[:len(line)-len(strings.TrimLeft(line, " "))]
-		items := make([]string, 0)
-		j := i + 1
-		for ; j < len(lines); j++ {
-			itemLine := strings.TrimSpace(lines[j])
-			if itemLine == "]" || itemLine == "]," {
-				trailingComma := ""
-				if strings.HasSuffix(itemLine, ",") {
-					trailingComma = ","
-				}
-				if len(items) == 0 {
-					out = append(out, indent+strings.TrimSuffix(trimmed, "[")+"[]"+trailingComma)
-				} else {
-					out = append(out, indent+strings.TrimSuffix(trimmed, "[")+"[ "+strings.Join(items, ", ")+" ]"+trailingComma)
-				}
-				i = j
-				break
-			}
-			item := strings.TrimSuffix(itemLine, ",")
-			if !salesforcePrettyPrimitiveArrayItem(item) {
-				break
-			}
-			items = append(items, item)
-		}
-		if j >= len(lines) || (j < len(lines) && strings.TrimSpace(lines[j]) != "]" && strings.TrimSpace(lines[j]) != "],") {
-			out = append(out, line)
-			continue
-		}
-	}
-	return strings.Join(out, "\n")
-}
-
-func salesforcePrettyPrimitiveArrayItem(item string) bool {
-	if item == "null" || item == "true" || item == "false" {
-		return true
-	}
-	if item == "" || strings.ContainsAny(item, "{}[]") {
-		return false
-	}
-	if item[0] == '"' {
-		return len(item) >= 2 && item[len(item)-1] == '"'
-	}
-	if _, err := strconv.ParseFloat(item, 64); err == nil {
-		return true
-	}
-	return false
+	return out.String()
 }
 
 type orderedJSONField struct {
@@ -766,10 +762,42 @@ func jsonMarshalNoEscapeIndent(value any, prefix, indent string) ([]byte, error)
 	return data, nil
 }
 
+// jsonAddressPropertyOrder is the native System.Address JSON property order:
+// alphabetical, with null properties kept even under suppressNulls (followup
+// rows J01-J11, standard and custom Address values at API 62.0 and 67.0).
+// stateCode and countryCode appear only for an Address that carries them.
+var jsonAddressPropertyOrder = []string{"city", "country", "countryCode", "geocodeAccuracy", "latitude", "longitude", "postalCode", "state", "stateCode", "street"}
+
+func jsonAddressFromValue(value Value, suppressObjectNulls bool, convert func(Value, bool) any) (any, bool) {
+	// Only a platform System.Address value is a compound. A standard Address
+	// SObject record keeps the ordinary SObject JSON shape.
+	systemAddress := value.Runtime == "System.Address" || strings.EqualFold(value.Type, "System.Address")
+	if value.Kind != ValueObject || !systemAddress || value.classInstance || value.projectClass {
+		return nil, false
+	}
+	out := orderedJSONObject{}
+	for _, name := range jsonAddressPropertyOrder {
+		item, ok := value.Fields[name]
+		if !ok {
+			if name == "countryCode" || name == "stateCode" {
+				continue
+			}
+			item = Null
+		}
+		out = append(out, orderedJSONField{name: name, value: convert(item, suppressObjectNulls)})
+	}
+	return out, true
+}
+
 func jsonSObjectFromValue(value Value, suppressObjectNulls bool, convert func(Value, bool) any, apiVersion, urlType string) any {
+	value = jsonProjectedSObjectValue(value)
 	out := orderedJSONObject{}
 	if value.Type != "" {
-		attributes := map[string]any{"type": value.Type}
+		jsonType := value.Type
+		if value.Fields[jsonSObjectQueryProjectionField].Runtime == "Name" {
+			jsonType = "Name"
+		}
+		attributes := map[string]any{"type": jsonType}
 		if id, ok := value.Fields["Id"]; ok && !strings.Contains(value.Type, ".") {
 			version, err := storage.ResolveRESTAPIVersion(apiVersion)
 			if idText, ok := idValueText(id); err == nil && ok && idText != "" {
@@ -782,7 +810,7 @@ func jsonSObjectFromValue(value Value, suppressObjectNulls bool, convert func(Va
 		}
 		out = append(out, orderedJSONField{name: "attributes", value: attributes})
 	}
-	for _, field := range jsonSObjectFieldNames(value) {
+	for _, field := range jsonSerializedSObjectFieldNames(value) {
 		item := value.Fields[field]
 		if suppressObjectNulls && item.Kind == ValueNull {
 			continue
@@ -846,7 +874,7 @@ const jsonDeserializedSObjectFieldOrder = "__glade_json_deserialized_sobject_fie
 // Constructed SObjects retain their first assignment order (R222/R223/R368).
 // Deserialized SObjects use canonical-name hash buckets, including later writes.
 func jsonOrderedSObjectFieldNames(value Value, regular, system []string) []string {
-	customMetadata := strings.HasSuffix(strings.ToLower(value.Type), "__mdt")
+	customMetadata := strings.HasSuffix(strings.ToLower(value.Type), "__mdt") || value.Fields[sobjectExplicitFieldsField].Runtime == jsonDeserializedSObjectFieldOrder
 	byFoldedName := make(map[string]string, len(regular)+len(system))
 	for _, field := range regular {
 		byFoldedName[strings.ToLower(field)] = field
@@ -928,7 +956,7 @@ func isImplicitFalseIsDeleted(value Value, field string, item Value) bool {
 	if field != "IsDeleted" || item.Kind != ValueBool || item.Bool {
 		return false
 	}
-	return !isExplicitSObjectField(value, field)
+	return !isExplicitSObjectField(value, field) && !jsonSObjectSelectedField(value, field)
 }
 
 func orderedJSONMapKeys(value Value) []string {
@@ -1995,7 +2023,7 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 		}
 		if typedObjectIsSObject {
 			if fieldType, ok := vm.jsonSObjectFieldType(typeName, key); ok {
-				value, err := vm.typedSObjectFieldValueFromJSON(fieldType, jsonTypedInput{value: item, source: inputField.source, start: inputField.start}, strict)
+				value, err := vm.typedSchemaSObjectFieldValueFromJSON(typeName, key, fieldType, jsonTypedInput{value: item, source: inputField.source, start: inputField.start}, strict, false)
 				if err != nil {
 					return Null, err
 				}
@@ -2014,7 +2042,7 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 			fieldName := vm.resolveSObjectFieldName(typeName, key)
 			if !strings.EqualFold(fieldName, key) {
 				if fieldType, ok := vm.jsonSObjectFieldType(typeName, fieldName); ok {
-					value, err := vm.typedSObjectFieldValueFromJSON(fieldType, jsonTypedInput{value: item, source: inputField.source, start: inputField.start}, strict)
+					value, err := vm.typedSchemaSObjectFieldValueFromJSON(typeName, key, fieldType, jsonTypedInput{value: item, source: inputField.source, start: inputField.start}, strict, false)
 					if err != nil {
 						return Null, err
 					}
@@ -2034,7 +2062,7 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 			var value Value
 			var err error
 			if typedObjectIsSObject {
-				value, err = vm.typedSObjectFieldValueFromJSON(fieldType, jsonTypedInput{value: item, source: inputField.source, start: inputField.start}, strict)
+				value, err = vm.typedSchemaSObjectFieldValueFromJSON(typeName, key, fieldType, jsonTypedInput{value: item, source: inputField.source, start: inputField.start}, strict, false)
 			} else {
 				value, err = vm.typedApexFieldValueFromJSON(fieldType, inputField, strict)
 			}
@@ -2420,7 +2448,7 @@ func (vm *VM) sObjectValueFromJSON(raw any, strict bool) (Value, error) {
 			continue
 		}
 		if fieldType, ok := vm.jsonSObjectFieldType(typeName, key); ok {
-			value, err := vm.typedSObjectFieldValueFromJSON(fieldType, jsonTypedInput{value: item, source: field.source, start: field.start}, strict)
+			value, err := vm.typedSchemaSObjectFieldValueFromJSON(typeName, key, fieldType, jsonTypedInput{value: item, source: field.source, start: field.start}, strict, true)
 			if err != nil {
 				return Null, err
 			}
@@ -2437,7 +2465,7 @@ func (vm *VM) sObjectValueFromJSON(raw any, strict bool) (Value, error) {
 		fieldName := vm.resolveSObjectFieldName(typeName, key)
 		if !strings.EqualFold(fieldName, key) {
 			if fieldType, ok := vm.jsonSObjectFieldType(typeName, fieldName); ok {
-				value, err := vm.typedSObjectFieldValueFromJSON(fieldType, jsonTypedInput{value: item, source: field.source, start: field.start}, strict)
+				value, err := vm.typedSchemaSObjectFieldValueFromJSON(typeName, key, fieldType, jsonTypedInput{value: item, source: field.source, start: field.start}, strict, true)
 				if err != nil {
 					return Null, err
 				}
@@ -2493,6 +2521,38 @@ func jsonUnknownSObjectPayloadError(typeName string, raw any) error {
 		}
 	}
 	return nil
+}
+
+// Native format/roundTrip rows distinguish the currency field type from
+// Decimal when a formatted string cannot be read back into an SObject field.
+// Decoder twins retain field input boundaries for concrete targets; SObject.class
+// reports the captured unavailable-source location instead.
+func (vm *VM) typedSchemaSObjectFieldValueFromJSON(typeName, fieldName, fieldType string, input jsonTypedInput, strict, genericSObject bool) (Value, error) {
+	if text, ok := input.value.(string); ok && strings.TrimSpace(text) != "" {
+		if _, field, known := vm.jsonActiveSObjectField(typeName, fieldName); known && strings.EqualFold(field.DisplayType, "CURRENCY") {
+			if _, err := decimalFromText(text); err != nil {
+				message := fmt.Sprintf("Cannot deserialize instance of currency from VALUE_STRING value %s or request may be missing a required field", text)
+				if !genericSObject && input.source != "" {
+					// Currency errors identify the separator before the field,
+					// not its key (sobject_json2_decoders rows 18-21). Derive
+					// it from the key position shared by both decoder routes.
+					boundary := input.start
+					for boundary > 0 && strings.ContainsRune(" \t\r\n", rune(input.source[boundary-1])) {
+						boundary--
+					}
+					if boundary > 0 && input.source[boundary-1] == ',' {
+						boundary--
+					} else {
+						boundary = input.start
+					}
+					line, column := jsonInputPosition(input.source, boundary)
+					return Null, jsonDeserializeException("%s at [line:%d, column:%d]", message, line, column)
+				}
+				return Null, jsonDeserializeException("%s at [Source: N/A; line: -1, column: -1][line:-1, column:-1]", message)
+			}
+		}
+	}
+	return vm.typedSObjectFieldValueFromJSON(fieldType, input, strict)
 }
 
 func (vm *VM) typedSObjectFieldValueFromJSON(fieldType string, raw any, strict bool) (Value, error) {
@@ -2573,6 +2633,25 @@ func (vm *VM) jsonSObjectParentValueFromJSON(containingType, typeName, fieldName
 		// null fields absent from the concrete User or Group target.
 		typeName = "Name"
 	}
+
+	relation, polymorphic := vm.parentRelationshipMetadata(containingType, fieldName)
+	nameProjection := false
+	if !strict && polymorphic && relation.Polymorphic {
+		if values, ok := jsonObjectMap(raw); ok {
+			id, idOK := values["Id"].(string)
+			concrete, known := vm.sObjectNameForID(id)
+			if attrs, ok := jsonObjectMap(values["attributes"]); ok && idOK && known && validateApexID(id) == nil && relationReferencesObject(relation, concrete) {
+				if target, ok := attrs["type"].(string); ok {
+					if target == "Name" {
+						typeName = "Name"
+						nameProjection = true
+					} else if strings.EqualFold(target, concrete) && relationReferencesObject(relation, target) {
+						typeName = target
+					}
+				}
+			}
+		}
+	}
 	allowed := vm.jsonAllowedFields(typeName)
 	// R390-R393: report the first unknown string field in input order.
 	// jsonObjectFields also gives map-backed callers a deterministic fallback.
@@ -2591,7 +2670,13 @@ func (vm *VM) jsonSObjectParentValueFromJSON(containingType, typeName, fieldName
 			return Null, jsonDeserializeException("Cannot deserialize instance of <unknown> from VALUE_STRING value %s or request may be missing a required field", text)
 		}
 	}
-	return vm.typedValueFromJSON(typeName, jsonTypedInput{value: raw, sObjectRecord: true}, strict)
+	value, err := vm.typedValueFromJSON(typeName, jsonTypedInput{value: raw, sObjectRecord: true}, strict)
+	if err == nil && nameProjection {
+		projection := String("")
+		projection.Runtime = "Name"
+		value.Fields[jsonSObjectQueryProjectionField] = projection
+	}
+	return value, err
 }
 
 func (vm *VM) jsonOwnerNameProjection(containingType, relationship string, raw any) bool {
@@ -3020,7 +3105,7 @@ func (vm *VM) jsonSObjectFieldType(typeName, fieldName string) (string, bool) {
 		return "", false
 	}
 	fieldName = vm.resolveSObjectFieldName(typeName, fieldName)
-	field, ok := definition.Fields[fieldName]
+	_, field, ok := storage.ResolveFieldDefinition(definition, vm.Org.Namespace, fieldName)
 	if !ok {
 		return "", false
 	}
@@ -3035,6 +3120,8 @@ func (vm *VM) jsonSObjectFieldType(typeName, fieldName string) (string, bool) {
 		return "Integer", true
 	case storage.FieldDecimal:
 		return "Decimal", true
+	case storage.FieldLocation, storage.FieldAddress:
+		return "Object", true
 	case storage.FieldBlob:
 		return "Blob", true
 	case storage.FieldDate:
@@ -3152,91 +3239,86 @@ func (vm *VM) jsonSObjectParentRelationshipType(typeName, relationshipName strin
 }
 
 func (vm *VM) jsonSObjectChildRelationshipType(typeName, relationshipName string) (string, bool) {
+	vm.ensureMetadataCacheGeneration()
 	if vm.Org == nil {
 		return "", false
 	}
-	cacheKey := strings.ToLower(strings.TrimSpace(typeName)) + "\x00" + strings.ToLower(strings.TrimSpace(relationshipName))
-	if cached, ok := vm.jsonChildRelTypeCache.load(cacheKey); ok {
-		return cached.Type, cached.OK
-	}
-	cacheResult := func(typeName string, ok bool) (string, bool) {
-		if vm.jsonChildRelTypeCache == nil {
-			vm.jsonChildRelTypeCache = newJSONChildRelTypeLookupCache()
-		}
-		vm.jsonChildRelTypeCache.store(cacheKey, jsonRelationshipTypeLookup{Type: typeName, OK: ok})
-		return typeName, ok
-	}
 	parentObject, _, ok := vm.sObjectDefinitionForRead(typeName)
 	if !ok {
-		return cacheResult("", false)
+		return "", false
+	}
+	// The completed parent plan includes every alias and answers negative
+	// lookups too. Retaining another entry for each query duplicates its values
+	// and lets arbitrary misses grow the generation's live working set.
+	if vm.jsonChildRelTypeCache == nil {
+		vm.jsonChildRelTypeCache = newJSONChildRelTypeLookupCache()
 	}
 	parentKey := strings.ToLower(strings.TrimSpace(parentObject))
 	relationshipKey := strings.ToLower(strings.TrimSpace(relationshipName))
 	if index, ok := vm.jsonChildRelTypeCache.loadParent(parentKey); ok {
 		if cached, ok := index[relationshipKey]; ok {
-			return cacheResult(cached.Type, cached.OK)
+			return cached.Type, cached.OK
 		}
-		return cacheResult("", false)
+		return "", false
 	}
 	index := vm.buildJSONSObjectChildRelationshipTypeIndex(parentObject)
 	vm.jsonChildRelTypeCache.storeParent(parentKey, index)
 	if cached, ok := index[relationshipKey]; ok {
-		return cacheResult(cached.Type, cached.OK)
+		return cached.Type, cached.OK
 	}
-	return cacheResult("", false)
+	return "", false
 }
 
 func (vm *VM) buildJSONSObjectChildRelationshipTypeIndex(parentObject string) map[string]jsonRelationshipTypeLookup {
 	jsonChildRelationshipIndexBuilds.Add(1)
-	matchesByName := make(map[string][]string)
-	addMatch := func(childRelationshipName, childName string) {
-		if strings.TrimSpace(childRelationshipName) == "" || strings.TrimSpace(childName) == "" {
-			return
-		}
-		for _, alias := range jsonRelationshipNameLookupKeys(vm.Org.Namespace, childRelationshipName) {
-			matchesByName[alias] = appendUniqueStringFold(matchesByName[alias], childName)
+	index := make(map[string]jsonRelationshipTypeLookup)
+	// Most aliases have exactly one child. Keep their final value directly;
+	// only ambiguous aliases need the ordered, case-folded candidate list.
+	var ambiguous map[string][]string
+	addMatch := func(name, childName, childType string) {
+		for _, alias := range jsonRelationshipNameLookupKeys(vm.Org.Namespace, name) {
+			previous, exists := index[alias]
+			if !exists {
+				index[alias] = jsonRelationshipTypeLookup{Type: childType, OK: true}
+				continue
+			}
+			if previous.Type == childType {
+				continue
+			}
+			if ambiguous == nil {
+				ambiguous = make(map[string][]string)
+			}
+			matches := ambiguous[alias]
+			if len(matches) == 0 {
+				matches = []string{previous.Type[len("List<") : len(previous.Type)-1]}
+			}
+			ambiguous[alias] = appendUniqueStringFold(matches, childName)
 		}
 	}
-	children := vm.jsonChildRelationshipCandidates(parentObject)
+	names := vm.childRelationshipCandidateNames(parentObject)
 	// The parent can itself be a child (for example a standard object's parent
 	// lookup). A catalog-only parent participates without being installed in Org.
+	var catalogDefinition storage.ObjectDefinition
+	catalogOnly := false
 	if _, installed := vm.Org.Objects[parentObject]; !installed {
-		if _, definition, ok := vm.sObjectDefinitionForRead(parentObject); ok {
-			children = maps.Clone(children)
-			if children == nil {
-				children = make(map[string]storage.ObjectState)
-			}
-			children[parentObject] = storage.ObjectState{Definition: definition}
-		}
+		_, catalogDefinition, catalogOnly = vm.sObjectDefinitionForRead(parentObject)
 	}
-	for childName, childState := range children {
-		childRelationshipName := ""
-		for _, relation := range childState.Definition.Relations {
-			if !relationshipTargetsObject(relation, parentObject) {
+	// Preserve the original global relation-before-field order: folded duplicate
+	// object keys keep the first matching canonical spelling. Read definitions
+	// directly in both passes without constructing temporary ObjectState maps.
+	for _, relations := range [2]bool{true, false} {
+		for _, childName := range names {
+			state, ok := vm.Org.Objects[childName]
+			if !ok || storage.IsChangeEventObject(state.Definition) {
 				continue
 			}
-			childRelationshipName = relation.ChildRelationship
-			if childRelationshipName == "" {
-				childRelationshipName = derivedVMChildRelationshipName(childState.Definition)
-			}
-			addMatch(childRelationshipName, childName)
+			vm.addJSONChildRelationshipDefinition(parentObject, childName, state.Definition, relations, addMatch)
+		}
+		if catalogOnly {
+			vm.addJSONChildRelationshipDefinition(parentObject, parentObject, catalogDefinition, relations, addMatch)
 		}
 	}
-	for childName, childState := range children {
-		for _, field := range childState.Definition.Fields {
-			if field.Type != storage.FieldReference || len(field.ReferenceTo) == 0 {
-				continue
-			}
-			if !relationshipTargetsObject(storage.Relationship{ParentObjects: field.ReferenceTo}, parentObject) {
-				continue
-			}
-			for _, childRelationshipName := range vmFieldChildRelationshipNames(childState.Definition, field) {
-				addMatch(childRelationshipName, childName)
-			}
-		}
-	}
-	index := make(map[string]jsonRelationshipTypeLookup, len(matchesByName))
-	for relationshipKey, matches := range matchesByName {
+	for relationshipKey, matches := range ambiguous {
 		if childName := vm.bestChildRelationshipObject(matches); childName != "" {
 			index[relationshipKey] = jsonRelationshipTypeLookup{Type: "List<" + childName + ">", OK: true}
 		}
@@ -3244,53 +3326,247 @@ func (vm *VM) buildJSONSObjectChildRelationshipTypeIndex(parentObject string) ma
 	return index
 }
 
-// Only template orgs promise frozen definitions. Mutable host orgs keep the
-// original scan so an uncached parent can see schema added between lookups.
-func (vm *VM) jsonChildRelationshipCandidates(parentObject string) map[string]storage.ObjectState {
+func (vm *VM) addJSONChildRelationshipDefinition(parentObject, childName string, definition storage.ObjectDefinition, relations bool, addMatch func(string, string, string)) {
+	if strings.TrimSpace(childName) == "" {
+		return
+	}
+	// Relations and fields often repeat the same child name. Expand each exact
+	// schema spelling once per child, without per-reference slices or strings.
+	seen := make(map[string]bool)
+	childType := "List<" + childName + ">"
+	add := func(name string) {
+		if strings.TrimSpace(name) == "" || seen[name] {
+			return
+		}
+		seen[name] = true
+		addMatch(name, childName, childType)
+	}
+	derived := derivedVMChildRelationshipName(definition)
+	if relations {
+		for _, relation := range definition.Relations {
+			if !relationshipTargetsObject(relation, parentObject) {
+				continue
+			}
+			childRelationshipName := relation.ChildRelationship
+			if childRelationshipName == "" {
+				childRelationshipName = derived
+			}
+			add(childRelationshipName)
+		}
+		return
+	}
+	for _, field := range definition.Fields {
+		if field.Type != storage.FieldReference || len(field.ReferenceTo) == 0 {
+			continue
+		}
+		if !relationshipTargetsObject(storage.Relationship{ParentObjects: field.ReferenceTo}, parentObject) {
+			continue
+		}
+		// Match vmFieldChildRelationshipNames: coalesce aliases within this
+		// field using EqualFold before expanding their lowercase lookup keys.
+		// EqualFold-equivalent Unicode spellings can have distinct lowercase
+		// keys. The exact-name set above only removes repeated work across
+		// fields; it must not change which aliases each field contributes.
+		explicit := field.ChildRelationshipName
+		stored := storage.ChildRelationshipName(field)
+		add(explicit)
+		if !strings.EqualFold(stored, explicit) {
+			add(stored)
+		}
+		if !strings.EqualFold(derived, explicit) && !strings.EqualFold(derived, stored) {
+			add(derived)
+		}
+	}
+}
+
+// childRelationshipScanVisits counts the child objects a relationship lookup
+// scanned; perf guards compare it with the number of possible children.
+var childRelationshipScanVisits atomic.Uint64
+
+// childRelationshipScanCandidates preserves a name-set snapshot and ordinary
+// map visitation without allocating one ObjectState per candidate. Its sole
+// caller reads definitions synchronously and performs no schema writes during
+// traversal, so current definitions can be read when each name is yielded.
+func (vm *VM) childRelationshipScanCandidates(parentObject string) iter.Seq2[string, storage.ObjectState] {
+	names := vm.childRelationshipCandidateNames(parentObject)
+	var org *storage.OrgState
+	if vm != nil {
+		org = vm.Org
+	}
+	children := make(map[string]struct{}, len(names))
+	for _, name := range names {
+		if org != nil {
+			if _, ok := org.Objects[name]; ok {
+				children[name] = struct{}{}
+			}
+		}
+	}
+	return func(yield func(string, storage.ObjectState) bool) {
+		if org == nil {
+			return
+		}
+		for name := range children {
+			state, ok := org.Objects[name]
+			if ok && !yield(name, state) {
+				return
+			}
+		}
+	}
+}
+
+// Template orgs promise frozen definitions, so their candidate index is shared
+// by every runtime clone. A mutable host org indexes per VM and rebuilds when
+// its schema generation or object count changes: every in-place definition
+// change clears the schema stamp (and so bumps the generation), and installing
+// an object changes the count, so an uncached parent still sees added schema.
+func (vm *VM) childRelationshipCandidateTable() map[string][]string {
+	if vm == nil || vm.Org == nil {
+		return nil
+	}
+	vm.ensureMetadataCacheGeneration()
 	if vm.Org.RuntimeSchemaStamp == "" {
-		return vm.Org.Objects
+		return vm.mutableOrgChildRelationshipCandidates()
 	}
 	if vm.jsonChildRelTypeCache == nil {
 		vm.jsonChildRelTypeCache = newJSONChildRelTypeLookupCache()
 	}
 	cache := vm.jsonChildRelTypeCache
 	cache.candidatesOnce.Do(func() {
-		cache.childCandidates = make(map[string][]string)
-		for childName, child := range vm.Org.Objects {
-			if storage.IsChangeEventObject(child.Definition) {
+		cache.childCandidates = buildChildRelationshipCandidates(vm.Org)
+	})
+	return cache.childCandidates
+}
+
+func (vm *VM) childRelationshipCandidateNames(parentObject string) []string {
+	if vm == nil || vm.Org == nil {
+		return nil
+	}
+	table := vm.childRelationshipCandidateTable()
+	keys := jsonRelationshipParentCandidateKeys(parentObject)
+	return childRelationshipNamesForKeys(table, keys)
+}
+
+// JSON, DML, and lazy lookup already used lowercase candidate narrowing on the
+// baseline. Loaded lookup instead scanned every object and used EqualFold, so
+// only that route needs its original scan for exceptional Unicode fold pairs.
+const loadedChildRelationshipFullScanKey = "\x00loaded-relationship-full-scan"
+
+func (vm *VM) loadedChildRelationshipCandidateNames(parentObject string) []string {
+	if vm == nil || vm.Org == nil {
+		return nil
+	}
+	table := vm.childRelationshipCandidateTable()
+	keys := jsonRelationshipParentCandidateKeys(parentObject)
+	_, fullScan := table[loadedChildRelationshipFullScanKey]
+	if !fullScan {
+		for _, key := range keys {
+			if loadedChildRelationshipParentFoldKey(key) != key {
+				fullScan = true
+				break
+			}
+		}
+	}
+	if fullScan {
+		names := make([]string, 0, len(vm.Org.Objects))
+		for name := range vm.Org.Objects {
+			names = append(names, name)
+		}
+		return names
+	}
+	return childRelationshipNamesForKeys(table, keys)
+}
+
+func childRelationshipNamesForKeys(table map[string][]string, keys []string) []string {
+	if len(keys) == 1 {
+		return table[keys[0]]
+	}
+	seen := make(map[string]struct{})
+	var names []string
+	for _, key := range keys {
+		for _, name := range table[key] {
+			if _, ok := seen[name]; ok {
 				continue
 			}
-			parents := make(map[string]bool)
-			add := func(parent string) {
-				for _, key := range jsonRelationshipParentCandidateKeys(parent) {
-					parents[key] = true
+			seen[name] = struct{}{}
+			names = append(names, name)
+		}
+	}
+	return names
+}
+
+// A mutable host may edit fields and relation slices in place. Candidate
+// content belongs to exactly one org installation/schema generation; container
+// identity never permits carrying parent keys across that boundary. Frozen
+// templates instead share buildChildRelationshipCandidates through their
+// generation-owned jsonChildRelTypeLookupCache.
+type childRelationshipCandidateIndex struct {
+	org         *storage.OrgState
+	generation  uint64
+	objectCount int
+	candidates  map[string][]string
+}
+
+func (vm *VM) mutableOrgChildRelationshipCandidates() map[string][]string {
+	index := vm.childRelCandidates
+	if index == nil || index.org != vm.Org || index.generation != vm.Org.SchemaGeneration() || index.objectCount != len(vm.Org.Objects) {
+		index = &childRelationshipCandidateIndex{
+			org: vm.Org, generation: vm.Org.SchemaGeneration(), objectCount: len(vm.Org.Objects),
+			candidates: buildChildRelationshipCandidates(vm.Org),
+		}
+		vm.childRelCandidates = index
+	}
+	return index.candidates
+}
+
+// Build only from this generation's content. Even unchanged container
+// addresses may contain entirely different reference targets after a host edit.
+// Each child name is recorded once per parent key. Callers read the live
+// definition; this index does not retain relations, fields, or records.
+func buildChildRelationshipCandidates(org *storage.OrgState) map[string][]string {
+	if org == nil {
+		return nil
+	}
+	childCandidates := make(map[string][]string)
+	keysByParent := make(map[string][]string)
+	parents := make(map[string]bool, 8)
+	for childName, child := range org.Objects {
+		if storage.IsChangeEventObject(child.Definition) {
+			continue
+		}
+		clear(parents)
+		add := func(parent string) {
+			keys, ok := keysByParent[parent]
+			if !ok {
+				keys = jsonRelationshipParentCandidateKeys(parent)
+				keysByParent[parent] = keys
+				for _, key := range keys {
+					if loadedChildRelationshipParentFoldKey(key) != key {
+						childCandidates[loadedChildRelationshipFullScanKey] = nil
+						break
+					}
 				}
 			}
-			for _, relation := range child.Definition.Relations {
-				for _, parent := range relation.ParentObjects {
-					add(parent)
-				}
+			for _, key := range keys {
+				parents[key] = true
 			}
-			for _, field := range child.Definition.Fields {
-				if field.Type != storage.FieldReference {
-					continue
-				}
+		}
+		for _, relation := range child.Definition.Relations {
+			for _, parent := range relation.ParentObjects {
+				add(parent)
+			}
+		}
+		for _, field := range child.Definition.Fields {
+			if field.Type == storage.FieldReference {
 				for _, parent := range field.ReferenceTo {
 					add(parent)
 				}
 			}
-			for parent := range parents {
-				cache.childCandidates[parent] = append(cache.childCandidates[parent], childName)
-			}
 		}
-	})
-	children := make(map[string]storage.ObjectState)
-	for _, key := range jsonRelationshipParentCandidateKeys(parentObject) {
-		for _, child := range cache.childCandidates[key] {
-			children[child] = vm.Org.Objects[child]
+		for parent := range parents {
+			childCandidates[parent] = append(childCandidates[parent], childName)
 		}
 	}
-	return children
+	return childCandidates
 }
 
 // Include both namespace reductions used by relationshipTargetsObject. The
@@ -3315,6 +3591,29 @@ func jsonRelationshipParentCandidateKeys(name string) []string {
 		}
 	}
 	return keys
+}
+
+// Lowercase separates long-s/S and final-sigma/sigma. Detect exceptional fold
+// keys for loaded lookup's full-org fallback without widening other routes.
+func loadedChildRelationshipParentFoldKey(name string) string {
+	for i := 0; i < len(name); i++ {
+		if name[i] < 0x80 {
+			continue
+		}
+		var key strings.Builder
+		key.Grow(len(name))
+		for _, r := range name {
+			canonical := r
+			for folded := unicode.SimpleFold(r); folded != r; folded = unicode.SimpleFold(folded) {
+				if folded < canonical {
+					canonical = folded
+				}
+			}
+			key.WriteRune(unicode.ToLower(canonical))
+		}
+		return key.String()
+	}
+	return strings.ToLower(name)
 }
 
 func jsonRelationshipNameLookupKeys(namespace, name string) []string {
@@ -4049,7 +4348,9 @@ func (vm *VM) hydrateJSONParentLookupFields(value Value) {
 			}
 		}
 	}
-	vm.hydrateParentLookupFields(value)
+	// A JSON payload is self-contained; its Id does not authorize loading
+	// omitted foreign keys from a stored record (customQuery round trips).
+	vm.hydrateParentLookupFieldsWithStoredValues(value, false)
 }
 
 // Native owner-side Account formula rows retain the qualified alias regardless

@@ -20,7 +20,11 @@ func lookupOverflowOrg(namespace string) storage.OrgState {
 		"AnnualRevenue": {APIName: "AnnualRevenue", Type: storage.FieldDecimal, Scale: 2},
 	}
 	for _, name := range []string{"OwnerId", "ParentId", "RecordTypeId"} {
-		fields[name] = storage.Field{APIName: name, Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: strings.TrimSuffix(name, "Id"), Updateable: &editable}
+		target := "Account"
+		if name == "RecordTypeId" {
+			target = "RecordType"
+		}
+		fields[name] = storage.Field{APIName: name, Type: storage.FieldReference, ReferenceTo: []string{target}, RelationshipName: strings.TrimSuffix(name, "Id"), Updateable: &editable}
 	}
 	fields["CreatedById"] = storage.Field{APIName: "CreatedById", Type: storage.FieldReference, ReferenceTo: []string{"User"}, RelationshipName: "CreatedBy", Updateable: &readOnly}
 	values := map[string]storage.Value{"Name": storage.StringValue("Lookup owner"), "AnnualRevenue": storage.DecimalValue("12")}
@@ -33,7 +37,7 @@ func lookupOverflowOrg(namespace string) storage.OrgState {
 		fields[name] = storage.Field{APIName: name, Type: storage.FieldReference, ReferenceTo: []string{"Contact"}, RelationshipName: relation, Updateable: &editable}
 		values[name] = storage.IDValue("003000000000001")
 	}
-	org.Objects["Account"] = storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "Account", KeyPrefix: "001", Fields: fields}, Records: map[storage.ID]storage.Record{
+	org.Objects["Account"] = storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "Account", KeyPrefix: "001", Fields: fields, RecordTypes: []storage.RecordTypeInfo{{DeveloperName: "OwnedPolicy", Name: "Owned policy", Active: true}}}, Records: map[storage.ID]storage.Record{
 		"001000000000001": {ID: "001000000000001", Object: "Account", Fields: values},
 	}}
 	org.Objects["Contact"] = storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "Contact", KeyPrefix: "003", Fields: map[string]storage.Field{

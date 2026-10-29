@@ -83,7 +83,7 @@ func TestMathOrgConformance(t *testing.T) {
 		return prefix + "try {Object r; " + code + " pq.out('" + tc.ID + "',r);}catch(Exception e){pq.err('" + tc.ID + "',e);}"
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			rows := append([]familyCase(nil), rows...)
 			if api == "68.0" {
 				// Retain raw native wrapper coordinates; rejection checks remain categorical.

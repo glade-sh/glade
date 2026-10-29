@@ -1,0 +1,12 @@
+{
+  "orgName": "Owned standard field combination",
+  "edition": "Developer",
+  "settings": {
+    "quoteSettings": {
+      "enableQuote": false
+    },
+    "orderSettings": {
+      "enableOrders": false
+    }
+  }
+}

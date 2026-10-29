@@ -1,0 +1,2 @@
+case_id	route	outcome	observation
+collection_output_to_scalar	deploy	rejected	[{"name":"OwnedCollectionLeaf","problem":"field integrity exception: unknown (In an Assignment element, \u201cOwned first\u201d isn\u2019t a valid value when the \u201cresult\u201d variable is set with the Equals operator.)"},{"name":"OwnedScalarParent","problem":"Call (Subflow) - The flow OwnedCollectionLeaf doesn't exist."}]

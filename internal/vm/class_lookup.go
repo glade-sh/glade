@@ -488,6 +488,10 @@ func (vm *VM) reflectionTypeToken(name string) Value {
 }
 
 func (vm *VM) typeForName(namespace, name string, explicitNamespace bool) Value {
+	if vm.Org != nil && namespace == "" && hasPrefixFold(name, "Schema.") &&
+		!vm.Org.AllowsStandardObject(name[len("Schema."):]) {
+		return Null
+	}
 	// The platform Network class remains available when its schema object is off.
 	if namespace == "" && strings.EqualFold(name, "Schema.Network") && (vm.Org == nil || !vm.Org.HasFeature("Communities")) {
 		return Null
@@ -496,9 +500,22 @@ func (vm *VM) typeForName(namespace, name string, explicitNamespace bool) Value 
 	if name == "" || name != strings.TrimSpace(name) {
 		return Null
 	}
+	if namespace == "" && strings.EqualFold(name, "UserInfo") {
+		if class, ok := vm.lookupClass(name); !ok || class.PlatformType {
+			return vm.reflectionTypeToken("System.UserInfo")
+		}
+	}
+	if namespace == "" && strings.EqualFold(name, "System.UserInfo") ||
+		strings.EqualFold(namespace, "System") && (strings.EqualFold(name, "UserInfo") || strings.EqualFold(name, "System.UserInfo")) {
+		return vm.reflectionTypeToken("System.UserInfo")
+	}
 	// R185/R187: qualified schema records and System interfaces are visible
 	// through the single-name overload; System scalar aliases are not.
 	if namespace == "" && hasPrefixFold(name, "Schema.") {
+		if _, namedOnly := storage.ResolveNamedApexReferenceObjectName(name[len("Schema."):]); namedOnly && !vm.namedApexReferenceClassShadow(name) &&
+			(explicitNamespace || !vm.namedApexReferenceReflectionAvailable()) {
+			return Null
+		}
 		if record, ok := vm.explicitSchemaRecordType(name); ok {
 			return vm.reflectionTypeToken("Schema." + record)
 		}
@@ -524,9 +541,6 @@ func (vm *VM) typeForName(namespace, name string, explicitNamespace bool) Value 
 		}
 	}
 	if namespace != "" {
-		if strings.EqualFold(namespace, "System") && strings.EqualFold(name, "UserInfo") {
-			return vm.reflectionTypeToken("System.UserInfo")
-		}
 		if resolved, ok := generatedPlatformTypeForName(namespace, name); ok {
 			return vm.reflectionTypeToken(resolved)
 		}
@@ -539,6 +553,13 @@ func (vm *VM) typeForName(namespace, name string, explicitNamespace bool) Value 
 		}
 		for _, candidate := range namespaceTypeNameCandidates(namespace, name) {
 			if class, ok := vm.lookupClass(candidate); ok && !methodHasModifier(class.Modifiers, AnonymousClassModifier) {
+				classNamespace := class.Namespace
+				if classNamespace == "" && vm.Org != nil {
+					classNamespace = vm.Org.Namespace
+				}
+				if !strings.EqualFold(classNamespace, namespace) {
+					continue
+				}
 				if !vm.typeForNameNestedClassVisible(class, namespace, name) {
 					return Null
 				}
@@ -562,6 +583,16 @@ func (vm *VM) typeForName(namespace, name string, explicitNamespace bool) Value 
 	}
 	if resolved, ok := vm.resolveClassName(name); ok {
 		if class, ok := vm.lookupClass(resolved); ok && !methodHasModifier(class.Modifiers, AnonymousClassModifier) {
+			// A single-name lookup of a schema alias is global, unlike a
+			// lexical class literal. API 62/67 keep the platform type visible
+			// even when the caller declares a same-named nested source class.
+			if !explicitNamespace && class.Nested && !class.PlatformType && !strings.Contains(name, ".") {
+				if alias, ok := platformShortTypeAlias(name); ok {
+					if platform, captured := schemaMetadataClassAlias(alias); captured {
+						return vm.reflectionTypeToken(platform)
+					}
+				}
+			}
 			if !vm.typeForNameNestedClassVisible(class, namespace, name) {
 				return Null
 			}
@@ -575,6 +606,11 @@ func (vm *VM) typeForName(namespace, name string, explicitNamespace bool) Value 
 		}
 		if _, class := vm.lookupClass(resolved); !class {
 			return vm.reflectionTypeToken(resolved)
+		}
+	}
+	if !explicitNamespace && vm.namedApexReferenceReflectionAvailable() {
+		if record, ok := vm.namedApexReferenceObjectName(name); ok {
+			return vm.reflectionTypeToken("Schema." + record)
 		}
 	}
 	if vm.Org != nil {
@@ -842,6 +878,9 @@ func (vm *VM) explicitSchemaRecordType(typeName string) (string, bool) {
 	}
 	if event, ok := standardChangeEventName(record); ok {
 		return event, true
+	}
+	if canonical, ok := vm.namedApexReferenceObjectName(record); ok && !vm.namedApexReferenceClassShadow(typeName) {
+		return canonical, true
 	}
 	// Suffix-shaped names alone do not establish that a record exists.
 	if isCommonSObjectTypeName(record) {

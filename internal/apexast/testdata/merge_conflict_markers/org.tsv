@@ -1,0 +1,11 @@
+source_api	deploy_status	line	column	problem
+62.0	Failed	4	1	Expecting '}' but was: '<'
+62.0	Failed	6	1	Expecting '}' but was: '==='
+62.0	Failed	4	9	Invalid type: HEAD
+62.0	Failed	2	27	Method must have a body
+62.0	Failed	2	27	Missing return statement required return type: Integer
+67.0	Failed	4	1	Expecting '}' but was: '<'
+67.0	Failed	6	1	Expecting '}' but was: '==='
+67.0	Failed	4	9	Invalid type: HEAD
+67.0	Failed	2	27	Method must have a body
+67.0	Failed	2	27	Missing return statement required return type: Integer

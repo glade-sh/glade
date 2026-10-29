@@ -204,7 +204,7 @@ func TestAsyncOrgConformance(t *testing.T) {
 		return "ACCEPTED"
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			if api == "68.0" {
 				t.Log("API68 named primary/adjacent checks use anonymous native answers except R012/R199; 47 native controls, 3 Cron controls, 4 shadows and 10 drains have native named observations")
 			}

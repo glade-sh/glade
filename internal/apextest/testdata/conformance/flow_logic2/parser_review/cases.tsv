@@ -1,0 +1,21 @@
+id	filter_logic_json	local_expectation
+not	"NOT 1"	GLADEAUTO002
+xor	"1 XOR 2"	GLADEAUTO002
+unclosed	"(1 OR 2"	GLADEAUTO002
+unopened	"1 OR 2)"	GLADEAUTO002
+empty_nested	"1 OR ()"	GLADEAUTO002
+zero	"0 OR 2"	GLADEAUTO002
+too_large	"1 OR 3"	GLADEAUTO002
+overflow	"18446744073709551617 OR 2"	GLADEAUTO002
+nested_not	"((1 OR 2) AND (NOT 1))"	GLADEAUTO002
+wrapped_xor	" \t( 1 XOR\n 2 ) \r"	GLADEAUTO002
+negative_rhs	"(1 OR -2)"	GLADEAUTO002
+negative_lhs	"(-1 OR 2)"	GLADEAUTO002
+not_negative	"NOT (1 OR -2)"	GLADEAUTO002
+positive_large	"(1 OR +3)"	GLADEAUTO002
+positive_in_range	"(1 OR +2)"	GLADEAUTO002
+open_only	"("	GLADEAUTO002
+close_only	")"	GLADEAUTO002
+empty	"()"	GLADEAUTO002
+nested_valid	"((1 OR 2) AND (1))"	supported
+whitespace_valid	" \t(( 1 oR\n2 ) aNd\r ( 1 )) \t"	supported

@@ -1,0 +1,9 @@
+shape	coverage
+multiParent/multiParentReverse/multiParentNull	multi-level parent order and null boundary
+polyParents/polyParentsReverse/polyNullWho	polymorphic What Who Owner and null boundary
+typeofAccount/typeofOpportunity/typeofWho	TYPEOF branches and selected-field order
+fieldsStandard/fieldsAll/fieldsCustom	field expansion and unbounded rejection twins
+toLabel/toLabelAlias/format/formatAlias	function result names and aliases
+address/addressReverse/addressComponents/mailingAddress	compound Address inside whole records
+location/locationReverse/locationComponents	compound Location inside whole records
+unknownField/emptyBoundary	rejection twin and empty query boundary

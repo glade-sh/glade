@@ -115,7 +115,7 @@ func runNativeSnapshotConformance(t *testing.T, filename, family string) {
 		d7Seen[key] = true
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			source, ok := data.SourcesByAPI[api]
 			if !ok || len(source.Classes) == 0 || len(source.ClassMetadata) != len(source.Classes) || source.TestClass == "" || source.TestMethod == "" {
 				t.Fatal("incomplete captured source")

@@ -105,6 +105,9 @@ func handleDAPLaunch(ctx context.Context, handler *dap.Handler, launch dap.Launc
 	machine.SetCurrentNamespace(org.Namespace)
 	if testLaunch {
 		machine.EnableTestContext()
+	} else {
+		// An anonymous launch is an anonymous transaction, as in glade exec.
+		machine.SetToolingExecuteAnonymous(true)
 	}
 	if err := apextest.RegisterCompiledProjectRuntimeForRequest(machine, runtime); err != nil {
 		return err

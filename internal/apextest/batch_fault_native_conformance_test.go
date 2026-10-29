@@ -39,7 +39,7 @@ func TestBatchFaultNativeConformance(t *testing.T) {
 	if err := json.Unmarshal(raw, &data); err != nil {
 		t.Fatal(err)
 	}
-	if strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" || len(data.Cells) != 40 || len(data.Controls) != 24 || len(data.Carries) != 2 {
+	if strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" || len(data.Cells) != 42 || len(data.Controls) != 24 || len(data.Carries) != 0 {
 		t.Fatal("incomplete batch observation matrix")
 	}
 	checkHash := func(source, want string) {

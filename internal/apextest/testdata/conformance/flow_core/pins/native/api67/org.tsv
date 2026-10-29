@@ -1,0 +1,45 @@
+case_id	route	outcome	observation
+entry-equal-to	anonymous	runtime	{"effects":1}
+entry-equal-to	istest	runtime	{"effects":1}
+entry-not-equal-to	anonymous	runtime	{"effects":1}
+entry-not-equal-to	istest	runtime	{"effects":1}
+entry-greater-than	anonymous	runtime	{"effects":1}
+entry-greater-than	istest	runtime	{"effects":1}
+entry-is-null	anonymous	runtime	{"effects":1}
+entry-is-null	istest	runtime	{"effects":1}
+entry-contains	anonymous	runtime	{"effects":1}
+entry-contains	istest	runtime	{"effects":1}
+entry-starts-with	anonymous	runtime	{"effects":1}
+entry-starts-with	istest	runtime	{"effects":1}
+entry-ends-with	anonymous	runtime	{"effects":1}
+entry-ends-with	istest	runtime	{"effects":1}
+entry-or-update	anonymous	runtime	{"effects":1}
+entry-or-update	istest	runtime	{"effects":1}
+before-save-update	anonymous	runtime	{"afterStableUpdate":"sentinel2","afterTransition":"flow-hit","alreadyMatchedAfterUpdate":"sentinel"}
+before-save-update	istest	runtime	{"afterStableUpdate":"sentinel2","afterTransition":"flow-hit","alreadyMatchedAfterUpdate":"sentinel"}
+before-save-two-equals	anonymous	runtime	{"afterStableUpdate":"sentinel2","afterTransition":"flow-hit","alreadyMatchedAfterUpdate":"sentinel"}
+before-save-two-equals	istest	runtime	{"afterStableUpdate":"sentinel2","afterTransition":"flow-hit","alreadyMatchedAfterUpdate":"sentinel"}
+delete-name-collision	anonymous	runtime	{"recordTargetRemaining":1,"variableTargetRemaining":0}
+delete-name-collision	istest	runtime	{"recordTargetRemaining":1,"variableTargetRemaining":0}
+custom-not-equal-to	anonymous	runtime	{"effects":1}
+custom-not-equal-to	istest	runtime	{"effects":1}
+custom-greater-than-or-equal-to	anonymous	runtime	{"effects":1}
+custom-greater-than-or-equal-to	istest	runtime	{"effects":1}
+custom-less-than	anonymous	runtime	{"effects":1}
+custom-less-than	istest	runtime	{"effects":1}
+custom-less-than-or-equal-to	anonymous	runtime	{"effects":1}
+custom-less-than-or-equal-to	istest	runtime	{"effects":1}
+custom-is-null	anonymous	runtime	{"effects":1}
+custom-is-null	istest	runtime	{"effects":1}
+custom-starts-with	anonymous	runtime	{"effects":1}
+custom-starts-with	istest	runtime	{"effects":1}
+custom-ends-with	anonymous	runtime	{"effects":1}
+custom-ends-with	istest	runtime	{"effects":1}
+alias-equals	anonymous	flow-deploy-rejected	{"problem":"Error parsing file: 'Equals' is not a valid value for the enum 'FlowRecordFilterOperator'"}
+alias-equals	istest	flow-deploy-rejected	{"problem":"Error parsing file: 'Equals' is not a valid value for the enum 'FlowRecordFilterOperator'"}
+alias-notequals	anonymous	flow-deploy-rejected	{"problem":"Error parsing file: 'Notequals' is not a valid value for the enum 'FlowRecordFilterOperator'"}
+alias-notequals	istest	flow-deploy-rejected	{"problem":"Error parsing file: 'Notequals' is not a valid value for the enum 'FlowRecordFilterOperator'"}
+alias-isblank	anonymous	flow-deploy-rejected	{"problem":"Error parsing file: 'IsBlank' is not a valid value for the enum 'FlowRecordFilterOperator'"}
+alias-isblank	istest	flow-deploy-rejected	{"problem":"Error parsing file: 'IsBlank' is not a valid value for the enum 'FlowRecordFilterOperator'"}
+alias-empty-operator	anonymous	flow-deploy-rejected	{"problem":"Error parsing file: '' is not a valid value for the enum 'FlowRecordFilterOperator'"}
+alias-empty-operator	istest	flow-deploy-rejected	{"problem":"Error parsing file: '' is not a valid value for the enum 'FlowRecordFilterOperator'"}

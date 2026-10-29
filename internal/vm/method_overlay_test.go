@@ -67,7 +67,7 @@ func TestCloneRegisterMethodOverlayMatchesOwnedTables(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if !clone.runtimeArtifactsShared || clone.methodOverlay == nil {
+	if !clone.runtimeArtifactsShared.Load() || clone.methodOverlay == nil {
 		t.Fatalf("clone RegisterMethod copied the shared tables instead of using the overlay")
 	}
 
@@ -101,7 +101,7 @@ func TestCloneRegisterMethodOverlayMatchesOwnedTables(t *testing.T) {
 	removed := extra[1]
 	want.unregisterMethod(removed)
 	clone.unregisterMethod(removed)
-	if clone.runtimeArtifactsShared || clone.methodOverlay != nil {
+	if clone.runtimeArtifactsShared.Load() || clone.methodOverlay != nil {
 		t.Fatalf("unregister did not materialize private tables")
 	}
 	if !reflect.DeepEqual(clone.Methods, want.Methods) || !reflect.DeepEqual(clone.MethodOverloads, want.MethodOverloads) || !reflect.DeepEqual(clone.MethodFolded, want.MethodFolded) {
@@ -129,7 +129,7 @@ func TestCloneRegisterTriggerMaterializesMethodOverlay(t *testing.T) {
 	if err := clone.RegisterTrigger(Trigger{Name: "TrailTrigger", Object: "Account", Timing: "before", Operation: "insert"}); err != nil {
 		t.Fatal(err)
 	}
-	if clone.runtimeArtifactsShared || clone.methodOverlay != nil {
+	if clone.runtimeArtifactsShared.Load() || clone.methodOverlay != nil {
 		t.Fatalf("RegisterTrigger did not materialize private tables")
 	}
 	if !reflect.DeepEqual(clone.MethodOverloads["Trail.pick"], wantOverloads) {
@@ -272,7 +272,7 @@ func TestCloneOverloadOfBaseNameMatchesFreshMachine(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if clone.methodOverlay == nil || !clone.runtimeArtifactsShared {
+	if clone.methodOverlay == nil || !clone.runtimeArtifactsShared.Load() {
 		t.Fatalf("clone did not use the method overlay")
 	}
 	assertSameOverloadOrder(t, clone, fresh, "Trail.pick")
@@ -325,7 +325,7 @@ func TestCloneRegisterClassReplacingAliasMatchesFreshMachine(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if clone.runtimeArtifactsShared || clone.methodOverlay != nil {
+	if clone.runtimeArtifactsShared.Load() || clone.methodOverlay != nil {
 		t.Fatalf("RegisterClass merge did not materialize private tables")
 	}
 	assertSameClassRegisteredMethods(t, clone, fresh, "Trail.pick", "pkg.Trail.pick", "Trail.other", "pkg.Trail.other")

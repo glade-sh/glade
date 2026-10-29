@@ -1,0 +1,9 @@
+api	resource	observation
+60.0	rest_tooling_query_apexclass	"{""keys"":[""done"",""entityTypeName"",""queryLocator"",""records"",""size"",""totalSize""],""status"":200}"
+65.0	rest_tooling_query_apexclass	"{""keys"":[""done"",""entityTypeName"",""queryLocator"",""records"",""size"",""totalSize""],""status"":200}"
+67.0	rest_tooling_query_apexclass	"{""keys"":[""done"",""entityTypeName"",""queryLocator"",""records"",""size"",""totalSize""],""status"":200}"
+68.0	rest_tooling_query_apexclass	"{""keys"":[""done"",""entityTypeName"",""queryLocator"",""records"",""size"",""totalSize""],""status"":200}"
+60.0	rest_tooling_sobjects	"{""keys"":[""encoding"",""maxBatchSize"",""sobjects""],""status"":200}"
+65.0	rest_tooling_sobjects	"{""keys"":[""encoding"",""maxBatchSize"",""sobjects""],""status"":200}"
+67.0	rest_tooling_sobjects	"{""keys"":[""encoding"",""maxBatchSize"",""sobjects""],""status"":200}"
+68.0	rest_tooling_sobjects	"{""keys"":[""encoding"",""maxBatchSize"",""sobjects""],""status"":200}"

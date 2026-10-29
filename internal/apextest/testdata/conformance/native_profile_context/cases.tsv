@@ -1,0 +1,6 @@
+case	routes	apis	observation
+administrator	anonymous,isTest	62.0,67.0	Current profile name; administrator-only row accepted; standard-only row rejected
+same_user	isTest	62.0,67.0	runAs of current User retains the profile validation result
+standard_user	isTest	62.0,67.0	Standard User rejects administrator-only row and accepts standard-only row
+unassigned	anonymous,isTest	62.0,67.0	Named permission-set assignment absent until explicitly assigned
+selected_null	anonymous,isTest	62.0,67.0	Selected null Description is absent from getPopulatedFieldsAsMap

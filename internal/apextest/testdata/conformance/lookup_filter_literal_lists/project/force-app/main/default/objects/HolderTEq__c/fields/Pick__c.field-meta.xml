@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Pick__c</fullName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <label>Pick</label>
+    <lookupFilter>
+        <active>true</active>
+        <errorMessage>no match TEq</errorMessage>
+        <filterItems><field>FilterTarget__c.Tag__c</field><operation>equals</operation><value>red, blue</value></filterItems>
+        <isOptional>false</isOptional>
+    </lookupFilter>
+    <referenceTo>FilterTarget__c</referenceTo>
+    <relationshipLabel>Holders</relationshipLabel>
+    <relationshipName>HoldersTEq</relationshipName>
+    <required>false</required>
+    <type>Lookup</type>
+</CustomField>

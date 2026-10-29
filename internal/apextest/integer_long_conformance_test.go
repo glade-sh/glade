@@ -111,7 +111,7 @@ class Ov {
 		mismatches.Check(t, id, route, expected, observed)
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "Integer and Long", api)
 			type scopedCase struct {
 				familyCase

@@ -1,0 +1,2 @@
+case	reason
+dependency_bogus_member	The offline test supplies a partial dependency catalog, not the complete source declaration in the capture org; its nested inventory cannot prove absence.

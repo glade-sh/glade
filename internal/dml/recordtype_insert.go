@@ -39,6 +39,11 @@ func hasExplicitNullRecordTypeInput(record storage.Record) bool {
 
 func (e *Engine) validateApexRecordTypeInsert(definition storage.ObjectDefinition, record storage.Record) error {
 	mode := e.Options.ApexRecordTypeInsertMode
+	// person_account_profile_routes/org.tsv captures statement insert/upsert
+	// and scalar/list Database.insert, including options and explicit modes.
+	if e.Options.ApexRejectNullPersonRecordType && strings.EqualFold(definition.APIName, "Account") && isPersonAccountRecord(record) && hasExplicitNullRecordTypeInput(record) {
+		return dmlErrorf("INVALID_CROSS_REFERENCE_KEY", []string{"RecordTypeId"}, "Record Type ID: this ID value isn't valid for the user: ")
+	}
 	if (mode != "SYSTEM_MODE" && mode != "USER_MODE") || !UsesImplicitMasterRecordType(definition) {
 		return nil
 	}

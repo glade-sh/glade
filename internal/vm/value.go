@@ -29,6 +29,8 @@ type Value struct {
 	// Only source literals that establish lexical class identity authorize JSON
 	// to use it. Keep this provenance outside serializable token fields.
 	lexicalClassLiteral bool
+	// Preserve class-literal origin for the legacy dependency construction path.
+	dependencyClassLiteral bool
 	// Retained only for the captured single-helper exception text boundary.
 	exceptionAnonymousCallerLine int
 	// Keep the observed String-constructor display separate from runtime faults,
@@ -67,6 +69,13 @@ type Value struct {
 	// List-based map insertion retains an unsaved record under a null Id key
 	// that can be retrieved through keySet, but not through a literal null.
 	sobjectListNullMapKey bool
+
+	// mapBackingShared marks a map whose Map, MapKeys and MapOrder storage is
+	// shared with another holder (a typed view of the global describe map).
+	// Mutations copy the storage first, so holders never see each other's
+	// writes while reads share one copy.
+	mapBackingShared               bool
+	globalDescribeEntriesCanonical bool
 
 	nativeListElement bool
 	Fields            map[string]Value `json:"fields,omitempty"`
@@ -266,6 +275,9 @@ func (v Value) String() string {
 	case ValueSet:
 		return "Set" + valuesString(v.Set)
 	case ValueMap:
+		if v.mapKeySetSource != nil {
+			v = v.currentFieldMapHolder()
+		}
 		return mapString(v)
 	case ValueObject:
 		if text, ok := httpDTOString(v); ok {

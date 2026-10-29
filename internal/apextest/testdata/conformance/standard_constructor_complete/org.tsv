@@ -1,0 +1,55 @@
+api	object	case	route	compiled	success	observation	source_sha256
+62.0	Contact	missing-constructor	anonymous	false	false	Compilation failed at Line 1 column 15 with the error:  Field does not exist: SyntheticAbsentField on Contact	f0778ef9a7960ca9773e7c66ffb9d703249666fb06442b1927a4981abcb6cd20
+62.0	Contact	boundary-constructor	anonymous	true	true	accepted	82ee76ba0154ca27f43214d2a150e4c8e0045786457abbcf9b11e46374295bbb
+62.0	Contact	missing-put	anonymous	true	true	System.SObjectException|Invalid field SyntheticAbsentField for Contact	6547ab1b73b83258468b3c55b4eb392e7a41231ad3c6abfdf28f0c4f969c5701
+62.0	Lead	missing-constructor	anonymous	false	false	Compilation failed at Line 1 column 12 with the error:  Field does not exist: SyntheticAbsentField on Lead	62e68ebcde9441453b191708ce804a8cc57dd450d13d0735d176e555a148252c
+62.0	Lead	boundary-constructor	anonymous	true	true	accepted	f7ad0b8f72c960428b6dcb26f06e19032d2eec894c3a0c0bd6f11b032eb26588
+62.0	Lead	missing-put	anonymous	true	true	System.SObjectException|Invalid field SyntheticAbsentField for Lead	488fd14d5fa50f258b15246d6b5032c3febaa498634a7330a4a460d6f10b005a
+62.0	PricebookEntry	missing-constructor	anonymous	false	false	Compilation failed at Line 1 column 22 with the error:  Field does not exist: SyntheticAbsentField on PricebookEntry	b696644dcd7ccb1d3f2b9f149388c01dca5cdce59a706cbd4309b8de1df04cc8
+62.0	PricebookEntry	boundary-constructor	anonymous	true	true	accepted	5bc1eb25931f670853d57c9f11a82ec2dbafd6d2f7ca8b1c86cc76b7fe76346d
+62.0	PricebookEntry	missing-put	anonymous	true	true	System.SObjectException|Invalid field SyntheticAbsentField for PricebookEntry	ddaef64745eb9cb961e182af7d6690ff55cd2f4aec1baff7233ce8ee85119080
+62.0	Contact	missing-constructor	named	false	false	Field does not exist: SyntheticAbsentField on Contact	321549a87f41cde5dcb0982ecdce98a669f57cb88434b8f3c01a82221b6679b0
+62.0	Lead	missing-constructor	named	false	false	Field does not exist: SyntheticAbsentField on Lead	2ec3ae26770acac5d75b12a31a62ea5f6a4fa5238a5dc52e3f0dbd22333a4d4c
+62.0	PricebookEntry	missing-constructor	named	false	false	Field does not exist: SyntheticAbsentField on PricebookEntry	7792ea1182535277654fd00f195fabc99be47b8875f6150e71530a6fbbb9c854
+62.0	Contact	missing-constructor	test-runner	false	false	Field does not exist: SyntheticAbsentField on Contact	ddeea1c3c5d6b8cdca9baeabce3e445c0bbe3db26ad1fee5b512f2740df1c804
+62.0	Lead	missing-constructor	test-runner	false	false	Field does not exist: SyntheticAbsentField on Lead	ee0a6365720ec2e0b5d452a2a2e486ce47ca22a33f5c1b2f5f1101fcb7c1125c
+62.0	PricebookEntry	missing-constructor	test-runner	false	false	Field does not exist: SyntheticAbsentField on PricebookEntry	38ddddca4889cc13b8876038b72a7497291bb7c9acb03f52047e206d1aecff2c
+62.0	Contact	boundary-constructor	named	true	true	accepted	594c65e16e9093e9196027d5861310dbc0deb5e27acb0eeab6709deef7b79d16
+62.0	Contact	missing-put	named	true	true	System.SObjectException|Invalid field SyntheticAbsentField for Contact	2bd056ea4152f7a29ff230ca2bf442092eb5b9e189c59aa2b7ba2ee149a453dd
+62.0	Lead	boundary-constructor	named	true	true	accepted	a4b20b24d22c50d1b3751d415c8ad14fb3149f3aefdcd9c59742c95843dbab01
+62.0	Lead	missing-put	named	true	true	System.SObjectException|Invalid field SyntheticAbsentField for Lead	a77a253222a175c212f0f66b19450db28f2d8fc303ec34c3509c3f33236d6348
+62.0	PricebookEntry	boundary-constructor	named	true	true	accepted	6e814761d1ef32368c40585e22ec55600f56ee223056199539bb1f08d50e59ed
+62.0	PricebookEntry	missing-put	named	true	true	System.SObjectException|Invalid field SyntheticAbsentField for PricebookEntry	99d7009f425dedd9b1b0e6252a3d270a558152addc59a39b453997746c7f543b
+62.0	Contact	boundary-constructor	test-runner	true	true	accepted	f7c6d530e9004fa18a4533d6475a5f9c687dd5d7d3bdf6293018873c7021e8f8
+62.0	Contact	missing-put	test-runner	true	true	System.SObjectException|Invalid field SyntheticAbsentField for Contact	f06359de65c853afbf52830c381dde311595104e1dc3a5d05d1ea94802b58704
+62.0	Lead	boundary-constructor	test-runner	true	true	accepted	2822da575d1c0e0a078270bd5b4acf4c6a902a3e8ef18f56266681dac97c6896
+62.0	Lead	missing-put	test-runner	true	true	System.SObjectException|Invalid field SyntheticAbsentField for Lead	28bb12e56396c9be6254922ee5a21645baaf3ee2a3f6f2220a942ef792f0ed2b
+62.0	PricebookEntry	boundary-constructor	test-runner	true	true	accepted	aab7da3aac1c2ef27fce34aa511a65fadefa280b83057bdb0e6f4b8eb87370a1
+62.0	PricebookEntry	missing-put	test-runner	true	true	System.SObjectException|Invalid field SyntheticAbsentField for PricebookEntry	1571041abf87339f0fd1bc0ca65a0091d805b1eabbcadc991a39318492f5e25b
+67.0	Contact	missing-constructor	anonymous	false	false	Compilation failed at Line 1 column 15 with the error:  Field does not exist: SyntheticAbsentField on Contact	f0778ef9a7960ca9773e7c66ffb9d703249666fb06442b1927a4981abcb6cd20
+67.0	Contact	boundary-constructor	anonymous	true	true	accepted	82ee76ba0154ca27f43214d2a150e4c8e0045786457abbcf9b11e46374295bbb
+67.0	Contact	missing-put	anonymous	true	true	System.SObjectException|Invalid field SyntheticAbsentField for Contact	6547ab1b73b83258468b3c55b4eb392e7a41231ad3c6abfdf28f0c4f969c5701
+67.0	Lead	missing-constructor	anonymous	false	false	Compilation failed at Line 1 column 12 with the error:  Field does not exist: SyntheticAbsentField on Lead	62e68ebcde9441453b191708ce804a8cc57dd450d13d0735d176e555a148252c
+67.0	Lead	boundary-constructor	anonymous	true	true	accepted	f7ad0b8f72c960428b6dcb26f06e19032d2eec894c3a0c0bd6f11b032eb26588
+67.0	Lead	missing-put	anonymous	true	true	System.SObjectException|Invalid field SyntheticAbsentField for Lead	488fd14d5fa50f258b15246d6b5032c3febaa498634a7330a4a460d6f10b005a
+67.0	PricebookEntry	missing-constructor	anonymous	false	false	Compilation failed at Line 1 column 22 with the error:  Field does not exist: SyntheticAbsentField on PricebookEntry	b696644dcd7ccb1d3f2b9f149388c01dca5cdce59a706cbd4309b8de1df04cc8
+67.0	PricebookEntry	boundary-constructor	anonymous	true	true	accepted	5bc1eb25931f670853d57c9f11a82ec2dbafd6d2f7ca8b1c86cc76b7fe76346d
+67.0	PricebookEntry	missing-put	anonymous	true	true	System.SObjectException|Invalid field SyntheticAbsentField for PricebookEntry	ddaef64745eb9cb961e182af7d6690ff55cd2f4aec1baff7233ce8ee85119080
+67.0	Contact	missing-constructor	named	false	false	Field does not exist: SyntheticAbsentField on Contact	99eb94d1a6d6dd84d075b329d636f4aa853396357e0e78adc5dcd700a34b9cb7
+67.0	Lead	missing-constructor	named	false	false	Field does not exist: SyntheticAbsentField on Lead	c487dcd5949cc0cc1658a484b065b6aca7073117a4b44b3d93b38aca70501522
+67.0	PricebookEntry	missing-constructor	named	false	false	Field does not exist: SyntheticAbsentField on PricebookEntry	8f5642028902b78fa67b7a06f82b2d5f419eebfc3d4dd498fd3d879dcf3604a9
+67.0	Contact	missing-constructor	test-runner	false	false	Field does not exist: SyntheticAbsentField on Contact	c0751216d5d8e1071600566e5096eee1a16ce93d95bbdd48e31cf9b1cba14b15
+67.0	Lead	missing-constructor	test-runner	false	false	Field does not exist: SyntheticAbsentField on Lead	318f896a94b102559a883b27c4796e6903a8a2608accfb18077a77dead6d4506
+67.0	PricebookEntry	missing-constructor	test-runner	false	false	Field does not exist: SyntheticAbsentField on PricebookEntry	e05193c892a07cd1a23a9ada7bde7c238239c8ae3f695e23ddcfa3ee2a1c6d28
+67.0	Contact	boundary-constructor	named	true	true	accepted	107359ff201e13302b8b5ff59ddd9334a3e1d75fe9f370966cc56713d4cd8cdd
+67.0	Contact	missing-put	named	true	true	System.SObjectException|Invalid field SyntheticAbsentField for Contact	3979aa5eadf5e6da19d2333fb4becf48c3156ec2d2fb3e496459c3dff5e77751
+67.0	Lead	boundary-constructor	named	true	true	accepted	08398a5ef133ec1e6c353012a1852152bf04b63ec6a53c8a3f085fbe4a356070
+67.0	Lead	missing-put	named	true	true	System.SObjectException|Invalid field SyntheticAbsentField for Lead	328907056fe5f0dc700a253d3f86832e45ee23aec0b1de599eead2f1ff6ecc79
+67.0	PricebookEntry	boundary-constructor	named	true	true	accepted	ec9f91c6dd647d10e1aa0eba971750a0fbf908bcc41fda2b858848b4f74f2b70
+67.0	PricebookEntry	missing-put	named	true	true	System.SObjectException|Invalid field SyntheticAbsentField for PricebookEntry	6a201f7e9257467d6d6ede82e8001c5f6d4abe30f8c85b02d3825d4ff1725ab4
+67.0	Contact	boundary-constructor	test-runner	true	true	accepted	3ef3e15f1391f28be2553ee223989919bac47031ed136a32973724a88c4b408a
+67.0	Contact	missing-put	test-runner	true	true	System.SObjectException|Invalid field SyntheticAbsentField for Contact	fd6912713a8d77f38305d699e5bc82ebd84ca767bd07a144388b47301cd0e2fb
+67.0	Lead	boundary-constructor	test-runner	true	true	accepted	64c678b0ce828a7b20839da7305c2e4bf182dc241a02e947e577fc3b43b084ba
+67.0	Lead	missing-put	test-runner	true	true	System.SObjectException|Invalid field SyntheticAbsentField for Lead	d07b484b55c2c2b7cda7452deddc756ad6aae76bb0ef1c0e151e44f3b21a91f5
+67.0	PricebookEntry	boundary-constructor	test-runner	true	true	accepted	bc3ac7b729a17952adc983741bf6cf1bd3a4a59d1c72ec7562b876849082b171
+67.0	PricebookEntry	missing-put	test-runner	true	true	System.SObjectException|Invalid field SyntheticAbsentField for PricebookEntry	3c449d6fd76193fca05cb884230eed81f772af2cfd673f422ad971531f92532a

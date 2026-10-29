@@ -8,7 +8,7 @@ import (
 
 func isSetupObject(objectName string) bool {
 	switch strings.ToLower(objectName) {
-	case "user", "profile", "userrole", "permissionset", "permissionsetassignment", "permissionsetgroup", "permissionsetgroupcomponent", "fieldpermissions", "objectpermissions", "setupentityaccess":
+	case "user", "profile", "userrole", "permissionset", "permissionsetassignment", "permissionsetlicenseassign", "permissionsetgroup", "permissionsetgroupcomponent", "fieldpermissions", "objectpermissions", "setupentityaccess":
 		return true
 	default:
 		return false

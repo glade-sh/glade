@@ -1,0 +1,147 @@
+api	route	case	input	outcome
+62.0	anonymous	comma.ListLabel__c	Birch_East	OK
+62.0	anonymous	comma.ListLabel__c	Cedar_West	OK
+62.0	anonymous	comma.ListLabel__c	Plain	FIELD_FILTER_VALIDATION_EXCEPTION
+62.0	anonymous	comma.ListLabel__c	null	OK
+62.0	anonymous	comma.Name__c	Birch_East	FIELD_FILTER_VALIDATION_EXCEPTION
+62.0	anonymous	comma.Name__c	Cedar_West	FIELD_FILTER_VALIDATION_EXCEPTION
+62.0	anonymous	comma.Name__c	Plain	FIELD_FILTER_VALIDATION_EXCEPTION
+62.0	anonymous	comma.Name__c	null	OK
+62.0	anonymous	comma.OtherLabel__c	Birch_East	FIELD_FILTER_VALIDATION_EXCEPTION
+62.0	anonymous	comma.OtherLabel__c	Cedar_West	OK
+62.0	anonymous	comma.OtherLabel__c	Plain	FIELD_FILTER_VALIDATION_EXCEPTION
+62.0	anonymous	comma.OtherLabel__c	null	OK
+62.0	anonymous	comma.QuotedLabel__c	Birch_East	OK
+62.0	anonymous	comma.QuotedLabel__c	Cedar_West	FIELD_FILTER_VALIDATION_EXCEPTION
+62.0	anonymous	comma.QuotedLabel__c	Plain	FIELD_FILTER_VALIDATION_EXCEPTION
+62.0	anonymous	comma.QuotedLabel__c	null	OK
+62.0	anonymous	comma.QuotedName__c	Birch_East	OK
+62.0	anonymous	comma.QuotedName__c	Cedar_West	FIELD_FILTER_VALIDATION_EXCEPTION
+62.0	anonymous	comma.QuotedName__c	Plain	FIELD_FILTER_VALIDATION_EXCEPTION
+62.0	anonymous	comma.QuotedName__c	null	OK
+62.0	anonymous	date.DateLocale__c	25	FIELD_FILTER_VALIDATION_EXCEPTION
+62.0	anonymous	date.DateLocale__c	26	OK
+62.0	anonymous	date.DateLocale__c	27	OK
+62.0	anonymous	date.DateLocale__c	28	FIELD_FILTER_VALIDATION_EXCEPTION
+62.0	anonymous	date.DateOne__c	25	FIELD_FILTER_VALIDATION_EXCEPTION
+62.0	anonymous	date.DateOne__c	26	OK
+62.0	anonymous	date.DateOne__c	27	FIELD_FILTER_VALIDATION_EXCEPTION
+62.0	anonymous	date.DateOne__c	28	FIELD_FILTER_VALIDATION_EXCEPTION
+62.0	anonymous	explicit	Care	true|true
+62.0	anonymous	explicit	Named_Individual	true|true
+62.0	anonymous	explicit	Named_Person	true|true
+62.0	anonymous	missingLastName	Care	REQUIRED_FIELD_MISSING
+62.0	anonymous	missingLastName	Named_Individual	REQUIRED_FIELD_MISSING
+62.0	anonymous	missingLastName	Named_Person	REQUIRED_FIELD_MISSING
+62.0	anonymous	number.NumberPair__c	12.56725	FIELD_FILTER_VALIDATION_EXCEPTION
+62.0	anonymous	number.NumberPair__c	12.5	OK
+62.0	anonymous	number.NumberPair__c	1234	FIELD_FILTER_VALIDATION_EXCEPTION
+62.0	anonymous	number.NumberPair__c	1	FIELD_FILTER_VALIDATION_EXCEPTION
+62.0	anonymous	number.NumberPair__c	234	FIELD_FILTER_VALIDATION_EXCEPTION
+62.0	anonymous	number.NumberPair__c	67.25	OK
+62.0	anonymous	number.NumberPair__c	999	FIELD_FILTER_VALIDATION_EXCEPTION
+62.0	anonymous	number.NumberQuoted__c	12.56725	FIELD_FILTER_VALIDATION_EXCEPTION
+62.0	anonymous	number.NumberQuoted__c	12.5	FIELD_FILTER_VALIDATION_EXCEPTION
+62.0	anonymous	number.NumberQuoted__c	1234	OK
+62.0	anonymous	number.NumberQuoted__c	1	FIELD_FILTER_VALIDATION_EXCEPTION
+62.0	anonymous	number.NumberQuoted__c	234	FIELD_FILTER_VALIDATION_EXCEPTION
+62.0	anonymous	number.NumberQuoted__c	67.25	FIELD_FILTER_VALIDATION_EXCEPTION
+62.0	anonymous	number.NumberQuoted__c	999	FIELD_FILTER_VALIDATION_EXCEPTION
+62.0	anonymous	number.Number__c	12.56725	FIELD_FILTER_VALIDATION_EXCEPTION
+62.0	anonymous	number.Number__c	12.5	FIELD_FILTER_VALIDATION_EXCEPTION
+62.0	anonymous	number.Number__c	1234	FIELD_FILTER_VALIDATION_EXCEPTION
+62.0	anonymous	number.Number__c	1	OK
+62.0	anonymous	number.Number__c	234	OK
+62.0	anonymous	number.Number__c	67.25	FIELD_FILTER_VALIDATION_EXCEPTION
+62.0	anonymous	number.Number__c	999	FIELD_FILTER_VALIDATION_EXCEPTION
+67.0	anonymous	comma.ListLabel__c	Birch_East	OK
+67.0	anonymous	comma.ListLabel__c	Cedar_West	OK
+67.0	anonymous	comma.ListLabel__c	Plain	FIELD_FILTER_VALIDATION_EXCEPTION
+67.0	anonymous	comma.ListLabel__c	null	OK
+67.0	anonymous	comma.Name__c	Birch_East	FIELD_FILTER_VALIDATION_EXCEPTION
+67.0	anonymous	comma.Name__c	Cedar_West	FIELD_FILTER_VALIDATION_EXCEPTION
+67.0	anonymous	comma.Name__c	Plain	FIELD_FILTER_VALIDATION_EXCEPTION
+67.0	anonymous	comma.Name__c	null	OK
+67.0	anonymous	comma.OtherLabel__c	Birch_East	FIELD_FILTER_VALIDATION_EXCEPTION
+67.0	anonymous	comma.OtherLabel__c	Cedar_West	OK
+67.0	anonymous	comma.OtherLabel__c	Plain	FIELD_FILTER_VALIDATION_EXCEPTION
+67.0	anonymous	comma.OtherLabel__c	null	OK
+67.0	anonymous	comma.QuotedLabel__c	Birch_East	OK
+67.0	anonymous	comma.QuotedLabel__c	Cedar_West	FIELD_FILTER_VALIDATION_EXCEPTION
+67.0	anonymous	comma.QuotedLabel__c	Plain	FIELD_FILTER_VALIDATION_EXCEPTION
+67.0	anonymous	comma.QuotedLabel__c	null	OK
+67.0	anonymous	comma.QuotedName__c	Birch_East	OK
+67.0	anonymous	comma.QuotedName__c	Cedar_West	FIELD_FILTER_VALIDATION_EXCEPTION
+67.0	anonymous	comma.QuotedName__c	Plain	FIELD_FILTER_VALIDATION_EXCEPTION
+67.0	anonymous	comma.QuotedName__c	null	OK
+67.0	anonymous	date.DateLocale__c	25	FIELD_FILTER_VALIDATION_EXCEPTION
+67.0	anonymous	date.DateLocale__c	26	OK
+67.0	anonymous	date.DateLocale__c	27	OK
+67.0	anonymous	date.DateLocale__c	28	FIELD_FILTER_VALIDATION_EXCEPTION
+67.0	anonymous	date.DateOne__c	25	FIELD_FILTER_VALIDATION_EXCEPTION
+67.0	anonymous	date.DateOne__c	26	OK
+67.0	anonymous	date.DateOne__c	27	FIELD_FILTER_VALIDATION_EXCEPTION
+67.0	anonymous	date.DateOne__c	28	FIELD_FILTER_VALIDATION_EXCEPTION
+67.0	anonymous	explicit	Care	true|true
+67.0	anonymous	explicit	Named_Individual	true|true
+67.0	anonymous	explicit	Named_Person	true|true
+67.0	anonymous	missingLastName	Care	REQUIRED_FIELD_MISSING
+67.0	anonymous	missingLastName	Named_Individual	REQUIRED_FIELD_MISSING
+67.0	anonymous	missingLastName	Named_Person	REQUIRED_FIELD_MISSING
+67.0	anonymous	number.NumberPair__c	12.56725	FIELD_FILTER_VALIDATION_EXCEPTION
+67.0	anonymous	number.NumberPair__c	12.5	OK
+67.0	anonymous	number.NumberPair__c	1234	FIELD_FILTER_VALIDATION_EXCEPTION
+67.0	anonymous	number.NumberPair__c	1	FIELD_FILTER_VALIDATION_EXCEPTION
+67.0	anonymous	number.NumberPair__c	234	FIELD_FILTER_VALIDATION_EXCEPTION
+67.0	anonymous	number.NumberPair__c	67.25	OK
+67.0	anonymous	number.NumberPair__c	999	FIELD_FILTER_VALIDATION_EXCEPTION
+67.0	anonymous	number.NumberQuoted__c	12.56725	FIELD_FILTER_VALIDATION_EXCEPTION
+67.0	anonymous	number.NumberQuoted__c	12.5	FIELD_FILTER_VALIDATION_EXCEPTION
+67.0	anonymous	number.NumberQuoted__c	1234	OK
+67.0	anonymous	number.NumberQuoted__c	1	FIELD_FILTER_VALIDATION_EXCEPTION
+67.0	anonymous	number.NumberQuoted__c	234	FIELD_FILTER_VALIDATION_EXCEPTION
+67.0	anonymous	number.NumberQuoted__c	67.25	FIELD_FILTER_VALIDATION_EXCEPTION
+67.0	anonymous	number.NumberQuoted__c	999	FIELD_FILTER_VALIDATION_EXCEPTION
+67.0	anonymous	number.Number__c	12.56725	FIELD_FILTER_VALIDATION_EXCEPTION
+67.0	anonymous	number.Number__c	12.5	FIELD_FILTER_VALIDATION_EXCEPTION
+67.0	anonymous	number.Number__c	1234	FIELD_FILTER_VALIDATION_EXCEPTION
+67.0	anonymous	number.Number__c	1	OK
+67.0	anonymous	number.Number__c	234	OK
+67.0	anonymous	number.Number__c	67.25	FIELD_FILTER_VALIDATION_EXCEPTION
+67.0	anonymous	number.Number__c	999	FIELD_FILTER_VALIDATION_EXCEPTION
+62.0	metadata	CommaProbe__c.Developer__c	deploy	Invalid lookup filter: Syntax error.  Found 'end of formula'
+62.0	metadata	CommaProbe__c.Label__c	deploy	Invalid lookup filter: Syntax error.  Found 'end of formula'
+62.0	metadata	CommaProbe__c.Name__c	deploy	OK
+62.0	metadata	CommaProbe__c.QuotedLabel__c	deploy	OK
+62.0	metadata	CommaProbe__c.QuotedName__c	deploy	OK
+62.0	metadata	LiteralProbe__c.DateText__c	deploy	Invalid filter: Invalid date (Valid date format 10/26/2026)
+62.0	metadata	LiteralProbe__c.Date__c	deploy	Invalid filter: Invalid date (Valid date format 10/26/2026)
+62.0	metadata	LiteralProbe__c.NumberPair__c	deploy	OK
+62.0	metadata	LiteralProbe__c.Number__c	deploy	OK
+67.0	metadata	CommaProbe__c.Developer__c	deploy	Invalid lookup filter: Syntax error.  Found 'end of formula'
+67.0	metadata	CommaProbe__c.Label__c	deploy	Invalid lookup filter: Syntax error.  Found 'end of formula'
+67.0	metadata	CommaProbe__c.Name__c	deploy	OK
+67.0	metadata	CommaProbe__c.QuotedLabel__c	deploy	OK
+67.0	metadata	CommaProbe__c.QuotedName__c	deploy	OK
+67.0	metadata	LiteralProbe__c.DateText__c	deploy	Invalid filter: Invalid date (Valid date format 10/26/2026)
+67.0	metadata	LiteralProbe__c.Date__c	deploy	Invalid filter: Invalid date (Valid date format 10/26/2026)
+67.0	metadata	LiteralProbe__c.NumberPair__c	deploy	OK
+67.0	metadata	LiteralProbe__c.Number__c	deploy	OK
+62.0	metadata	CommaProbe__c.OtherLabel__c	deploy	OK
+62.0	metadata	CommaProbe__c.QuotedDeveloper__c	deploy	Invalid lookup filter: Syntax error.  Found 'end of formula'
+67.0	metadata	CommaProbe__c.OtherLabel__c	deploy	OK
+67.0	metadata	CommaProbe__c.QuotedDeveloper__c	deploy	Invalid lookup filter: Syntax error.  Found 'end of formula'
+62.0	metadata	LiteralProbe__c.DateLocale__c	deploy	OK
+62.0	metadata	LiteralProbe__c.DateOne__c	deploy	OK
+62.0	metadata	LiteralProbe__c.NumberQuoted__c	deploy	OK
+67.0	metadata	LiteralProbe__c.DateLocale__c	deploy	OK
+67.0	metadata	LiteralProbe__c.DateOne__c	deploy	OK
+67.0	metadata	LiteralProbe__c.NumberQuoted__c	deploy	OK
+62.0	metadata	CommaProbe__c.ListLabel__c	deploy	OK
+67.0	metadata	CommaProbe__c.ListLabel__c	deploy	OK
+62.0	profile	personVisibilities	all	OK
+62.0	anonymous-after-profile	allRows	all	55 matched
+62.0	@IsTest	allRows	all	55 matched
+67.0	profile	personVisibilities	all	OK
+67.0	anonymous-after-profile	allRows	all	55 matched
+67.0	@IsTest	allRows	all	55 matched

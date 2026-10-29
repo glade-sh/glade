@@ -1,0 +1,9 @@
+id	group	route	status	value
+Hill	flow_number_text	anonymous	ok	null
+HillTone	flow_number_text	anonymous	ok	null
+Lake	flow_number_text	anonymous	ok	"0"
+LakeTone	flow_number_text	anonymous	ok	"Blue"
+River	flow_number_text	anonymous	ok	"2,031"
+RiverTone	flow_number_text	anonymous	ok	"Amber"
+changed	flow_number_text	anonymous	ok	"2,042"
+changedTone	flow_number_text	anonymous	ok	null

@@ -129,7 +129,7 @@ func TestDMLTransactionsOrgConformance(t *testing.T) {
 		return "ACCEPTED"
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			// Select raw native diagnostics before either route pads rejected source.
 			cases := append([]familyCase(nil), data.Cases...)
 			for i := range cases {

@@ -1,0 +1,12 @@
+method	route
+afterLookup	record-triggered after-save parent -> Get Records -> record-input child -> lookup
+afterCollection	record-triggered after-save parent -> Get Records collection -> collection-input child -> loop -> record-input child -> lookup
+autoLookup	autolaunched parent -> Get Records -> record-input child -> lookup
+autoRecord	autolaunched parent record variable -> record-input child -> lookup
+autoCollection	autolaunched parent -> Get Records collection -> collection-input child -> loop -> record-input child -> lookup
+emptyCollection	autolaunched parent -> empty Get Records collection -> collection-input child
+directChild	direct child interview -> record input -> lookup
+directCollectionChild	direct child interview -> collection input -> loop -> record-input child -> lookup
+beforeLookup	before-save parent -> Get Records -> triggering-record field assignment; subflow native eligibility captured separately
+autoCollectionVariable	autolaunched parent collection variable -> collection-input child -> loop -> record-input child -> lookup
+autoScalar	autolaunched parent scalar input -> scalar-input child -> lookup

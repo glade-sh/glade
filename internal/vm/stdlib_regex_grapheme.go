@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/dlclark/regexp2"
 	"github.com/rivo/uniseg"
@@ -68,7 +69,19 @@ func compileRegexp2PlanForInputWithException(callee, source, input, exceptionTyp
 	if err != nil {
 		return nil, err
 	}
-	table := buildGraphemeBoundaryTable(input)
+	// A pattern without grapheme tokens compiles independently of its input:
+	// it needs no cluster table and its plan can be shared between calls.
+	inputIndependent := !regexSourceUsesGraphemeTokens(regexp2Source)
+	cacheKey := regexp2PlanCacheKey{callee: callee, source: source, exceptionType: exceptionType}
+	if inputIndependent {
+		if plan, ok := regexp2PlanCache.lookup(cacheKey); ok {
+			return plan, nil
+		}
+	}
+	var table *graphemeBoundaryTable
+	if !inputIndependent {
+		table = buildGraphemeBoundaryTable(input)
+	}
 	internal := map[string]bool{}
 	regexp2Source = rewriteGraphemeTokensForRegexp2(regexp2Source, table, internal)
 	re, err := regexp2.Compile(regexp2Source, regexp2.None)
@@ -86,7 +99,7 @@ func compileRegexp2PlanForInputWithException(callee, source, input, exceptionTyp
 		}
 	}
 	re.MatchTimeout = regexp2MatchTimeout
-	return &regexp2Plan{
+	plan := &regexp2Plan{
 		originalSource:     source,
 		source:             regexp2Source,
 		matchSource:        markedSource,
@@ -95,7 +108,48 @@ func compileRegexp2PlanForInputWithException(callee, source, input, exceptionTyp
 		internalGroupNames: internal,
 		publicGroupNumbers: publicGroups,
 		endAssertionGroups: endGroups,
-	}, nil
+	}
+	if inputIndependent {
+		regexp2PlanCache.store(cacheKey, plan)
+	}
+	return plan, nil
+}
+
+func regexSourceUsesGraphemeTokens(source string) bool {
+	return strings.Contains(source, `\X`) || strings.Contains(source, `\b{g}`)
+}
+
+type regexp2PlanCacheKey struct {
+	callee        string
+	source        string
+	exceptionType string
+}
+
+// regexp2PlanCacheLimit bounds the shared plan cache. Patterns built from data
+// could otherwise grow it without limit in a long-lived server.
+const regexp2PlanCacheLimit = 4096
+
+type regexp2PlanCacheStore struct {
+	mu    sync.Mutex
+	plans map[regexp2PlanCacheKey]*regexp2Plan
+}
+
+var regexp2PlanCache regexp2PlanCacheStore
+
+func (c *regexp2PlanCacheStore) lookup(key regexp2PlanCacheKey) (*regexp2Plan, bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	plan, ok := c.plans[key]
+	return plan, ok
+}
+
+func (c *regexp2PlanCacheStore) store(key regexp2PlanCacheKey, plan *regexp2Plan) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.plans == nil || len(c.plans) >= regexp2PlanCacheLimit {
+		c.plans = make(map[regexp2PlanCacheKey]*regexp2Plan)
+	}
+	c.plans[key] = plan
 }
 
 func regexp2CompileSourceForSyntax(source string) string {
@@ -208,25 +262,33 @@ func regexp2PublicGroupNumbers(re *regexp2.Regexp, internal map[string]bool, sou
 }
 
 func (p *regexp2Plan) findValidStartingAt(input string, startAt int) (*regexp2.Match, error) {
-	match, err := p.re.FindStringMatchStartingAt(input, startAt)
+	match, err := searchRegexp2(p.re, input, func() (*regexp2.Match, error) {
+		return p.re.FindStringMatchStartingAt(input, startAt)
+	})
 	for match != nil && err == nil {
 		if p.validGraphemeMatch(input, match) {
 			return match, nil
 		}
-		match, err = p.re.FindNextMatch(match)
+		match, err = p.findNext(input, match)
 	}
 	return nil, err
 }
 
 func (p *regexp2Plan) findNextValid(input string, prev *regexp2.Match) (*regexp2.Match, error) {
-	match, err := p.re.FindNextMatch(prev)
+	match, err := p.findNext(input, prev)
 	for match != nil && err == nil {
 		if p.validGraphemeMatch(input, match) {
 			return match, nil
 		}
-		match, err = p.re.FindNextMatch(match)
+		match, err = p.findNext(input, match)
 	}
 	return nil, err
+}
+
+func (p *regexp2Plan) findNext(input string, prev *regexp2.Match) (*regexp2.Match, error) {
+	return searchRegexp2(p.re, input, func() (*regexp2.Match, error) {
+		return p.re.FindNextMatch(prev)
+	})
 }
 
 func (p *regexp2Plan) validGraphemeMatch(input string, match *regexp2.Match) bool {

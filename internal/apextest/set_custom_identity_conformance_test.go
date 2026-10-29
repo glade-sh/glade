@@ -168,7 +168,7 @@ func TestSetCustomIdentityConformance(t *testing.T) {
 		t.Fatal("pending/carry count differs")
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "SetCustomIdentity", api)
 			baseIndex := listSObjectCastIndex(t, api, nil)
 			org := orgFromIndex(baseIndex)

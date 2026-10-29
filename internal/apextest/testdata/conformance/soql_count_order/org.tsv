@@ -1,0 +1,149 @@
+source_api	route	case	query_route	observation
+62.0	anonymous	count_missing	query	{"message":"No such column 'Bogus__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.","type":"System.QueryException"}
+62.0	anonymous	count_missing	queryWithBinds	{"message":"No such column 'Bogus__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.","type":"System.QueryException"}
+62.0	anonymous	count_missing	countQuery	{"message":"No such column 'Bogus__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.","type":"System.QueryException"}
+62.0	anonymous	count_missing	locator	{"message":"No such column 'Bogus__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.","type":"System.QueryException"}
+62.0	anonymous	count_parent_missing	query	{"message":"No such column 'Bogus__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.","type":"System.QueryException"}
+62.0	anonymous	count_parent_missing	queryWithBinds	{"message":"No such column 'Bogus__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.","type":"System.QueryException"}
+62.0	anonymous	count_parent_missing	countQuery	{"message":"No such column 'Bogus__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.","type":"System.QueryException"}
+62.0	anonymous	count_parent_missing	locator	{"message":"No such column 'Bogus__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.","type":"System.QueryException"}
+62.0	anonymous	count_bad_type	query	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	anonymous	count_bad_type	queryWithBinds	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	anonymous	count_bad_type	countQuery	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	anonymous	count_bad_type	locator	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	anonymous	count_valid	query	{"message":"use countQuery() for [select count()...] queries","type":"System.QueryException"}
+62.0	anonymous	count_valid	queryWithBinds	{"message":"use countQuery() for [select count()...] queries","type":"System.QueryException"}
+62.0	anonymous	count_valid	countQuery	0
+62.0	anonymous	count_valid	locator	{"message":"use countQuery() for [select count()...] queries","type":"System.QueryException"}
+62.0	anonymous	count_empty	query	{"message":"use countQuery() for [select count()...] queries","type":"System.QueryException"}
+62.0	anonymous	count_empty	queryWithBinds	{"message":"use countQuery() for [select count()...] queries","type":"System.QueryException"}
+62.0	anonymous	count_empty	countQuery	0
+62.0	anonymous	count_empty	locator	{"message":"use countQuery() for [select count()...] queries","type":"System.QueryException"}
+62.0	anonymous	group_hidden	query	["total"]
+62.0	anonymous	group_selected	query	["Name","total"]
+62.0	anonymous	group_other_hidden	query	["total"]
+62.0	anonymous	group_alias	query	["label","total"]
+62.0	anonymous	group_only	query	["Name"]
+62.0	anonymous	order_name_id	query	["Name","Id"]
+62.0	anonymous	order_id_name	query	["Id","Name"]
+62.0	anonymous	order_three	query	["Phone","Name","Id"]
+62.0	anonymous	order_three_reverse	query	["Id","Name","Phone"]
+62.0	anonymous	order_null	query	["Name","Id"]
+62.0	isTest	count_bad_type	countQuery	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	isTest	count_bad_type	locator	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	isTest	count_bad_type	query	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	isTest	count_bad_type	queryWithBinds	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	isTest	count_empty	countQuery	0
+62.0	isTest	count_empty	locator	{"message":"use countQuery() for [select count()...] queries","type":"System.QueryException"}
+62.0	isTest	count_empty	query	{"message":"use countQuery() for [select count()...] queries","type":"System.QueryException"}
+62.0	isTest	count_empty	queryWithBinds	{"message":"use countQuery() for [select count()...] queries","type":"System.QueryException"}
+62.0	isTest	count_missing	countQuery	{"message":"No such column 'Bogus__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.","type":"System.QueryException"}
+62.0	isTest	count_missing	locator	{"message":"No such column 'Bogus__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.","type":"System.QueryException"}
+62.0	isTest	count_missing	query	{"message":"No such column 'Bogus__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.","type":"System.QueryException"}
+62.0	isTest	count_missing	queryWithBinds	{"message":"No such column 'Bogus__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.","type":"System.QueryException"}
+62.0	isTest	count_parent_missing	countQuery	{"message":"No such column 'Bogus__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.","type":"System.QueryException"}
+62.0	isTest	count_parent_missing	locator	{"message":"No such column 'Bogus__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.","type":"System.QueryException"}
+62.0	isTest	count_parent_missing	query	{"message":"No such column 'Bogus__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.","type":"System.QueryException"}
+62.0	isTest	count_parent_missing	queryWithBinds	{"message":"No such column 'Bogus__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.","type":"System.QueryException"}
+62.0	isTest	count_valid	countQuery	0
+62.0	isTest	count_valid	locator	{"message":"use countQuery() for [select count()...] queries","type":"System.QueryException"}
+62.0	isTest	count_valid	query	{"message":"use countQuery() for [select count()...] queries","type":"System.QueryException"}
+62.0	isTest	count_valid	queryWithBinds	{"message":"use countQuery() for [select count()...] queries","type":"System.QueryException"}
+62.0	isTest	group_alias	query	["label","total"]
+62.0	isTest	group_hidden	query	["total"]
+62.0	isTest	group_only	query	["Name"]
+62.0	isTest	group_other_hidden	query	["total"]
+62.0	isTest	group_selected	query	["Name","total"]
+62.0	isTest	order_id_name	query	["Id","Name"]
+62.0	isTest	order_name_id	query	["Name","Id"]
+62.0	isTest	order_null	query	["Name","Id"]
+62.0	isTest	order_three	query	["Phone","Name","Id"]
+62.0	isTest	order_three_reverse	query	["Id","Name","Phone"]
+67.0	anonymous	count_missing	query	{"message":"No such column 'Bogus__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.","type":"System.QueryException"}
+67.0	anonymous	count_missing	queryWithBinds	{"message":"No such column 'Bogus__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.","type":"System.QueryException"}
+67.0	anonymous	count_missing	countQuery	{"message":"No such column 'Bogus__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.","type":"System.QueryException"}
+67.0	anonymous	count_missing	locator	{"message":"No such column 'Bogus__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.","type":"System.QueryException"}
+67.0	anonymous	count_parent_missing	query	{"message":"No such column 'Bogus__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.","type":"System.QueryException"}
+67.0	anonymous	count_parent_missing	queryWithBinds	{"message":"No such column 'Bogus__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.","type":"System.QueryException"}
+67.0	anonymous	count_parent_missing	countQuery	{"message":"No such column 'Bogus__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.","type":"System.QueryException"}
+67.0	anonymous	count_parent_missing	locator	{"message":"No such column 'Bogus__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.","type":"System.QueryException"}
+67.0	anonymous	count_bad_type	query	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	anonymous	count_bad_type	queryWithBinds	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	anonymous	count_bad_type	countQuery	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	anonymous	count_bad_type	locator	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	anonymous	count_valid	query	{"message":"use countQuery() for [select count()...] queries","type":"System.QueryException"}
+67.0	anonymous	count_valid	queryWithBinds	{"message":"use countQuery() for [select count()...] queries","type":"System.QueryException"}
+67.0	anonymous	count_valid	countQuery	0
+67.0	anonymous	count_valid	locator	{"message":"use countQuery() for [select count()...] queries","type":"System.QueryException"}
+67.0	anonymous	count_empty	query	{"message":"use countQuery() for [select count()...] queries","type":"System.QueryException"}
+67.0	anonymous	count_empty	queryWithBinds	{"message":"use countQuery() for [select count()...] queries","type":"System.QueryException"}
+67.0	anonymous	count_empty	countQuery	0
+67.0	anonymous	count_empty	locator	{"message":"use countQuery() for [select count()...] queries","type":"System.QueryException"}
+67.0	anonymous	group_hidden	query	["total"]
+67.0	anonymous	group_selected	query	["Name","total"]
+67.0	anonymous	group_other_hidden	query	["total"]
+67.0	anonymous	group_alias	query	["label","total"]
+67.0	anonymous	group_only	query	["Name"]
+67.0	anonymous	order_name_id	query	["Name","Id"]
+67.0	anonymous	order_id_name	query	["Id","Name"]
+67.0	anonymous	order_three	query	["Phone","Name","Id"]
+67.0	anonymous	order_three_reverse	query	["Id","Name","Phone"]
+67.0	anonymous	order_null	query	["Name","Id"]
+67.0	isTest	count_bad_type	countQuery	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	isTest	count_bad_type	locator	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	isTest	count_bad_type	query	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	isTest	count_bad_type	queryWithBinds	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	isTest	count_empty	countQuery	0
+67.0	isTest	count_empty	locator	{"message":"use countQuery() for [select count()...] queries","type":"System.QueryException"}
+67.0	isTest	count_empty	query	{"message":"use countQuery() for [select count()...] queries","type":"System.QueryException"}
+67.0	isTest	count_empty	queryWithBinds	{"message":"use countQuery() for [select count()...] queries","type":"System.QueryException"}
+67.0	isTest	count_missing	countQuery	{"message":"No such column 'Bogus__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.","type":"System.QueryException"}
+67.0	isTest	count_missing	locator	{"message":"No such column 'Bogus__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.","type":"System.QueryException"}
+67.0	isTest	count_missing	query	{"message":"No such column 'Bogus__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.","type":"System.QueryException"}
+67.0	isTest	count_missing	queryWithBinds	{"message":"No such column 'Bogus__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.","type":"System.QueryException"}
+67.0	isTest	count_parent_missing	countQuery	{"message":"No such column 'Bogus__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.","type":"System.QueryException"}
+67.0	isTest	count_parent_missing	locator	{"message":"No such column 'Bogus__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.","type":"System.QueryException"}
+67.0	isTest	count_parent_missing	query	{"message":"No such column 'Bogus__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.","type":"System.QueryException"}
+67.0	isTest	count_parent_missing	queryWithBinds	{"message":"No such column 'Bogus__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.","type":"System.QueryException"}
+67.0	isTest	count_valid	countQuery	0
+67.0	isTest	count_valid	locator	{"message":"use countQuery() for [select count()...] queries","type":"System.QueryException"}
+67.0	isTest	count_valid	query	{"message":"use countQuery() for [select count()...] queries","type":"System.QueryException"}
+67.0	isTest	count_valid	queryWithBinds	{"message":"use countQuery() for [select count()...] queries","type":"System.QueryException"}
+67.0	isTest	group_alias	query	["label","total"]
+67.0	isTest	group_hidden	query	["total"]
+67.0	isTest	group_only	query	["Name"]
+67.0	isTest	group_other_hidden	query	["total"]
+67.0	isTest	group_selected	query	["Name","total"]
+67.0	isTest	order_id_name	query	["Id","Name"]
+67.0	isTest	order_name_id	query	["Name","Id"]
+67.0	isTest	order_null	query	["Name","Id"]
+67.0	isTest	order_three	query	["Phone","Name","Id"]
+67.0	isTest	order_three_reverse	query	["Id","Name","Phone"]
+62.0	anonymous	custom_new_missing	compile	{"compiled":false,"message":"Compilation failed at Line 1 column 37 with the error:\n\nVariable does not exist: Bogus__c"}
+62.0	isTest	custom_new_missing	compile	{"compiled":false,"message":"Variable does not exist: Bogus__c"}
+62.0	anonymous	custom_local_missing	compile	{"compiled":false,"message":"Compilation failed at Line 1 column 63 with the error:\n\nVariable does not exist: Other__c"}
+62.0	isTest	custom_local_missing	compile	{"compiled":false,"message":"Variable does not exist: Other__c"}
+62.0	anonymous	custom_new_missing_write	compile	{"compiled":false,"message":"Compilation failed at Line 1 column 22 with the error:\n\nVariable does not exist: Third__c"}
+62.0	isTest	custom_new_missing_write	compile	{"compiled":false,"message":"Variable does not exist: Third__c"}
+62.0	anonymous	custom_known	compile	{"compiled":true}
+62.0	isTest	custom_known	compile	{"compiled":true}
+62.0	anonymous	custom_id	compile	{"compiled":true}
+62.0	isTest	custom_id	compile	{"compiled":true}
+62.0	anonymous	custom_safe_missing	compile	{"compiled":false,"message":"Compilation failed at Line 1 column 38 with the error:\n\nVariable does not exist: Fourth__c"}
+62.0	isTest	custom_safe_missing	compile	{"compiled":false,"message":"Variable does not exist: Fourth__c"}
+62.0	anonymous	custom_new_other	compile	{"compiled":false,"message":"Compilation failed at Line 1 column 37 with the error:\n\nVariable does not exist: Fifth__c"}
+62.0	isTest	custom_new_other	compile	{"compiled":false,"message":"Variable does not exist: Fifth__c"}
+67.0	anonymous	custom_new_missing	compile	{"compiled":false,"message":"Compilation failed at Line 1 column 37 with the error:\n\nVariable does not exist: Bogus__c"}
+67.0	isTest	custom_new_missing	compile	{"compiled":false,"message":"Variable does not exist: Bogus__c"}
+67.0	anonymous	custom_local_missing	compile	{"compiled":false,"message":"Compilation failed at Line 1 column 63 with the error:\n\nVariable does not exist: Other__c"}
+67.0	isTest	custom_local_missing	compile	{"compiled":false,"message":"Variable does not exist: Other__c"}
+67.0	anonymous	custom_new_missing_write	compile	{"compiled":false,"message":"Compilation failed at Line 1 column 22 with the error:\n\nVariable does not exist: Third__c"}
+67.0	isTest	custom_new_missing_write	compile	{"compiled":false,"message":"Variable does not exist: Third__c"}
+67.0	anonymous	custom_known	compile	{"compiled":true}
+67.0	isTest	custom_known	compile	{"compiled":true}
+67.0	anonymous	custom_id	compile	{"compiled":true}
+67.0	isTest	custom_id	compile	{"compiled":true}
+67.0	anonymous	custom_safe_missing	compile	{"compiled":false,"message":"Compilation failed at Line 1 column 38 with the error:\n\nVariable does not exist: Fourth__c"}
+67.0	isTest	custom_safe_missing	compile	{"compiled":false,"message":"Variable does not exist: Fourth__c"}
+67.0	anonymous	custom_new_other	compile	{"compiled":false,"message":"Compilation failed at Line 1 column 37 with the error:\n\nVariable does not exist: Fifth__c"}
+67.0	isTest	custom_new_other	compile	{"compiled":false,"message":"Variable does not exist: Fifth__c"}

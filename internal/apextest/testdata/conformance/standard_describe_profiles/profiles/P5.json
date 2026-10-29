@@ -1,0 +1,12 @@
+{
+  "orgName": "Standard describe profile P5",
+  "edition": "Developer",
+  "settings": {
+    "quoteSettings": {
+      "enableQuote": true
+    },
+    "orderSettings": {
+      "enableOrders": true
+    }
+  }
+}

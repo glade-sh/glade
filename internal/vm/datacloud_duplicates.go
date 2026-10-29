@@ -99,7 +99,7 @@ func duplicateMatchRecordValue(record storage.Record, find bool) Value {
 				put(field, user)
 			}
 		case "BillingAddress":
-			address := Object("Address")
+			address := newSystemAddress()
 			for component, source := range map[string]string{"street": "BillingStreet", "city": "BillingCity", "state": "BillingState", "postalCode": "BillingPostalCode", "country": "BillingCountry"} {
 				if _, value, ok := objectFieldValue(full, source); ok && value.Kind != ValueNull {
 					address.Fields[component] = value

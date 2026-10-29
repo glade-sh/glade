@@ -45,7 +45,7 @@ func TestSObjectContainersOrgConformance(t *testing.T) {
 		return "'" + strings.ReplaceAll(strings.ReplaceAll(s, "\\", "\\\\"), "'", "\\'") + "'"
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			root := t.TempDir()
 			var files []string
 			for name, source := range data.Files {

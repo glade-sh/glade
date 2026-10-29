@@ -1,0 +1,14 @@
+id	group	route	status	value
+P01	FLOW_GAPS	anonymous	runtime	{"outcome":"runtime","value":{"exception":"FIELD_CUSTOM_VALIDATION_EXCEPTION","fields":0,"message":"D=March 9, 2031|N=365|S=ERR|B=true|A=1,234.5|X=dd|"}}
+P02	FLOW_GAPS	anonymous	runtime	{"outcome":"runtime","value":{"exception":"FIELD_CUSTOM_VALIDATION_EXCEPTION","fields":0,"message":"D=December 1, 2031|N=365|S=ERR|B=true|A=|X=|"}}
+P03	FLOW_GAPS	anonymous	runtime	{"outcome":"runtime","value":{"exception":"FIELD_CUSTOM_VALIDATION_EXCEPTION","fields":0,"message":"D=March 9, 2031|N=365|S=ERR|B=true|A=5|X=|"}}
+P04	FLOW_GAPS	anonymous	runtime	{"outcome":"runtime","value":{"descriptionIsParentId":true,"descriptionLength":18,"site":"Par"}}
+P05	FLOW_GAPS	anonymous	runtime	{"outcome":"runtime","value":{"description":null,"site":null}}
+P06	FLOW_GAPS	anonymous	runtime	{"outcome":"runtime","value":{"exception":null,"id":true}}
+P07	FLOW_GAPS	anonymous	runtime	{"outcome":"runtime","value":{"exception":null,"id":true}}
+P08	FLOW_GAPS	anonymous	runtime	{"outcome":"runtime","value":{"exception":"FIELD_CUSTOM_VALIDATION_EXCEPTION","fields":0,"message":"over limit"}}
+P09	FLOW_GAPS	anonymous	runtime	{"outcome":"runtime","value":{"exception":null}}
+P10	FLOW_GAPS	anonymous	runtime	{"outcome":"runtime","value":{"exception":null}}
+P11	FLOW_GAPS	anonymous	runtime	{"outcome":"runtime","value":{"exception":"FIELD_CUSTOM_VALIDATION_EXCEPTION","message":"bad combo"}}
+P12	FLOW_GAPS	anonymous	runtime	{"outcome":"runtime","value":{"exception":null}}
+P13	FLOW_GAPS	anonymous	runtime	{"outcome":"runtime","value":{"exception":"FIELD_CUSTOM_VALIDATION_EXCEPTION","message":"bad combo"}}

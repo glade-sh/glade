@@ -1,0 +1,5 @@
+profile	route	cases
+admin	Database.insert(scalar,false)	business_omitted,business_explicit,empty,person_feature
+false	Database.insert(scalar,false)	business_omitted,business_explicit,empty,person_feature
+omitted	Database.insert(scalar,false)	business_omitted,business_explicit,empty,person_feature
+misplaced	Database.insert(scalar,false)	business_omitted,business_explicit,empty,person_feature

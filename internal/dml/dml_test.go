@@ -3,6 +3,7 @@ package dml
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -7817,5 +7818,61 @@ func TestInsertPersonAccountFieldWithoutFeatureNamesSetup(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestFlowActionOutputClearedWhenActionRunsAgain(t *testing.T) {
+	org := testOrg()
+	org.Objects["Widget__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Widget__c",
+			KeyPrefix: "a0w",
+			Fields: map[string]storage.Field{
+				"Name":   {APIName: "Name", Type: storage.FieldString},
+				"First":  {APIName: "First", Type: storage.FieldDateTime},
+				"Second": {APIName: "Second", Type: storage.FieldDateTime},
+			},
+			FlowRules: []storage.FlowRule{{
+				Name:   "TwiceAction",
+				Active: true,
+				Steps: []storage.FlowStep{
+					{Kind: "action", Action: storage.FlowAction{Name: "Stamp", ActionType: "apex", ActionName: "Stamp"}},
+					{Kind: "fieldUpdate", FieldUpdates: []storage.WorkflowFieldUpdate{{Name: "SetFirst", Field: "First", ActionOutput: "Stamp"}}},
+					{Kind: "action", Action: storage.FlowAction{Name: "Stamp", ActionType: "apex", ActionName: "Stamp"}},
+					{Kind: "fieldUpdate", FieldUpdates: []storage.WorkflowFieldUpdate{{Name: "SetSecond", Field: "Second", ActionOutput: "Stamp"}}},
+				},
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+	calls := 0
+	engine.FlowActionInvokerWithContext = func(_ storage.FlowAction, _ storage.Record, context FlowActionContext) error {
+		calls++
+		if calls == 1 {
+			context.Output(storage.Value{Kind: storage.ValueDateTime, String: "2026-01-02T03:04:05.000Z"})
+		}
+		return nil
+	}
+
+	insert := engine.Insert([]storage.Record{{Object: "Widget__c", Fields: map[string]storage.Value{"Name": storage.StringValue("Twice")}}})
+	if calls != 2 {
+		t.Fatalf("action calls = %d, want 2", calls)
+	}
+	// With no stored output the assignment takes the same path as an action
+	// that never returned one (the second run here). Compare against that.
+	baseline := NewEngine(&org)
+	baseline.FlowActionInvokerWithContext = func(storage.FlowAction, storage.Record, FlowActionContext) error { return nil }
+	base := baseline.Insert([]storage.Record{{Object: "Widget__c", Fields: map[string]storage.Value{"Name": storage.StringValue("None")}}})
+	if insert[0].Success != base[0].Success {
+		t.Fatalf("re-run success = %v, no-output success = %v", insert[0].Success, base[0].Success)
+	}
+	if !insert[0].Success {
+		return
+	}
+	got := org.Objects["Widget__c"].Records[insert[0].ID].Fields["Second"]
+	want := org.Objects["Widget__c"].Records[base[0].ID].Fields["Second"]
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("second assignment = %#v, want no-output result %#v (first run's output must not be reused)", got, want)
 	}
 }
