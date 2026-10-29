@@ -147,15 +147,18 @@ exec "$GLADE_TEST_INSTALL_EXE" "-test.run=$GLADE_TEST_INSTALL_RUN" -- "$@"
 				// installer can finish; release the first copy in either case.
 				var secondErr error
 				secondFinished := false
-				select {
-				case secondErr = <-second:
-					secondFinished = true
-				case <-time.After(func() time.Duration {
-					if independent {
-						return 3 * time.Second
+				if independent {
+					select {
+					case secondErr = <-second:
+						secondFinished = true
+					case <-ctx.Done():
 					}
-					return time.Second
-				}()):
+				} else {
+					select {
+					case secondErr = <-second:
+						secondFinished = true
+					case <-time.After(time.Second):
+					}
 				}
 				if independent && !secondFinished {
 					t.Errorf("independent route %s blocked on the toolchain install", secondRoute)
@@ -226,7 +229,10 @@ func copyHelper(t *testing.T) {
 		control := os.Getenv("GLADE_TEST_INSTALL_CONTROL")
 		if os.Getenv("GLADE_TEST_INSTALL_HOLD") == "true" {
 			writeFile(t, filepath.Join(control, "copy-ready"), "", 0o644)
-			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			// The parent owns the 15-second deadline and terminates this helper
+			// on expiry. Keep this fallback longer so the held copy cannot resume
+			// before the independence check has finished.
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 			defer cancel()
 			waitFile(t, ctx, filepath.Join(control, "copy-release"))
 		} else {
