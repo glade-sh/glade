@@ -2,6 +2,7 @@ package vm
 
 import (
 	"fmt"
+	"maps"
 	"sort"
 	"strings"
 
@@ -675,7 +676,7 @@ func (vm *VM) stripInaccessibleRecord(accessType string, record *Value, enforceR
 		}
 		fieldAllowed := readableObject && vm.currentUserFieldPermissionWithScope(objectName, canonicalField, fieldPermission, scopedPermissionSetID)
 		if scopedPermissionSetID == "" {
-			fieldAllowed = fieldAllowed || vm.stripInaccessibleKeepsBaselineWritableField(accessType, objectName, canonicalField)
+			fieldAllowed = fieldAllowed || vm.stripInaccessibleKeepsBaselineWritableField(accessType, objectName, canonicalField, true)
 		}
 		if isExplicitSObjectField(*record, field) || vm.queriedSObjectFieldsIncludes(*record, field) {
 			fieldAllowed = fieldAllowed && vm.stripInaccessibleIntrinsicFieldPermission(objectName, canonicalField, fieldPermission)
@@ -693,7 +694,20 @@ func (vm *VM) stripInaccessibleRecord(accessType string, record *Value, enforceR
 		modified = true
 	}
 	if selected, ok := record.Fields[sobjectQueriedFieldsField]; ok && selected.Kind == ValueMap {
-		for _, selectedFieldValue := range selected.MapKeys {
+		// JSON subquery projections can carry an implicit join value without
+		// making it a queried Apex field. Inspect it privately for stripping.
+		selectedFields := selected.MapKeys
+		if supplemental := record.Fields[jsonSObjectQueryProjectionField].Fields; len(supplemental) > 0 {
+			selectedFields = maps.Clone(selectedFields)
+			if selectedFields == nil {
+				selectedFields = make(map[string]Value, len(supplemental))
+			}
+			for field := range supplemental {
+				key := String(strings.ToLower(field))
+				selectedFields[mapKey(key)] = key
+			}
+		}
+		for _, selectedFieldValue := range selectedFields {
 			if selectedFieldValue.Kind != ValueString {
 				continue
 			}
@@ -704,7 +718,7 @@ func (vm *VM) stripInaccessibleRecord(accessType string, record *Value, enforceR
 			canonicalField := vm.resolveSObjectFieldName(objectName, field)
 			fieldAllowed := readableObject && vm.currentUserFieldPermissionWithScope(objectName, canonicalField, fieldPermission, scopedPermissionSetID)
 			if scopedPermissionSetID == "" {
-				fieldAllowed = fieldAllowed || vm.stripInaccessibleKeepsBaselineWritableField(accessType, objectName, canonicalField)
+				fieldAllowed = fieldAllowed || vm.stripInaccessibleKeepsBaselineWritableField(accessType, objectName, canonicalField, false)
 			}
 			fieldAllowed = fieldAllowed && vm.stripInaccessibleIntrinsicFieldPermission(objectName, canonicalField, fieldPermission)
 			if fieldPermission == "" || fieldAllowed {
@@ -853,9 +867,23 @@ func stripInaccessibleFieldPermission(accessType string) string {
 		return ""
 	}
 }
-func (vm *VM) stripInaccessibleKeepsBaselineWritableField(accessType, objectName, fieldName string) bool {
+func (vm *VM) stripInaccessibleKeepsBaselineWritableField(accessType, objectName, fieldName string, fieldPresent bool) bool {
 	switch strings.ToUpper(strings.TrimSpace(accessType)) {
-	case "CREATABLE", "UPSERTABLE":
+	case "CREATABLE":
+		if !vm.isBaselineWritableField(objectName, fieldName) {
+			return false
+		}
+		// Native rows cover present custom Name fields with root CRUD
+		// enforcement disabled. Other required and absent fields retain
+		// the existing baseline until those routes have their own oracle.
+		if fieldPresent && vm.ordinaryCustomPermissionObject(objectName) {
+			_, field, known := vm.sObjectFieldDefinition(objectName, fieldName)
+			if known && isNameFieldDescribe(field) {
+				return vm.currentUserObjectPermission(objectName, "isCreateable")
+			}
+		}
+		return true
+	case "UPSERTABLE":
 		return vm.isBaselineWritableField(objectName, fieldName)
 	case "UPDATABLE":
 		return stripInaccessibleKeepsSObjectBaselineWritableUpdateField(objectName, fieldName)

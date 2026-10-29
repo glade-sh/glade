@@ -1,0 +1,7 @@
+case	route	apis	actor	setup
+describeAccess/describeCase	@IsTest/project	62-67	Standard User	no profile or permission-set metadata; canonical/lowercase names
+queryAndDml/queryCase	@IsTest/project	62-67	Standard User	plain/system/user queries and inserts; two custom objects
+stripAccess/stripCase	@IsTest/project	62-67	Standard User	read/create/update, enforced denial and empty-list boundary
+anonymous	anonymous	62-67	running administrator	object CRUD; runAs rejection twin
+anonymousRunAs	anonymous	62-67	running administrator	runAs rejected outside test context
+explicit modifier twins	@IsTest/project	62-67	Standard User	CedarExplicitAccessTest repeats all six default-modifier methods using explicit private declarations

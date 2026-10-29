@@ -114,7 +114,7 @@ func TestValueEdgesNativeConformance(t *testing.T) {
 			"\ncorpusObserved=String.valueOf(r); } catch(Exception e) { corpusObserved='EXC|'+e.getTypeName()+'|'+e.getMessage(); }\n" + assertion(tc.ID, expected)
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			root := t.TempDir()
 			writeFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"sourceApiVersion":%q,"packageDirectories":[{"path":"force-app","default":true}]}`, api))
 			classRows := make(map[string]string, len(data.Cases))

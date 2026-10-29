@@ -1,0 +1,11 @@
+case	value
+clean	ok
+beforeStart	ok
+insideStart	System.CalloutException|You have uncommitted work pending. Please commit or rollback before calling out
+rollbackRelease	ok
+rollbackOnly	System.CalloutException|All active Savepoints must be released before making callouts.
+savepoint	System.CalloutException|All active Savepoints must be released before making callouts.
+empty	ok
+afterStop	ok
+soap	System.CalloutException|You have uncommitted work pending. Please commit or rollback before calling out
+enqueue	System.CalloutException|You have uncommitted work pending. Please commit or rollback before calling out

@@ -1,0 +1,7 @@
+id	filter_logic_json
+not_fn	"NOT(1)"
+and_fn	"AND(1)"
+or_fn	"OR(1)"
+xor_fn	"XOR(1)"
+valid	"1 OR 2"
+reject	"1 XOR 2"

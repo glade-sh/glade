@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
-	"time"
 )
 
 // These are local configuration contracts. They do not assert Salesforce CPU
@@ -165,22 +164,22 @@ func TestAsyncWindowExplicitEnforcementAndRestorationContracts(t *testing.T) {
 				machine.limits = Limits{Queries: 3, CPUTimeMS: 9}
 				machine.limitViolations = []LimitViolation{{Name: "queryRows", Used: 2, Limit: 1}}
 				machine.cpuBudgetUsed = 8
-				machine.cpuStartedAt = time.Unix(123, 0)
-				machine.cpuRunning = true
 				parentLimits, parentCaps := machine.limits, machine.limitCaps
 				parentViolations := append([]LimitViolation(nil), machine.limitViolations...)
 				_, err := machine.withAsyncLimitWindow(func() (Value, error) {
-					if machine.limits != (Limits{}) || machine.cpuBudgetUsed != 0 || machine.cpuRunning {
+					if machine.limits != (Limits{}) || machine.cpuBudgetUsed != 0 {
 						t.Fatal("child counters did not reset")
 					}
 					cap := caps.Queries
+					unitsPerCount := 1
 					if counter == "cpuTime" {
 						cap = caps.CPUTimeMS
+						unitsPerCount = cpuBudgetUnitsPerMillisecond
 					}
-					if err := machine.incrementLimit(counter, cap); err != nil {
+					if err := machine.incrementLimit(counter, cap*unitsPerCount); err != nil {
 						t.Fatalf("at cap: %v", err)
 					}
-					limitErr := machine.incrementLimit(counter, 1)
+					limitErr := machine.incrementLimit(counter, unitsPerCount)
 					want := []LimitViolation{{Name: counter, Used: cap + 1, Limit: cap}}
 					if !reflect.DeepEqual(machine.limitViolations, want) {
 						t.Errorf("child violations = %#v, want %#v", machine.limitViolations, want)
@@ -193,7 +192,7 @@ func TestAsyncWindowExplicitEnforcementAndRestorationContracts(t *testing.T) {
 				} else if !strict && err != nil {
 					t.Errorf("permissive error = %v", err)
 				}
-				if machine.limits != parentLimits || machine.limitCaps != parentCaps || !reflect.DeepEqual(machine.limitViolations, parentViolations) || machine.cpuBudgetUsed != 8 || machine.cpuStartedAt != time.Unix(123, 0) || !machine.cpuRunning {
+				if machine.limits != parentLimits || machine.limitCaps != parentCaps || !reflect.DeepEqual(machine.limitViolations, parentViolations) || machine.cpuBudgetUsed != 8 {
 					t.Fatalf("parent limit window was not restored")
 				}
 			})

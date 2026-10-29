@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>TextNotEqualFieldTarget__c</fullName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <label>Text Not Equal Field Target</label>
+    <lookupFilter>
+        <active>true</active>
+        <errorMessage>text values must differ</errorMessage>
+        <filterItems>
+            <field>LookupFilterParent__c.RegionText__c</field>
+            <operation>notEqual</operation>
+            <valueField>LookupFilterParent__c.CompareText__c</valueField>
+        </filterItems>
+        <isOptional>false</isOptional>
+    </lookupFilter>
+    <referenceTo>LookupFilterParent__c</referenceTo>
+    <relationshipLabel>Text Not Equal Field Filter Children</relationshipLabel>
+    <relationshipName>TextNotEqualFieldFilterChildren</relationshipName>
+    <type>Lookup</type>
+</CustomField>

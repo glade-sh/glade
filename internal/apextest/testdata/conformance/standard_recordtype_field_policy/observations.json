@@ -1,0 +1,190 @@
+[
+  {
+    "api": "62.0",
+    "profile": "baseline",
+    "route": "anonymous",
+    "class_name": "",
+    "source": "Map<String,Schema.SObjectField> fields=Account.SObjectType.getDescribe().fields.getMap(); String observed='MISSING'; if(fields.containsKey('RecordTypeId')) { Schema.DescribeFieldResult field=fields.get('RecordTypeId').getDescribe(); observed=String.valueOf(field.getType())+'|'+field.isCreateable()+'|'+field.isUpdateable()+'|'+String.valueOf(field.getReferenceTo()[0]); } System.assert(false,'OBSERVED|'+observed);",
+    "message": "MISSING",
+    "source_sha256": "b762c0d828cf12332b0ba0ba7872ba852c22983cfce7477d65ba9daf47834c18"
+  },
+  {
+    "api": "62.0",
+    "profile": "baseline",
+    "route": "named",
+    "class_name": "RecordTypeFieldPolicy62",
+    "source": "public class RecordTypeFieldPolicy62 { public static String observe() { Map<String,Schema.SObjectField> fields=Account.SObjectType.getDescribe().fields.getMap(); if(!fields.containsKey('RecordTypeId')) return 'MISSING'; Schema.DescribeFieldResult field=fields.get('RecordTypeId').getDescribe(); return String.valueOf(field.getType())+'|'+field.isCreateable()+'|'+field.isUpdateable()+'|'+String.valueOf(field.getReferenceTo()[0]); } }",
+    "message": "MISSING",
+    "source_sha256": "58c71c03e8e27b27ab587517ecb9dff3dd85a7422eb105d93992d093670786e5"
+  },
+  {
+    "api": "62.0",
+    "profile": "baseline",
+    "route": "test-runner",
+    "class_name": "RecordTypeFieldPolicy62Test",
+    "source": "@IsTest private class RecordTypeFieldPolicy62Test { @IsTest static void sample() { System.assert(false,'OBSERVED|'+RecordTypeFieldPolicy62.observe()); } }",
+    "message": "MISSING",
+    "source_sha256": "cba3b8d2e713270b5e837349f61a0140726b3240f8c4e3defc913759ec936d40"
+  },
+  {
+    "api": "62.0",
+    "profile": "baseline",
+    "route": "anonymous-constructor",
+    "class_name": "",
+    "source": "Account row=new Account(RecordTypeId=null);",
+    "compiled": false,
+    "message": "Compilation failed at Line 1 column 13 with the error:\n\nField does not exist: RecordTypeId on Account",
+    "source_sha256": "2f83172a9c3a4820f7e65070bd47a9be323a1ea2ca3ecc1e5ea472cc68acca4d"
+  },
+  {
+    "api": "62.0",
+    "profile": "baseline",
+    "route": "named-constructor",
+    "class_name": "RecordTypeConstructor62",
+    "source": "public class RecordTypeConstructor62 { public static void sample() { Account row=new Account(RecordTypeId=null); } }",
+    "compiled": false,
+    "message": "Field does not exist: RecordTypeId on Account",
+    "source_sha256": "25435a439a4088ab5e5b83def4504feaadad3cc7e04afb7c19c0db7f8338be51"
+  },
+  {
+    "api": "67.0",
+    "profile": "baseline",
+    "route": "anonymous",
+    "class_name": "",
+    "source": "Map<String,Schema.SObjectField> fields=Account.SObjectType.getDescribe().fields.getMap(); String observed='MISSING'; if(fields.containsKey('RecordTypeId')) { Schema.DescribeFieldResult field=fields.get('RecordTypeId').getDescribe(); observed=String.valueOf(field.getType())+'|'+field.isCreateable()+'|'+field.isUpdateable()+'|'+String.valueOf(field.getReferenceTo()[0]); } System.assert(false,'OBSERVED|'+observed);",
+    "message": "MISSING",
+    "source_sha256": "b762c0d828cf12332b0ba0ba7872ba852c22983cfce7477d65ba9daf47834c18"
+  },
+  {
+    "api": "67.0",
+    "profile": "baseline",
+    "route": "named",
+    "class_name": "RecordTypeFieldPolicy67",
+    "source": "public class RecordTypeFieldPolicy67 { public static String observe() { Map<String,Schema.SObjectField> fields=Account.SObjectType.getDescribe().fields.getMap(); if(!fields.containsKey('RecordTypeId')) return 'MISSING'; Schema.DescribeFieldResult field=fields.get('RecordTypeId').getDescribe(); return String.valueOf(field.getType())+'|'+field.isCreateable()+'|'+field.isUpdateable()+'|'+String.valueOf(field.getReferenceTo()[0]); } }",
+    "message": "MISSING",
+    "source_sha256": "d43465bba4bce890c3312a6fb60ee70da94fb16568b3ece8b58639ec37f8241b"
+  },
+  {
+    "api": "67.0",
+    "profile": "baseline",
+    "route": "test-runner",
+    "class_name": "RecordTypeFieldPolicy67Test",
+    "source": "@IsTest private class RecordTypeFieldPolicy67Test { @IsTest static void sample() { System.assert(false,'OBSERVED|'+RecordTypeFieldPolicy67.observe()); } }",
+    "message": "MISSING",
+    "source_sha256": "1f41f929ccf02c0c21ff20b4fdc4d1f734615d0ca747463480d7855e4c87f329"
+  },
+  {
+    "api": "67.0",
+    "profile": "baseline",
+    "route": "anonymous-constructor",
+    "class_name": "",
+    "source": "Account row=new Account(RecordTypeId=null);",
+    "compiled": false,
+    "message": "Compilation failed at Line 1 column 13 with the error:\n\nField does not exist: RecordTypeId on Account",
+    "source_sha256": "2f83172a9c3a4820f7e65070bd47a9be323a1ea2ca3ecc1e5ea472cc68acca4d"
+  },
+  {
+    "api": "67.0",
+    "profile": "baseline",
+    "route": "named-constructor",
+    "class_name": "RecordTypeConstructor67",
+    "source": "public class RecordTypeConstructor67 { public static void sample() { Account row=new Account(RecordTypeId=null); } }",
+    "compiled": false,
+    "message": "Field does not exist: RecordTypeId on Account",
+    "source_sha256": "52c4929f130bffcfddc0fb96c3d45c7d7bacccb6691fd080d315be490f561740"
+  },
+  {
+    "api": "62.0",
+    "profile": "recordtype",
+    "route": "anonymous",
+    "class_name": "",
+    "source": "Map<String,Schema.SObjectField> fields=Account.SObjectType.getDescribe().fields.getMap(); String observed='MISSING'; if(fields.containsKey('RecordTypeId')) { Schema.DescribeFieldResult field=fields.get('RecordTypeId').getDescribe(); observed=String.valueOf(field.getType())+'|'+field.isCreateable()+'|'+field.isUpdateable()+'|'+String.valueOf(field.getReferenceTo()[0]); } System.assert(false,'OBSERVED|'+observed);",
+    "message": "REFERENCE|true|true|RecordType",
+    "source_sha256": "b762c0d828cf12332b0ba0ba7872ba852c22983cfce7477d65ba9daf47834c18"
+  },
+  {
+    "api": "62.0",
+    "profile": "recordtype",
+    "route": "named",
+    "class_name": "RecordTypeFieldPolicy62",
+    "source": "public class RecordTypeFieldPolicy62 { public static String observe() { Map<String,Schema.SObjectField> fields=Account.SObjectType.getDescribe().fields.getMap(); if(!fields.containsKey('RecordTypeId')) return 'MISSING'; Schema.DescribeFieldResult field=fields.get('RecordTypeId').getDescribe(); return String.valueOf(field.getType())+'|'+field.isCreateable()+'|'+field.isUpdateable()+'|'+String.valueOf(field.getReferenceTo()[0]); } }",
+    "message": "REFERENCE|true|true|RecordType",
+    "source_sha256": "58c71c03e8e27b27ab587517ecb9dff3dd85a7422eb105d93992d093670786e5"
+  },
+  {
+    "api": "62.0",
+    "profile": "recordtype",
+    "route": "test-runner",
+    "class_name": "RecordTypeFieldPolicy62Test",
+    "source": "@IsTest private class RecordTypeFieldPolicy62Test { @IsTest static void sample() { System.assert(false,'OBSERVED|'+RecordTypeFieldPolicy62.observe()); } }",
+    "message": "REFERENCE|true|true|RecordType",
+    "source_sha256": "cba3b8d2e713270b5e837349f61a0140726b3240f8c4e3defc913759ec936d40"
+  },
+  {
+    "api": "62.0",
+    "profile": "recordtype",
+    "route": "anonymous-constructor",
+    "class_name": "",
+    "source": "Account row=new Account(RecordTypeId=null);",
+    "compiled": true,
+    "message": "accepted",
+    "source_sha256": "2f83172a9c3a4820f7e65070bd47a9be323a1ea2ca3ecc1e5ea472cc68acca4d"
+  },
+  {
+    "api": "62.0",
+    "profile": "recordtype",
+    "route": "named-constructor",
+    "class_name": "RecordTypeConstructor62",
+    "source": "public class RecordTypeConstructor62 { public static void sample() { Account row=new Account(RecordTypeId=null); } }",
+    "compiled": true,
+    "message": "accepted",
+    "source_sha256": "25435a439a4088ab5e5b83def4504feaadad3cc7e04afb7c19c0db7f8338be51"
+  },
+  {
+    "api": "67.0",
+    "profile": "recordtype",
+    "route": "anonymous",
+    "class_name": "",
+    "source": "Map<String,Schema.SObjectField> fields=Account.SObjectType.getDescribe().fields.getMap(); String observed='MISSING'; if(fields.containsKey('RecordTypeId')) { Schema.DescribeFieldResult field=fields.get('RecordTypeId').getDescribe(); observed=String.valueOf(field.getType())+'|'+field.isCreateable()+'|'+field.isUpdateable()+'|'+String.valueOf(field.getReferenceTo()[0]); } System.assert(false,'OBSERVED|'+observed);",
+    "message": "REFERENCE|true|true|RecordType",
+    "source_sha256": "b762c0d828cf12332b0ba0ba7872ba852c22983cfce7477d65ba9daf47834c18"
+  },
+  {
+    "api": "67.0",
+    "profile": "recordtype",
+    "route": "named",
+    "class_name": "RecordTypeFieldPolicy67",
+    "source": "public class RecordTypeFieldPolicy67 { public static String observe() { Map<String,Schema.SObjectField> fields=Account.SObjectType.getDescribe().fields.getMap(); if(!fields.containsKey('RecordTypeId')) return 'MISSING'; Schema.DescribeFieldResult field=fields.get('RecordTypeId').getDescribe(); return String.valueOf(field.getType())+'|'+field.isCreateable()+'|'+field.isUpdateable()+'|'+String.valueOf(field.getReferenceTo()[0]); } }",
+    "message": "REFERENCE|true|true|RecordType",
+    "source_sha256": "d43465bba4bce890c3312a6fb60ee70da94fb16568b3ece8b58639ec37f8241b"
+  },
+  {
+    "api": "67.0",
+    "profile": "recordtype",
+    "route": "test-runner",
+    "class_name": "RecordTypeFieldPolicy67Test",
+    "source": "@IsTest private class RecordTypeFieldPolicy67Test { @IsTest static void sample() { System.assert(false,'OBSERVED|'+RecordTypeFieldPolicy67.observe()); } }",
+    "message": "REFERENCE|true|true|RecordType",
+    "source_sha256": "1f41f929ccf02c0c21ff20b4fdc4d1f734615d0ca747463480d7855e4c87f329"
+  },
+  {
+    "api": "67.0",
+    "profile": "recordtype",
+    "route": "anonymous-constructor",
+    "class_name": "",
+    "source": "Account row=new Account(RecordTypeId=null);",
+    "compiled": true,
+    "message": "accepted",
+    "source_sha256": "2f83172a9c3a4820f7e65070bd47a9be323a1ea2ca3ecc1e5ea472cc68acca4d"
+  },
+  {
+    "api": "67.0",
+    "profile": "recordtype",
+    "route": "named-constructor",
+    "class_name": "RecordTypeConstructor67",
+    "source": "public class RecordTypeConstructor67 { public static void sample() { Account row=new Account(RecordTypeId=null); } }",
+    "compiled": true,
+    "message": "accepted",
+    "source_sha256": "52c4929f130bffcfddc0fb96c3d45c7d7bacccb6691fd080d315be490f561740"
+  }
+]

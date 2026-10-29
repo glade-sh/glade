@@ -1,0 +1,6 @@
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+ <apiVersion>62.0</apiVersion><interviewLabel>Capture Async</interviewLabel><label>Capture Async</label><processType>AutoLaunchedFlow</processType>
+ <recordUpdates><name>Immediate</name><label>Immediate</label><locationX>0</locationX><locationY>0</locationY><inputAssignments><field>Immediate__c</field><value><booleanValue>true</booleanValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+ <recordUpdates><name>Delayed</name><label>Delayed</label><locationX>0</locationX><locationY>0</locationY><inputAssignments><field>Marker__c</field><value><booleanValue>true</booleanValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+ <start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Immediate</targetReference></connector><filterLogic>and</filterLogic><filters><field>Name</field><operator>EqualTo</operator><value><stringValue>async</stringValue></value></filters><object>CaptureRecord__c</object><recordTriggerType>Create</recordTriggerType><scheduledPaths><name>DelayedPath</name><connector><targetReference>Delayed</targetReference></connector><pathType>AsyncAfterCommit</pathType></scheduledPaths><triggerType>RecordAfterSave</triggerType></start><status>Active</status>
+</Flow>

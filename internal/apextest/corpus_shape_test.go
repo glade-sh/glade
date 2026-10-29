@@ -39,6 +39,17 @@ func TestCorpusShape(t *testing.T) {
 					t.Fatalf("anonymous check diagnostics: %v", result.Diagnostics)
 				}
 			})
+			// Native: sema/testdata/schema_relationship_gate/org.tsv:301,307,319,325.
+			t.Run("anonymousSchemaSObjectTypes", func(t *testing.T) {
+				source, err := os.ReadFile(filepath.Join(root, "anonymous-schema-types.apex"))
+				if err != nil {
+					t.Fatal(err)
+				}
+				result := sema.AnalyzeAnonymous(index, string(source), api)
+				if len(result.Diagnostics) != 0 {
+					t.Fatalf("anonymous check diagnostics: %v", result.Diagnostics)
+				}
+			})
 			t.Run("projectTestRunner", func(t *testing.T) {
 				run := Run(index, Options{NoDiskCache: true, Parallelism: 1})
 				for _, suite := range run.Suites {

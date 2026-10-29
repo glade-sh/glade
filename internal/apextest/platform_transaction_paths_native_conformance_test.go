@@ -32,7 +32,7 @@ func readPlatformTransactionCases(t *testing.T) []platformTransactionCase {
 		t.Fatal(err)
 	}
 	lines := strings.Split(strings.TrimSpace(string(raw)), "\n")
-	if len(lines) != 33 || lines[0] != "id\tfamily\tshape\troutes\tapis" {
+	if len(lines) != 34 || lines[0] != "id\tfamily\tshape\troutes\tapis" {
 		t.Fatal("incomplete platform transaction case table")
 	}
 	var cases []platformTransactionCase
@@ -89,11 +89,7 @@ func readPlatformTransactionNative(t *testing.T, family, api, route string, case
 			}
 		}
 	}
-	countKey := "rows"
-	if strings.Contains(string(receipt), "\nexported_rows=") {
-		countKey = "exported_rows"
-	}
-	if len(observations) != count || !strings.Contains(string(receipt), fmt.Sprintf("%s=%d\n", countKey, count)) {
+	if len(observations) != count || !strings.Contains(string(receipt), fmt.Sprintf("rows=%d\n", count)) {
 		t.Fatal("unexpected native rows")
 	}
 	verifyPlatformCaptureSetup(t, string(receipt))
@@ -327,7 +323,7 @@ func readPlatformCommittedDeliveryNative(t *testing.T, api string) map[string]ma
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, required := range []string{"api=" + api + "\n", "context=committed_anonymous\n", "rows=4\n", "exported_rows=3\n", "native_complete=true\n", "deployment_success=true\n"} {
+	for _, required := range []string{"api=" + api + "\n", "context=committed_anonymous\n", "rows=4\n", "native_complete=true\n", "deployment_success=true\n"} {
 		if !strings.Contains(string(receipt), required) {
 			t.Fatalf("incomplete committed delivery capture: %s", required)
 		}
@@ -337,11 +333,7 @@ func readPlatformCommittedDeliveryNative(t *testing.T, api string) map[string]ma
 		if err != nil {
 			t.Fatal(err)
 		}
-		digestKey := "delivery_source_sha256"
-		if name == "cases.tsv" {
-			digestKey = "exported_delivery_source_sha256"
-		}
-		if !strings.Contains(string(receipt), fmt.Sprintf("%s:%s=%x\n", digestKey, name, sha256.Sum256(source))) {
+		if !strings.Contains(string(receipt), fmt.Sprintf("delivery_source_sha256:%s=%x\n", name, sha256.Sum256(source))) {
 			t.Fatalf("native delivery source changed: %s", name)
 		}
 	}
@@ -372,7 +364,7 @@ func readPlatformCommittedDeliveryNative(t *testing.T, api string) map[string]ma
 		t.Fatal(err)
 	}
 	lines := strings.Split(strings.TrimSpace(string(raw)), "\n")
-	if len(lines) != 4 || lines[0] != "id\troute\tvalue" {
+	if len(lines) != 5 || lines[0] != "id\troute\tvalue" {
 		t.Fatal("incomplete committed delivery rows")
 	}
 	rows := map[string]map[string]any{}
@@ -387,7 +379,7 @@ func readPlatformCommittedDeliveryNative(t *testing.T, api string) map[string]ma
 		}
 		rows[cells[0]] = row
 	}
-	for _, id := range []string{"F07", "F09", "P08"} {
+	for _, id := range []string{"F07", "F08", "F09", "P08"} {
 		if rows[id] == nil {
 			t.Fatalf("missing committed delivery row %s", id)
 		}
@@ -446,7 +438,7 @@ func TestPlatformCommittedDeliveryNativeConformance(t *testing.T) {
 				if got == nil {
 					t.Fatal("missing delivery observation transport")
 				}
-				ids := []string{"F07", "F09"}
+				ids := []string{"F07", "F08", "F09"}
 				if family == "event_flows" {
 					ids = []string{"P08"}
 				}

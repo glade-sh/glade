@@ -269,6 +269,11 @@ func TestNamespacedGlobalDescribeWarmRawCacheNativeRoutes(t *testing.T) {
 					org.Objects[name] = storage.ObjectState{Definition: storage.ObjectDefinition{APIName: name}}
 				}
 				machine.SetOrg(&org)
+				if route == "isTest" {
+					// Warm the raw cache after test schema initialization, while
+					// the caller namespace is still deliberately unbound.
+					machine.EnableTestContext()
+				}
 				raw := machine.schemaGlobalDescribe()
 				rawSize := len(raw.Map)
 				if _, ok := raw.Map[mapKey(String("TypeTextItem__c"))]; !ok {

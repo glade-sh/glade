@@ -103,7 +103,7 @@ func runInvocableFlowActionConformance(t *testing.T, cluster string, shapes, cel
 		t.Fatal("native count changed")
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "C187IA-"+cluster, api)
 			root := invocableFlowActionRoot(t, api)
 			baseIndex := loadTestIndex(t, root)

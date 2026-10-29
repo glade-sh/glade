@@ -69,7 +69,7 @@ func TestUserRecordAccessUserModeNativeConformance(t *testing.T) {
 		oracle[row[0]][row[1]] = row[3]
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			for _, testCase := range data.Cases {
 				if oracle[api][testCase.ID] != testCase.Expected || testCase.Expected != "ok|true|1" {
 					t.Fatalf("invalid captured result for %s/%s: %q", api, testCase.ID, oracle[api][testCase.ID])

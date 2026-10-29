@@ -72,7 +72,7 @@ func TestFormulaEvaluationOrgConformance(t *testing.T) {
 			"System.assert(" + comparison + ", " + conformanceApexString(row.ID) + "+' expected <'+expectedText+'> actual <'+conformanceObservedText+'>');"
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "formula evaluation", api)
 			root := t.TempDir()
 			var declarationPaths []string

@@ -529,13 +529,16 @@ deploying-administrator context; it does not model a Salesforce Standard User,
 which can have no access to a new custom object. Keep explicit restricted-user
 tests separate with `System.runAs`.
 
-The native comparison records three differences: Standard User describe access
-is false; native `Security.stripInaccessible(CREATABLE)` removes `Name` where
-Glade retains it; and an API 67 plain `COUNT()` denial raises
-`System.SecurityException` natively while Glade reports
-`System.QueryException`. In the restricted-user rows, user-mode DML also raises
-`System.SecurityException`; plain `INSERT` without grants raises it at API 67,
-while the captured API 62 insert succeeds.
+The native Standard User captures at source APIs 62–67 have no access to a
+new custom object without profile or permission-set grants. Describe returns
+false for its CRUD and optional-field FLS. `Security.stripInaccessible(CREATABLE)`
+removes `Name` as well as the optional field when root CRUD enforcement is
+false. The `READABLE` root-CRUD-enforced twin raises `System.NoAccessException`.
+User-mode queries and inserts deny access at every captured API. Plain
+`Database.countQuery` calls and `Database.insert` calls succeed through API 66;
+at API 67, these calls in `System.runAs` raise `System.SecurityException`.
+Explicit `SYSTEM_MODE`
+queries and inserts succeed throughout this captured range.
 
 Use `test.permissionSets` when a project's setup instructions require an admin
 to assign permission sets before running tests. Names are API names from

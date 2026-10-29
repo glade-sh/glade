@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"maps"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -25,6 +26,7 @@ type anonymousSetup struct {
 	known                 map[string]TypeReference
 	namespace             string
 	deps                  map[string]bool
+	sourceNamespaces      map[string]bool
 	queryDeclaredObjects  []schema.Object
 	visualforcePageNames  map[string]bool
 	visualforcePagesKnown bool
@@ -79,6 +81,7 @@ func buildAnonymousSetup(index typesys.Index) (*anonymousSetup, bool) {
 		known:                 analyzer.known,
 		namespace:             analyzer.namespace,
 		deps:                  analyzer.deps,
+		sourceNamespaces:      analyzer.sourceNamespaces,
 		queryDeclaredObjects:  analyzer.queryDeclaredObjects,
 		visualforcePageNames:  analyzer.visualforcePageNames,
 		visualforcePagesKnown: analyzer.visualforcePagesKnown,
@@ -95,6 +98,13 @@ func buildAnonymousSetup(index typesys.Index) (*anonymousSetup, bool) {
 // the checks a build makes under any marker layout.
 func anonymousProjectMarkers(index typesys.Index) map[string]bool {
 	markers := make(map[string]bool)
+	if root := strings.TrimSpace(index.Project.Root); root != "" {
+		semaSourceUnitMarkerWalk(filepath.Clean(root), "", func(marker string) bool {
+			_, err := os.Stat(marker)
+			markers[marker] = err == nil
+			return false
+		})
+	}
 	for _, typ := range index.Types {
 		_, dir, ok := semaSourceUnitFile(typ.File)
 		if !ok {
@@ -121,6 +131,7 @@ func (s *anonymousSetup) analyzer() *Analyzer {
 		canonicalNames:        newSemaCanonicalNames(semaAnalysisCanonicalNameLimit),
 		namespace:             s.namespace,
 		deps:                  maps.Clone(s.deps),
+		sourceNamespaces:      maps.Clone(s.sourceNamespaces),
 		queryDeclaredObjects:  append([]schema.Object(nil), s.queryDeclaredObjects...),
 		visualforcePageNames:  s.visualforcePageNames,
 		visualforcePagesKnown: s.visualforcePagesKnown,
@@ -344,6 +355,7 @@ type anonymousIndexIdentity struct {
 	codeIntelSymbols      anonymousSliceIdentity[packageartifact.CodeIntelSymbol]
 	codeIntelUses         anonymousSliceIdentity[packageartifact.CodeIntelUse]
 	dependencies          anonymousSliceIdentity[typesys.DependencyInfo]
+	sourceNamespaces      anonymousSliceIdentity[string]
 	diagnostics           anonymousSliceIdentity[diagnostic.Diagnostic]
 	apiVersion            string
 }
@@ -378,6 +390,7 @@ func anonymousSetupKeyFor(index typesys.Index, apiVersion string) (anonymousSetu
 		codeIntelSymbols:      newAnonymousSliceIdentity(index.CodeIntelSymbols),
 		codeIntelUses:         newAnonymousSliceIdentity(index.CodeIntelUses),
 		dependencies:          newAnonymousSliceIdentity(index.Dependencies),
+		sourceNamespaces:      newAnonymousSliceIdentity(index.SourceNamespaces),
 		diagnostics:           newAnonymousSliceIdentity(index.Diagnostics),
 		apiVersion:            apiVersion,
 	}

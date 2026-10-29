@@ -1,0 +1,289 @@
+source_api	route	case	query_route	observation
+62.0	anonymous	name_eq	query	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	anonymous	name_eq	sosl	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	anonymous	name_in	query	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	anonymous	name_in	sosl	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	anonymous	name_decimal	query	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	anonymous	name_decimal	sosl	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	anonymous	name_quoted_eq	query	true
+62.0	anonymous	name_quoted_eq	sosl	0
+62.0	anonymous	name_quoted_in	query	true
+62.0	anonymous	name_quoted_in	sosl	0
+62.0	anonymous	name_null	query	false
+62.0	anonymous	name_null	sosl	0
+62.0	anonymous	picklist_eq	query	{"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	anonymous	picklist_eq	sosl	{"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	anonymous	picklist_in	query	{"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	anonymous	picklist_in	sosl	{"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	anonymous	picklist_quoted	query	true
+62.0	anonymous	picklist_quoted	sosl	0
+62.0	anonymous	textarea_eq	query	{"message":"field 'Description' can not be filtered in a query call","type":"System.QueryException"}
+62.0	anonymous	textarea_eq	sosl	{"message":"field 'Description' can not be filtered in a query call","type":"System.QueryException"}
+62.0	anonymous	textarea_quoted	query	{"message":"field 'Description' can not be filtered in a query call","type":"System.QueryException"}
+62.0	anonymous	textarea_quoted	sosl	{"message":"field 'Description' can not be filtered in a query call","type":"System.QueryException"}
+62.0	anonymous	short_textarea_eq	query	{"message":"value of filter criterion for field 'Note__c' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	anonymous	short_textarea_eq	sosl	{"message":"value of filter criterion for field 'Note__c' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	anonymous	short_textarea_quoted	query	true
+62.0	anonymous	short_textarea_quoted	sosl	0
+62.0	anonymous	id_eq	query	{"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	anonymous	id_eq	sosl	{"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	anonymous	id_in	query	{"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	anonymous	id_in	sosl	{"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	anonymous	id_null	query	false
+62.0	anonymous	id_null	sosl	0
+62.0	anonymous	name_eq	queryWithBinds	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	anonymous	name_eq	locator	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	anonymous	name_in	queryWithBinds	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	anonymous	name_in	locator	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	anonymous	picklist_eq	queryWithBinds	{"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	anonymous	picklist_eq	locator	{"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	anonymous	id_eq	queryWithBinds	{"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	anonymous	id_eq	locator	{"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	isTest	id_eq	locator	{"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	isTest	id_eq	query	{"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	isTest	id_eq	queryWithBinds	{"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	isTest	id_eq	sosl	{"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	isTest	id_in	query	{"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	isTest	id_in	sosl	{"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	isTest	id_null	query	false
+62.0	isTest	id_null	sosl	0
+62.0	isTest	name_decimal	query	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	isTest	name_decimal	sosl	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	isTest	name_eq	locator	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	isTest	name_eq	query	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	isTest	name_eq	queryWithBinds	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	isTest	name_eq	sosl	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	isTest	name_in	locator	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	isTest	name_in	query	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	isTest	name_in	queryWithBinds	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	isTest	name_in	sosl	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	isTest	name_null	query	false
+62.0	isTest	name_null	sosl	0
+62.0	isTest	name_quoted_eq	query	true
+62.0	isTest	name_quoted_eq	sosl	0
+62.0	isTest	name_quoted_in	query	true
+62.0	isTest	name_quoted_in	sosl	0
+62.0	isTest	picklist_eq	locator	{"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	isTest	picklist_eq	query	{"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	isTest	picklist_eq	queryWithBinds	{"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	isTest	picklist_eq	sosl	{"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	isTest	picklist_in	query	{"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	isTest	picklist_in	sosl	{"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	isTest	picklist_quoted	query	true
+62.0	isTest	picklist_quoted	sosl	0
+62.0	isTest	short_textarea_eq	query	{"message":"value of filter criterion for field 'Note__c' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	isTest	short_textarea_eq	sosl	{"message":"value of filter criterion for field 'Note__c' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+62.0	isTest	short_textarea_quoted	query	true
+62.0	isTest	short_textarea_quoted	sosl	0
+62.0	isTest	textarea_eq	query	{"message":"field 'Description' can not be filtered in a query call","type":"System.QueryException"}
+62.0	isTest	textarea_eq	sosl	{"message":"field 'Description' can not be filtered in a query call","type":"System.QueryException"}
+62.0	isTest	textarea_quoted	query	{"message":"field 'Description' can not be filtered in a query call","type":"System.QueryException"}
+62.0	isTest	textarea_quoted	sosl	{"message":"field 'Description' can not be filtered in a query call","type":"System.QueryException"}
+62.0	anonymous	name_eq	static_soql	{"compiled":false,"message":"Compilation failed at Line 1 column 23 with the error:\n\n\nSELECT Id FROM Account WHERE Name = 3\n                             ^\nERROR at Row:1:Column:30\nvalue of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	name_in	static_soql	{"compiled":false,"message":"Compilation failed at Line 1 column 23 with the error:\n\n\nSELECT Id FROM Account WHERE Name IN (1,2)\n                             ^\nERROR at Row:1:Column:30\nvalue of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	name_decimal	static_soql	{"compiled":false,"message":"Compilation failed at Line 1 column 23 with the error:\n\n\nSELECT Id FROM Account WHERE Name = 3.5\n                             ^\nERROR at Row:1:Column:30\nvalue of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	name_quoted_eq	static_soql	{"compiled":true}
+62.0	anonymous	name_quoted_in	static_soql	{"compiled":true}
+62.0	anonymous	name_null	static_soql	{"compiled":true}
+62.0	anonymous	picklist_eq	static_soql	{"compiled":false,"message":"Compilation failed at Line 1 column 23 with the error:\n\n\nSELECT Id FROM Account WHERE Industry = 3\n                             ^\nERROR at Row:1:Column:30\nvalue of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	picklist_in	static_soql	{"compiled":false,"message":"Compilation failed at Line 1 column 23 with the error:\n\n\nSELECT Id FROM Account WHERE Industry IN (1,2)\n                             ^\nERROR at Row:1:Column:30\nvalue of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	picklist_quoted	static_soql	{"compiled":true}
+62.0	anonymous	textarea_eq	static_soql	{"compiled":false,"message":"Compilation failed at Line 1 column 23 with the error:\n\n\nSELECT Id FROM Account WHERE Description = 3\n                             ^\nERROR at Row:1:Column:30\nfield 'Description' can not be filtered in a query call"}
+62.0	anonymous	textarea_quoted	static_soql	{"compiled":false,"message":"Compilation failed at Line 1 column 23 with the error:\n\n\nSELECT Id FROM Account WHERE Description = '3'\n                             ^\nERROR at Row:1:Column:30\nfield 'Description' can not be filtered in a query call"}
+62.0	anonymous	short_textarea_eq	static_soql	{"compiled":false,"message":"Compilation failed at Line 1 column 23 with the error:\n\n\nSELECT Id FROM Account WHERE Note__c = 3\n                             ^\nERROR at Row:1:Column:30\nvalue of filter criterion for field 'Note__c' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	short_textarea_quoted	static_soql	{"compiled":true}
+62.0	anonymous	id_eq	static_soql	{"compiled":false,"message":"Compilation failed at Line 1 column 23 with the error:\n\n\nSELECT Id FROM Account WHERE Id = 3\n                             ^\nERROR at Row:1:Column:30\nvalue of filter criterion for field 'Id' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	id_in	static_soql	{"compiled":false,"message":"Compilation failed at Line 1 column 23 with the error:\n\n\nSELECT Id FROM Account WHERE Id IN (1,2)\n                             ^\nERROR at Row:1:Column:30\nvalue of filter criterion for field 'Id' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	id_null	static_soql	{"compiled":true}
+62.0	isTest	name_eq	static_soql	{"compiled":false,"message":"SELECT Id FROM Account WHERE Name = 3\n                             ^\nERROR at Row:1:Column:30\nvalue of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+62.0	isTest	name_in	static_soql	{"compiled":false,"message":"SELECT Id FROM Account WHERE Name IN (1,2)\n                             ^\nERROR at Row:1:Column:30\nvalue of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+62.0	isTest	name_decimal	static_soql	{"compiled":false,"message":"SELECT Id FROM Account WHERE Name = 3.5\n                             ^\nERROR at Row:1:Column:30\nvalue of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+62.0	isTest	name_quoted_eq	static_soql	{"compiled":true}
+62.0	isTest	name_quoted_in	static_soql	{"compiled":true}
+62.0	isTest	name_null	static_soql	{"compiled":true}
+62.0	isTest	picklist_eq	static_soql	{"compiled":false,"message":"SELECT Id FROM Account WHERE Industry = 3\n                             ^\nERROR at Row:1:Column:30\nvalue of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes"}
+62.0	isTest	picklist_in	static_soql	{"compiled":false,"message":"SELECT Id FROM Account WHERE Industry IN (1,2)\n                             ^\nERROR at Row:1:Column:30\nvalue of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes"}
+62.0	isTest	picklist_quoted	static_soql	{"compiled":true}
+62.0	isTest	textarea_eq	static_soql	{"compiled":false,"message":"SELECT Id FROM Account WHERE Description = 3\n                             ^\nERROR at Row:1:Column:30\nfield 'Description' can not be filtered in a query call"}
+62.0	isTest	textarea_quoted	static_soql	{"compiled":false,"message":"SELECT Id FROM Account WHERE Description = '3'\n                             ^\nERROR at Row:1:Column:30\nfield 'Description' can not be filtered in a query call"}
+62.0	isTest	short_textarea_eq	static_soql	{"compiled":false,"message":"SELECT Id FROM Account WHERE Note__c = 3\n                             ^\nERROR at Row:1:Column:30\nvalue of filter criterion for field 'Note__c' must be of type string and should be enclosed in quotes"}
+62.0	isTest	short_textarea_quoted	static_soql	{"compiled":true}
+62.0	isTest	id_eq	static_soql	{"compiled":false,"message":"SELECT Id FROM Account WHERE Id = 3\n                             ^\nERROR at Row:1:Column:30\nvalue of filter criterion for field 'Id' must be of type string and should be enclosed in quotes"}
+62.0	isTest	id_in	static_soql	{"compiled":false,"message":"SELECT Id FROM Account WHERE Id IN (1,2)\n                             ^\nERROR at Row:1:Column:30\nvalue of filter criterion for field 'Id' must be of type string and should be enclosed in quotes"}
+62.0	isTest	id_null	static_soql	{"compiled":true}
+62.0	anonymous	name_eq	static_sosl	{"compiled":false,"message":"Compilation failed at Line 1 column 29 with the error:\n\n\nFIELDS RETURNING Account(Id WHERE Name = 3)\n                                  ^\nERROR at Row:1:Column:70\nvalue of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	name_in	static_sosl	{"compiled":false,"message":"Compilation failed at Line 1 column 29 with the error:\n\n\nFIELDS RETURNING Account(Id WHERE Name IN (1,2))\n                                  ^\nERROR at Row:1:Column:70\nvalue of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	name_decimal	static_sosl	{"compiled":false,"message":"Compilation failed at Line 1 column 29 with the error:\n\n\nFIELDS RETURNING Account(Id WHERE Name = 3.5)\n                                  ^\nERROR at Row:1:Column:70\nvalue of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	name_quoted_eq	static_sosl	{"compiled":true}
+62.0	anonymous	name_quoted_in	static_sosl	{"compiled":true}
+62.0	anonymous	name_null	static_sosl	{"compiled":true}
+62.0	anonymous	picklist_eq	static_sosl	{"compiled":false,"message":"Compilation failed at Line 1 column 29 with the error:\n\n\nFIELDS RETURNING Account(Id WHERE Industry = 3)\n                                  ^\nERROR at Row:1:Column:70\nvalue of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	picklist_in	static_sosl	{"compiled":false,"message":"Compilation failed at Line 1 column 29 with the error:\n\n\nFIELDS RETURNING Account(Id WHERE Industry IN (1,2))\n                                  ^\nERROR at Row:1:Column:70\nvalue of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	picklist_quoted	static_sosl	{"compiled":true}
+62.0	anonymous	textarea_eq	static_sosl	{"compiled":false,"message":"Compilation failed at Line 1 column 29 with the error:\n\n\nFIELDS RETURNING Account(Id WHERE Description = 3)\n                                  ^\nERROR at Row:1:Column:70\nfield 'Description' can not be filtered in a query call"}
+62.0	anonymous	textarea_quoted	static_sosl	{"compiled":false,"message":"Compilation failed at Line 1 column 29 with the error:\n\n\nFIELDS RETURNING Account(Id WHERE Description = '3')\n                                  ^\nERROR at Row:1:Column:70\nfield 'Description' can not be filtered in a query call"}
+62.0	anonymous	short_textarea_eq	static_sosl	{"compiled":false,"message":"Compilation failed at Line 1 column 29 with the error:\n\n\nFIELDS RETURNING Account(Id WHERE Note__c = 3)\n                                  ^\nERROR at Row:1:Column:70\nvalue of filter criterion for field 'Note__c' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	short_textarea_quoted	static_sosl	{"compiled":true}
+62.0	anonymous	id_eq	static_sosl	{"compiled":false,"message":"Compilation failed at Line 1 column 29 with the error:\n\n\nFIELDS RETURNING Account(Id WHERE Id = 3)\n                                  ^\nERROR at Row:1:Column:70\nvalue of filter criterion for field 'Id' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	id_in	static_sosl	{"compiled":false,"message":"Compilation failed at Line 1 column 29 with the error:\n\n\nFIELDS RETURNING Account(Id WHERE Id IN (1,2))\n                                  ^\nERROR at Row:1:Column:70\nvalue of filter criterion for field 'Id' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	id_null	static_sosl	{"compiled":true}
+62.0	isTest	name_eq	static_sosl	{"compiled":false,"message":"FIELDS RETURNING Account(Id WHERE Name = 3)\n                                  ^\nERROR at Row:1:Column:70\nvalue of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+62.0	isTest	name_in	static_sosl	{"compiled":false,"message":"FIELDS RETURNING Account(Id WHERE Name IN (1,2))\n                                  ^\nERROR at Row:1:Column:70\nvalue of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+62.0	isTest	name_decimal	static_sosl	{"compiled":false,"message":"FIELDS RETURNING Account(Id WHERE Name = 3.5)\n                                  ^\nERROR at Row:1:Column:70\nvalue of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+62.0	isTest	name_quoted_eq	static_sosl	{"compiled":true}
+62.0	isTest	name_quoted_in	static_sosl	{"compiled":true}
+62.0	isTest	name_null	static_sosl	{"compiled":true}
+62.0	isTest	picklist_eq	static_sosl	{"compiled":false,"message":"FIELDS RETURNING Account(Id WHERE Industry = 3)\n                                  ^\nERROR at Row:1:Column:70\nvalue of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes"}
+62.0	isTest	picklist_in	static_sosl	{"compiled":false,"message":"FIELDS RETURNING Account(Id WHERE Industry IN (1,2))\n                                  ^\nERROR at Row:1:Column:70\nvalue of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes"}
+62.0	isTest	picklist_quoted	static_sosl	{"compiled":true}
+62.0	isTest	textarea_eq	static_sosl	{"compiled":false,"message":"FIELDS RETURNING Account(Id WHERE Description = 3)\n                                  ^\nERROR at Row:1:Column:70\nfield 'Description' can not be filtered in a query call"}
+62.0	isTest	textarea_quoted	static_sosl	{"compiled":false,"message":"FIELDS RETURNING Account(Id WHERE Description = '3')\n                                  ^\nERROR at Row:1:Column:70\nfield 'Description' can not be filtered in a query call"}
+62.0	isTest	short_textarea_eq	static_sosl	{"compiled":false,"message":"FIELDS RETURNING Account(Id WHERE Note__c = 3)\n                                  ^\nERROR at Row:1:Column:70\nvalue of filter criterion for field 'Note__c' must be of type string and should be enclosed in quotes"}
+62.0	isTest	short_textarea_quoted	static_sosl	{"compiled":true}
+62.0	isTest	id_eq	static_sosl	{"compiled":false,"message":"FIELDS RETURNING Account(Id WHERE Id = 3)\n                                  ^\nERROR at Row:1:Column:70\nvalue of filter criterion for field 'Id' must be of type string and should be enclosed in quotes"}
+62.0	isTest	id_in	static_sosl	{"compiled":false,"message":"FIELDS RETURNING Account(Id WHERE Id IN (1,2))\n                                  ^\nERROR at Row:1:Column:70\nvalue of filter criterion for field 'Id' must be of type string and should be enclosed in quotes"}
+62.0	isTest	id_null	static_sosl	{"compiled":true}
+67.0	anonymous	name_eq	query	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	anonymous	name_eq	sosl	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	anonymous	name_in	query	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	anonymous	name_in	sosl	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	anonymous	name_decimal	query	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	anonymous	name_decimal	sosl	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	anonymous	name_quoted_eq	query	true
+67.0	anonymous	name_quoted_eq	sosl	0
+67.0	anonymous	name_quoted_in	query	true
+67.0	anonymous	name_quoted_in	sosl	0
+67.0	anonymous	name_null	query	false
+67.0	anonymous	name_null	sosl	0
+67.0	anonymous	picklist_eq	query	{"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	anonymous	picklist_eq	sosl	{"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	anonymous	picklist_in	query	{"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	anonymous	picklist_in	sosl	{"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	anonymous	picklist_quoted	query	true
+67.0	anonymous	picklist_quoted	sosl	0
+67.0	anonymous	textarea_eq	query	{"message":"field 'Description' can not be filtered in a query call","type":"System.QueryException"}
+67.0	anonymous	textarea_eq	sosl	{"message":"field 'Description' can not be filtered in a query call","type":"System.QueryException"}
+67.0	anonymous	textarea_quoted	query	{"message":"field 'Description' can not be filtered in a query call","type":"System.QueryException"}
+67.0	anonymous	textarea_quoted	sosl	{"message":"field 'Description' can not be filtered in a query call","type":"System.QueryException"}
+67.0	anonymous	short_textarea_eq	query	{"message":"value of filter criterion for field 'Note__c' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	anonymous	short_textarea_eq	sosl	{"message":"value of filter criterion for field 'Note__c' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	anonymous	short_textarea_quoted	query	true
+67.0	anonymous	short_textarea_quoted	sosl	0
+67.0	anonymous	id_eq	query	{"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	anonymous	id_eq	sosl	{"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	anonymous	id_in	query	{"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	anonymous	id_in	sosl	{"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	anonymous	id_null	query	false
+67.0	anonymous	id_null	sosl	0
+67.0	anonymous	name_eq	queryWithBinds	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	anonymous	name_eq	locator	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	anonymous	name_in	queryWithBinds	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	anonymous	name_in	locator	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	anonymous	picklist_eq	queryWithBinds	{"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	anonymous	picklist_eq	locator	{"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	anonymous	id_eq	queryWithBinds	{"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	anonymous	id_eq	locator	{"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	isTest	id_eq	locator	{"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	isTest	id_eq	query	{"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	isTest	id_eq	queryWithBinds	{"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	isTest	id_eq	sosl	{"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	isTest	id_in	query	{"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	isTest	id_in	sosl	{"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	isTest	id_null	query	false
+67.0	isTest	id_null	sosl	0
+67.0	isTest	name_decimal	query	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	isTest	name_decimal	sosl	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	isTest	name_eq	locator	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	isTest	name_eq	query	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	isTest	name_eq	queryWithBinds	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	isTest	name_eq	sosl	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	isTest	name_in	locator	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	isTest	name_in	query	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	isTest	name_in	queryWithBinds	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	isTest	name_in	sosl	{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	isTest	name_null	query	false
+67.0	isTest	name_null	sosl	0
+67.0	isTest	name_quoted_eq	query	true
+67.0	isTest	name_quoted_eq	sosl	0
+67.0	isTest	name_quoted_in	query	true
+67.0	isTest	name_quoted_in	sosl	0
+67.0	isTest	picklist_eq	locator	{"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	isTest	picklist_eq	query	{"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	isTest	picklist_eq	queryWithBinds	{"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	isTest	picklist_eq	sosl	{"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	isTest	picklist_in	query	{"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	isTest	picklist_in	sosl	{"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	isTest	picklist_quoted	query	true
+67.0	isTest	picklist_quoted	sosl	0
+67.0	isTest	short_textarea_eq	query	{"message":"value of filter criterion for field 'Note__c' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	isTest	short_textarea_eq	sosl	{"message":"value of filter criterion for field 'Note__c' must be of type string and should be enclosed in quotes","type":"System.QueryException"}
+67.0	isTest	short_textarea_quoted	query	true
+67.0	isTest	short_textarea_quoted	sosl	0
+67.0	isTest	textarea_eq	query	{"message":"field 'Description' can not be filtered in a query call","type":"System.QueryException"}
+67.0	isTest	textarea_eq	sosl	{"message":"field 'Description' can not be filtered in a query call","type":"System.QueryException"}
+67.0	isTest	textarea_quoted	query	{"message":"field 'Description' can not be filtered in a query call","type":"System.QueryException"}
+67.0	isTest	textarea_quoted	sosl	{"message":"field 'Description' can not be filtered in a query call","type":"System.QueryException"}
+67.0	anonymous	name_eq	static_soql	{"compiled":false,"message":"Compilation failed at Line 1 column 23 with the error:\n\n\nSELECT Id FROM Account WHERE Name = 3\n                             ^\nERROR at Row:1:Column:30\nvalue of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	name_in	static_soql	{"compiled":false,"message":"Compilation failed at Line 1 column 23 with the error:\n\n\nSELECT Id FROM Account WHERE Name IN (1,2)\n                             ^\nERROR at Row:1:Column:30\nvalue of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	name_decimal	static_soql	{"compiled":false,"message":"Compilation failed at Line 1 column 23 with the error:\n\n\nSELECT Id FROM Account WHERE Name = 3.5\n                             ^\nERROR at Row:1:Column:30\nvalue of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	name_quoted_eq	static_soql	{"compiled":true}
+67.0	anonymous	name_quoted_in	static_soql	{"compiled":true}
+67.0	anonymous	name_null	static_soql	{"compiled":true}
+67.0	anonymous	picklist_eq	static_soql	{"compiled":false,"message":"Compilation failed at Line 1 column 23 with the error:\n\n\nSELECT Id FROM Account WHERE Industry = 3\n                             ^\nERROR at Row:1:Column:30\nvalue of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	picklist_in	static_soql	{"compiled":false,"message":"Compilation failed at Line 1 column 23 with the error:\n\n\nSELECT Id FROM Account WHERE Industry IN (1,2)\n                             ^\nERROR at Row:1:Column:30\nvalue of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	picklist_quoted	static_soql	{"compiled":true}
+67.0	anonymous	textarea_eq	static_soql	{"compiled":false,"message":"Compilation failed at Line 1 column 23 with the error:\n\n\nSELECT Id FROM Account WHERE Description = 3\n                             ^\nERROR at Row:1:Column:30\nfield 'Description' can not be filtered in a query call"}
+67.0	anonymous	textarea_quoted	static_soql	{"compiled":false,"message":"Compilation failed at Line 1 column 23 with the error:\n\n\nSELECT Id FROM Account WHERE Description = '3'\n                             ^\nERROR at Row:1:Column:30\nfield 'Description' can not be filtered in a query call"}
+67.0	anonymous	short_textarea_eq	static_soql	{"compiled":false,"message":"Compilation failed at Line 1 column 23 with the error:\n\n\nSELECT Id FROM Account WHERE Note__c = 3\n                             ^\nERROR at Row:1:Column:30\nvalue of filter criterion for field 'Note__c' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	short_textarea_quoted	static_soql	{"compiled":true}
+67.0	anonymous	id_eq	static_soql	{"compiled":false,"message":"Compilation failed at Line 1 column 23 with the error:\n\n\nSELECT Id FROM Account WHERE Id = 3\n                             ^\nERROR at Row:1:Column:30\nvalue of filter criterion for field 'Id' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	id_in	static_soql	{"compiled":false,"message":"Compilation failed at Line 1 column 23 with the error:\n\n\nSELECT Id FROM Account WHERE Id IN (1,2)\n                             ^\nERROR at Row:1:Column:30\nvalue of filter criterion for field 'Id' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	id_null	static_soql	{"compiled":true}
+67.0	isTest	name_eq	static_soql	{"compiled":false,"message":"SELECT Id FROM Account WHERE Name = 3\n                             ^\nERROR at Row:1:Column:30\nvalue of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+67.0	isTest	name_in	static_soql	{"compiled":false,"message":"SELECT Id FROM Account WHERE Name IN (1,2)\n                             ^\nERROR at Row:1:Column:30\nvalue of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+67.0	isTest	name_decimal	static_soql	{"compiled":false,"message":"SELECT Id FROM Account WHERE Name = 3.5\n                             ^\nERROR at Row:1:Column:30\nvalue of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+67.0	isTest	name_quoted_eq	static_soql	{"compiled":true}
+67.0	isTest	name_quoted_in	static_soql	{"compiled":true}
+67.0	isTest	name_null	static_soql	{"compiled":true}
+67.0	isTest	picklist_eq	static_soql	{"compiled":false,"message":"SELECT Id FROM Account WHERE Industry = 3\n                             ^\nERROR at Row:1:Column:30\nvalue of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes"}
+67.0	isTest	picklist_in	static_soql	{"compiled":false,"message":"SELECT Id FROM Account WHERE Industry IN (1,2)\n                             ^\nERROR at Row:1:Column:30\nvalue of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes"}
+67.0	isTest	picklist_quoted	static_soql	{"compiled":true}
+67.0	isTest	textarea_eq	static_soql	{"compiled":false,"message":"SELECT Id FROM Account WHERE Description = 3\n                             ^\nERROR at Row:1:Column:30\nfield 'Description' can not be filtered in a query call"}
+67.0	isTest	textarea_quoted	static_soql	{"compiled":false,"message":"SELECT Id FROM Account WHERE Description = '3'\n                             ^\nERROR at Row:1:Column:30\nfield 'Description' can not be filtered in a query call"}
+67.0	isTest	short_textarea_eq	static_soql	{"compiled":false,"message":"SELECT Id FROM Account WHERE Note__c = 3\n                             ^\nERROR at Row:1:Column:30\nvalue of filter criterion for field 'Note__c' must be of type string and should be enclosed in quotes"}
+67.0	isTest	short_textarea_quoted	static_soql	{"compiled":true}
+67.0	isTest	id_eq	static_soql	{"compiled":false,"message":"SELECT Id FROM Account WHERE Id = 3\n                             ^\nERROR at Row:1:Column:30\nvalue of filter criterion for field 'Id' must be of type string and should be enclosed in quotes"}
+67.0	isTest	id_in	static_soql	{"compiled":false,"message":"SELECT Id FROM Account WHERE Id IN (1,2)\n                             ^\nERROR at Row:1:Column:30\nvalue of filter criterion for field 'Id' must be of type string and should be enclosed in quotes"}
+67.0	isTest	id_null	static_soql	{"compiled":true}
+67.0	anonymous	name_eq	static_sosl	{"compiled":false,"message":"Compilation failed at Line 1 column 29 with the error:\n\n\nFIELDS RETURNING Account(Id WHERE Name = 3)\n                                  ^\nERROR at Row:1:Column:70\nvalue of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	name_in	static_sosl	{"compiled":false,"message":"Compilation failed at Line 1 column 29 with the error:\n\n\nFIELDS RETURNING Account(Id WHERE Name IN (1,2))\n                                  ^\nERROR at Row:1:Column:70\nvalue of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	name_decimal	static_sosl	{"compiled":false,"message":"Compilation failed at Line 1 column 29 with the error:\n\n\nFIELDS RETURNING Account(Id WHERE Name = 3.5)\n                                  ^\nERROR at Row:1:Column:70\nvalue of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	name_quoted_eq	static_sosl	{"compiled":true}
+67.0	anonymous	name_quoted_in	static_sosl	{"compiled":true}
+67.0	anonymous	name_null	static_sosl	{"compiled":true}
+67.0	anonymous	picklist_eq	static_sosl	{"compiled":false,"message":"Compilation failed at Line 1 column 29 with the error:\n\n\nFIELDS RETURNING Account(Id WHERE Industry = 3)\n                                  ^\nERROR at Row:1:Column:70\nvalue of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	picklist_in	static_sosl	{"compiled":false,"message":"Compilation failed at Line 1 column 29 with the error:\n\n\nFIELDS RETURNING Account(Id WHERE Industry IN (1,2))\n                                  ^\nERROR at Row:1:Column:70\nvalue of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	picklist_quoted	static_sosl	{"compiled":true}
+67.0	anonymous	textarea_eq	static_sosl	{"compiled":false,"message":"Compilation failed at Line 1 column 29 with the error:\n\n\nFIELDS RETURNING Account(Id WHERE Description = 3)\n                                  ^\nERROR at Row:1:Column:70\nfield 'Description' can not be filtered in a query call"}
+67.0	anonymous	textarea_quoted	static_sosl	{"compiled":false,"message":"Compilation failed at Line 1 column 29 with the error:\n\n\nFIELDS RETURNING Account(Id WHERE Description = '3')\n                                  ^\nERROR at Row:1:Column:70\nfield 'Description' can not be filtered in a query call"}
+67.0	anonymous	short_textarea_eq	static_sosl	{"compiled":false,"message":"Compilation failed at Line 1 column 29 with the error:\n\n\nFIELDS RETURNING Account(Id WHERE Note__c = 3)\n                                  ^\nERROR at Row:1:Column:70\nvalue of filter criterion for field 'Note__c' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	short_textarea_quoted	static_sosl	{"compiled":true}
+67.0	anonymous	id_eq	static_sosl	{"compiled":false,"message":"Compilation failed at Line 1 column 29 with the error:\n\n\nFIELDS RETURNING Account(Id WHERE Id = 3)\n                                  ^\nERROR at Row:1:Column:70\nvalue of filter criterion for field 'Id' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	id_in	static_sosl	{"compiled":false,"message":"Compilation failed at Line 1 column 29 with the error:\n\n\nFIELDS RETURNING Account(Id WHERE Id IN (1,2))\n                                  ^\nERROR at Row:1:Column:70\nvalue of filter criterion for field 'Id' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	id_null	static_sosl	{"compiled":true}
+67.0	isTest	name_eq	static_sosl	{"compiled":false,"message":"FIELDS RETURNING Account(Id WHERE Name = 3)\n                                  ^\nERROR at Row:1:Column:70\nvalue of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+67.0	isTest	name_in	static_sosl	{"compiled":false,"message":"FIELDS RETURNING Account(Id WHERE Name IN (1,2))\n                                  ^\nERROR at Row:1:Column:70\nvalue of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+67.0	isTest	name_decimal	static_sosl	{"compiled":false,"message":"FIELDS RETURNING Account(Id WHERE Name = 3.5)\n                                  ^\nERROR at Row:1:Column:70\nvalue of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+67.0	isTest	name_quoted_eq	static_sosl	{"compiled":true}
+67.0	isTest	name_quoted_in	static_sosl	{"compiled":true}
+67.0	isTest	name_null	static_sosl	{"compiled":true}
+67.0	isTest	picklist_eq	static_sosl	{"compiled":false,"message":"FIELDS RETURNING Account(Id WHERE Industry = 3)\n                                  ^\nERROR at Row:1:Column:70\nvalue of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes"}
+67.0	isTest	picklist_in	static_sosl	{"compiled":false,"message":"FIELDS RETURNING Account(Id WHERE Industry IN (1,2))\n                                  ^\nERROR at Row:1:Column:70\nvalue of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes"}
+67.0	isTest	picklist_quoted	static_sosl	{"compiled":true}
+67.0	isTest	textarea_eq	static_sosl	{"compiled":false,"message":"FIELDS RETURNING Account(Id WHERE Description = 3)\n                                  ^\nERROR at Row:1:Column:70\nfield 'Description' can not be filtered in a query call"}
+67.0	isTest	textarea_quoted	static_sosl	{"compiled":false,"message":"FIELDS RETURNING Account(Id WHERE Description = '3')\n                                  ^\nERROR at Row:1:Column:70\nfield 'Description' can not be filtered in a query call"}
+67.0	isTest	short_textarea_eq	static_sosl	{"compiled":false,"message":"FIELDS RETURNING Account(Id WHERE Note__c = 3)\n                                  ^\nERROR at Row:1:Column:70\nvalue of filter criterion for field 'Note__c' must be of type string and should be enclosed in quotes"}
+67.0	isTest	short_textarea_quoted	static_sosl	{"compiled":true}
+67.0	isTest	id_eq	static_sosl	{"compiled":false,"message":"FIELDS RETURNING Account(Id WHERE Id = 3)\n                                  ^\nERROR at Row:1:Column:70\nvalue of filter criterion for field 'Id' must be of type string and should be enclosed in quotes"}
+67.0	isTest	id_in	static_sosl	{"compiled":false,"message":"FIELDS RETURNING Account(Id WHERE Id IN (1,2))\n                                  ^\nERROR at Row:1:Column:70\nvalue of filter criterion for field 'Id' must be of type string and should be enclosed in quotes"}
+67.0	isTest	id_null	static_sosl	{"compiled":true}

@@ -67,7 +67,7 @@ func TestScheduledNestingStopTestNativeConformance(t *testing.T) {
 		t.Fatalf("incomplete native rows: %v", counts)
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			index := nativeBoundaryIndex(t, api, data.Classes, nil)
 			analysis := sema.Analyze(index)
 			if index.HasErrors() || analysis.HasErrors() {

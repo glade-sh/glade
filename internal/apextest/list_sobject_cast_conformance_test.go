@@ -122,7 +122,7 @@ func runListSObjectCastConformance(t *testing.T, cluster string, shapes, cells i
 		t.Fatalf("native cells=%d, want=%d", observations, cells)
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			// Transport controls retain their own count label, separate from CL matches.
 			counts := newConformanceCountLog(t, "ListSObjectCast-"+cluster, api)
 			baseIndex := listSObjectCastIndex(t, api, nil)

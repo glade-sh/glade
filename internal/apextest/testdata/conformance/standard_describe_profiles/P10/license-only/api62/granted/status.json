@@ -1,0 +1,687 @@
+[
+  {
+    "code": "",
+    "object": "Account",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AccountBrand",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AccountBrandShare",
+    "status": 200
+  },
+  {
+    "code": "NOT_FOUND",
+    "object": "AccountContactRelation",
+    "status": 404
+  },
+  {
+    "code": "NOT_FOUND",
+    "object": "AccountTeamMember",
+    "status": 404
+  },
+  {
+    "code": "",
+    "object": "ApexClass",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApexTrigger",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Asset",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AsyncApexJob",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Attachment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Audience",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BusinessHours",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Campaign",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CampaignMember",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Case",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CaseComment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChannelProgram",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChannelProgramFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChannelProgramHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChannelProgramLevel",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChannelProgramLevelFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChannelProgramLevelHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChannelProgramLevelShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChannelProgramMember",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChannelProgramMemberFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChannelProgramMemberHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChannelProgramMemberShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChannelProgramShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CollaborationGroup",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Contact",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentDocument",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentDocumentLink",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentVersion",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Contract",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CronTrigger",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Dashboard",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DelegatedAccount",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DelegatedAccountFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DelegatedAccountHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DelegatedAccountShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Document",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EmailMessage",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EmailTemplate",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Entitlement",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EntitySubscription",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Event",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExperienceDiagnosticEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FeedItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Folder",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Group",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "GroupMember",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Individual",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "InventoryItemReservation",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "InventoryReservation",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "InventoryReservationShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Lead",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ListView",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Location",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MobSecurityCertPinConfig",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MobileSecurityAssignment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MobileSecurityPolicy",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MobileSecurityUserMetric",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NavigationLinkSet",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NavigationMenuItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Network",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NetworkActivityAudit",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NetworkAffinity",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NetworkAuthApiSettings",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NetworkDataCategory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NetworkDiscoverableLogin",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NetworkEmailTmplAllowlist",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NetworkFeedResponseMetric",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NetworkMember",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NetworkMemberGroup",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NetworkModeration",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NetworkPageOverride",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NetworkSelfRegistration",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NetworkUserHistoryRecent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Note",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ObjectMetadataTag",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ObjectRelatedUrl",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ObjectRelatedUrlChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Opportunity",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OpportunityContactRole",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OpportunityLineItem",
+    "status": 200
+  },
+  {
+    "code": "NOT_FOUND",
+    "object": "OpportunityTeamMember",
+    "status": 404
+  },
+  {
+    "code": "",
+    "object": "Order",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OrderItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Organization",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Partner",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerFundAllocation",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerFundAllocationFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerFundAllocationHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerFundAllocationShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerFundClaim",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerFundClaimFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerFundClaimHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerFundClaimShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerFundRequest",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerFundRequestFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerFundRequestHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerFundRequestShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerMarketingBudget",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerMarketingBudgetFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerMarketingBudgetHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerMarketingBudgetShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PendingOrdSumProcEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PendingOrderSummary",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PendingOrderSummaryChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PermissionSet",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PermissionSetAssignment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PersonAccountOwnerPowerUser",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PersonalizationTargetInfo",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PortalDelegablePermissionSet",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Pricebook2",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PricebookEntry",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProcessInstance",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProcessInstanceWorkitem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Product2",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Profile",
+    "status": 200
+  },
+  {
+    "code": "NOT_FOUND",
+    "object": "Quote",
+    "status": 404
+  },
+  {
+    "code": "NOT_FOUND",
+    "object": "QuoteLineItem",
+    "status": 404
+  },
+  {
+    "code": "",
+    "object": "RecordType",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Report",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ReputationLevel",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ReputationPointsRule",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceContract",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SharingSet",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SiteMarketingDataExtensionMapping",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "StaticResource",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Task",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Topic",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "User",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserCustomBadge",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserRole",
+    "status": 200
+  },
+  {
+    "code": "NOT_FOUND",
+    "object": "WebStore",
+    "status": 404
+  },
+  {
+    "code": "",
+    "object": "WorkOrder",
+    "status": 200
+  }
+]

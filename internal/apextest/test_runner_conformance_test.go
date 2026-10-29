@@ -96,7 +96,7 @@ func TestTestRunnerOrgConformance(t *testing.T) {
 		return "ACCEPTED"
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCounts()
 			defer counts.Log(t, "test runner", api, "")
 			root := t.TempDir()

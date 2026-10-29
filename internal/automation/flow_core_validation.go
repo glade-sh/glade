@@ -59,10 +59,26 @@ func flowCoreValidateProjectEntries(p project.Project, idx *Index) error {
 					reject(fmt.Sprintf("start filter %q references an unknown field", filter.Field))
 				}
 			}
+			if strings.TrimSpace(raw.Start.FilterFormula) == "" {
+				logic := strings.TrimSpace(raw.Start.FilterLogic)
+				if logic != "" && !strings.EqualFold(logic, "and") {
+					for _, filter := range raw.Start.Filters {
+						// Reject only the enum aliases captured as invalid. Other
+						// operators retain the base loader's warning/projection.
+						switch strings.ToLower(strings.TrimSpace(filter.Operator)) {
+						case "", "equals", "notequals", "isblank":
+							reject(fmt.Sprintf("start filter operator %q is not supported for custom logic", filter.Operator))
+						}
+					}
+				}
+			}
 			variables := flowVariableMap(raw.Variables)
 			for _, assignment := range raw.Assignments {
 				for _, item := range assignment.Items {
 					if flowCoreScalarVariableReference(item.AssignToReference, variables) || invocableFlowActionBooleanAssignment(item, variables) != "" {
+						continue
+					}
+					if variable, declared := variables[strings.ToLower(strings.TrimSpace(item.AssignToReference))]; declared && !variable.IsCollection && strings.EqualFold(variable.DataType, "SObject") {
 						continue
 					}
 					field := flowRecordFieldReference(item.AssignToReference)

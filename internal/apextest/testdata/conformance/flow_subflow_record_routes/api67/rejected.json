@@ -1,0 +1,10 @@
+{
+  "success": false,
+  "failures": [
+    {
+      "component": "CedarBeforeSubflow",
+      "problem": "CallChild (Subflow) - A flow can\u2019t include Subflow elements when TriggerType is set to Record\u2014Run Before Save.",
+      "problemType": "Error"
+    }
+  ]
+}

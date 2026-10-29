@@ -1715,7 +1715,9 @@ func locationComponentFieldNames(definition storage.ObjectDefinition, namespace 
 		return "", "", false
 	}
 	fieldDef, ok := definition.Fields[canonical]
-	if !ok || fieldDef.Type != storage.FieldLocation {
+	// Custom Address compounds carry the same Latitude/Longitude components.
+	customAddress := fieldDef.Type == storage.FieldAddress && storage.CustomAddressComponentName(canonical, "Latitude") != ""
+	if !ok || (fieldDef.Type != storage.FieldLocation && !customAddress) {
 		return "", "", false
 	}
 	base := strings.TrimSuffix(canonical, "__c")

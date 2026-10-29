@@ -28,6 +28,7 @@ func (vm *VM) testStart() (Value, error) {
 	vm.testContext.PlatformEventStartIndex = len(vm.testContext.PlatformEvents)
 	vm.testContext.ChainEnqueued = false
 	vm.calloutPendingWork = calloutPendingWork{}
+	vm.testContext.parentCPUBudget = vm.cpuBudgetUsed
 	vm.testContext.ParentLimits = vm.limits
 	vm.testContext.ParentViolations = append([]LimitViolation(nil), vm.limitViolations...)
 	vm.ResetLimits()
@@ -48,6 +49,7 @@ func (vm *VM) testStop(result *Result) (Value, error) {
 	err := vm.drainTestWork(result)
 	// The test boundary clears pending DML and active-savepoint callout guards.
 	vm.calloutPendingWork = calloutPendingWork{}
+	vm.cpuBudgetUsed = vm.testContext.parentCPUBudget
 	vm.limits = vm.testContext.ParentLimits
 	vm.limitViolations = append([]LimitViolation(nil), vm.testContext.ParentViolations...)
 	return Null, err
@@ -1288,6 +1290,7 @@ func (vm *VM) runAsyncJobInTransaction(job AsyncJob, result *Result, batchProjec
 		}
 		previousFinalizer := vm.currentFinalizer
 		vm.currentFinalizer = Value{}
+		jobTransaction := vm.beginDMLRollbackPoint(vm.testContext == nil, false)
 		_, err := vm.withAsyncLimitWindow(func() (Value, error) {
 			return vm.withQueueableJob(job, func() (Value, error) {
 				if staticExecute {
@@ -1298,7 +1301,20 @@ func (vm *VM) runAsyncJobInTransaction(job AsyncJob, result *Result, batchProjec
 		})
 		finalizer := vm.currentFinalizer
 		vm.currentFinalizer = previousFinalizer
+		if err != nil && jobTransaction.enabled && finalizer.Kind == ValueObject {
+			// Live failures roll back the body before the Finalizer observes its
+			// parent. stopTest retains its Processing state and body effects.
+			if rollbackErr := vm.restoreDMLRollbackPoint(jobTransaction); rollbackErr != nil {
+				err = rollbackErr
+			}
+			vm.recordAsyncJob(job, "Failed", err.Error())
+		} else {
+			vm.finishDMLRollbackPoint(jobTransaction)
+		}
 		if finalizer.Kind == ValueObject {
+			if err == nil {
+				vm.recordAsyncJob(job, "Completed", "")
+			}
 			finalizerErr := vm.runQueueableFinalizer(finalizer, job, result, err)
 			if err == nil {
 				err = finalizerErr
@@ -1418,20 +1434,22 @@ func (vm *VM) runQueueableFinalizer(finalizer Value, job AsyncJob, result *Resul
 	if len(target.Params) == 0 {
 		args = nil
 	}
-	_, err := vm.withQueueableDelay(job, func() (Value, error) {
-		return vm.withAsyncKind("Queueable", func() (Value, error) {
-			// B44X01Z/02Z/05Z: omitted finalizers enter with sharing at API
-			// 62/67 even when the Queueable parent runs without sharing. Keep
-			// declared sharing on its existing path; those shapes are unprobed.
-			// Applying the omitted-entry rule at other APIs is a generalization.
-			mode := strings.ToLower(strings.TrimSpace(target.SharingMode))
-			if !target.SourceContextBound {
-				mode, _ = vm.classSharingMode(target.ClassName)
-			}
-			if mode == "" {
-				return vm.callMethodWithReceiver(target, finalizer, args, result, "with sharing")
-			}
-			return vm.callAsyncEntry(target, finalizer, args, result, false)
+	_, err := vm.withAsyncLimitWindow(func() (Value, error) {
+		return vm.withQueueableDelay(job, func() (Value, error) {
+			return vm.withAsyncKind("Queueable", func() (Value, error) {
+				// B44X01Z/02Z/05Z: omitted finalizers enter with sharing at API
+				// 62/67 even when the Queueable parent runs without sharing. Keep
+				// declared sharing on its existing path; those shapes are unprobed.
+				// Applying the omitted-entry rule at other APIs is a generalization.
+				mode := strings.ToLower(strings.TrimSpace(target.SharingMode))
+				if !target.SourceContextBound {
+					mode, _ = vm.classSharingMode(target.ClassName)
+				}
+				if mode == "" {
+					return vm.callMethodWithReceiver(target, finalizer, args, result, "with sharing")
+				}
+				return vm.callAsyncEntry(target, finalizer, args, result, false)
+			})
 		})
 	})
 	return err
@@ -2095,12 +2113,10 @@ func (vm *VM) withAsyncLimitWindow(run func() (Value, error)) (Value, error) {
 	defer restoreCreations()
 	parentSingleReserved, parentMassReserved := vm.singleEmailReserved, vm.massEmailReserved
 	vm.singleEmailReserved, vm.massEmailReserved = 0, 0
+	parentCPUBudget := vm.cpuBudgetUsed
 	parentLimits := vm.limits
 	parentCaps := vm.limitCaps
 	parentViolations := append([]LimitViolation(nil), vm.limitViolations...)
-	parentCPUBudget := vm.cpuBudgetUsed
-	parentCPUStartedAt := vm.cpuStartedAt
-	parentCPURunning := vm.cpuRunning
 	if asyncCaps, ok := LimitCapsForProfile("strict-async"); ok && vm.limitCaps.nativeDefaults {
 		// Only native defaults widen. Complete explicit caps remain local,
 		// including query and CPU values equal to the synchronous defaults.
@@ -2115,8 +2131,6 @@ func (vm *VM) withAsyncLimitWindow(run func() (Value, error)) (Value, error) {
 		vm.limitCaps = parentCaps
 		vm.limitViolations = parentViolations
 		vm.cpuBudgetUsed = parentCPUBudget
-		vm.cpuStartedAt = parentCPUStartedAt
-		vm.cpuRunning = parentCPURunning
 	}()
 	value, err := run()
 	return value, err

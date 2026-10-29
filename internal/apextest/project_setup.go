@@ -676,19 +676,71 @@ func applyProjectDataRelationshipReferences(org *storage.OrgState, p project.Pro
 		ensurePermissionReferencedObjectField(org, ref.ChildObject, fieldName)
 	}
 }
-func applyProjectProfileRecordTypes(org *storage.OrgState, p project.Project) bool {
+
+// ApplyProjectProfileMetadata installs the profile records and record type
+// defaults used by project-backed CLI, server and debugger orgs.
+func ApplyProjectProfileMetadata(org *storage.OrgState, p project.Project) error {
+	return applyProjectProfileMetadata(org, p, make(map[string]permissionSetMetadataCacheEntry), os.ReadFile)
+}
+
+func applyProjectProfileMetadata(org *storage.OrgState, p project.Project, permissionSetMetadataCache map[string]permissionSetMetadataCacheEntry, readFile func(string) ([]byte, error)) error {
+	if org == nil {
+		return nil
+	}
+	// All consumers use the same bytes, including permission metadata that
+	// otherwise has its own live file reader.
+	bodies := make(map[string][]byte, len(p.ProfileFiles))
+	for _, file := range p.ProfileFiles {
+		data, err := readFile(file)
+		if err != nil {
+			return err
+		}
+		bodies[file] = data
+		var metadata permissionSetMetadata
+		ok := xml.Unmarshal(data, &metadata) == nil
+		permissionSetMetadataCache[file] = permissionSetMetadataCacheEntry{metadata: metadata, ok: ok}
+	}
+	readProfile := func(file string) ([]byte, error) {
+		data, ok := bodies[file]
+		if !ok {
+			return nil, fmt.Errorf("profile metadata was not captured: %s", file)
+		}
+		return data, nil
+	}
+	_, hadPersonAccountObject := org.Objects["PersonAccount"]
+	foldPersonAccountObjectIntoAccount(org)
+	if applyProjectProfileRecordTypes(org, p, readProfile) || hadPersonAccountObject {
+		storage.EnsureDeterministicPlatformData(org)
+	}
+	applyProjectProfileRecordTypeDefaults(org, p, readProfile)
+	applyProjectProfileRecords(org, p, permissionSetMetadataCache)
+	applyProjectAccountRecordTypeDefaults(org, p, readProfile)
+	return nil
+}
+
+func applyProjectProfileRecordTypes(org *storage.OrgState, p project.Project, readers ...func(string) ([]byte, error)) bool {
 	if org == nil || len(p.ProfileFiles) == 0 {
 		return false
 	}
 	changed := false
 	for _, file := range sortedProfileFilesForDefaults(p.ProfileFiles) {
-		for _, visibility := range loadProfileRecordTypeVisibilities(file) {
+		for _, visibility := range loadProfileRecordTypeVisibilities(file, readers...) {
 			canonicalObject, ok := profileRecordTypeObjectName(*org, visibility.ObjectName)
 			if !ok {
 				continue
 			}
 			state := org.Objects[canonicalObject]
-			if profileRecordTypeExists(state.Definition.RecordTypes, visibility.DeveloperName) {
+			if (visibility.Qualified || !isAccountRecordTypeObject(visibility.ObjectName) || hasQualifiedRecordTypes(state.Definition.RecordTypes)) &&
+				profileRecordTypeExists(state.Definition.RecordTypes, visibility.DeveloperName) {
+				continue
+			}
+			if index := recordTypeDeveloperIndex(state.Definition.RecordTypes, visibility.DeveloperName); index >= 0 {
+				if visibility.PersonAccount && !state.Definition.RecordTypes[index].PersonAccount {
+					state.Definition = state.Definition.Clone()
+					state.Definition.RecordTypes[index].PersonAccount = true
+					org.Objects[canonicalObject] = state
+					changed = true
+				}
 				continue
 			}
 			state.Definition = state.Definition.Clone()
@@ -698,6 +750,7 @@ func applyProjectProfileRecordTypes(org *storage.OrgState, p project.Project) bo
 				Active:        true,
 				Available:     true,
 				Default:       visibility.Default && !visibility.PersonAccount,
+				PersonAccount: visibility.PersonAccount,
 			})
 			org.Objects[canonicalObject] = state
 			changed = true
@@ -705,11 +758,11 @@ func applyProjectProfileRecordTypes(org *storage.OrgState, p project.Project) bo
 	}
 	return changed
 }
-func applyProjectProfileRecordTypeDefaults(org *storage.OrgState, p project.Project) {
+func applyProjectProfileRecordTypeDefaults(org *storage.OrgState, p project.Project, readers ...func(string) ([]byte, error)) {
 	if org == nil || len(p.ProfileFiles) == 0 {
 		return
 	}
-	defaults := projectProfileRecordTypeDefaults(p.ProfileFiles)
+	defaults := projectProfileRecordTypeDefaults(p.ProfileFiles, readers...)
 	for objectName, developerName := range defaults {
 		canonicalObject, ok := profileRecordTypeObjectName(*org, objectName)
 		if !ok {
@@ -728,6 +781,57 @@ func applyProjectProfileRecordTypeDefaults(org *storage.OrgState, p project.Proj
 		}
 		if changed {
 			org.Objects[canonicalObject] = state
+		}
+	}
+}
+
+func applyProjectAccountRecordTypeDefaults(org *storage.OrgState, p project.Project, readers ...func(string) ([]byte, error)) {
+	_, personAccountsEnabled := storage.ResolveFieldName(org.Objects["Account"].Definition, "", "IsPersonAccount")
+	for _, file := range sortedProfileFilesForDefaults(p.ProfileFiles) {
+		name := profileNameFromPath(file)
+		profileID, found := recordFieldID(org.Objects["Profile"], "Name", name)
+		if strings.EqualFold(name, "Admin") {
+			profileID, found = storage.DefaultProfileID, true
+		}
+		if !found {
+			continue
+		}
+		data, err := readProfileMetadataFile(file, readers...)
+		if err != nil {
+			continue
+		}
+		var profile profileXML
+		if xml.Unmarshal(data, &profile) != nil {
+			continue
+		}
+		// Native person_account_profile_routes rows retain the business personAccountDefault
+		// when present, but fall back to default when it is false or omitted.
+		// With Person Accounts disabled, only default applies.
+		businessPersonDefault := false
+		if personAccountsEnabled {
+			for _, visibility := range profile.RecordTypeVisibilities {
+				object, _, ok := strings.Cut(strings.TrimSpace(visibility.RecordType), ".")
+				if ok && strings.EqualFold(object, "Account") && visibility.Visible && visibility.PersonAccountDefault {
+					businessPersonDefault = true
+					break
+				}
+			}
+		}
+		for _, visibility := range profile.RecordTypeVisibilities {
+			object, developerName, ok := strings.Cut(strings.TrimSpace(visibility.RecordType), ".")
+			if !ok || !visibility.Visible || !(strings.EqualFold(object, "Account") || strings.EqualFold(object, "PersonAccount")) {
+				continue
+			}
+			selected := visibility.PersonAccountDefault
+			if strings.EqualFold(object, "Account") && !businessPersonDefault {
+				selected = visibility.Default
+			}
+			if !selected {
+				continue
+			}
+			org.Metadata.AccountRecordTypeDefaults = append(org.Metadata.AccountRecordTypeDefaults, storage.AccountRecordTypeDefault{
+				ProfileID: profileID, DeveloperName: stripRecordTypeNamespaceToken(developerName), PersonAccount: strings.EqualFold(object, "PersonAccount"),
+			})
 		}
 	}
 }
@@ -1187,18 +1291,29 @@ func applyProjectPermissionSetMetadataPermissions(org *storage.OrgState, file, p
 		if !ok {
 			continue
 		}
+		qualified := stripRecordTypeNamespaceToken(developerName) != strings.TrimSpace(developerName)
 		developerName = stripRecordTypeNamespaceToken(developerName)
 		state := org.Objects[canonicalObject]
-		if profileRecordTypeExists(state.Definition.RecordTypes, developerName) {
+		if (qualified || !isAccountRecordTypeObject(objectName) || hasQualifiedRecordTypes(state.Definition.RecordTypes)) &&
+			profileRecordTypeExists(state.Definition.RecordTypes, developerName) {
+			continue
+		}
+		if index := recordTypeDeveloperIndex(state.Definition.RecordTypes, developerName); index >= 0 {
+			if strings.EqualFold(objectName, "PersonAccount") && !state.Definition.RecordTypes[index].PersonAccount {
+				state.Definition = state.Definition.Clone()
+				state.Definition.RecordTypes[index].PersonAccount = true
+				org.Objects[canonicalObject] = state
+			}
 			continue
 		}
 		state.Definition = state.Definition.Clone()
 		state.Definition.RecordTypes = append(state.Definition.RecordTypes, storage.RecordTypeInfo{
 			DeveloperName: developerName,
-			Name:          recordTypeLabelFromDeveloperName(developerName),
+			Name:          recordTypeLabelFromDeveloperName(stripRecordTypeNamespaceToken(developerName)),
 			Active:        true,
 			Available:     true,
 			Default:       visibility.Default,
+			PersonAccount: strings.EqualFold(objectName, "PersonAccount"),
 		})
 		org.Objects[canonicalObject] = state
 	}

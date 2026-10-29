@@ -49,7 +49,7 @@ func (p *Parser) refineInlineSOSLDiagnostics(path, source string, items []extern
 			continue
 		}
 		raw := source[start:end]
-		query, err := sosl.Parse(raw)
+		query, err := sosl.ParseInline(raw)
 		message := sosl.InlineCompileDiagnosticMessage(raw, query, err)
 		if message != "" {
 			if len(raw) < len(validQuery) {

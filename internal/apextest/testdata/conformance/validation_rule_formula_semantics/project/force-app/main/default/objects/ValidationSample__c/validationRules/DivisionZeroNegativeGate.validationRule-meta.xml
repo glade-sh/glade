@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>DivisionZeroNegativeGate</fullName>
+    <active>true</active>
+    <errorConditionFormula>AND(ISNEW(), Name = &quot;Division Zero Negative&quot;, -1 / NumberValue__c &gt; 0)</errorConditionFormula>
+    <errorMessage>Zero division negative numerator blocked</errorMessage>
+</ValidationRule>

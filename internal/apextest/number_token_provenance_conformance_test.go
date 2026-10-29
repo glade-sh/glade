@@ -46,7 +46,7 @@ type numberTokenData struct {
 func TestNumberTokenProvenanceOrgConformance(t *testing.T) {
 	data := loadNumberTokenData(t)
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "NumberTokenProvenance", api)
 			root := t.TempDir()
 			writeFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"sourceApiVersion":%q,"packageDirectories":[{"path":"force-app","default":true}]}`, api))

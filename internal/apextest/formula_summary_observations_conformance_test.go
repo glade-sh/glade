@@ -65,7 +65,7 @@ func TestFormulaSummaryObservationsConformance(t *testing.T) {
 		t.Fatalf("native observations: %d", cells)
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "FormulaSummaryObservations", api)
 			base := conformanceSchemaBase(t, nativeBoundaryIndex(t, api, nil, data.Objects), api)
 			for _, row := range data.Rows {

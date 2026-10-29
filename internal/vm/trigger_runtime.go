@@ -519,6 +519,7 @@ func (vm *VM) runTriggers(timing, op string, records, oldRecords []storage.Recor
 	return nil, nil
 }
 func (vm *VM) triggersForOperation(object, timing, op string) []Trigger {
+	vm.ensureMetadataCacheGeneration()
 	if vm == nil {
 		return nil
 	}
@@ -599,6 +600,7 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 	leaveBeforeUpdate := vm.enterBeforeUpdateTrigger(trigger, records)
 	defer leaveBeforeUpdate()
 	caller := vm.Globals
+	callerTypes := vm.VarTypes
 	callerFinals := vm.finalLocals
 	callerClosedLocals, callerBindRoute := vm.closedSOQLLocals, vm.dynamicSOQLBindRoute
 	callerClass := vm.currentClass
@@ -617,6 +619,7 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 		frame[key] = value
 	}
 	vm.Globals = frame
+	vm.VarTypes = make(map[string]string)
 	vm.finalLocals = nil
 	vm.closedSOQLLocals, vm.dynamicSOQLBindRoute = nil, ""
 	vm.triggerGlobals = frame
@@ -653,6 +656,7 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 	defer func() {
 		vm.callStack = vm.callStack[:len(vm.callStack)-1]
 		vm.Globals = caller
+		vm.VarTypes = callerTypes
 		vm.finalLocals = callerFinals
 		vm.closedSOQLLocals, vm.dynamicSOQLBindRoute = callerClosedLocals, callerBindRoute
 		vm.triggerGlobals = callerTriggerGlobals

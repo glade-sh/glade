@@ -23,7 +23,7 @@ func flowCoreValidateProjectAssignments(_ project.Project, idx *Index) error {
 		}
 		variables := flowVariableMap(raw.Variables)
 		constants := flowConstantMap(raw.Constants)
-		formulas := flowFormulaMap(raw.Formulas)
+		formulas := flowFormulaMapWithConstants(raw.Formulas, raw.Constants)
 		invalid := false
 		for _, assignment := range raw.Assignments {
 			for _, item := range assignment.Items {

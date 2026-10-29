@@ -1,0 +1,13 @@
+case	body	compiled
+static_instance_text	System.assertEquals('parcel', ReceiverOwner.Instance.Text.toLowerCase());	true
+inner_member_chain	System.assertEquals('leaf', ReceiverOwner.Instance.Child.Text.toLowerCase());	true
+inner_enum_constant	System.assertEquals('NONE', ReceiverOwner.Level.NONE.name());	true
+inherited_method	System.assertEquals('parent', ReceiverOwner.Instance.inherited());	true
+overload_string	System.assertEquals('text', ReceiverOwner.Instance.choose('x'));	true
+overload_integer	System.assertEquals('number', ReceiverOwner.Instance.choose(1));	true
+inner_cast_instanceof	ReceiverParent value = new ReceiverOwner.Node(); System.assert(value instanceof ReceiverOwner.Node); ReceiverOwner.Node node = (ReceiverOwner.Node)value; System.assertEquals('parent', node.inherited());	true
+short_fields_getmap	Map<String, Schema.SObjectField> fields = Account.SObjectType.fields.getMap();	false
+short_fields_get	Schema.SObjectField field = Account.SObjectType.fields.get('Name');	false
+missing_inner_receiver	ReceiverOwner.Absent.invoke();	false
+short_named_fieldset	List<Schema.FieldSetMember> fields = Account.SObjectType.FieldSets.AccountSummary.getFields();	false
+missing_static_namespace	String value = pkgx.GatewayService.Instance.save();	false

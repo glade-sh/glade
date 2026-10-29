@@ -83,7 +83,7 @@ func TestResidualQueryOrgConformance(t *testing.T) {
 		t.Fatalf("query observations=%d carries=%d", exact, carried)
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "ResidualQuery", api)
 			for _, row := range data.Rows {
 				t.Run(row.ID, func(t *testing.T) {

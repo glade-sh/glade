@@ -69,6 +69,7 @@ if [[ "$*" == "test -vet=off -trimpath -list ^Test ./internal/apextest" ]]; then
 fi
 printf '%s\n' "$*" >> "$FIXTURE_DIR/calls"
 printf 'GOMAXPROCS=%s GOFLAGS=%s\n' "${GOMAXPROCS-unset}" "${GOFLAGS-unset}" >> "$FIXTURE_DIR/environment"
+printf '%s\n' "${GLADE_LWC_BROWSER-unset}" >> "$FIXTURE_DIR/browser-environment"
 if [[ "$1" == "vet" ]]; then exit "$FIXTURE_NATIVE_RC"; fi
 if [[ "$1" != "test" || "$2" != "-json" ]]; then exit 91; fi
 if [[ -s "$FIXTURE_DIR/events" ]]; then cat "$FIXTURE_DIR/events"; exit "$FIXTURE_NATIVE_RC"; fi
@@ -278,5 +279,47 @@ func TestCILocalReleaseApexLaneKeepsExplicitDataWeaveDeferrals(t *testing.T) {
 		if err != nil || !strings.Contains(string(data), `"valid": true`) || !strings.Contains(string(data), name) || !strings.Contains(string(data), `"deferred"`) {
 			t.Fatalf("deferral missing from shard summary: %v\n%s", err, data)
 		}
+	}
+}
+
+// Full server validation must execute L08; the ordinary CI lane routes it to
+// Browser instead. Exercise the commands with no inherited browser opt-in.
+func TestCIL08FullServerRoutesRequireBrowser(t *testing.T) {
+	for _, route := range []string{"core", "test", "race", "local-release", "local-release-lane"} {
+		t.Run(route, func(t *testing.T) {
+			args := []string{route}
+			if route == "local-release-lane" {
+				args = append(args, "server-playground")
+			}
+			out, err, calls, artifacts := runLocalReleaseLaneFixture(t, args, localReleaseLaneFixture{env: []string{"GLADE_LWC_BROWSER="}})
+			if err != nil {
+				t.Fatalf("route: %v\n%s", err, out)
+			}
+			data, err := os.ReadFile(filepath.Join(filepath.Dir(artifacts), "browser-environment"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			commands, environments := strings.Split(strings.TrimSpace(calls), "\n"), strings.Split(strings.TrimSuffix(string(data), "\n"), "\n")
+			if len(commands) != len(environments) {
+				t.Fatalf("commands/environments: %q / %q", calls, data)
+			}
+			found := false
+			for i, command := range commands {
+				if strings.Contains(command, "./internal/server") {
+					found = true
+					if strings.Contains(command, " -skip") || strings.Contains(command, " -run") {
+						t.Errorf("full server route filters conformance: %s", command)
+					}
+					if environments[i] != "1" {
+						t.Errorf("server route did not enable browser: %s", command)
+					}
+				} else if environments[i] != "" {
+					t.Errorf("browser opt-in leaked to unrelated route: %s", command)
+				}
+			}
+			if !found {
+				t.Fatal("server route missing")
+			}
+		})
 	}
 }

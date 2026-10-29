@@ -65,7 +65,7 @@ func TestAbstractHierarchyOrgConformance(t *testing.T) {
 		}
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "AbstractHierarchy", api)
 			for _, row := range data.Rows {
 				counts.Run(t, row.Route, row.ID, row.ID+"/"+row.Route, func(t *testing.T) {

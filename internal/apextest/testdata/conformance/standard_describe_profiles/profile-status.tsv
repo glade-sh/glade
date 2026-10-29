@@ -1,0 +1,14 @@
+profile	observation	edition	features	settings	definition_sha256	api62_effective_added	api62_effective_removed	api67_effective_added	api67_effective_removed	baseline_profile
+P0	captured	Developer		{}	a442d63ca3ba0f5aa8bdba02fd32fe379be06b8ae6abd611618469fcd8786bc4	0	0	0	0	P0
+P1	captured	Developer	MultiCurrency	{}	91ab036e1a4c7dcbe0d21319510f0086e58943d497f26960258e4ba01b918b02	25	0	25	0	P0
+P2	captured	Developer	PersonAccounts	{}	5636f6456db2673afac4758d88e70a436768c93b83cb378b9ea882d91f258cd5	46	0	46	0	P0
+P3	captured	Developer	StateAndCountryPicklist	{}	a3c93ff4b45815fb9a68707a7e8f0d239b0d62d3171d9f4a055913b387ac89f9	30	0	30	0	P0
+P4	captured	Developer	Communities	"{""communitiesSettings"":{""enableNetworksEnabled"":true}}"	03795310057fea630368c7a972966337060cd04ef9b84a12f78c0cc7c51b89b5	123	0	133	0	P0
+P5	captured	Developer		"{""orderSettings"":{""enableOrders"":true},""quoteSettings"":{""enableQuote"":true}}"	84863c6513f47e0ffe057e8db6aafee84fa2bf5243d1a27cd25ebabbf985b140	99	0	99	0	P0
+P6	captured	Developer	ProductsAndSchedules	"{""productSettings"":{""enableQuantitySchedule"":true,""enableRevenueSchedule"":true}}"	632e0f68ee63da58d5ac5813893a3cbce2b115107ddde4e603d61c2e178355e5	13	0	13	0	P0
+P7	captured	Developer	Entitlements	"{""entitlementSettings"":{""enableEntitlements"":true}}"	feb26d66b9c9d385da92e992d26b9b117d29e27ab939f02cb88ced423f9cdf25	0	0	0	0	P0
+P8	captured	Developer	OrderManagement	"{""orderManagementSettings"":{""enableOrderManagement"":true}}"	6ca81681c2dcc3f806d31dbf1659ab499b977b78153712149f0fd662148081fc	86	0	101	0	P0
+P9	captured	Developer	ContactsToMultipleAccounts	{}	831fab9c8303328f9a55519664e270d16a179491c01341e9586bf6b29a00056f	14	0	14	0	P0
+P10	captured	Developer	B2BCommerce,Communities	"{""commerceSettings"":{""commerceEnabled"":true},""communitiesSettings"":{""enableNetworksEnabled"":true}}"	1f78c2d27e758f508c5366a99ebfa38048d354cb565c67460ceef6ec27e5fe66	77	0	78	0	P4
+P11	captured	Enterprise		{}	967de86f3388ab26736b1c4fe85a63912229fb6ece4712b717681b712988fcaa	51	172	57	213	P0
+PU	captured	Developer	Communities,Entitlements,MultiCurrency,OrderManagement,PersonAccounts,ProductsAndSchedules,SalesUser,ServiceCloud,StateAndCountryPicklist	"{""communitiesSettings"":{""enableNetworksEnabled"":true},""entitlementSettings"":{""enableEntitlements"":true},""orderManagementSettings"":{""enableOrderManagement"":true},""orderSettings"":{""enableOrders"":true},""productSettings"":{""enableQuantitySchedule"":true,""enableRevenueSchedule"":true},""quoteSettings"":{""enableQuote"":true}}"	63ae3fba6f8c238722e5ebad0390b3ed656308d3fbb37a4ef58ea8aafbc90b1f	491	0	518	0	P0

@@ -129,7 +129,7 @@ func TestAnalyzeQualifiedReceiverNativeControls(t *testing.T) {
 		seen[key] = true
 		// These native rejections remain local false acceptances. Report them
 		// as named KNOWN_GAP skips, never as passing native conformance rows.
-		if c[1] == "known_gap" || row[1] == "anonymous" && c[1] == "receiver" && row[3] == "false" {
+		if c[1] == "known_gap" && row[2] != "standard_schema_fields_map" || row[1] == "anonymous" && c[1] == "receiver" && row[3] == "false" {
 			t.Run("KNOWN_GAP/"+key, func(t *testing.T) {
 				if row[3] != "false" {
 					t.Fatalf("known gap must cite a native rejection: %v", row)

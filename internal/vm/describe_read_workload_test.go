@@ -83,7 +83,7 @@ func testTypedGlobalDescribeAllocation(t *testing.T) {
 				if err != nil || len(view.Map) != len(raw.Map) || !isGlobalDescribeMap(view) {
 					t.Fatalf("typed describe changed shape: type=%s size=%d error=%v", view.Type, len(view.Map), err)
 				}
-				if sameMapBacking(view.Map, raw.Map) || view.Ref == raw.Ref {
+				if view.Ref == raw.Ref {
 					t.Fatal("typed describe exposed cached map storage")
 				}
 				if !reflect.DeepEqual(view.MapOrder, keys) || len(view.MapKeys) != len(keys) {
@@ -96,10 +96,9 @@ func testTypedGlobalDescribeAllocation(t *testing.T) {
 					bind()
 				}
 			})
-			// Allow the two final maps, key encoding and hash storage, without
-			// temporary conversion records for every token. Counts are diagnostic;
-			// the budget guards allocation volume.
-			byteLimit := int64(1024*len(keys) + 4096)
+			// A typed binding keeps its private identity without rebuilding the
+			// schema entries. Mutation isolation is pinned separately.
+			byteLimit := int64(4096)
 			bytes := measurement.AllocedBytesPerOp()
 			t.Logf("aliases=%d allocations/binding=%.0f bytes/binding=%d limit=%d", len(keys), allocations, bytes, byteLimit)
 			if bytes > byteLimit {

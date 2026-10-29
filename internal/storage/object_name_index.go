@@ -14,6 +14,30 @@ import (
 // index. Its type keeps it apart from the resolved-name string keys.
 type objectNameIndexKey struct{}
 
+type objectNameCacheOwnerKey struct{}
+
+// A shallow OrgState copy can replace Objects while retaining the cache pointer.
+// Only the original map may read or populate that cache. Foreign maps resolve
+// without it; they cannot overwrite the owner's preparation or retain their
+// potentially large object tables in a shared cache.
+func newObjectNameCache(objects map[string]ObjectState) *sync.Map {
+	cache := &sync.Map{}
+	cache.Store(objectNameCacheOwnerKey{}, objects)
+	return cache
+}
+
+func ownedObjectNameCache(org OrgState) *sync.Map {
+	if org.objectNameCache == nil {
+		return nil
+	}
+	owner, ok := org.objectNameCache.Load(objectNameCacheOwnerKey{})
+	objects, valid := owner.(map[string]ObjectState)
+	if !ok || !valid || !sameObjectMap(objects, org.Objects) {
+		return nil
+	}
+	return org.objectNameCache
+}
+
 // objectNameIndex groups the object names of one Objects map by their
 // strings.EqualFold class, so ResolveObjectName does not scan every object for
 // a name that is not an exact key. It is valid only for the map it was built
@@ -118,6 +142,7 @@ func sameObjectMap(left, right map[string]ObjectState) bool {
 // extending it after additions, and rebuilding it for another map. It returns
 // nil when the org has no cache.
 func objectNameIndexFor(org OrgState) *objectNameIndex {
+	org.objectNameCache = ownedObjectNameCache(org)
 	if org.objectNameCache == nil {
 		return nil
 	}
@@ -149,7 +174,7 @@ func PrimeObjectNameIndex(org OrgState) {
 // is current, so the clone does not rebuild it. Resolved names and misses are
 // not carried.
 func newObjectNameCacheFrom(source *sync.Map, sourceObjects, cloneObjects map[string]ObjectState) *sync.Map {
-	out := &sync.Map{}
+	out := newObjectNameCache(cloneObjects)
 	if source == nil || len(sourceObjects) != len(cloneObjects) {
 		return out
 	}
@@ -171,17 +196,17 @@ func newObjectNameCacheFrom(source *sync.Map, sourceObjects, cloneObjects map[st
 	return out
 }
 
-// DeleteObject removes an object from the org and drops the org's name cache.
-// Product code deletes objects only through this function, because the cache
-// assumes that a map with an unchanged count holds unchanged names.
+// DeleteObject advances the complete schema lifetime after an actual deletion.
+// A later addition can restore the old count without restoring the old schema.
 func DeleteObject(org *OrgState, name string) {
 	if org == nil {
 		return
 	}
-	delete(org.Objects, name)
-	if org.objectNameCache != nil {
-		org.objectNameCache.Clear()
+	if _, exists := org.Objects[name]; !exists {
+		return
 	}
+	delete(org.Objects, name)
+	org.ClearRuntimeSchemaStamp()
 }
 
 // firstObjectNameFolding returns the smallest object name that equals one of

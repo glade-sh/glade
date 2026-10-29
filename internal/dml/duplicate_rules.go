@@ -226,14 +226,15 @@ func ActiveDuplicateRules(org *storage.OrgState, object string) []storage.Duplic
 }
 
 // checkDuplicateRules runs after custom validation (native DR13) for Apex
-// insert and update statements. The first rule by sortOrder that finds a
-// record decides the outcome (DR16). Records inserted by the same statement
-// are not candidates (DR07).
+// insert and update statements. Rules run in sort order; a permitted match
+// does not bypass later blocking or alerting rules. Records inserted by the
+// same statement are not candidates.
 func (e *Engine) checkDuplicateRules(record storage.Record, update bool, stamp *string) (*DuplicateReport, error) {
 	if !e.Options.EnforceDuplicateRules || (!update && stamp == nil) {
 		return nil, nil
 	}
 	exclude := func(id storage.ID) bool { return !update && e.duplicates.stamp == stamp && e.duplicates.batch[id] }
+	var report *DuplicateReport
 	for _, rule := range ActiveDuplicateRules(e.Org, record.Object) {
 		applies, supported := DuplicateRuleApplies(e.Org, rule, record)
 		if !supported || !applies {
@@ -261,17 +262,20 @@ func (e *Engine) checkDuplicateRules(record storage.Record, update bool, stamp *
 			}
 			// CM01 pins insert reports only; update reports stay unrecorded.
 			if update || !duplicateOperationsInclude(operations, "Report") {
-				return nil, nil
+				continue
 			}
-			var matches []storage.Record
-			for _, match := range found.Matches {
-				matches = append(matches, match.Records...)
+			if report == nil {
+				var matches []storage.Record
+				for _, match := range found.Matches {
+					matches = append(matches, match.Records...)
+				}
+				report = &DuplicateReport{Rule: rule, Object: record.Object, RecordID: record.ID, Matches: matches}
 			}
-			return &DuplicateReport{Rule: rule, Object: record.Object, RecordID: record.ID, Matches: matches}, nil
+			continue
 		}
 		return nil, nil
 	}
-	return nil, nil
+	return report, nil
 }
 
 func duplicateRuleError(result DuplicateResult) error {

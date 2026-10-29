@@ -1,6 +1,9 @@
 package storage
 
-import "reflect"
+import (
+	"reflect"
+	"slices"
+)
 
 type RuntimeTemplate struct {
 	Org                OrgState
@@ -15,7 +18,7 @@ func NewRuntimeTemplate(org OrgState) RuntimeTemplate {
 func (t RuntimeTemplate) CloneRuntimeOrg() OrgState {
 	cloneStats.cloneRuntime.Add(1)
 	out := t.Org
-	out.Features = append([]string(nil), t.Org.Features...)
+	out.Features = slices.Clone(t.Org.Features)
 	out.Metadata.FeatureParameters = append([]FeatureParameterMetadata(nil), t.Org.Metadata.FeatureParameters...)
 	out.RuntimeSchemaStamp = t.RuntimeSchemaStamp
 	if t.Org.Objects != nil {

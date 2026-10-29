@@ -53,7 +53,7 @@ func TestPlatformCacheCopyConformance(t *testing.T) {
 		return "'" + strings.ReplaceAll(strings.ReplaceAll(s, "\\", "\\\\"), "'", "\\'") + "'"
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			root := t.TempDir()
 			for name, source := range data.Metadata {
 				writeFile(t, filepath.Join(root, name), source)

@@ -32,9 +32,9 @@ type standardOverlayCheckPlan struct {
 	// field that lacks a type, or lacks display metadata the catalog has,
 	// needs a refresh.
 	shallowFields []standardOverlayShallowField
-	// picklistFields are catalog fields with picklist values.
-	picklistFields        []string
-	featurePicklistFields map[string][]string
+	// picklistFields retain the catalog list and restriction facets.
+	picklistFields        []standardOverlayPicklistField
+	featurePicklistFields map[string][]standardOverlayPicklistField
 	readOnlyFields        []string
 	readOnlyFieldsOK      bool
 }
@@ -108,11 +108,11 @@ func buildStandardOverlayCheckPlan(objectName string) *standardOverlayCheckPlan 
 			})
 		}
 	}
-	picklists := func(fields map[string]Field) []string {
-		var out []string
+	picklists := func(fields map[string]Field) []standardOverlayPicklistField {
+		var out []standardOverlayPicklistField
 		for name, standard := range fields {
-			if len(standard.PicklistValues) != 0 {
-				out = append(out, name)
+			if len(standard.PicklistValues) != 0 || standard.RestrictedPicklist {
+				out = append(out, standardOverlayPicklistField{name: name, label: standard.Label, restricted: standard.RestrictedPicklist, hasValues: len(standard.PicklistValues) != 0})
 			}
 		}
 		return out
@@ -128,7 +128,7 @@ func buildStandardOverlayCheckPlan(objectName string) *standardOverlayCheckPlan 
 	for feature, fields := range entry.FeatureFields {
 		if names := picklists(fields); len(names) > 0 {
 			if plan.featurePicklistFields == nil {
-				plan.featurePicklistFields = make(map[string][]string)
+				plan.featurePicklistFields = make(map[string][]standardOverlayPicklistField)
 			}
 			plan.featurePicklistFields[feature] = names
 		}
@@ -319,10 +319,21 @@ func (plan *standardOverlayCheckPlan) stubTimeFieldsNeedRepair(definition Object
 	return false
 }
 
-func standardOverlayPicklistsMissing(definition ObjectDefinition, names []string) bool {
-	for _, name := range names {
-		existingName, exists := ResolveFieldName(definition, "", name)
-		if exists && !definition.Fields[existingName].PicklistValuesConfigured && len(definition.Fields[existingName].PicklistValues) == 0 {
+type standardOverlayPicklistField struct {
+	name       string
+	label      string
+	restricted bool
+	hasValues  bool
+}
+
+func standardOverlayPicklistsMissing(definition ObjectDefinition, fields []standardOverlayPicklistField) bool {
+	for _, field := range fields {
+		existingName, exists := ResolveFieldName(definition, "", field.name)
+		if !exists {
+			continue
+		}
+		existing := definition.Fields[existingName]
+		if (field.restricted && (!existing.RestrictedPicklist || (existing.Label == field.name && field.label != field.name && !standardConfiguredOptionalField(definition, existingName)))) || (field.hasValues && !existing.PicklistValuesConfigured && len(existing.PicklistValues) == 0) {
 			return true
 		}
 	}

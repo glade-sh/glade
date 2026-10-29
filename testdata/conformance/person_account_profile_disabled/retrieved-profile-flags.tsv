@@ -1,0 +1,13 @@
+api	profile	record_type	default	person_account_default	visible
+67.0	Admin	Account.Business_Account	false	omitted	true
+67.0	Admin	Account.Business_Alternate	false	omitted	true
+67.0	Admin	Account.Business_Default	true	omitted	true
+67.0	Route False	Account.Business_Account	false	omitted	true
+67.0	Route False	Account.Business_Alternate	true	omitted	true
+67.0	Route False	Account.Business_Default	false	omitted	true
+67.0	Route Misplaced	Account.Business_Account	false	omitted	true
+67.0	Route Misplaced	Account.Business_Alternate	true	omitted	true
+67.0	Route Misplaced	Account.Business_Default	false	omitted	true
+67.0	Route Omitted	Account.Business_Account	false	omitted	true
+67.0	Route Omitted	Account.Business_Alternate	true	omitted	true
+67.0	Route Omitted	Account.Business_Default	false	omitted	true

@@ -7,9 +7,11 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/glade-sh/glade/internal/typesys"
 )
 
-func TestCartExtensionPlatformTypesNativeConformance(t *testing.T) {
+func TestCartExtensionPlatformTypesNamedNativeConformance(t *testing.T) {
 	dir := "testdata/cart_extension_platform_types"
 	raw, err := os.ReadFile(filepath.Join(dir, "cases.json"))
 	if err != nil {
@@ -50,7 +52,7 @@ func TestCartExtensionPlatformTypesNativeConformance(t *testing.T) {
 		if row[1] != "deploy" {
 			continue
 		}
-		key := row[0] + "/" + row[2]
+		key := row[0] + "/named/" + row[2]
 		if seen[key] || (row[0] != "62.0" && row[0] != "67.0") {
 			t.Fatalf("invalid native key %q", key)
 		}
@@ -82,5 +84,42 @@ func TestCartExtensionPlatformTypesNativeConformance(t *testing.T) {
 	}
 	if accepted != 10 || rejected != 6 || len(seen) != 16 {
 		t.Fatalf("incomplete native compile matrix: accepted=%d rejected=%d keys=%d", accepted, rejected, len(seen))
+	}
+}
+
+func TestCartExtensionPlatformTypesAnonymousNativeConformance(t *testing.T) {
+	const dir = "testdata/cart_extension_platform_types"
+	raw, err := os.ReadFile(filepath.Join(dir, "org.tsv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := csv.NewReader(strings.NewReader(string(raw)))
+	r.Comma = '\t'
+	rows, err := r.ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	source, err := os.ReadFile(filepath.Join(dir, "direct_list_construction.apex"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	checked := 0
+	for _, row := range rows[1:] {
+		if row[1] != "anonymous" {
+			continue
+		}
+		if row[2] != "cart_item_list_constructor" || row[3] != "rejected" || row[4] == "" {
+			t.Fatalf("unexpected anonymous capture: %v", row)
+		}
+		checked++
+		t.Run(row[0]+"/anonymous/"+row[2], func(t *testing.T) {
+			result := AnalyzeAnonymous(typesys.Index{}, string(source), row[0])
+			if !result.HasErrors() {
+				t.Fatalf("native rejected with %q; Glade accepted", row[4])
+			}
+		})
+	}
+	if checked != 2 {
+		t.Fatalf("anonymous native rows=%d, want 2", checked)
 	}
 }

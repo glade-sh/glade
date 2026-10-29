@@ -1,0 +1,1 @@
+<Queue xmlns="http://soap.sforce.com/2006/04/metadata"><doesSendEmailToMembers>false</doesSendEmailToMembers><name>FF_ProfileQueue</name><queueSobject><sobjectType>Lead</sobjectType></queueSobject></Queue>

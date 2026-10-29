@@ -1,0 +1,15 @@
+id	group	route	status	value
+E01	FLOW_LOGIC	anonymous	runtime	{"outcome":"runtime","value":{"accountNumber":"E2","description":"E5","employees":null,"fax":null,"phone":null,"revenue":null,"site":"E1"}}
+E02	FLOW_LOGIC	anonymous	runtime	{"outcome":"runtime","value":{"accountNumber":null,"description":"E5","employees":null,"fax":null,"phone":null,"revenue":null,"site":"E1"}}
+E03	FLOW_LOGIC	anonymous	runtime	{"outcome":"runtime","value":{"accountNumber":null,"description":null,"employees":null,"fax":null,"phone":null,"revenue":null,"site":null}}
+E04	FLOW_LOGIC	anonymous	runtime	{"outcome":"runtime","value":{"accountNumber":"E2","description":"E5","employees":null,"fax":null,"phone":null,"revenue":null,"site":"E1"}}
+E05	FLOW_LOGIC	anonymous	runtime	{"outcome":"runtime","value":{"accountNumber":null,"description":null,"employees":200,"fax":null,"phone":null,"revenue":null,"site":null}}
+E06	FLOW_LOGIC	anonymous	runtime	{"outcome":"runtime","value":{"accountNumber":"E2","description":"E5","employees":200,"fax":"E3","phone":null,"revenue":null,"site":"E1"}}
+E07	FLOW_LOGIC	anonymous	runtime	{"outcome":"runtime","value":{"accountNumber":"E2","description":"E5","employees":200,"fax":"E3","phone":null,"revenue":null,"site":"E1"}}
+E08	FLOW_LOGIC	anonymous	runtime	{"outcome":"runtime","value":{"accountNumber":null,"description":null,"employees":50,"fax":null,"phone":"E4","revenue":null,"site":null}}
+E09	FLOW_LOGIC	anonymous	runtime	{"outcome":"runtime","value":{"accountNumber":null,"description":null,"employees":3,"fax":null,"phone":"E4","revenue":null,"site":null}}
+E10	FLOW_LOGIC	anonymous	runtime	{"outcome":"runtime","value":{"accountNumber":null,"description":null,"employees":null,"fax":null,"phone":null,"revenue":null,"site":null}}
+L01	FLOW_LOGIC	anonymous	runtime	{"outcome":"runtime","value":{"accountNumber":null,"description":null,"employees":null,"fax":null,"phone":null,"revenue":100,"site":null}}
+L02	FLOW_LOGIC	anonymous	runtime	{"outcome":"runtime","value":{"accountNumber":null,"description":"LoopSeedC","employees":7,"fax":null,"phone":null,"revenue":93,"site":null}}
+L03	FLOW_LOGIC	anonymous	runtime	{"outcome":"runtime","value":{"accountNumber":null,"description":null,"employees":null,"fax":null,"phone":null,"revenue":10.25,"site":null}}
+L04	FLOW_LOGIC	anonymous	runtime	{"outcome":"runtime","value":{"accountNumber":null,"description":null,"employees":null,"fax":null,"phone":null,"revenue":995,"site":null}}

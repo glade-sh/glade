@@ -2,6 +2,12 @@ package soql
 
 import "strings"
 
+// ScanBindExpression returns the exclusive source end of an Apex operand.
+// SOSL uses the same balanced member/index/call grammar for inline bindings.
+func ScanBindExpression(text string, start int) (int, bool) {
+	return scanSOQLBindFamilyExpression(text, start)
+}
+
 // scanSOQLBindFamilyExpression keeps captured member, indexed, and conditional
 // Apex operands together. Query grouping punctuation is left to the SOQL parser.
 func scanSOQLBindFamilyExpression(text string, start int) (int, bool) {

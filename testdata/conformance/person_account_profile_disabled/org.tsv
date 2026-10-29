@@ -1,0 +1,41 @@
+api	route	case	value	detail
+62.0	anonymous	admin_business_explicit	Business_Default	
+62.0	anonymous	admin_business_omitted	Business_Default	
+62.0	anonymous	admin_empty	REQUIRED_FIELD_MISSING	Name
+62.0	anonymous	admin_person_feature	false	
+62.0	istest	admin_business_explicit	Business_Default	
+62.0	istest	admin_business_omitted	Business_Default	
+62.0	istest	admin_empty	REQUIRED_FIELD_MISSING	Name
+62.0	istest	admin_person_feature	false	
+62.0	istest	false_business_explicit	Business_Default	
+62.0	istest	false_business_omitted	Business_Alternate	
+62.0	istest	false_empty	REQUIRED_FIELD_MISSING	Name
+62.0	istest	false_person_feature	false	
+62.0	istest	misplaced_business_explicit	Business_Default	
+62.0	istest	misplaced_business_omitted	Business_Alternate	
+62.0	istest	misplaced_empty	REQUIRED_FIELD_MISSING	Name
+62.0	istest	misplaced_person_feature	false	
+62.0	istest	omitted_business_explicit	Business_Default	
+62.0	istest	omitted_business_omitted	Business_Alternate	
+62.0	istest	omitted_empty	REQUIRED_FIELD_MISSING	Name
+62.0	istest	omitted_person_feature	false	
+67.0	anonymous	admin_business_explicit	Business_Default	
+67.0	anonymous	admin_business_omitted	Business_Default	
+67.0	anonymous	admin_empty	REQUIRED_FIELD_MISSING	Name
+67.0	anonymous	admin_person_feature	false	
+67.0	istest	admin_business_explicit	Business_Default	
+67.0	istest	admin_business_omitted	Business_Default	
+67.0	istest	admin_empty	REQUIRED_FIELD_MISSING	Name
+67.0	istest	admin_person_feature	false	
+67.0	istest	false_business_explicit	Business_Default	
+67.0	istest	false_business_omitted	Business_Alternate	
+67.0	istest	false_empty	REQUIRED_FIELD_MISSING	Name
+67.0	istest	false_person_feature	false	
+67.0	istest	misplaced_business_explicit	Business_Default	
+67.0	istest	misplaced_business_omitted	Business_Alternate	
+67.0	istest	misplaced_empty	REQUIRED_FIELD_MISSING	Name
+67.0	istest	misplaced_person_feature	false	
+67.0	istest	omitted_business_explicit	Business_Default	
+67.0	istest	omitted_business_omitted	Business_Alternate	
+67.0	istest	omitted_empty	REQUIRED_FIELD_MISSING	Name
+67.0	istest	omitted_person_feature	false	

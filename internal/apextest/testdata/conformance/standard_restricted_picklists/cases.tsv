@@ -1,0 +1,8 @@
+case	behaviour
+standard_bad	Five restricted standard fields reject unknown values with labeled message and field name
+standard_valid	Same fields accept active values
+standard_null	Nullable restricted fields accept null
+standard_update	Reject unknown values on update
+unrestricted	Account.Industry accepts an unlisted value
+custom	Custom restricted field retains labeled message
+statement	Statement DML uses the same error message

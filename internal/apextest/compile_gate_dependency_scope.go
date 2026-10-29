@@ -61,14 +61,14 @@ func compileGateTriggerReferenceProblem(file, source, className string) string {
 		if node.Kind == "type_identifier" {
 			start, end := node.Range.Start.Offset, node.Range.End.Offset
 			if start >= 0 && end <= len(source) && strings.EqualFold(source[start:end], className) {
-				return "Invalid type: " + className
+				return "Invalid type: " + source[start:end]
 			}
 		}
 		if node.Kind == "method_invocation" && len(node.Children) > 2 && node.Children[0].Kind == "identifier" {
 			qualifier := node.Children[0]
 			start, end := qualifier.Range.Start.Offset, qualifier.Range.End.Offset
 			if start >= 0 && end <= len(source) && strings.EqualFold(source[start:end], className) {
-				return "Variable does not exist: " + className
+				return "Variable does not exist: " + source[start:end]
 			}
 		}
 		for _, child := range node.Children {

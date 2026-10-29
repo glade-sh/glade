@@ -15,8 +15,10 @@ type flatObjectAliasIndexKey struct {
 }
 
 type flatObjectAliasIndex struct {
-	positionsByRef map[uint64][]int
-	slots          int
+	positionsByRef map[uint64]int
+	// Only duplicated identities allocate a positions slice.
+	additionalPositions map[uint64][]int
+	slots               int
 }
 
 func flatObjectAliasKey(value Value) (flatObjectAliasIndexKey, bool) {
@@ -55,11 +57,20 @@ func (vm *VM) tryIndexedFlatObjectAliasRoot(value Value, previous aliasSnapshot,
 		vm.clearFlatObjectAliasIndexes()
 		return false, false
 	}
-	positions := index.positionsByRef[previous.ref]
+	first, found := index.positionsByRef[previous.ref]
+	other := index.additionalPositions[previous.ref]
 	if probe != nil {
 		probe.shortcutVisits++
 	}
-	for _, position := range positions {
+	if !found {
+		return true, false
+	}
+	count := 1 + len(other)
+	for n := 0; n < count; n++ {
+		position := first
+		if n > 0 {
+			position = other[n-1]
+		}
 		if probe != nil {
 			probe.shortcutVisits++
 		}
@@ -68,7 +79,11 @@ func (vm *VM) tryIndexedFlatObjectAliasRoot(value Value, previous aliasSnapshot,
 			return false, false
 		}
 	}
-	for _, position := range positions {
+	for n := 0; n < count; n++ {
+		position := first
+		if n > 0 {
+			position = other[n-1]
+		}
 		value.List[position] = updated
 		if probe != nil {
 			probe.shortcutVisits++
@@ -76,18 +91,34 @@ func (vm *VM) tryIndexedFlatObjectAliasRoot(value Value, previous aliasSnapshot,
 	}
 	if updated.Ref != previous.ref {
 		delete(index.positionsByRef, previous.ref)
-		if updated.Ref != 0 && len(positions) != 0 {
-			index.positionsByRef[updated.Ref] = append(index.positionsByRef[updated.Ref], positions...)
+		delete(index.additionalPositions, previous.ref)
+		if updated.Ref != 0 {
+			if _, exists := index.positionsByRef[updated.Ref]; !exists {
+				index.positionsByRef[updated.Ref] = first
+				if len(other) > 0 {
+					if index.additionalPositions == nil {
+						index.additionalPositions = make(map[uint64][]int)
+					}
+					index.additionalPositions[updated.Ref] = other
+				}
+			} else {
+				if index.additionalPositions == nil {
+					index.additionalPositions = make(map[uint64][]int)
+				}
+				positions := append(index.additionalPositions[updated.Ref], first)
+				index.additionalPositions[updated.Ref] = append(positions, other...)
+			}
 		}
 		if probe != nil {
-			probe.shortcutVisits += uint64(len(positions))
+			probe.shortcutVisits += uint64(count)
 		}
 	}
-	return true, len(positions) != 0
+	return true, true
 }
 
 func buildFlatObjectAliasIndex(value Value, probe *scopeAliasProbe) (*flatObjectAliasIndex, bool) {
-	index := &flatObjectAliasIndex{positionsByRef: make(map[uint64][]int, len(value.List)), slots: len(value.List)}
+	// Nested/otherwise ineligible roots are common on fallback paths. Prove
+	// eligibility before allocating an index that would immediately be dropped.
 	unknownTarget := aliasSnapshot{ref: newValueRef(), kind: ValueObject}
 	for position := range value.List {
 		child := &value.List[position]
@@ -95,8 +126,19 @@ func buildFlatObjectAliasIndex(value Value, probe *scopeAliasProbe) (*flatObject
 		if !safe {
 			return nil, false
 		}
+	}
+	index := &flatObjectAliasIndex{positionsByRef: make(map[uint64]int, len(value.List)), slots: len(value.List)}
+	for position := range value.List {
+		child := &value.List[position]
 		if child.Kind == ValueObject && child.Ref != 0 {
-			index.positionsByRef[child.Ref] = append(index.positionsByRef[child.Ref], position)
+			if _, exists := index.positionsByRef[child.Ref]; !exists {
+				index.positionsByRef[child.Ref] = position
+			} else {
+				if index.additionalPositions == nil {
+					index.additionalPositions = make(map[uint64][]int)
+				}
+				index.additionalPositions[child.Ref] = append(index.additionalPositions[child.Ref], position)
+			}
 			if probe != nil {
 				probe.shortcutVisits++
 			}

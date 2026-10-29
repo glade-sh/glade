@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <label>Lookup Filter Child</label>
+    <nameField>
+        <label>Lookup Filter Child Name</label>
+        <type>Text</type>
+    </nameField>
+    <pluralLabel>Lookup Filter Children</pluralLabel>
+    <sharingModel>ReadWrite</sharingModel>
+</CustomObject>

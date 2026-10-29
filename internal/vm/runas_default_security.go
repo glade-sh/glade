@@ -160,7 +160,9 @@ func (vm *VM) defaultRunAsInsertFailures(value Value) ([]dml.Result, bool) {
 }
 
 // C137_185-191/227-233 and the captured rows capture ordinary flat queries
-// scoped by Id. COUNT denies entity access; projections report a missing object.
+// scoped by Id. The default_permissions_capture rows also cover unfiltered
+// custom-object Database.countQuery calls. COUNT denies entity access;
+// projections report a missing object.
 func (vm *VM) defaultRunAsSOQLDenial(query soql.Query) error {
 	if !vm.runAsSecureDefaults() || len(query.ChildQueries) != 0 || len(query.Typeofs) != 0 ||
 		(!query.Count && len(query.Aggregates) != 0) || len(query.GroupBy) != 0 || query.Having != nil ||
@@ -168,10 +170,14 @@ func (vm *VM) defaultRunAsSOQLDenial(query soql.Query) error {
 		query.ForView || query.ForReference || query.AllRows || query.UsingScope != "" {
 		return nil
 	}
-	where := query.Where
-	if where == nil || !strings.EqualFold(where.Field, "Id") || where.Op != "=" || where.Not ||
-		len(where.And) != 0 || len(where.Or) != 0 || where.Range || where.Subquery != nil {
-		return nil
+	unfilteredCustomCount := vm.dynamicSOQLBindRoute == "Database.countQuery" &&
+		query.Count && query.Where == nil && vm.ordinaryCustomPermissionObject(query.Object)
+	if !unfilteredCustomCount {
+		where := query.Where
+		if where == nil || !strings.EqualFold(where.Field, "Id") || where.Op != "=" || where.Not ||
+			len(where.And) != 0 || len(where.Or) != 0 || where.Range || where.Subquery != nil {
+			return nil
+		}
 	}
 	for _, field := range query.Fields {
 		if !query.Count && strings.ContainsAny(field, ". ()\t\r\n") {

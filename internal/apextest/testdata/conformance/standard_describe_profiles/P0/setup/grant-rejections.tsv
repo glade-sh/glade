@@ -1,0 +1,9 @@
+field	message
+Contract.ShippingLatitude	Invalid field permission field name Contract field Contract.ShippingLatitude
+Contract.ShippingGeocodeAccuracy	Invalid field permission field name Contract field Contract.ShippingGeocodeAccuracy
+Contract.ShippingStreet	Invalid field permission field name Contract field Contract.ShippingStreet
+Contract.ShippingLongitude	Invalid field permission field name Contract field Contract.ShippingLongitude
+Contract.ShippingCountry	Invalid field permission field name Contract field Contract.ShippingCountry
+Contract.ShippingCity	Invalid field permission field name Contract field Contract.ShippingCity
+Contract.ShippingState	Invalid field permission field name Contract field Contract.ShippingState
+Contract.ShippingPostalCode	Invalid field permission field name Contract field Contract.ShippingPostalCode

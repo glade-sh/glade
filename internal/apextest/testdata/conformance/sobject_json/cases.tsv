@@ -1,0 +1,11 @@
+cases	behavior
+empty, emptyList, nullBoundary	Empty and null boundaries
+constructed, reversed, putOverwrite, nullId	First assignment, overwrite, explicit null fields
+assignedId15, assignedId18, inserted	Assigned and inserted record identity and URL
+queryNameId, queryIdName, queryFields, queryReversed, queryImplicitId, queryThenWrite	Query field ordering, omitted and explicit Id, nulls, subsequent writes
+constructedParent, queryParent, queryNullParent	Constructed and queried parent relationships
+queryChildren, queryEmptyChildren	Populated and empty child subqueries
+customConstructed, customInserted, customQuery, customQueryReversed, customParent	Custom records and parent relationships
+deserialized, deserializedReversed	JSON field order and explicit null round trips
+missingAttributes, strictUnknown	Rejection twins for generic record metadata and strict unknown fields
+unknownField, invalidId	Permissive deserialization controls

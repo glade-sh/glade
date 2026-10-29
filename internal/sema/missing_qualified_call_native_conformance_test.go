@@ -13,6 +13,7 @@ import (
 
 func TestMissingQualifiedCallNativeConformance(t *testing.T) {
 	const dir = "testdata/missing_qualified_call"
+	deferred := namespaceAbsenceDeferrals(t, dir)
 	f, err := os.Open(filepath.Join(dir, "org.tsv"))
 	if err != nil {
 		t.Fatal(err)
@@ -34,6 +35,12 @@ func TestMissingQualifiedCallNativeConformance(t *testing.T) {
 				t.Fatal(err)
 			}
 			result := AnalyzeAnonymous(typesys.Index{}, string(source), row[0])
+			if deferred[row[1]] {
+				if result.HasErrors() {
+					t.Fatal(result.Diagnostics)
+				}
+				return
+			}
 			if !result.HasErrors() {
 				t.Fatalf("native rejected compilation: %s; Glade accepted: %v", row[3], result.Diagnostics)
 			}

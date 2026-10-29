@@ -216,6 +216,12 @@ func copyChangeEventFollowupProject(t *testing.T, api string) string {
 			t.Fatal(err)
 		}
 	}
+	// The division-on native profile includes this configured standard field,
+	// but has no Account record type or enabled Communities. Retain that shape
+	// for every host, including Run(index), which reconstructs its own org.
+	// Native event rows: followups/org.tsv:6,21,38,53,70,85; cases.json:26.
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/fields/Division.field-meta.xml"),
+		`<CustomField><fullName>Division</fullName><type>Picklist</type></CustomField>`)
 	return root
 }
 

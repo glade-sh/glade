@@ -307,7 +307,7 @@ func TestStaticIndexPublishesUnqualifiedFieldSubtree(t *testing.T) {
 func TestStaticIndexPublishesLazyDescribeChildList(t *testing.T) {
 	machine, factory := mapPutStaticIndexFixture(t, 8, false, true)
 	org := storage.NewOrgState()
-	machine.Org = &org
+	machine.SetOrg(&org)
 	child := Object("Schema.ChildRelationship")
 	child.Fields["relationshipName"] = String("RelatedRows")
 	child.Fields["junctionIdListNames"] = List(String("LinkedIds"))

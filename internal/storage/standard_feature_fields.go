@@ -1,40 +1,60 @@
 package storage
 
-import "sort"
+import (
+	"sort"
 
-var standardOptionalFieldFeatures = []struct{ object, field, feature string }{
-	{"Account", "IsActive", "HealthCloud"},
-	{"Contact", "IsPersonAccount", "PersonAccounts"},
-	{"User", "DefaultCurrencyIsoCode", "MultiCurrency"},
-	{"Opportunity", "SyncedQuoteId", "Quotes"},
-}
+	"github.com/glade-sh/glade/internal/project"
+)
 
 func standardOptionalFieldEnabled(object, field, signature string) bool {
-	for _, gate := range standardOptionalFieldFeatures {
-		if stringsEqualFold(object, gate.object) && stringsEqualFold(field, gate.field) {
-			return featureSignatureHas(signature, gate.feature)
-		}
+	policy := standardFieldPolicyFor(object)
+	if policy == nil {
+		return true
 	}
-	return true
+	if gate, ok := standardPolicyLookup(policy.gates, field); ok {
+		return standardFieldPolicyGateEnabled(gate, signature)
+	}
+	absent, _ := standardPolicyLookup(policy.absent, field)
+	return !absent
 }
 
 func standardOptionalFieldsNeedRepair(definition ObjectDefinition, signature string) bool {
-	matched := false
-	for _, gate := range standardOptionalFieldFeatures {
-		if !stringsEqualFold(definition.APIName, gate.object) {
-			continue
-		}
-		matched = true
-		_, exists := ResolveFieldName(definition, "", gate.field)
-		if exists != featureSignatureHas(signature, gate.feature) {
+	policy := standardFieldPolicyFor(definition.APIName)
+	if policy == nil {
+		return false
+	}
+	if _, recorded := definition.Metadata[standardConfiguredPolicyFields]; !recorded {
+		return true
+	}
+	if standardFieldPolicyHasRecordTypes(definition) {
+		if _, exists := ResolveFieldName(definition, "", "RecordTypeId"); !exists {
 			return true
 		}
 	}
-	if !matched {
-		return false
+	for _, field := range policy.Present {
+		if _, exists := ResolveFieldName(definition, "", field); !exists {
+			return true
+		}
+	}
+	for _, gate := range policy.gates {
+		// An unknown shape retains existing catalog fields, but does not
+		// synthesize fields belonging only to an unrequested feature profile.
+		if !gate.Legacy && featureSignatureHas(signature, project.UnspecifiedStandardFieldShape) && !standardFieldPolicyGateEnabledForDefinition(gate, definition, signature) {
+			continue
+		}
+		_, exists := ResolveFieldName(definition, "", gate.Field.Name)
+		enabled := standardFieldPolicyGateEnabledForDefinition(gate, definition, signature) || standardFieldPolicyPreservesConfiguredField(definition, gate.Field.Name)
+		if exists != enabled {
+			return true
+		}
+	}
+	for name := range definition.Fields {
+		if !standardOptionalFieldEnabledForDefinition(definition, name, signature) {
+			return true
+		}
 	}
 	for _, relation := range definition.Relations {
-		if !standardOptionalFieldEnabled(definition.APIName, relation.Field, signature) {
+		if !standardOptionalFieldEnabledForDefinition(definition, relation.Field, signature) {
 			return true
 		}
 	}
@@ -42,16 +62,10 @@ func standardOptionalFieldsNeedRepair(definition ObjectDefinition, signature str
 }
 
 func removeDisabledStandardOptionalFields(definition *ObjectDefinition, signature string) {
-	for _, gate := range standardOptionalFieldFeatures {
-		if stringsEqualFold(definition.APIName, gate.object) && !featureSignatureHas(signature, gate.feature) {
-			if name, exists := ResolveFieldName(*definition, "", gate.field); exists {
-				delete(definition.Fields, name)
-			}
-		}
-	}
+	applyStandardFieldPolicy(definition, signature)
 	var relations []Relationship
 	for i, relation := range definition.Relations {
-		if !standardOptionalFieldEnabled(definition.APIName, relation.Field, signature) {
+		if !standardOptionalFieldEnabledForDefinition(*definition, relation.Field, signature) {
 			if relations == nil {
 				relations = append(make([]Relationship, 0, len(definition.Relations)), definition.Relations[:i]...)
 			}
@@ -76,9 +90,12 @@ func StandardFeatureObjectNames(features []string) []string {
 			}
 		}
 	}
-	for _, gate := range standardOptionalFieldFeatures {
-		if hasCanonicalFeature(features, gate.feature) {
-			names[gate.object] = true
+	signature := canonicalFeatureSignature(features)
+	for _, policy := range standardFieldPolicies {
+		for _, gate := range policy.gates {
+			if standardFieldPolicyGateEnabled(gate, signature) {
+				names[gate.Object] = true
+			}
 		}
 	}
 	result := make([]string, 0, len(names))
@@ -93,6 +110,11 @@ func StandardFeatureObjectNames(features []string) []string {
 // only when an org feature is enabled. Such a field is absent from a clean
 // org's describe, so its absence is not a catalog gap.
 func StandardObjectFieldRequiresFeature(objectName, fieldName string) bool {
+	if policy := standardFieldPolicyFor(objectName); policy != nil {
+		if _, gated := standardPolicyLookup(policy.gates, fieldName); gated {
+			return true
+		}
+	}
 	if canonical, known := ResolveKnownStandardObjectName(objectName); known {
 		objectName = canonical
 	}
@@ -105,10 +127,5 @@ func StandardObjectFieldRequiresFeature(objectName, fieldName string) bool {
 			}
 		}
 	}
-	for _, gate := range standardOptionalFieldFeatures {
-		if stringsEqualFold(objectName, gate.object) && stringsEqualFold(fieldName, gate.field) {
-			return true
-		}
-	}
-	return isStateAndCountryPicklistField(fieldName)
+	return false
 }

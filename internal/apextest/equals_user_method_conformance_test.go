@@ -145,7 +145,7 @@ func runEqualsUserMethodConformance(t *testing.T, cluster string, shapes, cells 
 		t.Fatalf("native cells=%d, want=%d", observations, cells)
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			// Each runtime cell executes on a private clone of the API base.
 			counts := newConformanceCountLog(t, "EqualsUserMethod-"+cluster, api)
 			baseIndex := equalsUserMethodIndex(t, api, nil)

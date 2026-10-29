@@ -15,6 +15,7 @@ import (
 
 func TestStaticObjectChainLSPNamedTestAndTriggerRoutes(t *testing.T) {
 	const fixture = "../../testdata/conformance/static_object_chain_routes"
+	deferred := namespaceAbsenceDeferrals(t, fixture)
 	read := func(name string) [][]string {
 		t.Helper()
 		data, err := os.ReadFile(filepath.Join(fixture, name))
@@ -85,7 +86,7 @@ func TestStaticObjectChainLSPNamedTestAndTriggerRoutes(t *testing.T) {
 				handler := NewHandler(index)
 				defer handler.parser.Close()
 				ds := handler.diagnosticsForDocument(uriFromPath(path))
-				if row[3] == "true" {
+				if row[3] == "true" || deferred[row[2]] {
 					for _, d := range ds {
 						if d.Severity == diagnostic.Error {
 							t.Errorf("native accepted chain; LSP: %v", d)

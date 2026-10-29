@@ -61,8 +61,17 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 		if scope[semaCurrentTypeScopeKey] == "" {
 			scope[semaCurrentTypeScopeKey] = typ.Name
 		}
+		if receiver, _, ok := splitSemaMethodPath(callee); ok && strings.Contains(receiver, ".") {
+			root, _, _ := strings.Cut(receiver, ".")
+			if scope[normalizeName(root)] == "" {
+				if d, rejected := semaInnerEnumReceiverFieldAccess(typ, member, receiver, bodyOffset+match[2], bodyOffset+match[3], source, model); rejected {
+					diagnostics = append(diagnostics, d)
+					continue
+				}
+			}
+		}
 		if callee == "this" || callee == "super" {
-			diagnostics = append(diagnostics, a.diagnoseConstructorChain(typ, member, callee, args, bodyOffset+match[2], bodyOffset+match[3], source, model)...)
+			diagnostics = append(diagnostics, a.diagnoseConstructorChain(typ, member, callee, args, bodyOffset+match[2], bodyOffset+match[3], source, scope, model)...)
 			continue
 		}
 		diagnostics = append(diagnostics, checkUnknownCallArgs(typ, member, args, match[3], bodyOffset, source, scopes)...)
@@ -80,6 +89,13 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 					diagnostics = append(diagnostics, visibilityDiagnostic)
 				}
 				continue
+			}
+			if len(candidates) == 0 && !semaCallMayBelongToMissingSuperclass(model, typ, callee, "instance", receiverType) {
+				if selected, rejected := semaInnerReceiverMissingMethodType(receiverType, method, model, semaDirectInnerConstructorReceiver(body, match[0], receiverType, typ.Name, model)); rejected {
+					d := semaShadowMissingMethod(typ, member, callee, method, selected, semaArgTypes(args, scope, model), bodyOffset+match[2], bodyOffset+match[3], source)
+					diagnostics = append(diagnostics, d)
+					continue
+				}
 			}
 			if platformDiagnostics, handled := checkSemaPlatformCall(typ, member, receiverType, method, args, bodyOffset+match[2], bodyOffset+match[3], source, scope, model, "instance"); handled {
 				diagnostics = append(diagnostics, platformDiagnostics...)
@@ -129,6 +145,9 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 				continue
 			}
 			if receiverExpr, method, ok := splitSemaMethodPath(callee); ok {
+				if semaQualifiedCallReceiverDeferred(a, typ.Name, receiverExpr, newIRSemaScope(scope), model, typ.EffectiveAPIVersion) {
+					continue
+				}
 				if scope[normalizeName(receiverExpr)] == "" {
 					if d, rejected := semaCacheLexicalRequestCall(typ, member, receiverExpr, method, callee, len(args), bodyOffset+match[2], bodyOffset+match[3], source, model); rejected {
 						diagnostics = append(diagnostics, d)
@@ -650,7 +669,7 @@ func semaNarrowedBatchableExecuteImplemented(model *semaTypeMemberView, iface st
 	return false
 }
 
-func (a *Analyzer) diagnoseConstructorChain(typ typesys.TypeSymbol, member typesys.MemberSymbol, callee string, args []semaArg, start, end int, source string, model *semaTypeMemberView) []diagnostic.Diagnostic {
+func (a *Analyzer) diagnoseConstructorChain(typ typesys.TypeSymbol, member typesys.MemberSymbol, callee string, args []semaArg, start, end int, source string, scope map[string]string, model *semaTypeMemberView) []diagnostic.Diagnostic {
 	if member.Kind != apexast.DeclarationConstructor {
 		return []diagnostic.Diagnostic{constructorDiagnostic(typ, member, callee, "constructor chaining is only valid inside constructors", start, end, source)}
 	}
@@ -683,6 +702,21 @@ func (a *Analyzer) diagnoseConstructorChain(typ typesys.TypeSymbol, member types
 		if argTypes[i] == "" {
 			for _, ctor := range target.constructors {
 				if len(ctor.Parameters) == len(args) {
+					// exception_constructor_visibility rows 82 and 88: a single
+					// private (String, Integer) exception constructor called by
+					// super with matching lexical argument types is inaccessible.
+					// Leave overload selection and inherited signatures unchanged.
+					if callee == "super" && len(target.constructors) == 1 && len(args) == 2 &&
+						accessModifier(ctor.Modifiers) == "private" &&
+						strings.EqualFold(ctor.Parameters[0].Type, "String") && strings.EqualFold(ctor.Parameters[1].Type, "Integer") {
+						if _, isException := exceptionTypeMembers(target.name, model); isException &&
+							strings.EqualFold(semaResolveConstructedExpressionType(model, typ.Name, args[0].text, scope), "String") &&
+							strings.EqualFold(semaResolveConstructedExpressionType(model, typ.Name, args[1].text, scope), "Integer") {
+							if d, blocked := checkSemaMemberAccess(typ, member, callee, resolvedMember{owner: target.name, member: ctor}, start, end, source, model); blocked {
+								return []diagnostic.Diagnostic{d}
+							}
+						}
+					}
 					return nil
 				}
 			}
@@ -893,14 +927,18 @@ func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.Mem
 	if semaKnownFluentHelperMethod(callee) {
 		return nil
 	}
-	return []diagnostic.Diagnostic{{
+	d := diagnostic.Diagnostic{
 		Severity:      diagnostic.Error,
 		Code:          "GLADESEMA009",
 		NativeMessage: nativeNarrowedBatchableCallRejection(model, candidates, argTypes),
 		Message:       fmt.Sprintf("%s %q has no matching overload for call %q with %d argument(s)", member.Kind, member.Name, callee, len(args)),
 		File:          typ.File,
 		Range:         semaRange(source, start, end),
-	}}
+	}
+	if receiver, method, ok := splitSemaMethodPath(callee); ok && semaInnerArgumentCollision(candidates, argTypes, model) {
+		d = nativeSourceOverloadDiagnostic(d, semaTextReceiverType(receiver, scope, model), method, argTypes, candidates, model, typ)
+	}
+	return []diagnostic.Diagnostic{d}
 }
 
 // Type-system C004/C015 capture the wrong-scope rejection on a concrete narrowed
@@ -2156,6 +2194,13 @@ func semaNumericConversionScore(paramType, argType string) int {
 }
 
 func semaAssignableToType(paramType, argType string, model *semaTypeMemberView) bool {
+	// Address and Location also name Schema records. Preserve the System
+	// identities before alias normalization reaches the SObject-first lookup.
+	if strings.EqualFold(semaCanonicalPlatformAlias(argType), "Address") &&
+		strings.EqualFold(semaCanonicalPlatformAlias(paramType), "Location") &&
+		!semaProjectTypeShadowsPlatform(model, argType) && !semaProjectTypeShadowsPlatform(model, paramType) {
+		return true
+	}
 	paramType = semaCanonicalAssignableType(paramType)
 	argType = semaCanonicalAssignableType(argType)
 	if strings.EqualFold(argType, "void") {
@@ -2272,21 +2317,28 @@ func semaSchemaDescribeMapAssignable(paramType, argType string) bool {
 }
 
 func semaNestedShortTypeEquivalent(left, right string, model *semaTypeMemberView) bool {
+	// Parameterized types belong to semaGenericAssignableToType. Member lookup
+	// erases their arguments, which cannot establish type identity.
+	if strings.ContainsAny(left, "<[") || strings.ContainsAny(right, "<[") {
+		return false
+	}
 	leftShort := shortNestedTypeName(left)
 	rightShort := shortNestedTypeName(right)
-	if leftShort == left && rightShort == right {
+	if leftShort == left && rightShort == right || !strings.EqualFold(leftShort, rightShort) {
 		return false
 	}
-	if !strings.EqualFold(leftShort, rightShort) {
-		return false
+	leftMembers, _, leftOK := semaLookupTypeMembers(model, left)
+	rightMembers, _, rightOK := semaLookupTypeMembers(model, right)
+	if leftOK && rightOK && leftMembers.nestingDepth > 0 && rightMembers.nestingDepth > 0 &&
+		leftMembers.kind == apexast.DeclarationClass && rightMembers.kind == apexast.DeclarationClass &&
+		!leftMembers.platform && !rightMembers.platform && !leftMembers.dependency && !rightMembers.dependency &&
+		!leftMembers.sobject && !rightMembers.sobject {
+		// Captured source inner classes retain their declaring outer. Platform
+		// aliases and unresolved short names keep the existing fallback below.
+		return strings.EqualFold(leftMembers.name, rightMembers.name)
 	}
-	for _, typeName := range []string{left, right} {
-		members, _, ok := semaLookupTypeMembers(model, typeName)
-		if ok && strings.EqualFold(shortNestedTypeName(members.name), leftShort) {
-			return true
-		}
-	}
-	return false
+	return leftOK && strings.EqualFold(shortNestedTypeName(leftMembers.name), leftShort) ||
+		rightOK && strings.EqualFold(shortNestedTypeName(rightMembers.name), leftShort)
 }
 
 func semaDynamicQueryResultAssignableTo(paramType string, model *semaTypeMemberView) bool {
@@ -2855,8 +2907,15 @@ func semaExplicitSchemaSObjectMembers(typeName string, model *semaTypeMemberView
 		return typeMembers{}, "", false
 	}
 	qualifiedKey := normalizeName("Schema." + schemaName)
-	if members, ok := model.lookup(qualifiedKey); ok && members.sobject {
-		return semaEnsureStandardSObjectTypeMembers(model, qualifiedKey, members), qualifiedKey, true
+	if members, ok := model.lookup(qualifiedKey); ok {
+		if members.sobject {
+			return semaEnsureStandardSObjectTypeMembers(model, qualifiedKey, members), qualifiedKey, true
+		}
+		// An exact owned Schema type wins over the named-body SObject
+		// fallback, even when another nested type makes its short alias ambiguous.
+		if _, namedOnly := storage.ResolveNamedApexReferenceObjectName(schemaName); namedOnly && !members.platform {
+			return typeMembers{}, qualifiedKey, false
+		}
 	}
 	schemaKey := normalizeName(schemaName)
 	if members, ok := model.lookup(schemaKey); ok && members.sobject {

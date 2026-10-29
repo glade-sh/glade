@@ -153,7 +153,7 @@ System.debug('S2:' + describeShareDigest(String.valueOf(Schema.describeSObjects(
 System.debug('S3:' + describeShareDigest(String.valueOf(Schema.SObjectType.Account.fields)));
 System.debug('S4:' + describeShareDigest(String.valueOf(Schema.SObjectType.Account.fields.getMap())));
 System.debug('S5:' + describeShareDigest(JSON.serialize(Schema.SObjectType.Account.fields.getMap().keySet())));`,
-			debug: "S1:9702/6b6bbc7e6dd5 | S2:34906/dfeaddb94919 | S3:33328/4f402254ad9d | S4:7552/1f383175d47a | S5:914/9c0c26ea89c4",
+			debug: "S1:9702/6b6bbc7e6dd5 | S2:34894/0e56d86445ef | S3:33316/7c307881fd53 | S4:7552/1f383175d47a | S5:914/9c0c26ea89c4",
 		},
 		{
 			name: "heap size with describe roots and field maps",
@@ -168,7 +168,7 @@ Map<String, Schema.SObjectField> m2 = d3.fields.getMap();
 Schema.SObjectField t = m2.get('lastname');
 Integer e = Limits.getHeapSize();
 System.debug('H1:' + a + ':' + b + ':' + c + ':' + e);`,
-			debug: "H1:15171:20841:43239:49903",
+			debug: "H1:15168:20838:42104:48312",
 		},
 		{
 			name:       "namespaced field maps",
@@ -194,6 +194,15 @@ System.debug('N4:' + t + ':' + Schema.SObjectType.zzns__Gadget__c.fields.getMap(
 func describeShareNamespacedOrg() storage.OrgState {
 	org := storage.NewOrgState()
 	org.Namespace = "zzns"
+	// Match describeShareOrg's explicit Account schema, so namespace variants
+	// of the shared field-map baselines describe the same Account fields.
+	org.Objects["Account"] = storage.ObjectState{Definition: storage.ObjectDefinition{
+		APIName: "Account", Fields: map[string]storage.Field{"RecordTypeId": {
+			APIName: "RecordTypeId", Label: "Record Type ID", Type: storage.FieldReference,
+			ReferenceTo: []string{"RecordType"}, RelationshipName: "RecordType",
+		}},
+	}}
+	configureStandardField(&org, "Account", "Division")
 	for _, name := range []string{"Account", "User", "RecordType"} {
 		storage.EnsureStandardObject(&org, name)
 	}
@@ -221,6 +230,16 @@ func describeShareOrgFor(namespaced bool) storage.OrgState {
 
 func describeShareOrg() storage.OrgState {
 	org := storage.NewOrgState()
+	// This local sharing fixture includes a captured RecordTypeId reference.
+	// Its frozen field-map/rendering expectations describe that explicit schema.
+	org.Objects["Account"] = storage.ObjectState{Definition: storage.ObjectDefinition{
+		APIName: "Account", Fields: map[string]storage.Field{"RecordTypeId": {
+			APIName: "RecordTypeId", Label: "Record Type ID", Type: storage.FieldReference,
+			ReferenceTo: []string{"RecordType"}, RelationshipName: "RecordType",
+		}},
+	}}
+
+	configureStandardField(&org, "Account", "Division")
 	for _, name := range []string{"Account", "Contact", "User", "RecordType"} {
 		storage.EnsureStandardObject(&org, name)
 	}
@@ -291,7 +310,13 @@ func describeSharePrimedBase(t *testing.T) (*VM, *storage.RuntimeTemplate) {
 
 func describeSharePrimedBaseFor(t *testing.T, namespaced bool) (*VM, *storage.RuntimeTemplate) {
 	t.Helper()
-	template := storage.NewRuntimeTemplate(describeShareOrgFor(namespaced))
+	org := describeShareOrgFor(namespaced)
+	// Match the runner: complete test-context schema before freezing it.
+	// Clones must not add async objects to an already frozen generation.
+	initializer := New(nil)
+	initializer.SetOrg(&org)
+	initializer.EnableTestContext()
+	template := storage.NewRuntimeTemplate(org)
 	PrimeRuntimeTemplateSchema(&template)
 	base := New(nil)
 	base.EnableTestContext()

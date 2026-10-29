@@ -89,11 +89,33 @@ func (vm *VM) forgetStaticMapPutPathsForRef(ref uint64) {
 }
 
 func (vm *VM) forgetStaticMapPutPathsInField(location staticFieldRef) {
-	for key, hint := range vm.staticAliasChildHints {
-		if key.Location == location && staticAliasMapPutPathKind(hint.Kind) {
-			delete(vm.staticAliasChildHints, key)
-		}
+	if !vm.staticMapPutPathHints {
+		return
 	}
+	remaining := false
+	for key, hint := range vm.staticAliasChildHints {
+		if !staticAliasMapPutPathKind(hint.Kind) {
+			continue
+		}
+		if key.Location == location {
+			delete(vm.staticAliasChildHints, key)
+			continue
+		}
+		remaining = true
+	}
+	vm.staticMapPutPathHints = remaining
+}
+
+// rememberStaticAliasChildHintEntry stores one hint and notes whether a map-put
+// path hint now exists, so forgetting them can skip an empty scan.
+func (vm *VM) rememberStaticAliasChildHintEntry(key staticAliasChildHintKey, hint staticAliasChildHint) {
+	if vm.staticAliasChildHints == nil {
+		vm.staticAliasChildHints = make(map[staticAliasChildHintKey]staticAliasChildHint)
+	}
+	if staticAliasMapPutPathKind(hint.Kind) {
+		vm.staticMapPutPathHints = true
+	}
+	vm.staticAliasChildHints[key] = hint
 }
 
 // Delta writes preserve unrelated paths. Any reference reached by the complete
@@ -229,9 +251,6 @@ func (vm *VM) replaceStaticAliasUsingMapPutPath(value Value, location staticFiel
 	} else {
 		value = parent
 	}
-	if vm.staticAliasChildHints == nil {
-		vm.staticAliasChildHints = make(map[staticAliasChildHintKey]staticAliasChildHint)
-	}
-	vm.staticAliasChildHints[key] = hint
+	vm.rememberStaticAliasChildHintEntry(key, hint)
 	return value, true
 }

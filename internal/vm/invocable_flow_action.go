@@ -9,7 +9,7 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
-// Local action shapes share the Flow interpreter for scalar record and primitive
+// Top-level local action shapes share the Flow interpreter for scalar record and primitive
 // variables, assignments, decisions, lookups, subflows, updates and supported creates.
 // Collections, fault connectors and other steps retain an explicit boundary.
 func invocableFlowActionSupported(rule storage.FlowRule) bool {
@@ -115,6 +115,73 @@ func invocableFlowActionStepsSupportedWithTargets(steps []storage.FlowStep, targ
 	return walk(steps)
 }
 
+// Top-level action admission is separate from child interpretation. Children
+// keep all shapes supported by the shared Flow interpreter. Resolve optional
+// dependencies during execution; reject only unavoidable recursion and the
+// native-rejected literal-to-collection assignment before execution.
+func (vm *VM) invocableFlowActionTreeSupported(rule storage.FlowRule) bool {
+	if !invocableFlowActionSupported(rule) {
+		return false
+	}
+	active := make(map[string]bool)
+	var supported func(storage.FlowRule, bool) bool
+	supported = func(current storage.FlowRule, conditional bool) bool {
+		key := strings.ToLower(strings.TrimSpace(current.Name))
+		if active[key] {
+			return conditional
+		}
+		active[key] = true
+		defer delete(active, key)
+		targets := make(map[string]bool)
+		var walk func([]storage.FlowStep, bool) bool
+		walk = func(steps []storage.FlowStep, guarded bool) bool {
+			for _, step := range steps {
+				if !walk(step.FaultBranch, true) {
+					return false
+				}
+				switch step.Kind {
+				case "reference":
+					targetKey := strings.ToLower(strings.TrimSpace(step.Target))
+					if targets[targetKey] {
+						continue
+					}
+					targets[targetKey] = true
+					target, found := current.StepTargets[targetKey]
+					if found && !walk(target, guarded) {
+						return false
+					}
+				case "subflow":
+					child, found := vm.autolaunchedFlowRule(step.Subflow.FlowName)
+					if found && child.Active && !supported(child, guarded) {
+						return false
+					}
+				case "decision":
+					for _, branch := range step.Branches {
+						if !walk(branch.Steps, true) {
+							return false
+						}
+					}
+				case "loop":
+					if !walk(step.Loop.Steps, true) {
+						return false
+					}
+				case "assignment":
+					if strings.EqualFold(step.Assignment.Operator, "Assign") && step.Assignment.SourceField == "" && step.Assignment.Formula == "" && step.Assignment.LiteralValue != "" {
+						for _, variable := range current.Variables {
+							if strings.EqualFold(variable.Name, step.Assignment.Target) && variable.IsCollection && strings.EqualFold(variable.DataType, "String") {
+								return false
+							}
+						}
+					}
+				}
+			}
+			return true
+		}
+		return walk(current.Steps, conditional)
+	}
+	return supported(rule, false)
+}
+
 type invocableFlowActionFault struct{ code, message string }
 
 func (e *invocableFlowActionFault) Error() string { return e.message }
@@ -158,7 +225,7 @@ func (vm *VM) invokeInvocableFlowAction(action, invocation Value, executionResul
 	if !found {
 		return Null, false, &invocableMissingActionError{name: name}
 	}
-	if !invocableFlowActionSupported(rule) {
+	if !vm.invocableFlowActionTreeSupported(rule) {
 		return Null, false, unsupportedCallError("Invocable.Action.invoke hosted Flow action " + name)
 	}
 	// Validate before materializing input or executing the Flow. The captured

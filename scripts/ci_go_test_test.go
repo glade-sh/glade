@@ -2293,8 +2293,8 @@ func browserWorkflowProblem(workflow string) string {
 		`export PATH="$RUNNER_TEMP/browser-bin:$PATH"`,
 		`/usr/bin/time -v -o "$GITHUB_WORKSPACE/ci-artifacts/browser/resource-usage.txt"`,
 		"go test -json -vet=off -p=1 -count=1 -timeout=25m -trimpath",
-		"-run '^(TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser|TestLWCAPI67RegistrationRunsInBrowser)$'",
-		"./internal/lwcruntime ./internal/lwcbrowser",
+		"-run '^(TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser|TestLWCAPI67RegistrationRunsInBrowser|TestL08SalesforceConformance)$'",
+		"./internal/lwcruntime ./internal/lwcbrowser ./internal/server",
 		`tee "$GITHUB_WORKSPACE/ci-artifacts/browser/go-test.json"`,
 		"PIPESTATUS[@]",
 		"native_rc",
@@ -2531,6 +2531,12 @@ func TestCIBrowserWorkflowContract(t *testing.T) {
 		"missing API67 selector": func(s string) string {
 			return strings.Replace(s, "|TestLWCAPI67RegistrationRunsInBrowser", "", 1)
 		},
+		"missing L08 selector": func(s string) string {
+			return strings.Replace(s, "|TestL08SalesforceConformance", "", 1)
+		},
+		"missing server package": func(s string) string {
+			return strings.Replace(s, "./internal/lwcbrowser ./internal/server", "./internal/lwcbrowser", 1)
+		},
 		"weakened skip": func(s string) string {
 			return strings.Replace(s, `action in {"pass", "fail", "skip"}`, `action in {"pass", "fail"}`, 1)
 		},
@@ -2699,49 +2705,56 @@ func TestCIBrowserScopeHandlesNewlinePath(t *testing.T) {
 		t.Fatal("scope script is missing")
 	}
 
-	repo := t.TempDir()
-	runGit := func(args ...string) string {
-		t.Helper()
-		cmd := exec.Command("git", args...)
-		cmd.Dir = repo
-		out, err := cmd.CombinedOutput()
-		if err != nil {
-			t.Fatalf("git %v: %v\n%s", args, err, out)
-		}
-		return strings.TrimSpace(string(out))
-	}
-	runGit("init", "-q")
-	runGit("config", "user.email", "browser-ci@example.invalid")
-	runGit("config", "user.name", "Browser CI")
-	if err := os.WriteFile(filepath.Join(repo, "README.md"), []byte("base\n"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	runGit("add", "README.md")
-	runGit("commit", "-qm", "base")
-	base := runGit("rev-parse", "HEAD")
-	if err := os.WriteFile(filepath.Join(repo, "newline\ncomponent.go"), []byte("package newline\n"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	runGit("add", "-A")
-	runGit("commit", "-qm", "newline go path")
-	head := runGit("rev-parse", "HEAD")
+	for _, changedPath := range []string{"newline\ncomponent.go", "internal/server/testdata/l08_salesforce.json", "internal/server/testdata/l08_review_controls.json", "internal/server/testdata/l08_browser.mjs"} {
+		t.Run(changedPath, func(t *testing.T) {
+			repo := t.TempDir()
+			runGit := func(args ...string) string {
+				t.Helper()
+				cmd := exec.Command("git", args...)
+				cmd.Dir = repo
+				out, err := cmd.CombinedOutput()
+				if err != nil {
+					t.Fatalf("git %v: %v\n%s", args, err, out)
+				}
+				return strings.TrimSpace(string(out))
+			}
+			runGit("init", "-q")
+			runGit("config", "user.email", "browser-ci@example.invalid")
+			runGit("config", "user.name", "Browser CI")
+			if err := os.WriteFile(filepath.Join(repo, "README.md"), []byte("base\n"), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			runGit("add", "README.md")
+			runGit("commit", "-qm", "base")
+			base := runGit("rev-parse", "HEAD")
+			if err := os.MkdirAll(filepath.Dir(filepath.Join(repo, changedPath)), 0o700); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(filepath.Join(repo, changedPath), []byte("fixture\n"), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			runGit("add", "-A")
+			runGit("commit", "-qm", "newline go path")
+			head := runGit("rev-parse", "HEAD")
 
-	output := filepath.Join(repo, "github-output")
-	if err := os.MkdirAll(filepath.Join(repo, "ci-artifacts", "browser"), 0o700); err != nil {
-		t.Fatal(err)
-	}
-	cmd := exec.Command("bash", "-c", script)
-	cmd.Dir = repo
-	cmd.Env = append(os.Environ(), "BASE_SHA="+base, "HEAD_SHA="+head, "UNCONDITIONAL=false", "GITHUB_OUTPUT="+output, "GITHUB_WORKSPACE="+repo, "RUNNER_TEMP="+t.TempDir())
-	if out, err := cmd.CombinedOutput(); err != nil {
-		t.Fatalf("scope script failed: %v\n%s", err, out)
-	}
-	result, err := os.ReadFile(output)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if string(result) != "run_expensive=true\n" {
-		t.Fatalf("newline-bearing .go path scope = %q, want true", result)
+			output := filepath.Join(repo, "github-output")
+			if err := os.MkdirAll(filepath.Join(repo, "ci-artifacts", "browser"), 0o700); err != nil {
+				t.Fatal(err)
+			}
+			cmd := exec.Command("bash", "-c", script)
+			cmd.Dir = repo
+			cmd.Env = append(os.Environ(), "BASE_SHA="+base, "HEAD_SHA="+head, "UNCONDITIONAL=false", "GITHUB_OUTPUT="+output, "GITHUB_WORKSPACE="+repo, "RUNNER_TEMP="+t.TempDir())
+			if out, err := cmd.CombinedOutput(); err != nil {
+				t.Fatalf("scope script failed: %v\n%s", err, out)
+			}
+			result, err := os.ReadFile(output)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if string(result) != "run_expensive=true\n" {
+				t.Fatalf("path %q scope = %q, want true", changedPath, result)
+			}
+		})
 	}
 }
 
@@ -2761,14 +2774,17 @@ func TestCIBrowserTAPValidationFixtures(t *testing.T) {
 	if !ok {
 		t.Fatal("browser validator Python terminator is missing")
 	}
+	const l08Pass = `{"Action":"pass","Package":"github.com/glade-sh/glade/internal/server","Test":"TestL08SalesforceConformance"}`
 	goEvents := strings.Join([]string{
 		`{"Action":"pass","Package":"github.com/glade-sh/glade/internal/lwcruntime","Test":"TestBrowserRuntimeSuite"}`,
 		`{"Action":"pass","Package":"github.com/glade-sh/glade/internal/lwcbrowser","Test":"TestGeneratedPhase3BaseComponentsRunInBrowser"}`,
 		`{"Action":"pass","Package":"github.com/glade-sh/glade/internal/lwcbrowser","Test":"TestLWCAPI67RegistrationRunsInBrowser"}`,
+		l08Pass,
 	}, "\n") + "\n"
 	cases := []struct {
 		name    string
 		nodeTAP string
+		events  string
 		valid   bool
 	}{
 		{name: "harmless diagnostic words", valid: true, nodeTAP: "TAP version 13\n# Subtest: name mentions not ok and # SKIP harmlessly\nok 1 - name mentions not ok and \\# SKIP harmlessly\n1..1\n# tests 1\n# pass 1\n# fail 0\n# skipped 0\n"},
@@ -2777,6 +2793,23 @@ func TestCIBrowserTAPValidationFixtures(t *testing.T) {
 		{name: "cannot launch", nodeTAP: "TAP version 13\n# cannot launch chromium: denied\nok 1 - passes\n1..1\n# tests 1\n# pass 1\n# fail 0\n# skipped 0\n"},
 		{name: "successful evidence retains sentinel", nodeTAP: "not run\nTAP version 13\nok 1 - passes\n1..1\n# tests 1\n# pass 1\n# fail 0\n# skipped 0\n"},
 	}
+	passingTAP := "TAP version 13\nok 1 - passes\n1..1\n# tests 1\n# pass 1\n# fail 0\n# skipped 0\n"
+	for _, action := range []string{"missing", "skip", "fail", "duplicate"} {
+		replacement := strings.Replace(l08Pass, `"pass"`, `"`+action+`"`, 1)
+		if action == "missing" {
+			replacement = `{"Action":"pass","Package":"github.com/glade-sh/glade/internal/server"}`
+		}
+		if action == "duplicate" {
+			replacement = l08Pass + "\n" + l08Pass
+		}
+		cases = append(cases, struct {
+			name, nodeTAP, events string
+			valid                 bool
+		}{
+			name: "L08 " + action, nodeTAP: passingTAP,
+			events: strings.Replace(goEvents, l08Pass, replacement, 1),
+		})
+	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			workspace := t.TempDir()
@@ -2784,7 +2817,11 @@ func TestCIBrowserTAPValidationFixtures(t *testing.T) {
 			if err := os.MkdirAll(artifacts, 0o700); err != nil {
 				t.Fatal(err)
 			}
-			if err := os.WriteFile(filepath.Join(artifacts, "go-test.json"), []byte(goEvents), 0o600); err != nil {
+			events := tc.events
+			if events == "" {
+				events = goEvents
+			}
+			if err := os.WriteFile(filepath.Join(artifacts, "go-test.json"), []byte(events), 0o600); err != nil {
 				t.Fatal(err)
 			}
 			if err := os.WriteFile(filepath.Join(artifacts, "node-test.log"), []byte(tc.nodeTAP), 0o600); err != nil {
@@ -3423,7 +3460,7 @@ func TestCINestedSourcesWorkflowContract(t *testing.T) {
 func TestCINodeIntegrationPureLaneSkipSelectors(t *testing.T) {
 	wantSkip := map[string]string{
 		"gladecli":              "^(?:TestRunDoctorReportsParser|TestRunDoctorJSON|TestRunDoctorShortFlags|TestRunDoctorReportsProjectLocalDataEnvironment)$",
-		"server-and-playground": "^(?:TestVFPageBootstrapsLightningOut|TestVFPageBootstrapsMultiWidgetLightningOut|TestLightningModulesServesCompiledJS|TestLightningModulesServesSiblingModuleWithoutJSExtension|TestLWCShellComponentRouteServesHTML|TestLWCShellRootRendersHomeWithFormalTabsAndBuilderLink|TestLWCShellBuilderRouteRendersBuilderNavigationLayoutAndSampleRecord|TestLWCShellTabRouteIncludesPreviewRouteCatalog|TestServerRootRendersLWCHomeWhenProjectHasLWCs|TestLWCShellRendersApplicationNavAndConsoleMode|TestLWCShellAppRouteFallsBackToApplicationDefaultTab|TestLWCShellUnsupportedCustomTabReturnsDiagnostic|TestLWCShellMixedPageDiagnosticsStillRendersValidComponents)$",
+		"server-and-playground": "^(?:TestVFPageBootstrapsLightningOut|TestVFPageBootstrapsMultiWidgetLightningOut|TestLightningModulesServesCompiledJS|TestLightningModulesServesSiblingModuleWithoutJSExtension|TestLWCShellComponentRouteServesHTML|TestLWCShellRootRendersHomeWithFormalTabsAndBuilderLink|TestLWCShellBuilderRouteRendersBuilderNavigationLayoutAndSampleRecord|TestLWCShellTabRouteIncludesPreviewRouteCatalog|TestServerRootRendersLWCHomeWhenProjectHasLWCs|TestLWCShellRendersApplicationNavAndConsoleMode|TestLWCShellAppRouteFallsBackToApplicationDefaultTab|TestLWCShellUnsupportedCustomTabReturnsDiagnostic|TestLWCShellMixedPageDiagnosticsStillRendersValidComponents|TestL08SalesforceConformance)$",
 		"repoguard":             "",
 		"remaining-go":          "^(?:TestBuildCompileConfigAPIVersionMatrix|TestLWCModuleAvailabilityFollowsBundleAPIVersion|TestComplexTemplateExpressionsFollowBundleAPIVersion|TestHTMLDetailsNameFollowsBundleAPIVersion|TestCompilePreservesDeclaredAPI67|TestCompileProjectLWCBundles|TestCompileRewritesTemplateStylesheetImports|TestCompileEmitsSiblingJSModules|TestCompileEmitsUtilityOnlyLWCModules|TestCompileEmitsAdditionalHTMLTemplateModules|TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate|TestCompileEnablesLwcOnDirective|TestSetupBundleIncludesLabelsSibling|TestSetupImportMapIncludesLocalComponents|TestValidateRootFindsRepoCheckout|TestInstallFromCWDSkipsGlobalShareAsSource|TestInstallFromCopiesToolchain|TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare|TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser|TestLWCAPI67RegistrationRunsInBrowser)$",
 	}
@@ -4021,7 +4058,7 @@ func TestCIVetHasOneAuthoritativeGateAndNoImplicitLaneWork(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := strings.Count(string(workflow), "go vet -trimpath ./..."); got != 1 {
+	if got := strings.Count(string(workflow), "run: scripts/ci-go-test.sh local-release-lane vet"); got != 1 {
 		t.Fatalf("standalone full vet gates = %d, want 1", got)
 	}
 	script, err := os.ReadFile("ci-go-test.sh")

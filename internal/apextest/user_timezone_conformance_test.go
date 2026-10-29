@@ -63,7 +63,7 @@ func TestUserTimezoneNativeConformance(t *testing.T) {
 			"String expectedText=" + conformanceApexString(expected) + "; System.assert(expectedText.equals(r)," + conformanceApexString(row.ID) + "+' expected <'+expectedText+'> actual <'+r+'>');"
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "UserTimezone", api)
 			root := t.TempDir()
 			project := fmt.Sprintf(`{"sourceApiVersion":%q,"packageDirectories":[{"path":"force-app","default":true}]}`, api)

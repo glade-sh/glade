@@ -156,7 +156,7 @@ func TestExceptionsOrgConformance(t *testing.T) {
 		return out
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "exceptions", api)
 			build := func(sources map[string]string) typesys.Index {
 				root := t.TempDir()

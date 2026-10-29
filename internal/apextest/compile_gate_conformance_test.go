@@ -122,7 +122,7 @@ func TestCompileGateOrgConformance(t *testing.T) {
 		rows[row.ID] = row
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			for _, row := range data.Rows {
 				t.Run(row.ID, func(t *testing.T) {
 					native, ok := row.Native[api]

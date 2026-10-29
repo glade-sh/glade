@@ -52,7 +52,7 @@ func runNativeProjectRouteCounts(t *testing.T, family, class string, apis []stri
 			t.Fatal(err)
 		}
 		for _, api := range apis {
-			t.Run(api, func(t *testing.T) {
+			runConformanceAPIVersion(t, api, func(t *testing.T) {
 				root := t.TempDir()
 				project := filepath.Join(dir, "project")
 				err := filepath.WalkDir(project, func(path string, entry fs.DirEntry, err error) error {

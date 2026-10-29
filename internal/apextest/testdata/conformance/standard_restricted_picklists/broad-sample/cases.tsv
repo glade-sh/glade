@@ -1,0 +1,16 @@
+case	input	observation
+Opportunity.ForecastCategoryName	NotAnAllowedValue / valid or null twin	describe restriction, invalid insert, valid insert, invalid update
+Case.Status	NotAnAllowedValue / valid or null twin	describe restriction, invalid insert, valid insert, invalid update
+Task.RecurrenceType	NotAnAllowedValue / valid or null twin	describe restriction, invalid insert, valid insert, invalid update
+Task.RecurrenceInstance	NotAnAllowedValue / valid or null twin	describe restriction, invalid insert, valid insert, invalid update
+Task.RecurrenceMonthOfYear	NotAnAllowedValue / valid or null twin	describe restriction, invalid insert, valid insert, invalid update
+Event.ShowAs	NotAnAllowedValue / valid or null twin	describe restriction, invalid insert, valid insert, invalid update
+Event.RecurrenceType	NotAnAllowedValue / valid or null twin	describe restriction, invalid insert, valid insert, invalid update
+Contract.OwnerExpirationNotice	NotAnAllowedValue / valid or null twin	describe restriction, invalid insert, valid insert, invalid update
+Contract.Status	NotAnAllowedValue / valid or null twin	describe restriction, invalid insert, valid insert, invalid update
+Contract.BillingGeocodeAccuracy	NotAnAllowedValue / valid or null twin	describe restriction, invalid insert, valid insert, invalid update
+Order.Status	NotAnAllowedValue / valid or null twin	describe restriction, invalid insert, valid insert, invalid update
+Order.BillingGeocodeAccuracy	NotAnAllowedValue / valid or null twin	describe restriction, invalid insert, valid insert, invalid update
+Quote.BillingGeocodeAccuracy	NotAnAllowedValue / valid or null twin	describe restriction, invalid insert, valid insert, invalid update
+ContentVersion.SharingOption	NotAnAllowedValue / valid or null twin	describe restriction, invalid insert, valid insert, invalid update
+ContentVersion.SharingPrivacy	NotAnAllowedValue / valid or null twin	describe restriction, invalid insert, valid insert, invalid update

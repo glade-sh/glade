@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Related_Parent__c</fullName>
+    <label>Related Parent</label>
+    <referenceTo>Owned_Relationship_Parent__c</referenceTo>
+    <relationshipLabel>Related Children</relationshipLabel>
+    <relationshipName>Related_Parent</relationshipName>
+    <type>Lookup</type>
+</CustomField>

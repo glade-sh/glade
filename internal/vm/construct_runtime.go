@@ -1231,20 +1231,42 @@ func (vm *VM) constructValueWithNamedArgOrder(typeName string, args []Value, nam
 			}
 		}
 		explicitField := false
+		var fieldDefinition storage.Field
 		if definition.APIName != "" {
 			if canonical, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, field); ok {
 				field = canonical
+				fieldDefinition = definition.Fields[field]
 				explicitField = true
+			}
+		} else if vm.Org != nil {
+			// Catalog-only standard objects need the same explicit Boolean
+			// binding as installed objects, including the dotted null view.
+			// Keep defaults and other field kinds on their existing paths.
+			if _, known := storage.ResolveKnownStandardObjectName(objectType); known {
+				if prepared, _, ok := vm.sObjectFieldDefinition(objectType, field); ok {
+					if canonical, candidate, present := storage.ResolveFieldDefinition(prepared, vm.Org.Namespace, field); present && candidate.Type == storage.FieldBoolean {
+						field = canonical
+						fieldDefinition = candidate
+						explicitField = true
+					}
+				}
 			}
 		}
 		if explicitField {
-			if err := sObjectTypedIDAssignmentError(value, definition.Fields[field]); err != nil {
+			if err := sObjectTypedIDAssignmentError(value, fieldDefinition); err != nil {
 				return Null, err
 			}
-			value = coerceSObjectFieldRuntimeValue(value, definition.Fields[field])
+			value = coerceSObjectFieldRuntimeValue(value, fieldDefinition)
 			vm.setExplicitSObjectFieldValue(&object, field, value)
 		} else {
 			object.Fields[field] = value
+			if definition.APIName != "" {
+				if _, relationship := vm.parentRelationshipMetadata(objectType, field); relationship {
+					// A named parent relationship keeps its constructor position
+					// alongside scalar fields (sobject_json/org.tsv:20,300).
+					markExplicitSObjectField(&object, field)
+				}
+			}
 		}
 	}
 	vm.registerSObjectAliasRecord(object)
@@ -4357,12 +4379,53 @@ func builtinExceptionParent(typeName string) string {
 
 func isBuiltinExceptionType(typeName string) bool {
 	typeName = exceptionTypeName(typeName)
+	if len(typeName) <= len(asciiLowerBuffer{}) && isASCII(typeName) {
+		// Every known name is ASCII, so EqualFold reduces to ASCII case folding.
+		// The map index on a converted stack buffer does not allocate.
+		var buf asciiLowerBuffer
+		return builtinExceptionLowerNames[string(asciiLowerInto(buf[:0], typeName))]
+	}
 	for known := range builtinExceptionParents {
 		if strings.EqualFold(typeName, known) {
 			return true
 		}
 	}
 	return false
+}
+
+var builtinExceptionLowerNames = func() map[string]bool {
+	names := make(map[string]bool, len(builtinExceptionParents))
+	for known := range builtinExceptionParents {
+		names[asciiLower(known)] = true
+	}
+	return names
+}()
+
+func isASCII(s string) bool {
+	for i := 0; i < len(s); i++ {
+		if s[i] >= 0x80 {
+			return false
+		}
+	}
+	return true
+}
+
+type asciiLowerBuffer [96]byte
+
+// asciiLowerInto appends s with ASCII letters lowercased; callers check isASCII.
+func asciiLowerInto(dst []byte, s string) []byte {
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if 'A' <= c && c <= 'Z' {
+			c += 'a' - 'A'
+		}
+		dst = append(dst, c)
+	}
+	return dst
+}
+
+func asciiLower(s string) string {
+	return string(asciiLowerInto(make([]byte, 0, len(s)), s))
 }
 
 var builtinExceptionParents = func() map[string]string {

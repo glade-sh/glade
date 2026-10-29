@@ -1,0 +1,138 @@
+[
+  {
+    "id": "CUSTOM_FRESH_DIRECT",
+    "body": "Account r=new Account(Name='Address Review',Site__Street__s='Two',Site__Latitude__s=12.5,Site__Longitude__s=25.0); System.assertEquals(null,r.Site__c);",
+    "status": "PASS"
+  },
+  {
+    "id": "CUSTOM_FRESH_GET",
+    "body": "Account r=new Account(Name='Address Review',Site__Street__s='Two',Site__Latitude__s=12.5,Site__Longitude__s=25.0); System.assertEquals(null,r.get('Site__c'));",
+    "status": "PASS"
+  },
+  {
+    "id": "CUSTOM_INSERTED_DIRECT",
+    "body": "Account r=new Account(Name='Address Review',Site__Street__s='Two',Site__Latitude__s=12.5,Site__Longitude__s=25.0); insert r; System.assertEquals(null,r.Site__c);",
+    "status": "PASS"
+  },
+  {
+    "id": "CUSTOM_INSERTED_GET",
+    "body": "Account r=new Account(Name='Address Review',Site__Street__s='Two',Site__Latitude__s=12.5,Site__Longitude__s=25.0); insert r; System.assertEquals(null,r.get('Site__c'));",
+    "status": "PASS"
+  },
+  {
+    "id": "CUSTOM_QUERIED_DIRECT",
+    "body": "Account r=new Account(Name='Address Review',Site__Street__s='Two',Site__Latitude__s=12.5,Site__Longitude__s=25.0); insert r; r=[SELECT Site__c FROM Account WHERE Id=:r.Id]; System.Address a=r.Site__c; Object o=a; System.assert(o instanceof System.Address); System.assert(o instanceof System.Location); System.assertEquals(false,o instanceof Address); System.assertEquals(false,o instanceof Location); System.Location l=a; System.assertEquals(12.5,a.getLatitude()); System.assertEquals(25.0,l.getLongitude()); System.assertEquals(0.0,a.getDistance(l,'km')); System.assertEquals(a,(System.Address)l);",
+    "status": "PASS"
+  },
+  {
+    "id": "CUSTOM_QUERIED_GET",
+    "body": "Account r=new Account(Name='Address Review',Site__Street__s='Two',Site__Latitude__s=12.5,Site__Longitude__s=25.0); insert r; r=[SELECT Site__c FROM Account WHERE Id=:r.Id]; System.Address a=(System.Address)r.get('Site__c'); Object o=a; System.assert(o instanceof System.Address); System.assert(o instanceof System.Location); System.assertEquals(false,o instanceof Address); System.assertEquals(false,o instanceof Location); System.Location l=a; System.assertEquals(12.5,a.getLatitude()); System.assertEquals(25.0,l.getLongitude()); System.assertEquals(0.0,a.getDistance(l,'km')); System.assertEquals(a,(System.Address)l);",
+    "status": "PASS"
+  },
+  {
+    "id": "STANDARD_QUERIED_DIRECT",
+    "body": "Account r=new Account(Name='Address Review',BillingStreet='One',BillingLatitude=12.5,BillingLongitude=25.0); insert r; r=[SELECT BillingAddress FROM Account WHERE Id=:r.Id]; System.Address a=r.BillingAddress; Object o=a; System.assert(o instanceof System.Address); System.assert(o instanceof System.Location); System.assertEquals(false,o instanceof Address); System.assertEquals(false,o instanceof Location); System.Location l=a; System.assertEquals(12.5,a.getLatitude()); System.assertEquals(25.0,l.getLongitude()); System.assertEquals(0.0,a.getDistance(l,'km')); System.assertEquals(a,(System.Address)l);",
+    "status": "PASS"
+  },
+  {
+    "id": "STANDARD_QUERIED_GET",
+    "body": "Account r=new Account(Name='Address Review',BillingStreet='One',BillingLatitude=12.5,BillingLongitude=25.0); insert r; r=[SELECT BillingAddress FROM Account WHERE Id=:r.Id]; System.Address a=(System.Address)r.get('BillingAddress'); Object o=a; System.assert(o instanceof System.Address); System.assert(o instanceof System.Location); System.assertEquals(false,o instanceof Address); System.assertEquals(false,o instanceof Location); System.Location l=a; System.assertEquals(12.5,a.getLatitude()); System.assertEquals(25.0,l.getLongitude()); System.assertEquals(0.0,a.getDistance(l,'km')); System.assertEquals(a,(System.Address)l);",
+    "status": "PASS"
+  },
+  {
+    "id": "CUSTOM_COMPONENTS_DIRECT",
+    "body": "Account r=new Account(Name='Address Review',Site__Street__s='Two',Site__Latitude__s=12.5,Site__Longitude__s=25.0); insert r; r=[SELECT Site__Latitude__s FROM Account WHERE Id=:r.Id]; Boolean caught=false; try { Object o=r.Site__c; } catch(System.SObjectException e) { caught=true; } System.assert(caught);",
+    "status": "PASS"
+  },
+  {
+    "id": "CUSTOM_COMPONENTS_GET",
+    "body": "Account r=new Account(Name='Address Review',Site__Street__s='Two',Site__Latitude__s=12.5,Site__Longitude__s=25.0); insert r; r=[SELECT Site__Latitude__s FROM Account WHERE Id=:r.Id]; Boolean caught=false; try { Object o=r.get('Site__c'); } catch(System.SObjectException e) { caught=true; } System.assert(caught);",
+    "status": "PASS"
+  },
+  {
+    "id": "CUSTOM_QUERIED_EMPTY",
+    "body": "Account r=new Account(Name='Address Empty'); insert r; r=[SELECT Site__c FROM Account WHERE Id=:r.Id]; System.assertEquals(null,r.Site__c); System.assertEquals(null,r.get('Site__c')); Object o=r.Site__c; System.assertEquals(false,o instanceof System.Location);",
+    "status": "PASS"
+  },
+  {
+    "id": "SOURCE_BOUNDARY",
+    "body": "Object a=new Address(); Object l=new Location(); System.assertEquals(false,a instanceof System.Address); System.assertEquals(false,a instanceof System.Location); System.assertEquals(false,l instanceof System.Location);",
+    "status": "PASS"
+  },
+  {
+    "id": "SOURCE_REJECT",
+    "body": "Address a=new Address(); System.Location l=a;",
+    "status": "REJECT"
+  },
+  {
+    "id": "REVERSE_REJECT",
+    "body": "System.Location l=System.Location.newInstance(0,0); System.Address a=l;",
+    "status": "REJECT"
+  },
+  {
+    "id": "DUPLICATE_SHADOW",
+    "body": "Account r=new Account(Name='Cedar Address Review',Phone='4155550142',BillingStreet='17 Pine Way',BillingCity='Portland',BillingState='OR',BillingPostalCode='97201',BillingCountry='USA'); insert r; List<Datacloud.FindDuplicatesResult> found=Datacloud.FindDuplicates.findDuplicates(new List<SObject>{new Account(Name=r.Name,Phone=r.Phone,BillingStreet=r.BillingStreet,BillingCity=r.BillingCity,BillingPostalCode=r.BillingPostalCode)}); Integer seen=0; for(Datacloud.FindDuplicatesResult f:found) { for(Datacloud.DuplicateResult d:f.getDuplicateResults()) { for(Datacloud.MatchResult m:d.getMatchResults()) { for(Datacloud.MatchRecord match:m.getMatchRecords()) { System.Address a=(System.Address)match.getRecord().get('BillingAddress'); Object o=a; System.assert(o instanceof System.Location); System.assertEquals(false,o instanceof Address); System.assertEquals('17 Pine Way',a.getStreet()); seen++; } } } } System.assert(seen>0);",
+    "status": "PASS"
+  },
+  {
+    "id": "CART_SHADOW",
+    "body": "CartExtension.ItemArrange a=new CartExtension.ItemArrange.Builder().withCartItemId('0aB000000000001AAA').withProductId('01t000000000001AAA').withQuantity(3).withDeliverToCity('Portland').build(); System.Address address=a.getDeliveryAddress(); Object o=address; System.assert(o instanceof System.Location); System.assertEquals(false,o instanceof Address); System.Location l=address; System.assertEquals('Portland',address.getCity());",
+    "status": "PASS",
+    "namedOnly": true
+  },
+  {
+    "id": "DML_UPDATE_DIRECT",
+    "body": "Account r=new Account(Name='Address Review',Site__Street__s='Two',Site__Latitude__s=12.5,Site__Longitude__s=25.0); insert r; r=[SELECT Name, Site__c FROM Account WHERE Id=:r.Id]; r.Name='Updated'; update r; Account q=[SELECT Name, Site__Street__s, Site__Latitude__s, Site__Longitude__s FROM Account WHERE Id=:r.Id]; System.assertEquals('Updated',q.Name); System.assertEquals('Two',q.Site__Street__s); System.assertEquals(12.5,q.Site__Latitude__s); System.assertEquals(25.0,q.Site__Longitude__s);",
+    "status": "PASS"
+  },
+  {
+    "id": "DML_UPDATE_LIST",
+    "body": "Account r=new Account(Name='Address Review',Site__Street__s='Two',Site__Latitude__s=12.5,Site__Longitude__s=25.0); insert r; List<Account> rs=[SELECT Name, Site__c FROM Account WHERE Id=:r.Id]; rs[0].Name='Updated'; update rs; Account q=[SELECT Name, Site__Street__s, Site__Latitude__s, Site__Longitude__s FROM Account WHERE Id=:r.Id]; System.assertEquals('Updated',q.Name); System.assertEquals('Two',q.Site__Street__s); System.assertEquals(12.5,q.Site__Latitude__s); System.assertEquals(25.0,q.Site__Longitude__s);",
+    "status": "PASS"
+  },
+  {
+    "id": "DML_UPSERT_DIRECT",
+    "body": "Account r=new Account(Name='Address Review',Site__Street__s='Two',Site__Latitude__s=12.5,Site__Longitude__s=25.0); insert r; r=[SELECT Name, Site__c FROM Account WHERE Id=:r.Id]; r.Name='Upserted'; upsert r; Account q=[SELECT Name, Site__Street__s, Site__Latitude__s, Site__Longitude__s FROM Account WHERE Id=:r.Id]; System.assertEquals('Upserted',q.Name); System.assertEquals('Two',q.Site__Street__s); System.assertEquals(12.5,q.Site__Latitude__s); System.assertEquals(25.0,q.Site__Longitude__s);",
+    "status": "PASS"
+  },
+  {
+    "id": "DML_UPSERT_LIST",
+    "body": "Account r=new Account(Name='Address Review',Site__Street__s='Two',Site__Latitude__s=12.5,Site__Longitude__s=25.0); insert r; List<Account> rs=[SELECT Name, Site__c FROM Account WHERE Id=:r.Id]; rs[0].Name='Upserted'; upsert rs; Account q=[SELECT Name, Site__Street__s, Site__Latitude__s, Site__Longitude__s FROM Account WHERE Id=:r.Id]; System.assertEquals('Upserted',q.Name); System.assertEquals('Two',q.Site__Street__s); System.assertEquals(12.5,q.Site__Latitude__s); System.assertEquals(25.0,q.Site__Longitude__s);",
+    "status": "PASS"
+  },
+  {
+    "id": "DML_DELETE_DIRECT",
+    "body": "Account r=new Account(Name='Address Review',Site__Street__s='Two',Site__Latitude__s=12.5,Site__Longitude__s=25.0); insert r; r=[SELECT Name, Site__c FROM Account WHERE Id=:r.Id]; delete r; System.assertEquals(0,[SELECT COUNT() FROM Account WHERE Id=:r.Id]);",
+    "status": "PASS"
+  },
+  {
+    "id": "DML_DELETE_LIST",
+    "body": "Account r=new Account(Name='Address Review',Site__Street__s='Two',Site__Latitude__s=12.5,Site__Longitude__s=25.0); insert r; List<Account> rs=[SELECT Name, Site__c FROM Account WHERE Id=:r.Id]; delete rs; System.assertEquals(0,[SELECT COUNT() FROM Account WHERE Id=:r.Id]);",
+    "status": "PASS"
+  },
+  {
+    "id": "DML_CLONE_DIRECT",
+    "body": "Account r=new Account(Name='Address Review',Site__Street__s='Two',Site__Latitude__s=12.5,Site__Longitude__s=25.0); insert r; r=[SELECT Name, Site__c FROM Account WHERE Id=:r.Id]; Account c=r.clone(false); System.assertEquals('Two',c.Site__c.getStreet()); insert c; Account q=[SELECT Site__c, Site__Street__s, Site__Latitude__s, Site__Longitude__s FROM Account WHERE Id=:c.Id]; System.assertEquals(null,q.Site__Street__s); System.assertEquals(null,q.Site__Latitude__s); System.assertEquals(null,q.Site__Longitude__s); System.assertEquals(null,q.Site__c);",
+    "status": "PASS"
+  },
+  {
+    "id": "DML_CLONE_LIST",
+    "body": "Account r=new Account(Name='Address Review',Site__Street__s='Two',Site__Latitude__s=12.5,Site__Longitude__s=25.0); insert r; List<Account> rs=[SELECT Name, Site__c FROM Account WHERE Id=:r.Id]; List<Account> cs=new List<Account>{rs[0].clone(false)}; insert cs; Account c=cs[0]; Account q=[SELECT Site__c, Site__Street__s, Site__Latitude__s, Site__Longitude__s FROM Account WHERE Id=:c.Id]; System.assertEquals(null,q.Site__Street__s); System.assertEquals(null,q.Site__Latitude__s); System.assertEquals(null,q.Site__Longitude__s); System.assertEquals(null,q.Site__c);",
+    "status": "PASS"
+  },
+  {
+    "id": "DML_COMPONENT_AFTER_COMPOUND",
+    "body": "Account r=new Account(Name='Address Review',Site__Street__s='Two',Site__Latitude__s=12.5,Site__Longitude__s=25.0); insert r; r=[SELECT Name, Site__c, Site__Street__s FROM Account WHERE Id=:r.Id]; r.Site__Street__s='Three'; update r; System.assertEquals('Two',r.Site__c.getStreet()); Account q=[SELECT Site__c, Site__Street__s, Site__Latitude__s FROM Account WHERE Id=:r.Id]; System.assertEquals('Three',q.Site__Street__s); System.assertEquals(12.5,q.Site__Latitude__s); System.assertEquals('Three',q.Site__c.getStreet());",
+    "status": "PASS"
+  },
+  {
+    "id": "DML_CONTROL_NO_COMPOUND",
+    "body": "Account r=new Account(Name='Address Review',Site__Street__s='Two',Site__Latitude__s=12.5,Site__Longitude__s=25.0); insert r; r=[SELECT Name FROM Account WHERE Id=:r.Id]; r.Name='Updated'; update r; Account q=[SELECT Name, Site__Street__s, Site__Latitude__s, Site__Longitude__s FROM Account WHERE Id=:r.Id]; System.assertEquals('Updated',q.Name); System.assertEquals('Two',q.Site__Street__s); System.assertEquals(12.5,q.Site__Latitude__s); System.assertEquals(25.0,q.Site__Longitude__s);",
+    "status": "PASS"
+  },
+  {
+    "id": "DML_CONTROL_STANDARD",
+    "body": "Account r=new Account(Name='Address Review',BillingStreet='One',BillingLatitude=12.5,BillingLongitude=25.0); insert r; r=[SELECT Name, BillingAddress FROM Account WHERE Id=:r.Id]; r.Name='Updated'; update r; Account q=[SELECT Name, BillingStreet, BillingLatitude FROM Account WHERE Id=:r.Id]; System.assertEquals('Updated',q.Name); System.assertEquals('One',q.BillingStreet); System.assertEquals(12.5,q.BillingLatitude);",
+    "status": "PASS"
+  }
+]

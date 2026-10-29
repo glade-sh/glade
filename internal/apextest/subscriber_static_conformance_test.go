@@ -41,7 +41,7 @@ func TestSubscriberStaticNativeConformance(t *testing.T) {
 	}
 	methods := []string{"direct_stop", "direct_before", "direct_after", "direct_both"}
 	for _, api := range data.APIs {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			expected := map[string]map[string]int{}
 			for _, row := range data.Rows {
 				if row.API != api {

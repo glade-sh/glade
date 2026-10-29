@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -298,6 +299,17 @@ func (vm *VM) flowDeclaration(name string) (storage.FlowRule, bool) {
 			return declaration, true
 		}
 	}
+	// After-save record flows are known declarations, even though they have
+	// no Apex interview entry. Let start report FlowException rather than
+	// treating their names as nonexistent types in createInterview.
+	for _, object := range vm.Org.Objects {
+		for _, rule := range object.Definition.FlowRules {
+			if strings.EqualFold(strings.TrimSpace(rule.TriggerType), "RecordAfterSave") &&
+				strings.EqualFold(strings.TrimSpace(rule.Name), strings.TrimSpace(name)) {
+				return rule, true
+			}
+		}
+	}
 	return storage.FlowRule{}, false
 }
 
@@ -394,6 +406,12 @@ func (vm *VM) flowInterviewInput(receiver Value) (dml.FlowInterviewInput, map[st
 			continue
 		}
 		if value.Kind == ValueObject && (recordShape || vm.isSObjectLikeType(value.Type)) {
+			// Scalar Flow inputs snapshot an after-trigger record without
+			// changing the caller's DML write protection.
+			if reason, readOnly := sobjectReadOnlyReason(value); readOnly && reason == "trigger record" && isTriggerSObject(value) {
+				value = cloneValue(value)
+				deleteObjectField(value.Fields, sobjectReadOnlyField)
+			}
 			record, err := vm.flowInterviewRecordFromValue(&value)
 			if err != nil {
 				return input, opaque, fmt.Errorf("Flow.Interview input %s: %w", name, err)
@@ -1777,6 +1795,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return vm.traceDescribeArgs("fields.getMap", nil)
 			})
 			fieldsMap, _ := vm.privateDescribeFieldMap(receiver)
+			if holder, ok := sharedSObjectFieldMapHolder(fieldsMap); ok {
+				return holder, receiver, false, true, nil
+			}
 			return privateDescribeCollection(fieldsMap), receiver, false, true, nil
 		}
 	case "Schema.SObjectTypeFieldSets", "Schema.FieldSetMap":
@@ -1870,60 +1891,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		}
 	case "Schema.SObjectField":
 		if method == "getDescribe" {
-			if len(args) > 1 {
-				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectField.getDescribe expects 0 or 1 arguments")
-			}
-			if len(args) == 1 && !isSchemaDescribeOptionValue(args[0], "FieldDescribeOptions") {
-				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectField.getDescribe expects FieldDescribeOptions")
-			}
-			objectValue, ok := receiver.Fields["object"]
-			if !ok || objectValue.Kind != ValueString {
-				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectField token missing object")
-			}
-			fieldValue, ok := receiver.Fields["field"]
-			if !ok || fieldValue.Kind != ValueString {
-				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectField token missing field")
-			}
-			describe, err := vm.describeFieldValue(objectValue.Text, fieldValue.Text)
-			if err != nil {
-				return Null, receiver, false, true, err
-			}
-			describe = overlaySObjectDescribe(describe, "", "")
-			if systemField, ok := syntheticSObjectSystemField(fieldValue.Text); ok {
-				if _, ok := describe.Fields["type"]; !ok {
-					describe.Fields["type"] = schemaDisplayTypeValue(systemField.DisplayType)
-				}
-				if _, ok := describe.Fields["soapType"]; !ok {
-					describe.Fields["soapType"] = schemaSOAPTypeValue(soapTypeForStorageField(systemField))
-				}
-				if relationship, ok := describe.Fields["relationshipName"]; systemField.RelationshipName != "" && (!ok || relationship.Kind == ValueNull) {
-					describe.Fields["relationshipName"] = String(systemField.RelationshipName)
-				}
-				if existing, ok := describe.Fields["referenceTo"]; !ok || existing.Kind != ValueList || len(existing.List) == 0 {
-					references := make([]Value, 0, len(systemField.ReferenceTo))
-					for _, target := range systemField.ReferenceTo {
-						references = append(references, sObjectTypeToken(target))
-					}
-					describe.Fields["referenceTo"] = List(references...)
-				}
-			}
-			if name, ok := describe.Fields["name"]; (!ok || name.Kind != ValueString || strings.TrimSpace(name.Text) == "") && strings.TrimSpace(fieldValue.Text) != "" {
-				describe.Fields["name"] = String(fieldValue.Text)
-				if label, ok := describe.Fields["label"]; !ok || label.Kind != ValueString || strings.TrimSpace(label.Text) == "" {
-					describe.Fields["label"] = String(fieldValue.Text)
-				}
-				if displayType, ok := jsonSObjectSystemFieldType(fieldValue.Text); ok {
-					describe.Fields["type"] = schemaDisplayTypeValue(displayType)
-					describe.Fields["soapType"] = schemaSOAPTypeValue(displayType)
-				}
-			}
-			appendTraceLazy(result, "apex.describe.field", "apex.describe", func() map[string]any {
-				return vm.traceDescribeArgs("SObjectField.getDescribe", map[string]any{
-					trace.ArgObject: objectValue.Text,
-					trace.ArgField:  fieldValue.Text,
-				})
-			})
-			return describe, receiver, false, true, nil
+			return vm.callSObjectFieldDescribe(receiver, args, result, false)
 		}
 		switch method {
 		case "getSObjectField", "getName", "getLabel", "getType", "getSoapType", "getSObjectType", "getLength", "getByteLength", "getPrecision", "getScale", "getDigits", "getCalculatedFormula", "isHtmlFormatted", "isNillable", "isExternalId", "isUnique", "isEncrypted", "isCalculated", "isAutoNumber", "isCaseSensitive", "isNameField", "isCustom", "getReferenceTo", "getRelationshipName", "getPicklistValues", "getController", "getControllerValues", "isAccessible", "isCreateable", "isUpdateable", "isSortable":
@@ -5152,11 +5120,17 @@ func (vm *VM) callTypeObjectMember(receiver Value, method string, args []Value, 
 				}
 			}
 		}
-		if class, ok := vm.lookupClass(typeName); ok && len(class.Constructors) > 0 {
+		if registered && (class.IsAbstract || class.IsInterface) {
+			return Null, true, newExceptionError("TypeException", typeName+" cannot be constructed")
+		}
+		if registered && len(class.Constructors) > 0 {
 			ctor, matched, _ := vm.matchConstructor(class, nil)
-			// Native protected no-argument constructors are unavailable to
-			// reflection even when the caller is the owner or a subclass.
-			if !matched || strings.EqualFold(ctor.Access, "protected") {
+			// Keep the pre-q345 dependency-owned nested subclass literal path.
+			// Native rows establish rejection for a public nested class; the
+			// dependency-specific exception is a legacy compatibility boundary.
+			privateConstructor := strings.EqualFold(ctor.Access, "private") &&
+				!vm.legacyDependencyNestedLiteral(receiver, class)
+			if !matched || strings.EqualFold(ctor.Access, "protected") || privateConstructor {
 				return Null, true, newExceptionError("TypeException", typeName+" does not have a no-arg constructor")
 			}
 		}
@@ -5180,6 +5154,10 @@ func (vm *VM) callTypeObjectMember(receiver Value, method string, args []Value, 
 		}()
 		value, err := vm.constructValue(typeName, nil, nil, result)
 		if err != nil {
+			var thrown *apexThrowError
+			if errors.As(err, &thrown) {
+				return Null, true, err
+			}
 			return Null, true, newExceptionError("TypeException", err.Error())
 		}
 		return value, true, nil
@@ -5224,7 +5202,7 @@ func (vm *VM) normalizeBuiltPassivePlatformDTO(object *Value) {
 		return
 	}
 	if strings.EqualFold(object.Type, "CartExtension.ItemArrange") {
-		address := Object("Address")
+		address := newSystemAddress()
 		for _, field := range []string{"street", "city", "state", "stateCode", "postalCode", "country", "countryCode", "latitude", "longitude", "geocodeAccuracy"} {
 			source := "deliverTo" + strings.ToUpper(field[:1]) + field[1:]
 			if _, value, ok := objectFieldValue(*object, source); ok {
@@ -6050,4 +6028,113 @@ func (vm *VM) sObjectTypeDescribeShouldUseLocalName(typeName string) bool {
 		return strings.EqualFold(namespace, currentNamespace)
 	}
 	return strings.EqualFold(namespace, strings.TrimSpace(vm.Org.Namespace))
+}
+
+// callSObjectFieldDescribe keeps eager and temporary reads on the same validation,
+// correction and tracing path. borrow is only for the proven built-in scalar
+// chain in eval; no caller may publish the borrowed describe itself.
+func (vm *VM) callSObjectFieldDescribe(receiver Value, args []Value, result *Result, borrow bool) (Value, Value, bool, bool, error) {
+	if len(args) > 1 {
+		return Null, receiver, false, true, fmt.Errorf("Schema.SObjectField.getDescribe expects 0 or 1 arguments")
+	}
+	if len(args) == 1 && !isSchemaDescribeOptionValue(args[0], "FieldDescribeOptions") {
+		return Null, receiver, false, true, fmt.Errorf("Schema.SObjectField.getDescribe expects FieldDescribeOptions")
+	}
+	objectValue, ok := receiver.Fields["object"]
+	if !ok || objectValue.Kind != ValueString {
+		return Null, receiver, false, true, fmt.Errorf("Schema.SObjectField token missing object")
+	}
+	fieldValue, ok := receiver.Fields["field"]
+	if !ok || fieldValue.Kind != ValueString {
+		return Null, receiver, false, true, fmt.Errorf("Schema.SObjectField token missing field")
+	}
+	describe, err := vm.describeFieldValue(objectValue.Text, fieldValue.Text)
+	if err != nil {
+		return Null, receiver, false, true, err
+	}
+	// A nonescaping scalar chain borrows the template until a correction writes.
+	// Preserve the header identity allocation even when no Fields copy is needed.
+	templateFields := describe.Fields
+	describe.Ref = newValueRef()
+	private := false
+	ensurePrivate := func() {
+		if !private {
+			// Retain the eager path's capacity and copy behavior. Cloning the
+			// backing table can also retain unused template capacity.
+			if templateFields != nil {
+				describe.Fields = make(map[string]Value, len(templateFields))
+				for name, value := range templateFields {
+					describe.Fields[name] = value
+				}
+			}
+			private = true
+		}
+	}
+	if !borrow {
+		ensurePrivate()
+	}
+	if systemField, ok := syntheticSObjectSystemField(fieldValue.Text); ok {
+		if _, ok := describe.Fields["type"]; !ok {
+			ensurePrivate()
+			describe.Fields["type"] = schemaDisplayTypeValue(systemField.DisplayType)
+		}
+		if _, ok := describe.Fields["soapType"]; !ok {
+			ensurePrivate()
+			describe.Fields["soapType"] = schemaSOAPTypeValue(soapTypeForStorageField(systemField))
+		}
+		if relationship, ok := describe.Fields["relationshipName"]; systemField.RelationshipName != "" && (!ok || relationship.Kind == ValueNull) {
+			ensurePrivate()
+			describe.Fields["relationshipName"] = String(systemField.RelationshipName)
+		}
+		if existing, ok := describe.Fields["referenceTo"]; !ok || existing.Kind != ValueList || len(existing.List) == 0 {
+			references := make([]Value, 0, len(systemField.ReferenceTo))
+			for _, target := range systemField.ReferenceTo {
+				references = append(references, sObjectTypeToken(target))
+			}
+			ensurePrivate()
+			describe.Fields["referenceTo"] = List(references...)
+		}
+	}
+	if name, ok := describe.Fields["name"]; (!ok || name.Kind != ValueString || strings.TrimSpace(name.Text) == "") && strings.TrimSpace(fieldValue.Text) != "" {
+		ensurePrivate()
+		describe.Fields["name"] = String(fieldValue.Text)
+		if label, ok := describe.Fields["label"]; !ok || label.Kind != ValueString || strings.TrimSpace(label.Text) == "" {
+			ensurePrivate()
+			describe.Fields["label"] = String(fieldValue.Text)
+		}
+		if displayType, ok := jsonSObjectSystemFieldType(fieldValue.Text); ok {
+			ensurePrivate()
+			describe.Fields["type"] = schemaDisplayTypeValue(displayType)
+			ensurePrivate()
+			describe.Fields["soapType"] = schemaSOAPTypeValue(displayType)
+		}
+	}
+	appendTraceLazy(result, "apex.describe.field", "apex.describe", func() map[string]any {
+		return vm.traceDescribeArgs("SObjectField.getDescribe", map[string]any{
+			trace.ArgObject: objectValue.Text,
+			trace.ArgField:  fieldValue.Text,
+		})
+	})
+	return describe, receiver, false, true, nil
+}
+
+// legacyDependencyNestedLiteral confines the regression repair to a private
+// nested subclass instantiated by its namespaced dependency owner from a class
+// literal. It does not infer platform behavior for other reflection routes.
+func (vm *VM) legacyDependencyNestedLiteral(token Value, class Class) bool {
+	if !token.dependencyClassLiteral || !class.Dependency || !class.Nested ||
+		class.Namespace == "" || !strings.EqualFold(class.Access, "private") ||
+		!strings.EqualFold(vm.currentCallerNamespace(), class.Namespace) {
+		return false
+	}
+	fullName := runtimeClassName(class)
+	dot := strings.LastIndexByte(fullName, '.')
+	if dot < 0 {
+		return false
+	}
+	owner, found := vm.lookupClass(fullName[:dot])
+	if !found || !owner.Dependency || !strings.EqualFold(runtimeClassName(owner), vm.currentClass) {
+		return false
+	}
+	return strings.EqualFold(class.SuperClass, owner.Name) || strings.EqualFold(class.SuperClass, runtimeClassName(owner))
 }

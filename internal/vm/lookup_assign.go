@@ -351,8 +351,9 @@ func (vm *VM) lookup(name string) (Value, error) {
 			}
 			if !strings.Contains(className, ".") {
 				suffix := "." + className
-				for _, class := range vm.ClassEntries() {
-					if !strings.HasSuffix(class.Name, suffix) || len(class.EnumValues) == 0 {
+				for _, key := range vm.enumSuffixClassCandidates(className) {
+					class, ok := vm.classEntry(key)
+					if !ok || !strings.HasSuffix(class.Name, suffix) || len(class.EnumValues) == 0 {
 						continue
 					}
 					if err := vm.ensureClassInitialized(class.Name); err != nil {
@@ -785,7 +786,7 @@ func (vm *VM) setObjectFieldValue(object *Value, name string, value Value) {
 		return
 	}
 	previous := object.Fields[name]
-	vm.markCollectionRefsEscaped(value)
+	vm.markCollectionRefsEscapedSince(previous, value)
 	vm.setGraphFieldValue(object, name, value)
 	vm.rememberPublishedObjectFieldRefs(*object, previous, value)
 	if object.Kind != ValueObject || vm.isSObjectLikeType(object.Type) {
@@ -820,6 +821,29 @@ func coerceReadSchemaFieldIdentity(receiver, value Value, field storage.Field) V
 	value = coerceReadSObjectFieldRuntimeValue(receiver, value, field)
 	if field.Type == storage.FieldID && value.Kind == ValueString && validateApexIDShape(value.Text) == nil {
 		value.Type = "Id"
+	}
+	return value
+}
+
+// Registered schema fields and ordinary dotted lookup share the same Boolean
+// null view. Preserve raw null for dynamic get and keep metadata's false view
+// ahead of its schema default (constructed_metadata_defaults/org.tsv:53,117).
+// Commerce's explicit-null dotted reads are captured at API62/67 in
+// commerce_extension_shapes/org.tsv:50,61,111,122.
+func coerceDottedSObjectBooleanNull(receiver, value Value, name string, definition storage.ObjectDefinition, field storage.Field) Value {
+	if value.Kind != ValueNull || field.Type != storage.FieldBoolean {
+		return value
+	}
+	explicit := isExplicitSObjectField(receiver, name)
+	if storage.IsCustomMetadataDefinition(definition) || !explicit &&
+		!storage.IsCustomSettingDefinition(definition) && hasSuffixFold(definition.APIName, "__c") {
+		return Bool(false)
+	}
+	if explicit {
+		if defaultValue, ok := storage.DefaultValueForField(field); ok {
+			return vmValueFromStorage(defaultValue)
+		}
+		return Bool(false)
 	}
 	return value
 }
@@ -1420,6 +1444,15 @@ func (vm *VM) lookupSObjectTypeToken(parts []string) (Value, bool) {
 	if canonical, ok := storage.ResolveKnownStandardObjectName(objectName); ok {
 		return sObjectTypeToken(canonical), true
 	}
+	if canonical, ok := vm.namedApexReferenceObjectName(objectName); ok {
+		if strings.EqualFold(parts[0], "Schema") && vm.namedApexReferenceClassShadow("Schema."+objectName) {
+			return Null, false
+		}
+		class, owned := vm.lookupClass(objectName)
+		if strings.EqualFold(parts[0], "Schema") || strings.EqualFold(parts[0], "SObjectType") || !owned || class.PlatformType {
+			return sObjectTypeToken(canonical), true
+		}
+	}
 	if isCustomObjectLikeName(objectName) {
 		return sObjectTypeToken(objectName), true
 	}
@@ -1478,6 +1511,9 @@ func (vm *VM) sObjectTypeTokenForName(objectName string) (Value, bool) {
 		}
 	}
 	if canonical, ok := storage.ResolveKnownStandardObjectName(objectName); ok {
+		return sObjectTypeToken(canonical), true
+	}
+	if canonical, ok := vm.namedApexReferenceObjectName(objectName); ok {
 		return sObjectTypeToken(canonical), true
 	}
 	if isCustomObjectLikeName(objectName) {
@@ -2257,8 +2293,11 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 					continue
 				}
 				value = coerceRawRecordTypeDefaultTokenRuntimeValue(field.Name, value)
-				if _, fieldDef, exists := vm.sObjectFieldDefinition(current.Type, field.Name); exists {
+				if definition, fieldDef, exists := vm.sObjectFieldDefinition(current.Type, field.Name); exists {
 					value = coerceReadSchemaFieldIdentity(current, value, fieldDef)
+					if !current.classInstance {
+						value = coerceDottedSObjectBooleanNull(current, value, field.Name, definition, fieldDef)
+					}
 				}
 				value = vm.datetimeFieldReadValue(owner, field, value)
 				current = value
@@ -2270,8 +2309,11 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 					continue
 				}
 				value = coerceRawRecordTypeDefaultTokenRuntimeValue(part, value)
-				if _, fieldDef, exists := vm.sObjectFieldDefinition(current.Type, part); exists {
+				if definition, fieldDef, exists := vm.sObjectFieldDefinition(current.Type, part); exists {
 					value = coerceReadSchemaFieldIdentity(current, value, fieldDef)
+					if !current.classInstance {
+						value = coerceDottedSObjectBooleanNull(current, value, part, definition, fieldDef)
+					}
 				}
 				value = vm.datetimeFieldReadValue(owner, field, value)
 				current = value
@@ -2284,8 +2326,11 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 						continue
 					}
 					value = coerceRawRecordTypeDefaultTokenRuntimeValue(canonical, value)
-					if _, fieldDef, exists := vm.sObjectFieldDefinition(current.Type, canonical); exists {
+					if definition, fieldDef, exists := vm.sObjectFieldDefinition(current.Type, canonical); exists {
 						value = coerceReadSchemaFieldIdentity(current, value, fieldDef)
+						if !current.classInstance {
+							value = coerceDottedSObjectBooleanNull(current, value, canonical, definition, fieldDef)
+						}
 					}
 					value = vm.datetimeFieldReadValue(owner, field, value)
 					current = value
@@ -2359,13 +2404,22 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 			if value.Kind == ValueList && vm.sObjectChildRelationshipField(current.Type, canonicalPart) {
 				value = shallowCopyListValue(value)
 			}
+			// A queried custom compound is a snapshot: later component edits do
+			// not change it (address_location_review DML_COMPONENT_AFTER_COMPOUND).
+			// No native row covers standard compounds, which keep following
+			// their components.
+			if value.Kind == ValueObject && value.Runtime == "System.Address" && hasSuffixFold(canonicalPart, "__c") {
+				current = value
+				continue
+			}
 			if addressValue, hasAddress := vm.sObjectCompoundAddressValue(current, canonicalPart); hasAddress {
 				value = addressValue
 				current = value
 				continue
 			}
-			if _, fieldDef, exists := vm.sObjectFieldDefinition(current.Type, canonicalPart); exists {
+			if definition, fieldDef, exists := vm.sObjectFieldDefinition(current.Type, canonicalPart); exists {
 				value = coerceReadSchemaFieldIdentity(current, value, fieldDef)
+				value = coerceDottedSObjectBooleanNull(current, value, canonicalPart, definition, fieldDef)
 				// Preserve the supplied COUNT snapshot on trigger records. Other
 				// rollup operations retain their existing read path until captured.
 				triggerCountSnapshot := isTriggerSObject(current) && strings.EqualFold(fieldDef.SummaryOperation, "count")
@@ -2389,23 +2443,7 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 					continue
 				}
 			}
-			if definition, fieldDef, exists := vm.sObjectFieldDefinition(current.Type, canonicalPart); exists && fieldDef.Type == storage.FieldBoolean &&
-				(storage.IsCustomMetadataDefinition(definition) || !isExplicitSObjectField(current, canonicalPart) &&
-					!storage.IsCustomSettingDefinition(definition) && hasSuffixFold(definition.APIName, "__c")) {
-				// Raw null from newSObject(loadDefaults=false) is false on dotted
-				// access; dynamic get retains the native null observation.
-				current = Bool(false)
-				continue
-			}
 			if isExplicitSObjectField(current, canonicalPart) {
-				if _, fieldDef, exists := vm.sObjectFieldDefinition(current.Type, canonicalPart); exists && fieldDef.Type == storage.FieldBoolean {
-					if defaultValue, ok := storage.DefaultValueForField(fieldDef); ok {
-						current = vmValueFromStorage(defaultValue)
-					} else {
-						current = Bool(false)
-					}
-					continue
-				}
 				if typedNull, hasTypedNull := vm.explicitParentRelationshipNullValue(current, canonicalPart); hasTypedNull {
 					current = typedNull
 					continue

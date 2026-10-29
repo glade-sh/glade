@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync/atomic"
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/diagnostic"
@@ -23,7 +24,11 @@ var visualforceControllerMethodName = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]
 // supported controller compiler checks reject it. Unrelated Apex diagnostics
 // remain outside this compile gate.
 func rejectedVisualforceControllers(p project.Project) (map[string]bool, error) {
-	index, diagnostics, err := visualforceControllerCompilation(p)
+	return rejectedVisualforceControllersWith(p, nil)
+}
+
+func rejectedVisualforceControllersWith(p project.Project, compilation *ControllerCompilation) (map[string]bool, error) {
+	index, diagnostics, err := visualforceControllerCompilationWith(p, compilation)
 	if err != nil {
 		return nil, err
 	}
@@ -83,26 +88,65 @@ func ControllerCompileDiagnostics(p project.Project) ([]diagnostic.Diagnostic, e
 }
 
 func visualforceControllerCompilation(p project.Project) (typesys.Index, []diagnostic.Diagnostic, error) {
+	return visualforceControllerCompilationWith(p, nil)
+}
+
+// ControllerCompilation is an Apex compilation of a project that the caller
+// already performed: the type index built for that project and the complete
+// semantic diagnostics of that index (sema.AnalyzeWithOptions with
+// Diagnostics enabled; ExportTypes and source transport do not change
+// diagnostics). The controller compile gate reuses it instead of building and
+// analyzing the project again, but only when the index was built from the
+// same project configuration and dependency identity as the project at hand.
+type ControllerCompilation struct {
+	Index       typesys.Index
+	Diagnostics []diagnostic.Diagnostic
+}
+
+// controllerCompilationReuses counts compile gates served from a supplied
+// ControllerCompilation. Tests use it to prove a reuse or a fallback.
+var controllerCompilationReuses atomic.Uint64
+
+func visualforceControllerCompilationWith(p project.Project, compilation *ControllerCompilation) (typesys.Index, []diagnostic.Diagnostic, error) {
+	if compilation != nil && typesys.MatchesProjectSources(compilation.Index, p) {
+		controllerCompilationReuses.Add(1)
+		// The supplied slice may be shared with a semantic cache; rewrite a copy.
+		diagnostics, err := visualforceControllerDiagnostics(p, append([]diagnostic.Diagnostic(nil), compilation.Diagnostics...))
+		if err != nil {
+			return typesys.Index{}, nil, err
+		}
+		return compilation.Index, diagnostics, nil
+	}
 	objects, err := schema.LoadProject(p)
 	if err != nil {
 		return typesys.Index{}, nil, err
 	}
 	index := typesys.Build(p, objects)
 	analysis := sema.AnalyzeWithOptions(index, sema.AnalyzeOptions{Diagnostics: true, SuppressPerformanceDiagnostics: true})
+	diagnostics, err := visualforceControllerDiagnostics(p, analysis.Diagnostics)
+	if err != nil {
+		return typesys.Index{}, nil, err
+	}
+	return index, diagnostics, nil
+}
+
+// visualforceControllerDiagnostics rewrites the project's own metadata
+// diagnostics into their native controller-compile presentation, in place.
+func visualforceControllerDiagnostics(p project.Project, diagnostics []diagnostic.Diagnostic) ([]diagnostic.Diagnostic, error) {
 	ownedSources := make(map[string]bool, len(p.ApexFiles))
 	for _, path := range p.ApexFiles {
 		ownedSources[filepath.Clean(path)] = true
 	}
-	for i, diag := range analysis.Diagnostics {
+	for i, diag := range diagnostics {
 		if ownedSources[filepath.Clean(diag.File)] && (diag.Code == "GLADESEMA006" || diag.Code == "GLADESEMA_QUERY_FIELD" || diag.Code == "GLADESEMA_QUERY_OBJECT" || diag.Code == "GLADESEMA_QUERY_RELATIONSHIP") {
 			source, err := os.ReadFile(diag.File)
 			if err != nil {
-				return typesys.Index{}, nil, err
+				return nil, err
 			}
-			analysis.Diagnostics[i] = sema.VisualforceMetadataDiagnostic(diag, string(source))
+			diagnostics[i] = sema.VisualforceMetadataDiagnostic(diag, string(source))
 		}
 	}
-	return index, analysis.Diagnostics, nil
+	return diagnostics, nil
 }
 
 func validateCompiledControllerDeclarations(root *MarkupNode, rejected map[string]bool) error {

@@ -1,0 +1,11 @@
+api	route	case	value	detail	message
+62.0	anonymous	admin_empty	REQUIRED_FIELD_MISSING	Name	Required fields are missing: [Name]
+62.0	istest	admin_empty	REQUIRED_FIELD_MISSING	Name	Required fields are missing: [Name]
+62.0	istest	false_empty	REQUIRED_FIELD_MISSING	Name	Required fields are missing: [Name]
+62.0	istest	misplaced_empty	REQUIRED_FIELD_MISSING	Name	Required fields are missing: [Name]
+62.0	istest	omitted_empty	REQUIRED_FIELD_MISSING	Name	Required fields are missing: [Name]
+67.0	anonymous	admin_empty	REQUIRED_FIELD_MISSING	Name	Required fields are missing: [Name]
+67.0	istest	admin_empty	REQUIRED_FIELD_MISSING	Name	Required fields are missing: [Name]
+67.0	istest	false_empty	REQUIRED_FIELD_MISSING	Name	Required fields are missing: [Name]
+67.0	istest	misplaced_empty	REQUIRED_FIELD_MISSING	Name	Required fields are missing: [Name]
+67.0	istest	omitted_empty	REQUIRED_FIELD_MISSING	Name	Required fields are missing: [Name]

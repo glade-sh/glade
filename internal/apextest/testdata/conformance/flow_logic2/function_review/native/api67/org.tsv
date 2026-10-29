@@ -1,0 +1,7 @@
+context	id	observation
+deployment	not_fn	{"accepted":true,"messages":[]}
+deployment	and_fn	{"accepted":false,"messages":["field integrity exception: unknown (Invalid condition logic: Check the spelling in your filter logic.)"]}
+deployment	or_fn	{"accepted":false,"messages":["field integrity exception: unknown (Invalid condition logic: Check the spelling in your filter logic.)"]}
+deployment	xor_fn	{"accepted":false,"messages":["field integrity exception: unknown (Invalid condition logic: Check the spelling in your filter logic.)"]}
+deployment	valid	{"accepted":true,"messages":[]}
+deployment	reject	{"accepted":false,"messages":["field integrity exception: unknown (Invalid condition logic: Check the spelling in your filter logic.)"]}

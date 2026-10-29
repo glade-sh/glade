@@ -78,6 +78,7 @@ type VM struct {
 	nestedTypeHierarchyCache map[nestedTypeKey]nestedTypeResult
 	enumLookup               map[string]enumClassLookup
 	enumSuffixLookup         map[string]enumClassLookup
+	enumSuffixClasses        *enumSuffixClassIndex
 	uniqueNestedTypeCache    map[string]uniqueNestedTypeLookup
 	onlyNestedTypeCache      map[string]uniqueNestedTypeLookup
 	topLevelTypeCache        map[string]uniqueNestedTypeLookup
@@ -151,8 +152,6 @@ type VM struct {
 	limitMode       LimitMode
 	limitViolations []LimitViolation
 	cpuBudgetUsed   int
-	cpuStartedAt    time.Time
-	cpuRunning      bool
 	fakeNow         time.Time
 	lastNow         time.Time
 	hasLastNow      bool
@@ -249,9 +248,12 @@ type VM struct {
 	lastAmbiguous      *overloadDiagnostic
 	activeConstructors map[string]int
 	// --- Describe caches ---
-	describeCache                map[describeCacheKey]Value
-	fieldDescribeCache           map[describeCacheKey]Value
-	globalDescribeCache          *Value
+	describeCache       map[describeCacheKey]Value
+	fieldDescribeCache  map[describeCacheKey]Value
+	globalDescribeCache *Value
+	// Private immutable key preparation after leaving a frozen generation.
+	// Never cloned; exact key equality is rechecked before each reuse.
+	globalDescribeProjectionKeys map[string]globalDescribeKeyMetadata
 	describeTabsCache            *Value
 	describeDefCache             map[string]storage.ObjectDefinition
 	customDataCache              map[string]Value
@@ -268,15 +270,18 @@ type VM struct {
 	fieldResolveCache            *fieldResolveLookupCache
 	loadedChildRelCache          *loadedChildRelationshipLookupCache
 	lazyChildRelCache            *lazyChildRelationshipLookupCache
+	childRelCandidates           *childRelationshipCandidateIndex
 	objectNameCache              map[objectNameLookupKey]objectNameLookup
 	recentlyViewed               map[string]map[storage.ID]recentlyViewedEntry
 	metadataCacheStamp           string
+	metadataCacheGeneration      uint64
+	metadataCacheLifetime        metadataCacheLifetime
 	isolationJournal             *storage.IsolationJournal
 	// describeShare holds the describe parts shared by clones of a primed
 	// base. describeShareDefinitions and sharedDescribeFieldMaps hold the
 	// entries this VM used; the latter, keyed by map identity, also tells
 	// privateDescribeFieldMap which field maps its describe roots share.
-	// Both outlive clearMetadataCaches: earlier roots can still be in use.
+	// Field-map owners outlive invalidation: earlier roots can still be in use.
 	describeShare            *describeShareCache
 	describeShareDefinitions []*describeShareDefinition
 	sharedDescribeFieldMaps  map[uintptr]*describeShareFieldMap
@@ -286,8 +291,11 @@ type VM struct {
 	staticValueRefsShared bool
 	// Serializes lazy collection/publication by concurrent template clones.
 	// Executing a VM concurrently with cloning it is still unsupported.
-	staticValueRefsMu         sync.Mutex
-	staticAliasChildHints     map[staticAliasChildHintKey]staticAliasChildHint
+	staticValueRefsMu     sync.Mutex
+	staticAliasChildHints map[staticAliasChildHintKey]staticAliasChildHint
+	// staticMapPutPathHints is true while staticAliasChildHints may hold a
+	// map-put path hint; a full scan that finds none clears it again.
+	staticMapPutPathHints     bool
 	staticAliasDirectChildren map[staticFieldRef]staticAliasDirectChildIndex
 	localOnlyCollectionRefs   map[uint64]bool
 	localOnlyObjectRefs       map[uint64]bool
@@ -314,7 +322,7 @@ type VM struct {
 	perfRecorder                *PerfRecorder
 	classLookupPerf             *classLookupPerfShard
 	scopeAliasTraversalObserver scopeAliasTraversalObserver
-	runtimeArtifactsShared      bool
+	runtimeArtifactsShared      atomic.Bool
 	methodOverlay               *methodTableOverlay
 }
 
@@ -621,6 +629,7 @@ type TestContext struct {
 	ConnectAPIFixtures       map[string]Value
 	SoqlStubs                map[string]Value
 	ParentLimits             Limits
+	parentCPUBudget          int
 	ParentViolations         []LimitViolation
 	CurrentPackageVersion    Value
 	RunAsDepth               int
@@ -815,7 +824,10 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 	clone.MethodOverloads = vm.MethodOverloads
 	clone.MethodFolded = vm.MethodFolded
 	clone.Triggers = vm.Triggers
-	clone.runtimeArtifactsShared = true
+	// Both owners must detach after publication. Concurrent cloning of a
+	// frozen source may mark it shared more than once, hence the atomic flag.
+	clone.runtimeArtifactsShared.Store(true)
+	vm.runtimeArtifactsShared.Store(true)
 	clone.methodOverlay = vm.methodOverlay.clone()
 	// Alias-escape tracking indexes populated Platform Cache entries as alias roots
 	// in the static-root index under the partition name. A frozen clone copies
@@ -905,6 +917,7 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 	// SetOrg always clears these pointers before installing any mutable org
 	// because the compact stamp is not a complete schema manifest.
 	clone.metadataCacheStamp = vm.metadataCacheStamp
+	clone.metadataCacheGeneration = vm.metadataCacheGeneration
 	if strings.TrimSpace(vm.metadataCacheStamp) != "" {
 		clone.jsonChildRelTypeCache = vm.jsonChildRelTypeCache
 		clone.childRelCache = vm.childRelCache
@@ -979,10 +992,10 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 // RegisterMethod on a shared clone (per-test registration in the apextest
 // runner) writes to the small method overlay instead and copies nothing.
 func (vm *VM) ensureRuntimeArtifactsOwned() {
-	if vm == nil || !vm.runtimeArtifactsShared {
+	if vm == nil || !vm.runtimeArtifactsShared.Load() {
 		return
 	}
-	vm.runtimeArtifactsShared = false
+	vm.runtimeArtifactsShared.Store(false)
 	vm.Methods = copyMethodMap(vm.Methods)
 	vm.MethodOverloads = copyMethodSliceMap(vm.MethodOverloads)
 	vm.MethodFolded = copyMethodSliceMap(vm.MethodFolded)
@@ -1683,6 +1696,7 @@ func (vm *VM) SetOrg(org *storage.OrgState) {
 		vm.metadataCacheStamp = nextStamp
 	}
 	vm.Org = org
+	vm.metadataCacheLifetime = metadataLifetimeForOrg(org)
 	vm.installManagedFeatureParameters(org, false)
 	// Host code may install schema after supplying values. Recheck those
 	// roots before newly resolved SObject types become eligible for pruning.
@@ -1709,19 +1723,21 @@ func (vm *VM) SetOrg(org *storage.OrgState) {
 }
 
 // SetRuntimeTemplateOrg installs a fresh clone of the schema generation that
-// this VM was cloned from. All other org changes must use SetOrg.
+// this VM was cloned from. Matching stamp text alone never proves that
+// provenance; an unrelated generation uses SetOrg and discards every cache.
 func (vm *VM) SetRuntimeTemplateOrg(org *storage.OrgState) {
 	vm.ensureChangeEventObjects(org)
 	vm.recordCreations = nil
 	vm.lookupHistoryScope = nil
 	vm.creationSavepoints = nil
 	stamp := runtimeSchemaStampHintForOrg(org)
-	if stamp == "" || stamp != vm.metadataCacheStamp {
+	if vm.Org != nil || stamp == "" || stamp != vm.metadataCacheStamp || vm.metadataCacheGeneration == 0 || org.RuntimeGenerationID() != vm.metadataCacheGeneration {
 		vm.SetOrg(org)
 		return
 	}
 	vm.installManagedFeatureParameters(org, true)
 	vm.Org = org
+	vm.metadataCacheLifetime = metadataLifetimeForOrg(org)
 	if vm.soqlExecutionCache == nil {
 		vm.soqlExecutionCache = soql.NewExecutionCache()
 	}
@@ -1734,19 +1750,22 @@ func (vm *VM) SetRuntimeTemplateOrg(org *storage.OrgState) {
 	}
 }
 
-// PrimeMetadataSchema records the compact schema stamp for org without touching
-// the org or clearing caches. Clones may tentatively share the base cache graph,
-// but SetOrg always detaches it before installing mutable org state.
+// PrimeMetadataSchema replaces the preparation graph without changing org.
+// Only generation-owned immutable preparation may survive priming; VM-owned
+// results and preparation from an unstamped org must never cross this boundary.
 func (vm *VM) PrimeMetadataSchema(org *storage.OrgState) {
 	if vm == nil {
 		return
 	}
+	vm.discardMetadataCaches()
+	vm.metadataCacheLifetime = metadataLifetimeForOrg(org)
 	stamp := runtimeSchemaStampHintForOrg(org)
 	if stamp == "" {
 		stamp = schemaCacheStampForOrg(org)
 	}
 	if stamp != "" {
 		vm.metadataCacheStamp = stamp
+		vm.metadataCacheGeneration = org.RuntimeGenerationID()
 		if org != nil && strings.TrimSpace(org.RuntimeSchemaStamp) != "" {
 			caches := runtimeGenerationCachesForOrg(org, stamp)
 			vm.childRelCache = caches.childRel
@@ -1785,6 +1804,7 @@ func PrimeRuntimeTemplateSchema(template *storage.RuntimeTemplate) {
 		template.Org.InvalidateRuntimeGeneration()
 	}
 	storage.EnsureUniqueKeyPrefixes(&template.Org)
+	storage.PrimeStandardObjectEnsureNoops(&template.Org)
 	stamp := schemaCacheStampForOrg(&template.Org)
 	template.RuntimeSchemaStamp = stamp
 	template.Org.RuntimeSchemaStamp = stamp
@@ -2137,6 +2157,7 @@ func (vm *VM) SetContext(ctx context.Context) {
 }
 
 func (vm *VM) newDMLEngine(result *Result) dml.Engine {
+	vm.ensureMetadataCacheGeneration()
 	engine := dml.NewEngine(vm.Org)
 	if vm.dmlSummaryByChild == nil {
 		vm.dmlSummaryByChild = dml.NewSummaryRelationCache()
@@ -2163,6 +2184,9 @@ func (vm *VM) newDMLEngine(result *Result) dml.Engine {
 	}
 	engine.FlowActionInvokerWithContext = func(action storage.FlowAction, record storage.Record, context dml.FlowActionContext) error {
 		return vm.invokeFlowActionWithContext(action, record, context, result)
+	}
+	engine.FlowActionBatchInvoker = func(action storage.FlowAction, requests []dml.FlowActionRequest) error {
+		return vm.invokeFlowActionBatch(action, requests, result)
 	}
 	engine.FlowPathEnqueuer = vm.enqueueFlowAsyncPath
 	if vm.currentAsyncKind == "FlowAsyncPath" {
@@ -2196,6 +2220,13 @@ func (vm *VM) invokeFlowAction(action storage.FlowAction, record storage.Record,
 }
 
 func (vm *VM) invokeFlowActionWithContext(action storage.FlowAction, record storage.Record, context dml.FlowActionContext, result *Result) error {
+	return vm.invokeFlowActionBatch(action, []dml.FlowActionRequest{{Record: record, Context: context}}, result)
+}
+
+func (vm *VM) invokeFlowActionBatch(action storage.FlowAction, requests []dml.FlowActionRequest, result *Result) error {
+	if len(requests) == 0 {
+		return nil
+	}
 	method, ok, err := vm.resolveFlowInvocableMethod(action)
 	if err != nil {
 		return err
@@ -2218,25 +2249,47 @@ func (vm *VM) invokeFlowActionWithContext(action storage.FlowAction, record stor
 		// Rollup). Runtime values still need the owning class qualification so
 		// member lookup sees the nested class fields.
 		elementType = vm.qualifyFlowActionElementType(method, elementType)
-		item, directEvent := vm.platformEventFlowActionInput(action, record, method, elementType)
-		if !directEvent {
-			item, err = vm.flowActionInputObject(action, record, context, elementType, method.Params[0].Name, result)
-			if err != nil {
-				return err
+		items := make([]Value, 0, len(requests))
+		for _, request := range requests {
+			item, directEvent := vm.platformEventFlowActionInput(action, request.Record, method, elementType)
+			if !directEvent {
+				item, err = vm.flowActionInputObject(action, request.Record, request.Context, elementType, method.Params[0].Name, result)
+				if err != nil {
+					return err
+				}
 			}
+			items = append(items, item)
 		}
-		arg := List(item)
+		arg := List(items...)
 		arg.Type = method.Params[0].Type
 		args = []Value{arg}
 	}
-	appendTrace(result, "apex.flow.action", "apex.flow", map[string]any{
-		"action": action.Name,
-		"class":  method.ClassName,
-		"method": method.Name,
-		"record": string(record.ID),
-		"object": record.Object,
-	})
-	_, err = vm.callMethod(method, args, result)
+	for _, request := range requests {
+		appendTrace(result, "apex.flow.action", "apex.flow", map[string]any{
+			"action": action.Name,
+			"class":  method.ClassName,
+			"method": method.Name,
+			"record": string(request.Record.ID),
+			"object": request.Record.Object,
+		})
+	}
+	returned, err := vm.callMethod(method, args, result)
+	if err == nil && (returned.Kind == ValueList || returned.Kind == ValueNull) {
+		// Native flow_followups AO01-AO14: positional outputs, null for
+		// missing positions, and no cardinality error for surplus elements.
+		for i, request := range requests {
+			if request.Context.Output == nil {
+				continue
+			}
+			value := Null
+			if returned.Kind == ValueList && i < len(returned.List) {
+				value = returned.List[i]
+			}
+			if output, convertErr := storageValueFromVM(value); convertErr == nil {
+				request.Context.Output(output)
+			}
+		}
+	}
 	if err != nil {
 		var thrown *apexThrowError
 		if errors.As(err, &thrown) {
@@ -2568,6 +2621,36 @@ func (vm *VM) applyDeferredAutomation(engine *dml.Engine, records, oldRecords []
 		return nil
 	}
 	sideEffects := vm.snapshotSideEffects()
+	// The native bulk capture uses atomic inserts. Partial-save scheduling
+	// retains its existing per-record path.
+	if allOrNone {
+		if handled, err := engine.ApplyFlowActionBatch(records, func(i int, outcome dml.AutomationResult) error {
+			record := records[i]
+			appendTrace(result, "apex.automation.apply", "apex.automation", map[string]any{
+				"object": record.Object,
+				"id":     string(record.ID),
+			})
+			if !outcome.WorkflowUpdated && !outcome.FlowUpdated {
+				return nil
+			}
+			oldRecord := record
+			if i < len(oldRecords) {
+				oldRecord = oldRecords[i]
+			}
+			return vm.refireAutomationUpdateTriggers(record.Object, record.ID, oldRecord, allOrNone, rollback, result)
+		}); handled {
+			if err != nil && allOrNone {
+				if rollbackErr := vm.restoreDMLRollbackPoint(rollback); rollbackErr != nil {
+					return rollbackErr
+				}
+				vm.restoreSideEffects(sideEffects)
+				appendTrace(result, "apex.automation.rollback", "apex.automation", map[string]any{
+					"count": len(records), "reason": err.Error(),
+				})
+			}
+			return err
+		}
+	}
 	for i, record := range records {
 		if record.Object == "" || record.ID == "" {
 			continue
@@ -2714,7 +2797,10 @@ func (vm *VM) clearTriggerMatchCache() {
 	if vm == nil {
 		return
 	}
-	vm.triggerMatchCache.reset()
+	// The old cache may still belong to a source or sibling with different
+	// private registrations. Resetting it in place would let this VM publish
+	// its matches back into that owner's cache.
+	vm.triggerMatchCache = newTriggerMatchCache()
 	vm.triggerNamespaceCache = make(map[triggerNamespaceLookupKey]string)
 }
 
@@ -2993,6 +3079,7 @@ func (vm *VM) ExecuteTestInClass(program ir.Program, className string) (Result, 
 }
 
 func (vm *VM) execute(program ir.Program, className string) (result Result, err error) {
+	vm.ensureMetadataCacheGeneration()
 	if vm.testContext == nil {
 		previous := vm.mixedDML
 		vm.mixedDML = mixedDMLState{}
@@ -3009,7 +3096,6 @@ func (vm *VM) execute(program ir.Program, className string) (result Result, err 
 	defer func() {
 		vm.closedSOQLLocals, vm.dynamicSOQLBindRoute = callerClosedLocals, callerBindRoute
 	}()
-	vm.startCPUClock()
 	result = Result{Vars: vm.Globals, traceEnabled: vm.traceEnabled}
 	if vm.traceEnabled {
 		result.TraceFormat = trace.FormatChromeTraceEvent

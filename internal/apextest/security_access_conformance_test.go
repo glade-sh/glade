@@ -236,7 +236,7 @@ func TestSecurityAccessOrgConformance(t *testing.T) {
 		return prefix
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "security access", api)
 			if api != "68.0" {
 				t.Run("namespace-shadow-controls", func(t *testing.T) {

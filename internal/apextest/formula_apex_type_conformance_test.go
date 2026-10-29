@@ -119,7 +119,7 @@ func runFormulaApexConformance(t *testing.T, cluster string, shapes, cells int) 
 	}
 	bases := newConformanceSchemaCache(t)
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "FormulaApex"+cluster, api)
 			for _, row := range data.Rows {
 				t.Run(row.ID, func(t *testing.T) {

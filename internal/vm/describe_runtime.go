@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"maps"
 	"reflect"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 
+	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/storage"
 )
@@ -17,12 +19,13 @@ import (
 // not allocate concatenated keys. Permission assignments are still read anew
 // for each lookup, including updates that leave the record count unchanged.
 type describeCacheKey struct {
-	ObjectName     string
-	FieldName      string
-	ProfileID      string
-	UserID         string
-	PermissionSets string
-	TaskFieldOrder bool
+	ObjectName                  string
+	FieldName                   string
+	ProfileID                   string
+	UserID                      string
+	PermissionSets              string
+	TaskFieldOrder              bool
+	OmitPermissionViewAllFields bool
 }
 
 // childRelationshipCache memoizes parent-object -> child relationship describe
@@ -261,6 +264,7 @@ func cloneChildRelationshipValue(value Value) Value {
 }
 
 func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinition) Value {
+	vm.ensureMetadataCacheGeneration()
 	cacheKey := vm.describeSObjectCacheKey(name)
 	if cacheKey != (describeCacheKey{}) {
 		if cached, ok := vm.describeCache[cacheKey]; ok {
@@ -381,6 +385,7 @@ func (vm *VM) describeSObjectFieldMap(name string, definition storage.ObjectDefi
 		fieldNames = append(fieldNames, fieldName)
 	}
 	vm.sortDescribeFieldNames(name, definition, fieldNames)
+	omitViewAllFields := vm.omitPermissionViewAllFields(name)
 	for _, fieldName := range fieldNames {
 		field := definition.Fields[fieldName]
 		apiName := field.APIName
@@ -388,6 +393,9 @@ func (vm *VM) describeSObjectFieldMap(name string, definition storage.ObjectDefi
 			apiName = fieldName
 		}
 		if strings.TrimSpace(apiName) == "" {
+			continue
+		}
+		if omitViewAllFields && strings.EqualFold(apiName, "PermissionsViewAllFields") {
 			continue
 		}
 		field.APIName = apiName
@@ -438,6 +446,7 @@ func (vm *VM) describeChildRelationshipsForDescribe(receiver *Value) (Value, err
 }
 
 func (vm *VM) describePreparedDefinition(name string, definition storage.ObjectDefinition) storage.ObjectDefinition {
+	vm.ensureMetadataCacheGeneration()
 	cacheKey := strings.ToLower(strings.TrimSpace(name))
 	if vm != nil && cacheKey != "" {
 		if vm.describeDefCache == nil {
@@ -646,6 +655,7 @@ func (vm *VM) sObjectFieldMapAliases(objectName, fieldName string) []string {
 }
 
 func (vm *VM) describeChildRelationships(name string) []Value {
+	vm.ensureMetadataCacheGeneration()
 	if vm == nil || vm.Org == nil {
 		return nil
 	}
@@ -756,22 +766,113 @@ func (vm *VM) globalDescribeMapValue() Value {
 	if vm.Org == nil || vm.Org.Namespace == "" {
 		return value
 	}
-	// Global describe exposes only qualified owner-side custom entities. Keep
-	// this projection separate from the raw app/module map and its cache.
+	// Only keys are immutable preparation. The raw app/module map and its
+	// token payloads remain writable in the local compatibility baseline, and
+	// synthesized change-event tokens belong to one call. Rebuild the values
+	// from the current raw map; share verified key metadata and typed bindings.
+	caller := vm.currentCallerNamespace()
 	value.Map = maps.Clone(value.Map)
 	for key, token := range value.Map {
 		objectName := token.Fields["object"].Text
-		if vm.ownedGlobalDescribeLocalKey(mapStoredKey(value, key).Text, objectName) {
+		if vm.ownedGlobalDescribeLocalKeyForCaller(mapStoredKey(value, key).Text, objectName, caller) {
 			delete(value.Map, key)
 		}
 	}
 	for name := range vm.Org.Objects {
-		if vm.ownedNamespacedCustomGlobalDescribe(name) {
+		if vm.ownedNamespacedCustomGlobalDescribeForCaller(name, caller) {
 			event := name[:len(name)-len("__c")] + "__ChangeEvent"
 			value.Map[mapKey(String(strings.ToLower(event)))] = sObjectTypeToken(event)
 		}
 	}
+	vm.fillGlobalDescribeProjectionKeys(&value, caller)
+	value.mapBackingShared = true
 	return value
+}
+
+// typedGlobalDescribeViewType reports whether typeName is the declared type of
+// a global describe view, Map<String, Schema.SObjectType>, whose entries a
+// typed assignment leaves unchanged.
+func typedGlobalDescribeViewType(typeName string) bool {
+	keyType, valueType, ok := mapTypeArgs(typeName)
+	if !ok || !strings.EqualFold(strings.TrimSpace(keyType), "String") {
+		return false
+	}
+	valueType = strings.TrimPrefix(canonicalRuntimePlatformType(valueType), "Schema.")
+	return strings.EqualFold(valueType, "SObjectType")
+}
+
+// sharedGlobalDescribeView gives a pristine global result a typed private
+// identity without copying its entries. Typed aliases keep their existing
+// identity via coerceAssignable; raw app/module maps never use this shortcut.
+func (vm *VM) sharedGlobalDescribeView(value Value, typeName string) (Value, bool) {
+	if vm == nil || !isGlobalDescribeMap(value) || value.Type != globalDescribeMapType || value.Ref == 0 || !value.globalDescribeEntriesCanonical || len(value.MapKeys) != len(value.Map) {
+		return Value{}, false
+	}
+	if !value.mapBackingShared {
+		entry, ok := vm.globalDescribeCacheEntry(value.Ref)
+		if !ok || !sameMapBacking(entry.Map, value.Map) {
+			return Value{}, false
+		}
+		entry.mapBackingShared = true
+		vm.storeGlobalDescribeCacheEntry(*entry)
+	}
+	view := value
+	view.Ref = newValueRef()
+	view.Type = typeName
+	view.mapBackingShared = true
+	return view, true
+}
+
+// globalDescribeCacheEntry finds the raw app/module describe cache by identity.
+func (vm *VM) globalDescribeCacheEntry(ref uint64) (*Value, bool) {
+	if vm.globalDescribeCache != nil && vm.globalDescribeCache.Ref == ref {
+		return vm.globalDescribeCache, true
+	}
+	return nil, false
+}
+
+func (vm *VM) storeGlobalDescribeCacheEntry(entry Value) {
+	// A namespaced global result is a per-call projection, even though the
+	// baseline retains the raw map's identity. Only raw app/module writes may
+	// update that cache. Typed holders already have private identities.
+	if isGlobalDescribeMap(entry) && vm.Org != nil && vm.Org.Namespace != "" {
+		return
+	}
+	if vm.globalDescribeCache != nil && vm.globalDescribeCache.Ref == entry.Ref {
+		// The base cache also backs app/module describe. The global-only
+		// lookup marker belongs to the returned view, never to that base.
+		entry.Runtime = ""
+		*vm.globalDescribeCache = entry
+		return
+	}
+}
+
+// prepareSharedMapMutation detaches shared entries before publishing a map
+// write. Reference identity stays unchanged so ordinary alias writeback still
+// reaches every alias of this holder. Other typed holders have distinct refs.
+func (vm *VM) prepareSharedMapMutation(receiver *Value) {
+	if receiver == nil || receiver.Kind != ValueMap {
+		return
+	}
+	_, cached := vm.globalDescribeCacheEntry(receiver.Ref)
+	if !receiver.mapBackingShared && !cached {
+		return
+	}
+	receiver.Map = maps.Clone(receiver.Map)
+	receiver.MapKeys = maps.Clone(receiver.MapKeys)
+	receiver.MapOrder = slices.Clone(receiver.MapOrder)
+	receiver.mapBackingShared = false
+	receiver.globalDescribeEntriesCanonical = false
+	recordFieldMapHolderDetach(*receiver)
+}
+
+func mapMutatingMemberName(method string) bool {
+	switch canonicalCollectionMemberName("Map", method) {
+	case "put", "putAll", "remove", "clear":
+		return true
+	default:
+		return false
+	}
 }
 
 func isGlobalDescribeMap(value Value) bool {
@@ -893,6 +994,9 @@ func (vm *VM) describeObjectDefinition(objectName string) (string, storage.Objec
 	}
 	if definition, ok := storage.StandardObjectDefinition(objectName); ok {
 		return definition.APIName, definition, true
+	}
+	if canonical, ok := vm.namedApexReferenceObjectName(objectName); ok {
+		return canonical, storage.ObjectDefinition{APIName: canonical}, true
 	}
 	if event, ok := standardChangeEventName(objectName); ok {
 		return event, storage.ObjectDefinition{APIName: event}, true
@@ -1039,6 +1143,16 @@ func isNameFieldDescribe(field storage.Field) bool {
 	// Task.Subject are the standard COMBOBOX fields; Case.Subject and other
 	// ordinary text fields with the same API name are not name fields.
 	return strings.EqualFold(field.APIName, "Subject") && strings.EqualFold(field.DisplayType, "COMBOBOX")
+}
+
+// isCustomAddressComponent reports a generated component of a custom Address
+// field; native describe marks those components custom.
+func isCustomAddressComponent(definition storage.ObjectDefinition, field storage.Field) bool {
+	if _, ok := storage.CustomAddressComponentKey(field.CompoundFieldName, field.APIName); !ok {
+		return false
+	}
+	compound, ok := definition.Fields[field.CompoundFieldName]
+	return ok && compound.Type == storage.FieldAddress
 }
 
 func isCustomSchemaName(name string) bool {
@@ -1739,6 +1853,7 @@ func recordTypeInfoValue(recordType storage.RecordTypeInfo) Value {
 }
 
 func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
+	vm.ensureMetadataCacheGeneration()
 	objectName, definition, ok := vm.describeObjectDefinition(objectName)
 	if !ok {
 		return Null, fmt.Errorf("Schema field describe unknown object %s", objectName)
@@ -1836,7 +1951,7 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	if nameField, known := storage.StandardFieldNameFlag(orgDefinition, field.APIName); known {
 		desc.Fields["nameField"] = Bool(nameField)
 	}
-	desc.Fields["custom"] = Bool(isCustomSchemaName(field.APIName))
+	desc.Fields["custom"] = Bool(isCustomSchemaName(field.APIName) || isCustomAddressComponent(orgDefinition, field))
 	desc.Fields["length"] = Int(int64(describeFieldLength(field)))
 	desc.Fields["precision"] = Int(int64(describeFieldPrecision(field)))
 	desc.Fields["scale"] = Int(int64(describeFieldScale(field)))
@@ -2045,7 +2160,21 @@ func (vm *VM) fieldDescribeCacheKeys(objectName, fieldName string) []describeCac
 func (vm *VM) describeSObjectCacheKey(objectName string) describeCacheKey {
 	key := vm.describePermissionCacheKey(strings.ToLower(strings.TrimSpace(objectName)), "")
 	key.TaskFieldOrder = vm.usesCapturedTaskDescribeFieldOrder(objectName)
+	key.OmitPermissionViewAllFields = vm.omitPermissionViewAllFields(objectName)
 	return key
+}
+
+// The captured field map omits this member at API 62 and exposes it at 63/67.
+// Keep the storage catalog intact: only this describe-map boundary was probed.
+func (vm *VM) omitPermissionViewAllFields(objectName string) bool {
+	if vm == nil || !strings.EqualFold(objectName, "ObjectPermissions") {
+		return false
+	}
+	version := vm.currentMethod.APIVersion
+	if version == "" && vm.Org != nil {
+		version = vm.Org.APIVersion
+	}
+	return apexversion.AtLeast(version, 62) && !apexversion.AtLeast(version, 63)
 }
 
 func (vm *VM) fieldDescribeCacheKey(objectName, fieldName string) describeCacheKey {
@@ -2135,6 +2264,7 @@ func appendUniqueStringFold(values []string, value string) []string {
 }
 
 func (vm *VM) describeSyntheticFieldValue(objectName, fieldName string, field storage.Field) (Value, error) {
+	vm.ensureMetadataCacheGeneration()
 	cacheKey := vm.fieldDescribeCacheKey(objectName, fieldName)
 	if cached, ok := vm.fieldDescribeCache[cacheKey]; ok {
 		return cached, nil
@@ -2436,6 +2566,9 @@ func approxValueSize(value Value) int {
 }
 
 func approxValueSizeSeen(value Value, seen map[approxVisitKey]bool) int {
+	if value.Kind == ValueMap && value.mapKeySetSource != nil {
+		value = value.currentFieldMapHolder()
+	}
 	switch value.Kind {
 	case ValueList, ValueSet, ValueMap, ValueObject:
 		key := approxVisitKey{kind: value.Kind, ref: value.Ref}
@@ -2512,7 +2645,17 @@ func (vm *VM) ownedNamespacedCustomGlobalDescribe(name string) bool {
 	if vm.Org == nil || vm.Org.Namespace == "" || !hasSuffixFold(name, "__c") {
 		return false
 	}
-	if caller := vm.currentCallerNamespace(); caller != "" && !strings.EqualFold(caller, vm.Org.Namespace) {
+	return vm.ownedNamespacedCustomGlobalDescribeForCaller(name, vm.currentCallerNamespace())
+}
+
+// ownedNamespacedCustomGlobalDescribeForCaller is ownedNamespacedCustomGlobalDescribe
+// with the caller namespace already resolved; one global describe call resolves
+// it once for every key instead of once per key.
+func (vm *VM) ownedNamespacedCustomGlobalDescribeForCaller(name, caller string) bool {
+	if vm.Org == nil || vm.Org.Namespace == "" || !hasSuffixFold(name, "__c") {
+		return false
+	}
+	if caller != "" && !strings.EqualFold(caller, vm.Org.Namespace) {
 		return false
 	}
 	prefix, qualified := namespaceTokenPrefix(name)
@@ -2527,6 +2670,13 @@ func (vm *VM) ownedGlobalDescribeLocalKey(key, resolved string) bool {
 	if vm.Org == nil || vm.Org.Namespace == "" {
 		return false
 	}
+	return vm.ownedGlobalDescribeLocalKeyForCaller(key, resolved, vm.currentCallerNamespace())
+}
+
+func (vm *VM) ownedGlobalDescribeLocalKeyForCaller(key, resolved, caller string) bool {
+	if vm.Org == nil || vm.Org.Namespace == "" {
+		return false
+	}
 	_, qualified := namespaceTokenPrefix(strings.TrimSpace(key))
 	if qualified {
 		return false
@@ -2536,8 +2686,8 @@ func (vm *VM) ownedGlobalDescribeLocalKey(key, resolved string) bool {
 	} else if hasSuffixFold(resolved, "__ChangeEvent") {
 		resolved = resolved[:len(resolved)-len("__ChangeEvent")] + "__c"
 	}
-	if canonical, ok := vm.resolveObjectName(resolved); ok {
+	if canonical, ok := vm.resolveObjectNameForCaller(resolved, caller); ok {
 		resolved = canonical
 	}
-	return vm.ownedNamespacedCustomGlobalDescribe(resolved)
+	return vm.ownedNamespacedCustomGlobalDescribeForCaller(resolved, caller)
 }

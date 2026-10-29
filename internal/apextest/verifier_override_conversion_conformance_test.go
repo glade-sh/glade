@@ -45,7 +45,7 @@ type overrideConversionCapture struct {
 func TestVerifierOverrideConversionOrgConformance(t *testing.T) {
 	data := readOverrideConversionCapture(t)
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "VerifierOverrideConversion", api)
 			classes := make(map[string]string, len(data.SupportClasses)+1)
 			for name, source := range data.SupportClasses {

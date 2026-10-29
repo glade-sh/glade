@@ -149,7 +149,7 @@ func runTypedNullConformance(t *testing.T, file, cluster string, shapes, cells i
 		t.Fatalf("independent semantic cells=%d, expected=%d", observations, cells)
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "C156TN-"+cluster, api)
 			baseIndex := typedNullIndex(t, api, nil)
 			org := orgFromIndex(baseIndex)

@@ -372,6 +372,7 @@ func ExecuteWithCacheAndContext(org storage.OrgState, query Query, cache *Execut
 		}
 		for _, record := range records {
 			removeHiddenAggregateFields(record.Fields, query.orderAggregates)
+			removeUnselectedGroupFields(record.Fields, query, org)
 		}
 		return Result{
 			Records: records, Rows: len(records),

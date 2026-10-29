@@ -150,7 +150,7 @@ func TestApexMetadataOrgConformance(t *testing.T) {
 		return prefix + "try {Object r; " + code + " pq.out('" + row.ID + "',r);}catch(Exception e){pq.err('" + row.ID + "',e);}"
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "Apex metadata", api)
 			root := t.TempDir()
 			baseSources := map[string]string{"ApexMetadataOracleOutput": helper}

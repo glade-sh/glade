@@ -1,0 +1,11 @@
+api	route	case	observed	source_sha256
+62.0	anonymous	constructor-query	PASS	f73a8458922a2ef0560add83eb3f6dfb54f467435cf11f0c5de95004e67ff3c1
+62.0	named	constructor-query	PASS	f73a8458922a2ef0560add83eb3f6dfb54f467435cf11f0c5de95004e67ff3c1
+62.0	test-runner	constructor-query	PASS	f73a8458922a2ef0560add83eb3f6dfb54f467435cf11f0c5de95004e67ff3c1
+62.0	query	Account.PersonAccount	IsPersonType=true	-
+67.0	anonymous	constructor-query	PASS	f73a8458922a2ef0560add83eb3f6dfb54f467435cf11f0c5de95004e67ff3c1
+67.0	named	constructor-query	PASS	f73a8458922a2ef0560add83eb3f6dfb54f467435cf11f0c5de95004e67ff3c1
+67.0	test-runner	constructor-query	PASS	f73a8458922a2ef0560add83eb3f6dfb54f467435cf11f0c5de95004e67ff3c1
+67.0	query	Account.PersonAccount	IsPersonType=true	-
+67.0	listMetadata	Account.PersonAccount	LISTED	-
+67.0	retrieve	PersonAccount.PersonAccount	RETRIEVED	-

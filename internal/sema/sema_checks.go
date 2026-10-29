@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
+	"sync"
 	"unicode"
 
 	"github.com/glade-sh/glade/internal/apexast"
@@ -102,18 +104,25 @@ func triggerObjectSupportsTriggers(index typesys.Index, objectName string) (supp
 	}
 	return storage.StandardObjectTriggerable(objectName)
 }
-func (a *Analyzer) checkMemberTypes(index typesys.Index) []diagnostic.Diagnostic {
+func (a *Analyzer) checkMemberTypes(index typesys.Index, model *semaTypeMemberView) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
+	named := a.namedApexSourceAnalyzer()
 	for _, typ := range index.Types {
 		if skipProjectDiagnosticType(typ) {
 			continue
+		}
+		// Native named classes and interfaces accept the named-source reference
+		// object types in field, property, return and collection signatures.
+		analyzer := a
+		if semaNamedApexSourceType(typ) {
+			analyzer = named
 		}
 		for _, member := range typ.Members {
 			if member.Type == "" || member.Type == "void" {
 				continue
 			}
 			for _, ref := range extractTypeNames(member.Type) {
-				if a.hasKnownAtVersion(ref, typ.EffectiveAPIVersion) {
+				if semaTypeReferenceKnownAtVersion(analyzer, model, typ.Name, ref, typ.EffectiveAPIVersion) {
 					continue
 				}
 				diagnostics = append(diagnostics, diagnostic.Diagnostic{
@@ -129,11 +138,16 @@ func (a *Analyzer) checkMemberTypes(index typesys.Index) []diagnostic.Diagnostic
 	}
 	return diagnostics
 }
-func (a *Analyzer) checkMethodParameters(index typesys.Index) []diagnostic.Diagnostic {
+func (a *Analyzer) checkMethodParameters(index typesys.Index, model *semaTypeMemberView) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
+	named := a.namedApexSourceAnalyzer()
 	for _, typ := range index.Types {
 		if skipProjectDiagnosticType(typ) {
 			continue
+		}
+		analyzer := a
+		if semaNamedApexSourceType(typ) {
+			analyzer = named
 		}
 		for _, member := range typ.Members {
 			if member.Kind != apexast.DeclarationMethod && member.Kind != apexast.DeclarationConstructor {
@@ -141,16 +155,21 @@ func (a *Analyzer) checkMethodParameters(index typesys.Index) []diagnostic.Diagn
 			}
 			for _, param := range member.Parameters {
 				for _, ref := range extractTypeNames(param.Type) {
-					if a.hasKnownAtVersion(ref, typ.EffectiveAPIVersion) {
+					if semaTypeReferenceKnownAtVersion(analyzer, model, typ.Name, ref, typ.EffectiveAPIVersion) {
 						continue
 					}
-					diagnostics = append(diagnostics, diagnostic.Diagnostic{
+					item := diagnostic.Diagnostic{
 						Severity: diagnostic.Error,
 						Code:     "GLADESEMA004",
 						Message:  fmt.Sprintf("%s %q parameter %q references unknown type %q", member.Kind, member.Name, param.Name, ref),
 						File:     typ.File,
 						Range:    &param.Range,
-					})
+					}
+					// Captured reference-only parameter rejections (named-org.tsv).
+					if storage.IsReferenceOnlyStandardObject(ref) {
+						item.NativeMessage = "Invalid type: " + ref
+					}
+					diagnostics = append(diagnostics, item)
 				}
 			}
 		}
@@ -162,7 +181,7 @@ func (a *Analyzer) checkSchemaReferences(index typesys.Index) []diagnostic.Diagn
 	for _, object := range index.Objects {
 		for _, field := range object.Fields {
 			for _, referenceTo := range field.ReferenceTo {
-				if referenceTo == "" || a.hasKnown(referenceTo) {
+				if referenceTo == "" || a.hasKnown(referenceTo) || storage.IsReferenceOnlyStandardObject(referenceTo) {
 					continue
 				}
 				diagnostics = append(diagnostics, diagnostic.Diagnostic{
@@ -203,6 +222,7 @@ func (a *Analyzer) checkQuerySemantics(index typesys.Index) []diagnostic.Diagnos
 		if version, ok := apexversion.Major(typ.EffectiveAPIVersion); ok {
 			sourceChecker.apiVersion = version
 		}
+		sourceChecker.namedApexReferenceObjects = semaNamedApexSourceType(typ)
 		diagnostics = append(diagnostics, sourceChecker.checkFileWithFacts(typ.File, facts)...)
 	}
 	return diagnostics
@@ -317,6 +337,8 @@ type querySemanticsChecker struct {
 	knownTypes     map[string]bool
 	bindingTypes   []typesys.TypeSymbol
 	hasBaseline    bool
+	// namedApexReferenceObjects is set for files declaring named classes.
+	namedApexReferenceObjects bool
 }
 
 func newQuerySemanticsChecker(index typesys.Index, declaredObjects ...schema.Object) querySemanticsChecker {
@@ -334,12 +356,6 @@ func newQuerySemanticsChecker(index typesys.Index, declaredObjects ...schema.Obj
 		checker.knownTypes[strings.ToLower(typ.Name)] = true
 		checker.knownTypes[strings.ToLower(typ.LocalName)] = true
 	}
-	for _, typ := range typesys.StandardPlatformSymbolView() {
-		checker.knownTypes[strings.ToLower(typ.Name)] = true
-		if typ.Namespace != "" {
-			checker.knownTypes[strings.ToLower(typ.Namespace+"."+typ.Name)] = true
-		}
-	}
 	for _, object := range declaredObjects {
 		checker.recordDeclaredFields(object)
 	}
@@ -348,6 +364,37 @@ func newQuerySemanticsChecker(index typesys.Index, declaredObjects ...schema.Obj
 	}
 	checker.addActivityFieldsToTaskAndEvent()
 	return checker
+}
+
+var (
+	semaPlatformKnownTypesOnce  sync.Once
+	semaPlatformKnownTypesCache map[string]bool
+)
+
+// semaPlatformKnownTypes returns the lowered standard-platform type names.
+// The set is identical for every index, so every checker shares one copy
+// built once instead of lowering the whole platform symbol table per
+// analysis. Its sole input is the immutable compiled platform symbol view;
+// it needs no project/API/org invalidation. Project names belong exclusively
+// to querySemanticsChecker.knownTypes. Readers never mutate the shared map.
+func semaPlatformKnownTypes() map[string]bool {
+	semaPlatformKnownTypesOnce.Do(func() {
+		known := make(map[string]bool)
+		for _, typ := range typesys.StandardPlatformSymbolView() {
+			known[strings.ToLower(typ.Name)] = true
+			if typ.Namespace != "" {
+				known[strings.ToLower(typ.Namespace+"."+typ.Name)] = true
+			}
+		}
+		semaPlatformKnownTypesCache = known
+	})
+	return semaPlatformKnownTypesCache
+}
+
+// isKnownType reports whether key, already lowered exactly as the previous
+// single-map lookups lowered it, names a project or standard-platform type.
+func (c querySemanticsChecker) isKnownType(key string) bool {
+	return c.knownTypes[key] || semaPlatformKnownTypes()[key]
 }
 
 func (c querySemanticsChecker) checkFile(file, source string) []diagnostic.Diagnostic {
@@ -384,13 +431,13 @@ func (c querySemanticsChecker) checkFileWithFacts(file string, facts *sourceFact
 		}
 		diagnostics = append(diagnostics, c.checkSOQLQuery(query, query.Object, ctx, 0, nil)...)
 		bindings := bindingResolver.bindingsAt(literal.queryOffset)
-		diagnostics = append(diagnostics, inlineQueryBindDiagnostics(ctx, bindings, c.knownTypes)...)
+		diagnostics = append(diagnostics, inlineQueryBindDiagnostics(ctx, bindings, c.isKnownType)...)
 		diagnostics = append(diagnostics, c.soqlBindExpressionDiagnostics(query, ctx, bindings)...)
 		diagnostics = append(diagnostics, c.queryFieldBindDiagnostics(query, ctx, bindings)...)
 		diagnostics = append(diagnostics, queryWindowBindDiagnostics(query, ctx, bindings)...)
 	}
 	for _, literal := range semaSOSLLiterals(source, spans) {
-		query, err := sosl.Parse(literal.text)
+		query, err := sosl.ParseInline(literal.text)
 		ctx := queryTextContext{file: file, queryText: literal.text, queryOffset: literal.queryOffset, locator: locator}
 		if item, ok := c.capturedSpacedReturningDiagnostic(ctx); ok {
 			diagnostics = append(diagnostics, item)
@@ -413,7 +460,7 @@ func (c querySemanticsChecker) checkFileWithFacts(file string, facts *sourceFact
 		if bindType := bindings[strings.ToLower(query.SearchBind)]; strings.EqualFold(bindType, "Integer") || strings.EqualFold(bindType, "Boolean") {
 			diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_BIND", "Specified search expression cannot be converted to string", ":"+query.SearchBind, findQueryIdentifier(ctx.queryText, ":"+query.SearchBind, 0)))
 		}
-		diagnostics = append(diagnostics, inlineQueryBindDiagnostics(ctx, bindings, c.knownTypes)...)
+		diagnostics = append(diagnostics, inlineQueryBindDiagnostics(ctx, bindings, c.isKnownType)...)
 		diagnostics = append(diagnostics, soslAssignmentDiagnostics(source, literal, ctx)...)
 		diagnostics = append(diagnostics, queryNumericBindDiagnostics(ctx, bindings, query.Limit.Bind, "LIMIT")...)
 		diagnostics = append(diagnostics, queryStringBindDiagnostics(ctx, bindings, query.DivisionBind, "WITH DIVISION")...)
@@ -846,7 +893,7 @@ func semaDeclarationAtTypeScope(source string, start, declaration int, spans sem
 	return len(semaOpenBraces(source, start, declaration, spans)) == 0
 }
 
-func inlineQueryBindDiagnostics(ctx queryTextContext, bindings map[string]string, knownTypes map[string]bool) []diagnostic.Diagnostic {
+func inlineQueryBindDiagnostics(ctx queryTextContext, bindings map[string]string, isKnown func(string) bool) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	// Literal and comment colons are query text, not executable Apex binds.
 	// Keep the original byte offsets for diagnostics on real bind expressions.
@@ -873,7 +920,7 @@ func inlineQueryBindDiagnostics(ctx queryTextContext, bindings map[string]string
 			if strings.EqualFold(name, "this") {
 				continue
 			}
-			if knownTypes[strings.ToLower(name)] {
+			if isKnown(strings.ToLower(name)) {
 				continue
 			}
 		}
@@ -1149,10 +1196,19 @@ func (c querySemanticsChecker) checkSOQLQuery(query soql.Query, objectName strin
 	object, ok := c.object(objectName)
 	objectCursor := findSOQLFromObject(ctx.queryText, objectName, cursor)
 	if !ok {
-		if !c.knownTypes[normalizeName(objectName)] && ctx.rejectedListQueryDeclaration(objectName) {
+		if !c.isKnownType(normalizeName(objectName)) && ctx.rejectedListQueryDeclaration(objectName) {
 			return diagnostics
 		}
-		return append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_OBJECT", fmt.Sprintf("SOQL query references unknown SObject %q", objectName), objectName, objectCursor))
+		// Native named source compiles static SOQL over these reference
+		// objects; the query fails at runtime as an unsupported sObject type.
+		if _, named := storage.ResolveNamedApexReferenceObjectName(objectName); named && c.namedApexReferenceObjects {
+			return diagnostics
+		}
+		item := ctx.diagnostic("GLADESEMA_QUERY_OBJECT", fmt.Sprintf("SOQL query references unknown SObject %q", objectName), objectName, objectCursor)
+		if storage.IsReferenceOnlyStandardObject(objectName) {
+			item.NativeMessage = "Invalid type: Schema." + objectName
+		}
+		return append(diagnostics, item)
 	}
 	diagnostics = append(diagnostics, contentChildInnerEntityDiagnostics(object, query, ctx, cursor)...)
 	if aggregateAliases == nil {
@@ -1382,7 +1438,31 @@ func (c querySemanticsChecker) checkSOQLCondition(objectName string, condition s
 		}
 	} else if condition.Field != "" && !aggregateAliases[strings.ToLower(condition.Field)] {
 		diagnostics = append(diagnostics, c.checkSOQLField(objectName, condition.Field, ctx, cursor)...)
-		diagnostics = append(diagnostics, c.checkSOQLFieldCapability(objectName, condition.Field, "filterable", ctx, cursor)...)
+		values := []storage.Value{condition.Value}
+		collection := condition.Op == "IN" || condition.Op == "NOT IN"
+		if collection {
+			values = condition.Values
+			// Retain the existing capability path for unprobed IN diagnostics.
+			diagnostics = append(diagnostics, c.checkSOQLFieldCapability(objectName, condition.Field, "filterable", ctx, cursor)...)
+		}
+		numeric := false
+		bound := false
+		for _, value := range values {
+			numeric = numeric || value.Kind == storage.ValueInteger || value.Kind == storage.ValueDecimal
+			bound = bound || value.Kind == storage.ValueID && strings.HasPrefix(string(value.ID), ":")
+		}
+		field, known := c.field(objectName, condition.Field)
+		if !collection && known && schema.IsCustomAddressField(field) {
+			// Address compounds have a specific WHERE diagnostic, independent
+			// of the literal-type checks for other fields.
+			diagnostics = append(diagnostics, c.checkSOQLFieldCapability(objectName, condition.Field, "filterable", ctx, cursor)...)
+		} else if bound && !numeric {
+			if !collection {
+				diagnostics = append(diagnostics, c.checkSOQLFieldCapability(objectName, condition.Field, "filterable", ctx, cursor)...)
+			}
+		} else {
+			diagnostics = append(diagnostics, c.checkQueryFilterLiteral(objectName, condition.Field, numeric, collection, ctx, cursor)...)
+		}
 	}
 	if condition.Subquery != nil {
 		diagnostics = append(diagnostics, c.checkSOQLQuery(*condition.Subquery, condition.Subquery.Object, ctx, cursor, nil)...)
@@ -1396,6 +1476,43 @@ func (c querySemanticsChecker) checkSOQLCondition(objectName string, condition s
 	return diagnostics
 }
 
+// Both inline query languages reject numeric literals on textual fields at
+// compile time. Explicit unfilterable metadata takes precedence over type errors.
+func (c querySemanticsChecker) checkQueryFilterLiteral(objectName, fieldPath string, numeric, collection bool, ctx queryTextContext, cursor int) []diagnostic.Diagnostic {
+	if strings.ContainsAny(fieldPath, ".(") {
+		return nil
+	}
+	field, ok := c.field(objectName, fieldPath)
+	if !ok {
+		return nil
+	}
+	filterable := field.Filterable
+	if filterable == nil {
+		// Source-inferred standard fields can omit describe capabilities.
+		if standard := semaStandardSObjectFieldProviderFor(objectName); standard != nil {
+			if declared, ok := standard.lookup(fieldPath); ok {
+				filterable = declared.Filterable
+			}
+		}
+	}
+	message, code := "", "GLADESEMA_QUERY_CONTRACT"
+	if filterable != nil && !*filterable {
+		if collection {
+			return nil // No new unfilterable-field IN behavior without native rows.
+		}
+		message, code = "field '"+fieldPath+"' can not be filtered in a query call", "GLADESEMA_QUERY_CAPABILITY"
+	} else if numeric {
+		switch strings.ToLower(field.Type) {
+		case "string", "text", "textarea", "picklist", "id":
+			message = "value of filter criterion for field '" + fieldPath + "' must be of type string and should be enclosed in quotes"
+		}
+	}
+	if message == "" {
+		return nil
+	}
+	return []diagnostic.Diagnostic{ctx.nativeSOQLDiagnostic(code, message, fieldPath, findQueryIdentifier(ctx.queryText, fieldPath, cursor), true)}
+}
+
 func (c querySemanticsChecker) checkSOQLFieldCapability(objectName, fieldPath, capability string, ctx queryTextContext, cursor int) []diagnostic.Diagnostic {
 	fieldPath = semaSOQLFieldReference(fieldPath)
 	if fieldPath == "" || strings.Contains(fieldPath, ".") || strings.Contains(fieldPath, "(") || !c.hasFieldMetadata(objectName) {
@@ -1404,6 +1521,17 @@ func (c querySemanticsChecker) checkSOQLFieldCapability(objectName, fieldPath, c
 	field, ok := c.field(objectName, fieldPath)
 	if !ok {
 		return nil
+	}
+	if schema.IsCustomAddressField(field) {
+		// Native static SOQL compiles ORDER BY on a custom Address compound and
+		// fails only at runtime; WHERE has its own compile-time message.
+		if capability == "filterable" {
+			offset := findQueryIdentifier(ctx.queryText, fieldPath, cursor)
+			return []diagnostic.Diagnostic{ctx.diagnostic("GLADESEMA_QUERY_CAPABILITY", "Address fields can only be filtered using Distance expressions", fieldPath, offset)}
+		}
+		if capability == "sortable" {
+			return nil
+		}
 	}
 	var supported *bool
 	switch capability {
@@ -1564,6 +1692,35 @@ func (c querySemanticsChecker) checkSOSLQuery(query sosl.Query, ctx queryTextCon
 			}
 			cursor = maxInt(fieldCursor+len(field.Field), cursor)
 		}
+		diagnostics = append(diagnostics, c.checkSOSLFilterLiteral(object.Name, returning.Where, ctx, cursor)...)
+	}
+	return diagnostics
+}
+
+func (c querySemanticsChecker) checkSOSLFilterLiteral(objectName string, condition *sosl.Condition, ctx queryTextContext, cursor int) []diagnostic.Diagnostic {
+	if condition == nil {
+		return nil
+	}
+	numeric := false
+	if !condition.ValueQuoted && !condition.ValueIsNull && condition.Bind == "" {
+		_, err := strconv.ParseFloat(condition.Value, 64)
+		numeric = err == nil
+	}
+	for i := range condition.UnquotedValues {
+		if _, err := strconv.ParseFloat(condition.Values[i], 64); err == nil {
+			numeric = true
+		}
+	}
+	collection := condition.Operator == "IN" || condition.Operator == "NOT IN"
+	var diagnostics []diagnostic.Diagnostic
+	if condition.Bind == "" {
+		diagnostics = c.checkQueryFilterLiteral(objectName, condition.Field, numeric, collection, ctx, cursor)
+	}
+	for _, child := range condition.And {
+		diagnostics = append(diagnostics, c.checkSOSLFilterLiteral(objectName, &child, ctx, cursor)...)
+	}
+	for _, child := range condition.Or {
+		diagnostics = append(diagnostics, c.checkSOSLFilterLiteral(objectName, &child, ctx, cursor)...)
 	}
 	return diagnostics
 }
@@ -3705,6 +3862,8 @@ func (a *Analyzer) checkBodyReturns(typ typesys.TypeSymbol, member typesys.Membe
 		d := returnTypeDiagnostic(typ, member, fmt.Sprintf("returns %s from %s method", valueType, returnType), bodyOffset+value.start, bodyOffset+value.end, source)
 		if native := semaQueryLocatorReturnNativeMessage(returnType, valueType, model, typeUsesAPIVersionAtLeast(typ, 62) && capturedIntegerIteratorText.MatchString(value.text)); native != "" {
 			d.NativeMessage = native
+		} else if native := semaInnerReturnConversion(returnType, valueType, model); native != "" {
+			d.NativeMessage = native
 		}
 		diagnostics = append(diagnostics, d)
 	}
@@ -3767,15 +3926,15 @@ func checkSemaTernaryCondition(typ typesys.TypeSymbol, member typesys.MemberSymb
 	diagnostics = append(diagnostics, checkSemaTernaryCondition(typ, member, whenFalse, falseStart, source, scope, model)...)
 	return diagnostics
 }
-func (a *Analyzer) checkBodyExpressionTypeReferences(typ typesys.TypeSymbol, member typesys.MemberSymbol, scan *semaBodyExpressionScan, bodyOffset int, source string) []diagnostic.Diagnostic {
+func (a *Analyzer) checkBodyExpressionTypeReferences(typ typesys.TypeSymbol, member typesys.MemberSymbol, scan *semaBodyExpressionScan, bodyOffset int, source string, model *semaTypeMemberView) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	seen := make(map[string]bool)
 	for _, expr := range scan.expressions() {
-		diagnostics = append(diagnostics, a.checkSemaExpressionTypeReferences(typ, member, expr.text, bodyOffset+expr.start, source, seen)...)
+		diagnostics = append(diagnostics, a.checkSemaExpressionTypeReferences(typ, member, expr.text, bodyOffset+expr.start, source, seen, model)...)
 	}
 	return diagnostics
 }
-func (a *Analyzer) checkSemaExpressionTypeReferences(typ typesys.TypeSymbol, member typesys.MemberSymbol, expr string, exprStart int, source string, seen map[string]bool) []diagnostic.Diagnostic {
+func (a *Analyzer) checkSemaExpressionTypeReferences(typ typesys.TypeSymbol, member typesys.MemberSymbol, expr string, exprStart int, source string, seen map[string]bool, model *semaTypeMemberView) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	if _, whenTrue, whenFalse, ok := splitSemaTernary(expr); ok {
 		question, colon, _ := semaTernaryPositions(expr)
@@ -3783,20 +3942,20 @@ func (a *Analyzer) checkSemaExpressionTypeReferences(typ typesys.TypeSymbol, mem
 		conditionStart := exprStart + leadingWhitespaceLen(expr[:question])
 		trueStart := exprStart + question + 1 + leadingWhitespaceLen(expr[question+1:colon])
 		falseStart := exprStart + colon + 1 + leadingWhitespaceLen(expr[colon+1:])
-		diagnostics = append(diagnostics, a.checkSemaExpressionTypeReferences(typ, member, condition, conditionStart, source, seen)...)
-		diagnostics = append(diagnostics, a.checkSemaExpressionTypeReferences(typ, member, strings.TrimSpace(whenTrue), trueStart, source, seen)...)
-		diagnostics = append(diagnostics, a.checkSemaExpressionTypeReferences(typ, member, strings.TrimSpace(whenFalse), falseStart, source, seen)...)
+		diagnostics = append(diagnostics, a.checkSemaExpressionTypeReferences(typ, member, condition, conditionStart, source, seen, model)...)
+		diagnostics = append(diagnostics, a.checkSemaExpressionTypeReferences(typ, member, strings.TrimSpace(whenTrue), trueStart, source, seen, model)...)
+		diagnostics = append(diagnostics, a.checkSemaExpressionTypeReferences(typ, member, strings.TrimSpace(whenFalse), falseStart, source, seen, model)...)
 		return diagnostics
 	}
 	if castType, _, ok := splitSemaCast(expr); ok {
-		diagnostics = append(diagnostics, a.expressionTypeReferenceDiagnostics(typ, member, castType, exprStart+1, source, seen)...)
+		diagnostics = append(diagnostics, a.expressionTypeReferenceDiagnostics(typ, member, castType, exprStart+1, source, seen, model)...)
 	}
 	if _, instanceType, ok := splitSemaInstanceOf(expr); ok {
 		typeStart := strings.LastIndex(expr, instanceType)
 		if typeStart < 0 {
 			typeStart = len(expr) - len(instanceType)
 		}
-		diagnostics = append(diagnostics, a.expressionTypeReferenceDiagnostics(typ, member, instanceType, exprStart+typeStart, source, seen)...)
+		diagnostics = append(diagnostics, a.expressionTypeReferenceDiagnostics(typ, member, instanceType, exprStart+typeStart, source, seen, model)...)
 	}
 	return diagnostics
 }
@@ -3822,7 +3981,7 @@ func checkSemaPlatformCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, 
 		}
 		observedPagination = observedPaginationSourceCall(typ.EffectiveAPIVersion, receiverType, method, argTypes, receiverMode, model)
 	}
-	if (semaPlatformTypeUnavailable(typ.EffectiveAPIVersion, receiverType) ||
+	if (semaPlatformTypeUnavailableInModel(typ.EffectiveAPIVersion, receiverType, model) ||
 		semaPlatformMemberUnavailable(typ.EffectiveAPIVersion, receiverType, method)) && !observedPagination {
 		return []diagnostic.Diagnostic{unsupportedLocalFeatureDiagnostic(typ, member, receiverType+"."+method, start, end, source)}, true
 	}

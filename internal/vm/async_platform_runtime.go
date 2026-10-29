@@ -729,12 +729,23 @@ func (vm *VM) clearMetadataCaches() {
 	if vm != nil && vm.Org != nil {
 		vm.Org.ClearRuntimeSchemaStamp()
 	}
+	vm.discardMetadataCaches()
+	vm.metadataCacheLifetime = metadataLifetimeForOrg(vm.Org)
+}
+
+// Discard VM-owned results without changing the installed org. Retained Apex
+// holders keep their values; old shared field wrappers still need the first-exit
+// privatization registry until those holders are no longer reachable.
+func (vm *VM) discardMetadataCaches() {
 	vm.describeCache = make(map[describeCacheKey]Value)
 	vm.fieldDescribeCache = make(map[describeCacheKey]Value)
 	vm.describeDefCache = make(map[string]storage.ObjectDefinition)
 	vm.describeShare = nil
+	vm.describeShareDefinitions = nil
 	vm.globalDescribeCache = nil
+	vm.globalDescribeProjectionKeys = nil
 	vm.describeTabsCache = nil
+	vm.childRelCandidates = nil
 	vm.childRelCache = newChildRelationshipCache()
 	vm.childRelationshipLookupCache = newChildRelationshipLookupCache()
 	vm.jsonChildRelTypeCache = newJSONChildRelTypeLookupCache()
@@ -747,7 +758,9 @@ func (vm *VM) clearMetadataCaches() {
 	vm.loadedChildRelCache = newLoadedChildRelationshipLookupCache()
 	vm.lazyChildRelCache = newLazyChildRelationshipLookupCache()
 	vm.objectNameCache = make(map[objectNameLookupKey]objectNameLookup)
+	vm.clearTriggerMatchCache()
 	vm.metadataCacheStamp = ""
+	vm.metadataCacheGeneration = 0
 	vm.clearCustomDataCache()
 }
 

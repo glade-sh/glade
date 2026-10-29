@@ -308,7 +308,8 @@ func parseYAMLSubset(src string) (Config, error) {
 			if err != nil {
 				return Config{}, fmt.Errorf("glade.yml:%d: %w", lineNo+1, err)
 			}
-			cfg.Org.Features = values
+			// Preserve an explicitly empty list: it declares a bare org shape.
+			cfg.Org.Features = append([]string{}, values...)
 		default:
 			if section == "test" {
 				return Config{}, fmt.Errorf("glade.yml:%d: unsupported config key %q", lineNo+1, configKey)

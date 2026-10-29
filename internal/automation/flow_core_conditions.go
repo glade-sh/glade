@@ -39,9 +39,7 @@ func flowCoreEntryFormula(start flowStartXML, formulas map[string]string, variab
 		if _, ok := flowCoreEntryFilterLiteral(filter.Value); !ok || strings.TrimSpace(filter.Value.Formula) != "" || strings.TrimSpace(filter.Value.Expression) != "" || strings.TrimSpace(filter.Value.ElementReference) != "" {
 			return ""
 		}
-		switch strings.ToLower(strings.TrimSpace(filter.Operator)) {
-		case "equalto", "greaterthan":
-		default:
+		if !flowCoreEntryOperatorSupported(filter.Operator) {
 			return ""
 		}
 		conditions = append(conditions, flowConditionXML{LeftValueReference: "$Record." + trimObjectPrefix(strings.TrimSpace(filter.Field)), Operator: filter.Operator, RightValue: filter.Value})
@@ -63,11 +61,24 @@ func flowCoreEntryConditionsToFormula(groups [][]int, conditions []flowCondition
 			if left == "" || !ok {
 				return ""
 			}
-			operator := "="
-			if strings.EqualFold(strings.TrimSpace(condition.Operator), "GreaterThan") {
-				operator = ">"
+			var expression string
+			switch strings.ToLower(strings.ReplaceAll(strings.TrimSpace(condition.Operator), " ", "")) {
+			case "contains":
+				expression = "CONTAINS(" + left + "," + right + ")"
+			case "isnull":
+				expression = "ISBLANK(" + left + ") = " + right
+			case "startswith":
+				expression = "BEGINS(" + left + "," + right + ")"
+			case "endswith":
+				expression = "RIGHT(" + left + ",LEN(" + right + ")) = " + right
+			default:
+				operator, ok := flowCoreEntryComparisonOperator(condition.Operator)
+				if !ok {
+					return ""
+				}
+				expression = left + " " + operator + " " + right
 			}
-			andParts = append(andParts, left+" "+operator+" "+right)
+			andParts = append(andParts, expression)
 		}
 		if len(andParts) > 0 {
 			if len(andParts) == 1 {
@@ -84,6 +95,34 @@ func flowCoreEntryConditionsToFormula(groups [][]int, conditions []flowCondition
 		return orParts[0]
 	}
 	return "OR(" + strings.Join(orParts, ",") + ")"
+}
+
+func flowCoreEntryOperatorSupported(operator string) bool {
+	switch strings.ToLower(strings.ReplaceAll(strings.TrimSpace(operator), " ", "")) {
+	case "equalto", "notequalto", "greaterthan", "greaterthanorequalto", "lessthan", "lessthanorequalto", "contains", "isnull", "startswith", "endswith":
+		return true
+	default:
+		return false
+	}
+}
+
+func flowCoreEntryComparisonOperator(operator string) (string, bool) {
+	switch strings.ToLower(strings.ReplaceAll(strings.TrimSpace(operator), " ", "")) {
+	case "equalto":
+		return "=", true
+	case "notequalto":
+		return "!=", true
+	case "greaterthan":
+		return ">", true
+	case "greaterthanorequalto":
+		return ">=", true
+	case "lessthan":
+		return "<", true
+	case "lessthanorequalto":
+		return "<=", true
+	default:
+		return "", false
+	}
 }
 
 func flowCoreEntryFilterLiteral(value flowValueXML) (string, bool) {

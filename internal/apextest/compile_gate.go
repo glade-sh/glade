@@ -274,6 +274,16 @@ func compileGateNestedProgress(progress func(TestProgress)) func(TestProgress) {
 // their dependents, including trigger compile units. It reports false when
 // a source cannot be read.
 func (g *compileGate) exclude(index typesys.Index, units compileGateUnits, byFile map[string][]diagnostic.Diagnostic, sources *sourceCache) bool {
+	// If every compile unit has only own errors, none can inherit a dependent
+	// error or remain runnable. Do not read/parse their bodies or build a graph
+	// that cannot affect the report. Missing implementation diagnostics need
+	// the normal supertype/closure analysis, even when every file has errors.
+	if compileGateAllOwnErrors(units, byFile) {
+		for _, file := range units.order {
+			g.excludeRoot(file, units.classes[file], byFile[file])
+		}
+		return true
+	}
 	// mentions maps a lowercased class name to the other files whose tokens
 	// name it. Only those files are parsed to bind their references.
 	mentions := make(map[string][]string)
@@ -349,15 +359,8 @@ func (g *compileGate) exclude(index typesys.Index, units compileGateUnits, byFil
 		if len(diags) == 0 {
 			diags = byFile[file]
 		}
-		g.excludedFiles[file] = true
-		g.rootProblems[file] = indexCompileError(diags).Error()
-		problems := compileGateProblems(diags)
+		g.excludeRoot(file, units.classes[file], diags)
 		for _, className := range units.classes[file] {
-			entry := testreport.CompileExclusion{ClassName: className, File: file, Line: problems[0].Line, Root: className, Message: problems[0].Message}
-			if len(problems) > 1 {
-				entry.Problems = problems
-			}
-			g.add(entry)
 			frontier = append(frontier, strings.ToLower(className))
 		}
 	}
@@ -405,6 +408,36 @@ func (g *compileGate) exclude(index typesys.Index, units compileGateUnits, byFil
 	}
 
 	return true
+}
+
+func compileGateAllOwnErrors(units compileGateUnits, byFile map[string][]diagnostic.Diagnostic) bool {
+	if len(units.order) == 0 {
+		return false
+	}
+	for _, file := range units.order {
+		if len(byFile[file]) == 0 {
+			return false
+		}
+		for _, diag := range byFile[file] {
+			if diag.Code == "GLADESEMA017" {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func (g *compileGate) excludeRoot(file string, classes []string, diags []diagnostic.Diagnostic) {
+	g.excludedFiles[file] = true
+	g.rootProblems[file] = indexCompileError(diags).Error()
+	problems := compileGateProblems(diags)
+	for _, className := range classes {
+		entry := testreport.CompileExclusion{ClassName: className, File: file, Line: problems[0].Line, Root: className, Message: problems[0].Message}
+		if len(problems) > 1 {
+			entry.Problems = problems
+		}
+		g.add(entry)
+	}
 }
 
 // compileGateOwnErrors returns each invalid file's own errors: every error
@@ -505,7 +538,13 @@ func compileGateProblems(diags []diagnostic.Diagnostic) []testreport.CompileProb
 		} else if diag.Range != nil {
 			line = diag.Range.Start.Line
 		}
-		problems = append(problems, testreport.CompileProblem{Line: line, Message: message})
+		problem := testreport.CompileProblem{Line: line, Message: message}
+		// The captured default-access class is rejected before its body is
+		// compiled, even when the body also contains an invalid assignment.
+		if diag.Code == "GLADESEMA032" && diag.NativeMessage == "Top-level type must have public or global visibility" {
+			return []testreport.CompileProblem{problem}
+		}
+		problems = append(problems, problem)
 	}
 	return problems
 }
@@ -617,6 +656,7 @@ func filterCompileGateIndex(index typesys.Index, excluded map[string]bool) types
 		}
 		types = append(types, typ)
 	}
+	index.Subset = true
 	index.Types = types
 	index.Triggers = compileGateFilterTriggers(index.Triggers, excluded)
 	var diagnostics []diagnostic.Diagnostic

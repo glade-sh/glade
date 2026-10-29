@@ -1,0 +1,1 @@
+@IsTest private class CatalogConsumerTest { @IsTest static void observe() { CatalogConsumer value = new CatalogConsumer(); System.assertEquals(null, value.relay(null)); System.assertEquals(null, value.relayForeign(null)); } }

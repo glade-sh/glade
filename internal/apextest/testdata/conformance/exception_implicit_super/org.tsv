@@ -1,0 +1,3 @@
+source_api	method	observation
+62.0	implicitSuper	{"bothInner":"inner","both":"outer","causeInner":"inner","causeMessage":"Script-thrown exception","text":"owned text","noneDetail":null,"none":"Script-thrown exception"}
+67.0	implicitSuper	{"bothInner":"inner","both":"outer","causeInner":"inner","causeMessage":"Script-thrown exception","text":"owned text","noneDetail":null,"none":"Script-thrown exception"}

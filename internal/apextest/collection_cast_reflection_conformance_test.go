@@ -90,7 +90,7 @@ func TestCollectionCastReflectionConformance(t *testing.T) {
 		t.Fatal("native cell count differs")
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "CollectionCastReflection", api)
 			baseIndex := listSObjectCastIndex(t, api, nil)
 			org := orgFromIndex(baseIndex)

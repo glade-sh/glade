@@ -1,0 +1,159 @@
+api	route	case	observation
+62.0	followup	J01	"{""city"":""Springfield"",""country"":""United States"",""geocodeAccuracy"":null,""latitude"":37.5,""longitude"":-122.25,""postalCode"":""94105"",""state"":""California"",""street"":""1 Main St""}"
+62.0	followup	J02	"{""city"":""Solo"",""country"":null,""geocodeAccuracy"":null,""latitude"":null,""longitude"":null,""postalCode"":null,""state"":null,""street"":null}"
+62.0	followup	J03	"{""city"":""Shelbyville"",""country"":null,""geocodeAccuracy"":null,""latitude"":null,""longitude"":null,""postalCode"":null,""state"":null,""street"":null}"
+62.0	followup	J04	"{
+  ""city"" : ""Solo"",
+  ""country"" : null,
+  ""geocodeAccuracy"" : null,
+  ""latitude"" : null,
+  ""longitude"" : null,
+  ""postalCode"" : null,
+  ""state"" : null,
+  ""street"" : null
+}"
+62.0	followup	J05	"{""city"":""Solo"",""country"":null,""geocodeAccuracy"":null,""latitude"":null,""longitude"":null,""postalCode"":null,""state"":null,""street"":null}"
+62.0	followup	J06	"{""k"":{""city"":""Solo"",""country"":null,""geocodeAccuracy"":null,""latitude"":null,""longitude"":null,""postalCode"":null,""state"":null,""street"":null}}"
+62.0	followup	J07	"{""attributes"":{""type"":""Account"",""url"":""/services/data/v68.0/sobjects/Account/ID""},""Id"":""ID"",""BillingAddress"":{""city"":""Solo"",""country"":null,""geocodeAccuracy"":null,""latitude"":null,""longitude"":null,""postalCode"":null,""state"":null,""street"":null}}"
+62.0	followup	J07b	"{""attributes"":{""type"":""Account"",""url"":""/services/data/v68.0/sobjects/Account/ID""},""Id"":""ID"",""BillingAddress"":{""city"":""Springfield"",""country"":""United States"",""geocodeAccuracy"":null,""latitude"":37.5,""longitude"":-122.25,""postalCode"":""94105"",""state"":""California"",""street"":""1 Main St""},""ShippingAddress"":{""city"":""Shelbyville"",""country"":null,""geocodeAccuracy"":null,""latitude"":null,""longitude"":null,""postalCode"":null,""state"":null,""street"":null}}"
+62.0	followup	J07c	"{""attributes"":{""type"":""Account"",""url"":""/services/data/v68.0/sobjects/Account/ID""},""Id"":""ID"",""BillingAddress"":{""city"":""Solo"",""country"":null,""geocodeAccuracy"":null,""latitude"":null,""longitude"":null,""postalCode"":null,""state"":null,""street"":null}}"
+62.0	followup	J08	"{""city"":""Solo"",""country"":null,""countryCode"":null,""geocodeAccuracy"":null,""latitude"":null,""longitude"":null,""postalCode"":null,""state"":null,""stateCode"":null,""street"":null}"
+62.0	followup	J09	"{""city"":""Solo"",""country"":null,""countryCode"":null,""geocodeAccuracy"":null,""latitude"":null,""longitude"":null,""postalCode"":null,""state"":null,""stateCode"":null,""street"":null}"
+62.0	followup	J10	"{""attributes"":{""type"":""Addr_Test__c"",""url"":""/services/data/v68.0/sobjects/Addr_Test__c/ID""},""Id"":""ID"",""Home__c"":{""city"":""Solo"",""country"":null,""countryCode"":null,""geocodeAccuracy"":null,""latitude"":null,""longitude"":null,""postalCode"":null,""state"":null,""stateCode"":null,""street"":null}}"
+62.0	followup	J11	"{""attributes"":{""type"":""Addr_Test__c"",""url"":""/services/data/v68.0/sobjects/Addr_Test__c/ID""},""Id"":""ID"",""Home__c"":{""city"":""Solo"",""country"":null,""countryCode"":null,""geocodeAccuracy"":null,""latitude"":null,""longitude"":null,""postalCode"":null,""state"":null,""stateCode"":null,""street"":null}}"
+62.0	followup	R01	EXC|System.DmlException|Insert failed. First exception on row 0; first error: INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST, Billing Geocode Accuracy: bad value for restricted picklist field: Bogus: [BillingGeocodeAccuracy]|INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST|(BillingGeocodeAccuracy)
+62.0	followup	R02	inserted
+62.0	followup	R03	EXC|System.DmlException|Insert failed. First exception on row 0; first error: INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST, Pick Label: bad value for restricted picklist field: Z: [Pick__c]|INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST|(Pick__c)
+62.0	followup	R04	EXC|System.DmlException|Insert failed. First exception on row 0; first error: INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST, Dep Label: bad value for restricted picklist field: Z: [Dep__c]|INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST|(Dep__c)
+62.0	followup	R05	EXC|System.DmlException|Insert failed. First exception on row 0; first error: INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST, bad value for restricted picklist field: D2: [Dep__c]|INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST|(Dep__c)
+62.0	followup	R06	EXC|System.DmlException|Insert failed. First exception on row 0; first error: INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST, bad value for restricted picklist field: D1: [Dep__c]|INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST|(Dep__c)
+62.0	followup	R07	inserted
+62.0	followup	R08	inserted
+62.0	followup	R09	inserted
+62.0	followup	R10	EXC|System.DmlException|Insert failed. First exception on row 0; first error: INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST, Home (Geocode Accuracy): bad value for restricted picklist field: Bogus: [Home__GeocodeAccuracy__s]|INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST|(Home__GeocodeAccuracy__s)
+62.0	followup	R11	EXC|System.DmlException|Insert failed. First exception on row 0; first error: INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST, Home (Country/Territory): bad value for restricted picklist field: ZZ: [Home__CountryCode__s]|INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST|(Home__CountryCode__s)
+62.0	followup	R12	EXC|System.DmlException|Insert failed. First exception on row 0; first error: INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST, Home (Geocode Accuracy): bad value for restricted picklist field: Bogus: [Home__GeocodeAccuracy__s]|INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST|(Home__GeocodeAccuracy__s)
+62.0	followup	R13	inserted
+62.0	followup	R14	inserted
+62.0	followup	R15	inserted
+62.0	followup	R16	inserted
+62.0	followup	R20	EXC|System.DmlException|Update failed. First exception on row 0 with id a00hv00000239FQAAY; first error: INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST, Pick Label: bad value for restricted picklist field: Z: [Pick__c]|INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST|(Pick__c)
+62.0	followup	R21	EXC|System.DmlException|Update failed. First exception on row 0 with id a00hv00000239FRAAY; first error: INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST, Dep Label: bad value for restricted picklist field: Z: [Dep__c]|INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST|(Dep__c)
+62.0	followup	R22	EXC|System.DmlException|Update failed. First exception on row 0 with id a00hv00000239FSAAY; first error: INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST, bad value for restricted picklist field: D1: [Dep__c]|INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST|(Dep__c)
+62.0	followup	R23	EXC|System.DmlException|Update failed. First exception on row 0 with id a00hv00000239FTAAY; first error: INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST, Home (Geocode Accuracy): bad value for restricted picklist field: Bogus: [Home__GeocodeAccuracy__s]|INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST|(Home__GeocodeAccuracy__s)
+62.0	followup	L01.-91	EXC|System.DmlException|Insert failed. First exception on row 0; first error: NUMBER_OUTSIDE_VALID_RANGE, Home (Latitude): value outside of valid range on numeric field: -91: [Home__Latitude__s]|NUMBER_OUTSIDE_VALID_RANGE|(Home__Latitude__s)
+62.0	followup	L01.90	inserted
+62.0	followup	L01.-90	inserted
+62.0	followup	L01.90.5	EXC|System.DmlException|Insert failed. First exception on row 0; first error: NUMBER_OUTSIDE_VALID_RANGE, Home (Latitude): value outside of valid range on numeric field: 90.5: [Home__Latitude__s]|NUMBER_OUTSIDE_VALID_RANGE|(Home__Latitude__s)
+62.0	followup	L01.-90.5	EXC|System.DmlException|Insert failed. First exception on row 0; first error: NUMBER_OUTSIDE_VALID_RANGE, Home (Latitude): value outside of valid range on numeric field: -90.5: [Home__Latitude__s]|NUMBER_OUTSIDE_VALID_RANGE|(Home__Latitude__s)
+62.0	followup	L01.0	inserted
+62.0	followup	L02.180	inserted
+62.0	followup	L02.-180	inserted
+62.0	followup	L02.181	EXC|System.DmlException|Insert failed. First exception on row 0; first error: NUMBER_OUTSIDE_VALID_RANGE, Home (Longitude): value outside of valid range on numeric field: 181: [Home__Longitude__s]|NUMBER_OUTSIDE_VALID_RANGE|(Home__Longitude__s)
+62.0	followup	L02.-181	EXC|System.DmlException|Insert failed. First exception on row 0; first error: NUMBER_OUTSIDE_VALID_RANGE, Home (Longitude): value outside of valid range on numeric field: -181: [Home__Longitude__s]|NUMBER_OUTSIDE_VALID_RANGE|(Home__Longitude__s)
+62.0	followup	L02.180.5	EXC|System.DmlException|Insert failed. First exception on row 0; first error: NUMBER_OUTSIDE_VALID_RANGE, Home (Longitude): value outside of valid range on numeric field: 180.5: [Home__Longitude__s]|NUMBER_OUTSIDE_VALID_RANGE|(Home__Longitude__s)
+62.0	followup	L02.0	inserted
+62.0	followup	L03	EXC|System.DmlException|Insert failed. First exception on row 0; first error: FIELD_INTEGRITY_EXCEPTION, Latitude value is missing : Home (Latitude): [Home__Latitude__s]|FIELD_INTEGRITY_EXCEPTION|(Home__Latitude__s)
+62.0	followup	L03b	EXC|System.DmlException|Insert failed. First exception on row 0; first error: NUMBER_OUTSIDE_VALID_RANGE, Home (Longitude): value outside of valid range on numeric field: 181: [Home__Longitude__s]|NUMBER_OUTSIDE_VALID_RANGE|(Home__Longitude__s)
+62.0	followup	L03c	EXC|System.DmlException|Insert failed. First exception on row 0; first error: NUMBER_OUTSIDE_VALID_RANGE, Home (Latitude): value outside of valid range on numeric field: 91: [Home__Latitude__s]|NUMBER_OUTSIDE_VALID_RANGE|(Home__Latitude__s)
+62.0	followup	L03d	EXC|System.DmlException|Insert failed. First exception on row 0; first error: NUMBER_OUTSIDE_VALID_RANGE, Home (Latitude): value outside of valid range on numeric field: -91: [Home__Latitude__s]|NUMBER_OUTSIDE_VALID_RANGE|(Home__Latitude__s)
+62.0	followup	L03e	EXC|System.DmlException|Insert failed. First exception on row 0; first error: NUMBER_OUTSIDE_VALID_RANGE, Home (Longitude): value outside of valid range on numeric field: 181: [Home__Longitude__s]|NUMBER_OUTSIDE_VALID_RANGE|(Home__Longitude__s)
+62.0	followup	U02	EXC|System.DmlException|Update failed. First exception on row 0 with id a00hv00000239FaAAI; first error: NUMBER_OUTSIDE_VALID_RANGE, Home (Latitude): value outside of valid range on numeric field: 91: [Home__Latitude__s]|NUMBER_OUTSIDE_VALID_RANGE|(Home__Latitude__s)
+62.0	followup	U03	EXC|System.DmlException|Update failed. First exception on row 0 with id a00hv00000239FbAAI; first error: NUMBER_OUTSIDE_VALID_RANGE, Home (Latitude): value outside of valid range on numeric field: -91: [Home__Latitude__s]|NUMBER_OUTSIDE_VALID_RANGE|(Home__Latitude__s)
+62.0	followup	U04	updated
+62.0	followup	U05	EXC|System.DmlException|Update failed. First exception on row 0 with id a00hv00000239FdAAI; first error: NUMBER_OUTSIDE_VALID_RANGE, Home (Longitude): value outside of valid range on numeric field: 181: [Home__Longitude__s]|NUMBER_OUTSIDE_VALID_RANGE|(Home__Longitude__s)
+62.0	followup	U06	EXC|System.DmlException|Update failed. First exception on row 0 with id a00hv00000239FeAAI; first error: NUMBER_OUTSIDE_VALID_RANGE, Home (Longitude): value outside of valid range on numeric field: -181: [Home__Longitude__s]|NUMBER_OUTSIDE_VALID_RANGE|(Home__Longitude__s)
+62.0	followup	U07	updated
+62.0	followup	U08	EXC|System.DmlException|Update failed. First exception on row 0 with id a00hv00000239FgAAI; first error: FIELD_INTEGRITY_EXCEPTION, Longitude value is missing : Home (Longitude): [Home__Longitude__s]|FIELD_INTEGRITY_EXCEPTION|(Home__Longitude__s)
+62.0	followup	U09	EXC|System.DmlException|Update failed. First exception on row 0 with id a00hv00000239FhAAI; first error: FIELD_INTEGRITY_EXCEPTION, Latitude value is missing : Home (Latitude): [Home__Latitude__s]|FIELD_INTEGRITY_EXCEPTION|(Home__Latitude__s)
+62.0	followup	U10	updated
+62.0	followup	U11	EXC|System.DmlException|Update failed. First exception on row 0 with id a00hv00000239FjAAI; first error: INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST, Home (Country/Territory): bad value for restricted picklist field: ZZ: [Home__CountryCode__s]|INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST|(Home__CountryCode__s)
+62.0	followup	U12	EXC|System.DmlException|Update failed. First exception on row 0 with id a00hv00000239FkAAI; first error: FIELD_INTEGRITY_EXCEPTION, The Home__StateCode__s field contains XX, which isn't an available state. Your administrator can add it for you.: [Home__StateCode__s]|FIELD_INTEGRITY_EXCEPTION|(Home__StateCode__s)
+62.0	followup	U13	updated
+62.0	followup	U14	updated
+62.0	followup	U15	EXC|System.DmlException|Update failed. First exception on row 0 with id a00hv00000239FnAAI; first error: STRING_TOO_LONG, Home (City): data value too large: yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy (max length=40): [Home__City__s]|STRING_TOO_LONG|(Home__City__s)
+62.0	followup	U16	updated
+62.0	followup	U17	EXC|System.DmlException|Update failed. First exception on row 0 with id a00hv00000239FpAAI; first error: NUMBER_OUTSIDE_VALID_RANGE, Home (Latitude): value outside of valid range on numeric field: 91: [Home__Latitude__s]|NUMBER_OUTSIDE_VALID_RANGE|(Home__Latitude__s)
+62.0	followup	U18	EXC|System.DmlException|Update failed. First exception on row 0 with id a00hv00000239FpAAI; first error: FIELD_INTEGRITY_EXCEPTION, The Home__StateCode__s field contains XX, which isn't an available state. Your administrator can add it for you.: [Home__StateCode__s]|FIELD_INTEGRITY_EXCEPTION|(Home__StateCode__s)
+62.0	followup	U19	EXC|System.DmlException|Update failed. First exception on row 0 with id a00hv00000239FpAAI; first error: FIELD_INTEGRITY_EXCEPTION, Longitude value is missing : Home (Longitude): [Home__Longitude__s]|FIELD_INTEGRITY_EXCEPTION|(Home__Longitude__s)
+62.0	followup	U20	updated
+62.0	followup	U21	EXC|System.DmlException|Update failed. First exception on row 0 with id a00hv00000239FqAAI; first error: FIELD_INTEGRITY_EXCEPTION, Longitude value is missing : Home (Longitude): [Home__Longitude__s]|FIELD_INTEGRITY_EXCEPTION|(Home__Longitude__s)
+67.0	followup	J01	"{""city"":""Springfield"",""country"":""United States"",""geocodeAccuracy"":null,""latitude"":37.5,""longitude"":-122.25,""postalCode"":""94105"",""state"":""California"",""street"":""1 Main St""}"
+67.0	followup	J02	"{""city"":""Solo"",""country"":null,""geocodeAccuracy"":null,""latitude"":null,""longitude"":null,""postalCode"":null,""state"":null,""street"":null}"
+67.0	followup	J03	"{""city"":""Shelbyville"",""country"":null,""geocodeAccuracy"":null,""latitude"":null,""longitude"":null,""postalCode"":null,""state"":null,""street"":null}"
+67.0	followup	J04	"{
+  ""city"" : ""Solo"",
+  ""country"" : null,
+  ""geocodeAccuracy"" : null,
+  ""latitude"" : null,
+  ""longitude"" : null,
+  ""postalCode"" : null,
+  ""state"" : null,
+  ""street"" : null
+}"
+67.0	followup	J05	"{""city"":""Solo"",""country"":null,""geocodeAccuracy"":null,""latitude"":null,""longitude"":null,""postalCode"":null,""state"":null,""street"":null}"
+67.0	followup	J06	"{""k"":{""city"":""Solo"",""country"":null,""geocodeAccuracy"":null,""latitude"":null,""longitude"":null,""postalCode"":null,""state"":null,""street"":null}}"
+67.0	followup	J07	"{""attributes"":{""type"":""Account"",""url"":""/services/data/v68.0/sobjects/Account/ID""},""Id"":""ID"",""BillingAddress"":{""city"":""Solo"",""country"":null,""geocodeAccuracy"":null,""latitude"":null,""longitude"":null,""postalCode"":null,""state"":null,""street"":null}}"
+67.0	followup	J07b	"{""attributes"":{""type"":""Account"",""url"":""/services/data/v68.0/sobjects/Account/ID""},""Id"":""ID"",""BillingAddress"":{""city"":""Springfield"",""country"":""United States"",""geocodeAccuracy"":null,""latitude"":37.5,""longitude"":-122.25,""postalCode"":""94105"",""state"":""California"",""street"":""1 Main St""},""ShippingAddress"":{""city"":""Shelbyville"",""country"":null,""geocodeAccuracy"":null,""latitude"":null,""longitude"":null,""postalCode"":null,""state"":null,""street"":null}}"
+67.0	followup	J07c	"{""attributes"":{""type"":""Account"",""url"":""/services/data/v68.0/sobjects/Account/ID""},""Id"":""ID"",""BillingAddress"":{""city"":""Solo"",""country"":null,""geocodeAccuracy"":null,""latitude"":null,""longitude"":null,""postalCode"":null,""state"":null,""street"":null}}"
+67.0	followup	J08	"{""city"":""Solo"",""country"":null,""countryCode"":null,""geocodeAccuracy"":null,""latitude"":null,""longitude"":null,""postalCode"":null,""state"":null,""stateCode"":null,""street"":null}"
+67.0	followup	J09	"{""city"":""Solo"",""country"":null,""countryCode"":null,""geocodeAccuracy"":null,""latitude"":null,""longitude"":null,""postalCode"":null,""state"":null,""stateCode"":null,""street"":null}"
+67.0	followup	J10	"{""attributes"":{""type"":""Addr_Test__c"",""url"":""/services/data/v68.0/sobjects/Addr_Test__c/ID""},""Id"":""ID"",""Home__c"":{""city"":""Solo"",""country"":null,""countryCode"":null,""geocodeAccuracy"":null,""latitude"":null,""longitude"":null,""postalCode"":null,""state"":null,""stateCode"":null,""street"":null}}"
+67.0	followup	J11	"{""attributes"":{""type"":""Addr_Test__c"",""url"":""/services/data/v68.0/sobjects/Addr_Test__c/ID""},""Id"":""ID"",""Home__c"":{""city"":""Solo"",""country"":null,""countryCode"":null,""geocodeAccuracy"":null,""latitude"":null,""longitude"":null,""postalCode"":null,""state"":null,""stateCode"":null,""street"":null}}"
+67.0	followup	R01	EXC|System.DmlException|Insert failed. First exception on row 0; first error: INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST, Billing Geocode Accuracy: bad value for restricted picklist field: Bogus: [BillingGeocodeAccuracy]|INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST|(BillingGeocodeAccuracy)
+67.0	followup	R02	inserted
+67.0	followup	R03	EXC|System.DmlException|Insert failed. First exception on row 0; first error: INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST, Pick Label: bad value for restricted picklist field: Z: [Pick__c]|INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST|(Pick__c)
+67.0	followup	R04	EXC|System.DmlException|Insert failed. First exception on row 0; first error: INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST, Dep Label: bad value for restricted picklist field: Z: [Dep__c]|INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST|(Dep__c)
+67.0	followup	R05	EXC|System.DmlException|Insert failed. First exception on row 0; first error: INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST, bad value for restricted picklist field: D2: [Dep__c]|INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST|(Dep__c)
+67.0	followup	R06	EXC|System.DmlException|Insert failed. First exception on row 0; first error: INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST, bad value for restricted picklist field: D1: [Dep__c]|INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST|(Dep__c)
+67.0	followup	R07	inserted
+67.0	followup	R08	inserted
+67.0	followup	R09	inserted
+67.0	followup	R10	EXC|System.DmlException|Insert failed. First exception on row 0; first error: INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST, Home (Geocode Accuracy): bad value for restricted picklist field: Bogus: [Home__GeocodeAccuracy__s]|INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST|(Home__GeocodeAccuracy__s)
+67.0	followup	R11	EXC|System.DmlException|Insert failed. First exception on row 0; first error: INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST, Home (Country/Territory): bad value for restricted picklist field: ZZ: [Home__CountryCode__s]|INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST|(Home__CountryCode__s)
+67.0	followup	R12	EXC|System.DmlException|Insert failed. First exception on row 0; first error: INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST, Home (Geocode Accuracy): bad value for restricted picklist field: Bogus: [Home__GeocodeAccuracy__s]|INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST|(Home__GeocodeAccuracy__s)
+67.0	followup	R13	inserted
+67.0	followup	R14	inserted
+67.0	followup	R15	inserted
+67.0	followup	R16	inserted
+67.0	followup	R20	EXC|System.DmlException|Update failed. First exception on row 0 with id a00hv0000023kZwAAI; first error: INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST, Pick Label: bad value for restricted picklist field: Z: [Pick__c]|INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST|(Pick__c)
+67.0	followup	R21	EXC|System.DmlException|Update failed. First exception on row 0 with id a00hv0000023kZxAAI; first error: INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST, Dep Label: bad value for restricted picklist field: Z: [Dep__c]|INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST|(Dep__c)
+67.0	followup	R22	EXC|System.DmlException|Update failed. First exception on row 0 with id a00hv0000023kZyAAI; first error: INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST, bad value for restricted picklist field: D1: [Dep__c]|INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST|(Dep__c)
+67.0	followup	R23	EXC|System.DmlException|Update failed. First exception on row 0 with id a00hv0000023kZzAAI; first error: INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST, Home (Geocode Accuracy): bad value for restricted picklist field: Bogus: [Home__GeocodeAccuracy__s]|INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST|(Home__GeocodeAccuracy__s)
+67.0	followup	L01.-91	EXC|System.DmlException|Insert failed. First exception on row 0; first error: NUMBER_OUTSIDE_VALID_RANGE, Home (Latitude): value outside of valid range on numeric field: -91: [Home__Latitude__s]|NUMBER_OUTSIDE_VALID_RANGE|(Home__Latitude__s)
+67.0	followup	L01.90	inserted
+67.0	followup	L01.-90	inserted
+67.0	followup	L01.90.5	EXC|System.DmlException|Insert failed. First exception on row 0; first error: NUMBER_OUTSIDE_VALID_RANGE, Home (Latitude): value outside of valid range on numeric field: 90.5: [Home__Latitude__s]|NUMBER_OUTSIDE_VALID_RANGE|(Home__Latitude__s)
+67.0	followup	L01.-90.5	EXC|System.DmlException|Insert failed. First exception on row 0; first error: NUMBER_OUTSIDE_VALID_RANGE, Home (Latitude): value outside of valid range on numeric field: -90.5: [Home__Latitude__s]|NUMBER_OUTSIDE_VALID_RANGE|(Home__Latitude__s)
+67.0	followup	L01.0	inserted
+67.0	followup	L02.180	inserted
+67.0	followup	L02.-180	inserted
+67.0	followup	L02.181	EXC|System.DmlException|Insert failed. First exception on row 0; first error: NUMBER_OUTSIDE_VALID_RANGE, Home (Longitude): value outside of valid range on numeric field: 181: [Home__Longitude__s]|NUMBER_OUTSIDE_VALID_RANGE|(Home__Longitude__s)
+67.0	followup	L02.-181	EXC|System.DmlException|Insert failed. First exception on row 0; first error: NUMBER_OUTSIDE_VALID_RANGE, Home (Longitude): value outside of valid range on numeric field: -181: [Home__Longitude__s]|NUMBER_OUTSIDE_VALID_RANGE|(Home__Longitude__s)
+67.0	followup	L02.180.5	EXC|System.DmlException|Insert failed. First exception on row 0; first error: NUMBER_OUTSIDE_VALID_RANGE, Home (Longitude): value outside of valid range on numeric field: 180.5: [Home__Longitude__s]|NUMBER_OUTSIDE_VALID_RANGE|(Home__Longitude__s)
+67.0	followup	L02.0	inserted
+67.0	followup	L03	EXC|System.DmlException|Insert failed. First exception on row 0; first error: FIELD_INTEGRITY_EXCEPTION, Latitude value is missing : Home (Latitude): [Home__Latitude__s]|FIELD_INTEGRITY_EXCEPTION|(Home__Latitude__s)
+67.0	followup	L03b	EXC|System.DmlException|Insert failed. First exception on row 0; first error: NUMBER_OUTSIDE_VALID_RANGE, Home (Longitude): value outside of valid range on numeric field: 181: [Home__Longitude__s]|NUMBER_OUTSIDE_VALID_RANGE|(Home__Longitude__s)
+67.0	followup	L03c	EXC|System.DmlException|Insert failed. First exception on row 0; first error: NUMBER_OUTSIDE_VALID_RANGE, Home (Latitude): value outside of valid range on numeric field: 91: [Home__Latitude__s]|NUMBER_OUTSIDE_VALID_RANGE|(Home__Latitude__s)
+67.0	followup	L03d	EXC|System.DmlException|Insert failed. First exception on row 0; first error: NUMBER_OUTSIDE_VALID_RANGE, Home (Latitude): value outside of valid range on numeric field: -91: [Home__Latitude__s]|NUMBER_OUTSIDE_VALID_RANGE|(Home__Latitude__s)
+67.0	followup	L03e	EXC|System.DmlException|Insert failed. First exception on row 0; first error: NUMBER_OUTSIDE_VALID_RANGE, Home (Longitude): value outside of valid range on numeric field: 181: [Home__Longitude__s]|NUMBER_OUTSIDE_VALID_RANGE|(Home__Longitude__s)
+67.0	followup	U02	EXC|System.DmlException|Update failed. First exception on row 0 with id a00hv0000023ka6AAA; first error: NUMBER_OUTSIDE_VALID_RANGE, Home (Latitude): value outside of valid range on numeric field: 91: [Home__Latitude__s]|NUMBER_OUTSIDE_VALID_RANGE|(Home__Latitude__s)
+67.0	followup	U03	EXC|System.DmlException|Update failed. First exception on row 0 with id a00hv0000023ka7AAA; first error: NUMBER_OUTSIDE_VALID_RANGE, Home (Latitude): value outside of valid range on numeric field: -91: [Home__Latitude__s]|NUMBER_OUTSIDE_VALID_RANGE|(Home__Latitude__s)
+67.0	followup	U04	updated
+67.0	followup	U05	EXC|System.DmlException|Update failed. First exception on row 0 with id a00hv0000023ka9AAA; first error: NUMBER_OUTSIDE_VALID_RANGE, Home (Longitude): value outside of valid range on numeric field: 181: [Home__Longitude__s]|NUMBER_OUTSIDE_VALID_RANGE|(Home__Longitude__s)
+67.0	followup	U06	EXC|System.DmlException|Update failed. First exception on row 0 with id a00hv0000023kaAAAQ; first error: NUMBER_OUTSIDE_VALID_RANGE, Home (Longitude): value outside of valid range on numeric field: -181: [Home__Longitude__s]|NUMBER_OUTSIDE_VALID_RANGE|(Home__Longitude__s)
+67.0	followup	U07	updated
+67.0	followup	U08	EXC|System.DmlException|Update failed. First exception on row 0 with id a00hv0000023kaCAAQ; first error: FIELD_INTEGRITY_EXCEPTION, Longitude value is missing : Home (Longitude): [Home__Longitude__s]|FIELD_INTEGRITY_EXCEPTION|(Home__Longitude__s)
+67.0	followup	U09	EXC|System.DmlException|Update failed. First exception on row 0 with id a00hv0000023kaDAAQ; first error: FIELD_INTEGRITY_EXCEPTION, Latitude value is missing : Home (Latitude): [Home__Latitude__s]|FIELD_INTEGRITY_EXCEPTION|(Home__Latitude__s)
+67.0	followup	U10	updated
+67.0	followup	U11	EXC|System.DmlException|Update failed. First exception on row 0 with id a00hv0000023kaFAAQ; first error: INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST, Home (Country/Territory): bad value for restricted picklist field: ZZ: [Home__CountryCode__s]|INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST|(Home__CountryCode__s)
+67.0	followup	U12	EXC|System.DmlException|Update failed. First exception on row 0 with id a00hv0000023kaGAAQ; first error: FIELD_INTEGRITY_EXCEPTION, The Home__StateCode__s field contains XX, which isn't an available state. Your administrator can add it for you.: [Home__StateCode__s]|FIELD_INTEGRITY_EXCEPTION|(Home__StateCode__s)
+67.0	followup	U13	updated
+67.0	followup	U14	updated
+67.0	followup	U15	EXC|System.DmlException|Update failed. First exception on row 0 with id a00hv0000023kaJAAQ; first error: STRING_TOO_LONG, Home (City): data value too large: yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy (max length=40): [Home__City__s]|STRING_TOO_LONG|(Home__City__s)
+67.0	followup	U16	updated
+67.0	followup	U17	EXC|System.DmlException|Update failed. First exception on row 0 with id a00hv0000023kaLAAQ; first error: NUMBER_OUTSIDE_VALID_RANGE, Home (Latitude): value outside of valid range on numeric field: 91: [Home__Latitude__s]|NUMBER_OUTSIDE_VALID_RANGE|(Home__Latitude__s)
+67.0	followup	U18	EXC|System.DmlException|Update failed. First exception on row 0 with id a00hv0000023kaLAAQ; first error: FIELD_INTEGRITY_EXCEPTION, The Home__StateCode__s field contains XX, which isn't an available state. Your administrator can add it for you.: [Home__StateCode__s]|FIELD_INTEGRITY_EXCEPTION|(Home__StateCode__s)
+67.0	followup	U19	EXC|System.DmlException|Update failed. First exception on row 0 with id a00hv0000023kaLAAQ; first error: FIELD_INTEGRITY_EXCEPTION, Longitude value is missing : Home (Longitude): [Home__Longitude__s]|FIELD_INTEGRITY_EXCEPTION|(Home__Longitude__s)
+67.0	followup	U20	updated
+67.0	followup	U21	EXC|System.DmlException|Update failed. First exception on row 0 with id a00hv0000023kaMAAQ; first error: FIELD_INTEGRITY_EXCEPTION, Longitude value is missing : Home (Longitude): [Home__Longitude__s]|FIELD_INTEGRITY_EXCEPTION|(Home__Longitude__s)

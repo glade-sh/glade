@@ -35,4 +35,3 @@ source_sha256:force-app/main/default/triggers/CaptureAccountChange.trigger-meta.
 source_sha256:sfdx-project.json=56c1e46f31f129abbece0bcc865a52734e61c5312ef2c6ec4305cc61f3eca62d
 setup_source_sha256=83c4e0db06a0e0320c4ff4f90e246551106acfccc7474fb95c767b6786e436b8
 fixture_permission_set_assigned=true
-exported_rows=5

@@ -5189,6 +5189,7 @@ insert u;
 	}
 	machine := New(nil)
 	org := testDataOrg()
+	configureStandardField(&org, "Case", "RecordTypeId")
 	storage.EnsureDeterministicPlatformData(&org)
 	storage.EnsureStandardObject(&org, "Case")
 	machine.SetOrg(&org)
@@ -8771,6 +8772,7 @@ System.assertEquals(false, invalidResult.isSuccess());
 	}
 	machine := New(nil)
 	org := testDataOrg()
+	configureStandardField(&org, "Opportunity", "RecordTypeId")
 	storage.EnsureStandardObject(&org, "Opportunity")
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {

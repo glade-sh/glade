@@ -1,4 +1,5 @@
 id	family	shape	route	apis
 F07	flow_paths	async path after committed DML	committed_anonymous	62.0,67.0
+F08	flow_paths	due scheduled path after committed DML	committed_anonymous	62.0,67.0
 F09	flow_paths	future scheduled path boundary	committed_anonymous	62.0,67.0
 P08	event_flows	event flow after committed publish	committed_anonymous	62.0,67.0

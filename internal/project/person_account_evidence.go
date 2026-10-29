@@ -1,6 +1,7 @@
 package project
 
 import (
+	"encoding/xml"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -21,10 +22,9 @@ var personAccountEvidenceSkipDirs = map[string]bool{
 
 const personAccountEvidenceMaxDepth = 12
 
-// personAccountRecordTypePaths returns retrieved PersonAccount record type
-// files under root. An org exposes the PersonAccount object, and so its record
-// types, only when Person Accounts are enabled, so a source tree that carries
-// one comes from an org with the feature.
+// personAccountRecordTypePaths accepts both the retrieved PersonAccount layout
+// and the default Account.PersonAccount identity exposed by listMetadata.
+// Other Account record types do not establish that Person Accounts are enabled.
 func personAccountRecordTypePaths(root string) []string {
 	if root == "" {
 		return nil
@@ -47,13 +47,25 @@ func personAccountRecordTypePaths(root string) []string {
 		if name != "objects" {
 			return nil
 		}
-		recordTypes := filepath.Join(path, "PersonAccount", "recordTypes")
-		items, readErr := os.ReadDir(recordTypes)
-		if readErr == nil {
+		for _, object := range []string{"PersonAccount", "Account"} {
+			recordTypes := filepath.Join(path, object, "recordTypes")
+			items, _ := os.ReadDir(recordTypes)
 			for _, item := range items {
-				if !item.IsDir() && strings.HasSuffix(item.Name(), ".recordType-meta.xml") {
-					found = append(found, filepath.Join(recordTypes, item.Name()))
+				if item.IsDir() || !strings.HasSuffix(item.Name(), ".recordType-meta.xml") {
+					continue
 				}
+				file := filepath.Join(recordTypes, item.Name())
+				if object == "Account" {
+					var recordType struct {
+						XMLName  xml.Name `xml:"RecordType"`
+						FullName string   `xml:"fullName"`
+					}
+					data, err := os.ReadFile(file)
+					if err != nil || xml.Unmarshal(data, &recordType) != nil || strings.TrimSpace(recordType.FullName) != "PersonAccount" {
+						continue
+					}
+				}
+				found = append(found, file)
 			}
 		}
 		return filepath.SkipDir

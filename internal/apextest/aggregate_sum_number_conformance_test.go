@@ -55,7 +55,7 @@ type aggregateSumNumberData struct {
 func TestAggregateSumNumberOrgConformance(t *testing.T) {
 	data := loadAggregateSumNumberConformance(t)
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "AggregateSumNumber", api)
 			root := t.TempDir()
 			writeFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"sourceApiVersion":%q,"packageDirectories":[{"path":"force-app","default":true}]}`, api))

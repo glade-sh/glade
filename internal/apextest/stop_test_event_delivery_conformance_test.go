@@ -35,7 +35,7 @@ func TestStopTestEventDeliveryOrgConformance(t *testing.T) {
 		t.Fatal("incomplete native matrix")
 	}
 	for _, api := range data.APIs {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			expected := map[string]map[string]int{}
 			for _, row := range data.Rows {
 				if row.API != api {

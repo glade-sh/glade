@@ -27,16 +27,81 @@ def scope():
     return config
 
 
+RUN_SECONDS = 600
+BUILD_SECONDS = 60
+BATCH_SECONDS = 900
+
+
+def positive_seconds(value):
+    if type(value) is not int or value < 1:
+        raise ValueError("race estimates must be positive integer seconds")
+    return value
+
+
 def plan(config):
-    # Longest first. Estimates include a conservative package build allowance;
-    # packages in a batch share their build cache and run one at a time.
-    weights = config["estimatedSeconds"]
-    batches = [{"index": i, "packages": [], "estimatedSeconds": 0} for i in range(8)]
-    for package in sorted(config["packages"], key=lambda p: (-weights[p], p)):
-        batch = min(batches, key=lambda b: (b["estimatedSeconds"], b["index"]))
-        batch["packages"].append(package)
-        batch["estimatedSeconds"] += weights[package]
+    runs = []
+    for package, names in sorted(config["packages"].items()):
+        weights = config.get("testSeconds", {}).get(package)
+        splits = config.get("splitTests", {}).get(package, {})
+        if weights is None:
+            seconds = positive_seconds(config["estimatedSeconds"][package])
+            if seconds > BATCH_SECONDS:
+                raise ValueError("oversized package needs measured test selections: " + package)
+            runs.append({"package": package, "tests": names, "estimatedSeconds": seconds})
+            continue
+        if names is None or set(weights) != set(names) or not set(splits) <= set(names):
+            raise ValueError("per-test estimates must cover the exact selected set")
+        groups = {}
+        for name in names:
+            positive_seconds(weights[name])
+            parts = splits.get(name)
+            leaves = {name + "/" + path: value for path, value in parts.items()} if parts else {name: weights[name]}
+            for path in leaves:
+                segments = path.split("/")
+                if any(not segment or re.search(r"[\s|\[\]()*+?^$\\]", segment) for segment in segments):
+                    raise ValueError("invalid exact subtest path")
+                if any(other.startswith(path + "/") for other in leaves):
+                    raise ValueError("overlapping split selections")
+                seconds = positive_seconds(leaves[path])
+                if seconds > RUN_SECONDS:
+                    raise ValueError("oversized test needs a finer measured split: " + path)
+                groups.setdefault(tuple(segments[:-1]), []).append((path, seconds))
+        # Only combine siblings. A Go -run filter is a slash-separated regex;
+        # combining unrelated paths would create a cross-product of branches.
+        for prefix, entries in sorted(groups.items()):
+            bins = []
+            for name, seconds in sorted(entries, key=lambda row: (-row[1], row[0])):
+                target = next((b for b in bins if b["estimatedSeconds"] + seconds <= RUN_SECONDS + BUILD_SECONDS), None)
+                if target is None:
+                    target = {"package": package, "tests": [], "estimatedSeconds": BUILD_SECONDS}
+                    bins.append(target)
+                target["tests"].append(name)
+                target["estimatedSeconds"] += seconds
+            for item in bins:
+                item["tests"].sort()
+            runs.extend(bins)
+    batches = []
+    for item in sorted(runs, key=lambda r: (-r["estimatedSeconds"], r["package"], r["tests"] or [])):
+        batch = next((b for b in batches if b["estimatedSeconds"] + item["estimatedSeconds"] <= BATCH_SECONDS), None)
+        if batch is None:
+            batch = {"index": len(batches), "packages": [], "runs": [], "estimatedSeconds": 0}
+            batches.append(batch)
+        batch["runs"].append(item)
+        batch["packages"] = sorted(set(batch["packages"] + [item["package"]]))
+        batch["estimatedSeconds"] += item["estimatedSeconds"]
+    if len(batches) > 256:
+        raise ValueError("race plan exceeds the CI matrix limit")
     return {"include": batches}
+
+
+def run_pattern(selected):
+    if not selected:
+        return "^$"
+    paths = [name.split("/") for name in selected]
+    if any(path[:-1] != paths[0][:-1] for path in paths):
+        raise ValueError("run selection must contain exact siblings")
+    return "/".join(["^" + re.escape(part) + "$" for part in paths[0][:-1]] +
+                    ["^(?:" + "|".join(re.escape(path[-1]) for path in paths) + ")$"])
 
 
 def run(config, index):
@@ -45,32 +110,40 @@ def run(config, index):
     if not 0 <= index < len(batches):
         raise ValueError("invalid push race batch index")
     batch = batches[index]
-    for package in batch["packages"]:
+    for ordinal, selection in enumerate(batch["runs"]):
+        package = selection["package"]
         environment = os.environ.copy()
+        if package == "./internal/apextest" and environment.get("GLADE_APEXTEST_SHARD"):
+            raise ValueError("push race selections cannot be intersected with a second Apex partition")
         if package == "./internal/gladecli":
             environment["GOMAXPROCS"] = "1"
         directory = ROOT / "ci-artifacts/race-push" / package.removeprefix("./").replace("/", "-")
+        if sum(r["package"] == package for r in batch["runs"]) > 1:
+            directory /= "run-" + str(ordinal)
         directory.mkdir(parents=True, exist_ok=True)
         (directory / "validation-summary.json").unlink(missing_ok=True)
         discovery = subprocess.check_output([GO, "test", "-race", "-list", ".", package], cwd=ROOT, text=True, env=environment)
         (directory / "discovery-command.txt").write_text(discovery)
         discovered = sorted(line for line in discovery.splitlines() if re.fullmatch(r"Test\w+", line))
-        selected = config["packages"][package]
+        selected = selection["tests"]
         selected = discovered if selected is None else selected
-        if len(discovered) != len(set(discovered)) or not set(selected) <= set(discovered):
+        if len(discovered) != len(set(discovered)) or not {name.split("/")[0] for name in selected} <= set(discovered):
             raise ValueError(f"focused race tests missing or duplicated in {package}")
         # Packages with no tests still compile under the race detector.
         if not selected and "[no test files]" not in discovery:
             raise ValueError(f"empty race discovery for {package}")
-        regex = "^(?:" + "|".join(re.escape(n) for n in selected) + ")$" if selected else "^$"
+        regex = run_pattern(selected)
         (directory / "selection.json").write_text(json.dumps({"package": package, "tests": selected, "regex": regex}, indent=2) + "\n")
         # Keep full Test selections short without also running fuzz seeds or
         # examples, whose terminal events are outside the discovered Test set.
         run_regex = "^Test" if selected and selected == discovered else regex
-        command = [GO, "test", "-race", "-json", "-vet=off", "-count=1", "-timeout=12m", "-run", run_regex, package]
+        command = [GO, "test", "-race", "-json", "-vet=off", "-count=1", "-timeout=" + str(max(720, selection["estimatedSeconds"] + 60)) + "s", "-run", run_regex, package]
         terminal = {}
+        started = set()
+        finished = set()
         expected_package = "github.com/glade-sh/glade/" + package.removeprefix("./")
         package_results = []
+        package_started = False
         print(f"[race] {package}: {len(selected)} selected tests", flush=True)
         with (directory / "events.json").open("w") as target:
             status = subprocess.run(command, cwd=ROOT, stdout=target, env=environment).returncode
@@ -80,7 +153,23 @@ def run(config, index):
                 if event.get("Package") != expected_package:
                     raise ValueError("race event has wrong package")
                 name, action = event.get("Test"), event.get("Action")
-                if name and "/" not in name and action in ("pass", "skip", "fail"):
+                if package_results:
+                    raise ValueError("race event after package completion")
+                if action == "start" and not name:
+                    if package_started:
+                        raise ValueError("repeated race package start")
+                    package_started = True
+                elif not package_started:
+                    raise ValueError("race event before package start")
+                if name and action == "run":
+                    if name in started:
+                        raise ValueError("duplicate race start: " + name)
+                    started.add(name)
+                if name and action in ("pass", "skip", "fail"):
+                    if name in finished:
+                        raise ValueError("duplicate race terminal: " + name)
+                    finished.add(name)
+                if name in selected and action in ("pass", "skip", "fail"):
                     if name in terminal:
                         raise ValueError(f"duplicate terminal result: {name}")
                     terminal[name] = action
@@ -98,7 +187,9 @@ def run(config, index):
             raise ValueError(f"race package validation failed: {validation.stdout}{validation.stderr}")
         deferred = {row["test"] for row in json.loads(package_summary.read_text())["deferred"]}
         expected = {name: "skip" if name in deferred else "pass" for name in selected}
-        if status or terminal != expected or (selected and package_results != ["pass"]):
+        ancestors = {"/".join(name.split("/")[:i]) for name in selected for i in range(1, len(name.split("/")))}
+        extra = {name for name in finished if name not in ancestors and not any(name == root or name.startswith(root + "/") for root in selected)}
+        if status or terminal != expected or extra or started != finished or (selected and package_results != ["pass"]):
             raise ValueError(f"race results do not exactly pass selected tests: {package}; exit={status}")
         (directory / "validation-summary.json").write_text(json.dumps({"valid": True, "package": package,
             "discovered": discovered, "selected": selected,

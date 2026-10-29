@@ -154,7 +154,7 @@ func TestEventListExtendedNativeConformance(t *testing.T) {
 		t.Fatal("runtime/carry observations changed")
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "EventListExtended", api)
 			for n := 1; n <= 16; n++ {
 				id := fmt.Sprintf("C04-%02d", n)

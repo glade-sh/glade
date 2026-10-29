@@ -113,7 +113,7 @@ func runInvocableFlowProjectConformance(t *testing.T, group string, shapes, cell
 		t.Fatal("native matrix count changed")
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "InvocableFlowProject-"+group, api)
 			root := invocableFlowObservedProject(t, filepath.Join(fixtureDir, "api"+strings.TrimSuffix(api, ".0")))
 			for n, row := range data.Rows {

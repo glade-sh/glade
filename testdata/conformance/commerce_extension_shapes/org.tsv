@@ -1,0 +1,123 @@
+api	route	case	outcome	diagnostic
+62.0	deploy	orchestrator_override	accepted	-
+62.0	deploy	inventory_override	accepted	-
+62.0	deploy	inventory_empty	accepted	-
+62.0	deploy	inventory_construct	rejected	Abstract classes cannot be constructed: CartExtension.InventoryCartCalculator
+62.0	deploy	pricing_override	accepted	-
+62.0	deploy	pricing_empty	accepted	-
+62.0	deploy	pricing_construct	rejected	Abstract classes cannot be constructed: CartExtension.PricingCartCalculator
+62.0	deploy	promotions_override	accepted	-
+62.0	deploy	promotions_empty	accepted	-
+62.0	deploy	promotions_construct	rejected	Abstract classes cannot be constructed: CartExtension.PromotionsCartCalculator
+62.0	deploy	shipping_override	accepted	-
+62.0	deploy	shipping_empty	accepted	-
+62.0	deploy	shipping_construct	rejected	Abstract classes cannot be constructed: CartExtension.ShippingCartCalculator
+62.0	deploy	tax_override	accepted	-
+62.0	deploy	tax_empty	accepted	-
+62.0	deploy	tax_construct	rejected	Abstract classes cannot be constructed: CartExtension.TaxCartCalculator
+62.0	deploy	order_override	accepted	-
+62.0	deploy	split_override	accepted	-
+62.0	deploy	split_mock_override	accepted	-
+62.0	deploy	split_mock_empty	rejected	Class G32CommerceSplitMockEmpty must implement the abstract method: void CartExtension.SplitShipmentServiceMock.arrangeItems(CartExtension.ItemArrangementRequest)
+62.0	deploy	split_mock_construct	rejected	Abstract classes cannot be constructed: CartExtension.SplitShipmentServiceMock
+62.0	deploy	helper_prices	rejected	Non-virtual, non-abstract methods cannot be overridden: void G32CommerceHelperPrices.prices(CartExtension.CartCalculateCalculatorRequest)
+62.0	deploy	helper_promotions	rejected	Non-virtual, non-abstract methods cannot be overridden: void G32CommerceHelperPromotions.promotions(CartExtension.CartCalculateCalculatorRequest)
+62.0	deploy	helper_inventory	rejected	Non-virtual, non-abstract methods cannot be overridden: void G32CommerceHelperInventory.inventory(CartExtension.CartCalculateCalculatorRequest)
+62.0	deploy	helper_shipping	rejected	Non-virtual, non-abstract methods cannot be overridden: void G32CommerceHelperShipping.shipping(CartExtension.CartCalculateCalculatorRequest)
+62.0	deploy	helper_taxes	rejected	Non-virtual, non-abstract methods cannot be overridden: void G32CommerceHelperTaxes.taxes(CartExtension.CartCalculateCalculatorRequest)
+62.0	deploy	helper_postshipping	rejected	Non-virtual, non-abstract methods cannot be overridden: void G32CommerceHelperPostshipping.postShipping(CartExtension.CartCalculateCalculatorRequest)
+62.0	deploy	checkout_validate_override	accepted	-
+62.0	deploy	checkout_validate_bad_signature	rejected	@Override specified for non-overriding method: CartExtension.PlaceOrderResponse G32CommerceBadValidate.validate(CartExtension.PlaceOrderRequest)
+62.0	deploy	pricing_contract_request	rejected	Type is not visible: commercestorepricing.ContractResolutionRequest
+62.0	deploy	pricing_contract_response	rejected	Type is not visible: commercestorepricing.ContractResolutionResponse
+62.0	deploy	webstore_fields	accepted	-
+62.0	deploy	webstore_missing_field	rejected	Field does not exist: OptionsSyntheticMissing on WebStore
+62.0	deploy	webstore_null_boundary	accepted	-
+62.0	anonymous	orchestrator_override	accepted	-
+62.0	anonymous	inventory_override	accepted	-
+62.0	anonymous	pricing_override	accepted	-
+62.0	anonymous	promotions_override	accepted	-
+62.0	anonymous	shipping_override	accepted	-
+62.0	anonymous	tax_override	accepted	-
+62.0	anonymous	order_override	compile_error	Compilation failed at Line 82 column 18 with the error: Field is not writeable: OrderDeliveryGroup.OrderId
+62.0	anonymous	split_override	accepted	-
+62.0	anonymous	split_mock_override	runtime_error	Execution failed at this code: System.UnsupportedOperationException: SplitShipmentServiceMock cannot be constructed directly outside of a test
+62.0	anonymous	checkout_validate_override	accepted	-
+62.0	anonymous	pricing_contract_request	compile_error	Compilation failed at Line 1 column 1 with the error: Type is not visible: commercestorepricing.ContractResolutionRequest
+62.0	anonymous	pricing_contract_response	compile_error	Compilation failed at Line 1 column 1 with the error: Type is not visible: commercestorepricing.ContractResolutionResponse
+62.0	anonymous	webstore_fields	accepted	-
+62.0	anonymous	webstore_missing_field	compile_error	Compilation failed at Line 1 column 12 with the error: Field does not exist: OptionsSyntheticMissing on WebStore
+62.0	anonymous	webstore_null_boundary	accepted	-
+62.0	istest	checkout_validate_override	Pass	-
+62.0	istest	inventory_override	Pass	-
+62.0	istest	orchestrator_override	Pass	-
+62.0	istest	pricing_override	Pass	-
+62.0	istest	promotions_override	Pass	-
+62.0	istest	shipping_override	Pass	-
+62.0	istest	split_mock_override	Pass	-
+62.0	istest	split_override	Pass	-
+62.0	istest	tax_override	Pass	-
+62.0	istest	webstore_fields	Pass	-
+62.0	istest	webstore_null_boundary	Pass	-
+62.0	describe	webstore_fields	accepted	"{""createable"": true, ""name"": ""OptionsAutoFacetingEnabled"", ""nillable"": false, ""type"": ""boolean"", ""updateable"": true}"
+67.0	deploy	orchestrator_override	accepted	-
+67.0	deploy	inventory_override	accepted	-
+67.0	deploy	inventory_empty	accepted	-
+67.0	deploy	inventory_construct	rejected	Abstract classes cannot be constructed: CartExtension.InventoryCartCalculator
+67.0	deploy	pricing_override	accepted	-
+67.0	deploy	pricing_empty	accepted	-
+67.0	deploy	pricing_construct	rejected	Abstract classes cannot be constructed: CartExtension.PricingCartCalculator
+67.0	deploy	promotions_override	accepted	-
+67.0	deploy	promotions_empty	accepted	-
+67.0	deploy	promotions_construct	rejected	Abstract classes cannot be constructed: CartExtension.PromotionsCartCalculator
+67.0	deploy	shipping_override	accepted	-
+67.0	deploy	shipping_empty	accepted	-
+67.0	deploy	shipping_construct	rejected	Abstract classes cannot be constructed: CartExtension.ShippingCartCalculator
+67.0	deploy	tax_override	accepted	-
+67.0	deploy	tax_empty	accepted	-
+67.0	deploy	tax_construct	rejected	Abstract classes cannot be constructed: CartExtension.TaxCartCalculator
+67.0	deploy	order_override	accepted	-
+67.0	deploy	split_override	accepted	-
+67.0	deploy	split_mock_override	accepted	-
+67.0	deploy	split_mock_empty	rejected	Class G32CommerceSplitMockEmpty must implement the abstract method: void CartExtension.SplitShipmentServiceMock.arrangeItems(CartExtension.ItemArrangementRequest)
+67.0	deploy	split_mock_construct	rejected	Abstract classes cannot be constructed: CartExtension.SplitShipmentServiceMock
+67.0	deploy	helper_prices	rejected	Non-virtual, non-abstract methods cannot be overridden: void G32CommerceHelperPrices.prices(CartExtension.CartCalculateCalculatorRequest)
+67.0	deploy	helper_promotions	rejected	Non-virtual, non-abstract methods cannot be overridden: void G32CommerceHelperPromotions.promotions(CartExtension.CartCalculateCalculatorRequest)
+67.0	deploy	helper_inventory	rejected	Non-virtual, non-abstract methods cannot be overridden: void G32CommerceHelperInventory.inventory(CartExtension.CartCalculateCalculatorRequest)
+67.0	deploy	helper_shipping	rejected	Non-virtual, non-abstract methods cannot be overridden: void G32CommerceHelperShipping.shipping(CartExtension.CartCalculateCalculatorRequest)
+67.0	deploy	helper_taxes	rejected	Non-virtual, non-abstract methods cannot be overridden: void G32CommerceHelperTaxes.taxes(CartExtension.CartCalculateCalculatorRequest)
+67.0	deploy	helper_postshipping	rejected	Non-virtual, non-abstract methods cannot be overridden: void G32CommerceHelperPostshipping.postShipping(CartExtension.CartCalculateCalculatorRequest)
+67.0	deploy	checkout_validate_override	accepted	-
+67.0	deploy	checkout_validate_bad_signature	rejected	@Override specified for non-overriding method: CartExtension.PlaceOrderResponse G32CommerceBadValidate.validate(CartExtension.PlaceOrderRequest)
+67.0	deploy	pricing_contract_request	rejected	Type is not visible: commercestorepricing.ContractResolutionRequest
+67.0	deploy	pricing_contract_response	rejected	Type is not visible: commercestorepricing.ContractResolutionResponse
+67.0	deploy	webstore_fields	accepted	-
+67.0	deploy	webstore_missing_field	rejected	Field does not exist: OptionsSyntheticMissing on WebStore
+67.0	deploy	webstore_null_boundary	accepted	-
+67.0	anonymous	orchestrator_override	accepted	-
+67.0	anonymous	inventory_override	accepted	-
+67.0	anonymous	pricing_override	accepted	-
+67.0	anonymous	promotions_override	accepted	-
+67.0	anonymous	shipping_override	accepted	-
+67.0	anonymous	tax_override	accepted	-
+67.0	anonymous	order_override	compile_error	Compilation failed at Line 82 column 18 with the error: Field is not writeable: OrderDeliveryGroup.OrderId
+67.0	anonymous	split_override	accepted	-
+67.0	anonymous	split_mock_override	runtime_error	Execution failed at this code: System.UnsupportedOperationException: SplitShipmentServiceMock cannot be constructed directly outside of a test
+67.0	anonymous	checkout_validate_override	accepted	-
+67.0	anonymous	pricing_contract_request	compile_error	Compilation failed at Line 1 column 1 with the error: Type is not visible: commercestorepricing.ContractResolutionRequest
+67.0	anonymous	pricing_contract_response	compile_error	Compilation failed at Line 1 column 1 with the error: Type is not visible: commercestorepricing.ContractResolutionResponse
+67.0	anonymous	webstore_fields	accepted	-
+67.0	anonymous	webstore_missing_field	compile_error	Compilation failed at Line 1 column 12 with the error: Field does not exist: OptionsSyntheticMissing on WebStore
+67.0	anonymous	webstore_null_boundary	accepted	-
+67.0	istest	checkout_validate_override	Pass	-
+67.0	istest	inventory_override	Pass	-
+67.0	istest	orchestrator_override	Pass	-
+67.0	istest	pricing_override	Pass	-
+67.0	istest	promotions_override	Pass	-
+67.0	istest	shipping_override	Pass	-
+67.0	istest	split_mock_override	Pass	-
+67.0	istest	split_override	Pass	-
+67.0	istest	tax_override	Pass	-
+67.0	istest	webstore_fields	Pass	-
+67.0	istest	webstore_null_boundary	Pass	-
+67.0	describe	webstore_fields	accepted	"{""createable"": true, ""name"": ""OptionsAutoFacetingEnabled"", ""nillable"": false, ""type"": ""boolean"", ""updateable"": true}"

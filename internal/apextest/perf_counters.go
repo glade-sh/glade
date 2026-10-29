@@ -43,6 +43,11 @@ type SemanticCachePerf struct {
 	Evictions     uint64                   `json:"evictions,omitempty"`
 }
 
+// RunnerPhasePerfCounters reports detailed phase durations. For phases measured
+// by this runner, zero means no observation. A measured zero-duration sample is
+// encoded as one nanosecond to distinguish clock quantization from inactivity;
+// it does not claim that one physical nanosecond elapsed. Imported pre-run and
+// cache measurements retain their original values.
 type RunnerPhasePerfCounters struct {
 	ProjectLoadNS           int64  `json:"projectLoadNs,omitempty"`
 	SchemaLoadNS            int64  `json:"schemaLoadNs,omitempty"`
@@ -341,11 +346,25 @@ func recordCloneFallback(counters ...*runPerfCounters) {
 	perfCounterFor(counters).cloneFallbacks.Add(1)
 }
 
+// recordObservedPhaseDuration records a sample only after a phase actually ran.
+// Callers must retain their no-observation guards; a zero sample is distinct
+// from a phase that never started. phase belongs to this run's counters.
+func (c *runPerfCounters) recordObservedPhaseDuration(phase *atomic.Int64, sample time.Duration) {
+	if c == nil || !c.enabled {
+		return
+	}
+	nanoseconds := sample.Nanoseconds()
+	if nanoseconds == 0 {
+		nanoseconds = 1
+	}
+	phase.Add(nanoseconds)
+}
+
 func recordSetupDuration(d time.Duration, counters ...*runPerfCounters) {
 	c := perfCounterFor(counters)
 	c.setupDurationMS.Add(d.Milliseconds())
 	if c.enabled {
-		c.phases.classSetupNS.Add(d.Nanoseconds())
+		c.recordObservedPhaseDuration(&c.phases.classSetupNS, d)
 	}
 }
 
@@ -353,7 +372,7 @@ func recordRunDuration(d time.Duration, counters ...*runPerfCounters) {
 	c := perfCounterFor(counters)
 	c.runDurationMS.Add(d.Milliseconds())
 	if c.enabled {
-		c.phases.methodRunNS.Add(d.Nanoseconds())
+		c.recordObservedPhaseDuration(&c.phases.methodRunNS, d)
 	}
 }
 
@@ -368,7 +387,7 @@ func startMethodWindow(counters ...*runPerfCounters) time.Time {
 func recordMethodWindow(started time.Time, counters ...*runPerfCounters) {
 	c := perfCounterFor(counters)
 	if c.enabled && !started.IsZero() {
-		c.phases.methodWindowNS.Add(time.Since(started).Nanoseconds())
+		c.recordObservedPhaseDuration(&c.phases.methodWindowNS, time.Since(started))
 	}
 }
 

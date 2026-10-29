@@ -2456,6 +2456,100 @@ func TestPropagateAliasSnapshotToStaticsUsesDirectMapChildIndex(t *testing.T) {
 	}
 }
 
+func TestPropagateAliasSnapshotToStaticsUsesDirectListChildIndex(t *testing.T) {
+	ResetPerfCounters()
+	SetPerfCountersEnabled(true)
+	t.Cleanup(ResetPerfCounters)
+
+	machine := New(nil)
+	holder := List()
+	var target Value
+	for i := 0; i < staticAliasDirectListChildIndexMinChildren+4; i++ {
+		entry := Object("LogEntryBuilder")
+		entry.Fields["Name"] = String("entry-" + strconv.Itoa(i))
+		// A nested list of records keeps the element off the flat-object
+		// fast path, which indexes only scalar-shaped elements.
+		tag := Object("LogEntryTag")
+		tag.Fields["Name"] = String("tag-" + strconv.Itoa(i))
+		entry.Fields["tags"] = List(tag)
+		holder.List = append(holder.List, entry)
+		if i == staticAliasDirectListChildIndexMinChildren+1 {
+			target = entry
+		}
+	}
+	machine.Classes["Logger"] = Class{
+		Name: "Logger",
+		StaticFields: map[string]Field{
+			"buffer": {Name: "buffer", Type: "List<LogEntryBuilder>", Value: holder},
+		},
+	}
+	machine.staticValueRefs, machine.staticValueRefFields = machine.collectStaticValueRefs()
+
+	updated := Object("LogEntryBuilder")
+	updated.Ref = target.Ref
+	updated.Fields["Name"] = String("updated")
+
+	machine.propagateAliasSnapshotToStatics(snapshotAlias(target), updated)
+
+	got := machine.Classes["Logger"].StaticFields["buffer"].Value.List[staticAliasDirectListChildIndexMinChildren+1]
+	if got.Fields["Name"].Text != "updated" {
+		t.Fatalf("buffer element name = %q, want updated", got.Fields["Name"].Text)
+	}
+	if hits := SnapshotPerfCounters().StaticAlias.DirectChildHits; hits != 1 {
+		t.Fatalf("direct child hits = %d, want 1", hits)
+	}
+}
+
+func TestDirectListChildIndexFallsBackForDuplicateRefs(t *testing.T) {
+	ResetPerfCounters()
+	SetPerfCountersEnabled(true)
+	t.Cleanup(ResetPerfCounters)
+
+	machine := New(nil)
+	holder := List()
+	target := Object("LogEntryBuilder")
+	target.Fields["Name"] = String("initial")
+	targetTag := Object("LogEntryTag")
+	targetTag.Fields["Name"] = String("tag")
+	target.Fields["tags"] = List(targetTag)
+	for i := 0; i < staticAliasDirectListChildIndexMinChildren+2; i++ {
+		entry := Object("LogEntryBuilder")
+		entry.Fields["Name"] = String("entry-" + strconv.Itoa(i))
+		tag := Object("LogEntryTag")
+		tag.Fields["Name"] = String("tag-" + strconv.Itoa(i))
+		entry.Fields["tags"] = List(tag)
+		holder.List = append(holder.List, entry)
+	}
+	// The same object appears at two list indexes; the direct index must not
+	// replace only one occurrence.
+	holder.List = append(holder.List, target, target)
+	machine.Classes["Logger"] = Class{
+		Name: "Logger",
+		StaticFields: map[string]Field{
+			"buffer": {Name: "buffer", Type: "List<LogEntryBuilder>", Value: holder},
+		},
+	}
+	machine.staticValueRefs, machine.staticValueRefFields = machine.collectStaticValueRefs()
+
+	updated := Object("LogEntryBuilder")
+	updated.Ref = target.Ref
+	updated.Fields["Name"] = String("updated")
+
+	machine.propagateAliasSnapshotToStatics(snapshotAlias(target), updated)
+
+	buffer := machine.Classes["Logger"].StaticFields["buffer"].Value.List
+	last := len(buffer) - 1
+	if got := buffer[last].Fields["Name"].Text; got != "updated" {
+		t.Fatalf("buffer[last] name = %q, want updated", got)
+	}
+	if got := buffer[last-1].Fields["Name"].Text; got != "updated" {
+		t.Fatalf("buffer[last-1] name = %q, want updated", got)
+	}
+	if hits := SnapshotPerfCounters().StaticAlias.DirectChildHits; hits != 0 {
+		t.Fatalf("direct child hits = %d, want 0 for duplicate refs", hits)
+	}
+}
+
 func TestPropagateAliasSnapshotToStaticsUsesDirectObjectChildIndex(t *testing.T) {
 	ResetPerfCounters()
 	SetPerfCountersEnabled(true)
@@ -14322,4 +14416,121 @@ func TestRegisterClassDropsSelfSuperclassAfterDependencyMerge(t *testing.T) {
 	if _, ok := class.Fields["LocalField"]; !ok {
 		t.Fatalf("local field was not merged: %#v", class.Fields)
 	}
+}
+
+func TestStaticAliasChildHintSurvivesParentUpdateAtSameSlot(t *testing.T) {
+	ResetPerfCounters()
+	SetPerfCountersEnabled(true)
+	t.Cleanup(ResetPerfCounters)
+
+	machine := New(nil)
+	holder := List()
+	var builder, event Value
+	for i := 0; i < staticAliasDirectListChildIndexMinChildren+4; i++ {
+		entry := Object("LogEntryBuilder")
+		record := Object("LogEntryEvent")
+		record.Fields["Message"] = String("message-" + strconv.Itoa(i))
+		entry.Fields["event"] = record
+		holder.List = append(holder.List, entry)
+		if i == 3 {
+			builder = entry
+			event = record
+		}
+	}
+	machine.Classes["Logger"] = Class{
+		Name: "Logger",
+		StaticFields: map[string]Field{
+			"buffer": {Name: "buffer", Type: "List<LogEntryBuilder>", Value: holder},
+		},
+	}
+	machine.staticValueRefs, machine.staticValueRefFields = machine.collectStaticValueRefs()
+
+	// The nested record is not a direct list child: its first mutation walks the
+	// field and records a child hint for its slot.
+	firstEvent := Object("LogEntryEvent")
+	firstEvent.Ref = event.Ref
+	firstEvent.Fields["Message"] = String("first")
+	machine.propagateAliasSnapshotToStatics(snapshotAlias(event), firstEvent)
+	if hits := SnapshotPerfCounters().StaticAlias.ChildHintHits; hits != 0 {
+		t.Fatalf("child hint hits after the first record mutation = %d, want 0", hits)
+	}
+
+	// The builder that holds the record is then written back into the same slot.
+	updatedBuilder := Object("LogEntryBuilder")
+	updatedBuilder.Ref = builder.Ref
+	updatedBuilder.Fields["event"] = firstEvent
+	updatedBuilder.Fields["Saved"] = Bool(true)
+	machine.propagateAliasSnapshotToStatics(snapshotAlias(builder), updatedBuilder)
+	if hits := SnapshotPerfCounters().StaticAlias.DirectChildHits; hits != 1 {
+		t.Fatalf("direct child hits after the builder writeback = %d, want 1", hits)
+	}
+
+	// The record still lives in the hinted slot, so its next mutation must not
+	// walk the whole buffer again.
+	secondEvent := Object("LogEntryEvent")
+	secondEvent.Ref = event.Ref
+	secondEvent.Fields["Message"] = String("second")
+	machine.propagateAliasSnapshotToStatics(snapshotAlias(firstEvent), secondEvent)
+
+	got := machine.Classes["Logger"].StaticFields["buffer"].Value.List[3]
+	if got.Fields["Saved"].Kind != ValueBool || !got.Fields["Saved"].Bool {
+		t.Fatalf("builder Saved = %+v, want true", got.Fields["Saved"])
+	}
+	if text := got.Fields["event"].Fields["Message"].Text; text != "second" {
+		t.Fatalf("event message = %q, want second", text)
+	}
+	if hits := SnapshotPerfCounters().StaticAlias.ChildHintHits; hits != 1 {
+		t.Fatalf("child hint hits after the second record mutation = %d, want 1", hits)
+	}
+}
+
+func TestStaticAliasChildHintForgottenWhenRecordMovesToAnotherSlot(t *testing.T) {
+	machine := New(nil)
+	holder := List()
+	var first, second, event Value
+	for i := 0; i < staticAliasDirectListChildIndexMinChildren+4; i++ {
+		entry := Object("LogEntryBuilder")
+		holder.List = append(holder.List, entry)
+		switch i {
+		case 2:
+			first = entry
+			event = Object("LogEntryEvent")
+			event.Fields["Message"] = String("initial")
+			entry.Fields["event"] = event
+		case 9:
+			second = entry
+		}
+	}
+	machine.Classes["Logger"] = Class{
+		Name: "Logger",
+		StaticFields: map[string]Field{
+			"buffer": {Name: "buffer", Type: "List<LogEntryBuilder>", Value: holder},
+		},
+	}
+	machine.staticValueRefs, machine.staticValueRefFields = machine.collectStaticValueRefs()
+
+	firstEvent := Object("LogEntryEvent")
+	firstEvent.Ref = event.Ref
+	firstEvent.Fields["Message"] = String("first")
+	machine.propagateAliasSnapshotToStatics(snapshotAlias(event), firstEvent)
+
+	// The same record is now also stored under another builder: the hint for
+	// its old slot must not replace only one occurrence.
+	updatedSecond := Object("LogEntryBuilder")
+	updatedSecond.Ref = second.Ref
+	updatedSecond.Fields["event"] = firstEvent
+	machine.propagateAliasSnapshotToStatics(snapshotAlias(second), updatedSecond)
+
+	secondEvent := Object("LogEntryEvent")
+	secondEvent.Ref = event.Ref
+	secondEvent.Fields["Message"] = String("second")
+	machine.propagateAliasSnapshotToStatics(snapshotAlias(firstEvent), secondEvent)
+
+	buffer := machine.Classes["Logger"].StaticFields["buffer"].Value.List
+	for _, index := range []int{2, 9} {
+		if text := buffer[index].Fields["event"].Fields["Message"].Text; text != "second" {
+			t.Fatalf("buffer[%d] event message = %q, want second", index, text)
+		}
+	}
+	_ = first
 }

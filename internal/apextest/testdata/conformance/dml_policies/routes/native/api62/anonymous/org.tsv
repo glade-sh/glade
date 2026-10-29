@@ -1,0 +1,22 @@
+case	value
+batch_Alert_keyword_true	DUPLICATES_DETECTED|1
+batch_Alert_keyword_false	DUPLICATES_DETECTED|1
+batch_Alert_options_true	ok,ok|3
+batch_Alert_options_false	ok,DUPLICATES_DETECTED|2
+batch_Block_keyword_true	DUPLICATES_DETECTED|1
+batch_Block_keyword_false	DUPLICATES_DETECTED|1
+batch_Block_options_true	ok,DUPLICATES_DETECTED|2
+batch_Block_options_false	ok,DUPLICATES_DETECTED|2
+upsert_keyword	DUPLICATES_DETECTED|1
+upsert_database	DUPLICATES_DETECTED|1
+trigger_assignment_insert_options	true|true|true|before-insert:false,after-insert:false,before-update:true,after-update:true
+trigger_assignment_insert_record	true|true|true|before-insert:false,after-insert:false,before-update:true,after-update:true
+trigger_assignment_update_options	true|true|true|before-update:false,after-update:false,before-update:true,after-update:true
+trigger_assignment_update_record	true|true|true|before-update:false,after-update:false,before-update:true,after-update:true
+trigger_lead_insert_options	true|true|true|before-insert:false,after-insert:false,before-update:true,after-update:true
+trigger_lead_insert_record	true|true|true|before-insert:false,after-insert:false,before-update:true,after-update:true
+trigger_lead_update_options	true|true|true|before-update:false,after-update:false,before-update:true,after-update:true
+trigger_lead_update_record	true|true|true|before-update:false,after-update:false,before-update:true,after-update:true
+trigger_duplicate	DUPLICATES_DETECTED
+async_callout	test-only
+soap_pending	System.CalloutException|You have uncommitted work pending. Please commit or rollback before calling out

@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>NumberPair__c</fullName><label>NumberPair</label><referenceTo>Holder__c</referenceTo><relationshipLabel>NumberPair</relationshipLabel><relationshipName>LiteralProbeNumberPair</relationshipName><deleteConstraint>SetNull</deleteConstraint><type>Lookup</type><lookupFilter><active>true</active><filterItems><field>Holder__c.Amount__c</field><operation>equals</operation><value>12.5,67.25</value></filterItems><isOptional>false</isOptional></lookupFilter></CustomField>

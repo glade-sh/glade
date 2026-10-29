@@ -43,6 +43,9 @@ type typeMembers struct {
 }
 
 type semaTypeMemberModel struct {
+	orgShapeFeatures            []string
+	constructorDefinitions      sync.Map
+	constructorSchemaOnce       sync.Once
 	receiverDependencyInstalled bool
 	customLabelNames            map[string]bool
 	customLabelsKnown           bool
@@ -63,6 +66,10 @@ type semaTypeMemberModel struct {
 	sourceMembersByUnit       map[string]map[string]typeMembers
 	sourceUnitsWithDuplicates map[string]bool
 	sourceUnitByFile          map[string]string
+	completeSourceNestedTypes map[string]bool
+	sourceScopeByAlias        map[string]semaSourceScope
+	sourceProjectByUnit       map[string]string
+	defaultSourceScope        semaSourceScope
 }
 
 type semaLazyPlatformTypeMemberModel struct {
@@ -123,13 +130,60 @@ type semaTypeMemberState struct {
 }
 
 type semaTypeMemberView struct {
-	state      *semaTypeMemberState
-	current    map[string]typeMembers
-	hydrated   map[string]typeMembers
-	canonical  *semaCanonicalNames
-	sourceUnit string
+	state                     *semaTypeMemberState
+	current                   map[string]typeMembers
+	hydrated                  map[string]typeMembers
+	canonical                 *semaCanonicalNames
+	sourceUnit                string
+	anonymous                 bool
+	namedApexReferenceObjects bool
+	namedApexReferenceMembers map[string]typeMembers
 	// lexicalShadows memoizes semaLexicalShadowingInner by owner and name.
 	lexicalShadows map[string]string
+}
+
+// A source declaration closes nested names only in its own project and
+// namespace. Different source trees within one SFDX project share this scope.
+type semaSourceScope struct {
+	project   string
+	namespace string
+}
+
+func (s *semaTypeMemberState) anonymousView() *semaTypeMemberView {
+	view := s.view()
+	view.anonymous = true
+	return view
+}
+
+func semaSourceTypeInCallingScope(model *semaTypeMemberView, owner string, members typeMembers) bool {
+	if model == nil || model.state == nil || model.state.base == nil {
+		return false
+	}
+	base := model.state.base
+	target, known := base.sourceScopeByAlias[normalizeName(members.name)]
+	if !known {
+		return false
+	}
+	if model.anonymous || owner == "" {
+		return target == base.defaultSourceScope
+	}
+	if model.sourceUnit != "" {
+		project, known := base.sourceProjectByUnit[model.sourceUnit]
+		if !known {
+			return false
+		}
+		current, known := model.lookupName(owner)
+		if !known {
+			return false
+		}
+		namespace := normalizeName(current.namespace)
+		if namespace == "" {
+			namespace = base.defaultSourceScope.namespace
+		}
+		return target == (semaSourceScope{project: project, namespace: namespace})
+	}
+	caller, known := base.sourceScopeByAlias[normalizeName(owner)]
+	return known && caller == target
 }
 
 func newSemaTypeMemberState(base *semaTypeMemberModel) *semaTypeMemberState {
@@ -177,10 +231,10 @@ func (v *semaTypeMemberView) lookup(key string) (typeMembers, bool) {
 		members, ok := v.state.platform.lookup(key)
 		if ok {
 			v.hydrated[key] = members
+			return members, true
 		}
-		return members, ok
 	}
-	return typeMembers{}, false
+	return v.namedApexReferenceObjectMembers(key)
 }
 
 func (v *semaTypeMemberView) get(key string) typeMembers {
@@ -202,6 +256,15 @@ func (v *semaTypeMemberView) canonicalName(name string) string {
 func (v *semaTypeMemberView) storeHydrated(key string, members typeMembers) {
 	if v == nil || v.state == nil || key == "" {
 		return
+	}
+	if v.namedApexReferenceObjects && members.platform && members.sobject {
+		if name, ok := semaNamedApexReferenceObjectName(key); ok {
+			if v.namedApexReferenceMembers == nil {
+				v.namedApexReferenceMembers = make(map[string]typeMembers)
+			}
+			v.namedApexReferenceMembers[name] = members
+			return
+		}
 	}
 	v.hydrated[key] = members
 }
@@ -274,12 +337,20 @@ func newSemaLazyPlatformTypeMemberModel(symbols []typesys.TypeSymbol) *semaLazyP
 		if symbol.Namespace != "" {
 			qualifiedKey = normalizeName(symbol.Namespace) + "." + localKey
 		}
-		if _, exists := model.symbolsByKey[localKey]; !exists {
+		short := semaShortTypeKeyFromNormalizedKey(localKey)
+		// Platform symbols may carry the namespace separately from Name.
+		// Neither representation may register an unavailable bare SObject name.
+		referenceOnlyAlias := qualifiedKey != short && storage.IsReferenceOnlyStandardObject(short)
+		if _, exists := model.symbolsByKey[localKey]; !exists && (localKey != short || !referenceOnlyAlias) {
 			model.symbolsByKey[localKey] = symbol
 		}
 		model.symbolsByKey[qualifiedKey] = symbol
-		short := semaShortTypeKeyFromNormalizedKey(localKey)
 		if short == "" {
+			continue
+		}
+		// A namespaced platform type cannot make an unavailable reference-only
+		// SObject name resolve as a bare type. Keep its qualified entries above.
+		if referenceOnlyAlias {
 			continue
 		}
 		if short != localKey {
@@ -897,6 +968,17 @@ func semaSourceUnitKey(file, sourceRoot string) string {
 	return semaSourceUnitKeyCached(file, sourceRoot, nil)
 }
 
+// Indexed source units belong to this model's immutable build generation.
+// Unindexed files have no captured marker identity or invalidation generation:
+// their root and live marker walk must be observed on every lookup. In
+// particular, caching a negative walk would hide a newly created project.
+func (m *semaTypeMemberModel) sourceUnitForFile(file, sourceRoot string) string {
+	if unit := m.sourceUnitByFile[file]; unit != "" {
+		return unit
+	}
+	return semaSourceUnitKey(file, sourceRoot)
+}
+
 func semaSourceUnitKeyCached(file, sourceRoot string, cache map[string]string) string {
 	file, dir, ok := semaSourceUnitFile(file)
 	if !ok {
@@ -990,10 +1072,7 @@ func semaModelWithCurrentType(model *semaTypeMemberView, typ typesys.TypeSymbol)
 		}
 	}
 	if model != nil && model.state != nil && model.state.base != nil {
-		out.sourceUnit = model.state.base.sourceUnitByFile[typ.File]
-		if out.sourceUnit == "" {
-			out.sourceUnit = semaSourceUnitKey(typ.File, typ.SourceRoot)
-		}
+		out.sourceUnit = model.state.base.sourceUnitForFile(typ.File, typ.SourceRoot)
 	}
 	addCurrent(typ)
 	// The global model intentionally keeps one winner for an ambiguous Apex
@@ -1072,10 +1151,7 @@ func semaSourceUnitHasDuplicate(model *semaTypeMemberView, typ typesys.TypeSymbo
 	if model == nil || model.state == nil || model.state.base == nil {
 		return false
 	}
-	unit := model.state.base.sourceUnitByFile[typ.File]
-	if unit == "" {
-		unit = semaSourceUnitKey(typ.File, typ.SourceRoot)
-	}
+	unit := model.state.base.sourceUnitForFile(typ.File, typ.SourceRoot)
 	return model.state.base.sourceUnitsWithDuplicates[unit]
 }
 
@@ -1418,7 +1494,9 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 	for _, name := range index.CustomLabelNames {
 		customLabelNames[normalizeName(name)] = true
 	}
+	complete, scopes, projects, defaultScope := semaCompleteSourceNestedInventories(index, sourceUnitByFile)
 	model := &semaTypeMemberModel{
+		orgShapeFeatures:          append([]string(nil), index.OrgShapeFeatures...),
 		customLabelNames:          customLabelNames,
 		customLabelsKnown:         index.CustomLabelsKnown,
 		members:                   out,
@@ -1426,6 +1504,10 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 		sourceMembersByUnit:       sourceMembersByUnit,
 		sourceUnitsWithDuplicates: sourceUnitsWithDuplicates,
 		sourceUnitByFile:          sourceUnitByFile,
+		completeSourceNestedTypes: complete,
+		sourceScopeByAlias:        scopes,
+		sourceProjectByUnit:       projects,
+		defaultSourceScope:        defaultScope,
 	}
 	for _, feature := range index.OrgShapeFeatures {
 		if strings.EqualFold(feature, "Knowledge") {
@@ -1447,6 +1529,107 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 	model.shortCandidates = buildSemaShortCandidateIndex(out, semaTypeMemberCandidateKeys(index))
 	model.receiverDependencyInstalled = markReceiverDependencyPeers(out, index)
 	return model
+}
+
+// Only actual, unambiguous source declarations without an inherited inventory
+// close their nested names. Count lookup aliases as well as namespace-qualified
+// identities: independent packaging namespaces can share an unqualified name.
+func semaCompleteSourceNestedInventories(index typesys.Index, units map[string]string) (map[string]bool, map[string]semaSourceScope, map[string]string, semaSourceScope) {
+	nearestProject := func(dir, sourceRoot string) string {
+		project := ""
+		semaSourceUnitMarkerWalk(dir, sourceRoot, func(marker string) bool {
+			if _, err := os.Stat(marker); err != nil {
+				return false
+			}
+			project = filepath.Dir(marker)
+			if absolute, err := filepath.Abs(project); err == nil {
+				project = absolute
+			}
+			return true
+		})
+		return project
+	}
+	defaultScope := semaSourceScope{namespace: normalizeName(index.Project.Namespace)}
+	if root := strings.TrimSpace(index.Project.Root); root != "" {
+		defaultScope.project = nearestProject(filepath.Clean(root), "")
+	}
+	projects := make(map[string]string)
+	scopes := make(map[string]semaSourceScope)
+	aliases := make([][]string, len(index.Types))
+	counts := make(map[string]int)
+	for i, typ := range index.Types {
+		add := func(name string) {
+			key := normalizeName(name)
+			for _, previous := range aliases[i] {
+				if key == previous {
+					return
+				}
+			}
+			aliases[i] = append(aliases[i], key)
+			counts[key]++
+		}
+		name := semaTypeMembersName(typ)
+		add(name)
+		if !semaRequiresQualifiedDependencyName(typ) {
+			add(typ.Name)
+		}
+		if typ.Namespace != "" {
+			add(typ.Namespace + "." + typ.Name)
+			add(typ.Namespace + "." + name)
+		}
+	}
+	// Class and trigger bodies share caller-name lookups. Count both before
+	// installing scopes, so a trigger cannot borrow a foreign class owner.
+	for _, trigger := range index.Triggers {
+		counts[normalizeName(trigger.Name)]++
+	}
+	complete := make(map[string]bool)
+	for i, typ := range index.Types {
+		if typ.Dependency || typ.Artifact || typ.File == "" || !typ.HasSourceSnapshot() {
+			continue
+		}
+		unambiguous := true
+		for _, key := range aliases[i] {
+			unambiguous = unambiguous && counts[key] == 1
+		}
+		unit := units[typ.File]
+		project, cached := projects[unit]
+		if !cached {
+			project = nearestProject(filepath.Dir(typ.File), typ.SourceRoot)
+			if project == "" {
+				project = defaultScope.project
+			}
+			projects[unit] = project
+		}
+		namespace := normalizeName(typ.Namespace)
+		if namespace == "" {
+			namespace = defaultScope.namespace
+		}
+		if unambiguous {
+			for _, key := range aliases[i] {
+				scopes[key] = semaSourceScope{project: project, namespace: namespace}
+				complete[key] = typ.SuperClass == "" && len(typ.Interfaces) == 0
+			}
+		}
+	}
+	// Triggers have a calling project even though they are not class symbols.
+	// Record only unique trigger identities; ambiguous owners still defer.
+	for _, trigger := range index.Triggers {
+		key := normalizeName(trigger.Name)
+		if trigger.Dependency || trigger.File == "" || !trigger.SourceBacked || counts[key] != 1 {
+			continue
+		}
+		project := nearestProject(filepath.Dir(trigger.File), trigger.SourceRoot)
+		if project == "" {
+			project = defaultScope.project
+		}
+		namespace := normalizeName(trigger.Namespace)
+		if namespace == "" {
+			namespace = defaultScope.namespace
+		}
+		scopes[key] = semaSourceScope{project: project, namespace: namespace}
+	}
+	return complete, scopes, projects, defaultScope
 }
 
 func buildSemaTypeMemberView(index typesys.Index) *semaTypeMemberView {
@@ -2280,7 +2463,8 @@ func semaAddSObjectProviderMembers(members *typeMembers, provider semaSObjectFie
 				Type:      fieldType,
 				Modifiers: []string{"public"},
 			}
-			if strings.TrimSpace(field.Formula) != "" {
+			// Custom Address compounds are read-only like formulas (C01/C02).
+			if strings.TrimSpace(field.Formula) != "" || schema.IsCustomAddressField(field) {
 				member.Modifiers = append(member.Modifiers, semaCalculatedFieldModifier)
 			}
 			// SObjectType is a static token on most SObjects, but a small set of

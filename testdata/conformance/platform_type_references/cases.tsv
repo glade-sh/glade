@@ -1,0 +1,3 @@
+case	positions	source
+platform_types	field,parameter,return,local,generic,extends,implements,catch,query-loop	PlatformTypeReferences.cls;PlatformTypeReferencesTest.cls;PlatformTypePlugin.cls;PlatformTypeRegistration.cls;anonymous.apex
+invalid_system	local	invalid.apex

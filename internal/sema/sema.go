@@ -23,12 +23,12 @@ import (
 // SemanticABI identifies the behavior of semantic diagnostics, inference,
 // visibility, and exported types. Any change to those behaviors must bump this
 // value so persisted semantic results fail closed.
-const SemanticABI = "sema-v70"
+const SemanticABI = "sema-v73"
 
 // PlatformABI identifies the built-in Salesforce platform model consumed by
 // semantic analysis. Changes to built-in signatures, aliases, or visibility
 // must bump this value so persisted semantic results fail closed.
-const PlatformABI = "salesforce-platform-v57"
+const PlatformABI = "salesforce-platform-v58"
 
 type Result struct {
 	Project     typesys.ProjectInfo      `json:"project"`
@@ -61,9 +61,11 @@ const (
 
 type Analyzer struct {
 	known                         map[string]TypeReference
+	namedApexReferenceObjects     bool
 	canonicalNames                *semaCanonicalNames
 	namespace                     string
 	deps                          map[string]bool
+	sourceNamespaces              map[string]bool
 	includePerformanceDiagnostics bool
 	queryDeclaredObjects          []schema.Object
 	visualforcePageNames          map[string]bool
@@ -215,12 +217,12 @@ func (a *Analyzer) analyzeWithOptions(index typesys.Index, opts AnalyzeOptions, 
 		result.Diagnostics = append(result.Diagnostics, sourceAPIVersionDiagnostics(index)...)
 		result.Diagnostics = append(result.Diagnostics, a.checkTriggers(index)...)
 		result.Diagnostics = append(result.Diagnostics, a.checkDeclarationContracts(index)...)
-		result.Diagnostics = append(result.Diagnostics, a.checkMemberTypes(index)...)
-		result.Diagnostics = append(result.Diagnostics, a.checkSourceTypeContracts(index)...)
 		typeMemberState := buildSemaTypeMemberState(index, recorder, a.sources)
 		typeMemberView := typeMemberState.view()
+		result.Diagnostics = append(result.Diagnostics, a.checkMemberTypes(index, typeMemberView)...)
+		result.Diagnostics = append(result.Diagnostics, a.checkSourceTypeContracts(index)...)
 		result.Diagnostics = append(result.Diagnostics, checkCustomExceptionNames(index, typeMemberView)...)
-		result.Diagnostics = append(result.Diagnostics, a.checkMethodParameters(index)...)
+		result.Diagnostics = append(result.Diagnostics, a.checkMethodParameters(index, typeMemberView)...)
 		result.Diagnostics = append(result.Diagnostics, a.checkAnnotations(index)...)
 		result.Diagnostics = append(result.Diagnostics, checkAnnotationCatalog(index)...)
 		result.Diagnostics = append(result.Diagnostics, checkAnnotationContracts(index)...)
@@ -266,6 +268,10 @@ func (a *Analyzer) prepareAnalysisContext(index typesys.Index, opts AnalyzeOptio
 	a.canonicalNames = newSemaCanonicalNames(semaAnalysisCanonicalNameLimit)
 	a.namespace = index.Project.Namespace
 	a.deps = make(map[string]bool)
+	a.sourceNamespaces = make(map[string]bool, len(index.SourceNamespaces))
+	for _, namespace := range index.SourceNamespaces {
+		a.sourceNamespaces[normalizeName(namespace)] = true
+	}
 	a.includePerformanceDiagnostics = opts.Diagnostics && !opts.SuppressPerformanceDiagnostics
 	a.queryDeclaredObjects = append([]schema.Object(nil), index.Objects...)
 	a.visualforcePageNames = make(map[string]bool, len(index.VisualforcePageNames))
@@ -303,11 +309,15 @@ func (a *Analyzer) prepareAnalysisModel(index typesys.Index) {
 		a.addKnown(object.Name, TypeSchema, "")
 	}
 	for _, dep := range index.Dependencies {
-		if dep.Status != "loaded" || strings.TrimSpace(dep.Namespace) == "" {
+		if strings.TrimSpace(dep.Namespace) == "" {
 			continue
 		}
+		// Declaration establishes namespace openness even when its symbol
+		// index is unavailable. Loading symbols is a separate operation.
 		a.deps[normalizeName(dep.Namespace)] = true
-		a.addKnown(dep.Namespace, TypePlatform, dep.SourceRoot)
+		if dep.Status == "loaded" {
+			a.addKnown(dep.Namespace, TypePlatform, dep.SourceRoot)
+		}
 	}
 	workspace := make(map[string]TypeReference, len(index.Types))
 	addWorkspace := func(name string, kind TypeKind, source string) {
@@ -321,6 +331,12 @@ func (a *Analyzer) prepareAnalysisModel(index typesys.Index) {
 		workspace[key] = TypeReference{Name: name, Kind: kind, Source: source}
 	}
 	for _, typ := range index.Types {
+		// A symbol's packaging namespace is positive evidence of an open
+		// namespace even without a separate dependency catalog entry.
+		if namespace := normalizeName(typ.Namespace); namespace != "" &&
+			!strings.EqualFold(namespace, a.namespace) && namespace != "system" && namespace != "schema" {
+			a.deps[namespace] = true
+		}
 		if !typ.Dependency {
 			addWorkspace(typ.Name, TypeApex, typ.File)
 		} else if typ.Namespace == "" {
@@ -1138,9 +1154,9 @@ func (a *Analyzer) collectSemaLocalDecl(typ typesys.TypeSymbol, member typesys.M
 	scopeStart, scopeEnd := blockBoundsAt(body, match[2])
 	visibleStart := semaLocalVisibleStart(body, match[1]-1, match[5])
 	for _, ref := range extractTypeNames(typeName) {
-		if !a.hasKnownAtVersion(ref, typ.EffectiveAPIVersion) {
+		if !semaTypeReferenceKnownAtVersion(a, model, typ.Name, ref, typ.EffectiveAPIVersion) {
 			message := fmt.Sprintf("%s %q declares local %q with unknown type %q", member.Kind, member.Name, name, ref)
-			if semaFormulaEvalQualifiedType(ref) {
+			if semaFormulaEvalQualifiedType(ref) || storage.IsReferenceOnlyStandardObject(ref) {
 				message = "Invalid type: " + ref
 			}
 			diagnostics = append(diagnostics, diagnostic.Diagnostic{
@@ -1572,7 +1588,7 @@ func semaReturnMatchInIgnoredText(ignored *semaIgnoredText, match []int) bool {
 	return ignored.contains(match[0] + keyword)
 }
 
-func (a *Analyzer) expressionTypeReferenceDiagnostics(typ typesys.TypeSymbol, member typesys.MemberSymbol, typeName string, start int, source string, seen map[string]bool) []diagnostic.Diagnostic {
+func (a *Analyzer) expressionTypeReferenceDiagnostics(typ typesys.TypeSymbol, member typesys.MemberSymbol, typeName string, start int, source string, seen map[string]bool, model *semaTypeMemberView) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	for _, ref := range extractTypeNames(typeName) {
 		key := fmt.Sprintf("%d:%s", start, normalizeName(ref))
@@ -1580,7 +1596,7 @@ func (a *Analyzer) expressionTypeReferenceDiagnostics(typ typesys.TypeSymbol, me
 			continue
 		}
 		seen[key] = true
-		if !a.hasKnownAtVersion(ref, typ.EffectiveAPIVersion) {
+		if !semaTypeReferenceKnownAtVersion(a, model, typ.Name, ref, typ.EffectiveAPIVersion) {
 			diagnostics = append(diagnostics, diagnostic.Diagnostic{
 				Severity: diagnostic.Error,
 				Code:     "GLADESEMA006",
@@ -2842,7 +2858,9 @@ func semaChainedCallReceiver(body string, callStart int, scope map[string]string
 			exprStart = receiverCallStart
 		}
 	}
-	if exprStart > 0 && body[exprStart-1] == '(' {
+	// A constructed receiver inside an argument belongs to that inner call,
+	// not to the fluent call surrounding the argument.
+	if exprStart > 0 && body[exprStart-1] == '(' && semaConstructorReceiverType(fullReceiverExpr) == "" {
 		methodEnd := exprStart - 1
 		methodStart := methodEnd
 		for methodStart > 0 && isIdentifierByte(body[methodStart-1]) {
@@ -3258,6 +3276,16 @@ func (a *Analyzer) hasKnown(name string) bool {
 			return false
 		}
 		return true
+	}
+	if a.namedApexReferenceObjects {
+		if _, ok := semaNamedApexReferenceObjectName(name); ok {
+			return true
+		}
+	}
+	// Reference targets do not become Apex types through Schema's permissive
+	// namespace fallbacks. Exact project declarations above retain precedence.
+	if target, qualified := semaSchemaQualifiedTypeName(name); qualified && storage.IsReferenceOnlyStandardObject(target) {
+		return false
 	}
 	if semaFormulaEvalQualifiedType(name) {
 		return false

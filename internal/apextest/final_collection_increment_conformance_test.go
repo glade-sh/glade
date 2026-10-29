@@ -126,7 +126,7 @@ func runFinalCollectionIncrementConformance(t *testing.T, file, cluster string, 
 		t.Fatalf("independent semantic cells=%d, expected=%d", observations, cells)
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "C166PF-"+cluster, api)
 			baseIndex := finalCollectionIncrementIndex(t, api, nil)
 			org := orgFromIndex(baseIndex)

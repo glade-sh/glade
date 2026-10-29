@@ -51,7 +51,7 @@ type projectionDefaultsNamedPrograms struct {
 func TestSObjectProjectionAndDefaultsOrgConformance(t *testing.T) {
 	data, objects := loadProjectionDefaultsData(t)
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "SObjectProjectionDefaults", api)
 			root := t.TempDir()
 			writeFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"sourceApiVersion":%q,"packageDirectories":[{"path":"force-app","default":true}]}`, api))

@@ -141,7 +141,7 @@ func TestSOSLOrgConformance(t *testing.T) {
 		return "ACCEPTED"
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "SOSL", api)
 			rows := make([]familyCase, 0, len(data.Cases)+len(data.Controls))
 			rows = append(rows, data.Cases...)

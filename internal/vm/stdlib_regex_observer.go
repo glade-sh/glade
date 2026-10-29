@@ -219,9 +219,14 @@ func (p *regexp2Plan) matchStartingAt(input string, startByte, endRune int, full
 		return nil, err
 	}
 	re.MatchTimeout = regexp2MatchTimeout
-	match, err := re.FindStringMatchStartingAt(input, startByte)
+	match, err := searchRegexp2(re, input, func() (*regexp2.Match, error) {
+		return re.FindStringMatchStartingAt(input, startByte)
+	})
 	for match != nil && err == nil && !p.validGraphemeMatch(input, match) {
-		match, err = re.FindNextMatch(match)
+		previous := match
+		match, err = searchRegexp2(re, input, func() (*regexp2.Match, error) {
+			return re.FindNextMatch(previous)
+		})
 	}
 	return match, err
 }
@@ -239,7 +244,9 @@ func (p *regexp2Plan) operationHitEnd(input string, startByte, endRune int, anch
 		return false, err
 	}
 	re.MatchTimeout = regexp2MatchTimeout
-	match, err := re.FindStringMatchStartingAt(input, startByte)
+	match, err := searchRegexp2(re, input, func() (*regexp2.Match, error) {
+		return re.FindStringMatchStartingAt(input, startByte)
+	})
 	if err != nil || match == nil {
 		return false, err
 	}

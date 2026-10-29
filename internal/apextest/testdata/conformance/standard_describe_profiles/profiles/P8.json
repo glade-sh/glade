@@ -1,0 +1,12 @@
+{
+  "orgName": "Standard describe profile P8",
+  "edition": "Developer",
+  "features": [
+    "OrderManagement"
+  ],
+  "settings": {
+    "orderManagementSettings": {
+      "enableOrderManagement": true
+    }
+  }
+}

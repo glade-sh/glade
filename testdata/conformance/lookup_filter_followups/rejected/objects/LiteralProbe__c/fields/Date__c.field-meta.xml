@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Date__c</fullName><label>Date</label><referenceTo>Holder__c</referenceTo><relationshipLabel>Date</relationshipLabel><relationshipName>LiteralProbeDate</relationshipName><deleteConstraint>SetNull</deleteConstraint><type>Lookup</type><lookupFilter><active>true</active><filterItems><field>Holder__c.Day__c</field><operation>equals</operation><value>2026-10-26,2026-10-27</value></filterItems><isOptional>false</isOptional></lookupFilter></CustomField>

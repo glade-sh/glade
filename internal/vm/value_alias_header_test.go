@@ -27,12 +27,15 @@ func TestValueSameHeaderAndBacking(t *testing.T) {
 	}
 
 	for name, mutate := range map[string]func(*Value){
-		"type":                   func(value *Value) { value.Type = "Contact" },
-		"text":                   func(value *Value) { value.Text = "changed" },
-		"hidden flag":            func(value *Value) { value.schemaIDConstructor = true },
-		"loaded reference":       func(value *Value) { value.loadedReferenceSnapshot = &sobjectLoadedReferenceSnapshot{} },
-		"list map null key flag": func(value *Value) { value.sobjectListNullMapKey = true },
-		"set ownership token":    func(value *Value) { value.primitiveSetState = &primitiveSetState{} },
+		"shared map backing":         func(value *Value) { value.mapBackingShared = true },
+		"canonical describe entries": func(value *Value) { value.globalDescribeEntriesCanonical = true },
+		"type":                       func(value *Value) { value.Type = "Contact" },
+		"text":                       func(value *Value) { value.Text = "changed" },
+		"hidden flag":                func(value *Value) { value.schemaIDConstructor = true },
+		"dependency literal origin":  func(value *Value) { value.dependencyClassLiteral = true },
+		"loaded reference":           func(value *Value) { value.loadedReferenceSnapshot = &sobjectLoadedReferenceSnapshot{} },
+		"list map null key flag":     func(value *Value) { value.sobjectListNullMapKey = true },
+		"set ownership token":        func(value *Value) { value.primitiveSetState = &primitiveSetState{} },
 	} {
 		t.Run(name, func(t *testing.T) {
 			candidate := base
@@ -52,7 +55,7 @@ func TestValueSameHeaderAndBacking(t *testing.T) {
 }
 
 func TestValueSameHeaderAndBackingGuardsValueFieldCount(t *testing.T) {
-	if got, want := reflect.TypeOf(Value{}).NumField(), 35; got != want {
+	if got, want := reflect.TypeOf(Value{}).NumField(), 38; got != want {
 		t.Fatalf("valueSameHeaderAndBacking must be updated for Value fields: got %d, want %d", got, want)
 	}
 }

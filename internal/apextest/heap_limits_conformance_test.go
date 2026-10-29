@@ -179,7 +179,7 @@ func TestHeapLimitsOrgConformance(t *testing.T) {
 		return typeName + ": " + problem.Message
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			releaseRuntimeCachesAfterTest(t)
 			counts := newConformanceCountLog(t, "HEAP", api)
 			root := t.TempDir()

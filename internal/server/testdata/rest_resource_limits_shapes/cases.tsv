@@ -1,0 +1,6 @@
+case	apis	route	assertion
+resources	60.0,65.0,67.0,68.0	/services/data/v<api>/	native comparable keys only; apps/glade absent; local namespace subset deliberate
+limits	60.0,65.0,67.0,68.0	/services/data/v<api>/limits	native comparable keys only; DailyBulkV2IngestJobs absent; deterministic local limit subset deliberate
+limits-composite	60.0,65.0,67.0,68.0	POST /services/data/v<api>/composite -> GET limits	same captured direct-limits key boundary through local composition
+limits-batch	60.0,65.0,67.0,68.0	POST /services/data/v<api>/composite/batch -> GET limits	same captured direct-limits key boundary through local composition
+limits-graph	60.0,65.0,67.0,68.0	POST /services/data/v<api>/composite/graph -> GET limits	same captured direct-limits key boundary through local composition; no native Graph-parity claim

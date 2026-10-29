@@ -132,6 +132,7 @@ func runSOQLBindNativeConformance(t *testing.T, file, family string, shapes, cel
 		t.Fatalf("assertable/resolved cells: %d/%d, want %d/%d", actualCells, resolvedCells, data.AssertedCellCount, data.ResolvedCellCount)
 	}
 	bases := newConformanceSchemaCache(t)
+	projects := newConformanceProjectCache(t)
 	for _, api := range data.APIVersions {
 		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, family, api)
@@ -150,9 +151,9 @@ func runSOQLBindNativeConformance(t *testing.T, file, family string, shapes, cel
 							}
 							counts.TrackKind(t, route, "exact", 1)
 							if route == "anonymous" {
-								soqlBindNativeAnonymous(t, bases, api, cell.Source, *cell.Expected)
+								soqlBindNativeAnonymous(t, bases, projects, api, cell.Source, *cell.Expected)
 							} else {
-								soqlBindNativeTest(t, bases, api, cell.Source, *cell.Expected)
+								soqlBindNativeTest(t, bases, projects, api, cell.Source, *cell.Expected)
 							}
 						})
 					}
@@ -186,10 +187,10 @@ func soqlBindNativeValue(t *testing.T, id string, want soqlBindNativeExpected, e
 	}
 }
 
-func soqlBindNativeAnonymous(t *testing.T, bases *conformanceSchemaCache, api string, source soqlBindNativeSource, want soqlBindNativeExpected) {
+func soqlBindNativeAnonymous(t *testing.T, bases *conformanceSchemaCache, projects *conformanceProjectCache, api string, source soqlBindNativeSource, want soqlBindNativeExpected) {
 	t.Helper()
 	declarations := soqlBindNativeAnonymousDeclarations(t, source.Anonymous)
-	index := sema.WithAnonymousDeclarationContext(soqlBindNativeIndex(t, api, declarations, source.Objects))
+	index := sema.WithAnonymousDeclarationContext(soqlBindNativeIndex(t, api, declarations, source.Objects, projects))
 	body := []byte(source.Anonymous)
 	parsed := apexast.ParseSource("NativeObservationAnonymous.cls", source.Anonymous)
 	for _, decl := range parsed.Declarations {
@@ -220,7 +221,7 @@ func soqlBindNativeAnonymous(t *testing.T, bases *conformanceSchemaCache, api st
 	}
 	runtime := conformanceSchemaRequestRuntime(t, index)
 	base := bases.get(t, api, "", source.Objects, func(t *testing.T) *conformanceRunner {
-		return conformanceSchemaBase(t, soqlBindNativeIndex(t, api, nil, source.Objects), api)
+		return conformanceSchemaBase(t, soqlBindNativeIndex(t, api, nil, source.Objects, projects), api)
 	})
 	runner := newConformanceRunner(t, index, conformanceRunnerOptions{Base: base, RequestRuntime: &runtime, Org: base.orgSource})
 	machine := runner.newMachine()
@@ -228,9 +229,9 @@ func soqlBindNativeAnonymous(t *testing.T, bases *conformanceSchemaCache, api st
 	soqlBindNativeValue(t, source.ID, want, execErr)
 }
 
-func soqlBindNativeTest(t *testing.T, bases *conformanceSchemaCache, api string, source soqlBindNativeSource, want soqlBindNativeExpected) {
+func soqlBindNativeTest(t *testing.T, bases *conformanceSchemaCache, projects *conformanceProjectCache, api string, source soqlBindNativeSource, want soqlBindNativeExpected) {
 	t.Helper()
-	index := soqlBindNativeIndex(t, api, source.Classes, source.Objects)
+	index := soqlBindNativeIndex(t, api, source.Classes, source.Objects, projects)
 	analysis := sema.Analyze(index)
 	// The analyzer includes and refines index diagnostics. Match the product
 	// compile gate without prepending raw parser errors ahead of native text.
@@ -256,7 +257,7 @@ func soqlBindNativeTest(t *testing.T, bases *conformanceSchemaCache, api string,
 		t.Fatalf("named compile: %v %v", methodErrors[key], programErrors[key])
 	}
 	base := bases.get(t, api, "", source.Objects, func(t *testing.T) *conformanceRunner {
-		return conformanceSchemaBase(t, soqlBindNativeIndex(t, api, nil, source.Objects), api)
+		return conformanceSchemaBase(t, soqlBindNativeIndex(t, api, nil, source.Objects, projects), api)
 	})
 	runner := newConformanceRunner(t, index, conformanceRunnerOptions{Base: base, LinkProject: true, Org: base.orgSource})
 	machine := runner.newMachine()
@@ -323,8 +324,20 @@ func soqlBindNativeAnonymousDeclarations(t *testing.T, source string) map[string
 	return declarations
 }
 
-func soqlBindNativeIndex(t *testing.T, api string, classes, objects map[string]string) typesys.Index {
+func soqlBindNativeIndex(t *testing.T, api string, classes, objects map[string]string, projects ...*conformanceProjectCache) typesys.Index {
 	t.Helper()
+	if len(projects) != 0 {
+		files := make(map[string]string, 2*len(classes)+len(objects))
+		for name, source := range classes {
+			path := filepath.Join("force-app/main/default/classes", name+".cls")
+			files[path] = source
+			files[path+"-meta.xml"] = "<ApexClass><apiVersion>" + api + "</apiVersion></ApexClass>"
+		}
+		for name, source := range objects {
+			files[filepath.Join("force-app/main/default/objects", name, name+".object-meta.xml")] = source
+		}
+		return projects[0].index(t, api, files)
+	}
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"sourceApiVersion":%q,"packageDirectories":[{"path":"force-app","default":true}]}`, api))
 	for name, source := range classes {

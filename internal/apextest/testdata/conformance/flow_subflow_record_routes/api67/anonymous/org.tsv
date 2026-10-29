@@ -1,0 +1,17 @@
+route	operation	observation
+after-flow	insert	{"description":"Cedar first","initial":"Cedar first","returned":null}
+after-flow	update	{"description":"Cedar second","initial":null,"returned":null}
+before-flow	insert	{"description":"Cedar first","initial":"Cedar first","returned":null}
+before-flow	update	{"description":"Cedar second","initial":null,"returned":null}
+before-invocable	insert	{"description":"Cedar first","initial":"Cedar first","returned":null}
+before-invocable	update	{"description":"Cedar second","initial":null,"returned":null}
+after-invocable	insert	{"description":"Cedar first","initial":"Cedar first","returned":null}
+after-invocable	update	{"description":"Cedar second","initial":null,"returned":null}
+before-interview	insert	{"description":"Cedar first","initial":"Cedar first","returned":null}
+before-interview	update	{"description":"Cedar second","initial":null,"returned":null}
+after-interview	insert	{"description":"Cedar first","initial":"Cedar first","returned":null}
+after-interview	update	{"description":"Cedar second","initial":null,"returned":null}
+invocable	insert	{"description":"Cedar first","initial":null,"returned":"Cedar first"}
+invocable	update	{"description":"Cedar second","initial":null,"returned":"Cedar second"}
+interview	insert	{"description":"Cedar first","initial":null,"returned":"Cedar first"}
+interview	update	{"description":"Cedar second","initial":null,"returned":"Cedar second"}

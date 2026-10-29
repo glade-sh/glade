@@ -1,0 +1,12 @@
+{
+  "orgName": "Owned standard field combination",
+  "edition": "Developer",
+  "features": [
+    "OrderManagement"
+  ],
+  "settings": {
+    "orderManagementSettings": {
+      "enableOrderManagement": true
+    }
+  }
+}

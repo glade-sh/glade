@@ -1,0 +1,4 @@
+project:
+  dependencies:
+    - name: AccessBase
+      path: ../base

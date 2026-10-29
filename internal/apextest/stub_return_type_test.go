@@ -103,7 +103,7 @@ func TestStubDeclaredReturnType(t *testing.T) {
 			"System.assert(expectedText.equals(observedText),'" + id + " expected <'+expectedText+'> actual <'+observedText+'>');"
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCounts()
 			defer counts.Log(t, "test runner", api, "stub-return")
 			buildIndex := func(declarations map[string]string, testSource string) typesys.Index {

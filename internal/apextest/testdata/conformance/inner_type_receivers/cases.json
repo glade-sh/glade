@@ -1,0 +1,3173 @@
+[
+  {
+    "id": "parameter_public",
+    "shape": "parameter",
+    "variant": "public",
+    "classes": {
+      "R254ParameterPublic": "public class R254ParameterPublic { public class EventBus { public String publish() { return 'inner'; } } String consume(EventBus value) { return value == null ? 'null' : value.publish(); } public static String run() { return new R254ParameterPublic().consume(new EventBus()); } }"
+    },
+    "body": "System.debug('OBS|' + JSON.serialize(R254ParameterPublic.run()));",
+    "testClass": "R254Test1",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test1 { @IsTest static void observe() { System.assert(false, 'OBS|' + JSON.serialize(R254ParameterPublic.run())); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:54:53.395969+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"inner\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T03:56:01.885771+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:56:43.807366+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"inner\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T06:51:51.024367+00:00"
+      }
+    ]
+  },
+  {
+    "id": "callable_public",
+    "shape": "callable",
+    "variant": "public",
+    "classes": {
+      "R254CallablePublic": "public class R254CallablePublic { public interface Callable { String call(); } public class Worker implements Callable { public String call() { return 'inner'; } } public static String run() { Callable value = new Worker(); return value.call(); } }"
+    },
+    "body": "System.debug('OBS|' + JSON.serialize(R254CallablePublic.run()));",
+    "testClass": "R254Test2",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test2 { @IsTest static void observe() { System.assert(false, 'OBS|' + JSON.serialize(R254CallablePublic.run())); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:54:54.858929+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"inner\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T03:56:01.888713+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:56:45.299970+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"inner\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T06:51:51.026245+00:00"
+      }
+    ]
+  },
+  {
+    "id": "schedulable_public",
+    "shape": "schedulable",
+    "variant": "public",
+    "classes": {
+      "R254SchedulablePublic": "public class R254SchedulablePublic { public interface Schedulable { String execute(); } public class Worker implements Schedulable { public String execute() { return 'inner'; } } public static String run() { Schedulable value = new Worker(); return value.execute(); } }"
+    },
+    "body": "System.debug('OBS|' + JSON.serialize(R254SchedulablePublic.run()));",
+    "testClass": "R254Test3",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test3 { @IsTest static void observe() { System.assert(false, 'OBS|' + JSON.serialize(R254SchedulablePublic.run())); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:54:56.302437+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"inner\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T03:56:01.889948+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:56:46.624397+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"inner\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T06:51:51.027505+00:00"
+      }
+    ]
+  },
+  {
+    "id": "map_public",
+    "shape": "map",
+    "variant": "public",
+    "classes": {
+      "R254MapPublic": "public class R254MapPublic { public class Type {} public static String run() { Type key = new Type(); Map<Type,String> values = new Map<Type,String>(); values.put(key, 'inner'); return values.size()+':'+values.get(key)+':'+values.containsKey(key); } }"
+    },
+    "body": "System.debug('OBS|' + JSON.serialize(R254MapPublic.run()));",
+    "testClass": "R254Test4",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test4 { @IsTest static void observe() { System.assert(false, 'OBS|' + JSON.serialize(R254MapPublic.run())); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"1:inner:true\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:54:57.183327+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"1:inner:true\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"1:inner:true\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T03:56:01.890808+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"1:inner:true\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:56:47.980447+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"1:inner:true\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"1:inner:true\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T06:51:51.028740+00:00"
+      }
+    ]
+  },
+  {
+    "id": "catch_public",
+    "shape": "catch",
+    "variant": "public",
+    "classes": {
+      "R254CatchPublic": "public class R254CatchPublic { public class ReceiverException extends System.Exception {} public static String run() { try { throw new ReceiverException('inner'); } catch (ReceiverException value) { return value.getMessage(); } } }"
+    },
+    "body": "System.debug('OBS|' + JSON.serialize(R254CatchPublic.run()));",
+    "testClass": "R254Test5",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test5 { @IsTest static void observe() { System.assert(false, 'OBS|' + JSON.serialize(R254CatchPublic.run())); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:54:58.581802+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"inner\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T03:56:01.891608+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:56:49.830901+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"inner\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T06:51:51.029958+00:00"
+      }
+    ]
+  },
+  {
+    "id": "saveresult_public",
+    "shape": "saveresult",
+    "variant": "public",
+    "classes": {
+      "R254SaveResultPublic": "public class R254SaveResultPublic { public class SaveResult { public String marker() { return 'inner'; } } public static String run() { return new SaveResult().marker(); } }"
+    },
+    "body": "System.debug('OBS|' + JSON.serialize(R254SaveResultPublic.run()));",
+    "testClass": "R254Test6",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test6 { @IsTest static void observe() { System.assert(false, 'OBS|' + JSON.serialize(R254SaveResultPublic.run())); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:55:00.010811+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"inner\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T03:56:01.892406+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:56:51.308767+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"inner\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T06:51:51.031339+00:00"
+      }
+    ]
+  },
+  {
+    "id": "describefieldresult_public",
+    "shape": "describefieldresult",
+    "variant": "public",
+    "classes": {
+      "R254DescribeFieldResultPublic": "public class R254DescribeFieldResultPublic { public class DescribeFieldResult { public String marker() { return 'inner'; } } public static String run() { return new DescribeFieldResult().marker(); } }"
+    },
+    "body": "System.debug('OBS|' + JSON.serialize(R254DescribeFieldResultPublic.run()));",
+    "testClass": "R254Test7",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test7 { @IsTest static void observe() { System.assert(false, 'OBS|' + JSON.serialize(R254DescribeFieldResultPublic.run())); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:55:00.957342+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"inner\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T03:56:01.893202+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:56:52.774750+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"inner\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T06:51:51.032771+00:00"
+      }
+    ]
+  },
+  {
+    "id": "duplicate_public",
+    "shape": "duplicate",
+    "variant": "public",
+    "classes": {
+      "R254LeftPublic": "public class R254LeftPublic { public class EventBus { public String marker() { return 'left'; } } public static String run() { return new EventBus().marker(); } }",
+      "R254RightPublic": "public class R254RightPublic { public class EventBus { public String marker() { return 'right'; } } public static String run() { return new EventBus().marker(); } }",
+      "R254DuplicatePublic": "public class R254DuplicatePublic { public static String run() { return R254LeftPublic.run()+':'+R254RightPublic.run(); } }"
+    },
+    "body": "System.debug('OBS|' + JSON.serialize(R254DuplicatePublic.run()));",
+    "testClass": "R254Test8",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test8 { @IsTest static void observe() { System.assert(false, 'OBS|' + JSON.serialize(R254DuplicatePublic.run())); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"left:right\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:55:02.414819+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"left:right\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"left:right\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T03:56:01.893965+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"left:right\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:56:54.217470+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"left:right\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"left:right\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T06:51:51.034321+00:00"
+      }
+    ]
+  },
+  {
+    "id": "field_enum_public",
+    "shape": "field_enum",
+    "variant": "public",
+    "classes": {
+      "R254FieldEnumPublic": "public class R254FieldEnumPublic { public enum Level { LOW,HIGH } static Level level = Level.LOW; public static String run() { return level.name(); } }"
+    },
+    "body": "System.debug('OBS|' + JSON.serialize(R254FieldEnumPublic.run()));",
+    "testClass": "R254Test9",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test9 { @IsTest static void observe() { System.assert(false, 'OBS|' + JSON.serialize(R254FieldEnumPublic.run())); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Inner types are not allowed to have inner types",
+        "nativeMessage": "Inner types are not allowed to have inner types",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:58:13.418618+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Illegal forward reference: level | Dependent class is invalid and needs recompilation:\n Class R254FieldEnumPublic : Illegal forward reference: level",
+        "nativeMessage": "Illegal forward reference: level | Dependent class is invalid and needs recompilation:\n Class R254FieldEnumPublic : Illegal forward reference: level",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T03:56:04.418065+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Inner types are not allowed to have inner types",
+        "nativeMessage": "Inner types are not allowed to have inner types",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:58:40.157300+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Illegal forward reference: level | Dependent class is invalid and needs recompilation:\n Class R254FieldEnumPublic : Illegal forward reference: level",
+        "nativeMessage": "Illegal forward reference: level | Dependent class is invalid and needs recompilation:\n Class R254FieldEnumPublic : Illegal forward reference: level",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T06:51:53.402656+00:00"
+      }
+    ],
+    "anonymousSource": "public class R254FieldEnumPublic { public enum Level { LOW,HIGH } static Level level = Level.LOW; public static String run() { return level.name(); } }\nSystem.debug('OBS|' + JSON.serialize(R254FieldEnumPublic.run()));",
+    "anonymousNote": "This inline-declaration row pins the anonymous nesting boundary; the direct_reject twin pins receiver rejection against deployed helpers."
+  },
+  {
+    "id": "parameter_default",
+    "shape": "parameter",
+    "variant": "default",
+    "classes": {
+      "R254ParameterDefault": "public class R254ParameterDefault { class EventBus { public String publish() { return 'inner'; } } String consume(EventBus value) { return value == null ? 'null' : value.publish(); } public static String run() { return new R254ParameterDefault().consume(new EventBus()); } }"
+    },
+    "body": "System.debug('OBS|' + JSON.serialize(R254ParameterDefault.run()));",
+    "testClass": "R254Test10",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test10 { @IsTest static void observe() { System.assert(false, 'OBS|' + JSON.serialize(R254ParameterDefault.run())); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:55:04.781835+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"inner\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T03:56:04.419822+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:56:57.140664+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"inner\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T06:51:53.404481+00:00"
+      }
+    ]
+  },
+  {
+    "id": "callable_default",
+    "shape": "callable",
+    "variant": "default",
+    "classes": {
+      "R254CallableDefault": "public class R254CallableDefault { interface Callable { String call(); } class Worker implements Callable { public String call() { return 'inner'; } } public static String run() { Callable value = new Worker(); return value.call(); } }"
+    },
+    "body": "System.debug('OBS|' + JSON.serialize(R254CallableDefault.run()));",
+    "testClass": "R254Test11",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test11 { @IsTest static void observe() { System.assert(false, 'OBS|' + JSON.serialize(R254CallableDefault.run())); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:55:06.248683+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"inner\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T03:56:04.420835+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:56:58.137412+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"inner\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T06:51:53.405716+00:00"
+      }
+    ]
+  },
+  {
+    "id": "schedulable_default",
+    "shape": "schedulable",
+    "variant": "default",
+    "classes": {
+      "R254SchedulableDefault": "public class R254SchedulableDefault { interface Schedulable { String execute(); } class Worker implements Schedulable { public String execute() { return 'inner'; } } public static String run() { Schedulable value = new Worker(); return value.execute(); } }"
+    },
+    "body": "System.debug('OBS|' + JSON.serialize(R254SchedulableDefault.run()));",
+    "testClass": "R254Test12",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test12 { @IsTest static void observe() { System.assert(false, 'OBS|' + JSON.serialize(R254SchedulableDefault.run())); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:55:07.696324+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"inner\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T03:56:04.421776+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:56:59.610207+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"inner\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T06:51:53.406950+00:00"
+      }
+    ]
+  },
+  {
+    "id": "map_default",
+    "shape": "map",
+    "variant": "default",
+    "classes": {
+      "R254MapDefault": "public class R254MapDefault { class Type {} public static String run() { Type key = new Type(); Map<Type,String> values = new Map<Type,String>(); values.put(key, 'inner'); return values.size()+':'+values.get(key)+':'+values.containsKey(key); } }"
+    },
+    "body": "System.debug('OBS|' + JSON.serialize(R254MapDefault.run()));",
+    "testClass": "R254Test13",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test13 { @IsTest static void observe() { System.assert(false, 'OBS|' + JSON.serialize(R254MapDefault.run())); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"1:inner:true\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:55:09.165835+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"1:inner:true\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"1:inner:true\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T03:56:04.422943+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"1:inner:true\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:57:01.003148+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"1:inner:true\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"1:inner:true\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T06:51:53.408189+00:00"
+      }
+    ]
+  },
+  {
+    "id": "catch_default",
+    "shape": "catch",
+    "variant": "default",
+    "classes": {
+      "R254CatchDefault": "public class R254CatchDefault { class ReceiverException extends System.Exception {} public static String run() { try { throw new ReceiverException('inner'); } catch (ReceiverException value) { return value.getMessage(); } } }"
+    },
+    "body": "System.debug('OBS|' + JSON.serialize(R254CatchDefault.run()));",
+    "testClass": "R254Test14",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test14 { @IsTest static void observe() { System.assert(false, 'OBS|' + JSON.serialize(R254CatchDefault.run())); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:55:10.532144+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"inner\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T03:56:04.423844+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:57:01.908067+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"inner\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T06:51:53.409415+00:00"
+      }
+    ]
+  },
+  {
+    "id": "saveresult_default",
+    "shape": "saveresult",
+    "variant": "default",
+    "classes": {
+      "R254SaveResultDefault": "public class R254SaveResultDefault { class SaveResult { public String marker() { return 'inner'; } } public static String run() { return new SaveResult().marker(); } }"
+    },
+    "body": "System.debug('OBS|' + JSON.serialize(R254SaveResultDefault.run()));",
+    "testClass": "R254Test15",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test15 { @IsTest static void observe() { System.assert(false, 'OBS|' + JSON.serialize(R254SaveResultDefault.run())); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:55:11.979526+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"inner\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T03:56:04.424690+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:57:02.777671+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"inner\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T06:51:53.410601+00:00"
+      }
+    ]
+  },
+  {
+    "id": "describefieldresult_default",
+    "shape": "describefieldresult",
+    "variant": "default",
+    "classes": {
+      "R254DescribeFieldResultDefault": "public class R254DescribeFieldResultDefault { class DescribeFieldResult { public String marker() { return 'inner'; } } public static String run() { return new DescribeFieldResult().marker(); } }"
+    },
+    "body": "System.debug('OBS|' + JSON.serialize(R254DescribeFieldResultDefault.run()));",
+    "testClass": "R254Test16",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test16 { @IsTest static void observe() { System.assert(false, 'OBS|' + JSON.serialize(R254DescribeFieldResultDefault.run())); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:55:12.925815+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"inner\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T03:56:04.425551+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:57:04.098257+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"inner\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T06:51:53.411798+00:00"
+      }
+    ]
+  },
+  {
+    "id": "duplicate_default",
+    "shape": "duplicate",
+    "variant": "default",
+    "classes": {
+      "R254LeftDefault": "public class R254LeftDefault { class EventBus { public String marker() { return 'left'; } } public static String run() { return new EventBus().marker(); } }",
+      "R254RightDefault": "public class R254RightDefault { class EventBus { public String marker() { return 'right'; } } public static String run() { return new EventBus().marker(); } }",
+      "R254DuplicateDefault": "public class R254DuplicateDefault { public static String run() { return R254LeftDefault.run()+':'+R254RightDefault.run(); } }"
+    },
+    "body": "System.debug('OBS|' + JSON.serialize(R254DuplicateDefault.run()));",
+    "testClass": "R254Test17",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test17 { @IsTest static void observe() { System.assert(false, 'OBS|' + JSON.serialize(R254DuplicateDefault.run())); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"left:right\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:55:14.321173+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"left:right\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"left:right\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T03:56:04.426513+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"left:right\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:57:05.514724+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"left:right\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"left:right\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T06:51:53.413313+00:00"
+      }
+    ]
+  },
+  {
+    "id": "field_enum_default",
+    "shape": "field_enum",
+    "variant": "default",
+    "classes": {
+      "R254FieldEnumDefault": "public class R254FieldEnumDefault { enum Level { LOW,HIGH } static Level level = Level.LOW; public static String run() { return level.name(); } }"
+    },
+    "body": "System.debug('OBS|' + JSON.serialize(R254FieldEnumDefault.run()));",
+    "testClass": "R254Test18",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test18 { @IsTest static void observe() { System.assert(false, 'OBS|' + JSON.serialize(R254FieldEnumDefault.run())); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Inner types are not allowed to have inner types",
+        "nativeMessage": "Inner types are not allowed to have inner types",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:58:14.340996+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Illegal forward reference: level | Dependent class is invalid and needs recompilation:\n Class R254FieldEnumDefault : Illegal forward reference: level",
+        "nativeMessage": "Illegal forward reference: level | Dependent class is invalid and needs recompilation:\n Class R254FieldEnumDefault : Illegal forward reference: level",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T03:56:06.898140+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Inner types are not allowed to have inner types",
+        "nativeMessage": "Inner types are not allowed to have inner types",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:58:41.020024+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Illegal forward reference: level | Dependent class is invalid and needs recompilation:\n Class R254FieldEnumDefault : Illegal forward reference: level",
+        "nativeMessage": "Illegal forward reference: level | Dependent class is invalid and needs recompilation:\n Class R254FieldEnumDefault : Illegal forward reference: level",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T06:51:55.763033+00:00"
+      }
+    ],
+    "anonymousSource": "public class R254FieldEnumDefault { enum Level { LOW,HIGH } static Level level = Level.LOW; public static String run() { return level.name(); } }\nSystem.debug('OBS|' + JSON.serialize(R254FieldEnumDefault.run()));",
+    "anonymousNote": "This inline-declaration row pins the anonymous nesting boundary; the direct_reject twin pins receiver rejection against deployed helpers."
+  },
+  {
+    "id": "parameter_mixed",
+    "shape": "parameter",
+    "variant": "mixed",
+    "classes": {
+      "R254ParameterMixed": "public class R254ParameterMixed { public class EventBus { public String publish() { return 'inner'; } } String consume(eVeNtBuS value) { return value == null ? 'null' : value.publish(); } public static String run() { return new R254ParameterMixed().consume(new eVeNtBuS()); } }"
+    },
+    "body": "System.debug('OBS|' + JSON.serialize(R254ParameterMixed.run()));",
+    "testClass": "R254Test19",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test19 { @IsTest static void observe() { System.assert(false, 'OBS|' + JSON.serialize(R254ParameterMixed.run())); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:55:16.131498+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"inner\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T03:56:06.900063+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:57:07.324995+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"inner\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T06:51:55.764977+00:00"
+      }
+    ]
+  },
+  {
+    "id": "callable_mixed",
+    "shape": "callable",
+    "variant": "mixed",
+    "classes": {
+      "R254CallableMixed": "public class R254CallableMixed { public interface Callable { String call(); } public class Worker implements cAlLaBlE { public String call() { return 'inner'; } } public static String run() { cAlLaBlE value = new Worker(); return value.call(); } }"
+    },
+    "body": "System.debug('OBS|' + JSON.serialize(R254CallableMixed.run()));",
+    "testClass": "R254Test20",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test20 { @IsTest static void observe() { System.assert(false, 'OBS|' + JSON.serialize(R254CallableMixed.run())); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:55:17.449121+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"inner\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T03:56:06.901070+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:57:08.753555+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"inner\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T06:51:55.766455+00:00"
+      }
+    ]
+  },
+  {
+    "id": "schedulable_mixed",
+    "shape": "schedulable",
+    "variant": "mixed",
+    "classes": {
+      "R254SchedulableMixed": "public class R254SchedulableMixed { public interface Schedulable { String execute(); } public class Worker implements sChEdUlAbLe { public String execute() { return 'inner'; } } public static String run() { sChEdUlAbLe value = new Worker(); return value.execute(); } }"
+    },
+    "body": "System.debug('OBS|' + JSON.serialize(R254SchedulableMixed.run()));",
+    "testClass": "R254Test21",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test21 { @IsTest static void observe() { System.assert(false, 'OBS|' + JSON.serialize(R254SchedulableMixed.run())); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:55:18.848281+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"inner\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T03:56:06.902061+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:57:10.089253+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"inner\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T06:51:55.767723+00:00"
+      }
+    ]
+  },
+  {
+    "id": "map_mixed",
+    "shape": "map",
+    "variant": "mixed",
+    "classes": {
+      "R254MapMixed": "public class R254MapMixed { public class Type {} public static String run() { tYpE key = new tYpE(); Map<tYpE,String> values = new Map<tYpE,String>(); values.put(key, 'inner'); return values.size()+':'+values.get(key)+':'+values.containsKey(key); } }"
+    },
+    "body": "System.debug('OBS|' + JSON.serialize(R254MapMixed.run()));",
+    "testClass": "R254Test22",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test22 { @IsTest static void observe() { System.assert(false, 'OBS|' + JSON.serialize(R254MapMixed.run())); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"1:inner:true\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:55:19.747293+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"1:inner:true\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"1:inner:true\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T03:56:06.903010+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"1:inner:true\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:57:10.976256+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"1:inner:true\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"1:inner:true\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T06:51:55.768936+00:00"
+      }
+    ]
+  },
+  {
+    "id": "catch_mixed",
+    "shape": "catch",
+    "variant": "mixed",
+    "classes": {
+      "R254CatchMixed": "public class R254CatchMixed { public class ReceiverException extends System.Exception {} public static String run() { try { throw new rEcEiVeReXcEpTiOn('inner'); } catch (rEcEiVeReXcEpTiOn value) { return value.getMessage(); } } }"
+    },
+    "body": "System.debug('OBS|' + JSON.serialize(R254CatchMixed.run()));",
+    "testClass": "R254Test23",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test23 { @IsTest static void observe() { System.assert(false, 'OBS|' + JSON.serialize(R254CatchMixed.run())); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:55:20.662553+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"inner\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T03:56:06.903865+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:57:12.363527+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"inner\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T06:51:55.770150+00:00"
+      }
+    ]
+  },
+  {
+    "id": "saveresult_mixed",
+    "shape": "saveresult",
+    "variant": "mixed",
+    "classes": {
+      "R254SaveResultMixed": "public class R254SaveResultMixed { public class SaveResult { public String marker() { return 'inner'; } } public static String run() { return new saveresult().marker(); } }"
+    },
+    "body": "System.debug('OBS|' + JSON.serialize(R254SaveResultMixed.run()));",
+    "testClass": "R254Test24",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test24 { @IsTest static void observe() { System.assert(false, 'OBS|' + JSON.serialize(R254SaveResultMixed.run())); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:55:22.060745+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"inner\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T03:56:06.904706+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:57:13.265362+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"inner\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T06:51:55.771383+00:00"
+      }
+    ]
+  },
+  {
+    "id": "describefieldresult_mixed",
+    "shape": "describefieldresult",
+    "variant": "mixed",
+    "classes": {
+      "R254DescribeFieldResultMixed": "public class R254DescribeFieldResultMixed { public class DescribeFieldResult { public String marker() { return 'inner'; } } public static String run() { return new describefieldresult().marker(); } }"
+    },
+    "body": "System.debug('OBS|' + JSON.serialize(R254DescribeFieldResultMixed.run()));",
+    "testClass": "R254Test25",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test25 { @IsTest static void observe() { System.assert(false, 'OBS|' + JSON.serialize(R254DescribeFieldResultMixed.run())); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:55:22.969719+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"inner\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T03:56:06.905563+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:57:14.581895+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"inner\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T06:51:55.773165+00:00"
+      }
+    ]
+  },
+  {
+    "id": "duplicate_mixed",
+    "shape": "duplicate",
+    "variant": "mixed",
+    "classes": {
+      "R254LeftMixed": "public class R254LeftMixed { public class EventBus { public String marker() { return 'left'; } } public static String run() { return new eventbus().marker(); } }",
+      "R254RightMixed": "public class R254RightMixed { public class EventBus { public String marker() { return 'right'; } } public static String run() { return new eventbus().marker(); } }",
+      "R254DuplicateMixed": "public class R254DuplicateMixed { public static String run() { return R254LeftMixed.run()+':'+R254RightMixed.run(); } }"
+    },
+    "body": "System.debug('OBS|' + JSON.serialize(R254DuplicateMixed.run()));",
+    "testClass": "R254Test26",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test26 { @IsTest static void observe() { System.assert(false, 'OBS|' + JSON.serialize(R254DuplicateMixed.run())); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"left:right\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:55:24.293590+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"left:right\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"left:right\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T03:56:06.906414+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"left:right\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:57:15.919773+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"left:right\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"left:right\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T06:51:55.774612+00:00"
+      }
+    ]
+  },
+  {
+    "id": "field_enum_mixed",
+    "shape": "field_enum",
+    "variant": "mixed",
+    "classes": {
+      "R254FieldEnumMixed": "public class R254FieldEnumMixed { public enum Level { LOW,HIGH } static lEvEl level = lEvEl.LOW; public static String run() { return level.name(); } }"
+    },
+    "body": "System.debug('OBS|' + JSON.serialize(R254FieldEnumMixed.run()));",
+    "testClass": "R254Test27",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test27 { @IsTest static void observe() { System.assert(false, 'OBS|' + JSON.serialize(R254FieldEnumMixed.run())); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Inner types are not allowed to have inner types",
+        "nativeMessage": "Inner types are not allowed to have inner types",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:58:15.215641+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Illegal forward reference: level | Dependent class is invalid and needs recompilation:\n Class R254FieldEnumMixed : Illegal forward reference: level",
+        "nativeMessage": "Illegal forward reference: level | Dependent class is invalid and needs recompilation:\n Class R254FieldEnumMixed : Illegal forward reference: level",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T03:56:09.249295+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Inner types are not allowed to have inner types",
+        "nativeMessage": "Inner types are not allowed to have inner types",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:58:41.852104+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Illegal forward reference: level | Dependent class is invalid and needs recompilation:\n Class R254FieldEnumMixed : Illegal forward reference: level",
+        "nativeMessage": "Illegal forward reference: level | Dependent class is invalid and needs recompilation:\n Class R254FieldEnumMixed : Illegal forward reference: level",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T06:51:58.122176+00:00"
+      }
+    ],
+    "anonymousSource": "public class R254FieldEnumMixed { public enum Level { LOW,HIGH } static lEvEl level = lEvEl.LOW; public static String run() { return level.name(); } }\nSystem.debug('OBS|' + JSON.serialize(R254FieldEnumMixed.run()));",
+    "anonymousNote": "This inline-declaration row pins the anonymous nesting boundary; the direct_reject twin pins receiver rejection against deployed helpers."
+  },
+  {
+    "id": "parameter_boundary",
+    "shape": "parameter",
+    "variant": "boundary",
+    "classes": {
+      "R254ParameterBoundary": "public class R254ParameterBoundary { public class EventBus { public String publish() { return 'inner'; } } String consume(EventBus value) { return value == null ? 'null' : value.publish(); } public static String run() { return new R254ParameterBoundary().consume(null); } }"
+    },
+    "body": "System.debug('OBS|' + JSON.serialize(R254ParameterBoundary.run()));",
+    "testClass": "R254Test28",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test28 { @IsTest static void observe() { System.assert(false, 'OBS|' + JSON.serialize(R254ParameterBoundary.run())); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"null\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:55:26.506791+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"null\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"null\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T03:56:09.250807+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"null\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:57:18.124029+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"null\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"null\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T06:51:58.123982+00:00"
+      }
+    ]
+  },
+  {
+    "id": "callable_boundary",
+    "shape": "callable",
+    "variant": "boundary",
+    "classes": {
+      "R254CallableBoundary": "public class R254CallableBoundary { public interface Callable { String call(); } public class Worker implements System.Callable { public Object call(String action, Map<String,Object> args) { return action; } } public static String run() { System.Callable value = new Worker(); return (String)value.call('platform', new Map<String,Object>()); } }"
+    },
+    "body": "System.debug('OBS|' + JSON.serialize(R254CallableBoundary.run()));",
+    "testClass": "R254Test29",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test29 { @IsTest static void observe() { System.assert(false, 'OBS|' + JSON.serialize(R254CallableBoundary.run())); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"platform\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:55:27.857180+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"platform\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"platform\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T03:56:09.251835+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"platform\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:57:19.469665+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"platform\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"platform\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T06:51:58.125318+00:00"
+      }
+    ]
+  },
+  {
+    "id": "schedulable_boundary",
+    "shape": "schedulable",
+    "variant": "boundary",
+    "classes": {
+      "R254SchedulableBoundary": "public class R254SchedulableBoundary { public interface Schedulable { String execute(); } public class Worker implements System.Schedulable { public String result='before'; public void execute(System.SchedulableContext context) { result='platform'; } } public static String run() { Worker value = new Worker(); value.execute(null); return value.result; } }"
+    },
+    "body": "System.debug('OBS|' + JSON.serialize(R254SchedulableBoundary.run()));",
+    "testClass": "R254Test30",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test30 { @IsTest static void observe() { System.assert(false, 'OBS|' + JSON.serialize(R254SchedulableBoundary.run())); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"platform\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:55:29.299751+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"platform\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"platform\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T03:56:09.252858+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"platform\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:57:20.354147+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"platform\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"platform\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T06:51:58.126636+00:00"
+      }
+    ]
+  },
+  {
+    "id": "map_boundary",
+    "shape": "map",
+    "variant": "boundary",
+    "classes": {
+      "R254MapBoundary": "public class R254MapBoundary { public class Type {} public static String run() { Type key = null; Map<Type,String> values = new Map<Type,String>(); values.put(key, 'inner'); return values.size()+':'+values.get(key)+':'+values.containsKey(key); } }"
+    },
+    "body": "System.debug('OBS|' + JSON.serialize(R254MapBoundary.run()));",
+    "testClass": "R254Test31",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test31 { @IsTest static void observe() { System.assert(false, 'OBS|' + JSON.serialize(R254MapBoundary.run())); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"1:inner:true\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:55:30.791107+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"1:inner:true\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"1:inner:true\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T03:56:09.254610+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"1:inner:true\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:57:21.753695+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"1:inner:true\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"1:inner:true\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T06:51:58.127915+00:00"
+      }
+    ]
+  },
+  {
+    "id": "catch_boundary",
+    "shape": "catch",
+    "variant": "boundary",
+    "classes": {
+      "R254CatchBoundary": "public class R254CatchBoundary { public class ReceiverException extends System.Exception {} public static String run() { try { throw new ReceiverException('inner'); } catch (System.Exception value) { return value.getMessage(); } } }"
+    },
+    "body": "System.debug('OBS|' + JSON.serialize(R254CatchBoundary.run()));",
+    "testClass": "R254Test32",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test32 { @IsTest static void observe() { System.assert(false, 'OBS|' + JSON.serialize(R254CatchBoundary.run())); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:55:31.688062+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"inner\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T03:56:09.255744+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:57:23.152178+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"inner\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"inner\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T06:51:58.129284+00:00"
+      }
+    ]
+  },
+  {
+    "id": "saveresult_boundary",
+    "shape": "saveresult",
+    "variant": "boundary",
+    "classes": {
+      "R254SaveResultBoundary": "public class R254SaveResultBoundary { public class SaveResult { public String marker() { return 'inner'; } } public static String run() { Database.SaveResult platformValue=null; return String.valueOf(platformValue == null); } }"
+    },
+    "body": "System.debug('OBS|' + JSON.serialize(R254SaveResultBoundary.run()));",
+    "testClass": "R254Test33",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test33 { @IsTest static void observe() { System.assert(false, 'OBS|' + JSON.serialize(R254SaveResultBoundary.run())); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"true\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:55:33.098299+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"true\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"true\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T03:56:09.256696+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"true\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:57:24.728509+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"true\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"true\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T06:51:58.130589+00:00"
+      }
+    ]
+  },
+  {
+    "id": "describefieldresult_boundary",
+    "shape": "describefieldresult",
+    "variant": "boundary",
+    "classes": {
+      "R254DescribeFieldResultBoundary": "public class R254DescribeFieldResultBoundary { public class DescribeFieldResult { public String marker() { return 'inner'; } } public static String run() { Schema.DescribeFieldResult platformValue=null; return String.valueOf(platformValue == null); } }"
+    },
+    "body": "System.debug('OBS|' + JSON.serialize(R254DescribeFieldResultBoundary.run()));",
+    "testClass": "R254Test34",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test34 { @IsTest static void observe() { System.assert(false, 'OBS|' + JSON.serialize(R254DescribeFieldResultBoundary.run())); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"true\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:55:34.504868+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"true\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"true\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T03:56:09.257650+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"true\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:58:43.162962+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"true\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"true\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T06:51:58.131863+00:00"
+      }
+    ]
+  },
+  {
+    "id": "duplicate_boundary",
+    "shape": "duplicate",
+    "variant": "boundary",
+    "classes": {
+      "R254LeftBoundary": "public class R254LeftBoundary { public class EventBus { public String marker() { return 'left'; } } public static String run() { return new EventBus().marker(); } }",
+      "R254RightBoundary": "public class R254RightBoundary { public class EventBus { public String marker() { return 'right'; } } public static String run() { return new EventBus().marker(); } }",
+      "R254DuplicateBoundary": "public class R254DuplicateBoundary { public static String run() { Object value = new R254LeftBoundary.EventBus(); return String.valueOf(value instanceof R254RightBoundary.EventBus); } }"
+    },
+    "body": "System.debug('OBS|' + JSON.serialize(R254DuplicateBoundary.run()));",
+    "testClass": "R254Test35",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test35 { @IsTest static void observe() { System.assert(false, 'OBS|' + JSON.serialize(R254DuplicateBoundary.run())); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"false\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:55:35.946752+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"false\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"false\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T03:56:09.258555+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"false\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:58:44.159297+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"false\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"false\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T06:51:58.133519+00:00"
+      }
+    ]
+  },
+  {
+    "id": "field_enum_boundary",
+    "shape": "field_enum",
+    "variant": "boundary",
+    "classes": {
+      "R254FieldEnumBoundary": "public class R254FieldEnumBoundary { public enum Level { LOW,HIGH } static Level level = null; public static String run() { return String.valueOf(level == null); } }"
+    },
+    "body": "System.debug('OBS|' + JSON.serialize(R254FieldEnumBoundary.run()));",
+    "testClass": "R254Test36",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test36 { @IsTest static void observe() { System.assert(false, 'OBS|' + JSON.serialize(R254FieldEnumBoundary.run())); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"true\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:55:36.835628+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"true\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"true\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T03:56:09.259475+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"true\"",
+        "nativeMessage": "",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:58:45.036815+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"true\"",
+        "nativeMessage": "System.AssertException: Assertion Failed: OBS|\"true\"",
+        "command": "sf apex run test (RunLocalTests)",
+        "capturedAt": "2026-10-25T06:51:58.134942+00:00"
+      }
+    ]
+  },
+  {
+    "id": "parameter_reject",
+    "shape": "parameter",
+    "variant": "rejection",
+    "classes": {
+      "R254RejectParameter": "public class R254RejectParameter { public class EventBus {} public class Other {} public static void consume(EventBus value) {} public static void run() { consume(new Other()); } }"
+    },
+    "body": "public class R254RejectParameter { public class EventBus {} public class Other {} public static void consume(EventBus value) {} public static void run() { consume(new Other()); } }\nSystem.debug('unreachable');",
+    "testClass": "R254Test37",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test37 { @IsTest static void observe() { System.assertEquals(1,1); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "compileOnly": true,
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Inner types are not allowed to have inner types",
+        "nativeMessage": "Inner types are not allowed to have inner types",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:58:16.109278+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void consume(R254RejectParameter.Other) from the type R254RejectParameter",
+        "nativeMessage": "Method does not exist or incorrect signature: void consume(R254RejectParameter.Other) from the type R254RejectParameter",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T03:56:11.715339+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Inner types are not allowed to have inner types",
+        "nativeMessage": "Inner types are not allowed to have inner types",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T06:51:26.672771+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void consume(R254RejectParameter.Other) from the type R254RejectParameter",
+        "nativeMessage": "Method does not exist or incorrect signature: void consume(R254RejectParameter.Other) from the type R254RejectParameter",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T06:52:00.491246+00:00"
+      }
+    ],
+    "anonymousSource": "public class R254RejectParameter { public class EventBus {} public class Other {} public static void consume(EventBus value) {} public static void run() { consume(new Other()); } }\nSystem.debug('unreachable');",
+    "anonymousNote": "This inline-declaration row pins the anonymous nesting boundary; the direct_reject twin pins receiver rejection against deployed helpers."
+  },
+  {
+    "id": "callable_reject",
+    "shape": "callable",
+    "variant": "rejection",
+    "classes": {
+      "R254RejectCallable": "public class R254RejectCallable { public interface Callable { String call(); } public class Worker implements Callable {} }"
+    },
+    "body": "public class R254RejectCallable { public interface Callable { String call(); } public class Worker implements Callable {} }\nSystem.debug('unreachable');",
+    "testClass": "R254Test38",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test38 { @IsTest static void observe() { System.assertEquals(1,1); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "compileOnly": true,
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Inner types are not allowed to have inner types",
+        "nativeMessage": "Inner types are not allowed to have inner types",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:58:16.994980+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Class R254RejectCallable.Worker must implement the method: String R254RejectCallable.Callable.call()",
+        "nativeMessage": "Class R254RejectCallable.Worker must implement the method: String R254RejectCallable.Callable.call()",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T03:56:14.141163+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Inner types are not allowed to have inner types",
+        "nativeMessage": "Inner types are not allowed to have inner types",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T06:51:27.482190+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Class R254RejectCallable.Worker must implement the method: String R254RejectCallable.Callable.call()",
+        "nativeMessage": "Class R254RejectCallable.Worker must implement the method: String R254RejectCallable.Callable.call()",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T06:52:02.949214+00:00"
+      }
+    ],
+    "anonymousSource": "public class R254RejectCallable { public interface Callable { String call(); } public class Worker implements Callable {} }\nSystem.debug('unreachable');",
+    "anonymousNote": "This inline-declaration row pins the anonymous nesting boundary; the direct_reject twin pins receiver rejection against deployed helpers."
+  },
+  {
+    "id": "schedulable_reject",
+    "shape": "schedulable",
+    "variant": "rejection",
+    "classes": {
+      "R254RejectSchedulable": "public class R254RejectSchedulable { public interface Schedulable { String execute(); } public class Worker implements Schedulable {} }"
+    },
+    "body": "public class R254RejectSchedulable { public interface Schedulable { String execute(); } public class Worker implements Schedulable {} }\nSystem.debug('unreachable');",
+    "testClass": "R254Test39",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test39 { @IsTest static void observe() { System.assertEquals(1,1); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "compileOnly": true,
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Inner types are not allowed to have inner types",
+        "nativeMessage": "Inner types are not allowed to have inner types",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:58:17.885360+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Class R254RejectSchedulable.Worker must implement the method: String R254RejectSchedulable.Schedulable.execute()",
+        "nativeMessage": "Class R254RejectSchedulable.Worker must implement the method: String R254RejectSchedulable.Schedulable.execute()",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T03:56:16.575002+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Inner types are not allowed to have inner types",
+        "nativeMessage": "Inner types are not allowed to have inner types",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T06:51:28.286225+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Class R254RejectSchedulable.Worker must implement the method: String R254RejectSchedulable.Schedulable.execute()",
+        "nativeMessage": "Class R254RejectSchedulable.Worker must implement the method: String R254RejectSchedulable.Schedulable.execute()",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T06:52:05.344542+00:00"
+      }
+    ],
+    "anonymousSource": "public class R254RejectSchedulable { public interface Schedulable { String execute(); } public class Worker implements Schedulable {} }\nSystem.debug('unreachable');",
+    "anonymousNote": "This inline-declaration row pins the anonymous nesting boundary; the direct_reject twin pins receiver rejection against deployed helpers."
+  },
+  {
+    "id": "map_reject",
+    "shape": "map",
+    "variant": "rejection",
+    "classes": {
+      "R254RejectMap": "public class R254RejectMap { public class Type {} public static void run() { Map<Type,String> values = new Map<Type,String>(); values.put('wrong', 'value'); } }"
+    },
+    "body": "public class R254RejectMap { public class Type {} public static void run() { Map<Type,String> values = new Map<Type,String>(); values.put('wrong', 'value'); } }\nSystem.debug('unreachable');",
+    "testClass": "R254Test40",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test40 { @IsTest static void observe() { System.assertEquals(1,1); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "compileOnly": true,
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Inner types are not allowed to have inner types",
+        "nativeMessage": "Inner types are not allowed to have inner types",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:58:18.760875+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void put(String, String) from the type Map<R254RejectMap.Type,String>",
+        "nativeMessage": "Method does not exist or incorrect signature: void put(String, String) from the type Map<R254RejectMap.Type,String>",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T03:56:18.937074+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Inner types are not allowed to have inner types",
+        "nativeMessage": "Inner types are not allowed to have inner types",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T06:51:29.094272+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void put(String, String) from the type Map<R254RejectMap.Type,String>",
+        "nativeMessage": "Method does not exist or incorrect signature: void put(String, String) from the type Map<R254RejectMap.Type,String>",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T06:52:07.700690+00:00"
+      }
+    ],
+    "anonymousSource": "public class R254RejectMap { public class Type {} public static void run() { Map<Type,String> values = new Map<Type,String>(); values.put('wrong', 'value'); } }\nSystem.debug('unreachable');",
+    "anonymousNote": "This inline-declaration row pins the anonymous nesting boundary; the direct_reject twin pins receiver rejection against deployed helpers."
+  },
+  {
+    "id": "catch_reject",
+    "shape": "catch",
+    "variant": "rejection",
+    "classes": {
+      "R254RejectCatch": "public class R254RejectCatch { public class Exception {} public static void run() { try { Integer value=1; } catch (Exception value) {} } }"
+    },
+    "body": "public class R254RejectCatch { public class Exception {} public static void run() { try { Integer value=1; } catch (Exception value) {} } }\nSystem.debug('unreachable');",
+    "testClass": "R254Test41",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test41 { @IsTest static void observe() { System.assertEquals(1,1); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "compileOnly": true,
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Inner types are not allowed to have inner types",
+        "nativeMessage": "Inner types are not allowed to have inner types",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:58:19.650592+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Exception class must extend another Exception class: R254RejectCatch.Exception | @Override specified for non-overriding method: String R254RejectCatch.Exception.getTypeName() | Identifier name is reserved: Exception",
+        "nativeMessage": "Exception class must extend another Exception class: R254RejectCatch.Exception | @Override specified for non-overriding method: String R254RejectCatch.Exception.getTypeName() | Identifier name is reserved: Exception",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T03:56:21.358889+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Inner types are not allowed to have inner types",
+        "nativeMessage": "Inner types are not allowed to have inner types",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T06:51:29.904191+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Exception class must extend another Exception class: R254RejectCatch.Exception | @Override specified for non-overriding method: String R254RejectCatch.Exception.getTypeName() | Identifier name is reserved: Exception",
+        "nativeMessage": "Exception class must extend another Exception class: R254RejectCatch.Exception | @Override specified for non-overriding method: String R254RejectCatch.Exception.getTypeName() | Identifier name is reserved: Exception",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T06:52:10.065840+00:00"
+      }
+    ],
+    "anonymousSource": "public class R254RejectCatch { public class Exception {} public static void run() { try { Integer value=1; } catch (Exception value) {} } }\nSystem.debug('unreachable');",
+    "anonymousNote": "This inline-declaration row pins the anonymous nesting boundary; the direct_reject twin pins receiver rejection against deployed helpers."
+  },
+  {
+    "id": "saveresult_reject",
+    "shape": "saveresult",
+    "variant": "rejection",
+    "classes": {
+      "R254RejectSaveResult": "public class R254RejectSaveResult { public class SaveResult {} public static void run() { new SaveResult().isSuccess(); } }"
+    },
+    "body": "public class R254RejectSaveResult { public class SaveResult {} public static void run() { new SaveResult().isSuccess(); } }\nSystem.debug('unreachable');",
+    "testClass": "R254Test42",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test42 { @IsTest static void observe() { System.assertEquals(1,1); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "compileOnly": true,
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Inner types are not allowed to have inner types",
+        "nativeMessage": "Inner types are not allowed to have inner types",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:58:20.542171+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void isSuccess() from the type R254RejectSaveResult.SaveResult",
+        "nativeMessage": "Method does not exist or incorrect signature: void isSuccess() from the type R254RejectSaveResult.SaveResult",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T03:56:23.781644+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Inner types are not allowed to have inner types",
+        "nativeMessage": "Inner types are not allowed to have inner types",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T06:51:30.705531+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void isSuccess() from the type R254RejectSaveResult.SaveResult",
+        "nativeMessage": "Method does not exist or incorrect signature: void isSuccess() from the type R254RejectSaveResult.SaveResult",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T06:52:12.437072+00:00"
+      }
+    ],
+    "anonymousSource": "public class R254RejectSaveResult { public class SaveResult {} public static void run() { new SaveResult().isSuccess(); } }\nSystem.debug('unreachable');",
+    "anonymousNote": "This inline-declaration row pins the anonymous nesting boundary; the direct_reject twin pins receiver rejection against deployed helpers."
+  },
+  {
+    "id": "describefieldresult_reject",
+    "shape": "describefieldresult",
+    "variant": "rejection",
+    "classes": {
+      "R254RejectDescribeFieldResult": "public class R254RejectDescribeFieldResult { public class DescribeFieldResult {} public static void run() { new DescribeFieldResult().getName(); } }"
+    },
+    "body": "public class R254RejectDescribeFieldResult { public class DescribeFieldResult {} public static void run() { new DescribeFieldResult().getName(); } }\nSystem.debug('unreachable');",
+    "testClass": "R254Test43",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test43 { @IsTest static void observe() { System.assertEquals(1,1); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "compileOnly": true,
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Inner types are not allowed to have inner types",
+        "nativeMessage": "Inner types are not allowed to have inner types",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:58:21.939840+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void getName() from the type R254RejectDescribeFieldResult.DescribeFieldResult",
+        "nativeMessage": "Method does not exist or incorrect signature: void getName() from the type R254RejectDescribeFieldResult.DescribeFieldResult",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T03:56:26.173686+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Inner types are not allowed to have inner types",
+        "nativeMessage": "Inner types are not allowed to have inner types",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T06:51:31.509886+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void getName() from the type R254RejectDescribeFieldResult.DescribeFieldResult",
+        "nativeMessage": "Method does not exist or incorrect signature: void getName() from the type R254RejectDescribeFieldResult.DescribeFieldResult",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T06:52:14.789652+00:00"
+      }
+    ],
+    "anonymousSource": "public class R254RejectDescribeFieldResult { public class DescribeFieldResult {} public static void run() { new DescribeFieldResult().getName(); } }\nSystem.debug('unreachable');",
+    "anonymousNote": "This inline-declaration row pins the anonymous nesting boundary; the direct_reject twin pins receiver rejection against deployed helpers."
+  },
+  {
+    "id": "duplicate_reject",
+    "shape": "duplicate",
+    "variant": "rejection",
+    "classes": {
+      "R254RejectDuplicate": "public class R254RejectDuplicate { public class EventBus {} public class Other {} public static EventBus run() { return new Other(); } }"
+    },
+    "body": "public class R254RejectDuplicate { public class EventBus {} public class Other {} public static EventBus run() { return new Other(); } }\nSystem.debug('unreachable');",
+    "testClass": "R254Test44",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test44 { @IsTest static void observe() { System.assertEquals(1,1); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "compileOnly": true,
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Inner types are not allowed to have inner types",
+        "nativeMessage": "Inner types are not allowed to have inner types",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:58:22.777964+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Illegal conversion from R254RejectDuplicate.Other to R254RejectDuplicate.EventBus",
+        "nativeMessage": "Illegal conversion from R254RejectDuplicate.Other to R254RejectDuplicate.EventBus",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T03:56:28.605034+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Inner types are not allowed to have inner types",
+        "nativeMessage": "Inner types are not allowed to have inner types",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T06:51:32.314965+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Illegal conversion from R254RejectDuplicate.Other to R254RejectDuplicate.EventBus",
+        "nativeMessage": "Illegal conversion from R254RejectDuplicate.Other to R254RejectDuplicate.EventBus",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T06:52:17.168800+00:00"
+      }
+    ],
+    "anonymousSource": "public class R254RejectDuplicate { public class EventBus {} public class Other {} public static EventBus run() { return new Other(); } }\nSystem.debug('unreachable');",
+    "anonymousNote": "This inline-declaration row pins the anonymous nesting boundary; the direct_reject twin pins receiver rejection against deployed helpers."
+  },
+  {
+    "id": "field_enum_reject",
+    "shape": "field_enum",
+    "variant": "rejection",
+    "classes": {
+      "R254RejectFieldEnum": "public class R254RejectFieldEnum { public enum Level { LOW } static Level level=Level.LOW; public static void run() { Level.nope(); } }"
+    },
+    "body": "public class R254RejectFieldEnum { public enum Level { LOW } static Level level=Level.LOW; public static void run() { Level.nope(); } }\nSystem.debug('unreachable');",
+    "testClass": "R254Test45",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254Test45 { @IsTest static void observe() { System.assertEquals(1,1); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "compileOnly": true,
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Inner types are not allowed to have inner types",
+        "nativeMessage": "Inner types are not allowed to have inner types",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T03:58:23.654660+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void nope() from the type R254RejectFieldEnum.Level | Illegal forward reference: level",
+        "nativeMessage": "Method does not exist or incorrect signature: void nope() from the type R254RejectFieldEnum.Level | Illegal forward reference: level",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T03:56:30.975994+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Inner types are not allowed to have inner types",
+        "nativeMessage": "Inner types are not allowed to have inner types",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T06:51:33.648608+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void nope() from the type R254RejectFieldEnum.Level | Illegal forward reference: level",
+        "nativeMessage": "Method does not exist or incorrect signature: void nope() from the type R254RejectFieldEnum.Level | Illegal forward reference: level",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T06:52:19.540910+00:00"
+      }
+    ],
+    "anonymousSource": "public class R254RejectFieldEnum { public enum Level { LOW } static Level level=Level.LOW; public static void run() { Level.nope(); } }\nSystem.debug('unreachable');",
+    "anonymousNote": "This inline-declaration row pins the anonymous nesting boundary; the direct_reject twin pins receiver rejection against deployed helpers."
+  },
+  {
+    "id": "parameter_direct_reject",
+    "shape": "parameter",
+    "variant": "direct_rejection",
+    "classes": {},
+    "body": "R254ReceiverParameters.consume(new R254LeftPublic.EventBus());\nSystem.debug('OBS|' + JSON.serialize('accepted'));",
+    "testClass": "R254DirectTest1",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254DirectTest1 { @IsTest static void observe() { R254ReceiverParameters.consume(new R254LeftPublic.EventBus()); System.assert(false, 'OBS|' + JSON.serialize('accepted')); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "runnerReject": true,
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void consume(R254LeftPublic.EventBus) from the type R254ReceiverParameters",
+        "nativeMessage": "Method does not exist or incorrect signature: void consume(R254LeftPublic.EventBus) from the type R254ReceiverParameters",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T06:54:39.086877+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void consume(R254LeftPublic.EventBus) from the type R254ReceiverParameters",
+        "nativeMessage": "Method does not exist or incorrect signature: void consume(R254LeftPublic.EventBus) from the type R254ReceiverParameters",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T06:54:41.512495+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void consume(R254LeftPublic.EventBus) from the type R254ReceiverParameters",
+        "nativeMessage": "Method does not exist or incorrect signature: void consume(R254LeftPublic.EventBus) from the type R254ReceiverParameters",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T06:55:23.850858+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void consume(R254LeftPublic.EventBus) from the type R254ReceiverParameters",
+        "nativeMessage": "Method does not exist or incorrect signature: void consume(R254LeftPublic.EventBus) from the type R254ReceiverParameters",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T06:55:26.517567+00:00"
+      }
+    ],
+    "setupClasses": {
+      "R254ReceiverParameters": "public class R254ReceiverParameters { public static String consume(R254ParameterPublic.EventBus value) { return value.publish(); } }"
+    }
+  },
+  {
+    "id": "callable_direct_reject",
+    "shape": "callable",
+    "variant": "direct_rejection",
+    "classes": {
+      "R254DirectCallable": "public class R254DirectCallable implements R254CallablePublic.Callable {}"
+    },
+    "body": "public class R254DirectCallable implements R254CallablePublic.Callable {}\nSystem.debug('OBS|' + JSON.serialize('accepted'));",
+    "testClass": "R254DirectTest2",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254DirectTest2 { @IsTest static void observe() { Object value = R254DirectCallable.class; System.assert(false, 'OBS|' + JSON.serialize('accepted')); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "runnerReject": true,
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Class R254DirectCallable must implement the method: String R254CallablePublic.Callable.call()",
+        "nativeMessage": "Class R254DirectCallable must implement the method: String R254CallablePublic.Callable.call()",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T06:54:42.955167+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Class R254DirectCallable must implement the method: String R254CallablePublic.Callable.call() | Dependent class is invalid and needs recompilation:\n Class R254DirectCallable : Class R254DirectCallable must implement the method: String R254CallablePublic.Callable.call()",
+        "nativeMessage": "Class R254DirectCallable must implement the method: String R254CallablePublic.Callable.call() | Dependent class is invalid and needs recompilation:\n Class R254DirectCallable : Class R254DirectCallable must implement the method: String R254CallablePublic.Callable.call()",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T06:54:45.396548+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Class R254DirectCallable must implement the method: String R254CallablePublic.Callable.call()",
+        "nativeMessage": "Class R254DirectCallable must implement the method: String R254CallablePublic.Callable.call()",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T06:55:27.378036+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Class R254DirectCallable must implement the method: String R254CallablePublic.Callable.call() | Dependent class is invalid and needs recompilation:\n Class R254DirectCallable : Class R254DirectCallable must implement the method: String R254CallablePublic.Callable.call()",
+        "nativeMessage": "Class R254DirectCallable must implement the method: String R254CallablePublic.Callable.call() | Dependent class is invalid and needs recompilation:\n Class R254DirectCallable : Class R254DirectCallable must implement the method: String R254CallablePublic.Callable.call()",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T06:55:29.802012+00:00"
+      }
+    ]
+  },
+  {
+    "id": "schedulable_direct_reject",
+    "shape": "schedulable",
+    "variant": "direct_rejection",
+    "classes": {
+      "R254DirectSchedulable": "public class R254DirectSchedulable implements R254SchedulablePublic.Schedulable {}"
+    },
+    "body": "public class R254DirectSchedulable implements R254SchedulablePublic.Schedulable {}\nSystem.debug('OBS|' + JSON.serialize('accepted'));",
+    "testClass": "R254DirectTest3",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254DirectTest3 { @IsTest static void observe() { Object value = R254DirectSchedulable.class; System.assert(false, 'OBS|' + JSON.serialize('accepted')); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "runnerReject": true,
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Class R254DirectSchedulable must implement the method: String R254SchedulablePublic.Schedulable.execute()",
+        "nativeMessage": "Class R254DirectSchedulable must implement the method: String R254SchedulablePublic.Schedulable.execute()",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T06:54:46.854416+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Class R254DirectSchedulable must implement the method: String R254SchedulablePublic.Schedulable.execute() | Dependent class is invalid and needs recompilation:\n Class R254DirectSchedulable : Class R254DirectSchedulable must implement the method: String R254SchedulablePublic.Schedulable.execute()",
+        "nativeMessage": "Class R254DirectSchedulable must implement the method: String R254SchedulablePublic.Schedulable.execute() | Dependent class is invalid and needs recompilation:\n Class R254DirectSchedulable : Class R254DirectSchedulable must implement the method: String R254SchedulablePublic.Schedulable.execute()",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T06:54:51.000959+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Class R254DirectSchedulable must implement the method: String R254SchedulablePublic.Schedulable.execute()",
+        "nativeMessage": "Class R254DirectSchedulable must implement the method: String R254SchedulablePublic.Schedulable.execute()",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T06:55:31.248948+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Class R254DirectSchedulable must implement the method: String R254SchedulablePublic.Schedulable.execute() | Dependent class is invalid and needs recompilation:\n Class R254DirectSchedulable : Class R254DirectSchedulable must implement the method: String R254SchedulablePublic.Schedulable.execute()",
+        "nativeMessage": "Class R254DirectSchedulable must implement the method: String R254SchedulablePublic.Schedulable.execute() | Dependent class is invalid and needs recompilation:\n Class R254DirectSchedulable : Class R254DirectSchedulable must implement the method: String R254SchedulablePublic.Schedulable.execute()",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T06:55:33.631914+00:00"
+      }
+    ]
+  },
+  {
+    "id": "map_direct_reject",
+    "shape": "map",
+    "variant": "direct_rejection",
+    "classes": {},
+    "body": "Map<R254MapPublic.Type,String> values = new Map<R254MapPublic.Type,String>(); values.put('wrong','value');\nSystem.debug('OBS|' + JSON.serialize('accepted'));",
+    "testClass": "R254DirectTest4",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254DirectTest4 { @IsTest static void observe() { Map<R254MapPublic.Type,String> values = new Map<R254MapPublic.Type,String>(); values.put('wrong','value'); System.assert(false, 'OBS|' + JSON.serialize('accepted')); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "runnerReject": true,
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void put(String, String) from the type Map<R254MapPublic.Type,String>",
+        "nativeMessage": "Method does not exist or incorrect signature: void put(String, String) from the type Map<R254MapPublic.Type,String>",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T06:54:52.638987+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void put(String, String) from the type Map<R254MapPublic.Type,String>",
+        "nativeMessage": "Method does not exist or incorrect signature: void put(String, String) from the type Map<R254MapPublic.Type,String>",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T06:54:55.085943+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void put(String, String) from the type Map<R254MapPublic.Type,String>",
+        "nativeMessage": "Method does not exist or incorrect signature: void put(String, String) from the type Map<R254MapPublic.Type,String>",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T06:55:34.558928+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void put(String, String) from the type Map<R254MapPublic.Type,String>",
+        "nativeMessage": "Method does not exist or incorrect signature: void put(String, String) from the type Map<R254MapPublic.Type,String>",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T06:55:36.931249+00:00"
+      }
+    ]
+  },
+  {
+    "id": "catch_direct_reject",
+    "shape": "catch",
+    "variant": "direct_rejection",
+    "classes": {},
+    "body": "try { throw new R254CatchPublic.ReceiverException('inner'); } catch (R254MapPublic.Type value) {}\nSystem.debug('OBS|' + JSON.serialize('accepted'));",
+    "testClass": "R254DirectTest5",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254DirectTest5 { @IsTest static void observe() { try { throw new R254CatchPublic.ReceiverException('inner'); } catch (R254MapPublic.Type value) {} System.assert(false, 'OBS|' + JSON.serialize('accepted')); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "runnerReject": true,
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Catch block variable must be of type exception: R254MapPublic.Type",
+        "nativeMessage": "Catch block variable must be of type exception: R254MapPublic.Type",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T06:54:56.428459+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Catch block variable must be of type exception: R254MapPublic.Type",
+        "nativeMessage": "Catch block variable must be of type exception: R254MapPublic.Type",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T06:54:58.911333+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Catch block variable must be of type exception: R254MapPublic.Type",
+        "nativeMessage": "Catch block variable must be of type exception: R254MapPublic.Type",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T06:55:38.306656+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Catch block variable must be of type exception: R254MapPublic.Type",
+        "nativeMessage": "Catch block variable must be of type exception: R254MapPublic.Type",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T06:55:40.679270+00:00"
+      }
+    ]
+  },
+  {
+    "id": "saveresult_direct_reject",
+    "shape": "saveresult",
+    "variant": "direct_rejection",
+    "classes": {},
+    "body": "new R254SaveResultPublic.SaveResult().isSuccess();\nSystem.debug('OBS|' + JSON.serialize('accepted'));",
+    "testClass": "R254DirectTest6",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254DirectTest6 { @IsTest static void observe() { new R254SaveResultPublic.SaveResult().isSuccess(); System.assert(false, 'OBS|' + JSON.serialize('accepted')); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "runnerReject": true,
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void isSuccess() from the type R254SaveResultPublic.SaveResult",
+        "nativeMessage": "Method does not exist or incorrect signature: void isSuccess() from the type R254SaveResultPublic.SaveResult",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T06:55:00.262242+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void isSuccess() from the type R254SaveResultPublic.SaveResult",
+        "nativeMessage": "Method does not exist or incorrect signature: void isSuccess() from the type R254SaveResultPublic.SaveResult",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T06:55:02.839358+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void isSuccess() from the type R254SaveResultPublic.SaveResult",
+        "nativeMessage": "Method does not exist or incorrect signature: void isSuccess() from the type R254SaveResultPublic.SaveResult",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T06:55:41.516069+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void isSuccess() from the type R254SaveResultPublic.SaveResult",
+        "nativeMessage": "Method does not exist or incorrect signature: void isSuccess() from the type R254SaveResultPublic.SaveResult",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T06:55:43.876595+00:00"
+      }
+    ]
+  },
+  {
+    "id": "describefieldresult_direct_reject",
+    "shape": "describefieldresult",
+    "variant": "direct_rejection",
+    "classes": {},
+    "body": "new R254DescribeFieldResultPublic.DescribeFieldResult().getName();\nSystem.debug('OBS|' + JSON.serialize('accepted'));",
+    "testClass": "R254DirectTest7",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254DirectTest7 { @IsTest static void observe() { new R254DescribeFieldResultPublic.DescribeFieldResult().getName(); System.assert(false, 'OBS|' + JSON.serialize('accepted')); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "runnerReject": true,
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void getName() from the type R254DescribeFieldResultPublic.DescribeFieldResult",
+        "nativeMessage": "Method does not exist or incorrect signature: void getName() from the type R254DescribeFieldResultPublic.DescribeFieldResult",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T06:55:04.368727+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void getName() from the type R254DescribeFieldResultPublic.DescribeFieldResult",
+        "nativeMessage": "Method does not exist or incorrect signature: void getName() from the type R254DescribeFieldResultPublic.DescribeFieldResult",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T06:55:06.839828+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void getName() from the type R254DescribeFieldResultPublic.DescribeFieldResult",
+        "nativeMessage": "Method does not exist or incorrect signature: void getName() from the type R254DescribeFieldResultPublic.DescribeFieldResult",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T06:55:44.699696+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void getName() from the type R254DescribeFieldResultPublic.DescribeFieldResult",
+        "nativeMessage": "Method does not exist or incorrect signature: void getName() from the type R254DescribeFieldResultPublic.DescribeFieldResult",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T06:55:47.119230+00:00"
+      }
+    ]
+  },
+  {
+    "id": "duplicate_direct_reject",
+    "shape": "duplicate",
+    "variant": "direct_rejection",
+    "classes": {},
+    "body": "R254LeftPublic.EventBus value = new R254RightPublic.EventBus();\nSystem.debug('OBS|' + JSON.serialize('accepted'));",
+    "testClass": "R254DirectTest8",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254DirectTest8 { @IsTest static void observe() { R254LeftPublic.EventBus value = new R254RightPublic.EventBus(); System.assert(false, 'OBS|' + JSON.serialize('accepted')); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "runnerReject": true,
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Illegal assignment from R254RightPublic.EventBus to R254LeftPublic.EventBus",
+        "nativeMessage": "Illegal assignment from R254RightPublic.EventBus to R254LeftPublic.EventBus",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T06:55:07.772014+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Illegal assignment from R254RightPublic.EventBus to R254LeftPublic.EventBus",
+        "nativeMessage": "Illegal assignment from R254RightPublic.EventBus to R254LeftPublic.EventBus",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T06:55:11.247734+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Illegal assignment from R254RightPublic.EventBus to R254LeftPublic.EventBus",
+        "nativeMessage": "Illegal assignment from R254RightPublic.EventBus to R254LeftPublic.EventBus",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T06:55:47.933323+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Illegal assignment from R254RightPublic.EventBus to R254LeftPublic.EventBus",
+        "nativeMessage": "Illegal assignment from R254RightPublic.EventBus to R254LeftPublic.EventBus",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T06:55:50.361158+00:00"
+      }
+    ]
+  },
+  {
+    "id": "field_enum_direct_reject",
+    "shape": "field_enum",
+    "variant": "direct_rejection",
+    "classes": {},
+    "body": "R254FieldEnumBoundary.Level.nope();\nSystem.debug('OBS|' + JSON.serialize('accepted'));",
+    "testClass": "R254DirectTest9",
+    "testMethod": "observe",
+    "testSource": "@IsTest private class R254DirectTest9 { @IsTest static void observe() { R254FieldEnumBoundary.Level.nope(); System.assert(false, 'OBS|' + JSON.serialize('accepted')); } }",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "runnerReject": true,
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Variable is not visible: R254FieldEnumBoundary.level",
+        "nativeMessage": "Variable is not visible: R254FieldEnumBoundary.level",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T06:55:12.235966+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Variable is not visible: R254FieldEnumBoundary.level",
+        "nativeMessage": "Variable is not visible: R254FieldEnumBoundary.level",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T06:55:15.750356+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Variable is not visible: R254FieldEnumBoundary.level",
+        "nativeMessage": "Variable is not visible: R254FieldEnumBoundary.level",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-25T06:55:51.251804+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Variable is not visible: R254FieldEnumBoundary.level",
+        "nativeMessage": "Variable is not visible: R254FieldEnumBoundary.level",
+        "command": "sf project deploy start (@IsTest rejection)",
+        "capturedAt": "2026-10-25T06:55:53.616149+00:00"
+      }
+    ]
+  }
+]

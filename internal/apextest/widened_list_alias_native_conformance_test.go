@@ -133,7 +133,7 @@ func TestWidenedListAliasNativeConformance(t *testing.T) {
 		d7Seen[key] = true
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			widenedListAliasNativeDigest(t, "original helper "+api, data.Derivation.CapturedHelperSHA256ByAPI[api])
 			source, ok := data.SourcesByAPI[api]
 			if !ok || len(source.Classes) != 2 || len(source.ClassMetadata) != len(source.Classes) || source.TestClass == "" || source.TestMethod == "" {

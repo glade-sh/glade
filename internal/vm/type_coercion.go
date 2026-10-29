@@ -462,6 +462,9 @@ func (vm *VM) schemaRecordValueMatches(value Value, target string) (bool, bool) 
 }
 
 func (vm *VM) typeAssignableTo(from, to string) bool {
+	if matched, handled := vm.addressLocationTypesMatch(from, to); handled {
+		return matched
+	}
 	if matched, handled := vm.schemaRecordTypesMatch(from, to); handled {
 		return matched
 	}
@@ -560,6 +563,13 @@ func (vm *VM) typeAssignableTo(from, to string) bool {
 }
 
 func (vm *VM) generatedPlatformTypeDistance(typeName, target string, seen map[string]bool) (int, bool) {
+	// The Address overlay describes System.Address, not a source class that
+	// shadows its short name. Such classes use their declared hierarchy below.
+	if strings.EqualFold(typeName, "Address") {
+		if class, found := vm.lookupClass(typeName); found && !class.PlatformType {
+			return 0, false
+		}
+	}
 	typeName = canonicalRuntimePlatformType(typeName)
 	target = canonicalRuntimePlatformType(target)
 	if strings.EqualFold(typeName, target) {
@@ -1181,6 +1191,9 @@ func runtimeValueTypeName(value Value) string {
 	return valueTypeName(value)
 }
 func (vm *VM) typeMatches(typeName, target string, seen map[string]bool) bool {
+	if matched, handled := vm.addressLocationTypesMatch(typeName, target); handled {
+		return matched
+	}
 	if matched, handled := vm.schemaRecordTypesMatch(typeName, target); handled {
 		return matched
 	}
@@ -1814,6 +1827,19 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 			value.Type = typeName
 			return value, nil
 		}
+		// A typed global describe variable is a private copy of the describe
+		// map. Its entries are unchanged by this coercion, so share the cached
+		// storage copy-on-write instead of rebuilding both key maps per
+		// assignment. Raw app/module maps are not global views: retain their
+		// eager private copy, including their live key-set write routes.
+		if isGlobalDescribeMap(value) && typedGlobalDescribeViewType(typeName) {
+			if view, ok := vm.sharedGlobalDescribeView(value, typeName); ok {
+				return view, nil
+			}
+			if value.mapBackingShared && strings.EqualFold(sourceType, typeName) {
+				return value, nil
+			}
+		}
 		if strings.EqualFold(valueType, "sObject") && mapConcreteSObjectValueType(sourceType) != "" {
 			return value, nil
 		}
@@ -1829,7 +1855,7 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 		if !readOnly {
 			rollback = captureCoercionMapBranches(value, rawKeys)
 		}
-		canonicalRepresentation := value.MapKeys != nil &&
+		canonicalRepresentation := value.Type != globalDescribeMapType && value.MapKeys != nil &&
 			len(value.MapKeys) == len(value.Map) &&
 			(len(value.Map) == 0 ||
 				(value.MapOrder != nil && slices.Equal(value.MapOrder, rawKeys)))
@@ -1922,7 +1948,24 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 		}
 		published := value
 		preserveAliasRepresentation := canonicalRepresentation && uniqueEntryCount == len(value.MapOrder)
-		if preserveAliasRepresentation {
+		// Shared backing is never rewritten in place: frozen field-map storage
+		// belongs to every holder of this VM, and a global describe view's keys
+		// and order belong to every runtime clone of the primed template, so
+		// parallel test methods read them without a lock. Detach to a private
+		// tuple with the same identity. Private copies that merely carry the
+		// shared flag keep the in-place rewrite their retained headers observe.
+		detachFieldMapHolder := preserveAliasRepresentation && published.mapBackingShared && namesFrozenFieldMap(published)
+		detachSharedBacking := detachFieldMapHolder ||
+			(preserveAliasRepresentation && published.mapBackingShared && isGlobalDescribeMap(published))
+		if detachSharedBacking {
+			// Frozen field-map storage: this holder and its true aliases get
+			// a private tuple with the same identity; siblings keep theirs.
+			published.Map = make(map[string]Value, uniqueEntryCount)
+			published.MapKeys = make(map[string]Value, uniqueEntryCount)
+			published.MapOrder = make([]string, 0, uniqueEntryCount)
+			published.mapBackingShared = false
+			published.globalDescribeEntriesCanonical = false
+		} else if preserveAliasRepresentation {
 			clear(published.Map)
 			clear(published.MapKeys)
 			published.MapOrder = published.MapOrder[:0]
@@ -1938,6 +1981,9 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 			}
 			published.Map[entry.key] = entry.value
 			published.MapKeys[entry.key] = entry.keyValue
+		}
+		if detachFieldMapHolder {
+			recordFieldMapHolderDetach(published)
 		}
 		return published, nil
 	}

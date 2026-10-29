@@ -116,7 +116,7 @@ func runFlowRefsConformance(t *testing.T, cluster string, shapes, cells, carried
 		t.Fatalf("native cells/carries=%d/%d, want %d/%d", observations, carries, cells, carried)
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "FlowRefs-"+cluster, api)
 			baseIndex := flowRefsIndex(t, api, nil, nil)
 			base := newConformanceRunner(t, baseIndex, conformanceRunnerOptions{})

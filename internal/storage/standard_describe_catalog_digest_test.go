@@ -58,7 +58,7 @@ func TestStandardDescribeCatalogV2DigestOracle(t *testing.T) {
 		childRowCount += len(describe.ChildRelationships)
 		recordTypeCount += len(describe.RecordTypeInfos)
 	}
-	if got := []int{len(typedBundle.Describes), fieldCount, childRowCount, recordTypeCount}; !reflect.DeepEqual(got, []int{5323, 81896, 43445, 766}) {
+	if got := []int{len(typedBundle.Describes), fieldCount, childRowCount, recordTypeCount}; !reflect.DeepEqual(got, []int{5323, 81897, 43445, 766}) {
 		t.Fatalf("raw counts objects/fields/childRows/recordTypes = %v", got)
 	}
 
@@ -223,10 +223,19 @@ func TestStandardDescribeCatalogV2DigestOracle(t *testing.T) {
 	// and only reviewed standard picklist values.
 	// The standard_picklist_values native API 62/67 rows qualify the three
 	// corrected default lists and their ordering in both catalogs.
+	// Commerce API62/67 native webstore_fields rows add the captured Boolean
+	// OptionsAutoFacetingEnabled field; the rich and reverse catalogs are unchanged.
+	// The raw and projected digests below combine that field with the restricted
+	// picklist projection (the rich digest is unchanged by the Commerce field).
+	// standard_restricted_picklists/org.tsv:2-5 (API 62/67) qualifies retaining
+	// restrictedPicklist in the rich and projected catalogs; raw input is unchanged.
+	// Projected fields also retain catalog-origin provenance so configuration
+	// exclusions preserve explicit and native validation rules. The raw, rich,
+	// and reverse catalogs are unchanged by this projection-only addition.
 	wantDigests := map[string]string{
-		"RAW-BROAD-v1":       "deb1417e7868805b35e667e8e666677626db8aee485fe3f46128fb711c97eea6",
-		"PROJECTED-BROAD-v1": "f5abc3a50aca19d421232abf1c3e68a1418b2e155c483eff9a96a6bc4e816941",
-		"RICH-v1":            "1dbd6dfb605bbbf25e96cc7db83558e678c85e6fe83267cdac0a1514e0a9dc8e",
+		"RAW-BROAD-v1":       "7227213d3c382ce9d0a9be6118331e34e40bdf99e0004b9be932b22d287f2bb3",
+		"PROJECTED-BROAD-v1": "abb6cd24e88fb1a7c72e25ee50ac515032f55ef80b23681c7865735ea90541af",
+		"RICH-v1":            "92239c48aed07e0db93739fb128fa64e8ac26d3b22228e79b9cc5fc3d826130f",
 		"REVERSE-v1":         "a7010fc13d96f894dfc7c3efd5e8fe9b23e1a40984f78f972cf161fa59a4cf6f",
 	}
 	for _, section := range []string{"RAW-BROAD-v1", "PROJECTED-BROAD-v1", "RICH-v1", "REVERSE-v1"} {

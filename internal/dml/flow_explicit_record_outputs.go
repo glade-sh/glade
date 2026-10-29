@@ -100,10 +100,18 @@ func flowSubflowCarryRecordInput(subflowFrame *flowFrame, target, reference stri
 	key := flowFrameKey(target)
 	if record, ok := frame.records[source]; ok {
 		subflowFrame.records[key] = record.Clone()
+		if input, found := frame.subflowInputs[source]; found {
+			subflowFrame.subflowInputs[key] = input
+		}
 		return true
 	}
 	if output, ok := frame.lookupOutputs[source]; ok {
 		subflowFrame.records[key] = output.record.Clone()
+		return true
+	}
+	if output, ok := frame.lookupCollections[source]; ok {
+		output.records = cloneFlowRecords(output.records)
+		subflowFrame.lookupCollections[key] = output
 		return true
 	}
 	if records, ok := frame.collections[source]; ok {

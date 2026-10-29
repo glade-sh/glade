@@ -18,6 +18,9 @@ func TestDirectParallel(t *testing.T) { t.Parallel() }
 func TestHelperGoroutine(t *testing.T) { startWorker() }
 func TestHelperParallel(t *testing.T) { runParallel(t) }
 func TestTransitiveHelper(t *testing.T) { runHelper(t) }
+func TestProjectWorkers(t *testing.T) { Run(nil, Options{ParallelMethods: true}) }
+func TestHelperProjectWorkers(t *testing.T) { runProject() }
+func TestSerialProject(t *testing.T) { Run(nil, Options{ParallelMethods: false}) }
 func TestSerial(t *testing.T) {}
 `
 	helper := `package fixture
@@ -25,13 +28,14 @@ import "testing"
 func startWorker() { go func() {}() }
 func runParallel(t *testing.T) { t.Parallel() }
 func runHelper(t *testing.T) { runParallel(t) }
+func runProject() { Run(nil, Options{ParallelMethods: true}) }
 `
 	for name, body := range map[string]string{"routes_test.go": source, "helpers_test.go": helper} {
 		if err := os.WriteFile(filepath.Join(dir, name), []byte(body), 0o600); err != nil {
 			t.Fatal(err)
 		}
 	}
-	want := []string{"TestDirectGoroutine", "TestDirectParallel", "TestHelperGoroutine", "TestHelperParallel", "TestTransitiveHelper"}
+	want := []string{"TestDirectGoroutine", "TestDirectParallel", "TestHelperGoroutine", "TestHelperParallel", "TestHelperProjectWorkers", "TestProjectWorkers", "TestTransitiveHelper"}
 	if got := concurrentRaceTests(t, dir); !reflect.DeepEqual(got, want) {
 		t.Fatalf("concurrent routes = %v, want %v", got, want)
 	}
@@ -60,9 +64,11 @@ package = ''' + repr("github.com/glade-sh/glade/" + package.removeprefix("./")) 
 if "-list" in sys.argv:
     print("\\n".join(names) + "\\nok  " + package + " 0.01s")
 else:
+    print(json.dumps({"Action":"start", "Package":package}))
     pattern = sys.argv[sys.argv.index("-run") + 1]
     for name in names:
         if re.search(pattern, name):
+            print(json.dumps({"Action": "run", "Package":package,"Test":name}))
             print(json.dumps({"Action": "pass", "Package": package, "Test": name}))
     print(json.dumps({"Action": "pass", "Package": package}))
 ''')

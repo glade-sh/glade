@@ -1,0 +1,12 @@
+{
+  "orgName": "Standard describe profile P4",
+  "edition": "Developer",
+  "features": [
+    "Communities"
+  ],
+  "settings": {
+    "communitiesSettings": {
+      "enableNetworksEnabled": true
+    }
+  }
+}

@@ -13,6 +13,7 @@ import (
 
 func TestStaticObjectChainNativeAnonymousNamedTestAndTriggerRoutes(t *testing.T) {
 	const fixture = "../../testdata/conformance/static_object_chain_routes"
+	deferred := namespaceAbsenceDeferrals(t, fixture)
 	cases, err := readTypeNamePinRows(filepath.Join(fixture, "cases.tsv"))
 	if err != nil {
 		t.Fatal(err)
@@ -75,8 +76,8 @@ func TestStaticObjectChainNativeAnonymousNamedTestAndTriggerRoutes(t *testing.T)
 				if row[1] == "anonymous" {
 					result = AnalyzeAnonymous(index, statement, row[0])
 				}
-				if row[3] == "true" {
-					if row[4] != "true" || result.HasErrors() {
+				if row[3] == "true" || deferred[row[2]] {
+					if (!deferred[row[2]] && row[4] != "true") || result.HasErrors() {
 						t.Fatalf("native accepted chain; diagnostics: %v", result.Diagnostics)
 					}
 				} else {

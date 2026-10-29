@@ -333,7 +333,6 @@ var localAPILimits = map[string]localAPILimit{
 	"DailyApiRequests":                            localAPILimitValue(15000),
 	"DailyAsyncApexExecutions":                    localAPILimitValue(250000),
 	"DailyBulkApiBatches":                         localAPILimitValue(15000),
-	"DailyBulkV2IngestJobs":                       localAPILimitValue(10000),
 	"DailyBulkV2QueryJobs":                        localAPILimitValue(10000),
 	"DailyDurableGenericStreamingApiEvents":       localAPILimitValue(10000),
 	"DailyStreamingApiEvents":                     localAPILimitValue(10000),

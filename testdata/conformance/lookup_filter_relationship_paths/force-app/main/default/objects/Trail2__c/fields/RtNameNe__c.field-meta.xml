@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>RtNameNe__c</fullName>
+    <label>RtNameNe</label>
+    <referenceTo>Account</referenceTo>
+    <relationshipLabel>RtNameNes</relationshipLabel>
+    <relationshipName>RtNameNeRel</relationshipName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <type>Lookup</type>
+    <lookupFilter><active>true</active><errorMessage>Providers only</errorMessage><filterItems><field>Account.RecordType.Name</field><operation>notEqual</operation><value>Provider</value></filterItems><isOptional>false</isOptional></lookupFilter>
+</CustomField>

@@ -34,7 +34,7 @@ func TestEventRelationshipNullNativeConformance(t *testing.T) {
 		"MeadowEventTypeProbeTest": string(sources["sources/MeadowEventTypeProbeTest.cls"]),
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "EventRelationshipNull", api)
 			index := nativeBoundaryIndex(t, api, classes, nil)
 			if analysis := sema.Analyze(index); index.HasErrors() || analysis.HasErrors() {

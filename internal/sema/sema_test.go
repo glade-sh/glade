@@ -2515,8 +2515,10 @@ func TestAnalyzeSObjectTypeFieldSetsTokenPaths(t *testing.T) {
 public class UsesSchemaSObjectTypeFieldSets {
   public void run() {
     List<Schema.FieldSetMember> direct = Schema.SObjectType.Account.fieldSets.AccountSummary.getFields();
-    List<Schema.FieldSetMember> shortName = Account.SObjectType.FieldSets.AccountSummary.getFields();
     List<Schema.FieldSetMember> fromMap = Schema.SObjectType.Account.fieldSets.getMap().get('AccountSummary').getFields();
+  }
+  public void shortName() {
+    List<Schema.FieldSetMember> fields = Account.SObjectType.FieldSets.AccountSummary.getFields();
   }
 }
 `)
@@ -2527,8 +2529,10 @@ public class UsesSchemaSObjectTypeFieldSets {
 	}, schema.Schema{Objects: []schema.Object{{Name: "Account"}}})
 
 	result := Analyze(index)
-	if result.HasErrors() {
-		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	// Native receiver_member_routes/org.tsv:82-85,90-93 rejects only the short form.
+	// The two describe-result routes above must remain valid.
+	if len(result.Diagnostics) != 1 || result.Diagnostics[0].NativeMessage != "Variable does not exist: Account.SObjectType.FieldSets.AccountSummary" {
+		t.Fatalf("want only the native short-fieldset rejection: %#v", result.Diagnostics)
 	}
 }
 
@@ -4367,7 +4371,7 @@ public class UsesTest {
 `)
 	index := typesys.Build(project.Project{
 		Root:      root,
-		Namespace: "dlrs",
+		Namespace: "examplens",
 		ApexFiles: []string{filepath.Join(root, "UsesTest.cls")},
 	}, schema.Schema{})
 

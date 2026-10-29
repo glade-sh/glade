@@ -172,7 +172,7 @@ func runUserModeInaccessibleConformance(t *testing.T, cluster string, shapes, as
 		t.Fatalf("cells=%d/%d, want=%d/%d", actual, carries, asserted, carried)
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "UserModeInaccessible-"+cluster, api)
 			// A private shared-runner template for each route preserves the observed
 			// anonymous business-data baseline and the test route's empty business data.
@@ -283,8 +283,20 @@ func userModeInaccessibleRead(t *testing.T, file string, target any) {
 		t.Fatal(err)
 	}
 }
-func userModeInaccessibleIndex(t *testing.T, api string, fixture userModeInaccessibleFixture, classes map[string]string) typesys.Index {
+func userModeInaccessibleIndex(t *testing.T, api string, fixture userModeInaccessibleFixture, classes map[string]string, projects ...*conformanceProjectCache) typesys.Index {
 	t.Helper()
+	if len(projects) != 0 {
+		files := make(map[string]string, len(fixture.Metadata)+2*len(classes))
+		for path, source := range fixture.Metadata {
+			files[filepath.Join("force-app/main/default", path)] = source
+		}
+		for name, source := range classes {
+			path := filepath.Join("force-app/main/default/classes", name+".cls")
+			files[path] = source
+			files[path+"-meta.xml"] = "<ApexClass><apiVersion>" + api + "</apiVersion></ApexClass>"
+		}
+		return projects[0].index(t, api, files)
+	}
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"sourceApiVersion":%q,"packageDirectories":[{"path":"force-app","default":true}]}`, api))
 	for path, text := range fixture.Metadata {

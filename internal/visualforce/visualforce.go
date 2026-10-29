@@ -71,6 +71,15 @@ func PageNames(p project.Project) []string {
 	return pageNames(p, LoadProject)
 }
 
+// PageNamesWithControllerCompilation is PageNames for a caller that already
+// compiled the project's Apex. The strict loader's controller compile gate
+// reuses that compilation when its index matches p; otherwise it compiles.
+func PageNamesWithControllerCompilation(p project.Project, compilation *ControllerCompilation) []string {
+	return pageNames(p, func(p project.Project) (Index, error) {
+		return loadProjectWithControllerCompilation(p, false, true, compilation)
+	})
+}
+
 func pageNames(p project.Project, load func(project.Project) (Index, error)) []string {
 	if len(p.VisualforcePageFiles) == 0 {
 		return nil
@@ -121,6 +130,10 @@ func LoadProjectBestEffort(p project.Project) Index {
 }
 
 func loadProject(p project.Project, bestEffort, validateExpressions bool) (Index, error) {
+	return loadProjectWithControllerCompilation(p, bestEffort, validateExpressions, nil)
+}
+
+func loadProjectWithControllerCompilation(p project.Project, bestEffort, validateExpressions bool, compilation *ControllerCompilation) (Index, error) {
 	idx := Index{}
 	fallbackAPIVersion, err := apexversion.PreserveSource(p.SourceAPIVersion)
 	if err != nil {
@@ -210,7 +223,7 @@ func loadProject(p project.Project, bestEffort, validateExpressions bool) (Index
 					}
 				}
 				if rejectedControllers == nil {
-					rejectedControllers, err = rejectedVisualforceControllers(p)
+					rejectedControllers, err = rejectedVisualforceControllersWith(p, compilation)
 					if err != nil {
 						return Index{}, err
 					}

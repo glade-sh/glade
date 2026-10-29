@@ -45,12 +45,17 @@ func evaluateRecordFormula(formula string, record storage.Record) (bool, bool) {
 }
 
 func evaluateRecordFormulaInOrg(formula string, org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record) (bool, bool) {
+	return evaluateRecordFormulaInOrgAsUser(formula, org, definition, record, "")
+}
+
+func evaluateRecordFormulaInOrgAsUser(formula string, org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record, userID storage.ID) (bool, bool) {
 	parser := formulaParser{
 		tokens:     tokenizeFormula(html.UnescapeString(formula)),
 		record:     record,
 		org:        org,
 		definition: definition,
 		namespace:  formulaSourceNamespace("", definition),
+		userID:     userID,
 	}
 	value, ok := parser.parseExpression()
 	if !ok || parser.peek().typ != formulaTokenEOF {
@@ -60,10 +65,10 @@ func evaluateRecordFormulaInOrg(formula string, org *storage.OrgState, definitio
 }
 
 func evaluateRecordFormulaInOrgWithContext(formula string, org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record, prior *storage.Record, isNew bool) (bool, bool) {
-	return evaluateRecordFormulaInOrgWithNamespace(formula, "", org, definition, record, prior, isNew)
+	return evaluateRecordFormulaInOrgWithNamespace(formula, "", org, definition, record, prior, isNew, "")
 }
 
-func evaluateRecordFormulaInOrgWithNamespace(formula, namespace string, org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record, prior *storage.Record, isNew bool) (bool, bool) {
+func evaluateRecordFormulaInOrgWithNamespace(formula, namespace string, org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record, prior *storage.Record, isNew bool, userID storage.ID) (bool, bool) {
 	parser := formulaParser{
 		tokens:     tokenizeFormula(html.UnescapeString(formula)),
 		record:     record,
@@ -72,12 +77,33 @@ func evaluateRecordFormulaInOrgWithNamespace(formula, namespace string, org *sto
 		namespace:  formulaSourceNamespace(namespace, definition),
 		prior:      prior,
 		isNew:      isNew,
+		userID:     userID,
 	}
 	value, ok := parser.parseExpression()
 	if !ok || parser.peek().typ != formulaTokenEOF {
 		return false, false
 	}
 	return value.truthy(), true
+}
+
+func evaluateCustomValidationFormulaInOrgWithNamespace(formula, namespace string, org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record, prior *storage.Record, isNew bool, userID storage.ID) (bool, bool) {
+	parser := formulaParser{
+		tokens:         tokenizeFormula(html.UnescapeString(formula)),
+		record:         record,
+		org:            org,
+		definition:     definition,
+		namespace:      formulaSourceNamespace(namespace, definition),
+		prior:          prior,
+		isNew:          isNew,
+		userID:         userID,
+		validationRule: true,
+	}
+	value, ok := parser.parseExpression()
+	if !ok || parser.peek().typ != formulaTokenEOF {
+		return false, false
+	}
+	// An evaluated arithmetic error causes a custom validation rule to fail.
+	return parser.validationError || value.truthy(), true
 }
 
 func evaluateRecordFormulaValue(formula string, field storage.Field, record storage.Record) (storage.Value, bool, bool) {
@@ -437,6 +463,8 @@ type formulaParser struct {
 	evaluating          map[string]bool
 	prior               *storage.Record
 	isNew               bool
+	validationRule      bool
+	validationError     bool
 	preserveNumericNull bool
 	blankNumericAsZero  bool
 	formulaSurface      bool
@@ -445,6 +473,7 @@ type formulaParser struct {
 	failure             *FormulaError
 	storedFormula       bool
 	flowTextNulls       bool
+	flowRecordContext   bool
 	flowReference       func(string) (formulaValue, bool, bool)
 	userID              storage.ID
 }
@@ -640,7 +669,9 @@ func (p *formulaParser) parseMultiplicative() (formulaValue, bool) {
 			}
 			continue
 		}
-		if p.preserveNumericNull && (left.kind == formulaNull || right.kind == formulaNull) {
+		// Native custom-validation rows establish null propagation for division.
+		// Other operators retain the existing blank-number coercion.
+		if (p.preserveNumericNull || (p.validationRule && op == "/")) && (left.kind == formulaNull || right.kind == formulaNull) {
 			left = formulaValue{kind: formulaNull}
 			continue
 		}
@@ -658,6 +689,11 @@ func (p *formulaParser) parseMultiplicative() (formulaValue, bool) {
 			continue
 		}
 		if rightNumber == 0 {
+			if p.validationRule {
+				p.validationError = true
+				left = formulaValue{kind: formulaNull}
+				continue
+			}
 			if p.formulaSurface {
 				message := "Division by zero"
 				if leftNumber == 0 {
@@ -940,6 +976,9 @@ func (p *formulaParser) fieldValue(field string) formulaValue {
 }
 
 func (p *formulaParser) valueForRecordField(record storage.Record, field string) formulaValue {
+	if p.flowRecordContext && len(field) > len("$Record.") && strings.EqualFold(field[:len("$Record.")], "$Record.") {
+		field = field[len("$Record."):]
+	}
 	if strings.EqualFold(field, "$User.Id") {
 		id := p.userID
 		if id == "" {
@@ -949,6 +988,9 @@ func (p *formulaParser) valueForRecordField(record storage.Record, field string)
 	}
 	if p.org == nil {
 		return formulaFieldValue(record, field)
+	}
+	if strings.EqualFold(field, "$Profile.Name") {
+		return p.profileNameValue()
 	}
 	namespace := p.resolutionNamespace(p.definition)
 	if field == "$RecordType.Name" || field == "$RecordType.DeveloperName" {
@@ -990,6 +1032,7 @@ func (p *formulaParser) valueForRecordField(record storage.Record, field string)
 					evaluating:         p.evaluating,
 					prior:              p.prior,
 					isNew:              p.isNew,
+					userID:             p.userID,
 					blankNumericAsZero: currencyFormulaBlankAsZero(fieldDef),
 				}
 				value, ok := nested.parseExpression()
@@ -1014,6 +1057,26 @@ func (p *formulaParser) valueForRecordField(record storage.Record, field string)
 		}
 	}
 	return formulaFieldValue(record, field)
+}
+
+func (p *formulaParser) profileNameValue() formulaValue {
+	userID := p.userID
+	if userID == "" {
+		userID = storage.DefaultUserID
+	}
+	_, user, found := storage.LookupRecordByID(p.org.Objects["User"].Records, userID)
+	if !found {
+		return formulaValue{kind: formulaNull}
+	}
+	profileID, found := formulaRecordField(user, "ProfileId")
+	if !found {
+		return formulaValue{kind: formulaNull}
+	}
+	_, profile, found := storage.LookupRecordByID(p.org.Objects["Profile"].Records, idFromStorageValue(profileID))
+	if !found {
+		return formulaValue{kind: formulaNull}
+	}
+	return formulaFieldValue(profile, "Name")
 }
 
 func (p *formulaParser) setupFieldValue(field string) (formulaValue, bool) {

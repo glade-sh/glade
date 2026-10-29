@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>Validation Probe Access</label>
+    <description>Access to the synthetic validation formula probe schema.</description>
+    <objectPermissions>
+        <allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit>
+        <allowRead>true</allowRead><modifyAllRecords>true</modifyAllRecords><viewAllRecords>true</viewAllRecords>
+        <object>ValidationParent__c</object>
+    </objectPermissions>
+    <objectPermissions>
+        <allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit>
+        <allowRead>true</allowRead><modifyAllRecords>true</modifyAllRecords><viewAllRecords>true</viewAllRecords>
+        <object>ValidationSample__c</object>
+    </objectPermissions>
+    <fieldPermissions><editable>true</editable><field>ValidationParent__c.Gate__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>true</editable><field>ValidationSample__c.Parent__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>true</editable><field>ValidationSample__c.TextValue__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>true</editable><field>ValidationSample__c.NumberValue__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>true</editable><field>ValidationSample__c.PickValue__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>true</editable><field>ValidationSample__c.MultiValue__c</field><readable>true</readable></fieldPermissions>
+</PermissionSet>

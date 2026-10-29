@@ -1,0 +1,5 @@
+source_api	route	case_id	outcome	message
+62.0	anonymous	warm_named_availability	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true|true|FieldServiceMobileExtension|false|true|true|true
+62.0	isTest	warm_named_availability	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false|false|FieldServiceMobileExtension|false|false|false|false
+67.0	anonymous	warm_named_availability	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true|true|FieldServiceMobileExtension|false|true|true|true
+67.0	isTest	warm_named_availability	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false|true|FieldServiceMobileExtension|false|true|false|true

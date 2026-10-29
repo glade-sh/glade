@@ -11,7 +11,7 @@ type objectDMLPolicy struct {
 	storedDMLDerivedFields    func(*VM, *storage.Record)
 	storedInsertDerivedFields func(*VM, *storage.Record) error
 	transientDMLDerivedFields []string
-	defaultRecordTypeID       func(storage.ObjectDefinition, storage.Record) storage.ID
+	defaultRecordTypeID       func(*VM, storage.ObjectDefinition, storage.Record) storage.ID
 }
 
 func dmlPolicyForObject(objectName string) *objectDMLPolicy {

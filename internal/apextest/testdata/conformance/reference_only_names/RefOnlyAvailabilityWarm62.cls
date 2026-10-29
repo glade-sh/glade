@@ -1,0 +1,1 @@
+public class RefOnlyAvailabilityWarm62 { public static String observe() { FieldServiceMobileExtension value = new Schema.FieldServiceMobileExtension(); return value.getSObjectType().getDescribe().getName() + '|' + String.valueOf(Schema.getGlobalDescribe().get('FieldServiceMobileExtension') == null) + '|' + String.valueOf(Type.forName('FieldServiceMobileExtension') == null); } }

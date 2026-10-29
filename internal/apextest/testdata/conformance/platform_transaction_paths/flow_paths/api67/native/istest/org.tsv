@@ -4,3 +4,4 @@ F02	flow_paths	istest	runtime	{"delayed":false,"exception":null,"immediate":true
 F03	flow_paths	istest	runtime	{"delayed":false,"exception":null,"immediate":true,"timerLogs":0}
 F04	flow_paths	istest	runtime	{"delayed":false,"exception":null,"immediate":true,"timerLogs":0}
 F05	flow_paths	istest	runtime	{"delayed":false,"exception":null,"immediate":false,"timerLogs":0}
+F06	flow_paths	istest	runtime	{"exception":"System.FlowException"}

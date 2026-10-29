@@ -125,7 +125,7 @@ func TestStubDispatchOrgConformance(t *testing.T) {
 		}
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "StubDispatch", api)
 			helpers := data.HelpersByAPI[api].Classes
 			baseIndex := stubDispatchIndex(t, api, helpers, nil)

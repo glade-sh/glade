@@ -87,7 +87,7 @@ func TestCollectionConformanceAPI67(t *testing.T) {
 		mismatches.Check(t, id, route, expected, observed)
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "collections", api)
 			if api == "68.0" {
 				t.Log("API68: 262 anonymous native answers including direct R231; named assertions remain local legacy checks")

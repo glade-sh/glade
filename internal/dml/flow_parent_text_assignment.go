@@ -8,7 +8,7 @@ import (
 )
 
 // The owned native matrix covers a triggering record's direct or one-parent
-// Text field, or a direct Integer field, assigned to a scalar String in a
+// Text field, or a direct Integer, whole Number or Picklist, assigned to a String in a
 // before-save CreateAndUpdate Flow. Validate the metadata before reading a
 // field; calculated fields and other source types retain their boundary.
 func (e *Engine) flowRecordTextAssignmentValue(assignment storage.FlowAssignment, frame *flowFrame) (value storage.Value, supported, handled bool) {
@@ -52,12 +52,17 @@ func (e *Engine) flowRecordTextAssignmentValue(assignment storage.FlowAssignment
 			}
 		}
 	}
-	if (!integerField && field.Type != storage.FieldString) || strings.TrimSpace(field.Formula) != "" {
+	wholeNumberField := field.Type == storage.FieldDecimal && field.Scale == 0 && !integerField &&
+		!strings.EqualFold(field.DisplayType, "CURRENCY") && !strings.EqualFold(field.DisplayType, "PERCENT")
+	if (!integerField && !wholeNumberField && field.Type != storage.FieldString && field.Type != storage.FieldPicklist) || strings.TrimSpace(field.Formula) != "" {
 		return storage.Value{}, false, true
 	}
 	value, present = sourceRecordFieldValue(source, fieldName)
 	if !present {
 		return storage.NullValue(), true, true
+	}
+	if wholeNumberField && value.Kind != storage.ValueNull {
+		return e.flowWholeNumberText(value)
 	}
 	if integerField && value.Kind != storage.ValueNull {
 		switch value.Kind {
@@ -71,6 +76,37 @@ func (e *Engine) flowRecordTextAssignmentValue(assignment storage.FlowAssignment
 		return storage.Value{}, false, true
 	}
 	return value.Clone(), true, true
+}
+
+func (e *Engine) flowWholeNumberText(value storage.Value) (storage.Value, bool, bool) {
+	// Flow uses display formatting for Number-to-String assignment. The
+	// captured profile is en_US; other locales retain their existing boundary.
+	user := e.Org.Objects["User"].Records[e.UserID]
+	if locale := user.Fields["LocaleSidKey"]; locale.Kind == storage.ValueString && locale.String != "" && locale.String != "en_US" {
+		return storage.Value{}, false, true
+	}
+	raw := workflowValueString(value)
+	if value.Kind == storage.ValueDecimal {
+		raw = value.Decimal
+	}
+	number, ok := new(big.Rat).SetString(raw)
+	if !ok || !number.IsInt() {
+		return storage.Value{}, false, true
+	}
+	text := number.Num().String()
+	sign := ""
+	if strings.HasPrefix(text, "-") {
+		sign, text = "-", text[1:]
+	}
+	var grouped strings.Builder
+	grouped.WriteString(sign)
+	for i, digit := range text {
+		if i > 0 && (len(text)-i)%3 == 0 {
+			grouped.WriteByte(',')
+		}
+		grouped.WriteRune(digit)
+	}
+	return storage.StringValue(grouped.String()), true, true
 }
 
 // String scalar assignments and collection Add can read a parent Text field
@@ -182,6 +218,51 @@ func (e *Engine) flowIntegerScalarFieldUpdateValue(update storage.WorkflowFieldU
 			return storage.Value{}, false
 		}
 		return storage.IntegerValue(rational.Num().Int64()), true
+	}
+	return storage.Value{}, false
+}
+
+// A Number or Currency interview variable written to a numeric field by a Create save flow
+// is the field's value (API 62.0 and 67.0, after-save Update Records over a
+// Get Records loop). A variable no node assigned is null. Integer and decimal
+// fields accept the whole or fractional number unchanged; other shapes keep
+// their existing boundary.
+func (e *Engine) flowNumberScalarFieldUpdateValue(update storage.WorkflowFieldUpdate, field storage.Field, definition storage.ObjectDefinition, frame *flowFrame) (storage.Value, bool) {
+	if e == nil || e.Org == nil || frame == nil || !(frame.saveDecisions && !frame.priorDecisions) ||
+		(field.Type != storage.FieldInteger && field.Type != storage.FieldDecimal) || strings.TrimSpace(update.Formula) != "" {
+		return storage.Value{}, false
+	}
+	source := strings.TrimSpace(update.SourceField)
+	if source == "" || strings.Contains(source, ".") {
+		return storage.Value{}, false
+	}
+	if _, modeled := storage.ResolveFieldName(definition, e.Org.Namespace, source); modeled {
+		return storage.Value{}, false
+	}
+	key := flowFrameKey(source)
+	variable, declared := frame.variables[key]
+	dataType := strings.TrimSpace(variable.DataType)
+	if !declared || variable.IsCollection || !strings.EqualFold(dataType, "Number") && !strings.EqualFold(dataType, "Currency") {
+		return storage.Value{}, false
+	}
+	value, assigned := frame.scalars[key]
+	if !assigned || value.Kind == storage.ValueNull {
+		if frame.assigned[key] {
+			return storage.Value{}, false
+		}
+		return storage.NullValue(), true
+	}
+	switch value.Kind {
+	case storage.ValueInteger:
+		return value.Clone(), true
+	case storage.ValueDecimal:
+		if field.Type == storage.FieldDecimal {
+			return value.Clone(), true
+		}
+		rational, ok := new(big.Rat).SetString(strings.TrimSpace(value.Decimal))
+		if ok && rational.IsInt() && rational.Num().IsInt64() {
+			return storage.IntegerValue(rational.Num().Int64()), true
+		}
 	}
 	return storage.Value{}, false
 }

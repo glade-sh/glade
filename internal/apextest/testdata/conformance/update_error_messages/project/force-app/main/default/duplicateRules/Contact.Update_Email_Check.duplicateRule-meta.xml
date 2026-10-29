@@ -1,0 +1,5 @@
+<DuplicateRule xmlns="http://soap.sforce.com/2006/04/metadata">
+<actionOnInsert>Block</actionOnInsert><actionOnUpdate>Block</actionOnUpdate><alertText>Synthetic duplicate rejection</alertText>
+<duplicateRuleMatchRules><matchRuleSObjectType>Contact</matchRuleSObjectType><matchingRule>Update_Exact_Email</matchingRule></duplicateRuleMatchRules>
+<isActive>true</isActive><masterLabel>Update Email Check</masterLabel><securityOption>BypassSharingRules</securityOption><sortOrder>3</sortOrder>
+</DuplicateRule>

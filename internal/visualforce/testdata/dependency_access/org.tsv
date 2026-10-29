@@ -1,0 +1,17 @@
+api	case_id	actual	diagnostic
+62.0	class_access	DEPLOY_OK	
+62.0	page_access	DEPLOY_OK	
+62.0	second_dependency_members	DEPLOY_OK	
+62.0	disabled_dependency_access	DEPLOY_OK	
+62.0	local_access	DEPLOY_OK	
+62.0	missing_class	DEPLOY_ERROR	In field: apexClass - no ApexClass named AbsentAccessController found
+62.0	missing_page	DEPLOY_ERROR	In field: apexPage - no ApexPage named AbsentAccessPage found
+62.0	profile_dependency_access	DEPLOY_OK	
+67.0	class_access	DEPLOY_OK	
+67.0	page_access	DEPLOY_OK	
+67.0	second_dependency_members	DEPLOY_OK	
+67.0	disabled_dependency_access	DEPLOY_OK	
+67.0	local_access	DEPLOY_OK	
+67.0	missing_class	DEPLOY_ERROR	In field: apexClass - no ApexClass named AbsentAccessController found
+67.0	missing_page	DEPLOY_ERROR	In field: apexPage - no ApexPage named AbsentAccessPage found
+67.0	profile_dependency_access	DEPLOY_OK	

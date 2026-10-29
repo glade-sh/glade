@@ -1,0 +1,21 @@
+reference	positions	expected
+bar.Wrapper	field,parameter,return,local,generic,new,extends,implements,catch	defer
+fooNs.Unknown	field,parameter,return,local,generic,new,extends,implements,catch	defer
+baz.Type	field,parameter,return,local,generic,new,extends,implements,catch	defer
+fooNs.X	field,parameter,return,local,generic,new,extends	resolve when namespace=fooNs
+fooNs.X.Callback	implements	resolve when namespace=fooNs
+fooNs.X.CustomException	catch	resolve when namespace=fooNs
+bar.Logger.log(),baz.Logger.log(),fooNs.Unknown.log(),q.logger.log()	static-call, unknown root	reject: native org.tsv:5,8,11,14 (62.0), :26,29,32,35 (67.0)
+System.NotAType	local,new	reject
+Schema.Account.NotAThing	local,new	reject
+q.Type	field,parameter,return,local,generic,new,extends,implements,catch,classic-for,enhanced-for,cast,instanceof,Object-assignment,instance-call,class-literal,generic-class-literal	defer
+bar.wrapper	field,parameter,return,local,generic,new,extends,implements,catch,classic-for,enhanced-for,cast,instanceof,Object-assignment,instance-call,class-literal,generic-class-literal	defer
+Messaging.UncataloguedType.log()	static-call	defer partial platform namespace
+Schema.UncataloguedType.log()	static-call	defer partial non-SObject catalog
+System.Http.UncataloguedType.log()	static-call	defer partial nested platform catalog
+System.String.UncataloguedType.log()	static-call	defer partial nested platform catalog
+NamespaceExtends0.Uncatalogued	field,parameter,return,local,generic,new,catch,static-call	defer inherited catalog
+dep.KnownType.Uncatalogued.log()	static-call, symbol-only dependency	reject: absent-dependency native org.tsv:17,38; symbol-only model is an offline boundary
+System.Database.Bogus	static-call receiver API62/67	reject exact native receiver fact only
+Label.ns.Hello,Label.ns.Other,Label.otherNs.Other	guarded value receiver call	defer unenumerated namespace label catalog
+System.Foo.bar()	static-call, absent System member	reject: native org.tsv:2,23 (62.0/67.0)

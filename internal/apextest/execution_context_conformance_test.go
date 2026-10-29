@@ -154,7 +154,7 @@ func TestExecutionContextOrgConformance(t *testing.T) {
 		return prefix + "try {" + code + observation + "} catch(Exception e) {observedText='EXC|'+e.getTypeName()+'|'+e.getMessage();}\n" + comparison
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "execution context", api)
 			ceilingAPI := api == ceiling.APIVersion
 			if ceilingAPI {

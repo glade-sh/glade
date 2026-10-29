@@ -1,0 +1,50 @@
+[
+  {
+    "api": "63.0",
+    "route": "anonymous",
+    "source": "for(String objectName : new List<String>{'PermissionSet','Profile'}) { Schema.SObjectType token=Schema.getGlobalDescribe().get(objectName); System.debug(LoggingLevel.ERROR,'VERSION|'+objectName+'|'+token.getDescribe().fields.getMap().containsKey('PermissionsViewLicenseUtilization')); }",
+    "source_sha256": "d09a40dc3e4c85afef480edbec4bcd838de0eb28e0198a66046ca8abd2a47c4b"
+  },
+  {
+    "api": "63.0",
+    "route": "named",
+    "source": "public class StandardDescribeVersion63 { public static void capture() { for(String objectName : new List<String>{'PermissionSet','Profile'}) { Schema.SObjectType token=Schema.getGlobalDescribe().get(objectName); System.debug(LoggingLevel.ERROR,'VERSION|'+objectName+'|'+token.getDescribe().fields.getMap().containsKey('PermissionsViewLicenseUtilization')); } } }",
+    "source_sha256": "4a0848b299f5d18970b2e8753a18ab7397bac279d3b946c2526c3d287cf1e1f6"
+  },
+  {
+    "api": "64.0",
+    "route": "anonymous",
+    "source": "for(String objectName : new List<String>{'PermissionSet','Profile'}) { Schema.SObjectType token=Schema.getGlobalDescribe().get(objectName); System.debug(LoggingLevel.ERROR,'VERSION|'+objectName+'|'+token.getDescribe().fields.getMap().containsKey('PermissionsViewLicenseUtilization')); }",
+    "source_sha256": "d09a40dc3e4c85afef480edbec4bcd838de0eb28e0198a66046ca8abd2a47c4b"
+  },
+  {
+    "api": "64.0",
+    "route": "named",
+    "source": "public class StandardDescribeVersion64 { public static void capture() { for(String objectName : new List<String>{'PermissionSet','Profile'}) { Schema.SObjectType token=Schema.getGlobalDescribe().get(objectName); System.debug(LoggingLevel.ERROR,'VERSION|'+objectName+'|'+token.getDescribe().fields.getMap().containsKey('PermissionsViewLicenseUtilization')); } } }",
+    "source_sha256": "dcc1c430e56829f6bea96ddf700fedcd2ae9445c49f77e8857e9a727bdb1ba0f"
+  },
+  {
+    "api": "65.0",
+    "route": "anonymous",
+    "source": "for(String objectName : new List<String>{'PermissionSet','Profile'}) { Schema.SObjectType token=Schema.getGlobalDescribe().get(objectName); System.debug(LoggingLevel.ERROR,'VERSION|'+objectName+'|'+token.getDescribe().fields.getMap().containsKey('PermissionsViewLicenseUtilization')); }",
+    "source_sha256": "d09a40dc3e4c85afef480edbec4bcd838de0eb28e0198a66046ca8abd2a47c4b"
+  },
+  {
+    "api": "65.0",
+    "route": "named",
+    "source": "public class StandardDescribeVersion65 { public static void capture() { for(String objectName : new List<String>{'PermissionSet','Profile'}) { Schema.SObjectType token=Schema.getGlobalDescribe().get(objectName); System.debug(LoggingLevel.ERROR,'VERSION|'+objectName+'|'+token.getDescribe().fields.getMap().containsKey('PermissionsViewLicenseUtilization')); } } }",
+    "source_sha256": "4eb3cd1512394c965350c66af2ffee188fc46f1d6e13d2c02831f1dc6a6bde91"
+  },
+  {
+    "api": "66.0",
+    "route": "anonymous",
+    "source": "for(String objectName : new List<String>{'PermissionSet','Profile'}) { Schema.SObjectType token=Schema.getGlobalDescribe().get(objectName); System.debug(LoggingLevel.ERROR,'VERSION|'+objectName+'|'+token.getDescribe().fields.getMap().containsKey('PermissionsViewLicenseUtilization')); }",
+    "source_sha256": "d09a40dc3e4c85afef480edbec4bcd838de0eb28e0198a66046ca8abd2a47c4b"
+  },
+  {
+    "api": "66.0",
+    "route": "named",
+    "source": "public class StandardDescribeVersion66 { public static void capture() { for(String objectName : new List<String>{'PermissionSet','Profile'}) { Schema.SObjectType token=Schema.getGlobalDescribe().get(objectName); System.debug(LoggingLevel.ERROR,'VERSION|'+objectName+'|'+token.getDescribe().fields.getMap().containsKey('PermissionsViewLicenseUtilization')); } } }",
+    "source_sha256": "550db38b22e778791a8376e1cc97d02a96dd33e1e5f3d1479daeb661392f1506"
+  }
+]

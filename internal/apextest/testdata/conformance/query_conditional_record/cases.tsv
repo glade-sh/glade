@@ -1,0 +1,8 @@
+id	purpose
+left	new record branch
+right	query branch
+reverse	query first branch
+local	local assignment
+nullLeft	null then singleton query
+nullRight	singleton query then null
+listControl	query remains list in list context

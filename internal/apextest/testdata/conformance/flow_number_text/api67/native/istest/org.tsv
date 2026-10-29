@@ -1,0 +1,9 @@
+id	group	route	status	value
+Hill	flow_number_text	istest	ok	null
+HillTone	flow_number_text	istest	ok	null
+Lake	flow_number_text	istest	ok	"0"
+LakeTone	flow_number_text	istest	ok	"Blue"
+River	flow_number_text	istest	ok	"2,031"
+RiverTone	flow_number_text	istest	ok	"Amber"
+changed	flow_number_text	istest	ok	"2,042"
+changedTone	flow_number_text	istest	ok	null

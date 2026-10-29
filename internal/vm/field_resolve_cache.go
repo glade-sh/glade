@@ -50,6 +50,7 @@ func (c *fieldResolveLookupCache) store(key fieldResolveLookupKey, value fieldRe
 }
 
 func (vm *VM) resolveFieldName(definition storage.ObjectDefinition, name string) (string, bool) {
+	vm.ensureMetadataCacheGeneration()
 	namespace := ""
 	if vm != nil && vm.Org != nil {
 		namespace = vm.Org.Namespace

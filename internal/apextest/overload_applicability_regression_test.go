@@ -182,7 +182,7 @@ func TestOverloadApplicabilityOrgConformance(t *testing.T) {
 			"System.assert(expectedText.equals(observedText),'" + id + " expected <'+expectedText+'> actual <'+observedText+'>');"
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			anonymousIndex, _ := overloadAnonymousIndex(t, data.RuntimePrelude, api)
 			if analysis := sema.AnalyzeAnonymousDeclarations(anonymousIndex); analysis.HasErrors() {
 				t.Fatalf("anonymous helper semantics: %v", analysis.Diagnostics)
@@ -331,7 +331,7 @@ func TestOverloadApplicabilityPreservesNativeAmbiguity(t *testing.T) {
 		t.Fatalf("native rejection selection: %v", regression.PreservedNativeRejections)
 	}
 	for _, api := range native.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			for _, id := range regression.PreservedNativeRejections {
 				row, found := byID[id]
 				if !found || !strings.HasPrefix(row.Expected, "COMPILE_ERROR\t") {
@@ -359,7 +359,7 @@ func TestOverloadApplicabilityPreservesNativeControls(t *testing.T) {
 		t.Fatalf("native control selection: %v", regression.PreservedNativeControls)
 	}
 	for _, api := range native.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			index := overloadApplicabilityIndex(t, native.AnonymousDeclarations, api)
 			runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true})
 			for _, id := range regression.PreservedNativeControls {

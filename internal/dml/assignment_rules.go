@@ -62,7 +62,19 @@ func (e *Engine) AssignmentRuleOwner(input storage.Record) (storage.ID, error) {
 
 func (e *Engine) assignmentEntryMatches(entry storage.AssignmentRuleEntry, record storage.Record, definition storage.ObjectDefinition) (bool, bool) {
 	if entry.Formula != "" {
-		return evaluateWorkflowRule(storage.WorkflowRule{Formula: entry.Formula}, record, definition, e.Org)
+		if strings.TrimSpace(entry.Formula) == "" {
+			return true, true
+		}
+		// Persisted owners live in System, while formula fields read Fields.
+		// The native identity predicates compare $User.Id with this owner.
+		if _, explicit := record.GetField("OwnerId"); !explicit && !record.HasExplicitNull("OwnerId") && record.System.OwnerID != "" {
+			record = record.Clone()
+			if record.Fields == nil {
+				record.Fields = make(map[string]storage.Value)
+			}
+			record.Fields["OwnerId"] = storage.IDValue(record.System.OwnerID)
+		}
+		return evaluateRecordFormulaInOrgAsUser(entry.Formula, e.Org, definition, record, e.systemUserID())
 	}
 	if len(entry.Criteria) == 0 {
 		return true, true

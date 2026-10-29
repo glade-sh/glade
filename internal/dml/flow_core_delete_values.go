@@ -39,7 +39,8 @@ func flowCoreRecordTriggerError(rule storage.FlowRule, err error) error {
 		return err
 	}
 	var unknownOutput *flowCoreUnknownSubflowOutputError
-	if errors.As(err, &unknownOutput) {
+	var unstoredInput *flowUnstoredSubflowInputFieldError
+	if errors.As(err, &unknownOutput) || errors.As(err, &unstoredInput) {
 		return &flowCoreSubflowOutputFailure{cause: dmlErrorf("CANNOT_EXECUTE_FLOW_TRIGGER", nil, "We can't save this record because the “%s” process failed. Give your Salesforce admin these details. <b>An unhandled fault has occurred in this flow</b><br>An unhandled fault has occurred while processing the flow.  Please contact your system administrator for more information.", rule.Name)}
 	}
 	if !errors.As(err, &noMatch) {

@@ -1,0 +1,8332 @@
+[
+  {
+    "code": "",
+    "object": "AIApplication",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AIApplicationConfig",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AIInsightAction",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AIInsightFeedback",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AIInsightReason",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AIInsightValue",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AIPredictionEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AIRecordInsight",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AcceptedEventRelation",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Account",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AccountBrand",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AccountBrandShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AccountChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AccountCleanInfo",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AccountCleanInfoChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AccountContactRole",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AccountContactRoleChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AccountFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AccountHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AccountPartner",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AccountShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ActionLinkGroupTemplate",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ActionLinkTemplate",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ActiveFeatureLicenseMetric",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ActivePermSetLicenseMetric",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ActiveProfileMetric",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ActivityFieldHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ActivityHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ActorReactiveAskRespEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AdditionalNumber",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Address",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AddressHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AggregateResult",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AiJobRun",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AiJobRunShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AlternativePaymentMethod",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AlternativePaymentMethodShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AnalyticsTaskStatusEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AnalyticsUserAttrFuncTkn",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AnalyticsUserAttrFuncTknShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Announcement",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApexClass",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApexComponent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApexEmailNotification",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApexLog",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApexPage",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApexPageInfo",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApexTestQueueItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApexTestResult",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApexTestResultLimits",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApexTestRunResult",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApexTestSuite",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApexTrigger",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApexTypeImplementor",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApiAnomalyEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApiAnomalyEventStore",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApiAnomalyEventStoreFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApiEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApiEventStream",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApiPrtcPolicyChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AppAnalyticsQueryRequest",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AppDefinition",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AppExtension",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AppExtensionChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AppMenuItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AppTabMember",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AppUsageAssignment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AppointmentTopicTimeSlot",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AppointmentTopicTimeSlotFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AppointmentTopicTimeSlotHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApprovalSubmission",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApprovalSubmissionDetail",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApprovalSubmissionDetailFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApprovalSubmissionDetailHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApprovalSubmissionFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApprovalSubmissionHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApprovalSubmissionShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApprovalWorkItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApprovalWorkItemFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApprovalWorkItemHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApprovalWorkItemShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApptBundleAggrDurDnscale",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApptBundleAggrDurDnscaleFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApptBundleAggrPolicy",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApptBundleAggrPolicyFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApptBundleConfig",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApptBundleConfigFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApptBundleConfigHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApptBundleConfigShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApptBundlePolicy",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApptBundlePolicyFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApptBundlePolicyShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApptBundlePolicySvcTerr",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApptBundlePolicySvcTerrFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApptBundlePropagatePolicy",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApptBundlePropagatePolicyFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApptBundleRestrictPolicy",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApptBundleRestrictPolicyFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApptBundleSortPolicy",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ApptBundleSortPolicyFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Asset",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AssetAccountParticipant",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AssetAccountParticipantChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AssetAccountParticipantFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AssetAccountParticipantHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AssetAction",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AssetActionSource",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AssetAttribute",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AssetAttributeChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AssetChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AssetContactParticipant",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AssetContactParticipantChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AssetContactParticipantFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AssetContactParticipantHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AssetDowntimePeriod",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AssetDowntimePeriodFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AssetDowntimePeriodHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AssetFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AssetHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AssetRelationship",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AssetRelationshipChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AssetRelationshipFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AssetRelationshipHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AssetShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AssetStatePeriod",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AssetStatePeriodAttribute",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AssetTokenEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AssetWarranty",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AssetWarrantyChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AssetWarrantyFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AssetWarrantyHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AssignedResource",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AssignedResourceChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AssignedResourceFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AssignedResourceHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AssignmentRule",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AssociatedLocation",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AssociatedLocationChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AsyncApexJob",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AsyncOperationEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AsyncOperationLog",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AsyncOperationStatus",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AttachedContentDocument",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Attachment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AttributeDefinition",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AttributeDefinitionChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AttributeDefinitionFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AttributeDefinitionHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AttributeDefinitionShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AttributePicklist",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AttributePicklistChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AttributePicklistFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AttributePicklistHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AttributePicklistShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AttributePicklistValue",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AttributePicklistValueChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AttributePicklistValueFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AttributePicklistValueHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Audience",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AuraDefinition",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AuraDefinitionBundle",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AuraDefinitionBundleInfo",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AuraDefinitionInfo",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AuthConfig",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AuthConfigProviders",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AuthProvParamFwdAllowlist",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AuthProvider",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AuthSession",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AuthorizationForm",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AuthorizationFormChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AuthorizationFormConsent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AuthorizationFormConsentChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AuthorizationFormConsentHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AuthorizationFormConsentShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AuthorizationFormDataUse",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AuthorizationFormDataUseChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AuthorizationFormDataUseHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AuthorizationFormDataUseShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AuthorizationFormHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AuthorizationFormShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AuthorizationFormText",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AuthorizationFormTextChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AuthorizationFormTextFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "AuthorizationFormTextHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BackgroundOperation",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BatchApexErrorEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BrandTemplate",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BrandingSet",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BrandingSetProperty",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BriefcaseAssignment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BriefcaseAssignmentChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BriefcaseDefinition",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BriefcaseDefinitionChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BriefcaseRule",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BriefcaseRuleFilter",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BrowserPolicyViolation",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BulkApiResultEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BulkApiResultEventStore",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BusinessBrand",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BusinessBrandChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BusinessBrandShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BusinessHours",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BusinessProcess",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BuyerGroup",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BuyerGroupFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BuyerGroupHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "BuyerGroupShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Calendar",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CalendarView",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CalendarViewChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CalendarViewShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CallCenter",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CallCoachingMediaProvider",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Campaign",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CampaignChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CampaignFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CampaignHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CampaignMember",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CampaignMemberChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CampaignMemberStatus",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CampaignMemberStatusChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CampaignShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CardPaymentMethod",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CartCheckoutSession",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CartDeliveryGroup",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CartDeliveryGroupChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CartDeliveryGroupMethod",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CartDeliveryGroupMethodAdj",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CartItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CartItemChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CartItemPriceAdjustment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CartItemPriceAdjustmentChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CartRelatedItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CartRelatedItemChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CartTax",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CartTaxChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CartValidationOutput",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CartValidationOutputChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Case",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CaseChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CaseComment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CaseContactRole",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CaseFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CaseHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CaseHistory2",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CaseHistory2ChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CaseMilestone",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CaseShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CaseSolution",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CaseStatus",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CaseTeamMember",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CaseTeamRole",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CaseTeamTemplate",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CaseTeamTemplateMember",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CaseTeamTemplateRecord",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CategoryData",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CategoryNode",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CdsChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChannelProgram",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChannelProgramFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChannelProgramHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChannelProgramLevel",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChannelProgramLevelFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChannelProgramLevelHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChannelProgramLevelShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChannelProgramMember",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChannelProgramMemberFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChannelProgramMemberHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChannelProgramMemberShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChannelProgramShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChatRetirementRdyMetrics",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChatterActivity",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChatterExtension",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ChatterExtensionConfig",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ClientBrowser",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CollaborationGroup",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CollaborationGroupFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CollaborationGroupMember",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CollaborationGroupMemberRequest",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CollaborationGroupRecord",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CollaborationGroupRecordChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CollaborationInvitation",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CollaborationRoom",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ColorDefinition",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CombinedAttachment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CommSubscription",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CommSubscriptionChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CommSubscriptionChannelType",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CommSubscriptionChannelTypeChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CommSubscriptionChannelTypeFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CommSubscriptionChannelTypeHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CommSubscriptionChannelTypeShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CommSubscriptionConsent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CommSubscriptionConsentChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CommSubscriptionConsentFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CommSubscriptionConsentHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CommSubscriptionConsentShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CommSubscriptionFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CommSubscriptionHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CommSubscriptionShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CommSubscriptionTiming",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CommSubscriptionTimingChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CommSubscriptionTimingFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CommSubscriptionTimingHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Community",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ConcurLongRunApexErrEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ConferenceNumber",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ConferenceNumberChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ConnectedApplication",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ConsumptionRate",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ConsumptionRateHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ConsumptionSchedule",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ConsumptionScheduleFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ConsumptionScheduleHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ConsumptionScheduleShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Contact",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContactChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContactCleanInfo",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContactCleanInfoChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContactFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContactHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContactPointAddress",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContactPointAddressChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContactPointAddressHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContactPointAddressShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContactPointConsent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContactPointConsentChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContactPointConsentHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContactPointConsentShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContactPointEmail",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContactPointEmailChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContactPointEmailHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContactPointEmailShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContactPointPhone",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContactPointPhoneChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContactPointPhoneHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContactPointPhoneShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContactPointTypeConsent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContactPointTypeConsentChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContactPointTypeConsentHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContactPointTypeConsentShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContactRequest",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContactRequestShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContactShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentAsset",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentBody",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentDistribution",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentDistributionView",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentDocument",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentDocumentChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentDocumentFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentDocumentHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentDocumentLink",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentDocumentLinkChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentDocumentSubscription",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentFolder",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentFolderChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentFolderItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentFolderLink",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentFolderMember",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentNotification",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentTagSubscription",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentTaxonomy",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentTaxonomyRelatedTerm",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentTaxonomyTerm",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentTaxonomyTermRelatedTerm",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentTaxonomyTermRelationshipType",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentUserSubscription",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentVersion",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentVersionChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentVersionComment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentVersionHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentVersionRating",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentVersionRenditionContent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentWorkspace",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentWorkspaceDoc",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentWorkspaceMember",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentWorkspacePermission",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContentWorkspaceSubscription",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContextParamMap",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Contract",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContractChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContractContactRole",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContractFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContractHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContractLineItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContractLineItemChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContractLineItemFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContractLineItemHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContractLineOutcome",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContractLineOutcomeData",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContractLineOutcomeDataChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContractLineOutcomeFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContractLineOutcomeHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContractLineOutcomeShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ContractStatus",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ConvEntryRelatedRecordCopy",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ConvEntryRelatedRecordCopyShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ConvIntelligenceSignalRule",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ConvIntelligenceSignalSubRule",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ConvMessageSendRequest",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Conversation",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ConversationApiLog",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ConversationApiLogObjSum",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ConversationApiLogShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ConversationEntry",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ConversationEntryCopy",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ConversationEntryCopyShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ConversationParticipant",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CorsWhitelistEntry",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Coupon",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CouponChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CouponCodeRedemption",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CouponCodeRedemptionShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CouponFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CouponHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CouponShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CredentialStuffingEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CredentialStuffingEventStore",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CredentialStuffingEventStoreFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CreditMemo",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CreditMemoFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CreditMemoHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CreditMemoInvApplication",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CreditMemoInvApplicationFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CreditMemoLine",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CreditMemoLineFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CreditMemoLineHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CreditMemoShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CronJobDetail",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CronTrigger",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CspTrustedSite",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CuratedExpJobEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CuratedExpPlanEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CurrencyType",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CustomBrand",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CustomBrandAsset",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CustomHelpMenuItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CustomHelpMenuSection",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CustomHttpHeader",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CustomNotificationType",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CustomPermission",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CustomPermissionDependency",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CustomReportType",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Customer",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "CustomerShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DandBCompany",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Dashboard",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DashboardComponent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DashboardComponentFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DashboardFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DataAssessmentFieldMetric",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DataAssessmentMetric",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DataAssessmentValueMetric",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DataEncryptionKey",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DataMaskCustomValueLibrary",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DataMaskCustomValueLibraryShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DataObjectDataChgEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DataStatistics",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DataType",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DataUseLegalBasis",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DataUseLegalBasisChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DataUseLegalBasisHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DataUseLegalBasisShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DataUsePurpose",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DataUsePurposeChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DataUsePurposeHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DataUsePurposeShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DataWeaveResource",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DatacloudAddress",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DatacloudCompany",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DatacloudContact",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DatacloudDandBCompany",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DatacloudOwnedEntity",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DatacloudPurchaseUsage",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DatedConversionRate",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DeclinedEventRelation",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DelegatedAccount",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DelegatedAccountFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DelegatedAccountHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DelegatedAccountShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DeleteEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DeliveryEstimationSetup",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DeliveryEstimationSetupFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DeliveryEstimationSetupHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DeliveryEstimationSetupShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DevopsActivityLog",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DevopsActivityLogShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DevopsEnvDeployment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DevopsEnvDeploymentFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DevopsEnvDeploymentHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DevopsEnvDeploymentMbr",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DevopsEnvDeploymentMbrFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DevopsEnvDeploymentMbrHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DevopsEnvironment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DevopsEnvironmentFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DevopsEnvironmentHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DevopsEnvironmentShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DevopsRequestInfo",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DevopsRequestInfoChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DevopsRequestInfoEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DevopsRequestInfoFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DevopsRequestInfoHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DevopsRequestInfoShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DigitalSignature",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DigitalSignatureChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DigitalWallet",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Document",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DocumentAttachmentMap",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Domain",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DomainSite",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DuplicateRecordItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DuplicateRecordSet",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DuplicateRule",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DynamicDataCapture",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DynamicDataCaptureChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DynamicDataCaptureFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DynamicDataCaptureHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "DynamicDataCaptureShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EmailBounceEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EmailCapture",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EmailDomainFilter",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EmailDomainKey",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EmailMessage",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EmailMessageChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EmailMessageRelation",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EmailRelay",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EmailServicesAddress",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EmailServicesFunction",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EmailStatus",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EmailTemplate",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EmailTemplateChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EmbeddedServiceDetail",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EmbeddedServiceLabel",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EngagementChannelType",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EngagementChannelTypeChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EngagementChannelTypeFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EngagementChannelTypeHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EngagementChannelTypeShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EngmtChannelTypeSettings",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EnhancedLetterhead",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EnhancedLetterheadFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Entitlement",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EntitlementChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EntitlementContact",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EntitlementFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EntitlementHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EntitlementTemplate",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EntityDefinition",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EntityMilestone",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EntityMilestoneFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EntityMilestoneHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EntityParticle",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EntitySubscription",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Event",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EventBusSubscriber",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EventChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EventFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EventLogFile",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EventRelation",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EventRelationChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EventRelayConfig",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EventRelayConfigChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EventRelayFeedback",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EventStagedInviteeEmail",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "EvfPipelineSubTaskDetails",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Expense",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExpenseChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExpenseFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExpenseHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExpenseReport",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExpenseReportEntry",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExpenseReportEntryFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExpenseReportEntryHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExpenseReportFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExpenseReportHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExpenseReportShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExpenseShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExperienceDiagnosticEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExpressionFilter",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExpressionFilterCriteria",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExpressionSetView",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExternalClientApplication",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExternalDataSource",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExternalDataSrcDescriptor",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExternalDataUserAuth",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExternalEncryptionRootKey",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExternalEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExternalEventChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExternalEventMapping",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExternalEventMappingShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExtlClntAppAndroidPushConfig",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExtlClntAppApplePushConfig",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExtlClntAppMobPlcyConfig",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExtlClntAppMobileSettings",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExtlClntAppNotifSettings",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExtlClntAppNotifType",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExtlClntAppOauthConsumer",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExtlClntAppOauthIpRange",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExtlClntAppOauthPlcyAttr",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExtlClntAppOauthPlcyCnfg",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExtlClntAppOauthPlcyCustmScp",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExtlClntAppOauthSecuritySettings",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExtlClntAppOauthSecurityTokenIpRange",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExtlClntAppOauthSetAttr",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExtlClntAppOauthSetCustmScp",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExtlClntAppOauthSettings",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExtlClntAppPlcyCnfg",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExtlClntAppPushPolicyConfig",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExtlClntAppPushSettings",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ExtlRecShrStagedRecord",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FOStatusChangedEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FeatureUsageEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FeedAttachment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FeedComment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FeedItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FeedLike",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FeedPollChoice",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FeedPollVote",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FeedRevision",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FeedSignal",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FeedTrackedChange",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FieldDefinition",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FieldMappingConfig",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FieldMappingConfigItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FieldPermissions",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FieldSecurityClassification",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FieldServiceMobileSettings",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FieldServiceMobileSettingsChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FieldServiceOrgSettings",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FieldSvcAddlMobSettings",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FileEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FileEventStore",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FileSearchActivity",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FinanceBalanceSnapshot",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FinanceBalanceSnapshotChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FinanceBalanceSnapshotShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FinanceTransaction",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FinanceTransactionChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FinanceTransactionShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FiscalYearSettings",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FldSvcObjChg",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FldSvcObjChgDtl",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlexQueueItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlowDebugRefreshEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlowDefinitionView",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlowExecutionErrorEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlowInterview",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlowInterviewLog",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlowInterviewLogEntry",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlowInterviewLogShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlowInterviewShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlowOrchestration",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlowOrchestrationChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlowOrchestrationEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlowOrchestrationInstance",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlowOrchestrationInstanceShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlowOrchestrationLog",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlowOrchestrationStageInstance",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlowOrchestrationStageInstanceShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlowOrchestrationStepInstance",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlowOrchestrationStepInstanceShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlowOrchestrationVersion",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlowOrchestrationVersionChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlowOrchestrationWorkItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlowOrchestrationWorkItemShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlowRecord",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlowRecordChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlowRecordElement",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlowRecordElementChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlowRecordElementOccurrence",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlowRecordHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlowRecordRelation",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlowRecordShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlowRecordVersion",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlowRecordVersionChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlowRecordVersionOccurrence",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlowStageRelation",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlowTestResult",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlowTestResultShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlowTestView",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlowVariableView",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FlowVersionView",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Folder",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FolderedContentDocument",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FormulaFunction",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FormulaFunctionAllowedType",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FormulaFunctionCategory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FulfillOrdItemQtyChgEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FulfillmentOrder",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FulfillmentOrderChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FulfillmentOrderFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FulfillmentOrderItemAdjustment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FulfillmentOrderItemAdjustmentFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FulfillmentOrderItemTax",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FulfillmentOrderItemTaxChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FulfillmentOrderItemTaxFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FulfillmentOrderLineItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FulfillmentOrderLineItemChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FulfillmentOrderLineItemFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "FulfillmentOrderShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "GeolocationBasedAction",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "GeolocationBasedActionChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "GeolocationBasedActionFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "GeolocationBasedActionHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "GeolocationBasedActionShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "GisPrvdCnctrJobObjRun",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "GrantedByLicense",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Group",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "GroupMember",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "GtwyProvPaymentMethodType",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "GuestUserAnomalyEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "GuestUserAnomalyEventStore",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "GuestUserAnomalyEventStoreFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Holiday",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "IPAddressRange",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "IconDefinition",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Idea",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "IdeaComment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "IdentityProviderEventStore",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "IdentityVerificationEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "IdpEventLog",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "IframeWhiteListUrl",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Image",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ImageFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ImageHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ImageShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Individual",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "IndividualChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "IndividualHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "IndividualShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "InstalledMobileApp",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "InventoryItemReservation",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "InventoryReservation",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "InventoryReservationShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Invoice",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "InvoiceFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "InvoiceHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "InvoiceLine",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "InvoiceLineFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "InvoiceLineHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "InvoiceShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "JobProfile",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "JobProfileFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "JobProfileHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "JobProfileShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "KnowledgeableUser",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Lead",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LeadChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LeadCleanInfo",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LeadFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LeadHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LeadShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LeadStatus",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LegalEntity",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LegalEntityFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LegalEntityHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LegalEntityShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LicenseDefinitionCustomPermission",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LightningExperienceTheme",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LightningOnboardingConfig",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LightningUriEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LightningUriEventStream",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ListEmail",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ListEmailChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ListEmailIndividualRecipient",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ListEmailRecipientSource",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ListEmailSentResult",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ListEmailSentResultChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ListEmailShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ListView",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ListViewChart",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ListViewChartInstance",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ListViewEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ListViewEventStream",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LiveAgentSession",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LiveAgentSessionChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LiveAgentSessionHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LiveAgentSessionShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LiveChatSensitiveDataRule",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LiveChatTranscript",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LiveChatTranscriptChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LiveChatTranscriptEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LiveChatTranscriptEventChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LiveChatTranscriptFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LiveChatTranscriptHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LiveChatTranscriptShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LiveChatVisitor",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LiveChatVisitorChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Location",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LocationChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LocationFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LocationGroup",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LocationGroupAssignment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LocationGroupAssignmentChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LocationGroupChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LocationGroupFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LocationGroupHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LocationGroupShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LocationHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LocationShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LocationShippingCarrierMethod",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LocationShippingCarrierMethodFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LocationShippingCarrierMethodHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LocationShippingCarrierMethodShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LoginAnomalyEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LoginAnomalyEventStore",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LoginAnomalyEventStoreFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LoginAsEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LoginAsEventStream",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LoginEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LoginEventStream",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LoginGeo",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LoginHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LoginIp",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LogoutEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LogoutEventStream",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "LookedUpFromActivity",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MLEngagementEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MLModel",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MLModelFactor",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MLModelFactorComponent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MLModelMetric",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MLPredictionDefinition",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MLRecommendationDefinition",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Macro",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MacroChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MacroHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MacroInstruction",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MacroInstructionChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MacroShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MacroUsage",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MacroUsageShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MailmergeTemplate",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MaintenanceAsset",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MaintenanceAssetChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MaintenanceAssetFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MaintenanceAssetHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MaintenancePlan",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MaintenancePlanChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MaintenancePlanFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MaintenancePlanHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MaintenancePlanShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MaintenanceWorkRule",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MaintenanceWorkRuleChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MaintenanceWorkRuleFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MaintenanceWorkRuleHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MaintenanceWorkRuleShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ManagedContent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ManagedContentChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ManagedContentChannel",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ManagedContentSpace",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ManagedContentVariant",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ManagedContentVariantChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MatchingInformation",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MatchingRule",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MatchingRuleItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MessagingChannel",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MessagingChannelUsage",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MessagingEndUser",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MessagingEndUserChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MessagingEndUserHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MessagingEndUserShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MessagingSession",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MessagingSessionChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MessagingSessionFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MessagingSessionHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MessagingSessionMetrics",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MessagingSessionShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MilestoneType",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MlFeatureValueMetric",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MobSecurityCertPinConfig",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MobileApplicationDetail",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MobilePushServiceDevice",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MobileSecurityAssignment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MobileSecurityPolicy",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MobileSecurityUserMetric",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MobileSettingsAssignment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MsgChannelAvailability",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MsgChannelLanguageKeyword",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MsgChannelUsageExternalOrg",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MsgSessStatusChangedEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MutingPermissionSet",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "MyDomainDiscoverableLogin",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Name",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NamedCredential",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NavigationLinkSet",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NavigationMenuItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Network",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NetworkActivityAudit",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NetworkAffinity",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NetworkAuthApiSettings",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NetworkDataCategory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NetworkDiscoverableLogin",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NetworkEmailTmplAllowlist",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NetworkFeedResponseMetric",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NetworkMember",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NetworkMemberGroup",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NetworkModeration",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NetworkPageOverride",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NetworkSelfRegistration",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NetworkUserHistoryRecent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Note",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "NoteAndAttachment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OauthCustomScope",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OauthCustomScopeApp",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OauthToken",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OauthTokenExchHandlerApp",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OauthTokenExchangeHandler",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ObjectMetadataTag",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ObjectMilestonePauseTime",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ObjectPermissions",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ObjectRelatedUrl",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ObjectRelatedUrlChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OnboardingMetrics",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OpenActivity",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OperatingHours",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OperatingHoursChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OperatingHoursFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OperatingHoursHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OperatingHoursHoliday",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OperatingHoursHolidayChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OperatingHoursHolidayFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OperatingHoursHolidayHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OperatingHoursShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Opportunity",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OpportunityChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OpportunityCompetitor",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OpportunityContactRole",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OpportunityContactRoleChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OpportunityFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OpportunityFieldHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OpportunityHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OpportunityLineItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OpportunityLineItemChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OpportunityLineItemSchedule",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OpportunityPartner",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OpportunityRelatedDeleteLog",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OpportunityShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OpportunityStage",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Order",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OrderChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OrderFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OrderHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OrderItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OrderItemChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OrderItemFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OrderItemHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OrderShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OrderStatus",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OrgEmailAddressSecurity",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OrgLifecycleNotification",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OrgMetric",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OrgMetricScanSummary",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OrgWideEmailAddress",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Organization",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OutboundEngagementTmplView",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OutboundEngmtContentRsrc",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OutboundEngmtContentRsrcFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OutboundEngmtContentRsrcShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OutgoingEmail",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OutgoingEmailRelation",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OwnedContentDocument",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "OwnerChangeOptionInfo",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PackageConversion",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PackageLicense",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Participant",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Partner",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerFundAllocation",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerFundAllocationFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerFundAllocationHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerFundAllocationShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerFundClaim",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerFundClaimFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerFundClaimHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerFundClaimShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerFundRequest",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerFundRequestFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerFundRequestHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerFundRequestShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerMarketingBudget",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerMarketingBudgetFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerMarketingBudgetHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerMarketingBudgetShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartnerRole",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartyConsent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartyConsentChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartyConsentFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartyConsentHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PartyConsentShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PayGroup",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PayGroupChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PayGroupFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PayGroupHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PayGroupShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PayPeriod",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PayPeriodChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PayPeriodFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PayPeriodHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PayPeriodShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Payment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PaymentAuthAdjustment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PaymentAuthorization",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PaymentCredit",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PaymentCreditLinePayment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PaymentCreditTransaction",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PaymentFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PaymentGateway",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PaymentGatewayLog",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PaymentGatewayProvider",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PaymentGroup",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PaymentLineInvoice",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PaymentLineInvoiceHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PaymentMethod",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PaymentPageChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PendingOrdSumProcEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PendingOrderSummary",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PendingOrderSummaryChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Period",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PermissionSet",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PermissionSetAssignment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PermissionSetEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PermissionSetEventStore",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PermissionSetGroup",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PermissionSetGroupComponent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PermissionSetLicense",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PermissionSetLicenseAssign",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PermissionSetLicenseDefinition",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PermissionSetTabSetting",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PersonAccountOwnerPowerUser",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PersonalizationTargetInfo",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PickTicket",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PickTicketAssignment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PickTicketFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PickTicketProduct",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PickTicketProductFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PickTicketShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PicklistValueInfo",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PipelineInspectionListView",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PlatformAction",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PlatformCachePartition",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PlatformCachePartitionType",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PlatformEventUsageMetric",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PlatformStatusAlertEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PortalDelegablePermissionSet",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PplnInspListViewCalcClmn",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Pricebook2",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Pricebook2ChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Pricebook2History",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PricebookEntry",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PricebookEntryChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PricebookEntryHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PrivacyJobSession",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PrivacyJobSessionShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PrivacyObjectSession",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PrivacyObjectSessionShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PrivacyPolicy",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PrivacyPolicyDefinition",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PrivacyRTBFRequest",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PrivacyRTBFRequestFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PrivacyRTBFRequestHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PrivacyRTBFRequestShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PrivacySessionRecordFailure",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PrivacySessionRecordFailureShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProcessDefinition",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProcessException",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProcessExceptionChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProcessExceptionEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProcessExceptionShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProcessFlowMigration",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProcessInstance",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProcessInstanceChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProcessInstanceHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProcessInstanceNode",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProcessInstanceStep",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProcessInstanceStepChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProcessInstanceWorkitem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProcessNode",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Product2",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Product2ChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Product2Feed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Product2History",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductAttribute",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductAttributeChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductAttributeSet",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductAttributeSetItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductAttributeSetProduct",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductCatalog",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductCatalogChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductCatalogFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductCatalogHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductCatalogShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductCategory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductCategoryChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductCategoryFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductCategoryHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductCategoryProduct",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductCategoryProductChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductCategoryProductHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductConsumed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductConsumedChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductConsumedFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductConsumedHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductConsumedState",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductConsumedStateChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductConsumedStateHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductConsumptionSchedule",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductEntitlementTemplate",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductItemChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductItemFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductItemHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductItemShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductItemTransaction",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductItemTransactionChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductItemTransactionFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductItemTransactionHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductRequest",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductRequestChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductRequestFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductRequestHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductRequestLineItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductRequestLineItemChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductRequestLineItemFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductRequestLineItemHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductRequestShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductRequired",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductRequiredChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductRequiredFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductRequiredHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductServiceCampaign",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductServiceCampaignFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductServiceCampaignHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductServiceCampaignItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductServiceCampaignItemFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductServiceCampaignItemHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductServiceCampaignItemStatus",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductServiceCampaignShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductServiceCampaignStatus",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductTransfer",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductTransferChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductTransferFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductTransferHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductTransferShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductTransferState",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductTransferStateChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductTransferStateHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductWarrantyTerm",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductWarrantyTermChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductWarrantyTermFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ProductWarrantyTermHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Profile",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Promotion",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionLineItemRule",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionLineItemRuleShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionMarketSegment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionMarketSegmentChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionMarketSegmentFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionMarketSegmentHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionQualifier",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionQualifierFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionQualifierHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionSegment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionSegmentBuyerGroup",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionSegmentBuyerGroupFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionSegmentBuyerGroupHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionSegmentFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionSegmentHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionSegmentSalesStore",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionSegmentSalesStoreFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionSegmentSalesStoreHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionSegmentShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionTarget",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionTargetFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionTargetHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionTier",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionTierFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromotionTierHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Prompt",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromptAction",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromptActionShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromptError",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromptErrorShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PromptVersion",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Publisher",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "PushTopic",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "QueueSobject",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "QuickText",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "QuickTextChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "QuickTextHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "QuickTextShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "QuickTextUsage",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "QuickTextUsageChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "QuickTextUsageShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Quote",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "QuoteChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "QuoteDocument",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "QuoteFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "QuoteHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "QuoteLineItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "QuoteLineItemChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "QuoteLineItemHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "QuoteShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "QuoteTemplateRichTextData",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "RecentlyViewed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Recommendation",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "RecommendationChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "RecommendationResponse",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "RecordAction",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "RecordActionHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "RecordType",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "RecordsetFilterCriteria",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "RecordsetFilterCriteriaChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "RecordsetFilterCriteriaFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "RecordsetFilterCriteriaHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "RecordsetFilterCriteriaRule",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "RecordsetFilterCriteriaRuleChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "RecordsetFilterCriteriaShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "RecordsetFltrCritMonitor",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "RecordsetFltrCritMonitorChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "RecordsetFltrCritMonitorFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "RecordsetFltrCritMonitorHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "RedirectWhitelistUrl",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Refund",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "RefundLinePayment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "RefundLinePaymentHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "RegisteredExternalService",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "RelatedListColumnDefinition",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "RelatedListDefinition",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "RelationshipDomain",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "RelationshipInfo",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "RemoteKeyCalloutEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ReplyEmailSettings",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Report",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ReportAnomalyEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ReportAnomalyEventStore",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ReportAnomalyEventStoreFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ReportEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ReportEventStream",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ReportFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ReportHierarchyObjectField",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ReputationLevel",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ReputationPointsRule",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ResourceAbsence",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ResourceAbsenceChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ResourceAbsenceFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ResourceAbsenceHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ResourcePreference",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ResourcePreferenceChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ResourcePreferenceFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ResourcePreferenceHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "RetentionStoreUsage",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "RetentionStoreUsageShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ReturnOrder",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ReturnOrderChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ReturnOrderFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ReturnOrderHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ReturnOrderItemAdjustment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ReturnOrderItemAdjustmentChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ReturnOrderItemTax",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ReturnOrderItemTaxChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ReturnOrderLineItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ReturnOrderLineItemChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ReturnOrderLineItemFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ReturnOrderLineItemHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ReturnOrderShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SPSamlAttributes",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SalesStore",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SamlSsoConfig",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SchedulingConstraint",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SchedulingConstraintShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SchedulingObjective",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SchedulingObjectiveParameter",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SchedulingRule",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SchedulingRuleParameter",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SchedulingWorkspace",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SchedulingWorkspaceFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SchedulingWorkspaceShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SchedulingWorkspaceTerritory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SchedulingWorkspaceTerritoryFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Scontrol",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Scorecard",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ScorecardAssociation",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ScorecardMetric",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ScorecardShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SearchLayout",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SearchPromotionRule",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SecurityCustomBaseline",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SecurityHealthCheckAlertRecipient",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SecurityHealthCheckResult",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Seller",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SellerHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SellerShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SerializedProduct",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SerializedProductChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SerializedProductFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SerializedProductHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SerializedProductShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SerializedProductTransaction",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SerializedProductTransactionChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SerializedProductTransactionFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SerializedProductTransactionHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceAppointment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceAppointmentCapacityUsage",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceAppointmentCapacityUsageFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceAppointmentCapacityUsageHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceAppointmentChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceAppointmentFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceAppointmentHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceAppointmentShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceAppointmentStatus",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceContract",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceContractChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceContractFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceContractHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceContractShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceCrew",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceCrewChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceCrewFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceCrewHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceCrewMember",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceCrewMemberChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceCrewMemberFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceCrewMemberHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceCrewShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceReport",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceReportChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceReportHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceReportLayout",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceReportLayoutChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceResource",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceResourceCapacity",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceResourceCapacityChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceResourceCapacityFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceResourceCapacityHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceResourceChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceResourceFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceResourceHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceResourcePreference",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceResourcePreferenceFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceResourcePreferenceHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceResourcePreferenceShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceResourceShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceResourceSkill",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceResourceSkillChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceResourceSkillFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceResourceSkillHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceSetupProvisioning",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceTerritory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceTerritoryChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceTerritoryFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceTerritoryHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceTerritoryLocation",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceTerritoryLocationChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceTerritoryLocationFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceTerritoryLocationHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceTerritoryMember",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceTerritoryMemberChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceTerritoryMemberFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceTerritoryMemberHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ServiceTerritoryShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SessionHijackingEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SessionHijackingEventStore",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SessionHijackingEventStoreFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SessionPermSetActivation",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SetupAssistantStep",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SetupAuditTrail",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SetupEntityAccess",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SfdcPartnerSbscrOffer",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SfdcPartnerSbscrOfferHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SfdcPartnerSbscrOfferItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SfdcPartnerSbscrOfferShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SharingSet",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Shift",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShiftChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShiftFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShiftHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShiftPattern",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShiftPatternChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShiftPatternEntry",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShiftPatternEntryChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShiftPatternEntryFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShiftPatternEntryHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShiftPatternFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShiftPatternHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShiftPatternShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShiftShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShiftStatus",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShiftTemplate",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShiftTemplateChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShiftTemplateShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Shipment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShipmentChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShipmentFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShipmentHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShipmentItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShipmentItemFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShipmentItemHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShipmentShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShippingCarrier",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShippingCarrierFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShippingCarrierHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShippingCarrierMethod",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShippingCarrierMethodFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShippingCarrierMethodHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShippingCarrierMethodShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShippingCarrierShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShippingConfigurationSet",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShippingConfigurationSetShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShippingRateArea",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ShippingRateGroup",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Site",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SiteDetail",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SiteFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SiteHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SiteIframeWhiteListUrl",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SiteMarketingDataExtensionMapping",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SiteRedirectMapping",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Skill",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SkillChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SkillRequirement",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SkillRequirementChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SkillRequirementFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SkillRequirementHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SkillType",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SlaProcess",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SlackChannelRelatedRecord",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Solution",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SolutionFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SolutionHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SolutionStatus",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SourceChangeNotification",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "StagedInviteeEmail",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "StagedInviteeEmailShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Stamp",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "StampAssignment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "StandardShippingRate",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "StaticResource",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "StoreIntegratedService",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "StreamingChannel",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "StreamingChannelShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Swarm",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SwarmFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SwarmHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SwarmMember",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SwarmMemberFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SwarmMemberHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SwarmMemberShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "SwarmShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "TabDefinition",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "TableauHostMapping",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "TableauHostMappingShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Task",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "TaskChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "TaskFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "TaskPriority",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "TaskStatus",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "TenantUsageEntitlement",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "TestSuiteMembership",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ThirdPartyAccountLink",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ThreatDetectionFeedback",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "ThreatDetectionFeedbackFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "TimeSheet",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "TimeSheetChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "TimeSheetEntry",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "TimeSheetEntryChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "TimeSheetEntryFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "TimeSheetEntryHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "TimeSheetFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "TimeSheetHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "TimeSheetShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "TimeSlot",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "TimeSlotChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "TimeSlotHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "TodayGoal",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "TodayGoalChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "TodayGoalShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Topic",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "TopicAssignment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "TopicFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "TopicUserEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "TransactionSecurityPolicy",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Translation",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "TravelMode",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "TravelModeFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "TravelModeShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UiFormulaCriterion",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UiFormulaRule",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UndecidedEventRelation",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UnitOfMeasure",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UnitOfMeasureChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UnitOfMeasureShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UniversalAnomalyEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UniversalAnomalyEventStore",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UniversalAnomalyEventStoreFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UnstructuredStorageSpace",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UnstructuredStorageSpaceShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UriEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UriEventStream",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "User",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserAppInfo",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserAppInfoChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserAppMenuCustomization",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserAppMenuCustomizationShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserAppMenuItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserCustomBadge",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserDefinedLabel",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserDefinedLabelAssignment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserDefinedLabelAssignmentShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserDefinedLabelShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserEmailPreferredPerson",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserEmailPreferredPersonChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserEmailPreferredPersonShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserEntityAccess",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserFieldAccess",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserLicense",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserListView",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserListViewCriterion",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserLocalWebServerIdentity",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserLocalWebServerIdentityShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserLocationAssignment",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserLogin",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserPackageLicense",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserPermissionAccess",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserPreference",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserPrioritizedRecord",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserPrioritizedRecordShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserProvAccount",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserProvAccountStaging",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserProvMockTarget",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserProvisioningConfig",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserProvisioningLog",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserProvisioningRequest",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserProvisioningRequestShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserRecordAccess",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserRole",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserSetupEntityAccess",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "UserSharedFeature",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "VerificationHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "VisualforceAccessMetrics",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Vote",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WarrantyTerm",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WarrantyTermChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WarrantyTermFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WarrantyTermHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WarrantyTermShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WaveAutoInstallRequest",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WaveAutoInstallRequestChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WaveCompatibilityCheckItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebCart",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebCartActivityLog",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebCartAdjustmentBasis",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebCartAdjustmentBasisChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebCartAdjustmentGroup",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebCartAdjustmentGroupChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebCartChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebCartCollaborator",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebCartCollaboratorHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebCartCredit",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebCartFailedEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebCartHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebCartShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebLink",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebStore",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebStoreBuyerGroup",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebStoreBuyerGroupChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebStoreCatalog",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebStoreCatalogChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebStoreCatalogHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebStoreChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebStoreConfig",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebStoreInventorySource",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebStoreNetwork",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WebStoreShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkAccess",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkAccessChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkAccessShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkBadge",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkBadgeChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkBadgeDefinition",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkBadgeDefinitionChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkBadgeDefinitionFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkBadgeDefinitionHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkBadgeDefinitionShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkCapacityAvailability",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkCapacityAvailabilityFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkCapacityAvailabilityShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkCapacityLimit",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkCapacityLimitChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkCapacityLimitFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkCapacityLimitHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkCapacityLimitShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkCapacityUsage",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkCapacityUsageFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkCapacityUsageShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkDemographic",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkItemEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkOrder",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkOrderChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkOrderFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkOrderHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkOrderLineItem",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkOrderLineItemChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkOrderLineItemFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkOrderLineItemHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkOrderLineItemStatus",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkOrderShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkOrderStatus",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkPlan",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkPlanChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkPlanFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkPlanHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkPlanSelectionRule",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkPlanSelectionRuleChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkPlanSelectionRuleFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkPlanSelectionRuleHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkPlanSelectionRuleShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkPlanShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkPlanTemplate",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkPlanTemplateChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkPlanTemplateEntry",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkPlanTemplateEntryChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkPlanTemplateEntryFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkPlanTemplateEntryHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkPlanTemplateFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkPlanTemplateHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkPlanTemplateShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkStep",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkStepChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkStepFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkStepHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkStepStatus",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkStepTemplate",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkStepTemplateChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkStepTemplateFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkStepTemplateHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkStepTemplateShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkThanks",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkThanksChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkThanksShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkType",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkTypeChangeEvent",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkTypeFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkTypeGroup",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkTypeGroupFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkTypeGroupHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkTypeGroupMember",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkTypeGroupMemberFeed",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkTypeGroupMemberHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkTypeGroupShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkTypeHistory",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkTypeShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkforceCapacity",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkforceCapacityShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkforceCapacityUnit",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "Workload",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkloadShare",
+    "status": 200
+  },
+  {
+    "code": "",
+    "object": "WorkloadUnit",
+    "status": 200
+  }
+]

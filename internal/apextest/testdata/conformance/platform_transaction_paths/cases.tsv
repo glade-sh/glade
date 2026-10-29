@@ -8,6 +8,7 @@ F02	flow_paths	record async after stopTest	anonymous,istest	62.0,67.0
 F03	flow_paths	future scheduled path before stopTest	anonymous,istest	62.0,67.0
 F04	flow_paths	future scheduled path after stopTest	anonymous,istest	62.0,67.0
 F05	flow_paths	scheduled-trigger exclusion from ordinary DML	anonymous,istest	62.0,67.0
+F06	flow_paths	direct interview of record-triggered flow rejection	anonymous,istest	62.0,67.0
 P01	event_flows	publish without explicit delivery	anonymous,istest	62.0,67.0
 P02	event_flows	publish and explicit delivery	anonymous,istest	62.0,67.0
 P03	event_flows	second delivery does not replay	anonymous,istest	62.0,67.0

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>67.0</apiVersion><environments>Default</environments><processType>AutoLaunchedFlow</processType><status>Active</status><label>Gap RtDecision</label>
+<customErrors><name>E</name><label>E</label><locationX>0</locationX><locationY>0</locationY><customErrorMessages><errorMessage>bad combo</errorMessage><isFieldError>false</isFieldError></customErrorMessages></customErrors>
+<decisions><name>D</name><label>D</label><locationX>0</locationX><locationY>0</locationY><defaultConnector><targetReference>E</targetReference></defaultConnector><defaultConnectorLabel>Default Outcome</defaultConnectorLabel><rules><name>Valid</name><conditionLogic>and</conditionLogic><conditions><leftValueReference>validRt</leftValueReference><operator>EqualTo</operator><rightValue><booleanValue>true</booleanValue></rightValue></conditions><label>Valid</label></rules></decisions>
+<formulas><name>validRt</name><dataType>Boolean</dataType><expression>OR(
+AND(
+OR({!GetParent.RecordType.DeveloperName}==&apos;GapParA&apos;,
+{!GetParent.RecordType.DeveloperName}==&apos;GapParB&apos;),
+{!$Record.RecordType.DeveloperName}==&apos;GapChildX&apos;
+    ),
+AND(
+    {!GetParent.RecordType.DeveloperName}==&apos;GapParC&apos;,
+    {!$Record.RecordType.DeveloperName}==&apos;GapChildY&apos;
+    )
+)</expression></formulas>
+<recordLookups><name>GetParent</name><label>GetParent</label><locationX>0</locationX><locationY>0</locationY><assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound><connector><targetReference>D</targetReference></connector><filterLogic>and</filterLogic><filters><field>Id</field><operator>EqualTo</operator><value><elementReference>$Record.ParentId</elementReference></value></filters><getFirstRecordOnly>true</getFirstRecordOnly><object>Account</object><storeOutputAutomatically>true</storeOutputAutomatically></recordLookups>
+<start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>GetParent</targetReference></connector><filterFormula>OR({!$Record.RecordType.DeveloperName}==&apos;GapChildX&apos;,{!$Record.RecordType.DeveloperName}==&apos;GapChildY&apos;)</filterFormula><object>Account</object><recordTriggerType>CreateAndUpdate</recordTriggerType><triggerType>RecordBeforeSave</triggerType></start></Flow>

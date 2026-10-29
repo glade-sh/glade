@@ -129,7 +129,7 @@ func runGenericInterfaceCastConformance(t *testing.T, cluster string, shapes, ce
 		t.Fatalf("native cells=%d, want=%d", observations, cells)
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			// Transport controls retain their own count label, separate from GI matches.
 			counts := newConformanceCountLog(t, "GenericInterfaceCast-"+cluster, api)
 			baseIndex := genericInterfaceCastIndex(t, api, nil)

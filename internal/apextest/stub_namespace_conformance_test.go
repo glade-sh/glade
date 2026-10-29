@@ -163,7 +163,7 @@ func runStubNamespaceConformance(t *testing.T, group string, shapes int) {
 		t.Fatalf("matrix: shapes=%d cells=%d native=%d carried=%d", len(rows), cells, observations, carried)
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCounts()
 			defer counts.Log(t, "STUB-NS", api, group)
 			fixture, ok := data.FixturesByAPI[api]

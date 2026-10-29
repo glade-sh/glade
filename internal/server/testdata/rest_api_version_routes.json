@@ -77,11 +77,7 @@
    "id": "rest_resources_root",
    "path": "/services/data/v%s/",
    "keyMode": "subset",
-   "gladeOnlyKeys": [
-    "apps",
-    "glade"
-   ],
-   "keyReason": "The local root lists only the namespaces it routes, plus its own glade namespace and an apps entry that the native root does not list.",
+   "keyReason": "Deliberate product difference: discovery lists the existing local namespace subset; hosted namespaces absent locally are omitted. Native key observations are truncated to 40 sorted keys.",
    "owner": "REST resource body shapes vs native rows",
    "native": {
     "59.0": {
@@ -598,11 +594,6 @@
   {
    "id": "rest_tooling_query_apexclass",
    "path": "/services/data/v%s/tooling/query?q=SELECT+Id+FROM+ApexClass+LIMIT+1",
-   "localUnsupported": {
-    "status": 501,
-    "errorCode": "UNSUPPORTED_FEATURE",
-    "reason": "Tooling query for ApexClass is not modeled locally and is rejected explicitly."
-   },
    "owner": "REST resource body shapes vs native rows",
    "native": {
     "59.0": {
@@ -676,16 +667,13 @@
      "errorCode": "NOT_FOUND",
      "message": "The requested resource does not exist"
     }
-   }
+   },
+   "keyMode": "subset",
+   "keyReason": "Deliberate product difference: local Tooling queries return done, records and totalSize for source-backed results; hosted cursor and duplicate size/type fields are omitted."
   },
   {
    "id": "rest_tooling_sobjects",
    "path": "/services/data/v%s/tooling/sobjects",
-   "localUnsupported": {
-    "status": 501,
-    "errorCode": "UNSUPPORTED_FEATURE",
-    "reason": "Tooling sObject discovery is not implemented locally and is rejected explicitly."
-   },
    "owner": "REST resource body shapes vs native rows",
    "native": {
     "59.0": {
@@ -741,16 +729,15 @@
      "errorCode": "NOT_FOUND",
      "message": "The requested resource does not exist"
     }
-   }
+   },
+   "keyMode": "subset",
+   "keyReason": "Deliberate product difference: local Tooling discovery lists source-backed sobjects; global discovery encoding and batch metadata are omitted."
   },
   {
    "id": "rest_limits",
    "path": "/services/data/v%s/limits",
    "keyMode": "subset",
-   "gladeOnlyKeys": [
-    "DailyBulkV2IngestJobs"
-   ],
-   "keyReason": "The local limits are a subset of the native limits, plus DailyBulkV2IngestJobs, which the native resource does not return.",
+   "keyReason": "Deliberate product difference: limits exposes only deterministic local counters, not the full org-specific hosted limits inventory or live accounting. Native key observations are truncated to 40 sorted keys.",
    "owner": "REST resource body shapes vs native rows",
    "native": {
     "59.0": {

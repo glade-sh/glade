@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Related__c</fullName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <label>Related</label>
+    <referenceTo>LookupFilterDetail__c</referenceTo>
+    <relationshipLabel>Lookup Filter Parents</relationshipLabel>
+    <relationshipName>Related</relationshipName>
+    <type>Lookup</type>
+</CustomField>

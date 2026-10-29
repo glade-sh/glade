@@ -10,6 +10,7 @@ import (
 
 func TestStaticObjectChainProjectNamedTestAndTriggerRoutes(t *testing.T) {
 	const fixture = "../../testdata/conformance/static_object_chain_routes"
+	deferred := namespaceAbsenceDeferrals(t, fixture)
 	cases, err := readTypeNamePinRowsForApextest(filepath.Join(fixture, "cases.tsv"))
 	if err != nil {
 		t.Fatal(err)
@@ -51,6 +52,10 @@ func TestStaticObjectChainProjectNamedTestAndTriggerRoutes(t *testing.T) {
 					statement = strings.ReplaceAll(statement, "ReceiverValues.", namespace+".ReceiverValues.")
 					message = strings.ReplaceAll(message, "ReceiverValues.", namespace+".ReceiverValues.")
 				}
+				// Compile deferred package calls without executing an unavailable API.
+				if deferred[row[2]] {
+					statement = "if (false) { " + statement + " }"
+				}
 				name, source, invocation := "ChainProbe.cls", "", ""
 				switch row[1] {
 				case "named":
@@ -66,10 +71,10 @@ func TestStaticObjectChainProjectNamedTestAndTriggerRoutes(t *testing.T) {
 					t.Fatalf("unknown route: %v", row)
 				}
 				write(name, source)
-				if row[3] == "false" {
+				if row[3] == "false" && !deferred[row[2]] {
 					invocation = "System.assert(true);"
 				}
-				if row[1] != "istest" || row[3] == "false" {
+				if row[1] != "istest" || row[3] == "false" && !deferred[row[2]] {
 					write("ChainRunnerTest.cls", "@IsTest private class ChainRunnerTest { @IsTest static void observe() { "+invocation+" } }")
 				}
 				index := loadTestIndex(t, root)
@@ -77,7 +82,7 @@ func TestStaticObjectChainProjectNamedTestAndTriggerRoutes(t *testing.T) {
 					t.Fatalf("index errors: %v", index.Diagnostics)
 				}
 				run := Run(index, Options{NoDiskCache: true, Parallelism: 1})
-				if row[3] == "true" {
+				if row[3] == "true" || deferred[row[2]] {
 					if got := run.Summary(); got.Total != 1 || got.Passed != 1 || len(run.ExcludedClasses) != 0 {
 						t.Fatalf("native accepted chain: summary=%+v excluded=%+v suites=%+v", got, run.ExcludedClasses, run.Suites)
 					}

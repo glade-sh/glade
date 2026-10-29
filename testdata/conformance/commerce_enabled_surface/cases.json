@@ -1,0 +1,46 @@
+[
+  {
+    "id": "pricing_response_visible",
+    "source": "commercestorepricing.ContractResolutionResponse value;"
+  },
+  {
+    "id": "pricing_request_visible",
+    "source": "commercestorepricing.ContractResolutionRequest value;"
+  },
+  {
+    "id": "pricing_service_visible",
+    "source": "commercestorepricing.PricingService value;"
+  },
+  {
+    "id": "inventory_visible",
+    "source": "CartExtension.InventoryCartCalculator value;"
+  },
+  {
+    "id": "checkout_status_visible",
+    "source": "sfdc_checkout.IntegrationStatus value;"
+  },
+  {
+    "id": "checkout_interface_visible",
+    "source": "sfdc_checkout.CartPriceCalculations value;"
+  },
+  {
+    "id": "checkout_info_visible",
+    "source": "sfdc_checkout.IntegrationInfo value;"
+  },
+  {
+    "id": "webstore_ctor",
+    "source": "WebStore value = new WebStore(Name='Synthetic store', OptionsAutoFacetingEnabled=true); System.assertEquals(true,value.OptionsAutoFacetingEnabled);"
+  },
+  {
+    "id": "webstore_rejection",
+    "source": "WebStore value = new WebStore(OptionsSyntheticMissing=true);"
+  },
+  {
+    "id": "webstore_boundary",
+    "source": "WebStore value = new WebStore(OptionsAutoFacetingEnabled=null); System.assertEquals(null,value.OptionsAutoFacetingEnabled);"
+  },
+  {
+    "id": "webstore_membership",
+    "source": "Map<String,Schema.SObjectField> fields=Schema.SObjectType.WebStore.fields.getMap(); System.debug('COMMERCE|'+fields.containsKey('OptionsAutoFacetingEnabled')+'|'+fields.containsKey('OptionsSyntheticMissing'));"
+  }
+]

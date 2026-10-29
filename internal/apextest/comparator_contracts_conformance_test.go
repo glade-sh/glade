@@ -100,7 +100,7 @@ func TestComparatorContractsConformance(t *testing.T) {
 		t.Fatal("incomplete native cells")
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "ComparatorContracts", api)
 			baseIndex := genericInterfaceCastIndex(t, api, nil)
 			org := orgFromIndex(baseIndex)

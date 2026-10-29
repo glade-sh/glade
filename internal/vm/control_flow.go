@@ -730,8 +730,8 @@ func (vm *VM) executeWhile(source string, inst ir.Instruction, result *Result) (
 
 func (vm *VM) executeDoWhile(source string, inst ir.Instruction, result *Result) (execOutcome, error) {
 	for iteration := 0; ; iteration++ {
-		if iteration >= maxLoopIterations {
-			return execOutcome{}, fmt.Errorf("do/while loop exceeded %d iterations", maxLoopIterations)
+		if err := vm.chargeLoopIteration("do/while", iteration); err != nil {
+			return execOutcome{}, err
 		}
 		out, err := vm.executeProgram(ir.Program{Instructions: inst.Then, Source: source}, result)
 		if err != nil {
@@ -792,8 +792,8 @@ func (vm *VM) executeFor(source string, inst ir.Instruction, result *Result) (ex
 		}
 	}
 	for iteration := 0; ; iteration++ {
-		if iteration >= maxLoopIterations {
-			return execOutcome{}, fmt.Errorf("for loop exceeded %d iterations", maxLoopIterations)
+		if err := vm.chargeLoopIteration("for", iteration); err != nil {
+			return execOutcome{}, err
 		}
 		condition, err := vm.eval(inst.Expr, result)
 		if err != nil {
@@ -957,8 +957,8 @@ func (vm *VM) executeForEach(source string, inst ir.Instruction, result *Result)
 		if err := vm.collectionTraversalMutationError(iterable, removalEpoch); err != nil {
 			return execOutcome{}, err
 		}
-		if iteration >= maxLoopIterations {
-			return execOutcome{}, fmt.Errorf("enhanced for loop exceeded %d iterations", maxLoopIterations)
+		if err := vm.chargeLoopIteration("enhanced for", iteration); err != nil {
+			return execOutcome{}, err
 		}
 		coerced, err := vm.coerceAssignable(inst.Type, value)
 		if err != nil {
@@ -982,6 +982,18 @@ func (vm *VM) executeForEach(source string, inst ir.Instruction, result *Result)
 		}
 	}
 	return execOutcome{}, nil
+}
+
+func (vm *VM) chargeLoopIteration(kind string, iteration int) error {
+	if err := vm.ctx.Err(); err != nil {
+		return err
+	}
+	// A finite strict CPU cap must exhaust as a LimitException, even when
+	// its work budget allows more iterations than the local safety guard.
+	if iteration >= maxLoopIterations && (vm.limitMode != LimitModeStrict || vm.limitCaps.CPUTimeMS < 0) {
+		return fmt.Errorf("%s loop exceeded %d iterations", kind, maxLoopIterations)
+	}
+	return vm.incrementCPUBudget(1)
 }
 
 func (vm *VM) shouldChunkEnhancedForList(loopType string, iterable Value) bool {

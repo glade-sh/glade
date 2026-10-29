@@ -1,0 +1,43 @@
+phase	api	route	case	value	detail	message
+oracle	62.0	istest	generic_person_missing_last	REQUIRED_FIELD_MISSING	LastName	Required fields are missing: [LastName]
+oracle	62.0	istest	generic_empty	REQUIRED_FIELD_MISSING	Name	Required fields are missing: [Name]
+oracle	62.0	istest	generic_person_null	INVALID_CROSS_REFERENCE_KEY	RecordTypeId	Record Type ID: this ID value isn't valid for the user:
+oracle	62.0	istest	admin_person_missing_last	REQUIRED_FIELD_MISSING	LastName	Required fields are missing: [LastName]
+oracle	62.0	istest	admin_empty	REQUIRED_FIELD_MISSING	Name	Required fields are missing: [Name]
+oracle	62.0	istest	admin_person_null	INVALID_CROSS_REFERENCE_KEY	RecordTypeId	Record Type ID: this ID value isn't valid for the user:
+oracle	62.0	istest	alternate_person_missing_last	REQUIRED_FIELD_MISSING	LastName	Required fields are missing: [LastName]
+oracle	62.0	istest	alternate_empty	REQUIRED_FIELD_MISSING	Name	Required fields are missing: [Name]
+oracle	62.0	istest	alternate_person_null	INVALID_CROSS_REFERENCE_KEY	RecordTypeId	Record Type ID: this ID value isn't valid for the user:
+oracle	62.0	istest	restored_person_missing_last	REQUIRED_FIELD_MISSING	LastName	Required fields are missing: [LastName]
+oracle	62.0	istest	restored_empty	REQUIRED_FIELD_MISSING	Name	Required fields are missing: [Name]
+oracle	62.0	istest	restored_person_null	INVALID_CROSS_REFERENCE_KEY	RecordTypeId	Record Type ID: this ID value isn't valid for the user:
+oracle	62.0	anonymous	admin_person_missing_last	REQUIRED_FIELD_MISSING	LastName	Required fields are missing: [LastName]
+oracle	62.0	anonymous	admin_empty	REQUIRED_FIELD_MISSING	Name	Required fields are missing: [Name]
+oracle	62.0	anonymous	admin_person_null	INVALID_CROSS_REFERENCE_KEY	RecordTypeId	Record Type ID: this ID value isn't valid for the user:
+oracle	67.0	istest	generic_person_missing_last	REQUIRED_FIELD_MISSING	LastName	Required fields are missing: [LastName]
+oracle	67.0	istest	generic_empty	REQUIRED_FIELD_MISSING	Name	Required fields are missing: [Name]
+oracle	67.0	istest	generic_person_null	INVALID_CROSS_REFERENCE_KEY	RecordTypeId	Record Type ID: this ID value isn't valid for the user:
+oracle	67.0	istest	admin_person_missing_last	REQUIRED_FIELD_MISSING	LastName	Required fields are missing: [LastName]
+oracle	67.0	istest	admin_empty	REQUIRED_FIELD_MISSING	Name	Required fields are missing: [Name]
+oracle	67.0	istest	admin_person_null	INVALID_CROSS_REFERENCE_KEY	RecordTypeId	Record Type ID: this ID value isn't valid for the user:
+oracle	67.0	istest	alternate_person_missing_last	REQUIRED_FIELD_MISSING	LastName	Required fields are missing: [LastName]
+oracle	67.0	istest	alternate_empty	REQUIRED_FIELD_MISSING	Name	Required fields are missing: [Name]
+oracle	67.0	istest	alternate_person_null	INVALID_CROSS_REFERENCE_KEY	RecordTypeId	Record Type ID: this ID value isn't valid for the user:
+oracle	67.0	istest	restored_person_missing_last	REQUIRED_FIELD_MISSING	LastName	Required fields are missing: [LastName]
+oracle	67.0	istest	restored_empty	REQUIRED_FIELD_MISSING	Name	Required fields are missing: [Name]
+oracle	67.0	istest	restored_person_null	INVALID_CROSS_REFERENCE_KEY	RecordTypeId	Record Type ID: this ID value isn't valid for the user:
+oracle	67.0	anonymous	admin_person_missing_last	REQUIRED_FIELD_MISSING	LastName	Required fields are missing: [LastName]
+oracle	67.0	anonymous	admin_empty	REQUIRED_FIELD_MISSING	Name	Required fields are missing: [Name]
+oracle	67.0	anonymous	admin_person_null	INVALID_CROSS_REFERENCE_KEY	RecordTypeId	Record Type ID: this ID value isn't valid for the user:
+setup	67.0	istest	generic_person_omitted	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY		Access to entity 'Account' denied
+setup	67.0	istest	generic_business_omitted	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY		Access to entity 'Account' denied
+setup	67.0	istest	generic_person_explicit	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY		Access to entity 'Account' denied
+setup	67.0	istest	generic_person_missing_last	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY		Access to entity 'Account' denied
+setup	67.0	istest	generic_empty	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY		Access to entity 'Account' denied
+setup	67.0	istest	generic_person_null	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY		Access to entity 'Account' denied
+setup	67.0	istest	alternate_person_omitted	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY		Access to entity 'Account' denied
+setup	67.0	istest	alternate_business_omitted	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY		Access to entity 'Account' denied
+setup	67.0	istest	alternate_person_explicit	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY		Access to entity 'Account' denied
+setup	67.0	istest	alternate_person_missing_last	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY		Access to entity 'Account' denied
+setup	67.0	istest	alternate_empty	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY		Access to entity 'Account' denied
+setup	67.0	istest	alternate_person_null	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY		Access to entity 'Account' denied

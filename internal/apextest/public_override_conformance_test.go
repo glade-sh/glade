@@ -55,7 +55,7 @@ func TestPublicOverrideOrgConformance(t *testing.T) {
 		return typesys.Build(project.Project{Root: root, SourceAPIVersion: api, ApexFiles: paths}, schema.Schema{})
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			seen := map[string]bool{}
 			// Each row's same-named fixture replaces the preceding generation.
 			// The shared runner links each complete index without mixing scopes.

@@ -1,0 +1,43 @@
+source_api	case_id	route	outcome	diagnostic
+62.0	system_foo	anonymous	rejected	Variable does not exist: System.Foo
+62.0	system_foo	named	rejected	Variable does not exist: System.Foo
+62.0	system_foo	isTest	rejected	Variable does not exist: System.Foo
+62.0	bar_logger	anonymous	rejected	Variable does not exist: bar.Logger
+62.0	bar_logger	named	rejected	Variable does not exist: bar.Logger
+62.0	bar_logger	isTest	rejected	Variable does not exist: bar.Logger
+62.0	baz_logger	anonymous	rejected	Variable does not exist: baz.Logger
+62.0	baz_logger	named	rejected	Variable does not exist: baz.Logger
+62.0	baz_logger	isTest	rejected	Variable does not exist: baz.Logger
+62.0	foons_unknown	anonymous	rejected	Variable does not exist: fooNs.Unknown
+62.0	foons_unknown	named	rejected	Variable does not exist: fooNs.Unknown
+62.0	foons_unknown	isTest	rejected	Variable does not exist: fooNs.Unknown
+62.0	q_logger	anonymous	rejected	Variable does not exist: q.logger
+62.0	q_logger	named	rejected	Variable does not exist: q.logger
+62.0	q_logger	isTest	rejected	Variable does not exist: q.logger
+62.0	dep_uncatalogued	anonymous	rejected	Variable does not exist: dep.KnownType.Uncatalogued
+62.0	dep_uncatalogued	named	rejected	Variable does not exist: dep.KnownType.Uncatalogued
+62.0	dep_uncatalogued	isTest	rejected	Variable does not exist: dep.KnownType.Uncatalogued
+62.0	system_debug	anonymous	accepted	""
+62.0	system_debug	named	accepted	""
+62.0	system_debug	isTest	accepted	""
+67.0	system_foo	anonymous	rejected	Variable does not exist: System.Foo
+67.0	system_foo	named	rejected	Variable does not exist: System.Foo
+67.0	system_foo	isTest	rejected	Variable does not exist: System.Foo
+67.0	bar_logger	anonymous	rejected	Variable does not exist: bar.Logger
+67.0	bar_logger	named	rejected	Variable does not exist: bar.Logger
+67.0	bar_logger	isTest	rejected	Variable does not exist: bar.Logger
+67.0	baz_logger	anonymous	rejected	Variable does not exist: baz.Logger
+67.0	baz_logger	named	rejected	Variable does not exist: baz.Logger
+67.0	baz_logger	isTest	rejected	Variable does not exist: baz.Logger
+67.0	foons_unknown	anonymous	rejected	Variable does not exist: fooNs.Unknown
+67.0	foons_unknown	named	rejected	Variable does not exist: fooNs.Unknown
+67.0	foons_unknown	isTest	rejected	Variable does not exist: fooNs.Unknown
+67.0	q_logger	anonymous	rejected	Variable does not exist: q.logger
+67.0	q_logger	named	rejected	Variable does not exist: q.logger
+67.0	q_logger	isTest	rejected	Variable does not exist: q.logger
+67.0	dep_uncatalogued	anonymous	rejected	Variable does not exist: dep.KnownType.Uncatalogued
+67.0	dep_uncatalogued	named	rejected	Variable does not exist: dep.KnownType.Uncatalogued
+67.0	dep_uncatalogued	isTest	rejected	Variable does not exist: dep.KnownType.Uncatalogued
+67.0	system_debug	anonymous	accepted	""
+67.0	system_debug	named	accepted	""
+67.0	system_debug	isTest	accepted	""

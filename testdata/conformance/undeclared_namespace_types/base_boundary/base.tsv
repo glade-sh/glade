@@ -1,0 +1,7 @@
+line	code	message
+3	GLADESEMA008	method "run" calls unknown method "bar.Logger.log"
+4	GLADESEMA006	Invalid type: bar.LogBuilder
+5	GLADESEMA006	Invalid type: bar.Wrapper
+6	GLADESEMA006	Invalid type: bar.OtherWrapper
+7	GLADESEMA006	Invalid type: fooNs.LocalThing
+8	GLADESEMA006	Invalid type: fooNs.Unknown

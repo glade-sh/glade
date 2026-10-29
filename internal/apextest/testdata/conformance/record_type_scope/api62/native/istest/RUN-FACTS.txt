@@ -1,0 +1,4 @@
+native_complete=true
+api=62.0
+route=istest
+transport=System.assert

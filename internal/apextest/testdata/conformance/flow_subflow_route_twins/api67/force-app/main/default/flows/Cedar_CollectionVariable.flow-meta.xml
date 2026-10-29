@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>67.0</apiVersion>
+    <interviewLabel>Cedar_CollectionVariable</interviewLabel>
+    <label>Cedar_CollectionVariable</label>
+    <processType>AutoLaunchedFlow</processType>
+    <subflows>
+        <name>CallChild</name>
+        <label>CallChild</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <flowName>Cedar_CollectionChild</flowName>
+        <inputAssignments>
+            <name>things</name>
+            <value>
+                <elementReference>things</elementReference>
+            </value>
+        </inputAssignments>
+    </subflows>
+    <start>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>CallChild</targetReference>
+        </connector>
+    </start>
+    <variables>
+        <name>things</name>
+        <dataType>SObject</dataType>
+        <isCollection>true</isCollection>
+        <isInput>true</isInput>
+        <isOutput>false</isOutput>
+        <objectType>Willow__c</objectType>
+    </variables>
+    <status>Active</status>
+</Flow>

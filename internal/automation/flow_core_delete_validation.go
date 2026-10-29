@@ -26,7 +26,7 @@ func flowCoreValidateProjectDeleteFilters(_ project.Project, idx *Index) error {
 		}
 		variables := flowVariableMap(raw.Variables)
 		constants := flowConstantMap(raw.Constants)
-		formulas := flowFormulaMap(raw.Formulas)
+		formulas := flowFormulaMapWithConstants(raw.Formulas, raw.Constants)
 		invalid := false
 		for _, del := range raw.RecordDeletes {
 			if del.InputReference != "" || len(del.Filters) != 3 || !strings.EqualFold(strings.TrimSpace(del.FilterLogic), "and") {

@@ -1,0 +1,7 @@
+id	route	behavior
+nonnegative	anonymous,IsTest	CPU sample is nonnegative and monotone; synchronous cap is 10000
+work	anonymous,IsTest	Apex computation advances CPU time
+wait	anonymous	HTTP wait increases wall time without equivalent CPU growth
+reset	IsTest	Test.startTest opens an independent CPU window
+async	IsTest/Queueable	Async CPU cap is 60000
+exhaustion	anonymous	CPU exhaustion raises uncatchable System.LimitException

@@ -209,6 +209,7 @@ func Discover(index typesys.Index, opts Options) []TestCase {
 		if len(selectedClasses) != 0 && !selectedClasses[strings.ToLower(typ.Name)] {
 			continue
 		}
+		costHint := testCaseCostHintForType(typ)
 		for _, member := range typ.Members {
 			if member.Kind != apexast.DeclarationMethod {
 				continue
@@ -237,7 +238,7 @@ func Discover(index typesys.Index, opts Options) []TestCase {
 				Range:              member.Range,
 				BodyRange:          member.BodyRange,
 				SeeAllData:         isSeeAllDataTest(typ.Modifiers) || isSeeAllDataTest(member.Modifiers),
-				CostHint:           testCaseCostHint(typ.File),
+				CostHint:           costHint,
 				ReturnType:         member.Type,
 				Modifiers:          member.Modifiers,
 			})
@@ -392,6 +393,7 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 	if gateErr != nil {
 		return compileErrorRun(cases, gateErr, started, opts)
 	}
+	generation.controllerCompilation = visualforceControllerCompilationHint(index, diagnostics)
 	diagnostics = gate.withoutScopedDependencyErrors(diagnostics)
 	if compileErr := indexCompileError(diagnostics); compileErr != nil {
 		return runWithCompileGate(ctx, index, opts, cases, hooks, runState, gate, sources, diagnostics, compileErr, started)
@@ -421,7 +423,7 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 		return compileErrorRun(cases, testSourceErr, started, opts)
 	}
 	if runState.counters.enabled {
-		runState.counters.phases.testCompileNS.Add(time.Since(testCompileStarted).Nanoseconds())
+		runState.counters.recordObservedPhaseDuration(&runState.counters.phases.testCompileNS, time.Since(testCompileStarted))
 	}
 	if emitProgress {
 		reportProgress(opts, TestProgress{Event: "compile_done", DurationMS: time.Since(started).Milliseconds(), Status: "pass"})
@@ -450,7 +452,7 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 		}
 	}
 	if runState.counters.enabled {
-		runState.counters.phases.orgBuildNS.Add(time.Since(orgSetupStarted).Nanoseconds())
+		runState.counters.recordObservedPhaseDuration(&runState.counters.phases.orgBuildNS, time.Since(orgSetupStarted))
 	}
 	recordCloneReason("", "run-base", "vm-runtime", runState.counters)
 	machineCloneStarted := time.Now()
@@ -472,9 +474,10 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 	if runState.counters.enabled {
 		orgSetupStarted = time.Now()
 	}
+	primeTestOrgSchema(&org)
 	baseMachine.PrimeMetadataSchema(&org)
 	if runState.counters.enabled {
-		runState.counters.phases.orgBuildNS.Add(time.Since(orgSetupStarted).Nanoseconds())
+		runState.counters.recordObservedPhaseDuration(&runState.counters.phases.orgBuildNS, time.Since(orgSetupStarted))
 	}
 	baseRuntimeErr := runtime.BaseErr
 	if baseRuntimeErr == nil {
@@ -490,7 +493,7 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 		}
 		baseRuntimeErr = registerTestRuntime(baseMachine, flattenSetupMethods(setups))
 		if runState.counters.enabled {
-			runState.counters.phases.testCompileNS.Add(time.Since(testCompileStarted).Nanoseconds())
+			runState.counters.recordObservedPhaseDuration(&runState.counters.phases.testCompileNS, time.Since(testCompileStarted))
 		}
 	}
 	// Freeze the alias/class lookup into a shared immutable index before each
@@ -501,7 +504,7 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 	}
 	baseMachine.FreezeClassLookup()
 	if runState.counters.enabled {
-		runState.counters.phases.projectCompileNS.Add(time.Since(freezeStarted).Nanoseconds())
+		runState.counters.recordObservedPhaseDuration(&runState.counters.phases.projectCompileNS, time.Since(freezeStarted))
 	}
 	suites := make(map[string][]testreport.Case)
 	order := make([]string, 0)
@@ -588,7 +591,7 @@ assemble:
 		run.Suites = append(run.Suites, testreport.Suite{Name: name, Cases: suites[name]})
 	}
 	if runState.counters.enabled {
-		runState.counters.phases.reportAssemblyNS.Add(time.Since(reportStarted).Nanoseconds())
+		runState.counters.recordObservedPhaseDuration(&runState.counters.phases.reportAssemblyNS, time.Since(reportStarted))
 	}
 	return run
 }
@@ -744,7 +747,7 @@ func semanticGateDiagnostics(ctx context.Context, index typesys.Index, artifacts
 		hooks.afterIdentity()
 	}
 	if perfCounters.enabled {
-		perfCounters.phases.semanticKeyNS.Add(time.Since(keyStarted).Nanoseconds())
+		perfCounters.recordObservedPhaseDuration(&perfCounters.phases.semanticKeyNS, time.Since(keyStarted))
 	}
 	var gateStarted time.Time
 	if perfCounters.enabled {
@@ -854,7 +857,7 @@ func semanticGateDiagnostics(ctx context.Context, index typesys.Index, artifacts
 		return nil, err
 	}
 	if perfCounters.enabled {
-		perfCounters.phases.semanticGateNS.Add(time.Since(gateStarted).Nanoseconds())
+		perfCounters.recordObservedPhaseDuration(&perfCounters.phases.semanticGateNS, time.Since(gateStarted))
 	}
 	return diagnostics, nil
 }
@@ -1125,6 +1128,8 @@ type runtimeCacheEntry struct {
 	restored                     vm.RestoredRuntimeTemplate
 	patchAuthority               *runtimePatchAuthority
 	executionProjectionValidated bool
+	// Keeps the shared platform prefix alive while this entry shares its data.
+	standardPrefix *standardRuntimePrefix
 }
 
 // runtimeExecutionView is the immutable subset of a compiled runtime needed by
@@ -1338,6 +1343,10 @@ type runtimeGeneration struct {
 	source   runtimeSourceGeneration
 	metadata runtimeMetadataGeneration
 	key      runtimeCacheKey
+	// controllerCompilation is the semantic gate's analysis of this
+	// generation, offered to the Visualforce controller compile gate so page
+	// registration does not build and analyze the project a second time.
+	controllerCompilation *visualforce.ControllerCompilation
 }
 
 func runtimeKeyWithSourceGeneration(index typesys.Index, generation runtimeSourceGeneration) runtimeCacheKey {
@@ -1433,6 +1442,7 @@ func cloneRuntimeCacheEntryChecked(in runtimeCacheEntry) (runtimeCacheEntry, boo
 		BaseErr:        in.BaseErr,
 		restored:       in.restored,
 		patchAuthority: authority,
+		standardPrefix: in.standardPrefix,
 		// A successful full structural clone is itself a validation boundary.
 		executionProjectionValidated: true,
 	}, true
@@ -1803,17 +1813,23 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 	}
 
 	methods := compileProjectMethods(index, sources)
-	classes := compileProjectClasses(index, methods, sources)
+	classRuntime := prepareProjectClassRuntime(index, methods, sources)
+	classes := classRuntime.classes
 	triggers, triggerErrors := compileProjectTriggers(index, sources)
 	org, orgErr := orgFromIndexWithError(index, sources)
 	if orgErr != nil && !isEmailServiceRejection(orgErr) {
 		return key, zero, orgErr
 	}
-	pageNames := visualforcePageNames(index)
-	baseMachine := vm.New(nil)
+	pageNames := visualforcePageNamesWithCompilation(index, generation.controllerCompilation)
+	baseMachine := classRuntime.machine
+	if baseMachine == nil {
+		// Preserve cold startup's allocation order: VM construction warms the
+		// platform indexes, which must follow org construction on this path.
+		baseMachine = vm.New(nil)
+	}
 	baseMachine.SetTraceEnabled(false)
 	registerVisualforcePages(baseMachine, pageNames)
-	baseErr := registerBaseRuntime(baseMachine, methods, classes, triggers)
+	baseErr := registerBaseRuntime(baseMachine, methods, classRuntime.unregistered, triggers)
 	if err := sources.sourceSnapshotError(); err != nil {
 		return key, zero, err
 	}
@@ -1826,6 +1842,7 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 		BaseErr:                      baseErr,
 		restored:                     vm.NewRestoredRuntimeTemplate(org, baseMachine),
 		executionProjectionValidated: true,
+		standardPrefix:               classRuntime.prefix,
 	}
 	entry.patchAuthority = newRuntimePatchAuthority(index, key, digests, sources, entry, org)
 	projected, projectOK := project(entry)
@@ -1906,7 +1923,7 @@ func runtimeFromIndexWithPreparedGenerationAndPerfProjected[T any](index typesys
 	keyStarted := time.Now()
 	key := generation.key
 	rememberRuntimeCacheRoot(index, key)
-	counters.phases.runtimeKeyNS.Add(time.Since(keyStarted).Nanoseconds())
+	counters.recordObservedPhaseDuration(&counters.phases.runtimeKeyNS, time.Since(keyStarted))
 	if cached, ok := validMemoryRuntimeProjection(key, project); ok {
 		invokeSnapshotValidationHook("runtime_before_memory_cache_return")
 		if err := sources.validateCapturedSourceGeneration(); err != nil {
@@ -1921,7 +1938,7 @@ func runtimeFromIndexWithPreparedGenerationAndPerfProjected[T any](index typesys
 	if diskCacheAllowed {
 		lookupStarted := time.Now()
 		lookupInput, _ = validatedDiskRuntimeInput(index, digests)
-		counters.phases.cacheValidateNS.Add(time.Since(lookupStarted).Nanoseconds())
+		counters.recordObservedPhaseDuration(&counters.phases.cacheValidateNS, time.Since(lookupStarted))
 		if diskEntry, ok := tryLoadDiskRuntimeWithPerfValidatedInput(index, key, lookupInput, counters); ok {
 			if projected, projectOK := project(diskEntry); projectOK {
 				invokeSnapshotValidationHook("runtime_before_disk_cache_return")
@@ -1947,7 +1964,7 @@ func runtimeFromIndexWithPreparedGenerationAndPerfProjected[T any](index typesys
 	if digests != nil {
 		bindingStarted := time.Now()
 		err := preloadRuntimeSources(index, sources)
-		counters.phases.runtimeKeyNS.Add(time.Since(bindingStarted).Nanoseconds())
+		counters.recordObservedPhaseDuration(&counters.phases.runtimeKeyNS, time.Since(bindingStarted))
 		if err != nil {
 			return key, zero, err
 		}
@@ -1955,27 +1972,31 @@ func runtimeFromIndexWithPreparedGenerationAndPerfProjected[T any](index typesys
 
 	compileStarted := time.Now()
 	methods := compileProjectMethods(index, sources)
-	classes := compileProjectClasses(index, methods, sources)
+	classRuntime := prepareProjectClassRuntime(index, methods, sources)
+	classes := classRuntime.classes
 	triggers, triggerErrors := compileProjectTriggers(index, sources)
-	counters.phases.projectCompileNS.Add(time.Since(compileStarted).Nanoseconds())
+	counters.recordObservedPhaseDuration(&counters.phases.projectCompileNS, time.Since(compileStarted))
 
 	orgStarted := time.Now()
 	org, orgErr := orgFromIndexWithError(index, sources)
 	if orgErr != nil && !isEmailServiceRejection(orgErr) {
 		return key, zero, orgErr
 	}
-	counters.phases.orgBuildNS.Add(time.Since(orgStarted).Nanoseconds())
+	counters.recordObservedPhaseDuration(&counters.phases.orgBuildNS, time.Since(orgStarted))
 
 	compileStarted = time.Now()
-	pageNames := visualforcePageNames(index)
-	baseMachine := vm.New(nil)
+	pageNames := visualforcePageNamesWithCompilation(index, generation.controllerCompilation)
+	baseMachine := classRuntime.machine
+	if baseMachine == nil {
+		baseMachine = vm.New(nil)
+	}
 	baseMachine.SetTraceEnabled(false)
 	registerVisualforcePages(baseMachine, pageNames)
-	baseErr := registerBaseRuntime(baseMachine, methods, classes, triggers)
-	counters.phases.projectCompileNS.Add(time.Since(compileStarted).Nanoseconds())
+	baseErr := registerBaseRuntime(baseMachine, methods, classRuntime.unregistered, triggers)
+	counters.recordObservedPhaseDuration(&counters.phases.projectCompileNS, time.Since(compileStarted))
 	restoredStarted := time.Now()
 	restored := vm.NewRestoredRuntimeTemplate(org, baseMachine)
-	counters.phases.orgBuildNS.Add(time.Since(restoredStarted).Nanoseconds())
+	counters.recordObservedPhaseDuration(&counters.phases.orgBuildNS, time.Since(restoredStarted))
 	if err := sources.sourceSnapshotError(); err != nil {
 		return key, zero, err
 	}
@@ -1989,9 +2010,10 @@ func runtimeFromIndexWithPreparedGenerationAndPerfProjected[T any](index typesys
 		BaseErr:                      baseErr,
 		restored:                     restored,
 		executionProjectionValidated: true,
+		standardPrefix:               classRuntime.prefix,
 	}
 	entry.patchAuthority = newRuntimePatchAuthorityWithPerf(index, key, digests, sources, entry, org, counters)
-	counters.phases.projectCompileNS.Add(time.Since(authorityStarted).Nanoseconds())
+	counters.recordObservedPhaseDuration(&counters.phases.projectCompileNS, time.Since(authorityStarted))
 	projected, projectOK := project(entry)
 	if !projectOK {
 		return key, zero, fmt.Errorf("compiled runtime payload cannot be cloned safely")
@@ -2013,7 +2035,7 @@ func runtimeFromIndexWithPreparedGenerationAndPerfProjected[T any](index typesys
 		}
 		publicationStarted := time.Now()
 		publicationInput, ok := validatedDiskRuntimeInputForPublication(index, digests, lookupInput)
-		counters.phases.cacheValidateNS.Add(time.Since(publicationStarted).Nanoseconds())
+		counters.recordObservedPhaseDuration(&counters.phases.cacheValidateNS, time.Since(publicationStarted))
 		if ok {
 			persistDiskRuntimeWithPerfValidatedInput(index, key, org, entry, publicationInput, counters)
 		}
@@ -2231,7 +2253,15 @@ func containsRegisteredTestMethod(methods []vm.Method, target vm.Method) bool {
 	return false
 }
 
+// Test parallelism is an upper bound on simultaneously retained execution
+// owners, including class setup and journal workers. Capping only each class's
+// method workers still leaves N private VMs alive on a single execution CPU.
+func testExecutionParallelism(requested int) int {
+	return max(1, min(requested, runtime.GOMAXPROCS(0)))
+}
+
 func prepareTestSetups(ctx context.Context, classNames []string, baseMachine *vm.VM, baseRuntimeErr error, setups map[string][]vm.Method, setupErrors map[string]error, setupInvokePrograms map[string][]ir.Program, setupInvokeErrors map[string]error, triggerErrors []error, org storage.OrgState, opts Options, counters *runPerfCounters) map[string]testSetupResult {
+	opts.Parallelism = testExecutionParallelism(opts.Parallelism)
 	results := make(map[string]testSetupResult, len(classNames))
 	emitProgress := opts.Progress != nil
 	parallelism := opts.Parallelism
@@ -2305,6 +2335,7 @@ func prepareTestSetups(ctx context.Context, classNames []string, baseMachine *vm
 }
 
 func runTestPlans(ctx context.Context, planned []testCasePlan, results []testreport.Case, baseMachine *vm.VM, baseRuntimeErr error, triggerErrors []error, opts Options, counters *runPerfCounters) {
+	opts.Parallelism = testExecutionParallelism(opts.Parallelism)
 	parallelism := opts.Parallelism
 	emitProgress := opts.Progress != nil
 	classOrder := make([]string, 0)
@@ -2390,6 +2421,7 @@ func runTestPlans(ctx context.Context, planned []testCasePlan, results []testrep
 }
 
 func runNoSetupJournalPlans(ctx context.Context, planned []testCasePlan, results []testreport.Case, baseMachine *vm.VM, baseRuntimeErr error, triggerErrors []error, org storage.OrgState, opts Options, counters *runPerfCounters) {
+	opts.Parallelism = testExecutionParallelism(opts.Parallelism)
 	parallelism := opts.Parallelism
 	emitProgress := opts.Progress != nil
 	classOrder := make([]string, 0)
@@ -2525,12 +2557,13 @@ func rollbackJournal(journal *storage.IsolationJournal, mark testJournalMark, co
 		org.SystemTimestampSequence = mark.systemTimestampSequence
 	}
 	if !started.IsZero() {
-		counters.phases.rollbackNS.Add(time.Since(started).Nanoseconds())
+		counters.recordObservedPhaseDuration(&counters.phases.rollbackNS, time.Since(started))
 	}
 	return err
 }
 
 func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndexes map[string][]int, planned []testCasePlan, results []testreport.Case, baseMachine *vm.VM, baseRuntimeErr error, setups map[string][]vm.Method, setupErrors map[string]error, setupInvokePrograms map[string][]ir.Program, setupInvokeErrors map[string]error, triggerErrors []error, org storage.OrgState, opts Options, counters *runPerfCounters) {
+	opts.Parallelism = testExecutionParallelism(opts.Parallelism)
 	parallelism := opts.Parallelism
 	if parallelism <= 1 {
 		parallelism = 1
@@ -2542,6 +2575,10 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 	if parallelism > 1 {
 		sortClassRunOrder(classOrder, classIndexes, opts.ClassDurationMS, counters)
 	}
+	// Method workers retain private orgs and journals. Budget their initial
+	// allocation, history reservations and later growth against the execution
+	// CPUs, so a one-CPU run does not retain idle workers at the class tail.
+	executionWidth := runtime.GOMAXPROCS(0)
 	adaptiveBudgets := map[string]int{}
 	if opts.ParallelMethods {
 		var adaptiveHistoryStarted time.Time
@@ -2550,10 +2587,12 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 		}
 		adaptiveBudgets = adaptiveClassMethodBudget(opts.Parallelism, classScheduleInputs(classOrder, classIndexes, opts.ClassDurationMS))
 		if counters != nil && counters.enabled && len(opts.ClassDurationMS) > 0 {
-			counters.phases.historyApplyNS.Add(time.Since(adaptiveHistoryStarted).Nanoseconds())
+			counters.recordObservedPhaseDuration(&counters.phases.historyApplyNS, time.Since(adaptiveHistoryStarted))
 		}
 		reservedMethodWorkers := 0
-		for _, budget := range adaptiveBudgets {
+		for className, budget := range adaptiveBudgets {
+			budget = min(budget, executionWidth)
+			adaptiveBudgets[className] = budget
 			if budget > 1 && budget-1 > reservedMethodWorkers {
 				reservedMethodWorkers = budget - 1
 			}
@@ -2572,7 +2611,7 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 	}
 	dispatcher := newClassDispatcher(classOrder, costHints, opts.ClassDurationMS)
 	if counters != nil && counters.enabled && len(opts.ClassDurationMS) > 0 {
-		counters.phases.historyApplyNS.Add(time.Since(historyStarted).Nanoseconds())
+		counters.recordObservedPhaseDuration(&counters.phases.historyApplyNS, time.Since(historyStarted))
 	}
 	defer func() {
 		if counters == nil || !counters.enabled {
@@ -2581,8 +2620,9 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 		}
 		teardownStarted := time.Now()
 		dispatcher.close()
-		counters.phases.teardownNS.Add(time.Since(teardownStarted).Nanoseconds())
+		counters.recordObservedPhaseDuration(&counters.phases.teardownNS, time.Since(teardownStarted))
 	}()
+	workerOrgs := &testWorkerOrgPool{seed: org, capacity: opts.Parallelism}
 	methodWindow := methodWindowTimer{counters: counters}
 	var wg sync.WaitGroup
 	for worker := 0; worker < parallelism; worker++ {
@@ -2622,7 +2662,17 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 					if extra := adaptiveBudgets[className]; extra > methodParallelism {
 						methodParallelism = extra
 					}
-					runClassMethodIndexes(ctx, methodIndexes, planned, results, setupOrg, setupErr, setupRandom, setupLimits, setupShared, baseMachine, baseRuntimeErr, triggerErrors, opts, counters, methodParallelism, &methodWindow)
+					methodParallelism = min(methodParallelism, executionWidth)
+					// Workers freed by finished classes join this class's remaining
+					// methods while it runs, instead of leaving a long class serial.
+					grow := func() int {
+						allowed := methodParallelismForClassRun(opts.Parallelism, parallelism, len(methodIndexes), dispatcher.unfinishedClassCount())
+						if extra := adaptiveBudgets[className]; extra > allowed {
+							allowed = extra
+						}
+						return min(allowed, executionWidth)
+					}
+					runClassMethodIndexes(ctx, methodIndexes, planned, results, setupOrg, setupErr, setupRandom, setupLimits, setupShared, baseMachine, baseRuntimeErr, triggerErrors, opts, counters, methodParallelism, &methodWindow, grow, workerOrgs)
 					dispatcher.recordObserved(className, time.Since(classStart).Milliseconds())
 					continue
 				}
@@ -2803,7 +2853,7 @@ func sortClassRunOrder(classOrder []string, classIndexes map[string][]int, class
 	var started time.Time
 	if c.enabled && len(classDurationMS) > 0 {
 		started = time.Now()
-		defer func() { c.phases.historyApplyNS.Add(time.Since(started).Nanoseconds()) }()
+		defer func() { c.recordObservedPhaseDuration(&c.phases.historyApplyNS, time.Since(started)) }()
 	}
 	sort.SliceStable(classOrder, func(i, j int) bool {
 		left := classOrder[i]
@@ -2828,7 +2878,7 @@ func sortMethodIndexes(indexes []int, planned []testCasePlan, methodDurationMS m
 	var started time.Time
 	if c.enabled {
 		started = time.Now()
-		defer func() { c.phases.historyApplyNS.Add(time.Since(started).Nanoseconds()) }()
+		defer func() { c.recordObservedPhaseDuration(&c.phases.historyApplyNS, time.Since(started)) }()
 	}
 	sort.SliceStable(indexes, func(i, j int) bool {
 		left := planned[indexes[i]].TestCase
@@ -2845,7 +2895,10 @@ func sortMethodIndexes(indexes []int, planned []testCasePlan, methodDurationMS m
 	})
 }
 
-func runClassMethodIndexes(ctx context.Context, indexes []int, planned []testCasePlan, results []testreport.Case, setupOrg storage.OrgState, setupErr error, setupRandom uint64, setupLimits vm.Limits, setupShared bool, baseMachine *vm.VM, baseRuntimeErr error, triggerErrors []error, opts Options, counters *runPerfCounters, parallelism int, methodWindow *methodWindowTimer) {
+// runClassMethodIndexes runs one class's methods on parallelism workers. grow,
+// when set, is consulted before each dispatch and may raise the allowed worker
+// count; one more worker starts whenever more jobs remain than workers exist.
+func runClassMethodIndexes(ctx context.Context, indexes []int, planned []testCasePlan, results []testreport.Case, setupOrg storage.OrgState, setupErr error, setupRandom uint64, setupLimits vm.Limits, setupShared bool, baseMachine *vm.VM, baseRuntimeErr error, triggerErrors []error, opts Options, counters *runPerfCounters, parallelism int, methodWindow *methodWindowTimer, grow func() int, workerOrgs *testWorkerOrgPool) {
 	emitProgress := opts.Progress != nil
 	if parallelism <= 1 {
 		parallelism = 1
@@ -2856,7 +2909,7 @@ func runClassMethodIndexes(ctx context.Context, indexes []int, planned []testCas
 	useJournal := len(indexes) > 1 && classSupportsJournalIsolation(indexes, planned)
 	jobs := make(chan int)
 	var wg sync.WaitGroup
-	for worker := 0; worker < parallelism; worker++ {
+	startWorker := func() {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -2868,9 +2921,16 @@ func runClassMethodIndexes(ctx context.Context, indexes []int, planned []testCas
 				if len(indexes) > 0 {
 					className = planned[indexes[0]].TestCase.ClassName
 				}
-				workerOrg = cloneRuntimeOrgForClass(setupOrg, className, "test-worker", counters)
+				if workerOrgs.accepts(setupOrg, setupShared) {
+					worker := workerOrgs.take(className, counters)
+					defer workerOrgs.put(worker)
+					journal = worker.journal
+					workerOrg = worker.org
+				} else {
+					workerOrg = cloneRuntimeOrgForClass(setupOrg, className, "test-worker", counters)
+					journal = storage.NewIsolationJournal(&workerOrg)
+				}
 				workerSetupShared = false
-				journal = storage.NewIsolationJournal(&workerOrg)
 			}
 			for i := range jobs {
 				if results[i].Status != "" {
@@ -2911,11 +2971,29 @@ func runClassMethodIndexes(ctx context.Context, indexes []int, planned []testCas
 			}
 		}()
 	}
-	for _, i := range indexes {
+	for worker := 0; worker < parallelism; worker++ {
+		startWorker()
+	}
+	started := parallelism
+	for n, i := range indexes {
+		if shouldGrowMethodWorkers(started, len(indexes)-n, grow) {
+			startWorker()
+			started++
+		}
 		jobs <- i
 	}
 	close(jobs)
 	wg.Wait()
+}
+
+// shouldGrowMethodWorkers reports whether one more method worker should start
+// before the next dispatch: the schedule now allows more workers than exist,
+// and there are more remaining jobs than workers to run them.
+func shouldGrowMethodWorkers(started, remaining int, grow func() int) bool {
+	if grow == nil || remaining <= started {
+		return false
+	}
+	return grow() > started
 }
 
 func runSingleClassTestPlans(ctx context.Context, planned []testCasePlan, results []testreport.Case, baseMachine *vm.VM, baseRuntimeErr error, triggerErrors []error, opts Options, counters *runPerfCounters, parallelism int) {
@@ -2984,6 +3062,31 @@ func initializeTestOrg(org *storage.OrgState) {
 	machine.SetTraceEnabled(false)
 	machine.SetOrg(org)
 	machine.EnableTestContext()
+	// Refresh installed standard definitions once on the private run org.
+	// Lazy runAs/DML setup can then ensure those objects without dropping the
+	// trusted schema generation in every test. Do not add catalogue objects.
+	var names []string
+	for name := range org.Objects {
+		if _, known := storage.ResolveKnownStandardObjectName(name); known {
+			names = append(names, name)
+		}
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		storage.EnsureStandardObject(org, name)
+	}
+	primeTestOrgSchema(org)
+}
+
+// Initialization and configured environment setup can add schema. Freeze the
+// resulting private run org once, after those writers, before workers clone it.
+func primeTestOrgSchema(org *storage.OrgState) {
+	if org == nil || org.RuntimeSchemaStamp != "" {
+		return
+	}
+	template := storage.NewRuntimeTemplate(*org)
+	vm.PrimeRuntimeTemplateSchema(&template)
+	*org = template.Org
 }
 
 func prepareTestSetupOrg(ctx context.Context, className string, baseMachine *vm.VM, baseRuntimeErr error, setups []vm.Method, setupErr error, setupPrograms []ir.Program, setupProgramErr error, triggerErrors []error, org storage.OrgState, opts Options, counters *runPerfCounters, limits ...*vm.Limits) (storage.OrgState, uint64, error, bool) {
@@ -3476,6 +3579,28 @@ func OrgFromIndex(index typesys.Index) storage.OrgState {
 }
 
 func visualforcePageNames(index typesys.Index) []string {
+	return visualforcePageNamesWithCompilation(index, nil)
+}
+
+// visualforceControllerCompilationHint offers the semantic gate's analysis to
+// Visualforce page registration. The gate analyzed exactly this index with
+// Diagnostics enabled, so its complete diagnostics are the ones the controller
+// compile gate would compute for the same project; the Visualforce loader
+// still verifies the project identity before reusing them. An index whose
+// schema failed to load is not the compile gate's input and offers nothing.
+func visualforceControllerCompilationHint(index typesys.Index, diagnostics []diagnostic.Diagnostic) *visualforce.ControllerCompilation {
+	if index.Project.Root == "" || index.Subset {
+		return nil
+	}
+	for _, diag := range index.Diagnostics {
+		if diag.Code == "GLADESCHEMA001" {
+			return nil
+		}
+	}
+	return &visualforce.ControllerCompilation{Index: index, Diagnostics: diagnostics}
+}
+
+func visualforcePageNamesWithCompilation(index typesys.Index, compilation *visualforce.ControllerCompilation) []string {
 	if index.Project.Root == "" {
 		return nil
 	}
@@ -3485,18 +3610,26 @@ func visualforcePageNames(index typesys.Index) []string {
 	}
 	names := make([]string, 0)
 	seen := make(map[string]bool)
-	appendVisualforcePageNames(&names, seen, p, false)
+	appendVisualforcePageNames(&names, seen, p, false, compilation)
 	return names
 }
 
-func appendVisualforcePageNames(names *[]string, seen map[string]bool, p project.Project, dependency bool) {
+// Only the root project is the gate's analysis subject; dependency projects
+// compile their own pages as before.
+func appendVisualforcePageNames(names *[]string, seen map[string]bool, p project.Project, dependency bool, compilation *visualforce.ControllerCompilation) {
 	for _, dep := range p.ManagedPackageDependencies {
 		if dep.Status != "loaded" || dep.Project == nil {
 			continue
 		}
-		appendVisualforcePageNames(names, seen, *dep.Project, true)
+		appendVisualforcePageNames(names, seen, *dep.Project, true, nil)
 	}
-	for _, name := range visualforce.PageNames(p) {
+	var pageNames []string
+	if !dependency && compilation != nil {
+		pageNames = visualforce.PageNamesWithControllerCompilation(p, compilation)
+	} else {
+		pageNames = visualforce.PageNames(p)
+	}
+	for _, name := range pageNames {
 		appendVisualforcePageName(names, seen, name)
 		if p.Namespace != "" {
 			appendVisualforcePageName(names, seen, visualforceNamespacedPageName(p.Namespace, name))
@@ -4683,7 +4816,7 @@ func standardApexTestOrg() storage.OrgState {
 		org := storage.NewOrgState()
 		org.OrgID = storage.DefaultOrgID
 		for _, objectName := range storage.KnownStandardObjectNames() {
-			if objectName == "Network" || objectName == "NetworkMember" {
+			if objectName == "Network" || objectName == "NetworkMember" || storage.IsReferenceOnlyStandardObject(objectName) {
 				continue
 			}
 			storage.EnsureStandardObject(&org, objectName)
@@ -4714,7 +4847,7 @@ func shapedStandardApexTestOrg(features []string, domainURL string) storage.OrgS
 		org := standardApexTestOrg()
 		org.APIVersion = storage.DefaultRESTAPIVersion
 		org.DomainURL = domainURL
-		storage.ApplyOrgShape(&org, features)
+		storage.ApplyProjectOrgShape(&org, features)
 		shapedStandardApexTestOrgCache.key = string(key)
 		shapedStandardApexTestOrgCache.org = org
 	}
@@ -4743,7 +4876,12 @@ func orgFromIndexWithError(index typesys.Index, caches ...*sourceCache) (storage
 	}
 	features := []string(nil)
 	if index.Project.Root != "" {
-		features = project.OrgShapeFeatures(index.Project.Root)
+		// The effective project's shape: the snapshot is the one loaded below.
+		if p, err := sources.capturedProjectSnapshot(index.Project.Root); err == nil {
+			features = project.StandardFieldPolicyFeatures(p)
+		} else {
+			features = project.StandardFieldPolicyFeatures(project.Project{Root: index.Project.Root})
+		}
 	}
 	shapedSeed := index.Project.Root != "" && index.Project.Namespace == "" && len(index.Objects) == 0
 	var org storage.OrgState
@@ -4769,7 +4907,7 @@ func orgFromIndexWithError(index typesys.Index, caches ...*sourceCache) (storage
 		}
 	}
 	if index.Project.Root != "" && !shapedSeed {
-		storage.ApplyOrgShape(&org, features)
+		storage.ApplyProjectOrgShape(&org, features)
 	}
 	applyProjectReferencedStandardFields(&org, index, caches...)
 	foldPersonAccountObjectIntoAccount(&org)
@@ -4825,19 +4963,17 @@ func orgFromIndexWithError(index typesys.Index, caches ...*sourceCache) (storage
 	}
 	storage.EnsureDeterministicPlatformData(&org)
 	if len(features) > 0 {
-		storage.ApplyOrgShape(&org, features)
+		storage.ApplyProjectOrgShape(&org, features)
 	}
 	if loadedProject != nil {
 		_ = resource.ApplyProjectRoles(&org, *loadedProject)
 		_ = resource.ApplyProjectGroups(&org, *loadedProject)
 		_ = resource.ApplyProjectQueues(&org, *loadedProject)
 		_ = resource.ApplyProjectOwnerSharingRules(&org, *loadedProject)
-		if applyProjectProfileRecordTypes(&org, *loadedProject) {
-			storage.EnsureDeterministicPlatformData(&org)
-		}
 		permissionSetMetadataCache := make(map[string]permissionSetMetadataCacheEntry)
-		applyProjectProfileRecordTypeDefaults(&org, *loadedProject)
-		applyProjectProfileRecords(&org, *loadedProject, permissionSetMetadataCache)
+		if err := applyProjectProfileMetadata(&org, *loadedProject, permissionSetMetadataCache, sources.readCapturedProjectMetadata); err != nil {
+			return org, err
+		}
 		if err := resource.ApplyProjectNetworks(&org, *loadedProject, sources.readCapturedProjectMetadata); err != nil {
 			return org, err
 		}
@@ -4938,9 +5074,39 @@ func foldPersonAccountObjectIntoAccount(org *storage.OrgState) {
 	account.Definition = account.Definition.Clone()
 	storage.EnsureStandardObjectFieldsForFeatures(&account.Definition, []string{"PersonAccounts"})
 	for _, recordType := range personAccount.Definition.RecordTypes {
-		if profileRecordTypeExists(account.Definition.RecordTypes, recordType.DeveloperName) {
+		// The captured label collisions contain no installed namespace. Retain
+		// the original matcher whenever qualified identities are involved.
+		qualified := stripRecordTypeNamespaceToken(recordType.DeveloperName) != strings.TrimSpace(recordType.DeveloperName)
+		qualified = qualified || hasQualifiedRecordTypes(account.Definition.RecordTypes)
+		exists := false
+		if qualified {
+			exists = profileRecordTypeExists(account.Definition.RecordTypes, recordType.DeveloperName)
+		} else {
+			for _, existing := range account.Definition.RecordTypes {
+				if strings.EqualFold(existing.DeveloperName, recordType.DeveloperName) {
+					exists = true
+					break
+				}
+			}
+		}
+		if exists {
+			// Preserve the original behavior for duplicate exact identities.
+			for i := range account.Definition.RecordTypes {
+				if strings.EqualFold(account.Definition.RecordTypes[i].DeveloperName, recordType.DeveloperName) {
+					// The feature overlay seeds a generic PersonAccount placeholder.
+					// A project declaration of that identity supplies its actual label;
+					// retaining the placeholder label can create a second inferred type.
+					if !qualified && strings.EqualFold(recordType.DeveloperName, "PersonAccount") &&
+						strings.EqualFold(account.Definition.RecordTypes[i].Name, "Person Account") &&
+						personAccountLabelUsedByRequiredLookup(org, recordType.Name) {
+						account.Definition.RecordTypes[i].Name = recordType.Name
+					}
+					account.Definition.RecordTypes[i].PersonAccount = true
+				}
+			}
 			continue
 		}
+		recordType.PersonAccount = true
 		account.Definition.RecordTypes = append(account.Definition.RecordTypes, recordType)
 	}
 	org.Objects["Account"] = account
@@ -4953,6 +5119,30 @@ func foldPersonAccountObjectIntoAccount(org *storage.OrgState) {
 		org.Objects["RecordType"] = recordTypes
 	}
 	storage.DeleteObject(org, "PersonAccount")
+}
+
+// This compatibility case restores the previous lookup result only for the
+// unqualified generic placeholder with a single required label criterion.
+func personAccountLabelUsedByRequiredLookup(org *storage.OrgState, label string) bool {
+	if strings.TrimSpace(label) == "" {
+		return false
+	}
+	for _, object := range org.Objects {
+		for _, field := range object.Definition.Fields {
+			filter := field.FilteredLookupInfo
+			if field.Type != storage.FieldReference || len(field.ReferenceTo) != 1 ||
+				!strings.EqualFold(field.ReferenceTo[0], "Account") || !filter.Active || filter.OptionalFilter ||
+				strings.TrimSpace(filter.BooleanFilter) != "" || len(filter.FilterItems) != 1 {
+				continue
+			}
+			item := filter.FilterItems[0]
+			if strings.EqualFold(item.Field, "Account.RecordTypeId") && strings.EqualFold(item.Operation, "equals") &&
+				item.ValueField == "" && item.Value == label {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 var apexStaticFieldReferencePattern = regexp.MustCompile(`\b([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z][A-Za-z0-9_]*)\b`)
@@ -5706,9 +5896,10 @@ func hasSuffixFold(value, suffix string) bool {
 }
 
 type profileRecordTypeVisibilityXML struct {
-	Default    bool   `xml:"default"`
-	RecordType string `xml:"recordType"`
-	Visible    bool   `xml:"visible"`
+	PersonAccountDefault bool   `xml:"personAccountDefault"`
+	Default              bool   `xml:"default"`
+	RecordType           string `xml:"recordType"`
+	Visible              bool   `xml:"visible"`
 }
 
 type profileXML struct {
@@ -6208,10 +6399,18 @@ type projectProfileRecordTypeVisibility struct {
 	Name          string
 	Default       bool
 	PersonAccount bool
+	Qualified     bool
 }
 
-func loadProfileRecordTypeVisibilities(file string) map[string]projectProfileRecordTypeVisibility {
-	data, err := os.ReadFile(file)
+func readProfileMetadataFile(file string, readers ...func(string) ([]byte, error)) ([]byte, error) {
+	if len(readers) > 0 && readers[0] != nil {
+		return readers[0](file)
+	}
+	return os.ReadFile(file)
+}
+
+func loadProfileRecordTypeVisibilities(file string, readers ...func(string) ([]byte, error)) map[string]projectProfileRecordTypeVisibility {
+	data, err := readProfileMetadataFile(file, readers...)
 	if err != nil {
 		return nil
 	}
@@ -6228,6 +6427,7 @@ func loadProfileRecordTypeVisibilities(file string) map[string]projectProfileRec
 		if !ok || objectName == "" || developerName == "" {
 			continue
 		}
+		qualified := stripRecordTypeNamespaceToken(developerName) != strings.TrimSpace(developerName)
 		developerName = stripRecordTypeNamespaceToken(developerName)
 		key := strings.ToLower(objectName) + "\x00" + strings.ToLower(developerName)
 		if _, exists := out[key]; exists {
@@ -6236,9 +6436,10 @@ func loadProfileRecordTypeVisibilities(file string) map[string]projectProfileRec
 		out[key] = projectProfileRecordTypeVisibility{
 			ObjectName:    objectName,
 			DeveloperName: developerName,
-			Name:          strings.ReplaceAll(developerName, "_", " "),
+			Name:          strings.ReplaceAll(stripRecordTypeNamespaceToken(developerName), "_", " "),
 			Default:       visibility.Default,
 			PersonAccount: strings.EqualFold(objectName, "PersonAccount"),
+			Qualified:     qualified,
 		}
 	}
 	return out
@@ -6251,6 +6452,10 @@ func profileRecordTypeObjectName(org storage.OrgState, objectName string) (strin
 	return storage.ResolveObjectName(org, objectName)
 }
 
+func isAccountRecordTypeObject(objectName string) bool {
+	return strings.EqualFold(objectName, "Account") || strings.EqualFold(objectName, "PersonAccount")
+}
+
 func stripRecordTypeNamespaceToken(name string) string {
 	name = strings.TrimSpace(name)
 	idx := strings.Index(name, "__")
@@ -6258,6 +6463,28 @@ func stripRecordTypeNamespaceToken(name string) string {
 		return name
 	}
 	return name[idx+2:]
+}
+
+// Record type metadata references use full developer identities. A matching
+// label or namespace suffix does not identify the same record type.
+func recordTypeDeveloperIndex(recordTypes []storage.RecordTypeInfo, developerName string) int {
+	developerName = strings.TrimSpace(developerName)
+	for i, recordType := range recordTypes {
+		if strings.EqualFold(strings.TrimSpace(recordType.DeveloperName), developerName) {
+			return i
+		}
+	}
+	return -1
+}
+
+// Installed namespace shapes are outside the person-account oracle.
+func hasQualifiedRecordTypes(recordTypes []storage.RecordTypeInfo) bool {
+	for _, recordType := range recordTypes {
+		if stripRecordTypeNamespaceToken(recordType.DeveloperName) != strings.TrimSpace(recordType.DeveloperName) {
+			return true
+		}
+	}
+	return false
 }
 
 func profileRecordTypeExists(recordTypes []storage.RecordTypeInfo, developerName string) bool {
@@ -6280,10 +6507,10 @@ func profileRecordTypeNameMatches(candidate, name, strippedName string) bool {
 	return strippedName != "" && strings.EqualFold(stripRecordTypeNamespaceToken(candidate), strippedName)
 }
 
-func projectProfileRecordTypeDefaults(files []string) map[string]string {
+func projectProfileRecordTypeDefaults(files []string, readers ...func(string) ([]byte, error)) map[string]string {
 	defaults := make(map[string]string)
 	for _, file := range sortedProfileFilesForDefaults(files) {
-		for objectName, developerName := range loadProfileRecordTypeDefaults(file) {
+		for objectName, developerName := range loadProfileRecordTypeDefaults(file, readers...) {
 			if _, exists := defaults[objectName]; !exists {
 				defaults[objectName] = developerName
 			}
@@ -6305,8 +6532,8 @@ func sortedProfileFilesForDefaults(files []string) []string {
 	return out
 }
 
-func loadProfileRecordTypeDefaults(file string) map[string]string {
-	data, err := os.ReadFile(file)
+func loadProfileRecordTypeDefaults(file string, readers ...func(string) ([]byte, error)) map[string]string {
+	data, err := readProfileMetadataFile(file, readers...)
 	if err != nil {
 		return nil
 	}

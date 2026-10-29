@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Record_Type_Name__c</fullName>
+    <label>Record Type Name</label>
+    <length>40</length>
+    <type>Text</type>
+</CustomField>

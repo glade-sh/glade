@@ -123,7 +123,7 @@ func TestSchemaFieldTokenMapOrgConformance(t *testing.T) {
 		t.Logf("%s carried to %s: %s; native <%s> actual <%s>", tc.ID, tc.CarryOwner, tc.CarryReason, tc.Expected, debug[0])
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "SchemaFieldTokenMap", api)
 			root := t.TempDir()
 			helperPath := filepath.Join(root, "P.cls")

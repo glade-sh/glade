@@ -60,7 +60,7 @@ func TestSourceSyntaxBoundaryNativeConformance(t *testing.T) {
 		}
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "A01-boundary", api)
 			build := func(root string, sources map[string]string) typesys.Index {
 				var paths []string

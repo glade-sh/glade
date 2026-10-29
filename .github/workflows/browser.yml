@@ -79,7 +79,7 @@ jobs:
             run_expensive=false
             while IFS= read -r -d '' changed_path; do
               case "$changed_path" in
-                *.go|go.mod|go.sum|lwcruntime/**|third_party/lwc/**|testdata/local-tests/lwc-shell/**|testdata/local-tests/lightning-out-vf/**|.github/workflows/browser.yml)
+                *.go|go.mod|go.sum|lwcruntime/**|third_party/lwc/**|testdata/local-tests/lwc-shell/**|testdata/local-tests/lightning-out-vf/**|internal/server/testdata/l08*|.github/workflows/browser.yml)
                   run_expensive=true
                   break
                   ;;
@@ -215,8 +215,8 @@ jobs:
           set +e
           /usr/bin/time -v -o "$GITHUB_WORKSPACE/ci-artifacts/browser/resource-usage.txt" \
             go test -json -vet=off -p=1 -count=1 -timeout=25m -trimpath \
-              -run '^(TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser|TestLWCAPI67RegistrationRunsInBrowser)$' \
-              ./internal/lwcruntime ./internal/lwcbrowser \
+              -run '^(TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser|TestLWCAPI67RegistrationRunsInBrowser|TestL08SalesforceConformance)$' \
+              ./internal/lwcruntime ./internal/lwcbrowser ./internal/server \
             | tee "$GITHUB_WORKSPACE/ci-artifacts/browser/go-test.json"
           pipeline_status=("${PIPESTATUS[@]}")
           native_rc=${pipeline_status[0]}
@@ -238,6 +238,7 @@ jobs:
               ("github.com/glade-sh/glade/internal/lwcruntime", "TestBrowserRuntimeSuite"),
               ("github.com/glade-sh/glade/internal/lwcbrowser", "TestGeneratedPhase3BaseComponentsRunInBrowser"),
               ("github.com/glade-sh/glade/internal/lwcbrowser", "TestLWCAPI67RegistrationRunsInBrowser"),
+              ("github.com/glade-sh/glade/internal/server", "TestL08SalesforceConformance"),
           }
           terminals = {}
           errors = []

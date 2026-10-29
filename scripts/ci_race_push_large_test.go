@@ -26,8 +26,11 @@ if "-list" in sys.argv:
 if any(len(a)>100000 for a in sys.argv):
  sys.stderr.write("argument list too long\\n");sys.exit(7)
 selector=sys.argv[sys.argv.index("-run")+1]
+print(json.dumps({"Action":"start","Package":p}))
 for n in names+["FuzzOwnedSeeds", "ExampleOwned"]:
- if re.search(selector, n): print(json.dumps({"Action":"pass","Package":p,"Test":n}))
+ if re.search(selector, n):
+  print(json.dumps({"Action":"run","Package":p,"Test":n}))
+  print(json.dumps({"Action":"pass","Package":p,"Test":n}))
 print(json.dumps({"Action":"pass","Package":p}))
 ''')
  fake.chmod(0o700);m.GO=str(fake)

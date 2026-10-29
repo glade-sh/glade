@@ -1,0 +1,8 @@
+method	source
+recordIdentity	System.assert(false,'BOUNDARY|'+JSON.serialize(ResidualBoundaryProbe.recordIdentity()));
+automaticActivity	System.assert(false,'BOUNDARY|'+JSON.serialize(ResidualBoundaryProbe.emailActivity(true,false)));
+duplicateActivity	System.assert(false,'BOUNDARY|'+JSON.serialize(ResidualBoundaryProbe.emailActivity(true,true)));
+manualActivity	System.assert(false,'BOUNDARY|'+JSON.serialize(ResidualBoundaryProbe.emailActivity(false,true)));
+readTraversal	System.assert(false,'BOUNDARY|'+JSON.serialize(ResidualBoundaryProbe.readTraversal()));
+mutateTraversal	ResidualBoundaryProbe.mutateTraversal();
+anonymousRunAs	System.runAs(new User()){System.assert(false,'unreachable');}

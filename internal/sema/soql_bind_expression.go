@@ -84,7 +84,7 @@ func (c querySemanticsChecker) soqlBindExpressionDiagnostics(query soql.Query, c
 func (c querySemanticsChecker) soqlBindExpressionProblem(expr ir.Expr, bindings map[string]string) string {
 	if expr.Kind == ir.ExprVariable {
 		name := strings.Split(expr.Name, ".")[0]
-		if _, ok := bindings[strings.ToLower(name)]; !ok && !c.knownTypes[strings.ToLower(name)] && !strings.EqualFold(name, "this") {
+		if _, ok := bindings[strings.ToLower(name)]; !ok && !c.isKnownType(strings.ToLower(name)) && !strings.EqualFold(name, "this") {
 			return "Variable does not exist: " + name
 		}
 	}
@@ -105,7 +105,7 @@ func (c querySemanticsChecker) soqlBindExpressionProblem(expr ir.Expr, bindings 
 	}
 	if expr.Kind == ir.ExprCall && expr.Left == nil && !strings.HasPrefix(expr.Callee, "__") && !strings.HasPrefix(expr.Callee, "new:") && !strings.HasPrefix(expr.Callee, "newlit:") {
 		if root, _, ok := strings.Cut(expr.Callee, "."); ok {
-			if _, bound := bindings[strings.ToLower(root)]; !bound && !c.knownTypes[strings.ToLower(root)] {
+			if _, bound := bindings[strings.ToLower(root)]; !bound && !c.isKnownType(strings.ToLower(root)) {
 				return "Variable does not exist: " + root
 			}
 		}

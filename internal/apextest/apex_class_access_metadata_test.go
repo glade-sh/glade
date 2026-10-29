@@ -31,7 +31,7 @@ func TestApexClassAccessMetadataConformance(t *testing.T) {
 		t.Fatal("incomplete documented cases")
 	}
 	for _, api := range data.APIs {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			root := t.TempDir()
 			for name, source := range data.Files {
 				writeFile(t, filepath.Join(root, filepath.FromSlash(name)), strings.ReplaceAll(source, "{{API}}", api))

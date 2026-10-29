@@ -1,0 +1,8 @@
+api	route	case	outcome	diagnostic
+62.0	REST describe	webstore_fields	accepted	"{""createable"": true, ""name"": ""OptionsAutoFacetingEnabled"", ""nillable"": false, ""type"": ""boolean"", ""updateable"": true}"
+62.0	anonymous	contract_request	environment_error	INVALID_OPERATION: Apex compilation not enabled for this organization
+62.0	anonymous	contract_response	environment_error	INVALID_OPERATION: Apex compilation not enabled for this organization
+67.0	REST describe	webstore_fields	accepted	"{""createable"": true, ""name"": ""OptionsAutoFacetingEnabled"", ""nillable"": false, ""type"": ""boolean"", ""updateable"": true}"
+67.0	anonymous	contract_request	environment_error	INVALID_OPERATION: Apex compilation not enabled for this organization
+67.0	anonymous	contract_response	environment_error	INVALID_OPERATION: Apex compilation not enabled for this organization
+62.0	deploy	extension_matrix	environment_error	Not available for deploy for this organization

@@ -1,0 +1,17 @@
+{
+  "count_missing": "SELECT COUNT() FROM Account WHERE Bogus__c = 'x'",
+  "count_parent_missing": "SELECT COUNT() FROM Contact WHERE Account.Bogus__c = 'x'",
+  "count_bad_type": "SELECT COUNT() FROM Account WHERE Name = 3",
+  "count_valid": "SELECT COUNT() FROM Account WHERE Name = 'No synthetic match'",
+  "count_empty": "SELECT COUNT() FROM Account WHERE Name = null",
+  "group_hidden": "SELECT COUNT(Id) total FROM Account WHERE Name = 'Shape Alpha' GROUP BY Name",
+  "group_selected": "SELECT Name, COUNT(Id) total FROM Account WHERE Name = 'Shape Alpha' GROUP BY Name",
+  "group_other_hidden": "SELECT COUNT(Id) total FROM Account WHERE Name = 'Shape Alpha' GROUP BY Industry",
+  "group_alias": "SELECT Name label, COUNT(Id) total FROM Account WHERE Name = 'Shape Alpha' GROUP BY Name",
+  "group_only": "SELECT Name FROM Account WHERE Name = 'Shape Alpha' GROUP BY Name",
+  "order_name_id": "SELECT Name, Id FROM Account WHERE Name = 'Shape Alpha'",
+  "order_id_name": "SELECT Id, Name FROM Account WHERE Name = 'Shape Alpha'",
+  "order_three": "SELECT Phone, Name, Id FROM Account WHERE Name = 'Shape Alpha'",
+  "order_three_reverse": "SELECT Id, Name, Phone FROM Account WHERE Name = 'Shape Alpha'",
+  "order_null": "SELECT Description, Name, Id FROM Account WHERE Name = 'Shape Alpha'"
+}

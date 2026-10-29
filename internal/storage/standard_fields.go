@@ -73,6 +73,26 @@ func ensureStandardObjectFieldsForFeatures(definition *ObjectDefinition, feature
 	if !standardObjectFieldsNeedWrite(*definition, featureSignature) {
 		return
 	}
+	snapshotConfiguredStandardPolicyFields(definition)
+	// Enrichment repairs API-name placeholders, but a configured optional
+	// field can explicitly use that same string as its label. Preserve it
+	// through every merge, including refresh of an existing overlay.
+	configuredLabels := make(map[string]string)
+	for name, field := range definition.Fields {
+		if field.Label != "" && field.Label == field.APIName && standardConfiguredOptionalField(*definition, name) {
+			configuredLabels[name] = field.Label
+		}
+	}
+	defer func() {
+		for name, label := range configuredLabels {
+			field, ok := definition.Fields[name]
+			if ok {
+				field.Label = label
+				definition.Fields[name] = field
+			}
+		}
+	}()
+	removeDisabledStandardFeatureRecordTypes(definition, features)
 	removeMasterDetailOwnerFields(definition)
 	if _, ok := standardObjectCatalogEntryForName(definition.APIName); ok {
 		definition.EnableSearch = true
@@ -84,7 +104,6 @@ func ensureStandardObjectFieldsForFeatures(definition *ObjectDefinition, feature
 		}
 		return
 	}
-	stateAndCountryPicklistEnabled := hasCanonicalFeature(features, "StateAndCountryPicklist")
 	if definition.Fields == nil {
 		definition.Fields = make(map[string]Field)
 	}
@@ -118,9 +137,6 @@ func ensureStandardObjectFieldsForFeatures(definition *ObjectDefinition, feature
 	}
 	for _, field := range fields {
 		ensureStandardRelationship(definition, field)
-	}
-	if !stateAndCountryPicklistEnabled {
-		removeStateAndCountryPicklistFields(definition)
 	}
 	removeDisabledStandardOptionalFields(definition, featureSignature)
 	removeOrganizationFeatureFlagFields(definition)
@@ -720,15 +736,16 @@ func EnsureStandardObject(org *OrgState, objectName string) {
 	if org.Features != nil {
 		features = org.Features
 	}
-	fieldsNeedWrite := standardObjectFieldsNeedWrite(state.Definition, canonicalFeatureSignature(features))
-	// An existing object that needs neither write and has no record types is a
-	// no-op for every definition: both predicates are the conditions under which
-	// the steps below write, and the record type branch is skipped. A trusted
-	// runtime schema stamp then still describes the org, so it is kept.
-	definitionNoop := existed && len(state.Definition.RecordTypes) == 0 &&
-		!standardObjectDefinitionNeedsWrite(state.Definition, objectName) &&
+	featureSignature := canonicalFeatureSignature(features)
+	fieldsNeedWrite := standardObjectFieldsNeedWrite(state.Definition, featureSignature)
+	definitionNeedsWrite := standardObjectDefinitionNeedsWrite(state.Definition, objectName, featureSignature)
+	// A prepared definition and complete record-type seed need no schema writes.
+	// Keep their shared generation and avoid replacing its proof with a private
+	// clone's field map. Unprepared or changed seeds take the repair path below.
+	definitionNoop := existed && (len(state.Definition.RecordTypes) == 0 || standardRecordTypeEnsureProven(org, state.Definition)) &&
+		!definitionNeedsWrite &&
 		!fieldsNeedWrite
-	if existed && (standardObjectDefinitionNeedsWrite(state.Definition, objectName) || fieldsNeedWrite) {
+	if existed && (definitionNeedsWrite || fieldsNeedWrite) {
 		state.Definition = state.Definition.Clone()
 	}
 	if state.Definition.APIName == "" {
@@ -765,20 +782,27 @@ func EnsureStandardObject(org *OrgState, objectName string) {
 	if !definitionNoop {
 		org.ClearRuntimeSchemaStamp()
 	}
-	if len(state.Definition.RecordTypes) > 0 {
+	if len(state.Definition.RecordTypes) > 0 && !definitionNoop {
 		ensureRecordTypeObject(org)
 		ensureRecordTypeRecordsForObject(org, objectName)
+		rememberStandardRecordTypeEnsure(org, org.Objects[objectName].Definition)
 	}
 }
 
-func standardObjectDefinitionNeedsWrite(definition ObjectDefinition, objectName string) bool {
+// standardObjectDefinitionNeedsWrite reports whether EnsureStandardObject
+// would change anything besides the overlay fields for the org's enabled
+// feature signature. The overlay marker records that signature, so an org with
+// enabled features is prepared when its marker carries the same signature;
+// comparing against the empty signature would treat every prepared definition
+// of a feature-enabled org as a write and drop its schema generation.
+func standardObjectDefinitionNeedsWrite(definition ObjectDefinition, objectName, featureSignature string) bool {
 	if masterDetailOwnerFieldsNeedRepair(definition) {
 		return true
 	}
 	if definition.APIName == "" || definition.Label == "" || definition.PluralLabel == "" || definition.KeyPrefix == "" {
 		return true
 	}
-	if !standardFieldsOverlayApplied(definition, "") {
+	if !standardFieldsOverlayApplied(definition, featureSignature) {
 		return true
 	}
 	if standardReadOnlyFlagsNeedRepair(&definition) {
@@ -874,6 +898,15 @@ func standardObjectLookupKey(name string) string {
 }
 
 func buildKnownStandardObjectNameSet() map[string]bool {
+	// A catalog reference target does not establish a standalone Apex type.
+	// Keep those names available only to reference-field metadata validation.
+	return buildKnownStandardObjectNameSetWithoutReferenceOnly()
+}
+
+// buildKnownStandardObjectNameSetWithoutReferenceOnly is every known standard
+// object name except the derived reference-only targets. The generator that
+// derives that list reads this set, so it must not include the list itself.
+func buildKnownStandardObjectNameSetWithoutReferenceOnly() map[string]bool {
 	names := make(map[string]bool)
 	for _, name := range platformRelationshipChildObjectNames {
 		names[name] = true
@@ -924,6 +957,41 @@ func buildKnownStandardObjectNameSet() map[string]bool {
 		names[name] = true
 	}
 	return names
+}
+
+// IsReferenceOnlyStandardObject reports catalog reference targets that are not
+// globally registered standard objects.
+//
+// The set (referenceOnlyStandardObjectNames, standard_reference_only_generated.go)
+// is every reference target in the describe catalog that is not itself a known
+// standard object. Reference-field metadata admits every name. Native source
+// availability and reflection depend on the execution context; the bounded
+// named-source exceptions are listed by NamedApexReferenceObjectNames. See
+// apextest/testdata/conformance/reference_only_names for the captured contracts.
+func IsReferenceOnlyStandardObject(objectName string) bool {
+	_, ok := referenceOnlyStandardObjectSet()[standardObjectLookupKey(objectName)]
+	return ok
+}
+
+var referenceOnlyStandardObjectSetOnce struct {
+	sync.Once
+	set map[string]struct{}
+}
+
+func referenceOnlyStandardObjectSet() map[string]struct{} {
+	referenceOnlyStandardObjectSetOnce.Do(func() {
+		set := make(map[string]struct{}, len(referenceOnlyStandardObjectNames))
+		for _, name := range referenceOnlyStandardObjectNames {
+			set[standardObjectLookupKey(name)] = struct{}{}
+		}
+		referenceOnlyStandardObjectSetOnce.set = set
+	})
+	return referenceOnlyStandardObjectSetOnce.set
+}
+
+// ReferenceOnlyStandardObjectNames returns the derived reference-only names.
+func ReferenceOnlyStandardObjectNames() []string {
+	return append([]string(nil), referenceOnlyStandardObjectNames...)
 }
 
 var referenceBackedStandardObjectNames = []string{
@@ -1255,7 +1323,7 @@ func standardStubReferenceFieldEnabledForSignature(objectName, fieldName, featur
 	if strings.EqualFold(fieldName, "CurrencyIsoCode") && !featureSignatureHas(featureSignature, "MultiCurrency") {
 		return false
 	}
-	return standardOptionalFieldEnabled(objectName, fieldName, featureSignature)
+	return standardOptionalFieldEnabledForDefinition(ObjectDefinition{APIName: objectName}, fieldName, featureSignature)
 }
 
 func featureSignatureHas(signature, want string) bool {
@@ -1305,7 +1373,7 @@ func standardStubReferenceTargetsAvailable(targets []string) bool {
 		if target == "" {
 			continue
 		}
-		if _, known := ResolveKnownStandardObjectName(target); !known {
+		if _, known := ResolveKnownStandardObjectName(target); !known && !IsReferenceOnlyStandardObject(target) {
 			return false
 		}
 	}
@@ -1375,7 +1443,7 @@ func VisitStandardObjectRelationships(objectName string, features []string, visi
 	signature := canonicalFeatureSignature(features)
 	if entry, ok := standardObjectCatalogEntryForName(objectName); ok {
 		for _, relationship := range entry.Definition.Relations {
-			if (!personAccounts && isPersonAccountRelationship(relationship)) || !standardOptionalFieldEnabled(objectName, relationship.Field, signature) {
+			if (!personAccounts && isPersonAccountRelationship(relationship)) || !standardOptionalFieldEnabledForDefinition(ObjectDefinition{APIName: objectName}, relationship.Field, signature) {
 				continue
 			}
 			visit(cloneRelationship(relationship))
@@ -1387,7 +1455,7 @@ func VisitStandardObjectRelationships(objectName string, features []string, visi
 		return found
 	}
 	for _, relationship := range relationships {
-		if (!personAccounts && isPersonAccountRelationship(relationship)) || !standardOptionalFieldEnabled(objectName, relationship.Field, signature) {
+		if (!personAccounts && isPersonAccountRelationship(relationship)) || !standardOptionalFieldEnabledForDefinition(ObjectDefinition{APIName: objectName}, relationship.Field, signature) {
 			continue
 		}
 		visit(cloneRelationship(relationship))
@@ -1618,6 +1686,7 @@ func applyStandardObjectCompatibilityOverlays(definition *ObjectDefinition) {
 			field := definition.Fields[name]
 			field.DefaultedOnCreate = BoolFlag(false)
 			field.RestrictedPicklist = true
+			field.RestrictedPicklistFromCatalog = false
 			definition.Fields[name] = field
 		}
 		ensureFieldDefault(definition, "Username", "local-user@example.invalid")
@@ -1969,6 +2038,7 @@ func mergeStandardFields(definition *ObjectDefinition, fields map[string]Field) 
 	sort.Strings(names)
 	for _, name := range names {
 		field := fields[name]
+		field.RestrictedPicklistFromCatalog = field.RestrictedPicklist
 		if existingName, ok := ResolveFieldName(*definition, "", field.APIName); ok {
 			existing := definition.Fields[existingName]
 			enrichStandardField(&existing, field)
@@ -1983,7 +2053,7 @@ func enrichStandardField(existing *Field, field Field) {
 	if existing.APIName == "" {
 		existing.APIName = field.APIName
 	}
-	if existing.Label == "" {
+	if existing.Label == "" || (field.RestrictedPicklist && existing.Label == field.APIName) {
 		existing.Label = field.Label
 	}
 	if existing.Type == "" || existing.Type == FieldAny {
@@ -2046,8 +2116,9 @@ func enrichStandardField(existing *Field, field Field) {
 	if field.CaseSensitive {
 		existing.CaseSensitive = true
 	}
-	if field.RestrictedPicklist {
+	if field.RestrictedPicklist && !existing.RestrictedPicklist {
 		existing.RestrictedPicklist = true
+		existing.RestrictedPicklistFromCatalog = true
 	}
 	if field.IDLookup {
 		existing.IDLookup = true
@@ -2290,18 +2361,6 @@ func hasCanonicalFeature(features []string, want string) bool {
 		}
 	}
 	return false
-}
-
-func removeStateAndCountryPicklistFields(definition *ObjectDefinition) {
-	for fieldName := range definition.Fields {
-		if isStateAndCountryPicklistField(fieldName) {
-			delete(definition.Fields, fieldName)
-		}
-	}
-}
-
-func isStateAndCountryPicklistField(fieldName string) bool {
-	return strings.HasSuffix(fieldName, "StateCode") || strings.HasSuffix(fieldName, "CountryCode")
 }
 
 func stringsEqualFold(left, right string) bool {

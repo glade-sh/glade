@@ -1,0 +1,27 @@
+case_id	success	status	fields	message
+L01	true	-	-	-
+L02	false	FIELD_FILTER_VALIDATION_EXCEPTION	RequiredTarget__c	target category must be Allowed
+L03	true	-	-	-
+L04	true	-	-	-
+L05	false	FIELD_FILTER_VALIDATION_EXCEPTION	RequiredTarget__c	target category must be Allowed
+L06	true	-	-	-
+L07	false	FIELD_FILTER_VALIDATION_EXCEPTION	SourceTarget__c	target region must match source region
+L08	false	FIELD_FILTER_VALIDATION_EXCEPTION	SourceTarget__c	target region must match source region
+L09	true	-	-	-
+L10	false	FIELD_FILTER_VALIDATION_EXCEPTION	FormulaTarget__c	formula state must be Ready
+L11	true	-	-	-
+L12	false	FIELD_CUSTOM_VALIDATION_EXCEPTION	Reject__c	synthetic validation rejected the row
+L13	false	FIELD_CUSTOM_VALIDATION_EXCEPTION	Reject__c	synthetic validation rejected the row
+L14	true	-	-	-
+L15	false	FIELD_FILTER_VALIDATION_EXCEPTION	TextNotEqualFieldTarget__c	text values must differ
+L16	true	-	-	-
+L17	false	FIELD_FILTER_VALIDATION_EXCEPTION	TextNotEqualBlankTarget__c	text value must not be blank
+L18	false	FIELD_FILTER_VALIDATION_EXCEPTION	DateNotEqualTarget__c	target date must differ from source date
+L19	true	-	-	-
+L20	false	FIELD_FILTER_VALIDATION_EXCEPTION	TextNotEqualFieldTarget__c	text values must differ
+L21	true	-	-	-
+L22	false	FIELD_FILTER_VALIDATION_EXCEPTION	TextNotEqualBlankTarget__c	text value must not be blank
+L23	true	-	-	-
+L24	true	-	-	-
+L25	false	FIELD_FILTER_VALIDATION_EXCEPTION	TextEqualsBlankTarget__c	text value must be blank
+L26	true	-	-	-

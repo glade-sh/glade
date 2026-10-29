@@ -78,7 +78,7 @@ func runContentChildConformance(t *testing.T, cluster string, shapes int) {
 		}
 	}
 	for _, api := range capture.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			fixtures := capture.FixturesByAPI[api]
 			if len(fixtures) != 3 {
 				t.Fatal("missing captured object metadata")

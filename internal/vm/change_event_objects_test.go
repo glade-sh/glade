@@ -223,6 +223,12 @@ func TestChangeEventRestoredTemplateCloneKeepsSchemaStampAPIRoutes(t *testing.T)
 				org.Objects["Parcel__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{
 					APIName: "Parcel__c", Fields: map[string]storage.Field{"Marker__c": {APIName: "Marker__c", Type: storage.FieldString}},
 				}}
+				if route == "istest" {
+					// As in the project runner, finish test schema before freezing.
+					setup := New(nil)
+					setup.SetOrg(&org)
+					setup.EnableTestContext()
+				}
 				base := New(nil)
 				for _, name := range []string{"AccountChangeEvent", "Parcel__ChangeEvent"} {
 					if err := base.RegisterTrigger(Trigger{Name: name + "Observer", Object: name, Timing: "after", Operation: "insert", APIVersion: api}); err != nil {

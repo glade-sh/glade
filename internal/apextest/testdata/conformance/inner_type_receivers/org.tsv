@@ -1,0 +1,227 @@
+id	api	route	compiled	success	outcome
+parameter_public	62.0	anonymous	true	true	"""inner"""
+parameter_public	62.0	isTest	true	true	"""inner"""
+parameter_public	67.0	anonymous	true	true	"""inner"""
+parameter_public	67.0	isTest	true	true	"""inner"""
+callable_public	62.0	anonymous	true	true	"""inner"""
+callable_public	62.0	isTest	true	true	"""inner"""
+callable_public	67.0	anonymous	true	true	"""inner"""
+callable_public	67.0	isTest	true	true	"""inner"""
+schedulable_public	62.0	anonymous	true	true	"""inner"""
+schedulable_public	62.0	isTest	true	true	"""inner"""
+schedulable_public	67.0	anonymous	true	true	"""inner"""
+schedulable_public	67.0	isTest	true	true	"""inner"""
+map_public	62.0	anonymous	true	true	"""1:inner:true"""
+map_public	62.0	isTest	true	true	"""1:inner:true"""
+map_public	67.0	anonymous	true	true	"""1:inner:true"""
+map_public	67.0	isTest	true	true	"""1:inner:true"""
+catch_public	62.0	anonymous	true	true	"""inner"""
+catch_public	62.0	isTest	true	true	"""inner"""
+catch_public	67.0	anonymous	true	true	"""inner"""
+catch_public	67.0	isTest	true	true	"""inner"""
+saveresult_public	62.0	anonymous	true	true	"""inner"""
+saveresult_public	62.0	isTest	true	true	"""inner"""
+saveresult_public	67.0	anonymous	true	true	"""inner"""
+saveresult_public	67.0	isTest	true	true	"""inner"""
+describefieldresult_public	62.0	anonymous	true	true	"""inner"""
+describefieldresult_public	62.0	isTest	true	true	"""inner"""
+describefieldresult_public	67.0	anonymous	true	true	"""inner"""
+describefieldresult_public	67.0	isTest	true	true	"""inner"""
+duplicate_public	62.0	anonymous	true	true	"""left:right"""
+duplicate_public	62.0	isTest	true	true	"""left:right"""
+duplicate_public	67.0	anonymous	true	true	"""left:right"""
+duplicate_public	67.0	isTest	true	true	"""left:right"""
+field_enum_public	62.0	anonymous	false	false	Inner types are not allowed to have inner types
+field_enum_public	62.0	isTest	false	false	"Illegal forward reference: level | Dependent class is invalid and needs recompilation:
+ Class R254FieldEnumPublic : Illegal forward reference: level"
+field_enum_public	67.0	anonymous	false	false	Inner types are not allowed to have inner types
+field_enum_public	67.0	isTest	false	false	"Illegal forward reference: level | Dependent class is invalid and needs recompilation:
+ Class R254FieldEnumPublic : Illegal forward reference: level"
+parameter_default	62.0	anonymous	true	true	"""inner"""
+parameter_default	62.0	isTest	true	true	"""inner"""
+parameter_default	67.0	anonymous	true	true	"""inner"""
+parameter_default	67.0	isTest	true	true	"""inner"""
+callable_default	62.0	anonymous	true	true	"""inner"""
+callable_default	62.0	isTest	true	true	"""inner"""
+callable_default	67.0	anonymous	true	true	"""inner"""
+callable_default	67.0	isTest	true	true	"""inner"""
+schedulable_default	62.0	anonymous	true	true	"""inner"""
+schedulable_default	62.0	isTest	true	true	"""inner"""
+schedulable_default	67.0	anonymous	true	true	"""inner"""
+schedulable_default	67.0	isTest	true	true	"""inner"""
+map_default	62.0	anonymous	true	true	"""1:inner:true"""
+map_default	62.0	isTest	true	true	"""1:inner:true"""
+map_default	67.0	anonymous	true	true	"""1:inner:true"""
+map_default	67.0	isTest	true	true	"""1:inner:true"""
+catch_default	62.0	anonymous	true	true	"""inner"""
+catch_default	62.0	isTest	true	true	"""inner"""
+catch_default	67.0	anonymous	true	true	"""inner"""
+catch_default	67.0	isTest	true	true	"""inner"""
+saveresult_default	62.0	anonymous	true	true	"""inner"""
+saveresult_default	62.0	isTest	true	true	"""inner"""
+saveresult_default	67.0	anonymous	true	true	"""inner"""
+saveresult_default	67.0	isTest	true	true	"""inner"""
+describefieldresult_default	62.0	anonymous	true	true	"""inner"""
+describefieldresult_default	62.0	isTest	true	true	"""inner"""
+describefieldresult_default	67.0	anonymous	true	true	"""inner"""
+describefieldresult_default	67.0	isTest	true	true	"""inner"""
+duplicate_default	62.0	anonymous	true	true	"""left:right"""
+duplicate_default	62.0	isTest	true	true	"""left:right"""
+duplicate_default	67.0	anonymous	true	true	"""left:right"""
+duplicate_default	67.0	isTest	true	true	"""left:right"""
+field_enum_default	62.0	anonymous	false	false	Inner types are not allowed to have inner types
+field_enum_default	62.0	isTest	false	false	"Illegal forward reference: level | Dependent class is invalid and needs recompilation:
+ Class R254FieldEnumDefault : Illegal forward reference: level"
+field_enum_default	67.0	anonymous	false	false	Inner types are not allowed to have inner types
+field_enum_default	67.0	isTest	false	false	"Illegal forward reference: level | Dependent class is invalid and needs recompilation:
+ Class R254FieldEnumDefault : Illegal forward reference: level"
+parameter_mixed	62.0	anonymous	true	true	"""inner"""
+parameter_mixed	62.0	isTest	true	true	"""inner"""
+parameter_mixed	67.0	anonymous	true	true	"""inner"""
+parameter_mixed	67.0	isTest	true	true	"""inner"""
+callable_mixed	62.0	anonymous	true	true	"""inner"""
+callable_mixed	62.0	isTest	true	true	"""inner"""
+callable_mixed	67.0	anonymous	true	true	"""inner"""
+callable_mixed	67.0	isTest	true	true	"""inner"""
+schedulable_mixed	62.0	anonymous	true	true	"""inner"""
+schedulable_mixed	62.0	isTest	true	true	"""inner"""
+schedulable_mixed	67.0	anonymous	true	true	"""inner"""
+schedulable_mixed	67.0	isTest	true	true	"""inner"""
+map_mixed	62.0	anonymous	true	true	"""1:inner:true"""
+map_mixed	62.0	isTest	true	true	"""1:inner:true"""
+map_mixed	67.0	anonymous	true	true	"""1:inner:true"""
+map_mixed	67.0	isTest	true	true	"""1:inner:true"""
+catch_mixed	62.0	anonymous	true	true	"""inner"""
+catch_mixed	62.0	isTest	true	true	"""inner"""
+catch_mixed	67.0	anonymous	true	true	"""inner"""
+catch_mixed	67.0	isTest	true	true	"""inner"""
+saveresult_mixed	62.0	anonymous	true	true	"""inner"""
+saveresult_mixed	62.0	isTest	true	true	"""inner"""
+saveresult_mixed	67.0	anonymous	true	true	"""inner"""
+saveresult_mixed	67.0	isTest	true	true	"""inner"""
+describefieldresult_mixed	62.0	anonymous	true	true	"""inner"""
+describefieldresult_mixed	62.0	isTest	true	true	"""inner"""
+describefieldresult_mixed	67.0	anonymous	true	true	"""inner"""
+describefieldresult_mixed	67.0	isTest	true	true	"""inner"""
+duplicate_mixed	62.0	anonymous	true	true	"""left:right"""
+duplicate_mixed	62.0	isTest	true	true	"""left:right"""
+duplicate_mixed	67.0	anonymous	true	true	"""left:right"""
+duplicate_mixed	67.0	isTest	true	true	"""left:right"""
+field_enum_mixed	62.0	anonymous	false	false	Inner types are not allowed to have inner types
+field_enum_mixed	62.0	isTest	false	false	"Illegal forward reference: level | Dependent class is invalid and needs recompilation:
+ Class R254FieldEnumMixed : Illegal forward reference: level"
+field_enum_mixed	67.0	anonymous	false	false	Inner types are not allowed to have inner types
+field_enum_mixed	67.0	isTest	false	false	"Illegal forward reference: level | Dependent class is invalid and needs recompilation:
+ Class R254FieldEnumMixed : Illegal forward reference: level"
+parameter_boundary	62.0	anonymous	true	true	"""null"""
+parameter_boundary	62.0	isTest	true	true	"""null"""
+parameter_boundary	67.0	anonymous	true	true	"""null"""
+parameter_boundary	67.0	isTest	true	true	"""null"""
+callable_boundary	62.0	anonymous	true	true	"""platform"""
+callable_boundary	62.0	isTest	true	true	"""platform"""
+callable_boundary	67.0	anonymous	true	true	"""platform"""
+callable_boundary	67.0	isTest	true	true	"""platform"""
+schedulable_boundary	62.0	anonymous	true	true	"""platform"""
+schedulable_boundary	62.0	isTest	true	true	"""platform"""
+schedulable_boundary	67.0	anonymous	true	true	"""platform"""
+schedulable_boundary	67.0	isTest	true	true	"""platform"""
+map_boundary	62.0	anonymous	true	true	"""1:inner:true"""
+map_boundary	62.0	isTest	true	true	"""1:inner:true"""
+map_boundary	67.0	anonymous	true	true	"""1:inner:true"""
+map_boundary	67.0	isTest	true	true	"""1:inner:true"""
+catch_boundary	62.0	anonymous	true	true	"""inner"""
+catch_boundary	62.0	isTest	true	true	"""inner"""
+catch_boundary	67.0	anonymous	true	true	"""inner"""
+catch_boundary	67.0	isTest	true	true	"""inner"""
+saveresult_boundary	62.0	anonymous	true	true	"""true"""
+saveresult_boundary	62.0	isTest	true	true	"""true"""
+saveresult_boundary	67.0	anonymous	true	true	"""true"""
+saveresult_boundary	67.0	isTest	true	true	"""true"""
+describefieldresult_boundary	62.0	anonymous	true	true	"""true"""
+describefieldresult_boundary	62.0	isTest	true	true	"""true"""
+describefieldresult_boundary	67.0	anonymous	true	true	"""true"""
+describefieldresult_boundary	67.0	isTest	true	true	"""true"""
+duplicate_boundary	62.0	anonymous	true	true	"""false"""
+duplicate_boundary	62.0	isTest	true	true	"""false"""
+duplicate_boundary	67.0	anonymous	true	true	"""false"""
+duplicate_boundary	67.0	isTest	true	true	"""false"""
+field_enum_boundary	62.0	anonymous	true	true	"""true"""
+field_enum_boundary	62.0	isTest	true	true	"""true"""
+field_enum_boundary	67.0	anonymous	true	true	"""true"""
+field_enum_boundary	67.0	isTest	true	true	"""true"""
+parameter_reject	62.0	anonymous	false	false	Inner types are not allowed to have inner types
+parameter_reject	62.0	isTest	false	false	Method does not exist or incorrect signature: void consume(R254RejectParameter.Other) from the type R254RejectParameter
+parameter_reject	67.0	anonymous	false	false	Inner types are not allowed to have inner types
+parameter_reject	67.0	isTest	false	false	Method does not exist or incorrect signature: void consume(R254RejectParameter.Other) from the type R254RejectParameter
+callable_reject	62.0	anonymous	false	false	Inner types are not allowed to have inner types
+callable_reject	62.0	isTest	false	false	Class R254RejectCallable.Worker must implement the method: String R254RejectCallable.Callable.call()
+callable_reject	67.0	anonymous	false	false	Inner types are not allowed to have inner types
+callable_reject	67.0	isTest	false	false	Class R254RejectCallable.Worker must implement the method: String R254RejectCallable.Callable.call()
+schedulable_reject	62.0	anonymous	false	false	Inner types are not allowed to have inner types
+schedulable_reject	62.0	isTest	false	false	Class R254RejectSchedulable.Worker must implement the method: String R254RejectSchedulable.Schedulable.execute()
+schedulable_reject	67.0	anonymous	false	false	Inner types are not allowed to have inner types
+schedulable_reject	67.0	isTest	false	false	Class R254RejectSchedulable.Worker must implement the method: String R254RejectSchedulable.Schedulable.execute()
+map_reject	62.0	anonymous	false	false	Inner types are not allowed to have inner types
+map_reject	62.0	isTest	false	false	Method does not exist or incorrect signature: void put(String, String) from the type Map<R254RejectMap.Type,String>
+map_reject	67.0	anonymous	false	false	Inner types are not allowed to have inner types
+map_reject	67.0	isTest	false	false	Method does not exist or incorrect signature: void put(String, String) from the type Map<R254RejectMap.Type,String>
+catch_reject	62.0	anonymous	false	false	Inner types are not allowed to have inner types
+catch_reject	62.0	isTest	false	false	Exception class must extend another Exception class: R254RejectCatch.Exception | @Override specified for non-overriding method: String R254RejectCatch.Exception.getTypeName() | Identifier name is reserved: Exception
+catch_reject	67.0	anonymous	false	false	Inner types are not allowed to have inner types
+catch_reject	67.0	isTest	false	false	Exception class must extend another Exception class: R254RejectCatch.Exception | @Override specified for non-overriding method: String R254RejectCatch.Exception.getTypeName() | Identifier name is reserved: Exception
+saveresult_reject	62.0	anonymous	false	false	Inner types are not allowed to have inner types
+saveresult_reject	62.0	isTest	false	false	Method does not exist or incorrect signature: void isSuccess() from the type R254RejectSaveResult.SaveResult
+saveresult_reject	67.0	anonymous	false	false	Inner types are not allowed to have inner types
+saveresult_reject	67.0	isTest	false	false	Method does not exist or incorrect signature: void isSuccess() from the type R254RejectSaveResult.SaveResult
+describefieldresult_reject	62.0	anonymous	false	false	Inner types are not allowed to have inner types
+describefieldresult_reject	62.0	isTest	false	false	Method does not exist or incorrect signature: void getName() from the type R254RejectDescribeFieldResult.DescribeFieldResult
+describefieldresult_reject	67.0	anonymous	false	false	Inner types are not allowed to have inner types
+describefieldresult_reject	67.0	isTest	false	false	Method does not exist or incorrect signature: void getName() from the type R254RejectDescribeFieldResult.DescribeFieldResult
+duplicate_reject	62.0	anonymous	false	false	Inner types are not allowed to have inner types
+duplicate_reject	62.0	isTest	false	false	Illegal conversion from R254RejectDuplicate.Other to R254RejectDuplicate.EventBus
+duplicate_reject	67.0	anonymous	false	false	Inner types are not allowed to have inner types
+duplicate_reject	67.0	isTest	false	false	Illegal conversion from R254RejectDuplicate.Other to R254RejectDuplicate.EventBus
+field_enum_reject	62.0	anonymous	false	false	Inner types are not allowed to have inner types
+field_enum_reject	62.0	isTest	false	false	Method does not exist or incorrect signature: void nope() from the type R254RejectFieldEnum.Level | Illegal forward reference: level
+field_enum_reject	67.0	anonymous	false	false	Inner types are not allowed to have inner types
+field_enum_reject	67.0	isTest	false	false	Method does not exist or incorrect signature: void nope() from the type R254RejectFieldEnum.Level | Illegal forward reference: level
+parameter_direct_reject	62.0	anonymous	false	false	Method does not exist or incorrect signature: void consume(R254LeftPublic.EventBus) from the type R254ReceiverParameters
+parameter_direct_reject	62.0	isTest	false	false	Method does not exist or incorrect signature: void consume(R254LeftPublic.EventBus) from the type R254ReceiverParameters
+parameter_direct_reject	67.0	anonymous	false	false	Method does not exist or incorrect signature: void consume(R254LeftPublic.EventBus) from the type R254ReceiverParameters
+parameter_direct_reject	67.0	isTest	false	false	Method does not exist or incorrect signature: void consume(R254LeftPublic.EventBus) from the type R254ReceiverParameters
+callable_direct_reject	62.0	anonymous	false	false	Class R254DirectCallable must implement the method: String R254CallablePublic.Callable.call()
+callable_direct_reject	62.0	isTest	false	false	"Class R254DirectCallable must implement the method: String R254CallablePublic.Callable.call() | Dependent class is invalid and needs recompilation:
+ Class R254DirectCallable : Class R254DirectCallable must implement the method: String R254CallablePublic.Callable.call()"
+callable_direct_reject	67.0	anonymous	false	false	Class R254DirectCallable must implement the method: String R254CallablePublic.Callable.call()
+callable_direct_reject	67.0	isTest	false	false	"Class R254DirectCallable must implement the method: String R254CallablePublic.Callable.call() | Dependent class is invalid and needs recompilation:
+ Class R254DirectCallable : Class R254DirectCallable must implement the method: String R254CallablePublic.Callable.call()"
+schedulable_direct_reject	62.0	anonymous	false	false	Class R254DirectSchedulable must implement the method: String R254SchedulablePublic.Schedulable.execute()
+schedulable_direct_reject	62.0	isTest	false	false	"Class R254DirectSchedulable must implement the method: String R254SchedulablePublic.Schedulable.execute() | Dependent class is invalid and needs recompilation:
+ Class R254DirectSchedulable : Class R254DirectSchedulable must implement the method: String R254SchedulablePublic.Schedulable.execute()"
+schedulable_direct_reject	67.0	anonymous	false	false	Class R254DirectSchedulable must implement the method: String R254SchedulablePublic.Schedulable.execute()
+schedulable_direct_reject	67.0	isTest	false	false	"Class R254DirectSchedulable must implement the method: String R254SchedulablePublic.Schedulable.execute() | Dependent class is invalid and needs recompilation:
+ Class R254DirectSchedulable : Class R254DirectSchedulable must implement the method: String R254SchedulablePublic.Schedulable.execute()"
+map_direct_reject	62.0	anonymous	false	false	Method does not exist or incorrect signature: void put(String, String) from the type Map<R254MapPublic.Type,String>
+map_direct_reject	62.0	isTest	false	false	Method does not exist or incorrect signature: void put(String, String) from the type Map<R254MapPublic.Type,String>
+map_direct_reject	67.0	anonymous	false	false	Method does not exist or incorrect signature: void put(String, String) from the type Map<R254MapPublic.Type,String>
+map_direct_reject	67.0	isTest	false	false	Method does not exist or incorrect signature: void put(String, String) from the type Map<R254MapPublic.Type,String>
+catch_direct_reject	62.0	anonymous	false	false	Catch block variable must be of type exception: R254MapPublic.Type
+catch_direct_reject	62.0	isTest	false	false	Catch block variable must be of type exception: R254MapPublic.Type
+catch_direct_reject	67.0	anonymous	false	false	Catch block variable must be of type exception: R254MapPublic.Type
+catch_direct_reject	67.0	isTest	false	false	Catch block variable must be of type exception: R254MapPublic.Type
+saveresult_direct_reject	62.0	anonymous	false	false	Method does not exist or incorrect signature: void isSuccess() from the type R254SaveResultPublic.SaveResult
+saveresult_direct_reject	62.0	isTest	false	false	Method does not exist or incorrect signature: void isSuccess() from the type R254SaveResultPublic.SaveResult
+saveresult_direct_reject	67.0	anonymous	false	false	Method does not exist or incorrect signature: void isSuccess() from the type R254SaveResultPublic.SaveResult
+saveresult_direct_reject	67.0	isTest	false	false	Method does not exist or incorrect signature: void isSuccess() from the type R254SaveResultPublic.SaveResult
+describefieldresult_direct_reject	62.0	anonymous	false	false	Method does not exist or incorrect signature: void getName() from the type R254DescribeFieldResultPublic.DescribeFieldResult
+describefieldresult_direct_reject	62.0	isTest	false	false	Method does not exist or incorrect signature: void getName() from the type R254DescribeFieldResultPublic.DescribeFieldResult
+describefieldresult_direct_reject	67.0	anonymous	false	false	Method does not exist or incorrect signature: void getName() from the type R254DescribeFieldResultPublic.DescribeFieldResult
+describefieldresult_direct_reject	67.0	isTest	false	false	Method does not exist or incorrect signature: void getName() from the type R254DescribeFieldResultPublic.DescribeFieldResult
+duplicate_direct_reject	62.0	anonymous	false	false	Illegal assignment from R254RightPublic.EventBus to R254LeftPublic.EventBus
+duplicate_direct_reject	62.0	isTest	false	false	Illegal assignment from R254RightPublic.EventBus to R254LeftPublic.EventBus
+duplicate_direct_reject	67.0	anonymous	false	false	Illegal assignment from R254RightPublic.EventBus to R254LeftPublic.EventBus
+duplicate_direct_reject	67.0	isTest	false	false	Illegal assignment from R254RightPublic.EventBus to R254LeftPublic.EventBus
+field_enum_direct_reject	62.0	anonymous	false	false	Variable is not visible: R254FieldEnumBoundary.level
+field_enum_direct_reject	62.0	isTest	false	false	Variable is not visible: R254FieldEnumBoundary.level
+field_enum_direct_reject	67.0	anonymous	false	false	Variable is not visible: R254FieldEnumBoundary.level
+field_enum_direct_reject	67.0	isTest	false	false	Variable is not visible: R254FieldEnumBoundary.level

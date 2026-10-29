@@ -1,0 +1,12 @@
+method	outcome
+afterCollection	Pass
+afterLookup	Pass
+autoCollection	Pass
+autoCollectionVariable	Pass
+autoLookup	Pass
+autoRecord	Pass
+autoScalar	Pass
+beforeLookup	Pass
+directChild	Pass
+directCollectionChild	Pass
+emptyCollection	Pass

@@ -1,0 +1,301 @@
+api	route	case	result
+62.0	anonymous	mixed_name_in_first	{"compiled":false,"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	mixed_name_in_last	{"compiled":false,"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	mixed_name_in_quoted	{"compiled":true}
+62.0	anonymous	mixed_name_in_null	{"compiled":true}
+62.0	anonymous	mixed_name_not_in_first	{"compiled":false,"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	mixed_name_not_in_last	{"compiled":false,"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	mixed_name_not_in_quoted	{"compiled":true}
+62.0	anonymous	mixed_name_not_in_null	{"compiled":true}
+62.0	anonymous	mixed_industry_in_first	{"compiled":false,"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	mixed_industry_in_last	{"compiled":false,"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	mixed_industry_in_quoted	{"compiled":true}
+62.0	anonymous	mixed_industry_in_null	{"compiled":true}
+62.0	anonymous	mixed_industry_not_in_first	{"compiled":false,"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	mixed_industry_not_in_last	{"compiled":false,"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	mixed_industry_not_in_quoted	{"compiled":true}
+62.0	anonymous	mixed_industry_not_in_null	{"compiled":true}
+62.0	anonymous	mixed_id_in_first	{"compiled":false,"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	mixed_id_in_last	{"compiled":false,"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	mixed_id_in_quoted	{"compiled":true}
+62.0	anonymous	mixed_id_in_null	{"compiled":true}
+62.0	anonymous	mixed_id_not_in_first	{"compiled":false,"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	mixed_id_not_in_last	{"compiled":false,"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	mixed_id_not_in_quoted	{"compiled":true}
+62.0	anonymous	mixed_id_not_in_null	{"compiled":true}
+62.0	anonymous	inline_index_name	{"compiled":false,"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	inline_index_picklist	{"compiled":false,"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	inline_index_id	{"compiled":false,"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	inline_index_pickscalar	{"compiled":false,"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	inline_index_idscalar	{"compiled":false,"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	inline_index_quoted	{"compiled":true}
+62.0	anonymous	inline_index_null	{"compiled":true}
+62.0	anonymous	inline_paren_name	{"compiled":false,"message":"Unexpected token '<'."}
+62.0	anonymous	inline_paren_picklist	{"compiled":false,"message":"Unexpected token '<'."}
+62.0	anonymous	inline_paren_id	{"compiled":false,"message":"Unexpected token '<'."}
+62.0	anonymous	inline_paren_pickscalar	{"compiled":false,"message":"Unexpected token '<'."}
+62.0	anonymous	inline_paren_idscalar	{"compiled":false,"message":"Unexpected token '<'."}
+62.0	anonymous	inline_paren_quoted	{"compiled":false,"message":"Unexpected token '<'."}
+62.0	anonymous	inline_paren_null	{"compiled":false,"message":"Unexpected token '<'."}
+62.0	anonymous	inline_call_name	{"compiled":false,"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	inline_call_picklist	{"compiled":false,"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	inline_call_id	{"compiled":false,"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	inline_call_pickscalar	{"compiled":false,"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	inline_call_idscalar	{"compiled":false,"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	inline_call_quoted	{"compiled":true}
+62.0	anonymous	inline_call_null	{"compiled":true}
+62.0	anonymous	dynamic_index_name_query	{"observed":{"message":"expecting a right parentheses, found '['","type":"System.QueryException"}}
+62.0	anonymous	dynamic_index_name_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_index_name_find	{"observed":{"message":"expecting a right parentheses, found '['","type":"System.QueryException"}}
+62.0	anonymous	dynamic_index_name_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_index_picklist_query	{"observed":{"message":"expecting a right parentheses, found '['","type":"System.QueryException"}}
+62.0	anonymous	dynamic_index_picklist_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_index_picklist_find	{"observed":{"message":"expecting a right parentheses, found '['","type":"System.QueryException"}}
+62.0	anonymous	dynamic_index_picklist_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_index_id_query	{"observed":{"message":"expecting a right parentheses, found '['","type":"System.QueryException"}}
+62.0	anonymous	dynamic_index_id_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_index_id_find	{"observed":{"message":"expecting a right parentheses, found '['","type":"System.QueryException"}}
+62.0	anonymous	dynamic_index_id_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_index_pickscalar_query	{"observed":{"message":"expecting a right parentheses, found '['","type":"System.QueryException"}}
+62.0	anonymous	dynamic_index_pickscalar_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_index_pickscalar_find	{"observed":{"message":"expecting a right parentheses, found '['","type":"System.QueryException"}}
+62.0	anonymous	dynamic_index_pickscalar_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_index_idscalar_query	{"observed":{"message":"expecting a right parentheses, found '['","type":"System.QueryException"}}
+62.0	anonymous	dynamic_index_idscalar_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_index_idscalar_find	{"observed":{"message":"expecting a right parentheses, found '['","type":"System.QueryException"}}
+62.0	anonymous	dynamic_index_idscalar_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_index_quoted_query	{"observed":{"message":"expecting a right parentheses, found '['","type":"System.QueryException"}}
+62.0	anonymous	dynamic_index_quoted_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_index_quoted_find	{"observed":{"message":"expecting a right parentheses, found '['","type":"System.QueryException"}}
+62.0	anonymous	dynamic_index_quoted_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_index_null_query	{"observed":{"message":"expecting a right parentheses, found '['","type":"System.QueryException"}}
+62.0	anonymous	dynamic_index_null_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_index_null_find	{"observed":{"message":"expecting a right parentheses, found '['","type":"System.QueryException"}}
+62.0	anonymous	dynamic_index_null_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_paren_name_query	{"terminal":"Only variable references are allowed in dynamic SOQL/SOSL."}
+62.0	anonymous	dynamic_paren_name_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_paren_name_find	{"terminal":"Only variable references are allowed in dynamic SOQL/SOSL."}
+62.0	anonymous	dynamic_paren_name_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_paren_picklist_query	{"terminal":"Only variable references are allowed in dynamic SOQL/SOSL."}
+62.0	anonymous	dynamic_paren_picklist_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_paren_picklist_find	{"terminal":"Only variable references are allowed in dynamic SOQL/SOSL."}
+62.0	anonymous	dynamic_paren_picklist_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_paren_id_query	{"terminal":"Only variable references are allowed in dynamic SOQL/SOSL."}
+62.0	anonymous	dynamic_paren_id_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_paren_id_find	{"terminal":"Only variable references are allowed in dynamic SOQL/SOSL."}
+62.0	anonymous	dynamic_paren_id_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_paren_pickscalar_query	{"terminal":"Only variable references are allowed in dynamic SOQL/SOSL."}
+62.0	anonymous	dynamic_paren_pickscalar_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_paren_pickscalar_find	{"terminal":"Only variable references are allowed in dynamic SOQL/SOSL."}
+62.0	anonymous	dynamic_paren_pickscalar_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_paren_idscalar_query	{"terminal":"Only variable references are allowed in dynamic SOQL/SOSL."}
+62.0	anonymous	dynamic_paren_idscalar_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_paren_idscalar_find	{"terminal":"Only variable references are allowed in dynamic SOQL/SOSL."}
+62.0	anonymous	dynamic_paren_idscalar_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_paren_quoted_query	{"terminal":"Only variable references are allowed in dynamic SOQL/SOSL."}
+62.0	anonymous	dynamic_paren_quoted_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_paren_quoted_find	{"terminal":"Only variable references are allowed in dynamic SOQL/SOSL."}
+62.0	anonymous	dynamic_paren_quoted_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_paren_null_query	{"terminal":"Only variable references are allowed in dynamic SOQL/SOSL."}
+62.0	anonymous	dynamic_paren_null_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_paren_null_find	{"terminal":"Only variable references are allowed in dynamic SOQL/SOSL."}
+62.0	anonymous	dynamic_paren_null_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_call_name_query	{"observed":{"message":"expecting a right parentheses, found '('","type":"System.QueryException"}}
+62.0	anonymous	dynamic_call_name_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_call_name_find	{"observed":{"message":"expecting a right parentheses, found '('","type":"System.QueryException"}}
+62.0	anonymous	dynamic_call_name_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_call_picklist_query	{"observed":{"message":"expecting a right parentheses, found '('","type":"System.QueryException"}}
+62.0	anonymous	dynamic_call_picklist_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_call_picklist_find	{"observed":{"message":"expecting a right parentheses, found '('","type":"System.QueryException"}}
+62.0	anonymous	dynamic_call_picklist_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_call_id_query	{"observed":{"message":"expecting a right parentheses, found '('","type":"System.QueryException"}}
+62.0	anonymous	dynamic_call_id_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_call_id_find	{"observed":{"message":"expecting a right parentheses, found '('","type":"System.QueryException"}}
+62.0	anonymous	dynamic_call_id_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_call_pickscalar_query	{"observed":{"message":"expecting a right parentheses, found '('","type":"System.QueryException"}}
+62.0	anonymous	dynamic_call_pickscalar_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_call_pickscalar_find	{"observed":{"message":"expecting a right parentheses, found '('","type":"System.QueryException"}}
+62.0	anonymous	dynamic_call_pickscalar_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_call_idscalar_query	{"observed":{"message":"expecting a right parentheses, found '('","type":"System.QueryException"}}
+62.0	anonymous	dynamic_call_idscalar_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_call_idscalar_find	{"observed":{"message":"expecting a right parentheses, found '('","type":"System.QueryException"}}
+62.0	anonymous	dynamic_call_idscalar_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_call_quoted_query	{"observed":{"message":"expecting a right parentheses, found '('","type":"System.QueryException"}}
+62.0	anonymous	dynamic_call_quoted_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_call_quoted_find	{"observed":{"message":"expecting a right parentheses, found '('","type":"System.QueryException"}}
+62.0	anonymous	dynamic_call_quoted_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_call_null_query	{"observed":{"message":"expecting a right parentheses, found '('","type":"System.QueryException"}}
+62.0	anonymous	dynamic_call_null_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_call_null_find	{"observed":{"message":"expecting a right parentheses, found '('","type":"System.QueryException"}}
+62.0	anonymous	dynamic_call_null_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+62.0	anonymous	dynamic_plain_bad	{"observed":{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}}
+62.0	anonymous	dynamic_plain_quoted	{"observed":"accepted"}
+62.0	anonymous	dynamic_plain_null	{"observed":"accepted"}
+62.0	anonymous	dynamic_find_index_name	{"observed":{"message":"unexpected token: [","type":"System.QueryException"}}
+62.0	anonymous	dynamic_find_index_quoted	{"observed":{"message":"unexpected token: [","type":"System.QueryException"}}
+62.0	anonymous	dynamic_find_index_null	{"observed":{"message":"unexpected token: [","type":"System.QueryException"}}
+62.0	anonymous	dynamic_find_call_name	{"observed":{"message":"unexpected token: (","type":"System.QueryException"}}
+62.0	anonymous	dynamic_find_call_quoted	{"observed":{"message":"unexpected token: (","type":"System.QueryException"}}
+62.0	anonymous	dynamic_find_call_null	{"observed":{"message":"unexpected token: (","type":"System.QueryException"}}
+62.0	anonymous	dynamic_find_paren_name	{"terminal":"Only variable references are allowed in dynamic SOQL/SOSL."}
+62.0	anonymous	dynamic_find_paren_quoted	{"terminal":"Only variable references are allowed in dynamic SOQL/SOSL."}
+62.0	anonymous	dynamic_find_paren_null	{"terminal":"Only variable references are allowed in dynamic SOQL/SOSL."}
+62.0	anonymous	inline_where_index_name	{"compiled":false,"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	inline_where_index_quoted	{"compiled":true}
+62.0	anonymous	inline_where_call_name	{"compiled":false,"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+62.0	anonymous	inline_where_call_quoted	{"compiled":true}
+62.0	anonymous	dynamic_mixed_bad	{"observed":{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}}
+62.0	anonymous	dynamic_mixed_quoted	{"observed":"accepted"}
+62.0	anonymous	dynamic_mixed_null	{"observed":"accepted"}
+62.0	anonymous	dynamic_nullbind_bad	{"observed":{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}}
+62.0	anonymous	dynamic_nullbind_quoted	{"observed":"accepted"}
+67.0	anonymous	mixed_name_in_first	{"compiled":false,"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	mixed_name_in_last	{"compiled":false,"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	mixed_name_in_quoted	{"compiled":true}
+67.0	anonymous	mixed_name_in_null	{"compiled":true}
+67.0	anonymous	mixed_name_not_in_first	{"compiled":false,"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	mixed_name_not_in_last	{"compiled":false,"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	mixed_name_not_in_quoted	{"compiled":true}
+67.0	anonymous	mixed_name_not_in_null	{"compiled":true}
+67.0	anonymous	mixed_industry_in_first	{"compiled":false,"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	mixed_industry_in_last	{"compiled":false,"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	mixed_industry_in_quoted	{"compiled":true}
+67.0	anonymous	mixed_industry_in_null	{"compiled":true}
+67.0	anonymous	mixed_industry_not_in_first	{"compiled":false,"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	mixed_industry_not_in_last	{"compiled":false,"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	mixed_industry_not_in_quoted	{"compiled":true}
+67.0	anonymous	mixed_industry_not_in_null	{"compiled":true}
+67.0	anonymous	mixed_id_in_first	{"compiled":false,"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	mixed_id_in_last	{"compiled":false,"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	mixed_id_in_quoted	{"compiled":true}
+67.0	anonymous	mixed_id_in_null	{"compiled":true}
+67.0	anonymous	mixed_id_not_in_first	{"compiled":false,"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	mixed_id_not_in_last	{"compiled":false,"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	mixed_id_not_in_quoted	{"compiled":true}
+67.0	anonymous	mixed_id_not_in_null	{"compiled":true}
+67.0	anonymous	inline_index_name	{"compiled":false,"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	inline_index_picklist	{"compiled":false,"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	inline_index_id	{"compiled":false,"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	inline_index_pickscalar	{"compiled":false,"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	inline_index_idscalar	{"compiled":false,"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	inline_index_quoted	{"compiled":true}
+67.0	anonymous	inline_index_null	{"compiled":true}
+67.0	anonymous	inline_paren_name	{"compiled":false,"message":"Unexpected token '<'."}
+67.0	anonymous	inline_paren_picklist	{"compiled":false,"message":"Unexpected token '<'."}
+67.0	anonymous	inline_paren_id	{"compiled":false,"message":"Unexpected token '<'."}
+67.0	anonymous	inline_paren_pickscalar	{"compiled":false,"message":"Unexpected token '<'."}
+67.0	anonymous	inline_paren_idscalar	{"compiled":false,"message":"Unexpected token '<'."}
+67.0	anonymous	inline_paren_quoted	{"compiled":false,"message":"Unexpected token '<'."}
+67.0	anonymous	inline_paren_null	{"compiled":false,"message":"Unexpected token '<'."}
+67.0	anonymous	inline_call_name	{"compiled":false,"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	inline_call_picklist	{"compiled":false,"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	inline_call_id	{"compiled":false,"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	inline_call_pickscalar	{"compiled":false,"message":"value of filter criterion for field 'Industry' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	inline_call_idscalar	{"compiled":false,"message":"value of filter criterion for field 'Id' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	inline_call_quoted	{"compiled":true}
+67.0	anonymous	inline_call_null	{"compiled":true}
+67.0	anonymous	dynamic_index_name_query	{"observed":{"message":"expecting a right parentheses, found '['","type":"System.QueryException"}}
+67.0	anonymous	dynamic_index_name_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_index_name_find	{"observed":{"message":"expecting a right parentheses, found '['","type":"System.QueryException"}}
+67.0	anonymous	dynamic_index_name_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_index_picklist_query	{"observed":{"message":"expecting a right parentheses, found '['","type":"System.QueryException"}}
+67.0	anonymous	dynamic_index_picklist_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_index_picklist_find	{"observed":{"message":"expecting a right parentheses, found '['","type":"System.QueryException"}}
+67.0	anonymous	dynamic_index_picklist_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_index_id_query	{"observed":{"message":"expecting a right parentheses, found '['","type":"System.QueryException"}}
+67.0	anonymous	dynamic_index_id_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_index_id_find	{"observed":{"message":"expecting a right parentheses, found '['","type":"System.QueryException"}}
+67.0	anonymous	dynamic_index_id_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_index_pickscalar_query	{"observed":{"message":"expecting a right parentheses, found '['","type":"System.QueryException"}}
+67.0	anonymous	dynamic_index_pickscalar_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_index_pickscalar_find	{"observed":{"message":"expecting a right parentheses, found '['","type":"System.QueryException"}}
+67.0	anonymous	dynamic_index_pickscalar_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_index_idscalar_query	{"observed":{"message":"expecting a right parentheses, found '['","type":"System.QueryException"}}
+67.0	anonymous	dynamic_index_idscalar_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_index_idscalar_find	{"observed":{"message":"expecting a right parentheses, found '['","type":"System.QueryException"}}
+67.0	anonymous	dynamic_index_idscalar_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_index_quoted_query	{"observed":{"message":"expecting a right parentheses, found '['","type":"System.QueryException"}}
+67.0	anonymous	dynamic_index_quoted_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_index_quoted_find	{"observed":{"message":"expecting a right parentheses, found '['","type":"System.QueryException"}}
+67.0	anonymous	dynamic_index_quoted_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_index_null_query	{"observed":{"message":"expecting a right parentheses, found '['","type":"System.QueryException"}}
+67.0	anonymous	dynamic_index_null_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_index_null_find	{"observed":{"message":"expecting a right parentheses, found '['","type":"System.QueryException"}}
+67.0	anonymous	dynamic_index_null_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_paren_name_query	{"terminal":"Only variable references are allowed in dynamic SOQL/SOSL."}
+67.0	anonymous	dynamic_paren_name_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_paren_name_find	{"terminal":"Only variable references are allowed in dynamic SOQL/SOSL."}
+67.0	anonymous	dynamic_paren_name_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_paren_picklist_query	{"terminal":"Only variable references are allowed in dynamic SOQL/SOSL."}
+67.0	anonymous	dynamic_paren_picklist_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_paren_picklist_find	{"terminal":"Only variable references are allowed in dynamic SOQL/SOSL."}
+67.0	anonymous	dynamic_paren_picklist_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_paren_id_query	{"terminal":"Only variable references are allowed in dynamic SOQL/SOSL."}
+67.0	anonymous	dynamic_paren_id_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_paren_id_find	{"terminal":"Only variable references are allowed in dynamic SOQL/SOSL."}
+67.0	anonymous	dynamic_paren_id_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_paren_pickscalar_query	{"terminal":"Only variable references are allowed in dynamic SOQL/SOSL."}
+67.0	anonymous	dynamic_paren_pickscalar_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_paren_pickscalar_find	{"terminal":"Only variable references are allowed in dynamic SOQL/SOSL."}
+67.0	anonymous	dynamic_paren_pickscalar_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_paren_idscalar_query	{"terminal":"Only variable references are allowed in dynamic SOQL/SOSL."}
+67.0	anonymous	dynamic_paren_idscalar_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_paren_idscalar_find	{"terminal":"Only variable references are allowed in dynamic SOQL/SOSL."}
+67.0	anonymous	dynamic_paren_idscalar_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_paren_quoted_query	{"terminal":"Only variable references are allowed in dynamic SOQL/SOSL."}
+67.0	anonymous	dynamic_paren_quoted_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_paren_quoted_find	{"terminal":"Only variable references are allowed in dynamic SOQL/SOSL."}
+67.0	anonymous	dynamic_paren_quoted_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_paren_null_query	{"terminal":"Only variable references are allowed in dynamic SOQL/SOSL."}
+67.0	anonymous	dynamic_paren_null_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_paren_null_find	{"terminal":"Only variable references are allowed in dynamic SOQL/SOSL."}
+67.0	anonymous	dynamic_paren_null_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_call_name_query	{"observed":{"message":"expecting a right parentheses, found '('","type":"System.QueryException"}}
+67.0	anonymous	dynamic_call_name_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_call_name_find	{"observed":{"message":"expecting a right parentheses, found '('","type":"System.QueryException"}}
+67.0	anonymous	dynamic_call_name_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_call_picklist_query	{"observed":{"message":"expecting a right parentheses, found '('","type":"System.QueryException"}}
+67.0	anonymous	dynamic_call_picklist_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_call_picklist_find	{"observed":{"message":"expecting a right parentheses, found '('","type":"System.QueryException"}}
+67.0	anonymous	dynamic_call_picklist_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_call_id_query	{"observed":{"message":"expecting a right parentheses, found '('","type":"System.QueryException"}}
+67.0	anonymous	dynamic_call_id_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_call_id_find	{"observed":{"message":"expecting a right parentheses, found '('","type":"System.QueryException"}}
+67.0	anonymous	dynamic_call_id_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_call_pickscalar_query	{"observed":{"message":"expecting a right parentheses, found '('","type":"System.QueryException"}}
+67.0	anonymous	dynamic_call_pickscalar_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_call_pickscalar_find	{"observed":{"message":"expecting a right parentheses, found '('","type":"System.QueryException"}}
+67.0	anonymous	dynamic_call_pickscalar_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_call_idscalar_query	{"observed":{"message":"expecting a right parentheses, found '('","type":"System.QueryException"}}
+67.0	anonymous	dynamic_call_idscalar_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_call_idscalar_find	{"observed":{"message":"expecting a right parentheses, found '('","type":"System.QueryException"}}
+67.0	anonymous	dynamic_call_idscalar_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_call_quoted_query	{"observed":{"message":"expecting a right parentheses, found '('","type":"System.QueryException"}}
+67.0	anonymous	dynamic_call_quoted_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_call_quoted_find	{"observed":{"message":"expecting a right parentheses, found '('","type":"System.QueryException"}}
+67.0	anonymous	dynamic_call_quoted_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_call_null_query	{"observed":{"message":"expecting a right parentheses, found '('","type":"System.QueryException"}}
+67.0	anonymous	dynamic_call_null_query_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_call_null_find	{"observed":{"message":"expecting a right parentheses, found '('","type":"System.QueryException"}}
+67.0	anonymous	dynamic_call_null_find_access	{"observed":{"message":"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.","type":"System.SecurityException"}}
+67.0	anonymous	dynamic_plain_bad	{"observed":{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}}
+67.0	anonymous	dynamic_plain_quoted	{"observed":"accepted"}
+67.0	anonymous	dynamic_plain_null	{"observed":"accepted"}
+67.0	anonymous	dynamic_find_index_name	{"observed":{"message":"unexpected token: [","type":"System.QueryException"}}
+67.0	anonymous	dynamic_find_index_quoted	{"observed":{"message":"unexpected token: [","type":"System.QueryException"}}
+67.0	anonymous	dynamic_find_index_null	{"observed":{"message":"unexpected token: [","type":"System.QueryException"}}
+67.0	anonymous	dynamic_find_call_name	{"observed":{"message":"unexpected token: (","type":"System.QueryException"}}
+67.0	anonymous	dynamic_find_call_quoted	{"observed":{"message":"unexpected token: (","type":"System.QueryException"}}
+67.0	anonymous	dynamic_find_call_null	{"observed":{"message":"unexpected token: (","type":"System.QueryException"}}
+67.0	anonymous	dynamic_find_paren_name	{"terminal":"Only variable references are allowed in dynamic SOQL/SOSL."}
+67.0	anonymous	dynamic_find_paren_quoted	{"terminal":"Only variable references are allowed in dynamic SOQL/SOSL."}
+67.0	anonymous	dynamic_find_paren_null	{"terminal":"Only variable references are allowed in dynamic SOQL/SOSL."}
+67.0	anonymous	inline_where_index_name	{"compiled":false,"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	inline_where_index_quoted	{"compiled":true}
+67.0	anonymous	inline_where_call_name	{"compiled":false,"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"}
+67.0	anonymous	inline_where_call_quoted	{"compiled":true}
+67.0	anonymous	dynamic_mixed_bad	{"observed":{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}}
+67.0	anonymous	dynamic_mixed_quoted	{"observed":"accepted"}
+67.0	anonymous	dynamic_mixed_null	{"observed":"accepted"}
+67.0	anonymous	dynamic_nullbind_bad	{"observed":{"message":"value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes","type":"System.QueryException"}}
+67.0	anonymous	dynamic_nullbind_quoted	{"observed":"accepted"}

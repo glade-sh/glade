@@ -1,0 +1,2222 @@
+{
+  "apis": [
+    "62.0",
+    "67.0"
+  ],
+  "profiles": [
+    "P0",
+    "P1",
+    "P2",
+    "P3",
+    "P4",
+    "P5",
+    "P6",
+    "P7",
+    "P8",
+    "P9",
+    "P10",
+    "P11",
+    "PU"
+  ],
+  "objects": [
+    "Account",
+    "AccountContactRelation",
+    "AccountTeamMember",
+    "ApexClass",
+    "ApexTrigger",
+    "Asset",
+    "AsyncApexJob",
+    "Attachment",
+    "BusinessHours",
+    "Campaign",
+    "CampaignMember",
+    "Case",
+    "CaseComment",
+    "CollaborationGroup",
+    "Contact",
+    "ContentDocument",
+    "ContentDocumentLink",
+    "ContentVersion",
+    "Contract",
+    "CronTrigger",
+    "Dashboard",
+    "Document",
+    "EmailMessage",
+    "EmailTemplate",
+    "Entitlement",
+    "EntitySubscription",
+    "Event",
+    "FeedItem",
+    "Folder",
+    "Group",
+    "GroupMember",
+    "Individual",
+    "Lead",
+    "ListView",
+    "Location",
+    "Network",
+    "Note",
+    "Opportunity",
+    "OpportunityContactRole",
+    "OpportunityLineItem",
+    "OpportunityTeamMember",
+    "Order",
+    "OrderItem",
+    "Organization",
+    "Partner",
+    "PermissionSet",
+    "PermissionSetAssignment",
+    "Pricebook2",
+    "PricebookEntry",
+    "ProcessInstance",
+    "ProcessInstanceWorkitem",
+    "Product2",
+    "Profile",
+    "Quote",
+    "QuoteLineItem",
+    "RecordType",
+    "Report",
+    "ServiceContract",
+    "StaticResource",
+    "Task",
+    "Topic",
+    "User",
+    "UserRole",
+    "WebStore",
+    "WorkOrder"
+  ],
+  "observations": [
+    "global-default",
+    "rest-default",
+    "apex-default",
+    "rest-granted",
+    "apex-granted",
+    "fielddefinition-count",
+    "compile-anonymous-default",
+    "compile-named-default",
+    "compile-anonymous-granted",
+    "compile-named-granted",
+    "test-runner-granted",
+    "granted-dynamic-put-get-describe"
+  ],
+  "samples": {
+    "Contact": [
+      "GenderIdentity",
+      "Pronouns"
+    ],
+    "Lead": [
+      "GenderIdentity",
+      "Pronouns",
+      "HasOptedOutOfEmail"
+    ],
+    "OpportunityLineItem": [
+      "Discount"
+    ],
+    "Account": [
+      "Tradestyle"
+    ],
+    "PricebookEntry": [
+      "CurrencyIsoCode"
+    ],
+    "WebStore": [
+      "*"
+    ]
+  },
+  "rejection_control": {
+    "object": "Account",
+    "field": "SyntheticAbsentField"
+  },
+  "boundary_control": {
+    "object": "Account",
+    "field": "Id"
+  },
+  "historical_extra_fields": [
+    {
+      "object": "Account",
+      "field": "Division",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "AccountTeamMember",
+      "field": "CreatedById",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "AccountTeamMember",
+      "field": "CreatedDate",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "AccountTeamMember",
+      "field": "LastModifiedById",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "AccountTeamMember",
+      "field": "LastModifiedDate",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "AccountTeamMember",
+      "field": "SystemModstamp",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Asset",
+      "field": "Division",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Asset",
+      "field": "ExternalIdentifier",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Asset",
+      "field": "RecordTypeId",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Asset",
+      "field": "StatusReason",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Asset",
+      "field": "Uuid",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "AsyncApexJob",
+      "field": "LastModifiedById",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "AsyncApexJob",
+      "field": "LastModifiedDate",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "AsyncApexJob",
+      "field": "SystemModstamp",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Attachment",
+      "field": "Division",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Campaign",
+      "field": "RecordTypeId",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "CampaignMember",
+      "field": "RecordTypeId",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Case",
+      "field": "BusinessHoursId",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Case",
+      "field": "Division",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Case",
+      "field": "EntitlementId",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Case",
+      "field": "HasCommentsUnreadByOwner",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Case",
+      "field": "HasSelfServiceComments",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Case",
+      "field": "IsClosedOnCreate",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Case",
+      "field": "IsSelfServiceClosed",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Case",
+      "field": "IsStopped",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Case",
+      "field": "IsVisibleInSelfService",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Case",
+      "field": "MilestoneStatus",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Case",
+      "field": "ProductId",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Case",
+      "field": "RecordTypeId",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Case",
+      "field": "SlaExitDate",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Case",
+      "field": "SlaStartDate",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Case",
+      "field": "SourceId",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Case",
+      "field": "StopStartDate",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "CaseComment",
+      "field": "Division",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Contact",
+      "field": "BuyerAttributes",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Contact",
+      "field": "CanAllowPortalSelfReg",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Contact",
+      "field": "DepartmentGroup",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Contact",
+      "field": "Division",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Contact",
+      "field": "DoNotCall",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Contact",
+      "field": "HasOptedOutOfEmail",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Contact",
+      "field": "HasOptedOutOfFax",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Contact",
+      "field": "MiddleName",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Contact",
+      "field": "RecordTypeId",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Contact",
+      "field": "Suffix",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Contact",
+      "field": "TitleType",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "ContentDocument",
+      "field": "Division",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "ContentDocumentLink",
+      "field": "CreatedById",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "ContentDocumentLink",
+      "field": "CreatedDate",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "ContentDocumentLink",
+      "field": "LastModifiedById",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "ContentDocumentLink",
+      "field": "LastModifiedDate",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "ContentVersion",
+      "field": "Division",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "ContentVersion",
+      "field": "RecordTypeId",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Contract",
+      "field": "Division",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Contract",
+      "field": "RecordTypeId",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Contract",
+      "field": "ShippingAddress",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Contract",
+      "field": "ShippingCity",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Contract",
+      "field": "ShippingCountry",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Contract",
+      "field": "ShippingGeocodeAccuracy",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Contract",
+      "field": "ShippingLatitude",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Contract",
+      "field": "ShippingLongitude",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Contract",
+      "field": "ShippingPostalCode",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Contract",
+      "field": "ShippingState",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Contract",
+      "field": "ShippingStreet",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "CronTrigger",
+      "field": "LastModifiedDate",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "CronTrigger",
+      "field": "SystemModstamp",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "EmailMessage",
+      "field": "Division",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "EmailMessage",
+      "field": "EmailRoutingAddressId",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "EmailMessage",
+      "field": "IsPrivateDraft",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "EmailMessage",
+      "field": "ToIds",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Entitlement",
+      "field": "Division",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "EntitySubscription",
+      "field": "LastModifiedById",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "EntitySubscription",
+      "field": "LastModifiedDate",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "EntitySubscription",
+      "field": "SystemModstamp",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Event",
+      "field": "Division",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Event",
+      "field": "IsClosed",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Event",
+      "field": "RecordTypeId",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Event",
+      "field": "ServiceAppointmentId",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Event",
+      "field": "Type",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Event",
+      "field": "WhatCount",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Event",
+      "field": "WhoCount",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "FeedItem",
+      "field": "LastModifiedById",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Group",
+      "field": "DefaultDivision",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Group",
+      "field": "QueueRoutingConfigId",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "GroupMember",
+      "field": "CreatedById",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "GroupMember",
+      "field": "CreatedDate",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "GroupMember",
+      "field": "LastModifiedById",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "GroupMember",
+      "field": "LastModifiedDate",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Individual",
+      "field": "MiddleName",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Individual",
+      "field": "Suffix",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Lead",
+      "field": "Division",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Lead",
+      "field": "DoNotCall",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Lead",
+      "field": "HasOptedOutOfEmail",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Lead",
+      "field": "HasOptedOutOfFax",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Lead",
+      "field": "MiddleName",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Lead",
+      "field": "RecordTypeId",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Lead",
+      "field": "Suffix",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Note",
+      "field": "Division",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Opportunity",
+      "field": "ContractId",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Opportunity",
+      "field": "Division",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Opportunity",
+      "field": "IqScore",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Opportunity",
+      "field": "RecordTypeId",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "OpportunityContactRole",
+      "field": "Division",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "OpportunityLineItem",
+      "field": "Division",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Order",
+      "field": "BillingEmailAddress",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Order",
+      "field": "BillingPhoneNumber",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Order",
+      "field": "Division",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Order",
+      "field": "GrandTotalAmount",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Order",
+      "field": "OrderedDate",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Order",
+      "field": "RecordTypeId",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Order",
+      "field": "RelatedOrderId",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Order",
+      "field": "RelatedOrderType",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Order",
+      "field": "SalesChannelId",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Order",
+      "field": "TaxLocaleType",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Order",
+      "field": "TotalAdjustedDeliveryAmount",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Order",
+      "field": "TotalAdjustedDeliveryTaxAmount",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Order",
+      "field": "TotalAdjustedProductAmount",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Order",
+      "field": "TotalAdjustedProductTaxAmount",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Order",
+      "field": "TotalDeliveryAdjDistAmount",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Order",
+      "field": "TotalDeliveryAdjDistTaxAmount",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Order",
+      "field": "TotalProductAdjDistAmount",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Order",
+      "field": "TotalProductAdjDistTaxAmount",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Order",
+      "field": "TotalTaxAmount",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "OrderItem",
+      "field": "Division",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "OrderItem",
+      "field": "EarliestEstimatedDeliveryDate",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "OrderItem",
+      "field": "EarliestEstimatedDeliveryTime",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "OrderItem",
+      "field": "EstimatedDeliveryReference",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "OrderItem",
+      "field": "EstimatedDeliveryTimeZone",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "OrderItem",
+      "field": "GrossUnitPrice",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "OrderItem",
+      "field": "LatestEstimatedDeliveryDate",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "OrderItem",
+      "field": "LatestEstimatedDeliveryTime",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "OrderItem",
+      "field": "LineNumber",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "OrderItem",
+      "field": "OrderDeliveryGroupId",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "OrderItem",
+      "field": "RelatedOrderItemId",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "OrderItem",
+      "field": "TotalAdjustmentAmount",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "OrderItem",
+      "field": "TotalAdjustmentTaxAmount",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "OrderItem",
+      "field": "TotalLineAdjustmentAmount",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "OrderItem",
+      "field": "TotalLineAdjustmentTaxAmount",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "OrderItem",
+      "field": "TotalLineAmount",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "OrderItem",
+      "field": "TotalLineTaxAmount",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "OrderItem",
+      "field": "TotalTaxAmount",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "OrderItem",
+      "field": "Type",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "OrderItem",
+      "field": "TypeCode",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Partner",
+      "field": "Division",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsAITestingUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsAIWorkbenchUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsAcceptRiskForProblems",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsAdoptionAnalyticsUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsAllowSurveyAdvancedFeatures",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsAppointmentBookingUserAccess",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsAssignUserToSkill",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsAssocChgRqstAndProb",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsAssocIncAndChgRqst",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsAssocIncAndProb",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsAssocRelAndChgRqst",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsAssocRelAndInc",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsAssocRelAndProb",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsBypassEmailApproval",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsBypassMFAForUiLogins",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsCallCoachingUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsCanRunAnalysis",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsCanTranslateScrt2Conversation",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsCanWriteWithAiScrt2Conversation",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsCodeBuilderUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsConfigureLiveMessage",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsCreateAuditFields",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsCreateUpdateSDDDataset",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsCreateUpdateSDDStory",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsDataPipelinesAppConsumer",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsDebugApex",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsDecisionTableExecUserAccess",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsDeferSharingCalculations",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsDeleteChangeRequest",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsDeleteIncident",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsDeleteProblem",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsDigitalAgentUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsDivisionAffected",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsEditDeliveryInformation",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsEditManagedOrderSummaries",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsEditOrderManagementBillingType",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsEditUnmanagedOrderSummaries",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsEinsteinAgentPlatformBuilder",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsEinsteinCopilotBuilder",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsEinsteinCopilotUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsEventLogReadAccess",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsExecutePromptTemplates",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsGetSmartDataDiscovery",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsGetSmartDataDiscoveryExternal",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsHydratePromptTemplateIA",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsInboundMigrationToolsUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsLeadScoreResultPublisher",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsLeadScoreUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsLightningSchedulerUserAccess",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsLiveMessageAgent",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsManageDataProcessingEngine",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsManageForecastingCustomData",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsManagePromptTemplates",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsManageQuotas",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsManageSmartDataDiscovery",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsManageSmartDataDiscoveryModel",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsManageTrustMeasures",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsOmniAssistiveActionUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsOmniSupervisorManageQueue",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsOpportunityScoreUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsOrgPerformanceAccess",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsOutboundMigrationToolsUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsOverrideForecasts",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsPerformanceAnalysisAccess",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsProposeMajorIncidents",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsPublicTwitterResponse",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsReadConfigurationItemInformation",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsRecordVisibilityAPI",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsRegrelloUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsReopenProblems",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsResolveChgRqstAssoc",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsResolveIncAssoc",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsResolveProbAssoc",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsSCEViewAllData",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsSalesAnalyticsUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsScheduleJob",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsSchedulingFacilityManager",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsSchedulingLineAmbassador",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsServiceAnalyticsUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsSetupAgentBuilder",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsSetupAgentUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsShareSmartDataDiscoveryStory",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsSmartDataDiscoveryForCommunity",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsSonicConsumer",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsStoryOnDSWithPredicate",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsUnmeteredUserBasedAI",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsUpdateReportTypeReferences",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsUpdateWithInactiveOwner",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsUseDeliveryEstimation",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsUseOrderManagementAPIs",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsUseOrderSummaryCreateAPI",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsUseShipment",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsUseSmartDataDiscovery",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsUserCanAccessNLPResult",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsUserCanPerformNLPOperation",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsVideoConferenceMeetUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsVideoConferenceTeamsUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsVideoConferenceZoomUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsViewAgtfrceAnlytDshbrd",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsViewAllCalls",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsViewAllForecasts",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsViewCaseAnlytDshbrd",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsViewCaseInteraction",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsViewChangeRequestAnlytDshbrd",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsViewChangeRequestDshbrd",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsViewForecastingPredictive",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsViewIncidentAnlytDshbrd",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsViewIncidentFulfrDshbrd",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsViewIncidentMgrDshbrd",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsViewItLeaderAnlytDshbrd",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsViewItsmConsoleAsFulfr",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsViewItsmConsoleHmpg",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsViewKnwlgAnlytDshbrd",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsViewLicenseUtilization",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsViewOmnichnlAnlytDshbrd",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsViewProblemFulfrDshbrd",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsViewProblemMgrDshbrd",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsViewTrustMeasures",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsWaveTrendReports",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSet",
+      "field": "PermissionsYourAccountCDAPublishEvents",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSetAssignment",
+      "field": "CreatedById",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSetAssignment",
+      "field": "CreatedDate",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSetAssignment",
+      "field": "LastModifiedById",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "PermissionSetAssignment",
+      "field": "LastModifiedDate",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Pricebook2",
+      "field": "RecordTypeId",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "ProcessInstanceWorkitem",
+      "field": "LastModifiedById",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "ProcessInstanceWorkitem",
+      "field": "LastModifiedDate",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Product2",
+      "field": "RecordTypeId",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsAITestingUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsAIWorkbenchUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsAcceptRiskForProblems",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsAdoptionAnalyticsUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsAllowSurveyAdvancedFeatures",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsAppointmentBookingUserAccess",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsAssignUserToSkill",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsAssocChgRqstAndProb",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsAssocIncAndChgRqst",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsAssocIncAndProb",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsAssocRelAndChgRqst",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsAssocRelAndInc",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsAssocRelAndProb",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsBypassEmailApproval",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsBypassMFAForUiLogins",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsCallCoachingUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsCanRunAnalysis",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsCanTranslateScrt2Conversation",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsCanWriteWithAiScrt2Conversation",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsCodeBuilderUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsConfigureLiveMessage",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsCreateAuditFields",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsCreateUpdateSDDDataset",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsCreateUpdateSDDStory",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsDataPipelinesAppConsumer",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsDebugApex",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsDecisionTableExecUserAccess",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsDeferSharingCalculations",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsDeleteChangeRequest",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsDeleteIncident",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsDeleteProblem",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsDigitalAgentUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsDivisionAffected",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsEditDeliveryInformation",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsEditManagedOrderSummaries",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsEditOrderManagementBillingType",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsEditUnmanagedOrderSummaries",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsEinsteinAgentPlatformBuilder",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsEinsteinCopilotBuilder",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsEinsteinCopilotUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsEventLogReadAccess",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsExecutePromptTemplates",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsGetSmartDataDiscovery",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsGetSmartDataDiscoveryExternal",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsHydratePromptTemplateIA",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsInboundMigrationToolsUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsLeadScoreResultPublisher",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsLeadScoreUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsLightningSchedulerUserAccess",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsLiveMessageAgent",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsManageDataProcessingEngine",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsManageForecastingCustomData",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsManagePromptTemplates",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsManageQuotas",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsManageSmartDataDiscovery",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsManageSmartDataDiscoveryModel",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsManageTrustMeasures",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsOmniAssistiveActionUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsOmniSupervisorManageQueue",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsOpportunityScoreUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsOrgPerformanceAccess",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsOutboundMigrationToolsUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsOverrideForecasts",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsPerformanceAnalysisAccess",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsProposeMajorIncidents",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsPublicTwitterResponse",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsReadConfigurationItemInformation",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsRecordVisibilityAPI",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsRegrelloUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsReopenProblems",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsResolveChgRqstAssoc",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsResolveIncAssoc",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsResolveProbAssoc",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsSCEViewAllData",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsSalesAnalyticsUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsScheduleJob",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsSchedulingFacilityManager",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsSchedulingLineAmbassador",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsServiceAnalyticsUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsSetupAgentBuilder",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsSetupAgentUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsShareSmartDataDiscoveryStory",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsSmartDataDiscoveryForCommunity",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsSonicConsumer",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsStoryOnDSWithPredicate",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsUnmeteredUserBasedAI",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsUpdateReportTypeReferences",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsUpdateWithInactiveOwner",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsUseDeliveryEstimation",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsUseOrderManagementAPIs",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsUseOrderSummaryCreateAPI",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsUseShipment",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsUseSmartDataDiscovery",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsUserCanAccessNLPResult",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsUserCanPerformNLPOperation",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsVideoConferenceMeetUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsVideoConferenceTeamsUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsVideoConferenceZoomUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsViewAgtfrceAnlytDshbrd",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsViewAllCalls",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsViewAllForecasts",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsViewCaseAnlytDshbrd",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsViewCaseInteraction",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsViewChangeRequestAnlytDshbrd",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsViewChangeRequestDshbrd",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsViewForecastingPredictive",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsViewIncidentAnlytDshbrd",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsViewIncidentFulfrDshbrd",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsViewIncidentMgrDshbrd",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsViewItLeaderAnlytDshbrd",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsViewItsmConsoleAsFulfr",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsViewItsmConsoleHmpg",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsViewKnwlgAnlytDshbrd",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsViewLicenseUtilization",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsViewOmnichnlAnlytDshbrd",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsViewProblemFulfrDshbrd",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsViewProblemMgrDshbrd",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsViewTrustMeasures",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsWaveTrendReports",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Profile",
+      "field": "PermissionsYourAccountCDAPublishEvents",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Quote",
+      "field": "Division",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Quote",
+      "field": "RecordTypeId",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "QuoteLineItem",
+      "field": "Division",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Task",
+      "field": "Division",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Task",
+      "field": "RecordTypeId",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Task",
+      "field": "Type",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Task",
+      "field": "WhatCount",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Task",
+      "field": "WhoCount",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Topic",
+      "field": "LastModifiedById",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "Topic",
+      "field": "LastModifiedDate",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "User",
+      "field": "AssistantName",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "User",
+      "field": "DefaultDivision",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "User",
+      "field": "IsPortalSelfRegistered",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "User",
+      "field": "LeadSource",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "User",
+      "field": "MiddleName",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "User",
+      "field": "Salutation",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "User",
+      "field": "Suffix",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "User",
+      "field": "UserPermissionsAvantgoUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "User",
+      "field": "UserPermissionsLiveAgentUser",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "User",
+      "field": "UserPreferencesBRELookupTableWelcomeMat",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "User",
+      "field": "UserPreferencesHideBrowseProductRedirectConfirmation",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "User",
+      "field": "UserPreferencesHideOnlineSalesAppTabVisibilityRequirementsModal",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "User",
+      "field": "UserPreferencesHideOnlineSalesAppWelcomeMat",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "UserRole",
+      "field": "CreatedById",
+      "status": "recaptured-per-profile"
+    },
+    {
+      "object": "UserRole",
+      "field": "CreatedDate",
+      "status": "recaptured-per-profile"
+    }
+  ],
+  "controls": {
+    "commerce_license_only": {
+      "path": "P10/license-only",
+      "definition": "P10/license-only/profile-definition.json",
+      "baseline": "P4"
+    }
+  }
+}

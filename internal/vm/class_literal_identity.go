@@ -6,6 +6,7 @@ import "strings"
 // generic tokens also display the lexical owner of an inner element type.
 // Nongeneric shadow literals keep their original display spelling.
 func (vm *VM) lexicalClassLiteralToken(name string, token Value) Value {
+	token.dependencyClassLiteral = true
 	if platform, ok := vm.scalarPlatformClassLiteral(name); ok {
 		token.Text = platform
 		if token.Fields == nil {
@@ -53,13 +54,34 @@ func (vm *VM) scalarPlatformClassLiteral(name string) (string, bool) {
 	case "selectoption", "system.selectoption":
 		platform = "System.SelectOption"
 	default:
-		return "", false
+		var ok bool
+		platform, ok = schemaMetadataClassAlias(name)
+		if !ok {
+			return "", false
+		}
 	}
 	resolved := vm.resolveTypeNameInClass(vm.currentClass, name)
 	if class, ok := vm.lookupClass(resolved); ok && !class.PlatformType {
 		return "", false
 	}
 	return platform, true
+}
+
+// Native API 62/67 rows require canonical names and Type identity for these
+// aliases. Other schema types retain their existing reflection behavior.
+func schemaMetadataClassAlias(name string) (string, bool) {
+	switch strings.ToLower(name) {
+	case "describefieldresult", "schema.describefieldresult":
+		return "Schema.DescribeFieldResult", true
+	case "describesobjectresult", "schema.describesobjectresult":
+		return "Schema.DescribeSObjectResult", true
+	case "sobjecttype", "schema.sobjecttype":
+		return "Schema.SObjectType", true
+	case "sobjectfield", "schema.sobjectfield":
+		return "Schema.SObjectField", true
+	default:
+		return "", false
+	}
 }
 
 // JSON uses its existing target spelling except for lexical class literals.

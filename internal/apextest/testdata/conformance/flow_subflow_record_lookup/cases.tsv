@@ -1,0 +1,13 @@
+route	lookup_populated	shape
+single	true	single parent record binding
+single	false	single parent record binding
+missing	true	missing parent record binding
+missing	false	missing parent record binding
+collection	true	collection parent record binding
+collection	false	collection parent record binding
+record	true	record parent record binding
+record	false	record parent record binding
+variable	true	variable parent record binding
+variable	false	variable parent record binding
+direct	true	direct parent record binding
+direct	false	direct parent record binding

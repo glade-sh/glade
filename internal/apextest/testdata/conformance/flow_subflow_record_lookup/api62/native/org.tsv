@@ -1,0 +1,13 @@
+id	value
+collection_null	"<null>"
+collection_set	"Willow account"
+direct_null	"<null>"
+direct_set	"Willow account"
+missing_null	"ERROR|System.DmlException"
+missing_set	"ERROR|System.DmlException"
+record_null	"<null>"
+record_set	"Willow account"
+single_null	"<null>"
+single_set	"Willow account"
+variable_null	"<null>"
+variable_set	"Willow account"

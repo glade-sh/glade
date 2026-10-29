@@ -68,10 +68,15 @@ p="github.com/glade-sh/glade/internal/vm"
 n="TestSOQLSafeNavigationBindNativeConformance"
 if "-list" in sys.argv:
  print(n+"\\nok  "+p+" 0.01s");sys.exit(0)
+print(json.dumps(dict(Action="start",Package=p)))
+print(json.dumps(dict(Action="run",Package=p,Test=n)))
 for api in ("62.0", "67.0"):
+ print(json.dumps(dict(Action="run",Package=p,Test=n+"/"+api)))
  child=n+"/"+api+"/left_member"
+ print(json.dumps(dict(Action="run",Package=p,Test=child)))
  print(json.dumps(dict(Action="output",Package=p,Test=child,Output="    soql_safe_navigation_bind_conformance_test.go:55: native boundary is captured but outside this bind replay\\n")))
  print(json.dumps(dict(Action="skip",Package=p,Test=child)))
+ print(json.dumps(dict(Action="pass",Package=p,Test=n+"/"+api)))
 print(json.dumps(dict(Action="pass",Package=p,Test=n)))
 print(json.dumps(dict(Action="pass",Package=p)))
 ''')

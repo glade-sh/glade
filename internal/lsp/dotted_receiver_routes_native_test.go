@@ -15,6 +15,7 @@ import (
 
 func TestDottedReceiverLSPNamedTestAndTriggerRoutes(t *testing.T) {
 	const fixture = "../../testdata/conformance/type_name_resolution_pins"
+	deferred := namespaceAbsenceDeferrals(t, filepath.Join(fixture, "receiver_routes"))
 	read := func(name string) [][]string {
 		t.Helper()
 		data, err := os.ReadFile(filepath.Join(fixture, "receiver_routes", name))
@@ -64,7 +65,14 @@ func TestDottedReceiverLSPNamedTestAndTriggerRoutes(t *testing.T) {
 			}
 			handler := NewHandler(index)
 			defer handler.parser.Close()
-			for _, d := range handler.diagnosticsForDocument(uriFromPath(paths[len(paths)-1])) {
+			diagnostics := handler.diagnosticsForDocument(uriFromPath(paths[len(paths)-1]))
+			if deferred[row[2]] {
+				if len(diagnostics) != 0 {
+					t.Fatal(diagnostics)
+				}
+				return
+			}
+			for _, d := range diagnostics {
 				if d.Severity == diagnostic.Error && d.NativeMessage == row[4] {
 					return
 				}

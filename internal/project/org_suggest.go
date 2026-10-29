@@ -119,7 +119,11 @@ func SuggestOrgSetup(root string) []OrgSetupSuggestion {
 	loaded, loadErr := Load(root)
 	customPersonFields := setupCustomPersonAccountFields(loaded)
 	declared := map[string]bool{}
-	for _, f := range OrgShapeFeatures(root) {
+	effective := OrgShapeFeatures(root)
+	if loadErr == nil {
+		effective = EffectiveOrgShapeFeatures(loaded)
+	}
+	for _, f := range effective {
 		declared[f] = true
 	}
 	var configured []string

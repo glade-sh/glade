@@ -128,6 +128,18 @@ func TestChangeEventEnabledFeatureFieldsNativeAPIRoutes(t *testing.T) {
 				t.Fatal(err)
 			}
 			org := OrgState{APIVersion: row[0], Objects: map[string]ObjectState{}}
+			// The features-on capture provisions Division and a Business Account
+			// record type (followups/cases.json and org.tsv:107-108,139-140,
+			// 171-172). Supply that captured base schema before deriving its event.
+			// Division provisioning is outside this event-schema test's scope.
+			org.Features = []string{"Division", "Communities"}
+			org.Objects["Account"] = ObjectState{Definition: ObjectDefinition{
+				APIName: "Account",
+				Fields: map[string]Field{
+					"Division": {APIName: "Division", Type: FieldPicklist},
+				},
+				RecordTypes: []RecordTypeInfo{{DeveloperName: "Business", Name: "Business", Active: true}},
+			}}
 			if !EnsureChangeEventObject(&org, "AccountChangeEvent") {
 				t.Fatal("event not installed")
 			}
@@ -144,6 +156,29 @@ func TestChangeEventEnabledFeatureFieldsNativeAPIRoutes(t *testing.T) {
 			if !seen[api+"/"+route] {
 				t.Errorf("missing feature-enabled native row for %s/%s", api, route)
 			}
+		}
+	}
+}
+
+// Native features-off event rows are followups/org.tsv:99,101,103. They
+// distinguish a bare catalog from the explicitly provisioned schema above.
+func TestChangeEventDisabledFeatureFieldsNativeCatalogAndInstalledRoutes(t *testing.T) {
+	for _, api := range []string{"62.0", "67.0", "68.0"} {
+		for _, route := range []string{"catalog-base", "installed-base"} {
+			t.Run(api+"/"+route, func(t *testing.T) {
+				org := OrgState{APIVersion: api, Objects: map[string]ObjectState{}}
+				if route == "installed-base" {
+					EnsureStandardObject(&org, "Account")
+				}
+				if !EnsureChangeEventObject(&org, "AccountChangeEvent") {
+					t.Fatal("event not installed")
+				}
+				for _, field := range []string{"Division", "RecordTypeId", "IsCustomerPortal"} {
+					if _, exists := org.Objects["AccountChangeEvent"].Definition.Fields[field]; exists {
+						t.Errorf("bare AccountChangeEvent exposes native-absent %s", field)
+					}
+				}
+			})
 		}
 	}
 }

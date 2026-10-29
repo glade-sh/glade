@@ -1,0 +1,7 @@
+api_version	route	case	result	detail
+62.0	anonymous	omitted	accepted	false,false
+62.0	anonymous	explicit_true	accepted	true,true
+62.0	anonymous	missing_required_text	rejected	REQUIRED_FIELD_MISSING
+67.0	anonymous	omitted	accepted	false,false
+67.0	anonymous	explicit_true	accepted	true,true
+67.0	anonymous	missing_required_text	rejected	REQUIRED_FIELD_MISSING

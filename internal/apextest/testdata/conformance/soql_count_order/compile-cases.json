@@ -1,0 +1,9 @@
+{
+  "custom_new_missing": "Object value = new ShapeRecord__c().Bogus__c;",
+  "custom_local_missing": "ShapeRecord__c row = new ShapeRecord__c(); Object value = row.Other__c;",
+  "custom_new_missing_write": "new ShapeRecord__c().Third__c = 'x';",
+  "custom_known": "Object value = new ShapeRecord__c(Known__c='ok').Known__c;",
+  "custom_id": "Id value = new ShapeRecord__c().Id;",
+  "custom_safe_missing": "Object value = new ShapeRecord__c()?.Fourth__c;",
+  "custom_new_other": "Object value = new ShapeRecord__c().Fifth__c;"
+}

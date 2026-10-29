@@ -1,0 +1,5 @@
+source_api	route	case	compiled	problem
+62.0	anonymous	standard_schema_fields_map	false	Method does not exist or incorrect signature: void getMap() from the type Schema.SObjectField
+62.0	isTest	standard_schema_fields_map	false	Method does not exist or incorrect signature: void getMap() from the type Schema.SObjectField
+67.0	anonymous	standard_schema_fields_map	false	Method does not exist or incorrect signature: void getMap() from the type Schema.SObjectField
+67.0	isTest	standard_schema_fields_map	false	Method does not exist or incorrect signature: void getMap() from the type Schema.SObjectField

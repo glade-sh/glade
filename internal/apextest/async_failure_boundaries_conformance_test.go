@@ -48,7 +48,7 @@ func TestAsyncFailureBoundariesNativeConformance(t *testing.T) {
 			t.Fatal("duplicate or unbound native cell")
 		}
 		seen[key] = true
-		t.Run(key, func(t *testing.T) {
+		runConformanceSubtestParallel(t, key, func(t *testing.T) {
 			fixture, ok := data.Fixtures[cell.Fixture]
 			if !ok || cell.Fixture != cell.API+"/"+cell.Route {
 				t.Fatal("missing native fixture")

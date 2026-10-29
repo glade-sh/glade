@@ -1,0 +1,61 @@
+id	type	left	operator	right_kind	right	behaviour
+N01	Number	NUnset	GreaterThan	number	0	unassigned greater than zero
+N02	Number	NUnset	LessThan	number	0	unassigned less than zero
+N03	Number	NUnset	GreaterThanOrEqualTo	number	0	unassigned greater or equal zero
+N04	Number	NUnset	LessThanOrEqualTo	number	0	unassigned less or equal zero
+N05	Number	NUnset	EqualTo	number	0	unassigned equals zero rejection twin
+N06	Number	NUnset	NotEqualTo	number	0	unassigned differs from zero
+N07	Number	NUnset	EqualTo	ref	NOtherUnset	two unassigned variables
+N08	Number	NZero	EqualTo	ref	NUnset	zero versus null right
+N09	Number	NPositive	GreaterThan	ref	NUnset	positive versus null right
+N10	Number	NNegative	LessThan	ref	NUnset	negative versus null right
+N11	Number	NUnset	GreaterThan	ref	NPositive	null left versus positive
+N12	Number	NUnset	LessThan	ref	NPositive	null left versus positive
+N13	Number	NUnset	IsNull	boolean	true	unassigned IsNull true
+N14	Number	NUnset	IsNull	boolean	false	unassigned IsNull rejection twin
+N15	Number	NZero	IsNull	boolean	false	zero boundary is present
+N16	Number	NZero	EqualTo	ref	NZero	zero boundary equals itself
+N17	Number	NPositive	GreaterThan	ref	NZero	positive greater than zero control
+N18	Number	NNegative	LessThan	ref	NZero	negative less than zero control
+N19	Number	NAssignedNull	EqualTo	ref	NUnset	assigned null left equals unassigned
+N20	Number	NAssignedNull	GreaterThan	number	0	assigned null left greater than zero
+N21	Number	NZero	GreaterThan	ref	NUnset	zero greater than null right
+N22	Number	NZero	LessThan	ref	NUnset	zero less than null right
+N23	Number	NUnset	GreaterThanOrEqualTo	ref	NOtherUnset	null greater or equal null
+N24	Number	NUnset	LessThanOrEqualTo	ref	NOtherUnset	null less or equal null
+N25	Number	NPositive	GreaterThan	number	0	positive literal control
+N26	Number	NNegative	LessThan	number	0	negative literal control
+N27	Number	NAssignedNull	LessThan	ref	NPositive	assigned null left ordered variable
+N28	Number	NPositive	EqualTo	ref	NPositive	positive variable equality control
+N29	Number	NNegative	GreaterThan	ref	NUnset	negative greater than null right
+N30	Number	NUnset	LessThan	ref	NNegative	null left less than negative
+C01	Currency	CUnset	GreaterThan	number	0	unassigned greater than zero
+C02	Currency	CUnset	LessThan	number	0	unassigned less than zero
+C03	Currency	CUnset	GreaterThanOrEqualTo	number	0	unassigned greater or equal zero
+C04	Currency	CUnset	LessThanOrEqualTo	number	0	unassigned less or equal zero
+C05	Currency	CUnset	EqualTo	number	0	unassigned equals zero rejection twin
+C06	Currency	CUnset	NotEqualTo	number	0	unassigned differs from zero
+C07	Currency	CUnset	EqualTo	ref	COtherUnset	two unassigned variables
+C08	Currency	CZero	EqualTo	ref	CUnset	zero versus null right
+C09	Currency	CPositive	GreaterThan	ref	CUnset	positive versus null right
+C10	Currency	CNegative	LessThan	ref	CUnset	negative versus null right
+C11	Currency	CUnset	GreaterThan	ref	CPositive	null left versus positive
+C12	Currency	CUnset	LessThan	ref	CPositive	null left versus positive
+C13	Currency	CUnset	IsNull	boolean	true	unassigned IsNull true
+C14	Currency	CUnset	IsNull	boolean	false	unassigned IsNull rejection twin
+C15	Currency	CZero	IsNull	boolean	false	zero boundary is present
+C16	Currency	CZero	EqualTo	ref	CZero	zero boundary equals itself
+C17	Currency	CPositive	GreaterThan	ref	CZero	positive greater than zero control
+C18	Currency	CNegative	LessThan	ref	CZero	negative less than zero control
+C19	Currency	CAssignedNull	EqualTo	ref	CUnset	assigned null left equals unassigned
+C20	Currency	CAssignedNull	GreaterThan	number	0	assigned null left greater than zero
+C21	Currency	CZero	GreaterThan	ref	CUnset	zero greater than null right
+C22	Currency	CZero	LessThan	ref	CUnset	zero less than null right
+C23	Currency	CUnset	GreaterThanOrEqualTo	ref	COtherUnset	null greater or equal null
+C24	Currency	CUnset	LessThanOrEqualTo	ref	COtherUnset	null less or equal null
+C25	Currency	CPositive	GreaterThan	number	0	positive literal control
+C26	Currency	CNegative	LessThan	number	0	negative literal control
+C27	Currency	CAssignedNull	LessThan	ref	CPositive	assigned null left ordered variable
+C28	Currency	CPositive	EqualTo	ref	CPositive	positive variable equality control
+C29	Currency	CNegative	GreaterThan	ref	CUnset	negative greater than null right
+C30	Currency	CUnset	LessThan	ref	CNegative	null left less than negative

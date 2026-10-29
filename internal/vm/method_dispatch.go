@@ -1000,6 +1000,10 @@ func (vm *VM) callClassLiteralReceiverMember(callee string, args []Value, result
 
 func (vm *VM) callValueMember(receiverName string, receiver Value, method string, args []Value, result *Result) (Value, bool, error) {
 	receiver = receiver.currentMapKeySet()
+	normalizeFieldMapHolderArgs(args)
+	if receiver.Kind == ValueMap && (receiver.mapBackingShared || isGlobalDescribeMap(receiver)) && mapMutatingMemberName(method) {
+		vm.prepareSharedMapMutation(&receiver)
+	}
 	if isIteratorValue(receiver) && (strings.EqualFold(method, "hasNext") || strings.EqualFold(method, "next")) {
 		if _, locator := receiver.Fields["__queryLocator"]; locator {
 			value, updated, mutated, handled, err := vm.callQueryLocatorIterator(receiver, method, args)
@@ -1816,6 +1820,9 @@ func canonicalPlatformObjectMemberName(typeName, method string) string {
 }
 
 func (vm *VM) storeReceiver(receiverName string, value Value) error {
+	if isGlobalDescribeMap(value) || value.Type == globalDescribeMapType {
+		vm.storeGlobalDescribeCacheEntry(value)
+	}
 	vm.updateMapKeySetBacking(value)
 	if err := vm.writeMapKeySetRemovals(value); err != nil {
 		return err
@@ -2182,6 +2189,12 @@ func (vm *VM) resolveGlobalDescribeObjectName(name string) (string, bool) {
 	if name == "" {
 		return "", false
 	}
+	if vm.Org != nil && !vm.Org.AllowsStandardObject(name) {
+		return "", false
+	}
+	if canonical, ok := vm.namedApexReferenceObjectName(name); ok {
+		return canonical, true
+	}
 	orgNamespace := ""
 	if vm.Org != nil {
 		orgNamespace = strings.TrimSpace(vm.Org.Namespace)
@@ -2440,7 +2453,17 @@ func (vm *VM) callStubProxyMember(receiver Value, method string, args []Value, r
 	callbackArgs := append([]Value(nil), args...)
 	for i, param := range target.Params {
 		paramType := vm.resolveTypeNameInClass(target.ClassName, param.Type)
-		paramTypes = append(paramTypes, vm.reflectionTypeToken(paramType))
+		paramToken := vm.reflectionTypeToken(paramType)
+		// The class-literal alias change made a mixed-case SObjectType
+		// parameter disagree with its pre-existing stub signature. Limit the
+		// compatibility repair to this scalar callback parameter; a resolved
+		// source class with the same name keeps its own identity.
+		if strings.EqualFold(paramType, "SObjectType") {
+			if class, found := vm.lookupClass(paramType); !found || class.PlatformType {
+				paramToken = vm.reflectionTypeToken("Schema.SObjectType")
+			}
+		}
+		paramTypes = append(paramTypes, paramToken)
 		paramNames = append(paramNames, String(vm.stubParameterName(target, i, param.Name)))
 		// Stub callbacks receive converted numeric values while preserving the
 		// runtime shape of other arguments, including specialized lists.
@@ -3674,7 +3697,7 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 		if err != nil {
 			return Null, true, err
 		}
-		if objectName, ok := sObjectFieldMapObjectName(receiver); ok && args[0].Kind == ValueString && vm.sObjectFieldMapKeyIsChildRelationship(objectName, args[0].Text) && !vm.sObjectFieldMapDirectValueMatchesKey(receiver, key, args[0].Text) {
+		if objectName, ok := sObjectFieldMapObjectName(receiver); ok && args[0].Kind == ValueString && !vm.sObjectFieldMapDirectValueMatchesKey(receiver, key, args[0].Text) && vm.sObjectFieldMapKeyIsChildRelationship(objectName, args[0].Text) {
 			return vm.collectionReadValue(receiver, missingMapValue(receiver)), true, nil
 		}
 		value, ok := receiver.Map[key]
@@ -3727,7 +3750,7 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 		if err != nil {
 			return Null, true, err
 		}
-		if objectName, ok := sObjectFieldMapObjectName(receiver); ok && args[0].Kind == ValueString && vm.sObjectFieldMapKeyIsChildRelationship(objectName, args[0].Text) && !vm.sObjectFieldMapDirectValueMatchesKey(receiver, key, args[0].Text) {
+		if objectName, ok := sObjectFieldMapObjectName(receiver); ok && args[0].Kind == ValueString && !vm.sObjectFieldMapDirectValueMatchesKey(receiver, key, args[0].Text) && vm.sObjectFieldMapKeyIsChildRelationship(objectName, args[0].Text) {
 			return Bool(false), true, nil
 		}
 		_, ok := receiver.Map[key]

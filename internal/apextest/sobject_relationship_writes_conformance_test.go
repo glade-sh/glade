@@ -117,7 +117,7 @@ func TestSObjectRelationshipWritesOrgConformance(t *testing.T) {
 		return row, observed
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			fixture, ok := data.Fixtures[api]
 			if !ok || len(fixture.Files) != 5 || len(fixture.SourceSHA256) != len(fixture.Files) {
 				t.Fatal("missing captured source bundle")

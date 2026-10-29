@@ -23,6 +23,7 @@ import (
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/enterprise"
 	"github.com/glade-sh/glade/internal/flagparse"
+	"github.com/glade-sh/glade/internal/frontendcache"
 	"github.com/glade-sh/glade/internal/project"
 	gladeschema "github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/storage"
@@ -70,6 +71,8 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 			_ = writeTestHelp(w)
 			return testreport.Run{}, nil
 		}
+		// Fence active frontend publications before the existing cache reset.
+		frontendcache.Invalidate()
 		if err := runTestClearCache(rest, w); err != nil {
 			return testreport.Run{}, err
 		}
@@ -817,10 +820,12 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		perfRunStarted = time.Now()
 	}
 	perfExecution.ExecutionMode = "local"
-	generation, err := loadTestIndexWithPerfPhasesContext(ctx, root, perfEnabled)
+	generation, err := loadTestIndexWithPerfPhasesContext(ctx, root, perfEnabled, !noCache)
 	if err != nil {
 		return testreport.Run{}, err
 	}
+	perfExecution.FrontendCacheHit = generation.FrontendCacheHit
+	perfExecution.FrontendIndexBuilds = generation.FrontendIndexBuilds
 	loadedProject := generation.Project
 	index := generation.Index
 	buildArtifacts := generation.Artifacts
@@ -1023,10 +1028,12 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 // test run. Keeping these values together prevents a type index from being
 // analyzed or executed with source artifacts from a different build.
 type testBuildGeneration struct {
-	Project   project.Project
-	Index     typesys.Index
-	Artifacts typesys.BuildArtifacts
-	Phases    apextest.PreRunPhaseDurations
+	FrontendCacheHit    bool
+	FrontendIndexBuilds int
+	Project             project.Project
+	Index               typesys.Index
+	Artifacts           typesys.BuildArtifacts
+	Phases              apextest.PreRunPhaseDurations
 }
 
 func loadTestIndexWithPerfPhases(root string, enabled bool) (testBuildGeneration, error) {
@@ -1035,7 +1042,26 @@ func loadTestIndexWithPerfPhases(root string, enabled bool) (testBuildGeneration
 
 // Loading remains synchronous. Honor cancellation between phases without
 // leaving an abandoned parser or index builder running after the command exits.
-func loadTestIndexWithPerfPhasesContext(ctx context.Context, root string, enabled bool) (testBuildGeneration, error) {
+func loadTestIndexWithPerfPhasesContext(ctx context.Context, root string, enabled bool, allowCache ...bool) (testBuildGeneration, error) {
+	cacheAllowed := len(allowCache) == 0 || allowCache[0]
+	cacheAllowed = apextest.ResolveDiskRuntimeCachePolicy(apextest.Options{NoDiskCache: !cacheAllowed}).Enabled
+	frontendCacheHit := false
+	frontendIndexBuilds := 0
+	build := func(p project.Project, s gladeschema.Schema) (typesys.Index, typesys.BuildArtifacts) {
+		if !cacheAllowed {
+			frontendIndexBuilds++
+			return typesys.BuildWithArtifacts(p, s)
+		}
+		frontend := frontendcache.LoadOrBuild(p, s, func() (typesys.Index, typesys.BuildArtifacts) {
+			frontendIndexBuilds++
+			return typesys.BuildWithArtifacts(p, s)
+		})
+		frontendCacheHit = frontend.Hit
+		if frontend.Reused {
+			frontendIndexBuilds++
+		}
+		return frontend.Index, frontend.Artifacts
+	}
 	if err := ctx.Err(); err != nil {
 		return testBuildGeneration{}, err
 	}
@@ -1052,6 +1078,7 @@ func loadTestIndexWithPerfPhasesContext(ctx context.Context, root string, enable
 			return testBuildGeneration{}, err
 		}
 		if schemaErr != nil {
+			frontendIndexBuilds++
 			index, artifacts := typesys.BuildWithArtifacts(p, gladeschema.Schema{})
 			if err := ctx.Err(); err != nil {
 				return testBuildGeneration{}, err
@@ -1061,13 +1088,13 @@ func loadTestIndexWithPerfPhasesContext(ctx context.Context, root string, enable
 				Code:     "GLADESCHEMA001",
 				Message:  fmt.Sprintf("metadata schema load failed: %v", schemaErr),
 			})
-			return testBuildGeneration{Project: p, Index: index, Artifacts: artifacts}, nil
+			return testBuildGeneration{FrontendCacheHit: frontendCacheHit, FrontendIndexBuilds: frontendIndexBuilds, Project: p, Index: index, Artifacts: artifacts}, nil
 		}
-		index, artifacts := typesys.BuildWithArtifacts(p, s)
+		index, artifacts := build(p, s)
 		if err := ctx.Err(); err != nil {
 			return testBuildGeneration{}, err
 		}
-		return testBuildGeneration{Project: p, Index: index, Artifacts: artifacts}, nil
+		return testBuildGeneration{FrontendCacheHit: frontendCacheHit, FrontendIndexBuilds: frontendIndexBuilds, Project: p, Index: index, Artifacts: artifacts}, nil
 	}
 	var phases apextest.PreRunPhaseDurations
 	started := time.Now()
@@ -1087,6 +1114,7 @@ func loadTestIndexWithPerfPhasesContext(ctx context.Context, root string, enable
 	}
 	started = time.Now()
 	if schemaErr != nil {
+		frontendIndexBuilds++
 		index, artifacts := typesys.BuildWithArtifacts(p, gladeschema.Schema{})
 		phases.IndexBuild = time.Since(started)
 		if err := ctx.Err(); err != nil {
@@ -1097,14 +1125,14 @@ func loadTestIndexWithPerfPhasesContext(ctx context.Context, root string, enable
 			Code:     "GLADESCHEMA001",
 			Message:  fmt.Sprintf("metadata schema load failed: %v", schemaErr),
 		})
-		return testBuildGeneration{Project: p, Index: index, Artifacts: artifacts, Phases: phases}, nil
+		return testBuildGeneration{FrontendCacheHit: frontendCacheHit, FrontendIndexBuilds: frontendIndexBuilds, Project: p, Index: index, Artifacts: artifacts, Phases: phases}, nil
 	}
-	index, artifacts := typesys.BuildWithArtifacts(p, s)
+	index, artifacts := build(p, s)
 	phases.IndexBuild = time.Since(started)
 	if err := ctx.Err(); err != nil {
 		return testBuildGeneration{Phases: phases}, err
 	}
-	return testBuildGeneration{Project: p, Index: index, Artifacts: artifacts, Phases: phases}, nil
+	return testBuildGeneration{FrontendCacheHit: frontendCacheHit, FrontendIndexBuilds: frontendIndexBuilds, Project: p, Index: index, Artifacts: artifacts, Phases: phases}, nil
 }
 
 func validateReadOnlyTestOutputPaths(root string, effectiveRoot string, destinations ...cliArtifactDestination) error {
@@ -2290,6 +2318,8 @@ type runPerfSummary struct {
 }
 
 type runPerfExecution struct {
+	FrontendCacheHit     bool                                  `json:"frontendCacheHit"`
+	FrontendIndexBuilds  int                                   `json:"frontendIndexBuilds"`
 	Arguments            []string                              `json:"arguments"`
 	RequestedParallelism int                                   `json:"requestedParallelism"`
 	EffectiveParallelism int                                   `json:"effectiveParallelism"`

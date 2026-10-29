@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Kind__c</fullName>
+    <label>Kind</label>
+    <type>Picklist</type>
+    <valueSet><valueSetDefinition><sorted>false</sorted>
+        <value><fullName>Alpha</fullName><default>false</default><label>Alpha</label></value>
+        <value><fullName>Beta</fullName><default>false</default><label>Beta</label></value>
+        <value><fullName>Gamma</fullName><default>false</default><label>Gamma</label></value>
+    </valueSetDefinition></valueSet>
+</CustomField>

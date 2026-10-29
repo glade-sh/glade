@@ -124,7 +124,7 @@ func runFlowCoreConformance(t *testing.T, cluster string, shapes, cells, carried
 	}
 	bases := newConformanceSchemaCache(t)
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "FlowCore-"+cluster, api)
 			for _, row := range data.Rows {
 				t.Run(row.ID, func(t *testing.T) {
@@ -203,7 +203,11 @@ func runFlowCoreConformance(t *testing.T, cluster string, shapes, cells, carried
 								}
 								_, execErr = machine.ExecuteInClass(programs[key], cases[0].ClassName)
 							}
-							flowCorePayload(t, row.ID, want, execErr)
+							if cluster == "pins" {
+								flowPayloadWithMarker(t, row.ID, "FLOW_PIN_RESULT", want, execErr)
+							} else {
+								flowCorePayload(t, row.ID, want, execErr)
+							}
 						})
 					}
 				})
@@ -248,6 +252,10 @@ func flowCoreExceptionType(name string) string {
 }
 
 func flowCorePayload(t *testing.T, id string, expected flowCoreExpected, execErr error) {
+	flowPayloadWithMarker(t, id, "FLOW_CORE_RESULT", expected, execErr)
+}
+
+func flowPayloadWithMarker(t *testing.T, id, marker string, expected flowCoreExpected, execErr error) {
 	t.Helper()
 	var runtimeErr *vm.RuntimeError
 	if !errors.As(execErr, &runtimeErr) {
@@ -263,8 +271,9 @@ func flowCorePayload(t *testing.T, id string, expected flowCoreExpected, execErr
 	if flowCoreExceptionType(runtimeErr.Type) != "System.AssertException" {
 		t.Fatalf("missing marker assertion: %v", execErr)
 	}
-	_, envelope, found := strings.Cut(message, "FLOW_CORE_RESULT|"+id+"|")
-	if !found || strings.Count(message, "FLOW_CORE_RESULT|") != 1 {
+	prefix := marker + "|" + id + "|"
+	_, envelope, found := strings.Cut(message, prefix)
+	if !found || strings.Count(message, marker+"|") != 1 {
 		t.Fatalf("missing observation envelope: %s", message)
 	}
 	var got, want map[string]any
@@ -317,4 +326,12 @@ func TestFlowCoreBeforeSaveModesConformance(t *testing.T) {
 }
 func TestFlowCoreEntryConditionNeighboursConformance(t *testing.T) {
 	runFlowCoreConformance(t, "entry-condition-neighbours", 21, 84, 0)
+}
+
+func TestFlowCorePinsConformance(t *testing.T) {
+	runFlowCoreConformance(t, "pins", 22, 88, 0)
+}
+
+func TestFlowCoreActionOutputsConformance(t *testing.T) {
+	runFlowCoreConformance(t, "action-outputs", 3, 12, 0)
 }

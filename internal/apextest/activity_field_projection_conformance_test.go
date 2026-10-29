@@ -16,7 +16,7 @@ import (
 func TestActivityFieldProjectionNativeConformance(t *testing.T) {
 	const fixture = "testdata/conformance/activity_field_projection"
 	for _, api := range []string{"62.0", "67.0"} {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			root := t.TempDir()
 			err := filepath.WalkDir(filepath.Join(fixture, "force-app"), func(path string, entry os.DirEntry, err error) error {
 				if err != nil || entry.IsDir() {

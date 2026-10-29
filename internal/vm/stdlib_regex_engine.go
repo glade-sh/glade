@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync/atomic"
 	"time"
 	"unicode/utf8"
 
@@ -713,26 +714,21 @@ func splitRegexRegexp2(name, pattern, text string, limit int64) ([]string, error
 	if parts, ok := splitLiteralRegexPlan(plan, text, limit); ok {
 		return parts, nil
 	}
-	// A resumed process can advance regexp2's approximate clock between
-	// deadline creation and its first check. Retry that premature timeout once
-	// with a fresh deadline; a search that spent its budget keeps the base
-	// handling. Native ipv4_validation/literal_splits/org.tsv:2-5 pin the
-	// escaped-dot results this restores.
+	// Plan searches retry premature timeouts in searchRegexp2. Native
+	// ipv4_validation/literal_splits/org.tsv:2-5 pin the escaped-dot results.
 	find := func(previous *regexp2.Match) (*regexp2.Match, error) {
-		search := func() (*regexp2.Match, error) {
-			if previous == nil {
-				return plan.findValidStartingAt(text, 0)
-			}
-			return plan.findNextValid(text, previous)
+		if previous == nil {
+			return plan.findValidStartingAt(text, 0)
 		}
-		return retryPrematureRegexTimeout(plan.re.MatchTimeout, search)
+		return plan.findNextValid(text, previous)
 	}
 	textRunes := []rune(text)
 	var parts []string
 	lastEnd := 0
 	splits := int64(0)
 	// No native row covers a first search that exhausts its budget; keep the
-	// base result (unsplit input). Only a premature timeout is retried above.
+	// base result (unsplit input). A premature timeout never reaches this
+	// point: searchRegexp2 retries it until it succeeds or the budget is spent.
 	match, err := find(nil)
 	for match != nil {
 		if limit > 0 && splits >= limit-1 {
@@ -777,17 +773,104 @@ func splitRegexRegexp2(name, pattern, text string, limit int64) ([]string, error
 	return parts, nil
 }
 
-// retryPrematureRegexTimeout reruns search once when regexp2 reports a timeout
-// before half of its budget has elapsed. Only a stale approximate clock after
-// process suspension produces that; a search that spent its budget, and every
-// other error, is returned unchanged.
-func retryPrematureRegexTimeout(budget time.Duration, search func() (*regexp2.Match, error)) (*regexp2.Match, error) {
-	started := time.Now()
-	match, err := search()
-	if err != nil && time.Since(started) < budget/2 && strings.HasPrefix(err.Error(), "match timeout after ") {
+// regexp2SearchFault lets tests model a premature timeout from regexp2's
+// approximate clock for one input without suspending the process. Production
+// code leaves it nil.
+var regexp2SearchFault func(input string) error
+
+// searchRegexp2 runs one regexp2 search for every regex plan route (split,
+// matches, find, replace, hitEnd). A resumed process can advance regexp2's
+// approximate clock between deadline creation and its first check, so a
+// premature timeout is retried; a search that spent its budget is unchanged.
+func searchRegexp2(re *regexp2.Regexp, input string, search func() (*regexp2.Match, error)) (*regexp2.Match, error) {
+	return retryPrematureRegexTimeout(re.MatchTimeout, func() (*regexp2.Match, error) {
+		if fault := regexp2SearchFault; fault != nil {
+			if err := fault(input); err != nil {
+				return nil, err
+			}
+		}
 		return search()
+	})
+}
+
+// retryPrematureRegexTimeout reruns search when a regexp2 timeout did not
+// come from the search spending its budget. Two cases are premature:
+//
+//   - The timeout fired before half the budget of wall time: regexp2's
+//     approximate clock jumped after a host resume. Wait one clock period so
+//     the clock's pending update lands, and rerun, up to one budget's worth
+//     of clock periods.
+//   - The search ran past half the budget of wall time, but the process used
+//     less than half a budget of CPU meanwhile: the host suspended the process
+//     while the search was in flight. Rerun once, with a fresh stale-clock
+//     allowance, since the clock can still be catching up after the resume.
+//
+// A search that spent its budget, and every other error, is returned
+// unchanged, so genuine timeouts keep their error text and handling.
+func retryPrematureRegexTimeout(budget time.Duration, search func() (*regexp2.Match, error)) (*regexp2.Match, error) {
+	// Count stale-clock reruns instead of timing them, so a suspension during
+	// the wait cannot use up the allowance.
+	maxStaleRetries := max(int(budget/regexp2.DefaultClockPeriod), 1)
+	staleRetries := 0
+	suspendedRetry := false
+	for {
+		started := time.Now()
+		sample := recentRegexCPUSample(started)
+		match, err := search()
+		if err == nil || !strings.HasPrefix(err.Error(), "match timeout after ") {
+			return match, err
+		}
+		if time.Since(started) < budget/2 {
+			if staleRetries >= maxStaleRetries {
+				return match, err
+			}
+			staleRetries++
+			time.Sleep(regexp2.DefaultClockPeriod)
+			continue
+		}
+		if suspendedRetry || !regexSearchWasSuspended(sample, budget) {
+			return match, err
+		}
+		suspendedRetry = true
+		staleRetries = 0
 	}
-	return match, err
+}
+
+// regexCPUSample pairs a wall time with the process CPU time read then.
+type regexCPUSample struct {
+	wall time.Time
+	cpu  time.Duration
+}
+
+var regexCPUSampleCache atomic.Pointer[regexCPUSample]
+
+// recentRegexCPUSample returns a sample taken at most one clock period before
+// now, reading process CPU time at most once per period so successful
+// searches stay cheap. It returns nil when CPU time is unavailable.
+func recentRegexCPUSample(now time.Time) *regexCPUSample {
+	sample := regexCPUSampleCache.Load()
+	if sample != nil && !now.Before(sample.wall) && now.Sub(sample.wall) < regexp2.DefaultClockPeriod {
+		return sample
+	}
+	cpu, ok := regexProcessCPUTime()
+	if !ok {
+		return nil
+	}
+	sample = &regexCPUSample{wall: now, cpu: cpu}
+	regexCPUSampleCache.Store(sample)
+	return sample
+}
+
+// regexSearchWasSuspended reports whether the whole process used less than
+// half a budget of CPU since sample, taken no later than the search started.
+// A genuine timeout spins one goroutine for the full budget, so it always
+// reads as not suspended.
+func regexSearchWasSuspended(sample *regexCPUSample, budget time.Duration) bool {
+	if sample == nil {
+		return false
+	}
+	cpu, ok := regexProcessCPUTime()
+	return ok && cpu-sample.cpu < budget/2
 }
 
 // Only unescaped, printable ASCII literals can bypass the full matcher. Use

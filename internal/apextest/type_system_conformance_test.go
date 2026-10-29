@@ -101,7 +101,7 @@ func TestTypeSystemOrgConformance(t *testing.T) {
 		t.Logf("%s diagnostic text carried to %s: native <%s>; exact rejection category matched", tc.ID, data.DiagnosticTextOwner, diagnosticText)
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCounts()
 			defer counts.Log(t, "type system", api, "")
 			root := t.TempDir()

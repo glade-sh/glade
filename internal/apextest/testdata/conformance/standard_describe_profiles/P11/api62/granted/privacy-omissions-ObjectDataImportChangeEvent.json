@@ -1,0 +1,6 @@
+{
+  "field": "PrimaryObject",
+  "object": "ObjectDataImportChangeEvent",
+  "omittedNativeChoice": "article__Share",
+  "reason": "Non-clean-name native picklist choice outside the captured object inventory"
+}

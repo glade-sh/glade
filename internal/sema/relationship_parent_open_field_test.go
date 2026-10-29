@@ -38,7 +38,7 @@ func TestStandardParentWithChildRelationshipResolvesUnknownFieldsLikeLazyObject(
 			{"namespaced constructor", "Contact c = new Contact(pkgns__Extra__c = 'x');"},
 			{"custom suffix constructor", "Contact c = new Contact(Extra__c = 'x');"},
 			{"missing ordinary read", "Contact c = new Contact(); Object s = c.NotInCatalogXyz;"},
-			{"missing ordinary constructor", "Contact c = new Contact(NotInCatalogXyz = 'x');"},
+			{"missing ordinary constructor", "Contact row = new Contact(SyntheticAbsentField = 'x');"},
 		}
 		for _, tc := range cases {
 			want := AnalyzeAnonymous(lazy, tc.source, version).HasErrors()
@@ -55,11 +55,16 @@ func TestStandardParentWithChildRelationshipResolvesUnknownFieldsLikeLazyObject(
 		}
 		for _, source := range []string{
 			"Contact c = new Contact(); String s = c.pkgns__Extra__c;",
-			"Contact c = new Contact(NotInCatalogXyz = 'x');",
 		} {
 			if got := AnalyzeAnonymous(partialParent, source, version); got.HasErrors() {
 				t.Errorf("%s partial parent %q: %v", version, source, got.Diagnostics)
 			}
+		}
+		// standard_constructor_complete/org.tsv:2,29 directly reject this
+		// API62/67 source. A partial project extension cannot open the captured
+		// complete standard constructor surface to an undeclared ordinary field.
+		if got := AnalyzeAnonymous(partialParent, "Contact row = new Contact(SyntheticAbsentField = 'x');", version); !got.HasErrors() {
+			t.Errorf("%s partial parent admitted the native missing constructor field", version)
 		}
 		// Standard fields still hydrate on a parent with a child relationship.
 		control := AnalyzeAnonymous(withRelationship, "Contact c = new Contact(LastName = 'x'); String n = c.LastName; List<Appl__c> k = c.Appls;", version)

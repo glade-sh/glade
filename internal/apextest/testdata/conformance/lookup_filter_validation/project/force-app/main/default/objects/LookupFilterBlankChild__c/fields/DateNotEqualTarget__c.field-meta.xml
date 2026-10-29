@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>DateNotEqualTarget__c</fullName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <label>Date Not Equal Target</label>
+    <lookupFilter>
+        <active>true</active>
+        <errorMessage>target date must differ from source date</errorMessage>
+        <filterItems>
+            <field>$Source.SourceDate__c</field>
+            <operation>notEqual</operation>
+            <valueField>LookupFilterParent__c.RegionDate__c</valueField>
+        </filterItems>
+        <isOptional>false</isOptional>
+    </lookupFilter>
+    <referenceTo>LookupFilterParent__c</referenceTo>
+    <relationshipLabel>Date Not Equal Filter Children</relationshipLabel>
+    <relationshipName>DateNotEqualFilterChildren</relationshipName>
+    <type>Lookup</type>
+</CustomField>

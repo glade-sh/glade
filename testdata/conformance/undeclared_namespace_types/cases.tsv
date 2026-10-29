@@ -1,0 +1,8 @@
+case	namespace_source	reference	positions	file	expected
+own_type_qualified	project defines LocalThing; fooNs undeclared	fooNs.LocalThing	field,parameter,generic,new,anonymous-new	BarSignatures.cls,BarExtension.cls,BarConstructions.cls,anonymous.apex	accepted
+absent_type_qualified	no project type; fooNs undeclared	fooNs.Unknown	field,parameter,generic,new,anonymous-new	BarSignatures.cls,BarExtension.cls,BarConstructions.cls,anonymous.apex	accepted
+managed_wrapper	installed managed namespace bar; undeclared	bar.Wrapper	field,parameter,generic,new-return,new-argument,new-literal,new-generic,for,new-field-initializer,test-new,anonymous-new	BarSignatures.cls,BarConstructions.cls,BarConsumerTest.cls,anonymous.apex	accepted
+managed_other_wrapper	installed managed namespace bar; undeclared	bar.OtherWrapper	field-generic,return,parameter-generic,new-local-value,new-map-generic,anonymous-new-generic	BarSignatures.cls,BarConstructions.cls,anonymous.apex	accepted
+managed_log_builder	installed managed namespace bar; undeclared	bar.LogBuilder	new-argument,anonymous-new-argument	BarConstructions.cls,anonymous.apex	accepted
+managed_base_types	installed managed namespace bar; undeclared	bar.BaseHandler,bar.Callback,bar.CustomException	extends,implements,catch	BarExtension.cls,BarSignatures.cls	accepted
+base_boundary_locals	installed managed namespace bar; undeclared	bar.LogBuilder,bar.Wrapper,bar.OtherWrapper,fooNs.LocalThing,fooNs.Unknown	local	base_boundary/BarLocals.cls.txt	rejected (local declarations, A04 C055); base_boundary/base.tsv line 3 (static call) stays rejected

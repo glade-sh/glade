@@ -1,0 +1,4 @@
+id	purpose
+empty	single OR filter, empty lookup
+found	single OR filter, populated lookup
+updated	single OR filter on update

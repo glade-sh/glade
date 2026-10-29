@@ -48,7 +48,7 @@ func runNativeObservationProjectWithCarries(t *testing.T, family, class string, 
 		t.Fatal("incomplete native observations")
 	}
 	for _, api := range apis {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			root := t.TempDir()
 			project := filepath.Join(dir, "project")
 			err := filepath.WalkDir(project, func(path string, entry fs.DirEntry, err error) error {

@@ -1,0 +1,10 @@
+method	boundary
+recordIdentity	factory and record type differ
+automaticActivity	platform activity
+duplicateActivity	application and platform activity
+manualActivity	platform activity disabled
+readTraversal	read-only nested traversal
+mutateTraversal	helper removes from active traversal
+nameNoGrant	no permission assignment
+nameObjectGrant	object assignment and intrinsic limits
+anonymousRunAs	nontest rejection

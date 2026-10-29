@@ -19,7 +19,7 @@ package_lane_rows=""
 
 cleanup_testlog_renderer() {
 	local status_file
-	for status_file in "${testlog_status_files[@]}"; do
+	for status_file in ${testlog_status_files[@]+"${testlog_status_files[@]}"}; do
 		rm -f "${status_file}"
 	done
 	if [[ -n "${testlog_renderer_dir}" ]]; then
@@ -43,12 +43,12 @@ unregister_owned_child() {
 	local completed_pid="$1"
 	local pid
 	local -a remaining=()
-	for pid in "${owned_child_roots[@]}"; do
+	for pid in ${owned_child_roots[@]+"${owned_child_roots[@]}"}; do
 		if [[ "${pid}" != "${completed_pid}" ]]; then
 			remaining+=("${pid}")
 		fi
 	done
-	owned_child_roots=("${remaining[@]}")
+	owned_child_roots=(${remaining[@]+"${remaining[@]}"})
 }
 
 terminate_owned_tree() {
@@ -64,10 +64,10 @@ terminate_owned_tree() {
 
 terminate_owned_children() {
 	local root_pid
-	for root_pid in "${owned_child_roots[@]}"; do
+	for root_pid in ${owned_child_roots[@]+"${owned_child_roots[@]}"}; do
 		terminate_owned_tree "${root_pid}"
 	done
-	for root_pid in "${owned_child_roots[@]}"; do
+	for root_pid in ${owned_child_roots[@]+"${owned_child_roots[@]}"}; do
 		wait "${root_pid}" 2>/dev/null || true
 	done
 	owned_child_roots=()
@@ -265,6 +265,11 @@ package_lane_packages() {
 
 run_package_lane() {
 	local lane="$1"
+	# Full server validation requires L08. Ordinary CI explicitly routes it to
+	# the provisioned Browser authority with -skip below.
+	if [[ "${lane}" == "server-and-playground" ]]; then
+		local -x GLADE_LWC_BROWSER=1
+	fi
 	local kind="$2"
 	local timeout="$3"
 	local skip_regex="${4:-}"
@@ -534,7 +539,7 @@ run_named_package_lane() {
 
 # These lane-specific skips route tests to provisioned authorities; they are not
 # known-failure waivers. The 35 excluded Node tests run in node-integration,
-# whose validator requires every selected test to pass without skips. The three
+# whose validator requires every selected test to pass without skips. The four
 # browser tests run in .github/workflows/browser.yml with Node, LWC dependencies,
 # Chromium and GLADE_LWC_BROWSER=1; that workflow rejects Go and Node skip events.
 # local-release uses run_local_release_lane instead and retains these tests.
@@ -548,7 +553,7 @@ run_ci_package_lane() {
 			run_package_lane "${lane}" test 30m '^(?:TestRunDoctorReportsParser|TestRunDoctorJSON|TestRunDoctorShortFlags|TestRunDoctorReportsProjectLocalDataEnvironment)$'
 			;;
 		server-and-playground)
-			run_package_lane "${lane}" test 30m '^(?:TestVFPageBootstrapsLightningOut|TestVFPageBootstrapsMultiWidgetLightningOut|TestLightningModulesServesCompiledJS|TestLightningModulesServesSiblingModuleWithoutJSExtension|TestLWCShellComponentRouteServesHTML|TestLWCShellRootRendersHomeWithFormalTabsAndBuilderLink|TestLWCShellBuilderRouteRendersBuilderNavigationLayoutAndSampleRecord|TestLWCShellTabRouteIncludesPreviewRouteCatalog|TestServerRootRendersLWCHomeWhenProjectHasLWCs|TestLWCShellRendersApplicationNavAndConsoleMode|TestLWCShellAppRouteFallsBackToApplicationDefaultTab|TestLWCShellUnsupportedCustomTabReturnsDiagnostic|TestLWCShellMixedPageDiagnosticsStillRendersValidComponents)$'
+			run_package_lane "${lane}" test 30m '^(?:TestVFPageBootstrapsLightningOut|TestVFPageBootstrapsMultiWidgetLightningOut|TestLightningModulesServesCompiledJS|TestLightningModulesServesSiblingModuleWithoutJSExtension|TestLWCShellComponentRouteServesHTML|TestLWCShellRootRendersHomeWithFormalTabsAndBuilderLink|TestLWCShellBuilderRouteRendersBuilderNavigationLayoutAndSampleRecord|TestLWCShellTabRouteIncludesPreviewRouteCatalog|TestServerRootRendersLWCHomeWhenProjectHasLWCs|TestLWCShellRendersApplicationNavAndConsoleMode|TestLWCShellAppRouteFallsBackToApplicationDefaultTab|TestLWCShellUnsupportedCustomTabReturnsDiagnostic|TestLWCShellMixedPageDiagnosticsStillRendersValidComponents|TestL08SalesforceConformance)$'
 			;;
 		remaining-go)
 			run_package_lane "${lane}" test 20m '^(?:TestBuildCompileConfigAPIVersionMatrix|TestLWCModuleAvailabilityFollowsBundleAPIVersion|TestComplexTemplateExpressionsFollowBundleAPIVersion|TestHTMLDetailsNameFollowsBundleAPIVersion|TestCompilePreservesDeclaredAPI67|TestCompileProjectLWCBundles|TestCompileRewritesTemplateStylesheetImports|TestCompileEmitsSiblingJSModules|TestCompileEmitsUtilityOnlyLWCModules|TestCompileEmitsAdditionalHTMLTemplateModules|TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate|TestCompileEnablesLwcOnDirective|TestSetupBundleIncludesLabelsSibling|TestSetupImportMapIncludesLocalComponents|TestValidateRootFindsRepoCheckout|TestInstallFromCWDSkipsGlobalShareAsSource|TestInstallFromCopiesToolchain|TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare|TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser|TestLWCAPI67RegistrationRunsInBrowser)$' ci-remaining
@@ -762,6 +767,11 @@ PY
 
 run_local_release_lane() {
 	local lane="$1"
+	# Full server validation requires L08. Ordinary CI explicitly routes it to
+	# the provisioned Browser authority with -skip below.
+	if [[ "${lane}" == "server-and-playground" ]]; then
+		local -x GLADE_LWC_BROWSER=1
+	fi
 	local label="$2"
 	local timeout="$3"
 	local artifact_root="$4"
@@ -820,12 +830,26 @@ wait_local_release_lane() {
 	return "${rc}"
 }
 
+# Successful vet results can be shared across checkouts. Cached diagnostics can
+# retain the producing checkout's paths, so only failures pay for an untrimmed
+# rerun. The explicit false also overrides -trimpath inherited through GOFLAGS.
+run_vet() (
+	local diagnostics
+	diagnostics="$(mktemp "${TMPDIR:-/tmp}/glade-ci-vet.XXXXXX")"
+	trap 'rm -f "${diagnostics}"' EXIT
+	if go vet -trimpath ./... >"${diagnostics}" 2>&1; then
+		cat "${diagnostics}"
+	else
+		go vet -trimpath=false ./...
+	fi
+)
+
 run_local_release() {
 	local_release_jobs >/dev/null
 	local artifact_root="${CI_LOCAL_RELEASE_ARTIFACT_DIR:-ci-artifacts/local-release}"
 	mkdir -p "${artifact_root}"
 	printf '[ci] local release lanes: jobs=1 artifact_dir=%s\n' "${artifact_root}"
-	run_with_heartbeat "go vet ./..." go vet -trimpath ./...
+	run_with_heartbeat "go vet ./..." run_vet
 	run_local_release_lane "repoguard" "guard" 30m "${artifact_root}"
 	run_local_release_lane "gladecli" "cli-ui" 30m "${artifact_root}"
 	run_local_release_lane "sema" "sema" 30m "${artifact_root}"
@@ -840,7 +864,7 @@ run_selected_local_release_lane() {
 	local_release_jobs >/dev/null
 	case "${lane}" in
 		vet)
-			run_with_heartbeat "go vet ./..." go vet -trimpath ./...
+			run_with_heartbeat "go vet ./..." run_vet
 			;;
 		guard)
 			run_local_release_lane "repoguard" "guard" 30m "${artifact_root}"

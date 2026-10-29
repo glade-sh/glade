@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>AdministratorOnly</fullName><active>true</active><errorConditionFormula>AND(Name = &quot;restricted&quot;, $Profile.Name &lt;&gt; &quot;System Administrator&quot;)</errorConditionFormula><errorMessage>Administrator required</errorMessage></ValidationRule>

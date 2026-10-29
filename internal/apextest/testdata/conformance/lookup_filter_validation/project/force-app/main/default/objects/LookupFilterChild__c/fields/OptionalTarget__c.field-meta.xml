@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>OptionalTarget__c</fullName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <label>Optional Target</label>
+    <lookupFilter>
+        <active>true</active>
+        <errorMessage>target category must be Allowed</errorMessage>
+        <filterItems>
+            <field>LookupFilterParent__c.Category__c</field>
+            <operation>equals</operation>
+            <value>Allowed</value>
+        </filterItems>
+        <isOptional>true</isOptional>
+    </lookupFilter>
+    <referenceTo>LookupFilterParent__c</referenceTo>
+    <relationshipLabel>Optional Lookup Filter Children</relationshipLabel>
+    <relationshipName>OptionalLookupFilterChildren</relationshipName>
+    <type>Lookup</type>
+</CustomField>

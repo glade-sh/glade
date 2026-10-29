@@ -41,6 +41,31 @@ func concurrentRaceTests(t *testing.T, dir string) []string {
 				case *ast.GoStmt:
 					concurrent[name] = true
 				case *ast.CallExpr:
+					// The Apex project runner starts workers in production code;
+					// its tests need race coverage even without a Go statement.
+					if f, ok := x.Fun.(*ast.Ident); ok && f.Name == "Run" {
+						for _, arg := range x.Args {
+							literal, ok := arg.(*ast.CompositeLit)
+							if !ok {
+								continue
+							}
+							typ, ok := literal.Type.(*ast.Ident)
+							if !ok || typ.Name != "Options" {
+								continue
+							}
+							for _, elt := range literal.Elts {
+								kv, ok := elt.(*ast.KeyValueExpr)
+								if !ok {
+									continue
+								}
+								key, keyOK := kv.Key.(*ast.Ident)
+								value, valueOK := kv.Value.(*ast.Ident)
+								if keyOK && valueOK && key.Name == "ParallelMethods" && value.Name == "true" {
+									concurrent[name] = true
+								}
+							}
+						}
+					}
 					switch f := x.Fun.(type) {
 					case *ast.Ident:
 						calls[name] = append(calls[name], f.Name)
@@ -110,6 +135,10 @@ func TestCIRacePushPlanUnionAndWorkflow(t *testing.T) {
 		Include []struct {
 			Packages         []string `json:"packages"`
 			EstimatedSeconds int      `json:"estimatedSeconds"`
+			Runs             []struct {
+				Package string
+				Tests   []string
+			} `json:"runs"`
 		} `json:"include"`
 	}
 	if err := json.Unmarshal(out, &plan); err != nil {
@@ -126,18 +155,40 @@ func TestCIRacePushPlanUnionAndWorkflow(t *testing.T) {
 		t.Fatal(err)
 	}
 	seen := map[string]bool{}
+	selections := map[string]map[string]bool{}
 	for _, batch := range plan.Include {
 		if batch.EstimatedSeconds > 900 {
 			t.Errorf("batch estimate %d exceeds 15 minutes", batch.EstimatedSeconds)
 		}
 		for _, pkg := range batch.Packages {
-			if seen[pkg] {
-				t.Fatalf("duplicate %s", pkg)
-			}
 			seen[pkg] = true
 		}
+		for _, run := range batch.Runs {
+			if selections[run.Package] == nil {
+				selections[run.Package] = map[string]bool{}
+			}
+			for _, name := range run.Tests {
+				if selections[run.Package][name] {
+					t.Fatalf("duplicated selection %s %s", run.Package, name)
+				}
+				selections[run.Package][name] = true
+			}
+		}
 	}
-	if len(seen) != len(cfg.Packages) || len(plan.Include) > 8 {
+	for pkg, names := range cfg.Packages {
+		for _, name := range names {
+			found := false
+			for selected := range selections[pkg] {
+				if selected == name || strings.HasPrefix(selected, name+"/") {
+					found = true
+				}
+			}
+			if !found {
+				t.Errorf("missing selected test %s %s", pkg, name)
+			}
+		}
+	}
+	if len(seen) != len(cfg.Packages) || len(plan.Include) > 256 {
 		t.Fatalf("invalid plan %s", out)
 	}
 	for pkg := range cfg.Packages {
@@ -172,9 +223,13 @@ name=os.getenv("FIXTURE_NAME", "TestConcurrent")
 if "-list" in sys.argv:
  print(name+"\\nTestOther\\nok  "+p+" 0.01s");sys.exit(0)
 mode=os.environ.get("FIXTURE_MODE", "pass")
+print(json.dumps({"Action":"start", "Package":p}))
+if mode!="missing": print(json.dumps({"Action":"run", "Package":p,"Test":name}))
 if mode=="deferred": print(json.dumps({"Action":"output", "Package":p, "Test":name, "Output":"    dataweave_legacy_test.go:23: requires explicitly installed DataWeave toolchain\\n"}))
 if mode!="missing": print(json.dumps({"Action": "skip" if mode in ("skip", "deferred") else "pass", "Package":p, "Test":name}))
-if mode=="extra": print(json.dumps({"Action":"pass", "Package":p, "Test":"TestOther"}))
+if mode=="extra":
+ print(json.dumps({"Action":"run", "Package":p,"Test":"TestOther"}))
+ print(json.dumps({"Action":"pass", "Package":p, "Test":"TestOther"}))
 print(json.dumps({"Action":"pass", "Package":p}))
 ''')
  fake.chmod(0o700);m.GO=str(fake)

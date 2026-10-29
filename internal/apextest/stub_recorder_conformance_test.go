@@ -168,7 +168,7 @@ func runStubRecorderConformance(t *testing.T, group string) {
 		}
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			for _, context := range []string{"namespace", "plain"} {
 				t.Run(context, func(t *testing.T) {
 					capture, ok := data.CapturesByAPI[api][context]

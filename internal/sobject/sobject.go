@@ -203,6 +203,10 @@ type DescribeFieldResult struct {
 	PicklistValueSettings    []storage.PicklistSetting   `json:"picklistValueSettings,omitempty"`
 	PicklistValues           []storage.PicklistValue     `json:"picklistValues,omitempty"`
 
+	// Internal provenance carried through storage/describe conversions.
+	RestrictedPicklistFromCatalog bool `json:"restrictedPicklistFromCatalog,omitempty"`
+	StandardValueSetApplied       bool `json:"standardValueSetApplied,omitempty"`
+
 	MetadataRelationshipControllingField string `json:"metadataRelationshipControllingField,omitempty"`
 }
 
@@ -330,9 +334,18 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 			}
 			autoNumber := strings.EqualFold(field.Type, "AutoNumber")
 			var createable, updateable, nillable, defaultedOnCreate *bool
-			if object.GeneratedHistoryParent != "" || field.GeneratedRecentAccess {
+			var filterable, sortable, groupable, aggregatable *bool
+			picklistValues := storagePicklistValues(field.PicklistValues)
+			customAddress := field.CompoundFieldName != "" || schema.IsCustomAddressField(field)
+			if object.GeneratedHistoryParent != "" || field.GeneratedRecentAccess || customAddress {
 				createable, updateable = field.Createable, field.Updateable
 				nillable, defaultedOnCreate = field.Nillable, field.DefaultedOnCreate
+			}
+			if customAddress {
+				filterable, sortable, groupable, aggregatable = field.Filterable, field.Sortable, field.Groupable, field.Aggregatable
+				if values, ok := storage.CustomAddressComponentPicklistValues(field.CompoundFieldName, field.Name); ok {
+					picklistValues = values
+				}
 			}
 			if strings.EqualFold(field.Type, "MasterDetail") {
 				updateable = storage.BoolFlag(field.ReparentableMasterDetail)
@@ -387,6 +400,7 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 				IDLookup:                 field.IDLookup || field.ExternalID,
 				Encrypted:                field.Encrypted,
 				RestrictedPicklist:       field.RestrictedPicklist,
+				StandardValueSetApplied:  field.StandardValueSetApplied,
 				NamePointing:             len(references) > 1,
 				Updateable:               updateable,
 				Createable:               createable,
@@ -394,7 +408,12 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 				DefaultedOnCreate:        defaultedOnCreate,
 				PicklistController:       field.PicklistController,
 				PicklistValueSettings:    storagePicklistSettings(field.PicklistValueSettings),
-				PicklistValues:           storagePicklistValues(field.PicklistValues),
+				PicklistValues:           picklistValues,
+				CompoundFieldName:        field.CompoundFieldName,
+				Filterable:               filterable,
+				Sortable:                 sortable,
+				Groupable:                groupable,
+				Aggregatable:             aggregatable,
 
 				MetadataRelationshipControllingField: field.MetadataRelationshipControllingField,
 			}
@@ -439,16 +458,6 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 				Description:      recordType.Description,
 				PicklistDefaults: cloneStringMap(recordType.PicklistDefaults),
 			})
-		}
-		if len(describe.RecordTypes) > 0 {
-			describe.Fields["RecordTypeId"] = DescribeFieldResult{
-				Name:             "RecordTypeId",
-				Type:             storage.FieldReference,
-				DisplayType:      string(storage.FieldReference),
-				Label:            "Record Type ID",
-				ReferenceTo:      []string{"RecordType"},
-				RelationshipName: "RecordType",
-			}
 		}
 		for _, rule := range object.ValidationRules {
 			describe.ValidationRules = append(describe.ValidationRules, storage.ValidationRule{
@@ -866,6 +875,8 @@ func ToObjectDefinition(describe DescribeSObjectResult) storage.ObjectDefinition
 			PicklistValueSettings:    cloneStoragePicklistSettings(field.PicklistValueSettings),
 			PicklistValues:           append([]storage.PicklistValue(nil), field.PicklistValues...),
 
+			RestrictedPicklistFromCatalog:        field.RestrictedPicklistFromCatalog,
+			StandardValueSetApplied:              field.StandardValueSetApplied,
 			MetadataRelationshipControllingField: field.MetadataRelationshipControllingField,
 		}
 	}
@@ -886,6 +897,10 @@ func ToObjectDefinition(describe DescribeSObjectResult) storage.ObjectDefinition
 }
 
 func FromObjectDefinition(definition storage.ObjectDefinition) DescribeSObjectResult {
+	if _, exists := storage.ResolveFieldName(definition, "", "RecordTypeId"); !exists && len(definition.RecordTypes) > 0 && storage.StandardObjectRecordTypeFieldEnabled(definition) {
+		definition = definition.Clone()
+		storage.EnsureRecordTypeIDField(&definition)
+	}
 	describe := DescribeSObjectResult{
 		Name:            definition.APIName,
 		Label:           definition.Label,
@@ -957,6 +972,8 @@ func FromObjectDefinition(definition storage.ObjectDefinition) DescribeSObjectRe
 			PicklistValueSettings:    cloneStoragePicklistSettings(field.PicklistValueSettings),
 			PicklistValues:           append([]storage.PicklistValue(nil), field.PicklistValues...),
 
+			RestrictedPicklistFromCatalog:        field.RestrictedPicklistFromCatalog,
+			StandardValueSetApplied:              field.StandardValueSetApplied,
 			MetadataRelationshipControllingField: field.MetadataRelationshipControllingField,
 		}
 	}
@@ -971,16 +988,6 @@ func FromObjectDefinition(definition storage.ObjectDefinition) DescribeSObjectRe
 			Description:      recordType.Description,
 			PicklistDefaults: cloneStringMap(recordType.PicklistDefaults),
 		})
-	}
-	if len(describe.RecordTypes) > 0 {
-		describe.Fields["RecordTypeId"] = DescribeFieldResult{
-			Name:             "RecordTypeId",
-			Type:             storage.FieldReference,
-			DisplayType:      string(storage.FieldReference),
-			Label:            "Record Type ID",
-			ReferenceTo:      []string{"RecordType"},
-			RelationshipName: "RecordType",
-		}
 	}
 	return describe
 }
@@ -1189,6 +1196,8 @@ func storageFieldType(raw string) storage.FieldType {
 		return storage.FieldTime
 	case "location":
 		return storage.FieldLocation
+	case "address":
+		return storage.FieldAddress
 	case "lookup", "masterdetail", "metadatarelationship":
 		return storage.FieldReference
 	case "id":

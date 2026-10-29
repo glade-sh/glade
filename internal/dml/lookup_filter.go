@@ -1,10 +1,13 @@
 package dml
 
 import (
+	"encoding/csv"
 	"fmt"
+	"io"
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/glade-sh/glade/internal/storage"
 )
@@ -41,49 +44,69 @@ func (e *Engine) validateLookupFilters(definition storage.ObjectDefinition, reco
 			if err != nil {
 				return err
 			}
-			var want formulaValue
+			// Commas outside quotes separate alternatives. Quoted commas belong
+			// to the literal (for example a record-type label or a grouped number).
+			var wants []formulaValue
 			if item.ValueField != "" {
-				want, _, _, err = e.lookupFilterValue(item.ValueField, definition, record, targetDefinition, target)
+				want, _, _, err := e.lookupFilterValue(item.ValueField, definition, record, targetDefinition, target)
 				if err != nil {
 					return err
 				}
+				wants = append(wants, want)
 			} else if item.Value != "" {
-				value := item.Value
-				if strings.EqualFold(valueField.APIName, "RecordTypeId") && valueField.Type == storage.FieldReference {
-					// Salesforce lookup-filter RecordType literals use the
-					// developer name first; retain Glade's existing label fallback.
-					// Prefer the developer name so a label collision cannot
-					// select a different record type.
-					for _, recordType := range valueDefinition.RecordTypes {
-						if recordType.DeveloperName == value && recordType.ID != "" {
-							value = string(recordType.ID)
-							break
-						}
+				parts, err := lookupFilterLiteralValues(valueField, item.Value)
+				if err != nil {
+					return fmt.Errorf("dml: unsupported lookup filter literal for %s: %w", item.Field, err)
+				}
+				for _, part := range parts {
+					value := strings.TrimSpace(part)
+					if value == "" {
+						continue
 					}
-					if value == item.Value {
+					if strings.EqualFold(valueField.APIName, "RecordTypeId") && valueField.Type == storage.FieldReference {
+						// Salesforce lookup-filter RecordType literals use the
+						// developer name first; retain Glade's existing label fallback.
+						// Prefer the developer name so a label collision cannot
+						// select a different record type.
+						resolved := false
 						for _, recordType := range valueDefinition.RecordTypes {
-							if recordType.Name == value && recordType.ID != "" {
-								value = string(recordType.ID)
+							if recordType.DeveloperName == value && recordType.ID != "" {
+								value, resolved = string(recordType.ID), true
 								break
 							}
 						}
+						if !resolved {
+							for _, recordType := range valueDefinition.RecordTypes {
+								if recordType.Name == value && recordType.ID != "" {
+									value = string(recordType.ID)
+									break
+								}
+							}
+						}
 					}
+					literal, _, ok := workflowLiteralValue(valueField, value)
+					if !ok {
+						return fmt.Errorf("dml: unsupported lookup filter literal for %s", item.Field)
+					}
+					wants = append(wants, formulaStorageValue(literal))
 				}
-				literal, _, ok := workflowLiteralValue(valueField, value)
-				if !ok {
-					return fmt.Errorf("dml: unsupported lookup filter literal for %s", item.Field)
-				}
-				want = formulaStorageValue(literal)
 			}
-			equal := false
-			if actual.blank() || want.blank() {
-				equal = actual.blank() && want.blank()
-			} else {
-				equal = compareFormulaValues(actual, want, "=")
+			if len(wants) == 0 {
+				wants = append(wants, formulaValue{})
+			}
+			equal, blankDates := false, false
+			for _, want := range wants {
+				if actual.blank() || want.blank() {
+					equal = equal || (actual.blank() && want.blank())
+					blankDates = blankDates || (actual.blank() && want.blank() && actual.fieldType == storage.FieldDate && want.fieldType == storage.FieldDate)
+				} else {
+					equal = equal || compareFormulaValues(actual, want, "=")
+				}
 			}
 			switch strings.ToLower(item.Operation) {
 			case "equals":
-				matches[i] = equal
+				// Blank dates do not satisfy a lookup equality criterion.
+				matches[i] = equal && !blankDates
 			case "notequal":
 				matches[i] = !equal
 			default:
@@ -103,6 +126,38 @@ func (e *Engine) validateLookupFilters(definition storage.ObjectDefinition, reco
 		}
 	}
 	return nil
+}
+
+func lookupFilterLiteralValues(field storage.Field, value string) ([]string, error) {
+	values := strings.Split(value, ",")
+	if strings.Contains(value, `"`) {
+		reader := csv.NewReader(strings.NewReader(strings.TrimSpace(value)))
+		reader.FieldsPerRecord = -1
+		reader.TrimLeadingSpace = true
+		reader.LazyQuotes = true
+		var err error
+		values, err = reader.Read()
+		if err != nil {
+			return nil, err
+		}
+		if _, err := reader.Read(); err != io.EOF {
+			return nil, fmt.Errorf("expected one literal list")
+		}
+	}
+	for i, value := range values {
+		value = strings.TrimSpace(value)
+		switch field.Type {
+		case storage.FieldInteger, storage.FieldDecimal:
+			value = strings.ReplaceAll(value, ",", "")
+		case storage.FieldDate:
+			// Metadata date criteria use month/day/year; stored dates use ISO.
+			if parsed, err := time.Parse("1/2/2006", value); err == nil {
+				value = parsed.Format("2006-01-02")
+			}
+		}
+		values[i] = value
+	}
+	return values, nil
 }
 
 func (e *Engine) lookupFilterValue(path string, sourceDefinition storage.ObjectDefinition, source storage.Record, targetDefinition storage.ObjectDefinition, target storage.Record) (formulaValue, storage.Field, storage.ObjectDefinition, error) {
