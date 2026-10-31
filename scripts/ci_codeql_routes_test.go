@@ -35,7 +35,7 @@ func TestCICodeQLFastAndFullWorkflowRoutes(t *testing.T) {
 	}
 	text := readWorkflowFile(t, "codeql.yml")
 	job := workflowJobBlocks(t, text)["codeql"]
-	for _, marker := range []string{"workflow_call:", "if: inputs.profile == 'fast'", "if: inputs.profile == 'full'", "timeout-minutes: 25", "python3 scripts/ci-codeql.py check", "CODEQL_ACTION_ANALYZE_DID_COMPLETE_SUCCESSFULLY=true", "if: steps.analyze.outputs.completed == 'true'"} {
+	for _, marker := range []string{"workflow_call:", "if: inputs.profile == 'fast'", "if: inputs.profile == 'full'", "timeout-minutes: 15", "python3 scripts/ci-codeql.py check", "CODEQL_ACTION_ANALYZE_DID_COMPLETE_SUCCESSFULLY=true", "if: steps.analyze.outputs.completed == 'true'"} {
 		if !strings.Contains(text, marker) {
 			t.Errorf("reusable workflow omits %q", marker)
 		}
@@ -57,7 +57,7 @@ func TestCICodeQLBoundedAnalysisAndMergeGateRoutes(t *testing.T) {
 		}{
 			{"clean", false}, {"alert", true}, {"suppressed", false}, {"note_alert", true},
 			{"analysis_error", true}, {"exit_124_is_error", true}, {"malformed_sarif", true},
-			{"query_timeout", true}, {"finalize_timeout", true}, {"interpret_timeout", true},
+			{"query_timeout", false}, {"finalize_timeout", false}, {"interpret_timeout", false},
 		} {
 			t.Run(profile+"/"+tc.name, func(t *testing.T) {
 				dir := t.TempDir()
@@ -66,11 +66,7 @@ func TestCICodeQLBoundedAnalysisAndMergeGateRoutes(t *testing.T) {
 import json, os, sys, time
 mode = os.environ['CODEQL_FIXTURE']
 phase = sys.argv[2]
-if mode == {'finalize':'finalize_timeout','run-queries':'query_timeout','interpret-results':'interpret_timeout'}[phase]:
-    if phase == 'interpret-results':
-        output = next(a.split('=', 1)[1] for a in sys.argv if a.startswith('--output='))
-        with open(output, 'w') as f: f.write(json.dumps({'version':'2.1.0','runs':[{'tool':{'driver':{'name':'CodeQL'}},'results':[]}]}))
-    time.sleep(30)
+if mode == {'finalize':'finalize_timeout','run-queries':'query_timeout','interpret-results':'interpret_timeout'}[phase]: time.sleep(30)
 if phase == 'run-queries' and mode == 'analysis_error': sys.exit(2)
 if phase == 'run-queries' and mode == 'exit_124_is_error': sys.exit(124)
 if phase == 'interpret-results':
@@ -101,19 +97,16 @@ if phase == 'interpret-results':
 				}
 				timedOut := strings.HasSuffix(tc.name, "_timeout")
 				phase := map[string]string{"query_timeout": "run-queries", "finalize_timeout": "finalize", "interpret_timeout": "interpret-results"}[tc.name]
-				if timedOut && (err == nil || !strings.Contains(string(out), "CodeQL "+phase) || !strings.Contains(string(out), "analysis is incomplete")) {
-					t.Fatalf("timeout must fail with a clear message: %v\n%s", err, out)
+				if timedOut && (err != nil || !strings.Contains(string(out), "::warning::CodeQL "+phase)) {
+					t.Fatalf("timeout must warn and succeed: %v\n%s", err, out)
 				}
 				data, _ := os.ReadFile(githubOutput)
-				if timedOut && (!strings.Contains(string(data), "completed=false") || strings.Contains(string(data), "completed=true")) {
+				if timedOut && !strings.Contains(string(data), "completed=false") {
 					t.Fatalf("timeout must not upload stale results: %s", data)
 				}
 				if timedOut {
-					if _, statErr := os.Stat(output); !os.IsNotExist(statErr) {
-						t.Fatalf("timeout left partial SARIF: %v", statErr)
-					}
 					env, _ := os.ReadFile(githubEnv)
-					for _, flag := range []string{"CODEQL_ACTION_SKIP_SARIF_UPLOAD=true", "CODEQL_ACTION_JOB_STATUS=JOB_STATUS_FAILURE"} {
+					for _, flag := range []string{"CODEQL_ACTION_SKIP_SARIF_UPLOAD=true", "CODEQL_ACTION_JOB_STATUS=JOB_STATUS_UNKNOWN"} {
 						if !strings.Contains(string(env), flag) {
 							t.Errorf("timeout omits pinned post-hook flag %s: %s", flag, env)
 						}

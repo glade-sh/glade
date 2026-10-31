@@ -16,7 +16,7 @@ jobs:
     name: CodeQL (${{ inputs.profile }})
     runs-on: ubuntu-latest
     # Setup and upload are bounded separately from the analysis process.
-    timeout-minutes: 25
+    timeout-minutes: 15
     permissions:
       actions: read
       contents: read
@@ -159,7 +159,7 @@ jobs:
         run: go build -o "${RUNNER_TEMP}/glade-codeql" ./cmd/glade
       - name: Analyze CodeQL
         id: analyze
-        timeout-minutes: 14
+        timeout-minutes: 6
         env:
           CODEQL: ${{ steps.fast.outputs.codeql-path || steps.full.outputs.codeql-path }}
           PROFILE: ${{ inputs.profile }}

@@ -187,10 +187,7 @@ oversized idle workers were both reverted after they missed the bar.
 Required CI now runs twelve Apex test shards and runs the VM and CLI packages as
 isolated jobs. A gofmt gate checks every tracked Go file and fails when the file
 list cannot be built. A nightly job runs the timing-sensitive tests 20 times on
-Linux and macOS and fails if a listed test is missing or any run fails. The
-CodeQL job now fails when any phase times out and deletes the partial SARIF.
-Its query budget is 10 minutes, and the whole analysis has 12, after the
-incomplete-analysis check began failing slower runners. New
+Linux and macOS and fails if a listed test is missing or any run fails. New
 data-driven conformance tests record captured behavior for abstract interface
 overrides, merge-conflict markers, missing-dependency receivers, metadata
 dependency shapes, Flow loop relationships and action dependencies, async stack
@@ -199,6 +196,13 @@ capability and known-gap reports and the release-evidence wording were
 refreshed. They remain selected summaries, not a full inventory.
 
 ### Known issues and verification limits
+
+The CodeQL scan on large changes does not finish its queries within its time
+budget. On pull requests and tags that change many files, about ten of thirty
+queries complete before the budget ends, and the job reports the analysis as
+incomplete. The v0.3.2 release had the same result. The scan is complete for
+small changes. Release verification does not treat an incomplete CodeQL scan as
+proof of absence of findings. Finding the cause is planned work.
 
 The Race workflow on `main` is red on every push because of timing. The
 `internal/vm` CI lane runs close to its 20 minute limit and has timed out on

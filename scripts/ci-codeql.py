@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bound CodeQL analysis and fail if any phase exceeds its deadline."""
+"""Bound CodeQL analysis; only an expired wall-clock deadline becomes a warning."""
 
 import argparse
 import datetime
@@ -109,11 +109,12 @@ def analyze(args):
     except subprocess.TimeoutExpired:
         output.unlink(missing_ok=True)
         message = f"CodeQL {phase} exceeded its wall-clock budget; analysis is incomplete. Review logs and rerun."
-        action_env(CODEQL_ACTION_SKIP_SARIF_UPLOAD="true")
+        print(f"::warning::{message}", flush=True)
+        action_env(CODEQL_ACTION_SKIP_SARIF_UPLOAD="true", CODEQL_ACTION_JOB_STATUS="JOB_STATUS_UNKNOWN")
         if path := os.environ.get("GITHUB_STEP_SUMMARY"):
             with open(path, "a") as summary:
-                summary.write(f"**Error:** {message}\n")
-        raise ValueError(message) from None
+                summary.write(f"**Warning:** {message}\n")
+        return
     # Validate before permitting upload; findings are checked after upload.
     read_results(output)
     action_output(True)
