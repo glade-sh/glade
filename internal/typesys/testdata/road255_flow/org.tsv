@@ -1,0 +1,9 @@
+case_id	api_version	route	setup	observation
+single_62	62.0	anonymous	first	FIRST
+two_62	62.0	anonymous	first,second	SECOND
+missing_62	62.0	anonymous	missing	Invalid type: Flow.Interview.RoadMissing62
+named_62	62.0	istest	first,second	PASS SECOND
+single_67	67.0	anonymous	first	FIRST
+two_67	67.0	anonymous	first,second	SECOND
+missing_67	67.0	anonymous	missing	Invalid type: Flow.Interview.RoadMissing67
+named_67	67.0	istest	first,second	PASS SECOND

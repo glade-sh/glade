@@ -19,7 +19,8 @@ import (
 
 type ownerContactNativeCapture struct {
 	Context, SourceAPI, Route, ProjectAPI, ReplayProjectAPI, TransportAPI, NamespaceContext, TestClass string
-	SourceManifestSHA256, SourceManifestRaw string; OrgRun string `json:"runMetadata"`
+	SourceManifestSHA256, SourceManifestRaw                                                            string
+	OrgRun                                                                                             string `json:"runMetadata"`
 	SourceManifest                                                                                     struct {
 		Phase string
 		Files map[string]string

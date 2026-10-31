@@ -229,13 +229,19 @@ func ActiveDuplicateRules(org *storage.OrgState, object string) []storage.Duplic
 // insert and update statements. Rules run in sort order; a permitted match
 // does not bypass later blocking or alerting rules. Records inserted by the
 // same statement are not candidates.
-func (e *Engine) checkDuplicateRules(record storage.Record, update bool, stamp *string) (*DuplicateReport, error) {
+func (e *Engine) checkDuplicateRules(record storage.Record, update bool, stamp *string, prior *storage.Record) (*DuplicateReport, error) {
 	if !e.Options.EnforceDuplicateRules || (!update && stamp == nil) {
 		return nil, nil
 	}
 	exclude := func(id storage.ID) bool { return !update && e.duplicates.stamp == stamp && e.duplicates.batch[id] }
 	var report *DuplicateReport
 	for _, rule := range ActiveDuplicateRules(e.Org, record.Object) {
+		if !update && e.Options.UpsertCapturedInsertRulesOnly && !upsertCapturedEmailRule(rule, record) {
+			continue
+		}
+		if update && e.Options.UpsertChangedExactDuplicatesOnly && !upsertExactMatchChanged(rule, record, prior) {
+			continue
+		}
 		applies, supported := DuplicateRuleApplies(e.Org, rule, record)
 		if !supported || !applies {
 			continue
@@ -275,7 +281,40 @@ func (e *Engine) checkDuplicateRules(record storage.Record, update bool, stamp *
 		}
 		return nil, nil
 	}
+	if report != nil && e.Options.UpsertCapturedInsertRulesOnly && !e.upsertSingleReportMatch(record, exclude) {
+		return nil, nil
+	}
 	return report, nil
+}
+
+// The committed upsert observation contains one matching report rule and one
+// matching record. Leave fanout on the prior upsert path until captured.
+func (e *Engine) upsertSingleReportMatch(record storage.Record, exclude func(storage.ID) bool) bool {
+	rules, records := 0, 0
+	for _, rule := range ActiveDuplicateRules(e.Org, record.Object) {
+		if !strings.EqualFold(rule.ActionOnInsert, "Allow") || !duplicateOperationsInclude(rule.OperationsOnInsert, "Report") {
+			continue
+		}
+		applies, supported := DuplicateRuleApplies(e.Org, rule, record)
+		if !supported {
+			return false
+		}
+		if !applies {
+			continue
+		}
+		matches, supported := FindDuplicateMatches(e.Org, rule, record, exclude)
+		if !supported {
+			return false
+		}
+		if !matches.HasRecords() {
+			continue
+		}
+		rules++
+		for _, match := range matches.Matches {
+			records += len(match.Records)
+		}
+	}
+	return rules == 1 && records == 1
 }
 
 func duplicateRuleError(result DuplicateResult) error {
@@ -300,9 +339,40 @@ func (e *Engine) noteDuplicateInsert(stamp *string, report *DuplicateReport, id 
 }
 
 // enforceDuplicateRulesOnUpdate checks the merged record (native DR08).
-func (e *Engine) enforceDuplicateRulesOnUpdate(record storage.Record) error {
-	_, err := e.checkDuplicateRules(record, true, nil)
+func (e *Engine) enforceDuplicateRulesOnUpdate(record, prior storage.Record) error {
+	_, err := e.checkDuplicateRules(record, true, nil, &prior)
 	return err
+}
+
+// Limit upsert update enforcement to changed, single-field exact matches.
+func upsertExactMatchChanged(rule storage.DuplicateRule, record storage.Record, prior *storage.Record) bool {
+	if prior == nil || !upsertCapturedEmailRule(rule, record) {
+		return false
+	}
+	match := rule.MatchRules[0]
+	item := match.Items[0]
+	before, beforeOK := prior.GetField(item.Field)
+	after, afterOK := record.GetField(item.Field)
+	// Native changed-update rows start from an existing nonblank match key.
+	if duplicateBlank(before, beforeOK) {
+		return false
+	}
+	return beforeOK != afterOK || !storageValuesEqual(storage.Field{}, before, after)
+}
+
+// The upsert captures cover one nonblank Contact Email exact match, not
+// standard, multi-item, other-field, or MatchBlanks rules.
+func upsertCapturedEmailRule(rule storage.DuplicateRule, record storage.Record) bool {
+	if !strings.EqualFold(record.Object, "Contact") || !strings.EqualFold(rule.Object, "Contact") || len(rule.MatchRules) != 1 {
+		return false
+	}
+	match := rule.MatchRules[0]
+	if !strings.EqualFold(match.Object, "Contact") || storage.IsStandardMatchingRule(match.Object, match.Name) || !strings.EqualFold(match.Status, "Active") || len(match.Items) != 1 || (match.BooleanFilter != "" && match.BooleanFilter != "1") {
+		return false
+	}
+	item := match.Items[0]
+	value, ok := record.GetField(item.Field)
+	return strings.EqualFold(item.Field, "Email") && strings.EqualFold(item.Method, "Exact") && strings.EqualFold(item.BlankBehavior, "NullNotAllowed") && !duplicateBlank(value, ok)
 }
 
 // TakeDuplicateReports returns and clears reports pending commit.

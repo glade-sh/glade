@@ -1,0 +1,1 @@
+insert new Contact(LastName='Safe',Email='report@example.invalid',RouteKey__c='report-base'); Contact r=new Contact(LastName='Report',Email='report@example.invalid',RouteKey__c='report-new'); upsert r RouteKey__c; System.debug('REPORT_CAPTURE|'+(r.Id!=null));

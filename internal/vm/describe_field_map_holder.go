@@ -13,6 +13,17 @@ package vm
 // VM exactly as eager copies share them; nothing here crosses a VM, because
 // clones copy Values through cloneValue, which drops the descriptor.
 
+// markSObjectFieldGetMap distinguishes the returned map from its field wrapper.
+func markSObjectFieldGetMap(value Value) Value {
+	fields := make(map[string]Value, len(value.Fields)+1)
+	for key, item := range value.Fields {
+		fields[key] = item
+	}
+	fields["__sobject_field_getmap"] = Bool(true)
+	value.Fields = fields
+	return value
+}
+
 // fieldMapHolderDescriptor reports the ownership descriptor of value, if it is
 // a field-map participant.
 func fieldMapHolderDescriptor(value Value) *mapKeySetBacking {

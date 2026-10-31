@@ -28,6 +28,11 @@ capability notes describe selected behaviors in the checked source ledger.
 The download version does not certify these notes or
 inherit the historical runtime/parity evidence below.
 
+The generated capability catalog is incomplete: its Flow limits and Platform
+Cache entries summarize selected behavior. Check the [Apex support reference](/reference/apex-support)
+and [automation guide](/guide/automation) as well; an absent entry is not a
+support claim.
+
 ## Before you adopt Glade
 
 - Your local loop uses supported Apex parse, check, test, SOQL, DML, trigger, and SObject paths.
@@ -82,7 +87,7 @@ runtime-support credit and local test execution reports `UnsupportedFeature`.
 
 | Release / source | Evidence | Denominator and boundary | Receipt |
 | --- | --- | --- | --- |
-| v0.2.15 — `82b8495972715a27aec8f864bc4ab39e7fa03974` | Historical distribution; clean embedded VCS metadata; exact Required CI and Salesforce correctness authority | 475/475 required checks; per-archive checksums, 128–129-component SBOMs, and attestations; not blanket parity | [Release assets](https://github.com/glade-sh/glade/releases/tag/v0.2.15) |
+| v0.2.15 — `82b8495972715a27aec8f864bc4ab39e7fa03974` | Historical distribution evidence; clean embedded VCS metadata; exact Required CI and Salesforce correctness authority | 475/475 required checks; per-archive checksums, 128–129-component SBOMs, and attestations; not blanket parity | [Release assets](https://github.com/glade-sh/glade/releases/tag/v0.2.15) |
 | v0.2.14 — `b974901a3e0ad48d6c517cff894601fa5e242000` | Historical distribution; exact Required CI and Salesforce correctness authority for the product/Tools pair | Per-archive checksums, 128–129-component SBOMs, and attestations; not blanket parity or a new corpus result | [Release assets](https://github.com/glade-sh/glade/releases/tag/v0.2.14) |
 | v0.2.13 — `04c55539045d782ce56e2e5d92d4fb637ba03741` | Published distribution | Per-archive checksums and attestations; not a new corpus/parity result | [Release assets](https://github.com/glade-sh/glade/releases/tag/v0.2.13) |
 | v0.2.12 — `3a454dee3cb35c604cb1bf25e6a8972b63dd7c81` | Tagged local/corpus and Salesforce checks | 12,315 and 782 private tests; 86 public projects; 475 Salesforce checks, with their distinct accounting | [Tagged validation](https://github.com/glade-sh/glade/blob/v0.2.12/docs/PRIVATE_CORPUS_ASSURANCE.md#tagged-v0212-product-validation) |

@@ -1,0 +1,10 @@
+case	operation	observation
+A01	local alias clear	alias and original become empty
+A02	static field alias clear	stored alias becomes empty
+A03	instance field alias clear	stored alias becomes empty
+A04	argument alias clear	caller and argument become empty
+A05	separate holder	independent holder retains Name
+A06	later holder	new holder retains Name
+A07	clone boundary	clone retains Name after original clear
+A08	ordinary map alias	clear updates alias
+A09	original put after clear	FinalException rejection

@@ -10,7 +10,7 @@ import (
 )
 
 type Index struct {
-	OutApps []OutApp
+	OutApps     []OutApp
 	byQualified map[string]OutApp
 }
 

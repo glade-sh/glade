@@ -1,0 +1,7 @@
+api	route	case	result
+62.0	test	update_scalar_null	success
+63.0	test	update_scalar_null	success
+64.0	test	update_scalar_null	success
+65.0	test	update_scalar_null	success
+66.0	test	update_scalar_null	success
+67.0	test	update_scalar_null	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:

@@ -1,0 +1,7 @@
+api	route	case	result
+62.0	anonymous	name_number	"{""message"":""value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"",""type"":""System.QueryException""}"
+62.0	anonymous	phone_number	"{""message"":""value of filter criterion for field 'Phone' must be of type string and should be enclosed in quotes"",""type"":""System.QueryException""}"
+62.0	anonymous	quoted_control	[]
+67.0	anonymous	name_number	"{""message"":""value of filter criterion for field 'Name' must be of type string and should be enclosed in quotes"",""type"":""System.QueryException""}"
+67.0	anonymous	phone_number	"{""message"":""value of filter criterion for field 'Phone' must be of type string and should be enclosed in quotes"",""type"":""System.QueryException""}"
+67.0	anonymous	quoted_control	[]

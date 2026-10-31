@@ -1,0 +1,5 @@
+source_api	route	observation
+62.0	anonymous	"[""System.TypeException|Invalid date: 1990-01-01"",""OK|1990-01-02"",""OK|2024-02-29"",""System.TypeException|Invalid date: 2/29/2023"",""OK|1990-01-02""]"
+62.0	istest	"[""System.TypeException|Invalid date: 1990-01-01"",""OK|1990-01-02"",""OK|2024-02-29"",""System.TypeException|Invalid date: 2/29/2023"",""OK|1990-01-02""]"
+67.0	anonymous	"[""System.TypeException|Invalid date: 1990-01-01"",""OK|1990-01-02"",""OK|2024-02-29"",""System.TypeException|Invalid date: 2/29/2023"",""OK|1990-01-02""]"
+67.0	istest	"[""System.TypeException|Invalid date: 1990-01-01"",""OK|1990-01-02"",""OK|2024-02-29"",""System.TypeException|Invalid date: 2/29/2023"",""OK|1990-01-02""]"

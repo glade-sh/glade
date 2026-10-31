@@ -1,0 +1,8 @@
+case	apis	route	question
+query	62.0,67.0	isTest	Does Database.query hide the pre-test standard pricebook but expose a test-created one?
+query_access	62.0,67.0	isTest	Do system and user access-level query overloads hide the pre-test standard pricebook?
+query_binds	62.0,67.0	isTest	Do system and user bind-map queries hide the pre-test standard pricebook and expose test-created data?
+count	62.0,67.0	isTest	Do countQuery and access-level overloads hide the pre-test standard pricebook?
+count_binds	62.0,67.0	isTest	Do countQueryWithBinds overloads hide the pre-test standard pricebook and expose test-created data?
+all_data	62.0,67.0	isTest SeeAllData=true	Are standard pricebooks visible to dynamic routes with SeeAllData enabled?
+missing	62.0,67.0	isTest	Does singleton assignment of a missing dynamic query throw QueryException?

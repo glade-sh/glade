@@ -1,0 +1,9 @@
+case_id	api_version	metadata_name	source	deploy_status	problem
+filename_mismatch_62	62.0	RoadWrong62	public class RoadActual62 {}	Failed	File name mismatch with class name: RoadActual62
+multiple_top_level_62	62.0	RoadTop62	public class RoadTop62 {} public class RoadOther62 {}	Failed	Missing '<EOF>' at 'public'
+top_level_boundary_62	62.0	RoadValid62	public class RoadValid62 {}	Succeeded	<none>
+generated_name_62	62.0	Flow	public class Flow { public class Interview { public class Probe {} } }	Failed	Inner types are not allowed to have inner types
+filename_mismatch_67	67.0	RoadWrong67	public class RoadActual67 {}	Failed	File name mismatch with class name: RoadActual67
+multiple_top_level_67	67.0	RoadTop67	public class RoadTop67 {} public class RoadOther67 {}	Failed	Missing '<EOF>' at 'public'
+top_level_boundary_67	67.0	RoadValid67	public class RoadValid67 {}	Succeeded	<none>
+generated_name_67	67.0	Flow	public class Flow { public class Interview { public class Probe {} } }	Failed	Inner types are not allowed to have inner types

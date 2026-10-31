@@ -1,0 +1,1 @@
+<Profile xmlns="http://soap.sforce.com/2006/04/metadata"><custom>true</custom><userLicense>Salesforce</userLicense><recordTypeVisibilities><default>false</default><recordType>PersonAccount.pkg__Care</recordType><visible>true</visible></recordTypeVisibilities></Profile>

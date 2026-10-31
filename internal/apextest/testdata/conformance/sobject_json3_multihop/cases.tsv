@@ -1,0 +1,7 @@
+shape	purpose
+directTechnology	two-hop translated projection and predicate
+directBanking	adjacent two-hop translated value
+qualified	two-hop root-qualified projection and predicate
+missing	unmatched translated label boundary
+locator	two-hop projection via locator
+child	two-hop projection in child relationship query

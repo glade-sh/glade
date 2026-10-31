@@ -1,6 +1,7 @@
 package dml
 
 import (
+	"html"
 	"strings"
 	"time"
 
@@ -12,12 +13,16 @@ import (
 // as "March 9, 2031", a currency or number without a currency symbol and with
 // grouping ("1,234.5", "5"), a Boolean as "true" and a null as empty text. A
 // reference or value type that is not captured keeps the authored message.
-func (e *Engine) renderFlowCustomErrorText(message string, frame *flowFrame) string {
+func (e *Engine) renderFlowCustomErrorText(message string, frame *flowFrame, formulas map[string]string) string {
 	if frame == nil || !strings.Contains(message, "{!") {
 		return message
 	}
+	capturedFormula := flowCapturedCustomErrorFormula(message, formulas, frame)
 	rendered, ok := renderFlowTextTemplate(message, frame, func(reference string) (storage.Value, bool) {
 		value, found := e.flowFrameReferenceValue(reference, frame)
+		if expression, formula := formulas[flowFrameKey(reference)]; formula && capturedFormula && flowCoreFormulaUsesScalars(expression, frame, true) {
+			value, found = e.flowContextFormulaValueWithCapturedBindings(expression, frame, true)
+		}
 		if !found {
 			return storage.Value{}, false
 		}
@@ -87,4 +92,32 @@ func groupFlowMergeNumber(text string) string {
 		return sign + grouped.String() + "." + fraction
 	}
 	return sign + grouped.String()
+}
+
+// A partial-insert capture covers a formula merge that reads a declared String
+// in a record-triggered Create interview, not arbitrary Custom Error failures.
+func flowCapturedCustomErrorFormula(message string, formulas map[string]string, frame *flowFrame) bool {
+	if frame == nil || !frame.capturedBeforeCreate {
+		return false
+	}
+	lower := strings.ToLower(message)
+	for name, expression := range formulas {
+		if !strings.Contains(lower, "{!"+strings.ToLower(name)+"}") {
+			continue
+		}
+		for _, token := range tokenizeFormula(html.UnescapeString(expression)) {
+			if token.typ != formulaTokenIdent {
+				continue
+			}
+			reference := strings.ToLower(token.text)
+			if strings.Contains(reference, ".") {
+				continue
+			}
+			variable, declared := frame.variables[flowFrameKey(reference)]
+			if declared && !variable.IsCollection && strings.EqualFold(variable.DataType, "String") {
+				return true
+			}
+		}
+	}
+	return false
 }

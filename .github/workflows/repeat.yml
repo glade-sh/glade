@@ -1,0 +1,34 @@
+name: Repeat timing-sensitive tests
+
+on:
+  schedule:
+    - cron: '17 8 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  repeat:
+    name: Repeat timing-sensitive tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: "1.26.10"
+          cache: false
+      - name: Repeat selected tests
+        env:
+          CGO_ENABLED: "1"
+        run: python3 scripts/ci-repeat.py
+      - name: Flag repeat failures for defect triage
+        if: failure()
+        run: echo '::error::A repeat-run failure requires defect triage; do not dismiss it as a flake.'

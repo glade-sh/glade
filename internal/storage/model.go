@@ -228,22 +228,23 @@ type MetadataRegistry struct {
 
 	Flows []FlowRule `json:"flows,omitempty"`
 	// FlowDeclarations expose metadata without registering executable automation.
-	FlowDeclarations       []FlowRule                  `json:"flowDeclarations,omitempty"`
-	DataWeaveResources     []DataWeaveResourceMetadata `json:"dataWeaveResources,omitempty"`
-	Labels                 []LabelMetadata             `json:"labels,omitempty"`
-	ManagedLabelNamespaces []string                    `json:"managedLabelNamespaces,omitempty"`
-	Tabs                   []TabMetadata               `json:"tabs,omitempty"`
-	Applications           []ApplicationMetadata       `json:"applications,omitempty"`
-	DataCategoryGroups     []DataCategoryGroup         `json:"dataCategoryGroups,omitempty"`
-	QuickActions           []QuickActionMetadata       `json:"quickActions,omitempty"`
-	FieldSets              []FieldSetMetadata          `json:"fieldSets,omitempty"`
-	StaticResources        []StaticResourceMetadata    `json:"staticResources,omitempty"`
-	ContentAssets          []ContentAssetMetadata      `json:"contentAssets,omitempty"`
-	Endpoints              []EndpointMetadata          `json:"endpoints,omitempty"`
-	EmailTemplates         []EmailTemplateMetadata     `json:"emailTemplates,omitempty"`
-	MessageChannels        []MessageChannelMetadata    `json:"messageChannels,omitempty"`
-	FeatureParameters      []FeatureParameterMetadata  `json:"featureParameters,omitempty"`
-	Layouts                []LayoutMetadata            `json:"layouts,omitempty"`
+	FlowDeclarations       []FlowRule                    `json:"flowDeclarations,omitempty"`
+	DataWeaveResources     []DataWeaveResourceMetadata   `json:"dataWeaveResources,omitempty"`
+	Labels                 []LabelMetadata               `json:"labels,omitempty"`
+	ValueSetTranslations   []StandardValueSetTranslation `json:"standardValueSetTranslations,omitempty"`
+	ManagedLabelNamespaces []string                      `json:"managedLabelNamespaces,omitempty"`
+	Tabs                   []TabMetadata                 `json:"tabs,omitempty"`
+	Applications           []ApplicationMetadata         `json:"applications,omitempty"`
+	DataCategoryGroups     []DataCategoryGroup           `json:"dataCategoryGroups,omitempty"`
+	QuickActions           []QuickActionMetadata         `json:"quickActions,omitempty"`
+	FieldSets              []FieldSetMetadata            `json:"fieldSets,omitempty"`
+	StaticResources        []StaticResourceMetadata      `json:"staticResources,omitempty"`
+	ContentAssets          []ContentAssetMetadata        `json:"contentAssets,omitempty"`
+	Endpoints              []EndpointMetadata            `json:"endpoints,omitempty"`
+	EmailTemplates         []EmailTemplateMetadata       `json:"emailTemplates,omitempty"`
+	MessageChannels        []MessageChannelMetadata      `json:"messageChannels,omitempty"`
+	FeatureParameters      []FeatureParameterMetadata    `json:"featureParameters,omitempty"`
+	Layouts                []LayoutMetadata              `json:"layouts,omitempty"`
 }
 
 type AccountRecordTypeDefault struct {
@@ -268,6 +269,15 @@ type LabelMetadata struct {
 	ShortDescription string `json:"shortDescription,omitempty"`
 	Categories       string `json:"categories,omitempty"`
 	File             string `json:"file,omitempty"`
+}
+
+// StandardValueSetTranslation is a project-authored translation of one
+// standard picklist value. Runtime clones share this immutable metadata.
+type StandardValueSetTranslation struct {
+	ValueSet    string `json:"valueSet"`
+	Language    string `json:"language"`
+	MasterLabel string `json:"masterLabel"`
+	Translation string `json:"translation"`
 }
 
 type TabMetadata struct {
@@ -634,7 +644,9 @@ type WorkflowFieldUpdate struct {
 	Field        string `json:"field"`
 	LiteralValue string `json:"literalValue,omitempty"`
 	Formula      string `json:"formula,omitempty"`
-	SourceField  string `json:"sourceField,omitempty"`
+	// FlowFrameFormula marks an individually selected record-triggered Flow formula.
+	FlowFrameFormula bool   `json:"flowFrameFormula,omitempty"`
+	SourceField      string `json:"sourceField,omitempty"`
 	// ActionOutput names a Flow Apex action whose automatically stored
 	// output supplies the value.
 	ActionOutput string `json:"actionOutput,omitempty"`
@@ -832,7 +844,8 @@ type FlowCustomError struct {
 }
 
 type FlowCustomErrorMessage struct {
-	Message string `json:"message"`
+	Message  string            `json:"message"`
+	Formulas map[string]string `json:"formulas,omitempty"`
 }
 
 type FlowApexPluginCall struct {
@@ -909,6 +922,9 @@ type LookupHistoryScope struct{ identity byte }
 func NewLookupHistoryScope() *LookupHistoryScope { return &LookupHistoryScope{} }
 
 type Record struct {
+	// dmlDefaultRecordTypeID is transient provenance for a VM-supplied default.
+	// It is intentionally unexported so JSON and gob snapshots do not retain it.
+	dmlDefaultRecordTypeID *ID
 	// AssignmentRule is a transient per-record DML option, never persisted.
 	AssignmentRule *AssignmentRuleSelection `json:"-"`
 	// MetadataSourceUnit binds source-backed metadata collisions to their producing project.
@@ -933,6 +949,43 @@ type Record struct {
 
 	// ClearedReferences retains optional lookups cleared by parent deletion.
 	ClearedReferences map[string]ClearedReference `json:"clearedReferences,omitempty"`
+}
+
+// MarkDMLRecordTypeDefaulted records the current VM-supplied record type.
+func (r *Record) MarkDMLRecordTypeDefaulted() {
+	value, ok := r.GetField("RecordTypeId")
+	if !ok {
+		return
+	}
+	var id ID
+	if value.Kind == ValueID {
+		id = value.ID
+	} else if value.Kind == ValueString {
+		id = ID(value.String)
+	}
+	if id != "" {
+		r.dmlDefaultRecordTypeID = &id
+	}
+}
+
+// DMLRecordTypeDefaulted is false if the default was subsequently changed.
+func (r Record) DMLRecordTypeDefaulted() bool {
+	if r.dmlDefaultRecordTypeID == nil {
+		return false
+	}
+	value, ok := r.GetField("RecordTypeId")
+	if !ok {
+		return false
+	}
+	if value.Kind == ValueID {
+		return IDsEqual(*r.dmlDefaultRecordTypeID, value.ID)
+	}
+	return value.Kind == ValueString && IDsEqual(*r.dmlDefaultRecordTypeID, ID(value.String))
+}
+
+// ClearDMLRecordTypeDefaulted drops the provenance before a record is stored.
+func (r *Record) ClearDMLRecordTypeDefaulted() {
+	r.dmlDefaultRecordTypeID = nil
 }
 
 type ClearedReference struct {

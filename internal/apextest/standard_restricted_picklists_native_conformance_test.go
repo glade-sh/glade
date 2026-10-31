@@ -30,32 +30,26 @@ func TestStandardRestrictedPicklistsNativeConformance(t *testing.T) {
 
 func TestStandardRestrictedPicklistLocaleNativeConformance(t *testing.T) {
 	// locale-boundary/org.tsv:2-5, API 62/67, anonymous and @IsTest.
-	// This named set is deliberately explicit: additional native rejections
-	// must fail the normal comparison until independently accounted for.
-	carriedLocaleRejections := []string{
-		"NotAnAllowedValue", "az", "be", "dz", "en", "ky", "lo", "lu", "ne",
-		"ps", "rn", "so", "tg", "ti", "uz", "xx", "yo", "zz",
-	}
-	const carryReason = "LocaleSidKey enforcement is deferred because the catalog is not a complete valid-DML list and would risk false rejections"
 	runRestrictedPicklistNativeConformance(t, "testdata/conformance/standard_restricted_picklists/locale-boundary", "LocaleRestrictionProbeTest", func(t *testing.T, api string, got, want map[string]any) {
-		// The broad catalog is a feature spread; this capture qualifies DML
-		// aliases and their absence from describe, not the total org shape.
+		// Org-specific describe sizes are not part of this DML comparison.
 		delete(got, "totalEntryCount")
 		delete(want, "totalEntryCount")
-		for _, locale := range carriedLocaleRejections {
-			t.Run("CARRIED/LocaleSidKey/"+locale, func(t *testing.T) {
-				t.Logf("CARRIED native=%v; local=%v; reason=%s", want[locale], got[locale], carryReason)
-				if locale == "NotAnAllowedValue" {
-					t.Logf("CARRIED error: native=%v; local=%v; reason=%s", want["error"], got["error"], carryReason)
-				}
-			})
-			delete(got, locale)
-			delete(want, locale)
-		}
-		// The error belongs to NotAnAllowedValue and was logged with that carry.
-		delete(got, "error")
-		delete(want, "error")
 	})
+}
+
+// locale-routes/org.tsv:2-5 covers API 62/67 and both execution routes.
+func TestStandardRestrictedPicklistLocaleRoutesNativeConformance(t *testing.T) {
+	runRestrictedPicklistNativeConformance(t, "testdata/conformance/standard_restricted_picklists/locale-routes", "LocaleRoutesProbeTest", func(*testing.T, string, map[string]any, map[string]any) {})
+}
+
+// locale-diagnostics-{1,2}/org.tsv:2-5 record exact diagnostics for all
+// captured rejected values across statement and Database DML routes.
+func TestStandardRestrictedPicklistLocaleDiagnosticsNativeConformance(t *testing.T) {
+	for _, fixture := range []string{"locale-diagnostics-1", "locale-diagnostics-2"} {
+		t.Run(fixture, func(t *testing.T) {
+			runRestrictedPicklistNativeConformance(t, "testdata/conformance/standard_restricted_picklists/"+fixture, "LocaleRoutesProbeTest", func(*testing.T, string, map[string]any, map[string]any) {})
+		})
+	}
 }
 
 func runRestrictedPicklistNativeConformance(t *testing.T, fixture, testClass string, normalize func(*testing.T, string, map[string]any, map[string]any)) {

@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/ir"
 	"github.com/glade-sh/glade/internal/storage"
@@ -246,12 +247,42 @@ func (vm *VM) executeDatabaseDMLWithOptions(op string, args []Value, result *Res
 		}
 	}
 	if dmlMode == "USER_MODE" {
+		permissionOp := op
+		if ordinaryDatabaseCall && op == "upsert" && (externalIDField == "" || strings.EqualFold(externalIDField, "Id")) && vm.accountPersonAccountsEnabled() {
+			records := dmlAccessRecords(args[0])
+			scope := accessLevelPermissionSetID(accessLevel)
+			newAccounts := len(records) > 0 && vm.currentUserObjectPermissionWithScope("Account", "isAccessible", scope) && vm.currentUserObjectPermissionWithScope("Account", "isCreateable", scope)
+			for _, record := range records {
+				_, id, hasID := objectFieldValue(record, "Id")
+				if record.Kind != ValueObject || !strings.EqualFold(vm.canonicalSObjectValueType(record), "Account") || (hasID && id.Kind != ValueNull) {
+					newAccounts = false
+					break
+				}
+			}
+			if newAccounts {
+				permissionOp = "insert"
+			}
+		}
+		// API 67 default Database calls in runAs use create permission for
+		// a new Account upsert and return a row error for a denied update.
+		if ordinaryDatabaseCall && !isDatabaseAccessLevelValue(accessLevel) && !allOrNone && externalIDField == "" && vm.runAsSecureDefaults() && (op == "upsert" || op == "update") && vm.accountPersonAccountsEnabled() {
+			records := dmlAccessRecords(args[0])
+			if len(records) == 1 && records[0].Kind == ValueObject && strings.EqualFold(vm.canonicalSObjectValueType(records[0]), "Account") {
+				_, id, hasID := objectFieldValue(records[0], "Id")
+				if hasID && id.Kind != ValueNull && vm.currentUserObjectPermission("Account", "isAccessible") && vm.currentUserObjectPermission("Account", "isCreateable") && !vm.currentUserObjectPermission("Account", "isUpdateable") {
+					if err := vm.chargeAccountPermissionDML(1); err != nil {
+						return Null, err
+					}
+					return fieldKeyDMLResultsValue(op, args[0], []dml.Result{{StatusCode: "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", Error: "DML operation UPDATE not allowed on Account"}}), nil
+				}
+			}
+		}
 		if allOrNone && externalIDField == "" {
 			if err := vm.databaseAccessLevelDenial(op, args[0], accessLevel); err != nil {
 				return Null, err
 			}
 		}
-		if err := vm.enforceUserModeDMLAccess(op, args[0], accessLevel); err != nil {
+		if err := vm.enforceUserModeDMLAccess(permissionOp, args[0], accessLevel); err != nil {
 			return Null, err
 		}
 	}
@@ -272,14 +303,22 @@ func (vm *VM) executeDatabaseDMLWithOptions(op string, args []Value, result *Res
 	}
 	if op == "insert" {
 		dmlOptions.ApexRecordTypeInsertMode = dmlMode
-		dmlOptions.ApexRejectNullPersonRecordType = ordinaryDatabaseCall
 	}
+	// Only the create branch of an upsert runs insert validation.
+	dmlOptions.ApexRejectNullPersonRecordType = ordinaryDatabaseCall && (op == "insert" || (op == "upsert" && (externalIDField == "" || strings.EqualFold(externalIDField, "Id"))))
 	dmlOptions.AllowTestHistoryInsert = historyTestSeed && op == "insert" && vm.allowTestHistoryInsert()
 	results, err := vm.applyDMLWithRecordAccess(op, args[0], allOrNone, externalIDField, dmlOptions, result, dmlMode)
 	appendDurationTraceLazy(result, "apex.dml."+op, "apex.dml", traceStart, traceDurationSince(traceStartedAt), func() map[string]any {
 		return vm.traceDMLArgs(op, traceRecords, len(traceRecords))
 	})
 	if err != nil {
+		// The captured singleton partial insert returns a SaveResult for a Flow
+		// Custom Error containing a record-triggered String formula merge.
+		if op == "insert" && len(args) == 2 && args[0].Kind == ValueObject && args[1].Kind == ValueBool && !allOrNone {
+			if failure, ok := dml.FlowCapturedFormulaErrorResult(err); ok {
+				return fieldKeyDMLResultsValue(op, args[0], []dml.Result{failure}), nil
+			}
+		}
 		return Null, err
 	}
 	if allOrNone && hasDMLFailures(results) {
@@ -310,6 +349,28 @@ func (vm *VM) executeDatabaseDMLWithOptions(op string, args []Value, result *Res
 		// API 62/67 observations cover this three-argument overload.
 		if op == "insert" && len(args) == 3 && args[0].Kind == ValueList && args[1].Kind == ValueBool && dmlMode == "SYSTEM_MODE" {
 			return Null, statementDMLException(op, results, vm.dmlExceptionObjectTypes(args[0]))
+		}
+		// Captured Account, Contact and Opportunity required-field failures cover
+		// Boolean and USER_MODE list inserts. Preserve uncaptured fields and APIs.
+		version := vm.currentMethod.APIVersion
+		if version == "" && vm.Org != nil {
+			version = vm.Org.APIVersion
+		}
+		if ordinaryDatabaseCall && apexversion.AtLeast(version, 62) && !apexversion.AtLeast(version, 68) && op == "insert" && args[0].Kind == ValueList && len(args) >= 2 && len(args) <= 3 && args[1].Kind == ValueBool && (len(args) == 2 || (isDatabaseAccessLevelValue(accessLevel) && dmlMode == "USER_MODE")) {
+			objectTypes := vm.dmlExceptionObjectTypes(args[0])
+			for index, item := range results {
+				if item.Success || item.Error == "" {
+					continue
+				}
+				details := dmlResultErrors(item)
+				if item.StatusCode == "REQUIRED_FIELD_MISSING" && index < len(objectTypes) && len(details) > 0 && len(details[0].Fields) == 1 {
+					object, field := objectTypes[index], details[0].Fields[0]
+					if ((strings.EqualFold(object, "Account") || strings.EqualFold(object, "Opportunity")) && strings.EqualFold(field, "Name")) || (strings.EqualFold(object, "Contact") && strings.EqualFold(field, "LastName")) {
+						return Null, rowDMLException(op, results, objectTypes)
+					}
+				}
+				break
+			}
 		}
 		// Native update_error_messages rows cover default/Boolean Database.update;
 		// options, access levels and aliases retain their uncaptured local envelope.
@@ -2229,6 +2290,11 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 	if err := validateDMLListEntries(value); err != nil {
 		return nil, err
 	}
+	// The captured custom-key duplicate behavior is scalar. Keep the list
+	// route on its shipping path, even if partial DML later filters the list.
+	if op == "upsert" && value.Kind == ValueList {
+		options.PreserveCustomKeyUpsertList = true
+	}
 	bulkPrevious := aliasSnapshot{}
 	bulkPropagate := value.Kind == ValueList && value.Ref != 0
 	if bulkPropagate {
@@ -2882,6 +2948,9 @@ func (vm *VM) applySObjectFieldDefaults(records []storage.Record, apexInsertMode
 		if _, ok := records[i].GetField("RecordTypeId"); allowRecordTypeDefault && !ok && !records[i].HasExplicitNull("RecordTypeId") {
 			if recordTypeID := vm.defaultRecordTypeIDForRecord(objectName, definition, records[i]); recordTypeID != "" {
 				records[i].Fields["RecordTypeId"] = storage.IDValue(recordTypeID)
+				if strings.EqualFold(objectName, "Account") && records[i].HasExplicitNull("LastName") {
+					records[i].MarkDMLRecordTypeDefaulted()
+				}
 			}
 		}
 		for name, field := range definition.Fields {
@@ -3313,6 +3382,12 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 	engine.Options = options
 	engine.Options.AllowBatchUniqueValueSwap = allOrNone
 	engine.Options.EnforceUpsertIDInsertDuplicateRules = true
+	// Native scalar upsert rows apply duplicate rules to matched updates as
+	// well as inserts. List routes retain their shipping behavior.
+	if len(records) == 1 && !engine.Options.PreserveCustomKeyUpsertList {
+		engine.Options.EnforceDuplicateRules = true
+		engine.Options.UpsertChangedExactDuplicatesOnly = true
+	}
 	engine.PriorRecords = dmlPriorRecordsByID(before)
 	if !allOrNone && vm.hasAfterTriggerForDML("upsert", records) {
 		ensurePartialAfterTriggerBackup()
@@ -3411,6 +3486,9 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 		}
 	}
 	if hasDMLSuccess(results) {
+		if len(records) == 1 && !engine.Options.PreserveCustomKeyUpsertList && externalIDField != "" && !strings.EqualFold(externalIDField, "Id") {
+			vm.queueDuplicateReports(engine.TakeDuplicateReports())
+		}
 		vm.rebuildDMLObjectIndexes(records, results)
 		vm.clearCustomDataCache()
 	}
@@ -6028,6 +6106,18 @@ func groupedRecordIndicesByObject(records []storage.Record) [][]int {
 	return groups
 }
 
+// Captured Account permission failures consume a statement and all submitted
+// rows, even when the write itself is rejected before reaching the engine.
+func (vm *VM) chargeAccountPermissionDML(rows int) error {
+	if err := vm.incrementLimit("dmlStatements", 1); err != nil {
+		return err
+	}
+	if err := vm.incrementLimit("dmlRows", rows); err != nil {
+		return err
+	}
+	return vm.incrementLimit("cpuTime", rows)
+}
+
 func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, mode ir.DMLMode, result *Result) error {
 	if mode == ir.DMLModeSystem {
 		if err := vm.validateExplicitAccessLevel(accessLevelValue("SYSTEM_MODE")); err != nil {
@@ -6131,6 +6221,53 @@ func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, mode i
 			_, id, hasID := objectFieldValue(value, "Id")
 			if !hasID || id.Kind == ValueNull {
 				permissionOp = "insert"
+			}
+		}
+		// The enabled-feature capture also covers a singleton Account list
+		// whose upsert takes the create branch under the read/create profile.
+		if mode == ir.DMLModeDefault && op == "upsert" && externalIDField == "" && value.Kind == ValueList && len(value.List) == 1 && vm.runAsSecureDefaults() && vm.accountPersonAccountsEnabled() && vm.currentUserObjectPermission("Account", "isAccessible") && vm.currentUserObjectPermission("Account", "isCreateable") && !vm.currentUserObjectPermission("Account", "isUpdateable") {
+			record := value.List[0]
+			if record.Kind == ValueObject && strings.EqualFold(vm.canonicalSObjectValueType(record), "Account") {
+				_, id, hasID := objectFieldValue(record, "Id")
+				if !hasID || id.Kind == ValueNull {
+					permissionOp = "insert"
+				}
+			}
+		}
+		if mode == ir.DMLModeUser && op == "upsert" && (externalIDField == "" || strings.EqualFold(externalIDField, "Id")) && vm.accountPersonAccountsEnabled() {
+			// The captured selector-free Account routes check create for new
+			// records and update for records with an Id, including lists.
+			records := dmlAccessRecords(value)
+			accounts := len(records) > 0 && vm.currentUserObjectPermission("Account", "isAccessible")
+			for _, record := range records {
+				if record.Kind != ValueObject || !strings.EqualFold(vm.canonicalSObjectValueType(record), "Account") {
+					accounts = false
+					break
+				}
+			}
+			if accounts {
+				for _, record := range records {
+					_, id, hasID := objectFieldValue(record, "Id")
+					rowOp := "insert"
+					if hasID && id.Kind != ValueNull {
+						rowOp = "update"
+						if vm.currentUserObjectPermission("Account", "isAccessible") && vm.currentUserObjectPermission("Account", "isCreateable") && !vm.currentUserObjectPermission("Account", "isUpdateable") {
+							if err := vm.chargeAccountPermissionDML(len(records)); err != nil {
+								return err
+							}
+							return newExceptionError("TypeException", "DML operation UPDATE not allowed on Account")
+						}
+					} else if vm.currentUserObjectPermission("Account", "isAccessible") && !vm.currentUserObjectPermission("Account", "isCreateable") {
+						if err := vm.chargeAccountPermissionDML(len(records)); err != nil {
+							return err
+						}
+						return newExceptionError("DmlException", "Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result! ")
+					}
+					if err := vm.enforceUserModeDMLAccess(rowOp, record, Value{}); err != nil {
+						return err
+					}
+				}
+				permissionOp = ""
 			}
 		}
 		if err := vm.enforceUserModeDMLAccess(permissionOp, value, Value{}); err != nil {

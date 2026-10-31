@@ -1,0 +1,5 @@
+{
+  "name_number": "SELECT Id FROM Account WHERE Name = 3",
+  "phone_number": "SELECT Id FROM Account WHERE Phone = 7",
+  "quoted_control": "SELECT Id FROM Account WHERE Name = '3'"
+}

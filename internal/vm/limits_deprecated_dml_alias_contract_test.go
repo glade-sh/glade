@@ -12,7 +12,7 @@ import "testing"
 // behavior, reset, enforcement, async, native/API interval/AC7 remain unqualified.
 func TestExecLimitsDeprecatedDMLAliasesAPI67(t *testing.T) {
 	cases := []struct {
-		name string
+		name   string
 		source string
 	}{
 		{name: "integerGetterBindingAndTargetStabilityControl", source: `Integer used=Limits.getDMLStatements();Integer cap=Limits.getLimitDMLStatements();Integer runAs=Limits.getRunAs();Integer runAsCap=Limits.getLimitRunAs();Integer rollbacks=Limits.getSavepointRollbacks();Integer rollbackCap=Limits.getLimitSavepointRollbacks();Integer savepoints=Limits.getSavepoints();Integer savepointCap=Limits.getLimitSavepoints();System.assertEquals(used,Limits.getDMLStatements());System.assertEquals(cap,Limits.getLimitDMLStatements());`},

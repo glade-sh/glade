@@ -835,8 +835,12 @@ func coerceDottedSObjectBooleanNull(receiver, value Value, name string, definiti
 		return value
 	}
 	explicit := isExplicitSObjectField(receiver, name)
-	if storage.IsCustomMetadataDefinition(definition) || !explicit &&
-		!storage.IsCustomSettingDefinition(definition) && hasSuffixFold(definition.APIName, "__c") {
+	_, queried := receiver.Fields[sobjectQueriedFieldsField]
+	_, cloned := receiver.Fields[sobjectCloneMarkerField]
+	freshCaller := !queried && !cloned && !isTriggerSObject(receiver) && !isParentProjectionSObject(receiver)
+	if storage.IsCustomMetadataDefinition(definition) || !storage.IsCustomSettingDefinition(definition) &&
+		(!explicit && hasSuffixFold(definition.APIName, "__c") || explicit && freshCaller &&
+			(hasSuffixFold(definition.APIName, "__c") || strings.EqualFold(definition.APIName, "Contact")) && observedCustomCheckboxField(field)) {
 		return Bool(false)
 	}
 	if explicit {
@@ -846,6 +850,22 @@ func coerceDottedSObjectBooleanNull(receiver, value Value, name string, definiti
 		return Bool(false)
 	}
 	return value
+}
+
+// Captured metadata uses custom Checkbox fields with true/false defaults.
+// A metadata-loaded checkbox may omit Nillable but retains Boolean display type.
+func observedCustomCheckboxField(field storage.Field) bool {
+	if field.Type != storage.FieldBoolean || !hasSuffixFold(field.APIName, "__c") || strings.TrimSpace(field.Formula) != "" {
+		return false
+	}
+	if field.Nillable != nil && *field.Nillable {
+		return false
+	}
+	if field.Nillable == nil && !strings.EqualFold(field.DisplayType, "boolean") {
+		return false
+	}
+	defaultValue := strings.TrimSpace(field.DefaultValue)
+	return strings.EqualFold(defaultValue, "true") || strings.EqualFold(defaultValue, "false")
 }
 
 func (vm *VM) setExplicitSObjectFieldValue(object *Value, name string, value Value) {

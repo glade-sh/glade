@@ -94,7 +94,7 @@ func TestVisualforceHTMLStandardControllerUserModeProjectionAPI67(t *testing.T) 
 				machine.SetCurrentUser(storage.Record{
 					ID: userID, Object: "User",
 					Fields: map[string]storage.Value{
-						"ProfileId": storage.IDValue("00e000000000002"),
+						"ProfileId":              storage.IDValue("00e000000000002"),
 						"PermissionsViewAllData": storage.BooleanValue(true),
 					},
 				})

@@ -7,6 +7,11 @@ Apex source API below 62.0 is unsupported. DataWeave, ConnectApi, and Slack
 are excluded and unsupported. See [RELEASE_POLICY.md](RELEASE_POLICY.md#salesforce-api-versions)
 for endpoint versions and Execute Anonymous eligibility.
 
+The generated capability reports are incomplete snapshots: their Flow limits
+and Platform Cache entries summarize selected behavior. Use
+[COMPATIBILITY.md](COMPATIBILITY.md) and the detailed guides alongside them;
+an absent entry is not a support claim.
+
 ## If You Want To Use Glade
 
 1. Start and install: [INSTALL.md](INSTALL.md)

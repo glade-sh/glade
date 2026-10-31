@@ -77,6 +77,25 @@ func (o *methodTableOverlay) applyTo(methods map[string]Method, overloads, folde
 	}
 }
 
+// RangeRegisteredMethods visits the effective method table, including methods
+// registered on a clone. An overlay entry replaces the shared entry of the same
+// name, just as it does for method lookup.
+func (vm *VM) RangeRegisteredMethods(visit func(Method)) {
+	for name, method := range vm.Methods {
+		if vm.methodOverlay != nil {
+			if _, overridden := vm.methodOverlay.methods[name]; overridden {
+				continue
+			}
+		}
+		visit(method)
+	}
+	if vm.methodOverlay != nil {
+		for _, method := range vm.methodOverlay.methods {
+			visit(method)
+		}
+	}
+}
+
 // registeredMethod reads vm.Methods through the clone overlay.
 func (vm *VM) registeredMethod(name string) (Method, bool) {
 	if vm.methodOverlay != nil {

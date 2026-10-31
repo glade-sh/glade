@@ -1,0 +1,5 @@
+case	shape	boundary
+H01	unsaved Opportunity Lead Case	empty record
+H02	Opportunity Name and Lead LastName	populated and explicit null
+H03	Opportunity/Lead in list	nested hash
+H04	null argument	rejection

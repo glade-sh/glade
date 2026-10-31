@@ -87,7 +87,8 @@
     ]
   },
   "concurrentTestCounts": {
-    "./internal/apextest": 477,
+    "./internal/apextest": 484,
+    "./internal/pluginhost": 3,
     "./internal/sema": 644,
     "./internal/vm": 14
   }

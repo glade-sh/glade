@@ -1803,6 +1803,9 @@ func selectFunctionFieldArg(arg string) string {
 	return inner
 }
 func toLabelValue(org storage.OrgState, definition storage.ObjectDefinition, field string, value storage.Value) storage.Value {
+	if unqualified, ok := stripQualifiedCurrentObjectField(org, definition, field); ok {
+		field = unqualified
+	}
 	fields, ok := fieldDefinitionsForReference(org, definition, field)
 	if !ok || len(fields) == 0 {
 		return value.Clone()

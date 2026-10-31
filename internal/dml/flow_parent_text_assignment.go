@@ -145,12 +145,17 @@ func (e *Engine) flowTextScalarFieldUpdateValue(update storage.WorkflowFieldUpda
 		return storage.Value{}, false
 	}
 	if strings.TrimSpace(update.Formula) != "" {
-		if !flowCoreFormulaUsesScalars(update.Formula, frame) {
+		if !flowCoreFormulaUsesScalars(update.Formula, frame, update.FlowFrameFormula) {
 			return storage.Value{}, false
 		}
-		value, ok := flowFrameFormulaValue(update.Formula, frame)
+		var value storage.Value
+		var ok bool
 		if e.InvocableFlow {
 			value, ok = e.flowContextFormulaValue(update.Formula, frame)
+		} else if update.FlowFrameFormula {
+			value, ok = flowFrameCapturedFormulaValue(update.Formula, frame)
+		} else {
+			value, ok = flowFrameFormulaValue(update.Formula, frame)
 		}
 		return value, ok && (value.Kind == storage.ValueString || value.Kind == storage.ValueNull)
 	}

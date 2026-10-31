@@ -1,0 +1,14 @@
+case	axis	route and boundary
+null_last_no_type	LastName explicitly null with no Name	Database.insert, statement insert/upsert scalar and list; omitted record type
+null_last_business_type	LastName explicitly null with business Name	Database.insert, statement insert/upsert scalar and list; explicit business RecordTypeId
+null_last_business_missing	LastName explicitly null without Name	Database.insert, statement insert/upsert scalar and list; explicit business RecordTypeId
+null_last_person_type	LastName explicitly null with FirstName	Database.insert, statement insert/upsert scalar and list; explicit person RecordTypeId
+omitted_last_business	LastName omitted with business Name	Database.insert, statement insert/upsert scalar and list; explicit business RecordTypeId success control
+business_user_new	business Account read/create permissions	USER_MODE statement scalar/list and Id selector; null Id
+business_user_existing	business Account read/create permissions	USER_MODE statement scalar/list and Id selector; existing Id
+business_user_mixed	business Account read/create permissions	USER_MODE statement list with new and existing
+business_api_new	business Account read/create permissions	Database.upsert default/USER_MODE/SYSTEM_MODE scalar/list
+business_api_existing	business Account read/create permissions	Database.update/upsert partial; existing Id and limit deltas
+feature_disabled	PersonAccounts disabled	preserve existing shipping behavior; no fresh native row within one-org capture
+business_api_selector	business Account read/create permissions	Database.upsert scalar/list Id selector and explicit access-level lists
+business_readonly_editonly	business Account permission profiles	USER_MODE scalar/list/Id selector with read-only and read-edit without create

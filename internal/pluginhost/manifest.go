@@ -8,9 +8,30 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"syscall"
+	"time"
 )
 
 func LoadManifestFromExecutable(ctx context.Context, executable string) (Manifest, error) {
+	// Linux can briefly reject exec while another process holds the executable
+	// open for writing, including a descriptor inherited during a concurrent fork.
+	const attempts = 5
+	for attempt := 0; ; attempt++ {
+		manifest, err := loadManifestFromExecutableOnce(ctx, executable)
+		if !errors.Is(err, syscall.ETXTBSY) || attempt == attempts-1 {
+			return manifest, err
+		}
+		timer := time.NewTimer(25 * time.Millisecond)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return Manifest{}, fmt.Errorf("read plugin manifest: %w", ctx.Err())
+		case <-timer.C:
+		}
+	}
+}
+
+func loadManifestFromExecutableOnce(ctx context.Context, executable string) (Manifest, error) {
 	cmd := exec.CommandContext(ctx, executable, "manifest", "--json")
 	configureManifestCommand(cmd)
 	var stdout, stderr bytes.Buffer

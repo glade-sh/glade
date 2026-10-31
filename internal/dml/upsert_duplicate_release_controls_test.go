@@ -10,8 +10,7 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
-// A custom external-ID insertion retains the release engine's no-statement
-// duplicate policy until that selector has its own native capture.
+// Custom external-ID inserts enforce duplicate rules, including distinct controls.
 func TestUpsertCustomKeyDuplicateRetainsReleaseEngineBehavior(t *testing.T) {
 	loaded, err := project.Load(filepath.Join("../apextest/testdata/conformance/dml_policies", "project"))
 	if err != nil {
@@ -43,11 +42,15 @@ func TestUpsertCustomKeyDuplicateRetainsReleaseEngineBehavior(t *testing.T) {
 						row.Fields["Email"] = storage.StringValue("distinct@example.invalid")
 					}
 					results := engine.UpsertWithExternalID([]storage.Record{row}, key)
-					if len(results) != 1 || !results[0].Success || !results[0].Created {
-						t.Fatalf("release custom-key insertion: %+v", results)
+					if len(results) != 1 || results[0].Success == collide || (!collide && !results[0].Created) {
+						t.Fatalf("custom-key insertion: %+v", results)
 					}
-					if len(org.Objects["Contact"].Records) != 2 {
-						t.Fatal("custom-key insertion must retain both records")
+					want := 2
+					if collide {
+						want = 1
+					}
+					if len(org.Objects["Contact"].Records) != want {
+						t.Fatalf("record count: got %d, want %d", len(org.Objects["Contact"].Records), want)
 					}
 				})
 			}

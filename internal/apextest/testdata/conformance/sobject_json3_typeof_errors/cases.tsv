@@ -1,0 +1,7 @@
+shape	query	purpose
+ownerAccount	Task.Owner WHEN Account	existing rejection
+ownerContact	Task.Owner WHEN Contact	adjacent rejection
+ownerOpportunity	Task.Owner WHEN Opportunity	adjacent rejection
+whoAccount	Task.Who WHEN Account	second relationship rejection
+validBoundary	Task.Owner WHEN User	valid target boundary
+unknownType	Task.Owner WHEN NotARealType__c	unknown entity boundary

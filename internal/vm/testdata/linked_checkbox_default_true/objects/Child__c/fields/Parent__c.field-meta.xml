@@ -1,0 +1,1 @@
+<?xml version="1.0" encoding="UTF-8"?><CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Parent__c</fullName><label>Parent</label><referenceTo>Parent__c</referenceTo><relationshipLabel>Children</relationshipLabel><relationshipName>Children</relationshipName><type>Lookup</type></CustomField>

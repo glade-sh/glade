@@ -12,43 +12,60 @@ import (
 // These are local preservation controls, not native parity assertions: the
 // captured matrix does not answer default-mode or non-test parent projection.
 func TestPrivateSelfLookupSharingUncapturedContextControls(t *testing.T) {
-	for _, shape := range []string{"default_static", "default_dynamic", "other_access_argument", "non_test"} {
-		t.Run(shape, func(t *testing.T) {
-			machine := hierarchyRecordVisibilityMachine(t)
-			hierarchyReadShare(machine, "a00000000000003", 1)
-			hierarchySourceUnchanged(t, machine)
-			registerHierarchyVisibilityReader(t, machine, "62.0", "with sharing", false)
-			if shape == "non_test" {
-				machine.executionUser = machine.testContext.CurrentUser
-				machine.testContext = nil
-			} else {
-				query := "SELECT Id, Parent__c, Parent__r.Id, Parent__r.Parent__c, Parent__r.Parent__r.Id FROM Widget__c WHERE Id = 'a00000000000003'"
-				body := "return [" + query + "];"
-				if shape == "default_dynamic" {
-					body = "return Database.query('" + strings.ReplaceAll(query, "'", "\\'") + "');"
-				} else if shape == "other_access_argument" {
-					body = "return Database.query('" + strings.ReplaceAll(query, "'", "\\'") + "',AccessLevel.SYSTEM_MODE);"
+	for _, api := range []string{"62.0", "67.0"} {
+		shapes := []string{"other_access_argument", "other_access_argument_reordered"}
+		if api == "62.0" {
+			shapes = append(shapes, "default_static", "default_dynamic", "non_test")
+		}
+		for _, shape := range shapes {
+			t.Run(api+"/"+shape, func(t *testing.T) {
+				machine := hierarchyRecordVisibilityMachine(t)
+				hierarchyReadShare(machine, "a00000000000003", 1)
+				hierarchySourceUnchanged(t, machine)
+				registerHierarchyVisibilityReader(t, machine, api, "with sharing", false)
+				if shape == "non_test" {
+					machine.executionUser = machine.testContext.CurrentUser
+					machine.testContext = nil
+				} else {
+					query := "SELECT Id, Parent__c, Parent__r.Id, Parent__r.Parent__c, Parent__r.Parent__r.Id FROM Widget__c WHERE Id = 'a00000000000003'"
+					body := "return [" + query + "];"
+					if shape == "default_dynamic" {
+						body = "return Database.query('" + strings.ReplaceAll(query, "'", "\\'") + "');"
+					} else if shape == "other_access_argument" || shape == "other_access_argument_reordered" {
+						if shape == "other_access_argument_reordered" {
+							query = "SELECT Parent__r.Id, Parent__c, Id, Parent__r.Parent__r.Id, Parent__r.Parent__c FROM Widget__c WHERE Id = 'a00000000000003'"
+						}
+						body = "return Database.query('" + strings.ReplaceAll(query, "'", "\\'") + "',AccessLevel.SYSTEM_MODE);"
+					}
+					program, err := CompileAnonymousWithOptions(body, CompileOptions{APIVersion: api})
+					if err != nil {
+						t.Fatal(err)
+					}
+					method := machine.Methods["HierarchyReader.read"]
+					machine.unregisterMethod(method)
+					method.Program = program
+					if err := machine.RegisterMethod(method); err != nil {
+						t.Fatal(err)
+					}
 				}
-				program, err := CompileAnonymousWithOptions(body, CompileOptions{APIVersion: "62.0"})
-				if err != nil {
-					t.Fatal(err)
+				rows, err := machine.callMethod(machine.Methods["HierarchyEntry.read"], nil, &Result{})
+				if err != nil || len(rows.List) != 1 {
+					t.Fatalf("unchanged query control: rows=%d error=%v", len(rows.List), err)
 				}
-				method := machine.Methods["HierarchyReader.read"]
-				machine.unregisterMethod(method)
-				method.Program = program
-				if err := machine.RegisterMethod(method); err != nil {
-					t.Fatal(err)
+				_, parent, ok := objectFieldValue(rows.List[0], "Parent__r")
+				if !ok || parent.Kind != ValueObject {
+					t.Fatal("uncaptured context changed its existing projection")
 				}
-			}
-			rows, err := machine.callMethod(machine.Methods["HierarchyEntry.read"], nil, &Result{})
-			if err != nil || len(rows.List) != 1 {
-				t.Fatalf("unchanged query control: rows=%d error=%v", len(rows.List), err)
-			}
-			_, parent, ok := objectFieldValue(rows.List[0], "Parent__r")
-			if !ok || parent.Kind != ValueObject {
-				t.Fatal("uncaptured context changed its existing projection")
-			}
-		})
+				rows, err = machine.callMethod(machine.Methods["HierarchyEntry.read"], nil, &Result{})
+				if err != nil || len(rows.List) != 1 {
+					t.Fatalf("warm query control: rows=%d error=%v", len(rows.List), err)
+				}
+				_, parent, ok = objectFieldValue(rows.List[0], "Parent__r")
+				if !ok || parent.Kind != ValueObject {
+					t.Fatal("warm uncaptured context changed its existing projection")
+				}
+			})
+		}
 	}
 }
 

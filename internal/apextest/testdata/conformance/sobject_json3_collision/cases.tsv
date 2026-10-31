@@ -1,0 +1,7 @@
+case	coverage	routes	api
+industry_a	Industry Agriculture API value has master label Banking; label collides with another API value	anonymous; @IsTest	62.0;67.0
+industry_b	Industry Banking API value has master label Technology; second collision	anonymous; @IsTest	62.0;67.0
+industry_c	Industry Technology API value has master label Agriculture; third collision	anonymous; @IsTest	62.0;67.0
+alias	Translated and untranslated direct aliases and unaliased projection	anonymous; @IsTest	62.0;67.0
+null_boundary	Selected null picklist alias	anonymous; @IsTest	62.0;67.0
+query_rejection	Unknown selected field rejected	anonymous; @IsTest	62.0;67.0

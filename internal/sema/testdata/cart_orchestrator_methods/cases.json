@@ -1,0 +1,7 @@
+[
+  {"id":"shipping_promotions_call","name":"ProbeShippingPromotions","source":"public class ProbeShippingPromotions extends CartExtension.CartCalculate { public override void calculate(CartExtension.CartCalculateOrchestratorRequest r) { shippingPromotions((CartExtension.CartCalculateCalculatorRequest)null); } }"},
+  {"id":"shipping_call","name":"ProbeShipping","source":"public class ProbeShipping extends CartExtension.CartCalculate { public override void calculate(CartExtension.CartCalculateOrchestratorRequest r) { shipping((CartExtension.CartCalculateCalculatorRequest)null); } }"},
+  {"id":"pricing_call","name":"ProbePrices","source":"public class ProbePrices extends CartExtension.CartCalculate { public override void calculate(CartExtension.CartCalculateOrchestratorRequest r) { prices((CartExtension.CartCalculateCalculatorRequest)null); } }"},
+  {"id":"shipping_promotions_wrong_arg","name":"ProbeWrongArg","source":"public class ProbeWrongArg extends CartExtension.CartCalculate { public override void calculate(CartExtension.CartCalculateOrchestratorRequest r) { shippingPromotions('wrong'); } }"},
+  {"id":"shipping_promotions_override","name":"ProbeOverride","source":"public class ProbeOverride extends CartExtension.CartCalculate { public override void shippingPromotions(CartExtension.CartCalculateCalculatorRequest r) {} }"}
+]

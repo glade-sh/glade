@@ -18,7 +18,8 @@ import (
 
 type staticFactoryReceiverCapture struct {
 	Context, SourceAPI, HelperAPI, Route, ProjectAPI, TransportAPI, NamespaceContext, TestClass string
-	SourceManifestRaw, SourceManifestSHA256 string; OrgRun string `json:"runMetadata"`
+	SourceManifestRaw, SourceManifestSHA256                                                     string
+	OrgRun                                                                                      string `json:"runMetadata"`
 	SourceManifest                                                                              struct {
 		Phase, HelperSetupDeploymentID string
 		Files                          map[string]string
@@ -54,7 +55,8 @@ type staticFactoryReceiverSetup struct {
 	Done, CheckOnly                                               bool
 	NumberComponentErrors, NumberTestErrors                       int
 	RawSHA256, SourceDigests                                      map[string]string
-	OrgRun string `json:"runMetadata"`; ReceiptDiscrepancy string
+	OrgRun                                                        string `json:"runMetadata"`
+	ReceiptDiscrepancy                                            string
 	Command                                                       struct{ Command []string }
 }
 

@@ -1,0 +1,67 @@
+api_version	route	case_id	method	input_shape	native_observation
+62.0	istest	A001	callbackReturnsMockedResponse	valid Continuation; seven SOAP options; mocked SOAP response	PASS|callback=mock-response
+62.0	istest	A002	sevenSoapOptionsAreAccepted	valid Continuation; seven SOAP option strings	PASS|future=nonnull
+62.0	istest	A003	eightSoapOptionsAreRejected	valid Continuation; eight SOAP option strings	System.TypeException|Invalid info with length 8
+62.0	deploy	A004	LongtailInvalidBeginInvoke.call	beginInvoke called with four null arguments	REJECT|Method does not exist or incorrect signature: void beginInvoke(NULL, NULL, NULL, NULL) from the type WebServiceCallout
+62.0	istest	R001	LongtailAsyncSoapReviewTest.begin_constructedFuture	begin_constructedFuture	OK|nonnull=true|calls=1
+62.0	istest	R002	LongtailAsyncSoapReviewTest.begin_requestFields	begin_requestFields	method=null|endpoint=null|action=null|body=
+62.0	istest	R003	LongtailAsyncSoapReviewTest.begin_dirtyDML	begin_dirtyDML	System.CalloutException|You have uncommitted work pending. Please commit or rollback before calling out|calls=0
+62.0	istest	R004	LongtailAsyncSoapReviewTest.begin_normal	begin_normal	OK|nonnull=true|requests=1|calls=0|callouts=1
+62.0	istest	R005	LongtailAsyncSoapReviewTest.begin_noMock	begin_noMock	OK|nonnull=true|requests=1|calls=0|callouts=1
+62.0	istest	R006	LongtailAsyncSoapReviewTest.begin_nullOptions	begin_nullOptions	System.NullPointerException|Argument 5 cannot be null|calls=0
+62.0	istest	R007	LongtailAsyncSoapReviewTest.begin_sixOptions	begin_sixOptions	System.TypeException|Invalid info with length 6|calls=0
+62.0	istest	R008	LongtailAsyncSoapReviewTest.begin_eightOptions	begin_eightOptions	System.TypeException|Invalid info with length 8|calls=0
+62.0	istest	R009	LongtailAsyncSoapReviewTest.begin_nullStub	begin_nullStub	System.CalloutException|Web service callout failed: Callout stub not found: null|calls=0
+62.0	istest	R010	LongtailAsyncSoapReviewTest.begin_nullRequest	begin_nullRequest	OK|nonnull=true|requests=1|calls=0|callouts=1
+62.0	istest	R011	LongtailAsyncSoapReviewTest.begin_nullContinuation	begin_nullContinuation	System.NullPointerException|Argument 4 cannot be null|calls=0
+62.0	istest	R012	LongtailAsyncSoapReviewTest.begin_nullType	begin_nullType	System.NullPointerException|Argument 3 cannot be null|calls=0
+62.0	istest	R013	LongtailAsyncSoapReviewTest.begin_wrongType	begin_wrongType	System.CalloutException| Incompatible return type specified.|calls=0
+62.0	istest	R014	LongtailAsyncSoapReviewTest.end_wrongFieldNamespace	end_wrongFieldNamespace	System.CalloutException|Web service callout failed: Unable to parse callout response. Apex type not found for element urn:other=value|calls=0
+62.0	istest	R015	LongtailAsyncSoapReviewTest.end_unexpectedField	end_unexpectedField	System.CalloutException|Web service callout failed: Unable to parse callout response. Apex type not found for element extra|calls=0
+62.0	istest	R016	LongtailAsyncSoapReviewTest.end_nilValue	end_nilValue	OK|null|calls=0
+62.0	istest	R017	LongtailAsyncSoapReviewTest.end_normal	end_normal	OK|mock-response|calls=0
+62.0	istest	R018	LongtailAsyncSoapReviewTest.end_noResponse	end_noResponse	System.NullPointerException|Attempt to de-reference a null object|calls=0
+62.0	istest	R019	LongtailAsyncSoapReviewTest.end_emptyBody	end_emptyBody	System.CalloutException|IO Exception: input contained no data|calls=0
+62.0	istest	R020	LongtailAsyncSoapReviewTest.end_malformed	end_malformed	System.CalloutException|Web service callout failed: Unexpected element. Parser was expecting element 'http://schemas.xmlsoap.org/soap/envelope/:Envelope' but found ':broken'|calls=0
+62.0	istest	R021	LongtailAsyncSoapReviewTest.end_missingValue	end_missingValue	OK|null|calls=0
+62.0	istest	R022	LongtailAsyncSoapReviewTest.end_emptyValue	end_emptyValue	OK||calls=0
+62.0	istest	R023	LongtailAsyncSoapReviewTest.end_escapedValue	end_escapedValue	OK| a & b |calls=0
+62.0	istest	R024	LongtailAsyncSoapReviewTest.end_wrongNamespace	end_wrongNamespace	System.CalloutException|Web service callout failed: Unexpected element. Parser was expecting element 'urn:glade:echo:EchoResponse' but found 'urn:other:EchoResponse'|calls=0
+62.0	istest	R025	LongtailAsyncSoapReviewTest.end_duplicateValue	end_duplicateValue	OK|second|calls=0
+62.0	istest	R026	LongtailAsyncSoapReviewTest.end_nullFuture	end_nullFuture	System.NullPointerException|Argument 1 cannot be null
+62.0	istest	R027	LongtailAsyncSoapReviewTest.end_plainFuture	end_plainFuture	OK|null
+62.0	anonymous	R028	missingTypemap	anonymous/missing_typemap.apex	System.CalloutException|Web service callout failed: Unable to find namespace-typemap info. Please regenerate the stub|callouts=1
+62.0	anonymous-reject	R029	rejectedSignature	anonymous/rejected_signature.apex	REJECT|Method does not exist or incorrect signature: void beginInvoke(NULL, NULL, NULL, NULL) from the type WebServiceCallout
+67.0	istest	A005	callbackReturnsMockedResponse	valid Continuation; seven SOAP options; mocked SOAP response	PASS|callback=mock-response
+67.0	istest	A006	sevenSoapOptionsAreAccepted	valid Continuation; seven SOAP option strings	PASS|future=nonnull
+67.0	istest	A007	eightSoapOptionsAreRejected	valid Continuation; eight SOAP option strings	System.TypeException|Invalid info with length 8
+67.0	deploy	A008	LongtailInvalidBeginInvoke.call	beginInvoke called with four null arguments	REJECT|Method does not exist or incorrect signature: void beginInvoke(NULL, NULL, NULL, NULL) from the type WebServiceCallout
+67.0	istest	R001	LongtailAsyncSoapReviewTest.begin_constructedFuture	begin_constructedFuture	OK|nonnull=true|calls=1
+67.0	istest	R002	LongtailAsyncSoapReviewTest.begin_requestFields	begin_requestFields	method=null|endpoint=null|action=null|body=
+67.0	istest	R003	LongtailAsyncSoapReviewTest.begin_dirtyDML	begin_dirtyDML	System.CalloutException|You have uncommitted work pending. Please commit or rollback before calling out|calls=0
+67.0	istest	R004	LongtailAsyncSoapReviewTest.begin_normal	begin_normal	OK|nonnull=true|requests=1|calls=0|callouts=1
+67.0	istest	R005	LongtailAsyncSoapReviewTest.begin_noMock	begin_noMock	OK|nonnull=true|requests=1|calls=0|callouts=1
+67.0	istest	R006	LongtailAsyncSoapReviewTest.begin_nullOptions	begin_nullOptions	System.NullPointerException|Argument 5 cannot be null|calls=0
+67.0	istest	R007	LongtailAsyncSoapReviewTest.begin_sixOptions	begin_sixOptions	System.TypeException|Invalid info with length 6|calls=0
+67.0	istest	R008	LongtailAsyncSoapReviewTest.begin_eightOptions	begin_eightOptions	System.TypeException|Invalid info with length 8|calls=0
+67.0	istest	R009	LongtailAsyncSoapReviewTest.begin_nullStub	begin_nullStub	System.CalloutException|Web service callout failed: Callout stub not found: null|calls=0
+67.0	istest	R010	LongtailAsyncSoapReviewTest.begin_nullRequest	begin_nullRequest	OK|nonnull=true|requests=1|calls=0|callouts=1
+67.0	istest	R011	LongtailAsyncSoapReviewTest.begin_nullContinuation	begin_nullContinuation	System.NullPointerException|Argument 4 cannot be null|calls=0
+67.0	istest	R012	LongtailAsyncSoapReviewTest.begin_nullType	begin_nullType	System.NullPointerException|Argument 3 cannot be null|calls=0
+67.0	istest	R013	LongtailAsyncSoapReviewTest.begin_wrongType	begin_wrongType	System.CalloutException| Incompatible return type specified.|calls=0
+67.0	istest	R014	LongtailAsyncSoapReviewTest.end_wrongFieldNamespace	end_wrongFieldNamespace	System.CalloutException|Web service callout failed: Unable to parse callout response. Apex type not found for element urn:other=value|calls=0
+67.0	istest	R015	LongtailAsyncSoapReviewTest.end_unexpectedField	end_unexpectedField	System.CalloutException|Web service callout failed: Unable to parse callout response. Apex type not found for element extra|calls=0
+67.0	istest	R016	LongtailAsyncSoapReviewTest.end_nilValue	end_nilValue	OK|null|calls=0
+67.0	istest	R017	LongtailAsyncSoapReviewTest.end_normal	end_normal	OK|mock-response|calls=0
+67.0	istest	R018	LongtailAsyncSoapReviewTest.end_noResponse	end_noResponse	System.NullPointerException|Attempt to de-reference a null object|calls=0
+67.0	istest	R019	LongtailAsyncSoapReviewTest.end_emptyBody	end_emptyBody	System.CalloutException|IO Exception: input contained no data|calls=0
+67.0	istest	R020	LongtailAsyncSoapReviewTest.end_malformed	end_malformed	System.CalloutException|Web service callout failed: Unexpected element. Parser was expecting element 'http://schemas.xmlsoap.org/soap/envelope/:Envelope' but found ':broken'|calls=0
+67.0	istest	R021	LongtailAsyncSoapReviewTest.end_missingValue	end_missingValue	OK|null|calls=0
+67.0	istest	R022	LongtailAsyncSoapReviewTest.end_emptyValue	end_emptyValue	OK||calls=0
+67.0	istest	R023	LongtailAsyncSoapReviewTest.end_escapedValue	end_escapedValue	OK| a & b |calls=0
+67.0	istest	R024	LongtailAsyncSoapReviewTest.end_wrongNamespace	end_wrongNamespace	System.CalloutException|Web service callout failed: Unexpected element. Parser was expecting element 'urn:glade:echo:EchoResponse' but found 'urn:other:EchoResponse'|calls=0
+67.0	istest	R025	LongtailAsyncSoapReviewTest.end_duplicateValue	end_duplicateValue	OK|second|calls=0
+67.0	istest	R026	LongtailAsyncSoapReviewTest.end_nullFuture	end_nullFuture	System.NullPointerException|Argument 1 cannot be null
+67.0	istest	R027	LongtailAsyncSoapReviewTest.end_plainFuture	end_plainFuture	OK|null
+67.0	anonymous	R028	missingTypemap	anonymous/missing_typemap.apex	System.CalloutException|Web service callout failed: Unable to find namespace-typemap info. Please regenerate the stub|callouts=1
+67.0	anonymous-reject	R029	rejectedSignature	anonymous/rejected_signature.apex	REJECT|Method does not exist or incorrect signature: void beginInvoke(NULL, NULL, NULL, NULL) from the type WebServiceCallout

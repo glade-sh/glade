@@ -28,6 +28,7 @@ type typeMembers struct {
 	generatedHistory                  bool
 	externalPackageSObject            bool
 	partialSObject                    bool
+	completeSchemaSObject             bool
 	nestingDepth                      int
 	kind                              apexast.DeclarationKind
 	superClass                        string
@@ -1357,6 +1358,7 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 			(!object.Partial && strings.HasSuffix(object.Name, "__e")) ||
 			strings.EqualFold(object.PublishBehavior, "PublishImmediately") || strings.EqualFold(object.PublishBehavior, "PublishAfterCommit")
 		objectMembers.partialSObject = objectMembers.partialSObject || object.Partial
+		objectMembers.completeSchemaSObject = objectMembers.completeSchemaSObject || (!object.Partial && object.FieldsComplete && object.CompleteSnapshot)
 		if objectMembers.namespace == "" {
 			objectMembers.namespace = semaNamespaceFromAPIName(object.Name)
 		}
@@ -1997,6 +1999,7 @@ func semaEnsureStandardSObjectTypeMembers(model *semaTypeMemberView, key string,
 	hydrated.platformEvent = members.platformEvent
 	hydrated.externalPackageSObject = members.externalPackageSObject
 	hydrated.partialSObject = members.partialSObject
+	hydrated.completeSchemaSObject = members.completeSchemaSObject
 	hydrated.syntheticChildRelationshipAliases = members.syntheticChildRelationshipAliases
 	for fieldKey, field := range members.fields {
 		hydrated.fields[fieldKey] = field

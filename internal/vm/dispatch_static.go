@@ -393,7 +393,7 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"wave.Templates.getTemplate", "wave.Templates.getTemplateConfig", "wave.Templates.getTemplates",
 		"sfsqlquery.SqlTester.clearMocks", "sfsqlquery.SqlTester.enqueueMockRows", "sfsqlquery.SqlTester.setMockRows", "sfsqlquery.SqlTester.setMockMetadata",
 		"sfsqlquery.SqlTester.isRunningTest", "sfsqlquery.QueryHandle.create", "sfsqlquery.SqlStatement.create",
-		"WebServiceCallout.invoke",
+		"WebServiceCallout.invoke", "WebServiceCallout.beginInvoke", "WebServiceCallout.endInvoke",
 		"CURRENCY.newInstance",
 		"Collator.getInstance",
 		"Test.setCreatedDate", "Test.setFixedSearchResults", "Test.startTest", "Test.stopTest", "Test.getStandardPricebookId",

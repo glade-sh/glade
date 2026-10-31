@@ -103,6 +103,7 @@ type Project struct {
 	QuickActionFiles           []string                   `json:"quickActionFiles"`
 	GlobalValueSetFiles        []string                   `json:"globalValueSetFiles"`
 	StandardValueSetFiles      []string                   `json:"standardValueSetFiles"`
+	ValueSetTranslationFiles   []string                   `json:"standardValueSetTranslationFiles,omitempty"`
 	FlexiPageFiles             []string                   `json:"flexiPageFiles"`
 	ApplicationFiles           []string                   `json:"applicationFiles"`
 	VisualforcePageFiles       []string                   `json:"visualforcePageFiles"`
@@ -620,6 +621,7 @@ func load(root string, stack map[string]bool, dependency bool, requestedPackages
 	sort.Strings(p.QuickActionFiles)
 	sort.Strings(p.GlobalValueSetFiles)
 	sort.Strings(p.StandardValueSetFiles)
+	sort.Strings(p.ValueSetTranslationFiles)
 	sort.Strings(p.FlexiPageFiles)
 	sort.Strings(p.ApplicationFiles)
 	sort.Strings(p.VisualforcePageFiles)
@@ -686,6 +688,7 @@ func dedupeProjectFiles(p *Project) {
 	p.QuickActionFiles = dedupeFilePaths(p.QuickActionFiles)
 	p.GlobalValueSetFiles = dedupeFilePaths(p.GlobalValueSetFiles)
 	p.StandardValueSetFiles = dedupeFilePaths(p.StandardValueSetFiles)
+	p.ValueSetTranslationFiles = dedupeFilePaths(p.ValueSetTranslationFiles)
 	p.FlexiPageFiles = dedupeFilePaths(p.FlexiPageFiles)
 	p.ApplicationFiles = dedupeFilePaths(p.ApplicationFiles)
 	p.VisualforcePageFiles = dedupeFilePaths(p.VisualforcePageFiles)
@@ -2000,6 +2003,8 @@ func collectFiles(root string, p *Project) error {
 			p.GlobalValueSetFiles = append(p.GlobalValueSetFiles, path)
 		case strings.HasSuffix(lower, ".standardvalueset"), strings.HasSuffix(lower, ".standardvalueset-meta.xml"):
 			p.StandardValueSetFiles = append(p.StandardValueSetFiles, path)
+		case strings.HasSuffix(lower, ".standardvaluesettranslation"), strings.HasSuffix(lower, ".standardvaluesettranslation-meta.xml"):
+			p.ValueSetTranslationFiles = append(p.ValueSetTranslationFiles, path)
 		case strings.HasSuffix(lower, ".flexipage"), strings.HasSuffix(lower, ".flexipage-meta.xml"):
 			p.FlexiPageFiles = append(p.FlexiPageFiles, path)
 		case strings.HasSuffix(lower, ".app-meta.xml"), strings.HasSuffix(lower, ".app") && strings.Contains(filepath.ToSlash(lower), "/applications/"):

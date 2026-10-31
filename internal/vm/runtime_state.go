@@ -52,8 +52,10 @@ const (
 // markers below flag the start of a contiguous group. When adding state,
 // place it in the matching group and update New.
 type VM struct {
-	stringASCII      []stringASCIIEntry
-	stringASCIIBytes int
+	road174WarmOrderAccess map[string]bool
+	road174PermissionStamp map[string]string
+	stringASCII            []stringASCIIEntry
+	stringASCIIBytes       int
 	// --- Class/method/type registries and lookup caches ---
 	Globals                  map[string]Value
 	VarTypes                 map[string]string
@@ -139,7 +141,8 @@ type VM struct {
 	executionUser           Value
 	// Captured once from the runner's initial org, before test setup inserts.
 	// Clones share this immutable ID set; EnableTestContext must not recapture it.
-	testDocumentBaseline map[storage.ID]struct{}
+	testDocumentBaseline          map[storage.ID]struct{}
+	testStandardPricebookBaseline map[storage.ID]struct{}
 	// Traversals belong to this VM, independently of method frames and clones.
 	activeCollectionTraversals        map[collectionTraversalKey]int
 	enhancedCollectionTraversals      map[collectionTraversalKey]int
@@ -955,6 +958,7 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 	clone.managedFeatureValues = copyValueMap(vm.managedFeatureValues)
 	clone.isolationJournal = vm.isolationJournal
 	clone.testDocumentBaseline = vm.testDocumentBaseline
+	clone.testStandardPricebookBaseline = vm.testStandardPricebookBaseline
 	if len(vm.sObjectCollectionAliasRefs) != 0 {
 		clone.sObjectCollectionAliasRefs = make(map[uint64]bool, len(vm.sObjectCollectionAliasRefs))
 		for ref := range vm.sObjectCollectionAliasRefs {
@@ -2841,6 +2845,24 @@ func (vm *VM) SetTestDocumentBaseline(org *storage.OrgState) {
 	}
 }
 
+// SetTestStandardPricebookBaseline records the pre-test standard price books.
+// Test-created price books remain queryable and the underlying org is intact.
+func (vm *VM) SetTestStandardPricebookBaseline(org *storage.OrgState) {
+	vm.testStandardPricebookBaseline = make(map[storage.ID]struct{})
+	if org == nil {
+		return
+	}
+	name, ok := storage.ResolveObjectName(*org, "Pricebook2")
+	if !ok {
+		return
+	}
+	for id, record := range org.Objects[name].Records {
+		if value, ok := record.GetField("IsStandard"); ok && value.Kind == storage.ValueBoolean && value.Boolean {
+			vm.testStandardPricebookBaseline[id] = struct{}{}
+		}
+	}
+}
+
 func (vm *VM) defaultTestCurrentUser() Value {
 	if vm.executionUser.Kind != "" && vm.executionUser.Kind != ValueNull {
 		return vm.executionUser
@@ -3079,6 +3101,14 @@ func (vm *VM) ExecuteTestInClass(program ir.Program, className string) (Result, 
 }
 
 func (vm *VM) execute(program ir.Program, className string) (result Result, err error) {
+	previousRoad174WarmOrderAccess := vm.road174WarmOrderAccess
+	previousRoad174PermissionStamp := vm.road174PermissionStamp
+	vm.road174WarmOrderAccess = nil
+	vm.road174PermissionStamp = nil
+	defer func() {
+		vm.road174WarmOrderAccess = previousRoad174WarmOrderAccess
+		vm.road174PermissionStamp = previousRoad174PermissionStamp
+	}()
 	vm.ensureMetadataCacheGeneration()
 	if vm.testContext == nil {
 		previous := vm.mixedDML

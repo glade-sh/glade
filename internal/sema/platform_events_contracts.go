@@ -95,6 +95,12 @@ func semaPlatformEventCallMessage(receiver, method, mode string, args []string, 
 				if schemaName, ok := semaSchemaQualifiedTypeName(arg); ok {
 					standardName = schemaName
 				}
+				// Named Apex accepts scalar FileEvent publication with one argument
+				// or a null callback. Anonymous and other event types differ.
+				if namedSource && strings.EqualFold(standardName, "FileEvent") &&
+					(len(args) == 1 || len(args) == 2 && strings.EqualFold(args[1], "null")) {
+					return ""
+				}
 				// This standard event is publishable without the custom platform-event marker.
 				standardEvent := strings.EqualFold(standardName, "FlowOrchestrationEvent")
 				if !strings.EqualFold(arg, "SObject") && !semaPlatformEventType(arg, model) && !standardEvent {

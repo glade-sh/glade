@@ -115,12 +115,40 @@ func validatePersonAccountRequiredFields(objectName string, record storage.Recor
 	return dmlErrorf("REQUIRED_FIELD_MISSING", []string{"LastName"}, "Required fields are missing: [LastName]")
 }
 
-func validateAccountNameRequiredFields(objectName string, definition storage.ObjectDefinition, record storage.Record) error {
+func hasExplicitBusinessAccountRecordType(objectName string, definition storage.ObjectDefinition, record storage.Record) bool {
+	if !strings.EqualFold(objectName, "Account") || record.DMLRecordTypeDefaulted() {
+		return false
+	}
+	value, present := record.GetField("RecordTypeId")
+	if !present {
+		return false
+	}
+	id := idFromStorageValue(value)
+	for _, recordType := range definition.RecordTypes {
+		if id != "" && recordType.ID != "" && storage.IDsEqual(id, recordType.ID) {
+			return !recordType.PersonAccount
+		}
+	}
+	return false
+}
+
+func validateAccountNameRequiredFields(objectName string, definition storage.ObjectDefinition, record storage.Record, explicitBusinessRecordType bool) error {
 	if !strings.EqualFold(objectName, "Account") || isPersonAccountRecord(record) {
 		return nil
 	}
 	if _, ok := personAccountRecordType(definition.RecordTypes); !ok {
 		return nil
+	}
+	// A new Account with an explicitly null LastName follows the person
+	// required-field boundary in the captured upsert routes.
+	if record.HasExplicitNull("LastName") {
+		if explicitBusinessRecordType {
+			return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{"LastName"}, "Account: bad field names on insert/update call: LastName")
+		}
+		if strings.TrimSpace(stringField(record.Fields, "Name")) != "" {
+			return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{"Name"}, "Unable to create/update fields: Name. Please check the security settings of this field and verify that it is read/write for your profile or permission set.")
+		}
+		return dmlErrorf("REQUIRED_FIELD_MISSING", []string{"LastName"}, "Required fields are missing: [LastName]")
 	}
 	if strings.TrimSpace(stringField(record.Fields, "Name")) != "" {
 		return nil

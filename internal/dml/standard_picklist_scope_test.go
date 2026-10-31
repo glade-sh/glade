@@ -170,3 +170,79 @@ func TestOrderStatusDeployedValueSetRetainsDraft(t *testing.T) {
 		t.Fatal("explicit project restriction accepted undeclared Draft")
 	}
 }
+
+// locale-boundary/org.tsv:2-5 and locale_sid_key/org.tsv:2-3 capture these DML results.
+func TestUserLocaleSidKeyCapturedValues(t *testing.T) {
+	definition := storage.ObjectDefinition{APIName: "User"}
+	storage.EnsureStandardObjectFields(&definition)
+	field := definition.Fields["LocaleSidKey"]
+	for _, row := range []struct {
+		value string
+		valid bool
+	}{
+		{"en_US", true}, {"pl_PL", true}, {"af", true}, {"haw", true}, {"en_AD", true},
+		{"en", false}, {"az", false}, {"NotAnAllowedValue", false},
+		{"en-GB", false}, {"en_FOO", false}, {"en_XY", false}, {"xx_XX", false}, {"zz_US", false},
+	} {
+		t.Run(row.value, func(t *testing.T) {
+			err := validateRestrictedPicklistField("User", "LocaleSidKey", field, storage.StringValue(row.value))
+			if row.valid && err != nil {
+				t.Fatalf("valid value: %v", err)
+			}
+			if !row.valid {
+				if err == nil {
+					t.Fatal("expected restricted picklist error")
+				}
+				result := resultFromError("", err)
+				if result.StatusCode != "INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST" || result.Error != "Locale: bad value for restricted picklist field: "+row.value {
+					t.Fatalf("unexpected result: %+v", result)
+				}
+			}
+		})
+	}
+}
+
+// The existing locale-boundary capture supplies update behavior; these local
+// controls exercise the shared engine insert, update, and upsert paths.
+func TestUserLocaleSidKeyEngineRoutes(t *testing.T) {
+	for _, api := range []string{"62.0", "67.0"} {
+		for _, route := range []string{"insert", "update", "upsert-insert", "upsert-update"} {
+			t.Run(api+"/"+route, func(t *testing.T) {
+				org := storage.NewOrgState()
+				org.APIVersion = api
+				storage.EnsureDeterministicPlatformData(&org)
+				storage.EnsureStandardObject(&org, "User")
+				engine := NewEngine(&org)
+				record := storage.Record{Object: "User", Fields: map[string]storage.Value{"LocaleSidKey": storage.StringValue("NotAnAllowedValue")}}
+				if route == "update" || route == "upsert-update" {
+					record.ID = storage.ID(storage.DefaultUserID)
+				}
+				var result []Result
+				switch route {
+				case "insert":
+					result = engine.Insert([]storage.Record{record})
+				case "update":
+					result = engine.Update([]storage.Record{record})
+				default:
+					result = engine.Upsert([]storage.Record{record})
+				}
+				if len(result) != 1 || result[0].StatusCode != "INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST" || result[0].Error != "Locale: bad value for restricted picklist field: NotAnAllowedValue" {
+					t.Fatalf("locale rejection: %+v", result)
+				}
+			})
+		}
+	}
+}
+
+// No native row establishes whether these unprobed values are accepted.
+// They must not be rejected solely because a partial capture omits them.
+func TestUserLocaleSidKeyUnprobedValuesAreNotRejected(t *testing.T) {
+	definition := storage.ObjectDefinition{APIName: "User"}
+	storage.EnsureStandardObjectFields(&definition)
+	field := definition.Fields["LocaleSidKey"]
+	for _, value := range []string{"unprobed_locale", "zz_ZZ", "es_XY"} {
+		if err := validateRestrictedPicklistField("User", "LocaleSidKey", field, storage.StringValue(value)); err != nil {
+			t.Errorf("unprobed value %q was rejected: %v", value, err)
+		}
+	}
+}

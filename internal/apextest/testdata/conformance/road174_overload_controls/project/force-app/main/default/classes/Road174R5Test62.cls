@@ -1,0 +1,1 @@
+@IsTest(SeeAllData=true) private class Road174R5Test62 { @IsTest static void observe(){User u=[SELECT Id FROM User WHERE LastName='Proof' AND IsActive=true LIMIT 1];System.runAs(u){System.assert(false,'R5RUNAS|'+Road174R562.collect());}} }

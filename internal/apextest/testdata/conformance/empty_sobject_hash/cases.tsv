@@ -1,0 +1,7 @@
+id	behavior	case	role
+H01	SObject hash	Two equal Account records with same Name	original
+H02	SObject hash	Empty Account and Contact records	boundary
+H03	SObject hash	Account Name, alternate Name, null Name, Industry	adjacent
+H04	SObject hash	Two equal Contact records and changed field	adjacent
+H05	SObject hash	System.hashCode with zero arguments	compile rejection
+T01	Task WhatId	Relationship name and reference target names	org-dependent boundary

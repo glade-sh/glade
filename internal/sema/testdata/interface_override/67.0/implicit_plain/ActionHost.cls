@@ -1,0 +1,1 @@
+public class ActionHost { public class Request {} public interface Driver { List<Object> run(Request a); Iterable<Object> more(Request a); } public abstract class BaseDriver implements Driver {  public virtual List<Object> run(Request a) { return new List<Object>(); } } }

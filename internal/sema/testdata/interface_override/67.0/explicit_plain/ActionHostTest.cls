@@ -1,0 +1,1 @@
+@IsTest private class ActionHostTest { private class Mock extends ActionHost.BaseDriver { public Iterable<Object> more(ActionHost.Request a) { return new List<Object>(); } } @IsTest static void exercise() { System.assertNotEquals(null, new Mock().more(null)); } }

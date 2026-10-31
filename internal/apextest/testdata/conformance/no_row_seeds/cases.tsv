@@ -1,0 +1,10 @@
+case	apis	routes	question
+role_absent	62.0,67.0	anonymous,isTest	Does a fresh org contain a role named Default and does a singleton query reject its absence?
+role_boundary	62.0,67.0	anonymous,isTest	Does an impossible role name return zero?
+pricebook	62.0,67.0	anonymous,isTest	Is the standard price book queryable in the execution context?
+business_hours	62.0,67.0	anonymous,isTest	Is a default business-hours record queryable?
+pricebook_before_after	62.0,67.0	isTest	Does the standard price book become visible after obtaining its test ID?
+pricebook_inserted	62.0,67.0	isTest	Is a test-created nonstandard price book queryable?
+pricebook_missing	62.0,67.0	isTest	Does a missing price book singleton query throw?
+pricebook_all_data	62.0,67.0	isTest SeeAllData=true	Is the standard price book visible when org data is enabled?
+account_isolation	62.0,67.0	isTest	Is a preexisting account hidden in an isolated test?

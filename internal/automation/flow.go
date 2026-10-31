@@ -19,6 +19,7 @@ type flowXML struct {
 	graphStop        string
 	graph            *flowTargetGraph
 	decisionFormulas map[string]string
+	frameFormulas    map[string]string
 
 	APIVersion            string                       `xml:"apiVersion"`
 	Label                 string                       `xml:"label"`
@@ -342,9 +343,11 @@ func loadFlow(path string, definitions ...map[string]storage.ObjectDefinition) (
 	flowResolveStandardRelationshipUpdates(&raw, sourceDefinitions...)
 	formulas := flowFormulaMapWithConstants(raw.Formulas, raw.Constants)
 	variables := flowVariableMap(raw.Variables)
+	frameFormulas := flowFrameFormulaMap(raw, variables)
+	raw.frameFormulas = frameFormulas
 	raw.decisionFormulas = flowDecisionFormulaMap(raw, variables)
 	orderedGraph := flowNormalizeTextDecisionNegation(&raw, variables)
-	orderedGraph = orderedGraph || flowRequiresOrderedGraph(raw) || raw.decisionFormulas != nil
+	orderedGraph = orderedGraph || flowRequiresOrderedGraph(raw) || raw.decisionFormulas != nil || frameFormulas != nil
 	if strings.EqualFold(strings.TrimSpace(raw.Start.TriggerType), "PlatformEvent") {
 		// Preserve the event interview's current-user resource in record inputs.
 		// This binding map is private; globals are not declared Flow variables.
@@ -503,6 +506,7 @@ func loadFlow(path string, definitions ...map[string]storage.ObjectDefinition) (
 		}
 	}
 	for _, assignment := range raw.Assignments {
+		frameOrOrdinary := flowAssignmentElementFormulas(raw, formulas, assignment)
 		for _, item := range assignment.Items {
 			if !flowAssignmentOperatorSupported(item.Operator) {
 				diagnostics = append(diagnostics, flowUnsupported(path, name, fmt.Sprintf("assignment %q operator %q is not supported", firstNonBlank(assignment.Name, assignment.Label), item.Operator)))
@@ -515,13 +519,19 @@ func loadFlow(path string, definitions ...map[string]storage.ObjectDefinition) (
 			if field == "" {
 				continue
 			}
-			formula := flowExpressionValue(item.Value, formulas)
+			captured := strings.EqualFold(strings.TrimSpace(item.Operator), "Assign") && flowValueHasSelectedFormula(item.Value, flowAssignmentElementSelection(raw, assignment))
+			itemFormulas := formulas
+			if captured {
+				itemFormulas = frameOrOrdinary
+			}
+			formula := flowExpressionValue(item.Value, itemFormulas)
 			rule.FieldUpdates = append(rule.FieldUpdates, storage.WorkflowFieldUpdate{
-				Name:         firstNonBlank(assignment.Name, assignment.Label, field),
-				Field:        field,
-				LiteralValue: flowLiteralValue(item.Value),
-				Formula:      formula,
-				SourceField:  flowLookupSourceFieldValueUnlessFormula(item.Value, formula, variables, raw.RecordLookups),
+				Name:             firstNonBlank(assignment.Name, assignment.Label, field),
+				Field:            field,
+				LiteralValue:     flowLiteralValue(item.Value),
+				Formula:          formula,
+				FlowFrameFormula: formula != "" && captured,
+				SourceField:      flowLookupSourceFieldValueUnlessFormula(item.Value, formula, variables, raw.RecordLookups),
 			})
 		}
 	}
@@ -562,7 +572,7 @@ func loadFlow(path string, definitions ...map[string]storage.ObjectDefinition) (
 		rule.RecordLookups = append(rule.RecordLookups, recordLookup)
 	}
 	for _, create := range raw.RecordCreates {
-		recordCreate, ok := modeledFlowRecordCreate(create, formulas, variables, raw.RecordLookups)
+		recordCreate, ok := modeledFlowCapturedRecordCreate(raw, create, formulas, variables)
 		if !ok {
 			diagnostics = append(diagnostics, flowUnsupported(path, name, fmt.Sprintf("record create node %q is not modeled", firstNonBlank(create.Name, create.Label))))
 			continue
@@ -586,7 +596,7 @@ func loadFlow(path string, definitions ...map[string]storage.ObjectDefinition) (
 		rule.RecordDeletes = append(rule.RecordDeletes, recordDelete)
 	}
 	for _, customError := range raw.CustomErrors {
-		ce := modeledFlowCustomError(customError, raw.Constants)
+		ce := modeledFlowCustomError(customError, raw.Constants, flowCustomErrorFrameFormulas(raw))
 		if ce.Name != "" {
 			rule.CustomErrors = append(rule.CustomErrors, ce)
 		}
@@ -980,6 +990,197 @@ func flowFormulaMapWithNormalization(formulas []flowFormulaXML, constants []flow
 	return out
 }
 
+// Preserve record qualification when a formula can also address a scalar in
+// the interview. The framed step graph keeps these bindings through execution.
+func flowFrameFormulaMap(raw flowXML, variables map[string]flowVariableXML) map[string]string {
+	if strings.TrimSpace(raw.Start.Object) == "" || !strings.EqualFold(raw.Start.RecordTriggerType, "Create") ||
+		(!strings.EqualFold(raw.Start.TriggerType, "RecordBeforeSave") && !strings.EqualFold(raw.Start.TriggerType, "RecordAfterSave")) {
+		return nil
+	}
+	scalars := make(map[string]bool)
+	for name, variable := range variables {
+		if !variable.IsCollection && strings.EqualFold(variable.DataType, "String") {
+			scalars[strings.ToLower(name)] = true
+		}
+	}
+	if len(scalars) == 0 {
+		return nil
+	}
+	formulas := flowFormulaMapWithNormalization(raw.Formulas, raw.Constants, func(expression string) string {
+		normalized, found := normalizeFlowDecisionFormula(expression, scalars)
+		if found {
+			return normalized
+		}
+		return normalizeFlowFormula(expression)
+	})
+	selected := make(map[string]string)
+	selectElement := func(names []string) {
+		if !flowFormulaNamesUseBareScalar(names, formulas, scalars) {
+			return
+		}
+		for _, name := range names {
+			name = strings.ToLower(strings.TrimSpace(name))
+			if expression, exists := formulas[name]; exists {
+				if _, found := normalizeFlowDecisionFormula(expression, scalars); found {
+					selected[name] = expression
+				}
+			}
+		}
+	}
+	if strings.EqualFold(strings.TrimSpace(raw.Start.TriggerType), "RecordBeforeSave") {
+		for _, assignment := range raw.Assignments {
+			selectElement(flowCapturedAssignmentNames(assignment, variables))
+		}
+	}
+	if strings.EqualFold(strings.TrimSpace(raw.Start.TriggerType), "RecordAfterSave") {
+		for _, create := range raw.RecordCreates {
+			var names []string
+			for _, field := range create.Fields {
+				names = append(names, flowFormulaValueNames(field.Value)...)
+			}
+			selectElement(names)
+		}
+	}
+	if strings.EqualFold(strings.TrimSpace(raw.Start.TriggerType), "RecordBeforeSave") {
+		for _, customError := range raw.CustomErrors {
+			for _, message := range customError.Messages {
+				text := strings.ToLower(firstNonBlank(message.ErrorMessage, message.Message))
+				var names []string
+				for name := range formulas {
+					if strings.Contains(text, "{!"+name+"}") {
+						names = append(names, name)
+					}
+				}
+				selectElement(names)
+			}
+		}
+	}
+	if len(selected) != 0 {
+		return selected
+	}
+	return nil
+}
+
+func flowCustomErrorFrameFormulas(raw flowXML) map[string]string {
+	if !strings.EqualFold(strings.TrimSpace(raw.Start.TriggerType), "RecordBeforeSave") {
+		return nil
+	}
+	return raw.frameFormulas
+}
+
+func flowFormulaValueNames(value flowValueXML) []string {
+	return []string{value.ElementReference, value.Formula, value.Expression}
+}
+
+func flowFormulaNamesUseBareScalar(names []string, formulas map[string]string, scalars map[string]bool) bool {
+	for _, name := range names {
+		if _, found := normalizeFlowDecisionFormulaMode(formulas[strings.ToLower(strings.TrimSpace(name))], scalars, true); found {
+			return true
+		}
+	}
+	return false
+}
+
+func flowElementFormulaSelection(raw flowXML, names []string) map[string]string {
+	if len(raw.frameFormulas) == 0 {
+		return nil
+	}
+	scalars := make(map[string]bool)
+	for name, variable := range flowVariableMap(raw.Variables) {
+		if !variable.IsCollection && strings.EqualFold(variable.DataType, "String") {
+			scalars[strings.ToLower(name)] = true
+		}
+	}
+	if !flowFormulaNamesUseBareScalar(names, raw.frameFormulas, scalars) {
+		return nil
+	}
+	selected := make(map[string]string)
+	for _, name := range names {
+		name = strings.ToLower(strings.TrimSpace(name))
+		if expression, ok := raw.frameFormulas[name]; ok {
+			selected[name] = expression
+		}
+	}
+	return selected
+}
+
+func flowElementFormulaMap(raw flowXML, ordinary map[string]string, names []string) map[string]string {
+	selected := flowElementFormulaSelection(raw, names)
+	if len(selected) == 0 {
+		return ordinary
+	}
+	return flowOverlayFormulaMap(ordinary, selected)
+}
+
+func flowValueHasSelectedFormula(value flowValueXML, selected map[string]string) bool {
+	for _, name := range flowFormulaValueNames(value) {
+		if _, ok := selected[strings.ToLower(strings.TrimSpace(name))]; ok {
+			return true
+		}
+	}
+	return false
+}
+
+// Select only the record-field assignment route observed in the native rows.
+func flowCapturedAssignmentNames(assignment flowAssignmentXML, variables map[string]flowVariableXML) []string {
+	var names []string
+	for _, item := range assignment.Items {
+		if !strings.EqualFold(strings.TrimSpace(item.Operator), "Assign") {
+			continue
+		}
+		if _, ok := modeledFlowAssignmentUpdate(assignment, item, nil, variables, nil); ok {
+			names = append(names, flowFormulaValueNames(item.Value)...)
+		}
+	}
+	return names
+}
+
+func flowAssignmentElementSelection(raw flowXML, assignment flowAssignmentXML) map[string]string {
+	if !strings.EqualFold(strings.TrimSpace(raw.Start.TriggerType), "RecordBeforeSave") {
+		return nil
+	}
+	return flowElementFormulaSelection(raw, flowCapturedAssignmentNames(assignment, flowVariableMap(raw.Variables)))
+}
+
+func flowCreateElementSelection(raw flowXML, create flowRecordCreateXML) map[string]string {
+	if !strings.EqualFold(strings.TrimSpace(raw.Start.TriggerType), "RecordAfterSave") {
+		return nil
+	}
+	var names []string
+	for _, field := range create.Fields {
+		names = append(names, flowFormulaValueNames(field.Value)...)
+	}
+	return flowElementFormulaSelection(raw, names)
+}
+
+func flowAssignmentElementFormulas(raw flowXML, ordinary map[string]string, assignment flowAssignmentXML) map[string]string {
+	selected := flowAssignmentElementSelection(raw, assignment)
+	if len(selected) == 0 {
+		return ordinary
+	}
+	return flowOverlayFormulaMap(ordinary, selected)
+}
+
+func flowCreateElementFormulas(raw flowXML, ordinary map[string]string, create flowRecordCreateXML) map[string]string {
+	selected := flowCreateElementSelection(raw, create)
+	if len(selected) == 0 {
+		return ordinary
+	}
+	return flowOverlayFormulaMap(ordinary, selected)
+}
+
+// Retain ordinary normalization for every formula outside the selected set.
+func flowOverlayFormulaMap(ordinary, selected map[string]string) map[string]string {
+	merged := make(map[string]string, len(ordinary))
+	for name, expression := range ordinary {
+		merged[name] = expression
+	}
+	for name, expression := range selected {
+		merged[name] = expression
+	}
+	return merged
+}
+
 // Decision resources that depend on scalars need an interview frame and distinct
 // explicit record bindings. Keep ordinary normalization for other resources.
 func flowDecisionFormulaMap(raw flowXML, variables map[string]flowVariableXML) map[string]string {
@@ -1023,6 +1224,10 @@ func flowDecisionFormulaMap(raw flowXML, variables map[string]flowVariableXML) m
 }
 
 func normalizeFlowDecisionFormula(expression string, scalars map[string]bool) (string, bool) {
+	return normalizeFlowDecisionFormulaMode(expression, scalars, false)
+}
+
+func normalizeFlowDecisionFormulaMode(expression string, scalars map[string]bool, bareOnly bool) (string, bool) {
 	needsFrame := false
 	normalizeReference := func(reference string) string {
 		reference = strings.TrimSpace(reference)
@@ -1033,7 +1238,9 @@ func normalizeFlowDecisionFormula(expression string, scalars map[string]bool) (s
 			field := reference[len(prefix):]
 			name, _, _ := strings.Cut(field, ".")
 			if scalars[strings.ToLower(name)] {
-				needsFrame = true
+				if !bareOnly {
+					needsFrame = true
+				}
 				return "$Record." + field
 			}
 			return field
@@ -1505,6 +1712,19 @@ func modeledFlowRecordLookup(lookup flowRecordLookupXML, variables map[string]fl
 	return out, true
 }
 
+// Carry the selected formula resource on each create input through the stored graph.
+func modeledFlowCapturedRecordCreate(raw flowXML, create flowRecordCreateXML, formulas map[string]string, variables map[string]flowVariableXML) (storage.FlowRecordCreate, bool) {
+	result, ok := modeledFlowRecordCreate(create, flowCreateElementFormulas(raw, formulas, create), variables, raw.RecordLookups)
+	if !ok {
+		return result, false
+	}
+	selected := flowCreateElementSelection(raw, create)
+	for i, field := range create.Fields {
+		result.InputAssignments[i].FlowFrameFormula = result.InputAssignments[i].Formula != "" && flowValueHasSelectedFormula(field.Value, selected)
+	}
+	return result, true
+}
+
 func modeledFlowRecordCreate(create flowRecordCreateXML, formulas map[string]string, variables map[string]flowVariableXML, lookups []flowRecordLookupXML) (storage.FlowRecordCreate, bool) {
 	name := firstNonBlank(create.Name, create.Label)
 	objectName := strings.TrimSpace(create.Object)
@@ -1912,9 +2132,16 @@ func flowPopulateBranchBody(branch storage.FlowBranch, target, stop string, raw 
 			}
 			modeled = true
 			fault := strings.TrimSpace(assignment.FaultConnector.TargetReference)
+			frameOrOrdinary := flowAssignmentElementFormulas(raw, formulas, assignment)
 			for _, item := range assignment.Items {
 				item = flowAssignmentItemConstantValue(item, variables, flowConstantMap(raw.Constants))
-				if update, ok := modeledFlowAssignmentUpdate(assignment, item, formulas, variables, raw.RecordLookups); ok {
+				captured := strings.EqualFold(strings.TrimSpace(item.Operator), "Assign") && flowValueHasSelectedFormula(item.Value, flowAssignmentElementSelection(raw, assignment))
+				itemFormulas := formulas
+				if captured {
+					itemFormulas = frameOrOrdinary
+				}
+				if update, ok := modeledFlowAssignmentUpdate(assignment, item, itemFormulas, variables, raw.RecordLookups); ok {
+					update.FlowFrameFormula = update.Formula != "" && captured
 					if update.LiteralValue == "" && update.Formula == "" {
 						update.ActionOutput = flowAutomaticApexActionOutput(raw, item.Value)
 					}
@@ -1987,7 +2214,7 @@ func flowPopulateBranchBody(branch storage.FlowBranch, target, stop string, raw 
 			}
 			modeled = true
 			fault := strings.TrimSpace(create.FaultConnector.TargetReference)
-			if recordCreate, ok := modeledFlowRecordCreate(create, formulas, variables, raw.RecordLookups); ok {
+			if recordCreate, ok := modeledFlowCapturedRecordCreate(raw, create, formulas, variables); ok {
 				branch.RecordCreates = append(branch.RecordCreates, recordCreate)
 				branch.Steps = append(branch.Steps, storage.FlowStep{Kind: "recordCreate", FaultTarget: fault, RecordCreate: recordCreate})
 			} else {
@@ -2171,7 +2398,7 @@ func flowPopulateBranchBody(branch storage.FlowBranch, target, stop string, raw 
 				continue
 			}
 			modeled = true
-			branch.Steps = append(branch.Steps, storage.FlowStep{Kind: "customError", CustomError: modeledFlowCustomError(customError, raw.Constants)})
+			branch.Steps = append(branch.Steps, storage.FlowStep{Kind: "customError", CustomError: modeledFlowCustomError(customError, raw.Constants, flowCustomErrorFrameFormulas(raw))})
 			break
 		}
 		if modeled {
@@ -2187,11 +2414,15 @@ func flowPopulateBranchBody(branch storage.FlowBranch, target, stop string, raw 
 	return branch, diagnostics
 }
 
-func modeledFlowCustomError(customError flowCustomErrorXML, constants []flowConstantXML) storage.FlowCustomError {
+func modeledFlowCustomError(customError flowCustomErrorXML, constants []flowConstantXML, formulaMaps ...map[string]string) storage.FlowCustomError {
+	var formulas map[string]string
+	if len(formulaMaps) > 0 {
+		formulas = formulaMaps[0]
+	}
 	ce := storage.FlowCustomError{Name: strings.TrimSpace(customError.Name), Description: strings.TrimSpace(customError.Description)}
 	for _, msg := range customError.Messages {
 		text := strings.TrimSpace(firstNonBlank(msg.ErrorMessage, msg.Message))
-		ce.Messages = append(ce.Messages, storage.FlowCustomErrorMessage{Message: inlineFlowConstantMergeFields(text, constants)})
+		ce.Messages = append(ce.Messages, storage.FlowCustomErrorMessage{Message: inlineFlowConstantMergeFields(text, constants), Formulas: formulas})
 	}
 	return ce
 }

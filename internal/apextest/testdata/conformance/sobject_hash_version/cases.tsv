@@ -1,0 +1,5 @@
+case	shape	boundary
+H01	Account Opportunity Lead Case	empty record
+H02	Account Contact Opportunity Lead	populated and explicit null fields
+H03	Account populated two fields	field aggregation
+H04	System.hashCode(null)	rejection

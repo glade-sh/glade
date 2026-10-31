@@ -4,6 +4,283 @@
 
 No unreleased changes.
 
+## v0.3.3
+
+v0.3.3 adds asynchronous SOAP callouts and the captured CPU-limit message. It
+tightens upsert, Person Account, locale, and record-access behavior to captured
+Salesforce results, and it extends Flow formula and action-output handling. API
+labels list the source versions checked against captured results; where a label
+names two versions, no other was captured. Changes that applied a captured row
+only to its own shape say so, and other shapes keep their earlier behavior. The
+supported windows and hosted boundaries remain in
+[release policy](RELEASE_POLICY.md#salesforce-api-versions).
+
+### Behavior to check when upgrading
+
+- **Caches.** The semantic, platform, test-runtime, and debug-adapter caches
+  carry new versions (`sema-v74`, `salesforce-platform-v59`,
+  `apextest-runtime-v16`, debug-adapter cache 13), and the startup cache is at
+  version 15. The first command after upgrading rebuilds them and runs slower
+  once. If an old compile error persists, run `glade test clear-cache` once.
+- **CPU limit message (Apex API 62.0 and 67.0).** When a synchronous run
+  exhausts the CPU limit, the uncatchable `System.LimitException` now carries
+  the captured message `Apex CPU time limit exceeded`. The reported limit stays
+  10,000 ms and the 60,000 ms asynchronous cap is unchanged. The estimate is
+  still work-based, not wall-clock time.
+- **Standard pricebook in tests (Apex API 62.0 and 67.0).** With
+  `SeeAllData=false`, a test no longer sees a standard pricebook that existed
+  before the test started, and calling `Test.getStandardPricebookId()` does
+  not make it queryable. A pricebook the test creates is visible. With
+  `SeeAllData=true` the pre-existing pricebook is visible.
+- **Person Account fields (Apex API 62.0 and 67.0).** A project that reads or
+  sets Person Account fields, such as `FirstName` on `Account`, must declare
+  the `PersonAccounts` feature. Set it under `org: features:` in `glade.yml`,
+  list it in the scratch definition Glade reads, or ship Person Account
+  metadata (a Person Account record type or `__pc` fields). Without that
+  evidence Glade reports `GLADESEMA019` ("Field does not exist") the way
+  Salesforce does in an org without Person Accounts. Some projects that
+  compiled under v0.3.2 now report this at compile time. Glade does not infer
+  the feature from field references in source. State and country code fields,
+  such as `Order.ShippingStateCode`, likewise need `StateAndCountryPicklist`
+  in the scratch definition.
+- **Upsert and duplicate rules (Apex API 62.0 and 67.0).** An upsert by custom
+  external key that inserts a record now evaluates the active duplicate rule. A scalar upsert that updates a
+  record evaluates it when the matching value changed and the prior value was
+  not blank. This applies to the captured shape only: one active, same-object,
+  exact-match rule on a non-blank Contact `Email` with `NullNotAllowed`. A test
+  that relied on such an upsert passing silently can now fail with
+  `DUPLICATES_DETECTED`.
+- **Person Account upsert (Apex API 62.0 and 67.0).** `Database.upsert` that
+  creates a Person Account with an explicit null `RecordTypeId` is rejected
+  with `INVALID_CROSS_REFERENCE_KEY`. Omitting the field is accepted. Upserts
+  that update an existing record are unchanged.
+- **User locale (Apex API 62.0 and 67.0).** `User.LocaleSidKey` values outside
+  the captured list are rejected with the captured diagnostic. Update was
+  captured. Insert and upsert use the same engine check and are inferred.
+- **Unknown custom fields (Apex API 62.0 and 67.0).** When a project pins a
+  hash-verified schema snapshot that asserts `fieldsComplete` for an object,
+  reading an undeclared custom field on that object is a compile error.
+  Without that assertion the object stays open.
+- **Hash codes and JSON maps (Apex API 62.0 and 67.0).** `System.hashCode` on
+  a directly built record returns the captured value for an empty record and
+  for one with Name, LastName, or Industry set. `JSON.serialize` on a Map with a null key
+  throws `System.JSONException: Unable to serialize a map with a null key.`
+- **Checkbox reads (Apex API 62.0 and 67.0).** For a custom Checkbox field with
+  a default of true, an omitted or null value reads `false` through the field
+  and `null` through `get()`. Inserting an explicit null is rejected with
+  `INVALID_TYPE_ON_FIELD_IN_RECORD`.
+
+### Apex semantics and queries
+
+- **Asynchronous SOAP callouts (Apex API 62.0 and 67.0).**
+  `System.WebServiceCallout.beginInvoke` and `endInvoke` run. A continuation
+  builds its request, mocks time, counts the callout, and delivers a String
+  response to its callback. The captured null arguments, option lengths,
+  missing or empty bodies, escaped values, and namespace mismatch follow the
+  native rows. The four-argument form is rejected before it is deferred.
+- **Record access in queries (Apex API 62.0 and 67.0).** `UserRecordAccess`
+  fields such as `MaxAccessLevel` come from the running user's assigned
+  grants, including Modify All Records, and not from the profile name. At API
+  67.0 the source policy applies even when a query names `SYSTEM_MODE`; at
+  62.0 an explicit `USER_MODE` keeps its captured result. Invalid fields keep
+  the earlier error order.
+- **Translated queries (Apex API 62.0 and 67.0).** With a French user language,
+  `FORMAT` on currency and date fields, `toLabel` on a translated standard
+  picklist value, and predicates on translated labels follow the captured
+  rows. Currency scale and sign are kept. A language without the translation
+  falls back to the stored value. Translations apply only when `glade.yml` lists the language under
+  `org.features`, as `TranslationLanguage-fr`, and the project carries the
+  matching standard value set translation metadata. Captured rows cover `Account.Industry`; other
+  fields and languages are not generalized.
+- **Describe field maps (Apex API 62.0 and 67.0).** A copy of a describe field
+  map normalizes reads and keeps the keys you supply when you write. `clear()`
+  on the original `getMap()` result is allowed, and copies made after a clear
+  are empty. `put`, `remove`, and `putAll` on the original are rejected, as
+  captured.
+- **Required fields on insert (Apex API 62.0 and 67.0).** A failed insert that
+  lacks a required field, such as Account `Name`, Contact `LastName`, or
+  Opportunity `Name`, reports the captured row details in the exception.
+  Inserts from asynchronous Apex keep their earlier exception behavior.
+- **FileEvent publication (Apex API 62.0 and 67.0).** In a named class,
+  publishing a single `FileEvent` compiles, with or without a null callback.
+  Anonymous publication is still rejected. Other event types and callback types
+  are not changed.
+- **Commerce cart helper (Apex API 62.0 and 67.0).** A `CartExtension`
+  calculator class can call the public `shippingPromotions` helper with a
+  `CartCalculateCalculatorRequest`. Overriding it, or passing another argument
+  type, is rejected.
+- **Duplicate class keys (all source API versions).** When two sources define
+  the same class key, load order is now stable: namespace and name ascending,
+  with equal keys kept in append order. This is local ordering. Which
+  duplicate Salesforce would pick is not established.
+
+### Runtime, DML, and platform APIs
+
+- **AutomatedProcess user (Apex API 62.0 and 67.0).** The
+  AutomatedProcess user is seeded with the `America/Los_Angeles` time zone,
+  as captured. A user that already has an explicit time zone keeps it.
+- **Visualforce and Lightning Apex requests (Visualforce API 59.0 and 67.0,
+  Apex API 62.0 and 67.0).** Requests reuse the frozen project runtime instead of rebuilding it for each
+  render. Methods registered in a request overlay appear in the remoting
+  script. Captured page projection and remoting rows are unchanged.
+- **Plugin manifests.** On Linux, reading a plugin manifest retries up to five
+  times, 25 ms apart, when the executable is briefly busy. Other errors and
+  cancellation return at once.
+
+### Schema, metadata, and projects
+
+- **Metadata names (Apex API 62.0 and 67.0).** `QualifiedApiName` on
+  `EntityDefinition` and `FieldDefinition` for project-owned custom schema
+  matches the describe name, so namespaced and `__c` filters find their rows.
+  Standard objects and non-project metadata use the earlier names.
+- **Schema snapshots (Apex API 62.0 and 67.0).** A snapshot that omits
+  `fieldsComplete`, a partial schema, an external-package schema, and a
+  project metadata overlay stay open to unknown fields. Writes and safe
+  navigation keep their earlier behavior.
+
+### Flows
+
+- **Formula bindings (Apex API 62.0 and 67.0).** In record-triggered
+  before-save and after-save Create flows, a String variable without a default
+  starts as null. An Assignment resolves a bare name shared by a String
+  variable and a record field to the variable. Create and Custom Error
+  formulas use the same binding. An explicit record reference stays distinct.
+  Subflows, invocable interviews, other trigger modes, and non-String
+  variables keep their earlier handling.
+- **Apex action outputs (Apex API 62.0 and 67.0).** Copying an unassigned text
+  collection output gives null. Adding a null text element gives a one-element
+  list holding null. An unassigned text output reads null. An undeclared
+  assignment target is rejected at deployment.
+
+### Performance
+
+Measured changes are small. The table compares v0.3.3 with the v0.3.2 source
+on full project test runs over unchanged inputs: three rounds of base, head,
+head, base per project, on one macOS host, medians of retired instructions and
+peak memory from `/usr/bin/time -l`. Normalized test outcomes were identical in
+all 36 trials, and each admitted trial started with at least 35% free memory.
+The change measured is the optional-field gate index for standard objects.
+
+| Open-source project | Instructions | CPU time | Peak memory |
+| --- | ---: | ---: | ---: |
+| Sample-code project | 348.6B to 331.4B (-4.9%) | 27.6 s to 26.7 s | 2,021 to 2,018 MiB (-0.1%) |
+| Rollup library | 752.8B to 747.5B (-0.7%) | 66.7 s to 65.0 s | 2,081 to 2,101 MiB (+1.0%) |
+| Logging framework | 1,177.8B to 1,171.1B (-0.6%) | 119.6 s to 113.7 s | 1,851 to 1,854 MiB (+0.1%) |
+
+Block-scope bindings keep a two-slot local snapshot for small blocks and fall
+back to the earlier map for larger or case-colliding ones. On one VM
+hot-loop test, measured on a quiet host with three base, head, head, base rounds and six processes per side,
+median instructions fell from 35.29B to 33.45B (-5.2%) and median peak memory
+from 242.6 to 218.6 MiB (-9.9%). Every round favored the new build. This is one
+loop shape, not a project run.
+
+Two other changes are not claimed as gains. Sharing the project runtime across
+Visualforce requests showed -5.2% median instructions on one project, driven
+by one round (-5.7%; the other two were -0.1%), with a +20.6% median
+peak-memory rise. An identical-binary control moved by up to 0.7% between
+rounds. The other two projects moved by less than 1% in instructions. A change
+that tried to cut global describe scratch storage and one that discarded
+oversized idle workers were both reverted after they missed the bar.
+
+### Development and CI
+
+Required CI now runs twelve Apex test shards and runs the VM and CLI packages as
+isolated jobs. A gofmt gate checks every tracked Go file and fails when the file
+list cannot be built. A nightly job runs the timing-sensitive tests 20 times on
+Linux and macOS and fails if a listed test is missing or any run fails. New
+data-driven conformance tests record captured behavior for abstract interface
+overrides, merge-conflict markers, missing-dependency receivers, metadata
+dependency shapes, Flow loop relationships and action dependencies, async stack
+depth, and `Date.parse` shapes. They change no product behavior. The generated
+capability and known-gap reports and the release-evidence wording were
+refreshed. They remain selected summaries, not a full inventory.
+
+### Known issues and verification limits
+
+The CodeQL scan on large changes does not finish its queries within its time
+budget. On pull requests and tags that change many files, about ten of thirty
+queries complete before the budget ends, and the job reports the analysis as
+incomplete. The v0.3.2 release had the same result. The scan is complete for
+small changes. Release verification does not treat an incomplete CodeQL scan as
+proof of absence of findings. Finding the cause is planned work.
+
+The Race workflow on `main` is red on every push because of timing. The
+`internal/vm` CI lane runs close to its 20 minute limit and has timed out on
+first attempts. The Visualforce V09 clicked-controls conformance case at API
+59 flaked in CI before passing. The Visualforce
+V-series tests fail on some remote hosts but pass in CI.
+
+The permissive custom-object CRUD/FLS defaults described under v0.3.0 remain.
+Do not infer default-deny equivalence from local Standard User tests.
+
+Asynchronous SOAP callouts return String responses only. Other response
+schemas and hosted transport are not captured and stay unsupported.
+
+`UserRecordAccess` follows direct assignments. Permission set group grants, and
+nested projections on `Asset`, `Contract`, `Order`, and `Pricebook2`, keep the
+earlier result because no capture covers them.
+
+Duplicate-rule checks on upsert cover the one captured rule shape. Other rule
+shapes, list and bulk upserts, and multi-item or `MatchBlanks` rules keep their
+earlier behavior. A duplicate report is queued only for one matching report
+rule and one matched record. These are local choices, not a claim that
+Salesforce behaves this way. The Person Account change covers one record per
+call. Mixed and larger lists, the API 67.0 denial message, limit accounting, and
+installed namespaced record types were not captured.
+
+`User.LocaleSidKey` rejection rests on sampled values. An undescribed alias that
+Salesforce accepts could be rejected here. The locale-specific insert and upsert
+wrappers share the engine path and are inferred, not separately captured.
+
+Hash codes follow the captured shapes only. Queried records, other field types,
+and other objects keep their earlier hash. `JSON.serialize` rejects a null map
+key in the one-argument top-level form. Nested maps, `serializePretty`, and
+`JSONGenerator` were not captured.
+
+Translated queries cover French and `Account.Industry`. Child projections and
+query-locator paging share that path with no locale row of their own. For an
+invalid `TYPEOF` target, the error class matches and the message text does not.
+
+The CPU figures are estimates. The synchronous message comes from one capture
+per API version. The asynchronous exhaustion message and the cost of row-heavy
+work are not calibrated.
+
+Standard pricebook isolation covers the standard pricebook only. Other
+pre-existing pricebooks, query handles, paging, and Visualforce and Lightning
+hosts are not captured. A pre-existing `Account` under `SeeAllData=true` is not
+modeled.
+
+Flow formula bindings cover the captured String shapes. Relationship Id
+targets of non-text types keep their earlier resolver. Action-output behavior
+covers unassigned text collections; empty collections and other collection
+types are not established.
+
+Describe-map `clear()` through the field wrapper is rejected at compile time,
+as captured, and has no runtime change. `FileEvent` handling is limited to the
+captured scalar and null-callback forms. Metadata `QualifiedApiName` changes
+apply to project-owned custom schema; whether they explain every missing
+metadata row in larger projects was not verified.
+
+The v0.3.2 disclosures remain unless changed above, including the 99 reference-only standard object names, the Flow
+action and before-delete routes with Currency variables, and the
+contract-resolution types, which were captured at API 62.0 and 67.0 only.
+Committed platform-event delivery timing, deferred Flow execution, fuzzy and
+cross-object duplicate matching, and transaction and callout boundaries beyond
+the captured cases are not established. Hosted Experience Cloud, approval
+routing, email and notification delivery, and PDF rendering fidelity remain
+outside the local contract. DataWeave, ConnectApi, and Slack remain excluded
+and unsupported. Execute Anonymous eligibility remains 65.0, 66.0, 67.0, and
+68.0.
+
+### Install and verify
+
+Release archives remain supported on macOS and Linux for AMD64 and ARM64.
+Follow [checksum and attestation verification](INSTALL.md#security-verification).
+Upgrade with `glade update`, then run `glade version` and
+`glade doctor --project .`. Check the cache guidance above before rerunning
+project tests. Publication and artifact verification remain subject to the
+[release gate](RELEASE_POLICY.md#release-gate).
+
 ## v0.3.2
 
 v0.3.2 makes offline test runs use less CPU and memory. It also closes more

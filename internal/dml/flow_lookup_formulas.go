@@ -23,6 +23,12 @@ func (e *Engine) evaluateFlowDecisionFormula(expression string, source storage.R
 			if value, found := frame.scalars[flowFrameKey(reference)]; found {
 				return formulaStorageValue(value.Clone()), true, true
 			}
+			if frame.capturedBeforeCreate {
+				variable, declared := frame.variables[flowFrameKey(reference)]
+				if declared && !variable.IsCollection && variable.DefaultValue == nil && strings.EqualFold(variable.DataType, "String") {
+					return formulaStorageValue(storage.NullValue()), true, true
+				}
+			}
 			return formulaValue{}, false, false
 		}
 		output, found := frame.lookupOutputs[flowFrameKey(name)]

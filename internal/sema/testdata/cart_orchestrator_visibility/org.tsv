@@ -1,0 +1,15 @@
+api	route	case	outcome	diagnostic
+62.0	deploy	external_base	accepted	-
+62.0	deploy	external_subclass	accepted	-
+62.0	deploy	external_wrong_type	rejected	Method does not exist or incorrect signature: void shippingPromotions(String) from the type CartExtension.CartCalculate
+62.0	deploy	subclass_method	accepted	-
+62.0	deploy	external_adjacent	accepted	-
+67.0	deploy	external_base	accepted	-
+67.0	deploy	external_subclass	accepted	-
+67.0	deploy	external_wrong_type	rejected	Method does not exist or incorrect signature: void shippingPromotions(String) from the type CartExtension.CartCalculate
+67.0	deploy	subclass_method	accepted	-
+67.0	deploy	external_adjacent	accepted	-
+62.0	anonymous	direct_null_caught	passed	-
+62.0	istest	direct_null_caught	passed	-
+67.0	anonymous	direct_null_caught	passed	-
+67.0	istest	direct_null_caught	passed	-

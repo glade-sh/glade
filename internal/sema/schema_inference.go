@@ -69,6 +69,9 @@ func semaMergeSchemaObjectDefinitions(existing, incoming schema.Object) schema.O
 		primary, supplemental = incoming, existing
 	}
 	primary.Partial = existing.Partial && incoming.Partial
+	primary.FieldsComplete = existing.FieldsComplete || incoming.FieldsComplete
+	// Do not combine an old inferred marker with an unrelated assertion.
+	primary.CompleteSnapshot = (existing.CompleteSnapshot && existing.FieldsComplete) || (incoming.CompleteSnapshot && incoming.FieldsComplete)
 	if primary.Label == "" {
 		primary.Label = supplemental.Label
 	}

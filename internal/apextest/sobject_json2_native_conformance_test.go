@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/glade-sh/glade/internal/sema"
+	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/vm"
 )
 
@@ -32,6 +33,14 @@ func TestSObjectJSON2DecoderNativeConformance(t *testing.T) {
 }
 
 func runSObjectJSON2NativeConformance(t *testing.T, fixture, probe, prefix, namespace, shapes string, operations ...string) {
+	language := ""
+	if probe == "SObjectJSON3Probe" || probe == "SObjectJSON3Routes" {
+		language = "fr"
+	}
+	runSObjectJSON2NativeConformanceWithLanguage(t, fixture, probe, prefix, namespace, shapes, language, operations...)
+}
+
+func runSObjectJSON2NativeConformanceWithLanguage(t *testing.T, fixture, probe, prefix, namespace, shapes, language string, operations ...string) {
 	native, runtimeAPI := readSObjectJSON2NativeRows(t, fixture, shapes, operations...)
 	releaseRuntimeCachesAfterTest(t)
 	for _, api := range []string{"62.0", "67.0"} {
@@ -43,6 +52,10 @@ func runSObjectJSON2NativeConformance(t *testing.T, fixture, probe, prefix, name
 			writeFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"sourceApiVersion":%q,"namespace":%q,"packageDirectories":[{"path":".","default":true}]}`, api, namespace))
 			writeFile(t, filepath.Join(root, "classes/"+probe+".cls-meta.xml"), `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>`+api+`</apiVersion><status>Active</status></ApexClass>`)
 			named := strings.ReplaceAll(sobjectJSON2NativeTestClass(native[api]["isTest"]), "SObjectJSON2Probe", probe)
+			if language != "" {
+				named = strings.Replace(named, "@IsTest static void capturedRows() {", "@IsTest static void capturedRows() { System.runAs(new User(Id='005000000000009', Name='Synthetic', LastName='Synthetic', LocaleSidKey='fr_FR', LanguageLocaleKey='"+language+"')) {", 1)
+				named = strings.TrimSuffix(named, "}\n}\n") + "}\n}\n}\n"
+			}
 			if probe == "SObjectJSON2RouteProbe" {
 				named = strings.ReplaceAll(named, probe+".observe()", "new Map<String,Map<String,String>>{'context'=>(Map<String,String>)JSON.deserialize("+probe+".observe(),Map<String,String>.class)}")
 			}
@@ -72,6 +85,9 @@ func runSObjectJSON2NativeConformance(t *testing.T, fixture, probe, prefix, name
 				runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 				result, err := runner.execute(program, func(machine *vm.VM) {
 					machine.SetCurrentNamespace(namespace)
+					if language != "" {
+						machine.SetCurrentUser(storage.Record{ID: storage.ID(storage.DefaultUserID), Object: "User", Fields: map[string]storage.Value{"LocaleSidKey": storage.StringValue("fr_FR"), "LanguageLocaleKey": storage.StringValue(language)}})
+					}
 				})
 				if err != nil {
 					t.Fatal(err)

@@ -33,7 +33,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Assert | `Assert.isNotNull` | `supported` | Routes through local assertion failures with optional message text. |
 | Assert | `Assert.isNull` | `supported` | Routes through local assertion failures with optional message text. |
 | Assert | `Assert.isTrue` | `supported` | Routes through local assertion failures with optional message text. |
-| Blob / PageReference | `Blob.toPdf, PageReference.getContent and getContentAsPDF` | `partial` | Blob.toPdf, PageReference.getContent and getContentAsPDF render locally with a text-only PDF writer that follows the layout of Salesforce's renderer (PDF-1.4, Letter, Times-Roman, Flate streams). It is not Salesforce's Flying Saucer/iText engine: CSS, tables, images and embedded fonts are not rendered, and output is deterministic where Salesforce's is not. Set pdf.command to an external HTML-to-PDF program for real rendering. PageReference.getContent returns HTML for pages without renderAs="pdf". The pdf.command setting applies to Visualforce page rendering; Blob.toPdf uses the local writer. |
+| Blob / PageReference | `Blob.toPdf, PageReference.getContent and getContentAsPDF` | `partial` | Blob.toPdf and PageReference.getContentAsPDF provide deterministic minimal local PDF stand-ins; Salesforce rendering fidelity is not emulated. |
 | Boolean | `Boolean.valueOf(Object)` | `supported` | Converts supported local field/object values into Boolean values. |
 | Boolean | `Boolean.valueOf(String)` | `supported` | Converts strings to Boolean using Apex-shaped true/false parsing. |
 | BusinessHours | `BusinessHours malformed local holiday metadata` | `unsupported` | Malformed seeded holiday metadata raises a stable UnsupportedFeature diagnostic naming the unsupported local field shape. |
@@ -42,6 +42,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | BusinessHours | `BusinessHours.diff(String, Datetime, Datetime)` | `supported` | Counts deterministic local business milliseconds across seeded week schedules, timezones, all-day closures, partial-day closures, recurring holidays, and linked holidays. |
 | BusinessHours | `BusinessHours.isWithin(String, Datetime)` | `supported` | Checks seeded local week schedules, timezones, Holiday closures, OperatingHoursHoliday links, partial-day closures, and recurring holidays. |
 | BusinessHours | `BusinessHours.nextStartDate(Id, Datetime)` | `supported` | Finds the next deterministic local start from seeded week schedules, timezones, Holiday closures, OperatingHoursHoliday links, partial-day closures, and recurring holidays. |
+| Cache | `Cache.Org / Cache.Session` | `supported` | Local partitions, key operations, expiration and checked builder behavior; hosted eviction guarantees are not modeled. |
 | Crypto | `Crypto.decryptWithManagedIV` | `supported` | Managed-IV AES-GCM decryption, including additional authenticated data, is executable in the local runtime; ciphertext values remain unstable. |
 | Crypto | `Crypto.encryptWithManagedIV` | `supported` | Managed-IV AES-GCM encryption, including additional authenticated data, is executable in the local runtime; ciphertext values remain unstable. |
 | Crypto | `Crypto.generateDigest` | `supported` | MD5, SHA-1/SHA1, SHA-256/SHA256, SHA-384/SHA384, SHA-512/SHA512, and SHA3-256/384/512 digests are fixture-pinned, with Salesforce-shaped SecurityException diagnostics for unknown names. |
@@ -110,16 +111,19 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | EncodingUtil | `EncodingUtil.convertToHex` | `supported` | Blob-shaped local value. |
 | EncodingUtil | `EncodingUtil.urlDecode` | `supported` | Oracle-pinned URL form decoding covers UTF-8, US-ASCII replacement, ISO-8859-1 aliases, and UTF-16 mixed escaped/plain input. |
 | EncodingUtil | `EncodingUtil.urlEncode` | `supported` | Oracle-pinned URL form encoding covers UTF-8, US-ASCII replacement, ISO-8859-1 aliases, and UTF-16 escaped output. |
+| EventBus | `EventBus / ReplayId` | `supported` | Local publish and checked read-only ReplayId behavior use the local test event queue; live streaming requires Salesforce. |
 | Exception | `InvalidParameterValueException constructors` | `supported` | Supports zero-arg, message, cause, and existing platform-specific constructor shapes. |
 | Exception | `NoAccessException constructors` | `supported` | Supports zero-arg, message, cause, and message-plus-cause constructor shapes. |
 | Exception | `NoDataFoundException constructors` | `supported` | Supports zero-arg, message, cause, and message-plus-cause constructor shapes. |
 | Exception | `NullPointerException constructors` | `supported` | Supports zero-arg, message, cause, and message-plus-cause constructor shapes. |
 | FeatureManagement | `FeatureManagement.checkPermission` | `supported` | Checks local runAs user permissions, permission sets, and custom-permission assignments. |
+| FormulaEval | `Formula.builder()` | `supported` | Builds and evaluates the supported local formula subset; unsupported expressions raise a local diagnostic. |
 | HTTP | `Http.send(HttpRequest)` | `supported` | Routes local callouts through registered HttpCalloutMock implementations and records local callout limits. |
 | HTTP | `HttpRequest` | `supported` | Endpoint, method, headers, timeout, body, blob body, and local DTO accessors are modeled. |
 | HTTP | `HttpRequest client certificate local mock metadata` | `supported` | Client certificate name and PEM accessors read deterministic local certificate metadata for mock-backed callouts. |
 | HTTP | `HttpRequest client certificate real TLS handshake` | `unsupported` | Real mutual-TLS handshakes and Salesforce certificate-store delivery require hosted callout infrastructure. |
 | HTTP | `HttpResponse` | `supported` | Status, status code, headers, body, blob body, and local DTO accessors are modeled. |
+| Invocable | `Invocable.Action Flow actions` | `supported` | Runs supported local Flow actions and returns local result and error objects. |
 | JSON | `JSON.deserialize` | `supported` | Oracle-pinned DTO, SObject, primitive, collection, Object, string-key, and scalar-key map paths preserve duplicate-key last-value behavior and field order. |
 | JSON | `JSON.deserializeStrict` | `supported` | Oracle-pinned strict DTO and SObject paths accept known fields, reject unknown fields with Salesforce-shaped diagnostics, and keep the last duplicate SObject field value. |
 | JSON | `JSON.deserializeUntyped` | `supported` | Oracle-pinned untyped primitive, list, and map containers preserve order, collapse duplicate keys to the last value, and throw Salesforce-shaped oversized integer errors. |

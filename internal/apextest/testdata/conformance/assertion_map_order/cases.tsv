@@ -1,0 +1,5 @@
+case	behavior	control
+map_forward	JSON.serialize string map, insert alpha then beta	one key
+map_reverse	JSON.serialize string map, insert beta then alpha	reversed insertion
+map_nested	JSON.serialize nested string maps	one nested key
+map_null_key	JSON.serialize map with null key	rejection boundary

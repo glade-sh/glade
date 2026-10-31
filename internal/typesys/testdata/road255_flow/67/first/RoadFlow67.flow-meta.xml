@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>67.0</apiVersion>
+<assignments><name>SetResult</name><label>Set Result</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>result</assignToReference><operator>Assign</operator><value><stringValue>FIRST</stringValue></value></assignmentItems></assignments>
+<interviewLabel>RoadFlow67</interviewLabel><label>RoadFlow67</label><processType>AutoLaunchedFlow</processType><start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>SetResult</targetReference></connector></start><status>Active</status>
+<variables><name>result</name><dataType>String</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>true</isOutput></variables></Flow>

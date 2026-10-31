@@ -36,7 +36,8 @@ func TestNameResolutionOrgConformance(t *testing.T) {
 		Source, Terminal, Observed                                      string
 		ExpectedCompilation, ExpectedRuntime                            string
 		RemainingReason, MessageGap, Owner                              string
-		Sources map[string]string `json:"declarations"`; Files, SourceSha256 map[string]string
+		Sources                                                         map[string]string `json:"declarations"`
+		Files, SourceSha256                                             map[string]string
 		NativeDiagnostics                                               []struct {
 			Class string
 			Line  int

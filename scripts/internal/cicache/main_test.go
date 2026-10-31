@@ -392,7 +392,7 @@ jobs:
     steps:
       - uses: actions/checkout@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa # v1.0.0
 `))
-	if !hasProblem(errs, "ci.yml/gladecli: required artifact upload missing: go-test-gladecli") {
+	if !hasProblem(errs, "ci.yml/gladecli: required artifact upload missing: gladecli-shard-${{ matrix.shard }}") {
 		t.Fatalf("problems = %v", errs)
 	}
 }
@@ -404,10 +404,10 @@ jobs:
     steps:
       - uses: actions/upload-artifact@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa # v1.0.0
         with:
-          name: go-test-gladecli
-          path: ci-artifacts/go-test/test-gladecli.json
+          name: gladecli-shard-${{ matrix.shard }}
+          path: wrong-directory/
 `))
-	if !hasProblem(errs, "ci.yml/gladecli: required artifact upload missing path: ci-artifacts/go-test/resource-gladecli.json") {
+	if !hasProblem(errs, "ci.yml/gladecli: required artifact upload missing path: ci-artifacts/gladecli-${{ matrix.shard }}/") {
 		t.Fatalf("problems = %v", errs)
 	}
 }
@@ -420,12 +420,10 @@ jobs:
       - uses: actions/upload-artifact@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa # v1.0.0
         if: false
         with:
-          name: go-test-gladecli
-          path: |
-            ci-artifacts/go-test/test-gladecli.json
-            ci-artifacts/go-test/resource-gladecli.json
+          name: gladecli-shard-${{ matrix.shard }}
+          path: ci-artifacts/gladecli-${{ matrix.shard }}/
 `))
-	if !hasProblem(errs, "ci.yml/gladecli: required artifact upload is disabled: go-test-gladecli") {
+	if !hasProblem(errs, "ci.yml/gladecli: required artifact upload is disabled: gladecli-shard-${{ matrix.shard }}") {
 		t.Fatalf("problems = %v", errs)
 	}
 }
@@ -437,12 +435,10 @@ jobs:
     steps:
       - uses: actions/upload-artifact@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa # v1.0.0
         with:
-          name: go-test-gladecli
-          path: |
-            ci-artifacts/go-test/test-gladecli.json.bak
-            ci-artifacts/go-test/resource-gladecli.json
+          name: gladecli-shard-${{ matrix.shard }}
+          path: ci-artifacts/gladecli-${{ matrix.shard }}/.bak
 `))
-	if !hasProblem(errs, "ci.yml/gladecli: required artifact upload missing path: ci-artifacts/go-test/test-gladecli.json") {
+	if !hasProblem(errs, "ci.yml/gladecli: required artifact upload missing path: ci-artifacts/gladecli-${{ matrix.shard }}/") {
 		t.Fatalf("problems = %v", errs)
 	}
 }

@@ -1,0 +1,63 @@
+source_api	route	case	subject	outcome	value
+62.0	anonymous	projection	Lead	ok	"[true,true,true,true,true,""All""]"
+62.0	anonymous	direct	Lead	ok	"[true,true,true,true,true,""All""]"
+62.0	anonymous	projection	Campaign	ok	"[true,true,true,true,true,""All""]"
+62.0	anonymous	direct	Campaign	ok	"[true,true,true,true,true,""All""]"
+62.0	anonymous	projection	Contract	ok	"[true,true,true,true,false,""Transfer""]"
+62.0	anonymous	direct	Contract	ok	"[true,true,true,true,false,""Transfer""]"
+62.0	anonymous	projection	Asset	ok	"[true,true,true,true,false,""Transfer""]"
+62.0	anonymous	direct	Asset	ok	"[true,true,true,true,false,""Transfer""]"
+62.0	anonymous	projection	Product2	ok	"[true,true,true,true,true,""All""]"
+62.0	anonymous	direct	Product2	ok	"[true,true,true,true,true,""All""]"
+62.0	anonymous	projection	Pricebook2	ok	"[true,true,true,false,false,""Delete""]"
+62.0	anonymous	direct	Pricebook2	ok	"[true,true,true,false,false,""Delete""]"
+62.0	anonymous	projection	Order	ok	"[true,true,true,true,false,""All""]"
+62.0	anonymous	direct	Order	ok	"[true,true,true,true,true,""All""]"
+62.0	anonymous	projection	OpportunityLineItem	ok	"[true,true,true,true,true,""All""]"
+62.0	anonymous	direct	OpportunityLineItem	ok	"[true,true,true,true,true,""All""]"
+62.0	anonymous	nested	SELECT Campaign.UserRecordAccess.HasReadAccess,Campaign.UserRecordAccess.HasEditAccess FROM Opportunity LIMIT 1	ok	"[{""attributes"":{""type"":""UserRecordAccess""},""HasReadAccess"":true,""HasEditAccess"":true}]"
+62.0	anonymous	nested	SELECT Product2.UserRecordAccess.HasReadAccess,Product2.UserRecordAccess.HasEditAccess FROM Asset LIMIT 1	ok	"[{""attributes"":{""type"":""UserRecordAccess""},""HasReadAccess"":true,""HasEditAccess"":true}]"
+62.0	anonymous	nested	SELECT PricebookEntry.Product2.UserRecordAccess.HasReadAccess FROM OpportunityLineItem LIMIT 1	ok	"[{""attributes"":{""type"":""UserRecordAccess""},""HasReadAccess"":true}]"
+62.0	anonymous	rejection	SELECT UserRecordAccess.UserId FROM Lead LIMIT 1	reject	-
+62.0	anonymous	rejection	SELECT UserRecordAccess.HasReadAccess FROM User LIMIT 1	reject	-
+62.0	istest	static-member	Lead	ok	-
+62.0	istest	static-member	Campaign	ok	-
+62.0	istest	static-member	Contract	ok	-
+62.0	istest	static-member	Asset	ok	-
+62.0	istest	static-member	Product2	ok	-
+62.0	istest	static-member	Pricebook2	ok	-
+62.0	istest	static-member	Order	ok	-
+62.0	istest	static-member	OpportunityLineItem	ok	-
+62.0	istest	nested-member	Opportunity.Campaign	ok	-
+62.0	istest	nested-member	Asset.Product2	ok	-
+67.0	anonymous	projection	Lead	ok	"[true,true,true,true,true,""All""]"
+67.0	anonymous	direct	Lead	ok	"[true,true,true,true,true,""All""]"
+67.0	anonymous	projection	Campaign	ok	"[true,true,true,true,true,""All""]"
+67.0	anonymous	direct	Campaign	ok	"[true,true,true,true,true,""All""]"
+67.0	anonymous	projection	Contract	ok	"[true,true,true,true,false,""Transfer""]"
+67.0	anonymous	direct	Contract	ok	"[true,true,true,true,false,""Transfer""]"
+67.0	anonymous	projection	Asset	ok	"[true,true,true,true,false,""Transfer""]"
+67.0	anonymous	direct	Asset	ok	"[true,true,true,true,false,""Transfer""]"
+67.0	anonymous	projection	Product2	ok	"[true,true,true,true,true,""All""]"
+67.0	anonymous	direct	Product2	ok	"[true,true,true,true,true,""All""]"
+67.0	anonymous	projection	Pricebook2	ok	"[true,true,true,false,false,""Delete""]"
+67.0	anonymous	direct	Pricebook2	ok	"[true,true,true,false,false,""Delete""]"
+67.0	anonymous	projection	Order	ok	"[true,true,true,true,false,""All""]"
+67.0	anonymous	direct	Order	ok	"[true,true,true,true,true,""All""]"
+67.0	anonymous	projection	OpportunityLineItem	ok	"[true,true,true,true,true,""All""]"
+67.0	anonymous	direct	OpportunityLineItem	ok	"[true,true,true,true,true,""All""]"
+67.0	anonymous	nested	SELECT Campaign.UserRecordAccess.HasReadAccess,Campaign.UserRecordAccess.HasEditAccess FROM Opportunity LIMIT 1	ok	"[{""attributes"":{""type"":""UserRecordAccess""},""HasReadAccess"":true,""HasEditAccess"":true}]"
+67.0	anonymous	nested	SELECT Product2.UserRecordAccess.HasReadAccess,Product2.UserRecordAccess.HasEditAccess FROM Asset LIMIT 1	ok	"[{""attributes"":{""type"":""UserRecordAccess""},""HasReadAccess"":true,""HasEditAccess"":true}]"
+67.0	anonymous	nested	SELECT PricebookEntry.Product2.UserRecordAccess.HasReadAccess FROM OpportunityLineItem LIMIT 1	ok	"[{""attributes"":{""type"":""UserRecordAccess""},""HasReadAccess"":true}]"
+67.0	anonymous	rejection	SELECT UserRecordAccess.UserId FROM Lead LIMIT 1	reject	-
+67.0	anonymous	rejection	SELECT UserRecordAccess.HasReadAccess FROM User LIMIT 1	reject	-
+67.0	istest	static-member	Lead	ok	-
+67.0	istest	static-member	Campaign	ok	-
+67.0	istest	static-member	Contract	ok	-
+67.0	istest	static-member	Asset	ok	-
+67.0	istest	static-member	Product2	ok	-
+67.0	istest	static-member	Pricebook2	ok	-
+67.0	istest	static-member	Order	ok	-
+67.0	istest	static-member	OpportunityLineItem	ok	-
+67.0	istest	nested-member	Opportunity.Campaign	ok	-
+67.0	istest	nested-member	Asset.Product2	ok	-

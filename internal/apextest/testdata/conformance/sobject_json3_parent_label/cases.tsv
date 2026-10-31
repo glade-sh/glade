@@ -1,0 +1,8 @@
+shape	purpose
+parentTechnology	aliased parent translated value, JSON and getters
+parentBanking	second aliased parent translated value
+parentAgriculture	third aliased parent translated value
+parentNull	null parent picklist boundary
+parentUnaliased	unaliased parent translated value
+parentMissing	null parent relationship boundary
+rootReject	child root alias rejection

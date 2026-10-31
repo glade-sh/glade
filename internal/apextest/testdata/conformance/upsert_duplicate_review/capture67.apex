@@ -1,0 +1,11 @@
+insert new Contact(LastName='Safe', Email='report67@example.invalid', RouteKey__c='report-base');
+insert new Contact(LastName='Block', Email='block67@example.invalid', RouteKey__c='block-base');
+Contact distinctRow = new Contact(LastName='Report', Email='distinct67@example.invalid', RouteKey__c='report-distinct');
+Database.UpsertResult distinctResult = Database.upsert(distinctRow, Contact.RouteKey__c, false);
+Contact blockedRow = new Contact(LastName='Block', Email='block67@example.invalid', RouteKey__c='blocked-new');
+Database.UpsertResult blockedResult = Database.upsert(blockedRow, Contact.RouteKey__c, false);
+Contact reportRow = new Contact(LastName='Report', Email='report67@example.invalid', RouteKey__c='report-new');
+Database.UpsertResult reportResult = Database.upsert(reportRow, Contact.RouteKey__c, false);
+System.debug('CAPTURE67|distinct|'+distinctResult.isSuccess()+'|'+distinctResult.isCreated());
+System.debug('CAPTURE67|blocked|'+blockedResult.isSuccess()+'|'+String.valueOf(blockedResult.getErrors()[0].getStatusCode()));
+System.debug('CAPTURE67|report|'+reportResult.isSuccess()+'|'+reportResult.isCreated());

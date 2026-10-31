@@ -1,0 +1,23 @@
+api	route	case	dotted_or_status	dynamic
+62.0	anonymous	custom-null-true	false	null
+62.0	anonymous	custom-null-false	false	null
+62.0	anonymous	contact-custom-null	false	null
+62.0	anonymous	contact-standard-null	false	null
+62.0	anonymous	webstore-null	null
+62.0	anonymous	caller-omitted	false	null
+62.0	anonymous	id-only	false	null
+62.0	anonymous	queried	true	true
+62.0	anonymous	clone	false	null
+62.0	anonymous	null-insert	INVALID_TYPE_ON_FIELD_IN_RECORD
+62.0	istest	project-observe	Pass
+67.0	anonymous	custom-null-true	false	null
+67.0	anonymous	custom-null-false	false	null
+67.0	anonymous	contact-custom-null	false	null
+67.0	anonymous	contact-standard-null	false	null
+67.0	anonymous	webstore-null	null
+67.0	anonymous	caller-omitted	false	null
+67.0	anonymous	id-only	false	null
+67.0	anonymous	queried	true	true
+67.0	anonymous	clone	false	null
+67.0	anonymous	null-insert	INVALID_TYPE_ON_FIELD_IN_RECORD
+67.0	istest	project-observe	Pass

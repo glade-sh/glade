@@ -16,9 +16,8 @@ func TestMapPutAllUnsavedNativeConformance(t *testing.T) {
 			}
 			out := make(map[string]any, len(observed))
 			for key, item := range observed {
-				// Retain serialization observations in the native rows without
-				// expanding this map insertion regression to JSON error behavior.
-				if strings.HasSuffix(key, "Json") || strings.HasSuffix(key, "KeysString") {
+				// Key-set display remains outside this JSON serialization regression.
+				if strings.HasSuffix(key, "KeysString") {
 					continue
 				}
 				out[key] = item

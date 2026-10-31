@@ -955,10 +955,7 @@
               "et": "System.DmlException"
             }
           },
-          "assertionStatus": "ASSERTED",
-          "carriedFields": {
-            "em": "Existing Database.insert validation wording; outside runAs DEFAULT permission enforcement"
-          }
+          "assertionStatus": "ASSERTED"
         },
         "66.0": {
           "nativeStatus": "OBSERVED",
@@ -1013,10 +1010,7 @@
               "et": "System.DmlException"
             }
           },
-          "assertionStatus": "ASSERTED",
-          "carriedFields": {
-            "em": "Existing Database.insert validation wording; outside runAs DEFAULT permission enforcement"
-          }
+          "assertionStatus": "ASSERTED"
         },
         "68.0": {
           "nativeStatus": "OBSERVED",
@@ -2958,10 +2952,7 @@
               "et": "System.DmlException"
             }
           },
-          "assertionStatus": "ASSERTED",
-          "carriedFields": {
-            "em": "Existing Database.insert validation wording; outside runAs DEFAULT permission enforcement"
-          }
+          "assertionStatus": "ASSERTED"
         },
         "66.0": {
           "nativeStatus": "OBSERVED",
@@ -3016,10 +3007,7 @@
               "et": "System.DmlException"
             }
           },
-          "assertionStatus": "ASSERTED",
-          "carriedFields": {
-            "em": "Existing Database.insert validation wording; outside runAs DEFAULT permission enforcement"
-          }
+          "assertionStatus": "ASSERTED"
         },
         "68.0": {
           "nativeStatus": "OBSERVED",
@@ -12263,10 +12251,7 @@
               "et": "System.DmlException"
             }
           },
-          "assertionStatus": "ASSERTED",
-          "carriedFields": {
-            "em": "Existing Database.insert validation wording; outside runAs DEFAULT permission enforcement"
-          }
+          "assertionStatus": "ASSERTED"
         },
         "66.0": {
           "nativeStatus": "OBSERVED",
@@ -12321,10 +12306,7 @@
               "et": "System.DmlException"
             }
           },
-          "assertionStatus": "ASSERTED",
-          "carriedFields": {
-            "em": "Existing Database.insert validation wording; outside runAs DEFAULT permission enforcement"
-          }
+          "assertionStatus": "ASSERTED"
         },
         "68.0": {
           "nativeStatus": "OBSERVED",
@@ -14336,10 +14318,7 @@
               "et": "System.DmlException"
             }
           },
-          "assertionStatus": "ASSERTED",
-          "carriedFields": {
-            "em": "Existing Database.insert validation wording; outside runAs DEFAULT permission enforcement"
-          }
+          "assertionStatus": "ASSERTED"
         },
         "66.0": {
           "nativeStatus": "OBSERVED",
@@ -14394,10 +14373,7 @@
               "et": "System.DmlException"
             }
           },
-          "assertionStatus": "ASSERTED",
-          "carriedFields": {
-            "em": "Existing Database.insert validation wording; outside runAs DEFAULT permission enforcement"
-          }
+          "assertionStatus": "ASSERTED"
         },
         "68.0": {
           "nativeStatus": "OBSERVED",
@@ -37106,10 +37082,7 @@
               "et": "System.DmlException"
             }
           },
-          "assertionStatus": "ASSERTED",
-          "carriedFields": {
-            "em": "Glade reports Database.insert failed instead of the native first-exception row-2 diagnostic. Native message retained; error type/status and effects match."
-          }
+          "assertionStatus": "ASSERTED"
         },
         "66.0": {
           "nativeStatus": "OBSERVED",
@@ -37164,10 +37137,7 @@
               "et": "System.DmlException"
             }
           },
-          "assertionStatus": "ASSERTED",
-          "carriedFields": {
-            "em": "Glade reports Database.insert failed instead of the native first-exception row-2 diagnostic. Native message retained; error type/status and effects match."
-          }
+          "assertionStatus": "ASSERTED"
         },
         "68.0": {
           "nativeStatus": "OBSERVED",
@@ -39179,10 +39149,7 @@
               "et": "System.DmlException"
             }
           },
-          "assertionStatus": "ASSERTED",
-          "carriedFields": {
-            "em": "Glade reports Database.insert failed instead of the native first-exception row-2 diagnostic. Native message retained; error type/status and effects match."
-          }
+          "assertionStatus": "ASSERTED"
         },
         "66.0": {
           "nativeStatus": "OBSERVED",
@@ -39237,10 +39204,7 @@
               "et": "System.DmlException"
             }
           },
-          "assertionStatus": "ASSERTED",
-          "carriedFields": {
-            "em": "Glade reports Database.insert failed instead of the native first-exception row-2 diagnostic. Native message retained; error type/status and effects match."
-          }
+          "assertionStatus": "ASSERTED"
         },
         "68.0": {
           "nativeStatus": "OBSERVED",

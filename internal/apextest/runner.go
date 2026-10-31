@@ -460,6 +460,7 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 	baseMachine.SetExpressionTypeResolver(sema.RuntimeExpressionTypeResolver(index))
 	recordCloneRuntimeMachineDuration(time.Since(machineCloneStarted), runState.counters)
 	baseMachine.SetTestDocumentBaseline(&org)
+	baseMachine.SetTestStandardPricebookBaseline(&org)
 	baseMachine.SetPerfRecorder(runState.vmPerf)
 	baseMachine.SetTraceEnabled(false)
 	if testSettings.HasEnvironment() {
@@ -1271,11 +1272,13 @@ func runtimeKeyWithDigestLookup(index typesys.Index, lookup func(string) ([sha25
 		CustomMetadataRecords []schema.CustomMetadataRecord `json:"customMetadataRecords,omitempty"`
 		Dependencies          []typesys.DependencyInfo      `json:"dependencies,omitempty"`
 		Diagnostics           []diagnostic.Diagnostic       `json:"diagnostics,omitempty"`
+		OrgShapeFeatures      []string                      `json:"orgShapeFeatures,omitempty"`
 	}{
 		Objects:               index.Objects,
 		CustomMetadataRecords: index.CustomMetadataRecords,
 		Dependencies:          index.Dependencies,
 		Diagnostics:           index.Diagnostics,
+		OrgShapeFeatures:      index.OrgShapeFeatures,
 	})
 	if err != nil {
 		write("semantic-metadata-error:" + err.Error())

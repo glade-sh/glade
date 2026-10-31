@@ -1,0 +1,6 @@
+case_id	api	route	shape
+AO_NULL	62,67	anonymous,istest	Flow action returns declared unset scalar output
+AO_EMPTY	62,67	anonymous,istest	Flow action returns declared empty text output
+AO_MULTI	62,67	anonymous,istest	Flow action returns collection with two values
+AO_BULK	62,67	anonymous,istest	Two invocations with distinct inputs, check independent outputs
+AO_REJECT	62,67	deploy	Invalid output reference rejected

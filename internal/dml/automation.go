@@ -775,6 +775,16 @@ func (e *Engine) newFlowStepFrame(flowName string, record *storage.Record, defin
 	frame.recordCreations = e.RecordCreations
 	frame.textTemplates = cloneFlowTextTemplates(textTemplates)
 	flowCoreSeedScalarDefaults(variables, frame)
+	// Mark the captured record-triggered route without changing shared frame values.
+	if !e.InvocableFlow {
+		for _, rule := range definition.FlowRules {
+			if rule.Name == flowName && strings.EqualFold(rule.RecordTriggerType, "Create") && flowRuleHasSaveDecisions(rule) {
+				frame.capturedFormulaBindings = true
+				frame.capturedBeforeCreate = strings.EqualFold(rule.TriggerType, "RecordBeforeSave")
+				break
+			}
+		}
+	}
 	seedFlowFrame(e, record, frame)
 	e.seedFlowDecisionPrior(flowName, *record, definition, steps, frame)
 	return frame
@@ -786,27 +796,29 @@ type flowRecordCollection struct {
 }
 
 type flowFrame struct {
-	pathVisited         map[string]bool
-	stepTargets         map[string][]storage.FlowStep
-	activeTargets       map[string]bool
-	recordCreations     *RecordCreations
-	saveDecisions       bool
-	priorDecisions      bool
-	beforeSaveDecisions bool
-	scalarBeforeSave    bool
-	createDecision      bool
-	lookupOutputs       map[string]flowLookupOutput
-	subflowInputs       map[string]flowLookupOutput
-	lookupCollections   map[string]flowRecordCollection
-	matchedObjects      map[string]bool
-	variables           map[string]storage.FlowVariable
-	scalars             map[string]storage.Value
-	records             map[string]storage.Record
-	nullRecordDefaults  map[string]bool
-	collections         map[string][]storage.Record
-	textTemplates       map[string]string
-	priorCollections    map[string]bool
-	assigned            map[string]bool
+	capturedFormulaBindings bool
+	capturedBeforeCreate    bool
+	pathVisited             map[string]bool
+	stepTargets             map[string][]storage.FlowStep
+	activeTargets           map[string]bool
+	recordCreations         *RecordCreations
+	saveDecisions           bool
+	priorDecisions          bool
+	beforeSaveDecisions     bool
+	scalarBeforeSave        bool
+	createDecision          bool
+	lookupOutputs           map[string]flowLookupOutput
+	subflowInputs           map[string]flowLookupOutput
+	lookupCollections       map[string]flowRecordCollection
+	matchedObjects          map[string]bool
+	variables               map[string]storage.FlowVariable
+	scalars                 map[string]storage.Value
+	records                 map[string]storage.Record
+	nullRecordDefaults      map[string]bool
+	collections             map[string][]storage.Record
+	textTemplates           map[string]string
+	priorCollections        map[string]bool
+	assigned                map[string]bool
 	// autolaunched preserves Email Alert's interview-origin logging behavior.
 	autolaunched            bool
 	outputAssignmentLookups map[string]bool
@@ -1239,8 +1251,13 @@ func (e *Engine) applyFlowStep(flowName, objectName string, record *storage.Reco
 		if msg == "" {
 			msg = step.CustomError.Name
 		}
-		msg = e.renderFlowCustomErrorText(msg, frame)
-		return false, &flowCustomErrorFailure{cause: dmlErrorf("FIELD_CUSTOM_VALIDATION_EXCEPTION", nil, "%s", msg)}
+		var formulas map[string]string
+		if len(step.CustomError.Messages) > 0 {
+			formulas = step.CustomError.Messages[0].Formulas
+		}
+		capturedFormula := flowCapturedCustomErrorFormula(msg, formulas, frame)
+		msg = e.renderFlowCustomErrorText(msg, frame, formulas)
+		return false, &flowCustomErrorFailure{cause: dmlErrorf("FIELD_CUSTOM_VALIDATION_EXCEPTION", nil, "%s", msg), capturedFormula: capturedFormula}
 	case "transform":
 		if err := e.applyFlowTransformStep(step.Transform, frame); err != nil {
 			return false, err
@@ -1547,6 +1564,15 @@ func flowFrameFormulaValue(expression string, frame *flowFrame) (storage.Value, 
 	return value, ok
 }
 
+// Only captured assignment and record-create consumers opt into frame bindings.
+func flowFrameCapturedFormulaValue(expression string, frame *flowFrame) (storage.Value, bool) {
+	if frame == nil {
+		return storage.Value{}, false
+	}
+	value, _, ok := evaluateFlowFormulaValue(expression, flowFrameCapturedFormulaRecord(frame, expression))
+	return value, ok
+}
+
 func flowFrameFormulaRecord(frame *flowFrame) storage.Record {
 	record := storage.Record{Fields: make(map[string]storage.Value)}
 	for name, value := range frame.scalars {
@@ -1566,6 +1592,37 @@ func flowFrameFormulaRecord(frame *flowFrame) storage.Record {
 	}
 	for name, output := range frame.lookupOutputs {
 		flowFrameFormulaRecordFields(record.Fields, name, output.record)
+	}
+	return record
+}
+
+func flowFrameCapturedFormulaRecord(frame *flowFrame, expression string) storage.Record {
+	record := flowFrameFormulaRecord(frame)
+	if !frame.capturedFormulaBindings {
+		return record
+	}
+	for _, token := range tokenizeFormula(html.UnescapeString(expression)) {
+		if token.typ != formulaTokenIdent || strings.Contains(token.text, ".") {
+			continue
+		}
+		name := flowFrameKey(token.text)
+		variable, declared := frame.variables[name]
+		if !declared || variable.IsCollection || !strings.EqualFold(variable.DataType, "String") {
+			continue
+		}
+		value, present := frame.scalars[name]
+		if !present {
+			if variable.DefaultValue != nil {
+				continue
+			}
+			value = storage.NullValue()
+		}
+		for field := range record.Fields {
+			if strings.EqualFold(field, name) {
+				delete(record.Fields, field)
+			}
+		}
+		record.Fields[name] = value.Clone()
 	}
 	return record
 }

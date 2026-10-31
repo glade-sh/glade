@@ -65,9 +65,8 @@ fm.remove('name');`,
 			err: "System.FinalException: Collection is read-only",
 		},
 		{
-			name:   "fields.getMap clear is read-only",
+			name:   "fields.getMap clear succeeds",
 			source: `Account.SObjectType.getDescribe().fields.getMap().clear();`,
-			err:    "System.FinalException: Collection is read-only",
 		},
 		{
 			name: "fields wrapper put is read-only",

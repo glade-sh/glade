@@ -175,7 +175,6 @@ func TestBuildDescribeRegistry(t *testing.T) {
 	}
 }
 
-
 func TestBuildDescribeRegistryGeneratesCustomShareObject(t *testing.T) {
 	registry := BuildDescribeRegistry(schema.Schema{Objects: []schema.Object{{
 		Name:          "Sharing_Test_Object__c",

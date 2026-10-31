@@ -1,0 +1,1 @@
+CpuFollowup67.sample();

@@ -1,0 +1,7 @@
+api	route	case	insert	update
+62.0	anonymous	omitted_record_type	Default	Default
+62.0	istest	omitted_record_type	Default	Default
+67.0	anonymous	omitted_record_type	Default	Default
+67.0	istest	omitted_record_type	Default	Default
+62.0	metadata-deploy	invalid_relationship_path	REJECTED	REJECTED
+67.0	metadata-deploy	invalid_relationship_path	REJECTED	REJECTED

@@ -1005,7 +1005,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 			"UserType":          StringValue("AutomatedProcess"),
 			"LocaleSidKey":      StringValue("en_US"),
 			"LanguageLocaleKey": StringValue("en_US"),
-			"TimeZoneSidKey":    StringValue("UTC"),
+			"TimeZoneSidKey":    StringValue("America/Los_Angeles"),
 			"EmailEncodingKey":  StringValue("UTF-8"),
 		},
 	})

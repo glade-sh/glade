@@ -1069,6 +1069,9 @@ func (vm *VM) assignedPermissionSetIDs(userID string) []string {
 	}
 	var out []string
 	for _, record := range state.Records {
+		if record.System.IsDeleted {
+			continue
+		}
 		if assigneeValue, ok := record.GetField("AssigneeId"); ok && storage.IDsEqual(storage.ID(storageValueIDText(assigneeValue)), storage.ID(userID)) {
 			if permissionSetValue, ok := record.GetField("PermissionSetId"); ok {
 				if id := storageValueIDText(permissionSetValue); id != "" {

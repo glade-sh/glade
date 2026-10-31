@@ -5,7 +5,7 @@ export const editorSupportCatalog = {
   "schemaVersion": 1,
   "generatedFrom": "docs/STDLIB_COVERAGE.md",
   "summary": {
-    "supported": 269,
+    "supported": 273,
     "partial": 1,
     "stub": 0,
     "unsupported": 18,
@@ -213,7 +213,7 @@ export const editorSupportCatalog = {
       "area": "Blob / PageReference",
       "api": "Blob.toPdf, PageReference.getContent and getContentAsPDF",
       "status": "partial",
-      "notes": "Blob.toPdf, PageReference.getContent and getContentAsPDF render locally with a text-only PDF writer that follows the layout of Salesforce's renderer (PDF-1.4, Letter, Times-Roman, Flate streams). It is not Salesforce's Flying Saucer/iText engine: CSS, tables, images and embedded fonts are not rendered, and output is deterministic where Salesforce's is not. Set pdf.command to an external HTML-to-PDF program for real rendering. PageReference.getContent returns HTML for pages without renderAs=\"pdf\". The pdf.command setting applies to Visualforce page rendering; Blob.toPdf uses the local writer."
+      "notes": "Blob.toPdf and PageReference.getContentAsPDF provide deterministic minimal local PDF stand-ins; Salesforce rendering fidelity is not emulated."
     },
     {
       "id": "[\"Boolean\",\"Boolean.valueOf(Object)\"]",
@@ -270,6 +270,13 @@ export const editorSupportCatalog = {
       "api": "BusinessHours.nextStartDate(Id, Datetime)",
       "status": "supported",
       "notes": "Finds the next deterministic local start from seeded week schedules, timezones, Holiday closures, OperatingHoursHoliday links, partial-day closures, and recurring holidays."
+    },
+    {
+      "id": "[\"Cache\",\"Cache.Org / Cache.Session\"]",
+      "area": "Cache",
+      "api": "Cache.Org / Cache.Session",
+      "status": "supported",
+      "notes": "Local partitions, key operations, expiration and checked builder behavior; hosted eviction guarantees are not modeled."
     },
     {
       "id": "[\"Crypto\",\"Crypto.decryptWithManagedIV\"]",
@@ -748,6 +755,13 @@ export const editorSupportCatalog = {
       "notes": "Oracle-pinned URL form encoding covers UTF-8, US-ASCII replacement, ISO-8859-1 aliases, and UTF-16 escaped output."
     },
     {
+      "id": "[\"EventBus\",\"EventBus / ReplayId\"]",
+      "area": "EventBus",
+      "api": "EventBus / ReplayId",
+      "status": "supported",
+      "notes": "Local publish and checked read-only ReplayId behavior use the local test event queue; live streaming requires Salesforce."
+    },
+    {
       "id": "[\"Exception\",\"InvalidParameterValueException constructors\"]",
       "area": "Exception",
       "api": "InvalidParameterValueException constructors",
@@ -783,6 +797,13 @@ export const editorSupportCatalog = {
       "notes": "Checks local runAs user permissions, permission sets, and custom-permission assignments."
     },
     {
+      "id": "[\"FormulaEval\",\"Formula.builder()\"]",
+      "area": "FormulaEval",
+      "api": "Formula.builder()",
+      "status": "supported",
+      "notes": "Builds and evaluates the supported local formula subset; unsupported expressions raise a local diagnostic."
+    },
+    {
       "id": "[\"HTTP\",\"Http.send(HttpRequest)\"]",
       "area": "HTTP",
       "api": "Http.send(HttpRequest)",
@@ -816,6 +837,13 @@ export const editorSupportCatalog = {
       "api": "HttpResponse",
       "status": "supported",
       "notes": "Status, status code, headers, body, blob body, and local DTO accessors are modeled."
+    },
+    {
+      "id": "[\"Invocable\",\"Invocable.Action Flow actions\"]",
+      "area": "Invocable",
+      "api": "Invocable.Action Flow actions",
+      "status": "supported",
+      "notes": "Runs supported local Flow actions and returns local result and error objects."
     },
     {
       "id": "[\"JSON\",\"JSON.deserialize\"]",
@@ -3302,6 +3330,23 @@ export const editorSupportCatalog = {
           "statusLabel": "Runs locally",
           "info": "Checks local runAs user permissions, permission sets, and custom-permission assignments.",
           "signature": "checkPermission",
+          "source": "docs/STDLIB_COVERAGE.md"
+        }
+      ]
+    },
+    "Formula": {
+      "label": "Formula",
+      "detail": "Formula support",
+      "items": [
+        {
+          "label": "builder",
+          "apply": "builder()",
+          "type": "method",
+          "detail": "FormulaEval API",
+          "status": "supported",
+          "statusLabel": "Runs locally",
+          "info": "Builds and evaluates the supported local formula subset; unsupported expressions raise a local diagnostic.",
+          "signature": "builder()",
           "source": "docs/STDLIB_COVERAGE.md"
         }
       ]

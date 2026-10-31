@@ -1,0 +1,13 @@
+api	route	case	result
+62.0	anonymous	forward	{"beta":2,"alpha":1}
+62.0	anonymous	reverse	{"alpha":1,"beta":2}
+62.0	anonymous	nested	{"inner":{"beta":2,"alpha":1}}
+62.0	anonymous	boundary	{"alpha":1}
+62.0	anonymous	reject	System.JSONException|Unable to serialize a map with a null key.
+67.0	anonymous	forward	{"beta":2,"alpha":1}
+67.0	anonymous	reverse	{"alpha":1,"beta":2}
+67.0	anonymous	nested	{"inner":{"beta":2,"alpha":1}}
+67.0	anonymous	boundary	{"alpha":1}
+67.0	anonymous	reject	System.JSONException|Unable to serialize a map with a null key.
+62.0	isTest	assertions	passed
+67.0	isTest	assertions	passed

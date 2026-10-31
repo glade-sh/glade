@@ -1,0 +1,8 @@
+{
+  "account_missing": "Object x = new Account().BogusField__c;",
+  "contact_missing": "Object x = new Contact().OtherMissing__c;",
+  "account_standard": "Object x = new Account().Name;",
+  "contact_standard": "Object x = new Contact().LastName;",
+  "account_custom": "Object x = new Account().ProbeField__c;",
+  "contact_custom": "Object x = new Contact().ProbeField__c;"
+}

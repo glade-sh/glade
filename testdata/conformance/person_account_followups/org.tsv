@@ -1,0 +1,121 @@
+api	route	case	result
+62.0	anon	upsert_scalar_null	INVALID_CROSS_REFERENCE_KEY:RecordTypeId
+62.0	anon	upsert_scalar_omitted	success
+62.0	anon	upsert_scalar_invalid	REQUIRED_FIELD_MISSING:LastName
+62.0	anon	upsert_list_null	INVALID_CROSS_REFERENCE_KEY:RecordTypeId
+62.0	anon	upsert_list_omitted	success
+62.0	anon	upsert_list_invalid	REQUIRED_FIELD_MISSING:LastName
+62.0	anon	upsert_existing_scalar_null	success
+62.0	anon	upsert_existing_scalar_omitted	success
+62.0	anon	upsert_existing_scalar_invalid	REQUIRED_FIELD_MISSING:LastName
+62.0	anon	upsert_existing_list_null	success
+62.0	anon	upsert_existing_list_omitted	success
+62.0	anon	upsert_existing_list_invalid	REQUIRED_FIELD_MISSING:LastName
+62.0	anon	update_scalar_null	success
+62.0	anon	update_scalar_omitted	success
+62.0	anon	update_scalar_invalid	REQUIRED_FIELD_MISSING:LastName
+62.0	anon	update_list_null	success
+62.0	anon	update_list_omitted	success
+62.0	anon	update_list_invalid	REQUIRED_FIELD_MISSING:LastName
+62.0	anon	user_null_null	INVALID_CROSS_REFERENCE_KEY:RecordTypeId
+62.0	anon	user_null_omitted	success
+62.0	anon	user_null_invalid	REQUIRED_FIELD_MISSING:LastName
+62.0	anon	user_list_new_null	INVALID_CROSS_REFERENCE_KEY:RecordTypeId
+62.0	anon	user_list_new_omitted	success
+62.0	anon	user_list_new_invalid	REQUIRED_FIELD_MISSING:LastName
+62.0	anon	user_scalar_existing_null	success
+62.0	anon	user_scalar_existing_omitted	success
+62.0	anon	user_scalar_existing_invalid	REQUIRED_FIELD_MISSING:LastName
+62.0	anon	user_list_existing_null	success
+62.0	anon	user_list_existing_omitted	success
+62.0	anon	user_list_existing_invalid	REQUIRED_FIELD_MISSING:LastName
+62.0	test	upsert_scalar_null	INVALID_CROSS_REFERENCE_KEY:RecordTypeId
+62.0	test	upsert_scalar_omitted	success
+62.0	test	upsert_scalar_invalid	REQUIRED_FIELD_MISSING:LastName
+62.0	test	upsert_list_null	INVALID_CROSS_REFERENCE_KEY:RecordTypeId
+62.0	test	upsert_list_omitted	success
+62.0	test	upsert_list_invalid	REQUIRED_FIELD_MISSING:LastName
+62.0	test	upsert_existing_scalar_null	success
+62.0	test	upsert_existing_scalar_omitted	success
+62.0	test	upsert_existing_scalar_invalid	REQUIRED_FIELD_MISSING:LastName
+62.0	test	upsert_existing_list_null	success
+62.0	test	upsert_existing_list_omitted	success
+62.0	test	upsert_existing_list_invalid	REQUIRED_FIELD_MISSING:LastName
+62.0	test	update_scalar_null	success
+62.0	test	update_scalar_omitted	success
+62.0	test	update_scalar_invalid	REQUIRED_FIELD_MISSING:LastName
+62.0	test	update_list_null	success
+62.0	test	update_list_omitted	success
+62.0	test	update_list_invalid	REQUIRED_FIELD_MISSING:LastName
+62.0	test	user_null_null	INVALID_CROSS_REFERENCE_KEY:RecordTypeId
+62.0	test	user_null_omitted	success
+62.0	test	user_null_invalid	REQUIRED_FIELD_MISSING:LastName
+62.0	test	user_list_new_null	INVALID_CROSS_REFERENCE_KEY:RecordTypeId
+62.0	test	user_list_new_omitted	success
+62.0	test	user_list_new_invalid	REQUIRED_FIELD_MISSING:LastName
+62.0	test	user_scalar_existing_null	System.TypeException:DML operation UPDATE not allowed on Account
+62.0	test	user_scalar_existing_omitted	System.TypeException:DML operation UPDATE not allowed on Account
+62.0	test	user_scalar_existing_invalid	System.TypeException:DML operation UPDATE not allowed on Account
+62.0	test	user_list_existing_null	System.TypeException:DML operation UPDATE not allowed on Account
+62.0	test	user_list_existing_omitted	System.TypeException:DML operation UPDATE not allowed on Account
+62.0	test	user_list_existing_invalid	System.TypeException:DML operation UPDATE not allowed on Account
+67.0	anon	upsert_scalar_null	INVALID_CROSS_REFERENCE_KEY:RecordTypeId
+67.0	anon	upsert_scalar_omitted	success
+67.0	anon	upsert_scalar_invalid	REQUIRED_FIELD_MISSING:LastName
+67.0	anon	upsert_list_null	INVALID_CROSS_REFERENCE_KEY:RecordTypeId
+67.0	anon	upsert_list_omitted	success
+67.0	anon	upsert_list_invalid	REQUIRED_FIELD_MISSING:LastName
+67.0	anon	upsert_existing_scalar_null	success
+67.0	anon	upsert_existing_scalar_omitted	success
+67.0	anon	upsert_existing_scalar_invalid	REQUIRED_FIELD_MISSING:LastName
+67.0	anon	upsert_existing_list_null	success
+67.0	anon	upsert_existing_list_omitted	success
+67.0	anon	upsert_existing_list_invalid	REQUIRED_FIELD_MISSING:LastName
+67.0	anon	update_scalar_null	success
+67.0	anon	update_scalar_omitted	success
+67.0	anon	update_scalar_invalid	REQUIRED_FIELD_MISSING:LastName
+67.0	anon	update_list_null	success
+67.0	anon	update_list_omitted	success
+67.0	anon	update_list_invalid	REQUIRED_FIELD_MISSING:LastName
+67.0	anon	user_null_null	INVALID_CROSS_REFERENCE_KEY:RecordTypeId
+67.0	anon	user_null_omitted	success
+67.0	anon	user_null_invalid	REQUIRED_FIELD_MISSING:LastName
+67.0	anon	user_list_new_null	INVALID_CROSS_REFERENCE_KEY:RecordTypeId
+67.0	anon	user_list_new_omitted	success
+67.0	anon	user_list_new_invalid	REQUIRED_FIELD_MISSING:LastName
+67.0	anon	user_scalar_existing_null	success
+67.0	anon	user_scalar_existing_omitted	success
+67.0	anon	user_scalar_existing_invalid	REQUIRED_FIELD_MISSING:LastName
+67.0	anon	user_list_existing_null	success
+67.0	anon	user_list_existing_omitted	success
+67.0	anon	user_list_existing_invalid	REQUIRED_FIELD_MISSING:LastName
+67.0	test	upsert_scalar_null	INVALID_CROSS_REFERENCE_KEY:RecordTypeId
+67.0	test	upsert_scalar_omitted	success
+67.0	test	upsert_scalar_invalid	REQUIRED_FIELD_MISSING:LastName
+67.0	test	upsert_list_null	INVALID_CROSS_REFERENCE_KEY:RecordTypeId
+67.0	test	upsert_list_omitted	success
+67.0	test	upsert_list_invalid	REQUIRED_FIELD_MISSING:LastName
+67.0	test	upsert_existing_scalar_null	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:
+67.0	test	upsert_existing_scalar_omitted	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:
+67.0	test	upsert_existing_scalar_invalid	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:
+67.0	test	upsert_existing_list_null	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:
+67.0	test	upsert_existing_list_omitted	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:
+67.0	test	upsert_existing_list_invalid	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:
+67.0	test	update_scalar_null	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:
+67.0	test	update_scalar_omitted	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:
+67.0	test	update_scalar_invalid	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:
+67.0	test	update_list_null	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:
+67.0	test	update_list_omitted	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:
+67.0	test	update_list_invalid	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:
+67.0	test	user_null_null	INVALID_CROSS_REFERENCE_KEY:RecordTypeId
+67.0	test	user_null_omitted	success
+67.0	test	user_null_invalid	REQUIRED_FIELD_MISSING:LastName
+67.0	test	user_list_new_null	INVALID_CROSS_REFERENCE_KEY:RecordTypeId
+67.0	test	user_list_new_omitted	success
+67.0	test	user_list_new_invalid	REQUIRED_FIELD_MISSING:LastName
+67.0	test	user_scalar_existing_null	System.TypeException:DML operation UPDATE not allowed on Account
+67.0	test	user_scalar_existing_omitted	System.TypeException:DML operation UPDATE not allowed on Account
+67.0	test	user_scalar_existing_invalid	System.TypeException:DML operation UPDATE not allowed on Account
+67.0	test	user_list_existing_null	System.TypeException:DML operation UPDATE not allowed on Account
+67.0	test	user_list_existing_omitted	System.TypeException:DML operation UPDATE not allowed on Account
+67.0	test	user_list_existing_invalid	System.TypeException:DML operation UPDATE not allowed on Account

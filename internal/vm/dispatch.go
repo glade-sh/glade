@@ -2130,6 +2130,9 @@ platformStaticCall:
 		if isIteratorValue(args[0]) {
 			return Null, jsonDeserializeException("Apex Type unsupported in JSON: system.ListIterator")
 		}
+		if len(args) == 1 && jsonRootMapHasNullKey(args[0]) {
+			return Null, jsonDeserializeException("Unable to serialize a map with a null key.")
+		}
 		data, err := jsonMarshalNoEscape(vm.jsonFromValueForJSONSerialize(args[0], suppressNulls))
 		if err != nil {
 			return Null, apexPagesSerializationError(err)
@@ -2983,6 +2986,10 @@ platformStaticCall:
 		return vm.testSetMock(args)
 	case "WebServiceCallout.invoke":
 		return vm.webServiceCalloutInvoke(args, result)
+	case "WebServiceCallout.beginInvoke":
+		return vm.webServiceCalloutBeginInvoke(args, result)
+	case "WebServiceCallout.endInvoke":
+		return vm.webServiceCalloutEndInvoke(args, result)
 	case "Test.testInstall":
 		return vm.testInstall(args, result)
 	case "Test.testUninstall":

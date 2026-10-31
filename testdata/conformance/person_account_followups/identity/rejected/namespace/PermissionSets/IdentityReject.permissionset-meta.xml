@@ -1,0 +1,1 @@
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata"><label>Identity Reject</label><recordTypeVisibilities><recordType>PersonAccount.pkg__Care</recordType><visible>true</visible></recordTypeVisibilities></PermissionSet>

@@ -1,0 +1,5 @@
+source_api	method	observation
+62.0	isolated	{"bindSystem":0,"bindUser":0,"count":0,"countBindSystem":0,"countBindUser":0,"countCreatedSystem":1,"countCreatedUser":1,"countSystem":0,"countUser":0,"createdSystem":1,"createdUser":1,"missing":"List has no rows for assignment to SObject","plain":0,"system":0,"user":0}
+62.0	allData	{"bindSystem":1,"bindUser":1,"plain":1,"system":1,"user":1}
+67.0	isolated	{"bindSystem":0,"bindUser":0,"count":0,"countBindSystem":0,"countBindUser":0,"countCreatedSystem":1,"countCreatedUser":1,"countSystem":0,"countUser":0,"createdSystem":1,"createdUser":1,"missing":"List has no rows for assignment to SObject","plain":0,"system":0,"user":0}
+67.0	allData	{"bindSystem":1,"bindUser":1,"plain":1,"system":1,"user":1}

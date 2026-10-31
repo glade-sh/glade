@@ -1,0 +1,34 @@
+route	case_id	observation
+istest	A001	PASS|callback=mock-response
+istest	A002	PASS|future=nonnull
+istest	A003	System.TypeException|Invalid info with length 8
+deploy	A004	REJECT|Method does not exist or incorrect signature: void beginInvoke(NULL, NULL, NULL, NULL) from the type WebServiceCallout
+istest	R001	OK|nonnull=true|calls=1
+istest	R002	method=null|endpoint=null|action=null|body=
+istest	R003	System.CalloutException|You have uncommitted work pending. Please commit or rollback before calling out|calls=0
+istest	R004	OK|nonnull=true|requests=1|calls=0|callouts=1
+istest	R005	OK|nonnull=true|requests=1|calls=0|callouts=1
+istest	R006	System.NullPointerException|Argument 5 cannot be null|calls=0
+istest	R007	System.TypeException|Invalid info with length 6|calls=0
+istest	R008	System.TypeException|Invalid info with length 8|calls=0
+istest	R009	System.CalloutException|Web service callout failed: Callout stub not found: null|calls=0
+istest	R010	OK|nonnull=true|requests=1|calls=0|callouts=1
+istest	R011	System.NullPointerException|Argument 4 cannot be null|calls=0
+istest	R012	System.NullPointerException|Argument 3 cannot be null|calls=0
+istest	R013	System.CalloutException| Incompatible return type specified.|calls=0
+istest	R014	System.CalloutException|Web service callout failed: Unable to parse callout response. Apex type not found for element urn:other=value|calls=0
+istest	R015	System.CalloutException|Web service callout failed: Unable to parse callout response. Apex type not found for element extra|calls=0
+istest	R016	OK|null|calls=0
+istest	R017	OK|mock-response|calls=0
+istest	R018	System.NullPointerException|Attempt to de-reference a null object|calls=0
+istest	R019	System.CalloutException|IO Exception: input contained no data|calls=0
+istest	R020	System.CalloutException|Web service callout failed: Unexpected element. Parser was expecting element 'http://schemas.xmlsoap.org/soap/envelope/:Envelope' but found ':broken'|calls=0
+istest	R021	OK|null|calls=0
+istest	R022	OK||calls=0
+istest	R023	OK| a & b |calls=0
+istest	R024	System.CalloutException|Web service callout failed: Unexpected element. Parser was expecting element 'urn:glade:echo:EchoResponse' but found 'urn:other:EchoResponse'|calls=0
+istest	R025	OK|second|calls=0
+istest	R026	System.NullPointerException|Argument 1 cannot be null
+istest	R027	OK|null
+anonymous	R028	System.CalloutException|Web service callout failed: Unable to find namespace-typemap info. Please regenerate the stub|callouts=1
+anonymous-reject	R029	REJECT|Method does not exist or incorrect signature: void beginInvoke(NULL, NULL, NULL, NULL) from the type WebServiceCallout

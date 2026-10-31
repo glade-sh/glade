@@ -1796,9 +1796,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			})
 			fieldsMap, _ := vm.privateDescribeFieldMap(receiver)
 			if holder, ok := sharedSObjectFieldMapHolder(fieldsMap); ok {
-				return holder, receiver, false, true, nil
+				return markSObjectFieldGetMap(holder), receiver, false, true, nil
 			}
-			return privateDescribeCollection(fieldsMap), receiver, false, true, nil
+			return markSObjectFieldGetMap(privateDescribeCollection(fieldsMap)), receiver, false, true, nil
 		}
 	case "Schema.SObjectTypeFieldSets", "Schema.FieldSetMap":
 		switch method {

@@ -1,0 +1,9 @@
+source_api	route	case	observation
+62.0	istest	loaded	{"static":"ready","instance":"ready"}
+62.0	istest	nullBoundary	{"exception":"System.NullPointerException"}
+62.0	anonymous	controls	SUCCESS
+62.0	deploy	missing	Invalid type: MissingReceiverDependency
+67.0	istest	loaded	{"static":"ready","instance":"ready"}
+67.0	istest	nullBoundary	{"exception":"System.NullPointerException"}
+67.0	anonymous	controls	SUCCESS
+67.0	deploy	missing	Invalid type: MissingReceiverDependency

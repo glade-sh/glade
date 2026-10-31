@@ -320,6 +320,7 @@ func projectFiles(p project.Project) []string {
 	out = append(out, p.QuickActionFiles...)
 	out = append(out, p.GlobalValueSetFiles...)
 	out = append(out, p.StandardValueSetFiles...)
+	out = append(out, p.ValueSetTranslationFiles...)
 	out = append(out, p.FlexiPageFiles...)
 	out = append(out, p.ApplicationFiles...)
 	out = append(out, p.VisualforcePageFiles...)

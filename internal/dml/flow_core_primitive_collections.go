@@ -31,6 +31,19 @@ func (e *Engine) flowCoreApplyPrimitiveAssignment(assignment storage.FlowAssignm
 		return true, nil
 	}
 	if variable.IsCollection {
+		// Invocable Flow text collections are seeded as empty for execution,
+		// but an unassigned source represents null when copied to an output.
+		if e.InvocableFlow && (operator == "assign" || operator == "equalto") &&
+			strings.EqualFold(variable.DataType, "String") && variable.IsOutput && !variable.IsInput {
+			sourceKey := flowFrameKey(assignment.SourceField)
+			source, found := frame.variables[sourceKey]
+			if found && source.IsCollection && strings.EqualFold(source.DataType, "String") &&
+				source.IsOutput && !source.IsInput && source.DefaultValue == nil && !frame.assigned[sourceKey] {
+				frame.scalars[key] = storage.NullValue()
+				frame.assigned[key] = true
+				return true, nil
+			}
+		}
 		if operator != "add" || !flowCorePrimitiveCollection(variable) {
 			return false, nil
 		}

@@ -19,13 +19,23 @@ func jsonCompoundFromValue(value Value, suppress bool, convert func(Value, bool)
 		return nil, false
 	}
 	var names []string
+	childSuppress := false
 	switch typ {
 	case "System.Address":
 		names = []string{"city", "country", "countryCode", "geocodeAccuracy", "latitude", "longitude", "postalCode", "state", "stateCode", "street"}
 	case "System.Location":
 		names = []string{"latitude", "longitude"}
 	default:
-		return nil, false
+		if !strings.EqualFold(value.Type, "System.Address") {
+			return nil, false
+		}
+		// The legacy case-insensitive Address path followed platform scalars
+		// and propagated suppression to children. Preserve that ordering.
+		if scalar, ok := jsonPlatformScalarFromValue(value); ok {
+			return scalar, true
+		}
+		names = []string{"city", "country", "countryCode", "geocodeAccuracy", "latitude", "longitude", "postalCode", "state", "stateCode", "street"}
+		childSuppress = suppress
 	}
 	out := orderedJSONObject{}
 	for _, name := range names {
@@ -36,7 +46,7 @@ func jsonCompoundFromValue(value Value, suppress bool, convert func(Value, bool)
 		if !present {
 			item = Null
 		}
-		out = append(out, orderedJSONField{name: name, value: convert(item, false)})
+		out = append(out, orderedJSONField{name: name, value: convert(item, childSuppress)})
 	}
 	return out, true
 }

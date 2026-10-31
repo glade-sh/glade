@@ -1,0 +1,12 @@
+Map<String, Schema.SObjectField> d = Schema.SObjectType.Account.fields.getMap();
+Map<String, Schema.SObjectField> c = new Map<String, Schema.SObjectField>(d);
+Map<String, Schema.SObjectField> p = new Map<String, Schema.SObjectField>(); p.putAll(d);
+Map<String, Schema.SObjectField> l = d.clone();
+Map<String, Schema.SObjectField> ordinary = new Map<String, Schema.SObjectField>{'Name' => Account.Name};
+System.debug('ROAD123|C01|' + (d.get('NAME') == Account.Name));
+System.debug('ROAD123|C02|' + (c.get('NAME') == Account.Name));
+System.debug('ROAD123|C03|' + (p.get('NAME') == Account.Name));
+System.debug('ROAD123|C04|' + (l.get('NAME') == Account.Name));
+System.debug('ROAD123|C05|' + (c.get('MissingField__c') == null));
+System.debug('ROAD123|C06|' + (ordinary.get('NAME') == null));
+System.debug('ROAD123|C07|' + (c.get('Name') == Account.Name));

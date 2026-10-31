@@ -1,0 +1,5 @@
+case_id	api	route	shape
+COPY_UNASSIGNED	62,67	anonymous,istest	assign unassigned text collection to output collection
+ADD_NULL	62,67	anonymous,istest	add an unassigned null text variable to output collection
+CONTROL	62,67	anonymous,istest	unassigned and populated collections in same flow
+REJECT_UNKNOWN	62,67	deploy	undeclared assignment target

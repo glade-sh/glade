@@ -9,3 +9,5 @@ source_api	deploy_status	line	column	problem
 67.0	Failed	4	9	Invalid type: HEAD
 67.0	Failed	2	27	Method must have a body
 67.0	Failed	2	27	Missing return statement required return type: Integer
+62.0	Succeeded			clean twin
+67.0	Succeeded			clean twin

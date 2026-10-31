@@ -1,0 +1,10 @@
+id	case	role
+D1	Contact list insert missing LastName in third row	adjacent
+D2	Opportunity list insert missing Name in third row	adjacent
+D3	Account list insert with allOrNone false	boundary
+J1	populated map of a deserialized Account child relationship	candidate
+J2	deserialize bare child array	rejection
+E1	immediate event publish save result and errors	candidate
+E2	after-commit event publish save result and errors	boundary
+D4	Contact list insert with USER_MODE missing LastName	adjacent
+D5	Opportunity list insert with USER_MODE missing Name	adjacent

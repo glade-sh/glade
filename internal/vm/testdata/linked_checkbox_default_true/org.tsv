@@ -1,0 +1,50 @@
+api	route	case	dotted_or_status	dynamic
+62.0	before	omitted	false	null
+62.0	before	null	false	null
+62.0	before	false	false	false
+62.0	before	true	true	true
+62.0	insert	omitted	success
+62.0	insert	null	INVALID_TYPE_ON_FIELD_IN_RECORD
+62.0	insert	false	success
+62.0	insert	true	success
+62.0	after	omitted	false	null
+62.0	after	null	false	null
+62.0	after	false	false	false
+62.0	after	true	true	true
+62.0	soql	false	false	false
+62.0	soql	omitted	true	true
+62.0	soql	true	true	true
+62.0	linked-put	null	false	null
+62.0	linked-put	false	false	false
+62.0	linked-put	true	true	true
+62.0	linked-constructor	omitted	false	null
+62.0	linked-constructor	null	false	null
+62.0	linked-constructor	false	false	false
+62.0	linked-constructor	true	true	true
+62.0	reject	System.SObjectException
+67.0	before	omitted	false	null
+67.0	before	null	false	null
+67.0	before	false	false	false
+67.0	before	true	true	true
+67.0	insert	omitted	success
+67.0	insert	null	INVALID_TYPE_ON_FIELD_IN_RECORD
+67.0	insert	false	success
+67.0	insert	true	success
+67.0	after	omitted	false	null
+67.0	after	null	false	null
+67.0	after	false	false	false
+67.0	after	true	true	true
+67.0	soql	false	false	false
+67.0	soql	false	false	false
+67.0	soql	omitted	true	true
+67.0	soql	omitted	true	true
+67.0	soql	true	true	true
+67.0	soql	true	true	true
+67.0	linked-put	null	false	null
+67.0	linked-put	false	false	false
+67.0	linked-put	true	true	true
+67.0	linked-constructor	omitted	false	null
+67.0	linked-constructor	null	false	null
+67.0	linked-constructor	false	false	false
+67.0	linked-constructor	true	true	true
+67.0	reject	System.SObjectException

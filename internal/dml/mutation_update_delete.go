@@ -108,7 +108,7 @@ func (e *Engine) updateOne(record storage.Record) error {
 	if err := e.validateLookupFilters(object.Definition, finalRecord); err != nil {
 		return err
 	}
-	if err := e.enforceDuplicateRulesOnUpdate(finalRecord); err != nil {
+	if err := e.enforceDuplicateRulesOnUpdate(finalRecord, priorRecord); err != nil {
 		return err
 	}
 	_, hasPrivateShares := privateOwnerShareObject(e.Org, object.Definition)
@@ -331,7 +331,7 @@ func (e *Engine) deleteRecord(objectName string, id storage.ID, seen map[string]
 	return nil
 }
 
-func (e *Engine) upsertByExternalID(record storage.Record, externalIDField string, statementStamp *string) (storage.ID, bool, error) {
+func (e *Engine) upsertByExternalID(record storage.Record, externalIDField string, statementStamp *string, singleRecord bool) (storage.ID, bool, error) {
 	object, objectName, err := e.object(record.Object)
 	if err != nil {
 		return "", false, err
@@ -346,7 +346,7 @@ func (e *Engine) upsertByExternalID(record storage.Record, externalIDField strin
 	if isExplicitIDUpsertField(object.Definition, e.Org.Namespace, externalIDField) {
 		record = recordWithExplicitIDField(object.Definition, e.Org.Namespace, record)
 		if record.ID == "" {
-			id, err := e.insertUpsertID(record, statementStamp)
+			id, err := e.insertUpsertID(record, statementStamp, false)
 			return id, true, err
 		}
 		if err := e.validateUpsertIDReference(record); err != nil {
@@ -362,7 +362,7 @@ func (e *Engine) upsertByExternalID(record storage.Record, externalIDField strin
 		return "", false, err
 	}
 	if !ok {
-		id, err := e.insertUpsertID(record, statementStamp)
+		id, err := e.insertUpsertID(record, statementStamp, false)
 		return id, true, err
 	}
 	matches := make([]storage.ID, 0, 1)
@@ -380,8 +380,13 @@ func (e *Engine) upsertByExternalID(record storage.Record, externalIDField strin
 		return "", false, dmlErrorf("DUPLICATE_EXTERNAL_ID", []string{field}, "dml: external id %s.%s matched multiple records", objectName, field)
 	}
 	if len(matches) == 0 {
-		// Custom-key insertion has no captured duplicate-rule contract yet.
-		id, err := e.insertOne(record, nil)
+		// The native rows cover a single record. Preserve the existing behavior
+		// for multi-record custom-key upserts until their semantics are captured.
+		if !singleRecord {
+			id, err := e.insertOne(record, nil)
+			return id, true, err
+		}
+		id, err := e.insertUpsertID(record, statementStamp, true)
 		return id, true, err
 	}
 	record.ID = matches[0]
@@ -391,12 +396,17 @@ func (e *Engine) upsertByExternalID(record storage.Record, externalIDField strin
 	return record.ID, false, nil
 }
 
-func (e *Engine) insertUpsertID(record storage.Record, statementStamp *string) (storage.ID, error) {
+func (e *Engine) insertUpsertID(record storage.Record, statementStamp *string, capturedRulesOnly bool) (storage.ID, error) {
 	previous := e.Options.EnforceDuplicateRules
+	previousScope := e.Options.UpsertCapturedInsertRulesOnly
 	if e.Options.EnforceUpsertIDInsertDuplicateRules {
 		e.Options.EnforceDuplicateRules = true
 	}
-	defer func() { e.Options.EnforceDuplicateRules = previous }()
+	e.Options.UpsertCapturedInsertRulesOnly = capturedRulesOnly
+	defer func() {
+		e.Options.EnforceDuplicateRules = previous
+		e.Options.UpsertCapturedInsertRulesOnly = previousScope
+	}()
 	return e.insertOne(record, statementStamp)
 }
 

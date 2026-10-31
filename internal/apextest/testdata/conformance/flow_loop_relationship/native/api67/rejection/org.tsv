@@ -1,0 +1,2 @@
+id	status	message
+invalid_field	rejected	field integrity exception: unknown (The element has an invalid reference to "Next.Parent.NoSuchSyntheticField__c".)

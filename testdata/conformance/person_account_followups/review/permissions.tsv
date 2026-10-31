@@ -1,0 +1,13 @@
+api	method	case	outcome
+62.0	editonly	new_scalar	System.DmlException:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result! |1|1
+62.0	editonly	new_list	System.DmlException:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result! |1|2
+62.0	editonly	new_selector	System.DmlException:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result! |1|1
+62.0	readonly	new_scalar	System.DmlException:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result! |1|1
+62.0	readonly	new_list	System.DmlException:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result! |1|2
+62.0	readonly	new_selector	System.DmlException:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result! |1|1
+67.0	editonly	new_scalar	System.DmlException:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result! |1|1
+67.0	editonly	new_list	System.DmlException:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result! |1|2
+67.0	editonly	new_selector	System.DmlException:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result! |1|1
+67.0	readonly	new_scalar	System.DmlException:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result! |1|1
+67.0	readonly	new_list	System.DmlException:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result! |1|2
+67.0	readonly	new_selector	System.DmlException:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result! |1|1

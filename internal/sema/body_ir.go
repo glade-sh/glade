@@ -2374,6 +2374,17 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 			}
 			return []diagnostic.Diagnostic{d}
 		}
+		// The qualified SOAP platform receiver can otherwise be deferred before
+		// its captured beginInvoke signature is checked. A local System binding
+		// or project type keeps its own receiver semantics.
+		if !scoped && strings.EqualFold(receiverExpr, "System.WebServiceCallout") && strings.EqualFold(method, "beginInvoke") && semaLexicalShadowingInner(model, typ.Name, root) == "" {
+			rootMembers, rootKnown := model.lookupName(root)
+			if !rootKnown || rootMembers.platform || rootMembers.dependency {
+				if d, rejected := semaHTTPMethodDiagnostic(typ, receiverExpr, method, irCallArgTypes(a, expr.Args, scope, model, typ.Name), model, "class", bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source); rejected {
+					return []diagnostic.Diagnostic{d}
+				}
+			}
+		}
 		if semaQualifiedCallReceiverDeferred(a, typ.Name, receiverExpr, scope, model, typ.EffectiveAPIVersion) {
 			// No indexed type or value binds this path. An incomplete type
 			// catalog cannot make the later static-root fallback reject it.
@@ -2454,10 +2465,14 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 	if (strings.HasPrefix(expr.Callee, "__field:") || strings.HasPrefix(expr.Callee, "__safe_field:") || strings.HasPrefix(expr.Callee, "__assignField:")) && expr.Left != nil {
 		receiverType := resolveNestedTypeReference(model, typ.Name, a.inferIRExprType(*expr.Left, scope, model, typ.Name))
 		field := strings.TrimPrefix(strings.TrimPrefix(strings.TrimPrefix(expr.Callee, "__field:"), "__safe_field:"), "__assignField:")
-		// Complete project custom objects have a closed field surface. Open
-		// standard, partial and external package schema keeps its own fallback.
-		if members, _, known := semaLookupTypeMembers(model, receiverType); known && members.sobject && !members.partialSObject && !members.externalPackageSObject && semaHasAPISuffixFold(members.name, "__c") && semaHasAPISuffixFold(field, "__c") {
-			if _, found := semaResolveFieldPath(model, receiverType, field); !found {
+		// A complete custom object or pinned standard-object snapshot closes
+		// its custom fields. Partial and external-package schemas stay open.
+		if members, _, known := semaLookupTypeMembers(model, receiverType); known && members.sobject && !members.partialSObject && !members.externalPackageSObject && semaHasAPISuffixFold(field, "__c") && (semaHasAPISuffixFold(members.name, "__c") || members.completeSchemaSObject && storage.IsKnownStandardObject(members.name) && strings.HasPrefix(expr.Callee, "__field:")) {
+			_, found := semaResolveFieldPath(model, receiverType, field)
+			if storage.IsKnownStandardObject(members.name) {
+				_, found = semaResolveField(model, receiverType, field, make(map[string]bool))
+			}
+			if !found {
 				message := "Variable does not exist: " + field
 				item := semaFieldAccessDiagnostic(typ, member, field, message, bodyOffset+pos, bodyOffset+pos+max(1, len(field)), source)
 				item.NativeMessage = message

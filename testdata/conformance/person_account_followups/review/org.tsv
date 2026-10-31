@@ -1,0 +1,69 @@
+api	route	case	outcome
+62.0	anon	name_null_only	REQUIRED_FIELD_MISSING:LastName:Required fields are missing: [LastName]|1|1
+62.0	anon	name_null_business	INVALID_FIELD_FOR_INSERT_UPDATE:Name:Unable to create/update fields: Name. Please check the security settings of this field and verify that it is read/write for your profile or permission set.|1|1
+62.0	anon	name_null_first	REQUIRED_FIELD_MISSING:LastName:Required fields are missing: [LastName]|1|1
+62.0	anon	name_omitted	REQUIRED_FIELD_MISSING:Name:Required fields are missing: [Name]|1|1
+62.0	anon	user_bulk_new	success|1|2
+62.0	anon	user_bulk_existing	success|1|2
+62.0	anon	user_bulk_mixed	success|1|2
+62.0	anon	user_selector_new	success|1|1
+62.0	anon	user_selector_existing	success|1|1
+62.0	anon	api_upsert_user	INVALID_CROSS_REFERENCE_KEY:RecordTypeId:Record Type ID: this ID value isn't valid for the user: |1|1
+62.0	anon	api_upsert_system	INVALID_CROSS_REFERENCE_KEY:RecordTypeId:Record Type ID: this ID value isn't valid for the user: |1|1
+62.0	anon	api_upsert_selector	INVALID_CROSS_REFERENCE_KEY:RecordTypeId:Record Type ID: this ID value isn't valid for the user: |1|1
+62.0	anon	api_upsert_user_list	INVALID_CROSS_REFERENCE_KEY:RecordTypeId:Record Type ID: this ID value isn't valid for the user: |1|2
+62.0	anon	api_upsert_system_list	INVALID_CROSS_REFERENCE_KEY:RecordTypeId:Record Type ID: this ID value isn't valid for the user: |1|2
+62.0	anon	api_upsert_selector_list	INVALID_CROSS_REFERENCE_KEY:RecordTypeId:Record Type ID: this ID value isn't valid for the user: |1|2
+62.0	anon	api_update_existing	success|1|1
+62.0	anon	api_upsert_existing	success|1|1
+62.0	test	name_null_only	REQUIRED_FIELD_MISSING:LastName:Required fields are missing: [LastName]|1|1
+62.0	test	name_null_business	INVALID_FIELD_FOR_INSERT_UPDATE:Name:Unable to create/update fields: Name. Please check the security settings of this field and verify that it is read/write for your profile or permission set.|1|1
+62.0	test	name_null_first	REQUIRED_FIELD_MISSING:LastName:Required fields are missing: [LastName]|1|1
+62.0	test	name_omitted	REQUIRED_FIELD_MISSING:Name:Required fields are missing: [Name]|1|1
+62.0	test	user_bulk_new	success|1|2
+62.0	test	user_bulk_existing	System.TypeException:DML operation UPDATE not allowed on Account|1|2
+62.0	test	user_bulk_mixed	System.TypeException:DML operation UPDATE not allowed on Account|1|2
+62.0	test	user_selector_new	success|1|1
+62.0	test	user_selector_existing	System.TypeException:DML operation UPDATE not allowed on Account|1|1
+62.0	test	api_upsert_user	INVALID_CROSS_REFERENCE_KEY:RecordTypeId:Record Type ID: this ID value isn't valid for the user: |1|1
+62.0	test	api_upsert_system	INVALID_CROSS_REFERENCE_KEY:RecordTypeId:Record Type ID: this ID value isn't valid for the user: |1|1
+62.0	test	api_upsert_selector	INVALID_CROSS_REFERENCE_KEY:RecordTypeId:Record Type ID: this ID value isn't valid for the user: |1|1
+62.0	test	api_upsert_user_list	INVALID_CROSS_REFERENCE_KEY:RecordTypeId:Record Type ID: this ID value isn't valid for the user: |1|2
+62.0	test	api_upsert_system_list	INVALID_CROSS_REFERENCE_KEY:RecordTypeId:Record Type ID: this ID value isn't valid for the user: |1|2
+62.0	test	api_upsert_selector_list	INVALID_CROSS_REFERENCE_KEY:RecordTypeId:Record Type ID: this ID value isn't valid for the user: |1|2
+62.0	test	api_update_existing	success|1|1
+62.0	test	api_upsert_existing	success|1|1
+67.0	anon	name_null_only	REQUIRED_FIELD_MISSING:LastName:Required fields are missing: [LastName]|1|1
+67.0	anon	name_null_business	INVALID_FIELD_FOR_INSERT_UPDATE:Name:Unable to create/update fields: Name. Please check the security settings of this field and verify that it is read/write for your profile or permission set.|1|1
+67.0	anon	name_null_first	REQUIRED_FIELD_MISSING:LastName:Required fields are missing: [LastName]|1|1
+67.0	anon	name_omitted	REQUIRED_FIELD_MISSING:Name:Required fields are missing: [Name]|1|1
+67.0	anon	user_bulk_new	success|1|2
+67.0	anon	user_bulk_existing	success|1|2
+67.0	anon	user_bulk_mixed	success|1|2
+67.0	anon	user_selector_new	success|1|1
+67.0	anon	user_selector_existing	success|1|1
+67.0	anon	api_upsert_user	INVALID_CROSS_REFERENCE_KEY:RecordTypeId:Record Type ID: this ID value isn't valid for the user: |1|1
+67.0	anon	api_upsert_system	INVALID_CROSS_REFERENCE_KEY:RecordTypeId:Record Type ID: this ID value isn't valid for the user: |1|1
+67.0	anon	api_upsert_selector	INVALID_CROSS_REFERENCE_KEY:RecordTypeId:Record Type ID: this ID value isn't valid for the user: |1|1
+67.0	anon	api_upsert_user_list	INVALID_CROSS_REFERENCE_KEY:RecordTypeId:Record Type ID: this ID value isn't valid for the user: |1|2
+67.0	anon	api_upsert_system_list	INVALID_CROSS_REFERENCE_KEY:RecordTypeId:Record Type ID: this ID value isn't valid for the user: |1|2
+67.0	anon	api_upsert_selector_list	INVALID_CROSS_REFERENCE_KEY:RecordTypeId:Record Type ID: this ID value isn't valid for the user: |1|2
+67.0	anon	api_update_existing	success|1|1
+67.0	anon	api_upsert_existing	success|1|1
+67.0	test	name_null_only	REQUIRED_FIELD_MISSING:LastName:Required fields are missing: [LastName]|1|1
+67.0	test	name_null_business	INVALID_FIELD_FOR_INSERT_UPDATE:Name:Unable to create/update fields: Name. Please check the security settings of this field and verify that it is read/write for your profile or permission set.|1|1
+67.0	test	name_null_first	REQUIRED_FIELD_MISSING:LastName:Required fields are missing: [LastName]|1|1
+67.0	test	name_omitted	REQUIRED_FIELD_MISSING:Name:Required fields are missing: [Name]|1|1
+67.0	test	user_bulk_new	success|1|2
+67.0	test	user_bulk_existing	System.TypeException:DML operation UPDATE not allowed on Account|1|2
+67.0	test	user_bulk_mixed	System.TypeException:DML operation UPDATE not allowed on Account|1|2
+67.0	test	user_selector_new	success|1|1
+67.0	test	user_selector_existing	System.TypeException:DML operation UPDATE not allowed on Account|1|1
+67.0	test	api_upsert_user	INVALID_CROSS_REFERENCE_KEY:RecordTypeId:Record Type ID: this ID value isn't valid for the user: |1|1
+67.0	test	api_upsert_system	INVALID_CROSS_REFERENCE_KEY:RecordTypeId:Record Type ID: this ID value isn't valid for the user: |1|1
+67.0	test	api_upsert_selector	INVALID_CROSS_REFERENCE_KEY:RecordTypeId:Record Type ID: this ID value isn't valid for the user: |1|1
+67.0	test	api_upsert_user_list	INVALID_CROSS_REFERENCE_KEY:RecordTypeId:Record Type ID: this ID value isn't valid for the user: |1|2
+67.0	test	api_upsert_system_list	INVALID_CROSS_REFERENCE_KEY:RecordTypeId:Record Type ID: this ID value isn't valid for the user: |1|2
+67.0	test	api_upsert_selector_list	INVALID_CROSS_REFERENCE_KEY:RecordTypeId:Record Type ID: this ID value isn't valid for the user: |1|2
+67.0	test	api_update_existing	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY::DML operation UPDATE not allowed on Account|1|1
+67.0	test	api_upsert_existing	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY::DML operation UPDATE not allowed on Account|1|1

@@ -1,0 +1,3 @@
+id	route	result	value1	value2	value3
+future	executeAnonymous/@future	PASS	60000	Task persisted	separate transaction
+rows	executeAnonymous	System.AssertException	707	5	1000 rows; total 716 ms

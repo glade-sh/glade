@@ -1953,6 +1953,8 @@ func (vm *VM) invalidSObjectFieldMapNamespaceKey(receiver, key Value) bool {
 	return true
 }
 
+const copiedSObjectFieldMapRuntime = "sobjectfieldmap-copy"
+
 func (vm *VM) specialMapLookup(receiver, key Value) (Value, bool) {
 	if receiver.Kind != ValueMap || key.Kind != ValueString {
 		return Null, false
@@ -3693,7 +3695,11 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 		if vm.invalidSObjectFieldMapNamespaceKey(receiver, args[0]) {
 			return vm.collectionReadValue(receiver, missingMapValue(receiver)), true, nil
 		}
-		key, err := vm.resolvedMapLookupKey(receiver, args[0])
+		lookup := args[0]
+		if receiver.Runtime == copiedSObjectFieldMapRuntime && lookup.Kind == ValueString {
+			lookup = String(strings.ToLower(lookup.Text))
+		}
+		key, err := vm.resolvedMapLookupKey(receiver, lookup)
 		if err != nil {
 			return Null, true, err
 		}
@@ -3701,6 +3707,9 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 			return vm.collectionReadValue(receiver, missingMapValue(receiver)), true, nil
 		}
 		value, ok := receiver.Map[key]
+		if !ok && receiver.Runtime == copiedSObjectFieldMapRuntime && args[0].Kind == ValueString {
+			return vm.collectionReadValue(receiver, missingMapValue(receiver)), true, nil
+		}
 		if !ok {
 			value, ok = vm.populatedFieldsMapAliasLookup(receiver, args[0])
 		}
@@ -3746,7 +3755,11 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 		if isSObjectFieldMapValue(receiver) && args[0].Kind == ValueString && strings.Contains(args[0].Text, ".") {
 			return Bool(false), true, nil
 		}
-		key, err := vm.resolvedMapLookupKey(receiver, args[0])
+		lookup := args[0]
+		if receiver.Runtime == copiedSObjectFieldMapRuntime && lookup.Kind == ValueString {
+			lookup = String(strings.ToLower(lookup.Text))
+		}
+		key, err := vm.resolvedMapLookupKey(receiver, lookup)
 		if err != nil {
 			return Null, true, err
 		}
@@ -3754,6 +3767,9 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 			return Bool(false), true, nil
 		}
 		_, ok := receiver.Map[key]
+		if !ok && receiver.Runtime == copiedSObjectFieldMapRuntime && args[0].Kind == ValueString {
+			return Bool(false), true, nil
+		}
 		if !ok {
 			_, ok = vm.populatedFieldsMapAliasLookup(receiver, args[0])
 		}
@@ -3897,8 +3913,18 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("Map.clear expects 0 arguments")
 		}
-		receiver.Map = map[string]Value{}
-		receiver.MapKeys = map[string]Value{}
+		if flag := receiver.Fields["__sobject_field_getmap"]; flag.Kind == ValueBool && flag.Bool && isSObjectFieldMapValue(receiver) {
+			// The holder is detached before dispatch. Clear that backing in place
+			// so aliases retain the holder identity and observe the mutation.
+			clear(receiver.Map)
+			clear(receiver.MapKeys)
+			if descriptor := fieldMapHolderDescriptor(receiver); descriptor != nil && descriptor.value.Ref == receiver.Ref {
+				descriptor.value.MapOrder = nil
+			}
+		} else {
+			receiver.Map = map[string]Value{}
+			receiver.MapKeys = map[string]Value{}
+		}
 		receiver.MapOrder = nil
 		if err := vm.storeReceiver(receiverName, receiver); err != nil {
 			return Null, true, err
@@ -3907,6 +3933,9 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 	case "clone":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("Map.clone expects 0 arguments")
+		}
+		if isSObjectFieldMapValue(receiver) {
+			return vm.copySObjectFieldMapEntries(receiver), true, nil
 		}
 		cloned := receiver
 		cloned.Ref = newValueRef()

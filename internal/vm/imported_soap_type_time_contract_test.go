@@ -82,8 +82,8 @@ func TestExecImportedSOAPTypeTextThenTimeAPI67(t *testing.T) {
 	base := apextest.Options{
 		SelectedClasses:       []string{"GladeSOAPTypeTime67Proof"},
 		RuntimeRESTAPIVersion: "67.0",
-		Parallelism:          1,
-		NoDiskCache:          true,
+		Parallelism:           1,
+		NoDiskCache:           true,
 	}
 	discovered := apextest.Discover(index, base)
 	if len(discovered) != 2 {

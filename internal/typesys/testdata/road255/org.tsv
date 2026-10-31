@@ -1,0 +1,7 @@
+case_id	api_version	class_name	body	deploy_status	problem
+nested_duplicate_62	62.0	RoadProbe62Duplicate	class Item {} interface Item {}	Failed	Type name already in use: RoadProbe62Duplicate.Item
+nested_case_62	62.0	RoadProbe62Case	class Item {} class item {}	Failed	Type name already in use: RoadProbe62Case.item
+nested_unique_62	62.0	RoadProbe62Unique	class Item {} interface Other {}	Succeeded	<none>
+nested_duplicate_67	67.0	RoadProbe67Duplicate	class Item {} interface Item {}	Failed	Type name already in use: RoadProbe67Duplicate.Item
+nested_case_67	67.0	RoadProbe67Case	class Item {} class item {}	Failed	Type name already in use: RoadProbe67Case.item
+nested_unique_67	67.0	RoadProbe67Unique	class Item {} interface Other {}	Succeeded	<none>

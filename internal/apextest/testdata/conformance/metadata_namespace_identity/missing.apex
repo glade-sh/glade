@@ -1,0 +1,1 @@
+List<FieldDefinition> missing = [SELECT QualifiedApiName FROM FieldDefinition WHERE EntityDefinition.QualifiedApiName = 'gladens001__Ns113bFlag__mdt' AND QualifiedApiName = 'gladens001__NoSuchField__c']; System.debug('NSROW|missing|' + missing.size());

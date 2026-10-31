@@ -1,0 +1,6 @@
+case	shape	boundary
+C01	queried records with cleared Id	five types direct singleton and nested
+C02	inserted records with cleared Id	five types direct singleton
+C03	unequal record	comparison control
+C04	null argument	rejection
+C05	queried cleared Id versus explicit null Id	equal-value control

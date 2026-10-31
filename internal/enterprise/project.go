@@ -63,7 +63,7 @@ func CountMetadataFiles(p project.Project) int {
 		len(p.PermissionSetFiles) + len(p.PermissionSetGroupFiles) +
 		len(p.PermissionAssignmentFiles) + len(p.ListViewFiles) + len(p.LayoutFiles) +
 		len(p.CompactLayoutFiles) + len(p.TabFiles) + len(p.WebLinkFiles) +
-		len(p.QuickActionFiles) + len(p.GlobalValueSetFiles) + len(p.StandardValueSetFiles) +
+		len(p.QuickActionFiles) + len(p.GlobalValueSetFiles) + len(p.StandardValueSetFiles) + len(p.ValueSetTranslationFiles) +
 		len(p.FlexiPageFiles) + len(p.ApplicationFiles) + len(p.VisualforcePageFiles) +
 		len(p.VisualforceComponentFiles) + len(p.AuraFiles) + len(p.LWCFiles) +
 		len(p.LWCHTMLFiles) + len(p.LWCCSSFiles) + len(p.LWCMetaFiles)

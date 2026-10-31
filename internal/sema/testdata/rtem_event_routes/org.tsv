@@ -1,0 +1,33 @@
+api	route	case	compiled	observation
+62.0	anonymous	file_action	true	accepted
+62.0	anonymous	file_date	true	accepted
+62.0	anonymous	file_store_action	true	accepted
+62.0	anonymous	report_date	true	accepted
+62.0	anonymous	account_date	false	Compilation failed at Line 1 column 30 with the error:  Field is not writeable: Account.CreatedDate
+62.0	anonymous	publish_file	false	Compilation failed at Line 1 column 10 with the error:  DML operation Insert not allowed on FileEvent
+62.0	anonymous	publish_report	false	Compilation failed at Line 1 column 10 with the error:  DML operation Insert not allowed on ReportEvent
+62.0	anonymous	publish_account	false	Compilation failed at Line 1 column 10 with the error:  Argument must be a Platform Event sObject type.
+67.0	anonymous	file_action	true	accepted
+67.0	anonymous	file_date	true	accepted
+67.0	anonymous	file_store_action	true	accepted
+67.0	anonymous	report_date	true	accepted
+67.0	anonymous	account_date	false	Compilation failed at Line 1 column 30 with the error:  Field is not writeable: Account.CreatedDate
+67.0	anonymous	publish_file	false	Compilation failed at Line 1 column 10 with the error:  DML operation Insert not allowed on FileEvent
+67.0	anonymous	publish_report	false	Compilation failed at Line 1 column 10 with the error:  DML operation Insert not allowed on ReportEvent
+67.0	anonymous	publish_account	false	Compilation failed at Line 1 column 10 with the error:  Argument must be a Platform Event sObject type.
+62.0	named	file_action	true	accepted
+62.0	named	file_date	true	accepted
+62.0	named	file_store_action	true	accepted
+62.0	named	report_date	true	accepted
+62.0	named	account_date	false	Field is not writeable: Account.CreatedDate
+62.0	named	publish_file	true	accepted
+62.0	named	publish_report	false	DML operation Insert not allowed on ReportEvent; Argument must be a Platform Event sObject type.
+62.0	named	publish_account	false	Argument must be a Platform Event sObject type.
+67.0	named	file_action	true	accepted
+67.0	named	file_date	true	accepted
+67.0	named	file_store_action	true	accepted
+67.0	named	report_date	true	accepted
+67.0	named	account_date	false	Field is not writeable: Account.CreatedDate
+67.0	named	publish_file	true	accepted
+67.0	named	publish_report	false	DML operation Insert not allowed on ReportEvent; Argument must be a Platform Event sObject type.
+67.0	named	publish_account	false	Argument must be a Platform Event sObject type.

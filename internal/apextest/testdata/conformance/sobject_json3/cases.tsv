@@ -1,0 +1,15 @@
+case	coverage	routes	api
+number_standard	Queried standard DOUBLE display fields, including zero and negative values, serialize with and without null suppression	anonymous; @IsTest	62.0;67.0
+number_custom	Number(18,4) custom field query, zero, fractional and precision boundaries, both serialize overloads	anonymous; @IsTest	62.0;67.0
+locale_format	Non-en_US FORMAT numeric and date values across Account and Opportunity, aliases, multiple dates and null boundary	anonymous; @IsTest	62.0;67.0
+locale_tolabel	Non-en_US toLabel translated picklist values, alias and null boundary	anonymous; @IsTest	62.0;67.0
+task_owner_typeof	Task.Owner TYPEOF selected fields in normal and runAs test contexts with SeeAllData true and false	anonymous; @IsTest	62.0;67.0
+rejection	Invalid field and unsupported TYPEOF branch rejection twins	anonymous; @IsTest	62.0;67.0
+review_static	Static SOQL FORMAT and toLabel, alias and unaliased, direct access	anonymous; @IsTest	62.0;67.0
+review_locator	Database.getQueryLocator FORMAT and toLabel projections and direct access	anonymous; @IsTest	62.0;67.0
+review_child	Parent-child subquery FORMAT and toLabel projections and direct access	anonymous; @IsTest	62.0;67.0
+review_boundary	Null and missing-field access or rejected projection control	anonymous; @IsTest	62.0;67.0
+review_child_translation	Child Account subquery translated Industry and direct access	anonymous; @IsTest	62.0;67.0
+review_format_boundaries	French FORMAT on synthetic custom currency and date fields, positive negative null and alias paths	anonymous; @IsTest	62.0;67.0
+review_label_boundaries	Active French and German Industry translations for multiple values; null boundary	anonymous; @IsTest	62.0;67.0
+review_second_valueset	Translated Opportunity Stage values at two active languages	anonymous; @IsTest	62.0;67.0

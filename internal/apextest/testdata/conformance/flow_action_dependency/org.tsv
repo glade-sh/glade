@@ -1,0 +1,9 @@
+api	case	route	result
+62.0	missing	metadata-deploy	rejected: action unavailable
+62.0	loaded	metadata-deploy	accepted
+62.0	boundary	anonymous	pass: calls=1
+62.0	boundary	istest	pass: calls=1
+67.0	missing	metadata-deploy	rejected: action unavailable
+67.0	loaded	metadata-deploy	accepted
+67.0	boundary	anonymous	pass: calls=1
+67.0	boundary	istest	pass: calls=1
