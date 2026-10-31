@@ -17,10 +17,12 @@ import (
 )
 
 type annotatedMethodNativeCapture struct {
-	Context, SourceAPI, HelperAPI, Route, ProjectAPI, TransportAPI, NamespaceContext, TestClass       string
-	SourceManifestSHA256, SourceManifestRaw string; OrgRun string `json:"runMetadata"`; SourceManifestKind, OriginalSourceManifestSHA256 string
-	OmittedNonSourceFiles                                                                             int
-	SourceManifest                                                                                    struct {
+	Context, SourceAPI, HelperAPI, Route, ProjectAPI, TransportAPI, NamespaceContext, TestClass string
+	SourceManifestSHA256, SourceManifestRaw                                                     string
+	OrgRun                                                                                      string `json:"runMetadata"`
+	SourceManifestKind, OriginalSourceManifestSHA256                                            string
+	OmittedNonSourceFiles                                                                       int
+	SourceManifest                                                                              struct {
 		Phase string
 		Files map[string]string
 	}
@@ -61,7 +63,7 @@ func TestAnnotatedMethodCommentsNativeConformance(t *testing.T) {
 			Done, CheckOnly                                               bool
 			NumberComponentErrors, NumberTestErrors                       int
 			RawSHA256, SourceDigests                                      map[string]string
-			OrgRun string `json:"runMetadata"`
+			OrgRun                                                        string `json:"runMetadata"`
 		}
 	}
 	raw, err := os.ReadFile("testdata/conformance/annotated_method_comments.json")

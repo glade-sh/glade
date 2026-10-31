@@ -10,7 +10,7 @@ import (
 )
 
 type DoctorInfo struct {
-	PDFRenderer string `json:"pdfRenderer"`
+	PDFRenderer              string           `json:"pdfRenderer"`
 	SchemaVersion            string           `json:"schemaVersion,omitempty"`
 	Command                  string           `json:"command,omitempty"`
 	Status                   string           `json:"status,omitempty"`
@@ -42,7 +42,7 @@ type DoctorInfo struct {
 	Suggestions              []string         `json:"suggestions,omitempty"`
 	Recovery                 []string         `json:"recovery,omitempty"`
 	Advisories               []string         `json:"advisories,omitempty"`
-	OrgSetup []DoctorOrgSetup `json:"orgSetup,omitempty"`
+	OrgSetup                 []DoctorOrgSetup `json:"orgSetup,omitempty"`
 
 	TestEnvironment *config.TestEnvironment `json:"testEnvironment,omitempty"`
 }

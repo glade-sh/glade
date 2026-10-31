@@ -18,7 +18,8 @@ import (
 
 type apexImplementorNativeCapture struct {
 	Context, SourceAPI, HelperAPI, Route, ProjectAPI, TransportAPI, NamespaceContext, TestClass string
-	SourceManifestRaw, SourceManifestSHA256 string; OrgRun string `json:"runMetadata"`
+	SourceManifestRaw, SourceManifestSHA256                                                     string
+	OrgRun                                                                                      string `json:"runMetadata"`
 	SourceManifest                                                                              struct {
 		Phase                   string
 		HelperSetupDeploymentID string
@@ -57,10 +58,11 @@ func TestApexTypeImplementorNativeConformance(t *testing.T) {
 		KnownRows                                                int
 		Captures                                                 []apexImplementorNativeCapture
 		HelperSetup                                              struct {
-			DeploymentID, Status, SourceManifestRaw, SourceManifestSHA256 string; OrgRun string `json:"runMetadata"`
-			Done, CheckOnly                                                       bool
-			NumberComponentErrors, NumberTestErrors                               int
-			RawSHA256, SourceDigests                                              map[string]string
+			DeploymentID, Status, SourceManifestRaw, SourceManifestSHA256 string
+			OrgRun                                                        string `json:"runMetadata"`
+			Done, CheckOnly                                               bool
+			NumberComponentErrors, NumberTestErrors                       int
+			RawSHA256, SourceDigests                                      map[string]string
 		}
 		CarriedObservations []struct {
 			apexImplementorNativeCapture
