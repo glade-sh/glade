@@ -1,0 +1,1 @@
+User u=[SELECT Id FROM User WHERE LastName='Proof' AND IsActive=true LIMIT 1];PermissionSet p=[SELECT Id FROM PermissionSet WHERE Name='Road174Grant'];insert new PermissionSetAssignment(AssigneeId=u.Id,PermissionSetId=p.Id);delete [SELECT Id FROM PermissionSetAssignment WHERE AssigneeId=:u.Id AND PermissionSet.Name='Road174Global'];System.debug('R4SWITCH|ok');

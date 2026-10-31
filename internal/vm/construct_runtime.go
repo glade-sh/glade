@@ -200,9 +200,18 @@ func (vm *VM) constructCollectionValue(typeName string, args []Value, namedArgs 
 		if len(args) == 1 && args[0].Kind == ValueMap {
 			value := Map()
 			value.Type = typeName
-			for _, rawKey := range orderedValueMapKeys(args[0]) {
-				item := args[0].Map[rawKey]
-				keyValue := mapStoredKey(args[0], rawKey)
+			// A copy constructed from a describe field map retains its
+			// case-insensitive field lookup; putAll into an ordinary map does not.
+			source := args[0]
+			if isSObjectFieldMapValue(source) {
+				source = vm.copySObjectFieldMapEntries(source)
+			}
+			if source.Runtime == copiedSObjectFieldMapRuntime {
+				value.Runtime = copiedSObjectFieldMapRuntime
+			}
+			for _, rawKey := range orderedValueMapKeys(source) {
+				item := source.Map[rawKey]
+				keyValue := mapStoredKey(source, rawKey)
 				key, coerced, err := vm.coerceMapEntry(typeName, keyValue, item)
 				if err != nil {
 					return Null, true, fmt.Errorf("Map constructor: %w", err)
@@ -250,6 +259,29 @@ func (vm *VM) constructCollectionValue(typeName string, args []Value, namedArgs 
 		return value, true, nil
 	}
 	return Null, false, nil
+}
+
+// copySObjectFieldMapEntries materializes the observable lower-case keys of a
+// describe field map. Its internal alias entries are not independent map keys.
+func (vm *VM) copySObjectFieldMapEntries(source Value) Value {
+	value := Map()
+	value.Type = "Map<String,Schema.SObjectField>"
+	value.Runtime = copiedSObjectFieldMapRuntime
+	keys, _ := vm.sObjectFieldMapCanonicalKeySet(source)
+	for _, key := range keys.Set {
+		encoded := mapKey(key)
+		item, ok := source.Map[encoded]
+		if !ok {
+			item, ok = vm.specialMapLookup(source, key)
+		}
+		if !ok {
+			continue
+		}
+		value.Map[encoded] = item
+		value.MapKeys[encoded] = key
+		value.MapOrder = append(value.MapOrder, encoded)
+	}
+	return value
 }
 
 func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs map[string]Value, result *Result, literalArgs bool) (Value, error) {

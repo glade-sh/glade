@@ -1,0 +1,226 @@
+[
+  {
+    "api": "62.0",
+    "route": "named",
+    "case": "file_scalar",
+    "source": "EventBus.publish(new FileEvent());",
+    "compiled": true,
+    "message": ""
+  },
+  {
+    "api": "62.0",
+    "route": "named",
+    "case": "file_schema",
+    "source": "EventBus.publish(new Schema.FileEvent());",
+    "compiled": true,
+    "message": ""
+  },
+  {
+    "api": "62.0",
+    "route": "named",
+    "case": "file_list",
+    "source": "EventBus.publish(new List<FileEvent>{new FileEvent()});",
+    "compiled": true,
+    "message": ""
+  },
+  {
+    "api": "62.0",
+    "route": "named",
+    "case": "file_callback",
+    "source": "EventBus.publish(new FileEvent(), null);",
+    "compiled": true,
+    "message": ""
+  },
+  {
+    "api": "62.0",
+    "route": "named",
+    "case": "report_scalar",
+    "source": "EventBus.publish(new ReportEvent());",
+    "compiled": false,
+    "message": "DML operation Insert not allowed on ReportEvent; Argument must be a Platform Event sObject type."
+  },
+  {
+    "api": "62.0",
+    "route": "named",
+    "case": "account_scalar",
+    "source": "EventBus.publish(new Account());",
+    "compiled": false,
+    "message": "Argument must be a Platform Event sObject type."
+  },
+  {
+    "api": "62.0",
+    "route": "named",
+    "case": "login_scalar",
+    "source": "EventBus.publish(new LoginEvent());",
+    "compiled": false,
+    "message": "DML operation Insert not allowed on LoginEvent; Argument must be a Platform Event sObject type."
+  },
+  {
+    "api": "62.0",
+    "route": "istest",
+    "case": "file_scalar",
+    "source": "EventBus.publish(new FileEvent());",
+    "compiled": true,
+    "message": ""
+  },
+  {
+    "api": "62.0",
+    "route": "istest",
+    "case": "file_schema",
+    "source": "EventBus.publish(new Schema.FileEvent());",
+    "compiled": true,
+    "message": ""
+  },
+  {
+    "api": "62.0",
+    "route": "istest",
+    "case": "file_list",
+    "source": "EventBus.publish(new List<FileEvent>{new FileEvent()});",
+    "compiled": true,
+    "message": ""
+  },
+  {
+    "api": "62.0",
+    "route": "istest",
+    "case": "file_callback",
+    "source": "EventBus.publish(new FileEvent(), null);",
+    "compiled": true,
+    "message": ""
+  },
+  {
+    "api": "62.0",
+    "route": "istest",
+    "case": "report_scalar",
+    "source": "EventBus.publish(new ReportEvent());",
+    "compiled": false,
+    "message": "DML operation Insert not allowed on ReportEvent; Argument must be a Platform Event sObject type."
+  },
+  {
+    "api": "62.0",
+    "route": "istest",
+    "case": "account_scalar",
+    "source": "EventBus.publish(new Account());",
+    "compiled": false,
+    "message": "Argument must be a Platform Event sObject type."
+  },
+  {
+    "api": "62.0",
+    "route": "istest",
+    "case": "login_scalar",
+    "source": "EventBus.publish(new LoginEvent());",
+    "compiled": false,
+    "message": "DML operation Insert not allowed on LoginEvent; Argument must be a Platform Event sObject type."
+  },
+  {
+    "api": "67.0",
+    "route": "named",
+    "case": "file_scalar",
+    "source": "EventBus.publish(new FileEvent());",
+    "compiled": true,
+    "message": ""
+  },
+  {
+    "api": "67.0",
+    "route": "named",
+    "case": "file_schema",
+    "source": "EventBus.publish(new Schema.FileEvent());",
+    "compiled": true,
+    "message": ""
+  },
+  {
+    "api": "67.0",
+    "route": "named",
+    "case": "file_list",
+    "source": "EventBus.publish(new List<FileEvent>{new FileEvent()});",
+    "compiled": true,
+    "message": ""
+  },
+  {
+    "api": "67.0",
+    "route": "named",
+    "case": "file_callback",
+    "source": "EventBus.publish(new FileEvent(), null);",
+    "compiled": true,
+    "message": ""
+  },
+  {
+    "api": "67.0",
+    "route": "named",
+    "case": "report_scalar",
+    "source": "EventBus.publish(new ReportEvent());",
+    "compiled": false,
+    "message": "DML operation Insert not allowed on ReportEvent; Argument must be a Platform Event sObject type."
+  },
+  {
+    "api": "67.0",
+    "route": "named",
+    "case": "account_scalar",
+    "source": "EventBus.publish(new Account());",
+    "compiled": false,
+    "message": "Argument must be a Platform Event sObject type."
+  },
+  {
+    "api": "67.0",
+    "route": "named",
+    "case": "login_scalar",
+    "source": "EventBus.publish(new LoginEvent());",
+    "compiled": false,
+    "message": "DML operation Insert not allowed on LoginEvent; Argument must be a Platform Event sObject type."
+  },
+  {
+    "api": "67.0",
+    "route": "istest",
+    "case": "file_scalar",
+    "source": "EventBus.publish(new FileEvent());",
+    "compiled": true,
+    "message": ""
+  },
+  {
+    "api": "67.0",
+    "route": "istest",
+    "case": "file_schema",
+    "source": "EventBus.publish(new Schema.FileEvent());",
+    "compiled": true,
+    "message": ""
+  },
+  {
+    "api": "67.0",
+    "route": "istest",
+    "case": "file_list",
+    "source": "EventBus.publish(new List<FileEvent>{new FileEvent()});",
+    "compiled": true,
+    "message": ""
+  },
+  {
+    "api": "67.0",
+    "route": "istest",
+    "case": "file_callback",
+    "source": "EventBus.publish(new FileEvent(), null);",
+    "compiled": true,
+    "message": ""
+  },
+  {
+    "api": "67.0",
+    "route": "istest",
+    "case": "report_scalar",
+    "source": "EventBus.publish(new ReportEvent());",
+    "compiled": false,
+    "message": "DML operation Insert not allowed on ReportEvent; Argument must be a Platform Event sObject type."
+  },
+  {
+    "api": "67.0",
+    "route": "istest",
+    "case": "account_scalar",
+    "source": "EventBus.publish(new Account());",
+    "compiled": false,
+    "message": "Argument must be a Platform Event sObject type."
+  },
+  {
+    "api": "67.0",
+    "route": "istest",
+    "case": "login_scalar",
+    "source": "EventBus.publish(new LoginEvent());",
+    "compiled": false,
+    "message": "DML operation Insert not allowed on LoginEvent; Argument must be a Platform Event sObject type."
+  }
+]

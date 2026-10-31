@@ -1,0 +1,3 @@
+case	source	api	route	expected
+conflict	MarkerProbe.cls	62.0,67.0	class deployment	reject syntax
+clean	clean/MarkerProbe.cls	62.0,67.0	class deployment	accept

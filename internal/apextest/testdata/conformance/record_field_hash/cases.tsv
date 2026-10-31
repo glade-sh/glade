@@ -1,0 +1,9 @@
+case	shape	boundary
+F01	date and field-name hash	adjacent and leap dates before/after epoch
+F02	Lead Company hash	strings, null and singleton
+F03	Opportunity StageName and CloseDate	strings, dates and null
+F04	multifield opportunity	direct, singleton and nested lists
+F05	different field values	inequality controls
+F06	null argument	rejection
+F07	date lists	singleton, multiple and nested
+F08	date and record lists	mixed element boundary

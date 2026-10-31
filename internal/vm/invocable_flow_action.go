@@ -11,13 +11,17 @@ import (
 
 // Top-level local action shapes share the Flow interpreter for scalar record and primitive
 // variables, assignments, decisions, lookups, subflows, updates and supported creates.
-// Collections, fault connectors and other steps retain an explicit boundary.
+// Output-only text collections use the same primitive Flow frame; other
+// collections, fault connectors and other steps retain an explicit boundary.
 func invocableFlowActionSupported(rule storage.FlowRule) bool {
 	if !strings.EqualFold(rule.ProcessType, "AutoLaunchedFlow") || len(rule.Variables) == 0 || len(rule.Steps) == 0 {
 		return false
 	}
 	for _, variable := range rule.Variables {
 		if variable.IsCollection {
+			if !variable.IsInput && variable.IsOutput && strings.EqualFold(variable.DataType, "String") {
+				continue
+			}
 			return false
 		}
 		if strings.EqualFold(variable.DataType, "Boolean") || strings.EqualFold(variable.DataType, "Number") {
@@ -327,6 +331,13 @@ func (vm *VM) invokeInvocableFlowAction(action, invocation Value, executionResul
 				markExplicitSObjectField(&value, "Id")
 			}
 		} else if scalar, ok := output.Scalars[key]; ok {
+			// The Flow frame seeds primitive collections as empty lists for
+			// execution, but native action output exposes an unassigned text
+			// collection as null. Assigned collections retain their contents.
+			if variable.IsCollection && strings.EqualFold(variable.DataType, "String") && !output.Assigned[key] {
+				set(variable.Name, Null)
+				continue
+			}
 			value = vmValueFromStorage(scalar)
 			if strings.EqualFold(variable.DataType, "Number") && scalar.Kind != storage.ValueNull {
 				if number, err := strconv.ParseFloat(value.String(), 64); err == nil {

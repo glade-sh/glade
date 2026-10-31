@@ -86,13 +86,13 @@ func TestExecImportedCaseSensitiveTextMetadataAPI67(t *testing.T) {
 	base := apextest.Options{
 		SelectedClasses:       []string{"GladeCaseSensitive67Proof"},
 		RuntimeRESTAPIVersion: "67.0",
-		Parallelism:          1,
-		NoDiskCache:          true,
+		Parallelism:           1,
+		NoDiskCache:           true,
 	}
 	discovered := apextest.Discover(index, base)
 	methods := map[string]bool{
 		"importedCaseInsensitiveControl": false,
-		"importedCaseSensitiveFocal": false,
+		"importedCaseSensitiveFocal":     false,
 	}
 	if len(discovered) != len(methods) {
 		t.Fatalf("discovered %d cases, want exactly %d", len(discovered), len(methods))

@@ -1,0 +1,11 @@
+shape	purpose
+qualifiedAccount	root-qualified Industry filter and projection
+qualifiedOpportunity	root-qualified Stage filter and projection
+qualifiedTask	root-qualified Task status
+statusTask	Task translated status filter
+statusOrder	Order translated status filter
+statusContract	Contract translated status filter
+parentOpportunity	Opportunity parent translated projection
+semiIndustry	translated Industry inside semi-join
+semiStage	translated Stage inside semi-join
+semiMissing	semi-join unmatched translated label boundary

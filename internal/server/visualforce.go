@@ -1142,9 +1142,17 @@ func (s *Server) visualforceRuntime() (*vm.VM, error) {
 	if s.runtimeErr != nil {
 		return nil, fmt.Errorf("Visualforce runtime setup failed: %w", s.runtimeErr)
 	}
-	machine := vm.New(nil)
+	var machine *vm.VM
 	if s.runtime != nil {
 		machine = s.runtime.CloneRuntime(nil)
+	} else if s.Index != nil {
+		var err error
+		machine, err = apextest.NewProjectRuntimeForRequest(*s.Index)
+		if err != nil {
+			return nil, fmt.Errorf("Visualforce runtime setup failed: %w", err)
+		}
+	} else {
+		machine = vm.New(nil)
 	}
 	if s.Org == nil {
 		empty := storage.NewOrgState()
@@ -1161,11 +1169,6 @@ func (s *Server) visualforceRuntime() (*vm.VM, error) {
 	}
 	if strings.TrimSpace(namespace) != "" {
 		machine.SetCurrentNamespace(namespace)
-	}
-	if s.Index != nil && s.runtime == nil {
-		if err := apextest.RegisterProjectRuntimeForRequest(machine, *s.Index); err != nil {
-			return nil, fmt.Errorf("Visualforce runtime setup failed: %w", err)
-		}
 	}
 	return machine, nil
 }

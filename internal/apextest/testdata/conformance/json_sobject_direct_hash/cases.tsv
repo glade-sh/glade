@@ -1,0 +1,6 @@
+case	shape	boundary
+J01	deserialize empty Account and Contact	empty
+J02	deserialize populated and null Account/Contact	string/null
+J03	deserializeStrict Opportunity and Lead	strict entry
+J04	wrong JSON root	rejection
+J05	Case, multi-field, generic SObject	adjacent shapes

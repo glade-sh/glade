@@ -1,0 +1,7 @@
+String key = null;
+String blank = '';
+try { System.debug('ROW|null-filter|' + [SELECT count() FROM MeadowGroup__mdt WHERE NamespacePrefix = :key]); } catch (Exception e) { System.debug('ROW|null-filter|ERROR:' + e.getTypeName()); }
+try { System.debug('ROW|blank-filter|' + [SELECT count() FROM MeadowGroup__mdt WHERE NamespacePrefix = :blank]); } catch (Exception e) { System.debug('ROW|blank-filter|ERROR:' + e.getTypeName()); }
+try { System.debug('ROW|missing-filter|' + [SELECT count() FROM MeadowGroup__mdt WHERE DeveloperName = 'Missing']); } catch (Exception e) { System.debug('ROW|missing-filter|ERROR:' + e.getTypeName()); }
+try { List<MeadowGroup__mdt> rows = [SELECT DeveloperName, Descriptor__r.Column__r.QualifiedApiName, Descriptor__r.Entity__r.QualifiedApiName, (SELECT Value__c FROM Choices__r) FROM MeadowGroup__mdt WHERE Descriptor__r.Entity__r.QualifiedApiName = 'MeadowEntry__c' WITH USER_MODE]; System.debug('ROW|user-mode|' + rows.size() + ':' + rows[0].Descriptor__r.Column__r.QualifiedApiName + ':' + rows[0].Choices__r.size()); } catch (Exception e) { System.debug('ROW|user-mode|ERROR:' + e.getTypeName() + ':' + e.getMessage()); }
+try { List<MeadowGroup__mdt> rows = [SELECT DeveloperName, Descriptor__r.Column__r.QualifiedApiName FROM MeadowGroup__mdt WHERE DeveloperName = 'Missing' WITH USER_MODE]; System.debug('ROW|user-mode-missing|' + rows.size()); } catch (Exception e) { System.debug('ROW|user-mode-missing|ERROR:' + e.getTypeName() + ':' + e.getMessage()); }

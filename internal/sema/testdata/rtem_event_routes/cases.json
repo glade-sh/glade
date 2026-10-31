@@ -1,0 +1,258 @@
+[
+  {
+    "api": "62.0",
+    "route": "anonymous",
+    "case": "file_action",
+    "source": "FileEvent e = new FileEvent(); e.FileAction = 'x';",
+    "compiled": true,
+    "message": ""
+  },
+  {
+    "api": "62.0",
+    "route": "anonymous",
+    "case": "file_date",
+    "source": "FileEvent e = new FileEvent(); e.CreatedDate = Datetime.now();",
+    "compiled": true,
+    "message": ""
+  },
+  {
+    "api": "62.0",
+    "route": "anonymous",
+    "case": "file_store_action",
+    "source": "FileEventStore e = new FileEventStore(); e.FileAction = 'x';",
+    "compiled": true,
+    "message": ""
+  },
+  {
+    "api": "62.0",
+    "route": "anonymous",
+    "case": "report_date",
+    "source": "ReportEvent e = new ReportEvent(); e.CreatedDate = Datetime.now();",
+    "compiled": true,
+    "message": ""
+  },
+  {
+    "api": "62.0",
+    "route": "anonymous",
+    "case": "account_date",
+    "source": "Account e = new Account(); e.CreatedDate = Datetime.now();",
+    "compiled": false,
+    "message": "Compilation failed at Line 1 column 30 with the error:  Field is not writeable: Account.CreatedDate"
+  },
+  {
+    "api": "62.0",
+    "route": "anonymous",
+    "case": "publish_file",
+    "source": "EventBus.publish(new FileEvent());",
+    "compiled": false,
+    "message": "Compilation failed at Line 1 column 10 with the error:  DML operation Insert not allowed on FileEvent"
+  },
+  {
+    "api": "62.0",
+    "route": "anonymous",
+    "case": "publish_report",
+    "source": "EventBus.publish(new ReportEvent());",
+    "compiled": false,
+    "message": "Compilation failed at Line 1 column 10 with the error:  DML operation Insert not allowed on ReportEvent"
+  },
+  {
+    "api": "62.0",
+    "route": "anonymous",
+    "case": "publish_account",
+    "source": "EventBus.publish(new Account());",
+    "compiled": false,
+    "message": "Compilation failed at Line 1 column 10 with the error:  Argument must be a Platform Event sObject type."
+  },
+  {
+    "api": "67.0",
+    "route": "anonymous",
+    "case": "file_action",
+    "source": "FileEvent e = new FileEvent(); e.FileAction = 'x';",
+    "compiled": true,
+    "message": ""
+  },
+  {
+    "api": "67.0",
+    "route": "anonymous",
+    "case": "file_date",
+    "source": "FileEvent e = new FileEvent(); e.CreatedDate = Datetime.now();",
+    "compiled": true,
+    "message": ""
+  },
+  {
+    "api": "67.0",
+    "route": "anonymous",
+    "case": "file_store_action",
+    "source": "FileEventStore e = new FileEventStore(); e.FileAction = 'x';",
+    "compiled": true,
+    "message": ""
+  },
+  {
+    "api": "67.0",
+    "route": "anonymous",
+    "case": "report_date",
+    "source": "ReportEvent e = new ReportEvent(); e.CreatedDate = Datetime.now();",
+    "compiled": true,
+    "message": ""
+  },
+  {
+    "api": "67.0",
+    "route": "anonymous",
+    "case": "account_date",
+    "source": "Account e = new Account(); e.CreatedDate = Datetime.now();",
+    "compiled": false,
+    "message": "Compilation failed at Line 1 column 30 with the error:  Field is not writeable: Account.CreatedDate"
+  },
+  {
+    "api": "67.0",
+    "route": "anonymous",
+    "case": "publish_file",
+    "source": "EventBus.publish(new FileEvent());",
+    "compiled": false,
+    "message": "Compilation failed at Line 1 column 10 with the error:  DML operation Insert not allowed on FileEvent"
+  },
+  {
+    "api": "67.0",
+    "route": "anonymous",
+    "case": "publish_report",
+    "source": "EventBus.publish(new ReportEvent());",
+    "compiled": false,
+    "message": "Compilation failed at Line 1 column 10 with the error:  DML operation Insert not allowed on ReportEvent"
+  },
+  {
+    "api": "67.0",
+    "route": "anonymous",
+    "case": "publish_account",
+    "source": "EventBus.publish(new Account());",
+    "compiled": false,
+    "message": "Compilation failed at Line 1 column 10 with the error:  Argument must be a Platform Event sObject type."
+  },
+  {
+    "api": "62.0",
+    "route": "named",
+    "case": "file_action",
+    "source": "FileEvent e = new FileEvent(); e.FileAction = 'x';",
+    "compiled": true,
+    "message": ""
+  },
+  {
+    "api": "62.0",
+    "route": "named",
+    "case": "file_date",
+    "source": "FileEvent e = new FileEvent(); e.CreatedDate = Datetime.now();",
+    "compiled": true,
+    "message": ""
+  },
+  {
+    "api": "62.0",
+    "route": "named",
+    "case": "file_store_action",
+    "source": "FileEventStore e = new FileEventStore(); e.FileAction = 'x';",
+    "compiled": true,
+    "message": ""
+  },
+  {
+    "api": "62.0",
+    "route": "named",
+    "case": "report_date",
+    "source": "ReportEvent e = new ReportEvent(); e.CreatedDate = Datetime.now();",
+    "compiled": true,
+    "message": ""
+  },
+  {
+    "api": "62.0",
+    "route": "named",
+    "case": "account_date",
+    "source": "Account e = new Account(); e.CreatedDate = Datetime.now();",
+    "compiled": false,
+    "message": "Field is not writeable: Account.CreatedDate"
+  },
+  {
+    "api": "62.0",
+    "route": "named",
+    "case": "publish_file",
+    "source": "EventBus.publish(new FileEvent());",
+    "compiled": true,
+    "message": ""
+  },
+  {
+    "api": "62.0",
+    "route": "named",
+    "case": "publish_report",
+    "source": "EventBus.publish(new ReportEvent());",
+    "compiled": false,
+    "message": "DML operation Insert not allowed on ReportEvent; Argument must be a Platform Event sObject type."
+  },
+  {
+    "api": "62.0",
+    "route": "named",
+    "case": "publish_account",
+    "source": "EventBus.publish(new Account());",
+    "compiled": false,
+    "message": "Argument must be a Platform Event sObject type."
+  },
+  {
+    "api": "67.0",
+    "route": "named",
+    "case": "file_action",
+    "source": "FileEvent e = new FileEvent(); e.FileAction = 'x';",
+    "compiled": true,
+    "message": ""
+  },
+  {
+    "api": "67.0",
+    "route": "named",
+    "case": "file_date",
+    "source": "FileEvent e = new FileEvent(); e.CreatedDate = Datetime.now();",
+    "compiled": true,
+    "message": ""
+  },
+  {
+    "api": "67.0",
+    "route": "named",
+    "case": "file_store_action",
+    "source": "FileEventStore e = new FileEventStore(); e.FileAction = 'x';",
+    "compiled": true,
+    "message": ""
+  },
+  {
+    "api": "67.0",
+    "route": "named",
+    "case": "report_date",
+    "source": "ReportEvent e = new ReportEvent(); e.CreatedDate = Datetime.now();",
+    "compiled": true,
+    "message": ""
+  },
+  {
+    "api": "67.0",
+    "route": "named",
+    "case": "account_date",
+    "source": "Account e = new Account(); e.CreatedDate = Datetime.now();",
+    "compiled": false,
+    "message": "Field is not writeable: Account.CreatedDate"
+  },
+  {
+    "api": "67.0",
+    "route": "named",
+    "case": "publish_file",
+    "source": "EventBus.publish(new FileEvent());",
+    "compiled": true,
+    "message": ""
+  },
+  {
+    "api": "67.0",
+    "route": "named",
+    "case": "publish_report",
+    "source": "EventBus.publish(new ReportEvent());",
+    "compiled": false,
+    "message": "DML operation Insert not allowed on ReportEvent; Argument must be a Platform Event sObject type."
+  },
+  {
+    "api": "67.0",
+    "route": "named",
+    "case": "publish_account",
+    "source": "EventBus.publish(new Account());",
+    "compiled": false,
+    "message": "Argument must be a Platform Event sObject type."
+  }
+]

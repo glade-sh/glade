@@ -1,0 +1,1 @@
+@IsTest(SeeAllData=true) private class R174T67arg {@IsTest static void observe(){User u=[SELECT Id FROM User WHERE LastName='Proof' AND IsActive=true LIMIT 1];System.runAs(u){System.assert(false,'R5ISO|'+R17467arg.collect());}}}

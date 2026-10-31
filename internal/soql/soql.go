@@ -314,14 +314,14 @@ func ExecuteWithCacheAndContext(org storage.OrgState, query Query, cache *Execut
 		return Result{}, err
 	}
 	if query.Where != nil && conditionContainsSubquery(*query.Where) {
-		condition, err := resolveSubqueries(org, *query.Where)
+		condition, err := resolveSubqueries(org, cloneCondition(*query.Where), context)
 		if err != nil {
 			return Result{}, err
 		}
 		query.Where = &condition
 	}
 	if query.Having != nil && conditionContainsSubquery(*query.Having) {
-		condition, err := resolveSubqueries(org, *query.Having)
+		condition, err := resolveSubqueries(org, cloneCondition(*query.Having), context)
 		if err != nil {
 			return Result{}, err
 		}
@@ -347,7 +347,7 @@ func ExecuteWithCacheAndContext(org storage.OrgState, query Query, cache *Execut
 				continue
 			}
 		}
-		if matches(org, object.Definition, record, query.Where) {
+		if matchesWithContext(org, object.Definition, record, query.Where, context) {
 			matchedRecords = append(matchedRecords, record)
 		}
 	}
@@ -1306,22 +1306,26 @@ func usesStartDateAsFiscalYearNameFromValue(value storage.Value) (bool, bool) {
 }
 
 func matches(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, condition *Condition) bool {
+	return matchesWithContext(org, definition, record, condition, ExecutionContext{})
+}
+
+func matchesWithContext(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, condition *Condition, context ExecutionContext) bool {
 	if condition == nil {
 		return true
 	}
 	if condition.Not {
-		return !matches(org, definition, record, &Condition{
+		return !matchesWithContext(org, definition, record, &Condition{
 			RewrittenAggregate: condition.RewrittenAggregate,
 			And:                condition.And, Or: condition.Or,
 			Field: condition.Field, Formula: condition.Formula, Op: condition.Op,
 			Value: condition.Value, Value2: condition.Value2, Range: condition.Range,
 			DateLiteralTimeZoneID: condition.DateLiteralTimeZoneID,
 			Values:                condition.Values, Subquery: condition.Subquery,
-		})
+		}, context)
 	}
 	if len(condition.And) > 0 {
 		for _, c := range condition.And {
-			if !matches(org, definition, record, &c) {
+			if !matchesWithContext(org, definition, record, &c, context) {
 				return false
 			}
 		}
@@ -1329,7 +1333,7 @@ func matches(org storage.OrgState, definition storage.ObjectDefinition, record s
 	}
 	if len(condition.Or) > 0 {
 		for _, c := range condition.Or {
-			if matches(org, definition, record, &c) {
+			if matchesWithContext(org, definition, record, &c, context) {
 				return true
 			}
 		}
@@ -1344,6 +1348,9 @@ func matches(org storage.OrgState, definition storage.ObjectDefinition, record s
 	}
 	if !ok {
 		left = storage.NullValue()
+	}
+	if expr, parsed := parseSelectFieldExpression(condition.Field); parsed && expr.Func == "TOLABEL" && len(expr.Args) == 1 {
+		left = translatedPredicateLabel(org, definition, expr.Args[0], left, context.Language)
 	}
 	if condition.Range && condition.DateLiteralTimeZoneID != "" {
 		if matched, handled := matchesDateLiteralRange(left, condition); handled {
@@ -1570,13 +1577,15 @@ func compareTime(left, right time.Time) int {
 	return 0
 }
 
-func resolveSubqueries(org storage.OrgState, condition Condition) (Condition, error) {
+func resolveSubqueries(org storage.OrgState, condition Condition, context ExecutionContext) (Condition, error) {
 	if condition.Subquery != nil {
 		groupedNegation := groupedNegatedSemiAntiCondition(&condition)
 		if len(condition.Subquery.Fields) != 1 || condition.Subquery.Count || len(condition.Subquery.Aggregates) > 0 {
 			return Condition{}, fmt.Errorf("soql: semi-join subquery must select exactly one field")
 		}
-		result, err := Execute(org, *condition.Subquery)
+		// Preserve the prior actor-free semi-join boundary while sharing the
+		// language needed for translated predicates.
+		result, err := ExecuteWithCacheAndContext(org, *condition.Subquery, nil, ExecutionContext{Language: context.Language})
 		if err != nil {
 			return Condition{}, err
 		}
@@ -1605,14 +1614,14 @@ func resolveSubqueries(org storage.OrgState, condition Condition) (Condition, er
 		}
 	}
 	for i := range condition.And {
-		resolved, err := resolveSubqueries(org, condition.And[i])
+		resolved, err := resolveSubqueries(org, condition.And[i], context)
 		if err != nil {
 			return Condition{}, err
 		}
 		condition.And[i] = resolved
 	}
 	for i := range condition.Or {
-		resolved, err := resolveSubqueries(org, condition.Or[i])
+		resolved, err := resolveSubqueries(org, condition.Or[i], context)
 		if err != nil {
 			return Condition{}, err
 		}
@@ -1753,7 +1762,7 @@ func executeChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 	if records, handled, err := executeContentChildAttachedQuery(org, parentDefinition, parent, childQuery, childCache, context); handled {
 		return records, err
 	}
-	prepared, err := prepareChildRelationshipQuery(org, parentDefinition, childQuery, childCache)
+	prepared, err := prepareChildRelationshipQuery(org, parentDefinition, childQuery, childCache, context)
 	if err != nil {
 		return nil, err
 	}
@@ -1789,7 +1798,7 @@ func executeChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 		if !ok || !equalValues(parentID, storage.IDValue(parent.ID)) {
 			continue
 		}
-		if matches(org, childObject.Definition, child, query.Where) {
+		if matchesWithContext(org, childObject.Definition, child, query.Where, context) {
 			matched = append(matched, child)
 		}
 	}
@@ -1808,7 +1817,7 @@ func executeChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 	return out, nil
 }
 
-func prepareChildRelationshipQuery(org storage.OrgState, parentDefinition storage.ObjectDefinition, childQuery ChildQuery, childCache *childRelationshipQueryCache) (preparedChildRelationshipQuery, error) {
+func prepareChildRelationshipQuery(org storage.OrgState, parentDefinition storage.ObjectDefinition, childQuery ChildQuery, childCache *childRelationshipQueryCache, context ExecutionContext) (preparedChildRelationshipQuery, error) {
 	key := strings.ToLower(parentDefinition.APIName + "." + childQuery.Relationship)
 	if childCache != nil {
 		if prepared, ok := childCache.prepared[key]; ok {
@@ -1842,7 +1851,7 @@ func prepareChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 		return preparedChildRelationshipQuery{}, err
 	}
 	if query.Where != nil && conditionContainsSubquery(*query.Where) {
-		condition, err := resolveSubqueries(org, *query.Where)
+		condition, err := resolveSubqueries(org, cloneCondition(*query.Where), context)
 		if err != nil {
 			return preparedChildRelationshipQuery{}, err
 		}
@@ -2860,7 +2869,17 @@ func validateTypeofReference(org storage.OrgState, definition storage.ObjectDefi
 	for typeName, fields := range spec.When {
 		parentName, ok := storage.ResolveObjectName(org, typeName)
 		if !ok || !allowedTargets[parentName] {
-			return typeofTargetUnavailableError(typeName, mode)
+			// The captured diagnostics are for ordinary queries; retain the
+			// existing security-mode behavior until that route has evidence.
+			if mode != "" {
+				return typeofTargetUnavailableError(typeName, mode)
+			}
+			if !ok {
+				message := MissingObjectMessage(typeName)
+				return queryError(message, message)
+			}
+			message := fmt.Sprintf("WHEN operand '%s' is not a valid entity type for polymorphic field '%s'", typeName, spec.Relationship)
+			return queryError(message, message)
 		}
 		parent := org.Objects[parentName]
 		for _, field := range fields {
@@ -3222,6 +3241,11 @@ func relationshipValue(org storage.OrgState, record storage.Record, field string
 		}
 		for _, parentObjectName := range relation.ParentObjects {
 			if strings.EqualFold(parentObjectName, "EntityDefinition") || strings.EqualFold(parentObjectName, "FieldDefinition") {
+				if strings.EqualFold(parts[1], "QualifiedApiName") {
+					if value, ok := ownedMetadataRelationshipName(org, object.Definition, record, parentObjectName, parentID); ok {
+						return value, true
+					}
+				}
 				if value, ok := entityDefinitionRelationshipValue(parentObjectName, parentID, parts[1]); ok {
 					return value, true
 				}
@@ -3374,6 +3398,62 @@ func relationshipLookupPathKnown(org storage.OrgState, record storage.Record, re
 		return true
 	}
 	return false
+}
+
+// ownedMetadataRelationshipName resolves the project-owned custom schema names
+// used by metadata relationship projections. Other ownership and unresolved
+// references retain the existing fallback.
+func ownedMetadataRelationshipName(org storage.OrgState, source storage.ObjectDefinition, record storage.Record, target string, value storage.Value) (storage.Value, bool) {
+	if org.Namespace == "" || !storage.IsCustomMetadataDefinition(source) {
+		return storage.Value{}, false
+	}
+	owner, ok := record.Fields["NamespacePrefix"]
+	if !ok || owner.Kind != storage.ValueString || !strings.EqualFold(owner.String, org.Namespace) {
+		return storage.Value{}, false
+	}
+	var text string
+	switch value.Kind {
+	case storage.ValueString:
+		text = value.String
+	case storage.ValueID:
+		text = string(value.ID)
+	default:
+		return storage.Value{}, false
+	}
+	objectName, fieldName, hasField := strings.Cut(strings.TrimSpace(text), ".")
+	if strings.EqualFold(target, "FieldDefinition") != hasField || !projectCustomSchemaName(org.Namespace, objectName) {
+		return storage.Value{}, false
+	}
+	if hasField && !projectCustomSchemaName(org.Namespace, fieldName) {
+		return storage.Value{}, false
+	}
+	canonical, ok := storage.ResolveObjectName(org, objectName)
+	if !ok {
+		return storage.Value{}, false
+	}
+	definition := org.Objects[canonical].Definition
+	qualifiedObject := storage.NamespaceTokenName(org.Namespace, definition.APIName)
+	if !strings.HasPrefix(strings.ToLower(qualifiedObject), strings.ToLower(org.Namespace)+"__") {
+		return storage.Value{}, false
+	}
+	if !hasField {
+		return storage.StringValue(qualifiedObject), true
+	}
+	_, field, ok := storage.ResolveFieldDefinition(definition, org.Namespace, fieldName)
+	if !ok || !projectCustomSchemaName(org.Namespace, field.APIName) {
+		return storage.Value{}, false
+	}
+	return storage.StringValue(storage.NamespaceTokenName(org.Namespace, field.APIName)), true
+}
+
+// Only simple custom object and field names with no explicit foreign namespace
+// are eligible for the captured project-owned qualification rule.
+func projectCustomSchemaName(namespace, name string) bool {
+	if !strings.HasSuffix(strings.ToLower(name), "__c") {
+		return false
+	}
+	unqualified := storage.StripAnyNamespaceToken(name)
+	return unqualified == name || strings.EqualFold(storage.StripNamespaceToken(namespace, name), unqualified)
 }
 
 func entityDefinitionRelationshipValue(objectName string, value storage.Value, field string) (storage.Value, bool) {

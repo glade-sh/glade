@@ -1,0 +1,9 @@
+shape	purpose
+stageProspecting	translated Opportunity stage filter
+stageQualification	second stage filter
+stageNeeds	third stage filter
+stageMaster	master label rejection
+stageMissing	unknown label rejection
+childProspecting	child query stage filter
+childQualification	second child stage filter
+parentPredicate	parent Industry translated predicate

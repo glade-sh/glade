@@ -1,0 +1,7 @@
+api	route	observation
+62.0	anonymous	[{"outputs":{"Echo":"alpha","EmptyText":"","Flow__InterviewStatus":"Finished","Items":["first","second"],"NullText":null},"success":true},{"outputs":{"Echo":"beta","EmptyText":"","Flow__InterviewStatus":"Finished","Items":["first","second"],"NullText":null},"success":true}]
+62.0	istest	[{"outputs":{"Echo":"alpha","EmptyText":"","Flow__InterviewStatus":"Finished","Items":["first","second"],"NullText":null},"success":true},{"outputs":{"Echo":"beta","EmptyText":"","Flow__InterviewStatus":"Finished","Items":["first","second"],"NullText":null},"success":true}]
+62.0	deploy-rejection	undeclared assignment target rejected
+67.0	anonymous	[{"outputs":{"Echo":"alpha","EmptyText":"","Flow__InterviewStatus":"Finished","Items":["first","second"],"NullText":null},"success":true},{"outputs":{"Echo":"beta","EmptyText":"","Flow__InterviewStatus":"Finished","Items":["first","second"],"NullText":null},"success":true}]
+67.0	istest	[{"outputs":{"Echo":"alpha","EmptyText":"","Flow__InterviewStatus":"Finished","Items":["first","second"],"NullText":null},"success":true},{"outputs":{"Echo":"beta","EmptyText":"","Flow__InterviewStatus":"Finished","Items":["first","second"],"NullText":null},"success":true}]
+67.0	deploy-rejection	undeclared assignment target rejected

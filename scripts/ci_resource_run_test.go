@@ -197,7 +197,8 @@ func TestCIResourceTelemetryCoversAuthoritativeLanes(t *testing.T) {
 	workflow, jobs := readCIWorkflow(t)
 	want := map[string][]string{
 		"workflow-lint":         {"resource-workflow-lint.json", "scripts/ci-go-test.sh lane workflow-lint"},
-		"gladecli":              {"resource-gladecli.json", "scripts/ci-go-test.sh lane gladecli"},
+		"gladecli":              {"resource-usage.json", "scripts/ci-go-test.sh gladecli-shard"},
+		"vm":                    {"resource-usage.json", "scripts/ci-go-test.sh vm-shard"},
 		"node-integration":      {"resource-usage.json", "scripts/ci-go-test.sh node-integration"},
 		"sema":                  {"resource-usage.json", "scripts/ci-go-test.sh sema-shard"},
 		"sema-full":             {"resource-usage.json", "scripts/ci-go-test.sh sema-full"},
@@ -215,8 +216,8 @@ func TestCIResourceTelemetryCoversAuthoritativeLanes(t *testing.T) {
 			t.Errorf("%s does not use resource wrapper", job)
 		}
 	}
-	if got := strings.Count(workflow, "scripts/ci-resource-run.sh"); got != 11 {
-		t.Fatalf("resource wrapper invocation count = %d, want 11", got)
+	if got := strings.Count(workflow, "scripts/ci-resource-run.sh"); got != 12 {
+		t.Fatalf("resource wrapper invocation count = %d, want 12", got)
 	}
 	for _, forbidden := range []string{"runs-on: ubuntu-latest-", "GOMAXPROCS: \"4\"", "GOMAXPROCS: \"8\""} {
 		if strings.Contains(workflow, forbidden) {

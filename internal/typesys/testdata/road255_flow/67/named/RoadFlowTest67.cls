@@ -1,0 +1,1 @@
+@IsTest private class RoadFlowTest67 { @IsTest static void latest() { Flow.Interview.RoadFlow67 i = new Flow.Interview.RoadFlow67(new Map<String,Object>()); i.start(); System.assertEquals('SECOND', i.getVariableValue('result')); } }

@@ -14,13 +14,13 @@ import (
 
 func TestCIScaleApexWorkflowRoutes(t *testing.T) {
 	_, jobs := readCIWorkflow(t)
-	for _, marker := range []string{"shard: [0, 1, 2, 3, 4, 5]", "CI_APEXTEST_SHARDS: \"6\"", "timeout-minutes: 100", "fail-fast: false"} {
+	for _, marker := range []string{"shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]", "CI_APEXTEST_SHARDS: \"12\"", "timeout-minutes: 100", "fail-fast: false"} {
 		if !strings.Contains(jobs["apextest"], marker) {
 			t.Errorf("Apex matrix missing %q", marker)
 		}
 	}
 	history := jobs["apextest-history"]
-	for index := range 6 {
+	for index := range 12 {
 		if !strings.Contains(history, fmt.Sprintf("/tmp/apextest-history-input/apex-shard-%d", index)) {
 			t.Errorf("Apex history omits shard %d", index)
 		}

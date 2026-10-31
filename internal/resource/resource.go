@@ -36,6 +36,14 @@ type translatedLabelXML struct {
 	Label string `xml:"label"`
 }
 
+type standardValueSetTranslationXML struct {
+	XMLName xml.Name `xml:"StandardValueSetTranslation"`
+	Values  []struct {
+		MasterLabel string `xml:"masterLabel"`
+		Translation string `xml:"translation"`
+	} `xml:"valueTranslation"`
+}
+
 type tabXML struct {
 	CustomObject bool   `xml:"customObject"`
 	Page         string `xml:"page"`
@@ -187,6 +195,36 @@ func loadProject(p project.Project, readMetadata func(string) ([]byte, error)) (
 			return storage.MetadataRegistry{}, err
 		}
 		registry.Labels = append(registry.Labels, labels...)
+	}
+	for _, path := range p.ValueSetTranslationFiles {
+		data, err := readMetadata(path)
+		if err != nil {
+			return storage.MetadataRegistry{}, err
+		}
+		name := filepath.Base(path)
+		lower := strings.ToLower(name)
+		for _, suffix := range []string{".standardvaluesettranslation-meta.xml", ".standardvaluesettranslation"} {
+			if strings.HasSuffix(lower, suffix) {
+				name = name[:len(name)-len(suffix)]
+				break
+			}
+		}
+		separator := strings.LastIndexByte(name, '-')
+		if separator <= 0 || separator == len(name)-1 {
+			continue
+		}
+		var raw standardValueSetTranslationXML
+		if err := xml.Unmarshal(data, &raw); err != nil {
+			return storage.MetadataRegistry{}, err
+		}
+		for _, entry := range raw.Values {
+			if entry.MasterLabel == "" || entry.Translation == "" {
+				continue
+			}
+			registry.ValueSetTranslations = append(registry.ValueSetTranslations, storage.StandardValueSetTranslation{
+				ValueSet: name[:separator], Language: name[separator+1:], MasterLabel: entry.MasterLabel, Translation: entry.Translation,
+			})
+		}
 	}
 	resources, err := loadStaticResources(p.StaticResourceFiles, p.StaticResourceMetas, p.Namespace)
 	if err != nil {
@@ -357,6 +395,18 @@ func LayoutMetadataFiles(p project.Project) []string {
 	return files
 }
 
+// StandardValueSetTranslationMetadataFiles includes loaded dependencies so
+// runtime metadata snapshots capture every value used by the resolver.
+func StandardValueSetTranslationMetadataFiles(p project.Project) []string {
+	files := append([]string(nil), p.ValueSetTranslationFiles...)
+	for _, dep := range p.ManagedPackageDependencies {
+		if dep.Status == "loaded" && dep.Project != nil {
+			files = append(files, StandardValueSetTranslationMetadataFiles(*dep.Project)...)
+		}
+	}
+	return files
+}
+
 func projectFolderFilesWithDependencies(p project.Project) []string {
 	files := append([]string(nil), p.FolderFiles...)
 	for _, dep := range p.ManagedPackageDependencies {
@@ -396,6 +446,7 @@ func mergeRegistry(dst *storage.MetadataRegistry, src storage.MetadataRegistry) 
 		return
 	}
 	dst.Labels = append(dst.Labels, src.Labels...)
+	dst.ValueSetTranslations = append(dst.ValueSetTranslations, src.ValueSetTranslations...)
 	dst.ManagedLabelNamespaces = append(dst.ManagedLabelNamespaces, src.ManagedLabelNamespaces...)
 	dst.DataCategoryGroups = append(dst.DataCategoryGroups, src.DataCategoryGroups...)
 	dst.StaticResources = append(dst.StaticResources, src.StaticResources...)

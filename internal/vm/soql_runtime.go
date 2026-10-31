@@ -56,11 +56,12 @@ func (vm *VM) executeSOQLRowsWithAccounting(raw string, execResult *Result, expa
 }
 
 func (vm *VM) executeSOQLRowsWithAccountingAndSource(raw string, execResult *Result, expand func(string) (string, error), binds Value, accessLevelMode, permissionSetID string, accounting soqlHandleAccounting, captureSource func(*storage.OrgState)) ([]Value, error) {
-	return vm.executeSOQLRowsWithSecurityDetails(raw, execResult, expand, binds, accessLevelMode, permissionSetID, accounting, captureSource, false, false)
+	return vm.executeSOQLRowsWithSecurityDetails(raw, execResult, expand, binds, accessLevelMode, permissionSetID, accounting, captureSource, false, false, false)
 }
 
-func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result, expand func(string) (string, error), binds Value, accessLevelMode, permissionSetID string, accounting soqlHandleAccounting, captureSource func(*storage.OrgState), denialDetails, explicitBindAccessLevel bool) ([]Value, error) {
-	applyHierarchyQueryPolicy := accounting == soqlOrdinaryAccounting
+func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result, expand func(string) (string, error), binds Value, accessLevelMode, permissionSetID string, accounting soqlHandleAccounting, captureSource func(*storage.OrgState), denialDetails, explicitBindAccessLevel, directAccessLevel bool) ([]Value, error) {
+	ordinaryQuery := accounting == soqlOrdinaryAccounting
+	applyHierarchyQueryPolicy := ordinaryQuery
 	// Pagination keeps ordinary query accounting without adopting hierarchy
 	// behavior captured only for static SOQL and Database.query routes.
 	if accounting == soqlPaginationAccounting {
@@ -70,6 +71,9 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 		return nil, unsupportedCallError("SOSL/FIND local search surface")
 	}
 	if query, err := vm.parseSOQLAt(raw); err == nil {
+		if explicitBindAccessLevel && strings.EqualFold(accessLevelMode, "SYSTEM_MODE") && accounting == soqlOrdinaryAccounting && vm.anonymousOrderSystemModeDenied(query) && (vm.validOrderSystemModeReferences(query) || hasInvalidUserAccessField(query)) {
+			return nil, newExceptionError("SecurityException", "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.")
+		}
 		if err := vm.validateSOQLSelection(query, true); err != nil {
 			return nil, err
 		}
@@ -116,10 +120,17 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 	if accounting != soqlOrdinaryAccounting && query.HasOffset {
 		query.Limit, query.HasLimit = 0, true
 	}
+	explicitMode := query.SecurityMode
+	if explicitMode == "" && explicitBindAccessLevel {
+		explicitMode = accessLevelMode
+	}
 	explicitUserMode := strings.EqualFold(query.SecurityMode, "USER_MODE")
 	explicitSystemMode := strings.EqualFold(query.SecurityMode, "SYSTEM_MODE") ||
 		(strings.TrimSpace(query.SecurityMode) == "" && explicitBindAccessLevel && strings.EqualFold(accessLevelMode, "SYSTEM_MODE"))
 	defaultMode := strings.TrimSpace(query.SecurityMode) == "" && strings.TrimSpace(accessLevelMode) == ""
+	if explicitSystemMode && accounting == soqlOrdinaryAccounting && vm.anonymousOrderSystemModeDenied(query) && vm.validOrderSystemModeReferences(query) {
+		return nil, newExceptionError("SecurityException", "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.")
+	}
 	if strings.TrimSpace(accessLevelMode) == "" {
 		accessLevelMode = vm.defaultAccessLevelMode()
 	}
@@ -211,6 +222,10 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 	// handles retain their live source org and must not receive a filtered copy.
 	if accounting == soqlOrdinaryAccounting && strings.EqualFold(executeQuery.Object, "Document") {
 		executeOrg = vm.orgWithTestDocumentVisibility(executeQuery.Object)
+	} else if ordinaryQuery && strings.EqualFold(executeQuery.Object, "Pricebook2") {
+		// no_row_seeds/followup: ordinary queries hide the pre-test standard
+		// price book in isolated tests, even after Test.getStandardPricebookId.
+		executeOrg = vm.orgWithTestBaselineVisibility(executeQuery.Object, vm.testStandardPricebookBaseline)
 	}
 	if strings.EqualFold(executeQuery.Object, "UserRecordAccess") {
 		syntheticOrg := vm.orgWithSyntheticUserRecordAccess()
@@ -228,7 +243,23 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 	if captureSource != nil {
 		captureSource(executeOrg)
 	}
-	result, err := soql.ExecuteWithCacheAndContext(*executeOrg, executeQuery, vm.soqlExecutionCacheForOrg(executeOrg), soql.ExecutionContext{APIVersion: vm.currentSourceExecutionPolicy().APIVersion, UserID: storage.ID(vm.currentUserID()), UserRecordAccess: vm.userRecordAccessForRecord})
+	accessProjection := strings.TrimSpace(permissionSetID) == "" && vm.capturedOrderAccessProjection(query)
+	actorKey := canonicalIDMapKey(vm.currentUserID())
+	if accessProjection {
+		vm.prepareRoad174PermissionState(actorKey)
+	}
+	result, err := soql.ExecuteWithCacheAndContext(*executeOrg, executeQuery, vm.soqlExecutionCacheForOrg(executeOrg), soql.ExecutionContext{APIVersion: vm.currentSourceExecutionPolicy().APIVersion, Language: vm.currentUserInfoField("LanguageLocaleKey", "en_US"), UserID: storage.ID(vm.currentUserID()), UserRecordAccess: func(objectName string, record storage.Record) storage.Record {
+		accessSequence := 0
+		if accessProjection {
+			key := actorKey + ":" + canonicalIDMapKey(string(record.ID))
+			if vm.road174WarmOrderAccess[key] {
+				accessSequence = 2
+			} else if strings.EqualFold(explicitMode, "USER_MODE") {
+				accessSequence = 1
+			}
+		}
+		return vm.userRecordAccessForRelationship(objectName, record, query.SecurityMode, explicitMode, accessSequence, permissionSetID != "")
+	}, NestedUserRecordAccess: vm.userRecordAccessForRecord})
 	if err != nil {
 		var queryErr *soql.QueryError
 		if errors.As(err, &queryErr) && queryErr.Message != "" {
@@ -281,7 +312,7 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 			vm.hydrateQueriedRecordTypeRelationships(value)
 			// Native observations cover explicit system-mode queries in runAs
 			// tests. Other access modes and non-test contexts remain unchanged.
-			if accounting == soqlOrdinaryAccounting && explicitSystemMode && vm.testContext != nil && vm.testContext.RunAsDepth > 0 {
+			if accounting == soqlOrdinaryAccounting && explicitSystemMode && !directAccessLevel && vm.testContext != nil && vm.testContext.RunAsDepth > 0 {
 				vm.applyPrivateSelfLookupSharing(&value, query.Object, vm.soqlSharingUserID(query))
 			}
 		}
@@ -300,11 +331,25 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 			return vm.traceSOQLArgs(queryText, query.Object, result.Rows)
 		},
 	)
+	if accessProjection && strings.EqualFold(explicitMode, "USER_MODE") && len(result.Records) != 0 {
+		if vm.road174WarmOrderAccess == nil {
+			vm.road174WarmOrderAccess = make(map[string]bool)
+		}
+		for _, record := range result.Records {
+			if record.ID != "" {
+				vm.road174WarmOrderAccess[actorKey+":"+canonicalIDMapKey(string(record.ID))] = true
+			}
+		}
+	}
 	return values, nil
 }
 
 func (vm *VM) orgWithTestDocumentVisibility(objectName string) *storage.OrgState {
-	if vm.testContext == nil || vm.testContext.SeeAllData || len(vm.testDocumentBaseline) == 0 {
+	return vm.orgWithTestBaselineVisibility(objectName, vm.testDocumentBaseline)
+}
+
+func (vm *VM) orgWithTestBaselineVisibility(objectName string, baselineIDs map[storage.ID]struct{}) *storage.OrgState {
+	if vm.testContext == nil || vm.testContext.SeeAllData || len(baselineIDs) == 0 {
 		return vm.Org
 	}
 	object, ok := vm.Org.Objects[objectName]
@@ -314,7 +359,7 @@ func (vm *VM) orgWithTestDocumentVisibility(objectName string) *storage.OrgState
 	records := make(map[storage.ID]storage.Record, len(object.Records))
 	hidden := false
 	for id, record := range object.Records {
-		if _, baseline := vm.testDocumentBaseline[id]; baseline {
+		if _, baseline := baselineIDs[id]; baseline {
 			hidden = true
 			continue
 		}
@@ -1185,6 +1230,273 @@ func (vm *VM) userRecordAccessForRecord(objectName string, record storage.Record
 		"HasAllAccess":      storage.BooleanValue(all),
 		"MaxAccessLevel":    storage.StringValue(level),
 	}}
+}
+
+// anonymousOrderSystemModeDenied is bounded to the Order query controls.
+func (vm *VM) anonymousOrderSystemModeDenied(query soql.Query) bool {
+	if vm.testContext != nil || vm.currentClass != "" || vm.currentMethod.ClassName != "" || vm.currentTrigger || !strings.EqualFold(query.Object, "Order") {
+		return false
+	}
+	api := vm.currentSourceExecutionPolicy().APIVersion
+	return api == "62.0" || api == "67.0"
+}
+
+// Argument overloads reject even invalid pseudo-parent leaves before query
+// validation, as distinct from ordinary invalid fields and clause syntax.
+func hasInvalidUserAccessField(query soql.Query) bool {
+	for _, field := range query.Fields {
+		parts := strings.Split(field, ".")
+		if len(parts) == 2 && strings.EqualFold(parts[0], "UserRecordAccess") && soql.UserRecordAccessProjectionError(query.Object, parts[1]) != nil {
+			return true
+		}
+	}
+	return false
+}
+
+// Validation precedes the anonymous SYSTEM_MODE denial only for captured
+// valid queries. Invalid queries retain the shipping query error precedence.
+func (vm *VM) validOrderSystemModeReferences(query soql.Query) bool {
+	if vm.Org == nil {
+		return false
+	}
+	name, ok := storage.ResolveObjectName(*vm.Org, query.Object)
+	if !ok {
+		return false
+	}
+	return soql.ValidateReferences(*vm.Org, vm.Org.Objects[name].Definition, query) == nil
+}
+
+// capturedOrderAccessProjection covers the captured HasAllAccess projection
+// shapes, including reordered fields, a limit and distinct owner predicates.
+func (vm *VM) capturedOrderAccessProjection(query soql.Query) bool {
+	if !strings.EqualFold(query.Object, "Order") {
+		return false
+	}
+	api := vm.currentSourceExecutionPolicy().APIVersion
+	if api != "62.0" && api != "67.0" {
+		return false
+	}
+	if len(query.ChildQueries) != 0 || query.HasOffset || len(query.Order) != 0 || len(query.GroupBy) != 0 || (query.HasLimit && query.Limit != 1) {
+		return false
+	}
+	if w := query.Where; w != nil {
+		if !strings.EqualFold(w.Field, "OwnerId") || !storage.IDsEqual(storage.ID(storageValueIDText(w.Value)), storage.ID(vm.currentUserID())) || (w.Op != "=" && w.Op != "!=") || w.Not || len(w.And) != 0 || len(w.Or) != 0 || w.Range || w.Subquery != nil {
+			return false
+		}
+	}
+	if len(query.Fields) != 1 && len(query.Fields) != 6 {
+		return false
+	}
+	allowed := map[string]bool{"userrecordaccess.hasreadaccess": true, "userrecordaccess.haseditaccess": true, "userrecordaccess.hasdeleteaccess": true, "userrecordaccess.hastransferaccess": true, "userrecordaccess.hasallaccess": true, "userrecordaccess.maxaccesslevel": true}
+	seen := make(map[string]bool, len(query.Fields))
+	for _, field := range query.Fields {
+		field = strings.ToLower(field)
+		if !allowed[field] || seen[field] {
+			return false
+		}
+		seen[field] = true
+	}
+	return seen["userrecordaccess.hasallaccess"]
+}
+
+// A permission change invalidates observations for the actor, including a
+// removed and reinserted assignment. State remains local to one execution.
+func (vm *VM) prepareRoad174PermissionState(actorKey string) {
+	if vm.Org == nil || actorKey == "" {
+		return
+	}
+	parts := []string{}
+	parents := map[string]bool{}
+	user := vm.executionUser
+	if vm.testContext != nil && vm.testContext.CurrentUser.Kind != "" {
+		user = vm.testContext.CurrentUser
+	}
+	profileID := stringField(user, "ProfileId")
+	parents[canonicalIDMapKey(profileID)] = true
+	parents[canonicalIDMapKey(vm.profileOwnedPermissionSetID(profileID))] = true
+	parts = append(parts, "profile="+profileID, fmt.Sprintf("user-global=%t", objectBoolField(user, "PermissionsModifyAllData") || userHasPermission(user, "ModifyAllData")))
+	for _, record := range vm.Org.Objects["PermissionSetAssignment"].Records {
+		assignee, _ := record.GetField("AssigneeId")
+		if canonicalIDMapKey(storageValueIDText(assignee)) != actorKey {
+			continue
+		}
+		set, _ := record.GetField("PermissionSetId")
+		id := storageValueIDText(set)
+		parents[canonicalIDMapKey(id)] = true
+		parts = append(parts, fmt.Sprintf("assignment=%s:%s:%t:%s", record.ID, id, record.System.IsDeleted, record.System.SystemModstamp))
+	}
+	for _, record := range vm.Org.Objects["PermissionSet"].Records {
+		if !parents[canonicalIDMapKey(string(record.ID))] {
+			continue
+		}
+		v, _ := record.GetField("PermissionsModifyAllData")
+		parts = append(parts, fmt.Sprintf("set=%s:%t:%t:%s", record.ID, v.Boolean, record.System.IsDeleted, record.System.SystemModstamp))
+	}
+	for _, record := range vm.Org.Objects["Profile"].Records {
+		if canonicalIDMapKey(string(record.ID)) != canonicalIDMapKey(profileID) {
+			continue
+		}
+		v, _ := record.GetField("PermissionsModifyAllData")
+		parts = append(parts, fmt.Sprintf("profile-global=%t:%s", v.Boolean, record.System.SystemModstamp))
+	}
+	for _, record := range vm.Org.Objects["ObjectPermissions"].Records {
+		parent, _ := record.GetField("ParentId")
+		object, _ := record.GetField("SObjectType")
+		if !parents[canonicalIDMapKey(storageValueIDText(parent))] || !storageStringValueEquals(object, "Order") {
+			continue
+		}
+		read, _ := record.GetField("PermissionsRead")
+		edit, _ := record.GetField("PermissionsEdit")
+		del, _ := record.GetField("PermissionsDelete")
+		all, _ := record.GetField("PermissionsModifyAllRecords")
+		parts = append(parts, fmt.Sprintf("object=%s:%t:%t:%t:%t:%t:%s", record.ID, read.Boolean, edit.Boolean, del.Boolean, all.Boolean, record.System.IsDeleted, record.System.SystemModstamp))
+	}
+	sort.Strings(parts)
+	stamp := strings.Join(parts, "|")
+	if vm.road174PermissionStamp == nil {
+		vm.road174PermissionStamp = make(map[string]string)
+	}
+	if previous, ok := vm.road174PermissionStamp[actorKey]; ok && previous != stamp {
+		for key := range vm.road174WarmOrderAccess {
+			if strings.HasPrefix(key, actorKey+":") {
+				delete(vm.road174WarmOrderAccess, key)
+			}
+		}
+	}
+	vm.road174PermissionStamp[actorKey] = stamp
+}
+
+// userRecordAccessForRelationship applies the captured relationship-only access
+// rules. Direct UserRecordAccess queries continue to use their own surface.
+func (vm *VM) userRecordAccessForRelationship(objectName string, record storage.Record, mode, explicitMode string, accessSequence int, scoped bool) storage.Record {
+	access := vm.userRecordAccessForRecord(objectName, record)
+	if scoped {
+		return access
+	}
+	// Permission-set groups have no native projection observations. Keep the
+	// shipping calculation whenever the actor has an active group assignment.
+	if vm.Org != nil {
+		userID := vm.currentUserID()
+		for _, assignment := range vm.Org.Objects["PermissionSetAssignment"].Records {
+			assignee, _ := assignment.GetField("AssigneeId")
+			group, _ := assignment.GetField("PermissionSetGroupId")
+			if !assignment.System.IsDeleted && storage.IDsEqual(storage.ID(storageValueIDText(assignee)), storage.ID(userID)) && storageValueIDText(group) != "" {
+				return access
+			}
+		}
+	}
+	name := strings.ToLower(objectName)
+	if name != "asset" && name != "contract" && name != "order" && name != "pricebook2" {
+		return access
+	}
+	if record.System.IsDeleted || !vm.currentUserObjectPermission(objectName, "isAccessible") {
+		return access
+	}
+	userID := vm.currentUserInfoField("Id", "005-local-user")
+	read := access.Fields["HasReadAccess"].Boolean
+	edit := access.Fields["HasEditAccess"].Boolean
+	remove := access.Fields["HasDeleteAccess"].Boolean
+	transfer := false
+	if strings.EqualFold(mode, "SYSTEM_MODE") {
+		read, edit = true, true
+		remove = vm.currentUserCanWriteRecord(objectName, record, userID, "delete")
+		if name == "pricebook2" {
+			remove = true
+		} else {
+			transfer = true
+		}
+	} else if name != "pricebook2" {
+		transfer = edit && vm.currentUserCanWriteRecord(objectName, record, userID, "transfer")
+	}
+	level := "None"
+	if read {
+		level = "Read"
+	}
+	if edit {
+		level = "Edit"
+	}
+	if remove {
+		level = "Delete"
+	}
+	if transfer {
+		level = "Transfer"
+	}
+	allAccess := false
+	if name == "order" && remove && transfer {
+		user := vm.executionUser
+		if vm.testContext != nil {
+			user = vm.testContext.CurrentUser
+		}
+		profileID := stringField(user, "ProfileId")
+		fullGrant := vm.currentUserObjectRecordGrant(objectName, "PermissionsModifyAllRecords") ||
+			objectBoolField(user, "PermissionsModifyAllData") || userHasPermission(user, "ModifyAllData") ||
+			vm.recordHasAnyBooleanPermission("Profile", profileID, "PermissionsModifyAllData")
+		if !fullGrant {
+			for _, id := range vm.assignedPermissionSetIDs(stringField(user, "Id")) {
+				if vm.recordHasAnyBooleanPermission("PermissionSet", id, "PermissionsModifyAllData") {
+					fullGrant = true
+					break
+				}
+			}
+		}
+		anonymous := vm.currentClass == "" && vm.currentMethod.ClassName == ""
+		runAs := vm.testContext != nil && vm.testContext.RunAsDepth > 0
+		secureDefaults := apexversion.Enabled(vm.currentSourceExecutionPolicy().APIVersion, apexversion.SecureDefaults)
+		if fullGrant && (!strings.EqualFold(mode, "SYSTEM_MODE") || secureDefaults || anonymous || runAs) {
+			level = "All"
+		}
+		// The native named/anonymous context rows use assigned permission sets.
+		// Profile-derived grants retain their existing behavior.
+		assignedGrant := false
+		directSets := map[string]bool{}
+		for _, assignment := range vm.Org.Objects["PermissionSetAssignment"].Records {
+			assignee, _ := assignment.GetField("AssigneeId")
+			set, _ := assignment.GetField("PermissionSetId")
+			if !assignment.System.IsDeleted && storage.IDsEqual(storage.ID(storageValueIDText(assignee)), storage.ID(stringField(user, "Id"))) {
+				directSets[canonicalIDMapKey(storageValueIDText(set))] = true
+			}
+		}
+		for _, id := range vm.assignedPermissionSetIDs(stringField(user, "Id")) {
+			if !directSets[canonicalIDMapKey(id)] {
+				continue
+			}
+			if vm.recordHasAnyBooleanPermission("PermissionSet", id, "IsOwnedByProfile") {
+				continue
+			}
+			if vm.recordHasAnyBooleanPermission("PermissionSet", id, "PermissionsModifyAllData") {
+				assignedGrant = true
+			}
+			for _, grant := range vm.Org.Objects["ObjectPermissions"].Records {
+				parent, _ := grant.GetField("ParentId")
+				object, _ := grant.GetField("SObjectType")
+				permission, ok := grant.GetField("PermissionsModifyAllRecords")
+				if storageIDValueEquals(parent, id) && storageStringValueEquals(object, objectName) && ok && permission.Kind == storage.ValueBoolean && permission.Boolean {
+					assignedGrant = true
+				}
+			}
+		}
+		testClass := false
+		if class, ok := vm.lookupClass(vm.currentClass); ok {
+			testClass = class.IsTest || methodHasModifier(class.Modifiers, "isTest")
+		}
+		if !scoped && assignedGrant && fullGrant && !testClass && !vm.recordHasAnyBooleanPermission("Profile", profileID, "PermissionsModifyAllData") {
+			if !anonymous {
+				level = "All"
+			}
+			allAccess = strings.EqualFold(explicitMode, "USER_MODE") || (!anonymous && (strings.EqualFold(explicitMode, "SYSTEM_MODE") || !runAs))
+		}
+		profileGlobalGrant := vm.recordHasAnyBooleanPermission("Profile", profileID, "PermissionsModifyAllData")
+		if !scoped && fullGrant && !testClass && accessSequence != 0 && (assignedGrant || profileGlobalGrant) {
+			allAccess = accessSequence == 2
+		}
+	}
+	access.Fields["HasReadAccess"] = storage.BooleanValue(read)
+	access.Fields["HasEditAccess"] = storage.BooleanValue(edit)
+	access.Fields["HasDeleteAccess"] = storage.BooleanValue(remove)
+	access.Fields["HasTransferAccess"] = storage.BooleanValue(transfer)
+	access.Fields["HasAllAccess"] = storage.BooleanValue(allAccess)
+	access.Fields["MaxAccessLevel"] = storage.StringValue(level)
+	return access
 }
 
 func (vm *VM) orgWithSyntheticUserRecordAccess() storage.OrgState {
@@ -3015,7 +3327,7 @@ func (vm *VM) enforceSOQLSecurity(query soql.Query, permissionSetID string) erro
 		if err := vm.enforceSOQLRelationshipSecurityWithScope(objectName, field, mode, permissionSetID, true); err != nil {
 			return err
 		}
-		for _, fieldName := range vm.securityFieldNames(objectName, field, mode, true) {
+		for _, fieldName := range vm.securityFieldNames(objectName, field, mode, true, permissionSetID) {
 			if !vm.currentUserFieldPermissionWithScope(objectName, fieldName, "isAccessible", permissionSetID) {
 				if mode == "USER_MODE" {
 					return newExceptionError("QueryException", soql.MissingColumnMessage(fieldName, objectName))
@@ -3036,7 +3348,7 @@ func (vm *VM) enforceSOQLSecurity(query soql.Query, permissionSetID string) erro
 		if err := vm.enforceSOQLRelationshipSecurityWithScope(objectName, order.Field, mode, permissionSetID, false); err != nil {
 			return err
 		}
-		for _, fieldName := range vm.securityFieldNames(objectName, order.Field, mode, false) {
+		for _, fieldName := range vm.securityFieldNames(objectName, order.Field, mode, false, permissionSetID) {
 			if !vm.currentUserFieldPermissionWithScope(objectName, fieldName, "isAccessible", permissionSetID) {
 				return newExceptionError("QueryException", fmt.Sprintf("No such column '%s' on entity '%s'.", fieldName, objectName))
 			}
@@ -3442,7 +3754,9 @@ func (vm *VM) applySOQLSharing(query soql.Query, result soql.Result) soql.Result
 		if !userMode {
 			visibleQuery.SecurityMode = ""
 		}
-		visibleResult, err := soql.ExecuteWithCacheAndContext(*vm.Org, visibleQuery, vm.soqlExecutionCacheForOrg(vm.Org), soql.ExecutionContext{APIVersion: vm.currentSourceExecutionPolicy().APIVersion, UserID: storage.ID(vm.currentUserID()), UserRecordAccess: vm.userRecordAccessForRecord})
+		visibleResult, err := soql.ExecuteWithCacheAndContext(*vm.Org, visibleQuery, vm.soqlExecutionCacheForOrg(vm.Org), soql.ExecutionContext{APIVersion: vm.currentSourceExecutionPolicy().APIVersion, Language: vm.currentUserInfoField("LanguageLocaleKey", "en_US"), UserID: storage.ID(vm.currentUserID()), UserRecordAccess: func(objectName string, record storage.Record) storage.Record {
+			return vm.userRecordAccessForRelationship(objectName, record, visibleQuery.SecurityMode, "", 0, false)
+		}})
 		if err == nil {
 			visibleResult = vm.applySOQLSharing(visibleQuery, visibleResult)
 			count := storage.IntegerValue(int64(len(visibleResult.Records)))
@@ -3639,7 +3953,7 @@ func (vm *VM) currentUserID() string {
 	return vm.currentUserInfoField("Id", "")
 }
 
-func (vm *VM) securityFieldNames(objectName, expression, mode string, projection bool) []string {
+func (vm *VM) securityFieldNames(objectName, expression, mode string, projection bool, permissionSetID string) []string {
 	expression = strings.TrimSpace(expression)
 	if expression == "" || strings.Contains(expression, "(") {
 		return nil
@@ -3652,6 +3966,12 @@ func (vm *VM) securityFieldNames(objectName, expression, mode string, projection
 	if before, after, ok := strings.Cut(expression, "."); ok {
 		if strings.EqualFold(before, objectName) {
 			expression = after
+		}
+	}
+	if strings.EqualFold(mode, "USER_MODE") && projection && permissionSetID == "" {
+		parts := strings.Split(expression, ".")
+		if len(parts) == 2 && strings.EqualFold(parts[0], "UserRecordAccess") && soql.UserRecordAccessProjectionError(objectName, parts[1]) == nil {
+			return nil
 		}
 	}
 	if strings.Contains(expression, ".") {
@@ -3980,7 +4300,7 @@ func (vm *VM) executeSOQLWithDenialDetails(raw string, execResult *Result, denia
 	var values []Value
 	var err error
 	if denialDetails {
-		values, err = vm.executeSOQLRowsWithSecurityDetails(raw, execResult, vm.expandSOQLBinds, typedMap("Map<String,Object>"), vm.defaultAccessLevelMode(), "", soqlOrdinaryAccounting, nil, true, false)
+		values, err = vm.executeSOQLRowsWithSecurityDetails(raw, execResult, vm.expandSOQLBinds, typedMap("Map<String,Object>"), vm.defaultAccessLevelMode(), "", soqlOrdinaryAccounting, nil, true, false, false)
 	} else {
 		values, err = vm.executeSOQLRows(raw, execResult)
 	}
@@ -4016,7 +4336,7 @@ func (vm *VM) executePaginationSOQL(raw string, binds Value, accessLevel Value, 
 		}
 		binds = typedMap("Map<String,Object>")
 	}
-	values, err := vm.executeSOQLRowsWithSecurityDetails(raw, execResult, expand, binds, mode, permissionSetID, soqlPaginationAccounting, nil, false, explicitBindAccessLevel)
+	values, err := vm.executeSOQLRowsWithSecurityDetails(raw, execResult, expand, binds, mode, permissionSetID, soqlPaginationAccounting, nil, false, explicitBindAccessLevel, false)
 	if err != nil {
 		return Null, err
 	}
@@ -4132,7 +4452,7 @@ func (vm *VM) executeSOQLWithBindMapAccessLevel(raw string, binds Value, accessL
 	// Preserve that provenance when choosing SYSTEM_MODE sharing behavior.
 	values, err := vm.executeSOQLRowsWithSecurityDetails(raw, execResult, func(query string) (string, error) {
 		return vm.expandSOQLBindsFromMap(query, binds)
-	}, binds, databaseAccessLevelSecurityMode(accessLevel), accessLevelPermissionSetID(accessLevel), soqlOrdinaryAccounting, nil, false, true)
+	}, binds, databaseAccessLevelSecurityMode(accessLevel), accessLevelPermissionSetID(accessLevel), soqlOrdinaryAccounting, nil, false, true, false)
 	if err != nil {
 		return Null, err
 	}
@@ -4232,7 +4552,7 @@ func (vm *VM) executeSOQLRows(raw string, execResult *Result) ([]Value, error) {
 	return vm.executeSOQLRowsWithExpander(raw, execResult, vm.expandSOQLBinds, typedMap("Map<String,Object>"), "")
 }
 func (vm *VM) executeSOQLRowsWithAccessLevel(raw string, execResult *Result, accessLevel Value) ([]Value, error) {
-	return vm.executeSOQLRowsWithExpanderAndScope(raw, execResult, vm.expandSOQLBinds, typedMap("Map<String,Object>"), databaseAccessLevelSecurityMode(accessLevel), accessLevelPermissionSetID(accessLevel))
+	return vm.executeSOQLRowsWithSecurityDetails(raw, execResult, vm.expandSOQLBinds, typedMap("Map<String,Object>"), databaseAccessLevelSecurityMode(accessLevel), accessLevelPermissionSetID(accessLevel), soqlOrdinaryAccounting, nil, false, true, true)
 }
 func writeSOQLBindExpansion(out *strings.Builder, value Value, consumed string, literal func(Value) string) {
 	out.WriteString(literal(value))

@@ -1,0 +1,61 @@
+id	operation	lookup	purpose
+C01	describe map	NAME	case alias baseline
+C02	copy constructor	NAME	case alias after copy
+C03	putAll	NAME	case alias after transfer
+C04	clone	NAME	case alias after clone
+C05	copy constructor	MissingField__c	missing-key rejection
+C06	ordinary literal	NAME	case-sensitive boundary
+C07	copy constructor	Name	exact-key boundary
+C08	copy of copy	NAME	case lookup on second-generation copy
+C09	copy constructor	containsKey NAME	case membership on initial copy
+C10	copy of copy	containsKey NAME	case membership on second-generation copy
+C11	copy constructor put	get addedkey	case lookup of added key
+C12	copy constructor put	containsKey ADDEDKEY	case membership of added key
+C13	copy constructor put	get AddedKey	exact lookup of added key
+C14	copy constructor put	get NAME after overwrite	case lookup after overwrite
+C15	copy constructor put	containsKey NAME after overwrite	membership after overwrite
+C16	copy constructor remove	get NAME	case lookup after remove
+C17	copy constructor remove	containsKey NAME	case membership after remove
+C18	copy constructor clear	get NAME	lookup after clear boundary
+C19	copy constructor putAll	get ADDEDKEY	case lookup after putAll
+C20	ordinary put	get ADDEDKEY	ordinary map rejection twin
+C21	clone put	get addedkey	clone mutation case lookup
+C22	clone put	containsKey ADDEDKEY	clone mutation membership
+C23	copy constructor remove	remove NAME	case-insensitive removal result
+C24	copy constructor put	size after NAME overwrite	replacement size boundary
+C25	copy constructor put	added exact is null	added value identity
+C26	copy constructor put	size after added	insertion size
+C27	copy constructor put	get name remains Account.Name	overwrite original value
+C28	copy constructor put	get NAME is Contact.Name	overwrite exact value
+C29	copy constructor put	keySet contains AddedKey	key exposure
+C30	copy constructor remove	get Name is Account.Name	removal original value
+C31	copy constructor mutation	original describe Name remains	isolation boundary
+C32	cleared copy putAll	get AddedKey is Contact.Name	exact lookup after putAll
+C33	clone put	get AddedKey is Contact.Name	clone exact lookup
+C34	copy constructor put	get addedkey is Account.Name	added case value identity
+C35	copy constructor put lowercase	get ADDEDKEY	case-normalized lookup of added lower key
+C36	copy constructor put lowercase	containsKey AddedKey	case-normalized membership of added lower key
+C37	copy constructor remove lowercase	get ADDEDKEY	exact lower-key removal
+C38	copy of mutated copy	get ADDEDKEY	copy of mutated source
+C39	copy constructor put uppercase	get NAME is Account.Name	lookup normalizes before access
+C40	copy constructor remove lowercase	get NAME is null	removal of canonical lowercase key
+C41	copy constructor	keySet contains name	canonical stored key case
+C42	copy constructor	keySet contains Name	stored key rejection boundary
+C43	copy constructor	size matches source	copy key deduplication
+C44	clone	containsKey NAME	clone initial membership
+C45	ordinary copy	get NAME	ordinary copy case boundary
+C46	clone put lowercase	get ADDEDKEY	clone lower key lookup
+C47	copy of mutated copy	get AddedKey	copy of mixed-case key
+C48	original put lower	FinalException	addition rejection
+C49	original put mixed	FinalException	mixed-case addition rejection
+C50	original put existing	FinalException	replacement rejection
+C51	original put null	FinalException	null value rejection
+C52	original remove lower	FinalException	removal rejection
+C53	original remove missing	FinalException	missing-key removal rejection
+C54	original clear	accepted	clear boundary
+C55	original putAll	FinalException	bulk mutation rejection
+C56	original clear	size zero	accepted clear boundary
+C57	original clear then copy	get NAME null	copy reflects clearing
+C58	original clear then clone	get NAME null	clone reflects clearing
+C59	original clear then copy	size zero	copy does not synthesize fields
+C60	original clear then clone	size zero	clone does not synthesize fields

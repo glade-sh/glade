@@ -18,10 +18,17 @@ func (e *Engine) flowCurrentUserID() (storage.Value, bool) {
 }
 
 func (e *Engine) flowContextFormulaValue(expression string, frame *flowFrame) (storage.Value, bool) {
+	return e.flowContextFormulaValueWithCapturedBindings(expression, frame, false)
+}
+
+func (e *Engine) flowContextFormulaValueWithCapturedBindings(expression string, frame *flowFrame, captured bool) (storage.Value, bool) {
 	if frame == nil {
 		return storage.Value{}, false
 	}
 	record := flowFrameFormulaRecord(frame)
+	if captured {
+		record = flowFrameCapturedFormulaRecord(frame, expression)
+	}
 	tokens := tokenizeFormula(html.UnescapeString(expression))
 	bound := make([]formulaToken, 0, len(tokens))
 	for i := 0; i < len(tokens); i++ {

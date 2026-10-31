@@ -3,7 +3,6 @@ package apextest
 import (
 	"fmt"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/vm"
@@ -11,7 +10,7 @@ import (
 
 // Local ownership controls through actual test and request compilers. Native
 // reads remain pinned by ../vm/testdata/describe_sharing/org.tsv:2,4,5,7;
-// this does not change the fixture's carried native/local mutation difference.
+// getMap clear and its empty-copy boundary match schema_field_map_copy/org.tsv C54–C60.
 func TestFieldMapReadProjectAndRequestRoutes(t *testing.T) {
 	for _, api := range []string{"62.0", "67.0"} {
 		for _, namespace := range []string{"", "zzns"} {
@@ -51,12 +50,17 @@ global static void observe() {
 }
 public static Integer calls = 0;
 public static Schema.SObjectField token() { calls++; return Account.Name; }
-global static void rejectClear() { Schema.SObjectType.Account.fields.getMap().clear(); }
+global static void clearMap() {
+    Map<String,Schema.SObjectField> fields = Schema.SObjectType.Account.fields.getMap();
+    fields.clear();
+    System.assertEquals(0, fields.size());
+    System.assertEquals(0, fields.clone().size());
+}
 }`)
 				writeFile(t, filepath.Join(classes, "FieldMapOwnerTest.cls"), `@IsTest private class FieldMapOwnerTest {
 @IsTest static void first() { FieldMapOwner.observe(); }
 @IsTest static void next() { FieldMapOwner.observe(); }
-@IsTest static void rejectClear() { FieldMapOwner.rejectClear(); }
+@IsTest static void clearMap() { FieldMapOwner.clearMap(); }
 }`)
 				for _, name := range []string{"FieldMapOwner", "FieldMapOwnerTest"} {
 					writeFile(t, filepath.Join(classes, name+".cls-meta.xml"), "<ApexClass><apiVersion>"+api+"</apiVersion><status>Active</status></ApexClass>")
@@ -64,7 +68,7 @@ global static void rejectClear() { Schema.SObjectType.Account.fields.getMap().cl
 				index := loadTestIndex(t, root)
 				for range 2 {
 					run := Run(index, Options{Parallelism: 1, NoDiskCache: true})
-					if got := run.Summary(); got.Total != 3 || got.Passed != 2 || got.Failed != 1 {
+					if got := run.Summary(); got.Total != 3 || got.Passed != 3 || got.Failed != 0 {
 						for _, suite := range run.Suites {
 							for _, test := range suite.Cases {
 								if test.Problem != nil {
@@ -73,13 +77,6 @@ global static void rejectClear() { Schema.SObjectType.Account.fields.getMap().cl
 							}
 						}
 						t.Fatalf("project outcomes=%+v suites=%+v", got, run.Suites)
-					}
-					for _, suite := range run.Suites {
-						for _, test := range suite.Cases {
-							if test.MethodName == "rejectClear" && (test.Status != "fail" || test.Problem == nil || !strings.Contains(test.Problem.Type+": "+test.Problem.Message, "System.FinalException: Collection is read-only")) {
-								t.Fatalf("project rejection changed: %+v", test.Problem)
-							}
-						}
 					}
 				}
 				runtime, err := CompileProjectRuntimeForRequestWithSourceDigests(index, nil)
@@ -98,12 +95,12 @@ global static void rejectClear() { Schema.SObjectType.Account.fields.getMap().cl
 						t.Fatalf("request route: %v", err)
 					}
 				}
-				rejection, err := vm.CompileAnonymousWithOptions("FieldMapOwner.rejectClear();", vm.CompileOptions{APIVersion: api})
+				clear, err := vm.CompileAnonymousWithOptions("FieldMapOwner.clearMap();", vm.CompileOptions{APIVersion: api})
 				if err != nil {
 					t.Fatal(err)
 				}
-				if _, err := runner.newMachine().Execute(rejection); err == nil || !strings.Contains(err.Error(), "System.FinalException: Collection is read-only") {
-					t.Fatalf("request rejection changed: %v", err)
+				if _, err := runner.newMachine().Execute(clear); err != nil {
+					t.Fatalf("request clear: %v", err)
 				}
 			})
 		}

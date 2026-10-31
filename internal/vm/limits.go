@@ -311,6 +311,11 @@ func (vm *VM) checkLimit(name string, used, cap int) error {
 	}
 	if vm.limitMode == LimitModeStrict {
 		message := fmt.Sprintf("Too many %s: %d out of %d", name, used, cap)
+		// API 62/67 synchronous exhaustion reports a fixed message. Explicit
+		// local caps use the same synchronous error contract.
+		if name == "cpuTime" && vm.currentAsyncKind == "" {
+			message = "Apex CPU time limit exceeded"
+		}
 		if vm.limitCaps.nativeDefaults && vm.currentAsyncKind == "" {
 			switch name {
 			case "queries":

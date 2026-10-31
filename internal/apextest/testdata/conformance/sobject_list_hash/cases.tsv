@@ -1,0 +1,8 @@
+case	shape	boundary
+L01	five standard record singleton lists	empty records
+L02	four populated record singleton lists	string fields
+L03	empty, two-element, generic, null lists	collection boundaries
+L04	null field, JSON, multifield	construction boundaries
+L05	queried versus fresh record	equal values and hashes
+L06	null System.hashCode argument	rejection
+L07	populated, mixed and nested lists	compound boundaries

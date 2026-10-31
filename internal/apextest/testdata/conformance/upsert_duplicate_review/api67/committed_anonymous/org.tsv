@@ -1,0 +1,4 @@
+case	status	created	sets	items_per_set
+custom_insert_report	ok	true	1	2
+custom_insert_distinct	ok	true	0	0
+custom_insert_blocked	DUPLICATES_DETECTED	na	0	0

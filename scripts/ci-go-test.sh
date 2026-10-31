@@ -283,7 +283,7 @@ run_package_lane() {
 		args+=(-p=1)
 	fi
 	while IFS= read -r pkg; do
-		if [[ "${routing}" == "ci-remaining" && ( "${pkg}" == "./internal/lwc/compile" || "${pkg}" == "./internal/visualforce" ) ]]; then
+		if [[ "${routing}" == "ci-remaining" && ( "${pkg}" == "./internal/lwc/compile" || "${pkg}" == "./internal/visualforce" || "${pkg}" == "./internal/vm" ) ]]; then
 			continue
 		elif [[ "${lane}" == "remaining-go" && "${kind}" == "test" && "${pkg}" == "./internal/visualforce" ]]; then
 			visualforce_packages+=("${pkg}")
@@ -524,7 +524,8 @@ run_named_package_lane() {
 			run_package_lane "${lane}" test 30m
 			;;
 		remaining-go)
-			run_package_lane "${lane}" test 20m
+			# VM exceeded 20 minutes on main and PR; 30m provides at least 50% margin over 20m.
+			run_package_lane "${lane}" test 30m
 			;;
 		apextest)
 			echo "[ci] apextest must use dedicated apex-shard routing" >&2
@@ -556,7 +557,7 @@ run_ci_package_lane() {
 			run_package_lane "${lane}" test 30m '^(?:TestVFPageBootstrapsLightningOut|TestVFPageBootstrapsMultiWidgetLightningOut|TestLightningModulesServesCompiledJS|TestLightningModulesServesSiblingModuleWithoutJSExtension|TestLWCShellComponentRouteServesHTML|TestLWCShellRootRendersHomeWithFormalTabsAndBuilderLink|TestLWCShellBuilderRouteRendersBuilderNavigationLayoutAndSampleRecord|TestLWCShellTabRouteIncludesPreviewRouteCatalog|TestServerRootRendersLWCHomeWhenProjectHasLWCs|TestLWCShellRendersApplicationNavAndConsoleMode|TestLWCShellAppRouteFallsBackToApplicationDefaultTab|TestLWCShellUnsupportedCustomTabReturnsDiagnostic|TestLWCShellMixedPageDiagnosticsStillRendersValidComponents|TestL08SalesforceConformance)$'
 			;;
 		remaining-go)
-			run_package_lane "${lane}" test 20m '^(?:TestBuildCompileConfigAPIVersionMatrix|TestLWCModuleAvailabilityFollowsBundleAPIVersion|TestComplexTemplateExpressionsFollowBundleAPIVersion|TestHTMLDetailsNameFollowsBundleAPIVersion|TestCompilePreservesDeclaredAPI67|TestCompileProjectLWCBundles|TestCompileRewritesTemplateStylesheetImports|TestCompileEmitsSiblingJSModules|TestCompileEmitsUtilityOnlyLWCModules|TestCompileEmitsAdditionalHTMLTemplateModules|TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate|TestCompileEnablesLwcOnDirective|TestSetupBundleIncludesLabelsSibling|TestSetupImportMapIncludesLocalComponents|TestValidateRootFindsRepoCheckout|TestInstallFromCWDSkipsGlobalShareAsSource|TestInstallFromCopiesToolchain|TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare|TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser|TestLWCAPI67RegistrationRunsInBrowser)$' ci-remaining
+			run_package_lane "${lane}" test 30m '^(?:TestBuildCompileConfigAPIVersionMatrix|TestLWCModuleAvailabilityFollowsBundleAPIVersion|TestComplexTemplateExpressionsFollowBundleAPIVersion|TestHTMLDetailsNameFollowsBundleAPIVersion|TestCompilePreservesDeclaredAPI67|TestCompileProjectLWCBundles|TestCompileRewritesTemplateStylesheetImports|TestCompileEmitsSiblingJSModules|TestCompileEmitsUtilityOnlyLWCModules|TestCompileEmitsAdditionalHTMLTemplateModules|TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate|TestCompileEnablesLwcOnDirective|TestSetupBundleIncludesLabelsSibling|TestSetupImportMapIncludesLocalComponents|TestValidateRootFindsRepoCheckout|TestInstallFromCWDSkipsGlobalShareAsSource|TestInstallFromCopiesToolchain|TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare|TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser|TestLWCAPI67RegistrationRunsInBrowser)$' ci-remaining
 			;;
 		sema|repoguard)
 			run_named_package_lane "${lane}"
@@ -711,6 +712,22 @@ try:
                         summary["deferred"].append({"package": package, "test": test,
                             "skipReason": boundary_cause,
                             "reason": "captured native boundary; local replay is explicitly excluded by the case table"})
+                        continue
+                    # These case-alias routes require a case-insensitive filesystem.
+                    # Linux runs skip only the case-variant leaf, retaining the
+                    # passing parent and all other selector/consumer coverage.
+                    project_consumers = r"(?:Compile|CompileBatch|DevLWC|DevVF|ServerModules|ServerRuntime|ServerShims|ServerVendor)"
+                    cli_consumers = r"(?:DoctorCLI|ToolchainStatusCLI)"
+                    case_leaf = r"GLADE_(?:HOME|ROOT)_case"
+                    completed = r"(?:TestHomeProjectRoutesCompletedReadOnlyHome/(?:absent|inaccessible|read-only)/" + project_consumers + r"|TestHomeCLIStatusRoutesCompletedReadOnlyHome/(?:absent|inaccessible|read-only)/" + cli_consumers + ")/" + case_leaf
+                    pending = r"(?:TestHomeProjectRoutesTwoProcessesPendingInstall/install_then_" + project_consumers + r"|TestHomeCLIStatusRoutesTwoProcessesPendingInstall/install_then_" + cli_consumers + ")/" + case_leaf
+                    reason = None
+                    if lane == "gladecli-ci" and package == module + "/internal/gladecli":
+                        if re.fullmatch(completed, test):
+                            reason = r"\s+readonly\.go:\d+: case alias requires a case-insensitive filesystem\s*$"
+                        elif re.fullmatch(pending, test):
+                            reason = r"\s+process\.go:\d+: case-variant alias requires a case-insensitive filesystem; this filesystem is case-sensitive\s*$"
+                    if reason and any(re.fullmatch(reason, line) for output in test_output.get(identity, ()) for line in output.splitlines()):
                         continue
                     inputs, cause = deferred_dataweave.get(identity, ((), ""))
                     missing = [name for name in inputs if not os.environ.get(name)]
@@ -1079,29 +1096,30 @@ if not summary["valid"]:
 PY
 }
 
-filter_lwc_compile_discovery() {
+filter_node_integration_discovery() {
 	local discovery_path="$1"
 	local artifact_dir="$2"
+	local package_name="$3"
 	local authority_path="${artifact_dir}/node-integration-expected.tsv"
 	write_node_integration_expected "${authority_path}"
 	cp "${discovery_path}" "${artifact_dir}/discovery-full.txt"
-	python3 - "${artifact_dir}/discovery-full.txt" "${authority_path}" "${discovery_path}" <<'PY'
+	python3 - "${artifact_dir}/discovery-full.txt" "${authority_path}" "${discovery_path}" "${package_name}" <<'PY'
 import sys
 
-full_path, authority_path, discovery_path = sys.argv[1:]
+full_path, authority_path, discovery_path, package_name = sys.argv[1:]
 with open(full_path, encoding="utf-8") as source:
     discovered = source.read().splitlines()
 with open(authority_path, encoding="utf-8") as source:
     excluded = [name for package, name in (line.rstrip("\n").split("\t") for line in source)
-                if package == "github.com/glade-sh/glade/internal/lwc/compile"]
+                if package == package_name]
 if not excluded or len(excluded) != len(set(excluded)):
-    raise SystemExit("invalid LWC compile Node authority selection")
+    raise SystemExit("invalid Node authority selection for " + package_name)
 missing = sorted(set(excluded) - set(discovered))
 if missing:
-    raise SystemExit("LWC compile Node authority tests missing from discovery: " + ", ".join(missing))
+    raise SystemExit("Node authority tests missing from discovery: " + ", ".join(missing))
 remaining = sorted(set(discovered) - set(excluded))
 if not remaining or sorted(remaining + excluded) != discovered:
-    raise SystemExit("LWC compile and Node authority union does not match discovery")
+    raise SystemExit("package and Node authority union does not match discovery")
 with open(discovery_path, "w", encoding="utf-8") as target:
     target.write("\n".join(remaining) + "\n")
 PY
@@ -1128,8 +1146,13 @@ run_test_matrix_shard() {
 	fi
 	if [[ "${mode}" == "apex-ci" ]]; then
 		test_args=(-count=1 -timeout=90m)
-		index_pattern='^[0-5]$'
-		index_description='between 0 and 5'
+		if [[ "${shard_count}" == "12" ]]; then
+			index_pattern='^([0-9]|1[01])$'
+			index_description='between 0 and 11'
+		else
+			index_pattern='^[0-5]$'
+			index_description='between 0 and 5'
+		fi
 	fi
 	if [[ "${mode}" == "lwc-compile" ]]; then
 		test_args=(-count=1 -timeout=90m)
@@ -1141,7 +1164,12 @@ run_test_matrix_shard() {
 		index_pattern='^[0-3]$'
 		index_description='between 0 and 3'
 	fi
-	if [[ "${mode}" == "local-release" || "${mode}" == "lwc-compile" || "${mode}" == "visualforce" || "${lane}" == "apextest" ]]; then
+	if [[ "${mode}" == "vm-ci" || "${mode}" == "gladecli-ci" ]]; then
+		test_args=(-count=1 -timeout=30m)
+		index_pattern='^[0-3]$'
+		index_description='between 0 and 3'
+	fi
+	if [[ "${mode}" == "local-release" || "${mode}" == "lwc-compile" || "${mode}" == "visualforce" || "${mode}" == "vm-ci" || "${mode}" == "gladecli-ci" || "${lane}" == "apextest" ]]; then
 		package_summary_path="${artifact_dir}/package-summary.json"
 	fi
 	local artifact_suffix="invalid"
@@ -1179,7 +1207,7 @@ run_test_matrix_shard() {
 		while IFS= read -r pkg; do
 			lane_packages+=("${pkg}")
 		done < <(package_lane_packages "${lane}")
-		if [[ "${mode}" == "lwc-compile" || "${mode}" == "visualforce" ]]; then
+		if [[ "${mode}" == "lwc-compile" || "${mode}" == "visualforce" || "${mode}" == "vm-ci" ]]; then
 			if [[ "$(printf '%s\n' "${lane_packages[@]}" | awk -v pkg="${package_arg}" '$0 == pkg { n++ } END { print n+0 }')" -ne 1 ]]; then
 				echo "[ci] ${label} must occur exactly once in the remaining-go package lane" >&2
 				return 1
@@ -1208,8 +1236,8 @@ run_test_matrix_shard() {
 		return "${discovery_rc}"
 	fi
 	validate_package_discovery "${discovery_raw}" "${discovery}" "${package_name}" "${label}" "${strict_discovery}"
-	if [[ "${mode}" == "lwc-compile" ]]; then
-		filter_lwc_compile_discovery "${discovery}" "${artifact_dir}"
+	if [[ "${mode}" == "lwc-compile" || "${mode}" == "gladecli-ci" ]]; then
+		filter_node_integration_discovery "${discovery}" "${artifact_dir}" "${package_name}"
 	fi
 
 	if [[ -n "${CI_SHARD_PLANNER:-}" ]]; then
@@ -1232,7 +1260,9 @@ run_test_matrix_shard() {
 		# Successful discovery above establishes that this exact package has tests.
 		local shard_metadata="${artifact_dir}/package-test-metadata.tsv"
 		printf '%s\thas-tests\n' "${package_name}" >"${shard_metadata}"
-		validate_local_release_package_summary "${lane}" "${label} shard ${index}" "${events}" "${package_summary_path}" "${shard_metadata}" "${package_arg}" || validation_rc="$?"
+		local validation_lane="${lane}"
+		[[ "${mode}" == "gladecli-ci" ]] && validation_lane="gladecli-ci"
+		validate_local_release_package_summary "${validation_lane}" "${label} shard ${index}" "${events}" "${package_summary_path}" "${shard_metadata}" "${package_arg}" || validation_rc="$?"
 	fi
 	validate_shard_results "${selected}" "${events}" "${summary}" "${package_name}" "${label}" "${package_summary_path}" || validation_rc="$?"
 	if [[ "${native_rc}" -ne 0 || "${validation_rc}" -ne 0 ]]; then
@@ -1254,11 +1284,15 @@ run_apextest_matrix_shard() {
 		label="local-release Apex"
 		shard_count="2"
 		index_pattern='^[01]$'
-	elif [[ "${shard_count}" == "6" ]]; then
+	elif [[ "${shard_count}" == "6" || "${shard_count}" == "12" ]]; then
 		mode="apex-ci"
-		index_pattern='^[0-5]$'
+		if [[ "${shard_count}" == "12" ]]; then
+			index_pattern='^([0-9]|1[01])$'
+		else
+			index_pattern='^[0-5]$'
+		fi
 	elif [[ "${shard_count}" != "2" ]]; then
-		echo "CI_APEXTEST_SHARDS must be 2 or 6" >&2
+		echo "CI_APEXTEST_SHARDS must be 2, 6, or 12" >&2
 		return 2
 	fi
 	local artifact_suffix="invalid"
@@ -1271,8 +1305,8 @@ run_apextest_matrix_shard() {
 	# go test -vet=off -trimpath -list '^Test' "${apex_package}"
 	# planner+=(--history "${CI_APEXTEST_HISTORY_PATH}")
 	# run_json_with_heartbeat "go test Apex shard ${index}" "${events}" -timeout=90m -trimpath -run "${regex}" "${apex_package}"
-	# CI opts into six shards with CI_APEXTEST_SHARDS=6; local helpers default to
-	# two shards. About 280 measured-plan Apex minutes plus 25% test growth
+	# CI opts into six or twelve shards; local helpers default to two shards.
+	# About 280 measured-plan Apex minutes plus 25% test growth
 	# estimates 58 minutes per CI shard, or 87 with a 1.5x margin.
 	# Allow 90 minutes for cold history and runner variance.
 	# Local release trains retain their established two-shard partition.
@@ -1298,6 +1332,20 @@ run_visualforce_matrix_shard() {
 	local artifact_suffix="invalid"
 	[[ "${index}" =~ ^[0-3]$ ]] && artifact_suffix="${index}"
 	run_test_matrix_shard "${index}" "github.com/glade-sh/glade/internal/visualforce" "./internal/visualforce" "remaining-go" "Visualforce" "${CI_VISUALFORCE_ARTIFACT_DIR:-ci-artifacts/visualforce-${artifact_suffix}}" "${CI_VISUALFORCE_HISTORY_PATH:-}" "1" "visualforce" "4"
+}
+
+run_vm_matrix_shard() {
+	local index="${1:-}"
+	local artifact_suffix="invalid"
+	[[ "${index}" =~ ^[0-3]$ ]] && artifact_suffix="${index}"
+	run_test_matrix_shard "${index}" "github.com/glade-sh/glade/internal/vm" "./internal/vm" "remaining-go" "VM" "${CI_VM_ARTIFACT_DIR:-ci-artifacts/vm-${artifact_suffix}}" "${CI_VM_HISTORY_PATH:-}" "1" "vm-ci" "4"
+}
+
+run_gladecli_matrix_shard() {
+	local index="${1:-}"
+	local artifact_suffix="invalid"
+	[[ "${index}" =~ ^[0-3]$ ]] && artifact_suffix="${index}"
+	run_test_matrix_shard "${index}" "github.com/glade-sh/glade/internal/gladecli" "./internal/gladecli" "gladecli" "gladecli" "${CI_GLADECLI_ARTIFACT_DIR:-ci-artifacts/gladecli-${artifact_suffix}}" "${CI_GLADECLI_HISTORY_PATH:-}" "1" "gladecli-ci" "4"
 }
 
 refresh_test_history() {
@@ -1336,6 +1384,10 @@ SHARD_COUNT = int(sys.argv[5])
 SCRIPT = sys.argv[7]
 TEST_NAME = re.compile(r"Test[A-Za-z0-9_]*\Z")
 MAX_MILLIS = (1 << 63) - 1
+include_deferred = ((PACKAGE == "github.com/glade-sh/glade/internal/apextest"
+                     and os.environ.get("CI_APEXTEST_HISTORY_COMPLETE") == "1")
+                    or (PACKAGE == "github.com/glade-sh/glade/internal/vm"
+                        and os.environ.get("CI_VM_HISTORY_COMPLETE") == "1"))
 
 shard_dirs = sys.argv[8:]
 output_path = sys.argv[6]
@@ -1435,24 +1487,25 @@ try:
         selected_tests = selected["tests"]
         summary = load_json(os.path.join(shard_dir, "validation-summary.json"))
         summary_keys = ("valid", "expected", "passed", "errors")
-        if PACKAGE in ("github.com/glade-sh/glade/internal/apextest", "github.com/glade-sh/glade/internal/lwc/compile", "github.com/glade-sh/glade/internal/visualforce") and "deferred" in summary:
+        if PACKAGE in ("github.com/glade-sh/glade/internal/apextest", "github.com/glade-sh/glade/internal/lwc/compile", "github.com/glade-sh/glade/internal/visualforce", "github.com/glade-sh/glade/internal/vm", "github.com/glade-sh/glade/internal/gladecli") and "deferred" in summary:
             summary_keys += ("deferred",)
         require_exact_keys(summary, summary_keys, f"shard {index} validation summary")
         deferred = summary.get("deferred", [])
         if (not isinstance(deferred, list) or any(not isinstance(name, str) for name in deferred)
                 or deferred != sorted(set(deferred))):
             reject(f"shard {index} has an invalid deferred test list")
-        if deferred and PACKAGE != "github.com/glade-sh/glade/internal/apextest":
-            reject(f"shard {index} has deferred tests outside the Apex policy")
-        if PACKAGE in ("github.com/glade-sh/glade/internal/lwc/compile", "github.com/glade-sh/glade/internal/visualforce"):
+        if deferred and PACKAGE not in ("github.com/glade-sh/glade/internal/apextest", "github.com/glade-sh/glade/internal/vm"):
+            reject(f"shard {index} has deferred tests outside the Apex/VM policy")
+        if PACKAGE in ("github.com/glade-sh/glade/internal/lwc/compile", "github.com/glade-sh/glade/internal/visualforce", "github.com/glade-sh/glade/internal/vm", "github.com/glade-sh/glade/internal/gladecli"):
             # Recheck package terminals and nested skips/failures from raw
-            # events before accepting a browser package coverage/history union.
+            # events before accepting the package coverage/history union.
             with tempfile.TemporaryDirectory(prefix=f"glade-{PREFIX}-history-") as directory:
                 metadata = os.path.join(directory, "metadata.tsv")
                 checked = os.path.join(directory, "package-summary.json")
                 with open(metadata, "w", encoding="utf-8") as target:
                     target.write(PACKAGE + "\thas-tests\n")
-                result = subprocess.run(["bash", SCRIPT, "package-summary", "remaining-go", "history",
+                lane = "gladecli-ci" if PACKAGE == "github.com/glade-sh/glade/internal/gladecli" else "remaining-go"
+                result = subprocess.run(["bash", SCRIPT, "package-summary", lane, "history",
                     os.path.join(shard_dir, "events.json"), checked, metadata, PACKAGE],
                     capture_output=True, text=True)
                 if result.returncode != 0:
@@ -1460,14 +1513,15 @@ try:
         if deferred:
             # Recheck the existing exact prerequisite/reason policy against raw
             # events, rather than trusting a claimed deferral in the summary.
-            with tempfile.TemporaryDirectory(prefix="glade-apex-history-") as directory:
+            with tempfile.TemporaryDirectory(prefix=f"glade-{PREFIX}-history-") as directory:
                 metadata = os.path.join(directory, "metadata.tsv")
                 checked = os.path.join(directory, "package-summary.json")
                 with open(metadata, "w", encoding="utf-8") as target:
                     target.write(PACKAGE + "\thas-tests\n")
+                lane = "apextest" if PACKAGE == "github.com/glade-sh/glade/internal/apextest" else "remaining-go"
                 result = subprocess.run(["bash", "-c",
-                    'source "$1"; validate_local_release_package_summary apextest history "$2" "$3" "$4" "$5"',
-                    "history", SCRIPT, os.path.join(shard_dir, "events.json"), checked, metadata, PACKAGE],
+                    'source "$1"; validate_local_release_package_summary "$2" history "$3" "$4" "$5" "$6"',
+                    "history", SCRIPT, lane, os.path.join(shard_dir, "events.json"), checked, metadata, PACKAGE],
                     capture_output=True, text=True)
                 if result.returncode != 0:
                     reject(f"shard {index} deferred prerequisite validation failed: {result.stderr.strip()}")
@@ -1514,6 +1568,8 @@ try:
             if len(events) != 1 or events[0].get("Action") != expected_action:
                 reject(f"shard {index} test {name} does not have one {expected_action} terminal result")
             if expected_action == "skip":
+                if include_deferred:
+                    durations[name] = 0
                 continue
             elapsed = events[0].get("Elapsed")
             if isinstance(elapsed, bool) or not isinstance(elapsed, (int, float)) or not math.isfinite(elapsed) or elapsed < 0:
@@ -1530,7 +1586,10 @@ try:
             reject(f"shard {index} elapsed total is not finite")
         shard_elapsed.append(elapsed_total)
 
-    if len(durations) + len(all_deferred) != len(discovery) or sorted(list(durations) + all_deferred) != discovery:
+    if include_deferred:
+        if sorted(durations) != discovery:
+            reject("passing and zero-weight deferred terminal union does not exactly match all discovered tests")
+    elif len(durations) + len(all_deferred) != len(discovery) or sorted(list(durations) + all_deferred) != discovery:
         reject("passing and deferred terminal union does not exactly match all discovered tests")
     import statistics
     median = statistics.median(shard_elapsed)
@@ -1559,7 +1618,7 @@ try:
     history = {
         "version": 1,
         "package": PACKAGE,
-        "complete": not all_deferred,
+        "complete": not all_deferred or include_deferred,
         "tests": [{"name": name, "durationMillis": durations[name]} for name in sorted(durations)],
     }
     output_dir = os.path.dirname(output_path) or "."
@@ -1576,7 +1635,7 @@ try:
         except FileNotFoundError:
             pass
         raise
-    if all_deferred:
+    if all_deferred and not include_deferred:
         print(f"[ci] {LABEL} duration history incomplete: deferred={all_deferred}; using deterministic scheduling fallback")
     print(f"[ci] {LABEL} duration history refreshed: tests={len(discovery)} shard_elapsed={shard_elapsed} median={median:.6f}s")
 except Exception as error:
@@ -1586,21 +1645,33 @@ PY
 }
 
 refresh_apextest_history() {
-	# Keep the two-shard local train interface; CI uses output then all six dirs.
+	# Keep the two-shard local train interface; CI supplies output then all dirs.
 	if [[ "$#" -eq 3 ]]; then
 		refresh_test_history "github.com/glade-sh/glade/internal/apextest" "Apex" "apextest" "0" "2" "$3" "$1" "$2"
-	elif [[ "$#" -eq 7 ]]; then
+	elif [[ "$#" -eq 7 || "$#" -eq 13 ]]; then
 		local output="$1"
+		local shard_count="6"
+		if [[ "$#" -eq 13 ]]; then
+			shard_count="12"
+		fi
 		shift
-		refresh_test_history "github.com/glade-sh/glade/internal/apextest" "Apex" "apextest" "0" "6" "${output}" "$@"
+		refresh_test_history "github.com/glade-sh/glade/internal/apextest" "Apex" "apextest" "0" "${shard_count}" "${output}" "$@"
 	else
-		echo "usage: scripts/ci-go-test.sh apex-history-refresh {OUTPUT SHARD_0_DIR ... SHARD_5_DIR | SHARD_0_DIR SHARD_1_DIR OUTPUT}" >&2
+		echo "usage: scripts/ci-go-test.sh apex-history-refresh {OUTPUT SHARD_0_DIR ... SHARD_N_DIR | SHARD_0_DIR SHARD_1_DIR OUTPUT}" >&2
 		return 2
 	fi
 }
 
 refresh_sema_history() {
 	refresh_test_history "github.com/glade-sh/glade/internal/sema" "sema" "sema" "0" "2" "${3:-}" "${1:-}" "${2:-}"
+}
+
+refresh_vm_history() {
+	refresh_test_history "github.com/glade-sh/glade/internal/vm" "VM" "vm" "0" "4" "$@"
+}
+
+refresh_gladecli_history() {
+	refresh_test_history "github.com/glade-sh/glade/internal/gladecli" "gladecli" "gladecli" "0" "4" "$@"
 }
 
 bootstrap_visualforce_history() {
@@ -1847,6 +1918,24 @@ main() {
 			shift
 			refresh_test_history "github.com/glade-sh/glade/internal/visualforce" "Visualforce" "visualforce" "0" "4" "$@"
 			;;
+		vm-shard)
+			if [[ "$#" -ne 2 ]]; then echo "usage: scripts/ci-go-test.sh vm-shard INDEX (0-3)" >&2; return 2; fi
+			run_vm_matrix_shard "${2:-}"
+			;;
+		vm-history-refresh)
+			if [[ "$#" -ne 6 ]]; then echo "usage: scripts/ci-go-test.sh vm-history-refresh OUTPUT SHARD_0_DIR ... SHARD_3_DIR" >&2; return 2; fi
+			shift
+			refresh_vm_history "$@"
+			;;
+		gladecli-shard)
+			if [[ "$#" -ne 2 ]]; then echo "usage: scripts/ci-go-test.sh gladecli-shard INDEX (0-3)" >&2; return 2; fi
+			run_gladecli_matrix_shard "${2:-}"
+			;;
+		gladecli-history-refresh)
+			if [[ "$#" -ne 6 ]]; then echo "usage: scripts/ci-go-test.sh gladecli-history-refresh OUTPUT SHARD_0_DIR ... SHARD_3_DIR" >&2; return 2; fi
+			shift
+			refresh_gladecli_history "$@"
+			;;
 		visualforce-history-bootstrap)
 			if [[ "$#" -ne 3 || -z "$2" || -z "$3" ]]; then echo "usage: scripts/ci-go-test.sh visualforce-history-bootstrap OUTPUT EVENTS" >&2; return 2; fi
 			bootstrap_visualforce_history "$2" "$3"
@@ -1869,7 +1958,7 @@ main() {
 			validate_sema_equivalence "${2:-}" "${3:-}" "${4:-}" "${5:-}"
 			;;
 		*)
-			echo "usage: scripts/ci-go-test.sh [core|test|race|local-release|local-release-lane NAME|lane NAME|node-integration|apex-shard 0-5|apex-history-refresh OUTPUT SHARD_0_DIR ... SHARD_5_DIR (or SHARD_0_DIR SHARD_1_DIR OUTPUT)|sema-shard 0|1|lwc-compile-shard 0-7|lwc-compile-history-refresh OUTPUT SHARD_0_DIR ... SHARD_7_DIR|visualforce-shard 0-3|visualforce-history-refresh OUTPUT SHARD_0_DIR ... SHARD_3_DIR|visualforce-history-bootstrap OUTPUT EVENTS|package-summary LANE LABEL EVENTS SUMMARY METADATA PACKAGE...|sema-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT|sema-full|sema-equivalence SHARD_0_DIR SHARD_1_DIR FULL_DIR OUTPUT]" >&2
+			echo "usage: scripts/ci-go-test.sh [core|test|race|local-release|local-release-lane NAME|lane NAME|node-integration|apex-shard 0-11|apex-history-refresh OUTPUT SHARD_0_DIR ... SHARD_N_DIR (or SHARD_0_DIR SHARD_1_DIR OUTPUT)|sema-shard 0|1|lwc-compile-shard 0-7|lwc-compile-history-refresh OUTPUT SHARD_0_DIR ... SHARD_7_DIR|visualforce-shard 0-3|visualforce-history-refresh OUTPUT SHARD_0_DIR ... SHARD_3_DIR|vm-shard 0-3|vm-history-refresh OUTPUT SHARD_0_DIR ... SHARD_3_DIR|gladecli-shard 0-3|gladecli-history-refresh OUTPUT SHARD_0_DIR ... SHARD_3_DIR|visualforce-history-bootstrap OUTPUT EVENTS|package-summary LANE LABEL EVENTS SUMMARY METADATA PACKAGE...|sema-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT|sema-full|sema-equivalence SHARD_0_DIR SHARD_1_DIR FULL_DIR OUTPUT]" >&2
 			return 2
 			;;
 	esac

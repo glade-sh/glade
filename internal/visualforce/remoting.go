@@ -10,6 +10,7 @@ import (
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/typesys"
+	"github.com/glade-sh/glade/internal/vm"
 )
 
 type RemotingRequest struct {
@@ -165,10 +166,10 @@ func renderPageRemotingScript(node *MarkupNode, ctx *RenderContext) string {
 	}
 	methods := make([]RemoteActionMethod, 0)
 	seen := map[string]bool{}
-	for _, method := range ctx.VM.Methods {
+	ctx.VM.RangeRegisteredMethods(func(method vm.Method) {
 		dot := strings.LastIndex(method.Name, ".")
 		if dot < 0 || !hasRemoteActionAnnotation(method.Modifiers) {
-			continue
+			return
 		}
 		candidate := RemoteActionMethod{
 			ClassName:      method.Name[:dot],
@@ -179,11 +180,11 @@ func renderPageRemotingScript(node *MarkupNode, ctx *RenderContext) string {
 		}
 		key := strings.ToLower(method.Name)
 		if seen[key] || ValidateRemoteActionExposure(candidate) != nil {
-			continue
+			return
 		}
 		seen[key] = true
 		methods = append(methods, candidate)
-	}
+	})
 	metadata, err := BuildRemotingMetadata(page, methods)
 	if err != nil || len(metadata.Actions) == 0 {
 		return ""

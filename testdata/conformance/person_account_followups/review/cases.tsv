@@ -1,0 +1,18 @@
+case	axis	boundary
+name_null_only	new Account with explicit null LastName	no Name or person signal
+name_null_business	new Account with explicit null LastName	business Name supplied
+name_null_first	new Account with explicit null LastName	FirstName supplied
+name_omitted	new Account with omitted LastName	no Name or person signal
+user_bulk_new	USER_MODE statement upsert	2 new rows
+user_bulk_existing	USER_MODE statement upsert	2 existing rows
+user_bulk_mixed	USER_MODE statement upsert	new and existing
+user_selector_new	USER_MODE statement upsert Id selector	new null Id
+user_selector_existing	USER_MODE statement upsert Id selector	existing Id
+api_upsert_user	Database.upsert USER_MODE	new explicit null RecordTypeId
+api_upsert_system	Database.upsert SYSTEM_MODE	new explicit null RecordTypeId
+api_upsert_selector	Database.upsert Id selector	new explicit null RecordTypeId
+api_update_existing	Database.update false	existing explicit null RecordTypeId; message and DML accounting
+api_upsert_existing	Database.upsert false	existing explicit null RecordTypeId; message and DML accounting
+permission_readonly	USER_MODE upsert	read-only profile, scalar/list/Id selector new
+permission_editonly	USER_MODE upsert	read-edit profile without create, scalar/list/Id selector new
+api_upsert_bulk_access	Database.upsert selector and explicit modes	2 new null-type rows

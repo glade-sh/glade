@@ -1,0 +1,15 @@
+Map<String,Schema.SObjectField> d=Schema.SObjectType.Account.fields.getMap();
+Map<String,Schema.SObjectField> c=new Map<String,Schema.SObjectField>(d);
+System.debug('ROAD123|C41|'+c.keySet().contains('name'));
+System.debug('ROAD123|C42|'+c.keySet().contains('Name'));
+System.debug('ROAD123|C43|'+(c.size()==d.size()));
+Map<String,Schema.SObjectField> l=d.clone();
+System.debug('ROAD123|C44|'+l.containsKey('NAME'));
+Map<String,Schema.SObjectField> o=new Map<String,Schema.SObjectField>{'Name'=>Account.Name};
+Map<String,Schema.SObjectField> oc=new Map<String,Schema.SObjectField>(o);
+System.debug('ROAD123|C45|'+(oc.get('NAME')==null));
+l.put('addedkey',Contact.Name);
+System.debug('ROAD123|C46|'+(l.get('ADDEDKEY')==Contact.Name));
+c.put('AddedKey',Contact.Name);
+Map<String,Schema.SObjectField> cc=new Map<String,Schema.SObjectField>(c);
+System.debug('ROAD123|C47|'+(cc.get('AddedKey')==Contact.Name));

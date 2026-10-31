@@ -11,7 +11,7 @@ func TestExecStringTemplateAndTrimContractAPI67(t *testing.T) {
 		source     string
 	}{
 		{
-			name: "templateOverride",
+			name:       "templateOverride",
 			usesHelper: true,
 			source: `GladeTemplateValue value = new GladeTemplateValue();
 Map<String,Object> values = new Map<String,Object>{'value' => value};
@@ -20,7 +20,7 @@ System.assertEquals('override-sentinel', actual);
 `,
 		},
 		{
-			name: "directOverrideControl",
+			name:       "directOverrideControl",
 			usesHelper: true,
 			source: `GladeTemplateValue value = new GladeTemplateValue();
 String actual = value.toString();
@@ -28,7 +28,7 @@ System.assertEquals('override-sentinel', actual);
 `,
 		},
 		{
-			name: "templateStringControl",
+			name:       "templateStringControl",
 			usesHelper: false,
 			source: `Map<String,Object> values = new Map<String,Object>{'value' => 'plain'};
 String actual = '${value}'.template(values);
@@ -36,7 +36,7 @@ System.assertEquals('plain', actual);
 `,
 		},
 		{
-			name: "templateIntegerControl",
+			name:       "templateIntegerControl",
 			usesHelper: false,
 			source: `Map<String,Object> values = new Map<String,Object>{'value' => 22};
 String actual = '${value}'.template(values);
@@ -44,7 +44,7 @@ System.assertEquals('22', actual);
 `,
 		},
 		{
-			name: "templateEscapedControl",
+			name:       "templateEscapedControl",
 			usesHelper: false,
 			source: `Map<String,Object> values = new Map<String,Object>{'value' => 'plain'};
 String actual = '$${value}'.template(values);
@@ -52,7 +52,7 @@ System.assertEquals('${value}', actual);
 `,
 		},
 		{
-			name: "templateMissingKeyControl",
+			name:       "templateMissingKeyControl",
 			usesHelper: false,
 			source: `Boolean caught = false;
 try {
@@ -64,7 +64,7 @@ System.assertEquals(true, caught);
 `,
 		},
 		{
-			name: "trimBoundary",
+			name:       "trimBoundary",
 			usesHelper: false,
 			source: `String ctrl = String.fromCharArray(new List<Integer>{1});
 String text = ctrl + 'x' + ctrl;
@@ -73,7 +73,7 @@ System.assertEquals('x', actual);
 `,
 		},
 		{
-			name: "trimInteriorControl",
+			name:       "trimInteriorControl",
 			usesHelper: false,
 			source: `String ctrl = String.fromCharArray(new List<Integer>{1});
 String text = 'x' + ctrl + 'y';

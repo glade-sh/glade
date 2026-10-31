@@ -139,7 +139,7 @@ func semaHTTPMethodDiagnostic(typ typesys.TypeSymbol, receiver, method string, a
 		return diagnostic.Diagnostic{}, false
 	}
 	canonicalMethod := ""
-	for _, name := range []string{"getHeaderKeys", "getTimeout", "setTimeout", "setBody", "setBodyAsBlob", "setHeader", "setStatusCode", "send", "getHeader", "getParameter", "addHttpRequest", "invoke"} {
+	for _, name := range []string{"getHeaderKeys", "getTimeout", "setTimeout", "setBody", "setBodyAsBlob", "setHeader", "setStatusCode", "send", "getHeader", "getParameter", "addHttpRequest", "invoke", "beginInvoke"} {
 		if strings.EqualFold(method, name) {
 			canonicalMethod = name
 			break

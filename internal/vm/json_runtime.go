@@ -146,9 +146,6 @@ func (w *jsonValueWalker) convert(value Value, suppressObjectNulls bool) any {
 		if scalar, ok := jsonPlatformScalarFromValue(value); ok {
 			return scalar
 		}
-		if address, ok := jsonAddressFromValue(value, suppressObjectNulls, w.convert); ok {
-			return address
-		}
 		return jsonSObjectFromValue(value, suppressObjectNulls, w.convert, storage.DefaultRESTAPIVersion, value.Type)
 	default:
 		return nil
@@ -210,6 +207,21 @@ func jsonSerializationToken(value Value) (jsonSerializationIdentity, bool) {
 		return jsonSerializationIdentity{kind: value.Kind, token: value.Ref}, true
 	}
 	return jsonSerializationIdentity{}, false
+}
+
+// jsonRootMapHasNullKey checks the two runtime encodings for a null map key.
+// The second encoding is used by maps populated from unsaved SObjects.
+func jsonRootMapHasNullKey(value Value) bool {
+	if value.Kind != ValueMap {
+		return false
+	}
+	value = value.currentMapKeySet()
+	for _, key := range [...]string{mapKey(Null), "null:sobject-list-id"} {
+		if _, ok := value.Map[key]; ok && mapStoredKey(value, key).Kind == ValueNull {
+			return true
+		}
+	}
+	return false
 }
 
 func (vm *VM) jsonFromValueForSerialize(value Value, suppressObjectNulls bool) any {
@@ -397,11 +409,6 @@ func (vm *VM) jsonFromValueForSerializeWithState(value Value, suppressObjectNull
 		}
 		if scalar, ok := jsonPlatformScalarFromValue(value); ok {
 			return scalar
-		}
-		if address, ok := jsonAddressFromValue(value, suppressObjectNulls, func(item Value, suppress bool) any {
-			return vm.jsonFromValueForSerializeWithState(item, suppress, state)
-		}); ok {
-			return address
 		}
 		if serialized, handled := vm.invocableFlowActionJSONValue(value, suppressObjectNulls, state.active); handled {
 			return serialized
@@ -760,33 +767,6 @@ func jsonMarshalNoEscapeIndent(value any, prefix, indent string) ([]byte, error)
 		data = data[:len(data)-1]
 	}
 	return data, nil
-}
-
-// jsonAddressPropertyOrder is the native System.Address JSON property order:
-// alphabetical, with null properties kept even under suppressNulls (followup
-// rows J01-J11, standard and custom Address values at API 62.0 and 67.0).
-// stateCode and countryCode appear only for an Address that carries them.
-var jsonAddressPropertyOrder = []string{"city", "country", "countryCode", "geocodeAccuracy", "latitude", "longitude", "postalCode", "state", "stateCode", "street"}
-
-func jsonAddressFromValue(value Value, suppressObjectNulls bool, convert func(Value, bool) any) (any, bool) {
-	// Only a platform System.Address value is a compound. A standard Address
-	// SObject record keeps the ordinary SObject JSON shape.
-	systemAddress := value.Runtime == "System.Address" || strings.EqualFold(value.Type, "System.Address")
-	if value.Kind != ValueObject || !systemAddress || value.classInstance || value.projectClass {
-		return nil, false
-	}
-	out := orderedJSONObject{}
-	for _, name := range jsonAddressPropertyOrder {
-		item, ok := value.Fields[name]
-		if !ok {
-			if name == "countryCode" || name == "stateCode" {
-				continue
-			}
-			item = Null
-		}
-		out = append(out, orderedJSONField{name: name, value: convert(item, suppressObjectNulls)})
-	}
-	return out, true
 }
 
 func jsonSObjectFromValue(value Value, suppressObjectNulls bool, convert func(Value, bool) any, apiVersion, urlType string) any {

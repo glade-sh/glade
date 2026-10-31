@@ -1,0 +1,5 @@
+source_api	method	observation
+62.0	isolated	{"accountCount":0,"after":0,"before":0,"byId":0,"inserted":1,"missing":"List has no rows for assignment to SObject"}
+62.0	allData	{"accountCount":1,"standardCount":1}
+67.0	isolated	{"accountCount":0,"after":0,"before":0,"byId":0,"inserted":1,"missing":"List has no rows for assignment to SObject"}
+67.0	allData	{"accountCount":1,"standardCount":1}

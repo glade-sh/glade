@@ -1,0 +1,4 @@
+case_id	api	route	shape
+EMPTY_UNASSIGNED	62,67	anonymous,istest	declared output-only text collection with no assignment
+POPULATED_CONTROL	62,67	anonymous,istest	two-element output collection in same flow
+REJECT_UNKNOWN	62,67	deploy	undeclared assignment target

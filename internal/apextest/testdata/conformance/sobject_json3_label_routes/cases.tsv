@@ -1,0 +1,10 @@
+shape	purpose
+filterTechnology	translated label matches
+filterBanking	second translated label matches
+filterAgriculture	third translated label matches
+filterMaster	master label rejection when translation active
+filterMissing	unknown label rejection
+filterLike	translated LIKE boundary
+parentTechnology	parent Industry projection
+parentBanking	second parent Industry projection
+parentNull	null parent picklist boundary

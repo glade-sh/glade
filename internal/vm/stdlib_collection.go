@@ -102,7 +102,12 @@ func callMapStdlibMember(receiver Value, method string, args []Value) (Value, Va
 	}
 	if isSObjectFieldMapValue(receiver) {
 		switch method {
-		case "clear", "remove", "put", "putAll":
+		case "clear":
+			if flag := receiver.Fields["__sobject_field_getmap"]; flag.Kind == ValueBool && flag.Bool {
+				return Null, receiver, false, false, nil
+			}
+			return Null, receiver, false, true, fmt.Errorf("System.FinalException: Collection is read-only")
+		case "remove", "put", "putAll":
 			// R076: this platform map raises an uncatchable FinalException.
 			return Null, receiver, false, true, fmt.Errorf("System.FinalException: Collection is read-only")
 		}

@@ -1,0 +1,5 @@
+id	route	case
+C137_015	anonymous	all-or-none list insert, required Name missing in third row
+C137_029	anonymous	all-or-none list insert with USER_MODE, required Name missing in third row
+C137_099	istest	all-or-none list insert, required Name missing in third row
+C137_113	istest	all-or-none list insert with USER_MODE, required Name missing in third row

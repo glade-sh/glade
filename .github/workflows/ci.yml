@@ -48,6 +48,8 @@ jobs:
         with:
           go-version: "1.26.10"
           cache: false
+      - name: Check Go formatting
+        run: scripts/ci-gofmt.sh
       - name: Install checksum-pinned actionlint
         run: |
           scripts/install-actionlint.sh "$RUNNER_TEMP/actionlint"
@@ -176,12 +178,51 @@ jobs:
           path: ~/.cache/go-build
           key: ${{ steps.restore-go-build-cache.outputs.cache-primary-key }}
 
-  gladecli:
+  gladecli-history-input:
     if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 5
+    env:
+      CI_GLADECLI_HISTORY_PATH: /tmp/glade-gladecli-duration-history/gladecli-duration-history.json
+      CI_DURATION_HISTORY_CACHE_REF: ${{ github.event.pull_request.base.sha || github.event.before || github.sha }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Validate benchmark cache pair
+        if: github.event_name == 'workflow_dispatch'
+        run: scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"
+      - name: Restore gladecli duration history
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: /tmp/glade-gladecli-duration-history
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}gladecli-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-${{ hashFiles('go.sum') }}-${{ env.CI_DURATION_HISTORY_CACHE_REF }}
+      - name: Stage gladecli duration history
+        run: |
+          mkdir -p ci-artifacts/gladecli-history-input
+          if [[ -s "$CI_GLADECLI_HISTORY_PATH" ]]; then
+            cp "$CI_GLADECLI_HISTORY_PATH" ci-artifacts/gladecli-history-input/gladecli-duration-history.json
+          fi
+          : >ci-artifacts/gladecli-history-input/ready
+      - name: Upload gladecli duration history input
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: gladecli-history-input
+          path: ci-artifacts/gladecli-history-input/
+          if-no-files-found: error
+
+  gladecli:
+    if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
+    needs: gladecli-history-input
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
     env:
       GOMAXPROCS: "2"
+      CI_GLADECLI_HISTORY_PATH: /tmp/glade-gladecli-duration-history/gladecli-duration-history.json
+      CI_GLADECLI_ARTIFACT_DIR: ci-artifacts/gladecli-${{ matrix.shard }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Validate benchmark cache pair
@@ -197,7 +238,7 @@ jobs:
         continue-on-error: true
         with:
           path: ~/go/pkg/mod
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-gladecli-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-gladecli-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
           restore-keys: |
             ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-gladecli-${{ hashFiles('go.sum') }}-
             ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
@@ -207,11 +248,16 @@ jobs:
         continue-on-error: true
         with:
           path: ~/.cache/go-build
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-gladecli-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-gladecli-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
           restore-keys: |
             ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-gladecli-${{ hashFiles('go.sum') }}-
             ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
-      - run: scripts/ci-resource-run.sh ci-artifacts/go-test/resource-gladecli.json gladecli -- scripts/ci-go-test.sh lane gladecli
+      - name: Download shared gladecli duration history
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: gladecli-history-input
+          path: /tmp/glade-gladecli-duration-history
+      - run: scripts/ci-resource-run.sh "$CI_GLADECLI_ARTIFACT_DIR/resource-usage.json" "gladecli-${{ matrix.shard }}" -- scripts/ci-go-test.sh gladecli-shard "${{ matrix.shard }}"
       - name: Save Go module cache
         if: success()
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
@@ -230,10 +276,166 @@ jobs:
         if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: go-test-gladecli
-          path: |
-            ci-artifacts/go-test/test-gladecli.json
-            ci-artifacts/go-test/resource-gladecli.json
+          name: gladecli-shard-${{ matrix.shard }}
+          path: ci-artifacts/gladecli-${{ matrix.shard }}/
+          if-no-files-found: error
+
+  gladecli-history:
+    needs: gladecli
+    if: ${{ success() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Download successful gladecli shard evidence
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          pattern: gladecli-shard-*
+          path: /tmp/gladecli-history-input
+      - name: Refresh and guard gladecli duration history
+        run: scripts/ci-go-test.sh gladecli-history-refresh /tmp/glade-gladecli-duration-history/gladecli-duration-history.json /tmp/gladecli-history-input/gladecli-shard-0 /tmp/gladecli-history-input/gladecli-shard-1 /tmp/gladecli-history-input/gladecli-shard-2 /tmp/gladecli-history-input/gladecli-shard-3
+      - name: Save gladecli duration history
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: /tmp/glade-gladecli-duration-history
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}gladecli-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-${{ hashFiles('go.sum') }}-${{ github.sha }}
+      - name: Upload gladecli duration history evidence
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: gladecli-duration-history-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /tmp/glade-gladecli-duration-history/gladecli-duration-history.json
+          if-no-files-found: error
+
+  vm-history-input:
+    if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      CI_VM_HISTORY_PATH: /tmp/glade-vm-duration-history/vm-duration-history.json
+      CI_DURATION_HISTORY_CACHE_REF: ${{ github.event.pull_request.base.sha || github.event.before || github.sha }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Validate benchmark cache pair
+        if: github.event_name == 'workflow_dispatch'
+        run: scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"
+      - name: Restore vm duration history
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: /tmp/glade-vm-duration-history
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}vm-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-${{ hashFiles('go.sum') }}-${{ env.CI_DURATION_HISTORY_CACHE_REF }}
+      - name: Stage vm duration history
+        run: |
+          mkdir -p ci-artifacts/vm-history-input
+          if [[ -s "$CI_VM_HISTORY_PATH" ]]; then
+            cp "$CI_VM_HISTORY_PATH" ci-artifacts/vm-history-input/vm-duration-history.json
+          fi
+          : >ci-artifacts/vm-history-input/ready
+      - name: Upload vm duration history input
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: vm-history-input
+          path: ci-artifacts/vm-history-input/
+          if-no-files-found: error
+
+  vm:
+    if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
+    needs: vm-history-input
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
+    env:
+      GOMAXPROCS: "2"
+      CI_VM_HISTORY_PATH: /tmp/glade-vm-duration-history/vm-duration-history.json
+      CI_VM_ARTIFACT_DIR: ci-artifacts/vm-${{ matrix.shard }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Validate benchmark cache pair
+        if: github.event_name == 'workflow_dispatch'
+        run: scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: "1.26.10"
+          cache: false
+      - name: Restore Go module cache
+        id: restore-go-mod-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-vm-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
+          restore-keys: |
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-vm-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+      - name: Restore Go build cache
+        id: restore-go-build-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: ~/.cache/go-build
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-vm-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
+          restore-keys: |
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-vm-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+      - name: Download shared vm duration history
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: vm-history-input
+          path: /tmp/glade-vm-duration-history
+      - run: scripts/ci-resource-run.sh "$CI_VM_ARTIFACT_DIR/resource-usage.json" "vm-${{ matrix.shard }}" -- scripts/ci-go-test.sh vm-shard "${{ matrix.shard }}"
+      - name: Save Go module cache
+        if: success()
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ steps.restore-go-mod-cache.outputs.cache-primary-key }}
+      - name: Save Go build cache
+        if: success()
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: ~/.cache/go-build
+          key: ${{ steps.restore-go-build-cache.outputs.cache-primary-key }}
+      - name: Upload raw Go test events
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: vm-shard-${{ matrix.shard }}
+          path: ci-artifacts/vm-${{ matrix.shard }}/
+          if-no-files-found: error
+
+  vm-history:
+    needs: vm
+    if: ${{ success() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      CI_VM_HISTORY_COMPLETE: "1"
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Download successful vm shard evidence
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          pattern: vm-shard-*
+          path: /tmp/vm-history-input
+      - name: Refresh and guard vm duration history
+        run: scripts/ci-go-test.sh vm-history-refresh /tmp/glade-vm-duration-history/vm-duration-history.json /tmp/vm-history-input/vm-shard-0 /tmp/vm-history-input/vm-shard-1 /tmp/vm-history-input/vm-shard-2 /tmp/vm-history-input/vm-shard-3
+      - name: Save vm duration history
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: /tmp/glade-vm-duration-history
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}vm-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-${{ hashFiles('go.sum') }}-${{ github.sha }}
+      - name: Upload vm duration history evidence
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: vm-duration-history-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /tmp/glade-vm-duration-history/vm-duration-history.json
           if-no-files-found: error
 
   node-integration:
@@ -1187,7 +1389,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 1, 2, 3, 4, 5]
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
     env:
       CGO_ENABLED: "1"
       CI_TEST_BIN_DIR: /tmp/glade-test-binaries
@@ -1196,7 +1398,7 @@ jobs:
       GOMODCACHE: /tmp/go-mod-ci-apextest-${{ matrix.shard }}
       GOCACHE: /tmp/go-build-ci-apextest-${{ matrix.shard }}
       CI_APEXTEST_ARTIFACT_DIR: ci-artifacts/apextest-${{ matrix.shard }}
-      CI_APEXTEST_SHARDS: "6"
+      CI_APEXTEST_SHARDS: "12"
       CI_APEXTEST_HISTORY_PATH: /tmp/glade-apextest-duration-history/apextest-duration-history.json
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -1255,6 +1457,8 @@ jobs:
     if: ${{ success() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    env:
+      CI_APEXTEST_HISTORY_COMPLETE: "1"
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Download successful Apex shard evidence
@@ -1263,7 +1467,7 @@ jobs:
           pattern: apex-shard-*
           path: /tmp/apextest-history-input
       - name: Refresh and guard Apex duration history
-        run: scripts/ci-go-test.sh apex-history-refresh /tmp/glade-apextest-duration-history/apextest-duration-history.json /tmp/apextest-history-input/apex-shard-0 /tmp/apextest-history-input/apex-shard-1 /tmp/apextest-history-input/apex-shard-2 /tmp/apextest-history-input/apex-shard-3 /tmp/apextest-history-input/apex-shard-4 /tmp/apextest-history-input/apex-shard-5
+        run: scripts/ci-go-test.sh apex-history-refresh /tmp/glade-apextest-duration-history/apextest-duration-history.json /tmp/apextest-history-input/apex-shard-0 /tmp/apextest-history-input/apex-shard-1 /tmp/apextest-history-input/apex-shard-2 /tmp/apextest-history-input/apex-shard-3 /tmp/apextest-history-input/apex-shard-4 /tmp/apextest-history-input/apex-shard-5 /tmp/apextest-history-input/apex-shard-6 /tmp/apextest-history-input/apex-shard-7 /tmp/apextest-history-input/apex-shard-8 /tmp/apextest-history-input/apex-shard-9 /tmp/apextest-history-input/apex-shard-10 /tmp/apextest-history-input/apex-shard-11
       - name: Save Apex duration history
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         continue-on-error: true
@@ -1344,6 +1548,9 @@ jobs:
       - lwc-compile-history
       - visualforce-history
       - gladecli
+      - gladecli-history
+      - vm
+      - vm-history
       - node-integration
       - nested-sources
       - sema

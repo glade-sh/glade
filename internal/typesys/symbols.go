@@ -288,7 +288,11 @@ func buildWithWorkspaceSources(p project.Project, s schema.Schema, sources *Work
 	idx.sourceDigests = artifacts.SourceDigests
 	idx.apexMetadataInputs = sources.apexMetadataInputSet()
 
-	sort.Slice(idx.Types, func(i, j int) bool {
+	// Order by namespace and name; equal keys retain their append order.
+	// Loaded projects sort source paths, while dependency and shim order comes
+	// from the project input. This is a local determinism rule, not a claim
+	// about Salesforce collision resolution.
+	sort.SliceStable(idx.Types, func(i, j int) bool {
 		if idx.Types[i].Namespace == idx.Types[j].Namespace {
 			return idx.Types[i].Name < idx.Types[j].Name
 		}
@@ -392,7 +396,7 @@ func appendArtifactDependency(idx *Index, dep project.ManagedPackageDependency) 
 	for _, typ := range artifact.ApexTypes {
 		idx.Types = append(idx.Types, typeSymbolFromArtifact(namespace, version, artifact.SourceAPIVersion, typ))
 	}
-	idx.Objects = append(idx.Objects, artifact.Objects...)
+	idx.Objects = append(idx.Objects, clearDependencyStandardSnapshotAuthority(artifact.Objects)...)
 	idx.CustomMetadataRecords = append(idx.CustomMetadataRecords, artifact.CustomMetadataRecords...)
 	idx.CodeIntelSymbols = append(idx.CodeIntelSymbols, artifact.CodeIntelSymbols...)
 	idx.CodeIntelUses = append(idx.CodeIntelUses, artifact.CodeIntelUses...)
@@ -836,9 +840,29 @@ func namespaceTypeKey(namespace, name string) string {
 	return strings.ToLower(namespace + "." + name)
 }
 
+// A dependency snapshot describes its own org, not the host org. Keep its
+// fields but never transfer standard-object completeness to the host index.
+func clearDependencyStandardSnapshotAuthority(objects []schema.Object) []schema.Object {
+	out := objects
+	cloned := false
+	for i, object := range objects {
+		if !storage.IsKnownStandardObject(object.Name) || (!object.FieldsComplete && !object.CompleteSnapshot) {
+			continue
+		}
+		if !cloned {
+			out = append([]schema.Object(nil), objects...)
+			cloned = true
+		}
+		out[i].FieldsComplete = false
+		out[i].CompleteSnapshot = false
+	}
+	return out
+}
+
 func namespaceDependencySchema(in schema.Schema, namespace string) schema.Schema {
 	namespace = strings.TrimSpace(namespace)
 	if namespace == "" {
+		in.Objects = clearDependencyStandardSnapshotAuthority(in.Objects)
 		return in
 	}
 	out := in
@@ -866,6 +890,7 @@ func namespaceDependencySchema(in schema.Schema, namespace string) schema.Schema
 		}
 		out.Objects[i] = object
 	}
+	out.Objects = clearDependencyStandardSnapshotAuthority(out.Objects)
 	out.CustomMetadataRecords = make([]schema.CustomMetadataRecord, len(in.CustomMetadataRecords))
 	for i, record := range in.CustomMetadataRecords {
 		record.ObjectName = namespaceAPIName(namespace, record.ObjectName)
@@ -1720,7 +1745,9 @@ func updateApexFilesIncrementalWithLoadedProject(previous Index, changedPaths, d
 		idx.Dependencies = append([]DependencyInfo(nil), previous.Dependencies...)
 		idx.Dependencies[dependencyIndex].ApexTypes += dependencyTypeDelta
 	}
-	sort.Slice(idx.Types, func(i, j int) bool {
+	// Equal keys retain their existing order; duplicate incremental inputs
+	// fall back to a full build before reaching this sort.
+	sort.SliceStable(idx.Types, func(i, j int) bool {
 		if idx.Types[i].Namespace != idx.Types[j].Namespace {
 			return idx.Types[i].Namespace < idx.Types[j].Namespace
 		}

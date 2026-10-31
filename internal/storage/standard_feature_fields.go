@@ -2,6 +2,7 @@ package storage
 
 import (
 	"sort"
+	"strings"
 
 	"github.com/glade-sh/glade/internal/project"
 )
@@ -36,13 +37,17 @@ func standardOptionalFieldsNeedRepair(definition ObjectDefinition, signature str
 			return true
 		}
 	}
+	gatePresence, indexed := optionalGatePresence(definition, policy)
 	for _, gate := range policy.gates {
 		// An unknown shape retains existing catalog fields, but does not
 		// synthesize fields belonging only to an unrequested feature profile.
 		if !gate.Legacy && featureSignatureHas(signature, project.UnspecifiedStandardFieldShape) && !standardFieldPolicyGateEnabledForDefinition(gate, definition, signature) {
 			continue
 		}
-		_, exists := ResolveFieldName(definition, "", gate.Field.Name)
+		exists := gatePresence.has(gate.Field.Name)
+		if !indexed {
+			_, exists = ResolveFieldName(definition, "", gate.Field.Name)
+		}
 		enabled := standardFieldPolicyGateEnabledForDefinition(gate, definition, signature) || standardFieldPolicyPreservesConfiguredField(definition, gate.Field.Name)
 		if exists != enabled {
 			return true
@@ -59,6 +64,54 @@ func standardOptionalFieldsNeedRepair(definition ObjectDefinition, signature str
 		}
 	}
 	return false
+}
+
+// optionalGatePresence builds only a per-call index, never a cached verdict.
+// Simple ASCII names have the same existence result under ResolveFieldName as
+// an ASCII case-folded exact key. Special names and non-ASCII keys fall back
+// to the full resolver, including its namespace and location-component rules.
+type optionalGateIndex struct {
+	names   [64]string
+	present uint64
+	count   int
+}
+
+func (index *optionalGateIndex) has(name string) bool {
+	for i := 0; i < index.count; i++ {
+		if index.names[i] == name {
+			return index.present&(uint64(1)<<i) != 0
+		}
+	}
+	return false
+}
+
+func optionalGatePresence(definition ObjectDefinition, policy *standardFieldPolicyObject) (optionalGateIndex, bool) {
+	var index optionalGateIndex
+	if len(policy.gates) < 8 || len(policy.gates) > len(index.names) {
+		return index, false
+	}
+	for _, gate := range policy.gates {
+		name := gate.Field.Name
+		if name == "" || strings.Contains(name, "__") || strings.EqualFold(name, "Id") || !relationshipNameASCII(name) {
+			return index, false
+		}
+		index.names[index.count] = name
+		index.count++
+	}
+	for name := range definition.Fields {
+		if !relationshipNameASCII(name) {
+			return index, false
+		}
+		if gate, ok := standardPolicyLookup(policy.gates, name); ok {
+			for i := 0; i < index.count; i++ {
+				if index.names[i] == gate.Field.Name {
+					index.present |= uint64(1) << i
+					break
+				}
+			}
+		}
+	}
+	return index, true
 }
 
 func removeDisabledStandardOptionalFields(definition *ObjectDefinition, signature string) {

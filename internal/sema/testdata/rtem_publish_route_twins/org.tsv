@@ -1,0 +1,29 @@
+api	route	case	compiled	observation
+62.0	named	file_scalar	true	accepted
+62.0	named	file_schema	true	accepted
+62.0	named	file_list	true	accepted
+62.0	named	file_callback	true	accepted
+62.0	named	report_scalar	false	DML operation Insert not allowed on ReportEvent; Argument must be a Platform Event sObject type.
+62.0	named	account_scalar	false	Argument must be a Platform Event sObject type.
+62.0	named	login_scalar	false	DML operation Insert not allowed on LoginEvent; Argument must be a Platform Event sObject type.
+62.0	istest	file_scalar	true	accepted
+62.0	istest	file_schema	true	accepted
+62.0	istest	file_list	true	accepted
+62.0	istest	file_callback	true	accepted
+62.0	istest	report_scalar	false	DML operation Insert not allowed on ReportEvent; Argument must be a Platform Event sObject type.
+62.0	istest	account_scalar	false	Argument must be a Platform Event sObject type.
+62.0	istest	login_scalar	false	DML operation Insert not allowed on LoginEvent; Argument must be a Platform Event sObject type.
+67.0	named	file_scalar	true	accepted
+67.0	named	file_schema	true	accepted
+67.0	named	file_list	true	accepted
+67.0	named	file_callback	true	accepted
+67.0	named	report_scalar	false	DML operation Insert not allowed on ReportEvent; Argument must be a Platform Event sObject type.
+67.0	named	account_scalar	false	Argument must be a Platform Event sObject type.
+67.0	named	login_scalar	false	DML operation Insert not allowed on LoginEvent; Argument must be a Platform Event sObject type.
+67.0	istest	file_scalar	true	accepted
+67.0	istest	file_schema	true	accepted
+67.0	istest	file_list	true	accepted
+67.0	istest	file_callback	true	accepted
+67.0	istest	report_scalar	false	DML operation Insert not allowed on ReportEvent; Argument must be a Platform Event sObject type.
+67.0	istest	account_scalar	false	Argument must be a Platform Event sObject type.
+67.0	istest	login_scalar	false	DML operation Insert not allowed on LoginEvent; Argument must be a Platform Event sObject type.

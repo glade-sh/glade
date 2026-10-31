@@ -137,7 +137,7 @@ func TestStaticRecordAliasLoopNativeRoutes(t *testing.T) {
 				runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 				for _, mutation := range []string{"assignment", "put"} {
 					var last uint64
-					for _, count := range []int{200, 800} {
+					for _, count := range []int{200, 800, 4000} {
 						machine := runner.newMachine()
 						setup := fmt.Sprintf(`StaticAliasProbe.rows = new List<Account>();
 							for (Integer i = 0; i < %d; i++) {
@@ -169,7 +169,8 @@ func TestStaticRecordAliasLoopNativeRoutes(t *testing.T) {
 							for (Account row : StaticAliasProbe.rows) { System.assertEquals('processed', row.Description); }`, 2*count))
 						stats := recorder.Snapshot()
 						replacement := assertStaticRecordAliasReplacementMeasured(t, stats)
-						visits := replacement + stats.StaticAlias.RefScanVisits + stats.StaticAlias.LocationVisits + stats.ScopeAlias.ShortcutVisits
+						visits := replacement + stats.StaticAlias.RefScanVisits + stats.StaticAlias.LocationVisits +
+							stats.ScopeAlias.Roots + stats.ScopeAlias.RecursiveVisits + stats.ScopeAlias.ShortcutVisits + stats.ScopeAlias.ElisionFallbackWalks
 						t.Logf("%s records=%d replacement=%d counted_visits=%d", mutation, count, replacement, visits)
 						if visits > uint64(200*count) || (last != 0 && visits > 6*last) {
 							t.Errorf("%s records=%d counted_visits=%d prior=%d; want linear work", mutation, count, visits, last)

@@ -1,0 +1,4 @@
+id	route	case
+future	executeAnonymous	enqueue future, observe its CPU cap in Task
+rows	executeAnonymous	insert and query 1000 synthetic Accounts, report CPU deltas
+exhaustion	executeAnonymous	uncatchable CPU exhaustion; existing native fixture

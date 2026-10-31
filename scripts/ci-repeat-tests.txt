@@ -1,0 +1,7 @@
+# Explicit timing, suspension, and async drain depth checks.
+./internal/vm TestLiteralSplitStringAndPatternRoutesAfterSuspension
+./internal/vm TestQueueableInheritedDepthOutsideStopTestRoutes
+./internal/apextest TestQueueableInheritedDepthOutsideStopTestAnonymousAndIsTestProjectRoutes
+./internal/apextest TestAsyncStackDepthAnonymousAndStopTestNativeConformance
+./internal/testdaemon TestGracefulStopClientBoundsUnresponsiveRun
+./internal/gladecli TestGracefulStopWatchIdleAndPerTestTimeoutRoutes

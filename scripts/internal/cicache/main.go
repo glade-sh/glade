@@ -1302,7 +1302,10 @@ type requiredUpload struct {
 
 var requiredUploads = []requiredUpload{
 	{"browser.yml", "browser", "browser-${{ github.run_id }}-${{ github.run_attempt }}", []string{"ci-artifacts/browser/**"}},
-	{"ci.yml", "gladecli", "go-test-gladecli", []string{"ci-artifacts/go-test/test-gladecli.json", "ci-artifacts/go-test/resource-gladecli.json"}},
+	{"ci.yml", "gladecli", "gladecli-shard-${{ matrix.shard }}", []string{"ci-artifacts/gladecli-${{ matrix.shard }}/"}},
+	{"ci.yml", "vm", "vm-shard-${{ matrix.shard }}", []string{"ci-artifacts/vm-${{ matrix.shard }}/"}},
+	{"ci.yml", "gladecli-history", "gladecli-duration-history-${{ github.run_id }}-${{ github.run_attempt }}", []string{"/tmp/glade-gladecli-duration-history/gladecli-duration-history.json"}},
+	{"ci.yml", "vm-history", "vm-duration-history-${{ github.run_id }}-${{ github.run_attempt }}", []string{"/tmp/glade-vm-duration-history/vm-duration-history.json"}},
 	{"ci.yml", "node-integration", "go-test-node-integration", []string{"ci-artifacts/go-test-node-integration/test-node-integration.json", "ci-artifacts/go-test-node-integration/expected.txt", "ci-artifacts/go-test-node-integration/discovery.txt", "ci-artifacts/go-test-node-integration/validation-summary.json", "ci-artifacts/go-test-node-integration/resource-usage.json"}},
 	{"ci.yml", "sema", "sema-shard-${{ matrix.shard }}", []string{"ci-artifacts/sema-${{ matrix.shard }}/"}},
 	{"ci.yml", "sema-history", "sema-duration-history-${{ github.run_id }}-${{ github.run_attempt }}", []string{"/tmp/glade-sema-duration-history/sema-duration-history.json"}},

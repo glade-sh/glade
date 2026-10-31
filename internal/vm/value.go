@@ -968,13 +968,26 @@ func sObjectValuesEqual(left, right Value, seen map[[2]uint64]bool) bool {
 // Equality and hashing use the same field projection. Captured Schema
 // Checkbox presence is separate from assignment; explicit nulls remain present.
 func sObjectEqualityFieldIncluded(owner Value, field string, value Value) bool {
-	// A cleared record identity is absent from the value projection. Keep the
-	// explicit field itself available to DML/JSON and retain ordinary nulls.
-	if strings.EqualFold(field, "Id") && value.Kind == ValueNull {
+	// Captured standard records distinguish an explicitly cleared identity
+	// from an absent field. Keep other record shapes on their existing path.
+	if strings.EqualFold(field, "Id") && value.Kind == ValueNull &&
+		!(capturedStandardHashRecord(owner) && isExplicitSObjectField(owner, field)) {
 		return false
 	}
 	return !isInternalSObjectField(field) && sObjectEqualityFieldVisible(owner, field) &&
 		(schemaLoadedCheckboxEqualityField(owner, field, value) || !sObjectMissingFieldEqualsImplicitDefault(owner, field, value))
+}
+
+func capturedStandardHashRecord(value Value) bool {
+	if value.Kind != ValueObject || value.classInstance {
+		return false
+	}
+	switch strings.ToLower(value.Type) {
+	case "account", "contact", "opportunity", "lead", "case":
+		return true
+	default:
+		return false
+	}
 }
 
 // System fields hydrated for runtime bookkeeping do not widen an SObject's

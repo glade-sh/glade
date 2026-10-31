@@ -1,0 +1,7 @@
+api	source	result
+62.0	profile-source	ACCEPTED
+62.0	rejected-label-Profiles	In field: recordType - no RecordType named PersonAccount.Care Label found
+62.0	rejected-namespace-Profiles	In field: recordType - no RecordType named PersonAccount.pkg__Care found
+67.0	profile-source	ACCEPTED
+67.0	rejected-label-Profiles	In field: recordType - no RecordType named PersonAccount.Care Label found
+67.0	rejected-namespace-Profiles	In field: recordType - no RecordType named PersonAccount.pkg__Care found

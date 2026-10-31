@@ -499,7 +499,7 @@
       "routes": {
         "anonymous": {
           "id": "C126HASH_006",
-          "stage": "carried",
+          "stage": "observed",
           "sourceSha256": {
             "anonymous": "906fce4eeafa8d35b24db4ec3081ef8f8b4c0fe00dc2197ead17f5e40ba4e269"
           },
@@ -533,13 +533,11 @@
             "68.0": "fc8d23182efaa0be001c4d034503313f69f0f93b758f34b969fd9868a694583e"
           },
           "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nAccount a=new Account(Name='Synthetic');Account b=new Account(Name='Synthetic');o.put('first',System.hashCode(a));o.put('second',System.hashCode(b));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126HASH_006|'+JSON.serialize(o));",
-          "objects": {},
-          "carryReason": "Exact numeric SObject hash relation needs more native captures; known gap in the frozen release scope.",
-          "carryOwner": "classify the one shot baselines and the six vetted candidate repos"
+          "objects": {}
         },
         "isTest": {
           "id": "C126HASH_006",
-          "stage": "carried",
+          "stage": "observed",
           "sourceSha256": {
             "class:C126Test": "8401f8d044ac51bb7553aa5a657744fcfcb38a6fa71ed7899319cb8f9d3c7f30"
           },
@@ -578,9 +576,7 @@
           "tests": [
             "C126Test"
           ],
-          "objects": {},
-          "carryReason": "Exact numeric SObject hash relation needs more native captures; known gap in the frozen release scope.",
-          "carryOwner": "classify the one shot baselines and the six vetted candidate repos"
+          "objects": {}
         }
       }
     }

@@ -1,0 +1,33 @@
+api	route	case	compiled	message
+62.0	anonymous	account_missing	false	"Compilation failed at Line 1 column 26 with the error:
+
+Variable does not exist: BogusField__c"
+62.0	isTest	account_missing	false	Variable does not exist: BogusField__c
+62.0	anonymous	contact_missing	false	"Compilation failed at Line 1 column 26 with the error:
+
+Variable does not exist: OtherMissing__c"
+62.0	isTest	contact_missing	false	Variable does not exist: OtherMissing__c
+62.0	anonymous	account_standard	true	
+62.0	isTest	account_standard	true	
+62.0	anonymous	contact_standard	true	
+62.0	isTest	contact_standard	true	
+62.0	anonymous	account_custom	true	
+62.0	isTest	account_custom	true	
+62.0	anonymous	contact_custom	true	
+62.0	isTest	contact_custom	true	
+67.0	anonymous	account_missing	false	"Compilation failed at Line 1 column 26 with the error:
+
+Variable does not exist: BogusField__c"
+67.0	isTest	account_missing	false	Variable does not exist: BogusField__c
+67.0	anonymous	contact_missing	false	"Compilation failed at Line 1 column 26 with the error:
+
+Variable does not exist: OtherMissing__c"
+67.0	isTest	contact_missing	false	Variable does not exist: OtherMissing__c
+67.0	anonymous	account_standard	true	
+67.0	isTest	account_standard	true	
+67.0	anonymous	contact_standard	true	
+67.0	isTest	contact_standard	true	
+67.0	anonymous	account_custom	true	
+67.0	isTest	account_custom	true	
+67.0	anonymous	contact_custom	true	
+67.0	isTest	contact_custom	true	

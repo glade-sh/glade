@@ -229,6 +229,21 @@ func validateFields(definition storage.ObjectDefinition, namespace string, recor
 		if isCalculatedOrSummaryField(definition.Fields[canonical]) {
 			return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{canonical}, "dml: field %s.%s is not writeable", record.Object, canonical)
 		}
+		fieldDef := definition.Fields[canonical]
+		// API 62/67 reject an explicit null for a non-nillable custom
+		// checkbox with default true on insert; omission uses the default.
+		// linked_checkbox_default_true/org.tsv:7,30.
+		if len(existing) == 0 && record.HasExplicitNull(canonical) &&
+			hasSuffixFold(definition.APIName, "__c") && !storage.IsCustomSettingDefinition(definition) &&
+			hasSuffixFold(canonical, "__c") && fieldDef.Type == storage.FieldBoolean &&
+			(fieldDef.Nillable != nil && !*fieldDef.Nillable || fieldDef.Nillable == nil && strings.EqualFold(fieldDef.DisplayType, "boolean")) &&
+			strings.EqualFold(strings.TrimSpace(fieldDef.DefaultValue), "true") {
+			label := strings.TrimSpace(fieldDef.Label)
+			if label == "" {
+				label = canonical
+			}
+			return dmlErrorf("INVALID_TYPE_ON_FIELD_IN_RECORD", []string{canonical}, "%s: value not of required type: ", label)
+		}
 	}
 	return nil
 }
@@ -301,6 +316,11 @@ func validateScaleZeroNumberField(fieldName string, field storage.Field, value s
 }
 
 func validateRestrictedPicklistField(objectName, fieldName string, field storage.Field, value storage.Value) error {
+	if field.RestrictedPicklist {
+		if handled, err := validateCapturedUserLocale(objectName, fieldName, field, value); handled {
+			return err
+		}
+	}
 	if !field.RestrictedPicklist || (field.Type != storage.FieldPicklist && field.Type != storage.FieldMultiPicklist) {
 		return nil
 	}

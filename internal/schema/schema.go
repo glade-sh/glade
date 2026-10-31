@@ -24,8 +24,14 @@ type Schema struct {
 }
 
 type Object struct {
-	Name                   string            `json:"name"`
-	Partial                bool              `json:"partial,omitempty"`
+	Name    string `json:"name"`
+	Partial bool   `json:"partial,omitempty"`
+	// FieldsComplete is an explicit snapshot assertion that the object's
+	// field list is complete. Omission keeps unknown fields open.
+	FieldsComplete bool `json:"fieldsComplete,omitempty"`
+	// CompleteSnapshot binds a verified assertion to this schema generation.
+	// Both flags are required so older inferred markers remain open.
+	CompleteSnapshot       bool              `json:"completeSnapshot,omitempty"`
 	Label                  string            `json:"label,omitempty"`
 	PluralLabel            string            `json:"pluralLabel,omitempty"`
 	SharingModel           string            `json:"sharingModel,omitempty"`
@@ -385,8 +391,13 @@ func LoadProject(p project.Project) (Schema, error) {
 	}
 	for i := range snapshotObjects {
 		object := snapshotObjects[i]
+		// The hash verifies integrity, not completeness. Only an explicit
+		// assertion on a non-partial snapshot establishes authority.
+		object.CompleteSnapshot = object.FieldsComplete && !object.Partial
 		if existing := byName[object.Name]; existing != nil {
 			mergeObjectMetadata(existing, object)
+			existing.FieldsComplete = existing.FieldsComplete || object.FieldsComplete
+			existing.CompleteSnapshot = existing.CompleteSnapshot || object.CompleteSnapshot
 		} else {
 			byName[object.Name] = &object
 		}

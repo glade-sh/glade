@@ -257,10 +257,11 @@ func LookupPlatformChildRelationship(parent ObjectDefinition, relationship strin
 }
 
 // SupportsUserRecordAccessRelationship covers the captured record-bearing
-// standard parents and ordinary custom objects. User and metadata are excluded.
+// standard parents and ordinary custom objects. Uncaptured standard objects are excluded.
 func SupportsUserRecordAccessRelationship(objectName string) bool {
 	switch strings.ToLower(objectName) {
-	case "account", "case", "contact", "opportunity":
+	case "account", "case", "contact", "opportunity", "lead", "campaign", "contract", "asset",
+		"product2", "pricebook2", "order", "opportunitylineitem":
 		return true
 	}
 	return strings.HasSuffix(strings.ToLower(objectName), "__c")

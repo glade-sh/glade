@@ -1356,6 +1356,7 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 	{Name: "CartExtension.CartItem", SuperClass: "CartExtension.CommerceObject"},
 	{Name: "CartExtension.CartCalculate", Modifiers: []string{"virtual"}, Methods: []StandardMethodSpec{
 		{Name: "calculate", ReturnType: "void", Parameters: []string{"CartExtension.CartCalculateOrchestratorRequest"}, Modifiers: []string{"virtual"}},
+		{Name: "shippingPromotions", ReturnType: "void", Parameters: []string{"CartExtension.CartCalculateCalculatorRequest"}},
 	}},
 	// Commerce-enabled API62/67 native rows also expose the inventory
 	// calculator as abstract with a concrete, overridable calculate method.

@@ -11,7 +11,7 @@ import (
 )
 
 // Require the captured business-default fallback in the restored org.
-const dapCacheVersion = 11
+const dapCacheVersion = 13
 
 func loadDAPStartupState(projectRoot string) (storage.OrgState, apextest.CompiledProjectRuntime, string, error) {
 	root, err := filepath.Abs(projectRoot)

@@ -1,0 +1,9 @@
+case_id	api_version	body	result
+initial_62	62.0	public class RoadUnique62 {}	created
+duplicate_62	62.0	public class RoadUnique62 { public static Integer marker = 2; }	DUPLICATE_VALUE
+case_duplicate_62	62.0	public class roadunique62 {}	DUPLICATE_VALUE
+boundary_62	62.0	public class RoadOther62 {}	created
+initial_67	67.0	public class RoadUnique67 {}	created
+duplicate_67	67.0	public class RoadUnique67 { public static Integer marker = 2; }	DUPLICATE_VALUE
+case_duplicate_67	67.0	public class roadunique67 {}	DUPLICATE_VALUE
+boundary_67	67.0	public class RoadOther67 {}	created

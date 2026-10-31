@@ -1,0 +1,5 @@
+source_api	route	message
+62.0	anonymous	Non static method cannot be referenced from a static context: int System.hashCode()
+62.0	isTest	Non static method cannot be referenced from a static context: int System.hashCode()
+67.0	anonymous	Non static method cannot be referenced from a static context: int System.hashCode()
+67.0	isTest	Non static method cannot be referenced from a static context: int System.hashCode()

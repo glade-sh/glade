@@ -1,0 +1,7 @@
+[
+ {"id":"external_base","name":"ProbeExternalBase","source":"public class ProbeExternalBase { public static void run(CartExtension.CartCalculate value, CartExtension.CartCalculateCalculatorRequest r) { value.shippingPromotions(r); } }"},
+ {"id":"external_subclass","name":"ProbeExternalSubclass","source":"public class ProbeExternalSubclass { public class Child extends CartExtension.CartCalculate {} public static void run(Child value, CartExtension.CartCalculateCalculatorRequest r) { value.shippingPromotions(r); } }"},
+ {"id":"external_wrong_type","name":"ProbeExternalWrong","source":"public class ProbeExternalWrong { public static void run(CartExtension.CartCalculate value) { value.shippingPromotions('wrong'); } }"},
+ {"id":"subclass_method","name":"ProbeChildAccess","source":"public class ProbeChildAccess extends CartExtension.CartCalculate { public void run(CartExtension.CartCalculateCalculatorRequest r) { shippingPromotions(r); } }"},
+ {"id":"external_adjacent","name":"ProbeAdjacentAccess","source":"public class ProbeAdjacentAccess { public static void run(CartExtension.CartCalculate value, CartExtension.CartCalculateCalculatorRequest r) { value.shipping(r); } }"}
+]

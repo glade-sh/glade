@@ -1,0 +1,7 @@
+case	fixture	apis	routes	native evidence
+metadata_absent	no custom metadata definition	62.0,67.0	anonymous,named	metadata_dependency_shapes/api{62,67}/absent/org.tsv:2
+metadata_empty	definition without custom field	62.0,67.0	anonymous,named	metadata_dependency_shapes/api{62,67}/empty/org.tsv:2
+metadata_present	definition and custom field	62.0,67.0	anonymous,named,test runner	metadata_dependency_shapes/api{62,67}/complete/org.tsv:2
+feature_absent	plain scratch definition	62.0,67.0	anonymous,isTest,project runner,warm	org_object_availability/org.tsv:2-5
+feature_quote_present	Quote setting enabled	62.0,67.0	anonymous,isTest,project runner,warm	org_object_availability/org.tsv:10-13
+feature_store_present	OrderManagement enabled	62.0,67.0	anonymous,isTest,project runner,warm	org_object_availability/org.tsv:6-9

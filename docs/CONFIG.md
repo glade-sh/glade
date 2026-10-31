@@ -76,6 +76,7 @@ Supported keys:
 | `project.dependencyPaths` | Inline list of local directories to search for declared SFDX package dependencies, relative to the supplying `glade.yml`. |
 | `project.schemaSnapshot` | Schema snapshot path, relative to `glade.yml`; requires `schemaSnapshotSHA256`. |
 | `project.schemaSnapshotSHA256` | Paired 64-character hexadecimal SHA-256 digest for `schemaSnapshot`. |
+
 | `project.packageShims` | Local source roots that provide test/runtime bodies for captured package artifacts. |
 | `pdf.command` | Absolute executable path for optional external HTML-to-PDF rendering; empty uses the local text writer. |
 | `org.features` | Scratch-org style features for local runtime behavior. |
@@ -87,6 +88,14 @@ Supported keys:
 | `test.user.language` | Default running test user's language key. |
 | `test.user.defaultCurrencyIsoCode` | Default running test user's currency code. |
 | `test.clock.start` | Deterministic test clock start as an RFC3339 timestamp. |
+
+A snapshot's matching hash verifies its contents; it does not establish that
+its field list is complete. To assert that an object contains every field from
+the represented org, set `"fieldsComplete": true` on that object in the pinned
+snapshot. Omitted or false assertions leave unknown fields open. An object with
+`"partial": true` remains open even if it also asserts completeness. Only make
+this assertion when the snapshot includes the whole field surface needed by the
+project, including installed and org-specific fields.
 
 ### Test user and clock
 
@@ -322,6 +331,7 @@ behavior; enabling a name does not provision a Salesforce service.
 | `AddCustomApps:N` | Seed `N` local application records; for example, `AddCustomApps:3`. |
 | `Quotes` | `Opportunity.SyncedQuoteId` field availability. |
 | `HealthCloud` | Writable `Account.IsActive` Boolean field, defaulting to `false`; accepts names beginning with `HealthCloud`, including `HealthCloudAddOn`. |
+| `TranslationLanguage-fr` | Model an active French Translation Workbench language for the captured `Account.Industry` standard value-set `toLabel` route. Include the corresponding `Industry-fr.standardValueSetTranslation` metadata. |
 
 `Chatter`, `LightningExperience`, `EnableSetPasswordInApi`, and
 `AnalyticsAdminPerms` are retained as capability flags. They

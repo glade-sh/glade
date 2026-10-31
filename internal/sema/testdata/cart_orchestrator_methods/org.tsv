@@ -1,0 +1,11 @@
+api	route	case	outcome	diagnostic
+62.0	deploy	shipping_promotions_call	accepted	-
+62.0	deploy	shipping_call	accepted	-
+62.0	deploy	pricing_call	accepted	-
+62.0	deploy	shipping_promotions_wrong_arg	rejected	Method does not exist or incorrect signature: void shippingPromotions(String) from the type ProbeWrongArg
+62.0	deploy	shipping_promotions_override	rejected	Non-virtual, non-abstract methods cannot be overridden: void ProbeOverride.shippingPromotions(CartExtension.CartCalculateCalculatorRequest)
+67.0	deploy	shipping_promotions_call	accepted	-
+67.0	deploy	shipping_call	accepted	-
+67.0	deploy	pricing_call	accepted	-
+67.0	deploy	shipping_promotions_wrong_arg	rejected	Method does not exist or incorrect signature: void shippingPromotions(String) from the type ProbeWrongArg
+67.0	deploy	shipping_promotions_override	rejected	Non-virtual, non-abstract methods cannot be overridden: void ProbeOverride.shippingPromotions(CartExtension.CartCalculateCalculatorRequest)

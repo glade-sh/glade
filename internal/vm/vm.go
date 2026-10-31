@@ -4970,6 +4970,8 @@ func stackFrames(frames []callFrame) []StackFrame {
 }
 
 func (vm *VM) callMethod(method Method, args []Value, result *Result) (Value, error) {
+	// A bare future is a local inline approximation: it shares the caller's
+	// CPU window, unlike the separate native future transaction.
 	if vm.testContext == nil && vm.currentAsyncKind != "Future" && methodHasModifier(method.Modifiers, "future") {
 		vm.calloutPendingWork.pending = true
 	}

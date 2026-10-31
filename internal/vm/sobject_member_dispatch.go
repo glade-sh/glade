@@ -576,8 +576,16 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (ou
 		}
 		if !ok {
 			if definition, fieldDef, exists := vm.sObjectFieldDefinition(receiver.Type, field); exists &&
-				fieldDef.Type == storage.FieldBoolean && (storage.IsCustomMetadataDefinition(definition) || !storage.IsCustomSettingDefinition(definition) && hasSuffixFold(definition.APIName, "__c")) && sObjectIDFromFields(receiver.Fields) == "" {
-				return typedNull("Boolean"), true, nil
+				fieldDef.Type == storage.FieldBoolean && (storage.IsCustomMetadataDefinition(definition) || !storage.IsCustomSettingDefinition(definition) && hasSuffixFold(definition.APIName, "__c")) {
+				_, queried := receiver.Fields[sobjectQueriedFieldsField]
+				// Inserting an omitted default-true custom checkbox does not
+				// materialize it on the caller, even though SOQL returns true.
+				// linked_checkbox_default_true/org.tsv:10,15,33,39.
+				if sObjectIDFromFields(receiver.Fields) == "" || (!queried || dmlAccessibleSObject(receiver)) && !isExplicitSObjectField(receiver, field) &&
+					!isParentProjectionSObject(receiver) && !isTriggerSObject(receiver) && !storage.IsCustomMetadataDefinition(definition) &&
+					observedCustomCheckboxField(fieldDef) && strings.EqualFold(strings.TrimSpace(fieldDef.DefaultValue), "true") {
+					return typedNull("Boolean"), true, nil
+				}
 			}
 			if value, ok := vm.missingSObjectFieldValue(receiver, field); ok {
 				return value, true, nil

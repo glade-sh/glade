@@ -943,11 +943,11 @@ func TestCIApexDurationHistoryWorkflowOwnership(t *testing.T) {
 			t.Errorf("single-writer refresh job missing %q", want)
 		}
 	}
-	if strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0") != 20 {
+	if strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0") != 24 {
 		t.Errorf("cache save count = %d, want existing DAG writers plus Apex, sema, LWC and Visualforce history writers", strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0"))
 	}
-	if strings.Count(workflow, "shard: [0, 1]") != 1 || strings.Count(workflow, "shard: [0, 1, 2, 3, 4, 5]") != 1 {
-		t.Error("workflow must contain the six-shard Apex and two-shard sema matrices")
+	if strings.Count(workflow, "shard: [0, 1]") != 1 || strings.Count(workflow, "shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]") != 1 {
+		t.Error("workflow must contain the twelve-shard Apex and two-shard sema matrices")
 	}
 	if matches, _ := filepath.Glob(filepath.Join("..", "**", "*duration-history*.json")); len(matches) != 0 {
 		t.Fatalf("tracked duration history candidates: %v", matches)
@@ -961,7 +961,7 @@ func TestCIDurationHistoryUsesOneImmutablePredecessorKeyPerRun(t *testing.T) {
 		t.Fatal(err)
 	}
 	jobs := workflowJobBlocks(t, string(data))
-	for _, name := range []string{"sema", "apextest", "lwc-compile-history-input", "visualforce-history-input"} {
+	for _, name := range []string{"sema", "apextest", "lwc-compile-history-input", "visualforce-history-input", "vm-history-input", "gladecli-history-input"} {
 		if name == "apextest" {
 			name = "apextest-history-input"
 		}
@@ -1870,7 +1870,7 @@ func benchmarkCachePairWorkflowProblem(name, workflow string) string {
 	}
 	guard := "    if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}"
 	for _, jobName := range []string{
-		"site", "vet", "gladecli", "node-integration", "sema", "server-and-playground",
+		"site", "vet", "gladecli", "vm", "vm-history-input", "gladecli-history-input", "node-integration", "sema", "server-and-playground",
 		"test", "test-binaries", "smoke-runtime", "smoke-distribution", "apextest-history-input", "apextest", "lwc-compile-history-input", "visualforce-history-input",
 	} {
 		job := jobs[jobName]
@@ -1925,7 +1925,7 @@ func TestCIBenchmarkCachePairContractRejectsAnyCacheBeforeValidation(t *testing.
 		{
 			workflowName: "ci.yml",
 			jobNames: []string{
-				"site", "vet", "gladecli", "node-integration", "sema", "server-and-playground",
+				"site", "vet", "gladecli", "vm", "vm-history-input", "gladecli-history-input", "node-integration", "sema", "server-and-playground",
 				"test", "smoke-runtime", "smoke-distribution", "apextest-history-input", "apextest", "lwc-compile-history-input", "visualforce-history-input",
 			},
 			validationCommand: `scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"`,
@@ -2016,6 +2016,9 @@ func ciRequiredAggregateProblem(workflow string) string {
       - lwc-compile-history
       - visualforce-history
       - gladecli
+      - gladecli-history
+      - vm
+      - vm-history
       - node-integration
       - nested-sources
       - sema
@@ -3543,7 +3546,7 @@ func TestCIParallelDAGTopology(t *testing.T) {
 		"codeql", "apextest", "apextest-history", "gladecli", "nested-sources", "node-integration", "required-ci", "required-scheduled-ci", "sema", "sema-equivalence", "sema-full", "sema-history",
 		"server-and-playground", "site", "smoke-distribution", "smoke-runtime", "test", "test-binaries", "vet", "workflow-lint",
 	}
-	wantJobs = append(wantJobs, "apextest-history-input", "lwc-compile-history-input", "lwc-compile-history", "visualforce-history-input", "visualforce-history")
+	wantJobs = append(wantJobs, "apextest-history-input", "lwc-compile-history-input", "lwc-compile-history", "visualforce-history-input", "visualforce-history", "gladecli-history-input", "gladecli-history", "vm-history-input", "vm", "vm-history")
 	sort.Strings(wantJobs)
 	gotJobs := make([]string, 0, len(jobs))
 	for name := range jobs {
@@ -3558,18 +3561,21 @@ func TestCIParallelDAGTopology(t *testing.T) {
 		if name != "codeql" && !strings.Contains(job, "runs-on: ubuntu-latest") {
 			t.Errorf("%s is not an ubuntu-latest job", name)
 		}
-		if input, serialized := map[string]string{"apextest": "[apextest-history-input, test-binaries]", "sema": "test-binaries", "test": "[lwc-compile-history-input, visualforce-history-input, test-binaries]"}[name]; serialized {
+		if input, serialized := map[string]string{"apextest": "[apextest-history-input, test-binaries]", "sema": "test-binaries", "test": "[lwc-compile-history-input, visualforce-history-input, test-binaries]", "gladecli": "gladecli-history-input", "vm": "vm-history-input"}[name]; serialized {
 			if !strings.Contains(job, "needs: "+input) {
 				t.Errorf("%s must depend on %s", name, input)
 			}
 			continue
 		}
-		if !map[string]bool{"apextest-history": true, "lwc-compile-history": true, "visualforce-history": true, "required-ci": true, "required-scheduled-ci": true, "sema-history": true, "sema-equivalence": true}[name] && strings.Contains(job, "needs:") {
+		if !map[string]bool{"apextest-history": true, "lwc-compile-history": true, "visualforce-history": true, "required-ci": true, "required-scheduled-ci": true, "sema-history": true, "sema-equivalence": true, "gladecli-history": true, "vm-history": true}[name] && strings.Contains(job, "needs:") {
 			t.Errorf("root job %s must not be serialized with needs", name)
 		}
 	}
 	for _, name := range []string{"site", "vet", "gladecli", "node-integration", "nested-sources", "sema", "sema-full", "server-and-playground", "test", "smoke-runtime", "smoke-distribution"} {
 		timeout := "30"
+		if name == "gladecli" {
+			timeout = "40"
+		}
 		if name == "test" {
 			timeout = "100" // Preserve the browser-shard budgets and setup allowance.
 		}
@@ -3586,7 +3592,7 @@ func TestCIParallelDAGLaneCommandsAndArtifacts(t *testing.T) {
 	workflow, jobs := readCIWorkflow(t)
 	wantLaneCommands := map[string][]string{
 		"workflow-lint":         {"scripts/ci-go-test.sh lane workflow-lint"},
-		"gladecli":              {"scripts/ci-go-test.sh lane gladecli"},
+		"gladecli":              {"scripts/ci-go-test.sh gladecli-shard"},
 		"node-integration":      {"scripts/ci-go-test.sh node-integration"},
 		"server-and-playground": {"scripts/ci-go-test.sh lane server-and-playground"},
 		"test":                  {"scripts/ci-go-test.sh lane repoguard", "scripts/ci-go-test.sh lane remaining-go"},
@@ -3604,7 +3610,7 @@ func TestCIParallelDAGLaneCommandsAndArtifacts(t *testing.T) {
 
 	wantArtifacts := map[string]string{
 		"workflow-lint":         "go-test-workflow-lint",
-		"gladecli":              "go-test-gladecli",
+		"gladecli":              "gladecli-shard-${{ matrix.shard }}",
 		"node-integration":      "go-test-node-integration",
 		"server-and-playground": "go-test-server-and-playground",
 		"test":                  "go-test-remaining-go",
@@ -3619,7 +3625,6 @@ func TestCIParallelDAGLaneCommandsAndArtifacts(t *testing.T) {
 	}
 	for _, path := range []string{
 		"ci-artifacts/go-test/test-workflow-lint.json",
-		"ci-artifacts/go-test/test-gladecli.json",
 		"ci-artifacts/go-test-node-integration/test-node-integration.json",
 		"ci-artifacts/go-test/test-server-and-playground.json",
 		"ci-artifacts/go-test/test-repoguard.json",
@@ -3685,7 +3690,7 @@ func TestCIParallelDAGCacheOwnership(t *testing.T) {
 			t.Errorf("%s lacks the ci-test digest seed fallback", jobName)
 		}
 	}
-	if strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0") != 20 {
+	if strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0") != 24 {
 		t.Errorf("cache save count = %d, want existing DAG, shared binary producer, and four history writers", strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0"))
 	}
 }
@@ -3696,7 +3701,7 @@ func TestCIParallelDAGPreservesApexAndUsesRootCheckout(t *testing.T) {
 	input := jobs["apextest-history-input"]
 	history := jobs["apextest-history"]
 	for _, marker := range []string{
-		"needs: [apextest-history-input, test-binaries]", "shard: [0, 1, 2, 3, 4, 5]", "timeout-minutes: 100", "scripts/ci-go-test.sh apex-shard \"${{ matrix.shard }}\"",
+		"needs: [apextest-history-input, test-binaries]", "shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]", "timeout-minutes: 100", "scripts/ci-go-test.sh apex-shard \"${{ matrix.shard }}\"",
 		"CI_APEXTEST_HISTORY_PATH", "actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0", "name: apextest-history-input",
 		"actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0", "name: apex-shard-${{ matrix.shard }}",
 	} {
@@ -3823,7 +3828,7 @@ func TestCIGoTestLogWrapperIsWired(t *testing.T) {
 		"scripts/ci-go-test.sh lane remaining-go",
 		"apextest:",
 		"matrix:",
-		"shard: [0, 1, 2, 3, 4, 5]",
+		"shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]",
 		"cache: false",
 		"ci-apextest-${{ matrix.shard }}",
 		"go-mod-v1-1.26.10-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-apextest-${{ matrix.shard }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}",
@@ -3850,8 +3855,8 @@ func TestCIGoTestLogWrapperIsWired(t *testing.T) {
 	if strings.Count(workflowText, "go test -json") != 0 {
 		t.Fatal("ci.yml must delegate the native Apex run to the tested wrapper")
 	}
-	if strings.Count(workflowText, "shard: [0, 1]") != 1 || strings.Count(workflowText, "shard: [0, 1, 2, 3, 4, 5]") != 1 {
-		t.Fatal("ci.yml must define six Apex cells and two sema cells")
+	if strings.Count(workflowText, "shard: [0, 1]") != 1 || strings.Count(workflowText, "shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]") != 1 {
+		t.Fatal("ci.yml must define twelve Apex cells and two sema cells")
 	}
 	if strings.Contains(workflowText, ".ci-artifacts") || strings.Contains(scriptText, ".ci-artifacts") {
 		t.Fatal("Apex evidence must use a non-hidden path so upload-artifact includes it by default")
@@ -3948,7 +3953,7 @@ func TestCIPackageLaneCommandRunsOnlyRequestedManifestPackagesAndPreservesStatus
 		{lane: "sema", wantTimeout: "-timeout=30m"},
 		{lane: "server-and-playground", wantTimeout: "-timeout=30m"},
 		{lane: "repoguard", wantTimeout: "-timeout=30m"},
-		{lane: "remaining-go", wantTimeout: "-timeout=20m"},
+		{lane: "remaining-go", wantTimeout: "-timeout=30m"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.lane, func(t *testing.T) {
@@ -4003,8 +4008,8 @@ exit 23
 			}
 			var wantPackages []string
 			for _, pkg := range manifest.Lanes[tc.lane] {
-				if tc.lane == "remaining-go" && (pkg == "github.com/glade-sh/glade/internal/lwc/compile" || pkg == "github.com/glade-sh/glade/internal/visualforce") {
-					continue // Dedicated browser shards own these packages in CI.
+				if tc.lane == "remaining-go" && (pkg == "github.com/glade-sh/glade/internal/lwc/compile" || pkg == "github.com/glade-sh/glade/internal/visualforce" || pkg == "github.com/glade-sh/glade/internal/vm") {
+					continue // Dedicated shards own these packages in CI.
 				}
 				wantPackages = append(wantPackages, toArgument(pkg))
 			}

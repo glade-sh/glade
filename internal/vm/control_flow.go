@@ -545,21 +545,56 @@ func childProgram(parent ir.Program, instructions []ir.Instruction) ir.Program {
 func (vm *VM) executeBlockScope(program ir.Program, inst ir.Instruction, result *Result) (execOutcome, error) {
 	type outerBinding struct {
 		value            Value
-		typ              string
+		name, typ        string
 		existed, hadType bool
 		final, hadFinal  bool
 	}
-	outer := make(map[string]outerBinding)
+	// Most blocks declare only a handful of names. Keep their snapshots in a
+	// bounded local buffer, growing only for larger scopes.
+	var small [2]outerBinding
+	outer := small[:0]
+	var large map[string]outerBinding
 	var collect func([]ir.Instruction)
 	collect = func(instructions []ir.Instruction) {
 		for _, child := range instructions {
 			switch child.Op {
 			case ir.OpDeclare:
-				if _, seen := outer[child.Name]; !seen && child.Name != "" {
-					value, existed := vm.Globals[child.Name]
-					typ, hadType := vm.VarTypes[child.Name]
-					final, hadFinal := vm.finalLocals[child.Name]
-					outer[child.Name] = outerBinding{value: value, typ: typ, existed: existed, hadType: hadType, final: final, hadFinal: hadFinal}
+				name := child.Name
+				if name == "" {
+					continue
+				}
+				seen, useMap := false, large != nil
+				if !useMap {
+					for i := range outer {
+						if outer[i].name == name {
+							seen = true
+							break
+						}
+						if strings.EqualFold(outer[i].name, name) {
+							useMap = true
+						}
+					}
+					useMap = useMap || (!seen && len(outer) == len(small))
+					if useMap {
+						large = make(map[string]outerBinding)
+						for _, binding := range outer {
+							large[binding.name] = binding
+						}
+					}
+				}
+				if useMap {
+					_, seen = large[name]
+				}
+				if !seen {
+					value, existed := vm.Globals[name]
+					typ, hadType := vm.VarTypes[name]
+					final, hadFinal := vm.finalLocals[name]
+					binding := outerBinding{name: name, value: value, typ: typ, existed: existed, hadType: hadType, final: final, hadFinal: hadFinal}
+					if useMap {
+						large[name] = binding
+					} else {
+						outer = append(outer, binding)
+					}
 				}
 			case ir.OpDeclGroup:
 				collect(child.Then)
@@ -569,7 +604,7 @@ func (vm *VM) executeBlockScope(program ir.Program, inst ir.Instruction, result 
 	collect(inst.Then)
 	completed := false
 	defer func() {
-		for name, binding := range outer {
+		restore := func(name string, binding outerBinding) {
 			// Closed for-body String binds remain available to dynamic SOQL
 			// without keeping the declaration in lexical lookup.
 			closedStringLoop := inst.Op == ir.OpFor && strings.EqualFold(canonicalRuntimePlatformType(vm.VarTypes[name]), "String")
@@ -592,6 +627,15 @@ func (vm *VM) executeBlockScope(program ir.Program, inst ir.Instruction, result 
 				vm.finalLocals[name] = binding.final
 			} else {
 				delete(vm.finalLocals, name)
+			}
+		}
+		if large != nil {
+			for name, binding := range large {
+				restore(name, binding)
+			}
+		} else {
+			for _, binding := range outer {
+				restore(binding.name, binding)
 			}
 		}
 	}()

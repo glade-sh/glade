@@ -1,0 +1,5 @@
+case	api	route	dependency	observation
+loaded_instance	62,67	anonymous,named	present	Initialized instance receiver returns a value
+loaded_static	62,67	anonymous,named	present	Initialized static receiver returns a value
+missing_type	62,67	deploy	absent	Reference to absent type is rejected
+null_boundary	62,67	anonymous,named	present	Explicit null receiver raises NullPointerException

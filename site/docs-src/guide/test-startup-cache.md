@@ -71,7 +71,7 @@ On each run whose effective policy allows restored-runtime disk reuse (unless
 `--no-cache` or a running test server handles the request), Glade reads
 `startup.meta.json` and checks **freshness**:
 
-- Cache format version matches (currently **14**), along with manifest schema,
+- Cache format version matches (currently **15**), along with manifest schema,
   platform ABI, and test-runtime ABI.
 - Project root and the canonical project digest match. The digest covers API
   version, namespace and remaps, package directories, managed dependencies,

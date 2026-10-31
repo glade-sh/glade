@@ -24,7 +24,6 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/visualforce"
-	"github.com/glade-sh/glade/internal/vm"
 	"golang.org/x/net/html"
 )
 
@@ -376,9 +375,8 @@ func v04Render(t *testing.T, p project.Project, vf visualforce.Index, index type
 	page, _ := vf.Page(name)
 	srv := server.NewWithSource(&org, server.SourceMetadata{Project: p})
 	srv.VisualforceHTMLUserID = user.ID
-	machine := vm.New(nil)
-	runtimeErr := apextest.RegisterUncachedProjectRuntimeForRequest(machine, index)
-	srv.SetProjectRuntime(index, machine, runtimeErr)
+	// Use the server's on-demand request runtime for each captured row.
+	srv.SetProjectRuntime(index, nil, nil)
 	response := httptest.NewRecorder()
 	srv.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/apex/"+name+"?id=001000000000004AAA", nil))
 	if response.Code >= http.StatusBadRequest || c.HTTPStatus[page.APIVersion] != 0 {

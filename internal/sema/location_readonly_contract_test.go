@@ -39,11 +39,11 @@ Double staticKilometers = System.Location.getDistance(p, q, 'km');
 `
 
 type locationReadonlyCase struct {
-	name string
-	body string
+	name      string
+	body      string
 	anonymous bool
-	field string
-	shadow bool
+	field     string
+	shadow    bool
 }
 
 func TestLocationReadOnlyContractAPI67(t *testing.T) {
@@ -72,32 +72,40 @@ func TestLocationReadOnlyContractAPI67(t *testing.T) {
 			diagnostics := append([]diagnostic.Diagnostic{}, result.Diagnostics...)
 			for i := range diagnostics {
 				diagnostics[i].File = filepath.Base(diagnostics[i].File)
-				if result.Diagnostics[i].File == "" { diagnostics[i].File = "" }
+				if result.Diagnostics[i].File == "" {
+					diagnostics[i].File = ""
+				}
 			}
 			lhs := ""
 			start, end := -1, -1
 			if tc.field != "" {
 				lhs = "p." + tc.field
-				start = strings.Index(source, lhs + " =")
+				start = strings.Index(source, lhs+" =")
 				end = start + len(lhs)
-				if start < 0 { t.Fatalf("LOCATION_SETUP_STOP [%s]: assignment span absent", tc.name) }
+				if start < 0 {
+					t.Fatalf("LOCATION_SETUP_STOP [%s]: assignment span absent", tc.name)
+				}
 			}
 			bodySum := sha256.Sum256([]byte(tc.body))
 			observation := struct {
-				Case string `json:"case"`
-				API string `json:"api"`
-				Anonymous bool `json:"anonymous"`
-				BodySHA256 string `json:"bodySha256"`
-				LHS string `json:"lhs"`
-				Start int `json:"start"`
-				End int `json:"end"`
+				Case        string                  `json:"case"`
+				API         string                  `json:"api"`
+				Anonymous   bool                    `json:"anonymous"`
+				BodySHA256  string                  `json:"bodySha256"`
+				LHS         string                  `json:"lhs"`
+				Start       int                     `json:"start"`
+				End         int                     `json:"end"`
 				Diagnostics []diagnostic.Diagnostic `json:"diagnostics"`
 			}{tc.name, locationReadonlyAPI, tc.anonymous, hex.EncodeToString(bodySum[:]), lhs, start, end, diagnostics}
 			encoded, err := json.Marshal(observation)
-			if err != nil { t.Fatalf("LOCATION_SETUP_STOP [%s]: %v", tc.name, err) }
+			if err != nil {
+				t.Fatalf("LOCATION_SETUP_STOP [%s]: %v", tc.name, err)
+			}
 			t.Logf("LOCATION_OBSERVATION %s", encoded)
 			if tc.field == "" {
-				if len(diagnostics) != 0 { t.Fatalf("LOCATION_CONTROL_STOP [%s]: %s", tc.name, encoded) }
+				if len(diagnostics) != 0 {
+					t.Fatalf("LOCATION_CONTROL_STOP [%s]: %s", tc.name, encoded)
+				}
 				return
 			}
 			if len(diagnostics) == 0 {
@@ -119,29 +127,37 @@ func locationReadonlyAnalyzeNamed(t *testing.T, source string, shadow bool) Resu
 	root := t.TempDir()
 	probe := filepath.Join(root, "Probe.cls")
 	writeSemaFile(t, probe, source)
-	writeSemaFile(t, probe + "-meta.xml", locationReadonlyMetadata)
+	writeSemaFile(t, probe+"-meta.xml", locationReadonlyMetadata)
 	paths := []string{probe}
 	if shadow {
 		local := filepath.Join(root, "Location.cls")
 		writeSemaFile(t, local, "public class Location { public Double latitude; public Double longitude; }")
-		writeSemaFile(t, local + "-meta.xml", locationReadonlyMetadata)
+		writeSemaFile(t, local+"-meta.xml", locationReadonlyMetadata)
 		paths = append(paths, local)
 	}
 	for _, path := range paths {
 		metadata, err := os.ReadFile(path + "-meta.xml")
-		if err != nil || string(metadata) != locationReadonlyMetadata { t.Fatalf("LOCATION_METADATA_STOP: %s: %v", filepath.Base(path), err) }
+		if err != nil || string(metadata) != locationReadonlyMetadata {
+			t.Fatalf("LOCATION_METADATA_STOP: %s: %v", filepath.Base(path), err)
+		}
 	}
 	index := typesys.Build(project.Project{Root: root, SourceAPIVersion: locationReadonlyAPI, ApexFiles: paths}, schema.Schema{})
 	seen := map[string]bool{}
 	for _, typ := range index.Types {
 		for _, path := range paths {
 			if typ.File == path && (typ.Name == "Probe" || typ.Name == "Location") {
-				if typ.EffectiveAPIVersion != locationReadonlyAPI { t.Fatalf("LOCATION_EFFECTIVE_API_STOP: %s: %q", typ.Name, typ.EffectiveAPIVersion) }
+				if typ.EffectiveAPIVersion != locationReadonlyAPI {
+					t.Fatalf("LOCATION_EFFECTIVE_API_STOP: %s: %q", typ.Name, typ.EffectiveAPIVersion)
+				}
 				seen[path] = true
 			}
 		}
 	}
-	if len(seen) != len(paths) { t.Fatalf("LOCATION_TYPE_SETUP_STOP: got %d classes want %d", len(seen), len(paths)) }
-	if len(index.Diagnostics) != 0 { t.Fatalf("LOCATION_INDEX_STOP: %#v", index.Diagnostics) }
+	if len(seen) != len(paths) {
+		t.Fatalf("LOCATION_TYPE_SETUP_STOP: got %d classes want %d", len(seen), len(paths))
+	}
+	if len(index.Diagnostics) != 0 {
+		t.Fatalf("LOCATION_INDEX_STOP: %#v", index.Diagnostics)
+	}
 	return Analyze(index)
 }

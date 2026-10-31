@@ -1,0 +1,6 @@
+case	axis	route	boundary
+user_upsert_null_id	create-only Account access	scalar statement upsert USER_MODE	Id explicitly null vs existing Id
+user_upsert_list	create-only Account access	list statement upsert USER_MODE	new vs existing Id
+null_type_upsert	person RecordTypeId explicit null	Database.upsert scalar and list	null vs omitted and missing LastName
+null_type_update	person RecordTypeId explicit null	Database.update scalar and list	null vs omitted and missing LastName
+default_identity	profile default record type identity	Account insertion	DeveloperName vs label and qualified name

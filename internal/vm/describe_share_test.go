@@ -28,37 +28,21 @@ func TestDescribeShareNativeConformance(t *testing.T) {
 	if len(rows) != 7 || strings.Join(rows[0], ",") != "source_api,row,observation" {
 		t.Fatal("incomplete native matrix")
 	}
-	// The native map accepts clear while this runtime rejects it. Preserve that
-	// existing difference in this refactor; compare the native read observations
-	// separately, with mutation behavior covered by the local baseline pins.
-	start := strings.Index(string(source), "try {")
-	end := strings.Index(string(source), "System.debug('ROW\\tafter")
-	if start < 0 || end < start {
-		t.Fatal("invalid native probe source")
-	}
-	readSource := string(source[:start]) + string(source[end:])
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api, func(t *testing.T) {
 			var want []string
 			for _, row := range rows[1:] {
 				if row[0] == api {
-					if row[1] == "clear" {
-						if row[2] != "accepted" {
-							t.Fatal("native mutation observation changed")
-						}
-						t.Log("carried: native getMap().clear() accepts; local baseline throws FinalException")
-						continue
-					}
 					want = append(want, "ROW\t"+row[1]+"\t"+row[2])
 				}
 			}
-			if len(want) != 2 {
+			if len(want) != 3 {
 				t.Fatal("missing native observations")
 			}
 			base, template := describeSharePrimedBase(t)
 			for range 2 {
 				clone := describeShareClone(base, template)
-				got, errText := describeShareRun(t, clone, describeShareRow{name: api, source: readSource})
+				got, errText := describeShareRun(t, clone, describeShareRow{name: api, source: string(source)})
 				if errText != "" || got != strings.Join(want, " | ") {
 					t.Fatalf("native=%q; Glade=%q; error=%s", want, got, errText)
 				}

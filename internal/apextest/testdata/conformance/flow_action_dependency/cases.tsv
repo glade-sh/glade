@@ -1,0 +1,4 @@
+id	api	scenario
+missing	62,67	deploy flow without the referenced Apex class
+loaded	62,67	deploy flow with the referenced invocable class and invoke it
+boundary	62,67	invoke the zero-parameter action with an empty interview input map

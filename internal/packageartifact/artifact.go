@@ -551,6 +551,7 @@ func artifactSourceFiles(p project.Project) []string {
 	files = append(files, p.QuickActionFiles...)
 	files = append(files, p.GlobalValueSetFiles...)
 	files = append(files, p.StandardValueSetFiles...)
+	files = append(files, p.ValueSetTranslationFiles...)
 	files = append(files, p.FlexiPageFiles...)
 	files = append(files, p.ApplicationFiles...)
 	files = append(files, p.VisualforcePageFiles...)

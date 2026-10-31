@@ -270,7 +270,7 @@ func TestJSONSObjectAcyclicControls(t *testing.T) {
 	parentJSON := `{"attributes":{"type":"Account"},"Name":"parent","Parent":` + childJSON + `}`
 	for _, tc := range []struct {
 		name  string
-		value            Value
+		value Value
 		want  string
 	}{
 		{"deep-200", chain, chainJSON},

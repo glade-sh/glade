@@ -1,0 +1,1 @@
+for(Profile p:[SELECT Name,PermissionsModifyAllData,PermissionsViewAllData FROM Profile WHERE Name IN ('Standard User','Marketing User','Minimum Access - Salesforce') ORDER BY Name])System.debug('R6PROF|'+JSON.serialize(new List<Object>{p.Name,p.PermissionsModifyAllData,p.PermissionsViewAllData}));

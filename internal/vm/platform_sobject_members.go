@@ -1937,6 +1937,15 @@ func (vm *VM) missingSObjectFieldValue(receiver Value, field string) (Value, boo
 		return storageFieldNullValue(fieldDef), true
 	}
 	if value, ok := vm.storedSObjectFieldValue(receiver, field); ok {
+		// An ID-only caller or clone does not gain a stored checkbox default
+		// until queried (linked_checkbox_review/org.tsv:8-10,19-21).
+		if value.Kind == ValueBool && value.Bool && hasSuffixFold(definition.APIName, "__c") &&
+			!storage.IsCustomSettingDefinition(definition) && observedCustomCheckboxField(fieldDef) &&
+			strings.EqualFold(strings.TrimSpace(fieldDef.DefaultValue), "true") &&
+			(!hasQueriedFields || dmlAccessibleSObject(receiver)) && !isTriggerSObject(receiver) &&
+			!isParentProjectionSObject(receiver) {
+			return Bool(false), true
+		}
 		return value, true
 	}
 	if value, ok := vm.unqueriedStoredDefaultFieldValue(receiver, field); ok {
@@ -3112,6 +3121,11 @@ func sObjectHashCode(value Value, seen map[uint64]bool) int32 {
 	}
 	hash := javaStringHashCode(strings.ToLower(stripSObjectNamespacePrefix(canonicalRuntimePlatformType(value.Type))))
 	for field, child := range value.Fields {
+		// Preserve the legacy hash for record shapes outside the captured
+		// System.hashCode rule, even when equality retains an explicit null Id.
+		if strings.EqualFold(field, "Id") && child.Kind == ValueNull {
+			continue
+		}
 		if !sObjectEqualityFieldIncluded(value, field, child) {
 			continue
 		}

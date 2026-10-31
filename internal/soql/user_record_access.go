@@ -130,7 +130,11 @@ func userRecordAccessProjectionValue(org storage.OrgState, record storage.Record
 	if context.UserRecordAccess == nil {
 		return key, storage.NullValue(), true
 	}
-	access := context.UserRecordAccess(current.Object, current)
+	accessFn := context.UserRecordAccess
+	if index > 0 && context.NestedUserRecordAccess != nil {
+		accessFn = context.NestedUserRecordAccess
+	}
+	access := accessFn(current.Object, current)
 	value, ok := access.GetField(leaf.APIName)
 	if !ok {
 		value = storage.NullValue()

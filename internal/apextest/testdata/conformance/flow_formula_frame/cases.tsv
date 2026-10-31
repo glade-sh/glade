@@ -1,0 +1,9 @@
+context	case	api62	api67	control
+decision	variable shadows record field	existing FV_name_number_collision	existing FV_name_number_collision	explicit record twins
+decision	default-less variable read	capture	capture	populated record field and explicit record twin
+assignment	variable shadows record field	capture	capture	explicit record twin
+assignment	default-less variable read	capture	capture	populated record field and explicit record twin
+record-create	variable shadows record field	capture	capture	explicit record twin
+record-create	default-less variable read	capture	capture	populated record field and explicit record twin
+custom-error	variable shadows record field	capture	capture	explicit record twin
+custom-error	default-less variable read	capture	capture	populated record field and explicit record twin

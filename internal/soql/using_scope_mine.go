@@ -9,9 +9,11 @@ import (
 // ExecutionContext contains actor state that must not be stored in parsed query
 // or schema caches. An omitted actor keeps owned-record Mine queries unsupported.
 type ExecutionContext struct {
-	APIVersion       string
-	UserID           storage.ID
-	UserRecordAccess func(objectName string, record storage.Record) storage.Record
+	APIVersion             string
+	Language               string
+	UserID                 storage.ID
+	UserRecordAccess       func(objectName string, record storage.Record) storage.Record
+	NestedUserRecordAccess func(objectName string, record storage.Record) storage.Record
 }
 
 func usingScopeOwnerFilter(definition storage.ObjectDefinition, scope string, context ExecutionContext) (string, storage.ID, error) {

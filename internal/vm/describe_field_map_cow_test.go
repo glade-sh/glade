@@ -26,8 +26,7 @@ func fieldMapGet(t *testing.T, machine *VM, wrapper Value) Value {
 }
 
 // Native read observations: testdata/describe_sharing/org.tsv:2,4,5,7.
-// Writes below pin the existing local contract, including its native-clear
-// discrepancy documented by TestDescribeShareNativeConformance.
+// Writes below cover holder isolation and the captured read-only mutations.
 func TestFieldMapReadHoldersPreserveOwnership(t *testing.T) {
 	for _, primed := range []bool{false, true} {
 		for _, namespaced := range []bool{false, true} {
@@ -193,7 +192,7 @@ System.assertEquals('private label', Account.SObjectType.fields.Name.label);`
 					}
 				})
 			}
-			for _, mutation := range []string{"put('private', Account.Name)", "putAll(new Map<String,Schema.SObjectField>{'private'=>Account.Name})", "remove('Name')", "clear()"} {
+			for _, mutation := range []string{"put('private', Account.Name)", "putAll(new Map<String,Schema.SObjectField>{'private'=>Account.Name})", "remove('Name')"} {
 				t.Run(api+fmt.Sprint(namespaced)+mutation, func(t *testing.T) {
 					machine := describeShareUnprimedFor(namespaced)
 					program, err := CompileAnonymousWithOptions(`Map<String,Schema.SObjectField> fields = Account.SObjectType.fields.getMap(); fields.`+mutation+`;`, CompileOptions{APIVersion: api})

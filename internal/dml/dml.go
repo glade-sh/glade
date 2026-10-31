@@ -150,9 +150,16 @@ type Options struct {
 	// Apex insert/update statements enforce duplicate rules; explicit
 	// Database.DMLOptions.DuplicateRuleHeader.allowSave saves Allow+Alert matches.
 	EnforceDuplicateRules, AllowDuplicateSave bool
-	// Captured Apex upsert duplicate rules cover unmatched Id insertion only.
-	// Custom-key inserts and matched updates retain their existing policy.
+	// Captured Apex upsert duplicate rules cover unmatched Id insertion and
+	// scalar custom-key insertion. Matched updates retain their existing policy.
 	EnforceUpsertIDInsertDuplicateRules bool
+	// Restrict newly enabled custom-key inserts to the observed rule shape.
+	UpsertCapturedInsertRulesOnly bool
+	// Upsert update checks are limited to captured, changed exact match fields.
+	UpsertChangedExactDuplicatesOnly bool
+	// Preserve the shipping custom-key insertion behavior for list routes,
+	// including lists reduced to one surviving row before the engine runs.
+	PreserveCustomKeyUpsertList bool
 	// Resolved access mode for captured Apex custom-object insert contracts.
 	// Empty preserves non-Apex engine callers' existing record-type defaults.
 	ApexRecordTypeInsertMode string
@@ -481,7 +488,7 @@ func (e *Engine) upsert(records []storage.Record, externalIDField string) []Resu
 		if record.ID == "" {
 			// Share duplicate statement identity while retaining per-row audit clocks.
 			statementStamp = ""
-			id, created, err := e.upsertByExternalID(record, externalIDField, &statementStamp)
+			id, created, err := e.upsertByExternalID(record, externalIDField, &statementStamp, len(records) == 1 && !e.Options.PreserveCustomKeyUpsertList)
 			if err != nil {
 				results[i] = resultFromError(record.ID, err)
 				results[i].UpsertCreated = created
@@ -895,6 +902,7 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string) (stora
 		return "", err
 	}
 	normalizeUserNameFields(objectName, object.Definition, &record)
+	explicitBusinessRecordType := hasExplicitBusinessAccountRecordType(objectName, object.Definition, record)
 	createPersonContact := createsPersonContactOnInsert(objectName, record)
 	e.applyDefaultRecordTypeID(objectName, object.Definition, &record)
 	applyFieldDefaults(e.Org, object.Definition, &record, e.systemUserID())
@@ -929,7 +937,7 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string) (stora
 	if err := validatePersonAccountRequiredFields(objectName, record); err != nil {
 		return "", err
 	}
-	if err := validateAccountNameRequiredFields(objectName, object.Definition, record); err != nil {
+	if err := validateAccountNameRequiredFields(objectName, object.Definition, record, explicitBusinessRecordType); err != nil {
 		return "", err
 	}
 	if err := validateRequiredInsert(object.Definition, record); err != nil {
@@ -966,7 +974,7 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string) (stora
 	if err := e.validateLookupFilters(object.Definition, record); err != nil {
 		return "", err
 	}
-	duplicateReport, err := e.checkDuplicateRules(record, false, statementStamp)
+	duplicateReport, err := e.checkDuplicateRules(record, false, statementStamp, nil)
 	if err != nil {
 		return "", err
 	}
@@ -1038,6 +1046,7 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string) (stora
 	}
 	materializeEmailMessageName(&record)
 	storedRecord := record.Clone()
+	storedRecord.ClearDMLRecordTypeDefaulted()
 	storedRecord.AssignmentRule = nil
 	storedRecord.ParentRelationships = nil
 	storedRecord.LoadedReferences = nil
