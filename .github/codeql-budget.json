@@ -1,6 +1,6 @@
 {
   "full_waivers": 12,
   "pr_waivers": 7,
-  "analyze_seconds": 300,
-  "query_seconds": 240
+  "analyze_seconds": 720,
+  "query_seconds": 600
 }

@@ -239,11 +239,11 @@ print(json.dumps(dict(Action="pass", Package=package, Elapsed=1)))
 func TestCIScaleCodeQLJobAndAnalyzeRoutes(t *testing.T) {
 	jobs := workflowJobBlocks(t, readWorkflowFile(t, "codeql.yml"))
 	job := jobs["codeql"]
-	if !strings.Contains(job, "    timeout-minutes: 15\n") {
+	if !strings.Contains(job, "    timeout-minutes: 25\n") {
 		t.Error("CodeQL job needs setup and upload time around analysis")
 	}
-	if !strings.Contains(workflowStepBlock(t, job, "name: Analyze CodeQL"), "timeout-minutes: 6") {
-		t.Error("CodeQL analysis needs a five-minute process budget plus cleanup")
+	if !strings.Contains(workflowStepBlock(t, job, "name: Analyze CodeQL"), "timeout-minutes: 14") {
+		t.Error("CodeQL analysis needs a twelve-minute process budget plus cleanup")
 	}
 }
 

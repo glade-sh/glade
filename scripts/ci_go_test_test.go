@@ -1255,7 +1255,7 @@ func TestSecurityWorkflowContract(t *testing.T) {
 	codeql := workflowJobBlocks(t, readWorkflowFile(t, "codeql.yml"))["codeql"]
 	for _, want := range []string{
 		"name: CodeQL (${{ inputs.profile }})",
-		"timeout-minutes: 15",
+		"timeout-minutes: 25",
 		"languages: go",
 		"config: |",
 		"- uses: security-extended",
@@ -1348,7 +1348,7 @@ func TestSecurityWorkflowContract(t *testing.T) {
 		}
 	}
 	analyze := workflowStepBlock(t, codeql, "name: Analyze CodeQL")
-	for _, want := range []string{"timeout-minutes: 6", "python3 scripts/ci-codeql.py analyze"} {
+	for _, want := range []string{"timeout-minutes: 14", "python3 scripts/ci-codeql.py analyze"} {
 		if !strings.Contains(analyze, want) {
 			t.Errorf("bounded analysis omits %q", want)
 		}

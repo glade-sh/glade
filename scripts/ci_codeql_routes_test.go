@@ -35,7 +35,7 @@ func TestCICodeQLFastAndFullWorkflowRoutes(t *testing.T) {
 	}
 	text := readWorkflowFile(t, "codeql.yml")
 	job := workflowJobBlocks(t, text)["codeql"]
-	for _, marker := range []string{"workflow_call:", "if: inputs.profile == 'fast'", "if: inputs.profile == 'full'", "timeout-minutes: 15", "python3 scripts/ci-codeql.py check", "CODEQL_ACTION_ANALYZE_DID_COMPLETE_SUCCESSFULLY=true", "if: steps.analyze.outputs.completed == 'true'"} {
+	for _, marker := range []string{"workflow_call:", "if: inputs.profile == 'fast'", "if: inputs.profile == 'full'", "timeout-minutes: 25", "python3 scripts/ci-codeql.py check", "CODEQL_ACTION_ANALYZE_DID_COMPLETE_SUCCESSFULLY=true", "if: steps.analyze.outputs.completed == 'true'"} {
 		if !strings.Contains(text, marker) {
 			t.Errorf("reusable workflow omits %q", marker)
 		}

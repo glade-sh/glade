@@ -188,7 +188,9 @@ Required CI now runs twelve Apex test shards and runs the VM and CLI packages as
 isolated jobs. A gofmt gate checks every tracked Go file and fails when the file
 list cannot be built. A nightly job runs the timing-sensitive tests 20 times on
 Linux and macOS and fails if a listed test is missing or any run fails. The
-CodeQL job now fails when any phase times out and deletes the partial SARIF. New
+CodeQL job now fails when any phase times out and deletes the partial SARIF.
+Its query budget is 10 minutes, and the whole analysis has 12, after the
+incomplete-analysis check began failing slower runners. New
 data-driven conformance tests record captured behavior for abstract interface
 overrides, merge-conflict markers, missing-dependency receivers, metadata
 dependency shapes, Flow loop relationships and action dependencies, async stack
