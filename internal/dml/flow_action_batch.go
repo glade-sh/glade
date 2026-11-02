@@ -1,6 +1,7 @@
 package dml
 
 import (
+	"reflect"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/storage"
@@ -128,7 +129,15 @@ func (e *Engine) runFlowActionBatch(rule storage.FlowRule, action storage.FlowAc
 					return false, flowCoreRecordTriggerError(rule, err)
 				}
 				if changed {
-					if err := e.storeFlowFieldUpdates(objectName, previous[i], working[i]); err != nil {
+					current, merged := previous[i], working[i]
+					if len(frame.batchUpdatedFields) > 0 && !frame.batchLaterFieldUpdate {
+						// Preserve filtered writes made after interview-local assignments.
+						if _, live, found := storage.LookupRecordByID(e.Org.Objects[objectName].Records, working[i].ID); found {
+							current = live
+						}
+						merged = mergeFlowBatchFieldChanges(previous[i], working[i], current, frame.batchUpdatedFields)
+					}
+					if err := e.storeFlowFieldUpdates(objectName, current, merged); err != nil {
 						return false, err
 					}
 				}
@@ -152,6 +161,56 @@ func (e *Engine) runFlowActionBatch(rule storage.FlowRule, action storage.FlowAc
 		}
 	}
 	return nil
+}
+
+// mergeFlowBatchFieldChanges applies interview-local changes without replacing
+// independent writes that a record-update step made to the stored row.
+func mergeFlowBatchFieldChanges(before, working, current storage.Record, written map[string]bool) storage.Record {
+	merged := current.Clone()
+	if merged.Fields == nil {
+		merged.Fields = make(map[string]storage.Value)
+	}
+	if merged.ExplicitNulls == nil {
+		merged.ExplicitNulls = make(map[string]bool)
+	}
+	keys := make(map[string]bool)
+	for key := range before.Fields {
+		keys[key] = true
+	}
+	for key := range working.Fields {
+		keys[key] = true
+	}
+	for key := range before.ExplicitNulls {
+		keys[key] = true
+	}
+	for key := range working.ExplicitNulls {
+		keys[key] = true
+	}
+	for key := range keys {
+		if written[key] {
+			continue
+		}
+		old, oldExists := before.Fields[key]
+		newValue, newExists := working.Fields[key]
+		if oldExists == newExists && reflect.DeepEqual(old, newValue) && before.ExplicitNulls[key] == working.ExplicitNulls[key] {
+			continue
+		}
+		live, liveExists := current.Fields[key]
+		if liveExists != oldExists || !reflect.DeepEqual(live, old) || current.ExplicitNulls[key] != before.ExplicitNulls[key] {
+			continue
+		}
+		if newExists {
+			merged.Fields[key] = newValue.Clone()
+		} else {
+			delete(merged.Fields, key)
+		}
+		if working.ExplicitNulls[key] {
+			merged.ExplicitNulls[key] = true
+		} else {
+			delete(merged.ExplicitNulls, key)
+		}
+	}
+	return merged
 }
 
 // Inspect both success and fault graphs. Memoized summaries count repeated
