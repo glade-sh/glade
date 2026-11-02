@@ -1,0 +1,14 @@
+capture_date=2026-11-02
+source_apis=62.0,67.0
+native_route=named synchronous Apex test (System.runAs is unavailable to executeAnonymous)
+org_type=one-day Developer scratch org
+release=Winter '27 (campaign release-drift ruling 35)
+capture_scope=Lead user-mode read by standard users, creator/non-creator and user/empty-queue/nonempty-queue ownership
+scratch_default=initial org sharing model was not queried; it must not be equated with an omitted Glade metadata sharing model
+private_control=deployed project/private-model/objects/Lead/Lead.object-meta.xml and observed EntityDefinition.InternalSharingModel=Private
+observations=count query, intentionally failed assertion envelope FLOWBATCH, test transaction rolled back
+source=project/force-app/main/default/classes/LeadSharingProbeTest.cls
+source_sha256=e55b19093d226161c8c3c1192ae7e5455577b875d9c9089d41c6233c291ba291
+versioning=deploy class metadata at each source api; project contains the 62.0 version and the 67.0 version differs only in apiVersion
+org_delete_command=success
+org_deletion_verification=inconclusive; first Dev Hub query omitted all-rows and returned no rows; a later all-rows query showed a Deleted record at the expected creation time but identity was not retained for an exact match
