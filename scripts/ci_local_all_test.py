@@ -296,7 +296,11 @@ try:
 except KeyboardInterrupt:
  r.cancel(); sys.exit(130)
 """)
-                env = {**os.environ, 'MARKER': str(root / 'evaluator')}
+                # A GitHub pull_request runner exports RUNNER_TEMP and GITHUB_EVENT_NAME,
+                # which send ci-codeql.py to compute local PR diff ranges in this
+                # git-less fixture before the fake evaluator ever starts.
+                env = {k: v for k, v in os.environ.items() if not k.startswith(("GITHUB_", "RUNNER_", "CODEQL_"))}
+                env["MARKER"] = str(root / "evaluator")
                 proc = subprocess.Popen([sys.executable, str(harness), str(ROOT / 'scripts/ci-local-all'), str(root)], env=env, start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 try:
                     self.wait_for(root / 'evaluator.child')
