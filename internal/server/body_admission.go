@@ -15,7 +15,10 @@ const maxStagedRequestBytes int64 = 32 << 20
 
 // stageRequestBody reads bodies before taking the org lock, within a disk budget.
 func (s *Server) stageRequestBody(w http.ResponseWriter, r *http.Request) (func(), bool) {
-	if r.Body == nil || r.Body == http.NoBody || r.Method == http.MethodHead {
+	// HTTP/2 supplies a non-nil Body even when the stream ended with its
+	// headers. That request reports ContentLength 0 and has nothing to stage;
+	// HTTP/1 already gives such a request http.NoBody.
+	if r.Body == nil || r.Body == http.NoBody || r.Method == http.MethodHead || (r.ProtoMajor >= 2 && r.ContentLength == 0) {
 		return func() {}, true
 	}
 	s.bodySlotsOnce.Do(func() { s.bodySlots = make(chan struct{}, 16) })

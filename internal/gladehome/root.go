@@ -377,7 +377,13 @@ func validateRoot(root string) (string, bool) {
 			return "", false
 		}
 	}
-	return filepath.Clean(root), true
+	// Resolve once against the working directory: consumers run node with a
+	// different cwd, so a relative root would be joined twice.
+	absolute, err := filepath.Abs(root)
+	if err != nil {
+		return "", false
+	}
+	return absolute, true
 }
 
 // ToolchainStatus describes whether the active LWC toolchain is ready.

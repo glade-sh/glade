@@ -3,6 +3,7 @@ package gladecli
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -164,9 +165,22 @@ func runHomeCLIStatus(t *testing.T, route string) error {
 		writeTestFile(t, filepath.Join(root, "glade.yml"), "project:\n  root: .\n")
 		args = []string{"doctor", "--project", root, "--json"}
 	}
-	var output bytes.Buffer
-	if code := Run(t.Context(), args, &output, &output); code != 0 {
-		return fmt.Errorf("%s exited %d: %s", command, code, &output)
+	var output, stderr bytes.Buffer
+	if code := Run(t.Context(), args, &output, &stderr); code != 0 {
+		return fmt.Errorf("%s exited %d: %s%s", command, code, &output, &stderr)
+	}
+	if command == "DoctorCLI" {
+		// Doctor may pass on Apex readiness alone; the toolchain verdict is
+		// the managed consumer's outcome.
+		var report struct {
+			ToolchainOK *bool `json:"toolchainOK"`
+		}
+		if err := json.Unmarshal(output.Bytes(), &report); err != nil || report.ToolchainOK == nil {
+			return fmt.Errorf("%s report lacks toolchainOK (%v): %s", command, err, &output)
+		}
+		if !*report.ToolchainOK {
+			return fmt.Errorf("%s reported toolchainOK=false: %s", command, &output)
+		}
 	}
 	return nil
 }

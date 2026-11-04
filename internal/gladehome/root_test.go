@@ -261,3 +261,49 @@ func TestEnsureRootConcurrentFirstUseInstallsOnce(t *testing.T) {
 		}
 	}
 }
+
+// A relative or parent-relative GLADE_HOME must resolve once against the
+// working directory, so consumers that run node with another cwd stay correct.
+func TestValidateRootReturnsAbsoluteForRelativeHome(t *testing.T) {
+	base := t.TempDir()
+	home := filepath.Join(base, "home")
+	for _, rel := range []string{
+		"third_party/lwc/compile.mjs",
+		"third_party/lwc/node_modules/@lwc/compiler/package.json",
+		"lwcruntime/src/shims/wire-adapter.mjs",
+		"lwcruntime/src/shims/lds-cache.mjs",
+		"lwcruntime/src/shell/app.mjs",
+		"lwcruntime/src/slds/slds-loader.mjs",
+		"lwcruntime/src/lightning/button.mjs",
+	} {
+		writeMinimalToolchainFile(t, home, rel)
+	}
+	child := filepath.Join(base, "child")
+	if err := os.MkdirAll(child, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Chdir(base)
+	want, err := filepath.Abs("home")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, value := range []string{"home", filepath.Join("child", "..", "home")} {
+		for _, env := range []string{"GLADE_HOME", "GLADE_ROOT"} {
+			t.Run(env+"/"+value, func(t *testing.T) {
+				t.Setenv("GLADE_HOME", "")
+				t.Setenv("GLADE_ROOT", "")
+				t.Setenv("XDG_DATA_HOME", t.TempDir())
+				t.Setenv(env, value)
+				for name, resolve := range map[string]func() (string, error){"Root": Root, "EnsureRoot": EnsureRoot} {
+					got, err := resolve()
+					if err != nil {
+						t.Fatalf("%s: %v", name, err)
+					}
+					if got != want {
+						t.Fatalf("%s = %q, want absolute %q", name, got, want)
+					}
+				}
+			})
+		}
+	}
+}

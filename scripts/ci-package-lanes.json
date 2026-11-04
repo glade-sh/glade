@@ -92,7 +92,7 @@
     "./internal/apextest": 504,
     "./internal/gladecli": 92,
     "./internal/gladehome": 8,
-    "./internal/playground": 3,
+    "./internal/playground": 4,
     "./internal/pluginhost": 4,
     "./internal/sema": 646,
     "./internal/server": 11,

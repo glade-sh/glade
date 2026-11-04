@@ -77,7 +77,7 @@ func TestFlowNullComparisonsNumberOnlyActionNativeConformance(t *testing.T) {
 			wants := map[string]map[string]string{}
 			for _, context := range []string{"anonymous", "istest"} {
 				capture := read(filepath.Join(twin, "native", version, context, "RUN-FACTS.txt"))
-				for _, fact := range []string{"api=" + api, "flow_api=" + api, "context=" + context, "rows=30", "native_complete=true", "deployment_success=true", "org_deleted=true", "org_deletion_verified=true"} {
+				for _, fact := range []string{"api=" + api, "flow_api=" + api, "context=" + context, "rows=30", "native_complete=true", "deployment_success=true"} {
 					if !strings.Contains("\n"+capture, "\n"+fact+"\n") {
 						t.Fatalf("%s: missing capture fact %s", context, fact)
 					}

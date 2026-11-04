@@ -218,6 +218,17 @@ if [[ ! -x "${GLADE}" ]]; then
 	exit 1
 fi
 
+# Install the bundled payload as docs/INSTALL.md describes, into a private data
+# home. A binary does not trust toolchain files beside itself unless the user
+# opts in (docs/LWC_LOCAL_SHELL.md), so the smoke checks the installed layout.
+if [[ -d "${EXTRACT_DIR}/share/glade" ]]; then
+	SMOKE_DATA_HOME="${TMP}/data-home"
+	mkdir -p "${SMOKE_DATA_HOME}/glade"
+	cp -R "${EXTRACT_DIR}/share/glade/." "${SMOKE_DATA_HOME}/glade/"
+	export XDG_DATA_HOME="${SMOKE_DATA_HOME}"
+	unset GLADE_HOME GLADE_ROOT GLADE_ALLOW_PROJECT_TOOLCHAIN
+fi
+
 HASH_BEFORE="$(shasum -a 256 "${GLADE}" | awk '{print $1}')"
 ACTUAL_VERSION="$("${GLADE}" version 2>&1)"
 if [[ "${ACTUAL_VERSION}" != "${VERSION_OUTPUT}" ]]; then

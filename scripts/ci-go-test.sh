@@ -1605,7 +1605,10 @@ try:
                     capture_output=True, text=True)
                 if result.returncode != 0:
                     reject(f"shard {index} deferred prerequisite validation failed: {result.stderr.strip()}")
-                checked_deferred = sorted(row["test"] for row in load_json(checked)["deferred"])
+                # The shard summary lists deferred selected top-level tests;
+                # captured native-boundary subtests stay inside a passing parent.
+                checked_deferred = sorted(row["test"] for row in load_json(checked)["deferred"]
+                                          if row["test"] in selected_tests)
                 if checked_deferred != deferred:
                     reject(f"shard {index} deferred tests do not match raw events")
             all_deferred.extend(deferred)

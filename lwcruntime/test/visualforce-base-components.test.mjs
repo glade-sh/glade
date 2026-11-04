@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { chromium } from "./shared-playwright.mjs";
-import { requireLWCToolchain, startVisualforceDevServer } from "./helpers.mjs";
+import { newLocalPage, requireLWCToolchain, startVisualforceDevServer } from "./helpers.mjs";
 
 const fixture = "testdata/local-tests/lightning-out-vf";
 
@@ -21,7 +21,7 @@ test("Visualforce Lightning Out renders supported base components with SLDS", as
   let browser;
   try {
     browser = await chromium.launch({ headless: true });
-    const page = await browser.newPage();
+    const page = await newLocalPage(browser);
     await page.goto(`${server.baseURL}/apex/MultiWidgetHost`, { waitUntil: "networkidle" });
 
     const host = page.locator('c-base-component-host [data-probe="vf-base"]');

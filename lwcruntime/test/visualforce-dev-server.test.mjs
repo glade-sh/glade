@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { chromium } from "./shared-playwright.mjs";
-import { defaultSLDSHref, requireLWCToolchain, startVisualforceDevServer } from "./helpers.mjs";
+import { defaultSLDSHref, newLocalPage, requireLWCToolchain, startVisualforceDevServer } from "./helpers.mjs";
 
 const fixture = "testdata/local-tests/lightning-out-vf";
 
@@ -24,7 +24,7 @@ test("MultiWidgetHost boots Lightning Out components in the rendered Visualforce
   const consoleErrors = [];
   try {
     browser = await chromium.launch({ headless: true });
-    const page = await browser.newPage();
+    const page = await newLocalPage(browser);
     page.on("pageerror", (err) => {
       pageErrors.push(err.message);
     });
@@ -118,7 +118,7 @@ test("served record wire refreshes after LDS update and notification", async (t)
   let browser;
   try {
     browser = await chromium.launch({ headless: true });
-    const page = await browser.newPage();
+    const page = await newLocalPage(browser);
     await page.goto(`${server.baseURL}/apex/MultiWidgetHost`, { waitUntil: "networkidle" });
     const recordName = page.locator("c-record-wire-host .name");
     assert.equal(await recordName.innerText({ timeout: 10000 }), "Acme");
