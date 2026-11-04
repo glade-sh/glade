@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 const serveDir = ".glade/test"
@@ -22,7 +23,25 @@ func ServePIDPath(projectRoot string) string {
 	return pid
 }
 
+// absoluteIfClimbing resolves a relative root that climbs out of the working
+// directory. Cleaning leaves only leading parent segments, which cannot cross a
+// symlink, so the absolute form is unambiguous and passes the traversal check.
+func absoluteIfClimbing(projectRoot string) string {
+	if projectRoot == "" || filepath.IsAbs(projectRoot) {
+		return projectRoot
+	}
+	cleaned := filepath.Clean(projectRoot)
+	if cleaned != ".." && !strings.HasPrefix(cleaned, ".."+string(filepath.Separator)) {
+		return projectRoot
+	}
+	if abs, err := filepath.Abs(cleaned); err == nil {
+		return abs
+	}
+	return projectRoot
+}
+
 func servePaths(projectRoot string) (socket string, pid string) {
+	projectRoot = absoluteIfClimbing(projectRoot)
 	localSocket := filepath.Join(projectRoot, serveDir, "serve.sock")
 	localPID := filepath.Join(projectRoot, serveDir, "serve.pid")
 	if len(localSocket) <= maxUnixSocketPathLen {
@@ -34,6 +53,7 @@ func servePaths(projectRoot string) (socket string, pid string) {
 }
 
 func privateServeDir(projectRoot string) (base, relative string) {
+	projectRoot = absoluteIfClimbing(projectRoot)
 	localSocket := filepath.Join(projectRoot, serveDir, "serve.sock")
 	if len(localSocket) <= maxUnixSocketPathLen {
 		return projectRoot, filepath.FromSlash(serveDir)

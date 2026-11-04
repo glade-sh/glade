@@ -7,6 +7,7 @@ import (
 	"errors"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -471,20 +472,73 @@ func TestRunDevLWCWithOpenURLErrorClosesListener(t *testing.T) {
   <isExposed>true</isExposed>
 </LightningComponentBundle>`)
 	wantErr := errors.New("open failed")
-	var addr string
+	var listener *lwcCloseTrackingListener
+	err := runDevLWCWithOpenURLAndListen(t.Context(), []string{"--project", root, "--addr", "127.0.0.1:0", "--open"}, &bytes.Buffer{}, &bytes.Buffer{},
+		func(string) error { return wantErr },
+		func(network, address string) (net.Listener, error) {
+			base, err := net.Listen(network, address)
+			if err != nil {
+				return nil, err
+			}
+			t.Cleanup(func() { _ = base.Close() })
+			if err := base.(*net.TCPListener).SetDeadline(time.Now().Add(30 * time.Second)); err != nil {
+				return nil, err
+			}
+			listener = &lwcCloseTrackingListener{Listener: base}
+			return listener, nil
+		})
+	if !errors.Is(err, wantErr) {
+		t.Fatalf("error = %v, want %v", err, wantErr)
+	}
+	if listener == nil {
+		t.Fatal("listener factory was not called")
+	}
+	if listener.closeCalls != 1 {
+		t.Fatalf("listener close calls = %d, want 1", listener.closeCalls)
+	}
+	if conn, err := listener.Listener.Accept(); !errors.Is(err, net.ErrClosed) {
+		if conn != nil {
+			_ = conn.Close()
+		}
+		t.Fatalf("owned listener Accept error = %v, want %v", err, net.ErrClosed)
+	}
+}
 
-	err := runDevLWCWithOpenURL(t.Context(), []string{"--project", root, "--addr", "127.0.0.1:0", "--open"}, &bytes.Buffer{}, &bytes.Buffer{}, func(url string) error {
-		addr = strings.TrimSuffix(strings.TrimPrefix(url, "http://"), "/lwc")
+// Preserve the public wrapper's opener-error and released-address contract.
+func TestRunDevLWCOpenErrorReleasesAdvertisedAddress(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/default/lwc/contextProbe/contextProbe.js-meta.xml"), `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata"><isExposed>true</isExposed></LightningComponentBundle>`)
+	wantErr := errors.New("open failed")
+	var opened string
+	err := runDevLWCWithOpenURL(t.Context(), []string{"--project", root, "--addr", "127.0.0.1:0", "--open"}, &bytes.Buffer{}, &bytes.Buffer{}, func(target string) error {
+		opened = target
 		return wantErr
 	})
 	if !errors.Is(err, wantErr) {
 		t.Fatalf("error = %v, want %v", err, wantErr)
 	}
-	listener, listenErr := net.Listen("tcp", addr)
-	if listenErr != nil {
-		t.Fatalf("listener %q was not closed after opener error: %v", addr, listenErr)
+	parsed, err := url.Parse(opened)
+	if err != nil || parsed.Scheme != "http" || parsed.Host == "" || parsed.Path != "/lwc" {
+		t.Fatalf("opener URL = %q, parse error = %v", opened, err)
 	}
-	listener.Close()
+	listener, err := net.Listen("tcp", parsed.Host)
+	if err != nil {
+		t.Fatalf("listener %q was not closed after opener error: %v", parsed.Host, err)
+	}
+	if err := listener.Close(); err != nil {
+		t.Fatalf("close rebound listener: %v", err)
+	}
+}
+
+type lwcCloseTrackingListener struct {
+	net.Listener
+	closeCalls int
+}
+
+func (l *lwcCloseTrackingListener) Close() error {
+	l.closeCalls++
+	return l.Listener.Close()
 }
 
 func TestRunDevLWCUsesDBForLocalBuilderSearch(t *testing.T) {
@@ -529,7 +583,12 @@ func TestRunDevLWCUsesDBForLocalBuilderSearch(t *testing.T) {
 
 	ready := waitForDevLWCReadyFileOrDone(t, readyPath, done, &stdout, &stderr)
 	client := http.Client{Timeout: devLWCReadyFileTimeout}
-	resp, err := client.Get(ready.URL + "/lightning/local/records.json?object=Account&q=database")
+	req, err := http.NewRequest(http.MethodGet, ready.URL+"/lightning/local/records.json?object=Account&q=database", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Sec-Fetch-Site", "same-origin")
+	resp, err := client.Do(req)
 	if err != nil {
 		cancel()
 		t.Fatal(err)

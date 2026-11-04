@@ -1,0 +1,11 @@
+id	api	route	status	value
+forname_missing_newinstance	62.0	anonymous	OBSERVED	{"compiled":true,"success":false,"exceptionMessage":"System.NullPointerException: Attempt to de-reference a null object"}
+forname_missing_newinstance	67.0	anonymous	OBSERVED	{"compiled":true,"success":false,"exceptionMessage":"System.NullPointerException: Attempt to de-reference a null object"}
+forname_missing_is_null	62.0	anonymous	OBSERVED	{"compiled":true,"success":true,"exceptionMessage":""}
+forname_missing_is_null	67.0	anonymous	OBSERVED	{"compiled":true,"success":true,"exceptionMessage":""}
+forname_ns_missing_newinstance	62.0	anonymous	OBSERVED	{"compiled":true,"success":false,"exceptionMessage":"System.NullPointerException: Attempt to de-reference a null object"}
+forname_ns_missing_newinstance	67.0	anonymous	OBSERVED	{"compiled":true,"success":false,"exceptionMessage":"System.NullPointerException: Attempt to de-reference a null object"}
+forname_missing_catch_npe	62.0	anonymous	OBSERVED	{"compiled":true,"success":false,"exceptionMessage":"System.AssertException: Assertion Failed: caught:System.NullPointerException:Attempt to de-reference a null object"}
+forname_missing_catch_npe	67.0	anonymous	OBSERVED	{"compiled":true,"success":false,"exceptionMessage":"System.AssertException: Assertion Failed: caught:System.NullPointerException:Attempt to de-reference a null object"}
+forname_missing_getname	62.0	anonymous	OBSERVED	{"compiled":true,"success":false,"exceptionMessage":"System.NullPointerException: Attempt to de-reference a null object"}
+forname_missing_getname	67.0	anonymous	OBSERVED	{"compiled":true,"success":false,"exceptionMessage":"System.NullPointerException: Attempt to de-reference a null object"}

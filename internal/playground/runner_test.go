@@ -854,3 +854,35 @@ func TestRunnerReportsCompileErrorWithoutCommit(t *testing.T) {
 		t.Fatalf("compile error committed records: %#v", latest.Objects["Account"].Records)
 	}
 }
+
+// The playground runs anonymous Apex, so it must keep the Tooling
+// executeAnonymous reflection boundary captured in
+// apextest/testdata/conformance/reference_only_names/context-org.tsv: a named
+// helper sees the global lookup but Type.forName stays null (API 62-66 too).
+func TestRunnerAnonymousTransactionKeepsReferenceOnlyReflectionBoundary(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
+	projectRoot := t.TempDir()
+	writePlaygroundTestFile(t, filepath.Join(projectRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"name":"local-project","sourceApiVersion":"62.0"}`)
+	writePlaygroundTestFile(t, filepath.Join(projectRoot, "force-app/main/default/classes/RefOnlyAvailabilityWarm62.cls"), `public class RefOnlyAvailabilityWarm62 { public static String observe() { FieldServiceMobileExtension value = new Schema.FieldServiceMobileExtension(); return value.getSObjectType().getDescribe().getName() + '|' + String.valueOf(Schema.getGlobalDescribe().get('FieldServiceMobileExtension') == null) + '|' + String.valueOf(Type.forName('FieldServiceMobileExtension') == null); } }
+`)
+	writePlaygroundTestFile(t, filepath.Join(projectRoot, "force-app/main/default/classes/RefOnlyAvailabilityWarm62.cls-meta.xml"), `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>`)
+	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ProjectRoot: projectRoot, ID: "default"})
+	if err != nil {
+		t.Fatalf("OpenWorkspace() error = %v", err)
+	}
+	runner := NewRunner(ws, RunnerOptions{Version: "test"})
+	result, err := runner.Run(t.Context(), RunRequest{
+		AnonymousBody: "System.debug(RefOnlyAvailabilityWarm62.observe());",
+		Mode:          RunModeScratch,
+		LimitMode:     "permissive",
+	})
+	if err != nil {
+		t.Fatalf("Run() error = %v", err)
+	}
+	if result.Status != RunStatusPass {
+		t.Fatalf("status = %q diagnostics=%#v error=%s", result.Status, result.Diagnostics, result.ErrorMessage)
+	}
+	if len(result.Logs) != 1 || result.Logs[0] != "FieldServiceMobileExtension|false|true" {
+		t.Fatalf("logs = %#v", result.Logs)
+	}
+}

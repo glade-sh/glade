@@ -82,7 +82,7 @@ func TestPublicWorkspaceDescribesEnforcedPolicy(t *testing.T) {
 	}
 	handler := NewServer(ws, ServerOptions{Version: "test", Public: true})
 	rec := httptest.NewRecorder()
-	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/playground/api/workspace", nil))
+	handler.ServeHTTP(case339ResponseWriter{rec}, httptest.NewRequest(http.MethodGet, "/playground/api/workspace", nil))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("workspace status = %d body=%s", rec.Code, rec.Body.String())
 	}
@@ -116,7 +116,7 @@ func TestPublicRunTimeoutReturnsActionableResponse(t *testing.T) {
 		t.Fatal(err)
 	}
 	rec := httptest.NewRecorder()
-	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/playground/api/run", bytes.NewReader(body)))
+	handler.ServeHTTP(case339ResponseWriter{rec}, httptest.NewRequest(http.MethodPost, "/playground/api/run", bytes.NewReader(body)))
 	if rec.Code != http.StatusServiceUnavailable {
 		t.Fatalf("timeout status = %d body=%s", rec.Code, rec.Body.String())
 	}
@@ -274,10 +274,11 @@ func TestPublicServerWorkspaceOmitsConfiguredDBPath(t *testing.T) {
 		t.Fatalf("OpenWorkspace() error = %v", err)
 	}
 	handler := NewServer(ws, ServerOptions{Version: "test", DBPath: dbPath, Public: true})
+	t.Cleanup(handler.Close)
 
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/playground/api/workspace", nil)
-	handler.ServeHTTP(rec, req)
+	handler.ServeHTTP(case339ResponseWriter{rec}, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("workspace status = %d body=%s", rec.Code, rec.Body.String())
 	}
@@ -837,17 +838,24 @@ func TestPublicProjectReferenceRespectsWorkspaceLimits(t *testing.T) {
 		t.Fatal(err)
 	}
 	handler := NewServer(ws, ServerOptions{Version: "test", Public: true, MaxWorkspaceFiles: 2, MaxWorkspaceBytes: 1024, ProjectReferences: []ProjectReference{{Name: "Local", Path: projectRoot}}})
-	before, err := ws.Metadata()
+	t.Cleanup(handler.Close)
+	initial := httptest.NewRecorder()
+	handler.ServeHTTP(case339ResponseWriter{initial}, httptest.NewRequest(http.MethodGet, "/playground/api/workspace", nil))
+	cookie := initial.Result().Cookies()[0]
+	visitor := handler.sessions.items[cookie.Value].server.workspace
+	before, err := visitor.Metadata()
 	if err != nil {
 		t.Fatal(err)
 	}
 	request, _ := json.Marshal(map[string]string{"id": handler.projectRefs[0].ID})
 	rec := httptest.NewRecorder()
-	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/playground/api/examples/load", bytes.NewReader(request)))
+	load := httptest.NewRequest(http.MethodPost, "/playground/api/examples/load", bytes.NewReader(request))
+	load.AddCookie(cookie)
+	handler.ServeHTTP(case339ResponseWriter{rec}, load)
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("count-limited load = %d %s", rec.Code, rec.Body.String())
 	}
-	after, err := ws.Metadata()
+	after, err := visitor.Metadata()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -855,21 +863,40 @@ func TestPublicProjectReferenceRespectsWorkspaceLimits(t *testing.T) {
 		t.Fatal("workspace changed after rejected project reference")
 	}
 	handler = NewServer(ws, ServerOptions{Version: "test", Public: true, MaxWorkspaceFiles: 16, MaxWorkspaceBytes: 10, ProjectReferences: []ProjectReference{{Name: "Local", Path: projectRoot}}})
+	t.Cleanup(handler.Close)
+	initial = httptest.NewRecorder()
+	handler.ServeHTTP(case339ResponseWriter{initial}, httptest.NewRequest(http.MethodGet, "/playground/api/workspace", nil))
+	cookie = initial.Result().Cookies()[0]
+	visitor = handler.sessions.items[cookie.Value].server.workspace
+	before, err = visitor.Metadata()
+	if err != nil {
+		t.Fatal(err)
+	}
 	request, _ = json.Marshal(map[string]string{"id": handler.projectRefs[0].ID})
 	rec = httptest.NewRecorder()
-	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/playground/api/examples/load", bytes.NewReader(request)))
+	load = httptest.NewRequest(http.MethodPost, "/playground/api/examples/load", bytes.NewReader(request))
+	load.AddCookie(cookie)
+	handler.ServeHTTP(case339ResponseWriter{rec}, load)
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("byte-limited load = %d %s", rec.Code, rec.Body.String())
 	}
+	after, err = visitor.Metadata()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if after.WorkspaceHash != before.WorkspaceHash {
+		t.Fatal("workspace changed after byte-limited rejection")
+	}
 	handler = NewServer(ws, ServerOptions{Version: "test", Public: true, MaxWorkspaceFiles: 5, MaxWorkspaceBytes: 1024, ProjectReferences: []ProjectReference{{Name: "Local", Path: projectRoot}}})
+	t.Cleanup(handler.Close)
 	request, _ = json.Marshal(map[string]string{"id": handler.projectRefs[0].ID})
 	rec = httptest.NewRecorder()
-	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/playground/api/examples/load", bytes.NewReader(request)))
+	handler.ServeHTTP(case339ResponseWriter{rec}, httptest.NewRequest(http.MethodPost, "/playground/api/examples/load", bytes.NewReader(request)))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("bounded load = %d %s", rec.Code, rec.Body.String())
 	}
-	meta, err := ws.Metadata()
-	if err != nil {
+	var meta WorkspaceMetadata
+	if err := json.Unmarshal(rec.Body.Bytes(), &meta); err != nil {
 		t.Fatal(err)
 	}
 	if file := workspaceFileByPath(meta.Files, "force-app/main/default/classes/One.cls"); file == nil || !file.ReadOnly {
@@ -965,12 +992,13 @@ func TestPublicServerRateLimitsMutatingEndpointsByForwardedIP(t *testing.T) {
 		t.Fatalf("OpenWorkspace() error = %v", err)
 	}
 	handler := NewServer(ws, ServerOptions{Version: "test", Public: true, RatePerMinute: 1})
+	t.Cleanup(handler.Close)
 
 	for i, want := range []int{http.StatusOK, http.StatusTooManyRequests} {
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodPost, "/playground/api/reset", nil)
 		req.Header.Set("X-Forwarded-For", "203.0.113.10, 10.0.0.1")
-		handler.ServeHTTP(rec, req)
+		handler.ServeHTTP(case339ResponseWriter{rec}, req)
 		if rec.Code != want {
 			t.Fatalf("reset %d status = %d body=%s, want %d", i, rec.Code, rec.Body.String(), want)
 		}
@@ -992,6 +1020,7 @@ func TestPublicServerForcesScratchStrictRun(t *testing.T) {
 		Public:     true,
 		RunTimeout: 30 * time.Second,
 	})
+	t.Cleanup(handler.Close)
 
 	body, _ := json.Marshal(RunRequest{
 		AnonymousBody: "Account account = new Account(Name = 'No Persist'); insert account;",
@@ -1001,7 +1030,7 @@ func TestPublicServerForcesScratchStrictRun(t *testing.T) {
 	})
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodPost, "/playground/api/run", bytes.NewReader(body))
-	handler.ServeHTTP(rec, req)
+	handler.ServeHTTP(case339ResponseWriter{rec}, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("run status = %d body=%s", rec.Code, rec.Body.String())
 	}
@@ -1012,7 +1041,11 @@ func TestPublicServerForcesScratchStrictRun(t *testing.T) {
 	if result.LimitMode != "strict" {
 		t.Fatalf("limit mode = %q, want strict", result.LimitMode)
 	}
-	org := handler.runner.Org()
+	cookies := rec.Result().Cookies()
+	if len(cookies) == 0 {
+		t.Fatal("public run did not establish a visitor session")
+	}
+	org := handler.sessions.items[cookies[0].Value].server.runner.Org()
 	if account := org.Objects["Account"]; len(account.Records) != 0 {
 		t.Fatalf("public persist wrote %d account records to shared org", len(account.Records))
 	}

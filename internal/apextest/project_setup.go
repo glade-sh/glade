@@ -595,7 +595,23 @@ func projectReferencedStandardFieldCacheKey(index typesys.Index, cache *sourceCa
 	return fmt.Sprintf("%s|%016x", index.Project.Root, h.Sum64())
 }
 
-func applyProjectReferencedRecordTypes(org *storage.OrgState, p project.Project, caches ...*sourceCache) {
+// personAccountRecordTypeLabels returns the labels declared under the
+// PersonAccount metadata object, before it is folded into Account.
+func personAccountRecordTypeLabels(org storage.OrgState) map[string]bool {
+	object, ok := org.Objects["PersonAccount"]
+	if !ok {
+		return nil
+	}
+	labels := make(map[string]bool)
+	for _, recordType := range object.Definition.RecordTypes {
+		if label := strings.ToLower(strings.TrimSpace(recordType.Name)); label != "" {
+			labels[label] = true
+		}
+	}
+	return labels
+}
+
+func applyProjectReferencedRecordTypes(org *storage.OrgState, p project.Project, personLabels map[string]bool, caches ...*sourceCache) {
 	if org == nil {
 		return
 	}
@@ -613,17 +629,21 @@ func applyProjectReferencedRecordTypes(org *storage.OrgState, p project.Project,
 		if profileRecordTypeExists(state.Definition.RecordTypes, ref.DeveloperName) || profileRecordTypeExists(state.Definition.RecordTypes, ref.Name) {
 			continue
 		}
+		// A source reference to a PersonAccount record type label names a
+		// person type; the family comes from that metadata, not the name.
+		person := canonicalObject == "Account" && personLabels[strings.ToLower(strings.TrimSpace(ref.Name))]
 		state.Definition.RecordTypes = append(state.Definition.RecordTypes, storage.RecordTypeInfo{
 			DeveloperName: ref.DeveloperName,
 			Name:          ref.Name,
 			Active:        true,
 			Available:     true,
+			PersonAccount: person,
 		})
 		org.Objects[canonicalObject] = state
 	}
 }
 
-func applyManagedDependencyReferencedRecordTypes(org *storage.OrgState, p project.Project, caches ...*sourceCache) {
+func applyManagedDependencyReferencedRecordTypes(org *storage.OrgState, p project.Project, personLabels map[string]bool, caches ...*sourceCache) {
 	if org == nil {
 		return
 	}
@@ -631,7 +651,7 @@ func applyManagedDependencyReferencedRecordTypes(org *storage.OrgState, p projec
 		if dep.Project == nil || dep.Status != "loaded" {
 			continue
 		}
-		applyProjectReferencedRecordTypes(org, *dep.Project, caches...)
+		applyProjectReferencedRecordTypes(org, *dep.Project, personLabels, caches...)
 	}
 }
 

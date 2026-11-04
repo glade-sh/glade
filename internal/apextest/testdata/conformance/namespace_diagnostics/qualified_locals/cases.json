@@ -1,0 +1,86 @@
+[
+  {
+    "id": "N005",
+    "group": "controls/namespace-type-references",
+    "code": "System.String x='a'; pq.out('N005','compiled');",
+    "compile": true,
+    "expected": "COMPILE_ERROR\tline 6: Invalid type: System.String",
+    "sourceLine": 6,
+    "namedCompilations": {
+      "62.0": {
+        "name": "A04Native62N005",
+        "source": "@IsTest private class A04Native62N005 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nSystem.String x='a'; pq.out('N005','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+        "expected": "COMPILE_ERROR\tInvalid type: System.String"
+      },
+      "67.0": {
+        "name": "A04Native67N005",
+        "source": "@IsTest private class A04Native67N005 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nSystem.String x='a'; pq.out('N005','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+        "expected": "COMPILE_ERROR\tInvalid type: System.String"
+      }
+    },
+    "nativeNull": false
+  },
+  {
+    "id": "N006",
+    "group": "controls/namespace-type-references",
+    "code": "System.String x; pq.out('N006','compiled');",
+    "compile": true,
+    "expected": "COMPILE_ERROR\tline 6: Invalid type: System.String",
+    "sourceLine": 6,
+    "namedCompilations": {
+      "62.0": {
+        "name": "A04Native62N006",
+        "source": "@IsTest private class A04Native62N006 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nSystem.String x; pq.out('N006','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+        "expected": "COMPILE_ERROR\tInvalid type: System.String"
+      },
+      "67.0": {
+        "name": "A04Native67N006",
+        "source": "@IsTest private class A04Native67N006 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nSystem.String x; pq.out('N006','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+        "expected": "COMPILE_ERROR\tInvalid type: System.String"
+      }
+    },
+    "nativeNull": false
+  },
+  {
+    "id": "N007",
+    "group": "controls/namespace-type-references",
+    "code": "System.Integer x=1; pq.out('N007','compiled');",
+    "compile": true,
+    "expected": "COMPILE_ERROR\tline 6: Invalid type: System.Integer",
+    "sourceLine": 6,
+    "namedCompilations": {
+      "62.0": {
+        "name": "A04Native62N007",
+        "source": "@IsTest private class A04Native62N007 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nSystem.Integer x=1; pq.out('N007','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+        "expected": "COMPILE_ERROR\tInvalid type: System.Integer"
+      },
+      "67.0": {
+        "name": "A04Native67N007",
+        "source": "@IsTest private class A04Native67N007 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nSystem.Integer x=1; pq.out('N007','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+        "expected": "COMPILE_ERROR\tInvalid type: System.Integer"
+      }
+    },
+    "nativeNull": false
+  },
+  {
+    "id": "N008",
+    "group": "controls/namespace-type-references",
+    "code": "System.List<String> x=new List<String>(); pq.out('N008','compiled');",
+    "compile": true,
+    "expected": "COMPILE_ERROR\tline 6: Invalid type: System.List",
+    "sourceLine": 6,
+    "namedCompilations": {
+      "62.0": {
+        "name": "A04Native62N008",
+        "source": "@IsTest private class A04Native62N008 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nSystem.List<String> x=new List<String>(); pq.out('N008','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+        "expected": "COMPILE_ERROR\tInvalid type: System.List"
+      },
+      "67.0": {
+        "name": "A04Native67N008",
+        "source": "@IsTest private class A04Native67N008 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nSystem.List<String> x=new List<String>(); pq.out('N008','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+        "expected": "COMPILE_ERROR\tInvalid type: System.List"
+      }
+    },
+    "nativeNull": false
+  }
+]

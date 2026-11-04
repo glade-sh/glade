@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
@@ -224,6 +225,7 @@ type sourceTag struct {
 
 func scanSourceTags(source string) []sourceTag {
 	var tags []sourceTag
+	positions := sourcePositionCursor{source: source, line: 1, column: 1}
 	for i := 0; i < len(source); {
 		if source[i] != '<' {
 			i++
@@ -246,9 +248,9 @@ func scanSourceTags(source string) []sourceTag {
 			break
 		}
 		raw := source[i : end+1]
-		line, column := lineColumnAt(source, i)
+		line, column := positions.at(i)
 		name, attrs := parseRawStartTag(raw)
-		nameEndLine, nameEndColumn := lineColumnAt(source, i+1+len(name))
+		nameEndLine, nameEndColumn := positions.at(i + 1 + len(name))
 		tags = append(tags, sourceTag{name: name, attrs: attrs, line: line, column: column, nameEndLine: nameEndLine, nameEndColumn: nameEndColumn})
 		i = end + 1
 		switch strings.ToLower(name) {
@@ -260,6 +262,29 @@ func scanSourceTags(source string) []sourceTag {
 		}
 	}
 	return tags
+}
+
+// Source tag offsets advance monotonically. Count runes using the same byte
+// boundary semantics as lineColumnAt, including malformed UTF-8.
+type sourcePositionCursor struct {
+	source string
+	offset int
+	line   int
+	column int
+}
+
+func (p *sourcePositionCursor) at(offset int) (int, int) {
+	for p.offset < offset && p.offset < len(p.source) {
+		r, size := utf8.DecodeRuneInString(p.source[p.offset:])
+		p.offset += size
+		if r == '\n' {
+			p.line++
+			p.column = 1
+		} else {
+			p.column++
+		}
+	}
+	return p.line, p.column
 }
 
 func findStartTagEnd(source string, offset int) int {

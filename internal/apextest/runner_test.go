@@ -1807,8 +1807,8 @@ func TestRuntimeKeyIncludesSemanticMetadata(t *testing.T) {
 }
 
 func TestRunWithSourceDigestsPersistsExactV7RuntimeKey(t *testing.T) {
-	if testRuntimeCacheABI != "apextest-runtime-v16" {
-		t.Fatalf("test runtime ABI = %q, want apextest-runtime-v16", testRuntimeCacheABI)
+	if testRuntimeCacheABI != "apextest-runtime-v26" {
+		t.Fatalf("test runtime ABI = %q, want apextest-runtime-v26", testRuntimeCacheABI)
 	}
 	wasDisabled := disableDiskCache.Load()
 	disableDiskCache.Store(false)
@@ -5858,8 +5858,8 @@ global abstract class Binding {
   global static Binding newInstance() {
     return (Binding) impls.get(BindingType.Apex).newInstance();
   }
-  private class ApexBinding extends Binding {
-    private ApexBinding() {
+  public class ApexBinding extends Binding {
+    public ApexBinding() {
       Source = 'dep';
     }
   }
@@ -5902,8 +5902,8 @@ public abstract class Binding {
   public static Binding newInstance() {
     return (Binding) impls.get(BindingType.Apex).newInstance();
   }
-  private class ApexBinding extends Binding {
-    private ApexBinding() {
+  public class ApexBinding extends Binding {
+    public ApexBinding() {
       Source = 'local';
     }
   }

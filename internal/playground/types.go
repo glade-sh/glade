@@ -55,11 +55,6 @@ type PlaygroundPolicy struct {
 	LimitCaps         vm.LimitCaps `json:"limitCaps"`
 }
 
-type PlaygroundHealth struct {
-	Status  string `json:"status"`
-	Version string `json:"version,omitempty"`
-}
-
 type WorkspaceFile struct {
 	Path     string `json:"path"`
 	Kind     string `json:"kind"`
@@ -96,11 +91,13 @@ const (
 )
 
 type RunRequest struct {
-	AnonymousBody string        `json:"anonymousBody"`
-	Mode          RunMode       `json:"mode"`
-	LimitMode     vm.LimitMode  `json:"limitMode"`
-	UseCache      bool          `json:"useCache"`
-	LimitCaps     *vm.LimitCaps `json:"-"`
+	AnonymousBody     string        `json:"anonymousBody"`
+	Mode              RunMode       `json:"mode"`
+	LimitMode         vm.LimitMode  `json:"limitMode"`
+	UseCache          bool          `json:"useCache"`
+	LimitCaps         *vm.LimitCaps `json:"-"`
+	OutputLimit       int           `json:"-"`
+	disableCacheWrite bool
 }
 
 type RunResult struct {
@@ -170,16 +167,26 @@ type RunnerOptions struct {
 	DBPath  string
 }
 
+// PlaygroundHealth is the public liveness and readiness response.
+type PlaygroundHealth struct {
+	Status  string `json:"status"`
+	Version string `json:"version,omitempty"`
+}
+
 type ServerOptions struct {
-	Version           string
-	DBPath            string
-	DefaultLimitMode  vm.LimitMode
-	ProjectReferences []ProjectReference
-	ShowExamples      bool
-	Public            bool
-	RunTimeout        time.Duration
-	RatePerMinute     int
-	PublicLimitCaps   vm.LimitCaps
-	MaxWorkspaceFiles int
-	MaxWorkspaceBytes int64
+	Version             string
+	DBPath              string
+	DefaultLimitMode    vm.LimitMode
+	ProjectReferences   []ProjectReference
+	ShowExamples        bool
+	Public              bool
+	RunTimeout          time.Duration
+	RatePerMinute       int
+	TrustedProxy        string
+	DigitalOceanIngress bool
+	// InsecureLocalCookie permits HTTP cookies only for explicit loopback validation.
+	InsecureLocalCookie bool
+	PublicLimitCaps     vm.LimitCaps
+	MaxWorkspaceFiles   int
+	MaxWorkspaceBytes   int64
 }

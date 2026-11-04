@@ -24,19 +24,20 @@ automatically expanded instructions. Start a new task after changing startup
 instructions and verify which files it loaded. See the official
 [AGENTS.md guide](https://learn.chatgpt.com/docs/agent-configuration/agents-md).
 
-For Codex, select Astra or another available model in the client. Model and
+Pick the model in the client; the repository does not depend on one. State
+the client and model in your report so results can be reproduced. Model and
 reasoning defaults belong in user configuration; provider endpoints and auth
-also belong there. Inspect the effective task settings when an app selection
-differs from a CLI default. Use the current client's supported values rather
-than copying context limits or model-specific settings from another client.
-See [Codex configuration](https://learn.chatgpt.com/docs/config-file/config-basic).
+also belong there. Pass the model explicitly when a client's default may
+differ, and inspect the effective task settings when an app selection differs
+from a CLI default. See
+[Codex configuration](https://learn.chatgpt.com/docs/config-file/config-basic).
 
-For Astra, give a clear outcome, relevant context, constraints, and completion
-checks. State when to proceed with reasonable assumptions and when independent
-subtasks should run in parallel. Audit overlapping skills before adding more
-instructions: broad triggers, conflicting approval rules, unavailable tool
-names, and mandatory ceremonies can all change the result. These priorities
-follow [OpenAI's Astra guidance](https://developers.openai.com/api/docs/guides/latest-model#prompting-best-practices).
+Give any agent a clear outcome, the relevant files, the constraints in
+`AGENTS.md`, and the completion checks from the validation table. Say when to
+proceed on reasonable assumptions and when independent subtasks may run in
+parallel. Audit overlapping skills before adding more instructions: broad
+triggers, conflicting approval rules, unavailable tool names, and mandatory
+ceremonies can all change the result.
 
 Use task-specific skills for recurring procedures. Routine repository work
 already has shell commands and tests; it does not require a new MCP server,
@@ -63,6 +64,12 @@ For JavaScript surfaces, use the Node version in the corresponding CI workflow
 and `npm ci --prefix <directory>` with that directory's lockfile when dependencies
 are missing or changed. Browser tests also need their package's Playwright
 browser installation. Do not treat a dependency-driven skip as a passing test.
+
+These suites need such tools on the host: `internal/gladecli` and
+`internal/server` (Node for the LWC shell and toolchain tests),
+`internal/visualforce` and `internal/lwcbrowser` (Playwright and Chromium), and
+`./scripts` (a real git checkout, `jq` and Node). Run them where the dependency
+exists, or report the result as environmental and name the missing tool.
 
 ## Validation by surface
 
@@ -125,6 +132,26 @@ those historical rows do not extend the product's API 59–67 support contract.
 For an archived checkout, point `GLADE_HOME` at a prepared toolchain and set
 `GLADE_LWC_PLAYWRIGHT_MODULE` to the absolute Playwright package directory.
 `GLADE_LWC_BROWSER_EXECUTABLE` optionally selects an installed Chromium binary.
+
+Visualforce's V09, V09 clicked-field, V12, V13 and V15 Salesforce
+conformance tests also require Node, Playwright and Chromium. CI installs the
+locked `lwcruntime` dependencies and its Chromium before the Visualforce
+shards. A tracked-files-only archive omits `node_modules`, so a runner without
+an externally provisioned Playwright package cannot execute these browser
+checks. Treat them as CI-only on such runners; missing prerequisites are not a
+conformance pass. To run them on a provisioned checkout, install both dependency
+trees and Chromium as in CI, then use:
+
+```bash
+CGO_ENABLED=1 go test -count=1 -p=1 -timeout=0 \
+  -run '^TestV(09|12|13|15).*SalesforceConformance$' ./internal/visualforce
+```
+
+An archived checkout needs `GLADE_LWC_PLAYWRIGHT_MODULE` set to the absolute
+path of a compatible installed Playwright package and a usable Chromium. On
+Linux, Chromium may also need system dependencies; CI uses Playwright's
+`install --with-deps chromium`.
+
 For a checkout with dependencies installed, run:
 
 ```bash
@@ -151,10 +178,69 @@ for all families: repeat each family's conformance test and compare its report
 before enabling concurrency in a lane planner.
 
 Use [the CI workflows](../.github/workflows) and package scripts as the current
-command authority. `scripts/ci-go-test.sh local-release` runs the broad Go lanes;
-avoid running it concurrently with another broad suite on the same host.
+command authority.
+
+## Validation ladder
+
+Climb only as far as the change needs. Each step runs once per exact tree.
+
+| Step | Command | When |
+| --- | --- | --- |
+| Focused | `go test ./internal/<pkg> -run '^(TestA\|TestB)$'` | While iterating. Rerun a failure alone before anything broader. |
+| Package | `go test ./internal/<pkg>` for each changed package, plus `./internal/gladecli ./internal/repoguard` | Once before review. |
+| Full local release | `scripts/ci-go-test.sh local-release` | Changes that cross packages or touch the parser, `sema`, `vm`, `storage`, `soql` or `dml`; release candidates. |
+| Distribution smoke | `scripts/release-check.sh` (adds `git diff --check`, the site release proof and `scripts/smoke.sh`) | Release candidates, from a clean checkout. |
+| Required CI, locally | `scripts/ci-local-all` | Before opening or updating a release PR. |
+
+`local-release` runs its lanes one at a time: `vet`, `guard` (repoguard),
+`cli-ui` (gladecli), `sema`, `apex` (two apextest shards), `server-playground`
+and `remaining`. `scripts/ci-go-test.sh local-release-lane NAME` reruns one
+lane. `LOCAL_GO_TEST_JOBS` accepts `auto` or a positive integer, but lanes do
+not overlap. Raw events and a validated `package-summary.json` per lane go
+under `ci-artifacts/local-release/`. Avoid running it alongside another broad
+suite on the same host.
+
+`scripts/ci-local-all` runs the jobs behind `Required CI` without GitHub
+Actions, with the same shard counts: apextest 12, vm 4, gladecli 4, sema 2,
+LWC compile 8 and Visualforce 4. It needs Go with CGO, Node 22, actionlint,
+the CodeQL CLI and Go query packs, and Playwright Chromium. A missing tool is
+`SKIP-ENV`, which exits nonzero. Shards run serially unless `--jobs N` is set.
+
+## Hosted CI
+
+GitHub Actions is the hosted authority. Pull requests and pushes to `main` run
+these workflows:
+
+| Workflow | Triggers | What it gates |
+| --- | --- | --- |
+| `CI` (`ci.yml`) | PR, push to `main`, Monday schedule, dispatch | The `Required CI` job, the only ruleset-required check. It succeeds only when every dependency succeeds: CodeQL (fast), workflow-lint, site, test-binaries, vet, the sharded apextest, vm, gladecli and sema jobs and their duration-history jobs, node-integration, nested-sources, server-and-playground, the `test` matrix (remaining Go packages plus repoguard, LWC compile and Visualforce shards), smoke-runtime and smoke-distribution. The schedule adds `Required Scheduled CI` (sema-full and sema-equivalence). |
+| `Browser` (`browser.yml`) | PR, push to `main`, daily, dispatch | LWC browser and L08 conformance. Missing or skipped browser results fail. |
+| `Race` (`race.yml`) | Successful CI workflow run for a push to `main` (`workflow_run`), Monday schedule, dispatch | The main-branch run follows CI instead of competing with it for the 20 concurrent hosted runners, and runs the concurrency selection in `scripts/ci-race-push.json`. Schedule and dispatch run the full race matrix, with apextest in three parts. Not a PR check. |
+| `Security` (`security.yml`) | PR, push to `main`, `v*` tags, Monday schedule, dispatch | govulncheck, gosec, npm audit, dependency review and OpenSSF Scorecard. The full CodeQL profile runs only on the schedule, tags and dispatch. |
+| `Repeat timing-sensitive tests` (`repeat.yml`) | Daily, dispatch | Reruns `scripts/ci-repeat-tests.txt` on Linux and macOS. |
+| `Release` (`release.yml`) | `v*` tags, dispatch | See [DISTRIBUTION_WORKFLOW.md](DISTRIBUTION_WORKFLOW.md). |
+
+CodeQL has two profiles in one reusable workflow (`codeql.yml`). The fast
+profile is part of `Required CI`. The full profile runs in Security. Analysis
+has a hard 300-second budget. When the budget expires, the job warns, uploads
+no SARIF and still succeeds, so `Required CI` can pass on an incomplete scan.
+Large changes regularly hit this. An incomplete scan is not evidence that there
+are no findings. See [CODEQL_WORKFLOW.md](CODEQL_WORKFLOW.md) and
+[CODEQL_BUDGET.md](CODEQL_BUDGET.md).
+
+Release tags need an exact-SHA `Required CI` success from a push to `main`.
+`scripts/verify-required-ci.sh OWNER/REPO SHA` finds it; PR and manual runs do
+not count. Browser, Race and Security are operator checks: read their results
+for the release candidate, but the tag does not attest that they ran.
 
 ## Check that the setup helps
+
+Two habits remove most review rounds. Review your own diff with the reviewer's
+criteria before asking for review: observed evidence for each behavior change,
+a fail-before test, route twins, and no loosened assertion without a citation.
+Then rerun your new tests from a clean export of HEAD
+(`git archive HEAD | tar -x -C <dir>`), so untracked files cannot hide a
+failure.
 
 In a fresh task, ask the agent to identify its instruction files, the product
 boundary, and the checks for the files you intend to change. It should find

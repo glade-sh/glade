@@ -15,8 +15,8 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-// Replay the captured numeric Decision matrix through the supported interview,
-// record lifecycle, subflow, and committed async adapters of the shared reader.
+// Replay the captured numeric Decision matrix through every interview, action,
+// record lifecycle, subflow, and committed async adapter of the shared reader.
 func TestFlowNullComparisonsRoutesNativeConformance(t *testing.T) {
 	const fixture = "testdata/conformance/flow_null_comparisons"
 	const routesFixture = fixture + "/routes"
@@ -60,23 +60,6 @@ func TestFlowNullComparisonsRoutesNativeConformance(t *testing.T) {
 	}
 	if !routeNames["async"] {
 		t.Fatal("missing deferred route")
-	}
-	// These exact fixture shapes are rejected before Decision evaluation. Keep
-	// their native evidence, verify its supported twin, and pin the local boundary
-	// without claiming route parity.
-	boundaries := map[string]struct{ message, twin string }{
-		// invocableFlowActionSupported excludes Currency declarations. The Apex
-		// probe JSON-encodes the action errors in its assertion message.
-		"action": {
-			`unsupported call \"Invocable.Action.invoke hosted Flow action NullCompareAuto\"`,
-			"typed",
-		},
-		// flowStepsBeforeSaveSafeWithTargets permits only root recordCreate;
-		// TestFlowTargetReferenceSafetyPreservesLegacyRestrictions pins this.
-		"before_delete": {
-			"dml: before-delete flow NullRouteDelete contains unsupported side-effect steps",
-			"after_insert",
-		},
 	}
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api, func(t *testing.T) {
@@ -153,13 +136,6 @@ func TestFlowNullComparisonsRoutesNativeConformance(t *testing.T) {
 						t.Fatalf("%s/%s: missing native cases", context, route)
 					}
 				}
-				if context != "committed_anonymous" {
-					for route, boundary := range boundaries {
-						if !reflect.DeepEqual(want[route], want[boundary.twin]) {
-							t.Fatalf("%s/%s: native matrix differs from supported twin %s", context, route, boundary.twin)
-						}
-					}
-				}
 				wants[context] = want
 			}
 			for path, body := range files {
@@ -200,15 +176,6 @@ func TestFlowNullComparisonsRoutesNativeConformance(t *testing.T) {
 					t.Fatal(err)
 				}
 				result, err := machine.Execute(program)
-				if boundary, ok := boundaries[route]; ok {
-					if err == nil || !strings.Contains(err.Error(), boundary.message) {
-						t.Fatalf("expected local boundary %q; got %v", boundary.message, err)
-					}
-					// The local boundary is pinned above; the native numeric
-					// matrix for this route is asserted through its twin.
-					t.Logf("local route boundary: %s; native numeric matrix covered by %s", boundary.message, boundary.twin)
-					return result
-				}
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -248,13 +215,6 @@ func TestFlowNullComparisonsRoutesNativeConformance(t *testing.T) {
 						}
 						seen[route] = true
 						t.Run(route, func(t *testing.T) {
-							if boundary, ok := boundaries[route]; ok {
-								if row.Problem == nil || !strings.Contains(row.Problem.Message, boundary.message) {
-									t.Fatalf("expected local boundary %q; got %+v", boundary.message, row.Problem)
-								}
-								t.Logf("local route boundary: %s; native numeric matrix covered by %s", boundary.message, boundary.twin)
-								return
-							}
 							if row.Problem == nil || !strings.HasSuffix(row.Problem.Type, "ObservationException") {
 								t.Fatalf("%s failed before observation: %+v", row.MethodName, row.Problem)
 							}

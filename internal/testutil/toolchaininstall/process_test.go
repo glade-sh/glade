@@ -31,7 +31,7 @@ func TestPendingIndependentConsumerDeadline(t *testing.T) {
 
 	for _, scenario := range []string{"slow", "blocked"} {
 		t.Run(scenario, func(t *testing.T) {
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), 80*time.Second)
 			defer cancel()
 			cmd := exec.CommandContext(ctx, os.Args[0], "-test.run=^TestPendingIndependentConsumerDeadline$")
 			cmd.Env = append(os.Environ(), "GLADE_TEST_INDEPENDENCE_SCENARIO="+scenario)

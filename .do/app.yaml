@@ -14,8 +14,12 @@ services:
     instance_count: 1
     instance_size_slug: basic-xxs
     health_check:
-      http_path: /readyz
+      http_path: /healthz
     envs:
+      # App Platform supplies DO-Connecting-IP at its ingress boundary.
+      - key: GLADE_DO_APP_PLATFORM
+        value: "1"
+        scope: RUN_TIME
       - key: PORT
         value: "8080"
         scope: RUN_TIME

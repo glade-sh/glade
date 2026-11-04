@@ -400,7 +400,7 @@ func TestCIRaceWorkflowContract(t *testing.T) {
 		"path: ${{ steps.race-npm-cache.outputs.dir }}",
 		"key: race-npm-v1-${{ runner.os }}-${{ runner.arch }}-22-${{ hashFiles('third_party/lwc/package-lock.json') }}",
 		"key: ${{ steps.race-npm-cache-restore.outputs.cache-primary-key }}",
-		"if: ${{ contains(fromJSON(steps.classify.outputs.early-packages), './internal/gladecli') }}",
+		"if: ${{ steps.classify.outputs.mode == 'full' && contains(fromJSON(steps.classify.outputs.early-packages), './internal/gladecli') }}",
 	} {
 		if !strings.Contains(planJob, marker) {
 			t.Errorf("race plan cache owner missing %q", marker)

@@ -1,0 +1,1 @@
+public class FormatProbe { public static String observe(String which) { Database.SaveResult r=Database.insert(new Account(Name='FORMAT_'+which.toUpperCase(), AnnualRevenue=-1234.50),false); return r.isSuccess() ? 'success' : String.valueOf(r.getErrors()[0].getStatusCode())+'|'+r.getErrors()[0].getMessage(); } }

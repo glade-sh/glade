@@ -11,6 +11,7 @@ import (
 )
 
 func TestToolchainInstallTwoProcessesColdShare(t *testing.T) {
+	t.Setenv("GLADE_ALLOW_PROJECT_TOOLCHAIN", "1")
 	toolchaininstall.ColdShare(t, []string{"EnsureRoot", "InstallFrom", "InstallFromCWD"}, func(route string) error {
 		switch route {
 		case "EnsureRoot":
@@ -34,6 +35,7 @@ func TestToolchainInstallTwoProcessesColdShare(t *testing.T) {
 }
 
 func TestEnsureRootTwoProcessesPendingEditor(t *testing.T) {
+	t.Setenv("GLADE_ALLOW_PROJECT_TOOLCHAIN", "1")
 	toolchaininstall.PendingEditor(t, func(string) error {
 		_, err := EnsureRoot()
 		return err
@@ -104,6 +106,7 @@ func TestHomeReadersExternalRootDoesNotRequireWritableUserShare(t *testing.T) {
 			resolvers := []func() (string, error){Root, EnsureRoot}
 			wantDetail := "ok (explicit)"
 			if env == "discovered" {
+				t.Setenv("GLADE_ALLOW_PROJECT_TOOLCHAIN", "1")
 				t.Chdir(root)
 				// Discovery is read-only; EnsureRoot intentionally installs to the share.
 				resolvers = []func() (string, error){Root}

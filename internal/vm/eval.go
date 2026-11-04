@@ -11,6 +11,10 @@ import (
 
 func parseLiteral(raw string) (Value, error) {
 	original := raw
+	if strings.HasPrefix(raw, "'") && strings.HasSuffix(raw, "'") {
+		text := strings.TrimSuffix(strings.TrimPrefix(raw, "'"), "'")
+		return String(unescapeApexStringLiteral(text)), nil
+	}
 	switch strings.ToLower(raw) {
 	case "true":
 		return Bool(true), nil
@@ -18,10 +22,6 @@ func parseLiteral(raw string) (Value, error) {
 		return Bool(false), nil
 	case "null":
 		return Null, nil
-	}
-	if strings.HasPrefix(raw, "'") && strings.HasSuffix(raw, "'") {
-		text := strings.TrimSuffix(strings.TrimPrefix(raw, "'"), "'")
-		return String(unescapeApexStringLiteral(text)), nil
 	}
 	suffix := byte(0)
 	if len(raw) > 0 {

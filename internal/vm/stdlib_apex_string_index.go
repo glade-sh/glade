@@ -19,7 +19,16 @@ func apexStringLength(text string) int {
 }
 
 func apexStringUTF16Units(text string) []uint16 {
-	return utf16.Encode([]rune(text))
+	units := make([]uint16, 0, apexStringLength(text))
+	for _, r := range text {
+		if r <= 0xffff {
+			units = append(units, uint16(r))
+			continue
+		}
+		hi, lo := utf16.EncodeRune(r)
+		units = append(units, uint16(hi), uint16(lo))
+	}
+	return units
 }
 
 func byteIndexForApexStringIndex(input string, unitIndex int) (int, error) {

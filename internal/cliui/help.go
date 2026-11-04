@@ -13,15 +13,21 @@ type HelpCommand struct {
 
 type FlagHelp struct {
 	Name        string
+	Aliases     []string
 	Value       string
 	Description string
 }
 
+func (f FlagHelp) Names() []string {
+	return append([]string{f.Name}, f.Aliases...)
+}
+
 func (f FlagHelp) Display() string {
+	name := strings.Join(f.Names(), ", ")
 	if f.Value == "" {
-		return f.Name
+		return name
 	}
-	return f.Name + " " + f.Value
+	return name + " " + f.Value
 }
 
 type SubcommandHelp struct {
@@ -78,13 +84,14 @@ var commandReferences = []CommandHelp{
 			{Name: "status", Description: "Print LWC toolchain status."},
 		},
 		Flags: []FlagHelp{
-			{Name: "--from", Value: "<glade-checkout>", Description: "Install from another glade checkout. Defaults to the current checkout."},
+			{Name: "--from", Value: "<glade-checkout>", Description: "Install from a Glade checkout. Defaults to an auto-discovered checkout."},
 			{Name: "--json", Description: "Write toolchain status as JSON."},
 		},
 		Notes: []string{
 			"DataWeave is unsupported in Glade.",
 			"The toolchain installs to the Glade data directory, normally ~/.local/share/glade.",
-			"GLADE_HOME overrides the Glade installation root.",
+			"GLADE_HOME selects an active toolchain root; the shell installer also uses it as its destination.",
+			"Source discovery checks environment roots, executable ancestors, then current-directory ancestors; use --from to choose explicitly.",
 			"XDG_DATA_HOME overrides the base directory for the global toolchain.",
 		},
 		Examples: []string{"glade toolchain status", "glade toolchain install --from path/to/glade"},
@@ -234,8 +241,8 @@ var commandReferences = []CommandHelp{
 		Name:        "exec",
 		Description: "Execute anonymous Apex.",
 		Usage:       []string{"glade exec [--project <root>] [--db <path>] [--dry-run] [--json] [--trace <path>] [--debug-log <path>] [--limit-mode <mode>] '<anonymous apex>'"},
-		Flags: []FlagHelp{
-			{Name: "--project, -p", Value: "<root>", Description: "SFDX project root used for metadata and local org shape."},
+		Flags: append([]FlagHelp{
+			{Name: "--project", Aliases: []string{"-p"}, Value: "<root>", Description: "SFDX project root used for metadata and local org shape."},
 			{Name: "--db", Value: "<path>", Description: "SQLite local org path for DB-backed anonymous Apex execution."},
 			{Name: "--dry-run", Description: "Run against the selected local org without saving changes."},
 			{Name: "--json", Description: "Write VM result and trace as JSON."},
@@ -244,7 +251,8 @@ var commandReferences = []CommandHelp{
 			{Name: "--debug-log", Value: "<summary|raw|path>", Description: "Select debug-log mode or write a Salesforce-style debug log. Use - for stdout."},
 			{Name: "--log-out", Value: "<path>", Description: "Write the raw Salesforce-style debug log to a file."},
 			{Name: "--limit-mode", Value: "<mode>", Description: "Governor limit mode: permissive or strict."},
-		},
+		}, governorFlagHelp()...),
+		Notes:    governorNotes(),
 		Examples: []string{`glade exec "System.debug('hello');"`, `glade exec --debug-log raw --log-out reports/exec.log "System.debug('hello');"`, `glade exec --json "Integer x = 1;"`, `glade exec --project . --db .glade/envs/dev.sqlite "insert new Account(Name = 'Local');"`},
 	},
 	{
@@ -252,7 +260,7 @@ var commandReferences = []CommandHelp{
 		Description: "Parse, profile, explain, analyze for editors, and synthesize from Salesforce debug logs.",
 		Usage:       []string{"glade debug parse --log <path> [--json]", "glade debug profile --log <path> [--json] [--format text|markdown]", "glade debug explain --log <path> [--project <root>] [--min-confidence <n>] [--json]", "glade debug editor --log <path> [--project <root>] [--min-confidence <n>] [--max-candidates <n>] [--json]", "glade debug repro --log <path> [--project <root>] [--min-confidence <n>]", "glade debug replay --log <path> [--project <root>] [--min-confidence <n>] [--entry-index <n>] [--json]"},
 		Subcommands: []SubcommandHelp{
-			{Name: "parse", Description: "Parse a Salesforce debug log."},
+			{Name: "parse", Description: "Parse a Salesforce debug log; always writes parsed-log JSON."},
 			{Name: "profile", Description: "Profile a parsed debug log."},
 			{Name: "explain", Description: "Annotate log frames with project symbols."},
 			{Name: "editor", Description: "Build Apex log editor navigation, folding, symbols, hovers, and diagnostics."},
@@ -269,6 +277,7 @@ var commandReferences = []CommandHelp{
 			{Name: "--format", Value: "<mode>", Description: "Profile output format: text or markdown."},
 		},
 		Notes: []string{
+			"debug parse always writes parsed-log JSON on success; --json is a compatibility no-op for parse.",
 			"Replay works best with Apex Code: DEBUG minimum, FINER/FINEST for METHOD_ENTRY detail.",
 			"Use Database: INFO for SOQL/DML setup evidence and System: DEBUG for System.debug branch markers.",
 			"Use Apex Profiling: INFO for limits, Callout: INFO for HTTP paths, Validation/Workflow: INFO when automation changes data, Visualforce: INFO only for Visualforce entry points, and NBA/Wave/other feature categories: NONE unless used.",
@@ -313,12 +322,17 @@ var commandReferences = []CommandHelp{
 			{Name: "daemon", Description: "Show or stop the persistent test server."},
 			{Name: "clear-cache", Description: "Remove the startup and semantic caches for a project."},
 		},
-		Flags: []FlagHelp{
+		Flags: append([]FlagHelp{
 			{Name: "--project", Value: "<root>", Description: "Project root. Defaults to current directory."},
 			{Name: "--filter", Value: "<pattern>", Description: "Run matching test classes or methods."},
 			{Name: "--class", Value: "<name>", Description: "Run one exact test class."},
 			{Name: "--method", Value: "<name>", Description: "Run one exact test method. Requires --class."},
 			{Name: "--class-file", Value: "<path>", Description: "Read exact test class names, one per line."},
+			{Name: "--shard-count", Value: "<n>", Description: "Number of deterministic class shards."},
+			{Name: "--shard-index", Value: "<i>", Description: "Shard index starting at zero."},
+			{Name: "--duration-history", Value: "<path>", Description: "Weight shard planning with prior class durations."},
+			{Name: "--write-class-shards", Value: "<dir>", Description: "Write class shard files and exit."},
+			{Name: "--read-only", Description: "Run one local test pass without project writes."},
 			{Name: "--connect", Description: "Require a running test server."},
 			{Name: "--no-serve", Description: "Do not auto-connect to a running test server."},
 			{Name: "--no-cache", Description: "Bypass startup and semantic caches for this run."},
@@ -328,6 +342,11 @@ var commandReferences = []CommandHelp{
 			{Name: "--daemon", Description: "Keep index warm in process for watch loops."},
 			{Name: "--json", Description: "Write JSON test results."},
 			{Name: "--junit", Value: "<path>", Description: "Write JUnit XML results."},
+			{Name: "--cpu-profile", Value: "<path>", Description: "Profile the local command lifetime, finalized on exit; incompatible with --connect."},
+			{Name: "--mem-profile", Value: "<path>", Description: "Write a heap profile on local command exit; incompatible with --connect."},
+			{Name: "--perf-json", Value: "<path>", Description: "Write performance counters for a local one-shot run."},
+			{Name: "--impact-json", Value: "<path>", Description: "Write per-test dependencies for a local one-shot run."},
+			{Name: "--runtime-rest-api-version", Value: "<version>", Description: "Test org REST context; does not change source API versions."},
 			{Name: "--trace", Value: "<path>", Description: "Write a Chrome trace JSON document for this run."},
 			{Name: "--services", Value: "<path>", Description: "Validate a services.yml virtualization config."},
 			{Name: "--progress", Description: "Show progress on stderr; uses a progress bar on TTY and line output when redirected."},
@@ -345,9 +364,10 @@ var commandReferences = []CommandHelp{
 			{Name: "--no-parallel-methods", Description: "Run methods serially within a class."},
 			{Name: "--parallelism", Value: "<n>", Description: "Worker count."},
 			{Name: "--test-timeout", Value: "<dur>", Description: "Per-test wall-clock cap; overrides GLADE_TEST_TIMEOUT (10m; 0 disables)."},
-			{Name: "--gc-aggressive", Description: "Run with GOGC=50."},
+			{Name: "--gc-aggressive", Description: "Follow the soft memory limit; unlimited memory falls back to GOGC=50 (default limit 4 GiB)."},
 			{Name: "--limit-mode", Value: "<mode>", Description: "Governor limit mode: permissive or strict."},
-		},
+		}, governorFlagHelp()...),
+		Notes:    governorNotes(),
 		Examples: []string{"glade test serve --project .", "glade test --project . --class RefinementServiceTest", "glade test --project . --class RefinementServiceTest --method testRefinesFileRow", "glade test --project . --class-file tests.txt"},
 	},
 	{
@@ -370,7 +390,7 @@ var commandReferences = []CommandHelp{
 	{
 		Name:        "dev",
 		Description: "Run the human-focused local development cockpit.",
-		Usage:       []string{"glade dev [--project <root>]", "glade dev test [--project <root>] [--class <name>|--test <Class.method>|--changed|--failed] [--out <runs-dir>]", "glade dev watch [--project <root>] [--out <runs-dir>]", "glade dev vf [--project <root>] [--port <port>|--addr <host:port>] [--ready-file <path>]", "glade dev lwc [--project <root>] [--db <path>] [--port <port>|--addr <host:port>] [--ready-file <path>]"},
+		Usage:       []string{"glade dev [--project <root>]", "glade dev test [--project <root>] [--class <pattern>|--test <pattern>|--changed|--failed] [--out <runs-dir>]", "glade dev watch [--project <root>] [--out <runs-dir>]", "glade dev vf [--project <root>] [--port <port>|--addr <host:port>] [--ready-file <path>]", "glade dev lwc [--project <root>] [--db <path>] [--port <port>|--addr <host:port>] [--ready-file <path>]"},
 		Subcommands: []SubcommandHelp{
 			{Name: "test", Description: "Run a saved human-friendly test workflow."},
 			{Name: "watch", Description: "Watch and save run artifacts."},
@@ -381,14 +401,14 @@ var commandReferences = []CommandHelp{
 			{Name: "--project", Value: "<root>", Description: "Project root. Defaults to current directory."},
 			{Name: "--out", Value: "<runs-dir>", Description: "Run artifact directory."},
 			{Name: "--all", Description: "Run all tests."},
-			{Name: "--class", Value: "<name>", Description: "Run one test class."},
-			{Name: "--test", Value: "<Class.method>", Description: "Run one test method."},
+			{Name: "--class", Value: "<pattern>", Description: "Match case-insensitive substrings of the full Class.method test name; comma-separated alternatives; ignored in watch mode."},
+			{Name: "--test", Value: "<pattern>", Description: "Match case-insensitive substrings of the full Class.method test name; comma-separated alternatives; ignored in watch mode."},
 			{Name: "--changed", Description: "Run tests affected since HEAD."},
 			{Name: "--failed", Description: "Rerun tests from the last failed run."},
 			{Name: "--watch", Description: "Watch during dev test."},
 			{Name: "--watch-once", Description: "Run one watch cycle and exit."},
 		},
-		Examples: []string{"glade dev --project .", "glade dev test --project . --failed"},
+		Examples: []string{"glade dev --project .", "glade dev test --project . --class refund", "glade dev test --project . --failed"},
 	},
 	{
 		Name:        "report",
@@ -557,12 +577,13 @@ var commandReferences = []CommandHelp{
 		Name:        "server",
 		Description: "Start the local Salesforce-compatible API baseline.",
 		Usage:       []string{"glade server [--addr <host:port>] [--project <root>] [--db <path>] [--limit-mode <mode>]"},
-		Flags: []FlagHelp{
+		Flags: append([]FlagHelp{
 			{Name: "--addr", Value: "<host:port>", Description: "Bind address. Defaults to 127.0.0.1:8080. Network-reachable binds require GLADE_SERVER_PUBLIC=1."},
 			{Name: "--db", Value: "<path>", Description: "Persistent local database."},
 			{Name: "--project", Value: "<root>", Description: "Project root. Defaults to current directory."},
 			{Name: "--limit-mode", Value: "<mode>", Description: "Governor limit mode: permissive or strict."},
-		},
+		}, governorFlagHelp()...),
+		Notes:    governorNotes(),
 		Examples: []string{"glade server --project .", "glade server --db .glade/org.sqlite"},
 	},
 	{
@@ -714,6 +735,54 @@ var commandReferences = []CommandHelp{
 		Usage:       []string{"glade help [command]"},
 		Examples:    []string{"glade help", "glade help test"},
 	},
+}
+
+func governorFlagHelp() []FlagHelp {
+	return []FlagHelp{
+		{Name: "--limit-profile", Value: "<name>", Description: "Local caps profile: default, strict-sync, strict-async, or custom."},
+		{Name: "--limit-queries", Value: "<n>", Description: "Override SOQL queries cap (sync base 100)."},
+		{Name: "--limit-query-rows", Value: "<n>", Description: "Override SOQL rows cap (sync base 50000)."},
+		{Name: "--limit-dml-statements", Value: "<n>", Description: "Override DML statements cap (sync base 150)."},
+		{Name: "--limit-dml-rows", Value: "<n>", Description: "Override DML rows cap (sync base 10000)."},
+		{Name: "--limit-heap-size", Value: "<n>", Description: "Override heap bytes cap (sync base 10000000)."},
+		{Name: "--limit-cpu-ms", Value: "<n>", Description: "Override estimated CPU milliseconds cap (sync base 10000)."},
+		{Name: "--limit-callouts", Value: "<n>", Description: "Override callouts cap (sync base 100)."},
+		{Name: "--limit-email-invocations", Value: "<n>", Description: "Override email invocations cap (sync base 10)."},
+		{Name: "--limit-async-jobs", Value: "<n>", Description: "Override async jobs cap (sync base 50)."},
+		{Name: "--limit-future-calls", Value: "<n>", Description: "Override future calls cap (sync base 50)."},
+		{Name: "--limit-queueable-jobs", Value: "<n>", Description: "Override queueable jobs cap (sync base 50)."},
+		{Name: "--limit-batch-jobs", Value: "<n>", Description: "Override batch jobs cap (sync base 5)."},
+		{Name: "--limit-scheduled-jobs", Value: "<n>", Description: "Override scheduled jobs cap (sync base 100)."},
+		{Name: "--limit-sosl-queries", Value: "<n>", Description: "Override SOSL queries cap (sync base 20)."},
+		{Name: "--limit-query-locator-rows", Value: "<n>", Description: "Override query-locator rows cap (sync base 10000)."},
+		{Name: "--limit-run-as", Value: "<n>", Description: "Override run-as counter cap (sync base 100)."},
+		{Name: "--limit-savepoints", Value: "<n>", Description: "Override savepoints cap (sync base 5)."},
+		{Name: "--limit-savepoint-rollbacks", Value: "<n>", Description: "Override savepoint rollbacks cap (sync base 100)."},
+		{Name: "--limit-publish-immediate-dml", Value: "<n>", Description: "Override publish-immediate DML cap (sync base 150)."},
+	}
+}
+
+func governorNotes() []string {
+	return []string{
+		"Profiles: default, strict-sync, custom (same sync base), or strict-async (200 queries, 25000000 heap bytes, 60000 CPU ms; other caps unchanged). Names are case-insensitive.",
+		"With no profile or caps, retain native context-sensitive defaults. An explicit profile or any cap installs a complete local cap set; async entry preserves it and strict mode enforces its local heap cap.",
+		"Choose the profile first; explicit cap flags override its values regardless of argument order. Caps are non-negative integers; zero is a zero cap, not unlimited. Mode is independent: profiles do not enable strict mode.",
+		"CPU milliseconds are Glade's deterministic work estimate, not host elapsed time or native Salesforce CPU parity. The per-test wall-clock timeout is separate.",
+		"These options apply to exec, test execution (including daemon/watch and test-server requests), and server execute-anonymous Apex; not test serve startup or ordinary REST data operations. Custom local caps do not establish Salesforce governor parity.",
+	}
+}
+
+// GovernorHelpText shares governor flag descriptions with command references.
+func GovernorHelpText() string {
+	var b strings.Builder
+	b.WriteString("Governor options:\n")
+	for _, flag := range governorFlagHelp() {
+		fmt.Fprintf(&b, "  %-38s %s\n", flag.Display(), flag.Description)
+	}
+	for _, note := range governorNotes() {
+		fmt.Fprintf(&b, "\n  %s\n", note)
+	}
+	return strings.TrimSpace(b.String())
 }
 
 func projectProgressFlags(jsonDescription string) []FlagHelp {
@@ -1096,34 +1165,22 @@ Usage:
   glade test daemon status|stop [--project <root>]
   glade test clear-cache [--project <root>]
 
-Persistent test server:
-  glade test serve keeps the project runtime warm across CLI invocations.
-  It writes .glade/test/serve.sock and serve.pid under the project root.
-  Later glade test runs auto-connect when that socket is reachable.
-  Use --no-serve to force a local build, or --connect to require the server.
-
-Daily loop:
-  glade test changed --project . --since HEAD runs tests affected by changed files.
-  glade test failed --project . reruns tests that failed in the last completed run.
-  glade test --project . --last-failed is the flag form of the same rerun.
-  glade test --project . --wizard prints the likely next command without running it.
-
-Daemon lifecycle:
-  glade test serve --project . starts the persistent warm server.
-  glade test daemon status --project . shows stopped, stale, warming, or ready state.
-  glade test daemon stop --project . shuts down a live server or removes stale files.
-
-Serve flags:
-  --project <root>          Project root. Defaults to current directory.
-  --socket <path>           Override the unix socket path.
-  --no-watch                Do not watch project files for changes.
-  --no-warm                 Skip the initial runtime warm on startup.
+Cache control:
+  clear-cache removes the project-local startup and semantic caches.
 
 Common flags:
   --project <root>          Project root. Defaults to current directory.
   --filter <pattern>        Run matching test classes or methods.
+  --class <name>            Run one exact test class.
+  --method <name>           Run one exact test method. Requires --class.
+  --class-file <path>       Read exact test class names, one per line.
+  --shard-count <n>         Select one deterministic class shard.
+  --shard-index <i>         Shard index to run, starting at 0.
+  --duration-history <path> Weight shard planning with prior class durations.
+  --write-class-shards <dir> Write class shard files and exit.
   --connect                 Require a running test server (see serve).
   --no-serve                Do not auto-connect to a running test server.
+  --read-only               Run one local test pass without project writes; incompatible with UI, wizard, debug, watch, daemon, connect, and shard generation.
   --no-cache                Bypass startup and semantic caches for this run.
   --last-failed             Rerun tests that failed in the last completed run.
   --ui                      Open the TUI on the test board.
@@ -1131,6 +1188,13 @@ Common flags:
   --daemon                  Keep index warm in-process for --watch loops.
   --json                    Write JSON test results.
   --junit <path>            Write JUnit XML results.
+  --cpu-profile <path>      Profile the local command lifetime (including watch/daemon); finalized on exit.
+  --mem-profile <path>      Write a heap profile on local command exit (including watch/daemon).
+                           CPU/heap profiles are incompatible with explicit --connect.
+  --perf-json <path>        Write opt-in performance counters for this local one-shot run.
+  --impact-json <path>      Write per-test execution dependencies and shared inputs (local one-shot).
+  --trace <path>            Write a Chrome trace JSON document for this run.
+  --services <path>         Validate a services.yml virtualization config.
   --progress                Show progress on stderr; uses a progress bar on TTY and line output when redirected.
   --progress-json           Print NDJSON progress events to stderr.
   --no-progress, --quiet    Disable progress.
@@ -1145,29 +1209,25 @@ Common flags:
   --no-parallel-methods     Force serial method execution within a class.
   --parallelism <n>         Worker count (default: GOMAXPROCS).
   --test-timeout <dur>      Per-test wall-clock cap; overrides GLADE_TEST_TIMEOUT (default 10m; 0 disables).
-  --gc-aggressive           Run with GOGC=50 for memory-constrained hosts.
+  --runtime-rest-api-version <version>
+                           Test org REST context (default 65.0); does not change source API versions.
+  --gc-aggressive           Follow the soft memory limit instead of heap growth;
+                           unlimited memory falls back to GOGC=50 (default limit 4 GiB).
   --limit-mode <mode>       Use strict or permissive governor limits.
 
-Startup cache (.glade/test/startup.meta.json):
-  Written after a cold harness build with a hashed startup.payload.<sha256>.gob.
-  Loaded when file/config/package fingerprints still match. Does not store test
-  results. The exact semantic result cache lives separately under
-  .glade/semantic/. Use clear-cache after git pull or Glade upgrades, and
-  --no-cache to bypass both cache systems while debugging.
-  See docs/TEST_STARTUP_CACHE.md for freshness rules and recovery.
+`) + "\n\n" + GovernorHelpText() + "\n\n" + strings.TrimSpace(`
+Serve flags:
+  --project <root>          Project root. Defaults to current directory.
+  --socket <path>           Server socket (default .glade/test/serve.sock).
+  --watch, --no-watch       Enable or disable watching (default enabled).
+  --warm, --no-warm         Enable or disable startup warmup (default enabled).
+  Clients discover only the standard project socket; --socket does not change client discovery.
 
 Examples:
-  glade test serve --project .
-  glade test daemon status --project .
-  glade test changed --project . --since HEAD
-  glade test failed --project .
-  glade test clear-cache --project .
   glade test --project . --class RefinementServiceTest
   glade test --project . --class RefinementServiceTest --method testRefinesFileRow
-  glade test --project . --no-cache --class RefinementServiceTest
-  glade test --project . --connect --class RefinementServiceTest
-  glade test --project . --daemon --watch
-  glade test --project . --changed-since origin/main --json --no-progress
+  glade test --project . --class-file tests.txt
+  glade test --project . --shard-count 2 --shard-index 0
 `)
 	_, err := fmt.Fprintln(w, body)
 	return err

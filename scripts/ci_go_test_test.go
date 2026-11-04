@@ -943,8 +943,8 @@ func TestCIApexDurationHistoryWorkflowOwnership(t *testing.T) {
 			t.Errorf("single-writer refresh job missing %q", want)
 		}
 	}
-	if strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0") != 24 {
-		t.Errorf("cache save count = %d, want existing DAG writers plus Apex, sema, LWC and Visualforce history writers", strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0"))
+	if strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0") != 25 {
+		t.Errorf("cache save count = %d, want existing DAG and history writers plus the Apex retry profile writer", strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0"))
 	}
 	if strings.Count(workflow, "shard: [0, 1]") != 1 || strings.Count(workflow, "shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]") != 1 {
 		t.Error("workflow must contain the twelve-shard Apex and two-shard sema matrices")
@@ -1818,6 +1818,14 @@ func benchmarkCachePairWorkflowProblem(name, workflow string) string {
 		for _, name := range []string{"lwc-compile-history-input", "visualforce-history-input"} {
 			input := workflowJobBlocksText(workflow)[name]
 			npmWorkflow = strings.Replace(npmWorkflow, input, "", 1)
+		}
+		// Scheduling cache conditions are independent of npm cache setup.
+		for _, jobName := range []string{"apextest-history-input", "apextest-history"} {
+			for _, step := range workflowStepBlocksText(workflowJobBlocksText(workflow)[jobName]) {
+				if strings.Contains(step, "name: Select prior Apex scheduling attempt") || strings.Contains(step, "name: Cache Apex scheduling profile after balance failure") {
+					npmWorkflow = strings.Replace(npmWorkflow, step, "", 1)
+				}
+			}
 		}
 	}
 	if got := strings.Count(workflow, "          cache: npm"); got != wantOpaqueNPM {
@@ -3690,8 +3698,8 @@ func TestCIParallelDAGCacheOwnership(t *testing.T) {
 			t.Errorf("%s lacks the ci-test digest seed fallback", jobName)
 		}
 	}
-	if strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0") != 24 {
-		t.Errorf("cache save count = %d, want existing DAG, shared binary producer, and four history writers", strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0"))
+	if strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0") != 25 {
+		t.Errorf("cache save count = %d, want existing DAG, shared binary producer, four history writers, and the Apex retry profile writer", strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0"))
 	}
 }
 

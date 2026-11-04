@@ -58,7 +58,7 @@ func TestStandardDescribeCatalogV2DigestOracle(t *testing.T) {
 		childRowCount += len(describe.ChildRelationships)
 		recordTypeCount += len(describe.RecordTypeInfos)
 	}
-	if got := []int{len(typedBundle.Describes), fieldCount, childRowCount, recordTypeCount}; !reflect.DeepEqual(got, []int{5323, 81897, 43445, 766}) {
+	if got := []int{len(typedBundle.Describes), fieldCount, childRowCount, recordTypeCount}; !reflect.DeepEqual(got, []int{5323, 81928, 43445, 766}) {
 		t.Fatalf("raw counts objects/fields/childRows/recordTypes = %v", got)
 	}
 
@@ -233,8 +233,8 @@ func TestStandardDescribeCatalogV2DigestOracle(t *testing.T) {
 	// exclusions preserve explicit and native validation rules. The raw, rich,
 	// and reverse catalogs are unchanged by this projection-only addition.
 	wantDigests := map[string]string{
-		"RAW-BROAD-v1":       "7227213d3c382ce9d0a9be6118331e34e40bdf99e0004b9be932b22d287f2bb3",
-		"PROJECTED-BROAD-v1": "abb6cd24e88fb1a7c72e25ee50ac515032f55ef80b23681c7865735ea90541af",
+		"RAW-BROAD-v1":       "ecae8f4d84a60b42a5e15419821a5bda9e18082645b65c3ac24aa669013adcec",
+		"PROJECTED-BROAD-v1": "42ae74537e29c90a4e3622117e8ad599ff5ab664c9e0c9cdcb1897c7fcef24b0",
 		"RICH-v1":            "92239c48aed07e0db93739fb128fa64e8ac26d3b22228e79b9cc5fc3d826130f",
 		"REVERSE-v1":         "a7010fc13d96f894dfc7c3efd5e8fe9b23e1a40984f78f972cf161fa59a4cf6f",
 	}

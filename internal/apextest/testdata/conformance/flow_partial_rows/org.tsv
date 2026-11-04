@@ -1,0 +1,17 @@
+api	route	case	observation
+62.0	anonymous	invalid_flow	["INVALID_FIELD_FOR_INSERT_UPDATE","FIELD_CUSTOM_VALIDATION_EXCEPTION"]
+62.0	anonymous	flow_invalid	["FIELD_CUSTOM_VALIDATION_EXCEPTION","INVALID_FIELD_FOR_INSERT_UPDATE"]
+62.0	anonymous	success_flow	["SUCCESS","FIELD_CUSTOM_VALIDATION_EXCEPTION"]
+62.0	istest	invalid_flow	["INVALID_FIELD_FOR_INSERT_UPDATE","FIELD_CUSTOM_VALIDATION_EXCEPTION"]
+62.0	istest	flow_invalid	["FIELD_CUSTOM_VALIDATION_EXCEPTION","INVALID_FIELD_FOR_INSERT_UPDATE"]
+62.0	istest	success_flow	["SUCCESS","FIELD_CUSTOM_VALIDATION_EXCEPTION"]
+62.0	anonymous	checkbox_null	INVALID_TYPE_ON_FIELD_IN_RECORD|Probe Flag: value not of required type:<space>
+62.0	anonymous	checkbox_flow_boundary	FIELD_CUSTOM_VALIDATION_EXCEPTION|flow rejected false
+67.0	anonymous	invalid_flow	["INVALID_FIELD_FOR_INSERT_UPDATE","FIELD_CUSTOM_VALIDATION_EXCEPTION"]
+67.0	anonymous	flow_invalid	["FIELD_CUSTOM_VALIDATION_EXCEPTION","INVALID_FIELD_FOR_INSERT_UPDATE"]
+67.0	anonymous	success_flow	["SUCCESS","FIELD_CUSTOM_VALIDATION_EXCEPTION"]
+67.0	istest	invalid_flow	["INVALID_FIELD_FOR_INSERT_UPDATE","FIELD_CUSTOM_VALIDATION_EXCEPTION"]
+67.0	istest	flow_invalid	["FIELD_CUSTOM_VALIDATION_EXCEPTION","INVALID_FIELD_FOR_INSERT_UPDATE"]
+67.0	istest	success_flow	["SUCCESS","FIELD_CUSTOM_VALIDATION_EXCEPTION"]
+67.0	anonymous	checkbox_null	INVALID_TYPE_ON_FIELD_IN_RECORD|Probe Flag: value not of required type:<space>
+67.0	anonymous	checkbox_flow_boundary	FIELD_CUSTOM_VALIDATION_EXCEPTION|flow rejected false

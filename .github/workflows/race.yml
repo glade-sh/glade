@@ -1,7 +1,16 @@
 name: Race
 
 on:
-  push:
+  # Main-branch race runs start when the CI workflow for the same push has
+  # completed successfully. The concurrency-only race matrix is about 60 jobs;
+  # starting it on the push itself made it compete with the CI workflow for
+  # the account's 20 concurrent hosted runners (v0.3.3 main push: 20 jobs
+  # running for 65 minutes straight; the CI workflow took 78 min against
+  # 38 min for the same tree as a pull request). Race is not a release
+  # authority, so it can follow the CI workflow instead of racing it.
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
     branches: [main]
   schedule:
     - cron: '43 10 * * 1'
@@ -19,12 +28,16 @@ concurrency:
 
 jobs:
   plan:
+    # A red or cancelled CI run gets no race run; its rerun completes the CI
+    # workflow again and triggers Race then.
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
       contents: read
       actions: read
     env:
+      GLADE_ROOT: ${{ github.workspace }}
       CI_LWC_COMPILE_HISTORY_PATH: /tmp/glade-lwc-compile-duration-history/lwc-compile-duration-history.json
     outputs:
       packages: ${{ steps.classify.outputs.packages }}
@@ -47,7 +60,7 @@ jobs:
         id: classify
         run: |
           case "${{ github.event_name }}" in
-            push)
+            push|workflow_run)
               mode=concurrency
               packages="$(scripts/ci-race-packages.sh full)"
               ;;
@@ -82,30 +95,32 @@ jobs:
           mkdir -p ci-artifacts/race-plan
           printf '{"mode":"%s","packages":%s,"early_packages":%s,"generic_packages":%s,"push_matrix":%s}\n' "$mode" "$packages" "$early_packages" "$generic_packages" "$push_matrix" >ci-artifacts/race-plan/plan.json
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
-        if: ${{ contains(fromJSON(steps.classify.outputs.early-packages), './internal/gladecli') }}
+        if: ${{ steps.classify.outputs.mode == 'full' && contains(fromJSON(steps.classify.outputs.early-packages), './internal/gladecli') }}
         with:
           node-version: "22"
       - name: Resolve race npm cache path
         id: race-npm-cache
-        if: ${{ contains(fromJSON(steps.classify.outputs.early-packages), './internal/gladecli') }}
+        if: ${{ steps.classify.outputs.mode == 'full' && contains(fromJSON(steps.classify.outputs.early-packages), './internal/gladecli') }}
         run: echo "dir=$(npm config get cache)" >>"$GITHUB_OUTPUT"
       - name: Restore race npm cache
         id: race-npm-cache-restore
-        if: ${{ contains(fromJSON(steps.classify.outputs.early-packages), './internal/gladecli') }}
+        if: ${{ steps.classify.outputs.mode == 'full' && contains(fromJSON(steps.classify.outputs.early-packages), './internal/gladecli') }}
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ${{ steps.race-npm-cache.outputs.dir }}
           key: race-npm-v1-${{ runner.os }}-${{ runner.arch }}-22-${{ hashFiles('third_party/lwc/package-lock.json') }}
       - name: Install shared LWC toolchain
-        if: ${{ contains(fromJSON(steps.classify.outputs.early-packages), './internal/gladecli') }}
+        if: ${{ steps.classify.outputs.mode == 'full' && contains(fromJSON(steps.classify.outputs.early-packages), './internal/gladecli') }}
+        timeout-minutes: 5
         run: npm ci --prefix third_party/lwc
       - name: Save race npm cache
-        if: ${{ contains(fromJSON(steps.classify.outputs.early-packages), './internal/gladecli') }}
+        if: ${{ steps.classify.outputs.mode == 'full' && contains(fromJSON(steps.classify.outputs.early-packages), './internal/gladecli') }}
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ${{ steps.race-npm-cache.outputs.dir }}
           key: ${{ steps.race-npm-cache-restore.outputs.cache-primary-key }}
       - name: Find validated LWC timing evidence
+        if: steps.classify.outputs.mode == 'full'
         id: lwc-history
         env:
           GH_TOKEN: ${{ github.token }}
@@ -130,7 +145,7 @@ jobs:
           echo "::warning::Validated LWC timings unavailable; using deterministic scheduling fallback"
       - name: Download LWC timing evidence
         id: lwc-timing-download
-        if: steps.lwc-history.outputs.run_id != ''
+        if: steps.classify.outputs.mode == 'full' && steps.lwc-history.outputs.run_id != ''
         continue-on-error: true
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
@@ -139,7 +154,7 @@ jobs:
           pattern: go-test-lwc-compile-shard-*
           path: /tmp/race-lwc-predecessor
       - name: Validate LWC duration history
-        if: steps.lwc-history.outputs.run_id != '' && steps.lwc-timing-download.outcome == 'success'
+        if: steps.classify.outputs.mode == 'full' && steps.lwc-history.outputs.run_id != '' && steps.lwc-timing-download.outcome == 'success'
         run: |
           if scripts/ci-go-test.sh lwc-compile-history-refresh "$CI_LWC_COMPILE_HISTORY_PATH" /tmp/race-lwc-predecessor/go-test-lwc-compile-shard-{0..7}; then
             :
@@ -150,6 +165,7 @@ jobs:
             exit "$status"
           fi
       - name: Stage shared LWC duration history
+        if: steps.classify.outputs.mode == 'full'
         run: |
           mkdir -p ci-artifacts/race-lwc-history-input
           if [[ -s "$CI_LWC_COMPILE_HISTORY_PATH" ]]; then
@@ -157,6 +173,7 @@ jobs:
           fi
           : >ci-artifacts/race-lwc-history-input/ready
       - name: Upload shared LWC duration history
+        if: steps.classify.outputs.mode == 'full'
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: race-lwc-history-input-${{ github.run_id }}-${{ github.run_attempt }}
@@ -263,7 +280,7 @@ jobs:
     needs: [plan, test-binaries]
     if: needs.plan.outputs.mode == 'full' && needs.plan.outputs.has-packages == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 70
+    timeout-minutes: 145
     strategy:
       fail-fast: false
       max-parallel: 8
@@ -306,6 +323,7 @@ jobs:
             slug: internal-lwc-compile
             shard: 7
     env:
+      GLADE_ROOT: ${{ github.workspace }}
       CGO_ENABLED: "1"
       CI_TEST_BIN_DIR: /tmp/glade-race-test-binaries
       GOMAXPROCS: "2"
@@ -337,10 +355,14 @@ jobs:
           node-version: "22"
       - name: Install LWC toolchain
         if: matrix.package == './internal/lwc/compile'
+        timeout-minutes: 5
         run: npm ci --prefix third_party/lwc
       - name: Install browser conformance dependencies
+        timeout-minutes: 5
         run: npm ci --prefix lwcruntime
+      # Three times the observed 19m39s install plus backoff fits in 65m.
       - name: Install conformance Chromium
+        timeout-minutes: 65
         run: scripts/ci-install-playwright.sh ./lwcruntime/node_modules/.bin/playwright install --with-deps chromium
       - name: Run assigned browser race shard
         env:
@@ -403,12 +425,13 @@ jobs:
     needs: [plan, test-binaries]
     if: needs.plan.outputs.mode == 'full' && needs.plan.outputs.has-early-packages == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 70
+    timeout-minutes: 80
     strategy:
       fail-fast: false
       matrix:
         package: ${{ fromJSON(needs.plan.outputs.early-packages) }}
     env:
+      GLADE_ROOT: ${{ github.workspace }}
       CGO_ENABLED: "1"
       CI_TEST_BIN_DIR: ${{ matrix.package == './internal/gladecli' && '/tmp/glade-race-test-binaries' || '' }}
       GOMAXPROCS: "2"
@@ -440,6 +463,7 @@ jobs:
           key: race-npm-v1-${{ runner.os }}-${{ runner.arch }}-22-${{ hashFiles('third_party/lwc/package-lock.json') }}
       - name: Install LWC toolchain
         if: ${{ matrix.package == './internal/gladecli' }}
+        timeout-minutes: 5
         run: npm ci --prefix third_party/lwc
       - name: Resolve artifact name
         id: artifact
@@ -468,13 +492,14 @@ jobs:
     needs: plan
     if: needs.plan.outputs.mode == 'full' && needs.plan.outputs.has-generic-packages == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 70
+    timeout-minutes: 145
     strategy:
       fail-fast: false
       max-parallel: 6
       matrix:
         package: ${{ fromJSON(needs.plan.outputs.generic-packages) }}
     env:
+      GLADE_ROOT: ${{ github.workspace }}
       GOMAXPROCS: "2"
       GLADE_LWC_BROWSER: "1"
       GLADE_LWC_PLAYWRIGHT_MODULE: ${{ github.workspace }}/lwcruntime/node_modules/playwright
@@ -501,12 +526,15 @@ jobs:
           key: race-npm-v1-${{ runner.os }}-${{ runner.arch }}-22-${{ hashFiles('third_party/lwc/package-lock.json') }}
       - name: Install LWC toolchain
         if: ${{ contains(fromJSON('["./internal/gladehome","./internal/lwcbrowser","./internal/server"]'), matrix.package) }}
+        timeout-minutes: 5
         run: npm ci --prefix third_party/lwc
       - name: Install browser conformance dependencies
         if: ${{ contains(fromJSON('["./internal/lwcbrowser","./internal/server"]'), matrix.package) }}
+        timeout-minutes: 5
         run: npm ci --prefix lwcruntime
       - name: Install conformance Chromium
         if: ${{ contains(fromJSON('["./internal/lwcbrowser","./internal/server"]'), matrix.package) }}
+        timeout-minutes: 65
         run: scripts/ci-install-playwright.sh ./lwcruntime/node_modules/.bin/playwright install --with-deps chromium
       - name: Resolve artifact name
         id: artifact
@@ -665,13 +693,14 @@ jobs:
     needs: plan
     if: needs.plan.outputs.mode == 'concurrency'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: ${{ matrix.timeoutMinutes }}
     strategy:
       fail-fast: false
       max-parallel: 6
       matrix:
         include: ${{ fromJSON(needs.plan.outputs.push-matrix).include }}
     env:
+      GLADE_ROOT: ${{ github.workspace }}
       CGO_ENABLED: "1"
       GOMAXPROCS: "2"
       GLADE_LWC_BROWSER: "1"
@@ -682,16 +711,22 @@ jobs:
         with:
           go-version: "1.26.10"
           cache: false
-      - if: ${{ contains(matrix.packages, './internal/gladecli') || contains(matrix.packages, './internal/server') }}
+      - if: ${{ contains(matrix.packages, './internal/gladecli') || contains(matrix.packages, './internal/server') || contains(matrix.packages, './internal/gladehome') }}
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: "22"
-      - name: Install test browser dependencies
-        if: ${{ contains(matrix.packages, './internal/gladecli') || contains(matrix.packages, './internal/server') }}
-        run: |
-          npm ci --prefix third_party/lwc
-          npm ci --prefix lwcruntime
-          scripts/ci-install-playwright.sh ./lwcruntime/node_modules/.bin/playwright install --with-deps chromium
+      - name: Install LWC toolchain
+        if: ${{ contains(matrix.packages, './internal/gladecli') || contains(matrix.packages, './internal/server') || contains(matrix.packages, './internal/gladehome') }}
+        timeout-minutes: 5
+        run: npm ci --prefix third_party/lwc
+      - name: Install browser conformance dependencies
+        if: ${{ contains(matrix.packages, './internal/gladecli') || contains(matrix.packages, './internal/server') || contains(matrix.packages, './internal/gladehome') }}
+        timeout-minutes: 5
+        run: npm ci --prefix lwcruntime
+      - name: Install conformance Chromium
+        if: ${{ contains(matrix.packages, './internal/gladecli') || contains(matrix.packages, './internal/server') || contains(matrix.packages, './internal/gladehome') }}
+        timeout-minutes: 65
+        run: scripts/ci-install-playwright.sh ./lwcruntime/node_modules/.bin/playwright install --with-deps chromium
       - name: Run concurrent Go tests
         run: python3 scripts/ci-race-push.py run "${{ matrix.index }}"
       - name: Upload push race evidence

@@ -1,0 +1,2423 @@
+{
+ "version": 1,
+ "package": "github.com/glade-sh/glade/internal/gladecli",
+ "source": "GitHub Actions ubuntu-latest lane ghci-canon-2dcdbbefa (2026-11-02), go test -count=1 -json at canonical capture-revision-1, Go 1.26.10, GOMAXPROCS=2; one matched full-package run; scheduling hints only",
+ "tests": [
+  {
+   "name": "TestApplyDevVFProjectDataFixturesIgnoresSFDXDataPlanArrays",
+   "durationMillis": 70
+  },
+  {
+   "name": "TestApplyDevVFProjectDataFixturesIgnoresUnknownJSONWithBOM",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestApplyDevVFProjectDataFixturesSeedsSFDXRecordsObject",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestApplyDevVFProjectDataFixturesSeedsSFDXTreeData",
+   "durationMillis": 70
+  },
+  {
+   "name": "TestApplyDevVFProjectDataFixturesSeedsSFDXTreeDataWithBOM",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestApplyDevVFProjectDataFixturesSeedsStorageFixtures",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestApplyTestMemoryLimitsAllocationCollectionCountRoute",
+   "durationMillis": 260
+  },
+  {
+   "name": "TestApplyTestMemoryLimitsEffectiveLimitRoutes",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestApplyTestMemoryLimitsPreservesExplicitPolicyOnReentryRoute",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestApplyTestMemoryLimitsRoutes",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestAutomationWarningMessagesNameAllDiagnostics",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestCLIOutputContractDBSeedJSONProgressSplit",
+   "durationMillis": 160
+  },
+  {
+   "name": "TestCLIOutputContractDevLWCBoundsRoutesAndKeepsReadyFileComplete",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestCLIOutputContractJSONProgressSplit",
+   "durationMillis": 1230
+  },
+  {
+   "name": "TestCLIOutputContractNoProgressSuppressesStderr",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestCheckCancellationBeforeLoadPhases",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestCoalesceWatchSelectionsNormalizesClassesStably",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestCodeIntelligenceHelpListsProductCommands",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestCompatDispatchesToLinkedPlugin",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestCompatIsNotPublicCommand",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestConfigInitPromptAcceptsOverrides",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestConfigNetworkAnonymousAndTestRunnerRoutes",
+   "durationMillis": 17490
+  },
+  {
+   "name": "TestConfigTestPermissionsSurface",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestConfiguredPermissionsCLIRouteTwins",
+   "durationMillis": 7020
+  },
+  {
+   "name": "TestConnectedMalformedFailedShardResponseWritesNoArtifacts",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestConnectedRunKeepsArtifactPathsClientLocal",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestConnectedRunUsesPublishedProjectSnapshot",
+   "durationMillis": 3080
+  },
+  {
+   "name": "TestConnectedRunUsesPublishedTestSelection",
+   "durationMillis": 1390
+  },
+  {
+   "name": "TestConnectedShardPlanPreservesExactSelectorFailures",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestConnectedShardPlanRequiresExactUniqueIndexesBeforeArtifacts",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestConnectedShardPlanWritesOnlyClientFiles",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestContextAssignmentProjectRoutesNativeConformance",
+   "durationMillis": 17150
+  },
+  {
+   "name": "TestDAPCacheKeyIncludesSourceAPIVersion",
+   "durationMillis": 6480
+  },
+  {
+   "name": "TestDAPRejectsPriorCacheVersions",
+   "durationMillis": 19050
+  },
+  {
+   "name": "TestDBCanonicalOrgOriginSeedAndStoredPrecedence",
+   "durationMillis": 550
+  },
+  {
+   "name": "TestDBCanonicalOrgOriginSeedsLegacyMetadataAndRejectsInvalidConfig",
+   "durationMillis": 480
+  },
+  {
+   "name": "TestDBOrgSkipsInvalidEmailServicesWithWarnings",
+   "durationMillis": 370
+  },
+  {
+   "name": "TestDaemonClassShardFilesEquivalent",
+   "durationMillis": 100
+  },
+  {
+   "name": "TestDaemonClassShardFilesSelectedRoutesRejectLocalFallback",
+   "durationMillis": 200
+  },
+  {
+   "name": "TestDaemonEquivalenceMatrix",
+   "durationMillis": 18600
+  },
+  {
+   "name": "TestDaemonEquivalenceSelectedRoutesRejectLocalFallback",
+   "durationMillis": 20480
+  },
+  {
+   "name": "TestDaemonRoutingPoisonPreservesProjectMetadata",
+   "durationMillis": 560
+  },
+  {
+   "name": "TestDataWeaveToolchainUnsupported",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestDefaultCLIDurationHistoryPathUsesGladeCache",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestDevLWCOptionsApplyContextPresetAndExplicitOverrides",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestDevLWCOptionsSupportUtilityAndFlowTargets",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestDevLWCRoutesListComponentsPagesTabsAndVisualforce",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestDevLWCSelectedURLUsesContext",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestDevLWCSelectedURLUsesURLAddressableAndActionContexts",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestDevServersAllowPublicBindOptInBeforeProjectLoading",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestDevServersGuardPublicBindsBeforeProjectLoading",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestDirectPackageShimWatchMatchesFreshLoad",
+   "durationMillis": 760
+  },
+  {
+   "name": "TestDoctorConfiguredTestEnvironment",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestDoctorCustomPersonQueryDiagnosticRoutes",
+   "durationMillis": 24170
+  },
+  {
+   "name": "TestDoctorOrgSetupEvidenceRoutes",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestDoctorPDFRendererConfiguration",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestDoctorPlatformContextRoutes",
+   "durationMillis": 28230
+  },
+  {
+   "name": "TestDoctorSyntaxEvidenceRoutes",
+   "durationMillis": 45140
+  },
+  {
+   "name": "TestDuplicateCanonicalNameWarningForcesFullFallbackGraph",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestEmptyClassFileSelectionRejectsProfilingArtifacts",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestEmptyClassFileSelectionsWriteRequestedArtifacts",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestEnumValueMethodsNativeCheckCachedTwins",
+   "durationMillis": 31240
+  },
+  {
+   "name": "TestEnumValueMethodsNativeCheckNamedIsTestRoutes",
+   "durationMillis": 4300
+  },
+  {
+   "name": "TestExecConfiguredParentDateNativeConformance",
+   "durationMillis": 2310
+  },
+  {
+   "name": "TestExecReferenceOnlyNameAnonymousContextNativeConformance",
+   "durationMillis": 1270
+  },
+  {
+   "name": "TestFailedTestCommandOrgSetupEvidenceRoutes",
+   "durationMillis": 2300
+  },
+  {
+   "name": "TestFlattenTestCasesPreservesSourceFile",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestFlattenTestCasesPreservesTerminalReason",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestFlowFormulaFrameRejectLegacyDAPCache",
+   "durationMillis": 21740
+  },
+  {
+   "name": "TestFrontendCacheBodyEditInvalidatesWholeSemanticResult",
+   "durationMillis": 440
+  },
+  {
+   "name": "TestFrontendCacheCLICheckAndTestRoutes",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestFrontendCacheCheckResultsAndClearRoutes",
+   "durationMillis": 430
+  },
+  {
+   "name": "TestFrontendCacheClearFencesActivePublication",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestFrontendCacheCorruptionAndPrivatePathsFallBack",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestFrontendCacheHitSkipsBuilderAndRejectsMutation",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestFrontendCacheInvalidEditsUseCompleteBuildArtifacts",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestFrontendCacheKeepsSourceOnlyOccurrencesOnEdit",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestFrontendCacheNamedProjectOutcomesAtFloors",
+   "durationMillis": 4700
+  },
+  {
+   "name": "TestFrontendCacheOneFileEditReusesUnchangedParsing",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestFrontendCacheSetupStageChangesInvalidateIdentity",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestGeneratedEmptyClassShardIsSafeNoop",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestGracefulStopBeforeFinalReportProjectRoutes",
+   "durationMillis": 25140
+  },
+  {
+   "name": "TestGracefulStopCompletedEmptySelectionWriterRoutes",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestGracefulStopCompletedProjectWriterRoutes",
+   "durationMillis": 34430
+  },
+  {
+   "name": "TestGracefulStopCompletedWriterErrorRoutes",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestGracefulStopConnectedPartialErrorAndRejection",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestGracefulStopDAPBeforeCommandRoutes",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestGracefulStopDAPProjectRoutes",
+   "durationMillis": 9950
+  },
+  {
+   "name": "TestGracefulStopDAPStdioHelper",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestGracefulStopDAPStdioProjectRoutes",
+   "durationMillis": 13400
+  },
+  {
+   "name": "TestGracefulStopDAPSuccessfulProjectRoutes",
+   "durationMillis": 1430
+  },
+  {
+   "name": "TestGracefulStopDevDaemonNonStopRoutes",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestGracefulStopDevDaemonProjectRoutes",
+   "durationMillis": 5000
+  },
+  {
+   "name": "TestGracefulStopDevDaemonResponseRoutes",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestGracefulStopDiscoveryConnectedEmptyResultExit",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestGracefulStopDiscoveryControlCommandsDoNotRun",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestGracefulStopDiscoveryDevArtifactErrorRoutes",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestGracefulStopDiscoveryEmptyClassFileRoutes",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestGracefulStopDiscoveryLoadPhaseRoutes",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestGracefulStopDiscoveryPreservesProjectErrors",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestGracefulStopDiscoveryProjectRoutes",
+   "durationMillis": 770
+  },
+  {
+   "name": "TestGracefulStopDiscoveryResultWriterRoutes",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestGracefulStopDiscoverySuccessfulShardPlanRoutes",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestGracefulStopDiscoveryWatchSetupRoutes",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestGracefulStopFinalReportWatchProjectRoutes",
+   "durationMillis": 2500
+  },
+  {
+   "name": "TestGracefulStopFinalResultErrorOwnershipRoutes",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestGracefulStopFinalResultServerOnlyProjectRoutes",
+   "durationMillis": 2410
+  },
+  {
+   "name": "TestGracefulStopFinalizerArtifactErrorRoutes",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestGracefulStopFinalizerOrdinaryErrorRoutes",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestGracefulStopJSONRetainsCompletedTests",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestGracefulStopJUnitFailureProjectRoutes",
+   "durationMillis": 45910
+  },
+  {
+   "name": "TestGracefulStopProjectConsole",
+   "durationMillis": 2820
+  },
+  {
+   "name": "TestGracefulStopProjectRoutes",
+   "durationMillis": 13080
+  },
+  {
+   "name": "TestGracefulStopQueuedConnectedNormalEmptyRun",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestGracefulStopQueuedConnectedRejectsNonStopResponses",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestGracefulStopQueuedConnectedRoutes",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestGracefulStopQueuedConnectedShardPlanRoutes",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestGracefulStopWatchIdleAndPerTestTimeoutRoutes",
+   "durationMillis": 1490
+  },
+  {
+   "name": "TestGracefulStopWatchProjectRoutes",
+   "durationMillis": 44740
+  },
+  {
+   "name": "TestGracefulStopWatchRunnerRoutes",
+   "durationMillis": 2670
+  },
+  {
+   "name": "TestHomeCLIStatusRoutesCompletedReadOnlyHome",
+   "durationMillis": 140
+  },
+  {
+   "name": "TestHomeCLIStatusRoutesTwoProcessesPendingInstall",
+   "durationMillis": 26930
+  },
+  {
+   "name": "TestHomeProjectRoutesCompletedReadOnlyHome",
+   "durationMillis": 49180
+  },
+  {
+   "name": "TestHomeProjectRoutesTwoProcessesPendingInstall",
+   "durationMillis": 189950
+  },
+  {
+   "name": "TestHomeTestDaemonIndependentOfPendingInstall",
+   "durationMillis": 6680
+  },
+  {
+   "name": "TestImpactJSONCLIFlags",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestImpactJSONInventoryAbsentMalformedAndSelectorErrorRoutes",
+   "durationMillis": 1800
+  },
+  {
+   "name": "TestImpactJSONInventoryScratchCumulusOrdinaryChangedAndAliasRoutes",
+   "durationMillis": 43280
+  },
+  {
+   "name": "TestImpactJSONProjectChangedRoutes",
+   "durationMillis": 2890
+  },
+  {
+   "name": "TestImpactJSONProjectCompileErrorBoundary",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestImpactJSONProjectNamedTestRunnerRoutes",
+   "durationMillis": 3580
+  },
+  {
+   "name": "TestImpactJSONProjectSelectionAndRequestedTraceRoutes",
+   "durationMillis": 2250
+  },
+  {
+   "name": "TestImpactJSONProjectTruncationBoundary",
+   "durationMillis": 1480
+  },
+  {
+   "name": "TestInProcessDaemonPreservesProgress",
+   "durationMillis": 750
+  },
+  {
+   "name": "TestInspectDefinitionFindsSymbolByLocation",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestInspectDefinitionFindsSymbolByName",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestInspectPerformanceMovedToPlugin",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestInspectReferencesCanIncludeDeclaration",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestInspectReferencesJSONUsesCLIEnvelope",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestInspectReferencesTextOmitsDeclarationByDefault",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestLatestFailedFilterIncludesAllFailures",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestLightCommandsReturnWithoutProjectRuntime",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestLoadCLIDurationHistoryReadsClassAndMethodMaps",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestLoadDAPStartupStateCachesReusesAndInvalidates",
+   "durationMillis": 5220
+  },
+  {
+   "name": "TestLoadTestIndexWithPerfPhasesRetainsBuildArtifactsAcrossSchemaBranches",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestLocalClassUpdateWithConfigDriftRetainsOldStateAndWatcherUntilPrepared",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestLocalDependencyPathsCLIRoutesAPI62And67",
+   "durationMillis": 3400
+  },
+  {
+   "name": "TestLocalDependencyPathsInitRoutesAPI62And67",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestLocalDependencyPathsInitializedCLIRoutesAPI62And67",
+   "durationMillis": 7600
+  },
+  {
+   "name": "TestLocalFallbackProofDriftAndBuildErrorRetainOldState",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestLocalHTTPServersSetReadHeaderTimeout",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestLocalLateFallbackReloadsInsideProofWindow",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestNamedDependencyMappingCommandRoutes",
+   "durationMillis": 3880
+  },
+  {
+   "name": "TestNativeDuplicateClassWinnerExecutionRoutes",
+   "durationMillis": 8810
+  },
+  {
+   "name": "TestNativeWatchRegistrationGapReconcilesToFreshLoad",
+   "durationMillis": 1010
+  },
+  {
+   "name": "TestNetworkExternalUserAccessNativeProjectRoutes",
+   "durationMillis": 4900
+  },
+  {
+   "name": "TestNetworkFileGitProjectCLIAliasAndDaemonRoutes",
+   "durationMillis": 30950
+  },
+  {
+   "name": "TestNetworkFileProjectWatchLocalAndDaemonRoutes",
+   "durationMillis": 36900
+  },
+  {
+   "name": "TestNewCheckSemaPerfIncludesSourceArenaCounters",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestNoCacheRoutingContract",
+   "durationMillis": 3230
+  },
+  {
+   "name": "TestNoCacheRoutingNativeConformance",
+   "durationMillis": 4630
+  },
+  {
+   "name": "TestNormalizeDevVFServeErrorIgnoresNormalServerClose",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestOpenDBStoreCreatesPrivateFiles",
+   "durationMillis": 390
+  },
+  {
+   "name": "TestOpenDBStoreDoesNotTruncateInvalidExistingFile",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestOpenDBStorePreservesExistingFiles",
+   "durationMillis": 460
+  },
+  {
+   "name": "TestOpenDBStorePreservesMemoryDSNs",
+   "durationMillis": 380
+  },
+  {
+   "name": "TestOrgForProjectAccountAddressFieldsExposeFirstComponent",
+   "durationMillis": 140
+  },
+  {
+   "name": "TestOrgStateFromIndexHydratesSourceGroupsAfterSeed",
+   "durationMillis": 140
+  },
+  {
+   "name": "TestOrgStateFromIndexHydratesSourceRolesAfterSeed",
+   "durationMillis": 140
+  },
+  {
+   "name": "TestOrgStateFromIndexReturnsCustomMetadataApplyError",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestOverloadApplicabilityStaticThisAndInterface",
+   "durationMillis": 1330
+  },
+  {
+   "name": "TestOverloadApplicabilityStaticThisRejection",
+   "durationMillis": 260
+  },
+  {
+   "name": "TestOwnedIterableCollectionViewsConformance",
+   "durationMillis": 9590
+  },
+  {
+   "name": "TestOwnedOverloadApplicability",
+   "durationMillis": 147220
+  },
+  {
+   "name": "TestParseDBUIOptions",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestParseDBUIOptionsPort",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestPersonAccountFormulaInputNativeAnonymousExec",
+   "durationMillis": 2080
+  },
+  {
+   "name": "TestPersonAccountFormulaInputNativeTypedAnonymousExec",
+   "durationMillis": 2310
+  },
+  {
+   "name": "TestPersonAccountFormulaNativeAnonymousExec",
+   "durationMillis": 1930
+  },
+  {
+   "name": "TestPersonAccountFormulaNativeAnonymousRead",
+   "durationMillis": 2250
+  },
+  {
+   "name": "TestPersonAccountFormulaNativeTypedAnonymousExec",
+   "durationMillis": 2180
+  },
+  {
+   "name": "TestPersonAccountPCRequiredFormulaNativeProjectRunner",
+   "durationMillis": 5250
+  },
+  {
+   "name": "TestPersonAccountProfileDefaultsProjectLoaders",
+   "durationMillis": 14210
+  },
+  {
+   "name": "TestPersonAccountProfileRoutesProjectLoaders",
+   "durationMillis": 16040
+  },
+  {
+   "name": "TestPersonAccountProfileRoutesRejectLegacyDAPCache",
+   "durationMillis": 4770
+  },
+  {
+   "name": "TestPluginsAvailableCustomRegistryKeepsEndpointError",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestPluginsAvailableDefaultRegistryPreviewError",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestPluginsAvailableListsRegistry",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestPluginsAvailableRejectsArguments",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestPluginsDoctorJSON",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestPluginsHelpShowsAvailable",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestPluginsInstallCommunityRegistryInCIStopsBeforeDownload",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestPluginsInstallDefaultRegistryPreviewError",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestPluginsInstallMissingArchiveDoesNotFetchRegistry",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestPluginsInstallRemoteURLProgressFinishesOnTrustError",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestPluginsInstallRemoteURLRequiresSHA256",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestPluginsLinkListsPlugin",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestPluginsListAndWhichUseCanonicalIdentity",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestPluginsListEmpty",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestPluginsListJSONCancellationCleansUpLinkedExecutableDescendant",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestPluginsListJSONIncludesEditorMetadata",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestPluginsListJSONIncludesLinkedExecutableEditorMetadata",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestPluginsListJSONTimeoutBeforePIDWriteDoesNotRequirePIDFile",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestPluginsSearchAndInfoUseRegistry",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestPluginsSearchWithoutQueryListsRegistry",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestPrepareDaemonWatchRunKeepsSelectionPairedWithSnapshot",
+   "durationMillis": 550
+  },
+  {
+   "name": "TestPrepareInitialDaemonWatchRetriesOrdinaryDrift",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestPrepareInitialLocalWatchRetriesOrdinaryDrift",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestPrepareInitialWatchRetriesRespectContextAndHardErrors",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestPrepareLocalWatchReplacementFailureLeavesOldWatcherLive",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestPrepareLocalWatchReplacementRejectsDriftAfterCandidateBaseline",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestPrepareLocalWatchReplacementRejectsGraphBuildDrift",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestPrintDevVFStartupSummaryBoundsPages",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestPrintDevVFStartupSummaryListsPagesAndWatchedFiles",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestProgressFailingSetupCLIHasSeparateCounts",
+   "durationMillis": 1090
+  },
+  {
+   "name": "TestProgressModeForJSONDefaultsOff",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestProgressSeparatesSetupFailuresFromMethodErrors",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestProgressSetupFailureWithoutMethodCompletionStaysUnsuccessful",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestProjectBindingKeepsSourceVersionIndependentOfEndpoint",
+   "durationMillis": 140
+  },
+  {
+   "name": "TestRTEMPublishCheckColdAndWarm",
+   "durationMillis": 450
+  },
+  {
+   "name": "TestReadCLIRecordedPIDIfPresent",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestReleaseBuildScriptWritesMachineReadableManifest",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestReleaseBuildUsesTMPDIRAndCleansWorkdirAfterEarlyFailure",
+   "durationMillis": 760
+  },
+  {
+   "name": "TestRenderIsNotPublicCommand",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestReportExportConfinesSavedRunFiles",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestResetPlaygroundStateClearsResultCache",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestResetPlaygroundStateRejectsEscapingWorkspaceID",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestResetPlaygroundStateRejectsInternalSymlinkedWorkspace",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestResetPlaygroundStateRejectsSymlinkedWorkspaces",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRewriteChangedTestArgsDefaultsToHead",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestCase339ServerBoundsSlowRequestBody",
+   "durationMillis": 5000
+  },
+  {
+   "name": "TestRunCheckAcceptsXor",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestRunCheckAllValidFlowsAddNoAutomationDiagnostics",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestRunCheckAndTestPreserveHistoricalSourceAPIVersions",
+   "durationMillis": 2140
+  },
+  {
+   "name": "TestRunCheckAndTestRejectReservedApexIdentifier",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestRunCheckArtifactPermissionsAreRestricted",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestRunCheckDoesNotReportPerformanceDiagnostics",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestRunCheckFormatsForCI",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestRunCheckJSON",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestRunCheckJSONOmitsDuplicateDataDiagnostics",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestRunCheckNoCacheDoesNotReadWriteOrRetainSemanticResult",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestRunCheckNoProgressSuppressesProgress",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestRunCheckPerfJSONCapturesLowerCamelPhaseAndSemaCounters",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestRunCheckPerfJSONPreservesEveryOutputFormat",
+   "durationMillis": 90
+  },
+  {
+   "name": "TestRunCheckPerfJSONReportsSinglePhysicalSourceRead",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestRunCheckPerfProfilesCloseOnSuccessDiagnosticsAndError",
+   "durationMillis": 980
+  },
+  {
+   "name": "TestRunCheckPerfRejectsExistingHardLinkedDestinationsBeforeWrites",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunCheckPerfRejectsPairwiseArtifactAliasesBeforeWrites",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunCheckPerfRejectsSymlinkAncestorAliasWithMissingParentsBeforeWrites",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunCheckProgressJSONKeepsStdoutJSON",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestRunCheckProgressWritesPhasesToStderr",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestRunCheckRejectsGenerationChangedAfterIndexBeforeSemanticAnalysis",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunCheckRejectsMutationAfterSemanticIdentityBeforePublication",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestRunCheckReportsMalformedMetadataAsDiagnostic",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestRunCheckReportsNativeDuplicateSourcesAsWarnings",
+   "durationMillis": 620
+  },
+  {
+   "name": "TestRunCheckReportsUnparsableFlowFileAsWarning",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestRunCheckSemanticDiskCachePreservesExactResult",
+   "durationMillis": 460
+  },
+  {
+   "name": "TestRunCheckUnknownType",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestRunCommandHelp",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunCompletionBash",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunCompletionFish",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunCompletionRejectsUnknownShell",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunConfigInitRefusesOverwrite",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunConfigInitWritesGladeYML",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunConfigShowJSON",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunConfigShowSourceAPI68Window",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunConfigShowTextReportsNamespaceRemaps",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunConfigValidateMissingProjectUsesConfigExitCode",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunConfigValidateReportsOK",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunConfigValidateReportsParseError",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunConfigValidateReportsUnreadScratchSettings",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestRunDAP",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunDAPAcceptsDBFlag",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunDAPLaunchAcceptsIDEProjectRootAndAnonymousBody",
+   "durationMillis": 1410
+  },
+  {
+   "name": "TestRunDAPLaunchCanExecutePrivateTestMethodInClass",
+   "durationMillis": 1290
+  },
+  {
+   "name": "TestRunDAPLaunchEmitsStopped",
+   "durationMillis": 2550
+  },
+  {
+   "name": "TestRunDAPLaunchReferenceOnlyNameAnonymousContextNativeConformance",
+   "durationMillis": 1840
+  },
+  {
+   "name": "TestRunDAPLaunchTestMethodDoesNotPersistDBWrites",
+   "durationMillis": 2390
+  },
+  {
+   "name": "TestRunDAPWithDBPersistsOnCleanTermination",
+   "durationMillis": 2880
+  },
+  {
+   "name": "TestRunDBDescribeJSONListsObjectsWithRecordCounts",
+   "durationMillis": 220
+  },
+  {
+   "name": "TestRunDBDescribeObjectJSONIncludesFields",
+   "durationMillis": 130
+  },
+  {
+   "name": "TestRunDBImportSFListsObjects",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunDBImportSFSeedsDatabase",
+   "durationMillis": 200
+  },
+  {
+   "name": "TestRunDBInspectUsesDefaultProjectEnvironment",
+   "durationMillis": 180
+  },
+  {
+   "name": "TestRunDBQueryAllJSONIncludesDeletedRows",
+   "durationMillis": 470
+  },
+  {
+   "name": "TestRunDBQueryJSONUsesSOQLRuntimeAndLimit",
+   "durationMillis": 820
+  },
+  {
+   "name": "TestRunDBRefreshesSameProjectSchemaDrift",
+   "durationMillis": 660
+  },
+  {
+   "name": "TestRunDBRejectsDatabaseFromDifferentProjectSchema",
+   "durationMillis": 360
+  },
+  {
+   "name": "TestRunDBRejectsFlagTokenAsDBValue",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunDBRejectsSchemaRefreshThatWouldDropRecords",
+   "durationMillis": 440
+  },
+  {
+   "name": "TestRunDBRejectsUnknownFlagBeforeFixture",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunDBSeedInspectExportAndReset",
+   "durationMillis": 440
+  },
+  {
+   "name": "TestRunDBSeedWizardAndProgress",
+   "durationMillis": 160
+  },
+  {
+   "name": "TestRunDBUIAliasCarriesImportDefaults",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunDBUIAliasValidateNoUI",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunDBUIReadyFileUsesDefaultProjectEnv",
+   "durationMillis": 210
+  },
+  {
+   "name": "TestRunDBUIRejectsPublicBindWithoutOptIn",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunDBUIScopesRoutesToDBManager",
+   "durationMillis": 210
+  },
+  {
+   "name": "TestRunDBUIWithOpenURLErrorClosesListener",
+   "durationMillis": 170
+  },
+  {
+   "name": "TestRunDBUIWithOpenURLUsesListenerAddress",
+   "durationMillis": 260
+  },
+  {
+   "name": "TestRunDBUsageMentionsImport",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunDebugEditorJSON",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunDebugEditorJSONWithoutProject",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunDebugEditorTextSummary",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunDebugExplainJSON",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunDebugExplainText",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunDebugParseJSON",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunDebugProfileJSON",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunDebugProfileMarkdownFormat",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunDebugProfileText",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunDebugReplayEntryIndexJSON",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunDebugReplayJSON",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunDebugRepro",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunDebugRequiresLog",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunDevLWCHelpUsesLWCHelp",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunDevLWCOpenDefaultsToWorkbench",
+   "durationMillis": 530
+  },
+  {
+   "name": "TestRunDevLWCOpenDefaultsToWorkbenchWhenProjectHasDefaultContext",
+   "durationMillis": 1020
+  },
+  {
+   "name": "TestRunDevLWCOpenUsesStubbedOpener",
+   "durationMillis": 580
+  },
+  {
+   "name": "TestRunDevLWCUsesDBForLocalBuilderSearch",
+   "durationMillis": 1750
+  },
+  {
+   "name": "TestRunDevLWCWithOpenURLErrorClosesListener",
+   "durationMillis": 1030
+  },
+  {
+   "name": "TestRunDevStatus",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunDevTestFailedRerunsLatestFailure",
+   "durationMillis": 1380
+  },
+  {
+   "name": "TestRunDevTestProgressWritesToStderr",
+   "durationMillis": 2330
+  },
+  {
+   "name": "TestRunDevTestWritesArtifacts",
+   "durationMillis": 2080
+  },
+  {
+   "name": "TestRunDevVFHelpUsesVisualforceHelp",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunDevWatchOnceUsesHumanOutput",
+   "durationMillis": 460
+  },
+  {
+   "name": "TestRunDiscoveryCommands",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunDoctorJSON",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestRunDoctorJSONExitCodeMatchesSetupStatus",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunDoctorProjectPathMustExist",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunDoctorReportsFeatureUsage",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestRunDoctorReportsParser",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestRunDoctorReportsPhase2OrgSetupEvidence",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestRunDoctorReportsProjectLocalDataEnvironment",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunDoctorReportsProjectLocalDataSchemaRefresh",
+   "durationMillis": 1360
+  },
+  {
+   "name": "TestRunDoctorShortFlags",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestRunEditorDoctorVSCodeJSONReportsBundledVSIX",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunEditorDoctorVSCodeReportsPaths",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunEditorInstallVSCodeFindsSourceCheckoutVSIX",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunEditorInstallVSCodePrefersSourceCheckoutOverUserShareVSIX",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunEditorInstallVSCodeSuppressesSuccessfulEditorOutput",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunEditorInstallVSCodeUsesBundledVSIXWhenPathOmitted",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunEditorInstallVSCodeUsesGladeHomeBundledVSIX",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunEditorInstallVSCodeUsesVSIX",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunExec",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunExecCanceledBeforeProjectLoad",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunExecCanceledDuringProjectLoadJoinsAndPreservesErrors",
+   "durationMillis": 2220
+  },
+  {
+   "name": "TestRunExecDebugEmitsDAPInitializeResponse",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunExecDebugLogCreatesParentDirs",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunExecDebugLogFile",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunExecDebugLogRawMode",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunExecDebugLogStdout",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunExecDoubleDashStopsFlagParsing",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestRunExecFailure",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunExecFollowsSourceAPIVersion",
+   "durationMillis": 880
+  },
+  {
+   "name": "TestRunExecJSON",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestRunExecJSONHandlesAccessLevelValues",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunExecLimitProfileJSONAndExplicitCaps",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunExecLoadsCurrentProjectOrgFeaturesByDefault",
+   "durationMillis": 1400
+  },
+  {
+   "name": "TestRunExecPreservesCallerGCPercent",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestRunExecPreservesHistoricalApexSourceVersion",
+   "durationMillis": 1070
+  },
+  {
+   "name": "TestRunExecProjectInitializesMetadataDeployResultMessages",
+   "durationMillis": 460
+  },
+  {
+   "name": "TestRunExecProjectLoadError",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunExecQueueableDuplicateSignatureWithProjectRuntime",
+   "durationMillis": 1340
+  },
+  {
+   "name": "TestRunExecRejectsInvalidHistoricalApexVersions",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunExecRejectsReservedLocalIdentifiersWithAndWithoutProject",
+   "durationMillis": 170
+  },
+  {
+   "name": "TestRunExecRejectsSemanticErrorsWithoutProject",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestRunExecSummaryCapsDebugLines",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunExecSupportsAnonymousTransientClassDeclarations",
+   "durationMillis": 350
+  },
+  {
+   "name": "TestRunExecSupportsMultipleAnonymousTypeDeclarations",
+   "durationMillis": 400
+  },
+  {
+   "name": "TestRunExecTraceFile",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunExecWithDBDoesNotPersistOnExecutionError",
+   "durationMillis": 1210
+  },
+  {
+   "name": "TestRunExecWithDBDryRunDoesNotPersist",
+   "durationMillis": 2060
+  },
+  {
+   "name": "TestRunExecWithDBPersistsAnonymousDML",
+   "durationMillis": 1550
+  },
+  {
+   "name": "TestRunExecWithProjectRegistersLocalClasses",
+   "durationMillis": 620
+  },
+  {
+   "name": "TestRunExecWithProjectRejectsAnonymousSemanticDiagnosticsBeforeExecution",
+   "durationMillis": 130
+  },
+  {
+   "name": "TestRunExecWithProjectResolvesTransientDeclarationTypes",
+   "durationMillis": 13690
+  },
+  {
+   "name": "TestRunExecWithProjectUsesLocalPlatformHarnesses",
+   "durationMillis": 870
+  },
+  {
+   "name": "TestRunInitAliasesConfigInit",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunInspectGraphJSON",
+   "durationMillis": 160
+  },
+  {
+   "name": "TestRunInspectSymbolsJSON",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunInspectSymbolsProgressWritesToStderr",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunInspectSymbolsTextIsScannableAndRelative",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunLSPDiagnosticsOnce",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestRunLeafCommandUnknownFlagSuggestsClosestMatch",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunOrgAuthPrintsSfCommand",
+   "durationMillis": 110
+  },
+  {
+   "name": "TestRunOrgCommandsRejectPathAliases",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunOrgCommandsUseProjectFlagForConfigLookup",
+   "durationMillis": 110
+  },
+  {
+   "name": "TestRunOrgCreateRejectsPublicBindWithoutOptIn",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunOrgCreateWritesConfigAndInitializesDB",
+   "durationMillis": 140
+  },
+  {
+   "name": "TestRunOrgListShowsConfiguredOrg",
+   "durationMillis": 110
+  },
+  {
+   "name": "TestRunOrgStatusReportsStoppedWhenServerIsNotRunning",
+   "durationMillis": 110
+  },
+  {
+   "name": "TestRunPackageBuildUsesRequestedNamespace",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunPackageCaptureBridgeGuidesWhenPluginMissing",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunPackageInfoPrintsCaptureProvenance",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunPackageRichArtifactWorkflow",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestRunParseJSON",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunParseProgressWritesToStderr",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunPlaygroundExampleFlagImpliesExamples",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunPlaygroundExampleFlagPrintsDeepLocalURL",
+   "durationMillis": 180
+  },
+  {
+   "name": "TestRunPlaygroundExampleFlagRejectsProjectRefs",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunPlaygroundExampleFlagRejectsProjectRoot",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunPlaygroundExampleFlagRejectsUnknownID",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunPlaygroundExamplesFlag",
+   "durationMillis": 180
+  },
+  {
+   "name": "TestRunPlaygroundListExamples",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunPlaygroundNoDB",
+   "durationMillis": 70
+  },
+  {
+   "name": "TestRunPlaygroundOnce",
+   "durationMillis": 170
+  },
+  {
+   "name": "TestRunPlaygroundProjectRefFlag",
+   "durationMillis": 170
+  },
+  {
+   "name": "TestRunPlaygroundPublicOptInWarns",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestRunPlaygroundPublicRequiresOptIn",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunPlaygroundRejectsEscapingWorkspaceID",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunPlaygroundRejectsFlagTokenAsProjectValue",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunPlaygroundResetOnStartRefusesProjectRoot",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunPlaygroundUnknownFlag",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunPlaygroundWizardHonorsNoOpenAndPublicAddress",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunPlaygroundWizardPrintsCommand",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunPlaygroundWizardPublicAddressPrintsOptInEnv",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunPlaygroundWizardTrustedProxy",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunProfileAnalyzeJSON",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunProfileAnalyzePprofFormat",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunRefactorRenameDryRunJSONDoesNotWrite",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunRefactorRenameProgressWritesToStderr",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunRefactorRenameRejectsInvalidSchemaSuffix",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunRefactorRenameWriteByLocation",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunReportAcceptsUppercaseFormat",
+   "durationMillis": 180
+  },
+  {
+   "name": "TestRunReportAssessJSON",
+   "durationMillis": 190
+  },
+  {
+   "name": "TestRunReportAssessStrictFailsOnDiagnostics",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestRunReportCommands",
+   "durationMillis": 840
+  },
+  {
+   "name": "TestRunReportCruftWritesHTML",
+   "durationMillis": 150
+  },
+  {
+   "name": "TestRunReportInvalidFormatDoesNotCreateOutFile",
+   "durationMillis": 90
+  },
+  {
+   "name": "TestRunReportJSONGitHubAndHTML",
+   "durationMillis": 1120
+  },
+  {
+   "name": "TestRunReportListRejectsIgnoredOutputFlag",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunReportRefactorProofJSON",
+   "durationMillis": 3340
+  },
+  {
+   "name": "TestRunReportRefactorProofRejectsRunTestsFlag",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunReportRejectsFlagTokenAsRunsDirValue",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunReportRejectsFlagsForWrongEnterpriseSubcommand",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunSchemaLoad",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunSchemaLoadCapsObjectList",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestRunSchemaLoadProgressWritesToStderr",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunSelectedTestsDirectMultipleClasses",
+   "durationMillis": 920
+  },
+  {
+   "name": "TestRunServerRejectsPublicBindWithoutOptIn",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunTUIValidateNoUI",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunTestAllowsBroadFilterToSelectZeroWithExactClass",
+   "durationMillis": 570
+  },
+  {
+   "name": "TestRunTestAsyncExplicitCapsContracts",
+   "durationMillis": 1500
+  },
+  {
+   "name": "TestRunTestAutomaticHistoryOnlyPreservesNormalRun",
+   "durationMillis": 530
+  },
+  {
+   "name": "TestRunTestChangedAliasUsesHead",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunTestConnectRequiresServerWithImplicitDurationHistory",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunTestDaemonChangedSinceNarrowsMultipleAffectedClasses",
+   "durationMillis": 1200
+  },
+  {
+   "name": "TestRunTestDaemonFilterUsesWarmService",
+   "durationMillis": 1400
+  },
+  {
+   "name": "TestRunTestDaemonStatusAndStopRunningServer",
+   "durationMillis": 610
+  },
+  {
+   "name": "TestRunTestDaemonStatusNoServer",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunTestDaemonStopPreservesLivePIDWithoutResponsiveSocket",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunTestDaemonStopPreservesUnresponsiveEndpoint",
+   "durationMillis": 200
+  },
+  {
+   "name": "TestRunTestDaemonStopWaitsForProjectRequestDrain",
+   "durationMillis": 1400
+  },
+  {
+   "name": "TestRunTestDaemonWatchOnceStreamsEvents",
+   "durationMillis": 810
+  },
+  {
+   "name": "TestRunTestDebugEmitsDAPInitializeResponse",
+   "durationMillis": 900
+  },
+  {
+   "name": "TestRunTestDependencyScopedCompileGate",
+   "durationMillis": 2390
+  },
+  {
+   "name": "TestRunTestInstanceHelperMethod",
+   "durationMillis": 920
+  },
+  {
+   "name": "TestRunTestJSONAndJUnit",
+   "durationMillis": 1190
+  },
+  {
+   "name": "TestRunTestLastFailedRerunsRecordedFailures",
+   "durationMillis": 1640
+  },
+  {
+   "name": "TestRunTestLimitProfileAndExplicitCaps",
+   "durationMillis": 910
+  },
+  {
+   "name": "TestRunTestMemoryLimitFlagHelpRoutes",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunTestMemoryLimitsParallelMethodAndClassRoutes",
+   "durationMillis": 6870
+  },
+  {
+   "name": "TestRunTestMemoryLimitsProjectRoutes",
+   "durationMillis": 21180
+  },
+  {
+   "name": "TestRunTestMemoryLimitsWarmDiskCacheRoute",
+   "durationMillis": 9600
+  },
+  {
+   "name": "TestRunTestPerfJSONCreatesPrivateArtifact",
+   "durationMillis": 840
+  },
+  {
+   "name": "TestRunTestPerfJSONExactSelectorKeepsCurrentPreRunSnapshotWithoutStaleRunnerData",
+   "durationMillis": 540
+  },
+  {
+   "name": "TestRunTestPerfJSONPreservesExistingArtifactPermissions",
+   "durationMillis": 530
+  },
+  {
+   "name": "TestRunTestPerfJSONPreservesLegacyShapeAndDerivesDurationsFromPhases",
+   "durationMillis": 1150
+  },
+  {
+   "name": "TestRunTestPerfJSONRecordsEffectiveExecutionProvenance",
+   "durationMillis": 910
+  },
+  {
+   "name": "TestRunTestPerfJSONRejectsDurationHistoryPathConflict",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunTestPerfJSONRejectsEarlySuccessAndArtifactOnlyModes",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunTestPerfJSONRejectsNonlocalModes",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunTestPerfJSONWiresPreRunAndRunnerPhasesAndPreservesResultIdentity",
+   "durationMillis": 960
+  },
+  {
+   "name": "TestRunTestPerfProfilesAloneDoNotEnablePerfCounters",
+   "durationMillis": 880
+  },
+  {
+   "name": "TestRunTestPerfRejectsPairwiseArtifactAliasesBeforeWrites",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestRunTestProgressIncludesStartupCacheHint",
+   "durationMillis": 840
+  },
+  {
+   "name": "TestRunTestProgressJSONWritesNDJSONToStderr",
+   "durationMillis": 2010
+  },
+  {
+   "name": "TestRunTestProgressReportsFreshCacheAndParallelBypass",
+   "durationMillis": 1330
+  },
+  {
+   "name": "TestRunTestProgressWritesToStderr",
+   "durationMillis": 940
+  },
+  {
+   "name": "TestRunTestReadOnlyAllowsExternalArtifacts",
+   "durationMillis": 810
+  },
+  {
+   "name": "TestRunTestReadOnlyDanglingOutputSymlink",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunTestReadOnlyDanglingTargetTraversal",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunTestReadOnlyPreservesProject",
+   "durationMillis": 590
+  },
+  {
+   "name": "TestRunTestReadOnlyProtectsRedirectingConfig",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunTestReadOnlyRedirectedRoot",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunTestReadOnlyRejectsIncompatibleModes",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestRunTestReadOnlyShardOutputSymlink",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunTestReadOnlySymlinkParentTraversal",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunTestRejectsEmptyClassFile",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunTestRejectsInvalidMethodBodyBeforeExecution",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestRunTestRejectsMissingExactClassSelectorJSON",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunTestRejectsMissingExactMethodSelectorConsole",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunTestRejectsMissingExactMethodSelectorJSON",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunTestRejectsMixedValidMissingClassFileJSON",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunTestRejectsTraceWithWatch",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunTestSelectorFailureDoesNotPopulateLastFailed",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunTestSelectsClassFile",
+   "durationMillis": 560
+  },
+  {
+   "name": "TestRunTestSelectsDeterministicClassShard",
+   "durationMillis": 840
+  },
+  {
+   "name": "TestRunTestSelectsExactClass",
+   "durationMillis": 1250
+  },
+  {
+   "name": "TestRunTestSelectsExactMethod",
+   "durationMillis": 560
+  },
+  {
+   "name": "TestRunTestServeRejectsFlagTokenAsValue",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunTestStaticHelperMethod",
+   "durationMillis": 860
+  },
+  {
+   "name": "TestRunTestStaticHelperMethodWithBranching",
+   "durationMillis": 850
+  },
+  {
+   "name": "TestRunTestStaticHelperMethodWithWhileLoop",
+   "durationMillis": 1430
+  },
+  {
+   "name": "TestRunTestUIAliasValidateNoUI",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunTestUnknownFlagSuggestsClosestMatch",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunTestValidKnownFailureJSON",
+   "durationMillis": 870
+  },
+  {
+   "name": "TestRunTestValidatesServicesConfig",
+   "durationMillis": 2270
+  },
+  {
+   "name": "TestRunTestWatchOnceEmitsProfileSummaryWhenTracing",
+   "durationMillis": 470
+  },
+  {
+   "name": "TestRunTestWatchOnceStreamsEvents",
+   "durationMillis": 430
+  },
+  {
+   "name": "TestRunTestWizardPrintsDailyLoopCommands",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunTestWritesTraceFile",
+   "durationMillis": 1340
+  },
+  {
+   "name": "TestRunTopLevelHelpAlignment",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunTopLevelHelpIsWorkflowDoorway",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunTriggerBodyCheckAcceptsSalesforceLegalTriggers",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestRunTriggerBodyCheckReportsBodyAndCapabilityDiagnostics",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestRunUnknownCommand",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunUnknownCommandSuggestsClosestMatch",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunUnknownFlagSuggestsClosestMatch",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunUpdateDryRunPrintsInstallCommand",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunUpdateHelp",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunVersion",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunVersionJSON",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunVersionJSONUsesCLIEnvelope",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRunWatchTestsDaemonInitialRunRebuildsAfterWatcherBaseline",
+   "durationMillis": 510
+  },
+  {
+   "name": "TestRunWatchTestsInitialRunRebuildsAfterWatcherBaseline",
+   "durationMillis": 490
+  },
+  {
+   "name": "TestRuntimeRESTAPICLIContext",
+   "durationMillis": 4800
+  },
+  {
+   "name": "TestRuntimeRESTAPIWatchOnce",
+   "durationMillis": 440
+  },
+  {
+   "name": "TestSchemaImportDescribeFeedsPinnedCheckAndTest",
+   "durationMillis": 1220
+  },
+  {
+   "name": "TestSchemaImportDescribeProjectCacheRequiresProjectRoot",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSchemaImportDescribeWritesProjectCache",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSchemaImportDescribeWritesSchema",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSchemaReferenceGateApexRelationshipCLIProjectRoutes",
+   "durationMillis": 42530
+  },
+  {
+   "name": "TestSchemaReferenceGateFeatureNativeCLIProjectRoutes",
+   "durationMillis": 16030
+  },
+  {
+   "name": "TestSchemaReferenceGateProjectRoutesNativeConformance",
+   "durationMillis": 9850
+  },
+  {
+   "name": "TestSchemaReferenceGateRelationshipCLIProjectRoutes",
+   "durationMillis": 4780
+  },
+  {
+   "name": "TestSchemaReferenceGateRelationshipTypeofCLIProjectRoutes",
+   "durationMillis": 5160
+  },
+  {
+   "name": "TestSchemaReferenceGateTriggerAndSingletonCLIProjectRoutes",
+   "durationMillis": 37740
+  },
+  {
+   "name": "TestScopedPluginCoordinateIsNotArchiveInstallArg",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestScopedWatchBackendReplacementSwitchesExternalDependencyRoots",
+   "durationMillis": 120
+  },
+  {
+   "name": "TestSemanticBinaryIdentityProjectRoutes",
+   "durationMillis": 6350
+  },
+  {
+   "name": "TestStandardAnonymousRouteNativeConformance",
+   "durationMillis": 9630
+  },
+  {
+   "name": "TestStopTestDaemonPreservesEndpointOnDialError",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestStopTestDaemonPreservesUnresponsiveEndpoint",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestStopTestDaemonReportsActiveRunCleanupTimeout",
+   "durationMillis": 2020
+  },
+  {
+   "name": "TestStopTestDaemonWaitsForActiveRunCleanup",
+   "durationMillis": 240
+  },
+  {
+   "name": "TestSupplementalSourceWatchLocalAndDaemonRoutes",
+   "durationMillis": 9450
+  },
+  {
+   "name": "TestSupportedSourceAPIVersionExecutionMatrix",
+   "durationMillis": 2220
+  },
+  {
+   "name": "TestSymlinkedDependencyRetargetReloadsScopeAndStopsOldTarget",
+   "durationMillis": 330
+  },
+  {
+   "name": "TestSymlinkedDirectDependencyWatchMatchesFreshLoad",
+   "durationMillis": 1510
+  },
+  {
+   "name": "TestTestCancellationBeforeProjectLoad",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestTestClearCache",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestTestClearCacheRejectsFlagTokenAsProjectValue",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestTestOneShotCacheStatusExplainsNoCache",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestTestOneShotCacheStatusExplainsParallelMethodBypass",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestTestTimeoutChangedForwarding",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestTestTimeoutDevWatch",
+   "durationMillis": 1190
+  },
+  {
+   "name": "TestTestTimeoutInvalidEnvironment",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestTestTimeoutInvalidFlag",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestTestTimeoutMilliseconds",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestTestTimeoutPrecedence",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestTestWizardReportsFreshCacheAndOneShotParallelBypass",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestThrowSuccessorScopeProjectAndCachedAnonymousExecNativeRoutes",
+   "durationMillis": 3670
+  },
+  {
+   "name": "TestToolchainHelpExcludesDataWeaveInstallation",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestToolchainInstallProjectTwoProcessesColdShare",
+   "durationMillis": 6180
+  },
+  {
+   "name": "TestToolchainStatusJSONReportsMissingToolchain",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestTryTestServerRunAutoConnect",
+   "durationMillis": 1010
+  },
+  {
+   "name": "TestTryTestServerRunFailsClosedOnProtocolMismatch",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestTypeProvenanceConformance",
+   "durationMillis": 69760
+  },
+  {
+   "name": "TestUnloadedDependencyAnonymousExecNativeRoutes",
+   "durationMillis": 6690
+  },
+  {
+   "name": "TestUnloadedDependencyKnownPlatformAnonymousPolicy",
+   "durationMillis": 610
+  },
+  {
+   "name": "TestUnloadedDependencyMultiHelperAnonymousExecNativeRoutes",
+   "durationMillis": 8030
+  },
+  {
+   "name": "TestUnloadedDependencySchemaAliasAnonymousExecNativeRoutes",
+   "durationMillis": 14670
+  },
+  {
+   "name": "TestUpdateInstallCommandQuotesSingleQuotes",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestUpdateInstallCommandUsesExecutableDirectory",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestUsageErrorsMatchHelpSurface",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestValidateDistinctCLIArtifactDestinationsFastPathSkipsResolutionAndAllocation",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestWarningBearingLocalApexEditRebuildsOnceWithoutReplacement",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestWatchIndexStateLifecycleMatchesFreshLoad",
+   "durationMillis": 35710
+  },
+  {
+   "name": "TestWatchIndexStatePreservesLiveStateAndRecoversAfterFailedFallback",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestWatchIndexUpdateReturnsFailedFallbackWithoutCandidate",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestWatchIndexUpdateUsesIncrementalForApexOnlyChanges",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestWatchRunCoordinatorAllDominatesAndCancelsOnce",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestWatchRunCoordinatorCoalescedRunUsesLatestStarter",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestWatchRunCoordinatorCoalescesPendingDirectSelections",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestWatchRunCoordinatorIgnoresStaleCompletion",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestWatchRunCoordinatorStopCancelsActiveRunOnce",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestWatchRunCoordinatorWaitsForCanceledRunBeforeStartingPending",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestWriteCLIDurationHistoryMergesObservedDurations",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestWriteCLIDurationHistoryRecordsSubMillisecondMethods",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestWriteClassShardsDefensivelyRejectsInvalidCountsBeforeArtifacts",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestWriteClassShardsValidatesImplicitParallelismBeforeArtifacts",
+   "durationMillis": 80
+  },
+  {
+   "name": "TestWriteDBUIReadyFile",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestWriteDebugLogCreatesPrivateFiles",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestWriteDebugLogPreservesExistingPermissions",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestWriteDebugLogStdout",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestWriteDevLWCReadyFileWritesShellRoutes",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestWriteDevVFReadyFileWritesURLAddressAndPages",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestWriteReadyFileAtomicallyPublishesCompleteReplacement",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestWriteRefactorRenameTextCapsEditsUnlessFull",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestWriteTestJSONEnvelopeMarksEmptySelection",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestWriteTestJSONEnvelopeMarksSkippedCasesPartial",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestWriteTestOrgSetupHintWithoutConfigMapping",
+   "durationMillis": 0
+  }
+ ]
+}

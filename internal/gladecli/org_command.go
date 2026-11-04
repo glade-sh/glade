@@ -48,7 +48,7 @@ func runOrg(ctx context.Context, args []string, w io.Writer, progressW io.Writer
 		return err
 	}
 	if len(args) == 0 || isHelpArg(args[0]) {
-		return errors.New("usage: glade org create|list|status|start|auth ...")
+		return errors.New("usage: glade org create|list|status|start|auth|token ...")
 	}
 	switch args[0] {
 	case "create":
@@ -61,8 +61,10 @@ func runOrg(ctx context.Context, args []string, w io.Writer, progressW io.Writer
 		return runOrgStart(ctx, args[1:], w, progressW)
 	case "auth":
 		return runOrgAuth(ctx, args[1:], w)
+	case "token":
+		return runOrgToken(ctx, args[1:], w)
 	default:
-		return errors.New("usage: glade org create|list|status|start|auth ...")
+		return errors.New("usage: glade org create|list|status|start|auth|token ...")
 	}
 }
 
@@ -257,10 +259,10 @@ func runOrgAuth(ctx context.Context, args []string, w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	token := cfg.OrgID + "!glade-local-" + cfg.Alias
 	commandArgs := []string{"sf", "org", "login", "access-token", "--instance-url", cfg.InstanceURL, "--alias", cfg.Alias, "--no-prompt"}
 	if printOnly {
-		env := []string{shellEnvAssignment("SF_ACCESS_TOKEN", token)}
+		tokenCommand := shellCommand("glade", "org", "token", alias, "--project", projectRoot)
+		env := []string{"SF_ACCESS_TOKEN=\"$(" + tokenCommand + ")\""}
 		if sfConfigDir != "" {
 			env = append(env, shellEnvAssignment("SF_CONFIG_DIR", sfConfigDir))
 		}
@@ -271,6 +273,10 @@ func runOrgAuth(ctx context.Context, args []string, w io.Writer) error {
 	if status.Status != "running" {
 		return fmt.Errorf("org %q is not running", cfg.Alias)
 	}
+	token, err := requestOrgAccessToken(ctx, cfg)
+	if err != nil {
+		return err
+	}
 	cmd := exec.CommandContext(ctx, commandArgs[0], commandArgs[1:]...)
 	cmd.Stdout = w
 	cmd.Stderr = w
@@ -279,6 +285,56 @@ func runOrgAuth(ctx context.Context, args []string, w io.Writer) error {
 		cmd.Env = append(cmd.Env, "SF_CONFIG_DIR="+sfConfigDir)
 	}
 	return cmd.Run()
+}
+
+func runOrgToken(ctx context.Context, args []string, w io.Writer) error {
+	alias, projectRoot, err := parseOrgAliasProject("token", args)
+	if err != nil {
+		return err
+	}
+	cfg, err := readOrgConfig(projectRoot, alias)
+	if err != nil {
+		return err
+	}
+	token, err := requestOrgAccessToken(ctx, cfg)
+	if err != nil {
+		return err
+	}
+	_, err = fmt.Fprintln(w, token)
+	return err
+}
+
+func requestOrgAccessToken(ctx context.Context, cfg orgConfig) (string, error) {
+	endpoint := strings.TrimRight(cfg.InstanceURL, "/") + "/services/oauth2/token"
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, strings.NewReader("grant_type=password"))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("X-Glade-Client", "1")
+	req.Header.Set("X-GLADE-User-Id", cfg.UserID)
+	if capability := os.Getenv("GLADE_SERVER_CAPABILITY"); capability != "" {
+		req.Header.Set("X-Glade-Capability", capability)
+	}
+	client := http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("request local org access token: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return "", fmt.Errorf("request local org access token: HTTP %d", resp.StatusCode)
+	}
+	var payload struct {
+		AccessToken string `json:"access_token"`
+	}
+	if err := json.NewDecoder(io.LimitReader(resp.Body, 64*1024)).Decode(&payload); err != nil {
+		return "", fmt.Errorf("decode local org access token: %w", err)
+	}
+	if payload.AccessToken == "" {
+		return "", errors.New("local org token response is missing an access token")
+	}
+	return payload.AccessToken, nil
 }
 
 func parseOrgAliasProject(command string, args []string) (string, string, error) {
@@ -439,6 +495,7 @@ func checkOrgStatus(ctx context.Context, cfg orgConfig) orgStatus {
 		status.Error = err.Error()
 		return status
 	}
+	req.Header.Set("X-Glade-Client", "1")
 	client := http.Client{Timeout: 750 * time.Millisecond}
 	resp, err := client.Do(req)
 	if err != nil {

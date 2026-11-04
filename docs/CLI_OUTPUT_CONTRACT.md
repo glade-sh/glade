@@ -4,7 +4,7 @@ This document is the shared contract for Glade command output.
 
 ## Output Modes
 
-- Default output is concise human text. It leads with the user outcome.
+- Default output is concise human text, except for documented machine-output commands such as `debug parse`. It leads with the user outcome.
 - `--verbose` and `--debug` may show internal detail and absolute paths.
 - Completed result-producing `--json` modes write JSON to stdout; see the legacy and watch exceptions below.
 - `--format` writes specialized artifacts such as SARIF, GitHub annotations, JUnit, Markdown, or HTML where a command supports them.
@@ -42,6 +42,10 @@ only on stderr. Check the process exit code before parsing output. Watch modes
 emit NDJSON events rather than a single result envelope. Wizard output and
 legacy paths such as `glade test failed --json` with no saved failures still
 print human text.
+
+`glade debug parse --log <path>` writes parsed-log JSON on success, without
+the priority-command envelope. Its accepted `--json` flag is a compatibility
+no-op; early failures may write only to stderr.
 
 ## JSON Envelope
 

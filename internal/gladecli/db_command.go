@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -336,7 +337,7 @@ func runDBUIWithOpenURLAndListen(ctx context.Context, args []string, w io.Writer
 		}
 	}
 	handler := dbUIRouteScopedHandler{next: server.NewWithStore(&org, store)}
-	httpServer := &http.Server{Addr: opts.addr, Handler: handler, ReadHeaderTimeout: localHTTPReadHeaderTimeout}
+	httpServer := &http.Server{Addr: opts.addr, Handler: server.GuardHTTPAuthority(handler, actualAddr, opts.addr), ReadHeaderTimeout: localHTTPReadHeaderTimeout, ReadTimeout: localHTTPReadTimeout}
 	renderer.Render(cliui.Event{Kind: cliui.EventPhaseEnd, Phase: "db ui", Label: "Record manager ready", Current: 2, Total: 2})
 	renderer.Finish(cliui.Result{OK: true, Label: "db ui ready"})
 	printDBUIStartupSummary(w, url, actualAddr, dbPath, opts.root)
@@ -633,6 +634,69 @@ func openDBStore(path, root string) (*storage.SQLiteStore, storage.OrgState, err
 		_ = store.Close()
 		return nil, storage.OrgState{}, err
 	}
+	if hasBinding {
+		if len(org.Objects) > 0 {
+			storedBinding, bound, err := store.ProjectBinding()
+			if err != nil {
+				_ = store.Close()
+				return nil, storage.OrgState{}, err
+			}
+			if bound && storedBinding.ProjectRoot != "" && !sameCleanPath(storedBinding.ProjectRoot, binding.ProjectRoot) {
+				_ = store.Close()
+				return nil, storage.OrgState{}, dbProjectMismatchError(path, root, storedBinding)
+			}
+		}
+		if len(org.Objects) > 0 && !boundProjectIdentityMatches(binding.ProjectRoot, org) {
+			_ = store.Close()
+			return nil, storage.OrgState{}, flowProjectIdentityError(path)
+		}
+		markProjectFlowSources(&projectOrg)
+	} else if len(org.Objects) > 0 {
+		storedBinding, bound, err := store.ProjectBinding()
+		if err != nil {
+			_ = store.Close()
+			return nil, storage.OrgState{}, err
+		}
+		if (!bound || storedBinding.ProjectRoot == "") && legacyOrgHasFileBackedFlow(org, false) {
+			_ = store.Close()
+			return nil, storage.OrgState{}, flowProjectIdentityError(path)
+		}
+		if bound && storedBinding.ProjectRoot != "" {
+			if org.Metadata.ProjectFlowRootID == "" {
+				_ = store.Close()
+				return nil, storage.OrgState{}, flowProjectIdentityError(path)
+			}
+			if org.Metadata.ProjectFlowOwnershipVersion == 0 {
+				if legacyOrgHasFileBackedFlow(org, false) {
+					_ = store.Close()
+					return nil, storage.OrgState{}, fmt.Errorf("cannot establish legacy project Flow ownership outside its bound project; reopen with the previous metadata roots configured")
+				}
+			} else {
+				// A missing directory must not be treated as an empty project.
+				// When it is available, always refresh so new Flows are found
+				// even after the previous last project Flow was removed.
+				info, statErr := os.Stat(storedBinding.ProjectRoot)
+				if statErr != nil || !info.IsDir() {
+					if legacyOrgHasFileBackedFlow(org, true) {
+						_ = store.Close()
+						return nil, storage.OrgState{}, fmt.Errorf("cannot load bound project to refresh Flow metadata")
+					}
+				} else {
+					root = storedBinding.ProjectRoot
+					projectOrg, binding, hasBinding, err = projectOrgAndDBBinding(root)
+					if err != nil || !hasBinding {
+						_ = store.Close()
+						return nil, storage.OrgState{}, fmt.Errorf("cannot load bound project to refresh Flow metadata")
+					}
+					if !boundProjectIdentityMatches(binding.ProjectRoot, org) {
+						_ = store.Close()
+						return nil, storage.OrgState{}, flowProjectIdentityError(path)
+					}
+					markProjectFlowSources(&projectOrg)
+				}
+			}
+		}
+	}
 	storedDomainURL := org.DomainURL
 	if len(org.Objects) == 0 {
 		if hasBinding {
@@ -659,10 +723,31 @@ func openDBStore(path, root string) (*storage.SQLiteStore, storage.OrgState, err
 			}
 		}
 	} else if hasBinding {
+		if org.Metadata.ProjectFlowOwnershipVersion == 0 {
+			if err := validateLegacyProjectFlowOwnership(org, root); err != nil {
+				_ = store.Close()
+				return nil, storage.OrgState{}, err
+			}
+		}
 		org, err = validateDBProjectBinding(store, path, root, binding, org, projectOrg)
 		if err != nil {
 			_ = store.Close()
 			return nil, storage.OrgState{}, err
+		}
+		changed := refreshDBProjectFlows(&org, projectOrg, root)
+		if org.Metadata.ProjectFlowOwnershipVersion == 0 {
+			org.Metadata.ProjectFlowOwnershipVersion = 1
+			changed = true
+		}
+		if org.Metadata.ProjectFlowRootID == "" && projectOrg.Metadata.ProjectFlowRootID != "" {
+			org.Metadata.ProjectFlowRootID = projectOrg.Metadata.ProjectFlowRootID
+			changed = true
+		}
+		if changed {
+			if err := store.Save(org); err != nil {
+				_ = store.Close()
+				return nil, storage.OrgState{}, err
+			}
 		}
 	}
 	// Seed old saved orgs only when they have no explicit canonical origin.
@@ -674,6 +759,218 @@ func openDBStore(path, root string) (*storage.SQLiteStore, storage.OrgState, err
 		}
 	}
 	return store, org, nil
+}
+
+// Mark rules loaded from the bound project so that ownership survives a later
+// removal or retargeting of an external metadata root.
+func markProjectFlowSources(org *storage.OrgState) {
+	org.Metadata.ProjectFlowOwnershipVersion = 1
+	mark := func(rules []storage.FlowRule) {
+		for i := range rules {
+			if rules[i].File != "" {
+				rules[i].ProjectSourceOwned = true
+			}
+		}
+	}
+	for name, object := range org.Objects {
+		mark(object.Definition.FlowRules)
+		org.Objects[name] = object
+	}
+	mark(org.Metadata.Flows)
+	mark(org.Metadata.FlowDeclarations)
+}
+
+// localProjectRootID returns a stable local filesystem identity where the
+// platform exposes device and inode numbers. It contains no project content.
+func localProjectRootID(root string) string {
+	info, err := os.Stat(root)
+	if err != nil || !info.IsDir() || info.Sys() == nil {
+		return ""
+	}
+	value := reflect.Indirect(reflect.ValueOf(info.Sys()))
+	if !value.IsValid() || value.Kind() != reflect.Struct {
+		return ""
+	}
+	number := func(name string) string {
+		field := value.FieldByName(name)
+		if !field.IsValid() {
+			return ""
+		}
+		switch field.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			return strconv.FormatInt(field.Int(), 10)
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			return strconv.FormatUint(field.Uint(), 10)
+		default:
+			return ""
+		}
+	}
+	device, inode := number("Dev"), number("Ino")
+	if device == "" || inode == "" {
+		return ""
+	}
+	return device + ":" + inode
+}
+
+// A stored identity is required: source similarity cannot prove ownership.
+func boundProjectIdentityMatches(root string, org storage.OrgState) bool {
+	return org.Metadata.ProjectFlowRootID != "" && localProjectRootID(root) == org.Metadata.ProjectFlowRootID
+}
+
+func flowProjectIdentityError(path string) error {
+	return fmt.Errorf("cannot identify bound project to refresh Flow metadata; rebuild the database: move %s aside and rerun the command with the project and database paths (existing data will not be retained)", path)
+}
+
+// legacyOrgHasFileBackedFlow detects ambiguous legacy sources or tagged
+// project sources before a bound database opens without its project.
+func legacyOrgHasFileBackedFlow(org storage.OrgState, projectOnly bool) bool {
+	hasFile := func(rules []storage.FlowRule) bool {
+		for _, rule := range rules {
+			if projectOnly && !rule.ProjectSourceOwned {
+				continue
+			}
+			file := strings.ToLower(strings.TrimSpace(rule.File))
+			if strings.HasSuffix(file, ".flow") || strings.HasSuffix(file, ".flow-meta.xml") {
+				return true
+			}
+		}
+		return false
+	}
+	for _, object := range org.Objects {
+		if hasFile(object.Definition.FlowRules) {
+			return true
+		}
+	}
+	return hasFile(org.Metadata.Flows) || hasFile(org.Metadata.FlowDeclarations)
+}
+
+// Legacy databases cannot distinguish a former external project Flow from a
+// runtime-owned file after that root disappears. Refuse the ambiguous open
+// instead of silently retaining or deleting an unknown executable rule.
+func validateLegacyProjectFlowOwnership(org storage.OrgState, root string) error {
+	owned, err := projectFlowSourceOwner(root)
+	if err != nil {
+		return err
+	}
+	check := func(rules []storage.FlowRule) error {
+		for _, rule := range rules {
+			file := strings.TrimSpace(rule.File)
+			lower := strings.ToLower(file)
+			if file != "" && (strings.HasSuffix(lower, ".flow") || strings.HasSuffix(lower, ".flow-meta.xml")) && !owned(rule) {
+				return fmt.Errorf("cannot establish legacy project Flow ownership; reopen with the previous metadata roots configured")
+			}
+		}
+		return nil
+	}
+	for _, object := range org.Objects {
+		if err := check(object.Definition.FlowRules); err != nil {
+			return err
+		}
+	}
+	if err := check(org.Metadata.Flows); err != nil {
+		return err
+	}
+	return check(org.Metadata.FlowDeclarations)
+}
+
+// Project Flow metadata can change independently of the database schema.
+// Reconcile source-owned rules while preserving runtime-only rules and data.
+func refreshDBProjectFlows(org *storage.OrgState, projectOrg storage.OrgState, root string) bool {
+	owned, err := projectFlowSourceOwner(root)
+	if err != nil {
+		return false
+	}
+	changed := false
+	legacyOwnership := org.Metadata.ProjectFlowOwnershipVersion == 0
+	reconcile := func(existing, source []storage.FlowRule) []storage.FlowRule {
+		out := make([]storage.FlowRule, 0, len(existing)+len(source))
+		used := make([]bool, len(source))
+		for _, old := range existing {
+			match := -1
+			for i, rule := range source {
+				if strings.EqualFold(old.Name, rule.Name) {
+					match = i
+					break
+				}
+			}
+			if match >= 0 {
+				if !used[match] {
+					out = append(out, source[match])
+					used[match] = true
+				}
+				continue
+			}
+			if (!legacyOwnership && !old.ProjectSourceOwned) || (legacyOwnership && !owned(old)) {
+				out = append(out, old)
+			}
+		}
+		for i, rule := range source {
+			if !used[i] {
+				out = append(out, rule)
+			}
+		}
+		if len(out) == 0 && existing == nil {
+			out = nil
+		}
+		if !reflect.DeepEqual(existing, out) {
+			changed = true
+		}
+		return out
+	}
+	for name, current := range org.Objects {
+		source := projectOrg.Objects[name]
+		current.Definition.FlowRules = reconcile(current.Definition.FlowRules, source.Definition.FlowRules)
+		org.Objects[name] = current
+	}
+	org.Metadata.Flows = reconcile(org.Metadata.Flows, projectOrg.Metadata.Flows)
+	org.Metadata.FlowDeclarations = reconcile(org.Metadata.FlowDeclarations, projectOrg.Metadata.FlowDeclarations)
+	return changed
+}
+
+// projectFlowSourceOwner identifies source rules using the same local package
+// and extra-metadata roots that the project loader scans. Runtime-only rules
+// without a source path stay outside this ownership boundary.
+func projectFlowSourceOwner(root string) (func(storage.FlowRule) bool, error) {
+	projectRoot, err := filepath.Abs(root)
+	if err != nil {
+		return nil, err
+	}
+	var externalRoots []string
+	loaded := false
+	within := func(root, file string) bool {
+		rel, err := filepath.Rel(root, file)
+		return err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
+	}
+	return func(rule storage.FlowRule) bool {
+		if rule.ProjectSourceOwned {
+			return true
+		}
+		file := strings.TrimSpace(rule.File)
+		lower := strings.ToLower(file)
+		if file == "" || !(strings.HasSuffix(lower, ".flow-meta.xml") || strings.HasSuffix(lower, ".flow")) {
+			return false
+		}
+		if !filepath.IsAbs(file) {
+			file = filepath.Join(projectRoot, file)
+		}
+		file = filepath.Clean(file)
+		if within(projectRoot, file) {
+			return true
+		}
+		if !loaded {
+			loaded = true
+			if p, err := project.Load(projectRoot); err == nil {
+				externalRoots = append(externalRoots, p.PackageRoots()...)
+				externalRoots = append(externalRoots, p.ExtraMetadataDirs...)
+			}
+		}
+		for _, sourceRoot := range externalRoots {
+			if within(sourceRoot, file) {
+				return true
+			}
+		}
+		return false
+	}, nil
 }
 
 func projectOrgAndDBBinding(root string) (storage.OrgState, storage.ProjectBinding, bool, error) {
@@ -705,6 +1002,7 @@ func projectOrgAndDBBinding(root string) (storage.OrgState, storage.ProjectBindi
 	if abs, err := filepath.Abs(projectRoot); err == nil {
 		projectRoot = abs
 	}
+	org.Metadata.ProjectFlowRootID = localProjectRootID(projectRoot)
 	return org, storage.ProjectBinding{
 		ProjectRoot:       filepath.Clean(projectRoot),
 		SchemaFingerprint: fingerprint,
@@ -735,6 +1033,17 @@ func validateDBProjectBinding(store *storage.SQLiteStore, dbPath, root string, e
 		if stored.ProjectRoot == "" {
 			return org, dbProjectMismatchError(dbPath, root, stored)
 		}
+		if reconciled, ok, err := reconcileFlowOnlyStandardObjects(org, projectOrg, root); err != nil {
+			return org, err
+		} else if ok {
+			if err := store.Save(reconciled); err != nil {
+				return org, err
+			}
+			if err := store.SetProjectBinding(expected); err != nil {
+				return org, err
+			}
+			return reconciled, nil
+		}
 		refreshed, err := refreshDBProjectSchema(store, dbPath, root, org, projectOrg, expected)
 		if err != nil {
 			return org, err
@@ -742,6 +1051,80 @@ func validateDBProjectBinding(store *storage.SQLiteStore, dbPath, root string, e
 		return refreshed, nil
 	}
 	return org, nil
+}
+
+// reconcileFlowOnlyStandardObjects preserves canonical standard objects already
+// stored in the database, and permits new ones required by project Flows.
+func reconcileFlowOnlyStandardObjects(current, projectOrg storage.OrgState, root string) (storage.OrgState, bool, error) {
+	owned, err := projectFlowSourceOwner(root)
+	if err != nil {
+		return current, false, err
+	}
+	left, right := current.Clone(), projectOrg.Clone()
+	changed := false
+	addMissing := func(dst *storage.OrgState, src storage.OrgState, requireProjectFlow bool) (bool, error) {
+		for name, object := range src.Objects {
+			if _, exists := dst.Objects[name]; exists {
+				continue
+			}
+			ownedFlow := false
+			for _, rule := range object.Definition.FlowRules {
+				if owned(rule) {
+					ownedFlow = true
+					break
+				}
+			}
+			if requireProjectFlow && !ownedFlow {
+				return false, nil
+			}
+			if _, known := storage.ResolveKnownStandardObjectName(name); !known {
+				return false, nil
+			}
+			canonical := storage.NewOrgState()
+			canonical.Features = append([]string(nil), src.Features...)
+			storage.EnsureStandardObject(&canonical, name)
+			one := storage.NewOrgState()
+			one.Objects[name] = object
+			canonicalObject := storage.NewOrgState()
+			canonicalObject.Objects[name] = canonical.Objects[name]
+			have, err := storage.SchemaFingerprint(one)
+			if err != nil {
+				return false, err
+			}
+			want, err := storage.SchemaFingerprint(canonicalObject)
+			if err != nil {
+				return false, err
+			}
+			if have != want {
+				return false, nil
+			}
+			object.Records = make(map[storage.ID]storage.Record)
+			dst.Objects[name] = object
+			changed = true
+		}
+		return true, nil
+	}
+	if ok, err := addMissing(&left, projectOrg, true); err != nil || !ok {
+		return current, false, err
+	}
+	if ok, err := addMissing(&right, current, false); err != nil || !ok {
+		return current, false, err
+	}
+	if !changed {
+		return current, false, nil
+	}
+	a, err := storage.SchemaFingerprint(left)
+	if err != nil {
+		return current, false, err
+	}
+	b, err := storage.SchemaFingerprint(right)
+	if err != nil {
+		return current, false, err
+	}
+	if a != b {
+		return current, false, nil
+	}
+	return left, true, nil
 }
 
 func refreshDBProjectSchema(store *storage.SQLiteStore, dbPath, root string, current, projectOrg storage.OrgState, binding storage.ProjectBinding) (storage.OrgState, error) {
@@ -869,6 +1252,11 @@ func orgStateFromIndex(root string, p project.Project, index typesys.Index) (sto
 		return storage.OrgState{}, err
 	}
 	if automationIndex, err := automation.LoadProject(p); err == nil {
+		for _, flow := range automationIndex.Flows {
+			if _, ok := storage.ResolveKnownStandardObjectName(flow.ObjectName); ok {
+				storage.EnsureStandardObject(&org, flow.ObjectName)
+			}
+		}
 		automation.ApplyToOrg(&org, automationIndex)
 	}
 	storage.EnsureDeterministicPlatformData(&org)

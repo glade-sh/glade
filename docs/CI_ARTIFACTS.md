@@ -103,9 +103,8 @@ the checked package inventory and writes local evidence beneath
 | `events.json` | Raw `go test -json` events for the lane. |
 | `package-summary.json` | Validated package ownership and result summary. |
 
-The default lane execution is serial to bound memory. An explicit
-`LOCAL_GO_TEST_JOBS` value greater than one may overlap only the final
-independent lanes. The site phase runs its proofs exactly once and writes
+Lanes run one at a time to bound memory; `LOCAL_GO_TEST_JOBS` does not make
+them overlap. The site phase runs its proofs exactly once and writes
 `site/.vitepress/release-check.json`.
 
 These are local maintainer artifacts, not product command output. Do not commit

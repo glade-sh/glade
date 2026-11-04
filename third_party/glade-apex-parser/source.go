@@ -3,6 +3,7 @@ package apexast
 import (
 	"net/url"
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -24,10 +25,7 @@ func (m LineMap) Position(offset int) Position {
 	if offset < 0 {
 		offset = 0
 	}
-	line := 0
-	for line+1 < len(m.starts) && m.starts[line+1] <= offset {
-		line++
-	}
+	line := sort.Search(len(m.starts), func(i int) bool { return m.starts[i] > offset }) - 1
 	return Position{
 		Line:   line + 1,
 		Column: offset - m.starts[line] + 1,

@@ -14,7 +14,7 @@ import (
 
 func TestPersonAccountProfileRoutesRejectLegacyDAPCache(t *testing.T) {
 	const fixture = "../../testdata/conformance/person_account_profile_routes"
-	const legacyVersion = 10
+	const legacyVersion = 13
 	const staleMarker = "legacy-business-profile-default"
 	t.Setenv("GLADE_HOME", t.TempDir())
 	root := copyProfileRoutesLoaderProject(t, fixture, "67.0", true)

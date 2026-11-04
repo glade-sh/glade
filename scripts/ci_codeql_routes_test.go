@@ -90,7 +90,7 @@ if phase == 'interpret-results':
 				githubOutput := filepath.Join(dir, "output")
 				githubEnv := filepath.Join(dir, "env")
 				run := exec.Command("python3", "ci-codeql.py", "analyze", "--profile", profile, "--codeql", cli, "--database", dir, "--output", output, "--budget", budget)
-				run.Env = append(os.Environ(), "CODEQL_FIXTURE="+tc.name, "GITHUB_OUTPUT="+githubOutput, "GITHUB_ENV="+githubEnv, "GITHUB_STEP_SUMMARY="+filepath.Join(dir, "summary"))
+				run.Env = append(os.Environ(), "GITHUB_EVENT_NAME=workflow_dispatch", "CODEQL_FIXTURE="+tc.name, "GITHUB_OUTPUT="+githubOutput, "GITHUB_ENV="+githubEnv, "GITHUB_STEP_SUMMARY="+filepath.Join(dir, "summary"))
 				out, err := run.CombinedOutput()
 				if strings.Contains(string(out), "can't open file") {
 					t.Fatalf("workflow command missing: %s", out)
@@ -143,7 +143,7 @@ func TestCICodeQLDiffInformedQueryRoutes(t *testing.T) {
 	}{
 		{"fast_small_pr", "fast", `[{"path":"src/quoted'name.go","startLine":2,"endLine":4}]`, true},
 		{"fast_empty_diff", "fast", `[]`, true},
-		{"fast_large_pr_or_missing_ranges", "fast", "", false},
+		{"fast_non_pr_missing_ranges", "fast", "", false},
 		{"full_ignores_pr_ranges", "full", `[]`, false},
 	} {
 		t.Run(route.name, func(t *testing.T) {
@@ -167,7 +167,7 @@ if phase == 'interpret-results':
 				t.Fatal(err)
 			}
 			cmd := exec.Command("python3", "ci-codeql.py", "analyze", "--profile", route.profile, "--codeql", cli, "--database", dir, "--output", filepath.Join(dir, "result.sarif"), "--budget", "../.github/codeql-budget.json")
-			cmd.Env = append(os.Environ(), "CODEQL_ACTION_TEMP="+dir, "GITHUB_WORKSPACE="+dir, "CODEQL_CALL_DIR="+dir)
+			cmd.Env = append(os.Environ(), "GITHUB_EVENT_NAME=workflow_dispatch", "CODEQL_ACTION_TEMP="+dir, "GITHUB_WORKSPACE="+dir, "CODEQL_CALL_DIR="+dir)
 			if out, err := cmd.CombinedOutput(); err != nil {
 				t.Fatalf("diff route: %v\n%s", err, out)
 			}
@@ -235,5 +235,14 @@ if phase == 'interpret-results':
 				}
 			}
 		})
+	}
+}
+
+// Real, owned Git histories cover the API-cap fallback, merge coordinates and
+// malformed provenance without running CodeQL or contacting the network.
+func TestCICodeQLCompleteLocalDiffRoutes(t *testing.T) {
+	cmd := exec.Command("python3", "ci_codeql_diff_test.py", "-v")
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("complete local diff routes: %v\n%s", err, out)
 	}
 }

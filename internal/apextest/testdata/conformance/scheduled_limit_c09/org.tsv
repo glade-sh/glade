@@ -1,0 +1,3 @@
+source_api	method	observation
+62.0	case0	{"parentCap":100,"stop":true,"v":1,"cb":"Schedulable","case":0,"stage":"complete","api":"62.0","locale":"en_US","tz":"America/Los_Angeles","Queries":[0,100],"AggregateQueries":[0,300],"QueueableJobs":[0,50],"FutureCalls":[0,50]}
+67.0	case0	{"parentCap":100,"stop":true,"v":1,"cb":"Schedulable","case":0,"stage":"complete","api":"67.0","locale":"en_US","tz":"America/Los_Angeles","AggregateQueries":[0,300],"QueueableJobs":[0,50],"FutureCalls":[0,50]}

@@ -813,6 +813,43 @@ func (w *Workspace) RuntimeSourceHash() (string, error) {
 	return w.hashLocked(selectRuntimeSourceFiles(files))
 }
 
+// workspaceHashes computes both digest contracts from the same file reads.
+func (w *Workspace) workspaceHashes() (string, string, error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	files, err := w.listFilesLocked()
+	if err != nil {
+		return "", "", err
+	}
+	root, err := w.openRoot()
+	if err != nil {
+		return "", "", err
+	}
+	defer root.Close()
+	full, runtime := sha256.New(), sha256.New()
+	for _, file := range files {
+		if file.Kind == "other" {
+			continue
+		}
+		if _, err := confinedLstat(root, file.Path); err != nil {
+			return "", "", err
+		}
+		body, err := root.ReadFile(file.Path)
+		if err != nil {
+			return "", "", err
+		}
+		var dst io.Writer = full
+		if file.Kind != "anonymous" && file.Kind != "data" {
+			dst = io.MultiWriter(full, runtime)
+		}
+		_, _ = dst.Write([]byte(file.Path))
+		_, _ = dst.Write([]byte{0})
+		_, _ = dst.Write(body)
+		_, _ = dst.Write([]byte{0})
+	}
+	return "sha256:" + hex.EncodeToString(full.Sum(nil)), "sha256:" + hex.EncodeToString(runtime.Sum(nil)), nil
+}
+
 func (w *Workspace) listFilesLocked() ([]WorkspaceFile, error) {
 	var files []WorkspaceFile
 	root, err := w.openRoot()

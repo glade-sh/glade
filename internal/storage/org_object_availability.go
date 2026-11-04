@@ -6,6 +6,7 @@ import "github.com/glade-sh/glade/internal/project"
 // here. Other catalog objects keep their existing policy until native A/B rows
 // establish their feature or setting trigger.
 var standardObjectFeatures = []struct{ object, feature string }{
+	{"AccountContactRelation", "ContactsToMultipleAccounts"},
 	{"Quote", "Quotes"},
 	{"QuoteLineItem", "Quotes"},
 	{"WebStore", "OrderManagement"},

@@ -12,7 +12,7 @@ implementation.
 Use this page when checking the local Visualforce preview boundary.
 The support map carries the current local contract and hosted gaps.
 
-v0.3.0 supports Visualforce API 59.0-68.0. Preserved historical page versions
+Glade supports Visualforce API 59.0-67.0. Preserved historical page versions
 outside that window are unsupported.
 
 ## Start here

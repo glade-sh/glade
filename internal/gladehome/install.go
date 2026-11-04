@@ -3,6 +3,7 @@ package gladehome
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -24,10 +25,16 @@ func InstallFrom(src string) error {
 		return err
 	}
 	defer lock.Close()
-	return installFrom(src)
+	return installFrom(src, lock)
 }
 
-func installFrom(src string) error {
+func installFrom(src string, lock *os.File) error {
+	if err := recoverExclusive(lock); err != nil {
+		return fmt.Errorf("recover toolchain install: %w", err)
+	}
+	if err := cleanupAbandonedSourceStages(UserShareDir()); err != nil {
+		return errors.Join(fmt.Errorf("clean source toolchain staging: %w", err), writeInstallMarker(lock, 'P'))
+	}
 	src, ok := validateRoot(src)
 	if !ok {
 		return fmt.Errorf("source %q is not a glade checkout with an installed LWC toolchain (run npm install in third_party/lwc)", src)
@@ -60,20 +67,128 @@ func installFrom(src string) error {
 		{rel: "lwcruntime/src/shims"},
 		{rel: "lwcruntime/src/slds"},
 	}
+	if err := os.MkdirAll(dst, 0o755); err != nil {
+		return fmt.Errorf("create toolchain destination: %w", err)
+	}
+	stage, err := os.MkdirTemp(dst, ".toolchain-stage-")
+	if err != nil {
+		return fmt.Errorf("stage toolchain: %w", err)
+	}
+	keepStage := false
+	defer func() {
+		if !keepStage {
+			_ = os.RemoveAll(stage)
+		}
+	}()
+	var staged []string
 	for _, pair := range pairs {
 		from := filepath.Join(src, filepath.FromSlash(pair.rel))
 		to := filepath.Join(dst, filepath.FromSlash(pair.rel))
 		if samePath(from, to) {
 			continue
 		}
-		if err := os.RemoveAll(to); err != nil {
-			return fmt.Errorf("reset %s: %w", to, err)
-		}
-		if err := copyTree(from, to); err != nil {
+		if err := copyTree(from, filepath.Join(stage, "new", filepath.FromSlash(pair.rel))); err != nil {
 			return fmt.Errorf("copy %s: %w", pair.rel, err)
 		}
+		staged = append(staged, pair.rel)
 	}
-	if err := installEditorVSIX(src, dst); err != nil {
+	if err := installEditorVSIX(src, filepath.Join(stage, "new")); err != nil {
+		return err
+	}
+	if _, err := os.Lstat(filepath.Join(stage, "new", "editor", "vscode-glade.vsix")); err == nil {
+		staged = append(staged, "editor/vscode-glade.vsix")
+	} else if !os.IsNotExist(err) {
+		return err
+	}
+	if len(staged) == 0 {
+		return nil
+	}
+	journal := make([]sourceInstallEntry, 0, len(staged))
+	for _, rel := range staged {
+		_, err := os.Lstat(filepath.Join(dst, filepath.FromSlash(rel)))
+		if err != nil && !os.IsNotExist(err) {
+			return err
+		}
+		journal = append(journal, sourceInstallEntry{Rel: rel, HadOld: err == nil})
+	}
+	journalData, err := json.Marshal(journal)
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(filepath.Join(stage, "journal.json"), journalData, 0o600); err != nil {
+		return err
+	}
+	if err := os.WriteFile(filepath.Join(stage, "started"), nil, 0o600); err != nil {
+		return err
+	}
+	if err := writeInstallMarker(lock, 'P'); err != nil {
+		return err
+	}
+	type replacement struct {
+		target string
+		backup string
+		hadOld bool
+	}
+	var applied []replacement
+	rollback := func() error {
+		var result error
+		for i := len(applied) - 1; i >= 0; i-- {
+			entry := applied[i]
+			if err := os.RemoveAll(entry.target); err != nil {
+				result = errors.Join(result, err)
+				continue
+			}
+			if entry.hadOld {
+				result = errors.Join(result, os.Rename(entry.backup, entry.target))
+			}
+		}
+		return result
+	}
+	fail := func(cause error) error {
+		if err := rollback(); err != nil {
+			keepStage = true
+			return errors.Join(cause, fmt.Errorf("rollback failed; previous files retained under %s: %w", stage, err))
+		}
+		if err := writeInstallMarker(lock, 0); err != nil {
+			keepStage = true
+			return errors.Join(cause, fmt.Errorf("clear toolchain recovery marker: %w", err))
+		}
+		return cause
+	}
+	for _, item := range journal {
+		rel := item.Rel
+		target := filepath.Join(dst, filepath.FromSlash(rel))
+		backup := filepath.Join(stage, "old", filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
+			return fail(err)
+		}
+		entry := replacement{target: target, backup: backup}
+		if item.HadOld {
+			if err := os.MkdirAll(filepath.Dir(backup), 0o755); err != nil {
+				return fail(err)
+			}
+			if err := os.Rename(target, backup); err != nil {
+				return fail(err)
+			}
+			entry.hadOld = true
+		}
+		applied = append(applied, entry)
+		if err := os.Rename(filepath.Join(stage, "new", filepath.FromSlash(rel)), target); err != nil {
+			return fail(fmt.Errorf("install %s: %w", rel, err))
+		}
+	}
+	if err := os.WriteFile(filepath.Join(stage, "commit.tmp"), nil, 0o600); err != nil {
+		return fail(err)
+	}
+	if err := os.Rename(filepath.Join(stage, "commit.tmp"), filepath.Join(stage, "committed")); err != nil {
+		return fail(err)
+	}
+	if err := os.RemoveAll(stage); err != nil {
+		keepStage = true
+		return err
+	}
+	if err := writeInstallMarker(lock, 0); err != nil {
+		keepStage = true
 		return err
 	}
 	return nil
@@ -155,8 +270,15 @@ func InstallFromCWD() error {
 }
 
 func findInstallSource() (string, error) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return "", fmt.Errorf("find current checkout: %w", err)
+	}
+	return findInstallSourceCandidates(walkAncestors(cwd))
+}
+
+func findInstallSourceCandidates(candidates []string) (string, error) {
 	share := filepath.Clean(UserShareDir())
-	candidates := candidateRoots(false)
 	seen := make(map[string]bool, len(candidates))
 	var fallback string
 	for _, candidate := range candidates {

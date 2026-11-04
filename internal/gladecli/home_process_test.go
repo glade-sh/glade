@@ -72,7 +72,8 @@ func runHomeProjectConsumer(t *testing.T, route string) error {
 			return fmt.Errorf("%s: HTTP %d: %s", consumer, rec.Code, rec.Body)
 		}
 	case "DevLWC", "DevVF":
-		ctx, cancel := context.WithTimeout(t.Context(), 8*time.Second)
+		// Cold standard-org initialization is substantially slower under -race.
+		ctx, cancel := context.WithTimeout(t.Context(), 90*time.Second)
 		defer cancel()
 		ready := filepath.Join(root, "ready.json")
 		args := []string{"--project", root, "--addr", "127.0.0.1:0", "--ready-file", ready, "--progress-json"}

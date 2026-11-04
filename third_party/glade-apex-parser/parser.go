@@ -188,11 +188,26 @@ func normalizeApexSource(source string) string {
 	return normalizeInlineQueryOffsets(normalizeInlineSOQLFormula(normalizeInlineSOSL(normalizeExplicitConstructorInvocations(normalizePackageQualifiedReferences(normalizeTriggerContextReferences(normalizeVoidIdentifiers(source)))))))
 }
 
+// normalizationBytes copies only when a normalization pass first writes.
+func normalizationBytes(source string, out *[]byte) []byte {
+	if *out == nil {
+		*out = []byte(source)
+	}
+	return *out
+}
+
+func normalizedSource(source string, out []byte) string {
+	if out == nil {
+		return source
+	}
+	return string(out)
+}
+
 // The upstream tree grammar rejects SOSL forms that Apex accepts before runtime
 // search validation. Normalize only those forms and preserve every byte offset;
 // declarations, expressions and diagnostics continue reading the original text.
 func normalizeInlineSOSL(source string) string {
-	out := []byte(source)
+	var out []byte
 	for i := 0; i < len(source); {
 		switch {
 		case source[i] == '\'':
@@ -212,13 +227,13 @@ func normalizeInlineSOSL(source string) string {
 				i++
 				continue
 			}
-			normalizeInlineSOSLQuery(source, out, start, end)
+			normalizeInlineSOSLQuery(source, &out, start, end)
 			i = end + 1
 		default:
 			i++
 		}
 	}
-	return string(out)
+	return normalizedSource(source, out)
 }
 
 func inlineSOSLEnd(source string, start int) int {
@@ -247,10 +262,10 @@ func inlineSOSLEnd(source string, start int) int {
 	return -1
 }
 
-func normalizeInlineSOSLQuery(source string, out []byte, start, end int) {
+func normalizeInlineSOSLQuery(source string, out *[]byte, start, end int) {
 	term := nextSignificantIndex(source, start+len("FIND"))
 	if term+1 < end && source[term:term+2] == "''" && skipApexString(source, term) == term+2 {
-		copy(out[term:term+2], ":x") // C003: preserve the original empty term.
+		copy(normalizationBytes(source, out)[term:term+2], ":x") // C003: preserve the original empty term.
 	}
 	returning := false
 	depth := 0
@@ -282,7 +297,7 @@ func normalizeInlineSOSLQuery(source string, out []byte, start, end int) {
 				switch strings.ToUpper(source[scope:scopeEnd]) {
 				case "ALL", "NAME", "EMAIL", "PHONE", "SIDEBAR":
 				default:
-					blankInlineSOSL(out, i, fields+len("FIELDS"))
+					blankInlineSOSL(source, out, i, fields+len("FIELDS"))
 				}
 			}
 			i += len("IN")
@@ -290,7 +305,7 @@ func normalizeInlineSOSLQuery(source string, out []byte, start, end int) {
 			mode := nextSignificantIndex(source, i+len("WITH"))
 			for _, word := range []string{"USER_MODE", "SYSTEM_MODE"} {
 				if hasWordAtFold(source, mode, word) {
-					blankInlineSOSL(out, i, mode+len(word))
+					blankInlineSOSL(source, out, i, mode+len(word))
 					break
 				}
 			}
@@ -298,7 +313,7 @@ func normalizeInlineSOSLQuery(source string, out []byte, start, end int) {
 		case returning && depth > 0 && hasWordAtFold(source, i, "OFFSET"):
 			value := nextSignificantIndex(source, i+len("OFFSET"))
 			if value+1 < end && source[value] == '-' && source[value+1] >= '0' && source[value+1] <= '9' {
-				out[value] = ' '
+				normalizationBytes(source, out)[value] = ' '
 			}
 			i += len("OFFSET")
 		default:
@@ -307,7 +322,8 @@ func normalizeInlineSOSLQuery(source string, out []byte, start, end int) {
 	}
 }
 
-func blankInlineSOSL(out []byte, start, end int) {
+func blankInlineSOSL(source string, output *[]byte, start, end int) {
+	out := normalizationBytes(source, output)
 	for i := start; i < end && i < len(out); i++ {
 		if out[i] != '\n' && out[i] != '\r' {
 			out[i] = ' '
@@ -320,7 +336,7 @@ func normalizePackageQualifiedReferences(source string) string {
 	// Package.Version is also a legal qualified type reference in Apex source.
 	// Keep the source byte length unchanged so parser ranges still map directly
 	// to the original source.
-	out := []byte(source)
+	var out []byte
 	for i := 0; i < len(source); {
 		switch {
 		case source[i] == '\'':
@@ -330,13 +346,13 @@ func normalizePackageQualifiedReferences(source string) string {
 		case hasPrefixAt(source, i, "/*"):
 			i = skipBlockComment(source, i)
 		case hasWordAtFold(source, i, "Package") && nextSignificantByte(source, i+len("Package")) == '.':
-			copy(out[i:i+len(packageQualifiedTypeSentinel)], packageQualifiedTypeSentinel)
+			copy(normalizationBytes(source, &out)[i:i+len(packageQualifiedTypeSentinel)], packageQualifiedTypeSentinel)
 			i += len("Package")
 		default:
 			i++
 		}
 	}
-	return string(out)
+	return normalizedSource(source, out)
 }
 
 func treeSitterDeclaration(node *tree_sitter.Node, source string, lineMap LineMap) (Declaration, bool) {
@@ -985,36 +1001,30 @@ func normalizeVoidIdentifiers(source string) string {
 	// Apex allows methods named "void". The upstream grammar treats a bare
 	// void(...) call as the void type token, so rewrite only that identifier
 	// form with a same-length sentinel to preserve byte offsets.
-	var out strings.Builder
-	out.Grow(len(source))
-
+	var out []byte
 	for i := 0; i < len(source); {
 		switch {
 		case source[i] == '\'':
-			next := copyApexString(&out, source, i)
-			i = next
+			i = skipApexString(source, i)
 		case hasPrefixAt(source, i, "//"):
-			next := copyUntilNewline(&out, source, i)
-			i = next
+			i = skipUntilNewline(source, i)
 		case hasPrefixAt(source, i, "/*"):
-			next := copyBlockComment(&out, source, i)
-			i = next
+			i = skipBlockComment(source, i)
 		case hasWordAt(source, i, "void") && nextSignificantByte(source, i+len("void")) == '(':
-			out.WriteString(voidIdentifierSentinel)
+			copy(normalizationBytes(source, &out)[i:i+len(voidIdentifierSentinel)], voidIdentifierSentinel)
 			i += len("void")
 		default:
-			out.WriteByte(source[i])
 			i++
 		}
 	}
-	return out.String()
+	return normalizedSource(source, out)
 }
 
 func normalizeTriggerContextReferences(source string) string {
 	// The upstream grammar reserves trigger for trigger declarations. Apex also
 	// exposes Trigger.* context variables inside bodies, which are not part of
 	// this package's declaration API.
-	out := []byte(source)
+	var out []byte
 	for i := 0; i < len(source); {
 		switch {
 		case source[i] == '\'':
@@ -1024,13 +1034,13 @@ func normalizeTriggerContextReferences(source string) string {
 		case hasPrefixAt(source, i, "/*"):
 			i = skipBlockComment(source, i)
 		case hasWordAtFold(source, i, "trigger") && nextSignificantByte(source, i+len("trigger")) == '.':
-			copy(out[i:i+len(triggerContextSentinel)], triggerContextSentinel)
+			copy(normalizationBytes(source, &out)[i:i+len(triggerContextSentinel)], triggerContextSentinel)
 			i += len(triggerContextSentinel)
 		default:
 			i++
 		}
 	}
-	return string(out)
+	return normalizedSource(source, out)
 }
 
 func normalizeExplicitConstructorInvocations(source string) string {
@@ -1038,7 +1048,7 @@ func normalizeExplicitConstructorInvocations(source string) string {
 	// constructor chaining, which rejects Apex code that calls them elsewhere.
 	// Body expression details are not part of this package's API, so rewrite
 	// the call keyword and any leading cast prefix with same-length text.
-	out := []byte(source)
+	var out []byte
 	for i := 0; i < len(source); {
 		switch {
 		case source[i] == '\'':
@@ -1048,21 +1058,22 @@ func normalizeExplicitConstructorInvocations(source string) string {
 		case hasPrefixAt(source, i, "/*"):
 			i = skipBlockComment(source, i)
 		case hasWordAt(source, i, "this"):
-			i = normalizeExplicitConstructorInvocation(out, source, i, "thiz")
+			i = normalizeExplicitConstructorInvocation(&out, source, i, "thiz")
 		case hasWordAt(source, i, "super"):
-			i = normalizeExplicitConstructorInvocation(out, source, i, "soper")
+			i = normalizeExplicitConstructorInvocation(&out, source, i, "soper")
 		default:
 			i++
 		}
 	}
-	return string(out)
+	return normalizedSource(source, out)
 }
 
-func normalizeExplicitConstructorInvocation(out []byte, source string, keywordStart int, replacement string) int {
+func normalizeExplicitConstructorInvocation(output *[]byte, source string, keywordStart int, replacement string) int {
 	openParen := nextSignificantIndex(source, keywordStart+len(replacement))
 	if openParen >= len(source) || source[openParen] != '(' {
 		return keywordStart + len(replacement)
 	}
+	out := normalizationBytes(source, output)
 	copy(out[keywordStart:keywordStart+len(replacement)], replacement)
 	argStart := nextSignificantIndex(source, openParen+1)
 	if argStart >= len(source) || source[argStart] != '(' {

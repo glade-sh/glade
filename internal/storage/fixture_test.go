@@ -517,7 +517,7 @@ func TestEnsureDeterministicPlatformDataSeedsAccountPersonTypeRecordTypes(t *tes
 			Fields:    map[string]Field{"Name": {APIName: "Name", Type: FieldString}},
 			RecordTypes: []RecordTypeInfo{
 				{DeveloperName: "Organization", Name: "Organization", Active: true, Available: true},
-				{DeveloperName: "Individual", Name: "Individual", Active: true, Available: true},
+				{DeveloperName: "Individual", Name: "Individual", Active: true, Available: true, PersonAccount: true},
 			},
 		},
 		Records: make(map[ID]Record),

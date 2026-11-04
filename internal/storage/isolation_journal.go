@@ -8,7 +8,12 @@ type IsolationJournal struct {
 	updated       []journalRecordBefore
 	sequences     []journalSequenceBefore
 	recordingMark IsolationMark
+	insertedKeys  map[journalRecordKey]struct{}
+	updatedKeys   map[journalRecordKey]struct{}
 }
+
+// Small spans are cheaper to scan than to allocate and populate an index.
+const journalIndexThreshold = 32
 
 type IsolationMark struct {
 	inserted  int
@@ -56,6 +61,8 @@ func (j *IsolationJournal) Mark() IsolationMark {
 		updated:   len(j.updated),
 		sequences: len(j.sequences),
 	}
+	j.insertedKeys = nil
+	j.updatedKeys = nil
 	return j.recordingMark
 }
 
@@ -75,6 +82,9 @@ func (j *IsolationJournal) RecordInsert(object string, id ID) {
 		return
 	}
 	j.inserted = append(j.inserted, journalRecordKey{object: object, id: id})
+	if j.insertedKeys != nil {
+		j.insertedKeys[journalRecordKey{object: object, id: id}] = struct{}{}
+	}
 }
 
 func (j *IsolationJournal) RecordUpdate(object string, id ID, before Record) {
@@ -93,6 +103,9 @@ func (j *IsolationJournal) RecordUpdate(object string, id ID, before Record) {
 		record: before.Clone(),
 		exists: true,
 	})
+	if j.updatedKeys != nil {
+		j.updatedKeys[journalRecordKey{object: object, id: id}] = struct{}{}
+	}
 }
 
 func (j *IsolationJournal) Rollback(mark IsolationMark) error {
@@ -147,6 +160,8 @@ func (j *IsolationJournal) Rollback(mark IsolationMark) error {
 	j.updated = j.updated[:mark.updated]
 	j.sequences = j.sequences[:mark.sequences]
 	j.recordingMark = mark
+	j.insertedKeys = nil
+	j.updatedKeys = nil
 	for objectName := range touchedObjects {
 		RebuildObjectIndexes(j.org, objectName)
 	}
@@ -154,6 +169,16 @@ func (j *IsolationJournal) Rollback(mark IsolationMark) error {
 }
 
 func (j *IsolationJournal) recordBeforeRecorded(object string, id ID) bool {
+	if j.updatedKeys == nil && len(j.updated)-j.recordingMark.updated >= journalIndexThreshold {
+		j.updatedKeys = make(map[journalRecordKey]struct{}, len(j.updated)-j.recordingMark.updated)
+		for _, before := range j.updated[j.recordingMark.updated:] {
+			j.updatedKeys[journalRecordKey{object: before.object, id: before.id}] = struct{}{}
+		}
+	}
+	if j.updatedKeys != nil {
+		_, ok := j.updatedKeys[journalRecordKey{object: object, id: id}]
+		return ok
+	}
 	for i := len(j.updated) - 1; i >= j.recordingMark.updated; i-- {
 		before := j.updated[i]
 		if before.object == object && before.id == id {
@@ -164,6 +189,16 @@ func (j *IsolationJournal) recordBeforeRecorded(object string, id ID) bool {
 }
 
 func (j *IsolationJournal) recordInsertRecorded(object string, id ID) bool {
+	if j.insertedKeys == nil && len(j.inserted)-j.recordingMark.inserted >= journalIndexThreshold {
+		j.insertedKeys = make(map[journalRecordKey]struct{}, len(j.inserted)-j.recordingMark.inserted)
+		for _, inserted := range j.inserted[j.recordingMark.inserted:] {
+			j.insertedKeys[inserted] = struct{}{}
+		}
+	}
+	if j.insertedKeys != nil {
+		_, ok := j.insertedKeys[journalRecordKey{object: object, id: id}]
+		return ok
+	}
 	for i := len(j.inserted) - 1; i >= j.recordingMark.inserted; i-- {
 		inserted := j.inserted[i]
 		if inserted.object == object && inserted.id == id {

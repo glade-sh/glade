@@ -362,6 +362,10 @@ func loadFlow(path string, definitions ...map[string]storage.ObjectDefinition) (
 		})
 		return flow, diagnostics, nil
 	}
+	if problem := flowUndeclaredCustomErrorReference(raw); problem != "" {
+		diagnostics = append(diagnostics, diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADEAUTO004", File: path, Message: problem})
+		return flow, diagnostics, nil
+	}
 	if problem := flowInvalidValueReference(raw, variables); problem != "" {
 		diagnostics = append(diagnostics, diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADEAUTO004", File: path, Message: problem})
 		return flow, diagnostics, nil
@@ -2414,6 +2418,49 @@ func flowPopulateBranchBody(branch storage.FlowBranch, target, stop string, raw 
 	return branch, diagnostics
 }
 
+// flowUndeclaredCustomErrorReference handles a bare reference only for the
+// captured simple shape, where no other resources or executable nodes exist.
+func flowUndeclaredCustomErrorReference(raw flowXML) string {
+	if len(raw.Constants)+len(raw.Variables)+len(raw.Formulas)+len(raw.TextTemplates)+len(raw.Decisions)+len(raw.Assignments)+len(raw.RecordUpdates)+len(raw.Screens)+len(raw.Loops)+len(raw.Subflows)+len(raw.ActionCalls)+len(raw.RecordLookups)+len(raw.RecordCreates)+len(raw.RecordDeletes)+len(raw.ApexPluginCalls)+len(raw.Transforms)+len(raw.CollectionProcessors)+len(raw.OrchestratedStages)+len(raw.Stages)+len(raw.Waits) != 0 {
+		return ""
+	}
+	for _, node := range raw.CustomErrors {
+		for _, message := range node.Messages {
+			text := firstNonBlank(message.ErrorMessage, message.Message)
+			for len(text) > 0 {
+				start := strings.Index(text, "{!")
+				if start < 0 {
+					break
+				}
+				text = text[start+2:]
+				end := strings.IndexByte(text, '}')
+				if end < 0 {
+					break
+				}
+				ref := strings.TrimSpace(text[:end])
+				text = text[end+1:]
+				if ref == "" || !regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`).MatchString(ref) {
+					continue
+				}
+				known := false
+				for _, candidate := range raw.CustomErrors {
+					if strings.EqualFold(candidate.Name, ref) {
+						known = true
+						break
+					}
+				}
+				if !known {
+					return fmt.Sprintf("field integrity exception: unknown (\"%s\" refers to an element: \"%s\", which doesn't exist.)", node.Name, ref)
+				}
+			}
+		}
+	}
+	return ""
+}
+
+// Group only ordinary decimal spellings; alternate metadata encodings have no native row.
+var flowMergePlainDecimal = regexp.MustCompile(`^-?(0|[1-9][0-9]*)(\.[0-9]+)?$`)
+
 func modeledFlowCustomError(customError flowCustomErrorXML, constants []flowConstantXML, formulaMaps ...map[string]string) storage.FlowCustomError {
 	var formulas map[string]string
 	if len(formulaMaps) > 0 {
@@ -2422,7 +2469,14 @@ func modeledFlowCustomError(customError flowCustomErrorXML, constants []flowCons
 	ce := storage.FlowCustomError{Name: strings.TrimSpace(customError.Name), Description: strings.TrimSpace(customError.Description)}
 	for _, msg := range customError.Messages {
 		text := strings.TrimSpace(firstNonBlank(msg.ErrorMessage, msg.Message))
-		ce.Messages = append(ce.Messages, storage.FlowCustomErrorMessage{Message: inlineFlowConstantMergeFields(text, constants), Formulas: formulas})
+		numbers := make(map[string]string)
+		for _, constant := range constants {
+			value := strings.TrimSpace(constant.Value.NumberValue)
+			if number, err := strconv.ParseFloat(value, 64); flowMergePlainDecimal.MatchString(value) && err == nil && !math.IsInf(number, 0) && !math.IsNaN(number) && math.Abs(number) >= 1000 {
+				numbers[strings.ToLower(strings.TrimSpace(constant.Name))] = value
+			}
+		}
+		ce.Messages = append(ce.Messages, storage.FlowCustomErrorMessage{Message: inlineFlowConstantMergeFields(text, constants), NumberConstants: numbers, Formulas: formulas})
 	}
 	return ce
 }
@@ -2439,12 +2493,12 @@ func inlineFlowConstantMergeFields(text string, constants []flowConstantXML) str
 		switch {
 		case name == "":
 		case strings.TrimSpace(constant.Value.NumberValue) != "":
-			// Only the captured range: grouping of larger constants is not observed.
-			if number, err := strconv.ParseFloat(strings.TrimSpace(constant.Value.NumberValue), 64); err == nil && math.Abs(number) < 1000 {
-				byName[name] = strconv.FormatFloat(number, 'f', -1, 64)
+			if number, err := strconv.ParseFloat(strings.TrimSpace(constant.Value.NumberValue), 64); err == nil && !math.IsNaN(number) && !math.IsInf(number, 0) && math.Abs(number) < 1000 {
+				formatted := strconv.FormatFloat(number, 'f', -1, 64)
 				if number == 0 {
-					byName[name] = "0"
+					formatted = "0"
 				}
+				byName[name] = formatted
 			}
 		case strings.EqualFold(strings.TrimSpace(constant.Value.BooleanValue), "true"), strings.EqualFold(strings.TrimSpace(constant.Value.BooleanValue), "false"):
 			byName[name] = strings.ToLower(strings.TrimSpace(constant.Value.BooleanValue))
@@ -2731,7 +2785,8 @@ func flowRequiresOrderedGraph(raw flowXML) bool {
 		return true
 	}
 	variables := flowVariableMap(raw.Variables)
-	saveTrigger := strings.EqualFold(raw.Start.TriggerType, "RecordBeforeSave") || strings.EqualFold(raw.Start.TriggerType, "RecordAfterSave")
+	saveTrigger := strings.EqualFold(raw.Start.TriggerType, "RecordBeforeSave") || strings.EqualFold(raw.Start.TriggerType, "RecordAfterSave") ||
+		strings.EqualFold(raw.Start.TriggerType, "RecordBeforeDelete") && strings.EqualFold(raw.Start.RecordTriggerType, "Delete")
 	for _, decision := range raw.Decisions {
 		for _, branch := range decision.Rules {
 			for _, condition := range branch.Conditions {

@@ -2,6 +2,7 @@ package gladecli
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"io"
 	"os"
@@ -12,7 +13,8 @@ import (
 	"github.com/glade-sh/glade/internal/flagparse"
 )
 
-const updateInstallScriptCommand = "curl -fsSL https://glade.sh/install.sh"
+//go:embed update_installer.sh
+var updateInstaller string
 
 func runUpdate(ctx context.Context, args []string, stdout, stderr io.Writer) error {
 	parsed, err := flagparse.New("glade update").
@@ -39,7 +41,12 @@ func runUpdate(ctx context.Context, args []string, stdout, stderr io.Writer) err
 		return nil
 	}
 
-	cmd := exec.CommandContext(ctx, "sh", "-c", installCommand)
+	executable, err := os.Executable()
+	if err != nil {
+		return err
+	}
+	cmd := exec.CommandContext(ctx, "sh", "-c", updateInstaller)
+	cmd.Env = append(os.Environ(), "GLADE_INSTALL_DIR="+filepath.Dir(executable))
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
 	return cmd.Run()
@@ -54,8 +61,7 @@ func updateInstallCommand() (string, error) {
 }
 
 func updateInstallCommandForExecutable(executable string) string {
-	installDir := filepath.Dir(executable)
-	return fmt.Sprintf("%s | env GLADE_INSTALL_DIR=%s sh", updateInstallScriptCommand, shellQuote(installDir))
+	return fmt.Sprintf("env GLADE_UPDATE_ALLOW_SHELL=1 %s update", shellQuote(executable))
 }
 
 func shellQuote(value string) string {

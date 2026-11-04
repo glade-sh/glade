@@ -49,7 +49,9 @@ type Project struct {
 	// SourceNamespaces lists namespaces declared by sfdx-project.json files
 	// of sub-projects inside the loaded package directories. Their source is
 	// part of this project, so a qualifier naming one names project source.
-	SourceNamespaces           []string                   `json:"sourceNamespaces,omitempty"`
+	SourceNamespaces []string `json:"sourceNamespaces,omitempty"`
+	// SourceNamespaceRoots maps nested project directories to their declared namespaces.
+	SourceNamespaceRoots       map[string]string          `json:"sourceNamespaceRoots,omitempty"`
 	SourceAPIVersion           string                     `json:"sourceApiVersion,omitempty"`
 	OrgDomainURL               string                     `json:"orgDomainUrl,omitempty"`
 	SchemaSnapshot             string                     `json:"schemaSnapshot,omitempty"`
@@ -546,6 +548,7 @@ func load(root string, stack map[string]bool, dependency bool, requestedPackages
 			}
 			return Project{}, err
 		}
+		collectAncestorSourceNamespaces(absRoot, pkgRoot, &p)
 		if err := collectFiles(pkgRoot, &p); err != nil {
 			return Project{}, err
 		}
@@ -571,6 +574,11 @@ func load(root string, stack map[string]bool, dependency bool, requestedPackages
 		}
 	}
 	dedupeProjectFiles(&p)
+	// Configs affect ownership even when no selected source belongs to them.
+	// Only advertise namespaces that actually own selected Apex files.
+	for _, path := range p.SelectedApexFiles() {
+		p.SourceNamespaces = appendSourceNamespace(p.SourceNamespaces, p.Namespace, p.SourceNamespaceForFile(path, p.Namespace))
+	}
 
 	sort.Strings(p.ApexFiles)
 	p.SourceWarnings = duplicateApexClassSourceWarnings(absRoot, p.ApexFiles)
@@ -1288,7 +1296,7 @@ func findReferencedNamespaceSiblingSFDXPackageDependencyRoots(root string, packa
 		return nil
 	}
 	parent := filepath.Dir(filepath.Clean(root))
-	var roots []string
+	var candidates []struct{ root, namespace string }
 	for _, candidate := range localSFDXSiblingProjectCandidates(parent) {
 		if sameFilePath(candidate, root) {
 			continue
@@ -1301,10 +1309,23 @@ func findReferencedNamespaceSiblingSFDXPackageDependencyRoots(root string, packa
 			delete(unresolved, normalizeSFDXPackageName(dir.Package))
 		}
 		namespace := strings.TrimSpace(cfg.Namespace)
-		if namespace == "" || strings.EqualFold(namespace, p.Namespace) || !projectRootReferencesNamespaceToken(root, p, namespace) {
+		if namespace == "" || strings.EqualFold(namespace, p.Namespace) {
 			continue
 		}
-		roots = append(roots, candidate)
+		candidates = append(candidates, struct{ root, namespace string }{candidate, namespace})
+	}
+	tokens := make(map[string]bool, len(candidates))
+	for _, candidate := range candidates {
+		tokens[candidate.namespace+"__"] = false
+	}
+	for _, pkgRoot := range packageRoots(root, p.PackageDirectories, true) {
+		referencesNamespaceTokensInRoot(pkgRoot, tokens)
+	}
+	var roots []string
+	for _, candidate := range candidates {
+		if tokens[candidate.namespace+"__"] {
+			roots = append(roots, candidate.root)
+		}
 	}
 	return roots
 }
@@ -1463,7 +1484,22 @@ func projectRootReferencesNamespaceToken(root string, p Project, namespace strin
 }
 
 func referencesNamespaceTokenInRoot(root, token string) bool {
-	err := filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
+	tokens := map[string]bool{token: false}
+	referencesNamespaceTokensInRoot(root, tokens)
+	return tokens[token]
+}
+
+func referencesNamespaceTokensInRoot(root string, tokens map[string]bool) {
+	remaining := 0
+	for _, found := range tokens {
+		if !found {
+			remaining++
+		}
+	}
+	if remaining == 0 {
+		return
+	}
+	_ = filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return nil
 		}
@@ -1486,12 +1522,17 @@ func referencesNamespaceTokenInRoot(root, token string) bool {
 		if err != nil {
 			return nil
 		}
-		if strings.Contains(string(data), token) {
+		for token, found := range tokens {
+			if !found && strings.Contains(string(data), token) {
+				tokens[token] = true
+				remaining--
+			}
+		}
+		if remaining == 0 {
 			return errFoundNamespaceReference
 		}
 		return nil
 	})
-	return errors.Is(err, errFoundNamespaceReference)
 }
 
 var errFoundNamespaceReference = errors.New("found namespace reference")
@@ -1877,6 +1918,30 @@ func setupMetadataRoots(root string) []string {
 	return roots
 }
 
+// collectAncestorSourceNamespaces includes project configs between the
+// project root and a selected package root, which the package walk cannot see.
+func collectAncestorSourceNamespaces(root, packageRoot string, p *Project) {
+	root = filepath.Clean(root)
+	dir := filepath.Dir(filepath.Clean(packageRoot))
+	rel, err := filepath.Rel(root, dir)
+	if err != nil || filepath.IsAbs(rel) || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return
+	}
+	for dir != root {
+		recordSourceNamespace(dir, p)
+		dir = filepath.Dir(dir)
+	}
+}
+
+func recordSourceNamespace(dir string, p *Project) {
+	if cfg, err := loadSFDXProject(dir); err == nil && cfg.HasManifest {
+		if p.SourceNamespaceRoots == nil {
+			p.SourceNamespaceRoots = make(map[string]string)
+		}
+		p.SourceNamespaceRoots[dir] = strings.TrimSpace(cfg.Namespace)
+	}
+}
+
 func collectFiles(root string, p *Project) error {
 	return filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
@@ -1897,9 +1962,7 @@ func collectFiles(root string, p *Project) error {
 
 		if d.Name() == "sfdx-project.json" {
 			if dir := filepath.Clean(filepath.Dir(path)); dir != filepath.Clean(p.Root) {
-				if cfg, err := loadSFDXProject(dir); err == nil {
-					p.SourceNamespaces = appendSourceNamespace(p.SourceNamespaces, p.Namespace, cfg.Namespace)
-				}
+				recordSourceNamespace(dir, p)
 			}
 			return nil
 		}
@@ -2031,6 +2094,25 @@ func collectFiles(root string, p *Project) error {
 		}
 		return nil
 	})
+}
+
+// SourceNamespaceForFile returns the namespace declared by the nearest nested
+// project, or fallback when no nested project owns the source file.
+func (p Project) SourceNamespaceForFile(path, fallback string) string {
+	path = filepath.Clean(path)
+	best := ""
+	namespace := fallback
+	for root, candidate := range p.SourceNamespaceRoots {
+		root = filepath.Clean(root)
+		rel, err := filepath.Rel(root, path)
+		if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(os.PathSeparator)) || filepath.IsAbs(rel) {
+			continue
+		}
+		if len(root) > len(best) {
+			best, namespace = root, candidate
+		}
+	}
+	return namespace
 }
 
 func appendSourceNamespace(namespaces []string, own, namespace string) []string {

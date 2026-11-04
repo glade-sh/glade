@@ -121,11 +121,14 @@ func ValidateVisualforceAccessMetadata(p project.Project) error {
 	}
 	seen := map[projectView]bool{}
 	addName := func(names map[string]bool, name, namespace string) {
-		names[strings.ToLower(name)] = true
 		if namespace != "" {
-			// Access metadata uses the Metadata API spelling, not Apex's dot form.
+			// An installed package's components resolve only by their Metadata
+			// API spelling, not Apex's dot form and not unprefixed (native rows
+			// from a non-namespaced consumer, API 62.0 and 67.0).
 			names[strings.ToLower(namespace+"__"+name)] = true
+			return
 		}
+		names[strings.ToLower(name)] = true
 	}
 	var collectNames func(projectView)
 	collectNames = func(view projectView) {

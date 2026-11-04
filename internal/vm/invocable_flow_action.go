@@ -30,7 +30,7 @@ func invocableFlowActionSupported(rule storage.FlowRule) bool {
 		if strings.EqualFold(variable.DataType, "String") {
 			continue
 		}
-		if strings.EqualFold(variable.DataType, "Date") && !variable.IsInput && !variable.IsOutput {
+		if (strings.EqualFold(variable.DataType, "Date") || strings.EqualFold(variable.DataType, "Currency")) && !variable.IsInput && !variable.IsOutput {
 			continue
 		}
 		if !strings.EqualFold(variable.DataType, "SObject") || strings.TrimSpace(variable.ObjectType) == "" {

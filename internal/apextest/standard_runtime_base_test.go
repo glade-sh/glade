@@ -62,7 +62,7 @@ func TestSingleProjectRequestStartupKeepsFullMethodTables(t *testing.T) {
 			t.Fatal(err)
 		}
 		command := exec.Command(executable, "-test.run=^TestSingleProjectRequestStartupKeepsFullMethodTables$", "-test.count=1")
-		command.Env = append(os.Environ(), "GLADE_STANDARD_STARTUP_CHILD=1")
+		command.Env = append(childEnvWithoutShardSelector(), "GLADE_STANDARD_STARTUP_CHILD=1")
 		if output, err := command.CombinedOutput(); err != nil {
 			t.Fatalf("fresh startup: %v\n%s", err, output)
 		}
@@ -92,7 +92,7 @@ func TestSingleProjectRunStartupDoesNotRetainStandardRuntime(t *testing.T) {
 			for _, perf := range []bool{false, true} {
 				t.Run(fmt.Sprintf("%s/perf-%t", api, perf), func(t *testing.T) {
 					command := exec.Command(executable, "-test.run=^TestSingleProjectRunStartupDoesNotRetainStandardRuntime$", "-test.count=1")
-					command.Env = append(os.Environ(),
+					command.Env = append(childEnvWithoutShardSelector(),
 						"GLADE_STANDARD_RUN_STARTUP_API="+api,
 						fmt.Sprintf("GLADE_STANDARD_RUN_STARTUP_PERF=%t", perf))
 					if output, err := command.CombinedOutput(); err != nil {
@@ -214,7 +214,7 @@ func TestFirstColdRuntimePassiveClassesMatchCachedRegistration(t *testing.T) {
 			t.Fatal(err)
 		}
 		command := exec.Command(executable, "-test.run=^TestFirstColdRuntimePassiveClassesMatchCachedRegistration$", "-test.count=1")
-		command.Env = append(os.Environ(), "GLADE_FIRST_COLD_PASSIVE_CHILD=1")
+		command.Env = append(childEnvWithoutShardSelector(), "GLADE_FIRST_COLD_PASSIVE_CHILD=1")
 		if output, err := command.CombinedOutput(); err != nil {
 			t.Fatalf("first-cold passive registration: %v\n%s", err, output)
 		}

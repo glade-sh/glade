@@ -1,0 +1,11 @@
+api	route	observation
+62.0	anonymous	query=true|boundary=true|rejection=true|type=DATE
+62.0	istest	query=true|boundary=true|rejection=true|type=DATE
+67.0	anonymous	query=true|boundary=true|rejection=true|type=DATE
+67.0	istest	query=true|boundary=true|rejection=true|type=DATE
+59.0	ui-object-info	"{""Id"":{""apiName"":""Id"",""createable"":false,""dataType"":""String"",""label"":""Lead ID"",""required"":true,""updateable"":false},""LastTransferDate"":{""apiName"":""LastTransferDate"",""createable"":false,""dataType"":""Date"",""label"":""Last Transfer Date"",""required"":false,""updateable"":false}}"
+59.0	visualforce	CASE251|Last Transfer Date|Lead ID|END251
+67.0	ui-object-info	"{""Id"":{""apiName"":""Id"",""createable"":false,""dataType"":""String"",""label"":""Lead ID"",""required"":true,""updateable"":false},""LastTransferDate"":{""apiName"":""LastTransferDate"",""createable"":false,""dataType"":""Date"",""label"":""Last Transfer Date"",""required"":false,""updateable"":false}}"
+67.0	visualforce	CASE251|Last Transfer Date|Lead ID|END251
+59.0	ui-rejection	false
+67.0	ui-rejection	false

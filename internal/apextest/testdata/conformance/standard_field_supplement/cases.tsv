@@ -1,0 +1,5 @@
+api	object	route	case
+62.0,67.0	Account,Lead,Order	REST describe	full readable fields and facets, default and granted
+62.0,67.0	Account,Lead,Order	anonymous Apex describe	full named field map, flags, missing field rejection and existing field boundary
+62.0,67.0	Account,Lead,Order	project test	field existence and describe route
+62.0,67.0	Account,Lead,Order	SOQL	selected supplemented fields

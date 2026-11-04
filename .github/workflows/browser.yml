@@ -28,6 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
+      GLADE_ROOT: ${{ github.workspace }}/source
       GOMAXPROCS: "2"
       GLADE_LWC_BROWSER: "1"
       PLAYWRIGHT_BROWSERS_PATH: /home/runner/.cache/ms-playwright

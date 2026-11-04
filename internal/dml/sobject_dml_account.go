@@ -6,6 +6,9 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
+// QueriedPersonAccountNameError is the native error for an unassigned queried Name.
+const QueriedPersonAccountNameError = "Unable to create/update fields: Name. Please check the security settings of this field and verify that it is read/write for your profile or permission set."
+
 func normalizePersonAccountFields(objectName string, definition storage.ObjectDefinition, record *storage.Record) {
 	if !strings.EqualFold(objectName, "Account") || record == nil {
 		return
@@ -13,14 +16,141 @@ func normalizePersonAccountFields(objectName string, definition storage.ObjectDe
 	if record.Fields == nil {
 		record.Fields = make(map[string]storage.Value)
 	}
-	if !hasPersonAccountSignal(*record) {
+	if _, enabled := storage.ResolveFieldName(definition, "", "IsPersonAccount"); !enabled {
 		return
 	}
-	if _, enabled := storage.ResolveFieldName(definition, "", "IsPersonAccount"); !enabled {
+	// Stored blank person contact fields are null in both business and person
+	// controls. This happens in DML, after the VM's before-trigger snapshot.
+	for _, field := range []string{"PersonHomePhone", "PersonMobilePhone", "PersonEmail"} {
+		value, present := record.GetField(field)
+		if present && value.Kind == storage.ValueString && strings.Trim(value.String, " \t") == "" {
+			record.Fields[field] = storage.NullValue()
+		}
+	}
+	if AccountHasExplicitBusinessRecordType(objectName, definition, *record) || (accountUsesBusinessContactDefault(objectName, *record, definition.RecordTypes) && AccountHasBusinessContactInput(*record)) {
+		return
+	}
+	if !hasPersonAccountSignal(*record) {
 		return
 	}
 	record.Fields["IsPersonAccount"] = storage.BooleanValue(true)
 	normalizeFirstLastName(definition, record)
+}
+
+// Reviewed business-account contact rows reject populated values after before
+// triggers; malformed email is rejected earlier by the VM preflight.
+func validateBusinessAccountContacts(objectName string, definition storage.ObjectDefinition, record storage.Record, existing ...storage.Record) error {
+	if _, enabled := storage.ResolveFieldName(definition, "", "IsPersonAccount"); !enabled {
+		return nil
+	}
+	business := AccountHasExplicitBusinessRecordType(objectName, definition, record)
+	if !business && len(existing) != 0 {
+		// An existing explicit record type supplies the family for sparse updates.
+		person, hasPersonFlag := existing[0].GetField("IsPersonAccount")
+		selected, hasSelected := record.GetField("RecordTypeId")
+		if !hasSelected || idFromStorageValue(selected) == "" {
+			if AccountHasExplicitBusinessRecordType(objectName, definition, existing[0]) {
+				business = true
+			} else if !(hasPersonFlag && person.Kind == storage.ValueBoolean && person.Boolean) {
+				business = accountUsesBusinessContactDefault(objectName, record, definition.RecordTypes)
+			}
+		}
+	} else if !business {
+		business = accountUsesBusinessContactDefault(objectName, record, definition.RecordTypes)
+	}
+	if !business || !AccountHasBusinessContactInput(record) {
+		return nil
+	}
+	for _, field := range []string{"PersonHomePhone", "PersonMobilePhone", "PersonEmail"} {
+		value, present := record.GetField(field)
+		if present && value.Kind == storage.ValueString && strings.Trim(value.String, " \t") != "" {
+			if field == "PersonEmail" && InvalidEmailValue(value) {
+				if canonical, ok := storage.ResolveFieldName(definition, "", field); ok {
+					if err := validateEmailField(objectName, canonical, definition.Fields[canonical], value); err != nil {
+						return err
+					}
+				}
+				continue
+			}
+			return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{field}, "Business Account may not use Person Account field %s", field)
+		}
+	}
+	return nil
+}
+
+// AccountHasBusinessContactInput reports whether a captured contact field was
+// supplied, independently of other person-account inputs.
+func AccountHasBusinessContactInput(record storage.Record) bool {
+	contact := false
+	for field := range record.Fields {
+		lower := strings.ToLower(field)
+		if lower == "personhomephone" || lower == "personmobilephone" || lower == "personemail" {
+			contact = true
+		}
+	}
+	return contact || record.HasExplicitNull("PersonHomePhone") || record.HasExplicitNull("PersonMobilePhone") || record.HasExplicitNull("PersonEmail")
+}
+
+// The native omitted-type rows provide a business Name and one of the three
+// captured contact fields; a separately supplied person signal keeps its path.
+func accountUsesBusinessContactDefault(objectName string, record storage.Record, typeSets ...[]storage.RecordTypeInfo) bool {
+	if !strings.EqualFold(objectName, "Account") || !AccountHasBusinessContactInput(record) {
+		return false
+	}
+	if len(typeSets) != 0 {
+		knownBusinessDefault := false
+		for _, rt := range typeSets[0] {
+			if rt.Default && rt.Active && rt.Available && !rt.PersonAccount {
+				knownBusinessDefault = true
+			}
+			if value, supplied := record.GetField("RecordTypeId"); supplied && record.DMLRecordTypeDefaulted() && storage.IDsEqual(idFromStorageValue(value), rt.ID) && rt.PersonAccount {
+				return false
+			}
+		}
+		if !knownBusinessDefault {
+			return false
+		}
+	}
+	for field, value := range record.Fields {
+		lower := strings.ToLower(field)
+		if lower != "personhomephone" && lower != "personmobilephone" && lower != "personemail" && !strings.HasSuffix(lower, "__c") &&
+			(strings.HasPrefix(lower, "person") || lower == "firstname" || lower == "lastname") && personBeforeTriggerValue(value) {
+			return false
+		}
+	}
+	if record.HasExplicitNull("RecordTypeId") || record.HasExplicitNull("FirstName") || record.HasExplicitNull("LastName") {
+		return false
+	}
+	if _, supplied := record.GetField("FirstName"); supplied {
+		return false
+	}
+	if _, supplied := record.GetField("LastName"); supplied {
+		return false
+	}
+	if _, supplied := record.GetField("RecordTypeId"); supplied && !record.DMLRecordTypeDefaulted() {
+		return false
+	}
+	name, supplied := record.GetField("Name")
+	return supplied && name.Kind == storage.ValueString && strings.TrimSpace(name.String) != ""
+}
+
+// AccountHasExplicitBusinessRecordType requires a known business type. Its
+// family is metadata, not a property of the configurable name or label.
+func AccountHasExplicitBusinessRecordType(objectName string, definition storage.ObjectDefinition, record storage.Record) bool {
+	if !strings.EqualFold(objectName, "Account") || record.DMLRecordTypeDefaulted() {
+		return false
+	}
+	value, present := record.GetField("RecordTypeId")
+	if !present {
+		return false
+	}
+	id := idFromStorageValue(value)
+	for _, recordType := range definition.RecordTypes {
+		if id != "" && recordType.ID != "" && storage.IDsEqual(id, recordType.ID) {
+			return !recordType.PersonAccount
+		}
+	}
+	return false
 }
 
 func hasPersonAccountSignal(record storage.Record) bool {
@@ -28,13 +158,57 @@ func hasPersonAccountSignal(record storage.Record) bool {
 }
 
 func hasPersonAccountFieldSignal(record storage.Record) bool {
+	return accountPersonSignal(record, false)
+}
+
+// AccountPersonSignalForBeforeTrigger shares the engine's field traversal but
+// retains the pre-trigger value policy for fields outside the native matrix.
+func AccountPersonSignalForBeforeTrigger(record storage.Record) bool {
+	return accountPersonSignal(record, true)
+}
+
+func accountPersonSignal(record storage.Record, beforeTrigger bool) bool {
 	for field, value := range record.Fields {
+		// Account custom fields may begin with Person without being Contact
+		// fields. Only a Person Account alias (__pc) carries that meaning.
+		if strings.HasSuffix(strings.ToLower(field), "__c") {
+			continue
+		}
+		if beforeTrigger {
+			if !strings.HasPrefix(field, "Person") && field != "FirstName" && field != "LastName" {
+				continue
+			}
+			if strings.EqualFold(field, "PersonEmail") && value.Kind == storage.ValueString && strings.Trim(value.String, " \t") == "" {
+				continue
+			}
+			if personBeforeTriggerValue(value) {
+				return true
+			}
+			continue
+		}
 		lower := strings.ToLower(field)
 		if (strings.HasPrefix(lower, "person") || lower == "firstname" || lower == "lastname") && nonDefaultPersonValue(value) {
 			return true
 		}
 	}
 	return false
+}
+
+func personBeforeTriggerValue(value storage.Value) bool {
+	switch value.Kind {
+	case storage.ValueNull, "":
+		return false
+	case storage.ValueBoolean:
+		return value.Boolean
+	case storage.ValueString, storage.ValueDate, storage.ValueDateTime, storage.ValueDecimal:
+		return value.String != ""
+	case storage.ValueID:
+		return value.ID != ""
+	case storage.ValueInteger:
+		return value.Integer != 0
+	default:
+		return true
+	}
 }
 
 func isPersonAccountFeatureField(field string) bool {
@@ -101,7 +275,10 @@ func createsPersonContactOnInsert(objectName string, record storage.Record) bool
 	return objectName == "Account" && isPersonAccountRecord(record)
 }
 
-func forcePersonAccountRecordType(objectName string, record storage.Record) bool {
+func forcePersonAccountRecordType(objectName string, record storage.Record, recordTypes []storage.RecordTypeInfo) bool {
+	if accountUsesBusinessContactDefault(objectName, record, recordTypes) {
+		return false
+	}
 	return strings.EqualFold(objectName, "Account") && (isPersonAccountRecord(record) || hasPersonAccountFieldSignal(record))
 }
 
@@ -158,6 +335,11 @@ func validateAccountNameRequiredFields(objectName string, definition storage.Obj
 
 func defaultRecordTypeForRecord(objectName string, recordTypes []storage.RecordTypeInfo, record storage.Record) (storage.RecordTypeInfo, bool) {
 	if strings.EqualFold(objectName, "Account") {
+		if accountUsesBusinessContactDefault(objectName, record, recordTypes) {
+			if recordType, ok := businessAccountRecordType(recordTypes); ok {
+				return recordType, true
+			}
+		}
 		if isPersonAccountRecord(record) || hasPersonAccountFieldSignal(record) {
 			if recordType, ok := personAccountRecordType(recordTypes); ok {
 				return recordType, true
@@ -180,7 +362,7 @@ func AccountDefaultRecordType(org *storage.OrgState, userID storage.ID, definiti
 		_, user, found := storage.LookupRecordByID(org.Objects["User"].Records, userID)
 		if found {
 			profileID := idFromStorageValue(user.Fields["ProfileId"])
-			person := forcePersonAccountRecordType("Account", record)
+			person := forcePersonAccountRecordType("Account", record, definition.RecordTypes)
 			for _, mapping := range org.Metadata.AccountRecordTypeDefaults {
 				if !storage.IDsEqual(mapping.ProfileID, profileID) || mapping.PersonAccount != person {
 					continue
@@ -236,23 +418,9 @@ func preferredPersonAccountRecordType(recordTypes []storage.RecordTypeInfo, allo
 	return storage.RecordTypeInfo{}, false
 }
 
+// Account family comes from the explicit record type metadata flag.
 func recordTypeLooksPersonAccount(recordType storage.RecordTypeInfo) bool {
-	if recordType.PersonAccount {
-		return true
-	}
-	name := strings.ToLower(strings.TrimSpace(recordType.Name + " " + recordType.DeveloperName))
-	return strings.Contains(name, "person") || strings.Contains(name, "individual")
-}
-
-// explicitPersonAccountRecordType reports whether id names a record type that
-// belongs to person accounts, whatever its developer name.
-func explicitPersonAccountRecordType(recordTypes []storage.RecordTypeInfo, id storage.ID) bool {
-	for _, recordType := range recordTypes {
-		if recordType.ID != "" && storage.IDsEqual(recordType.ID, id) {
-			return recordType.PersonAccount || recordTypeLooksPersonAccount(recordType)
-		}
-	}
-	return false
+	return recordType.PersonAccount
 }
 
 func recordTypeLooksGenericPersonAccount(recordType storage.RecordTypeInfo) bool {

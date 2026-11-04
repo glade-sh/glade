@@ -1,0 +1,25 @@
+id	api	route	outcome	detail
+platform_static	62.0	anonymous	accepted	assertions passed
+platform_static	62.0	istest	accepted	assertions passed
+wrong_static	62.0	anonymous	compile-rejected	"Compilation failed at Line 1 column 1 with the error:
+
+Variable does not exist: AbsentNamespace.String"
+wrong_static	62.0	istest	compile-rejected	Variable does not exist: AbsentNamespace.String
+platform_type	62.0	anonymous	runtime-rejected	"Execution failed at this code:
+
+System.AssertException: Assertion Failed: Same value: null"
+platform_type	62.0	istest	runtime-rejected	System.AssertException: Assertion Failed: Same value: null
+wrong_type	62.0	anonymous	accepted	assertions passed
+wrong_type	62.0	istest	accepted	assertions passed
+platform_static	67.0	anonymous	accepted	assertions passed
+platform_static	67.0	istest	accepted	assertions passed
+wrong_static	67.0	anonymous	compile-rejected	"Compilation failed at Line 1 column 1 with the error:
+
+Variable does not exist: AbsentNamespace.String"
+wrong_static	67.0	istest	compile-rejected	Variable does not exist: AbsentNamespace.String
+platform_type	67.0	anonymous	runtime-rejected	"Execution failed at this code:
+
+System.AssertException: Assertion Failed: Same value: null"
+platform_type	67.0	istest	runtime-rejected	System.AssertException: Assertion Failed: Same value: null
+wrong_type	67.0	anonymous	accepted	assertions passed
+wrong_type	67.0	istest	accepted	assertions passed

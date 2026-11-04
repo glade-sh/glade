@@ -410,6 +410,9 @@ func (vm *VM) hydrateUpdateTriggerRecords(records, before []storage.Record) []st
 			definition = object.Definition
 		}
 		merged := before[i].Clone()
+		if record.DMLNameUnassigned() {
+			merged.MarkDMLNameUnassigned()
+		}
 		if record.System.OwnerID != "" {
 			merged.System.OwnerID = record.System.OwnerID
 		}
@@ -654,7 +657,9 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 	}
 	vm.callStack = append(vm.callStack, callFrame{Symbol: trigger.Name, File: trigger.File, Line: trigger.Line, Column: trigger.Column, APIVersion: trigger.APIVersion, SharingMode: "without sharing"})
 	defer func() {
-		vm.callStack = vm.callStack[:len(vm.callStack)-1]
+		lastCall := len(vm.callStack) - 1
+		vm.callStack[lastCall] = callFrame{}
+		vm.callStack = vm.callStack[:lastCall]
 		vm.Globals = caller
 		vm.VarTypes = callerTypes
 		vm.finalLocals = callerFinals
@@ -703,9 +708,22 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 				if err != nil {
 					return nil, err
 				}
+				if records[i].DMLNameUnassigned() && !isUserSetSObjectFieldAlias(item, "Name") {
+					record.MarkDMLNameUnassigned()
+				}
 				preserveMissingSystemFields(&record, records[i].System)
 				preserveMissingRecordFields(&record, records[i])
 				preserveMissingExplicitNulls(&record, records[i])
+				if records[i].DMLRecordTypeDefaulted() && !isUserSetSObjectFieldAlias(item, "RecordTypeId") {
+					record.MarkDMLRecordTypeDefaulted()
+				}
+				if trigger.Operation == "update" {
+					for _, field := range []string{"Name", "RecordTypeId"} {
+						if records[i].DMLTriggerAssigned(field) || isUserSetSObjectFieldAlias(item, field) {
+							record.MarkDMLTriggerAssignment(field)
+						}
+					}
+				}
 				preserveLoadedReferenceInput(&record, records[i], item)
 				if records[i].ID != "" && record.ID == "" {
 					record.ID = records[i].ID

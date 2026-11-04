@@ -196,7 +196,12 @@ func describeShareNamespacedOrg() storage.OrgState {
 	// Match describeShareOrg's explicit Account schema, so namespace variants
 	// of the shared field-map baselines describe the same Account fields.
 	org.Objects["Account"] = storage.ObjectState{Definition: storage.ObjectDefinition{
-		APIName: "Account", Fields: map[string]storage.Field{"RecordTypeId": {
+		APIName: "Account", Fields: map[string]storage.Field{"Id": {
+			APIName: "Id", Label: "Record ID", Type: storage.FieldID,
+		}, "DandbCompanyId": {
+			APIName: "DandbCompanyId", Label: "DandbCompanyId", Type: storage.FieldReference,
+			ReferenceTo: []string{"DandBCompany"}, RelationshipName: "DandbCompany",
+		}, "RecordTypeId": {
 			APIName: "RecordTypeId", Label: "Record Type ID", Type: storage.FieldReference,
 			ReferenceTo: []string{"RecordType"}, RelationshipName: "RecordType",
 		}},
@@ -228,6 +233,10 @@ func describeShareOrgFor(namespaced bool) storage.OrgState {
 }
 
 func describeShareOrg() storage.OrgState {
+	return describeShareOrgWithLegacyLabel(true)
+}
+
+func describeShareOrgWithLegacyLabel(freezeLabel bool) storage.OrgState {
 	org := storage.NewOrgState()
 	// This local sharing fixture includes a captured RecordTypeId reference.
 	// Its frozen field-map/rendering expectations describe that explicit schema.
@@ -237,6 +246,22 @@ func describeShareOrg() storage.OrgState {
 			ReferenceTo: []string{"RecordType"}, RelationshipName: "RecordType",
 		}},
 	}}
+	if freezeLabel {
+		// Keep the legacy rendering fixture stable while testing the current
+		// catalog independently in the shared/unshared equivalence test.
+		org.Objects["Account"].Definition.Fields["Id"] = storage.Field{
+			APIName: "Id", Label: "Record ID", Type: storage.FieldID,
+		}
+		org.Objects["Contact"] = storage.ObjectState{Definition: storage.ObjectDefinition{
+			APIName: "Contact", Fields: map[string]storage.Field{"Id": {
+				APIName: "Id", Label: "Record ID", Type: storage.FieldID,
+			}},
+		}}
+		org.Objects["Account"].Definition.Fields["DandbCompanyId"] = storage.Field{
+			APIName: "DandbCompanyId", Label: "DandbCompanyId", Type: storage.FieldReference,
+			ReferenceTo: []string{"DandBCompany"}, RelationshipName: "DandbCompany",
+		}
+	}
 
 	configureStandardField(&org, "Account", "Division")
 	for _, name := range []string{"Account", "Contact", "User", "RecordType"} {
@@ -310,6 +335,11 @@ func describeSharePrimedBase(t *testing.T) (*VM, *storage.RuntimeTemplate) {
 func describeSharePrimedBaseFor(t *testing.T, namespaced bool) (*VM, *storage.RuntimeTemplate) {
 	t.Helper()
 	org := describeShareOrgFor(namespaced)
+	return describeSharePrimedBaseWithOrg(t, org)
+}
+
+func describeSharePrimedBaseWithOrg(t *testing.T, org storage.OrgState) (*VM, *storage.RuntimeTemplate) {
+	t.Helper()
 	// Match the runner: complete test-context schema before freezing it.
 	// Clones must not add async objects to an already frozen generation.
 	initializer := New(nil)

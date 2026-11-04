@@ -1,0 +1,29 @@
+source_api	class	method	capture_id	observation
+62.0	DootLocaleA867A1031	gmtpair	A8.gmtpair	{"status":"ok","sameInstant":true,"gmtDates":[[2026,1,1],[2026,1,2]],"localDates":[[2026,1,1],[2026,1,2]],"reverse":false,"same":false,"context":{"tz":"GMT","language":"en_US","locale":"en_US"}}
+62.0	DootLocaleA867A1031	gmtrev	A8.gmtrev	{"status":"ok","sameInstant":true,"gmtDates":[[2026,1,2],[2026,1,2]],"localDates":[[2026,1,2],[2026,1,2]],"reverse":true,"same":true,"context":{"tz":"GMT","language":"en_US","locale":"en_US"}}
+62.0	DootLocaleA867A1031	lapair	A8.lapair	{"status":"ok","sameInstant":true,"gmtDates":[[2026,1,1],[2026,1,2]],"localDates":[[2026,1,1],[2026,1,1]],"reverse":true,"same":true,"context":{"tz":"America/Los_Angeles","language":"en_US","locale":"en_US"}}
+62.0	DootLocaleA867A1031	larev	A8.larev	{"status":"ok","sameInstant":true,"gmtDates":[[2026,1,2],[2026,1,2]],"localDates":[[2026,1,1],[2026,1,2]],"reverse":false,"same":false,"context":{"tz":"America/Los_Angeles","language":"en_US","locale":"en_US"}}
+62.0	DootGcmDirect67A1031	cbcControl	A20.direct.cbc	{"status":"ok","roundtrip":true}
+62.0	DootGcmDirect67A1031	observe	A20.direct	{"status":"ok","roundtrip":true,"bytes":34}
+62.0	DootGcmManaged67A1031	cbcControl	A21.managed.cbc	{"status":"ok","roundtrip":true}
+62.0	DootGcmManaged67A1031	observe	A21.managed	{"status":"ok","roundtrip":true,"bytes":34}
+62.0	DootGcmNull67A1031	observe	A22.null	{"error":{"em":"Argument cannot be null.","et":"System.NullPointerException","stage":"encrypt"}}
+62.0	DootEcdsaMalformed67A1031	badSign	A23.sign	{"error":{"em":"Invalid Crypto Key","et":"System.SecurityException","stage":"sign"}}
+62.0	DootEcdsaMalformed67A1031	badVerify	A23.verify	{"error":{"em":"Invalid Crypto Key","et":"System.SecurityException","stage":"verify"}}
+62.0	DootEcdsaMalformed67A1031	encodingControl	A23.encodingControl	{"status":"ok","digestBytes":32,"base64Roundtrip":true,"hexRoundtrip":true,"hex":"6f776e6564"}
+62.0	DootLocaleU167A1031	en	U1.en	{"status":"ok","collections":[2,1,2,2],"controls":[true,false],"equal":[true,true,false],"context":{"tz":"GMT","language":"en_US","locale":"en_US"}}
+62.0	DootLocaleU167A1031	tr	U1.tr	{"status":"ok","collections":[2,1,2,2],"controls":[true,false],"equal":[false,true,true],"context":{"tz":"GMT","language":"en_US","locale":"tr_TR"}}
+67.0	DootLocaleA867A1031	gmtpair	A8.gmtpair	{"status":"ok","sameInstant":true,"gmtDates":[[2026,1,1],[2026,1,2]],"localDates":[[2026,1,1],[2026,1,2]],"reverse":false,"same":false,"context":{"tz":"GMT","language":"en_US","locale":"en_US"}}
+67.0	DootLocaleA867A1031	gmtrev	A8.gmtrev	{"status":"ok","sameInstant":true,"gmtDates":[[2026,1,2],[2026,1,2]],"localDates":[[2026,1,2],[2026,1,2]],"reverse":true,"same":true,"context":{"tz":"GMT","language":"en_US","locale":"en_US"}}
+67.0	DootLocaleA867A1031	lapair	A8.lapair	{"status":"ok","sameInstant":true,"gmtDates":[[2026,1,1],[2026,1,2]],"localDates":[[2026,1,1],[2026,1,1]],"reverse":true,"same":true,"context":{"tz":"America/Los_Angeles","language":"en_US","locale":"en_US"}}
+67.0	DootLocaleA867A1031	larev	A8.larev	{"status":"ok","sameInstant":true,"gmtDates":[[2026,1,2],[2026,1,2]],"localDates":[[2026,1,1],[2026,1,2]],"reverse":false,"same":false,"context":{"tz":"America/Los_Angeles","language":"en_US","locale":"en_US"}}
+67.0	DootGcmDirect67A1031	cbcControl	A20.direct.cbc	{"status":"ok","roundtrip":true}
+67.0	DootGcmDirect67A1031	observe	A20.direct	{"status":"ok","roundtrip":true,"bytes":34}
+67.0	DootGcmManaged67A1031	cbcControl	A21.managed.cbc	{"status":"ok","roundtrip":true}
+67.0	DootGcmManaged67A1031	observe	A21.managed	{"status":"ok","roundtrip":true,"bytes":34}
+67.0	DootGcmNull67A1031	observe	A22.null	{"error":{"em":"Argument cannot be null.","et":"System.NullPointerException","stage":"encrypt"}}
+67.0	DootEcdsaMalformed67A1031	badSign	A23.sign	{"error":{"em":"Invalid Crypto Key","et":"System.SecurityException","stage":"sign"}}
+67.0	DootEcdsaMalformed67A1031	badVerify	A23.verify	{"error":{"em":"Invalid Crypto Key","et":"System.SecurityException","stage":"verify"}}
+67.0	DootEcdsaMalformed67A1031	encodingControl	A23.encodingControl	{"status":"ok","digestBytes":32,"base64Roundtrip":true,"hexRoundtrip":true,"hex":"6f776e6564"}
+67.0	DootLocaleU167A1031	en	U1.en	{"status":"ok","collections":[2,1,2,2],"controls":[true,false],"equal":[true,true,false],"context":{"tz":"GMT","language":"en_US","locale":"en_US"}}
+67.0	DootLocaleU167A1031	tr	U1.tr	{"status":"ok","collections":[2,1,2,2],"controls":[true,false],"equal":[false,true,true],"context":{"tz":"GMT","language":"en_US","locale":"tr_TR"}}

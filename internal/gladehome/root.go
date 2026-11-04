@@ -1,11 +1,13 @@
 package gladehome
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
+	"syscall"
 )
 
 // RepoRoot locates a glade source checkout (go.mod + LWC toolchain). Use this for
@@ -22,7 +24,15 @@ func RepoRoot() (string, error) {
 // SourceRoot locates a glade source checkout without requiring the local LWC
 // compiler dependencies. Use this for checked-in source assets.
 func SourceRoot() (string, error) {
-	candidates := candidateRoots(false)
+	return sourceRootCandidates(candidateRoots(false))
+}
+
+// CompilerSourceRoot only discovers scripts from explicitly authorized roots.
+func CompilerSourceRoot() (string, error) {
+	return sourceRootCandidates(executableCandidateRoots(false))
+}
+
+func sourceRootCandidates(candidates []string) (string, error) {
 	seen := make(map[string]bool, len(candidates))
 	for _, candidate := range candidates {
 		candidate = filepath.Clean(candidate)
@@ -46,21 +56,13 @@ func Root() (string, error) {
 // toolchainRoot waits for any installer writing the managed share. Explicit
 // checkouts outside that share need neither the lock nor a writable share.
 func toolchainRoot() (string, string, error) {
-	root, detail, err := findActiveToolchainRoot()
-	if err != nil || !sameDirectory(root, UserShareDir()) {
-		return root, detail, err
-	}
-	installMu.Lock()
-	defer installMu.Unlock()
-	lock, err := readInstallLock()
+	root, release, err := leaseActiveRoot(false)
 	if err != nil {
 		return "", "", err
 	}
-	if lock != nil {
-		defer lock.Close()
-	}
-	// Validation alone cannot establish completion while an installer is copying.
-	return findActiveToolchainRoot()
+	defer release()
+	_, status, err := findActiveToolchainRoot()
+	return root, status, err
 }
 
 func findActiveToolchainRoot() (string, string, error) {
@@ -70,7 +72,7 @@ func findActiveToolchainRoot() (string, string, error) {
 	if root, ok := userShareRoot(); ok {
 		return root, "ok (global)", nil
 	}
-	if root, ok, err := findToolchainRoot(false); err != nil {
+	if root, ok, err := findToolchainCandidates(executableCandidateRoots(false)); err != nil {
 		return "", "", err
 	} else if ok {
 		return root, "ok (discovered)", nil
@@ -78,14 +80,17 @@ func findActiveToolchainRoot() (string, string, error) {
 	return "", "", fmt.Errorf("glade LWC toolchain not found; run `glade toolchain install` from a glade checkout or set GLADE_HOME")
 }
 
-// installMu serializes installers within this process before taking the file lock.
-var installMu sync.Mutex
+// installMu excludes in-process writers while any shared reader is active.
+var installMu sync.RWMutex
 
 // EnsureRoot returns the user-global toolchain directory, installing from a discovered
 // source checkout when needed.
 func EnsureRoot() (string, error) {
 	if root, ok := explicitToolchainRoot(); ok && !sameDirectory(root, UserShareDir()) {
-		return root, nil
+		if hasGoMod(root) {
+			return root, nil
+		}
+		return Root()
 	}
 	installMu.Lock()
 	defer installMu.Unlock()
@@ -99,6 +104,9 @@ func EnsureRoot() (string, error) {
 		return "", err
 	}
 	defer lock.Close()
+	if err := recoverExclusive(lock); err != nil {
+		return "", fmt.Errorf("recover toolchain install: %w", err)
+	}
 	// Another process may have installed between verification and the write lock.
 	if root, ok := explicitToolchainRoot(); ok {
 		return root, nil
@@ -106,11 +114,11 @@ func EnsureRoot() (string, error) {
 	if root, ok := userShareRoot(); ok {
 		return root, nil
 	}
-	src, err := findInstallSource()
+	src, err := findInstallSourceCandidates(executableCandidateRoots(false))
 	if err != nil {
 		return "", err
 	}
-	if err := installFrom(src); err != nil {
+	if err := installFrom(src, lock); err != nil {
 		return "", err
 	}
 	root, ok := userShareRoot()
@@ -162,6 +170,20 @@ func sameDirectory(a, b string) bool {
 	return err == nil && right.IsDir() && os.SameFile(left, right)
 }
 
+// selectedInstallDir identifies the directory a shell installer can modify.
+// It must be selected before validation, since an update may be mid-swap.
+func selectedInstallDir() string {
+	if root := strings.TrimSpace(os.Getenv("GLADE_HOME")); root != "" && !hasGoMod(root) {
+		return root
+	}
+	if root := strings.TrimSpace(os.Getenv("GLADE_ROOT")); root != "" && !hasGoMod(root) {
+		if st, err := os.Stat(root); err == nil && st.IsDir() {
+			return root
+		}
+	}
+	return UserShareDir()
+}
+
 func explicitToolchainRoot() (string, bool) {
 	for _, value := range []string{os.Getenv("GLADE_HOME"), os.Getenv("GLADE_ROOT")} {
 		value = strings.TrimSpace(value)
@@ -195,15 +217,24 @@ func ShimsDir() (string, error) {
 
 // RuntimeAssetDir holds browser runtime modules served at /lightning/runtime/.
 func RuntimeAssetDir(name string) (string, error) {
+	dir, err := RuntimeAssetDirAt("", name)
+	if err != nil {
+		return "", err
+	}
+	root, err := Root()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(root, dir), nil
+}
+
+// RuntimeAssetDirAt applies the managed asset policy to an already leased root.
+func RuntimeAssetDirAt(root, name string) (string, error) {
 	name = strings.TrimSpace(name)
 	switch name {
 	case "experience", "lightning", "shell", "shims", "slds":
 	default:
 		return "", fmt.Errorf("unknown LWC runtime asset directory %q", name)
-	}
-	root, err := Root()
-	if err != nil {
-		return "", err
 	}
 	return filepath.Join(root, "lwcruntime", "src", name), nil
 }
@@ -225,7 +256,10 @@ func userShareRoot() (string, bool) {
 }
 
 func findToolchainRoot(includeUserShare bool) (string, bool, error) {
-	candidates := candidateRoots(includeUserShare)
+	return findToolchainCandidates(candidateRoots(includeUserShare))
+}
+
+func findToolchainCandidates(candidates []string) (string, bool, error) {
 	seen := make(map[string]bool, len(candidates))
 	for _, candidate := range candidates {
 		candidate = filepath.Clean(candidate)
@@ -238,6 +272,24 @@ func findToolchainRoot(includeUserShare bool) (string, bool, error) {
 		}
 	}
 	return "", false, nil
+}
+
+// executableCandidateRoots excludes implicit executable and project discovery unless
+// the invoking user explicitly authorizes the legacy search.
+func executableCandidateRoots(includeUserShare bool) []string {
+	if os.Getenv("GLADE_ALLOW_PROJECT_TOOLCHAIN") == "1" {
+		return candidateRoots(includeUserShare)
+	}
+	var roots []string
+	for _, key := range []string{"GLADE_HOME", "GLADE_ROOT"} {
+		if value := strings.TrimSpace(os.Getenv(key)); value != "" {
+			roots = append(roots, value)
+		}
+	}
+	if includeUserShare {
+		roots = append(roots, UserShareDir())
+	}
+	return roots
 }
 
 func candidateRoots(includeUserShare bool) []string {
@@ -333,6 +385,9 @@ func ToolchainStatus() (path string, ok bool, detail string) {
 	root, detail, err := toolchainRoot()
 	if err == nil {
 		return root, true, detail
+	}
+	if errors.Is(err, os.ErrPermission) || errors.Is(err, syscall.EROFS) {
+		return UserShareDir(), false, err.Error()
 	}
 	return UserShareDir(), false, "missing; reinstall the release or install from a Glade source checkout"
 }

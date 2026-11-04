@@ -3,6 +3,7 @@ package apexast
 import (
 	"net/url"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/diagnostic"
@@ -30,10 +31,7 @@ func (m LineMap) Position(offset int) diagnostic.Position {
 	if offset > m.length {
 		offset = m.length
 	}
-	line := 0
-	for line+1 < len(m.starts) && m.starts[line+1] <= offset {
-		line++
-	}
+	line := sort.Search(len(m.starts), func(i int) bool { return m.starts[i] > offset }) - 1
 	return diagnostic.Position{
 		Line:   line + 1,
 		Column: offset - m.starts[line] + 1,

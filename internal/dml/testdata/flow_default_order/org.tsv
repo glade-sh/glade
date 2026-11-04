@@ -1,0 +1,17 @@
+api	route	case	observation
+62.0	anonymous	omitted	true|
+62.0	anonymous	explicit_true	true|
+62.0	anonymous	explicit_null	false|Probe Flag: value not of required type:<space>
+62.0	anonymous	rejection_twin	false|flow rejected false
+62.0	istest	omitted	true|
+62.0	istest	explicit_true	true|
+62.0	istest	explicit_null	false|Probe Flag: value not of required type:<space>
+62.0	istest	rejection_twin	false|flow rejected false
+67.0	anonymous	omitted	true|
+67.0	anonymous	explicit_true	true|
+67.0	anonymous	explicit_null	false|Probe Flag: value not of required type:<space>
+67.0	anonymous	rejection_twin	false|flow rejected false
+67.0	istest	omitted	true|
+67.0	istest	explicit_true	true|
+67.0	istest	explicit_null	false|Probe Flag: value not of required type:<space>
+67.0	istest	rejection_twin	false|flow rejected false

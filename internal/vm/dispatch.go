@@ -500,6 +500,14 @@ platformStaticCall:
 		if strings.EqualFold(level, "NONE") {
 			return Null, nil
 		}
+		if vm.debugOutputLimit > 0 {
+			// Each message also occupies a JSON string and array separator.
+			remaining := vm.debugOutputLimit - result.debugOutputBytes
+			if remaining < 3 || len(line) > remaining-3 {
+				return Null, fmt.Errorf("debug output limit exceeded")
+			}
+			result.debugOutputBytes += len(line) + 3
+		}
 		result.Debug = append(result.Debug, line)
 		event := DebugEvent{
 			Level:    level,
@@ -540,12 +548,12 @@ platformStaticCall:
 			return Null, vm.scalarCountRouteError(args[0].Text, vm.expandSOQLBinds)
 		}
 		if len(args) == 2 {
-			return vm.executeSOQLWithAccessLevel(args[0].Text, args[1], result)
+			return vm.namedApexReferenceDynamicQueryFault(vm.executeSOQLWithAccessLevel(args[0].Text, args[1], result))
 		}
 		if err := vm.userModeInaccessibleAnonymousSystemQuery(args[0].Text); err != nil {
 			return Null, err
 		}
-		return vm.executeSOQLQuery(args[0].Text, result)
+		return vm.namedApexReferenceDynamicQueryFault(vm.executeSOQLQuery(args[0].Text, result))
 	case "Database.queryWithBinds":
 		if len(args) != 3 {
 			return Null, fmt.Errorf("Database.queryWithBinds expects query String, bind Map, and AccessLevel")
@@ -579,7 +587,7 @@ platformStaticCall:
 				return vm.expandSOQLBindsFromMap(raw, args[1])
 			})
 		}
-		return vm.executeSOQLWithBindMapAccessLevel(args[0].Text, args[1], args[2], result)
+		return vm.namedApexReferenceDynamicQueryFault(vm.executeSOQLWithBindMapAccessLevel(args[0].Text, args[1], args[2], result))
 	case "Database.countQuery":
 		if len(args) != 1 && len(args) != 2 {
 			return Null, fmt.Errorf("Database.countQuery expects query String and optional AccessLevel")
@@ -612,7 +620,7 @@ platformStaticCall:
 			value, err = vm.executeSOQL(args[0].Text, result)
 		}
 		if err != nil {
-			return Null, err
+			return vm.namedApexReferenceDynamicQueryFault(Null, err)
 		}
 		if count, ok := aggregateCount(value); ok {
 			return count, nil
@@ -639,7 +647,7 @@ platformStaticCall:
 		}
 		value, err := vm.executeSOQLWithBindMapAccessLevel(args[0].Text, args[1], args[2], result)
 		if err != nil {
-			return Null, err
+			return vm.namedApexReferenceDynamicQueryFault(Null, err)
 		}
 		if count, ok := aggregateCount(value); ok {
 			return count, nil
@@ -2224,6 +2232,16 @@ platformStaticCall:
 				ok = true
 			}
 			if !ok {
+				if canonical, named := storage.ResolveNamedApexReferenceObjectName(objectName); named {
+					// Native named source describes these objects; anonymous code
+					// is denied read access instead of seeing an invalid name.
+					if _, visible := vm.namedApexReferenceObjectName(objectName); !visible {
+						return Null, newExceptionError("System.NoAccessException", "Entity: "+canonical+" is not readable")
+					}
+					_, referenceDefinition, _ := vm.describeObjectDefinition(canonical)
+					describes = append(describes, vm.describeSObjectValue(canonical, referenceDefinition))
+					continue
+				}
 				return Null, invalidSchemaSObject("describeSObject", objectName, false)
 			}
 			describes = append(describes, vm.describeSObjectValue(resolved, definition))

@@ -1,0 +1,315 @@
+#!/usr/bin/env python3
+"""Run the release candidate's Required CI checks without GitHub Actions."""
+import argparse
+import concurrent.futures
+import json
+import os
+from pathlib import Path
+import re
+import signal
+import shutil
+import subprocess
+import sys
+import tempfile
+import threading
+import time
+
+ROOT = Path(__file__).resolve().parent.parent
+SHARDS = {'apextest': 12, 'sema': 2, 'lwc-compile': 8, 'visualforce': 4, 'gladecli': 4, 'vm': 4}
+MAPPING = {
+    'codeql': 'codeql', 'workflow-lint': 'workflow-lint', 'site': 'site',
+    'test-binaries': 'test-binaries', 'vet': 'vet', 'apextest': 'apextest',
+    'apextest-history': 'apextest-history', 'lwc-compile-history': 'lwc-compile-history',
+    'visualforce-history': 'visualforce-history', 'gladecli': 'gladecli',
+    'gladecli-history': 'gladecli-history', 'vm': 'vm', 'vm-history': 'vm-history',
+    'node-integration': 'node-integration', 'nested-sources': 'nested-sources',
+    'sema': 'sema', 'sema-history': 'sema-history',
+    'server-and-playground': 'server-and-playground', 'test': 'test',
+    'smoke-runtime': 'smoke-runtime', 'smoke-distribution': 'smoke-distribution',
+}
+
+def required_jobs(source):
+    # Fail closed if the aggregate changes shape; YAML tests independently
+    # verify this parser and the mapping against the actual workflow.
+    match = re.search(r'(?m)^  required-ci:\n(?:(?:    (?!needs:)[^\n]*|\n)\n)*    needs:\n((?:      - [a-z0-9-]+\s*\n)+)', source)
+    if not match:
+        raise ValueError('cannot read Required CI needs')
+    jobs = re.findall(r'(?m)^      - ([a-z0-9-]+)\s*$', match.group(1))
+    if not jobs or len(set(jobs)) != len(jobs):
+        raise ValueError('empty or duplicate Required CI needs')
+    return set(jobs)
+
+def check_mapping(required):
+    missing = required - MAPPING.keys()
+    stale = MAPPING.keys() - required
+    if missing or stale:
+        raise ValueError(f'unmapped required jobs: {sorted(missing)}; stale mappings: {sorted(stale)}')
+
+def exit_status(statuses):
+    return 0 if statuses and all(s == 'PASS' for s in statuses) else 1
+
+def first_failure(log):
+    lines = log.read_text(errors='replace').splitlines()
+    for line in lines:
+        if re.search(r'(?i)(--- FAIL:|^FAIL\b|\berror\b|\bfatal\b|\brejected\b)', line):
+            return line[:300]
+    return next((line[:300] for line in reversed(lines) if line.strip()), 'no output')
+
+class Runner:
+    def __init__(self, root, jobs):
+        self.root = root
+        self.jobs = jobs
+        self.results = {}
+        self.cancelled = threading.Event()
+        self.process_lock = threading.Lock()
+        self.processes = set()
+        self.env = {key: value for key, value in os.environ.items() if not key.startswith('CI_')}
+        self.env.update(CGO_ENABLED='1', NO_COLOR='1', GOMAXPROCS='2', GLADE_LWC_BROWSER='1',
+                        GLADE_HOME='', GLADE_ROOT=str(ROOT), XDG_DATA_HOME=str(root/'xdg-data'),
+                        GLADE_LWC_PLAYWRIGHT_MODULE=str(ROOT/'lwcruntime/node_modules/playwright'),
+                        CI_LOCAL_RELEASE_ARTIFACT_DIR=str(root/'local-release'),
+                        CI_GO_TEST_ARTIFACT_DIR=str(root/'go-test'),
+                        CI_NODE_INTEGRATION_ARTIFACT_DIR=str(root/'node-integration'))
+        self.node = bool(shutil.which('node') and shutil.which('npm'))
+        if self.node:
+            v = subprocess.run(['node', '-p', 'process.versions.node.split(".")[0]'], capture_output=True, text=True)
+            self.node = v.returncode == 0 and v.stdout.strip() == '22'
+        self.go = bool(shutil.which('go'))
+        if self.go:
+            version = subprocess.run(['go', 'version'], capture_output=True, text=True)
+            self.go = version.returncode == 0 and bool(re.search(r'\bgo1\.26\.10\b', version.stdout))
+
+    def command(self, name, command, env=None, prerequisites=()):
+        if self.cancelled.is_set():
+            return
+        log = self.root / (name + '.log')
+        missing = [p for p in prerequisites if not p[0]]
+        if missing:
+            status = 'FAIL' if any(len(p) > 2 and p[2] == 'FAIL' for p in missing) else 'SKIP-ENV'
+            log.write_text('Prerequisites: ' + '; '.join(p[1] for p in missing) + '\n')
+            self.results[name] = (status, log)
+            return
+        with log.open('w') as f:
+            try:
+                with self.process_lock:
+                    if self.cancelled.is_set():
+                        return
+                    process = subprocess.Popen(command, cwd=ROOT, env={**self.env, **(env or {})}, stdout=f, stderr=subprocess.STDOUT, start_new_session=True)
+                    self.processes.add(process)
+                try:
+                    rc = process.wait()
+                except BaseException:
+                    self.cancel()
+                    raise
+                finally:
+                    with self.process_lock:
+                        self.processes.discard(process)
+                status = 'PASS' if rc == 0 else 'FAIL'
+                if rc:
+                    f.write(f'\nCommand failed with exit status {rc}: {command!r}\n')
+            except OSError as e:
+                f.write(str(e) + '\n')
+                status = 'SKIP-ENV'
+        self.results[name] = (status, log)
+
+    def cancel(self):
+        self.cancelled.set()
+        with self.process_lock:
+            processes = list(self.processes)
+        for process in processes:
+            try:
+                os.killpg(process.pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+        for process in processes:
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                pass
+            # The group can outlive its leader, even when wait has returned.
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            process.wait()
+
+    def shell(self, name, script, **kwargs):
+        # Keep the shell alive while its interrupted helper reaps its own session.
+        if name == 'codeql':
+            script = "trap 'wait; exit 143' TERM\n" + script
+        self.command(name, ['bash', '-euo', 'pipefail', '-c', script], **kwargs)
+
+    def dep(self, path):
+        return (ROOT / path).exists()
+
+    def browser_available(self, package):
+        module = ROOT / package / 'node_modules/playwright'
+        if not self.node or not module.is_dir():
+            return False
+        js = 'const p=require(process.argv[1]);process.stdout.write(p.chromium.executablePath())'
+        p = subprocess.run(['node', '-e', js, str(module)], cwd=ROOT / package, capture_output=True, text=True)
+        return p.returncode == 0 and Path(p.stdout).is_file()
+
+    def run(self):
+        go = (self.go, 'Go 1.26.10 toolchain')
+        node = (self.node, 'Node 22 and npm')
+        for prefix, label in [('third_party/lwc', 'lwc'), ('lwcruntime', 'runtime'), ('site', 'site'), ('internal/playground/web', 'playground')]:
+            self.command('npm-ci-'+label, ['npm', 'ci', '--prefix', prefix], prerequisites=[node])
+        def npm_dep(label):
+            state, _ = self.results['npm-ci-'+label]
+            return (state == 'PASS', 'npm ci '+label+' did not pass', state)
+        candidate_files = ['third_party/lwc/compile.mjs', 'third_party/lwc/node_modules/@lwc/compiler',
+                           'lwcruntime/src/shims/wire-adapter.mjs', 'lwcruntime/src/shims/lds-cache.mjs',
+                           'lwcruntime/src/shell/app.mjs', 'lwcruntime/src/slds/slds-loader.mjs',
+                           'lwcruntime/src/lightning/button.mjs']
+        candidate = (self.results['npm-ci-lwc'][0] != 'PASS' or all(self.dep(p) for p in candidate_files), 'candidate LWC toolchain incomplete', 'FAIL')
+        lwc = npm_dep('lwc')
+        runtime = npm_dep('runtime')
+        browser = (self.browser_available('lwcruntime'), 'Playwright Chromium for lwcruntime')
+        sitebrowser = (self.browser_available('site'), 'Playwright Chromium for site')
+        g = 'scripts/ci-go-test.sh'
+        self.command('workflow-lint', ['bash','-c', f'scripts/ci-gofmt.sh && {g} lane workflow-lint && scripts/ci-actionlint.sh'], prerequisites=[go, (bool(shutil.which('actionlint')), 'actionlint')])
+        self.command('vet', [g,'local-release-lane','vet'], prerequisites=[go])
+        self.command('node-integration', [g,'node-integration'], prerequisites=[go,node,lwc,candidate])
+        self.command('server-and-playground', [g,'lane','server-and-playground'], prerequisites=[go,node,lwc,candidate,runtime,browser])
+        self.command('test-guard', [g,'lane','repoguard'], prerequisites=[go])
+        self.command('test-remaining-go', [g,'lane','remaining-go'], prerequisites=[go,node,lwc,candidate,runtime,browser])
+        self.shell('nested-sources', '(cd third_party/glade-apex-parser && go test -trimpath ./... && CGO_ENABLED=0 go test -trimpath ./...); npm test --prefix internal/playground/web; npm run build --prefix internal/playground/web; test -z "$(git status --porcelain --untracked-files=all -- internal/playground/static)"', prerequisites=[go,node,npm_dep('playground')])
+        self.shell('smoke-runtime', 'go build -o "$CI_LOCAL_LOG_ROOT/glade" ./cmd/glade; scripts/smoke-runtime.sh "$CI_LOCAL_LOG_ROOT/glade"', env={'CI_LOCAL_LOG_ROOT':str(self.root)}, prerequisites=[go])
+        self.command('smoke-distribution', ['scripts/smoke-distribution.sh'], prerequisites=[go,node,lwc,candidate])
+        self.shell('site', 'npm test --prefix site; npm run build --prefix site; npm run check:built --prefix site; NODE_OPTIONS="--require=\\\"$PWD/scripts/ci-site-preview.cjs\\\"" CI=1 GLADE_SITE_PREBUILT=1 npm run test:browser --prefix site; node --require ./scripts/ci-site-preview.cjs site/node_modules/vitepress/bin/vitepress.js preview site --port 4173 >"$CI_LOCAL_LOG_ROOT/preview.log" 2>&1 & pid=$!; trap "kill $pid 2>/dev/null || true" EXIT; ready=0; for i in {1..30}; do kill -0 "$pid" 2>/dev/null || break; if grep -q "Built site served at http://localhost:4173/" "$CI_LOCAL_LOG_ROOT/preview.log"; then ready=1; break; fi; sleep 1; done; if test "$ready" -ne 1 || ! kill -0 "$pid" || ! curl -fsS http://127.0.0.1:4173/ >/dev/null; then cat "$CI_LOCAL_LOG_ROOT/preview.log"; exit 1; fi; npm run smoke:preview --prefix site -- http://127.0.0.1:4173', env={'CI_LOCAL_LOG_ROOT': str(self.root)}, prerequisites=[node,npm_dep('site'),sitebrowser])
+        self.command('test-binaries', ['bash','-c', r'set -e; for p in apextest sema lwc/compile visualforce; do slug=${p//\//-}; python3 scripts/ci-test-binary.py build "$CI_LOCAL_LOG_ROOT/binaries/$slug" test "./internal/$p"; done'], env={'CI_LOCAL_LOG_ROOT':str(self.root)}, prerequisites=[go])
+        # Each Go command owns a separate artifact directory; shard plans share
+        # the same absent history input and are validated together afterwards.
+        specs = [('sema',SHARDS['sema'],'sema','CI_SEMA_ARTIFACT_DIR'),('lwc-compile',SHARDS['lwc-compile'],'lwc-compile','CI_LWC_COMPILE_ARTIFACT_DIR'),('visualforce',SHARDS['visualforce'],'visualforce','CI_VISUALFORCE_ARTIFACT_DIR'),('gladecli',SHARDS['gladecli'],'gladecli','CI_GLADECLI_ARTIFACT_DIR'),('vm',SHARDS['vm'],'vm','CI_VM_ARTIFACT_DIR')]
+        def shard(spec, i):
+            if self.cancelled.is_set():
+                return
+            group, _, command, variable = spec
+            name = f'{group}-{i}'
+            prereq = [go]
+            if group in ('lwc-compile','visualforce'): prereq += [node,lwc,candidate,runtime,browser]
+            shared_binary = group not in ('gladecli', 'vm')
+            if shared_binary and self.results['test-binaries'][0] != 'PASS':
+                status, _ = self.results['test-binaries']
+                log = self.root/(name+'.log')
+                log.write_text('shared test binaries did not pass\n')
+                self.results[name] = (status, log)
+                return
+            env = {variable:str(self.root/name), 'GLADE_HOME':str(self.root/name/'glade-home'), 'CI_APEXTEST_SHARDS':str(SHARDS['apextest'])}
+            if shared_binary:
+                env['CI_TEST_BIN_DIR'] = str(self.root/'binaries'/group)
+            self.command(name,[g,command+'-shard',str(i)],env=env,prerequisites=prereq)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.jobs) as pool:
+            futures = [pool.submit(shard,s,i) for s in specs for i in range(s[1])]
+            try:
+                for f in futures: f.result()
+            except BaseException:
+                self.cancel()
+                for f in futures:
+                    f.cancel()
+                raise
+        apexroot = self.root/'apextest'
+        if self.results['test-binaries'][0] == 'PASS':
+            self.command('apextest-dispatch', ['scripts/apextest-shards.sh', str(apexroot)], env={'CI_APEXTEST_SHARDS':str(SHARDS['apextest']), 'CI_APEXTEST_HISTORY_COMPLETE':'1', 'GLADE_APEXTEST_SHARD_JOBS':str(self.jobs), 'GLADE_APEXTEST_SHARD_TIMEOUT_SECONDS':'6000', 'CI_TEST_BIN_DIR':str(self.root/'binaries/apextest')}, prerequisites=[go])
+        else:
+            log = self.root/'apextest-dispatch.log'
+            log.write_text('shared test binaries did not pass\n')
+            self.results['apextest-dispatch'] = (self.results['test-binaries'][0], log)
+        dispatch_status = self.results['apextest-dispatch'][0]
+        for i in range(SHARDS['apextest']):
+            log = apexroot/f'shard-{i}.log'
+            rc = apexroot/f'shard-{i}'/'exit-status.txt'
+            if rc.exists():
+                status = 'PASS' if rc.read_text().strip() == '0' else 'FAIL'
+            else:
+                status = dispatch_status if dispatch_status != 'PASS' else 'FAIL'
+                log = self.results['apextest-dispatch'][1]
+            self.results[f'apextest-{i}'] = (status, log)
+        self.results['apextest-history'] = self.results['apextest-dispatch']
+        for group, count, command, _ in specs:
+            dirs = [str(self.root/f'{group}-{i}') for i in range(count)]
+            if group == 'sema': args = [g, 'sema-history-refresh', *dirs, str(self.root/'sema-history.json')]
+            else: args = [g, ('apex' if group == 'apextest' else group)+'-history-refresh', str(self.root/(group+'-history.json')), *dirs]
+            states = [self.results[f'{group}-{i}'][0] for i in range(count)]
+            if all(state == 'PASS' for state in states):
+                history_env = {'CI_VM_HISTORY_COMPLETE':'1'} if group == 'vm' else {}
+                self.command(group+'-history', args, env=history_env)
+            else:
+                log = self.root/(group+'-history.log')
+                log.write_text('shard results incomplete: '+str(states)+'\n')
+                self.results[group+'-history'] = ('FAIL' if 'FAIL' in states else 'SKIP-ENV', log)
+        # Extract the workflow's own browser evidence validator, avoiding a
+        # second copy of its no-skip and terminal-coverage policy.
+        workflow = (ROOT / '.github/workflows/browser.yml').read_text()
+        match = re.search(r"(?ms)^          python3 - <<'PY'\n(.*?)^          PY$", workflow)
+        if not match:
+            raise ValueError('browser workflow validator not found')
+        validator = '\n'.join(line[10:] if line.startswith('          ') else line for line in match.group(1).splitlines()) + '\n'
+        (self.root/'browser-validator.py').write_text(validator)
+        bdir = self.root/'ci-artifacts/browser'
+        bdir.mkdir(parents=True)
+        bindir = self.root/'browser-bin'
+        bindir.mkdir()
+        wrapper = bindir/'npm'
+        wrapper.write_text('#!/bin/bash\nset -o pipefail\n"$REAL_NPM" "$@" 2>&1 | tee -a "$BROWSER_NODE_TEST_LOG"\nexit ${PIPESTATUS[0]}\n')
+        wrapper.chmod(0o755)
+        (bdir/'node-test.log').write_text('')
+        self.shell('browser', 'set +e; go test -json -vet=off -p=1 -count=1 -timeout=25m -trimpath -run "^(TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser|TestLWCAPI67RegistrationRunsInBrowser|TestL08SalesforceConformance)$" ./internal/lwcruntime ./internal/lwcbrowser ./internal/server >"$GITHUB_WORKSPACE/ci-artifacts/browser/go-test.json"; rc=$?; python3 "$GITHUB_WORKSPACE/browser-validator.py"; valid=$?; test "$rc" -eq 0 && test "$valid" -eq 0', env={'GITHUB_WORKSPACE':str(self.root),'GLADE_LWC_BROWSER':'1','PATH':str(bindir)+os.pathsep+self.env.get('PATH',''),'REAL_NPM':shutil.which('npm') or '', 'BROWSER_NODE_TEST_LOG':str(bdir/'node-test.log')}, prerequisites=[go,node,lwc,candidate,runtime,browser])
+        # Preserve the fast profile's checked-in query configuration. In the
+        # absence of PR diff ranges, this analyzes the full source tree.
+        codeql = shutil.which('codeql')
+        codeql_source = (ROOT/'.github/workflows/codeql.yml').read_text()
+        config_match = re.search(r'(?ms)^      - name: Initialize pull request CodeQL\n.*?^          config: \|\n(.*?)^          build-mode:', codeql_source)
+        if not config_match:
+            raise ValueError('fast CodeQL configuration not found')
+        config = '\n'.join(line[12:] if line.startswith('            ') else line for line in config_match.group(1).splitlines()) + '\n'
+        (self.root/'codeql-config.yml').write_text(config)
+        self.shell('codeql', 'codeql database init --language=go --source-root=. --codescanning-config="$CI_LOCAL_LOG_ROOT/codeql-config.yml" "$CI_LOCAL_LOG_ROOT/codeql-db"; codeql database trace-command "$CI_LOCAL_LOG_ROOT/codeql-db" -- go build -o "$CI_LOCAL_LOG_ROOT/glade-codeql" ./cmd/glade; python3 scripts/ci-codeql.py analyze --profile fast --codeql "$(command -v codeql)" --database "$CI_LOCAL_LOG_ROOT/codeql-db" --output "$CI_LOCAL_LOG_ROOT/codeql.sarif"; test -s "$CI_LOCAL_LOG_ROOT/codeql.sarif"; python3 scripts/ci-codeql.py check "$CI_LOCAL_LOG_ROOT/codeql.sarif"', env={'CI_LOCAL_LOG_ROOT':str(self.root),'RUNNER_TEMP':str(self.root),'GITHUB_WORKSPACE':str(ROOT)}, prerequisites=[go,(bool(codeql),'CodeQL CLI and Go query packs')])
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--check-mapping', action='store_true')
+    parser.add_argument('--check-shards', action='store_true')
+    parser.add_argument('--jobs', type=int, default=1, help='maximum parallel shard processes (default: 1)')
+    parser.add_argument('--log-dir', help='new directory for logs and evidence')
+    args = parser.parse_args()
+    try:
+        required = required_jobs((ROOT/'.github/workflows/ci.yml').read_text())
+        check_mapping(required)
+        if args.check_shards:
+            print(json.dumps(SHARDS, sort_keys=True))
+            return 0
+        if args.check_mapping:
+            print(json.dumps(sorted(required)))
+            return 0
+        if args.jobs < 1:
+            raise ValueError('--jobs must be positive')
+        if args.log_dir:
+            root = Path(args.log_dir).absolute()
+            root.mkdir(parents=True, exist_ok=False)
+        else:
+            root = Path(tempfile.mkdtemp(prefix='glade-ci-local-all-')).resolve()
+        runner = Runner(root, args.jobs)
+        def interrupted(signum, frame):
+            raise KeyboardInterrupt
+        signal.signal(signal.SIGTERM, interrupted)
+        try:
+            runner.run()
+        except KeyboardInterrupt:
+            runner.cancel()
+            print('ci-local-all: interrupted', file=sys.stderr)
+            return 130
+        print(f'Logs and evidence: {root}')
+        print(f'{"LANE":28} {"RESULT":9} LOG / FIRST FAILURE')
+        for lane, (status, log) in runner.results.items():
+            detail = '' if status == 'PASS' else ' | '+first_failure(log)
+            print(f'{lane:28} {status:9} {log}{detail}')
+        return exit_status([result[0] for result in runner.results.values()])
+    except (OSError, ValueError) as error:
+        print(f'ci-local-all: {error}', file=sys.stderr)
+        return 2
+
+if __name__ == '__main__':
+    sys.exit(main())

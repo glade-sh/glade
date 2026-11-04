@@ -807,28 +807,41 @@ func searchRegexp2(re *regexp2.Regexp, input string, search func() (*regexp2.Mat
 //
 // A search that spent its budget, and every other error, is returned
 // unchanged, so genuine timeouts keep their error text and handling.
+type regexRetryRuntime struct {
+	now    func() time.Time
+	sleep  func(time.Duration)
+	sample func(time.Time) *regexCPUSample
+	cpu    func() (time.Duration, bool)
+}
+
 func retryPrematureRegexTimeout(budget time.Duration, search func() (*regexp2.Match, error)) (*regexp2.Match, error) {
+	return retryPrematureRegexTimeoutWithRuntime(budget, search, regexRetryRuntime{
+		now: time.Now, sleep: time.Sleep, sample: recentRegexCPUSample, cpu: regexProcessCPUTime,
+	})
+}
+
+func retryPrematureRegexTimeoutWithRuntime(budget time.Duration, search func() (*regexp2.Match, error), rt regexRetryRuntime) (*regexp2.Match, error) {
 	// Count stale-clock reruns instead of timing them, so a suspension during
 	// the wait cannot use up the allowance.
 	maxStaleRetries := max(int(budget/regexp2.DefaultClockPeriod), 1)
 	staleRetries := 0
 	suspendedRetry := false
 	for {
-		started := time.Now()
-		sample := recentRegexCPUSample(started)
+		started := rt.now()
+		sample := rt.sample(started)
 		match, err := search()
 		if err == nil || !strings.HasPrefix(err.Error(), "match timeout after ") {
 			return match, err
 		}
-		if time.Since(started) < budget/2 {
+		if rt.now().Sub(started) < budget/2 {
 			if staleRetries >= maxStaleRetries {
 				return match, err
 			}
 			staleRetries++
-			time.Sleep(regexp2.DefaultClockPeriod)
+			rt.sleep(regexp2.DefaultClockPeriod)
 			continue
 		}
-		if suspendedRetry || !regexSearchWasSuspended(sample, budget) {
+		if suspendedRetry || !regexSearchWasSuspendedWithCPU(sample, budget, rt.cpu) {
 			return match, err
 		}
 		suspendedRetry = true
@@ -866,10 +879,14 @@ func recentRegexCPUSample(now time.Time) *regexCPUSample {
 // A genuine timeout spins one goroutine for the full budget, so it always
 // reads as not suspended.
 func regexSearchWasSuspended(sample *regexCPUSample, budget time.Duration) bool {
+	return regexSearchWasSuspendedWithCPU(sample, budget, regexProcessCPUTime)
+}
+
+func regexSearchWasSuspendedWithCPU(sample *regexCPUSample, budget time.Duration, readCPU func() (time.Duration, bool)) bool {
 	if sample == nil {
 		return false
 	}
-	cpu, ok := regexProcessCPUTime()
+	cpu, ok := readCPU()
 	return ok && cpu-sample.cpu < budget/2
 }
 

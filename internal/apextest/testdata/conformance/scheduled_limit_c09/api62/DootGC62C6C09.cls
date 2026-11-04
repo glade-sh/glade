@@ -1,0 +1,1 @@
+public without sharing class DootGC62C6C09 implements Schedulable { Id owned; Integer k; public DootGC62C6C09(Id i,Integer n) {owned=i;k=n;} public void execute(SchedulableContext c) { DootGW62C6C09.persist(owned,k); } }

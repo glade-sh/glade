@@ -1,7 +1,6 @@
 package server
 
 import (
-	"crypto/sha256"
 	"fmt"
 	"net/http"
 	"os"
@@ -24,6 +23,22 @@ type lightningState struct {
 }
 
 var ensureLightningRoot = gladehome.EnsureRoot
+
+// Close releases the server's compiled Lightning cache.
+func (s *Server) Close() error {
+	if s == nil {
+		return nil
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.lightning.cacheRoot != "" {
+		if err := os.RemoveAll(s.lightning.cacheRoot); err != nil {
+			return err
+		}
+	}
+	s.lightning = lightningState{}
+	return nil
+}
 
 func (s *Server) ResetLightningCache() {
 	if s == nil {
@@ -52,12 +67,19 @@ func (s *Server) ensureLightningLocked() error {
 		return err
 	}
 	cacheRoot := lightningCacheRoot(s.Source.Project)
-	if err := os.RemoveAll(cacheRoot); err != nil {
-		return err
+	if cacheRoot == "" {
+		return fmt.Errorf("cannot create private Lightning cache; check TMPDIR ownership, permissions, and free space")
 	}
 	cfg, compiled, err := lwcbrowser.PreparePageConfig(s.Source.Project, cacheRoot)
 	if err != nil {
+		_ = os.RemoveAll(cacheRoot)
 		return err
+	}
+	if oldRoot := s.lightning.cacheRoot; oldRoot != "" {
+		if err := os.RemoveAll(oldRoot); err != nil {
+			_ = os.RemoveAll(cacheRoot)
+			return err
+		}
 	}
 	s.lightning = lightningState{
 		cacheRoot: cacheRoot,
@@ -69,20 +91,15 @@ func (s *Server) ensureLightningLocked() error {
 	return nil
 }
 
-func lightningCacheRoot(p project.Project) string {
-	root := strings.TrimSpace(p.Root)
-	if abs, err := filepath.Abs(root); err == nil {
-		root = abs
+func lightningCacheRoot(_ project.Project) string {
+	if !trustedLightningTempParent(os.TempDir()) {
+		return ""
 	}
-	if root == "" {
-		root = "unknown-project"
+	root, err := os.MkdirTemp(os.TempDir(), "glade-lwc-cache-")
+	if err != nil {
+		return ""
 	}
-	sum := sha256.Sum256([]byte(filepath.Clean(root)))
-	name := filepath.Base(filepath.Clean(root))
-	if name == "." || name == string(filepath.Separator) || name == "" {
-		name = "project"
-	}
-	return filepath.Join(os.TempDir(), "glade-lwc-cache", fmt.Sprintf("%s-%x", name, sum[:6]))
+	return root
 }
 
 func (s *Server) lightningBootstrapConfigLocked() (*lwcbrowser.PageConfig, bool, error) {
@@ -137,14 +154,22 @@ func (s *Server) handleLightningVendor(w http.ResponseWriter, r *http.Request, p
 		writeMethodNotAllowed(w, http.MethodGet)
 		return
 	}
-	toolchain, err := gladehome.LWCToolchainDir()
+	root, release, err := gladehome.LeaseRoot()
 	if err != nil {
 		writeSalesforceError(w, errUnsupportedFeature, err.Error())
 		return
 	}
+	held := true
+	defer func() {
+		if held {
+			release()
+		}
+	}()
 	var rel string
 	switch parts[0] {
 	case "lwc.js":
+		release()
+		held = false
 		content, err := readLightningStaticShim("lwc-engine.mjs")
 		if err != nil {
 			writeSalesforceError(w, errUnknownEndpoint, "lwc bootstrap missing")
@@ -157,11 +182,16 @@ func (s *Server) handleLightningVendor(w http.ResponseWriter, r *http.Request, p
 	case "synthetic-shadow.js":
 		rel = filepath.Join("@lwc", "synthetic-shadow", "dist", "index.js")
 	default:
+		release()
+		held = false
 		writeSalesforceError(w, errUnknownEndpoint, "unknown lightning vendor")
 		return
 	}
-	path := filepath.Join(toolchain, "node_modules", rel)
+	path := filepath.Join(root, "third_party", "lwc", "node_modules", rel)
 	content, err := os.ReadFile(path)
+	// The in-memory bytes no longer depend on the installed toolchain.
+	release()
+	held = false
 	if err != nil {
 		writeSalesforceError(w, errUnknownEndpoint, "lwc vendor missing")
 		return

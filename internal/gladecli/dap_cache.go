@@ -10,8 +10,8 @@ import (
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
-// Require the captured business-default fallback in the restored org.
-const dapCacheVersion = 13
+// Require person-family metadata and the captured business-default fallback in the restored org.
+const dapCacheVersion = 17
 
 func loadDAPStartupState(projectRoot string) (storage.OrgState, apextest.CompiledProjectRuntime, string, error) {
 	root, err := filepath.Abs(projectRoot)

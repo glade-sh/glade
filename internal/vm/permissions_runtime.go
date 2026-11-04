@@ -83,6 +83,11 @@ func storagePermissionValueMatches(value storage.Value, permission string) bool 
 	return false
 }
 func (vm *VM) currentUserObjectPermission(objectName, method string) bool {
+	if method != "isQueryable" && method != "isSearchable" && vm.isNamedApexReferenceDescribe(objectName) {
+		// Native describes of these reference objects deny create, update,
+		// delete and read access to every user.
+		return false
+	}
 	if method == "isCreateable" || method == "isUpdateable" || method == "isDeletable" {
 		// These objects have no Apex object write access, including
 		// for administrators. Profile privileges cannot enable this surface.
@@ -920,6 +925,9 @@ func (vm *VM) explicitObjectPermission(parentID, objectName, method string) (boo
 	}
 	field := objectPermissionField(method)
 	for _, record := range state.Records {
+		if method == "isAccessible" && record.System.IsDeleted && vm.testContext != nil && vm.testContext.RunAsDepth > 0 {
+			continue
+		}
 		if parentIDValue, ok := record.GetField("ParentId"); !ok || !storageIDValueEquals(parentIDValue, parentID) {
 			continue
 		}

@@ -57,14 +57,15 @@ func TestRetryPrematureRegexTimeoutGates(t *testing.T) {
 		}
 	})
 	t.Run("spent budget is not retried", func(t *testing.T) {
-		regexCPUSampleCache.Store(nil)
+		clock := &regexRetryTestClock{available: true}
 		calls := 0
-		_, err := retryPrematureRegexTimeout(200*time.Millisecond, func() (*regexp2.Match, error) {
+		_, err := retryPrematureRegexTimeoutWithRuntime(200*time.Millisecond, func() (*regexp2.Match, error) {
 			calls++
-			burnRegexTestCPU(150 * time.Millisecond)
+			clock.wall += 150 * time.Millisecond
+			clock.cpu += 150 * time.Millisecond
 			return nil, errPrematureTimeout
-		})
-		if err == nil || calls != 1 {
+		}, clock.runtime())
+		if err != errPrematureTimeout || calls != 1 {
 			t.Fatalf("err=%v calls=%d", err, calls)
 		}
 	})
@@ -131,9 +132,83 @@ func TestRetryPrematureRegexTimeoutGates(t *testing.T) {
 	})
 }
 
-// burnRegexTestCPU spins for d of wall time, using CPU the way a genuine
-// catastrophic search does.
-func burnRegexTestCPU(d time.Duration) {
-	for until := time.Now().Add(d); time.Now().Before(until); {
+type regexRetryTestClock struct {
+	wall, cpu time.Duration
+	available bool
+}
+
+func (clock *regexRetryTestClock) runtime() regexRetryRuntime {
+	return regexRetryRuntime{
+		now:   func() time.Time { return time.Unix(0, int64(clock.wall)) },
+		sleep: func(d time.Duration) { clock.wall += d },
+		sample: func(now time.Time) *regexCPUSample {
+			if !clock.available {
+				return nil
+			}
+			return &regexCPUSample{wall: now, cpu: clock.cpu}
+		},
+		cpu: func() (time.Duration, bool) { return clock.cpu, clock.available },
+	}
+}
+
+func TestRegexRetryCPUClassificationBoundary(t *testing.T) {
+	for _, tc := range []struct {
+		name      string
+		cpu       time.Duration
+		available bool
+		wantCalls int
+	}{
+		{"below half", 100*time.Millisecond - time.Nanosecond, true, 2},
+		{"at half", 100 * time.Millisecond, true, 1},
+		{"above half", 150 * time.Millisecond, true, 1},
+		{"unavailable", 0, false, 1},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			clock := &regexRetryTestClock{available: tc.available}
+			calls := 0
+			_, err := retryPrematureRegexTimeoutWithRuntime(200*time.Millisecond, func() (*regexp2.Match, error) {
+				calls++
+				clock.wall += 150 * time.Millisecond
+				clock.cpu += tc.cpu
+				return nil, errPrematureTimeout
+			}, clock.runtime())
+			if err != errPrematureTimeout || calls != tc.wantCalls {
+				t.Fatalf("err=%v calls=%d, want original error and %d calls", err, calls, tc.wantCalls)
+			}
+		})
+	}
+}
+
+// Verify the production sampler and retry entry point with measured process CPU.
+func TestRegexRetryRealCPUBudget(t *testing.T) {
+	_, ok := regexProcessCPUTime()
+	if !ok {
+		t.Skip("process CPU time unavailable")
+	}
+	regexCPUSampleCache.Store(nil)
+	calls := 0
+	watchdog := time.Now().Add(20 * time.Second)
+	_, err := retryPrematureRegexTimeout(200*time.Millisecond, func() (*regexp2.Match, error) {
+		calls++
+		start, available := regexProcessCPUTime()
+		if !available {
+			t.Fatal("process CPU time became unavailable")
+		}
+		for {
+			cpu, available := regexProcessCPUTime()
+			if !available {
+				t.Fatal("process CPU time became unavailable")
+			}
+			if cpu-start >= 150*time.Millisecond {
+				break
+			}
+			if time.Now().After(watchdog) {
+				t.Fatal("CPU consumption watchdog expired")
+			}
+		}
+		return nil, errPrematureTimeout
+	})
+	if err != errPrematureTimeout || calls != 1 {
+		t.Fatalf("err=%v calls=%d", err, calls)
 	}
 }

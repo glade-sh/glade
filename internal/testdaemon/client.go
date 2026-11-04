@@ -6,6 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"os"
+	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -18,6 +21,10 @@ const clientRunDrainTimeoutV1 = 2 * time.Second
 var (
 	clientControlIOTimeoutV1 = 3 * time.Second
 	clientRunIOTimeoutV1     = time.Hour
+	// ErrDiscoveryDirectoryMissing signals that no PID or socket path may be
+	// inspected after discovery because the directory was absent.
+	ErrDiscoveryDirectoryMissing = errors.New("test server discovery directory does not exist")
+	ErrUntrustedDiscovery        = errors.New("insecure test server discovery directory")
 )
 
 type ServerUnavailableError struct {
@@ -80,6 +87,16 @@ func callV1(ctx context.Context, socket string, req RequestV1) (ResponseV1, erro
 	if socket == "" {
 		return ResponseV1{}, errors.New("test server socket path is required")
 	}
+	if socketHasDotDot(socket) {
+		return ResponseV1{}, fmt.Errorf("insecure test server socket path: %s", socket)
+	}
+	info, err := os.Lstat(filepath.Dir(socket))
+	if err != nil {
+		return ResponseV1{}, &ServerUnavailableError{Socket: socket, Err: err}
+	}
+	if !info.IsDir() || info.Mode().Perm()&0002 != 0 {
+		return ResponseV1{}, fmt.Errorf("insecure test server socket directory: %s", filepath.Dir(socket))
+	}
 	dialer := net.Dialer{Timeout: defaultDialTimeout}
 	conn, err := dialer.DialContext(ctx, "unix", socket)
 	if err != nil {
@@ -89,7 +106,14 @@ func callV1(ctx context.Context, socket string, req RequestV1) (ResponseV1, erro
 		return ResponseV1{}, &ServerUnavailableError{Socket: socket, Err: err}
 	}
 	defer conn.Close()
+	if err := authenticateDaemonPeer(conn); err != nil {
+		return ResponseV1{}, fmt.Errorf("insecure test server peer: %w", err)
+	}
+	return callV1OnConn(ctx, conn, req)
+}
 
+// callV1OnConn exchanges a request on a connection owned by its caller.
+func callV1OnConn(ctx context.Context, conn net.Conn, req RequestV1) (ResponseV1, error) {
 	timeout := clientControlIOTimeoutV1
 	if req.Op == OpRun {
 		timeout = clientRunIOTimeoutV1
@@ -131,6 +155,49 @@ func callV1(ctx context.Context, socket string, req RequestV1) (ResponseV1, erro
 		return resp, errors.New(resp.Error)
 	}
 	return resp, nil
+}
+
+// ValidateDiscoverySocket rejects paths that another user could replace.
+// It is required before using an automatically discovered daemon socket.
+func ValidateDiscoverySocket(socket string) error {
+	if socketHasDotDot(socket) {
+		return fmt.Errorf("insecure test server discovery path: %s", socket)
+	}
+	dir := filepath.Dir(socket)
+	// Validate the existing ancestry even if the socket or some parent
+	// directories are absent: callers may also inspect or remove the PID file.
+	for candidate := dir; ; candidate = filepath.Dir(candidate) {
+		_, err := os.Lstat(candidate)
+		if err == nil {
+			trusted := secureDiscoveryPath(candidate)
+			if candidate != dir {
+				trusted = secureDiscoveryParentPath(candidate)
+			}
+			if !trusted {
+				return fmt.Errorf("%w: %s", ErrUntrustedDiscovery, candidate)
+			}
+			if candidate != dir {
+				return &ServerUnavailableError{Socket: socket, Err: ErrDiscoveryDirectoryMissing}
+			}
+			break
+		}
+		if !errors.Is(err, os.ErrNotExist) || filepath.Dir(candidate) == candidate {
+			return fmt.Errorf("cannot validate test server discovery directory %s: %w", candidate, err)
+		}
+	}
+	if _, err := os.Lstat(socket); errors.Is(err, os.ErrNotExist) {
+		return &ServerUnavailableError{Socket: socket, Err: err}
+	}
+	return nil
+}
+
+func socketHasDotDot(path string) bool {
+	for _, part := range strings.Split(filepath.ToSlash(path), "/") {
+		if part == ".." {
+			return true
+		}
+	}
+	return false
 }
 
 func normalizeClientProtocolErrorV1(ctx context.Context, err error, deadline time.Time, callerDeadlineApplied bool) error {

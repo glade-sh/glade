@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"os"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -191,6 +192,7 @@ func TestDescribeShareFailsClosed(t *testing.T) {
 		if _, ok := fields.Map[mapKey(String("extra__c"))]; !ok {
 			t.Fatal("clone with a replaced definition lost its own field")
 		}
+		runtime.GC()
 		sibling := describeShareClone(base, template)
 		siblingFields := describeShareFieldMapOf(t, sibling, "Account")
 		if mapIdentity(siblingFields) != shared {
@@ -219,6 +221,9 @@ func TestDescribeShareFailsClosed(t *testing.T) {
 		_ = describeShareFieldMapOf(t, clone, "Account")
 		clone.clearMetadataCaches()
 	})
+	// The cache holds entries weakly; retain their builder while comparing
+	// sibling field-map identities across the subtests.
+	runtime.KeepAlive(builder)
 }
 
 // Apex code reaches a field map or token only through a private copy: the first

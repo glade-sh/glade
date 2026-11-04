@@ -107,7 +107,8 @@
     "Lead": [
       "GenderIdentity",
       "Pronouns",
-      "HasOptedOutOfEmail"
+      "HasOptedOutOfEmail",
+      "LastTransferDate"
     ],
     "OpportunityLineItem": [
       "Discount"

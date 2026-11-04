@@ -13,12 +13,40 @@ import (
 // as "March 9, 2031", a currency or number without a currency symbol and with
 // grouping ("1,234.5", "5"), a Boolean as "true" and a null as empty text. A
 // reference or value type that is not captured keeps the authored message.
-func (e *Engine) renderFlowCustomErrorText(message string, frame *flowFrame, formulas map[string]string) string {
+func (e *Engine) renderFlowCustomErrorText(message string, frame *flowFrame, formulaMaps ...map[string]string) string {
+	var formulas map[string]string
+	if len(formulaMaps) > 0 {
+		formulas = formulaMaps[0]
+	}
+	return e.renderFlowCustomErrorTextWithConstants(message, frame, nil, formulas)
+}
+
+func (e *Engine) renderFlowCustomErrorTextWithConstants(message string, frame *flowFrame, constants map[string]string, formulaMaps ...map[string]string) string {
+	var formulas map[string]string
+	if len(formulaMaps) > 0 {
+		formulas = formulaMaps[0]
+	}
 	if frame == nil || !strings.Contains(message, "{!") {
 		return message
 	}
 	capturedFormula := flowCapturedCustomErrorFormula(message, formulas, frame)
 	rendered, ok := renderFlowTextTemplate(message, frame, func(reference string) (storage.Value, bool) {
+		if number, ok := constants[strings.ToLower(reference)]; ok {
+			if !e.flowMergeLocaleIsEnUS() {
+				return storage.Value{}, false
+			}
+			text, supported := flowMergeFieldText(storage.DecimalValue(number))
+			if !supported {
+				return storage.Value{}, false
+			}
+			return storage.StringValue(text), true
+		}
+		if strings.EqualFold(reference, "$Flow.CurrentDateTime") {
+			if text, ok := e.flowCurrentDateTimeMergeText(); ok {
+				return storage.StringValue(text), true
+			}
+			return storage.Value{}, false
+		}
 		value, found := e.flowFrameReferenceValue(reference, frame)
 		if expression, formula := formulas[flowFrameKey(reference)]; formula && capturedFormula && flowCoreFormulaUsesScalars(expression, frame, true) {
 			value, found = e.flowContextFormulaValueWithCapturedBindings(expression, frame, true)
@@ -36,6 +64,49 @@ func (e *Engine) renderFlowCustomErrorText(message string, frame *flowFrame, for
 		return message
 	}
 	return rendered.String
+}
+
+func (e *Engine) flowMergeLocaleIsEnUS() bool {
+	if e == nil || e.Org == nil {
+		return false
+	}
+	users, ok := e.Org.Objects["User"]
+	if !ok {
+		return false
+	}
+	user, ok := users.Records[e.systemUserID()]
+	if !ok {
+		return false
+	}
+	return user.Fields["LocaleSidKey"].String == "en_US"
+}
+
+// Only the captured user locale and time zone are modeled here. Other user
+// settings keep the authored message until their formatting is captured.
+func (e *Engine) flowCurrentDateTimeMergeText() (string, bool) {
+	if e == nil || e.Org == nil {
+		return "", false
+	}
+	users, ok := e.Org.Objects["User"]
+	if !ok {
+		return "", false
+	}
+	user, ok := users.Records[e.systemUserID()]
+	if !ok {
+		return "", false
+	}
+	if user.Fields["LocaleSidKey"].String != "en_US" || user.Fields["TimeZoneSidKey"].String != "America/Los_Angeles" {
+		return "", false
+	}
+	zone, err := time.LoadLocation("America/Los_Angeles")
+	if err != nil {
+		return "", false
+	}
+	now := time.Now()
+	if e.Now != nil {
+		now = e.Now()
+	}
+	return now.In(zone).Format("1/2/2006, 3:04 PM"), true
 }
 
 func flowMergeFieldText(value storage.Value) (string, bool) {

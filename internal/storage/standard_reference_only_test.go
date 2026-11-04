@@ -90,3 +90,15 @@ func TestReferenceOnlyStandardObjectsAreDerivedFromCatalog(t *testing.T) {
 		}
 	}
 }
+
+// Callers that iterate KnownStandardObjectNames need no reference-only filter:
+// the two sets never overlap.
+func TestKnownStandardObjectNamesExcludeReferenceOnly(t *testing.T) {
+	resetKnownStandardObjectCacheForTest()
+	defer resetKnownStandardObjectCacheForTest()
+	for _, name := range KnownStandardObjectNames() {
+		if IsReferenceOnlyStandardObject(name) {
+			t.Fatalf("known standard object %s is also reference-only", name)
+		}
+	}
+}

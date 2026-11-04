@@ -117,7 +117,10 @@ exec "$GLADE_TEST_INSTALL_EXE" "-test.run=$GLADE_TEST_INSTALL_RUN" -- "$@"
 					}
 				}
 				control := t.TempDir()
-				ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+				// The overall deadline covers cold, race-instrumented startup of the
+				// first process; the independence window below starts only once the
+				// second process is running.
+				ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 				defer cancel()
 				start := func(route string, hold bool) (<-chan error, *bytes.Buffer) {
 					cmd := exec.CommandContext(ctx, exe, "-test.run=^"+strings.Split(t.Name(), "/")[0]+"$")
@@ -152,6 +155,7 @@ exec "$GLADE_TEST_INSTALL_EXE" "-test.run=$GLADE_TEST_INSTALL_RUN" -- "$@"
 					case secondErr = <-second:
 						secondFinished = true
 					case <-ctx.Done():
+					case <-time.After(60 * time.Second):
 					}
 				} else {
 					select {
@@ -229,10 +233,10 @@ func copyHelper(t *testing.T) {
 		control := os.Getenv("GLADE_TEST_INSTALL_CONTROL")
 		if os.Getenv("GLADE_TEST_INSTALL_HOLD") == "true" {
 			writeFile(t, filepath.Join(control, "copy-ready"), "", 0o644)
-			// The parent owns the 15-second deadline and terminates this helper
+			// The parent owns the independence window and terminates this helper
 			// on expiry. Keep this fallback longer so the held copy cannot resume
 			// before the independence check has finished.
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 			defer cancel()
 			waitFile(t, ctx, filepath.Join(control, "copy-release"))
 		} else {

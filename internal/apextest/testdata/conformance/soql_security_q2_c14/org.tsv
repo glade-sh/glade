@@ -1,0 +1,7 @@
+source_api	class	method	capture_id	observation
+62.0	DootSoqlQ2TestB1031	limitRows	Q2.limit	{"locale":"en_US","rows":[{"Id":"<custom1:1>","Name":"B-visible"}],"stage":"query","status":"observed","tz":"America/Los_Angeles"}
+62.0	DootSoqlQ2TestB1031	offsetRows	Q2.offset	{"locale":"en_US","rows":[{"Id":"<custom1:1>","Name":"C-visible"}],"stage":"query","status":"observed","tz":"America/Los_Angeles"}
+62.0	DootSoqlQ2TestB1031	unwindowed	Q2.unwindowed	{"locale":"en_US","rows":[{"Id":"<custom1:1>","Name":"B-visible"},{"Id":"<custom1:2>","Name":"C-visible"}],"stage":"query","status":"observed","tz":"America/Los_Angeles"}
+67.0	DootSoqlQ2TestB1031	limitRows	Q2.limit	{"locale":"en_US","rows":[{"Id":"<custom1:1>","Name":"B-visible"}],"stage":"query","status":"observed","tz":"America/Los_Angeles"}
+67.0	DootSoqlQ2TestB1031	offsetRows	Q2.offset	{"locale":"en_US","rows":[{"Id":"<custom1:1>","Name":"C-visible"}],"stage":"query","status":"observed","tz":"America/Los_Angeles"}
+67.0	DootSoqlQ2TestB1031	unwindowed	Q2.unwindowed	{"locale":"en_US","rows":[{"Id":"<custom1:1>","Name":"B-visible"},{"Id":"<custom1:2>","Name":"C-visible"}],"stage":"query","status":"observed","tz":"America/Los_Angeles"}

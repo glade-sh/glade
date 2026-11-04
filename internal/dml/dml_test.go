@@ -1814,7 +1814,8 @@ func recordTypeByID(recordTypes []storage.RecordTypeInfo, id storage.ID) storage
 	return storage.RecordTypeInfo{ID: id}
 }
 
-func TestInsertOrganizationAccountRecordTypeWithPersonNameFieldsUsesPersonAccount(t *testing.T) {
+// Native mixed-name email rejection: case349_review2/org.tsv:4,13 (API 62/67).
+func TestInsertOrganizationAccountRecordTypeWithPersonNameFieldsRetainsExplicitType(t *testing.T) {
 	org := storage.NewOrgState()
 	storage.EnsureDeterministicPlatformData(&org)
 	storage.ApplyOrgShape(&org, []string{"PersonAccounts"})
@@ -1841,21 +1842,8 @@ func TestInsertOrganizationAccountRecordTypeWithPersonNameFieldsUsesPersonAccoun
 		},
 	}})
 
-	if len(insert) != 1 || !insert[0].Success {
-		t.Fatalf("insert result = %#v", insert)
-	}
-	stored := org.Objects["Account"].Records[insert[0].ID]
-	if got := stored.Fields["Name"].String; got != "Eric Clapton" {
-		t.Fatalf("account name = %q", got)
-	}
-	if got, want := idFromStorageValue(stored.Fields["RecordTypeId"]), personAccountRecordTypeID(t, org); got != want {
-		t.Fatalf("record type = %s, want %s; fields=%#v", got, want, stored.Fields)
-	}
-	if !stored.Fields["IsPersonAccount"].Boolean {
-		t.Fatalf("person account flag was not set: %#v", stored.Fields)
-	}
-	if idFromStorageValue(stored.Fields["PersonContactId"]) == "" {
-		t.Fatalf("person contact was not created: %#v", stored.Fields)
+	if len(insert) != 1 || insert[0].Success || insert[0].StatusCode != "INVALID_FIELD_FOR_INSERT_UPDATE" {
+		t.Fatalf("explicit business input result = %#v", insert)
 	}
 }
 

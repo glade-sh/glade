@@ -83,6 +83,18 @@ node ../glade-tools/scripts/generate-standard-describe-pack.mjs internal/storage
 python3 scripts/generate-standard-field-order.py
 ```
 
+The native Account, Lead, and Order field supplement is captured in
+`internal/apextest/testdata/conformance/standard_field_supplement`. Apply its
+verified missing fields to the broad input with
+`python3 scripts/apply-standard-field-supplement.py`, then run the pack and
+field-order generators above. Rich facets are taken from the existing P0
+capture after matching the new API 62/67 rows. Picklist lists are included
+only when every value is in the reviewed public allowlist; a partial list is
+omitted so it cannot override a complete native compatibility overlay. The explicit policy sample for
+`Lead.LastTransferDate` is regenerated with the field-policy generator below.
+The supplement describes one Developer org and does not establish absence in
+other feature profiles.
+
 The field-order generator writes `internal/storage/standard_field_order.tsv.gz`
 from the same authoritative catalog. The packed describe format sorts fields;
 this names-only projection preserves the original describe sequence for

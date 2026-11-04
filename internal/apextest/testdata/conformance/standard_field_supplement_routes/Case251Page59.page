@@ -1,0 +1,1 @@
+<apex:page showHeader="false" sidebar="false">CASE251|{!$ObjectType.Lead.Fields.LastTransferDate.Label}|{!$ObjectType.Lead.Fields.Id.Label}|END251</apex:page>

@@ -2061,7 +2061,7 @@ for (String fieldName : fields.keySet()) {
 	machine := New(nil)
 	org := testDataOrg()
 	account := org.Objects["Account"]
-	account.Definition.RecordTypes = []storage.RecordTypeInfo{{DeveloperName: "PersonAccount", Name: "Person Account", Active: true}}
+	account.Definition.RecordTypes = []storage.RecordTypeInfo{{DeveloperName: "PersonAccount", Name: "Person Account", Active: true, PersonAccount: true}}
 	org.Objects["Account"] = account
 	storage.ApplyOrgShape(&org, []string{"PersonAccounts"})
 	machine.SetOrg(&org)
@@ -8357,7 +8357,7 @@ System.assertNotEquals(null, individual.getRecordTypeId());
 			APIName:   "PersonAccount",
 			KeyPrefix: "001",
 			RecordTypes: []storage.RecordTypeInfo{
-				{ID: "012000000000201", DeveloperName: "Individual", Name: "Individual", Active: true, Available: true},
+				{ID: "012000000000201", DeveloperName: "Individual", Name: "Individual", Active: true, Available: true, PersonAccount: true},
 			},
 		},
 		Records: make(map[storage.ID]storage.Record),
@@ -8806,6 +8806,7 @@ System.assertEquals(true, storedPerson.IsPersonAccount);
 		Name:          "Individual",
 		Active:        true,
 		Available:     true,
+		PersonAccount: true,
 	})
 	org.Objects["Account"] = account
 	storage.EnsureDeterministicPlatformData(&org)
@@ -15702,7 +15703,7 @@ System.assertEquals('Individual', [SELECT RecordType.DeveloperName FROM Account 
 	account := org.Objects["Account"]
 	account.Definition.RecordTypes = []storage.RecordTypeInfo{
 		{ID: "012000000000001", DeveloperName: "Business", Name: "Business", Active: true, Available: true, Default: true},
-		{ID: "012000000000002", DeveloperName: "Individual", Name: "Individual", Active: true, Available: true},
+		{ID: "012000000000002", DeveloperName: "Individual", Name: "Individual", Active: true, Available: true, PersonAccount: true},
 	}
 	org.Objects["Account"] = account
 	storage.EnsureDeterministicPlatformData(&org)

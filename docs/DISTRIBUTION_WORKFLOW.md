@@ -2,6 +2,10 @@
 
 Use this runbook to cut and publish a Glade release with predictable output.
 
+The release train has four steps: the local gate on a clean candidate, the
+hosted checks on the exact `main` commit, the tag, and distribution. Run each
+gate once per exact tree. Any new commit needs its own hosted checks.
+
 ## 1. Preflight
 
 Prepare the matching version section in [RELEASE_NOTES.md](RELEASE_NOTES.md)
@@ -10,7 +14,7 @@ before freezing the release commit. Run from a clean checkout of the candidate:
 ```bash
 npm ci --prefix site
 npm ci --prefix third_party/lwc
-scripts/release-check.sh
+GLADE_TOOLS_DIR=/path/to/the capture tools
 ```
 
 The distribution build rejects tracked or untracked changes so that embedded Go
@@ -22,11 +26,18 @@ proof needs the VitePress toolchain. LWC integration tests need the checked
 compiler/runtime toolchain; the release summary rejects their intentional
 dependency-missing skips instead of treating them as proof.
 
-The command runs `git diff --check`, the exact-once site release proof, the
+Set `GLADE_TOOLS_DIR` to the intended tools checkout (it defaults to the sibling
+`../glade-tools`). The first build checks its `glade-tools` command against this
+candidate using the tools dependency metadata in read-only mode. Resolve any
+dependency or build failures before running the release gates. Neither checkout
+is modified.
+
+The command runs `git diff --check`, the tools lockstep build, the exact-once site release proof, the
 checked local Go release lanes, and a distribution build with product smoke
 tests. The site proof writes `site/.vitepress/release-check.json`. Go lanes
-default to serial execution for bounded memory use and write raw events plus a validated
-`package-summary.json` under `ci-artifacts/local-release/`. Package discovery
+run one at a time to bound memory use (the script defaults `GOMAXPROCS` to 2)
+and write raw events plus a validated `package-summary.json` under
+`ci-artifacts/local-release/`. Package discovery
 or lane ownership drift fails closed. If a command fails, stop and fix before
 tagging.
 
@@ -43,13 +54,43 @@ gate before tagging:
 (cd ../glade-tools && scripts/release-check.sh)
 ```
 
+Before opening or updating a release PR, run the Required CI local gate on the
+clean candidate tree:
+
+```bash
+scripts/ci-local-all
+```
+
+Use Go 1.26.10 with CGO, Node 22 and npm, `actionlint`, the CodeQL CLI and Go
+query packs, and Playwright Chromium for the site and LWC runtime. The runner
+installs lockfile-pinned npm dependencies with `npm ci`; install the matching
+Playwright Chromium beforehand using the repository's
+`scripts/ci-install-playwright.sh`. It reports each lane and its log path and
+exits nonzero for a failure or `SKIP-ENV`. A missing Node, browser, Go, actionlint
+or CodeQL toolchain is not a pass. By default shards run serially; `--jobs N`
+allows concurrent shard workers on a host with sufficient capacity. Use
+`--log-dir PATH` to choose a new evidence directory. CodeQL uses the workflow's
+fast query configuration on the whole local tree when PR diff information is
+unavailable; it does not upload GitHub results. Local results do not replace
+the required hosted checks or release attestations.
+
 ## 2. Freeze the Approved Pair, Tag and Push
 
 Merge the release changes to `main` first. Freeze the product and Tools commits,
 wait for the product's exact-SHA main-push `Required CI`, and run Salesforce
 correctness for that exact pair. PR checks and manual CI runs do not qualify.
-The read-only preflight reuses the hosted approvals; it does not rerun tests or
-create tags. Keep its output with the release evidence.
+`scripts/verify-required-ci.sh` finds the Required CI job; `scripts/verify-salesforce-check.sh`
+finds the Salesforce check. The read-only preflight runs both. It reuses the
+hosted approvals; it does not rerun tests or create tags. Keep its output with
+the release evidence.
+
+Before tagging, also read the operator checks for the same commit: the
+`Browser`, `Race` and `Security` workflows. Record a failure or a known issue
+in [RELEASE_NOTES.md](RELEASE_NOTES.md). Review the CodeQL waivers in
+[CODEQL_BUDGET.md](CODEQL_BUDGET.md#waiver-review-2026-10-22) and record the
+date. The fast CodeQL job inside `Required CI` succeeds with a warning when its
+analysis budget expires, so a green `Required CI` does not prove a complete
+scan. State an incomplete scan in the release notes.
 
 ```bash
 VERSION=vX.Y.Z
@@ -177,9 +218,14 @@ export WRANGLER_MODULE='/absolute/path/to/node_modules/wrangler'
 node scripts/release-publish.mjs dist "$VERSION" "$GLADE_SHA"
 ```
 
-The source must be the unpacked, checksum-verified GitHub bundle. Verify all
-platform provenance and CycloneDX attestations before publication. The publisher
-requires the original approval JSON in `dist/vX.Y.Z/`; for an older immutable
+The source must be the unpacked, checksum-verified GitHub bundle. Before any
+bucket write, the publisher independently checks the CI and Salesforce
+authority against GitHub and verifies each staged archive's provenance and
+CycloneDX attestation against the release workflow, tag and product SHA. It
+also compares each staged SBOM with the attested predicate. This requires an
+authenticated `gh` with access to the authority and attestations. Manual policy
+review remains required. The publisher requires the original approval JSON in
+`dist/vX.Y.Z/`; for an older immutable
 release, download each named approval artifact from its successful Release run
 directly into that directory. Never synthesize or copy approvals from another
 candidate. Conflicting versioned bytes, stale approvals, a newer live channel,

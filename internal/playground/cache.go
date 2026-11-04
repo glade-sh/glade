@@ -7,7 +7,10 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
+
+	"github.com/glade-sh/glade/internal/vm"
 )
 
 type CacheKey struct {
@@ -19,11 +22,15 @@ type CacheKey struct {
 	RunMode          string
 	Version          string
 	SourceAPIVersion string
+	OutputLimit      int
+	LimitCaps        *vm.LimitCaps
 }
 
 func (k CacheKey) String() string {
 	h := sha256.New()
-	for _, part := range []string{k.WorkspaceHash, k.AnonymousBody, k.SeedHash, k.ProjectRoot, k.LimitMode, k.RunMode, k.Version, k.SourceAPIVersion} {
+	// A new domain invalidates old entries whose keys omitted execution caps.
+	caps, _ := json.Marshal(k.LimitCaps)
+	for _, part := range []string{"playground-cache-v2", k.WorkspaceHash, k.AnonymousBody, k.SeedHash, k.ProjectRoot, k.LimitMode, k.RunMode, k.Version, k.SourceAPIVersion, strconv.Itoa(k.OutputLimit), string(caps)} {
 		h.Write([]byte(part))
 		h.Write([]byte{0})
 	}

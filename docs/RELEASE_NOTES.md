@@ -2,7 +2,62 @@
 
 ## Unreleased
 
-No unreleased changes.
+Planned changes are listed below.
+
+## v0.3.4
+
+v0.3.4 hardens the local server, the installer and the managed toolchain. It tightens several Apex, Flow and Visualforce results to captured Salesforce rows, speeds up common runtime paths, and makes the repository's own test and CI runs faster. API labels list the source versions checked against captured results; where a label names two versions, no other was captured. The supported windows and hosted boundaries remain in [release policy](RELEASE_POLICY.md#salesforce-api-versions).
+
+### Behavior to check when upgrading
+
+- **Caches.** The semantic, platform, test-runtime and debug-adapter caches carry new versions (`sema-v79`, `salesforce-platform-v60`, `apextest-runtime-v26`, debug-adapter cache 17), the test cache format is 3, and the startup cache stays at version 15. The first command after upgrading rebuilds them and runs slower once. If an old compile error persists, run `glade test clear-cache` once.
+- **Server authentication on exposed listeners.** When `glade server` listens on a non-loopback address, anonymous Apex execution needs the server capability (`GLADE_SERVER_CAPABILITY`, sent as `X-Glade-Capability`) or an issued token. Issued tokens are random, revocable and bound to the server that issued them. A token stops working when the local user it names is changed, replaced, deleted or reset, and when it expires. `glade org` prints a login command that carries an issued token. Loopback use is unchanged. A same-origin browser client can present an issued token. See [install](INSTALL.md) for host, origin and proxy settings.
+- **Server host and origin checks.** Local server, database UI and development listeners reject unrecognized HTTP Host values and browser requests from another origin. For a wildcard listener, set `GLADE_SERVER_ALLOWED_HOSTS`. Behind a TLS proxy or a different external port, set `GLADE_SERVER_PROXY_ORIGINS`; Glade does not trust `Forwarded` or `X-Forwarded-*` for authorization. Scripted reset calls from non-browser clients send `X-Glade-Client: 1`.
+- **Installer and updater.** The installer verifies the release archive's provenance and SBOM attestation before extraction and stops if verification fails. It needs the GitHub CLI (`gh`) and Python 3. For private releases, sign in with `gh` or set `GLADE_GITHUB_TOKEN`. `glade update` runs the installer embedded in the installed binary.
+- **Managed toolchain lock.** If Glade cannot open or create the installation lock, it refuses to use the managed installation rather than read files during a possible update. For a shared installation, ask the owner to make the lock readable to each user. Updates also need permission to acquire it. Runtime assets served from a toolchain are checked against the trusted source root.
+- **Toolchain scripts.** LWC compiler and runtime scripts no longer use project markers as authority. Select a trusted root explicitly, or opt in to legacy discovery with `GLADE_ALLOW_PROJECT_TOOLCHAIN=1`.
+- **Playground hosting.** Sessions are limited to eight per client and 64 in total, mutating requests and database reads are rate limited by the direct peer address, session cookies are `Secure`, `HttpOnly` and `SameSite=Lax`, and public database snapshots are capped at 512 KiB. Add `--trusted-proxy <IP>` only for a proxy you control that overwrites `X-Forwarded-For`. The container example now binds to loopback and sets an explicit local-cookie option. See [playground hosting](PLAYGROUND_HOSTING.md).
+- **String literals (Apex API 62.0 and 67.0).** A quoted literal keeps its exact bytes, including mixed case, Unicode, empty strings and escapes. Native rows show no change in any observable result.
+- **Compound local types (Apex API 62.0 and 67.0).** Names such as `System.String`, `System.Integer` and `System.List` as local types keep their v0.3.3 analysis. No new Salesforce behavior is claimed.
+- **Person Account record types and merges (Apex API 62.0 and 67.0).** A project's own Person Account record type label is kept when the test org is built, so record types looked up by that label resolve as person types, and merging two Person Accounts no longer fails with `bad field names: Name` when the merge loads stored fields.
+- **Queried Person Account `Name` (Apex API 62.0 and 67.0).** Updating a Person Account whose `Name` was selected in a query and not assigned is rejected with `INVALID_FIELD_FOR_INSERT_UPDATE` and the captured message, before any trigger runs. Updates that select only `Id` or `RecordTypeId` still succeed. Captured shapes only. Other Person and business Account shapes keep their earlier behavior. Upserts with an explicit Person Account type report the captured error details.
+- **Reference-only `SObjectType` reads (Apex API 62.0 and 67.0).** A bare read of a reference-only `SObjectType` in anonymous Apex is rejected as captured. Named classes keep their earlier behavior.
+- **Flow null comparisons (Apex API 62.0 and 67.0).** Decisions that compare a null value now run on the Currency action route and on before-delete flows, as captured.
+- **Notifications and page references (Apex API 62.0 and 67.0).** Notification precedence, page reference shape, and `ViewAllFields` hiding at API 62.0 follow the captured rows.
+- **`System.runAs` (Apex API 62.0 and 67.0).** Describe snapshots are restored when `runAs` exits, and revoked permissions are observed only in the captured test context.
+- **Visualforce.** Installed-package components resolve by `namespace__Name` in access metadata. A request reuses the user's time zone across record display requests. Rendering reuses bounded expression syntax between renders.
+- **LWC URL and HTML sanitizers (Apex API 59.0 and 67.0 rows).** `javascript:` URLs, including mixed-case and encoded forms, receive the captured `https://` prefix. HTTP, FTP, relative, protocol-relative and empty values are unchanged, and other schemes keep their earlier handling. The local HTML-purify helper import fails closed, as native deployment rejects it. Stock `formattedRichText` is unchanged.
+- **Warm test cache.** The warm test cache now keeps false field flags. Before, a warm single-worker run could differ from a fresh run on those fields. Run `glade test clear-cache` if a result looked different between warm and fresh runs.
+- **`glade dev` selectors.** Selectors match full test names, and help says so.
+- **Scratch features.** The feature list Glade reads from scratch definitions is one registry, deduplicated without regard to case. `glade.yml` features are unchanged.
+- **Database commands.** A project mismatch keeps its diagnostic ahead of the Flow identity guard.
+
+### Speed
+
+- Parsing, schema and semantic analysis: adapter line starts are searched instead of rescanned, XML repair is skipped when a file has no ampersand, schema members and namespace scans are indexed and shared, and repeated field scopes in method bodies are reused.
+- The startup cache is reused when only file timestamps change, and the semantic cache publishes a shared snapshot.
+- Building the test org no longer decodes each standard object's describe twice: key prefix and triggerable flags come from a generated table. On a two-test project this removes about 20% of the instructions a run retires; v0.3.4 startup is within about 2% of v0.3.3.
+- String operations stream UTF-16 conversion, scalar describe results no longer keep full graphs, popped VM stack slots are cleared, and fixture records avoid one extra clone.
+- No speed claim is made for whole projects beyond the appendix measurements.
+
+### Contributor and CI changes
+
+- **Test parallelism and sharding.** Tests for the VM, command line, semantic analysis and Visualforce can be sharded (`GLADE_VM_SHARD`). Child processes re-executed by a test drop the shard selector. A duration table plans shards, and new tests get a nonzero estimate. The Visualforce suites run 64 V13 rows per worker and check the V09 heap every 20 rows.
+- **Race workflow.** A `main` push starts Race after CI completes. Push runs skip full preparation, and provisioning steps are named and bounded.
+- **CodeQL.** The fast pull request job uses complete diff ranges. An incomplete scan still warns and does not fail.
+- **`scripts/ci-local-all`** runs every required CI lane locally. Cancelling it stops the CodeQL evaluator and its child.
+- **Conformance guards.** A test-first conformance test may merge only with its fix or a counted carried record. Skip-guard callers and pinned gap-guard files are audited.
+- **Release gates.** The tools build is checked before release gates, extension tests run before the shared payload build, and release authority is gated.
+- **Visualforce prerequisites** are documented in `docs/AI_SETUP.md`: Node, Playwright and Chromium.
+
+### Known issues
+
+- **Exposed listeners and project routes.** On an exposed listener, project Apex routes (Apex REST, Visualforce controllers and Lightning actions) still accept the `X-Glade-Client` header without a token. The docs list them as unauthenticated. v0.3.5 will require the capability or an issued token on every API route of an exposed listener, with an explicit opt-out for intentional public demos.
+- **Concurrent anonymous execution.** Concurrent anonymous-execute requests to the local `glade server` can race in semantic analysis on a shared index. This predates v0.3.4 and is fixed in v0.3.5. Send anonymous-execute requests one at a time until then.
+- **Salesforce Winter '27 drift.** v0.3.4 conformance tracks Summer '26 captures. Rows where Winter '27 behaves differently are pinned as known divergences, and tracking the current release is planned for v0.3.5. One drift set (reference-only surfaces at API 62 to 66) was captured on one org on 2026-11-02. Two later fresh orgs did not reproduce it and answered like Summer '26, so it may be uneven rollout and not a stable change.
+- **CodeQL.** The fast job reports an incomplete analysis on very large changes as a warning, not a failure.
+- The Visualforce browser conformance tests need Node, Playwright and Chromium; on a runner without them they cannot pass. That is an environment limit.
+- The known-failure ledger is unchanged from v0.3.3; the carried security, locale and crypto differences recorded there still apply.
 
 ## v0.3.3
 

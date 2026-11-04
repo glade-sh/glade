@@ -16,6 +16,9 @@ test("install script upgrades the binary and replaces only packaged toolchain di
   const host = join(root, "host");
   const payload = join(root, "payload");
   const installDir = join(root, "bin");
+  const commands = join(root, "commands");
+  await mkdir(commands);
+  await writeFile(join(commands, "gh"), "#!/bin/sh\nexit 0\n", { mode: 0o755 });
   const gladeHome = join(root, "home");
   const version = "v9.9.9";
   const osName = releaseOS();
@@ -67,6 +70,9 @@ test("install script upgrades the binary and replaces only packaged toolchain di
     cwd: repoRoot,
     env: {
       ...process.env,
+      PATH: `${commands}:${process.env.PATH}`,
+      HOME: root,
+      XDG_DATA_HOME: join(root, "xdg"),
       GLADE_DOWNLOAD_BASE: pathToFileURL(host).href,
       GLADE_HOME: gladeHome,
       GLADE_INSTALL_DIR: installDir

@@ -8,6 +8,7 @@ import (
 	"mime"
 	"net"
 	"net/http"
+	"net/url"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -19,29 +20,53 @@ import (
 
 const (
 	defaultPublicRunTimeout        = 5 * time.Second
+	defaultPublicBodyTimeout       = 5 * time.Second
+	defaultPublicWriteTimeout      = 5 * time.Second
+	defaultPublicOutputBytes       = 16 * 1024
+	maxPublicResponseBytes         = 128 * 1024
+	maxPublicDatabaseBytes         = 512 * 1024 // the seeded org alone is about 100 KiB of snapshot JSON
+	maxPublicRequestBytes          = 1 << 20
 	defaultPublicRatePerMinute     = 30
 	defaultPublicMaxWorkspaceFiles = 64
 	defaultPublicMaxWorkspaceBytes = 2 * 1024 * 1024
 )
 
 type Server struct {
-	version           string
-	workspace         *Workspace
-	runner            *Runner
-	defaultLimitMode  vm.LimitMode
-	dbPath            string
-	projectRefs       []ProjectReference
-	showExamples      bool
-	public            bool
-	runTimeout        time.Duration
-	publicLimitCaps   vm.LimitCaps
-	maxWorkspaceFiles int
-	maxWorkspaceBytes int64
-	ratePerMinute     int
-	rateLimiter       *fixedWindowRateLimiter
+	workspace           *Workspace
+	runner              *Runner
+	defaultLimitMode    vm.LimitMode
+	dbPath              string
+	projectRefs         []ProjectReference
+	showExamples        bool
+	public              bool
+	runTimeout          time.Duration
+	publicLimitCaps     vm.LimitCaps
+	maxWorkspaceFiles   int
+	maxWorkspaceBytes   int64
+	ratePerMinute       int
+	rateLimiter         *fixedWindowRateLimiter
+	trustedProxy        string
+	digitalOceanIngress bool
+	version             string
+	workspaceMutation   sync.Mutex
+	sessions            *publicSessions
+	requests            chan struct{}
 }
 
 func NewServer(workspace *Workspace, opts ServerOptions) *Server {
+	serverOpts := opts
+	if opts.Public {
+		serverOpts.DBPath = ""
+	}
+	s := newServer(workspace, serverOpts)
+	if opts.Public {
+		s.requests = make(chan struct{}, 16)
+		s.sessions = &publicSessions{opts: opts, items: make(map[string]*publicSession), creationLimiter: newFixedWindowRateLimiter(s.rateLimiter.limit)}
+	}
+	return s
+}
+
+func newServer(workspace *Workspace, opts ServerOptions) *Server {
 	mode := opts.DefaultLimitMode
 	if mode == "" {
 		mode = vm.LimitModePermissive
@@ -67,29 +92,106 @@ func NewServer(workspace *Workspace, opts ServerOptions) *Server {
 		publicLimitCaps = defaultPublicLimitCaps()
 	}
 	return &Server{
-		version:           opts.Version,
-		workspace:         workspace,
-		runner:            NewRunner(workspace, RunnerOptions{Version: opts.Version, DBPath: opts.DBPath}),
-		defaultLimitMode:  mode,
-		dbPath:            opts.DBPath,
-		projectRefs:       normalizeProjectReferences(opts.ProjectReferences),
-		showExamples:      opts.ShowExamples,
-		public:            opts.Public,
-		runTimeout:        runTimeout,
-		publicLimitCaps:   publicLimitCaps,
-		maxWorkspaceFiles: maxWorkspaceFiles,
-		maxWorkspaceBytes: maxWorkspaceBytes,
-		ratePerMinute:     ratePerMinute,
-		rateLimiter:       newFixedWindowRateLimiter(ratePerMinute),
+		workspace:           workspace,
+		runner:              NewRunner(workspace, RunnerOptions{Version: opts.Version, DBPath: opts.DBPath}),
+		defaultLimitMode:    mode,
+		dbPath:              opts.DBPath,
+		projectRefs:         normalizeProjectReferences(opts.ProjectReferences),
+		showExamples:        opts.ShowExamples,
+		public:              opts.Public,
+		runTimeout:          runTimeout,
+		publicLimitCaps:     publicLimitCaps,
+		maxWorkspaceFiles:   maxWorkspaceFiles,
+		maxWorkspaceBytes:   maxWorkspaceBytes,
+		ratePerMinute:       ratePerMinute,
+		rateLimiter:         newFixedWindowRateLimiter(ratePerMinute),
+		trustedProxy:        opts.TrustedProxy,
+		digitalOceanIngress: opts.DigitalOceanIngress,
+		version:             opts.Version,
 	}
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if s.public && isPublicLimitedEndpoint(r) && !s.rateLimiter.allow(clientIP(r), time.Now()) {
+	if s.public {
+		w.Header().Set("Cache-Control", "no-store")
+		var ok bool
+		w, ok = publicResponseWriter(w)
+		if !ok {
+			return
+		}
+	}
+	if r.Method == http.MethodGet && (r.URL.Path == "/healthz" || r.URL.Path == "/readyz") {
+		w.Header().Set("Cache-Control", "no-store")
+		if r.URL.Path == "/healthz" {
+			writeJSON(w, http.StatusOK, PlaygroundHealth{Status: "ok", Version: s.version})
+			return
+		}
+		if s.workspace == nil || s.runner == nil || s.runner.initErr != nil {
+			writeJSON(w, http.StatusServiceUnavailable, PlaygroundHealth{Status: "unavailable"})
+			return
+		}
+		if _, err := s.workspace.Metadata(); err != nil {
+			writeJSON(w, http.StatusServiceUnavailable, PlaygroundHealth{Status: "unavailable"})
+			return
+		}
+		writeJSON(w, http.StatusOK, PlaygroundHealth{Status: "ready", Version: s.version})
+		return
+	}
+	if s.public && r.ContentLength > maxPublicRequestBytes {
+		writeError(w, http.StatusRequestEntityTooLarge, "public request body too large")
+		return
+	}
+	if s.requests != nil {
+		select {
+		case s.requests <- struct{}{}:
+			defer func() { <-s.requests }()
+		default:
+			writeError(w, http.StatusServiceUnavailable, "public playground is busy")
+			return
+		}
+	}
+	if s.public && r.Body != nil && r.Body != http.NoBody {
+		controller := http.NewResponseController(w)
+		if err := controller.SetReadDeadline(time.Now().Add(defaultPublicBodyTimeout)); err != nil {
+			writeError(w, http.StatusServiceUnavailable, "public request deadlines are unavailable")
+			return
+		}
+		defer func() { _ = controller.SetReadDeadline(time.Time{}) }()
+	}
+	if s.public && r.Method != http.MethodGet && r.Method != http.MethodHead && !publicSameOriginAtIngress(r, s.trustedProxy, s.digitalOceanIngress) {
+		writeError(w, http.StatusForbidden, "cross-origin request denied")
+		return
+	}
+	if s.public && isPublicLimitedEndpoint(r) && !s.rateLimiter.allow(publicIngressClientIP(r, s.trustedProxy, s.digitalOceanIngress), time.Now()) {
 		w.Header().Set("Retry-After", "60")
 		writeError(w, http.StatusTooManyRequests, "rate limit exceeded")
 		return
 	}
+	if s.sessions != nil && r.Method == http.MethodGet {
+		if strings.HasPrefix(r.URL.Path, "/playground/assets/") {
+			s.serveHTTP(w, r)
+			return
+		}
+		needsSession := r.URL.Path == "/playground" || r.URL.Path == "/playground/"
+		switch r.URL.Path {
+		case "/playground/api/workspace", "/playground/api/examples", "/playground/api/runs/latest", "/playground/api/database":
+			needsSession = true
+		}
+		if !needsSession {
+			if _, err := r.Cookie(publicSessionCookie); err != nil {
+				writeError(w, http.StatusNotFound, "unknown playground route")
+				return
+			}
+		}
+	}
+	if s.sessions != nil {
+		s.sessions.serve(w, r, s.rateLimiter)
+		return
+	}
+	s.serveHTTP(w, r)
+}
+
+func (s *Server) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case r.Method == http.MethodGet && r.URL.Path == "/healthz":
 		w.Header().Set("Cache-Control", "no-store")
@@ -123,6 +225,10 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case r.Method == http.MethodPost && r.URL.Path == "/playground/api/seed":
 		s.handleSeed(w, r)
 	case r.Method == http.MethodGet && r.URL.Path == "/playground/api/runs/latest":
+		if s.public {
+			writeJSON(w, http.StatusOK, map[string]any{"found": false})
+			return
+		}
 		latest, ok, err := s.runner.cache.Latest()
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, err.Error())
@@ -130,7 +236,23 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		writeJSON(w, http.StatusOK, map[string]any{"found": ok, "result": latest})
 	case r.Method == http.MethodGet && r.URL.Path == "/playground/api/database":
-		writeJSON(w, http.StatusOK, databaseSnapshot(s.runner.CurrentOrg()))
+		if s.public {
+			snapshot, ok := s.runner.publicDatabaseSnapshot()
+			if !ok {
+				writeError(w, http.StatusRequestEntityTooLarge, "public output limit exceeded")
+				return
+			}
+			data, err := json.Marshal(snapshot)
+			if err != nil || len(data) > maxPublicDatabaseBytes {
+				writeError(w, http.StatusRequestEntityTooLarge, "public output limit exceeded")
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write(data)
+		} else {
+			writeJSON(w, http.StatusOK, databaseSnapshot(s.runner.CurrentOrg()))
+		}
 	case r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/playground/assets/"):
 		s.serveStaticAsset(w, r)
 	case r.Method == http.MethodGet && (r.URL.Path == "/playground/" || r.URL.Path == "/playground"):
@@ -140,6 +262,9 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		if s.public {
+			w.Header().Set("Cache-Control", "no-store")
+		}
 		_, _ = w.Write(data)
 	case r.Method == http.MethodGet:
 		s.serveWorkspaceFile(w, r)
@@ -156,6 +281,8 @@ func (s *Server) handleLoadExample(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	s.workspaceMutation.Lock()
+	defer s.workspaceMutation.Unlock()
 	meta, err := s.loadSource(req.ID)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
@@ -231,7 +358,14 @@ func (s *Server) loadSource(id string) (WorkspaceMetadata, error) {
 	for _, ref := range s.projectRefs {
 		if ref.ID == id {
 			if s.public {
-				return s.workspace.LoadProjectReferenceLimited(ref, s.maxWorkspaceFiles, s.maxWorkspaceBytes)
+				files, err := collectProjectReferenceFilesLimited(ref, s.maxWorkspaceFiles, s.maxWorkspaceBytes)
+				if err != nil {
+					return WorkspaceMetadata{}, err
+				}
+				if err := validatePublicManifest(files["sfdx-project.json"]); err != nil {
+					return WorkspaceMetadata{}, err
+				}
+				return s.workspace.loadFiles(ref.ID, files, true)
 			}
 			return s.workspace.LoadProjectReference(ref)
 		}
@@ -305,7 +439,9 @@ func (s *Server) serveStaticAsset(w http.ResponseWriter, r *http.Request) {
 	if contentType := mime.TypeByExtension(filepath.Ext(asset)); contentType != "" {
 		w.Header().Set("Content-Type", contentType)
 	}
-	w.Header().Set("Cache-Control", "no-cache")
+	if !s.public {
+		w.Header().Set("Cache-Control", "no-cache")
+	}
 	_, _ = w.Write(data)
 }
 
@@ -362,7 +498,25 @@ func (s *Server) handleSaveFile(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	s.workspaceMutation.Lock()
+	defer s.workspaceMutation.Unlock()
 	if s.public {
+		rel, err := normalizedWorkspacePath(req.Path)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		clean := strings.ToLower(rel)
+		if clean == "glade.yml" || clean == "glade.yaml" {
+			writeError(w, http.StatusForbidden, "public playground configuration is server managed")
+			return
+		}
+		if clean == "sfdx-project.json" {
+			if err := validatePublicManifest(req.Content); err != nil {
+				writeError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+		}
 		if err := s.checkPublicWorkspaceBudget(req); err != nil {
 			writeError(w, http.StatusRequestEntityTooLarge, err.Error())
 			return
@@ -390,7 +544,21 @@ func (s *Server) handleSaveFile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleDeleteFile(w http.ResponseWriter, r *http.Request) {
+	s.workspaceMutation.Lock()
+	defer s.workspaceMutation.Unlock()
 	path := r.URL.Query().Get("path")
+	if s.public {
+		rel, err := normalizedWorkspacePath(path)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		clean := strings.ToLower(rel)
+		if clean == "glade.yml" || clean == "glade.yaml" {
+			writeError(w, http.StatusForbidden, "public playground configuration is server managed")
+			return
+		}
+	}
 	if err := s.workspace.DeleteFile(path); err != nil {
 		var readOnly ErrReadOnlyFile
 		if errors.As(err, &readOnly) {
@@ -424,6 +592,14 @@ func (s *Server) handleRun(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	if s.public {
+		s.workspaceMutation.Lock()
+		defer s.workspaceMutation.Unlock()
+		if err := installPublicConfig(s.workspace); err != nil {
+			writeError(w, http.StatusInternalServerError, "cannot initialize session configuration")
+			return
+		}
+	}
 	if req.LimitMode == "" {
 		req.LimitMode = s.defaultLimitMode
 	}
@@ -437,7 +613,9 @@ func (s *Server) handleRun(w http.ResponseWriter, r *http.Request) {
 		req.Mode = RunModeScratch
 		req.LimitMode = vm.LimitModeStrict
 		req.UseCache = false
+		req.disableCacheWrite = true
 		req.LimitCaps = &s.publicLimitCaps
+		req.OutputLimit = defaultPublicOutputBytes
 	}
 	result, err := s.runner.Run(ctx, req)
 	if err != nil {
@@ -452,10 +630,38 @@ func (s *Server) handleRun(w http.ResponseWriter, r *http.Request) {
 		result.Status = RunStatusRuntimeError
 		result.ErrorMessage = message
 		result.Diagnostics = []Diagnostic{{Severity: "error", Message: message}}
-		writeJSON(w, http.StatusServiceUnavailable, result)
+		if s.public {
+			writePublicRunResult(w, http.StatusServiceUnavailable, result)
+		} else {
+			writeJSON(w, http.StatusServiceUnavailable, result)
+		}
 		return
 	}
-	writeJSON(w, http.StatusOK, result)
+	if s.public {
+		writePublicRunResult(w, http.StatusOK, result)
+	} else {
+		writeJSON(w, http.StatusOK, result)
+	}
+}
+
+func writePublicRunResult(w http.ResponseWriter, status int, result RunResult) {
+	var ok bool
+	w, ok = publicResponseWriter(w)
+	if !ok {
+		return
+	}
+	if !publicResultFitsBudget(result) {
+		writeError(w, http.StatusRequestEntityTooLarge, "public output limit exceeded")
+		return
+	}
+	data, err := json.Marshal(result)
+	if err != nil || len(data) > maxPublicResponseBytes {
+		writeError(w, http.StatusRequestEntityTooLarge, "public output limit exceeded")
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_, _ = w.Write(data)
 }
 
 func (s *Server) handleSeed(w http.ResponseWriter, r *http.Request) {
@@ -492,7 +698,12 @@ func (s *Server) serveWorkspaceFile(w http.ResponseWriter, r *http.Request) {
 	if contentType := mime.TypeByExtension(filepath.Ext(path)); contentType != "" {
 		w.Header().Set("Content-Type", contentType)
 	}
-	http.ServeContent(w, r, filepath.Base(path), info.ModTime(), file)
+	modified := info.ModTime()
+	if s.public {
+		// Session files must not use a shared cache validator from another visitor.
+		modified = time.Time{}
+	}
+	http.ServeContent(w, r, filepath.Base(path), modified, file)
 }
 
 func defaultPublicLimitCaps() vm.LimitCaps {
@@ -515,6 +726,8 @@ func defaultPublicLimitCaps() vm.LimitCaps {
 
 func isPublicLimitedEndpoint(r *http.Request) bool {
 	switch r.URL.Path {
+	case "/playground/api/database":
+		return r.Method == http.MethodGet
 	case "/playground/api/run", "/playground/api/examples/load", "/playground/api/files", "/playground/api/reset", "/playground/api/seed":
 		return r.Method == http.MethodPost || r.Method == http.MethodPut || r.Method == http.MethodDelete
 	default:
@@ -523,17 +736,102 @@ func isPublicLimitedEndpoint(r *http.Request) bool {
 }
 
 func clientIP(r *http.Request) string {
-	if forwarded := strings.TrimSpace(r.Header.Get("X-Forwarded-For")); forwarded != "" {
-		first, _, _ := strings.Cut(forwarded, ",")
-		if first = strings.TrimSpace(first); first != "" {
-			return first
-		}
-	}
 	host, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err == nil && host != "" {
 		return host
 	}
 	return strings.TrimSpace(r.RemoteAddr)
+}
+
+// publicClientIP trusts exactly one forwarded address only from the configured
+// proxy. The proxy must overwrite, not append to, incoming forwarding headers.
+func publicClientIP(r *http.Request, trustedProxy string) string {
+	peer := clientIP(r)
+	trusted, remote := net.ParseIP(trustedProxy), net.ParseIP(peer)
+	if trusted == nil || remote == nil || !trusted.Equal(remote) {
+		return peer
+	}
+	values := r.Header.Values("X-Forwarded-For")
+	if len(values) == 1 {
+		if forwarded := net.ParseIP(strings.TrimSpace(values[0])); forwarded != nil {
+			return forwarded.String()
+		}
+	}
+	return peer
+}
+
+// publicIngressClientIP only trusts the platform header when the deployment
+// explicitly opts into its provider-controlled ingress boundary.
+func publicIngressClientIP(r *http.Request, trustedProxy string, digitalOceanIngress bool) string {
+	if digitalOceanIngress {
+		values := r.Header.Values("Do-Connecting-Ip")
+		if len(values) == 1 {
+			if forwarded := net.ParseIP(strings.TrimSpace(values[0])); forwarded != nil {
+				return forwarded.String()
+			}
+		}
+		return clientIP(r)
+	}
+	return publicClientIP(r, trustedProxy)
+}
+
+func publicSameOrigin(r *http.Request) bool {
+	return publicSameOriginAtIngress(r, "", false)
+}
+
+// publicSameOriginAtIngress compares the browser origin with the externally
+// visible origin. Forwarded schemes are trusted only from a configured proxy.
+func publicSameOriginAtIngress(r *http.Request, trustedProxy string, digitalOceanIngress bool) bool {
+	if strings.EqualFold(r.Header.Get("Sec-Fetch-Site"), "cross-site") {
+		return false
+	}
+	origins := r.Header.Values("Origin")
+	if len(origins) == 0 {
+		return true
+	}
+	if len(origins) != 1 || origins[0] == "" {
+		return false
+	}
+	scheme := "http"
+	if r.TLS != nil {
+		scheme = "https"
+	}
+	if digitalOceanIngress {
+		// App Platform upgrades external HTTP requests to HTTPS.
+		scheme = "https"
+	} else if trusted, peer := net.ParseIP(trustedProxy), net.ParseIP(clientIP(r)); trusted != nil && peer != nil && trusted.Equal(peer) {
+		values := r.Header.Values("X-Forwarded-Proto")
+		if len(values) != 1 || (values[0] != "http" && values[0] != "https") {
+			return false
+		}
+		scheme = values[0]
+	}
+	parsed, err := url.Parse(origins[0])
+	if err != nil || parsed.Scheme != scheme || parsed.User != nil || parsed.Path != "" || parsed.RawQuery != "" || parsed.ForceQuery || parsed.Fragment != "" || parsed.Opaque != "" {
+		return false
+	}
+	originHost, ok := publicOriginAuthority(parsed.Host, scheme)
+	if !ok {
+		return false
+	}
+	requestHost, ok := publicOriginAuthority(r.Host, scheme)
+	return ok && originHost == requestHost
+}
+
+func publicOriginAuthority(host, scheme string) (string, bool) {
+	parsed, err := url.Parse(scheme + "://" + host)
+	if err != nil || parsed.User != nil || parsed.Host != host || parsed.Hostname() == "" || parsed.Path != "" || parsed.RawQuery != "" || parsed.ForceQuery || parsed.Fragment != "" {
+		return "", false
+	}
+	port := parsed.Port()
+	if port == "" {
+		if scheme == "https" {
+			port = "443"
+		} else {
+			port = "80"
+		}
+	}
+	return net.JoinHostPort(strings.ToLower(parsed.Hostname()), port), true
 }
 
 type fixedWindowRateLimiter struct {
@@ -587,6 +885,11 @@ func (s *Server) checkPublicWorkspaceBudget(req FileSaveRequest) error {
 	if err != nil {
 		return err
 	}
+	for _, component := range strings.Split(rel, "/") {
+		if strings.HasPrefix(component, ".") {
+			return fmt.Errorf("hidden workspace paths are not allowed")
+		}
+	}
 	meta, err := s.workspace.Metadata()
 	if err != nil {
 		return err
@@ -611,7 +914,7 @@ func (s *Server) checkPublicWorkspaceBudget(req FileSaveRequest) error {
 
 func decodeJSON(r *http.Request, out any) error {
 	defer r.Body.Close()
-	return json.NewDecoder(http.MaxBytesReader(nil, r.Body, 1<<20)).Decode(out)
+	return json.NewDecoder(http.MaxBytesReader(nil, r.Body, maxPublicRequestBytes)).Decode(out)
 }
 
 func writeJSON(w http.ResponseWriter, status int, body any) {
@@ -622,4 +925,23 @@ func writeJSON(w http.ResponseWriter, status int, body any) {
 
 func writeError(w http.ResponseWriter, status int, message string) {
 	writeJSON(w, status, map[string]any{"error": message})
+}
+
+// validatePublicManifest confines package paths interpreted by the project loader.
+func validatePublicManifest(content string) error {
+	var manifest struct {
+		PackageDirectories []struct {
+			Path string `json:"path"`
+		} `json:"packageDirectories"`
+	}
+	if err := json.Unmarshal([]byte(content), &manifest); err != nil {
+		return fmt.Errorf("invalid project manifest: %w", err)
+	}
+	for _, dir := range manifest.PackageDirectories {
+		path := filepath.FromSlash(strings.ReplaceAll(dir.Path, "\\", "/"))
+		if !filepath.IsLocal(path) {
+			return fmt.Errorf("public package directory must remain within the workspace")
+		}
+	}
+	return nil
 }

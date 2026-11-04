@@ -38,8 +38,21 @@ Salesforce DX project, as shown in [First Project Run](#first-project-run).
 ## Security verification
 
 Release archives publish checksums, CycloneDX SBOMs, and GitHub artifact
-attestations. The release workflow verifies both the archive provenance and its
-CycloneDX attestation before uploading the platform assets.
+attestations. The installer requires the GitHub CLI (`gh`) and network access to
+verify the staged archive's release-workflow provenance and SBOM attestation
+before extraction. It also requires Python 3 to coordinate the installation
+lock. Verification failure stops installation.
+
+Public release attestations can be verified without a GitHub login. For private
+releases, authenticate `gh` or set `GLADE_GITHUB_TOKEN` with access to release
+assets and attestations. The release workflow verifies both the archive
+provenance and its CycloneDX attestation
+before uploading the platform assets.
+
+An installer fetched and run directly from `glade.sh` is itself trusted at
+download time; a substituted installer could bypass these checks.
+`glade update` runs the installer embedded in the installed binary, which
+checks the downloaded archive before replacing the installation.
 
 Use the copyable, verification-only block in the [Security & trust
 guide](https://glade.sh/guide/security-trust#release-proof). From a reviewed
@@ -66,9 +79,16 @@ GLADE_UPDATE_ALLOW_SHELL=1 glade update
 glade version
 ```
 
-`glade update` prints the exact installer command before it runs. It updates the
+`glade update` prints an executable update command before it runs. It updates the
 directory that contains the current `glade` binary. The environment guard keeps
 self-replacement explicit.
+
+Managed installations use an installation lock to protect files during updates
+and reads. If Glade cannot open or create that lock, it refuses to use the
+managed installation rather than reading files while an update may be active.
+For a shared installation, ask its owner to make the existing lock readable to
+the users who need it, or select a separately managed installation you can
+access. The installer and updater also require permission to acquire the lock.
 
 ## Install VS Code Extension
 
@@ -326,8 +346,8 @@ path. Full reset remains `POST /services/data/v65.0/glade/reset`. Scoped resets
 can target only data or platform state:
 
 ```bash
-curl -s -X POST http://127.0.0.1:8080/services/data/v65.0/glade/reset/data
-curl -s -X POST 'http://127.0.0.1:8080/services/data/v65.0/glade/reset?scope=users,limits,async'
+curl -s -H 'X-Glade-Client: 1' -X POST http://127.0.0.1:8080/services/data/v65.0/glade/reset/data
+curl -s -H 'X-Glade-Client: 1' -X POST 'http://127.0.0.1:8080/services/data/v65.0/glade/reset?scope=users,limits,async'
 ```
 
 Use `glade db inspect --json` before and after mutating server requests as the
@@ -341,6 +361,37 @@ requests. Direct REST DML uses that local user for system field stamping;
 Tooling `executeAnonymous` still uses the VM's local default user context. Do
 not expose `glade server` to untrusted networks without an authenticating reverse
 proxy.
+
+Local server, database UI, and development listeners reject unrecognized HTTP
+Host authorities and browser requests from another origin. For a wildcard
+network listener, set `GLADE_SERVER_ALLOWED_HOSTS` to a comma-separated list of
+hostnames accepted by that listener. A Tooling `executeAnonymous` GET also
+requires a nonempty `GLADE_SERVER_CAPABILITY` in the server environment and the
+same value in the `X-Glade-Capability` request header. Requests without an
+`Origin` or trusted `Sec-Fetch-Site` metadata require the capability or an
+`X-Glade-Client: 1` header from a non-browser client. User-initiated browser
+navigation with `Sec-Fetch-Site: none` shows a confirmation before opening the
+requested page; an authenticating reverse proxy can provide the client header
+to bypass that confirmation. Treat the capability as a secret and do not expose
+it to untrusted preview code. These controls do not isolate code running in a
+preview from other content on the same origin. Lightning preview also requires a
+trusted temporary directory; if cache creation fails, set `TMPDIR` to a directory
+with secure ownership and permissions and adequate free space. Use a path
+without `..` components for `TMPDIR` and test-daemon sockets.
+The default test daemon also requires a trusted project and socket-directory
+ancestry; move the project or temporary directory to a securely owned location
+if daemon startup reports an insecure discovery directory.
+
+Cross-origin browser requests remain rejected even if they include the client
+header. The Tooling `executeAnonymous` GET always requires the capability.
+
+For a reverse proxy that terminates TLS or uses a different external port, set
+`GLADE_SERVER_PROXY_ORIGINS` to a comma-separated list of exact external origins,
+such as `https://preview.example.test,https://preview.example.test:8443`.
+Configure the proxy to preserve the external `Host` header. The listener checks
+browser origins against this list and does not trust `Forwarded` or
+`X-Forwarded-*` headers for authorization. Allowlist only origins controlled by
+the operator, and authenticate and restrict access at the proxy.
 
 ## Local Apex Playground
 

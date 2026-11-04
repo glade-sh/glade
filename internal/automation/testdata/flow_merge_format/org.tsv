@@ -1,0 +1,15 @@
+api	route	case	observation
+62.0	anonymous	constant	constant=1,234.5|negative=-1,234.5|boundary=1,000|below=999.5
+62.0	anonymous	control	control=-1,234.5
+62.0	anonymous	datetime	datetime=10/28/2026, 9:13 AM
+62.0	istest	constant	constant=1,234.5|negative=-1,234.5|boundary=1,000|below=999.5
+62.0	istest	control	control=-1,234.5
+62.0	istest	datetime	datetime=10/28/2026, 9:13 AM
+62.0	deploy	invalid	field integrity exception: unknown ("Reject" refers to an element: "doesNotExist", which doesn't exist.)
+67.0	anonymous	constant	constant=1,234.5|negative=-1,234.5|boundary=1,000|below=999.5
+67.0	anonymous	control	control=-1,234.5
+67.0	anonymous	datetime	datetime=10/28/2026, 9:13 AM
+67.0	istest	constant	constant=1,234.5|negative=-1,234.5|boundary=1,000|below=999.5
+67.0	istest	control	control=-1,234.5
+67.0	istest	datetime	datetime=10/28/2026, 9:14 AM
+67.0	deploy	invalid	field integrity exception: unknown ("Reject" refers to an element: "doesNotExist", which doesn't exist.)

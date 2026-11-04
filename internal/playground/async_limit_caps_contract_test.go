@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -19,7 +18,7 @@ func TestPublicServerAsyncExplicitCapsContracts(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	writePlaygroundTestFile(t, filepath.Join(ws.Root, "force-app/main/default/classes/CapWorker.cls"), `
+	classSource := `
 public class CapWorker implements Queueable {
   public void execute(QueueableContext context) {
     System.assertEquals(100, Limits.getLimitQueries());
@@ -27,19 +26,33 @@ public class CapWorker implements Queueable {
     System.debug('explicit caps checked');
   }
 }
-`)
+`
 	caps, ok := vm.LimitCapsForProfile("strict-sync")
 	if !ok {
 		t.Fatal("strict-sync profile missing")
 	}
 	// The request budget includes compilation and is independent of the Apex CPU cap.
 	handler := NewServer(ws, ServerOptions{Version: "test", Public: true, PublicLimitCaps: caps, RunTimeout: 30 * time.Second})
+	t.Cleanup(handler.Close)
+	save, err := json.Marshal(FileSaveRequest{Path: "force-app/main/default/classes/CapWorker.cls", Content: classSource})
+	if err != nil {
+		t.Fatal(err)
+	}
+	saved := httptest.NewRecorder()
+	handler.ServeHTTP(case339ResponseWriter{saved}, httptest.NewRequest(http.MethodPut, "/playground/api/files", bytes.NewReader(save)))
+	if saved.Code != http.StatusOK {
+		t.Fatalf("save status = %d body=%s", saved.Code, saved.Body.String())
+	}
 	body, err := json.Marshal(RunRequest{AnonymousBody: "System.enqueueJob(new CapWorker());", Mode: RunModeScratch})
 	if err != nil {
 		t.Fatal(err)
 	}
 	rec := httptest.NewRecorder()
-	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/playground/api/run", bytes.NewReader(body)))
+	req := httptest.NewRequest(http.MethodPost, "/playground/api/run", bytes.NewReader(body))
+	for _, cookie := range saved.Result().Cookies() {
+		req.AddCookie(cookie)
+	}
+	handler.ServeHTTP(case339ResponseWriter{rec}, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("run status = %d body=%s", rec.Code, rec.Body.String())
 	}

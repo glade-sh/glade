@@ -1,0 +1,5 @@
+id	category	source	routes	api
+platform_static	compile acceptance	System.assertEquals('A', System.String.valueOf('A'));	anonymous,istest	62.0,67.0
+wrong_static	compile rejection	AbsentNamespace.String.valueOf('A');	anonymous,istest	62.0,67.0
+platform_type	runtime assertion rejection	System.assertNotEquals(null, Type.forName('System', 'String'));	anonymous,istest	62.0,67.0
+wrong_type	runtime boundary	System.assertEquals(null, Type.forName('AbsentNamespace', 'String'));	anonymous,istest	62.0,67.0

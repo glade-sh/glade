@@ -667,14 +667,7 @@ func getRecordWireData(org *storage.OrgState, recordID string, fields []string, 
 }
 
 func ldsRecordLocation(org *storage.OrgState) *time.Location {
-	if org == nil {
-		return time.UTC
-	}
-	user := (&Server{Org: org}).currentUser(nil, "")
-	if location, err := time.LoadLocation(userString(user, "TimeZoneSidKey", "UTC")); err == nil {
-		return location
-	}
-	return time.UTC
+	return newRecordTimeContext(org).ldsLocation()
 }
 
 // Reuse the request's location for every field and expanded parent record.
@@ -1071,7 +1064,12 @@ func getObjectInfoWireData(org *storage.OrgState, objectAPIName string) (map[str
 	for _, field := range fieldList {
 		name, _ := field["name"].(string)
 		if name != "" {
-			fields[name] = objectInfoFieldPayload(field, object.Definition.Fields[name])
+			info := objectInfoFieldPayload(field, object.Definition.Fields[name])
+			// The captured Lead object-info route reports its primary Id as String.
+			if strings.EqualFold(objectName, "Lead") && strings.EqualFold(name, "Id") && object.Definition.Fields[name].Type == storage.FieldID {
+				info["dataType"] = "String"
+			}
+			fields[name] = info
 		}
 	}
 	payload["fields"] = fields
@@ -2013,6 +2011,9 @@ func findOrgObject(org *storage.OrgState, objectAPIName string) (objectName stri
 		return "", storage.ObjectState{}, false
 	}
 	objectAPIName = strings.TrimSpace(objectAPIName)
+	if !org.AllowsStandardObject(objectAPIName) {
+		return "", storage.ObjectState{}, false
+	}
 	if canonical, known := storage.ResolveKnownStandardObjectName(objectAPIName); known {
 		storage.EnsureStandardObject(org, canonical)
 		objectAPIName = canonical

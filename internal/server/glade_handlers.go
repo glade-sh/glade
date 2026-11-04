@@ -8,18 +8,31 @@ import (
 	"net/http"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/visualforce"
 )
 
 func (s *Server) handleGLADE(w http.ResponseWriter, r *http.Request, parts []string) {
+	if r.Method == http.MethodPost && len(parts) > 0 && (parts[0] == "fixture" || parts[0] == "reset") && r.Body != nil && r.Body != http.NoBody {
+		controller := http.NewResponseController(w)
+		if controller.SetReadDeadline(time.Now().Add(5*time.Second)) == nil {
+			defer func() { _ = controller.SetReadDeadline(time.Time{}) }()
+		}
+	}
 	switch {
 	case len(parts) == 0 && r.Method == http.MethodGet:
 		writeJSON(w, http.StatusOK, gladeDiscovery(versionFromRequest(r)))
 	case len(parts) >= 1 && parts[0] == "reset" && r.Method == http.MethodPost:
+		if r.Body != nil && r.Body != http.NoBody {
+			r.Body = http.MaxBytesReader(w, r.Body, maxLocalRequestBodyBytes)
+		}
 		scopes, err := resetScopes(r, parts[1:])
 		if err != nil {
+			if writeRequestBodyLimitError(w, err) {
+				return
+			}
 			writeSalesforceError(w, errInvalidReset, err.Error())
 			return
 		}
@@ -28,6 +41,12 @@ func (s *Server) handleGLADE(w http.ResponseWriter, r *http.Request, parts []str
 		if err := s.commitOrg(next); err != nil {
 			writeSalesforceError(w, errStoreFailure, err.Error())
 			return
+		}
+		for _, scope := range scopes {
+			if scope == "all" || scope == "users" || scope == "platform" {
+				revokeServerTokens(s)
+				break
+			}
 		}
 		writeJSON(w, http.StatusOK, gladeResetPayload{
 			Success:    true,
@@ -55,8 +74,11 @@ func (s *Server) handleGLADE(w http.ResponseWriter, r *http.Request, parts []str
 			writeSalesforceError(w, errInvalidFixture, err.Error())
 			return
 		}
-		fixture, err := storage.ReadFixture(r.Body)
+		fixture, err := storage.ReadFixture(http.MaxBytesReader(w, r.Body, maxLocalRequestBodyBytes))
 		if err != nil {
+			if writeRequestBodyLimitError(w, err) {
+				return
+			}
 			var versionErr storage.UnsupportedFixtureVersionError
 			if errors.As(err, &versionErr) {
 				writeSalesforceError(w, errInvalidFixture, err.Error())
@@ -76,6 +98,11 @@ func (s *Server) handleGLADE(w http.ResponseWriter, r *http.Request, parts []str
 		if err := s.commitOrg(next); err != nil {
 			writeSalesforceError(w, errStoreFailure, err.Error())
 			return
+		}
+		if mode == fixtureLoadModeReplace {
+			revokeServerTokens(s)
+		} else {
+			revokeFixtureUserTokens(s, fixture)
 		}
 		writeJSON(w, http.StatusOK, map[string]any{"success": true, "mode": mode, "summary": storage.InspectOrg("", *s.Org)})
 	case len(parts) >= 1 && parts[0] == "db-manager":

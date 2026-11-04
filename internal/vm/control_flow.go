@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -82,7 +83,7 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (_ execOutcome,
 				return execOutcome{}, err
 			}
 		}
-		if vm.traceEnabled && result != nil {
+		if vm.traceEnabled && result != nil && result.traceEnabled {
 			if len(result.Trace) >= maxTraceEvents {
 				// A capped trace only counts drops; its event payload is discarded.
 				appendResultTrace(result, trace.Event{})
@@ -357,8 +358,17 @@ func traceSeqLen(result *Result) int {
 }
 
 func appendResultTrace(result *Result, event trace.Event) {
-	if result == nil {
+	if result == nil || !result.traceEnabled {
 		return
+	}
+	if result.traceOutputLimit > 0 {
+		data, err := json.Marshal(event)
+		if err != nil || len(data)+1 > result.traceOutputLimit-result.traceOutputBytes {
+			result.Trace = append(result.Trace, trace.Instant("apex.trace.truncated", "apex.trace", int64(len(result.Trace)), map[string]any{"reason": "output limit"}))
+			result.traceEnabled = false
+			return
+		}
+		result.traceOutputBytes += len(data) + 1
 	}
 	if len(result.Trace) < maxTraceEvents {
 		result.Trace = append(result.Trace, event)
@@ -1365,7 +1375,27 @@ func (vm *VM) executeRunAs(source string, inst ir.Instruction, result *Result) (
 	}
 	previous := vm.testContext.CurrentUser
 	previousPackageVersion := vm.testContext.CurrentPackageVersion
+	var priorDescribes map[describeCacheKey]Value
+	var runAsUserID string
+	var isRunAsDescribe func(describeCacheKey) bool
 	if changesUser {
+		if vm.Org != nil {
+			runAsUserID = strings.TrimSpace(stringField(user, "Id"))
+			isRunAsDescribe = func(key describeCacheKey) bool {
+				if !strings.EqualFold(key.UserID, runAsUserID) || key.FieldName != "" || !hasSuffixFold(key.ObjectName, "__c") {
+					return false
+				}
+				resolved, ok := storage.ResolveObjectName(*vm.Org, key.ObjectName)
+				return ok && !storage.IsCustomSettingDefinition(vm.Org.Objects[resolved].Definition)
+			}
+			priorDescribes = make(map[describeCacheKey]Value)
+			for key := range vm.describeCache {
+				if isRunAsDescribe(key) {
+					priorDescribes[key] = vm.describeCache[key]
+					delete(vm.describeCache, key)
+				}
+			}
+		}
 		vm.testContext.CurrentUser = user
 	}
 	vm.testContext.RunAsDepth++
@@ -1380,6 +1410,16 @@ func (vm *VM) executeRunAs(source string, inst ir.Instruction, result *Result) (
 		}
 		vm.testContext.RunAsDepth--
 		if changesUser {
+			if isRunAsDescribe != nil {
+				for key := range vm.describeCache {
+					if isRunAsDescribe(key) {
+						delete(vm.describeCache, key)
+					}
+				}
+				for key, value := range priorDescribes {
+					vm.describeCache[key] = value
+				}
+			}
 			vm.testContext.CurrentUser = previous
 		}
 	}()

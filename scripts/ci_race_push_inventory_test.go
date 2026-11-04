@@ -92,3 +92,38 @@ else:
 		})
 	}
 }
+
+func TestCIRacePushImportedHelperConcurrency(t *testing.T) {
+	root := t.TempDir()
+	subject := filepath.Join(root, "internal", "subject")
+	helper := filepath.Join(root, "internal", "testutil", "worker")
+	for _, dir := range []string{subject, helper} {
+		if err := os.MkdirAll(dir, 0700); err != nil {
+			t.Fatal(err)
+		}
+	}
+	files := map[string]string{
+		filepath.Join(root, "go.mod"): "module github.com/glade-sh/glade\n",
+		filepath.Join(subject, "routes_test.go"): `package subject
+import ("testing"; alias "github.com/glade-sh/glade/internal/testutil/worker")
+func TestWorker(t *testing.T) { alias.Start() }
+func TestIndirect(t *testing.T) { helper() }
+func helper() { alias.Wrap() }
+func TestSerial(t *testing.T) { alias.Serial() }
+`,
+		filepath.Join(helper, "worker.go"): `package worker
+func Start() { go func() {}() }
+func Wrap() { Start() }
+func Serial() {}
+`,
+	}
+	for path, body := range files {
+		if err := os.WriteFile(path, []byte(body), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	want := []string{"TestIndirect", "TestWorker"}
+	if got := concurrentRaceTests(t, subject); !reflect.DeepEqual(got, want) {
+		t.Fatalf("imported helper routes = %v, want %v", got, want)
+	}
+}

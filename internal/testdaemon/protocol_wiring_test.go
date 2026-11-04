@@ -16,6 +16,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/glade-sh/glade/internal/apextest"
@@ -242,40 +243,125 @@ func TestProtocolWiringV1ClientRunHasSeparateBoundedDefault(t *testing.T) {
 	}
 }
 
+type deadlineRecordingConn struct {
+	net.Conn
+	deadlines chan time.Time
+}
+
+func (c *deadlineRecordingConn) SetDeadline(deadline time.Time) error {
+	select {
+	case c.deadlines <- deadline:
+	default:
+		return errors.New("unexpected repeated control SetDeadline")
+	}
+	return c.Conn.SetDeadline(deadline)
+}
+
 func TestProtocolWiringV1CallerDeadlineOverridesClientDefault(t *testing.T) {
 	previousTimeout := clientControlIOTimeoutV1
 	clientControlIOTimeoutV1 = 5 * time.Second
 	defer func() { clientControlIOTimeoutV1 = previousTimeout }()
-	socket, listener := protocolWiringUnixListener(t)
-	defer listener.Close()
-	accepted := make(chan net.Conn, 1)
-	go func() {
-		conn, err := listener.Accept()
-		if err == nil {
-			accepted <- conn
+	synctest.Test(t, func(t *testing.T) {
+		client, peer := net.Pipe()
+		t.Cleanup(func() { _ = client.Close(); _ = peer.Close() })
+		recorded := &deadlineRecordingConn{Conn: client, deadlines: make(chan time.Time, 1)}
+		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+		defer cancel()
+		want, _ := ctx.Deadline()
+		result := make(chan error, 1)
+		go func() {
+			_, err := callV1OnConn(ctx, recorded, RequestV1{Version: ProtocolVersionV1, Op: OpPing})
+			result <- err
+		}()
+		if _, err := DecodeRequestV1(bufio.NewReader(peer)); err != nil {
+			t.Fatalf("decode client ping: %v", err)
 		}
-	}()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-	defer cancel()
-	result := make(chan error, 1)
-	go func() {
-		_, err := PingV1(ctx, socket)
-		result <- err
-	}()
-	conn := <-accepted
-	defer conn.Close()
-	if _, err := DecodeRequestV1(bufio.NewReader(conn)); err != nil {
-		t.Fatalf("decode client ping: %v", err)
-	}
-	select {
-	case err := <-result:
-		if !errors.Is(err, context.DeadlineExceeded) {
-			t.Fatalf("caller-deadline request error = %v", err)
+		if got := <-recorded.deadlines; !got.Equal(want) {
+			t.Fatalf("connection deadline = %v, want %v", got, want)
 		}
-	case <-time.After(time.Second):
-		t.Fatal("caller deadline did not override the longer client default")
-	}
+		select {
+		case err := <-result:
+			if !errors.Is(err, context.DeadlineExceeded) {
+				t.Fatalf("caller-deadline request error = %v", err)
+			}
+		case <-time.After(time.Second):
+			t.Fatal("caller deadline did not override the longer client default")
+		}
+	})
+	t.Run("unix", func(t *testing.T) {
+		socket, listener := protocolWiringUnixListener(t)
+		defer listener.Close()
+		type acceptedResult struct {
+			conn net.Conn
+			err  error
+		}
+		accepted := make(chan acceptedResult, 1)
+		acceptExited := make(chan struct{})
+		go func() {
+			defer close(acceptExited)
+			conn, err := listener.Accept()
+			accepted <- acceptedResult{conn, err}
+		}()
+		t.Cleanup(func() {
+			_ = listener.Close()
+			select {
+			case <-acceptExited:
+				// The client can finish while Accept simultaneously succeeds.
+				// Close an accepted connection the main path did not consume.
+				select {
+				case pending := <-accepted:
+					if pending.conn != nil {
+						_ = pending.conn.Close()
+					}
+				default:
+				}
+			case <-time.After(20 * time.Second):
+				t.Error("accept did not exit")
+			}
+		})
+		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+		defer cancel()
+		result := make(chan error, 1)
+		exited := make(chan struct{})
+		go func() { defer close(exited); _, err := PingV1(ctx, socket); result <- err }()
+		var conn net.Conn
+		t.Cleanup(func() {
+			cancel()
+			if conn != nil {
+				_ = conn.Close()
+			}
+			select {
+			case <-exited:
+			case <-time.After(20 * time.Second):
+				t.Error("ping did not exit")
+			}
+		})
+		select {
+		case got := <-accepted:
+			if got.err != nil {
+				t.Fatal(got.err)
+			}
+			conn = got.conn
+		case err := <-result:
+			t.Fatalf("ping ended before accept: %v", err)
+		case <-time.After(20 * time.Second):
+			t.Fatal("ping was not accepted")
+		}
+		if err := conn.SetReadDeadline(time.Now().Add(20 * time.Second)); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := DecodeRequestV1(bufio.NewReader(conn)); err != nil {
+			t.Fatalf("decode ping: %v", err)
+		}
+		select {
+		case err := <-result:
+			if !errors.Is(err, context.DeadlineExceeded) {
+				t.Fatalf("deadline error = %v", err)
+			}
+		case <-time.After(time.Second):
+			t.Fatal("ping deadline did not fire")
+		}
+	})
 }
 
 func TestProtocolWiringV1ClientCancellationInterruptsIOAfterDial(t *testing.T) {

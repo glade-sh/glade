@@ -1,0 +1,8 @@
+method	class_member	call
+sig	public static Boolean sig() { FieldServiceMobileExtension f = new FieldServiceMobileExtension(); return f != null; }	H.sig()
+ret	public static FieldServiceMobileExtension ret() { return new FieldServiceMobileExtension(); }	H.ret() != null
+refl	public static Boolean refl() { return Schema.getGlobalDescribe().get('FieldServiceMobileExtension') == null; }	H.refl()
+tf	public static Boolean tf() { return Type.forName('FieldServiceMobileExtension') == null; }	H.tf()
+sq	public static Integer sq() { return [select Id from FieldServiceMobileExtension].size(); }	H.sq()
+dq	public static Integer dq() { return Database.query('select Id from FieldServiceMobileExtension').size(); }	H.dq()
+dsc	public static String dsc() { return FieldServiceMobileExtension.SObjectType.getDescribe().getName(); }	H.dsc()

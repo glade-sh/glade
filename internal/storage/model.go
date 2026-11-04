@@ -219,6 +219,12 @@ func (o *OrgState) ClearRuntimeSchemaStamp() {
 }
 
 type MetadataRegistry struct {
+	// ProjectFlowOwnershipVersion marks databases whose project-owned Flow
+	// rules were tagged; omitted legacy metadata decodes as zero.
+	ProjectFlowOwnershipVersion int `json:"projectFlowOwnershipVersion,omitempty"`
+	// ProjectFlowRootID is an optional local filesystem identity for the bound
+	// project directory, used to detect replacement before refreshing Flows.
+	ProjectFlowRootID string `json:"projectFlowRootId,omitempty"`
 	// AccountRecordTypeDefaults keeps the separate business/person defaults
 	// declared by each profile. Runtime clones share this immutable metadata.
 	AccountRecordTypeDefaults []AccountRecordTypeDefault `json:"accountRecordTypeDefaults,omitempty"`
@@ -670,6 +676,7 @@ type FlowRule struct {
 	Label                                  string `json:"label,omitempty"`
 	Name                                   string `json:"name"`
 	File                                   string `json:"file,omitempty"`
+	ProjectSourceOwned                     bool   `json:"projectSourceOwned,omitempty"`
 	Active                                 bool   `json:"active,omitempty"`
 	ProcessType                            string `json:"processType,omitempty"`
 	TriggerType                            string `json:"triggerType,omitempty"`
@@ -844,8 +851,9 @@ type FlowCustomError struct {
 }
 
 type FlowCustomErrorMessage struct {
-	Message  string            `json:"message"`
-	Formulas map[string]string `json:"formulas,omitempty"`
+	Message         string            `json:"message"`
+	Formulas        map[string]string `json:"formulas,omitempty"`
+	NumberConstants map[string]string `json:"numberConstants,omitempty"`
 }
 
 type FlowApexPluginCall struct {
@@ -922,6 +930,11 @@ type LookupHistoryScope struct{ identity byte }
 func NewLookupHistoryScope() *LookupHistoryScope { return &LookupHistoryScope{} }
 
 type Record struct {
+	// triggerAssignments tracks explicit before-trigger assignments during DML.
+	triggerAssignments uint8
+	// dmlNameUnassigned is transient provenance for a queried, unassigned Name.
+	// Unexported fields are not retained by JSON or gob snapshots.
+	dmlNameUnassigned bool
 	// dmlDefaultRecordTypeID is transient provenance for a VM-supplied default.
 	// It is intentionally unexported so JSON and gob snapshots do not retain it.
 	dmlDefaultRecordTypeID *ID
@@ -950,6 +963,39 @@ type Record struct {
 	// ClearedReferences retains optional lookups cleared by parent deletion.
 	ClearedReferences map[string]ClearedReference `json:"clearedReferences,omitempty"`
 }
+
+// MarkDMLTriggerAssignment records a user assignment during a before trigger.
+func (r *Record) MarkDMLTriggerAssignment(field string) {
+	if strings.EqualFold(field, "Name") {
+		r.triggerAssignments |= 1
+	}
+	if strings.EqualFold(field, "RecordTypeId") {
+		r.triggerAssignments |= 2
+	}
+}
+
+// DMLTriggerAssigned reports whether a before trigger assigned the field.
+func (r Record) DMLTriggerAssigned(field string) bool {
+	if strings.EqualFold(field, "Name") {
+		return r.triggerAssignments&1 != 0
+	}
+	if strings.EqualFold(field, "RecordTypeId") {
+		return r.triggerAssignments&2 != 0
+	}
+	return false
+}
+
+// ClearDMLTriggerAssignments removes transaction-local assignment provenance.
+func (r *Record) ClearDMLTriggerAssignments() { r.triggerAssignments = 0 }
+
+// MarkDMLNameUnassigned records a queried Name that was not assigned.
+func (r *Record) MarkDMLNameUnassigned() { r.dmlNameUnassigned = true }
+
+// DMLNameUnassigned reports queried, unassigned Name provenance.
+func (r Record) DMLNameUnassigned() bool { return r.dmlNameUnassigned }
+
+// ClearDMLNameUnassigned removes query provenance before storage.
+func (r *Record) ClearDMLNameUnassigned() { r.dmlNameUnassigned = false }
 
 // MarkDMLRecordTypeDefaulted records the current VM-supplied record type.
 func (r *Record) MarkDMLRecordTypeDefaulted() {
@@ -2064,7 +2110,7 @@ func cloneFlowSteps(steps []FlowStep) []FlowStep {
 		out[i].Transform.FieldMappings = append([]WorkflowFieldUpdate(nil), steps[i].Transform.FieldMappings...)
 		out[i].CollectionProcessor.Criteria = append([]WorkflowCriteriaItem(nil), steps[i].CollectionProcessor.Criteria...)
 		out[i].CollectionProcessor.FieldMappings = append([]WorkflowFieldUpdate(nil), steps[i].CollectionProcessor.FieldMappings...)
-		out[i].CustomError.Messages = append([]FlowCustomErrorMessage(nil), steps[i].CustomError.Messages...)
+		out[i].CustomError.Messages = cloneFlowCustomErrorMessages(steps[i].CustomError.Messages)
 		out[i].FaultBranch = cloneFlowSteps(steps[i].FaultBranch)
 		out[i].Loop.Steps = cloneFlowSteps(steps[i].Loop.Steps)
 		out[i].Branches = cloneFlowBranches(steps[i].Branches)
@@ -2172,10 +2218,23 @@ func cloneFlowRecordDeletes(deletes []FlowRecordDelete) []FlowRecordDelete {
 	return out
 }
 
+func cloneFlowCustomErrorMessages(messages []FlowCustomErrorMessage) []FlowCustomErrorMessage {
+	out := append([]FlowCustomErrorMessage(nil), messages...)
+	for i := range out {
+		if messages[i].NumberConstants != nil {
+			out[i].NumberConstants = make(map[string]string, len(messages[i].NumberConstants))
+			for k, v := range messages[i].NumberConstants {
+				out[i].NumberConstants[k] = v
+			}
+		}
+	}
+	return out
+}
+
 func cloneFlowCustomErrors(errors []FlowCustomError) []FlowCustomError {
 	out := append([]FlowCustomError(nil), errors...)
 	for i := range out {
-		out[i].Messages = append([]FlowCustomErrorMessage(nil), errors[i].Messages...)
+		out[i].Messages = cloneFlowCustomErrorMessages(errors[i].Messages)
 	}
 	return out
 }

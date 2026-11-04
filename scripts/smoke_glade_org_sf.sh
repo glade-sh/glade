@@ -38,7 +38,7 @@ SERVER_PID="$!"
 
 server_ready=0
 for _ in $(seq 1 100); do
-  if curl -fsS "http://${ADDR}/services/oauth2/userinfo" >/dev/null 2>&1; then
+  if curl -fsS -H 'X-Glade-Client: 1' "http://${ADDR}/services/oauth2/userinfo" >/dev/null 2>&1; then
     server_ready=1
     break
   fi

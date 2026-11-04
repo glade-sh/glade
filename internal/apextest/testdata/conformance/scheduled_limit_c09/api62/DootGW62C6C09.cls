@@ -1,0 +1,13 @@
+public without sharing class DootGW62C6C09 {
+ public static Map<String,Object> captured;
+ public static Id armed;
+ public static Integer mode;
+ public static String payload(Map<String,Object> d) { String s=JSON.serialize(d); if(s.length()>620) return '{"status":"inconclusive_payload_too_long"}'; return s; }
+ public static Map<String,Object> sample(Integer k,Id owned) {
+ Map<String,Object> d=new Map<String,Object>{'v'=>1,'cb'=>'Schedulable','case'=>k,'stage'=>'begin','org'=>UserInfo.getOrganizationId(),'api'=>'62.0','locale'=>UserInfo.getLocale(),'tz'=>UserInfo.getTimeZone().getID()};
+ if(k==0) {d.put('Queries',new List<Integer>{Limits.getQueries(),Limits.getLimitQueries()});d.put('AggregateQueries',new List<Integer>{Limits.getAggregateQueries(),Limits.getLimitAggregateQueries()});d.put('QueueableJobs',new List<Integer>{Limits.getQueueableJobs(),Limits.getLimitQueueableJobs()});d.put('FutureCalls',new List<Integer>{Limits.getFutureCalls(),Limits.getLimitFutureCalls()});}if(k==1) {d.put('DmlStatements',new List<Integer>{Limits.getDmlStatements(),Limits.getLimitDmlStatements()});d.put('DmlRows',new List<Integer>{Limits.getDmlRows(),Limits.getLimitDmlRows()});d.put('QueryRows',new List<Integer>{Limits.getQueryRows(),Limits.getLimitQueryRows()});d.put('Callouts',new List<Integer>{Limits.getCallouts(),Limits.getLimitCallouts()});}if(k==2) {d.put('CpuTime',new List<Integer>{Limits.getCpuTime(),Limits.getLimitCpuTime()});d.put('HeapSize',new List<Integer>{Limits.getHeapSize(),Limits.getLimitHeapSize()});d.put('EmailInvocations',new List<Integer>{Limits.getEmailInvocations(),Limits.getLimitEmailInvocations()});d.put('SoslQueries',new List<Integer>{Limits.getSoslQueries(),Limits.getLimitSoslQueries()});}if(k==3) { Integer q=Limits.getQueries(),r=Limits.getQueryRows(); List<Account> z=[SELECT Id FROM Account WHERE Id=:owned WITH SYSTEM_MODE]; Integer dq=Limits.getQueries()-q,dr=Limits.getQueryRows()-r; d.put('dq',dq); d.put('dr',dr); d.put('rows',z.size()); }if(k==4) { Integer s=Limits.getDmlStatements(),r=Limits.getDmlRows(); Account z=new Account(Name='C09 synthetic'); insert as system z; Integer ds=Limits.getDmlStatements()-s,dr=Limits.getDmlRows()-r; d.put('ds',ds); d.put('dr',dr); }
+ d.put('stage','complete'); return d;
+ }
+ public static void persist(Id owned,Integer k) { Map<String,Object> d=sample(k,owned); Account a=new Account(Id=owned,Description=payload(d)); update as system a; }
+ public static Map<String,Object> read(Id owned) { List<Account> a=[SELECT Id,Description FROM Account WHERE Id=:owned WITH SYSTEM_MODE]; System.assertEquals(1,a.size(),'C09 owned row'); return (Map<String,Object>)JSON.deserializeUntyped(a[0].Description); }
+}

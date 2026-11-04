@@ -18,3 +18,19 @@ func ResolveNamedApexReferenceObjectName(name string) (string, bool) {
 	}
 	return "", false
 }
+
+// NamedApexReferenceObjectDescribe returns the captured describe identity of a
+// named-source reference object: the label, plural label and key prefix.
+// Native describes also report no create, update, delete or read access and an
+// empty field map (reference_only_surfaces, Winter '27 org, API 62-67).
+func NamedApexReferenceObjectDescribe(name string) (label, pluralLabel, keyPrefix string, ok bool) {
+	canonical, ok := ResolveNamedApexReferenceObjectName(name)
+	if !ok {
+		return "", "", "", false
+	}
+	switch canonical {
+	case "FieldServiceMobileExtension":
+		return "Field Service Mobile Extension", "Field Service Mobile Extensions", "1ME", true
+	}
+	return "", "", "", false
+}

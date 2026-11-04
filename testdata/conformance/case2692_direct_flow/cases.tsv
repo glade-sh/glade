@@ -1,0 +1,13 @@
+case	object	request_body	interpretation
+account_unmatched	Account	{"LastName":null,"Description":"unmatched"}	active Flows do not match
+account_phone	Account	{"LastName":null,"Description":"phone"}	matched Flow assigns Phone
+account_same_type	Account	{"LastName":null,"Description":"same"}	matched Flow assigns its existing RecordTypeId
+account_explicit_type	Account	{"LastName":null,"RecordTypeId":"<DESCRIBE_DEFAULT_BUSINESS_ID>"}	default business type supplied explicitly
+account_valid	Account	{"Name":"Synthetic Boundary"}	valid business boundary
+user_reject	User	{"Name":"Explicit","FirstName":"Reject","LastName":"Probe"}	read-only Name and matching rejection Flow
+user_unmatched	User	{"Name":"Explicit","FirstName":"Control","LastName":"Probe"}	read-only Name and unmatched rejection Flow
+user_without_name	User	{"FirstName":"Reject","LastName":"Probe"}	matching Flow without explicit Name
+account_description	Account	{"LastName":null,"Description":"description"}	matched Flow assigns Description
+account_decision	Account	{"LastName":null,"Description":"decision"}	matched decision Flow assigns Phone
+account_unmatched_control	Account	{"LastName":null,"Description":"none"}	no Flow filter matches
+account_valid_control	Account	{"Name":"Synthetic Second Boundary"}	valid second-org boundary

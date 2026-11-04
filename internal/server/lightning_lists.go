@@ -14,7 +14,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/glade-sh/glade/internal/lwcbrowser"
 	"github.com/glade-sh/glade/internal/storage"
@@ -1146,8 +1145,9 @@ func (s *Server) listRecordPageData(object storage.ObjectState, config map[strin
 	if end > len(ids) {
 		end = len(ids)
 	}
+	context := newRecordTimeContext(s.Org)
 	for _, id := range ids[offset:end] {
-		row, err := getLDSRecordWireData(s.Org, lwcbrowser.WireGetRecordRequest{RecordID: id, Fields: fields, OptionalFields: optional}, s.Source)
+		row, err := getLDSRecordWireDataInLocation(s.Org, lwcbrowser.WireGetRecordRequest{RecordID: id, Fields: fields, OptionalFields: optional}, s.Source, context.ldsLocation())
 		if err != nil {
 			return nil, err
 		}
@@ -1156,7 +1156,7 @@ func (s *Server) listRecordPageData(object storage.ObjectState, config map[strin
 		if len(fields) == 0 && len(optional) == 0 {
 			row["fields"] = map[string]any{}
 		}
-		s.projectListRecord(row, object.Records[storage.ID(id)], object.Definition)
+		s.projectListRecord(row, object.Records[storage.ID(id)], object.Definition, context)
 		records = append(records, row)
 	}
 	var next, previous any
@@ -1171,7 +1171,7 @@ func (s *Server) listRecordPageData(object storage.ObjectState, config map[strin
 
 // List resources have their own projection; getRecord's relationship array and
 // field display defaults are not the list-record representation.
-func (s *Server) projectListRecord(row map[string]any, record storage.Record, definition storage.ObjectDefinition) {
+func (s *Server) projectListRecord(row map[string]any, record storage.Record, definition storage.ObjectDefinition, context recordTimeContext) {
 	row["childRelationships"] = map[string]any{}
 	row["recordTypeInfo"] = nil
 	row["systemModstamp"] = record.System.SystemModstamp
@@ -1190,32 +1190,14 @@ func (s *Server) projectListRecord(row map[string]any, record storage.Record, de
 		}
 		if field.Type == storage.FieldDateTime {
 			if value, ok := payload["value"].(string); ok {
-				payload["displayValue"] = s.listDateTimeDisplay(value)
+				payload["displayValue"] = context.listDisplay(value)
 			}
 		}
 	}
 }
 
 func (s *Server) listDateTimeDisplay(value string) any {
-	user := s.currentUser(nil, "")
-	// Unsupported locales or unavailable zone data do not panic or silently
-	// apply another user's zone. The raw timestamp remains in value.
-	if userString(user, "LocaleSidKey", "") != "en_US" {
-		return nil
-	}
-	zoneName := userString(user, "TimeZoneSidKey", "")
-	if zoneName == "" {
-		return nil
-	}
-	zone, err := time.LoadLocation(zoneName)
-	if err != nil {
-		return nil
-	}
-	stamp, err := time.Parse(time.RFC3339Nano, value)
-	if err != nil {
-		return nil
-	}
-	return stamp.In(zone).Format("1/2/2006, 3:04 PM")
+	return newRecordTimeContext(s.Org).listDisplay(value)
 }
 
 // Native list-view and related-list controls supply numeric gte/gt predicates.

@@ -7,6 +7,7 @@ import json
 import math
 import os
 from pathlib import Path
+import re
 import shlex
 import signal
 import subprocess
@@ -32,16 +33,106 @@ def action_env(**values):
                 output.write(f"{key}={value}\n")
 
 
-def diff_pack(profile):
-    # Pinned init persists these ranges before the analysis step. Keep the
-    # same data-extension protocol as its analyze action, without API calls.
+def local_diff_ranges(deadline=None):
+    """Complete PR ranges in the analyzed tree, without the compare API cap.
+
+    Uncertain provenance is an error, never an empty diff. No network command or
+    repository mutation is performed here; checkout must provide full history.
+    """
+    workspace = Path(os.environ["GITHUB_WORKSPACE"])
+    deadline = min(deadline if deadline is not None else float("inf"), time.monotonic() + 60)
+
+    def git(*args):
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise subprocess.TimeoutExpired("complete local CodeQL diff", 60)
+        return subprocess.check_output(
+            ["git", "--literal-pathspecs", "-C", str(workspace), *args],
+            stderr=subprocess.PIPE, timeout=remaining,
+        )
+
+    def commit(value):
+        if not isinstance(value, str) or not re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", value):
+            raise ValueError("invalid pinned PR commit")
+        resolved = git("rev-parse", "--verify", value + "^{commit}").decode().strip()
+        if resolved != value:
+            raise ValueError("PR commit did not resolve exactly")
+        return value
+
+    event = json.loads(Path(os.environ["GITHUB_EVENT_PATH"]).read_text())
+    pr = event["pull_request"]
+    base, head = commit(pr["base"]["sha"]), commit(pr["head"]["sha"])
+    analyzed = commit(os.environ["GITHUB_SHA"])
+    if git("rev-parse", "HEAD").decode().strip() != analyzed:
+        raise ValueError("CodeQL checkout does not match GITHUB_SHA")
+    if git("rev-parse", "--is-shallow-repository").strip() != b"false":
+        raise ValueError("local CodeQL diff requires complete checkout history")
+    if analyzed != head:
+        parents = git("show", "-s", "--format=%P", analyzed).decode().split()
+        if parents != [base, head]:
+            raise ValueError("CodeQL tree is neither the PR head nor its pinned merge")
+    ancestors = git("merge-base", "--all", base, head).decode().split()
+    if len(ancestors) != 1:
+        raise ValueError("CodeQL PR diff requires exactly one merge base")
+    ancestor = commit(ancestors[0])
+    # Ranges must describe the program extracted from this checkout, not edits
+    # made since checkout. Build output belongs outside the source tree.
+    if git("diff", "--no-ext-diff", "--ignore-submodules=none", "--name-only", "-z", "HEAD", "--") or git("diff", "--cached", "--no-ext-diff", "--ignore-submodules=none", "--name-only", "-z", "HEAD", "--"):
+        raise ValueError("tracked source changed since the analyzed commit")
+    if any(p.endswith(b".go") for p in git("ls-files", "--others", "-z").split(b"\0")):
+        raise ValueError("untracked Go source makes local diff provenance uncertain")
+
+    # Raw NUL-separated paths avoid quoting, newline, rename and pathspec traps.
+    # Disable renames: the destination becomes an addition, conservatively
+    # covering every destination line; the old path has no nodes in this tree.
+    raw = git("diff", "--raw", "--no-abbrev", "-z", "--no-renames", "--no-ext-diff",
+              "--no-relative", "--ignore-submodules=none", ancestor, analyzed, "--")
+    parts = raw.split(b"\0")
+    if parts[-1] != b"" or (len(parts) - 1) % 2:
+        raise ValueError("invalid complete Git change manifest")
+    ranges = []
+    for index in range(0, len(parts) - 1, 2):
+        header, path = parts[index].decode("ascii"), parts[index + 1].decode("utf-8")
+        fields = header.split()
+        if len(fields) != 5 or fields[4] not in ("A", "M", "D", "T"):
+            raise ValueError("unsupported Git change manifest entry")
+        if not path or Path(path).is_absolute() or ".." in Path(path).parts:
+            raise ValueError("invalid local PR diff path")
+        if fields[4] == "D":
+            continue
+        if fields[1] not in ("100644", "100755"):
+            raise ValueError("changed symlink or submodule requires full CodeQL analysis")
+        patch = git("diff", "--no-ext-diff", "--no-textconv", "--no-renames",
+                    "--no-color", "--no-relative", "--unified=0", ancestor, analyzed, "--", path)
+        hunks = re.findall(rb"^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@", patch, re.MULTILINE)
+        # Binary/mode-only/empty changes and deletion-only hunks cannot supply
+        # precise surviving lines. Whole-file matching is deliberately broader.
+        if not hunks or any(count == b"0" for _, count in hunks):
+            ranges.append({"path": path, "startLine": 0, "endLine": 0})
+        else:
+            for start, count in hunks:
+                first, length = int(start), int(count) if count else 1
+                if first < 1 or length < 1:
+                    raise ValueError("invalid Git new-line hunk")
+                ranges.append({"path": path, "startLine": first, "endLine": first + length - 1})
+    print("CodeQL local diff: " + json.dumps({"merge_base": ancestor, "analyzed_sha": analyzed,
+          "changed_files": (len(parts) - 1) // 2, "ranges": len(ranges)}), flush=True)
+    return ranges
+
+
+def diff_pack(profile, deadline=None):
+    # Prefer pinned init's ranges. Large PRs exceed its compare API cap, so
+    # compute a complete local fallback in the actual analyzed tree instead.
     temp = os.environ.get("CODEQL_ACTION_TEMP") or os.environ.get("RUNNER_TEMP")
     if profile != "fast" or not temp:
         return None
     ranges_file = Path(temp, "pr-diff-range.json")
-    if not ranges_file.exists():
+    if ranges_file.exists():
+        ranges = json.loads(ranges_file.read_text())
+    elif os.environ.get("GITHUB_EVENT_NAME") == "pull_request":
+        ranges = local_diff_ranges(deadline)
+    else:
         return None
-    ranges = json.loads(ranges_file.read_text())
     if not isinstance(ranges, list):
         raise ValueError("invalid PR diff ranges")
     data = []
@@ -73,10 +164,14 @@ def run_phase(command, seconds):
     process = subprocess.Popen(command, start_new_session=True)
     try:
         status = process.wait(timeout=seconds)
-    except subprocess.TimeoutExpired:
-        os.killpg(process.pid, signal.SIGKILL)
+    finally:
+        # The evaluator owns a separate session, so even interruption of the
+        # invoking shell must terminate that session before this helper exits.
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
         process.wait()
-        raise
     if status:
         raise subprocess.CalledProcessError(status, command)
 
@@ -91,7 +186,7 @@ def analyze(args):
     output.unlink(missing_ok=True)
     action_output(False)
     deadline = time.monotonic() + total
-    pack = diff_pack(args.profile)
+    pack = diff_pack(args.profile, deadline)
     query_options = [f"--additional-packs={pack}", "--extension-packs=codeql-action/pr-diff-range"] if pack else []
     sarif_options = ["--sarif-run-property=incrementalMode=diff-informed"] if pack else []
     phases = [
@@ -144,6 +239,10 @@ def check(path):
 
 
 def main():
+    def interrupted(signum, frame):
+        raise KeyboardInterrupt
+
+    signal.signal(signal.SIGTERM, interrupted)
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
     scan = commands.add_parser("analyze")
@@ -155,7 +254,7 @@ def main():
     args = parser.parse_args()
     try:
         analyze(args) if args.command == "analyze" else check(args.sarif)
-    except (OSError, ValueError, KeyError, TypeError, subprocess.CalledProcessError) as error:
+    except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError) as error:
         action_env(CODEQL_ACTION_JOB_STATUS="JOB_STATUS_FAILURE")
         print(f"::error::CodeQL: {error}", file=sys.stderr)
         return 1

@@ -1,0 +1,4 @@
+finding	class	method	capture_id
+Dot15/Q2	DootSoqlQ2TestB1031	limitRows	Q2.limit
+Dot15/Q2	DootSoqlQ2TestB1031	offsetRows	Q2.offset
+Dot15/Q2	DootSoqlQ2TestB1031	unwindowed	Q2.unwindowed

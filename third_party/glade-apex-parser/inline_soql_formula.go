@@ -7,7 +7,7 @@ import "strings"
 // The tree grammar predates FORMULA predicates. Give it a field operand with
 // the same byte range; query validation continues to use the original source.
 func normalizeInlineSOQLFormula(source string) string {
-	out := []byte(source)
+	var out []byte
 	for i := 0; i < len(source); {
 		switch {
 		case source[i] == '\'':
@@ -27,16 +27,16 @@ func normalizeInlineSOQLFormula(source string) string {
 				i++
 				continue
 			}
-			normalizeSOQLFormulaPredicates(source, out, start, end)
+			normalizeSOQLFormulaPredicates(source, &out, start, end)
 			i = end + 1
 		default:
 			i++
 		}
 	}
-	return string(out)
+	return normalizedSource(source, out)
 }
 
-func normalizeSOQLFormulaPredicates(source string, out []byte, start, end int) {
+func normalizeSOQLFormulaPredicates(source string, out *[]byte, start, end int) {
 	depth, opaqueDepth := 0, -1
 	fromSeen, where, operand, qualified := false, false, false, false
 	for i := start + len("SELECT"); i < end; {
@@ -91,8 +91,8 @@ func normalizeSOQLFormulaPredicates(source string, out []byte, start, end int) {
 		case where && opaqueDepth < 0 && operand && word == "NOT":
 		case where && opaqueDepth < 0 && operand && word == "FORMULA":
 			if callEnd := inlineSOQLFormulaCallEnd(source, wordEnd, end); callEnd > wordEnd {
-				blankInlineSOSL(out, i, callEnd)
-				copy(out[i:callEnd], "Id")
+				blankInlineSOSL(source, out, i, callEnd)
+				copy((*out)[i:callEnd], "Id")
 				wordEnd = callEnd
 			}
 			operand = false

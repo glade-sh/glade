@@ -15,9 +15,11 @@ import (
 )
 
 type Server struct {
-	mu    sync.RWMutex
-	Org   *storage.OrgState
-	Store interface {
+	mu            sync.RWMutex
+	bodySlotsOnce sync.Once
+	bodySlots     chan struct{}
+	Org           *storage.OrgState
+	Store         interface {
 		Save(storage.OrgState) error
 	}
 	Source       SourceMetadata
@@ -202,15 +204,57 @@ func (s *Server) ReloadProjectState(source SourceMetadata, index typesys.Index, 
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if !localRequestOriginAllowed(r) {
+		http.Error(w, "cross-origin request forbidden", http.StatusForbidden)
+		return
+	}
 	parts := splitPath(r.URL.EscapedPath())
-	if canServeWithReadLock(r, parts) {
+	release, ok := s.stageRequestBody(w, r)
+	if !ok {
+		return
+	}
+	defer release()
+	readOnly := canServeWithReadLock(r, parts)
+	if readOnly {
 		s.mu.RLock()
 		defer s.mu.RUnlock()
 	} else {
 		s.mu.Lock()
 		defer s.mu.Unlock()
 	}
+	if !readOnly && hasIssuedTokens() {
+		before := snapshotIssuedUsers(s, s.Org)
+		defer func() {
+			if s.Org != nil {
+				revokeChangedUsers(s, before, s.Org.Objects["User"].Records)
+			}
+		}()
+	}
+	if !s.issuedUserStillExists(r) {
+		http.Error(w, "issued token user no longer exists", http.StatusUnauthorized)
+		return
+	}
 	s.serveHTTPLocked(w, r, parts)
+}
+
+func (s *Server) issuedUserStillExists(r *http.Request) bool {
+	userID, ok := r.Context().Value(issuedUserContextKey{}).(string)
+	if !ok {
+		return true
+	}
+	token, ok := r.Context().Value(issuedTokenContextKey{}).(string)
+	if !ok {
+		return false
+	}
+	boundUser, valid := issuedTokenUserFor(token, s)
+	if !valid || boundUser != userID {
+		return false
+	}
+	if s.Org == nil {
+		return false
+	}
+	user, exists := userRecord(s.Org.Objects["User"], storage.ID(userID))
+	return exists && !user.System.IsDeleted
 }
 
 func canServeWithReadLock(r *http.Request, parts []string) bool {

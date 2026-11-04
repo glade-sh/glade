@@ -18,11 +18,22 @@ Release installs include the toolchain. Verify it before opening LWC routes:
 glade toolchain status
 ```
 
-Source-checkout developers can install it with
-`glade toolchain install --from path/to/glade`. Each bundle must declare exact
-API version `65.0`, `66.0`, or `67.0`; the bundle version is independent of the
-Apex project default and local HTTP route version. Keep the Salesforce-intended
-version instead of raising it only to make local preview compile.
+Explicit LWC bundle versions are whole numbers; the compiler accepts 59.0–68.0
+and defaults an unversioned bundle to 68.0. The supported target is 59.0–67.0;
+retaining an accepted version is not a parity claim.
+
+Compilation and runtime assets use the installed toolchain or a root explicitly
+selected with `GLADE_HOME` or `GLADE_ROOT`. Set either to a reviewed checkout to
+use its scripts; a source-only checkout can use installed dependencies. Running
+`glade toolchain install --from /path/to/reviewed/checkout` explicitly installs
+that checkout; `glade toolchain install` selects a source from the current
+checkout. These actions authorize its preparation scripts.
+
+For the legacy automatic discovery workflow, set
+`GLADE_ALLOW_PROJECT_TOOLCHAIN=1` in the invoking environment only after reviewing
+the project and its surroundings. Exactly `1` permits discovery beside the
+executable and in project ancestors, including executable preparation scripts.
+Node must be available on PATH. Prefer an explicit trusted root.
 
 Then start the local workbench from the project root:
 

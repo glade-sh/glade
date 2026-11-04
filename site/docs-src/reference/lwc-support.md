@@ -11,8 +11,8 @@ from the maintained repository LWC support source during the site build.
 Use this page when checking whether a Lightning Web Component can run in the local shell.
 The detailed guide and checked support rows carry the route and module detail.
 
-v0.3.0 supports LWC API 59.0-68.0. Explicit bundle `apiVersion` values must be
-whole versions in that window. Unversioned bundles use compiler default 68.0;
+Glade supports LWC API 59.0-67.0. Explicit bundle `apiVersion` values must be
+whole versions from 59.0 through 68.0. Unversioned bundles use compiler default 68.0;
 module availability follows the effective version.
 
 The bundled LWC toolchain pins `@lwc/compiler` 9.4.3. Its API default is

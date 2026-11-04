@@ -137,10 +137,9 @@ func TestOwnNamespaceInnerTypeResolvesOnEveryRoute(t *testing.T) {
 						if s.Total != 1 || s.CompileErrors != 0 || len(run.ExcludedClasses) != 0 {
 							t.Fatalf("warm=%v summary=%+v excluded=%+v problem=%s", warm, s, run.ExcludedClasses, firstRunProblem(run))
 						}
-						// The runtime binds classes by their indexed namespace. A
-						// sub-project namespace qualifier compiles here; dispatch
-						// through it is a separate runtime boundary.
-						if layout == "root" && (s.Passed != 1 || s.RuntimeErrors != 0) {
+						// Native own-namespace dispatch succeeds for both API floors;
+						// see subproject_namespace_runtime/org.tsv:3,6.
+						if s.Passed != 1 || s.RuntimeErrors != 0 {
 							t.Fatalf("warm=%v summary=%+v problem=%s", warm, s, firstRunProblem(run))
 						}
 					}

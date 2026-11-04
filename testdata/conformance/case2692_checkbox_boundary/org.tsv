@@ -1,0 +1,25 @@
+api	route	case	result	fields
+62.0	rest	false_unmatched	INVALID_TYPE_ON_FIELD_IN_RECORD	FalseFlag__c
+62.0	rest	true_unmatched	INVALID_TYPE_ON_FIELD_IN_RECORD	TrueFlag__c
+62.0	rest	false_matched	INVALID_TYPE_ON_FIELD_IN_RECORD	FalseFlag__c
+62.0	rest	true_matched	INVALID_TYPE_ON_FIELD_IN_RECORD	TrueFlag__c
+62.0	rest	valid	SUCCESS	
+62.0	rest	reject	FIELD_CUSTOM_VALIDATION_EXCEPTION	
+62.0	anonymous	false_unmatched	INVALID_TYPE_ON_FIELD_IN_RECORD	FalseFlag__c
+62.0	anonymous	true_unmatched	INVALID_TYPE_ON_FIELD_IN_RECORD	TrueFlag__c
+62.0	anonymous	false_matched	INVALID_TYPE_ON_FIELD_IN_RECORD	FalseFlag__c
+62.0	anonymous	true_matched	INVALID_TYPE_ON_FIELD_IN_RECORD	TrueFlag__c
+62.0	anonymous	valid	SUCCESS	
+62.0	anonymous	reject	FIELD_CUSTOM_VALIDATION_EXCEPTION	
+67.0	rest	false_unmatched	INVALID_TYPE_ON_FIELD_IN_RECORD	FalseFlag__c
+67.0	rest	true_unmatched	INVALID_TYPE_ON_FIELD_IN_RECORD	TrueFlag__c
+67.0	rest	false_matched	INVALID_TYPE_ON_FIELD_IN_RECORD	FalseFlag__c
+67.0	rest	true_matched	INVALID_TYPE_ON_FIELD_IN_RECORD	TrueFlag__c
+67.0	rest	valid	SUCCESS	
+67.0	rest	reject	FIELD_CUSTOM_VALIDATION_EXCEPTION	
+67.0	anonymous	false_unmatched	INVALID_TYPE_ON_FIELD_IN_RECORD	FalseFlag__c
+67.0	anonymous	true_unmatched	INVALID_TYPE_ON_FIELD_IN_RECORD	TrueFlag__c
+67.0	anonymous	false_matched	INVALID_TYPE_ON_FIELD_IN_RECORD	FalseFlag__c
+67.0	anonymous	true_matched	INVALID_TYPE_ON_FIELD_IN_RECORD	TrueFlag__c
+67.0	anonymous	valid	SUCCESS	
+67.0	anonymous	reject	FIELD_CUSTOM_VALIDATION_EXCEPTION	

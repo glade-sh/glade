@@ -1,0 +1,59 @@
+{
+  "cases": [
+    {
+      "api": "62.0",
+      "class": "C11Q3A62C1",
+      "files": {
+        "packet/classes/C11Q3A62C1.cls": "26c1f86b577964852fd132eb82dd4cbf07541faf70759c75f65abd3a80b2d6a5",
+        "packet/classes/C11Q3A62C1.cls-meta.xml": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+        "packet/classes/C11Q3R62C1.cls": "bc159347dbf37f678ff444e839a8f6071a073862a09e9f5b64fc2e6a39f9cb65",
+        "packet/classes/C11Q3R62C1.cls-meta.xml": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+        "packet/objects/DootSecQ3B1031__c/DootSecQ3B1031__c.object-meta.xml": "3e8639a4f792333036b43f10c321212ea30a5fc9622d85f7746b80019117a4b8",
+        "packet/objects/DootSecQ3B1031__c/fields/Allowed__c.field-meta.xml": "a3f9c283d790029f09335484819d108d8b9ade96ad1a6e6ee178a1b807bffca4",
+        "packet/objects/DootSecQ3B1031__c/fields/Hidden__c.field-meta.xml": "c4cb77b53085246e33d8aef3b684161625ffd0899cb5ffab00fd574dc8c83d40",
+        "packet/objects/DootSecQ3B1031__c/fields/Value__c.field-meta.xml": "896dbabfac9ec5e1cc427cad6c292e873f786177031647edc2fc05ee199008bf",
+        "packet/objects/DootSecQ3ChildB1031__c/DootSecQ3ChildB1031__c.object-meta.xml": "276c6efd08e7a91c98f45c6fce21cfed61374df7e8d2db78dfe740cef812e850",
+        "packet/objects/DootSecQ3ChildB1031__c/fields/Allowed__c.field-meta.xml": "a3f9c283d790029f09335484819d108d8b9ade96ad1a6e6ee178a1b807bffca4",
+        "packet/objects/DootSecQ3ChildB1031__c/fields/Hidden__c.field-meta.xml": "c4cb77b53085246e33d8aef3b684161625ffd0899cb5ffab00fd574dc8c83d40",
+        "packet/objects/DootSecQ3ChildB1031__c/fields/Parent__c.field-meta.xml": "ceb1253eb0fdc3e8081fa481cb64aefd07d39d739386d38c78e99b750e0b4d20",
+        "packet/permissionsets/C11Q3AdminC1.permissionset-meta.xml": "b02a58cc322ee9718a03aaf085150207525664d88a736f1b471c7f70f90d2b64",
+        "packet/permissionsets/DootSecQ3ReaderB1031.permissionset-meta.xml": "edbdc93283d0bb73ad4becd1a787cc5478778a3ebdc3f335e8fae3683838fa7f",
+        "sfdx-project.json": "5191ffe4d4c72f10283ba8fb544e4d8ba65f916bcaf4396d9e3b194ae7f0a80b"
+      },
+      "marker": "c11.Q3.admin.api62|Q3.childProjection",
+      "method": "childProjection",
+      "payload_sha256": "834d3e3f98aab32e3aa97232c2e89e2a00cfa740b3e9669f39c72414283ab3d6",
+      "report_pointer": "$/result/details/runTestResult/failures/0",
+      "report_sha256": "412bb66bc89df9a2bc699ce83bb688c82f392c86a30666abb4558d2052ef5d4b",
+      "source_input_sha256": "7b8166453290772d2e871d9c69d377e399a374305654d9f7a0144e665eac0ea0"
+    },
+    {
+      "api": "67.0",
+      "class": "C11Q3A67C1",
+      "files": {
+        "packet/classes/C11Q3A67C1.cls": "fce72a55fb61232f5aa186b42491c86700283edd180cd82addba7707d206f1cb",
+        "packet/classes/C11Q3A67C1.cls-meta.xml": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+        "packet/classes/C11Q3R67C1.cls": "f2f79365dcd2d881d0bb51a2384ca3b3c758b896c37e1a763bf3438b72424cec",
+        "packet/classes/C11Q3R67C1.cls-meta.xml": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+        "packet/objects/DootSecQ3B1031__c/DootSecQ3B1031__c.object-meta.xml": "3e8639a4f792333036b43f10c321212ea30a5fc9622d85f7746b80019117a4b8",
+        "packet/objects/DootSecQ3B1031__c/fields/Allowed__c.field-meta.xml": "a3f9c283d790029f09335484819d108d8b9ade96ad1a6e6ee178a1b807bffca4",
+        "packet/objects/DootSecQ3B1031__c/fields/Hidden__c.field-meta.xml": "c4cb77b53085246e33d8aef3b684161625ffd0899cb5ffab00fd574dc8c83d40",
+        "packet/objects/DootSecQ3B1031__c/fields/Value__c.field-meta.xml": "896dbabfac9ec5e1cc427cad6c292e873f786177031647edc2fc05ee199008bf",
+        "packet/objects/DootSecQ3ChildB1031__c/DootSecQ3ChildB1031__c.object-meta.xml": "276c6efd08e7a91c98f45c6fce21cfed61374df7e8d2db78dfe740cef812e850",
+        "packet/objects/DootSecQ3ChildB1031__c/fields/Allowed__c.field-meta.xml": "a3f9c283d790029f09335484819d108d8b9ade96ad1a6e6ee178a1b807bffca4",
+        "packet/objects/DootSecQ3ChildB1031__c/fields/Hidden__c.field-meta.xml": "c4cb77b53085246e33d8aef3b684161625ffd0899cb5ffab00fd574dc8c83d40",
+        "packet/objects/DootSecQ3ChildB1031__c/fields/Parent__c.field-meta.xml": "ceb1253eb0fdc3e8081fa481cb64aefd07d39d739386d38c78e99b750e0b4d20",
+        "packet/permissionsets/C11Q3AdminC1.permissionset-meta.xml": "b02a58cc322ee9718a03aaf085150207525664d88a736f1b471c7f70f90d2b64",
+        "packet/permissionsets/DootSecQ3ReaderB1031.permissionset-meta.xml": "edbdc93283d0bb73ad4becd1a787cc5478778a3ebdc3f335e8fae3683838fa7f",
+        "sfdx-project.json": "1efe9f20783d8a3449d04e98e5ca98ba00dc8797f82bf2659c56713ab9770d0a"
+      },
+      "marker": "c11.Q3.admin.api67|Q3.childProjection",
+      "method": "childProjection",
+      "payload_sha256": "ba5559cf22351b0a867247e5f1be68628f7f8238f49fcab25b8fb03428ef3f53",
+      "report_pointer": "$/result/details/runTestResult/failures/0",
+      "report_sha256": "1602aef43ae64d4629a29985da62eee1cb576da87778bcb8211cfda0fc1d534a",
+      "source_input_sha256": "cf4ceeda3ea450a9ad57f78fb170e4a9be541998434377d9000b8e0e71483fc8"
+    }
+  ],
+  "tsv_sha256": "35c5c4fa973fd1b0fa912c013e7a2f42f0772a9f2cc04ee566e2733cee049c21"
+}

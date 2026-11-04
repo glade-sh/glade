@@ -1,0 +1,5 @@
+source_api	class	method	capture_id	observation
+62.0	DootLocaleA1267A1031	en	A12.en	{"status":"ok","parsed":[2008,1,28],"formatted":"1/28/2008","input":[2008,1,28],"context":{"tz":"GMT","language":"en_US","locale":"en_US"}}
+62.0	DootLocaleA1267A1031	fr	A12.fr	{"status":"ok","parsed":[2008,1,28],"formatted":"28/01/2008","input":[2008,1,28],"context":{"tz":"GMT","language":"en_US","locale":"fr_FR"}}
+67.0	DootLocaleA1267A1031	en	A12.en	{"status":"ok","parsed":[2008,1,28],"formatted":"1/28/2008","input":[2008,1,28],"context":{"tz":"GMT","language":"en_US","locale":"en_US"}}
+67.0	DootLocaleA1267A1031	fr	A12.fr	{"status":"ok","parsed":[2008,1,28],"formatted":"28/01/2008","input":[2008,1,28],"context":{"tz":"GMT","language":"en_US","locale":"fr_FR"}}

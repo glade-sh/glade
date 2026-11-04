@@ -1,0 +1,5 @@
+source_api	route	observation
+62.0	anonymous	"{""privateOther"":""System.TypeException"",""privateSubclass"":""System.TypeException"",""publicBoundary"":""constructed"",""publicSubclass"":""System.TypeException""}"
+62.0	isTest	"{""privateOther"":""System.TypeException"",""privateSubclass"":""System.TypeException"",""publicBoundary"":""constructed"",""publicSubclass"":""System.TypeException""}"
+67.0	anonymous	"{""privateOther"":""System.TypeException"",""privateSubclass"":""System.TypeException"",""publicBoundary"":""constructed"",""publicSubclass"":""System.TypeException""}"
+67.0	isTest	"{""privateOther"":""System.TypeException"",""privateSubclass"":""System.TypeException"",""publicBoundary"":""constructed"",""publicSubclass"":""System.TypeException""}"

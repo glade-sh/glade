@@ -42,6 +42,13 @@ func (s *Server) commitOrg(org storage.OrgState) error {
 	if err := s.persistOrg(org); err != nil {
 		return err
 	}
+	if hasIssuedTokens() {
+		if s.Org.OrgID != org.OrgID {
+			revokeServerTokens(s)
+		} else {
+			revokeChangedUsers(s, s.Org.Objects["User"].Records, org.Objects["User"].Records)
+		}
+	}
 	*s.Org = org
 	return nil
 }
@@ -525,6 +532,9 @@ func (s *Server) currentUser(r *http.Request, pathUserID storage.ID) storage.Rec
 }
 
 func selectedUserID(r *http.Request, pathUserID storage.ID) storage.ID {
+	if value, ok := r.Context().Value(issuedUserContextKey{}).(string); ok {
+		return storage.ID(value)
+	}
 	if value := strings.TrimSpace(r.Header.Get("X-GLADE-User-Id")); value != "" {
 		return storage.ID(value)
 	}
@@ -538,6 +548,9 @@ func bearerUserID(header string) storage.ID {
 	parts := strings.Fields(header)
 	if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
 		return ""
+	}
+	if userID, ok := issuedTokenUser(parts[1]); ok {
+		return storage.ID(userID)
 	}
 	return storage.ID(parts[1])
 }
@@ -632,8 +645,12 @@ func (s *Server) localTokenPayload(r *http.Request) (map[string]any, error) {
 	}
 	base := "http://" + r.Host
 	userID := string(user.ID)
+	token, err := issueTokenFor(s, userID)
+	if err != nil {
+		return nil, err
+	}
 	return map[string]any{
-		"access_token": localAccessToken(userID),
+		"access_token": token,
 		"instance_url": base,
 		"id":           identity["id"],
 		"issued_at":    "0",
@@ -641,10 +658,6 @@ func (s *Server) localTokenPayload(r *http.Request) (map[string]any, error) {
 		"token_type":   "Bearer",
 		"scope":        "api refresh_token",
 	}, nil
-}
-
-func localAccessToken(userID string) string {
-	return "local-" + userID
 }
 
 func userString(user storage.Record, field, fallback string) string {

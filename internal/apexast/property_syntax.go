@@ -1,6 +1,7 @@
 package apexast
 
 import (
+	"sort"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/diagnostic"
@@ -34,10 +35,8 @@ func nativePropertySyntax(file File, source string) File {
 				!strings.EqualFold(decl.Accessors[0].Kind, "get") || !strings.EqualFold(decl.Accessors[1].Kind, "set") {
 				continue
 			}
-			for i := 0; i+7 < len(tokens); i++ {
-				if tokens[i].offset < decl.Range.Start.Offset || tokens[i+6].offset >= decl.Range.End.Offset {
-					continue
-				}
+			start := sort.Search(len(tokens), func(i int) bool { return tokens[i].offset >= decl.Range.Start.Offset })
+			for i := start; i+7 < len(tokens) && tokens[i+6].offset < decl.Range.End.Offset; i++ {
 				shape := []string{"{", "transient", "get", ";", "set", ";", "}", "public"}
 				matches := true
 				for j, token := range shape {

@@ -7,8 +7,8 @@ import (
 )
 
 // Native explicit-person rows in testdata/conformance/lookup_filter_followups/org.tsv
-// preserve Named_Person, Named_Individual and Care. Legacy metadata can identify
-// a person record type by its name without carrying the newer PersonAccount flag.
+// preserve Named_Person, Named_Individual and Care. Their family is represented
+// explicitly, since configurable business names can contain the same words.
 func TestPersonAccountExplicitNameOnlyFollowups(t *testing.T) {
 	for _, tc := range []struct{ name, developer, label string }{
 		{"personLabel", "Care", "Care Person"},
@@ -22,7 +22,7 @@ func TestPersonAccountExplicitNameOnlyFollowups(t *testing.T) {
 			account := org.Objects["Account"]
 			account.Definition.RecordTypes = []storage.RecordTypeInfo{
 				{DeveloperName: "PersonAccount", Name: "Person Account", Active: true, Available: true, Default: true, PersonAccount: true},
-				{DeveloperName: tc.developer, Name: tc.label, Active: true, Available: true},
+				{DeveloperName: tc.developer, Name: tc.label, Active: true, Available: true, PersonAccount: true},
 			}
 			storage.EnsureRecordTypeIDField(&account.Definition)
 			org.Objects["Account"] = account
@@ -37,8 +37,8 @@ func TestPersonAccountExplicitNameOnlyFollowups(t *testing.T) {
 			engine := NewEngine(&org)
 			for _, index := range []int{1, 0} {
 				rt := org.Objects["Account"].Definition.RecordTypes[index]
-				if index == 1 && rt.PersonAccount {
-					t.Fatal("fixture must exercise an unflagged person record type")
+				if index == 1 && !rt.PersonAccount {
+					t.Fatal("fixture must retain its captured person record type family")
 				}
 				result := engine.Insert([]storage.Record{{Object: "Account", Fields: map[string]storage.Value{
 					"LastName": storage.StringValue("Owned"), "RecordTypeId": storage.IDValue(rt.ID),

@@ -23,12 +23,12 @@ import (
 // SemanticABI identifies the behavior of semantic diagnostics, inference,
 // visibility, and exported types. Any change to those behaviors must bump this
 // value so persisted semantic results fail closed.
-const SemanticABI = "sema-v74"
+const SemanticABI = "sema-v79"
 
 // PlatformABI identifies the built-in Salesforce platform model consumed by
 // semantic analysis. Changes to built-in signatures, aliases, or visibility
 // must bump this value so persisted semantic results fail closed.
-const PlatformABI = "salesforce-platform-v59"
+const PlatformABI = "salesforce-platform-v60"
 
 type Result struct {
 	Project     typesys.ProjectInfo      `json:"project"`
@@ -2809,54 +2809,125 @@ func semaIterableElementTypeInHierarchy(typeName string, model *semaTypeMemberVi
 	return "", false
 }
 
+type semaReceiverWork struct {
+	Units, Limit, Calls, InferenceEntries int
+	StopSite                              string
+}
+type semaReceiverWorkFailure struct{ Reason string }
+
+func (w *semaReceiverWork) add(n int) {
+	if w == nil {
+		return
+	}
+	if n < 0 {
+		panic(semaReceiverWorkFailure{"negative work charge"})
+	}
+	w.Units += n
+	if w.Units > w.Limit {
+		panic(semaReceiverWorkFailure{"receiver work limit exceeded"})
+	}
+}
+func (w *semaReceiverWork) inference() {
+	if w == nil {
+		return
+	}
+	w.InferenceEntries++
+	panic(semaReceiverWorkFailure{"oversized receiver entered inference"})
+}
+func receiverWorkTrimSpace(s string, w *semaReceiverWork) string {
+	w.add(len(s))
+	return strings.TrimSpace(s)
+}
+func receiverWorkToLower(s string, w *semaReceiverWork) string {
+	w.add(len(s))
+	return strings.ToLower(s)
+}
+func receiverWorkFields(s string, w *semaReceiverWork) []string {
+	w.add(len(s))
+	return strings.Fields(s)
+}
+func receiverWorkLastIndex(s, needle string, w *semaReceiverWork) int {
+	w.add(len(s) + len(needle))
+	return strings.LastIndex(s, needle)
+}
+func receiverWorkLastIndexByte(s string, needle byte, w *semaReceiverWork) int {
+	w.add(len(s))
+	return strings.LastIndexByte(s, needle)
+}
+func receiverWorkCount(s, needle string, w *semaReceiverWork) int {
+	w.add(len(s) + len(needle))
+	return strings.Count(s, needle)
+}
+func receiverWorkEqualFold(a, b string, w *semaReceiverWork) bool {
+	w.add(len(a) + len(b))
+	return strings.EqualFold(a, b)
+}
+
 func semaChainedCallReceiver(body string, callStart int, scope map[string]string, model *semaTypeMemberView, currentType string) (string, string, bool) {
-	dot, ok := semaPreviousDottedChainDot(body, callStart)
+	return semaChainedCallReceiverWithWork(body, callStart, scope, model, currentType, nil)
+}
+
+func semaChainedCallReceiverWithWork(body string, callStart int, scope map[string]string, model *semaTypeMemberView, currentType string, work *semaReceiverWork) (string, string, bool) {
+	if work != nil {
+		work.Calls++
+	}
+	dot, ok := semaPreviousDottedChainDotWithWork(body, callStart, work)
 	if !ok || dot < 1 {
 		return "", "", false
 	}
 	methodStart := callStart
 	methodEnd := callStart
 	for methodEnd < len(body) && isIdentifierByte(body[methodEnd]) {
+		work.add(1)
 		methodEnd++
 	}
 	receiverEnd := dot - 1
 	for receiverEnd >= 0 && isWhitespace(body[receiverEnd]) {
+		work.add(1)
 		receiverEnd--
 	}
 	if methodEnd == methodStart || receiverEnd < 0 || body[receiverEnd] != ')' {
 		return "", "", false
 	}
-	open := matchingOpenParenBefore(body, receiverEnd)
+	open := matchingOpenParenBeforeWithWork(body, receiverEnd, work)
 	if open < 0 {
 		return "", "", false
 	}
 	receiverCallStart := open
 	for receiverCallStart > 0 && isIdentifierByte(body[receiverCallStart-1]) {
+		work.add(1)
 		receiverCallStart--
 	}
-	exprStart := semaExpressionStart(body[:callStart])
+	exprStart := semaExpressionStartWithWork(body[:callStart], work)
 	if exprStart > dot {
 		return "", "", false
 	}
-	if semaHasUnmatchedCloseParen(body[exprStart:dot]) {
-		if newStart := semaLastNewExpressionStart(body[:exprStart]); newStart >= 0 {
+	if semaHasUnmatchedCloseParenWithWork(body[exprStart:dot], work) {
+		if newStart := semaLastNewExpressionStartWithWork(body[:exprStart], work); newStart >= 0 {
 			exprStart = newStart
 		}
 	}
-	fullReceiverExpr := strings.TrimSpace(body[exprStart:dot])
+	fullReceiverExpr := receiverWorkTrimSpace(body[exprStart:dot], work)
 	fullReceiverType := ""
-	boundedFullReceiver := semaReceiverProbeIsBounded(fullReceiverExpr)
+	boundedFullReceiver := semaReceiverProbeIsBoundedWithWork(fullReceiverExpr, work)
 	if boundedFullReceiver {
+		work.inference()
 		fullReceiverType = inferSemaArgTypeWithModel(fullReceiverExpr, scope, model)
 	}
-	if receiverCallStart > exprStart && receiverCallStart < open && !semaReceiverCallLooksLikeConstructor(body[exprStart:receiverCallStart]) {
-		if semaReceiverCallStartDropsDottedReceiver(body, receiverCallStart) {
+	if receiverCallStart > exprStart && receiverCallStart < open && !semaReceiverCallLooksLikeConstructorWithWork(body[exprStart:receiverCallStart], work) {
+		if semaReceiverCallStartDropsDottedReceiverWithWork(body, receiverCallStart, work) {
 			if fullReceiverType == "" && !boundedFullReceiver {
+				if work != nil {
+					work.StopSite = "oversized-dotted-fallback"
+				}
 				return "", "", false
 			}
 		} else {
 			exprStart = receiverCallStart
 		}
+	}
+	if work != nil {
+		panic(semaReceiverWorkFailure{"oversized receiver missed fallback"})
 	}
 	// A constructed receiver inside an argument belongs to that inner call,
 	// not to the fluent call surrounding the argument.
@@ -2906,15 +2977,24 @@ func semaChainedCallReceiver(body string, callStart int, scope map[string]string
 }
 
 func semaReceiverProbeIsBounded(expr string) bool {
+	return semaReceiverProbeIsBoundedWithWork(expr, nil)
+}
+
+func semaReceiverProbeIsBoundedWithWork(expr string, work *semaReceiverWork) bool {
 	if len(expr) > 512 {
 		return false
 	}
-	return strings.Count(expr, "(") <= 8
+	return receiverWorkCount(expr, "(", work) <= 8
 }
 
 func semaHasUnmatchedCloseParen(expr string) bool {
+	return semaHasUnmatchedCloseParenWithWork(expr, nil)
+}
+
+func semaHasUnmatchedCloseParenWithWork(expr string, work *semaReceiverWork) bool {
 	depth := 0
 	for i := len(expr) - 1; i >= 0; i-- {
+		work.add(1)
 		switch expr[i] {
 		case ')':
 			depth++
@@ -2929,8 +3009,13 @@ func semaHasUnmatchedCloseParen(expr string) bool {
 }
 
 func semaLastNewExpressionStart(prefix string) int {
-	lower := strings.ToLower(prefix)
-	for idx := strings.LastIndex(lower, "new "); idx >= 0; idx = strings.LastIndex(lower[:idx], "new ") {
+	return semaLastNewExpressionStartWithWork(prefix, nil)
+}
+
+func semaLastNewExpressionStartWithWork(prefix string, work *semaReceiverWork) int {
+	lower := receiverWorkToLower(prefix, work)
+	for idx := receiverWorkLastIndex(lower, "new ", work); idx >= 0; idx = receiverWorkLastIndex(lower[:idx], "new ", work) {
+		work.add(1)
 		if idx == 0 || !isIdentifierByte(lower[idx-1]) {
 			return idx
 		}
@@ -2939,13 +3024,22 @@ func semaLastNewExpressionStart(prefix string) int {
 }
 
 func semaReceiverCallLooksLikeConstructor(prefix string) bool {
-	fields := strings.Fields(strings.TrimSpace(prefix))
-	return len(fields) > 0 && strings.EqualFold(fields[len(fields)-1], "new")
+	return semaReceiverCallLooksLikeConstructorWithWork(prefix, nil)
+}
+
+func semaReceiverCallLooksLikeConstructorWithWork(prefix string, work *semaReceiverWork) bool {
+	fields := receiverWorkFields(receiverWorkTrimSpace(prefix, work), work)
+	return len(fields) > 0 && receiverWorkEqualFold(fields[len(fields)-1], "new", work)
 }
 
 func semaReceiverCallStartDropsDottedReceiver(body string, receiverCallStart int) bool {
+	return semaReceiverCallStartDropsDottedReceiverWithWork(body, receiverCallStart, nil)
+}
+
+func semaReceiverCallStartDropsDottedReceiverWithWork(body string, receiverCallStart int, work *semaReceiverWork) bool {
 	before := receiverCallStart - 1
 	for before >= 0 && isWhitespace(body[before]) {
+		work.add(1)
 		before--
 	}
 	return before >= 0 && body[before] == '.'
@@ -3012,30 +3106,40 @@ func semaLooksLikeDottedCall(body string, callStart int) bool {
 }
 
 func semaPreviousDottedChainDot(body string, callStart int) (int, bool) {
+	return semaPreviousDottedChainDotWithWork(body, callStart, nil)
+}
+
+func semaPreviousDottedChainDotWithWork(body string, callStart int, work *semaReceiverWork) (int, bool) {
 	i := callStart - 1
 	for i >= 0 && isWhitespace(body[i]) {
+		work.add(1)
 		i--
 	}
 	if i >= 0 && body[i] == '.' {
 		return i, true
 	}
-	if dot := semaDotBeforeTrailingLineComment(body, i); dot >= 0 {
+	if dot := semaDotBeforeTrailingLineCommentWithWork(body, i, work); dot >= 0 {
 		return dot, true
 	}
 	return -1, false
 }
 
 func semaDotBeforeTrailingLineComment(body string, end int) int {
+	return semaDotBeforeTrailingLineCommentWithWork(body, end, nil)
+}
+
+func semaDotBeforeTrailingLineCommentWithWork(body string, end int, work *semaReceiverWork) int {
 	if end < 0 || end >= len(body) {
 		return -1
 	}
-	lineStart := strings.LastIndexByte(body[:end+1], '\n') + 1
-	comment := strings.LastIndex(body[lineStart:end+1], "//")
+	lineStart := receiverWorkLastIndexByte(body[:end+1], '\n', work) + 1
+	comment := receiverWorkLastIndex(body[lineStart:end+1], "//", work)
 	if comment < 0 {
 		return -1
 	}
 	i := lineStart + comment - 1
 	for i >= lineStart && isWhitespace(body[i]) {
+		work.add(1)
 		i--
 	}
 	if i >= lineStart && body[i] == '.' {
@@ -3118,9 +3222,14 @@ func semaSourceHasDottedCall(body, method string) bool {
 }
 
 func semaExpressionStart(expr string) int {
+	return semaExpressionStartWithWork(expr, nil)
+}
+
+func semaExpressionStartWithWork(expr string, work *semaReceiverWork) int {
 	depth := 0
 	angleDepth := 0
 	for i := len(expr) - 1; i >= 0; i-- {
+		work.add(1)
 		switch expr[i] {
 		case ')', ']', '}':
 			depth++
@@ -3145,13 +3254,13 @@ func semaExpressionStart(expr string) int {
 				return i + 1
 			}
 		case '\n':
-			if depth == 0 && angleDepth == 0 && semaContinuesWithDot(expr, i+1) {
+			if depth == 0 && angleDepth == 0 && semaContinuesWithDotWithWork(expr, i+1, work) {
 				continue
 			}
-			if depth == 0 && angleDepth == 0 && semaPreviousLineContinuesWithDot(expr, i-1) {
+			if depth == 0 && angleDepth == 0 && semaPreviousLineContinuesWithDotWithWork(expr, i-1, work) {
 				continue
 			}
-			if depth == 0 && angleDepth == 0 && semaPreviousNonWhitespaceByte(expr, i-1) == '(' {
+			if depth == 0 && angleDepth == 0 && semaPreviousNonWhitespaceByteWithWork(expr, i-1, work) == '(' {
 				continue
 			}
 			if angleDepth == 0 {
@@ -3194,7 +3303,12 @@ func semaExpressionStart(expr string) int {
 }
 
 func semaContinuesWithDot(expr string, start int) bool {
+	return semaContinuesWithDotWithWork(expr, start, nil)
+}
+
+func semaContinuesWithDotWithWork(expr string, start int, work *semaReceiverWork) bool {
 	for i := start; i < len(expr); i++ {
+		work.add(1)
 		if isWhitespace(expr[i]) {
 			continue
 		}
@@ -3204,18 +3318,28 @@ func semaContinuesWithDot(expr string, start int) bool {
 }
 
 func semaPreviousLineContinuesWithDot(expr string, end int) bool {
+	return semaPreviousLineContinuesWithDotWithWork(expr, end, nil)
+}
+
+func semaPreviousLineContinuesWithDotWithWork(expr string, end int, work *semaReceiverWork) bool {
 	i := end
 	for i >= 0 && isWhitespace(expr[i]) {
+		work.add(1)
 		i--
 	}
 	if i >= 0 && expr[i] == '.' {
 		return true
 	}
-	return semaDotBeforeTrailingLineComment(expr, i) >= 0
+	return semaDotBeforeTrailingLineCommentWithWork(expr, i, work) >= 0
 }
 
 func semaPreviousNonWhitespaceByte(expr string, start int) byte {
+	return semaPreviousNonWhitespaceByteWithWork(expr, start, nil)
+}
+
+func semaPreviousNonWhitespaceByteWithWork(expr string, start int, work *semaReceiverWork) byte {
 	for i := start; i >= 0; i-- {
+		work.add(1)
 		if isWhitespace(expr[i]) {
 			continue
 		}

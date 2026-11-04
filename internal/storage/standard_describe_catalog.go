@@ -39,7 +39,7 @@ func StandardObjectDescribeKeyPrefix(objectName string) (prefix *string, known b
 	if !ok {
 		return nil, false
 	}
-	describe, found, err := lookupStandardDescribeCatalogV2(canonical)
+	describe, found, err := standardDescribeCatalogV2RawProductionCache.scalarForName(canonical)
 	return describe.KeyPrefix, found && err == nil
 }
 
@@ -87,7 +87,7 @@ func StandardObjectTriggerable(objectName string) (triggerable, known bool) {
 		}
 		return *flag, true
 	}
-	describe, found, err := lookupStandardDescribeCatalogV2(canonical)
+	describe, found, err := standardDescribeCatalogV2RawProductionCache.scalarForName(canonical)
 	if err != nil || !found || describe.Triggerable == nil {
 		standardObjectTriggerableCache.Store(canonical, (*bool)(nil))
 		return false, false

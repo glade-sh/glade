@@ -1,7 +1,7 @@
 {
   "version": 1,
   "package": "github.com/glade-sh/glade/internal/apextest",
-  "source": "e712d4c63; darwin/arm64 Go 1.26.10 GOMAXPROCS=2; complete registry in 85 bounded selections; process wall and CPU measured separately; merged maximum spans from separate selections; scheduling hints, not a matched full-package measurement",
+  "source": "e712d4c63; darwin/arm64 Go 1.26.10 GOMAXPROCS=2; complete registry in 85 bounded selections; process wall and CPU measured separately; merged maximum spans from separate selections; scheduling hints, not a matched full-package measurement; 2026-11-02 (34b21e602): 364 tests added from one laptop -test.v run of exactly those tests (darwin/arm64 Go 1.26.10 GOMAXPROCS=2 GOMEMLIMIT=3GiB; parallel parents weigh max(parent, sum of children)); stale entries pruned against -test.list",
   "tests": [
     {
       "name": "TestAPIVersionDiagnosticNativeConformance",
@@ -56,6 +56,22 @@
       "durationMillis": 0
     },
     {
+      "name": "TestAddressLocationNativeConformance",
+      "durationMillis": 17920
+    },
+    {
+      "name": "TestAdjacentEmptySObjectHashNativeConformance",
+      "durationMillis": 4370
+    },
+    {
+      "name": "TestAdjacentEmptySObjectHashWarmProjectRoute",
+      "durationMillis": 4370
+    },
+    {
+      "name": "TestAdjacentRequiredInsertWarmProjectRoute",
+      "durationMillis": 6080
+    },
+    {
       "name": "TestAdminProfilePredicateAPI65Proof",
       "durationMillis": 232
     },
@@ -66,6 +82,10 @@
     {
       "name": "TestAggregateFieldCapabilitiesNativeConformance",
       "durationMillis": 974
+    },
+    {
+      "name": "TestAggregateNamespaceProjectionProjectRoutes",
+      "durationMillis": 11430
     },
     {
       "name": "TestAggregateSumNumberOrgConformance",
@@ -136,6 +156,10 @@
       "durationMillis": 409
     },
     {
+      "name": "TestAssertionMapOrderNativeConformance",
+      "durationMillis": 1340
+    },
+    {
       "name": "TestAssetOwnerNativeConformance",
       "durationMillis": 937
     },
@@ -192,6 +216,10 @@
       "durationMillis": 3662
     },
     {
+      "name": "TestAsyncCapsC14NativeConformance",
+      "durationMillis": 1900
+    },
+    {
       "name": "TestAsyncContextIDsAnonymousAndIsTestNativeConformance",
       "durationMillis": 1643
     },
@@ -214,6 +242,10 @@
     {
       "name": "TestAsyncInheritedStaticCallbacksProjectDeployRejectedNative",
       "durationMillis": 59
+    },
+    {
+      "name": "TestAsyncLifecycleC14NativeConformance",
+      "durationMillis": 11140
     },
     {
       "name": "TestAsyncOrgConformance",
@@ -244,6 +276,14 @@
       "durationMillis": 1608
     },
     {
+      "name": "TestAsyncWebserviceCalloutNativeConformance",
+      "durationMillis": 5890
+    },
+    {
+      "name": "TestAsyncY9C14NativeConformance",
+      "durationMillis": 2660
+    },
+    {
       "name": "TestAuditClockCutoffNativeConformance",
       "durationMillis": 2905
     },
@@ -268,6 +308,10 @@
       "durationMillis": 849
     },
     {
+      "name": "TestAutomatedUserTimezoneNativeRoutes",
+      "durationMillis": 1560
+    },
+    {
       "name": "TestAutomationOrgConformance",
       "durationMillis": 7470
     },
@@ -286,6 +330,10 @@
     {
       "name": "TestBatchFinishLifecycleNativeConformance",
       "durationMillis": 2996
+    },
+    {
+      "name": "TestBatchLimitC09NativeConformance",
+      "durationMillis": 2360
     },
     {
       "name": "TestBatchableStartOrgConformance",
@@ -340,8 +388,72 @@
       "durationMillis": 2071
     },
     {
+      "name": "TestBusinessAccountPermissionReviewNativeConformance",
+      "durationMillis": 3760
+    },
+    {
       "name": "TestBusinessHoursOrgConformance",
       "durationMillis": 25099
+    },
+    {
+      "name": "TestC11ActorGateCarryRejectsOtherFailures",
+      "durationMillis": 0
+    },
+    {
+      "name": "TestC11CorrectedQ14",
+      "durationMillis": 36870
+    },
+    {
+      "name": "TestC11Q2CaptureProposal",
+      "durationMillis": 7290
+    },
+    {
+      "name": "TestC11Q345CaptureProposal",
+      "durationMillis": 63410
+    },
+    {
+      "name": "TestC11Q345RejectsInvalidRelations",
+      "durationMillis": 0
+    },
+    {
+      "name": "TestC11Q3RepairAdmin",
+      "durationMillis": 1800
+    },
+    {
+      "name": "TestC11WarmActorGateRoutes",
+      "durationMillis": 26240
+    },
+    {
+      "name": "TestC14CarryPinsAbsentFields",
+      "durationMillis": 0
+    },
+    {
+      "name": "TestC14CarryPinsObservedValues",
+      "durationMillis": 0
+    },
+    {
+      "name": "TestC14CarrySnapshotRequiresExactCase",
+      "durationMillis": 0
+    },
+    {
+      "name": "TestC14GapGuardRejectsUnregistered",
+      "durationMillis": 210
+    },
+    {
+      "name": "TestC14GapGuardRequiresExactLeaf",
+      "durationMillis": 0
+    },
+    {
+      "name": "TestC14WarmOversizedCarryIsExact",
+      "durationMillis": 0
+    },
+    {
+      "name": "TestC14WarmProblemRejectsMissingCapture",
+      "durationMillis": 0
+    },
+    {
+      "name": "TestC14WarmProjectRoutes",
+      "durationMillis": 290800
     },
     {
       "name": "TestCMTQueryLimitsAPI66Proof",
@@ -416,6 +528,34 @@
       "durationMillis": 0
     },
     {
+      "name": "TestCaptureAsyncIdentityNormalization",
+      "durationMillis": 0
+    },
+    {
+      "name": "TestCaptureClockRelationshipNormalization",
+      "durationMillis": 0
+    },
+    {
+      "name": "TestCaptureCustomIdentityNormalization",
+      "durationMillis": 0
+    },
+    {
+      "name": "TestCaptureCustomPrefixNormalization",
+      "durationMillis": 0
+    },
+    {
+      "name": "TestCaptureIdentityNormalization",
+      "durationMillis": 0
+    },
+    {
+      "name": "TestCaptureObservationAdapter",
+      "durationMillis": 0
+    },
+    {
+      "name": "TestCaptureURLAndShortIdentityNormalization",
+      "durationMillis": 0
+    },
+    {
       "name": "TestCapturedPackageConstructorFailsWithNamedBoundaryWithoutShim",
       "durationMillis": 132
     },
@@ -436,8 +576,20 @@
       "durationMillis": 137
     },
     {
+      "name": "TestCartExtensionDirectProjectNamedIsTestTriggerNativeRoutes",
+      "durationMillis": 18770
+    },
+    {
       "name": "TestCartExtensionDispatchNativeConformance",
       "durationMillis": 4369
+    },
+    {
+      "name": "TestCartExtensionPlatformTypesProjectNamedNativeConformance",
+      "durationMillis": 2780
+    },
+    {
+      "name": "TestCartOrchestratorDirectIsTestNativeRoutes",
+      "durationMillis": 880
     },
     {
       "name": "TestCartPlatformCalculatorProjectRoutesNativeConformance",
@@ -552,12 +704,28 @@
       "durationMillis": 215
     },
     {
+      "name": "TestClassWorkersRespectExecutionWidth",
+      "durationMillis": 1810
+    },
+    {
       "name": "TestClassesLifecycleOrgConformance",
       "durationMillis": 21346
     },
     {
+      "name": "TestClearedRecordHashNativeConformance",
+      "durationMillis": 3050
+    },
+    {
+      "name": "TestClearedRecordHashWarmProjectRoute",
+      "durationMillis": 2490
+    },
+    {
       "name": "TestCloneRuntimeOrgIsolatesRecordsAndDefinitions",
       "durationMillis": 1
+    },
+    {
+      "name": "TestClosedSchemaProjectOverlayDirectories",
+      "durationMillis": 190
     },
     {
       "name": "TestColdStandardFieldValidationNativeConformanceRoutes",
@@ -624,6 +792,18 @@
       "durationMillis": 1005
     },
     {
+      "name": "TestCommerceExtensionDispatchNativeProjectRoutes",
+      "durationMillis": 7510
+    },
+    {
+      "name": "TestCommerceWebStoreNativeNullProjectValue",
+      "durationMillis": 1040
+    },
+    {
+      "name": "TestCommerceWebStoreNativeProjectRoutes",
+      "durationMillis": 6020
+    },
+    {
       "name": "TestCommonProjectShapesNativeConformance",
       "durationMillis": 411
     },
@@ -642,6 +822,22 @@
     {
       "name": "TestCompileGateExcludesTriggerReferencingExcludedClass",
       "durationMillis": 257
+    },
+    {
+      "name": "TestCompileGateMissingDependencyProjectMemory",
+      "durationMillis": 2760
+    },
+    {
+      "name": "TestCompileGateMissingDependencyProjectRSS",
+      "durationMillis": 55170
+    },
+    {
+      "name": "TestCompileGateMissingDependencyRootDiagnostics",
+      "durationMillis": 0
+    },
+    {
+      "name": "TestCompileGateMissingDependencyRootsAllocation",
+      "durationMillis": 70
     },
     {
       "name": "TestCompileGateOrgConformance",
@@ -742,6 +938,10 @@
     {
       "name": "TestConfiguredParentDateNativeConformance",
       "durationMillis": 807
+    },
+    {
+      "name": "TestConfiguredPermissionCacheTransitions",
+      "durationMillis": 3280
     },
     {
       "name": "TestConfiguredPermissionGroupsAndSetup",
@@ -936,6 +1136,10 @@
       "durationMillis": 3284
     },
     {
+      "name": "TestCorpusShapePlatformTypeReferences",
+      "durationMillis": 1670
+    },
+    {
       "name": "TestCorpusShapeUnresolvedManagedType",
       "durationMillis": 754
     },
@@ -990,6 +1194,18 @@
     {
       "name": "TestCustomAccessLevelFeatureGateNativeConformance",
       "durationMillis": 177
+    },
+    {
+      "name": "TestCustomAddressFieldsDescribeMatchesNative",
+      "durationMillis": 1060
+    },
+    {
+      "name": "TestCustomAddressFieldsNativeConformance",
+      "durationMillis": 9570
+    },
+    {
+      "name": "TestCustomAddressFollowupNativeConformance",
+      "durationMillis": 1440
     },
     {
       "name": "TestCustomHistoryNativeConformance",
@@ -1048,6 +1264,22 @@
       "durationMillis": 1287
     },
     {
+      "name": "TestDMLPolicyBulkUpsertAndTriggerRoutes",
+      "durationMillis": 2520
+    },
+    {
+      "name": "TestDMLPolicyCalloutBoundariesIsTest",
+      "durationMillis": 770
+    },
+    {
+      "name": "TestDMLPolicyMetadataSnapshotKeepsMatchingAndAssignmentSources",
+      "durationMillis": 200
+    },
+    {
+      "name": "TestDMLPolicyNativeConformanceAnonymousAndIsTest",
+      "durationMillis": 4000
+    },
+    {
       "name": "TestDMLTransactionsOrgConformance",
       "durationMillis": 75987
     },
@@ -1062,6 +1294,10 @@
     {
       "name": "TestDateAndLoopBoundaryNativeConformance",
       "durationMillis": 4470
+    },
+    {
+      "name": "TestDateLocaleA12C14NativeConformance",
+      "durationMillis": 1000
     },
     {
       "name": "TestDateOperandDiagnosticNativeConformance",
@@ -1120,6 +1356,10 @@
       "durationMillis": 484
     },
     {
+      "name": "TestDefaultPermissionsCapturedRoutes",
+      "durationMillis": 55380
+    },
+    {
       "name": "TestDeletedLookupCrossTransactionNativeConformance",
       "durationMillis": 582
     },
@@ -1130,6 +1370,14 @@
     {
       "name": "TestDeletedRecordAccessNativeConformance",
       "durationMillis": 1330
+    },
+    {
+      "name": "TestDependencyAccessPageRegistrationRoutes",
+      "durationMillis": 2050
+    },
+    {
+      "name": "TestDependencyEveryFeatureProfileRuntimeSchema",
+      "durationMillis": 13590
     },
     {
       "name": "TestDependencyGateBaselineConformance",
@@ -1156,6 +1404,14 @@
       "durationMillis": 1
     },
     {
+      "name": "TestDependencyPrivateReflectionNativeConformance",
+      "durationMillis": 1260
+    },
+    {
+      "name": "TestDependencyScratchFeaturesReachRuntimeSchema",
+      "durationMillis": 850
+    },
+    {
       "name": "TestDependentPicklistBoundaryNativeConformance",
       "durationMillis": 1239
     },
@@ -1164,12 +1420,20 @@
       "durationMillis": 5477
     },
     {
+      "name": "TestDescribeHolderProjectConcurrentRoutes",
+      "durationMillis": 58750
+    },
+    {
       "name": "TestDescribeJSONVersionNativeConformance",
       "durationMillis": 7904
     },
     {
       "name": "TestDescribeJSONVersionNativeFixture",
       "durationMillis": 1
+    },
+    {
+      "name": "TestDescribeMapWriteIsolationProjectRoutes",
+      "durationMillis": 407140
     },
     {
       "name": "TestDescribeReadWorkloadProjectRoutes",
@@ -1246,6 +1510,10 @@
     {
       "name": "TestDispatchFollowupsNativeConformance",
       "durationMillis": 2420
+    },
+    {
+      "name": "TestDistinctRequestRuntimesShareStandardRegistration",
+      "durationMillis": 360
     },
     {
       "name": "TestDocumentAndReportMetadataAPI62Project40Proof",
@@ -1344,6 +1612,14 @@
       "durationMillis": 432
     },
     {
+      "name": "TestEmailRecipientInsertNativeConformance",
+      "durationMillis": 3320
+    },
+    {
+      "name": "TestEmailRecipientMixedSourceNativeConformance",
+      "durationMillis": 3260
+    },
+    {
       "name": "TestEmailRecipientNativeControls",
       "durationMillis": 291
     },
@@ -1354,6 +1630,14 @@
     {
       "name": "TestEmailServicesMetadataNativeRejectedProjectRoutes",
       "durationMillis": 475
+    },
+    {
+      "name": "TestEmptySObjectHashNativeConformance",
+      "durationMillis": 1100
+    },
+    {
+      "name": "TestEmptySObjectHashWarmProjectRoute",
+      "durationMillis": 1120
     },
     {
       "name": "TestEnclosingJoinHelperNativeConformance",
@@ -1442,6 +1726,18 @@
     {
       "name": "TestEventRelationshipNullNativeConformance",
       "durationMillis": 627
+    },
+    {
+      "name": "TestExceptionConstructorVisibilityNativeConformance",
+      "durationMillis": 16660
+    },
+    {
+      "name": "TestExceptionExplicitImplicitSuperNativeConformance",
+      "durationMillis": 870
+    },
+    {
+      "name": "TestExceptionImplicitSuperNativeConformance",
+      "durationMillis": 440
     },
     {
       "name": "TestExceptionOverrideNativeConformance",
@@ -1568,6 +1864,14 @@
       "durationMillis": 738
     },
     {
+      "name": "TestFieldMapReadProjectAndRequestRoutes",
+      "durationMillis": 4440
+    },
+    {
+      "name": "TestFieldProxyCorpusShapeRunnerNativeDiagnosticRoutes",
+      "durationMillis": 5660
+    },
+    {
       "name": "TestFieldSetDisplayedAPI62Project40Proof",
       "durationMillis": 156
     },
@@ -1648,8 +1952,44 @@
       "durationMillis": 6977
     },
     {
+      "name": "TestFinalizerExecutionNativeConformanceAnonymousAndIsTestProjectAPIRoutes",
+      "durationMillis": 4770
+    },
+    {
+      "name": "TestFirstColdRuntimePassiveClassesMatchCachedRegistration",
+      "durationMillis": 780
+    },
+    {
       "name": "TestFixtureBoundaryNativeConformance",
       "durationMillis": 948
+    },
+    {
+      "name": "TestFlowActionCollectionOpsNativeConformance",
+      "durationMillis": 400
+    },
+    {
+      "name": "TestFlowActionCollectionOpsProjectRoutes",
+      "durationMillis": 770
+    },
+    {
+      "name": "TestFlowActionDependencyNativeConformance",
+      "durationMillis": 2770
+    },
+    {
+      "name": "TestFlowActionEmptyOutputNativeConformance",
+      "durationMillis": 600
+    },
+    {
+      "name": "TestFlowActionEmptyOutputProjectRoutes",
+      "durationMillis": 1100
+    },
+    {
+      "name": "TestFlowActionOutputBulkNativeConformance",
+      "durationMillis": 560
+    },
+    {
+      "name": "TestFlowActionOutputBulkProjectRoutes",
+      "durationMillis": 1270
     },
     {
       "name": "TestFlowAsyncPathContinuationNativeConformanceAnonymousAndIsTestAPIRoutes",
@@ -1680,8 +2020,16 @@
       "durationMillis": 1094
     },
     {
+      "name": "TestFlowChildInterpreterShapeProjectRoutes",
+      "durationMillis": 3510
+    },
+    {
       "name": "TestFlowConstantAssignmentAnonymousAndIsTestNativeConformance",
       "durationMillis": 1054
+    },
+    {
+      "name": "TestFlowCoreActionOutputsConformance",
+      "durationMillis": 3300
     },
     {
       "name": "TestFlowCoreAssignmentOperatorsConformance",
@@ -1732,6 +2080,10 @@
       "durationMillis": 3031
     },
     {
+      "name": "TestFlowCorePinsConformance",
+      "durationMillis": 12850
+    },
+    {
       "name": "TestFlowCoreSubflowOutputsConformance",
       "durationMillis": 2857
     },
@@ -1748,8 +2100,24 @@
       "durationMillis": 343
     },
     {
+      "name": "TestFlowDecisionComparesRecordFieldToPriorReference",
+      "durationMillis": 350
+    },
+    {
+      "name": "TestFlowDecisionCriteriaNativeConformance",
+      "durationMillis": 1230
+    },
+    {
       "name": "TestFlowDecisionShapesAnonymousAndIsTestNativeConformance",
       "durationMillis": 3632
+    },
+    {
+      "name": "TestFlowDeleteLookupEqualityProjectRoutes",
+      "durationMillis": 2120
+    },
+    {
+      "name": "TestFlowDeliveryPathsNativeConformanceIsTestProjectAPIRoutes",
+      "durationMillis": 32830
     },
     {
       "name": "TestFlowEntryCreateAndUpdateNativeConformance",
@@ -1768,6 +2136,30 @@
       "durationMillis": 1680
     },
     {
+      "name": "TestFlowFilteredUpdatePreservesCallerValues",
+      "durationMillis": 2270
+    },
+    {
+      "name": "TestFlowFollowupsNativeConformance",
+      "durationMillis": 13160
+    },
+    {
+      "name": "TestFlowFormulaFrameNativeConformance",
+      "durationMillis": 1970
+    },
+    {
+      "name": "TestFlowFormulaFrameRejectLegacyDiskRuntime",
+      "durationMillis": 5060
+    },
+    {
+      "name": "TestFlowFormulaFrameUnmaskedNativeRows",
+      "durationMillis": 690
+    },
+    {
+      "name": "TestFlowGapsNativeConformance",
+      "durationMillis": 1270
+    },
+    {
       "name": "TestFlowIntegerErrorsInterviewActionTriggerSubflowNativeRoutes",
       "durationMillis": 2661
     },
@@ -1778,6 +2170,26 @@
     {
       "name": "TestFlowIntegerStringAssignmentNativeConformance",
       "durationMillis": 1742
+    },
+    {
+      "name": "TestFlowLogic2FunctionNativeConformance",
+      "durationMillis": 10
+    },
+    {
+      "name": "TestFlowLogic2NativeConformance",
+      "durationMillis": 1870
+    },
+    {
+      "name": "TestFlowLogic2ParserNativeConformance",
+      "durationMillis": 30
+    },
+    {
+      "name": "TestFlowLogicNativeConformance",
+      "durationMillis": 560
+    },
+    {
+      "name": "TestFlowLookupCollectionBlankProjectRoutes",
+      "durationMillis": 3100
     },
     {
       "name": "TestFlowLookupFieldUpdateNativeConformance",
@@ -1792,12 +2204,40 @@
       "durationMillis": 1089
     },
     {
+      "name": "TestFlowLookupUncapturedOperatorProjectRoutes",
+      "durationMillis": 1770
+    },
+    {
+      "name": "TestFlowLoopRelationshipNativeConformance",
+      "durationMillis": 2120
+    },
+    {
       "name": "TestFlowNamedResourceRelationshipAnonymousAndIsTestRoutes",
       "durationMillis": 1212
     },
     {
+      "name": "TestFlowNativeAnonymousRouteTwins",
+      "durationMillis": 4890
+    },
+    {
+      "name": "TestFlowNullComparisonsNativeConformance",
+      "durationMillis": 1910
+    },
+    {
+      "name": "TestFlowNullComparisonsNumberOnlyActionNativeConformance",
+      "durationMillis": 1170
+    },
+    {
+      "name": "TestFlowNullComparisonsRoutesNativeConformance",
+      "durationMillis": 5440
+    },
+    {
       "name": "TestFlowNullLookupUpdateNativeConformance",
       "durationMillis": 1037
+    },
+    {
+      "name": "TestFlowNumberTextNativeConformance",
+      "durationMillis": 2300
     },
     {
       "name": "TestFlowOperandsFactoryTypedActionAndSaveNativeRoutes",
@@ -1824,8 +2264,20 @@
       "durationMillis": 2443
     },
     {
+      "name": "TestFlowPathRouteNativeConformance",
+      "durationMillis": 3600
+    },
+    {
+      "name": "TestFlowPathRouteNativeRows",
+      "durationMillis": 10
+    },
+    {
       "name": "TestFlowPicklistDecisionNativeConformance",
       "durationMillis": 3883
+    },
+    {
+      "name": "TestFlowProfileContextNativeConformance",
+      "durationMillis": 5650
     },
     {
       "name": "TestFlowRecordBindingNativeConformance",
@@ -1868,6 +2320,14 @@
       "durationMillis": 11323
     },
     {
+      "name": "TestFlowRefsOmittedRecordTypeInvalidPathNative",
+      "durationMillis": 0
+    },
+    {
+      "name": "TestFlowRefsOmittedRecordTypeNative",
+      "durationMillis": 2560
+    },
+    {
       "name": "TestFlowRefsPriorRecordConformance",
       "durationMillis": 10411
     },
@@ -1884,12 +2344,48 @@
       "durationMillis": 1604
     },
     {
+      "name": "TestFlowRelatedFieldsNativeConformance",
+      "durationMillis": 1210
+    },
+    {
+      "name": "TestFlowRelationshipIDOtherLookupNativeRoutes",
+      "durationMillis": 2220
+    },
+    {
+      "name": "TestFlowRelationshipIDSelfLookupNativeRoutes",
+      "durationMillis": 1010
+    },
+    {
       "name": "TestFlowScalarAssignmentNativeConformance",
       "durationMillis": 1521
     },
     {
       "name": "TestFlowScalarSubflowNativeConformance",
       "durationMillis": 1459
+    },
+    {
+      "name": "TestFlowSingleFilterLookupNativeConformance",
+      "durationMillis": 1000
+    },
+    {
+      "name": "TestFlowSubflowAnonymousRouteTwins",
+      "durationMillis": 1200
+    },
+    {
+      "name": "TestFlowSubflowCachedProjectRoutes",
+      "durationMillis": 3430
+    },
+    {
+      "name": "TestFlowSubflowRecordLookupNativeConformance",
+      "durationMillis": 1660
+    },
+    {
+      "name": "TestFlowSubflowRecordRoutesNativeConformance",
+      "durationMillis": 7580
+    },
+    {
+      "name": "TestFlowSubflowRouteTwinsConformance",
+      "durationMillis": 2470
     },
     {
       "name": "TestFlowSubflowScalarPrecedenceNativeConformance",
@@ -1980,6 +2476,10 @@
       "durationMillis": 5098
     },
     {
+      "name": "TestForeignNamespaceInnerTypeRejectedOnEveryRoute",
+      "durationMillis": 330
+    },
+    {
       "name": "TestFormulaAndCertificateNativeConformance",
       "durationMillis": 304
     },
@@ -2038,6 +2538,10 @@
     {
       "name": "TestFrozenStandardOrgNativeConformance",
       "durationMillis": 481
+    },
+    {
+      "name": "TestGeneratedSOQLRelationshipNativeConformance",
+      "durationMillis": 2260
     },
     {
       "name": "TestGenerationContainmentNamedAndRequestEntrypointRoutes",
@@ -2320,6 +2824,22 @@
       "durationMillis": 1017
     },
     {
+      "name": "TestInitializedFeatureOrgRetainsSchemaGeneration",
+      "durationMillis": 10
+    },
+    {
+      "name": "TestInitializedShapedProjectTestContextRetainsSchemaGeneration",
+      "durationMillis": 290
+    },
+    {
+      "name": "TestInitializedTestOrgPreparesExistingStandardDefinitions",
+      "durationMillis": 10
+    },
+    {
+      "name": "TestInitializedTestOrgRetainsSchemaGeneration",
+      "durationMillis": 10
+    },
+    {
       "name": "TestInlineQueryCoalesceNullOrgConformance",
       "durationMillis": 7129
     },
@@ -2340,12 +2860,24 @@
       "durationMillis": 154
     },
     {
+      "name": "TestInnerFluentArgumentNativeConformance",
+      "durationMillis": 7600
+    },
+    {
+      "name": "TestInnerTypeReceiverNativeConformance",
+      "durationMillis": 61440
+    },
+    {
       "name": "TestInnerTypeScopeRestoredNativeConformance",
       "durationMillis": 3528
     },
     {
       "name": "TestInnerTypeShapesNativeConformance",
       "durationMillis": 16552
+    },
+    {
+      "name": "TestInsertEventChildNativeConformance",
+      "durationMillis": 2530
     },
     {
       "name": "TestInsertedIdentifierBodyNativeConformance",
@@ -2524,6 +3056,10 @@
       "durationMillis": 307
     },
     {
+      "name": "TestJSONAccessRuntimeBoundariesNativeConformance",
+      "durationMillis": 2610
+    },
+    {
       "name": "TestJSONAliasAllocationNativeConformance",
       "durationMillis": 849
     },
@@ -2564,6 +3100,10 @@
       "durationMillis": 3677
     },
     {
+      "name": "TestJSONNullKeyOverloadProjectScope",
+      "durationMillis": 390
+    },
+    {
       "name": "TestJSONOrgConformance",
       "durationMillis": 9870
     },
@@ -2574,6 +3114,10 @@
     {
       "name": "TestJSONOwnerRESTURLOrgConformance",
       "durationMillis": 2159
+    },
+    {
+      "name": "TestJSONSObjectDirectHashNativeConformance",
+      "durationMillis": 1540
     },
     {
       "name": "TestJSONSetterInitializationNativeConformance",
@@ -2658,6 +3202,10 @@
     {
       "name": "TestLineItemProductNativeConformance",
       "durationMillis": 241
+    },
+    {
+      "name": "TestLinkedCheckboxReviewProjectRoutes",
+      "durationMillis": 3400
     },
     {
       "name": "TestListAddAssignmentNativeConformance",
@@ -2764,6 +3312,22 @@
       "durationMillis": 4587
     },
     {
+      "name": "TestLookupFilterLiteralListsNativeConformance",
+      "durationMillis": 2790
+    },
+    {
+      "name": "TestLookupFilterRelationshipPathsMatchNativeRows",
+      "durationMillis": 1430
+    },
+    {
+      "name": "TestLookupFilterValidationNativeConformanceIsTestProjectAPIRoutes",
+      "durationMillis": 1340
+    },
+    {
+      "name": "TestLookupFollowupsNativeConformance",
+      "durationMillis": 6370
+    },
+    {
       "name": "TestLookupIDWritesNativeConformance",
       "durationMillis": 1119
     },
@@ -2786,6 +3350,10 @@
     {
       "name": "TestMalformedListViewMetadataStopsRuntime",
       "durationMillis": 1267
+    },
+    {
+      "name": "TestManagedDependencyAbsentStaticCallReleaseBoundary",
+      "durationMillis": 13800
     },
     {
       "name": "TestManagedDependencyClassQueriesOwnNamespacedSObjectRecordTypeRelationship",
@@ -2840,6 +3408,10 @@
       "durationMillis": 422
     },
     {
+      "name": "TestMergeConflictProjectRoutes",
+      "durationMillis": 1290
+    },
+    {
       "name": "TestMessagingOrgConformance",
       "durationMillis": 7554
     },
@@ -2876,6 +3448,14 @@
       "durationMillis": 2357
     },
     {
+      "name": "TestMetadataForeignRelationshipHostRoutes",
+      "durationMillis": 8960
+    },
+    {
+      "name": "TestMetadataForeignRelationshipProjectRoutes",
+      "durationMillis": 2940
+    },
+    {
       "name": "TestMetadataGenerationProjectSnapshotOptionRoute",
       "durationMillis": 0
     },
@@ -2904,8 +3484,24 @@
       "durationMillis": 4273
     },
     {
+      "name": "TestMetadataNamespaceIdentityNativeConformance",
+      "durationMillis": 13260
+    },
+    {
+      "name": "TestMetadataNamespaceRelationshipHostRoutes",
+      "durationMillis": 9900
+    },
+    {
+      "name": "TestMetadataNamespaceRelationshipNativeConformance",
+      "durationMillis": 2780
+    },
+    {
       "name": "TestMetadataPathOutsideEveryPackageRootRejected",
       "durationMillis": 2
+    },
+    {
+      "name": "TestMetadataQueryModesNativeConformance",
+      "durationMillis": 2610
     },
     {
       "name": "TestMetadataRelationshipValuesNativeConformance",
@@ -2928,6 +3524,26 @@
       "durationMillis": 1
     },
     {
+      "name": "TestMethodWorkerOrgPoolConcurrentReuse",
+      "durationMillis": 0
+    },
+    {
+      "name": "TestMethodWorkerOrgReuseAcrossClasses",
+      "durationMillis": 700
+    },
+    {
+      "name": "TestMethodWorkerPoolRejectsChangedRuntimeGeneration",
+      "durationMillis": 0
+    },
+    {
+      "name": "TestMethodWorkersGrowWhenClassesFinish",
+      "durationMillis": 0
+    },
+    {
+      "name": "TestMethodWorkersRespectExecutionWidth",
+      "durationMillis": 1500
+    },
+    {
       "name": "TestMinePaginationNativeConformance",
       "durationMillis": 658
     },
@@ -2942,6 +3558,14 @@
     {
       "name": "TestMissingLabelDiagnosticNativeConformance",
       "durationMillis": 81
+    },
+    {
+      "name": "TestMissingSchemaNullReceiverNativeConformance",
+      "durationMillis": 1010
+    },
+    {
+      "name": "TestMissingTypeReflectionNullNativeConformance",
+      "durationMillis": 790
     },
     {
       "name": "TestMixedCaptureOrderNativeConformance",
@@ -2980,12 +3604,40 @@
       "durationMillis": 40796
     },
     {
+      "name": "TestNamespaceAbsenceProofDuplicateCatalogs",
+      "durationMillis": 3030
+    },
+    {
+      "name": "TestNamespaceAbsenceProofRoutes",
+      "durationMillis": 430
+    },
+    {
+      "name": "TestNamespaceAbsenceProofRunnerControls",
+      "durationMillis": 20
+    },
+    {
       "name": "TestNamespaceAccessibleEnclosingOrgConformance",
       "durationMillis": 1681
     },
     {
+      "name": "TestNamespaceDiagnosticsNativeConformance",
+      "durationMillis": 4990
+    },
+    {
       "name": "TestNamespaceRemapConstantPrefixDependency",
       "durationMillis": 191
+    },
+    {
+      "name": "TestNamespaceStaticCallNativeConformance",
+      "durationMillis": 10180
+    },
+    {
+      "name": "TestNamespacedDependencyAccessPageRegistrationRoutes",
+      "durationMillis": 1370
+    },
+    {
+      "name": "TestNamespacedDependencyPrivateNestedReflectionAnonymous",
+      "durationMillis": 240
     },
     {
       "name": "TestNamespacedEnumConstructorFieldEqualityUsesNamespaceType",
@@ -3016,12 +3668,24 @@
       "durationMillis": 6859
     },
     {
+      "name": "TestNativeCaptureGapReporting",
+      "durationMillis": 10
+    },
+    {
       "name": "TestNativeInnerStaticOrgConformance",
       "durationMillis": 1092
     },
     {
+      "name": "TestNativeMismatchReporting",
+      "durationMillis": 290
+    },
+    {
       "name": "TestNativeObservationComparisonGuards",
       "durationMillis": 1
+    },
+    {
+      "name": "TestNativeProfileContextConformance",
+      "durationMillis": 5290
     },
     {
       "name": "TestNativeRecipientComparisonGuards",
@@ -3080,6 +3744,34 @@
       "durationMillis": 13
     },
     {
+      "name": "TestNoRowDynamicControlsCachedRoutes",
+      "durationMillis": 2170
+    },
+    {
+      "name": "TestNoRowDynamicControlsNativeConformance",
+      "durationMillis": 1360
+    },
+    {
+      "name": "TestNoRowPricebookControlsCachedRoutes",
+      "durationMillis": 2010
+    },
+    {
+      "name": "TestNoRowPricebookControlsNativeConformance",
+      "durationMillis": 1200
+    },
+    {
+      "name": "TestNoRowSeedsNativeConformance",
+      "durationMillis": 1160
+    },
+    {
+      "name": "TestNonAccountRecordTypeLegacyDefaultsFollowups",
+      "durationMillis": 0
+    },
+    {
+      "name": "TestNonAccountRecordTypeLegacyProjectionFollowups",
+      "durationMillis": 200
+    },
+    {
       "name": "TestNorwegianLocaleNamedProjectIsTestNativeRoutes",
       "durationMillis": 2267
     },
@@ -3130,6 +3822,10 @@
     {
       "name": "TestObjectStringEqualityNativeConformance",
       "durationMillis": 321
+    },
+    {
+      "name": "TestObservedPhaseDurationSamples",
+      "durationMillis": 10
     },
     {
       "name": "TestOpaqueMethodAnnotationsNativeConformance",
@@ -3380,6 +4076,30 @@
       "durationMillis": 214
     },
     {
+      "name": "TestOrgObjectAvailabilityChildrenNativeConformance",
+      "durationMillis": 6670
+    },
+    {
+      "name": "TestOrgObjectAvailabilityCommerceDMLProjectRoutes",
+      "durationMillis": 5010
+    },
+    {
+      "name": "TestOrgObjectAvailabilityNativeConformance",
+      "durationMillis": 5390
+    },
+    {
+      "name": "TestOrgObjectAvailabilityNativeProjectRoutes",
+      "durationMillis": 8550
+    },
+    {
+      "name": "TestOrgObjectAvailabilityOverloadsNativeConformance",
+      "durationMillis": 7000
+    },
+    {
+      "name": "TestOrgObjectAvailabilityOverloadsNativeProjectRoutes",
+      "durationMillis": 8450
+    },
+    {
       "name": "TestOrganizationFeatureFlagsNativeConformance",
       "durationMillis": 13394
     },
@@ -3398,6 +4118,10 @@
     {
       "name": "TestOverloadApplicabilityPreservesNativeControls",
       "durationMillis": 208
+    },
+    {
+      "name": "TestOwnNamespaceInnerTypeResolvesOnEveryRoute",
+      "durationMillis": 4100
     },
     {
       "name": "TestOwnerContactUserModeNativeConformance",
@@ -3430,6 +4154,10 @@
     {
       "name": "TestParallelMethodDiskRuntimeGuardRemainsEnabled",
       "durationMillis": 1
+    },
+    {
+      "name": "TestParallelMethodsRebindGlobalDescribeIntoStatics",
+      "durationMillis": 27420
     },
     {
       "name": "TestParentFieldDiscoveryAnonymousAndIsTestNativeConformance",
@@ -3482,6 +4210,10 @@
     {
       "name": "TestPdfRenderingNativeConformance",
       "durationMillis": 2193
+    },
+    {
+      "name": "TestPendingNotificationPermissionsNativeConformance",
+      "durationMillis": 3010
     },
     {
       "name": "TestPerfCountersCapturePhaseDurations",
@@ -3548,8 +4280,64 @@
       "durationMillis": 18
     },
     {
+      "name": "TestPersonAccountBoundaryReviewNativeConformance",
+      "durationMillis": 10140
+    },
+    {
+      "name": "TestPersonAccountConstructorDiagnosticShapes",
+      "durationMillis": 3060
+    },
+    {
       "name": "TestPersonAccountCustomFieldsNativeConformance",
       "durationMillis": 15567
+    },
+    {
+      "name": "TestPersonAccountDeclaredLabelLookupRegression",
+      "durationMillis": 4470
+    },
+    {
+      "name": "TestPersonAccountDependencyEvidenceProjectRoutes",
+      "durationMillis": 27790
+    },
+    {
+      "name": "TestPersonAccountDisabledProjectPreservesUpsertBaseline",
+      "durationMillis": 2390
+    },
+    {
+      "name": "TestPersonAccountEvidenceProjectRoutes",
+      "durationMillis": 34780
+    },
+    {
+      "name": "TestPersonAccountFlagDeveloperIdentityFollowups",
+      "durationMillis": 0
+    },
+    {
+      "name": "TestPersonAccountFlagFoldFollowups",
+      "durationMillis": 0
+    },
+    {
+      "name": "TestPersonAccountFlagPermissionSetAfterFoldFollowups",
+      "durationMillis": 50
+    },
+    {
+      "name": "TestPersonAccountFlagProfileFollowups",
+      "durationMillis": 10
+    },
+    {
+      "name": "TestPersonAccountFlagSerializedFollowups",
+      "durationMillis": 0
+    },
+    {
+      "name": "TestPersonAccountFlagVisibilityBoundariesFollowups",
+      "durationMillis": 140
+    },
+    {
+      "name": "TestPersonAccountFollowupsNativeConformance",
+      "durationMillis": 7970
+    },
+    {
+      "name": "TestPersonAccountFollowupsReviewNativeConformance",
+      "durationMillis": 7640
     },
     {
       "name": "TestPersonAccountFormulaInputNativeConformance",
@@ -3564,16 +4352,96 @@
       "durationMillis": 19885
     },
     {
+      "name": "TestPersonAccountIdentityCollisionsFollowups",
+      "durationMillis": 740
+    },
+    {
+      "name": "TestPersonAccountLabelProjectionBoundaries",
+      "durationMillis": 390
+    },
+    {
+      "name": "TestPersonAccountLabelSyntheticExecutionRoutes",
+      "durationMillis": 4700
+    },
+    {
+      "name": "TestPersonAccountLegacyExistenceMatcherFollowups",
+      "durationMillis": 0
+    },
+    {
+      "name": "TestPersonAccountMixedQualifiedLegacyFollowups",
+      "durationMillis": 80
+    },
+    {
       "name": "TestPersonAccountPCRequiredFormulaNativeConformance",
       "durationMillis": 3738
+    },
+    {
+      "name": "TestPersonAccountPermissionReviewNativeConformance",
+      "durationMillis": 3540
+    },
+    {
+      "name": "TestPersonAccountProfileDefaultsNativeConformance",
+      "durationMillis": 6960
+    },
+    {
+      "name": "TestPersonAccountProfileIdentityDefaultsFollowups",
+      "durationMillis": 0
+    },
+    {
+      "name": "TestPersonAccountProfileMetadataInvalidatesWarmRuntime",
+      "durationMillis": 1630
+    },
+    {
+      "name": "TestPersonAccountProfileRoutesNativeConformance",
+      "durationMillis": 18170
+    },
+    {
+      "name": "TestPersonAccountProfileRoutesRejectLegacyRuntimeCache",
+      "durationMillis": 1750
+    },
+    {
+      "name": "TestPersonAccountQualifiedFoldLegacyFollowups",
+      "durationMillis": 0
+    },
+    {
+      "name": "TestPersonAccountQualifiedLegacyProjectionFollowups",
+      "durationMillis": 330
+    },
+    {
+      "name": "TestPersonAccountReadHostRoutes",
+      "durationMillis": 6400
+    },
+    {
+      "name": "TestPersonAccountReadNativeRows",
+      "durationMillis": 0
+    },
+    {
+      "name": "TestPersonAccountReadRouteShapes",
+      "durationMillis": 24810
     },
     {
       "name": "TestPersonAccountRetrievedRecordTypeEnablesNameFields",
       "durationMillis": 74
     },
     {
+      "name": "TestPersonAccountUnqualifiedWithQualifiedCandidateFollowups",
+      "durationMillis": 90
+    },
+    {
       "name": "TestPersonAccountWithoutFeatureNativeConformance",
       "durationMillis": 1147
+    },
+    {
+      "name": "TestPersonContactAliasNativeConformance",
+      "durationMillis": 3070
+    },
+    {
+      "name": "TestPersonContactAliasesPreserveBusinessAccountsWithRequiredContactField",
+      "durationMillis": 830
+    },
+    {
+      "name": "TestPersonRecordTypeIdentityNativeConformance",
+      "durationMillis": 6460
     },
     {
       "name": "TestPicklistDefaultsNativeConformance",
@@ -3720,6 +4588,10 @@
       "durationMillis": 74870
     },
     {
+      "name": "TestPlatformNamespaceSiblingNativeConformance",
+      "durationMillis": 1500
+    },
+    {
       "name": "TestPlatformRelationshipsNativeConformance",
       "durationMillis": 27644
     },
@@ -3744,6 +4616,10 @@
       "durationMillis": 12949
     },
     {
+      "name": "TestPlatformTypeReferencesRunnerInvalidSystem",
+      "durationMillis": 500
+    },
+    {
       "name": "TestPolymorphicJSONTargetOrgConformance",
       "durationMillis": 13419
     },
@@ -3754,6 +4630,14 @@
     {
       "name": "TestPopulatedMapNativeConformance",
       "durationMillis": 7106
+    },
+    {
+      "name": "TestPopulatedSObjectHashNativeConformance",
+      "durationMillis": 2110
+    },
+    {
+      "name": "TestPopulatedSObjectHashWarmProjectRoute",
+      "durationMillis": 1040
     },
     {
       "name": "TestPrefixRecordIdentityNativeConformance",
@@ -3988,6 +4872,10 @@
       "durationMillis": 126
     },
     {
+      "name": "TestQ3IdentityAnchorNormalization",
+      "durationMillis": 0
+    },
+    {
       "name": "TestQualifiedFieldTokensProjectNativeRoutes",
       "durationMillis": 5924
     },
@@ -3996,8 +4884,16 @@
       "durationMillis": 2804
     },
     {
+      "name": "TestQualifiedNamespaceLocalNativeConformance",
+      "durationMillis": 330
+    },
+    {
       "name": "TestQualifiedPageReferenceNativeConformance",
       "durationMillis": 718
+    },
+    {
+      "name": "TestQualifiedReceiverShapesProjectNamedNativeConformance",
+      "durationMillis": 40420
     },
     {
       "name": "TestQualifiedReceiversNativeConformance",
@@ -4014,6 +4910,10 @@
     {
       "name": "TestQueriedParentProjectionNativeConformance",
       "durationMillis": 2310
+    },
+    {
+      "name": "TestQueryConditionalRecordNativeConformance",
+      "durationMillis": 1570
     },
     {
       "name": "TestQueryKeywordCommentsProjectNativeRoutes",
@@ -4064,6 +4964,10 @@
       "durationMillis": 190
     },
     {
+      "name": "TestQueueableIdTextNativeConformanceIsTestProjectAPIRoutes",
+      "durationMillis": 1500
+    },
+    {
       "name": "TestQueueableInheritedDepthOutsideStopTestAnonymousAndIsTestProjectRoutes",
       "durationMillis": 2446
     },
@@ -4076,8 +4980,16 @@
       "durationMillis": 1060
     },
     {
+      "name": "TestNotAndNativeConformance",
+      "durationMillis": 10510
+    },
+    {
       "name": "TestRTEMDynamicPutNativeConformance",
       "durationMillis": 2316
+    },
+    {
+      "name": "TestRTEMPublishProjectRunnerCompile",
+      "durationMillis": 430
     },
     {
       "name": "TestRawListAliasNativeConformance",
@@ -4090,6 +5002,10 @@
     {
       "name": "TestReceiverDependencyControlsConformance",
       "durationMillis": 2540
+    },
+    {
+      "name": "TestReceiverDependencyControlsNativeConformance",
+      "durationMillis": 1180
     },
     {
       "name": "TestReceiverDependencyNoInheritanceConformance",
@@ -4124,6 +5040,14 @@
       "durationMillis": 2628
     },
     {
+      "name": "TestReceiverMemberProjectOpaquePackageCompileRoutes",
+      "durationMillis": 1100
+    },
+    {
+      "name": "TestReceiverMemberProjectRunnerNamedIsTestTriggerRoutes",
+      "durationMillis": 18470
+    },
+    {
       "name": "TestRecentAccessFieldsNativeConformance",
       "durationMillis": 958
     },
@@ -4138,6 +5062,14 @@
     {
       "name": "TestRecordDefaultAndListTypeNativeConformance",
       "durationMillis": 629
+    },
+    {
+      "name": "TestRecordFieldHashNativeConformance",
+      "durationMillis": 1800
+    },
+    {
+      "name": "TestRecordFieldHashWarmProjectRoute",
+      "durationMillis": 1200
     },
     {
       "name": "TestRecordLifecycleNativeConformance",
@@ -4176,8 +5108,56 @@
       "durationMillis": 672
     },
     {
+      "name": "TestRecordTypeScopeNativeConformance",
+      "durationMillis": 2980
+    },
+    {
       "name": "TestRedirectTargetNativeConformance",
       "durationMillis": 672
+    },
+    {
+      "name": "TestReferenceOnlyNameAllowsOwnedClassNativeConformance",
+      "durationMillis": 780
+    },
+    {
+      "name": "TestReferenceOnlyNameFieldServiceContextNativeConformance",
+      "durationMillis": 1460
+    },
+    {
+      "name": "TestReferenceOnlyNameFieldServiceReflectionVersionsNativeConformance",
+      "durationMillis": 1530
+    },
+    {
+      "name": "TestReferenceOnlyNameFieldServiceSOQLVersionsNativeConformance",
+      "durationMillis": 1370
+    },
+    {
+      "name": "TestReferenceOnlyNameNamedSourceNativeConformance",
+      "durationMillis": 2600
+    },
+    {
+      "name": "TestReferenceOnlyNamePreservesOwnedSchemaType",
+      "durationMillis": 1100
+    },
+    {
+      "name": "TestReferenceOnlyNamesNativeConformance",
+      "durationMillis": 27470
+    },
+    {
+      "name": "TestReferenceOnlySurfacesMixedVersionNativeConformance",
+      "durationMillis": 2420
+    },
+    {
+      "name": "TestReferenceOnlySurfacesNativeConformance",
+      "durationMillis": 15710
+    },
+    {
+      "name": "TestReferenceOnlySurfacesTriggerRowsRecorded",
+      "durationMillis": 0
+    },
+    {
+      "name": "TestReferenceTargetsOfIndustriesObjectsCompileAndStayUnqueryable",
+      "durationMillis": 2640
     },
     {
       "name": "TestReflectedListTokenCapturedConformance",
@@ -4186,6 +5166,10 @@
     {
       "name": "TestReflectionAnalyticsTransportControlsConformance",
       "durationMillis": 8386
+    },
+    {
+      "name": "TestReflectionConstructionNativeConformanceAnonymousAndIsTestProjectAPIRoutes",
+      "durationMillis": 9870
     },
     {
       "name": "TestReflectionEdgesNativeConformance",
@@ -4268,12 +5252,28 @@
       "durationMillis": 366
     },
     {
+      "name": "TestRequiredNameInsertNativeConformance",
+      "durationMillis": 1280
+    },
+    {
+      "name": "TestRequiredNameInsertWarmProjectRoute",
+      "durationMillis": 830
+    },
+    {
       "name": "TestResidualBoundaryNativeEvidenceCarries",
       "durationMillis": 14
     },
     {
+      "name": "TestResidualMetadataOwnerNativeConformance",
+      "durationMillis": 4090
+    },
+    {
       "name": "TestResidualQueryOrgConformance",
       "durationMillis": 12479
+    },
+    {
+      "name": "TestResidualRuntimeBoundariesNativeConformance",
+      "durationMillis": 18370
     },
     {
       "name": "TestRestoredChildRelationshipCacheNativeProjectRoutes",
@@ -4294,6 +5294,46 @@
     {
       "name": "TestRichTextPersistenceAPI62Project40Proof",
       "durationMillis": 272
+    },
+    {
+      "name": "TestRoad174RecordAccessHostRoutes",
+      "durationMillis": 6940
+    },
+    {
+      "name": "TestRoad174RecordAccessHostValues",
+      "durationMillis": 10530
+    },
+    {
+      "name": "TestRoad174RecordAccessNativeConformance",
+      "durationMillis": 16240
+    },
+    {
+      "name": "TestRoad174RecordAccessProject",
+      "durationMillis": 600
+    },
+    {
+      "name": "TestRoad174ReviewStaticProject",
+      "durationMillis": 1200
+    },
+    {
+      "name": "TestRoad2701MetadataFixtureTransitions",
+      "durationMillis": 3060
+    },
+    {
+      "name": "TestRoad2713DateRouteNativeConformance",
+      "durationMillis": 3170
+    },
+    {
+      "name": "TestCase289FollowupsNativeConformance",
+      "durationMillis": 3960
+    },
+    {
+      "name": "TestCase313NativeConformance",
+      "durationMillis": 1440
+    },
+    {
+      "name": "TestCase332DateLiteralIsTestRoute",
+      "durationMillis": 650
     },
     {
       "name": "TestRollupCheckboxFilterNativeConformance",
@@ -5748,6 +6788,10 @@
       "durationMillis": 2
     },
     {
+      "name": "TestRuntimeMissingInputBoundariesNativeConformance",
+      "durationMillis": 2340
+    },
+    {
       "name": "TestRuntimePatchAmbientFingerprintPreservesCloneIdentity",
       "durationMillis": 1218
     },
@@ -5842,6 +6886,10 @@
     {
       "name": "TestRuntimeSchemaIsolationNativeConformance",
       "durationMillis": 1412
+    },
+    {
+      "name": "TestRuntimeSettingBoundariesNativeConformance",
+      "durationMillis": 4530
     },
     {
       "name": "TestRuntimeShapeCarryFieldComparison",
@@ -6008,6 +7056,22 @@
       "durationMillis": 2183
     },
     {
+      "name": "TestSOQLClockC14NativeConformance",
+      "durationMillis": 4820
+    },
+    {
+      "name": "TestSOQLClockHeldNativeEvidence",
+      "durationMillis": 0
+    },
+    {
+      "name": "TestSOQLControlsC14NativeConformance",
+      "durationMillis": 4740
+    },
+    {
+      "name": "TestSOQLCountOrderNativeConformance",
+      "durationMillis": 36540
+    },
+    {
       "name": "TestSOQLDateTimeLiteralNativeConformance",
       "durationMillis": 388
     },
@@ -6024,12 +7088,24 @@
       "durationMillis": 2755
     },
     {
+      "name": "TestSOQLIdentityC14NativeConformance",
+      "durationMillis": 7340
+    },
+    {
+      "name": "TestSOQLLocaleC14NativeConformance",
+      "durationMillis": 7600
+    },
+    {
       "name": "TestSOQLMixedConditionalNativeConformance",
       "durationMillis": 439
     },
     {
       "name": "TestSOQLMixedConditionalStoredListNativeControls",
       "durationMillis": 37
+    },
+    {
+      "name": "TestSOQLNonCountLiteralNativeConformance",
+      "durationMillis": 6320
     },
     {
       "name": "TestSOQLNotControlsNativeConformance",
@@ -6040,8 +7116,36 @@
       "durationMillis": 942
     },
     {
+      "name": "TestSOQLQuotedNumericBindsNativeConformance",
+      "durationMillis": 1680
+    },
+    {
+      "name": "TestSOQLQuotedNumericNativeConformance",
+      "durationMillis": 50400
+    },
+    {
       "name": "TestSOQLRelationshipsOrgConformance",
       "durationMillis": 28251
+    },
+    {
+      "name": "TestSOQLSecurityQ14C14NativeConformance",
+      "durationMillis": 6820
+    },
+    {
+      "name": "TestSOQLSecurityQ2C14NativeConformance",
+      "durationMillis": 3370
+    },
+    {
+      "name": "TestSOQLSecurityQ3C14NativeConformance",
+      "durationMillis": 3360
+    },
+    {
+      "name": "TestSOQLSecurityQ4C14NativeConformance",
+      "durationMillis": 6160
+    },
+    {
+      "name": "TestSOQLSecurityQ5C14NativeConformance",
+      "durationMillis": 3810
     },
     {
       "name": "TestSOQLSelectionOrgConformance",
@@ -6082,6 +7186,90 @@
     {
       "name": "TestSObjectGetTemporalOrgConformance",
       "durationMillis": 120
+    },
+    {
+      "name": "TestSObjectHashVersionNativeConformance",
+      "durationMillis": 1800
+    },
+    {
+      "name": "TestSObjectJSON2DecoderNativeConformance",
+      "durationMillis": 3200
+    },
+    {
+      "name": "TestSObjectJSON2NamespaceNativeConformance",
+      "durationMillis": 3120
+    },
+    {
+      "name": "TestSObjectJSON2NativeConformance",
+      "durationMillis": 4190
+    },
+    {
+      "name": "TestSObjectJSON2RouteContextNativeConformance",
+      "durationMillis": 3400
+    },
+    {
+      "name": "TestSObjectJSON3ActiveLanguageRuntimeCache",
+      "durationMillis": 610
+    },
+    {
+      "name": "TestSObjectJSON3BoundaryNativeConformance",
+      "durationMillis": 7660
+    },
+    {
+      "name": "TestSObjectJSON3CollisionNativeConformance",
+      "durationMillis": 3220
+    },
+    {
+      "name": "TestSObjectJSON3IndustryValueSetRuntimeCache",
+      "durationMillis": 1040
+    },
+    {
+      "name": "TestSObjectJSON3LabelRoutesNativeConformance",
+      "durationMillis": 2170
+    },
+    {
+      "name": "TestSObjectJSON3MorePredicatesNativeConformance",
+      "durationMillis": 2040
+    },
+    {
+      "name": "TestSObjectJSON3MultiHopNativeConformance",
+      "durationMillis": 2160
+    },
+    {
+      "name": "TestSObjectJSON3NativeConformance",
+      "durationMillis": 5560
+    },
+    {
+      "name": "TestSObjectJSON3ParentLabelNativeConformance",
+      "durationMillis": 2020
+    },
+    {
+      "name": "TestSObjectJSON3QualifiedNativeConformance",
+      "durationMillis": 2340
+    },
+    {
+      "name": "TestSObjectJSON3RouteNativeConformance",
+      "durationMillis": 4060
+    },
+    {
+      "name": "TestSObjectJSON3TranslationSnapshot",
+      "durationMillis": 10
+    },
+    {
+      "name": "TestSObjectJSON3TypeofErrorsNativeConformance",
+      "durationMillis": 1820
+    },
+    {
+      "name": "TestSObjectJSONNativeConformance",
+      "durationMillis": 3700
+    },
+    {
+      "name": "TestSObjectListHashNativeConformance",
+      "durationMillis": 2170
+    },
+    {
+      "name": "TestSObjectListHashWarmProjectRoute",
+      "durationMillis": 1430
     },
     {
       "name": "TestSObjectProjectionAndDefaultsOrgConformance",
@@ -6174,6 +7362,10 @@
     {
       "name": "TestScheduledFlowPathNativeConformance",
       "durationMillis": 428
+    },
+    {
+      "name": "TestScheduledLimitC09NativeConformance",
+      "durationMillis": 880
     },
     {
       "name": "TestScheduledNestingStopTestNativeConformance",
@@ -6308,6 +7500,14 @@
       "durationMillis": 0
     },
     {
+      "name": "TestSchemaTypeAliasesNativeConformance",
+      "durationMillis": 2440
+    },
+    {
+      "name": "TestSchemaTypeFactoryNativeConformance",
+      "durationMillis": 3290
+    },
+    {
       "name": "TestSchemaZeroArgumentConstructionNativeConformance",
       "durationMillis": 893
     },
@@ -6366,6 +7566,14 @@
     {
       "name": "TestSeededIdentityNativeConformance",
       "durationMillis": 441
+    },
+    {
+      "name": "TestSeededPlatformRowsNativeConformance",
+      "durationMillis": 5790
+    },
+    {
+      "name": "TestSeededPlatformRowsTriageProjectColdWarm",
+      "durationMillis": 3780
     },
     {
       "name": "TestSelfLookupInsertNativeConformance",
@@ -6496,6 +7704,14 @@
       "durationMillis": 4
     },
     {
+      "name": "TestSetupStageRecordTypeRefreshesWarmDiskRuntime",
+      "durationMillis": 2290
+    },
+    {
+      "name": "TestShadowRecordNameHashProjectRoutes",
+      "durationMillis": 1480
+    },
+    {
       "name": "TestShardChildOutcomesMatchUnsharded",
       "durationMillis": 136
     },
@@ -6554,6 +7770,14 @@
     {
       "name": "TestSharingReasonLabelConformance",
       "durationMillis": 1746
+    },
+    {
+      "name": "TestSingleProjectRequestStartupKeepsFullMethodTables",
+      "durationMillis": 2690
+    },
+    {
+      "name": "TestSingleProjectRunStartupDoesNotRetainStandardRuntime",
+      "durationMillis": 17610
     },
     {
       "name": "TestSingleSObjectQueryExceptionNativeConformance",
@@ -6656,8 +7880,68 @@
       "durationMillis": 76
     },
     {
+      "name": "TestStandardCommerceCapturedSettingProjectRoutes",
+      "durationMillis": 2560
+    },
+    {
+      "name": "TestStandardConfiguredRecordTypeFieldProjectRoutes",
+      "durationMillis": 4250
+    },
+    {
+      "name": "TestStandardConstructorCompleteNativeProjectRoutes",
+      "durationMillis": 13230
+    },
+    {
+      "name": "TestStandardConstructorVirtualFieldsNativeProjectRoutes",
+      "durationMillis": 5550
+    },
+    {
       "name": "TestStandardDefinitionCacheAnonymousNamedAndTestRunnerNativeRoutes",
       "durationMillis": 1327
+    },
+    {
+      "name": "TestStandardDescribeProfileNativeAnonymousRuntime",
+      "durationMillis": 10440
+    },
+    {
+      "name": "TestStandardDescribeProfileNativeCaptureIntegrity",
+      "durationMillis": 10
+    },
+    {
+      "name": "TestStandardDescribeProfileNativeCommercePrerequisite",
+      "durationMillis": 40
+    },
+    {
+      "name": "TestStandardDescribeProfileNativeCompile",
+      "durationMillis": 1310
+    },
+    {
+      "name": "TestStandardDescribeProfileNativeExportPrivacyRoutes",
+      "durationMillis": 7620
+    },
+    {
+      "name": "TestStandardDescribeProfileNativeFeatureCaptureMatrix",
+      "durationMillis": 10
+    },
+    {
+      "name": "TestStandardDescribeProfileNativeFeatureSetDifferences",
+      "durationMillis": 3260
+    },
+    {
+      "name": "TestStandardDescribeProfileNativeFields",
+      "durationMillis": 910
+    },
+    {
+      "name": "TestStandardDescribeProfileNativeNamedMapMembershipRoutes",
+      "durationMillis": 10
+    },
+    {
+      "name": "TestStandardDescribeProfileNativeProjectTestRunner",
+      "durationMillis": 9760
+    },
+    {
+      "name": "TestStandardEmailMessageInputNativeProjectRoutes",
+      "durationMillis": 7170
     },
     {
       "name": "TestStandardEventRouteTwinsNativeConformance",
@@ -6700,8 +7984,52 @@
       "durationMillis": 171
     },
     {
+      "name": "TestStandardFieldEvidenceCommerceProjectRoutes",
+      "durationMillis": 6640
+    },
+    {
+      "name": "TestStandardFieldEvidenceFlowExistingBoundaryRoutes",
+      "durationMillis": 510
+    },
+    {
+      "name": "TestStandardFieldEvidenceLiveAgentProjectRoutes",
+      "durationMillis": 1920
+    },
+    {
+      "name": "TestStandardFieldEvidenceMetadataRoutes",
+      "durationMillis": 10780
+    },
+    {
+      "name": "TestStandardFieldIncompleteProjectRoutes",
+      "durationMillis": 4160
+    },
+    {
       "name": "TestStandardFieldOverlayNativeConformanceRoutes",
       "durationMillis": 6602
+    },
+    {
+      "name": "TestStandardFieldPolicyCombinationNativeEvidence",
+      "durationMillis": 0
+    },
+    {
+      "name": "TestStandardFieldPolicyConfiguredActivityNativeProjectRouteTwins",
+      "durationMillis": 12940
+    },
+    {
+      "name": "TestStandardFieldPolicyConfiguredCaseNativeProjectDescribeRoutes",
+      "durationMillis": 5600
+    },
+    {
+      "name": "TestStandardFieldPolicyConfiguredRecordTypeNativeProjectRouteTwins",
+      "durationMillis": 4370
+    },
+    {
+      "name": "TestStandardFieldPolicyOrderManagementNativeConstructorRoutes",
+      "durationMillis": 2840
+    },
+    {
+      "name": "TestStandardFieldPolicyRecordTypeMetadataProjectRoutes",
+      "durationMillis": 27200
     },
     {
       "name": "TestStandardFieldShapesNativeConformance",
@@ -6800,8 +8128,56 @@
       "durationMillis": 4316
     },
     {
+      "name": "TestStandardRecordTypeFieldPolicyNativeProjectRoutes",
+      "durationMillis": 4150
+    },
+    {
+      "name": "TestStandardRestrictedPicklistBroadSampleNativeConformance",
+      "durationMillis": 2130
+    },
+    {
+      "name": "TestStandardRestrictedPicklistLocaleDiagnosticsNativeConformance",
+      "durationMillis": 5790
+    },
+    {
+      "name": "TestStandardRestrictedPicklistLocaleNativeConformance",
+      "durationMillis": 2760
+    },
+    {
+      "name": "TestStandardRestrictedPicklistLocaleRoutesNativeConformance",
+      "durationMillis": 2090
+    },
+    {
+      "name": "TestStandardRestrictedPicklistProjectValueSetsNativeConformance",
+      "durationMillis": 3420
+    },
+    {
+      "name": "TestStandardRestrictedPicklistsNativeConformance",
+      "durationMillis": 3270
+    },
+    {
       "name": "TestStandardRouteNamedNativeConformance",
       "durationMillis": 1801
+    },
+    {
+      "name": "TestStandardRuntimeBaseAllocationBudget",
+      "durationMillis": 1920
+    },
+    {
+      "name": "TestStandardRuntimeBaseMatchesFreshRegistration",
+      "durationMillis": 4260
+    },
+    {
+      "name": "TestStandardRuntimeBasePreservesShadowedClasses",
+      "durationMillis": 1780
+    },
+    {
+      "name": "TestStandardRuntimeNilPrefixFallsBackToLegacyRegistration",
+      "durationMillis": 160
+    },
+    {
+      "name": "TestStandardRuntimePrefixReleasedWithRuntimeCache",
+      "durationMillis": 720
     },
     {
       "name": "TestStandardSObjectConstructorWinsOverNestedClassWithSameName",
@@ -6868,6 +8244,18 @@
       "durationMillis": 3050
     },
     {
+      "name": "TestStdlibCoreC14NativeConformance",
+      "durationMillis": 15340
+    },
+    {
+      "name": "TestStdlibLocaleCryptoC14NativeConformance",
+      "durationMillis": 9410
+    },
+    {
+      "name": "TestStdlibUnicodeSmallC14NativeConformance",
+      "durationMillis": 5340
+    },
+    {
       "name": "TestStopTestDeliversEventsPublishedByAsyncWorkAfterThePublisher",
       "durationMillis": 205
     },
@@ -6898,6 +8286,10 @@
     {
       "name": "TestStringScanNativeConformance",
       "durationMillis": 228
+    },
+    {
+      "name": "TestStubAliasSignatureProject",
+      "durationMillis": 1610
     },
     {
       "name": "TestStubArgumentShapeNativeConformance",
@@ -7192,6 +8584,10 @@
       "durationMillis": 1300
     },
     {
+      "name": "TestTriggerDependencyNativeConformance",
+      "durationMillis": 7670
+    },
+    {
       "name": "TestTriggerExecutableSourceKeepsStatementsAndNestedMembers",
       "durationMillis": 0
     },
@@ -7328,12 +8724,28 @@
       "durationMillis": 4242
     },
     {
+      "name": "TestU7IdentitySeedNormalization",
+      "durationMillis": 0
+    },
+    {
       "name": "TestURLDomainOrgConformance",
       "durationMillis": 3678
     },
     {
       "name": "TestURLFieldLimitNativeConformance",
       "durationMillis": 484
+    },
+    {
+      "name": "TestUndeclaredNamespaceRunnerKeepsSystemAbsence",
+      "durationMillis": 580
+    },
+    {
+      "name": "TestUndeclaredNamespaceStaticCallKeepsCompileExclusion",
+      "durationMillis": 1610
+    },
+    {
+      "name": "TestUndeclaredNamespaceTypesProjectRoutes",
+      "durationMillis": 1780
     },
     {
       "name": "TestUnexpectedExceptionNativeConformance",
@@ -7380,6 +8792,10 @@
       "durationMillis": 2934
     },
     {
+      "name": "TestUnloadedDependencySourceTransition",
+      "durationMillis": 500
+    },
+    {
       "name": "TestUnloadedDependencyUnreachedHelperRestorationUnitRoute",
       "durationMillis": 6
     },
@@ -7388,12 +8804,32 @@
       "durationMillis": 245
     },
     {
+      "name": "TestUpdateErrorMessagesNativeConformance",
+      "durationMillis": 3180
+    },
+    {
       "name": "TestUpdateRecordTypeFromProjectReferencePreservesExistingLabelWhenReferenceUsesDeveloperName",
       "durationMillis": 0
     },
     {
       "name": "TestUpdateRecordTypeFromProjectReferenceRefreshesExistingMetadata",
       "durationMillis": 0
+    },
+    {
+      "name": "TestUpsertDuplicateSingletonListShippingProjectRoutes",
+      "durationMillis": 3540
+    },
+    {
+      "name": "TestUpsertDuplicateUncapturedBlankPriorProjectRoutes",
+      "durationMillis": 11700
+    },
+    {
+      "name": "TestUpsertDuplicateUncapturedProjectRoutesRetainReleaseBehavior",
+      "durationMillis": 8520
+    },
+    {
+      "name": "TestUpsertDuplicateUncapturedScopeProjectRoutes",
+      "durationMillis": 10330
     },
     {
       "name": "TestUpsertFieldsNativeConformance",
@@ -7480,6 +8916,10 @@
       "durationMillis": 1
     },
     {
+      "name": "TestValidationAndLookupProjectAnonymousAndIsTestNativeRoutes",
+      "durationMillis": 5730
+    },
+    {
       "name": "TestValidationErrorFieldsDependencyControl",
       "durationMillis": 504
     },
@@ -7496,6 +8936,10 @@
       "durationMillis": 243
     },
     {
+      "name": "TestValidationRuleFormulaNativeConformanceAnonymousAPIRoutes",
+      "durationMillis": 1920
+    },
+    {
       "name": "TestValueEdgesNativeConformance",
       "durationMillis": 1555
     },
@@ -7510,6 +8954,18 @@
     {
       "name": "TestVisualforceAssetPagesNativeConformance",
       "durationMillis": 658
+    },
+    {
+      "name": "TestVisualforceControllerCompilationHintSkipsCompileGateSubset",
+      "durationMillis": 20
+    },
+    {
+      "name": "TestVisualforceControllerCompilationHintSkipsFailedSchema",
+      "durationMillis": 0
+    },
+    {
+      "name": "TestVisualforcePageNamesFromSemanticGateMatchOwnCompile",
+      "durationMillis": 40
     },
     {
       "name": "TestWarmRuntimeWithBuildArtifactsRejectsChangedGeneration",

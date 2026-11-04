@@ -98,10 +98,24 @@ error GLADESEMA002 method "latestInvoice" references unknown type "Invoice__c"
 
 ## Automation diagnostics
 
-Warnings identify the workflow, Flow, or file that needs attention. A
-`GLADEAUTO003` file is skipped while the other automation files still load.
-`GLADEAUTO004` is an error, including invalid references within the supported
-record-triggered Flow subset. See [local Flow execution](/guide/automation#local-flow-execution).
+Warnings identify the workflow, Flow, or file that needs attention.
+
+### GLADEAUTO001 {#gladeauto001}
+
+Unsupported workflow behavior (warning).
+
+### GLADEAUTO002 {#gladeauto002}
+
+Unsupported Flow behavior (warning).
+
+### GLADEAUTO003 {#gladeauto003}
+
+An unreadable or malformed automation file is skipped (warning); other files still load.
+
+### GLADEAUTO004 {#gladeauto004}
+
+Invalid supported Flow definition (error), including invalid references within
+its record-triggered subset. See [local Flow execution](/guide/automation#local-flow-execution).
 
 ## Recursive collection display
 

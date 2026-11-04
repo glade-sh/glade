@@ -1,0 +1,7 @@
+source_api	route	case	observation
+62.0	anonymous	own-qualified-nested	2
+62.0	isTest	own-qualified-nested	2
+62.0	anonymous	foreign-qualified-nested	Invalid type
+67.0	anonymous	own-qualified-nested	2
+67.0	isTest	own-qualified-nested	2
+67.0	anonymous	foreign-qualified-nested	Invalid type

@@ -344,8 +344,13 @@ func matchingOpenExpressionParenBefore(body string, close int) int {
 }
 
 func matchingOpenParenBefore(body string, close int) int {
+	return matchingOpenParenBeforeWithWork(body, close, nil)
+}
+
+func matchingOpenParenBeforeWithWork(body string, close int, work *semaReceiverWork) int {
 	depth := 0
 	for i := close; i >= 0; i-- {
+		work.add(1)
 		switch body[i] {
 		case ')':
 			depth++

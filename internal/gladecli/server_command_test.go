@@ -109,3 +109,16 @@ func TestRunPlaygroundRejectsDisabledPublicSafeguards(t *testing.T) {
 		})
 	}
 }
+
+func TestRunPlaygroundWizardTrustedProxy(t *testing.T) {
+	var output bytes.Buffer
+	err := runPlayground(t.Context(), []string{"--wizard", "--public", "--trusted-proxy", "192.0.2.12", "--data-root", t.TempDir()}, &output, io.Discard)
+	if err != nil || !strings.Contains(output.String(), "--trusted-proxy 192.0.2.12") {
+		t.Fatalf("wizard: %v %s", err, output.String())
+	}
+	for _, invalid := range []string{"not-an-ip", "192.0.2.1,192.0.2.2", "192.0.2.0/24"} {
+		if err := runPlayground(t.Context(), []string{"--wizard", "--trusted-proxy", invalid}, io.Discard, io.Discard); err == nil {
+			t.Errorf("accepted invalid proxy %q", invalid)
+		}
+	}
+}

@@ -3,6 +3,7 @@ package vm
 import (
 	"os"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -55,6 +56,7 @@ func TestStandardObjectResolutionKeepsSharedSchemaRoutes(t *testing.T) {
 				if mapIdentity(describeShareFieldMapOf(t, machine, "Account")) != sharedMap {
 					t.Error("unrelated Account field map was rebuilt")
 				}
+				runtime.GC()
 				sibling := describeShareClone(base, template)
 				if _, present := sibling.Org.Objects["Asset"]; present {
 					t.Error("standard object leaked into a sibling")
@@ -62,6 +64,9 @@ func TestStandardObjectResolutionKeepsSharedSchemaRoutes(t *testing.T) {
 				if mapIdentity(describeShareFieldMapOf(t, sibling, "Account")) != sharedMap {
 					t.Error("sibling stopped sharing Account fields")
 				}
+				// The shared cache retains entries weakly; the first VM must remain
+				// live through the sibling identity check.
+				runtime.KeepAlive(machine)
 			})
 		}
 	}

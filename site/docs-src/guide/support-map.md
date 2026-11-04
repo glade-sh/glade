@@ -41,9 +41,9 @@ support claim.
 - You will keep a Salesforce validation gate for features Glade does not model.
 - You will use first-party plugins for capability reports and advisory scans instead of expecting those scanners in base `glade --help`.
 
-The v0.3.0 support window is **Apex 62.0-68.0, LWC and Visualforce 59.0-68.0**.
+The supported window is **Apex 62.0-67.0, LWC and Visualforce 59.0-67.0**.
 Apex source API below 62.0 is unsupported, even when the loader preserves the
-version. Execute Anonymous accepts source API 65.0, 66.0, 67.0, and 68.0.
+version. HTTP Execute Anonymous admits source API 65.0, 66.0, 67.0, and 68.0.
 Explicit LWC bundle versions must be whole versions from 59.0 through 68.0;
 unversioned bundles use compiler default 68.0. Local HTTP endpoints
 separately support 60.0, 65.0, 66.0, 67.0, and 68.0 (default 65.0).

@@ -128,6 +128,12 @@ jobs:
           key: release-v1-npm-${{ runner.os }}-22-${{ hashFiles('third_party/lwc/package-lock.json', 'contrib/vscode-glade/package-lock.json') }}-${{ github.sha }}
           restore-keys: |
             release-v1-npm-${{ runner.os }}-22-${{ hashFiles('third_party/lwc/package-lock.json', 'contrib/vscode-glade/package-lock.json') }}-
+      - name: Install extension test dependencies
+        working-directory: contrib/vscode-glade
+        run: npm ci
+      - name: Test extension behavior
+        working-directory: contrib/vscode-glade
+        run: npm test
       - name: Build shared release payload
         shell: bash
         env:

@@ -1,0 +1,17 @@
+source_api	class	method	capture_id	observation
+62.0	DootSoqlU10TestB1031	two	U10.two	{"tz":"America/Los_Angeles","locale":"en_US","stage":"query","status":"observed","rows":[]}
+62.0	DootSoqlU8TestB1031	shortened	U8.shortened	{"tz":"America/Los_Angeles","locale":"en_US","stage":"query","status":"observed","rows":[]}
+62.0	DootSoqlQ12TestB1031	day_only	Q12.DAY_ONLY	{"tz":"America/Los_Angeles","locale":"en_US","exception":{"inaccessible":{},"message":"only datetime fields support: DAY_ONLY","type":"System.QueryException","stage":"query"}}
+62.0	DootSoqlQ12TestB1031	hour_in_day	Q12.HOUR_IN_DAY	{"tz":"America/Los_Angeles","locale":"en_US","exception":{"inaccessible":{},"message":"only datetime and time fields support: HOUR_IN_DAY","type":"System.QueryException","stage":"query"}}
+62.0	DootSoqlQ7TestB1031	countFirstTypeof	Q7.countFirstTypeof	{"tz":"America/Los_Angeles","locale":"en_US","exception":{"inaccessible":{},"message":"unexpected token: ','","type":"System.QueryException","stage":"query"}}
+62.0	DootSoqlQ7TestB1031	overlap	Q7.overlap	{"tz":"America/Los_Angeles","locale":"en_US","exception":{"inaccessible":{},"message":"TYPEOF operand 'What' and top-level SELECT list element 'What.Name' may not reference the same relationship field","type":"System.QueryException","stage":"query"}}
+62.0	DootSoqlQ7TestB1031	typeofFirstCount	Q7.typeofFirstCount	{"tz":"America/Los_Angeles","locale":"en_US","exception":{"inaccessible":{},"message":"unexpected token: 'COUNT()'","type":"System.QueryException","stage":"query"}}
+62.0	DootSoqlQ8TestB1031	rollover	Q8.rollover	{"tz":"America/Los_Angeles","locale":"en_US","stage":"query","status":"observed","rows":[{"n":1,"wk":1,"Birthdate":"2021-01-01"},{"n":1,"wk":1,"Birthdate":"2021-01-07"},{"n":1,"wk":2,"Birthdate":"2021-01-08"}]}
+67.0	DootSoqlU10TestB1031	two	U10.two	{"tz":"America/Los_Angeles","locale":"en_US","stage":"query","status":"observed","rows":[]}
+67.0	DootSoqlU8TestB1031	shortened	U8.shortened	{"tz":"America/Los_Angeles","locale":"en_US","stage":"query","status":"observed","rows":[]}
+67.0	DootSoqlQ12TestB1031	day_only	Q12.DAY_ONLY	{"tz":"America/Los_Angeles","locale":"en_US","exception":{"inaccessible":{},"message":"only datetime fields support: DAY_ONLY","type":"System.QueryException","stage":"query"}}
+67.0	DootSoqlQ12TestB1031	hour_in_day	Q12.HOUR_IN_DAY	{"tz":"America/Los_Angeles","locale":"en_US","exception":{"inaccessible":{},"message":"only datetime and time fields support: HOUR_IN_DAY","type":"System.QueryException","stage":"query"}}
+67.0	DootSoqlQ7TestB1031	countFirstTypeof	Q7.countFirstTypeof	{"tz":"America/Los_Angeles","locale":"en_US","exception":{"inaccessible":{},"message":"unexpected token: ','","type":"System.QueryException","stage":"query"}}
+67.0	DootSoqlQ7TestB1031	overlap	Q7.overlap	{"tz":"America/Los_Angeles","locale":"en_US","exception":{"inaccessible":{},"message":"TYPEOF operand 'What' and top-level SELECT list element 'What.Name' may not reference the same relationship field","type":"System.QueryException","stage":"query"}}
+67.0	DootSoqlQ7TestB1031	typeofFirstCount	Q7.typeofFirstCount	{"tz":"America/Los_Angeles","locale":"en_US","exception":{"inaccessible":{},"message":"unexpected token: 'COUNT()'","type":"System.QueryException","stage":"query"}}
+67.0	DootSoqlQ8TestB1031	rollover	Q8.rollover	{"tz":"America/Los_Angeles","locale":"en_US","stage":"query","status":"observed","rows":[{"n":1,"wk":1,"Birthdate":"2021-01-01"},{"n":1,"wk":1,"Birthdate":"2021-01-07"},{"n":1,"wk":2,"Birthdate":"2021-01-08"}]}

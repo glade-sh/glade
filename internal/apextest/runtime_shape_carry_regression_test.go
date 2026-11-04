@@ -128,7 +128,7 @@ func TestRuntimeShapeCarryProjectRouteTwins(t *testing.T) {
 		t.Fatal(err)
 	}
 	cmd := exec.Command(binary, "-test.run=^TestRuntimeShapeCarryProjectRouteTwins$", "-test.v", "-test.timeout=150s")
-	cmd.Env = append(os.Environ(), childFlag+"=1")
+	cmd.Env = append(childEnvWithoutShardSelector(), childFlag+"=1")
 	output, err := cmd.CombinedOutput()
 	if err == nil {
 		t.Fatal("matching-field mutations passed every synthetic project route")

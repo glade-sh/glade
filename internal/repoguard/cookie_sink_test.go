@@ -10,15 +10,17 @@ import (
 	"testing"
 )
 
-// The Visualforce Apex Cookie emulation is the only place Glade writes a
-// response cookie, and its Secure and HttpOnly flags come from the Apex
-// program. CodeQL's cookie queries are excluded for that reason, so a new
-// sink must be added here deliberately and reviewed.
+// The Visualforce cookie flags come from Apex. The public playground session
+// cookie is separately pinned below because CodeQL's cookie queries are excluded.
 const cookieSinkFile = "internal/server/visualforce.go"
+const publicCookieSinkFile = "internal/playground/public_sessions.go"
 
-func TestOnlyVisualforceWritesResponseCookies(t *testing.T) {
+func TestResponseCookieSinksAreReviewed(t *testing.T) {
 	root := repoRoot(t)
 	var found []string
+	publicCookieLiterals := 0
+	publicSetCookieCalls := 0
+	publicCookieSafe := false
 	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -40,10 +42,39 @@ func TestOnlyVisualforceWritesResponseCookies(t *testing.T) {
 		rel, _ := filepath.Rel(root, path)
 		rel = filepath.ToSlash(rel)
 		ast.Inspect(file, func(node ast.Node) bool {
+			if literal, ok := node.(*ast.CompositeLit); ok && rel == publicCookieSinkFile {
+				if typ, ok := literal.Type.(*ast.SelectorExpr); ok && typ.Sel.Name == "Cookie" {
+					if pkg, ok := typ.X.(*ast.Ident); ok && pkg.Name == "http" {
+						publicCookieLiterals++
+						flags := map[string]bool{}
+						for _, element := range literal.Elts {
+							kv, ok := element.(*ast.KeyValueExpr)
+							if !ok {
+								continue
+							}
+							key, ok := kv.Key.(*ast.Ident)
+							if !ok {
+								continue
+							}
+							switch value := kv.Value.(type) {
+							case *ast.Ident:
+								flags[key.Name] = value.Name == "true"
+							case *ast.SelectorExpr:
+								pkg, ok := value.X.(*ast.Ident)
+								flags[key.Name] = ok && pkg.Name == "http" && value.Sel.Name == "SameSiteLaxMode"
+							}
+						}
+						publicCookieSafe = flags["Secure"] && flags["HttpOnly"] && flags["SameSite"]
+					}
+				}
+			}
 			switch n := node.(type) {
 			case *ast.SelectorExpr:
 				if pkg, ok := n.X.(*ast.Ident); ok && pkg.Name == "http" && (n.Sel.Name == "SetCookie" || n.Sel.Name == "Cookie") {
 					found = append(found, rel+": http."+n.Sel.Name)
+					if rel == publicCookieSinkFile && n.Sel.Name == "SetCookie" {
+						publicSetCookieCalls++
+					}
 				}
 			}
 			return true
@@ -56,9 +87,18 @@ func TestOnlyVisualforceWritesResponseCookies(t *testing.T) {
 	if len(found) == 0 {
 		t.Fatalf("expected the cookie sink in %s; update this guard if it moved", cookieSinkFile)
 	}
+	visualforceFound := false
 	for _, use := range found {
-		if !strings.HasPrefix(use, cookieSinkFile+":") {
-			t.Errorf("new response cookie sink %s: review Secure and HttpOnly, then update this guard and the CodeQL exclusions in security.yml", use)
+		if strings.HasPrefix(use, cookieSinkFile+":") {
+			visualforceFound = true
+		} else if !strings.HasPrefix(use, publicCookieSinkFile+":") {
+			t.Errorf("unreviewed response cookie sink %s", use)
 		}
+	}
+	if !visualforceFound {
+		t.Errorf("expected Visualforce cookie sink in %s", cookieSinkFile)
+	}
+	if publicCookieLiterals != 1 || publicSetCookieCalls != 1 || !publicCookieSafe {
+		t.Errorf("public session cookie must pin Secure, HttpOnly and SameSite=Lax (literals=%d, sinks=%d)", publicCookieLiterals, publicSetCookieCalls)
 	}
 }

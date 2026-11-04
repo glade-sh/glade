@@ -27,6 +27,7 @@ import (
 )
 
 const localHTTPReadHeaderTimeout = 10 * time.Second
+const localHTTPReadTimeout = 5 * time.Second
 
 func runServer(ctx context.Context, args []string, w io.Writer, progressW io.Writer) error {
 	if err := ctx.Err(); err != nil {
@@ -131,6 +132,9 @@ func runServer(ctx context.Context, args []string, w io.Writer, progressW io.Wri
 		source, _ := serverSourceMetadata(root)
 		handler = server.NewWithSource(&org, source)
 	}
+	if srv, ok := handler.(*server.Server); ok {
+		defer srv.Close()
+	}
 	if limitMode != "" {
 		if srv, ok := handler.(*server.Server); ok {
 			srv.LimitMode = limitMode
@@ -180,7 +184,7 @@ func runServer(ctx context.Context, args []string, w io.Writer, progressW io.Wri
 		fmt.Fprintln(w)
 		fmt.Fprintln(w, "WARNING  Server is network-reachable. Local org data and mutation routes are unauthenticated.")
 	}
-	return serveHTTPWithContext(ctx, addr, handler)
+	return serveHTTPWithContext(ctx, addr, server.GuardHTTPAuthority(handler, addr))
 }
 
 func runPlayground(ctx context.Context, args []string, w io.Writer, progressW io.Writer) error {
@@ -208,6 +212,7 @@ func runPlayground(ctx context.Context, args []string, w io.Writer, progressW io
 	public := false
 	runTimeout := time.Duration(0)
 	ratePerMinute := 0
+	trustedProxy := ""
 	progress := false
 	progressJSON := false
 	noProgress := false
@@ -273,6 +278,15 @@ func runPlayground(ctx context.Context, args []string, w io.Writer, progressW io
 				return errors.New("--run-timeout must be greater than zero")
 			}
 			runTimeout = d
+		case "--trusted-proxy":
+			value, err := takeFlagValue(args, &i, "--trusted-proxy requires an IP address")
+			if err != nil {
+				return err
+			}
+			if net.ParseIP(value) == nil {
+				return fmt.Errorf("--trusted-proxy requires a single IP address")
+			}
+			trustedProxy = value
 		case "--rate-per-minute":
 			value, err := takeFlagValue(args, &i, "--rate-per-minute requires a value")
 			if err != nil {
@@ -380,6 +394,7 @@ func runPlayground(ctx context.Context, args []string, w io.Writer, progressW io
 			public:         public,
 			runTimeout:     runTimeout,
 			ratePerMinute:  ratePerMinute,
+			trustedProxy:   trustedProxy,
 		})
 	}
 	if exampleID != "" && !resetOnStart {
@@ -447,15 +462,19 @@ func runPlayground(ctx context.Context, args []string, w io.Writer, progressW io
 	}
 	renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "playground", Label: "Starting workbench", Current: current, Total: total})
 	handler := playground.NewServer(ws, playground.ServerOptions{
-		Version:           Version,
-		DBPath:            dbPath,
-		DefaultLimitMode:  limitMode,
-		ProjectReferences: projectRefs,
-		ShowExamples:      showExamples,
-		Public:            public,
-		RunTimeout:        runTimeout,
-		RatePerMinute:     ratePerMinute,
+		Version:             Version,
+		DBPath:              dbPath,
+		DefaultLimitMode:    limitMode,
+		ProjectReferences:   projectRefs,
+		ShowExamples:        showExamples,
+		Public:              public,
+		RunTimeout:          runTimeout,
+		RatePerMinute:       ratePerMinute,
+		TrustedProxy:        trustedProxy,
+		DigitalOceanIngress: os.Getenv("GLADE_DO_APP_PLATFORM") == "1",
+		InsecureLocalCookie: os.Getenv("GLADE_PLAYGROUND_INSECURE_LOCAL") == "1",
 	})
+	defer handler.Close()
 	url := playgroundURL(addr, exampleID)
 	fmt.Fprintln(w, "Glade playground")
 	fmt.Fprintln(w)
@@ -491,7 +510,7 @@ func runPlayground(ctx context.Context, args []string, w io.Writer, progressW io
 }
 
 func serveHTTPWithContext(ctx context.Context, addr string, handler http.Handler) error {
-	httpServer := &http.Server{Addr: addr, Handler: handler, ReadHeaderTimeout: localHTTPReadHeaderTimeout}
+	httpServer := &http.Server{Addr: addr, Handler: handler, ReadHeaderTimeout: localHTTPReadHeaderTimeout, ReadTimeout: localHTTPReadTimeout}
 	go func() {
 		<-ctx.Done()
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
@@ -542,6 +561,7 @@ type playgroundWizardOptions struct {
 	public         bool
 	runTimeout     time.Duration
 	ratePerMinute  int
+	trustedProxy   string
 }
 
 func writePlaygroundWizard(w io.Writer, opts playgroundWizardOptions) error {
@@ -586,6 +606,9 @@ func writePlaygroundWizard(w io.Writer, opts playgroundWizardOptions) error {
 	}
 	if opts.ratePerMinute > 0 {
 		args = append(args, "--rate-per-minute", strconv.Itoa(opts.ratePerMinute))
+	}
+	if opts.trustedProxy != "" {
+		args = append(args, "--trusted-proxy", opts.trustedProxy)
 	}
 	if opts.openBrowserSet {
 		if opts.openBrowser {

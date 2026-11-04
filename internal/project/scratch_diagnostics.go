@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 )
 
 func scratchOrgConfigFiles(root string) []string {
@@ -17,7 +18,7 @@ func scratchOrgConfigFiles(root string) []string {
 	return dedupeStrings(append(paths, cumulusCIOrgConfigFiles(root)...))
 }
 
-// ScratchDefinitionWarnings reports settings the local shape loader does not
+// ScratchDefinitionWarnings reports features and settings the local shape loader does not
 // read. It preserves unknown settings and never includes their values.
 func ScratchDefinitionWarnings(root string) []string {
 	readKeys := make(map[string]bool)
@@ -41,21 +42,31 @@ func ScratchDefinitionWarnings(root string) []string {
 			continue
 		}
 		var unread []string
+		seenFeatures := make(map[string]bool)
+		for _, raw := range def.Features {
+			feature := strings.TrimSpace(raw)
+			lowerKey := strings.ToLower(feature)
+			if feature == "" || isMappedScratchFeature(feature) || seenFeatures[lowerKey] {
+				continue
+			}
+			seenFeatures[lowerKey] = true
+			unread = append(unread, "features."+feature)
+		}
 		for block, value := range def.Settings {
 			settings, ok := value.(map[string]any)
 			if !ok || len(settings) == 0 {
-				unread = append(unread, block)
+				unread = append(unread, "settings."+block)
 				continue
 			}
 			for key := range settings {
 				if !readKeys[block+"."+key] {
-					unread = append(unread, block+"."+key)
+					unread = append(unread, "settings."+block+"."+key)
 				}
 			}
 		}
 		sort.Strings(unread)
 		for _, key := range unread {
-			warnings = append(warnings, fmt.Sprintf("%s: settings.%s is not read by Glade", source, key))
+			warnings = append(warnings, fmt.Sprintf("%s: %s is not read by Glade", source, key))
 		}
 	}
 	return warnings

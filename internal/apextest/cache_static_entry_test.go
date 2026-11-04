@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/glade-sh/glade/internal/project"
 )
 
 func TestCacheStaticEntryAcrossProjectSources(t *testing.T) {
@@ -36,7 +38,24 @@ func TestCacheStaticEntryAcrossProjectSources(t *testing.T) {
 			if index.Project.SourceAPIVersion != api {
 				t.Fatalf("source API=%s, want %s", index.Project.SourceAPIVersion, api)
 			}
-			run := Run(index, Options{NoDiskCache: true, Parallelism: 1})
+			// Model the local org's authored default separately from the
+			// namespaced project sources being compiled by this test.
+			partition := filepath.Join(root, "default.cachePartition-meta.xml")
+			metadata := `<PlatformCachePartition xmlns="http://soap.sforce.com/2006/04/metadata"><isDefaultPartition>true</isDefaultPartition><masterLabel>default</masterLabel><platformCachePartitionTypes><allocatedCapacity>1</allocatedCapacity><cacheType>Organization</cacheType></platformCachePartitionTypes><platformCachePartitionTypes><allocatedCapacity>1</allocatedCapacity><cacheType>Session</cacheType></platformCachePartitionTypes></PlatformCachePartition>`
+			if err := os.WriteFile(partition, []byte(metadata), 0600); err != nil {
+				t.Fatal(err)
+			}
+			p, err := project.Load(root)
+			if err != nil {
+				t.Fatal(err)
+			}
+			p.ManagedPackageDependencies = append(p.ManagedPackageDependencies, project.ManagedPackageDependency{
+				Status: "loaded", Project: &project.Project{Root: root, CachePartitionFiles: []string{partition}},
+			})
+			run := Run(index, Options{NoDiskCache: true, Parallelism: 1, ProjectSnapshot: &p})
+			if problem := firstRunProblem(run); strings.Contains(problem, "A default partition was not found") {
+				t.Fatalf("project cache operations require a configured default partition: %s", problem)
+			}
 			if got := run.Summary(); got.Total != 4 || got.Passed != 4 {
 				t.Fatalf("summary=%+v, problem=%s", got, firstRunProblem(run))
 			}

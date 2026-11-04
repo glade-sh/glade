@@ -114,7 +114,7 @@ with open(sys.argv[1], encoding="utf-8") as f:
     print(json.load(f)["url"])
 PY
 )"
-curl -fsS "${DB_UI_URL}" >"${TMP}/db-ui.html"
+curl -fsS -H 'X-Glade-Client: 1' "${DB_UI_URL}" >"${TMP}/db-ui.html"
 grep -q 'Glade Local Data' "${TMP}/db-ui.html"
 kill "${SERVER_PID}" 2>/dev/null || true
 wait "${SERVER_PID}" 2>/dev/null || true
@@ -199,7 +199,7 @@ PY
 SERVER_PID="$!"
 server_ready=0
 for _ in $(seq 1 300); do
-  if curl -fsS "http://${ADDR}/services/data" >"${TMP}/server-data.json" 2>/dev/null; then
+  if curl -fsS -H 'X-Glade-Client: 1' "http://${ADDR}/services/data" >"${TMP}/server-data.json" 2>/dev/null; then
     server_ready=1
     break
   fi

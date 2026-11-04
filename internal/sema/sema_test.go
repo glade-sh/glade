@@ -914,16 +914,49 @@ func TestChainedCallReceiverLongDottedFluentChainReturnsPromptly(t *testing.T) {
 		t.Fatal("test setup did not find target chained call")
 	}
 	callStart++
-	done := make(chan bool, 1)
+	work := &semaReceiverWork{Limit: 32*len(body) + 512}
+	type result struct {
+		receiver, method string
+		ok               bool
+		panicValue       any
+	}
+	done := make(chan result, 1)
 	go func() {
-		_, _, _ = semaChainedCallReceiver(body, callStart, map[string]string{
+		var got result
+		defer func() {
+			if p := recover(); p != nil {
+				got.panicValue = p
+			}
+			done <- got
+		}()
+		got.receiver, got.method, got.ok = semaChainedCallReceiverWithWork(body, callStart, map[string]string{
 			semaCurrentTypeScopeKey: "TestCartSubmitter",
-		}, semaTypeMemberViewFromMembers(map[string]typeMembers{}), "TestCartSubmitter")
-		done <- true
+		}, semaTypeMemberViewFromMembers(map[string]typeMembers{}), "TestCartSubmitter", work)
 	}()
 
 	select {
-	case <-done:
+	case got := <-done:
+		if got.panicValue != nil || got.receiver != "" || got.method != "" || got.ok {
+			t.Fatalf("receiver result = %#v work=%+v", got, work)
+		}
+		production := make(chan result, 1)
+		go func() {
+			r, m, ok := semaChainedCallReceiver(body, callStart, map[string]string{
+				semaCurrentTypeScopeKey: "TestCartSubmitter",
+			}, semaTypeMemberViewFromMembers(map[string]typeMembers{}), "TestCartSubmitter")
+			production <- result{receiver: r, method: m, ok: ok}
+		}()
+		select {
+		case actual := <-production:
+			if actual.receiver != got.receiver || actual.method != got.method || actual.ok != got.ok {
+				t.Fatalf("production wrapper = %#v", actual)
+			}
+		case <-time.After(500 * time.Millisecond):
+			t.Fatal("production wrapper did not return promptly")
+		}
+		if work.Calls != 1 || work.InferenceEntries != 0 || work.StopSite != "oversized-dotted-fallback" || work.Units > work.Limit {
+			t.Fatalf("unexpected work: %+v", work)
+		}
 	case <-time.After(500 * time.Millisecond):
 		t.Fatal("long dotted fluent-chain receiver lookup did not return promptly")
 	}
@@ -950,16 +983,49 @@ func TestChainedCallReceiverExpandedLongReceiverReturnsPromptly(t *testing.T) {
 		t.Fatal("test setup did not find target chained call")
 	}
 	callStart++
-	done := make(chan bool, 1)
+	work := &semaReceiverWork{Limit: 32*len(body) + 512}
+	type result struct {
+		receiver, method string
+		ok               bool
+		panicValue       any
+	}
+	done := make(chan result, 1)
 	go func() {
-		_, _, _ = semaChainedCallReceiver(body, callStart, map[string]string{
+		var got result
+		defer func() {
+			if p := recover(); p != nil {
+				got.panicValue = p
+			}
+			done <- got
+		}()
+		got.receiver, got.method, got.ok = semaChainedCallReceiverWithWork(body, callStart, map[string]string{
 			semaCurrentTypeScopeKey: "TestCartSubmitter",
-		}, semaTypeMemberViewFromMembers(map[string]typeMembers{}), "TestCartSubmitter")
-		done <- true
+		}, semaTypeMemberViewFromMembers(map[string]typeMembers{}), "TestCartSubmitter", work)
 	}()
 
 	select {
-	case <-done:
+	case got := <-done:
+		if got.panicValue != nil || got.receiver != "" || got.method != "" || got.ok {
+			t.Fatalf("receiver result = %#v work=%+v", got, work)
+		}
+		production := make(chan result, 1)
+		go func() {
+			r, m, ok := semaChainedCallReceiver(body, callStart, map[string]string{
+				semaCurrentTypeScopeKey: "TestCartSubmitter",
+			}, semaTypeMemberViewFromMembers(map[string]typeMembers{}), "TestCartSubmitter")
+			production <- result{receiver: r, method: m, ok: ok}
+		}()
+		select {
+		case actual := <-production:
+			if actual.receiver != got.receiver || actual.method != got.method || actual.ok != got.ok {
+				t.Fatalf("production wrapper = %#v", actual)
+			}
+		case <-time.After(500 * time.Millisecond):
+			t.Fatal("production wrapper did not return promptly")
+		}
+		if work.Calls != 1 || work.InferenceEntries != 0 || work.StopSite != "oversized-dotted-fallback" || work.Units > work.Limit {
+			t.Fatalf("unexpected work: %+v", work)
+		}
 	case <-time.After(500 * time.Millisecond):
 		t.Fatal("expanded long fluent-chain receiver lookup did not return promptly")
 	}

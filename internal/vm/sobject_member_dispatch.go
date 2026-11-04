@@ -529,6 +529,9 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (ou
 			return Null, true, fmt.Errorf("SObject.get expects field name String or Schema.SObjectField")
 		}
 		field := vm.resolveSObjectFieldName(receiver.Type, fieldArg)
+		if vm.permissionViewAllFieldsHidden(receiver.Type, field) {
+			return Null, true, newExceptionError("SObjectException", "Invalid field "+field+" for "+receiver.Type)
+		}
 		diagnosticField := field
 		if !isCustomObjectLikeName(receiver.Type) && vm.Org != nil && vm.Org.Namespace != "" && strings.EqualFold(vm.currentCallerNamespace(), vm.Org.Namespace) && strings.HasSuffix(strings.ToLower(fieldArg), "__c") {
 			if prefix, qualified := namespaceTokenPrefix(fieldArg); qualified && strings.EqualFold(prefix, vm.Org.Namespace) {
@@ -655,6 +658,9 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (ou
 			return Null, true, fmt.Errorf("SObject.put expects field name String or Schema.SObjectField and value")
 		}
 		field := vm.resolveSObjectFieldName(receiver.Type, fieldArg)
+		if vm.permissionViewAllFieldsHidden(receiver.Type, field) {
+			return Null, true, newExceptionError("SObjectException", "Invalid field "+field+" for "+receiver.Type)
+		}
 		if strings.HasPrefix(strings.ToLower(fieldArg), "__glade_") || strings.HasPrefix(strings.ToLower(field), "__glade_") {
 			if err := vm.unknownSObjectFieldError(receiver, field); err != nil {
 				return Null, true, err

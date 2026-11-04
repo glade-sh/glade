@@ -1,0 +1,3 @@
+source_api	class	method	capture_id	measurement
+62.0	DootGT62C6C09	case0	C09_62_6_0	Scheduled getter slice, parent and callback controls
+67.0	DootGT67C6C09	case0	C09_67_6_0	Scheduled getter slice, parent and callback controls; query getter not emitted

@@ -134,11 +134,21 @@ func (e *Engine) applyDefaultRecordTypeID(objectName string, definition storage.
 	if record.Fields == nil {
 		record.Fields = make(map[string]storage.Value)
 	}
-	personSignal := forcePersonAccountRecordType(objectName, *record)
+	// A VM-supplied default is not an explicit RecordTypeId assignment.
 	if value, ok := record.GetField("RecordTypeId"); ok {
-		if personSignal && !explicitPersonAccountRecordType(definition.RecordTypes, idFromStorageValue(value)) {
-			if recordType, found := personAccountRecordType(definition.RecordTypes); found && recordType.ID != "" && idFromStorageValue(value) != recordType.ID {
-				record.Fields["RecordTypeId"] = storage.IDValue(recordType.ID)
+		if record.DMLRecordTypeDefaulted() && forcePersonAccountRecordType(objectName, *record, definition.RecordTypes) {
+			current := idFromStorageValue(value)
+			isPerson := false
+			for _, rt := range definition.RecordTypes {
+				if rt.ID != "" && storage.IDsEqual(rt.ID, current) {
+					isPerson = rt.PersonAccount
+					break
+				}
+			}
+			if !isPerson {
+				if rt, found := personAccountRecordType(definition.RecordTypes); found && rt.ID != "" {
+					record.Fields["RecordTypeId"] = storage.IDValue(rt.ID)
+				}
 			}
 		}
 		return

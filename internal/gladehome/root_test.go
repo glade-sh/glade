@@ -216,6 +216,7 @@ func TestToolchainStatusHonorsExplicitGladeHomeBeforeUserShare(t *testing.T) {
 // reset the toolchain tree while another caller is copying it, and a caller that
 // finds the install complete must not reinstall.
 func TestEnsureRootConcurrentFirstUseInstallsOnce(t *testing.T) {
+	t.Setenv("GLADE_ALLOW_PROJECT_TOOLCHAIN", "1")
 	repo := t.TempDir()
 	for _, rel := range []string{
 		"go.mod",

@@ -61,11 +61,12 @@ type Server struct {
 	closeErr    error
 	serveCancel context.CancelFunc
 
-	runOnce      sync.Once
-	runAdmission chan struct{}
-	runExecution chan struct{}
-	runRequestV1 func(context.Context, RunRequestV1) (testreport.Run, watch.TestSelection, *ClassShardPlanV1, error)
-	runProgress  func(apextest.TestProgress)
+	runOnce             sync.Once
+	runAdmission        chan struct{}
+	runExecution        chan struct{}
+	runRequestV1        func(context.Context, RunRequestV1) (testreport.Run, watch.TestSelection, *ClassShardPlanV1, error)
+	runProgress         func(apextest.TestProgress)
+	afterRunAdmissionV1 func(string)
 
 	captureScopeFn         func(watch.Scope) (watch.Snapshot, error)
 	newBackendWatcherFn    func(context.Context, watch.Config, watch.Snapshot) (watch.BackendWatcher, watch.Backend, error)
@@ -101,6 +102,9 @@ func NewServer(cfg ServerConfig) (*Server, error) {
 		}
 	}()
 	defaultSocket := socket == ServeSocketPath(root)
+	if defaultSocket && !secureDiscoveryPath(filepath.Dir(socket)) {
+		return nil, fmt.Errorf("%w: %s", ErrUntrustedDiscovery, filepath.Dir(socket))
+	}
 	if !defaultSocket {
 		if err := os.MkdirAll(filepath.Dir(socket), 0o700); err != nil {
 			return nil, err
@@ -466,7 +470,7 @@ func (s *Server) handleV1(ctx context.Context, request RequestV1) ResponseV1 {
 			response.Error = err.Error()
 			return response
 		}
-		release, err := s.acquireRun(ctx)
+		release, err := s.acquireRunV1(ctx, request.ID)
 		if err != nil {
 			return runErrorResponseV1(response, testreport.Run{}, err)
 		}
@@ -513,6 +517,10 @@ func runErrorResponseV1(response ResponseV1, run testreport.Run, err error) Resp
 }
 
 func (s *Server) acquireRun(ctx context.Context) (func(), error) {
+	return s.acquireRunV1(ctx, "")
+}
+
+func (s *Server) acquireRunV1(ctx context.Context, requestID string) (func(), error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -524,6 +532,9 @@ func (s *Server) acquireRun(ctx context.Context) (func(), error) {
 	case s.runAdmission <- struct{}{}:
 	default:
 		return nil, errors.New("test server is busy; retry the request")
+	}
+	if observe := s.afterRunAdmissionV1; observe != nil {
+		observe(requestID)
 	}
 	if err := ctx.Err(); err != nil {
 		<-s.runAdmission

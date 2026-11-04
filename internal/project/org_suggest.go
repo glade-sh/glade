@@ -93,24 +93,6 @@ var (
 	recordTypeSObjectRE      = regexp.MustCompile(`(?i)\b([A-Za-z_][A-Za-z0-9_]*)\.SObjectType\.getDescribe\s*\(\s*\)\.getRecordTypeInfosBy(DeveloperName|Name)\s*\(\s*\)\s*\.get\s*\(\s*'([^']+)'`)
 )
 
-var mappedScratchFeatures = map[string]bool{
-	"personaccounts":             true,
-	"multicurrency":              true,
-	"stateandcountrypicklist":    true,
-	"communities":                true,
-	"flowsites":                  true,
-	"sites":                      true,
-	"contactstomultipleaccounts": true,
-	"platformcache":              true,
-	"providerfreeplatformcache":  true,
-	"quotes":                     true,
-	"healthcloud":                true,
-	"chatter":                    true,
-	"lightningexperience":        true,
-	"enablesetpasswordinapi":     true,
-	"analyticsadminperms":        true,
-}
-
 const suggestMaxFileBytes = 2 << 20
 
 // SuggestOrgSetup scans project source and metadata for explicit setup evidence,
@@ -562,23 +544,7 @@ func scratchFeatureSuggestions(root string) []OrgSetupSuggestion {
 }
 
 func isMappedScratchFeature(feature string) bool {
-	name := strings.ToLower(strings.TrimSpace(feature))
-	if mappedScratchFeatures[name] {
-		return true
-	}
-	if strings.HasPrefix(name, "healthcloud") {
-		return true
-	}
-	const customAppsPrefix = "addcustomapps:"
-	if !strings.HasPrefix(name, customAppsPrefix) || len(name) == len(customAppsPrefix) {
-		return false
-	}
-	for _, char := range name[len(customAppsPrefix):] {
-		if char < '0' || char > '9' {
-			return false
-		}
-	}
-	return true
+	return IsMappedScratchFeature(feature)
 }
 
 func containsFolded(values []string, want string) bool {

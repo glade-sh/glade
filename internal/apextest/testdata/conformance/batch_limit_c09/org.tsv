@@ -1,0 +1,7 @@
+source_api	context	method	observation
+62.0	Batch.execute	case0	{"parentCap":100,"stop":true,"v":1,"cb":"Batch.execute","case":0,"stage":"complete","api":"62.0","locale":"en_US","tz":"America/Los_Angeles","Queries":[0,200],"AggregateQueries":[0,600],"QueueableJobs":[0,1],"FutureCalls":[0,0]}
+62.0	Batch.finish	case0	{"parentCap":100,"stop":true,"v":1,"cb":"Batch.finish","case":0,"stage":"complete","api":"62.0","locale":"en_US","tz":"America/Los_Angeles","Queries":[0,200],"AggregateQueries":[0,600],"QueueableJobs":[0,1],"FutureCalls":[0,0]}
+62.0	Batch.start	case0	{"parentCap":100,"stop":true,"v":1,"cb":"Batch.start","case":0,"stage":"complete","api":"62.0","locale":"en_US","tz":"America/Los_Angeles","Queries":[0,200],"AggregateQueries":[0,600],"QueueableJobs":[0,1],"FutureCalls":[0,0]}
+67.0	Batch.execute	case0	{"parentCap":100,"stop":true,"v":1,"cb":"Batch.execute","case":0,"stage":"complete","api":"67.0","locale":"en_US","tz":"America/Los_Angeles","Queries":[0,200],"AggregateQueries":[0,600],"FutureCalls":[0,0]}
+67.0	Batch.finish	case0	{"parentCap":100,"stop":true,"v":1,"cb":"Batch.finish","case":0,"stage":"complete","api":"67.0","locale":"en_US","tz":"America/Los_Angeles","Queries":[0,200],"AggregateQueries":[0,600],"QueueableJobs":[0,1],"FutureCalls":[0,0]}
+67.0	Batch.start	case0	{"parentCap":100,"stop":true,"v":1,"cb":"Batch.start","case":0,"stage":"complete","api":"67.0","locale":"en_US","tz":"America/Los_Angeles","Queries":[0,200],"AggregateQueries":[0,600],"QueueableJobs":[0,1],"FutureCalls":[0,0]}

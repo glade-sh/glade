@@ -1,0 +1,7 @@
+source_api	context	method	measurement
+62.0	Batch.execute	case0	callback and governor getter slice
+62.0	Batch.finish	case0	callback and governor getter slice
+62.0	Batch.start	case0	callback and governor getter slice
+67.0	Batch.execute	case0	callback and governor getter slice
+67.0	Batch.finish	case0	callback and governor getter slice
+67.0	Batch.start	case0	callback and governor getter slice

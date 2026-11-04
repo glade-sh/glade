@@ -66,7 +66,9 @@ type v13WorkerRequest struct {
 	Output string   `json:"output"`
 }
 
-const v13WorkerLimit = 16
+// Rows per worker process. Each worker pays a cold standard-org start, so 64
+// rows per worker means 5 workers per API for the 278 rows instead of 18.
+const v13WorkerLimit = 64
 
 // TestV13SalesforceConformance compares all 278 native rows at API 59 and 67.
 // The fixture exports captured compile sources/metadata, complete diagnostics,

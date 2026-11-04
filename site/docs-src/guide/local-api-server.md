@@ -8,8 +8,8 @@ canonicalTask: /guide/workflows/local-data
 `glade server` starts local Salesforce-style HTTP routes backed by the same runtime used by the CLI. Use it for local integration tests, tools, and development loops that need REST-style org behavior without a live Salesforce org.
 
 Checked HTTP endpoint versions are 60.0, 65.0, 66.0, 67.0, and 68.0; the
-default is 65.0. These are independent of the v0.3.0 support window:
-Apex 62.0-68.0, LWC and Visualforce 59.0-68.0. Execute Anonymous accepts
+default is 65.0. These are independent of the supported window:
+Apex 62.0-67.0, LWC and Visualforce 59.0-67.0. Execute Anonymous accepts
 source API 65.0, 66.0, 67.0, and 68.0.
 
 ## Start the server
@@ -94,13 +94,13 @@ metadata baseline.
 | Metadata job status | local metadata job status routes | supported local status baseline |
 | Glade reset endpoints | `/services/data/vXX.X/glade/reset` and scoped reset routes | supported local-only baseline |
 
-Example request:
+Example request. Requests without browser origin metadata must send `X-Glade-Client: 1`, `X-Glade-Capability`, or an `Authorization: Bearer` header. Salesforce CLI sends a bearer header; plain clients such as curl can use the Glade client header:
 
 ```bash
-curl -s http://127.0.0.1:8080/services/data/
-curl -s http://127.0.0.1:8080/services/data/v60.0/sobjects/Account/describe
-curl -s 'http://127.0.0.1:8080/services/data/v60.0/query?q=SELECT+Id,Name+FROM+Account'
-curl -s 'http://127.0.0.1:8080/services/data/v60.0/limits/recordCount?sObjects=Account'
+curl -s -H 'X-Glade-Client: 1' http://127.0.0.1:8080/services/data/
+curl -s -H 'X-Glade-Client: 1' http://127.0.0.1:8080/services/data/v60.0/sobjects/Account/describe
+curl -s -H 'X-Glade-Client: 1' 'http://127.0.0.1:8080/services/data/v60.0/query?q=SELECT+Id,Name+FROM+Account'
+curl -s -H 'X-Glade-Client: 1' 'http://127.0.0.1:8080/services/data/v60.0/limits/recordCount?sObjects=Account'
 ```
 
 Example query response:

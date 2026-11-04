@@ -87,7 +87,8 @@ func TestSupplementalSourceWatchLocalAndDaemonRoutes(t *testing.T) {
 						}
 					}
 					defer func() { _ = watcher.Close() }()
-					writeTestFile(t, service, "public class SupplementalService { public static Integer value() { return 2; } }")
+					// Change the size as well as the content for coarse-timestamp filesystems.
+					writeTestFile(t, service, "public class SupplementalService { public static Integer value() { return 2; } }\n")
 					changes := waitForWatchChanges(t, watcher, service, watch.ChangeModified)
 					if run := apply(changes); run.Summary().Passed != 1 || run.Summary().Failed != 0 {
 						t.Fatalf("supplemental Apex watch run = %#v", run)

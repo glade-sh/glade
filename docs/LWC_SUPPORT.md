@@ -10,10 +10,11 @@ builder route `/lwc/builder`, and `/lwc/preview/*` routes. Visualforce appears
 here only where a Visualforce-backed tab or shared Lightning Out runtime
 affects an LWC.
 
-v0.3.0 supports LWC and Visualforce API 59.0-68.0. Explicit LWC bundle
-`apiVersion` values must be whole versions in that window. Unversioned bundles
+Glade supports LWC and Visualforce API 59.0-67.0. Explicit LWC bundle
+`apiVersion` values must be whole versions; the compiler accepts 59.0 through
+68.0. Unversioned bundles
 use compiler default 68.0; module availability follows the effective version.
-The full release window is Apex 62.0-68.0, LWC and Visualforce 59.0-68.0.
+The supported window is Apex 62.0-67.0, LWC and Visualforce 59.0-67.0.
 
 The local shell UI is the Workbench Console. Component Lab filters exposed
 LWCs, reads target metadata and `@api` properties, edits preview properties and

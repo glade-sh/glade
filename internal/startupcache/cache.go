@@ -397,10 +397,16 @@ func freshManifestWithSourceDigests(version int, entryProjectRoot, entryPlatform
 		return false
 	}
 	apexDigests, useSnapshot := completeApexSourceDigests(loaded, digests)
-	for _, fp := range append(append([]File(nil), manifest.Files...), manifest.ConfigFiles...) {
+	savedFiles := append(append([]File(nil), manifest.Files...), manifest.ConfigFiles...)
+	currentFiles := append(append([]File(nil), current.Files...), current.ConfigFiles...)
+	for i, fp := range savedFiles {
+		// A reused source digest is tied to its original generation. If the
+		// timestamp changed, hash the current file rather than trusting it.
+		sameGeneration := fp.ModTime == currentFiles[i].ModTime
+		fp.ModTime = currentFiles[i].ModTime
 		absPath := filepath.Clean(filepath.Join(root, filepath.FromSlash(fp.Path)))
 		digest, isApex := apexDigests[absPath]
-		if !fileFingerprintMatchesWithSourceDigest(root, fp, true, digest, useSnapshot && isApex, readFile) {
+		if !fileFingerprintMatchesWithSourceDigest(root, fp, true, digest, useSnapshot && isApex && sameGeneration, readFile) {
 			return false
 		}
 	}
@@ -416,9 +422,43 @@ func freshManifestWithValidatedInput(version int, entryProjectRoot, entryPlatfor
 		return false
 	}
 	root = filepath.Clean(root)
-	return filepath.Clean(entryProjectRoot) == root &&
-		input.projectRoot == root &&
-		reflect.DeepEqual(manifest, input.manifest)
+	if filepath.Clean(entryProjectRoot) != root || input.projectRoot != root {
+		return false
+	}
+	if reflect.DeepEqual(manifest, input.manifest) {
+		return true
+	}
+	// A supplied source-digest snapshot can predate a timestamp change.
+	// Validate against live bytes before relaxing cross-generation timestamps.
+	return sameManifestContent(manifest, input.manifest) &&
+		freshManifestWithSourceDigests(version, entryProjectRoot, entryPlatformABI, manifest, root, expectedVersion, nil, nil)
+}
+
+// sameManifestContent compares fully validated generations without changing
+// their timestamp-sensitive publication digests.
+func sameManifestContent(saved, current Manifest) bool {
+	if !saved.Complete || !current.Complete || saved.SchemaVersion != manifestSchemaVersion ||
+		saved.SchemaVersion != current.SchemaVersion || saved.ProjectRoot != current.ProjectRoot ||
+		saved.SourceAPIVersion != current.SourceAPIVersion || saved.Namespace != current.Namespace ||
+		saved.ProjectDigest == "" || saved.ProjectDigest != current.ProjectDigest ||
+		!reflect.DeepEqual(saved.Features, current.Features) ||
+		!sameDirectorySet(saved.PackageRoots, current.PackageRoots) ||
+		!sameFileContentSet(saved.Files, current.Files) || !sameFileContentSet(saved.ConfigFiles, current.ConfigFiles) {
+		return false
+	}
+	return true
+}
+
+func sameFileContentSet(saved, current []File) bool {
+	if !sameFileMetadataSet(saved, current) {
+		return false
+	}
+	for i := range saved {
+		if len(current[i].SHA256) != sha256.Size*2 || saved[i].SHA256 != current[i].SHA256 {
+			return false
+		}
+	}
+	return true
 }
 
 func BuildManifest(projectRoot string, p project.Project, index typesys.Index) Manifest {
@@ -914,7 +954,6 @@ func sameFileMetadataSet(expected, current []File) bool {
 		if expected[i].Path == "" ||
 			expected[i].Path != current[i].Path ||
 			expected[i].Size != current[i].Size ||
-			expected[i].ModTime != current[i].ModTime ||
 			len(expected[i].SHA256) != sha256.Size*2 {
 			return false
 		}
@@ -1115,7 +1154,8 @@ func appendProjectFilesFromProject(p project.Project) []string {
 	out := make([]string, 0, 128)
 	pValue := reflect.ValueOf(p)
 	for i := 0; i < pValue.NumField(); i++ {
-		if pValue.Type().Field(i).Name == "ExtraMetadataDirs" {
+		name := pValue.Type().Field(i).Name
+		if !strings.HasSuffix(name, "Files") && !strings.HasSuffix(name, "Metas") {
 			continue
 		}
 		field := pValue.Field(i)
@@ -1194,6 +1234,9 @@ func collectConfigPaths(p project.Project) ([]string, error) {
 		filepath.Join(root, "config", "hc-project-scratch-def.json"),
 		filepath.Join(root, "cumulusci.yml"),
 		filepath.Join(root, "cumulusci.template.yml"),
+	}
+	for dir := range p.SourceNamespaceRoots {
+		paths = append(paths, filepath.Join(dir, "sfdx-project.json"))
 	}
 	for dir := filepath.Clean(root); ; dir = filepath.Dir(dir) {
 		nearest := filepath.Join(dir, "glade.yml")

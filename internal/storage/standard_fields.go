@@ -108,7 +108,14 @@ func ensureStandardObjectFieldsForFeatures(definition *ObjectDefinition, feature
 		definition.Fields = make(map[string]Field)
 	}
 	if field, ok := definition.Fields["Id"]; !ok || field.APIName == "" {
-		definition.Fields["Id"] = Field{APIName: "Id", Label: "Record ID", Type: FieldID}
+		label := standardNativeIDLabel(definition.APIName)
+		if label == "" {
+			label = "Record ID"
+		}
+		definition.Fields["Id"] = Field{APIName: "Id", Label: label, Type: FieldID}
+	} else if label := generatedStandardIDLabelRepair(*definition); label != "" {
+		field.Label = label
+		definition.Fields["Id"] = field
 	}
 	ensureCoreSystemFields(definition)
 	mergeStandardObjectDefinition(definition, features)
@@ -155,6 +162,9 @@ func ensureStandardObjectFieldsForFeatures(definition *ObjectDefinition, feature
 }
 
 func standardObjectFieldsNeedWrite(definition ObjectDefinition, featureSignature string) bool {
+	if generatedStandardIDLabelRepair(definition) != "" {
+		return true
+	}
 	if accountTeamReferencesNeedRepair(definition) || organizationFeatureFlagsNeedRepair(definition) || standardOptionalFieldsNeedRepair(definition, featureSignature) || userLicenseStatusDescribeNeedsRepair(definition) || permissionSetCheckboxSchemaNeedsRepair(definition) || objectPermissionCheckboxSchemaNeedsRepair(definition) || knowledgeLanguageCreationNeedsRepair(definition) || apexClassLengthNillabilityNeedsRepair(definition) || platformChildEdgeFieldsNeedRepair(definition) {
 		return true
 	}
@@ -174,11 +184,49 @@ func standardObjectFieldsNeedWrite(definition ObjectDefinition, featureSignature
 	return plan.readOnlyFlagsNeedRepair(&definition)
 }
 
+// Repair only when an existing pre-overlay field snapshot proves Id was
+// generated. Older snapshots without that provenance may contain an explicitly
+// configured label, and must remain untouched.
+func generatedStandardIDLabelRepair(definition ObjectDefinition) string {
+	if definition.Metadata[standardConfiguredPolicyFieldsLabelProvenance] != "true" || standardFieldPolicyPreservesConfiguredField(definition, "Id") {
+		return ""
+	}
+	field, ok := definition.Fields["Id"]
+	if !ok || field.Label != "Record ID" {
+		return ""
+	}
+	label := standardNativeIDLabel(definition.APIName)
+	if label == "Record ID" {
+		return ""
+	}
+	return label
+}
+
+func standardNativeIDLabel(object string) string {
+	// These objects have matching API 62 and 67 Id labels in the captured
+	// granted describes; other catalog labels are not assumed version-stable.
+	if !strings.EqualFold(object, "Account") && !strings.EqualFold(object, "Contact") &&
+		!strings.EqualFold(object, "Lead") && !strings.EqualFold(object, "Order") {
+		return ""
+	}
+	if describe, found, err := lookupStandardDescribeCatalogV2(object); err == nil && found {
+		for _, field := range describe.Fields {
+			if strings.EqualFold(field.Name, "Id") {
+				return field.Label
+			}
+		}
+	}
+	return ""
+}
+
 // standardFieldsOverlayNeedsRefresh detects stale persisted overlays after the
 // authoritative standard catalog gains metadata. The overlay marker records
 // the feature shape, so it cannot by itself tell whether an older cache missed
 // richer field metadata such as picklist entries.
 func standardFieldsOverlayNeedsRefresh(definition ObjectDefinition, featureSignature string) bool {
+	if generatedStandardIDLabelRepair(definition) != "" {
+		return true
+	}
 	return accountTeamReferencesNeedRepair(definition) || organizationFeatureFlagsNeedRepair(definition) || standardOptionalFieldsNeedRepair(definition, featureSignature) || userLicenseStatusDescribeNeedsRepair(definition) || permissionSetCheckboxSchemaNeedsRepair(definition) || objectPermissionCheckboxSchemaNeedsRepair(definition) || knowledgeLanguageCreationNeedsRepair(definition) || apexClassLengthNillabilityNeedsRepair(definition) || platformChildEdgeFieldsNeedRepair(definition) || standardOverlayCheckPlanFor(definition.APIName).needsRefresh(definition, featureSignature)
 }
 
@@ -1136,7 +1184,19 @@ func mergeStandardObjectDefinition(definition *ObjectDefinition, features []stri
 			}
 		}
 		mergeStandardFields(definition, entry.FeatureFields[feature])
-		mergeStandardRecordTypes(definition, entry.FeatureRecordTypes[feature])
+		recordTypes := entry.FeatureRecordTypes[feature]
+		if feature == "PersonAccounts" && stringsEqualFold(definition.APIName, "Account") {
+			// Supply the intrinsic catalog entry's person-family metadata. Existing
+			// definitions retain their own explicit family when the catalog merges.
+			recordTypes = append([]RecordTypeInfo(nil), recordTypes...)
+			for i := range recordTypes {
+				if !stringsEqualFold(recordTypes[i].DeveloperName, "PersonAccount") {
+					continue
+				}
+				recordTypes[i].PersonAccount = true
+			}
+		}
+		mergeStandardRecordTypes(definition, recordTypes)
 	}
 	if stringsEqualFold(definition.APIName, "Account") && len(definition.RecordTypes) == 1 &&
 		stringsEqualFold(definition.RecordTypes[0].DeveloperName, "Master") &&

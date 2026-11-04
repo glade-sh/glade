@@ -34,6 +34,41 @@ type frontendField struct {
 	File                          string `json:"file"`
 	ChildRelationshipNameInferred bool   `json:"childRelationshipNameInferred"`
 }
+
+// Explicit methods prevent schema.Field's promoted JSON methods from hiding
+// the frontend-only fields in the snapshot wire representation.
+func (field frontendField) MarshalJSON() ([]byte, error) {
+	data, err := json.Marshal(field.Field)
+	if err != nil {
+		return nil, err
+	}
+	file, err := json.Marshal(field.File)
+	if err != nil {
+		return nil, err
+	}
+	data = append(data[:len(data)-1], `,"file":`...)
+	data = append(data, file...)
+	data = append(data, `,"childRelationshipNameInferred":`...)
+	data = fmt.Appendf(data, "%t}", field.ChildRelationshipNameInferred)
+	return data, nil
+}
+
+func (field *frontendField) UnmarshalJSON(data []byte) error {
+	if err := json.Unmarshal(data, &field.Field); err != nil {
+		return err
+	}
+	var extra struct {
+		File                          string `json:"file"`
+		ChildRelationshipNameInferred bool   `json:"childRelationshipNameInferred"`
+	}
+	if err := json.Unmarshal(data, &extra); err != nil {
+		return err
+	}
+	field.File = extra.File
+	field.ChildRelationshipNameInferred = extra.ChildRelationshipNameInferred
+	return nil
+}
+
 type frontendObject struct {
 	schema.Object
 	GeneratedHistoryParent string          `json:"generatedHistoryParent"`
@@ -566,7 +601,11 @@ func restoreFrontendSnapshot(p project.Project, s schema.Schema, data []byte, fo
 			remaps = owner.project.NamespaceRemaps
 		}
 		for _, path := range owner.project.SelectedApexFiles() {
-			key := sourceOccurrenceKeyForMetadata(SourceMetadata{RequestedPath: path, Root: owner.project.Root, Namespace: owner.metadata.namespace, Version: owner.metadata.version, Dependency: owner.metadata.dependency, NamespaceRemaps: remaps})
+			namespace := owner.metadata.namespace
+			if !owner.metadata.dependency {
+				namespace = owner.project.SourceNamespaceForFile(path, namespace)
+			}
+			key := sourceOccurrenceKeyForMetadata(SourceMetadata{RequestedPath: path, Root: owner.project.Root, Namespace: namespace, Version: owner.metadata.version, Dependency: owner.metadata.dependency, NamespaceRemaps: remaps})
 			expected[key]++
 		}
 	}
@@ -701,7 +740,14 @@ func captureFrontendInputs(p project.Project, s schema.Schema, artifacts *BuildA
 				if err != nil {
 					return err
 				}
-				digest = sha256.Sum256(data)
+				// The incremental compatibility identity uses the prior source
+				// digest. Still read the file so missing sources and read errors
+				// retain the same behavior.
+				if prior, found := previous.Digest(path); found {
+					digest = prior
+				} else {
+					digest = sha256.Sum256(data)
+				}
 				inputs.digests[path], inputs.physical[path] = digest, arena.canonicalPhysicalPath(path)
 				sidecar, err := os.ReadFile(path + "-meta.xml")
 				if err != nil && !os.IsNotExist(err) {

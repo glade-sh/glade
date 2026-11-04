@@ -1,0 +1,149 @@
+{
+  "cases": [
+    {
+      "actor_arm": "restricted",
+      "api": "62.0",
+      "class": "C11Q2R62C1",
+      "marker": "c11.Q2.restricted.api62|Q2.limit",
+      "method": "limitRows",
+      "payload_sha256": "1339ce31f1a0ff1384ad451f5aaf4e71ee7fad763904ebf8bd3b3c537472a5ac",
+      "report_pointer": "$/result/details/runTestResult/failures/3",
+      "report_sha256": "5375ae7f5467f12e0775368a1e9bd0320956f896c8edc990ef2b9f546e66a6bc"
+    },
+    {
+      "actor_arm": "restricted",
+      "api": "62.0",
+      "class": "C11Q2R62C1",
+      "marker": "c11.Q2.restricted.api62|Q2.offset",
+      "method": "offsetRows",
+      "payload_sha256": "8d9617b017f1ad8580d42a63f428e53288742731b803b0370d5d8bb24a283d78",
+      "report_pointer": "$/result/details/runTestResult/failures/4",
+      "report_sha256": "5375ae7f5467f12e0775368a1e9bd0320956f896c8edc990ef2b9f546e66a6bc"
+    },
+    {
+      "actor_arm": "restricted",
+      "api": "62.0",
+      "class": "C11Q2R62C1",
+      "marker": "c11.Q2.restricted.api62|Q2.unwindowed",
+      "method": "unwindowed",
+      "payload_sha256": "52d6154e75a66b454af2f704453813d8fe5547dd1ae258aca167d54e96ef1616",
+      "report_pointer": "$/result/details/runTestResult/failures/5",
+      "report_sha256": "5375ae7f5467f12e0775368a1e9bd0320956f896c8edc990ef2b9f546e66a6bc"
+    },
+    {
+      "actor_arm": "admin",
+      "api": "62.0",
+      "class": "C11Q2A62C1",
+      "marker": "c11.Q2.admin.api62|Q2.limit",
+      "method": "limitRows",
+      "payload_sha256": "008794ac5a8111c43a27824ad847f3ad9fc76506a6010c8b35711247fec9c574",
+      "report_pointer": "$/result/details/runTestResult/failures/0",
+      "report_sha256": "5375ae7f5467f12e0775368a1e9bd0320956f896c8edc990ef2b9f546e66a6bc"
+    },
+    {
+      "actor_arm": "admin",
+      "api": "62.0",
+      "class": "C11Q2A62C1",
+      "marker": "c11.Q2.admin.api62|Q2.offset",
+      "method": "offsetRows",
+      "payload_sha256": "d5627d84d2b2167172f1aaa23e45c3360fd380a2cb0087e3cf978df6430ada86",
+      "report_pointer": "$/result/details/runTestResult/failures/1",
+      "report_sha256": "5375ae7f5467f12e0775368a1e9bd0320956f896c8edc990ef2b9f546e66a6bc"
+    },
+    {
+      "actor_arm": "admin",
+      "api": "62.0",
+      "class": "C11Q2A62C1",
+      "marker": "c11.Q2.admin.api62|Q2.unwindowed",
+      "method": "unwindowed",
+      "payload_sha256": "3fc6725501ce4379da6d958264ad9d38a2c186831a8f5faa0738503b23f6f8d6",
+      "report_pointer": "$/result/details/runTestResult/failures/2",
+      "report_sha256": "5375ae7f5467f12e0775368a1e9bd0320956f896c8edc990ef2b9f546e66a6bc"
+    },
+    {
+      "actor_arm": "restricted",
+      "api": "67.0",
+      "class": "C11Q2R67C1",
+      "marker": "c11.Q2.restricted.api67|Q2.limit",
+      "method": "limitRows",
+      "payload_sha256": "f9ac840e1a9b6e9b7729f0aafd5470de8bcdb387f9338dcae87cf730a5317537",
+      "report_pointer": "$/result/details/runTestResult/failures/3",
+      "report_sha256": "9b8e9cf9ada9fed85f4e97da049ea603aab6f6fa2d204c873c5091c7054b8f95"
+    },
+    {
+      "actor_arm": "restricted",
+      "api": "67.0",
+      "class": "C11Q2R67C1",
+      "marker": "c11.Q2.restricted.api67|Q2.offset",
+      "method": "offsetRows",
+      "payload_sha256": "3655099f6ea47cc7b10b55fa195797517d0a2fef4c0f0f7da890e00ceed9ca0c",
+      "report_pointer": "$/result/details/runTestResult/failures/4",
+      "report_sha256": "9b8e9cf9ada9fed85f4e97da049ea603aab6f6fa2d204c873c5091c7054b8f95"
+    },
+    {
+      "actor_arm": "restricted",
+      "api": "67.0",
+      "class": "C11Q2R67C1",
+      "marker": "c11.Q2.restricted.api67|Q2.unwindowed",
+      "method": "unwindowed",
+      "payload_sha256": "b589d1a3ac6e65edd705467b2bc99617e3889784e5aa904398b59980822d32b6",
+      "report_pointer": "$/result/details/runTestResult/failures/5",
+      "report_sha256": "9b8e9cf9ada9fed85f4e97da049ea603aab6f6fa2d204c873c5091c7054b8f95"
+    },
+    {
+      "actor_arm": "admin",
+      "api": "67.0",
+      "class": "C11Q2A67C1",
+      "marker": "c11.Q2.admin.api67|Q2.limit",
+      "method": "limitRows",
+      "payload_sha256": "8dd89b11e899a0a33662dfdcd261d7a40d391f240c09a7bbb40c3ed6a2e7ce69",
+      "report_pointer": "$/result/details/runTestResult/failures/0",
+      "report_sha256": "9b8e9cf9ada9fed85f4e97da049ea603aab6f6fa2d204c873c5091c7054b8f95"
+    },
+    {
+      "actor_arm": "admin",
+      "api": "67.0",
+      "class": "C11Q2A67C1",
+      "marker": "c11.Q2.admin.api67|Q2.offset",
+      "method": "offsetRows",
+      "payload_sha256": "c4f39d901bd067da3dd642d454ec53a1a350dab34bfb114c2dec09df2816cc41",
+      "report_pointer": "$/result/details/runTestResult/failures/1",
+      "report_sha256": "9b8e9cf9ada9fed85f4e97da049ea603aab6f6fa2d204c873c5091c7054b8f95"
+    },
+    {
+      "actor_arm": "admin",
+      "api": "67.0",
+      "class": "C11Q2A67C1",
+      "marker": "c11.Q2.admin.api67|Q2.unwindowed",
+      "method": "unwindowed",
+      "payload_sha256": "f1958fac60245d27b1d45213498f173e2d3b1239a56a0f691bdde49fb3df4720",
+      "report_pointer": "$/result/details/runTestResult/failures/2",
+      "report_sha256": "9b8e9cf9ada9fed85f4e97da049ea603aab6f6fa2d204c873c5091c7054b8f95"
+    }
+  ],
+  "files": {
+    "project/62.0/packet/classes/C11Q2A62C1.cls": "c37a6f3cfc32147b87886640cbb4a72bf96516a447715124a4cdf6def69be4b9",
+    "project/62.0/packet/classes/C11Q2A62C1.cls-meta.xml": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+    "project/62.0/packet/classes/C11Q2R62C1.cls": "91f46fb5fe4c835094f8522d353d42ff3e54ee4f4f3d924cc106e2c63fd8eebd",
+    "project/62.0/packet/classes/C11Q2R62C1.cls-meta.xml": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+    "project/62.0/packet/objects/DootSecQ2B1031__c/DootSecQ2B1031__c.object-meta.xml": "ad11c9b31663bea0764a095aff72de67e1d9bce37925ba56e7fb4b6e0520d34f",
+    "project/62.0/packet/objects/DootSecQ2B1031__c/fields/Allowed__c.field-meta.xml": "a3f9c283d790029f09335484819d108d8b9ade96ad1a6e6ee178a1b807bffca4",
+    "project/62.0/packet/objects/DootSecQ2B1031__c/fields/Hidden__c.field-meta.xml": "c4cb77b53085246e33d8aef3b684161625ffd0899cb5ffab00fd574dc8c83d40",
+    "project/62.0/packet/objects/DootSecQ2B1031__c/fields/Value__c.field-meta.xml": "896dbabfac9ec5e1cc427cad6c292e873f786177031647edc2fc05ee199008bf",
+    "project/62.0/packet/permissionsets/C11Q2AdminC1.permissionset-meta.xml": "965e2710f17201201f8d233075ed10a3f021054699d8a6e9f5ea5b45b65628a7",
+    "project/62.0/packet/permissionsets/DootSecQ2ReaderB1031.permissionset-meta.xml": "7cbccb71d4477226f9a705c44141af0c9f4f4d107664fd88fb14899eaab40677",
+    "project/62.0/sfdx-project.json": "5191ffe4d4c72f10283ba8fb544e4d8ba65f916bcaf4396d9e3b194ae7f0a80b",
+    "project/67.0/packet/classes/C11Q2A67C1.cls": "35b136e4bf96220544641fd0ad16ffc699c9d06161303e97ff613b43fdcf22b1",
+    "project/67.0/packet/classes/C11Q2A67C1.cls-meta.xml": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+    "project/67.0/packet/classes/C11Q2R67C1.cls": "30f3dda80df105fefca9c781721831a70a37c784d5e10ffb28002bf53642a793",
+    "project/67.0/packet/classes/C11Q2R67C1.cls-meta.xml": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+    "project/67.0/packet/objects/DootSecQ2B1031__c/DootSecQ2B1031__c.object-meta.xml": "ad11c9b31663bea0764a095aff72de67e1d9bce37925ba56e7fb4b6e0520d34f",
+    "project/67.0/packet/objects/DootSecQ2B1031__c/fields/Allowed__c.field-meta.xml": "a3f9c283d790029f09335484819d108d8b9ade96ad1a6e6ee178a1b807bffca4",
+    "project/67.0/packet/objects/DootSecQ2B1031__c/fields/Hidden__c.field-meta.xml": "c4cb77b53085246e33d8aef3b684161625ffd0899cb5ffab00fd574dc8c83d40",
+    "project/67.0/packet/objects/DootSecQ2B1031__c/fields/Value__c.field-meta.xml": "896dbabfac9ec5e1cc427cad6c292e873f786177031647edc2fc05ee199008bf",
+    "project/67.0/packet/permissionsets/C11Q2AdminC1.permissionset-meta.xml": "965e2710f17201201f8d233075ed10a3f021054699d8a6e9f5ea5b45b65628a7",
+    "project/67.0/packet/permissionsets/DootSecQ2ReaderB1031.permissionset-meta.xml": "7cbccb71d4477226f9a705c44141af0c9f4f4d107664fd88fb14899eaab40677",
+    "project/67.0/sfdx-project.json": "1efe9f20783d8a3449d04e98e5ca98ba00dc8797f82bf2659c56713ab9770d0a"
+  },
+  "tsv_sha256": "b675e662547646cee21daf7fd0ef24046e883245e0d48f04ea23ac540ca58721"
+}

@@ -67,24 +67,39 @@ type standardDescribeCatalogV2CacheEntry struct {
 type standardDescribeCatalogV2RawDecodeFunc func(standardDescribeCatalogV2IndexEntry) (standardDescribeObject, error)
 
 type standardDescribeCatalogV2RawCache struct {
-	entries sync.Map
-	decode  standardDescribeCatalogV2RawDecodeFunc
+	entries    sync.Map
+	decode     standardDescribeCatalogV2RawDecodeFunc
+	scalarOnly bool
+	// scalars answers a scalar-only lookup without decoding the member. It
+	// is set for the production pack, whose generated scalar table is checked
+	// against every member; injected decoders keep decoding.
+	scalars func(standardDescribeCatalogV2IndexEntry) (standardDescribeObject, bool)
 }
 
 type standardDescribeCatalogV2RawCacheEntry struct {
-	once       sync.Once
-	indexEntry standardDescribeCatalogV2IndexEntry
-	value      standardDescribeObject
-	err        error
+	mu          sync.Mutex
+	once        sync.Once
+	indexEntry  standardDescribeCatalogV2IndexEntry
+	value       standardDescribeObject
+	err         error
+	fullReady   bool
+	scalarReady bool
+	scalar      standardDescribeObject
+	scalarErr   error
 }
 
 var standardDescribeCatalogV2ProductionCache = newStandardDescribeCatalogV2Cache(standardDescribeCatalogV2EntryForResolvedIndexEntry)
 
 // Raw catalog entries are immutable after decode. Callers may share them, but
 // must not mutate the returned slices or nested values.
-var standardDescribeCatalogV2RawProductionCache = newStandardDescribeCatalogV2RawCache(func(entry standardDescribeCatalogV2IndexEntry) (standardDescribeObject, error) {
-	return decodeStandardDescribeCatalogV2Member(standardDescribeCatalogV2Pack, entry)
-})
+var standardDescribeCatalogV2RawProductionCache = func() *standardDescribeCatalogV2RawCache {
+	cache := newStandardDescribeCatalogV2RawCache(func(entry standardDescribeCatalogV2IndexEntry) (standardDescribeObject, error) {
+		return decodeStandardDescribeCatalogV2Member(standardDescribeCatalogV2Pack, entry)
+	})
+	cache.scalarOnly = true
+	cache.scalars = lookupStandardDescribeCatalogV2Scalar
+	return cache
+}()
 
 func newStandardDescribeCatalogV2Cache(decode standardDescribeCatalogV2DecodeFunc) *standardDescribeCatalogV2Cache {
 	return &standardDescribeCatalogV2Cache{decode: decode}
@@ -128,30 +143,82 @@ func (cache *standardDescribeCatalogV2Cache) decodeCachedEntry(cached *standardD
 	return cached.value, true, cached.err
 }
 
-func (cache *standardDescribeCatalogV2RawCache) entryForName(objectName string) (standardDescribeObject, bool, error) {
+func (cache *standardDescribeCatalogV2RawCache) rawEntryForName(objectName string) (*standardDescribeCatalogV2RawCacheEntry, bool, error) {
 	objectName = strings.TrimSpace(objectName)
 	if objectName == "" {
-		return standardDescribeObject{}, false, nil
+		return nil, false, nil
 	}
 	indexEntry, ok := lookupStandardDescribeCatalogV2Index(standardDescribeCatalogV2Index, objectName)
 	if !ok {
-		return standardDescribeObject{}, false, nil
+		return nil, false, nil
 	}
 	if err := validateResolvedStandardDescribeCatalogV2IndexEntry(indexEntry); err != nil {
-		return standardDescribeObject{}, true, err
+		return nil, true, err
 	}
 	loaded, ok := cache.entries.Load(indexEntry.Name)
 	if !ok {
 		loaded, _ = cache.entries.LoadOrStore(indexEntry.Name, &standardDescribeCatalogV2RawCacheEntry{indexEntry: indexEntry})
 	}
-	cached := loaded.(*standardDescribeCatalogV2RawCacheEntry)
+	return loaded.(*standardDescribeCatalogV2RawCacheEntry), true, nil
+}
+
+func (cache *standardDescribeCatalogV2RawCache) entryForName(objectName string) (standardDescribeObject, bool, error) {
+	cached, found, err := cache.rawEntryForName(objectName)
+	if err != nil || !found {
+		return standardDescribeObject{}, found, err
+	}
+	cached.mu.Lock()
+	defer cached.mu.Unlock()
 	cached.once.Do(func() {
+		defer func() { cached.fullReady = true }()
+		if cached.scalarErr != nil {
+			cached.err = cached.scalarErr
+			return
+		}
 		cached.value, cached.err = cache.decode(cached.indexEntry)
 		if cached.err != nil {
 			cached.value = standardDescribeObject{}
+		} else if cached.scalarReady {
+			cached.value.KeyPrefix = cached.scalar.KeyPrefix
+			cached.value.Triggerable = cached.scalar.Triggerable
 		}
 	})
 	return cached.value, true, cached.err
+}
+
+// scalarForName keeps only scalar facets when the immutable production member
+// has not yet been fully requested. The production cache reads them from the
+// generated scalar table, so a later full lookup is the member's only decode.
+// Injected decoders retain their single-decode behavior, including any
+// stateful results and errors.
+func (cache *standardDescribeCatalogV2RawCache) scalarForName(objectName string) (standardDescribeObject, bool, error) {
+	if !cache.scalarOnly {
+		return cache.entryForName(objectName)
+	}
+	cached, found, err := cache.rawEntryForName(objectName)
+	if err != nil || !found {
+		return standardDescribeObject{}, found, err
+	}
+	cached.mu.Lock()
+	defer cached.mu.Unlock()
+	if !cached.scalarReady {
+		value, err := cached.value, cached.err
+		if !cached.fullReady {
+			var fromTable bool
+			if cache.scalars != nil {
+				value, fromTable = cache.scalars(cached.indexEntry)
+			}
+			if !fromTable {
+				value, err = cache.decode(cached.indexEntry)
+			}
+		}
+		if err == nil {
+			cached.scalar = standardDescribeObject{KeyPrefix: value.KeyPrefix, Triggerable: value.Triggerable}
+		}
+		cached.scalarErr = err
+		cached.scalarReady = true
+	}
+	return cached.scalar, true, cached.scalarErr
 }
 
 func validateResolvedStandardDescribeCatalogV2IndexEntry(entry standardDescribeCatalogV2IndexEntry) error {

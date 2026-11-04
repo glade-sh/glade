@@ -61,6 +61,7 @@
       "github.com/glade-sh/glade/internal/testreport",
       "github.com/glade-sh/glade/internal/testutil/browserapi",
       "github.com/glade-sh/glade/internal/testutil/enumvaluefixture",
+      "github.com/glade-sh/glade/internal/testutil/testshard",
       "github.com/glade-sh/glade/internal/testutil/toolchaininstall",
       "github.com/glade-sh/glade/internal/trace",
       "github.com/glade-sh/glade/internal/tui",
@@ -87,9 +88,15 @@
     ]
   },
   "concurrentTestCounts": {
-    "./internal/apextest": 484,
-    "./internal/pluginhost": 3,
-    "./internal/sema": 644,
+    "./internal/watch": 1,
+    "./internal/apextest": 504,
+    "./internal/gladecli": 92,
+    "./internal/gladehome": 8,
+    "./internal/playground": 3,
+    "./internal/pluginhost": 4,
+    "./internal/sema": 646,
+    "./internal/server": 11,
+    "./internal/testutil/toolchaininstall": 5,
     "./internal/vm": 14
   }
 }
