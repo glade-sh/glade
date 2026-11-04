@@ -158,8 +158,15 @@ func tryTestServerRequest(
 	run testdaemon.RunRequestV1,
 ) (testdaemon.ResponseV1, bool, error) {
 	socket := testdaemon.ServeSocketPath(root)
-	ping, err := testdaemon.PingV1(ctx, socket)
+	err := testdaemon.ValidateDiscoverySocket(socket)
+	var ping testdaemon.ResponseV1
+	if err == nil {
+		ping, err = testdaemon.PingV1(ctx, socket)
+	}
 	if err != nil {
+		if !requireConnect && errors.Is(err, testdaemon.ErrUntrustedDiscovery) {
+			return testdaemon.ResponseV1{}, false, nil
+		}
 		if testdaemon.IsServerUnavailable(err) {
 			if requireConnect {
 				return testdaemon.ResponseV1{}, false, errors.New("test server is not running; start one with: glade test serve --project " + root)

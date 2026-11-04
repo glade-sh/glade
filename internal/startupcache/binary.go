@@ -23,8 +23,9 @@ const (
 	stateGobFile = "startup.gob"
 	// Keep the historical filename so an older JSON header is observed and
 	// rejected instead of accidentally enabling legacy-gob fallback.
-	stateHeaderFile        = "startup.meta.json"
-	testCacheFormatVersion = 2
+	stateHeaderFile = "startup.meta.json"
+	// Format 3 adds ZeroFieldFlags; format 2 payloads lost false field flags.
+	testCacheFormatVersion = 3
 	payloadFilePrefix      = "startup.payload."
 	payloadFileSuffix      = ".gob"
 )
@@ -48,6 +49,8 @@ type testCacheHeader struct {
 type testCachePayload struct {
 	Org     storage.OrgState `json:"org"`
 	Runtime CompiledRuntime  `json:"runtime"`
+	// ZeroFieldFlags restores field pointer flags that gob drops; see zero_flags.go.
+	ZeroFieldFlags []zeroFieldFlags `json:"zeroFieldFlags,omitempty"`
 }
 
 func Clear(projectRoot, subdir string) error {
@@ -390,6 +393,8 @@ func readTestCachePayload(cacheRoot *os.Root, name, wantHash string, wantSize in
 	if got := hex.EncodeToString(hasher.Sum(nil)); got != wantHash {
 		return testCachePayload{}, fmt.Errorf("payload hash mismatch")
 	}
+	restoreZeroFieldFlags(&payload.Org, payload.ZeroFieldFlags)
+	payload.ZeroFieldFlags = nil
 	return payload, nil
 }
 
@@ -456,7 +461,7 @@ func writeSplitTestCacheWithStatsAfterRootOpened(entry *Entry, subdir string, af
 			return stats, err
 		}
 	}
-	payload := testCachePayload{Org: entry.Org, Runtime: entry.Runtime}
+	payload := testCachePayload{Org: entry.Org, Runtime: entry.Runtime, ZeroFieldFlags: captureZeroFieldFlags(entry.Org)}
 	tmp, tmpName, err := createTestCacheTemp(cacheRoot, "startup-payload-", ".gob")
 	if err != nil {
 		return stats, err

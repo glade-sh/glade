@@ -22,7 +22,8 @@ not public issues. If GitHub reporting is unavailable, use
   [GitHub documents](https://docs.github.com/en/code-security/reference/code-scanning/troubleshoot-analysis-errors/alerts-in-generated-code)
   that compiled Go analysis follows the build, so this path setting alone does
   not prove generated Go is excluded from the database or that analysis will
-  finish within the budget. Hosted execution still needs verification.
+  finish within the budget. On large changes the scan often times out; a
+  timed-out scan is incomplete coverage, not a clean result.
   Both profiles exclude `go/cookie-httponly-not-set` and
   `go/cookie-secure-not-set`: they never finished in run 39616762308. The only
   cookie sink is the Visualforce Apex Cookie emulation in

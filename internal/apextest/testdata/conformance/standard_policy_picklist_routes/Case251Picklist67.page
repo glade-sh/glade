@@ -1,0 +1,1 @@
+<apex:page controller="Case251PicklistProbe" showHeader="false" sidebar="false"><apex:outputText value="CASE251START{!observed}CASE251END" escape="false"/></apex:page>

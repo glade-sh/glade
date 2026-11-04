@@ -24,6 +24,18 @@ func (vm *VM) parseSOQLAt(queryText string) (soql.Query, error) {
 	if err == nil {
 		err = soql.ValidateFormulaVersion(query, vm.currentSourceExecutionPolicy().APIVersion)
 	}
+	if err == nil && vm.omitPermissionViewAllFields(query.Object) {
+		fields := append([]string(nil), query.Fields...)
+		fields = append(fields, soqlConditionFields(query.Where)...)
+		for _, order := range query.Order {
+			fields = append(fields, order.Field)
+		}
+		for _, field := range fields {
+			if vm.permissionViewAllFieldsHidden(query.Object, field) {
+				return query, &soql.QueryError{Message: soql.MissingColumnMessage("PermissionsViewAllFields", "ObjectPermissions")}
+			}
+		}
+	}
 	return query, err
 }
 

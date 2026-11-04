@@ -453,12 +453,46 @@ func buildPlanForPackage(packageName string, names []string, shardCount int, his
 
 	weights, diagnostic := historyWeightsForPackage(packageName, canonical, history)
 	historyUsed := diagnostic == ""
+	var estimate int64 = 1
+	if historyUsed {
+		// Use the lower observed median, floored at 1 ms; this is a placement
+		// estimate, not a recorded observation. Bound the sum for plan encoding.
+		var total int64
+		durations := make([]int64, 0, len(weights))
+		for _, duration := range weights {
+			total += duration // historyWeightsForPackage already checked this sum.
+			durations = append(durations, duration)
+		}
+		sort.Slice(durations, func(i, j int) bool { return durations[i] < durations[j] })
+		if len(durations) > 0 && durations[(len(durations)-1)/2] > estimate {
+			estimate = durations[(len(durations)-1)/2]
+		}
+		missing := len(canonical) - len(weights)
+		if missing > 0 && (math.MaxInt64-total)/int64(missing) < estimate {
+			estimate = (math.MaxInt64 - total) / int64(missing)
+		}
+		if estimate == 0 {
+			weights = nil
+			diagnostic = "history rejected: estimated duration total overflows int64; using deterministic fallback"
+			historyUsed = false
+		}
+	}
 	items := make([]weightedTest, 0, len(canonical))
 	for _, name := range canonical {
-		items = append(items, weightedTest{name: name, duration: weights[name], hash: sha256.Sum256([]byte(name))})
+		duration, observed := weights[name]
+		if historyUsed && !observed {
+			duration = estimate
+		}
+		items = append(items, weightedTest{name: name, duration: duration, hash: sha256.Sum256([]byte(name))})
 	}
 	if historyUsed {
 		sort.Slice(items, func(i, j int) bool {
+			// Preserve placement of every observed test, including genuine zeros.
+			_, observedI := weights[items[i].name]
+			_, observedJ := weights[items[j].name]
+			if observedI != observedJ {
+				return observedI
+			}
 			if items[i].duration != items[j].duration {
 				return items[i].duration > items[j].duration
 			}

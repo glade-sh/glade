@@ -92,18 +92,23 @@ func (s *Server) serveLightningStaticShim(w http.ResponseWriter, r *http.Request
 }
 
 func readLightningStaticShim(fileName string) ([]byte, error) {
-	for _, dir := range lightningStaticShimDirs() {
-		content, err := os.ReadFile(filepath.Join(dir, fileName))
+	if sourceRoot, err := gladehome.CompilerSourceRoot(); err == nil {
+		content, err := os.ReadFile(filepath.Join(sourceRoot, "lwcruntime", "src", "shims", fileName))
 		if err == nil {
 			return content, nil
 		}
 	}
-	return nil, os.ErrNotExist
+	root, release, err := gladehome.LeaseRoot()
+	if err != nil {
+		return nil, os.ErrNotExist
+	}
+	defer release()
+	return os.ReadFile(filepath.Join(root, "lwcruntime", "src", "shims", fileName))
 }
 
 func lightningStaticShimDirs() []string {
 	var dirs []string
-	if sourceRoot, err := gladehome.SourceRoot(); err == nil {
+	if sourceRoot, err := gladehome.CompilerSourceRoot(); err == nil {
 		dirs = appendRuntimeAssetDir(dirs, filepath.Join(sourceRoot, "lwcruntime", "src", "shims"))
 	}
 	if dir, err := gladehome.ShimsDir(); err == nil {

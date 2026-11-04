@@ -1,0 +1,1 @@
+@IsTest private class ProbeTest { @IsTest static void repro() { System.assertEquals(0,[SELECT count() FROM PlatformCachePartition]);System.assertEquals(0,[SELECT count() FROM DatedConversionRate]); } }

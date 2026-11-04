@@ -4,7 +4,7 @@ import http from "node:http";
 import path from "node:path";
 import test from "node:test";
 import { chromium } from "./shared-playwright.mjs";
-import { defaultSLDSHref, repoRoot, startLWCDevServer } from "./helpers.mjs";
+import { defaultSLDSHref, newLocalPage, repoRoot, startLWCDevServer } from "./helpers.mjs";
 
 const shellFiles = {
   "/lightning/runtime/shell/app.js": "lwcruntime/src/shell/app.mjs",
@@ -152,7 +152,7 @@ test("Component Lab renders an empty component list without existing options", a
   const server = await startWorkbenchServer();
   const browser = await chromium.launch({ headless: true });
   try {
-    const page = await browser.newPage();
+    const page = await newLocalPage(browser);
     await page.goto(`${server.baseURL}/lwc/preview/record/Account/001000000000001AAA`, { waitUntil: "domcontentloaded" });
     await page.setContent(`<!DOCTYPE html>
 <html>
@@ -215,7 +215,7 @@ test("Workbench Console collects runtime events and switches debug tabs with ari
   const server = await startWorkbenchServer();
   const browser = await chromium.launch({ headless: true });
   try {
-    const page = await browser.newPage();
+    const page = await newLocalPage(browser);
     await page.goto(`${server.baseURL}/lwc/preview/record/Account/001000000000001AAA?page=Account_Record_Page`, { waitUntil: "networkidle" });
     await page.locator('[data-glade-debug-output="issues"]').waitFor({ state: "attached", timeout: 60000 });
     await expandWorkbenchConsole(page);
@@ -346,7 +346,7 @@ test("Workbench Console groups save runs and restores the latest dev-loop signal
   const server = await startWorkbenchServer();
   const browser = await chromium.launch({ headless: true });
   try {
-    const page = await browser.newPage();
+    const page = await newLocalPage(browser);
     await page.goto(`${server.baseURL}/lwc/preview/record/Account/001000000000001AAA?page=Account_Record_Page`, { waitUntil: "networkidle" });
     await page.locator("[data-glade-run-summary]").waitFor({ state: "attached", timeout: 60000 });
     await expandWorkbenchConsole(page);
@@ -455,7 +455,7 @@ test("Workbench Console filters highlights and clears debug output", async () =>
   const server = await startWorkbenchServer();
   const browser = await chromium.launch({ headless: true });
   try {
-    const page = await browser.newPage();
+    const page = await newLocalPage(browser);
     await page.goto(`${server.baseURL}/lwc/preview/record/Account/001000000000001AAA?page=Account_Record_Page`, { waitUntil: "networkidle" });
     await page.locator("[data-glade-debug-filter]").waitFor({ state: "attached", timeout: 60000 });
     await expandWorkbenchConsole(page);
@@ -517,7 +517,7 @@ test("Workbench Console syntax highlights debug output across tabs", async () =>
   const server = await startWorkbenchServer();
   const browser = await chromium.launch({ headless: true });
   try {
-    const page = await browser.newPage();
+    const page = await newLocalPage(browser);
     await page.goto(`${server.baseURL}/lwc/preview/record/Account/001000000000001AAA?page=Account_Record_Page`, { waitUntil: "networkidle" });
     await page.locator("[data-glade-debug-filter]").waitFor({ state: "attached", timeout: 60000 });
     await expandWorkbenchConsole(page);
@@ -610,7 +610,7 @@ test("Workbench Console lazily renders debug tabs to keep heavy output off the s
   const server = await startWorkbenchServer();
   const browser = await chromium.launch({ headless: true });
   try {
-    const page = await browser.newPage();
+    const page = await newLocalPage(browser);
     await page.addInitScript(() => sessionStorage.clear());
     await page.goto(`${server.baseURL}/lwc/preview/record/Account/001000000000001AAA?page=Account_Record_Page`, { waitUntil: "networkidle" });
     await page.locator("[data-glade-debug-filter]").waitFor({ state: "attached", timeout: 60000 });
@@ -692,7 +692,7 @@ test("Workbench Console batches persistence during runtime event bursts", async 
   const server = await startWorkbenchServer();
   const browser = await chromium.launch({ headless: true });
   try {
-    const page = await browser.newPage();
+    const page = await newLocalPage(browser);
     await page.addInitScript(() => sessionStorage.clear());
     await page.goto(`${server.baseURL}/lwc/preview/record/Account/001000000000001AAA?page=Account_Record_Page`, { waitUntil: "networkidle" });
     await page.locator("[data-glade-debug-filter]").waitFor({ state: "attached", timeout: 60000 });
@@ -753,7 +753,7 @@ test("Workbench Console keeps long debug output scrollable", async (t) => {
   }
   const browser = await chromium.launch({ headless: true });
   try {
-    const page = await browser.newPage({ viewport: { width: 1180, height: 620 } });
+    const page = await newLocalPage(browser, { viewport: { width: 1180, height: 620 } });
     await page.goto(`${server.baseURL}/lwc/preview/record/Account/001000000000001AAA?page=Account_Record_Page`, { waitUntil: "networkidle" });
     await page.locator("[data-glade-debug-filter]").waitFor({ state: "attached", timeout: 60000 });
     await expandWorkbenchConsole(page);
@@ -842,7 +842,7 @@ test("Workbench Console resizes vertically from the drag handle", async (t) => {
   }
   const browser = await chromium.launch({ headless: true });
   try {
-    const page = await browser.newPage({ viewport: { width: 1280, height: 760 } });
+    const page = await newLocalPage(browser, { viewport: { width: 1280, height: 760 } });
     await page.goto(`${server.baseURL}/lwc/preview/record/Account/001000000000001AAA?page=Account_Record_Page`, { waitUntil: "networkidle" });
     await page.locator("[data-glade-debug-restore]").waitFor({ state: "attached", timeout: 60000 });
 
@@ -977,7 +977,7 @@ test("lwc shell workbench boots context panel diagnostics toasts and route kind"
   const server = await startWorkbenchServer();
   const browser = await chromium.launch({ headless: true });
   try {
-    const page = await browser.newPage();
+    const page = await newLocalPage(browser);
     await page.goto(`${server.baseURL}/lwc/preview/record/Account/001000000000001AAA?page=Account_Record_Page`, { waitUntil: "networkidle" });
     const result = await page.evaluate(() => ({
       routeKind: document.documentElement.dataset.gladeShell,
@@ -1017,7 +1017,7 @@ test("LWC shell workbench renders routes, context, and mounted record page", asy
   const consoleErrors = [];
   const pageErrors = [];
   try {
-    const page = await browser.newPage();
+    const page = await newLocalPage(browser);
     page.on("console", (msg) => {
       if (msg.type() === "error") {
         consoleErrors.push(msg.text());
@@ -1178,7 +1178,7 @@ test("LWC shell defaults to Component Lab and applies API props", async (t) => {
   const consoleErrors = [];
   const pageErrors = [];
   try {
-    const page = await browser.newPage({ viewport: { width: 1280, height: 760 } });
+    const page = await newLocalPage(browser, { viewport: { width: 1280, height: 760 } });
     page.on("console", (msg) => {
       if (msg.type() === "error") {
         consoleErrors.push(msg.text());
@@ -1592,7 +1592,7 @@ test("LWC shell workbench lets developers compose a local page from available co
   const consoleErrors = [];
   const pageErrors = [];
   try {
-    const page = await browser.newPage();
+    const page = await newLocalPage(browser);
     page.on("console", (msg) => {
       if (msg.type() === "error") {
         consoleErrors.push(msg.text());
@@ -1674,7 +1674,7 @@ test("LWC shell workbench keeps the root builder dense on desktop", async (t) =>
 
   const browser = await chromium.launch({ headless: true });
   try {
-    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    const page = await newLocalPage(browser, { viewport: { width: 1440, height: 900 } });
     await page.goto(`${server.baseURL}/lwc/builder`, { waitUntil: "networkidle" });
     await page.locator("[data-glade-workbench-builder]").waitFor({ timeout: 60000 });
 
@@ -1829,7 +1829,7 @@ test("LWC shell workbench keeps the root builder compact on mobile", async (t) =
 
   const browser = await chromium.launch({ headless: true });
   try {
-    const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    const page = await newLocalPage(browser, { viewport: { width: 390, height: 844 } });
     await page.goto(`${server.baseURL}/lwc/builder`, { waitUntil: "networkidle" });
     await page.locator("[data-glade-workbench-builder]").waitFor({ timeout: 60000 });
 
@@ -1871,7 +1871,7 @@ test("LWC shell workbench builder preserves draft context across reload", async 
 
   const browser = await chromium.launch({ headless: true });
   try {
-    const page = await browser.newPage({ viewport: { width: 1280, height: 820 } });
+    const page = await newLocalPage(browser, { viewport: { width: 1280, height: 820 } });
     await page.goto(`${server.baseURL}/lwc/builder`, { waitUntil: "networkidle" });
     await page.locator("[data-glade-workbench-builder]").waitFor({ timeout: 60000 });
 
@@ -1916,7 +1916,7 @@ test("LWC shell workbench builder does not open object search on restored record
   const browser = await chromium.launch({ headless: true });
   let objectSearchRequests = 0;
   try {
-    const page = await browser.newPage({ viewport: { width: 1280, height: 820 } });
+    const page = await newLocalPage(browser, { viewport: { width: 1280, height: 820 } });
     await page.route("**/lightning/local/objects.json?*", async (route) => {
       objectSearchRequests += 1;
       await route.continue();
@@ -1970,7 +1970,7 @@ test("LWC shell workbench builder exposes context controls", async (t) => {
   const consoleErrors = [];
   const pageErrors = [];
   try {
-    const page = await browser.newPage();
+    const page = await newLocalPage(browser);
     page.on("console", (msg) => {
       if (msg.type() === "error") {
         consoleErrors.push(msg.text());

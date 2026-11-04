@@ -193,6 +193,9 @@ func v09ClickedBrowser(t *testing.T, root, api string, rows []v09ClickCase) map[
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	output, err := cmd.Output()
+	if stderr.Len() > 0 {
+		t.Logf("V09 clicked controls API %s browser diagnostics: %s", api, stderr.String())
+	}
 	if err != nil {
 		t.Fatalf("V09 clicked controls API %s local browser: %v: %s", api, err, stderr.String())
 	}

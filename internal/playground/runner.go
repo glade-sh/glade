@@ -167,16 +167,42 @@ func (r *Runner) Run(ctx context.Context, req RunRequest) (RunResult, error) {
 		req.LimitMode = vm.LimitModePermissive
 	}
 	started := time.Now().UTC()
-	workspaceHash, err := r.workspace.Hash()
-	if err != nil {
-		return RunResult{}, err
+	var compileStart time.Time
+	var workspaceHash string
+	var runtime *cachedRuntimeTemplate
+	var indexDiagnostics []diagnostic.Diagnostic
+	var runtimeErr error
+	for attempt := 0; ; attempt++ {
+		var runtimeSourceHash string
+		var err error
+		workspaceHash, runtimeSourceHash, err = r.workspace.workspaceHashes()
+		if err != nil {
+			return RunResult{}, err
+		}
+		compileStart = time.Now()
+		warm := r.runtimeTemplate != nil && r.runtimeTemplate.workspaceHash == runtimeSourceHash &&
+			r.runtimeTemplate.projectRoot == r.workspace.ProjectRoot && r.runtimeTemplate.version == r.version
+		runtime, indexDiagnostics, runtimeErr = r.loadRuntimeTemplate(runtimeSourceHash)
+		if warm {
+			break
+		}
+		// Indexing reads the filesystem independently. Do not publish a runtime
+		// built while runtime sources changed under that read.
+		verifyStart := time.Now()
+		runtimeAfter, err := r.workspace.RuntimeSourceHash()
+		compileStart = compileStart.Add(time.Since(verifyStart))
+		if err != nil {
+			r.runtimeTemplate = nil
+			return RunResult{}, err
+		}
+		if runtimeSourceHash == runtimeAfter {
+			break
+		}
+		r.runtimeTemplate = nil
+		if attempt == 2 {
+			return RunResult{}, fmt.Errorf("runtime sources changed during preparation; retry the run")
+		}
 	}
-	runtimeSourceHash, err := r.workspace.RuntimeSourceHash()
-	if err != nil {
-		return RunResult{}, err
-	}
-	compileStart := time.Now()
-	runtime, indexDiagnostics, runtimeErr := r.loadRuntimeTemplate(runtimeSourceHash)
 	apiVersion := ""
 	if runtime != nil {
 		apiVersion = runtime.apiVersion
@@ -191,6 +217,8 @@ func (r *Runner) Run(ctx context.Context, req RunRequest) (RunResult, error) {
 		RunMode:          string(req.Mode),
 		Version:          r.version,
 		SourceAPIVersion: apiVersion,
+		OutputLimit:      req.OutputLimit,
+		LimitCaps:        req.LimitCaps,
 	}.String()
 
 	result := RunResult{
@@ -239,7 +267,11 @@ func (r *Runner) Run(ctx context.Context, req RunRequest) (RunResult, error) {
 
 	machine := runtime.template.CloneRuntime(nil)
 	machine.SetContext(ctx)
+	// Playground runs are anonymous transactions, like glade exec.
+	machine.SetToolingExecuteAnonymous(true)
 	machine.SetTraceEnabled(true)
+	machine.SetDebugOutputLimit(req.OutputLimit)
+	machine.SetTraceOutputLimit(req.OutputLimit * 2)
 	machine.SetLimitMode(req.LimitMode)
 	if req.LimitCaps != nil {
 		machine.SetLimitCaps(*req.LimitCaps)
@@ -279,7 +311,7 @@ func (r *Runner) Run(ctx context.Context, req RunRequest) (RunResult, error) {
 		r.store.org = persisted
 		r.store.mu.Unlock()
 	}
-	if req.UseCache {
+	if !req.disableCacheWrite {
 		if err := r.cache.Store(cacheKey, result); err != nil {
 			return RunResult{}, err
 		}

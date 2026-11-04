@@ -1,0 +1,17 @@
+api	route	case	outcome	diagnostic
+62.0	anonymous	N005	compile-rejected	Invalid type: System.String
+62.0	anonymous	N006	compile-rejected	Invalid type: System.String
+62.0	anonymous	N007	compile-rejected	Invalid type: System.Integer
+62.0	anonymous	N008	compile-rejected	Invalid type: System.List
+62.0	istest	N005	compile-rejected	Invalid type: System.String
+62.0	istest	N006	compile-rejected	Invalid type: System.String
+62.0	istest	N007	compile-rejected	Invalid type: System.Integer
+62.0	istest	N008	compile-rejected	Invalid type: System.List
+67.0	anonymous	N005	compile-rejected	Invalid type: System.String
+67.0	anonymous	N006	compile-rejected	Invalid type: System.String
+67.0	anonymous	N007	compile-rejected	Invalid type: System.Integer
+67.0	anonymous	N008	compile-rejected	Invalid type: System.List
+67.0	istest	N005	compile-rejected	Invalid type: System.String
+67.0	istest	N006	compile-rejected	Invalid type: System.String
+67.0	istest	N007	compile-rejected	Invalid type: System.Integer
+67.0	istest	N008	compile-rejected	Invalid type: System.List

@@ -32,7 +32,7 @@ glade dev lwc --project testdata/local-tests/lwc-shell --context packagePhase1Ba
 glade dev lwc --project testdata/local-tests/lwc-shell --context phase3BaseComponents --open
 glade dev lwc --project testdata/local-tests/lwc-shell --context communityAccount --open
 open http://127.0.0.1:8080/lwc/preview/community/Partner_Portal/Account
-curl http://127.0.0.1:8080/lightning/local/context.json
+curl -H 'X-Glade-Client: 1' http://127.0.0.1:8080/lightning/local/context.json
 ```
 
 Run `sh validate_fixture.sh` from the repository root to check the fixture shape.

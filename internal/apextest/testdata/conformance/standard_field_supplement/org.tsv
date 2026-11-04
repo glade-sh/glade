@@ -1,0 +1,1037 @@
+api	route	object	field	type	length	precision	scale	createable	updateable	nillable	permissionable	accessible
+62.0	default	Account	AccountNumber	string	40	0	0	true	true	true	true	
+62.0	default	Account	AccountSource	picklist	255	0	0	true	true	true	true	
+62.0	default	Account	AnnualRevenue	currency	0	18	0	true	true	true	true	
+62.0	default	Account	BillingAddress	address	0	0	0	false	false	true	true	
+62.0	default	Account	BillingCity	string	40	0	0	true	true	true	true	
+62.0	default	Account	BillingCountry	string	80	0	0	true	true	true	true	
+62.0	default	Account	BillingGeocodeAccuracy	picklist	40	0	0	true	true	true	true	
+62.0	default	Account	BillingLatitude	double	0	18	15	true	true	true	true	
+62.0	default	Account	BillingLongitude	double	0	18	15	true	true	true	true	
+62.0	default	Account	BillingPostalCode	string	20	0	0	true	true	true	true	
+62.0	default	Account	BillingState	string	80	0	0	true	true	true	true	
+62.0	default	Account	BillingStreet	textarea	255	0	0	true	true	true	true	
+62.0	default	Account	CleanStatus	picklist	40	0	0	true	true	true	true	
+62.0	default	Account	CreatedById	reference	18	0	0	false	false	false	false	
+62.0	default	Account	CreatedDate	datetime	0	0	0	false	false	false	false	
+62.0	default	Account	DandbCompanyId	reference	18	0	0	true	true	true	true	
+62.0	default	Account	Description	textarea	32000	0	0	true	true	true	true	
+62.0	default	Account	DunsNumber	string	9	0	0	true	true	true	true	
+62.0	default	Account	Fax	phone	40	0	0	true	true	true	true	
+62.0	default	Account	Id	id	18	0	0	false	false	false	false	
+62.0	default	Account	Industry	picklist	255	0	0	true	true	true	true	
+62.0	default	Account	IsDeleted	boolean	0	0	0	false	false	false	false	
+62.0	default	Account	Jigsaw	string	20	0	0	true	true	true	true	
+62.0	default	Account	JigsawCompanyId	string	20	0	0	false	false	true	false	
+62.0	default	Account	LastActivityDate	date	0	0	0	false	false	true	false	
+62.0	default	Account	LastModifiedById	reference	18	0	0	false	false	false	false	
+62.0	default	Account	LastModifiedDate	datetime	0	0	0	false	false	false	false	
+62.0	default	Account	LastReferencedDate	datetime	0	0	0	false	false	true	false	
+62.0	default	Account	LastViewedDate	datetime	0	0	0	false	false	true	false	
+62.0	default	Account	MasterRecordId	reference	18	0	0	false	false	true	false	
+62.0	default	Account	NaicsCode	string	8	0	0	true	true	true	true	
+62.0	default	Account	NaicsDesc	string	120	0	0	true	true	true	true	
+62.0	default	Account	Name	string	255	0	0	true	true	false	false	
+62.0	default	Account	NumberOfEmployees	int	0	0	0	true	true	true	true	
+62.0	default	Account	OperatingHoursId	reference	18	0	0	true	true	true	true	
+62.0	default	Account	OwnerId	reference	18	0	0	true	true	false	false	
+62.0	default	Account	Ownership	picklist	255	0	0	true	true	true	true	
+62.0	default	Account	ParentId	reference	18	0	0	true	true	true	true	
+62.0	default	Account	Phone	phone	40	0	0	true	true	true	true	
+62.0	default	Account	PhotoUrl	url	255	0	0	false	false	true	false	
+62.0	default	Account	Rating	picklist	255	0	0	true	true	true	true	
+62.0	default	Account	ShippingAddress	address	0	0	0	false	false	true	true	
+62.0	default	Account	ShippingCity	string	40	0	0	true	true	true	true	
+62.0	default	Account	ShippingCountry	string	80	0	0	true	true	true	true	
+62.0	default	Account	ShippingGeocodeAccuracy	picklist	40	0	0	true	true	true	true	
+62.0	default	Account	ShippingLatitude	double	0	18	15	true	true	true	true	
+62.0	default	Account	ShippingLongitude	double	0	18	15	true	true	true	true	
+62.0	default	Account	ShippingPostalCode	string	20	0	0	true	true	true	true	
+62.0	default	Account	ShippingState	string	80	0	0	true	true	true	true	
+62.0	default	Account	ShippingStreet	textarea	255	0	0	true	true	true	true	
+62.0	default	Account	Sic	string	20	0	0	true	true	true	true	
+62.0	default	Account	SicDesc	string	80	0	0	true	true	true	true	
+62.0	default	Account	Site	string	80	0	0	true	true	true	true	
+62.0	default	Account	SystemModstamp	datetime	0	0	0	false	false	false	false	
+62.0	default	Account	TickerSymbol	string	20	0	0	true	true	true	true	
+62.0	default	Account	Tradestyle	string	255	0	0	true	true	true	true	
+62.0	default	Account	Type	picklist	255	0	0	true	true	true	true	
+62.0	default	Account	Website	url	255	0	0	true	true	true	true	
+62.0	default	Account	YearStarted	string	4	0	0	true	true	true	true	
+62.0	default	Lead	Address	address	0	0	0	false	false	true	true	
+62.0	default	Lead	AnnualRevenue	currency	0	18	0	true	true	true	true	
+62.0	default	Lead	City	string	40	0	0	true	true	true	true	
+62.0	default	Lead	CleanStatus	picklist	40	0	0	true	true	true	true	
+62.0	default	Lead	Company	string	255	0	0	true	true	false	false	
+62.0	default	Lead	CompanyDunsNumber	string	9	0	0	true	true	true	true	
+62.0	default	Lead	ConvertedAccountId	reference	18	0	0	false	false	true	false	
+62.0	default	Lead	ConvertedContactId	reference	18	0	0	false	false	true	false	
+62.0	default	Lead	ConvertedDate	date	0	0	0	false	false	true	false	
+62.0	default	Lead	ConvertedOpportunityId	reference	18	0	0	false	false	true	false	
+62.0	default	Lead	Country	string	80	0	0	true	true	true	true	
+62.0	default	Lead	CreatedById	reference	18	0	0	false	false	false	false	
+62.0	default	Lead	CreatedDate	datetime	0	0	0	false	false	false	false	
+62.0	default	Lead	DandbCompanyId	reference	18	0	0	true	true	true	true	
+62.0	default	Lead	Description	textarea	32000	0	0	true	true	true	true	
+62.0	default	Lead	Email	email	80	0	0	true	true	true	true	
+62.0	default	Lead	EmailBouncedDate	datetime	0	0	0	false	true	true	false	
+62.0	default	Lead	EmailBouncedReason	string	255	0	0	false	true	true	false	
+62.0	default	Lead	Fax	phone	40	0	0	true	true	true	true	
+62.0	default	Lead	FirstName	string	40	0	0	true	true	true	false	
+62.0	default	Lead	GeocodeAccuracy	picklist	40	0	0	true	true	true	true	
+62.0	default	Lead	Id	id	18	0	0	false	false	false	false	
+62.0	default	Lead	IndividualId	reference	18	0	0	true	true	true	false	
+62.0	default	Lead	Industry	picklist	255	0	0	true	true	true	true	
+62.0	default	Lead	IsConverted	boolean	0	0	0	true	false	false	false	
+62.0	default	Lead	IsDeleted	boolean	0	0	0	false	false	false	false	
+62.0	default	Lead	IsUnreadByOwner	boolean	0	0	0	true	true	false	false	
+62.0	default	Lead	Jigsaw	string	20	0	0	true	true	true	true	
+62.0	default	Lead	JigsawContactId	string	20	0	0	false	false	true	false	
+62.0	default	Lead	LastActivityDate	date	0	0	0	false	false	true	false	
+62.0	default	Lead	LastModifiedById	reference	18	0	0	false	false	false	false	
+62.0	default	Lead	LastModifiedDate	datetime	0	0	0	false	false	false	false	
+62.0	default	Lead	LastName	string	80	0	0	true	true	false	false	
+62.0	default	Lead	LastReferencedDate	datetime	0	0	0	false	false	true	false	
+62.0	default	Lead	LastViewedDate	datetime	0	0	0	false	false	true	false	
+62.0	default	Lead	Latitude	double	0	18	15	true	true	true	true	
+62.0	default	Lead	LeadSource	picklist	255	0	0	true	true	true	true	
+62.0	default	Lead	Longitude	double	0	18	15	true	true	true	true	
+62.0	default	Lead	MasterRecordId	reference	18	0	0	false	false	true	false	
+62.0	default	Lead	MobilePhone	phone	40	0	0	true	true	true	true	
+62.0	default	Lead	Name	string	121	0	0	false	false	false	false	
+62.0	default	Lead	NumberOfEmployees	int	0	0	0	true	true	true	true	
+62.0	default	Lead	OwnerId	reference	18	0	0	true	true	false	false	
+62.0	default	Lead	Phone	phone	40	0	0	true	true	true	true	
+62.0	default	Lead	PhotoUrl	url	255	0	0	false	false	true	false	
+62.0	default	Lead	PostalCode	string	20	0	0	true	true	true	true	
+62.0	default	Lead	Rating	picklist	255	0	0	true	true	true	true	
+62.0	default	Lead	Salutation	picklist	40	0	0	true	true	true	false	
+62.0	default	Lead	State	string	80	0	0	true	true	true	true	
+62.0	default	Lead	Status	picklist	255	0	0	true	true	false	false	
+62.0	default	Lead	Street	textarea	255	0	0	true	true	true	true	
+62.0	default	Lead	SystemModstamp	datetime	0	0	0	false	false	false	false	
+62.0	default	Lead	Title	string	128	0	0	true	true	true	true	
+62.0	default	Lead	Website	url	255	0	0	true	true	true	true	
+62.0	default	Order	AccountId	reference	18	0	0	true	true	true	false	
+62.0	default	Order	ActivatedById	reference	18	0	0	false	true	true	true	
+62.0	default	Order	ActivatedDate	datetime	0	0	0	false	true	true	true	
+62.0	default	Order	BillToContactId	reference	18	0	0	true	true	true	true	
+62.0	default	Order	BillingAddress	address	0	0	0	false	false	true	true	
+62.0	default	Order	BillingCity	string	40	0	0	true	true	true	true	
+62.0	default	Order	BillingCountry	string	80	0	0	true	true	true	true	
+62.0	default	Order	BillingGeocodeAccuracy	picklist	40	0	0	true	true	true	true	
+62.0	default	Order	BillingLatitude	double	0	18	15	true	true	true	true	
+62.0	default	Order	BillingLongitude	double	0	18	15	true	true	true	true	
+62.0	default	Order	BillingPostalCode	string	20	0	0	true	true	true	true	
+62.0	default	Order	BillingState	string	80	0	0	true	true	true	true	
+62.0	default	Order	BillingStreet	textarea	255	0	0	true	true	true	true	
+62.0	default	Order	CompanyAuthorizedById	reference	18	0	0	true	true	true	true	
+62.0	default	Order	CompanyAuthorizedDate	date	0	0	0	true	true	true	true	
+62.0	default	Order	ContractId	reference	18	0	0	true	true	true	false	
+62.0	default	Order	CreatedById	reference	18	0	0	false	false	false	false	
+62.0	default	Order	CreatedDate	datetime	0	0	0	false	false	false	false	
+62.0	default	Order	CustomerAuthorizedById	reference	18	0	0	true	true	true	true	
+62.0	default	Order	CustomerAuthorizedDate	date	0	0	0	true	true	true	true	
+62.0	default	Order	Description	textarea	32000	0	0	true	true	true	true	
+62.0	default	Order	EffectiveDate	date	0	0	0	true	true	false	false	
+62.0	default	Order	EndDate	date	0	0	0	true	true	true	false	
+62.0	default	Order	Id	id	18	0	0	false	false	false	false	
+62.0	default	Order	IsDeleted	boolean	0	0	0	false	false	false	false	
+62.0	default	Order	IsReductionOrder	boolean	0	0	0	true	false	false	false	
+62.0	default	Order	LastModifiedById	reference	18	0	0	false	false	false	false	
+62.0	default	Order	LastModifiedDate	datetime	0	0	0	false	false	false	false	
+62.0	default	Order	LastReferencedDate	datetime	0	0	0	false	false	true	false	
+62.0	default	Order	LastViewedDate	datetime	0	0	0	false	false	true	false	
+62.0	default	Order	Name	string	80	0	0	true	true	true	true	
+62.0	default	Order	OrderNumber	string	30	0	0	false	false	false	false	
+62.0	default	Order	OrderReferenceNumber	string	80	0	0	true	true	true	true	
+62.0	default	Order	OriginalOrderId	reference	18	0	0	true	false	true	false	
+62.0	default	Order	OwnerId	reference	18	0	0	true	true	false	false	
+62.0	default	Order	PoDate	date	0	0	0	true	true	true	true	
+62.0	default	Order	PoNumber	string	80	0	0	true	true	true	true	
+62.0	default	Order	Pricebook2Id	reference	18	0	0	true	true	true	false	
+62.0	default	Order	ShipToContactId	reference	18	0	0	true	true	true	true	
+62.0	default	Order	ShippingAddress	address	0	0	0	false	false	true	true	
+62.0	default	Order	ShippingCity	string	40	0	0	true	true	true	true	
+62.0	default	Order	ShippingCountry	string	80	0	0	true	true	true	true	
+62.0	default	Order	ShippingGeocodeAccuracy	picklist	40	0	0	true	true	true	true	
+62.0	default	Order	ShippingLatitude	double	0	18	15	true	true	true	true	
+62.0	default	Order	ShippingLongitude	double	0	18	15	true	true	true	true	
+62.0	default	Order	ShippingPostalCode	string	20	0	0	true	true	true	true	
+62.0	default	Order	ShippingState	string	80	0	0	true	true	true	true	
+62.0	default	Order	ShippingStreet	textarea	255	0	0	true	true	true	true	
+62.0	default	Order	Status	picklist	100	0	0	true	true	false	false	
+62.0	default	Order	StatusCode	picklist	40	0	0	false	true	false	false	
+62.0	default	Order	SystemModstamp	datetime	0	0	0	false	false	false	false	
+62.0	default	Order	TotalAmount	currency	0	18	2	false	false	false	true	
+62.0	default	Order	Type	picklist	255	0	0	true	true	true	true	
+62.0	granted	Account	AccountNumber	string	40	0	0	true	true	true	true	
+62.0	granted	Account	AccountSource	picklist	255	0	0	true	true	true	true	
+62.0	granted	Account	AnnualRevenue	currency	0	18	0	true	true	true	true	
+62.0	granted	Account	BillingAddress	address	0	0	0	false	false	true	true	
+62.0	granted	Account	BillingCity	string	40	0	0	true	true	true	true	
+62.0	granted	Account	BillingCountry	string	80	0	0	true	true	true	true	
+62.0	granted	Account	BillingGeocodeAccuracy	picklist	40	0	0	true	true	true	true	
+62.0	granted	Account	BillingLatitude	double	0	18	15	true	true	true	true	
+62.0	granted	Account	BillingLongitude	double	0	18	15	true	true	true	true	
+62.0	granted	Account	BillingPostalCode	string	20	0	0	true	true	true	true	
+62.0	granted	Account	BillingState	string	80	0	0	true	true	true	true	
+62.0	granted	Account	BillingStreet	textarea	255	0	0	true	true	true	true	
+62.0	granted	Account	CleanStatus	picklist	40	0	0	true	true	true	true	
+62.0	granted	Account	CreatedById	reference	18	0	0	false	false	false	false	
+62.0	granted	Account	CreatedDate	datetime	0	0	0	false	false	false	false	
+62.0	granted	Account	DandbCompanyId	reference	18	0	0	true	true	true	true	
+62.0	granted	Account	Description	textarea	32000	0	0	true	true	true	true	
+62.0	granted	Account	DunsNumber	string	9	0	0	true	true	true	true	
+62.0	granted	Account	Fax	phone	40	0	0	true	true	true	true	
+62.0	granted	Account	Id	id	18	0	0	false	false	false	false	
+62.0	granted	Account	Industry	picklist	255	0	0	true	true	true	true	
+62.0	granted	Account	IsDeleted	boolean	0	0	0	false	false	false	false	
+62.0	granted	Account	Jigsaw	string	20	0	0	true	true	true	true	
+62.0	granted	Account	JigsawCompanyId	string	20	0	0	false	false	true	false	
+62.0	granted	Account	LastActivityDate	date	0	0	0	false	false	true	false	
+62.0	granted	Account	LastModifiedById	reference	18	0	0	false	false	false	false	
+62.0	granted	Account	LastModifiedDate	datetime	0	0	0	false	false	false	false	
+62.0	granted	Account	LastReferencedDate	datetime	0	0	0	false	false	true	false	
+62.0	granted	Account	LastViewedDate	datetime	0	0	0	false	false	true	false	
+62.0	granted	Account	MasterRecordId	reference	18	0	0	false	false	true	false	
+62.0	granted	Account	NaicsCode	string	8	0	0	true	true	true	true	
+62.0	granted	Account	NaicsDesc	string	120	0	0	true	true	true	true	
+62.0	granted	Account	Name	string	255	0	0	true	true	false	false	
+62.0	granted	Account	NumberOfEmployees	int	0	0	0	true	true	true	true	
+62.0	granted	Account	OperatingHoursId	reference	18	0	0	true	true	true	true	
+62.0	granted	Account	OwnerId	reference	18	0	0	true	true	false	false	
+62.0	granted	Account	Ownership	picklist	255	0	0	true	true	true	true	
+62.0	granted	Account	ParentId	reference	18	0	0	true	true	true	true	
+62.0	granted	Account	Phone	phone	40	0	0	true	true	true	true	
+62.0	granted	Account	PhotoUrl	url	255	0	0	false	false	true	false	
+62.0	granted	Account	Rating	picklist	255	0	0	true	true	true	true	
+62.0	granted	Account	ShippingAddress	address	0	0	0	false	false	true	true	
+62.0	granted	Account	ShippingCity	string	40	0	0	true	true	true	true	
+62.0	granted	Account	ShippingCountry	string	80	0	0	true	true	true	true	
+62.0	granted	Account	ShippingGeocodeAccuracy	picklist	40	0	0	true	true	true	true	
+62.0	granted	Account	ShippingLatitude	double	0	18	15	true	true	true	true	
+62.0	granted	Account	ShippingLongitude	double	0	18	15	true	true	true	true	
+62.0	granted	Account	ShippingPostalCode	string	20	0	0	true	true	true	true	
+62.0	granted	Account	ShippingState	string	80	0	0	true	true	true	true	
+62.0	granted	Account	ShippingStreet	textarea	255	0	0	true	true	true	true	
+62.0	granted	Account	Sic	string	20	0	0	true	true	true	true	
+62.0	granted	Account	SicDesc	string	80	0	0	true	true	true	true	
+62.0	granted	Account	Site	string	80	0	0	true	true	true	true	
+62.0	granted	Account	SystemModstamp	datetime	0	0	0	false	false	false	false	
+62.0	granted	Account	TickerSymbol	string	20	0	0	true	true	true	true	
+62.0	granted	Account	Tradestyle	string	255	0	0	true	true	true	true	
+62.0	granted	Account	Type	picklist	255	0	0	true	true	true	true	
+62.0	granted	Account	Website	url	255	0	0	true	true	true	true	
+62.0	granted	Account	YearStarted	string	4	0	0	true	true	true	true	
+62.0	granted	Lead	Address	address	0	0	0	false	false	true	true	
+62.0	granted	Lead	AnnualRevenue	currency	0	18	0	true	true	true	true	
+62.0	granted	Lead	City	string	40	0	0	true	true	true	true	
+62.0	granted	Lead	CleanStatus	picklist	40	0	0	true	true	true	true	
+62.0	granted	Lead	Company	string	255	0	0	true	true	false	false	
+62.0	granted	Lead	CompanyDunsNumber	string	9	0	0	true	true	true	true	
+62.0	granted	Lead	ConvertedAccountId	reference	18	0	0	false	false	true	false	
+62.0	granted	Lead	ConvertedContactId	reference	18	0	0	false	false	true	false	
+62.0	granted	Lead	ConvertedDate	date	0	0	0	false	false	true	false	
+62.0	granted	Lead	ConvertedOpportunityId	reference	18	0	0	false	false	true	false	
+62.0	granted	Lead	Country	string	80	0	0	true	true	true	true	
+62.0	granted	Lead	CreatedById	reference	18	0	0	false	false	false	false	
+62.0	granted	Lead	CreatedDate	datetime	0	0	0	false	false	false	false	
+62.0	granted	Lead	DandbCompanyId	reference	18	0	0	true	true	true	true	
+62.0	granted	Lead	Description	textarea	32000	0	0	true	true	true	true	
+62.0	granted	Lead	DoNotCall	boolean	0	0	0	true	true	false	true	
+62.0	granted	Lead	Email	email	80	0	0	true	true	true	true	
+62.0	granted	Lead	EmailBouncedDate	datetime	0	0	0	false	true	true	false	
+62.0	granted	Lead	EmailBouncedReason	string	255	0	0	false	true	true	false	
+62.0	granted	Lead	Fax	phone	40	0	0	true	true	true	true	
+62.0	granted	Lead	FirstName	string	40	0	0	true	true	true	false	
+62.0	granted	Lead	GenderIdentity	picklist	255	0	0	true	true	true	true	
+62.0	granted	Lead	GeocodeAccuracy	picklist	40	0	0	true	true	true	true	
+62.0	granted	Lead	HasOptedOutOfEmail	boolean	0	0	0	true	true	false	true	
+62.0	granted	Lead	HasOptedOutOfFax	boolean	0	0	0	true	true	false	true	
+62.0	granted	Lead	Id	id	18	0	0	false	false	false	false	
+62.0	granted	Lead	IndividualId	reference	18	0	0	true	true	true	false	
+62.0	granted	Lead	Industry	picklist	255	0	0	true	true	true	true	
+62.0	granted	Lead	IsConverted	boolean	0	0	0	true	false	false	false	
+62.0	granted	Lead	IsDeleted	boolean	0	0	0	false	false	false	false	
+62.0	granted	Lead	IsUnreadByOwner	boolean	0	0	0	true	true	false	false	
+62.0	granted	Lead	Jigsaw	string	20	0	0	true	true	true	true	
+62.0	granted	Lead	JigsawContactId	string	20	0	0	false	false	true	false	
+62.0	granted	Lead	LastActivityDate	date	0	0	0	false	false	true	false	
+62.0	granted	Lead	LastModifiedById	reference	18	0	0	false	false	false	false	
+62.0	granted	Lead	LastModifiedDate	datetime	0	0	0	false	false	false	false	
+62.0	granted	Lead	LastName	string	80	0	0	true	true	false	false	
+62.0	granted	Lead	LastReferencedDate	datetime	0	0	0	false	false	true	false	
+62.0	granted	Lead	LastTransferDate	date	0	0	0	false	false	true	true	
+62.0	granted	Lead	LastViewedDate	datetime	0	0	0	false	false	true	false	
+62.0	granted	Lead	Latitude	double	0	18	15	true	true	true	true	
+62.0	granted	Lead	LeadSource	picklist	255	0	0	true	true	true	true	
+62.0	granted	Lead	Longitude	double	0	18	15	true	true	true	true	
+62.0	granted	Lead	MasterRecordId	reference	18	0	0	false	false	true	false	
+62.0	granted	Lead	MobilePhone	phone	40	0	0	true	true	true	true	
+62.0	granted	Lead	Name	string	121	0	0	false	false	false	false	
+62.0	granted	Lead	NumberOfEmployees	int	0	0	0	true	true	true	true	
+62.0	granted	Lead	OwnerId	reference	18	0	0	true	true	false	false	
+62.0	granted	Lead	Phone	phone	40	0	0	true	true	true	true	
+62.0	granted	Lead	PhotoUrl	url	255	0	0	false	false	true	false	
+62.0	granted	Lead	PostalCode	string	20	0	0	true	true	true	true	
+62.0	granted	Lead	Pronouns	picklist	255	0	0	true	true	true	true	
+62.0	granted	Lead	Rating	picklist	255	0	0	true	true	true	true	
+62.0	granted	Lead	Salutation	picklist	40	0	0	true	true	true	false	
+62.0	granted	Lead	State	string	80	0	0	true	true	true	true	
+62.0	granted	Lead	Status	picklist	255	0	0	true	true	false	false	
+62.0	granted	Lead	Street	textarea	255	0	0	true	true	true	true	
+62.0	granted	Lead	SystemModstamp	datetime	0	0	0	false	false	false	false	
+62.0	granted	Lead	Title	string	128	0	0	true	true	true	true	
+62.0	granted	Lead	Website	url	255	0	0	true	true	true	true	
+62.0	granted	Order	AccountId	reference	18	0	0	true	true	true	false	
+62.0	granted	Order	ActivatedById	reference	18	0	0	false	true	true	true	
+62.0	granted	Order	ActivatedDate	datetime	0	0	0	false	true	true	true	
+62.0	granted	Order	BillToContactId	reference	18	0	0	true	true	true	true	
+62.0	granted	Order	BillingAddress	address	0	0	0	false	false	true	true	
+62.0	granted	Order	BillingCity	string	40	0	0	true	true	true	true	
+62.0	granted	Order	BillingCountry	string	80	0	0	true	true	true	true	
+62.0	granted	Order	BillingGeocodeAccuracy	picklist	40	0	0	true	true	true	true	
+62.0	granted	Order	BillingLatitude	double	0	18	15	true	true	true	true	
+62.0	granted	Order	BillingLongitude	double	0	18	15	true	true	true	true	
+62.0	granted	Order	BillingPostalCode	string	20	0	0	true	true	true	true	
+62.0	granted	Order	BillingState	string	80	0	0	true	true	true	true	
+62.0	granted	Order	BillingStreet	textarea	255	0	0	true	true	true	true	
+62.0	granted	Order	CompanyAuthorizedById	reference	18	0	0	true	true	true	true	
+62.0	granted	Order	CompanyAuthorizedDate	date	0	0	0	true	true	true	true	
+62.0	granted	Order	ContractId	reference	18	0	0	true	true	true	false	
+62.0	granted	Order	CreatedById	reference	18	0	0	false	false	false	false	
+62.0	granted	Order	CreatedDate	datetime	0	0	0	false	false	false	false	
+62.0	granted	Order	CustomerAuthorizedById	reference	18	0	0	true	true	true	true	
+62.0	granted	Order	CustomerAuthorizedDate	date	0	0	0	true	true	true	true	
+62.0	granted	Order	Description	textarea	32000	0	0	true	true	true	true	
+62.0	granted	Order	EffectiveDate	date	0	0	0	true	true	false	false	
+62.0	granted	Order	EndDate	date	0	0	0	true	true	true	false	
+62.0	granted	Order	Id	id	18	0	0	false	false	false	false	
+62.0	granted	Order	IsDeleted	boolean	0	0	0	false	false	false	false	
+62.0	granted	Order	IsReductionOrder	boolean	0	0	0	true	false	false	false	
+62.0	granted	Order	LastModifiedById	reference	18	0	0	false	false	false	false	
+62.0	granted	Order	LastModifiedDate	datetime	0	0	0	false	false	false	false	
+62.0	granted	Order	LastReferencedDate	datetime	0	0	0	false	false	true	false	
+62.0	granted	Order	LastViewedDate	datetime	0	0	0	false	false	true	false	
+62.0	granted	Order	Name	string	80	0	0	true	true	true	true	
+62.0	granted	Order	OpportunityId	reference	18	0	0	true	true	true	true	
+62.0	granted	Order	OrderNumber	string	30	0	0	false	false	false	false	
+62.0	granted	Order	OrderReferenceNumber	string	80	0	0	true	true	true	true	
+62.0	granted	Order	OriginalOrderId	reference	18	0	0	true	false	true	false	
+62.0	granted	Order	OwnerId	reference	18	0	0	true	true	false	false	
+62.0	granted	Order	PoDate	date	0	0	0	true	true	true	true	
+62.0	granted	Order	PoNumber	string	80	0	0	true	true	true	true	
+62.0	granted	Order	Pricebook2Id	reference	18	0	0	true	true	true	false	
+62.0	granted	Order	ShipToContactId	reference	18	0	0	true	true	true	true	
+62.0	granted	Order	ShippingAddress	address	0	0	0	false	false	true	true	
+62.0	granted	Order	ShippingCity	string	40	0	0	true	true	true	true	
+62.0	granted	Order	ShippingCountry	string	80	0	0	true	true	true	true	
+62.0	granted	Order	ShippingGeocodeAccuracy	picklist	40	0	0	true	true	true	true	
+62.0	granted	Order	ShippingLatitude	double	0	18	15	true	true	true	true	
+62.0	granted	Order	ShippingLongitude	double	0	18	15	true	true	true	true	
+62.0	granted	Order	ShippingPostalCode	string	20	0	0	true	true	true	true	
+62.0	granted	Order	ShippingState	string	80	0	0	true	true	true	true	
+62.0	granted	Order	ShippingStreet	textarea	255	0	0	true	true	true	true	
+62.0	granted	Order	Status	picklist	100	0	0	true	true	false	false	
+62.0	granted	Order	StatusCode	picklist	40	0	0	false	true	false	false	
+62.0	granted	Order	SystemModstamp	datetime	0	0	0	false	false	false	false	
+62.0	granted	Order	TotalAmount	currency	0	18	2	false	false	false	true	
+62.0	granted	Order	Type	picklist	255	0	0	true	true	true	true	
+62.0	anonymous	Account	AccountNumber	STRING	40	0	0	true	true	true	true	true
+62.0	anonymous	Account	AccountSource	PICKLIST	255	0	0	true	true	true	true	true
+62.0	anonymous	Account	AnnualRevenue	CURRENCY	0	18	0	true	true	true	true	true
+62.0	anonymous	Account	BillingAddress	ADDRESS	0	0	0	false	false	true	true	true
+62.0	anonymous	Account	BillingCity	STRING	40	0	0	true	true	true	true	true
+62.0	anonymous	Account	BillingCountry	STRING	80	0	0	true	true	true	true	true
+62.0	anonymous	Account	BillingGeocodeAccuracy	PICKLIST	40	0	0	true	true	true	true	true
+62.0	anonymous	Account	BillingLatitude	DOUBLE	0	18	15	true	true	true	true	true
+62.0	anonymous	Account	BillingLongitude	DOUBLE	0	18	15	true	true	true	true	true
+62.0	anonymous	Account	BillingPostalCode	STRING	20	0	0	true	true	true	true	true
+62.0	anonymous	Account	BillingState	STRING	80	0	0	true	true	true	true	true
+62.0	anonymous	Account	BillingStreet	TEXTAREA	255	0	0	true	true	true	true	true
+62.0	anonymous	Account	CleanStatus	PICKLIST	40	0	0	true	true	true	true	true
+62.0	anonymous	Account	CreatedById	REFERENCE	18	0	0	false	false	false	false	true
+62.0	anonymous	Account	CreatedDate	DATETIME	0	0	0	false	false	false	false	true
+62.0	anonymous	Account	DandbCompanyId	REFERENCE	18	0	0	true	true	true	true	true
+62.0	anonymous	Account	Description	TEXTAREA	32000	0	0	true	true	true	true	true
+62.0	anonymous	Account	DunsNumber	STRING	9	0	0	true	true	true	true	true
+62.0	anonymous	Account	Fax	PHONE	40	0	0	true	true	true	true	true
+62.0	anonymous	Account	Id	ID	18	0	0	false	false	false	false	true
+62.0	anonymous	Account	Industry	PICKLIST	255	0	0	true	true	true	true	true
+62.0	anonymous	Account	IsDeleted	BOOLEAN	0	0	0	false	false	false	false	true
+62.0	anonymous	Account	Jigsaw	STRING	20	0	0	true	true	true	true	true
+62.0	anonymous	Account	JigsawCompanyId	STRING	20	0	0	false	false	true	false	true
+62.0	anonymous	Account	LastActivityDate	DATE	0	0	0	false	false	true	false	true
+62.0	anonymous	Account	LastModifiedById	REFERENCE	18	0	0	false	false	false	false	true
+62.0	anonymous	Account	LastModifiedDate	DATETIME	0	0	0	false	false	false	false	true
+62.0	anonymous	Account	LastReferencedDate	DATETIME	0	0	0	false	false	true	false	true
+62.0	anonymous	Account	LastViewedDate	DATETIME	0	0	0	false	false	true	false	true
+62.0	anonymous	Account	MasterRecordId	REFERENCE	18	0	0	false	false	true	false	true
+62.0	anonymous	Account	NaicsCode	STRING	8	0	0	true	true	true	true	true
+62.0	anonymous	Account	NaicsDesc	STRING	120	0	0	true	true	true	true	true
+62.0	anonymous	Account	Name	STRING	255	0	0	true	true	false	false	true
+62.0	anonymous	Account	NumberOfEmployees	INTEGER	0	0	0	true	true	true	true	true
+62.0	anonymous	Account	OperatingHoursId	REFERENCE	18	0	0	true	true	true	true	true
+62.0	anonymous	Account	OwnerId	REFERENCE	18	0	0	true	true	false	false	true
+62.0	anonymous	Account	Ownership	PICKLIST	255	0	0	true	true	true	true	true
+62.0	anonymous	Account	ParentId	REFERENCE	18	0	0	true	true	true	true	true
+62.0	anonymous	Account	Phone	PHONE	40	0	0	true	true	true	true	true
+62.0	anonymous	Account	PhotoUrl	URL	255	0	0	false	false	true	false	true
+62.0	anonymous	Account	Rating	PICKLIST	255	0	0	true	true	true	true	true
+62.0	anonymous	Account	ShippingAddress	ADDRESS	0	0	0	false	false	true	true	true
+62.0	anonymous	Account	ShippingCity	STRING	40	0	0	true	true	true	true	true
+62.0	anonymous	Account	ShippingCountry	STRING	80	0	0	true	true	true	true	true
+62.0	anonymous	Account	ShippingGeocodeAccuracy	PICKLIST	40	0	0	true	true	true	true	true
+62.0	anonymous	Account	ShippingLatitude	DOUBLE	0	18	15	true	true	true	true	true
+62.0	anonymous	Account	ShippingLongitude	DOUBLE	0	18	15	true	true	true	true	true
+62.0	anonymous	Account	ShippingPostalCode	STRING	20	0	0	true	true	true	true	true
+62.0	anonymous	Account	ShippingState	STRING	80	0	0	true	true	true	true	true
+62.0	anonymous	Account	ShippingStreet	TEXTAREA	255	0	0	true	true	true	true	true
+62.0	anonymous	Account	Sic	STRING	20	0	0	true	true	true	true	true
+62.0	anonymous	Account	SicDesc	STRING	80	0	0	true	true	true	true	true
+62.0	anonymous	Account	Site	STRING	80	0	0	true	true	true	true	true
+62.0	anonymous	Account	SystemModstamp	DATETIME	0	0	0	false	false	false	false	true
+62.0	anonymous	Account	TickerSymbol	STRING	20	0	0	true	true	true	true	true
+62.0	anonymous	Account	Tradestyle	STRING	255	0	0	true	true	true	true	true
+62.0	anonymous	Account	Type	PICKLIST	255	0	0	true	true	true	true	true
+62.0	anonymous	Account	Website	URL	255	0	0	true	true	true	true	true
+62.0	anonymous	Account	YearStarted	STRING	4	0	0	true	true	true	true	true
+62.0	anonymous-boundary	Account	Id									true
+62.0	anonymous-rejection	Account	Case251DefinitelyMissing__c									false
+62.0	anonymous	Lead	Address	ADDRESS	0	0	0	false	false	true	true	true
+62.0	anonymous	Lead	AnnualRevenue	CURRENCY	0	18	0	true	true	true	true	true
+62.0	anonymous	Lead	City	STRING	40	0	0	true	true	true	true	true
+62.0	anonymous	Lead	CleanStatus	PICKLIST	40	0	0	true	true	true	true	true
+62.0	anonymous	Lead	Company	STRING	255	0	0	true	true	false	false	true
+62.0	anonymous	Lead	CompanyDunsNumber	STRING	9	0	0	true	true	true	true	true
+62.0	anonymous	Lead	ConvertedAccountId	REFERENCE	18	0	0	false	false	true	false	true
+62.0	anonymous	Lead	ConvertedContactId	REFERENCE	18	0	0	false	false	true	false	true
+62.0	anonymous	Lead	ConvertedDate	DATE	0	0	0	false	false	true	false	true
+62.0	anonymous	Lead	ConvertedOpportunityId	REFERENCE	18	0	0	false	false	true	false	true
+62.0	anonymous	Lead	Country	STRING	80	0	0	true	true	true	true	true
+62.0	anonymous	Lead	CreatedById	REFERENCE	18	0	0	false	false	false	false	true
+62.0	anonymous	Lead	CreatedDate	DATETIME	0	0	0	false	false	false	false	true
+62.0	anonymous	Lead	DandbCompanyId	REFERENCE	18	0	0	true	true	true	true	true
+62.0	anonymous	Lead	Description	TEXTAREA	32000	0	0	true	true	true	true	true
+62.0	anonymous	Lead	DoNotCall	BOOLEAN	0	0	0	true	true	false	true	true
+62.0	anonymous	Lead	Email	EMAIL	80	0	0	true	true	true	true	true
+62.0	anonymous	Lead	EmailBouncedDate	DATETIME	0	0	0	false	true	true	false	true
+62.0	anonymous	Lead	EmailBouncedReason	STRING	255	0	0	false	true	true	false	true
+62.0	anonymous	Lead	Fax	PHONE	40	0	0	true	true	true	true	true
+62.0	anonymous	Lead	FirstName	STRING	40	0	0	true	true	true	false	true
+62.0	anonymous	Lead	GenderIdentity	PICKLIST	255	0	0	true	true	true	true	true
+62.0	anonymous	Lead	GeocodeAccuracy	PICKLIST	40	0	0	true	true	true	true	true
+62.0	anonymous	Lead	HasOptedOutOfEmail	BOOLEAN	0	0	0	true	true	false	true	true
+62.0	anonymous	Lead	HasOptedOutOfFax	BOOLEAN	0	0	0	true	true	false	true	true
+62.0	anonymous	Lead	Id	ID	18	0	0	false	false	false	false	true
+62.0	anonymous	Lead	IndividualId	REFERENCE	18	0	0	true	true	true	false	true
+62.0	anonymous	Lead	Industry	PICKLIST	255	0	0	true	true	true	true	true
+62.0	anonymous	Lead	IsConverted	BOOLEAN	0	0	0	true	false	false	false	true
+62.0	anonymous	Lead	IsDeleted	BOOLEAN	0	0	0	false	false	false	false	true
+62.0	anonymous	Lead	IsUnreadByOwner	BOOLEAN	0	0	0	true	true	false	false	true
+62.0	anonymous	Lead	Jigsaw	STRING	20	0	0	true	true	true	true	true
+62.0	anonymous	Lead	JigsawContactId	STRING	20	0	0	false	false	true	false	true
+62.0	anonymous	Lead	LastActivityDate	DATE	0	0	0	false	false	true	false	true
+62.0	anonymous	Lead	LastModifiedById	REFERENCE	18	0	0	false	false	false	false	true
+62.0	anonymous	Lead	LastModifiedDate	DATETIME	0	0	0	false	false	false	false	true
+62.0	anonymous	Lead	LastName	STRING	80	0	0	true	true	false	false	true
+62.0	anonymous	Lead	LastReferencedDate	DATETIME	0	0	0	false	false	true	false	true
+62.0	anonymous	Lead	LastTransferDate	DATE	0	0	0	false	false	true	true	true
+62.0	anonymous	Lead	LastViewedDate	DATETIME	0	0	0	false	false	true	false	true
+62.0	anonymous	Lead	Latitude	DOUBLE	0	18	15	true	true	true	true	true
+62.0	anonymous	Lead	LeadSource	PICKLIST	255	0	0	true	true	true	true	true
+62.0	anonymous	Lead	Longitude	DOUBLE	0	18	15	true	true	true	true	true
+62.0	anonymous	Lead	MasterRecordId	REFERENCE	18	0	0	false	false	true	false	true
+62.0	anonymous	Lead	MobilePhone	PHONE	40	0	0	true	true	true	true	true
+62.0	anonymous	Lead	Name	STRING	121	0	0	false	false	false	false	true
+62.0	anonymous	Lead	NumberOfEmployees	INTEGER	0	0	0	true	true	true	true	true
+62.0	anonymous	Lead	OwnerId	REFERENCE	18	0	0	true	true	false	false	true
+62.0	anonymous	Lead	Phone	PHONE	40	0	0	true	true	true	true	true
+62.0	anonymous	Lead	PhotoUrl	URL	255	0	0	false	false	true	false	true
+62.0	anonymous	Lead	PostalCode	STRING	20	0	0	true	true	true	true	true
+62.0	anonymous	Lead	Pronouns	PICKLIST	255	0	0	true	true	true	true	true
+62.0	anonymous	Lead	Rating	PICKLIST	255	0	0	true	true	true	true	true
+62.0	anonymous	Lead	Salutation	PICKLIST	40	0	0	true	true	true	false	true
+62.0	anonymous	Lead	State	STRING	80	0	0	true	true	true	true	true
+62.0	anonymous	Lead	Status	PICKLIST	255	0	0	true	true	false	false	true
+62.0	anonymous	Lead	Street	TEXTAREA	255	0	0	true	true	true	true	true
+62.0	anonymous	Lead	SystemModstamp	DATETIME	0	0	0	false	false	false	false	true
+62.0	anonymous	Lead	Title	STRING	128	0	0	true	true	true	true	true
+62.0	anonymous	Lead	Website	URL	255	0	0	true	true	true	true	true
+62.0	anonymous-boundary	Lead	Id									true
+62.0	anonymous-rejection	Lead	Case251DefinitelyMissing__c									false
+62.0	anonymous	Order	AccountId	REFERENCE	18	0	0	true	true	true	false	true
+62.0	anonymous	Order	ActivatedById	REFERENCE	18	0	0	false	true	true	true	true
+62.0	anonymous	Order	ActivatedDate	DATETIME	0	0	0	false	true	true	true	true
+62.0	anonymous	Order	BillToContactId	REFERENCE	18	0	0	true	true	true	true	true
+62.0	anonymous	Order	BillingAddress	ADDRESS	0	0	0	false	false	true	true	true
+62.0	anonymous	Order	BillingCity	STRING	40	0	0	true	true	true	true	true
+62.0	anonymous	Order	BillingCountry	STRING	80	0	0	true	true	true	true	true
+62.0	anonymous	Order	BillingGeocodeAccuracy	PICKLIST	40	0	0	true	true	true	true	true
+62.0	anonymous	Order	BillingLatitude	DOUBLE	0	18	15	true	true	true	true	true
+62.0	anonymous	Order	BillingLongitude	DOUBLE	0	18	15	true	true	true	true	true
+62.0	anonymous	Order	BillingPostalCode	STRING	20	0	0	true	true	true	true	true
+62.0	anonymous	Order	BillingState	STRING	80	0	0	true	true	true	true	true
+62.0	anonymous	Order	BillingStreet	TEXTAREA	255	0	0	true	true	true	true	true
+62.0	anonymous	Order	CompanyAuthorizedById	REFERENCE	18	0	0	true	true	true	true	true
+62.0	anonymous	Order	CompanyAuthorizedDate	DATE	0	0	0	true	true	true	true	true
+62.0	anonymous	Order	ContractId	REFERENCE	18	0	0	true	true	true	false	true
+62.0	anonymous	Order	CreatedById	REFERENCE	18	0	0	false	false	false	false	true
+62.0	anonymous	Order	CreatedDate	DATETIME	0	0	0	false	false	false	false	true
+62.0	anonymous	Order	CustomerAuthorizedById	REFERENCE	18	0	0	true	true	true	true	true
+62.0	anonymous	Order	CustomerAuthorizedDate	DATE	0	0	0	true	true	true	true	true
+62.0	anonymous	Order	Description	TEXTAREA	32000	0	0	true	true	true	true	true
+62.0	anonymous	Order	EffectiveDate	DATE	0	0	0	true	true	false	false	true
+62.0	anonymous	Order	EndDate	DATE	0	0	0	true	true	true	false	true
+62.0	anonymous	Order	Id	ID	18	0	0	false	false	false	false	true
+62.0	anonymous	Order	IsDeleted	BOOLEAN	0	0	0	false	false	false	false	true
+62.0	anonymous	Order	IsReductionOrder	BOOLEAN	0	0	0	true	false	false	false	true
+62.0	anonymous	Order	LastModifiedById	REFERENCE	18	0	0	false	false	false	false	true
+62.0	anonymous	Order	LastModifiedDate	DATETIME	0	0	0	false	false	false	false	true
+62.0	anonymous	Order	LastReferencedDate	DATETIME	0	0	0	false	false	true	false	true
+62.0	anonymous	Order	LastViewedDate	DATETIME	0	0	0	false	false	true	false	true
+62.0	anonymous	Order	Name	STRING	80	0	0	true	true	true	true	true
+62.0	anonymous	Order	OpportunityId	REFERENCE	18	0	0	true	true	true	true	true
+62.0	anonymous	Order	OrderNumber	STRING	30	0	0	false	false	false	false	true
+62.0	anonymous	Order	OrderReferenceNumber	STRING	80	0	0	true	true	true	true	true
+62.0	anonymous	Order	OriginalOrderId	REFERENCE	18	0	0	true	false	true	false	true
+62.0	anonymous	Order	OwnerId	REFERENCE	18	0	0	true	true	false	false	true
+62.0	anonymous	Order	PoDate	DATE	0	0	0	true	true	true	true	true
+62.0	anonymous	Order	PoNumber	STRING	80	0	0	true	true	true	true	true
+62.0	anonymous	Order	Pricebook2Id	REFERENCE	18	0	0	true	true	true	false	true
+62.0	anonymous	Order	ShipToContactId	REFERENCE	18	0	0	true	true	true	true	true
+62.0	anonymous	Order	ShippingAddress	ADDRESS	0	0	0	false	false	true	true	true
+62.0	anonymous	Order	ShippingCity	STRING	40	0	0	true	true	true	true	true
+62.0	anonymous	Order	ShippingCountry	STRING	80	0	0	true	true	true	true	true
+62.0	anonymous	Order	ShippingGeocodeAccuracy	PICKLIST	40	0	0	true	true	true	true	true
+62.0	anonymous	Order	ShippingLatitude	DOUBLE	0	18	15	true	true	true	true	true
+62.0	anonymous	Order	ShippingLongitude	DOUBLE	0	18	15	true	true	true	true	true
+62.0	anonymous	Order	ShippingPostalCode	STRING	20	0	0	true	true	true	true	true
+62.0	anonymous	Order	ShippingState	STRING	80	0	0	true	true	true	true	true
+62.0	anonymous	Order	ShippingStreet	TEXTAREA	255	0	0	true	true	true	true	true
+62.0	anonymous	Order	Status	PICKLIST	100	0	0	true	true	false	false	true
+62.0	anonymous	Order	StatusCode	PICKLIST	40	0	0	false	true	false	false	true
+62.0	anonymous	Order	SystemModstamp	DATETIME	0	0	0	false	false	false	false	true
+62.0	anonymous	Order	TotalAmount	CURRENCY	0	18	2	false	false	false	true	true
+62.0	anonymous	Order	Type	PICKLIST	255	0	0	true	true	true	true	true
+62.0	anonymous-boundary	Order	Id									true
+62.0	anonymous-rejection	Order	Case251DefinitelyMissing__c									false
+67.0	default	Account	AccountNumber	string	40	0	0	true	true	true	true	
+67.0	default	Account	AccountSource	picklist	255	0	0	true	true	true	true	
+67.0	default	Account	AnnualRevenue	currency	0	18	0	true	true	true	true	
+67.0	default	Account	BillingAddress	address	0	0	0	false	false	true	true	
+67.0	default	Account	BillingCity	string	40	0	0	true	true	true	true	
+67.0	default	Account	BillingCountry	string	80	0	0	true	true	true	true	
+67.0	default	Account	BillingGeocodeAccuracy	picklist	40	0	0	true	true	true	true	
+67.0	default	Account	BillingLatitude	double	0	18	15	true	true	true	true	
+67.0	default	Account	BillingLongitude	double	0	18	15	true	true	true	true	
+67.0	default	Account	BillingPostalCode	string	20	0	0	true	true	true	true	
+67.0	default	Account	BillingState	string	80	0	0	true	true	true	true	
+67.0	default	Account	BillingStreet	textarea	255	0	0	true	true	true	true	
+67.0	default	Account	CleanStatus	picklist	40	0	0	true	true	true	true	
+67.0	default	Account	CreatedById	reference	18	0	0	false	false	false	false	
+67.0	default	Account	CreatedDate	datetime	0	0	0	false	false	false	false	
+67.0	default	Account	DandbCompanyId	reference	18	0	0	true	true	true	true	
+67.0	default	Account	Description	textarea	32000	0	0	true	true	true	true	
+67.0	default	Account	DunsNumber	string	9	0	0	true	true	true	true	
+67.0	default	Account	Fax	phone	40	0	0	true	true	true	true	
+67.0	default	Account	Id	id	18	0	0	false	false	false	false	
+67.0	default	Account	Industry	picklist	255	0	0	true	true	true	true	
+67.0	default	Account	IsDeleted	boolean	0	0	0	false	false	false	false	
+67.0	default	Account	Jigsaw	string	20	0	0	true	true	true	true	
+67.0	default	Account	JigsawCompanyId	string	20	0	0	false	false	true	false	
+67.0	default	Account	LastActivityDate	date	0	0	0	false	false	true	false	
+67.0	default	Account	LastModifiedById	reference	18	0	0	false	false	false	false	
+67.0	default	Account	LastModifiedDate	datetime	0	0	0	false	false	false	false	
+67.0	default	Account	LastReferencedDate	datetime	0	0	0	false	false	true	false	
+67.0	default	Account	LastViewedDate	datetime	0	0	0	false	false	true	false	
+67.0	default	Account	MasterRecordId	reference	18	0	0	false	false	true	false	
+67.0	default	Account	NaicsCode	string	8	0	0	true	true	true	true	
+67.0	default	Account	NaicsDesc	string	120	0	0	true	true	true	true	
+67.0	default	Account	Name	string	255	0	0	true	true	false	false	
+67.0	default	Account	NumberOfEmployees	int	0	0	0	true	true	true	true	
+67.0	default	Account	OperatingHoursId	reference	18	0	0	true	true	true	true	
+67.0	default	Account	OwnerId	reference	18	0	0	true	true	false	false	
+67.0	default	Account	Ownership	picklist	255	0	0	true	true	true	true	
+67.0	default	Account	ParentId	reference	18	0	0	true	true	true	true	
+67.0	default	Account	Phone	phone	40	0	0	true	true	true	true	
+67.0	default	Account	PhotoUrl	url	255	0	0	false	false	true	false	
+67.0	default	Account	Rating	picklist	255	0	0	true	true	true	true	
+67.0	default	Account	ShippingAddress	address	0	0	0	false	false	true	true	
+67.0	default	Account	ShippingCity	string	40	0	0	true	true	true	true	
+67.0	default	Account	ShippingCountry	string	80	0	0	true	true	true	true	
+67.0	default	Account	ShippingGeocodeAccuracy	picklist	40	0	0	true	true	true	true	
+67.0	default	Account	ShippingLatitude	double	0	18	15	true	true	true	true	
+67.0	default	Account	ShippingLongitude	double	0	18	15	true	true	true	true	
+67.0	default	Account	ShippingPostalCode	string	20	0	0	true	true	true	true	
+67.0	default	Account	ShippingState	string	80	0	0	true	true	true	true	
+67.0	default	Account	ShippingStreet	textarea	255	0	0	true	true	true	true	
+67.0	default	Account	Sic	string	20	0	0	true	true	true	true	
+67.0	default	Account	SicDesc	string	80	0	0	true	true	true	true	
+67.0	default	Account	Site	string	80	0	0	true	true	true	true	
+67.0	default	Account	SystemModstamp	datetime	0	0	0	false	false	false	false	
+67.0	default	Account	TickerSymbol	string	20	0	0	true	true	true	true	
+67.0	default	Account	Tradestyle	string	255	0	0	true	true	true	true	
+67.0	default	Account	Type	picklist	255	0	0	true	true	true	true	
+67.0	default	Account	Website	url	255	0	0	true	true	true	true	
+67.0	default	Account	YearStarted	string	4	0	0	true	true	true	true	
+67.0	default	Lead	Address	address	0	0	0	false	false	true	true	
+67.0	default	Lead	AnnualRevenue	currency	0	18	0	true	true	true	true	
+67.0	default	Lead	City	string	40	0	0	true	true	true	true	
+67.0	default	Lead	CleanStatus	picklist	40	0	0	true	true	true	true	
+67.0	default	Lead	Company	string	255	0	0	true	true	false	false	
+67.0	default	Lead	CompanyDunsNumber	string	9	0	0	true	true	true	true	
+67.0	default	Lead	ConvertedAccountId	reference	18	0	0	false	false	true	false	
+67.0	default	Lead	ConvertedContactId	reference	18	0	0	false	false	true	false	
+67.0	default	Lead	ConvertedDate	date	0	0	0	false	false	true	false	
+67.0	default	Lead	ConvertedOpportunityId	reference	18	0	0	false	false	true	false	
+67.0	default	Lead	Country	string	80	0	0	true	true	true	true	
+67.0	default	Lead	CreatedById	reference	18	0	0	false	false	false	false	
+67.0	default	Lead	CreatedDate	datetime	0	0	0	false	false	false	false	
+67.0	default	Lead	DandbCompanyId	reference	18	0	0	true	true	true	true	
+67.0	default	Lead	Description	textarea	32000	0	0	true	true	true	true	
+67.0	default	Lead	Email	email	80	0	0	true	true	true	true	
+67.0	default	Lead	EmailBouncedDate	datetime	0	0	0	false	true	true	false	
+67.0	default	Lead	EmailBouncedReason	string	255	0	0	false	true	true	false	
+67.0	default	Lead	Fax	phone	40	0	0	true	true	true	true	
+67.0	default	Lead	FirstName	string	40	0	0	true	true	true	false	
+67.0	default	Lead	GeocodeAccuracy	picklist	40	0	0	true	true	true	true	
+67.0	default	Lead	Id	id	18	0	0	false	false	false	false	
+67.0	default	Lead	IndividualId	reference	18	0	0	true	true	true	false	
+67.0	default	Lead	Industry	picklist	255	0	0	true	true	true	true	
+67.0	default	Lead	IsConverted	boolean	0	0	0	true	false	false	false	
+67.0	default	Lead	IsDeleted	boolean	0	0	0	false	false	false	false	
+67.0	default	Lead	IsUnreadByOwner	boolean	0	0	0	true	true	false	false	
+67.0	default	Lead	Jigsaw	string	20	0	0	true	true	true	true	
+67.0	default	Lead	JigsawContactId	string	20	0	0	false	false	true	false	
+67.0	default	Lead	LastActivityDate	date	0	0	0	false	false	true	false	
+67.0	default	Lead	LastModifiedById	reference	18	0	0	false	false	false	false	
+67.0	default	Lead	LastModifiedDate	datetime	0	0	0	false	false	false	false	
+67.0	default	Lead	LastName	string	80	0	0	true	true	false	false	
+67.0	default	Lead	LastReferencedDate	datetime	0	0	0	false	false	true	false	
+67.0	default	Lead	LastViewedDate	datetime	0	0	0	false	false	true	false	
+67.0	default	Lead	Latitude	double	0	18	15	true	true	true	true	
+67.0	default	Lead	LeadSource	picklist	255	0	0	true	true	true	true	
+67.0	default	Lead	Longitude	double	0	18	15	true	true	true	true	
+67.0	default	Lead	MasterRecordId	reference	18	0	0	false	false	true	false	
+67.0	default	Lead	MobilePhone	phone	40	0	0	true	true	true	true	
+67.0	default	Lead	Name	string	121	0	0	false	false	false	false	
+67.0	default	Lead	NumberOfEmployees	int	0	0	0	true	true	true	true	
+67.0	default	Lead	OwnerId	reference	18	0	0	true	true	false	false	
+67.0	default	Lead	Phone	phone	40	0	0	true	true	true	true	
+67.0	default	Lead	PhotoUrl	url	255	0	0	false	false	true	false	
+67.0	default	Lead	PostalCode	string	20	0	0	true	true	true	true	
+67.0	default	Lead	Rating	picklist	255	0	0	true	true	true	true	
+67.0	default	Lead	Salutation	picklist	40	0	0	true	true	true	false	
+67.0	default	Lead	State	string	80	0	0	true	true	true	true	
+67.0	default	Lead	Status	picklist	255	0	0	true	true	false	false	
+67.0	default	Lead	Street	textarea	255	0	0	true	true	true	true	
+67.0	default	Lead	SystemModstamp	datetime	0	0	0	false	false	false	false	
+67.0	default	Lead	Title	string	128	0	0	true	true	true	true	
+67.0	default	Lead	Website	url	255	0	0	true	true	true	true	
+67.0	default	Order	AccountId	reference	18	0	0	true	true	true	false	
+67.0	default	Order	ActivatedById	reference	18	0	0	false	true	true	true	
+67.0	default	Order	ActivatedDate	datetime	0	0	0	false	true	true	true	
+67.0	default	Order	BillToContactId	reference	18	0	0	true	true	true	true	
+67.0	default	Order	BillingAddress	address	0	0	0	false	false	true	true	
+67.0	default	Order	BillingCity	string	40	0	0	true	true	true	true	
+67.0	default	Order	BillingCountry	string	80	0	0	true	true	true	true	
+67.0	default	Order	BillingGeocodeAccuracy	picklist	40	0	0	true	true	true	true	
+67.0	default	Order	BillingLatitude	double	0	18	15	true	true	true	true	
+67.0	default	Order	BillingLongitude	double	0	18	15	true	true	true	true	
+67.0	default	Order	BillingPostalCode	string	20	0	0	true	true	true	true	
+67.0	default	Order	BillingState	string	80	0	0	true	true	true	true	
+67.0	default	Order	BillingStreet	textarea	255	0	0	true	true	true	true	
+67.0	default	Order	CompanyAuthorizedById	reference	18	0	0	true	true	true	true	
+67.0	default	Order	CompanyAuthorizedDate	date	0	0	0	true	true	true	true	
+67.0	default	Order	ContractId	reference	18	0	0	true	true	true	false	
+67.0	default	Order	CreatedById	reference	18	0	0	false	false	false	false	
+67.0	default	Order	CreatedDate	datetime	0	0	0	false	false	false	false	
+67.0	default	Order	CustomerAuthorizedById	reference	18	0	0	true	true	true	true	
+67.0	default	Order	CustomerAuthorizedDate	date	0	0	0	true	true	true	true	
+67.0	default	Order	Description	textarea	32000	0	0	true	true	true	true	
+67.0	default	Order	EffectiveDate	date	0	0	0	true	true	false	false	
+67.0	default	Order	EndDate	date	0	0	0	true	true	true	false	
+67.0	default	Order	Id	id	18	0	0	false	false	false	false	
+67.0	default	Order	IsDeleted	boolean	0	0	0	false	false	false	false	
+67.0	default	Order	IsReductionOrder	boolean	0	0	0	true	false	false	false	
+67.0	default	Order	LastModifiedById	reference	18	0	0	false	false	false	false	
+67.0	default	Order	LastModifiedDate	datetime	0	0	0	false	false	false	false	
+67.0	default	Order	LastReferencedDate	datetime	0	0	0	false	false	true	false	
+67.0	default	Order	LastViewedDate	datetime	0	0	0	false	false	true	false	
+67.0	default	Order	Name	string	80	0	0	true	true	true	true	
+67.0	default	Order	OrderNumber	string	30	0	0	false	false	false	false	
+67.0	default	Order	OrderReferenceNumber	string	80	0	0	true	true	true	true	
+67.0	default	Order	OriginalOrderId	reference	18	0	0	true	false	true	false	
+67.0	default	Order	OwnerId	reference	18	0	0	true	true	false	false	
+67.0	default	Order	PoDate	date	0	0	0	true	true	true	true	
+67.0	default	Order	PoNumber	string	80	0	0	true	true	true	true	
+67.0	default	Order	Pricebook2Id	reference	18	0	0	true	true	true	false	
+67.0	default	Order	ShipToContactId	reference	18	0	0	true	true	true	true	
+67.0	default	Order	ShippingAddress	address	0	0	0	false	false	true	true	
+67.0	default	Order	ShippingCity	string	40	0	0	true	true	true	true	
+67.0	default	Order	ShippingCountry	string	80	0	0	true	true	true	true	
+67.0	default	Order	ShippingGeocodeAccuracy	picklist	40	0	0	true	true	true	true	
+67.0	default	Order	ShippingLatitude	double	0	18	15	true	true	true	true	
+67.0	default	Order	ShippingLongitude	double	0	18	15	true	true	true	true	
+67.0	default	Order	ShippingPostalCode	string	20	0	0	true	true	true	true	
+67.0	default	Order	ShippingState	string	80	0	0	true	true	true	true	
+67.0	default	Order	ShippingStreet	textarea	255	0	0	true	true	true	true	
+67.0	default	Order	Status	picklist	100	0	0	true	true	false	false	
+67.0	default	Order	StatusCode	picklist	40	0	0	false	true	false	false	
+67.0	default	Order	SystemModstamp	datetime	0	0	0	false	false	false	false	
+67.0	default	Order	TotalAmount	currency	0	18	2	false	false	false	true	
+67.0	default	Order	Type	picklist	255	0	0	true	true	true	true	
+67.0	granted	Account	AccountNumber	string	40	0	0	true	true	true	true	
+67.0	granted	Account	AccountSource	picklist	255	0	0	true	true	true	true	
+67.0	granted	Account	AnnualRevenue	currency	0	18	0	true	true	true	true	
+67.0	granted	Account	BillingAddress	address	0	0	0	false	false	true	true	
+67.0	granted	Account	BillingCity	string	40	0	0	true	true	true	true	
+67.0	granted	Account	BillingCountry	string	80	0	0	true	true	true	true	
+67.0	granted	Account	BillingGeocodeAccuracy	picklist	40	0	0	true	true	true	true	
+67.0	granted	Account	BillingLatitude	double	0	18	15	true	true	true	true	
+67.0	granted	Account	BillingLongitude	double	0	18	15	true	true	true	true	
+67.0	granted	Account	BillingPostalCode	string	20	0	0	true	true	true	true	
+67.0	granted	Account	BillingState	string	80	0	0	true	true	true	true	
+67.0	granted	Account	BillingStreet	textarea	255	0	0	true	true	true	true	
+67.0	granted	Account	CleanStatus	picklist	40	0	0	true	true	true	true	
+67.0	granted	Account	CreatedById	reference	18	0	0	false	false	false	false	
+67.0	granted	Account	CreatedDate	datetime	0	0	0	false	false	false	false	
+67.0	granted	Account	DandbCompanyId	reference	18	0	0	true	true	true	true	
+67.0	granted	Account	Description	textarea	32000	0	0	true	true	true	true	
+67.0	granted	Account	DunsNumber	string	9	0	0	true	true	true	true	
+67.0	granted	Account	Fax	phone	40	0	0	true	true	true	true	
+67.0	granted	Account	Id	id	18	0	0	false	false	false	false	
+67.0	granted	Account	Industry	picklist	255	0	0	true	true	true	true	
+67.0	granted	Account	IsDeleted	boolean	0	0	0	false	false	false	false	
+67.0	granted	Account	Jigsaw	string	20	0	0	true	true	true	true	
+67.0	granted	Account	JigsawCompanyId	string	20	0	0	false	false	true	false	
+67.0	granted	Account	LastActivityDate	date	0	0	0	false	false	true	false	
+67.0	granted	Account	LastModifiedById	reference	18	0	0	false	false	false	false	
+67.0	granted	Account	LastModifiedDate	datetime	0	0	0	false	false	false	false	
+67.0	granted	Account	LastReferencedDate	datetime	0	0	0	false	false	true	false	
+67.0	granted	Account	LastViewedDate	datetime	0	0	0	false	false	true	false	
+67.0	granted	Account	MasterRecordId	reference	18	0	0	false	false	true	false	
+67.0	granted	Account	NaicsCode	string	8	0	0	true	true	true	true	
+67.0	granted	Account	NaicsDesc	string	120	0	0	true	true	true	true	
+67.0	granted	Account	Name	string	255	0	0	true	true	false	false	
+67.0	granted	Account	NumberOfEmployees	int	0	0	0	true	true	true	true	
+67.0	granted	Account	OperatingHoursId	reference	18	0	0	true	true	true	true	
+67.0	granted	Account	OwnerId	reference	18	0	0	true	true	false	false	
+67.0	granted	Account	Ownership	picklist	255	0	0	true	true	true	true	
+67.0	granted	Account	ParentId	reference	18	0	0	true	true	true	true	
+67.0	granted	Account	Phone	phone	40	0	0	true	true	true	true	
+67.0	granted	Account	PhotoUrl	url	255	0	0	false	false	true	false	
+67.0	granted	Account	Rating	picklist	255	0	0	true	true	true	true	
+67.0	granted	Account	ShippingAddress	address	0	0	0	false	false	true	true	
+67.0	granted	Account	ShippingCity	string	40	0	0	true	true	true	true	
+67.0	granted	Account	ShippingCountry	string	80	0	0	true	true	true	true	
+67.0	granted	Account	ShippingGeocodeAccuracy	picklist	40	0	0	true	true	true	true	
+67.0	granted	Account	ShippingLatitude	double	0	18	15	true	true	true	true	
+67.0	granted	Account	ShippingLongitude	double	0	18	15	true	true	true	true	
+67.0	granted	Account	ShippingPostalCode	string	20	0	0	true	true	true	true	
+67.0	granted	Account	ShippingState	string	80	0	0	true	true	true	true	
+67.0	granted	Account	ShippingStreet	textarea	255	0	0	true	true	true	true	
+67.0	granted	Account	Sic	string	20	0	0	true	true	true	true	
+67.0	granted	Account	SicDesc	string	80	0	0	true	true	true	true	
+67.0	granted	Account	Site	string	80	0	0	true	true	true	true	
+67.0	granted	Account	SystemModstamp	datetime	0	0	0	false	false	false	false	
+67.0	granted	Account	TickerSymbol	string	20	0	0	true	true	true	true	
+67.0	granted	Account	Tradestyle	string	255	0	0	true	true	true	true	
+67.0	granted	Account	Type	picklist	255	0	0	true	true	true	true	
+67.0	granted	Account	Website	url	255	0	0	true	true	true	true	
+67.0	granted	Account	YearStarted	string	4	0	0	true	true	true	true	
+67.0	granted	Lead	Address	address	0	0	0	false	false	true	true	
+67.0	granted	Lead	AnnualRevenue	currency	0	18	0	true	true	true	true	
+67.0	granted	Lead	City	string	40	0	0	true	true	true	true	
+67.0	granted	Lead	CleanStatus	picklist	40	0	0	true	true	true	true	
+67.0	granted	Lead	Company	string	255	0	0	true	true	false	false	
+67.0	granted	Lead	CompanyDunsNumber	string	9	0	0	true	true	true	true	
+67.0	granted	Lead	ConvertedAccountId	reference	18	0	0	false	false	true	false	
+67.0	granted	Lead	ConvertedContactId	reference	18	0	0	false	false	true	false	
+67.0	granted	Lead	ConvertedDate	date	0	0	0	false	false	true	false	
+67.0	granted	Lead	ConvertedOpportunityId	reference	18	0	0	false	false	true	false	
+67.0	granted	Lead	Country	string	80	0	0	true	true	true	true	
+67.0	granted	Lead	CreatedById	reference	18	0	0	false	false	false	false	
+67.0	granted	Lead	CreatedDate	datetime	0	0	0	false	false	false	false	
+67.0	granted	Lead	DandbCompanyId	reference	18	0	0	true	true	true	true	
+67.0	granted	Lead	Description	textarea	32000	0	0	true	true	true	true	
+67.0	granted	Lead	DoNotCall	boolean	0	0	0	true	true	false	true	
+67.0	granted	Lead	Email	email	80	0	0	true	true	true	true	
+67.0	granted	Lead	EmailBouncedDate	datetime	0	0	0	false	true	true	false	
+67.0	granted	Lead	EmailBouncedReason	string	255	0	0	false	true	true	false	
+67.0	granted	Lead	Fax	phone	40	0	0	true	true	true	true	
+67.0	granted	Lead	FirstName	string	40	0	0	true	true	true	false	
+67.0	granted	Lead	GenderIdentity	picklist	255	0	0	true	true	true	true	
+67.0	granted	Lead	GeocodeAccuracy	picklist	40	0	0	true	true	true	true	
+67.0	granted	Lead	HasOptedOutOfEmail	boolean	0	0	0	true	true	false	true	
+67.0	granted	Lead	HasOptedOutOfFax	boolean	0	0	0	true	true	false	true	
+67.0	granted	Lead	Id	id	18	0	0	false	false	false	false	
+67.0	granted	Lead	IndividualId	reference	18	0	0	true	true	true	false	
+67.0	granted	Lead	Industry	picklist	255	0	0	true	true	true	true	
+67.0	granted	Lead	IsConverted	boolean	0	0	0	true	false	false	false	
+67.0	granted	Lead	IsDeleted	boolean	0	0	0	false	false	false	false	
+67.0	granted	Lead	IsUnreadByOwner	boolean	0	0	0	true	true	false	false	
+67.0	granted	Lead	Jigsaw	string	20	0	0	true	true	true	true	
+67.0	granted	Lead	JigsawContactId	string	20	0	0	false	false	true	false	
+67.0	granted	Lead	LastActivityDate	date	0	0	0	false	false	true	false	
+67.0	granted	Lead	LastModifiedById	reference	18	0	0	false	false	false	false	
+67.0	granted	Lead	LastModifiedDate	datetime	0	0	0	false	false	false	false	
+67.0	granted	Lead	LastName	string	80	0	0	true	true	false	false	
+67.0	granted	Lead	LastReferencedDate	datetime	0	0	0	false	false	true	false	
+67.0	granted	Lead	LastTransferDate	date	0	0	0	false	false	true	true	
+67.0	granted	Lead	LastViewedDate	datetime	0	0	0	false	false	true	false	
+67.0	granted	Lead	Latitude	double	0	18	15	true	true	true	true	
+67.0	granted	Lead	LeadSource	picklist	255	0	0	true	true	true	true	
+67.0	granted	Lead	Longitude	double	0	18	15	true	true	true	true	
+67.0	granted	Lead	MasterRecordId	reference	18	0	0	false	false	true	false	
+67.0	granted	Lead	MobilePhone	phone	40	0	0	true	true	true	true	
+67.0	granted	Lead	Name	string	121	0	0	false	false	false	false	
+67.0	granted	Lead	NumberOfEmployees	int	0	0	0	true	true	true	true	
+67.0	granted	Lead	OwnerId	reference	18	0	0	true	true	false	false	
+67.0	granted	Lead	Phone	phone	40	0	0	true	true	true	true	
+67.0	granted	Lead	PhotoUrl	url	255	0	0	false	false	true	false	
+67.0	granted	Lead	PostalCode	string	20	0	0	true	true	true	true	
+67.0	granted	Lead	Pronouns	picklist	255	0	0	true	true	true	true	
+67.0	granted	Lead	Rating	picklist	255	0	0	true	true	true	true	
+67.0	granted	Lead	Salutation	picklist	40	0	0	true	true	true	false	
+67.0	granted	Lead	State	string	80	0	0	true	true	true	true	
+67.0	granted	Lead	Status	picklist	255	0	0	true	true	false	false	
+67.0	granted	Lead	Street	textarea	255	0	0	true	true	true	true	
+67.0	granted	Lead	SystemModstamp	datetime	0	0	0	false	false	false	false	
+67.0	granted	Lead	Title	string	128	0	0	true	true	true	true	
+67.0	granted	Lead	Website	url	255	0	0	true	true	true	true	
+67.0	granted	Order	AccountId	reference	18	0	0	true	true	true	false	
+67.0	granted	Order	ActivatedById	reference	18	0	0	false	true	true	true	
+67.0	granted	Order	ActivatedDate	datetime	0	0	0	false	true	true	true	
+67.0	granted	Order	BillToContactId	reference	18	0	0	true	true	true	true	
+67.0	granted	Order	BillingAddress	address	0	0	0	false	false	true	true	
+67.0	granted	Order	BillingCity	string	40	0	0	true	true	true	true	
+67.0	granted	Order	BillingCountry	string	80	0	0	true	true	true	true	
+67.0	granted	Order	BillingGeocodeAccuracy	picklist	40	0	0	true	true	true	true	
+67.0	granted	Order	BillingLatitude	double	0	18	15	true	true	true	true	
+67.0	granted	Order	BillingLongitude	double	0	18	15	true	true	true	true	
+67.0	granted	Order	BillingPostalCode	string	20	0	0	true	true	true	true	
+67.0	granted	Order	BillingState	string	80	0	0	true	true	true	true	
+67.0	granted	Order	BillingStreet	textarea	255	0	0	true	true	true	true	
+67.0	granted	Order	CompanyAuthorizedById	reference	18	0	0	true	true	true	true	
+67.0	granted	Order	CompanyAuthorizedDate	date	0	0	0	true	true	true	true	
+67.0	granted	Order	ContractId	reference	18	0	0	true	true	true	false	
+67.0	granted	Order	CreatedById	reference	18	0	0	false	false	false	false	
+67.0	granted	Order	CreatedDate	datetime	0	0	0	false	false	false	false	
+67.0	granted	Order	CustomerAuthorizedById	reference	18	0	0	true	true	true	true	
+67.0	granted	Order	CustomerAuthorizedDate	date	0	0	0	true	true	true	true	
+67.0	granted	Order	Description	textarea	32000	0	0	true	true	true	true	
+67.0	granted	Order	EffectiveDate	date	0	0	0	true	true	false	false	
+67.0	granted	Order	EndDate	date	0	0	0	true	true	true	false	
+67.0	granted	Order	Id	id	18	0	0	false	false	false	false	
+67.0	granted	Order	IsDeleted	boolean	0	0	0	false	false	false	false	
+67.0	granted	Order	IsReductionOrder	boolean	0	0	0	true	false	false	false	
+67.0	granted	Order	LastModifiedById	reference	18	0	0	false	false	false	false	
+67.0	granted	Order	LastModifiedDate	datetime	0	0	0	false	false	false	false	
+67.0	granted	Order	LastReferencedDate	datetime	0	0	0	false	false	true	false	
+67.0	granted	Order	LastViewedDate	datetime	0	0	0	false	false	true	false	
+67.0	granted	Order	Name	string	80	0	0	true	true	true	true	
+67.0	granted	Order	OpportunityId	reference	18	0	0	true	true	true	true	
+67.0	granted	Order	OrderNumber	string	30	0	0	false	false	false	false	
+67.0	granted	Order	OrderReferenceNumber	string	80	0	0	true	true	true	true	
+67.0	granted	Order	OriginalOrderId	reference	18	0	0	true	false	true	false	
+67.0	granted	Order	OwnerId	reference	18	0	0	true	true	false	false	
+67.0	granted	Order	PoDate	date	0	0	0	true	true	true	true	
+67.0	granted	Order	PoNumber	string	80	0	0	true	true	true	true	
+67.0	granted	Order	Pricebook2Id	reference	18	0	0	true	true	true	false	
+67.0	granted	Order	ShipToContactId	reference	18	0	0	true	true	true	true	
+67.0	granted	Order	ShippingAddress	address	0	0	0	false	false	true	true	
+67.0	granted	Order	ShippingCity	string	40	0	0	true	true	true	true	
+67.0	granted	Order	ShippingCountry	string	80	0	0	true	true	true	true	
+67.0	granted	Order	ShippingGeocodeAccuracy	picklist	40	0	0	true	true	true	true	
+67.0	granted	Order	ShippingLatitude	double	0	18	15	true	true	true	true	
+67.0	granted	Order	ShippingLongitude	double	0	18	15	true	true	true	true	
+67.0	granted	Order	ShippingPostalCode	string	20	0	0	true	true	true	true	
+67.0	granted	Order	ShippingState	string	80	0	0	true	true	true	true	
+67.0	granted	Order	ShippingStreet	textarea	255	0	0	true	true	true	true	
+67.0	granted	Order	Status	picklist	100	0	0	true	true	false	false	
+67.0	granted	Order	StatusCode	picklist	40	0	0	false	true	false	false	
+67.0	granted	Order	SystemModstamp	datetime	0	0	0	false	false	false	false	
+67.0	granted	Order	TotalAmount	currency	0	18	2	false	false	false	true	
+67.0	granted	Order	Type	picklist	255	0	0	true	true	true	true	
+67.0	anonymous	Account	AccountNumber	STRING	40	0	0	true	true	true	true	true
+67.0	anonymous	Account	AccountSource	PICKLIST	255	0	0	true	true	true	true	true
+67.0	anonymous	Account	AnnualRevenue	CURRENCY	0	18	0	true	true	true	true	true
+67.0	anonymous	Account	BillingAddress	ADDRESS	0	0	0	false	false	true	true	true
+67.0	anonymous	Account	BillingCity	STRING	40	0	0	true	true	true	true	true
+67.0	anonymous	Account	BillingCountry	STRING	80	0	0	true	true	true	true	true
+67.0	anonymous	Account	BillingGeocodeAccuracy	PICKLIST	40	0	0	true	true	true	true	true
+67.0	anonymous	Account	BillingLatitude	DOUBLE	0	18	15	true	true	true	true	true
+67.0	anonymous	Account	BillingLongitude	DOUBLE	0	18	15	true	true	true	true	true
+67.0	anonymous	Account	BillingPostalCode	STRING	20	0	0	true	true	true	true	true
+67.0	anonymous	Account	BillingState	STRING	80	0	0	true	true	true	true	true
+67.0	anonymous	Account	BillingStreet	TEXTAREA	255	0	0	true	true	true	true	true
+67.0	anonymous	Account	CleanStatus	PICKLIST	40	0	0	true	true	true	true	true
+67.0	anonymous	Account	CreatedById	REFERENCE	18	0	0	false	false	false	false	true
+67.0	anonymous	Account	CreatedDate	DATETIME	0	0	0	false	false	false	false	true
+67.0	anonymous	Account	DandbCompanyId	REFERENCE	18	0	0	true	true	true	true	true
+67.0	anonymous	Account	Description	TEXTAREA	32000	0	0	true	true	true	true	true
+67.0	anonymous	Account	DunsNumber	STRING	9	0	0	true	true	true	true	true
+67.0	anonymous	Account	Fax	PHONE	40	0	0	true	true	true	true	true
+67.0	anonymous	Account	Id	ID	18	0	0	false	false	false	false	true
+67.0	anonymous	Account	Industry	PICKLIST	255	0	0	true	true	true	true	true
+67.0	anonymous	Account	IsDeleted	BOOLEAN	0	0	0	false	false	false	false	true
+67.0	anonymous	Account	Jigsaw	STRING	20	0	0	true	true	true	true	true
+67.0	anonymous	Account	JigsawCompanyId	STRING	20	0	0	false	false	true	false	true
+67.0	anonymous	Account	LastActivityDate	DATE	0	0	0	false	false	true	false	true
+67.0	anonymous	Account	LastModifiedById	REFERENCE	18	0	0	false	false	false	false	true
+67.0	anonymous	Account	LastModifiedDate	DATETIME	0	0	0	false	false	false	false	true
+67.0	anonymous	Account	LastReferencedDate	DATETIME	0	0	0	false	false	true	false	true
+67.0	anonymous	Account	LastViewedDate	DATETIME	0	0	0	false	false	true	false	true
+67.0	anonymous	Account	MasterRecordId	REFERENCE	18	0	0	false	false	true	false	true
+67.0	anonymous	Account	NaicsCode	STRING	8	0	0	true	true	true	true	true
+67.0	anonymous	Account	NaicsDesc	STRING	120	0	0	true	true	true	true	true
+67.0	anonymous	Account	Name	STRING	255	0	0	true	true	false	false	true
+67.0	anonymous	Account	NumberOfEmployees	INTEGER	0	0	0	true	true	true	true	true
+67.0	anonymous	Account	OperatingHoursId	REFERENCE	18	0	0	true	true	true	true	true
+67.0	anonymous	Account	OwnerId	REFERENCE	18	0	0	true	true	false	false	true
+67.0	anonymous	Account	Ownership	PICKLIST	255	0	0	true	true	true	true	true
+67.0	anonymous	Account	ParentId	REFERENCE	18	0	0	true	true	true	true	true
+67.0	anonymous	Account	Phone	PHONE	40	0	0	true	true	true	true	true
+67.0	anonymous	Account	PhotoUrl	URL	255	0	0	false	false	true	false	true
+67.0	anonymous	Account	Rating	PICKLIST	255	0	0	true	true	true	true	true
+67.0	anonymous	Account	ShippingAddress	ADDRESS	0	0	0	false	false	true	true	true
+67.0	anonymous	Account	ShippingCity	STRING	40	0	0	true	true	true	true	true
+67.0	anonymous	Account	ShippingCountry	STRING	80	0	0	true	true	true	true	true
+67.0	anonymous	Account	ShippingGeocodeAccuracy	PICKLIST	40	0	0	true	true	true	true	true
+67.0	anonymous	Account	ShippingLatitude	DOUBLE	0	18	15	true	true	true	true	true
+67.0	anonymous	Account	ShippingLongitude	DOUBLE	0	18	15	true	true	true	true	true
+67.0	anonymous	Account	ShippingPostalCode	STRING	20	0	0	true	true	true	true	true
+67.0	anonymous	Account	ShippingState	STRING	80	0	0	true	true	true	true	true
+67.0	anonymous	Account	ShippingStreet	TEXTAREA	255	0	0	true	true	true	true	true
+67.0	anonymous	Account	Sic	STRING	20	0	0	true	true	true	true	true
+67.0	anonymous	Account	SicDesc	STRING	80	0	0	true	true	true	true	true
+67.0	anonymous	Account	Site	STRING	80	0	0	true	true	true	true	true
+67.0	anonymous	Account	SystemModstamp	DATETIME	0	0	0	false	false	false	false	true
+67.0	anonymous	Account	TickerSymbol	STRING	20	0	0	true	true	true	true	true
+67.0	anonymous	Account	Tradestyle	STRING	255	0	0	true	true	true	true	true
+67.0	anonymous	Account	Type	PICKLIST	255	0	0	true	true	true	true	true
+67.0	anonymous	Account	Website	URL	255	0	0	true	true	true	true	true
+67.0	anonymous	Account	YearStarted	STRING	4	0	0	true	true	true	true	true
+67.0	anonymous-boundary	Account	Id									true
+67.0	anonymous-rejection	Account	Case251DefinitelyMissing__c									false
+67.0	anonymous	Lead	Address	ADDRESS	0	0	0	false	false	true	true	true
+67.0	anonymous	Lead	AnnualRevenue	CURRENCY	0	18	0	true	true	true	true	true
+67.0	anonymous	Lead	City	STRING	40	0	0	true	true	true	true	true
+67.0	anonymous	Lead	CleanStatus	PICKLIST	40	0	0	true	true	true	true	true
+67.0	anonymous	Lead	Company	STRING	255	0	0	true	true	false	false	true
+67.0	anonymous	Lead	CompanyDunsNumber	STRING	9	0	0	true	true	true	true	true
+67.0	anonymous	Lead	ConvertedAccountId	REFERENCE	18	0	0	false	false	true	false	true
+67.0	anonymous	Lead	ConvertedContactId	REFERENCE	18	0	0	false	false	true	false	true
+67.0	anonymous	Lead	ConvertedDate	DATE	0	0	0	false	false	true	false	true
+67.0	anonymous	Lead	ConvertedOpportunityId	REFERENCE	18	0	0	false	false	true	false	true
+67.0	anonymous	Lead	Country	STRING	80	0	0	true	true	true	true	true
+67.0	anonymous	Lead	CreatedById	REFERENCE	18	0	0	false	false	false	false	true
+67.0	anonymous	Lead	CreatedDate	DATETIME	0	0	0	false	false	false	false	true
+67.0	anonymous	Lead	DandbCompanyId	REFERENCE	18	0	0	true	true	true	true	true
+67.0	anonymous	Lead	Description	TEXTAREA	32000	0	0	true	true	true	true	true
+67.0	anonymous	Lead	DoNotCall	BOOLEAN	0	0	0	true	true	false	true	true
+67.0	anonymous	Lead	Email	EMAIL	80	0	0	true	true	true	true	true
+67.0	anonymous	Lead	EmailBouncedDate	DATETIME	0	0	0	false	true	true	false	true
+67.0	anonymous	Lead	EmailBouncedReason	STRING	255	0	0	false	true	true	false	true
+67.0	anonymous	Lead	Fax	PHONE	40	0	0	true	true	true	true	true
+67.0	anonymous	Lead	FirstName	STRING	40	0	0	true	true	true	false	true
+67.0	anonymous	Lead	GenderIdentity	PICKLIST	255	0	0	true	true	true	true	true
+67.0	anonymous	Lead	GeocodeAccuracy	PICKLIST	40	0	0	true	true	true	true	true
+67.0	anonymous	Lead	HasOptedOutOfEmail	BOOLEAN	0	0	0	true	true	false	true	true
+67.0	anonymous	Lead	HasOptedOutOfFax	BOOLEAN	0	0	0	true	true	false	true	true
+67.0	anonymous	Lead	Id	ID	18	0	0	false	false	false	false	true
+67.0	anonymous	Lead	IndividualId	REFERENCE	18	0	0	true	true	true	false	true
+67.0	anonymous	Lead	Industry	PICKLIST	255	0	0	true	true	true	true	true
+67.0	anonymous	Lead	IsConverted	BOOLEAN	0	0	0	true	false	false	false	true
+67.0	anonymous	Lead	IsDeleted	BOOLEAN	0	0	0	false	false	false	false	true
+67.0	anonymous	Lead	IsUnreadByOwner	BOOLEAN	0	0	0	true	true	false	false	true
+67.0	anonymous	Lead	Jigsaw	STRING	20	0	0	true	true	true	true	true
+67.0	anonymous	Lead	JigsawContactId	STRING	20	0	0	false	false	true	false	true
+67.0	anonymous	Lead	LastActivityDate	DATE	0	0	0	false	false	true	false	true
+67.0	anonymous	Lead	LastModifiedById	REFERENCE	18	0	0	false	false	false	false	true
+67.0	anonymous	Lead	LastModifiedDate	DATETIME	0	0	0	false	false	false	false	true
+67.0	anonymous	Lead	LastName	STRING	80	0	0	true	true	false	false	true
+67.0	anonymous	Lead	LastReferencedDate	DATETIME	0	0	0	false	false	true	false	true
+67.0	anonymous	Lead	LastTransferDate	DATE	0	0	0	false	false	true	true	true
+67.0	anonymous	Lead	LastViewedDate	DATETIME	0	0	0	false	false	true	false	true
+67.0	anonymous	Lead	Latitude	DOUBLE	0	18	15	true	true	true	true	true
+67.0	anonymous	Lead	LeadSource	PICKLIST	255	0	0	true	true	true	true	true
+67.0	anonymous	Lead	Longitude	DOUBLE	0	18	15	true	true	true	true	true
+67.0	anonymous	Lead	MasterRecordId	REFERENCE	18	0	0	false	false	true	false	true
+67.0	anonymous	Lead	MobilePhone	PHONE	40	0	0	true	true	true	true	true
+67.0	anonymous	Lead	Name	STRING	121	0	0	false	false	false	false	true
+67.0	anonymous	Lead	NumberOfEmployees	INTEGER	0	0	0	true	true	true	true	true
+67.0	anonymous	Lead	OwnerId	REFERENCE	18	0	0	true	true	false	false	true
+67.0	anonymous	Lead	Phone	PHONE	40	0	0	true	true	true	true	true
+67.0	anonymous	Lead	PhotoUrl	URL	255	0	0	false	false	true	false	true
+67.0	anonymous	Lead	PostalCode	STRING	20	0	0	true	true	true	true	true
+67.0	anonymous	Lead	Pronouns	PICKLIST	255	0	0	true	true	true	true	true
+67.0	anonymous	Lead	Rating	PICKLIST	255	0	0	true	true	true	true	true
+67.0	anonymous	Lead	Salutation	PICKLIST	40	0	0	true	true	true	false	true
+67.0	anonymous	Lead	State	STRING	80	0	0	true	true	true	true	true
+67.0	anonymous	Lead	Status	PICKLIST	255	0	0	true	true	false	false	true
+67.0	anonymous	Lead	Street	TEXTAREA	255	0	0	true	true	true	true	true
+67.0	anonymous	Lead	SystemModstamp	DATETIME	0	0	0	false	false	false	false	true
+67.0	anonymous	Lead	Title	STRING	128	0	0	true	true	true	true	true
+67.0	anonymous	Lead	Website	URL	255	0	0	true	true	true	true	true
+67.0	anonymous-boundary	Lead	Id									true
+67.0	anonymous-rejection	Lead	Case251DefinitelyMissing__c									false
+67.0	anonymous	Order	AccountId	REFERENCE	18	0	0	true	true	true	false	true
+67.0	anonymous	Order	ActivatedById	REFERENCE	18	0	0	false	true	true	true	true
+67.0	anonymous	Order	ActivatedDate	DATETIME	0	0	0	false	true	true	true	true
+67.0	anonymous	Order	BillToContactId	REFERENCE	18	0	0	true	true	true	true	true
+67.0	anonymous	Order	BillingAddress	ADDRESS	0	0	0	false	false	true	true	true
+67.0	anonymous	Order	BillingCity	STRING	40	0	0	true	true	true	true	true
+67.0	anonymous	Order	BillingCountry	STRING	80	0	0	true	true	true	true	true
+67.0	anonymous	Order	BillingGeocodeAccuracy	PICKLIST	40	0	0	true	true	true	true	true
+67.0	anonymous	Order	BillingLatitude	DOUBLE	0	18	15	true	true	true	true	true
+67.0	anonymous	Order	BillingLongitude	DOUBLE	0	18	15	true	true	true	true	true
+67.0	anonymous	Order	BillingPostalCode	STRING	20	0	0	true	true	true	true	true
+67.0	anonymous	Order	BillingState	STRING	80	0	0	true	true	true	true	true
+67.0	anonymous	Order	BillingStreet	TEXTAREA	255	0	0	true	true	true	true	true
+67.0	anonymous	Order	CompanyAuthorizedById	REFERENCE	18	0	0	true	true	true	true	true
+67.0	anonymous	Order	CompanyAuthorizedDate	DATE	0	0	0	true	true	true	true	true
+67.0	anonymous	Order	ContractId	REFERENCE	18	0	0	true	true	true	false	true
+67.0	anonymous	Order	CreatedById	REFERENCE	18	0	0	false	false	false	false	true
+67.0	anonymous	Order	CreatedDate	DATETIME	0	0	0	false	false	false	false	true
+67.0	anonymous	Order	CustomerAuthorizedById	REFERENCE	18	0	0	true	true	true	true	true
+67.0	anonymous	Order	CustomerAuthorizedDate	DATE	0	0	0	true	true	true	true	true
+67.0	anonymous	Order	Description	TEXTAREA	32000	0	0	true	true	true	true	true
+67.0	anonymous	Order	EffectiveDate	DATE	0	0	0	true	true	false	false	true
+67.0	anonymous	Order	EndDate	DATE	0	0	0	true	true	true	false	true
+67.0	anonymous	Order	Id	ID	18	0	0	false	false	false	false	true
+67.0	anonymous	Order	IsDeleted	BOOLEAN	0	0	0	false	false	false	false	true
+67.0	anonymous	Order	IsReductionOrder	BOOLEAN	0	0	0	true	false	false	false	true
+67.0	anonymous	Order	LastModifiedById	REFERENCE	18	0	0	false	false	false	false	true
+67.0	anonymous	Order	LastModifiedDate	DATETIME	0	0	0	false	false	false	false	true
+67.0	anonymous	Order	LastReferencedDate	DATETIME	0	0	0	false	false	true	false	true
+67.0	anonymous	Order	LastViewedDate	DATETIME	0	0	0	false	false	true	false	true
+67.0	anonymous	Order	Name	STRING	80	0	0	true	true	true	true	true
+67.0	anonymous	Order	OpportunityId	REFERENCE	18	0	0	true	true	true	true	true
+67.0	anonymous	Order	OrderNumber	STRING	30	0	0	false	false	false	false	true
+67.0	anonymous	Order	OrderReferenceNumber	STRING	80	0	0	true	true	true	true	true
+67.0	anonymous	Order	OriginalOrderId	REFERENCE	18	0	0	true	false	true	false	true
+67.0	anonymous	Order	OwnerId	REFERENCE	18	0	0	true	true	false	false	true
+67.0	anonymous	Order	PoDate	DATE	0	0	0	true	true	true	true	true
+67.0	anonymous	Order	PoNumber	STRING	80	0	0	true	true	true	true	true
+67.0	anonymous	Order	Pricebook2Id	REFERENCE	18	0	0	true	true	true	false	true
+67.0	anonymous	Order	ShipToContactId	REFERENCE	18	0	0	true	true	true	true	true
+67.0	anonymous	Order	ShippingAddress	ADDRESS	0	0	0	false	false	true	true	true
+67.0	anonymous	Order	ShippingCity	STRING	40	0	0	true	true	true	true	true
+67.0	anonymous	Order	ShippingCountry	STRING	80	0	0	true	true	true	true	true
+67.0	anonymous	Order	ShippingGeocodeAccuracy	PICKLIST	40	0	0	true	true	true	true	true
+67.0	anonymous	Order	ShippingLatitude	DOUBLE	0	18	15	true	true	true	true	true
+67.0	anonymous	Order	ShippingLongitude	DOUBLE	0	18	15	true	true	true	true	true
+67.0	anonymous	Order	ShippingPostalCode	STRING	20	0	0	true	true	true	true	true
+67.0	anonymous	Order	ShippingState	STRING	80	0	0	true	true	true	true	true
+67.0	anonymous	Order	ShippingStreet	TEXTAREA	255	0	0	true	true	true	true	true
+67.0	anonymous	Order	Status	PICKLIST	100	0	0	true	true	false	false	true
+67.0	anonymous	Order	StatusCode	PICKLIST	40	0	0	false	true	false	false	true
+67.0	anonymous	Order	SystemModstamp	DATETIME	0	0	0	false	false	false	false	true
+67.0	anonymous	Order	TotalAmount	CURRENCY	0	18	2	false	false	false	true	true
+67.0	anonymous	Order	Type	PICKLIST	255	0	0	true	true	true	true	true
+67.0	anonymous-boundary	Order	Id									true
+67.0	anonymous-rejection	Order	Case251DefinitelyMissing__c									false

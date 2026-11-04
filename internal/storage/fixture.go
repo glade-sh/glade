@@ -234,7 +234,8 @@ func ApplyFixture(org *OrgState, fixture Fixture) error {
 				record.Fields[fieldName] = IDValue(entry.ID)
 				delete(record.ExplicitNulls, fieldName)
 			}
-			object.Records[record.ID] = record.Clone()
+			// Fields and explicit nulls are already owned by this record.
+			object.Records[record.ID] = record
 		}
 		org.Objects[objectName] = object
 	}
@@ -432,19 +433,6 @@ func applyMultiCurrency(org *OrgState) {
 		},
 	})
 	EnsureStandardObject(org, "DatedConversionRate")
-	putSeedRecord(org, "DatedConversionRate", Record{
-		ID:     "04w000000000001",
-		Object: "DatedConversionRate",
-		Fields: map[string]Value{
-			"IsoCode":          StringValue("USD"),
-			"ConversionRate":   DecimalValue("1"),
-			"StartDate":        DateValue("2000-01-01"),
-			"NextStartDate":    DateValue("4000-01-01"),
-			"SystemModstamp":   DateTimeValue("2000-01-01T00:00:00Z"),
-			"LastModifiedDate": DateTimeValue("2000-01-01T00:00:00Z"),
-			"CreatedDate":      DateTimeValue("2000-01-01T00:00:00Z"),
-		},
-	})
 	for name, obj := range org.Objects {
 		if !multiCurrencyObjectSupportsCurrencyISOCode(obj.Definition) {
 			continue
@@ -548,23 +536,6 @@ func applyPlatformCache(org *OrgState) {
 		"MasterLabel":        {APIName: "MasterLabel", Type: FieldString},
 		"NamespacePrefix":    {APIName: "NamespacePrefix", Type: FieldString},
 		"IsDefaultPartition": {APIName: "IsDefaultPartition", Type: FieldBoolean},
-	})
-	// Source metadata can supply the local default partition. Reapplying the
-	// feature must not add a competing implicit default.
-	for _, record := range org.Objects["PlatformCachePartition"].Records {
-		if record.Fields["NamespacePrefix"].String == "" && record.Fields["IsDefaultPartition"].Boolean {
-			return
-		}
-	}
-	putSeedRecord(org, "PlatformCachePartition", Record{
-		ID:     "0Px000000000001",
-		Object: "PlatformCachePartition",
-		Fields: map[string]Value{
-			"DeveloperName":      StringValue("default"),
-			"MasterLabel":        StringValue("default"),
-			"NamespacePrefix":    StringValue(""),
-			"IsDefaultPartition": BooleanValue(true),
-		},
 	})
 }
 
@@ -1637,6 +1608,8 @@ func ensureRecordTypeRecordsForObjectWithContext(org *OrgState, objectName strin
 			info.Name = info.DeveloperName
 		}
 		object.Definition.RecordTypes[i] = info
+		// Seed updates must not mutate records shared with runtime snapshots.
+		EnsureMutableObjectRecords(org, "RecordType")
 		putSeedRecord(org, "RecordType", Record{
 			ID:     info.ID,
 			Object: "RecordType",
@@ -1678,21 +1651,7 @@ func recordTypeSeedNamespace(record Record) string {
 }
 
 func recordTypeIsPersonType(objectName string, info RecordTypeInfo) bool {
-	if !strings.EqualFold(objectName, "Account") {
-		return false
-	}
-	developerName := strings.ToLower(strings.TrimSpace(info.DeveloperName))
-	name := strings.ToLower(strings.TrimSpace(info.Name))
-	for _, value := range []string{developerName, name} {
-		switch value {
-		case "individual", "personaccount", "person_account", "person account":
-			return true
-		}
-		if strings.Contains(value, "person") {
-			return true
-		}
-	}
-	return false
+	return strings.EqualFold(objectName, "Account") && info.PersonAccount
 }
 
 func recordTypeNamespacePrefix(org OrgState, info RecordTypeInfo) string {

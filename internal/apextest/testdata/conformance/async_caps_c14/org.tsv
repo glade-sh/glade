@@ -1,0 +1,9 @@
+source_api	class	method	capture_id	observation
+62.0	DootAsyncCaps67C26302350	asyncY6	Y6async	{"transport":"callback_complete","cb":{"v":1,"cb":"Y6.execute","stage":"complete","cap":1,"scope":1},"ownedRows":1,"stage":"stopReturned","stop":true,"submitted":true,"v":1}
+62.0	DootAsyncCaps67C26302350	syncY6	Y6sync	{"cap":50,"stage":"complete","cb":"Y6.sync","v":1}
+62.0	DootAsyncCaps67C26302350	asyncY7	Y7async	{"transport":"callback_complete","cb":{"v":1,"cb":"Y7.execute","stage":"complete","cap":100},"ownedRows":1,"stage":"stopReturned","stop":true,"submitted":true,"v":1}
+62.0	DootAsyncCaps67C26302350	syncY7	Y7sync	{"cap":100,"stage":"complete","cb":"Y7.sync","v":1}
+67.0	DootAsyncCaps67C26302350	asyncY6	Y6async	{"transport":"callback_complete","cb":{"v":1,"cb":"Y6.execute","stage":"complete","cap":1,"scope":1},"ownedRows":1,"stage":"stopReturned","stop":true,"submitted":true,"v":1}
+67.0	DootAsyncCaps67C26302350	syncY6	Y6sync	{"cap":50,"stage":"complete","cb":"Y6.sync","v":1}
+67.0	DootAsyncCaps67C26302350	asyncY7	Y7async	{"transport":"callback_complete","cb":{"v":1,"cb":"Y7.execute","stage":"complete","cap":100},"ownedRows":1,"stage":"stopReturned","stop":true,"submitted":true,"v":1}
+67.0	DootAsyncCaps67C26302350	syncY7	Y7sync	{"cap":100,"stage":"complete","cb":"Y7.sync","v":1}

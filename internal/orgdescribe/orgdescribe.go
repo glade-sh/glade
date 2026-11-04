@@ -1,6 +1,7 @@
 package orgdescribe
 
 import (
+	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
@@ -69,6 +70,19 @@ type Field struct {
 	RelationshipOrder   *int            `json:"relationshipOrder,omitempty"`
 }
 
+// MarshalJSON retains a supplied empty list through an imported catalog snapshot.
+func (f Field) MarshalJSON() ([]byte, error) {
+	type fieldAlias Field
+	var values *[]PicklistValue
+	if f.PicklistValues != nil {
+		values = &f.PicklistValues
+	}
+	return json.Marshal(struct {
+		fieldAlias
+		PicklistValues *[]PicklistValue `json:"picklistValues,omitempty"`
+	}{fieldAlias: fieldAlias(f), PicklistValues: values})
+}
+
 type PicklistValue struct {
 	Value   string `json:"value"`
 	Label   string `json:"label,omitempty"`
@@ -130,23 +144,24 @@ func (o SObject) ToSchemaObject(childNames map[string]string) schema.Object {
 
 func (f Field) ToSchemaField(childRelationshipName string) schema.Field {
 	return schema.Field{
-		Name:                  f.Name,
-		Label:                 labelOrName(f.Label, f.Name),
-		Type:                  metadataFieldType(f),
-		ReferenceTo:           cleanStrings(f.ReferenceTo),
-		RelationshipName:      strings.TrimSpace(f.RelationshipName),
-		ChildRelationshipName: childRelationshipName,
-		DefaultValue:          defaultString(f.DefaultValue),
-		Required:              requiredForCreate(f),
-		ExternalID:            f.ExternalID,
-		IDLookup:              f.IDLookup,
-		Filterable:            cloneBoolPtr(f.Filterable),
-		Groupable:             cloneBoolPtr(f.Groupable),
-		Sortable:              cloneBoolPtr(f.Sortable),
-		Aggregatable:          cloneBoolPtr(f.Aggregatable),
-		Unique:                f.Unique,
-		Formula:               strings.TrimSpace(f.Formula),
-		PicklistValues:        schemaPicklistValues(f.PicklistValues),
+		Name:                     f.Name,
+		Label:                    labelOrName(f.Label, f.Name),
+		Type:                     metadataFieldType(f),
+		ReferenceTo:              cleanStrings(f.ReferenceTo),
+		RelationshipName:         strings.TrimSpace(f.RelationshipName),
+		ChildRelationshipName:    childRelationshipName,
+		DefaultValue:             defaultString(f.DefaultValue),
+		Required:                 requiredForCreate(f),
+		ExternalID:               f.ExternalID,
+		IDLookup:                 f.IDLookup,
+		Filterable:               cloneBoolPtr(f.Filterable),
+		Groupable:                cloneBoolPtr(f.Groupable),
+		Sortable:                 cloneBoolPtr(f.Sortable),
+		Aggregatable:             cloneBoolPtr(f.Aggregatable),
+		Unique:                   f.Unique,
+		Formula:                  strings.TrimSpace(f.Formula),
+		PicklistValues:           schemaPicklistValues(f.PicklistValues),
+		PicklistValuesConfigured: f.PicklistValues != nil,
 	}
 }
 
@@ -223,32 +238,33 @@ func (o SObject) ToDescribeSObjectResult() sobject.DescribeSObjectResult {
 
 func (f Field) ToDescribeFieldResult() sobject.DescribeFieldResult {
 	return sobject.DescribeFieldResult{
-		Name:                f.Name,
-		Type:                storageFieldType(f),
-		DisplayType:         displayFieldType(f.Type),
-		Label:               labelOrName(f.Label, f.Name),
-		Nillable:            storage.BoolFlag(f.Nillable),
-		Accessible:          f.Accessible,
-		Createable:          storage.BoolFlag(f.Createable),
-		Updateable:          storage.BoolFlag(f.Updateable),
-		Filterable:          f.Filterable,
-		Groupable:           f.Groupable,
-		Sortable:            f.Sortable,
-		Aggregatable:        f.Aggregatable,
-		Permissionable:      f.Permissionable,
-		DeprecatedAndHidden: f.DeprecatedAndHidden,
-		ReferenceTo:         cleanStrings(f.ReferenceTo),
-		RelationshipName:    strings.TrimSpace(f.RelationshipName),
-		RelationshipOrder:   cloneIntPtr(f.RelationshipOrder),
-		DefaultValue:        defaultString(f.DefaultValue),
-		Required:            requiredForCreate(f),
-		ExternalID:          f.ExternalID,
-		Unique:              f.Unique,
-		CaseSensitive:       f.CaseSensitive,
-		RestrictedPicklist:  f.RestrictedPicklist,
-		IDLookup:            f.IDLookup,
-		NamePointing:        f.NamePointing,
-		PicklistValues:      storagePicklistValues(f.PicklistValues),
+		Name:                     f.Name,
+		Type:                     storageFieldType(f),
+		DisplayType:              displayFieldType(f.Type),
+		Label:                    labelOrName(f.Label, f.Name),
+		Nillable:                 storage.BoolFlag(f.Nillable),
+		Accessible:               f.Accessible,
+		Createable:               storage.BoolFlag(f.Createable),
+		Updateable:               storage.BoolFlag(f.Updateable),
+		Filterable:               f.Filterable,
+		Groupable:                f.Groupable,
+		Sortable:                 f.Sortable,
+		Aggregatable:             f.Aggregatable,
+		Permissionable:           f.Permissionable,
+		DeprecatedAndHidden:      f.DeprecatedAndHidden,
+		ReferenceTo:              cleanStrings(f.ReferenceTo),
+		RelationshipName:         strings.TrimSpace(f.RelationshipName),
+		RelationshipOrder:        cloneIntPtr(f.RelationshipOrder),
+		DefaultValue:             defaultString(f.DefaultValue),
+		Required:                 requiredForCreate(f),
+		ExternalID:               f.ExternalID,
+		Unique:                   f.Unique,
+		CaseSensitive:            f.CaseSensitive,
+		RestrictedPicklist:       f.RestrictedPicklist,
+		IDLookup:                 f.IDLookup,
+		NamePointing:             f.NamePointing,
+		PicklistValues:           storagePicklistValues(f.PicklistValues),
+		PicklistValuesConfigured: f.PicklistValues != nil,
 	}
 }
 
@@ -431,6 +447,9 @@ func displayFieldType(raw string) string {
 }
 
 func schemaPicklistValues(values []PicklistValue) []schema.PicklistValue {
+	if values == nil {
+		return nil
+	}
 	out := make([]schema.PicklistValue, 0, len(values))
 	for _, value := range values {
 		out = append(out, schema.PicklistValue{
@@ -444,6 +463,9 @@ func schemaPicklistValues(values []PicklistValue) []schema.PicklistValue {
 }
 
 func storagePicklistValues(values []PicklistValue) []storage.PicklistValue {
+	if values == nil {
+		return nil
+	}
 	out := make([]storage.PicklistValue, 0, len(values))
 	for _, value := range values {
 		out = append(out, storage.PicklistValue{

@@ -384,6 +384,26 @@ func TestReadDiscoveryRequestsDoNotSerializeOnResponseWrite(t *testing.T) {
 
 	blocking := newBlockingResponseWriter()
 	firstDone := make(chan struct{})
+	secondExited := make(chan struct{})
+	secondStarted := false
+	release := sync.OnceFunc(func() { close(blocking.release) })
+	watchdog := time.NewTimer(2 * time.Second)
+	defer watchdog.Stop()
+	t.Cleanup(func() {
+		release()
+		select {
+		case <-firstDone:
+		case <-time.After(30 * time.Second):
+			t.Error("first discovery worker did not exit")
+		}
+		if secondStarted {
+			select {
+			case <-secondExited:
+			case <-time.After(30 * time.Second):
+				t.Error("second discovery worker did not exit")
+			}
+		}
+	})
 	go func() {
 		defer close(firstDone)
 		handler.ServeHTTP(blocking, httptest.NewRequest(http.MethodGet, "/services/data", nil))
@@ -391,12 +411,14 @@ func TestReadDiscoveryRequestsDoNotSerializeOnResponseWrite(t *testing.T) {
 
 	select {
 	case <-blocking.wroteHeader:
-	case <-time.After(2 * time.Second):
+	case <-watchdog.C:
 		t.Fatal("first discovery request did not reach response write")
 	}
 
 	secondDone := make(chan *httptest.ResponseRecorder, 1)
+	secondStarted = true
 	go func() {
+		defer close(secondExited)
 		rec := httptest.NewRecorder()
 		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data", nil))
 		secondDone <- rec
@@ -411,10 +433,11 @@ func TestReadDiscoveryRequestsDoNotSerializeOnResponseWrite(t *testing.T) {
 		t.Fatal("second read-only discovery request was blocked by another read response write")
 	}
 
-	close(blocking.release)
+	release()
+	watchdog.Reset(2 * time.Second)
 	select {
 	case <-firstDone:
-	case <-time.After(2 * time.Second):
+	case <-watchdog.C:
 		t.Fatal("first discovery request did not finish")
 	}
 }
@@ -4804,7 +4827,7 @@ func TestOAuthUnsupportedStubsAreExplicit(t *testing.T) {
 	}
 }
 
-func TestOAuthTokenReturnsDeterministicLocalBearer(t *testing.T) {
+func TestOAuthTokenReturnsRandomLocalBearer(t *testing.T) {
 	org := testOrg()
 	storage.EnsureDeterministicPlatformData(&org)
 	addUser(&org, "005000000000123", "ada@example.test", "ada.alias@example.test", "Ada Trail")
@@ -4821,7 +4844,8 @@ func TestOAuthTokenReturnsDeterministicLocalBearer(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
 		t.Fatal(err)
 	}
-	if payload["access_token"] != "local-005000000000123" || payload["token_type"] != "Bearer" || payload["issued_at"] != "0" {
+	tok, _ := payload["access_token"].(string)
+	if user, ok := issuedTokenUser(tok); !ok || user != "005000000000123" || len(tok) < 43 || strings.HasPrefix(tok, "local-") || payload["token_type"] != "Bearer" || payload["issued_at"] != "0" {
 		t.Fatalf("token payload = %#v", payload)
 	}
 	if !strings.Contains(payload["id"].(string), "/id/00D000000000mH2/005000000000123") || payload["instance_url"] == "" {

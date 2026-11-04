@@ -102,6 +102,12 @@ const (
 
 var Null = Value{Kind: ValueNull}
 
+// JSONBudgetSnapshot exposes the same current collection view used by JSON
+// serialization, so a host can budget it before invoking the encoder.
+func (v Value) JSONBudgetSnapshot() Value {
+	return v.currentMapKeySet()
+}
+
 func (v Value) MarshalJSON() ([]byte, error) {
 	v = v.currentMapKeySet()
 	type jsonValue Value

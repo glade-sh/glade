@@ -104,13 +104,22 @@ func Compile(p project.Project, opts Options) (Manifest, error) {
 		ScriptRoot:     strings.TrimSpace(opts.RepoRoot),
 		DependencyRoot: strings.TrimSpace(opts.RepoRoot),
 	}
+	var release func()
 	if roots.ScriptRoot == "" {
+		dependencyRoot, leaseRelease, err := gladehome.LeaseEnsuredRoot()
+		if err != nil {
+			return Manifest{}, err
+		}
+		roots = compileToolchainRootsFor(dependencyRoot)
+		release = leaseRelease
+	} else {
 		var err error
-		roots, err = compileToolchainRoots()
+		release, err = gladehome.LeaseManagedRoot(roots.DependencyRoot)
 		if err != nil {
 			return Manifest{}, err
 		}
 	}
+	defer release()
 	namespace := strings.TrimSpace(opts.Namespace)
 	if namespace == "" {
 		namespace = strings.TrimSpace(p.Namespace)
@@ -151,13 +160,22 @@ func CompileBatch(p project.Project, opts Options) (map[string]BundleResult, err
 		return nil, fmt.Errorf("compile: OutDir is required")
 	}
 	roots := compileRoots{ScriptRoot: strings.TrimSpace(opts.RepoRoot), DependencyRoot: strings.TrimSpace(opts.RepoRoot)}
+	var release func()
 	if roots.ScriptRoot == "" {
+		dependencyRoot, leaseRelease, err := gladehome.LeaseEnsuredRoot()
+		if err != nil {
+			return nil, err
+		}
+		roots = compileToolchainRootsFor(dependencyRoot)
+		release = leaseRelease
+	} else {
 		var err error
-		roots, err = compileToolchainRoots()
+		release, err = gladehome.LeaseManagedRoot(roots.DependencyRoot)
 		if err != nil {
 			return nil, err
 		}
 	}
+	defer release()
 	projectRoot, err := filepath.Abs(p.Root)
 	if err != nil {
 		return nil, err
@@ -422,16 +440,20 @@ func compileToolchainRoots() (compileRoots, error) {
 	if err != nil {
 		return compileRoots{}, err
 	}
+	return compileToolchainRootsFor(dependencyRoot), nil
+}
+
+func compileToolchainRootsFor(dependencyRoot string) compileRoots {
 	roots := compileRoots{
 		ScriptRoot:     dependencyRoot,
 		DependencyRoot: dependencyRoot,
 	}
-	if sourceRoot, err := gladehome.SourceRoot(); err == nil {
+	if sourceRoot, err := gladehome.CompilerSourceRoot(); err == nil {
 		if _, err := os.Stat(filepath.Join(sourceRoot, "third_party", "lwc", "compile.mjs")); err == nil {
 			roots.ScriptRoot = sourceRoot
 		}
 	}
-	return roots, nil
+	return roots
 }
 
 func relativize(root string, paths []string) []string {

@@ -13,7 +13,34 @@ const stable = /^v\d+\.\d+\.\d+$/
 const sourceSHA = /^[0-9a-f]{40}$/
 const newer = (left, right) => left.localeCompare(right, 'en', { numeric: true }) > 0
 
-export async function publishRelease(bucket, root, version, expectedSHA, expectedToolsSHA) {
+export async function verifyReleaseAuthority({ files, version, expectedSHA, expectedToolsSHA }, execute = execFileSync) {
+  const script = name => fileURLToPath(new URL(`./${name}`, import.meta.url))
+  const env = { ...process.env, GITHUB_REPOSITORY: 'glade-sh/glade' }
+  const run = (command, args) => execute(command, args, { encoding: 'utf8', env })
+  const ci = JSON.parse(run('bash', [script('verify-required-ci.sh'), 'glade-sh/glade', expectedSHA]))
+  const sf = JSON.parse(run('bash', [script('verify-salesforce-check.sh'), expectedSHA, expectedToolsSHA]))
+  assert.deepEqual(JSON.parse(files.get(`${version}/required-ci-attestation.json`)), ci, 'CI authority differs from GitHub')
+  assert.deepEqual(JSON.parse(files.get(`${version}/salesforce-release-authority.json`)), sf, 'Salesforce authority differs from GitHub')
+  const temporary = await mkdtemp(path.join(os.tmpdir(), 'glade-release-proof-'))
+  try {
+    for (const osName of ['darwin', 'linux']) for (const arch of ['amd64', 'arm64']) {
+      const name = `glade_${version}_${osName}_${arch}.tar.gz`
+      const filename = path.join(temporary, name)
+      await writeFile(filename, files.get(`${version}/${name}`), { mode: 0o600 })
+      const args = ['attestation', 'verify', filename, '--repo', 'glade-sh/glade', '--signer-workflow', 'glade-sh/glade/.github/workflows/release.yml', '--source-digest', expectedSHA, '--source-ref', `refs/tags/${version}`]
+      run('gh', args)
+      const result = JSON.parse(run('gh', [...args, '--predicate-type', 'https://cyclonedx.org/bom', '--format', 'json']))
+      const sbom = JSON.parse(files.get(`${version}/${name}.sbom.json`))
+      assert.ok(Array.isArray(result) && result.some(row => {
+        try { assert.deepEqual(row.verificationResult.statement.predicate, sbom); return true } catch { return false }
+      }), `attested SBOM differs: ${name}`)
+    }
+  } finally {
+    await rm(temporary, { recursive: true, force: true })
+  }
+}
+
+export async function publishRelease(bucket, root, version, expectedSHA, expectedToolsSHA, verify = verifyReleaseAuthority) {
   assert.match(version, stable, 'expected a stable release version')
   assert.match(expectedSHA, sourceSHA, 'expected the approved product SHA')
   assert.match(expectedToolsSHA, sourceSHA, 'expected the tagged Tools SHA')
@@ -67,6 +94,10 @@ export async function publishRelease(bucket, root, version, expectedSHA, expecte
   assert.equal(index.schemaVersion, 1)
   assert.equal(index.channel, 'stable')
   assert.ok(index.versions.some(row => row.version === version && row.manifest === `https://downloads.glade.sh/${version}/release-manifest.json`))
+
+  // The verifier receives copies; the buffers retained for publication cannot be
+  // changed by a verifier or by later modifications to the unpacked bundle.
+  await verify({ files: new Map([...files].map(([key, bytes]) => [key, Buffer.from(bytes)])), version, expectedSHA, expectedToolsSHA })
 
   async function snapshot(key) {
     const object = await bucket.get(key)

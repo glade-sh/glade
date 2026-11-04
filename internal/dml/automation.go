@@ -359,6 +359,13 @@ func flowStepsBeforeSaveSafe(steps []storage.FlowStep, allowApexActions bool) bo
 }
 
 func flowStepsBeforeSaveSafeWithTargets(steps []storage.FlowStep, allowApexActions, allowDeleteEffects bool, targets map[string][]storage.FlowStep) bool {
+	// An explicit delete flow may create records from decision branches (native
+	// flow_null_comparisons before_delete rows). A flow that also reads Get
+	// Records output keeps the root-only boundary: no native row covers lookup
+	// criteria that gate a create (TestFlowDeleteLookupEqualityProjectRoutes).
+	nestedCreates := allowDeleteEffects && flowStepsSatisfy(steps, targets, func(step storage.FlowStep, _ bool) bool {
+		return step.Kind != "recordLookup"
+	})
 	return flowStepsSatisfy(steps, targets, func(step storage.FlowStep, root bool) bool {
 		switch step.Kind {
 		case "fieldUpdate", "assignment", "recordLookup", "customError", "decision":
@@ -366,7 +373,7 @@ func flowStepsBeforeSaveSafeWithTargets(steps []storage.FlowStep, allowApexActio
 		case "action":
 			return allowApexActions && strings.EqualFold(strings.TrimSpace(step.Action.ActionType), "apex")
 		case "recordCreate":
-			return allowDeleteEffects && root
+			return allowDeleteEffects && (root || nestedCreates)
 		case "recordUpdate", "subflow":
 			return allowDeleteEffects
 		default:
@@ -1242,8 +1249,10 @@ func (e *Engine) applyFlowStep(flowName, objectName string, record *storage.Reco
 		})
 	case "customError":
 		msg := ""
+		var numberConstants map[string]string
 		if len(step.CustomError.Messages) > 0 {
 			msg = step.CustomError.Messages[0].Message
+			numberConstants = step.CustomError.Messages[0].NumberConstants
 		}
 		if msg == "" {
 			msg = step.CustomError.Description
@@ -1256,7 +1265,7 @@ func (e *Engine) applyFlowStep(flowName, objectName string, record *storage.Reco
 			formulas = step.CustomError.Messages[0].Formulas
 		}
 		capturedFormula := flowCapturedCustomErrorFormula(msg, formulas, frame)
-		msg = e.renderFlowCustomErrorText(msg, frame, formulas)
+		msg = e.renderFlowCustomErrorTextWithConstants(msg, frame, numberConstants, formulas)
 		return false, &flowCustomErrorFailure{cause: dmlErrorf("FIELD_CUSTOM_VALIDATION_EXCEPTION", nil, "%s", msg), capturedFormula: capturedFormula}
 	case "transform":
 		if err := e.applyFlowTransformStep(step.Transform, frame); err != nil {

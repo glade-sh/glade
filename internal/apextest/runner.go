@@ -1302,6 +1302,7 @@ func runtimeKeyWithDigestLookup(index typesys.Index, lookup func(string) ([sha25
 	for _, trig := range index.Triggers {
 		write(trig.File)
 		write(trig.Name)
+		write(trig.Namespace)
 		write(trig.ObjectName)
 		write(trig.SourceRoot)
 		write(trig.Version)
@@ -4819,7 +4820,7 @@ func standardApexTestOrg() storage.OrgState {
 		org := storage.NewOrgState()
 		org.OrgID = storage.DefaultOrgID
 		for _, objectName := range storage.KnownStandardObjectNames() {
-			if objectName == "Network" || objectName == "NetworkMember" || storage.IsReferenceOnlyStandardObject(objectName) {
+			if objectName == "Network" || objectName == "NetworkMember" {
 				continue
 			}
 			storage.EnsureStandardObject(&org, objectName)
@@ -4905,6 +4906,18 @@ func orgFromIndexWithError(index typesys.Index, caches ...*sourceCache) (storage
 			Definition: sobject.ToObjectDefinition(describe),
 			Records:    make(map[storage.ID]storage.Record),
 		}
+	}
+	personLabels := personAccountRecordTypeLabels(org)
+	personAccountObject, hadPersonAccountObject := org.Objects["PersonAccount"]
+	// A fresh project's person-family metadata must be folded before standard
+	// object preparation seeds RecordType rows with explicit family flags.
+	foldPersonAccountObjectIntoAccount(&org)
+	if index.Project.Root != "" {
+		if p, err := sources.capturedProjectSnapshot(index.Project.Root); err == nil {
+			applyProjectProfileRecordTypes(&org, p, sources.readCapturedProjectMetadata)
+		}
+	}
+	for name := range registry.Objects {
 		if storage.IsKnownStandardObject(name) {
 			storage.EnsureStandardObject(&org, name)
 		}
@@ -4913,6 +4926,12 @@ func orgFromIndexWithError(index typesys.Index, caches ...*sourceCache) (storage
 		storage.ApplyProjectOrgShape(&org, features)
 	}
 	applyProjectReferencedStandardFields(&org, index, caches...)
+	// Standard preparation and the org shape can replace the folded person
+	// record types with the catalog placeholder. Fold the project declaration
+	// again so its label and family survive.
+	if hadPersonAccountObject {
+		org.Objects["PersonAccount"] = personAccountObject
+	}
 	foldPersonAccountObjectIntoAccount(&org)
 	applyApexClassRecords(&org, index, caches...)
 	applyApexTriggerRecords(&org, index, caches...)
@@ -4959,8 +4978,8 @@ func orgFromIndexWithError(index typesys.Index, caches ...*sourceCache) (storage
 			// Bind discovery to the captured metadata generation, including when
 			// unrelated executable automation cannot be loaded.
 			org.Metadata.FlowDeclarations = declarations
-			applyProjectReferencedRecordTypes(&org, p, caches...)
-			applyManagedDependencyReferencedRecordTypes(&org, p, caches...)
+			applyProjectReferencedRecordTypes(&org, p, personLabels, caches...)
+			applyManagedDependencyReferencedRecordTypes(&org, p, personLabels, caches...)
 			applyProjectDataRelationshipReferences(&org, p)
 		}
 	}

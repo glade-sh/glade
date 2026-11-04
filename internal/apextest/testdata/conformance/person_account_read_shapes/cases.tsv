@@ -1,0 +1,6 @@
+case_id	body
+READ	Account a = new Account(); String value = a.FirstName; System.assertEquals(null, value);
+ADJACENT	Account a = new Account(); String value = a.LastName; System.assertEquals(null, value);
+CONTROL	Account a = new Account(Name='Control'); String value = a.Name; System.assertEquals('Control', value);
+REJECTION	Account a = new Account(); String value = a.DefinitelyAbsent__c;
+FEATURE	System.assertEquals(false, Schema.SObjectType.Account.fields.getMap().containsKey('FirstName'));

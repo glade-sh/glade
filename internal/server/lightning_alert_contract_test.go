@@ -56,6 +56,12 @@ func TestLightningAlertOpenWaitsForDismissalAPI67(t *testing.T) {
 
 func feedbackRuntimeInput(t *testing.T, handler http.Handler, kind, source string) []byte {
 	t.Helper()
+	root, err := lightningTestRepoRoot()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("GLADE_HOME", "")
+	t.Setenv("GLADE_ROOT", root)
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/lightning/runtime/shell/overlay.js", nil))
 	if rec.Code != http.StatusOK {

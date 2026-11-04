@@ -3,7 +3,7 @@ import { createBaseComponent } from "./base.mjs";
 function renderFormattedUrl($api, $cmp) {
   if ($cmp.value == null || $cmp.value === "") return [];
   const value = String($cmp.value);
-  const href = /^(?:[a-z][a-z0-9+.-]*:\/\/|\/|\.{1,2}\/)/i.test(value)
+  const href = /^(?:(?!javascript:)[a-z][a-z0-9+.-]*:\/\/|\/|\.{1,2}\/)/i.test(value)
     ? value : `https://${value}`;
   return [$api.h("a", {
     key: 0,

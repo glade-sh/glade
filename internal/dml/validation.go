@@ -482,15 +482,20 @@ func validateEmailField(objectName, fieldName string, field storage.Field, value
 	if !strings.EqualFold(fieldName, "Email") && !strings.EqualFold(field.DisplayType, "EMAIL") {
 		return nil
 	}
-	if value.Kind != storage.ValueString || strings.TrimSpace(value.String) == "" {
-		return nil
-	}
-	text := strings.TrimSpace(value.String)
-	at := strings.LastIndex(text, "@")
-	if at <= 0 || at == len(text)-1 || !strings.Contains(text[at+1:], ".") {
+	if InvalidEmailValue(value) {
 		return dmlErrorf("INVALID_EMAIL_ADDRESS", []string{fieldName}, "dml: invalid email address for field %s.%s", objectName, fieldName)
 	}
 	return nil
+}
+
+// InvalidEmailValue is the shared DML syntax predicate for a supplied email.
+func InvalidEmailValue(value storage.Value) bool {
+	if value.Kind != storage.ValueString || strings.TrimSpace(value.String) == "" {
+		return false
+	}
+	text := strings.TrimSpace(value.String)
+	at := strings.LastIndex(text, "@")
+	return at <= 0 || at == len(text)-1 || !strings.Contains(text[at+1:], ".")
 }
 
 func (e Engine) applyStringLengthRules(definition storage.ObjectDefinition, record *storage.Record) error {

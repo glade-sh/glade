@@ -124,7 +124,7 @@ func (s *Server) runToolingExecuteAnonymousForSOAP(r *http.Request, source, apiV
 	if err != nil {
 		return toolingExecuteAnonymousSOAPResult{}, err
 	}
-	req := httptest.NewRequest(http.MethodPost, "/services/data/v"+apiVersion+"/tooling/executeAnonymous", bytes.NewReader(body))
+	req := httptest.NewRequest(http.MethodPost, "/services/data/v"+apiVersion+"/tooling/executeAnonymous", bytes.NewReader(body)).WithContext(r.Context())
 	req.Header = r.Header.Clone()
 	req.Header.Set("Content-Type", "application/json")
 

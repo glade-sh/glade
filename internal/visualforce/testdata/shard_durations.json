@@ -1,0 +1,1243 @@
+{
+ "version": 1,
+ "package": "github.com/glade-sh/glade/internal/visualforce",
+ "source": "GitHub Actions ubuntu-latest lane ghci-canon-capture-revision-1 (2026-11-02), go test -count=1 -json at canonical capture-revision-1, Go 1.26.10, GOMAXPROCS=2; one matched full-package run; scheduling hints only",
+ "tests": [
+  {
+   "name": "TestApplyFormValuesConvertsFromExistingControllerFieldTypes",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestApplyFormValuesLeavesInvalidTypedPostsAsStrings",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestApplyStandardControllerFormValuesUsesRecordValuesAndSchema",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestApplyViewStateValuesRestoresTypedControllerFields",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestAssetPageRegistrationNativeConformance",
+   "durationMillis": 380
+  },
+  {
+   "name": "TestAssetPageRegistrationRetainsNativeRejections",
+   "durationMillis": 90
+  },
+  {
+   "name": "TestCartOrchestratorControllerCompileRoute",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestConformanceAPIShardManifest",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestCoreComponentRegistryStatusesRemainPartial",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestDecodeViewStatePreservesAuthenticatedUncompressedFormats",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestDecodeViewStatePreservesExpiryPolicy",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestDecodeViewStateRejectsInvalidAuthenticatedCompressedPayload",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestDecodeViewStateRejectsLegacyPlaintextEnvelope",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestDecodeViewStateRejectsMalformedEnvelope",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestDecodeViewStateRejectsTamperedPayload",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestDecodeViewStateRejectsWrongSecret",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestDependencyAccessNativeConformance",
+   "durationMillis": 120
+  },
+  {
+   "name": "TestEncodeDecodeViewStatePreservesLargeCompressiblePayload",
+   "durationMillis": 360
+  },
+  {
+   "name": "TestEncodeDecodeViewStateRoundTrip",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestEncodeViewStateDoesNotExposeControllerFieldPlaintext",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestEncodeViewStateFailsClosedWhenNonceEntropyFails",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestEncodeViewStateUsesFreshNonce",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestEscapeVisualforceJavaScriptStringEscapesScriptSensitiveBytes",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestEscapeVisualforceOutputAllowsRawWhenEscapeFalse",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestEscapeVisualforceOutputEscapesByDefault",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestEvaluateVisualforceEncodeFunctions",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestEvaluateVisualforceExpressionCallsControllerMethod",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestEvaluateVisualforceExpressionFunctionsForParity",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestEvaluateVisualforceExpressionIndexesObjectsAndNulls",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestEvaluateVisualforceExpressionOperatorsAndGlobals",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestEvaluateVisualforceExpressionWritesBackMatchingExtensionMethod",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestEvaluateVisualforceExpressionWritesBackStandardControllerMethod",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestEvaluateVisualforceRemoteActionToken",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestEvaluateVisualforceURLFOR",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestEvaluateVisualforceURLFunctions",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestEvaluateVisualforceUnsupportedGlobalDiagnostic",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestExternalPageReferenceContentThrowsCatchableVisualforceException",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestExtractMergeReferences",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestFlowInterviewDiagnosticIsExplicitBlocker",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestGeneratedComponentCatalogMatchesLocalDocsCount",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestGeneratedComponentCatalogPreservesNamesAndAttributes",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestIdAttributeStringBindingRetainsNativeTypeMismatch",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestIdAttributeStringNativeComponentBinding",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestInjectViewStateAddsFieldToEveryForm",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestInputFileRegistryStatusIsPartialWithUploadGapReason",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestInputFileUploadAssignmentsBindBlobFilenameContentTypeAndSize",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestInputFileUploadBindingCapturesBlobAndMetadata",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestInputFileUploadBindingsFromMarkupCaptureBlobAndMetadataTargets",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestInputFileUploadRejectsOversizedBody",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestInteractiveUIOnlyComponentsStayPartialUntilLifecycleIsModeled",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestLoadProjectBestEffortKeepsLenientMarkup",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestLoadProjectBestEffortSkipsStructureValidation",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestLoadProjectIndexesMetadataOnlyPages",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestLoadProjectIndexesPagesAndComponents",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestLoadProjectRejectsInvalidVisualforceSidecarVersion",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestLoadProjectUsesVisualforceSidecarVersionAndProjectFallback",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestLoadProjectV08TypedRowRelationships",
+   "durationMillis": 150
+  },
+  {
+   "name": "TestNamespacedDependencyAccessNativeConformance",
+   "durationMillis": 170
+  },
+  {
+   "name": "TestNewPartialResponseReportsMissingTargetDiagnostic",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestNewPartialResponseResolvesShortTargetsToFormClientIDs",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestOutputTextDateStyleLocaleBoundaryProjectRoutes",
+   "durationMillis": 8820
+  },
+  {
+   "name": "TestOutputTextDateStyleLocaleBoundaryUnitRoute",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestOutputTextDateStyleLocaleNullUnitRoute",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestOutputTextParameterDefaultDateBoundaryUnitRoute",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestOutputTextParameterNativeNumberUnitRoute",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestOutputTextParametersNativeMarkupRoute",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestOutputTextParametersNativeProjectRoutes",
+   "durationMillis": 4380
+  },
+  {
+   "name": "TestOutputTextPatternsNativeArgumentUnitRoute",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestOutputTextPatternsNativeRenderingRoutes",
+   "durationMillis": 21310
+  },
+  {
+   "name": "TestOutputTextPatternsQuotedDateLocaleUnitRoute",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestPDFTextLinesMatchesVisualforcePDFVisibleText",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestPDFToolchainRendersBasicPDFWithoutExternalCommand",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestPageContentNativeProjectContextRoutes",
+   "durationMillis": 1410
+  },
+  {
+   "name": "TestPageNamesIgnoreControllerCompilationMissingFile",
+   "durationMillis": 110
+  },
+  {
+   "name": "TestPageNamesIgnoreForeignControllerCompilation",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestPageNamesIgnoreStaleControllerCompilation",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestPageNamesPreflight",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestPageNamesPreserveStrictLoaderRegistration",
+   "durationMillis": 4920
+  },
+  {
+   "name": "TestPageNamesReuseSuppliedControllerCompilation",
+   "durationMillis": 80
+  },
+  {
+   "name": "TestPagePDFExternalCommandFromProjectConfiguration",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestPagePDFLocalLayoutRouteTwins",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestPageReferenceRenderErrorPreservesControlErrors",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestParamSubmittedValuePreservesLowercaseNormalization",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestParseAjaxPayloadIdentifiesActionTargetsAndSubmittedFields",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestParseComponentToleratesVisualforceMarkupThatIsNotStrictXML",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestParseMarkupTreePositionsUseOriginalSourceBeforeSelfClosingExpansion",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestParseMarkupTreePreservesScriptStyleAndRawAttributes",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestParseMarkupTreeSelfClosingTagToleratesGreaterThanInAttribute",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestParseMarkupTreeSourceTagsSkipParserInsertedElements",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestParsePageToleratesGreaterThanInQuotedAttribute",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestPartialComponentSpecsDescribeMissingBehavior",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestPresentationChartUnsupportedNeighbours",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestPresentationDuplicateAttributeCapturedSource",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestPresentationDuplicateAttributePreservesTokenizerBoundaries",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestPromotedUIOnlyComponentsHaveRenderers",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRTEMPublishControllerCompilation",
+   "durationMillis": 160
+  },
+  {
+   "name": "TestReadStaticResourceIgnoresUnsafeZipResourceEntry",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestReadStaticResourceReadsDirectoryBundleBytes",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestReadStaticResourceReadsFlatResourceBytes",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestReadStaticResourceReadsNestedZipResourceEntry",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestReadStaticResourceRejectsDirectoryBundleSymlinkEscape",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestReadStaticResourceRejectsUnsafeResourceNames",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestReadStaticResourceRejectsUnsafeZipResourcePath",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestReadStaticResourceReportsMissingZipResourceEntry",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRemoteObjectsCRUDRoundTripUsesDeclaredLocalOrgState",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRemoteObjectsDescribeAndQueryUseDeclaredLocalOrgState",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRemoteObjectsDescriptorGeneratesNamespaceAndModels",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRemoteObjectsRejectsUndeclaredObjectsAndFields",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRemoteObjectsUnsupportedOperationsReturnDiagnostics",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRemotingDiscoveryAndEnvelopeDispatch",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRemotingExposureRequiresRemoteActionStaticPublicOrGlobal",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRemotingMetadataExposesPageControllersAndExtensions",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRemotingMetadataScriptInstallsLocalBrowserManager",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRemotingPageBootstrapMatchesNativeExposure",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRemotingRequestLimitAndTimeoutBounds",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderActionStatusUsesStartAndStopTextAttributes",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderActionSupportBindsParentClickForNativeButton",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderActionSupportEscapesMalformedEventAttributeName",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderAjaxActionFunctionEvaluatesParamDefaultValue",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderAjaxActionFunctionFindsPageForm",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderAjaxActionFunctionSubmitsNamedParamsAndStatus",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderAjaxActionSupportEmitsSubmitHook",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderAjaxCommandButtonEmitsSubmitHook",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderAjaxCommandButtonKeepsLabelOutOfTextContent",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderAjaxCommandButtonPassesActionStatusAndNearestRegion",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderAjaxCommandLinkEmitsSubmitHook",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderCommandButtonWithoutRerenderRemainsSubmit",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderCommandControlsPostActionExpression",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderControllerlessCustomComponentUsesAttributesAsVariables",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestRenderCoreActionFunctionRegionStatusPoller",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderCoreSelectComponents",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderCoreVisualforceComponents",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderCustomComponentAssignToFacetAndBody",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestRenderCustomComponentFallback",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderDataTableDoesNotDeriveHeaderFromFieldExpression",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderDataTableRepeatColumnsAPI67",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderDynamicComponentFallback",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderEnvironmentConcurrentAccess",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderExpressionTemplateAppliesURLENCODEInLinkAndOutputText",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderExpressionTemplateDoesNotReevaluateReplacementText",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderExpressionTemplateIgnoresBraceInsideStringLiteral",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderExpressionTemplateKeepsExistingTextReplacement",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderExpressionTemplateResolvesVisualforceSchemaAndContextGlobals",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderExpressionTemplateResolvesVisualforceUserAndOrganizationGlobals",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderIncludeLightningWithoutBootstrapDoesNotEmitNotice",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderIncludeUsesIncludedPageControllerInsideTemplate",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderInputFieldDoesNotUseArbitraryRecordWhenPageIDMisses",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderInputFieldRequiredAttributeUsesPageRenderer",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderInputFieldUsesDisplayMetadata",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderInputFieldUsesLocalSchemaAndRecordValues",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderInputFieldUsesMultiPicklistAndCheckboxMetadata",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderInputFileUsesVisualforceIDForFileControl",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderMarkupTreeHonorsOutputTextEscapeFalse",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderMarkupTreePropagatesVisibleExpressionTemplateErrors",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderMarkupTreeRendersOutputTextAndOutputField",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderMarkupTreeRendersPagePrimitives",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderMarkupTreeUsesComponentRegistry",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderMarkupTreeUsesRegistryForDocumentedNonApexComponents",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderOutputFieldUsesParentRelationshipDisplayName",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderOutputPanelEscapesMergeFieldTextButKeepsLiteralHTML",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderOutputPanelLayoutFamilyAPI67",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderOutputTextEscapeFalseKeepsExpressionRawButEscapesLiteralMarkup",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderOwnerOutputFieldRequiresAuthorizedUserName",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestRenderPageActionInvokeUsesBoundVisualforceLifecycle",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderPageBlockTableDerivesHeaderFromFieldExpression",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderPageInjectsCSRFFieldForLocalClients",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderPageIteratesControllerGetterLists",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderPageMessageIncludesDetailText",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderPageOmitsTransientControllerFieldsFromViewState",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderPagePostPassesSubmittedValuesToAction",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderPagePreservesViewStatePageMessagesOnPostback",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestRenderPageRejectsOversizedViewStatePayload",
+   "durationMillis": 470
+  },
+  {
+   "name": "TestRenderPageRejectsStructureFromDirectIndex",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderPageRejectsViewStateForDifferentPageOrController",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderPageRestoresExtensionFieldsFromViewState",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderPageRestoresOmittedRootNullFields",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderPageRunsPageActionBeforeRendering",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderPageSetsProjectNamespaceForMemberAccess",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderPageStandardControllerSaveUpdatesCurrentPageRecord",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderPageStandardSetControllerReflectsExtensionPageSizeInRecordSetVar",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestRenderPageStandardSetExtensionReceivesController",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestRenderPageStandardSetRecordSetVarRefreshesAfterActionChangesPageSize",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestRenderPageStandardSetRecordSetVarUsesOrgRecords",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestRenderPageStandardSetTableIncludesHeaderAndOrgRows",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestRenderPageStopsActionDispatchAfterExtensionRuntimeError",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderPageURLChecksPDFOutputSize",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestRenderPageURLUsesConfiguredPDFRendererForRenderAsPDF",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderPanelGridUsesTableRowsAndFacets",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderPartialTargetsFindsNamespacedClientID",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderPartialTargetsFindsScopedRerenderID",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderPartialTargetsPrefersElementIDOverRerenderMetadata",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderPromotedUIOnlyComponents",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderRemoteObjectsAccountFixturePreservesVisibleContract",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderRemoteObjectsFallsBackToDeclarationWhenLocalSchemaIsIncomplete",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderRemoteObjectsFieldsFixtureUsesNamespaceAndPreservesVisibleContract",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderRepeatAndDataTable",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderScriptTextPreservesJavaScriptEscapedMergeField",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderSelectListExpandsSelectOptionsValue",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderSelectListPreservesLiteralValue",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderSetupLikePagePreservesHTMLAndEvaluatesNamespace",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderStandardControllerAddFieldsResetTwoRequestsAPI67",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestRenderStandardControllerContractFamilyRequestLifecycle",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestRenderVisualforceComponentReferencesUseHierarchyClientIDs",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderVisualforceOutputPanelHonorsRenderedAndLayoutNone",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRenderVisualforceTextDoesNotReevaluateReplacementText",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestResolveResourceURL",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestResourceExpressionPreservesStaticResourceAndPathCase",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSetupNamespaceValidationPreservesOwnedHierarchySetting",
+   "durationMillis": 570
+  },
+  {
+   "name": "TestStandardComponentReferenceNamesIncludesLocalTestMetadataShapes",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestStandardComponentSpecsCannotPoisonCachedRegistry",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestStandardComponentSpecsCoverReferenceCatalog",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestStandardComponentSpecsHaveExplicitStatus",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestStandardComponentSpecsOnlyExposeDocsBackedComponents",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestStandardComponentSupportRowsExposeProductTableFields",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestStandardControllerRecordRootDoesNotMaskThrowingExtensionGetter",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestStandardControllerRecordRootPreservesExpressionPrecedence",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestStandardFieldPolicyConfiguredVisualforceRemoteObjectRoutes",
+   "durationMillis": 70
+  },
+  {
+   "name": "TestStructureContractsRejectInvalidParentsAndCardinality",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestStructureContractsRenderPageBlockSectionItemChildrenInOrder",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestStructureValidationUsesHTMLRawScriptText",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestURLFORCustomTabValidation",
+   "durationMillis": 370
+  },
+  {
+   "name": "TestURLFORSingleQuotedParameterValidation",
+   "durationMillis": 180
+  },
+  {
+   "name": "TestUnsupportedComponentSpecsUseStableFamilyReasons",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestUnsupportedHostedFamiliesHaveDiagnostics",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestV01SalesforceConformance",
+   "durationMillis": 1840
+  },
+  {
+   "name": "TestV02SalesforceConformance",
+   "durationMillis": 40630
+  },
+  {
+   "name": "TestV03SalesforceConformance",
+   "durationMillis": 88590
+  },
+  {
+   "name": "TestV04SalesforceConformance",
+   "durationMillis": 356590
+  },
+  {
+   "name": "TestV05SalesforceConformance",
+   "durationMillis": 230180
+  },
+  {
+   "name": "TestV06SalesforceConformance",
+   "durationMillis": 85100
+  },
+  {
+   "name": "TestV07SalesforceConformance",
+   "durationMillis": 107780
+  },
+  {
+   "name": "TestV07SelectionLifecycleBoundaries",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestV08SalesforceConformance",
+   "durationMillis": 10610
+  },
+  {
+   "name": "TestV09ClickedFieldControlsSalesforceConformance",
+   "durationMillis": 116460
+  },
+  {
+   "name": "TestV09SalesforceConformance",
+   "durationMillis": 828500
+  },
+  {
+   "name": "TestV10SalesforceConformance",
+   "durationMillis": 167880
+  },
+  {
+   "name": "TestV11SalesforceConformance",
+   "durationMillis": 210950
+  },
+  {
+   "name": "TestV11SuccessfulControlsPreservesMissingAndDuplicateState",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestV12SalesforceConformance",
+   "durationMillis": 625680
+  },
+  {
+   "name": "TestV13OnDemandRemotingRender",
+   "durationMillis": 5770
+  },
+  {
+   "name": "TestV13SalesforceConformance",
+   "durationMillis": 457460
+  },
+  {
+   "name": "TestV14SalesforceConformance",
+   "durationMillis": 520580
+  },
+  {
+   "name": "TestV15CartesianLayoutTolerance",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestV15SalesforceConformance",
+   "durationMillis": 38060
+  },
+  {
+   "name": "TestVerifyViewStateCSRFPreservesMatchAndMismatch",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestVerifyViewStateCSRFRejectsEmptyPayloadToken",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestViewStateGraphRejectsInvalidCollectionFieldReference",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestViewStateKeyCacheFailsClosedOnEntropyFailure",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestViewStateKeyCacheReturnsStableProcessKey",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestViewStatePublicCSRFCannotFallBackToCompatibilityToken",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestViewStateRejectsExplicitEmptySecret",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestViewStateRestoresAliasesWithoutMergingIndependentCollections",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestViewStateRoundTripPreservesCollectionFields",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestViewStateRoundTripRekeysIdentityMapEntries",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestViewStateRoundTripRetainsValueMapStorageKeys",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestVisualforceActionPageReferenceResultBecomesRedirect",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestVisualforceActionPageReferenceWithoutRedirectDoesNotTreatRecordURLAsApexPage",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestVisualforceActionPageReferenceWithoutRedirectRendersTargetPage",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestVisualforceAjaxFunctionCallIncludesAssignToParam",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestVisualforceAjaxScriptClearsStatusBeforeRedirect",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestVisualforceAjaxScriptPostsMarkersAndRefreshesViewState",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestVisualforceAssignmentContractFamily",
+   "durationMillis": 160
+  },
+  {
+   "name": "TestVisualforceAuthorizedFieldRetainsNumberMetadataAPI67",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestVisualforceAuthorizedInputFieldRerendersSubmittedValueAPI67",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestVisualforceAuthorizedInputFieldWithoutVisibleRowStaysBlankAPI67",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestVisualforceAuthorizedRelationshipNameProjectionAPI67",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestVisualforceAuthorizedScalarFieldRenderingAPI67",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestVisualforceCSPHeaderValueForCSPHeaderTrue",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestVisualforceControllerDMLFeatureProfileRollback",
+   "durationMillis": 2630
+  },
+  {
+   "name": "TestVisualforceDeniedFieldDoesNotSuppressGrantedSiblingAPI67",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestVisualforceDeniedInputFieldCannotUseMissingRowAPI67",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestVisualforceDeniedScalarExpressionStaysBlankAPI67",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestVisualforceDescribeHolderRequestIsolation",
+   "durationMillis": 14590
+  },
+  {
+   "name": "TestVisualforceExpressionContractFamily",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestVisualforceExpressionParserCoversPhase3Grammar",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestVisualforceFieldPresentationContractFamily",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestVisualforceFormBindingsForFieldsRejectsAllFieldsWhenPageHasNoInputs",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestVisualforceFormBindingsForFieldsRejectsUnrenderedSubmittedFields",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestVisualforceFormControllerReferenceRoundTrip",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestVisualforceFormStandardControllerBuiltinActions",
+   "durationMillis": 220
+  },
+  {
+   "name": "TestVisualforceGrantedFieldCannotReadPrivateRowAPI67",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestVisualforceIterationLimitChecksHonorReadOnlyMode",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestVisualforceJournalBulkRoutes",
+   "durationMillis": 1450
+  },
+  {
+   "name": "TestVisualforceLimitChecksAllowBoundaryValues",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestVisualforceLimitChecksReturnStableErrors",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestVisualforceLimitConstantsMatchDocs",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestVisualforceNamespacedStandardControllerFieldAliasAPI67",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestVisualforceOutputFieldDoesNotFallbackPastNameProjectionAPI67",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestVisualforcePageHeaderOptionsApplyBaselineCSPWhenAttributeIsAbsent",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestVisualforcePageHeaderOptionsApplyCSPNoCacheAndDownloadName",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestVisualforcePageHeaderOptionsApplyCacheExpiresMaxAge",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestVisualforceParsesStandardControllerRecordSetVar",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestVisualforcePostLifecycleAppliesSubmittedValuesBeforeActionAndRendersAfter",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestVisualforceProjectRenderWithMixedCustomTabs",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestVisualforceQualifiedSemiJoin",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestVisualforceRequestLimitsHonorReadOnlyMode",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestVisualforceSelectOptionConstructorAndAccessorState",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestVisualforceSelectOptionControllerCollectionRenderAndSubmit",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestVisualforceSelectOptionParentControlsPreserved",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestVisualforceSetControllerOnlyRendersAuthorizedProjectionAPI67",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestVisualforceStandardControllerInitialRenderHidesUnsharedRecordAPI67",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestVisualforceTranslatedMultiHopPredicate",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestVisualforceTranslatedParentPredicate",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestVisualforceTranslatedQueryCollision",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestVisualforceTypedFormValueConvertsMultiSelectAndDatetimeLocal",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestVisualforceTypedFormValueReturnsFieldConversionDiagnostic",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestVisualforceUnsupportedRecordAccessFailsClosedAPI67",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestVisualforceUnsupportedRelationshipPathDoesNotReadRawRecordAPI67",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestVisualforceUserGlobalUsesConfiguredExecutionUserAPI67",
+   "durationMillis": 0
+  }
+ ]
+}

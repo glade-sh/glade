@@ -748,12 +748,26 @@ func lightningRuntimeAsset(kind, name string) (string, []byte, bool) {
 	if strings.HasSuffix(name, ".js") {
 		candidates = append(candidates, strings.TrimSuffix(name, ".js")+".mjs")
 	}
-	for _, dir := range lightningRuntimeAssetDirs(kind) {
+	if sourceRoot, err := gladehome.CompilerSourceRoot(); err == nil {
 		for _, candidate := range candidates {
-			content, err := os.ReadFile(filepath.Join(dir, candidate))
-			if err != nil {
-				continue
+			content, err := os.ReadFile(filepath.Join(sourceRoot, "lwcruntime", "src", kind, candidate))
+			if err == nil {
+				return lightningRuntimeContentType(candidate), content, true
 			}
+		}
+	}
+	root, release, err := gladehome.LeaseRoot()
+	if err != nil {
+		return "", nil, false
+	}
+	defer release()
+	dir, err := gladehome.RuntimeAssetDirAt(root, kind)
+	if err != nil {
+		return "", nil, false
+	}
+	for _, candidate := range candidates {
+		content, err := os.ReadFile(filepath.Join(dir, candidate))
+		if err == nil {
 			return lightningRuntimeContentType(candidate), content, true
 		}
 	}
@@ -782,7 +796,7 @@ func cleanLightningRuntimeAssetName(name string) (string, bool) {
 
 func lightningRuntimeAssetDirs(kind string) []string {
 	var dirs []string
-	if sourceRoot, err := gladehome.SourceRoot(); err == nil {
+	if sourceRoot, err := gladehome.CompilerSourceRoot(); err == nil {
 		dirs = append(dirs, filepath.Join(sourceRoot, "lwcruntime", "src", kind))
 	}
 	if dir, err := gladehome.RuntimeAssetDir(kind); err == nil {

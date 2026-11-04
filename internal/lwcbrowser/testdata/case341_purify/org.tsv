@@ -1,0 +1,3 @@
+api	case	result	diagnostic
+59.0	default_import	DEPLOY_REJECTED	No MODULE named lightning:purifyLib found
+67.0	default_import	DEPLOY_REJECTED	No MODULE named lightning:purifyLib found

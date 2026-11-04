@@ -1,0 +1,1 @@
+@IsTest private class FormatProbeTest { @IsTest static void constantTest(){System.assert(false,'OBS|constant|'+FormatProbe.observe('constant'));} @IsTest static void datetimeTest(){System.assert(false,'OBS|datetime|'+FormatProbe.observe('datetime'));} @IsTest static void controlTest(){System.assert(false,'OBS|control|'+FormatProbe.observe('control'));} }

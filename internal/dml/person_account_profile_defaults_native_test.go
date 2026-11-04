@@ -29,7 +29,7 @@ func TestPersonAccountProfileDefaultsNativeRows(t *testing.T) {
 			account.Definition.RecordTypes = []storage.RecordTypeInfo{
 				{DeveloperName: "Business_Default", Name: "Business Default", Active: true, Available: true, Default: true},
 				{DeveloperName: "Business_Alternate", Name: "Business Alternate", Active: true, Available: true},
-				{DeveloperName: "PersonAccount", Name: "Person Account", Active: true, Available: true},
+				{DeveloperName: "PersonAccount", Name: "Person Account", Active: true, Available: true, PersonAccount: true},
 				{DeveloperName: "Provider", Name: "Provider", Active: true, Available: true, PersonAccount: true},
 				{DeveloperName: "Patient", Name: "Patient", Active: true, Available: true, PersonAccount: true},
 			}
@@ -92,7 +92,7 @@ func TestPersonAccountDefaultPrecedesNamedAlternatives(t *testing.T) {
 		t.Run(row[2], func(t *testing.T) {
 			types := []storage.RecordTypeInfo{
 				{DeveloperName: "Individual_Alternative", Name: "Individual Alternative", Active: true, Available: true, PersonAccount: true},
-				{DeveloperName: "PersonAccount", Name: "Person Account", Active: true, Available: true},
+				{DeveloperName: "PersonAccount", Name: "Person Account", Active: true, Available: true, PersonAccount: true},
 				{DeveloperName: "Provider", Name: "Provider", Active: true, Available: true, PersonAccount: true},
 				{DeveloperName: "Patient", Name: "Patient", Active: true, Available: true, PersonAccount: true},
 			}

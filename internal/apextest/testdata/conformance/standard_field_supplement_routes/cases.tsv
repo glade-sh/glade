@@ -1,0 +1,4 @@
+api	route	case
+62.0,67.0	anonymous,istest	Lead.LastTransferDate query, Id boundary, nonexistent field rejection
+59.0,67.0	Visualforce page	Lead.LastTransferDate and Id field labels
+59.0,67.0	UI API object info	Lead.LastTransferDate and Id membership, native type and flags

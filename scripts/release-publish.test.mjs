@@ -57,7 +57,7 @@ test('publishes create-only files, verifies them, advances pointers last, and re
     async put(key, body, options) { return storage.put(key, Buffer.from(await new Response(body).arrayBuffer()), options) },
   } }
   const bucket = previewBucket((url, init) => releaseR2Fetch(new Request(url, init), env))
-  await publishRelease(bucket, root, version, sha, toolsSHA)
+  await publishRelease(bucket, root, version, sha, toolsSHA, async () => {})
   const writes = calls.filter(([method]) => method === 'put')
   assert.equal(writes.length, 18)
   assert.deepEqual(writes.slice(-2).map(([, key]) => key), ['latest/release-manifest.json', 'index.json'])
@@ -65,7 +65,7 @@ test('publishes create-only files, verifies them, advances pointers last, and re
     assert.equal(options.onlyIf.etagDoesNotMatch, '*')
     assert.ok(calls.some(([method, readKey]) => method === 'get' && readKey === key))
   }
-  await publishRelease(bucket, root, version, sha, toolsSHA)
+  await publishRelease(bucket, root, version, sha, toolsSHA, async () => {})
   assert.equal(calls.filter(([method]) => method === 'put').length, 18)
 })
 
@@ -85,33 +85,33 @@ test('never overwrites a conflicting versioned object or advances pointers', asy
   const { root, bucket, objects } = await fixture(t)
   const key = `${version}/release-manifest.json`
   objects.set(key, Buffer.from('previous immutable bytes'))
-  await assert.rejects(publishRelease(bucket, root, version, sha, toolsSHA), /differs/)
+  await assert.rejects(publishRelease(bucket, root, version, sha, toolsSHA, async () => {}), /differs/)
   assert.equal(objects.get(key).toString(), 'previous immutable bytes')
   assert.equal(objects.has('index.json'), false)
 })
 
 test('rejects wrong approval SHA before any publication', async t => {
   const { root, bucket, calls } = await fixture(t)
-  await assert.rejects(publishRelease(bucket, root, version, 'f'.repeat(40), toolsSHA), /approval/)
+  await assert.rejects(publishRelease(bucket, root, version, 'f'.repeat(40), toolsSHA, async () => {}), /approval/)
   assert.equal(calls.length, 0)
 })
 
 test('does not roll a newer channel backward', async t => {
   const { root, bucket, objects, calls } = await fixture(t)
   objects.set('index.json', Buffer.from(JSON.stringify({ latest: 'v1.2.4', versions: [] })))
-  await assert.rejects(publishRelease(bucket, root, version, sha, toolsSHA), /newer/)
+  await assert.rejects(publishRelease(bucket, root, version, sha, toolsSHA, async () => {}), /newer/)
   assert.equal(calls.some(([method]) => method === 'put'), false)
 })
 
 test('rejects approval for a different tagged Tools commit before publication', async t => {
   const { root, bucket, calls } = await fixture(t)
-  await assert.rejects(publishRelease(bucket, root, version, sha, 'f'.repeat(40)), /Tools approval/)
+  await assert.rejects(publishRelease(bucket, root, version, sha, 'f'.repeat(40), async () => {}), /Tools approval/)
   assert.equal(calls.length, 0)
 })
 
 test('rechecks both pointers when another publisher changes an initially identical pointer', async t => {
   const { root, bucket, objects } = await fixture(t)
-  await publishRelease(bucket, root, version, sha, toolsSHA)
+  await publishRelease(bucket, root, version, sha, toolsSHA, async () => {})
   objects.delete(`${version}/SHA256SUMS.txt`)
   const put = bucket.put.bind(bucket)
   bucket.put = async (...args) => {
@@ -121,5 +121,5 @@ test('rechecks both pointers when another publisher changes an initially identic
     }
     return result
   }
-  await assert.rejects(publishRelease(bucket, root, version, sha, toolsSHA), /final channel/)
+  await assert.rejects(publishRelease(bucket, root, version, sha, toolsSHA, async () => {}), /final channel/)
 })

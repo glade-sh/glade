@@ -157,15 +157,16 @@ glade test --project .
 
 | Version axis | Current local contract |
 | --- | --- |
-| Apex source | 62.0-68.0 |
+| Apex source | 62.0-67.0 |
 | Historical Apex source below 62.0 | Unsupported, even if a well-formed version is preserved by the loader |
-| Execute Anonymous | 65.0, 66.0, 67.0, 68.0 |
-| LWC bundles | 59.0-68.0; explicit whole versions required when declared; unversioned compiler default 68.0 |
-| Visualforce | 59.0-68.0 |
+| HTTP Execute Anonymous | 65.0, 66.0, 67.0, 68.0 (admission, not a support claim) |
+| CLI `glade exec` | Preserves the project source version without applying the HTTP gate |
+| LWC bundles | 59.0-67.0 supported; compiler also admits 68.0 and defaults unversioned bundles to 68.0 |
+| Visualforce | 59.0-67.0 |
 | Local HTTP endpoints | 60.0, 65.0, 66.0, 67.0, 68.0; default 65.0 |
 
-The v0.3.0 support window is Apex 62.0-68.0, LWC and Visualforce 59.0-68.0.
-A clean check or test on an older project does not make Execute Anonymous
+The supported window is Apex 62.0-67.0, LWC and Visualforce 59.0-67.0.
+A clean check or test on an older project does not make HTTP Execute Anonymous
 eligible at that version. An HTTP endpoint version does not change source
 semantics. Do not bump project metadata merely to obtain a green result.
 Use the [support map](/guide/support-map) for behavior-specific limits.

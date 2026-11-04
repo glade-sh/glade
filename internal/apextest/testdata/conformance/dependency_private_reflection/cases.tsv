@@ -1,0 +1,5 @@
+case	role
+privateSubclass	private subclass
+privateOther	private non-subclass rejection twin
+publicSubclass	public subclass private constructor
+publicBoundary	public constructor boundary

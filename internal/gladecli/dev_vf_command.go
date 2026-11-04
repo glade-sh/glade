@@ -100,6 +100,7 @@ func runDevVF(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 		return err
 	}
 	handler := server.NewWithSource(&org, source)
+	defer handler.Close()
 	installDevVFRuntime(handler, index)
 	if root, err := gladehome.EnsureRoot(); err != nil {
 		renderer.Render(cliui.Event{Kind: cliui.EventWarn, Phase: "dev vf", Label: "LWC toolchain unavailable", Detail: err.Error()})
@@ -120,7 +121,7 @@ func runDevVF(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 			return err
 		}
 	}
-	httpServer := &http.Server{Addr: addr, Handler: handler, ReadHeaderTimeout: localHTTPReadHeaderTimeout}
+	httpServer := &http.Server{Addr: addr, Handler: server.GuardHTTPAuthority(handler, actualAddr, addr), ReadHeaderTimeout: localHTTPReadHeaderTimeout, ReadTimeout: localHTTPReadTimeout}
 	renderer.Render(cliui.Event{Kind: cliui.EventPhaseEnd, Phase: "dev vf", Label: "Server ready", Current: 4, Total: 4})
 	renderer.Finish(cliui.Result{OK: true, Label: "dev vf ready"})
 	printDevVFStartupSummary(w, actualAddr, p)

@@ -14,7 +14,7 @@ import (
 
 func TestPersonAccountProfileRoutesRejectLegacyRuntimeCache(t *testing.T) {
 	const fixture = "../../testdata/conformance/person_account_profile_routes"
-	const legacyABI = "apextest-runtime-v11"
+	const legacyABI = "apextest-runtime-v16"
 	const staleMarker = "legacy-business-profile-default"
 	t.Setenv("GLADE_HOME", t.TempDir())
 	t.Cleanup(EnableDiskCacheForTesting())

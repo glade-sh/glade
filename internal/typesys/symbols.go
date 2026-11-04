@@ -701,7 +701,11 @@ func projectSymbolFiles(parser *apexast.Parser, p project.Project, dependency bo
 		return nil
 	}
 	if len(p.ApexFiles) == 1 {
-		return []projectSymbolFile{projectSymbolFileFromPath(parser, p.ApexFiles[0], p.Root, p.SourceAPIVersion, dependency, namespace, version, sourceRemaps, sources)}
+		fileNamespace := namespace
+		if !dependency {
+			fileNamespace = p.SourceNamespaceForFile(p.ApexFiles[0], namespace)
+		}
+		return []projectSymbolFile{projectSymbolFileFromPath(parser, p.ApexFiles[0], p.Root, p.SourceAPIVersion, dependency, fileNamespace, version, sourceRemaps, sources)}
 	}
 	workers := runtime.GOMAXPROCS(0)
 	if workers < 1 {
@@ -732,9 +736,13 @@ func projectSymbolFiles(parser *apexast.Parser, p project.Project, dependency bo
 			localParser := apexast.NewParser()
 			defer localParser.Close()
 			for job := range jobs {
+				fileNamespace := namespace
+				if !dependency {
+					fileNamespace = p.SourceNamespaceForFile(job.Path, namespace)
+				}
 				results <- result{
 					Index: job.Index,
-					File:  projectSymbolFileFromPath(localParser, job.Path, p.Root, p.SourceAPIVersion, dependency, namespace, version, sourceRemaps, sources),
+					File:  projectSymbolFileFromPath(localParser, job.Path, p.Root, p.SourceAPIVersion, dependency, fileNamespace, version, sourceRemaps, sources),
 				}
 			}
 		}()
@@ -1132,13 +1140,14 @@ type incrementalResolvedSource struct {
 }
 
 type incrementalProjectConfigIdentity struct {
-	Root                string
-	Namespace           string
-	SourceNamespaces    []string
-	SourceAPIVersion    string
-	PackageDirectories  []project.PackageDirectory
-	NamespaceRemaps     []namespaceremap.Rule
-	ApexSourceSelection []string
+	Root                 string
+	Namespace            string
+	SourceNamespaces     []string
+	SourceNamespaceRoots map[string]string
+	SourceAPIVersion     string
+	PackageDirectories   []project.PackageDirectory
+	NamespaceRemaps      []namespaceremap.Rule
+	ApexSourceSelection  []string
 }
 
 type incrementalManagedDependencyIdentity struct {
@@ -1202,13 +1211,14 @@ func incrementalProjectConfigForIdentity(p project.Project) incrementalProjectCo
 		selection = selected
 	}
 	return incrementalProjectConfigIdentity{
-		Root:                p.Root,
-		Namespace:           p.Namespace,
-		SourceNamespaces:    p.SourceNamespaces,
-		SourceAPIVersion:    p.SourceAPIVersion,
-		PackageDirectories:  p.PackageDirectories,
-		NamespaceRemaps:     p.NamespaceRemaps,
-		ApexSourceSelection: selection,
+		Root:                 p.Root,
+		Namespace:            p.Namespace,
+		SourceNamespaces:     p.SourceNamespaces,
+		SourceNamespaceRoots: p.SourceNamespaceRoots,
+		SourceAPIVersion:     p.SourceAPIVersion,
+		PackageDirectories:   p.PackageDirectories,
+		NamespaceRemaps:      p.NamespaceRemaps,
+		ApexSourceSelection:  selection,
 	}
 }
 
@@ -1401,6 +1411,9 @@ func resolveIncrementalSource(owners []incrementalSourceOwner, path string, requ
 		}
 		if listedPath == "" {
 			listedPath = path
+		}
+		if !owner.metadata.dependency {
+			owner.metadata.namespace = owner.project.SourceNamespaceForFile(listedPath, owner.metadata.namespace)
 		}
 		matches = append(matches, incrementalResolvedSource{owner: owner, path: listedPath, packagePath: packagePath})
 	}

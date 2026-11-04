@@ -311,8 +311,13 @@ func TestV09SalesforceConformance(t *testing.T) {
 						t.Errorf("API %s %s: actual <%s> expected <%s>; diagnostics <%s> expected <%s>", api, c.ID, got, want, actualDiagnostic, expectedDiagnostic)
 					}
 				}()
-				v09ReleaseRowState(t, runtimeRoot)
+				// Every row still drops its render environments and runtime
+				// caches; the full collection, OS release and heap guard run on
+				// the progress cadence (every 20 rows and after the last row)
+				// instead of 278 times per API over a half-gigabyte base heap.
+				v09ReleaseRowCaches(runtimeRoot)
 				if (row+1)%20 == 0 || row+1 == len(table.Cases) {
+					v09ReleaseRowState(t, runtimeRoot)
 					var memory runtime.MemStats
 					runtime.ReadMemStats(&memory)
 					t.Logf("V09 API %s completed %d/278; retained heap %d MiB", api, row+1, memory.HeapAlloc>>20)
@@ -354,17 +359,24 @@ func TestV09SalesforceConformance(t *testing.T) {
 // frame has returned. Keep the lane guard as protection against future retention.
 func v09ReleaseRowState(t *testing.T, roots ...string) {
 	t.Helper()
-	for _, root := range roots {
-		visualforce.V09ReleaseRenderEnvironmentsForTest(root)
-	}
-	apextest.WaitForRuntimeCacheWork()
-	apextest.InvalidateRuntimeCaches()
+	v09ReleaseRowCaches(roots...)
 	debug.FreeOSMemory()
 	var memory runtime.MemStats
 	runtime.ReadMemStats(&memory)
 	if memory.HeapAlloc > 2<<30 {
 		t.Fatalf("V09 retained heap exceeds 2 GiB after row cleanup: %d bytes", memory.HeapAlloc)
 	}
+}
+
+// v09ReleaseRowCaches drops the roots' render environments and every runtime
+// cache without forcing a collection; v09ReleaseRowState adds the collection,
+// the OS release and the retained-heap guard.
+func v09ReleaseRowCaches(roots ...string) {
+	for _, root := range roots {
+		visualforce.V09ReleaseRenderEnvironmentsForTest(root)
+	}
+	apextest.WaitForRuntimeCacheWork()
+	apextest.InvalidateRuntimeCaches()
 }
 
 func v09WriteFiles(t *testing.T, root string, files map[string]string) {

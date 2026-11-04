@@ -9,8 +9,8 @@ import (
 )
 
 // ReadOnlyCompleted exercises the same consumers as PendingConsumers against a
-// completed, non-writable home. No lock, a readable lock owned by another user,
-// and an inaccessible lock must all allow verified assets to be read.
+// completed, non-writable home. A readable lock permits use; an absent or
+// inaccessible lock must fail closed for managed consumers.
 func ReadOnlyCompleted(t *testing.T, consumers []string, run func(*testing.T, string) error) {
 	t.Helper()
 	if runtime.GOOS == "windows" {
@@ -86,8 +86,13 @@ func ReadOnlyCompleted(t *testing.T, consumers []string, run func(*testing.T, st
 						}
 						t.Setenv("GLADE_HOME", "")
 						t.Setenv("GLADE_ROOT", "")
-						if err := run(t, consumer+"/"+selector); err != nil {
-							t.Fatal(err)
+						err := run(t, consumer+"/"+selector)
+						if lockMode == "read-only" {
+							if err != nil {
+								t.Fatal(err)
+							}
+						} else if err == nil {
+							t.Fatal("managed consumer succeeded without an accessible installation lock")
 						}
 					})
 				}

@@ -1,0 +1,27 @@
+case_id	api	feature	route	status	observed
+READ	62.0	disabled	anonymous	REJECTED	Compilation failed at Ln 1, Col 45 with the error:; Variable does not exist: FirstName
+READ	62.0	disabled	named	REJECTED	Variable does not exist: FirstName
+READ	62.0	disabled	istest	REJECTED	Variable does not exist: FirstName
+ADJACENT	62.0	disabled	anonymous	REJECTED	Compilation failed at Ln 1, Col 45 with the error:; Variable does not exist: LastName
+ADJACENT	62.0	disabled	named	REJECTED	Variable does not exist: LastName
+ADJACENT	62.0	disabled	istest	REJECTED	Variable does not exist: LastName
+CONTROL	62.0	disabled	anonymous	PASS	PASS
+CONTROL	62.0	disabled	named	PASS	PASS
+CONTROL	62.0	disabled	istest	PASS	PASS
+REJECTION	62.0	disabled	anonymous	REJECTED	Compilation failed at Ln 1, Col 45 with the error:; Variable does not exist: DefinitelyAbsent__c
+REJECTION	62.0	disabled	named	REJECTED	Variable does not exist: DefinitelyAbsent__c
+REJECTION	62.0	disabled	istest	REJECTED	Variable does not exist: DefinitelyAbsent__c
+FEATURE	62.0	disabled	anonymous	PASS	PASS
+READ	67.0	disabled	anonymous	REJECTED	Compilation failed at Ln 1, Col 45 with the error:; Variable does not exist: FirstName
+READ	67.0	disabled	named	REJECTED	Variable does not exist: FirstName
+READ	67.0	disabled	istest	REJECTED	Variable does not exist: FirstName
+ADJACENT	67.0	disabled	anonymous	REJECTED	Compilation failed at Ln 1, Col 45 with the error:; Variable does not exist: LastName
+ADJACENT	67.0	disabled	named	REJECTED	Variable does not exist: LastName
+ADJACENT	67.0	disabled	istest	REJECTED	Variable does not exist: LastName
+CONTROL	67.0	disabled	anonymous	PASS	PASS
+CONTROL	67.0	disabled	named	PASS	PASS
+CONTROL	67.0	disabled	istest	PASS	PASS
+REJECTION	67.0	disabled	anonymous	REJECTED	Compilation failed at Ln 1, Col 45 with the error:; Variable does not exist: DefinitelyAbsent__c
+REJECTION	67.0	disabled	named	REJECTED	Variable does not exist: DefinitelyAbsent__c
+REJECTION	67.0	disabled	istest	REJECTED	Variable does not exist: DefinitelyAbsent__c
+FEATURE	67.0	disabled	anonymous	PASS	PASS

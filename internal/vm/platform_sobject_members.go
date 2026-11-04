@@ -1018,6 +1018,11 @@ func (vm *VM) unqueriedStoredDefaultFieldValue(receiver Value, field string) (Va
 	if !ok {
 		return Null, false
 	}
+	// A stored custom Number field stays unqueried even if its value is
+	// numerically equal to its configured default.
+	if strings.HasSuffix(strings.ToLower(canonical), "__c") && fieldDef.Type == storage.FieldDecimal && strings.EqualFold(fieldDef.DisplayType, "DOUBLE") {
+		return Null, false
+	}
 	if unqueriedStoredDefaultFieldMustRemainHidden(canonical) {
 		return Null, false
 	}

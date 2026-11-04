@@ -1,12 +1,15 @@
 package sema
 
 import (
+	"fmt"
 	"io/fs"
 	"math/rand"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"testing"
+	"unicode/utf8"
 )
 
 // The reference functions below are the per-offset scanners that
@@ -91,6 +94,29 @@ func referenceSemaOffsetInParenGroup(body string, pos int) bool {
 	return depth > 0
 }
 
+// referenceQueryKeywordAt reports whether the lowered text at start begins
+// with "select" or "find". strings.ToLower maps rune by rune, so lowering the
+// first six runes gives exactly the prefix the original whole-body lowering
+// (strings.HasPrefix(strings.ToLower(body[start:]), keyword)) examined; six
+// lowered runes are at least six bytes, which covers both keywords.
+// TestReferenceQueryKeywordMatchesWholeBodyLowering pins the equivalence. The
+// whole-body form lowered the remainder of the body at every '[' before every
+// queried offset, which made the repository sweep O(brackets x length) per
+// offset.
+func referenceQueryKeywordAt(body string, start int) bool {
+	end := start
+	for runes := 0; runes < 6 && end < len(body); runes++ {
+		_, width := utf8.DecodeRuneInString(body[end:])
+		end += width
+	}
+	head := strings.ToLower(body[start:end])
+	return strings.HasPrefix(head, "select") || strings.HasPrefix(head, "find")
+}
+
+func referenceQueryKeywordAtWholeBody(body string, start int) bool {
+	return strings.HasPrefix(strings.ToLower(body[start:]), "select") || strings.HasPrefix(strings.ToLower(body[start:]), "find")
+}
+
 func referenceSemaOffsetInSOQLLiteral(body string, pos int) bool {
 	for i := 0; i < len(body) && i < pos; i++ {
 		switch body[i] {
@@ -113,7 +139,7 @@ func referenceSemaOffsetInSOQLLiteral(body string, pos int) bool {
 				}
 				break
 			}
-			if !strings.HasPrefix(strings.ToLower(body[queryStart:]), "select") && !strings.HasPrefix(strings.ToLower(body[queryStart:]), "find") {
+			if !referenceQueryKeywordAt(body, queryStart) {
 				continue
 			}
 			depth := 1
@@ -194,6 +220,27 @@ var semaIgnoredTextEdgeBodies = []string{
 	"List<Account> xs = [select Id from Account where Name in :names];\nfor (Account a : xs) { System.debug(a); }",
 }
 
+func TestReferenceQueryKeywordMatchesWholeBodyLowering(t *testing.T) {
+	bodies := append([]string(nil), semaIgnoredTextEdgeBodies...)
+	bodies = append(bodies, "[ſelect]", "[ﬁnd]", "[SELECT", "[FIND", "[sele", "[fin", "[Select Id]", "[İ", "[K", "[\xff\xffselect", "[select\xff")
+	pieces := []string{"[", "]", "s", "S", "e", "l", "c", "t", "f", "i", "n", "d", "İ", "K", "ſ", "ﬁ", "\xff", " ", "'", "/"}
+	rng := rand.New(rand.NewSource(7))
+	for n := 0; n < 2000; n++ {
+		var b strings.Builder
+		for k := rng.Intn(12); k >= 0; k-- {
+			b.WriteString(pieces[rng.Intn(len(pieces))])
+		}
+		bodies = append(bodies, b.String())
+	}
+	for _, body := range bodies {
+		for start := 0; start <= len(body); start++ {
+			if got, want := referenceQueryKeywordAt(body, start), referenceQueryKeywordAtWholeBody(body, start); got != want {
+				t.Fatalf("referenceQueryKeywordAt(%q, %d) = %v, want %v", body, start, got, want)
+			}
+		}
+	}
+}
+
 func TestSemaIgnoredTextMatchesReferenceOnEdgeCases(t *testing.T) {
 	for _, body := range semaIgnoredTextEdgeBodies {
 		assertSemaIgnoredTextMatchesReference(t, body)
@@ -215,9 +262,37 @@ func TestSemaIgnoredTextMatchesReferenceOnRandomBodies(t *testing.T) {
 	}
 }
 
+type ignoredTextFile struct {
+	path string
+	size int64
+}
+
+// Assign each path independently so adding a file cannot move another file
+// between independently executed race shards.
+func partitionIgnoredTextFiles(files []ignoredTextFile, count int) [][]ignoredTextFile {
+	files = append([]ignoredTextFile(nil), files...)
+	sort.Slice(files, func(i, j int) bool {
+		if files[i].size != files[j].size {
+			return files[i].size > files[j].size
+		}
+		return files[i].path < files[j].path
+	})
+	groups := make([][]ignoredTextFile, count)
+	for _, file := range files {
+		path := strings.TrimPrefix(filepath.ToSlash(file.path), "../../")
+		hash := uint32(2166136261 ^ 1)
+		for i := 0; i < len(path); i++ {
+			hash = (hash ^ uint32(path[i])) * 16777619
+		}
+		shard := int(hash % uint32(count))
+		groups[shard] = append(groups[shard], file)
+	}
+	return groups
+}
+
 func TestSemaIgnoredTextMatchesReferenceOnRepositoryApex(t *testing.T) {
 	root := filepath.Join("..", "..")
-	checked := 0
+	var files []ignoredTextFile
 	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -235,15 +310,28 @@ func TestSemaIgnoredTextMatchesReferenceOnRepositoryApex(t *testing.T) {
 		if len(source) > 64<<10 {
 			return nil
 		}
-		assertSemaIgnoredTextMatchesReference(t, string(source))
-		checked++
+		files = append(files, ignoredTextFile{path, int64(len(source))})
 		return nil
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if checked == 0 {
+	if len(files) == 0 {
 		t.Fatal("no Apex sources found")
+	}
+	for i, group := range partitionIgnoredTextFiles(files, 8) {
+		t.Run(fmt.Sprintf("part_%d", i), func(t *testing.T) {
+			// Parts share nothing but the read-only file list; every file is
+			// still checked at every offset.
+			t.Parallel()
+			for _, file := range group {
+				source, err := os.ReadFile(file.path)
+				if err != nil {
+					t.Fatal(err)
+				}
+				assertSemaIgnoredTextMatchesReference(t, string(source))
+			}
+		})
 	}
 }
 

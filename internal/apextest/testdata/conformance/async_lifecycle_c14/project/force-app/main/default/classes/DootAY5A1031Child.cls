@@ -1,0 +1,1 @@
+public without sharing class DootAY5A1031Child implements Database.Batchable<Integer>{public Iterable<Integer> start(Database.BatchableContext c){return new List<Integer>();}public void execute(Database.BatchableContext c,List<Integer> rows){}public void finish(Database.BatchableContext c){}}

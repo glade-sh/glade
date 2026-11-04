@@ -1,0 +1,41 @@
+api	route	object	case	observation
+62.0	anonymous	contact	derived_name_equals	true|
+62.0	anonymous	contact	different_name	true|
+62.0	anonymous	contact	first_name_reject	false|first name seen
+62.0	anonymous	contact	name_is_null	false|name true null
+62.0	anonymous	contact	name_is_not_null	true|
+62.0	istest	contact	derived_name_equals	true|
+62.0	istest	contact	different_name	true|
+62.0	istest	contact	first_name_reject	false|first name seen
+62.0	istest	contact	name_is_null	false|name true null
+62.0	istest	contact	name_is_not_null	true|
+62.0	anonymous	user	derived_name_equals	true|
+62.0	anonymous	user	different_name	true|
+62.0	anonymous	user	first_name_reject	false|first name seen
+62.0	anonymous	user	name_is_null	false|name true null
+62.0	anonymous	user	name_is_not_null	true|
+62.0	istest	user	derived_name_equals	true|
+62.0	istest	user	different_name	true|
+62.0	istest	user	first_name_reject	false|first name seen
+62.0	istest	user	name_is_null	false|name true null
+62.0	istest	user	name_is_not_null	true|
+67.0	anonymous	contact	derived_name_equals	true|
+67.0	anonymous	contact	different_name	true|
+67.0	anonymous	contact	first_name_reject	false|first name seen
+67.0	anonymous	contact	name_is_null	false|name true null
+67.0	anonymous	contact	name_is_not_null	true|
+67.0	istest	contact	derived_name_equals	true|
+67.0	istest	contact	different_name	true|
+67.0	istest	contact	first_name_reject	false|first name seen
+67.0	istest	contact	name_is_null	false|name true null
+67.0	istest	contact	name_is_not_null	true|
+67.0	anonymous	user	derived_name_equals	true|
+67.0	anonymous	user	different_name	true|
+67.0	anonymous	user	first_name_reject	false|first name seen
+67.0	anonymous	user	name_is_null	false|name true null
+67.0	anonymous	user	name_is_not_null	true|
+67.0	istest	user	derived_name_equals	true|
+67.0	istest	user	different_name	true|
+67.0	istest	user	first_name_reject	false|first name seen
+67.0	istest	user	name_is_null	false|name true null
+67.0	istest	user	name_is_not_null	true|

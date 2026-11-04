@@ -189,6 +189,7 @@ jobs:
 
   scorecard:
     name: OpenSSF Scorecard
+    if: ${{ !startsWith(github.ref, 'refs/tags/') }}
     runs-on: ubuntu-latest
     permissions:
       actions: read

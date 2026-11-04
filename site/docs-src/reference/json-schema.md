@@ -24,13 +24,19 @@ Priority commands write a versioned JSON envelope.
 }
 ```
 
+For `glade test`, `empty` means a successful summary with zero tests and exits
+0. A terminal stop reason overrides the envelope status to `stopped` and exits
+1. Check counts and per-test reasons separately; neither outcome establishes
+that a complete test run occurred. Failures and exclusions take precedence over
+`empty`.
+
 ## Fields
 
 | Field | Type | Notes |
 | --- | --- | --- |
 | `schemaVersion` | string | Envelope version. Current value is `1.0`. |
 | `command` | string | Command that produced the output. |
-| `status` | string | `passed`, `failed`, `partial`, or `unsupported` where supported. |
+| `status` | string | Command-dependent: `passed`, `failed`, `partial`, `unsupported`, `empty`, or `stopped` where supported. Handle unknown future values conservatively. |
 | `exitCode` | number | Process exit status. |
 | `project` | object | Project root and package information when known. |
 | `summary` | object | Command-specific counts. |

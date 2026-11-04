@@ -93,7 +93,7 @@ func TestGracefulStopServerEmptyRunRejectsNonStopErrors(t *testing.T) {
 
 func TestGracefulStopQueuedSocketProjectRoutes(t *testing.T) {
 	for _, api := range []string{"62.0", "67.0"} {
-		for _, cause := range []string{"cancel", "deadline"} {
+		for _, cause := range []string{"cancel", "deadline", "deadline-controlled"} {
 			t.Run(api+"/"+cause, func(t *testing.T) {
 				t.Cleanup(apextest.InvalidateRuntimeCaches)
 				root := t.TempDir()
@@ -110,8 +110,13 @@ func TestGracefulStopQueuedSocketProjectRoutes(t *testing.T) {
 				go func() { served <- server.ListenAndServe(serveCtx, io.Discard) }()
 				t.Cleanup(func() {
 					stopServer()
-					if err := <-served; err != nil {
-						t.Errorf("serve: %v", err)
+					select {
+					case err := <-served:
+						if err != nil {
+							t.Errorf("serve: %v", err)
+						}
+					case <-time.After(2 * time.Minute):
+						t.Error("server did not stop")
 					}
 				})
 				waitForServerCondition(t, func() bool {
@@ -123,32 +128,76 @@ func TestGracefulStopQueuedSocketProjectRoutes(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
+				requestID := "" // RunV1 does not supply an ID; this is the only queued run.
+				admitted := make(chan struct{}, 1)
+				server.afterRunAdmissionV1 = func(id string) {
+					if id == requestID {
+						select {
+						case admitted <- struct{}{}:
+						default:
+						}
+					}
+				}
 				t.Cleanup(func() {
 					if release != nil {
 						release()
 					}
 				})
 				ctx, cancel := context.WithCancel(context.Background())
+				var clock *manualDeadlineContext
 				if cause == "deadline" {
 					cancel()
 					ctx, cancel = context.WithTimeout(context.Background(), 500*time.Millisecond)
+				} else if cause == "deadline-controlled" {
+					cancel()
+					clock = newManualDeadlineContext(500 * time.Millisecond)
+					ctx, cancel = dialContextWithoutDeadline{clock}, clock.Close
 				}
 				defer cancel()
 				type outcome struct {
 					response ResponseV1
 					err      error
+					cause    error
 				}
 				finished := make(chan outcome, 1)
+				exited := make(chan struct{})
+				t.Cleanup(func() {
+					cancel()
+					select {
+					case <-exited:
+					case <-time.After(2 * time.Minute):
+						t.Error("client did not exit")
+					}
+				})
 				go func() {
+					defer close(exited)
 					response, err := RunV1(ctx, server.socket, RunRequestV1{Parallelism: 1})
-					finished <- outcome{response, err}
+					finished <- outcome{response, err, ctx.Err()}
 				}()
-				waitForServerCondition(t, func() bool { return len(server.runAdmission) == 2 }, "request never queued")
+				select {
+				case <-admitted:
+					if err := ctx.Err(); err != nil {
+						t.Fatalf("context expired before admission: %v", err)
+					}
+				case result := <-finished:
+					t.Fatalf("request completed before admission: %#v", result)
+				case <-time.After(2 * time.Minute):
+					t.Fatal("request never acknowledged admission")
+				}
+				if len(server.runAdmission) != 2 || len(server.runExecution) != 1 {
+					t.Fatal("acknowledged request not queued")
+				}
 				if cause == "cancel" {
 					cancel()
+				} else if cause == "deadline-controlled" {
+					clock.Advance(500 * time.Millisecond)
 				}
+
 				select {
 				case result := <-finished:
+					if cause != "cancel" && !errors.Is(result.cause, context.DeadlineExceeded) {
+						t.Errorf("deadline cause at return = %v", result.cause)
+					}
 					if result.err == nil || result.response.Error != context.Canceled.Error() {
 						t.Errorf("queued client cancellation: response=%#v err=%v", result.response, result.err)
 					}
@@ -161,7 +210,9 @@ func TestGracefulStopQueuedSocketProjectRoutes(t *testing.T) {
 				}
 				release()
 				release = nil
-				next, err := RunV1(context.Background(), server.socket, RunRequestV1{Parallelism: 1})
+				nextCtx, stopNext := context.WithTimeout(context.Background(), 2*time.Minute)
+				defer stopNext()
+				next, err := RunV1(nextCtx, server.socket, RunRequestV1{Parallelism: 1})
 				if err != nil || !next.OK || next.Run == nil || next.Run.Summary().Passed != 1 || next.Run.Summary().Total != 1 {
 					t.Fatalf("next project request did not execute: response=%#v err=%v", next, err)
 				}

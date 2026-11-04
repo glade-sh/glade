@@ -282,9 +282,10 @@ Only dependencies declared in the consumer manifest are loaded from these mappin
 An explicit `project.dependencies` mapping takes precedence over workspace discovery.
 
 `glade config validate` reports unsupported keys and parse errors before heavier
-commands run. It also prints nonfatal warnings for unread settings and malformed
-scratch definitions, with the source file and setting key. Setting values are
-not included in these warnings. An unread key can be valid Salesforce
+commands run. It also prints nonfatal warnings for unread features and settings
+and malformed scratch definitions, with the source file and key. Setting values
+are not included in these warnings. Feature names are matched case-insensitively
+and duplicate entries are reported once. An unread key can be valid Salesforce
 configuration; the warning means it has no local mapping in Glade.
 
 ## Experience Cloud metadata
@@ -315,9 +316,10 @@ settings and member provisioning are not modeled by this loader.
 
 ## Org Features
 
-`org.features` and `glade init --feature` accept the same feature names. Use the
-canonical spellings below. Features configure specific local schema and runtime
-behavior; enabling a name does not provision a Salesforce service.
+`org.features` and `glade init --feature` accept the same feature names. Matching
+is case-insensitive; use the canonical spellings below. Features configure specific
+local schema and runtime behavior; enabling a name does not provision a Salesforce
+service.
 
 | Feature | Local behavior |
 | --- | --- |
@@ -331,6 +333,10 @@ behavior; enabling a name does not provision a Salesforce service.
 | `AddCustomApps:N` | Seed `N` local application records; for example, `AddCustomApps:3`. |
 | `Quotes` | `Opportunity.SyncedQuoteId` field availability. |
 | `HealthCloud` | Writable `Account.IsActive` Boolean field, defaulting to `false`; accepts names beginning with `HealthCloud`, including `HealthCloudAddOn`. |
+| `OrderManagement` | `WebStore` standard object availability. |
+| `ApexUserModeWithPermset` | Custom `AccessLevel` usage in scratch org execution. |
+| `B2BCommerce`, `CommerceEnabled` | `WebStore` availability and fields (with `Communities` and `OrderManagement`). |
+| `LiveAgent`, `LiveAgentEnabled` | `Case` live-agent field gates. |
 | `TranslationLanguage-fr` | Model an active French Translation Workbench language for the captured `Account.Industry` standard value-set `toLabel` route. Include the corresponding `Industry-fr.standardValueSetTranslation` metadata. |
 
 `Chatter`, `LightningExperience`, `EnableSetPasswordInApi`, and
@@ -383,10 +389,12 @@ unread-key warning.
 | `currencySettings.enableMultiCurrency` | `MultiCurrency` |
 | `quoteSettings.enableQuote` | `Quotes` |
 
-Other settings remain in the source file and do not configure local org shape.
-For example, `userManagementSettings.enableNewUserEmailVerification` does not
-enable `EnableSetPasswordInApi`. `glade config validate` reports these unread
-keys without rejecting the project.
+Other features and settings remain in the source file and do not configure local org shape.
+For example, `features` entries such as `ServiceCloud` or `Knowledge`, and
+`userManagementSettings.enableNewUserEmailVerification`, do not enable local
+behaviors. Feature names are matched case-insensitively against the read features
+defined above. `glade config validate` reports these unread keys without rejecting
+the project.
 
 ### Undeclared setup suggestions
 

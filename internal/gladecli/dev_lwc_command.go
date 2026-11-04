@@ -28,6 +28,10 @@ func runDevLWC(ctx context.Context, args []string, w io.Writer, progressW io.Wri
 }
 
 func runDevLWCWithOpenURL(ctx context.Context, args []string, w io.Writer, progressW io.Writer, opener func(string) error) error {
+	return runDevLWCWithOpenURLAndListen(ctx, args, w, progressW, opener, net.Listen)
+}
+
+func runDevLWCWithOpenURLAndListen(ctx context.Context, args []string, w io.Writer, progressW io.Writer, opener func(string) error, listen func(string, string) (net.Listener, error)) error {
 	opts, err := parseDevLWCOptions(args)
 	if err != nil {
 		if errors.Is(err, errDevLWCHelp) {
@@ -86,6 +90,7 @@ func runDevLWCWithOpenURL(ctx context.Context, args []string, w io.Writer, progr
 	if store != nil {
 		handler = server.NewWithStoreAndSource(&org, store, source)
 	}
+	defer handler.Close()
 	installDevVFRuntime(handler, index)
 	if root, err := gladehome.EnsureRoot(); err != nil {
 		renderer.Render(cliui.Event{Kind: cliui.EventWarn, Phase: "dev lwc", Label: "LWC toolchain unavailable", Detail: err.Error()})
@@ -95,7 +100,7 @@ func runDevLWCWithOpenURL(ctx context.Context, args []string, w io.Writer, progr
 	renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "dev lwc", Label: "Building route metadata", Current: 4, Total: 6})
 	_ = devLWCPreviewRoutes(p)
 	renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "dev lwc", Label: "Starting shell", Current: 5, Total: 6})
-	listener, err := net.Listen("tcp", opts.addr)
+	listener, err := listen("tcp", opts.addr)
 	if err != nil {
 		renderer.Finish(cliui.Result{OK: false, Label: "dev lwc failed"})
 		return err
@@ -118,7 +123,7 @@ func runDevLWCWithOpenURL(ctx context.Context, args []string, w io.Writer, progr
 			return err
 		}
 	}
-	httpServer := &http.Server{Addr: opts.addr, Handler: handler, ReadHeaderTimeout: localHTTPReadHeaderTimeout}
+	httpServer := &http.Server{Addr: opts.addr, Handler: server.GuardHTTPAuthority(handler, actualAddr, opts.addr), ReadHeaderTimeout: localHTTPReadHeaderTimeout, ReadTimeout: localHTTPReadTimeout}
 	renderer.Render(cliui.Event{Kind: cliui.EventPhaseEnd, Phase: "dev lwc", Label: "Shell ready", Current: 6, Total: 6})
 	renderer.Finish(cliui.Result{OK: true, Label: "dev lwc ready"})
 	printDevLWCStartupSummary(w, actualAddr, p, selection)

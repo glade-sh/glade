@@ -171,6 +171,10 @@ func recordBatchFieldDiagnostic(objectName, fieldName string) string {
 // Layout selection replaces required fields, while optional fields are unioned
 // into the selected layout (native review controls at API 59 and 67).
 func getLDSRecordWireData(org *storage.OrgState, req lwcbrowser.WireGetRecordRequest, source SourceMetadata) (map[string]any, *lwcbrowser.WireError) {
+	return getLDSRecordWireDataInLocation(org, req, source, ldsRecordLocation(org))
+}
+
+func getLDSRecordWireDataInLocation(org *storage.OrgState, req lwcbrowser.WireGetRecordRequest, source SourceMetadata, zone *time.Location) (map[string]any, *lwcbrowser.WireError) {
 	fields := req.Fields
 	if len(req.LayoutTypes) > 0 {
 		for _, value := range req.LayoutTypes {
@@ -191,7 +195,7 @@ func getLDSRecordWireData(org *storage.OrgState, req lwcbrowser.WireGetRecordReq
 			fields = recordLayoutSelection(org, objectName, req.LayoutTypes, req.Modes, source)
 		}
 	}
-	data, wireErr := getRecordWireData(org, req.RecordID, fields, req.OptionalFields)
+	data, wireErr := getRecordWireDataInLocation(org, req.RecordID, fields, req.OptionalFields, zone)
 	if wireErr != nil && wireErr.Type == "INVALID_FIELD" {
 		if objectName, _, ok := findOrgRecord(org, req.RecordID); ok {
 			name := strings.TrimPrefix(wireErr.Message, "field not found: ")

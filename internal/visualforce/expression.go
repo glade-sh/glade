@@ -19,7 +19,13 @@ func EvaluateExpression(raw string, ctx *ExpressionContext) (string, error) {
 	if raw == "" {
 		return "", nil
 	}
-	expr, err := parseExpression(raw)
+	var expr Expression
+	var err error
+	if ctx != nil && ctx.syntax != nil {
+		expr, err = ctx.syntax.parse(raw)
+	} else {
+		expr, err = parseExpression(raw)
+	}
 	if err != nil {
 		if err.Error() == errNoExpression.Error() {
 			return raw, nil
@@ -142,6 +148,34 @@ type ExpressionContext struct {
 	evaluationError          error
 	repetitionFieldAccess    bool
 	standardRecordRoot       string
+	syntax                   *expressionSyntaxCache
+}
+
+type expressionSyntaxEntry struct {
+	expr Expression
+	err  error
+}
+
+// The cache stores syntax only, never evaluated values. It is bounded to one
+// render and populated lazily so hidden branches retain their existing behavior.
+type expressionSyntaxCache struct {
+	entries map[string]expressionSyntaxEntry
+	bytes   int
+}
+
+func (c *expressionSyntaxCache) parse(raw string) (Expression, error) {
+	if entry, ok := c.entries[raw]; ok {
+		return entry.expr, entry.err
+	}
+	expr, err := parseExpression(raw)
+	if len(c.entries) < 256 && c.bytes+len(raw) <= 64*1024 {
+		if c.entries == nil {
+			c.entries = make(map[string]expressionSyntaxEntry)
+		}
+		c.entries[raw] = expressionSyntaxEntry{expr: expr, err: err}
+		c.bytes += len(raw)
+	}
+	return expr, err
 }
 
 func (ctx *ExpressionContext) beginEvaluation() {

@@ -1,0 +1,5511 @@
+{
+ "version": 1,
+ "package": "github.com/glade-sh/glade/internal/sema",
+ "source": "GitHub Actions ubuntu-latest lane ghci-canon-capture-revision-1 (2026-11-02), go test -count=1 -json at canonical capture-revision-1, Go 1.26.10, GOMAXPROCS=2; one matched full-package run; scheduling hints only; TestSemaIgnoredTextMatchesReferenceOnRepositoryApex re-weighted to its post-fix wall (laptop 63 s x GHA ratio)",
+ "tests": [
+  {
+   "name": "TestAPI67CacheAcceptedShapes",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestAPI67CachePartitionStaticOnlyDiagnosticMessage",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestAPI67CacheRejectedShapes",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAPI67CompileShapePreservesAllowedConstructorNeighbors",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestAPI67CompileShapeRejectsAbstractAndVoidAssignmentBatch",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestAPI67CompileShapeRejectsHiddenAuthCallsAndContinuationState",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestAPI67CompileShapeRejectsInternalNoArgConstructors",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestAPI67CompileShapeRejectsNonConstructibleAndHiddenConstructors",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestAPI67ExceptionInheritedMembersAndSubtypeConstructors",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAPI67MessagingAssignmentsRejectedAnonymous",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestAPI67MessagingAssignmentsRejectedClass",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAPI67MessagingReadOnlyPropertiesAnonymous",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestAPI67MessagingReadOnlyPropertiesClass",
+   "durationMillis": 90
+  },
+  {
+   "name": "TestAPI67MessagingUndeclaredResultConstructorsRejectedAnonymous",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestAPI67ProjectUninstallContextOrganizationIdPropertyIsAccepted",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestAPI67ReleaseLanguageRuleRegressions",
+   "durationMillis": 210
+  },
+  {
+   "name": "TestAPI67ResidualPreservesCanonicalSurfaces",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAPI67ResidualRejectsAcquiredNonSalesforceSurfaces",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestAPI67ResidualRejectsInvalidDatabaseAllowCalloutsType",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestAPI67ResidualRejectsRemovedSiteURLHelpers",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestAPI67ResidualRejectsTimeZoneDisplayNameBooleanByCall",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestAPI67StandardExceptionConstructorVisibility",
+   "durationMillis": 1440
+  },
+  {
+   "name": "TestAPI67UninstallContextOrganizationIdMethodsAreAccepted",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestAPI67UninstallContextOrganizationIdPropertyIsRejected",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestAbstractImplementationOverrideRegression",
+   "durationMillis": 80
+  },
+  {
+   "name": "TestAbstractMethodRequiresExplicitAccessAtAPIVersion65",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAbstractMethodVersionGateUsesEffectiveSourceAPIVersion",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestAccessModifierContractFamilyAPI65And67",
+   "durationMillis": 770
+  },
+  {
+   "name": "TestActivityExternalIDUpsertQualification",
+   "durationMillis": 3840
+  },
+  {
+   "name": "TestActivityUpsertSelectorKeepsOwnershipAndCapabilityBoundaries",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestAddressLocationAssignmentIdentity",
+   "durationMillis": 80
+  },
+  {
+   "name": "TestAddressReadOnlyContractAPI67",
+   "durationMillis": 110
+  },
+  {
+   "name": "TestAggregateOrderGeneratedAliasDoesNotHideUnknownFields",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAggregateWhereContractAndValidNeighbors",
+   "durationMillis": 360
+  },
+  {
+   "name": "TestAnalyzeAPI67NamedClassInlineSOQLCoalesceSingletonContexts",
+   "durationMillis": 260
+  },
+  {
+   "name": "TestAnalyzeAPI67PlatformCallChecksRetainNegativeControls",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeAPI67PlatformStaticCallsAcceptBroadObjectSignatures",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeAPI68NativeExpressionControls",
+   "durationMillis": 190
+  },
+  {
+   "name": "TestAnalyzeAbstractReceiverMethodThroughThisField",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestAnalyzeAcceptsLowercaseExternalManagedPackageApexNamespace",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeAccessLevelWithPermissionSetIdOnEnumValue",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeAdditionalPlatformSeams",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeAllowsEveryDocumentedSchemaImplicitTypeSpelling",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeAllowsEveryDocumentedSystemQualifiedTypeSpelling",
+   "durationMillis": 790
+  },
+  {
+   "name": "TestAnalyzeAllowsNamespaceStaticMembersAndEnumValues",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeAllowsSameClassHelperWithSystemRestRequest",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeAllowsSchemaImplicitTypesEverywhere",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeAllowsSearchFindSurface",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeAllowsSearchQueryCompileOnly",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeAllowsSearchSuggestObjectOptionsSurface",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeAllowsSystemQualifiedDatabaseInnerReturnTypes",
+   "durationMillis": 70
+  },
+  {
+   "name": "TestAnalyzeAllowsSystemQualifiedTypesEverywhere",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeAmbiguousNullOverloadsRejected",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeAmbiguousOverloadSameReturnType",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeAnnotationSemantics",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeAnonymousCachedSetupFollowsProjectMarkers",
+   "durationMillis": 190
+  },
+  {
+   "name": "TestAnalyzeAnonymousCachedSetupFollowsSameStampEdit",
+   "durationMillis": 120
+  },
+  {
+   "name": "TestAnalyzeAnonymousCachedSetupMatchesFreshSetup",
+   "durationMillis": 830
+  },
+  {
+   "name": "TestAnalyzeAnonymousConcurrentCallsShareSetup",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeAnonymousDatabaseGetQueryLocatorRequiresInlineQueryForList",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestAnalyzeAnonymousFollowsSourceAPIVersion",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestAnalyzeAnonymousLowersXorSource",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestAnalyzeAnonymousRejectsNonSalesforcePatternSurface",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestAnalyzeAnonymousUsesBodyContracts",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeAnonymousWaiterSeesEditDuringLeaderBuild",
+   "durationMillis": 70
+  },
+  {
+   "name": "TestAnalyzeApexClassBodyFieldAsString",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeApexPagesAddMessagesOverloadsAreStatic",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeApexPagesHasMessagesSeverity",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeArrayStyleAndWrappedLocalDeclarations",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeAssertBooleanThroughNestedMapListFieldChain",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeAssertBooleanThroughSingletonMethodResultChain",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestAnalyzeAssertClassMethods",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeAuraHandledExceptionConstructable",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeBareInstanceFieldArgumentInChainedInterfaceCall",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeBareInstanceFieldsInImplicitChainedInterfaceCall",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeBitwiseIntegerExpressionAssignment",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeBooleanReturnWithCastComparison",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeBroadSystemStubShapes",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeBuildsTypeMemberModelOnce",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeCallArgumentAssignmentDoesNotDeclareLocal",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeCallArgumentSeesBareSObjectTypeLocal",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeCallArgumentsIgnoreCommentedArgument",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeCapturedMultiCurrencySchema",
+   "durationMillis": 390
+  },
+  {
+   "name": "TestAnalyzeCapturedStaticOverloadPrecedence",
+   "durationMillis": 380
+  },
+  {
+   "name": "TestAnalyzeCaseInsensitivePlatformEnumAndDateStatics",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeCaseInsensitiveVariableBeatsSObjectToken",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeCastAndInstanceOfExpressionTypes",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeCastedStringComparisonIsBoolean",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeChainedCallAfterNestedStaticFactoryArg",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeChainedCallArgumentSelectsSObjectFieldOverload",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeChainedCallOnNestedInterfaceReturn",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeChainedCallWithArgumentsOnNextLine",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeChainedCollectionCallAfterComparison",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeChainedCollectionCallAfterLessThan",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeChainedConstructorCallReturnType",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeChainedMapConstructorKeySet",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeChainedMapGetFieldIndexReturnType",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeChainedSObjectTypeToken",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestAnalyzeChainedStaticFactoryCall",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeChainedStaticPropertyNestedFieldCall",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeChildRelationshipAddAllSpecificType",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestAnalyzeChildRelationshipAddAllToSObjectList",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeClassLiteralTypeMethodsAreInstanceCalls",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeCollectionAddAllIterableAndSObjectFieldLoop",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeCollectionConstructorsWithArrayElementGenericTypes",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeCommaSeparatedLocalDeclaration",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeCommaSeparatedLocalDeclarations",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeCommaSeparatedLocalInitializersStopAtDeclaratorComma",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeCommentedConstructorDoesNotTriggerConstructability",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeCommonSObjectRelationshipsResolveStandardChains",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeCommonSalesSObjectTypes",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeConcreteSObjectCloneReturnsConcreteType",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeConcreteSObjectGetByFieldName",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeConcreteSObjectRelationshipAccessors",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeConditionalThrowDoesNotTerminateNonVoidMethod",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeConnectApiNamedCredentialInputFieldTypes",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestAnalyzeConnectApiOrderSummaryChangeMethodShapeBoundary",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeConnectApiOrganizationSettingsOrgIdIsId",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeConstructorChainingBaseline",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeConstructorChainingDiagnostics",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeConstructorPrefersEnumOverObject",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeCoreSystemTypeAliases",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestAnalyzeCronJobDetailAndCronTriggerStandardObjects",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeCustomExceptionConstructorInheritance",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeCustomHistoryObjectFromEnabledMetadata",
+   "durationMillis": 120
+  },
+  {
+   "name": "TestAnalyzeCustomHistoryObjectPreservesLocalRedeclarationControl",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeCustomHistoryObjectRequiresEnabledParent",
+   "durationMillis": 210
+  },
+  {
+   "name": "TestAnalyzeCustomMetadataLabelAsString",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeCustomMetadataStandardFieldsAreStrings",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeCustomOrderPropertyDoesNotCollapseToStandardOrder",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeCustomRelationshipFieldInfersReferencedObject",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeCustomSObjectSetOptions",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeDMLNestedProjectTypesPreserveOwnership",
+   "durationMillis": 240
+  },
+  {
+   "name": "TestAnalyzeDatabaseBatchableGenericContractUsesItemType",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeDatabaseBatchableMethods",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeDatabaseBatchableRejectsWrongReturnTypes",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeDatabaseBatchableRequiresAllMethods",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeDatabaseBatchableSObjectAllowsConcreteExecuteScope",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeDatabaseBatchableSObjectAllowsObjectExecuteScope",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeDatabaseBatchableStartAcceptsListReturn",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeDatabaseBatchableStartAcceptsNamespacedSObjectReturn",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeDatabaseDMLCollectionOverloads",
+   "durationMillis": 80
+  },
+  {
+   "name": "TestAnalyzeDatabaseDMLNewListLiteralReturnsResultList",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeDatabaseExecuteBatchRejectsStructuralBatchShape",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeDatabaseExecuteBatchRequiresBatchable",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeDatabaseQueryAssignsSingleAndListSObjectContexts",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeDatabaseQueryIsIterableAsSObject",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeDatabaseQueryResultCanBeIndexedAsSObjectList",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeDatabaseQueryWithBindsRequiresAccessLevel",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeDatabaseSavepoint",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeDatabaseStatefulBatchCompiles",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeDatabaseUpsertRequiresSObjectOperands",
+   "durationMillis": 140
+  },
+  {
+   "name": "TestAnalyzeDatacloudDuplicateResultTypes",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeDatacloudSafeFieldCollectionType",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeDateArithmeticAndSObjectCloneOverloads",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeDateDatetimeStandardDeclarations",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeDateTimeFieldDateCall",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeDatetimeFormatCall",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeDecimalRoundOnParenthesizedNumericExpression",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeDecimalRoundWithRoundingMode",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeDescribeBooleanRows",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeDescribeFieldDefaultValueFormula",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeDescribeFieldGetNameSelectsStringOverload",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeDescribeFieldReferenceRows",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeDescribePlatformConstructorControls",
+   "durationMillis": 140
+  },
+  {
+   "name": "TestAnalyzeDescribeSObjectResultFieldsGetMapChain",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeDescribeSobjectTypeAlias",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeDescribeSourceShadowConstructor",
+   "durationMillis": 150
+  },
+  {
+   "name": "TestAnalyzeDoesNotRequirePlatformStubsToSatisfyInterfaces",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeDomXmlNodeGetChildElement",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeDoubleArithmeticDecimalConversion",
+   "durationMillis": 650
+  },
+  {
+   "name": "TestAnalyzeDuplicateNamedClassUsesOwnMembersForBody",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeDuplicateOverlayHydrationPreservesUnknownCallOrder",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeEncodingUtilAndBlobStaticMethods",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeEnhancedForLocalDoesNotShadowClassAfterLoop",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeEnhancedForSOQLWithRelationshipFieldsSkipsClauseKeywords",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestAnalyzeEnumStaticMethods",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeEventSObjectTokensPreferStandardSObject",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeExceptionGetMessageOverrideRejectsWrongReturnAndVisibility",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeExplicitCastsFromFluentBaseReturns",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeExplicitCastsFromMapGetInitializeTypedLocals",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeExplicitSystemTypesBeatLocalShadows",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeExpressionPrecedenceLocalThenClassThenNamespace",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeFallbackPropertyNamesForDateAndList",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeFieldPathSkipsMissingExternalReceiverType",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeFieldSetMemberPathSelectsStringOverload",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeFieldVisibilityDiagnostics",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeFinalLocalVariable",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeFinalThrowAfterBlockTerminatesNonVoidMethod",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeFinalizerContextInterfaceArgument",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeFlowInterviewProjectTypes",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeFlowNamedTestDoesNotShadowSystemTest",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeFluentBuilderNestedStaticConditionCalls",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeFluentConstructorChainKeepsReceiverType",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeFluentStaticConstructorChain",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeFluentUserEqualsBeatsCollectionEquals",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeForEachOverDynamicObjectDefersElementValidation",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeGeneratedNestedEnumStaticMember",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeGeneratedShareFieldTokensUseEnableSharingMetadata",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeGeneratedShareFieldTokensWithUnknownSharingMetadata",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeGeneratedStandardSObjectShapeAndSOQL",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeGeneratedStubMethodStaticAccess",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeGeneratedSystemStubsAreCaseInsensitive",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeGenericInterfaceImplementationAssignableToInterface",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeGetClassGetName",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeGetClassGetNameInsideChainedArgument",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeHttpCalloutMockOneLineFixtureShape",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeHttpRequestGetters",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeIRBodyAllPathsReturnDiagnostics",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeIRStaticPropertyChainCallArgType",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeIgnoresSObjectConstructorNamedArgumentsAsAssignments",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeImplicitHelperMethodsBeatPlatformObjectMethods",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeImplicitMethodArgumentSelectsSpecificOverload",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeImplicitNamespaceCollisionLocalMember",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeImplicitNamespaceCollisionMissingOnly",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeImplicitNamespaceCollisionRejectsUnknownLocalMember",
+   "durationMillis": 80
+  },
+  {
+   "name": "TestAnalyzeInheritanceContractDiagnosticOrderIsDeterministic",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeInheritedAndSuperMethodCalls",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeInheritedNestedTypeShortName",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeInheritedOverloadRemainsVisible",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeInheritedSuperReturnAndFieldTypes",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeInlineQueryDeleteReturnCardinality",
+   "durationMillis": 530
+  },
+  {
+   "name": "TestAnalyzeInlineSOQLCoalesceNullAssignments",
+   "durationMillis": 220
+  },
+  {
+   "name": "TestAnalyzeInlineSOQLCoalesceNullReturn",
+   "durationMillis": 80
+  },
+  {
+   "name": "TestAnalyzeInlineSOQLDMLChoosesListOverload",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeInnerTypeWinsBeforeNamespaceType",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeInstallHandlerAssignableToTestInstall",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeInterfaceAndOverrideReturnInference",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeInterfaceEqualsMethodDoesNotCollideWithObjectEquals",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeKeepsLocalManagedPackageSObjectFieldsStrict",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeKnownFluentWithCall",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeKnownPlatformFieldReceiverMethodStaysPermissive",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeLeavesExternalManagedPackageSObjectFieldsOpen",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeListAddExpressionReturnTypes",
+   "durationMillis": 970
+  },
+  {
+   "name": "TestAnalyzeListCapacityConstructors",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeListDeepClonePreserveFlags",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeListReturnAssignableToIterable",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeListSortComparator",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeListSortSystemComparatorSObjectForConcreteSObjects",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeLoadsNestedSchemaCustomObjectsRelationshipTraversal",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeLocalDeclarationShadowsForEachVariable",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeLocalDoesNotShadowTypeInOwnInitializer",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeLocalNamedSearchUsesResolvedReceiver",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestAnalyzeLocalNestedEnumWinsOverDependencyType",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeLocationPlatformMethodsAndExceptionGetMessageOverride",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeLowercaseLoopVariableDoesNotResolveAsPlatformType",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeLowersXorBody",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeManagedPackageAccessRules",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeManagedPackageInstancePropertyKeepsNamespace",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeMapConstructorAcceptsChildRelationshipList",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeMapGetAcceptsCurrentClassStringConstant",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeMapGetAndRemoveAcceptCurrentClassStringConstantInsideCalls",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeMapInitializerValueChainedCall",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeMapLiteralValueChainedCallAfterArrow",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeMapStringSObjectConstructorFromList",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeMergesPartialConsumerObjectWithCompleteDependencyObject",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeMessagingEmailClone",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeMessagingSendEmailAllOrNothing",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeMetadataOperationsWithLegacyNestedMetadataType",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeMetadataSObjectFieldsAndStringEquals",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeMethodBodyBaseline",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeMethodBodyDiagnostics",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeMethodCallNullLiteralIsAmbiguous",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeMethodCallNumericOverloadChoosesNarrowestWidening",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeMethodCallNumericWideningBaseline",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeMethodCallObjectOverloadChoosesNearestAncestor",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeMethodCallOverloadBaseline",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeMethodCallOverloadUsesPairwiseSpecificity",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeMethodCallVisibilityDiagnostics",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeMethodParameterTypes",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeMultilineLocalConstructorDeclarationAcrossElseIf",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeMultilineLocalConstructorDeclarationStaysInScope",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeMultilineLocalDeclarationDoesNotRedeclareLaterUse",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeMultilineSOQLDoesNotDeclareClauseLocals",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeMultilineSOQLDoesNotDeclareLocals",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestAnalyzeMultilineSOQLDoesNotReportClauseKeywordsAsCalls",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeMultipleLocalDeclaratorsKeepDeclaredType",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeMultipleUninitializedLocalDeclarators",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeNamespacedContactCheckboxAndFinalClone",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeNamespacedNestedEnumConstantFieldPath",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeNamespacedObjectAcceptsLocalFieldAlias",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeNamespacedSchemaDerivedShareAcceptsLocalAPIName",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeNamespacedSelfLookupChildRelationshipAlias",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeNarrowedBatchableSchedulableExecuteNullCall",
+   "durationMillis": 90
+  },
+  {
+   "name": "TestAnalyzeNestedCastFieldAccess",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeNestedClassCanCallOuterStaticHelperOverObjectToString",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeNestedCollectionAddAfterForEachShadow",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeNestedEnumConstantFieldPath",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeNestedEnumOverloadDeclaredLater",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeNestedEnumShortQualifiedAssignment",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeNestedEnumValuesStaticCall",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeNestedGenericReturnShortName",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeNestedInterfaceResolutionPrefersEnclosingType",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeNestedIteratorImplementationAssignableToIteratorReturn",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeNestedPlatformInterfaceImplementation",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeNestedProjectTypeDoesNotShadowSystemLimits",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeNestedSiblingOverrideSignatures",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeNestedSuperMethodCalls",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeNestedSuperMissingMethod",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeNestedTestDoubleStaticMockAssignment",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeNestedTypeReferences",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestAnalyzeNestedTypeRelativeReferencesInsideOwner",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeNestedTypeUsesEnclosingStaticQueryLimit",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeNestedUtilityToStringOverloadBeatsPlatformToString",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeNestedWrapperRecordCollectionAdd",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeNewListHelperAllowsUntypedExpressionArgument",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeNonConstructableTypeDiagnostics",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeNullCoalescingDoesNotReportSyntheticCall",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeNullCoalescingKeepsConcreteReturnType",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeNullCoalescingReturnKeepsConcreteType",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeNumericSetScaleAndSObjectErrors",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeObjectEqualsAndFluentPageReferenceRedirect",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeObjectInitializerTernaryDoesNotUseNamedFieldAsCondition",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeObjectToStringCall",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeOpaqueSObjectFieldDoesNotInferStringFromName",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeOptionalStandardFeatureFields",
+   "durationMillis": 310
+  },
+  {
+   "name": "TestAnalyzeOptionsFingerprintCoversEveryOptionField",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestAnalyzeOptionsFingerprintIsStable",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestAnalyzeOverloadCandidates",
+   "durationMillis": 890
+  },
+  {
+   "name": "TestAnalyzeOverloadPrefersIterableIdOverSObjectList",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeOverrideAndImplementationContracts",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeOverrideSkipsMissingExternalSuperclass",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzePageReferenceMethodChainsUseReturnTypes",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzePerfCountersArePerCall",
+   "durationMillis": 70
+  },
+  {
+   "name": "TestAnalyzePerfCountersCaptureAllPhases",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestAnalyzePerfCountersConcurrentDistinctOutputs",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestAnalyzePerfCountersDisabledByDefault",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzePerfCountersPreserveResult",
+   "durationMillis": 90
+  },
+  {
+   "name": "TestAnalyzePermissionSObjectTypeStringField",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzePlatformAPIInterfacesRequireContracts",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzePlatformAPITestCreateStubAndSetMockBridge",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzePlatformAPITestSetCurrentPageReferencePageToken",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzePlatformEventDomainListDowncast",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzePlatformExceptionSubtypeAssignableToException",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzePlatformOverrideSignatures",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzePlatformReceiverSpellingIsCaseInsensitive",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzePolymorphicProjectSObjectRelationshipAccessors",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzePolymorphicStandardSObjectRelationshipAccessors",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzePreservesHistoricalPerFileSourceAPIVersions",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeProductNamespaceGeneratedDeclarations",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestAnalyzeProjectClassNamedStandardObjectKeepsLocalInstances",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeProjectDatabaseDoesNotFallBackToSystemDatabase",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeProjectLocalSObjectFieldsAgainstNamespacedSchema",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeProjectLocationMethodShadowsPlatformLocation",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeProjectNamespaceQualifiedTypes",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestAnalyzeProjectReferencedAnyFieldDoesNotBlockStringOverload",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeProjectReferencedDateFactoryFieldTypeFlowsToCalls",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeProjectReferencedFieldsRefineExistingAnyAndObjectFields",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeProjectReferencedLiteralFieldTypesFlowToAssignmentsAndConstructors",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeProjectReferencedNumericFieldInferenceAcceptsIntegerAndDecimalObservations",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeProjectReferencedSchemaDoesNotInferFieldsForAuthoritativeObjects",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestAnalyzeProjectReferencedSchemaIgnoresNestedNamedArgsInSObjectLiteral",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestAnalyzeProjectReferencedSchemaInfersEnhancedForObjectWhenSchemaPresent",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestAnalyzeProjectReferencedSchemaInfersObjectWhenSchemaEmpty",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeProjectStandardSObjectStaticGetSObjectType",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzePropertyAccessUsesDeclaredDtoType",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeProtectedInheritedMethodAcceptsSchemaSObjectFieldToken",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeQualifiedEnumFieldPathMethods",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeQualifiedIterableEnhancedFor",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeQualifiedPlatformListCoalesce",
+   "durationMillis": 120
+  },
+  {
+   "name": "TestAnalyzeQualifiedReceiverMatrix",
+   "durationMillis": 1170
+  },
+  {
+   "name": "TestAnalyzeQualifiedReceiverNativeControls",
+   "durationMillis": 790
+  },
+  {
+   "name": "TestAnalyzeQueryLocatorAndIterableMethods",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeQuerySemanticsAcceptsKnownStandardObjectsWithoutProjectMetadata",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestAnalyzeQuerySemanticsAcceptsLocationComponentFields",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeQuerySemanticsAcceptsSetupOwnerTypeOnHierarchySettings",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeQuerySemanticsAddsFeatureAndMetadataStandardFields",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestAnalyzeQuerySemanticsAddsSystemFieldsToCustomObjects",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeQuerySemanticsAllowsCurrentObjectQualifiedFields",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeQuerySemanticsCopiesActivityFieldsToTaskAndEvent",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeQuerySemanticsIgnoresSOQLComments",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeQuerySemanticsIncludesEventIsClosed",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeQuerySemanticsKeepsLocalManagedPackageShapeStrict",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeQuerySemanticsLeavesExternalManagedPackageShapeOpen",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeQuerySemanticsMergesExtensionFieldsOnDuplicateObjects",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeQuerySemanticsMergesStandardFieldsIntoProjectStandardObject",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeQuerySemanticsRejectsOwnerOnCustomMetadata",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeQuerySemanticsResolvesNamespacedStandardObjectExtensionField",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeQuerySemanticsResolvesProjectLocalObjectNamesAgainstNamespacedSchema",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestAnalyzeQuerySemanticsUsesGeneratedStandardRelationshipShape",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeQuerySemanticsUsesProjectReferencedPackageFieldShape",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeQuerySemanticsUsesStandardChildRelationshipFallback",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeQuiddityRunIntegrationTests",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeReceiverQualifiedNullOverloadsUseOnlyReceiverModeCandidates",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeReceiverQualifiedSameModeNullOverloadsRemainAmbiguous",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeRecognizesCallableAndStubProviderTypes",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeRecordTypeSObjectTypeReceiverIsFieldToken",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeRejectsFutureEffectiveSourceAPIVersion",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeRejectsSetArgumentWhenOnlyListObjectOverloadExists",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeRelationshipFieldTokenPathReturnsSObjectField",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeRemapsDependencySourceNamespaceReferences",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeResolvesMemberTypes",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeResolvesNamespaceQualifiedSchemaAliases",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeResolvesProjectLocalNamesAgainstNamespacedSchema",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeResolvesUnqualifiedNestedCastToCurrentOuter",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeRestContextStaticFields",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeRestResourceHelperUsesSystemQualifiedRequestAndNestedCast",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeReturnAfterCommentStartingWithReturn",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeReturnCastWithoutWhitespaceAfterReturn",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeReturnEqualityDoesNotLookLikeAssignment",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeReturnUsesBlockScopedLocalType",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeRollupSummaryFieldUsesSummarizedFieldType",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSOQLAggregateForEachLiteralUsesAggregateResultElements",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSOQLCountExpressionAssignsInteger",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeSOQLForLoopAcceptsListChunkVariable",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSOQLLiteralSelectsTypedListOverload",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSOQLMapConstructorAndChunkLoop",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeSOQLQueryDiagnosticsUseSchemaResolution",
+   "durationMillis": 70
+  },
+  {
+   "name": "TestAnalyzeSOQLRelationshipAndAggregateAliasDiagnostics",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestAnalyzeSOQLRollupGroupByDoesNotReportCallArgs",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSOQLSingletonAcceptsSObjectTargets",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSOQLTypeofBranchObjectDiagnostics",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSOSLFindLiteral",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeSOSLReturningFieldDiagnostics",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSOSLReturningFieldsAreNotCallArgs",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSObjectAddErrorAndTriggerStaticFlags",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSObjectCloneAndAddError",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSObjectClonePreservesConcreteReceiverType",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSObjectFieldTokenDoesNotShadowClassStaticField",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeSObjectFieldsTokenGetDescribe",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeSObjectGetErrorsReturnsDatabaseErrors",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSObjectGetPopulatedFieldsAsMap",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSObjectGetSObjectFieldToken",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeSObjectIdFieldPath",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSObjectInstanceFieldsUseValueTypes",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeSObjectMapGetSObjectType",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSObjectNamedConstructorsAndRunAsBlock",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeSObjectPutSObject",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSObjectRelationshipAssignmentAllowsReferencedRecord",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSObjectTypeFieldSetsTokenPaths",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeSObjectTypeFieldsPathReturnsDescribeFieldResult",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSObjectTypeFieldsStringProperties",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSObjectTypeFieldsTokens",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSObjectTypeTokenMatchesDescribeSObjectResult",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSafeFieldPathCollectionControls",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestAnalyzeSafeNavigationMethodReceiverField",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeSafeNavigationStaticFieldWithNestedTypeName",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSafeNavigationStaticPropertyWithNestedTypeName",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSafeNavigationStillRejectsTypeReceiver",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSalesSObjectAssignableToSObject",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSameNamespaceSourceDependencyInheritance",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSameNamespaceSourceDependencyProtectedFieldAccess",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSameNamespaceSourceDependencyShortName",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeScalarValueAndStringSliceMethods",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeSchemaAliasInstanceReceiverAllowsInstanceMethods",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSchemaDerivedCustomMetadataAndShareFields",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeSchemaDescribeSObjectResultMethods",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeSchemaEmailTemplateSObjectShape",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSchemaLocationRemainsSchemaObject",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestAnalyzeSchemaQualifiedCustomSObjectMatchesCustomSObject",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSchemaQualifierDisambiguatesShadowedSObject",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSchemaSoapTypeAliases",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSecurityStripInaccessibleDecision",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestAnalyzeSecurityTokensRespectValueBindings",
+   "durationMillis": 400
+  },
+  {
+   "name": "TestAnalyzeSelfLookupRelationshipNameStaysScalar",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSetDeepClone",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSharedTypeMemberModelPreservesDiagnosticOrder",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeShortNestedEnumValueOverload",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeShortNestedTypeMatchesAnyCompatibleCandidate",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeSignedIntegerLiteralReturn",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSimpleExpressionTypeDiagnostics",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSimpleReturnTypeDiagnostics",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSingleEmailMessageAssignableToMessagingEmail",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSingleEmailMessageSetWhatId",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSkipsInheritanceContractsForPackageArtifacts",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSkipsSourceBackedDependencyDiagnostics",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSourceBackedDependencyDowngradesSemanticUncertainty",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeStandardApexClassSelectorPatterns",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeStandardChangeEventSObjectFields",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeStandardChildRelationshipListMemberCalls",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeStandardEventIncludesIsClosed",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeStandardExceptionSubtypeAssignable",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeStandardPermissionSetAssignmentsRelationship",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeStandardSObjectInitializerNamedArgAfterLineComment",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeStandardSObjectRelationshipAccessors",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeStandardSetControllerAllowsUnresolvedQueryLocatorArg",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeStandardShareAccessFields",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeStaticAndInstanceMethodAccess",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeStaticCallWithListConstructedFromSetArgument",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeStaticFactoryOverloadWithSObjectInitializer",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeStaticFieldReceiverBeatsCaseFoldedNestedType",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeStaticMethodNamedMatches",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeStaticSOQLLiteralMatchesTypedListParameter",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeStaticStandardSObjectFieldTokensInListInitializer",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeStaticStringFieldTokensStayStrings",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeStaticUserEqualsAcceptsSObjectFieldToken",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeStatusCodePrincipalEnumValues",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeStringFormatAcceptsObjectListArguments",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeStringJoinAcceptsIterable",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeStringLiteralMethodAndSplitTypes",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeStringValueOfSelectsStringOverload",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSummaryFieldReturnType",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSuppressesSuperConstructorCallsToMissingSuperclass",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSuppressesUnknownCallsThatMayComeFromMissingSuperclass",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeSuppressesUnknownCallsThroughNestedTypeMissingSuperclass",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSuppressesUnknownFieldsThatMayComeFromMissingSuperclass",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeSystemDateTodayStaticCall",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeSystemEnumMethodsWithProjectShadowClass",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSystemHashCodeAcceptsObjectArgument",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeSystemLabelReferencesAsStrings",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSystemLocationNewInstance",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestAnalyzeSystemQualifierDisambiguatesShadowedDatabase",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestAnalyzeSystemSavepointAlias",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSystemScheduleBatchRequiresBatchable",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSystemStatusCodeAlias",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeSystemTypeAliasAssignment",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeTernaryExpressionTypes",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeTestIsRunningTestPrefersPlatformClassOverInheritedField",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeTestIsRunningTestStaticCall",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeTestIsRunningTestStaticCallInNamespacedProject",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeTestMethodMapGetAndRemoveAcceptPrivateStaticStringConstant",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeTestVisibleConstructorAccess",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeTestVisibleMethodAccess",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeTestVisibleStaticMapFieldChainedGet",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeThisConstructorCallWithNestedGenericList",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeThisFieldAccessIgnoresShadowingParameter",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeThrowTerminatesNonVoidMethod",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeTopLevelProjectTypeShadowsSystemLimits",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeTriggerBodyAcceptsStaticTriggerLocal",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeTriggerBodyAcceptsTriggerContextAndHandlerCalls",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestAnalyzeTriggerBodyIgnoresDependencyTriggers",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestAnalyzeTriggerBodyRejectsIncompatibleAssignment",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeTriggerBodyRejectsUnknownCallAndLocalType",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestAnalyzeTriggerBodyTypesContextForDeclaredObject",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestAnalyzeTriggerEventAcceptsDistinctEvents",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeTriggerEventRejectsDuplicateEvents",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeTriggerObject",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeTriggerObjectAcceptsContentVersionDelete",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestAnalyzeTriggerObjectAcceptsCustomObjectWithoutDescribeEvidence",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestAnalyzeTriggerObjectRejectsNonTriggerableObject",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestAnalyzeTriggerOperationEnumValueArgs",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeTypeNewInstance",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeTypedListLiteralDoesNotReportUnknownNewlitCall",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeURLStandardDeclarations",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeUnbracedEnhancedForLocalVisibleInNestedLoop",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeUnknownExternalFieldTypeStopsFieldPathCheck",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeUnknownExternalPackageFieldDoesNotUseFallbackPropertyType",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeUnknownMemberType",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeUpdatedWindowLocalDeclarationsRemainVisible",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeUppercaseBooleanLiteral",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeUserDefinedClassClone",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeUserDefinedIterableAndAddAll",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestAnalyzeUserInfoOrganizationName",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeUserInfoStandardDeclarations",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnalyzeUserRecordAccessAndAddressComparison",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeVisibilityBaseline",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeVisibleOverrideWinsOverProtectedBaseMethod",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeVisualforceComponentTypesAssignableToApexPagesComponent",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnalyzeWarnsForDMLInLoop",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeWarnsForDatabaseDMLCallInLoop",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestAnalyzeWarnsForSOQLInLoop",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnalyzeWarnsForStaticFirstTouchMassMetadata",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnalyzeWithArtifactsMissingSourceDoesNotFallBackToDisk",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestAnalyzeWithArtifactsSurvivesSourceRemovalWithoutReread",
+   "durationMillis": 90
+  },
+  {
+   "name": "TestAnalyzeWithCapturedSourceMissDoesNotFallBackToLiveFilesystem",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestAnalyzeWithCapturedSourcePrefersRetainedBytesOverLiveFilesystem",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestAnnotationCatalogAllowsDocumentedInvocableMethodProperties",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestAnnotationCatalogAllowsDocumentedInvocableVariableProperties",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnnotationCatalogAllowsEscapedApostropheInNamedStringArgument",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnnotationCatalogAllowsKnownProperties",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnnotationCatalogAllowsSalesforceInvocableVariableWithEscapedApostrophe",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnnotationCatalogAllowsSuppressWarnings",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnnotationCatalogChecksParametersAndAccessors",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnnotationCatalogRejectsUnknownAnnotationsAndProperties",
+   "durationMillis": 170
+  },
+  {
+   "name": "TestAnnotationContractsAllowMethodIsTestSeeAllDataWithoutEffectiveAPIVersion",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnnotationContractsAllowValueReturningTestMethod",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnnotationContractsAllowZeroParameterInvocableMethod",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnnotationContractsGateMethodIsTestSeeAllDataAtAPIVersion24",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnnotationContractsRejectInvalidOwnersAndSignatures",
+   "durationMillis": 270
+  },
+  {
+   "name": "TestAnnotationContractsRejectInvalidTargetsAndValues",
+   "durationMillis": 210
+  },
+  {
+   "name": "TestAnnotationContractsRejectMultipleInvocableMethods",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnonymousPageReferenceCacheDistinguishesMetadataInventory",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestAnonymousPageReferenceDistinguishesUnknownInventoryAndBindings",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestAnonymousPageReferenceUsesCapturedMetadata",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestAnonymousSetupConcurrentMissesBuildOnce",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnonymousSetupKeyIsContentIdentity",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestAnonymousSetupRebuildsWhenReadSourceChanges",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAnonymousStandardParentKeepsStandardFieldsWithChildRelationship",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAnonymousStatementContractsRejectInstructionsAfterThrow",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestAsyncDeclaredAndInheritedCallbackContractsNative",
+   "durationMillis": 750
+  },
+  {
+   "name": "TestAsyncWebserviceCalloutQualifiedAnonymousSignature",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestAuraEnabledGlobalScopeVersionGate",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestAuraOverloadDeclaringComponentVersion",
+   "durationMillis": 290
+  },
+  {
+   "name": "TestAuthProviderPluginCallbacksMayOmitOverride",
+   "durationMillis": 80
+  },
+  {
+   "name": "TestAuthSessionSchemaTokenPaths",
+   "durationMillis": 90
+  },
+  {
+   "name": "TestAutomationContractsRespectSourceOwnedShadows",
+   "durationMillis": 550
+  },
+  {
+   "name": "TestBatchableInheritedThroughPlatformSuperclassAccepted",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestBatchableProjectHierarchySecondGenericKeepsBaseDiagnostics",
+   "durationMillis": 130
+  },
+  {
+   "name": "TestBenchmarkFixtureExercisesMethodBodies",
+   "durationMillis": 410
+  },
+  {
+   "name": "TestBenchmarkFixtureExercisesSpecializedDiagnostics",
+   "durationMillis": 210
+  },
+  {
+   "name": "TestBenchmarkModesUseDistinctLifecycle",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestBlockBoundsAtSkipsCommentApostrophes",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestBuildSemaMethodBodyWorkItemsUsesParserBodyRanges",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestBuildSemaTriggerBodyWorkItemsUsesParserBodyRange",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestBuildTypeMembersDoesNotRetainPerAnalysisStandardPlaceholders",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestBusinessHoursDiffAndIsWithinAcceptStringAndIdVariables",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestCB104StdlibExactCompileParity",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestCB339ScalarConstructorsMatchSalesforce",
+   "durationMillis": 120
+  },
+  {
+   "name": "TestCB68PreservesNeighboringValidPlatformSurfaces",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestCB68RejectsThreeAcquiredNonSurfaces",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestCacheOrgCapturedListRemoval",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestCacheValidateKeysOverloadsFollowAPIVersion",
+   "durationMillis": 590
+  },
+  {
+   "name": "TestCacheValidateKeysRejectsNonStringCollections",
+   "durationMillis": 430
+  },
+  {
+   "name": "TestCalculatedFieldDescribeConformance",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestCalculatedStandardFieldReadsUseDescribeValueType",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestCalculatedStorageFieldTypeUsesDisplayMetadata",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestCallArgumentsAtKeepsMapInitializerFatArrowInCall",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestCallArgumentsAtKeepsNestedFormatAndListInitializer",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestCartCalculateExecutorMockNativeOverridePoints",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestCartCalculateExecutorMockOverrideCorrectionKeepsNonVirtualControl",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestCartDeliveryGroupMethodListKeepsNativeTypeBoundaries",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestCartDeliveryGroupMethodListNativeAddPoints",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestCartExtensionDirectAnonymousNamedIsTestTriggerNativeRoutes",
+   "durationMillis": 2170
+  },
+  {
+   "name": "TestCartExtensionPlatformTypesAnonymousNativeConformance",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestCartExtensionPlatformTypesNamedNativeConformance",
+   "durationMillis": 460
+  },
+  {
+   "name": "TestCartExtensionSurfaceNativeConformance",
+   "durationMillis": 1660
+  },
+  {
+   "name": "TestCartOrchestratorMethodLocalCompileRoutes",
+   "durationMillis": 320
+  },
+  {
+   "name": "TestCartOrchestratorMethodsNativeConformance",
+   "durationMillis": 440
+  },
+  {
+   "name": "TestCartOrchestratorVisibilityNativeConformance",
+   "durationMillis": 570
+  },
+  {
+   "name": "TestCartPlatformAnonymousRoutesNativeConformance",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestCastInstanceOfMethodArguments",
+   "durationMillis": 230
+  },
+  {
+   "name": "TestCatalogFieldsOfCustomizedIndustriesObjectsKeepReferenceTargets",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestCatchVariableCollidesWithOuterLocal",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestCatchVariableMayBeReusedAfterCatch",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestChainedCallReceiverExpandedLongReceiverReturnsPromptly",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestChainedCallReceiverLongDottedFluentChainReturnsPromptly",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestChainedPlatformReturnReceiverWithSourceShadow",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestChangeEventChildKeepsParentChildRelationshipAnonymousAndIsTestRoutes",
+   "durationMillis": 390
+  },
+  {
+   "name": "TestChangeEventCustomFieldsAndParentRelationshipAnonymousAndIsTestRoutes",
+   "durationMillis": 330
+  },
+  {
+   "name": "TestChangeEventNativeProjectSemanticAPIRoutes",
+   "durationMillis": 290
+  },
+  {
+   "name": "TestCheckBodyIRReportsUnknownCastAndInstanceOfTypes",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestCheckoutValidateNativeOverrideConformance",
+   "durationMillis": 260
+  },
+  {
+   "name": "TestClassLiteralMissingSuffixResolvesEnclosingTypeInClassBody",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestClassicForConditionKeepsOuterPropertyOutsideLoop",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestClassicForConditionUsesInitializerScope",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestClassicForInitializerMayPrecedeSameNamedLocalAtLegacySource",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestClassicForInitializerStillRejectsVisibleOuterLocalAtLegacySource",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestClassicForLegacyNativeConformance",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestColdBenchmarkRejectsInvalidProcessMarker",
+   "durationMillis": 450
+  },
+  {
+   "name": "TestColdBenchmarkRequiresDedicatedProcess",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestCollectionSignaturesStripTypeModifiers",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestCommentedCatchDoesNotCreateScope",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestCommentedSiblingEnhancedForLocalsDoNotRedeclare",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestCommerceExtensionContractVisibilityObservationBounds",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestCommerceExtensionContractVisibilityPreservesOtherTypes",
+   "durationMillis": 80
+  },
+  {
+   "name": "TestCommerceExtensionShapesNativeConformance",
+   "durationMillis": 2580
+  },
+  {
+   "name": "TestCommonProjectShapesCompileClean",
+   "durationMillis": 520
+  },
+  {
+   "name": "TestComplementRejectsNonIntegralOperands",
+   "durationMillis": 130
+  },
+  {
+   "name": "TestConditionalReachabilityNativeRoutes",
+   "durationMillis": 1530
+  },
+  {
+   "name": "TestConditionalReachabilityStatementNativeRows",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestConstructorArgumentReduction",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestConstructorFieldCatalogAnonymousAndNamedRoutes",
+   "durationMillis": 1280
+  },
+  {
+   "name": "TestConstructorFieldCatalogEnabledFeatureAndDeclaredMetadataRoutes",
+   "durationMillis": 720
+  },
+  {
+   "name": "TestConstructorFieldCatalogManagedAnonymousAndNamedRoutes",
+   "durationMillis": 2050
+  },
+  {
+   "name": "TestConstructorFieldCatalogNamedHarnessLoadsCompleteMetadata",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestConstructorInitializerNativeConformance",
+   "durationMillis": 330
+  },
+  {
+   "name": "TestContextAssignmentNativeConformance",
+   "durationMillis": 13420
+  },
+  {
+   "name": "TestCountExtractableMethodBodyRangesDoesNotAllocatePerAccessor",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestCouponInheritedSObjectTypePropertyPreservesProjectClass",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestCronTriggerJobDetailReferenceMetadata",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestCronTriggerJobDetailSemiJoinUsesReferenceMetadata",
+   "durationMillis": 740
+  },
+  {
+   "name": "TestCronTriggerSemiJoinStillRejectsNonReferenceFields",
+   "durationMillis": 210
+  },
+  {
+   "name": "TestCurrentTypeOverlayKeepsWorkerHydrationHistory",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestCustomExceptionCannotRedeclareInheritedStringConstructor",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestCustomLabelInventoryTracksMetadataGeneration",
+   "durationMillis": 80
+  },
+  {
+   "name": "TestCustomObjectHasContentDocumentLinksRelationship",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestDMLContractsAllowMergeOfSObjectAndIDCollection",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestDMLContractsAllowMergeOfSObjectAndSameSObjectCollection",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestDMLContractsAllowSObjectAndSObjectListOperands",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestDMLContractsAllowUpsertExternalIDAndIDLookupFields",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestDMLContractsAllowUpsertExternalIDFromMatchingDuplicateSchemaObject",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestDMLContractsAllowUpsertStandardIDLookupField",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestDMLContractsRejectAggregateResultMergeOperands",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestDMLContractsRejectIncompatibleMergePairings",
+   "durationMillis": 370
+  },
+  {
+   "name": "TestDMLContractsRejectNonSObjectOperands",
+   "durationMillis": 80
+  },
+  {
+   "name": "TestDMLContractsRejectStandardFieldWithoutExternalIDOrIDLookup",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestDMLContractsRejectUpsertNonExternalIDStandardFieldAuditLock",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestDMLContractsRequireUpsertExternalIDOrIDLookupField",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestDMLContractsResolveUnqualifiedUpsertSelectorsAgainstNamespacedSchema",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestDMLOptionsLocaleAssignmentCandidateScope",
+   "durationMillis": 100
+  },
+  {
+   "name": "TestDMLOptionsStringLocaleAssignmentCandidate",
+   "durationMillis": 70
+  },
+  {
+   "name": "TestDMLUpsertFieldsQualification",
+   "durationMillis": 220
+  },
+  {
+   "name": "TestDMLUpsertSelectorRejectsUnrecognizedNestedQualification",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestDataSourceAsyncDeleteCallbackUsesClassInheritance",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestDataSourceAsyncSaveCallbackUsesClassInheritance",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestDataWeaveLegacyCompileContracts",
+   "durationMillis": 130
+  },
+  {
+   "name": "TestDatabaseAsyncListObjectWithoutOptionsResolves",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestDatabaseEmptyRecycleBinIdVersionBoundary",
+   "durationMillis": 80
+  },
+  {
+   "name": "TestDatabaseInsertAsyncSingleRecordCallbackAccessLevelResolves",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestDatabaseQueryResultCollectionSignature",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestDatabaseSynchronousDMLObjectOverloadsResolve",
+   "durationMillis": 80
+  },
+  {
+   "name": "TestDatabaseUpdateObjectBooleanVersionBoundary",
+   "durationMillis": 90
+  },
+  {
+   "name": "TestDatabaseUpsertFieldTokenQualification",
+   "durationMillis": 260
+  },
+  {
+   "name": "TestDatabaseUpsertFieldTokenQualificationBoundaries",
+   "durationMillis": 190
+  },
+  {
+   "name": "TestDatetimeArithmeticAllowsFractionalDecimalDays",
+   "durationMillis": 320
+  },
+  {
+   "name": "TestDatetimeDecimalArithmeticKeepsOtherOperandsRejected",
+   "durationMillis": 130
+  },
+  {
+   "name": "TestDatetimeDecimalArithmeticPreservesExistingDayOperands",
+   "durationMillis": 130
+  },
+  {
+   "name": "TestDeclarationContractAccessorVisibilityAndDuplicates",
+   "durationMillis": 80
+  },
+  {
+   "name": "TestDeclarationContractAllowsStaticFinalAssignmentInStaticInitializer",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestDeclarationContractAllowsStaticFinalDeclarationInitialization",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestDeclarationContractAllowsStaticFinalInitializationAfterSameNamedLocalAssignment",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestDeclarationContractAmbiguousNullOverload",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestDeclarationContractConstructorChaining",
+   "durationMillis": 210
+  },
+  {
+   "name": "TestDeclarationContractIgnoresAnnotationArgumentsWhenTrackingStaticFinalInitialization",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestDeclarationContractIllegalClassModifiers",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestDeclarationContractIllegalMethodModifierCombinations",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestDeclarationContractInnerStaticInitializerAndSharing",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestDeclarationContractMethodBodyConsistency",
+   "durationMillis": 120
+  },
+  {
+   "name": "TestDeclarationContractNestingDepth",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestDeclarationContractParameterLimit",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestDeclarationContractRejectsAdditionalStaticAndAccessContracts",
+   "durationMillis": 90
+  },
+  {
+   "name": "TestDeclarationContractRejectsInheritedStaticFinalAssignment",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestDeclarationContractRejectsOmittedTopLevelVisibility",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestDeclarationContractRejectsStaticAndFinalFieldMisuse",
+   "durationMillis": 70
+  },
+  {
+   "name": "TestDeclarationContractRejectsStaticFinalAssignmentBeforeDeclarationInitialization",
+   "durationMillis": 80
+  },
+  {
+   "name": "TestDeclarationContractRejectsStaticFinalReassignmentAfterDeclarationInitialization",
+   "durationMillis": 90
+  },
+  {
+   "name": "TestDeclarationContractRejectsStaticFinalReassignmentAfterLaterInnerLocalShadow",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestDeclarationContractRejectsStaticFinalReassignmentInSecondStaticInitializer",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestDeclarationContractTopLevelVisibility",
+   "durationMillis": 80
+  },
+  {
+   "name": "TestDeclarationContractUserGenericClass",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestDeclarationContractsAllowStaticMethodLocalToShadowInstanceFieldOnReturn",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestDeclarationContractsInferIndexedListElementInsideNestedTry",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestDeclarationLayoutNativeConformance",
+   "durationMillis": 840
+  },
+  {
+   "name": "TestDeclaredOpaqueNamespaceLocalAccepted",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestDeclaredOpaquePackageTypesCompile",
+   "durationMillis": 110
+  },
+  {
+   "name": "TestDeclaredProjectNamespaceQualifiedTypeResolvesToProjectClass",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestDefaultAccessAbstractAcrossTopLevelClassesRegression",
+   "durationMillis": 120
+  },
+  {
+   "name": "TestDefaultAccessVirtualAcrossTopLevelClassesRegression",
+   "durationMillis": 80
+  },
+  {
+   "name": "TestDiagnoseMethodCallResolvesInferredDottedReceiverMethod",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestDocumentTemplateContentDocumentQueryShape",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestDocumentTemplateShapeKeepsUnknownTypeAndFieldErrors",
+   "durationMillis": 100
+  },
+  {
+   "name": "TestDottedCallTypeNamesNativeConformance",
+   "durationMillis": 100
+  },
+  {
+   "name": "TestDottedReceiverNativeAnonymousNamedTestAndTriggerRoutes",
+   "durationMillis": 820
+  },
+  {
+   "name": "TestDuplicateDeclarationCrossFileWorkspaceAmbiguityRemainsWarning",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestDuplicateDeclarationSameOwnerClassAndInterface",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestDuplicateLocalCanonicalKeyPreservesDiagnosticSpellingAndOffset",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestDuplicateLocalsAreRejected",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestDuplicateMemberCaseInsensitiveFields",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestDuplicateMemberCaseInsensitiveProperties",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestDuplicateMemberCaseOnlyMethodNames",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestDuplicateMemberConstructors",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestDuplicateMemberMethods",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestDuplicateMemberMethodsDifferOnlyByReturnType",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestDuplicateMemberRemainsErrorWithSourceBackedDependency",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestDuplicateParametersAreRejected",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestDuplicateRuleMetadataNativeProjectAnonymousAndIsTestAPIRoutes",
+   "durationMillis": 270
+  },
+  {
+   "name": "TestDurationNanosecondsClampsNegativeDurations",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestDynamicQueryDMLAcceptsRecordResults",
+   "durationMillis": 850
+  },
+  {
+   "name": "TestDynamicQueryDMLPreservesScalarIndexType",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestDynamicQueryDMLRejectsNonRecordAndMergeListTargets",
+   "durationMillis": 800
+  },
+  {
+   "name": "TestEnumValueMethodsExplicitSystemEnumWithProjectShadow",
+   "durationMillis": 90
+  },
+  {
+   "name": "TestEnumValueMethodsNativeIRCallRoute",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestEnumValueMethodsNativeNamedIsTestAnonymousRoutes",
+   "durationMillis": 5950
+  },
+  {
+   "name": "TestEnumValueMethodsNativeWrongArityNotClaimed",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestEnumValueMethodsQualifiedSystemEnumKeepsBareOnlyMethods",
+   "durationMillis": 70
+  },
+  {
+   "name": "TestEstimateResultRetainedBytesCountsContainersAndRanges",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestEventPublishCallbacksAreInterfaces",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestExceptionConstructorVisibilityNativeConformance",
+   "durationMillis": 1030
+  },
+  {
+   "name": "TestExceptionDeclarationInheritedInnerType",
+   "durationMillis": 2020
+  },
+  {
+   "name": "TestExceptionDependencyAncestryOrgControls",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestExceptionInheritedInnerVisibilityScope",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestExceptionMatrixAnonymousNestingPrecedesVirtual",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestExceptionMatrixTestClassVirtualRejectionTwin",
+   "durationMillis": 260
+  },
+  {
+   "name": "TestExplicitLookupMetadataStillRequiresKnownTarget",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestExplicitPlatformStaticFieldPathMemberUsesReadOnlyPlatformView",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestExportTypesDependencySymbolShadowsPlatformSource",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestExportTypesWorkspaceSymbolsShadowPlatformWithoutMutatingPlatformModel",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestExtractBodyForSemaSkipsCommentApostrophes",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestExtractTypeNames",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestFieldMayBeShadowedByLocal",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestFieldProxyNativeDiagnosticRoutes",
+   "durationMillis": 1700
+  },
+  {
+   "name": "TestFinalStaticPropertyGetterDoesNotPermitUnrelatedFinalWrites",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestFinalStaticPropertyOwnGetterAssignment",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestFinalizerFieldNativeSemaAnonymousAndNamedRoutes",
+   "durationMillis": 100
+  },
+  {
+   "name": "TestFlowOrchestrationEventNativeConformance",
+   "durationMillis": 80
+  },
+  {
+   "name": "TestFrozenTypeMemberViewsHydrateConcurrently",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestFutureParametersRequirePrimitiveValues",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestGeneratedPlatformAvailabilitySurface",
+   "durationMillis": 480
+  },
+  {
+   "name": "TestGeneratedPlatformSignatureMatchesMaterializedCatalog",
+   "durationMillis": 330
+  },
+  {
+   "name": "TestGeneratedPlatformSignaturePreservesOrderFallbackAndIsolation",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestGlobalFieldEnclosingOwnerUsesSameFile",
+   "durationMillis": 100
+  },
+  {
+   "name": "TestHTTPReceiverTraversalPreservesDiagnosticsAndTypes",
+   "durationMillis": 90
+  },
+  {
+   "name": "TestIRSemaScopeFlatMemoAnonymousShadow",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestIRSemaScopeFlatMemoCopiesAndClones",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestIRSemaScopeFlatMemoMatchesUncached",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestIdeaStandardSetControllerAcceptsObjectSelection",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestImplicitNamespaceMemberReceiverNativeConformance",
+   "durationMillis": 120
+  },
+  {
+   "name": "TestIncrementFixPreservesNativeNumericMethodRejections",
+   "durationMillis": 80
+  },
+  {
+   "name": "TestIncrementUncapturedReceiversKeepCanonicalDiagnostics",
+   "durationMillis": 180
+  },
+  {
+   "name": "TestIncrementUncapturedShapesKeepCanonicalTwins",
+   "durationMillis": 1270
+  },
+  {
+   "name": "TestIncrementValueRoutesNativeSema",
+   "durationMillis": 6340
+  },
+  {
+   "name": "TestIncrementValueRoutesPostfixCommentsSema",
+   "durationMillis": 340
+  },
+  {
+   "name": "TestIndexedAssignmentExpressionHasSlotType",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestInferFlattenedIRCallTypeNoCallMatchesHelpers",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestInferSemaArgTypeSObjectTypeFieldsPath",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestInferSemaArgTypeWithModelIgnoresStatementSpans",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestInferSemaFluentNestedConstructorChainType",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestInheritanceContractsAllowAuthProviderPluginClassOverrides",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestInheritanceContractsAllowBatchableScopeVariance",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestInheritanceContractsAllowObjectEqualityMethodsWithoutOverride",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestInheritanceContractsAllowStandardContextImplementationsAtAPI61",
+   "durationMillis": 290
+  },
+  {
+   "name": "TestInheritanceContractsAllowStaticMethodToShareInheritedInstanceSignature",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestInheritanceContractsAllowStaticPublicInterfaceImplementation",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestInheritanceContractsAllowTestVisiblePrivateOverrideInTestSubclass",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestInheritanceContractsGateAbstractAndOverrideAccessModifiersAtAPIVersion65",
+   "durationMillis": 130
+  },
+  {
+   "name": "TestInheritanceContractsKeepDuplicateSourceUnitsIndependent",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestInheritanceContractsRejectCrossNamespaceTestVisiblePrivateOverride",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestInheritanceContractsRejectExtendingNonVirtualSuperclass",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestInheritanceContractsRejectInvalidInheritanceTargets",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestInheritanceContractsRejectNonVirtualMethodOverride",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestInheritanceContractsRejectRawDatabaseBatchable",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestInheritanceContractsRejectVisibilityNarrowing",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestInheritanceContractsRequireAbstractImplementationOverrideFromAPIVersion62",
+   "durationMillis": 100
+  },
+  {
+   "name": "TestInheritanceContractsRequireOverrideForAbstractImplementation",
+   "durationMillis": 100
+  },
+  {
+   "name": "TestInheritanceContractsRequireOverrideForNonObjectHashCodeSignature",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestInheritanceContractsRequireOverrideForUserDeclaredObjectHashCodeSignature",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestInheritanceContractsRequireOverrideModifier",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestInheritanceContractsRequireQualifiedStandardContextMethodsAtAPI61",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestInheritanceContractsRequireTransitiveInterfaceMethods",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestInheritanceContractsRequireVisibleBatchableMethods",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestInheritanceContractsRequireVisibleInterfaceImplementation",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestInheritanceContractsRespectCrossNamespaceMethodVisibility",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestInheritanceContractsSubstituteIterableTypeArguments",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestInheritanceContractsSubstituteIteratorTypeArguments",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestInheritedNestedClassPrecedesStandardSObject",
+   "durationMillis": 140
+  },
+  {
+   "name": "TestInheritedNestedProjectTypePrecedesTopLevelSObjectNameClass",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestInnerReceiverChainedConstructorRecovery",
+   "durationMillis": 110
+  },
+  {
+   "name": "TestInnerTypeEqualToAncestor",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestInnerTypeLexicalShadowIRAndTextRoutes",
+   "durationMillis": 1510
+  },
+  {
+   "name": "TestInnerTypeReceiverGenericIdentityPreservesBase",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestInnerTypeReceiverNativeIRAndTextRoutes",
+   "durationMillis": 2300
+  },
+  {
+   "name": "TestInnerTypeStaticFieldSelfReferenceNative",
+   "durationMillis": 90
+  },
+  {
+   "name": "TestIntegerMemberBoundaryDiagnostics",
+   "durationMillis": 4660
+  },
+  {
+   "name": "TestIntegrationTestAPI67IsExplicitlyUnsupported",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestInterfaceOverrideNativeCompilerConformance",
+   "durationMillis": 250
+  },
+  {
+   "name": "TestInvocableMethodAllowsArrayParameterSyntax",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestInvocableMethodCapabilityTypeFormat",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestInvocableParameterConstructorVisibilityFollowsAPIVersion",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestInvocableVariableAcceptsQuotedRequired",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestInvocableVariablePropertyContracts",
+   "durationMillis": 530
+  },
+  {
+   "name": "TestIsSemaConstructorCallAtHonorsWhitespaceBeforeNew",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestIsTestClassAllowsCriticalAndTestForAtAPIVersion66",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestIsTestClassRejectsCriticalAndTestForBeforeAPIVersion66",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestIteratorObjectParameterDeclaredArguments",
+   "durationMillis": 710
+  },
+  {
+   "name": "TestJsonAccessAllowsDocumentedStringModes",
+   "durationMillis": 80
+  },
+  {
+   "name": "TestJsonAccessRejectsUnknownStringModeOnceForNestedType",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestKnowledgeArticleLanguageAssignmentBoundary",
+   "durationMillis": 480
+  },
+  {
+   "name": "TestLanguageRollupSalesforceContracts",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestLayeredModelCutoverDiagnosticOrder",
+   "durationMillis": 110
+  },
+  {
+   "name": "TestLayeredModelCutoverFeatureFieldsKeepExactTypesAndObjectIsolation",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestLayeredModelCutoverPrecedence",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestLayeredModelCutoverQueryAcceptsFeatureFieldsAndRejectsCrossObjectLeak",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestLayeredModelCutoverRemapsDependencySource",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestLayeredModelCutoverSharedMutationIsolation",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestLazyPlatformTypeMemberModelDeepClonesSourceAndLookupSlices",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestLazyPlatformTypeMemberModelDoesNotCacheUnknownLookups",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestLazyPlatformTypeMemberModelDoesNotExposeCachedMathMembers",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestLegacySiteURLHelpersUseEffectiveSourceAPIVersion",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestLifecycleDiagnosticSelection",
+   "durationMillis": 1010
+  },
+  {
+   "name": "TestListSObjectDirectQueryCastContracts",
+   "durationMillis": 80
+  },
+  {
+   "name": "TestLocationReadOnlyContractAPI67",
+   "durationMillis": 260
+  },
+  {
+   "name": "TestLookupFilterSchemaCloneIsolation",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestLoopVariableCollidesWithOuterLocal",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestManagedDependencyAbsentStaticCallReleaseRoutes",
+   "durationMillis": 270
+  },
+  {
+   "name": "TestMemberAllocationFastPaths",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestMemberResolutionAllocationChangesMatchReference",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestMetadataNamespaceFieldSourceDependencySeverity",
+   "durationMillis": 150
+  },
+  {
+   "name": "TestMetadataRetrieveGenericAssignability",
+   "durationMillis": 400
+  },
+  {
+   "name": "TestMethodBodyWorkItemDescriptorIsCompact",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestMethodBodyWorkItemsDoNotReserveInvalidBodies",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestMethodBodyWorkItemsPreserveOriginalOrder",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestMethodBodyWorkerScaffoldDefaultPreservesOneWorkerHistory",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestMethodBodyWorkerScaffoldKeepsViewsPrivate",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestMethodBodyWorkerScaffoldMergesIndexedOrder",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestMissingQualifiedCallNativeConformance",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestMissingQualifiedCallPreservesKnownReceivers",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestMultilineStringLiteralAvailableAcrossSupportedVersions",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestNamedAnnotationExposureUsesEnclosingDeclaration",
+   "durationMillis": 340
+  },
+  {
+   "name": "TestNamespaceAbsenceProofAnonymousPrefixPermissions",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestNamespaceAbsenceProofCatalogEntriesAreNotSourceDeclarations",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestNamespaceAbsenceProofClassTriggerOwnerCollision",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestNamespaceAbsenceProofClosedDeclarationPositions",
+   "durationMillis": 150
+  },
+  {
+   "name": "TestNamespaceAbsenceProofDependencyStaticReceiver",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestNamespaceAbsenceProofDuplicateCatalogs",
+   "durationMillis": 520
+  },
+  {
+   "name": "TestNamespaceAbsenceProofFlatSourceOwnership",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestNamespaceAbsenceProofForeignSystemShadow",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestNamespaceAbsenceProofInheritedNamespaceCollision",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestNamespaceAbsenceProofKnownProjectMembersStayStrict",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestNamespaceAbsenceProofPartialAndCollidingCatalogs",
+   "durationMillis": 250
+  },
+  {
+   "name": "TestNamespaceAbsenceProofPartialFormulaCatalog",
+   "durationMillis": 70
+  },
+  {
+   "name": "TestNamespaceAbsenceProofRoutes",
+   "durationMillis": 1080
+  },
+  {
+   "name": "TestNamespaceAbsenceProofSObjectIdentityProvenance",
+   "durationMillis": 90
+  },
+  {
+   "name": "TestNamespaceAbsenceProofSystemNestedCatalog",
+   "durationMillis": 110
+  },
+  {
+   "name": "TestNamespaceAbsenceProofTextExpressionFallback",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestNamespaceAccessibleAllowsPublicEnumsAtAPIVersion50",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestNamespaceAccessibleMemberIsAPIVersionGatedOnGlobalOwner",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestNamespaceAccessibleMemberIsAPIVersionGatedOnInterfaceOwner",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestNamespaceAccessibleRejectsInvalidOwnersAtAPIVersion50",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestNamespaceAccessibleRejectsPrivateEnumsAtAPIVersion50",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestNamespaceAccessibleSkipsContractsWithoutAnEffectiveAPIVersion",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestNamespaceInterfaceNativeBoundaries",
+   "durationMillis": 180
+  },
+  {
+   "name": "TestNamespaceStaticCallNativeConformance",
+   "durationMillis": 540
+  },
+  {
+   "name": "TestNarrowedAbstractOverrideRegression",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestNarrowedVirtualAndPrivateImplementationRegression",
+   "durationMillis": 120
+  },
+  {
+   "name": "TestNativeLifecycleDiagnosticsPublishStringToIntegerAssignmentText",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestNegativeSwitchCasesKeepDistinctValues",
+   "durationMillis": 100
+  },
+  {
+   "name": "TestNestedDefaultAccessAbstractAcrossTopLevelClassesRegression",
+   "durationMillis": 370
+  },
+  {
+   "name": "TestNestedEnhancedForLocalCannotRedeclareOuterLoopLocal",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestNestedPlatformTypeWithProjectShadow",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestNestedProjectTypePrecedesInheritedPlatformNestedType",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestNestedTypeAllocationChangesMatchReference",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestNoPanicOnMalformedIndex",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestNormalizeNameMatchesTrimmedLowercase",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestNullPointerZeroConstructorRemainsAcceptedAtAPIVersions40And41",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestObjectMethodOverrideQuirksRegression",
+   "durationMillis": 250
+  },
+  {
+   "name": "TestOneWorkerViewPreservesCrossPhaseHydrationOrder",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestOverloadAllocationChangesMatchReference",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestOverrideMayUsePublicVisibilityForGlobalProjectMethod",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestOverrideRejectsProtectedVisibilityForGlobalProjectMethod",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestOwnNamespaceMissingLocalTypeRejected",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestPackageVersionClassShapesMatchAPI67",
+   "durationMillis": 180
+  },
+  {
+   "name": "TestPageReferenceDiagnosticPreservesCompilationRoute",
+   "durationMillis": 110
+  },
+  {
+   "name": "TestPaginationScopeAvailabilityKeepsArgumentTypeShadowBoundary",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestPaginationScopeAvailabilityKeepsOtherResultSurfaces",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestPaginationScopeAvailabilityKeepsOtherShapes",
+   "durationMillis": 100
+  },
+  {
+   "name": "TestPaginationScopeAvailabilityPreservesOtherProfiles",
+   "durationMillis": 170
+  },
+  {
+   "name": "TestPaginationScopeAvailabilityPreservesProjectShadow",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestPaginationScopeObservedAPI62Signatures",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestParameterLocalCollisionIsRejected",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestParameterizedInterfaceCastFromUserInterface",
+   "durationMillis": 520
+  },
+  {
+   "name": "TestParameterizedInterfaceCastKeepsCollectionRejection",
+   "durationMillis": 130
+  },
+  {
+   "name": "TestParentBlockRedeclarationIsRejected",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestPerfRecorderDisabledStateIsCompact",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestPersonAccountCustomFieldsNativeSemanticRoutes",
+   "durationMillis": 900
+  },
+  {
+   "name": "TestPlatformAvailabilityFollowsSourceAPIVersion",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestPlatformBatchSuperclassNativeConformance",
+   "durationMillis": 260
+  },
+  {
+   "name": "TestPlatformCacheDiagnosticsPreserveOtherAssignments",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestPlatformCacheDiagnosticsPreserveSourceTypes",
+   "durationMillis": 80
+  },
+  {
+   "name": "TestPlatformTypeCatalogReferencePositions",
+   "durationMillis": 28890
+  },
+  {
+   "name": "TestPlatformTypeReferenceCatalogBoundary",
+   "durationMillis": 70
+  },
+  {
+   "name": "TestPlatformTypeReferencesNativeRoutes",
+   "durationMillis": 270
+  },
+  {
+   "name": "TestPrepareAnalysisIndexKeepsPlatformSymbolsOutOfWorkspaceIndex",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestPreviewAnnotationsRemainDisabledAtLatestAPIVersion",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestProjectBodyInfersApprovalUnlockResultDespiteApprovalSObjectName",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestProjectBodyResolvesApprovalProcessDespiteApprovalSObjectName",
+   "durationMillis": 70
+  },
+  {
+   "name": "TestProjectReferencedSchemaFieldsFromSourceKeepsMixedScanAllocationsBounded",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestProjectReferencedSchemaInferenceLeavesCallerIndexUntouched",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestProjectReferencedSchemaInfersStandardObjectLiteralFields",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestPropertyGetterMutationRemainsAcceptedAtTestedAPIVersions",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestPropertyOwnStaticGetterMutationVersionBoundary",
+   "durationMillis": 180
+  },
+  {
+   "name": "TestPropertyOwnStaticGetterUsesComponentAPIVersion",
+   "durationMillis": 70
+  },
+  {
+   "name": "TestPropertyQualifiedThisGetterRequiresSetter",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestPropertyStaticGetterAssignmentContextControls",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestProtectedAbstractImplementationWithoutOverrideRegression",
+   "durationMillis": 470
+  },
+  {
+   "name": "TestPublicCorpusAllowsDocumentInstanceFieldAssignmentsRegardlessOfWarmup",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestPublicCorpusAllowsStaticMethodCallThroughInstance",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestPublicCorpusChainedAssignmentReturnsAssignedValue",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestPublicCorpusCustomSettingNameRemainsStringWhenInitializedFromDatetimeFormat",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestPublicCorpusExternalPackageObjectFieldNamespaceEquivalence",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestPublicCorpusExternalPackageRelationshipMetadataTargetCanonicalizesStandardObject",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestPublicCorpusLocalPackageRelationshipToStandardObjectWithoutLookupMetadata",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestPublicCorpusMapArrayShorthandCompatibility",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestPublicCorpusMetadataDeployProblemTypeAssignment",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestPublicCorpusNamespacedQueryObjectMatchesLocalMetadata",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestPublicCorpusNestedFluentReturnKeepsOwnerType",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestPublicCorpusOpportunityContactRolesAfterDynamicQuery",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestPublicCorpusOpportunityContactRolesInNamespacedProject",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestPublicCorpusOpportunityContactRolesStandardChildRelationship",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestPublicCorpusOpportunityContactRolesWithProjectOpportunityFields",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestPublicCorpusPackageChildRelationshipWithoutLookupMetadata",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestPublicCorpusPackageRelationshipEmptyProjectTargetCanonicalizesStandardObject",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestPublicCorpusPackageRelationshipLocalNameCanonicalizesStandardObject",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestPublicCorpusPackageRelationshipMetadataTargetCanonicalizesStandardObject",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestPublicCorpusPackageRelationshipPrefersProjectCustomObjectOverStandardName",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestPublicCorpusPackageRelationshipToStandardObjectWithoutLookupMetadata",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestPublicCorpusPlatformEventIdentityFields",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestPublicCorpusRejectsVoidMethodAsArgumentValue",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestPublicCorpusRejectsVoidMethodAsAssignmentValue",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestPublicCorpusSObjectFieldDirectBooleanAccessors",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestPublicCorpusStandardSymbolAssignments",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestPublishingDateArgumentNativeSemaAnonymousAndNamedRoutes",
+   "durationMillis": 120
+  },
+  {
+   "name": "TestPublishingServiceObservedStaticCall",
+   "durationMillis": 120
+  },
+  {
+   "name": "TestQualifiedFieldTokenRecognizerNativeRows",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQualifiedFieldTokensNativeRoutes",
+   "durationMillis": 840
+  },
+  {
+   "name": "TestQualifiedHandledExceptionIsCatchableAtAPI65",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestQualifiedLocalCompoundMatchesShippingParent",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQualifiedLocalGuardPreservesCompoundTypeAnalysis",
+   "durationMillis": 330
+  },
+  {
+   "name": "TestQualifiedLocalTypeNativeRejectionTwins",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestQualifiedPlatformEnumMethodsWithSourceShadow",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestQualifiedPlatformRunAsSourceExpressionContract",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQualifiedPlatformRunAsWithUserShadow",
+   "durationMillis": 130
+  },
+  {
+   "name": "TestQualifiedQueryAndCommentAPI65",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestQualifiedQueryPlatformMemberIdentity",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQualifiedReceiverDeclaredPartialAndInferredSchemaRoutes",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQualifiedReceiverMissingObjectNamedIsTestTriggerNativeRoutes",
+   "durationMillis": 90
+  },
+  {
+   "name": "TestQualifiedReceiverNativePathClassification",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestQualifiedReceiverRestoredAnonymousCompatibilityControls",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestQualifiedReceiverSchemaStandardObjectTypeRoutes",
+   "durationMillis": 240
+  },
+  {
+   "name": "TestQualifiedReceiverShapesAnonymousNativeConformance",
+   "durationMillis": 120
+  },
+  {
+   "name": "TestQualifiedReceiverShapesNamedIsTestTriggerRouteTwins",
+   "durationMillis": 3650
+  },
+  {
+   "name": "TestQualifiedReceiverShortSObjectTypeFieldsRoutes",
+   "durationMillis": 250
+  },
+  {
+   "name": "TestQualifiedReceiverWideningAnonymousNativeConformance",
+   "durationMillis": 140
+  },
+  {
+   "name": "TestQualifiedSystemAliasesLeaveProjectAndUserNamespacesUntouched",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQualifiedSystemBooleanReturnSupportsBitwiseAtAPI66",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestQualifiedSystemReturnTypeCanonicalBuiltins",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQualifiedSystemTypesSurviveProjectDecoysAtAPI65",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestQueryAcceptsCustomMetadataLanguageField",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestQueryKeywordCommentExtractionNativeRows",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQueryKeywordCommentSpansNativeRows",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQueryKeywordCommentsNativeRoutes",
+   "durationMillis": 510
+  },
+  {
+   "name": "TestQueryKeywordLocalScanNativeRows",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQueryKeywordLocalsNativeRoutes",
+   "durationMillis": 890
+  },
+  {
+   "name": "TestQueryKeywordMultipleLocalScopeNativeRows",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestQueryLiteralBracketInsideStringOrBlockComment",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQueryLiteralCommentPunctuationStopsAtClosingBracket",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQueryRejectsGroupingByCustomMetadataLanguage",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestQuerySemanticsAPI51CountReassignment",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestQuerySemanticsAPI52MultilineSelectPreservesParameter",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestQuerySemanticsAcceptsAnonymousBlockLocalBind",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQuerySemanticsAcceptsArrayCollectionBind",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestQuerySemanticsAcceptsCollectionBindInEqualityAndValidatesElementType",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestQuerySemanticsAcceptsCollectionConstructorBind",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQuerySemanticsAcceptsConcatenatedMethodCallBind",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestQuerySemanticsAcceptsDeclaredInlineBind",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQuerySemanticsAcceptsDocumentedLiteralMethodBind",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestQuerySemanticsAcceptsDocumentedSOSLBindClauses",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQuerySemanticsAcceptsExpressionWindowBind",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQuerySemanticsAcceptsInlineBooleanLiteralExpression",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQuerySemanticsAcceptsInstanceFieldBind",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQuerySemanticsAcceptsInstanceFieldDeclaredAfterMethod",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQuerySemanticsAcceptsMethodParameterBind",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQuerySemanticsAcceptsQualifiedParameterBind",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQuerySemanticsAcceptsSOSLNotInCollectionBind",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestQuerySemanticsAcceptsStaticFieldBindInsideRunAs",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQuerySemanticsActivityFieldsStayInProviderOverlay",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQuerySemanticsAllowsUngroupedScalarCountWithLimit",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestQuerySemanticsBindDeclarationAfterClosedBlock",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQuerySemanticsChecksSourceWithNestedTypesOnce",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestQuerySemanticsCommentedConditionPreservesOuterBinds",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestQuerySemanticsCorrectsPartialStandardFieldsWithoutChangingProjectRelationship",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQuerySemanticsDefersStandardProviderDecodeUntilLookup",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQuerySemanticsDefersStandardProviderForCommonAndMissingCustomFields",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQuerySemanticsEmailMessageParentPrefersStandardCase",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestQuerySemanticsEnforcesDescribeBackedFieldCapabilities",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestQuerySemanticsFailsClosedOnParserErrors",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQuerySemanticsFieldProviderKeepsProjectAuthority",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQuerySemanticsIgnoresBindLikeTextInInlineQueryComments",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQuerySemanticsKeepsDeclaredFieldsOnObjectsAndStandardFieldsLayered",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQuerySemanticsKeepsInferredObjectsPartial",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestQuerySemanticsLayeredFieldLookupAllocationBound",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQuerySemanticsProviderKeepsDeclaredCountsAndMissingDiagnostics",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQuerySemanticsProviderKeepsHierarchySetupOwnerTarget",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQuerySemanticsProviderKeepsPartialAndExternalObjectsOpen",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQuerySemanticsProviderReturnsIndependentFieldValues",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQuerySemanticsRejectsAggregateOnNonAggregatableField",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestQuerySemanticsRejectsAggregateOnStandardTextField",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestQuerySemanticsRejectsFieldsAllInApexEvenWithLimit",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestQuerySemanticsRejectsIncompatibleFieldBindType",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestQuerySemanticsRejectsIncompatibleSOSLLikeBind",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestQuerySemanticsRejectsIncompatibleSOSLWhereBind",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestQuerySemanticsRejectsIncompatibleStandardFieldBindType",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestQuerySemanticsRejectsInvalidQueryShapes",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestQuerySemanticsRejectsMissingInlineBind",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQuerySemanticsRejectsSelfSemiJoin",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestQuerySemanticsRejectsUngroupedAggregateWithLimit",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestQuerySemanticsRejectsWrongSOSLAssignmentType",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestQuerySemanticsRequiresNumericLimitAndOffsetBinds",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQuerySemanticsRequiresNumericSOSLLimitBind",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQuerySemanticsRequiresNumericSOSLLimitBindInOneLineMethod",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestQuerySemanticsRequiresNumericSOSLReturningLimitAndOffsetBinds",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQuerySemanticsRequiresStringSOSLDivisionBind",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQuerySemanticsResolvesBindsInTheirLexicalMethodScope",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestQuerySemanticsValidatesDottedBindReceivers",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRTEMEventFieldAssignmentMatchesNative",
+   "durationMillis": 1040
+  },
+  {
+   "name": "TestRTEMEventRoutesNative",
+   "durationMillis": 700
+  },
+  {
+   "name": "TestRTEMPublishRouteTwinsNative",
+   "durationMillis": 890
+  },
+  {
+   "name": "TestReadOnlyRESTMethodRemoteActionVersionGate",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestReadonlyCreatedDateAssignmentRemainsRejected",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestReceiverFilterAllocationChangesMatchReference",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestReceiverMemberNativeAnonymousNamedIsTestTriggerRoutes",
+   "durationMillis": 2280
+  },
+  {
+   "name": "TestReceiverMemberOpaquePackageNamedIsTestRoutes",
+   "durationMillis": 120
+  },
+  {
+   "name": "TestReceiverMemberShortFieldsCallRecognizerNativeRoutes",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestReceiverMemberShortFieldsRecognizerSourceShadowRoute",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestReferenceNestedTypeResolutionPreservesPrecedence",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestReferenceOnlyStandardTargetsAreAdmittedBySema",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestResolveMethodBodyWorkItemRejectsInvalidIndexes",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestResolveMultiArgumentStaticCandidatesRetained",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestResolveNarrowedBatchableKeepsQualifiedApexScopeRejectionTwin",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestResolveNonBatchableInterfacesKeepPlatformSignatures",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestResolveQualifiedInterfaceCandidatesRemainDistinct",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestResolveStaticCandidatesRetainsAncestorOverload",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRestExposureAllowsMultipleMethodAnnotations",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestRestExposureAllowsSlashDelimitedNonterminalWildcard",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestRestExposureContracts",
+   "durationMillis": 340
+  },
+  {
+   "name": "TestRestVerbRequiresRestResourceOwner",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestResultSnapshotCoversCompleteResultShape",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestResultSnapshotDeepCopyClassifiesReferenceFields",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRoad174RecordAccessMemberBinding",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestRuntimeExpressionTypeResolverRejectsAmbiguousBareOwner",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRuntimeExpressionTypeResolverUsesSemanticTernaryType",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestRuntimeTypeTestCompatibilityAllowsNestedConcreteInterfaceImplementer",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRuntimeTypeTestCompatibilityIsConservativeForIncompleteExternalTypes",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestRuntimeTypeTestCompatibilityRejectsUnrelatedConcreteClass",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSF181AggregateOrderAPI62",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestSF181UnicodeThisAPI52",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestSOAPExposureAllowsLoggingLevel",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestSOAPExposureAllowsNestedGlobalWrapperProperties",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestSOAPExposureContracts",
+   "durationMillis": 150
+  },
+  {
+   "name": "TestSOAPExposureRejectsNonGlobalWrapperProperties",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestSOAPExposureRejectsTopLevelProperties",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestSOAPExposureRejectsUnsupportedWrapperProperties",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestSOQLBindCapturedMalformedIndex",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSOQLBindExpressionIntegerStringRejection",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSOQLBindExpressionVariablesAndIndexTypes",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSOQLBindInheritedProperties",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestSOQLBindInheritedPropertyControls",
+   "durationMillis": 90
+  },
+  {
+   "name": "TestSOQLBindLexicalCaseDeclarations",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSOQLBindLexicalDeclarationShapes",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSOQLBindLexicalInheritedFields",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestSOQLBindLexicalMultipleDeclarators",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSOQLBindLexicalNestedBlocks",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestSOQLBindLexicalQuotedColons",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSOQLBindLexicalStaticContext",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSOQLBindNestedLiteralBoundary",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSOQLSafeNavigationBindMemberType",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSOQLSelectionCompileSyntaxUsesAssignmentTarget",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSOQLStaticInitializerBindScopes",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSObjectConstructorNamedArgsAfterComparisonAreNotLocals",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestSObjectFieldErrorNativeConformance",
+   "durationMillis": 360
+  },
+  {
+   "name": "TestSObjectTokenDiagnosticSpanNativeConformance",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestSObjectTypeFieldSetsGetFollowsSourceAPIVersion",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestSalesforceAdmittedAuraOverloadAPI53",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestSalesforceAdmittedReadonlyContracts",
+   "durationMillis": 180
+  },
+  {
+   "name": "TestSalesforceOracleAcceptsCustomExceptionGetMessageOverride",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestSalesforceOracleAcceptsCustomExceptionGetStackTraceStringOverride",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestSalesforceOracleAcceptsObjectHashCode",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestSalesforceOracleRejectsAuraEnabledOverloads",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestSameSpelledCustomFieldNativeConformance",
+   "durationMillis": 350
+  },
+  {
+   "name": "TestSameSpelledParameterAndFieldKeepSObjectTypeToken",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestSameSpelledParameterIsFieldValueInTokenInitializer",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestSameSpelledSObjectTypeRejectionKeepsSameLineErrors",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestSameSpelledSObjectTypeRejectionSpansSpacedExpression",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestSandboxPostCopyIsInterface",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestScheduledReferenceMetadataSupportsIdOperands",
+   "durationMillis": 70
+  },
+  {
+   "name": "TestSchemaFieldTokenMapInitializerRejectsStringValue",
+   "durationMillis": 120
+  },
+  {
+   "name": "TestSchemaReferenceAggregateMetadataSourceRoutes",
+   "durationMillis": 100
+  },
+  {
+   "name": "TestSchemaReferenceDiagnosticSourceRoutes",
+   "durationMillis": 90
+  },
+  {
+   "name": "TestScratchBackedAnnotationRuleRegressions",
+   "durationMillis": 470
+  },
+  {
+   "name": "TestScratchBackedDeclarationRuleRegressions",
+   "durationMillis": 410
+  },
+  {
+   "name": "TestScratchBackedInheritanceContractsRuleRegressions",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestScratchBackedInheritanceRuleRegressions",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestScratchBackedQueryRuleRegressions",
+   "durationMillis": 140
+  },
+  {
+   "name": "TestScratchBackedRuleCatalogHasExpectedSize",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestScratchBackedStatementRuleRegressions",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestScratchBackedTypeRuleRegressions",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestSearchQueryObservedAccessLevelOverload",
+   "durationMillis": 290
+  },
+  {
+   "name": "TestSecurityAccessMethodGateMatchesPreviousChecks",
+   "durationMillis": 310
+  },
+  {
+   "name": "TestSecurityAccessMethodGatePreservesReceiverDiagnostics",
+   "durationMillis": 100
+  },
+  {
+   "name": "TestSecurityEnforcedQueryIsRejectedAtAPIVersion67AndLater",
+   "durationMillis": 90
+  },
+  {
+   "name": "TestSecurityEnforcedQueryUsesEffectiveSourceAPIVersion",
+   "durationMillis": 100
+  },
+  {
+   "name": "TestSecurityRowCauseGuardRequiresSObjectBinding",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaAnyKnownFieldCurrentOnlyView",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaAnyKnownFieldNilModel",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaAnyKnownFieldZeroView",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaApexTypeForObjectSchemaFieldUsesNameFallbacks",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaBindingResolverFindsAnnotatedStaticField",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaBindingResolverFindsGenericMethodParameters",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaBindingResolverFindsLocalAfterMultilineCall",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaBindingResolverFindsOuterLocalInsideRunAs",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaBindingResolverFindsPropertyAccessorLocal",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaBindingResolverKeepsLocalAfterNestedBlock",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaBindingResolverLexicalBindingsShadowFields",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestSemaBindingResolverNestedFieldsBoundedWork",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestSemaBindingResolverNestedFieldsPreserveScopes",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaBodyExpressionScanReusesExpressions",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaCanonicalNamesConcurrentLookupsMatchNormalizeName",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaCanonicalNamesMatchNormalizeNameForSalesforceNames",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaCanonicalNamesRemainBounded",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaCanonicalNamesRepeatedLookupDoesNotAllocate",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaCanonicalPlatformAliasCoversDocumentedSchemaImplicitImports",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaCanonicalPlatformAliasCoversDocumentedSystemNamespace",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaCanonicalPlatformAliasCoversEverySystemNamespaceTypeName",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaEnumValuesStripsComments",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaFlatMemoInferenceGuardsPreserveInputsAndResults",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaIgnoredTextMatchesReferenceOnEdgeCases",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaIgnoredTextMatchesReferenceOnRandomBodies",
+   "durationMillis": 80
+  },
+  {
+   "name": "TestSemaIgnoredTextMatchesReferenceOnRepositoryApex",
+   "durationMillis": 90000
+  },
+  {
+   "name": "TestSemaIgnoredTextQueriesDoNotRescanBody",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaKnownTypeHoldersKeepProjectNamesPrivate",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaNameMemosConcurrentLookups",
+   "durationMillis": 110
+  },
+  {
+   "name": "TestSemaNameMemosMatchUncached",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaNameMemosPreserveReceiverSpelling",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaNameMemosRemainBounded",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaNameMemosRepeatedLookupDoesNotAllocate",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaNameMemosSkipOversizedInputsAndOutputs",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaOpenSObjectFieldsAreOpaque",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaOpenSObjectFieldsPreservesIncompleteBuiltModels",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaPlatformAliasesDoesNotExposeSharedCache",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaPlatformConstructorSignaturesUseStandardSymbols",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaResolveFieldUsesShortCandidateIndex",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaSObjectFieldProviderDoesNotMutateStandardDefinitionForFeatures",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaSObjectFieldProviderKeepsCompatibilityRepairsWithoutMutatingSchema",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaSObjectFieldProviderKeepsKnownStandardAndFallbackTypes",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaSObjectFieldProviderPrecedenceAndDeterministicVisit",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaSObjectFieldProviderStandardThenCommonFallback",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaScopeFlatMemoCopyIndependence",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaScopeFlatMemoInvalidationAndCopies",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaScopeFlatMemoMatchesUncached",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaScopeFlatMemoWarmAllocations",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaSourceUnitFallbackObservesRootAndMarkerEdits",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaSourceUnitMarkerWalkEquivalence",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaSourcesCachesFallbackMissForEntireAnalysis",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemaStandardSObjectMembersIncludeChangeEvent",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemanticABIIsVersioned",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSemiJoinTextFieldNameDoesNotConferReferenceType",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestShortSObjectFieldsProxyBoundary",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestSiblingCatchVariablesMayReuseNames",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestSiblingScopesMayReuseNames",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestSingleApplicableAllocationPathPreservesHydration",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSingleQuotedStringLineBreakGate",
+   "durationMillis": 1730
+  },
+  {
+   "name": "TestSingleRowQueryWithMethodCallBindRetainsObjectType",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestSnapshotAssertionDoesNotCombineUnrelatedProvenance",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestSoqlStubProviderUsesClassInheritance",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestSourceClassLiteralMethodsWithPlatformShadows",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestSourceFactsMatchBracesBeyondInlineStackCapacity",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSourceFactsMatchingBracesPreserveMalformedBehavior",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSourceFactsPreserveLexicalSemantics",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSourceFactsRemainAnalysisLocal",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSourceFactsRetainSchemaCandidateBoundaries",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSourceFactsReuseOneIndexPerAnalysisOccurrence",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSourceSyntaxParameterizedClassLiterals",
+   "durationMillis": 460
+  },
+  {
+   "name": "TestSourceTypePrecedesUnloadedNamespace",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestSourceWindowPreservesExistingPlatformType",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestSplitSemaMethodPathIgnoresDottedGenericArgument",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestStandardCatalogReferenceMetadataDoesNotRequireUnavailableTargets",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestStandardChildRelationshipKeepsExplicitForeignParent",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestStandardChildRelationshipMembersDoNotExposeSharedCache",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestStandardChildRelationshipSurvivesProjectParentAlias",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestStandardConstructorCompleteNativeColdWarmRoutes",
+   "durationMillis": 2020
+  },
+  {
+   "name": "TestStandardFieldAccessNativeRoutes",
+   "durationMillis": 1920
+  },
+  {
+   "name": "TestStandardFieldAccessOpenMetadata",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestStandardFieldPolicyConfiguredActivityCachedParallelAnonymousRoutes",
+   "durationMillis": 80
+  },
+  {
+   "name": "TestStandardFieldPolicyConfiguredActivitySemaRouteTwins",
+   "durationMillis": 560
+  },
+  {
+   "name": "TestStandardFieldPolicyConfiguredRecordTypeSemaRouteTwins",
+   "durationMillis": 340
+  },
+  {
+   "name": "TestStandardFieldPolicyNativeAnonymousAndNamedConstructorRoutes",
+   "durationMillis": 1850
+  },
+  {
+   "name": "TestStandardFieldSchemaGenerationStability",
+   "durationMillis": 1720
+  },
+  {
+   "name": "TestStandardLookupDeclarationsRetainCatalogRelationships",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestStandardObjectConstructorAcceptsStandardFieldMissingFromCatalog",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestStandardObjectConstructorKeepsCustomFieldsStrictAtEveryAPI",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestStandardObjectConstructorStillRejectsFeatureGatedFields",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestStandardParentCompleteMetadataRejectsMissingLeafAnonymousRoutes",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestStandardParentManagedFieldAnonymousNamedAndIsTestRoutes",
+   "durationMillis": 350
+  },
+  {
+   "name": "TestStandardParentPartialFieldAnonymousNamedAndIsTestRoutes",
+   "durationMillis": 310
+  },
+  {
+   "name": "TestStandardParentSOSLCompleteMetadataRejectsMissingLeafAnonymousRoute",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestStandardParentSOSLPreservationAnonymousNamedAndIsTestRoutes",
+   "durationMillis": 290
+  },
+  {
+   "name": "TestStandardParentWithChildRelationshipResolvesUnknownFieldsLikeLazyObject",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestStandardReferenceFieldsSupportAssignmentsAndQueryPaths",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestStandardReferenceMetadataCanonicalizesScalarIdFallback",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestStandardRelationshipDoesNotOverwriteProjectInheritedProperty",
+   "durationMillis": 80
+  },
+  {
+   "name": "TestStandardRelationshipParentWithoutObjectDeclarationKeepsStandardFields",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestStandardSnapshotDependencyCannotCloseHost",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestStandardSnapshotExplicitCompletenessRoutes",
+   "durationMillis": 1950
+  },
+  {
+   "name": "TestStandardVirtualFieldPolicyNativeAnonymousAndNamedConstructorRoutes",
+   "durationMillis": 280
+  },
+  {
+   "name": "TestStatementContextRejectsIllegalBreakAndContinue",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestStatementContractsAllowGeneratedPlatformExceptionCatchTypes",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestStatementContractsAllowLoopAndExceptionControls",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestStatementContractsRejectAlreadyCoveredCatch",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestStatementContractsRejectCapturedTryThrowSuccessor",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestStatementContractsRejectElseOrderingAndInvalidCustomExceptionName",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestStatementContractsRejectFallbackAfterTerminatingTry",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestStatementContractsRejectInstructionsAfterThrow",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestStatementContractsRejectInvalidThrowAndCatchTypes",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestStatementContractsRejectUnreachableInstructions",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestStaticClassFieldPathUnknownLongPathReturnsPromptly",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestStaticFieldReceiverNativeAndNamespacedAnonymousNamedTestTriggerRoutes",
+   "durationMillis": 430
+  },
+  {
+   "name": "TestStaticFinalFieldDeclarationInitializerExcludesAnnotationArguments",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestStaticFinalFieldsInitializedElsewhereUsesParserBodyRange",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestStaticGetterExternalAssignmentComponentBoundary",
+   "durationMillis": 130
+  },
+  {
+   "name": "TestStaticGetterExternalAssignmentReceiverGuards",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestStaticObjectChainNativeAnonymousNamedTestAndTriggerRoutes",
+   "durationMillis": 2210
+  },
+  {
+   "name": "TestStaticObjectChainQualifiedFallbackResolvesStaticRootBeforeInstanceFields",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestStaticObjectChainReproducerNamedAndAnonymousRoutes",
+   "durationMillis": 180
+  },
+  {
+   "name": "TestStringJoinExactCollectionOverloadsCompile",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestStringPredicateCallArguments",
+   "durationMillis": 130
+  },
+  {
+   "name": "TestSuppressWarningsRequiresSingleStringArgument",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestSwitchContractsAllowQualifiedPlatformEnumConstants",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestSwitchContractsAllowSupportedSelectorTypes",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestSwitchContractsAllowUnqualifiedAccessTypeCases",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestSwitchContractsAllowUnqualifiedJSONTokenCasesFromMethodResult",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestSwitchContractsAllowUnqualifiedTriggerOperationCases",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestSwitchContractsInferTernaryDescribeTypeSelector",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestSwitchContractsKeepStringBranchValuesCaseSensitive",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestSwitchContractsPreferSelectorEnumWhenValueMatchesNestedType",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestSwitchContractsQualifiedPlatformEnumWithProjectShadow",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestSwitchContractsRejectUnsupportedSelectorsAndDuplicateValues",
+   "durationMillis": 210
+  },
+  {
+   "name": "TestSwitchContractsResolveClassicForInitializerEnum",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestSwitchContractsResolveNestedEnumFromGenericReturn",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestSwitchTypeBindingMethodArguments",
+   "durationMillis": 480
+  },
+  {
+   "name": "TestSystemExceptionNativeExtensionDeclarations",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestThrowOnlyStepResultAllowsQuotedSemicolon",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestThrowSuccessorAnonymousAndIsTestNativeConformance",
+   "durationMillis": 1080
+  },
+  {
+   "name": "TestThrowSuccessorScopeAnonymousAnalysisAndStatementNativeRoutes",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestThrowSuccessorStatementAnonymousAndIsTestNativeRows",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestTransientLocalNestedCallScopes",
+   "durationMillis": 470
+  },
+  {
+   "name": "TestTransientLocalScopeEndsAtDeclaringBlock",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestTypeContractAcceptsSafeNavigationEqualityRead",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestTypeContractAllowsDateAndDatetimeDayArithmetic",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestTypeContractAllowsExplicitSObjectListCasts",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestTypeContractAllowsInterfaceValueInstanceofNestedImplementer",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestTypeContractAllowsIterableInstanceofAtAllTestedAPIVersions",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestTypeContractAllowsLargeDecimalLiteral",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestTypeContractAllowsLocalToShadowGetOnlyPropertyOnAssignment",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestTypeContractAllowsLongSuffixLiteral",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestTypeContractAllowsMetadataLayoutCastFromRetrieve",
+   "durationMillis": 80
+  },
+  {
+   "name": "TestTypeContractAllowsNumericWideningAndCompatibleCasts",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestTypeContractAllowsQueryLocatorRuntimeCasts",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestTypeContractAllowsQueryLocatorRuntimeTypeTests",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestTypeContractAllowsQueryLocatorRuntimeTypesForAnyIterableElement",
+   "durationMillis": 80
+  },
+  {
+   "name": "TestTypeContractAllowsRuntimeCastsBetweenInterfacesAndClasses",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestTypeContractAllowsUnaryPlusBeforeStringConcatenation",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestTypeContractAllowsUnaryPlusStringArgument",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestTypeContractIgnoresNumericTextInStringsAndComments",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestTypeContractRejectsAlwaysTrueNestedIterableInstanceofAtAPIVersion60",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestTypeContractRejectsIncompatibleParameterizedCollectionCasts",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestTypeContractRejectsInvalidOperators",
+   "durationMillis": 170
+  },
+  {
+   "name": "TestTypeContractRejectsInvalidSourceTypesAndLiterals",
+   "durationMillis": 220
+  },
+  {
+   "name": "TestTypeContractRejectsMetadataSiblingCast",
+   "durationMillis": 80
+  },
+  {
+   "name": "TestTypeContractRejectsPropertyCapabilityAndSafeNavigationMisuse",
+   "durationMillis": 150
+  },
+  {
+   "name": "TestTypeContractRejectsRawCollectionConstructorsCaseInsensitively",
+   "durationMillis": 40
+  },
+  {
+   "name": "TestTypeContractRejectsUnaryPlusOutsideStringConcatenation",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestTypeContractScansNestedClassSourceOnce",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestTypeContractsAllowDateAndDatetimeOrdering",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestTypeContractsAllowTimeOrdering",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestTypeMemberCurrentOverlaySeparatesSFDXTrees",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestTypeMemberCurrentOverlaySharesBase",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestTypeMemberCurrentOverlayUsesLocalSiblingProject",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestTypeMemberCurrentOverlayUsesSameFileNestedType",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestTypeMemberDependencyOverlayKeepsQualifiedAndShortResolution",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestTypeMemberHydrationStaysAnalysisLocal",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestTypeMemberPlatformLayerPreservesConstructorsInterfacesEnumsAndStaticFields",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestTypeMemberProjectOverlayShadowsPlatformWithoutMutation",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestTypeMemberResolutionPrefersTopLevelTypeOverUnrelatedNestedShortName",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestTypeMemberShortCandidateCollisionPreservesIndexOrder",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestTypeMemberStateResolvesPlatformOutsideWorkspaceIndex",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestTypeMemberStateSharesImmutablePlatformModel",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestTypeMemberViewDoesNotExposeSharedPlatformCandidateSlices",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestTypeMemberViewsKeepHydrationPrivate",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestTypeMembersKeepCanonicalChildRelationshipWhenItCollidesWithParentName",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestTypeMembersKeepMethodCollisionSeparateFromSObjectFields",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestTypeMembersKeepProjectSObjectFieldTypeOverStandard",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestTypeMembersKeepStandardRelationshipWhenPartialProjectFieldUsesRelationshipName",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestTypeMembersOnlyAddOwnerForAuthoritativeOwnerShapes",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestTypeMembersParentRelationshipReplacesSyntheticChildAliasInEitherOrder",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestTypeMembersSchemaPresentChangeEventUsesBaseStandardShape",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestTypeMembersSyntheticChangeEventStillUsesBaseStandardShape",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestURLMethodAvailabilitySupportedProfiles",
+   "durationMillis": 240
+  },
+  {
+   "name": "TestUndeclaredNamespaceBaseBoundaryDeferred",
+   "durationMillis": 70
+  },
+  {
+   "name": "TestUndeclaredNamespaceCaseTableNamesFixtureReferences",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestUndeclaredNamespaceDeferralKeepsProvenAbsence",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestUndeclaredNamespaceTypesDeferredInProjectAndAnonymous",
+   "durationMillis": 130
+  },
+  {
+   "name": "TestUnicodeStaticThisKeepsOriginalSourceOffsets",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestUnknownMethodAnnotationsAcceptOpaqueNames",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestUnknownMethodAnnotationsPreserveKnownContracts",
+   "durationMillis": 150
+  },
+  {
+   "name": "TestUnknownNamespaceLocalTwinRejected",
+   "durationMillis": 20
+  },
+  {
+   "name": "TestUnknownNamespaceSignatureTypesCompile",
+   "durationMillis": 50
+  },
+  {
+   "name": "TestUnresolvedDeclaredNamespaceReceiverNamedAndTestRoutes",
+   "durationMillis": 60
+  },
+  {
+   "name": "TestUnresolvedDeclaredNamespaceReceiverRejectsDifferentOwnerNamedRoute",
+   "durationMillis": 90
+  },
+  {
+   "name": "TestUpsertStatementRetainsSingularFieldBoundary",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestUserModeOwnerContactProjectionAnonymous",
+   "durationMillis": 30
+  },
+  {
+   "name": "TestUserModeOwnerContactProjectionBoundaries",
+   "durationMillis": 10
+  },
+  {
+   "name": "TestUserModeOwnerContactProjectionRequiresUserField",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestValueCollectionDiagnosticWording",
+   "durationMillis": 2090
+  },
+  {
+   "name": "TestWorkspaceSourcePathMemoDoesNotSurviveBuildOrRefresh",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestWorkspaceSourcePathMemoMatchesSymlinkResolution",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestWorkspaceSourcePathMemoPreservesReadErrors",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestZeroBodyDuplicateOverlayHydrationPrecedesLaterDiagnostics",
+   "durationMillis": 0
+  }
+ ]
+}

@@ -407,6 +407,9 @@ func (vm *VM) describeSObjectFieldMap(name string, definition storage.ObjectDefi
 	if storage.IsGeneratedHistoryObject(definition) || storage.IsChangeEventObject(definition) {
 		// A change event's captured fields are already in its definition.
 		defaultFieldNames = nil
+	} else if vm.isNamedApexReferenceDescribe(definition.APIName) {
+		// The native describe of a named-source reference object has no fields.
+		defaultFieldNames = nil
 	} else if storage.IsCustomMetadataDefinition(definition) {
 		// Metadata identity fields are already supplied by the schema overlay.
 		// CMT describes have no ordinary record audit, Name or OwnerId fields.
@@ -488,7 +491,9 @@ func (vm *VM) prepareDescribeDefinition(name string, definition storage.ObjectDe
 			definition.KeyPrefix = storage.AssignDeterministicPrefixes([]string{prefixName}, nil)[prefixName]
 		}
 	}
-	storage.EnsureStandardObjectFields(&definition)
+	if !vm.isNamedApexReferenceDescribe(definition.APIName) {
+		storage.EnsureStandardObjectFields(&definition)
+	}
 	storage.RemoveCustomSettingUnsupportedFields(&definition)
 	if storage.IsCustomMetadataDefinition(definition) {
 		// Custom metadata has metadata identity fields instead of the audit
@@ -763,7 +768,11 @@ const globalDescribeMapType = "Schema.GlobalDescribeMap"
 func (vm *VM) globalDescribeMapValue() Value {
 	value := vm.schemaGlobalDescribe()
 	value.Runtime = globalDescribeMapType
+	value, extended := vm.withNamedApexReferenceGlobalEntries(value)
 	if vm.Org == nil || vm.Org.Namespace == "" {
+		if extended {
+			vm.fillGlobalDescribeProjectionKeys(&value, vm.currentCallerNamespace())
+		}
 		return value
 	}
 	// Only keys are immutable preparation. The raw app/module map and its
@@ -996,7 +1005,8 @@ func (vm *VM) describeObjectDefinition(objectName string) (string, storage.Objec
 		return definition.APIName, definition, true
 	}
 	if canonical, ok := vm.namedApexReferenceObjectName(objectName); ok {
-		return canonical, storage.ObjectDefinition{APIName: canonical}, true
+		label, plural, prefix, _ := storage.NamedApexReferenceObjectDescribe(canonical)
+		return canonical, storage.ObjectDefinition{APIName: canonical, Label: label, PluralLabel: plural, KeyPrefix: prefix}, true
 	}
 	if event, ok := standardChangeEventName(objectName); ok {
 		return event, storage.ObjectDefinition{APIName: event}, true
@@ -2175,6 +2185,14 @@ func (vm *VM) omitPermissionViewAllFields(objectName string) bool {
 		version = vm.Org.APIVersion
 	}
 	return apexversion.AtLeast(version, 62) && !apexversion.AtLeast(version, 63)
+}
+
+// permissionViewAllFieldsHidden reports a read, write or query of the member
+// that the source API hides entirely: SObject.get and put, dynamic SOQL, and the
+// describe map (case289_followups OPV rows at API 62.0). Static compilation
+// still accepts it; the conformance test pins that boundary.
+func (vm *VM) permissionViewAllFieldsHidden(objectName, field string) bool {
+	return strings.EqualFold(strings.TrimSpace(field), "PermissionsViewAllFields") && vm.omitPermissionViewAllFields(objectName)
 }
 
 func (vm *VM) fieldDescribeCacheKey(objectName, fieldName string) describeCacheKey {

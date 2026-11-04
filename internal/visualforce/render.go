@@ -60,6 +60,11 @@ func RenderMarkupTree(node *MarkupNode, ctx *RenderContext) (string, error) {
 		ctx = &RenderContext{}
 	}
 	ctx.ensureExpression()
+	expression := ctx.Expression
+	if expression.syntax == nil {
+		expression.syntax = &expressionSyntaxCache{}
+		defer func() { expression.syntax = nil }()
+	}
 	previousChart := ctx.presentationChartRendered
 	ctx.presentationChartRendered = false
 	defer func() { ctx.presentationChartRendered = previousChart }()
@@ -1788,7 +1793,7 @@ func renderCustomComponent(node *MarkupNode, ctx *RenderContext) (string, error)
 			if err := applyComponentAssignTo(ctx.VM, &controller, component.Attributes, componentValues); err != nil {
 				return "", contextualComponentSetterError(err, component.Name)
 			}
-			childCtx.Expression = &ExpressionContext{VM: ctx.VM, Controller: controller, Variables: variables}
+			childCtx.Expression = &ExpressionContext{VM: ctx.VM, Controller: controller, Variables: variables, syntax: ctx.Expression.syntax}
 		}
 	} else if componentHasAssignedValue(component.Attributes, childCtx.ComponentAttrs) {
 		return "", fmt.Errorf("component with assignTo attributes requires a controller and VM")

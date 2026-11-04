@@ -146,6 +146,8 @@ capture was made for this assessment because no runtime behavior was changed.
 Both cookie query exclusions remain in both profiles. No behavior-preserving
 flag hardening was identified, and no claim is made that the candidate would
 make either query finish. Un-waiving requires a fresh hosted full-profile and
-fast-profile scan with the queries enabled and complete timing results. The existing
-`TestOnlyVisualforceWritesResponseCookies` guard continues to reject additional
-Go cookie sinks outside this explicitly reviewed boundary.
+fast-profile scan with the queries enabled and complete timing results.
+`TestResponseCookieSinksAreReviewed` allows the Visualforce sink and the public
+playground session sink. It requires the latter to initialize Secure, HttpOnly
+and SameSite=Lax, and rejects other Go cookie sinks. Playground tests cover the
+explicit loopback HTTP exception and ensure configured ingress retains Secure.

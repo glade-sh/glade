@@ -3913,6 +3913,10 @@ for (Integer i=0; i<128; i++) {
 }
 
 func TestExecPlatformCachePartitionMetadataSeedsDefaultPartition(t *testing.T) {
+	empty, err := CompileAnonymous(`System.assertEquals(0, [SELECT count() FROM PlatformCachePartition]);`)
+	if err != nil {
+		t.Fatal(err)
+	}
 	program, err := CompileAnonymous(`
 PlatformCachePartition partition = [
 	SELECT developerName, NamespacePrefix
@@ -3932,6 +3936,17 @@ System.assert(Cache.Org.getPartition('local.default') != null);
 	machine := New(nil)
 	org := testDataOrg()
 	storage.ApplyOrgShape(&org, []string{"PlatformCache"})
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(empty); err != nil {
+		t.Fatal(err)
+	}
+	// The feature supplies the schema; an authored partition supplies the row.
+	partitions := org.Objects["PlatformCachePartition"]
+	id := storage.ID("0Px000000000101")
+	partitions.Records[id] = storage.Record{ID: id, Object: "PlatformCachePartition", Fields: map[string]storage.Value{
+		"DeveloperName": storage.StringValue("default"), "NamespacePrefix": storage.StringValue(""), "IsDefaultPartition": storage.BooleanValue(true),
+	}}
+	org.Objects["PlatformCachePartition"] = partitions
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
@@ -7215,7 +7230,7 @@ custom.setSenderId('005000000000001AAA');
 custom.setTitle('Title');
 custom.setBody('Body');
 custom.setTargetId('001000000000001AAA');
-custom.setTargetPageRef('/lightning/r/Account/001000000000001AAA/view');
+custom.setTargetPageRef('{"type":"standard__recordPage","attributes":{"recordId":"001000000000001AAA"}}');
 // D11 / Messaging M024: hosted delivery is an explicit local boundary.
 try {
  custom.send(new Set<String>{'005000000000001AAA'});

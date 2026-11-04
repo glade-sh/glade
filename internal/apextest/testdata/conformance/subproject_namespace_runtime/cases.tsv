@@ -1,0 +1,3 @@
+case	role
+own-qualified-nested	qualified nested method call
+foreign-qualified-nested	unknown namespace rejection

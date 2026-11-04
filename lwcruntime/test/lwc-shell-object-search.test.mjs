@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { repoRoot, startLWCDevServer } from "./helpers.mjs";
+import { localClientFetch, repoRoot, startLWCDevServer } from "./helpers.mjs";
 
 for (const apiVersion of ["62.0", "67.0"]) {
   test(`LWC shell object search retains source security grants at API ${apiVersion}`, async (t) => {
@@ -44,7 +44,7 @@ for (const apiVersion of ["62.0", "67.0"]) {
         pagePath: "/lwc/builder",
       });
       assert.ok(server, "synthetic project server started");
-      const response = await fetch(`${server.baseURL}/lightning/local/objects.json?q=acc`);
+      const response = await localClientFetch(`${server.baseURL}/lightning/local/objects.json?q=acc`);
       assert.equal(response.status, 200);
       const { objects } = await response.json();
       const account = objects.find((object) => object.apiName === "Account");

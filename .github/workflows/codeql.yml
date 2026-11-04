@@ -27,6 +27,10 @@ jobs:
           PROFILE: ${{ inputs.profile }}
         run: '[[ "$PROFILE" == fast || "$PROFILE" == full ]]'
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          # Complete local ranges replace the compare API's 300-file fallback.
+          # Keep the default analyzed merge ref; the wrapper verifies its parents.
+          fetch-depth: 0
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version: "1.26.10"
@@ -105,10 +109,10 @@ jobs:
                     # 30205055311 hit its 60-minute job timeout.
                     - go/incorrect-integer-conversion
                     # These two never finished in run 39616762308 (25 of 27
-                    # queries done within 3 minutes). The only cookie sink is
-                    # the Visualforce Apex Cookie emulation in
-                    # internal/server/visualforce.go, whose Secure and HttpOnly
-                    # come from the Apex program. Tests pin that sink.
+                    # queries done within 3 minutes). The Visualforce Apex
+                    # cookie flags come from Apex; the public session cookie
+                    # pins the default Secure, HttpOnly and SameSite=Lax cookie. Repoguard
+                    # inventories both sinks and checks the session flags.
                     - go/cookie-httponly-not-set
                     - go/cookie-secure-not-set
           build-mode: manual
@@ -148,10 +152,10 @@ jobs:
                     - go/unsafe-quoting
                     - go/unvalidated-url-redirection
                     # These two never finished in run 39616762308 (25 of 27
-                    # queries done within 3 minutes). The only cookie sink is
-                    # the Visualforce Apex Cookie emulation in
-                    # internal/server/visualforce.go, whose Secure and HttpOnly
-                    # come from the Apex program. Tests pin that sink.
+                    # queries done within 3 minutes). The Visualforce Apex
+                    # cookie flags come from Apex; the public session cookie
+                    # pins the default Secure, HttpOnly and SameSite=Lax cookie. Repoguard
+                    # inventories both sinks and checks the session flags.
                     - go/cookie-httponly-not-set
                     - go/cookie-secure-not-set
           build-mode: manual

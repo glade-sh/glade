@@ -697,13 +697,8 @@ export function getStatCount() { return overlays.length; }
 export function isLwcModalActive() { return overlays.length > 0; }
 `, true
 	case "purifylib":
-		return `export default function sanitizeHTML(dirty, _config = undefined) {
-  const template = document.createElement("template");
-  template.innerHTML = String(dirty || "");
-  for (const node of template.content.querySelectorAll("script")) {
-    node.remove();
-  }
-  return template.innerHTML;
+		return `export default function sanitizeHTML() {
+  throw new Error("lightning/purifyLib is unsupported");
 }
 `, true
 	case "routingservice":

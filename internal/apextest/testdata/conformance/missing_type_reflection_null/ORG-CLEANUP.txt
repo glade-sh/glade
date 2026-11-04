@@ -1,0 +1,5 @@
+cleanup_complete=true
+org_deleted=true
+dev_hub_scratch_status=Deleted
+local_alias_present=false
+verified_utc=2026-11-02T03:00:00+00:00

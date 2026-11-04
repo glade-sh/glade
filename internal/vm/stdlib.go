@@ -3943,8 +3943,14 @@ func canonicalObjectMemberMethod(method string) string {
 
 func javaStringHashCode(text string) int32 {
 	var hash int32
-	for _, unit := range utf16.Encode([]rune(text)) {
-		hash = 31*hash + int32(unit)
+	for _, r := range text {
+		if r <= 0xffff {
+			hash = 31*hash + int32(r)
+			continue
+		}
+		hi, lo := utf16.EncodeRune(r)
+		hash = 31*hash + int32(hi)
+		hash = 31*hash + int32(lo)
 	}
 	return hash
 }

@@ -1,0 +1,1 @@
+System.debug('CASE335|' + EncodingUtil.convertToHex(Blob.valueOf('AbC xYz')) + '|' + EncodingUtil.convertToHex(Blob.valueOf('')) + '|' + EncodingUtil.convertToHex(Blob.valueOf('ΩMix')) + '|' + EncodingUtil.convertToHex(Blob.valueOf('A\'B\\C')));

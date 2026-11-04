@@ -99,6 +99,10 @@ type checksumPayload struct {
 // checksummed semantic result. projectRoot must be a trusted caller-owned root;
 // every relative cache-directory component is verified before publication.
 func Store(projectRoot, relativePath string, identity Identity, result sema.Result) error {
+	return storeSnapshot(projectRoot, relativePath, identity, sema.SnapshotResult(result))
+}
+
+func storeSnapshot(projectRoot, relativePath string, identity Identity, snapshot sema.ResultSnapshot) error {
 	if err := identity.validate(); err != nil {
 		return err
 	}
@@ -109,7 +113,7 @@ func Store(projectRoot, relativePath string, identity Identity, result sema.Resu
 	payload := checksumPayload{
 		Version:  EnvelopeVersion,
 		Identity: identity,
-		Result:   sema.SnapshotResult(result),
+		Result:   snapshot,
 	}
 	checksum, err := payloadChecksum(payload)
 	if err != nil {

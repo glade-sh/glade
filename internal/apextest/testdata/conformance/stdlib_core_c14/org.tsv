@@ -1,0 +1,71 @@
+source_api	method	capture_id	observation
+62.0	a10gmt	A10.gmt	{"status":"ok","out":"2026-01-01 00:00 +0000"}
+62.0	a10losangeles	A10.losangeles	{"status":"ok","out":"2025-12-31 16:00 -0800"}
+62.0	a10singapore	A10.singapore	{"status":"ok","out":"2026-01-01 08:00 +0800"}
+62.0	a11Padding	A11.padding	{"status":"ok","dayControl":"6|006","out":"1|001"}
+62.0	a13future	A13.future	{"status":"ok","out":"2400-01-01 00:00:00","ms":13569465600000}
+62.0	a13ordinary	A13.ordinary	{"status":"ok","out":"2026-01-01 00:00:00","ms":1767225600000}
+62.0	a15Mutation	A15.mutate	{"status":"ok","size":1,"after":[false,null],"before":[true,7]}
+62.0	a15Unchanged	A15.unchanged	{"status":"ok","out":[true,7]}
+62.0	a18Comparable	A18.comparable	{"status":"ok","size":2}
+62.0	a18Duck	A18.duck	{"error":{"em":"One or more of the items in this list is not Comparable.","et":"System.ListException","stage":"sort"}}
+62.0	a19Collection	A19.collection	{"status":"ok","out":"{\"(x)\":1}"}
+62.0	a19Empty	A19.empty	{"status":"ok","out":"{}"}
+62.0	a19String	A19.string	{"status":"ok","out":"{\"x\":1}"}
+62.0	a1Title	A1.title	{"status":"ok","ascii":{"u":[97,66],"n":2},"out":{"u":[454],"n":1}}
+62.0	a2Ascii	A2.ascii	{"status":"ok","out":{"u":[97,46,46,46],"n":4}}
+62.0	a2Surrogate	A2.surrogate	{"status":"ok","out":{"u":[55357,46,46,46],"n":4},"in":{"u":[55357,56832,97,98,99],"n":5}}
+62.0	a3Nonempty	A3.nonempty	{"status":"ok","out":["a","b",""]}
+62.0	a3negempty	A3.neg.empty	{"status":"ok","out":[""],"limit":-1}
+62.0	a3neggroup	A3.neg.group	{"status":"ok","out":[""],"limit":-1}
+62.0	a3oneempty	A3.one.empty	{"status":"ok","out":[""],"limit":1}
+62.0	a3onegroup	A3.one.group	{"status":"ok","out":[""],"limit":1}
+62.0	a3twoempty	A3.two.empty	{"status":"ok","out":[""],"limit":2}
+62.0	a3twogroup	A3.two.group	{"status":"ok","out":[""],"limit":2}
+62.0	a3zeroempty	A3.zero.empty	{"status":"ok","out":[""],"limit":0}
+62.0	a3zerogroup	A3.zero.group	{"status":"ok","out":[""],"limit":0}
+62.0	a4decomp	A4.decomp	{"status":"ok","out":{"u":[105,775],"n":2},"in":{"u":[73,775],"n":2}}
+62.0	a4dotted	A4.dotted	{"status":"ok","out":{"u":[105],"n":1},"in":{"u":[304],"n":1}}
+62.0	a4sigma	A4.sigma	{"status":"ok","out":{"u":[959,962],"n":2},"in":{"u":[927,931],"n":2}}
+62.0	a5Admission	A5.admit	{"status":"ok","plain":"12300000000000000000000000000000000000000","scale":-8,"precision":33}
+62.0	a5Divide	A5.divide	{"status":"ok","plain":"12300000000000000000000000000000000000000","equal":true}
+62.0	a5Normal	A5.normal	{"status":"ok","plain":"12345","equal":true}
+62.0	a5Slash	A5.slash	{"status":"ok","scale":-8,"precision":33,"plain":"12300000000000000000000000000000000000000","equal":true}
+62.0	a7Magnitude	A7.magnitude	{"status":"ok","scale":-277,"precision":33,"digits":310}
+62.0	u4Ascii	U4.ascii	{"status":"ok","cmp":-1,"sorted":["a","b"]}
+62.0	u4BmpBoundary	U4.boundary	{"status":"ok","sorted":[{"u":[55296,56320],"n":2},{"u":[57344],"n":1}],"reverseCmp":2048,"cmp":-2048}
+67.0	a10gmt	A10.gmt	{"status":"ok","out":"2026-01-01 00:00 +0000"}
+67.0	a10losangeles	A10.losangeles	{"status":"ok","out":"2025-12-31 16:00 -0800"}
+67.0	a10singapore	A10.singapore	{"status":"ok","out":"2026-01-01 08:00 +0800"}
+67.0	a11Padding	A11.padding	{"status":"ok","dayControl":"6|006","out":"1|001"}
+67.0	a13future	A13.future	{"status":"ok","out":"2400-01-01 00:00:00","ms":13569465600000}
+67.0	a13ordinary	A13.ordinary	{"status":"ok","out":"2026-01-01 00:00:00","ms":1767225600000}
+67.0	a15Mutation	A15.mutate	{"status":"ok","size":1,"after":[false,null],"before":[true,7]}
+67.0	a15Unchanged	A15.unchanged	{"status":"ok","out":[true,7]}
+67.0	a18Comparable	A18.comparable	{"status":"ok","size":2}
+67.0	a18Duck	A18.duck	{"error":{"em":"One or more of the items in this list is not Comparable.","et":"System.ListException","stage":"sort"}}
+67.0	a19Collection	A19.collection	{"status":"ok","out":"{\"(x)\":1}"}
+67.0	a19Empty	A19.empty	{"status":"ok","out":"{}"}
+67.0	a19String	A19.string	{"status":"ok","out":"{\"x\":1}"}
+67.0	a1Title	A1.title	{"status":"ok","ascii":{"u":[97,66],"n":2},"out":{"u":[454],"n":1}}
+67.0	a2Ascii	A2.ascii	{"status":"ok","out":{"u":[97,46,46,46],"n":4}}
+67.0	a2Surrogate	A2.surrogate	{"status":"ok","out":{"u":[55357,46,46,46],"n":4},"in":{"u":[55357,56832,97,98,99],"n":5}}
+67.0	a3Nonempty	A3.nonempty	{"status":"ok","out":["a","b",""]}
+67.0	a3negempty	A3.neg.empty	{"status":"ok","out":[""],"limit":-1}
+67.0	a3neggroup	A3.neg.group	{"status":"ok","out":[""],"limit":-1}
+67.0	a3oneempty	A3.one.empty	{"status":"ok","out":[""],"limit":1}
+67.0	a3onegroup	A3.one.group	{"status":"ok","out":[""],"limit":1}
+67.0	a3twoempty	A3.two.empty	{"status":"ok","out":[""],"limit":2}
+67.0	a3twogroup	A3.two.group	{"status":"ok","out":[""],"limit":2}
+67.0	a3zeroempty	A3.zero.empty	{"status":"ok","out":[""],"limit":0}
+67.0	a3zerogroup	A3.zero.group	{"status":"ok","out":[""],"limit":0}
+67.0	a4decomp	A4.decomp	{"status":"ok","out":{"u":[105,775],"n":2},"in":{"u":[73,775],"n":2}}
+67.0	a4dotted	A4.dotted	{"status":"ok","out":{"u":[105],"n":1},"in":{"u":[304],"n":1}}
+67.0	a4sigma	A4.sigma	{"status":"ok","out":{"u":[959,962],"n":2},"in":{"u":[927,931],"n":2}}
+67.0	a5Admission	A5.admit	{"status":"ok","plain":"12300000000000000000000000000000000000000","scale":-8,"precision":33}
+67.0	a5Divide	A5.divide	{"status":"ok","plain":"12300000000000000000000000000000000000000","equal":true}
+67.0	a5Normal	A5.normal	{"status":"ok","plain":"12345","equal":true}
+67.0	a5Slash	A5.slash	{"status":"ok","scale":-8,"precision":33,"plain":"12300000000000000000000000000000000000000","equal":true}
+67.0	a7Magnitude	A7.magnitude	{"status":"ok","scale":-277,"precision":33,"digits":310}
+67.0	u4Ascii	U4.ascii	{"status":"ok","cmp":-1,"sorted":["a","b"]}
+67.0	u4BmpBoundary	U4.boundary	{"status":"ok","sorted":[{"u":[55296,56320],"n":2},{"u":[57344],"n":1}],"reverseCmp":2048,"cmp":-2048}

@@ -94,7 +94,7 @@ type Result struct {
 	AggregateInputRows *int `json:"-"`
 }
 type ExecutionCache struct {
-	mu                         sync.Mutex
+	mu                         sync.RWMutex
 	childRelationships         map[string]childRelationshipResolution
 	childFieldQualifierMatches map[string]bool
 }
@@ -115,4 +115,5 @@ type preparedChildRelationshipQuery struct {
 	childObjectName string
 	relation        storage.Relationship
 	query           Query
+	projection      []projectionField
 }

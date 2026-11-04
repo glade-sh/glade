@@ -335,7 +335,7 @@ func TestRunUpdateDryRunPrintsInstallCommand(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("code = %d stderr=%s", code, stderr.String())
 	}
-	if !strings.Contains(stdout.String(), "curl -fsSL https://glade.sh/install.sh | env GLADE_INSTALL_DIR=") {
+	if !strings.Contains(stdout.String(), "env GLADE_UPDATE_ALLOW_SHELL=1 ") || !strings.Contains(stdout.String(), " update") || strings.Contains(stdout.String(), "<embedded-installer>") {
 		t.Fatalf("dry run omitted install command:\n%s", stdout.String())
 	}
 	if strings.Contains(stdout.String(), "curl -fsSL https://glade.sh/install.sh | sh") {
@@ -345,7 +345,7 @@ func TestRunUpdateDryRunPrintsInstallCommand(t *testing.T) {
 
 func TestUpdateInstallCommandUsesExecutableDirectory(t *testing.T) {
 	got := updateInstallCommandForExecutable("/tmp/Glade Bin/glade")
-	want := "curl -fsSL https://glade.sh/install.sh | env GLADE_INSTALL_DIR='/tmp/Glade Bin' sh"
+	want := "env GLADE_UPDATE_ALLOW_SHELL=1 '/tmp/Glade Bin/glade' update"
 	if got != want {
 		t.Fatalf("command = %q, want %q", got, want)
 	}
@@ -353,9 +353,24 @@ func TestUpdateInstallCommandUsesExecutableDirectory(t *testing.T) {
 
 func TestUpdateInstallCommandQuotesSingleQuotes(t *testing.T) {
 	got := updateInstallCommandForExecutable("/tmp/matt's bin/glade")
-	want := "curl -fsSL https://glade.sh/install.sh | env GLADE_INSTALL_DIR='/tmp/matt'\\''s bin' sh"
+	want := "env GLADE_UPDATE_ALLOW_SHELL=1 '/tmp/matt'\\''s bin/glade' update"
 	if got != want {
 		t.Fatalf("command = %q, want %q", got, want)
+	}
+}
+
+func TestUpdateInstallCommandIsExecutable(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "quoted ' folder")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	executable := filepath.Join(dir, "glade")
+	if err := os.WriteFile(executable, []byte("#!/bin/sh\nprintf '%s %s' \"$GLADE_UPDATE_ALLOW_SHELL\" \"$1\"\n"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	out, err := exec.Command("sh", "-c", updateInstallCommandForExecutable(executable)).CombinedOutput()
+	if err != nil || string(out) != "1 update" {
+		t.Fatalf("printed command output %q: %v", out, err)
 	}
 }
 

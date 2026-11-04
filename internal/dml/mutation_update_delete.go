@@ -15,6 +15,8 @@ func (e *Engine) updateOne(record storage.Record) error {
 	if storage.IsCustomMetadataDefinition(object.Definition) {
 		return customMetadataReadOnlyError(objectName)
 	}
+	_, suppliedAccountName := record.GetField("Name")
+	suppliedAccountName = suppliedAccountName || record.HasExplicitNull("Name")
 	nullsFromFields := explicitNullsFromFieldValues(record)
 	record, err = canonicalizeRecord(e.Org.Namespace, object.Definition, objectName, record)
 	if err != nil {
@@ -34,6 +36,17 @@ func (e *Engine) updateOne(record storage.Record) error {
 	}
 	if existing.System.IsDeleted && !e.Options.AllowUpdateDeleted {
 		return fmt.Errorf("dml: record %s is deleted", record.ID)
+	}
+	if strings.EqualFold(objectName, "Account") && suppliedAccountName {
+		if person, ok := existing.GetField("IsPersonAccount"); ok && person.Kind == storage.ValueBoolean && person.Boolean {
+			if record.DMLNameUnassigned() {
+				return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{"Name"}, QueriedPersonAccountNameError)
+			}
+			return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{"Name"}, "Account: bad field names on insert/update call: Name")
+		}
+	}
+	if err := validateBusinessAccountContacts(objectName, object.Definition, record, existing); err != nil {
+		return err
 	}
 	if err := e.validatePersonAccountCustomFieldWrites(record, existing); err != nil {
 		return err
@@ -154,6 +167,7 @@ func (e *Engine) updateOne(record storage.Record) error {
 	if e.IsolationJournal != nil {
 		e.IsolationJournal.RecordUpdate(objectName, storedID, oldRecord)
 	}
+	existing.ClearDMLNameUnassigned()
 	object.Records[storedID] = existing
 	e.Org.Objects[objectName] = object
 	e.removeUniqueIndexRecord(objectName, object.Definition, oldRecord)

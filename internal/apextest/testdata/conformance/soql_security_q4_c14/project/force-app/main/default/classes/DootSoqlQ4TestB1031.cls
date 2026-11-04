@@ -1,0 +1,81 @@
+@IsTest(SeeAllData=false)
+private without sharing class DootSoqlQ4TestB1031 {
+ @IsTest static void baseline(){System.assertEquals(2,1+1,'BASELINE|arithmetic');}
+
+ private static Map<String,Object> failure(String stage,Exception e){
+  Map<String,Object> x=new Map<String,Object>{'stage'=>stage,'type'=>e.getTypeName(),'message'=>e.getMessage()};
+  if(e instanceof QueryException)x.put('inaccessible',((QueryException)e).getInaccessibleFields());
+  if(e instanceof DmlException){DmlException d=(DmlException)e;List<Object> rows=new List<Object>();for(Integer i=0;i<d.getNumDml();i++)rows.add(new Map<String,Object>{'i'=>d.getDmlIndex(i),'code'=>String.valueOf(d.getDmlStatusCode(i)),'message'=>d.getDmlMessage(i),'fields'=>d.getDmlFieldNames(i)});x.put('dml',rows);}return x;
+ }
+ private static Object compactValue(Object v){if(v instanceof SObject){Map<String,Object> m=new Map<String,Object>(),raw=((SObject)v).getPopulatedFieldsAsMap();for(String k:raw.keySet())m.put(k,compactValue(raw.get(k)));return m;}if(v instanceof List<SObject>)return compact((List<SObject>)v);return v;}
+ private static List<Object> compact(List<SObject> rows){List<Object> xs=new List<Object>();for(SObject r:rows)xs.add(compactValue(r));return xs;}
+ private static void emit(String id,Map<String,Object> o){
+  o.put('locale',UserInfo.getLocale());o.put('tz',UserInfo.getTimeZone().getID());
+  String j=JSON.serialize(o);if(j.length()>620)j=JSON.serialize(new Map<String,Object>{'status'=>'inconclusive_overlength','originalLength'=>j.length()});
+  System.assert(false,'CAPTURE|'+id+'|'+j);
+ }
+
+
+ private static void verifySeed(SObject seed){
+  Id fixtureId=(Id)seed.get('Id');Map<String,Object> expected=seed.getPopulatedFieldsAsMap();
+  Schema.DescribeSObjectResult ds=seed.getSObjectType().getDescribe();
+  if(ds.fields.getMap().containsKey('OwnerId')&&!expected.containsKey('OwnerId'))expected.put('OwnerId',UserInfo.getUserId());
+  List<String> fields=new List<String>(expected.keySet());
+  List<SObject> actual=Database.query('SELECT '+String.join(fields,',')+' FROM '+ds.getName()+' WHERE Id=:fixtureId WITH SYSTEM_MODE');
+  System.assertEquals(1,actual.size(),'fixture exact system readback');
+  for(String f:fields)System.assertEquals(expected.get(f),actual[0].get(f),'fixture persisted '+f);
+ }
+ private static void verifySeeds(List<SObject> seeds){for(SObject seed:seeds)verifySeed(seed);}
+
+ private static User reader(){List<User> us=[SELECT Id FROM User WHERE LastName='DootSecQ4ReaderB1031' WITH SYSTEM_MODE];System.assertEquals(1,us.size(),'fixture unique reader');return us[0];}
+ private static void accessGate(){
+  System.assertEquals(true,DootSecQ4B1031__c.SObjectType.getDescribe().isAccessible(),'fixture object readable');
+  System.assertEquals(true,DootSecQ4B1031__c.Allowed__c.getDescribe().isAccessible(),'fixture allowed readable');
+  System.assertEquals(false,DootSecQ4B1031__c.Hidden__c.getDescribe().isAccessible(),'fixture hidden must be denied');
+  System.assertEquals(false,DootSecQ4B1031__c.Value__c.getDescribe().isAccessible(),'fixture value must be denied');
+ }
+ @TestSetup static void setupReader(){
+  List<Profile> ps=[SELECT Id,PermissionsModifyAllData,PermissionsViewAllData FROM Profile WHERE Name='Minimum Access - Salesforce' WITH SYSTEM_MODE];
+  System.assertEquals(1,ps.size(),'fixture requires exact Minimum Access - Salesforce profile');
+  System.assertEquals(false,ps[0].PermissionsModifyAllData,'fixture no ModifyAllData');System.assertEquals(false,ps[0].PermissionsViewAllData,'fixture no ViewAllData');
+  User u=new User(Alias='dsec',LastName='DootSecQ4ReaderB1031',Email='capture@example.invalid',EmailEncodingKey='UTF-8',LanguageLocaleKey='en_US',LocaleSidKey='en_US',TimeZoneSidKey='GMT',ProfileId=ps[0].Id,Username='DootSecQ4ReaderB1031.'+UserInfo.getOrganizationId()+'.'+System.now().getTime()+'@example.invalid');insert as system u;
+  List<PermissionSet> grants=[SELECT Id FROM PermissionSet WHERE Name='DootSecQ4ReaderB1031' WITH SYSTEM_MODE];System.assertEquals(1,grants.size(),'fixture unique owned permission set');insert as system new PermissionSetAssignment(AssigneeId=u.Id,PermissionSetId=grants[0].Id);
+  
+ }
+ @IsTest static void allowed(){
+  Map<String,Object> o=new Map<String,Object>();String stage='fixture';
+  try{User r=reader();DootSecQ4B1031__c a=new DootSecQ4B1031__c(Name='Q4',Hidden__c='555',Allowed__c='ok',OwnerId=r.Id);insert as system a;verifySeed(a);DootSecQ4ChildB1031__c c=new DootSecQ4ChildB1031__c(Name='Q4',Parent__c=a.Id,Hidden__c='secret',Allowed__c='ok',OwnerId=r.Id);insert as system c;verifySeed(c);Id aid=a.Id,cid=c.Id;String oname=DootSecQ4B1031__c.SObjectType.getDescribe().getName(),cname=DootSecQ4ChildB1031__c.SObjectType.getDescribe().getName(),hidden=DootSecQ4B1031__c.Hidden__c.getDescribe().getName(),chidden=DootSecQ4ChildB1031__c.Hidden__c.getDescribe().getName(),parent=DootSecQ4ChildB1031__c.Parent__c.getDescribe().getName();System.runAs(r){accessGate();System.assertEquals(false,DootSecQ4ChildB1031__c.Hidden__c.getDescribe().isAccessible(),'fixture child hidden denied');System.assertEquals(true,DootSecQ4ChildB1031__c.Allowed__c.getDescribe().isAccessible(),'fixture child allowed');System.assertEquals(true,DootSecQ4ChildB1031__c.Parent__c.getDescribe().isAccessible(),'fixture child lookup readable');System.assertEquals(1,[SELECT COUNT() FROM DootSecQ4B1031__c WHERE Id=:aid WITH USER_MODE],'fixture parent identity');System.assertEquals(1,[SELECT COUNT() FROM DootSecQ4ChildB1031__c WHERE Id=:cid WITH USER_MODE],'fixture child identity');stage='query';o.put('rows',compact(Database.query('SELECT Id,'+DootSecQ4B1031__c.Allowed__c.getDescribe().getName()+' FROM '+oname+' WHERE Id=:aid WITH USER_MODE')));} o.put('status','observed');o.put('stage',stage);}
+  catch(Exception e){o.put('status',stage=='fixture'?'inconclusive_fixture':'operation_exception');o.put('stage',stage);o.put('exception',failure(stage,e));}
+  emit('Q4.allowed',o);
+ }
+ @IsTest static void deniedParent(){
+  Map<String,Object> o=new Map<String,Object>();String stage='fixture';
+  try{User r=reader();DootSecQ4B1031__c a=new DootSecQ4B1031__c(Name='Q4',Hidden__c='555',Allowed__c='ok',OwnerId=r.Id);insert as system a;verifySeed(a);DootSecQ4ChildB1031__c c=new DootSecQ4ChildB1031__c(Name='Q4',Parent__c=a.Id,Hidden__c='secret',Allowed__c='ok',OwnerId=r.Id);insert as system c;verifySeed(c);Id aid=a.Id,cid=c.Id;String oname=DootSecQ4B1031__c.SObjectType.getDescribe().getName(),cname=DootSecQ4ChildB1031__c.SObjectType.getDescribe().getName(),hidden=DootSecQ4B1031__c.Hidden__c.getDescribe().getName(),chidden=DootSecQ4ChildB1031__c.Hidden__c.getDescribe().getName(),parent=DootSecQ4ChildB1031__c.Parent__c.getDescribe().getName();System.runAs(r){accessGate();System.assertEquals(false,DootSecQ4ChildB1031__c.Hidden__c.getDescribe().isAccessible(),'fixture child hidden denied');System.assertEquals(true,DootSecQ4ChildB1031__c.Allowed__c.getDescribe().isAccessible(),'fixture child allowed');System.assertEquals(true,DootSecQ4ChildB1031__c.Parent__c.getDescribe().isAccessible(),'fixture child lookup readable');System.assertEquals(1,[SELECT COUNT() FROM DootSecQ4B1031__c WHERE Id=:aid WITH USER_MODE],'fixture parent identity');System.assertEquals(1,[SELECT COUNT() FROM DootSecQ4ChildB1031__c WHERE Id=:cid WITH USER_MODE],'fixture child identity');stage='query';o.put('rows',compact(Database.query('SELECT '+hidden+' FROM '+oname+' WHERE Id=:aid WITH USER_MODE')));} o.put('status','observed');o.put('stage',stage);}
+  catch(Exception e){o.put('status',stage=='fixture'?'inconclusive_fixture':'operation_exception');o.put('stage',stage);o.put('exception',failure(stage,e));}
+  emit('Q4.deniedParent',o);
+ }
+ @IsTest static void deniedChild(){
+  Map<String,Object> o=new Map<String,Object>();String stage='fixture';
+  try{User r=reader();DootSecQ4B1031__c a=new DootSecQ4B1031__c(Name='Q4',Hidden__c='555',Allowed__c='ok',OwnerId=r.Id);insert as system a;verifySeed(a);DootSecQ4ChildB1031__c c=new DootSecQ4ChildB1031__c(Name='Q4',Parent__c=a.Id,Hidden__c='secret',Allowed__c='ok',OwnerId=r.Id);insert as system c;verifySeed(c);Id aid=a.Id,cid=c.Id;String oname=DootSecQ4B1031__c.SObjectType.getDescribe().getName(),cname=DootSecQ4ChildB1031__c.SObjectType.getDescribe().getName(),hidden=DootSecQ4B1031__c.Hidden__c.getDescribe().getName(),chidden=DootSecQ4ChildB1031__c.Hidden__c.getDescribe().getName(),parent=DootSecQ4ChildB1031__c.Parent__c.getDescribe().getName();System.runAs(r){accessGate();System.assertEquals(false,DootSecQ4ChildB1031__c.Hidden__c.getDescribe().isAccessible(),'fixture child hidden denied');System.assertEquals(true,DootSecQ4ChildB1031__c.Allowed__c.getDescribe().isAccessible(),'fixture child allowed');System.assertEquals(true,DootSecQ4ChildB1031__c.Parent__c.getDescribe().isAccessible(),'fixture child lookup readable');System.assertEquals(1,[SELECT COUNT() FROM DootSecQ4B1031__c WHERE Id=:aid WITH USER_MODE],'fixture parent identity');System.assertEquals(1,[SELECT COUNT() FROM DootSecQ4ChildB1031__c WHERE Id=:cid WITH USER_MODE],'fixture child identity');stage='query';o.put('rows',compact(Database.query('SELECT '+chidden+' FROM '+cname+' WHERE Id=:cid WITH USER_MODE')));} o.put('status','observed');o.put('stage',stage);}
+  catch(Exception e){o.put('status',stage=='fixture'?'inconclusive_fixture':'operation_exception');o.put('stage',stage);o.put('exception',failure(stage,e));}
+  emit('Q4.deniedChild',o);
+ }
+ @IsTest static void predicate(){
+  Map<String,Object> o=new Map<String,Object>();String stage='fixture';
+  try{User r=reader();DootSecQ4B1031__c a=new DootSecQ4B1031__c(Name='Q4',Hidden__c='555',Allowed__c='ok',OwnerId=r.Id);insert as system a;verifySeed(a);DootSecQ4ChildB1031__c c=new DootSecQ4ChildB1031__c(Name='Q4',Parent__c=a.Id,Hidden__c='secret',Allowed__c='ok',OwnerId=r.Id);insert as system c;verifySeed(c);Id aid=a.Id,cid=c.Id;String oname=DootSecQ4B1031__c.SObjectType.getDescribe().getName(),cname=DootSecQ4ChildB1031__c.SObjectType.getDescribe().getName(),hidden=DootSecQ4B1031__c.Hidden__c.getDescribe().getName(),chidden=DootSecQ4ChildB1031__c.Hidden__c.getDescribe().getName(),parent=DootSecQ4ChildB1031__c.Parent__c.getDescribe().getName();System.runAs(r){accessGate();System.assertEquals(false,DootSecQ4ChildB1031__c.Hidden__c.getDescribe().isAccessible(),'fixture child hidden denied');System.assertEquals(true,DootSecQ4ChildB1031__c.Allowed__c.getDescribe().isAccessible(),'fixture child allowed');System.assertEquals(true,DootSecQ4ChildB1031__c.Parent__c.getDescribe().isAccessible(),'fixture child lookup readable');System.assertEquals(1,[SELECT COUNT() FROM DootSecQ4B1031__c WHERE Id=:aid WITH USER_MODE],'fixture parent identity');System.assertEquals(1,[SELECT COUNT() FROM DootSecQ4ChildB1031__c WHERE Id=:cid WITH USER_MODE],'fixture child identity');stage='query';o.put('rows',compact(Database.query('SELECT Id FROM '+oname+' WHERE Id=:aid AND '+hidden+'=\'555\' WITH USER_MODE')));} o.put('status','observed');o.put('stage',stage);}
+  catch(Exception e){o.put('status',stage=='fixture'?'inconclusive_fixture':'operation_exception');o.put('stage',stage);o.put('exception',failure(stage,e));}
+  emit('Q4.predicate',o);
+ }
+ @IsTest static void semi(){
+  Map<String,Object> o=new Map<String,Object>();String stage='fixture';
+  try{User r=reader();DootSecQ4B1031__c a=new DootSecQ4B1031__c(Name='Q4',Hidden__c='555',Allowed__c='ok',OwnerId=r.Id);insert as system a;verifySeed(a);DootSecQ4ChildB1031__c c=new DootSecQ4ChildB1031__c(Name='Q4',Parent__c=a.Id,Hidden__c='secret',Allowed__c='ok',OwnerId=r.Id);insert as system c;verifySeed(c);Id aid=a.Id,cid=c.Id;String oname=DootSecQ4B1031__c.SObjectType.getDescribe().getName(),cname=DootSecQ4ChildB1031__c.SObjectType.getDescribe().getName(),hidden=DootSecQ4B1031__c.Hidden__c.getDescribe().getName(),chidden=DootSecQ4ChildB1031__c.Hidden__c.getDescribe().getName(),parent=DootSecQ4ChildB1031__c.Parent__c.getDescribe().getName();System.runAs(r){accessGate();System.assertEquals(false,DootSecQ4ChildB1031__c.Hidden__c.getDescribe().isAccessible(),'fixture child hidden denied');System.assertEquals(true,DootSecQ4ChildB1031__c.Allowed__c.getDescribe().isAccessible(),'fixture child allowed');System.assertEquals(true,DootSecQ4ChildB1031__c.Parent__c.getDescribe().isAccessible(),'fixture child lookup readable');System.assertEquals(1,[SELECT COUNT() FROM DootSecQ4B1031__c WHERE Id=:aid WITH USER_MODE],'fixture parent identity');System.assertEquals(1,[SELECT COUNT() FROM DootSecQ4ChildB1031__c WHERE Id=:cid WITH USER_MODE],'fixture child identity');stage='query';o.put('rows',compact(Database.query('SELECT Id FROM '+oname+' WHERE Id=:aid AND Id IN (SELECT '+parent+' FROM '+cname+' WHERE Id=:cid AND '+chidden+'=\'secret\') WITH USER_MODE')));} o.put('status','observed');o.put('stage',stage);}
+  catch(Exception e){o.put('status',stage=='fixture'?'inconclusive_fixture':'operation_exception');o.put('stage',stage);o.put('exception',failure(stage,e));}
+  emit('Q4.semi',o);
+ }
+ @IsTest static void anti(){
+  Map<String,Object> o=new Map<String,Object>();String stage='fixture';
+  try{User r=reader();DootSecQ4B1031__c a=new DootSecQ4B1031__c(Name='Q4',Hidden__c='555',Allowed__c='ok',OwnerId=r.Id);insert as system a;verifySeed(a);DootSecQ4ChildB1031__c c=new DootSecQ4ChildB1031__c(Name='Q4',Parent__c=a.Id,Hidden__c='secret',Allowed__c='ok',OwnerId=r.Id);insert as system c;verifySeed(c);Id aid=a.Id,cid=c.Id;String oname=DootSecQ4B1031__c.SObjectType.getDescribe().getName(),cname=DootSecQ4ChildB1031__c.SObjectType.getDescribe().getName(),hidden=DootSecQ4B1031__c.Hidden__c.getDescribe().getName(),chidden=DootSecQ4ChildB1031__c.Hidden__c.getDescribe().getName(),parent=DootSecQ4ChildB1031__c.Parent__c.getDescribe().getName();System.runAs(r){accessGate();System.assertEquals(false,DootSecQ4ChildB1031__c.Hidden__c.getDescribe().isAccessible(),'fixture child hidden denied');System.assertEquals(true,DootSecQ4ChildB1031__c.Allowed__c.getDescribe().isAccessible(),'fixture child allowed');System.assertEquals(true,DootSecQ4ChildB1031__c.Parent__c.getDescribe().isAccessible(),'fixture child lookup readable');System.assertEquals(1,[SELECT COUNT() FROM DootSecQ4B1031__c WHERE Id=:aid WITH USER_MODE],'fixture parent identity');System.assertEquals(1,[SELECT COUNT() FROM DootSecQ4ChildB1031__c WHERE Id=:cid WITH USER_MODE],'fixture child identity');stage='query';o.put('rows',compact(Database.query('SELECT Id FROM '+oname+' WHERE Id=:aid AND Id NOT IN (SELECT '+parent+' FROM '+cname+' WHERE Id=:cid AND '+chidden+'=\'secret\') WITH USER_MODE')));} o.put('status','observed');o.put('stage',stage);}
+  catch(Exception e){o.put('status',stage=='fixture'?'inconclusive_fixture':'operation_exception');o.put('stage',stage);o.put('exception',failure(stage,e));}
+  emit('Q4.anti',o);
+ }
+}

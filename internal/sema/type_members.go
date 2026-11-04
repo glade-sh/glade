@@ -139,6 +139,11 @@ type semaTypeMemberView struct {
 	anonymous                 bool
 	namedApexReferenceObjects bool
 	namedApexReferenceMembers map[string]typeMembers
+	hydrationEpoch            *uint64
+	bodyFieldScopeMemo        *semaBodyFieldScopeMemo
+	methodFamilies            map[semaMethodFamilyKey][]resolvedMember
+	lastMethodFamily          semaMethodFamilyKey
+	lastMethodFamilyValid     bool
 	// lexicalShadows memoizes semaLexicalShadowingInner by owner and name.
 	lexicalShadows map[string]string
 }
@@ -200,10 +205,23 @@ func newSemaTypeMemberStateWithPlatform(base, platform *semaTypeMemberModel) *se
 
 func (s *semaTypeMemberState) view() *semaTypeMemberView {
 	return &semaTypeMemberView{
-		state:     s,
-		hydrated:  make(map[string]typeMembers),
-		canonical: newSemaCanonicalNames(semaAnalysisCanonicalNameLimit),
+		state:          s,
+		hydrated:       make(map[string]typeMembers),
+		canonical:      newSemaCanonicalNames(semaAnalysisCanonicalNameLimit),
+		hydrationEpoch: new(uint64),
 	}
+}
+
+func (v *semaTypeMemberView) fieldHydrationEpoch() *uint64 {
+	if v.hydrationEpoch == nil {
+		v.hydrationEpoch = new(uint64)
+	}
+	return v.hydrationEpoch
+}
+
+func (v *semaTypeMemberView) changedHydration() {
+	epoch := v.fieldHydrationEpoch()
+	*epoch++
 }
 
 func (v *semaTypeMemberView) lookup(key string) (typeMembers, bool) {
@@ -232,6 +250,7 @@ func (v *semaTypeMemberView) lookup(key string) (typeMembers, bool) {
 		members, ok := v.state.platform.lookup(key)
 		if ok {
 			v.hydrated[key] = members
+			v.changedHydration()
 			return members, true
 		}
 	}
@@ -264,10 +283,12 @@ func (v *semaTypeMemberView) storeHydrated(key string, members typeMembers) {
 				v.namedApexReferenceMembers = make(map[string]typeMembers)
 			}
 			v.namedApexReferenceMembers[name] = members
+			v.changedHydration()
 			return
 		}
 	}
 	v.hydrated[key] = members
+	v.changedHydration()
 }
 
 func (v *semaTypeMemberView) shortCandidateKeys(short string) []string {
@@ -743,9 +764,10 @@ func semaModelWithTriggerScope(model *semaTypeMemberView, trigger typesys.Trigge
 		context.fields[key] = field
 	}
 	out := &semaTypeMemberView{
-		state:    model.state,
-		current:  make(map[string]typeMembers, len(model.current)+1),
-		hydrated: model.hydrated,
+		state:          model.state,
+		current:        make(map[string]typeMembers, len(model.current)+1),
+		hydrated:       model.hydrated,
+		hydrationEpoch: model.fieldHydrationEpoch(),
 	}
 	for key, members := range model.current {
 		out.current[key] = members
@@ -1061,9 +1083,10 @@ func semaTypeSymbolKey(typ typesys.TypeSymbol) string {
 
 func semaModelWithCurrentType(model *semaTypeMemberView, typ typesys.TypeSymbol) *semaTypeMemberView {
 	out := &semaTypeMemberView{
-		state:    model.state,
-		current:  make(map[string]typeMembers, 2),
-		hydrated: model.hydrated,
+		state:          model.state,
+		current:        make(map[string]typeMembers, 2),
+		hydrated:       model.hydrated,
+		hydrationEpoch: model.fieldHydrationEpoch(),
 	}
 	addCurrent := func(currentType typesys.TypeSymbol) {
 		currentMembers := semaTypeMembersFromSymbol(currentType)
@@ -1521,6 +1544,9 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 	for unit, membersByKey := range sourceMembersByUnit {
 		unitView := *view
 		unitView.sourceUnit = unit
+		unitView.bodyFieldScopeMemo = nil
+		unitView.methodFamilies = nil
+		unitView.lastMethodFamilyValid = false
 		for key, members := range membersByKey {
 			membersByKey[key] = semaResolveTypeMembers(&unitView, members)
 		}

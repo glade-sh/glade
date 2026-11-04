@@ -146,8 +146,20 @@ func TestFlowTargetReferenceSafetyPreservesLegacyRestrictions(t *testing.T) {
 	if !flowCoreTriggeredStepsSafe(rule, []storage.FlowStep{ref}, "before-delete") {
 		t.Fatal("explicit delete root create rejected")
 	}
-	if flowCoreTriggeredStepsSafe(rule, []storage.FlowStep{{Kind: "decision", Branches: []storage.FlowBranch{{Steps: []storage.FlowStep{ref}}}}}, "before-delete") {
-		t.Fatal("nested create widened legacy delete safety")
+	nested := []storage.FlowStep{{Kind: "decision", Branches: []storage.FlowBranch{{Steps: []storage.FlowStep{ref}}}}}
+	// Native before-delete rows (flow_null_comparisons/routes, API 62/67) create
+	// Contact rows from decision branches.
+	if !flowCoreTriggeredStepsSafe(rule, nested, "before-delete") {
+		t.Fatal("explicit delete decision-branch create rejected")
+	}
+	lookup := storage.FlowStep{Kind: "recordLookup", RecordLookup: storage.FlowRecordLookup{Name: "Find", ObjectName: "Contact"}}
+	if flowCoreTriggeredStepsSafe(rule, append([]storage.FlowStep{lookup}, nested...), "before-delete") {
+		t.Fatal("explicit delete lookup-gated nested create widened")
+	}
+	save := rule
+	save.TriggerType, save.RecordTriggerType = "RecordBeforeSave", "Create"
+	if flowCoreTriggeredStepsSafe(save, nested, "before-save") || flowCoreTriggeredStepsSafe(save, []storage.FlowStep{ref}, "before-save") {
+		t.Fatal("before-save create widened legacy safety")
 	}
 	if flowStepsBeforeSaveSafe([]storage.FlowStep{{Kind: "loop"}}, false) {
 		t.Fatal("loop widened legacy before-save safety")

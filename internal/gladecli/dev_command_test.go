@@ -3,6 +3,7 @@ package gladecli
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -386,6 +387,8 @@ func TestRunWatchTestsDaemonInitialRunRebuildsAfterWatcherBaseline(t *testing.T)
 	}
 }
 
+// These watch tests change file size so the metadata-based poller can observe
+// the writes even on filesystems with coarse modification timestamps.
 func TestPrepareInitialLocalWatchRetriesOrdinaryDrift(t *testing.T) {
 	root := t.TempDir()
 	manifestPath := filepath.Join(root, "sfdx-project.json")
@@ -395,7 +398,7 @@ func TestPrepareInitialLocalWatchRetriesOrdinaryDrift(t *testing.T) {
 		snapshot, err := watch.CaptureScope(scope)
 		captures++
 		if captures == 1 {
-			writeTestFile(t, manifestPath, `{"packageDirectories":[{"path":"other-app","default":true}]}`)
+			writeTestFile(t, manifestPath, `{"packageDirectories":[{"path":"other-app-new","default":true}]}`)
 		}
 		return snapshot, err
 	}
@@ -409,8 +412,8 @@ func TestPrepareInitialLocalWatchRetriesOrdinaryDrift(t *testing.T) {
 	if captures != 4 {
 		t.Fatalf("startup captures = %d, want failed baseline/proof plus stable baseline/proof", captures)
 	}
-	if got := replacement.project.PackageDirectories[0].Path; got != "other-app" {
-		t.Fatalf("stable startup project path = %q, want other-app", got)
+	if got := replacement.project.PackageDirectories[0].Path; got != "other-app-new" {
+		t.Fatalf("stable startup project path = %q, want other-app-new", got)
 	}
 }
 
@@ -427,7 +430,7 @@ func TestPrepareInitialDaemonWatchRetriesOrdinaryDrift(t *testing.T) {
 		snapshot, captureErr := watch.CaptureScope(scope)
 		captures++
 		if captures == 1 {
-			writeTestFile(t, manifestPath, `{"packageDirectories":[{"path":"other-app","default":true}]}`)
+			writeTestFile(t, manifestPath, `{"packageDirectories":[{"path":"other-app-new","default":true}]}`)
 		}
 		return snapshot, captureErr
 	}
@@ -545,13 +548,10 @@ func TestScopedWatchBackendReplacementSwitchesExternalDependencyRoots(t *testing
 	waitForWatchChange(t, watcherB, bPath, watch.ChangeModified)
 
 	writeTestFile(t, aPath, "public class A { public void changedAgain() {} }")
-	select {
-	case changes := <-watcherB.Changes():
-		t.Fatalf("replacement watcher reported removed dependency root: %#v", changes)
-	case err := <-watcherB.Errors():
+	if err := awaitWatchQuiet(watcherB.Changes(), watcherB.Errors(), 100*time.Millisecond); err != nil {
 		t.Fatal(err)
-	case <-time.After(100 * time.Millisecond):
 	}
+
 }
 
 func TestSymlinkedDirectDependencyWatchMatchesFreshLoad(t *testing.T) {
@@ -865,9 +865,9 @@ func TestSymlinkedDependencyRetargetReloadsScopeAndStopsOldTarget(t *testing.T) 
 			if err := activeWatcher.Close(); err != nil {
 				t.Fatal(err)
 			}
-			writeTestFile(t, classB, "global class StageService { global static String value() { return 'cccc'; } }")
+			writeTestFile(t, classB, "global class StageService { global static String value() { return 'ccccc'; } }")
 			waitForWatchChange(t, replacement.watcher, classB, watch.ChangeModified)
-			writeTestFile(t, classA, "global class StageService { global static String value() { return 'dddd'; } }")
+			writeTestFile(t, classA, "global class StageService { global static String value() { return 'dddddd'; } }")
 			deadline := time.NewTimer(100 * time.Millisecond)
 			defer deadline.Stop()
 			for {
@@ -923,7 +923,7 @@ func TestLocalClassUpdateWithConfigDriftRetainsOldStateAndWatcherUntilPrepared(t
 		t.Fatal(err)
 	}
 	defer oldWatcher.Close()
-	writeTestFile(t, helperPath, "public class Helper { public static Integer value() { return 2; } }")
+	writeTestFile(t, helperPath, "public class Helper { public static Integer value() { return 22; } }")
 	writeTestFile(t, configPath, "project:\n  managedPackageDependencies: [\"PkgB:../dependency-b:2.0\"]\n")
 	classChanges := []watch.Change{{Path: helperPath, Op: watch.ChangeModified, Kind: watch.FileKindApexClass, Name: "Helper"}}
 	update, err := tryUpdateWatchIndexState(root, effectiveCfg.Scope, index, graph, classChanges)
@@ -953,7 +953,7 @@ func TestLocalClassUpdateWithConfigDriftRetainsOldStateAndWatcherUntilPrepared(t
 	if !reflect.DeepEqual(replacement.index, fresh) || !reflect.DeepEqual(replacement.graph, watch.BuildReferenceGraph(fresh)) {
 		t.Fatal("prepared replacement does not match forced clean state")
 	}
-	writeTestFile(t, helperPath, "public class Helper { public static Integer value() { return 3; } }")
+	writeTestFile(t, helperPath, "public class Helper { public static Integer value() { return 333; } }")
 	waitForWatchChange(t, oldWatcher, helperPath, watch.ChangeModified)
 }
 
@@ -1017,7 +1017,7 @@ func TestPrepareLocalWatchReplacementRejectsDriftAfterCandidateBaseline(t *testi
 		snapshot, captureErr := watch.CaptureScope(scope)
 		captures++
 		if captures == 1 {
-			writeTestFile(t, manifestPath, `{"packageDirectories":[{"path":"other-app","default":true}]}`)
+			writeTestFile(t, manifestPath, `{"packageDirectories":[{"path":"other-app-new","default":true}]}`)
 		}
 		return snapshot, captureErr
 	}
@@ -1647,5 +1647,26 @@ func TestWatchRunCoordinatorStopCancelsActiveRunOnce(t *testing.T) {
 	coordinator.Stop()
 	if cancelCount != 1 {
 		t.Fatalf("stop cancel count = %d, want 1", cancelCount)
+	}
+}
+
+// awaitWatchQuiet preserves the original assertion that no events or errors
+// occur throughout the quiet window.
+func awaitWatchQuiet(changes <-chan []watch.Change, errs <-chan error, duration time.Duration) error {
+	timer := time.NewTimer(duration)
+	defer timer.Stop()
+	select {
+	case batch, ok := <-changes:
+		if !ok {
+			return errors.New("watch changes closed during quiet window")
+		}
+		return fmt.Errorf("watch reported changes during quiet window: %#v", batch)
+	case err, ok := <-errs:
+		if !ok {
+			return errors.New("watch errors closed during quiet window")
+		}
+		return fmt.Errorf("watch error during quiet window: %v", err)
+	case <-timer.C:
+		return nil
 	}
 }

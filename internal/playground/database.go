@@ -3,6 +3,7 @@ package playground
 import (
 	"sort"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/glade-sh/glade/internal/storage"
 )
@@ -172,4 +173,116 @@ func databaseValue(value storage.Value) any {
 	default:
 		return value.String
 	}
+}
+
+// publicDatabaseSnapshot bounds the input before constructing or encoding a
+// browser snapshot. The conservative estimate includes every record, even
+// those beyond the browser row limit, to bound sorting and copying work too.
+func (r *Runner) publicDatabaseSnapshot() (DatabaseSnapshot, bool) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.lastOrg != nil {
+		return boundedDatabaseSnapshot(publicDatabaseOrg(*r.lastOrg))
+	}
+	r.store.mu.Lock()
+	defer r.store.mu.Unlock()
+	return boundedDatabaseSnapshot(publicDatabaseOrg(r.store.org))
+}
+
+// publicDatabaseOrg drops standard objects that hold no records. A run loads
+// the whole standard catalog (thousands of objects and columns), which would
+// exceed the public response budget before any visitor data is counted. Custom
+// and system objects, and every object with records, remain visible.
+func publicDatabaseOrg(org storage.OrgState) storage.OrgState {
+	objects := make(map[string]storage.ObjectState, len(org.Objects))
+	for name, object := range org.Objects {
+		if len(object.Records) == 0 && databaseObjectKind(object.Definition) == "standard" {
+			continue
+		}
+		objects[name] = object
+	}
+	org.Objects = objects
+	return org
+}
+
+func boundedDatabaseSnapshot(org storage.OrgState) (DatabaseSnapshot, bool) {
+	budget := maxPublicDatabaseBytes
+	consume := func(n int) bool {
+		if n < 0 || n > budget {
+			return false
+		}
+		budget -= n
+		return true
+	}
+	// Count the actual JSON string escape cost before materializing any rows.
+	stringFits := func(s string) bool {
+		if !consume(2) || len(s) > budget {
+			return false
+		}
+		for len(s) > 0 {
+			r, n := utf8.DecodeRuneInString(s)
+			cost := n
+			switch {
+			case r == '"' || r == '\\' || r == '\b' || r == '\f' || r == '\n' || r == '\r' || r == '\t':
+				cost = 2
+			case r < 0x20 || r == '<' || r == '>' || r == '&' || r == '\u2028' || r == '\u2029' || (r == utf8.RuneError && n == 1):
+				cost = 6
+			}
+			if !consume(cost) {
+				return false
+			}
+			s = s[n:]
+		}
+		return true
+	}
+	var valueFits func(storage.Value, int) bool
+	valueFits = func(v storage.Value, depth int) bool {
+		if depth > 64 || !consume(32) {
+			return false
+		}
+		switch v.Kind {
+		case storage.ValueString, storage.ValueDate, storage.ValueDateTime, storage.ValueBlob:
+			return stringFits(v.String)
+		case storage.ValueDecimal:
+			return stringFits(v.Decimal)
+		case storage.ValueID:
+			return stringFits(string(v.ID))
+		case storage.ValueList:
+			for _, child := range v.List {
+				if !valueFits(child, depth+1) {
+					return false
+				}
+			}
+		case storage.ValueNull, storage.ValueInteger, storage.ValueBoolean:
+			// These are encoded as bounded JSON scalars.
+		default:
+			return stringFits(v.String)
+		}
+		return true
+	}
+	if !consume(32) {
+		return DatabaseSnapshot{}, false
+	}
+	for name, object := range org.Objects {
+		if !consume(256) || !stringFits(name) || !stringFits(object.Definition.APIName) || !stringFits(object.Definition.Label) || !stringFits(object.Definition.KeyPrefix) {
+			return DatabaseSnapshot{}, false
+		}
+		for field := range object.Definition.Fields {
+			if !consume(8) || !stringFits(field) {
+				return DatabaseSnapshot{}, false
+			}
+		}
+		for id, record := range object.Records {
+			if !consume(96) || !stringFits(string(id)) || !stringFits(string(record.ID)) || !stringFits(string(record.ID)) || !stringFits(record.System.CreatedDate) || !stringFits(record.System.LastModifiedDate) || !stringFits(string(record.System.OwnerID)) {
+				return DatabaseSnapshot{}, false
+			}
+			for field, value := range record.Fields {
+				// A field name may appear both as a column and in the row.
+				if !consume(16) || !stringFits(field) || !stringFits(field) || !valueFits(value, 0) {
+					return DatabaseSnapshot{}, false
+				}
+			}
+		}
+	}
+	return databaseSnapshot(org), true
 }

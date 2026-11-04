@@ -28,7 +28,7 @@ source-copy installation belongs to the source-development workflow.
 
 Explicit LWC bundle API versions must be whole versions from 59.0 through 68.0.
 Unversioned bundles use compiler default 68.0; module availability follows the
-effective bundle version. The v0.3.0 window is Apex 62.0-68.0, LWC and Visualforce 59.0-68.0.
+effective bundle version. The supported window is Apex 62.0-67.0, LWC and Visualforce 59.0-67.0.
 Source, bundle, and HTTP endpoint versions are independent; do not
 upgrade metadata merely to hide an unsupported-version result.
 

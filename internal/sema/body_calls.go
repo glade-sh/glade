@@ -514,8 +514,50 @@ func semaResolvedMembersAllPlatformBacked(model *semaTypeMemberView, candidates 
 	return true
 }
 
+type semaMethodFamilyKey struct {
+	receiver, method, sourceUnit string
+	epoch                        uint64
+	anonymous, namedApex         bool
+}
+
+func cloneSemaMethodFamily(family []resolvedMember) []resolvedMember {
+	if family == nil {
+		return nil
+	}
+	copyOfFamily := append(make([]resolvedMember, 0, len(family)), family...)
+	for i := range copyOfFamily {
+		if semaDatabaseBatchableInterface(copyOfFamily[i].owner) {
+			copyOfFamily[i].member.Parameters = append([]apexast.Parameter(nil), copyOfFamily[i].member.Parameters...)
+		}
+	}
+	return copyOfFamily
+}
+
 func resolveMemberMethods(model *semaTypeMemberView, typeName, method string) []resolvedMember {
-	return resolveMemberMethodsSeen(model, typeName, method, make(map[string]bool))
+	if model == nil {
+		return resolveMemberMethodsSeen(model, typeName, method, make(map[string]bool))
+	}
+	epoch := model.fieldHydrationEpoch()
+	key := semaMethodFamilyKey{typeName, normalizeName(method), model.sourceUnit, *epoch, model.anonymous, model.namedApexReferenceObjects}
+	if cached, ok := model.methodFamilies[key]; ok {
+		return cloneSemaMethodFamily(cached)
+	}
+	resolved := resolveMemberMethodsSeen(model, typeName, method, make(map[string]bool))
+	if *epoch == key.epoch {
+		// One-off families are common. Retain a result only after the same
+		// stable root is requested twice, and keep the completed cache small.
+		if model.lastMethodFamilyValid && model.lastMethodFamily == key {
+			if len(model.methodFamilies) >= 16 {
+				model.methodFamilies = nil
+			}
+			if model.methodFamilies == nil {
+				model.methodFamilies = make(map[semaMethodFamilyKey][]resolvedMember)
+			}
+			model.methodFamilies[key] = cloneSemaMethodFamily(resolved)
+		}
+		model.lastMethodFamily, model.lastMethodFamilyValid = key, true
+	}
+	return resolved
 }
 
 func resolveImplicitMemberMethods(model *semaTypeMemberView, typeName, method string) []resolvedMember {
@@ -1592,9 +1634,9 @@ func applicableResolvedMembers(candidates []resolvedMember, argTypes []string, m
 
 // Callers that only select a member can provide a small stack-backed buffer.
 // Keep the captured static preference shared with visibility fallback checks.
-func appendApplicableResolvedMembers(applicable, candidates []resolvedMember, argTypes []string, model *semaTypeMemberView) []resolvedMember {
+func appendApplicableResolvedMembers(applicable, candidates []resolvedMember, argTypes []string, model *semaTypeMemberView, memo ...*semaRelationMemo) []resolvedMember {
 	for _, candidate := range candidates {
-		if memberApplicable(candidate.member, argTypes, model) {
+		if memberApplicable(candidate.member, argTypes, model, memo...) {
 			applicable = append(applicable, candidate)
 		}
 	}
@@ -1632,12 +1674,13 @@ func bestResolvedMemberByArgTypes(candidates []resolvedMember, argTypes []string
 		}
 		return resolvedMember{}, false, false
 	}
+	var relations semaRelationMemo
 	var small [4]resolvedMember
 	applicable := small[:0]
 	if len(candidates) > len(small) {
 		applicable = make([]resolvedMember, 0, len(candidates))
 	}
-	applicable = appendApplicableResolvedMembers(applicable, candidates, argTypes, model)
+	applicable = appendApplicableResolvedMembers(applicable, candidates, argTypes, model, &relations)
 	if len(applicable) == 1 {
 		return applicable[0], true, false
 	}
@@ -1663,26 +1706,27 @@ func bestResolvedMemberByArgTypes(candidates []resolvedMember, argTypes []string
 	if best, ok := bestResolvedMemberByExactObjectTieBreak(applicable, argTypes); ok {
 		return best, true, false
 	}
-	if best, ok := bestResolvedMemberByConversionScore(applicable, argTypes, model); ok {
+	if best, ok := bestResolvedMemberByConversionScore(applicable, argTypes, model, &relations); ok {
 		return best, true, false
 	}
-	return bestResolvedMemberBySpecificity(applicable, model)
+	return bestResolvedMemberBySpecificity(applicable, model, &relations)
 }
 
 func bestMemberByArgTypes(candidates []typesys.MemberSymbol, argTypes []string, model *semaTypeMemberView) (typesys.MemberSymbol, bool, bool) {
+	var relations semaRelationMemo
 	applicable := make([]typesys.MemberSymbol, 0, len(candidates))
 	for _, candidate := range candidates {
-		if memberApplicable(candidate, argTypes, model) {
+		if memberApplicable(candidate, argTypes, model, &relations) {
 			applicable = append(applicable, candidate)
 		}
 	}
 	if best, ok := bestMemberByExactObjectTieBreak(applicable, argTypes); ok {
 		return best, true, false
 	}
-	if best, ok := bestMemberByConversionScore(applicable, argTypes, model); ok {
+	if best, ok := bestMemberByConversionScore(applicable, argTypes, model, &relations); ok {
 		return best, true, false
 	}
-	return bestMemberBySpecificity(applicable, model)
+	return bestMemberBySpecificity(applicable, model, &relations)
 }
 
 func bestResolvedMemberBySOQLSingletonArgs(candidates []resolvedMember, argTypes []string, args []semaArg, model *semaTypeMemberView) (resolvedMember, bool) {
@@ -1781,27 +1825,27 @@ func bestMemberByExactObjectTieBreak(applicable []typesys.MemberSymbol, argTypes
 	return applicable[bestIndex], true
 }
 
-func bestResolvedMemberByConversionScore(applicable []resolvedMember, argTypes []string, model *semaTypeMemberView) (resolvedMember, bool) {
+func bestResolvedMemberByConversionScore(applicable []resolvedMember, argTypes []string, model *semaTypeMemberView, memo ...*semaRelationMemo) (resolvedMember, bool) {
 	bestIndex, ok := bestMemberConversionScoreIndex(len(applicable), argTypes, model, func(i int) typesys.MemberSymbol {
 		return applicable[i].member
-	})
+	}, memo...)
 	if !ok {
 		return resolvedMember{}, false
 	}
 	return applicable[bestIndex], true
 }
 
-func bestMemberByConversionScore(applicable []typesys.MemberSymbol, argTypes []string, model *semaTypeMemberView) (typesys.MemberSymbol, bool) {
+func bestMemberByConversionScore(applicable []typesys.MemberSymbol, argTypes []string, model *semaTypeMemberView, memo ...*semaRelationMemo) (typesys.MemberSymbol, bool) {
 	bestIndex, ok := bestMemberConversionScoreIndex(len(applicable), argTypes, model, func(i int) typesys.MemberSymbol {
 		return applicable[i]
-	})
+	}, memo...)
 	if !ok {
 		return typesys.MemberSymbol{}, false
 	}
 	return applicable[bestIndex], true
 }
 
-func bestMemberConversionScoreIndex(count int, argTypes []string, model *semaTypeMemberView, candidateAt func(int) typesys.MemberSymbol) (int, bool) {
+func bestMemberConversionScoreIndex(count int, argTypes []string, model *semaTypeMemberView, candidateAt func(int) typesys.MemberSymbol, memo ...*semaRelationMemo) (int, bool) {
 	bestIndex := -1
 	bestScore := 0
 	bestExact := 0
@@ -1816,7 +1860,7 @@ func bestMemberConversionScoreIndex(count int, argTypes []string, model *semaTyp
 		score := 0
 		exact := 0
 		for j, param := range candidate.Parameters {
-			conversion := semaConversionScore(param.Type, argTypes[j], model)
+			conversion := semaMemoConversionScore(param.Type, argTypes[j], model, memo...)
 			if conversion < 0 {
 				score = -1
 				break
@@ -1911,12 +1955,12 @@ func bestMemberExactObjectTieBreakIndex(count int, argTypes []string, candidateA
 	return bestIndex
 }
 
-func memberApplicable(candidate typesys.MemberSymbol, argTypes []string, model *semaTypeMemberView) bool {
+func memberApplicable(candidate typesys.MemberSymbol, argTypes []string, model *semaTypeMemberView, memo ...*semaRelationMemo) bool {
 	if len(candidate.Parameters) != len(argTypes) {
 		return false
 	}
 	for i, param := range candidate.Parameters {
-		if semaConversionScore(param.Type, argTypes[i], model) < 0 {
+		if semaMemoConversionScore(param.Type, argTypes[i], model, memo...) < 0 {
 			return false
 		}
 	}
@@ -1954,7 +1998,7 @@ func memberApplicableWithNamedArgs(candidate typesys.MemberSymbol, positionalArg
 	return true
 }
 
-func bestResolvedMemberBySpecificity(applicable []resolvedMember, model *semaTypeMemberView) (resolvedMember, bool, bool) {
+func bestResolvedMemberBySpecificity(applicable []resolvedMember, model *semaTypeMemberView, memo ...*semaRelationMemo) (resolvedMember, bool, bool) {
 	if len(applicable) == 0 {
 		return resolvedMember{}, false, false
 	}
@@ -1965,7 +2009,7 @@ func bestResolvedMemberBySpecificity(applicable []resolvedMember, model *semaTyp
 			if i == j {
 				continue
 			}
-			switch compareResolvedSemaMemberSpecificity(candidate, other, model) {
+			switch compareResolvedSemaMemberSpecificity(candidate, other, model, memo...) {
 			case -1, 2:
 				moreSpecificThanAll = false
 			}
@@ -1974,7 +2018,7 @@ func bestResolvedMemberBySpecificity(applicable []resolvedMember, model *semaTyp
 			}
 		}
 		if moreSpecificThanAll {
-			if bestIndex >= 0 && compareResolvedSemaMemberSpecificity(candidate, applicable[bestIndex], model) == 0 {
+			if bestIndex >= 0 && compareResolvedSemaMemberSpecificity(candidate, applicable[bestIndex], model, memo...) == 0 {
 				continue
 			}
 			if bestIndex >= 0 {
@@ -1989,8 +2033,8 @@ func bestResolvedMemberBySpecificity(applicable []resolvedMember, model *semaTyp
 	return applicable[bestIndex], true, false
 }
 
-func compareResolvedSemaMemberSpecificity(left, right resolvedMember, model *semaTypeMemberView) int {
-	paramSpecificity := compareSemaMemberSpecificity(left.member, right.member, model)
+func compareResolvedSemaMemberSpecificity(left, right resolvedMember, model *semaTypeMemberView, memo ...*semaRelationMemo) int {
+	paramSpecificity := compareSemaMemberSpecificity(left.member, right.member, model, memo...)
 	if paramSpecificity != 0 && paramSpecificity != 2 {
 		return paramSpecificity
 	}
@@ -2006,7 +2050,7 @@ func compareResolvedSemaMemberSpecificity(left, right resolvedMember, model *sem
 	}
 }
 
-func bestMemberBySpecificity(applicable []typesys.MemberSymbol, model *semaTypeMemberView) (typesys.MemberSymbol, bool, bool) {
+func bestMemberBySpecificity(applicable []typesys.MemberSymbol, model *semaTypeMemberView, memo ...*semaRelationMemo) (typesys.MemberSymbol, bool, bool) {
 	if len(applicable) == 0 {
 		return typesys.MemberSymbol{}, false, false
 	}
@@ -2017,7 +2061,7 @@ func bestMemberBySpecificity(applicable []typesys.MemberSymbol, model *semaTypeM
 			if i == j {
 				continue
 			}
-			switch compareSemaMemberSpecificity(candidate, other, model) {
+			switch compareSemaMemberSpecificity(candidate, other, model, memo...) {
 			case -1, 2:
 				moreSpecificThanAll = false
 			}
@@ -2026,7 +2070,7 @@ func bestMemberBySpecificity(applicable []typesys.MemberSymbol, model *semaTypeM
 			}
 		}
 		if moreSpecificThanAll {
-			if bestIndex >= 0 && compareSemaMemberSpecificity(candidate, applicable[bestIndex], model) == 0 {
+			if bestIndex >= 0 && compareSemaMemberSpecificity(candidate, applicable[bestIndex], model, memo...) == 0 {
 				continue
 			}
 			if bestIndex >= 0 {
@@ -2041,11 +2085,11 @@ func bestMemberBySpecificity(applicable []typesys.MemberSymbol, model *semaTypeM
 	return applicable[bestIndex], true, false
 }
 
-func compareSemaMemberSpecificity(left, right typesys.MemberSymbol, model *semaTypeMemberView) int {
+func compareSemaMemberSpecificity(left, right typesys.MemberSymbol, model *semaTypeMemberView, memo ...*semaRelationMemo) int {
 	leftBetter := false
 	rightBetter := false
 	for i := range left.Parameters {
-		switch compareSemaTypeSpecificity(left.Parameters[i].Type, right.Parameters[i].Type, model) {
+		switch compareSemaTypeSpecificity(left.Parameters[i].Type, right.Parameters[i].Type, model, memo...) {
 		case 1:
 			leftBetter = true
 		case -1:
@@ -2067,12 +2111,12 @@ func compareSemaMemberSpecificity(left, right typesys.MemberSymbol, model *semaT
 	}
 }
 
-func compareSemaTypeSpecificity(left, right string, model *semaTypeMemberView) int {
+func compareSemaTypeSpecificity(left, right string, model *semaTypeMemberView, memo ...*semaRelationMemo) int {
 	if strings.EqualFold(left, right) {
 		return 0
 	}
-	leftToRight := semaAssignableToType(right, left, model)
-	rightToLeft := semaAssignableToType(left, right, model)
+	leftToRight := semaMemoAssignable(right, left, model, memo...)
+	rightToLeft := semaMemoAssignable(left, right, model, memo...)
 	switch {
 	case leftToRight && !rightToLeft:
 		return 1
@@ -2083,6 +2127,78 @@ func compareSemaTypeSpecificity(left, right string, model *semaTypeMemberView) i
 	default:
 		return 0
 	}
+}
+
+// semaRelationMemo only lives for one overload selection. Entries use the
+// original type strings and are discarded whenever shared hydration changes.
+type semaRelationMemo struct {
+	epoch       uint64
+	initialized bool
+	scores      [16]struct {
+		param, arg string
+		value      int
+	}
+	scoreCount  int
+	assignments [16]struct {
+		param, arg string
+		value      bool
+	}
+	assignmentCount int
+}
+
+func (m *semaRelationMemo) generation(model *semaTypeMemberView) uint64 {
+	epoch := *model.fieldHydrationEpoch()
+	if !m.initialized || m.epoch != epoch {
+		m.epoch, m.initialized = epoch, true
+		m.scoreCount, m.assignmentCount = 0, 0
+	}
+	return epoch
+}
+
+func semaMemoConversionScore(param, arg string, model *semaTypeMemberView, memos ...*semaRelationMemo) int {
+	if model == nil || len(memos) == 0 || memos[0] == nil {
+		return semaConversionScore(param, arg, model)
+	}
+	memo := memos[0]
+	epoch := memo.generation(model)
+	for i := 0; i < memo.scoreCount; i++ {
+		entry := memo.scores[i]
+		if entry.param == param && entry.arg == arg {
+			return entry.value
+		}
+	}
+	value := semaConversionScore(param, arg, model)
+	if *model.fieldHydrationEpoch() == epoch && memo.scoreCount < len(memo.scores) {
+		memo.scores[memo.scoreCount] = struct {
+			param, arg string
+			value      int
+		}{param, arg, value}
+		memo.scoreCount++
+	}
+	return value
+}
+
+func semaMemoAssignable(param, arg string, model *semaTypeMemberView, memos ...*semaRelationMemo) bool {
+	if model == nil || len(memos) == 0 || memos[0] == nil {
+		return semaAssignableToType(param, arg, model)
+	}
+	memo := memos[0]
+	epoch := memo.generation(model)
+	for i := 0; i < memo.assignmentCount; i++ {
+		entry := memo.assignments[i]
+		if entry.param == param && entry.arg == arg {
+			return entry.value
+		}
+	}
+	value := semaAssignableToType(param, arg, model)
+	if *model.fieldHydrationEpoch() == epoch && memo.assignmentCount < len(memo.assignments) {
+		memo.assignments[memo.assignmentCount] = struct {
+			param, arg string
+			value      bool
+		}{param, arg, value}
+		memo.assignmentCount++
+	}
+	return value
 }
 
 func semaConversionScore(paramType, argType string, model *semaTypeMemberView) int {

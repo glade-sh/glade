@@ -699,6 +699,7 @@ func newCompositeHTTPRequest(parent *http.Request, method, target string, body i
 	if err != nil {
 		return nil, err
 	}
+	req = req.WithContext(parent.Context())
 	req.RequestURI = ""
 	req.Host = parent.Host
 	req.RemoteAddr = parent.RemoteAddr

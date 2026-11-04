@@ -1,0 +1,349 @@
+source_api	route	case_id	outcome	message
+62.0	anonymous	describe_name	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+62.0	isTest	describe_name	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|FieldServiceMobileExtension
+62.0	anonymous	describe_label	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+62.0	isTest	describe_label	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|Field Service Mobile Extension
+62.0	anonymous	describe_labelplural	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+62.0	isTest	describe_labelplural	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|Field Service Mobile Extensions
+62.0	anonymous	describe_createable	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+62.0	isTest	describe_createable	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+62.0	anonymous	describe_updateable	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+62.0	isTest	describe_updateable	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+62.0	anonymous	describe_deletable	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+62.0	isTest	describe_deletable	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+62.0	anonymous	describe_queryable	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+62.0	isTest	describe_queryable	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+62.0	anonymous	describe_accessible	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+62.0	isTest	describe_accessible	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+62.0	anonymous	describe_searchable	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+62.0	isTest	describe_searchable	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+62.0	anonymous	describe_custom	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+62.0	isTest	describe_custom	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+62.0	anonymous	describe_keyprefix	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+62.0	isTest	describe_keyprefix	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|1ME
+62.0	anonymous	describe_fieldmap_size	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+62.0	isTest	describe_fieldmap_size	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|0
+62.0	anonymous	describe_fieldmap_keys	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+62.0	isTest	describe_fieldmap_keys	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|
+62.0	anonymous	describe_fieldmap_has_id	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+62.0	isTest	describe_fieldmap_has_id	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+62.0	anonymous	describe_childrel	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+62.0	isTest	describe_childrel	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|1
+62.0	anonymous	describe_rtinfos	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+62.0	isTest	describe_rtinfos	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|0
+62.0	anonymous	describe_sobjecttype_str	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension
+62.0	isTest	describe_sobjecttype_str	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|FieldServiceMobileExtension
+62.0	anonymous	describe_new_getsobjecttype	COMPILE_ERROR	Invalid type: FieldServiceMobileExtension
+62.0	isTest	describe_new_getsobjecttype	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|FieldServiceMobileExtension
+62.0	anonymous	describe_fieldsets	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+62.0	isTest	describe_fieldsets	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|0
+62.0	anonymous	describe_global_get_describe	RUNTIME_ERROR	System.NullPointerException: Attempt to de-reference a null object
+62.0	isTest	describe_global_get_describe	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|FieldServiceMobileExtension
+62.0	anonymous	describe_global_fieldmap_size	RUNTIME_ERROR	System.NullPointerException: Attempt to de-reference a null object
+62.0	isTest	describe_global_fieldmap_size	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|0
+62.0	anonymous	describe_global_iscreateable	RUNTIME_ERROR	System.NullPointerException: Attempt to de-reference a null object
+62.0	isTest	describe_global_iscreateable	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+62.0	anonymous	global_containsKey_lower	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+62.0	isTest	global_containsKey_lower	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+62.0	anonymous	global_containsKey_mixed	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+62.0	isTest	global_containsKey_mixed	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+62.0	anonymous	global_keyset_contains_lower	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+62.0	isTest	global_keyset_contains_lower	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+62.0	anonymous	global_keyset_contains_mixed	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+62.0	isTest	global_keyset_contains_mixed	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+62.0	anonymous	global_get_null	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+62.0	isTest	global_get_null	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+62.0	anonymous	global_get_lower_null	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+62.0	isTest	global_get_lower_null	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+62.0	anonymous	global_values_name_match	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|0
+62.0	isTest	global_values_name_match	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|1
+62.0	anonymous	global_size_gt_zero	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+62.0	isTest	global_size_gt_zero	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+62.0	anonymous	global_keyset_ci	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+62.0	isTest	global_keyset_ci	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+62.0	anonymous	global_describeSObjects_size	RUNTIME_ERROR	System.NoAccessException: Entity: FieldServiceMobileExtension is not readable
+62.0	isTest	global_describeSObjects_size	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|1
+62.0	anonymous	global_describeSObjects_name	RUNTIME_ERROR	System.NoAccessException: Entity: FieldServiceMobileExtension is not readable
+62.0	isTest	global_describeSObjects_name	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|FieldServiceMobileExtension
+62.0	anonymous	global_get_null_all	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+62.0	isTest	global_get_null_all	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+62.0	anonymous	global_containsKey_all	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+62.0	isTest	global_containsKey_all	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+62.0	anonymous	construct_new	COMPILE_ERROR	Invalid type: FieldServiceMobileExtension
+62.0	isTest	construct_new	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+62.0	anonymous	construct_new_schema	COMPILE_ERROR	Invalid type: Schema.FieldServiceMobileExtension
+62.0	isTest	construct_new_schema	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+62.0	anonymous	construct_newSObject	RUNTIME_ERROR	System.NullPointerException: Attempt to de-reference a null object
+62.0	isTest	construct_newSObject	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+62.0	anonymous	construct_type_forName	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+62.0	isTest	construct_type_forName	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+62.0	anonymous	construct_type_forName_schema	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+62.0	isTest	construct_type_forName_schema	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+62.0	anonymous	construct_lowercase	COMPILE_ERROR	Invalid type: fieldservicemobileextension
+62.0	isTest	construct_lowercase	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+62.0	anonymous	construct_typeof_newInstance	RUNTIME_ERROR	System.NullPointerException: Attempt to de-reference a null object
+62.0	isTest	construct_typeof_newInstance	RUNTIME_ERROR	System.NullPointerException: Attempt to de-reference a null object
+62.0	anonymous	construct_sobjecttype_newSObject	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+62.0	isTest	construct_sobjecttype_newSObject	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+62.0	anonymous	query_dyn_query	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	isTest	query_dyn_query	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+62.0	anonymous	query_dyn_count	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	isTest	query_dyn_count	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+62.0	anonymous	query_dyn_query_lower	RUNTIME_ERROR	System.QueryException: sObject type 'fieldservicemobileextension' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	isTest	query_dyn_query_lower	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+62.0	anonymous	query_dyn_querywithbinds	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	isTest	query_dyn_querywithbinds	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+62.0	anonymous	query_dyn_query_limit	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	isTest	query_dyn_query_limit	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+62.0	anonymous	query_static_list	COMPILE_ERROR	Invalid type: Schema.FieldServiceMobileExtension
+62.0	isTest	query_static_list	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+62.0	anonymous	query_static_count	COMPILE_ERROR	Invalid type: Schema.FieldServiceMobileExtension
+62.0	isTest	query_static_count	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+62.0	anonymous	query_static_list_typed	COMPILE_ERROR	Invalid type: FieldServiceMobileExtension
+62.0	isTest	query_static_list_typed	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+63.0	anonymous	global_get_null_all	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+63.0	isTest	global_get_null_all	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+63.0	anonymous	global_containsKey_all	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+63.0	isTest	global_containsKey_all	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+63.0	anonymous	construct_new	COMPILE_ERROR	Invalid type: FieldServiceMobileExtension
+63.0	isTest	construct_new	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+63.0	anonymous	construct_new_schema	COMPILE_ERROR	Invalid type: Schema.FieldServiceMobileExtension
+63.0	isTest	construct_new_schema	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+63.0	anonymous	construct_newSObject	RUNTIME_ERROR	System.NullPointerException: Attempt to de-reference a null object
+63.0	isTest	construct_newSObject	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+63.0	anonymous	construct_type_forName	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+63.0	isTest	construct_type_forName	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+63.0	anonymous	construct_type_forName_schema	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+63.0	isTest	construct_type_forName_schema	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+63.0	anonymous	construct_lowercase	COMPILE_ERROR	Invalid type: fieldservicemobileextension
+63.0	isTest	construct_lowercase	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+63.0	anonymous	construct_typeof_newInstance	RUNTIME_ERROR	System.NullPointerException: Attempt to de-reference a null object
+63.0	isTest	construct_typeof_newInstance	RUNTIME_ERROR	System.NullPointerException: Attempt to de-reference a null object
+63.0	anonymous	construct_sobjecttype_newSObject	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+63.0	isTest	construct_sobjecttype_newSObject	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+63.0	anonymous	query_dyn_query	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.
+63.0	isTest	query_dyn_query	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+63.0	anonymous	query_dyn_count	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.
+63.0	isTest	query_dyn_count	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+63.0	anonymous	query_dyn_query_lower	RUNTIME_ERROR	System.QueryException: sObject type 'fieldservicemobileextension' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.
+63.0	isTest	query_dyn_query_lower	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+63.0	anonymous	query_dyn_querywithbinds	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.
+63.0	isTest	query_dyn_querywithbinds	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+63.0	anonymous	query_dyn_query_limit	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.
+63.0	isTest	query_dyn_query_limit	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+63.0	anonymous	query_static_list	COMPILE_ERROR	Invalid type: Schema.FieldServiceMobileExtension
+63.0	isTest	query_static_list	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+63.0	anonymous	query_static_count	COMPILE_ERROR	Invalid type: Schema.FieldServiceMobileExtension
+63.0	isTest	query_static_count	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+63.0	anonymous	query_static_list_typed	COMPILE_ERROR	Invalid type: FieldServiceMobileExtension
+63.0	isTest	query_static_list_typed	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+64.0	anonymous	global_get_null_all	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+64.0	isTest	global_get_null_all	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+64.0	anonymous	global_containsKey_all	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+64.0	isTest	global_containsKey_all	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+64.0	anonymous	construct_new	COMPILE_ERROR	Invalid type: FieldServiceMobileExtension
+64.0	isTest	construct_new	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+64.0	anonymous	construct_new_schema	COMPILE_ERROR	Invalid type: Schema.FieldServiceMobileExtension
+64.0	isTest	construct_new_schema	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+64.0	anonymous	construct_newSObject	RUNTIME_ERROR	System.NullPointerException: Attempt to de-reference a null object
+64.0	isTest	construct_newSObject	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+64.0	anonymous	construct_type_forName	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+64.0	isTest	construct_type_forName	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+64.0	anonymous	construct_type_forName_schema	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+64.0	isTest	construct_type_forName_schema	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+64.0	anonymous	construct_lowercase	COMPILE_ERROR	Invalid type: fieldservicemobileextension
+64.0	isTest	construct_lowercase	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+64.0	anonymous	construct_typeof_newInstance	RUNTIME_ERROR	System.NullPointerException: Attempt to de-reference a null object
+64.0	isTest	construct_typeof_newInstance	RUNTIME_ERROR	System.NullPointerException: Attempt to de-reference a null object
+64.0	anonymous	construct_sobjecttype_newSObject	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+64.0	isTest	construct_sobjecttype_newSObject	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+64.0	anonymous	query_dyn_query	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.
+64.0	isTest	query_dyn_query	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+64.0	anonymous	query_dyn_count	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.
+64.0	isTest	query_dyn_count	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+64.0	anonymous	query_dyn_query_lower	RUNTIME_ERROR	System.QueryException: sObject type 'fieldservicemobileextension' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.
+64.0	isTest	query_dyn_query_lower	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+64.0	anonymous	query_dyn_querywithbinds	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.
+64.0	isTest	query_dyn_querywithbinds	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+64.0	anonymous	query_dyn_query_limit	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.
+64.0	isTest	query_dyn_query_limit	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+64.0	anonymous	query_static_list	COMPILE_ERROR	Invalid type: Schema.FieldServiceMobileExtension
+64.0	isTest	query_static_list	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+64.0	anonymous	query_static_count	COMPILE_ERROR	Invalid type: Schema.FieldServiceMobileExtension
+64.0	isTest	query_static_count	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+64.0	anonymous	query_static_list_typed	COMPILE_ERROR	Invalid type: FieldServiceMobileExtension
+64.0	isTest	query_static_list_typed	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+65.0	anonymous	global_get_null_all	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+65.0	isTest	global_get_null_all	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+65.0	anonymous	global_containsKey_all	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+65.0	isTest	global_containsKey_all	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+65.0	anonymous	construct_new	COMPILE_ERROR	Invalid type: FieldServiceMobileExtension
+65.0	isTest	construct_new	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+65.0	anonymous	construct_new_schema	COMPILE_ERROR	Invalid type: Schema.FieldServiceMobileExtension
+65.0	isTest	construct_new_schema	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+65.0	anonymous	construct_newSObject	RUNTIME_ERROR	System.NullPointerException: Attempt to de-reference a null object
+65.0	isTest	construct_newSObject	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+65.0	anonymous	construct_type_forName	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+65.0	isTest	construct_type_forName	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+65.0	anonymous	construct_type_forName_schema	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+65.0	isTest	construct_type_forName_schema	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+65.0	anonymous	construct_lowercase	COMPILE_ERROR	Invalid type: fieldservicemobileextension
+65.0	isTest	construct_lowercase	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+65.0	anonymous	construct_typeof_newInstance	RUNTIME_ERROR	System.NullPointerException: Attempt to de-reference a null object
+65.0	isTest	construct_typeof_newInstance	RUNTIME_ERROR	System.NullPointerException: Attempt to de-reference a null object
+65.0	anonymous	construct_sobjecttype_newSObject	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+65.0	isTest	construct_sobjecttype_newSObject	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+65.0	anonymous	query_dyn_query	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.
+65.0	isTest	query_dyn_query	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+65.0	anonymous	query_dyn_count	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.
+65.0	isTest	query_dyn_count	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+65.0	anonymous	query_dyn_query_lower	RUNTIME_ERROR	System.QueryException: sObject type 'fieldservicemobileextension' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.
+65.0	isTest	query_dyn_query_lower	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+65.0	anonymous	query_dyn_querywithbinds	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.
+65.0	isTest	query_dyn_querywithbinds	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+65.0	anonymous	query_dyn_query_limit	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.
+65.0	isTest	query_dyn_query_limit	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+65.0	anonymous	query_static_list	COMPILE_ERROR	Invalid type: Schema.FieldServiceMobileExtension
+65.0	isTest	query_static_list	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+65.0	anonymous	query_static_count	COMPILE_ERROR	Invalid type: Schema.FieldServiceMobileExtension
+65.0	isTest	query_static_count	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+65.0	anonymous	query_static_list_typed	COMPILE_ERROR	Invalid type: FieldServiceMobileExtension
+65.0	isTest	query_static_list_typed	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+66.0	anonymous	global_get_null_all	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+66.0	isTest	global_get_null_all	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+66.0	anonymous	global_containsKey_all	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+66.0	isTest	global_containsKey_all	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+66.0	anonymous	construct_new	COMPILE_ERROR	Invalid type: FieldServiceMobileExtension
+66.0	isTest	construct_new	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+66.0	anonymous	construct_new_schema	COMPILE_ERROR	Invalid type: Schema.FieldServiceMobileExtension
+66.0	isTest	construct_new_schema	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+66.0	anonymous	construct_newSObject	RUNTIME_ERROR	System.NullPointerException: Attempt to de-reference a null object
+66.0	isTest	construct_newSObject	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+66.0	anonymous	construct_type_forName	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+66.0	isTest	construct_type_forName	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+66.0	anonymous	construct_type_forName_schema	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+66.0	isTest	construct_type_forName_schema	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+66.0	anonymous	construct_lowercase	COMPILE_ERROR	Invalid type: fieldservicemobileextension
+66.0	isTest	construct_lowercase	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+66.0	anonymous	construct_typeof_newInstance	RUNTIME_ERROR	System.NullPointerException: Attempt to de-reference a null object
+66.0	isTest	construct_typeof_newInstance	RUNTIME_ERROR	System.NullPointerException: Attempt to de-reference a null object
+66.0	anonymous	construct_sobjecttype_newSObject	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+66.0	isTest	construct_sobjecttype_newSObject	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+66.0	anonymous	query_dyn_query	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.
+66.0	isTest	query_dyn_query	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+66.0	anonymous	query_dyn_count	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.
+66.0	isTest	query_dyn_count	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+66.0	anonymous	query_dyn_query_lower	RUNTIME_ERROR	System.QueryException: sObject type 'fieldservicemobileextension' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.
+66.0	isTest	query_dyn_query_lower	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+66.0	anonymous	query_dyn_querywithbinds	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.
+66.0	isTest	query_dyn_querywithbinds	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+66.0	anonymous	query_dyn_query_limit	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.
+66.0	isTest	query_dyn_query_limit	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+66.0	anonymous	query_static_list	COMPILE_ERROR	Invalid type: Schema.FieldServiceMobileExtension
+66.0	isTest	query_static_list	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+66.0	anonymous	query_static_count	COMPILE_ERROR	Invalid type: Schema.FieldServiceMobileExtension
+66.0	isTest	query_static_count	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+66.0	anonymous	query_static_list_typed	COMPILE_ERROR	Invalid type: FieldServiceMobileExtension
+66.0	isTest	query_static_list_typed	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+67.0	anonymous	describe_name	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+67.0	isTest	describe_name	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|FieldServiceMobileExtension
+67.0	anonymous	describe_label	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+67.0	isTest	describe_label	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|Field Service Mobile Extension
+67.0	anonymous	describe_labelplural	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+67.0	isTest	describe_labelplural	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|Field Service Mobile Extensions
+67.0	anonymous	describe_createable	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+67.0	isTest	describe_createable	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+67.0	anonymous	describe_updateable	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+67.0	isTest	describe_updateable	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+67.0	anonymous	describe_deletable	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+67.0	isTest	describe_deletable	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+67.0	anonymous	describe_queryable	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+67.0	isTest	describe_queryable	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	anonymous	describe_accessible	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+67.0	isTest	describe_accessible	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+67.0	anonymous	describe_searchable	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+67.0	isTest	describe_searchable	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+67.0	anonymous	describe_custom	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+67.0	isTest	describe_custom	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+67.0	anonymous	describe_keyprefix	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+67.0	isTest	describe_keyprefix	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|1ME
+67.0	anonymous	describe_fieldmap_size	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+67.0	isTest	describe_fieldmap_size	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|0
+67.0	anonymous	describe_fieldmap_keys	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+67.0	isTest	describe_fieldmap_keys	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|
+67.0	anonymous	describe_fieldmap_has_id	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+67.0	isTest	describe_fieldmap_has_id	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+67.0	anonymous	describe_childrel	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+67.0	isTest	describe_childrel	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|1
+67.0	anonymous	describe_rtinfos	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+67.0	isTest	describe_rtinfos	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|0
+67.0	anonymous	describe_sobjecttype_str	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension
+67.0	isTest	describe_sobjecttype_str	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|FieldServiceMobileExtension
+67.0	anonymous	describe_new_getsobjecttype	COMPILE_ERROR	Invalid type: FieldServiceMobileExtension
+67.0	isTest	describe_new_getsobjecttype	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|FieldServiceMobileExtension
+67.0	anonymous	describe_fieldsets	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+67.0	isTest	describe_fieldsets	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|0
+67.0	anonymous	describe_global_get_describe	RUNTIME_ERROR	System.NullPointerException: Attempt to de-reference a null object
+67.0	isTest	describe_global_get_describe	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|FieldServiceMobileExtension
+67.0	anonymous	describe_global_fieldmap_size	RUNTIME_ERROR	System.NullPointerException: Attempt to de-reference a null object
+67.0	isTest	describe_global_fieldmap_size	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|0
+67.0	anonymous	describe_global_iscreateable	RUNTIME_ERROR	System.NullPointerException: Attempt to de-reference a null object
+67.0	isTest	describe_global_iscreateable	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+67.0	anonymous	global_containsKey_lower	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+67.0	isTest	global_containsKey_lower	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	anonymous	global_containsKey_mixed	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+67.0	isTest	global_containsKey_mixed	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	anonymous	global_keyset_contains_lower	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+67.0	isTest	global_keyset_contains_lower	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	anonymous	global_keyset_contains_mixed	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+67.0	isTest	global_keyset_contains_mixed	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+67.0	anonymous	global_get_null	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	isTest	global_get_null	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+67.0	anonymous	global_get_lower_null	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	isTest	global_get_lower_null	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+67.0	anonymous	global_values_name_match	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|0
+67.0	isTest	global_values_name_match	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|1
+67.0	anonymous	global_size_gt_zero	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	isTest	global_size_gt_zero	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	anonymous	global_keyset_ci	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+67.0	isTest	global_keyset_ci	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	anonymous	global_describeSObjects_size	RUNTIME_ERROR	System.NoAccessException: Entity: FieldServiceMobileExtension is not readable
+67.0	isTest	global_describeSObjects_size	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|1
+67.0	anonymous	global_describeSObjects_name	RUNTIME_ERROR	System.NoAccessException: Entity: FieldServiceMobileExtension is not readable
+67.0	isTest	global_describeSObjects_name	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|FieldServiceMobileExtension
+67.0	anonymous	global_get_null_all	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	isTest	global_get_null_all	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+67.0	anonymous	global_containsKey_all	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+67.0	isTest	global_containsKey_all	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	anonymous	construct_new	COMPILE_ERROR	Invalid type: FieldServiceMobileExtension
+67.0	isTest	construct_new	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	anonymous	construct_new_schema	COMPILE_ERROR	Invalid type: Schema.FieldServiceMobileExtension
+67.0	isTest	construct_new_schema	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	anonymous	construct_newSObject	RUNTIME_ERROR	System.NullPointerException: Attempt to de-reference a null object
+67.0	isTest	construct_newSObject	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	anonymous	construct_type_forName	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	isTest	construct_type_forName	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	anonymous	construct_type_forName_schema	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	isTest	construct_type_forName_schema	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	anonymous	construct_lowercase	COMPILE_ERROR	Invalid type: fieldservicemobileextension
+67.0	isTest	construct_lowercase	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	anonymous	construct_typeof_newInstance	RUNTIME_ERROR	System.NullPointerException: Attempt to de-reference a null object
+67.0	isTest	construct_typeof_newInstance	RUNTIME_ERROR	System.NullPointerException: Attempt to de-reference a null object
+67.0	anonymous	construct_sobjecttype_newSObject	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+67.0	isTest	construct_sobjecttype_newSObject	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	anonymous	query_dyn_query	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.
+67.0	isTest	query_dyn_query	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+67.0	anonymous	query_dyn_count	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.
+67.0	isTest	query_dyn_count	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+67.0	anonymous	query_dyn_query_lower	RUNTIME_ERROR	System.QueryException: sObject type 'fieldservicemobileextension' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.
+67.0	isTest	query_dyn_query_lower	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+67.0	anonymous	query_dyn_querywithbinds	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.
+67.0	isTest	query_dyn_querywithbinds	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+67.0	anonymous	query_dyn_query_limit	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.
+67.0	isTest	query_dyn_query_limit	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+67.0	anonymous	query_static_list	COMPILE_ERROR	Invalid type: Schema.FieldServiceMobileExtension
+67.0	isTest	query_static_list	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+67.0	anonymous	query_static_count	COMPILE_ERROR	Invalid type: Schema.FieldServiceMobileExtension
+67.0	isTest	query_static_count	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+67.0	anonymous	query_static_list_typed	COMPILE_ERROR	Invalid type: FieldServiceMobileExtension
+67.0	isTest	query_static_list_typed	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.

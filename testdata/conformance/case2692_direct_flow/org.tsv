@@ -1,0 +1,25 @@
+api	route	case	http	result	fields
+62.0	rest	account_unmatched	400	REQUIRED_FIELD_MISSING	LastName
+62.0	rest	account_phone	400	REQUIRED_FIELD_MISSING	LastName
+62.0	rest	account_same_type	400	REQUIRED_FIELD_MISSING	LastName
+62.0	rest	account_explicit_type	400	INVALID_FIELD_FOR_INSERT_UPDATE	LastName
+62.0	rest	account_valid	201	SUCCESS	
+62.0	rest	user_reject	400	INVALID_FIELD_FOR_INSERT_UPDATE	Name
+62.0	rest	user_unmatched	400	INVALID_FIELD_FOR_INSERT_UPDATE	Name
+62.0	rest	user_without_name	400	FIELD_CUSTOM_VALIDATION_EXCEPTION	
+67.0	rest	account_unmatched	400	REQUIRED_FIELD_MISSING	LastName
+67.0	rest	account_phone	400	REQUIRED_FIELD_MISSING	LastName
+67.0	rest	account_same_type	400	REQUIRED_FIELD_MISSING	LastName
+67.0	rest	account_explicit_type	400	INVALID_FIELD_FOR_INSERT_UPDATE	LastName
+67.0	rest	account_valid	201	SUCCESS	
+67.0	rest	user_reject	400	INVALID_FIELD_FOR_INSERT_UPDATE	Name
+67.0	rest	user_unmatched	400	INVALID_FIELD_FOR_INSERT_UPDATE	Name
+67.0	rest	user_without_name	400	FIELD_CUSTOM_VALIDATION_EXCEPTION	
+62.0	rest	account_description	400	REQUIRED_FIELD_MISSING	LastName
+62.0	rest	account_decision	400	REQUIRED_FIELD_MISSING	LastName
+62.0	rest	account_unmatched_control	400	REQUIRED_FIELD_MISSING	LastName
+62.0	rest	account_valid_control	201	SUCCESS	
+67.0	rest	account_description	400	REQUIRED_FIELD_MISSING	LastName
+67.0	rest	account_decision	400	REQUIRED_FIELD_MISSING	LastName
+67.0	rest	account_unmatched_control	400	REQUIRED_FIELD_MISSING	LastName
+67.0	rest	account_valid_control	201	SUCCESS	

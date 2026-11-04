@@ -1,0 +1,790 @@
+[
+ {
+  "id": "PR01",
+  "description": "type invalid + title null",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setNotificationTypeId('bad-id');n.setTitle(null);\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PR02",
+  "description": "type invalid + target invalid",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setNotificationTypeId('bad-id');n.setTargetId('bad-id');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PR03",
+  "description": "type invalid + recipients empty",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setNotificationTypeId('bad-id');recipients.clear();\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PR04",
+  "description": "type null + title null",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setNotificationTypeId(null);n.setTitle(null);\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PR05",
+  "description": "type null + target null",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setNotificationTypeId(null);n.setTargetId(null);\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PR06",
+  "description": "type null + recipients empty",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setNotificationTypeId(null);recipients.clear();\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PR07",
+  "description": "title null + target invalid",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTitle(null);n.setTargetId('bad-id');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PR08",
+  "description": "title null + recipients empty",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTitle(null);recipients.clear();\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PR09",
+  "description": "target invalid + recipients empty",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTargetId('bad-id');recipients.clear();\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PR10",
+  "description": "target null + recipients empty",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTargetId(null);recipients.clear();\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PR11",
+  "description": "body null + target null",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setBody(null);n.setTargetId(null);\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PR12",
+  "description": "body null + recipients empty",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setBody(null);recipients.clear();\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PR13",
+  "description": "title null + body null",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTitle(null);n.setBody(null);\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PR14",
+  "description": "type invalid + sender invalid",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setNotificationTypeId('bad-id');n.setSenderId('bad-id');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PR15",
+  "description": "title null + sender invalid",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTitle(null);n.setSenderId('bad-id');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PR16",
+  "description": "recipients checksum-bad + sender invalid",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n String u=String.valueOf(UserInfo.getUserId());String bad=u.substring(0,17)+(u.endsWith('A')?'B':'A');recipients=new Set<String>{bad};n.setSenderId('bad-id');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PR17",
+  "description": "target invalid + sender invalid",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTargetId('bad-id');n.setSenderId('bad-id');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PR18",
+  "description": "recipients checksum-bad + title null",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n String u=String.valueOf(UserInfo.getUserId());String bad=u.substring(0,17)+(u.endsWith('A')?'B':'A');recipients=new Set<String>{bad};n.setTitle(null);\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PR19",
+  "description": "recipients checksum-bad + type invalid",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n String u=String.valueOf(UserInfo.getUserId());String bad=u.substring(0,17)+(u.endsWith('A')?'B':'A');recipients=new Set<String>{bad};n.setNotificationTypeId('bad-id');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PR20",
+  "description": "recipients checksum-bad + target invalid",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n String u=String.valueOf(UserInfo.getUserId());String bad=u.substring(0,17)+(u.endsWith('A')?'B':'A');recipients=new Set<String>{bad};n.setTargetId('bad-id');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PR21",
+  "description": "target and valid pageRef both set",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTargetPageRef('{\"type\":\"standard__namedPage\",\"attributes\":{\"pageName\":\"home\"}}');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PR22",
+  "description": "pageRef invalid + title null",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTargetId(null);n.setTargetPageRef('not-json');n.setTitle(null);\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PR23",
+  "description": "pageRef invalid + recipients empty",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTargetId(null);n.setTargetPageRef('not-json');recipients.clear();\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PR24",
+  "description": "pageRef invalid + type invalid",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTargetId(null);n.setTargetPageRef('not-json');n.setNotificationTypeId('bad-id');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "TP01",
+  "description": "pageRef empty array",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTargetId(null);n.setTargetPageRef('[]');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "TP02",
+  "description": "pageRef number",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTargetId(null);n.setTargetPageRef('1');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "TP03",
+  "description": "pageRef bare x",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTargetId(null);n.setTargetPageRef('x');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "TP04",
+  "description": "pageRef JSON string",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTargetId(null);n.setTargetPageRef('\"x\"');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "TP05",
+  "description": "pageRef JSON null",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTargetId(null);n.setTargetPageRef('null');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "TP06",
+  "description": "pageRef empty object",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTargetId(null);n.setTargetPageRef('{}');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "TP07",
+  "description": "pageRef array with target set",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTargetPageRef('[]');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "CS01",
+  "description": "targetId checksum-bad",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n String u=String.valueOf(UserInfo.getUserId());String bad=u.substring(0,17)+(u.endsWith('A')?'B':'A');n.setTargetId(bad);\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "CS02",
+  "description": "senderId checksum-bad",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n String u=String.valueOf(UserInfo.getUserId());String bad=u.substring(0,17)+(u.endsWith('A')?'B':'A');n.setSenderId(bad);\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "CS03",
+  "description": "targetId 15 char valid",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTargetId(String.valueOf(UserInfo.getUserId()).substring(0,15));\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "OT01",
+  "description": "org-only real type by SOQL",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='OrgOnlyNotice' LIMIT 1].Id);\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "OT02",
+  "description": "org-only real type by literal id",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setNotificationTypeId('0MLEc000001YkRFOA0');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "OT03",
+  "description": "org-only real type literal + title null",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setNotificationTypeId('0MLEc000001YkRFOA0');n.setTitle(null);\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PS01",
+  "description": "nav missing + type invalid",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTargetId(null);n.setNotificationTypeId('bad-id');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PS02",
+  "description": "nav missing + sender invalid",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTargetId(null);n.setSenderId('bad-id');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PS03",
+  "description": "nav missing + recipients checksum-bad",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n String u=String.valueOf(UserInfo.getUserId());String bad=u.substring(0,17)+(u.endsWith('A')?'B':'A');n.setTargetId(null);recipients=new Set<String>{bad};\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PS04",
+  "description": "nav missing + recipients over limit",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTargetId(null);recipients.clear();for(Integer i=1;i<=501;i++)recipients.add('005'+String.valueOf(i).leftPad(12,'0'));\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PS05",
+  "description": "recipients over limit + type invalid",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n recipients.clear();for(Integer i=1;i<=501;i++)recipients.add('005'+String.valueOf(i).leftPad(12,'0'));n.setNotificationTypeId('bad-id');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PS06",
+  "description": "recipients over limit + title null",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n recipients.clear();for(Integer i=1;i<=501;i++)recipients.add('005'+String.valueOf(i).leftPad(12,'0'));n.setTitle(null);\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PS07",
+  "description": "recipients over limit + sender invalid",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n recipients.clear();for(Integer i=1;i<=501;i++)recipients.add('005'+String.valueOf(i).leftPad(12,'0'));n.setSenderId('bad-id');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PS08",
+  "description": "recipients over limit + target invalid",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n recipients.clear();for(Integer i=1;i<=501;i++)recipients.add('005'+String.valueOf(i).leftPad(12,'0'));n.setTargetId('bad-id');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PS09",
+  "description": "sender invalid + recipients empty",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setSenderId('bad-id');recipients.clear();\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PS10",
+  "description": "sender invalid + body null",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setSenderId('bad-id');n.setBody(null);\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PS11",
+  "description": "target invalid + pageRef invalid",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTargetId('bad-id');n.setTargetPageRef('not-json');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PS12",
+  "description": "type null + sender invalid",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setNotificationTypeId(null);n.setSenderId('bad-id');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PS13",
+  "description": "recipients null + type invalid",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n recipients=null;n.setNotificationTypeId('bad-id');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PS14",
+  "description": "recipients null + title null",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n recipients=null;n.setTitle(null);\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PS15",
+  "description": "recipients null + sender invalid",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n recipients=null;n.setSenderId('bad-id');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PS16",
+  "description": "recipients null + target invalid",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n recipients=null;n.setTargetId('bad-id');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PS17",
+  "description": "recipients null element + type invalid",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n recipients=new Set<String>{null};n.setNotificationTypeId('bad-id');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PS18",
+  "description": "recipients null element + target invalid",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n recipients=new Set<String>{null};n.setTargetId('bad-id');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PS19",
+  "description": "recipients null + type null",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n recipients=null;n.setNotificationTypeId(null);\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PS20",
+  "description": "recipients null + body null",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n recipients=null;n.setBody(null);\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "PS21",
+  "description": "recipients null + nav missing",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n recipients=null;n.setTargetId(null);\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "TQ01",
+  "description": "pageRef object with unknown key",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTargetId(null);n.setTargetPageRef('{\"a\":1}');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "TQ02",
+  "description": "pageRef type only",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTargetId(null);n.setTargetPageRef('{\"type\":\"standard__namedPage\"}');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "TQ03",
+  "description": "pageRef attributes only",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTargetId(null);n.setTargetPageRef('{\"attributes\":{\"pageName\":\"home\"}}');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "TQ04",
+  "description": "pageRef type and empty attributes",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTargetId(null);n.setTargetPageRef('{\"type\":\"standard__namedPage\",\"attributes\":{}}');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "TQ05",
+  "description": "pageRef numeric type",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTargetId(null);n.setTargetPageRef('{\"type\":1}');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "TQ06",
+  "description": "pageRef unknown type string",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTargetId(null);n.setTargetPageRef('{\"type\":\"x\"}');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "TQ07",
+  "description": "pageRef whitespace padded valid",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTargetId(null);n.setTargetPageRef(' {\"type\":\"standard__namedPage\",\"attributes\":{\"pageName\":\"home\"}} ');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "TQ08",
+  "description": "pageRef empty string with target null",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTargetId(null);n.setTargetPageRef('');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "TQ09",
+  "description": "pageRef true",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTargetId(null);n.setTargetPageRef('true');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "TQ10",
+  "description": "pageRef object type and attributes with extra key",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTargetId(null);n.setTargetPageRef('{\"type\":\"standard__namedPage\",\"attributes\":{\"pageName\":\"home\"},\"state\":{}}');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "TQ11",
+  "description": "pageRef numeric type with attributes",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTargetId(null);n.setTargetPageRef('{\"type\":1,\"attributes\":{}}');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "TQ12",
+  "description": "pageRef unknown type with attributes",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTargetId(null);n.setTargetPageRef('{\"type\":\"x\",\"attributes\":{}}');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "TQ13",
+  "description": "pageRef attributes array",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTargetId(null);n.setTargetPageRef('{\"type\":\"standard__namedPage\",\"attributes\":[]}');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "TQ14",
+  "description": "pageRef attributes null",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTargetId(null);n.setTargetPageRef('{\"type\":\"standard__namedPage\",\"attributes\":null}');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "TQ15",
+  "description": "pageRef empty type with attributes",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTargetId(null);n.setTargetPageRef('{\"type\":\"\",\"attributes\":{}}');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "TQ16",
+  "description": "pageRef null type with attributes",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTargetId(null);n.setTargetPageRef('{\"type\":null,\"attributes\":{}}');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "TQ17",
+  "description": "pageRef attributes string",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTargetId(null);n.setTargetPageRef('{\"type\":\"standard__namedPage\",\"attributes\":\"x\"}');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "TQ18",
+  "description": "pageRef upper-case keys",
+  "code": "Map<String,Object> o=new Map<String,Object>();\nString stage='setup';\ntry {\n Messaging.CustomNotification n=new Messaging.CustomNotification();\n n.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='ProbeNotice' LIMIT 1].Id);\n n.setTitle('Probe title');n.setBody('Probe body');n.setTargetId(UserInfo.getUserId());\n Set<String> recipients=new Set<String>{UserInfo.getUserId()};\n stage='mutation';\n n.setTargetId(null);n.setTargetPageRef('{\"TYPE\":\"standard__namedPage\",\"ATTRIBUTES\":{}}');\n stage='send';n.send(recipients);o.put('returned',true);\n} catch(Exception e) {o.put('stage',stage);o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "OPV1",
+  "description": "insert with PermissionsViewAllFields put true",
+  "code": "Object o=ViewAllFieldsObservation.observe('OPV1');\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "OPV2",
+  "description": "dynamic SOQL selecting PermissionsViewAllFields",
+  "code": "Object o=ViewAllFieldsObservation.observe('OPV2');\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "OPV3",
+  "description": "get PermissionsViewAllFields on new instance",
+  "code": "Object o=ViewAllFieldsObservation.observe('OPV3');\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "OPV4",
+  "description": "insert omitted ParentId plus supplied booleans",
+  "code": "Object o=ViewAllFieldsObservation.observe('OPV4');\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "OPV5",
+  "description": "describe field map, sObjectType token map, schema field list",
+  "code": "Object o=ViewAllFieldsObservation.observe('OPV5');\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "OPV7",
+  "description": "insert with explicit null ParentId",
+  "code": "Object o=ViewAllFieldsObservation.observe('OPV7');\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "OPV8",
+  "description": "insert with nonexistent PermissionSet ParentId",
+  "code": "Object o=ViewAllFieldsObservation.observe('OPV8');\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "OPV6",
+  "description": "put PermissionsViewAllFields false then insert, read other fields",
+  "code": "Object o=ViewAllFieldsObservation.observe('OPV6');\n",
+  "routes": [
+   "anonymous",
+   "istest"
+  ]
+ },
+ {
+  "id": "ST1",
+  "description": "static field token ObjectPermissions.PermissionsViewAllFields",
+  "code": "Schema.SObjectField f=ObjectPermissions.PermissionsViewAllFields;System.debug('OBS|ST1|'+String.valueOf(f));\n",
+  "routes": [
+   "static"
+  ]
+ },
+ {
+  "id": "ST2",
+  "description": "static member assignment",
+  "code": "ObjectPermissions g=new ObjectPermissions();g.PermissionsViewAllFields=true;System.debug('OBS|ST2|'+g.PermissionsViewAllFields);\n",
+  "routes": [
+   "static"
+  ]
+ },
+ {
+  "id": "ST3",
+  "description": "static SOQL field",
+  "code": "List<ObjectPermissions> r=[SELECT Id, PermissionsViewAllFields FROM ObjectPermissions LIMIT 1];System.debug('OBS|ST3|'+r.size());\n",
+  "routes": [
+   "static"
+  ]
+ },
+ {
+  "id": "ST4",
+  "description": "constructor named argument",
+  "code": "ObjectPermissions g=new ObjectPermissions(PermissionsViewAllFields=true);System.debug('OBS|ST4|'+g.PermissionsRead);\n",
+  "routes": [
+   "static"
+  ]
+ }
+]

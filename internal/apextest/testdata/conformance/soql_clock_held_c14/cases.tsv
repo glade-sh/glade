@@ -1,0 +1,7 @@
+finding	class	method	capture_id	disposition
+Dot15/Q10	DootSoqlQ10TestB1031	futureToday	Q10.futureToday	controlled-clock-match
+Dot15/Q11	DootSoqlQ11TestB1031	locale0NextWeek	Q11.en_US.NEXT_WEEK	controlled-clock-match
+Dot15/Q11	DootSoqlQ11TestB1031	locale0ThisWeek	Q11.en_US.THIS_WEEK	controlled-clock-match
+Dot15/Q11	DootSoqlQ11TestB1031	locale1NextWeek	Q11.en_GB.NEXT_WEEK	controlled-clock-match
+Dot15/Q11	DootSoqlQ11TestB1031	locale1ThisWeek	Q11.en_GB.THIS_WEEK	known-gap-batch Dot stdlib cases Dot Dot SOQL cases and Dot async cases
+Dot15/Q7	DootSoqlQ7TestB1031	formatFunction	Q7.formatFunction	known-gap-batch Dot stdlib cases Dot Dot SOQL cases and Dot async cases

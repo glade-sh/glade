@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -20,21 +21,70 @@ func concurrentRaceTests(t *testing.T, dir string) []string {
 	functions := map[string]*ast.FuncDecl{}
 	concurrent := map[string]bool{}
 	calls := map[string][]string{}
+	// Test utilities can start goroutines outside the test package. Follow their
+	// calls as well as local helpers, without treating arbitrary product calls
+	// as concurrent merely because another path through the product is.
+	root, err := filepath.Abs(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for {
+		if _, err := os.Stat(filepath.Join(root, "go.mod")); err == nil {
+			break
+		}
+		parent := filepath.Dir(root)
+		if parent == root || parent == "." {
+			root = ""
+			break
+		}
+		root = parent
+	}
 	files, err := filepath.Glob(filepath.Join(dir, "*_test.go"))
 	if err != nil {
 		t.Fatal(err)
 	}
+	type source struct{ path, prefix string }
+	var sources []source
 	for _, path := range files {
+		sources = append(sources, source{path, ""})
+	}
+	seen := map[string]bool{}
+	for i := 0; i < len(sources); i++ {
+		path, prefix := sources[i].path, sources[i].prefix
 		f, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
 		if err != nil {
 			t.Fatal(err)
+		}
+		imports := map[string]string{}
+		for _, imp := range f.Imports {
+			name, err := strconv.Unquote(imp.Path.Value)
+			if err != nil || !strings.HasPrefix(name, "github.com/glade-sh/glade/internal/testutil/") || root == "" {
+				continue
+			}
+			alias := filepath.Base(name)
+			if imp.Name != nil {
+				alias = imp.Name.Name
+			}
+			imports[alias] = name + "."
+			if !seen[name] {
+				seen[name] = true
+				paths, err := filepath.Glob(filepath.Join(root, strings.TrimPrefix(name, "github.com/glade-sh/glade/"), "*.go"))
+				if err != nil {
+					t.Fatal(err)
+				}
+				for _, p := range paths {
+					if !strings.HasSuffix(p, "_test.go") {
+						sources = append(sources, source{p, name + "."})
+					}
+				}
+			}
 		}
 		for _, decl := range f.Decls {
 			fn, ok := decl.(*ast.FuncDecl)
 			if !ok || fn.Body == nil {
 				continue
 			}
-			name := fn.Name.Name
+			name := prefix + fn.Name.Name
 			functions[name] = fn
 			ast.Inspect(fn.Body, func(n ast.Node) bool {
 				switch x := n.(type) {
@@ -68,8 +118,11 @@ func concurrentRaceTests(t *testing.T, dir string) []string {
 					}
 					switch f := x.Fun.(type) {
 					case *ast.Ident:
-						calls[name] = append(calls[name], f.Name)
+						calls[name] = append(calls[name], prefix+f.Name)
 					case *ast.SelectorExpr:
+						if ident, ok := f.X.(*ast.Ident); ok && imports[ident.Name] != "" {
+							calls[name] = append(calls[name], imports[ident.Name]+f.Sel.Name)
+						}
 						if f.Sel.Name == "Parallel" {
 							concurrent[name] = true
 						}
@@ -114,10 +167,10 @@ func TestCIRacePushRetainsConcurrentTests(t *testing.T) {
 	if len(cfg.Packages) == 0 {
 		t.Fatal("empty push race scope")
 	}
-	for _, pkg := range []string{"./internal/apextest", "./internal/gladecli", "./internal/lwc/compile", "./internal/visualforce"} {
+	for _, pkg := range []string{"./internal/apextest", "./internal/gladecli", "./internal/gladehome", "./internal/testutil/toolchaininstall", "./internal/lwc/compile", "./internal/visualforce"} {
 		want := concurrentRaceTests(t, filepath.Join("..", pkg))
 		if pkg == "./internal/lwc/compile" {
-			want = []string{"TestBrowserAPIParallelism", "TestRunBrowserPassesKeepsPassOrder"}
+			want = []string{"TestBrowserAPIParallelism", "TestCompilerBatchHoldsToolchainLeaseUntilChildExits", "TestCompilerCallsOverlap", "TestCompilerHoldsToolchainLeaseUntilChildExits", "TestRunBrowserPassesKeepsPassOrder"}
 		}
 		got, ok := cfg.Packages[pkg]
 		if !ok || !reflect.DeepEqual(got, want) {

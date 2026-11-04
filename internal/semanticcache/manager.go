@@ -150,8 +150,8 @@ func waitForFlight(ctx context.Context, flight *managerFlight, waited bool) (sem
 
 func (manager *Manager) runFlight(request Request, key string, flight *managerFlight, compute func() (sema.Result, error)) {
 	defer manager.endWork()
-	result, access, computeErr := manager.resolveLeader(request, key, flight.epoch, compute)
-	flight.result = sema.SnapshotResult(result)
+	snapshot, access, computeErr := manager.resolveLeader(request, key, flight.epoch, compute)
+	flight.result = snapshot
 	flight.access = access
 	flight.err = computeErr
 
@@ -191,44 +191,46 @@ func (manager *Manager) endWork() {
 	manager.workMu.Unlock()
 }
 
-func (manager *Manager) resolveLeader(request Request, key string, epoch uint64, compute func() (sema.Result, error)) (sema.Result, Access, error) {
+func (manager *Manager) resolveLeader(request Request, key string, epoch uint64, compute func() (sema.Result, error)) (sema.ResultSnapshot, Access, error) {
 	if result, access, ok := manager.memoryResult(key); ok {
-		return result, access, nil
+		return sema.SnapshotResult(result), access, nil
 	}
 	access := Access{}
 	if !request.NoDisk && request.ProjectRoot != "" && request.RelativePath != "" {
 		result, err := Load(request.ProjectRoot, request.RelativePath, request.Identity)
 		if err == nil {
-			manager.publish(epoch, key, result, nil)
+			snapshot := sema.SnapshotResult(result)
+			manager.publish(epoch, key, snapshot, sema.EstimateResultRetainedBytes(result), nil)
 			access = manager.access(SourceDisk)
-			return result, access, nil
+			return snapshot, access, nil
 		}
 		var miss *MissError
 		if !errors.As(err, &miss) {
-			return sema.Result{}, access, err
+			return sema.ResultSnapshot{}, access, err
 		}
 		access.DiskMissReason = miss.Reason
 	}
 	result, err := compute()
 	if err != nil {
-		return sema.Result{}, access, err
+		return sema.ResultSnapshot{}, access, err
 	}
 	missReason := access.DiskMissReason
+	snapshot := sema.SnapshotResult(result)
 	var persist func()
 	if !request.NoDisk && request.ProjectRoot != "" && request.RelativePath != "" {
 		persist = func() {
 			// Persistence is an optimization. A valid semantic result remains
 			// authoritative if the private cache cannot be written.
-			_ = Store(request.ProjectRoot, request.RelativePath, request.Identity, result)
+			_ = storeSnapshot(request.ProjectRoot, request.RelativePath, request.Identity, snapshot)
 		}
 	}
-	manager.publish(epoch, key, result, persist)
+	manager.publish(epoch, key, snapshot, sema.EstimateResultRetainedBytes(result), persist)
 	access = manager.access(SourceBuild)
 	access.DiskMissReason = missReason
-	return result, access, nil
+	return snapshot, access, nil
 }
 
-func (manager *Manager) publish(epoch uint64, key string, result sema.Result, persist func()) {
+func (manager *Manager) publish(epoch uint64, key string, snapshot sema.ResultSnapshot, retainedBytes int64, persist func()) {
 	manager.publicationMu.Lock()
 	defer manager.publicationMu.Unlock()
 	manager.mu.Lock()
@@ -240,7 +242,7 @@ func (manager *Manager) publish(epoch uint64, key string, result sema.Result, pe
 	if persist != nil {
 		persist()
 	}
-	manager.insert(key, result)
+	manager.insert(key, snapshot, retainedBytes)
 }
 
 func (manager *Manager) memoryResult(key string) (sema.Result, Access, bool) {
@@ -265,10 +267,9 @@ func (manager *Manager) memoryResult(key string) (sema.Result, Access, bool) {
 	return result, access, true
 }
 
-func (manager *Manager) insert(key string, result sema.Result) {
-	snapshot := sema.SnapshotResult(result)
+func (manager *Manager) insert(key string, snapshot sema.ResultSnapshot, retainedBytes int64) {
 	encoded, _ := json.Marshal(snapshot)
-	size := int64(len(encoded)) + sema.EstimateResultRetainedBytes(result)
+	size := int64(len(encoded)) + retainedBytes
 
 	manager.mu.Lock()
 	if existing := manager.entries[key]; existing != nil {

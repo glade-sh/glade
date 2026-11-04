@@ -1,0 +1,937 @@
+{
+  "cases": [
+    {
+      "actor_arm": "restricted",
+      "api": "62.0",
+      "class": "C11Q3R62C1",
+      "exception_message_omitted_for_privacy": false,
+      "marker": "c11.Q3.restricted.api62|Q3.childProjection",
+      "method": "childProjection",
+      "payload_sha256": "10608c60c708aa4452a32f3eee8697bffdbaba4c743cc1bf78417823006c7a77",
+      "redacted_id_paths": [
+        "/childProjection/0/parentId",
+        "/expectedChildId",
+        "/expectedParentId",
+        "/rows/0/Id",
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/2",
+      "report_sha256": "e7a03aed2c11d3cdb40c8171c91dbc2fc955a5e49704eeeb7e807dafcc01ffff",
+      "route_id": "c11-q3-fresh-api62-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "restricted",
+      "api": "62.0",
+      "class": "C11Q3R62C1",
+      "exception_message_omitted_for_privacy": false,
+      "marker": "c11.Q3.restricted.api62|Q3.positiveChildProjection",
+      "method": "positiveChildProjection",
+      "payload_sha256": "afd8302ac405d7584fd673733ccd738d4c0a7d61e4fd0480f7a1a157ef348535",
+      "redacted_id_paths": [
+        "/childProjection/0/childIds/0",
+        "/childProjection/0/parentId",
+        "/expectedHiddenChildId",
+        "/expectedVisibleChildId",
+        "/expectedParentId",
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/3",
+      "report_sha256": "e7a03aed2c11d3cdb40c8171c91dbc2fc955a5e49704eeeb7e807dafcc01ffff",
+      "route_id": "c11-q3-fresh-api62-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "admin",
+      "api": "62.0",
+      "class": "C11Q3A62C1",
+      "exception_message_omitted_for_privacy": false,
+      "marker": "c11.Q3.admin.api62|Q3.positiveChildProjection",
+      "method": "positiveChildProjection",
+      "payload_sha256": "d85336fa467809bae4d1a679e7dc3552932ef7468149806bf7763afbd9b97ed9",
+      "redacted_id_paths": [
+        "/childProjection/0/childIds/0",
+        "/childProjection/0/childIds/1",
+        "/childProjection/0/parentId",
+        "/expectedHiddenChildId",
+        "/expectedVisibleChildId",
+        "/expectedParentId",
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/1",
+      "report_sha256": "e7a03aed2c11d3cdb40c8171c91dbc2fc955a5e49704eeeb7e807dafcc01ffff",
+      "route_id": "c11-q3-fresh-api62-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "restricted",
+      "api": "67.0",
+      "class": "C11Q3R67C1",
+      "exception_message_omitted_for_privacy": false,
+      "marker": "c11.Q3.restricted.api67|Q3.childProjection",
+      "method": "childProjection",
+      "payload_sha256": "b62f46cca81e14a862c2c2959925465f9b7118fba7b666d40b7898924b4d5c1f",
+      "redacted_id_paths": [
+        "/childProjection/0/parentId",
+        "/expectedChildId",
+        "/expectedParentId",
+        "/rows/0/Id",
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/2",
+      "report_sha256": "360a9470c4d51a91ce36cf7f1f3ba9310ccbe51f5c22408fc343440dd015ddae",
+      "route_id": "c11-q3-fresh-api67-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "restricted",
+      "api": "67.0",
+      "class": "C11Q3R67C1",
+      "exception_message_omitted_for_privacy": false,
+      "marker": "c11.Q3.restricted.api67|Q3.positiveChildProjection",
+      "method": "positiveChildProjection",
+      "payload_sha256": "708bb08d7bda2224803ba5b8de9ce4082483a0216b9aa76e003ba3d54df6be9d",
+      "redacted_id_paths": [
+        "/childProjection/0/childIds/0",
+        "/childProjection/0/parentId",
+        "/expectedHiddenChildId",
+        "/expectedVisibleChildId",
+        "/expectedParentId",
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/3",
+      "report_sha256": "360a9470c4d51a91ce36cf7f1f3ba9310ccbe51f5c22408fc343440dd015ddae",
+      "route_id": "c11-q3-fresh-api67-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "admin",
+      "api": "67.0",
+      "class": "C11Q3A67C1",
+      "exception_message_omitted_for_privacy": false,
+      "marker": "c11.Q3.admin.api67|Q3.positiveChildProjection",
+      "method": "positiveChildProjection",
+      "payload_sha256": "f7bfe4fd098cf8cce32feffa9eaf347a7e296e591044021b3314f5c14bd8c71c",
+      "redacted_id_paths": [
+        "/childProjection/0/childIds/0",
+        "/childProjection/0/childIds/1",
+        "/childProjection/0/parentId",
+        "/expectedHiddenChildId",
+        "/expectedVisibleChildId",
+        "/expectedParentId",
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/1",
+      "report_sha256": "360a9470c4d51a91ce36cf7f1f3ba9310ccbe51f5c22408fc343440dd015ddae",
+      "route_id": "c11-q3-fresh-api67-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "restricted",
+      "api": "62.0",
+      "class": "C11Q4R62C1",
+      "exception_message_omitted_for_privacy": false,
+      "marker": "c11.Q4.restricted.api62|Q4.allowed",
+      "method": "allowed",
+      "payload_sha256": "34a7ffd16d24caf7d3ac5b05e0a355d073f9eece09a59b3219cfdcbb67faf83f",
+      "redacted_id_paths": [
+        "/rows/0/Id",
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/6",
+      "report_sha256": "aa2e9c0a19f32aa97845036a89c78c456b1415d051284145e348cb1a4774afd4",
+      "route_id": "c11-q4-fresh-api62-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "restricted",
+      "api": "62.0",
+      "class": "C11Q4R62C1",
+      "exception_message_omitted_for_privacy": true,
+      "marker": "c11.Q4.restricted.api62|Q4.deniedParent",
+      "method": "deniedParent",
+      "payload_sha256": "3b5ee611586a38eb5d35aa91289bd917e679bbc18cd05bb046cd5174e9fc126b",
+      "redacted_id_paths": [
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/9",
+      "report_sha256": "aa2e9c0a19f32aa97845036a89c78c456b1415d051284145e348cb1a4774afd4",
+      "route_id": "c11-q4-fresh-api62-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "restricted",
+      "api": "62.0",
+      "class": "C11Q4R62C1",
+      "exception_message_omitted_for_privacy": true,
+      "marker": "c11.Q4.restricted.api62|Q4.deniedChild",
+      "method": "deniedChild",
+      "payload_sha256": "a0c182d9f16eb5ff2d84628a418b7e1b17df3b89121b07ce0a445010bfe48df3",
+      "redacted_id_paths": [
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/8",
+      "report_sha256": "aa2e9c0a19f32aa97845036a89c78c456b1415d051284145e348cb1a4774afd4",
+      "route_id": "c11-q4-fresh-api62-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "restricted",
+      "api": "62.0",
+      "class": "C11Q4R62C1",
+      "exception_message_omitted_for_privacy": true,
+      "marker": "c11.Q4.restricted.api62|Q4.predicate",
+      "method": "predicate",
+      "payload_sha256": "3b5ee611586a38eb5d35aa91289bd917e679bbc18cd05bb046cd5174e9fc126b",
+      "redacted_id_paths": [
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/10",
+      "report_sha256": "aa2e9c0a19f32aa97845036a89c78c456b1415d051284145e348cb1a4774afd4",
+      "route_id": "c11-q4-fresh-api62-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "restricted",
+      "api": "62.0",
+      "class": "C11Q4R62C1",
+      "exception_message_omitted_for_privacy": true,
+      "marker": "c11.Q4.restricted.api62|Q4.semi",
+      "method": "semi",
+      "payload_sha256": "af2f47d925ece547ad02157e1220ed22ccdd85393ed4d81438a4d5d11d044a3a",
+      "redacted_id_paths": [
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/11",
+      "report_sha256": "aa2e9c0a19f32aa97845036a89c78c456b1415d051284145e348cb1a4774afd4",
+      "route_id": "c11-q4-fresh-api62-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "restricted",
+      "api": "62.0",
+      "class": "C11Q4R62C1",
+      "exception_message_omitted_for_privacy": true,
+      "marker": "c11.Q4.restricted.api62|Q4.anti",
+      "method": "anti",
+      "payload_sha256": "af2f47d925ece547ad02157e1220ed22ccdd85393ed4d81438a4d5d11d044a3a",
+      "redacted_id_paths": [
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/7",
+      "report_sha256": "aa2e9c0a19f32aa97845036a89c78c456b1415d051284145e348cb1a4774afd4",
+      "route_id": "c11-q4-fresh-api62-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "admin",
+      "api": "62.0",
+      "class": "C11Q4A62C1",
+      "exception_message_omitted_for_privacy": false,
+      "marker": "c11.Q4.admin.api62|Q4.allowed",
+      "method": "allowed",
+      "payload_sha256": "26f135db718dad7ed45e201671140bbf140ad137e0a48326f5bf8fd5d5c6d416",
+      "redacted_id_paths": [
+        "/rows/0/Id",
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/0",
+      "report_sha256": "aa2e9c0a19f32aa97845036a89c78c456b1415d051284145e348cb1a4774afd4",
+      "route_id": "c11-q4-fresh-api62-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "admin",
+      "api": "62.0",
+      "class": "C11Q4A62C1",
+      "exception_message_omitted_for_privacy": false,
+      "marker": "c11.Q4.admin.api62|Q4.deniedParent",
+      "method": "deniedParent",
+      "payload_sha256": "6b2fe5511e964e183477c19c8870215949ea0d023c1e4288d5c3e136b94d3fe8",
+      "redacted_id_paths": [
+        "/rows/0/Id",
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/3",
+      "report_sha256": "aa2e9c0a19f32aa97845036a89c78c456b1415d051284145e348cb1a4774afd4",
+      "route_id": "c11-q4-fresh-api62-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "admin",
+      "api": "62.0",
+      "class": "C11Q4A62C1",
+      "exception_message_omitted_for_privacy": false,
+      "marker": "c11.Q4.admin.api62|Q4.deniedChild",
+      "method": "deniedChild",
+      "payload_sha256": "86c0a1f31ed32df4b47aecb2cb7c60bd0a35a0084bafafba8eba434181683485",
+      "redacted_id_paths": [
+        "/rows/0/Id",
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/2",
+      "report_sha256": "aa2e9c0a19f32aa97845036a89c78c456b1415d051284145e348cb1a4774afd4",
+      "route_id": "c11-q4-fresh-api62-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "admin",
+      "api": "62.0",
+      "class": "C11Q4A62C1",
+      "exception_message_omitted_for_privacy": false,
+      "marker": "c11.Q4.admin.api62|Q4.predicate",
+      "method": "predicate",
+      "payload_sha256": "8cfd3b7e4446b997577f2daa6746f3d5d59901430a0476585416ba6022281c74",
+      "redacted_id_paths": [
+        "/rows/0/Id",
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/4",
+      "report_sha256": "aa2e9c0a19f32aa97845036a89c78c456b1415d051284145e348cb1a4774afd4",
+      "route_id": "c11-q4-fresh-api62-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "admin",
+      "api": "62.0",
+      "class": "C11Q4A62C1",
+      "exception_message_omitted_for_privacy": false,
+      "marker": "c11.Q4.admin.api62|Q4.semi",
+      "method": "semi",
+      "payload_sha256": "a31478f4f1713f4c74f2e95f39df22f0e09e3553db40625034077e7d180c45e6",
+      "redacted_id_paths": [
+        "/rows/0/Id",
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/5",
+      "report_sha256": "aa2e9c0a19f32aa97845036a89c78c456b1415d051284145e348cb1a4774afd4",
+      "route_id": "c11-q4-fresh-api62-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "admin",
+      "api": "62.0",
+      "class": "C11Q4A62C1",
+      "exception_message_omitted_for_privacy": false,
+      "marker": "c11.Q4.admin.api62|Q4.anti",
+      "method": "anti",
+      "payload_sha256": "f99ad56d60724f06aa43d9983825ef2cf8bf3f03f426e4f9a2743fea5b083e56",
+      "redacted_id_paths": [
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/1",
+      "report_sha256": "aa2e9c0a19f32aa97845036a89c78c456b1415d051284145e348cb1a4774afd4",
+      "route_id": "c11-q4-fresh-api62-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "restricted",
+      "api": "67.0",
+      "class": "C11Q4R67C1",
+      "exception_message_omitted_for_privacy": false,
+      "marker": "c11.Q4.restricted.api67|Q4.allowed",
+      "method": "allowed",
+      "payload_sha256": "84d4f02b2d909d7c8ff9b475652c5ae11d2536373dab87ef7fe96e2c483713fb",
+      "redacted_id_paths": [
+        "/rows/0/Id",
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/6",
+      "report_sha256": "5469e44ada25a05e20da971c52465c55eb74efc469b23dc5e9e643e35f412860",
+      "route_id": "c11-q4-fresh-api67-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "restricted",
+      "api": "67.0",
+      "class": "C11Q4R67C1",
+      "exception_message_omitted_for_privacy": true,
+      "marker": "c11.Q4.restricted.api67|Q4.deniedParent",
+      "method": "deniedParent",
+      "payload_sha256": "1531e141226d0f93a9719eeb2ab5e6e7b4ae055248752bc336e873d14c607159",
+      "redacted_id_paths": [
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/9",
+      "report_sha256": "5469e44ada25a05e20da971c52465c55eb74efc469b23dc5e9e643e35f412860",
+      "route_id": "c11-q4-fresh-api67-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "restricted",
+      "api": "67.0",
+      "class": "C11Q4R67C1",
+      "exception_message_omitted_for_privacy": true,
+      "marker": "c11.Q4.restricted.api67|Q4.deniedChild",
+      "method": "deniedChild",
+      "payload_sha256": "2c07461b2a24b9ef4e63a7102aa53598b517d2b2559d83b76e45065ea675d02a",
+      "redacted_id_paths": [
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/8",
+      "report_sha256": "5469e44ada25a05e20da971c52465c55eb74efc469b23dc5e9e643e35f412860",
+      "route_id": "c11-q4-fresh-api67-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "restricted",
+      "api": "67.0",
+      "class": "C11Q4R67C1",
+      "exception_message_omitted_for_privacy": true,
+      "marker": "c11.Q4.restricted.api67|Q4.predicate",
+      "method": "predicate",
+      "payload_sha256": "1531e141226d0f93a9719eeb2ab5e6e7b4ae055248752bc336e873d14c607159",
+      "redacted_id_paths": [
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/10",
+      "report_sha256": "5469e44ada25a05e20da971c52465c55eb74efc469b23dc5e9e643e35f412860",
+      "route_id": "c11-q4-fresh-api67-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "restricted",
+      "api": "67.0",
+      "class": "C11Q4R67C1",
+      "exception_message_omitted_for_privacy": true,
+      "marker": "c11.Q4.restricted.api67|Q4.semi",
+      "method": "semi",
+      "payload_sha256": "942e6b0df9edd2dcd28172134660259b1ea27f9a03b029ebb2f541077818254d",
+      "redacted_id_paths": [
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/11",
+      "report_sha256": "5469e44ada25a05e20da971c52465c55eb74efc469b23dc5e9e643e35f412860",
+      "route_id": "c11-q4-fresh-api67-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "restricted",
+      "api": "67.0",
+      "class": "C11Q4R67C1",
+      "exception_message_omitted_for_privacy": true,
+      "marker": "c11.Q4.restricted.api67|Q4.anti",
+      "method": "anti",
+      "payload_sha256": "942e6b0df9edd2dcd28172134660259b1ea27f9a03b029ebb2f541077818254d",
+      "redacted_id_paths": [
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/7",
+      "report_sha256": "5469e44ada25a05e20da971c52465c55eb74efc469b23dc5e9e643e35f412860",
+      "route_id": "c11-q4-fresh-api67-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "admin",
+      "api": "67.0",
+      "class": "C11Q4A67C1",
+      "exception_message_omitted_for_privacy": false,
+      "marker": "c11.Q4.admin.api67|Q4.allowed",
+      "method": "allowed",
+      "payload_sha256": "07b955ceb428101b5d537c6c63689681afcbcfaa9bf2eb4fa2345be3211508de",
+      "redacted_id_paths": [
+        "/rows/0/Id",
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/0",
+      "report_sha256": "5469e44ada25a05e20da971c52465c55eb74efc469b23dc5e9e643e35f412860",
+      "route_id": "c11-q4-fresh-api67-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "admin",
+      "api": "67.0",
+      "class": "C11Q4A67C1",
+      "exception_message_omitted_for_privacy": false,
+      "marker": "c11.Q4.admin.api67|Q4.deniedParent",
+      "method": "deniedParent",
+      "payload_sha256": "7b47f4ce6b737d85450f89fbfa3efdc790a54fc4843eed12c9cd5054497bcbc4",
+      "redacted_id_paths": [
+        "/rows/0/Id",
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/3",
+      "report_sha256": "5469e44ada25a05e20da971c52465c55eb74efc469b23dc5e9e643e35f412860",
+      "route_id": "c11-q4-fresh-api67-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "admin",
+      "api": "67.0",
+      "class": "C11Q4A67C1",
+      "exception_message_omitted_for_privacy": false,
+      "marker": "c11.Q4.admin.api67|Q4.deniedChild",
+      "method": "deniedChild",
+      "payload_sha256": "62e68b074455395d0b7f9e5a4b3f48b63e86a53a8b805f48311e44eaa801f1af",
+      "redacted_id_paths": [
+        "/rows/0/Id",
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/2",
+      "report_sha256": "5469e44ada25a05e20da971c52465c55eb74efc469b23dc5e9e643e35f412860",
+      "route_id": "c11-q4-fresh-api67-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "admin",
+      "api": "67.0",
+      "class": "C11Q4A67C1",
+      "exception_message_omitted_for_privacy": false,
+      "marker": "c11.Q4.admin.api67|Q4.predicate",
+      "method": "predicate",
+      "payload_sha256": "c7d8ccc01a3370b9552f8734e8bd673a81a25a6f8363e8b2fdcfb563cd296d2b",
+      "redacted_id_paths": [
+        "/rows/0/Id",
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/4",
+      "report_sha256": "5469e44ada25a05e20da971c52465c55eb74efc469b23dc5e9e643e35f412860",
+      "route_id": "c11-q4-fresh-api67-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "admin",
+      "api": "67.0",
+      "class": "C11Q4A67C1",
+      "exception_message_omitted_for_privacy": false,
+      "marker": "c11.Q4.admin.api67|Q4.semi",
+      "method": "semi",
+      "payload_sha256": "5c4780959dee680e6aff533fa53dc9d77e2302c2f6f8e6cc165c7dce1213a59b",
+      "redacted_id_paths": [
+        "/rows/0/Id",
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/5",
+      "report_sha256": "5469e44ada25a05e20da971c52465c55eb74efc469b23dc5e9e643e35f412860",
+      "route_id": "c11-q4-fresh-api67-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "admin",
+      "api": "67.0",
+      "class": "C11Q4A67C1",
+      "exception_message_omitted_for_privacy": false,
+      "marker": "c11.Q4.admin.api67|Q4.anti",
+      "method": "anti",
+      "payload_sha256": "052cde7d321c9c859caf2cf4e7329a4aa661d1212dc243dc062edd835258c006",
+      "redacted_id_paths": [
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/1",
+      "report_sha256": "5469e44ada25a05e20da971c52465c55eb74efc469b23dc5e9e643e35f412860",
+      "route_id": "c11-q4-fresh-api67-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "restricted",
+      "api": "62.0",
+      "class": "C11Q5R62C1",
+      "exception_message_omitted_for_privacy": false,
+      "marker": "c11.Q5.restricted.api62|Q5.allowed",
+      "method": "allowed",
+      "payload_sha256": "db652d3b6cbf2bd9aad00b6427e41e63061030d87c33f92a2dddc014ff4ce461",
+      "redacted_id_paths": [
+        "/rows/0/Id",
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/4",
+      "report_sha256": "15443f4c3f634dece47150283c6ad52a510e38ffb9ec3781c41b0010eaa8ddca",
+      "route_id": "c11-q5-fresh-api62-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "restricted",
+      "api": "62.0",
+      "class": "C11Q5R62C1",
+      "exception_message_omitted_for_privacy": true,
+      "marker": "c11.Q5.restricted.api62|Q5.directDenied",
+      "method": "directDenied",
+      "payload_sha256": "a6d414933434db3ba718b6d93f0466d528d486831d9d9eace25b5caf26b0abb5",
+      "redacted_id_paths": [
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/5",
+      "report_sha256": "15443f4c3f634dece47150283c6ad52a510e38ffb9ec3781c41b0010eaa8ddca",
+      "route_id": "c11-q5-fresh-api62-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "restricted",
+      "api": "62.0",
+      "class": "C11Q5R62C1",
+      "exception_message_omitted_for_privacy": false,
+      "marker": "c11.Q5.restricted.api62|Q5.typeofAllowed",
+      "method": "typeofAllowed",
+      "payload_sha256": "964cb6e6a6b04d8ab866b4c67f7600c87b9b862287eeaaa3424cc4aae050e7dd",
+      "redacted_id_paths": [
+        "/rows/0/What/Id",
+        "/rows/0/WhatId",
+        "/rows/0/Id",
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/6",
+      "report_sha256": "15443f4c3f634dece47150283c6ad52a510e38ffb9ec3781c41b0010eaa8ddca",
+      "route_id": "c11-q5-fresh-api62-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "restricted",
+      "api": "62.0",
+      "class": "C11Q5R62C1",
+      "exception_message_omitted_for_privacy": true,
+      "marker": "c11.Q5.restricted.api62|Q5.typeofDenied",
+      "method": "typeofDenied",
+      "payload_sha256": "a6d414933434db3ba718b6d93f0466d528d486831d9d9eace25b5caf26b0abb5",
+      "redacted_id_paths": [
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/7",
+      "report_sha256": "15443f4c3f634dece47150283c6ad52a510e38ffb9ec3781c41b0010eaa8ddca",
+      "route_id": "c11-q5-fresh-api62-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "admin",
+      "api": "62.0",
+      "class": "C11Q5A62C1",
+      "exception_message_omitted_for_privacy": false,
+      "marker": "c11.Q5.admin.api62|Q5.allowed",
+      "method": "allowed",
+      "payload_sha256": "6aaaa70e5298a54e0e8329a79de6dac5e029970ceab0622cd2a730958680f647",
+      "redacted_id_paths": [
+        "/rows/0/Id",
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/0",
+      "report_sha256": "15443f4c3f634dece47150283c6ad52a510e38ffb9ec3781c41b0010eaa8ddca",
+      "route_id": "c11-q5-fresh-api62-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "admin",
+      "api": "62.0",
+      "class": "C11Q5A62C1",
+      "exception_message_omitted_for_privacy": false,
+      "marker": "c11.Q5.admin.api62|Q5.directDenied",
+      "method": "directDenied",
+      "payload_sha256": "852dac163df02b96fec5fffc42e737214abf4ad6c7ce05f4bd331cbeb7d35508",
+      "redacted_id_paths": [
+        "/rows/0/Id",
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/1",
+      "report_sha256": "15443f4c3f634dece47150283c6ad52a510e38ffb9ec3781c41b0010eaa8ddca",
+      "route_id": "c11-q5-fresh-api62-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "admin",
+      "api": "62.0",
+      "class": "C11Q5A62C1",
+      "exception_message_omitted_for_privacy": false,
+      "marker": "c11.Q5.admin.api62|Q5.typeofAllowed",
+      "method": "typeofAllowed",
+      "payload_sha256": "85069515969e87d5797620b2edaef8e798ee5b826debca14f9cdea88324e76f3",
+      "redacted_id_paths": [
+        "/rows/0/What/Id",
+        "/rows/0/WhatId",
+        "/rows/0/Id",
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/2",
+      "report_sha256": "15443f4c3f634dece47150283c6ad52a510e38ffb9ec3781c41b0010eaa8ddca",
+      "route_id": "c11-q5-fresh-api62-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "admin",
+      "api": "62.0",
+      "class": "C11Q5A62C1",
+      "exception_message_omitted_for_privacy": false,
+      "marker": "c11.Q5.admin.api62|Q5.typeofDenied",
+      "method": "typeofDenied",
+      "payload_sha256": "18258c15461ec3b46b04363400dc2aa8999988ff7215fbb86e36e22dd021f25b",
+      "redacted_id_paths": [
+        "/rows/0/What/Id",
+        "/rows/0/WhatId",
+        "/rows/0/Id",
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/3",
+      "report_sha256": "15443f4c3f634dece47150283c6ad52a510e38ffb9ec3781c41b0010eaa8ddca",
+      "route_id": "c11-q5-fresh-api62-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "restricted",
+      "api": "67.0",
+      "class": "C11Q5R67C1",
+      "exception_message_omitted_for_privacy": false,
+      "marker": "c11.Q5.restricted.api67|Q5.allowed",
+      "method": "allowed",
+      "payload_sha256": "91088ea5596eadb29b2a26a58706a0d7c5bad18ab717f3b45d45e17f005369f2",
+      "redacted_id_paths": [
+        "/rows/0/Id",
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/4",
+      "report_sha256": "40c5b1484d661b95779e60af691f2f13412ba3377d2cf75600cb08fbfba5b615",
+      "route_id": "c11-q5-fresh-api67-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "restricted",
+      "api": "67.0",
+      "class": "C11Q5R67C1",
+      "exception_message_omitted_for_privacy": true,
+      "marker": "c11.Q5.restricted.api67|Q5.directDenied",
+      "method": "directDenied",
+      "payload_sha256": "4c604ecbd2c6769f7733a024bc971cc7871895eac6c1d50b925d82e7dd180caf",
+      "redacted_id_paths": [
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/5",
+      "report_sha256": "40c5b1484d661b95779e60af691f2f13412ba3377d2cf75600cb08fbfba5b615",
+      "route_id": "c11-q5-fresh-api67-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "restricted",
+      "api": "67.0",
+      "class": "C11Q5R67C1",
+      "exception_message_omitted_for_privacy": false,
+      "marker": "c11.Q5.restricted.api67|Q5.typeofAllowed",
+      "method": "typeofAllowed",
+      "payload_sha256": "3a1a3276dd2dbbb1b7be6973e10f8917545d3cb098659a590afb3efb7e059393",
+      "redacted_id_paths": [
+        "/rows/0/What/Id",
+        "/rows/0/WhatId",
+        "/rows/0/Id",
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/6",
+      "report_sha256": "40c5b1484d661b95779e60af691f2f13412ba3377d2cf75600cb08fbfba5b615",
+      "route_id": "c11-q5-fresh-api67-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "restricted",
+      "api": "67.0",
+      "class": "C11Q5R67C1",
+      "exception_message_omitted_for_privacy": true,
+      "marker": "c11.Q5.restricted.api67|Q5.typeofDenied",
+      "method": "typeofDenied",
+      "payload_sha256": "4c604ecbd2c6769f7733a024bc971cc7871895eac6c1d50b925d82e7dd180caf",
+      "redacted_id_paths": [
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/7",
+      "report_sha256": "40c5b1484d661b95779e60af691f2f13412ba3377d2cf75600cb08fbfba5b615",
+      "route_id": "c11-q5-fresh-api67-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "admin",
+      "api": "67.0",
+      "class": "C11Q5A67C1",
+      "exception_message_omitted_for_privacy": false,
+      "marker": "c11.Q5.admin.api67|Q5.allowed",
+      "method": "allowed",
+      "payload_sha256": "094a84a5f792ae118b492506be3814b8cef03f4be52a484b5fd329a0e329864e",
+      "redacted_id_paths": [
+        "/rows/0/Id",
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/0",
+      "report_sha256": "40c5b1484d661b95779e60af691f2f13412ba3377d2cf75600cb08fbfba5b615",
+      "route_id": "c11-q5-fresh-api67-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "admin",
+      "api": "67.0",
+      "class": "C11Q5A67C1",
+      "exception_message_omitted_for_privacy": false,
+      "marker": "c11.Q5.admin.api67|Q5.directDenied",
+      "method": "directDenied",
+      "payload_sha256": "367869d0d1d62374de3c0b7ac2372e1030b2cdc0258bdc8f6b0094f4a5a9b03b",
+      "redacted_id_paths": [
+        "/rows/0/Id",
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/1",
+      "report_sha256": "40c5b1484d661b95779e60af691f2f13412ba3377d2cf75600cb08fbfba5b615",
+      "route_id": "c11-q5-fresh-api67-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "admin",
+      "api": "67.0",
+      "class": "C11Q5A67C1",
+      "exception_message_omitted_for_privacy": false,
+      "marker": "c11.Q5.admin.api67|Q5.typeofAllowed",
+      "method": "typeofAllowed",
+      "payload_sha256": "bdc2965409457c46aa75d4d1ac57badff74e7bbb35eb4556901decb7715b2794",
+      "redacted_id_paths": [
+        "/rows/0/What/Id",
+        "/rows/0/WhatId",
+        "/rows/0/Id",
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/2",
+      "report_sha256": "40c5b1484d661b95779e60af691f2f13412ba3377d2cf75600cb08fbfba5b615",
+      "route_id": "c11-q5-fresh-api67-restricted-admin-c1"
+    },
+    {
+      "actor_arm": "admin",
+      "api": "67.0",
+      "class": "C11Q5A67C1",
+      "exception_message_omitted_for_privacy": false,
+      "marker": "c11.Q5.admin.api67|Q5.typeofDenied",
+      "method": "typeofDenied",
+      "payload_sha256": "24e043af49ef62b5f5132f40c5eaaa9279fa8980584ecc9ff6ebe34b33c7141f",
+      "redacted_id_paths": [
+        "/rows/0/What/Id",
+        "/rows/0/WhatId",
+        "/rows/0/Id",
+        "/profileId",
+        "/userId",
+        "/orgId"
+      ],
+      "report_pointer": "$/result/details/runTestResult/failures/3",
+      "report_sha256": "40c5b1484d661b95779e60af691f2f13412ba3377d2cf75600cb08fbfba5b615",
+      "route_id": "c11-q5-fresh-api67-restricted-admin-c1"
+    }
+  ],
+  "files": {
+    "project/c11-q3-fresh-api62-restricted-admin-c1/packet/classes/C11Q3A62C1.cls": "13d08f2644bd29ab64433fa2b8f39d37127d49df1c0e9f6a901d063a4a1867ef",
+    "project/c11-q3-fresh-api62-restricted-admin-c1/packet/classes/C11Q3A62C1.cls-meta.xml": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+    "project/c11-q3-fresh-api62-restricted-admin-c1/packet/classes/C11Q3R62C1.cls": "bc159347dbf37f678ff444e839a8f6071a073862a09e9f5b64fc2e6a39f9cb65",
+    "project/c11-q3-fresh-api62-restricted-admin-c1/packet/classes/C11Q3R62C1.cls-meta.xml": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+    "project/c11-q3-fresh-api62-restricted-admin-c1/packet/objects/DootSecQ3B1031__c/DootSecQ3B1031__c.object-meta.xml": "3e8639a4f792333036b43f10c321212ea30a5fc9622d85f7746b80019117a4b8",
+    "project/c11-q3-fresh-api62-restricted-admin-c1/packet/objects/DootSecQ3B1031__c/fields/Allowed__c.field-meta.xml": "a3f9c283d790029f09335484819d108d8b9ade96ad1a6e6ee178a1b807bffca4",
+    "project/c11-q3-fresh-api62-restricted-admin-c1/packet/objects/DootSecQ3B1031__c/fields/Hidden__c.field-meta.xml": "c4cb77b53085246e33d8aef3b684161625ffd0899cb5ffab00fd574dc8c83d40",
+    "project/c11-q3-fresh-api62-restricted-admin-c1/packet/objects/DootSecQ3B1031__c/fields/Value__c.field-meta.xml": "896dbabfac9ec5e1cc427cad6c292e873f786177031647edc2fc05ee199008bf",
+    "project/c11-q3-fresh-api62-restricted-admin-c1/packet/objects/DootSecQ3ChildB1031__c/DootSecQ3ChildB1031__c.object-meta.xml": "276c6efd08e7a91c98f45c6fce21cfed61374df7e8d2db78dfe740cef812e850",
+    "project/c11-q3-fresh-api62-restricted-admin-c1/packet/objects/DootSecQ3ChildB1031__c/fields/Allowed__c.field-meta.xml": "a3f9c283d790029f09335484819d108d8b9ade96ad1a6e6ee178a1b807bffca4",
+    "project/c11-q3-fresh-api62-restricted-admin-c1/packet/objects/DootSecQ3ChildB1031__c/fields/Hidden__c.field-meta.xml": "c4cb77b53085246e33d8aef3b684161625ffd0899cb5ffab00fd574dc8c83d40",
+    "project/c11-q3-fresh-api62-restricted-admin-c1/packet/objects/DootSecQ3ChildB1031__c/fields/Parent__c.field-meta.xml": "ceb1253eb0fdc3e8081fa481cb64aefd07d39d739386d38c78e99b750e0b4d20",
+    "project/c11-q3-fresh-api62-restricted-admin-c1/packet/permissionsets/C11Q3AdminC1.permissionset-meta.xml": "b02a58cc322ee9718a03aaf085150207525664d88a736f1b471c7f70f90d2b64",
+    "project/c11-q3-fresh-api62-restricted-admin-c1/packet/permissionsets/DootSecQ3ReaderB1031.permissionset-meta.xml": "edbdc93283d0bb73ad4becd1a787cc5478778a3ebdc3f335e8fae3683838fa7f",
+    "project/c11-q3-fresh-api62-restricted-admin-c1/sfdx-project.json": "5191ffe4d4c72f10283ba8fb544e4d8ba65f916bcaf4396d9e3b194ae7f0a80b",
+    "project/c11-q3-fresh-api67-restricted-admin-c1/packet/classes/C11Q3A67C1.cls": "2d2e24e5a0a7af2c066dc63f816568b3a407f176c00f873ea84bd4e229175c7b",
+    "project/c11-q3-fresh-api67-restricted-admin-c1/packet/classes/C11Q3A67C1.cls-meta.xml": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+    "project/c11-q3-fresh-api67-restricted-admin-c1/packet/classes/C11Q3R67C1.cls": "f2f79365dcd2d881d0bb51a2384ca3b3c758b896c37e1a763bf3438b72424cec",
+    "project/c11-q3-fresh-api67-restricted-admin-c1/packet/classes/C11Q3R67C1.cls-meta.xml": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+    "project/c11-q3-fresh-api67-restricted-admin-c1/packet/objects/DootSecQ3B1031__c/DootSecQ3B1031__c.object-meta.xml": "3e8639a4f792333036b43f10c321212ea30a5fc9622d85f7746b80019117a4b8",
+    "project/c11-q3-fresh-api67-restricted-admin-c1/packet/objects/DootSecQ3B1031__c/fields/Allowed__c.field-meta.xml": "a3f9c283d790029f09335484819d108d8b9ade96ad1a6e6ee178a1b807bffca4",
+    "project/c11-q3-fresh-api67-restricted-admin-c1/packet/objects/DootSecQ3B1031__c/fields/Hidden__c.field-meta.xml": "c4cb77b53085246e33d8aef3b684161625ffd0899cb5ffab00fd574dc8c83d40",
+    "project/c11-q3-fresh-api67-restricted-admin-c1/packet/objects/DootSecQ3B1031__c/fields/Value__c.field-meta.xml": "896dbabfac9ec5e1cc427cad6c292e873f786177031647edc2fc05ee199008bf",
+    "project/c11-q3-fresh-api67-restricted-admin-c1/packet/objects/DootSecQ3ChildB1031__c/DootSecQ3ChildB1031__c.object-meta.xml": "276c6efd08e7a91c98f45c6fce21cfed61374df7e8d2db78dfe740cef812e850",
+    "project/c11-q3-fresh-api67-restricted-admin-c1/packet/objects/DootSecQ3ChildB1031__c/fields/Allowed__c.field-meta.xml": "a3f9c283d790029f09335484819d108d8b9ade96ad1a6e6ee178a1b807bffca4",
+    "project/c11-q3-fresh-api67-restricted-admin-c1/packet/objects/DootSecQ3ChildB1031__c/fields/Hidden__c.field-meta.xml": "c4cb77b53085246e33d8aef3b684161625ffd0899cb5ffab00fd574dc8c83d40",
+    "project/c11-q3-fresh-api67-restricted-admin-c1/packet/objects/DootSecQ3ChildB1031__c/fields/Parent__c.field-meta.xml": "ceb1253eb0fdc3e8081fa481cb64aefd07d39d739386d38c78e99b750e0b4d20",
+    "project/c11-q3-fresh-api67-restricted-admin-c1/packet/permissionsets/C11Q3AdminC1.permissionset-meta.xml": "b02a58cc322ee9718a03aaf085150207525664d88a736f1b471c7f70f90d2b64",
+    "project/c11-q3-fresh-api67-restricted-admin-c1/packet/permissionsets/DootSecQ3ReaderB1031.permissionset-meta.xml": "edbdc93283d0bb73ad4becd1a787cc5478778a3ebdc3f335e8fae3683838fa7f",
+    "project/c11-q3-fresh-api67-restricted-admin-c1/sfdx-project.json": "1efe9f20783d8a3449d04e98e5ca98ba00dc8797f82bf2659c56713ab9770d0a",
+    "project/c11-q4-fresh-api62-restricted-admin-c1/packet/classes/C11Q4A62C1.cls": "17d53d2e00318771d50779fb135b0cf26dcef5c7377a11eec3e18d39d44c7791",
+    "project/c11-q4-fresh-api62-restricted-admin-c1/packet/classes/C11Q4A62C1.cls-meta.xml": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+    "project/c11-q4-fresh-api62-restricted-admin-c1/packet/classes/C11Q4R62C1.cls": "cb69fe60abdb509682be190e798dac82072dfde6bfc78e18bc5be720b7e146af",
+    "project/c11-q4-fresh-api62-restricted-admin-c1/packet/classes/C11Q4R62C1.cls-meta.xml": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+    "project/c11-q4-fresh-api62-restricted-admin-c1/packet/objects/DootSecQ4B1031__c/DootSecQ4B1031__c.object-meta.xml": "ef9dd2918f042ddbe448d631b986c0ab8ca301ff89b2950d203212106b4d5782",
+    "project/c11-q4-fresh-api62-restricted-admin-c1/packet/objects/DootSecQ4B1031__c/fields/Allowed__c.field-meta.xml": "a3f9c283d790029f09335484819d108d8b9ade96ad1a6e6ee178a1b807bffca4",
+    "project/c11-q4-fresh-api62-restricted-admin-c1/packet/objects/DootSecQ4B1031__c/fields/Hidden__c.field-meta.xml": "c4cb77b53085246e33d8aef3b684161625ffd0899cb5ffab00fd574dc8c83d40",
+    "project/c11-q4-fresh-api62-restricted-admin-c1/packet/objects/DootSecQ4B1031__c/fields/Value__c.field-meta.xml": "896dbabfac9ec5e1cc427cad6c292e873f786177031647edc2fc05ee199008bf",
+    "project/c11-q4-fresh-api62-restricted-admin-c1/packet/objects/DootSecQ4ChildB1031__c/DootSecQ4ChildB1031__c.object-meta.xml": "23d19919142b5b150abe8aec3cf6358245017cdc1ae16d0ba89acf781ba9faf1",
+    "project/c11-q4-fresh-api62-restricted-admin-c1/packet/objects/DootSecQ4ChildB1031__c/fields/Allowed__c.field-meta.xml": "a3f9c283d790029f09335484819d108d8b9ade96ad1a6e6ee178a1b807bffca4",
+    "project/c11-q4-fresh-api62-restricted-admin-c1/packet/objects/DootSecQ4ChildB1031__c/fields/Hidden__c.field-meta.xml": "c4cb77b53085246e33d8aef3b684161625ffd0899cb5ffab00fd574dc8c83d40",
+    "project/c11-q4-fresh-api62-restricted-admin-c1/packet/objects/DootSecQ4ChildB1031__c/fields/Parent__c.field-meta.xml": "c7369fedb4542e99ecfc1d4fe0ba1d52f8adfae60eb585794742ec5006b502a3",
+    "project/c11-q4-fresh-api62-restricted-admin-c1/packet/permissionsets/C11Q4AdminC1.permissionset-meta.xml": "5982adb958bb8fe0552189c8a5e9b37735b3ebdf26d4d28ce7434a77f671a67e",
+    "project/c11-q4-fresh-api62-restricted-admin-c1/packet/permissionsets/DootSecQ4ReaderB1031.permissionset-meta.xml": "bc021a3d0f6b1af0bbb38d6e7abfc9e28b043ef05c6cd60db5fdf6fd08a5b5cc",
+    "project/c11-q4-fresh-api62-restricted-admin-c1/sfdx-project.json": "5191ffe4d4c72f10283ba8fb544e4d8ba65f916bcaf4396d9e3b194ae7f0a80b",
+    "project/c11-q4-fresh-api67-restricted-admin-c1/packet/classes/C11Q4A67C1.cls": "5d4c5faec47aa38799b4b99013564a13bb539b2ddae6465cbb65d55606a3aacb",
+    "project/c11-q4-fresh-api67-restricted-admin-c1/packet/classes/C11Q4A67C1.cls-meta.xml": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+    "project/c11-q4-fresh-api67-restricted-admin-c1/packet/classes/C11Q4R67C1.cls": "3a3d553dc48e91f0af13bf23180d7f79d34d2820fa87c9b276104f15ec20a8cf",
+    "project/c11-q4-fresh-api67-restricted-admin-c1/packet/classes/C11Q4R67C1.cls-meta.xml": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+    "project/c11-q4-fresh-api67-restricted-admin-c1/packet/objects/DootSecQ4B1031__c/DootSecQ4B1031__c.object-meta.xml": "ef9dd2918f042ddbe448d631b986c0ab8ca301ff89b2950d203212106b4d5782",
+    "project/c11-q4-fresh-api67-restricted-admin-c1/packet/objects/DootSecQ4B1031__c/fields/Allowed__c.field-meta.xml": "a3f9c283d790029f09335484819d108d8b9ade96ad1a6e6ee178a1b807bffca4",
+    "project/c11-q4-fresh-api67-restricted-admin-c1/packet/objects/DootSecQ4B1031__c/fields/Hidden__c.field-meta.xml": "c4cb77b53085246e33d8aef3b684161625ffd0899cb5ffab00fd574dc8c83d40",
+    "project/c11-q4-fresh-api67-restricted-admin-c1/packet/objects/DootSecQ4B1031__c/fields/Value__c.field-meta.xml": "896dbabfac9ec5e1cc427cad6c292e873f786177031647edc2fc05ee199008bf",
+    "project/c11-q4-fresh-api67-restricted-admin-c1/packet/objects/DootSecQ4ChildB1031__c/DootSecQ4ChildB1031__c.object-meta.xml": "23d19919142b5b150abe8aec3cf6358245017cdc1ae16d0ba89acf781ba9faf1",
+    "project/c11-q4-fresh-api67-restricted-admin-c1/packet/objects/DootSecQ4ChildB1031__c/fields/Allowed__c.field-meta.xml": "a3f9c283d790029f09335484819d108d8b9ade96ad1a6e6ee178a1b807bffca4",
+    "project/c11-q4-fresh-api67-restricted-admin-c1/packet/objects/DootSecQ4ChildB1031__c/fields/Hidden__c.field-meta.xml": "c4cb77b53085246e33d8aef3b684161625ffd0899cb5ffab00fd574dc8c83d40",
+    "project/c11-q4-fresh-api67-restricted-admin-c1/packet/objects/DootSecQ4ChildB1031__c/fields/Parent__c.field-meta.xml": "c7369fedb4542e99ecfc1d4fe0ba1d52f8adfae60eb585794742ec5006b502a3",
+    "project/c11-q4-fresh-api67-restricted-admin-c1/packet/permissionsets/C11Q4AdminC1.permissionset-meta.xml": "5982adb958bb8fe0552189c8a5e9b37735b3ebdf26d4d28ce7434a77f671a67e",
+    "project/c11-q4-fresh-api67-restricted-admin-c1/packet/permissionsets/DootSecQ4ReaderB1031.permissionset-meta.xml": "bc021a3d0f6b1af0bbb38d6e7abfc9e28b043ef05c6cd60db5fdf6fd08a5b5cc",
+    "project/c11-q4-fresh-api67-restricted-admin-c1/sfdx-project.json": "1efe9f20783d8a3449d04e98e5ca98ba00dc8797f82bf2659c56713ab9770d0a",
+    "project/c11-q5-fresh-api62-restricted-admin-c1/packet/classes/C11Q5A62C1.cls": "6f6408fbe0ab6f8cd78461bc0f9c699cde9efee4bfb48ce500b753887d743d76",
+    "project/c11-q5-fresh-api62-restricted-admin-c1/packet/classes/C11Q5A62C1.cls-meta.xml": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+    "project/c11-q5-fresh-api62-restricted-admin-c1/packet/classes/C11Q5R62C1.cls": "df4da506ff9cc9816e871bee6e6f517183ede1eb7782c139499dbee3a3c43f12",
+    "project/c11-q5-fresh-api62-restricted-admin-c1/packet/classes/C11Q5R62C1.cls-meta.xml": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+    "project/c11-q5-fresh-api62-restricted-admin-c1/packet/objects/DootSecQ5B1031__c/DootSecQ5B1031__c.object-meta.xml": "18436581adfa1af1cf069f4e226b4b594efbe4404063bebadc44cf4888def2a5",
+    "project/c11-q5-fresh-api62-restricted-admin-c1/packet/objects/DootSecQ5B1031__c/fields/Allowed__c.field-meta.xml": "a3f9c283d790029f09335484819d108d8b9ade96ad1a6e6ee178a1b807bffca4",
+    "project/c11-q5-fresh-api62-restricted-admin-c1/packet/objects/DootSecQ5B1031__c/fields/Hidden__c.field-meta.xml": "c4cb77b53085246e33d8aef3b684161625ffd0899cb5ffab00fd574dc8c83d40",
+    "project/c11-q5-fresh-api62-restricted-admin-c1/packet/objects/DootSecQ5B1031__c/fields/Value__c.field-meta.xml": "896dbabfac9ec5e1cc427cad6c292e873f786177031647edc2fc05ee199008bf",
+    "project/c11-q5-fresh-api62-restricted-admin-c1/packet/permissionsets/C11Q5AdminC1.permissionset-meta.xml": "7cd6286276238c3aa508e3f09dd2a6f648aa25d8a384010a40ba00ea48035c6c",
+    "project/c11-q5-fresh-api62-restricted-admin-c1/packet/permissionsets/DootSecQ5ReaderB1031.permissionset-meta.xml": "a2bca9957876bcb87a1f32ff2fff5ab3726c2fbceac71ff72769cebd64ade0b8",
+    "project/c11-q5-fresh-api62-restricted-admin-c1/sfdx-project.json": "5191ffe4d4c72f10283ba8fb544e4d8ba65f916bcaf4396d9e3b194ae7f0a80b",
+    "project/c11-q5-fresh-api67-restricted-admin-c1/packet/classes/C11Q5A67C1.cls": "9a50ac5b1c5489f92a6325bdd70b3157015dce441d558f6aa8f9e9756101eb17",
+    "project/c11-q5-fresh-api67-restricted-admin-c1/packet/classes/C11Q5A67C1.cls-meta.xml": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+    "project/c11-q5-fresh-api67-restricted-admin-c1/packet/classes/C11Q5R67C1.cls": "e682205150425206bc72bae469cf9908a0c21b1a0dfda1ba6861724ec41e9586",
+    "project/c11-q5-fresh-api67-restricted-admin-c1/packet/classes/C11Q5R67C1.cls-meta.xml": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+    "project/c11-q5-fresh-api67-restricted-admin-c1/packet/objects/DootSecQ5B1031__c/DootSecQ5B1031__c.object-meta.xml": "18436581adfa1af1cf069f4e226b4b594efbe4404063bebadc44cf4888def2a5",
+    "project/c11-q5-fresh-api67-restricted-admin-c1/packet/objects/DootSecQ5B1031__c/fields/Allowed__c.field-meta.xml": "a3f9c283d790029f09335484819d108d8b9ade96ad1a6e6ee178a1b807bffca4",
+    "project/c11-q5-fresh-api67-restricted-admin-c1/packet/objects/DootSecQ5B1031__c/fields/Hidden__c.field-meta.xml": "c4cb77b53085246e33d8aef3b684161625ffd0899cb5ffab00fd574dc8c83d40",
+    "project/c11-q5-fresh-api67-restricted-admin-c1/packet/objects/DootSecQ5B1031__c/fields/Value__c.field-meta.xml": "896dbabfac9ec5e1cc427cad6c292e873f786177031647edc2fc05ee199008bf",
+    "project/c11-q5-fresh-api67-restricted-admin-c1/packet/permissionsets/C11Q5AdminC1.permissionset-meta.xml": "7cd6286276238c3aa508e3f09dd2a6f648aa25d8a384010a40ba00ea48035c6c",
+    "project/c11-q5-fresh-api67-restricted-admin-c1/packet/permissionsets/DootSecQ5ReaderB1031.permissionset-meta.xml": "a2bca9957876bcb87a1f32ff2fff5ab3726c2fbceac71ff72769cebd64ade0b8",
+    "project/c11-q5-fresh-api67-restricted-admin-c1/sfdx-project.json": "1efe9f20783d8a3449d04e98e5ca98ba00dc8797f82bf2659c56713ab9770d0a"
+  },
+  "tsv_sha256": "bd0519426886d25659df824e64f82410fc1bd715b4ebab981cb8c621bcdb64a8"
+}

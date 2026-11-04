@@ -18,17 +18,22 @@ A release can be promoted when:
 - Public support docs describe the current command surface and unsupported
   boundaries.
 
-For v0.3.0, the repository gate covers four private repositories and 18 selected
-public repositories. It requires zero failures except the known issues listed
-in the release notes. The broader 93-repository scan is post-release work and
-is not part of this release gate.
+Each version's release notes state which real-project checks its candidate
+passed. The gate requires zero failures apart from the known issues listed
+there.
 
 The local gate runs site verification, unit tests, and the production build
 exactly once, then validates the checked Go package inventory through
 memory-safe release lanes. Raw lane events and each validated
 `package-summary.json` are written under `ci-artifacts/local-release/`. The
-default is serial; do not raise `LOCAL_GO_TEST_JOBS` without host-specific
-resource evidence.
+lanes run one at a time; `LOCAL_GO_TEST_JOBS` does not make them overlap.
+
+CodeQL is not a complete-scan guarantee. The fast profile inside `Required CI`
+and the full profile in Security both succeed with a warning when their
+analysis budget expires, and upload no results. On large changes this is the
+common case. A release does not treat an incomplete scan as proof that there
+are no findings, and its notes say so. The waiver list in
+[CODEQL_BUDGET.md](CODEQL_BUDGET.md) is reviewed for every release.
 
 The local gate does not include the built-site, rendered-site browser, or preview
 smoke checks. Run those as described in [site/README.md](../site/README.md);
@@ -49,7 +54,7 @@ source tree, not broad promises that every Salesforce behavior is implemented.
 
 ## Salesforce API Versions
 
-The v0.3.0 support window is Apex 62.0-68.0, LWC and Visualforce 59.0-68.0.
+The supported window is Apex 62.0-67.0, LWC and Visualforce 59.0-67.0.
 Apex source API below 62.0, including legacy 24.0, 29.0, 36.0, 39.0, and 40.0
 behavior, is unsupported. The loader preserves well-formed positive whole
 historical Apex versions for compatibility; loading or passing a local test
@@ -59,7 +64,9 @@ or promise exact behavior for every historical source version.
 
 The checked HTTP endpoint versions remain the discrete set 60.0, 65.0, 66.0,
 67.0, and 68.0. The project source and HTTP endpoint defaults remain 65.0.
-Execute Anonymous has a narrower eligibility set: 65.0, 66.0, 67.0, and 68.0.
+HTTP Execute Anonymous admits 65.0, 66.0, 67.0, and 68.0. CLI `glade exec`
+preserves the project source version without that HTTP gate. Admission or
+preservation alone does not establish supported behavior.
 
 Source version, HTTP endpoint version, org profile, and LWC bundle metadata are
 independent. An endpoint version never changes source semantics. Explicit LWC
@@ -173,9 +180,11 @@ tar -xzf glade_vX.Y.Z_linux_amd64.tar.gz
      publication, not the later static-host or site publication.
 
 `Required CI` and `Salesforce Correctness` are automated exact-SHA release
-authorities. The separate LWC Browser, Race, Security, and local
-`scripts/release-check.sh` remain required operator or policy checks; the release
-tag does not attest that they ran. A manual Release workflow run on a branch
+authorities. The separate `Browser`, `Race` and `Security` workflows and the
+local `scripts/release-check.sh` remain required operator or policy checks; the
+release tag does not attest that they ran. `Race` for a `main` push starts
+after that push's CI workflow completes successfully and runs only the
+concurrency selection; the full race matrix runs weekly and on dispatch. A manual Release workflow run on a branch
 requires `glade_tools_sha` and verifies the same Salesforce authority, but it
 does not publish tag-only assets.
 

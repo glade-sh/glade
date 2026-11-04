@@ -481,7 +481,9 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		}()
 	}
 	defer func() {
-		vm.callStack = vm.callStack[:len(vm.callStack)-1]
+		lastCall := len(vm.callStack) - 1
+		vm.callStack[lastCall] = callFrame{}
+		vm.callStack = vm.callStack[:lastCall]
 		vm.Globals = caller
 		vm.VarTypes = callerTypes
 		vm.finalLocals = callerFinals
@@ -491,7 +493,9 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		vm.currentTrigger = callerTrigger
 		vm.currentStatement = callerStatement
 		vm.hasStatement = callerHasStatement
-		vm.scopeStack = vm.scopeStack[:len(vm.scopeStack)-1]
+		lastScope := len(vm.scopeStack) - 1
+		vm.scopeStack[lastScope] = nil
+		vm.scopeStack = vm.scopeStack[:lastScope]
 	}()
 
 	out, err := vm.executeProgram(method.Program, result)

@@ -449,7 +449,12 @@ func assertReferenceOnlyNamedRuntime(t *testing.T, index typesys.Index, class st
 			if !strings.Contains(kind, ".") {
 				kind = "System." + kind
 			}
-			if got := kind + ": " + result.Problem.Message; got != message {
+			// The project report appends VM diagnostic context after the message.
+			problem := result.Problem.Message
+			if i := strings.LastIndex(problem, " (context: "); i >= 0 && strings.HasSuffix(problem, ")") {
+				problem = problem[:i]
+			}
+			if got := kind + ": " + problem; got != message {
 				t.Errorf("%s native=%q; Glade=%q", result.MethodName, message, got)
 			}
 		}

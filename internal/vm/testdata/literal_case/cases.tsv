@@ -1,0 +1,5 @@
+case	apex_literal	hex
+mixed	'AbC xYz'	4162432078597a
+empty	''	""
+unicode	'ΩMix'	cea94d6978
+escaped	'A\'B\\C'	4127425c43

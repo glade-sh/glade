@@ -169,13 +169,18 @@ func writeFishCompletion(w io.Writer) error {
 			}
 		}
 		for _, flag := range ref.Flags {
-			name := strings.TrimPrefix(flag.Name, "--")
 			requiresValue := ""
 			if flag.Value != "" {
 				requiresValue = " -r"
 			}
-			if _, err := fmt.Fprintf(w, "complete -c glade -n '__fish_seen_subcommand_from %s' -l %s%s -d %q\n", ref.Name, name, requiresValue, flag.Description); err != nil {
-				return err
+			for _, name := range flag.Names() {
+				option := "-l " + strings.TrimPrefix(name, "--")
+				if !strings.HasPrefix(name, "--") {
+					option = "-s " + strings.TrimPrefix(name, "-")
+				}
+				if _, err := fmt.Fprintf(w, "complete -c glade -n '__fish_seen_subcommand_from %s' %s%s -d %q\n", ref.Name, option, requiresValue, flag.Description); err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -189,7 +194,7 @@ func fishQuote(value string) string {
 func bashFlags(ref cliui.CommandHelp) []string {
 	flags := []string{"--help", "-h"}
 	for _, flag := range ref.Flags {
-		flags = append(flags, flag.Name)
+		flags = append(flags, flag.Names()...)
 	}
 	return flags
 }
@@ -198,15 +203,13 @@ func zshFlags(ref cliui.CommandHelp) []string {
 	flags := []string{"--help[Show command help]", "-h[Show command help]"}
 	for _, flag := range ref.Flags {
 		desc := strings.TrimSuffix(flag.Description, ".")
-		if flag.Value != "" {
-			name := strings.TrimPrefix(flag.Name, "--")
-			flags = append(flags, fmt.Sprintf("%s[%s]:%s:_files", flag.Name, desc, strings.Trim(flag.Value, "<>")))
-			if name == "project" || name == "db" || name == "output" || name == "trace" || name == "debug-log" || name == "runs-dir" || name == "data-root" || name == "vsix" {
-				flags[len(flags)-1] = fmt.Sprintf("%s[%s]:%s:_files", flag.Name, desc, strings.Trim(flag.Value, "<>"))
+		for _, name := range flag.Names() {
+			if flag.Value != "" {
+				flags = append(flags, fmt.Sprintf("%s[%s]:%s:_files", name, desc, strings.Trim(flag.Value, "<>")))
+			} else {
+				flags = append(flags, fmt.Sprintf("%s[%s]", name, desc))
 			}
-			continue
 		}
-		flags = append(flags, fmt.Sprintf("%s[%s]", flag.Name, desc))
 	}
 	return flags
 }

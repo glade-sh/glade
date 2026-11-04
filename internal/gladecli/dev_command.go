@@ -56,10 +56,15 @@ Use the human-focused local development cockpit.
 
 Usage:
   glade dev [--project <root>]
-  glade dev test [--project <root>] [--class <name>|--test <Class.method>|--changed|--failed] [--out <runs-dir>]
+  glade dev test [--project <root>] [--class <pattern>|--test <pattern>|--changed|--failed] [--out <runs-dir>]
   glade dev watch [--project <root>] [--out <runs-dir>]
   glade dev vf [--project <root>] [--port <port>|--addr <host:port>] [--ready-file <path>]
   glade dev lwc [--project <root>] [--db <path>] [--port <port>|--addr <host:port>] [--ready-file <path>]
+
+Test selectors:
+  --class and --test use case-insensitive substring matching on the full Class.method test name;
+  comma-separated alternatives are allowed; watch ignores them.
+  For example, --class refund also matches a method named handlesRefund.
 
 Test wall-clock cap:
   --test-timeout <dur> overrides GLADE_TEST_TIMEOUT (default 10m; 0 disables).

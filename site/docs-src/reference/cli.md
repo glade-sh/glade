@@ -323,6 +323,56 @@ mkdir -p reports
 glade report refactor-proof --project . --since origin/main --format html --out reports/glade-refactor-proof.html
 ```
 
+## Governor options
+
+`glade exec`, `glade test`, and `glade server` accept `--limit-profile <name>`
+and the cap flags below. With `server`, these settings configure
+execute-anonymous Apex, not ordinary REST data operations. Test execution
+carries the cap set into local, watch/daemon, and test-server requests;
+`glade test serve` startup does not accept these flags.
+
+Profiles are case-insensitive: `default`, `strict-sync`, and `custom`
+start from the synchronous base below. `strict-async` changes queries to
+200, heap size to 25000000 bytes, and CPU to 60000 ms; all other caps remain
+the same. `custom` does not require an override and is not an unlimited profile.
+
+| Flag (each takes `<n>`) | Unit / counter | Synchronous base |
+| --- | --- | ---: |
+| `--limit-queries` | SOQL queries | 100 |
+| `--limit-query-rows` | SOQL rows | 50000 |
+| `--limit-dml-statements` | DML statements | 150 |
+| `--limit-dml-rows` | DML rows | 10000 |
+| `--limit-heap-size` | heap bytes | 10000000 |
+| `--limit-cpu-ms` | estimated CPU milliseconds | 10000 |
+| `--limit-callouts` | callouts | 100 |
+| `--limit-email-invocations` | email invocations | 10 |
+| `--limit-async-jobs` | async jobs | 50 |
+| `--limit-future-calls` | future calls | 50 |
+| `--limit-queueable-jobs` | queueable jobs | 50 |
+| `--limit-batch-jobs` | batch jobs | 5 |
+| `--limit-scheduled-jobs` | scheduled jobs | 100 |
+| `--limit-sosl-queries` | SOSL queries | 20 |
+| `--limit-query-locator-rows` | query-locator rows | 10000 |
+| `--limit-run-as` | run-as counter | 100 |
+| `--limit-savepoints` | savepoints | 5 |
+| `--limit-savepoint-rollbacks` | savepoint rollbacks | 100 |
+| `--limit-publish-immediate-dml` | publish-immediate DML | 150 |
+
+The selected profile supplies the base; explicit cap flags override its fields
+regardless of argument order. All cap values must be non-negative integers;
+zero means a zero cap, not unlimited. Omitted profile/caps retain native
+context-sensitive defaults. Any explicit profile (including `default`) or cap
+installs a complete local cap set: async execution preserves those caps and
+strict mode enforces the explicit local heap cap rather than the native-default
+heap threshold. A single cap override uses the synchronous base for other caps.
+
+`--limit-mode strict|permissive` is independent of profile selection: a name
+starting with `strict-` does not turn on strict mode. Permissive mode records
+violations; strict mode raises limit errors. CPU milliseconds use Glade's
+deterministic work estimate, not host elapsed time or native Salesforce CPU.
+The test wall-clock `--test-timeout` policy is separate. These are local cap
+controls, not evidence of Salesforce governor parity.
+
 ## `glade exec`
 
 Run execute-anonymous Apex against local source and storage.
@@ -343,6 +393,12 @@ glade exec --project . --limit-mode strict "System.debug(Limits.getDmlStatements
 ```
 
 ## `glade test`
+
+`glade test serve` accepts `--project`, `--socket`, `--watch`, `--no-watch`,
+`--warm`, and `--no-warm`. Watching and warming default to on. The default
+socket is `.glade/test/serve.sock` under the project root; clients discover
+only this standard socket, even when the server uses a custom socket.
+
 
 Discover and run local Apex tests. The `RefinementServiceTest.opensFile`
 examples match the editor walkthrough; substitute a class and method that exist

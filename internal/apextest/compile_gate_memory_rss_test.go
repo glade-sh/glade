@@ -29,7 +29,7 @@ func TestCompileGateMissingDependencyProjectRSS(t *testing.T) {
 				for _, dependency := range []string{"present", "missing"} {
 					selection := "^TestCompileGateMissingDependencyProjectMemory$/^" + strings.ReplaceAll(api, ".", "[.]") + "$/^" + dependency + "$"
 					cmd := exec.Command(binary, "-test.run="+selection, "-test.count=1", "-test.v", "-test.timeout=5m")
-					for _, entry := range os.Environ() {
+					for _, entry := range childEnvWithoutShardSelector() {
 						key, _, _ := strings.Cut(entry, "=")
 						switch key {
 						case "GOMAXPROCS", "GOGC", "GOMEMLIMIT", "GLADE_DEPENDENCY_MEMORY_CLASSES", "GLADE_HOME":

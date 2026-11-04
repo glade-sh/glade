@@ -1,0 +1,4 @@
+object	role
+AccountContactRelation	feature-gated
+Account	available boundary
+AbsentObject__c	rejection boundary

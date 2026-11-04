@@ -2,19 +2,10 @@
 // neither inspected nor replaced; popups use the browser's real user actions.
 import fs from 'node:fs';
 import {createRequire} from 'node:module';
+import {pathToFileURL} from 'node:url';
+import {rowFrame} from './v09_click_row_frame.mjs';
 const require = createRequire(import.meta.url);
 const rowSelector = id => '[data-v09-case=' + JSON.stringify(id) + ']';
-
-async function rowFrame(page, id) {
-  const deadline = Date.now() + 12000;
-  while (Date.now() < deadline) {
-    for (const frame of page.frames()) {
-      try { if (await frame.locator(rowSelector(id)).count() === 1) return frame; } catch (_) {}
-    }
-    await new Promise(resolve => setTimeout(resolve, 100));
-  }
-  throw new Error('OWNED_CLICK_ROW_MISSING');
-}
 
 async function snapshot(frame, id, roles) {
   return frame.evaluate(({id, roles}) => {
@@ -93,9 +84,12 @@ async function lookupPopup(page, frame, id, search) {
   const row = frame.locator(rowSelector(id));
   const input = row.locator('input[id$=":owned"],input[id="owned"]');
   if (search !== null) await input.fill(search);
-  const pending = page.waitForEvent('popup', {timeout: 10000});
-  await row.locator('a[id$="_lkwgt"]').click({timeout: 8000, noWaitAfter: true});
-  const popup = await pending;
+  const anchor = row.locator('a[id$="_lkwgt"]');
+  await anchor.waitFor({state: 'visible', timeout: 8000});
+  const [popup] = await Promise.all([
+    page.waitForEvent('popup', {timeout: 10000}),
+    anchor.click({timeout: 8000, noWaitAfter: true}),
+  ]);
   await popup.waitForLoadState('domcontentloaded', {timeout: 15000});
   return popup;
 }
@@ -160,7 +154,20 @@ async function searchPresence(page, frame, id, roles, term) {
   } finally { if (!popup.isClosed()) await popup.close().catch(() => {}); }
 }
 
-(async () => {
+export async function retryCase(page, url, id, observe, log = message => process.stderr.write(message + '\n')) {
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      await page.goto(url, {waitUntil: 'domcontentloaded'});
+      return await observe();
+    } catch (error) {
+      log(`v09 ${id} attempt ${attempt}: ${String(error && error.message || error).split('\n')[0]}`);
+      if (attempt < 3) await page.goto('about:blank');
+    }
+  }
+  return {status: 'unobserved', reason: 'LOCAL_WIDGET_CLICK_NOT_OBSERVED'};
+}
+
+async function main() {
   const cfg = JSON.parse(fs.readFileSync(0, 'utf8'));
   const {chromium} = require(cfg.playwrightModule);
   const browser = await chromium.launch({headless: true, executablePath: cfg.executablePath || undefined});
@@ -172,13 +179,16 @@ async function searchPresence(page, frame, id, roles, term) {
       const spec = cfg.mapping[id];
       const url = new URL('/apex/' + spec.page, cfg.url);
       url.searchParams.set('ownedCase', id);
-      await page.goto(url.href, {waitUntil: 'domcontentloaded'});
-      try {
+      output[id] = await retryCase(page, url.href, id, async () => {
         const frame = await rowFrame(page, id);
-        output[id] = spec.search_term ? await searchPresence(page, frame, id, cfg.roles, spec.search_term) : spec.mode === 'Lookup' ? await lookupClick(page, frame, id, cfg.roles) : await dateClick(frame, id, cfg.roles);
-      } catch (_) { output[id] = {status: 'unobserved', reason: 'LOCAL_WIDGET_CLICK_NOT_OBSERVED'}; }
+        return spec.search_term ? await searchPresence(page, frame, id, cfg.roles, spec.search_term) : spec.mode === 'Lookup' ? await lookupClick(page, frame, id, cfg.roles) : await dateClick(frame, id, cfg.roles);
+      });
       await page.goto('about:blank');
     }
   } finally { await browser.close(); }
   process.stdout.write(JSON.stringify(output));
-})().catch(error => { process.stderr.write(String(error)); process.exitCode = 1; });
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch(error => { process.stderr.write(String(error)); process.exitCode = 1; });
+}

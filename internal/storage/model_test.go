@@ -1016,12 +1016,8 @@ func TestApplyOrgShapeAddsOptionalFeatureObjectsAndRecords(t *testing.T) {
 	if network := org.Objects["Network"]; len(network.Records) != 0 || network.Definition.APIName != "Network" {
 		t.Fatalf("enabled Network schema without deployed metadata: %#v", network)
 	}
-	if cache := org.Objects["PlatformCachePartition"]; len(cache.Records) == 0 {
-		t.Fatalf("PlatformCachePartition records = %#v", cache.Records)
-	} else if got := cache.Records["0Px000000000001"].Fields["NamespacePrefix"].String; got != "" {
-		t.Fatalf("PlatformCachePartition NamespacePrefix = %q, want empty string", got)
-	} else if got := cache.Records["0Px000000000001"].Fields["DeveloperName"].String; got != "default" {
-		t.Fatalf("PlatformCachePartition DeveloperName = %q, want default", got)
+	if cache := org.Objects["PlatformCachePartition"]; len(cache.Records) != 0 || cache.Definition.APIName != "PlatformCachePartition" {
+		t.Fatalf("enabled PlatformCachePartition schema without deployed metadata: %#v", cache)
 	}
 	if apps := org.Objects["CustomApplication"]; len(apps.Records) != 3 {
 		t.Fatalf("CustomApplication records = %d, want 3", len(apps.Records))

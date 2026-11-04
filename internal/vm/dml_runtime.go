@@ -3,6 +3,7 @@ package vm
 import (
 	"errors"
 	"fmt"
+	"math/big"
 	"sort"
 	"strconv"
 	"strings"
@@ -1767,6 +1768,7 @@ func (vm *VM) executeDatabaseMergeWithMode(args []Value, mode ir.DMLMode, result
 		return Null, err
 	}
 	markMergeDuplicateOldRecords(duplicateBefore, master[0].ID)
+	originalMaster := master
 	master = vm.hydrateUpdateTriggerRecords(master, masterBefore)
 	if beforeUpdateFailures, err := vm.runTriggers(triggerTimingBefore, "update", master, masterBefore, result); err != nil {
 		*vm.Org = backup
@@ -1785,6 +1787,8 @@ func (vm *VM) executeDatabaseMergeWithMode(args []Value, mode ir.DMLMode, result
 		}
 		return vm.mergeResultValue(master[0].ID, args[1].Kind == ValueList, results), nil
 	}
+	// As on update: hydrated, unchanged person Name is not a supplied write.
+	removeUnchangedHydratedPersonFields(master, originalMaster, masterBefore)
 	beforeDeleteFailures, err := vm.runTriggers(triggerTimingBefore, "delete", duplicates, duplicateBefore, result)
 	if err != nil {
 		*vm.Org = backup
@@ -2456,6 +2460,86 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 			}()
 		}
 	}
+	// Preserve the existing all-or-none identity error ordering for mixed-invalid
+	// batches; the native Account field rows do not cover this combination.
+	// Native field captures do not cover DML nested in a before-update trigger.
+	// Keep all such calls on the prior path, including self-reference checks.
+	deferAccountFields := len(vm.beforeUpdateFrames) != 0
+	if allOrNone && (op == "insert" || op == "update" || (op == "upsert" && (externalIDField == "" || strings.EqualFold(externalIDField, "Id")))) {
+		for _, record := range records {
+			if vm.accountPreflightInvalidIdentity(op, record, externalIDField) {
+				deferAccountFields = true
+				break
+			}
+		}
+	}
+	if allOrNone && op == "upsert" && externalIDField != "" && !strings.EqualFold(externalIDField, "Id") {
+		for i, record := range records {
+			if !strings.EqualFold(record.Object, "Account") {
+				deferAccountFields = true
+				break
+			}
+			_, _, valid := vm.accountExternalUpsertExisting(record, externalIDField)
+			if !valid || !vm.accountExternalPreflightEligible(records, i, externalIDField) {
+				deferAccountFields = true
+				break
+			}
+		}
+	}
+	// Both errors on the same candidate have no native ordering row. Leave
+	// the entire batch on the prior path rather than guessing their priority.
+	var nameFailures, emailFailures []dml.Result
+	if !deferAccountFields {
+		nameFailures = vm.preflightBusinessAccountNameFailures(records, op, externalIDField)
+		emailFailures = vm.preflightAccountPersonEmailFailures(records, op, externalIDField)
+		if hasDMLFailures(nameFailures) && hasDMLFailures(emailFailures) {
+			for i := range nameFailures {
+				if !nameFailures[i].Success && nameFailures[i].Error != "" && !emailFailures[i].Success && emailFailures[i].Error != "" {
+					deferAccountFields = true
+					break
+				}
+			}
+		}
+	}
+	if allOrNone && !deferAccountFields {
+		if hasDMLFailures(nameFailures) && hasDMLFailures(emailFailures) {
+			for i := range nameFailures {
+				if nameFailures[i].Success && !emailFailures[i].Success && emailFailures[i].Error != "" {
+					nameFailures[i] = emailFailures[i]
+				}
+			}
+			return nameFailures, nil
+		}
+	}
+	if failures := nameFailures; !deferAccountFields && hasDMLFailures(failures) {
+		if allOrNone {
+			return failures, nil
+		}
+		records, _, targets = filterDMLInputs(records, nil, targets, failures)
+		if len(records) == 0 {
+			return failures, nil
+		}
+		emailFailures = vm.preflightAccountPersonEmailFailures(records, op, externalIDField)
+		defer func() {
+			if outErr == nil {
+				out = mergeDMLResults(failures, out)
+			}
+		}()
+	}
+	if failures := emailFailures; !deferAccountFields && hasDMLFailures(failures) {
+		if allOrNone {
+			return failures, nil
+		}
+		records, _, targets = filterDMLInputs(records, nil, targets, failures)
+		if len(records) == 0 {
+			return failures, nil
+		}
+		defer func() {
+			if outErr == nil {
+				out = mergeDMLResults(failures, out)
+			}
+		}()
+	}
 	if op == "upsert" {
 		return vm.applyUpsertDML(records, targets, allOrNone, externalIDField, options, result)
 	}
@@ -2526,6 +2610,38 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 			beforeFailures = identityFailures
 		}
 	}
+	// Salesforce rejects explicit null custom checkboxes before before-save
+	// record-triggered flows. Preserve the original positions for partial DML.
+	if op == "insert" {
+		var checkboxFailures []dml.Result
+		for i, record := range records {
+			if failure, invalid := dml.BeforeSaveCheckboxNullFailure(vm.Org, record); invalid {
+				if checkboxFailures == nil {
+					checkboxFailures = make([]dml.Result, len(records))
+					for j := 0; j < i; j++ {
+						checkboxFailures[j] = dml.Result{Success: true}
+					}
+				}
+				checkboxFailures[i] = failure
+			} else if checkboxFailures != nil {
+				checkboxFailures[i] = dml.Result{Success: true}
+			}
+		}
+		if hasDMLFailures(checkboxFailures) {
+			if allOrNone {
+				return nil, statementDMLException(op, checkboxFailures, vm.dmlExceptionObjectTypes(value))
+			}
+			records, before, targets = filterDMLInputs(records, before, targets, checkboxFailures)
+			if len(beforeFailures) > 0 {
+				beforeFailures = mergeDMLResults(beforeFailures, checkboxFailures)
+			} else {
+				beforeFailures = checkboxFailures
+			}
+			if len(records) == 0 {
+				return beforeFailures, nil
+			}
+		}
+	}
 	var rollback vmDMLRollbackPoint
 	rollbackReady := false
 	ensureRollback := func(forceSnapshot bool) {
@@ -2566,10 +2682,55 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 	if op == "insert" || op == "update" {
 		vm.normalizeBeforeDMLEmailFields(beforeTriggerRecords)
 		vm.applyBeforeDMLDerivedFields(beforeTriggerRecords)
-		if err := vm.applyBeforeSaveFlows(beforeTriggerRecords, result); err != nil {
+		if op == "insert" && !allOrNone && len(beforeTriggerRecords) > 1 && vm.hasBeforeSaveFlowForDML(beforeTriggerRecords) {
+			flowFailures := make([]dml.Result, len(beforeTriggerRecords))
+			for i := range beforeTriggerRecords {
+				flowFailures[i].Success = true
+				rowRollback := vm.beginDMLRollbackPoint(true, false)
+				flowErr := vm.applyBeforeSaveFlows(beforeTriggerRecords[i:i+1], result)
+				if flowErr == nil {
+					vm.finishDMLRollbackPoint(rowRollback)
+					continue
+				}
+				failure, custom := dml.FlowCustomErrorFailureResult(flowErr)
+				if !custom {
+					if rollbackErr := restoreRollback(); rollbackErr != nil {
+						return nil, rollbackErr
+					}
+					return nil, flowErr
+				}
+				if rollbackErr := vm.restoreDMLRollbackPoint(rowRollback); rollbackErr != nil {
+					return nil, rollbackErr
+				}
+				flowFailures[i] = failure
+			}
+			if hasDMLFailures(flowFailures) {
+				records, before, targets = filterDMLInputs(beforeTriggerRecords, before, targets, flowFailures)
+				beforeTriggerRecords = records
+				if len(beforeFailures) > 0 {
+					beforeFailures = mergeDMLResults(beforeFailures, flowFailures)
+				} else {
+					beforeFailures = flowFailures
+				}
+				if len(records) == 0 {
+					return beforeFailures, nil
+				}
+			}
+		} else if err := vm.applyBeforeSaveFlows(beforeTriggerRecords, result); err != nil {
 			ensureRollback(false)
 			if rollbackErr := restoreRollback(); rollbackErr != nil {
 				return nil, rollbackErr
+			}
+			if op == "insert" && len(records) == 1 {
+				if failure, ok := dml.FlowCustomErrorFailureResult(err); ok {
+					if allOrNone {
+						return nil, statementDMLException(op, []dml.Result{failure}, vm.dmlExceptionObjectTypes(value))
+					}
+					if hasDMLFailures(beforeFailures) {
+						return mergeDMLResults(beforeFailures, []dml.Result{failure}), nil
+					}
+					return []dml.Result{failure}, nil
+				}
 			}
 			return nil, err
 		}
@@ -2606,6 +2767,7 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 			}
 			if op == "update" {
 				preserveUpdateExplicitNulls(beforeTriggerRecords, originalUpdateRecords)
+				removeUnchangedHydratedPersonFields(beforeTriggerRecords, originalUpdateRecords, before)
 			}
 			records = beforeTriggerRecords
 			if op == "insert" {
@@ -3336,6 +3498,7 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 		}
 		if kind == "update" {
 			preserveUpdateExplicitNulls(triggerRecords, groupRecords)
+			removeUnchangedHydratedPersonFields(triggerRecords, groupRecords, groupBefore)
 		}
 		vm.applyBeforeDMLDerivedFields(triggerRecords)
 		for groupIndex, index := range indices {
@@ -3520,6 +3683,20 @@ func (vm *VM) validateDatabaseUpsertExternalIDField(records []storage.Record, fi
 		}
 	}
 	return nil
+}
+
+func (vm *VM) hasBeforeSaveFlowForDML(records []storage.Record) bool {
+	if vm == nil || vm.Org == nil {
+		return false
+	}
+	for _, objectName := range vm.dmlObjectNames(records) {
+		for _, rule := range vm.Org.Objects[objectName].Definition.FlowRules {
+			if rule.Active && strings.EqualFold(strings.TrimSpace(rule.TriggerType), "RecordBeforeSave") {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (vm *VM) hasAutomationForDML(records []storage.Record) bool {
@@ -3945,6 +4122,16 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 			}
 		}
 		explicitField := isExplicitSObjectField(*value, field) || sObjectCanonicalFieldExplicitOnValue(*value, field, canonicalField)
+		// A queried person Account Name is a projection, not an assignment.
+		// Keep explicit same-value assignments for the native rejection path.
+		if record.ID != "" && strings.EqualFold(objectType, "Account") && strings.EqualFold(canonicalField, "Name") &&
+			vm.queriedSObjectFieldsIncludes(*value, canonicalField) && !isUserSetSObjectFieldAlias(*value, field) && !isUserSetSObjectFieldAlias(*value, canonicalField) {
+			if old, found := vm.findOrgRecord(objectType, record.ID); found {
+				if person, present := old.GetField("IsPersonAccount"); present && person.Kind == storage.ValueBoolean && person.Boolean {
+					record.MarkDMLNameUnassigned()
+				}
+			}
+		}
 		if !explicitField && isTriggerSObject(*value) && strings.EqualFold(canonicalField, "RecordTypeId") {
 			explicitField = true
 		}
@@ -5746,6 +5933,41 @@ func cloneObjectDefinition(definition storage.ObjectDefinition) storage.ObjectDe
 	return out
 }
 
+// Remove fields copied only to provide a complete before-trigger view. Preserve
+// caller input and trigger changes for the DML engine to validate normally.
+func removeUnchangedHydratedPersonFields(records, original, before []storage.Record) {
+	for i := range records {
+		if i >= len(original) || i >= len(before) || !strings.EqualFold(records[i].Object, "Account") {
+			records[i].ClearDMLTriggerAssignments()
+			continue
+		}
+		person, ok := before[i].GetField("IsPersonAccount")
+		if !ok || person.Kind != storage.ValueBoolean || !person.Boolean {
+			records[i].ClearDMLTriggerAssignments()
+			continue
+		}
+		for _, field := range []string{"Name", "RecordTypeId"} {
+			if records[i].DMLTriggerAssigned(field) && !strings.EqualFold(field, "Name") {
+				continue
+			}
+			if _, supplied := original[i].GetField(field); supplied || original[i].HasExplicitNull(field) {
+				continue
+			}
+			value, present := records[i].GetField(field)
+			old, existed := before[i].GetField(field)
+			if !present || !existed || (!records[i].DMLTriggerAssigned(field) && !storageValuesEqualForVM(storage.Field{CaseSensitive: true}, value, old)) {
+				continue
+			}
+			for key := range records[i].Fields {
+				if strings.EqualFold(key, field) {
+					delete(records[i].Fields, key)
+				}
+			}
+		}
+		records[i].ClearDMLTriggerAssignments()
+	}
+}
+
 func preserveUpdateExplicitNulls(records, original []storage.Record) {
 	for i := range records {
 		if i >= len(original) || len(original[i].ExplicitNulls) == 0 {
@@ -5879,8 +6101,15 @@ func storageValuesEqualForVM(field storage.Field, left, right storage.Value) boo
 	switch left.Kind {
 	case storage.ValueNull:
 		return true
-	case storage.ValueString, storage.ValueDate, storage.ValueDateTime, storage.ValueDecimal:
+	case storage.ValueString, storage.ValueDate, storage.ValueDateTime:
 		return left.String == right.String
+	case storage.ValueDecimal:
+		if left.Decimal == right.Decimal {
+			return true
+		}
+		leftNumber, leftOK := new(big.Rat).SetString(left.Decimal)
+		rightNumber, rightOK := new(big.Rat).SetString(right.Decimal)
+		return leftOK && rightOK && leftNumber.Cmp(rightNumber) == 0
 	case storage.ValueInteger:
 		return left.Integer == right.Integer
 	case storage.ValueBoolean:
@@ -6283,6 +6512,9 @@ func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, mode i
 	}
 	if mode == ir.DMLModeDefault && vm.defaultRunAsPrivateTextUpdate(op, value) {
 		results, err = vm.applyDMLWithAccessPolicy(op, value, true, externalIDField, dmlOptions, result, true, true, dmlMode)
+	} else if mode == ir.DMLModeDefault && dmlMode == "SYSTEM_MODE" && op == "delete" &&
+		vm.testContext != nil && vm.testContext.RunAsDepth > 0 && !vm.runAsSecureDefaults() && vm.objectPermissionsDeleteInput(value) {
+		results, err = vm.applyDMLWithAccessPolicy(op, value, true, externalIDField, dmlOptions, result, false, true, dmlMode)
 	} else {
 		results, err = vm.applyDMLWithRecordAccess(op, value, true, externalIDField, dmlOptions, result, dmlMode)
 	}
@@ -6305,6 +6537,21 @@ func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, mode i
 		}
 	}
 	return nil
+}
+
+func (vm *VM) objectPermissionsDeleteInput(value Value) bool {
+	if value.Kind == ValueObject {
+		return strings.EqualFold(vm.canonicalSObjectValueType(value), "ObjectPermissions")
+	}
+	if value.Kind != ValueList || len(value.List) == 0 {
+		return false
+	}
+	for _, item := range value.List {
+		if item.Kind != ValueObject || !strings.EqualFold(vm.canonicalSObjectValueType(item), "ObjectPermissions") {
+			return false
+		}
+	}
+	return true
 }
 
 // Salesforce rejects an explicitly typed delete target whose Id cannot belong

@@ -42,9 +42,8 @@ separate checks in the CI site job. Run them locally using the
 
 The Go phase checks one authoritative package inventory and writes raw events
 plus a validated `package-summary.json` for every lane under
-`ci-artifacts/local-release/`. Automatic execution stays serial for predictable
-memory use. Only an explicit `LOCAL_GO_TEST_JOBS` value greater than one can
-overlap the final independent lanes.
+`ci-artifacts/local-release/`. Lanes run one at a time for predictable memory
+use; `LOCAL_GO_TEST_JOBS` does not make them overlap.
 
 Measure the unchanged gate when comparing resource use:
 
@@ -66,7 +65,9 @@ repository. `scripts/release-check.sh` remains the correctness authority.
 1. Add the `vX.Y.Z` section to `docs/RELEASE_NOTES.md` and check its body with
    `scripts/release-notes.sh vX.Y.Z` before freezing the release commit.
 2. Commit the intended changes and run `scripts/release-check.sh` from a clean
-   checkout. Complete the relevant site, browser, Race, and Security checks.
+   checkout. Read the `Browser`, `Race` and `Security` results for the
+   candidate, review the CodeQL waivers, and note an incomplete CodeQL scan in
+   the release notes.
 3. Merge to `main` and freeze the exact product and `glade-tools` commit pair.
    Wait for the product's main-push `Required CI` and the trusted
    `Salesforce Correctness` check for that pair. PR and manual CI runs do not

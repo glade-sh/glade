@@ -743,6 +743,7 @@ func (vm *VM) discardMetadataCaches() {
 	vm.describeShare = nil
 	vm.describeShareDefinitions = nil
 	vm.globalDescribeCache = nil
+	vm.namedGlobalDescribe = nil
 	vm.globalDescribeProjectionKeys = nil
 	vm.describeTabsCache = nil
 	vm.childRelCandidates = nil

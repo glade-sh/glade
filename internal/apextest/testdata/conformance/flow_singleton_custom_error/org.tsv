@@ -1,0 +1,9 @@
+api	route	case	observation
+62.0	anonymous	unconditional	FIELD_CUSTOM_VALIDATION_EXCEPTION|plain failure
+62.0	istest	unconditional	FIELD_CUSTOM_VALIDATION_EXCEPTION|plain failure
+62.0	anonymous	conditional_no_match	SUCCESS
+62.0	istest	conditional_no_match	SUCCESS
+67.0	anonymous	unconditional	FIELD_CUSTOM_VALIDATION_EXCEPTION|plain failure
+67.0	istest	unconditional	FIELD_CUSTOM_VALIDATION_EXCEPTION|plain failure
+67.0	anonymous	conditional_no_match	SUCCESS
+67.0	istest	conditional_no_match	SUCCESS

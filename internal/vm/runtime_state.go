@@ -238,6 +238,8 @@ type VM struct {
 	debugHooks       DebugHooks
 	hasDebugHooks    bool
 	debugOutputSink  func(DebugEvent)
+	debugOutputLimit int
+	traceOutputLimit int
 	traceEnabled     bool
 	ctx              context.Context
 	contextPollCount uint8
@@ -254,6 +256,7 @@ type VM struct {
 	describeCache       map[describeCacheKey]Value
 	fieldDescribeCache  map[describeCacheKey]Value
 	globalDescribeCache *Value
+	namedGlobalDescribe *namedGlobalDescribeExtension
 	// Private immutable key preparation after leaving a frozen generation.
 	// Never cloned; exact key equality is rechecked before each reuse.
 	globalDescribeProjectionKeys map[string]globalDescribeKeyMetadata
@@ -474,16 +477,19 @@ const (
 )
 
 type Result struct {
-	Debug           []string         `json:"debug,omitempty"`
-	DebugEvents     []DebugEvent     `json:"debugEvents,omitempty"`
-	Vars            map[string]Value `json:"vars,omitempty"`
-	TraceFormat     string           `json:"traceFormat,omitempty"`
-	Trace           []trace.Event    `json:"trace,omitempty"`
-	traceEnabled    bool
-	CapturedEmails  []CapturedEmail  `json:"capturedEmails,omitempty"`
-	Limits          Limits           `json:"limits,omitempty"`
-	LimitMode       LimitMode        `json:"limitMode,omitempty"`
-	LimitViolations []LimitViolation `json:"limitViolations,omitempty"`
+	Debug            []string         `json:"debug,omitempty"`
+	DebugEvents      []DebugEvent     `json:"debugEvents,omitempty"`
+	Vars             map[string]Value `json:"vars,omitempty"`
+	TraceFormat      string           `json:"traceFormat,omitempty"`
+	Trace            []trace.Event    `json:"trace,omitempty"`
+	traceEnabled     bool
+	debugOutputBytes int
+	traceOutputLimit int
+	traceOutputBytes int
+	CapturedEmails   []CapturedEmail  `json:"capturedEmails,omitempty"`
+	Limits           Limits           `json:"limits,omitempty"`
+	LimitMode        LimitMode        `json:"limitMode,omitempty"`
+	LimitViolations  []LimitViolation `json:"limitViolations,omitempty"`
 }
 
 type CapturedEmail struct {
@@ -948,6 +954,8 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 	// shared field maps private on first use in the clone as well.
 	clone.sharedDescribeFieldMaps = maps.Clone(vm.sharedDescribeFieldMaps)
 	clone.traceEnabled = vm.traceEnabled
+	clone.debugOutputLimit = vm.debugOutputLimit
+	clone.traceOutputLimit = vm.traceOutputLimit
 	clone.toolingExecuteAnonymous = vm.toolingExecuteAnonymous
 	clone.rejectAsyncActions = vm.rejectAsyncActions
 	clone.asyncActionViolation = vm.asyncActionViolation
@@ -1136,6 +1144,20 @@ func (vm *VM) recordIsolationJournalSequence(objectName string) {
 func (vm *VM) SetTraceEnabled(enabled bool) {
 	if vm != nil {
 		vm.traceEnabled = enabled
+	}
+}
+
+// SetDebugOutputLimit bounds collected debug text. Zero preserves the default unlimited behavior.
+func (vm *VM) SetDebugOutputLimit(bytes int) {
+	if vm != nil {
+		vm.debugOutputLimit = bytes
+	}
+}
+
+// SetTraceOutputLimit bounds collected trace JSON bytes; zero leaves it unlimited.
+func (vm *VM) SetTraceOutputLimit(bytes int) {
+	if vm != nil {
+		vm.traceOutputLimit = bytes
 	}
 }
 
@@ -3126,7 +3148,7 @@ func (vm *VM) execute(program ir.Program, className string) (result Result, err 
 	defer func() {
 		vm.closedSOQLLocals, vm.dynamicSOQLBindRoute = callerClosedLocals, callerBindRoute
 	}()
-	result = Result{Vars: vm.Globals, traceEnabled: vm.traceEnabled}
+	result = Result{Vars: vm.Globals, traceEnabled: vm.traceEnabled, traceOutputLimit: vm.traceOutputLimit}
 	if vm.traceEnabled {
 		result.TraceFormat = trace.FormatChromeTraceEvent
 	}

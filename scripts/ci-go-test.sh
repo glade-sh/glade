@@ -599,12 +599,15 @@ validate_local_release_package_summary() {
 	local summary_path="$4"
 	local package_metadata_path="$5"
 	shift 5
-	python3 - "${lane}" "${label}" "${events_path}" "${summary_path}" "${package_metadata_path}" "$@" <<'PY'
+	python3 - "${lane}" "${label}" "${events_path}" "${summary_path}" "${package_metadata_path}" "${repo_root}" "${script_dir}/ci-apex-native-gaps.json" "$@" <<'PY'
+import csv
 import json
 import os
 import sys
+import tempfile
+from pathlib import Path
 
-lane, label, events_path, summary_path, package_metadata_path, *arguments = sys.argv[1:]
+lane, label, events_path, summary_path, package_metadata_path, repo_root, apex_gaps_path, *arguments = sys.argv[1:]
 module = "github.com/glade-sh/glade"
 expected = []
 for argument in arguments:
@@ -666,6 +669,64 @@ native_boundaries = {
         "native boundary is captured but outside this bind replay"
     for api in ("62.0", "67.0")
 }
+# Push race still reports captured known gaps, rather than treating them as
+# passing conformance. Reconstruct the exact expected identity and text from
+# the owned native matrix; no other skipped row is excused.
+race_known_gaps = {}
+if lane == "race" and module + "/internal/sema" in expected:
+    fixture = Path(repo_root) / "internal/apextest/testdata/conformance/qualified_receivers"
+    with (fixture / "cases.tsv").open(newline="", encoding="utf-8") as source:
+        cases = {row["case"]: row for row in csv.DictReader(source, delimiter="\t")}
+    with (fixture / "compile.tsv").open(newline="", encoding="utf-8") as source:
+        for row in csv.DictReader(source, delimiter="\t"):
+            case = cases[row["case"]]
+            eligible = (case["kind"] == "known_gap" and row["case"] != "standard_schema_fields_map"
+                        or row["route"] == "anonymous" and case["kind"] == "receiver" and row["compiled"] == "false")
+            if eligible and row["compiled"] == "false":
+                key = "/".join((row["source_api"], row["route"], row["case"]))
+                name = "TestAnalyzeQualifiedReceiverNativeControls/KNOWN_GAP/" + key
+                reason = f"KNOWN GAP: local analysis accepts {case['expression']}; native compile.tsv row {key} rejects it: {row['problem']}"
+                race_known_gaps[(module + "/internal/sema", name)] = reason
+if lane == "race":
+    with tempfile.TemporaryDirectory() as directory:
+        probe = Path(directory) / "caseprobe"
+        probe.touch()
+        case_sensitive = not (Path(directory) / "CASEPROBE").exists()
+else:
+    case_sensitive = False
+case_reason = "case-variant alias requires a case-insensitive filesystem; this filesystem is case-sensitive"
+case_routes = {
+    module + "/internal/gladecli": {
+        "TestHomeProjectRoutesTwoProcessesPendingInstall": ("Compile", "CompileBatch", "ServerModules", "ServerVendor", "ServerShims", "ServerRuntime", "DevLWC", "DevVF"),
+        "TestHomeCLIStatusRoutesTwoProcessesPendingInstall": ("ToolchainStatusCLI", "DoctorCLI"),
+    },
+    module + "/internal/gladehome": {
+        "TestHomeReadersTwoProcessesPendingInstall": ("EnsureRoot", "Root", "LWCToolchainDir", "ShimsDir", "RuntimeAssetDir", "ToolchainStatus"),
+    },
+}
+race_case_skips = {(package, f"{parent}/install_then_{route}/{selector}")
+    for package, parents in case_routes.items() for parent, routes in parents.items()
+    for route in routes for selector in ("GLADE_HOME_case", "GLADE_ROOT_case")}
+readonly_case_routes = {
+    module + "/internal/gladehome": {
+        "TestHomeReadersCompletedReadOnlyHome": ("EnsureRoot", "Root", "LWCToolchainDir", "ShimsDir", "RuntimeAssetDir", "ToolchainStatus"),
+    },
+    module + "/internal/gladecli": {
+        "TestHomeProjectRoutesCompletedReadOnlyHome": ("Compile", "CompileBatch", "ServerModules", "ServerVendor", "ServerShims", "ServerRuntime", "DevLWC", "DevVF"),
+        "TestHomeCLIStatusRoutesCompletedReadOnlyHome": ("ToolchainStatusCLI", "DoctorCLI"),
+    },
+}
+readonly_case_skips = {(package, f"{parent}/{lock}/{route}/{selector}")
+    for package, parents in readonly_case_routes.items() for parent, routes in parents.items()
+    for lock in ("absent", "read-only", "inaccessible") for route in routes
+    for selector in ("GLADE_HOME_case", "GLADE_ROOT_case")}
+# Exact leaf identities only: an unexpected skip or different reason remains an error.
+with open(apex_gaps_path, encoding="utf-8") as f:
+    apex_gaps = json.load(f)
+if not isinstance(apex_gaps, list) or len(apex_gaps) != len(set(apex_gaps)) or any(not isinstance(x, str) or "/" not in x for x in apex_gaps):
+    raise ValueError("invalid Apex native gap inventory")
+native_boundaries.update({(module + "/internal/apextest", name):
+    "captured native observation has a known local gap" for name in apex_gaps})
 summary = {"version": 1, "lane": lane, "label": label, "valid": False,
            "expected": sorted(expected), "passed": [], "errors": [], "deferred": []}
 try:
@@ -704,6 +765,17 @@ try:
                 if action == "fail":
                     failed_tests.append(f"{package}/{test}")
                 if action == "skip":
+                    known_reason = race_known_gaps.get(identity)
+                    case_skip = lane == "race" and case_sensitive and identity in race_case_skips
+                    readonly_skip = lane == "race" and case_sensitive and identity in readonly_case_skips
+                    reason = known_reason or (case_reason if case_skip else "case alias requires a case-insensitive filesystem" if readonly_skip else "")
+                    source_file = "qualified_receiver_matrix_test.go" if known_reason else "readonly.go" if readonly_skip else "process.go"
+                    pattern = r"\s+" + re.escape(source_file) + r":\d+: " + re.escape(reason) + r"\s*$"
+                    if reason and any(re.fullmatch(pattern, line)
+                            for output in test_output.get(identity, ()) for line in output.splitlines()):
+                        summary["deferred"].append({"package": package, "test": test,
+                            "skipReason": reason, "reason": "captured known gap" if known_reason else "case-sensitive filesystem"})
+                        continue
                     boundary_cause = native_boundaries.get(identity)
                     boundary_pattern = (r"\s+\S+_test.go:\d+: " + re.escape(boundary_cause) + r"\s*$"
                                         if boundary_cause else "")
@@ -1391,6 +1463,14 @@ include_deferred = ((PACKAGE == "github.com/glade-sh/glade/internal/apextest"
 
 shard_dirs = sys.argv[8:]
 output_path = sys.argv[6]
+profile_path = os.environ.get("CI_APEXTEST_SCHEDULING_PROFILE", "") if PACKAGE == "github.com/glade-sh/glade/internal/apextest" else ""
+if profile_path and os.path.abspath(profile_path) == os.path.abspath(output_path):
+    raise SystemExit("scheduling profile must be separate from accepted history")
+if profile_path:
+    try:
+        os.unlink(profile_path)
+    except FileNotFoundError:
+        pass
 try:
     os.unlink(output_path)
 except FileNotFoundError:
@@ -1525,7 +1605,10 @@ try:
                     capture_output=True, text=True)
                 if result.returncode != 0:
                     reject(f"shard {index} deferred prerequisite validation failed: {result.stderr.strip()}")
-                checked_deferred = sorted(row["test"] for row in load_json(checked)["deferred"])
+                # The shard summary lists deferred selected top-level tests;
+                # captured native-boundary subtests stay inside a passing parent.
+                checked_deferred = sorted(row["test"] for row in load_json(checked)["deferred"]
+                                          if row["test"] in selected_tests)
                 if checked_deferred != deferred:
                     reject(f"shard {index} deferred tests do not match raw events")
             all_deferred.extend(deferred)
@@ -1613,6 +1696,27 @@ try:
                 elif plan["historyUsed"] is not True:
                     print(f"::warning::[ci] {LABEL} duration history timing advisory: {message}; plan used the deterministic fallback", file=sys.stderr)
                 else:
+                    if profile_path:
+                        # The profile is scheduling input only; it is never the accepted history.
+                        profile = {
+                            "version": 1, "package": PACKAGE,
+                            "complete": not all_deferred or include_deferred,
+                            "tests": [{"name": name, "durationMillis": durations[name]} for name in sorted(durations)],
+                        }
+                        profile_dir = os.path.dirname(profile_path) or "."
+                        os.makedirs(profile_dir, exist_ok=True)
+                        descriptor, temporary = tempfile.mkstemp(prefix=".apextest-scheduling.", dir=profile_dir, text=True)
+                        try:
+                            with os.fdopen(descriptor, "w", encoding="utf-8") as target:
+                                json.dump(profile, target, sort_keys=True, indent=2, allow_nan=False)
+                                target.write("\n")
+                            os.replace(temporary, profile_path)
+                        except BaseException:
+                            try:
+                                os.unlink(temporary)
+                            except FileNotFoundError:
+                                pass
+                            raise
                     reject(message)
 
     history = {

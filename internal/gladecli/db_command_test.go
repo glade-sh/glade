@@ -180,6 +180,7 @@ func TestRunDBUIScopesRoutesToDBManager(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	reset.Header.Set("Sec-Fetch-Site", "same-origin")
 	resetRes, err := client.Do(reset)
 	if err != nil {
 		t.Fatal(err)
@@ -189,7 +190,12 @@ func TestRunDBUIScopesRoutesToDBManager(t *testing.T) {
 		t.Fatalf("reset status = %d, want 404", resetRes.StatusCode)
 	}
 
-	dbRes, err := client.Get("http://" + ready.Addr + "/services/data/v60.0/glade/db-manager/objects")
+	dbRequest, err := http.NewRequest(http.MethodGet, "http://"+ready.Addr+"/services/data/v60.0/glade/db-manager/objects", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dbRequest.Header.Set("Sec-Fetch-Site", "same-origin")
+	dbRes, err := client.Do(dbRequest)
 	if err != nil {
 		t.Fatal(err)
 	}

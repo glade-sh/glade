@@ -241,7 +241,7 @@ func TestRunOrgAuthPrintsSfCommand(t *testing.T) {
 	}
 	got := stdout.String()
 	for _, want := range []string{
-		"SF_ACCESS_TOKEN='00D000000000mH2!glade-local-authme'",
+		"SF_ACCESS_TOKEN=\"$(glade org token authme --project .)\"",
 		"sf org login access-token",
 		"--instance-url http://127.0.0.1:17913",
 		"--alias authme",

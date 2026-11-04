@@ -800,6 +800,25 @@ function waitForReadyFile(filePath, child, readOutput) {
   });
 }
 
+// Local listeners reject headerless requests without origin metadata unless
+// the client marks itself (docs/INSTALL.md). Node fetch sends neither Origin
+// nor Sec-Fetch-Site, so test clients send the explicit local-client marker.
+export function localClientFetch(url, init = {}) {
+  const headers = new Headers(init.headers);
+  headers.set("X-Glade-Client", "1");
+  return fetch(url, { ...init, headers });
+}
+
+// Browser navigation that the test starts (goto, reload) carries
+// Sec-Fetch-Site: none, which local listeners answer with a confirmation
+// interstitial. Test pages identify as a local client instead.
+export function newLocalPage(browser, options = {}) {
+  return browser.newPage({
+    ...options,
+    extraHTTPHeaders: { ...options.extraHTTPHeaders, "X-Glade-Client": "1" },
+  });
+}
+
 async function waitForHTTP(url, child, readOutput) {
   const deadline = Date.now() + 30000;
   let lastError = "";
@@ -808,7 +827,7 @@ async function waitForHTTP(url, child, readOutput) {
       throw new Error(`Visualforce dev server exited before HTTP readiness\n${readOutput()}`);
     }
     try {
-      const response = await fetch(url);
+      const response = await localClientFetch(url);
       if (response.ok) {
         await response.arrayBuffer();
         return;

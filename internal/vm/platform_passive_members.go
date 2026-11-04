@@ -3239,6 +3239,13 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if name.Kind != ValueString {
 				return Bool(true), receiver, false, true, nil
 			}
+			if method == "isAccessible" && vm.testContext != nil && vm.testContext.RunAsDepth > 0 && vm.Org != nil {
+				if resolved, ok := storage.ResolveObjectName(*vm.Org, name.Text); ok && hasSuffixFold(resolved, "__c") && !storage.IsCustomSettingDefinition(vm.Org.Objects[resolved].Definition) {
+					if captured, ok := receiver.Fields["accessible"]; ok {
+						return captured, receiver, false, true, nil
+					}
+				}
+			}
 			if vm.Org != nil && (method == "isCreateable" || method == "isUpdateable" || method == "isDeletable") {
 				if resolved, ok := storage.ResolveObjectName(*vm.Org, name.Text); ok && storage.IsGeneratedHistoryObject(vm.Org.Objects[resolved].Definition) {
 					return Bool(false), receiver, false, true, nil
@@ -5125,11 +5132,9 @@ func (vm *VM) callTypeObjectMember(receiver Value, method string, args []Value, 
 		}
 		if registered && len(class.Constructors) > 0 {
 			ctor, matched, _ := vm.matchConstructor(class, nil)
-			// Keep the pre-q345 dependency-owned nested subclass literal path.
-			// Native rows establish rejection for a public nested class; the
-			// dependency-specific exception is a legacy compatibility boundary.
-			privateConstructor := strings.EqualFold(ctor.Access, "private") &&
-				!vm.legacyDependencyNestedLiteral(receiver, class)
+			// Namespaced and unpackaged native rows both reject private no-arg
+			// constructors, including private nested subclasses.
+			privateConstructor := strings.EqualFold(ctor.Access, "private")
 			if !matched || strings.EqualFold(ctor.Access, "protected") || privateConstructor {
 				return Null, true, newExceptionError("TypeException", typeName+" does not have a no-arg constructor")
 			}
@@ -6116,25 +6121,4 @@ func (vm *VM) callSObjectFieldDescribe(receiver Value, args []Value, result *Res
 		})
 	})
 	return describe, receiver, false, true, nil
-}
-
-// legacyDependencyNestedLiteral confines the regression repair to a private
-// nested subclass instantiated by its namespaced dependency owner from a class
-// literal. It does not infer platform behavior for other reflection routes.
-func (vm *VM) legacyDependencyNestedLiteral(token Value, class Class) bool {
-	if !token.dependencyClassLiteral || !class.Dependency || !class.Nested ||
-		class.Namespace == "" || !strings.EqualFold(class.Access, "private") ||
-		!strings.EqualFold(vm.currentCallerNamespace(), class.Namespace) {
-		return false
-	}
-	fullName := runtimeClassName(class)
-	dot := strings.LastIndexByte(fullName, '.')
-	if dot < 0 {
-		return false
-	}
-	owner, found := vm.lookupClass(fullName[:dot])
-	if !found || !owner.Dependency || !strings.EqualFold(runtimeClassName(owner), vm.currentClass) {
-		return false
-	}
-	return strings.EqualFold(class.SuperClass, owner.Name) || strings.EqualFold(class.SuperClass, runtimeClassName(owner))
 }

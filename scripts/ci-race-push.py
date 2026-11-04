@@ -30,6 +30,14 @@ def scope():
 RUN_SECONDS = 600
 BUILD_SECONDS = 60
 BATCH_SECONDS = 900
+# These packages run the three browser setup steps in race.yml, whose
+# individual deadlines are 5, 5 and 65 minutes respectively.
+BROWSER_PACKAGES = frozenset({"./internal/gladecli", "./internal/gladehome", "./internal/server"})
+BROWSER_SETUP_SECONDS = (5 + 5 + 65) * 60
+
+
+def run_timeout(seconds):
+    return max(1200, (seconds * 3 + 1) // 2 + 120)
 
 
 def positive_seconds(value):
@@ -40,14 +48,28 @@ def positive_seconds(value):
 
 def plan(config):
     runs = []
+    if not set(config.get("isolatedTests", {})) <= set(config["packages"]):
+        raise ValueError("isolated tests must belong to selected packages")
     for package, names in sorted(config["packages"].items()):
         weights = config.get("testSeconds", {}).get(package)
         splits = config.get("splitTests", {}).get(package, {})
+        isolated = config.get("isolatedTests", {}).get(package, {})
+        if isolated and (names is not None or weights is not None or splits):
+            raise ValueError("isolated tests require a whole-package selection")
         if weights is None:
             seconds = positive_seconds(config["estimatedSeconds"][package])
             if seconds > BATCH_SECONDS:
                 raise ValueError("oversized package needs measured test selections: " + package)
-            runs.append({"package": package, "tests": names, "estimatedSeconds": seconds})
+            if any(not re.fullmatch(r"Test\w+(?:/[A-Za-z0-9_.=-]+)*", name) or positive_seconds(value) > BATCH_SECONDS
+                   for name, value in isolated.items()):
+                raise ValueError("invalid isolated test or estimate")
+            if any(other.startswith(name + "/") for name in isolated for other in isolated):
+                raise ValueError("overlapping isolated tests")
+            roots = sorted({name.split("/", 1)[0] for name in isolated})
+            runs.append({"package": package, "tests": names, "estimatedSeconds": seconds,
+                         **({"excludeTests": roots} if isolated else {})})
+            for name, value in sorted(isolated.items()):
+                runs.append({"package": package, "tests": [name], "estimatedSeconds": value})
             continue
         if names is None or set(weights) != set(names) or not set(splits) <= set(names):
             raise ValueError("per-test estimates must cover the exact selected set")
@@ -91,6 +113,16 @@ def plan(config):
         batch["estimatedSeconds"] += item["estimatedSeconds"]
     if len(batches) > 256:
         raise ValueError("race plan exceeds the CI matrix limit")
+    for batch in batches:
+        # Reserve the full browser setup deadlines when those workflow steps
+        # run, in addition to common setup/upload and each selection's budget.
+        seconds = 720 + sum(run_timeout(r["estimatedSeconds"]) + BUILD_SECONDS for r in batch["runs"])
+        if BROWSER_PACKAGES.intersection(batch["packages"]):
+            seconds += BROWSER_SETUP_SECONDS
+        # Preserve the pre-existing push job floor as well as per-run budgets.
+        batch["timeoutMinutes"] = max(100, (seconds + 59) // 60)
+        if batch["timeoutMinutes"] > 360:
+            raise ValueError("race batch exceeds the GitHub job timeout limit")
     return {"include": batches}
 
 
@@ -126,7 +158,10 @@ def run(config, index):
         (directory / "discovery-command.txt").write_text(discovery)
         discovered = sorted(line for line in discovery.splitlines() if re.fullmatch(r"Test\w+", line))
         selected = selection["tests"]
-        selected = discovered if selected is None else selected
+        excluded = selection.get("excludeTests", [])
+        if not set(excluded) <= set(discovered):
+            raise ValueError(f"isolated race tests missing in {package}")
+        selected = [name for name in discovered if name not in excluded] if selected is None else selected
         if len(discovered) != len(set(discovered)) or not {name.split("/")[0] for name in selected} <= set(discovered):
             raise ValueError(f"focused race tests missing or duplicated in {package}")
         # Packages with no tests still compile under the race detector.
@@ -136,8 +171,12 @@ def run(config, index):
         (directory / "selection.json").write_text(json.dumps({"package": package, "tests": selected, "regex": regex}, indent=2) + "\n")
         # Keep full Test selections short without also running fuzz seeds or
         # examples, whose terminal events are outside the discovered Test set.
-        run_regex = "^Test" if selected and selected == discovered else regex
-        command = [GO, "test", "-race", "-json", "-vet=off", "-count=1", "-timeout=" + str(max(720, selection["estimatedSeconds"] + 60)) + "s", "-run", run_regex, package]
+        run_regex = "^Test" if selected and (selected == discovered or excluded) else regex
+        timeout = run_timeout(selection["estimatedSeconds"])
+        command = [GO, "test", "-race", "-json", "-vet=off", "-count=1", "-timeout=" + str(timeout) + "s", "-run", run_regex]
+        if excluded:
+            command.extend(["-skip", run_pattern(excluded)])
+        command.append(package)
         terminal = {}
         started = set()
         finished = set()

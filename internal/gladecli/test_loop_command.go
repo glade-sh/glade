@@ -66,6 +66,18 @@ func parseDaemonProject(args []string) (string, error) {
 func writeTestDaemonStatus(ctx context.Context, root string, w io.Writer) error {
 	socket := testdaemon.ServeSocketPath(root)
 	pidPath := testdaemon.ServePIDPath(root)
+	if err := testdaemon.ValidateDiscoverySocket(socket); err != nil {
+		if errors.Is(err, testdaemon.ErrDiscoveryDirectoryMissing) {
+			fmt.Fprintln(w, "test daemon: stopped")
+			fmt.Fprintf(w, "project: %s\n", root)
+			fmt.Fprintf(w, "socket: %s\n", socket)
+			fmt.Fprintln(w, "pid: none")
+			return nil
+		}
+		if !testdaemon.IsServerUnavailable(err) {
+			return err
+		}
+	}
 	resp, err := testdaemon.Ping(ctx, socket)
 	state := "stopped"
 	if err == nil && resp.OK {
@@ -87,6 +99,16 @@ func writeTestDaemonStatus(ctx context.Context, root string, w io.Writer) error 
 func stopTestDaemon(ctx context.Context, root string, w io.Writer) error {
 	socket := testdaemon.ServeSocketPath(root)
 	pidPath := testdaemon.ServePIDPath(root)
+	if err := testdaemon.ValidateDiscoverySocket(socket); err != nil {
+		if errors.Is(err, testdaemon.ErrDiscoveryDirectoryMissing) {
+			fmt.Fprintln(w, "test daemon: stopped")
+			fmt.Fprintf(w, "project: %s\n", root)
+			return nil
+		}
+		if !testdaemon.IsServerUnavailable(err) {
+			return err
+		}
+	}
 	resp, err := testdaemon.Ping(ctx, socket)
 	stale := testdaemon.IsServerUnavailable(err) &&
 		(errors.Is(err, os.ErrNotExist) || errors.Is(err, syscall.ECONNREFUSED))
@@ -160,6 +182,9 @@ func writeTestWizard(ctx context.Context, root string, w io.Writer) error {
 		return err
 	}
 	socket := testdaemon.ServeSocketPath(absRoot)
+	if err := testdaemon.ValidateDiscoverySocket(socket); err != nil && !testdaemon.IsServerUnavailable(err) {
+		return err
+	}
 	daemon := "stopped"
 	if resp, err := testdaemon.Ping(ctx, socket); err == nil && resp.OK {
 		daemon = "running"

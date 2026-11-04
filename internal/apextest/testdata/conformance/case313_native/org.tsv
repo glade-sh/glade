@@ -1,0 +1,11 @@
+api	route	case	observation
+62.0	istest	scalarDelete	ok
+62.0	istest	listDelete	ok
+62.0	istest	nestedSnapshot	before=true;delete=ok;held=true;fresh=false;restored=true
+62.0	istest	nestedControl	before=true;held=true;fresh=true;restored=true
+67.0	istest	scalarDelete	System.SecurityException|Access to entity 'ObjectPermissions' denied
+67.0	istest	listDelete	System.SecurityException|Access to entity 'ObjectPermissions' denied
+67.0	istest	nestedSnapshot	before=true;delete=System.SecurityException|Access to entity 'ObjectPermissions' denied;held=true;fresh=true;restored=true
+67.0	istest	nestedControl	before=true;held=true;fresh=true;restored=true
+62.0	anonymous	runAs	System.TypeException|System.runAs can only be used within a test method:
+67.0	anonymous	runAs	System.TypeException|System.runAs can only be used within a test method:

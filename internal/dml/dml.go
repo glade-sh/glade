@@ -419,6 +419,45 @@ func (e *Engine) Insert(records []storage.Record) []Result {
 	results := make([]Result, len(records))
 	statementStamp := ""
 	for i, record := range records {
+		if !e.DeferAutomation {
+			record = record.Clone()
+			object, objectName, err := e.object(record.Object)
+			if err != nil {
+				results[i] = resultFromError(record.ID, err)
+				continue
+			}
+			record, err = canonicalizeRecord(e.Org.Namespace, object.Definition, objectName, record)
+			if err != nil {
+				results[i] = resultFromError(record.ID, err)
+				continue
+			}
+			if failure, invalid := BeforeSaveCheckboxNullFailure(e.Org, record); invalid {
+				results[i] = failure
+				continue
+			}
+			// Keep the original input's writeability check ahead of automation.
+			// A separate copy avoids stripping fields from the Flow's input.
+			input := record.Clone()
+			stripImplicitReadOnlyDefaultFields(object.Definition, e.Org.Namespace, &input, true)
+			if err := e.validateInsertFieldWriteability(object.Definition, input); err != nil {
+				results[i] = resultFromError(record.ID, err)
+				continue
+			}
+			_, hadRecordType := record.GetField("RecordTypeId")
+			e.applyDefaultRecordTypeID(objectName, object.Definition, &record)
+			if _, hasRecordType := record.GetField("RecordTypeId"); !hadRecordType && hasRecordType && strings.EqualFold(objectName, "Account") && record.HasExplicitNull("LastName") {
+				// Preserve the input's provenance across before-save automation.
+				// The marker only remains valid while the record type is unchanged.
+				record.MarkDMLRecordTypeDefaulted()
+			}
+			applyFieldDefaults(e.Org, object.Definition, &record, e.systemUserID())
+			before := []storage.Record{record}
+			if err := e.ApplyBeforeSaveFlows(before); err != nil {
+				results[i] = resultFromError(record.ID, err)
+				continue
+			}
+			record = before[0]
+		}
 		id, err := e.insertOne(record, &statementStamp)
 		if err != nil {
 			results[i] = resultFromError(record.ID, err)
@@ -894,6 +933,9 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string) (stora
 		return "", err
 	}
 	normalizeNameFields(objectName, object.Definition, &record)
+	if err := validateBusinessAccountContacts(objectName, object.Definition, record); err != nil {
+		return "", err
+	}
 	if err := e.validatePersonAccountCustomFieldWrites(record); err != nil {
 		return "", err
 	}
@@ -961,8 +1003,10 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string) (stora
 	}
 	if strings.EqualFold(objectName, "ObjectPermissions") {
 		parent, supplied := record.GetField("ParentId")
-		if record.HasExplicitNull("ParentId") || supplied && parent.Kind == storage.ValueNull {
-			return "", dmlErrorf("INVALID_CROSS_REFERENCE_KEY", nil, "dml: null ObjectPermissions parent reference")
+		// An omitted ParentId is rejected like an explicit null (case289_followups
+		// OPV4, OPV7 at API 62.0 and 67.0).
+		if record.HasExplicitNull("ParentId") || !supplied || parent.Kind == storage.ValueNull {
+			return "", dmlErrorf("INVALID_CROSS_REFERENCE_KEY", nil, "Parent ID is invalid: null")
 		}
 	}
 	if err := e.validateReferences(object.Definition, record); err != nil {
@@ -1047,6 +1091,7 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string) (stora
 	materializeEmailMessageName(&record)
 	storedRecord := record.Clone()
 	storedRecord.ClearDMLRecordTypeDefaulted()
+	storedRecord.ClearDMLNameUnassigned()
 	storedRecord.AssignmentRule = nil
 	storedRecord.ParentRelationships = nil
 	storedRecord.LoadedReferences = nil

@@ -253,9 +253,9 @@ func ExecuteWithCacheAndContext(org storage.OrgState, query Query, cache *Execut
 		return Result{}, err
 	}
 	if strings.EqualFold(query.Object, "PlatformCachePartition") {
-		if object, ok := org.Objects["PlatformCachePartition"]; !ok || len(object.Records) == 0 {
+		if _, ok := org.Objects["PlatformCachePartition"]; !ok {
 			org = org.Clone()
-			storage.ApplyOrgShape(&org, []string{"PlatformCache"})
+			storage.EnsureStandardObject(&org, "PlatformCachePartition")
 		}
 	}
 	if strings.EqualFold(query.Object, "KnowledgeArticleVersion") {
@@ -331,6 +331,7 @@ func ExecuteWithCacheAndContext(org storage.OrgState, query Query, cache *Execut
 	ids := candidateRecordIDs(object, query.Where, query.AllRows)
 	sort.Strings(ids)
 
+	predicateScratch := &predicateScratch{}
 	matchedRecords := make([]storage.Record, 0, len(ids))
 	for _, idText := range ids {
 		record := object.Records[storage.ID(idText)]
@@ -347,7 +348,7 @@ func ExecuteWithCacheAndContext(org storage.OrgState, query Query, cache *Execut
 				continue
 			}
 		}
-		if matchesWithContext(org, object.Definition, record, query.Where, context) {
+		if matchesWithScratch(org, object.Definition, record, query.Where, context, predicateScratch) {
 			matchedRecords = append(matchedRecords, record)
 		}
 	}
@@ -389,8 +390,12 @@ func ExecuteWithCacheAndContext(org storage.OrgState, query Query, cache *Execut
 		}
 	}
 	records := make([]storage.Record, 0, len(matchedRecords))
+	var projection []projectionField
+	if len(matchedRecords) > 0 {
+		projection = prepareProjectionFields(query.Fields)
+	}
 	for _, record := range matchedRecords {
-		projected, err := projectRecord(org, object.Definition, record, query.Fields, query.ChildQueries, query.Typeofs, childCache, context)
+		projected, err := projectRecord(org, object.Definition, record, projection, query.ChildQueries, query.Typeofs, childCache, context)
 		if err != nil {
 			return Result{}, err
 		}
@@ -936,15 +941,13 @@ func aggregateRecords(org storage.OrgState, definition storage.ObjectDefinition,
 	groups := map[string]*group{}
 	var order []string
 	sets := groupingSets(query.GroupBy, query.GroupMode)
+	scratch := make([]storage.Value, len(query.GroupBy))
 	for _, record := range records {
 		for setIndex, active := range sets {
-			values := make(map[string]storage.Value, len(query.GroupBy))
-			grouping := make(map[string]bool, len(query.GroupBy))
 			parts := []string{strconv.Itoa(setIndex)}
-			for _, field := range query.GroupBy {
+			for i, field := range query.GroupBy {
 				if !active[field] {
-					values[field] = storage.NullValue()
-					grouping[field] = true
+					scratch[i] = storage.NullValue()
 					parts = append(parts, "1:")
 					continue
 				}
@@ -959,12 +962,20 @@ func aggregateRecords(org storage.OrgState, definition storage.ObjectDefinition,
 						value = storage.DateValue(value.String)
 					}
 				}
-				values[field] = value
+				scratch[i] = value
 				parts = append(parts, "0:"+aggregateGroupValueKey(org, definition, field, value))
 			}
 			key := strings.Join(parts, "\x00")
 			current, ok := groups[key]
 			if !ok {
+				values := make(map[string]storage.Value, len(query.GroupBy))
+				grouping := make(map[string]bool, len(query.GroupBy))
+				for i, field := range query.GroupBy {
+					values[field] = scratch[i]
+					if !active[field] {
+						grouping[field] = true
+					}
+				}
 				current = &group{key: key, values: values, grouping: grouping}
 				groups[key] = current
 				order = append(order, key)
@@ -1309,23 +1320,40 @@ func matches(org storage.OrgState, definition storage.ObjectDefinition, record s
 	return matchesWithContext(org, definition, record, condition, ExecutionContext{})
 }
 
+type literalBoundsKey struct {
+	start, end, zone string
+	utc              *time.Location
+}
+type literalBounds struct {
+	start, end time.Time
+	ok         bool
+}
+type predicateScratch struct {
+	bounds   map[literalBoundsKey]literalBounds
+	patterns map[string]*compiledLikePattern
+}
+
 func matchesWithContext(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, condition *Condition, context ExecutionContext) bool {
+	return matchesWithScratch(org, definition, record, condition, context, nil)
+}
+
+func matchesWithScratch(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, condition *Condition, context ExecutionContext, scratch *predicateScratch) bool {
 	if condition == nil {
 		return true
 	}
 	if condition.Not {
-		return !matchesWithContext(org, definition, record, &Condition{
+		return !matchesWithScratch(org, definition, record, &Condition{
 			RewrittenAggregate: condition.RewrittenAggregate,
 			And:                condition.And, Or: condition.Or,
 			Field: condition.Field, Formula: condition.Formula, Op: condition.Op,
 			Value: condition.Value, Value2: condition.Value2, Range: condition.Range,
 			DateLiteralTimeZoneID: condition.DateLiteralTimeZoneID,
 			Values:                condition.Values, Subquery: condition.Subquery,
-		}, context)
+		}, context, scratch)
 	}
 	if len(condition.And) > 0 {
 		for _, c := range condition.And {
-			if !matchesWithContext(org, definition, record, &c, context) {
+			if !matchesWithScratch(org, definition, record, &c, context, scratch) {
 				return false
 			}
 		}
@@ -1333,7 +1361,7 @@ func matchesWithContext(org storage.OrgState, definition storage.ObjectDefinitio
 	}
 	if len(condition.Or) > 0 {
 		for _, c := range condition.Or {
-			if matchesWithContext(org, definition, record, &c, context) {
+			if matchesWithScratch(org, definition, record, &c, context, scratch) {
 				return true
 			}
 		}
@@ -1353,7 +1381,7 @@ func matchesWithContext(org storage.OrgState, definition storage.ObjectDefinitio
 		left = translatedPredicateLabel(org, definition, expr.Args[0], left, context.Language)
 	}
 	if condition.Range && condition.DateLiteralTimeZoneID != "" {
-		if matched, handled := matchesDateLiteralRange(left, condition); handled {
+		if matched, handled := matchesDateLiteralRangeWithScratch(left, condition, scratch); handled {
 			return matched
 		}
 	}
@@ -1408,9 +1436,9 @@ func matchesWithContext(org storage.OrgState, definition storage.ObjectDefinitio
 		}
 		return compareValues(left, bound) <= 0
 	case "LIKE":
-		return likeMatch(left, condition.Value)
+		return likeMatchWithScratch(left, condition.Value, scratch)
 	case "NOT LIKE":
-		return !likeMatch(left, condition.Value)
+		return !likeMatchWithScratch(left, condition.Value, scratch)
 	case "INCLUDES":
 		return includesConditionMatch(org, left, condition)
 	case "EXCLUDES":
@@ -1462,6 +1490,10 @@ func MatchesDateLiteralRange(left storage.Value, condition *Condition) (bool, bo
 // timezone. The parser keeps the range values as Date values so existing Date
 // field behavior remains unchanged.
 func matchesDateLiteralRange(left storage.Value, condition *Condition) (bool, bool) {
+	return matchesDateLiteralRangeWithScratch(left, condition, nil)
+}
+
+func matchesDateLiteralRangeWithScratch(left storage.Value, condition *Condition, scratch *predicateScratch) (bool, bool) {
 	if left.Kind == storage.ValueNull || condition.Value.Kind != storage.ValueDate || condition.Value2.Kind != storage.ValueDate {
 		return false, false
 	}
@@ -1470,7 +1502,25 @@ func matchesDateLiteralRange(left storage.Value, condition *Condition) (bool, bo
 		compareStart = strings.Compare(left.String, condition.Value.String)
 		compareEnd = strings.Compare(left.String, condition.Value2.String)
 	} else if left.Kind == storage.ValueDateTime {
-		start, end, ok := dateLiteralUTCBounds(condition.Value.String, condition.Value2.String, condition.DateLiteralTimeZoneID)
+		zone := strings.TrimSpace(condition.DateLiteralTimeZoneID)
+		cacheable := scratch != nil && len(condition.Value.String) <= 64 && len(condition.Value2.String) <= 64 && len(condition.DateLiteralTimeZoneID) <= 64 && (zone == "" || strings.EqualFold(zone, "UTC") || strings.EqualFold(zone, "GMT"))
+		key := literalBoundsKey{start: condition.Value.String, end: condition.Value2.String, zone: condition.DateLiteralTimeZoneID, utc: time.UTC}
+		var bounds literalBounds
+		var found bool
+		if cacheable {
+			bounds, found = scratch.bounds[key]
+		}
+		if !found {
+			bounds.start, bounds.end, bounds.ok = dateLiteralUTCBounds(key.start, key.end, key.zone)
+			if cacheable {
+				if scratch.bounds == nil {
+					scratch.bounds = make(map[literalBoundsKey]literalBounds)
+				}
+				clear(scratch.bounds)
+				scratch.bounds[key] = bounds
+			}
+		}
+		start, end, ok := bounds.start, bounds.end, bounds.ok
 		if !ok {
 			return false, false
 		}
@@ -1649,7 +1699,22 @@ func newChildRelationshipQueryCache(execution *ExecutionCache) *childRelationshi
 	}
 }
 
-func projectRecord(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, fields []string, childQueries []ChildQuery, typeofs []TypeofSpec, childCache *childRelationshipQueryCache, context ExecutionContext) (storage.Record, error) {
+type projectionField struct {
+	raw    string
+	expr   selectFieldExpression
+	isExpr bool
+}
+
+func prepareProjectionFields(fields []string) []projectionField {
+	plan := make([]projectionField, len(fields))
+	for i, field := range fields {
+		expr, ok := parseSelectFieldExpression(field)
+		plan[i] = projectionField{raw: field, expr: expr, isExpr: ok}
+	}
+	return plan
+}
+
+func projectRecord(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, fields []projectionField, childQueries []ChildQuery, typeofs []TypeofSpec, childCache *childRelationshipQueryCache, context ExecutionContext) (storage.Record, error) {
 	out := storage.Record{
 		ID:            record.ID,
 		Object:        record.Object,
@@ -1658,8 +1723,9 @@ func projectRecord(org storage.OrgState, definition storage.ObjectDefinition, re
 		ExplicitNulls: make(map[string]bool),
 		System:        record.System,
 	}
-	for _, field := range fields {
-		if expr, ok := parseSelectFieldExpression(field); ok {
+	for _, selected := range fields {
+		field := selected.raw
+		if expr, ok := selected.expr, selected.isExpr; ok {
 			if value, ok := selectFieldExpressionValue(org, definition, record, expr); ok {
 				output := expr.outputName()
 				if expr.Func == "TOLABEL" && expr.Alias != "" && len(expr.Args) == 1 {
@@ -1787,6 +1853,7 @@ func executeChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 		}
 	}
 	sort.Strings(ids)
+	predicateScratch := &predicateScratch{}
 	matched := make([]storage.Record, 0, len(ids))
 	for _, idText := range ids {
 		child := childObject.Records[storage.ID(idText)]
@@ -1798,7 +1865,7 @@ func executeChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 		if !ok || !equalValues(parentID, storage.IDValue(parent.ID)) {
 			continue
 		}
-		if matchesWithContext(org, childObject.Definition, child, query.Where, context) {
+		if matchesWithScratch(org, childObject.Definition, child, query.Where, context, predicateScratch) {
 			matched = append(matched, child)
 		}
 	}
@@ -1807,8 +1874,15 @@ func executeChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 	}
 	matched = applyWindow(matched, query.Offset, query.Limit, query.HasLimit)
 	out := make([]storage.Record, 0, len(matched))
+	if len(matched) > 0 && prepared.projection == nil {
+		prepared.projection = prepareProjectionFields(query.Fields)
+		if childCache != nil {
+			key := strings.ToLower(parentDefinition.APIName + "." + childQuery.Relationship)
+			childCache.prepared[key] = prepared
+		}
+	}
 	for _, child := range matched {
-		projected, err := projectRecord(org, childObject.Definition, child, query.Fields, query.ChildQueries, query.Typeofs, childCache, context)
+		projected, err := projectRecord(org, childObject.Definition, child, prepared.projection, query.ChildQueries, query.Typeofs, childCache, context)
 		if err != nil {
 			return nil, err
 		}
@@ -1889,14 +1963,14 @@ func childRelationshipFieldQualifierMatchesCached(org storage.OrgState, childObj
 	}
 	cache := childCache.execution
 	key := childRelationshipFieldQualifierCacheKey(org.Namespace, childObjectName, definition.APIName, prefix)
-	cache.mu.Lock()
+	cache.mu.RLock()
 	if cache.childFieldQualifierMatches != nil {
 		if cached, ok := cache.childFieldQualifierMatches[key]; ok {
-			cache.mu.Unlock()
+			cache.mu.RUnlock()
 			return cached
 		}
 	}
-	cache.mu.Unlock()
+	cache.mu.RUnlock()
 
 	matched := childRelationshipFieldQualifierMatches(org, childObjectName, definition, prefix)
 	cache.mu.Lock()
@@ -1963,14 +2037,20 @@ func childRelationshipCached(org storage.OrgState, parentDefinition storage.Obje
 		return childRelationship(org, parentDefinition, relationship)
 	}
 	cache := childCache.execution
+	key := childRelationshipCacheKey(org.Namespace, parentDefinition.APIName, relationship)
+	cache.mu.RLock()
+	cached, found := cache.childRelationships[key]
+	cache.mu.RUnlock()
+	if found {
+		return cached.childObjectName, cached.relation, cached.ok
+	}
 	cache.mu.Lock()
 	defer cache.mu.Unlock()
-	if cache.childRelationships == nil {
-		cache.childRelationships = make(map[string]childRelationshipResolution)
-	}
-	key := childRelationshipCacheKey(org.Namespace, parentDefinition.APIName, relationship)
 	if cached, ok := cache.childRelationships[key]; ok {
 		return cached.childObjectName, cached.relation, cached.ok
+	}
+	if cache.childRelationships == nil {
+		cache.childRelationships = make(map[string]childRelationshipResolution)
 	}
 	childObjectName, relation, ok := childRelationship(org, parentDefinition, relationship)
 	cache.childRelationships[key] = childRelationshipResolution{childObjectName: childObjectName, relation: relation, ok: ok}
@@ -4396,7 +4476,9 @@ func valueKey(value storage.Value) string {
 	}
 }
 
-func likeMatch(left, right storage.Value) bool {
+func likeMatch(left, right storage.Value) bool { return likeMatchWithScratch(left, right, nil) }
+
+func likeMatchWithScratch(left, right storage.Value, scratch *predicateScratch) bool {
 	if right.Kind == storage.ValueID {
 		// Typed Id binds carry their complete 18-character text into LIKE.
 		right = storage.StringValue(string(right.ID))
@@ -4404,7 +4486,19 @@ func likeMatch(left, right storage.Value) bool {
 	if left.Kind != storage.ValueString || right.Kind != storage.ValueString {
 		return false
 	}
-	return matchLikePattern(left.String, right.String)
+	if scratch == nil || len(right.String) > 4096 {
+		return matchLikePattern(left.String, right.String)
+	}
+	if scratch.patterns == nil {
+		scratch.patterns = make(map[string]*compiledLikePattern)
+	}
+	pattern, found := scratch.patterns[right.String]
+	if !found {
+		pattern = compileLikePattern(right.String)
+		clear(scratch.patterns)
+		scratch.patterns[right.String] = pattern
+	}
+	return pattern.match(left.String)
 }
 
 func includesMatch(org storage.OrgState, left, right storage.Value) bool {
@@ -4501,13 +4595,13 @@ func splitMultiPicklistValue(text string) []string {
 	return values
 }
 
-func matchLikePattern(text, pattern string) bool {
-	// Tokenize escaped LIKE wildcards before matching. SOQL string decoding
-	// keeps these markers so a literal backslash remains distinct from \_ / \%.
-	type patternToken struct {
-		kind  byte // '%', '_', or literal
-		value byte
-	}
+type patternToken struct{ kind, value byte }
+type compiledLikePattern struct {
+	tokens     []patternToken
+	prev, curr []bool
+}
+
+func compileLikePattern(pattern string) *compiledLikePattern {
 	tokens := make([]patternToken, 0, len(pattern))
 	for i := 0; i < len(pattern); i++ {
 		if pattern[i] == '\\' && i+1 < len(pattern) && (pattern[i+1] == '\\' || pattern[i+1] == '_' || pattern[i+1] == '%') {
@@ -4522,12 +4616,18 @@ func matchLikePattern(text, pattern string) bool {
 			tokens = append(tokens, patternToken{value: pattern[i]})
 		}
 	}
+	return &compiledLikePattern{tokens: tokens, prev: make([]bool, len(tokens)+1), curr: make([]bool, len(tokens)+1)}
+}
+func matchLikePattern(text, pattern string) bool { return compileLikePattern(pattern).match(text) }
+func (p *compiledLikePattern) match(text string) bool {
 	// Dynamic programming over text bytes and the tokenized LIKE pattern.
-	m, n := len(text), len(tokens)
+	m, n := len(text), len(p.tokens)
+	tokens := p.tokens
 	// dp[i][j] = true if text[i:] matches pattern[j:]
 	// Use two rows to keep O(n) space.
-	prev := make([]bool, n+1)
-	curr := make([]bool, n+1)
+	prev, curr := p.prev, p.curr
+	clear(prev)
+	clear(curr)
 	prev[n] = true
 	for j := n - 1; j >= 0; j-- {
 		if tokens[j].kind == '%' {

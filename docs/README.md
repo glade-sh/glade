@@ -2,7 +2,7 @@
 
 This map keeps first-use docs in one place.
 
-The v0.3.0 support window is Apex 62.0-68.0, LWC and Visualforce 59.0-68.0.
+The supported window is Apex 62.0-67.0, LWC and Visualforce 59.0-67.0.
 Apex source API below 62.0 is unsupported. DataWeave, ConnectApi, and Slack
 are excluded and unsupported. See [RELEASE_POLICY.md](RELEASE_POLICY.md#salesforce-api-versions)
 for endpoint versions and Execute Anonymous eligibility.

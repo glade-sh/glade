@@ -206,6 +206,7 @@ type DescribeFieldResult struct {
 	// Internal provenance carried through storage/describe conversions.
 	RestrictedPicklistFromCatalog bool `json:"restrictedPicklistFromCatalog,omitempty"`
 	StandardValueSetApplied       bool `json:"standardValueSetApplied,omitempty"`
+	PicklistValuesConfigured      bool `json:"picklistValuesConfigured,omitempty"`
 
 	MetadataRelationshipControllingField string `json:"metadataRelationshipControllingField,omitempty"`
 }
@@ -401,6 +402,7 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 				Encrypted:                field.Encrypted,
 				RestrictedPicklist:       field.RestrictedPicklist,
 				StandardValueSetApplied:  field.StandardValueSetApplied,
+				PicklistValuesConfigured: field.PicklistValuesConfigured || field.PicklistValues != nil,
 				NamePointing:             len(references) > 1,
 				Updateable:               updateable,
 				Createable:               createable,
@@ -877,6 +879,7 @@ func ToObjectDefinition(describe DescribeSObjectResult) storage.ObjectDefinition
 
 			RestrictedPicklistFromCatalog:        field.RestrictedPicklistFromCatalog,
 			StandardValueSetApplied:              field.StandardValueSetApplied,
+			PicklistValuesConfigured:             field.PicklistValuesConfigured,
 			MetadataRelationshipControllingField: field.MetadataRelationshipControllingField,
 		}
 	}
@@ -974,6 +977,7 @@ func FromObjectDefinition(definition storage.ObjectDefinition) DescribeSObjectRe
 
 			RestrictedPicklistFromCatalog:        field.RestrictedPicklistFromCatalog,
 			StandardValueSetApplied:              field.StandardValueSetApplied,
+			PicklistValuesConfigured:             field.PicklistValuesConfigured,
 			MetadataRelationshipControllingField: field.MetadataRelationshipControllingField,
 		}
 	}

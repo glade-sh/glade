@@ -49,3 +49,27 @@ func TestInvocableFlowTargetReferenceValidation(t *testing.T) {
 		t.Fatal("legacy loop boundary changed")
 	}
 }
+
+// Native Invocable.Action rows (apextest/testdata/conformance/flow_null_comparisons
+// routes, API 62/67) run a flow with internal Currency variables. Currency
+// inputs and outputs have no native action rows and keep the boundary.
+func TestInvocableFlowActionCurrencyVariableAdmission(t *testing.T) {
+	steps := []storage.FlowStep{{Kind: "assignment", Assignment: storage.FlowAssignment{Operator: "Assign"}}}
+	for _, test := range []struct {
+		name     string
+		variable storage.FlowVariable
+		want     bool
+	}{
+		{name: "internal", variable: storage.FlowVariable{Name: "price", DataType: "Currency"}, want: true},
+		{name: "input", variable: storage.FlowVariable{Name: "price", DataType: "Currency", IsInput: true}},
+		{name: "output", variable: storage.FlowVariable{Name: "price", DataType: "Currency", IsOutput: true}},
+		{name: "collection", variable: storage.FlowVariable{Name: "price", DataType: "Currency", IsCollection: true}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			rule := storage.FlowRule{ProcessType: "AutoLaunchedFlow", Variables: []storage.FlowVariable{test.variable}, Steps: steps}
+			if got := invocableFlowActionSupported(rule); got != test.want {
+				t.Fatalf("supported=%v; want %v", got, test.want)
+			}
+		})
+	}
+}

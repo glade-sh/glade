@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { chromium } from "./shared-playwright.mjs";
-import { requireLWCToolchain, startLWCDevServer } from "./helpers.mjs";
+import { newLocalPage, requireLWCToolchain, startLWCDevServer } from "./helpers.mjs";
 
 const fixture = "testdata/local-tests/lwc-shell";
 
@@ -25,7 +25,7 @@ test("LWC dev shell renders a record FlexiPage with local data and shims", async
   const consoleErrors = [];
   try {
     browser = await chromium.launch({ headless: true });
-    const page = await browser.newPage();
+    const page = await newLocalPage(browser);
     page.on("pageerror", (err) => {
       pageErrors.push(err.message);
     });

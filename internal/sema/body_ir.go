@@ -18,6 +18,9 @@ import (
 const runtimeLoweringDiagnosticCode = "GLADERUNTIME001"
 
 func (a *Analyzer) checkBodyText(typ typesys.TypeSymbol, member typesys.MemberSymbol, body string, bodyOffset int, source string, model *semaTypeMemberView, constructability map[string]typesys.TypeSymbol) []diagnostic.Diagnostic {
+	if model != nil && model.bodyFieldScopeMemo == nil {
+		model.bodyFieldScopeMemo = &semaBodyFieldScopeMemo{}
+	}
 	// Some catalog reference targets are available only in named Apex source.
 	// Keep that visibility local to this body, including its hydration cache.
 	if typ.Kind == apexast.DeclarationClass && member.Kind != apexast.DeclarationTrigger && semaNamedApexSourceType(typ) {
@@ -25,6 +28,8 @@ func (a *Analyzer) checkBodyText(typ typesys.TypeSymbol, member typesys.MemberSy
 		bodyModel := *model
 		bodyModel.namedApexReferenceObjects = true
 		bodyModel.namedApexReferenceMembers = nil
+		bodyModel.methodFamilies = nil
+		bodyModel.lastMethodFamilyValid = false
 		model = &bodyModel
 	}
 	member = semaNormalizeMemberTypes(model, typ.Name, member)
@@ -231,11 +236,45 @@ func semaIRNameSpan(source string, from int, name string) (int, int, bool) {
 	return from, from, false
 }
 
+type semaBodyFieldScopeKey struct {
+	typeName, sourceUnit string
+	epoch                uint64
+	anonymous, namedApex bool
+}
+
+type semaBodyFieldScopeMemo struct {
+	last, cached           semaBodyFieldScopeKey
+	lastValid, cachedValid bool
+	scope                  map[string]string
+}
+
 func semaBodyBaseScope(typ typesys.TypeSymbol, member typesys.MemberSymbol, model *semaTypeMemberView) map[string]string {
-	baseScope := make(map[string]string)
-	baseScope[semaCurrentTypeScopeKey] = typ.Name
-	for name, fieldType := range semaFieldScope(model, typ.Name, make(map[string]bool)) {
-		baseScope[name] = fieldType
+	var baseScope map[string]string
+	if model != nil {
+		if model.bodyFieldScopeMemo == nil {
+			model.bodyFieldScopeMemo = &semaBodyFieldScopeMemo{}
+		}
+		memo := model.bodyFieldScopeMemo
+		epoch := model.fieldHydrationEpoch()
+		key := semaBodyFieldScopeKey{typ.Name, model.sourceUnit, *epoch, model.anonymous, model.namedApexReferenceObjects}
+		if memo.cachedValid && memo.cached == key {
+			baseScope = maps.Clone(memo.scope)
+		} else {
+			baseScope = make(map[string]string)
+			baseScope[semaCurrentTypeScopeKey] = typ.Name
+			semaCollectFieldScope(model, typ.Name, make(map[string]bool), baseScope)
+			if *epoch == key.epoch {
+				if memo.lastValid && memo.last == key {
+					memo.cached, memo.cachedValid = key, true
+					memo.scope = maps.Clone(baseScope)
+				}
+				memo.last, memo.lastValid = key, true
+			}
+		}
+	} else {
+		baseScope = make(map[string]string)
+		baseScope[semaCurrentTypeScopeKey] = typ.Name
+		semaCollectFieldScope(model, typ.Name, make(map[string]bool), baseScope)
 	}
 	for _, param := range member.Parameters {
 		baseScope[normalizeName(param.Name)] = param.Type
@@ -305,14 +344,19 @@ func dedupeBodyDiagnostics(diagnostics []diagnostic.Diagnostic) []diagnostic.Dia
 
 func semaFieldScope(model *semaTypeMemberView, typeName string, seen map[string]bool) map[string]string {
 	out := make(map[string]string)
+	semaCollectFieldScope(model, typeName, seen, out)
+	return out
+}
+
+func semaCollectFieldScope(model *semaTypeMemberView, typeName string, seen map[string]bool, out map[string]string) {
 	key := normalizeName(typeName)
 	if key == "" || seen[key] {
-		return out
+		return
 	}
 	seen[key] = true
 	members, ok := model.lookup(key)
 	if !ok {
-		return out
+		return
 	}
 	members = semaEnsureStandardSObjectTypeMembers(model, key, members)
 	for _, owner := range semaEnclosingTypeNames(members.name) {
@@ -327,13 +371,10 @@ func semaFieldScope(model *semaTypeMemberView, typeName string, seen map[string]
 			}
 		}
 	}
-	for name, field := range semaFieldScope(model, members.superClass, seen) {
-		out[name] = field
-	}
+	semaCollectFieldScope(model, members.superClass, seen, out)
 	for name, field := range members.fields {
 		out[name] = field.Type
 	}
-	return out
 }
 
 func semaEnclosingTypeNames(typeName string) []string {
@@ -4637,6 +4678,33 @@ func semaIRSObjectSpelledLocal(root string, scope irSemaScope, model *semaTypeMe
 	return binding.typ, true
 }
 
+// semaAnonymousReferenceOnlySObjectTypeRead reports a bare <Object>.SObjectType
+// read of a reference-only standard object (FieldServiceMobileExtension) in
+// anonymous Apex. Native rejects the read with "Variable does not exist:
+// <Object>"; named source admits the type. Native: reference_only_surfaces
+// org.tsv describe_sobjecttype_str at 62.0 and 67.0. Locals, fields and
+// declared types named <Object> keep their own rules, and Schema.<Object>
+// has no row.
+func semaAnonymousReferenceOnlySObjectTypeRead(name string, scope irSemaScope, model *semaTypeMemberView) bool {
+	// Anonymous Apex only: named classes and trigger bodies admit the type
+	// (native ORG-RUN.txt and trigger-org.tsv at 62.0, 66.0 and 67.0).
+	if !scope.anonymous {
+		return false
+	}
+	root, member, ok := strings.Cut(strings.TrimSpace(name), ".")
+	if !ok || !strings.EqualFold(member, "SObjectType") || !storage.IsReferenceOnlyStandardObject(root) {
+		return false
+	}
+	if _, scoped := scope.lookup(root); scoped {
+		return false
+	}
+	if model == nil || model.namedApexReferenceObjects {
+		return false
+	}
+	_, declared := model.lookup(normalizeName(root))
+	return !declared
+}
+
 // semaIRSameSpelledLocalSObjectTypeRead reports X.SObjectType where X is such
 // a local. A record has no SObjectType member, so native reports "Variable
 // does not exist: SObjectType": M1 S09/S109, H2S2X and H2R1T (an Account
@@ -4969,6 +5037,10 @@ func (a *Analyzer) irVariableDiagnostic(typ typesys.TypeSymbol, member typesys.M
 				return item, true
 			}
 		}
+	}
+	if semaAnonymousReferenceOnlySObjectTypeRead(name, scope, model) {
+		message := "Variable does not exist: " + root
+		return diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA013", Message: message, NativeMessage: message, File: typ.File, Range: semaRange(source, start, start+max(1, len(name)))}, true
 	}
 	if semaIRExprLooksLikeStaticSObjectToken(name, scope, model) {
 		return diagnostic.Diagnostic{}, false

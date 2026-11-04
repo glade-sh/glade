@@ -1,0 +1,35 @@
+import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { mkdir, mkdtemp, readFile, realpath, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { test } from "node:test";
+
+const repo = fileURLToPath(new URL("../../", import.meta.url));
+test("interrupted installation recovers before a later download fails", async () => {
+  const root = await mkdtemp(join(tmpdir(), "glade-recovery-"));
+  const xdg = join(root, "xdg"), share = join(xdg, "glade"), bin = join(root, "bin"), commands = join(root, "commands");
+  const txn = join(share, ".install-txn.fixture"), backup = join(txn, "backup/third_party/lwc");
+  await mkdir(backup, { recursive: true });
+  await mkdir(join(share, "third_party/lwc"), { recursive: true });
+  await writeFile(join(share, ".install.lock"), "S" + await realpath(share));
+  await mkdir(bin);
+  await mkdir(commands);
+  await writeFile(join(txn, "install-dir"), `${bin}\n`);
+  await writeFile(join(txn, "names"), "third_party\n");
+  await writeFile(join(txn, "started"), "");
+  await writeFile(join(txn, "had-third_party"), "");
+  await writeFile(join(txn, "had-binary"), "");
+  await writeFile(join(backup, "old.mjs"), "old asset\n");
+  await writeFile(join(share, "third_party/lwc/new.mjs"), "new asset\n");
+  await writeFile(join(bin, ".install-txn.fixture.backup"), "old executable\n");
+  await writeFile(join(bin, "glade"), "new executable\n");
+  await writeFile(join(commands, "curl"), "#!/bin/sh\nexit 22\n", { mode: 0o755 });
+  const env = { ...process.env, PATH: `${commands}:${process.env.PATH}`, HOME: root, XDG_DATA_HOME: xdg, GLADE_INSTALL_DIR: bin, GLADE_VERSION: "v9.9.9" };
+  delete env.GLADE_HOME;
+  const result = spawnSync("sh", [join(repo, "site/install.sh")], { env, encoding: "utf8" });
+  assert.notEqual(result.status, 0);
+  assert.equal(await readFile(join(bin, "glade"), "utf8"), "old executable\n", result.stderr + result.stdout);
+  assert.equal(await readFile(join(share, "third_party/lwc/old.mjs"), "utf8"), "old asset\n");
+});

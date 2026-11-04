@@ -37,6 +37,14 @@ func standardOptionalFieldsNeedRepair(definition ObjectDefinition, signature str
 			return true
 		}
 	}
+	for _, field := range policy.picklistFields {
+		if name, exists := ResolveFieldName(definition, "", field.APIName); exists {
+			existing := definition.Fields[name]
+			if !existing.PicklistValuesConfigured && len(existing.PicklistValues) == 0 {
+				return true
+			}
+		}
+	}
 	gatePresence, indexed := optionalGatePresence(definition, policy)
 	for _, gate := range policy.gates {
 		// An unknown shape retains existing catalog fields, but does not

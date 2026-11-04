@@ -43,6 +43,10 @@ a different effective source version. The checked Apex window is `65.0`,
 silently promoted into that window. A local pass does not prove deployment,
 org permissions, hosted services, or production parity.
 
+Doctor checks the project Apex source version against the runtime checked window.
+The supported target is Apex 62.0–67.0; preserving a version or passing locally
+does not prove Salesforce parity.
+
 ## Permission-Gated Tests
 
 When a project has no profile metadata, Glade keeps its local running test user
@@ -268,7 +272,7 @@ pin the source. The same server exposes the current standard-component support
 rows as local JSON:
 
 ```bash
-curl http://127.0.0.1:8080/services/data/v65.0/glade/visualforce/support
+curl -H 'X-Glade-Client: 1' http://127.0.0.1:8080/services/data/v65.0/glade/visualforce/support
 ```
 
 Use `--port 8080` for the common localhost shortcut. Use an ephemeral address

@@ -1,0 +1,10 @@
+id	case
+K1-distinct	decimal external key differs from existing key
+K1-equal	decimal external key equals existing key
+K1-multiple	distinct key when multiple records exist
+K1-duplicate	two stored records share a key
+K4-empty	business account with empty PersonEmail
+K4-spaces	business account with whitespace PersonEmail
+K4-tab	business account with mixed tab and spaces PersonEmail
+K4-nonempty	business account with populated PersonEmail
+K4-invalid	business account with invalid email text

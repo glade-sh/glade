@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -128,6 +129,7 @@ type Field struct {
 	PicklistValueSettings         []PicklistSetting  `json:"picklistValueSettings,omitempty"`
 	ValueSetName                  string             `json:"valueSetName,omitempty"`
 	StandardValueSetApplied       bool               `json:"standardValueSetApplied,omitempty"`
+	PicklistValuesConfigured      bool               `json:"picklistValuesConfigured,omitempty"`
 	RestrictedPicklist            bool               `json:"restrictedPicklist,omitempty"`
 	PicklistValues                []PicklistValue    `json:"picklistValues,omitempty"`
 
@@ -136,6 +138,39 @@ type Field struct {
 	// CompoundFieldName names the custom Address field that generated this
 	// component field; source metadata never declares components.
 	CompoundFieldName string `json:"compoundFieldName,omitempty"`
+}
+
+// MarshalJSON records an explicitly supplied list even when it is empty and
+// therefore omitted by the slice's ordinary omitempty encoding.
+func (field Field) MarshalJSON() ([]byte, error) {
+	type fieldAlias Field
+	return json.Marshal(struct {
+		fieldAlias
+		Configured bool `json:"picklistValuesConfigured,omitempty"`
+	}{fieldAlias: fieldAlias(field), Configured: field.PicklistValuesConfigured || field.PicklistValues != nil})
+}
+
+// UnmarshalJSON retains the distinction between an omitted value list and an
+// explicitly supplied empty list in project schema snapshots.
+func (field *Field) UnmarshalJSON(data []byte) error {
+	type fieldAlias Field
+	var wire struct {
+		*fieldAlias
+		Configured *bool `json:"picklistValuesConfigured"`
+	}
+	wire.fieldAlias = (*fieldAlias)(field)
+	if err := json.Unmarshal(data, &wire); err != nil {
+		return err
+	}
+	if wire.Configured != nil {
+		field.PicklistValuesConfigured = *wire.Configured
+		if !*wire.Configured && len(field.PicklistValues) == 0 {
+			field.PicklistValues = nil
+		}
+	} else if field.PicklistValues != nil {
+		field.PicklistValuesConfigured = true
+	}
+	return nil
 }
 
 type FilteredLookupInfo struct {
@@ -317,11 +352,11 @@ type validationRuleXML struct {
 }
 
 type valueSetXML struct {
-	ControllingField string                `xml:"controllingField"`
-	Definition       valueSetDefinitionXML `xml:"valueSetDefinition"`
-	Name             string                `xml:"valueSetName"`
-	Restricted       bool                  `xml:"restricted"`
-	ValueSettings    []valueSettingXML     `xml:"valueSettings"`
+	ControllingField string                 `xml:"controllingField"`
+	Definition       *valueSetDefinitionXML `xml:"valueSetDefinition"`
+	Name             string                 `xml:"valueSetName"`
+	Restricted       bool                   `xml:"restricted"`
+	ValueSettings    []valueSettingXML      `xml:"valueSettings"`
 }
 
 type valueSettingXML struct {
@@ -368,6 +403,13 @@ type sharingReasonXML struct {
 
 func LoadProject(p project.Project) (Schema, error) {
 	byName := make(map[string]*Object)
+	indexes := make(map[*Object]*memberIndexes)
+	indexesFor := func(object *Object) *memberIndexes {
+		if indexes[object] == nil {
+			indexes[object] = newMemberIndexes(object)
+		}
+		return indexes[object]
+	}
 	valueSets, err := loadValueSets(p)
 	if err != nil {
 		return Schema{}, err
@@ -379,7 +421,7 @@ func LoadProject(p project.Project) (Schema, error) {
 			return Schema{}, err
 		}
 		if existing, ok := byName[object.Name]; ok {
-			mergeObjectMetadata(existing, object)
+			mergeObjectMetadataIndexed(existing, object, indexesFor(existing))
 		} else {
 			byName[object.Name] = &object
 		}
@@ -395,7 +437,7 @@ func LoadProject(p project.Project) (Schema, error) {
 		// assertion on a non-partial snapshot establishes authority.
 		object.CompleteSnapshot = object.FieldsComplete && !object.Partial
 		if existing := byName[object.Name]; existing != nil {
-			mergeObjectMetadata(existing, object)
+			mergeObjectMetadataIndexed(existing, object, indexesFor(existing))
 			existing.FieldsComplete = existing.FieldsComplete || object.FieldsComplete
 			existing.CompleteSnapshot = existing.CompleteSnapshot || object.CompleteSnapshot
 		} else {
@@ -420,9 +462,12 @@ func LoadProject(p project.Project) (Schema, error) {
 			object = &Object{Name: objectName, Partial: true}
 			byName[objectName] = object
 		}
-		if i := fieldIndex(object.Fields, field.Name); i >= 0 {
+		index := indexesFor(object)
+		if i := index.fields.find(field.Name, func() int { return fieldIndex(object.Fields, field.Name) }); i >= 0 {
 			object.Fields[i] = field
+			index.fields.observe(field.Name, i)
 		} else {
+			index.fields.observe(field.Name, len(object.Fields))
 			object.Fields = append(object.Fields, field)
 		}
 	}
@@ -441,9 +486,12 @@ func LoadProject(p project.Project) (Schema, error) {
 			object = &Object{Name: objectName, Partial: true}
 			byName[objectName] = object
 		}
-		if i := recordTypeIndex(object.RecordTypes, recordType.DeveloperName); i >= 0 {
+		index := indexesFor(object)
+		if i := index.records.find(recordType.DeveloperName, func() int { return recordTypeIndex(object.RecordTypes, recordType.DeveloperName) }); i >= 0 {
 			object.RecordTypes[i] = recordType
+			index.records.observe(recordType.DeveloperName, i)
 		} else {
+			index.records.observe(recordType.DeveloperName, len(object.RecordTypes))
 			object.RecordTypes = append(object.RecordTypes, recordType)
 		}
 	}
@@ -463,9 +511,12 @@ func LoadProject(p project.Project) (Schema, error) {
 			object = &Object{Name: objectName, Partial: true}
 			byName[objectName] = object
 		}
-		if i := validationRuleIndex(object.ValidationRules, rule.Name); i >= 0 {
+		index := indexesFor(object)
+		if i := index.rules.find(rule.Name, func() int { return validationRuleIndex(object.ValidationRules, rule.Name) }); i >= 0 {
 			object.ValidationRules[i] = rule
+			index.rules.observe(rule.Name, i)
 		} else {
+			index.rules.observe(rule.Name, len(object.ValidationRules))
 			object.ValidationRules = append(object.ValidationRules, rule)
 		}
 	}
@@ -545,6 +596,10 @@ func loadPinnedSchemaSnapshot(p project.Project) ([]Object, error) {
 }
 
 func mergeObjectMetadata(dst *Object, src Object) {
+	mergeObjectMetadataIndexed(dst, src, newMemberIndexes(dst))
+}
+
+func mergeObjectMetadataIndexed(dst *Object, src Object, index *memberIndexes) {
 	if dst.Label == "" {
 		dst.Label = src.Label
 	}
@@ -600,17 +655,20 @@ func mergeObjectMetadata(dst *Object, src Object) {
 		dst.NameField = src.NameField
 	}
 	for _, field := range src.Fields {
-		if fieldIndex(dst.Fields, field.Name) < 0 {
+		if index.fields.find(field.Name, func() int { return fieldIndex(dst.Fields, field.Name) }) < 0 {
+			index.fields.observe(field.Name, len(dst.Fields))
 			dst.Fields = append(dst.Fields, field)
 		}
 	}
 	for _, recordType := range src.RecordTypes {
-		if recordTypeIndex(dst.RecordTypes, recordType.DeveloperName) < 0 {
+		if index.records.find(recordType.DeveloperName, func() int { return recordTypeIndex(dst.RecordTypes, recordType.DeveloperName) }) < 0 {
+			index.records.observe(recordType.DeveloperName, len(dst.RecordTypes))
 			dst.RecordTypes = append(dst.RecordTypes, recordType)
 		}
 	}
 	for _, rule := range src.ValidationRules {
-		if validationRuleIndex(dst.ValidationRules, rule.Name) < 0 {
+		if index.rules.find(rule.Name, func() int { return validationRuleIndex(dst.ValidationRules, rule.Name) }) < 0 {
+			index.rules.observe(rule.Name, len(dst.ValidationRules))
 			dst.ValidationRules = append(dst.ValidationRules, rule)
 		}
 	}
@@ -902,6 +960,12 @@ func loadField(path string) (Field, error) {
 
 func fieldFromXML(raw customFieldXML, fallback string) Field {
 	name := strings.TrimSpace(raw.FullName)
+	var values []picklistValueXML
+	var configuredValues []PicklistValue
+	if raw.ValueSet.Definition != nil {
+		values = raw.ValueSet.Definition.Values
+		configuredValues = picklistValues(values)
+	}
 	if name == "" {
 		name = fallback
 	}
@@ -964,7 +1028,8 @@ func fieldFromXML(raw customFieldXML, fallback string) Field {
 		PicklistValueSettings:         picklistSettings(raw.ValueSet.ValueSettings),
 		ValueSetName:                  strings.TrimSpace(raw.ValueSet.Name),
 		RestrictedPicklist:            raw.ValueSet.Restricted,
-		PicklistValues:                picklistValues(raw.ValueSet.Definition.Values),
+		PicklistValues:                configuredValues,
+		PicklistValuesConfigured:      raw.ValueSet.Definition != nil,
 
 		MetadataRelationshipControllingField: raw.MetadataRelationshipControllingField,
 	}
@@ -1150,6 +1215,7 @@ func applyValueSet(field *Field, valueSets map[string][]PicklistValue) {
 	}
 	field.PicklistValues = make([]PicklistValue, len(values))
 	copy(field.PicklistValues, values)
+	field.PicklistValuesConfigured = true
 }
 
 func summaryFiltersFromXML(raw []summaryFilterXML) []SummaryFilter {
@@ -1381,6 +1447,9 @@ func objectNameFromValidationRulePath(path string) string {
 var validEntityRE = regexp.MustCompile(`^(?:amp|lt|gt|quot|apos|#[0-9]+|#x[0-9a-fA-F]+);`)
 
 func escapeBareAmpersands(data []byte) []byte {
+	if bytes.IndexByte(data, '&') < 0 {
+		return data
+	}
 	s := string(data)
 	var out strings.Builder
 	for {

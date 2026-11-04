@@ -1,0 +1,5 @@
+finding	class	method	capture_id
+Dot15/Q5	DootSoqlQ5TestB1031	allowed	Q5.allowed
+Dot15/Q5	DootSoqlQ5TestB1031	directDenied	Q5.directDenied
+Dot15/Q5	DootSoqlQ5TestB1031	typeofAllowed	Q5.typeofAllowed
+Dot15/Q5	DootSoqlQ5TestB1031	typeofDenied	Q5.typeofDenied

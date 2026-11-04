@@ -48,6 +48,7 @@ func (v *semaTypeMemberView) namedApexReferenceObjectMembers(key string) (typeMe
 		v.namedApexReferenceMembers = make(map[string]typeMembers)
 	}
 	v.namedApexReferenceMembers[name] = members
+	v.changedHydration()
 	return members, true
 }
 

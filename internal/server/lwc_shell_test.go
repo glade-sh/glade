@@ -385,6 +385,12 @@ func TestLWCShellResolvesUtilityBarRouteAndRendersChrome(t *testing.T) {
 }
 
 func TestLightningRuntimeServesShellAndSLDSAssets(t *testing.T) {
+	root, err := lightningTestRepoRoot()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("GLADE_HOME", "")
+	t.Setenv("GLADE_ROOT", root)
 	handler := New(&storage.OrgState{})
 	cases := []struct {
 		path string
@@ -651,6 +657,8 @@ func TestLightningRuntimePrefersRepoAssetsForSourceCheckout(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Setenv("GLADE_HOME", "")
+	t.Setenv("GLADE_ROOT", root)
 	dirs := lightningRuntimeAssetDirs("shell")
 	if len(dirs) == 0 {
 		t.Fatal("no shell runtime asset dirs")

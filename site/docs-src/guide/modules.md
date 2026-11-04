@@ -112,7 +112,7 @@ uploads, view state, and preview diagnostics.
 
 ```bash
 glade dev vf --project . --port 8080
-curl http://127.0.0.1:8080/services/data/v65.0/glade/visualforce/support
+curl -H 'X-Glade-Client: 1' http://127.0.0.1:8080/services/data/v65.0/glade/visualforce/support
 ```
 
 Use Salesforce for hosted chrome, exact lifecycle timing, every component

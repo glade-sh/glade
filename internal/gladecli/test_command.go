@@ -1872,77 +1872,7 @@ func cleanDurationMap(in map[string]int64) map[string]int64 {
 }
 
 func writeTestHelp(w io.Writer) error {
-	body := strings.TrimSpace(`
-Run local Apex tests.
-
-Usage:
-  glade test [--project <root>] [flags]
-  glade test changed [--project <root>] [--since <ref>]
-  glade test failed [--project <root>]
-  glade test serve [--project <root>] [serve flags]
-  glade test daemon status|stop [--project <root>]
-  glade test clear-cache [--project <root>]
-
-Cache control:
-  clear-cache removes the project-local startup and semantic caches.
-
-Common flags:
-  --project <root>          Project root. Defaults to current directory.
-  --filter <pattern>        Run matching test classes or methods.
-  --class <name>            Run one exact test class.
-  --method <name>           Run one exact test method. Requires --class.
-  --class-file <path>       Read exact test class names, one per line.
-  --shard-count <n>         Select one deterministic class shard.
-  --shard-index <i>         Shard index to run, starting at 0.
-  --duration-history <path> Weight shard planning with prior class durations.
-  --write-class-shards <dir> Write class shard files and exit.
-  --connect                 Require a running test server (see serve).
-  --no-serve                Do not auto-connect to a running test server.
-  --read-only               Run one local test pass without project writes; incompatible with UI, wizard, debug, watch, daemon, connect, and shard generation.
-  --no-cache                Bypass startup and semantic caches for this run.
-  --last-failed             Rerun tests that failed in the last completed run.
-  --ui                      Open the TUI on the test board.
-  --wizard                  Print daily test loop command suggestions.
-  --daemon                  Keep index warm in-process for --watch loops.
-  --json                    Write JSON test results.
-  --junit <path>            Write JUnit XML results.
-  --cpu-profile <path>      Write a CPU profile for this local one-shot run.
-  --mem-profile <path>      Write a heap profile after this local one-shot run.
-  --perf-json <path>        Write opt-in performance counters for this local one-shot run.
-  --impact-json <path>      Write per-test execution dependencies and shared inputs (local one-shot).
-  --trace <path>            Write a Chrome trace JSON document for this run.
-  --services <path>         Validate a services.yml virtualization config.
-  --progress                Show progress on stderr; uses a progress bar on TTY and line output when redirected.
-  --progress-json           Print NDJSON progress events to stderr.
-  --no-progress, --quiet    Disable progress.
-  --debug                   Run one DAP snapshot session after tests.
-  --watch                   Watch source files and emit NDJSON events.
-  --watch-once              Run one watch cycle and exit.
-  --changed-since <ref>     Select tests affected since a git ref.
-  --since <ref>             Git ref for glade test changed (default HEAD).
-  --debounce <dur>          Watch debounce interval (default 500ms).
-  --watch-backend <mode>    Watch backend: auto, native, or poll.
-  --parallel-methods        Run test methods in parallel (default).
-  --no-parallel-methods     Force serial method execution within a class.
-  --parallelism <n>         Worker count (default: GOMAXPROCS).
-  --test-timeout <dur>      Per-test wall-clock cap; overrides GLADE_TEST_TIMEOUT (default 10m; 0 disables).
-  --runtime-rest-api-version <version>
-                           Test org REST context (default 65.0); does not change source API versions.
-  --gc-aggressive           Follow the soft memory limit instead of heap growth;
-                           unlimited memory falls back to GOGC=50 (default limit 4 GiB).
-  --limit-mode <mode>       Use strict or permissive governor limits.
-
-Serve flags:
-  --no-warm                 Start the server without warming the project.
-
-Examples:
-  glade test --project . --class AccountServiceTest
-  glade test --project . --class AccountServiceTest --method testCreatesAccount
-  glade test --project . --class-file tests.txt
-  glade test --project . --shard-count 2 --shard-index 0
-`)
-	_, err := fmt.Fprintln(w, body)
-	return err
+	return cliui.WriteTestHelp(w)
 }
 
 type cliTestProgressReporter struct {

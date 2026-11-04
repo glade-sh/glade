@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"slices"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
@@ -22,7 +23,27 @@ func TestAuxiliaryPollIntervalBoundsFastDebounce(t *testing.T) {
 	}
 }
 
+type delayedPollingWatcher struct {
+	changes chan []Change
+	errors  chan error
+}
+
+func (w *delayedPollingWatcher) Changes() <-chan []Change { return w.changes }
+func (w *delayedPollingWatcher) Errors() <-chan error     { return w.errors }
+func (w *delayedPollingWatcher) Close() error             { return nil }
+
 func TestPollingWatcherReportsChanges(t *testing.T) {
+	t.Run("delayed delivery", func(t *testing.T) {
+		path := filepath.Join(t.TempDir(), "example.cls")
+		synctest.Test(t, func(t *testing.T) {
+			w := &delayedPollingWatcher{changes: make(chan []Change, 1), errors: make(chan error, 1)}
+			go func() {
+				time.Sleep(2 * time.Second)
+				w.changes <- []Change{{Path: path, Op: ChangeModified, Kind: FileKindApexClass}}
+			}()
+			assertChange(t, awaitPollingBatchWithin(t, w, 30*time.Second), path, ChangeModified, FileKindApexClass)
+		})
+	})
 	root := t.TempDir()
 	classPath := filepath.Join(root, "InvoiceService.cls")
 	writeWatchFile(t, classPath, "public class InvoiceService {}")
@@ -36,14 +57,7 @@ func TestPollingWatcherReportsChanges(t *testing.T) {
 	defer watcher.Close()
 
 	writeWatchFile(t, classPath, "public class InvoiceService { void run() {} }")
-	select {
-	case changes := <-watcher.Changes():
-		assertChange(t, changes, classPath, ChangeModified, FileKindApexClass)
-	case err := <-watcher.Errors():
-		t.Fatal(err)
-	case <-time.After(time.Second):
-		t.Fatal("timeout waiting for polling change")
-	}
+	assertChange(t, awaitPollingBatch(t, watcher), classPath, ChangeModified, FileKindApexClass)
 }
 
 func TestPollingWatcherReportsLightningWebComponentChanges(t *testing.T) {
@@ -60,14 +74,7 @@ func TestPollingWatcherReportsLightningWebComponentChanges(t *testing.T) {
 	defer watcher.Close()
 
 	writeWatchFile(t, lwcPath, "export default class AccountWorkspace { connectedCallback() {} }")
-	select {
-	case changes := <-watcher.Changes():
-		assertChange(t, changes, lwcPath, ChangeModified, FileKindLightningWebComponent)
-	case err := <-watcher.Errors():
-		t.Fatal(err)
-	case <-time.After(time.Second):
-		t.Fatal("timeout waiting for polling LWC change")
-	}
+	assertChange(t, awaitPollingBatch(t, watcher), lwcPath, ChangeModified, FileKindLightningWebComponent)
 }
 
 func TestPollingWatcherReportsProjectConfigChanges(t *testing.T) {
@@ -84,14 +91,41 @@ func TestPollingWatcherReportsProjectConfigChanges(t *testing.T) {
 	defer watcher.Close()
 
 	writeWatchFile(t, configPath, `{"sourceApiVersion":"66.00","packageDirectories":[]}`)
+	assertChange(t, awaitPollingBatch(t, watcher), configPath, ChangeModified, FileKindIgnored)
+}
+
+func awaitPollingBatch(t *testing.T, watcher BackendWatcher) []Change {
+	t.Helper()
+	return awaitPollingBatchWithin(t, watcher, time.Second)
+}
+
+func awaitPollingBatchWithin(t *testing.T, watcher BackendWatcher, timeout time.Duration) []Change {
+	t.Helper()
+	timer := time.NewTimer(timeout)
+	defer timer.Stop()
 	select {
-	case changes := <-watcher.Changes():
-		assertChange(t, changes, configPath, ChangeModified, FileKindIgnored)
-	case err := <-watcher.Errors():
-		t.Fatal(err)
-	case <-time.After(time.Second):
-		t.Fatal("timeout waiting for polling project config change")
+	case err, ok := <-watcher.Errors():
+		if !ok {
+			t.Fatal("watcher error channel closed before delivery")
+		}
+		t.Fatalf("watcher error before delivery: %v", err)
+	case changes, ok := <-watcher.Changes():
+		if !ok {
+			t.Fatal("watcher change channel closed before delivery")
+		}
+		select {
+		case err, ok := <-watcher.Errors():
+			if !ok {
+				t.Fatal("watcher error channel closed during delivery")
+			}
+			t.Fatalf("watcher error during delivery: %v", err)
+		default:
+		}
+		return changes
+	case <-timer.C:
+		t.Fatal("polling worker did not deliver a change before test watchdog")
 	}
+	return nil
 }
 
 func TestBackendSelectionUsesPolling(t *testing.T) {
@@ -833,9 +867,9 @@ func TestScopedBackendsCarveDirectRootFromBroaderExclusion(t *testing.T) {
 			if selected != backend {
 				t.Fatalf("selected backend = %s, want %s", selected, backend)
 			}
-			writeWatchFile(t, directClass, "global class Direct { global void changed() {} }")
+			replaceWatchFile(t, directClass, "global class Direct { global void changed() {} }")
 			awaitScopedChange(t, watcher, directClass, ChangeModified)
-			writeWatchFile(t, siblingClass, "global class Sibling { global void ignored() {} }")
+			replaceWatchFile(t, siblingClass, "global class Sibling { global void ignored() {} }")
 			select {
 			case changes := <-watcher.Changes():
 				t.Fatalf("excluded sibling emitted changes: %#v", changes)
@@ -937,6 +971,21 @@ func TestNativeWatcherReportsScopedRootRemovalAndRecreation(t *testing.T) {
 	awaitScopedChange(t, watcher, classPath, ChangeDeleted)
 	writeWatchFile(t, classPath, "public class Dependency { public void recreated() {} }")
 	awaitScopedChange(t, watcher, classPath, ChangeAdded)
+}
+
+// replaceWatchFile swaps in complete content with one rename. A plain
+// os.WriteFile truncates first, and a poll between the truncate and the write
+// reports a second modification for the same edit on slow volumes, which a test
+// that asserts "no further batch" would misread as an unrelated change.
+func replaceWatchFile(t *testing.T, path, content string) {
+	t.Helper()
+	staged := filepath.Join(t.TempDir(), filepath.Base(path))
+	if err := os.WriteFile(staged, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Rename(staged, path); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func awaitScopedChange(t *testing.T, watcher BackendWatcher, path string, op ChangeOp) {

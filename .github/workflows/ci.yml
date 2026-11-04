@@ -443,6 +443,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
+      GLADE_ROOT: ${{ github.workspace }}
       GOMAXPROCS: "2"
       GOMODCACHE: /tmp/go-mod-ci-node-integration
       GOCACHE: /tmp/go-build-ci-node-integration
@@ -712,6 +713,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
+      GLADE_ROOT: ${{ github.workspace }}
       GOMAXPROCS: "2"
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -1078,6 +1080,7 @@ jobs:
             name: Visualforce (3)
             shard: 3
     env:
+      GLADE_ROOT: ${{ github.workspace }}
       CGO_ENABLED: "1"
       CI_TEST_BIN_DIR: ${{ matrix.lane != 'remaining-go' && '/tmp/glade-test-binaries' || '' }}
       GOMAXPROCS: "2"
@@ -1352,6 +1355,9 @@ jobs:
   apextest-history-input:
     if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
     timeout-minutes: 5
     env:
       CI_APEXTEST_HISTORY_PATH: /tmp/glade-apextest-duration-history/apextest-duration-history.json
@@ -1367,13 +1373,24 @@ jobs:
         with:
           path: /tmp/glade-apextest-duration-history
           key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}apextest-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-${{ hashFiles('go.sum') }}-${{ env.CI_DURATION_HISTORY_CACHE_REF }}
-      - name: Stage Apex duration history
+      - name: Select prior Apex scheduling attempt
+        if: ${{ github.run_attempt > 1 && (github.event_name != 'workflow_dispatch' || inputs.benchmark_cache_pair == 0) }}
+        id: retry
+        run: echo "attempt=$((GITHUB_RUN_ATTEMPT - 1))" >> "$GITHUB_OUTPUT"
+      - name: Restore Apex retry scheduling profile
+        if: steps.retry.outputs.attempt != ''
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: /tmp/apextest-scheduling-profile
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}apextest-scheduling-v1-${{ runner.os }}-${{ runner.arch }}-${{ github.run_id }}-${{ steps.retry.outputs.attempt }}
+      - name: Stage validated Apex scheduling input
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CI_APEXTEST_BENCHMARK_PAIR: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair || 0 }}
         run: |
           mkdir -p ci-artifacts/apextest-history-input
-          if [[ -s "$CI_APEXTEST_HISTORY_PATH" ]]; then
-            cp "$CI_APEXTEST_HISTORY_PATH" ci-artifacts/apextest-history-input/apextest-duration-history.json
-          fi
-          : >ci-artifacts/apextest-history-input/ready
+          scripts/ci-apex-history-input.sh
       - name: Upload Apex duration history input
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
@@ -1459,6 +1476,7 @@ jobs:
     timeout-minutes: 5
     env:
       CI_APEXTEST_HISTORY_COMPLETE: "1"
+      CI_APEXTEST_SCHEDULING_PROFILE: /tmp/apextest-scheduling-profile/profile.json
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Download successful Apex shard evidence
@@ -1467,7 +1485,22 @@ jobs:
           pattern: apex-shard-*
           path: /tmp/apextest-history-input
       - name: Refresh and guard Apex duration history
+        id: refresh
         run: scripts/ci-go-test.sh apex-history-refresh /tmp/glade-apextest-duration-history/apextest-duration-history.json /tmp/apextest-history-input/apex-shard-0 /tmp/apextest-history-input/apex-shard-1 /tmp/apextest-history-input/apex-shard-2 /tmp/apextest-history-input/apex-shard-3 /tmp/apextest-history-input/apex-shard-4 /tmp/apextest-history-input/apex-shard-5 /tmp/apextest-history-input/apex-shard-6 /tmp/apextest-history-input/apex-shard-7 /tmp/apextest-history-input/apex-shard-8 /tmp/apextest-history-input/apex-shard-9 /tmp/apextest-history-input/apex-shard-10 /tmp/apextest-history-input/apex-shard-11
+      - name: Cache Apex scheduling profile after balance failure
+        if: ${{ failure() && steps.refresh.outcome == 'failure' && (github.event_name != 'workflow_dispatch' || inputs.benchmark_cache_pair == 0) }}
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: /tmp/apextest-scheduling-profile
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}apextest-scheduling-v1-${{ runner.os }}-${{ runner.arch }}-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: Upload Apex scheduling profile after balance failure
+        if: ${{ failure() && steps.refresh.outcome == 'failure' }}
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: apextest-scheduling-profile-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /tmp/apextest-scheduling-profile/profile.json
+          if-no-files-found: ignore
       - name: Save Apex duration history
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         continue-on-error: true

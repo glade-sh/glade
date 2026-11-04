@@ -116,7 +116,7 @@ func ipv4ProjectSuspendedChild(t *testing.T, selection, flag string) {
 		t.Fatal(err)
 	}
 	cmd := exec.Command(exe, "-test.run="+selection, "-test.v", "-test.timeout=100s")
-	cmd.Env = append(os.Environ(), flag+"=1", "GOMAXPROCS=2")
+	cmd.Env = append(childEnvWithoutShardSelector(), flag+"=1", "GOMAXPROCS=2")
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		t.Fatal(err)

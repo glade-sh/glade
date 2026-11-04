@@ -35,6 +35,7 @@ type standardFieldPolicyObject struct {
 	Fields                []standardDescribeField
 	Absent                []string
 	fields                map[string]Field
+	picklistFields        []Field
 	absent                map[string]bool
 	gates                 map[string]standardFieldPolicyGate
 }
@@ -71,7 +72,11 @@ func loadStandardFieldPolicies() map[string]*standardFieldPolicyObject {
 		policy.absent = map[string]bool{}
 		policy.gates = map[string]standardFieldPolicyGate{}
 		for _, field := range policy.Fields {
-			policy.fields[strings.ToLower(field.Name)] = describeField(field)
+			captured := describeField(field)
+			policy.fields[strings.ToLower(field.Name)] = captured
+			if len(captured.PicklistValues) != 0 {
+				policy.picklistFields = append(policy.picklistFields, captured)
+			}
 		}
 		for _, field := range policy.Absent {
 			policy.absent[strings.ToLower(field)] = true
@@ -195,8 +200,14 @@ func applyStandardFieldPolicy(definition *ObjectDefinition, signature string) {
 		return
 	}
 	for _, field := range policy.fields {
-		if _, exists := ResolveFieldName(*definition, "", field.APIName); !exists {
+		if name, exists := ResolveFieldName(*definition, "", field.APIName); !exists {
 			definition.Fields[field.APIName] = cloneField(field)
+		} else if len(field.PicklistValues) != 0 {
+			existing := definition.Fields[name]
+			if !existing.PicklistValuesConfigured && len(existing.PicklistValues) == 0 {
+				existing.PicklistValues = append([]PicklistValue(nil), field.PicklistValues...)
+				definition.Fields[name] = existing
+			}
 		}
 	}
 	for _, gate := range policy.gates {

@@ -5,7 +5,6 @@ import {
   registerDecorators,
   registerTemplate,
 } from "lwc";
-import sanitizeHTML from "./purifyLib.mjs";
 
 // Native control_rich_tag_* distinguishes discarded content from unwrapped
 // object/custom elements.
@@ -37,8 +36,13 @@ function safeAttributes(node) {
 }
 
 function renderRichContent($api, value) {
+  const sanitized = document.createElement("template");
+  sanitized.innerHTML = String(value || "");
+  for (const node of sanitized.content.querySelectorAll("script")) {
+    node.remove();
+  }
   const fragment = document.createElement("template");
-  fragment.innerHTML = sanitizeHTML(value);
+  fragment.innerHTML = sanitized.innerHTML;
   let key = 1;
   function renderNodes(nodes) {
     return $api.i(Array.from(nodes), node => {

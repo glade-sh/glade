@@ -23,12 +23,13 @@ type AjaxPollerState struct {
 }
 
 func NewPartialResponse(renderedHTML, viewState string, rerenderIDs []string) PartialResponse {
-	targets, messages := RenderPartialTargetsWithDiagnostics(renderedHTML, rerenderIDs)
+	doc, err := nethtml.Parse(strings.NewReader(renderedHTML))
+	targets, messages := partialTargetsFromDocument(doc, err, rerenderIDs)
 	return PartialResponse{
 		Targets:   targets,
 		ViewState: viewState,
 		Messages:  messages,
-		Pollers:   partialPollerStates(renderedHTML),
+		Pollers:   partialPollerStatesFromDocument(doc, err),
 	}
 }
 
@@ -36,6 +37,10 @@ func NewPartialResponse(renderedHTML, viewState string, rerenderIDs []string) Pa
 // poller's own DOM node is outside the requested rerender targets.
 func partialPollerStates(renderedHTML string) map[string]AjaxPollerState {
 	doc, err := nethtml.Parse(strings.NewReader(renderedHTML))
+	return partialPollerStatesFromDocument(doc, err)
+}
+
+func partialPollerStatesFromDocument(doc *nethtml.Node, err error) map[string]AjaxPollerState {
 	if err != nil {
 		return nil
 	}
@@ -72,12 +77,19 @@ func RenderPartialTargets(renderedHTML string, rerenderIDs []string) map[string]
 }
 
 func RenderPartialTargetsWithDiagnostics(renderedHTML string, rerenderIDs []string) (map[string]string, []string) {
+	if len(rerenderIDs) == 0 {
+		return make(map[string]string), nil
+	}
+	doc, err := nethtml.Parse(strings.NewReader(renderedHTML))
+	return partialTargetsFromDocument(doc, err, rerenderIDs)
+}
+
+func partialTargetsFromDocument(doc *nethtml.Node, err error, rerenderIDs []string) (map[string]string, []string) {
 	targets := make(map[string]string)
 	if len(rerenderIDs) == 0 {
 		return targets, nil
 	}
 	messages := []string{}
-	doc, err := nethtml.Parse(strings.NewReader(renderedHTML))
 	if err != nil {
 		for _, id := range rerenderIDs {
 			id = strings.TrimSpace(id)

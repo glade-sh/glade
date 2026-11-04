@@ -45,6 +45,16 @@ func evaluateFlowCoreEntryCriteria(item storage.WorkflowCriteriaItem, record sto
 				return false, true
 			}
 		}
+		// A record-triggered Flow compares checkbox literals as booleans. In
+		// particular, the text "false" must not be treated as truthy text.
+		if created && strings.EqualFold(trigger, "RecordBeforeSave") && strings.EqualFold(strings.TrimSpace(item.Operation), "equals") && strings.TrimSpace(item.SourceField) == "" {
+			fieldName, ok := storage.ResolveFieldName(definition, namespace, strings.TrimSpace(item.Field))
+			want := strings.ToLower(trimFormulaLiteral(item.Value))
+			if ok && definition.Fields[fieldName].Type == storage.FieldBoolean && (want == "true" || want == "false") {
+				value, present := record.Fields[fieldName]
+				return present && value.Kind == storage.ValueBoolean && value.Boolean == (want == "true"), true
+			}
+		}
 		if matches, supported, handled := evaluateFlowCoreStringCriteria(item, record, definition, namespace); handled {
 			return matches, supported
 		}

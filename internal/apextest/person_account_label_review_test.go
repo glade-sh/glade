@@ -37,7 +37,7 @@ func TestPersonAccountLabelProjectionBoundaries(t *testing.T) {
 				}
 				org := storage.NewOrgState()
 				org.Objects["Account"] = storage.ObjectState{Definition: account}
-				org.Objects["PersonAccount"] = storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "PersonAccount", RecordTypes: []storage.RecordTypeInfo{{DeveloperName: "PersonAccount", Name: label, Active: true, Available: true}}}}
+				org.Objects["PersonAccount"] = storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "PersonAccount", RecordTypes: []storage.RecordTypeInfo{{DeveloperName: "PersonAccount", Name: label, Active: true, Available: true, PersonAccount: true}}}}
 				org.Objects["Probe__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "Probe__c", Fields: map[string]storage.Field{"Account__c": {APIName: "Account__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, FilteredLookupInfo: storage.FilteredLookupInfo{Active: tc.active, OptionalFilter: tc.optional, FilterItems: []storage.LookupFilterItem{{Field: "Account.RecordTypeId", Operation: "equals", Value: value}}}}}}}
 				if route == "fold" {
 					foldPersonAccountObjectIntoAccount(&org)
