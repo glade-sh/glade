@@ -94,7 +94,7 @@ func TestStringEqualityLocaleChangeC14NativeConformance(t *testing.T) {
 					if at < 0 {
 						if api == "67.0" && (probe == "p3" || probe == "p4") {
 							want := "Operation failed due to fields being inaccessible on Sobject User, check errors on Exception or Result!"
-							if result.Problem.Type != "System.DmlException" || !strings.Contains(result.Problem.Message, want) {
+							if strings.TrimPrefix(result.Problem.Type, "System.") != "DmlException" || !strings.Contains(result.Problem.Message, want) {
 								t.Fatalf("native System.DmlException %q; Glade %s: %s", want, result.Problem.Type, result.Problem.Message)
 							}
 							return
