@@ -3583,9 +3583,10 @@ func semaAuthProviderCallbackOverrideOptional(typ typesys.TypeSymbol, member typ
 func semaInheritedMethodVisible(child typesys.TypeSymbol, owner typeMembers, member typesys.MemberSymbol) bool {
 	if hasModifier(member.Modifiers, "private") {
 		sameNamespace := strings.EqualFold(strings.TrimSpace(child.Namespace), strings.TrimSpace(owner.namespace))
+		major, knownVersion := apexversion.Major(child.EffectiveAPIVersion)
 		if sameNamespace && !child.Dependency && !owner.dependency && !owner.platform &&
 			(hasModifier(member.Modifiers, "virtual") || hasModifier(member.Modifiers, "abstract")) &&
-			apexversion.Before(child.EffectiveAPIVersion, 65) &&
+			knownVersion && major >= 45 && major < 65 &&
 			semaTopLevelScope(semaTypeMembersName(child), child.Modifiers) == semaTopLevelScope(owner.name, owner.modifiers) {
 			return true
 		}
