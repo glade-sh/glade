@@ -1164,10 +1164,26 @@ jobs:
         run: npm ci --prefix lwcruntime
       - name: Install conformance Chromium
         run: scripts/ci-install-playwright.sh ./lwcruntime/node_modules/.bin/playwright install --with-deps chromium
-      - run: scripts/ci-resource-run.sh ci-artifacts/go-test/resource-repoguard.json repoguard -- scripts/ci-go-test.sh lane repoguard
+      - name: Run repository guards and remaining Go packages
         if: matrix.lane == 'remaining-go'
-      - run: scripts/ci-resource-run.sh ci-artifacts/go-test/resource-remaining-go.json remaining-go -- scripts/ci-go-test.sh lane remaining-go
-        if: matrix.lane == 'remaining-go'
+        run: |
+          # The repository guards scan the whole tree on one CPU for about
+          # fifteen minutes. Run them beside the remaining-go packages instead
+          # of ahead of them; each lane keeps its own events and resource files.
+          mkdir -p ci-artifacts/go-test
+          scripts/ci-resource-run.sh ci-artifacts/go-test/resource-repoguard.json repoguard -- scripts/ci-go-test.sh lane repoguard >ci-artifacts/go-test/repoguard.log 2>&1 &
+          guard_pid=$!
+          remaining_rc=0
+          scripts/ci-resource-run.sh ci-artifacts/go-test/resource-remaining-go.json remaining-go -- scripts/ci-go-test.sh lane remaining-go || remaining_rc=$?
+          guard_rc=0
+          wait "$guard_pid" || guard_rc=$?
+          echo "::group::repository guard lane (exit $guard_rc)"
+          cat ci-artifacts/go-test/repoguard.log
+          echo "::endgroup::"
+          if [[ "$remaining_rc" -ne 0 ]]; then
+            exit "$remaining_rc"
+          fi
+          exit "$guard_rc"
       - name: Test LWC compile shard
         if: startsWith(matrix.lane, 'lwc-compile-')
         run: scripts/ci-resource-run.sh ci-artifacts/lwc-compile-${{ matrix.shard }}/resource-usage.json lwc-compile-${{ matrix.shard }} -- scripts/ci-go-test.sh lwc-compile-shard "${{ matrix.shard }}"

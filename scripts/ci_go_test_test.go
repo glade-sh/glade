@@ -3420,10 +3420,13 @@ func TestCILWCCompileMatrixRoutesAllShardsAndPreservesFailureEvidence(t *testing
 			t.Errorf("compile step missing %q", marker)
 		}
 	}
+	guards := workflowStepBlockText(job, "      - name: Run repository guards and remaining Go packages")
+	if !strings.Contains(guards, "if: matrix.lane == 'remaining-go'") {
+		t.Error("repoguard and remaining-go must only run in the remaining-go matrix row")
+	}
 	for _, lane := range []string{"repoguard", "remaining-go"} {
-		step := workflowStepBlockText(job, "      - run: scripts/ci-resource-run.sh ci-artifacts/go-test/resource-"+lane+".json")
-		if !strings.Contains(step, "if: matrix.lane == 'remaining-go'") {
-			t.Errorf("%s must only run in remaining-go matrix row", lane)
+		if !strings.Contains(guards, "scripts/ci-resource-run.sh ci-artifacts/go-test/resource-"+lane+".json "+lane+" -- scripts/ci-go-test.sh lane "+lane) {
+			t.Errorf("%s lane command missing from the remaining-go step", lane)
 		}
 	}
 	upload := workflowStepBlockText(job, "      - name: Upload LWC compile shard events")
