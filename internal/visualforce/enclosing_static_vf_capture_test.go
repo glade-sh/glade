@@ -125,4 +125,5 @@ func TestCapturedEnclosingStaticVisualforceRoute(t *testing.T) {
 	if len(seen) != 4 {
 		t.Fatalf("unexpected native rows: %v", seen)
 	}
+	t.Run("controller-scope-matrix", runCapturedControllerScopeVisualforceMatrix)
 }
