@@ -1479,8 +1479,56 @@ type literalBounds struct {
 	ok         bool
 }
 type predicateScratch struct {
-	bounds   map[literalBoundsKey]literalBounds
-	patterns map[string]*compiledLikePattern
+	bounds    map[literalBoundsKey]literalBounds
+	patterns  map[string]*compiledLikePattern
+	textKinds map[textEqualityKindKey]textEqualityKind
+}
+
+// textEqualityKind records how equality on one declared field treats text
+// operands: whether every declared field is text, and whether every declared
+// text field compares exactly (unique and case-sensitive).
+type textEqualityKind struct {
+	text  bool
+	exact bool
+}
+
+type textEqualityKindKey struct {
+	object string
+	field  string
+}
+
+// declaredTextEqualityKind classifies a field for text equality. It is the
+// declaration walk equalFieldValuesInOrg performs; the predicate scratch
+// remembers the answer so a WHERE clause resolves each field once per query
+// instead of once per candidate record.
+func declaredTextEqualityKind(org storage.OrgState, definition storage.ObjectDefinition, field string) textEqualityKind {
+	fields, known := fieldDefinitionsForReference(org, definition, field)
+	text := known && len(fields) > 0
+	exact := text
+	for _, declared := range fields {
+		if declared.Type != storage.FieldString {
+			text = false
+			break
+		}
+		exact = exact && declared.Unique && declared.CaseSensitive
+	}
+	return textEqualityKind{text: text, exact: text && exact}
+}
+
+func (s *predicateScratch) textEqualityKind(org storage.OrgState, definition storage.ObjectDefinition, field string) textEqualityKind {
+	if s == nil {
+		return declaredTextEqualityKind(org, definition, field)
+	}
+	key := textEqualityKindKey{object: definition.APIName, field: field}
+	if kind, ok := s.textKinds[key]; ok {
+		return kind
+	}
+	kind := declaredTextEqualityKind(org, definition, field)
+	if s.textKinds == nil {
+		s.textKinds = make(map[textEqualityKindKey]textEqualityKind)
+	}
+	s.textKinds[key] = kind
+	return kind
 }
 
 func matchesWithContext(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, condition *Condition, context ExecutionContext) bool {
@@ -1548,12 +1596,12 @@ func matchesWithScratch(org storage.OrgState, definition storage.ObjectDefinitio
 		if condition.Range {
 			return compareValues(left, condition.Value) >= 0 && compareValues(left, condition.Value2) < 0
 		}
-		return equalFieldValuesInOrg(org, definition, condition.Field, left, condition.Value, context.Locale)
+		return equalFieldValuesInOrgWithScratch(org, definition, condition.Field, left, condition.Value, context.Locale, scratch)
 	case "!=":
 		if condition.Range {
 			return compareValues(left, condition.Value) < 0 || compareValues(left, condition.Value2) >= 0
 		}
-		return !equalFieldValuesInOrg(org, definition, condition.Field, left, condition.Value, context.Locale)
+		return !equalFieldValuesInOrgWithScratch(org, definition, condition.Field, left, condition.Value, context.Locale, scratch)
 	case ">":
 		bound := condition.Value
 		if condition.Range {
@@ -1604,7 +1652,7 @@ func matchesWithScratch(org storage.OrgState, definition storage.ObjectDefinitio
 			return false
 		}
 		for _, v := range condition.Values {
-			if equalFieldValuesInOrg(org, definition, condition.Field, left, v, context.Locale) {
+			if equalFieldValuesInOrgWithScratch(org, definition, condition.Field, left, v, context.Locale, scratch) {
 				return true
 			}
 		}
@@ -1614,7 +1662,7 @@ func matchesWithScratch(org storage.OrgState, definition storage.ObjectDefinitio
 			return false
 		}
 		for _, v := range condition.Values {
-			if equalFieldValuesInOrg(org, definition, condition.Field, left, v, context.Locale) {
+			if equalFieldValuesInOrgWithScratch(org, definition, condition.Field, left, v, context.Locale, scratch) {
 				return false
 			}
 		}
@@ -4447,6 +4495,10 @@ func equalValues(left, right storage.Value) bool {
 // Resolve the declared field type so Id/reference predicates retain their
 // existing 15/18-character comparison, including relationship fields.
 func equalFieldValuesInOrg(org storage.OrgState, definition storage.ObjectDefinition, field string, left, right storage.Value, locale string) bool {
+	return equalFieldValuesInOrgWithScratch(org, definition, field, left, right, locale, nil)
+}
+
+func equalFieldValuesInOrgWithScratch(org storage.OrgState, definition storage.ObjectDefinition, field string, left, right storage.Value, locale string, scratch *predicateScratch) bool {
 	// Custom metadata record identities compare their full qualified name;
 	// the current namespace must not make an unqualified name an alias.
 	if storage.IsCustomMetadataDefinition(definition) && strings.EqualFold(field, "QualifiedApiName") {
@@ -4458,26 +4510,17 @@ func equalFieldValuesInOrg(org storage.OrgState, definition storage.ObjectDefini
 		return equalValues(left, right)
 	}
 	if left.Kind == storage.ValueString && right.Kind == storage.ValueString {
-		fields, known := fieldDefinitionsForReference(org, definition, field)
-		text := known && len(fields) > 0
-		exact := text
-		for _, declared := range fields {
-			if declared.Type != storage.FieldString {
-				text = false
-				break
-			}
-			exact = exact && declared.Unique && declared.CaseSensitive
-		}
-		if text && exact {
+		kind := scratch.textEqualityKind(org, definition, field)
+		if kind.text && kind.exact {
 			// Native U6: equality on a case-sensitive unique text field is exact.
 			return left.String == right.String
 		}
-		if text && turkishTextLocale(locale) {
+		if kind.text && turkishTextLocale(locale) {
 			// Native U5 tr_TR: text equality folds by the user's Turkish
 			// casing, so I pairs with a dotless i and a dotted capital I with i.
 			return foldTurkish(left.String) == foldTurkish(right.String) || equalNamespacedTextValues(org, left, right)
 		}
-		if text {
+		if kind.text {
 			return strings.EqualFold(left.String, right.String) || equalNamespacedTextValues(org, left, right)
 		}
 	}
