@@ -2008,12 +2008,15 @@ func modeledFlowRecordTransform(name string, transform flowTransformXML) (storag
 		return storage.FlowTransform{}, false
 	}
 	out := storage.FlowTransform{Name: name, TransformType: "RecordMap", ObjectType: objectType}
+	seen := make(map[string]bool)
 	for _, action := range transform.TransformValues[0].Actions {
 		field := strings.TrimSpace(action.OutputFieldAPIName)
 		reference := strings.TrimSpace(action.Value.ElementReference)
-		if field == "" || reference == "" || !strings.EqualFold(strings.TrimSpace(action.TransformType), "Map") {
+		key := strings.ToLower(field)
+		if field == "" || seen[key] || reference == "" || !strings.EqualFold(strings.TrimSpace(action.TransformType), "Map") {
 			return storage.FlowTransform{}, false
 		}
+		seen[key] = true
 		out.FieldMappings = append(out.FieldMappings, storage.WorkflowFieldUpdate{Field: field, SourceField: reference})
 	}
 	return out, len(out.FieldMappings) > 0
