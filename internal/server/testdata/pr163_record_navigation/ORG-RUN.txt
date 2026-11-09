@@ -9,3 +9,4 @@ Contact path before returning record-not-found. A malformed ID sent with Record
 kept that path and displayed a record-unavailable message.
 The case column is the supplied object name and outcome is the resolved object.
 Record identifiers and organization details are omitted.
+The scratch org was deleted after capture; a subsequent lookup did not find it.
