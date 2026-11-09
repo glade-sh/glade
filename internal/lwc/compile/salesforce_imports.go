@@ -75,17 +75,26 @@ func loadSalesforceImports(p project.Project, references []string) (*salesforceI
 	if err != nil {
 		return nil, err
 	}
+	// Apply the same project feature policy used by runtime standard-field
+	// resolution before constructing the LWC import schema.
+	features := project.StandardFieldPolicyFeatures(p)
+	schemaEntry := func(definition storage.ObjectDefinition) salesforceSchemaObject {
+		if _, known := storage.ResolveKnownStandardObjectName(definition.APIName); known {
+			storage.EnsureStandardObjectFieldsForFeatures(&definition, features)
+		}
+		return salesforceSchemaEntry(definition)
+	}
 	// Reuse the runtime's schema overlay, including implicit custom-object
 	// fields and its custom-setting/master-detail exclusions.
 	for name, object := range sobject.BuildDescribeRegistry(projectSchema).Objects {
-		cfg.Schema[name] = salesforceSchemaEntry(sobject.ToObjectDefinition(object))
+		cfg.Schema[name] = schemaEntry(sobject.ToObjectDefinition(object))
 	}
 	loadObject := func(name string) {
 		if _, loaded := cfg.Schema[name]; loaded {
 			return
 		}
 		if definition, ok := storage.StandardObjectDefinition(name); ok && definition.APIName == name {
-			cfg.Schema[name] = salesforceSchemaEntry(definition)
+			cfg.Schema[name] = schemaEntry(definition)
 		}
 	}
 	for _, reference := range references {
