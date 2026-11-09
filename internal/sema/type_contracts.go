@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/apexversion"
@@ -47,19 +48,19 @@ func (a *Analyzer) checkSourceTypeContracts(index typesys.Index) []diagnostic.Di
 		seenSources[sourceKey] = true
 		source := facts.sourceText()
 		spans := facts.codeSpans()
-		for _, match := range typeContractRawCollectionConstructor.FindAllStringIndex(source, -1) {
+		for _, match := range typeContractRawCollectionConstructorMatches(source) {
 			if !spans.contains(match[0]) {
 				continue
 			}
 			diagnostics = append(diagnostics, typeContractDiagnostic(typ, typesys.MemberSymbol{}, "raw collection construction requires type arguments", match[0], match[1], source))
 		}
-		for _, match := range typeContractScientificLiteral.FindAllStringIndex(source, -1) {
+		for _, match := range typeContractScientificLiteralMatches(source) {
 			if !spans.contains(match[0]) {
 				continue
 			}
 			diagnostics = append(diagnostics, typeContractDiagnostic(typ, typesys.MemberSymbol{}, "scientific notation is not valid Apex numeric literal syntax", match[0], match[1], source))
 		}
-		for _, match := range typeContractIntegerLiteral.FindAllStringIndex(source, -1) {
+		for _, match := range typeContractIntegerLiteralMatches(source) {
 			if !spans.contains(match[0]) {
 				continue
 			}
@@ -72,7 +73,7 @@ func (a *Analyzer) checkSourceTypeContracts(index typesys.Index) []diagnostic.Di
 				diagnostics = append(diagnostics, typeContractDiagnostic(typ, typesys.MemberSymbol{}, "unsuffixed integer literal exceeds the Integer range", match[0], match[1], source))
 			}
 		}
-		for _, match := range typeContractSafeAssignment.FindAllStringIndex(source, -1) {
+		for _, match := range typeContractSafeAssignmentMatches(source) {
 			if !spans.contains(match[0]) {
 				continue
 			}
@@ -563,4 +564,91 @@ func dateOperandDiagnosticMessage(left string) string {
 	default:
 		return ""
 	}
+}
+
+// The four source-wide contract patterns run on every analyzed file. Each
+// match function first checks a necessary condition that a byte scan can
+// establish and only then runs the pattern, so the result is the pattern's.
+
+func typeContractSafeAssignmentMatches(source string) [][]int {
+	if !strings.Contains(source, "?.") {
+		return nil
+	}
+	return typeContractSafeAssignment.FindAllStringIndex(source, -1)
+}
+
+func typeContractIntegerLiteralMatches(source string) [][]int {
+	run := 0
+	for i := 0; i < len(source); i++ {
+		if source[i] >= '0' && source[i] <= '9' {
+			run++
+			if run >= 10 {
+				return typeContractIntegerLiteral.FindAllStringIndex(source, -1)
+			}
+			continue
+		}
+		run = 0
+	}
+	return nil
+}
+
+func typeContractScientificLiteralMatches(source string) [][]int {
+	for i := 1; i+1 < len(source); i++ {
+		if source[i] != 'e' && source[i] != 'E' || !typeContractDigit(source[i-1]) {
+			continue
+		}
+		next := source[i+1]
+		if typeContractDigit(next) || (next == '+' || next == '-') && i+2 < len(source) && typeContractDigit(source[i+2]) {
+			return typeContractScientificLiteral.FindAllStringIndex(source, -1)
+		}
+	}
+	return nil
+}
+
+func typeContractDigit(value byte) bool {
+	return value >= '0' && value <= '9'
+}
+
+func typeContractRawCollectionConstructorMatches(source string) [][]int {
+	for from := 0; ; {
+		at := strings.IndexByte(source[from:], '(')
+		if at < 0 {
+			return nil
+		}
+		at += from
+		from = at + 1
+		close := at + 1
+		for close < len(source) && typeContractSpace(source[close]) {
+			close++
+		}
+		if close == len(source) || source[close] != ')' {
+			continue
+		}
+		end := at
+		for end > 0 && typeContractSpace(source[end-1]) {
+			end--
+		}
+		if typeContractFoldSuffix(source[:end], "map") || typeContractFoldSuffix(source[:end], "set") || typeContractFoldSuffix(source[:end], "list") {
+			return typeContractRawCollectionConstructor.FindAllStringIndex(source, -1)
+		}
+	}
+}
+
+// typeContractFoldSuffix reports whether text ends with word under the same
+// simple case folding the (?i) pattern applies, counted in characters.
+func typeContractFoldSuffix(text, word string) bool {
+	start := len(text)
+	for range word {
+		if start == 0 {
+			return false
+		}
+		_, size := utf8.DecodeLastRuneInString(text[:start])
+		start -= size
+	}
+	return strings.EqualFold(text[start:], word)
+}
+
+// typeContractSpace matches the patterns' \s class: RE2 Perl whitespace.
+func typeContractSpace(value byte) bool {
+	return value == ' ' || value == '\t' || value == '\n' || value == '\f' || value == '\r'
 }
