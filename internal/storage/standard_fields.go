@@ -2126,6 +2126,7 @@ func ensureFieldDefault(definition *ObjectDefinition, fieldName string, defaultV
 	field := definition.Fields[resolved]
 	if field.DefaultValue == "" {
 		field.DefaultValue = defaultValue
+		field.DefaultValueFromMetadata = false
 		definition.Fields[resolved] = field
 	}
 }
@@ -2137,6 +2138,7 @@ func setFieldDefault(definition *ObjectDefinition, fieldName string, defaultValu
 	}
 	field := definition.Fields[resolved]
 	field.DefaultValue = defaultValue
+	field.DefaultValueFromMetadata = false
 	definition.Fields[resolved] = field
 }
 
