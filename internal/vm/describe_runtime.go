@@ -2011,24 +2011,6 @@ func recordTypeInfoValue(recordType storage.RecordTypeInfo) Value {
 	return value
 }
 
-// describeSingleQuotedLiteral excludes compound formulas even when they begin
-// and end with quoted strings.
-func describeSingleQuotedLiteral(value string) bool {
-	if len(value) < 2 || value[0] != '\'' {
-		return false
-	}
-	for i := 1; i < len(value); i++ {
-		if value[i] == '\\' {
-			i++
-			continue
-		}
-		if value[i] == '\'' {
-			return i == len(value)-1
-		}
-	}
-	return false
-}
-
 func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	vm.ensureMetadataCacheGeneration()
 	objectName, definition, ok := vm.describeAPI68ObjectDefinition(objectName)
@@ -2154,14 +2136,12 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 		desc.Fields["defaultedOnCreate"] = Bool(true)
 	} else if defaultValue, ok := storage.DefaultValueForField(field); ok {
 		desc.Fields["defaultValue"] = vmValueFromStorage(defaultValue)
-		// Metadata literal defaults are formula expressions. Describe returns
-		// null for the observed text, number and currency literal forms.
+		// Describe returns null for observed text, number and currency metadata
+		// default formulas, while preserving their formula text separately.
 		if field.DefaultValueFromMetadata {
-			literal := strings.TrimSpace(field.DefaultValue)
-			textLiteral := field.Type == storage.FieldString && strings.EqualFold(displayType, "STRING") && describeSingleQuotedLiteral(literal)
-			_, numberErr := strconv.ParseFloat(literal, 64)
-			numberLiteral := field.Type == storage.FieldDecimal && (strings.EqualFold(displayType, "DOUBLE") || strings.EqualFold(displayType, "CURRENCY")) && numberErr == nil
-			if textLiteral || numberLiteral {
+			textDefault := field.Type == storage.FieldString && strings.EqualFold(displayType, "STRING")
+			numberDefault := field.Type == storage.FieldDecimal && (strings.EqualFold(displayType, "DOUBLE") || strings.EqualFold(displayType, "CURRENCY"))
+			if textDefault || numberDefault {
 				desc.Fields["defaultValue"] = Null
 			}
 		}
