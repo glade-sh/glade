@@ -60,6 +60,10 @@ func TestEntitySharingModelNativeRowsAndWarmState(t *testing.T) {
 			changed.Definition.SharingModel = want["OwnedPublic__c"]
 			view.Objects["OwnedPrivate__c"] = changed
 			check(view, "OwnedPrivate__c", want["OwnedPublic__c"])
+			cleared := view.Objects["OwnedPrivate__c"]
+			cleared.Definition.SharingModel = ""
+			view.Objects["OwnedPrivate__c"] = cleared
+			check(view, "OwnedPrivate__c", "")
 		})
 	}
 }
