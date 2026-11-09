@@ -1116,7 +1116,8 @@ test("alert promise lifetime follows isolated native Escape controls", async (t)
 test("native icon, button icon and modal classes", async (t) => {
   if (!requireLWCToolchain(t)) return;
   const file = path.join(repoRoot, "internal/lwcbrowser/testdata/pr163_slds/org.tsv");
-  const rows = fs.readFileSync(file, "utf8").trim().split("\n").slice(1).map(line => line.split("\t"));
+  const rows = fs.readFileSync(file, "utf8").trim().split("\n").slice(1).map(line => line.split("\t"))
+    .filter(row => !["modal_default", "modal_medium", "modal_large"].includes(row[0]));
   assert.equal(rows.length, 24);
   const server = await startBaseComponentServer();
   const browser = await chromium.launch({ headless: true });
@@ -1172,6 +1173,42 @@ test("native icon, button icon and modal classes", async (t) => {
     assert.deepEqual(mismatches, []);
     await page.locator(".glade-modal-overlay .slds-modal__close").click();
     await page.evaluate(() => window.__nativeModal);
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});
+
+
+test("native modal size classes", async (t) => {
+  if (!requireLWCToolchain(t)) return;
+  const file = path.join(repoRoot, "internal/lwcbrowser/testdata/pr163_slds/org.tsv");
+  const rows = fs.readFileSync(file, "utf8").trim().split("\n").slice(1).map(line => line.split("\t"))
+    .filter(row => ["modal_default", "modal_medium", "modal_large"].includes(row[0]));
+  assert.equal(rows.length, 6);
+  const server = await startBaseComponentServer();
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const page = await browser.newPage();
+    await page.goto(`${server.baseURL}/base.html`, { waitUntil: "networkidle" });
+    const mismatches = [];
+    for (const [id, api, route, result, expected] of rows) {
+      assert.equal(route, "browser");
+      assert.equal(result, "rendered");
+      await page.evaluate(async (name) => {
+        const { default: Modal } = await import("lightning/modal");
+        const options = { label: "Probe modal" };
+        if (name !== "modal_default") options.size = name.slice("modal_".length);
+        window.__sizeModal = Modal.open(options);
+      }, id);
+      const actual = await page.locator(".glade-modal-overlay section[role=dialog]").getAttribute("class");
+      const got = [...new Set(actual.split(/\s+/))].sort();
+      const want = [...new Set(expected.split(/\s+/))].sort();
+      if (JSON.stringify(got) !== JSON.stringify(want)) mismatches.push({ id, api, got, want });
+      await page.locator(".glade-modal-overlay .slds-modal__close").click();
+      await page.evaluate(() => window.__sizeModal);
+    }
+    assert.deepEqual(mismatches, []);
   } finally {
     await browser.close();
     await server.close();
