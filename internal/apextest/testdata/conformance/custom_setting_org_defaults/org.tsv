@@ -1,0 +1,81 @@
+source_api	route	shape	observation
+62.0	anonymous	s01_org_update	{"id_after":false,"count":0,"dml":"System.DmlException|Update failed. First exception on row 0; first error: MISSING_ARGUMENT, Id not specified in an update call: []","id":null,"null":false}
+62.0	anonymous	s02_org_upsert	{"id_set":true,"count":1,"dml":"ok"}
+62.0	anonymous	s03_org_insert	{"owner_is_user":false,"owner_is_org":true,"count":1,"dml":"ok"}
+62.0	anonymous	s04_org_db_update	{"msg":"Id not specified in an update call","code":"MISSING_ARGUMENT","success":false}
+62.0	anonymous	s05_org_list_update	{"count":0,"dml":"System.DmlException|Update failed. First exception on row 0; first error: MISSING_ARGUMENT, Id not specified in an update call: []"}
+62.0	anonymous	s07_row_then_org_update	{"count":1,"flag_after":true,"dml":"ok","id_set":true}
+62.0	anonymous	s08_org_update_twice	{"second":"System.DmlException|Update failed. First exception on row 0; first error: MISSING_ARGUMENT, Id not specified in an update call: []","b_id_set":false,"b_flag":false,"same":false,"first":"System.DmlException|Update failed. First exception on row 0; first error: MISSING_ARGUMENT, Id not specified in an update call: []"}
+62.0	anonymous	s09_instance_update	{"count":0,"dml":"System.DmlException|Update failed. First exception on row 0; first error: MISSING_ARGUMENT, Id not specified in an update call: []","owner_is_user":true,"null":false}
+62.0	anonymous	s10_userrow_instance_update	{"flag_after":true,"dml":"ok","id_set":true}
+62.0	anonymous	s11_org_set_owner_update	{"count":0,"dml":"System.DmlException|Update failed. First exception on row 0; first error: MISSING_ARGUMENT, Id not specified in an update call: []"}
+62.0	anonymous	s12_org_set_owner_upsert	{"id_set":true,"count":1,"dml":"ok"}
+62.0	anonymous	s13_list_values	{"after_update":false,"present_flag":true,"instance_null":true,"all_size":0,"values_null":true}
+62.0	anonymous	s14_org_insert_then_get	{"flag_stored":false,"dml":"ok","a_owner_org":false,"b_owner_org":true,"b_id_set":true,"same_id":true}
+62.0	anonymous	s15_org_upsert_twice	{"a_owner_org":false,"flag_stored":false,"count":1}
+62.0	anonymous	s16_org_stale_after_insert	{"count":1,"dml":"System.DmlException|Update failed. First exception on row 0; first error: MISSING_ARGUMENT, Id not specified in an update call: []"}
+62.0	anonymous	s17_instance_insert	{"owner_user":true,"owner_org":false,"count":1,"dml":"ok"}
+62.0	anonymous	s18_org_delete_then_get	{"after_delete_flag":false,"after_delete_id_set":false,"id_set":true}
+62.0	anonymous	s19_org_insert_owner_shape	{"where_org_str":1,"where_org":1,"eq_org":true,"len":18}
+62.0	anonymous	s20_new_insert_owner_shape	{"where_org":1,"eq_org":true,"len":18}
+62.0	anonymous	s21_org_upsert_then_query_update	{"flag":false}
+62.0	isTest	s01_org_update	{"id_after":false,"count":0,"dml":"System.DmlException|Update failed. First exception on row 0; first error: MISSING_ARGUMENT, Id not specified in an update call: []","id":null,"null":false}
+62.0	isTest	s02_org_upsert	{"id_set":true,"count":1,"dml":"ok"}
+62.0	isTest	s03_org_insert	{"owner_is_user":false,"owner_is_org":true,"count":1,"dml":"ok"}
+62.0	isTest	s04_org_db_update	{"msg":"Id not specified in an update call","code":"MISSING_ARGUMENT","success":false}
+62.0	isTest	s05_org_list_update	{"count":0,"dml":"System.DmlException|Update failed. First exception on row 0; first error: MISSING_ARGUMENT, Id not specified in an update call: []"}
+62.0	isTest	s07_row_then_org_update	{"count":1,"flag_after":true,"dml":"ok","id_set":true}
+62.0	isTest	s08_org_update_twice	{"second":"System.DmlException|Update failed. First exception on row 0; first error: MISSING_ARGUMENT, Id not specified in an update call: []","b_id_set":false,"b_flag":false,"same":false,"first":"System.DmlException|Update failed. First exception on row 0; first error: MISSING_ARGUMENT, Id not specified in an update call: []"}
+62.0	isTest	s09_instance_update	{"count":0,"dml":"System.DmlException|Update failed. First exception on row 0; first error: MISSING_ARGUMENT, Id not specified in an update call: []","owner_is_user":true,"null":false}
+62.0	isTest	s10_userrow_instance_update	{"flag_after":true,"dml":"ok","id_set":true}
+62.0	isTest	s11_org_set_owner_update	{"count":0,"dml":"System.DmlException|Update failed. First exception on row 0; first error: MISSING_ARGUMENT, Id not specified in an update call: []"}
+62.0	isTest	s12_org_set_owner_upsert	{"id_set":true,"count":1,"dml":"ok"}
+62.0	isTest	s13_list_values	{"after_update":false,"present_flag":true,"instance_null":true,"all_size":0,"values_null":true}
+62.0	isTest	s14_org_insert_then_get	{"flag_stored":false,"dml":"ok","a_owner_org":false,"b_owner_org":true,"b_id_set":true,"same_id":true}
+62.0	isTest	s15_org_upsert_twice	{"a_owner_org":false,"flag_stored":false,"count":1}
+62.0	isTest	s16_org_stale_after_insert	{"count":1,"dml":"System.DmlException|Update failed. First exception on row 0; first error: MISSING_ARGUMENT, Id not specified in an update call: []"}
+62.0	isTest	s17_instance_insert	{"owner_user":true,"owner_org":false,"count":1,"dml":"ok"}
+62.0	isTest	s18_org_delete_then_get	{"after_delete_flag":false,"after_delete_id_set":false,"id_set":true}
+62.0	isTest	s19_org_insert_owner_shape	{"where_org_str":1,"where_org":1,"eq_org":true,"len":18}
+62.0	isTest	s20_new_insert_owner_shape	{"where_org":1,"eq_org":true,"len":18}
+62.0	isTest	s21_org_upsert_then_query_update	{"flag":false}
+67.0	anonymous	s01_org_update	{"id_after":false,"count":0,"dml":"System.DmlException|Update failed. First exception on row 0; first error: MISSING_ARGUMENT, Id not specified in an update call: []","id":null,"null":false}
+67.0	anonymous	s02_org_upsert	{"id_set":true,"count":1,"dml":"ok"}
+67.0	anonymous	s03_org_insert	{"owner_is_user":false,"owner_is_org":true,"count":1,"dml":"ok"}
+67.0	anonymous	s04_org_db_update	{"msg":"Id not specified in an update call","code":"MISSING_ARGUMENT","success":false}
+67.0	anonymous	s05_org_list_update	{"count":0,"dml":"System.DmlException|Update failed. First exception on row 0; first error: MISSING_ARGUMENT, Id not specified in an update call: []"}
+67.0	anonymous	s07_row_then_org_update	{"count":1,"flag_after":true,"dml":"ok","id_set":true}
+67.0	anonymous	s08_org_update_twice	{"second":"System.DmlException|Update failed. First exception on row 0; first error: MISSING_ARGUMENT, Id not specified in an update call: []","b_id_set":false,"b_flag":false,"same":false,"first":"System.DmlException|Update failed. First exception on row 0; first error: MISSING_ARGUMENT, Id not specified in an update call: []"}
+67.0	anonymous	s09_instance_update	{"count":0,"dml":"System.DmlException|Update failed. First exception on row 0; first error: MISSING_ARGUMENT, Id not specified in an update call: []","owner_is_user":true,"null":false}
+67.0	anonymous	s10_userrow_instance_update	{"flag_after":true,"dml":"ok","id_set":true}
+67.0	anonymous	s11_org_set_owner_update	{"count":0,"dml":"System.DmlException|Update failed. First exception on row 0; first error: MISSING_ARGUMENT, Id not specified in an update call: []"}
+67.0	anonymous	s12_org_set_owner_upsert	{"id_set":true,"count":1,"dml":"ok"}
+67.0	anonymous	s13_list_values	{"after_update":false,"present_flag":true,"instance_null":true,"all_size":0,"values_null":true}
+67.0	anonymous	s14_org_insert_then_get	{"flag_stored":false,"dml":"ok","a_owner_org":false,"b_owner_org":true,"b_id_set":true,"same_id":true}
+67.0	anonymous	s15_org_upsert_twice	{"a_owner_org":false,"flag_stored":false,"count":1}
+67.0	anonymous	s16_org_stale_after_insert	{"count":1,"dml":"System.DmlException|Update failed. First exception on row 0; first error: MISSING_ARGUMENT, Id not specified in an update call: []"}
+67.0	anonymous	s17_instance_insert	{"owner_user":true,"owner_org":false,"count":1,"dml":"ok"}
+67.0	anonymous	s18_org_delete_then_get	{"after_delete_flag":false,"after_delete_id_set":false,"id_set":true}
+67.0	anonymous	s19_org_insert_owner_shape	{"where_org_str":1,"where_org":1,"eq_org":true,"len":18}
+67.0	anonymous	s20_new_insert_owner_shape	{"where_org":1,"eq_org":true,"len":18}
+67.0	anonymous	s21_org_upsert_then_query_update	{"flag":false}
+67.0	isTest	s01_org_update	{"id_after":false,"count":0,"dml":"System.DmlException|Update failed. First exception on row 0; first error: MISSING_ARGUMENT, Id not specified in an update call: []","id":null,"null":false}
+67.0	isTest	s02_org_upsert	{"id_set":true,"count":1,"dml":"ok"}
+67.0	isTest	s03_org_insert	{"owner_is_user":false,"owner_is_org":true,"count":1,"dml":"ok"}
+67.0	isTest	s04_org_db_update	{"msg":"Id not specified in an update call","code":"MISSING_ARGUMENT","success":false}
+67.0	isTest	s05_org_list_update	{"count":0,"dml":"System.DmlException|Update failed. First exception on row 0; first error: MISSING_ARGUMENT, Id not specified in an update call: []"}
+67.0	isTest	s07_row_then_org_update	{"count":1,"flag_after":true,"dml":"ok","id_set":true}
+67.0	isTest	s08_org_update_twice	{"second":"System.DmlException|Update failed. First exception on row 0; first error: MISSING_ARGUMENT, Id not specified in an update call: []","b_id_set":false,"b_flag":false,"same":false,"first":"System.DmlException|Update failed. First exception on row 0; first error: MISSING_ARGUMENT, Id not specified in an update call: []"}
+67.0	isTest	s09_instance_update	{"count":0,"dml":"System.DmlException|Update failed. First exception on row 0; first error: MISSING_ARGUMENT, Id not specified in an update call: []","owner_is_user":true,"null":false}
+67.0	isTest	s10_userrow_instance_update	{"flag_after":true,"dml":"ok","id_set":true}
+67.0	isTest	s11_org_set_owner_update	{"count":0,"dml":"System.DmlException|Update failed. First exception on row 0; first error: MISSING_ARGUMENT, Id not specified in an update call: []"}
+67.0	isTest	s12_org_set_owner_upsert	{"id_set":true,"count":1,"dml":"ok"}
+67.0	isTest	s13_list_values	{"after_update":false,"present_flag":true,"instance_null":true,"all_size":0,"values_null":true}
+67.0	isTest	s14_org_insert_then_get	{"flag_stored":false,"dml":"ok","a_owner_org":false,"b_owner_org":true,"b_id_set":true,"same_id":true}
+67.0	isTest	s15_org_upsert_twice	{"a_owner_org":false,"flag_stored":false,"count":1}
+67.0	isTest	s16_org_stale_after_insert	{"count":1,"dml":"System.DmlException|Update failed. First exception on row 0; first error: MISSING_ARGUMENT, Id not specified in an update call: []"}
+67.0	isTest	s17_instance_insert	{"owner_user":true,"owner_org":false,"count":1,"dml":"ok"}
+67.0	isTest	s18_org_delete_then_get	{"after_delete_flag":false,"after_delete_id_set":false,"id_set":true}
+67.0	isTest	s19_org_insert_owner_shape	{"where_org_str":1,"where_org":1,"eq_org":true,"len":18}
+67.0	isTest	s20_new_insert_owner_shape	{"where_org":1,"eq_org":true,"len":18}
+67.0	isTest	s21_org_upsert_then_query_update	{"flag":false}

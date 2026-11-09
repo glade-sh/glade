@@ -1,0 +1,1 @@
+@IsTest private class B4SettingOnly62 { @IsTest static void observe() { try { KbManagement.PublishingService.publishArticle(null,false); System.assert(false); } catch(Exception e) { System.assertEquals('System.NoAccessException',e.getTypeName()); } } }

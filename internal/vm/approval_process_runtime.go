@@ -97,20 +97,31 @@ func (vm *VM) approvalProcessSubmitRequest(request Value, allOrNone bool) (Value
 	if !ok || strings.TrimSpace(objectIDText) == "" {
 		return approvalProcessFailureResult(allOrNone, objectID, "INVALID_FIELD", "ObjectId is invalid", []string{"ObjectId"})
 	}
-	if skip, ok := approvalRequestBool(request, "SkipEntryCriteria"); ok && !skip {
-		return Null, unsupportedCallError("Approval.process hosted approval engine routing")
-	}
 	objectName, ok := vm.approvalObjectNameForID(storage.ID(objectIDText))
 	if !ok {
 		return approvalProcessFailureResult(allOrNone, objectID, "INVALID_CROSS_REFERENCE_KEY", "ObjectId record is missing", []string{"ObjectId"})
 	}
-	definition, ok := vm.approvalProcessDefinitionForRequest(request, objectName)
+	definition, ok, err := vm.approvalProcessDefinitionForRequest(request, objectName)
+	if err != nil {
+		return Null, err
+	}
 	if !ok {
 		return approvalSubmitFailureResult(allOrNone, "NO_APPLICABLE_PROCESS", "No applicable approval process was found.", nil)
 	}
 	for _, instance := range vm.Org.Objects["ProcessInstance"].Records {
 		if storage.IDsEqual(storage.ID(storageStringField(instance, "TargetObjectId")), storage.ID(objectIDText)) && strings.EqualFold(storageStringField(instance, "Status"), "Pending") {
 			return approvalSubmitFailureResult(allOrNone, "ALREADY_IN_PROCESS", "This record is currently in an approval process. A record can be in only one approval process at a time.", nil)
+		}
+	}
+	if storageStringField(definition, "GladeApprovalRouting") == "owner" {
+		record, exists := vm.approvalRecordByID(objectName, storage.ID(objectIDText))
+		owner := record.System.OwnerID
+		if owner == "" {
+			owner = storage.ID(storageStringField(record, "OwnerId"))
+		}
+		submitter := approvalRequestID(request, "SubmitterId")
+		if !exists || !storage.IDsEqual(owner, storage.ID(vm.currentUserID())) || (submitter.Kind != ValueNull && !storage.IDsEqual(storage.ID(scalarText(submitter)), storage.ID(vm.currentUserID()))) || len(approvalRequestIDList(request, "NextApproverIds")) != 0 {
+			return Null, unsupportedCallError("Approval.process hosted approval engine routing")
 		}
 	}
 	actorID, err := vm.approvalSubmitActor(request, definition)
@@ -126,6 +137,10 @@ func (vm *VM) approvalProcessSubmitRequest(request Value, allOrNone bool) (Value
 		return Null, err
 	}
 	vm.approvalCreateStep(instanceID, storage.ID(vm.currentUserID()), "Started", approvalRequestString(request, "Comments"))
+	vm.approvalStoreHistory(workitemID, instanceID, storage.ID(objectIDText), actorID, "Pending", "")
+	if storageStringField(definition, "GladeApprovalRouting") == "owner" {
+		vm.approvalSetRecordLocked(objectName, storage.ID(objectIDText), true)
+	}
 	result := approvalProcessResult(true, objectID, nil)
 	result.Fields["instanceId"] = platformScalar("Id", string(instanceID))
 	result.Fields["instanceStatus"] = String("Pending")
@@ -217,56 +232,69 @@ func approvalProcessResult(success bool, entityID Value, errors []Value) Value {
 	result.Fields["actorIds"] = List()
 	result.Fields["newWorkitemIds"] = List()
 	result.Fields["errors"] = List(errors...)
+	if success && len(errors) == 0 {
+		// approval_verify submit/approve/reject/recall (API 62/67): a
+		// successful ProcessResult returns null from getErrors().
+		result.Fields["errors"] = Null
+	}
 	return result
 }
 
-func (vm *VM) approvalProcessDefinitionForRequest(request Value, objectName string) (storage.Record, bool) {
+func (vm *VM) approvalProcessDefinitionForRequest(request Value, objectName string) (storage.Record, bool, error) {
 	nameOrID := strings.TrimSpace(approvalRequestString(request, "ProcessDefinitionNameOrId"))
-	if nameOrID != "" {
-		return vm.approvalNamedProcessDefinition(nameOrID)
-	}
-	return vm.approvalLocalProcessDefinition(objectName)
-}
-
-func (vm *VM) approvalNamedProcessDefinition(nameOrID string) (storage.Record, bool) {
 	if vm == nil || vm.Org == nil {
-		return storage.Record{}, false
+		return storage.Record{}, false, nil
 	}
 	object, ok := vm.Org.Objects["ProcessDefinition"]
 	if !ok {
-		return storage.Record{}, false
+		return storage.Record{}, false, nil
 	}
-	if _, record, ok := storage.LookupRecordByID(object.Records, storage.ID(nameOrID)); ok && approvalProcessDefinitionActive(record) {
-		return record, true
-	}
+	skip, skipSpecified := approvalRequestBool(request, "SkipEntryCriteria")
+	var selected storage.Record
+	found := false
+	foreignMatch := false
 	for _, record := range sortedStorageRecords(object.Records) {
 		if !approvalProcessDefinitionActive(record) {
 			continue
 		}
-		if strings.EqualFold(storageStringField(record, "DeveloperName"), nameOrID) || strings.EqualFold(storageStringField(record, "Name"), nameOrID) {
-			return record, true
-		}
-	}
-	return storage.Record{}, false
-}
-
-func (vm *VM) approvalLocalProcessDefinition(objectName string) (storage.Record, bool) {
-	if vm == nil || vm.Org == nil {
-		return storage.Record{}, false
-	}
-	object, ok := vm.Org.Objects["ProcessDefinition"]
-	if !ok {
-		return storage.Record{}, false
-	}
-	for _, record := range sortedStorageRecords(object.Records) {
-		if !approvalProcessDefinitionActive(record) {
+		if nameOrID != "" {
+			recordID := string(record.ID)
+			idMatch := len(nameOrID) == 15 && len(recordID) >= 15 && recordID[:15] == nameOrID
+			if !idMatch && !strings.EqualFold(storageStringField(record, "DeveloperName"), nameOrID) {
+				continue
+			}
+		} else if !strings.EqualFold(storageStringField(record, "TableEnumOrId"), objectName) {
 			continue
 		}
-		if strings.EqualFold(storageStringField(record, "TableEnumOrId"), objectName) {
-			return record, true
+		if nameOrID != "" && !strings.EqualFold(storageStringField(record, "TableEnumOrId"), objectName) {
+			foreignMatch = true
+			continue
 		}
+		if routing := storageStringField(record, "GladeApprovalRouting"); routing == "" && skipSpecified && !skip {
+			return storage.Record{}, false, unsupportedCallError("Approval.process hosted approval engine routing")
+		}
+		if !(skip && nameOrID != "") {
+			criteria := strings.ToUpper(strings.ReplaceAll(strings.TrimSpace(storageStringField(record, "GladeApprovalCriteria")), " ", ""))
+			switch criteria {
+			case "", "TRUE", "TRUE()":
+			case "FALSE", "FALSE()":
+				continue
+			default:
+				return storage.Record{}, false, unsupportedCallError("Approval.process hosted approval engine routing")
+			}
+		}
+		if routing := storageStringField(record, "GladeApprovalRouting"); routing != "" && routing != "owner" {
+			return storage.Record{}, false, unsupportedCallError("Approval.process hosted approval engine routing")
+		}
+		if found {
+			return storage.Record{}, false, unsupportedCallError("Approval.process hosted approval engine routing")
+		}
+		selected, found = record, true
 	}
-	return storage.Record{}, false
+	if !found && foreignMatch {
+		return storage.Record{}, false, unsupportedCallError("Approval.process hosted approval engine routing")
+	}
+	return selected, found, nil
 }
 
 func approvalProcessDefinitionActive(record storage.Record) bool {
@@ -382,6 +410,8 @@ func (vm *VM) approvalApplyWorkitemAction(workitemID storage.ID, action string, 
 		status = "Approved"
 	case "reject", "rejected":
 		status = "Rejected"
+	case "removed":
+		status = "Removed"
 	default:
 		if allOrNone {
 			return Null, rowDMLException("process", []dml.Result{{StatusCode: "INVALID_OPERATION", Error: "Illegal transition type"}}, nil)
@@ -392,12 +422,31 @@ func (vm *VM) approvalApplyWorkitemAction(workitemID storage.ID, action string, 
 	if !ok {
 		return approvalProcessFailureResult(allOrNone, platformScalar("Id", string(workitemID)), "INVALID_CROSS_REFERENCE_KEY", "WorkitemId record is missing", []string{"WorkitemId"})
 	}
+	if workitem.System.IsDeleted {
+		// approval_verify decideAgain (API 62/67): a workitem that was already
+		// approved, rejected or recalled is an invalid cross reference.
+		if allOrNone {
+			return Null, rowDMLException("process", []dml.Result{{StatusCode: "INVALID_CROSS_REFERENCE_KEY", Error: "invalid cross reference id"}}, nil)
+		}
+		return approvalProcessFailureResult(false, platformScalar("Id", string(workitemID)), "INVALID_CROSS_REFERENCE_KEY", "invalid cross reference id", nil)
+	}
 	instanceID := storage.ID(strings.TrimSpace(storageStringField(workitem, "ProcessInstanceId")))
 	instance, ok := vm.approvalRecordByID("ProcessInstance", instanceID)
 	if !ok {
 		return approvalProcessFailureResult(allOrNone, platformScalar("Id", string(workitemID)), "INVALID_CROSS_REFERENCE_KEY", "ProcessInstance record is missing", []string{"ProcessInstanceId"})
 	}
 	actorID := storage.ID(strings.TrimSpace(storageStringField(workitem, "ActorId")))
+	definitionID := storage.ID(strings.TrimSpace(storageStringField(instance, "ProcessDefinitionId")))
+	definition, definitionExists := vm.approvalRecordByID("ProcessDefinition", definitionID)
+	if definitionExists && storageStringField(definition, "GladeApprovalRouting") == "owner" && !storage.IDsEqual(actorID, storage.ID(vm.currentUserID())) {
+		return Null, unsupportedCallError("Approval.process hosted approval engine routing")
+	}
+	// approval_verify recall (API 62/67): the submitter recalls a pending
+	// request of a process with allowRecall. Other recall shapes are not
+	// captured and stay with the hosted engine.
+	if status == "Removed" && (!definitionExists || storageStringField(definition, "GladeApprovalRecall") != "true" || !storage.IDsEqual(storage.ID(storageStringField(instance, "SubmittedById")), storage.ID(vm.currentUserID()))) {
+		return Null, unsupportedCallError("Approval.process hosted approval engine routing")
+	}
 	instanceBefore := instance.Clone()
 	instance.Fields["Status"] = storage.StringValue(status)
 	instance.Fields["LastActorId"] = storage.IDValue(actorID)
@@ -407,7 +456,29 @@ func (vm *VM) approvalApplyWorkitemAction(workitemID storage.ID, action string, 
 	workitem.System.IsDeleted = true
 	workitem.Fields["IsDeleted"] = storage.BooleanValue(true)
 	vm.approvalUpdateRecord(workitem, workitemBefore)
-	vm.approvalCreateStep(instanceID, actorID, status, comments)
+	// ProcessInstanceHistory (StepsAndWorkitems) lists steps and open
+	// workitems. A recall turns the workitem entry into Removed and adds no
+	// ProcessInstanceStep; approve and reject replace it with a step.
+	if history, ok := vm.approvalRecordByID("ProcessInstanceHistory", workitemID); ok {
+		historyBefore := history.Clone()
+		if status == "Removed" {
+			history.Fields["StepStatus"] = storage.StringValue("Removed")
+			history.Fields["IsPending"] = storage.BooleanValue(false)
+		} else {
+			history.System.IsDeleted = true
+			history.Fields["IsDeleted"] = storage.BooleanValue(true)
+		}
+		vm.approvalUpdateRecord(history, historyBefore)
+	}
+	if status != "Removed" {
+		vm.approvalCreateStep(instanceID, actorID, status, comments)
+	}
+	if definitionExists && storageStringField(definition, "GladeApprovalRouting") == "owner" {
+		targetID := storage.ID(strings.TrimSpace(storageStringField(instance, "TargetObjectId")))
+		if objectName, ok := vm.approvalObjectNameForID(targetID); ok {
+			vm.approvalSetRecordLocked(objectName, targetID, false)
+		}
+	}
 
 	result := approvalProcessResult(true, platformScalar("Id", string(workitemID)), nil)
 	result.Fields["instanceId"] = platformScalar("Id", string(instanceID))
@@ -421,6 +492,11 @@ func (vm *VM) approvalCreateStep(instanceID storage.ID, actorID storage.ID, stat
 	if err != nil {
 		return
 	}
+	defer func() {
+		if instance, ok := vm.approvalRecordByID("ProcessInstance", instanceID); ok {
+			vm.approvalStoreHistory(id, instanceID, storage.ID(strings.TrimSpace(storageStringField(instance, "TargetObjectId"))), actorID, status, comments)
+		}
+	}()
 	record := storage.Record{
 		ID:     id,
 		Object: "ProcessInstanceStep",
@@ -434,6 +510,26 @@ func (vm *VM) approvalCreateStep(instanceID storage.ID, actorID storage.ID, stat
 		},
 	}
 	vm.approvalStoreRecord(record)
+}
+
+// approvalStoreHistory mirrors a step or workitem as ProcessInstanceHistory
+// under the same Id (approval_verify StepsAndWorkitems rows, API 62/67).
+func (vm *VM) approvalStoreHistory(id, instanceID, targetID, actorID storage.ID, status, comments string) {
+	vm.approvalStoreRecord(storage.Record{
+		ID:     id,
+		Object: "ProcessInstanceHistory",
+		Fields: map[string]storage.Value{
+			"Id":                storage.IDValue(id),
+			"ProcessInstanceId": storage.IDValue(instanceID),
+			"TargetObjectId":    storage.IDValue(targetID),
+			"ActorId":           storage.IDValue(actorID),
+			"OriginalActorId":   storage.IDValue(actorID),
+			"StepStatus":        storage.StringValue(status),
+			"Comments":          storage.StringValue(comments),
+			"IsPending":         storage.BooleanValue(status == "Pending"),
+			"IsDeleted":         storage.BooleanValue(false),
+		},
+	})
 }
 
 func (vm *VM) approvalObjectNameForID(id storage.ID) (string, bool) {
@@ -472,6 +568,27 @@ func (vm *VM) approvalStoreRecord(record storage.Record) {
 	vm.recordIsolationJournalMutation(record.Object, record.ID, storage.Record{}, false)
 	object.Records[record.ID] = record
 	vm.Org.Objects[record.Object] = object
+}
+
+// approvalSetRecordLocked uses the same copy-on-write and rollback journal as
+// record actions, so approval state stays transactionally isolated.
+func (vm *VM) approvalSetRecordLocked(objectName string, id storage.ID, locked bool) {
+	if vm == nil || vm.Org == nil || id == "" {
+		return
+	}
+	storage.EnsureMutableObjectRecords(vm.Org, objectName)
+	object, ok := vm.Org.Objects[objectName]
+	if !ok {
+		return
+	}
+	storedID, record, ok := storage.LookupRecordByID(object.Records, id)
+	if !ok {
+		return
+	}
+	vm.recordIsolationJournalMutation(objectName, storedID, record, true)
+	record.System.Locked = locked
+	object.Records[storedID] = record
+	vm.Org.Objects[objectName] = object
 }
 
 func (vm *VM) approvalUpdateRecord(record storage.Record, before storage.Record) {

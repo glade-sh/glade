@@ -1,0 +1,3 @@
+<apex:page controller="ShapeCtl" showHeader="false" sidebar="false" standardStylesheets="false">
+<div data-case="ShapeNestedPlain"><apex:repeat value="{!objs}" var="ot"><apex:repeat value="{!fieldMap[ot]}" var="q">[{!$ObjectType[ot].fields[q].Label}]</apex:repeat></apex:repeat></div>
+</apex:page>

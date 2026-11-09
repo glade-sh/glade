@@ -1,0 +1,45 @@
+source_api	route	case_id	compiled	success	problem	exception
+62.0	anonymous	group	false	false	"
+SELECT PermissionsViewAllFields, COUNT(Id)
+       ^
+ERROR at Row:1:Column:8
+Invalid field: 'PermissionsViewAllFields'"	-
+62.0	anonymous	having	false	false	"
+SELECT PermissionsViewAllFields, COUNT(Id)
+       ^
+ERROR at Row:1:Column:8
+Invalid field: 'PermissionsViewAllFields'"	-
+62.0	anonymous	qualified-select	false	false	"
+SELECT ObjectPermissions.PermissionsViewAllFields
+       ^
+ERROR at Row:1:Column:8
+No such column 'PermissionsViewAllFields' on entity 'ObjectPermissions'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."	-
+62.0	anonymous	group-only	false	false	"
+FROM ObjectPermissions GROUP BY PermissionsViewAllFields
+                                ^
+ERROR at Row:1:Column:50
+No such column 'PermissionsViewAllFields' on entity 'ObjectPermissions'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."	-
+62.0	anonymous	having-only	false	false	"
+FROM ObjectPermissions GROUP BY PermissionsViewAllFields HAVING
+                                ^
+ERROR at Row:1:Column:50
+No such column 'PermissionsViewAllFields' on entity 'ObjectPermissions'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."	-
+63.0	anonymous	group	true	false	-	System.UnexpectedException: field 'PermissionsViewAllFields' can not be grouped in a query call
+63.0	anonymous	having	true	false	-	System.UnexpectedException: field 'PermissionsViewAllFields' can not be grouped in a query call
+63.0	anonymous	qualified-select	true	true	-	-
+63.0	anonymous	group-only	true	false	-	System.UnexpectedException: field 'PermissionsViewAllFields' can not be grouped in a query call
+63.0	anonymous	having-only	true	false	-	System.UnexpectedException: field 'PermissionsViewAllFields' can not be grouped in a query call
+64.0	anonymous	group	true	false	-	System.UnexpectedException: field 'PermissionsViewAllFields' can not be grouped in a query call
+64.0	anonymous	having	true	false	-	System.UnexpectedException: field 'PermissionsViewAllFields' can not be grouped in a query call
+64.0	anonymous	qualified-select	true	true	-	-
+65.0	anonymous	group	true	false	-	System.UnexpectedException: field 'PermissionsViewAllFields' can not be grouped in a query call
+65.0	anonymous	having	true	false	-	System.UnexpectedException: field 'PermissionsViewAllFields' can not be grouped in a query call
+65.0	anonymous	qualified-select	true	true	-	-
+66.0	anonymous	group	true	false	-	System.UnexpectedException: field 'PermissionsViewAllFields' can not be grouped in a query call
+66.0	anonymous	having	true	false	-	System.UnexpectedException: field 'PermissionsViewAllFields' can not be grouped in a query call
+66.0	anonymous	qualified-select	true	true	-	-
+67.0	anonymous	group	true	false	-	System.UnexpectedException: field 'PermissionsViewAllFields' can not be grouped in a query call
+67.0	anonymous	having	true	false	-	System.UnexpectedException: field 'PermissionsViewAllFields' can not be grouped in a query call
+67.0	anonymous	qualified-select	true	true	-	-
+67.0	anonymous	group-only	true	false	-	System.UnexpectedException: field 'PermissionsViewAllFields' can not be grouped in a query call
+67.0	anonymous	having-only	true	false	-	System.UnexpectedException: field 'PermissionsViewAllFields' can not be grouped in a query call

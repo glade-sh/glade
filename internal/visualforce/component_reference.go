@@ -18,7 +18,10 @@ func validateComponentClientIDs(root *MarkupNode) error {
 		}
 		if node.Namespace == "apex" && node.HasAttribute("id") {
 			id := node.Attribute("id")
-			if strings.Contains(id, " ") {
+			// The org rejects an id with a space or a colon, or one that starts with
+			// a digit; the message is the id itself (rows IdLiteralSpace, IdLiteralColon,
+			// IdLiteralDigit).
+			if strings.ContainsAny(id, " :") || id != "" && id[0] >= '0' && id[0] <= '9' {
 				return fmt.Errorf("%s", id)
 			}
 			if clientID := refs.clientIDs[node]; clientID != "" {
@@ -42,6 +45,10 @@ type componentReferenceResolver struct {
 	root      *componentReferenceNode
 	scopes    map[*MarkupNode]*componentReferenceScope
 	clientIDs map[*MarkupNode]string
+	// messageBase holds the generated-ID counter after a pageMessage's own ID.
+	messageBase map[*MarkupNode]int
+	// customScopes numbers the id scopes of custom component uses.
+	customScopes int
 }
 
 type componentReferenceNode struct {
@@ -72,6 +79,8 @@ func newComponentReferenceResolver(root *MarkupNode, inherited *componentReferen
 		root:      page,
 		scopes:    make(map[*MarkupNode]*componentReferenceScope),
 		clientIDs: make(map[*MarkupNode]string),
+
+		messageBase: make(map[*MarkupNode]int),
 	}
 	pageScope := &componentReferenceScope{resolver: resolver, container: page}
 	if root == nil {
@@ -107,6 +116,13 @@ func isApexPageNode(node *MarkupNode) bool {
 func (resolver *componentReferenceResolver) indexPage(page *MarkupNode, componentParent *componentReferenceNode, pageScope *componentReferenceScope) {
 	if page == nil {
 		return
+	}
+	if id := strings.TrimSpace(page.Attribute("id")); id != "" && !strings.Contains(id, "{!") && componentParent == resolver.root && componentParent.clientID == "j_id0" {
+		// An id on apex:page replaces the root of every client ID (row IdPageLiteral),
+		// and the page no longer takes j_id0: the first generated id is j_id0
+		// (row IncIdChild: pgc:j_id1 after the page's literal markup).
+		componentParent.localID, componentParent.clientID = id, id
+		componentParent.nextID = -1
 	}
 	resolver.scopes[page] = pageScope
 	resolver.clientIDs[page] = componentParent.clientID
@@ -150,13 +166,19 @@ func (resolver *componentReferenceResolver) indexNode(node *MarkupNode, componen
 			localID = resolver.root.nextGeneratedID()
 		}
 		ref := &componentReferenceNode{
-			localID:         localID,
-			clientID:        joinComponentClientID(clientParent.clientID, localID),
-			children:        map[string]*componentReferenceNode{},
-			namingContainer: strings.EqualFold(node.Name, "form") || strings.EqualFold(node.Name, "repeat"),
+			localID:  localID,
+			clientID: joinComponentClientID(clientParent.clientID, localID),
+			children: map[string]*componentReferenceNode{},
+			// An include and the page it splices in are naming containers (rows Inc*).
+			namingContainer: strings.EqualFold(node.Name, "form") || strings.EqualFold(node.Name, "repeat") || strings.EqualFold(node.Name, "include") || strings.EqualFold(node.Name, "page"),
 		}
 		componentParent.children[localID] = ref
 		resolver.clientIDs[node] = ref.clientID
+		if strings.EqualFold(node.Name, "pageMessage") {
+			// The org allocates thirteen internal components after the span.
+			resolver.messageBase[node] = resolver.root.nextID
+			resolver.root.nextID += 13
+		}
 		childContainer := namingContainer
 		if ref.namingContainer {
 			childContainer = ref
@@ -164,7 +186,10 @@ func (resolver *componentReferenceResolver) indexNode(node *MarkupNode, componen
 		// Captured field widgets include block and section identifiers in their
 		// client IDs. These prefixes do not create $Component lookup boundaries.
 		childClientParent := clientParent
-		if ref.namingContainer || strings.EqualFold(node.Name, "pageBlock") || strings.EqualFold(node.Name, "pageBlockSection") {
+		// A pageBlockSectionItem prefixes the ids of its cells (rows ItemsSameId*
+		// of testdata/vf_component_ids): two items may each hold a control with
+		// the same id.
+		if ref.namingContainer || strings.EqualFold(node.Name, "pageBlock") || strings.EqualFold(node.Name, "pageBlockSection") || strings.EqualFold(node.Name, "pageBlockSectionItem") {
 			childClientParent = ref
 		}
 		childScope := &componentReferenceScope{resolver: resolver, container: childContainer}
@@ -177,6 +202,19 @@ func (resolver *componentReferenceResolver) indexNode(node *MarkupNode, componen
 		return
 	}
 	*literal = true // Opening HTML is part of the current literal run.
+	if _, standard := StandardComponentSpec(node.Namespace, node.Name); node.Namespace != "" && !standard {
+		// A custom component is a naming scope: the content passed to its
+		// componentBody takes the component's id as a prefix, so it may reuse an
+		// id of the surrounding page or of another use of the same component
+		// (rows Body* of testdata/vf_component_ids). The generated number only
+		// keeps the scopes apart; it does not take part in the page's id sequence.
+		local := strings.TrimSpace(node.Attribute("id"))
+		if local == "" || strings.Contains(local, "{!") {
+			resolver.customScopes++
+			local = "j_cc" + strconv.Itoa(resolver.customScopes)
+		}
+		clientParent = &componentReferenceNode{localID: local, clientID: joinComponentClientID(clientParent.clientID, local)}
+	}
 	for _, child := range node.Children {
 		resolver.indexNode(child, componentParent, namingContainer, clientParent, scope, literal)
 	}

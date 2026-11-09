@@ -9,7 +9,7 @@ import (
 // Features read only through the embedded standard-field policy data cite that
 // data file and are checked against storage.PolicyFeatureNames.
 type FeatureConsumer struct {
-	Component string // "storage", "vm", "resource", "project" or "storage-policy-data"
+	Component string // "storage", "vm", "resource", "project", "sema" or "storage-policy-data"
 	File      string // path relative to the repository root
 }
 
@@ -23,6 +23,12 @@ type ScratchFeatureDescriptor struct {
 }
 
 var scratchFeatureRegistry = []ScratchFeatureDescriptor{
+	{
+		Name: "Knowledge",
+		Consumers: []FeatureConsumer{
+			{"sema", "internal/sema/type_members.go"},
+		},
+	},
 	{
 		Name: "PersonAccounts",
 		Consumers: []FeatureConsumer{
@@ -53,8 +59,6 @@ var scratchFeatureRegistry = []ScratchFeatureDescriptor{
 		Consumers: []FeatureConsumer{
 			{"storage", "internal/storage/fixture.go"},
 			{"storage", "internal/storage/fixture_organization_groups.go"},
-			{"resource", "internal/resource/networks.go"},
-			{"vm", "internal/vm/class_lookup.go"},
 			{"vm", "internal/vm/dispatch.go"},
 			{"project", "internal/project/project.go"},
 		},
@@ -119,6 +123,13 @@ var scratchFeatureRegistry = []ScratchFeatureDescriptor{
 		},
 	},
 	{
+		Name: "PublicSectorAccess",
+		Consumers: []FeatureConsumer{
+			{"storage", "internal/storage/platform_child_relationships_industries.go"},
+			{"storage", "internal/storage/org_object_availability.go"},
+		},
+	},
+	{
 		Name: "Quotes",
 		Consumers: []FeatureConsumer{
 			{"storage", "internal/storage/org_object_availability.go"},
@@ -130,6 +141,50 @@ var scratchFeatureRegistry = []ScratchFeatureDescriptor{
 		Consumers: []FeatureConsumer{
 			{"storage", "internal/storage/org_object_availability.go"},
 		},
+	},
+	{
+		Name:      "Territory2",
+		Consumers: []FeatureConsumer{{"storage", "internal/storage/org_object_availability.go"}, {"project", "internal/project/project.go"}},
+	},
+	{
+		Name:      "AccountTeams",
+		Consumers: []FeatureConsumer{{"storage", "internal/storage/org_object_availability.go"}, {"project", "internal/project/project.go"}},
+	},
+	{
+		Name:      "Forecasts",
+		Consumers: []FeatureConsumer{{"storage", "internal/storage/org_object_availability.go"}, {"project", "internal/project/project.go"}},
+	},
+	{
+		Name:      "OpportunityTeam",
+		Consumers: []FeatureConsumer{{"storage", "internal/storage/org_object_availability.go"}, {"project", "internal/project/project.go"}},
+	},
+	{
+		Name:      "OpportunitySplits",
+		Consumers: []FeatureConsumer{{"storage", "internal/storage/org_object_availability.go"}},
+	},
+	{
+		Name:      "OmniChannel",
+		Consumers: []FeatureConsumer{{"storage", "internal/storage/org_object_availability.go"}, {"project", "internal/project/project.go"}},
+	},
+	{
+		Name:      "Surveys",
+		Consumers: []FeatureConsumer{{"storage", "internal/storage/org_object_availability.go"}, {"project", "internal/project/project.go"}},
+	},
+	{
+		Name:      "CampaignInfluence2Enabled",
+		Consumers: []FeatureConsumer{{"vm", "internal/vm/class_lookup.go"}, {"storage", "internal/storage/org_object_availability.go"}, {"project", "internal/project/project.go"}},
+	},
+	{
+		Name:      "KnowledgeEnabled",
+		Consumers: []FeatureConsumer{{"storage", "internal/storage/org_object_availability.go"}, {"project", "internal/project/project.go"}},
+	},
+	{
+		Name:      "NetworksEnabled",
+		Consumers: []FeatureConsumer{{"storage", "internal/storage/org_object_availability.go"}, {"resource", "internal/resource/networks.go"}, {"sema", "internal/sema/automation_contracts.go"}, {"project", "internal/project/project.go"}},
+	},
+	{
+		Name:      "OrderManagementEnabled",
+		Consumers: []FeatureConsumer{{"storage", "internal/storage/org_object_availability.go"}, {"project", "internal/project/project.go"}},
 	},
 	{
 		Name: "B2BCommerce",
@@ -145,6 +200,39 @@ var scratchFeatureRegistry = []ScratchFeatureDescriptor{
 		},
 	},
 	{
+		Name: "MiddleNameEnabled",
+		Consumers: []FeatureConsumer{
+			{"storage-policy-data", "internal/storage/standard_field_policy.json.gz"},
+			{"project", "internal/project/project.go"},
+		},
+	},
+	{
+		Name: "EnhancedCommerceOrders",
+		Consumers: []FeatureConsumer{
+			{"storage-policy-data", "internal/storage/standard_field_policy.json.gz"},
+			{"project", "internal/project/project.go"},
+		},
+	},
+	{
+		Name: "CommerceContractPricing",
+		Consumers: []FeatureConsumer{
+			{"project", "internal/project/project.go"},
+			{"sema", "internal/sema/platform_availability.go"},
+		},
+	},
+	{
+		Name:      "Fundraising",
+		Consumers: []FeatureConsumer{{"storage", "internal/storage/org_object_availability.go"}},
+	},
+	{
+		Name:      "FundraisingEnabled",
+		Consumers: []FeatureConsumer{{"storage", "internal/storage/org_object_availability.go"}, {"project", "internal/project/project.go"}},
+	},
+	{
+		Name:      "DocGen",
+		Consumers: []FeatureConsumer{{"storage", "internal/storage/org_object_availability.go"}},
+	},
+	{
 		Name: "LiveAgent",
 		Consumers: []FeatureConsumer{
 			{"storage-policy-data", "internal/storage/standard_field_policy.json.gz"},
@@ -156,6 +244,13 @@ var scratchFeatureRegistry = []ScratchFeatureDescriptor{
 			{"storage-policy-data", "internal/storage/standard_field_policy.json.gz"},
 			{"project", "internal/project/project.go"},
 		},
+	},
+	{
+		// Synthesized from objectSettings.<object>.defaultRecordType, one
+		// token per object (ObjectDefaultRecordType<object>).
+		Name:      ObjectDefaultRecordTypeFeature,
+		Prefix:    true,
+		Consumers: []FeatureConsumer{{"project", "internal/project/project.go"}},
 	},
 	{
 		Name: "ApexUserModeWithPermset",

@@ -1,0 +1,1 @@
+<Report xmlns="http://soap.sforce.com/2006/04/metadata"><columns><field>OPPORTUNITY_NAME</field></columns><description> Opportunity notes </description><format>Tabular</format><name>B6 Opportunities</name><reportType>Opportunity</reportType><scope>organization</scope><showGrandTotal>false</showGrandTotal><showSubTotals>false</showSubTotals></Report>

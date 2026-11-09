@@ -1,0 +1,4 @@
+case	result
+populate	true
+clear	false,FIELD_INTEGRITY_EXCEPTION
+partial	false,true,MALFORMED_ID,1

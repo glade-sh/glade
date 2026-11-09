@@ -1,0 +1,5 @@
+source_api	route	default	explicit	null_negation
+62.0	anonymous	false	true	System.NullPointerException
+62.0	isTest	false	true	System.NullPointerException
+67.0	anonymous	false	true	System.NullPointerException
+67.0	isTest	false	true	System.NullPointerException

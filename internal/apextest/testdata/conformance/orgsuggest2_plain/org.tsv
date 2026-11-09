@@ -1,0 +1,13 @@
+source_api	phase	case	observation
+62.0	plain	describe	{"CampaignInfluence":false,"OpportunitySplit":false,"NetworkMember":false,"Network":false,"Account":true}
+62.0	plain	compile_account	compiled=true;success=true
+62.0	plain	compile_split	Invalid type: OpportunitySplit
+62.0	plain	compile_influence	Invalid type: CampaignInfluence
+67.0	plain	describe	{"CampaignInfluence":false,"OpportunitySplit":false,"NetworkMember":false,"Network":false,"Account":true}
+67.0	plain	compile_account	compiled=true;success=true
+67.0	plain	compile_split	Invalid type: OpportunitySplit
+67.0	plain	compile_influence	Invalid type: CampaignInfluence
+68.0	plain	describe	{"CampaignInfluence":false,"OpportunitySplit":false,"NetworkMember":false,"Network":false,"Account":true}
+68.0	plain	compile_account	compiled=true;success=true
+68.0	plain	compile_split	Invalid type: OpportunitySplit
+68.0	plain	compile_influence	Invalid type: CampaignInfluence

@@ -49,6 +49,28 @@ type standardOverlayCheckPlanSet struct {
 	raw     *standardDescribeCatalogV2RawCache
 	plans   sync.Map
 	builds  atomic.Uint64
+	labels  sync.Map
+}
+
+type standardCatalogLabelPair struct {
+	label       string
+	pluralLabel string
+	ok          bool
+}
+
+// standardObjectCatalogLabels returns the catalog label and plural label for
+// an object. Only these two strings are kept, so the check can run again after
+// the decoded catalog entries are released without decoding every object.
+func standardObjectCatalogLabels(objectName string) (label, pluralLabel string, ok bool) {
+	set := currentStandardOverlayCheckPlans()
+	if loaded, hit := set.labels.Load(objectName); hit {
+		pair := loaded.(standardCatalogLabelPair)
+		return pair.label, pair.pluralLabel, pair.ok
+	}
+	entry, found := standardObjectCatalogEntryForName(objectName)
+	pair := standardCatalogLabelPair{label: entry.Definition.Label, pluralLabel: entry.Definition.PluralLabel, ok: found}
+	set.labels.Store(objectName, pair)
+	return pair.label, pair.pluralLabel, pair.ok
 }
 
 var standardOverlayCheckPlans atomic.Pointer[standardOverlayCheckPlanSet]

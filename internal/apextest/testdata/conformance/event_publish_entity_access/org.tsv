@@ -1,0 +1,11 @@
+case	api	actor_and_route	observed
+capture_01	class API shown in observation	see observation	admin67:scalar=success,second=success,list=success,generic=success
+capture_02	class API shown in observation	see observation	user:create=false,read=false
+capture_03	class API shown in observation	see observation	v62:scalar=success,second=success,list=success,generic=success
+capture_04	class API shown in observation	see observation	v66:scalar=success,second=success,list=success,generic=success
+capture_05	class API shown in observation	see observation	v67:scalar=failure:CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Access to entity 'ProbeSignal__e' denied,second=failure:CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Access to entity 'AlertSignal__e' denied,list=failure:CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Access to entity 'ProbeSignal__e' denied,generic=failure:CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Access to entity 'ProbeSignal__e' denied
+capture_06	class API shown in observation	see observation	v68:scalar=failure:CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Access to entity 'ProbeSignal__e' denied,second=failure:CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Access to entity 'AlertSignal__e' denied,list=failure:CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Access to entity 'ProbeSignal__e' denied,generic=failure:CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Access to entity 'ProbeSignal__e' denied
+capture_07	class API shown in observation	see observation	readOnly:create=false,read=true
+capture_08	class API shown in observation	see observation	v67:scalar=failure:CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:DML operation INSERT not allowed on ProbeSignal__e,second=failure:CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Access to entity 'AlertSignal__e' denied,list=failure:CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:DML operation INSERT not allowed on ProbeSignal__e,generic=failure:CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:DML operation INSERT not allowed on ProbeSignal__e
+capture_09	class API shown in observation	see observation	grant:create=true,read=true
+capture_10	class API shown in observation	see observation	v67:scalar=success,second=failure:CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Access to entity 'AlertSignal__e' denied,list=success,generic=success

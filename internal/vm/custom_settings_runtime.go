@@ -14,11 +14,19 @@ func (vm *VM) isHierarchyCustomSetting(objectName string) bool {
 	return ok && kind == "custom setting" && strings.EqualFold(definition.Metadata["customSettingsType"], "Hierarchy")
 }
 
-// The ungranted Standard User can use hierarchy getters, but cannot query the
-// setting in user mode. Keep this query boundary separate from getter merging
+// isQueryPolicyCustomSetting reports a hierarchy or list custom setting. Both
+// types read, query and describe the same way for a user without access
+// (list_setting_runas_standard_user), and neither is subject to record sharing.
+func (vm *VM) isQueryPolicyCustomSetting(objectName string) bool {
+	_, _, kind, ok := vm.customDataObject(objectName)
+	return ok && kind == "custom setting"
+}
+
+// The ungranted Standard User can use hierarchy and list getters, but cannot
+// query the setting in user mode. Keep this query boundary separate from getter merging
 // and the existing describe/CRUD fallback for other profiles.
 func (vm *VM) hierarchyCustomSettingQueryDenied(objectName, permissionSetID string) bool {
-	if permissionSetID != "" || !vm.isHierarchyCustomSetting(objectName) {
+	if permissionSetID != "" || !vm.isQueryPolicyCustomSetting(objectName) {
 		return false
 	}
 	user := vm.executionUser
@@ -583,7 +591,10 @@ func (vm *VM) readOnlyCustomDataValue(record storage.Record, kind string) Value 
 }
 func (vm *VM) readOnlyCustomDataDefaultValue(objectName, kind string) Value {
 	value := Object(objectName)
-	if vm.Org != nil {
+	// A custom setting with no stored row is a fresh instance: native
+	// getOrgDefaults()/getInstance() apply no schema defaults (C11 capture,
+	// APIs 62 and 67). Defaults belong to persistence.
+	if vm.Org != nil && kind != "custom setting" {
 		if object, ok := vm.Org.Objects[objectName]; ok {
 			for name, field := range object.Definition.Fields {
 				if defaultValue, ok := storage.DefaultValueForField(field); ok {

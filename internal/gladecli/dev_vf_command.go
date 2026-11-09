@@ -28,6 +28,7 @@ import (
 
 func runDevVF(ctx context.Context, args []string, w io.Writer, progressW io.Writer) error {
 	addr := "127.0.0.1:8080"
+	publicDemo := false
 	root := "."
 	readyFile := ""
 	progress := false
@@ -41,6 +42,8 @@ func runDevVF(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 			}
 			addr = "127.0.0.1:" + args[i+1]
 			i++
+		case "--allow-public-demo":
+			publicDemo = true
 		case "--addr":
 			if i+1 >= len(args) {
 				return errors.New("--addr requires a value")
@@ -121,7 +124,7 @@ func runDevVF(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 			return err
 		}
 	}
-	httpServer := &http.Server{Addr: addr, Handler: server.GuardHTTPAuthority(handler, actualAddr, addr), ReadHeaderTimeout: localHTTPReadHeaderTimeout, ReadTimeout: localHTTPReadTimeout}
+	httpServer := &http.Server{Addr: addr, Handler: server.GuardHTTPAuthorityWithOptions(handler, actualAddr, server.AuthorityOptions{AllowPublicDemo: publicDemo}, addr), ReadHeaderTimeout: localHTTPReadHeaderTimeout, ReadTimeout: localHTTPReadTimeout}
 	renderer.Render(cliui.Event{Kind: cliui.EventPhaseEnd, Phase: "dev vf", Label: "Server ready", Current: 4, Total: 4})
 	renderer.Finish(cliui.Result{OK: true, Label: "dev vf ready"})
 	printDevVFStartupSummary(w, actualAddr, p)

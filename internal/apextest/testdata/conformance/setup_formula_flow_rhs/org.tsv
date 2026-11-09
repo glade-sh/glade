@@ -1,0 +1,5 @@
+api	route	case	observation
+62.0	istest	matching_record_field	{"text":true,"numeric":true}
+62.0	istest	nonmatching_record_field	{"text":false,"numeric":false}
+67.0	istest	matching_record_field	{"text":true,"numeric":true}
+67.0	istest	nonmatching_record_field	{"text":false,"numeric":false}

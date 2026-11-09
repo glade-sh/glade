@@ -1,0 +1,5 @@
+source_api	route	observation
+62.0	anonymous	{"relationshipName":"null","referenceTo":"()","fieldType":"STRING","mapJsonTarget":"Case","jsonSerialized":true,"jsonRelationship":"null","jsonLabel":"J","jsonTarget":"Opportunity","putName":"Lead","putToken":"Contact","directAssign":"Account"}
+62.0	isTest	{"relationshipName":"null","referenceTo":"()","fieldType":"STRING","mapJsonTarget":"Case","jsonSerialized":true,"jsonRelationship":"null","jsonLabel":"J","jsonTarget":"Opportunity","putName":"Lead","putToken":"Contact","directAssign":"Account"}
+67.0	anonymous	{"relationshipName":"null","referenceTo":"()","fieldType":"STRING","mapJsonTarget":"Case","jsonSerialized":true,"jsonRelationship":"null","jsonLabel":"J","jsonTarget":"Opportunity","putName":"Lead","putToken":"Contact","directAssign":"Account"}
+67.0	isTest	{"relationshipName":"null","referenceTo":"()","fieldType":"STRING","mapJsonTarget":"Case","jsonSerialized":true,"jsonRelationship":"null","jsonLabel":"J","jsonTarget":"Opportunity","putName":"Lead","putToken":"Contact","directAssign":"Account"}

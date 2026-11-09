@@ -1,0 +1,31 @@
+source_api	method	observation
+62.0	beforeAfter	{"after":{"open":1,"privUser":1,"privAdmin":1},"inside":{"open":1,"privUser":1,"privAdmin":0},"before":{"open":1,"privUser":1,"privAdmin":1}}
+62.0	helpers	{"insideInherited":0,"insideWithout":1,"insideWith":0,"outsideInherited":1,"outsideWithout":1,"outsideWith":1}
+62.0	inside	{"open":1,"privUser":1,"privAdmin":0}
+62.0	insideInsert	{"outsideInner":1,"insideInner":1}
+62.0	manualShare	{"open":1,"privUser":1,"privAdmin":1}
+62.0	nested	{"afterInner":{"open":1,"privUser":1,"privAdmin":0},"same":{"open":1,"privUser":1,"privAdmin":1}}
+62.0	outside	{"open":1,"privUser":1,"privAdmin":1}
+62.0	ownerTransfer	{"open":1,"privUser":1,"privAdmin":1}
+62.0	singleton	{"anyPriv":"row","open":"row","privUser":"row","privAdmin":"System.QueryException:List has no rows for assignment to SObject"}
+62.0	userLookup	{"selfLookup":1,"self":true,"inside":1,"outside":1}
+66.0	beforeAfter	{"after":{"open":1,"privUser":1,"privAdmin":1},"inside":{"open":1,"privUser":1,"privAdmin":0},"before":{"open":1,"privUser":1,"privAdmin":1}}
+66.0	helpers	{"insideInherited":0,"insideWithout":1,"insideWith":0,"outsideInherited":1,"outsideWithout":1,"outsideWith":1}
+66.0	inside	{"open":1,"privUser":1,"privAdmin":0}
+66.0	insideInsert	{"outsideInner":1,"insideInner":1}
+66.0	manualShare	{"open":1,"privUser":1,"privAdmin":1}
+66.0	nested	{"afterInner":{"open":1,"privUser":1,"privAdmin":0},"same":{"open":1,"privUser":1,"privAdmin":1}}
+66.0	outside	{"open":1,"privUser":1,"privAdmin":1}
+66.0	ownerTransfer	{"open":1,"privUser":1,"privAdmin":1}
+66.0	singleton	{"anyPriv":"row","open":"row","privUser":"row","privAdmin":"System.QueryException:List has no rows for assignment to SObject"}
+66.0	userLookup	{"selfLookup":1,"self":true,"inside":1,"outside":1}
+67.0	beforeAfter	{"after":{"open":1,"privUser":1,"privAdmin":1},"inside":{"open":1,"privUser":1,"privAdmin":0},"before":{"open":1,"privUser":1,"privAdmin":1}}
+67.0	helpers	{"insideInherited":0,"insideWithout":0,"insideWith":0,"outsideInherited":1,"outsideWithout":1,"outsideWith":1}
+67.0	inside	{"open":1,"privUser":1,"privAdmin":0}
+67.0	insideInsert	{"outsideInner":1,"insideInner":1}
+67.0	manualShare	{"open":1,"privUser":1,"privAdmin":1}
+67.0	nested	{"afterInner":{"open":1,"privUser":1,"privAdmin":0},"same":{"open":1,"privUser":1,"privAdmin":1}}
+67.0	outside	{"open":1,"privUser":1,"privAdmin":1}
+67.0	ownerTransfer	{"open":1,"privUser":1,"privAdmin":1}
+67.0	singleton	{"anyPriv":"row","open":"row","privUser":"row","privAdmin":"System.QueryException:List has no rows for assignment to SObject"}
+67.0	userLookup	{"selfLookup":1,"self":true,"inside":1,"outside":1}

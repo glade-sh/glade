@@ -13,6 +13,9 @@ func (vm *VM) flowCoreStatementInsertError(op string, value Value, err error) er
 	if failure, ok := dml.FlowCustomErrorFailureResult(err); ok {
 		return statementDMLException(op, []dml.Result{failure}, vm.dmlExceptionObjectTypes(value))
 	}
+	if failure, ok := dml.FlowRecordCreateFailureResult(err); ok {
+		return statementDMLException(op, []dml.Result{failure}, vm.dmlExceptionObjectTypes(value))
+	}
 	if value.Kind != ValueObject {
 		return err
 	}

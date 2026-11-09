@@ -15,6 +15,8 @@ func TestControlledParentQueryPreservesRequiredPermission(t *testing.T) {
 	writeFile(t, filepath.Join(base, "objects/GateMessage__c/fields/Parent__c.field-meta.xml"), `<CustomField><fullName>Parent__c</fullName><label>Parent</label><type>MasterDetail</type><referenceTo>GateItem__c</referenceTo><relationshipLabel>Messages</relationshipLabel><relationshipName>Messages</relationshipName></CustomField>`)
 	writeFile(t, filepath.Join(base, "objects/GateMessage__c/fields/Status__c.field-meta.xml"), `<CustomField><fullName>Status__c</fullName><label>Status</label><type>Text</type><length>40</length></CustomField>`)
 	writeFile(t, filepath.Join(base, "objects/GateMessage__c/fields/Body__c.field-meta.xml"), `<CustomField><fullName>Body__c</fullName><label>Body</label><type>LongTextArea</type><length>32768</length><visibleLines>3</visibleLines></CustomField>`)
+	// A deployed org needs these optional field grants before API 67 plain DML.
+	writeFile(t, filepath.Join(base, "profiles/Admin.profile-meta.xml"), `<Profile xmlns="http://soap.sforce.com/2006/04/metadata"><custom>false</custom><fieldPermissions><editable>true</editable><field>GateMessage__c.Status__c</field><readable>true</readable></fieldPermissions><fieldPermissions><editable>true</editable><field>GateMessage__c.Body__c</field><readable>true</readable></fieldPermissions><userLicense>Salesforce</userLicense></Profile>`)
 	writeFile(t, filepath.Join(base, "classes/GatePayload.cls"), `public class GatePayload {
   /** A plain value or a {"reference":...} marker is accepted. */
   public static String resolve(String raw) { return raw; }

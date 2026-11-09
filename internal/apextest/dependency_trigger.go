@@ -2,6 +2,7 @@ package apextest
 
 import (
 	"errors"
+	"path/filepath"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/typesys"
@@ -34,7 +35,7 @@ func (g *compileGate) restoreDependencyTriggers(machine *vm.VM) ([]typesys.Trigg
 		}
 		original := &vm.RuntimeError{Type: "CompileError", Message: message, Stack: []vm.StackFrame{{File: entry.File}}}
 		var explained *vm.RuntimeError
-		if err := ExplainDependencyError(index, "", original); err != original && errors.As(err, &explained) && explained.Type == "dependency_missing" {
+		if err := ExplainDependencyError(index, "", original); err != original && errors.As(err, &explained) && explained.Type == "dependency_missing" || g.hasKnownSchemaMemberError(index, entry.File) {
 			roots[strings.ToLower(entry.Root)] = true
 		}
 	}
@@ -93,4 +94,21 @@ func (g *compileGate) restoreDependencyTriggers(machine *vm.VM) ([]typesys.Trigg
 		return nil, err
 	}
 	return triggers, registerBaseRuntime(machine, methods, classes, compiled)
+}
+
+// A known Schema object with an invalid member is not a missing dependency.
+// Preserve its trigger too, so the missing-dependency boundary cannot hide the
+// real member error by removing the trigger and letting DML succeed.
+func (g *compileGate) hasKnownSchemaMemberError(index typesys.Index, file string) bool {
+	for _, diag := range g.diagnostics {
+		if diag.Code != "GLADESEMA008" || filepath.Clean(diag.File) != filepath.Clean(file) {
+			continue
+		}
+		reference := dependencyErrorReference(diag.Message)
+		qualifier, object, qualified := strings.Cut(reference, ".")
+		if qualified && strings.EqualFold(qualifier, "Schema") && !strings.Contains(object, ".") && dependencyTypeKnown(index, reference) {
+			return true
+		}
+	}
+	return false
 }

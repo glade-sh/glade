@@ -1,0 +1,1 @@
+public class H05 { public static void m(List<Quote> l) {} }

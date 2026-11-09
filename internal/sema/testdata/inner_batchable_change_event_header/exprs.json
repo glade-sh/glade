@@ -1,0 +1,19 @@
+{
+ "E00": "'control'",
+ "E01": "ev.ChangeEventHeader.changeType",
+ "E02": "ev.ChangeEventHeader.getChangeType()",
+ "E03": "h.changeType",
+ "E04": "h.getChangeType()",
+ "E05": "h.getEntityName()",
+ "E06": "h.getRecordIds()",
+ "E07": "h.getCommitUser()",
+ "E08": "h.getChangedFields()",
+ "E09": "ev.ChangeEventHeader.getEntityName()",
+ "E10": "ev.ChangeEventHeader.getRecordIds()",
+ "E11": "ev.ChangeEventHeader.getCommitUser()",
+ "E12": "ev.ChangeEventHeader.getChangedFields()",
+ "E13": "ev.ChangeEventHeader.entityName",
+ "E14": "h.entityName",
+ "E15": "ev.ChangeEventHeader.recordIds",
+ "E16": "ev.ChangeEventHeader"
+}

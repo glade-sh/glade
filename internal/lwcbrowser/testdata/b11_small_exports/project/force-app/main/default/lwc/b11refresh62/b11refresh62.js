@@ -1,0 +1,1 @@
+import {LightningElement} from 'lwc'; import {REFRESH_COMPLETE,REFRESH_ERROR,REFRESH_COMPLETE_WITH_ERROR} from 'lightning/refresh'; export default class Probe extends LightningElement {result='pending'; connectedCallback(){this.result=JSON.stringify({complete:REFRESH_COMPLETE,error:REFRESH_ERROR,withError:REFRESH_COMPLETE_WITH_ERROR});} }

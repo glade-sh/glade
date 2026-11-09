@@ -162,6 +162,10 @@ func generatedPlatformSurfaceUnavailable(id, owner, member, version string) bool
 		"apex:connectapi.namedcredentials.deleteexternalcredential(string)":
 		return !semaVersionAllows(version, apexversion.Range{Since: 62})
 	}
+	// stdlib_locale_crypto_c14 A22 ran this overload natively at API 62.0.
+	if id == "apex:system.crypto.encryptwithmanagediv(string,blob,blob,blob)" {
+		return !semaVersionAllows(version, apexversion.Range{Since: 62})
+	}
 	// A29 R040-R042 supersede the generated introduction date for these
 	// counter getters, independently of the cursor construction surface.
 	if owner == "system.limits" && (member == "getapexcursors" || member == "getlimitapexcursors") {

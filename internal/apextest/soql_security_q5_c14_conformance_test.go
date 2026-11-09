@@ -87,46 +87,8 @@ func TestSOQLSecurityQ5C14NativeConformance(t *testing.T) {
 						t.Fatal(err)
 					}
 					got = normalizeCaptureIdentities(got).(map[string]any)
-					var fields []string
-					switch row[2] {
-					case "directDenied":
-						g, gok := got["exception"].(map[string]any)
-						w, wok := want["exception"].(map[string]any)
-						if !gok || !wok {
-							t.Fatalf("missing inaccessible-field exception: native=%v; Glade=%v", want, got)
-						}
-						gi, gok := g["inaccessible"].(map[string]any)
-						wi, wok := w["inaccessible"].(map[string]any)
-						if !gok || !wok || len(gi) != 0 || len(wi) == 0 {
-							t.Fatalf("inaccessible map gap changed: native=%v; Glade=%v", want, got)
-						}
-						g["inaccessible"] = w["inaccessible"]
-					case "typeofAllowed":
-						fields = []string{"exception", "rows", "status"}
-					case "typeofDenied":
-						fields = []string{"exception"}
-					}
-					if len(fields) != 0 {
-						observed := `{"exception":{"inaccessible":{},"message":"WHEN operand 'DootSecQ5B1031__c' is not a valid entity type for polymorphic field 'What'","stage":"query","type":"System.QueryException"}}`
-						var expected map[string]any
-						if err := json.Unmarshal([]byte(observed), &expected); err != nil {
-							t.Fatal(err)
-						}
-						if row[2] == "typeofAllowed" {
-							expected["status"] = "operation_exception"
-						}
-						if !c14ExactCarryEqual(got, want, expected, fields) {
-							t.Fatalf("security gap changed: native=%v; Glade=%v", want, got)
-						}
-						t.Logf("known local carry batch Dot stdlib cases Dot Dot SOQL cases and Dot async cases (fix owner pending): native=%v; Glade=%v", want, got)
-						case345Skip(t)
-					}
 					if !reflect.DeepEqual(got, want) {
 						t.Fatalf("native=%v; Glade=%v", want, got)
-					}
-					if row[2] == "directDenied" {
-						t.Log("known local carry batch Dot stdlib cases Dot Dot SOQL cases and Dot async cases (fix owner pending): inaccessible field map differs")
-						case345Skip(t)
 					}
 				})
 			}

@@ -1,0 +1,1 @@
+global class GyBatchQL implements Database.Batchable<SObject>{global Database.QueryLocator start(Database.BatchableContext c){return Database.getQueryLocator([SELECT Id FROM Account WHERE Name='zz-in' ORDER BY Id]);}global void execute(Database.BatchableContext c,List<SObject> s){insert new Account(Name='chunk');}global void finish(Database.BatchableContext c){}}

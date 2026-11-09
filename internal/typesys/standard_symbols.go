@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/glade-sh/glade/internal/apexast"
 )
@@ -63,25 +64,101 @@ func standardEnumHashBase(value int64) *int64 {
 	return &value
 }
 
-var (
-	standardPlatformSymbolsOnce  sync.Once
-	standardPlatformSymbolsCache []TypeSymbol
-)
+// platformSymbolSnapshot is one immutable build of the standard platform
+// symbols. A process holds at most two over its life: the stub-only view, and
+// the view with the org-captured ConnectApi shape once a source names that
+// namespace (RequestConnectAPIShape). generation increases with each build so
+// PlatformViewCache holders can tell a stale derivation from a current one.
+type platformSymbolSnapshot struct {
+	view       []TypeSymbol
+	connectAPI bool
+	generation uint64
+}
+
+var platformSymbols struct {
+	mu      sync.Mutex
+	current atomic.Pointer[platformSymbolSnapshot]
+	builds  uint64
+}
+
+// currentPlatformSymbolSnapshot returns the snapshot matching the ConnectApi
+// request state, building it on first use or when the request arrived after
+// the stub-only view was built.
+func currentPlatformSymbolSnapshot() *platformSymbolSnapshot {
+	want := connectAPIShapeRequested.Load()
+	if snapshot := platformSymbols.current.Load(); snapshot != nil && (snapshot.connectAPI || !want) {
+		return snapshot
+	}
+	platformSymbols.mu.Lock()
+	defer platformSymbols.mu.Unlock()
+	if snapshot := platformSymbols.current.Load(); snapshot != nil && (snapshot.connectAPI || !want) {
+		return snapshot
+	}
+	platformSymbols.builds++
+	snapshot := &platformSymbolSnapshot{
+		view:       buildStandardPlatformSymbols(want),
+		connectAPI: want,
+		generation: platformSymbols.builds,
+	}
+	platformSymbols.current.Store(snapshot)
+	return snapshot
+}
 
 func StandardPlatformSymbols() []TypeSymbol {
-	standardPlatformSymbolsOnce.Do(func() {
-		standardPlatformSymbolsCache = buildStandardPlatformSymbols()
-	})
-	return cloneTypeSymbols(standardPlatformSymbolsCache)
+	return cloneTypeSymbols(currentPlatformSymbolSnapshot().view)
 }
 
 // StandardPlatformSymbolView returns cached platform symbols for read-only walkers.
 // Callers that may mutate symbols or nested slices must use StandardPlatformSymbols.
+// The slice is immutable; a later RequestConnectAPIShape publishes a new slice
+// rather than changing this one. Derived per-process caches use PlatformViewCache.
 func StandardPlatformSymbolView() []TypeSymbol {
-	standardPlatformSymbolsOnce.Do(func() {
-		standardPlatformSymbolsCache = buildStandardPlatformSymbols()
-	})
-	return standardPlatformSymbolsCache
+	return currentPlatformSymbolSnapshot().view
+}
+
+// StandardPlatformSymbolGeneration identifies the current symbol view. It
+// changes only when the view is rebuilt.
+func StandardPlatformSymbolGeneration() uint64 {
+	return currentPlatformSymbolSnapshot().generation
+}
+
+// PlatformViewCache caches one value derived from StandardPlatformSymbolView
+// and rebuilds it when the view changes. The zero value is ready to use. Get
+// is lock-free once built; a rebuild runs build once under a mutex.
+type PlatformViewCache[T any] struct {
+	mu      sync.Mutex
+	current atomic.Pointer[platformViewCacheEntry[T]]
+}
+
+type platformViewCacheEntry[T any] struct {
+	generation uint64
+	value      T
+}
+
+// Get returns the cached value for the current view, building it if needed.
+func (c *PlatformViewCache[T]) Get(build func(view []TypeSymbol) T) T {
+	snapshot := currentPlatformSymbolSnapshot()
+	if entry := c.current.Load(); entry != nil && entry.generation == snapshot.generation {
+		return entry.value
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if entry := c.current.Load(); entry != nil && entry.generation == snapshot.generation {
+		return entry.value
+	}
+	entry := &platformViewCacheEntry[T]{generation: snapshot.generation, value: build(snapshot.view)}
+	c.current.Store(entry)
+	return entry.value
+}
+
+// Cached returns the value built for the current view without building one.
+func (c *PlatformViewCache[T]) Cached() (T, bool) {
+	entry := c.current.Load()
+	if entry == nil || entry.generation != currentPlatformSymbolSnapshot().generation {
+		var zero T
+		return zero, false
+	}
+	return entry.value, true
 }
 
 var (
@@ -169,7 +246,11 @@ func sortedNamespaceNames(names map[string]string) []string {
 	return out
 }
 
-func buildStandardPlatformSymbols() []TypeSymbol {
+// buildStandardPlatformSymbols assembles the platform symbol table. With
+// connectAPI, the org-captured ConnectApi shape joins as the last overlay and
+// its captured superclasses apply; without it the table is the stub-only
+// table, byte for byte what a project that never names ConnectApi used before.
+func buildStandardPlatformSymbols(connectAPI bool) []TypeSymbol {
 	specs := append([]StandardSymbolSpec(nil), standardPlatformSymbolSpecs...)
 	specs = append(specs, productNamespaceSymbolSpecs...)
 	specs = append(specs, systemStubSymbolSpecs...)
@@ -177,7 +258,15 @@ func buildStandardPlatformSymbols() []TypeSymbol {
 	specs = append(specs, plan7SFDWSymbolSpecs...)
 	specs = append(specs, dataSourcePlatformSymbolOverlays...)
 	specs = append(specs, standardPlatformSymbolOverlays...)
+	specs = append(specs, cartHierarchyOverlays()...)
+	specs = append(specs, commerceServiceOverlays()...)
 	specs = append(specs, paymentPlatformSymbolOverlays...)
+	// The org-captured ConnectApi shape is authoritative over the stub corpus.
+	var captured *connectAPIShape
+	if connectAPI {
+		captured = connectAPICapturedShape()
+		specs = append(specs, captured.specs...)
+	}
 	known := make(map[string]struct{}, len(specs)+len(standardPlatformTypeNames))
 	for _, spec := range specs {
 		known[strings.ToLower(spec.Name)] = struct{}{}
@@ -195,6 +284,11 @@ func buildStandardPlatformSymbols() []TypeSymbol {
 	for i := range specs {
 		if parent, ok := StandardExceptionParent(specs[i].Name); ok {
 			specs[i].SuperClass = parent
+		}
+		if captured != nil && hasConnectAPIPrefix(specs[i].Name) {
+			if parent, ok := captured.superClasses[strings.ToLower(specs[i].Name)]; ok {
+				specs[i].SuperClass = parent
+			}
 		}
 	}
 	return StandardSymbolsFromSpecs(specs)
@@ -1352,8 +1446,8 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 	// Native API 62/67 rejects direct list construction and accepts both
 	// concrete cart values as CommerceObject arguments and return values.
 	{Name: "CartExtension.CartItemList", ReplaceConstructors: true},
-	{Name: "CartExtension.CartDeliveryGroup", SuperClass: "CartExtension.CommerceObject"},
-	{Name: "CartExtension.CartItem", SuperClass: "CartExtension.CommerceObject"},
+	// The remaining cart hierarchy and typed list iteration follow
+	// cartHierarchyOverlays.
 	{Name: "CartExtension.CartCalculate", Modifiers: []string{"virtual"}, Methods: []StandardMethodSpec{
 		{Name: "calculate", ReturnType: "void", Parameters: []string{"CartExtension.CartCalculateOrchestratorRequest"}, Modifiers: []string{"virtual"}},
 		{Name: "shippingPromotions", ReturnType: "void", Parameters: []string{"CartExtension.CartCalculateCalculatorRequest"}},
@@ -1757,6 +1851,10 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 		{Name: "join", ReturnType: "String", Parameters: []string{"Set<Object>", "String"}, Static: true},
 		{Name: "template", ReturnType: "String", Parameters: []string{"Map"}},
 	}},
+	// Native API 62 and 67 accept getMessage on these typed report errors.
+	{Name: "reports.InvalidFilterException", Methods: []StandardMethodSpec{{Name: "getMessage", ReturnType: "String"}}},
+	{Name: "reports.MetadataException", Methods: []StandardMethodSpec{{Name: "getMessage", ReturnType: "String"}}},
+	{Name: "reports.ReportRunException", Methods: []StandardMethodSpec{{Name: "getMessage", ReturnType: "String"}}},
 	// API 67 rejects no-arg constructors on these 29 Reports
 	// types. They are returned by runtime methods; Apex code cannot
 	// instantiate them directly.
@@ -1792,7 +1890,8 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 	{Name: "reports.StandardDateFilterDuration", ReplaceConstructors: true},
 	{Name: "reports.StandardDateFilterDurationGroup", ReplaceConstructors: true},
 	{Name: "reports.StandardFilterInfo", ReplaceConstructors: true},
-	{Name: "reports.StandardFilterInfoPicklist", ReplaceConstructors: true},
+	// Native catalog-picklist-type/org.tsv:2-5: the live picklist is a StandardFilterInfo.
+	{Name: "reports.StandardFilterInfoPicklist", SuperClass: "reports.StandardFilterInfo", ReplaceConstructors: true},
 	{Name: "reports.SummaryValue", ReplaceConstructors: true, Methods: []StandardMethodSpec{
 		// C032/K048/K049: visibility uses the formal Object parameter.
 		{Name: "setValue", ReturnType: "void", Parameters: []string{"Object"}, Modifiers: []string{"private"}},
@@ -1815,5 +1914,68 @@ func standardAssertMethods() []StandardMethodSpec {
 		{Name: "isNotNull", ReturnType: "void", Parameters: []string{"Object", "String"}, Static: true},
 		{Name: "fail", ReturnType: "void", Static: true},
 		{Name: "fail", ReturnType: "void", Parameters: []string{"String"}, Static: true},
+	}
+}
+
+// cartHierarchyOverlays records the native CartExtension value hierarchy and
+// the element type of each cart list iterator. Native API 62/67 compilation
+// (testdata/cart_commerce_hierarchy in internal/sema) accepts every concrete
+// cart value as CommerceObject, AbstractBaseCommerceObject and (except
+// CartItemAttribute, which stops at the base class) AbstractCommerceObject;
+// every cart list as AbstractCartList; BuyerActionsMock as BuyerActions; and
+// list.iterator().next() as the list's element type.
+func cartHierarchyOverlays() []StandardSymbolSpec {
+	const ns = "CartExtension."
+	specs := []StandardSymbolSpec{
+		{Name: ns + "AbstractBaseCommerceObject", SuperClass: ns + "CommerceObject"},
+		{Name: ns + "AbstractCommerceObject", SuperClass: ns + "AbstractBaseCommerceObject"},
+		{Name: ns + "CartItemAttribute", SuperClass: ns + "AbstractBaseCommerceObject"},
+		{Name: ns + "BuyerActionsMock", SuperClass: ns + "BuyerActions"},
+	}
+	for _, name := range []string{"Cart", "CartAdjustmentBasis", "CartAdjustmentGroup", "CartDeliveryGroup", "CartDeliveryGroupMethod", "CartDeliveryGroupMethodAdj", "CartItem", "CartItemPriceAdjustment", "CartTax", "CartValidationOutput"} {
+		specs = append(specs, StandardSymbolSpec{Name: ns + name, SuperClass: ns + "AbstractCommerceObject"})
+	}
+	for list, element := range map[string]string{
+		"CartAdjustmentBasisList":        "CartAdjustmentBasis",
+		"CartAdjustmentGroupList":        "CartAdjustmentGroup",
+		"CartDeliveryGroupList":          "CartDeliveryGroup",
+		"CartDeliveryGroupMethodAdjList": "CartDeliveryGroupMethodAdj",
+		"CartDeliveryGroupMethodList":    "CartDeliveryGroupMethod",
+		"CartItemAttributeList":          "CartItemAttribute",
+		"CartItemList":                   "CartItem",
+		"CartItemPriceAdjustmentList":    "CartItemPriceAdjustment",
+		"CartTaxList":                    "CartTax",
+		"CartValidationOutputList":       "CartValidationOutput",
+	} {
+		specs = append(specs, StandardSymbolSpec{
+			Name:       ns + list,
+			SuperClass: ns + "AbstractCartList",
+			Methods:    []StandardMethodSpec{{Name: "iterator", ReturnType: "Iterator<" + ns + element + ">", Force: true}},
+		})
+	}
+	return specs
+}
+
+// commerceServiceOverlays marks the overridable methods of the platform
+// inventory and pricing services. Native API 62/67 compilation
+// (testdata/commerce_service_overrides in internal/sema) accepts a subclass
+// that overrides each of them, although the generated stubs declare none of
+// them virtual.
+func commerceServiceOverlays() []StandardSymbolSpec {
+	const inventory = "commerce_inventory."
+	const pricing = "commercestorepricing."
+	virtual := []string{"public", "virtual"}
+	return []StandardSymbolSpec{
+		{Name: inventory + "CommerceInventoryService", Methods: []StandardMethodSpec{
+			{Name: "checkInventory", ReturnType: inventory + "InventoryCheckAvailability", ParameterSpecs: []StandardParameterSpec{{Name: "request", Type: inventory + "InventoryCheckAvailability"}}, Modifiers: virtual},
+			{Name: "deleteReservation", ReturnType: inventory + "DeleteReservationResponse", ParameterSpecs: []StandardParameterSpec{{Name: "reservationId", Type: "String"}, {Name: "currentReservation", Type: inventory + "InventoryReservation"}}, Modifiers: virtual},
+			{Name: "getInventoryLevel", ReturnType: inventory + "InventoryLevelsResponse", ParameterSpecs: []StandardParameterSpec{{Name: "request", Type: inventory + "InventoryLevelsRequest"}}, Modifiers: virtual},
+			{Name: "getReservation", ReturnType: inventory + "InventoryReservation", ParameterSpecs: []StandardParameterSpec{{Name: "reservationId", Type: "String"}}, Modifiers: virtual},
+			{Name: "upsertReservation", ReturnType: inventory + "UpsertReservationResponse", ParameterSpecs: []StandardParameterSpec{{Name: "upsertReservationRequest", Type: inventory + "UpsertReservationRequest"}, {Name: "currentReservation", Type: inventory + "InventoryReservation"}, {Name: "reservationChangeType", Type: "String"}}, Modifiers: virtual},
+		}},
+		{Name: pricing + "PricingService", Methods: []StandardMethodSpec{
+			{Name: "processPrice", ReturnType: pricing + "PricingResponse", ParameterSpecs: []StandardParameterSpec{{Name: "request", Type: pricing + "PricingRequest"}}, Modifiers: virtual},
+			{Name: "processTransactionalPrice", ReturnType: pricing + "TransactionalPricingResponse", ParameterSpecs: []StandardParameterSpec{{Name: "request", Type: pricing + "TransactionalPricingRequest"}}, Modifiers: virtual},
+		}},
 	}
 }

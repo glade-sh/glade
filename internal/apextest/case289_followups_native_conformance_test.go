@@ -58,7 +58,7 @@ func TestCase289FollowupsNativeConformance(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, api := range []string{"62.0", "67.0"} {
+	for _, api := range []string{"62.0", "67.0", "68.0"} {
 		t.Run(api, func(t *testing.T) {
 			root := t.TempDir()
 			project := filepath.Join(dir, "project")
@@ -75,7 +75,13 @@ func TestCase289FollowupsNativeConformance(t *testing.T) {
 					return err
 				}
 				text := strings.ReplaceAll(string(body), "62.0", api)
-				if !strings.Contains(string(capture), fmt.Sprintf("source_sha256:%s:%s=%x\n", api, filepath.ToSlash(name), sha256.Sum256([]byte(text)))) {
+				captureAPI, captureText := api, text
+				if api == "68.0" {
+					// The API 68 recapture used the API 67 source template.
+					captureAPI = "67.0"
+					captureText = strings.ReplaceAll(string(body), "62.0", captureAPI)
+				}
+				if !strings.Contains(string(capture), fmt.Sprintf("source_sha256:%s:%s=%x\n", captureAPI, filepath.ToSlash(name), sha256.Sum256([]byte(captureText)))) {
 					t.Errorf("source differs from capture: %s", name)
 				}
 				writeFile(t, filepath.Join(root, name), text)
@@ -105,8 +111,13 @@ func TestCase289FollowupsNativeConformance(t *testing.T) {
 				}
 			}
 			seen := 0
+			nativeAPI := api
+			if api == "68.0" {
+				// The recapture found the same observations at 67 and 68.
+				nativeAPI = "67.0"
+			}
 			for line, row := range rows[1:] {
-				if row[0] != api {
+				if row[0] != nativeAPI {
 					continue
 				}
 				seen++
@@ -119,7 +130,7 @@ func TestCase289FollowupsNativeConformance(t *testing.T) {
 					if err := json.Unmarshal([]byte(row[3]), &want); err != nil {
 						t.Fatal(err)
 					}
-					if local, ok := localAnswers[api+"/"+row[1]+"/"+row[2]]; ok {
+					if local, ok := localAnswers[nativeAPI+"/"+row[1]+"/"+row[2]]; ok {
 						want = local
 					}
 					var payload string
@@ -159,13 +170,10 @@ func TestCase289FollowupsNativeConformance(t *testing.T) {
 						analysis := sema.AnalyzeAnonymous(index, source, api)
 						_, compileErr := vm.CompileAnonymousWithOptions(source, vm.CompileOptions{APIVersion: api})
 						if !compiled {
-							// Static analysis does not yet hide the member at API 62.0: the
-							// org rejects the program, Glade compiles it. Closing this gap
-							// makes the assertion fail and requires removing the boundary.
-							if analysis.HasErrors() || compileErr != nil {
-								t.Fatalf("static ViewAllFields boundary closed; remove it: diagnostics=%v err=%v", analysis.Diagnostics, compileErr)
+							// Native rejects the member at API 62.0 on all four static routes.
+							if !analysis.HasErrors() {
+								t.Fatalf("native rejected %q; Glade accepted %s", obs["problem"], row[2])
 							}
-							t.Logf("local static boundary: native compile problem %q", obs["problem"])
 							return
 						}
 						if analysis.HasErrors() || compileErr != nil {
@@ -217,18 +225,6 @@ var localAnswers = func() map[string]any {
 		answers[api+"/istest/OT01"] = noRow
 		answers[api+"/anonymous/OT01"] = noRow
 		answers[api+"/anonymous/OT02"] = unknownType
-		// OPV3: a new SObject reads a standard Boolean as false in Glade; the org
-		// returned null for every standard Boolean probed. Not a ViewAllFields rule.
-		answers[api+"/istest/OPV3"] = map[string]any{"populated": false, "value": false}
-		answers[api+"/anonymous/OPV3"] = map[string]any{"populated": false, "value": false}
-		// OPV8: Glade keeps its lenient local PermissionSet reference catalog.
-		answers[api+"/istest/OPV8"] = map[string]any{"success": true, "errors": []any{}}
-		answers[api+"/anonymous/OPV8"] = map[string]any{"success": true, "errors": []any{}}
 	}
-	// API 62 hides the member from get as well; the Boolean default does not apply.
-	answers["62.0/istest/OPV3"] = nil
-	answers["62.0/anonymous/OPV3"] = nil
-	delete(answers, "62.0/istest/OPV3")
-	delete(answers, "62.0/anonymous/OPV3")
 	return answers
 }()

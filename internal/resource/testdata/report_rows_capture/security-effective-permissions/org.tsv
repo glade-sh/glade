@@ -1,0 +1,9 @@
+api	route	case	result
+62.0	anonymous	security-admin	rows=1|describe=ok|run=ok
+62.0	seealldata	security-admin	rows=1|describe=ok|run=ok
+62.0	anonymous	security-standard	rows=1|describe=System.SecurityException~Required permissions are not enabled.|run=System.SecurityException~Required permissions are not enabled.
+62.0	seealldata	security-standard	rows=1|describe=ok|run=ok
+67.0	anonymous	security-admin	rows=1|describe=ok|run=ok
+67.0	seealldata	security-admin	rows=1|describe=ok|run=ok
+67.0	anonymous	security-standard	rows=1|describe=System.SecurityException~Required permissions are not enabled.|run=System.SecurityException~Required permissions are not enabled.
+67.0	seealldata	security-standard	rows=1|describe=ok|run=ok

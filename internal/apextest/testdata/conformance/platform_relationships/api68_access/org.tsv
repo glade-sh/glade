@@ -1,0 +1,7 @@
+api	route	outcome
+62.0	anonymous-property	compile-reject
+62.0	anonymous-root-dynamic	System.QueryException
+67.0	anonymous-property	compile-reject
+67.0	anonymous-root-dynamic	System.QueryException
+68.0	anonymous-property	0
+68.0	anonymous-root-dynamic	ok

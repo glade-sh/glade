@@ -9,7 +9,7 @@ canonicalTask: /guide/workflows/local-data
 
 Checked HTTP endpoint versions are 60.0, 65.0, 66.0, 67.0, and 68.0; the
 default is 65.0. These are independent of the supported window:
-Apex 62.0-67.0, LWC and Visualforce 59.0-67.0. Execute Anonymous accepts
+Apex 62.0-68.0, LWC and Visualforce 59.0-67.0. Execute Anonymous accepts
 source API 65.0, 66.0, 67.0, and 68.0.
 
 ## Start the server

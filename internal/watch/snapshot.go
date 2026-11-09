@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 )
 
 type FileMetadata struct {
@@ -102,7 +103,7 @@ func CaptureScope(scope Scope) (Snapshot, error) {
 			if err != nil || !ok {
 				return err
 			}
-			if state.Kind == FileKindIgnored && !isRootConfigPath(state.Path, root) {
+			if state.Kind == FileKindIgnored && !isScopeConfigPath(state.Path, root) {
 				return nil
 			}
 			files[state.Path] = state
@@ -176,6 +177,12 @@ func captureScopeTopology(scope Scope) (map[string]TopologyState, error) {
 
 func isRootConfigPath(path, root string) bool {
 	return path == filepath.Join(root, "sfdx-project.json") || path == filepath.Join(root, "glade.yml")
+}
+
+// isScopeConfigPath adds .forceignore files at any depth below root: the
+// nearest one decides which package source loads.
+func isScopeConfigPath(path, root string) bool {
+	return isRootConfigPath(path, root) || (strings.EqualFold(filepath.Base(path), ".forceignore") && pathWithin(path, root))
 }
 
 func CapturePaths(paths []string) (Snapshot, error) {

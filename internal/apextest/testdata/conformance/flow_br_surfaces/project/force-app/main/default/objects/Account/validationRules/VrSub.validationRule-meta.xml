@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>VrSub</fullName><active>true</active><errorConditionFormula>AND(Name = 'VrSub', SUBSTITUTE('a' &amp; BR() &amp; 'b', BR(), '|') = 'a|b')</errorConditionFormula><errorMessage>vr-sub</errorMessage></ValidationRule>

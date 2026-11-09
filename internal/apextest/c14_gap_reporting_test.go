@@ -15,15 +15,7 @@ func TestNativeCaptureGapReporting(t *testing.T) {
 	cases := []struct {
 		file, condition string
 		count           int
-	}{
-		{"c11_q2_capture_test.go", "c11ActorGateCarry(", 2},
-		{"c11_q345_capture_test.go", "c11ActorGateCarry(", 2},
-		{"c11_q14_corrected_test.go", "c11ActorGateCarry(", 2},
-		{"c11_q3_repair_admin_test.go", "c11ActorGateCarry(", 1},
-		{"async_lifecycle_c14_conformance_test.go", `row[2] == "oversizedLocator"`, 1},
-		{"stdlib_locale_crypto_c14_conformance_test.go", `key == "DootGcmNull67A1031/observe"`, 1},
-		{"c14_warm_routes_test.go", `class == "DootGcmNull67A1031"`, 1},
-	}
+	}{}
 	for _, tc := range cases {
 		t.Run(tc.file, func(t *testing.T) {
 			fset := token.NewFileSet()

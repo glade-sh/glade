@@ -1,0 +1,1 @@
+public class H11 { public class Quote {} public static void m() { List<SObject> l = [SELECT Id FROM Quote]; } }

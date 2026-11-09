@@ -1,0 +1,9 @@
+case	observation
+definitions	["Owned_Active:Active:Account","Owned_Inactive:Inactive:Account"]
+lock	"true:true"
+lock_again	"true:NONE"
+missing	"false:NO_APPLICABLE_PROCESS"
+missing_no_process	"false:NO_APPLICABLE_PROCESS"
+submit	"true:Pending:1"
+unlock	"true:false"
+unlock_again	"true:NONE"

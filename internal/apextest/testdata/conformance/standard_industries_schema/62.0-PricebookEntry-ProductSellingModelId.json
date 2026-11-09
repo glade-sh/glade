@@ -1,0 +1,23 @@
+{
+  "aggregatable": true,
+  "calculated": false,
+  "compoundFieldName": null,
+  "createable": true,
+  "defaultedOnCreate": false,
+  "filterable": true,
+  "groupable": true,
+  "label": "Product Selling Model ID",
+  "length": 18,
+  "name": "ProductSellingModelId",
+  "nillable": true,
+  "permissionable": false,
+  "precision": 0,
+  "referenceTo": [
+    "ProductSellingModel"
+  ],
+  "relationshipName": "ProductSellingModel",
+  "scale": 0,
+  "sortable": true,
+  "type": "reference",
+  "updateable": false
+}

@@ -1,0 +1,6 @@
+import assert from 'node:assert/strict';let input='';for await(const c of process.stdin)input+=c;const data=JSON.parse(input),expected=JSON.parse(data.expected);const url=s=>'data:text/javascript;base64,'+Buffer.from(s).toString('base64');
+globalThis.__b11calls=[];const service=url(`export const CurrentPageReferenceAdapter=class{}; export function readShellContext(){return {community:{lwr:true}}} export async function generatePageReferenceUrl(){} export async function navigate(ref,opts){globalThis.__b11calls.push({ref,opts})}`);
+const mod=await import(url(data.source.replace('"/lightning/runtime/shell/navigation-service.js"',JSON.stringify(service))));let context;const adapter=new mod.NavigationContext(v=>context=v);adapter.connect();
+assert.deepEqual({navigate:typeof mod.navigate,context:typeof mod.NavigationContext,wired:typeof context},expected.initial);
+assert.throws(()=>mod.navigate(context,null),e=>e.name===expected.invalid.name&&e.message===expected.invalid.message);
+const ref={type:'standard__namedPage',attributes:{pageName:'home'}};const value=mod.navigate(context,ref,true);assert.deepEqual({kind:value&&typeof value.then==='function'?'promise':'sync',value:typeof value},expected.valid);assert.deepEqual(globalThis.__b11calls,[{ref,opts:{replace:true}}]);adapter.disconnect();

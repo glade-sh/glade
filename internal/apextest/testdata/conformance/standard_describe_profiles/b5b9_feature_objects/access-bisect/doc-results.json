@@ -1,0 +1,1662 @@
+[
+  {
+    "api": "63.0",
+    "kind": "dynamic",
+    "compiled": true,
+    "success": true,
+    "observations": [
+      {
+        "field": "DocumentGenerationProcess.AdditionalMetadata",
+        "route": "get",
+        "result": "System.SObjectException: Invalid field AdditionalMetadata for DocumentGenerationProcess"
+      },
+      {
+        "field": "DocumentGenerationProcess.AdditionalMetadata",
+        "route": "put",
+        "result": "System.SObjectException: Invalid field AdditionalMetadata for DocumentGenerationProcess"
+      },
+      {
+        "field": "DocumentGenerationProcess.AdditionalMetadata",
+        "route": "query",
+        "result": "System.QueryException: No such column 'AdditionalMetadata' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "field": "DocumentGenerationProcess.DocGenAdditionalInput",
+        "route": "get",
+        "result": "System.SObjectException: Invalid field DocGenAdditionalInput for DocumentGenerationProcess"
+      },
+      {
+        "field": "DocumentGenerationProcess.DocGenAdditionalInput",
+        "route": "put",
+        "result": "System.SObjectException: Invalid field DocGenAdditionalInput for DocumentGenerationProcess"
+      },
+      {
+        "field": "DocumentGenerationProcess.DocGenAdditionalInput",
+        "route": "query",
+        "result": "System.QueryException: No such column 'DocGenAdditionalInput' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "field": "DocumentGenerationProcess.DocGenAdditionalInputType",
+        "route": "get",
+        "result": "System.SObjectException: Invalid field DocGenAdditionalInputType for DocumentGenerationProcess"
+      },
+      {
+        "field": "DocumentGenerationProcess.DocGenAdditionalInputType",
+        "route": "put",
+        "result": "System.SObjectException: Invalid field DocGenAdditionalInputType for DocumentGenerationProcess"
+      },
+      {
+        "field": "DocumentGenerationProcess.DocGenAdditionalInputType",
+        "route": "query",
+        "result": "System.QueryException: No such column 'DocGenAdditionalInputType' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "field": "DocumentGenerationProcess.EstimatedDocumentSize",
+        "route": "get",
+        "result": "System.SObjectException: Invalid field EstimatedDocumentSize for DocumentGenerationProcess"
+      },
+      {
+        "field": "DocumentGenerationProcess.EstimatedDocumentSize",
+        "route": "put",
+        "result": "System.SObjectException: Invalid field EstimatedDocumentSize for DocumentGenerationProcess"
+      },
+      {
+        "field": "DocumentGenerationProcess.EstimatedDocumentSize",
+        "route": "query",
+        "result": "System.QueryException: No such column 'EstimatedDocumentSize' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "field": "DocumentGenerationProcess.IsLocalizationEnabled",
+        "route": "get",
+        "result": "System.SObjectException: Invalid field IsLocalizationEnabled for DocumentGenerationProcess"
+      },
+      {
+        "field": "DocumentGenerationProcess.IsLocalizationEnabled",
+        "route": "put",
+        "result": "System.SObjectException: Invalid field IsLocalizationEnabled for DocumentGenerationProcess"
+      },
+      {
+        "field": "DocumentGenerationProcess.IsLocalizationEnabled",
+        "route": "query",
+        "result": "System.QueryException: No such column 'IsLocalizationEnabled' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "field": "DocumentGenerationProcess.IsSharedExternally",
+        "route": "get",
+        "result": "System.SObjectException: Invalid field IsSharedExternally for DocumentGenerationProcess"
+      },
+      {
+        "field": "DocumentGenerationProcess.IsSharedExternally",
+        "route": "put",
+        "result": "System.SObjectException: Invalid field IsSharedExternally for DocumentGenerationProcess"
+      },
+      {
+        "field": "DocumentGenerationProcess.IsSharedExternally",
+        "route": "query",
+        "result": "System.QueryException: No such column 'IsSharedExternally' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "field": "DocumentGenerationProcess.IsTocUpdateRequired",
+        "route": "get",
+        "result": "System.SObjectException: Invalid field IsTocUpdateRequired for DocumentGenerationProcess"
+      },
+      {
+        "field": "DocumentGenerationProcess.IsTocUpdateRequired",
+        "route": "put",
+        "result": "System.SObjectException: Invalid field IsTocUpdateRequired for DocumentGenerationProcess"
+      },
+      {
+        "field": "DocumentGenerationProcess.IsTocUpdateRequired",
+        "route": "query",
+        "result": "System.QueryException: No such column 'IsTocUpdateRequired' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "field": "DocumentTemplate.ContextDefinitionName",
+        "route": "get",
+        "result": "System.SObjectException: Invalid field ContextDefinitionName for DocumentTemplate"
+      },
+      {
+        "field": "DocumentTemplate.ContextDefinitionName",
+        "route": "put",
+        "result": "System.SObjectException: Invalid field ContextDefinitionName for DocumentTemplate"
+      },
+      {
+        "field": "DocumentTemplate.ContextDefinitionName",
+        "route": "query",
+        "result": "System.QueryException: No such column 'ContextDefinitionName' on entity 'DocumentTemplate'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "field": "DocumentTemplate.ContextFilterName",
+        "route": "get",
+        "result": "System.SObjectException: Invalid field ContextFilterName for DocumentTemplate"
+      },
+      {
+        "field": "DocumentTemplate.ContextFilterName",
+        "route": "put",
+        "result": "System.SObjectException: Invalid field ContextFilterName for DocumentTemplate"
+      },
+      {
+        "field": "DocumentTemplate.ContextFilterName",
+        "route": "query",
+        "result": "System.QueryException: No such column 'ContextFilterName' on entity 'DocumentTemplate'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "field": "DocumentTemplate.ContextMappingName",
+        "route": "get",
+        "result": "System.SObjectException: Invalid field ContextMappingName for DocumentTemplate"
+      },
+      {
+        "field": "DocumentTemplate.ContextMappingName",
+        "route": "put",
+        "result": "System.SObjectException: Invalid field ContextMappingName for DocumentTemplate"
+      },
+      {
+        "field": "DocumentTemplate.ContextMappingName",
+        "route": "query",
+        "result": "System.QueryException: No such column 'ContextMappingName' on entity 'DocumentTemplate'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "field": "DocumentTemplate.ContextTransformationName",
+        "route": "get",
+        "result": "System.SObjectException: Invalid field ContextTransformationName for DocumentTemplate"
+      },
+      {
+        "field": "DocumentTemplate.ContextTransformationName",
+        "route": "put",
+        "result": "System.SObjectException: Invalid field ContextTransformationName for DocumentTemplate"
+      },
+      {
+        "field": "DocumentTemplate.ContextTransformationName",
+        "route": "query",
+        "result": "System.QueryException: No such column 'ContextTransformationName' on entity 'DocumentTemplate'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      }
+    ]
+  },
+  {
+    "api": "63.0",
+    "kind": "static-read",
+    "object": "DocumentGenerationProcess",
+    "field": "AdditionalMetadata",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();Object value=record.AdditionalMetadata;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 86 with the error:\n\nVariable does not exist: AdditionalMetadata",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "63.0",
+    "kind": "static-query",
+    "object": "DocumentGenerationProcess",
+    "field": "AdditionalMetadata",
+    "source": "List<DocumentGenerationProcess> rows=[SELECT AdditionalMetadata FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 38 with the error:\n\n\nSELECT AdditionalMetadata FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'AdditionalMetadata' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "63.0",
+    "kind": "static-read",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInput",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();Object value=record.DocGenAdditionalInput;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 86 with the error:\n\nVariable does not exist: DocGenAdditionalInput",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "63.0",
+    "kind": "static-query",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInput",
+    "source": "List<DocumentGenerationProcess> rows=[SELECT DocGenAdditionalInput FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 38 with the error:\n\n\nSELECT DocGenAdditionalInput FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'DocGenAdditionalInput' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "63.0",
+    "kind": "static-read",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInputType",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();Object value=record.DocGenAdditionalInputType;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 86 with the error:\n\nVariable does not exist: DocGenAdditionalInputType",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "63.0",
+    "kind": "static-query",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInputType",
+    "source": "List<DocumentGenerationProcess> rows=[SELECT DocGenAdditionalInputType FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 38 with the error:\n\n\nSELECT DocGenAdditionalInputType FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'DocGenAdditionalInputType' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "63.0",
+    "kind": "static-read",
+    "object": "DocumentGenerationProcess",
+    "field": "EstimatedDocumentSize",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();Object value=record.EstimatedDocumentSize;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 86 with the error:\n\nVariable does not exist: EstimatedDocumentSize",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "63.0",
+    "kind": "static-query",
+    "object": "DocumentGenerationProcess",
+    "field": "EstimatedDocumentSize",
+    "source": "List<DocumentGenerationProcess> rows=[SELECT EstimatedDocumentSize FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 38 with the error:\n\n\nSELECT EstimatedDocumentSize FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'EstimatedDocumentSize' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "63.0",
+    "kind": "static-read",
+    "object": "DocumentGenerationProcess",
+    "field": "IsLocalizationEnabled",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();Object value=record.IsLocalizationEnabled;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 86 with the error:\n\nVariable does not exist: IsLocalizationEnabled",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "63.0",
+    "kind": "static-query",
+    "object": "DocumentGenerationProcess",
+    "field": "IsLocalizationEnabled",
+    "source": "List<DocumentGenerationProcess> rows=[SELECT IsLocalizationEnabled FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 38 with the error:\n\n\nSELECT IsLocalizationEnabled FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'IsLocalizationEnabled' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "63.0",
+    "kind": "static-read",
+    "object": "DocumentGenerationProcess",
+    "field": "IsSharedExternally",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();Object value=record.IsSharedExternally;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 86 with the error:\n\nVariable does not exist: IsSharedExternally",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "63.0",
+    "kind": "static-query",
+    "object": "DocumentGenerationProcess",
+    "field": "IsSharedExternally",
+    "source": "List<DocumentGenerationProcess> rows=[SELECT IsSharedExternally FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 38 with the error:\n\n\nSELECT IsSharedExternally FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'IsSharedExternally' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "63.0",
+    "kind": "static-read",
+    "object": "DocumentGenerationProcess",
+    "field": "IsTocUpdateRequired",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();Object value=record.IsTocUpdateRequired;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 86 with the error:\n\nVariable does not exist: IsTocUpdateRequired",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "63.0",
+    "kind": "static-query",
+    "object": "DocumentGenerationProcess",
+    "field": "IsTocUpdateRequired",
+    "source": "List<DocumentGenerationProcess> rows=[SELECT IsTocUpdateRequired FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 38 with the error:\n\n\nSELECT IsTocUpdateRequired FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'IsTocUpdateRequired' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "63.0",
+    "kind": "static-read",
+    "object": "DocumentTemplate",
+    "field": "ContextDefinitionName",
+    "source": "DocumentTemplate record=new DocumentTemplate();Object value=record.ContextDefinitionName;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 68 with the error:\n\nVariable does not exist: ContextDefinitionName",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "63.0",
+    "kind": "static-query",
+    "object": "DocumentTemplate",
+    "field": "ContextDefinitionName",
+    "source": "List<DocumentTemplate> rows=[SELECT ContextDefinitionName FROM DocumentTemplate LIMIT 1];",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 29 with the error:\n\n\nSELECT ContextDefinitionName FROM DocumentTemplate\n       ^\nERROR at Row:1:Column:8\nNo such column 'ContextDefinitionName' on entity 'DocumentTemplate'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "63.0",
+    "kind": "static-read",
+    "object": "DocumentTemplate",
+    "field": "ContextFilterName",
+    "source": "DocumentTemplate record=new DocumentTemplate();Object value=record.ContextFilterName;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 68 with the error:\n\nVariable does not exist: ContextFilterName",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "63.0",
+    "kind": "static-query",
+    "object": "DocumentTemplate",
+    "field": "ContextFilterName",
+    "source": "List<DocumentTemplate> rows=[SELECT ContextFilterName FROM DocumentTemplate LIMIT 1];",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 29 with the error:\n\n\nSELECT ContextFilterName FROM DocumentTemplate\n       ^\nERROR at Row:1:Column:8\nNo such column 'ContextFilterName' on entity 'DocumentTemplate'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "63.0",
+    "kind": "static-read",
+    "object": "DocumentTemplate",
+    "field": "ContextMappingName",
+    "source": "DocumentTemplate record=new DocumentTemplate();Object value=record.ContextMappingName;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 68 with the error:\n\nVariable does not exist: ContextMappingName",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "63.0",
+    "kind": "static-query",
+    "object": "DocumentTemplate",
+    "field": "ContextMappingName",
+    "source": "List<DocumentTemplate> rows=[SELECT ContextMappingName FROM DocumentTemplate LIMIT 1];",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 29 with the error:\n\n\nSELECT ContextMappingName FROM DocumentTemplate\n       ^\nERROR at Row:1:Column:8\nNo such column 'ContextMappingName' on entity 'DocumentTemplate'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "63.0",
+    "kind": "static-read",
+    "object": "DocumentTemplate",
+    "field": "ContextTransformationName",
+    "source": "DocumentTemplate record=new DocumentTemplate();Object value=record.ContextTransformationName;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 68 with the error:\n\nVariable does not exist: ContextTransformationName",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "63.0",
+    "kind": "static-query",
+    "object": "DocumentTemplate",
+    "field": "ContextTransformationName",
+    "source": "List<DocumentTemplate> rows=[SELECT ContextTransformationName FROM DocumentTemplate LIMIT 1];",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 29 with the error:\n\n\nSELECT ContextTransformationName FROM DocumentTemplate\n       ^\nERROR at Row:1:Column:8\nNo such column 'ContextTransformationName' on entity 'DocumentTemplate'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "64.0",
+    "kind": "dynamic",
+    "compiled": true,
+    "success": true,
+    "observations": [
+      {
+        "field": "DocumentGenerationProcess.AdditionalMetadata",
+        "route": "get",
+        "result": "System.SObjectException: Invalid field AdditionalMetadata for DocumentGenerationProcess"
+      },
+      {
+        "field": "DocumentGenerationProcess.AdditionalMetadata",
+        "route": "put",
+        "result": "System.SObjectException: Invalid field AdditionalMetadata for DocumentGenerationProcess"
+      },
+      {
+        "field": "DocumentGenerationProcess.AdditionalMetadata",
+        "route": "query",
+        "result": "System.QueryException: No such column 'AdditionalMetadata' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "field": "DocumentGenerationProcess.DocGenAdditionalInput",
+        "route": "get",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentGenerationProcess.DocGenAdditionalInput",
+        "route": "put",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentGenerationProcess.DocGenAdditionalInput",
+        "route": "query",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentGenerationProcess.DocGenAdditionalInputType",
+        "route": "get",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentGenerationProcess.DocGenAdditionalInputType",
+        "route": "put",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentGenerationProcess.DocGenAdditionalInputType",
+        "route": "query",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentGenerationProcess.EstimatedDocumentSize",
+        "route": "get",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentGenerationProcess.EstimatedDocumentSize",
+        "route": "put",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentGenerationProcess.EstimatedDocumentSize",
+        "route": "query",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentGenerationProcess.IsLocalizationEnabled",
+        "route": "get",
+        "result": "System.SObjectException: Invalid field IsLocalizationEnabled for DocumentGenerationProcess"
+      },
+      {
+        "field": "DocumentGenerationProcess.IsLocalizationEnabled",
+        "route": "put",
+        "result": "System.SObjectException: Invalid field IsLocalizationEnabled for DocumentGenerationProcess"
+      },
+      {
+        "field": "DocumentGenerationProcess.IsLocalizationEnabled",
+        "route": "query",
+        "result": "System.QueryException: No such column 'IsLocalizationEnabled' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "field": "DocumentGenerationProcess.IsSharedExternally",
+        "route": "get",
+        "result": "System.SObjectException: Invalid field IsSharedExternally for DocumentGenerationProcess"
+      },
+      {
+        "field": "DocumentGenerationProcess.IsSharedExternally",
+        "route": "put",
+        "result": "System.SObjectException: Invalid field IsSharedExternally for DocumentGenerationProcess"
+      },
+      {
+        "field": "DocumentGenerationProcess.IsSharedExternally",
+        "route": "query",
+        "result": "System.QueryException: No such column 'IsSharedExternally' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "field": "DocumentGenerationProcess.IsTocUpdateRequired",
+        "route": "get",
+        "result": "System.SObjectException: Invalid field IsTocUpdateRequired for DocumentGenerationProcess"
+      },
+      {
+        "field": "DocumentGenerationProcess.IsTocUpdateRequired",
+        "route": "put",
+        "result": "System.SObjectException: Invalid field IsTocUpdateRequired for DocumentGenerationProcess"
+      },
+      {
+        "field": "DocumentGenerationProcess.IsTocUpdateRequired",
+        "route": "query",
+        "result": "System.QueryException: No such column 'IsTocUpdateRequired' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "field": "DocumentTemplate.ContextDefinitionName",
+        "route": "get",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentTemplate.ContextDefinitionName",
+        "route": "put",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentTemplate.ContextDefinitionName",
+        "route": "query",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentTemplate.ContextFilterName",
+        "route": "get",
+        "result": "System.SObjectException: Invalid field ContextFilterName for DocumentTemplate"
+      },
+      {
+        "field": "DocumentTemplate.ContextFilterName",
+        "route": "put",
+        "result": "System.SObjectException: Invalid field ContextFilterName for DocumentTemplate"
+      },
+      {
+        "field": "DocumentTemplate.ContextFilterName",
+        "route": "query",
+        "result": "System.QueryException: No such column 'ContextFilterName' on entity 'DocumentTemplate'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "field": "DocumentTemplate.ContextMappingName",
+        "route": "get",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentTemplate.ContextMappingName",
+        "route": "put",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentTemplate.ContextMappingName",
+        "route": "query",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentTemplate.ContextTransformationName",
+        "route": "get",
+        "result": "System.SObjectException: Invalid field ContextTransformationName for DocumentTemplate"
+      },
+      {
+        "field": "DocumentTemplate.ContextTransformationName",
+        "route": "put",
+        "result": "System.SObjectException: Invalid field ContextTransformationName for DocumentTemplate"
+      },
+      {
+        "field": "DocumentTemplate.ContextTransformationName",
+        "route": "query",
+        "result": "System.QueryException: No such column 'ContextTransformationName' on entity 'DocumentTemplate'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      }
+    ]
+  },
+  {
+    "api": "64.0",
+    "kind": "static-read",
+    "object": "DocumentGenerationProcess",
+    "field": "AdditionalMetadata",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();Object value=record.AdditionalMetadata;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 86 with the error:\n\nVariable does not exist: AdditionalMetadata",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "64.0",
+    "kind": "static-query",
+    "object": "DocumentGenerationProcess",
+    "field": "AdditionalMetadata",
+    "source": "List<DocumentGenerationProcess> rows=[SELECT AdditionalMetadata FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 38 with the error:\n\n\nSELECT AdditionalMetadata FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'AdditionalMetadata' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "64.0",
+    "kind": "static-read",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInput",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();Object value=record.DocGenAdditionalInput;",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "64.0",
+    "kind": "static-query",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInput",
+    "source": "List<DocumentGenerationProcess> rows=[SELECT DocGenAdditionalInput FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "64.0",
+    "kind": "static-read",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInputType",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();Object value=record.DocGenAdditionalInputType;",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "64.0",
+    "kind": "static-query",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInputType",
+    "source": "List<DocumentGenerationProcess> rows=[SELECT DocGenAdditionalInputType FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "64.0",
+    "kind": "static-read",
+    "object": "DocumentGenerationProcess",
+    "field": "EstimatedDocumentSize",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();Object value=record.EstimatedDocumentSize;",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "64.0",
+    "kind": "static-query",
+    "object": "DocumentGenerationProcess",
+    "field": "EstimatedDocumentSize",
+    "source": "List<DocumentGenerationProcess> rows=[SELECT EstimatedDocumentSize FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "64.0",
+    "kind": "static-read",
+    "object": "DocumentGenerationProcess",
+    "field": "IsLocalizationEnabled",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();Object value=record.IsLocalizationEnabled;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 86 with the error:\n\nVariable does not exist: IsLocalizationEnabled",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "64.0",
+    "kind": "static-query",
+    "object": "DocumentGenerationProcess",
+    "field": "IsLocalizationEnabled",
+    "source": "List<DocumentGenerationProcess> rows=[SELECT IsLocalizationEnabled FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 38 with the error:\n\n\nSELECT IsLocalizationEnabled FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'IsLocalizationEnabled' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "64.0",
+    "kind": "static-read",
+    "object": "DocumentGenerationProcess",
+    "field": "IsSharedExternally",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();Object value=record.IsSharedExternally;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 86 with the error:\n\nVariable does not exist: IsSharedExternally",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "64.0",
+    "kind": "static-query",
+    "object": "DocumentGenerationProcess",
+    "field": "IsSharedExternally",
+    "source": "List<DocumentGenerationProcess> rows=[SELECT IsSharedExternally FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 38 with the error:\n\n\nSELECT IsSharedExternally FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'IsSharedExternally' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "64.0",
+    "kind": "static-read",
+    "object": "DocumentGenerationProcess",
+    "field": "IsTocUpdateRequired",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();Object value=record.IsTocUpdateRequired;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 86 with the error:\n\nVariable does not exist: IsTocUpdateRequired",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "64.0",
+    "kind": "static-query",
+    "object": "DocumentGenerationProcess",
+    "field": "IsTocUpdateRequired",
+    "source": "List<DocumentGenerationProcess> rows=[SELECT IsTocUpdateRequired FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 38 with the error:\n\n\nSELECT IsTocUpdateRequired FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'IsTocUpdateRequired' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "64.0",
+    "kind": "static-read",
+    "object": "DocumentTemplate",
+    "field": "ContextDefinitionName",
+    "source": "DocumentTemplate record=new DocumentTemplate();Object value=record.ContextDefinitionName;",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "64.0",
+    "kind": "static-query",
+    "object": "DocumentTemplate",
+    "field": "ContextDefinitionName",
+    "source": "List<DocumentTemplate> rows=[SELECT ContextDefinitionName FROM DocumentTemplate LIMIT 1];",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "64.0",
+    "kind": "static-read",
+    "object": "DocumentTemplate",
+    "field": "ContextFilterName",
+    "source": "DocumentTemplate record=new DocumentTemplate();Object value=record.ContextFilterName;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 68 with the error:\n\nVariable does not exist: ContextFilterName",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "64.0",
+    "kind": "static-query",
+    "object": "DocumentTemplate",
+    "field": "ContextFilterName",
+    "source": "List<DocumentTemplate> rows=[SELECT ContextFilterName FROM DocumentTemplate LIMIT 1];",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 29 with the error:\n\n\nSELECT ContextFilterName FROM DocumentTemplate\n       ^\nERROR at Row:1:Column:8\nNo such column 'ContextFilterName' on entity 'DocumentTemplate'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "64.0",
+    "kind": "static-read",
+    "object": "DocumentTemplate",
+    "field": "ContextMappingName",
+    "source": "DocumentTemplate record=new DocumentTemplate();Object value=record.ContextMappingName;",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "64.0",
+    "kind": "static-query",
+    "object": "DocumentTemplate",
+    "field": "ContextMappingName",
+    "source": "List<DocumentTemplate> rows=[SELECT ContextMappingName FROM DocumentTemplate LIMIT 1];",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "64.0",
+    "kind": "static-read",
+    "object": "DocumentTemplate",
+    "field": "ContextTransformationName",
+    "source": "DocumentTemplate record=new DocumentTemplate();Object value=record.ContextTransformationName;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 68 with the error:\n\nVariable does not exist: ContextTransformationName",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "64.0",
+    "kind": "static-query",
+    "object": "DocumentTemplate",
+    "field": "ContextTransformationName",
+    "source": "List<DocumentTemplate> rows=[SELECT ContextTransformationName FROM DocumentTemplate LIMIT 1];",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 29 with the error:\n\n\nSELECT ContextTransformationName FROM DocumentTemplate\n       ^\nERROR at Row:1:Column:8\nNo such column 'ContextTransformationName' on entity 'DocumentTemplate'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "65.0",
+    "kind": "dynamic",
+    "compiled": true,
+    "success": true,
+    "observations": [
+      {
+        "field": "DocumentGenerationProcess.AdditionalMetadata",
+        "route": "get",
+        "result": "System.SObjectException: Invalid field AdditionalMetadata for DocumentGenerationProcess"
+      },
+      {
+        "field": "DocumentGenerationProcess.AdditionalMetadata",
+        "route": "put",
+        "result": "System.SObjectException: Invalid field AdditionalMetadata for DocumentGenerationProcess"
+      },
+      {
+        "field": "DocumentGenerationProcess.AdditionalMetadata",
+        "route": "query",
+        "result": "System.QueryException: No such column 'AdditionalMetadata' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "field": "DocumentGenerationProcess.DocGenAdditionalInput",
+        "route": "get",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentGenerationProcess.DocGenAdditionalInput",
+        "route": "put",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentGenerationProcess.DocGenAdditionalInput",
+        "route": "query",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentGenerationProcess.DocGenAdditionalInputType",
+        "route": "get",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentGenerationProcess.DocGenAdditionalInputType",
+        "route": "put",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentGenerationProcess.DocGenAdditionalInputType",
+        "route": "query",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentGenerationProcess.EstimatedDocumentSize",
+        "route": "get",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentGenerationProcess.EstimatedDocumentSize",
+        "route": "put",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentGenerationProcess.EstimatedDocumentSize",
+        "route": "query",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentGenerationProcess.IsLocalizationEnabled",
+        "route": "get",
+        "result": "System.SObjectException: Invalid field IsLocalizationEnabled for DocumentGenerationProcess"
+      },
+      {
+        "field": "DocumentGenerationProcess.IsLocalizationEnabled",
+        "route": "put",
+        "result": "System.SObjectException: Invalid field IsLocalizationEnabled for DocumentGenerationProcess"
+      },
+      {
+        "field": "DocumentGenerationProcess.IsLocalizationEnabled",
+        "route": "query",
+        "result": "System.QueryException: No such column 'IsLocalizationEnabled' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "field": "DocumentGenerationProcess.IsSharedExternally",
+        "route": "get",
+        "result": "System.SObjectException: Invalid field IsSharedExternally for DocumentGenerationProcess"
+      },
+      {
+        "field": "DocumentGenerationProcess.IsSharedExternally",
+        "route": "put",
+        "result": "System.SObjectException: Invalid field IsSharedExternally for DocumentGenerationProcess"
+      },
+      {
+        "field": "DocumentGenerationProcess.IsSharedExternally",
+        "route": "query",
+        "result": "System.QueryException: No such column 'IsSharedExternally' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "field": "DocumentGenerationProcess.IsTocUpdateRequired",
+        "route": "get",
+        "result": "System.SObjectException: Invalid field IsTocUpdateRequired for DocumentGenerationProcess"
+      },
+      {
+        "field": "DocumentGenerationProcess.IsTocUpdateRequired",
+        "route": "put",
+        "result": "System.SObjectException: Invalid field IsTocUpdateRequired for DocumentGenerationProcess"
+      },
+      {
+        "field": "DocumentGenerationProcess.IsTocUpdateRequired",
+        "route": "query",
+        "result": "System.QueryException: No such column 'IsTocUpdateRequired' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "field": "DocumentTemplate.ContextDefinitionName",
+        "route": "get",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentTemplate.ContextDefinitionName",
+        "route": "put",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentTemplate.ContextDefinitionName",
+        "route": "query",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentTemplate.ContextFilterName",
+        "route": "get",
+        "result": "System.SObjectException: Invalid field ContextFilterName for DocumentTemplate"
+      },
+      {
+        "field": "DocumentTemplate.ContextFilterName",
+        "route": "put",
+        "result": "System.SObjectException: Invalid field ContextFilterName for DocumentTemplate"
+      },
+      {
+        "field": "DocumentTemplate.ContextFilterName",
+        "route": "query",
+        "result": "System.QueryException: No such column 'ContextFilterName' on entity 'DocumentTemplate'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "field": "DocumentTemplate.ContextMappingName",
+        "route": "get",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentTemplate.ContextMappingName",
+        "route": "put",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentTemplate.ContextMappingName",
+        "route": "query",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentTemplate.ContextTransformationName",
+        "route": "get",
+        "result": "System.SObjectException: Invalid field ContextTransformationName for DocumentTemplate"
+      },
+      {
+        "field": "DocumentTemplate.ContextTransformationName",
+        "route": "put",
+        "result": "System.SObjectException: Invalid field ContextTransformationName for DocumentTemplate"
+      },
+      {
+        "field": "DocumentTemplate.ContextTransformationName",
+        "route": "query",
+        "result": "System.QueryException: No such column 'ContextTransformationName' on entity 'DocumentTemplate'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      }
+    ]
+  },
+  {
+    "api": "65.0",
+    "kind": "static-read",
+    "object": "DocumentGenerationProcess",
+    "field": "AdditionalMetadata",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();Object value=record.AdditionalMetadata;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 86 with the error:\n\nVariable does not exist: AdditionalMetadata",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "65.0",
+    "kind": "static-query",
+    "object": "DocumentGenerationProcess",
+    "field": "AdditionalMetadata",
+    "source": "List<DocumentGenerationProcess> rows=[SELECT AdditionalMetadata FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 38 with the error:\n\n\nSELECT AdditionalMetadata FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'AdditionalMetadata' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "65.0",
+    "kind": "static-read",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInput",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();Object value=record.DocGenAdditionalInput;",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "65.0",
+    "kind": "static-query",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInput",
+    "source": "List<DocumentGenerationProcess> rows=[SELECT DocGenAdditionalInput FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "65.0",
+    "kind": "static-read",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInputType",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();Object value=record.DocGenAdditionalInputType;",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "65.0",
+    "kind": "static-query",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInputType",
+    "source": "List<DocumentGenerationProcess> rows=[SELECT DocGenAdditionalInputType FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "65.0",
+    "kind": "static-read",
+    "object": "DocumentGenerationProcess",
+    "field": "EstimatedDocumentSize",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();Object value=record.EstimatedDocumentSize;",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "65.0",
+    "kind": "static-query",
+    "object": "DocumentGenerationProcess",
+    "field": "EstimatedDocumentSize",
+    "source": "List<DocumentGenerationProcess> rows=[SELECT EstimatedDocumentSize FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "65.0",
+    "kind": "static-read",
+    "object": "DocumentGenerationProcess",
+    "field": "IsLocalizationEnabled",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();Object value=record.IsLocalizationEnabled;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 86 with the error:\n\nVariable does not exist: IsLocalizationEnabled",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "65.0",
+    "kind": "static-query",
+    "object": "DocumentGenerationProcess",
+    "field": "IsLocalizationEnabled",
+    "source": "List<DocumentGenerationProcess> rows=[SELECT IsLocalizationEnabled FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 38 with the error:\n\n\nSELECT IsLocalizationEnabled FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'IsLocalizationEnabled' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "65.0",
+    "kind": "static-read",
+    "object": "DocumentGenerationProcess",
+    "field": "IsSharedExternally",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();Object value=record.IsSharedExternally;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 86 with the error:\n\nVariable does not exist: IsSharedExternally",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "65.0",
+    "kind": "static-query",
+    "object": "DocumentGenerationProcess",
+    "field": "IsSharedExternally",
+    "source": "List<DocumentGenerationProcess> rows=[SELECT IsSharedExternally FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 38 with the error:\n\n\nSELECT IsSharedExternally FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'IsSharedExternally' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "65.0",
+    "kind": "static-read",
+    "object": "DocumentGenerationProcess",
+    "field": "IsTocUpdateRequired",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();Object value=record.IsTocUpdateRequired;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 86 with the error:\n\nVariable does not exist: IsTocUpdateRequired",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "65.0",
+    "kind": "static-query",
+    "object": "DocumentGenerationProcess",
+    "field": "IsTocUpdateRequired",
+    "source": "List<DocumentGenerationProcess> rows=[SELECT IsTocUpdateRequired FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 38 with the error:\n\n\nSELECT IsTocUpdateRequired FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'IsTocUpdateRequired' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "65.0",
+    "kind": "static-read",
+    "object": "DocumentTemplate",
+    "field": "ContextDefinitionName",
+    "source": "DocumentTemplate record=new DocumentTemplate();Object value=record.ContextDefinitionName;",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "65.0",
+    "kind": "static-query",
+    "object": "DocumentTemplate",
+    "field": "ContextDefinitionName",
+    "source": "List<DocumentTemplate> rows=[SELECT ContextDefinitionName FROM DocumentTemplate LIMIT 1];",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "65.0",
+    "kind": "static-read",
+    "object": "DocumentTemplate",
+    "field": "ContextFilterName",
+    "source": "DocumentTemplate record=new DocumentTemplate();Object value=record.ContextFilterName;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 68 with the error:\n\nVariable does not exist: ContextFilterName",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "65.0",
+    "kind": "static-query",
+    "object": "DocumentTemplate",
+    "field": "ContextFilterName",
+    "source": "List<DocumentTemplate> rows=[SELECT ContextFilterName FROM DocumentTemplate LIMIT 1];",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 29 with the error:\n\n\nSELECT ContextFilterName FROM DocumentTemplate\n       ^\nERROR at Row:1:Column:8\nNo such column 'ContextFilterName' on entity 'DocumentTemplate'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "65.0",
+    "kind": "static-read",
+    "object": "DocumentTemplate",
+    "field": "ContextMappingName",
+    "source": "DocumentTemplate record=new DocumentTemplate();Object value=record.ContextMappingName;",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "65.0",
+    "kind": "static-query",
+    "object": "DocumentTemplate",
+    "field": "ContextMappingName",
+    "source": "List<DocumentTemplate> rows=[SELECT ContextMappingName FROM DocumentTemplate LIMIT 1];",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "65.0",
+    "kind": "static-read",
+    "object": "DocumentTemplate",
+    "field": "ContextTransformationName",
+    "source": "DocumentTemplate record=new DocumentTemplate();Object value=record.ContextTransformationName;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 68 with the error:\n\nVariable does not exist: ContextTransformationName",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "65.0",
+    "kind": "static-query",
+    "object": "DocumentTemplate",
+    "field": "ContextTransformationName",
+    "source": "List<DocumentTemplate> rows=[SELECT ContextTransformationName FROM DocumentTemplate LIMIT 1];",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 29 with the error:\n\n\nSELECT ContextTransformationName FROM DocumentTemplate\n       ^\nERROR at Row:1:Column:8\nNo such column 'ContextTransformationName' on entity 'DocumentTemplate'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "66.0",
+    "kind": "dynamic",
+    "compiled": true,
+    "success": true,
+    "observations": [
+      {
+        "field": "DocumentGenerationProcess.AdditionalMetadata",
+        "route": "get",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentGenerationProcess.AdditionalMetadata",
+        "route": "put",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentGenerationProcess.AdditionalMetadata",
+        "route": "query",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentGenerationProcess.DocGenAdditionalInput",
+        "route": "get",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentGenerationProcess.DocGenAdditionalInput",
+        "route": "put",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentGenerationProcess.DocGenAdditionalInput",
+        "route": "query",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentGenerationProcess.DocGenAdditionalInputType",
+        "route": "get",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentGenerationProcess.DocGenAdditionalInputType",
+        "route": "put",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentGenerationProcess.DocGenAdditionalInputType",
+        "route": "query",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentGenerationProcess.EstimatedDocumentSize",
+        "route": "get",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentGenerationProcess.EstimatedDocumentSize",
+        "route": "put",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentGenerationProcess.EstimatedDocumentSize",
+        "route": "query",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentGenerationProcess.IsLocalizationEnabled",
+        "route": "get",
+        "result": "System.SObjectException: Invalid field IsLocalizationEnabled for DocumentGenerationProcess"
+      },
+      {
+        "field": "DocumentGenerationProcess.IsLocalizationEnabled",
+        "route": "put",
+        "result": "System.SObjectException: Invalid field IsLocalizationEnabled for DocumentGenerationProcess"
+      },
+      {
+        "field": "DocumentGenerationProcess.IsLocalizationEnabled",
+        "route": "query",
+        "result": "System.QueryException: No such column 'IsLocalizationEnabled' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "field": "DocumentGenerationProcess.IsSharedExternally",
+        "route": "get",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentGenerationProcess.IsSharedExternally",
+        "route": "put",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentGenerationProcess.IsSharedExternally",
+        "route": "query",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentGenerationProcess.IsTocUpdateRequired",
+        "route": "get",
+        "result": "System.SObjectException: Invalid field IsTocUpdateRequired for DocumentGenerationProcess"
+      },
+      {
+        "field": "DocumentGenerationProcess.IsTocUpdateRequired",
+        "route": "put",
+        "result": "System.SObjectException: Invalid field IsTocUpdateRequired for DocumentGenerationProcess"
+      },
+      {
+        "field": "DocumentGenerationProcess.IsTocUpdateRequired",
+        "route": "query",
+        "result": "System.QueryException: No such column 'IsTocUpdateRequired' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "field": "DocumentTemplate.ContextDefinitionName",
+        "route": "get",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentTemplate.ContextDefinitionName",
+        "route": "put",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentTemplate.ContextDefinitionName",
+        "route": "query",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentTemplate.ContextFilterName",
+        "route": "get",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentTemplate.ContextFilterName",
+        "route": "put",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentTemplate.ContextFilterName",
+        "route": "query",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentTemplate.ContextMappingName",
+        "route": "get",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentTemplate.ContextMappingName",
+        "route": "put",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentTemplate.ContextMappingName",
+        "route": "query",
+        "result": "accepted"
+      },
+      {
+        "field": "DocumentTemplate.ContextTransformationName",
+        "route": "get",
+        "result": "System.SObjectException: Invalid field ContextTransformationName for DocumentTemplate"
+      },
+      {
+        "field": "DocumentTemplate.ContextTransformationName",
+        "route": "put",
+        "result": "System.SObjectException: Invalid field ContextTransformationName for DocumentTemplate"
+      },
+      {
+        "field": "DocumentTemplate.ContextTransformationName",
+        "route": "query",
+        "result": "System.QueryException: No such column 'ContextTransformationName' on entity 'DocumentTemplate'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      }
+    ]
+  },
+  {
+    "api": "66.0",
+    "kind": "static-read",
+    "object": "DocumentGenerationProcess",
+    "field": "AdditionalMetadata",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();Object value=record.AdditionalMetadata;",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "66.0",
+    "kind": "static-query",
+    "object": "DocumentGenerationProcess",
+    "field": "AdditionalMetadata",
+    "source": "List<DocumentGenerationProcess> rows=[SELECT AdditionalMetadata FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "66.0",
+    "kind": "static-read",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInput",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();Object value=record.DocGenAdditionalInput;",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "66.0",
+    "kind": "static-query",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInput",
+    "source": "List<DocumentGenerationProcess> rows=[SELECT DocGenAdditionalInput FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "66.0",
+    "kind": "static-read",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInputType",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();Object value=record.DocGenAdditionalInputType;",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "66.0",
+    "kind": "static-query",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInputType",
+    "source": "List<DocumentGenerationProcess> rows=[SELECT DocGenAdditionalInputType FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "66.0",
+    "kind": "static-read",
+    "object": "DocumentGenerationProcess",
+    "field": "EstimatedDocumentSize",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();Object value=record.EstimatedDocumentSize;",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "66.0",
+    "kind": "static-query",
+    "object": "DocumentGenerationProcess",
+    "field": "EstimatedDocumentSize",
+    "source": "List<DocumentGenerationProcess> rows=[SELECT EstimatedDocumentSize FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "66.0",
+    "kind": "static-read",
+    "object": "DocumentGenerationProcess",
+    "field": "IsLocalizationEnabled",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();Object value=record.IsLocalizationEnabled;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 86 with the error:\n\nVariable does not exist: IsLocalizationEnabled",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "66.0",
+    "kind": "static-query",
+    "object": "DocumentGenerationProcess",
+    "field": "IsLocalizationEnabled",
+    "source": "List<DocumentGenerationProcess> rows=[SELECT IsLocalizationEnabled FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 38 with the error:\n\n\nSELECT IsLocalizationEnabled FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'IsLocalizationEnabled' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "66.0",
+    "kind": "static-read",
+    "object": "DocumentGenerationProcess",
+    "field": "IsSharedExternally",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();Object value=record.IsSharedExternally;",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "66.0",
+    "kind": "static-query",
+    "object": "DocumentGenerationProcess",
+    "field": "IsSharedExternally",
+    "source": "List<DocumentGenerationProcess> rows=[SELECT IsSharedExternally FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "66.0",
+    "kind": "static-read",
+    "object": "DocumentGenerationProcess",
+    "field": "IsTocUpdateRequired",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();Object value=record.IsTocUpdateRequired;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 86 with the error:\n\nVariable does not exist: IsTocUpdateRequired",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "66.0",
+    "kind": "static-query",
+    "object": "DocumentGenerationProcess",
+    "field": "IsTocUpdateRequired",
+    "source": "List<DocumentGenerationProcess> rows=[SELECT IsTocUpdateRequired FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 38 with the error:\n\n\nSELECT IsTocUpdateRequired FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'IsTocUpdateRequired' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "66.0",
+    "kind": "static-read",
+    "object": "DocumentTemplate",
+    "field": "ContextDefinitionName",
+    "source": "DocumentTemplate record=new DocumentTemplate();Object value=record.ContextDefinitionName;",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "66.0",
+    "kind": "static-query",
+    "object": "DocumentTemplate",
+    "field": "ContextDefinitionName",
+    "source": "List<DocumentTemplate> rows=[SELECT ContextDefinitionName FROM DocumentTemplate LIMIT 1];",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "66.0",
+    "kind": "static-read",
+    "object": "DocumentTemplate",
+    "field": "ContextFilterName",
+    "source": "DocumentTemplate record=new DocumentTemplate();Object value=record.ContextFilterName;",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "66.0",
+    "kind": "static-query",
+    "object": "DocumentTemplate",
+    "field": "ContextFilterName",
+    "source": "List<DocumentTemplate> rows=[SELECT ContextFilterName FROM DocumentTemplate LIMIT 1];",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "66.0",
+    "kind": "static-read",
+    "object": "DocumentTemplate",
+    "field": "ContextMappingName",
+    "source": "DocumentTemplate record=new DocumentTemplate();Object value=record.ContextMappingName;",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "66.0",
+    "kind": "static-query",
+    "object": "DocumentTemplate",
+    "field": "ContextMappingName",
+    "source": "List<DocumentTemplate> rows=[SELECT ContextMappingName FROM DocumentTemplate LIMIT 1];",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "66.0",
+    "kind": "static-read",
+    "object": "DocumentTemplate",
+    "field": "ContextTransformationName",
+    "source": "DocumentTemplate record=new DocumentTemplate();Object value=record.ContextTransformationName;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 68 with the error:\n\nVariable does not exist: ContextTransformationName",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "66.0",
+    "kind": "static-query",
+    "object": "DocumentTemplate",
+    "field": "ContextTransformationName",
+    "source": "List<DocumentTemplate> rows=[SELECT ContextTransformationName FROM DocumentTemplate LIMIT 1];",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 29 with the error:\n\n\nSELECT ContextTransformationName FROM DocumentTemplate\n       ^\nERROR at Row:1:Column:8\nNo such column 'ContextTransformationName' on entity 'DocumentTemplate'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+    "compiled": null,
+    "success": null
+  }
+]

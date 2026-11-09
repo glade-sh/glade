@@ -1,0 +1,7 @@
+source_api	route	observation
+51.0	anonymous	{"twoGets":4,"setClear":0,"mapClear":0,"addViaCall":3,"addParam":3,"addStatic":3,"get2":0,"localOfStatic":0,"staticClear":0,"viaCall":0,"viaLocal":0}
+51.0	isTest	{"twoGets":4,"setClear":0,"mapClear":0,"addViaCall":3,"addParam":3,"addStatic":3,"get2":0,"localOfStatic":0,"staticClear":0,"viaCall":0,"viaLocal":0}
+62.0	anonymous	{"twoGets":4,"setClear":0,"mapClear":0,"addViaCall":3,"addParam":3,"addStatic":3,"get2":0,"localOfStatic":0,"staticClear":0,"viaCall":0,"viaLocal":0}
+62.0	isTest	{"twoGets":4,"setClear":0,"mapClear":0,"addViaCall":3,"addParam":3,"addStatic":3,"get2":0,"localOfStatic":0,"staticClear":0,"viaCall":0,"viaLocal":0}
+67.0	anonymous	{"twoGets":4,"setClear":0,"mapClear":0,"addViaCall":3,"addParam":3,"addStatic":3,"get2":0,"localOfStatic":0,"staticClear":0,"viaCall":0,"viaLocal":0}
+67.0	isTest	{"twoGets":4,"setClear":0,"mapClear":0,"addViaCall":3,"addParam":3,"addStatic":3,"get2":0,"localOfStatic":0,"staticClear":0,"viaCall":0,"viaLocal":0}

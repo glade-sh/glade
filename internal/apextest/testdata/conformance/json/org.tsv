@@ -1,0 +1,4 @@
+api	route	case	observation	context
+62.0	anonymous	R303	UNCAUGHT|System.UnexpectedException: Salesforce System Error: 1016898172-3658830 (308432432) (308432432)	stored cases.json expectation
+67.0	anonymous	R303	UNCAUGHT|System.UnexpectedException: Salesforce System Error: 614048281-4552867 (308432432) (308432432)	stored cases.json expectation
+68.0	anonymous	R303	UNCAUGHT|System.UnexpectedException: Salesforce System Error: 1275820533-233676 (308432432) (308432432)	fresh capture; request-specific Salesforce error ID

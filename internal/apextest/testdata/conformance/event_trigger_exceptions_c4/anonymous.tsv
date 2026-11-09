@@ -1,0 +1,3 @@
+source_api	step	observation
+62.0	evt_dump_after_45s	["cdc_before={\"userType\":\"AutomatedProcess\",\"dml\":0,\"queries\":0,\"mode\":\"npe\"}","pe_before={\"userType\":\"AutomatedProcess\",\"dml\":0,\"queries\":0,\"mode\":\"npe\"}"]
+67.0	evt_dump_after_45s	["cdc_before={\"userType\":\"AutomatedProcess\",\"dml\":0,\"queries\":0,\"mode\":\"npe\"}","pe_before={\"userType\":\"AutomatedProcess\",\"dml\":0,\"queries\":0,\"mode\":\"npe\"}"]

@@ -1,0 +1,1 @@
+try { Database.query('SELECT Id FROM ContactPointOttSvc LIMIT 1'); System.debug(LoggingLevel.ERROR,'ROOT_ROW|ok'); } catch (Exception e) { System.debug(LoggingLevel.ERROR,'ROOT_ROW|reject|'+e.getTypeName()); }

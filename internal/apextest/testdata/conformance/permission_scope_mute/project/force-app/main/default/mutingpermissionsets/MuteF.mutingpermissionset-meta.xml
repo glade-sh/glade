@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MutingPermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+  <label>MuteF</label>
+  <fieldPermissions><editable>true</editable><field>Cap__c.F__c</field><readable>true</readable></fieldPermissions>
+</MutingPermissionSet>

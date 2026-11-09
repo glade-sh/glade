@@ -16,6 +16,15 @@ func removeUnselectedGroupFields(fields map[string]storage.Value, query Query, o
 	selected := make(map[string]bool, len(query.Fields))
 	var selectedFields []string
 	for _, field := range query.Fields {
+		if arg, alias, ok := aggregateToLabelField(field); ok && alias == "" {
+			// An unaliased toLabel(field) is exposed under its grouped field.
+			for _, group := range query.GroupBy {
+				if containsName([]string{group}, arg) {
+					selected[strings.ToLower(group)] = true
+				}
+			}
+			continue
+		}
 		if expr, ok := parseSelectFieldExpression(field); ok {
 			selected[strings.ToLower(expr.outputName())] = true
 		} else if _, alias, ok := splitSelectFieldAlias(field); ok {
@@ -33,8 +42,26 @@ func removeUnselectedGroupFields(fields map[string]storage.Value, query Query, o
 			selected[strings.ToLower(aggregate.Alias)] = true
 		}
 	}
+	// Native Q9/Q12: a grouped date function selected under an alias is exposed
+	// only as that alias. Unselected or unaliased function keys keep their
+	// existing contract.
+	aliasedFunctions := map[string]bool{}
+	plainFunctions := map[string]bool{}
+	for _, field := range query.Fields {
+		if expr, ok := parseSelectFieldExpression(field); ok {
+			if expr.Alias != "" {
+				aliasedFunctions[normalizeGroupFunction(expr.Raw)] = true
+			} else {
+				plainFunctions[normalizeGroupFunction(expr.Raw)] = true
+			}
+		}
+	}
 	for _, group := range query.GroupBy {
 		if _, function := parseSelectFieldExpression(group); function {
+			key := normalizeGroupFunction(group)
+			if aliasedFunctions[key] && !plainFunctions[key] {
+				delete(fields, group)
+			}
 			continue
 		}
 		keepGroup := selected[strings.ToLower(group)]
@@ -69,4 +96,8 @@ func groupSelectedWithNamespace(namespace, field, group string) bool {
 	}
 	prefix := field[:len(field)-len(group)]
 	return strings.HasSuffix(prefix, "__") && len(prefix) > 2 && !strings.Contains(prefix[:len(prefix)-2], "__")
+}
+
+func normalizeGroupFunction(text string) string {
+	return strings.ToLower(strings.Join(strings.Fields(text), ""))
 }

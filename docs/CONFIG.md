@@ -80,6 +80,7 @@ Supported keys:
 | `project.packageShims` | Local source roots that provide test/runtime bodies for captured package artifacts. |
 | `pdf.command` | Absolute executable path for optional external HTML-to-PDF rendering; empty uses the local text writer. |
 | `org.features` | Scratch-org style features for local runtime behavior. |
+| `org.hierarchyAccessObjects` | Inline list of private custom object API names for which the source org grants read access through the owner's role hierarchy. Unlisted objects do not receive that grant. |
 | `test.permissionSets` | Inline list of project permission-set API names to assign to the running test user. |
 | `test.permissionSetGroups` | Inline list of project permission-set-group API names to assign to the running test user. |
 | `org.domainUrl` | Canonical HTTP(S) org origin used by `URL.getOrgDomainUrl()`; defaults to `https://local.glade.example`. |
@@ -88,6 +89,13 @@ Supported keys:
 | `test.user.language` | Default running test user's language key. |
 | `test.user.defaultCurrencyIsoCode` | Default running test user's currency code. |
 | `test.clock.start` | Deterministic test clock start as an RFC3339 timestamp. |
+
+When `config/project-scratch-def.json` names a `country` of `NO`, `DE` or `GB` and
+`test.user.locale` or `test.user.timeZone` is unset, the running test user takes the
+locale and time zone Salesforce gives a fresh org for that country (`no_NO` and
+`Europe/Paris`, `de_DE` and `Europe/Berlin`, `en_GB` and `Europe/London`). The
+Organization row and the user also report that country. Other countries keep the
+defaults above.
 
 A snapshot's matching hash verifies its contents; it does not establish that
 its field list is complete. To assert that an object contains every field from
@@ -117,10 +125,17 @@ and async work. `System.runAs` uses that user's own settings and restores the
 configured running user on exit. The configured user fields can also be queried
 from `User`. They do not change the Organization defaults or the host clock.
 
-Omitted values keep the existing defaults: `America/Los_Angeles`, `en_US` locale
-and language, `USD`, and a clock starting at `2026-05-02T12:00:00Z`. Choose a weekday
-when a test deliberately assumes that today and tomorrow are in the same week.
-Choose `GMT` when a UTC timestamp's calendar date is the intended local date.
+Omitted values keep the defaults: `America/Los_Angeles`, `en_US` locale and
+language, `USD`, and a clock starting at `2026-05-13T12:00:00Z`. Salesforce runs
+a test at the real date, so `Date.today()` changes from run to run. Glade fixes
+the start instead, so a run, its cached results and CI repeat exactly. The
+default is a Wednesday in mid-month and mid-quarter (05:00 in the default
+`America/Los_Angeles` zone). In every time zone that day and the days just
+before and after it are weekdays, and a week on either side stays in May. Before v0.3.5
+the default was `2026-05-02T12:00:00Z`, a Saturday; set that value to keep the old
+clock. Set `start` explicitly when a test assumes a particular weekday, month
+end or year end. Choose `GMT` when a UTC timestamp's calendar date is the
+intended local date.
 
 `timeZone` must be a recognized IANA identifier (or `UTC`/`GMT`); host-dependent
 `Local` and unknown identifiers fail validation. A recognized zone outside the
@@ -232,6 +247,13 @@ narrow `dependencyPaths` or remove the duplicate checkout. No match reports
 `dependency_missing`, which names the package and the key to add. Discovery is
 limited to these local workspace locations and explicit paths.
 
+A missing dependency source is an expected failure of the code that references
+it, as in Salesforce, and not of the whole project. This holds whether or not
+the package appears in `packageAliases`: tests that do not reference the package
+still run, and tests that do report `dependency_missing`. `dependency_ambiguous`
+and `dependency_load_error` have no single referencing code to blame, so they
+still fail every test until fixed.
+
 The list comes from the project's own `glade.yml`, or else the nearest
 ancestor `glade.yml`. Changing it, or a dependency appearing at a listed path,
 invalidates cached project state, so the next run rebuilds. `glade config show`
@@ -265,9 +287,11 @@ project:
 listed in `packageAliases`. `path` is relative to the `glade.yml` file and may
 point to an SFDX project or a bare source directory without a manifest. When
 pointing to an SFDX project, `package` optionally selects one
-`packageDirectories[].package`; if omitted, the project’s default package
-directories are used, or all declared package directories if none is marked
-default. Source namespaces come from the source project and are not inferred
+`packageDirectories[].package`. If `package` is omitted and `name` is itself a
+package that the project declares, that package is selected; otherwise the
+project’s default package directories are used, or all declared package
+directories if none is marked default. Two entries may point to the same `path`
+and select different packages; each loads its own package directories. Source namespaces come from the source project and are not inferred
 from the mapping name. The optional `version` is recorded for the local
 dependency and does not prevent loading a checkout.
 
@@ -335,6 +359,7 @@ service.
 | `HealthCloud` | Writable `Account.IsActive` Boolean field, defaulting to `false`; accepts names beginning with `HealthCloud`, including `HealthCloudAddOn`. |
 | `OrderManagement` | `WebStore` standard object availability. |
 | `ApexUserModeWithPermset` | Custom `AccessLevel` usage in scratch org execution. |
+| `OpportunitySplits` | `OpportunitySplit` and `OpportunitySplitType` object availability. Natively these appear only after the Opportunity Splits Setup wizard runs (Opportunity Teams first); no deployable setting does it, so only this feature enables them. |
 | `B2BCommerce`, `CommerceEnabled` | `WebStore` availability and fields (with `Communities` and `OrderManagement`). |
 | `LiveAgent`, `LiveAgentEnabled` | `Case` live-agent field gates. |
 | `TranslationLanguage-fr` | Model an active French Translation Workbench language for the captured `Account.Industry` standard value-set `toLabel` route. Include the corresponding `Industry-fr.standardValueSetTranslation` metadata. |
@@ -346,14 +371,86 @@ service behavior. Feature names without a local implementation do not add that
 functionality. In particular, a scratch definition can request services or
 licenses that the offline runtime does not implement.
 
+### Features add to the edition
+
+A scratch definition's `features` list adds to the edition's defaults. It never
+removes a standard object, and Glade's `org.features` follows the same rule for
+every object the edition carries. Some objects are not edition defaults and
+stay off until their feature or setting is listed. These include `Quote` and `QuoteLineItem`
+(`Quotes`, or `quoteSettings.enableQuote`), `AccountContactRelation`
+(`ContactsToMultipleAccounts`), and `WebStore` (`OrderManagement` or the
+captured B2B Commerce shape described below). A Developer
+scratch org with `features: ["Communities"]` and one with no features both
+reject `Quote`, `QuoteLineItem`, `AccountContactRelation` and `WebStore` at API
+62.0 and 67.0 (captured in `org_features_additive/org.tsv` and
+`org_object_availability/org.tsv`). So a project that lists `Communities` and
+uses `Quote` must also list `Quotes`, as it must enable the quote setting in a
+real org. A project with no feature inputs at all declares no shape, and Glade
+leaves `Quote`, `AccountContactRelation` and `WebStore` available in
+`glade test` and `glade exec --project` (checked on a minimal project at API
+67.0). `Network` and `NetworkMember` are the exception: they stay off until
+`communitiesSettings.enableNetworksEnabled` is on. The nearest `glade.yml` can be in a parent
+directory, so a nested project may still inherit a declared feature shape.
+
+| Object | Turned on by | Evidence |
+| --- | --- | --- |
+| `Quote`, `QuoteLineItem`, `QuoteDocument`, `QuoteFeed`, `QuoteHistory`, `QuoteLineItemHistory`, `QuoteShare` | `Quotes` or `quoteSettings.enableQuote` | Quote-setting availability captured at 62.0 and 67.0; `Quotes` is a Glade alias |
+| `WebStore` | `OrderManagement`, or the captured B2B Commerce shape below | Captured at 62.0 and 67.0 |
+| `AccountContactRelation` | `ContactsToMultipleAccounts` | Gate mapped in Glade; absent natively without it, not captured with it on |
+| `Network`, `NetworkMember` | `communitiesSettings.enableNetworksEnabled` | Captured at 62.0 and 67.0; `Communities` alone does not expose them |
+| `DatedConversionRate`, `CurrencyType` | `MultiCurrency` | Captured at 62.0 and 67.0 |
+| `Territory2`, `Territory2Model`, `Territory2Type`, `UserTerritory2Association`, `ObjectTerritory2Association` | `Territory2` or `territory2Settings.enableTerritoryManagement2` | Availability captured at 62.0 and 67.0; territory management itself is not modelled |
+| `AccountTeamMember` | `AccountTeams` or `accountSettings.enableAccountTeams` | Availability captured at 62.0 and 67.0 |
+| `ForecastingItem`, `ForecastingQuota`, `ForecastingType` | `Forecasts` or `forecastingSettings.enableForecasts` | Availability captured at 62.0 and 67.0 |
+| `OpportunityTeamMember` | `OpportunityTeam` or `opportunitySettings.enableOpportunityTeam` | Availability captured at 62.0 and 67.0 |
+| `OpportunitySplit`, `OpportunitySplitType` | `OpportunityTeam` and `OpportunitySplits` | Availability captured at 62.0 and 67.0 after enabling splits in Salesforce Setup; declare both features explicitly in Glade |
+| `ServiceChannel` | `OmniChannel` or `omniChannelSettings.enableOmniChannel` | Availability captured at 62.0 and 67.0 |
+| `Survey` | `Surveys` or `surveySettings.enableSurvey` | Availability captured at 62.0 and 67.0 |
+| `Knowledge__ka`, `Knowledge__kav` | `knowledgeSettings.enableKnowledge` | Setting-only and feature-only shapes captured at 62.0 and 67.0 |
+| Captured commerce catalog objects | `OrderManagement`, or the captured B2B Commerce shape below where present | The 106 objects in `org_commerce_family/org.tsv` and the B2B alternatives in `org_commerce_b2b/org.tsv` were captured at 62.0 and 67.0 |
+| `PickTicket` and five related objects, `UserLocationAssignment` | `OrderManagement` and `orderManagementSettings.enableOrderManagement` | Feature-only, setting-only, and combined shapes captured at 62.0 and 67.0 |
+
+The captured B2B Commerce shape uses both `B2BCommerce` and `Communities`
+features with `communitiesSettings.enableNetworksEnabled` and
+`commerceSettings.commerceEnabled`. Its individual object results and API
+version boundaries are recorded in `org_commerce_b2b`.
+
+For territory, account teams, forecasts, opportunity teams, Omni-Channel, and
+surveys, the availability captures used the settings shown above. Glade also
+accepts the listed feature names as local aliases; Salesforce rejects those
+six exact names as scratch-definition feature values, so they do not represent
+captured Salesforce feature-only shapes.
+
+For a declared shape, Glade models the captured unlicensed `CampaignInfluence`
+behavior. A CRM User licensed shape is not yet modeled. In the captured
+unlicensed org, `campaignSettings.enableCampaignInfluence2` exposes
+the `Schema.CampaignInfluence` type token. In anonymous execution the object
+is absent from global describe and queries fail. In test context it appears
+in global describe. Captured default dynamic count queries succeed through
+API 66 and raise a security exception at API 67; default dynamic record
+queries at API 67 and explicit user-mode queries at APIs 62 and 67 raise
+query exceptions, while explicit system-mode queries succeed.
+An unspecified project retains the compatibility fallback.
+
+Other feature-to-object mappings are not established by captures yet.
+
 ### Discovery and merging
 
 Glade combines features from these sources at the project root:
 
 - The nearest `glade.yml`, through `org.features`.
 - `config/project-scratch-def.json` and `config/hc-project-scratch-def.json`.
+- The scratch definition each `sfdx-project.json` `packageDirectories` entry
+  names with `definitionFile`, merged with the files above. Paths must stay
+  inside the project root.
 - Relative JSON `config_file:` entries in `cumulusci.yml` and
   `cumulusci.template.yml`. Paths must stay inside the project root.
+- Deployed org settings in the project source,
+  `settings/<Name>.settings-meta.xml` in any package directory. These feed the
+  same table as scratch-definition settings (see Mapped settings). The file
+  name picks the settings type (`Quote.settings-meta.xml` is `quoteSettings`);
+  only boolean values are read. Directories such as `node_modules`, `objects`,
+  `classes` and `lwc` are not searched.
 
 Scratch definitions can express `features` as a string or an array of strings.
 The result is a union across all discovered files, including separate CumulusCI
@@ -382,12 +479,47 @@ unread-key warning.
 
 | Setting | Feature |
 | --- | --- |
-| `communitiesSettings.enableNetworksEnabled` | `Communities` |
+| `communitiesSettings.enableNetworksEnabled` | `Communities`, `NetworksEnabled` |
 | `communitiesSettings.enableOotbProfExtUserOpsEnable` | `Communities` |
 | `chatterSettings.enableChatter` | `Chatter` |
 | `lightningExperienceSettings.enableS1DesktopEnabled` | `LightningExperience` |
 | `currencySettings.enableMultiCurrency` | `MultiCurrency` |
+| `territory2Settings.enableTerritoryManagement2` | `Territory2` |
+| `accountSettings.enableAccountTeams` | `AccountTeams` |
+| `forecastingSettings.enableForecasts` | `Forecasts` |
+| `opportunitySettings.enableOpportunityTeam` | `OpportunityTeam` |
+| `omniChannelSettings.enableOmniChannel` | `OmniChannel` |
+| `surveySettings.enableSurvey` | `Surveys` |
+| `campaignSettings.enableCampaignInfluence2` | `CampaignInfluence2Enabled` |
+| `knowledgeSettings.enableKnowledge` | `KnowledgeEnabled` |
+| `orderManagementSettings.enableOrderManagement` | `OrderManagementEnabled` |
 | `quoteSettings.enableQuote` | `Quotes` |
+
+The same keys work in a deployed `settings/*.settings-meta.xml` file, for
+example `Quote.settings-meta.xml` with `enableQuote` set to `true`. Native
+captures (`internal/apextest/testdata/conformance/org_settings_source`) show
+each setting adds objects to a plain Developer org:
+
+| Feature | Objects added |
+| --- | --- |
+| `Quotes` | `Quote`, `QuoteLineItem` |
+| `AccountTeams` | `AccountTeamMember` |
+| `OpportunityTeam` | `OpportunityTeamMember` |
+| `Territory2` | `Territory2`, `Territory2Model`, `Territory2Type`, `UserTerritory2Association`, `ObjectTerritory2Association` |
+| `Forecasts` | `ForecastingItem`, `ForecastingQuota`, `ForecastingType` |
+| `MultiCurrency` | `CurrencyType`, `DatedConversionRate` |
+| `NetworksEnabled` | `Network`, `NetworkMember` |
+
+The `Communities` feature alone does not add `Network` or `NetworkMember`.
+Only `communitiesSettings.enableNetworksEnabled` does. An org that declares a
+shape (a scratch definition or `org.features`) rejects these objects until a
+setting or feature enables them. A project with no declared shape keeps the
+other objects but still lacks `Network` and `NetworkMember`.
+`accountSettings.enableRelateContactToMultipleAccounts` does not add
+`AccountContactRelation`; the `ContactsToMultipleAccounts` feature does.
+`knowledgeSettings.enableKnowledge` adds `Knowledge__kav` and `Knowledge__ka`
+natively. In the captured unlicensed org, `campaignSettings.enableCampaignInfluence2`
+also exposes `CampaignInfluenceModel` and flips the `Schema.CampaignInfluence` type token.
 
 Other features and settings remain in the source file and do not configure local org shape.
 For example, `features` entries such as `ServiceCloud` or `Knowledge`, and
@@ -454,13 +586,15 @@ in the project.
 
 ### Anonymous execution and tests
 
-`glade exec` starts with a lean local org, then loads project schema and runtime
-metadata when a project is selected. `glade test` starts each test org from the
-full standard schema catalog before applying project metadata and feature
-policy. Objects can also be materialized as execution needs them. Consequently,
-`Schema.getGlobalDescribe()` and `Type.forName()` can observe different loaded
-schema between anonymous execution and tests. Neither command's raw object
-count is a Salesforce org inventory.
+`glade exec --project` and `glade test` start from the same standard schema
+catalog (`apextest.EnsureStandardObjectSpread`), then apply project metadata and
+the feature policy. Platform objects such as `AsyncApexJob`, `CronTrigger`,
+`PricebookEntry`, `OrgWideEmailAddress`, `OpportunityLineItem` and `GroupMember`
+therefore query the same way in anonymous Apex and in tests. `glade exec`
+without a project, and `glade exec --db`, keep their own org: no project means
+no org state, and a `--db` run uses the saved SQLite org. Objects can also be
+materialized as execution needs them, and neither command's raw object count
+is a Salesforce org inventory.
 
 Both paths use the project's discovered feature inputs. Features provide only
 their implemented local behavior; live Experience Cloud provisioning and other
@@ -541,11 +675,31 @@ local test or runtime behavior.
 
 ## Test User Permissions
 
-When a project has no profile metadata, Glade keeps its local running test user
-permissive for custom-object CRUD and field-level security. This follows the
-deploying-administrator context; it does not model a Salesforce Standard User,
-which can have no access to a new custom object. Keep explicit restricted-user
-tests separate with `System.runAs`.
+For a project without profile or permission-set grants, the local administrator
+has CRUD access to ordinary custom objects, but optional custom fields require
+an effective field grant. This matches the captured deploying-administrator
+context at APIs 62 through 68. Explicit system-mode operations can access those
+fields without the user-mode field check. A Standard User can have no access to
+a new custom object; use `System.runAs` to test that user's access.
+
+Profile files map to the profile they deploy to. `Admin.profile-meta.xml` is
+the System Administrator profile, so its field grants apply to the local
+administrator. `Standard.profile-meta.xml` is Standard User. `ReadOnly`,
+`SolutionManager`, `MarketingProfile`, `ContractManager` and `StandardAul`
+map to Read Only, Solution Manager, Marketing User, Contract Manager and
+Standard Platform User. Percent-encoded names such as
+`Custom%3A Sales Profile` map to `Custom: Sales Profile`.
+
+`glade exec`, `glade server`, and the LWC and Visualforce routes have no test
+user. They run as the default administrator, and `test.permissionSets` does not
+apply to them. On those routes, a project that grants custom-field access only
+through permission sets has no access to optional custom fields at source APIs
+62–68. User-mode DML, including plain DML at API 67, then fails. In anonymous
+Apex (`glade exec`) such a field is invisible, as in a Salesforce org: a static
+SOQL query or SObject reference that names it does not compile, the describe
+field map omits it, `SObject.put` raises `Invalid field`, and a dynamic query
+reports `No such column`. Grant the fields in `Admin.profile-meta.xml` to give
+the administrator access there.
 
 The native Standard User captures at source APIs 62–67 have no access to a
 new custom object without profile or permission-set grants. Describe returns
@@ -573,9 +727,9 @@ and field access. Custom permissions must be declared in project metadata and
 granted by a permission set; there is no separate custom-permission override.
 Assignments apply to the running user. `System.runAs(other)` uses the other
 user's own profile and assignments. Repeated names create one assignment.
-This option assigns the listed grants; it does not select a profile or replace
-the permissive no-profile default. For strict access checks, run code as a user
-with a restricted profile and that user's own permission assignments.
+This option assigns the listed grants; it does not select a profile. For
+restricted-user checks, run code as that user with the user's own permission
+assignments.
 
 Missing permission-set or group names produce a config error naming the missing
 API name. `glade config validate` checks these references; `glade config show`

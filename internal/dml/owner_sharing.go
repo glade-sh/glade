@@ -8,7 +8,7 @@ import (
 )
 
 // Native owner-rule captures cover Private custom objects, their Owner row,
-// and one Read rule whose source public group contains the owner directly.
+// and Read rules whose source public groups contain the owner directly.
 // Other sharing models, nested/role membership and membership-change-triggered
 // recalculation are separate boundaries; this does not grant recipient access.
 func privateOwnerShareObject(org *storage.OrgState, definition storage.ObjectDefinition) (string, bool) {
@@ -38,20 +38,21 @@ func (e *Engine) reconcilePrivateOwnerShares(objectName string, parentID storage
 		recipient     storage.ID
 	}
 	wanted := map[string]grant{"Owner": {cause: "Owner", access: "All", recipient: parent.System.OwnerID}}
-	var managedTarget storage.ID
-	// Configuration is populated only for the captured single-rule shape. Do
-	// not project unsupported programmatic configurations as additional grants.
-	if len(object.Definition.OwnerSharingRules) == 1 {
-		rule := object.Definition.OwnerSharingRules[0]
-		if rule.AccessLevel == "Read" {
-			source := e.directSharingGroup(rule.SourceGroup)
-			target := e.directSharingGroup(rule.TargetGroup)
-			if source != "" && target != "" {
-				managedTarget = target
-				if e.ownerIsDirectGroupMember(source, parent.System.OwnerID) {
-					wanted["Rule"] = grant{cause: "Rule", access: "Read", recipient: target}
-				}
-			}
+	managedTargets := make(map[storage.ID]bool)
+	// Project each supported direct-group rule independently. The share target
+	// is the identity of a Rule row, so rules targeting the same group coalesce.
+	for _, rule := range object.Definition.OwnerSharingRules {
+		if rule.AccessLevel != "Read" {
+			continue
+		}
+		source := e.directSharingGroup(rule.SourceGroup)
+		target := e.directSharingGroup(rule.TargetGroup)
+		if source == "" || target == "" {
+			continue
+		}
+		managedTargets[target] = true
+		if e.ownerIsDirectGroupMember(source, parent.System.OwnerID) {
+			wanted["Rule:"+string(target)] = grant{cause: "Rule", access: "Read", recipient: target}
 		}
 	}
 	share := e.Org.Objects[shareName]
@@ -77,8 +78,13 @@ func (e *Engine) reconcilePrivateOwnerShares(objectName string, parentID storage
 		key := ""
 		if cause.String == "Owner" {
 			key = "Owner"
-		} else if cause.String == "Rule" && managedTarget != "" && storage.IDsEqual(managedTarget, idFromStorageValue(recipient)) {
-			key = "Rule"
+		} else if cause.String == "Rule" {
+			for target := range managedTargets {
+				if storage.IDsEqual(target, idFromStorageValue(recipient)) {
+					key = "Rule:" + string(target)
+					break
+				}
+			}
 		}
 		if key == "" {
 			continue

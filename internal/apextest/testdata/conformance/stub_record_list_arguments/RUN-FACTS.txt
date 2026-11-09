@@ -1,0 +1,8 @@
+source_api=62.0,67.0
+routes=anonymous,istest
+rows=12
+native_complete=true
+project/force-app/main/default/classes/CallbackShapeProbe.cls sha256=982d173f8786406561b61243f70c40bd1c312192e8522f5707302e4700d9d519
+project/force-app/main/default/classes/CallbackShapeProbeTest.cls sha256=7b6729843b719139202cb8c09c6ae9d161ce623708dfa01ca5a4b85af8d22a9d
+project/force-app/main/default/classes/CallbackShapeProvider.cls sha256=35e76aeefc8e7e1405bd104d61d5061fe844cdae502f6776e98abfd499372669
+project/force-app/main/default/classes/CallbackShapeService.cls sha256=c94a5f8079db6be72b1fad38a359e6096941f675eb3d9f7a65449aabb78e5170

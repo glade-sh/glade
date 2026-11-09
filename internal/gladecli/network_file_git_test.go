@@ -20,7 +20,7 @@ func TestNetworkFileGitProjectCLIAliasAndDaemonRoutes(t *testing.T) {
 				t.Run(api+"/"+location+"/"+operation, func(t *testing.T) {
 					root := t.TempDir()
 					writeTestFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"sourceApiVersion":%q,"packageDirectories":[{"path":"force-app","default":true}]}`, api))
-					writeTestFile(t, filepath.Join(root, "glade.yml"), "org:\n  features: [Communities]\nproject:\n  extraMetadataDirs: [supplemental]\n")
+					writeTestFile(t, filepath.Join(root, "glade.yml"), "org:\n  features: [Communities, NetworksEnabled]\nproject:\n  extraMetadataDirs: [supplemental]\n")
 					writeTestFile(t, filepath.Join(root, "supplemental/README.md"), "Supplemental metadata")
 					metadataRoot := filepath.Join(root, "force-app/main/default")
 					if location == "supplemental" {

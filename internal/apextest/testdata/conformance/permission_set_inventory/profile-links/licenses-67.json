@@ -1,0 +1,289 @@
+{
+  "status": 0,
+  "result": {
+    "records": [
+      {
+        "attributes": {
+          "type": "UserLicense",
+          "url": "/services/data/v67.0/sobjects/UserLicense/100Ru00000kOKfqIAG"
+        },
+        "Id": "100Ru00000kOKfqIAG",
+        "Name": "Analytics Cloud Integration User",
+        "LicenseDefinitionKey": "INSIGHTS_INTEGRATION_USER"
+      },
+      {
+        "attributes": {
+          "type": "UserLicense",
+          "url": "/services/data/v67.0/sobjects/UserLicense/100Ru00000kOKg0IAG"
+        },
+        "Id": "100Ru00000kOKg0IAG",
+        "Name": "Authenticated Website",
+        "LicenseDefinitionKey": "PLATFORM_PORTAL"
+      },
+      {
+        "attributes": {
+          "type": "UserLicense",
+          "url": "/services/data/v67.0/sobjects/UserLicense/100Ru00000kOKfvIAG"
+        },
+        "Id": "100Ru00000kOKfvIAG",
+        "Name": "Authenticated Website",
+        "LicenseDefinitionKey": "Platform_Portal_User"
+      },
+      {
+        "attributes": {
+          "type": "UserLicense",
+          "url": "/services/data/v67.0/sobjects/UserLicense/100Ru00000kOKgHIAW"
+        },
+        "Id": "100Ru00000kOKgHIAW",
+        "Name": "Chatter External",
+        "LicenseDefinitionKey": "CSN_External_User"
+      },
+      {
+        "attributes": {
+          "type": "UserLicense",
+          "url": "/services/data/v67.0/sobjects/UserLicense/100Ru00000kOKftIAG"
+        },
+        "Id": "100Ru00000kOKftIAG",
+        "Name": "Chatter Free",
+        "LicenseDefinitionKey": "CSN_User"
+      },
+      {
+        "attributes": {
+          "type": "UserLicense",
+          "url": "/services/data/v67.0/sobjects/UserLicense/100Ru00000kOKfuIAG"
+        },
+        "Id": "100Ru00000kOKfuIAG",
+        "Name": "Cloud Integration User",
+        "LicenseDefinitionKey": "CLOUD_INTEGRATION_USER"
+      },
+      {
+        "attributes": {
+          "type": "UserLicense",
+          "url": "/services/data/v67.0/sobjects/UserLicense/100Ru00000kOKfwIAG"
+        },
+        "Id": "100Ru00000kOKfwIAG",
+        "Name": "Company Communities",
+        "LicenseDefinitionKey": "PID_COMPANY_COMMUNITIES"
+      },
+      {
+        "attributes": {
+          "type": "UserLicense",
+          "url": "/services/data/v67.0/sobjects/UserLicense/100Ru00000kOKgJIAW"
+        },
+        "Id": "100Ru00000kOKgJIAW",
+        "Name": "CPQ Integration User",
+        "LicenseDefinitionKey": "PID_CpqIntegration"
+      },
+      {
+        "attributes": {
+          "type": "UserLicense",
+          "url": "/services/data/v67.0/sobjects/UserLicense/100Ru00000kOKgFIAW"
+        },
+        "Id": "100Ru00000kOKgFIAW",
+        "Name": "Customer Community",
+        "LicenseDefinitionKey": "PID_Customer_Community"
+      },
+      {
+        "attributes": {
+          "type": "UserLicense",
+          "url": "/services/data/v67.0/sobjects/UserLicense/100Ru00000kOKfyIAG"
+        },
+        "Id": "100Ru00000kOKfyIAG",
+        "Name": "Customer Community Login",
+        "LicenseDefinitionKey": "PID_Customer_Community_Login"
+      },
+      {
+        "attributes": {
+          "type": "UserLicense",
+          "url": "/services/data/v67.0/sobjects/UserLicense/100Ru00000kOKg4IAG"
+        },
+        "Id": "100Ru00000kOKg4IAG",
+        "Name": "Customer Community Plus",
+        "LicenseDefinitionKey": "PID_Customer_Community_Plus"
+      },
+      {
+        "attributes": {
+          "type": "UserLicense",
+          "url": "/services/data/v67.0/sobjects/UserLicense/100Ru00000kOKgAIAW"
+        },
+        "Id": "100Ru00000kOKgAIAW",
+        "Name": "Customer Community Plus Login",
+        "LicenseDefinitionKey": "PID_Customer_Community_Plus_Login"
+      },
+      {
+        "attributes": {
+          "type": "UserLicense",
+          "url": "/services/data/v67.0/sobjects/UserLicense/100Ru00000kOKg2IAG"
+        },
+        "Id": "100Ru00000kOKg2IAG",
+        "Name": "Customer Portal Manager Custom",
+        "LicenseDefinitionKey": "PID_Customer_Portal_Standard"
+      },
+      {
+        "attributes": {
+          "type": "UserLicense",
+          "url": "/services/data/v67.0/sobjects/UserLicense/100Ru00000kOKg8IAG"
+        },
+        "Id": "100Ru00000kOKg8IAG",
+        "Name": "Customer Portal Manager Standard",
+        "LicenseDefinitionKey": "PID_Customer_Portal_Basic"
+      },
+      {
+        "attributes": {
+          "type": "UserLicense",
+          "url": "/services/data/v67.0/sobjects/UserLicense/100Ru00000kOKgKIAW"
+        },
+        "Id": "100Ru00000kOKgKIAW",
+        "Name": "External Apps Login",
+        "LicenseDefinitionKey": "PID_External_Apps_Login"
+      },
+      {
+        "attributes": {
+          "type": "UserLicense",
+          "url": "/services/data/v67.0/sobjects/UserLicense/100Ru00000kOKgCIAW"
+        },
+        "Id": "100Ru00000kOKgCIAW",
+        "Name": "External Identity",
+        "LicenseDefinitionKey": "PID_External_Identity"
+      },
+      {
+        "attributes": {
+          "type": "UserLicense",
+          "url": "/services/data/v67.0/sobjects/UserLicense/100Ru00000kOKg9IAG"
+        },
+        "Id": "100Ru00000kOKg9IAG",
+        "Name": "Force.com - App Subscription",
+        "LicenseDefinitionKey": "FDC_SUB"
+      },
+      {
+        "attributes": {
+          "type": "UserLicense",
+          "url": "/services/data/v67.0/sobjects/UserLicense/100Ru00000kOKgGIAW"
+        },
+        "Id": "100Ru00000kOKgGIAW",
+        "Name": "Force.com - Free",
+        "LicenseDefinitionKey": "PID_FDC_FREE"
+      },
+      {
+        "attributes": {
+          "type": "UserLicense",
+          "url": "/services/data/v67.0/sobjects/UserLicense/100Ru00000kOKg7IAG"
+        },
+        "Id": "100Ru00000kOKg7IAG",
+        "Name": "Gold Partner",
+        "LicenseDefinitionKey": "PID_STRATEGIC_PRM"
+      },
+      {
+        "attributes": {
+          "type": "UserLicense",
+          "url": "/services/data/v67.0/sobjects/UserLicense/100Ru00000kOKg6IAG"
+        },
+        "Id": "100Ru00000kOKg6IAG",
+        "Name": "High Volume Customer Portal",
+        "LicenseDefinitionKey": "HIGH_VOLUME_PORTAL"
+      },
+      {
+        "attributes": {
+          "type": "UserLicense",
+          "url": "/services/data/v67.0/sobjects/UserLicense/100Ru00000kOKgIIAW"
+        },
+        "Id": "100Ru00000kOKgIIAW",
+        "Name": "High Volume Customer Portal",
+        "LicenseDefinitionKey": "High_Volume_Customer_Portal_User"
+      },
+      {
+        "attributes": {
+          "type": "UserLicense",
+          "url": "/services/data/v67.0/sobjects/UserLicense/100Ru00000kOKg3IAG"
+        },
+        "Id": "100Ru00000kOKg3IAG",
+        "Name": "Identity",
+        "LicenseDefinitionKey": "PID_Identity_User"
+      },
+      {
+        "attributes": {
+          "type": "UserLicense",
+          "url": "/services/data/v67.0/sobjects/UserLicense/100Ru00000kOKgBIAW"
+        },
+        "Id": "100Ru00000kOKgBIAW",
+        "Name": "Partner App Subscription",
+        "LicenseDefinitionKey": "FDC_ISV_SUB"
+      },
+      {
+        "attributes": {
+          "type": "UserLicense",
+          "url": "/services/data/v67.0/sobjects/UserLicense/100Ru00000kOKgDIAW"
+        },
+        "Id": "100Ru00000kOKgDIAW",
+        "Name": "Partner Community",
+        "LicenseDefinitionKey": "PID_Partner_Community"
+      },
+      {
+        "attributes": {
+          "type": "UserLicense",
+          "url": "/services/data/v67.0/sobjects/UserLicense/100Ru00000kOKgEIAW"
+        },
+        "Id": "100Ru00000kOKgEIAW",
+        "Name": "Partner Community Login",
+        "LicenseDefinitionKey": "PID_Partner_Community_Login"
+      },
+      {
+        "attributes": {
+          "type": "UserLicense",
+          "url": "/services/data/v67.0/sobjects/UserLicense/100Ru00000kOKfpIAG"
+        },
+        "Id": "100Ru00000kOKfpIAG",
+        "Name": "Salesforce",
+        "LicenseDefinitionKey": "SFDC"
+      },
+      {
+        "attributes": {
+          "type": "UserLicense",
+          "url": "/services/data/v67.0/sobjects/UserLicense/100Ru00000kNvRjIAK"
+        },
+        "Id": "100Ru00000kNvRjIAK",
+        "Name": "Salesforce Integration",
+        "LicenseDefinitionKey": "SALESFORCE_INTEGRATION_USER"
+      },
+      {
+        "attributes": {
+          "type": "UserLicense",
+          "url": "/services/data/v67.0/sobjects/UserLicense/100Ru00000kOKfxIAG"
+        },
+        "Id": "100Ru00000kOKfxIAG",
+        "Name": "Salesforce Platform",
+        "LicenseDefinitionKey": "AUL"
+      },
+      {
+        "attributes": {
+          "type": "UserLicense",
+          "url": "/services/data/v67.0/sobjects/UserLicense/100Ru00000kOKg5IAG"
+        },
+        "Id": "100Ru00000kOKg5IAG",
+        "Name": "Silver Partner",
+        "LicenseDefinitionKey": "PID_STANDARD_PRM"
+      },
+      {
+        "attributes": {
+          "type": "UserLicense",
+          "url": "/services/data/v67.0/sobjects/UserLicense/100Ru00000kOKg1IAG"
+        },
+        "Id": "100Ru00000kOKg1IAG",
+        "Name": "Work.com Only",
+        "LicenseDefinitionKey": "PID_WCUSER"
+      },
+      {
+        "attributes": {
+          "type": "UserLicense",
+          "url": "/services/data/v67.0/sobjects/UserLicense/100Ru00000kOKfzIAG"
+        },
+        "Id": "100Ru00000kOKfzIAG",
+        "Name": "XOrg Proxy User",
+        "LicenseDefinitionKey": "PID_XOrg_Proxy_User"
+      }
+    ],
+    "totalSize": 31,
+    "done": true
+  },
+  "warnings": []
+}

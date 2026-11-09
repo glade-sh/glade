@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Cedar_Participant__c</fullName><deleteConstraint>SetNull</deleteConstraint><label>Participant</label><referenceTo>User</referenceTo><relationshipName>Cedar_Responses</relationshipName><required>false</required><type>Lookup</type></CustomField>

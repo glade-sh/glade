@@ -87,6 +87,7 @@ func (vm *VM) RestResponse() Value {
 
 // CallStatic invokes a registered static Apex method by fully qualified name.
 func (vm *VM) CallStatic(name string, args []Value) (_ Value, err error) {
+	defer vm.BeginReportTransaction()()
 	vm.clearFlatObjectAliasIndexes()
 	defer vm.clearFlatObjectAliasIndexes()
 	defer recoverJSONConversionError(&err)

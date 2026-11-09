@@ -1,0 +1,838 @@
+[
+  {
+    "route": "named-source",
+    "api": "62.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcDtTm",
+    "class": "OwnedAssign62_0",
+    "source": "GiftCommitment record=new GiftCommitment();record.LastNextGenCmtProcDtTm=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "62.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcError",
+    "class": "OwnedAssign62_1",
+    "source": "GiftCommitment record=new GiftCommitment();record.LastNextGenCmtProcError=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "62.0",
+    "object": "GiftCommitment",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "class": "OwnedAssign62_2",
+    "source": "GiftCommitment record=new GiftCommitment();record.PartyPhilanthropicRsrchPrflId=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "62.0",
+    "object": "GiftTransaction",
+    "field": "GenerationalCohort",
+    "class": "OwnedAssign62_3",
+    "source": "GiftTransaction record=new GiftTransaction();record.GenerationalCohort=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "62.0",
+    "object": "GiftTransaction",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "class": "OwnedAssign62_4",
+    "source": "GiftTransaction record=new GiftTransaction();record.PartyPhilanthropicRsrchPrflId=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "62.0",
+    "object": "GiftTransaction",
+    "field": "TaxDeductionAmount",
+    "class": "OwnedAssign62_5",
+    "source": "GiftTransaction record=new GiftTransaction();record.TaxDeductionAmount=null;"
+  },
+  {
+    "route": "named-deploy",
+    "api": "62.0",
+    "status": 1,
+    "failures": [
+      {
+        "name": "OwnedAssign62_0",
+        "problem": "Variable does not exist: LastNextGenCmtProcDtTm"
+      },
+      {
+        "name": "OwnedAssign62_1",
+        "problem": "Variable does not exist: LastNextGenCmtProcError"
+      },
+      {
+        "name": "OwnedAssign62_2",
+        "problem": "Variable does not exist: PartyPhilanthropicRsrchPrflId"
+      },
+      {
+        "name": "OwnedAssign62_3",
+        "problem": "Variable does not exist: GenerationalCohort"
+      },
+      {
+        "name": "OwnedAssign62_4",
+        "problem": "Variable does not exist: PartyPhilanthropicRsrchPrflId"
+      },
+      {
+        "name": "OwnedAssign62_5",
+        "problem": "Variable does not exist: TaxDeductionAmount"
+      }
+    ],
+    "successes": []
+  },
+  {
+    "route": "anonymous",
+    "api": "62.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcDtTm",
+    "source": "GiftCommitment record=new GiftCommitment();record.LastNextGenCmtProcDtTm=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 51 with the error:\n\nVariable does not exist: LastNextGenCmtProcDtTm"
+  },
+  {
+    "route": "anonymous",
+    "api": "62.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcError",
+    "source": "GiftCommitment record=new GiftCommitment();record.LastNextGenCmtProcError=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 51 with the error:\n\nVariable does not exist: LastNextGenCmtProcError"
+  },
+  {
+    "route": "anonymous",
+    "api": "62.0",
+    "object": "GiftCommitment",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "GiftCommitment record=new GiftCommitment();record.PartyPhilanthropicRsrchPrflId=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 51 with the error:\n\nVariable does not exist: PartyPhilanthropicRsrchPrflId"
+  },
+  {
+    "route": "anonymous",
+    "api": "62.0",
+    "object": "GiftTransaction",
+    "field": "GenerationalCohort",
+    "source": "GiftTransaction record=new GiftTransaction();record.GenerationalCohort=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 53 with the error:\n\nVariable does not exist: GenerationalCohort"
+  },
+  {
+    "route": "anonymous",
+    "api": "62.0",
+    "object": "GiftTransaction",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "GiftTransaction record=new GiftTransaction();record.PartyPhilanthropicRsrchPrflId=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 53 with the error:\n\nVariable does not exist: PartyPhilanthropicRsrchPrflId"
+  },
+  {
+    "route": "anonymous",
+    "api": "62.0",
+    "object": "GiftTransaction",
+    "field": "TaxDeductionAmount",
+    "source": "GiftTransaction record=new GiftTransaction();record.TaxDeductionAmount=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 53 with the error:\n\nVariable does not exist: TaxDeductionAmount"
+  },
+  {
+    "route": "named-source",
+    "api": "63.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcDtTm",
+    "class": "OwnedAssign63_0",
+    "source": "GiftCommitment record=new GiftCommitment();record.LastNextGenCmtProcDtTm=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "63.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcError",
+    "class": "OwnedAssign63_1",
+    "source": "GiftCommitment record=new GiftCommitment();record.LastNextGenCmtProcError=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "63.0",
+    "object": "GiftCommitment",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "class": "OwnedAssign63_2",
+    "source": "GiftCommitment record=new GiftCommitment();record.PartyPhilanthropicRsrchPrflId=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "63.0",
+    "object": "GiftTransaction",
+    "field": "GenerationalCohort",
+    "class": "OwnedAssign63_3",
+    "source": "GiftTransaction record=new GiftTransaction();record.GenerationalCohort=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "63.0",
+    "object": "GiftTransaction",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "class": "OwnedAssign63_4",
+    "source": "GiftTransaction record=new GiftTransaction();record.PartyPhilanthropicRsrchPrflId=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "63.0",
+    "object": "GiftTransaction",
+    "field": "TaxDeductionAmount",
+    "class": "OwnedAssign63_5",
+    "source": "GiftTransaction record=new GiftTransaction();record.TaxDeductionAmount=null;"
+  },
+  {
+    "route": "named-deploy",
+    "api": "63.0",
+    "status": 1,
+    "failures": [
+      {
+        "name": "OwnedAssign63_0",
+        "problem": "Variable does not exist: LastNextGenCmtProcDtTm"
+      },
+      {
+        "name": "OwnedAssign63_1",
+        "problem": "Variable does not exist: LastNextGenCmtProcError"
+      },
+      {
+        "name": "OwnedAssign63_2",
+        "problem": "Variable does not exist: PartyPhilanthropicRsrchPrflId"
+      },
+      {
+        "name": "OwnedAssign63_4",
+        "problem": "Variable does not exist: PartyPhilanthropicRsrchPrflId"
+      },
+      {
+        "name": "OwnedAssign63_5",
+        "problem": "Field is not writeable: GiftTransaction.TaxDeductionAmount"
+      }
+    ],
+    "successes": [
+      "OwnedAssign63_3"
+    ]
+  },
+  {
+    "route": "anonymous",
+    "api": "63.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcDtTm",
+    "source": "GiftCommitment record=new GiftCommitment();record.LastNextGenCmtProcDtTm=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 51 with the error:\n\nVariable does not exist: LastNextGenCmtProcDtTm"
+  },
+  {
+    "route": "anonymous",
+    "api": "63.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcError",
+    "source": "GiftCommitment record=new GiftCommitment();record.LastNextGenCmtProcError=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 51 with the error:\n\nVariable does not exist: LastNextGenCmtProcError"
+  },
+  {
+    "route": "anonymous",
+    "api": "63.0",
+    "object": "GiftCommitment",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "GiftCommitment record=new GiftCommitment();record.PartyPhilanthropicRsrchPrflId=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 51 with the error:\n\nVariable does not exist: PartyPhilanthropicRsrchPrflId"
+  },
+  {
+    "route": "anonymous",
+    "api": "63.0",
+    "object": "GiftTransaction",
+    "field": "GenerationalCohort",
+    "source": "GiftTransaction record=new GiftTransaction();record.GenerationalCohort=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "63.0",
+    "object": "GiftTransaction",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "GiftTransaction record=new GiftTransaction();record.PartyPhilanthropicRsrchPrflId=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 53 with the error:\n\nVariable does not exist: PartyPhilanthropicRsrchPrflId"
+  },
+  {
+    "route": "anonymous",
+    "api": "63.0",
+    "object": "GiftTransaction",
+    "field": "TaxDeductionAmount",
+    "source": "GiftTransaction record=new GiftTransaction();record.TaxDeductionAmount=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 53 with the error:\n\nField is not writeable: GiftTransaction.TaxDeductionAmount"
+  },
+  {
+    "route": "named-source",
+    "api": "64.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcDtTm",
+    "class": "OwnedAssign64_0",
+    "source": "GiftCommitment record=new GiftCommitment();record.LastNextGenCmtProcDtTm=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "64.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcError",
+    "class": "OwnedAssign64_1",
+    "source": "GiftCommitment record=new GiftCommitment();record.LastNextGenCmtProcError=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "64.0",
+    "object": "GiftCommitment",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "class": "OwnedAssign64_2",
+    "source": "GiftCommitment record=new GiftCommitment();record.PartyPhilanthropicRsrchPrflId=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "64.0",
+    "object": "GiftTransaction",
+    "field": "GenerationalCohort",
+    "class": "OwnedAssign64_3",
+    "source": "GiftTransaction record=new GiftTransaction();record.GenerationalCohort=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "64.0",
+    "object": "GiftTransaction",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "class": "OwnedAssign64_4",
+    "source": "GiftTransaction record=new GiftTransaction();record.PartyPhilanthropicRsrchPrflId=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "64.0",
+    "object": "GiftTransaction",
+    "field": "TaxDeductionAmount",
+    "class": "OwnedAssign64_5",
+    "source": "GiftTransaction record=new GiftTransaction();record.TaxDeductionAmount=null;"
+  },
+  {
+    "route": "named-deploy",
+    "api": "64.0",
+    "status": 1,
+    "failures": [
+      {
+        "name": "OwnedAssign64_0",
+        "problem": "Variable does not exist: LastNextGenCmtProcDtTm"
+      },
+      {
+        "name": "OwnedAssign64_1",
+        "problem": "Variable does not exist: LastNextGenCmtProcError"
+      },
+      {
+        "name": "OwnedAssign64_5",
+        "problem": "Field is not writeable: GiftTransaction.TaxDeductionAmount"
+      }
+    ],
+    "successes": [
+      "OwnedAssign64_2",
+      "OwnedAssign64_3",
+      "OwnedAssign64_4"
+    ]
+  },
+  {
+    "route": "anonymous",
+    "api": "64.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcDtTm",
+    "source": "GiftCommitment record=new GiftCommitment();record.LastNextGenCmtProcDtTm=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 51 with the error:\n\nVariable does not exist: LastNextGenCmtProcDtTm"
+  },
+  {
+    "route": "anonymous",
+    "api": "64.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcError",
+    "source": "GiftCommitment record=new GiftCommitment();record.LastNextGenCmtProcError=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 51 with the error:\n\nVariable does not exist: LastNextGenCmtProcError"
+  },
+  {
+    "route": "anonymous",
+    "api": "64.0",
+    "object": "GiftCommitment",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "GiftCommitment record=new GiftCommitment();record.PartyPhilanthropicRsrchPrflId=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "64.0",
+    "object": "GiftTransaction",
+    "field": "GenerationalCohort",
+    "source": "GiftTransaction record=new GiftTransaction();record.GenerationalCohort=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "64.0",
+    "object": "GiftTransaction",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "GiftTransaction record=new GiftTransaction();record.PartyPhilanthropicRsrchPrflId=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "64.0",
+    "object": "GiftTransaction",
+    "field": "TaxDeductionAmount",
+    "source": "GiftTransaction record=new GiftTransaction();record.TaxDeductionAmount=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 53 with the error:\n\nField is not writeable: GiftTransaction.TaxDeductionAmount"
+  },
+  {
+    "route": "named-source",
+    "api": "65.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcDtTm",
+    "class": "OwnedAssign65_0",
+    "source": "GiftCommitment record=new GiftCommitment();record.LastNextGenCmtProcDtTm=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "65.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcError",
+    "class": "OwnedAssign65_1",
+    "source": "GiftCommitment record=new GiftCommitment();record.LastNextGenCmtProcError=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "65.0",
+    "object": "GiftCommitment",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "class": "OwnedAssign65_2",
+    "source": "GiftCommitment record=new GiftCommitment();record.PartyPhilanthropicRsrchPrflId=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "65.0",
+    "object": "GiftTransaction",
+    "field": "GenerationalCohort",
+    "class": "OwnedAssign65_3",
+    "source": "GiftTransaction record=new GiftTransaction();record.GenerationalCohort=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "65.0",
+    "object": "GiftTransaction",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "class": "OwnedAssign65_4",
+    "source": "GiftTransaction record=new GiftTransaction();record.PartyPhilanthropicRsrchPrflId=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "65.0",
+    "object": "GiftTransaction",
+    "field": "TaxDeductionAmount",
+    "class": "OwnedAssign65_5",
+    "source": "GiftTransaction record=new GiftTransaction();record.TaxDeductionAmount=null;"
+  },
+  {
+    "route": "named-deploy",
+    "api": "65.0",
+    "status": 1,
+    "failures": [
+      {
+        "name": "OwnedAssign65_0",
+        "problem": "Variable does not exist: LastNextGenCmtProcDtTm"
+      },
+      {
+        "name": "OwnedAssign65_1",
+        "problem": "Variable does not exist: LastNextGenCmtProcError"
+      },
+      {
+        "name": "OwnedAssign65_5",
+        "problem": "Field is not writeable: GiftTransaction.TaxDeductionAmount"
+      }
+    ],
+    "successes": [
+      "OwnedAssign65_2",
+      "OwnedAssign65_3",
+      "OwnedAssign65_4"
+    ]
+  },
+  {
+    "route": "anonymous",
+    "api": "65.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcDtTm",
+    "source": "GiftCommitment record=new GiftCommitment();record.LastNextGenCmtProcDtTm=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 51 with the error:\n\nVariable does not exist: LastNextGenCmtProcDtTm"
+  },
+  {
+    "route": "anonymous",
+    "api": "65.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcError",
+    "source": "GiftCommitment record=new GiftCommitment();record.LastNextGenCmtProcError=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 51 with the error:\n\nVariable does not exist: LastNextGenCmtProcError"
+  },
+  {
+    "route": "anonymous",
+    "api": "65.0",
+    "object": "GiftCommitment",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "GiftCommitment record=new GiftCommitment();record.PartyPhilanthropicRsrchPrflId=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "65.0",
+    "object": "GiftTransaction",
+    "field": "GenerationalCohort",
+    "source": "GiftTransaction record=new GiftTransaction();record.GenerationalCohort=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "65.0",
+    "object": "GiftTransaction",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "GiftTransaction record=new GiftTransaction();record.PartyPhilanthropicRsrchPrflId=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "65.0",
+    "object": "GiftTransaction",
+    "field": "TaxDeductionAmount",
+    "source": "GiftTransaction record=new GiftTransaction();record.TaxDeductionAmount=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 53 with the error:\n\nField is not writeable: GiftTransaction.TaxDeductionAmount"
+  },
+  {
+    "route": "named-source",
+    "api": "66.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcDtTm",
+    "class": "OwnedAssign66_0",
+    "source": "GiftCommitment record=new GiftCommitment();record.LastNextGenCmtProcDtTm=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "66.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcError",
+    "class": "OwnedAssign66_1",
+    "source": "GiftCommitment record=new GiftCommitment();record.LastNextGenCmtProcError=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "66.0",
+    "object": "GiftCommitment",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "class": "OwnedAssign66_2",
+    "source": "GiftCommitment record=new GiftCommitment();record.PartyPhilanthropicRsrchPrflId=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "66.0",
+    "object": "GiftTransaction",
+    "field": "GenerationalCohort",
+    "class": "OwnedAssign66_3",
+    "source": "GiftTransaction record=new GiftTransaction();record.GenerationalCohort=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "66.0",
+    "object": "GiftTransaction",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "class": "OwnedAssign66_4",
+    "source": "GiftTransaction record=new GiftTransaction();record.PartyPhilanthropicRsrchPrflId=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "66.0",
+    "object": "GiftTransaction",
+    "field": "TaxDeductionAmount",
+    "class": "OwnedAssign66_5",
+    "source": "GiftTransaction record=new GiftTransaction();record.TaxDeductionAmount=null;"
+  },
+  {
+    "route": "named-deploy",
+    "api": "66.0",
+    "status": 1,
+    "failures": [
+      {
+        "name": "OwnedAssign66_0",
+        "problem": "Variable does not exist: LastNextGenCmtProcDtTm"
+      },
+      {
+        "name": "OwnedAssign66_1",
+        "problem": "Variable does not exist: LastNextGenCmtProcError"
+      },
+      {
+        "name": "OwnedAssign66_5",
+        "problem": "Field is not writeable: GiftTransaction.TaxDeductionAmount"
+      }
+    ],
+    "successes": [
+      "OwnedAssign66_2",
+      "OwnedAssign66_3",
+      "OwnedAssign66_4"
+    ]
+  },
+  {
+    "route": "anonymous",
+    "api": "66.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcDtTm",
+    "source": "GiftCommitment record=new GiftCommitment();record.LastNextGenCmtProcDtTm=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 51 with the error:\n\nVariable does not exist: LastNextGenCmtProcDtTm"
+  },
+  {
+    "route": "anonymous",
+    "api": "66.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcError",
+    "source": "GiftCommitment record=new GiftCommitment();record.LastNextGenCmtProcError=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 51 with the error:\n\nVariable does not exist: LastNextGenCmtProcError"
+  },
+  {
+    "route": "anonymous",
+    "api": "66.0",
+    "object": "GiftCommitment",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "GiftCommitment record=new GiftCommitment();record.PartyPhilanthropicRsrchPrflId=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "66.0",
+    "object": "GiftTransaction",
+    "field": "GenerationalCohort",
+    "source": "GiftTransaction record=new GiftTransaction();record.GenerationalCohort=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "66.0",
+    "object": "GiftTransaction",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "GiftTransaction record=new GiftTransaction();record.PartyPhilanthropicRsrchPrflId=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "66.0",
+    "object": "GiftTransaction",
+    "field": "TaxDeductionAmount",
+    "source": "GiftTransaction record=new GiftTransaction();record.TaxDeductionAmount=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 53 with the error:\n\nField is not writeable: GiftTransaction.TaxDeductionAmount"
+  },
+  {
+    "route": "named-source",
+    "api": "67.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcDtTm",
+    "class": "OwnedAssign67_0",
+    "source": "GiftCommitment record=new GiftCommitment();record.LastNextGenCmtProcDtTm=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "67.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcError",
+    "class": "OwnedAssign67_1",
+    "source": "GiftCommitment record=new GiftCommitment();record.LastNextGenCmtProcError=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "67.0",
+    "object": "GiftCommitment",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "class": "OwnedAssign67_2",
+    "source": "GiftCommitment record=new GiftCommitment();record.PartyPhilanthropicRsrchPrflId=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "67.0",
+    "object": "GiftTransaction",
+    "field": "GenerationalCohort",
+    "class": "OwnedAssign67_3",
+    "source": "GiftTransaction record=new GiftTransaction();record.GenerationalCohort=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "67.0",
+    "object": "GiftTransaction",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "class": "OwnedAssign67_4",
+    "source": "GiftTransaction record=new GiftTransaction();record.PartyPhilanthropicRsrchPrflId=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "67.0",
+    "object": "GiftTransaction",
+    "field": "TaxDeductionAmount",
+    "class": "OwnedAssign67_5",
+    "source": "GiftTransaction record=new GiftTransaction();record.TaxDeductionAmount=null;"
+  },
+  {
+    "route": "named-deploy",
+    "api": "67.0",
+    "status": 1,
+    "failures": [
+      {
+        "name": "OwnedAssign67_5",
+        "problem": "Field is not writeable: GiftTransaction.TaxDeductionAmount"
+      }
+    ],
+    "successes": [
+      "OwnedAssign67_0",
+      "OwnedAssign67_1",
+      "OwnedAssign67_2",
+      "OwnedAssign67_3",
+      "OwnedAssign67_4"
+    ]
+  },
+  {
+    "route": "anonymous",
+    "api": "67.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcDtTm",
+    "source": "GiftCommitment record=new GiftCommitment();record.LastNextGenCmtProcDtTm=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "67.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcError",
+    "source": "GiftCommitment record=new GiftCommitment();record.LastNextGenCmtProcError=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "67.0",
+    "object": "GiftCommitment",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "GiftCommitment record=new GiftCommitment();record.PartyPhilanthropicRsrchPrflId=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "67.0",
+    "object": "GiftTransaction",
+    "field": "GenerationalCohort",
+    "source": "GiftTransaction record=new GiftTransaction();record.GenerationalCohort=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "67.0",
+    "object": "GiftTransaction",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "GiftTransaction record=new GiftTransaction();record.PartyPhilanthropicRsrchPrflId=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "67.0",
+    "object": "GiftTransaction",
+    "field": "TaxDeductionAmount",
+    "source": "GiftTransaction record=new GiftTransaction();record.TaxDeductionAmount=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 53 with the error:\n\nField is not writeable: GiftTransaction.TaxDeductionAmount"
+  }
+]

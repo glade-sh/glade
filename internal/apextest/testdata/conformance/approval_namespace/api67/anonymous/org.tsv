@@ -1,0 +1,9 @@
+case	observation
+definition_prefixed_name_count	0
+definitions	["Owned_Active:Owned Active:Active:Account"]
+submit_id15	"true:Pending"
+submit_id18	"false:NO_APPLICABLE_PROCESS"
+submit_lower_prefixed	"false:NO_APPLICABLE_PROCESS"
+submit_none	"true:Pending"
+submit_plain	"true:Pending"
+submit_prefixed	"false:NO_APPLICABLE_PROCESS"

@@ -1,0 +1,3 @@
+<apex:page standardController="PickProbe__c" extensions="PickProbeController" showHeader="false" sidebar="false" standardStylesheets="false">
+<div data-case="err-multiselect">{!ISPICKVAL(PickProbe__c.Multi__c, 'A')}</div>
+</apex:page>

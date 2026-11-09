@@ -1,0 +1,7 @@
+Use suffix 62 or 67 matching source API. Replace N with the suffix.
+Helper: public class BirchDependencyN { public static Integer value(){return 7;} }
+missing_static and loaded_static: System.assertEquals(7, BirchDependencyN.value());
+dynamic_boundary: System.assertEquals(null, Type.forName('BirchDependencyN'));
+member_rejection: BirchDependencyN.absentMember();
+Named route wraps the statement in @IsTest private class BirchObserverN { @IsTest static void observe(){ STATEMENT } }. Deploy the observer before executing it.
+Order: missing static, dynamic boundary, deploy helper, loaded static, member rejection. Each row was run once per route and API.

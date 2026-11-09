@@ -1,0 +1,7 @@
+case_id	class	page	enabled
+ok	R378Cls	R378Page	true
+missing_class	NoSuchClass378		true
+missing_page		NoSuchPage378	true
+missing_page_disabled		NoSuchPage378	false
+bad_enabled_class	R378Cls		maybe
+bad_enabled_page		R378Page	maybe

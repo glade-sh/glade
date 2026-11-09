@@ -51,7 +51,7 @@ func TestNetworkConfigurationNativeProjectRoutes(t *testing.T) {
 					configuration := "metadata"
 					enabled := shape != "disabled" && shape != "disabled_metadata"
 					if enabled {
-						writeFile(t, filepath.Join(root, "glade.yml"), "org:\n  features: [Communities]\n")
+						writeFile(t, filepath.Join(root, "glade.yml"), "org:\n  features: [Communities, NetworksEnabled]\n")
 					}
 					if shape == "disabled" || shape == "disabled_metadata" {
 						configuration = "disabled"
@@ -68,7 +68,7 @@ func TestNetworkConfigurationNativeProjectRoutes(t *testing.T) {
 							dir = "../shared"
 						}
 						if dir != "force-app" {
-							writeFile(t, filepath.Join(root, "glade.yml"), "org:\n  features: [Communities]\nproject:\n  extraMetadataDirs: ["+dir+", "+dir+"]\n")
+							writeFile(t, filepath.Join(root, "glade.yml"), "org:\n  features: [Communities, NetworksEnabled]\nproject:\n  extraMetadataDirs: ["+dir+", "+dir+"]\n")
 						}
 						if shape == "scratch_metadata" {
 							writeFile(t, filepath.Join(root, "glade.yml"), "")

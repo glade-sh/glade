@@ -1,0 +1,37 @@
+[
+  {
+    "id": "r_v035_label_under",
+    "query": "query L12Owned { uiapi { query { FamilyL12Record__c(where: { and: [ { Key__c: { in: [\"L12_PARENT\", \"L12_A\", \"L12_B\", \"L12_C\", \"L12_D\"] } }, { Label__c: { like: \"alpha\\\\_b\" } } ] }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { cursor node { Id Key__c { value } Name { value } } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } } } }",
+    "variables": {},
+    "operation": "snapshot",
+    "scenario": "boundary"
+  },
+  {
+    "id": "r_v035_label_percent",
+    "query": "query L12Owned { uiapi { query { FamilyL12Record__c(where: { and: [ { Key__c: { in: [\"L12_PARENT\", \"L12_A\", \"L12_B\", \"L12_C\", \"L12_D\"] } }, { Label__c: { like: \"alpha\\\\%b\" } } ] }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { cursor node { Id Key__c { value } Name { value } } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } } } }",
+    "variables": {},
+    "operation": "snapshot",
+    "scenario": "boundary"
+  },
+  {
+    "id": "r_v035_label_slash_under",
+    "query": "query L12Owned { uiapi { query { FamilyL12Record__c(where: { and: [ { Key__c: { in: [\"L12_PARENT\", \"L12_A\", \"L12_B\", \"L12_C\", \"L12_D\"] } }, { Label__c: { like: \"alpha\\\\\\\\_b\" } } ] }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { cursor node { Id Key__c { value } Name { value } } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } } } }",
+    "variables": {},
+    "operation": "snapshot",
+    "scenario": "boundary"
+  },
+  {
+    "id": "r_v035_label_slash",
+    "query": "query L12Owned { uiapi { query { FamilyL12Record__c(where: { and: [ { Key__c: { in: [\"L12_PARENT\", \"L12_A\", \"L12_B\", \"L12_C\", \"L12_D\"] } }, { Label__c: { like: \"alpha\\\\\\\\b\" } } ] }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { cursor node { Id Key__c { value } Name { value } } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } } } }",
+    "variables": {},
+    "operation": "snapshot",
+    "scenario": "boundary"
+  },
+  {
+    "id": "r_v035_label_wildcard",
+    "query": "query L12Owned { uiapi { query { FamilyL12Record__c(where: { and: [ { Key__c: { in: [\"L12_PARENT\", \"L12_A\", \"L12_B\", \"L12_C\", \"L12_D\"] } }, { Label__c: { like: \"alpha_b\" } } ] }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { cursor node { Id Key__c { value } Name { value } } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } } } }",
+    "variables": {},
+    "operation": "snapshot",
+    "scenario": "boundary"
+  }
+]

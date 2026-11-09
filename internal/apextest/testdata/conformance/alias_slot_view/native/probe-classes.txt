@@ -1,0 +1,30 @@
+// C27bRoot.cls
+public virtual class C27bRoot {
+  public Integer count = 0;
+}
+// C27bFin.cls
+public virtual class C27bFin {
+  public String tag(C27bRoot r) { return 'root'; }
+  public String tag(C27bFull r) { return 'full'; }
+}
+// C27bFull.cls
+public virtual class C27bFull extends C27bRoot {
+  public C27bFull post;
+  public C27bFin fin;
+  public C27bFull() {}
+  public C27bFull(C27bFull post) { this.post = post; }
+  public String viaField() { return this.fin.tag(this.post); }
+}
+// C27bHolder.cls
+public class C27bHolder {
+  public static List<C27bFull> cache = new List<C27bFull>();
+  public static C27bFull held;
+  public static void bump(C27bRoot r) { r.count++; }
+}
+// C27bSHold.cls
+public class C27bSHold {
+  public static C27bFull s;
+  public static void bump(C27bRoot r) { r.count++; }
+  public static String viaStatic(C27bFin fin) { return fin.tag(s); }
+}
+// Static-field probe: classes above plus C27bSHold; C27bFull needs only the no-arg constructor here.

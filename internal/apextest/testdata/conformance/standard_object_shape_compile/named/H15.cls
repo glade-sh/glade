@@ -1,0 +1,1 @@
+public class H15 { public interface Territory2 {} public class Impl implements Territory2 {} }

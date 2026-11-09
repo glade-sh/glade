@@ -1,0 +1,10 @@
+{
+  "namespace": "",
+  "packageDirectories": [
+    {
+      "default": true,
+      "path": "packet"
+    }
+  ],
+  "sourceApiVersion": "62.0"
+}

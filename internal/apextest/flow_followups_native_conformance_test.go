@@ -104,12 +104,20 @@ func TestFlowFollowupsNativeConformance(t *testing.T) {
 			if files == 0 {
 				t.Fatal("native project is empty")
 			}
+			// ASSIGNMENT-RUN.txt: unassigned, the 67.0 action_outputs rows fail
+			// natively on both routes (QueryException); with
+			// FlowCoreAOCaptureAccess assigned every family equals org.tsv. The
+			// 62.0 rows reproduce unassigned.
+			writeRecordedFixtureAssignment(t, fixture, api, root, "force-app/main/default/permissionsets")
 			index := loadTestIndex(t, root)
 			org, err := orgFromIndexWithError(index)
 			if err != nil {
 				t.Fatal(err)
 			}
 			org.APIVersion = api
+			if err := applyConfiguredTestPermissions(&org, loadProjectForTest(t, root)); err != nil {
+				t.Fatal(err)
+			}
 			// Standard setup records include the administrator and Standard User
 			// profile used by the captured runAs source.
 			runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})

@@ -21,13 +21,13 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-// Version 15 rejects cached orgs with the old automated-process user timezone.
-const Version = 15
+// Version 16 rejects org snapshots without component-tab bundle identities.
+const Version = 16
 
 const manifestSchemaVersion = 1
 
-// DAPCacheVersion rejects debugger snapshots with synthetic Master records.
-const DAPCacheVersion = 5
+// DAPCacheVersion rejects debugger snapshots without component-tab bundle identities.
+const DAPCacheVersion = 6
 
 // SubdirTest is the on-disk cache directory used by glade test.
 const SubdirTest = ".glade/test"
@@ -1234,7 +1234,9 @@ func collectConfigPaths(p project.Project) ([]string, error) {
 		filepath.Join(root, "config", "hc-project-scratch-def.json"),
 		filepath.Join(root, "cumulusci.yml"),
 		filepath.Join(root, "cumulusci.template.yml"),
+		filepath.Join(root, project.ForceIgnoreFileName),
 	}
+	paths = append(paths, p.ForceIgnoreConfigs...)
 	for dir := range p.SourceNamespaceRoots {
 		paths = append(paths, filepath.Join(dir, "sfdx-project.json"))
 	}
@@ -1270,7 +1272,7 @@ func collectConfigPaths(p project.Project) ([]string, error) {
 				continue
 			}
 			full := filepath.Clean(filepath.Join(root, filepath.FromSlash(path)))
-			if full == filepath.Clean(root) || !strings.HasPrefix(full, filepath.Clean(root)+string(os.PathSeparator)) {
+			if full == filepath.Clean(root) || !strings.HasPrefix(full, filepath.Clean(root)+string(os.PathSeparator)) || !project.PathInsideRoot(root, full) {
 				continue
 			}
 			paths = append(paths, full)

@@ -145,8 +145,15 @@ func configuredActivityPolicyIndex(t *testing.T, api, route, body string) typesy
 		t.Fatalf("fixture must configure only the inherited Activity field: %+v", s.Objects)
 	}
 	index := typesys.Build(p, s)
-	if index.HasErrors() || len(index.OrgShapeFeatures) != 0 {
-		t.Fatalf("configured-field fixture must compile without org features: %v, %v", index.Diagnostics, index.OrgShapeFeatures)
+	// The declared Developer edition adds an internal identity marker, and the
+	// plain Developer definition adds the plain object-shape marker. Neither
+	// is a Salesforce feature; they must be the only shape tokens here.
+	markers := map[string]bool{}
+	for _, feature := range index.OrgShapeFeatures {
+		markers[feature] = true
+	}
+	if index.HasErrors() || !markers[project.StandardFieldEditionDeveloper] || len(markers) > 2 || len(markers) == 2 && !markers[project.PlainDeveloperObjectShape] {
+		t.Fatalf("configured-field fixture must compile without enabled org features: %v, %v", index.Diagnostics, index.OrgShapeFeatures)
 	}
 	return index
 }

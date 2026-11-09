@@ -17,6 +17,7 @@ import (
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/testdaemon"
 	"github.com/glade-sh/glade/internal/testreport"
+	"github.com/glade-sh/glade/internal/testutil"
 	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/watch"
 )
@@ -594,8 +595,15 @@ func TestSymlinkedDirectDependencyWatchMatchesFreshLoad(t *testing.T) {
 			}
 			defer watcher.Close()
 
-			writeTestFile(t, dependencyClass, "global class StageService { global static String value() { return 'modified'; } }")
-			changes := waitForWatchChanges(t, watcher, dependencyClass, watch.ChangeModified)
+			// A native backend can finish registering its stream after the first
+			// write (observed on external volumes), which loses that event.
+			// Rewrite the file with a distinct trailing comment each second until
+			// a change arrives, within a bounded deadline. Every version keeps
+			// value() returning 'modified', so the final disk state is the same
+			// one the fresh load reads.
+			changes := writeUntilWatchChange(t, watcher, dependencyClass, watch.ChangeModified, func(attempt int) {
+				writeTestFile(t, dependencyClass, fmt.Sprintf("global class StageService { global static String value() { return 'modified'; } } // write %d", attempt))
+			})
 			updated, graph, err := updateWatchIndexState(root, index, watch.BuildReferenceGraph(index), changes)
 			if err != nil {
 				t.Fatal(err)
@@ -1046,9 +1054,47 @@ func waitForWatchChange(t *testing.T, watcher watch.BackendWatcher, path string,
 	_ = waitForWatchChanges(t, watcher, path, op)
 }
 
+// writeUntilWatchChange calls write(0), then again every second, until the
+// watcher reports op for path or 30 seconds pass. It stops writing as soon as
+// the change is observed, so the file is stable once it returns.
+func writeUntilWatchChange(t *testing.T, watcher watch.BackendWatcher, path string, op watch.ChangeOp, write func(attempt int)) []watch.Change {
+	t.Helper()
+	deadline := time.NewTimer(30 * time.Second)
+	defer deadline.Stop()
+	retry := time.NewTicker(time.Second)
+	defer retry.Stop()
+	var observed []watch.Change
+	attempt := 0
+	write(attempt)
+	for {
+		select {
+		case changes, ok := <-watcher.Changes():
+			if !ok {
+				t.Fatalf("watcher closed waiting for %s %s; observed %#v", op, path, observed)
+			}
+			observed = append(observed, changes...)
+			for _, change := range changes {
+				if filepath.Clean(change.Path) == filepath.Clean(path) && change.Op == op {
+					return changes
+				}
+			}
+		case err, ok := <-watcher.Errors():
+			if !ok {
+				t.Fatalf("watcher errors closed waiting for %s %s; observed %#v", op, path, observed)
+			}
+			t.Fatal(err)
+		case <-retry.C:
+			attempt++
+			write(attempt)
+		case <-deadline.C:
+			t.Fatalf("timeout waiting for %s %s after %d writes; observed %#v", op, path, attempt+1, observed)
+		}
+	}
+}
+
 func waitForWatchChanges(t *testing.T, watcher watch.BackendWatcher, path string, op watch.ChangeOp) []watch.Change {
 	t.Helper()
-	deadline := time.NewTimer(5 * time.Second)
+	deadline := time.NewTimer(testutil.Deadline(5 * time.Second))
 	defer deadline.Stop()
 	var observed []watch.Change
 	for {

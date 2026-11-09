@@ -7,7 +7,7 @@ import (
 
 func TestOrgShapeHelpersKeepFrozenDefinitionsPrivate(t *testing.T) {
 	for _, tc := range []struct{ feature, object string }{
-		{"Sites", "Site"}, {"Communities", "Network"},
+		{"Sites", "Site"}, {"NetworksEnabled", "Network"},
 		{"ContactsToMultipleAccounts", "AccountContactRelation"},
 		{"PlatformCache", "PlatformCachePartition"}, {"AddCustomApps:1", "CustomApplication"},
 	} {

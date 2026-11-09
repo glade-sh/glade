@@ -46,6 +46,7 @@ func (vm *VM) InvokeLWCMethod(className, methodName string, params map[string]an
 }
 
 func (vm *VM) InvokeVisualforceAction(className, methodName, pageURL string, params map[string]string) (out UIInvocationResult, err error) {
+	defer vm.BeginReportTransaction()()
 	defer recoverJSONConversionUIResult(&out, &err)
 	out = UIInvocationResult{Framework: "visualforce", ClassName: className, MethodName: methodName}
 	if strings.TrimSpace(className) == "" || strings.TrimSpace(methodName) == "" {
@@ -153,6 +154,7 @@ func (vm *VM) InvokeVisualforceAction(className, methodName, pageURL string, par
 }
 
 func (vm *VM) InvokeVisualforceActionOnController(controller Value, className, methodName, pageURL string, params map[string]string) (_ Value, _ Value, out UIInvocationResult, err error) {
+	defer vm.BeginReportTransaction()()
 	defer recoverJSONConversionUIResult(&out, &err)
 	vm.registerSObjectAliasRecord(controller)
 	out = UIInvocationResult{Framework: "visualforce", ClassName: className, MethodName: methodName}
@@ -293,6 +295,10 @@ func mergeCurrentPageStringParams(page Value, params map[string]string) {
 }
 
 func (vm *VM) invokeUIAction(framework, className, methodName string, params map[string]any) (out UIInvocationResult, err error) {
+	previousExceptionContext := vm.uiExceptionContext
+	vm.uiExceptionContext = true
+	defer func() { vm.uiExceptionContext = previousExceptionContext }()
+	defer vm.BeginReportTransaction()()
 	defer recoverJSONConversionUIResult(&out, &err)
 	out = UIInvocationResult{Framework: framework, ClassName: className, MethodName: methodName}
 	callerEntrySharing := vm.entrySharingMode

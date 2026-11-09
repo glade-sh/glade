@@ -1,0 +1,1 @@
+public virtual class ShSubW66 extends ShW66 {}

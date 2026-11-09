@@ -66,6 +66,7 @@ func TestHierarchyQueryOverloadsDirectVMNativeRoutes(t *testing.T) {
 			}
 			for _, route := range routes {
 				t.Run(row[0]+"/"+row[1]+"/"+context+"/"+route.name, func(t *testing.T) {
+					t.Parallel()
 					org := testDataOrg()
 					storage.EnsureDeterministicPlatformData(&org)
 					org.Objects["BoundaryPreference__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{

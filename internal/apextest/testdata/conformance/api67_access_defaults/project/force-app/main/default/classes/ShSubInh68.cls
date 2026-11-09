@@ -1,0 +1,1 @@
+public virtual class ShSubInh68 extends ShInh68 {}

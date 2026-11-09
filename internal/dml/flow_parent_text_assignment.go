@@ -152,10 +152,8 @@ func (e *Engine) flowTextScalarFieldUpdateValue(update storage.WorkflowFieldUpda
 		var ok bool
 		if e.InvocableFlow {
 			value, ok = e.flowContextFormulaValue(update.Formula, frame)
-		} else if update.FlowFrameFormula {
-			value, ok = flowFrameCapturedFormulaValue(update.Formula, frame)
 		} else {
-			value, ok = flowFrameFormulaValue(update.Formula, frame)
+			value, ok = e.flowFrameFormulaValue(update.Formula, frame, update.FlowFrameFormula)
 		}
 		return value, ok && (value.Kind == storage.ValueString || value.Kind == storage.ValueNull)
 	}
@@ -163,7 +161,7 @@ func (e *Engine) flowTextScalarFieldUpdateValue(update storage.WorkflowFieldUpda
 	// writes from a subflow or scalar decision chain. Update-only boundaries
 	// remain separate from the before-save CreateAndUpdate matrix.
 	createSave := frame.saveDecisions && !frame.priorDecisions
-	if !frame.beforeSaveDecisions && !createSave {
+	if !frame.beforeSaveDecisions && !createSave && !frame.afterSaveWriteBack {
 		return storage.Value{}, false
 	}
 	source := strings.TrimSpace(update.SourceField)

@@ -42,7 +42,8 @@ test("graphql modules export tag helpers and empty local query results", async (
   assert.equal(typeof graphql.gql, "function");
   assert.equal(typeof graphql.graphql, "function");
   assert.equal(typeof graphql.query, "function");
-  assert.equal(document.kind, "Document");
+  assert.equal(document.kind, undefined);
+  assert.deepEqual(Object.keys(document), []);
   assert.match(document.source, /AccountList/);
   assert.deepEqual(await graphql.graphql({ query: document }), { data: {}, errors: [] });
   assert.equal(typeof uiGraphQLApi.gql, "function");

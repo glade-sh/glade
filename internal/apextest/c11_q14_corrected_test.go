@@ -169,18 +169,10 @@ func TestC11CorrectedQ14(t *testing.T) {
 				return r.Suites[0].Cases[0]
 			}
 			b := run("baseline")
-			if c11ActorGateCarry(t, b, c.Class, "baseline", c.Arm) {
-				t.Log("known local carry batch Dot stdlib cases Dot Dot SOQL cases and Dot async cases: actor profile prerequisite prevents native observation")
-				apextest.Case345Skip(t)
-			}
 			if b.ClassName != c.Class || b.MethodName != "baseline" || b.Status != testreport.StatusPass || b.Problem != nil {
 				t.Fatalf("baseline failed: %s", c11Diagnostic(b))
 			}
 			result := run(c.Method)
-			if c11ActorGateCarry(t, result, c.Class, c.Method, c.Arm) {
-				t.Log("known local carry batch Dot stdlib cases Dot Dot SOQL cases and Dot async cases: actor profile prerequisite prevents native observation")
-				apextest.Case345Skip(t)
-			}
 			payload, err := c12CapturePayload(result, c.Class, c.Method, c.Marker)
 			if err != nil {
 				t.Fatalf("capture transport mismatch: %v", err)
@@ -192,7 +184,9 @@ func TestC11CorrectedQ14(t *testing.T) {
 			if err := c11Q14Project(got, c.Projection); err != nil {
 				t.Fatal("projection failed")
 			}
-			if !reflect.DeepEqual(got, rows[c.Key]) {
+			want := rows[c.Key]
+
+			if !reflect.DeepEqual(got, want) {
 				t.Fatal("projected capture differs from pinned native oracle")
 			}
 		})

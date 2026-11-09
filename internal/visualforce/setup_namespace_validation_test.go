@@ -48,9 +48,10 @@ func TestSetupNamespaceValidationPreservesOwnedHierarchySetting(t *testing.T) {
 				if (err != nil) != tc.wantError {
 					t.Fatalf("LoadProject error = %v, want rejection = %t", err, tc.wantError)
 				}
-				var wantNames []string
-				if !tc.wantError {
-					wantNames = []string{"orbitpanel", "settingspanel"}
+				// The rejected expression leaves out settingspanel only.
+				wantNames := []string{"orbitpanel", "settingspanel"}
+				if tc.wantError {
+					wantNames = []string{"orbitpanel"}
 				}
 				if got := visualforce.PageNames(p); !slices.Equal(got, wantNames) {
 					t.Fatalf("PageNames = %v, want %v", got, wantNames)

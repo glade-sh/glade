@@ -784,6 +784,7 @@ func (s *WorkspaceSources) loadPhysical(physicalPath, requestedPath string) (*ph
 	if err == nil {
 		physical.raw = string(data)
 		physical.digest = sha256.Sum256(data)
+		NoteApexSource(physical.raw)
 	}
 	physical.err = err
 	close(physical.ready)

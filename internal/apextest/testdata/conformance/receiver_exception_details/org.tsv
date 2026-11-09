@@ -1,0 +1,9 @@
+source_api	route	case	observation
+62.0	anonymous	loaded	value:ready
+62.0	anonymous	null	caught:System.NullPointerException|Attempt to de-reference a null object|5
+62.0	istest	controls	PASS
+62.0	deploy	missing	Invalid type: MissingReceiverDependency
+67.0	anonymous	loaded	value:ready
+67.0	anonymous	null	caught:System.NullPointerException|Attempt to de-reference a null object|5
+67.0	istest	controls	PASS
+67.0	deploy	missing	Invalid type: MissingReceiverDependency

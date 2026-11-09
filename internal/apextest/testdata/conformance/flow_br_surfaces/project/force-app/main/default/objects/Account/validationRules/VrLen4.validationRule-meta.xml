@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>VrLen4</fullName><active>true</active><errorConditionFormula>AND(Name = 'VrLen4', LEN(BR()) = 4)</errorConditionFormula><errorMessage>vr-len4</errorMessage></ValidationRule>

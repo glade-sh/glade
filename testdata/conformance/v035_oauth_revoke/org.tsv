@@ -1,0 +1,13 @@
+api	case	operation	status
+62.0	before	data discovery	200
+67.0	before	data discovery	200
+versionless	invalid	token revoke	400
+versionless	valid	token revoke	200
+62.0	after	data discovery	401
+67.0	after	data discovery	401
+versionless	missing-post	revoke	400
+versionless	missing-get	revoke	400
+versionless	invalid-get	revoke	400
+versionless	valid-get	revoke	200
+62.0	after-get	data discovery	401
+67.0	after-get	data discovery	401

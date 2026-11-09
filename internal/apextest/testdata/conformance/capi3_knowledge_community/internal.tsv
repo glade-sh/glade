@@ -1,0 +1,21 @@
+62.0	istest	top	[internal]	System.UnsupportedOperationException|ConnectApi methods are not supported in data siloed tests. Please use @IsTest(SeeAllData=true).
+62.0	istest	top	[Internal]	System.UnsupportedOperationException|ConnectApi methods are not supported in data siloed tests. Please use @IsTest(SeeAllData=true).
+62.0	istest	top	[INTERNAL]	System.UnsupportedOperationException|ConnectApi methods are not supported in data siloed tests. Please use @IsTest(SeeAllData=true).
+62.0	istest	top	[ internal]	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId':  internal
+62.0	istest	top	[internal ]	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': internal 
+62.0	istest	top	[default]	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': default
+62.0	istest	top	[external]	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': external
+67.0	istest	top	[internal]	System.UnsupportedOperationException|ConnectApi methods are not supported in data siloed tests. Please use @IsTest(SeeAllData=true).
+67.0	istest	top	[Internal]	System.UnsupportedOperationException|ConnectApi methods are not supported in data siloed tests. Please use @IsTest(SeeAllData=true).
+67.0	istest	top	[INTERNAL]	System.UnsupportedOperationException|ConnectApi methods are not supported in data siloed tests. Please use @IsTest(SeeAllData=true).
+67.0	istest	top	[ internal]	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId':  internal
+67.0	istest	top	[internal ]	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': internal 
+67.0	istest	top	[default]	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': default
+67.0	istest	top	[external]	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': external
+68.0	istest	top	[internal]	System.UnsupportedOperationException|ConnectApi methods are not supported in data siloed tests. Please use @IsTest(SeeAllData=true).
+68.0	istest	top	[Internal]	System.UnsupportedOperationException|ConnectApi methods are not supported in data siloed tests. Please use @IsTest(SeeAllData=true).
+68.0	istest	top	[INTERNAL]	System.UnsupportedOperationException|ConnectApi methods are not supported in data siloed tests. Please use @IsTest(SeeAllData=true).
+68.0	istest	top	[ internal]	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId':  internal
+68.0	istest	top	[internal ]	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': internal 
+68.0	istest	top	[default]	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': default
+68.0	istest	top	[external]	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': external

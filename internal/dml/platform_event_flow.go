@@ -46,7 +46,10 @@ func (e *Engine) applyPlatformEventFlowEffects(objectName string, record *storag
 		}
 		steps, updates, actions, lookups, creates := rule.Steps, rule.FieldUpdates, rule.Actions, rule.RecordLookups, rule.RecordCreates
 		if len(rule.Branches) > 0 {
-			branch, matched := e.selectFlowBranch(rule, *record, definition)
+			branch, matched, branchErr := e.selectFlowBranch(rule, *record, definition)
+			if branchErr != nil {
+				return branchErr
+			}
 			e.traceAutomation("apex.flow.decision", map[string]any{
 				"flow": rule.Name, "object": objectName, "record": string(record.ID),
 				"branch": branch.Name, "default": branch.Default, "matched": matched,
@@ -71,6 +74,9 @@ func (e *Engine) applyPlatformEventFlowEffects(objectName string, record *storag
 
 func flowTriggeredStepsSafe(rule storage.FlowRule, steps []storage.FlowStep, label string) bool {
 	if label != "platform-event" {
+		if label == "before-save" && !flowBeforeSaveAssignedRecordLoopsSafe(rule, steps) {
+			return false
+		}
 		return flowCoreTriggeredStepsSafe(rule, steps, label)
 	}
 	if len(steps) == 0 {

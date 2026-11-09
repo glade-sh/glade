@@ -9,6 +9,7 @@ import (
 	apexparser "github.com/glade-sh/apex-parser"
 	"github.com/glade-sh/glade/internal/ir"
 	"github.com/glade-sh/glade/internal/soql"
+	"github.com/glade-sh/glade/internal/typesys"
 )
 
 type RuntimeLoweringError struct {
@@ -104,6 +105,11 @@ type CompileOptions struct {
 	// semantic analysis approved.
 	PrefixStatementCandidates bool
 	ApprovedPrefixStatements  map[int]bool
+	// NoLocalMethods keeps a top-level method declaration a statement (and so
+	// a compile error), as for a trigger: only an execute-anonymous body
+	// declares local methods (anonymous_local_methods_c4). Semantic analysis
+	// sets it for class and trigger bodies.
+	NoLocalMethods bool
 }
 
 func CompileAnonymous(source string) (ir.Program, error) {
@@ -111,11 +117,13 @@ func CompileAnonymous(source string) (ir.Program, error) {
 }
 
 func CompileAnonymousWithOptions(source string, options CompileOptions) (ir.Program, error) {
+	// Anonymous Apex never passes through apexast; note it here.
+	typesys.NoteApexSource(source)
 	tokens, err := lex(source)
 	if err != nil {
 		return ir.Program{}, classifyCompileError(source, err)
 	}
-	p := parser{tokens: tokens, apiVersion: options.APIVersion, prefixCandidates: options.PrefixStatementCandidates, approvedPrefix: options.ApprovedPrefixStatements}
+	p := parser{tokens: tokens, apiVersion: options.APIVersion, prefixCandidates: options.PrefixStatementCandidates, approvedPrefix: options.ApprovedPrefixStatements, trigger: options.Trigger || options.NoLocalMethods}
 	program, err := p.parseProgram()
 	if err != nil {
 		return ir.Program{}, classifyCompileError(source, err)
@@ -478,11 +486,22 @@ type parser struct {
 	apiVersion       string
 	prefixCandidates bool
 	approvedPrefix   map[int]bool
+	trigger          bool
 }
 
 func (p *parser) parseProgram() (ir.Program, error) {
 	var program ir.Program
 	for !p.peek(tokenEOF, "") {
+		if !p.trigger {
+			method, ok, err := p.parseLocalMethodDeclaration()
+			if err != nil {
+				return ir.Program{}, err
+			}
+			if ok {
+				program.LocalMethods = append(program.LocalMethods, method)
+				continue
+			}
+		}
 		stmt, err := p.parseStatement()
 		if err != nil {
 			return ir.Program{}, err

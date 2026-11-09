@@ -1,0 +1,2 @@
+Addendum to flow_profile_context/ORG-RUN.txt, kept outside the fixture so its ASSIGNMENT-RUN.txt fixture digest stays bound to the captured tree.
+API 68 repeat: 68 = 67 for both anonymous and named synchronous test observations, including administrator, Standard User runAs, restored context, wrong-profile and wrong-user controls. Deployed the API 68 synthetic metadata in a fresh scratch org, assigned the original access permission, and compared the complete result arrays. The anonymous debug transport was replaced with an assertion envelope for this repeat.

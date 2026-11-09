@@ -1,0 +1,133 @@
+type	prop	assigned	native
+ConnectApi.AdditionalDataResponse	asMap	new Map<String,Object>{'k'=>null}	{"k":null}
+ConnectApi.AdjustmentMatrixErrorRepresentation	errors	new List<ConnectApi.AdjustmentMatrixErrorRepresentation>{null}	[null]
+ConnectApi.AmazonMSKRouteDetailsRepresentation	type	ConnectApi.PrivateNetworkProvider.SnowflakeInternalStage	"AmazonMsk"
+ConnectApi.ArticleSummary	type	'zz_assigned'	"ArticleSummary"
+ConnectApi.AttributeFilterExpression	filters	new List<ConnectApi.AttributeFilter>{null}	[null]
+ConnectApi.BlankRecordField	type	'zz_assigned'	"Blank"
+ConnectApi.CPQProductDetailsOutputRepresentation	productUnitOfMeasures	new List<ConnectApi.CPQProductUnitOfMeasureOutputRepresentation>{null}	[null]
+ConnectApi.CPQProductListOutputRepresentation	productUnitOfMeasures	new List<ConnectApi.CPQProductUnitOfMeasureOutputRepresentation>{null}	[null]
+ConnectApi.CPQSearchProductsOutputRepresentation	productUnitOfMeasures	new List<ConnectApi.CPQProductUnitOfMeasureOutputRepresentation>{null}	[null]
+ConnectApi.CaseStatusPicklistValueAttributes	picklistAtrributesValueType	ConnectApi.PicklistAttributesValueType.WorkStepStatus	"CaseStatus"
+ConnectApi.CdpMlBinaryClassificationPredictionResult	status	ConnectApi.CdpMlPredictStatusEnum.Success	"Success"
+ConnectApi.CdpMlBinaryClassificationPredictionResult	type	ConnectApi.CdpMlModelPredictionTypeEnum.Regression	"BinaryClassification"
+ConnectApi.CdpMlGenericPredictionResult	status	ConnectApi.CdpMlPredictStatusEnum.Success	"Success"
+ConnectApi.CdpMlGenericPredictionResult	type	ConnectApi.CdpMlModelPredictionTypeEnum.Regression	"Generic"
+ConnectApi.CdpMlMulticlassClassificationPredictionResult	status	ConnectApi.CdpMlPredictStatusEnum.Success	"Success"
+ConnectApi.CdpMlMulticlassClassificationPredictionResult	type	ConnectApi.CdpMlModelPredictionTypeEnum.Regression	"MulticlassClassification"
+ConnectApi.CdpMlPredictionError	status	ConnectApi.CdpMlPredictStatusEnum.Success	"Error"
+ConnectApi.CdpMlRegressionPredictionResult	status	ConnectApi.CdpMlPredictStatusEnum.Success	"Success"
+ConnectApi.CdpMlRegressionPredictionResult	type	ConnectApi.CdpMlModelPredictionTypeEnum.Regression	"Regression"
+ConnectApi.CdpSegmentActionOutput	errors	new List<ConnectApi.CdpErrorResponse>{null}	[{}]
+ConnectApi.CdpSegmentActionOutput	success	false	true
+ConnectApi.ChatterActivitySummary	activityType	'zz_assigned'	"ChatterActivity"
+ConnectApi.ChatterGroupDetail	type	'zz_assigned'	"CollaborationGroup"
+ConnectApi.ChatterGroupSummary	type	'zz_assigned'	"CollaborationGroup"
+ConnectApi.ChatterLikePage	total	7	7
+ConnectApi.ChatterLikesCapability	isLikedByCurrentUser	true	false
+ConnectApi.CommerceAddressCollection	count	7	0
+ConnectApi.CommerceSubscriptionDetail	dynamicAttributes	new Map<String,ConnectApi.CommerceProductDynamicAttribute>{'k'=>null}	{"k":null}
+ConnectApi.CommerceSubscriptionDetail	priceAdjustments	new List<ConnectApi.CommerceSubscriptionPriceAdjustment>{null}	[null]
+ConnectApi.ContentHubRepository	type	'zz_assigned'	"ContentHubRepository"
+ConnectApi.CurrencyRecordField	type	'zz_assigned'	"Currency"
+ConnectApi.CustomListAudienceCriteria	type	ConnectApi.RecommendationAudienceCriteriaType.MaxDaysInCommunity	"CustomList"
+ConnectApi.DailySchedule	frequency	ConnectApi.CdpScheduleFrequencyTypeEnum.Weekly	"Daily"
+ConnectApi.DataCategoryMetadata	values	new Map<String,ConnectApi.DataCategoryValueMetadata>{'k'=>null}	{"k":null}
+ConnectApi.DatabricksInternalStageRouteDetailsRepresentation	type	ConnectApi.PrivateNetworkProvider.SnowflakeInternalStage	"DatabricksInternalStage"
+ConnectApi.DatabricksRouteDetailsRepresentation	type	ConnectApi.PrivateNetworkProvider.SnowflakeInternalStage	"Databricks"
+ConnectApi.DatacloudCompanies	total	7	7
+ConnectApi.DatacloudContacts	total	7	7
+ConnectApi.DistinctFacetValue	type	ConnectApi.CommerceSearchFacetType.Range	"DistinctValue"
+ConnectApi.DistinctValueSearchFacet	facetType	ConnectApi.CommerceSearchFacetType.Range	"DistinctValue"
+ConnectApi.ExternalFilePermissionInformation	externalFilePermissionsFailure	true	true
+ConnectApi.FeedEntityNotAvailableSummary	isEntityAvailable	true	false
+ConnectApi.FeedItem	feedElementType	ConnectApi.FeedElementType.Recommendation	"FeedItem"
+ConnectApi.FeedItemSummary	feedElementType	ConnectApi.FeedElementType.Recommendation	"FeedItem"
+ConnectApi.FeedItemSummary	isEntityAvailable	false	true
+ConnectApi.FeedReadSummary	activityType	'zz_assigned'	"FeedRead"
+ConnectApi.FileGroundingSourceOutput	groundingSourceType	'zz_assigned'	"SFDRIVE"
+ConnectApi.FileProvisionOutput	sourceType	'zz_assigned'	"SFDRIVE"
+ConnectApi.GenericBundleCapability	bundleType	ConnectApi.BundleType.TrackedChanges	"GenericBundle"
+ConnectApi.InsuranceMemberRatingRepresentation	id	'zz_assigned'	"<uuid>"
+ConnectApi.KnowledgeGroundingSourceOutput	groundingSourceType	'zz_assigned'	"KNOWLEDGE"
+ConnectApi.KnowledgeProvisionOutput	sourceType	'zz_assigned'	"KNOWLEDGE"
+ConnectApi.LeadStatusPicklistValueAttributes	picklistAtrributesValueType	ConnectApi.PicklistAttributesValueType.WorkStepStatus	"LeadStatus"
+ConnectApi.LearningCourseOutput	type	'zz_assigned'	"LearningCourse"
+ConnectApi.LearningProgramOutput	type	'zz_assigned'	"LearningProgram"
+ConnectApi.LightningExtensionInformation	extensionInformationType	ConnectApi.ExtensionInformationType.Lightning	"Lightning"
+ConnectApi.LinkMetadataCollection	linkMetadataList	new List<ConnectApi.LinkMetadata>{null}	[null]
+ConnectApi.MonthlySchedule	frequency	ConnectApi.CdpScheduleFrequencyTypeEnum.Weekly	"Monthly"
+ConnectApi.NBAFlowAction	type	ConnectApi.NBAActionType.Flow	"Flow"
+ConnectApi.NBANativeRecommendation	type	ConnectApi.NBATargetType.Recommendation	"Recommendation"
+ConnectApi.NewUserAudienceCriteria	type	ConnectApi.RecommendationAudienceCriteriaType.MaxDaysInCommunity	"MaxDaysInCommunity"
+ConnectApi.ObjectMetadata	fields	new Map<String,ConnectApi.FieldMetadata>{'k'=>null}	{"k":null}
+ConnectApi.OpportunityStagePicklistValueAttributes	picklistAtrributesValueType	ConnectApi.PicklistAttributesValueType.WorkStepStatus	"OpportunityStage"
+ConnectApi.PercentRecordField	type	'zz_assigned'	"Percent"
+ConnectApi.PicklistRecordField	type	'zz_assigned'	"Picklist"
+ConnectApi.RangeSearchFacet	facetType	ConnectApi.CommerceSearchFacetType.Range	"Range"
+ConnectApi.ReadByPage	total	7	7
+ConnectApi.RecommendedObject	type	'zz_assigned'	"RecommendedObject"
+ConnectApi.RedshiftRouteDetailsRepresentation	type	ConnectApi.PrivateNetworkProvider.SnowflakeInternalStage	"Redshift"
+ConnectApi.ReferenceRecordField	type	'zz_assigned'	"Reference"
+ConnectApi.RepositoryFileDetail	type	'zz_assigned'	"RepositoryFile"
+ConnectApi.RepositoryFileSummary	type	'zz_assigned'	"RepositoryFile"
+ConnectApi.RepositoryFolderDetail	type	'zz_assigned'	"RepositoryFolder"
+ConnectApi.RepositoryFolderItem	type	ConnectApi.FolderItemType.Folder	"Folder"
+ConnectApi.RepositoryFolderSummary	type	'zz_assigned'	"RepositoryFolder"
+ConnectApi.RepositoryGroupSummary	type	ConnectApi.ContentHubDirectoryEntryType.UserEntry	"GroupEntry"
+ConnectApi.RepositoryUserSummary	type	ConnectApi.ContentHubDirectoryEntryType.UserEntry	"UserEntry"
+ConnectApi.RetrieverGroundingSourceOutput	groundingSourceType	'zz_assigned'	"RETRIEVER"
+ConnectApi.SearchAnswer	metadata	new Map<String,ConnectApi.ObjectMetadata>{'k'=>null}	{"k":null}
+ConnectApi.SearchMetadata	sobjects	new Map<String,ConnectApi.ObjectMetadata>{'k'=>null}	{"k":null}
+ConnectApi.SearchMetadata	sources	new Map<String,ConnectApi.SourceMetadata>{'k'=>null}	{"k":null}
+ConnectApi.SearchResultGroups	metadata	new Map<String,ConnectApi.ObjectMetadata>{'k'=>null}	{"k":null}
+ConnectApi.SearchResultGroups	resultGroups	new List<ConnectApi.SearchResultGroup>{null}	[null]
+ConnectApi.SmartDataDiscoveryAIModelClassificationMetrics	predictionType	ConnectApi.SmartDataDiscoveryPredictionTypeEnum.Unknown	"Classification"
+ConnectApi.SmartDataDiscoveryAIModelDiscoverySource	type	ConnectApi.SmartDataDiscoveryModelSourceTypeEnum.UserUpload	"Discovery"
+ConnectApi.SmartDataDiscoveryAIModelMulticlassMetrics	predictionType	ConnectApi.SmartDataDiscoveryPredictionTypeEnum.Unknown	"MulticlassClassification"
+ConnectApi.SmartDataDiscoveryAIModelRegressionMetrics	predictionType	ConnectApi.SmartDataDiscoveryPredictionTypeEnum.Unknown	"Regression"
+ConnectApi.SmartDataDiscoveryAIModelUserUploadSource	type	ConnectApi.SmartDataDiscoveryModelSourceTypeEnum.UserUpload	"UserUpload"
+ConnectApi.SmartDataDiscoveryCategoricalImputationTransformation	type	ConnectApi.SmartDataDiscoveryAIModelTransformationTypeEnum.TypographicClustering	"CategoricalImputation"
+ConnectApi.SmartDataDiscoveryCategoricalProjectedPrediction	type	ConnectApi.SmartDataDiscoveryProjectedPredictionsType.Numerical	"Categorical"
+ConnectApi.SmartDataDiscoveryClassificationPredictionProperty	type	ConnectApi.SmartDataDiscoveryPredictionTypeEnum.Unknown	"Classification"
+ConnectApi.SmartDataDiscoveryDiscoveryModelRuntime	type	ConnectApi.SmartDataDiscoveryModelRuntimeTypeEnum.Py37Tensorflow270	"Discovery"
+ConnectApi.SmartDataDiscoveryExtractDayOfWeekTransformation	type	ConnectApi.SmartDataDiscoveryAIModelTransformationTypeEnum.TypographicClustering	"ExtractDayOfWeek"
+ConnectApi.SmartDataDiscoveryExtractMonthOfYearTransformation	type	ConnectApi.SmartDataDiscoveryAIModelTransformationTypeEnum.TypographicClustering	"ExtractMonthOfYear"
+ConnectApi.SmartDataDiscoveryFieldMappingAnalyticsDatasetField	type	ConnectApi.SmartDataDiscoveryFieldMapSourceTypeEnum.SalesforceField	"AnalyticsDatasetField"
+ConnectApi.SmartDataDiscoveryFieldMappingSalesforceField	type	ConnectApi.SmartDataDiscoveryFieldMapSourceTypeEnum.SalesforceField	"SalesforceField"
+ConnectApi.SmartDataDiscoveryFreeTextClusteringTransformation	type	ConnectApi.SmartDataDiscoveryAIModelTransformationTypeEnum.TypographicClustering	"FreeTextClustering"
+ConnectApi.SmartDataDiscoveryH2OModelRuntime	type	ConnectApi.SmartDataDiscoveryModelRuntimeTypeEnum.Py37Tensorflow270	"H2O"
+ConnectApi.SmartDataDiscoveryModelFieldDate	type	ConnectApi.SmartDataDiscoveryModelFieldTypeEnum.Text	"Date"
+ConnectApi.SmartDataDiscoveryModelFieldNumeric	type	ConnectApi.SmartDataDiscoveryModelFieldTypeEnum.Text	"Number"
+ConnectApi.SmartDataDiscoveryModelFieldText	type	ConnectApi.SmartDataDiscoveryModelFieldTypeEnum.Text	"Text"
+ConnectApi.SmartDataDiscoveryMulticlassClassificationPredictionProperty	type	ConnectApi.SmartDataDiscoveryPredictionTypeEnum.Unknown	"MulticlassClassification"
+ConnectApi.SmartDataDiscoveryMulticlassPredict	type	'zz_assigned'	"Multiclass"
+ConnectApi.SmartDataDiscoveryNumericTransformationFilter	type	ConnectApi.SmartDataDiscoveryTransformationFilterTypeEnum.Text	"Number"
+ConnectApi.SmartDataDiscoveryNumericalImputationTransformation	type	ConnectApi.SmartDataDiscoveryAIModelTransformationTypeEnum.TypographicClustering	"NumericalImputation"
+ConnectApi.SmartDataDiscoveryNumericalProjectedPrediction	type	ConnectApi.SmartDataDiscoveryProjectedPredictionsType.Numerical	"Numerical"
+ConnectApi.SmartDataDiscoveryPredictErrorObject	status	ConnectApi.SmartDataDiscoveryPredictStatusEnum.Success	"Error"
+ConnectApi.SmartDataDiscoveryPredictObject	status	ConnectApi.SmartDataDiscoveryPredictStatusEnum.Success	"Success"
+ConnectApi.SmartDataDiscoveryProjectedPredictionsCountFromDateIntervalSetting	type	ConnectApi.SmartDataDiscoveryProjectedPredictionsIntervalSettingType.Date	"CountFromDate"
+ConnectApi.SmartDataDiscoveryProjectedPredictionsCountIntervalSetting	type	ConnectApi.SmartDataDiscoveryProjectedPredictionsIntervalSettingType.Date	"Count"
+ConnectApi.SmartDataDiscoveryProjectedPredictionsDateIntervalSetting	type	ConnectApi.SmartDataDiscoveryProjectedPredictionsIntervalSettingType.Date	"Date"
+ConnectApi.SmartDataDiscoveryProjectedPredictionsOverride	type	ConnectApi.SmartDataDiscoveryAIModelTransformationTypeEnum.TypographicClustering	"TimeSeriesForecast"
+ConnectApi.SmartDataDiscoveryProjectedPredictionsTransformation	type	ConnectApi.SmartDataDiscoveryAIModelTransformationTypeEnum.TypographicClustering	"TimeSeriesForecast"
+ConnectApi.SmartDataDiscoveryRegressionPredictionProperty	type	ConnectApi.SmartDataDiscoveryPredictionTypeEnum.Unknown	"Regression"
+ConnectApi.SmartDataDiscoveryScikitLearn102ModelRuntime	type	ConnectApi.SmartDataDiscoveryModelRuntimeTypeEnum.Py37Tensorflow270	"Py37Scikitlearn102"
+ConnectApi.SmartDataDiscoverySentimentAnalysisTransformation	type	ConnectApi.SmartDataDiscoveryAIModelTransformationTypeEnum.TypographicClustering	"SentimentAnalysis"
+ConnectApi.SmartDataDiscoveryTensorFlow27ModelRuntime	type	ConnectApi.SmartDataDiscoveryModelRuntimeTypeEnum.Py37Tensorflow270	"Py37Tensorflow270"
+ConnectApi.SmartDataDiscoveryTensorFlowModelRuntime	type	ConnectApi.SmartDataDiscoveryModelRuntimeTypeEnum.Py37Tensorflow270	"Py36Tensorflow244"
+ConnectApi.SmartDataDiscoveryTextTransformationFilter	type	ConnectApi.SmartDataDiscoveryTransformationFilterTypeEnum.Text	"Text"
+ConnectApi.SmartDataDiscoveryTypographicClusteringTransformation	type	ConnectApi.SmartDataDiscoveryAIModelTransformationTypeEnum.TypographicClustering	"TypographicClustering"
+ConnectApi.SnowflakeInternalStageRouteDetailsRepresentation	type	ConnectApi.PrivateNetworkProvider.SnowflakeInternalStage	"SnowflakeInternalStage"
+ConnectApi.SnowflakeRouteDetailsRepresentation	type	ConnectApi.PrivateNetworkProvider.SnowflakeInternalStage	"Snowflake"
+ConnectApi.SubmitChangeOrderSummaryOutputRepresentation	createdEntities	new List<ConnectApi.CreatedEntityOutputRepresentation>{null}	[null]
+ConnectApi.TextSmartResponse	type	ConnectApi.EinsteinResponseType.TextMessage	"TextMessage"
+ConnectApi.TopicEndorsementSummary	activityType	'zz_assigned'	"TopicEndorsement"
+ConnectApi.TrackedChangeBundleCapability	bundleType	ConnectApi.BundleType.TrackedChanges	"TrackedChanges"
+ConnectApi.UnauthenticatedUser	type	'zz_assigned'	"UnauthenticatedUser"
+ConnectApi.UserDetail	type	'zz_assigned'	"User"
+ConnectApi.UserSummary	type	'zz_assigned'	"User"
+ConnectApi.VotePage	total	7	7
+ConnectApi.WeeklySchedule	frequency	ConnectApi.CdpScheduleFrequencyTypeEnum.Weekly	"Weekly"
+ConnectApi.WorkStepPicklistValueAttribute	picklistAtrributesValueType	ConnectApi.PicklistAttributesValueType.WorkStepStatus	"WorkStepStatus"

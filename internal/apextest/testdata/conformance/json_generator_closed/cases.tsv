@@ -1,0 +1,26 @@
+case	body
+closed_null	JSONGenerator g=JSON.createGenerator(false); g.close(); g.writeNull();
+closed_string	JSONGenerator g=JSON.createGenerator(false); g.close(); g.writeString('x');
+closed_boolean	JSONGenerator g=JSON.createGenerator(false); g.close(); g.writeBoolean(true);
+closed_number	JSONGenerator g=JSON.createGenerator(false); g.close(); g.writeNumber(1);
+closed_array_null	JSONGenerator g=JSON.createGenerator(false); g.writeStartArray(); g.writeEndArray(); g.close(); g.writeNull();
+closed_object_end	JSONGenerator g=JSON.createGenerator(false); g.writeStartObject(); g.close(); g.writeEndObject();
+getstring_then_null	JSONGenerator g=JSON.createGenerator(false); g.writeStartArray(); g.writeEndArray(); g.getAsString(); g.writeNull();
+open_write_control	JSONGenerator g=JSON.createGenerator(false); g.writeNull();
+closed_read_control	JSONGenerator g=JSON.createGenerator(false); g.close(); g.close(); g.isClosed(); g.getAsString();
+closed_array_end	JSONGenerator g=JSON.createGenerator(false); g.close(); g.writeEndArray();
+open_root_array_end	JSONGenerator g=JSON.createGenerator(false); g.writeEndArray();
+open_root_object_end	JSONGenerator g=JSON.createGenerator(false); g.writeEndObject();
+closed_field_name	JSONGenerator g=JSON.createGenerator(false); g.close(); g.writeFieldName('x');
+closed_start_object	JSONGenerator g=JSON.createGenerator(false); g.close(); g.writeStartObject();
+closed_start_array	JSONGenerator g=JSON.createGenerator(false); g.close(); g.writeStartArray();
+closed_string_field	JSONGenerator g=JSON.createGenerator(false); g.close(); g.writeStringField('x','y');
+closed_null_field	JSONGenerator g=JSON.createGenerator(false); g.close(); g.writeNullField('x');
+closed_object_field	JSONGenerator g=JSON.createGenerator(false); g.close(); g.writeObjectField('x','y');
+closed_object_value	JSONGenerator g=JSON.createGenerator(false); g.close(); g.writeObject('y');
+open_root_field_name	JSONGenerator g=JSON.createGenerator(false); g.writeFieldName('x');
+closed_date	JSONGenerator g=JSON.createGenerator(false); g.close(); g.writeDate(Date.newInstance(2020,1,1));
+closed_datetime	JSONGenerator g=JSON.createGenerator(false); g.close(); g.writeDateTime(Datetime.newInstance(2020,1,1,0,0,0));
+closed_time	JSONGenerator g=JSON.createGenerator(false); g.close(); g.writeTime(Time.newInstance(0,0,0,0));
+closed_id	JSONGenerator g=JSON.createGenerator(false); g.close(); g.writeId((Id)'001000000000001');
+closed_blob	JSONGenerator g=JSON.createGenerator(false); g.close(); g.writeBlob(Blob.valueOf('x'));

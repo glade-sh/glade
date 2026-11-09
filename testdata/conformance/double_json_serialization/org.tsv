@@ -1,0 +1,3342 @@
+key	value
+Decimal|dblvalueOf1.0E-7|dbl.cast.ser	1.0E-7
+Decimal|dblvalueOf1.0E-7|dec.format	0
+Decimal|dblvalueOf1.0E-7|dec.scale	8
+Decimal|dblvalueOf1.0E-7|dec.stripToPlain	0.0000001
+Decimal|dblvalueOf1.0E-7|dec.toPlainString	0.00000010
+Decimal|dblvalueOf1.0E-7|dec.toString	1.0E-7
+Decimal|dblvalueOf1.0E-7|gen.pretty.writeNumber	[ 1.0E-7 ]
+Decimal|dblvalueOf1.0E-7|gen.writeNumber	[1.0E-7]
+Decimal|dblvalueOf1.0E-7|gen.writeNumberField	{"v":1.0E-7}
+Decimal|dblvalueOf1.0E-7|gen.writeObject	[1.0E-7]
+Decimal|dblvalueOf1.0E-7|pretty.box	{\n  "v" : 1.0E-7\n}
+Decimal|dblvalueOf1.0E-7|pretty.list.obj	[ 1.0E-7 ]
+Decimal|dblvalueOf1.0E-7|pretty.list.typed	[ 1.0E-7 ]
+Decimal|dblvalueOf1.0E-7|pretty.map.obj	{\n  "v" : 1.0E-7\n}
+Decimal|dblvalueOf1.0E-7|pretty.map.typed	{\n  "v" : 1.0E-7\n}
+Decimal|dblvalueOf1.0E-7|pretty.scalar	1.0E-7
+Decimal|dblvalueOf1.0E-7|ser.box	{"v":1.0E-7}
+Decimal|dblvalueOf1.0E-7|ser.list.box	[{"v":1.0E-7}]
+Decimal|dblvalueOf1.0E-7|ser.list.obj	[1.0E-7]
+Decimal|dblvalueOf1.0E-7|ser.list.typed	[1.0E-7]
+Decimal|dblvalueOf1.0E-7|ser.list2.obj	[1.0E-7,1.0E-7]
+Decimal|dblvalueOf1.0E-7|ser.list2.typed	[1.0E-7,1.0E-7]
+Decimal|dblvalueOf1.0E-7|ser.map.list	{"v":[1.0E-7]}
+Decimal|dblvalueOf1.0E-7|ser.map.obj	{"v":1.0E-7}
+Decimal|dblvalueOf1.0E-7|ser.map.typed	{"v":1.0E-7}
+Decimal|dblvalueOf1.0E-7|ser.objbox	{"v":1.0E-7}
+Decimal|dblvalueOf1.0E-7|ser.scalar	1.0E-7
+Decimal|dblvalueOf1.0E-7|ser.set.typed	[1.0E-7]
+Decimal|dblvalueOf1.0E-7|str.concat	1.0E-7
+Decimal|dblvalueOf1.0E-7|str.objvalueOf	1.0E-7
+Decimal|dblvalueOf1.0E-7|str.valueOf	1.0E-7
+Decimal|dblvalueOf1e20|dbl.cast.ser	1.0E20
+Decimal|dblvalueOf1e20|dec.format	100,000,000,000,000,000,000
+Decimal|dblvalueOf1e20|dec.scale	-19
+Decimal|dblvalueOf1e20|dec.stripToPlain	100000000000000000000
+Decimal|dblvalueOf1e20|dec.toPlainString	100000000000000000000
+Decimal|dblvalueOf1e20|dec.toString	1.0E+20
+Decimal|dblvalueOf1e20|gen.pretty.writeNumber	[ 1.0E+20 ]
+Decimal|dblvalueOf1e20|gen.writeNumber	[1.0E+20]
+Decimal|dblvalueOf1e20|gen.writeNumberField	{"v":1.0E+20}
+Decimal|dblvalueOf1e20|gen.writeObject	[1.0E+20]
+Decimal|dblvalueOf1e20|pretty.box	{\n  "v" : 1.0E+20\n}
+Decimal|dblvalueOf1e20|pretty.list.obj	[ 1.0E+20 ]
+Decimal|dblvalueOf1e20|pretty.list.typed	[ 1.0E+20 ]
+Decimal|dblvalueOf1e20|pretty.map.obj	{\n  "v" : 1.0E+20\n}
+Decimal|dblvalueOf1e20|pretty.map.typed	{\n  "v" : 1.0E+20\n}
+Decimal|dblvalueOf1e20|pretty.scalar	1.0E+20
+Decimal|dblvalueOf1e20|ser.box	{"v":1.0E+20}
+Decimal|dblvalueOf1e20|ser.list.box	[{"v":1.0E+20}]
+Decimal|dblvalueOf1e20|ser.list.obj	[1.0E+20]
+Decimal|dblvalueOf1e20|ser.list.typed	[1.0E+20]
+Decimal|dblvalueOf1e20|ser.list2.obj	[1.0E+20,1.0E+20]
+Decimal|dblvalueOf1e20|ser.list2.typed	[1.0E+20,1.0E+20]
+Decimal|dblvalueOf1e20|ser.map.list	{"v":[1.0E+20]}
+Decimal|dblvalueOf1e20|ser.map.obj	{"v":1.0E+20}
+Decimal|dblvalueOf1e20|ser.map.typed	{"v":1.0E+20}
+Decimal|dblvalueOf1e20|ser.objbox	{"v":1.0E+20}
+Decimal|dblvalueOf1e20|ser.scalar	1.0E+20
+Decimal|dblvalueOf1e20|ser.set.typed	[1.0E+20]
+Decimal|dblvalueOf1e20|str.concat	1.0E+20
+Decimal|dblvalueOf1e20|str.objvalueOf	1.0E+20
+Decimal|dblvalueOf1e20|str.valueOf	1.0E+20
+Decimal|dblvalueOf5.0|dbl.cast.ser	5.0
+Decimal|dblvalueOf5.0|dec.format	5
+Decimal|dblvalueOf5.0|dec.scale	1
+Decimal|dblvalueOf5.0|dec.stripToPlain	5
+Decimal|dblvalueOf5.0|dec.toPlainString	5.0
+Decimal|dblvalueOf5.0|dec.toString	5.0
+Decimal|dblvalueOf5.0|gen.pretty.writeNumber	[ 5.0 ]
+Decimal|dblvalueOf5.0|gen.writeNumber	[5.0]
+Decimal|dblvalueOf5.0|gen.writeNumberField	{"v":5.0}
+Decimal|dblvalueOf5.0|gen.writeObject	[5.0]
+Decimal|dblvalueOf5.0|pretty.box	{\n  "v" : 5.0\n}
+Decimal|dblvalueOf5.0|pretty.list.obj	[ 5.0 ]
+Decimal|dblvalueOf5.0|pretty.list.typed	[ 5.0 ]
+Decimal|dblvalueOf5.0|pretty.map.obj	{\n  "v" : 5.0\n}
+Decimal|dblvalueOf5.0|pretty.map.typed	{\n  "v" : 5.0\n}
+Decimal|dblvalueOf5.0|pretty.scalar	5.0
+Decimal|dblvalueOf5.0|ser.box	{"v":5.0}
+Decimal|dblvalueOf5.0|ser.list.box	[{"v":5.0}]
+Decimal|dblvalueOf5.0|ser.list.obj	[5.0]
+Decimal|dblvalueOf5.0|ser.list.typed	[5.0]
+Decimal|dblvalueOf5.0|ser.list2.obj	[5.0,5.0]
+Decimal|dblvalueOf5.0|ser.list2.typed	[5.0,5.0]
+Decimal|dblvalueOf5.0|ser.map.list	{"v":[5.0]}
+Decimal|dblvalueOf5.0|ser.map.obj	{"v":5.0}
+Decimal|dblvalueOf5.0|ser.map.typed	{"v":5.0}
+Decimal|dblvalueOf5.0|ser.objbox	{"v":5.0}
+Decimal|dblvalueOf5.0|ser.scalar	5.0
+Decimal|dblvalueOf5.0|ser.set.typed	[5.0]
+Decimal|dblvalueOf5.0|str.concat	5.0
+Decimal|dblvalueOf5.0|str.objvalueOf	5.0
+Decimal|dblvalueOf5.0|str.valueOf	5.0
+Decimal|dblvalueOf5.5|dbl.cast.ser	5.5
+Decimal|dblvalueOf5.5|dec.format	5.5
+Decimal|dblvalueOf5.5|dec.scale	1
+Decimal|dblvalueOf5.5|dec.stripToPlain	5.5
+Decimal|dblvalueOf5.5|dec.toPlainString	5.5
+Decimal|dblvalueOf5.5|dec.toString	5.5
+Decimal|dblvalueOf5.5|gen.pretty.writeNumber	[ 5.5 ]
+Decimal|dblvalueOf5.5|gen.writeNumber	[5.5]
+Decimal|dblvalueOf5.5|gen.writeNumberField	{"v":5.5}
+Decimal|dblvalueOf5.5|gen.writeObject	[5.5]
+Decimal|dblvalueOf5.5|pretty.box	{\n  "v" : 5.5\n}
+Decimal|dblvalueOf5.5|pretty.list.obj	[ 5.5 ]
+Decimal|dblvalueOf5.5|pretty.list.typed	[ 5.5 ]
+Decimal|dblvalueOf5.5|pretty.map.obj	{\n  "v" : 5.5\n}
+Decimal|dblvalueOf5.5|pretty.map.typed	{\n  "v" : 5.5\n}
+Decimal|dblvalueOf5.5|pretty.scalar	5.5
+Decimal|dblvalueOf5.5|ser.box	{"v":5.5}
+Decimal|dblvalueOf5.5|ser.list.box	[{"v":5.5}]
+Decimal|dblvalueOf5.5|ser.list.obj	[5.5]
+Decimal|dblvalueOf5.5|ser.list.typed	[5.5]
+Decimal|dblvalueOf5.5|ser.list2.obj	[5.5,5.5]
+Decimal|dblvalueOf5.5|ser.list2.typed	[5.5,5.5]
+Decimal|dblvalueOf5.5|ser.map.list	{"v":[5.5]}
+Decimal|dblvalueOf5.5|ser.map.obj	{"v":5.5}
+Decimal|dblvalueOf5.5|ser.map.typed	{"v":5.5}
+Decimal|dblvalueOf5.5|ser.objbox	{"v":5.5}
+Decimal|dblvalueOf5.5|ser.scalar	5.5
+Decimal|dblvalueOf5.5|ser.set.typed	[5.5]
+Decimal|dblvalueOf5.5|str.concat	5.5
+Decimal|dblvalueOf5.5|str.objvalueOf	5.5
+Decimal|dblvalueOf5.5|str.valueOf	5.5
+Decimal|dblvar5.0|dbl.cast.ser	5.0
+Decimal|dblvar5.0|dec.format	5
+Decimal|dblvar5.0|dec.scale	1
+Decimal|dblvar5.0|dec.stripToPlain	5
+Decimal|dblvar5.0|dec.toPlainString	5.0
+Decimal|dblvar5.0|dec.toString	5.0
+Decimal|dblvar5.0|gen.pretty.writeNumber	[ 5.0 ]
+Decimal|dblvar5.0|gen.writeNumber	[5.0]
+Decimal|dblvar5.0|gen.writeNumberField	{"v":5.0}
+Decimal|dblvar5.0|gen.writeObject	[5.0]
+Decimal|dblvar5.0|pretty.box	{\n  "v" : 5.0\n}
+Decimal|dblvar5.0|pretty.list.obj	[ 5.0 ]
+Decimal|dblvar5.0|pretty.list.typed	[ 5.0 ]
+Decimal|dblvar5.0|pretty.map.obj	{\n  "v" : 5.0\n}
+Decimal|dblvar5.0|pretty.map.typed	{\n  "v" : 5.0\n}
+Decimal|dblvar5.0|pretty.scalar	5.0
+Decimal|dblvar5.0|ser.box	{"v":5.0}
+Decimal|dblvar5.0|ser.list.box	[{"v":5.0}]
+Decimal|dblvar5.0|ser.list.obj	[5.0]
+Decimal|dblvar5.0|ser.list.typed	[5.0]
+Decimal|dblvar5.0|ser.list2.obj	[5.0,5.0]
+Decimal|dblvar5.0|ser.list2.typed	[5.0,5.0]
+Decimal|dblvar5.0|ser.map.list	{"v":[5.0]}
+Decimal|dblvar5.0|ser.map.obj	{"v":5.0}
+Decimal|dblvar5.0|ser.map.typed	{"v":5.0}
+Decimal|dblvar5.0|ser.objbox	{"v":5.0}
+Decimal|dblvar5.0|ser.scalar	5.0
+Decimal|dblvar5.0|ser.set.typed	[5.0]
+Decimal|dblvar5.0|str.concat	5.0
+Decimal|dblvar5.0|str.objvalueOf	5.0
+Decimal|dblvar5.0|str.valueOf	5.0
+Decimal|dblvar5|dbl.cast.ser	5.0
+Decimal|dblvar5|dec.format	5
+Decimal|dblvar5|dec.scale	1
+Decimal|dblvar5|dec.stripToPlain	5
+Decimal|dblvar5|dec.toPlainString	5.0
+Decimal|dblvar5|dec.toString	5.0
+Decimal|dblvar5|gen.pretty.writeNumber	[ 5.0 ]
+Decimal|dblvar5|gen.writeNumber	[5.0]
+Decimal|dblvar5|gen.writeNumberField	{"v":5.0}
+Decimal|dblvar5|gen.writeObject	[5.0]
+Decimal|dblvar5|pretty.box	{\n  "v" : 5.0\n}
+Decimal|dblvar5|pretty.list.obj	[ 5.0 ]
+Decimal|dblvar5|pretty.list.typed	[ 5.0 ]
+Decimal|dblvar5|pretty.map.obj	{\n  "v" : 5.0\n}
+Decimal|dblvar5|pretty.map.typed	{\n  "v" : 5.0\n}
+Decimal|dblvar5|pretty.scalar	5.0
+Decimal|dblvar5|ser.box	{"v":5.0}
+Decimal|dblvar5|ser.list.box	[{"v":5.0}]
+Decimal|dblvar5|ser.list.obj	[5.0]
+Decimal|dblvar5|ser.list.typed	[5.0]
+Decimal|dblvar5|ser.list2.obj	[5.0,5.0]
+Decimal|dblvar5|ser.list2.typed	[5.0,5.0]
+Decimal|dblvar5|ser.map.list	{"v":[5.0]}
+Decimal|dblvar5|ser.map.obj	{"v":5.0}
+Decimal|dblvar5|ser.map.typed	{"v":5.0}
+Decimal|dblvar5|ser.objbox	{"v":5.0}
+Decimal|dblvar5|ser.scalar	5.0
+Decimal|dblvar5|ser.set.typed	[5.0]
+Decimal|dblvar5|str.concat	5.0
+Decimal|dblvar5|str.objvalueOf	5.0
+Decimal|dblvar5|str.valueOf	5.0
+Decimal|div1/3|dbl.cast.ser	0.3333333333333333
+Decimal|div1/3|dec.format	0.333
+Decimal|div1/3|dec.scale	33
+Decimal|div1/3|dec.stripToPlain	0.333333333333333333333333333333333
+Decimal|div1/3|dec.toPlainString	0.333333333333333333333333333333333
+Decimal|div1/3|dec.toString	0.333333333333333333333333333333333
+Decimal|div1/3|gen.pretty.writeNumber	[ 0.333333333333333333333333333333333 ]
+Decimal|div1/3|gen.writeNumber	[0.333333333333333333333333333333333]
+Decimal|div1/3|gen.writeNumberField	{"v":0.333333333333333333333333333333333}
+Decimal|div1/3|gen.writeObject	[0.333333333333333333333333333333333]
+Decimal|div1/3|pretty.box	{\n  "v" : 0.333333333333333333333333333333333\n}
+Decimal|div1/3|pretty.list.obj	[ 0.333333333333333333333333333333333 ]
+Decimal|div1/3|pretty.list.typed	[ 0.333333333333333333333333333333333 ]
+Decimal|div1/3|pretty.map.obj	{\n  "v" : 0.333333333333333333333333333333333\n}
+Decimal|div1/3|pretty.map.typed	{\n  "v" : 0.333333333333333333333333333333333\n}
+Decimal|div1/3|pretty.scalar	0.333333333333333333333333333333333
+Decimal|div1/3|ser.box	{"v":0.333333333333333333333333333333333}
+Decimal|div1/3|ser.list.box	[{"v":0.333333333333333333333333333333333}]
+Decimal|div1/3|ser.list.obj	[0.333333333333333333333333333333333]
+Decimal|div1/3|ser.list.typed	[0.333333333333333333333333333333333]
+Decimal|div1/3|ser.list2.obj	[0.333333333333333333333333333333333,0.333333333333333333333333333333333]
+Decimal|div1/3|ser.list2.typed	[0.333333333333333333333333333333333,0.333333333333333333333333333333333]
+Decimal|div1/3|ser.map.list	{"v":[0.333333333333333333333333333333333]}
+Decimal|div1/3|ser.map.obj	{"v":0.333333333333333333333333333333333}
+Decimal|div1/3|ser.map.typed	{"v":0.333333333333333333333333333333333}
+Decimal|div1/3|ser.objbox	{"v":0.333333333333333333333333333333333}
+Decimal|div1/3|ser.scalar	0.333333333333333333333333333333333
+Decimal|div1/3|ser.set.typed	[0.333333333333333333333333333333333]
+Decimal|div1/3|str.concat	0.333333333333333333333333333333333
+Decimal|div1/3|str.objvalueOf	0.333333333333333333333333333333333
+Decimal|div1/3|str.valueOf	0.333333333333333333333333333333333
+Decimal|div10/2|dbl.cast.ser	5.0
+Decimal|div10/2|dec.format	5
+Decimal|div10/2|dec.scale	0
+Decimal|div10/2|dec.stripToPlain	5
+Decimal|div10/2|dec.toPlainString	5
+Decimal|div10/2|dec.toString	5
+Decimal|div10/2|gen.pretty.writeNumber	[ 5 ]
+Decimal|div10/2|gen.writeNumber	[5]
+Decimal|div10/2|gen.writeNumberField	{"v":5}
+Decimal|div10/2|gen.writeObject	[5]
+Decimal|div10/2|pretty.box	{\n  "v" : 5\n}
+Decimal|div10/2|pretty.list.obj	[ 5 ]
+Decimal|div10/2|pretty.list.typed	[ 5 ]
+Decimal|div10/2|pretty.map.obj	{\n  "v" : 5\n}
+Decimal|div10/2|pretty.map.typed	{\n  "v" : 5\n}
+Decimal|div10/2|pretty.scalar	5
+Decimal|div10/2|ser.box	{"v":5}
+Decimal|div10/2|ser.list.box	[{"v":5}]
+Decimal|div10/2|ser.list.obj	[5]
+Decimal|div10/2|ser.list.typed	[5]
+Decimal|div10/2|ser.list2.obj	[5,5]
+Decimal|div10/2|ser.list2.typed	[5,5]
+Decimal|div10/2|ser.map.list	{"v":[5]}
+Decimal|div10/2|ser.map.obj	{"v":5}
+Decimal|div10/2|ser.map.typed	{"v":5}
+Decimal|div10/2|ser.objbox	{"v":5}
+Decimal|div10/2|ser.scalar	5
+Decimal|div10/2|ser.set.typed	[5]
+Decimal|div10/2|str.concat	5
+Decimal|div10/2|str.objvalueOf	5
+Decimal|div10/2|str.valueOf	5
+Decimal|intvar|dbl.cast.ser	5.0
+Decimal|intvar|dec.format	5
+Decimal|intvar|dec.scale	0
+Decimal|intvar|dec.stripToPlain	5
+Decimal|intvar|dec.toPlainString	5
+Decimal|intvar|dec.toString	5
+Decimal|intvar|gen.pretty.writeNumber	[ 5 ]
+Decimal|intvar|gen.writeNumber	[5]
+Decimal|intvar|gen.writeNumberField	{"v":5}
+Decimal|intvar|gen.writeObject	[5]
+Decimal|intvar|pretty.box	{\n  "v" : 5\n}
+Decimal|intvar|pretty.list.obj	[ 5 ]
+Decimal|intvar|pretty.list.typed	[ 5 ]
+Decimal|intvar|pretty.map.obj	{\n  "v" : 5\n}
+Decimal|intvar|pretty.map.typed	{\n  "v" : 5\n}
+Decimal|intvar|pretty.scalar	5
+Decimal|intvar|ser.box	{"v":5}
+Decimal|intvar|ser.list.box	[{"v":5}]
+Decimal|intvar|ser.list.obj	[5]
+Decimal|intvar|ser.list.typed	[5]
+Decimal|intvar|ser.list2.obj	[5,5]
+Decimal|intvar|ser.list2.typed	[5,5]
+Decimal|intvar|ser.map.list	{"v":[5]}
+Decimal|intvar|ser.map.obj	{"v":5}
+Decimal|intvar|ser.map.typed	{"v":5}
+Decimal|intvar|ser.objbox	{"v":5}
+Decimal|intvar|ser.scalar	5
+Decimal|intvar|ser.set.typed	[5]
+Decimal|intvar|str.concat	5
+Decimal|intvar|str.objvalueOf	5
+Decimal|intvar|str.valueOf	5
+Decimal|lit-0.0|dbl.cast.ser	0.0
+Decimal|lit-0.0|dec.format	0
+Decimal|lit-0.0|dec.scale	1
+Decimal|lit-0.0|dec.stripToPlain	0
+Decimal|lit-0.0|dec.toPlainString	0.0
+Decimal|lit-0.0|dec.toString	0.0
+Decimal|lit-0.0|gen.pretty.writeNumber	[ 0.0 ]
+Decimal|lit-0.0|gen.writeNumber	[0.0]
+Decimal|lit-0.0|gen.writeNumberField	{"v":0.0}
+Decimal|lit-0.0|gen.writeObject	[0.0]
+Decimal|lit-0.0|pretty.box	{\n  "v" : 0.0\n}
+Decimal|lit-0.0|pretty.list.obj	[ 0.0 ]
+Decimal|lit-0.0|pretty.list.typed	[ 0.0 ]
+Decimal|lit-0.0|pretty.map.obj	{\n  "v" : 0.0\n}
+Decimal|lit-0.0|pretty.map.typed	{\n  "v" : 0.0\n}
+Decimal|lit-0.0|pretty.scalar	0.0
+Decimal|lit-0.0|ser.box	{"v":0.0}
+Decimal|lit-0.0|ser.list.box	[{"v":0.0}]
+Decimal|lit-0.0|ser.list.obj	[0.0]
+Decimal|lit-0.0|ser.list.typed	[0.0]
+Decimal|lit-0.0|ser.list2.obj	[0.0,0.0]
+Decimal|lit-0.0|ser.list2.typed	[0.0,0.0]
+Decimal|lit-0.0|ser.map.list	{"v":[0.0]}
+Decimal|lit-0.0|ser.map.obj	{"v":0.0}
+Decimal|lit-0.0|ser.map.typed	{"v":0.0}
+Decimal|lit-0.0|ser.objbox	{"v":0.0}
+Decimal|lit-0.0|ser.scalar	0.0
+Decimal|lit-0.0|ser.set.typed	[0.0]
+Decimal|lit-0.0|str.concat	0.0
+Decimal|lit-0.0|str.objvalueOf	0.0
+Decimal|lit-0.0|str.valueOf	0.0
+Decimal|lit0.0000001|dbl.cast.ser	1.0E-7
+Decimal|lit0.0000001|dec.format	0
+Decimal|lit0.0000001|dec.scale	7
+Decimal|lit0.0000001|dec.stripToPlain	0.0000001
+Decimal|lit0.0000001|dec.toPlainString	0.0000001
+Decimal|lit0.0000001|dec.toString	1E-7
+Decimal|lit0.0000001|gen.pretty.writeNumber	[ 1E-7 ]
+Decimal|lit0.0000001|gen.writeNumber	[1E-7]
+Decimal|lit0.0000001|gen.writeNumberField	{"v":1E-7}
+Decimal|lit0.0000001|gen.writeObject	[1E-7]
+Decimal|lit0.0000001|pretty.box	{\n  "v" : 1E-7\n}
+Decimal|lit0.0000001|pretty.list.obj	[ 1E-7 ]
+Decimal|lit0.0000001|pretty.list.typed	[ 1E-7 ]
+Decimal|lit0.0000001|pretty.map.obj	{\n  "v" : 1E-7\n}
+Decimal|lit0.0000001|pretty.map.typed	{\n  "v" : 1E-7\n}
+Decimal|lit0.0000001|pretty.scalar	1E-7
+Decimal|lit0.0000001|ser.box	{"v":1E-7}
+Decimal|lit0.0000001|ser.list.box	[{"v":1E-7}]
+Decimal|lit0.0000001|ser.list.obj	[1E-7]
+Decimal|lit0.0000001|ser.list.typed	[1E-7]
+Decimal|lit0.0000001|ser.list2.obj	[1E-7,1E-7]
+Decimal|lit0.0000001|ser.list2.typed	[1E-7,1E-7]
+Decimal|lit0.0000001|ser.map.list	{"v":[1E-7]}
+Decimal|lit0.0000001|ser.map.obj	{"v":1E-7}
+Decimal|lit0.0000001|ser.map.typed	{"v":1E-7}
+Decimal|lit0.0000001|ser.objbox	{"v":1E-7}
+Decimal|lit0.0000001|ser.scalar	1E-7
+Decimal|lit0.0000001|ser.set.typed	[1E-7]
+Decimal|lit0.0000001|str.concat	1E-7
+Decimal|lit0.0000001|str.objvalueOf	1E-7
+Decimal|lit0.0000001|str.valueOf	1E-7
+Decimal|lit0|dbl.cast.ser	0.0
+Decimal|lit0|dec.format	0
+Decimal|lit0|dec.scale	0
+Decimal|lit0|dec.stripToPlain	0
+Decimal|lit0|dec.toPlainString	0
+Decimal|lit0|dec.toString	0
+Decimal|lit0|gen.pretty.writeNumber	[ 0 ]
+Decimal|lit0|gen.writeNumber	[0]
+Decimal|lit0|gen.writeNumberField	{"v":0}
+Decimal|lit0|gen.writeObject	[0]
+Decimal|lit0|pretty.box	{\n  "v" : 0\n}
+Decimal|lit0|pretty.list.obj	[ 0 ]
+Decimal|lit0|pretty.list.typed	[ 0 ]
+Decimal|lit0|pretty.map.obj	{\n  "v" : 0\n}
+Decimal|lit0|pretty.map.typed	{\n  "v" : 0\n}
+Decimal|lit0|pretty.scalar	0
+Decimal|lit0|ser.box	{"v":0}
+Decimal|lit0|ser.list.box	[{"v":0}]
+Decimal|lit0|ser.list.obj	[0]
+Decimal|lit0|ser.list.typed	[0]
+Decimal|lit0|ser.list2.obj	[0,0]
+Decimal|lit0|ser.list2.typed	[0,0]
+Decimal|lit0|ser.map.list	{"v":[0]}
+Decimal|lit0|ser.map.obj	{"v":0}
+Decimal|lit0|ser.map.typed	{"v":0}
+Decimal|lit0|ser.objbox	{"v":0}
+Decimal|lit0|ser.scalar	0
+Decimal|lit0|ser.set.typed	[0]
+Decimal|lit0|str.concat	0
+Decimal|lit0|str.objvalueOf	0
+Decimal|lit0|str.valueOf	0
+Decimal|lit5.00|dbl.cast.ser	5.0
+Decimal|lit5.00|dec.format	5
+Decimal|lit5.00|dec.scale	2
+Decimal|lit5.00|dec.stripToPlain	5
+Decimal|lit5.00|dec.toPlainString	5.00
+Decimal|lit5.00|dec.toString	5.00
+Decimal|lit5.00|gen.pretty.writeNumber	[ 5.00 ]
+Decimal|lit5.00|gen.writeNumber	[5.00]
+Decimal|lit5.00|gen.writeNumberField	{"v":5.00}
+Decimal|lit5.00|gen.writeObject	[5.00]
+Decimal|lit5.00|pretty.box	{\n  "v" : 5.00\n}
+Decimal|lit5.00|pretty.list.obj	[ 5.00 ]
+Decimal|lit5.00|pretty.list.typed	[ 5.00 ]
+Decimal|lit5.00|pretty.map.obj	{\n  "v" : 5.00\n}
+Decimal|lit5.00|pretty.map.typed	{\n  "v" : 5.00\n}
+Decimal|lit5.00|pretty.scalar	5.00
+Decimal|lit5.00|ser.box	{"v":5.00}
+Decimal|lit5.00|ser.list.box	[{"v":5.00}]
+Decimal|lit5.00|ser.list.obj	[5.00]
+Decimal|lit5.00|ser.list.typed	[5.00]
+Decimal|lit5.00|ser.list2.obj	[5.00,5.00]
+Decimal|lit5.00|ser.list2.typed	[5.00,5.00]
+Decimal|lit5.00|ser.map.list	{"v":[5.00]}
+Decimal|lit5.00|ser.map.obj	{"v":5.00}
+Decimal|lit5.00|ser.map.typed	{"v":5.00}
+Decimal|lit5.00|ser.objbox	{"v":5.00}
+Decimal|lit5.00|ser.scalar	5.00
+Decimal|lit5.00|ser.set.typed	[5.00]
+Decimal|lit5.00|str.concat	5.00
+Decimal|lit5.00|str.objvalueOf	5.00
+Decimal|lit5.00|str.valueOf	5.00
+Decimal|lit5.0|dbl.cast.ser	5.0
+Decimal|lit5.0|dec.format	5
+Decimal|lit5.0|dec.scale	1
+Decimal|lit5.0|dec.stripToPlain	5
+Decimal|lit5.0|dec.toPlainString	5.0
+Decimal|lit5.0|dec.toString	5.0
+Decimal|lit5.0|gen.pretty.writeNumber	[ 5.0 ]
+Decimal|lit5.0|gen.writeNumber	[5.0]
+Decimal|lit5.0|gen.writeNumberField	{"v":5.0}
+Decimal|lit5.0|gen.writeObject	[5.0]
+Decimal|lit5.0|pretty.box	{\n  "v" : 5.0\n}
+Decimal|lit5.0|pretty.list.obj	[ 5.0 ]
+Decimal|lit5.0|pretty.list.typed	[ 5.0 ]
+Decimal|lit5.0|pretty.map.obj	{\n  "v" : 5.0\n}
+Decimal|lit5.0|pretty.map.typed	{\n  "v" : 5.0\n}
+Decimal|lit5.0|pretty.scalar	5.0
+Decimal|lit5.0|ser.box	{"v":5.0}
+Decimal|lit5.0|ser.list.box	[{"v":5.0}]
+Decimal|lit5.0|ser.list.obj	[5.0]
+Decimal|lit5.0|ser.list.typed	[5.0]
+Decimal|lit5.0|ser.list2.obj	[5.0,5.0]
+Decimal|lit5.0|ser.list2.typed	[5.0,5.0]
+Decimal|lit5.0|ser.map.list	{"v":[5.0]}
+Decimal|lit5.0|ser.map.obj	{"v":5.0}
+Decimal|lit5.0|ser.map.typed	{"v":5.0}
+Decimal|lit5.0|ser.objbox	{"v":5.0}
+Decimal|lit5.0|ser.scalar	5.0
+Decimal|lit5.0|ser.set.typed	[5.0]
+Decimal|lit5.0|str.concat	5.0
+Decimal|lit5.0|str.objvalueOf	5.0
+Decimal|lit5.0|str.valueOf	5.0
+Decimal|lit5.50|dbl.cast.ser	5.5
+Decimal|lit5.50|dec.format	5.5
+Decimal|lit5.50|dec.scale	2
+Decimal|lit5.50|dec.stripToPlain	5.5
+Decimal|lit5.50|dec.toPlainString	5.50
+Decimal|lit5.50|dec.toString	5.50
+Decimal|lit5.50|gen.pretty.writeNumber	[ 5.50 ]
+Decimal|lit5.50|gen.writeNumber	[5.50]
+Decimal|lit5.50|gen.writeNumberField	{"v":5.50}
+Decimal|lit5.50|gen.writeObject	[5.50]
+Decimal|lit5.50|pretty.box	{\n  "v" : 5.50\n}
+Decimal|lit5.50|pretty.list.obj	[ 5.50 ]
+Decimal|lit5.50|pretty.list.typed	[ 5.50 ]
+Decimal|lit5.50|pretty.map.obj	{\n  "v" : 5.50\n}
+Decimal|lit5.50|pretty.map.typed	{\n  "v" : 5.50\n}
+Decimal|lit5.50|pretty.scalar	5.50
+Decimal|lit5.50|ser.box	{"v":5.50}
+Decimal|lit5.50|ser.list.box	[{"v":5.50}]
+Decimal|lit5.50|ser.list.obj	[5.50]
+Decimal|lit5.50|ser.list.typed	[5.50]
+Decimal|lit5.50|ser.list2.obj	[5.50,5.50]
+Decimal|lit5.50|ser.list2.typed	[5.50,5.50]
+Decimal|lit5.50|ser.map.list	{"v":[5.50]}
+Decimal|lit5.50|ser.map.obj	{"v":5.50}
+Decimal|lit5.50|ser.map.typed	{"v":5.50}
+Decimal|lit5.50|ser.objbox	{"v":5.50}
+Decimal|lit5.50|ser.scalar	5.50
+Decimal|lit5.50|ser.set.typed	[5.50]
+Decimal|lit5.50|str.concat	5.50
+Decimal|lit5.50|str.objvalueOf	5.50
+Decimal|lit5.50|str.valueOf	5.50
+Decimal|lit5|dbl.cast.ser	5.0
+Decimal|lit5|dec.format	5
+Decimal|lit5|dec.scale	0
+Decimal|lit5|dec.stripToPlain	5
+Decimal|lit5|dec.toPlainString	5
+Decimal|lit5|dec.toString	5
+Decimal|lit5|gen.pretty.writeNumber	[ 5 ]
+Decimal|lit5|gen.writeNumber	[5]
+Decimal|lit5|gen.writeNumberField	{"v":5}
+Decimal|lit5|gen.writeObject	[5]
+Decimal|lit5|pretty.box	{\n  "v" : 5\n}
+Decimal|lit5|pretty.list.obj	[ 5 ]
+Decimal|lit5|pretty.list.typed	[ 5 ]
+Decimal|lit5|pretty.map.obj	{\n  "v" : 5\n}
+Decimal|lit5|pretty.map.typed	{\n  "v" : 5\n}
+Decimal|lit5|pretty.scalar	5
+Decimal|lit5|ser.box	{"v":5}
+Decimal|lit5|ser.list.box	[{"v":5}]
+Decimal|lit5|ser.list.obj	[5]
+Decimal|lit5|ser.list.typed	[5]
+Decimal|lit5|ser.list2.obj	[5,5]
+Decimal|lit5|ser.list2.typed	[5,5]
+Decimal|lit5|ser.map.list	{"v":[5]}
+Decimal|lit5|ser.map.obj	{"v":5}
+Decimal|lit5|ser.map.typed	{"v":5}
+Decimal|lit5|ser.objbox	{"v":5}
+Decimal|lit5|ser.scalar	5
+Decimal|lit5|ser.set.typed	[5]
+Decimal|lit5|str.concat	5
+Decimal|lit5|str.objvalueOf	5
+Decimal|lit5|str.valueOf	5
+Decimal|longvar|dbl.cast.ser	5.0
+Decimal|longvar|dec.format	5
+Decimal|longvar|dec.scale	0
+Decimal|longvar|dec.stripToPlain	5
+Decimal|longvar|dec.toPlainString	5
+Decimal|longvar|dec.toString	5
+Decimal|longvar|gen.pretty.writeNumber	[ 5 ]
+Decimal|longvar|gen.writeNumber	[5]
+Decimal|longvar|gen.writeNumberField	{"v":5}
+Decimal|longvar|gen.writeObject	[5]
+Decimal|longvar|pretty.box	{\n  "v" : 5\n}
+Decimal|longvar|pretty.list.obj	[ 5 ]
+Decimal|longvar|pretty.list.typed	[ 5 ]
+Decimal|longvar|pretty.map.obj	{\n  "v" : 5\n}
+Decimal|longvar|pretty.map.typed	{\n  "v" : 5\n}
+Decimal|longvar|pretty.scalar	5
+Decimal|longvar|ser.box	{"v":5}
+Decimal|longvar|ser.list.box	[{"v":5}]
+Decimal|longvar|ser.list.obj	[5]
+Decimal|longvar|ser.list.typed	[5]
+Decimal|longvar|ser.list2.obj	[5,5]
+Decimal|longvar|ser.list2.typed	[5,5]
+Decimal|longvar|ser.map.list	{"v":[5]}
+Decimal|longvar|ser.map.obj	{"v":5}
+Decimal|longvar|ser.map.typed	{"v":5}
+Decimal|longvar|ser.objbox	{"v":5}
+Decimal|longvar|ser.scalar	5
+Decimal|longvar|ser.set.typed	[5]
+Decimal|longvar|str.concat	5
+Decimal|longvar|str.objvalueOf	5
+Decimal|longvar|str.valueOf	5
+Decimal|mul2.5*2|dbl.cast.ser	5.0
+Decimal|mul2.5*2|dec.format	5
+Decimal|mul2.5*2|dec.scale	1
+Decimal|mul2.5*2|dec.stripToPlain	5
+Decimal|mul2.5*2|dec.toPlainString	5.0
+Decimal|mul2.5*2|dec.toString	5.0
+Decimal|mul2.5*2|gen.pretty.writeNumber	[ 5.0 ]
+Decimal|mul2.5*2|gen.writeNumber	[5.0]
+Decimal|mul2.5*2|gen.writeNumberField	{"v":5.0}
+Decimal|mul2.5*2|gen.writeObject	[5.0]
+Decimal|mul2.5*2|pretty.box	{\n  "v" : 5.0\n}
+Decimal|mul2.5*2|pretty.list.obj	[ 5.0 ]
+Decimal|mul2.5*2|pretty.list.typed	[ 5.0 ]
+Decimal|mul2.5*2|pretty.map.obj	{\n  "v" : 5.0\n}
+Decimal|mul2.5*2|pretty.map.typed	{\n  "v" : 5.0\n}
+Decimal|mul2.5*2|pretty.scalar	5.0
+Decimal|mul2.5*2|ser.box	{"v":5.0}
+Decimal|mul2.5*2|ser.list.box	[{"v":5.0}]
+Decimal|mul2.5*2|ser.list.obj	[5.0]
+Decimal|mul2.5*2|ser.list.typed	[5.0]
+Decimal|mul2.5*2|ser.list2.obj	[5.0,5.0]
+Decimal|mul2.5*2|ser.list2.typed	[5.0,5.0]
+Decimal|mul2.5*2|ser.map.list	{"v":[5.0]}
+Decimal|mul2.5*2|ser.map.obj	{"v":5.0}
+Decimal|mul2.5*2|ser.map.typed	{"v":5.0}
+Decimal|mul2.5*2|ser.objbox	{"v":5.0}
+Decimal|mul2.5*2|ser.scalar	5.0
+Decimal|mul2.5*2|ser.set.typed	[5.0]
+Decimal|mul2.5*2|str.concat	5.0
+Decimal|mul2.5*2|str.objvalueOf	5.0
+Decimal|mul2.5*2|str.valueOf	5.0
+Decimal|round5.5|dbl.cast.ser	6.0
+Decimal|round5.5|dec.format	6
+Decimal|round5.5|dec.scale	0
+Decimal|round5.5|dec.stripToPlain	6
+Decimal|round5.5|dec.toPlainString	6
+Decimal|round5.5|dec.toString	6
+Decimal|round5.5|gen.pretty.writeNumber	[ 6 ]
+Decimal|round5.5|gen.writeNumber	[6]
+Decimal|round5.5|gen.writeNumberField	{"v":6}
+Decimal|round5.5|gen.writeObject	[6]
+Decimal|round5.5|pretty.box	{\n  "v" : 6\n}
+Decimal|round5.5|pretty.list.obj	[ 6 ]
+Decimal|round5.5|pretty.list.typed	[ 6 ]
+Decimal|round5.5|pretty.map.obj	{\n  "v" : 6\n}
+Decimal|round5.5|pretty.map.typed	{\n  "v" : 6\n}
+Decimal|round5.5|pretty.scalar	6
+Decimal|round5.5|ser.box	{"v":6}
+Decimal|round5.5|ser.list.box	[{"v":6}]
+Decimal|round5.5|ser.list.obj	[6]
+Decimal|round5.5|ser.list.typed	[6]
+Decimal|round5.5|ser.list2.obj	[6,6]
+Decimal|round5.5|ser.list2.typed	[6,6]
+Decimal|round5.5|ser.map.list	{"v":[6]}
+Decimal|round5.5|ser.map.obj	{"v":6}
+Decimal|round5.5|ser.map.typed	{"v":6}
+Decimal|round5.5|ser.objbox	{"v":6}
+Decimal|round5.5|ser.scalar	6
+Decimal|round5.5|ser.set.typed	[6]
+Decimal|round5.5|str.concat	6
+Decimal|round5.5|str.objvalueOf	6
+Decimal|round5.5|str.valueOf	6
+Decimal|setScale0of5.5|dbl.cast.ser	6.0
+Decimal|setScale0of5.5|dec.format	6
+Decimal|setScale0of5.5|dec.scale	0
+Decimal|setScale0of5.5|dec.stripToPlain	6
+Decimal|setScale0of5.5|dec.toPlainString	6
+Decimal|setScale0of5.5|dec.toString	6
+Decimal|setScale0of5.5|gen.pretty.writeNumber	[ 6 ]
+Decimal|setScale0of5.5|gen.writeNumber	[6]
+Decimal|setScale0of5.5|gen.writeNumberField	{"v":6}
+Decimal|setScale0of5.5|gen.writeObject	[6]
+Decimal|setScale0of5.5|pretty.box	{\n  "v" : 6\n}
+Decimal|setScale0of5.5|pretty.list.obj	[ 6 ]
+Decimal|setScale0of5.5|pretty.list.typed	[ 6 ]
+Decimal|setScale0of5.5|pretty.map.obj	{\n  "v" : 6\n}
+Decimal|setScale0of5.5|pretty.map.typed	{\n  "v" : 6\n}
+Decimal|setScale0of5.5|pretty.scalar	6
+Decimal|setScale0of5.5|ser.box	{"v":6}
+Decimal|setScale0of5.5|ser.list.box	[{"v":6}]
+Decimal|setScale0of5.5|ser.list.obj	[6]
+Decimal|setScale0of5.5|ser.list.typed	[6]
+Decimal|setScale0of5.5|ser.list2.obj	[6,6]
+Decimal|setScale0of5.5|ser.list2.typed	[6,6]
+Decimal|setScale0of5.5|ser.map.list	{"v":[6]}
+Decimal|setScale0of5.5|ser.map.obj	{"v":6}
+Decimal|setScale0of5.5|ser.map.typed	{"v":6}
+Decimal|setScale0of5.5|ser.objbox	{"v":6}
+Decimal|setScale0of5.5|ser.scalar	6
+Decimal|setScale0of5.5|ser.set.typed	[6]
+Decimal|setScale0of5.5|str.concat	6
+Decimal|setScale0of5.5|str.objvalueOf	6
+Decimal|setScale0of5.5|str.valueOf	6
+Decimal|setScale1of5|dbl.cast.ser	5.0
+Decimal|setScale1of5|dec.format	5
+Decimal|setScale1of5|dec.scale	1
+Decimal|setScale1of5|dec.stripToPlain	5
+Decimal|setScale1of5|dec.toPlainString	5.0
+Decimal|setScale1of5|dec.toString	5.0
+Decimal|setScale1of5|gen.pretty.writeNumber	[ 5.0 ]
+Decimal|setScale1of5|gen.writeNumber	[5.0]
+Decimal|setScale1of5|gen.writeNumberField	{"v":5.0}
+Decimal|setScale1of5|gen.writeObject	[5.0]
+Decimal|setScale1of5|pretty.box	{\n  "v" : 5.0\n}
+Decimal|setScale1of5|pretty.list.obj	[ 5.0 ]
+Decimal|setScale1of5|pretty.list.typed	[ 5.0 ]
+Decimal|setScale1of5|pretty.map.obj	{\n  "v" : 5.0\n}
+Decimal|setScale1of5|pretty.map.typed	{\n  "v" : 5.0\n}
+Decimal|setScale1of5|pretty.scalar	5.0
+Decimal|setScale1of5|ser.box	{"v":5.0}
+Decimal|setScale1of5|ser.list.box	[{"v":5.0}]
+Decimal|setScale1of5|ser.list.obj	[5.0]
+Decimal|setScale1of5|ser.list.typed	[5.0]
+Decimal|setScale1of5|ser.list2.obj	[5.0,5.0]
+Decimal|setScale1of5|ser.list2.typed	[5.0,5.0]
+Decimal|setScale1of5|ser.map.list	{"v":[5.0]}
+Decimal|setScale1of5|ser.map.obj	{"v":5.0}
+Decimal|setScale1of5|ser.map.typed	{"v":5.0}
+Decimal|setScale1of5|ser.objbox	{"v":5.0}
+Decimal|setScale1of5|ser.scalar	5.0
+Decimal|setScale1of5|ser.set.typed	[5.0]
+Decimal|setScale1of5|str.concat	5.0
+Decimal|setScale1of5|str.objvalueOf	5.0
+Decimal|setScale1of5|str.valueOf	5.0
+Decimal|setScale2of5|dbl.cast.ser	5.0
+Decimal|setScale2of5|dec.format	5
+Decimal|setScale2of5|dec.scale	2
+Decimal|setScale2of5|dec.stripToPlain	5
+Decimal|setScale2of5|dec.toPlainString	5.00
+Decimal|setScale2of5|dec.toString	5.00
+Decimal|setScale2of5|gen.pretty.writeNumber	[ 5.00 ]
+Decimal|setScale2of5|gen.writeNumber	[5.00]
+Decimal|setScale2of5|gen.writeNumberField	{"v":5.00}
+Decimal|setScale2of5|gen.writeObject	[5.00]
+Decimal|setScale2of5|pretty.box	{\n  "v" : 5.00\n}
+Decimal|setScale2of5|pretty.list.obj	[ 5.00 ]
+Decimal|setScale2of5|pretty.list.typed	[ 5.00 ]
+Decimal|setScale2of5|pretty.map.obj	{\n  "v" : 5.00\n}
+Decimal|setScale2of5|pretty.map.typed	{\n  "v" : 5.00\n}
+Decimal|setScale2of5|pretty.scalar	5.00
+Decimal|setScale2of5|ser.box	{"v":5.00}
+Decimal|setScale2of5|ser.list.box	[{"v":5.00}]
+Decimal|setScale2of5|ser.list.obj	[5.00]
+Decimal|setScale2of5|ser.list.typed	[5.00]
+Decimal|setScale2of5|ser.list2.obj	[5.00,5.00]
+Decimal|setScale2of5|ser.list2.typed	[5.00,5.00]
+Decimal|setScale2of5|ser.map.list	{"v":[5.00]}
+Decimal|setScale2of5|ser.map.obj	{"v":5.00}
+Decimal|setScale2of5|ser.map.typed	{"v":5.00}
+Decimal|setScale2of5|ser.objbox	{"v":5.00}
+Decimal|setScale2of5|ser.scalar	5.00
+Decimal|setScale2of5|ser.set.typed	[5.00]
+Decimal|setScale2of5|str.concat	5.00
+Decimal|setScale2of5|str.objvalueOf	5.00
+Decimal|setScale2of5|str.valueOf	5.00
+Decimal|str-0.0|dbl.cast.ser	0.0
+Decimal|str-0.0|dec.format	0
+Decimal|str-0.0|dec.scale	1
+Decimal|str-0.0|dec.stripToPlain	0
+Decimal|str-0.0|dec.toPlainString	0.0
+Decimal|str-0.0|dec.toString	0.0
+Decimal|str-0.0|gen.pretty.writeNumber	[ 0.0 ]
+Decimal|str-0.0|gen.writeNumber	[0.0]
+Decimal|str-0.0|gen.writeNumberField	{"v":0.0}
+Decimal|str-0.0|gen.writeObject	[0.0]
+Decimal|str-0.0|pretty.box	{\n  "v" : 0.0\n}
+Decimal|str-0.0|pretty.list.obj	[ 0.0 ]
+Decimal|str-0.0|pretty.list.typed	[ 0.0 ]
+Decimal|str-0.0|pretty.map.obj	{\n  "v" : 0.0\n}
+Decimal|str-0.0|pretty.map.typed	{\n  "v" : 0.0\n}
+Decimal|str-0.0|pretty.scalar	0.0
+Decimal|str-0.0|ser.box	{"v":0.0}
+Decimal|str-0.0|ser.list.box	[{"v":0.0}]
+Decimal|str-0.0|ser.list.obj	[0.0]
+Decimal|str-0.0|ser.list.typed	[0.0]
+Decimal|str-0.0|ser.list2.obj	[0.0,0.0]
+Decimal|str-0.0|ser.list2.typed	[0.0,0.0]
+Decimal|str-0.0|ser.map.list	{"v":[0.0]}
+Decimal|str-0.0|ser.map.obj	{"v":0.0}
+Decimal|str-0.0|ser.map.typed	{"v":0.0}
+Decimal|str-0.0|ser.objbox	{"v":0.0}
+Decimal|str-0.0|ser.scalar	0.0
+Decimal|str-0.0|ser.set.typed	[0.0]
+Decimal|str-0.0|str.concat	0.0
+Decimal|str-0.0|str.objvalueOf	0.0
+Decimal|str-0.0|str.valueOf	0.0
+Decimal|str0.0|dbl.cast.ser	0.0
+Decimal|str0.0|dec.format	0
+Decimal|str0.0|dec.scale	1
+Decimal|str0.0|dec.stripToPlain	0
+Decimal|str0.0|dec.toPlainString	0.0
+Decimal|str0.0|dec.toString	0.0
+Decimal|str0.0|gen.pretty.writeNumber	[ 0.0 ]
+Decimal|str0.0|gen.writeNumber	[0.0]
+Decimal|str0.0|gen.writeNumberField	{"v":0.0}
+Decimal|str0.0|gen.writeObject	[0.0]
+Decimal|str0.0|pretty.box	{\n  "v" : 0.0\n}
+Decimal|str0.0|pretty.list.obj	[ 0.0 ]
+Decimal|str0.0|pretty.list.typed	[ 0.0 ]
+Decimal|str0.0|pretty.map.obj	{\n  "v" : 0.0\n}
+Decimal|str0.0|pretty.map.typed	{\n  "v" : 0.0\n}
+Decimal|str0.0|pretty.scalar	0.0
+Decimal|str0.0|ser.box	{"v":0.0}
+Decimal|str0.0|ser.list.box	[{"v":0.0}]
+Decimal|str0.0|ser.list.obj	[0.0]
+Decimal|str0.0|ser.list.typed	[0.0]
+Decimal|str0.0|ser.list2.obj	[0.0,0.0]
+Decimal|str0.0|ser.list2.typed	[0.0,0.0]
+Decimal|str0.0|ser.map.list	{"v":[0.0]}
+Decimal|str0.0|ser.map.obj	{"v":0.0}
+Decimal|str0.0|ser.map.typed	{"v":0.0}
+Decimal|str0.0|ser.objbox	{"v":0.0}
+Decimal|str0.0|ser.scalar	0.0
+Decimal|str0.0|ser.set.typed	[0.0]
+Decimal|str0.0|str.concat	0.0
+Decimal|str0.0|str.objvalueOf	0.0
+Decimal|str0.0|str.valueOf	0.0
+Decimal|str0|dbl.cast.ser	0.0
+Decimal|str0|dec.format	0
+Decimal|str0|dec.scale	0
+Decimal|str0|dec.stripToPlain	0
+Decimal|str0|dec.toPlainString	0
+Decimal|str0|dec.toString	0
+Decimal|str0|gen.pretty.writeNumber	[ 0 ]
+Decimal|str0|gen.writeNumber	[0]
+Decimal|str0|gen.writeNumberField	{"v":0}
+Decimal|str0|gen.writeObject	[0]
+Decimal|str0|pretty.box	{\n  "v" : 0\n}
+Decimal|str0|pretty.list.obj	[ 0 ]
+Decimal|str0|pretty.list.typed	[ 0 ]
+Decimal|str0|pretty.map.obj	{\n  "v" : 0\n}
+Decimal|str0|pretty.map.typed	{\n  "v" : 0\n}
+Decimal|str0|pretty.scalar	0
+Decimal|str0|ser.box	{"v":0}
+Decimal|str0|ser.list.box	[{"v":0}]
+Decimal|str0|ser.list.obj	[0]
+Decimal|str0|ser.list.typed	[0]
+Decimal|str0|ser.list2.obj	[0,0]
+Decimal|str0|ser.list2.typed	[0,0]
+Decimal|str0|ser.map.list	{"v":[0]}
+Decimal|str0|ser.map.obj	{"v":0}
+Decimal|str0|ser.map.typed	{"v":0}
+Decimal|str0|ser.objbox	{"v":0}
+Decimal|str0|ser.scalar	0
+Decimal|str0|ser.set.typed	[0]
+Decimal|str0|str.concat	0
+Decimal|str0|str.objvalueOf	0
+Decimal|str0|str.valueOf	0
+Decimal|str1.0E-7|dbl.cast.ser	1.0E-7
+Decimal|str1.0E-7|dec.format	0
+Decimal|str1.0E-7|dec.scale	8
+Decimal|str1.0E-7|dec.stripToPlain	0.0000001
+Decimal|str1.0E-7|dec.toPlainString	0.00000010
+Decimal|str1.0E-7|dec.toString	1.0E-7
+Decimal|str1.0E-7|gen.pretty.writeNumber	[ 1.0E-7 ]
+Decimal|str1.0E-7|gen.writeNumber	[1.0E-7]
+Decimal|str1.0E-7|gen.writeNumberField	{"v":1.0E-7}
+Decimal|str1.0E-7|gen.writeObject	[1.0E-7]
+Decimal|str1.0E-7|pretty.box	{\n  "v" : 1.0E-7\n}
+Decimal|str1.0E-7|pretty.list.obj	[ 1.0E-7 ]
+Decimal|str1.0E-7|pretty.list.typed	[ 1.0E-7 ]
+Decimal|str1.0E-7|pretty.map.obj	{\n  "v" : 1.0E-7\n}
+Decimal|str1.0E-7|pretty.map.typed	{\n  "v" : 1.0E-7\n}
+Decimal|str1.0E-7|pretty.scalar	1.0E-7
+Decimal|str1.0E-7|ser.box	{"v":1.0E-7}
+Decimal|str1.0E-7|ser.list.box	[{"v":1.0E-7}]
+Decimal|str1.0E-7|ser.list.obj	[1.0E-7]
+Decimal|str1.0E-7|ser.list.typed	[1.0E-7]
+Decimal|str1.0E-7|ser.list2.obj	[1.0E-7,1.0E-7]
+Decimal|str1.0E-7|ser.list2.typed	[1.0E-7,1.0E-7]
+Decimal|str1.0E-7|ser.map.list	{"v":[1.0E-7]}
+Decimal|str1.0E-7|ser.map.obj	{"v":1.0E-7}
+Decimal|str1.0E-7|ser.map.typed	{"v":1.0E-7}
+Decimal|str1.0E-7|ser.objbox	{"v":1.0E-7}
+Decimal|str1.0E-7|ser.scalar	1.0E-7
+Decimal|str1.0E-7|ser.set.typed	[1.0E-7]
+Decimal|str1.0E-7|str.concat	1.0E-7
+Decimal|str1.0E-7|str.objvalueOf	1.0E-7
+Decimal|str1.0E-7|str.valueOf	1.0E-7
+Decimal|str100000000000000000000|dbl.cast.ser	1.0E20
+Decimal|str100000000000000000000|dec.format	100,000,000,000,000,000,000
+Decimal|str100000000000000000000|dec.scale	0
+Decimal|str100000000000000000000|dec.stripToPlain	100000000000000000000
+Decimal|str100000000000000000000|dec.toPlainString	100000000000000000000
+Decimal|str100000000000000000000|dec.toString	100000000000000000000
+Decimal|str100000000000000000000|gen.pretty.writeNumber	[ 100000000000000000000 ]
+Decimal|str100000000000000000000|gen.writeNumber	[100000000000000000000]
+Decimal|str100000000000000000000|gen.writeNumberField	{"v":100000000000000000000}
+Decimal|str100000000000000000000|gen.writeObject	[100000000000000000000]
+Decimal|str100000000000000000000|pretty.box	{\n  "v" : 100000000000000000000\n}
+Decimal|str100000000000000000000|pretty.list.obj	[ 100000000000000000000 ]
+Decimal|str100000000000000000000|pretty.list.typed	[ 100000000000000000000 ]
+Decimal|str100000000000000000000|pretty.map.obj	{\n  "v" : 100000000000000000000\n}
+Decimal|str100000000000000000000|pretty.map.typed	{\n  "v" : 100000000000000000000\n}
+Decimal|str100000000000000000000|pretty.scalar	100000000000000000000
+Decimal|str100000000000000000000|ser.box	{"v":100000000000000000000}
+Decimal|str100000000000000000000|ser.list.box	[{"v":100000000000000000000}]
+Decimal|str100000000000000000000|ser.list.obj	[100000000000000000000]
+Decimal|str100000000000000000000|ser.list.typed	[100000000000000000000]
+Decimal|str100000000000000000000|ser.list2.obj	[100000000000000000000,100000000000000000000]
+Decimal|str100000000000000000000|ser.list2.typed	[100000000000000000000,100000000000000000000]
+Decimal|str100000000000000000000|ser.map.list	{"v":[100000000000000000000]}
+Decimal|str100000000000000000000|ser.map.obj	{"v":100000000000000000000}
+Decimal|str100000000000000000000|ser.map.typed	{"v":100000000000000000000}
+Decimal|str100000000000000000000|ser.objbox	{"v":100000000000000000000}
+Decimal|str100000000000000000000|ser.scalar	100000000000000000000
+Decimal|str100000000000000000000|ser.set.typed	[100000000000000000000]
+Decimal|str100000000000000000000|str.concat	100000000000000000000
+Decimal|str100000000000000000000|str.objvalueOf	100000000000000000000
+Decimal|str100000000000000000000|str.valueOf	100000000000000000000
+Decimal|str123456789.123456789|dbl.cast.ser	1.2345678912345679E8
+Decimal|str123456789.123456789|dec.format	123,456,789.123
+Decimal|str123456789.123456789|dec.scale	9
+Decimal|str123456789.123456789|dec.stripToPlain	123456789.123456789
+Decimal|str123456789.123456789|dec.toPlainString	123456789.123456789
+Decimal|str123456789.123456789|dec.toString	123456789.123456789
+Decimal|str123456789.123456789|gen.pretty.writeNumber	[ 123456789.123456789 ]
+Decimal|str123456789.123456789|gen.writeNumber	[123456789.123456789]
+Decimal|str123456789.123456789|gen.writeNumberField	{"v":123456789.123456789}
+Decimal|str123456789.123456789|gen.writeObject	[123456789.123456789]
+Decimal|str123456789.123456789|pretty.box	{\n  "v" : 123456789.123456789\n}
+Decimal|str123456789.123456789|pretty.list.obj	[ 123456789.123456789 ]
+Decimal|str123456789.123456789|pretty.list.typed	[ 123456789.123456789 ]
+Decimal|str123456789.123456789|pretty.map.obj	{\n  "v" : 123456789.123456789\n}
+Decimal|str123456789.123456789|pretty.map.typed	{\n  "v" : 123456789.123456789\n}
+Decimal|str123456789.123456789|pretty.scalar	123456789.123456789
+Decimal|str123456789.123456789|ser.box	{"v":123456789.123456789}
+Decimal|str123456789.123456789|ser.list.box	[{"v":123456789.123456789}]
+Decimal|str123456789.123456789|ser.list.obj	[123456789.123456789]
+Decimal|str123456789.123456789|ser.list.typed	[123456789.123456789]
+Decimal|str123456789.123456789|ser.list2.obj	[123456789.123456789,123456789.123456789]
+Decimal|str123456789.123456789|ser.list2.typed	[123456789.123456789,123456789.123456789]
+Decimal|str123456789.123456789|ser.map.list	{"v":[123456789.123456789]}
+Decimal|str123456789.123456789|ser.map.obj	{"v":123456789.123456789}
+Decimal|str123456789.123456789|ser.map.typed	{"v":123456789.123456789}
+Decimal|str123456789.123456789|ser.objbox	{"v":123456789.123456789}
+Decimal|str123456789.123456789|ser.scalar	123456789.123456789
+Decimal|str123456789.123456789|ser.set.typed	[123456789.123456789]
+Decimal|str123456789.123456789|str.concat	123456789.123456789
+Decimal|str123456789.123456789|str.objvalueOf	123456789.123456789
+Decimal|str123456789.123456789|str.valueOf	123456789.123456789
+Decimal|str1E-7|dbl.cast.ser	1.0E-7
+Decimal|str1E-7|dec.format	0
+Decimal|str1E-7|dec.scale	7
+Decimal|str1E-7|dec.stripToPlain	0.0000001
+Decimal|str1E-7|dec.toPlainString	0.0000001
+Decimal|str1E-7|dec.toString	1E-7
+Decimal|str1E-7|gen.pretty.writeNumber	[ 1E-7 ]
+Decimal|str1E-7|gen.writeNumber	[1E-7]
+Decimal|str1E-7|gen.writeNumberField	{"v":1E-7}
+Decimal|str1E-7|gen.writeObject	[1E-7]
+Decimal|str1E-7|pretty.box	{\n  "v" : 1E-7\n}
+Decimal|str1E-7|pretty.list.obj	[ 1E-7 ]
+Decimal|str1E-7|pretty.list.typed	[ 1E-7 ]
+Decimal|str1E-7|pretty.map.obj	{\n  "v" : 1E-7\n}
+Decimal|str1E-7|pretty.map.typed	{\n  "v" : 1E-7\n}
+Decimal|str1E-7|pretty.scalar	1E-7
+Decimal|str1E-7|ser.box	{"v":1E-7}
+Decimal|str1E-7|ser.list.box	[{"v":1E-7}]
+Decimal|str1E-7|ser.list.obj	[1E-7]
+Decimal|str1E-7|ser.list.typed	[1E-7]
+Decimal|str1E-7|ser.list2.obj	[1E-7,1E-7]
+Decimal|str1E-7|ser.list2.typed	[1E-7,1E-7]
+Decimal|str1E-7|ser.map.list	{"v":[1E-7]}
+Decimal|str1E-7|ser.map.obj	{"v":1E-7}
+Decimal|str1E-7|ser.map.typed	{"v":1E-7}
+Decimal|str1E-7|ser.objbox	{"v":1E-7}
+Decimal|str1E-7|ser.scalar	1E-7
+Decimal|str1E-7|ser.set.typed	[1E-7]
+Decimal|str1E-7|str.concat	1E-7
+Decimal|str1E-7|str.objvalueOf	1E-7
+Decimal|str1E-7|str.valueOf	1E-7
+Decimal|str1E20|dbl.cast.ser	1.0E20
+Decimal|str1E20|dec.format	100,000,000,000,000,000,000
+Decimal|str1E20|dec.scale	-20
+Decimal|str1E20|dec.stripToPlain	100000000000000000000
+Decimal|str1E20|dec.toPlainString	100000000000000000000
+Decimal|str1E20|dec.toString	1E+20
+Decimal|str1E20|gen.pretty.writeNumber	[ 1E+20 ]
+Decimal|str1E20|gen.writeNumber	[1E+20]
+Decimal|str1E20|gen.writeNumberField	{"v":1E+20}
+Decimal|str1E20|gen.writeObject	[1E+20]
+Decimal|str1E20|pretty.box	{\n  "v" : 1E+20\n}
+Decimal|str1E20|pretty.list.obj	[ 1E+20 ]
+Decimal|str1E20|pretty.list.typed	[ 1E+20 ]
+Decimal|str1E20|pretty.map.obj	{\n  "v" : 1E+20\n}
+Decimal|str1E20|pretty.map.typed	{\n  "v" : 1E+20\n}
+Decimal|str1E20|pretty.scalar	1E+20
+Decimal|str1E20|ser.box	{"v":1E+20}
+Decimal|str1E20|ser.list.box	[{"v":1E+20}]
+Decimal|str1E20|ser.list.obj	[1E+20]
+Decimal|str1E20|ser.list.typed	[1E+20]
+Decimal|str1E20|ser.list2.obj	[1E+20,1E+20]
+Decimal|str1E20|ser.list2.typed	[1E+20,1E+20]
+Decimal|str1E20|ser.map.list	{"v":[1E+20]}
+Decimal|str1E20|ser.map.obj	{"v":1E+20}
+Decimal|str1E20|ser.map.typed	{"v":1E+20}
+Decimal|str1E20|ser.objbox	{"v":1E+20}
+Decimal|str1E20|ser.scalar	1E+20
+Decimal|str1E20|ser.set.typed	[1E+20]
+Decimal|str1E20|str.concat	1E+20
+Decimal|str1E20|str.objvalueOf	1E+20
+Decimal|str1E20|str.valueOf	1E+20
+Decimal|str5.0|dbl.cast.ser	5.0
+Decimal|str5.0|dec.format	5
+Decimal|str5.0|dec.scale	1
+Decimal|str5.0|dec.stripToPlain	5
+Decimal|str5.0|dec.toPlainString	5.0
+Decimal|str5.0|dec.toString	5.0
+Decimal|str5.0|gen.pretty.writeNumber	[ 5.0 ]
+Decimal|str5.0|gen.writeNumber	[5.0]
+Decimal|str5.0|gen.writeNumberField	{"v":5.0}
+Decimal|str5.0|gen.writeObject	[5.0]
+Decimal|str5.0|pretty.box	{\n  "v" : 5.0\n}
+Decimal|str5.0|pretty.list.obj	[ 5.0 ]
+Decimal|str5.0|pretty.list.typed	[ 5.0 ]
+Decimal|str5.0|pretty.map.obj	{\n  "v" : 5.0\n}
+Decimal|str5.0|pretty.map.typed	{\n  "v" : 5.0\n}
+Decimal|str5.0|pretty.scalar	5.0
+Decimal|str5.0|ser.box	{"v":5.0}
+Decimal|str5.0|ser.list.box	[{"v":5.0}]
+Decimal|str5.0|ser.list.obj	[5.0]
+Decimal|str5.0|ser.list.typed	[5.0]
+Decimal|str5.0|ser.list2.obj	[5.0,5.0]
+Decimal|str5.0|ser.list2.typed	[5.0,5.0]
+Decimal|str5.0|ser.map.list	{"v":[5.0]}
+Decimal|str5.0|ser.map.obj	{"v":5.0}
+Decimal|str5.0|ser.map.typed	{"v":5.0}
+Decimal|str5.0|ser.objbox	{"v":5.0}
+Decimal|str5.0|ser.scalar	5.0
+Decimal|str5.0|ser.set.typed	[5.0]
+Decimal|str5.0|str.concat	5.0
+Decimal|str5.0|str.objvalueOf	5.0
+Decimal|str5.0|str.valueOf	5.0
+Decimal|str5.50|dbl.cast.ser	5.5
+Decimal|str5.50|dec.format	5.5
+Decimal|str5.50|dec.scale	2
+Decimal|str5.50|dec.stripToPlain	5.5
+Decimal|str5.50|dec.toPlainString	5.50
+Decimal|str5.50|dec.toString	5.50
+Decimal|str5.50|gen.pretty.writeNumber	[ 5.50 ]
+Decimal|str5.50|gen.writeNumber	[5.50]
+Decimal|str5.50|gen.writeNumberField	{"v":5.50}
+Decimal|str5.50|gen.writeObject	[5.50]
+Decimal|str5.50|pretty.box	{\n  "v" : 5.50\n}
+Decimal|str5.50|pretty.list.obj	[ 5.50 ]
+Decimal|str5.50|pretty.list.typed	[ 5.50 ]
+Decimal|str5.50|pretty.map.obj	{\n  "v" : 5.50\n}
+Decimal|str5.50|pretty.map.typed	{\n  "v" : 5.50\n}
+Decimal|str5.50|pretty.scalar	5.50
+Decimal|str5.50|ser.box	{"v":5.50}
+Decimal|str5.50|ser.list.box	[{"v":5.50}]
+Decimal|str5.50|ser.list.obj	[5.50]
+Decimal|str5.50|ser.list.typed	[5.50]
+Decimal|str5.50|ser.list2.obj	[5.50,5.50]
+Decimal|str5.50|ser.list2.typed	[5.50,5.50]
+Decimal|str5.50|ser.map.list	{"v":[5.50]}
+Decimal|str5.50|ser.map.obj	{"v":5.50}
+Decimal|str5.50|ser.map.typed	{"v":5.50}
+Decimal|str5.50|ser.objbox	{"v":5.50}
+Decimal|str5.50|ser.scalar	5.50
+Decimal|str5.50|ser.set.typed	[5.50]
+Decimal|str5.50|str.concat	5.50
+Decimal|str5.50|str.objvalueOf	5.50
+Decimal|str5.50|str.valueOf	5.50
+Decimal|str5|dbl.cast.ser	5.0
+Decimal|str5|dec.format	5
+Decimal|str5|dec.scale	0
+Decimal|str5|dec.stripToPlain	5
+Decimal|str5|dec.toPlainString	5
+Decimal|str5|dec.toString	5
+Decimal|str5|gen.pretty.writeNumber	[ 5 ]
+Decimal|str5|gen.writeNumber	[5]
+Decimal|str5|gen.writeNumberField	{"v":5}
+Decimal|str5|gen.writeObject	[5]
+Decimal|str5|pretty.box	{\n  "v" : 5\n}
+Decimal|str5|pretty.list.obj	[ 5 ]
+Decimal|str5|pretty.list.typed	[ 5 ]
+Decimal|str5|pretty.map.obj	{\n  "v" : 5\n}
+Decimal|str5|pretty.map.typed	{\n  "v" : 5\n}
+Decimal|str5|pretty.scalar	5
+Decimal|str5|ser.box	{"v":5}
+Decimal|str5|ser.list.box	[{"v":5}]
+Decimal|str5|ser.list.obj	[5]
+Decimal|str5|ser.list.typed	[5]
+Decimal|str5|ser.list2.obj	[5,5]
+Decimal|str5|ser.list2.typed	[5,5]
+Decimal|str5|ser.map.list	{"v":[5]}
+Decimal|str5|ser.map.obj	{"v":5}
+Decimal|str5|ser.map.typed	{"v":5}
+Decimal|str5|ser.objbox	{"v":5}
+Decimal|str5|ser.scalar	5
+Decimal|str5|ser.set.typed	[5]
+Decimal|str5|str.concat	5
+Decimal|str5|str.objvalueOf	5
+Decimal|str5|str.valueOf	5
+Decimal|strip5.0|dbl.cast.ser	5.0
+Decimal|strip5.0|dec.format	5
+Decimal|strip5.0|dec.scale	0
+Decimal|strip5.0|dec.stripToPlain	5
+Decimal|strip5.0|dec.toPlainString	5
+Decimal|strip5.0|dec.toString	5
+Decimal|strip5.0|gen.pretty.writeNumber	[ 5 ]
+Decimal|strip5.0|gen.writeNumber	[5]
+Decimal|strip5.0|gen.writeNumberField	{"v":5}
+Decimal|strip5.0|gen.writeObject	[5]
+Decimal|strip5.0|pretty.box	{\n  "v" : 5\n}
+Decimal|strip5.0|pretty.list.obj	[ 5 ]
+Decimal|strip5.0|pretty.list.typed	[ 5 ]
+Decimal|strip5.0|pretty.map.obj	{\n  "v" : 5\n}
+Decimal|strip5.0|pretty.map.typed	{\n  "v" : 5\n}
+Decimal|strip5.0|pretty.scalar	5
+Decimal|strip5.0|ser.box	{"v":5}
+Decimal|strip5.0|ser.list.box	[{"v":5}]
+Decimal|strip5.0|ser.list.obj	[5]
+Decimal|strip5.0|ser.list.typed	[5]
+Decimal|strip5.0|ser.list2.obj	[5,5]
+Decimal|strip5.0|ser.list2.typed	[5,5]
+Decimal|strip5.0|ser.map.list	{"v":[5]}
+Decimal|strip5.0|ser.map.obj	{"v":5}
+Decimal|strip5.0|ser.map.typed	{"v":5}
+Decimal|strip5.0|ser.objbox	{"v":5}
+Decimal|strip5.0|ser.scalar	5
+Decimal|strip5.0|ser.set.typed	[5]
+Decimal|strip5.0|str.concat	5
+Decimal|strip5.0|str.objvalueOf	5
+Decimal|strip5.0|str.valueOf	5
+Decimal|strip5.50|dbl.cast.ser	5.5
+Decimal|strip5.50|dec.format	5.5
+Decimal|strip5.50|dec.scale	1
+Decimal|strip5.50|dec.stripToPlain	5.5
+Decimal|strip5.50|dec.toPlainString	5.5
+Decimal|strip5.50|dec.toString	5.5
+Decimal|strip5.50|gen.pretty.writeNumber	[ 5.5 ]
+Decimal|strip5.50|gen.writeNumber	[5.5]
+Decimal|strip5.50|gen.writeNumberField	{"v":5.5}
+Decimal|strip5.50|gen.writeObject	[5.5]
+Decimal|strip5.50|pretty.box	{\n  "v" : 5.5\n}
+Decimal|strip5.50|pretty.list.obj	[ 5.5 ]
+Decimal|strip5.50|pretty.list.typed	[ 5.5 ]
+Decimal|strip5.50|pretty.map.obj	{\n  "v" : 5.5\n}
+Decimal|strip5.50|pretty.map.typed	{\n  "v" : 5.5\n}
+Decimal|strip5.50|pretty.scalar	5.5
+Decimal|strip5.50|ser.box	{"v":5.5}
+Decimal|strip5.50|ser.list.box	[{"v":5.5}]
+Decimal|strip5.50|ser.list.obj	[5.5]
+Decimal|strip5.50|ser.list.typed	[5.5]
+Decimal|strip5.50|ser.list2.obj	[5.5,5.5]
+Decimal|strip5.50|ser.list2.typed	[5.5,5.5]
+Decimal|strip5.50|ser.map.list	{"v":[5.5]}
+Decimal|strip5.50|ser.map.obj	{"v":5.5}
+Decimal|strip5.50|ser.map.typed	{"v":5.5}
+Decimal|strip5.50|ser.objbox	{"v":5.5}
+Decimal|strip5.50|ser.scalar	5.5
+Decimal|strip5.50|ser.set.typed	[5.5]
+Decimal|strip5.50|str.concat	5.5
+Decimal|strip5.50|str.objvalueOf	5.5
+Decimal|strip5.50|str.valueOf	5.5
+Decimal|strip500|dbl.cast.ser	500.0
+Decimal|strip500|dec.format	500
+Decimal|strip500|dec.scale	-2
+Decimal|strip500|dec.stripToPlain	500
+Decimal|strip500|dec.toPlainString	500
+Decimal|strip500|dec.toString	5E+2
+Decimal|strip500|gen.pretty.writeNumber	[ 5E+2 ]
+Decimal|strip500|gen.writeNumber	[5E+2]
+Decimal|strip500|gen.writeNumberField	{"v":5E+2}
+Decimal|strip500|gen.writeObject	[5E+2]
+Decimal|strip500|pretty.box	{\n  "v" : 5E+2\n}
+Decimal|strip500|pretty.list.obj	[ 5E+2 ]
+Decimal|strip500|pretty.list.typed	[ 5E+2 ]
+Decimal|strip500|pretty.map.obj	{\n  "v" : 5E+2\n}
+Decimal|strip500|pretty.map.typed	{\n  "v" : 5E+2\n}
+Decimal|strip500|pretty.scalar	5E+2
+Decimal|strip500|ser.box	{"v":5E+2}
+Decimal|strip500|ser.list.box	[{"v":5E+2}]
+Decimal|strip500|ser.list.obj	[5E+2]
+Decimal|strip500|ser.list.typed	[5E+2]
+Decimal|strip500|ser.list2.obj	[5E+2,5E+2]
+Decimal|strip500|ser.list2.typed	[5E+2,5E+2]
+Decimal|strip500|ser.map.list	{"v":[5E+2]}
+Decimal|strip500|ser.map.obj	{"v":5E+2}
+Decimal|strip500|ser.map.typed	{"v":5E+2}
+Decimal|strip500|ser.objbox	{"v":5E+2}
+Decimal|strip500|ser.scalar	5E+2
+Decimal|strip500|ser.set.typed	[5E+2]
+Decimal|strip500|str.concat	5E+2
+Decimal|strip500|str.objvalueOf	5E+2
+Decimal|strip500|str.valueOf	5E+2
+Decimal|sum2.5+2.5|dbl.cast.ser	5.0
+Decimal|sum2.5+2.5|dec.format	5
+Decimal|sum2.5+2.5|dec.scale	1
+Decimal|sum2.5+2.5|dec.stripToPlain	5
+Decimal|sum2.5+2.5|dec.toPlainString	5.0
+Decimal|sum2.5+2.5|dec.toString	5.0
+Decimal|sum2.5+2.5|gen.pretty.writeNumber	[ 5.0 ]
+Decimal|sum2.5+2.5|gen.writeNumber	[5.0]
+Decimal|sum2.5+2.5|gen.writeNumberField	{"v":5.0}
+Decimal|sum2.5+2.5|gen.writeObject	[5.0]
+Decimal|sum2.5+2.5|pretty.box	{\n  "v" : 5.0\n}
+Decimal|sum2.5+2.5|pretty.list.obj	[ 5.0 ]
+Decimal|sum2.5+2.5|pretty.list.typed	[ 5.0 ]
+Decimal|sum2.5+2.5|pretty.map.obj	{\n  "v" : 5.0\n}
+Decimal|sum2.5+2.5|pretty.map.typed	{\n  "v" : 5.0\n}
+Decimal|sum2.5+2.5|pretty.scalar	5.0
+Decimal|sum2.5+2.5|ser.box	{"v":5.0}
+Decimal|sum2.5+2.5|ser.list.box	[{"v":5.0}]
+Decimal|sum2.5+2.5|ser.list.obj	[5.0]
+Decimal|sum2.5+2.5|ser.list.typed	[5.0]
+Decimal|sum2.5+2.5|ser.list2.obj	[5.0,5.0]
+Decimal|sum2.5+2.5|ser.list2.typed	[5.0,5.0]
+Decimal|sum2.5+2.5|ser.map.list	{"v":[5.0]}
+Decimal|sum2.5+2.5|ser.map.obj	{"v":5.0}
+Decimal|sum2.5+2.5|ser.map.typed	{"v":5.0}
+Decimal|sum2.5+2.5|ser.objbox	{"v":5.0}
+Decimal|sum2.5+2.5|ser.scalar	5.0
+Decimal|sum2.5+2.5|ser.set.typed	[5.0]
+Decimal|sum2.5+2.5|str.concat	5.0
+Decimal|sum2.5+2.5|str.objvalueOf	5.0
+Decimal|sum2.5+2.5|str.valueOf	5.0
+Double|dec1e20todbl|dbl.format	100,000,000,000,000,000,000
+Double|dec1e20todbl|dec.assign.scale	-19
+Double|dec1e20todbl|dec.assign.ser	1.0E+20
+Double|dec1e20todbl|dec.assign.toPlainString	100000000000000000000
+Double|dec1e20todbl|dec.toPlainString	100000000000000000000
+Double|dec1e20todbl|gen.pretty.writeNumber	[ 1.0E20 ]
+Double|dec1e20todbl|gen.writeNumber	[1.0E20]
+Double|dec1e20todbl|gen.writeNumberField	{"v":1.0E20}
+Double|dec1e20todbl|gen.writeObject	[1.0E20]
+Double|dec1e20todbl|pretty.box	{\n  "v" : 1.0E20\n}
+Double|dec1e20todbl|pretty.list.obj	[ 1.0E20 ]
+Double|dec1e20todbl|pretty.list.typed	[ 1.0E20 ]
+Double|dec1e20todbl|pretty.map.obj	{\n  "v" : 1.0E20\n}
+Double|dec1e20todbl|pretty.map.typed	{\n  "v" : 1.0E20\n}
+Double|dec1e20todbl|pretty.scalar	1.0E20
+Double|dec1e20todbl|ser.box	{"v":1.0E20}
+Double|dec1e20todbl|ser.list.box	[{"v":1.0E20}]
+Double|dec1e20todbl|ser.list.obj	[1.0E20]
+Double|dec1e20todbl|ser.list.typed	[1.0E20]
+Double|dec1e20todbl|ser.list2.obj	[1.0E20,1.0E20]
+Double|dec1e20todbl|ser.list2.typed	[1.0E20,1.0E20]
+Double|dec1e20todbl|ser.map.list	{"v":[1.0E20]}
+Double|dec1e20todbl|ser.map.obj	{"v":1.0E20}
+Double|dec1e20todbl|ser.map.typed	{"v":1.0E20}
+Double|dec1e20todbl|ser.objbox	{"v":1.0E20}
+Double|dec1e20todbl|ser.scalar	1.0E20
+Double|dec1e20todbl|ser.set.typed	[1.0E20]
+Double|dec1e20todbl|str.concat	1.0E20
+Double|dec1e20todbl|str.objvalueOf	1.0E20
+Double|dec1e20todbl|str.valueOf	1.0E20
+Double|dec5todbl|dbl.format	5
+Double|dec5todbl|dec.assign.scale	1
+Double|dec5todbl|dec.assign.ser	5.0
+Double|dec5todbl|dec.assign.toPlainString	5.0
+Double|dec5todbl|dec.toPlainString	5.0
+Double|dec5todbl|gen.pretty.writeNumber	[ 5.0 ]
+Double|dec5todbl|gen.writeNumber	[5.0]
+Double|dec5todbl|gen.writeNumberField	{"v":5.0}
+Double|dec5todbl|gen.writeObject	[5.0]
+Double|dec5todbl|pretty.box	{\n  "v" : 5.0\n}
+Double|dec5todbl|pretty.list.obj	[ 5.0 ]
+Double|dec5todbl|pretty.list.typed	[ 5.0 ]
+Double|dec5todbl|pretty.map.obj	{\n  "v" : 5.0\n}
+Double|dec5todbl|pretty.map.typed	{\n  "v" : 5.0\n}
+Double|dec5todbl|pretty.scalar	5.0
+Double|dec5todbl|ser.box	{"v":5.0}
+Double|dec5todbl|ser.list.box	[{"v":5.0}]
+Double|dec5todbl|ser.list.obj	[5.0]
+Double|dec5todbl|ser.list.typed	[5.0]
+Double|dec5todbl|ser.list2.obj	[5.0,5.0]
+Double|dec5todbl|ser.list2.typed	[5.0,5.0]
+Double|dec5todbl|ser.map.list	{"v":[5.0]}
+Double|dec5todbl|ser.map.obj	{"v":5.0}
+Double|dec5todbl|ser.map.typed	{"v":5.0}
+Double|dec5todbl|ser.objbox	{"v":5.0}
+Double|dec5todbl|ser.scalar	5.0
+Double|dec5todbl|ser.set.typed	[5.0]
+Double|dec5todbl|str.concat	5.0
+Double|dec5todbl|str.objvalueOf	5.0
+Double|dec5todbl|str.valueOf	5.0
+Double|decvar5.0|dbl.format	5
+Double|decvar5.0|dec.assign.scale	1
+Double|decvar5.0|dec.assign.ser	5.0
+Double|decvar5.0|dec.assign.toPlainString	5.0
+Double|decvar5.0|dec.toPlainString	5.0
+Double|decvar5.0|gen.pretty.writeNumber	[ 5.0 ]
+Double|decvar5.0|gen.writeNumber	[5.0]
+Double|decvar5.0|gen.writeNumberField	{"v":5.0}
+Double|decvar5.0|gen.writeObject	[5.0]
+Double|decvar5.0|pretty.box	{\n  "v" : 5.0\n}
+Double|decvar5.0|pretty.list.obj	[ 5.0 ]
+Double|decvar5.0|pretty.list.typed	[ 5.0 ]
+Double|decvar5.0|pretty.map.obj	{\n  "v" : 5.0\n}
+Double|decvar5.0|pretty.map.typed	{\n  "v" : 5.0\n}
+Double|decvar5.0|pretty.scalar	5.0
+Double|decvar5.0|ser.box	{"v":5.0}
+Double|decvar5.0|ser.list.box	[{"v":5.0}]
+Double|decvar5.0|ser.list.obj	[5.0]
+Double|decvar5.0|ser.list.typed	[5.0]
+Double|decvar5.0|ser.list2.obj	[5.0,5.0]
+Double|decvar5.0|ser.list2.typed	[5.0,5.0]
+Double|decvar5.0|ser.map.list	{"v":[5.0]}
+Double|decvar5.0|ser.map.obj	{"v":5.0}
+Double|decvar5.0|ser.map.typed	{"v":5.0}
+Double|decvar5.0|ser.objbox	{"v":5.0}
+Double|decvar5.0|ser.scalar	5.0
+Double|decvar5.0|ser.set.typed	[5.0]
+Double|decvar5.0|str.concat	5.0
+Double|decvar5.0|str.objvalueOf	5.0
+Double|decvar5.0|str.valueOf	5.0
+Double|decvar5|dbl.format	5
+Double|decvar5|dec.assign.scale	1
+Double|decvar5|dec.assign.ser	5.0
+Double|decvar5|dec.assign.toPlainString	5.0
+Double|decvar5|dec.toPlainString	5.0
+Double|decvar5|gen.pretty.writeNumber	[ 5.0 ]
+Double|decvar5|gen.writeNumber	[5.0]
+Double|decvar5|gen.writeNumberField	{"v":5.0}
+Double|decvar5|gen.writeObject	[5.0]
+Double|decvar5|pretty.box	{\n  "v" : 5.0\n}
+Double|decvar5|pretty.list.obj	[ 5.0 ]
+Double|decvar5|pretty.list.typed	[ 5.0 ]
+Double|decvar5|pretty.map.obj	{\n  "v" : 5.0\n}
+Double|decvar5|pretty.map.typed	{\n  "v" : 5.0\n}
+Double|decvar5|pretty.scalar	5.0
+Double|decvar5|ser.box	{"v":5.0}
+Double|decvar5|ser.list.box	[{"v":5.0}]
+Double|decvar5|ser.list.obj	[5.0]
+Double|decvar5|ser.list.typed	[5.0]
+Double|decvar5|ser.list2.obj	[5.0,5.0]
+Double|decvar5|ser.list2.typed	[5.0,5.0]
+Double|decvar5|ser.map.list	{"v":[5.0]}
+Double|decvar5|ser.map.obj	{"v":5.0}
+Double|decvar5|ser.map.typed	{"v":5.0}
+Double|decvar5|ser.objbox	{"v":5.0}
+Double|decvar5|ser.scalar	5.0
+Double|decvar5|ser.set.typed	[5.0]
+Double|decvar5|str.concat	5.0
+Double|decvar5|str.objvalueOf	5.0
+Double|decvar5|str.valueOf	5.0
+Double|div10/2|dbl.format	5
+Double|div10/2|dec.assign.scale	1
+Double|div10/2|dec.assign.ser	5.0
+Double|div10/2|dec.assign.toPlainString	5.0
+Double|div10/2|dec.toPlainString	5.0
+Double|div10/2|gen.pretty.writeNumber	[ 5.0 ]
+Double|div10/2|gen.writeNumber	[5.0]
+Double|div10/2|gen.writeNumberField	{"v":5.0}
+Double|div10/2|gen.writeObject	[5.0]
+Double|div10/2|pretty.box	{\n  "v" : 5.0\n}
+Double|div10/2|pretty.list.obj	[ 5.0 ]
+Double|div10/2|pretty.list.typed	[ 5.0 ]
+Double|div10/2|pretty.map.obj	{\n  "v" : 5.0\n}
+Double|div10/2|pretty.map.typed	{\n  "v" : 5.0\n}
+Double|div10/2|pretty.scalar	5.0
+Double|div10/2|ser.box	{"v":5.0}
+Double|div10/2|ser.list.box	[{"v":5.0}]
+Double|div10/2|ser.list.obj	[5.0]
+Double|div10/2|ser.list.typed	[5.0]
+Double|div10/2|ser.list2.obj	[5.0,5.0]
+Double|div10/2|ser.list2.typed	[5.0,5.0]
+Double|div10/2|ser.map.list	{"v":[5.0]}
+Double|div10/2|ser.map.obj	{"v":5.0}
+Double|div10/2|ser.map.typed	{"v":5.0}
+Double|div10/2|ser.objbox	{"v":5.0}
+Double|div10/2|ser.scalar	5.0
+Double|div10/2|ser.set.typed	[5.0]
+Double|div10/2|str.concat	5.0
+Double|div10/2|str.objvalueOf	5.0
+Double|div10/2|str.valueOf	5.0
+Double|intcast|dbl.format	5
+Double|intcast|dec.assign.scale	1
+Double|intcast|dec.assign.ser	5.0
+Double|intcast|dec.assign.toPlainString	5.0
+Double|intcast|dec.toPlainString	5.0
+Double|intcast|gen.pretty.writeNumber	[ 5.0 ]
+Double|intcast|gen.writeNumber	[5.0]
+Double|intcast|gen.writeNumberField	{"v":5.0}
+Double|intcast|gen.writeObject	[5.0]
+Double|intcast|pretty.box	{\n  "v" : 5.0\n}
+Double|intcast|pretty.list.obj	[ 5.0 ]
+Double|intcast|pretty.list.typed	[ 5.0 ]
+Double|intcast|pretty.map.obj	{\n  "v" : 5.0\n}
+Double|intcast|pretty.map.typed	{\n  "v" : 5.0\n}
+Double|intcast|pretty.scalar	5.0
+Double|intcast|ser.box	{"v":5.0}
+Double|intcast|ser.list.box	[{"v":5.0}]
+Double|intcast|ser.list.obj	[5.0]
+Double|intcast|ser.list.typed	[5.0]
+Double|intcast|ser.list2.obj	[5.0,5.0]
+Double|intcast|ser.list2.typed	[5.0,5.0]
+Double|intcast|ser.map.list	{"v":[5.0]}
+Double|intcast|ser.map.obj	{"v":5.0}
+Double|intcast|ser.map.typed	{"v":5.0}
+Double|intcast|ser.objbox	{"v":5.0}
+Double|intcast|ser.scalar	5.0
+Double|intcast|ser.set.typed	[5.0]
+Double|intcast|str.concat	5.0
+Double|intcast|str.objvalueOf	5.0
+Double|intcast|str.valueOf	5.0
+Double|intmul1.0|dbl.format	5
+Double|intmul1.0|dec.assign.scale	1
+Double|intmul1.0|dec.assign.ser	5.0
+Double|intmul1.0|dec.assign.toPlainString	5.0
+Double|intmul1.0|dec.toPlainString	5.0
+Double|intmul1.0|gen.pretty.writeNumber	[ 5.0 ]
+Double|intmul1.0|gen.writeNumber	[5.0]
+Double|intmul1.0|gen.writeNumberField	{"v":5.0}
+Double|intmul1.0|gen.writeObject	[5.0]
+Double|intmul1.0|pretty.box	{\n  "v" : 5.0\n}
+Double|intmul1.0|pretty.list.obj	[ 5.0 ]
+Double|intmul1.0|pretty.list.typed	[ 5.0 ]
+Double|intmul1.0|pretty.map.obj	{\n  "v" : 5.0\n}
+Double|intmul1.0|pretty.map.typed	{\n  "v" : 5.0\n}
+Double|intmul1.0|pretty.scalar	5.0
+Double|intmul1.0|ser.box	{"v":5.0}
+Double|intmul1.0|ser.list.box	[{"v":5.0}]
+Double|intmul1.0|ser.list.obj	[5.0]
+Double|intmul1.0|ser.list.typed	[5.0]
+Double|intmul1.0|ser.list2.obj	[5.0,5.0]
+Double|intmul1.0|ser.list2.typed	[5.0,5.0]
+Double|intmul1.0|ser.map.list	{"v":[5.0]}
+Double|intmul1.0|ser.map.obj	{"v":5.0}
+Double|intmul1.0|ser.map.typed	{"v":5.0}
+Double|intmul1.0|ser.objbox	{"v":5.0}
+Double|intmul1.0|ser.scalar	5.0
+Double|intmul1.0|ser.set.typed	[5.0]
+Double|intmul1.0|str.concat	5.0
+Double|intmul1.0|str.objvalueOf	5.0
+Double|intmul1.0|str.valueOf	5.0
+Double|intvar0|dbl.format	0
+Double|intvar0|dec.assign.scale	1
+Double|intvar0|dec.assign.ser	0.0
+Double|intvar0|dec.assign.toPlainString	0.0
+Double|intvar0|dec.toPlainString	0.0
+Double|intvar0|gen.pretty.writeNumber	[ 0.0 ]
+Double|intvar0|gen.writeNumber	[0.0]
+Double|intvar0|gen.writeNumberField	{"v":0.0}
+Double|intvar0|gen.writeObject	[0.0]
+Double|intvar0|pretty.box	{\n  "v" : 0.0\n}
+Double|intvar0|pretty.list.obj	[ 0.0 ]
+Double|intvar0|pretty.list.typed	[ 0.0 ]
+Double|intvar0|pretty.map.obj	{\n  "v" : 0.0\n}
+Double|intvar0|pretty.map.typed	{\n  "v" : 0.0\n}
+Double|intvar0|pretty.scalar	0.0
+Double|intvar0|ser.box	{"v":0.0}
+Double|intvar0|ser.list.box	[{"v":0.0}]
+Double|intvar0|ser.list.obj	[0.0]
+Double|intvar0|ser.list.typed	[0.0]
+Double|intvar0|ser.list2.obj	[0.0,0.0]
+Double|intvar0|ser.list2.typed	[0.0,0.0]
+Double|intvar0|ser.map.list	{"v":[0.0]}
+Double|intvar0|ser.map.obj	{"v":0.0}
+Double|intvar0|ser.map.typed	{"v":0.0}
+Double|intvar0|ser.objbox	{"v":0.0}
+Double|intvar0|ser.scalar	0.0
+Double|intvar0|ser.set.typed	[0.0]
+Double|intvar0|str.concat	0.0
+Double|intvar0|str.objvalueOf	0.0
+Double|intvar0|str.valueOf	0.0
+Double|intvar|dbl.format	5
+Double|intvar|dec.assign.scale	1
+Double|intvar|dec.assign.ser	5.0
+Double|intvar|dec.assign.toPlainString	5.0
+Double|intvar|dec.toPlainString	5.0
+Double|intvar|gen.pretty.writeNumber	[ 5.0 ]
+Double|intvar|gen.writeNumber	[5.0]
+Double|intvar|gen.writeNumberField	{"v":5.0}
+Double|intvar|gen.writeObject	[5.0]
+Double|intvar|pretty.box	{\n  "v" : 5.0\n}
+Double|intvar|pretty.list.obj	[ 5.0 ]
+Double|intvar|pretty.list.typed	[ 5.0 ]
+Double|intvar|pretty.map.obj	{\n  "v" : 5.0\n}
+Double|intvar|pretty.map.typed	{\n  "v" : 5.0\n}
+Double|intvar|pretty.scalar	5.0
+Double|intvar|ser.box	{"v":5.0}
+Double|intvar|ser.list.box	[{"v":5.0}]
+Double|intvar|ser.list.obj	[5.0]
+Double|intvar|ser.list.typed	[5.0]
+Double|intvar|ser.list2.obj	[5.0,5.0]
+Double|intvar|ser.list2.typed	[5.0,5.0]
+Double|intvar|ser.map.list	{"v":[5.0]}
+Double|intvar|ser.map.obj	{"v":5.0}
+Double|intvar|ser.map.typed	{"v":5.0}
+Double|intvar|ser.objbox	{"v":5.0}
+Double|intvar|ser.scalar	5.0
+Double|intvar|ser.set.typed	[5.0]
+Double|intvar|str.concat	5.0
+Double|intvar|str.objvalueOf	5.0
+Double|intvar|str.valueOf	5.0
+Double|lit-0.0|dbl.format	0
+Double|lit-0.0|dec.assign.scale	1
+Double|lit-0.0|dec.assign.ser	0.0
+Double|lit-0.0|dec.assign.toPlainString	0.0
+Double|lit-0.0|dec.toPlainString	0.0
+Double|lit-0.0|gen.pretty.writeNumber	[ 0.0 ]
+Double|lit-0.0|gen.writeNumber	[0.0]
+Double|lit-0.0|gen.writeNumberField	{"v":0.0}
+Double|lit-0.0|gen.writeObject	[0.0]
+Double|lit-0.0|pretty.box	{\n  "v" : 0.0\n}
+Double|lit-0.0|pretty.list.obj	[ 0.0 ]
+Double|lit-0.0|pretty.list.typed	[ 0.0 ]
+Double|lit-0.0|pretty.map.obj	{\n  "v" : 0.0\n}
+Double|lit-0.0|pretty.map.typed	{\n  "v" : 0.0\n}
+Double|lit-0.0|pretty.scalar	0.0
+Double|lit-0.0|ser.box	{"v":0.0}
+Double|lit-0.0|ser.list.box	[{"v":0.0}]
+Double|lit-0.0|ser.list.obj	[0.0]
+Double|lit-0.0|ser.list.typed	[0.0]
+Double|lit-0.0|ser.list2.obj	[0.0,0.0]
+Double|lit-0.0|ser.list2.typed	[0.0,0.0]
+Double|lit-0.0|ser.map.list	{"v":[0.0]}
+Double|lit-0.0|ser.map.obj	{"v":0.0}
+Double|lit-0.0|ser.map.typed	{"v":0.0}
+Double|lit-0.0|ser.objbox	{"v":0.0}
+Double|lit-0.0|ser.scalar	0.0
+Double|lit-0.0|ser.set.typed	[0.0]
+Double|lit-0.0|str.concat	0.0
+Double|lit-0.0|str.objvalueOf	0.0
+Double|lit-0.0|str.valueOf	0.0
+Double|lit0.0000001|dbl.format	0
+Double|lit0.0000001|dec.assign.scale	8
+Double|lit0.0000001|dec.assign.ser	1.0E-7
+Double|lit0.0000001|dec.assign.toPlainString	0.00000010
+Double|lit0.0000001|dec.toPlainString	0.00000010
+Double|lit0.0000001|gen.pretty.writeNumber	[ 1.0E-7 ]
+Double|lit0.0000001|gen.writeNumber	[1.0E-7]
+Double|lit0.0000001|gen.writeNumberField	{"v":1.0E-7}
+Double|lit0.0000001|gen.writeObject	[1.0E-7]
+Double|lit0.0000001|pretty.box	{\n  "v" : 1.0E-7\n}
+Double|lit0.0000001|pretty.list.obj	[ 1.0E-7 ]
+Double|lit0.0000001|pretty.list.typed	[ 1.0E-7 ]
+Double|lit0.0000001|pretty.map.obj	{\n  "v" : 1.0E-7\n}
+Double|lit0.0000001|pretty.map.typed	{\n  "v" : 1.0E-7\n}
+Double|lit0.0000001|pretty.scalar	1.0E-7
+Double|lit0.0000001|ser.box	{"v":1.0E-7}
+Double|lit0.0000001|ser.list.box	[{"v":1.0E-7}]
+Double|lit0.0000001|ser.list.obj	[1.0E-7]
+Double|lit0.0000001|ser.list.typed	[1.0E-7]
+Double|lit0.0000001|ser.list2.obj	[1.0E-7,1.0E-7]
+Double|lit0.0000001|ser.list2.typed	[1.0E-7,1.0E-7]
+Double|lit0.0000001|ser.map.list	{"v":[1.0E-7]}
+Double|lit0.0000001|ser.map.obj	{"v":1.0E-7}
+Double|lit0.0000001|ser.map.typed	{"v":1.0E-7}
+Double|lit0.0000001|ser.objbox	{"v":1.0E-7}
+Double|lit0.0000001|ser.scalar	1.0E-7
+Double|lit0.0000001|ser.set.typed	[1.0E-7]
+Double|lit0.0000001|str.concat	1.0E-7
+Double|lit0.0000001|str.objvalueOf	1.0E-7
+Double|lit0.0000001|str.valueOf	1.0E-7
+Double|lit0|dbl.format	0
+Double|lit0|dec.assign.scale	1
+Double|lit0|dec.assign.ser	0.0
+Double|lit0|dec.assign.toPlainString	0.0
+Double|lit0|dec.toPlainString	0.0
+Double|lit0|gen.pretty.writeNumber	[ 0.0 ]
+Double|lit0|gen.writeNumber	[0.0]
+Double|lit0|gen.writeNumberField	{"v":0.0}
+Double|lit0|gen.writeObject	[0.0]
+Double|lit0|pretty.box	{\n  "v" : 0.0\n}
+Double|lit0|pretty.list.obj	[ 0.0 ]
+Double|lit0|pretty.list.typed	[ 0.0 ]
+Double|lit0|pretty.map.obj	{\n  "v" : 0.0\n}
+Double|lit0|pretty.map.typed	{\n  "v" : 0.0\n}
+Double|lit0|pretty.scalar	0.0
+Double|lit0|ser.box	{"v":0.0}
+Double|lit0|ser.list.box	[{"v":0.0}]
+Double|lit0|ser.list.obj	[0.0]
+Double|lit0|ser.list.typed	[0.0]
+Double|lit0|ser.list2.obj	[0.0,0.0]
+Double|lit0|ser.list2.typed	[0.0,0.0]
+Double|lit0|ser.map.list	{"v":[0.0]}
+Double|lit0|ser.map.obj	{"v":0.0}
+Double|lit0|ser.map.typed	{"v":0.0}
+Double|lit0|ser.objbox	{"v":0.0}
+Double|lit0|ser.scalar	0.0
+Double|lit0|ser.set.typed	[0.0]
+Double|lit0|str.concat	0.0
+Double|lit0|str.objvalueOf	0.0
+Double|lit0|str.valueOf	0.0
+Double|lit5.0|dbl.format	5
+Double|lit5.0|dec.assign.scale	1
+Double|lit5.0|dec.assign.ser	5.0
+Double|lit5.0|dec.assign.toPlainString	5.0
+Double|lit5.0|dec.toPlainString	5.0
+Double|lit5.0|gen.pretty.writeNumber	[ 5.0 ]
+Double|lit5.0|gen.writeNumber	[5.0]
+Double|lit5.0|gen.writeNumberField	{"v":5.0}
+Double|lit5.0|gen.writeObject	[5.0]
+Double|lit5.0|pretty.box	{\n  "v" : 5.0\n}
+Double|lit5.0|pretty.list.obj	[ 5.0 ]
+Double|lit5.0|pretty.list.typed	[ 5.0 ]
+Double|lit5.0|pretty.map.obj	{\n  "v" : 5.0\n}
+Double|lit5.0|pretty.map.typed	{\n  "v" : 5.0\n}
+Double|lit5.0|pretty.scalar	5.0
+Double|lit5.0|ser.box	{"v":5.0}
+Double|lit5.0|ser.list.box	[{"v":5.0}]
+Double|lit5.0|ser.list.obj	[5.0]
+Double|lit5.0|ser.list.typed	[5.0]
+Double|lit5.0|ser.list2.obj	[5.0,5.0]
+Double|lit5.0|ser.list2.typed	[5.0,5.0]
+Double|lit5.0|ser.map.list	{"v":[5.0]}
+Double|lit5.0|ser.map.obj	{"v":5.0}
+Double|lit5.0|ser.map.typed	{"v":5.0}
+Double|lit5.0|ser.objbox	{"v":5.0}
+Double|lit5.0|ser.scalar	5.0
+Double|lit5.0|ser.set.typed	[5.0]
+Double|lit5.0|str.concat	5.0
+Double|lit5.0|str.objvalueOf	5.0
+Double|lit5.0|str.valueOf	5.0
+Double|lit5.50|dbl.format	5.5
+Double|lit5.50|dec.assign.scale	1
+Double|lit5.50|dec.assign.ser	5.5
+Double|lit5.50|dec.assign.toPlainString	5.5
+Double|lit5.50|dec.toPlainString	5.5
+Double|lit5.50|gen.pretty.writeNumber	[ 5.5 ]
+Double|lit5.50|gen.writeNumber	[5.5]
+Double|lit5.50|gen.writeNumberField	{"v":5.5}
+Double|lit5.50|gen.writeObject	[5.5]
+Double|lit5.50|pretty.box	{\n  "v" : 5.5\n}
+Double|lit5.50|pretty.list.obj	[ 5.5 ]
+Double|lit5.50|pretty.list.typed	[ 5.5 ]
+Double|lit5.50|pretty.map.obj	{\n  "v" : 5.5\n}
+Double|lit5.50|pretty.map.typed	{\n  "v" : 5.5\n}
+Double|lit5.50|pretty.scalar	5.5
+Double|lit5.50|ser.box	{"v":5.5}
+Double|lit5.50|ser.list.box	[{"v":5.5}]
+Double|lit5.50|ser.list.obj	[5.5]
+Double|lit5.50|ser.list.typed	[5.5]
+Double|lit5.50|ser.list2.obj	[5.5,5.5]
+Double|lit5.50|ser.list2.typed	[5.5,5.5]
+Double|lit5.50|ser.map.list	{"v":[5.5]}
+Double|lit5.50|ser.map.obj	{"v":5.5}
+Double|lit5.50|ser.map.typed	{"v":5.5}
+Double|lit5.50|ser.objbox	{"v":5.5}
+Double|lit5.50|ser.scalar	5.5
+Double|lit5.50|ser.set.typed	[5.5]
+Double|lit5.50|str.concat	5.5
+Double|lit5.50|str.objvalueOf	5.5
+Double|lit5.50|str.valueOf	5.5
+Double|lit5|dbl.format	5
+Double|lit5|dec.assign.scale	1
+Double|lit5|dec.assign.ser	5.0
+Double|lit5|dec.assign.toPlainString	5.0
+Double|lit5|dec.toPlainString	5.0
+Double|lit5|gen.pretty.writeNumber	[ 5.0 ]
+Double|lit5|gen.writeNumber	[5.0]
+Double|lit5|gen.writeNumberField	{"v":5.0}
+Double|lit5|gen.writeObject	[5.0]
+Double|lit5|pretty.box	{\n  "v" : 5.0\n}
+Double|lit5|pretty.list.obj	[ 5.0 ]
+Double|lit5|pretty.list.typed	[ 5.0 ]
+Double|lit5|pretty.map.obj	{\n  "v" : 5.0\n}
+Double|lit5|pretty.map.typed	{\n  "v" : 5.0\n}
+Double|lit5|pretty.scalar	5.0
+Double|lit5|ser.box	{"v":5.0}
+Double|lit5|ser.list.box	[{"v":5.0}]
+Double|lit5|ser.list.obj	[5.0]
+Double|lit5|ser.list.typed	[5.0]
+Double|lit5|ser.list2.obj	[5.0,5.0]
+Double|lit5|ser.list2.typed	[5.0,5.0]
+Double|lit5|ser.map.list	{"v":[5.0]}
+Double|lit5|ser.map.obj	{"v":5.0}
+Double|lit5|ser.map.typed	{"v":5.0}
+Double|lit5|ser.objbox	{"v":5.0}
+Double|lit5|ser.scalar	5.0
+Double|lit5|ser.set.typed	[5.0]
+Double|lit5|str.concat	5.0
+Double|lit5|str.objvalueOf	5.0
+Double|lit5|str.valueOf	5.0
+Double|longvar|dbl.format	5
+Double|longvar|dec.assign.scale	1
+Double|longvar|dec.assign.ser	5.0
+Double|longvar|dec.assign.toPlainString	5.0
+Double|longvar|dec.toPlainString	5.0
+Double|longvar|gen.pretty.writeNumber	[ 5.0 ]
+Double|longvar|gen.writeNumber	[5.0]
+Double|longvar|gen.writeNumberField	{"v":5.0}
+Double|longvar|gen.writeObject	[5.0]
+Double|longvar|pretty.box	{\n  "v" : 5.0\n}
+Double|longvar|pretty.list.obj	[ 5.0 ]
+Double|longvar|pretty.list.typed	[ 5.0 ]
+Double|longvar|pretty.map.obj	{\n  "v" : 5.0\n}
+Double|longvar|pretty.map.typed	{\n  "v" : 5.0\n}
+Double|longvar|pretty.scalar	5.0
+Double|longvar|ser.box	{"v":5.0}
+Double|longvar|ser.list.box	[{"v":5.0}]
+Double|longvar|ser.list.obj	[5.0]
+Double|longvar|ser.list.typed	[5.0]
+Double|longvar|ser.list2.obj	[5.0,5.0]
+Double|longvar|ser.list2.typed	[5.0,5.0]
+Double|longvar|ser.map.list	{"v":[5.0]}
+Double|longvar|ser.map.obj	{"v":5.0}
+Double|longvar|ser.map.typed	{"v":5.0}
+Double|longvar|ser.objbox	{"v":5.0}
+Double|longvar|ser.scalar	5.0
+Double|longvar|ser.set.typed	[5.0]
+Double|longvar|str.concat	5.0
+Double|longvar|str.objvalueOf	5.0
+Double|longvar|str.valueOf	5.0
+Double|math.pow2^3|dbl.format	8
+Double|math.pow2^3|dec.assign.scale	1
+Double|math.pow2^3|dec.assign.ser	8.0
+Double|math.pow2^3|dec.assign.toPlainString	8.0
+Double|math.pow2^3|dec.toPlainString	8.0
+Double|math.pow2^3|gen.pretty.writeNumber	[ 8.0 ]
+Double|math.pow2^3|gen.writeNumber	[8.0]
+Double|math.pow2^3|gen.writeNumberField	{"v":8.0}
+Double|math.pow2^3|gen.writeObject	[8.0]
+Double|math.pow2^3|pretty.box	{\n  "v" : 8.0\n}
+Double|math.pow2^3|pretty.list.obj	[ 8.0 ]
+Double|math.pow2^3|pretty.list.typed	[ 8.0 ]
+Double|math.pow2^3|pretty.map.obj	{\n  "v" : 8.0\n}
+Double|math.pow2^3|pretty.map.typed	{\n  "v" : 8.0\n}
+Double|math.pow2^3|pretty.scalar	8.0
+Double|math.pow2^3|ser.box	{"v":8.0}
+Double|math.pow2^3|ser.list.box	[{"v":8.0}]
+Double|math.pow2^3|ser.list.obj	[8.0]
+Double|math.pow2^3|ser.list.typed	[8.0]
+Double|math.pow2^3|ser.list2.obj	[8.0,8.0]
+Double|math.pow2^3|ser.list2.typed	[8.0,8.0]
+Double|math.pow2^3|ser.map.list	{"v":[8.0]}
+Double|math.pow2^3|ser.map.obj	{"v":8.0}
+Double|math.pow2^3|ser.map.typed	{"v":8.0}
+Double|math.pow2^3|ser.objbox	{"v":8.0}
+Double|math.pow2^3|ser.scalar	8.0
+Double|math.pow2^3|ser.set.typed	[8.0]
+Double|math.pow2^3|str.concat	8.0
+Double|math.pow2^3|str.objvalueOf	8.0
+Double|math.pow2^3|str.valueOf	8.0
+Double|math.sqrt25|dbl.format	5
+Double|math.sqrt25|dec.assign.scale	1
+Double|math.sqrt25|dec.assign.ser	5.0
+Double|math.sqrt25|dec.assign.toPlainString	5.0
+Double|math.sqrt25|dec.toPlainString	5.0
+Double|math.sqrt25|gen.pretty.writeNumber	[ 5.0 ]
+Double|math.sqrt25|gen.writeNumber	[5.0]
+Double|math.sqrt25|gen.writeNumberField	{"v":5.0}
+Double|math.sqrt25|gen.writeObject	[5.0]
+Double|math.sqrt25|pretty.box	{\n  "v" : 5.0\n}
+Double|math.sqrt25|pretty.list.obj	[ 5.0 ]
+Double|math.sqrt25|pretty.list.typed	[ 5.0 ]
+Double|math.sqrt25|pretty.map.obj	{\n  "v" : 5.0\n}
+Double|math.sqrt25|pretty.map.typed	{\n  "v" : 5.0\n}
+Double|math.sqrt25|pretty.scalar	5.0
+Double|math.sqrt25|ser.box	{"v":5.0}
+Double|math.sqrt25|ser.list.box	[{"v":5.0}]
+Double|math.sqrt25|ser.list.obj	[5.0]
+Double|math.sqrt25|ser.list.typed	[5.0]
+Double|math.sqrt25|ser.list2.obj	[5.0,5.0]
+Double|math.sqrt25|ser.list2.typed	[5.0,5.0]
+Double|math.sqrt25|ser.map.list	{"v":[5.0]}
+Double|math.sqrt25|ser.map.obj	{"v":5.0}
+Double|math.sqrt25|ser.map.typed	{"v":5.0}
+Double|math.sqrt25|ser.objbox	{"v":5.0}
+Double|math.sqrt25|ser.scalar	5.0
+Double|math.sqrt25|ser.set.typed	[5.0]
+Double|math.sqrt25|str.concat	5.0
+Double|math.sqrt25|str.objvalueOf	5.0
+Double|math.sqrt25|str.valueOf	5.0
+Double|str-0.0|dbl.format	-0
+Double|str-0.0|dec.assign.scale	1
+Double|str-0.0|dec.assign.ser	0.0
+Double|str-0.0|dec.assign.toPlainString	0.0
+Double|str-0.0|dec.toPlainString	0.0
+Double|str-0.0|gen.pretty.writeNumber	[ -0.0 ]
+Double|str-0.0|gen.writeNumber	[-0.0]
+Double|str-0.0|gen.writeNumberField	{"v":-0.0}
+Double|str-0.0|gen.writeObject	[-0.0]
+Double|str-0.0|pretty.box	{\n  "v" : -0.0\n}
+Double|str-0.0|pretty.list.obj	[ -0.0 ]
+Double|str-0.0|pretty.list.typed	[ -0.0 ]
+Double|str-0.0|pretty.map.obj	{\n  "v" : -0.0\n}
+Double|str-0.0|pretty.map.typed	{\n  "v" : -0.0\n}
+Double|str-0.0|pretty.scalar	-0.0
+Double|str-0.0|ser.box	{"v":-0.0}
+Double|str-0.0|ser.list.box	[{"v":-0.0}]
+Double|str-0.0|ser.list.obj	[-0.0]
+Double|str-0.0|ser.list.typed	[-0.0]
+Double|str-0.0|ser.list2.obj	[-0.0,-0.0]
+Double|str-0.0|ser.list2.typed	[-0.0,-0.0]
+Double|str-0.0|ser.map.list	{"v":[-0.0]}
+Double|str-0.0|ser.map.obj	{"v":-0.0}
+Double|str-0.0|ser.map.typed	{"v":-0.0}
+Double|str-0.0|ser.objbox	{"v":-0.0}
+Double|str-0.0|ser.scalar	-0.0
+Double|str-0.0|ser.set.typed	[-0.0]
+Double|str-0.0|str.concat	-0.0
+Double|str-0.0|str.objvalueOf	-0.0
+Double|str-0.0|str.valueOf	-0.0
+Double|str-1e20|dbl.format	-100,000,000,000,000,000,000
+Double|str-1e20|dec.assign.scale	-19
+Double|str-1e20|dec.assign.ser	-1.0E+20
+Double|str-1e20|dec.assign.toPlainString	-100000000000000000000
+Double|str-1e20|dec.toPlainString	-100000000000000000000
+Double|str-1e20|gen.pretty.writeNumber	[ -1.0E20 ]
+Double|str-1e20|gen.writeNumber	[-1.0E20]
+Double|str-1e20|gen.writeNumberField	{"v":-1.0E20}
+Double|str-1e20|gen.writeObject	[-1.0E20]
+Double|str-1e20|pretty.box	{\n  "v" : -1.0E20\n}
+Double|str-1e20|pretty.list.obj	[ -1.0E20 ]
+Double|str-1e20|pretty.list.typed	[ -1.0E20 ]
+Double|str-1e20|pretty.map.obj	{\n  "v" : -1.0E20\n}
+Double|str-1e20|pretty.map.typed	{\n  "v" : -1.0E20\n}
+Double|str-1e20|pretty.scalar	-1.0E20
+Double|str-1e20|ser.box	{"v":-1.0E20}
+Double|str-1e20|ser.list.box	[{"v":-1.0E20}]
+Double|str-1e20|ser.list.obj	[-1.0E20]
+Double|str-1e20|ser.list.typed	[-1.0E20]
+Double|str-1e20|ser.list2.obj	[-1.0E20,-1.0E20]
+Double|str-1e20|ser.list2.typed	[-1.0E20,-1.0E20]
+Double|str-1e20|ser.map.list	{"v":[-1.0E20]}
+Double|str-1e20|ser.map.obj	{"v":-1.0E20}
+Double|str-1e20|ser.map.typed	{"v":-1.0E20}
+Double|str-1e20|ser.objbox	{"v":-1.0E20}
+Double|str-1e20|ser.scalar	-1.0E20
+Double|str-1e20|ser.set.typed	[-1.0E20]
+Double|str-1e20|str.concat	-1.0E20
+Double|str-1e20|str.objvalueOf	-1.0E20
+Double|str-1e20|str.valueOf	-1.0E20
+Double|str-5|dbl.format	-5
+Double|str-5|dec.assign.scale	1
+Double|str-5|dec.assign.ser	-5.0
+Double|str-5|dec.assign.toPlainString	-5.0
+Double|str-5|dec.toPlainString	-5.0
+Double|str-5|gen.pretty.writeNumber	[ -5.0 ]
+Double|str-5|gen.writeNumber	[-5.0]
+Double|str-5|gen.writeNumberField	{"v":-5.0}
+Double|str-5|gen.writeObject	[-5.0]
+Double|str-5|pretty.box	{\n  "v" : -5.0\n}
+Double|str-5|pretty.list.obj	[ -5.0 ]
+Double|str-5|pretty.list.typed	[ -5.0 ]
+Double|str-5|pretty.map.obj	{\n  "v" : -5.0\n}
+Double|str-5|pretty.map.typed	{\n  "v" : -5.0\n}
+Double|str-5|pretty.scalar	-5.0
+Double|str-5|ser.box	{"v":-5.0}
+Double|str-5|ser.list.box	[{"v":-5.0}]
+Double|str-5|ser.list.obj	[-5.0]
+Double|str-5|ser.list.typed	[-5.0]
+Double|str-5|ser.list2.obj	[-5.0,-5.0]
+Double|str-5|ser.list2.typed	[-5.0,-5.0]
+Double|str-5|ser.map.list	{"v":[-5.0]}
+Double|str-5|ser.map.obj	{"v":-5.0}
+Double|str-5|ser.map.typed	{"v":-5.0}
+Double|str-5|ser.objbox	{"v":-5.0}
+Double|str-5|ser.scalar	-5.0
+Double|str-5|ser.set.typed	[-5.0]
+Double|str-5|str.concat	-5.0
+Double|str-5|str.objvalueOf	-5.0
+Double|str-5|str.valueOf	-5.0
+Double|str0.0001|dbl.format	0
+Double|str0.0001|dec.assign.scale	5
+Double|str0.0001|dec.assign.ser	0.00010
+Double|str0.0001|dec.assign.toPlainString	0.00010
+Double|str0.0001|dec.toPlainString	0.00010
+Double|str0.0001|gen.pretty.writeNumber	[ 1.0E-4 ]
+Double|str0.0001|gen.writeNumber	[1.0E-4]
+Double|str0.0001|gen.writeNumberField	{"v":1.0E-4}
+Double|str0.0001|gen.writeObject	[1.0E-4]
+Double|str0.0001|pretty.box	{\n  "v" : 1.0E-4\n}
+Double|str0.0001|pretty.list.obj	[ 1.0E-4 ]
+Double|str0.0001|pretty.list.typed	[ 1.0E-4 ]
+Double|str0.0001|pretty.map.obj	{\n  "v" : 1.0E-4\n}
+Double|str0.0001|pretty.map.typed	{\n  "v" : 1.0E-4\n}
+Double|str0.0001|pretty.scalar	1.0E-4
+Double|str0.0001|ser.box	{"v":1.0E-4}
+Double|str0.0001|ser.list.box	[{"v":1.0E-4}]
+Double|str0.0001|ser.list.obj	[1.0E-4]
+Double|str0.0001|ser.list.typed	[1.0E-4]
+Double|str0.0001|ser.list2.obj	[1.0E-4,1.0E-4]
+Double|str0.0001|ser.list2.typed	[1.0E-4,1.0E-4]
+Double|str0.0001|ser.map.list	{"v":[1.0E-4]}
+Double|str0.0001|ser.map.obj	{"v":1.0E-4}
+Double|str0.0001|ser.map.typed	{"v":1.0E-4}
+Double|str0.0001|ser.objbox	{"v":1.0E-4}
+Double|str0.0001|ser.scalar	1.0E-4
+Double|str0.0001|ser.set.typed	[1.0E-4]
+Double|str0.0001|str.concat	1.0E-4
+Double|str0.0001|str.objvalueOf	1.0E-4
+Double|str0.0001|str.valueOf	1.0E-4
+Double|str0.001|dbl.format	0.001
+Double|str0.001|dec.assign.scale	3
+Double|str0.001|dec.assign.ser	0.001
+Double|str0.001|dec.assign.toPlainString	0.001
+Double|str0.001|dec.toPlainString	0.001
+Double|str0.001|gen.pretty.writeNumber	[ 0.001 ]
+Double|str0.001|gen.writeNumber	[0.001]
+Double|str0.001|gen.writeNumberField	{"v":0.001}
+Double|str0.001|gen.writeObject	[0.001]
+Double|str0.001|pretty.box	{\n  "v" : 0.001\n}
+Double|str0.001|pretty.list.obj	[ 0.001 ]
+Double|str0.001|pretty.list.typed	[ 0.001 ]
+Double|str0.001|pretty.map.obj	{\n  "v" : 0.001\n}
+Double|str0.001|pretty.map.typed	{\n  "v" : 0.001\n}
+Double|str0.001|pretty.scalar	0.001
+Double|str0.001|ser.box	{"v":0.001}
+Double|str0.001|ser.list.box	[{"v":0.001}]
+Double|str0.001|ser.list.obj	[0.001]
+Double|str0.001|ser.list.typed	[0.001]
+Double|str0.001|ser.list2.obj	[0.001,0.001]
+Double|str0.001|ser.list2.typed	[0.001,0.001]
+Double|str0.001|ser.map.list	{"v":[0.001]}
+Double|str0.001|ser.map.obj	{"v":0.001}
+Double|str0.001|ser.map.typed	{"v":0.001}
+Double|str0.001|ser.objbox	{"v":0.001}
+Double|str0.001|ser.scalar	0.001
+Double|str0.001|ser.set.typed	[0.001]
+Double|str0.001|str.concat	0.001
+Double|str0.001|str.objvalueOf	0.001
+Double|str0.001|str.valueOf	0.001
+Double|str0|dbl.format	0
+Double|str0|dec.assign.scale	1
+Double|str0|dec.assign.ser	0.0
+Double|str0|dec.assign.toPlainString	0.0
+Double|str0|dec.toPlainString	0.0
+Double|str0|gen.pretty.writeNumber	[ 0.0 ]
+Double|str0|gen.writeNumber	[0.0]
+Double|str0|gen.writeNumberField	{"v":0.0}
+Double|str0|gen.writeObject	[0.0]
+Double|str0|pretty.box	{\n  "v" : 0.0\n}
+Double|str0|pretty.list.obj	[ 0.0 ]
+Double|str0|pretty.list.typed	[ 0.0 ]
+Double|str0|pretty.map.obj	{\n  "v" : 0.0\n}
+Double|str0|pretty.map.typed	{\n  "v" : 0.0\n}
+Double|str0|pretty.scalar	0.0
+Double|str0|ser.box	{"v":0.0}
+Double|str0|ser.list.box	[{"v":0.0}]
+Double|str0|ser.list.obj	[0.0]
+Double|str0|ser.list.typed	[0.0]
+Double|str0|ser.list2.obj	[0.0,0.0]
+Double|str0|ser.list2.typed	[0.0,0.0]
+Double|str0|ser.map.list	{"v":[0.0]}
+Double|str0|ser.map.obj	{"v":0.0}
+Double|str0|ser.map.typed	{"v":0.0}
+Double|str0|ser.objbox	{"v":0.0}
+Double|str0|ser.scalar	0.0
+Double|str0|ser.set.typed	[0.0]
+Double|str0|str.concat	0.0
+Double|str0|str.objvalueOf	0.0
+Double|str0|str.valueOf	0.0
+Double|str1.0E-7|dbl.format	0
+Double|str1.0E-7|dec.assign.scale	8
+Double|str1.0E-7|dec.assign.ser	1.0E-7
+Double|str1.0E-7|dec.assign.toPlainString	0.00000010
+Double|str1.0E-7|dec.toPlainString	0.00000010
+Double|str1.0E-7|gen.pretty.writeNumber	[ 1.0E-7 ]
+Double|str1.0E-7|gen.writeNumber	[1.0E-7]
+Double|str1.0E-7|gen.writeNumberField	{"v":1.0E-7}
+Double|str1.0E-7|gen.writeObject	[1.0E-7]
+Double|str1.0E-7|pretty.box	{\n  "v" : 1.0E-7\n}
+Double|str1.0E-7|pretty.list.obj	[ 1.0E-7 ]
+Double|str1.0E-7|pretty.list.typed	[ 1.0E-7 ]
+Double|str1.0E-7|pretty.map.obj	{\n  "v" : 1.0E-7\n}
+Double|str1.0E-7|pretty.map.typed	{\n  "v" : 1.0E-7\n}
+Double|str1.0E-7|pretty.scalar	1.0E-7
+Double|str1.0E-7|ser.box	{"v":1.0E-7}
+Double|str1.0E-7|ser.list.box	[{"v":1.0E-7}]
+Double|str1.0E-7|ser.list.obj	[1.0E-7]
+Double|str1.0E-7|ser.list.typed	[1.0E-7]
+Double|str1.0E-7|ser.list2.obj	[1.0E-7,1.0E-7]
+Double|str1.0E-7|ser.list2.typed	[1.0E-7,1.0E-7]
+Double|str1.0E-7|ser.map.list	{"v":[1.0E-7]}
+Double|str1.0E-7|ser.map.obj	{"v":1.0E-7}
+Double|str1.0E-7|ser.map.typed	{"v":1.0E-7}
+Double|str1.0E-7|ser.objbox	{"v":1.0E-7}
+Double|str1.0E-7|ser.scalar	1.0E-7
+Double|str1.0E-7|ser.set.typed	[1.0E-7]
+Double|str1.0E-7|str.concat	1.0E-7
+Double|str1.0E-7|str.objvalueOf	1.0E-7
+Double|str1.0E-7|str.valueOf	1.0E-7
+Double|str123456789|dbl.format	123,456,789
+Double|str123456789|dec.assign.scale	0
+Double|str123456789|dec.assign.ser	123456789
+Double|str123456789|dec.assign.toPlainString	123456789
+Double|str123456789|dec.toPlainString	123456789
+Double|str123456789|gen.pretty.writeNumber	[ 1.23456789E8 ]
+Double|str123456789|gen.writeNumber	[1.23456789E8]
+Double|str123456789|gen.writeNumberField	{"v":1.23456789E8}
+Double|str123456789|gen.writeObject	[1.23456789E8]
+Double|str123456789|pretty.box	{\n  "v" : 1.23456789E8\n}
+Double|str123456789|pretty.list.obj	[ 1.23456789E8 ]
+Double|str123456789|pretty.list.typed	[ 1.23456789E8 ]
+Double|str123456789|pretty.map.obj	{\n  "v" : 1.23456789E8\n}
+Double|str123456789|pretty.map.typed	{\n  "v" : 1.23456789E8\n}
+Double|str123456789|pretty.scalar	1.23456789E8
+Double|str123456789|ser.box	{"v":1.23456789E8}
+Double|str123456789|ser.list.box	[{"v":1.23456789E8}]
+Double|str123456789|ser.list.obj	[1.23456789E8]
+Double|str123456789|ser.list.typed	[1.23456789E8]
+Double|str123456789|ser.list2.obj	[1.23456789E8,1.23456789E8]
+Double|str123456789|ser.list2.typed	[1.23456789E8,1.23456789E8]
+Double|str123456789|ser.map.list	{"v":[1.23456789E8]}
+Double|str123456789|ser.map.obj	{"v":1.23456789E8}
+Double|str123456789|ser.map.typed	{"v":1.23456789E8}
+Double|str123456789|ser.objbox	{"v":1.23456789E8}
+Double|str123456789|ser.scalar	1.23456789E8
+Double|str123456789|ser.set.typed	[1.23456789E8]
+Double|str123456789|str.concat	1.23456789E8
+Double|str123456789|str.objvalueOf	1.23456789E8
+Double|str123456789|str.valueOf	1.23456789E8
+Double|str1e-4|dbl.format	0
+Double|str1e-4|dec.assign.scale	5
+Double|str1e-4|dec.assign.ser	0.00010
+Double|str1e-4|dec.assign.toPlainString	0.00010
+Double|str1e-4|dec.toPlainString	0.00010
+Double|str1e-4|gen.pretty.writeNumber	[ 1.0E-4 ]
+Double|str1e-4|gen.writeNumber	[1.0E-4]
+Double|str1e-4|gen.writeNumberField	{"v":1.0E-4}
+Double|str1e-4|gen.writeObject	[1.0E-4]
+Double|str1e-4|pretty.box	{\n  "v" : 1.0E-4\n}
+Double|str1e-4|pretty.list.obj	[ 1.0E-4 ]
+Double|str1e-4|pretty.list.typed	[ 1.0E-4 ]
+Double|str1e-4|pretty.map.obj	{\n  "v" : 1.0E-4\n}
+Double|str1e-4|pretty.map.typed	{\n  "v" : 1.0E-4\n}
+Double|str1e-4|pretty.scalar	1.0E-4
+Double|str1e-4|ser.box	{"v":1.0E-4}
+Double|str1e-4|ser.list.box	[{"v":1.0E-4}]
+Double|str1e-4|ser.list.obj	[1.0E-4]
+Double|str1e-4|ser.list.typed	[1.0E-4]
+Double|str1e-4|ser.list2.obj	[1.0E-4,1.0E-4]
+Double|str1e-4|ser.list2.typed	[1.0E-4,1.0E-4]
+Double|str1e-4|ser.map.list	{"v":[1.0E-4]}
+Double|str1e-4|ser.map.obj	{"v":1.0E-4}
+Double|str1e-4|ser.map.typed	{"v":1.0E-4}
+Double|str1e-4|ser.objbox	{"v":1.0E-4}
+Double|str1e-4|ser.scalar	1.0E-4
+Double|str1e-4|ser.set.typed	[1.0E-4]
+Double|str1e-4|str.concat	1.0E-4
+Double|str1e-4|str.objvalueOf	1.0E-4
+Double|str1e-4|str.valueOf	1.0E-4
+Double|str1e15|dbl.format	1,000,000,000,000,000
+Double|str1e15|dec.assign.scale	-14
+Double|str1e15|dec.assign.ser	1.0E+15
+Double|str1e15|dec.assign.toPlainString	1000000000000000
+Double|str1e15|dec.toPlainString	1000000000000000
+Double|str1e15|gen.pretty.writeNumber	[ 1.0E15 ]
+Double|str1e15|gen.writeNumber	[1.0E15]
+Double|str1e15|gen.writeNumberField	{"v":1.0E15}
+Double|str1e15|gen.writeObject	[1.0E15]
+Double|str1e15|pretty.box	{\n  "v" : 1.0E15\n}
+Double|str1e15|pretty.list.obj	[ 1.0E15 ]
+Double|str1e15|pretty.list.typed	[ 1.0E15 ]
+Double|str1e15|pretty.map.obj	{\n  "v" : 1.0E15\n}
+Double|str1e15|pretty.map.typed	{\n  "v" : 1.0E15\n}
+Double|str1e15|pretty.scalar	1.0E15
+Double|str1e15|ser.box	{"v":1.0E15}
+Double|str1e15|ser.list.box	[{"v":1.0E15}]
+Double|str1e15|ser.list.obj	[1.0E15]
+Double|str1e15|ser.list.typed	[1.0E15]
+Double|str1e15|ser.list2.obj	[1.0E15,1.0E15]
+Double|str1e15|ser.list2.typed	[1.0E15,1.0E15]
+Double|str1e15|ser.map.list	{"v":[1.0E15]}
+Double|str1e15|ser.map.obj	{"v":1.0E15}
+Double|str1e15|ser.map.typed	{"v":1.0E15}
+Double|str1e15|ser.objbox	{"v":1.0E15}
+Double|str1e15|ser.scalar	1.0E15
+Double|str1e15|ser.set.typed	[1.0E15]
+Double|str1e15|str.concat	1.0E15
+Double|str1e15|str.objvalueOf	1.0E15
+Double|str1e15|str.valueOf	1.0E15
+Double|str1e20|dbl.format	100,000,000,000,000,000,000
+Double|str1e20|dec.assign.scale	-19
+Double|str1e20|dec.assign.ser	1.0E+20
+Double|str1e20|dec.assign.toPlainString	100000000000000000000
+Double|str1e20|dec.toPlainString	100000000000000000000
+Double|str1e20|gen.pretty.writeNumber	[ 1.0E20 ]
+Double|str1e20|gen.writeNumber	[1.0E20]
+Double|str1e20|gen.writeNumberField	{"v":1.0E20}
+Double|str1e20|gen.writeObject	[1.0E20]
+Double|str1e20|pretty.box	{\n  "v" : 1.0E20\n}
+Double|str1e20|pretty.list.obj	[ 1.0E20 ]
+Double|str1e20|pretty.list.typed	[ 1.0E20 ]
+Double|str1e20|pretty.map.obj	{\n  "v" : 1.0E20\n}
+Double|str1e20|pretty.map.typed	{\n  "v" : 1.0E20\n}
+Double|str1e20|pretty.scalar	1.0E20
+Double|str1e20|ser.box	{"v":1.0E20}
+Double|str1e20|ser.list.box	[{"v":1.0E20}]
+Double|str1e20|ser.list.obj	[1.0E20]
+Double|str1e20|ser.list.typed	[1.0E20]
+Double|str1e20|ser.list2.obj	[1.0E20,1.0E20]
+Double|str1e20|ser.list2.typed	[1.0E20,1.0E20]
+Double|str1e20|ser.map.list	{"v":[1.0E20]}
+Double|str1e20|ser.map.obj	{"v":1.0E20}
+Double|str1e20|ser.map.typed	{"v":1.0E20}
+Double|str1e20|ser.objbox	{"v":1.0E20}
+Double|str1e20|ser.scalar	1.0E20
+Double|str1e20|ser.set.typed	[1.0E20]
+Double|str1e20|str.concat	1.0E20
+Double|str1e20|str.objvalueOf	1.0E20
+Double|str1e20|str.valueOf	1.0E20
+Double|str1e7|dbl.format	10,000,000
+Double|str1e7|dec.assign.scale	-6
+Double|str1e7|dec.assign.ser	1.0E+7
+Double|str1e7|dec.assign.toPlainString	10000000
+Double|str1e7|dec.toPlainString	10000000
+Double|str1e7|gen.pretty.writeNumber	[ 1.0E7 ]
+Double|str1e7|gen.writeNumber	[1.0E7]
+Double|str1e7|gen.writeNumberField	{"v":1.0E7}
+Double|str1e7|gen.writeObject	[1.0E7]
+Double|str1e7|pretty.box	{\n  "v" : 1.0E7\n}
+Double|str1e7|pretty.list.obj	[ 1.0E7 ]
+Double|str1e7|pretty.list.typed	[ 1.0E7 ]
+Double|str1e7|pretty.map.obj	{\n  "v" : 1.0E7\n}
+Double|str1e7|pretty.map.typed	{\n  "v" : 1.0E7\n}
+Double|str1e7|pretty.scalar	1.0E7
+Double|str1e7|ser.box	{"v":1.0E7}
+Double|str1e7|ser.list.box	[{"v":1.0E7}]
+Double|str1e7|ser.list.obj	[1.0E7]
+Double|str1e7|ser.list.typed	[1.0E7]
+Double|str1e7|ser.list2.obj	[1.0E7,1.0E7]
+Double|str1e7|ser.list2.typed	[1.0E7,1.0E7]
+Double|str1e7|ser.map.list	{"v":[1.0E7]}
+Double|str1e7|ser.map.obj	{"v":1.0E7}
+Double|str1e7|ser.map.typed	{"v":1.0E7}
+Double|str1e7|ser.objbox	{"v":1.0E7}
+Double|str1e7|ser.scalar	1.0E7
+Double|str1e7|ser.set.typed	[1.0E7]
+Double|str1e7|str.concat	1.0E7
+Double|str1e7|str.objvalueOf	1.0E7
+Double|str1e7|str.valueOf	1.0E7
+Double|str5.0|dbl.format	5
+Double|str5.0|dec.assign.scale	1
+Double|str5.0|dec.assign.ser	5.0
+Double|str5.0|dec.assign.toPlainString	5.0
+Double|str5.0|dec.toPlainString	5.0
+Double|str5.0|gen.pretty.writeNumber	[ 5.0 ]
+Double|str5.0|gen.writeNumber	[5.0]
+Double|str5.0|gen.writeNumberField	{"v":5.0}
+Double|str5.0|gen.writeObject	[5.0]
+Double|str5.0|pretty.box	{\n  "v" : 5.0\n}
+Double|str5.0|pretty.list.obj	[ 5.0 ]
+Double|str5.0|pretty.list.typed	[ 5.0 ]
+Double|str5.0|pretty.map.obj	{\n  "v" : 5.0\n}
+Double|str5.0|pretty.map.typed	{\n  "v" : 5.0\n}
+Double|str5.0|pretty.scalar	5.0
+Double|str5.0|ser.box	{"v":5.0}
+Double|str5.0|ser.list.box	[{"v":5.0}]
+Double|str5.0|ser.list.obj	[5.0]
+Double|str5.0|ser.list.typed	[5.0]
+Double|str5.0|ser.list2.obj	[5.0,5.0]
+Double|str5.0|ser.list2.typed	[5.0,5.0]
+Double|str5.0|ser.map.list	{"v":[5.0]}
+Double|str5.0|ser.map.obj	{"v":5.0}
+Double|str5.0|ser.map.typed	{"v":5.0}
+Double|str5.0|ser.objbox	{"v":5.0}
+Double|str5.0|ser.scalar	5.0
+Double|str5.0|ser.set.typed	[5.0]
+Double|str5.0|str.concat	5.0
+Double|str5.0|str.objvalueOf	5.0
+Double|str5.0|str.valueOf	5.0
+Double|str5.50|dbl.format	5.5
+Double|str5.50|dec.assign.scale	1
+Double|str5.50|dec.assign.ser	5.5
+Double|str5.50|dec.assign.toPlainString	5.5
+Double|str5.50|dec.toPlainString	5.5
+Double|str5.50|gen.pretty.writeNumber	[ 5.5 ]
+Double|str5.50|gen.writeNumber	[5.5]
+Double|str5.50|gen.writeNumberField	{"v":5.5}
+Double|str5.50|gen.writeObject	[5.5]
+Double|str5.50|pretty.box	{\n  "v" : 5.5\n}
+Double|str5.50|pretty.list.obj	[ 5.5 ]
+Double|str5.50|pretty.list.typed	[ 5.5 ]
+Double|str5.50|pretty.map.obj	{\n  "v" : 5.5\n}
+Double|str5.50|pretty.map.typed	{\n  "v" : 5.5\n}
+Double|str5.50|pretty.scalar	5.5
+Double|str5.50|ser.box	{"v":5.5}
+Double|str5.50|ser.list.box	[{"v":5.5}]
+Double|str5.50|ser.list.obj	[5.5]
+Double|str5.50|ser.list.typed	[5.5]
+Double|str5.50|ser.list2.obj	[5.5,5.5]
+Double|str5.50|ser.list2.typed	[5.5,5.5]
+Double|str5.50|ser.map.list	{"v":[5.5]}
+Double|str5.50|ser.map.obj	{"v":5.5}
+Double|str5.50|ser.map.typed	{"v":5.5}
+Double|str5.50|ser.objbox	{"v":5.5}
+Double|str5.50|ser.scalar	5.5
+Double|str5.50|ser.set.typed	[5.5]
+Double|str5.50|str.concat	5.5
+Double|str5.50|str.objvalueOf	5.5
+Double|str5.50|str.valueOf	5.5
+Double|str5|dbl.format	5
+Double|str5|dec.assign.scale	1
+Double|str5|dec.assign.ser	5.0
+Double|str5|dec.assign.toPlainString	5.0
+Double|str5|dec.toPlainString	5.0
+Double|str5|gen.pretty.writeNumber	[ 5.0 ]
+Double|str5|gen.writeNumber	[5.0]
+Double|str5|gen.writeNumberField	{"v":5.0}
+Double|str5|gen.writeObject	[5.0]
+Double|str5|pretty.box	{\n  "v" : 5.0\n}
+Double|str5|pretty.list.obj	[ 5.0 ]
+Double|str5|pretty.list.typed	[ 5.0 ]
+Double|str5|pretty.map.obj	{\n  "v" : 5.0\n}
+Double|str5|pretty.map.typed	{\n  "v" : 5.0\n}
+Double|str5|pretty.scalar	5.0
+Double|str5|ser.box	{"v":5.0}
+Double|str5|ser.list.box	[{"v":5.0}]
+Double|str5|ser.list.obj	[5.0]
+Double|str5|ser.list.typed	[5.0]
+Double|str5|ser.list2.obj	[5.0,5.0]
+Double|str5|ser.list2.typed	[5.0,5.0]
+Double|str5|ser.map.list	{"v":[5.0]}
+Double|str5|ser.map.obj	{"v":5.0}
+Double|str5|ser.map.typed	{"v":5.0}
+Double|str5|ser.objbox	{"v":5.0}
+Double|str5|ser.scalar	5.0
+Double|str5|ser.set.typed	[5.0]
+Double|str5|str.concat	5.0
+Double|str5|str.objvalueOf	5.0
+Double|str5|str.valueOf	5.0
+Double|sum2.5+2.5|dbl.format	5
+Double|sum2.5+2.5|dec.assign.scale	1
+Double|sum2.5+2.5|dec.assign.ser	5.0
+Double|sum2.5+2.5|dec.assign.toPlainString	5.0
+Double|sum2.5+2.5|dec.toPlainString	5.0
+Double|sum2.5+2.5|gen.pretty.writeNumber	[ 5.0 ]
+Double|sum2.5+2.5|gen.writeNumber	[5.0]
+Double|sum2.5+2.5|gen.writeNumberField	{"v":5.0}
+Double|sum2.5+2.5|gen.writeObject	[5.0]
+Double|sum2.5+2.5|pretty.box	{\n  "v" : 5.0\n}
+Double|sum2.5+2.5|pretty.list.obj	[ 5.0 ]
+Double|sum2.5+2.5|pretty.list.typed	[ 5.0 ]
+Double|sum2.5+2.5|pretty.map.obj	{\n  "v" : 5.0\n}
+Double|sum2.5+2.5|pretty.map.typed	{\n  "v" : 5.0\n}
+Double|sum2.5+2.5|pretty.scalar	5.0
+Double|sum2.5+2.5|ser.box	{"v":5.0}
+Double|sum2.5+2.5|ser.list.box	[{"v":5.0}]
+Double|sum2.5+2.5|ser.list.obj	[5.0]
+Double|sum2.5+2.5|ser.list.typed	[5.0]
+Double|sum2.5+2.5|ser.list2.obj	[5.0,5.0]
+Double|sum2.5+2.5|ser.list2.typed	[5.0,5.0]
+Double|sum2.5+2.5|ser.map.list	{"v":[5.0]}
+Double|sum2.5+2.5|ser.map.obj	{"v":5.0}
+Double|sum2.5+2.5|ser.map.typed	{"v":5.0}
+Double|sum2.5+2.5|ser.objbox	{"v":5.0}
+Double|sum2.5+2.5|ser.scalar	5.0
+Double|sum2.5+2.5|ser.set.typed	[5.0]
+Double|sum2.5+2.5|str.concat	5.0
+Double|sum2.5+2.5|str.objvalueOf	5.0
+Double|sum2.5+2.5|str.valueOf	5.0
+Integer|dbl1e20intValue|dbl.assign.ser	2.147483647E9
+Integer|dbl1e20intValue|dbl.assign.str	2.147483647E9
+Integer|dbl1e20intValue|dbl.cast.ser	2.147483647E9
+Integer|dbl1e20intValue|dec.assign.ser	2147483647
+Integer|dbl1e20intValue|dec.toPlainString	2147483647
+Integer|dbl1e20intValue|gen.pretty.writeNumber	[ 2147483647 ]
+Integer|dbl1e20intValue|gen.writeNumber	[2147483647]
+Integer|dbl1e20intValue|gen.writeNumberField	{"v":2147483647}
+Integer|dbl1e20intValue|gen.writeObject	[2147483647]
+Integer|dbl1e20intValue|pretty.box	{\n  "v" : 2147483647\n}
+Integer|dbl1e20intValue|pretty.list.obj	[ 2147483647 ]
+Integer|dbl1e20intValue|pretty.list.typed	[ 2147483647 ]
+Integer|dbl1e20intValue|pretty.map.obj	{\n  "v" : 2147483647\n}
+Integer|dbl1e20intValue|pretty.map.typed	{\n  "v" : 2147483647\n}
+Integer|dbl1e20intValue|pretty.scalar	2147483647
+Integer|dbl1e20intValue|ser.box	{"v":2147483647}
+Integer|dbl1e20intValue|ser.list.box	[{"v":2147483647}]
+Integer|dbl1e20intValue|ser.list.obj	[2147483647]
+Integer|dbl1e20intValue|ser.list.typed	[2147483647]
+Integer|dbl1e20intValue|ser.list2.obj	[2147483647,2147483647]
+Integer|dbl1e20intValue|ser.list2.typed	[2147483647,2147483647]
+Integer|dbl1e20intValue|ser.map.list	{"v":[2147483647]}
+Integer|dbl1e20intValue|ser.map.obj	{"v":2147483647}
+Integer|dbl1e20intValue|ser.map.typed	{"v":2147483647}
+Integer|dbl1e20intValue|ser.objbox	{"v":2147483647}
+Integer|dbl1e20intValue|ser.scalar	2147483647
+Integer|dbl1e20intValue|ser.set.typed	[2147483647]
+Integer|dbl1e20intValue|str.concat	2147483647
+Integer|dbl1e20intValue|str.objvalueOf	2147483647
+Integer|dbl1e20intValue|str.valueOf	2147483647
+Integer|dbl5.0intValue|dbl.assign.ser	5.0
+Integer|dbl5.0intValue|dbl.assign.str	5.0
+Integer|dbl5.0intValue|dbl.cast.ser	5.0
+Integer|dbl5.0intValue|dec.assign.ser	5
+Integer|dbl5.0intValue|dec.toPlainString	5
+Integer|dbl5.0intValue|gen.pretty.writeNumber	[ 5 ]
+Integer|dbl5.0intValue|gen.writeNumber	[5]
+Integer|dbl5.0intValue|gen.writeNumberField	{"v":5}
+Integer|dbl5.0intValue|gen.writeObject	[5]
+Integer|dbl5.0intValue|pretty.box	{\n  "v" : 5\n}
+Integer|dbl5.0intValue|pretty.list.obj	[ 5 ]
+Integer|dbl5.0intValue|pretty.list.typed	[ 5 ]
+Integer|dbl5.0intValue|pretty.map.obj	{\n  "v" : 5\n}
+Integer|dbl5.0intValue|pretty.map.typed	{\n  "v" : 5\n}
+Integer|dbl5.0intValue|pretty.scalar	5
+Integer|dbl5.0intValue|ser.box	{"v":5}
+Integer|dbl5.0intValue|ser.list.box	[{"v":5}]
+Integer|dbl5.0intValue|ser.list.obj	[5]
+Integer|dbl5.0intValue|ser.list.typed	[5]
+Integer|dbl5.0intValue|ser.list2.obj	[5,5]
+Integer|dbl5.0intValue|ser.list2.typed	[5,5]
+Integer|dbl5.0intValue|ser.map.list	{"v":[5]}
+Integer|dbl5.0intValue|ser.map.obj	{"v":5}
+Integer|dbl5.0intValue|ser.map.typed	{"v":5}
+Integer|dbl5.0intValue|ser.objbox	{"v":5}
+Integer|dbl5.0intValue|ser.scalar	5
+Integer|dbl5.0intValue|ser.set.typed	[5]
+Integer|dbl5.0intValue|str.concat	5
+Integer|dbl5.0intValue|str.objvalueOf	5
+Integer|dbl5.0intValue|str.valueOf	5
+Integer|dec1.0E-7intValue|dbl.assign.ser	0.0
+Integer|dec1.0E-7intValue|dbl.assign.str	0.0
+Integer|dec1.0E-7intValue|dbl.cast.ser	0.0
+Integer|dec1.0E-7intValue|dec.assign.ser	0
+Integer|dec1.0E-7intValue|dec.toPlainString	0
+Integer|dec1.0E-7intValue|gen.pretty.writeNumber	[ 0 ]
+Integer|dec1.0E-7intValue|gen.writeNumber	[0]
+Integer|dec1.0E-7intValue|gen.writeNumberField	{"v":0}
+Integer|dec1.0E-7intValue|gen.writeObject	[0]
+Integer|dec1.0E-7intValue|pretty.box	{\n  "v" : 0\n}
+Integer|dec1.0E-7intValue|pretty.list.obj	[ 0 ]
+Integer|dec1.0E-7intValue|pretty.list.typed	[ 0 ]
+Integer|dec1.0E-7intValue|pretty.map.obj	{\n  "v" : 0\n}
+Integer|dec1.0E-7intValue|pretty.map.typed	{\n  "v" : 0\n}
+Integer|dec1.0E-7intValue|pretty.scalar	0
+Integer|dec1.0E-7intValue|ser.box	{"v":0}
+Integer|dec1.0E-7intValue|ser.list.box	[{"v":0}]
+Integer|dec1.0E-7intValue|ser.list.obj	[0]
+Integer|dec1.0E-7intValue|ser.list.typed	[0]
+Integer|dec1.0E-7intValue|ser.list2.obj	[0,0]
+Integer|dec1.0E-7intValue|ser.list2.typed	[0,0]
+Integer|dec1.0E-7intValue|ser.map.list	{"v":[0]}
+Integer|dec1.0E-7intValue|ser.map.obj	{"v":0}
+Integer|dec1.0E-7intValue|ser.map.typed	{"v":0}
+Integer|dec1.0E-7intValue|ser.objbox	{"v":0}
+Integer|dec1.0E-7intValue|ser.scalar	0
+Integer|dec1.0E-7intValue|ser.set.typed	[0]
+Integer|dec1.0E-7intValue|str.concat	0
+Integer|dec1.0E-7intValue|str.objvalueOf	0
+Integer|dec1.0E-7intValue|str.valueOf	0
+Integer|dec1e20intValue|dbl.assign.ser	1.66199296E9
+Integer|dec1e20intValue|dbl.assign.str	1.66199296E9
+Integer|dec1e20intValue|dbl.cast.ser	1.66199296E9
+Integer|dec1e20intValue|dec.assign.ser	1661992960
+Integer|dec1e20intValue|dec.toPlainString	1661992960
+Integer|dec1e20intValue|gen.pretty.writeNumber	[ 1661992960 ]
+Integer|dec1e20intValue|gen.writeNumber	[1661992960]
+Integer|dec1e20intValue|gen.writeNumberField	{"v":1661992960}
+Integer|dec1e20intValue|gen.writeObject	[1661992960]
+Integer|dec1e20intValue|pretty.box	{\n  "v" : 1661992960\n}
+Integer|dec1e20intValue|pretty.list.obj	[ 1661992960 ]
+Integer|dec1e20intValue|pretty.list.typed	[ 1661992960 ]
+Integer|dec1e20intValue|pretty.map.obj	{\n  "v" : 1661992960\n}
+Integer|dec1e20intValue|pretty.map.typed	{\n  "v" : 1661992960\n}
+Integer|dec1e20intValue|pretty.scalar	1661992960
+Integer|dec1e20intValue|ser.box	{"v":1661992960}
+Integer|dec1e20intValue|ser.list.box	[{"v":1661992960}]
+Integer|dec1e20intValue|ser.list.obj	[1661992960]
+Integer|dec1e20intValue|ser.list.typed	[1661992960]
+Integer|dec1e20intValue|ser.list2.obj	[1661992960,1661992960]
+Integer|dec1e20intValue|ser.list2.typed	[1661992960,1661992960]
+Integer|dec1e20intValue|ser.map.list	{"v":[1661992960]}
+Integer|dec1e20intValue|ser.map.obj	{"v":1661992960}
+Integer|dec1e20intValue|ser.map.typed	{"v":1661992960}
+Integer|dec1e20intValue|ser.objbox	{"v":1661992960}
+Integer|dec1e20intValue|ser.scalar	1661992960
+Integer|dec1e20intValue|ser.set.typed	[1661992960]
+Integer|dec1e20intValue|str.concat	1661992960
+Integer|dec1e20intValue|str.objvalueOf	1661992960
+Integer|dec1e20intValue|str.valueOf	1661992960
+Integer|dec5.0intValue|dbl.assign.ser	5.0
+Integer|dec5.0intValue|dbl.assign.str	5.0
+Integer|dec5.0intValue|dbl.cast.ser	5.0
+Integer|dec5.0intValue|dec.assign.ser	5
+Integer|dec5.0intValue|dec.toPlainString	5
+Integer|dec5.0intValue|gen.pretty.writeNumber	[ 5 ]
+Integer|dec5.0intValue|gen.writeNumber	[5]
+Integer|dec5.0intValue|gen.writeNumberField	{"v":5}
+Integer|dec5.0intValue|gen.writeObject	[5]
+Integer|dec5.0intValue|pretty.box	{\n  "v" : 5\n}
+Integer|dec5.0intValue|pretty.list.obj	[ 5 ]
+Integer|dec5.0intValue|pretty.list.typed	[ 5 ]
+Integer|dec5.0intValue|pretty.map.obj	{\n  "v" : 5\n}
+Integer|dec5.0intValue|pretty.map.typed	{\n  "v" : 5\n}
+Integer|dec5.0intValue|pretty.scalar	5
+Integer|dec5.0intValue|ser.box	{"v":5}
+Integer|dec5.0intValue|ser.list.box	[{"v":5}]
+Integer|dec5.0intValue|ser.list.obj	[5]
+Integer|dec5.0intValue|ser.list.typed	[5]
+Integer|dec5.0intValue|ser.list2.obj	[5,5]
+Integer|dec5.0intValue|ser.list2.typed	[5,5]
+Integer|dec5.0intValue|ser.map.list	{"v":[5]}
+Integer|dec5.0intValue|ser.map.obj	{"v":5}
+Integer|dec5.0intValue|ser.map.typed	{"v":5}
+Integer|dec5.0intValue|ser.objbox	{"v":5}
+Integer|dec5.0intValue|ser.scalar	5
+Integer|dec5.0intValue|ser.set.typed	[5]
+Integer|dec5.0intValue|str.concat	5
+Integer|dec5.0intValue|str.objvalueOf	5
+Integer|dec5.0intValue|str.valueOf	5
+Integer|dec5.50intValue|dbl.assign.ser	5.0
+Integer|dec5.50intValue|dbl.assign.str	5.0
+Integer|dec5.50intValue|dbl.cast.ser	5.0
+Integer|dec5.50intValue|dec.assign.ser	5
+Integer|dec5.50intValue|dec.toPlainString	5
+Integer|dec5.50intValue|gen.pretty.writeNumber	[ 5 ]
+Integer|dec5.50intValue|gen.writeNumber	[5]
+Integer|dec5.50intValue|gen.writeNumberField	{"v":5}
+Integer|dec5.50intValue|gen.writeObject	[5]
+Integer|dec5.50intValue|pretty.box	{\n  "v" : 5\n}
+Integer|dec5.50intValue|pretty.list.obj	[ 5 ]
+Integer|dec5.50intValue|pretty.list.typed	[ 5 ]
+Integer|dec5.50intValue|pretty.map.obj	{\n  "v" : 5\n}
+Integer|dec5.50intValue|pretty.map.typed	{\n  "v" : 5\n}
+Integer|dec5.50intValue|pretty.scalar	5
+Integer|dec5.50intValue|ser.box	{"v":5}
+Integer|dec5.50intValue|ser.list.box	[{"v":5}]
+Integer|dec5.50intValue|ser.list.obj	[5]
+Integer|dec5.50intValue|ser.list.typed	[5]
+Integer|dec5.50intValue|ser.list2.obj	[5,5]
+Integer|dec5.50intValue|ser.list2.typed	[5,5]
+Integer|dec5.50intValue|ser.map.list	{"v":[5]}
+Integer|dec5.50intValue|ser.map.obj	{"v":5}
+Integer|dec5.50intValue|ser.map.typed	{"v":5}
+Integer|dec5.50intValue|ser.objbox	{"v":5}
+Integer|dec5.50intValue|ser.scalar	5
+Integer|dec5.50intValue|ser.set.typed	[5]
+Integer|dec5.50intValue|str.concat	5
+Integer|dec5.50intValue|str.objvalueOf	5
+Integer|dec5.50intValue|str.valueOf	5
+Integer|lit-0|dbl.assign.ser	0.0
+Integer|lit-0|dbl.assign.str	0.0
+Integer|lit-0|dbl.cast.ser	0.0
+Integer|lit-0|dec.assign.ser	0
+Integer|lit-0|dec.toPlainString	0
+Integer|lit-0|gen.pretty.writeNumber	[ 0 ]
+Integer|lit-0|gen.writeNumber	[0]
+Integer|lit-0|gen.writeNumberField	{"v":0}
+Integer|lit-0|gen.writeObject	[0]
+Integer|lit-0|pretty.box	{\n  "v" : 0\n}
+Integer|lit-0|pretty.list.obj	[ 0 ]
+Integer|lit-0|pretty.list.typed	[ 0 ]
+Integer|lit-0|pretty.map.obj	{\n  "v" : 0\n}
+Integer|lit-0|pretty.map.typed	{\n  "v" : 0\n}
+Integer|lit-0|pretty.scalar	0
+Integer|lit-0|ser.box	{"v":0}
+Integer|lit-0|ser.list.box	[{"v":0}]
+Integer|lit-0|ser.list.obj	[0]
+Integer|lit-0|ser.list.typed	[0]
+Integer|lit-0|ser.list2.obj	[0,0]
+Integer|lit-0|ser.list2.typed	[0,0]
+Integer|lit-0|ser.map.list	{"v":[0]}
+Integer|lit-0|ser.map.obj	{"v":0}
+Integer|lit-0|ser.map.typed	{"v":0}
+Integer|lit-0|ser.objbox	{"v":0}
+Integer|lit-0|ser.scalar	0
+Integer|lit-0|ser.set.typed	[0]
+Integer|lit-0|str.concat	0
+Integer|lit-0|str.objvalueOf	0
+Integer|lit-0|str.valueOf	0
+Integer|lit0|dbl.assign.ser	0.0
+Integer|lit0|dbl.assign.str	0.0
+Integer|lit0|dbl.cast.ser	0.0
+Integer|lit0|dec.assign.ser	0
+Integer|lit0|dec.toPlainString	0
+Integer|lit0|gen.pretty.writeNumber	[ 0 ]
+Integer|lit0|gen.writeNumber	[0]
+Integer|lit0|gen.writeNumberField	{"v":0}
+Integer|lit0|gen.writeObject	[0]
+Integer|lit0|pretty.box	{\n  "v" : 0\n}
+Integer|lit0|pretty.list.obj	[ 0 ]
+Integer|lit0|pretty.list.typed	[ 0 ]
+Integer|lit0|pretty.map.obj	{\n  "v" : 0\n}
+Integer|lit0|pretty.map.typed	{\n  "v" : 0\n}
+Integer|lit0|pretty.scalar	0
+Integer|lit0|ser.box	{"v":0}
+Integer|lit0|ser.list.box	[{"v":0}]
+Integer|lit0|ser.list.obj	[0]
+Integer|lit0|ser.list.typed	[0]
+Integer|lit0|ser.list2.obj	[0,0]
+Integer|lit0|ser.list2.typed	[0,0]
+Integer|lit0|ser.map.list	{"v":[0]}
+Integer|lit0|ser.map.obj	{"v":0}
+Integer|lit0|ser.map.typed	{"v":0}
+Integer|lit0|ser.objbox	{"v":0}
+Integer|lit0|ser.scalar	0
+Integer|lit0|ser.set.typed	[0]
+Integer|lit0|str.concat	0
+Integer|lit0|str.objvalueOf	0
+Integer|lit0|str.valueOf	0
+Integer|lit5|dbl.assign.ser	5.0
+Integer|lit5|dbl.assign.str	5.0
+Integer|lit5|dbl.cast.ser	5.0
+Integer|lit5|dec.assign.ser	5
+Integer|lit5|dec.toPlainString	5
+Integer|lit5|gen.pretty.writeNumber	[ 5 ]
+Integer|lit5|gen.writeNumber	[5]
+Integer|lit5|gen.writeNumberField	{"v":5}
+Integer|lit5|gen.writeObject	[5]
+Integer|lit5|pretty.box	{\n  "v" : 5\n}
+Integer|lit5|pretty.list.obj	[ 5 ]
+Integer|lit5|pretty.list.typed	[ 5 ]
+Integer|lit5|pretty.map.obj	{\n  "v" : 5\n}
+Integer|lit5|pretty.map.typed	{\n  "v" : 5\n}
+Integer|lit5|pretty.scalar	5
+Integer|lit5|ser.box	{"v":5}
+Integer|lit5|ser.list.box	[{"v":5}]
+Integer|lit5|ser.list.obj	[5]
+Integer|lit5|ser.list.typed	[5]
+Integer|lit5|ser.list2.obj	[5,5]
+Integer|lit5|ser.list2.typed	[5,5]
+Integer|lit5|ser.map.list	{"v":[5]}
+Integer|lit5|ser.map.obj	{"v":5}
+Integer|lit5|ser.map.typed	{"v":5}
+Integer|lit5|ser.objbox	{"v":5}
+Integer|lit5|ser.scalar	5
+Integer|lit5|ser.set.typed	[5]
+Integer|lit5|str.concat	5
+Integer|lit5|str.objvalueOf	5
+Integer|lit5|str.valueOf	5
+Integer|max|dbl.assign.ser	2.147483647E9
+Integer|max|dbl.assign.str	2.147483647E9
+Integer|max|dbl.cast.ser	2.147483647E9
+Integer|max|dec.assign.ser	2147483647
+Integer|max|dec.toPlainString	2147483647
+Integer|max|gen.pretty.writeNumber	[ 2147483647 ]
+Integer|max|gen.writeNumber	[2147483647]
+Integer|max|gen.writeNumberField	{"v":2147483647}
+Integer|max|gen.writeObject	[2147483647]
+Integer|max|pretty.box	{\n  "v" : 2147483647\n}
+Integer|max|pretty.list.obj	[ 2147483647 ]
+Integer|max|pretty.list.typed	[ 2147483647 ]
+Integer|max|pretty.map.obj	{\n  "v" : 2147483647\n}
+Integer|max|pretty.map.typed	{\n  "v" : 2147483647\n}
+Integer|max|pretty.scalar	2147483647
+Integer|max|ser.box	{"v":2147483647}
+Integer|max|ser.list.box	[{"v":2147483647}]
+Integer|max|ser.list.obj	[2147483647]
+Integer|max|ser.list.typed	[2147483647]
+Integer|max|ser.list2.obj	[2147483647,2147483647]
+Integer|max|ser.list2.typed	[2147483647,2147483647]
+Integer|max|ser.map.list	{"v":[2147483647]}
+Integer|max|ser.map.obj	{"v":2147483647}
+Integer|max|ser.map.typed	{"v":2147483647}
+Integer|max|ser.objbox	{"v":2147483647}
+Integer|max|ser.scalar	2147483647
+Integer|max|ser.set.typed	[2147483647]
+Integer|max|str.concat	2147483647
+Integer|max|str.objvalueOf	2147483647
+Integer|max|str.valueOf	2147483647
+Integer|negzero|dbl.assign.ser	0.0
+Integer|negzero|dbl.assign.str	0.0
+Integer|negzero|dbl.cast.ser	0.0
+Integer|negzero|dec.assign.ser	0
+Integer|negzero|dec.toPlainString	0
+Integer|negzero|gen.pretty.writeNumber	[ 0 ]
+Integer|negzero|gen.writeNumber	[0]
+Integer|negzero|gen.writeNumberField	{"v":0}
+Integer|negzero|gen.writeObject	[0]
+Integer|negzero|pretty.box	{\n  "v" : 0\n}
+Integer|negzero|pretty.list.obj	[ 0 ]
+Integer|negzero|pretty.list.typed	[ 0 ]
+Integer|negzero|pretty.map.obj	{\n  "v" : 0\n}
+Integer|negzero|pretty.map.typed	{\n  "v" : 0\n}
+Integer|negzero|pretty.scalar	0
+Integer|negzero|ser.box	{"v":0}
+Integer|negzero|ser.list.box	[{"v":0}]
+Integer|negzero|ser.list.obj	[0]
+Integer|negzero|ser.list.typed	[0]
+Integer|negzero|ser.list2.obj	[0,0]
+Integer|negzero|ser.list2.typed	[0,0]
+Integer|negzero|ser.map.list	{"v":[0]}
+Integer|negzero|ser.map.obj	{"v":0}
+Integer|negzero|ser.map.typed	{"v":0}
+Integer|negzero|ser.objbox	{"v":0}
+Integer|negzero|ser.scalar	0
+Integer|negzero|ser.set.typed	[0]
+Integer|negzero|str.concat	0
+Integer|negzero|str.objvalueOf	0
+Integer|negzero|str.valueOf	0
+Integer|str5|dbl.assign.ser	5.0
+Integer|str5|dbl.assign.str	5.0
+Integer|str5|dbl.cast.ser	5.0
+Integer|str5|dec.assign.ser	5
+Integer|str5|dec.toPlainString	5
+Integer|str5|gen.pretty.writeNumber	[ 5 ]
+Integer|str5|gen.writeNumber	[5]
+Integer|str5|gen.writeNumberField	{"v":5}
+Integer|str5|gen.writeObject	[5]
+Integer|str5|pretty.box	{\n  "v" : 5\n}
+Integer|str5|pretty.list.obj	[ 5 ]
+Integer|str5|pretty.list.typed	[ 5 ]
+Integer|str5|pretty.map.obj	{\n  "v" : 5\n}
+Integer|str5|pretty.map.typed	{\n  "v" : 5\n}
+Integer|str5|pretty.scalar	5
+Integer|str5|ser.box	{"v":5}
+Integer|str5|ser.list.box	[{"v":5}]
+Integer|str5|ser.list.obj	[5]
+Integer|str5|ser.list.typed	[5]
+Integer|str5|ser.list2.obj	[5,5]
+Integer|str5|ser.list2.typed	[5,5]
+Integer|str5|ser.map.list	{"v":[5]}
+Integer|str5|ser.map.obj	{"v":5}
+Integer|str5|ser.map.typed	{"v":5}
+Integer|str5|ser.objbox	{"v":5}
+Integer|str5|ser.scalar	5
+Integer|str5|ser.set.typed	[5]
+Integer|str5|str.concat	5
+Integer|str5|str.objvalueOf	5
+Integer|str5|str.valueOf	5
+Long|dbl1e20longValue|dbl.assign.ser	9.223372036854776E18
+Long|dbl1e20longValue|dbl.assign.str	9.223372036854776E18
+Long|dbl1e20longValue|dbl.cast.ser	9.223372036854776E18
+Long|dbl1e20longValue|dec.assign.ser	9223372036854775807
+Long|dbl1e20longValue|dec.toPlainString	9223372036854775807
+Long|dbl1e20longValue|gen.pretty.writeNumber	[ 9223372036854775807 ]
+Long|dbl1e20longValue|gen.writeNumber	[9223372036854775807]
+Long|dbl1e20longValue|gen.writeNumberField	{"v":9223372036854775807}
+Long|dbl1e20longValue|gen.writeObject	[9223372036854775807]
+Long|dbl1e20longValue|pretty.box	{\n  "v" : 9223372036854775807\n}
+Long|dbl1e20longValue|pretty.list.obj	[ 9223372036854775807 ]
+Long|dbl1e20longValue|pretty.list.typed	[ 9223372036854775807 ]
+Long|dbl1e20longValue|pretty.map.obj	{\n  "v" : 9223372036854775807\n}
+Long|dbl1e20longValue|pretty.map.typed	{\n  "v" : 9223372036854775807\n}
+Long|dbl1e20longValue|pretty.scalar	9223372036854775807
+Long|dbl1e20longValue|ser.box	{"v":9223372036854775807}
+Long|dbl1e20longValue|ser.list.box	[{"v":9223372036854775807}]
+Long|dbl1e20longValue|ser.list.obj	[9223372036854775807]
+Long|dbl1e20longValue|ser.list.typed	[9223372036854775807]
+Long|dbl1e20longValue|ser.list2.obj	[9223372036854775807,9223372036854775807]
+Long|dbl1e20longValue|ser.list2.typed	[9223372036854775807,9223372036854775807]
+Long|dbl1e20longValue|ser.map.list	{"v":[9223372036854775807]}
+Long|dbl1e20longValue|ser.map.obj	{"v":9223372036854775807}
+Long|dbl1e20longValue|ser.map.typed	{"v":9223372036854775807}
+Long|dbl1e20longValue|ser.objbox	{"v":9223372036854775807}
+Long|dbl1e20longValue|ser.scalar	9223372036854775807
+Long|dbl1e20longValue|ser.set.typed	[9223372036854775807]
+Long|dbl1e20longValue|str.concat	9223372036854775807
+Long|dbl1e20longValue|str.objvalueOf	9223372036854775807
+Long|dbl1e20longValue|str.valueOf	9223372036854775807
+Long|dbl5.0longValue|dbl.assign.ser	5.0
+Long|dbl5.0longValue|dbl.assign.str	5.0
+Long|dbl5.0longValue|dbl.cast.ser	5.0
+Long|dbl5.0longValue|dec.assign.ser	5
+Long|dbl5.0longValue|dec.toPlainString	5
+Long|dbl5.0longValue|gen.pretty.writeNumber	[ 5 ]
+Long|dbl5.0longValue|gen.writeNumber	[5]
+Long|dbl5.0longValue|gen.writeNumberField	{"v":5}
+Long|dbl5.0longValue|gen.writeObject	[5]
+Long|dbl5.0longValue|pretty.box	{\n  "v" : 5\n}
+Long|dbl5.0longValue|pretty.list.obj	[ 5 ]
+Long|dbl5.0longValue|pretty.list.typed	[ 5 ]
+Long|dbl5.0longValue|pretty.map.obj	{\n  "v" : 5\n}
+Long|dbl5.0longValue|pretty.map.typed	{\n  "v" : 5\n}
+Long|dbl5.0longValue|pretty.scalar	5
+Long|dbl5.0longValue|ser.box	{"v":5}
+Long|dbl5.0longValue|ser.list.box	[{"v":5}]
+Long|dbl5.0longValue|ser.list.obj	[5]
+Long|dbl5.0longValue|ser.list.typed	[5]
+Long|dbl5.0longValue|ser.list2.obj	[5,5]
+Long|dbl5.0longValue|ser.list2.typed	[5,5]
+Long|dbl5.0longValue|ser.map.list	{"v":[5]}
+Long|dbl5.0longValue|ser.map.obj	{"v":5}
+Long|dbl5.0longValue|ser.map.typed	{"v":5}
+Long|dbl5.0longValue|ser.objbox	{"v":5}
+Long|dbl5.0longValue|ser.scalar	5
+Long|dbl5.0longValue|ser.set.typed	[5]
+Long|dbl5.0longValue|str.concat	5
+Long|dbl5.0longValue|str.objvalueOf	5
+Long|dbl5.0longValue|str.valueOf	5
+Long|dec1.0E-7longValue|dbl.assign.ser	0.0
+Long|dec1.0E-7longValue|dbl.assign.str	0.0
+Long|dec1.0E-7longValue|dbl.cast.ser	0.0
+Long|dec1.0E-7longValue|dec.assign.ser	0
+Long|dec1.0E-7longValue|dec.toPlainString	0
+Long|dec1.0E-7longValue|gen.pretty.writeNumber	[ 0 ]
+Long|dec1.0E-7longValue|gen.writeNumber	[0]
+Long|dec1.0E-7longValue|gen.writeNumberField	{"v":0}
+Long|dec1.0E-7longValue|gen.writeObject	[0]
+Long|dec1.0E-7longValue|pretty.box	{\n  "v" : 0\n}
+Long|dec1.0E-7longValue|pretty.list.obj	[ 0 ]
+Long|dec1.0E-7longValue|pretty.list.typed	[ 0 ]
+Long|dec1.0E-7longValue|pretty.map.obj	{\n  "v" : 0\n}
+Long|dec1.0E-7longValue|pretty.map.typed	{\n  "v" : 0\n}
+Long|dec1.0E-7longValue|pretty.scalar	0
+Long|dec1.0E-7longValue|ser.box	{"v":0}
+Long|dec1.0E-7longValue|ser.list.box	[{"v":0}]
+Long|dec1.0E-7longValue|ser.list.obj	[0]
+Long|dec1.0E-7longValue|ser.list.typed	[0]
+Long|dec1.0E-7longValue|ser.list2.obj	[0,0]
+Long|dec1.0E-7longValue|ser.list2.typed	[0,0]
+Long|dec1.0E-7longValue|ser.map.list	{"v":[0]}
+Long|dec1.0E-7longValue|ser.map.obj	{"v":0}
+Long|dec1.0E-7longValue|ser.map.typed	{"v":0}
+Long|dec1.0E-7longValue|ser.objbox	{"v":0}
+Long|dec1.0E-7longValue|ser.scalar	0
+Long|dec1.0E-7longValue|ser.set.typed	[0]
+Long|dec1.0E-7longValue|str.concat	0
+Long|dec1.0E-7longValue|str.objvalueOf	0
+Long|dec1.0E-7longValue|str.valueOf	0
+Long|dec1e20longValue|dbl.assign.ser	7.766279631452242E18
+Long|dec1e20longValue|dbl.assign.str	7.766279631452242E18
+Long|dec1e20longValue|dbl.cast.ser	7.766279631452242E18
+Long|dec1e20longValue|dec.assign.ser	7766279631452241920
+Long|dec1e20longValue|dec.toPlainString	7766279631452241920
+Long|dec1e20longValue|gen.pretty.writeNumber	[ 7766279631452241920 ]
+Long|dec1e20longValue|gen.writeNumber	[7766279631452241920]
+Long|dec1e20longValue|gen.writeNumberField	{"v":7766279631452241920}
+Long|dec1e20longValue|gen.writeObject	[7766279631452241920]
+Long|dec1e20longValue|pretty.box	{\n  "v" : 7766279631452241920\n}
+Long|dec1e20longValue|pretty.list.obj	[ 7766279631452241920 ]
+Long|dec1e20longValue|pretty.list.typed	[ 7766279631452241920 ]
+Long|dec1e20longValue|pretty.map.obj	{\n  "v" : 7766279631452241920\n}
+Long|dec1e20longValue|pretty.map.typed	{\n  "v" : 7766279631452241920\n}
+Long|dec1e20longValue|pretty.scalar	7766279631452241920
+Long|dec1e20longValue|ser.box	{"v":7766279631452241920}
+Long|dec1e20longValue|ser.list.box	[{"v":7766279631452241920}]
+Long|dec1e20longValue|ser.list.obj	[7766279631452241920]
+Long|dec1e20longValue|ser.list.typed	[7766279631452241920]
+Long|dec1e20longValue|ser.list2.obj	[7766279631452241920,7766279631452241920]
+Long|dec1e20longValue|ser.list2.typed	[7766279631452241920,7766279631452241920]
+Long|dec1e20longValue|ser.map.list	{"v":[7766279631452241920]}
+Long|dec1e20longValue|ser.map.obj	{"v":7766279631452241920}
+Long|dec1e20longValue|ser.map.typed	{"v":7766279631452241920}
+Long|dec1e20longValue|ser.objbox	{"v":7766279631452241920}
+Long|dec1e20longValue|ser.scalar	7766279631452241920
+Long|dec1e20longValue|ser.set.typed	[7766279631452241920]
+Long|dec1e20longValue|str.concat	7766279631452241920
+Long|dec1e20longValue|str.objvalueOf	7766279631452241920
+Long|dec1e20longValue|str.valueOf	7766279631452241920
+Long|dec5.0longValue|dbl.assign.ser	5.0
+Long|dec5.0longValue|dbl.assign.str	5.0
+Long|dec5.0longValue|dbl.cast.ser	5.0
+Long|dec5.0longValue|dec.assign.ser	5
+Long|dec5.0longValue|dec.toPlainString	5
+Long|dec5.0longValue|gen.pretty.writeNumber	[ 5 ]
+Long|dec5.0longValue|gen.writeNumber	[5]
+Long|dec5.0longValue|gen.writeNumberField	{"v":5}
+Long|dec5.0longValue|gen.writeObject	[5]
+Long|dec5.0longValue|pretty.box	{\n  "v" : 5\n}
+Long|dec5.0longValue|pretty.list.obj	[ 5 ]
+Long|dec5.0longValue|pretty.list.typed	[ 5 ]
+Long|dec5.0longValue|pretty.map.obj	{\n  "v" : 5\n}
+Long|dec5.0longValue|pretty.map.typed	{\n  "v" : 5\n}
+Long|dec5.0longValue|pretty.scalar	5
+Long|dec5.0longValue|ser.box	{"v":5}
+Long|dec5.0longValue|ser.list.box	[{"v":5}]
+Long|dec5.0longValue|ser.list.obj	[5]
+Long|dec5.0longValue|ser.list.typed	[5]
+Long|dec5.0longValue|ser.list2.obj	[5,5]
+Long|dec5.0longValue|ser.list2.typed	[5,5]
+Long|dec5.0longValue|ser.map.list	{"v":[5]}
+Long|dec5.0longValue|ser.map.obj	{"v":5}
+Long|dec5.0longValue|ser.map.typed	{"v":5}
+Long|dec5.0longValue|ser.objbox	{"v":5}
+Long|dec5.0longValue|ser.scalar	5
+Long|dec5.0longValue|ser.set.typed	[5]
+Long|dec5.0longValue|str.concat	5
+Long|dec5.0longValue|str.objvalueOf	5
+Long|dec5.0longValue|str.valueOf	5
+Long|dec5.50longValue|dbl.assign.ser	5.0
+Long|dec5.50longValue|dbl.assign.str	5.0
+Long|dec5.50longValue|dbl.cast.ser	5.0
+Long|dec5.50longValue|dec.assign.ser	5
+Long|dec5.50longValue|dec.toPlainString	5
+Long|dec5.50longValue|gen.pretty.writeNumber	[ 5 ]
+Long|dec5.50longValue|gen.writeNumber	[5]
+Long|dec5.50longValue|gen.writeNumberField	{"v":5}
+Long|dec5.50longValue|gen.writeObject	[5]
+Long|dec5.50longValue|pretty.box	{\n  "v" : 5\n}
+Long|dec5.50longValue|pretty.list.obj	[ 5 ]
+Long|dec5.50longValue|pretty.list.typed	[ 5 ]
+Long|dec5.50longValue|pretty.map.obj	{\n  "v" : 5\n}
+Long|dec5.50longValue|pretty.map.typed	{\n  "v" : 5\n}
+Long|dec5.50longValue|pretty.scalar	5
+Long|dec5.50longValue|ser.box	{"v":5}
+Long|dec5.50longValue|ser.list.box	[{"v":5}]
+Long|dec5.50longValue|ser.list.obj	[5]
+Long|dec5.50longValue|ser.list.typed	[5]
+Long|dec5.50longValue|ser.list2.obj	[5,5]
+Long|dec5.50longValue|ser.list2.typed	[5,5]
+Long|dec5.50longValue|ser.map.list	{"v":[5]}
+Long|dec5.50longValue|ser.map.obj	{"v":5}
+Long|dec5.50longValue|ser.map.typed	{"v":5}
+Long|dec5.50longValue|ser.objbox	{"v":5}
+Long|dec5.50longValue|ser.scalar	5
+Long|dec5.50longValue|ser.set.typed	[5]
+Long|dec5.50longValue|str.concat	5
+Long|dec5.50longValue|str.objvalueOf	5
+Long|dec5.50longValue|str.valueOf	5
+Long|intvar|dbl.assign.ser	5.0
+Long|intvar|dbl.assign.str	5.0
+Long|intvar|dbl.cast.ser	5.0
+Long|intvar|dec.assign.ser	5
+Long|intvar|dec.toPlainString	5
+Long|intvar|gen.pretty.writeNumber	[ 5 ]
+Long|intvar|gen.writeNumber	[5]
+Long|intvar|gen.writeNumberField	{"v":5}
+Long|intvar|gen.writeObject	[5]
+Long|intvar|pretty.box	{\n  "v" : 5\n}
+Long|intvar|pretty.list.obj	[ 5 ]
+Long|intvar|pretty.list.typed	[ 5 ]
+Long|intvar|pretty.map.obj	{\n  "v" : 5\n}
+Long|intvar|pretty.map.typed	{\n  "v" : 5\n}
+Long|intvar|pretty.scalar	5
+Long|intvar|ser.box	{"v":5}
+Long|intvar|ser.list.box	[{"v":5}]
+Long|intvar|ser.list.obj	[5]
+Long|intvar|ser.list.typed	[5]
+Long|intvar|ser.list2.obj	[5,5]
+Long|intvar|ser.list2.typed	[5,5]
+Long|intvar|ser.map.list	{"v":[5]}
+Long|intvar|ser.map.obj	{"v":5}
+Long|intvar|ser.map.typed	{"v":5}
+Long|intvar|ser.objbox	{"v":5}
+Long|intvar|ser.scalar	5
+Long|intvar|ser.set.typed	[5]
+Long|intvar|str.concat	5
+Long|intvar|str.objvalueOf	5
+Long|intvar|str.valueOf	5
+Long|lit-0|dbl.assign.ser	0.0
+Long|lit-0|dbl.assign.str	0.0
+Long|lit-0|dbl.cast.ser	0.0
+Long|lit-0|dec.assign.ser	0
+Long|lit-0|dec.toPlainString	0
+Long|lit-0|gen.pretty.writeNumber	[ 0 ]
+Long|lit-0|gen.writeNumber	[0]
+Long|lit-0|gen.writeNumberField	{"v":0}
+Long|lit-0|gen.writeObject	[0]
+Long|lit-0|pretty.box	{\n  "v" : 0\n}
+Long|lit-0|pretty.list.obj	[ 0 ]
+Long|lit-0|pretty.list.typed	[ 0 ]
+Long|lit-0|pretty.map.obj	{\n  "v" : 0\n}
+Long|lit-0|pretty.map.typed	{\n  "v" : 0\n}
+Long|lit-0|pretty.scalar	0
+Long|lit-0|ser.box	{"v":0}
+Long|lit-0|ser.list.box	[{"v":0}]
+Long|lit-0|ser.list.obj	[0]
+Long|lit-0|ser.list.typed	[0]
+Long|lit-0|ser.list2.obj	[0,0]
+Long|lit-0|ser.list2.typed	[0,0]
+Long|lit-0|ser.map.list	{"v":[0]}
+Long|lit-0|ser.map.obj	{"v":0}
+Long|lit-0|ser.map.typed	{"v":0}
+Long|lit-0|ser.objbox	{"v":0}
+Long|lit-0|ser.scalar	0
+Long|lit-0|ser.set.typed	[0]
+Long|lit-0|str.concat	0
+Long|lit-0|str.objvalueOf	0
+Long|lit-0|str.valueOf	0
+Long|lit0|dbl.assign.ser	0.0
+Long|lit0|dbl.assign.str	0.0
+Long|lit0|dbl.cast.ser	0.0
+Long|lit0|dec.assign.ser	0
+Long|lit0|dec.toPlainString	0
+Long|lit0|gen.pretty.writeNumber	[ 0 ]
+Long|lit0|gen.writeNumber	[0]
+Long|lit0|gen.writeNumberField	{"v":0}
+Long|lit0|gen.writeObject	[0]
+Long|lit0|pretty.box	{\n  "v" : 0\n}
+Long|lit0|pretty.list.obj	[ 0 ]
+Long|lit0|pretty.list.typed	[ 0 ]
+Long|lit0|pretty.map.obj	{\n  "v" : 0\n}
+Long|lit0|pretty.map.typed	{\n  "v" : 0\n}
+Long|lit0|pretty.scalar	0
+Long|lit0|ser.box	{"v":0}
+Long|lit0|ser.list.box	[{"v":0}]
+Long|lit0|ser.list.obj	[0]
+Long|lit0|ser.list.typed	[0]
+Long|lit0|ser.list2.obj	[0,0]
+Long|lit0|ser.list2.typed	[0,0]
+Long|lit0|ser.map.list	{"v":[0]}
+Long|lit0|ser.map.obj	{"v":0}
+Long|lit0|ser.map.typed	{"v":0}
+Long|lit0|ser.objbox	{"v":0}
+Long|lit0|ser.scalar	0
+Long|lit0|ser.set.typed	[0]
+Long|lit0|str.concat	0
+Long|lit0|str.objvalueOf	0
+Long|lit0|str.valueOf	0
+Long|lit5L|dbl.assign.ser	5.0
+Long|lit5L|dbl.assign.str	5.0
+Long|lit5L|dbl.cast.ser	5.0
+Long|lit5L|dec.assign.ser	5
+Long|lit5L|dec.toPlainString	5
+Long|lit5L|gen.pretty.writeNumber	[ 5 ]
+Long|lit5L|gen.writeNumber	[5]
+Long|lit5L|gen.writeNumberField	{"v":5}
+Long|lit5L|gen.writeObject	[5]
+Long|lit5L|pretty.box	{\n  "v" : 5\n}
+Long|lit5L|pretty.list.obj	[ 5 ]
+Long|lit5L|pretty.list.typed	[ 5 ]
+Long|lit5L|pretty.map.obj	{\n  "v" : 5\n}
+Long|lit5L|pretty.map.typed	{\n  "v" : 5\n}
+Long|lit5L|pretty.scalar	5
+Long|lit5L|ser.box	{"v":5}
+Long|lit5L|ser.list.box	[{"v":5}]
+Long|lit5L|ser.list.obj	[5]
+Long|lit5L|ser.list.typed	[5]
+Long|lit5L|ser.list2.obj	[5,5]
+Long|lit5L|ser.list2.typed	[5,5]
+Long|lit5L|ser.map.list	{"v":[5]}
+Long|lit5L|ser.map.obj	{"v":5}
+Long|lit5L|ser.map.typed	{"v":5}
+Long|lit5L|ser.objbox	{"v":5}
+Long|lit5L|ser.scalar	5
+Long|lit5L|ser.set.typed	[5]
+Long|lit5L|str.concat	5
+Long|lit5L|str.objvalueOf	5
+Long|lit5L|str.valueOf	5
+Long|lit5|dbl.assign.ser	5.0
+Long|lit5|dbl.assign.str	5.0
+Long|lit5|dbl.cast.ser	5.0
+Long|lit5|dec.assign.ser	5
+Long|lit5|dec.toPlainString	5
+Long|lit5|gen.pretty.writeNumber	[ 5 ]
+Long|lit5|gen.writeNumber	[5]
+Long|lit5|gen.writeNumberField	{"v":5}
+Long|lit5|gen.writeObject	[5]
+Long|lit5|pretty.box	{\n  "v" : 5\n}
+Long|lit5|pretty.list.obj	[ 5 ]
+Long|lit5|pretty.list.typed	[ 5 ]
+Long|lit5|pretty.map.obj	{\n  "v" : 5\n}
+Long|lit5|pretty.map.typed	{\n  "v" : 5\n}
+Long|lit5|pretty.scalar	5
+Long|lit5|ser.box	{"v":5}
+Long|lit5|ser.list.box	[{"v":5}]
+Long|lit5|ser.list.obj	[5]
+Long|lit5|ser.list.typed	[5]
+Long|lit5|ser.list2.obj	[5,5]
+Long|lit5|ser.list2.typed	[5,5]
+Long|lit5|ser.map.list	{"v":[5]}
+Long|lit5|ser.map.obj	{"v":5}
+Long|lit5|ser.map.typed	{"v":5}
+Long|lit5|ser.objbox	{"v":5}
+Long|lit5|ser.scalar	5
+Long|lit5|ser.set.typed	[5]
+Long|lit5|str.concat	5
+Long|lit5|str.objvalueOf	5
+Long|lit5|str.valueOf	5
+Long|max|dbl.assign.ser	9.223372036854776E18
+Long|max|dbl.assign.str	9.223372036854776E18
+Long|max|dbl.cast.ser	9.223372036854776E18
+Long|max|dec.assign.ser	9223372036854775807
+Long|max|dec.toPlainString	9223372036854775807
+Long|max|gen.pretty.writeNumber	[ 9223372036854775807 ]
+Long|max|gen.writeNumber	[9223372036854775807]
+Long|max|gen.writeNumberField	{"v":9223372036854775807}
+Long|max|gen.writeObject	[9223372036854775807]
+Long|max|pretty.box	{\n  "v" : 9223372036854775807\n}
+Long|max|pretty.list.obj	[ 9223372036854775807 ]
+Long|max|pretty.list.typed	[ 9223372036854775807 ]
+Long|max|pretty.map.obj	{\n  "v" : 9223372036854775807\n}
+Long|max|pretty.map.typed	{\n  "v" : 9223372036854775807\n}
+Long|max|pretty.scalar	9223372036854775807
+Long|max|ser.box	{"v":9223372036854775807}
+Long|max|ser.list.box	[{"v":9223372036854775807}]
+Long|max|ser.list.obj	[9223372036854775807]
+Long|max|ser.list.typed	[9223372036854775807]
+Long|max|ser.list2.obj	[9223372036854775807,9223372036854775807]
+Long|max|ser.list2.typed	[9223372036854775807,9223372036854775807]
+Long|max|ser.map.list	{"v":[9223372036854775807]}
+Long|max|ser.map.obj	{"v":9223372036854775807}
+Long|max|ser.map.typed	{"v":9223372036854775807}
+Long|max|ser.objbox	{"v":9223372036854775807}
+Long|max|ser.scalar	9223372036854775807
+Long|max|ser.set.typed	[9223372036854775807]
+Long|max|str.concat	9223372036854775807
+Long|max|str.objvalueOf	9223372036854775807
+Long|max|str.valueOf	9223372036854775807
+Long|min|dbl.assign.ser	-9.223372036854776E18
+Long|min|dbl.assign.str	-9.223372036854776E18
+Long|min|dbl.cast.ser	-9.223372036854776E18
+Long|min|dec.assign.ser	-9223372036854775808
+Long|min|dec.toPlainString	-9223372036854775808
+Long|min|gen.pretty.writeNumber	[ -9223372036854775808 ]
+Long|min|gen.writeNumber	[-9223372036854775808]
+Long|min|gen.writeNumberField	{"v":-9223372036854775808}
+Long|min|gen.writeObject	[-9223372036854775808]
+Long|min|pretty.box	{\n  "v" : -9223372036854775808\n}
+Long|min|pretty.list.obj	[ -9223372036854775808 ]
+Long|min|pretty.list.typed	[ -9223372036854775808 ]
+Long|min|pretty.map.obj	{\n  "v" : -9223372036854775808\n}
+Long|min|pretty.map.typed	{\n  "v" : -9223372036854775808\n}
+Long|min|pretty.scalar	-9223372036854775808
+Long|min|ser.box	{"v":-9223372036854775808}
+Long|min|ser.list.box	[{"v":-9223372036854775808}]
+Long|min|ser.list.obj	[-9223372036854775808]
+Long|min|ser.list.typed	[-9223372036854775808]
+Long|min|ser.list2.obj	[-9223372036854775808,-9223372036854775808]
+Long|min|ser.list2.typed	[-9223372036854775808,-9223372036854775808]
+Long|min|ser.map.list	{"v":[-9223372036854775808]}
+Long|min|ser.map.obj	{"v":-9223372036854775808}
+Long|min|ser.map.typed	{"v":-9223372036854775808}
+Long|min|ser.objbox	{"v":-9223372036854775808}
+Long|min|ser.scalar	-9223372036854775808
+Long|min|ser.set.typed	[-9223372036854775808]
+Long|min|str.concat	-9223372036854775808
+Long|min|str.objvalueOf	-9223372036854775808
+Long|min|str.valueOf	-9223372036854775808
+Long|negzero|dbl.assign.ser	0.0
+Long|negzero|dbl.assign.str	0.0
+Long|negzero|dbl.cast.ser	0.0
+Long|negzero|dec.assign.ser	0
+Long|negzero|dec.toPlainString	0
+Long|negzero|gen.pretty.writeNumber	[ 0 ]
+Long|negzero|gen.writeNumber	[0]
+Long|negzero|gen.writeNumberField	{"v":0}
+Long|negzero|gen.writeObject	[0]
+Long|negzero|pretty.box	{\n  "v" : 0\n}
+Long|negzero|pretty.list.obj	[ 0 ]
+Long|negzero|pretty.list.typed	[ 0 ]
+Long|negzero|pretty.map.obj	{\n  "v" : 0\n}
+Long|negzero|pretty.map.typed	{\n  "v" : 0\n}
+Long|negzero|pretty.scalar	0
+Long|negzero|ser.box	{"v":0}
+Long|negzero|ser.list.box	[{"v":0}]
+Long|negzero|ser.list.obj	[0]
+Long|negzero|ser.list.typed	[0]
+Long|negzero|ser.list2.obj	[0,0]
+Long|negzero|ser.list2.typed	[0,0]
+Long|negzero|ser.map.list	{"v":[0]}
+Long|negzero|ser.map.obj	{"v":0}
+Long|negzero|ser.map.typed	{"v":0}
+Long|negzero|ser.objbox	{"v":0}
+Long|negzero|ser.scalar	0
+Long|negzero|ser.set.typed	[0]
+Long|negzero|str.concat	0
+Long|negzero|str.objvalueOf	0
+Long|negzero|str.valueOf	0
+Long|str100000000000000000|dbl.assign.ser	1.0E17
+Long|str100000000000000000|dbl.assign.str	1.0E17
+Long|str100000000000000000|dbl.cast.ser	1.0E17
+Long|str100000000000000000|dec.assign.ser	100000000000000000
+Long|str100000000000000000|dec.toPlainString	100000000000000000
+Long|str100000000000000000|gen.pretty.writeNumber	[ 100000000000000000 ]
+Long|str100000000000000000|gen.writeNumber	[100000000000000000]
+Long|str100000000000000000|gen.writeNumberField	{"v":100000000000000000}
+Long|str100000000000000000|gen.writeObject	[100000000000000000]
+Long|str100000000000000000|pretty.box	{\n  "v" : 100000000000000000\n}
+Long|str100000000000000000|pretty.list.obj	[ 100000000000000000 ]
+Long|str100000000000000000|pretty.list.typed	[ 100000000000000000 ]
+Long|str100000000000000000|pretty.map.obj	{\n  "v" : 100000000000000000\n}
+Long|str100000000000000000|pretty.map.typed	{\n  "v" : 100000000000000000\n}
+Long|str100000000000000000|pretty.scalar	100000000000000000
+Long|str100000000000000000|ser.box	{"v":100000000000000000}
+Long|str100000000000000000|ser.list.box	[{"v":100000000000000000}]
+Long|str100000000000000000|ser.list.obj	[100000000000000000]
+Long|str100000000000000000|ser.list.typed	[100000000000000000]
+Long|str100000000000000000|ser.list2.obj	[100000000000000000,100000000000000000]
+Long|str100000000000000000|ser.list2.typed	[100000000000000000,100000000000000000]
+Long|str100000000000000000|ser.map.list	{"v":[100000000000000000]}
+Long|str100000000000000000|ser.map.obj	{"v":100000000000000000}
+Long|str100000000000000000|ser.map.typed	{"v":100000000000000000}
+Long|str100000000000000000|ser.objbox	{"v":100000000000000000}
+Long|str100000000000000000|ser.scalar	100000000000000000
+Long|str100000000000000000|ser.set.typed	[100000000000000000]
+Long|str100000000000000000|str.concat	100000000000000000
+Long|str100000000000000000|str.objvalueOf	100000000000000000
+Long|str100000000000000000|str.valueOf	100000000000000000
+Long|str5|dbl.assign.ser	5.0
+Long|str5|dbl.assign.str	5.0
+Long|str5|dbl.cast.ser	5.0
+Long|str5|dec.assign.ser	5
+Long|str5|dec.toPlainString	5
+Long|str5|gen.pretty.writeNumber	[ 5 ]
+Long|str5|gen.writeNumber	[5]
+Long|str5|gen.writeNumberField	{"v":5}
+Long|str5|gen.writeObject	[5]
+Long|str5|pretty.box	{\n  "v" : 5\n}
+Long|str5|pretty.list.obj	[ 5 ]
+Long|str5|pretty.list.typed	[ 5 ]
+Long|str5|pretty.map.obj	{\n  "v" : 5\n}
+Long|str5|pretty.map.typed	{\n  "v" : 5\n}
+Long|str5|pretty.scalar	5
+Long|str5|ser.box	{"v":5}
+Long|str5|ser.list.box	[{"v":5}]
+Long|str5|ser.list.obj	[5]
+Long|str5|ser.list.typed	[5]
+Long|str5|ser.list2.obj	[5,5]
+Long|str5|ser.list2.typed	[5,5]
+Long|str5|ser.map.list	{"v":[5]}
+Long|str5|ser.map.obj	{"v":5}
+Long|str5|ser.map.typed	{"v":5}
+Long|str5|ser.objbox	{"v":5}
+Long|str5|ser.scalar	5
+Long|str5|ser.set.typed	[5]
+Long|str5|str.concat	5
+Long|str5|str.objvalueOf	5
+Long|str5|str.valueOf	5
+SObj|dblvar5.0|db.get.Cur0__c	5 scale=0 ser=5
+SObj|dblvar5.0|db.get.Cur2__c	5.00 scale=2 ser=5.00
+SObj|dblvar5.0|db.get.Num0__c	5 scale=0 ser=5
+SObj|dblvar5.0|db.get.Num2__c	5.00 scale=2 ser=5.00
+SObj|dblvar5.0|db.get.Pct0__c	5 scale=0 ser=5
+SObj|dblvar5.0|db.get.Pct2__c	5.00 scale=2 ser=5.00
+SObj|dblvar5.0|db.insert	ok
+SObj|dblvar5.0|db.map.obj	{"d":5,"c":5.00,"b":5,"a":5.00}
+SObj|dblvar5.0|db.pretty	{\n  "attributes" : {\n    "type" : "GladeDbl__c",\n    "url" : "/services/data/v68.0/sobjects/GladeDbl__c/ID"\n  },\n  "Id" : "ID",\n  "Name" : "n",\n  "Cur0__c" : 5,\n  "Cur2__c" : 5.00,\n  "Num0__c" : 5,\n  "Num2__c" : 5.00,\n  "Pct0__c" : 5,\n  "Pct2__c" : 5.00\n}
+SObj|dblvar5.0|db.ser	{"attributes":{"type":"GladeDbl__c","url":"/services/data/v68.0/sobjects/GladeDbl__c/ID"},"Id":"ID","Name":"n","Cur0__c":5,"Cur2__c":5.00,"Num0__c":5,"Num2__c":5.00,"Pct0__c":5,"Pct2__c":5.00}
+SObj|dblvar5.0|unsaved.fieldobj.Cur0__c	5.0
+SObj|dblvar5.0|unsaved.fieldobj.Cur2__c	5.0
+SObj|dblvar5.0|unsaved.fieldobj.Num0__c	5.0
+SObj|dblvar5.0|unsaved.fieldobj.Num2__c	5.0
+SObj|dblvar5.0|unsaved.fieldobj.Pct0__c	5.0
+SObj|dblvar5.0|unsaved.fieldobj.Pct2__c	5.0
+SObj|dblvar5.0|unsaved.get.Cur0__c	5.0 scale=1
+SObj|dblvar5.0|unsaved.get.Cur2__c	5.0 scale=1
+SObj|dblvar5.0|unsaved.get.Num0__c	5.0 scale=1
+SObj|dblvar5.0|unsaved.get.Num2__c	5.0 scale=1
+SObj|dblvar5.0|unsaved.get.Pct0__c	5.0 scale=1
+SObj|dblvar5.0|unsaved.get.Pct2__c	5.0 scale=1
+SObj|dblvar5.0|unsaved.pretty	{\n  "attributes" : {\n    "type" : "GladeDbl__c"\n  },\n  "Name" : "n",\n  "Cur0__c" : 5.0,\n  "Cur2__c" : 5.0,\n  "Num0__c" : 5.0,\n  "Num2__c" : 5.0,\n  "Pct0__c" : 5.0,\n  "Pct2__c" : 5.0\n}
+SObj|dblvar5.0|unsaved.ser	{"attributes":{"type":"GladeDbl__c"},"Name":"n","Cur0__c":5.0,"Cur2__c":5.0,"Num0__c":5.0,"Num2__c":5.0,"Pct0__c":5.0,"Pct2__c":5.0}
+SObj|dblvar5.0|unsaved.ser.list	[{"attributes":{"type":"GladeDbl__c"},"Name":"n","Cur0__c":5.0,"Cur2__c":5.0,"Num0__c":5.0,"Num2__c":5.0,"Pct0__c":5.0,"Pct2__c":5.0},{"attributes":{"type":"GladeDbl__c"},"Name":"n","Cur0__c":5.0,"Cur2__c":5.0,"Num0__c":5.0,"Num2__c":5.0,"Pct0__c":5.0,"Pct2__c":5.0}]
+SObj|dblvar5.0|unsaved.ser.map	{"Pct2__c":5.0,"Pct0__c":5.0,"Num2__c":5.0,"Num0__c":5.0,"Cur2__c":5.0,"Cur0__c":5.0,"Name":"n"}
+SObj|dblvar5.5|db.get.Cur0__c	5.5 scale=1 ser=5.5
+SObj|dblvar5.5|db.get.Cur2__c	5.50 scale=2 ser=5.50
+SObj|dblvar5.5|db.get.Num0__c	5.5 scale=1 ser=5.5
+SObj|dblvar5.5|db.get.Num2__c	5.50 scale=2 ser=5.50
+SObj|dblvar5.5|db.get.Pct0__c	5.5 scale=1 ser=5.5
+SObj|dblvar5.5|db.get.Pct2__c	5.50 scale=2 ser=5.50
+SObj|dblvar5.5|db.insert	ok
+SObj|dblvar5.5|db.map.obj	{"d":5.5,"c":5.50,"b":5.5,"a":5.50}
+SObj|dblvar5.5|db.pretty	{\n  "attributes" : {\n    "type" : "GladeDbl__c",\n    "url" : "/services/data/v68.0/sobjects/GladeDbl__c/ID"\n  },\n  "Id" : "ID",\n  "Name" : "n",\n  "Cur0__c" : 5.5,\n  "Cur2__c" : 5.50,\n  "Num0__c" : 5.5,\n  "Num2__c" : 5.50,\n  "Pct0__c" : 5.5,\n  "Pct2__c" : 5.50\n}
+SObj|dblvar5.5|db.ser	{"attributes":{"type":"GladeDbl__c","url":"/services/data/v68.0/sobjects/GladeDbl__c/ID"},"Id":"ID","Name":"n","Cur0__c":5.5,"Cur2__c":5.50,"Num0__c":5.5,"Num2__c":5.50,"Pct0__c":5.5,"Pct2__c":5.50}
+SObj|dblvar5.5|unsaved.fieldobj.Cur0__c	5.5
+SObj|dblvar5.5|unsaved.fieldobj.Cur2__c	5.5
+SObj|dblvar5.5|unsaved.fieldobj.Num0__c	5.5
+SObj|dblvar5.5|unsaved.fieldobj.Num2__c	5.5
+SObj|dblvar5.5|unsaved.fieldobj.Pct0__c	5.5
+SObj|dblvar5.5|unsaved.fieldobj.Pct2__c	5.5
+SObj|dblvar5.5|unsaved.get.Cur0__c	5.5 scale=1
+SObj|dblvar5.5|unsaved.get.Cur2__c	5.5 scale=1
+SObj|dblvar5.5|unsaved.get.Num0__c	5.5 scale=1
+SObj|dblvar5.5|unsaved.get.Num2__c	5.5 scale=1
+SObj|dblvar5.5|unsaved.get.Pct0__c	5.5 scale=1
+SObj|dblvar5.5|unsaved.get.Pct2__c	5.5 scale=1
+SObj|dblvar5.5|unsaved.pretty	{\n  "attributes" : {\n    "type" : "GladeDbl__c"\n  },\n  "Name" : "n",\n  "Cur0__c" : 5.5,\n  "Cur2__c" : 5.5,\n  "Num0__c" : 5.5,\n  "Num2__c" : 5.5,\n  "Pct0__c" : 5.5,\n  "Pct2__c" : 5.5\n}
+SObj|dblvar5.5|unsaved.ser	{"attributes":{"type":"GladeDbl__c"},"Name":"n","Cur0__c":5.5,"Cur2__c":5.5,"Num0__c":5.5,"Num2__c":5.5,"Pct0__c":5.5,"Pct2__c":5.5}
+SObj|dblvar5.5|unsaved.ser.list	[{"attributes":{"type":"GladeDbl__c"},"Name":"n","Cur0__c":5.5,"Cur2__c":5.5,"Num0__c":5.5,"Num2__c":5.5,"Pct0__c":5.5,"Pct2__c":5.5},{"attributes":{"type":"GladeDbl__c"},"Name":"n","Cur0__c":5.5,"Cur2__c":5.5,"Num0__c":5.5,"Num2__c":5.5,"Pct0__c":5.5,"Pct2__c":5.5}]
+SObj|dblvar5.5|unsaved.ser.map	{"Pct2__c":5.5,"Pct0__c":5.5,"Num2__c":5.5,"Num0__c":5.5,"Cur2__c":5.5,"Cur0__c":5.5,"Name":"n"}
+SObj|intvar|db.get.Cur0__c	5 scale=0 ser=5
+SObj|intvar|db.get.Cur2__c	5.00 scale=2 ser=5.00
+SObj|intvar|db.get.Num0__c	5 scale=0 ser=5
+SObj|intvar|db.get.Num2__c	5.00 scale=2 ser=5.00
+SObj|intvar|db.get.Pct0__c	5 scale=0 ser=5
+SObj|intvar|db.get.Pct2__c	5.00 scale=2 ser=5.00
+SObj|intvar|db.insert	ok
+SObj|intvar|db.map.obj	{"d":5,"c":5.00,"b":5,"a":5.00}
+SObj|intvar|db.pretty	{\n  "attributes" : {\n    "type" : "GladeDbl__c",\n    "url" : "/services/data/v68.0/sobjects/GladeDbl__c/ID"\n  },\n  "Id" : "ID",\n  "Name" : "n",\n  "Cur0__c" : 5,\n  "Cur2__c" : 5.00,\n  "Num0__c" : 5,\n  "Num2__c" : 5.00,\n  "Pct0__c" : 5,\n  "Pct2__c" : 5.00\n}
+SObj|intvar|db.ser	{"attributes":{"type":"GladeDbl__c","url":"/services/data/v68.0/sobjects/GladeDbl__c/ID"},"Id":"ID","Name":"n","Cur0__c":5,"Cur2__c":5.00,"Num0__c":5,"Num2__c":5.00,"Pct0__c":5,"Pct2__c":5.00}
+SObj|intvar|unsaved.fieldobj.Cur0__c	5
+SObj|intvar|unsaved.fieldobj.Cur2__c	5
+SObj|intvar|unsaved.fieldobj.Num0__c	5
+SObj|intvar|unsaved.fieldobj.Num2__c	5
+SObj|intvar|unsaved.fieldobj.Pct0__c	5
+SObj|intvar|unsaved.fieldobj.Pct2__c	5
+SObj|intvar|unsaved.get.Cur0__c	5 scale=0
+SObj|intvar|unsaved.get.Cur2__c	5 scale=0
+SObj|intvar|unsaved.get.Num0__c	5 scale=0
+SObj|intvar|unsaved.get.Num2__c	5 scale=0
+SObj|intvar|unsaved.get.Pct0__c	5 scale=0
+SObj|intvar|unsaved.get.Pct2__c	5 scale=0
+SObj|intvar|unsaved.pretty	{\n  "attributes" : {\n    "type" : "GladeDbl__c"\n  },\n  "Name" : "n",\n  "Cur0__c" : 5,\n  "Cur2__c" : 5,\n  "Num0__c" : 5,\n  "Num2__c" : 5,\n  "Pct0__c" : 5,\n  "Pct2__c" : 5\n}
+SObj|intvar|unsaved.ser	{"attributes":{"type":"GladeDbl__c"},"Name":"n","Cur0__c":5,"Cur2__c":5,"Num0__c":5,"Num2__c":5,"Pct0__c":5,"Pct2__c":5}
+SObj|intvar|unsaved.ser.list	[{"attributes":{"type":"GladeDbl__c"},"Name":"n","Cur0__c":5,"Cur2__c":5,"Num0__c":5,"Num2__c":5,"Pct0__c":5,"Pct2__c":5},{"attributes":{"type":"GladeDbl__c"},"Name":"n","Cur0__c":5,"Cur2__c":5,"Num0__c":5,"Num2__c":5,"Pct0__c":5,"Pct2__c":5}]
+SObj|intvar|unsaved.ser.map	{"Pct2__c":5,"Pct0__c":5,"Num2__c":5,"Num0__c":5,"Cur2__c":5,"Cur0__c":5,"Name":"n"}
+SObj|lit-0.0|db.get.Cur0__c	0 scale=0 ser=0
+SObj|lit-0.0|db.get.Cur2__c	0.00 scale=2 ser=0.00
+SObj|lit-0.0|db.get.Num0__c	0 scale=0 ser=0
+SObj|lit-0.0|db.get.Num2__c	0.00 scale=2 ser=0.00
+SObj|lit-0.0|db.get.Pct0__c	0 scale=0 ser=0
+SObj|lit-0.0|db.get.Pct2__c	0.00 scale=2 ser=0.00
+SObj|lit-0.0|db.insert	ok
+SObj|lit-0.0|db.map.obj	{"d":0,"c":0.00,"b":0,"a":0.00}
+SObj|lit-0.0|db.pretty	{\n  "attributes" : {\n    "type" : "GladeDbl__c",\n    "url" : "/services/data/v68.0/sobjects/GladeDbl__c/ID"\n  },\n  "Id" : "ID",\n  "Name" : "n",\n  "Cur0__c" : 0,\n  "Cur2__c" : 0.00,\n  "Num0__c" : 0,\n  "Num2__c" : 0.00,\n  "Pct0__c" : 0,\n  "Pct2__c" : 0.00\n}
+SObj|lit-0.0|db.ser	{"attributes":{"type":"GladeDbl__c","url":"/services/data/v68.0/sobjects/GladeDbl__c/ID"},"Id":"ID","Name":"n","Cur0__c":0,"Cur2__c":0.00,"Num0__c":0,"Num2__c":0.00,"Pct0__c":0,"Pct2__c":0.00}
+SObj|lit-0.0|unsaved.fieldobj.Cur0__c	0.0
+SObj|lit-0.0|unsaved.fieldobj.Cur2__c	0.0
+SObj|lit-0.0|unsaved.fieldobj.Num0__c	0.0
+SObj|lit-0.0|unsaved.fieldobj.Num2__c	0.0
+SObj|lit-0.0|unsaved.fieldobj.Pct0__c	0.0
+SObj|lit-0.0|unsaved.fieldobj.Pct2__c	0.0
+SObj|lit-0.0|unsaved.get.Cur0__c	0.0 scale=1
+SObj|lit-0.0|unsaved.get.Cur2__c	0.0 scale=1
+SObj|lit-0.0|unsaved.get.Num0__c	0.0 scale=1
+SObj|lit-0.0|unsaved.get.Num2__c	0.0 scale=1
+SObj|lit-0.0|unsaved.get.Pct0__c	0.0 scale=1
+SObj|lit-0.0|unsaved.get.Pct2__c	0.0 scale=1
+SObj|lit-0.0|unsaved.pretty	{\n  "attributes" : {\n    "type" : "GladeDbl__c"\n  },\n  "Name" : "n",\n  "Cur0__c" : 0.0,\n  "Cur2__c" : 0.0,\n  "Num0__c" : 0.0,\n  "Num2__c" : 0.0,\n  "Pct0__c" : 0.0,\n  "Pct2__c" : 0.0\n}
+SObj|lit-0.0|unsaved.ser	{"attributes":{"type":"GladeDbl__c"},"Name":"n","Cur0__c":0.0,"Cur2__c":0.0,"Num0__c":0.0,"Num2__c":0.0,"Pct0__c":0.0,"Pct2__c":0.0}
+SObj|lit-0.0|unsaved.ser.list	[{"attributes":{"type":"GladeDbl__c"},"Name":"n","Cur0__c":0.0,"Cur2__c":0.0,"Num0__c":0.0,"Num2__c":0.0,"Pct0__c":0.0,"Pct2__c":0.0},{"attributes":{"type":"GladeDbl__c"},"Name":"n","Cur0__c":0.0,"Cur2__c":0.0,"Num0__c":0.0,"Num2__c":0.0,"Pct0__c":0.0,"Pct2__c":0.0}]
+SObj|lit-0.0|unsaved.ser.map	{"Pct2__c":0.0,"Pct0__c":0.0,"Num2__c":0.0,"Num0__c":0.0,"Cur2__c":0.0,"Cur0__c":0.0,"Name":"n"}
+SObj|lit0|db.get.Cur0__c	0 scale=0 ser=0
+SObj|lit0|db.get.Cur2__c	0.00 scale=2 ser=0.00
+SObj|lit0|db.get.Num0__c	0 scale=0 ser=0
+SObj|lit0|db.get.Num2__c	0.00 scale=2 ser=0.00
+SObj|lit0|db.get.Pct0__c	0 scale=0 ser=0
+SObj|lit0|db.get.Pct2__c	0.00 scale=2 ser=0.00
+SObj|lit0|db.insert	ok
+SObj|lit0|db.map.obj	{"d":0,"c":0.00,"b":0,"a":0.00}
+SObj|lit0|db.pretty	{\n  "attributes" : {\n    "type" : "GladeDbl__c",\n    "url" : "/services/data/v68.0/sobjects/GladeDbl__c/ID"\n  },\n  "Id" : "ID",\n  "Name" : "n",\n  "Cur0__c" : 0,\n  "Cur2__c" : 0.00,\n  "Num0__c" : 0,\n  "Num2__c" : 0.00,\n  "Pct0__c" : 0,\n  "Pct2__c" : 0.00\n}
+SObj|lit0|db.ser	{"attributes":{"type":"GladeDbl__c","url":"/services/data/v68.0/sobjects/GladeDbl__c/ID"},"Id":"ID","Name":"n","Cur0__c":0,"Cur2__c":0.00,"Num0__c":0,"Num2__c":0.00,"Pct0__c":0,"Pct2__c":0.00}
+SObj|lit0|unsaved.fieldobj.Cur0__c	0
+SObj|lit0|unsaved.fieldobj.Cur2__c	0
+SObj|lit0|unsaved.fieldobj.Num0__c	0
+SObj|lit0|unsaved.fieldobj.Num2__c	0
+SObj|lit0|unsaved.fieldobj.Pct0__c	0
+SObj|lit0|unsaved.fieldobj.Pct2__c	0
+SObj|lit0|unsaved.get.Cur0__c	0 scale=0
+SObj|lit0|unsaved.get.Cur2__c	0 scale=0
+SObj|lit0|unsaved.get.Num0__c	0 scale=0
+SObj|lit0|unsaved.get.Num2__c	0 scale=0
+SObj|lit0|unsaved.get.Pct0__c	0 scale=0
+SObj|lit0|unsaved.get.Pct2__c	0 scale=0
+SObj|lit0|unsaved.pretty	{\n  "attributes" : {\n    "type" : "GladeDbl__c"\n  },\n  "Name" : "n",\n  "Cur0__c" : 0,\n  "Cur2__c" : 0,\n  "Num0__c" : 0,\n  "Num2__c" : 0,\n  "Pct0__c" : 0,\n  "Pct2__c" : 0\n}
+SObj|lit0|unsaved.ser	{"attributes":{"type":"GladeDbl__c"},"Name":"n","Cur0__c":0,"Cur2__c":0,"Num0__c":0,"Num2__c":0,"Pct0__c":0,"Pct2__c":0}
+SObj|lit0|unsaved.ser.list	[{"attributes":{"type":"GladeDbl__c"},"Name":"n","Cur0__c":0,"Cur2__c":0,"Num0__c":0,"Num2__c":0,"Pct0__c":0,"Pct2__c":0},{"attributes":{"type":"GladeDbl__c"},"Name":"n","Cur0__c":0,"Cur2__c":0,"Num0__c":0,"Num2__c":0,"Pct0__c":0,"Pct2__c":0}]
+SObj|lit0|unsaved.ser.map	{"Pct2__c":0,"Pct0__c":0,"Num2__c":0,"Num0__c":0,"Cur2__c":0,"Cur0__c":0,"Name":"n"}
+SObj|lit12345.678|db.get.Cur0__c	12345.678 scale=3 ser=12345.678
+SObj|lit12345.678|db.get.Cur2__c	12345.678 scale=3 ser=12345.678
+SObj|lit12345.678|db.get.Num0__c	12345.678 scale=3 ser=12345.678
+SObj|lit12345.678|db.get.Num2__c	12345.678 scale=3 ser=12345.678
+SObj|lit12345.678|db.get.Pct0__c	12345.678 scale=3 ser=12345.678
+SObj|lit12345.678|db.get.Pct2__c	12345.678 scale=3 ser=12345.678
+SObj|lit12345.678|db.insert	ok
+SObj|lit12345.678|db.map.obj	{"d":12345.678,"c":12345.678,"b":12345.678,"a":12345.678}
+SObj|lit12345.678|db.pretty	{\n  "attributes" : {\n    "type" : "GladeDbl__c",\n    "url" : "/services/data/v68.0/sobjects/GladeDbl__c/ID"\n  },\n  "Id" : "ID",\n  "Name" : "n",\n  "Cur0__c" : 12345.678,\n  "Cur2__c" : 12345.678,\n  "Num0__c" : 12345.678,\n  "Num2__c" : 12345.678,\n  "Pct0__c" : 12345.678,\n  "Pct2__c" : 12345.678\n}
+SObj|lit12345.678|db.ser	{"attributes":{"type":"GladeDbl__c","url":"/services/data/v68.0/sobjects/GladeDbl__c/ID"},"Id":"ID","Name":"n","Cur0__c":12345.678,"Cur2__c":12345.678,"Num0__c":12345.678,"Num2__c":12345.678,"Pct0__c":12345.678,"Pct2__c":12345.678}
+SObj|lit12345.678|unsaved.fieldobj.Cur0__c	12345.678
+SObj|lit12345.678|unsaved.fieldobj.Cur2__c	12345.678
+SObj|lit12345.678|unsaved.fieldobj.Num0__c	12345.678
+SObj|lit12345.678|unsaved.fieldobj.Num2__c	12345.678
+SObj|lit12345.678|unsaved.fieldobj.Pct0__c	12345.678
+SObj|lit12345.678|unsaved.fieldobj.Pct2__c	12345.678
+SObj|lit12345.678|unsaved.get.Cur0__c	12345.678 scale=3
+SObj|lit12345.678|unsaved.get.Cur2__c	12345.678 scale=3
+SObj|lit12345.678|unsaved.get.Num0__c	12345.678 scale=3
+SObj|lit12345.678|unsaved.get.Num2__c	12345.678 scale=3
+SObj|lit12345.678|unsaved.get.Pct0__c	12345.678 scale=3
+SObj|lit12345.678|unsaved.get.Pct2__c	12345.678 scale=3
+SObj|lit12345.678|unsaved.pretty	{\n  "attributes" : {\n    "type" : "GladeDbl__c"\n  },\n  "Name" : "n",\n  "Cur0__c" : 12345.678,\n  "Cur2__c" : 12345.678,\n  "Num0__c" : 12345.678,\n  "Num2__c" : 12345.678,\n  "Pct0__c" : 12345.678,\n  "Pct2__c" : 12345.678\n}
+SObj|lit12345.678|unsaved.ser	{"attributes":{"type":"GladeDbl__c"},"Name":"n","Cur0__c":12345.678,"Cur2__c":12345.678,"Num0__c":12345.678,"Num2__c":12345.678,"Pct0__c":12345.678,"Pct2__c":12345.678}
+SObj|lit12345.678|unsaved.ser.list	[{"attributes":{"type":"GladeDbl__c"},"Name":"n","Cur0__c":12345.678,"Cur2__c":12345.678,"Num0__c":12345.678,"Num2__c":12345.678,"Pct0__c":12345.678,"Pct2__c":12345.678},{"attributes":{"type":"GladeDbl__c"},"Name":"n","Cur0__c":12345.678,"Cur2__c":12345.678,"Num0__c":12345.678,"Num2__c":12345.678,"Pct0__c":12345.678,"Pct2__c":12345.678}]
+SObj|lit12345.678|unsaved.ser.map	{"Pct2__c":12345.678,"Pct0__c":12345.678,"Num2__c":12345.678,"Num0__c":12345.678,"Cur2__c":12345.678,"Cur0__c":12345.678,"Name":"n"}
+SObj|lit5.0|db.get.Cur0__c	5 scale=0 ser=5
+SObj|lit5.0|db.get.Cur2__c	5.00 scale=2 ser=5.00
+SObj|lit5.0|db.get.Num0__c	5 scale=0 ser=5
+SObj|lit5.0|db.get.Num2__c	5.00 scale=2 ser=5.00
+SObj|lit5.0|db.get.Pct0__c	5 scale=0 ser=5
+SObj|lit5.0|db.get.Pct2__c	5.00 scale=2 ser=5.00
+SObj|lit5.0|db.insert	ok
+SObj|lit5.0|db.map.obj	{"d":5,"c":5.00,"b":5,"a":5.00}
+SObj|lit5.0|db.pretty	{\n  "attributes" : {\n    "type" : "GladeDbl__c",\n    "url" : "/services/data/v68.0/sobjects/GladeDbl__c/ID"\n  },\n  "Id" : "ID",\n  "Name" : "n",\n  "Cur0__c" : 5,\n  "Cur2__c" : 5.00,\n  "Num0__c" : 5,\n  "Num2__c" : 5.00,\n  "Pct0__c" : 5,\n  "Pct2__c" : 5.00\n}
+SObj|lit5.0|db.ser	{"attributes":{"type":"GladeDbl__c","url":"/services/data/v68.0/sobjects/GladeDbl__c/ID"},"Id":"ID","Name":"n","Cur0__c":5,"Cur2__c":5.00,"Num0__c":5,"Num2__c":5.00,"Pct0__c":5,"Pct2__c":5.00}
+SObj|lit5.0|unsaved.fieldobj.Cur0__c	5.0
+SObj|lit5.0|unsaved.fieldobj.Cur2__c	5.0
+SObj|lit5.0|unsaved.fieldobj.Num0__c	5.0
+SObj|lit5.0|unsaved.fieldobj.Num2__c	5.0
+SObj|lit5.0|unsaved.fieldobj.Pct0__c	5.0
+SObj|lit5.0|unsaved.fieldobj.Pct2__c	5.0
+SObj|lit5.0|unsaved.get.Cur0__c	5.0 scale=1
+SObj|lit5.0|unsaved.get.Cur2__c	5.0 scale=1
+SObj|lit5.0|unsaved.get.Num0__c	5.0 scale=1
+SObj|lit5.0|unsaved.get.Num2__c	5.0 scale=1
+SObj|lit5.0|unsaved.get.Pct0__c	5.0 scale=1
+SObj|lit5.0|unsaved.get.Pct2__c	5.0 scale=1
+SObj|lit5.0|unsaved.pretty	{\n  "attributes" : {\n    "type" : "GladeDbl__c"\n  },\n  "Name" : "n",\n  "Cur0__c" : 5.0,\n  "Cur2__c" : 5.0,\n  "Num0__c" : 5.0,\n  "Num2__c" : 5.0,\n  "Pct0__c" : 5.0,\n  "Pct2__c" : 5.0\n}
+SObj|lit5.0|unsaved.ser	{"attributes":{"type":"GladeDbl__c"},"Name":"n","Cur0__c":5.0,"Cur2__c":5.0,"Num0__c":5.0,"Num2__c":5.0,"Pct0__c":5.0,"Pct2__c":5.0}
+SObj|lit5.0|unsaved.ser.list	[{"attributes":{"type":"GladeDbl__c"},"Name":"n","Cur0__c":5.0,"Cur2__c":5.0,"Num0__c":5.0,"Num2__c":5.0,"Pct0__c":5.0,"Pct2__c":5.0},{"attributes":{"type":"GladeDbl__c"},"Name":"n","Cur0__c":5.0,"Cur2__c":5.0,"Num0__c":5.0,"Num2__c":5.0,"Pct0__c":5.0,"Pct2__c":5.0}]
+SObj|lit5.0|unsaved.ser.map	{"Pct2__c":5.0,"Pct0__c":5.0,"Num2__c":5.0,"Num0__c":5.0,"Cur2__c":5.0,"Cur0__c":5.0,"Name":"n"}
+SObj|lit5.25|db.get.Cur0__c	5.25 scale=2 ser=5.25
+SObj|lit5.25|db.get.Cur2__c	5.25 scale=2 ser=5.25
+SObj|lit5.25|db.get.Num0__c	5.25 scale=2 ser=5.25
+SObj|lit5.25|db.get.Num2__c	5.25 scale=2 ser=5.25
+SObj|lit5.25|db.get.Pct0__c	5.25 scale=2 ser=5.25
+SObj|lit5.25|db.get.Pct2__c	5.25 scale=2 ser=5.25
+SObj|lit5.25|db.insert	ok
+SObj|lit5.25|db.map.obj	{"d":5.25,"c":5.25,"b":5.25,"a":5.25}
+SObj|lit5.25|db.pretty	{\n  "attributes" : {\n    "type" : "GladeDbl__c",\n    "url" : "/services/data/v68.0/sobjects/GladeDbl__c/ID"\n  },\n  "Id" : "ID",\n  "Name" : "n",\n  "Cur0__c" : 5.25,\n  "Cur2__c" : 5.25,\n  "Num0__c" : 5.25,\n  "Num2__c" : 5.25,\n  "Pct0__c" : 5.25,\n  "Pct2__c" : 5.25\n}
+SObj|lit5.25|db.ser	{"attributes":{"type":"GladeDbl__c","url":"/services/data/v68.0/sobjects/GladeDbl__c/ID"},"Id":"ID","Name":"n","Cur0__c":5.25,"Cur2__c":5.25,"Num0__c":5.25,"Num2__c":5.25,"Pct0__c":5.25,"Pct2__c":5.25}
+SObj|lit5.25|unsaved.fieldobj.Cur0__c	5.25
+SObj|lit5.25|unsaved.fieldobj.Cur2__c	5.25
+SObj|lit5.25|unsaved.fieldobj.Num0__c	5.25
+SObj|lit5.25|unsaved.fieldobj.Num2__c	5.25
+SObj|lit5.25|unsaved.fieldobj.Pct0__c	5.25
+SObj|lit5.25|unsaved.fieldobj.Pct2__c	5.25
+SObj|lit5.25|unsaved.get.Cur0__c	5.25 scale=2
+SObj|lit5.25|unsaved.get.Cur2__c	5.25 scale=2
+SObj|lit5.25|unsaved.get.Num0__c	5.25 scale=2
+SObj|lit5.25|unsaved.get.Num2__c	5.25 scale=2
+SObj|lit5.25|unsaved.get.Pct0__c	5.25 scale=2
+SObj|lit5.25|unsaved.get.Pct2__c	5.25 scale=2
+SObj|lit5.25|unsaved.pretty	{\n  "attributes" : {\n    "type" : "GladeDbl__c"\n  },\n  "Name" : "n",\n  "Cur0__c" : 5.25,\n  "Cur2__c" : 5.25,\n  "Num0__c" : 5.25,\n  "Num2__c" : 5.25,\n  "Pct0__c" : 5.25,\n  "Pct2__c" : 5.25\n}
+SObj|lit5.25|unsaved.ser	{"attributes":{"type":"GladeDbl__c"},"Name":"n","Cur0__c":5.25,"Cur2__c":5.25,"Num0__c":5.25,"Num2__c":5.25,"Pct0__c":5.25,"Pct2__c":5.25}
+SObj|lit5.25|unsaved.ser.list	[{"attributes":{"type":"GladeDbl__c"},"Name":"n","Cur0__c":5.25,"Cur2__c":5.25,"Num0__c":5.25,"Num2__c":5.25,"Pct0__c":5.25,"Pct2__c":5.25},{"attributes":{"type":"GladeDbl__c"},"Name":"n","Cur0__c":5.25,"Cur2__c":5.25,"Num0__c":5.25,"Num2__c":5.25,"Pct0__c":5.25,"Pct2__c":5.25}]
+SObj|lit5.25|unsaved.ser.map	{"Pct2__c":5.25,"Pct0__c":5.25,"Num2__c":5.25,"Num0__c":5.25,"Cur2__c":5.25,"Cur0__c":5.25,"Name":"n"}
+SObj|lit5.50|db.get.Cur0__c	5.5 scale=1 ser=5.5
+SObj|lit5.50|db.get.Cur2__c	5.50 scale=2 ser=5.50
+SObj|lit5.50|db.get.Num0__c	5.5 scale=1 ser=5.5
+SObj|lit5.50|db.get.Num2__c	5.50 scale=2 ser=5.50
+SObj|lit5.50|db.get.Pct0__c	5.5 scale=1 ser=5.5
+SObj|lit5.50|db.get.Pct2__c	5.50 scale=2 ser=5.50
+SObj|lit5.50|db.insert	ok
+SObj|lit5.50|db.map.obj	{"d":5.5,"c":5.50,"b":5.5,"a":5.50}
+SObj|lit5.50|db.pretty	{\n  "attributes" : {\n    "type" : "GladeDbl__c",\n    "url" : "/services/data/v68.0/sobjects/GladeDbl__c/ID"\n  },\n  "Id" : "ID",\n  "Name" : "n",\n  "Cur0__c" : 5.5,\n  "Cur2__c" : 5.50,\n  "Num0__c" : 5.5,\n  "Num2__c" : 5.50,\n  "Pct0__c" : 5.5,\n  "Pct2__c" : 5.50\n}
+SObj|lit5.50|db.ser	{"attributes":{"type":"GladeDbl__c","url":"/services/data/v68.0/sobjects/GladeDbl__c/ID"},"Id":"ID","Name":"n","Cur0__c":5.5,"Cur2__c":5.50,"Num0__c":5.5,"Num2__c":5.50,"Pct0__c":5.5,"Pct2__c":5.50}
+SObj|lit5.50|unsaved.fieldobj.Cur0__c	5.50
+SObj|lit5.50|unsaved.fieldobj.Cur2__c	5.50
+SObj|lit5.50|unsaved.fieldobj.Num0__c	5.50
+SObj|lit5.50|unsaved.fieldobj.Num2__c	5.50
+SObj|lit5.50|unsaved.fieldobj.Pct0__c	5.50
+SObj|lit5.50|unsaved.fieldobj.Pct2__c	5.50
+SObj|lit5.50|unsaved.get.Cur0__c	5.50 scale=2
+SObj|lit5.50|unsaved.get.Cur2__c	5.50 scale=2
+SObj|lit5.50|unsaved.get.Num0__c	5.50 scale=2
+SObj|lit5.50|unsaved.get.Num2__c	5.50 scale=2
+SObj|lit5.50|unsaved.get.Pct0__c	5.50 scale=2
+SObj|lit5.50|unsaved.get.Pct2__c	5.50 scale=2
+SObj|lit5.50|unsaved.pretty	{\n  "attributes" : {\n    "type" : "GladeDbl__c"\n  },\n  "Name" : "n",\n  "Cur0__c" : 5.50,\n  "Cur2__c" : 5.50,\n  "Num0__c" : 5.50,\n  "Num2__c" : 5.50,\n  "Pct0__c" : 5.50,\n  "Pct2__c" : 5.50\n}
+SObj|lit5.50|unsaved.ser	{"attributes":{"type":"GladeDbl__c"},"Name":"n","Cur0__c":5.50,"Cur2__c":5.50,"Num0__c":5.50,"Num2__c":5.50,"Pct0__c":5.50,"Pct2__c":5.50}
+SObj|lit5.50|unsaved.ser.list	[{"attributes":{"type":"GladeDbl__c"},"Name":"n","Cur0__c":5.50,"Cur2__c":5.50,"Num0__c":5.50,"Num2__c":5.50,"Pct0__c":5.50,"Pct2__c":5.50},{"attributes":{"type":"GladeDbl__c"},"Name":"n","Cur0__c":5.50,"Cur2__c":5.50,"Num0__c":5.50,"Num2__c":5.50,"Pct0__c":5.50,"Pct2__c":5.50}]
+SObj|lit5.50|unsaved.ser.map	{"Pct2__c":5.50,"Pct0__c":5.50,"Num2__c":5.50,"Num0__c":5.50,"Cur2__c":5.50,"Cur0__c":5.50,"Name":"n"}
+SObj|lit5|db.get.Cur0__c	5 scale=0 ser=5
+SObj|lit5|db.get.Cur2__c	5.00 scale=2 ser=5.00
+SObj|lit5|db.get.Num0__c	5 scale=0 ser=5
+SObj|lit5|db.get.Num2__c	5.00 scale=2 ser=5.00
+SObj|lit5|db.get.Pct0__c	5 scale=0 ser=5
+SObj|lit5|db.get.Pct2__c	5.00 scale=2 ser=5.00
+SObj|lit5|db.insert	ok
+SObj|lit5|db.map.obj	{"d":5,"c":5.00,"b":5,"a":5.00}
+SObj|lit5|db.pretty	{\n  "attributes" : {\n    "type" : "GladeDbl__c",\n    "url" : "/services/data/v68.0/sobjects/GladeDbl__c/ID"\n  },\n  "Id" : "ID",\n  "Name" : "n",\n  "Cur0__c" : 5,\n  "Cur2__c" : 5.00,\n  "Num0__c" : 5,\n  "Num2__c" : 5.00,\n  "Pct0__c" : 5,\n  "Pct2__c" : 5.00\n}
+SObj|lit5|db.ser	{"attributes":{"type":"GladeDbl__c","url":"/services/data/v68.0/sobjects/GladeDbl__c/ID"},"Id":"ID","Name":"n","Cur0__c":5,"Cur2__c":5.00,"Num0__c":5,"Num2__c":5.00,"Pct0__c":5,"Pct2__c":5.00}
+SObj|lit5|unsaved.fieldobj.Cur0__c	5
+SObj|lit5|unsaved.fieldobj.Cur2__c	5
+SObj|lit5|unsaved.fieldobj.Num0__c	5
+SObj|lit5|unsaved.fieldobj.Num2__c	5
+SObj|lit5|unsaved.fieldobj.Pct0__c	5
+SObj|lit5|unsaved.fieldobj.Pct2__c	5
+SObj|lit5|unsaved.get.Cur0__c	5 scale=0
+SObj|lit5|unsaved.get.Cur2__c	5 scale=0
+SObj|lit5|unsaved.get.Num0__c	5 scale=0
+SObj|lit5|unsaved.get.Num2__c	5 scale=0
+SObj|lit5|unsaved.get.Pct0__c	5 scale=0
+SObj|lit5|unsaved.get.Pct2__c	5 scale=0
+SObj|lit5|unsaved.pretty	{\n  "attributes" : {\n    "type" : "GladeDbl__c"\n  },\n  "Name" : "n",\n  "Cur0__c" : 5,\n  "Cur2__c" : 5,\n  "Num0__c" : 5,\n  "Num2__c" : 5,\n  "Pct0__c" : 5,\n  "Pct2__c" : 5\n}
+SObj|lit5|unsaved.ser	{"attributes":{"type":"GladeDbl__c"},"Name":"n","Cur0__c":5,"Cur2__c":5,"Num0__c":5,"Num2__c":5,"Pct0__c":5,"Pct2__c":5}
+SObj|lit5|unsaved.ser.list	[{"attributes":{"type":"GladeDbl__c"},"Name":"n","Cur0__c":5,"Cur2__c":5,"Num0__c":5,"Num2__c":5,"Pct0__c":5,"Pct2__c":5},{"attributes":{"type":"GladeDbl__c"},"Name":"n","Cur0__c":5,"Cur2__c":5,"Num0__c":5,"Num2__c":5,"Pct0__c":5,"Pct2__c":5}]
+SObj|lit5|unsaved.ser.map	{"Pct2__c":5,"Pct0__c":5,"Num2__c":5,"Num0__c":5,"Cur2__c":5,"Cur0__c":5,"Name":"n"}
+SObj|longvar|db.get.Cur0__c	5 scale=0 ser=5
+SObj|longvar|db.get.Cur2__c	5.00 scale=2 ser=5.00
+SObj|longvar|db.get.Num0__c	5 scale=0 ser=5
+SObj|longvar|db.get.Num2__c	5.00 scale=2 ser=5.00
+SObj|longvar|db.get.Pct0__c	5 scale=0 ser=5
+SObj|longvar|db.get.Pct2__c	5.00 scale=2 ser=5.00
+SObj|longvar|db.insert	ok
+SObj|longvar|db.map.obj	{"d":5,"c":5.00,"b":5,"a":5.00}
+SObj|longvar|db.pretty	{\n  "attributes" : {\n    "type" : "GladeDbl__c",\n    "url" : "/services/data/v68.0/sobjects/GladeDbl__c/ID"\n  },\n  "Id" : "ID",\n  "Name" : "n",\n  "Cur0__c" : 5,\n  "Cur2__c" : 5.00,\n  "Num0__c" : 5,\n  "Num2__c" : 5.00,\n  "Pct0__c" : 5,\n  "Pct2__c" : 5.00\n}
+SObj|longvar|db.ser	{"attributes":{"type":"GladeDbl__c","url":"/services/data/v68.0/sobjects/GladeDbl__c/ID"},"Id":"ID","Name":"n","Cur0__c":5,"Cur2__c":5.00,"Num0__c":5,"Num2__c":5.00,"Pct0__c":5,"Pct2__c":5.00}
+SObj|longvar|unsaved.fieldobj.Cur0__c	5
+SObj|longvar|unsaved.fieldobj.Cur2__c	5
+SObj|longvar|unsaved.fieldobj.Num0__c	5
+SObj|longvar|unsaved.fieldobj.Num2__c	5
+SObj|longvar|unsaved.fieldobj.Pct0__c	5
+SObj|longvar|unsaved.fieldobj.Pct2__c	5
+SObj|longvar|unsaved.get.Cur0__c	5 scale=0
+SObj|longvar|unsaved.get.Cur2__c	5 scale=0
+SObj|longvar|unsaved.get.Num0__c	5 scale=0
+SObj|longvar|unsaved.get.Num2__c	5 scale=0
+SObj|longvar|unsaved.get.Pct0__c	5 scale=0
+SObj|longvar|unsaved.get.Pct2__c	5 scale=0
+SObj|longvar|unsaved.pretty	{\n  "attributes" : {\n    "type" : "GladeDbl__c"\n  },\n  "Name" : "n",\n  "Cur0__c" : 5,\n  "Cur2__c" : 5,\n  "Num0__c" : 5,\n  "Num2__c" : 5,\n  "Pct0__c" : 5,\n  "Pct2__c" : 5\n}
+SObj|longvar|unsaved.ser	{"attributes":{"type":"GladeDbl__c"},"Name":"n","Cur0__c":5,"Cur2__c":5,"Num0__c":5,"Num2__c":5,"Pct0__c":5,"Pct2__c":5}
+SObj|longvar|unsaved.ser.list	[{"attributes":{"type":"GladeDbl__c"},"Name":"n","Cur0__c":5,"Cur2__c":5,"Num0__c":5,"Num2__c":5,"Pct0__c":5,"Pct2__c":5},{"attributes":{"type":"GladeDbl__c"},"Name":"n","Cur0__c":5,"Cur2__c":5,"Num0__c":5,"Num2__c":5,"Pct0__c":5,"Pct2__c":5}]
+SObj|longvar|unsaved.ser.map	{"Pct2__c":5,"Pct0__c":5,"Num2__c":5,"Num0__c":5,"Cur2__c":5,"Cur0__c":5,"Name":"n"}
+SObj|str1E10|db.get.Cur0__c	10000000000 scale=0 ser=10000000000
+SObj|str1E10|db.get.Cur2__c	10000000000.00 scale=2 ser=10000000000.00
+SObj|str1E10|db.get.Num0__c	10000000000 scale=0 ser=10000000000
+SObj|str1E10|db.get.Num2__c	10000000000.00 scale=2 ser=10000000000.00
+SObj|str1E10|db.get.Pct0__c	10000000000 scale=0 ser=10000000000
+SObj|str1E10|db.get.Pct2__c	10000000000.00 scale=2 ser=10000000000.00
+SObj|str1E10|db.insert	ok
+SObj|str1E10|db.map.obj	{"d":10000000000,"c":10000000000.00,"b":10000000000,"a":10000000000.00}
+SObj|str1E10|db.pretty	{\n  "attributes" : {\n    "type" : "GladeDbl__c",\n    "url" : "/services/data/v68.0/sobjects/GladeDbl__c/ID"\n  },\n  "Id" : "ID",\n  "Name" : "n",\n  "Cur0__c" : 10000000000,\n  "Cur2__c" : 10000000000.00,\n  "Num0__c" : 10000000000,\n  "Num2__c" : 10000000000.00,\n  "Pct0__c" : 10000000000,\n  "Pct2__c" : 10000000000.00\n}
+SObj|str1E10|db.ser	{"attributes":{"type":"GladeDbl__c","url":"/services/data/v68.0/sobjects/GladeDbl__c/ID"},"Id":"ID","Name":"n","Cur0__c":10000000000,"Cur2__c":10000000000.00,"Num0__c":10000000000,"Num2__c":10000000000.00,"Pct0__c":10000000000,"Pct2__c":10000000000.00}
+SObj|str1E10|unsaved.fieldobj.Cur0__c	1E+10
+SObj|str1E10|unsaved.fieldobj.Cur2__c	1E+10
+SObj|str1E10|unsaved.fieldobj.Num0__c	1E+10
+SObj|str1E10|unsaved.fieldobj.Num2__c	1E+10
+SObj|str1E10|unsaved.fieldobj.Pct0__c	1E+10
+SObj|str1E10|unsaved.fieldobj.Pct2__c	1E+10
+SObj|str1E10|unsaved.get.Cur0__c	1E+10 scale=-10
+SObj|str1E10|unsaved.get.Cur2__c	1E+10 scale=-10
+SObj|str1E10|unsaved.get.Num0__c	1E+10 scale=-10
+SObj|str1E10|unsaved.get.Num2__c	1E+10 scale=-10
+SObj|str1E10|unsaved.get.Pct0__c	1E+10 scale=-10
+SObj|str1E10|unsaved.get.Pct2__c	1E+10 scale=-10
+SObj|str1E10|unsaved.pretty	{\n  "attributes" : {\n    "type" : "GladeDbl__c"\n  },\n  "Name" : "n",\n  "Cur0__c" : 1E+10,\n  "Cur2__c" : 1E+10,\n  "Num0__c" : 1E+10,\n  "Num2__c" : 1E+10,\n  "Pct0__c" : 1E+10,\n  "Pct2__c" : 1E+10\n}
+SObj|str1E10|unsaved.ser	{"attributes":{"type":"GladeDbl__c"},"Name":"n","Cur0__c":1E+10,"Cur2__c":1E+10,"Num0__c":1E+10,"Num2__c":1E+10,"Pct0__c":1E+10,"Pct2__c":1E+10}
+SObj|str1E10|unsaved.ser.list	[{"attributes":{"type":"GladeDbl__c"},"Name":"n","Cur0__c":1E+10,"Cur2__c":1E+10,"Num0__c":1E+10,"Num2__c":1E+10,"Pct0__c":1E+10,"Pct2__c":1E+10},{"attributes":{"type":"GladeDbl__c"},"Name":"n","Cur0__c":1E+10,"Cur2__c":1E+10,"Num0__c":1E+10,"Num2__c":1E+10,"Pct0__c":1E+10,"Pct2__c":1E+10}]
+SObj|str1E10|unsaved.ser.map	{"Pct2__c":1E+10,"Pct0__c":1E+10,"Num2__c":1E+10,"Num0__c":1E+10,"Cur2__c":1E+10,"Cur0__c":1E+10,"Name":"n"}
+rt.dbl.deser1e20	{"v":1.0E20}
+rt.dbl.deser5	{"v":5.0}
+rt.dbl.deser5.0	{"v":5.0}
+rt.dec.deser1e20	{"v":1E+20}
+rt.dec.deser5	{"v":5}
+rt.dec.deser5.0	{"v":5.0}
+rt.dec.deser5.50	{"v":5.50}
+rt.int.deser5	{"v":5}
+rt.lng.deser5	{"v":5}
+rt.obj.deser5.0	EXC System.JSONException: Apex Type unsupported in JSON: Object
+rt.parser.dbl5.0	START_ARRAY
+rt.untyped.-0.0	{"v":0.0}
+rt.untyped.1.0E-7	{"v":1.0E-7}
+rt.untyped.1e20	{"v":1E+20}
+rt.untyped.5	{"v":5}
+rt.untyped.5.0	{"v":5.0}
+rt.untyped.5.50	{"v":5.50}
+rt.untyped.list5	[5]
+rt.untyped.list5.0	[5.0]
+rt.untyped.list5.0,5.0	[5.0,5.0]
+rt.untyped.type5	5 true true true
+rt.untyped.type5.0	5.0 true false true

@@ -1,0 +1,49 @@
+api	route	case	result
+62.0	anonymous	opportunity-date-B6_Absent-inside	3~CREATED_DATE~CUSTOM~2000-01-01~2100-01-01
+62.0	anonymous	opportunity-date-B6_Absent-future	0~CREATED_DATE~CUSTOM~2099-01-01~2100-01-01
+62.0	anonymous	opportunity-date-B6_Absent-open	3~CREATED_DATE~CUSTOM~null~null
+62.0	anonymous	opportunity-date-B6_Absent-invalid	reports.InvalidFilterException~[The specified start date of not-date specified for the standard date filter is invalid.]
+62.0	anonymous	opportunity-date-B6_Organization-inside	3~CREATED_DATE~CUSTOM~2000-01-01~2100-01-01
+62.0	anonymous	opportunity-date-B6_Organization-future	0~CREATED_DATE~CUSTOM~2099-01-01~2100-01-01
+62.0	anonymous	opportunity-date-B6_Organization-open	3~CREATED_DATE~CUSTOM~null~null
+62.0	anonymous	opportunity-date-B6_Organization-invalid	reports.InvalidFilterException~[The specified start date of not-date specified for the standard date filter is invalid.]
+62.0	anonymous	opportunity-date-B6_User-inside	2~CREATED_DATE~CUSTOM~2000-01-01~2100-01-01
+62.0	anonymous	opportunity-date-B6_User-future	0~CREATED_DATE~CUSTOM~2099-01-01~2100-01-01
+62.0	anonymous	opportunity-date-B6_User-open	2~CREATED_DATE~CUSTOM~null~null
+62.0	anonymous	opportunity-date-B6_User-invalid	reports.InvalidFilterException~[The specified start date of not-date specified for the standard date filter is invalid.]
+62.0	seealldata	opportunity-date-B6_Absent-inside	3~CREATED_DATE~CUSTOM~2000-01-01~2100-01-01
+62.0	seealldata	opportunity-date-B6_Absent-future	0~CREATED_DATE~CUSTOM~2099-01-01~2100-01-01
+62.0	seealldata	opportunity-date-B6_Absent-open	3~CREATED_DATE~CUSTOM~null~null
+62.0	seealldata	opportunity-date-B6_Absent-invalid	reports.InvalidFilterException~[The specified start date of not-date specified for the standard date filter is invalid.]
+62.0	seealldata	opportunity-date-B6_Organization-inside	3~CREATED_DATE~CUSTOM~2000-01-01~2100-01-01
+62.0	seealldata	opportunity-date-B6_Organization-future	0~CREATED_DATE~CUSTOM~2099-01-01~2100-01-01
+62.0	seealldata	opportunity-date-B6_Organization-open	3~CREATED_DATE~CUSTOM~null~null
+62.0	seealldata	opportunity-date-B6_Organization-invalid	reports.InvalidFilterException~[The specified start date of not-date specified for the standard date filter is invalid.]
+62.0	seealldata	opportunity-date-B6_User-inside	2~CREATED_DATE~CUSTOM~2000-01-01~2100-01-01
+62.0	seealldata	opportunity-date-B6_User-future	0~CREATED_DATE~CUSTOM~2099-01-01~2100-01-01
+62.0	seealldata	opportunity-date-B6_User-open	2~CREATED_DATE~CUSTOM~null~null
+62.0	seealldata	opportunity-date-B6_User-invalid	reports.InvalidFilterException~[The specified start date of not-date specified for the standard date filter is invalid.]
+67.0	anonymous	opportunity-date-B6_Absent-inside	3~CREATED_DATE~CUSTOM~2000-01-01~2100-01-01
+67.0	anonymous	opportunity-date-B6_Absent-future	0~CREATED_DATE~CUSTOM~2099-01-01~2100-01-01
+67.0	anonymous	opportunity-date-B6_Absent-open	3~CREATED_DATE~CUSTOM~null~null
+67.0	anonymous	opportunity-date-B6_Absent-invalid	reports.InvalidFilterException~[The specified start date of not-date specified for the standard date filter is invalid.]
+67.0	anonymous	opportunity-date-B6_Organization-inside	3~CREATED_DATE~CUSTOM~2000-01-01~2100-01-01
+67.0	anonymous	opportunity-date-B6_Organization-future	0~CREATED_DATE~CUSTOM~2099-01-01~2100-01-01
+67.0	anonymous	opportunity-date-B6_Organization-open	3~CREATED_DATE~CUSTOM~null~null
+67.0	anonymous	opportunity-date-B6_Organization-invalid	reports.InvalidFilterException~[The specified start date of not-date specified for the standard date filter is invalid.]
+67.0	anonymous	opportunity-date-B6_User-inside	2~CREATED_DATE~CUSTOM~2000-01-01~2100-01-01
+67.0	anonymous	opportunity-date-B6_User-future	0~CREATED_DATE~CUSTOM~2099-01-01~2100-01-01
+67.0	anonymous	opportunity-date-B6_User-open	2~CREATED_DATE~CUSTOM~null~null
+67.0	anonymous	opportunity-date-B6_User-invalid	reports.InvalidFilterException~[The specified start date of not-date specified for the standard date filter is invalid.]
+67.0	seealldata	opportunity-date-B6_Absent-inside	3~CREATED_DATE~CUSTOM~2000-01-01~2100-01-01
+67.0	seealldata	opportunity-date-B6_Absent-future	0~CREATED_DATE~CUSTOM~2099-01-01~2100-01-01
+67.0	seealldata	opportunity-date-B6_Absent-open	3~CREATED_DATE~CUSTOM~null~null
+67.0	seealldata	opportunity-date-B6_Absent-invalid	reports.InvalidFilterException~[The specified start date of not-date specified for the standard date filter is invalid.]
+67.0	seealldata	opportunity-date-B6_Organization-inside	3~CREATED_DATE~CUSTOM~2000-01-01~2100-01-01
+67.0	seealldata	opportunity-date-B6_Organization-future	0~CREATED_DATE~CUSTOM~2099-01-01~2100-01-01
+67.0	seealldata	opportunity-date-B6_Organization-open	3~CREATED_DATE~CUSTOM~null~null
+67.0	seealldata	opportunity-date-B6_Organization-invalid	reports.InvalidFilterException~[The specified start date of not-date specified for the standard date filter is invalid.]
+67.0	seealldata	opportunity-date-B6_User-inside	2~CREATED_DATE~CUSTOM~2000-01-01~2100-01-01
+67.0	seealldata	opportunity-date-B6_User-future	0~CREATED_DATE~CUSTOM~2099-01-01~2100-01-01
+67.0	seealldata	opportunity-date-B6_User-open	2~CREATED_DATE~CUSTOM~null~null
+67.0	seealldata	opportunity-date-B6_User-invalid	reports.InvalidFilterException~[The specified start date of not-date specified for the standard date filter is invalid.]

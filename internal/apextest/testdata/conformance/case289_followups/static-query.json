@@ -1,0 +1,7 @@
+{
+  "group": "List<AggregateResult> r=[SELECT PermissionsViewAllFields, COUNT(Id) FROM ObjectPermissions GROUP BY PermissionsViewAllFields];",
+  "having": "List<AggregateResult> r=[SELECT PermissionsViewAllFields, COUNT(Id) FROM ObjectPermissions GROUP BY PermissionsViewAllFields HAVING PermissionsViewAllFields = true];",
+  "qualified-select": "List<ObjectPermissions> r=[SELECT ObjectPermissions.PermissionsViewAllFields FROM ObjectPermissions LIMIT 1];",
+  "group-only": "List<AggregateResult> r=[SELECT COUNT(Id) FROM ObjectPermissions GROUP BY PermissionsViewAllFields];",
+  "having-only": "List<AggregateResult> r=[SELECT COUNT(Id) FROM ObjectPermissions GROUP BY PermissionsViewAllFields HAVING PermissionsViewAllFields = true];"
+}

@@ -67,6 +67,15 @@ func TestFlowNativeAnonymousRouteTwins(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
+				// The retained rows were observed with the fixture's set assigned:
+				// flow_related_fields/ASSIGNMENT-RUN.txt and
+				// generated_soql_relationships/ORG-RUN.txt.
+				switch family {
+				case "flow_related_fields":
+					writeCapturedAssignments(t, root, "Owned_Relationship_Probe_Access")
+				case "generated_soql_relationships":
+					writeCapturedAssignments(t, root, "Owned_Generated_Query_Access")
+				}
 				index := loadTestIndex(t, root)
 				if analysis := sema.AnalyzeAnonymous(index, invocation, api); analysis.HasErrors() {
 					t.Fatal(analysis.Diagnostics)
@@ -75,7 +84,7 @@ func TestFlowNativeAnonymousRouteTwins(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				org := orgFromIndex(index)
+				org := capturedFixtureOrg(t, index, api)
 				runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 				_, err = runner.execute(program)
 				var runtimeErr *vm.RuntimeError

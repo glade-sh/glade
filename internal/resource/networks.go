@@ -14,7 +14,7 @@ import (
 // ApplyProjectNetworks materializes deployed Network metadata without establishing
 // a hosted request context. A supplied reader preserves captured metadata bytes.
 func ApplyProjectNetworks(org *storage.OrgState, p project.Project, readers ...func(string) ([]byte, error)) error {
-	if org == nil || !org.HasFeature("Communities") || len(p.NetworkFiles) == 0 {
+	if org == nil || !org.HasFeature("NetworksEnabled") || len(p.NetworkFiles) == 0 {
 		return nil
 	}
 	read := os.ReadFile

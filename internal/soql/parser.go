@@ -551,6 +551,8 @@ type parser struct {
 	now                   time.Time
 	fiscalYearStartMonth  int
 	dateLiteralTimeZoneID string
+	// firstWeekday starts week date literals; the zero value is Sunday.
+	firstWeekday time.Weekday
 }
 
 func (p *parser) parseQuery() (Query, error) {
@@ -771,11 +773,34 @@ func (p *parser) parseQuery() (Query, error) {
 			if err := checkClauseOrder("WITH", 3); err != nil {
 				return Query{}, err
 			}
-			mode, err := p.parseSecurityMode()
-			if err != nil {
-				return Query{}, err
+			if strings.EqualFold(q.Object, "Knowledge__kav") && p.matchWord("DATA") {
+				if !p.matchWord("CATEGORY") {
+					return Query{}, p.errorf("expected CATEGORY after DATA")
+				}
+				group, err := p.parseName()
+				if err != nil {
+					return Query{}, err
+				}
+				if !strings.HasSuffix(strings.ToLower(group), "__c") {
+					message := fmt.Sprintf("Invalid data category group name provided: %s. The developer name of the category group should be suffixed by __c", group)
+					return Query{}, unexpectedQueryError(message, "invalid data category group name")
+				}
+				op := strings.ToUpper(p.advance().text)
+				if op != "AT" && op != "ABOVE" && op != "BELOW" && op != "ABOVE_OR_BELOW" {
+					return Query{}, p.errorf("expected data category operator")
+				}
+				name, err := p.parseName()
+				if err != nil {
+					return Query{}, err
+				}
+				q.DataCategoryGroup, q.DataCategoryOperator, q.DataCategoryName = group, op, name
+			} else {
+				mode, err := p.parseSecurityMode()
+				if err != nil {
+					return Query{}, err
+				}
+				q.SecurityMode = mode
 			}
-			q.SecurityMode = mode
 		default:
 			return Query{}, &QueryError{Message: "unexpected token: '" + p.peek().text + "'", Err: unsupportedSOQLErrorf("unsupported SOQL token %q", p.peek().text)}
 		}
@@ -837,8 +862,17 @@ func validateSemiAntiQuery(query Query) error {
 		}
 	}
 	for _, child := range query.ChildQueries {
-		if queryHasSemiAntiJoin(child.Query) && !semiJoinChildQuerySupported(query, child) {
+		if !queryHasSemiAntiJoin(child.Query) {
+			continue
+		}
+		if !semiJoinChildQuerySupported(query, child) {
 			return fmt.Errorf("soql: semi-join and anti-join subqueries are allowed only in the main WHERE clause")
+		}
+		// Parsed children have already been validated by the parser. The
+		// executor also accepts constructed Query values, which must apply
+		// the same nested-join and inner-window restrictions.
+		if err := validateSemiAntiQuery(child.Query); err != nil {
+			return err
 		}
 	}
 	return nil
@@ -1069,7 +1103,7 @@ func (p *parser) parseFields() ([]string, []ChildQuery, []TypeofSpec, error) {
 			if len(query.Fields) == 0 && len(query.Typeofs) == 0 {
 				return nil, nil, nil, p.errorf("child relationship subquery requires at least one field")
 			}
-			childQueries = append(childQueries, ChildQuery{Relationship: childRelationshipNameFromObject(query.Object), Query: query})
+			childQueries = append(childQueries, ChildQuery{Relationship: childRelationshipNameFromObject(query.Object), Query: query, After: len(fields)})
 			if !p.match(",") {
 				return fields, childQueries, typeofs, nil
 			}
@@ -1084,6 +1118,7 @@ func (p *parser) parseFields() ([]string, []ChildQuery, []TypeofSpec, error) {
 			if err != nil {
 				return nil, nil, nil, err
 			}
+			spec.After = len(fields)
 			typeofs = append(typeofs, spec)
 			if !p.match(",") {
 				return fields, childQueries, typeofs, nil
@@ -1162,6 +1197,11 @@ func (p *parser) parseFields() ([]string, []ChildQuery, []TypeofSpec, error) {
 					return nil, nil, nil, unexpectedToken(alias, "COUNT() does not accept an alias")
 				}
 				field += " " + alias
+			}
+			if field == "COUNT()" && len(fields) == 0 && len(typeofs) > 0 {
+				// Native U3 Q7 typeofFirstCount: a TYPEOF clause before COUNT()
+				// rejects the COUNT() token itself.
+				return nil, nil, nil, unexpectedToken("COUNT()", "COUNT() must be the only selected expression")
 			}
 			if field == "COUNT()" && (len(fields) > 0 || p.peek().text == ",") {
 				return nil, nil, nil, unexpectedToken(",", "COUNT() must be the only selected expression")
@@ -1422,7 +1462,27 @@ func validateSelectFieldExpression(org storage.OrgState, definition storage.Obje
 	if len(expr.Args) != 1 {
 		return unsupportedSOQLErrorf("%s currently supports one field argument", expr.Func)
 	}
-	return validateFieldReference(org, definition, selectFunctionFieldArg(expr.Args[0]), mode)
+	arg := selectFunctionFieldArg(expr.Args[0])
+	if err := validateFieldReference(org, definition, arg, mode); err != nil {
+		return err
+	}
+	// Native Q12: DAY_ONLY and HOUR_IN_DAY reject a Date field.
+	if (expr.Func == "DAY_ONLY" || expr.Func == "HOUR_IN_DAY") && !strings.ContainsAny(arg, "()") {
+		if fields, ok := dateGroupingFieldDefinitions(org, definition, arg); ok && len(fields) > 0 {
+			allDate := true
+			for _, field := range fields {
+				allDate = allDate && field.Type == storage.FieldDate
+			}
+			if allDate {
+				message := "only datetime fields support: DAY_ONLY"
+				if expr.Func == "HOUR_IN_DAY" {
+					message = "only datetime and time fields support: HOUR_IN_DAY"
+				}
+				return queryError(message, message)
+			}
+		}
+	}
+	return nil
 }
 
 func splitSelectFunctionArgs(argsText string) ([]string, bool) {
@@ -1518,105 +1578,130 @@ type geolocationPoint struct {
 	lon float64
 }
 
-func selectFieldExpressionValue(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, expr selectFieldExpression) (storage.Value, bool) {
+func selectFieldExpressionValue(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, expr selectFieldExpression, userIDs ...storage.ID) (storage.Value, bool) {
 	if expr.Func == "DISTANCE" {
 		return distanceExpressionValue(org, definition, record, expr)
 	}
 	if len(expr.Args) != 1 {
 		return storage.Value{}, false
 	}
-	value, ok := recordValue(org, definition, record, selectFunctionFieldArg(expr.Args[0]))
+	value, ok := recordValue(org, definition, record, selectFunctionFieldArg(expr.Args[0]), userIDs...)
 	if !ok {
 		return storage.Value{}, false
 	}
+	return selectFunctionValue(org, definition, expr, value), true
+}
+
+// convertedSelectFieldExpressionValue evaluates a date function over
+// convertTimezone(field) in the query's user zone. Other expressions evaluate
+// as before (UTC).
+func convertedSelectFieldExpressionValue(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, expr selectFieldExpression, zoneID string, userIDs ...storage.ID) (storage.Value, bool) {
+	if len(expr.Args) != 1 || !isSOQLDateFieldFunction(expr.Func) || selectFunctionFieldArg(expr.Args[0]) == strings.TrimSpace(expr.Args[0]) {
+		return selectFieldExpressionValue(org, definition, record, expr, userIDs...)
+	}
+	value, ok := recordValue(org, definition, record, selectFunctionFieldArg(expr.Args[0]), userIDs...)
+	if !ok {
+		return storage.Value{}, false
+	}
+	if value.Kind == storage.ValueDateTime {
+		if parsed, err := time.Parse(time.RFC3339, normalizeDateTime(value.String)); err == nil {
+			local := parsed.UTC().In(dateLiteralLocation(zoneID))
+			shifted := time.Date(local.Year(), local.Month(), local.Day(), local.Hour(), local.Minute(), local.Second(), 0, time.UTC)
+			value = storage.DateTimeValue(shifted.Format("2006-01-02T15:04:05.000Z"))
+		}
+	}
+	return selectFunctionValue(org, definition, expr, value), true
+}
+
+func selectFunctionValue(org storage.OrgState, definition storage.ObjectDefinition, expr selectFieldExpression, value storage.Value) storage.Value {
 	switch expr.Func {
 	case "TOLABEL":
-		return toLabelValue(org, definition, expr.Args[0], value), true
+		return toLabelValue(org, definition, expr.Args[0], value)
 	case "FORMAT":
-		return storage.StringValue(storageValueDisplayString(value)), true
+		return storage.StringValue(storageValueDisplayString(value))
 	case "CONVERTCURRENCY":
-		return value.Clone(), true
+		return value.Clone()
 	case "DAY_ONLY":
 		if text, ok := storageValueDateText(value); ok {
-			return storage.DateValue(text[:10]), true
+			return storage.DateValue(text[:10])
 		}
 	case "CALENDAR_MONTH":
 		if text, ok := storageValueDateText(value); ok {
 			if parsed, err := time.Parse("2006-01-02", text[:10]); err == nil {
-				return storage.IntegerValue(int64(parsed.Month())), true
+				return storage.IntegerValue(int64(parsed.Month()))
 			}
 		}
 	case "FISCAL_MONTH":
 		if text, ok := storageValueDateText(value); ok {
 			if parsed, err := time.Parse("2006-01-02", text[:10]); err == nil {
-				return storage.IntegerValue(int64(fiscalMonthNumber(int(parsed.Month()), FiscalYearStartMonth(org)))), true
+				return storage.IntegerValue(int64(fiscalMonthNumber(int(parsed.Month()), FiscalYearStartMonth(org))))
 			}
 		}
 	case "CALENDAR_QUARTER":
 		if text, ok := storageValueDateText(value); ok {
 			if parsed, err := time.Parse("2006-01-02", text[:10]); err == nil {
-				return storage.IntegerValue(int64((int(parsed.Month())-1)/3 + 1)), true
+				return storage.IntegerValue(int64((int(parsed.Month())-1)/3 + 1))
 			}
 		}
 	case "FISCAL_QUARTER":
 		if text, ok := storageValueDateText(value); ok {
 			if parsed, err := time.Parse("2006-01-02", text[:10]); err == nil {
-				return storage.IntegerValue(int64(fiscalQuarterNumber(int(parsed.Month()), FiscalYearStartMonth(org)))), true
+				return storage.IntegerValue(int64(fiscalQuarterNumber(int(parsed.Month()), FiscalYearStartMonth(org))))
 			}
 		}
 	case "CALENDAR_YEAR":
 		if text, ok := storageValueDateText(value); ok {
 			if parsed, err := time.Parse("2006-01-02", text[:10]); err == nil {
-				return storage.IntegerValue(int64(parsed.Year())), true
+				return storage.IntegerValue(int64(parsed.Year()))
 			}
 		}
 	case "FISCAL_YEAR":
 		if text, ok := storageValueDateText(value); ok {
 			if parsed, err := time.Parse("2006-01-02", text[:10]); err == nil {
 				startMonth, useStartYear := fiscalYearSettings(org)
-				return storage.IntegerValue(int64(fiscalYearNumber(parsed, startMonth, useStartYear))), true
+				return storage.IntegerValue(int64(fiscalYearNumber(parsed, startMonth, useStartYear)))
 			}
 		}
 	case "DAY_IN_MONTH":
 		if text, ok := storageValueDateText(value); ok {
 			if parsed, err := time.Parse("2006-01-02", text[:10]); err == nil {
-				return storage.IntegerValue(int64(parsed.Day())), true
+				return storage.IntegerValue(int64(parsed.Day()))
 			}
 		}
 	case "DAY_IN_WEEK":
 		if text, ok := storageValueDateText(value); ok {
 			if parsed, err := time.Parse("2006-01-02", text[:10]); err == nil {
 				weekday := int(parsed.Weekday()) + 1
-				return storage.IntegerValue(int64(weekday)), true
+				return storage.IntegerValue(int64(weekday))
 			}
 		}
 	case "DAY_IN_YEAR":
 		if text, ok := storageValueDateText(value); ok {
 			if parsed, err := time.Parse("2006-01-02", text[:10]); err == nil {
-				return storage.IntegerValue(int64(parsed.YearDay())), true
+				return storage.IntegerValue(int64(parsed.YearDay()))
 			}
 		}
 	case "HOUR_IN_DAY":
 		if value.Kind == storage.ValueDateTime && len(value.String) >= 13 {
 			if parsed, err := time.Parse(time.RFC3339, normalizeDateTime(value.String)); err == nil {
-				return storage.IntegerValue(int64(parsed.Hour())), true
+				return storage.IntegerValue(int64(parsed.Hour()))
 			}
 		}
 	case "WEEK_IN_MONTH":
 		if text, ok := storageValueDateText(value); ok {
 			if parsed, err := time.Parse("2006-01-02", text[:10]); err == nil {
-				return storage.IntegerValue(int64((parsed.Day()-1)/7 + 1)), true
+				return storage.IntegerValue(int64((parsed.Day()-1)/7 + 1))
 			}
 		}
 	case "WEEK_IN_YEAR":
 		if text, ok := storageValueDateText(value); ok {
 			if parsed, err := time.Parse("2006-01-02", text[:10]); err == nil {
-				_, week := parsed.ISOWeek()
-				return storage.IntegerValue(int64(week)), true
+				// Native Q8 rollover: week 1 is the first seven days of the year.
+				return storage.IntegerValue(int64((parsed.YearDay()-1)/7 + 1))
 			}
 		}
 	}
-	return storage.NullValue(), true
+	return storage.NullValue()
 }
 
 func distanceExpressionValue(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, expr selectFieldExpression) (storage.Value, bool) {
@@ -1975,6 +2060,16 @@ func validateGroupedSelectedFields(query Query, deferFieldsExpansion bool) error
 	for _, field := range query.Fields {
 		if _, unexpanded := fieldsFunctionMode(field); unexpanded && deferFieldsExpansion {
 			continue
+		}
+		// Native flow_tolabel_residuals (API 62.0, 67.0): an aliased
+		// toLabel(field) needs no grouping; an unaliased one needs its field
+		// grouped and otherwise names the field itself in a catchable
+		// QueryException.
+		if arg, alias, ok := aggregateToLabelField(field); ok {
+			if alias != "" || containsName(query.GroupBy, arg) {
+				continue
+			}
+			return queryError("Field must be grouped or aggregated: "+arg, fmt.Sprintf("field %s must be grouped or aggregated", arg))
 		}
 		aggregate, ok, err := parseAggregateField(field)
 		if err != nil {
@@ -2447,7 +2542,7 @@ func (p *parser) parsePrimaryCondition(allowNot bool) (Condition, error) {
 	}
 	valueToken = p.literalToken(valueToken)
 	allowLikeEscapes := op == "LIKE" || op == "NOT LIKE"
-	value, value2, isRange, err := literalAtWithMode(valueToken, p.now, p.fiscalYearStartMonth, allowLikeEscapes)
+	value, value2, isRange, err := literalAtWithWeekStart(valueToken, p.now, p.fiscalYearStartMonth, allowLikeEscapes, p.firstWeekday)
 	if err != nil {
 		return Condition{}, err
 	}
@@ -2460,7 +2555,7 @@ func (p *parser) parsePrimaryCondition(allowNot bool) (Condition, error) {
 				return Condition{}, p.errorf("expected WHERE value")
 			}
 			tok = p.literalToken(tok)
-			nextValue, _, nextRange, err := literalAtWithMode(tok, p.now, p.fiscalYearStartMonth, allowLikeEscapes)
+			nextValue, _, nextRange, err := literalAtWithWeekStart(tok, p.now, p.fiscalYearStartMonth, allowLikeEscapes, p.firstWeekday)
 			if err != nil {
 				return Condition{}, err
 			}
@@ -2755,7 +2850,11 @@ func literalAtWithFiscalYearStartMonth(text string, now time.Time, fiscalYearSta
 }
 
 func literalAtWithMode(text string, now time.Time, fiscalYearStartMonth int, allowLikeEscapes bool) (storage.Value, storage.Value, bool, error) {
-	if start, end, ok := dateLiteralWithFiscalYearStartMonth(text, now, fiscalYearStartMonth); ok {
+	return literalAtWithWeekStart(text, now, fiscalYearStartMonth, allowLikeEscapes, time.Sunday)
+}
+
+func literalAtWithWeekStart(text string, now time.Time, fiscalYearStartMonth int, allowLikeEscapes bool, firstWeekday time.Weekday) (storage.Value, storage.Value, bool, error) {
+	if start, end, ok := dateLiteralWithWeekStart(text, now, fiscalYearStartMonth, firstWeekday); ok {
 		return start, end, true, nil
 	}
 	if isKnownUnsupportedDateLiteral(text) {
@@ -2893,6 +2992,10 @@ func dateLiteral(text string, now time.Time) (storage.Value, storage.Value, bool
 }
 
 func dateLiteralWithFiscalYearStartMonth(text string, now time.Time, fiscalYearStartMonth int) (storage.Value, storage.Value, bool) {
+	return dateLiteralWithWeekStart(text, now, fiscalYearStartMonth, time.Sunday)
+}
+
+func dateLiteralWithWeekStart(text string, now time.Time, fiscalYearStartMonth int, firstWeekday time.Weekday) (storage.Value, storage.Value, bool) {
 	fiscalYearStartMonth = normalizeFiscalYearStartMonth(fiscalYearStartMonth)
 	today := dateOnly(now)
 	upper := strings.ToUpper(text)
@@ -2931,13 +3034,13 @@ func dateLiteralWithFiscalYearStartMonth(text string, now time.Time, fiscalYearS
 		start := quarterStart(today).AddDate(0, 3, 0)
 		return dateRange(start, start.AddDate(0, 3, 0))
 	case "THIS_WEEK":
-		start := weekStart(today)
+		start := weekStartOn(today, firstWeekday)
 		return dateRange(start, start.AddDate(0, 0, 7))
 	case "LAST_WEEK":
-		start := weekStart(today).AddDate(0, 0, -7)
+		start := weekStartOn(today, firstWeekday).AddDate(0, 0, -7)
 		return dateRange(start, start.AddDate(0, 0, 7))
 	case "NEXT_WEEK":
-		start := weekStart(today).AddDate(0, 0, 7)
+		start := weekStartOn(today, firstWeekday).AddDate(0, 0, 7)
 		return dateRange(start, start.AddDate(0, 0, 7))
 	case "LAST_90_DAYS":
 		return dateRange(today.AddDate(0, 0, -90), today.AddDate(0, 0, 1))
@@ -2975,16 +3078,16 @@ func dateLiteralWithFiscalYearStartMonth(text string, now time.Time, fiscalYearS
 	if n, ok := literalNumberSuffix(upper, "LAST_N_WEEKS:"); ok {
 		// LAST_N_WEEKS contains the previous n complete weeks and excludes
 		// the current week. The upper bound is the current week start.
-		end := weekStart(today)
+		end := weekStartOn(today, firstWeekday)
 		start := end.AddDate(0, 0, -7*n)
 		return dateRange(start, end)
 	}
 	if n, ok := literalNumberSuffix(upper, "NEXT_N_WEEKS:"); ok {
-		start := weekStart(today).AddDate(0, 0, 7)
+		start := weekStartOn(today, firstWeekday).AddDate(0, 0, 7)
 		return dateRange(start, start.AddDate(0, 0, 7*n))
 	}
 	if n, ok := literalNumberSuffix(upper, "N_WEEKS_AGO:"); ok {
-		start := weekStart(today).AddDate(0, 0, -7*n)
+		start := weekStartOn(today, firstWeekday).AddDate(0, 0, -7*n)
 		return dateRange(start, start.AddDate(0, 0, 7))
 	}
 	if n, ok := literalNumberSuffix(upper, "LAST_N_MONTHS:"); ok {
@@ -3053,8 +3156,9 @@ func dateLiteralWithFiscalYearStartMonth(text string, now time.Time, fiscalYearS
 func isKnownUnsupportedDateLiteral(text string) bool {
 	return false
 }
-func weekStart(day time.Time) time.Time {
-	return day.AddDate(0, 0, -int(day.Weekday()))
+func weekStartOn(day time.Time, first time.Weekday) time.Time {
+	offset := (int(day.Weekday()) - int(first) + 7) % 7
+	return day.AddDate(0, 0, -offset)
 }
 func quarterStart(day time.Time) time.Time {
 	month := time.Month(((int(day.Month()) - 1) / 3 * 3) + 1)
@@ -3173,4 +3277,14 @@ func validateISODateTimeToken(query string, start int, text string) error {
 		err.DateTimeLexerMessage = fmt.Sprintf("line %d:%d %s", line, column, lexerMessage)
 	}
 	return err
+}
+
+// aggregateToLabelField reports the field argument and alias of a
+// toLabel(field) select item.
+func aggregateToLabelField(field string) (arg, alias string, ok bool) {
+	expr, parsed := parseSelectFieldExpression(field)
+	if !parsed || expr.Func != "TOLABEL" || len(expr.Args) != 1 {
+		return "", "", false
+	}
+	return selectFunctionFieldArg(expr.Args[0]), expr.Alias, true
 }

@@ -1,0 +1,7 @@
+api	route	case	actual
+62.0	istest	process	api=62.0 afterOne=0 afterFive=3 afterUnchanged=4
+62.0	istest	waits	api=62.0 interviews=1 status=Paused pauseLabel=null labelStarts=true before=1 after=0
+67.0	istest	process	api=67.0 afterOne=0 afterFive=3 afterUnchanged=4
+67.0	istest	waits	api=67.0 interviews=1 status=Paused pauseLabel=null labelStarts=true before=1 after=0
+62.0	anonymous	anonymous	api=67.0 afterOne=0 afterFive=3 afterUnchanged=4 || api=67.0 interviews=1 status=Paused pauseLabel=null labelStarts=true before=1 after=0
+67.0	anonymous	anonymous	api=67.0 afterOne=0 afterFive=3 afterUnchanged=4 || api=67.0 interviews=1 status=Paused pauseLabel=null labelStarts=true before=1 after=0

@@ -1,0 +1,4 @@
+source_api	method	observation
+62.0	observe	"{""count"":5,""distinctAura"":true,""distinctLwc"":true,""sameTarget"":true}"
+67.0	observe	"{""count"":5,""distinctAura"":true,""distinctLwc"":true,""sameTarget"":true}"
+68.0	observe	"{""count"":5,""distinctAura"":true,""distinctLwc"":true,""sameTarget"":true}"

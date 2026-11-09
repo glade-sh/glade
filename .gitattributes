@@ -1,2 +1,5 @@
 lwcruntime/src/slds/design-system/** -whitespace
 lwcruntime/src/slds/design-system-2/** -whitespace
+
+# A trailing tab represents an empty captured accepted-prefix set.
+internal/apextest/testdata/conformance/capi2_argument_prefixes/org.tsv -whitespace

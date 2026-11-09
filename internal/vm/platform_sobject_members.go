@@ -53,7 +53,7 @@ func (vm *VM) displayStringValue(value Value, result *Result) (Value, error) {
 		parts := make([]string, 0, len(value.Map))
 		for _, key := range sortedMapKeys(value.Map) {
 			item := value.Map[key]
-			text := apexCollectionString(item)
+			text := apexMapValueCollectionString(item)
 			class, source := vm.lookupClass(item.Type)
 			if item.Kind == ValueObject && item.projectClass && source && !class.Dependency && len(class.EnumValues) == 0 && !vm.isSubclass(item.Type, "Exception") {
 				var err error
@@ -134,6 +134,9 @@ func (vm *VM) displayStringValue(value Value, result *Result) (Value, error) {
 	}
 	if isExceptionType(value.Type) {
 		return String(vm.exceptionToString(value)), nil
+	}
+	if vm.connectAPIObjectValue(value) {
+		return String(vm.connectAPIDisplayString(value, map[uint64]bool{})), nil
 	}
 	target, ok, ambiguous := vm.resolveInstanceMethodForArgs(value.Type, "toString", nil)
 	if ambiguous {
@@ -385,20 +388,37 @@ func (vm *VM) sObjectTypeDisplayName(typeName string) string {
 	return displayName
 }
 
+// Native List and Set text shows the first ten elements, then ", ..." in
+// String.valueOf, concatenation, System.debug, String.format, assertion
+// messages and Map-with-List-key JSON (record_type_shape list rows and the
+// list_forms rows). Object.toString on a collection keeps the full text: no row.
+const collectionDisplayLimit = 10
+
 func (vm *VM) displayList(values []Value, result *Result) (string, error) {
-	parts := make([]string, 0, len(values))
+	truncated := len(values) > collectionDisplayLimit
+	if truncated {
+		values = values[:collectionDisplayLimit]
+	}
+	parts := make([]string, 0, len(values)+1)
 	for _, item := range values {
 		text, err := vm.displayString(item, result)
 		if err != nil {
 			return "", err
 		}
 		parts = append(parts, text)
+	}
+	if truncated {
+		parts = append(parts, "...")
 	}
 	return "(" + strings.Join(parts, ", ") + ")", nil
 }
 
 func (vm *VM) displaySet(values []Value, result *Result) (string, error) {
-	parts := make([]string, 0, len(values))
+	truncated := len(values) > collectionDisplayLimit
+	if truncated {
+		values = values[:collectionDisplayLimit]
+	}
+	parts := make([]string, 0, len(values)+1)
 	for _, item := range values {
 		text, err := vm.displayString(item, result)
 		if err != nil {
@@ -406,12 +426,16 @@ func (vm *VM) displaySet(values []Value, result *Result) (string, error) {
 		}
 		parts = append(parts, text)
 	}
+	if truncated {
+		parts = append(parts, "...")
+	}
 	return "{" + strings.Join(parts, ", ") + "}", nil
 }
 
 const (
-	sobjectErrorsField   = "__glade_errors"
-	sobjectReadOnlyField = "__glade_readonly"
+	sobjectErrorsField                   = "__glade_errors"
+	sobjectReadOnlyField                 = "__glade_readonly"
+	sobjectEventSubscriberStorageIDField = "__glade_event_subscriber_storage_id"
 	// Reserved internal field name; authored JSON values never grant loaded-reference authority.
 	sobjectLoadedReferencesField             = "__glade_loaded_references"
 	sobjectQueriedFieldsField                = "__glade_queried_fields"
@@ -434,7 +458,7 @@ const (
 )
 
 func isInternalSObjectField(field string) bool {
-	if field == sobjectPublishedEventIDField || field == jsonCapturedOwnerProjectionField || field == jsonSObjectQueryProjectionField || field == databaseAsyncLocatorField || isLexicalInstanceFieldStorage(field) {
+	if field == sobjectEventSubscriberStorageIDField || field == sobjectPublishedEventIDField || field == jsonCapturedOwnerProjectionField || field == jsonSObjectQueryProjectionField || field == databaseAsyncLocatorField || isLexicalInstanceFieldStorage(field) {
 		return true
 	}
 	return field == sobjectLoadedReferencesField || field == sobjectErrorsField || field == sobjectReadOnlyField || field == sobjectQueriedFieldsField || field == sobjectModifiedSinceQueryField || field == sobjectSubqueryProjectionField || field == sobjectExplicitFieldsField || field == sobjectSetFieldsField || field == sobjectUserSetFieldsField || field == sobjectDefaultedFieldsField || field == sobjectDMLOptionsField || field == sobjectDMLAccessibleField || field == sobjectTriggerField || field == sobjectParentProjectionField || field == sobjectStrippedChildRelationshipsField || field == sobjectCloneMarkerField || field == sobjectCloneSourceIDField || field == sobjectEventOperationIDField
@@ -1160,7 +1184,7 @@ func (vm *VM) lazyChildRelationshipValue(receiver Value, field string) (Value, b
 
 func (vm *VM) lazyChildRelationshipLookup(parentObject, field string) lazyChildRelationshipLookup {
 	vm.ensureMetadataCacheGeneration()
-	key := strings.ToLower(strings.TrimSpace(parentObject)) + "\x00" + strings.ToLower(strings.TrimSpace(field))
+	key := strings.ToLower(strings.TrimSpace(parentObject)) + "\x00" + strings.ToLower(strings.TrimSpace(field)) + "\x00" + vm.currentSourceExecutionPolicy().APIVersion
 	if vm.lazyChildRelCache == nil {
 		vm.lazyChildRelCache = newLazyChildRelationshipLookupCache()
 	}
@@ -1176,6 +1200,9 @@ func (vm *VM) lazyChildRelationshipLookup(parentObject, field string) lazyChildR
 			continue
 		}
 		for _, relation := range childState.Definition.Relations {
+			if !storage.PlatformChildRelationshipAvailableAtVersion(parentObject, childName, relation.Field, vm.currentSourceExecutionPolicy().APIVersion) {
+				continue
+			}
 			if !relationshipTargetsObject(relation, parentObject) || strings.TrimSpace(relation.Field) == "" {
 				continue
 			}
@@ -1198,6 +1225,9 @@ func (vm *VM) lazyChildRelationshipLookup(parentObject, field string) lazyChildR
 			}
 			if fieldDef.APIName == "" {
 				fieldDef.APIName = fieldName
+			}
+			if !storage.PlatformChildRelationshipAvailableAtVersion(parentObject, childName, fieldDef.APIName, vm.currentSourceExecutionPolicy().APIVersion) {
+				continue
 			}
 			for _, childRelationshipName := range vmFieldChildRelationshipNames(childState.Definition, fieldDef) {
 				if !vmRelationshipNameMatches(vm.Org.Namespace, childRelationshipName, field) {
@@ -1257,6 +1287,7 @@ func (vm *VM) appendLazyChildRelationshipRecords(out []Value, seen map[storage.I
 		}
 	}
 	sort.Strings(ids)
+	convertRecord := vm.recordConverterForOrg(vm.Org)
 	for _, idText := range ids {
 		id := storage.ID(idText)
 		if seen[id] {
@@ -1267,7 +1298,7 @@ func (vm *VM) appendLazyChildRelationshipRecords(out []Value, seen map[storage.I
 			continue
 		}
 		record.Object = childName
-		out = append(out, vm.vmValueFromRecord(record))
+		out = append(out, convertRecord(record))
 		seen[id] = true
 	}
 	return out
@@ -1317,7 +1348,7 @@ func (vm *VM) loadedChildRelationshipValue(receiver Value, field string) (string
 
 func (vm *VM) loadedChildRelationshipLookup(receiverType, parentObject, field string) loadedChildRelationshipLookup {
 	vm.ensureMetadataCacheGeneration()
-	key := strings.ToLower(strings.TrimSpace(receiverType)) + "\x00" + strings.ToLower(strings.TrimSpace(parentObject)) + "\x00" + strings.ToLower(strings.TrimSpace(field))
+	key := strings.ToLower(strings.TrimSpace(receiverType)) + "\x00" + strings.ToLower(strings.TrimSpace(parentObject)) + "\x00" + strings.ToLower(strings.TrimSpace(field)) + "\x00" + vm.currentSourceExecutionPolicy().APIVersion
 	if vm.loadedChildRelCache == nil {
 		vm.loadedChildRelCache = newLoadedChildRelationshipLookupCache()
 	}
@@ -1334,6 +1365,9 @@ func (vm *VM) loadedChildRelationshipLookup(receiverType, parentObject, field st
 			continue
 		}
 		for _, relation := range childState.Definition.Relations {
+			if !storage.PlatformChildRelationshipAvailableAtVersion(parentObject, childName, relation.Field, vm.currentSourceExecutionPolicy().APIVersion) {
+				continue
+			}
 			if !relationshipTargetsObject(relation, parentObject) {
 				continue
 			}
@@ -1683,6 +1717,9 @@ func (vm *VM) resolveObjectNameForCaller(name, caller string) (string, bool) {
 		return resolved, true
 	}
 	resolved, ok := storage.ResolveObjectName(*vm.Org, name)
+	if !ok {
+		resolved, ok = vm.lazyStandardObject(name)
+	}
 	vm.objectNameCache[cacheKey] = objectNameLookup{Name: resolved, OK: ok}
 	return resolved, ok
 }
@@ -1896,7 +1933,7 @@ func (vm *VM) missingSObjectFieldValue(receiver Value, field string) (Value, boo
 		}
 		if shouldEvaluateSObjectFormulaField(receiver, fieldDef) {
 			if record, ok := vm.formulaRecordFromSObject(receiver); ok {
-				if value, _, ok := dml.EvaluateRecordFormulaValueInOrg(fieldDef.Formula, fieldDef, vm.Org, definition, record); ok {
+				if value, _, ok := dml.EvaluateRecordFormulaValueInOrgWithOptions(fieldDef.Formula, fieldDef, vm.Org, definition, record, vm.sObjectFormulaEvaluationOptions(receiver)); ok {
 					formulaValue := vmValueFromStorage(value)
 					if calculatedDateFormulaBlankValue(fieldDef, formulaValue) {
 						return Null, true
@@ -1968,7 +2005,18 @@ func (vm *VM) missingSObjectFieldValue(receiver Value, field string) (Value, boo
 		}
 	}
 	if fieldDef.Type == storage.FieldBoolean {
-		if strings.EqualFold(fieldDef.APIName, "IsDeleted") || storage.IsCustomSettingDefinition(definition) {
+		if strings.EqualFold(fieldDef.APIName, "IsDeleted") {
+			return Value{Kind: ValueNull, Type: "Boolean"}, true
+		}
+		if storage.IsCustomSettingDefinition(definition) {
+			// A freshly constructed custom setting, or the instance returned when
+			// no row exists, reads an unset checkbox as false (C11 capture,
+			// APIs 62 and 67). Stored rows keep the null view.
+			_, cloned := receiver.Fields[sobjectCloneMarkerField]
+			if !hasQueriedFields && !cloned && !isTriggerSObject(receiver) &&
+				strings.TrimSpace(fieldDef.DefaultValue) != "" {
+				return Bool(false), true
+			}
 			return Value{Kind: ValueNull, Type: "Boolean"}, true
 		}
 		return Bool(false), true
@@ -1993,15 +2041,21 @@ func (vm *VM) unknownSObjectFieldError(receiver Value, field string, requireDecl
 	if vm.hasPlatformEventMetadata(objectName) && strings.EqualFold(field, "ReplayId") {
 		return nil
 	}
-	if _, ok := syntheticSObjectSystemField(field); ok {
+	if _, ok := syntheticSObjectSystemField(field); ok && !vm.recordTypeFieldAbsent(definition, field) {
 		return nil
 	}
-	if _, queried := receiver.Fields[sobjectQueriedFieldsField]; !queried && isCustomObjectLikeName(objectName) && !vm.hasPlatformEventMetadata(objectName) && (len(requireDeclared) == 0 || !requireDeclared[0]) {
+	if _, queried := receiver.Fields[sobjectQueriedFieldsField]; !queried && isCustomObjectLikeName(objectName) && !vm.hasPlatformEventMetadata(objectName) && (len(requireDeclared) == 0 || !requireDeclared[0]) && !vm.recordTypeFieldAbsent(definition, field) {
 		if synthetic := syntheticSchemaField(field); synthetic.APIName != "" {
 			return nil
 		}
 	}
 	return newExceptionError("SObjectException", fmt.Sprintf("Invalid field %s for %s", field, objectName))
+}
+
+// recordTypeFieldAbsent: get and put of an absent RecordTypeId raise
+// "Invalid field RecordTypeId for <Object>" (dml.RecordTypeFieldAbsent).
+func (vm *VM) recordTypeFieldAbsent(definition storage.ObjectDefinition, field string) bool {
+	return strings.EqualFold(field, "RecordTypeId") && dml.RecordTypeFieldAbsent(vm.Org, definition)
 }
 
 func calculatedDateFormulaBlankValue(fieldDef storage.Field, value Value) bool {
@@ -2830,7 +2884,8 @@ func (vm *VM) findOrgRecord(objectName string, id storage.ID) (storage.Record, b
 }
 
 func (vm *VM) formulaRecordFromSObject(value Value) (storage.Record, bool) {
-	if isTriggerSObject(value) {
+	triggerRecord := isTriggerSObject(value)
+	if triggerRecord {
 		if _, readOnly := sobjectReadOnlyReason(value); readOnly {
 			// Formula reads must not inherit DML's write restriction. Keep the
 			// original Trigger record readonly while
@@ -2843,7 +2898,12 @@ func (vm *VM) formulaRecordFromSObject(value Value) (storage.Record, bool) {
 	if err != nil {
 		return storage.Record{}, false
 	}
-	if vm.Org == nil || record.ID == "" {
+	// A trigger record is a complete snapshot: Trigger.old holds the old
+	// values and a before-update Trigger.new the new inputs merged over them,
+	// so a formula is computed from the snapshot alone. Filling its null
+	// fields from the current stored row read the wrong values after a flip
+	// (blank_text_formula).
+	if vm.Org == nil || record.ID == "" || triggerRecord {
 		return record, true
 	}
 	objectName, ok := vm.resolveObjectName(record.Object)
@@ -2987,7 +3047,7 @@ func (vm *VM) summaryRecordFieldValue(definition storage.ObjectDefinition, recor
 	if !ok || fieldDef.Type != storage.FieldCalculated || strings.TrimSpace(fieldDef.Formula) == "" {
 		return storage.Value{}, false
 	}
-	value, _, ok := dml.EvaluateRecordFormulaValueInOrg(fieldDef.Formula, fieldDef, vm.Org, definition, record)
+	value, _, ok := dml.EvaluateRecordFormulaValueInOrgWithOptions(fieldDef.Formula, fieldDef, vm.Org, definition, record, dml.FormulaEvaluationOptions{SetupUserID: storage.ID(vm.currentUserID())})
 	return value, ok
 }
 

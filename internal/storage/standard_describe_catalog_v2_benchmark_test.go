@@ -8,7 +8,7 @@ import (
 func BenchmarkStandardDescribeCatalogLegacyLoad(b *testing.B) {
 	b.ReportAllocs()
 	for index := 0; index < b.N; index++ {
-		if catalog := loadEmbeddedStandardDescribeCatalog(); len(catalog) != 5323 {
+		if catalog := loadEmbeddedStandardDescribeCatalog(); len(catalog) != 5330 {
 			b.Fatalf("legacy catalog objects = %d", len(catalog))
 		}
 	}

@@ -61,7 +61,7 @@ func validateFormPlacement(root *MarkupNode) error {
 	}
 	var walk func(*MarkupNode, bool) error
 	walk = func(node *MarkupNode, inForm bool) error {
-		inForm = inForm || isApexStructureTag(node, "form")
+		inForm = inForm || isApexStructureTag(node, "form") || mayProvideForm(node)
 		if node.Namespace == "apex" && !inForm && (node.Name == "inputtext" || node.Name == "commandbutton") {
 			tag := "inputText"
 			if node.Name == "commandbutton" {
@@ -214,4 +214,100 @@ func formDeclaredWritable(class apexast.Declaration, name string, classes map[st
 		return formDeclaredWritable(parent, name, classes, seen)
 	}
 	return false
+}
+
+// mayProvideForm reports an element whose body is rendered inside markup this
+// file does not contain: the body of a custom component (its definition may
+// wrap <apex:componentBody/> in a form) and an <apex:define> (its template may
+// wrap <apex:insert/> in one). Native rows (vf_corpus_shapes) accept a button
+// or action function there. Without the component and template sources the
+// placement check stays lenient rather than rejecting a page that deploys.
+func mayProvideForm(node *MarkupNode) bool {
+	if node.Type != MarkupNodeElement {
+		return false
+	}
+	if node.Namespace == "apex" {
+		return node.Name == "define"
+	}
+	return node.Namespace != ""
+}
+
+// Native input components bind to one controller property or method. A literal,
+// empty or mixed value is a compile error. The tokenizer keeps the opening-tag
+// boundary the diagnostic location uses.
+func validateInputValueSource(source, sourceName string) error {
+	tags := map[string]string{
+		"apex:inputtext": "inputText", "apex:inputtextarea": "inputTextarea",
+		"apex:inputsecret": "inputSecret", "apex:inputcheckbox": "inputCheckbox", "apex:selectlist": "selectList",
+		// Rows IdLInputHiddenLit, IdLInputHiddenNoId, IdLInputHiddenQuote.
+		"apex:inputhidden": "inputHidden",
+	}
+	z := html.NewTokenizer(strings.NewReader(source))
+	offset := 0
+	for {
+		kind := z.Next()
+		offset += len(z.Raw())
+		if kind == html.ErrorToken {
+			if z.Err() == io.EOF {
+				return nil
+			}
+			return z.Err()
+		}
+		if kind != html.StartTagToken && kind != html.SelfClosingTagToken {
+			continue
+		}
+		token := z.Token()
+		if kind == html.SelfClosingTagToken {
+			z.NextIsNotRawText()
+		}
+		tag := tags[strings.ToLower(token.Data)]
+		if tag == "" {
+			continue
+		}
+		for _, attribute := range token.Attr {
+			if !strings.EqualFold(attribute.Key, "value") {
+				continue
+			}
+			value := attribute.Val
+			if strings.HasPrefix(value, "{!") && findExpressionTemplateEnd(value, 2) == len(value)-1 {
+				break
+			}
+			// Rows InputTextWs*, SelectListWs* and SelectListTwoExpr: spaces around a
+			// single expression fail with the expression as an unknown property, and
+			// adjacent expressions in a selectList fail the same way as #{...}.
+			if trimmed := strings.TrimSpace(value); trimmed != value && strings.HasPrefix(trimmed, "{!") && findExpressionTemplateEnd(trimmed, 2) == len(trimmed)-1 {
+				return fmt.Errorf("Unknown property '%s'", strings.TrimSpace(trimmed[2:len(trimmed)-1]))
+			}
+			if tag == "selectList" && onlyExpressions(value) {
+				return fmt.Errorf("Unknown property '%s'", strings.ReplaceAll(value, "{!", "#{"))
+			}
+			line, column := lineColumnAt(source, offset)
+			location := fmt.Sprintf(" at line %d column %d", line, column)
+			if sourceName != "" {
+				location = " in " + sourceName + location
+			}
+			if tag == "selectList" {
+				return fmt.Errorf("Formula expression is required for attribute value in <apex:selectList>%s", location)
+			}
+			return fmt.Errorf("Attribute value in <apex:%s> must contain only a formula expression that resolves to a single controller variable or method%s", tag, location)
+		}
+	}
+}
+
+// onlyExpressions reports whether value is two or more adjacent {!...}
+// expressions and nothing else.
+func onlyExpressions(value string) bool {
+	count := 0
+	for i := 0; i < len(value); {
+		if !strings.HasPrefix(value[i:], "{!") {
+			return false
+		}
+		end := findExpressionTemplateEnd(value[i:], 2)
+		if end < 0 {
+			return false
+		}
+		i += end + 1
+		count++
+	}
+	return count >= 2
 }

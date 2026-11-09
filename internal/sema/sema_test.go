@@ -11684,7 +11684,7 @@ public class Dependency {}
 	writeSemaFile(t, filepath.Join(consumerRoot, "Consumer.cls"), `
 public class Consumer {
   public void run() {
-    MissingLocal localRecord;
+    String text = pkgx.Dependency.missingFromIncompleteSource();
   }
 }
 `)
@@ -11706,12 +11706,19 @@ public class Consumer {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "GLADESEMA006" && diag.Severity != diagnostic.Warning {
+		if diag.Severity == diagnostic.Error {
 			t.Fatalf("source dependency semantic uncertainty should be warning: %#v", result.Diagnostics)
 		}
 	}
 	if result.HasErrors() {
 		t.Fatalf("source dependency semantic uncertainty should not fail check: %#v", result.Diagnostics)
+	}
+	warned := false
+	for _, diag := range result.Diagnostics {
+		warned = warned || diag.Severity == diagnostic.Warning
+	}
+	if !warned {
+		t.Fatalf("expected a downgraded warning for the dependency call: %#v", result.Diagnostics)
 	}
 }
 

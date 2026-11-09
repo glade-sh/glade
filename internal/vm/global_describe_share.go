@@ -10,7 +10,7 @@ func (vm *VM) sharedGlobalDescribeBuild() (Value, bool) {
 		return Value{}, false
 	}
 	share := vm.describeShare
-	key := vm.currentCallerNamespace()
+	key := vm.currentCallerNamespace() + "\x00" + vm.globalDescribeAvailabilityKey()
 	share.mu.Lock()
 	if share.globalMaps == nil {
 		share.globalMaps = make(map[string]Value)
@@ -26,9 +26,10 @@ func (vm *VM) sharedGlobalDescribeBuild() (Value, bool) {
 	// Keys and order remain immutable and shared; typed bindings share this
 	// VM's entries until their first map write.
 	value.Ref = newValueRef()
-	value.Map = maps.Clone(value.Map)
-	tokens := make(map[uint64]Value)
-	for key, token := range value.Map {
+	shared := value.Map
+	value.Map = make(map[string]Value, len(shared))
+	tokens := make(map[uint64]Value, len(shared)/2+1)
+	for key, token := range shared {
 		private, ok := tokens[token.Ref]
 		if !ok {
 			private = token

@@ -124,6 +124,9 @@ func formulaValueTypeName(v formulaValue) string {
 }
 
 func (p *formulaParser) formulaFieldType(name string) formulaValue {
+	if len(name) > len("$Permission.") && strings.EqualFold(name[:len("$Permission.")], "$Permission.") {
+		return formulaValue{kind: formulaBool}
+	}
 	fieldName, ok := storage.ResolveFieldName(p.definition, "", name)
 	field := p.definition.Fields[fieldName]
 	if !ok && p.org != nil {
@@ -140,6 +143,11 @@ func (p *formulaParser) formulaFieldType(name string) formulaValue {
 	}
 	if !ok {
 		p.validationMessage = "Could not access the following field: " + name + ". Contact your administrator."
+		if formulaObjectTypeReference(name) {
+			// activity_account_derivation F rows (API 62.0/67.0): $ObjectType
+			// is not a FormulaEval field.
+			p.validationMessage = "Field " + name + " does not exist. Check spelling."
+		}
 		return formulaValue{kind: formulaNull}
 	}
 	v := formulaValue{fieldType: field.Type, display: strings.ToUpper(field.DisplayType)}
@@ -194,7 +202,7 @@ func (p *formulaParser) formulaFunctionType(name string, args []formulaValue) (f
 	counts := map[string]int{
 		"NOT": 1, "ISNEW": 0, "ISBLANK": 1, "ISNULL": 1, "BLANKVALUE": 2, "NULLVALUE": 2,
 		"CONTAINS": 2, "BEGINS": 2, "FIND": 2, "LEFT": 2, "RIGHT": 2, "MID": 3, "CASESAFEID": 1, "SUBSTITUTE": 3,
-		"BR": 0, "REGEX": 2, "ISPICKVAL": 2, "TEXT": 1, "LOWER": 1, "UPPER": 1, "TRIM": 1,
+		"BR": 0, FlowResourceFormulaFunction: 1, "REGEX": 2, "ISPICKVAL": 2, "TEXT": 1, "LOWER": 1, "UPPER": 1, "TRIM": 1,
 		"LPAD": 3, "RPAD": 3, "TODAY": 0, "NOW": 0, "DATE": 3, "DAY": 1, "DAYOFYEAR": 1, "MONTH": 1, "YEAR": 1,
 		"ADDMONTHS": 2, "DATEVALUE": 1, "DATETIMEVALUE": 1, "TIMEVALUE": 1, "WEEKDAY": 1,
 		"FLOOR": 1, "CEILING": 1, "ROUND": 2, "ABS": 1, "MOD": 2, "LEN": 1, "SQRT": 1,
@@ -229,7 +237,7 @@ func (p *formulaParser) formulaFunctionType(name string, args []formulaValue) (f
 	switch name {
 	case "AND", "OR", "NOT", "ISNEW", "ISBLANK", "ISNULL", "CONTAINS", "BEGINS", "REGEX", "ISPICKVAL", "ISNUMBER":
 		return formulaValue{kind: formulaBool}, true
-	case "BLANKVALUE", "NULLVALUE":
+	case "BLANKVALUE", "NULLVALUE", FlowResourceFormulaFunction:
 		return args[0], true
 	case "CASE":
 		if len(args) < 4 {

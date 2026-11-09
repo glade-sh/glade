@@ -208,30 +208,32 @@ the CodeQL CLI and Go query packs, and Playwright Chromium. A missing tool is
 
 ## Hosted CI
 
-GitHub Actions is the hosted authority. Pull requests and pushes to `main` run
-these workflows:
+GitHub Actions is the hosted authority. Linux jobs use Ubuntu 24.04 for
+compatibility with the pinned Playwright browser dependencies. Pull requests and
+pushes to `main` run these workflows:
 
 | Workflow | Triggers | What it gates |
 | --- | --- | --- |
-| `CI` (`ci.yml`) | PR, push to `main`, Monday schedule, dispatch | The `Required CI` job, the only ruleset-required check. It succeeds only when every dependency succeeds: CodeQL (fast), workflow-lint, site, test-binaries, vet, the sharded apextest, vm, gladecli and sema jobs and their duration-history jobs, node-integration, nested-sources, server-and-playground, the `test` matrix (remaining Go packages plus repoguard, LWC compile and Visualforce shards), smoke-runtime and smoke-distribution. The schedule adds `Required Scheduled CI` (sema-full and sema-equivalence). |
+| `CI` (`ci.yml`) | PR, push to `main`, Monday schedule, dispatch | The `Required CI` job, the only ruleset-required check. It succeeds only when every dependency succeeds: workflow-lint, site, test-binaries, vet, the sharded apextest, vm, gladecli and sema jobs and their duration-history jobs, node-integration, nested-sources, server-and-playground, the `test` matrix (remaining Go packages plus repoguard, LWC compile and Visualforce shards), smoke-runtime and smoke-distribution. The schedule adds `Required Scheduled CI` (sema-full and sema-equivalence). |
 | `Browser` (`browser.yml`) | PR, push to `main`, daily, dispatch | LWC browser and L08 conformance. Missing or skipped browser results fail. |
 | `Race` (`race.yml`) | Successful CI workflow run for a push to `main` (`workflow_run`), Monday schedule, dispatch | The main-branch run follows CI instead of competing with it for the 20 concurrent hosted runners, and runs the concurrency selection in `scripts/ci-race-push.json`. Schedule and dispatch run the full race matrix, with apextest in three parts. Not a PR check. |
-| `Security` (`security.yml`) | PR, push to `main`, `v*` tags, Monday schedule, dispatch | govulncheck, gosec, npm audit, dependency review and OpenSSF Scorecard. The full CodeQL profile runs only on the schedule, tags and dispatch. |
+| `Security` (`security.yml`) | PR, push to `main`, `v*` tags, Monday schedule, dispatch | govulncheck, gosec, npm audit, dependency review and OpenSSF Scorecard. The fast CodeQL profile runs on PRs and main pushes; full runs on the schedule, tags and dispatch. |
 | `Repeat timing-sensitive tests` (`repeat.yml`) | Daily, dispatch | Reruns `scripts/ci-repeat-tests.txt` on Linux and macOS. |
 | `Release` (`release.yml`) | `v*` tags, dispatch | See [DISTRIBUTION_WORKFLOW.md](DISTRIBUTION_WORKFLOW.md). |
 
 CodeQL has two profiles in one reusable workflow (`codeql.yml`). The fast
-profile is part of `Required CI`. The full profile runs in Security. Analysis
-has a hard 300-second budget. When the budget expires, the job warns, uploads
-no SARIF and still succeeds, so `Required CI` can pass on an incomplete scan.
+profile runs in Security outside `Required CI`. The full profile runs in Security
+and as a release tag dependency. Analysis has a hard 300-second budget. When
+the budget expires, both profiles warn and upload no SARIF.
 Large changes regularly hit this. An incomplete scan is not evidence that there
 are no findings. See [CODEQL_WORKFLOW.md](CODEQL_WORKFLOW.md) and
 [CODEQL_BUDGET.md](CODEQL_BUDGET.md).
 
 Release tags need an exact-SHA `Required CI` success from a push to `main`.
 `scripts/verify-required-ci.sh OWNER/REPO SHA` finds it; PR and manual runs do
-not count. Browser, Race and Security are operator checks: read their results
-for the release candidate, but the tag does not attest that they ran.
+not count. Browser, Race and Security are operator checks for the release candidate. The
+release workflow independently runs the full CodeQL scan on the tag and fails
+on findings or errors; a timeout there is a known-issue warning.
 
 ## Check that the setup helps
 

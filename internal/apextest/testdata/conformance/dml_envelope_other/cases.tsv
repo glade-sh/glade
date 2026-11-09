@@ -1,0 +1,31 @@
+case	code
+db1_ups_opp	Database.upsert(badOpp);
+stmt_ups_opp	upsert badOpp;
+dblt_ups_opp	Database.upsert(new List<Opportunity>{badOpp}, true);
+db1_upd_gone	Database.update(new Account(Id=gone.Id, Name='z'));
+stmt_upd_gone	update new Account(Id=gone.Id, Name='z');
+db1_del_gone	Database.delete(gone);
+stmt_del_gone	delete gone;
+db1_undel_live	Database.undelete(live);
+stmt_undel_live	undelete live;
+dbl_del_noid_row0	Database.delete(new List<Account>{new Account(), gone});
+stmt_del_noid	delete new Account();
+ctl_false	Database.insert(list, false) error details
+ins_null_elem	insert new List<Account>{null};
+ins_null_elem1	insert new List<Account>{badAcc, null};
+upd_null_elem	update new List<Account>{null};
+ups_null_elem	upsert new List<Account>{null};
+undel_null_elem	undelete new List<Account>{null};
+db_del_null_elem	Database.delete(new List<Account>{null});
+db_upd_null_elem	Database.update(new List<Account>{null}, false);
+del_noid_row1	delete new List<Account>{live, new Account()};
+undel_noid	undelete new Account();
+undel_noid_row1	undelete new List<Account>{live, new Account()};
+db_del_noid	Database.delete(new Account(), false);
+upd_default_nullname	Database.update(nullName);
+upd_user_nullname	Database.update(nullName, AccessLevel.USER_MODE);
+upd_bool_sys_nullname	Database.update(new List<Account>{nullName}, true, AccessLevel.SYSTEM_MODE);
+upd_opts_nullname	Database.update(nullName, opts);
+ins_opts_req	Database.insert(badAcc, opts);
+del_user_gone	Database.delete(gone, true, AccessLevel.USER_MODE);
+ups_user_req	Database.upsert(badOpp, AccessLevel.USER_MODE);

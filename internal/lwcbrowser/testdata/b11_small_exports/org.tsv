@@ -1,0 +1,25 @@
+case	api	result
+nav	59.0	{"navigate":"undefined","context":"undefined"}
+nav	62.0	{"navigate":"undefined","context":"undefined"}
+nav	67.0	{"navigate":"undefined","context":"undefined"}
+graph	59.0	[{"kind":"promise","value":{"errors":[{"message":"Internal error in GraphQL adapter occurred","locations":[]}]}},{"kind":"promise","value":{"errors":[{"message":"Internal error in GraphQL adapter occurred","locations":[]}]}},{"kind":"promise","value":{"errors":[{"message":"Internal error in GraphQL adapter occurred","locations":[]}]}},{"kind":"promise","value":{"errors":[{"message":"Internal error in GraphQL adapter occurred","locations":[]}]}}]
+graph	62.0	[{"kind":"promise","value":{"errors":[{"message":"Internal error in GraphQL adapter occurred","locations":[]}]}},{"kind":"promise","value":{"errors":[{"message":"Internal error in GraphQL adapter occurred","locations":[]}]}},{"kind":"promise","value":{"errors":[{"message":"Internal error in GraphQL adapter occurred","locations":[]}]}},{"kind":"promise","value":{"errors":[{"message":"Internal error in GraphQL adapter occurred","locations":[]}]}}]
+graph	67.0	[{"kind":"promise","value":{"errors":[{"message":"Internal error in GraphQL adapter occurred","locations":[]}]}},{"kind":"promise","value":{"errors":[{"message":"Internal error in GraphQL adapter occurred","locations":[]}]}},{"kind":"promise","value":{"errors":[{"message":"Internal error in GraphQL adapter occurred","locations":[]}]}},{"kind":"promise","value":{"errors":[{"message":"Internal error in GraphQL adapter occurred","locations":[]}]}}]
+refresh	59.0	{"complete":1,"error":0}
+refresh	62.0	{"complete":1,"error":0}
+refresh	67.0	{"complete":1,"error":0}
+mobile	59.0	{"location":{"type":"function","available":false},"contacts":{"type":"function","available":false}}
+mobile	62.0	{"location":{"type":"function","available":false},"contacts":{"type":"function","available":false}}
+mobile	67.0	{"location":{"type":"function","available":false},"contacts":{"type":"function","available":false}}
+dial	59.0	{"tag":"LIGHTNING-CLICK-TO-DIAL","rendered":true}
+dial	62.0	{"tag":"LIGHTNING-CLICK-TO-DIAL","rendered":true}
+dial	67.0	{"tag":"LIGHTNING-CLICK-TO-DIAL","rendered":true}
+empty	59.0	{"tag":"LIGHTNING-EMPTY-STATE","rendered":true}
+empty	62.0	{"tag":"LIGHTNING-EMPTY-STATE","rendered":true}
+empty	67.0	{"tag":"LIGHTNING-EMPTY-STATE","rendered":true}
+button	59.0	{"tag":"LIGHTNING-RICH-TEXT-TOOLBAR-BUTTON","rendered":true}
+button	62.0	{"tag":"LIGHTNING-RICH-TEXT-TOOLBAR-BUTTON","rendered":true}
+button	67.0	{"tag":"LIGHTNING-RICH-TEXT-TOOLBAR-BUTTON","rendered":true}
+group	59.0	{"tag":"LIGHTNING-RICH-TEXT-TOOLBAR-BUTTON-GROUP","rendered":true}
+group	62.0	{"tag":"LIGHTNING-RICH-TEXT-TOOLBAR-BUTTON-GROUP","rendered":true}
+group	67.0	{"tag":"LIGHTNING-RICH-TEXT-TOOLBAR-BUTTON-GROUP","rendered":true}

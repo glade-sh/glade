@@ -1,0 +1,2055 @@
+[
+        {
+          "selectedRows": 8,
+          "totalRows": 205,
+          "scope": [
+            "SynthFlsParent__c",
+            "SynthFlsChild__c",
+            "Account",
+            "Contact"
+          ],
+          "query": "SELECT Id,ParentId,SobjectType,PermissionsRead,PermissionsCreate,PermissionsEdit,PermissionsDelete,PermissionsViewAllRecords,PermissionsModifyAllRecords,Parent.Name,Parent.IsOwnedByProfile,Parent.ProfileId,Parent.Profile.Name FROM ObjectPermissions WHERE SobjectType IN :SCOPE ORDER BY ParentId,SobjectType,Id",
+          "kind": "query"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "0PLRK0000055bVu4AI",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "0PLRK0000055bVx4AI",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "0PLRK0000055bVy4AI",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "0PLRK0000055bW04AI",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "0PLRK0000055bW14AI",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Account": 1
+          },
+          "count": 1,
+          "parent": null,
+          "parentId": "0PLRK0000055cbJ4AQ",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "0PLRK0000055cbN4AQ",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "0PLRK0000055cbO4AQ",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "0PLRK0000055cbP4AQ",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "0PLRK0000055cbQ4AQ",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "0PLRK0000055cbR4AQ",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "0PLRK0000055cbS4AQ",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "0PLRK0000055cbT4AQ",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "0PLRK0000055cbU4AQ",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "0PLRK0000055cbZ4AQ",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "0PLRK0000055cba4AA",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "0PLRK0000055cbb4AA",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "0PLRK0000055cbc4AA",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCP2B4AX"
+            },
+            "Id": "0PSRK00000MCP2B4AX",
+            "Name": "FweO2EngineC2CPermSet",
+            "IsOwnedByProfile": false
+          },
+          "parentId": "0PSRK00000MCP2B4AX",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCP2I4AX"
+            },
+            "Id": "0PSRK00000MCP2I4AX",
+            "Name": "AccessMerchantPayments",
+            "IsOwnedByProfile": false
+          },
+          "parentId": "0PSRK00000MCP2I4AX",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCP2L4AX"
+            },
+            "Id": "0PSRK00000MCP2L4AX",
+            "Name": "PaymentsAdministrator",
+            "IsOwnedByProfile": false
+          },
+          "parentId": "0PSRK00000MCP2L4AX",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUP44AP"
+            },
+            "Id": "0PSRK00000MCUP44AP",
+            "Name": "X00eB0000000Qlc9IAC",
+            "IsOwnedByProfile": true,
+            "ProfileId": "00eRK00000LPsajYAD",
+            "Profile": {
+              "attributes": {
+                "type": "Profile",
+                "url": "/services/data/v68.0/sobjects/Profile/00eRK00000LPsajYAD"
+              },
+              "Id": "00eRK00000LPsajYAD",
+              "Name": "Company Communities User"
+            }
+          },
+          "parentId": "0PSRK00000MCUP44AP",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUP54AP"
+            },
+            "Id": "0PSRK00000MCUP54AP",
+            "Name": "X00e1a000000N1LRAA0",
+            "IsOwnedByProfile": true,
+            "ProfileId": "00eRK00000LPsb6YAD",
+            "Profile": {
+              "attributes": {
+                "type": "Profile",
+                "url": "/services/data/v68.0/sobjects/Profile/00eRK00000LPsb6YAD"
+              },
+              "Id": "00eRK00000LPsb6YAD",
+              "Name": "High Volume Customer Portal User"
+            }
+          },
+          "parentId": "0PSRK00000MCUP54AP",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUP74AP"
+            },
+            "Id": "0PSRK00000MCUP74AP",
+            "Name": "X00e1a000000MWa8AAG",
+            "IsOwnedByProfile": true,
+            "ProfileId": "00eRK00000LPsakYAD",
+            "Profile": {
+              "attributes": {
+                "type": "Profile",
+                "url": "/services/data/v68.0/sobjects/Profile/00eRK00000LPsakYAD"
+              },
+              "Id": "00eRK00000LPsakYAD",
+              "Name": "Standard Platform User"
+            }
+          },
+          "parentId": "0PSRK00000MCUP74AP",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUP84AP"
+            },
+            "Id": "0PSRK00000MCUP84AP",
+            "Name": "X00ex00000018ozj_128_09_04_12_3",
+            "IsOwnedByProfile": true,
+            "ProfileId": "00eRK00000LPsb7YAD",
+            "Profile": {
+              "attributes": {
+                "type": "Profile",
+                "url": "/services/data/v68.0/sobjects/Profile/00eRK00000LPsb7YAD"
+              },
+              "Id": "00eRK00000LPsb7YAD",
+              "Name": "Solution Manager"
+            }
+          },
+          "parentId": "0PSRK00000MCUP84AP",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUP94AP"
+            },
+            "Id": "0PSRK00000MCUP94AP",
+            "Name": "X00ex00000018ozo_128_09_04_12_8",
+            "IsOwnedByProfile": true,
+            "ProfileId": "00eRK00000LPsb8YAD",
+            "Profile": {
+              "attributes": {
+                "type": "Profile",
+                "url": "/services/data/v68.0/sobjects/Profile/00eRK00000LPsb8YAD"
+              },
+              "Id": "00eRK00000LPsb8YAD",
+              "Name": "Marketing User"
+            }
+          },
+          "parentId": "0PSRK00000MCUP94AP",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1,
+            "SynthFlsParent__c": 1,
+            "SynthFlsChild__c": 1
+          },
+          "count": 4,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPA4A5"
+            },
+            "Id": "0PSRK00000MCUPA4A5",
+            "Name": "X00ex00000018ozh_128_09_04_12_1",
+            "IsOwnedByProfile": true,
+            "ProfileId": "00eRK00000LPsabYAD",
+            "Profile": {
+              "attributes": {
+                "type": "Profile",
+                "url": "/services/data/v68.0/sobjects/Profile/00eRK00000LPsabYAD"
+              },
+              "Id": "00eRK00000LPsabYAD",
+              "Name": "System Administrator"
+            }
+          },
+          "parentId": "0PSRK00000MCUPA4A5",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPB4A5"
+            },
+            "Id": "0PSRK00000MCUPB4A5",
+            "Name": "X00ex00000018ozq_128_09_04_12_10",
+            "IsOwnedByProfile": true,
+            "ProfileId": "00eRK00000LPsbAYAT",
+            "Profile": {
+              "attributes": {
+                "type": "Profile",
+                "url": "/services/data/v68.0/sobjects/Profile/00eRK00000LPsbAYAT"
+              },
+              "Id": "00eRK00000LPsbAYAT",
+              "Name": "Standard User"
+            }
+          },
+          "parentId": "0PSRK00000MCUPB4A5",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPC4A5"
+            },
+            "Id": "0PSRK00000MCUPC4A5",
+            "Name": "X00ex00000018ozp_128_09_04_12_9",
+            "IsOwnedByProfile": true,
+            "ProfileId": "00eRK00000LPsb9YAD",
+            "Profile": {
+              "attributes": {
+                "type": "Profile",
+                "url": "/services/data/v68.0/sobjects/Profile/00eRK00000LPsb9YAD"
+              },
+              "Id": "00eRK00000LPsb9YAD",
+              "Name": "Contract Manager"
+            }
+          },
+          "parentId": "0PSRK00000MCUPC4A5",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPD4A5"
+            },
+            "Id": "0PSRK00000MCUPD4A5",
+            "Name": "X00e1a000000MWa9AAG",
+            "IsOwnedByProfile": true,
+            "ProfileId": "00eRK00000LPsalYAD",
+            "Profile": {
+              "attributes": {
+                "type": "Profile",
+                "url": "/services/data/v68.0/sobjects/Profile/00eRK00000LPsalYAD"
+              },
+              "Id": "00eRK00000LPsalYAD",
+              "Name": "Customer Community Login User"
+            }
+          },
+          "parentId": "0PSRK00000MCUPD4A5",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPG4A5"
+            },
+            "Id": "0PSRK00000MCUPG4A5",
+            "Name": "X00e1a000000MWaDAAW",
+            "IsOwnedByProfile": true,
+            "ProfileId": "00eRK00000LPsapYAD",
+            "Profile": {
+              "attributes": {
+                "type": "Profile",
+                "url": "/services/data/v68.0/sobjects/Profile/00eRK00000LPsapYAD"
+              },
+              "Id": "00eRK00000LPsapYAD",
+              "Name": "Customer Portal Manager Custom"
+            }
+          },
+          "parentId": "0PSRK00000MCUPG4A5",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPI4A5"
+            },
+            "Id": "0PSRK00000MCUPI4A5",
+            "Name": "X00e1a000000MWaFAAW",
+            "IsOwnedByProfile": true,
+            "ProfileId": "00eRK00000LPsarYAD",
+            "Profile": {
+              "attributes": {
+                "type": "Profile",
+                "url": "/services/data/v68.0/sobjects/Profile/00eRK00000LPsarYAD"
+              },
+              "Id": "00eRK00000LPsarYAD",
+              "Name": "Customer Community Plus User"
+            }
+          },
+          "parentId": "0PSRK00000MCUPI4A5",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPJ4A5"
+            },
+            "Id": "0PSRK00000MCUPJ4A5",
+            "Name": "X00e1a000000MWaGAAW",
+            "IsOwnedByProfile": true,
+            "ProfileId": "00eRK00000LPsasYAD",
+            "Profile": {
+              "attributes": {
+                "type": "Profile",
+                "url": "/services/data/v68.0/sobjects/Profile/00eRK00000LPsasYAD"
+              },
+              "Id": "00eRK00000LPsasYAD",
+              "Name": "Silver Partner User"
+            }
+          },
+          "parentId": "0PSRK00000MCUPJ4A5",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPK4A5"
+            },
+            "Id": "0PSRK00000MCUPK4A5",
+            "Name": "X00e1a000000MWaHAAW",
+            "IsOwnedByProfile": true,
+            "ProfileId": "00eRK00000LPsatYAD",
+            "Profile": {
+              "attributes": {
+                "type": "Profile",
+                "url": "/services/data/v68.0/sobjects/Profile/00eRK00000LPsatYAD"
+              },
+              "Id": "00eRK00000LPsatYAD",
+              "Name": "High Volume Customer Portal"
+            }
+          },
+          "parentId": "0PSRK00000MCUPK4A5",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPL4A5"
+            },
+            "Id": "0PSRK00000MCUPL4A5",
+            "Name": "X00e1a000000MWaIAAW",
+            "IsOwnedByProfile": true,
+            "ProfileId": "00eRK00000LPsauYAD",
+            "Profile": {
+              "attributes": {
+                "type": "Profile",
+                "url": "/services/data/v68.0/sobjects/Profile/00eRK00000LPsauYAD"
+              },
+              "Id": "00eRK00000LPsauYAD",
+              "Name": "Gold Partner User"
+            }
+          },
+          "parentId": "0PSRK00000MCUPL4A5",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPM4A5"
+            },
+            "Id": "0PSRK00000MCUPM4A5",
+            "Name": "X00e1a000000MWaJAAW",
+            "IsOwnedByProfile": true,
+            "ProfileId": "00eRK00000LPsavYAD",
+            "Profile": {
+              "attributes": {
+                "type": "Profile",
+                "url": "/services/data/v68.0/sobjects/Profile/00eRK00000LPsavYAD"
+              },
+              "Id": "00eRK00000LPsavYAD",
+              "Name": "Customer Portal Manager Standard"
+            }
+          },
+          "parentId": "0PSRK00000MCUPM4A5",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPN4A5"
+            },
+            "Id": "0PSRK00000MCUPN4A5",
+            "Name": "X00e1a000000MWaKAAW",
+            "IsOwnedByProfile": true,
+            "ProfileId": "00eRK00000LPsawYAD",
+            "Profile": {
+              "attributes": {
+                "type": "Profile",
+                "url": "/services/data/v68.0/sobjects/Profile/00eRK00000LPsawYAD"
+              },
+              "Id": "00eRK00000LPsawYAD",
+              "Name": "Force.com - App Subscription User"
+            }
+          },
+          "parentId": "0PSRK00000MCUPN4A5",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPO4A5"
+            },
+            "Id": "0PSRK00000MCUPO4A5",
+            "Name": "X00e1a000000MWaLAAW",
+            "IsOwnedByProfile": true,
+            "ProfileId": "00eRK00000LPsaxYAD",
+            "Profile": {
+              "attributes": {
+                "type": "Profile",
+                "url": "/services/data/v68.0/sobjects/Profile/00eRK00000LPsaxYAD"
+              },
+              "Id": "00eRK00000LPsaxYAD",
+              "Name": "Customer Community Plus Login User"
+            }
+          },
+          "parentId": "0PSRK00000MCUPO4A5",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPP4A5"
+            },
+            "Id": "0PSRK00000MCUPP4A5",
+            "Name": "X00e1a000000MWaMAAW",
+            "IsOwnedByProfile": true,
+            "ProfileId": "00eRK00000LPsayYAD",
+            "Profile": {
+              "attributes": {
+                "type": "Profile",
+                "url": "/services/data/v68.0/sobjects/Profile/00eRK00000LPsayYAD"
+              },
+              "Id": "00eRK00000LPsayYAD",
+              "Name": "Partner App Subscription User"
+            }
+          },
+          "parentId": "0PSRK00000MCUPP4A5",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPQ4A5"
+            },
+            "Id": "0PSRK00000MCUPQ4A5",
+            "Name": "X00e1a000000MWaNAAW",
+            "IsOwnedByProfile": true,
+            "ProfileId": "00eRK00000LPsazYAD",
+            "Profile": {
+              "attributes": {
+                "type": "Profile",
+                "url": "/services/data/v68.0/sobjects/Profile/00eRK00000LPsazYAD"
+              },
+              "Id": "00eRK00000LPsazYAD",
+              "Name": "External Identity User"
+            }
+          },
+          "parentId": "0PSRK00000MCUPQ4A5",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPR4A5"
+            },
+            "Id": "0PSRK00000MCUPR4A5",
+            "Name": "X00e1a000000MWaOAAW",
+            "IsOwnedByProfile": true,
+            "ProfileId": "00eRK00000LPsb0YAD",
+            "Profile": {
+              "attributes": {
+                "type": "Profile",
+                "url": "/services/data/v68.0/sobjects/Profile/00eRK00000LPsb0YAD"
+              },
+              "Id": "00eRK00000LPsb0YAD",
+              "Name": "Partner Community User"
+            }
+          },
+          "parentId": "0PSRK00000MCUPR4A5",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPS4A5"
+            },
+            "Id": "0PSRK00000MCUPS4A5",
+            "Name": "X00e1a000000MWaPAAW",
+            "IsOwnedByProfile": true,
+            "ProfileId": "00eRK00000LPsb1YAD",
+            "Profile": {
+              "attributes": {
+                "type": "Profile",
+                "url": "/services/data/v68.0/sobjects/Profile/00eRK00000LPsb1YAD"
+              },
+              "Id": "00eRK00000LPsb1YAD",
+              "Name": "Partner Community Login User"
+            }
+          },
+          "parentId": "0PSRK00000MCUPS4A5",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPT4A5"
+            },
+            "Id": "0PSRK00000MCUPT4A5",
+            "Name": "X00e1a000000MWaQAAW",
+            "IsOwnedByProfile": true,
+            "ProfileId": "00eRK00000LPsb2YAD",
+            "Profile": {
+              "attributes": {
+                "type": "Profile",
+                "url": "/services/data/v68.0/sobjects/Profile/00eRK00000LPsb2YAD"
+              },
+              "Id": "00eRK00000LPsb2YAD",
+              "Name": "Customer Community User"
+            }
+          },
+          "parentId": "0PSRK00000MCUPT4A5",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPZ4A5"
+            },
+            "Id": "0PSRK00000MCUPZ4A5",
+            "Name": "X00e1a000000N1wKAAS",
+            "IsOwnedByProfile": true,
+            "ProfileId": "00eRK00000LPsafYAD",
+            "Profile": {
+              "attributes": {
+                "type": "Profile",
+                "url": "/services/data/v68.0/sobjects/Profile/00eRK00000LPsafYAD"
+              },
+              "Id": "00eRK00000LPsafYAD",
+              "Name": "Analytics Cloud Security User"
+            }
+          },
+          "parentId": "0PSRK00000MCUPZ4A5",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1,
+            "SynthFlsParent__c": 1,
+            "SynthFlsChild__c": 1
+          },
+          "count": 4,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPa4AP"
+            },
+            "Id": "0PSRK00000MCUPa4AP",
+            "Name": "X00e1a000000N1wLAAS",
+            "IsOwnedByProfile": true,
+            "ProfileId": "00eRK00000LPsacYAD",
+            "Profile": {
+              "attributes": {
+                "type": "Profile",
+                "url": "/services/data/v68.0/sobjects/Profile/00eRK00000LPsacYAD"
+              },
+              "Id": "00eRK00000LPsacYAD",
+              "Name": "Analytics Cloud Integration User"
+            }
+          },
+          "parentId": "0PSRK00000MCUPa4AP",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPb4AP"
+            },
+            "Id": "0PSRK00000MCUPb4AP",
+            "Name": "X00eB0000000cSXXIA2",
+            "IsOwnedByProfile": true,
+            "ProfileId": "00eRK00000LPsbBYAT",
+            "Profile": {
+              "attributes": {
+                "type": "Profile",
+                "url": "/services/data/v68.0/sobjects/Profile/00eRK00000LPsbBYAT"
+              },
+              "Id": "00eRK00000LPsbBYAT",
+              "Name": "CPQ Integration User"
+            }
+          },
+          "parentId": "0PSRK00000MCUPb4AP",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPe4AP"
+            },
+            "Id": "0PSRK00000MCUPe4AP",
+            "Name": "X00eB0000000zHKTIA2",
+            "IsOwnedByProfile": true,
+            "ProfileId": "00eRK00000LPsbDYAT",
+            "Profile": {
+              "attributes": {
+                "type": "Profile",
+                "url": "/services/data/v68.0/sobjects/Profile/00eRK00000LPsbDYAT"
+              },
+              "Id": "00eRK00000LPsbDYAT",
+              "Name": "External Apps Login User"
+            }
+          },
+          "parentId": "0PSRK00000MCUPe4AP",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPg4AP"
+            },
+            "Id": "0PSRK00000MCUPg4AP",
+            "Name": "X00e1a000000MWaAAAW",
+            "IsOwnedByProfile": true,
+            "ProfileId": "00eRK00000LPsamYAD",
+            "Profile": {
+              "attributes": {
+                "type": "Profile",
+                "url": "/services/data/v68.0/sobjects/Profile/00eRK00000LPsamYAD"
+              },
+              "Id": "00eRK00000LPsamYAD",
+              "Name": "Cross Org Data Proxy User"
+            }
+          },
+          "parentId": "0PSRK00000MCUPg4AP",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPj4AP"
+            },
+            "Id": "0PSRK00000MCUPj4AP",
+            "Name": "C2CHeadlessCMSAccessPermSet",
+            "IsOwnedByProfile": false
+          },
+          "parentId": "0PSRK00000MCUPj4AP",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPk4AP"
+            },
+            "Id": "0PSRK00000MCUPk4AP",
+            "Name": "SecurityCommandCenterStandardPermSet",
+            "IsOwnedByProfile": false
+          },
+          "parentId": "0PSRK00000MCUPk4AP",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPl4AP"
+            },
+            "Id": "0PSRK00000MCUPl4AP",
+            "Name": "Merchandiser",
+            "IsOwnedByProfile": false
+          },
+          "parentId": "0PSRK00000MCUPl4AP",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPm4AP"
+            },
+            "Id": "0PSRK00000MCUPm4AP",
+            "Name": "B2BBuyerManager",
+            "IsOwnedByProfile": false
+          },
+          "parentId": "0PSRK00000MCUPm4AP",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPn4AP"
+            },
+            "Id": "0PSRK00000MCUPn4AP",
+            "Name": "CommerceUser",
+            "IsOwnedByProfile": false
+          },
+          "parentId": "0PSRK00000MCUPn4AP",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPo4AP"
+            },
+            "Id": "0PSRK00000MCUPo4AP",
+            "Name": "B2BBuyer",
+            "IsOwnedByProfile": false
+          },
+          "parentId": "0PSRK00000MCUPo4AP",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPp4AP"
+            },
+            "Id": "0PSRK00000MCUPp4AP",
+            "Name": "CommerceAdmin",
+            "IsOwnedByProfile": false
+          },
+          "parentId": "0PSRK00000MCUPp4AP",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPq4AP"
+            },
+            "Id": "0PSRK00000MCUPq4AP",
+            "Name": "ActorCASCPermSet",
+            "IsOwnedByProfile": false
+          },
+          "parentId": "0PSRK00000MCUPq4AP",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPr4AP"
+            },
+            "Id": "0PSRK00000MCUPr4AP",
+            "Name": "AncCrmIntegrationUser",
+            "IsOwnedByProfile": false
+          },
+          "parentId": "0PSRK00000MCUPr4AP",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPs4AP"
+            },
+            "Id": "0PSRK00000MCUPs4AP",
+            "Name": "AncMarketingIntegrationUser",
+            "IsOwnedByProfile": false
+          },
+          "parentId": "0PSRK00000MCUPs4AP",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPt4AP"
+            },
+            "Id": "0PSRK00000MCUPt4AP",
+            "Name": "AncPersonalizationIntegrationUser",
+            "IsOwnedByProfile": false
+          },
+          "parentId": "0PSRK00000MCUPt4AP",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPw4AP"
+            },
+            "Id": "0PSRK00000MCUPw4AP",
+            "Name": "C2CCapstonePermSet",
+            "IsOwnedByProfile": false
+          },
+          "parentId": "0PSRK00000MCUPw4AP",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPx4AP"
+            },
+            "Id": "0PSRK00000MCUPx4AP",
+            "Name": "C2CE360EmailPermSet",
+            "IsOwnedByProfile": false
+          },
+          "parentId": "0PSRK00000MCUPx4AP",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPy4AP"
+            },
+            "Id": "0PSRK00000MCUPy4AP",
+            "Name": "C2CMcpServicePermSet",
+            "IsOwnedByProfile": false
+          },
+          "parentId": "0PSRK00000MCUPy4AP",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPz4AP"
+            },
+            "Id": "0PSRK00000MCUPz4AP",
+            "Name": "ConnectivityServiceCASCPermSet",
+            "IsOwnedByProfile": false
+          },
+          "parentId": "0PSRK00000MCUPz4AP",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUQ04AP"
+            },
+            "Id": "0PSRK00000MCUQ04AP",
+            "Name": "D360HomeOrgPermSet",
+            "IsOwnedByProfile": false
+          },
+          "parentId": "0PSRK00000MCUQ04AP",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUQ14AP"
+            },
+            "Id": "0PSRK00000MCUQ14AP",
+            "Name": "DeliveryEstimationServicePermSet",
+            "IsOwnedByProfile": false
+          },
+          "parentId": "0PSRK00000MCUQ14AP",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1
+          },
+          "count": 1,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUQ34AP"
+            },
+            "Id": "0PSRK00000MCUQ34AP",
+            "Name": "FieldServiceMobileStandardPermSet",
+            "IsOwnedByProfile": false
+          },
+          "parentId": "0PSRK00000MCUQ34AP",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUQ44AP"
+            },
+            "Id": "0PSRK00000MCUQ44AP",
+            "Name": "HighScaleFlowC2CPermSet",
+            "IsOwnedByProfile": false
+          },
+          "parentId": "0PSRK00000MCUQ44AP",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUQ54AP"
+            },
+            "Id": "0PSRK00000MCUQ54AP",
+            "Name": "HyperionCASCPermSet",
+            "IsOwnedByProfile": false
+          },
+          "parentId": "0PSRK00000MCUQ54AP",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUQ64AP"
+            },
+            "Id": "0PSRK00000MCUQ64AP",
+            "Name": "MarketingCloudPublishingC2CPermSet",
+            "IsOwnedByProfile": false
+          },
+          "parentId": "0PSRK00000MCUQ64AP",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUQ74AP"
+            },
+            "Id": "0PSRK00000MCUQ74AP",
+            "Name": "MarketingCloudReportingC2CPermSet",
+            "IsOwnedByProfile": false
+          },
+          "parentId": "0PSRK00000MCUQ74AP",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUQ84AP"
+            },
+            "Id": "0PSRK00000MCUQ84AP",
+            "Name": "MuleSoftPublishInvocableActionsC2CPermSet",
+            "IsOwnedByProfile": false
+          },
+          "parentId": "0PSRK00000MCUQ84AP",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUQ94AP"
+            },
+            "Id": "0PSRK00000MCUQ94AP",
+            "Name": "MuleSoftSeamlessLoginC2CPermSet",
+            "IsOwnedByProfile": false
+          },
+          "parentId": "0PSRK00000MCUQ94AP",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUQC4A5"
+            },
+            "Id": "0PSRK00000MCUQC4A5",
+            "Name": "PromptTemplatePermSet",
+            "IsOwnedByProfile": false
+          },
+          "parentId": "0PSRK00000MCUQC4A5",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUQD4A5"
+            },
+            "Id": "0PSRK00000MCUQD4A5",
+            "Name": "RPAC2CPermSet",
+            "IsOwnedByProfile": false
+          },
+          "parentId": "0PSRK00000MCUQD4A5",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUQE4A5"
+            },
+            "Id": "0PSRK00000MCUQE4A5",
+            "Name": "RegrelloC2CPermSet",
+            "IsOwnedByProfile": false
+          },
+          "parentId": "0PSRK00000MCUQE4A5",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUQG4A5"
+            },
+            "Id": "0PSRK00000MCUQG4A5",
+            "Name": "SeasIndexingPermSet",
+            "IsOwnedByProfile": false
+          },
+          "parentId": "0PSRK00000MCUQG4A5",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUQH4A5"
+            },
+            "Id": "0PSRK00000MCUQH4A5",
+            "Name": "YukonNudgeHeadlessPublishPermSet",
+            "IsOwnedByProfile": false
+          },
+          "parentId": "0PSRK00000MCUQH4A5",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": {
+            "attributes": {
+              "type": "PermissionSet",
+              "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCW974AH"
+            },
+            "Id": "0PSRK00000MCW974AH",
+            "Name": "X00eRK00000LPtWfYAL",
+            "IsOwnedByProfile": true,
+            "ProfileId": "00eRK00000LPtWfYAL",
+            "Profile": {
+              "attributes": {
+                "type": "Profile",
+                "url": "/services/data/v68.0/sobjects/Profile/00eRK00000LPtWfYAL"
+              },
+              "Id": "00eRK00000LPtWfYAL",
+              "Name": "B2B Reordering Portal Buyer Profile"
+            }
+          },
+          "parentId": "0PSRK00000MCW974AH",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "100RK00000tQtBGYA0",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "100RK00000tQtBHYA0",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "100RK00000tQtBLYA0",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Account": 1
+          },
+          "count": 1,
+          "parent": null,
+          "parentId": "100RK00000tQtBMYA0",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "100RK00000tQtBNYA0",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "100RK00000tQtBOYA0",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "100RK00000tQtBPYA0",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "100RK00000tQtBQYA0",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "100RK00000tQtBTYA0",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "100RK00000tQtBVYA0",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "100RK00000tQtBWYA0",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "100RK00000tQtBXYA0",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "100RK00000tQtBYYA0",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "100RK00000tQtBZYA0",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "100RK00000tQtBaYAK",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "100RK00000tQtBbYAK",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "100RK00000tQtBcYAK",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "100RK00000tQtBdYAK",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "100RK00000tQtBeYAK",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "100RK00000tQtBfYAK",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "100RK00000tQtBgYAK",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "100RK00000tQtBjYAK",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "100RK00000tQtBkYAK",
+          "kind": "parentCount"
+        },
+        {
+          "byObject": {
+            "Contact": 1,
+            "Account": 1
+          },
+          "count": 2,
+          "parent": null,
+          "parentId": "100RK00000tQtBlYAK",
+          "kind": "parentCount"
+        },
+        {
+          "row": {
+            "attributes": {
+              "type": "ObjectPermissions",
+              "url": "/services/data/v68.0/sobjects/ObjectPermissions/0000000MCUPAa00A2D"
+            },
+            "Id": "0000000MCUPAa00A2D",
+            "ParentId": "0PSRK00000MCUPA4A5",
+            "SobjectType": "SynthFlsChild__c",
+            "PermissionsRead": true,
+            "PermissionsCreate": true,
+            "PermissionsEdit": true,
+            "PermissionsDelete": true,
+            "PermissionsViewAllRecords": true,
+            "PermissionsModifyAllRecords": true,
+            "Parent": {
+              "attributes": {
+                "type": "PermissionSet",
+                "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPA4A5"
+              },
+              "Id": "0PSRK00000MCUPA4A5",
+              "Name": "X00ex00000018ozh_128_09_04_12_1",
+              "IsOwnedByProfile": true,
+              "ProfileId": "00eRK00000LPsabYAD",
+              "Profile": {
+                "attributes": {
+                  "type": "Profile",
+                  "url": "/services/data/v68.0/sobjects/Profile/00eRK00000LPsabYAD"
+                },
+                "Id": "00eRK00000LPsabYAD",
+                "Name": "System Administrator"
+              }
+            }
+          },
+          "kind": "permissionRow"
+        },
+        {
+          "row": {
+            "attributes": {
+              "type": "ObjectPermissions",
+              "url": "/services/data/v68.0/sobjects/ObjectPermissions/0000000MCUPAa01A2D"
+            },
+            "Id": "0000000MCUPAa01A2D",
+            "ParentId": "0PSRK00000MCUPA4A5",
+            "SobjectType": "SynthFlsParent__c",
+            "PermissionsRead": true,
+            "PermissionsCreate": true,
+            "PermissionsEdit": true,
+            "PermissionsDelete": true,
+            "PermissionsViewAllRecords": true,
+            "PermissionsModifyAllRecords": true,
+            "Parent": {
+              "attributes": {
+                "type": "PermissionSet",
+                "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPA4A5"
+              },
+              "Id": "0PSRK00000MCUPA4A5",
+              "Name": "X00ex00000018ozh_128_09_04_12_1",
+              "IsOwnedByProfile": true,
+              "ProfileId": "00eRK00000LPsabYAD",
+              "Profile": {
+                "attributes": {
+                  "type": "Profile",
+                  "url": "/services/data/v68.0/sobjects/Profile/00eRK00000LPsabYAD"
+                },
+                "Id": "00eRK00000LPsabYAD",
+                "Name": "System Administrator"
+              }
+            }
+          },
+          "kind": "permissionRow"
+        },
+        {
+          "row": {
+            "attributes": {
+              "type": "ObjectPermissions",
+              "url": "/services/data/v68.0/sobjects/ObjectPermissions/110RK000097a7WqYAI"
+            },
+            "Id": "110RK000097a7WqYAI",
+            "ParentId": "0PSRK00000MCUPA4A5",
+            "SobjectType": "Account",
+            "PermissionsRead": true,
+            "PermissionsCreate": true,
+            "PermissionsEdit": true,
+            "PermissionsDelete": true,
+            "PermissionsViewAllRecords": true,
+            "PermissionsModifyAllRecords": true,
+            "Parent": {
+              "attributes": {
+                "type": "PermissionSet",
+                "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPA4A5"
+              },
+              "Id": "0PSRK00000MCUPA4A5",
+              "Name": "X00ex00000018ozh_128_09_04_12_1",
+              "IsOwnedByProfile": true,
+              "ProfileId": "00eRK00000LPsabYAD",
+              "Profile": {
+                "attributes": {
+                  "type": "Profile",
+                  "url": "/services/data/v68.0/sobjects/Profile/00eRK00000LPsabYAD"
+                },
+                "Id": "00eRK00000LPsabYAD",
+                "Name": "System Administrator"
+              }
+            }
+          },
+          "kind": "permissionRow"
+        },
+        {
+          "row": {
+            "attributes": {
+              "type": "ObjectPermissions",
+              "url": "/services/data/v68.0/sobjects/ObjectPermissions/110RK000097a7XIYAY"
+            },
+            "Id": "110RK000097a7XIYAY",
+            "ParentId": "0PSRK00000MCUPA4A5",
+            "SobjectType": "Contact",
+            "PermissionsRead": true,
+            "PermissionsCreate": true,
+            "PermissionsEdit": true,
+            "PermissionsDelete": true,
+            "PermissionsViewAllRecords": true,
+            "PermissionsModifyAllRecords": true,
+            "Parent": {
+              "attributes": {
+                "type": "PermissionSet",
+                "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPA4A5"
+              },
+              "Id": "0PSRK00000MCUPA4A5",
+              "Name": "X00ex00000018ozh_128_09_04_12_1",
+              "IsOwnedByProfile": true,
+              "ProfileId": "00eRK00000LPsabYAD",
+              "Profile": {
+                "attributes": {
+                  "type": "Profile",
+                  "url": "/services/data/v68.0/sobjects/Profile/00eRK00000LPsabYAD"
+                },
+                "Id": "00eRK00000LPsabYAD",
+                "Name": "System Administrator"
+              }
+            }
+          },
+          "kind": "permissionRow"
+        },
+        {
+          "row": {
+            "attributes": {
+              "type": "ObjectPermissions",
+              "url": "/services/data/v68.0/sobjects/ObjectPermissions/110RK000097a7SGYAY"
+            },
+            "Id": "110RK000097a7SGYAY",
+            "ParentId": "0PSRK00000MCUPB4A5",
+            "SobjectType": "Account",
+            "PermissionsRead": true,
+            "PermissionsCreate": true,
+            "PermissionsEdit": true,
+            "PermissionsDelete": true,
+            "PermissionsViewAllRecords": false,
+            "PermissionsModifyAllRecords": false,
+            "Parent": {
+              "attributes": {
+                "type": "PermissionSet",
+                "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPB4A5"
+              },
+              "Id": "0PSRK00000MCUPB4A5",
+              "Name": "X00ex00000018ozq_128_09_04_12_10",
+              "IsOwnedByProfile": true,
+              "ProfileId": "00eRK00000LPsbAYAT",
+              "Profile": {
+                "attributes": {
+                  "type": "Profile",
+                  "url": "/services/data/v68.0/sobjects/Profile/00eRK00000LPsbAYAT"
+                },
+                "Id": "00eRK00000LPsbAYAT",
+                "Name": "Standard User"
+              }
+            }
+          },
+          "kind": "permissionRow"
+        },
+        {
+          "row": {
+            "attributes": {
+              "type": "ObjectPermissions",
+              "url": "/services/data/v68.0/sobjects/ObjectPermissions/110RK000097a7SKYAY"
+            },
+            "Id": "110RK000097a7SKYAY",
+            "ParentId": "0PSRK00000MCUPB4A5",
+            "SobjectType": "Contact",
+            "PermissionsRead": true,
+            "PermissionsCreate": true,
+            "PermissionsEdit": true,
+            "PermissionsDelete": true,
+            "PermissionsViewAllRecords": false,
+            "PermissionsModifyAllRecords": false,
+            "Parent": {
+              "attributes": {
+                "type": "PermissionSet",
+                "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPB4A5"
+              },
+              "Id": "0PSRK00000MCUPB4A5",
+              "Name": "X00ex00000018ozq_128_09_04_12_10",
+              "IsOwnedByProfile": true,
+              "ProfileId": "00eRK00000LPsbAYAT",
+              "Profile": {
+                "attributes": {
+                  "type": "Profile",
+                  "url": "/services/data/v68.0/sobjects/Profile/00eRK00000LPsbAYAT"
+                },
+                "Id": "00eRK00000LPsbAYAT",
+                "Name": "Standard User"
+              }
+            }
+          },
+          "kind": "permissionRow"
+        },
+        {
+          "row": {
+            "attributes": {
+              "type": "ObjectPermissions",
+              "url": "/services/data/v68.0/sobjects/ObjectPermissions/110RK000097cX0kYAE"
+            },
+            "Id": "110RK000097cX0kYAE",
+            "ParentId": "0PSRK00000MCUPa4AP",
+            "SobjectType": "SynthFlsChild__c",
+            "PermissionsRead": true,
+            "PermissionsCreate": false,
+            "PermissionsEdit": false,
+            "PermissionsDelete": false,
+            "PermissionsViewAllRecords": true,
+            "PermissionsModifyAllRecords": false,
+            "Parent": {
+              "attributes": {
+                "type": "PermissionSet",
+                "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPa4AP"
+              },
+              "Id": "0PSRK00000MCUPa4AP",
+              "Name": "X00e1a000000N1wLAAS",
+              "IsOwnedByProfile": true,
+              "ProfileId": "00eRK00000LPsacYAD",
+              "Profile": {
+                "attributes": {
+                  "type": "Profile",
+                  "url": "/services/data/v68.0/sobjects/Profile/00eRK00000LPsacYAD"
+                },
+                "Id": "00eRK00000LPsacYAD",
+                "Name": "Analytics Cloud Integration User"
+              }
+            }
+          },
+          "kind": "permissionRow"
+        },
+        {
+          "row": {
+            "attributes": {
+              "type": "ObjectPermissions",
+              "url": "/services/data/v68.0/sobjects/ObjectPermissions/110RK000097cX0lYAE"
+            },
+            "Id": "110RK000097cX0lYAE",
+            "ParentId": "0PSRK00000MCUPa4AP",
+            "SobjectType": "SynthFlsParent__c",
+            "PermissionsRead": true,
+            "PermissionsCreate": false,
+            "PermissionsEdit": false,
+            "PermissionsDelete": false,
+            "PermissionsViewAllRecords": true,
+            "PermissionsModifyAllRecords": false,
+            "Parent": {
+              "attributes": {
+                "type": "PermissionSet",
+                "url": "/services/data/v68.0/sobjects/PermissionSet/0PSRK00000MCUPa4AP"
+              },
+              "Id": "0PSRK00000MCUPa4AP",
+              "Name": "X00e1a000000N1wLAAS",
+              "IsOwnedByProfile": true,
+              "ProfileId": "00eRK00000LPsacYAD",
+              "Profile": {
+                "attributes": {
+                  "type": "Profile",
+                  "url": "/services/data/v68.0/sobjects/Profile/00eRK00000LPsacYAD"
+                },
+                "Id": "00eRK00000LPsacYAD",
+                "Name": "Analytics Cloud Integration User"
+              }
+            }
+          },
+          "kind": "permissionRow"
+        }
+      ]

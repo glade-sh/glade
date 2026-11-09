@@ -124,9 +124,9 @@ func validateWhereFormula(org storage.OrgState, definition storage.ObjectDefinit
 	return queryError("Formula result type is incompatible with the literal value type", "invalid WHERE formula comparison type")
 }
 
-func whereFormulaValue(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, expr *FormulaExpression) storage.Value {
-	left, leftOK := recordValue(org, definition, record, expr.Left)
-	right, rightOK := recordValue(org, definition, record, expr.Right)
+func whereFormulaValue(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, expr *FormulaExpression, userIDs ...storage.ID) storage.Value {
+	left, leftOK := recordValue(org, definition, record, expr.Left, userIDs...)
+	right, rightOK := recordValue(org, definition, record, expr.Right, userIDs...)
 	if !leftOK {
 		left = storage.NullValue()
 	}

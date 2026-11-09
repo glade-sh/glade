@@ -1,0 +1,4 @@
+<apex:component>
+<apex:attribute name="question" type="String" description="d"/>
+[{!question}]
+</apex:component>

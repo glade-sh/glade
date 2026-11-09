@@ -1,0 +1,3 @@
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>67.0</apiVersion><processType>AutoLaunchedFlow</processType><status>Active</status><label>R6 Valid Field</label>
+<recordUpdates><name>UpdateRecord</name><label>Update Record</label><locationX>0</locationX><locationY>0</locationY><inputAssignments><field>R6_Missing__c</field><value><stringValue>x</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+<start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>UpdateRecord</targetReference></connector><object>Opportunity</object><recordTriggerType>Create</recordTriggerType><triggerType>RecordBeforeSave</triggerType></start></Flow>

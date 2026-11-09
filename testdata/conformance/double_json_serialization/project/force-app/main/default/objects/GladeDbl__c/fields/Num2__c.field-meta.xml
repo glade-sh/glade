@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Num2__c</fullName><label>Num2</label><type>Number</type><precision>18</precision><scale>2</scale><required>false</required></CustomField>

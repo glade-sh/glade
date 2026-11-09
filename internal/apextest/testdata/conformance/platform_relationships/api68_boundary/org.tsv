@@ -1,0 +1,7 @@
+api	route	outcome
+62.0	anonymous-static	compile-reject
+62.0	anonymous-dynamic	System.QueryException
+67.0	anonymous-static	compile-reject
+67.0	anonymous-dynamic	System.QueryException
+68.0	anonymous-static	ok
+68.0	anonymous-dynamic	ok

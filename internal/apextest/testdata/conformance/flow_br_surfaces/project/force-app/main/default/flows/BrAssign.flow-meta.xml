@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>62.0</apiVersion>
+    <assignments><name>SetMain</name><label>SetMain</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>$Record.FaBr__c</assignToReference><operator>Assign</operator><value><elementReference>FBr</elementReference></value></assignmentItems><assignmentItems><assignToReference>$Record.FaLen__c</assignToReference><operator>Assign</operator><value><elementReference>FLen</elementReference></value></assignmentItems><assignmentItems><assignToReference>$Record.FaSub1__c</assignToReference><operator>Assign</operator><value><elementReference>FSub1</elementReference></value></assignmentItems><assignmentItems><assignToReference>$Record.FaSub2__c</assignToReference><operator>Assign</operator><value><elementReference>FSub2</elementReference></value></assignmentItems><assignmentItems><assignToReference>$Record.FaSub3__c</assignToReference><operator>Assign</operator><value><elementReference>FSub3</elementReference></value></assignmentItems><assignmentItems><assignToReference>$Record.FaNest__c</assignToReference><operator>Assign</operator><value><elementReference>FNest</elementReference></value></assignmentItems></assignments>
+    <formulas><name>FBr</name><dataType>String</dataType><expression>&apos;a&apos; &amp; BR() &amp; &apos;b&apos;</expression></formulas>
+    <formulas><name>FLen</name><dataType>String</dataType><expression>TEXT(LEN(&apos;a&apos; &amp; BR() &amp; &apos;b&apos;))</expression></formulas>
+    <formulas><name>FSub1</name><dataType>String</dataType><expression>SUBSTITUTE(&apos;a&apos; &amp; BR() &amp; &apos;b&apos;, BR(), &apos;|&apos;)</expression></formulas>
+    <formulas><name>FSub2</name><dataType>String</dataType><expression>SUBSTITUTE(&apos;a&apos; &amp; BR() &amp; &apos;b&apos;, &apos;&lt;br&gt;&apos;, &apos;|&apos;)</expression></formulas>
+    <formulas><name>FSub3</name><dataType>String</dataType><expression>SUBSTITUTE(&apos;a&apos; &amp; BR() &amp; &apos;b&apos;, &apos;_BR_ENCODED_&apos;, &apos;|&apos;)</expression></formulas>
+    <formulas><name>FNest</name><dataType>String</dataType><expression>TEXT(LEN({!FBr}))</expression></formulas>
+    <formulas><name>FIs14</name><dataType>Boolean</dataType><expression>LEN(&apos;a&apos; &amp; BR() &amp; &apos;b&apos;) = 14</expression></formulas>
+    <formulas><name>FIs6</name><dataType>Boolean</dataType><expression>LEN(&apos;a&apos; &amp; BR() &amp; &apos;b&apos;) = 6</expression></formulas>
+    <interviewLabel>BrAssign {!$Flow.CurrentDateTime}</interviewLabel><label>BrAssign</label><processType>AutoLaunchedFlow</processType>
+    <start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>SetMain</targetReference></connector><filterLogic>and</filterLogic><filters><field>Name</field><operator>EqualTo</operator><value><stringValue>FlowAssign</stringValue></value></filters><object>Account</object><recordTriggerType>Create</recordTriggerType><triggerType>RecordBeforeSave</triggerType></start>
+    <status>Active</status>
+</Flow>

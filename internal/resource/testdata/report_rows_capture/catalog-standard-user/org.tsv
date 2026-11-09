@@ -1,0 +1,25 @@
+api	route	case	result
+62.0	anonymous	admin-account	3~Account General~user~4
+62.0	anonymous	admin-contact	6~Contact: General~my~5
+62.0	anonymous	admin-opportunity	7~Opportunity Information~organization~4
+62.0	anonymous	standard-account	System.SecurityException~Required permissions are not enabled.
+62.0	anonymous	standard-contact	System.SecurityException~Required permissions are not enabled.
+62.0	anonymous	standard-opportunity	System.SecurityException~Required permissions are not enabled.
+62.0	isolated	standard-account	ok~3~Account General
+62.0	isolated	standard-contact	ok~6~Contact: General
+62.0	isolated	standard-opportunity	ok~7~Opportunity Information
+62.0	seealldata	standard-account	3~Account General~user~4
+62.0	seealldata	standard-contact	6~Contact: General~my~5
+62.0	seealldata	standard-opportunity	7~Opportunity Information~organization~4
+67.0	anonymous	admin-account	3~Account General~user~4
+67.0	anonymous	admin-contact	6~Contact: General~my~5
+67.0	anonymous	admin-opportunity	7~Opportunity Information~organization~4
+67.0	anonymous	standard-account	System.SecurityException~Required permissions are not enabled.
+67.0	anonymous	standard-contact	System.SecurityException~Required permissions are not enabled.
+67.0	anonymous	standard-opportunity	System.SecurityException~Required permissions are not enabled.
+67.0	isolated	standard-account	ok~3~Account General
+67.0	isolated	standard-contact	ok~6~Contact: General
+67.0	isolated	standard-opportunity	ok~7~Opportunity Information
+67.0	seealldata	standard-account	3~Account General~user~4
+67.0	seealldata	standard-contact	6~Contact: General~my~5
+67.0	seealldata	standard-opportunity	7~Opportunity Information~organization~4

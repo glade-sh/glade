@@ -90,6 +90,14 @@ try { Decimal ignored=partial.Balance__c; } catch(SObjectException ex) { hidden=
 				}
 				files["force-app/main/default/objects/EqualityProbe__c/"+suffix] = string(data)
 			}
+			// Native capture: testdata/conformance/case349/ORG-RUN.txt assigns this
+			// permission set to the administrator; deployment alone grants nothing.
+			permissionSet, err := os.ReadFile("../../testdata/conformance/case349/permissionsets/Case349Access.permissionset-meta.xml")
+			if err != nil {
+				t.Fatal(err)
+			}
+			files["force-app/main/default/permissionsets/Case349Access.permissionset-meta.xml"] = string(permissionSet)
+			files["glade.yml"] = "test:\n  permissionSets: [Case349Access]\n"
 			recordType, err := os.ReadFile("../../testdata/conformance/person_account_followups/force-app/main/default/objects/Account/recordTypes/Business_Default.recordType-meta.xml")
 			if err != nil {
 				t.Fatal(err)
@@ -119,7 +127,10 @@ try { Decimal ignored=partial.Balance__c; } catch(SObjectException ex) { hidden=
 			for _, route := range []string{"lwc", "vf"} {
 				t.Run(route, func(t *testing.T) {
 					machine := vm.New(nil)
-					org := apextest.OrgFromIndex(index)
+					org, err := apextest.OrgFromIndexWithConfiguredPermissions(index)
+					if err != nil {
+						t.Fatal(err)
+					}
 					org.APIVersion = api
 					machine.SetOrg(&org)
 					if err := apextest.RegisterProjectRuntime(machine, index); err != nil {

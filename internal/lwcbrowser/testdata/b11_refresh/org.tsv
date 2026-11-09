@@ -1,0 +1,4 @@
+case	api	result
+refresh	59.0	{"complete":{"type":"number","value":1},"error":{"type":"number","value":0},"singular":{"type":"undefined"},"plural":{"type":"number","value":2}}
+refresh	62.0	{"complete":{"type":"number","value":1},"error":{"type":"number","value":0},"singular":{"type":"undefined"},"plural":{"type":"number","value":2}}
+refresh	67.0	{"complete":{"type":"number","value":1},"error":{"type":"number","value":0},"singular":{"type":"undefined"},"plural":{"type":"number","value":2}}

@@ -1,0 +1,13 @@
+source_api	case_id	outcome	message
+59.0	ok	DEPLOY_OK	
+59.0	missing_class	DEPLOY_ERROR	In field: apexClass - no ApexClass named NoSuchClass378 found
+59.0	missing_page	DEPLOY_ERROR	In field: apexPage - no ApexPage named NoSuchPage378 found
+59.0	missing_page_disabled	DEPLOY_ERROR	In field: apexPage - no ApexPage named NoSuchPage378 found
+59.0	bad_enabled_class	DEPLOY_ERROR	Error parsing file: 'maybe' is not valid for type xsd:boolean, should be '0', '1', 'true' or 'false'
+59.0	bad_enabled_page	DEPLOY_ERROR	Error parsing file: 'maybe' is not valid for type xsd:boolean, should be '0', '1', 'true' or 'false'
+67.0	ok	DEPLOY_OK	
+67.0	missing_class	DEPLOY_ERROR	In field: apexClass - no ApexClass named NoSuchClass378 found
+67.0	missing_page	DEPLOY_ERROR	In field: apexPage - no ApexPage named NoSuchPage378 found
+67.0	missing_page_disabled	DEPLOY_ERROR	In field: apexPage - no ApexPage named NoSuchPage378 found
+67.0	bad_enabled_class	DEPLOY_ERROR	Error parsing file: 'maybe' is not valid for type xsd:boolean, should be '0', '1', 'true' or 'false'
+67.0	bad_enabled_page	DEPLOY_ERROR	Error parsing file: 'maybe' is not valid for type xsd:boolean, should be '0', '1', 'true' or 'false'

@@ -55,6 +55,10 @@ func init() {
 		baseComponent("carousel", 3, true, slotContainerTemplateJS("section", "slds-carousel")),
 		baseComponent("carouselImage", 3, true, carouselImageTemplateJS()),
 		baseComponent("checkboxGroup", 3, true, optionGroupTemplateJS("checkbox")),
+		baseComponent("clickToDial", 3, true, clickToDialTemplateJS()),
+		baseComponent("emptyState", 3, true, emptyStateTemplateJS()),
+		baseComponent("richTextToolbarButton", 3, true, richTextToolbarButtonTemplateJS()),
+		baseComponent("richTextToolbarButtonGroup", 3, true, richTextToolbarButtonGroupTemplateJS()),
 		baseComponent("dialog", 3, true, dialogNoticeTemplateJS("dialog")),
 		baseComponent("dualListbox", 3, true, dualListboxTemplateJS()),
 		baseComponent("dynamicIcon", 3, true, dynamicIconTemplateJS()),
@@ -186,6 +190,11 @@ func LightningBaseComponentModuleJS(name string) string {
 	case "button":
 		connectedExtraJS = `    const key = Symbol.for("glade.component.privateShadowHosts");
     (globalThis[key] ||= new WeakSet()).add(this.template.host);`
+	case "richtexttoolbarbutton":
+		connectedExtraJS = `    if (this.selected === undefined) this.selected = false;`
+		classExtraJS = `  showPopup() { this.__popupOpen = true; }
+  closePopup() { this.__popupOpen = false; }
+`
 	case "verticalnavigation":
 		classExtraJS = `  get selectedItem() {
     return this.__navigationSelectedItem;
@@ -252,6 +261,9 @@ func LightningBaseComponentModuleJS(name string) string {
 `
 	}
 	templateSlotsJS := `[""]`
+	if def.Name == "emptyState" {
+		templateSlotsJS = `["description", "cta"]`
+	}
 	if def.Name == "card" {
 		templateSlotsJS = `["", "actions", "footer", "title"]`
 	}
@@ -741,6 +753,11 @@ function basePublicProps() {
 	for (const name of ["label","title","value","options","checked","disabled","type","variant","iconName","iconPosition","iconClass","alternativeText","size","columns","data","keyField","objectApiName","recordId","fields","mode","name","fieldName","error","content","href","target","street","city","province","postalCode","country","items","header","placeholder","accept","multiple","flowApiName","flowInputVariables","initials","fallbackIconName","labelWhenOff","labelWhenOn","labelWhenHover","selected","sourceLabel","selectedLabel","min","max","step","mapMarkers","zoomLevel","markersTitle","src","description","dirty","required","message","theme","defaultValue","latitude","longitude","salutation","firstName","middleName","lastName","suffix","informalName","format","formatStyle","displayValue","tabIndex","badgeCount","assistiveText","readOnly","maxToasts","toastPosition","containerPosition","expanded","horizontalAlign","verticalAlign","pullToBoundary","multipleRows","smallDeviceSize","mediumDeviceSize","largeDeviceSize","padding","flexibility","alignmentBump","currencyCode","currencyDisplayAs","minimumIntegerDigits","minimumFractionDigits","maximumFractionDigits","minimumSignificantDigits","maximumSignificantDigits"]) {
     props[name] = { config: 0 };
   }
+  if (%[3]q === "lightning-empty-state") {
+    props.headingLevel = { config: 0 };
+    props.illustrationName = { config: 0 };
+  }
+  if (%[3]q === "lightning-rich-text-toolbar-button") props.iconAlternativeText = { config: 0 };
   if (%[3]q === "lightning-dual-listbox") {
     props.requiredOptions = { config: 0 };
   }
@@ -759,9 +776,11 @@ function basePublicProps() {
 function basePublicMethods() {
   const methods = ["setErrors","getErrors","wireRecordUi","getWiredData","wirePicklistValues","getWiredPicklistValues","setValue","clean","reset","setCustomValidity","checkValidity","reportValidity","focus","blur"];
   if (%[3]q === "lightning-modal") methods.push("close");
+  if (%[3]q === "lightning-rich-text-toolbar-button") methods.push("showPopup", "closePopup");
   return %[3]q === "lightning-tree-grid" ? methods.concat(["expandAll", "collapseAll", "getCurrentExpandedRows", "getSelectedRows"]) : methods;
 }
 function basePrivateFields() {
+  if (%[3]q === "lightning-rich-text-toolbar-button") return ["__popupOpen"];
   if (%[3]q === "lightning-dual-listbox") {
     return ["__dualSelectedSource", "__dualSelectedTarget", "__dualValidityMessage"];
   }
@@ -1400,6 +1419,23 @@ func tabsetTemplateJS() string {
 
 func tabTemplateJS() string {
 	return `[api_element("section", { classMap: { "slds-tabs_default__content": true }, key: 0 }, [api_element("h3", { classMap: { "slds-tabs_default__item": true }, attrs: { role: "tab", tabindex: "0" }, key: 1, on: { click: api_bind($cmp.handleActive) } }, [api_text($cmp.label || "")]), api_slot("", { key: 2 }, [], $slotset)])]`
+}
+
+// Desktop capture: without an enabled phone system, dialing is disabled.
+func clickToDialTemplateJS() string {
+	return `[api_element("span", { attrs: { role: "link", "aria-disabled": "true" }, key: 0 }, $cmp.value ? [api_element("span", { attrs: { title: "Click to dial disabled", "aria-label": "Click to dial disabled" }, key: 1 }, [api_element("svg", { svg: true, attrs: { "aria-hidden": "true" }, key: 2 }, [api_element("use", { svg: true, attrs: { href: "/assets/icons/utility-sprite/svg/symbols.svg#end_call" }, key: 3 }, [])])]), api_text(String($cmp.value).replace(/^(\d{3})(\d{3})(\d{4})$/, "($1) $2-$3"))] : [])]`
+}
+
+// Salesforce hosts the named illustrations; offline rendering uses an SLDS image icon stand-in.
+func emptyStateTemplateJS() string {
+	return `[api_element("div", { classMap: { "slds-empty-state": true }, attrs: { part: "empty-state" }, key: 0 }, [...($cmp.illustrationName && $cmp.size !== "x-small" ? [api_element("svg", { svg: true, attrs: { role: $cmp.alternativeText ? "img" : null, "aria-label": $cmp.alternativeText || null, "aria-hidden": $cmp.alternativeText ? null : "true" }, key: 4 }, [api_element("use", { svg: true, attrs: { href: "/assets/icons/utility-sprite/svg/symbols.svg#image" }, key: 5 }, [])])] : []), ...($cmp.title ? [api_element("h3", { classMap: { "slds-illustration-title": true }, attrs: { "aria-level": /^[1-6]$/.test(String($cmp.headingLevel)) ? String($cmp.headingLevel) : null }, key: 1 }, [api_text($cmp.title)])] : []), api_slot("description", { attrs: { name: "description" }, key: 2 }, [], $slotset), api_slot("cta", { attrs: { name: "cta" }, key: 3 }, [], $slotset)])]`
+}
+
+func richTextToolbarButtonTemplateJS() string {
+	return `[api_element("button", { classMap: { "slds-button": true, "slds-button_icon-border-filled": true }, attrs: { type: "button", part: "button button-icon", title: $cmp.iconAlternativeText || null, "aria-pressed": $cmp.selected ? "true" : "false", disabled: $cmp.disabled ? "" : null }, key: 0 }, [...(/^(action|custom|doctype|standard|utility):[a-zA-Z0-9_]+$/.test($cmp.iconName || "") ? [api_element("svg", { svg: true, classMap: { "slds-button__icon": true }, attrs: { "aria-hidden": "true" }, key: 2 }, [api_element("use", { svg: true, attrs: { href: "/assets/icons/" + $cmp.iconName.split(":")[0] + "-sprite/svg/symbols.svg#" + $cmp.iconName.split(":")[1] }, key: 3 }, [])])] : []), api_element("span", { classMap: { "slds-assistive-text": true }, key: 1 }, [api_text($cmp.iconAlternativeText || "")])]), api_element("div", { classMap: { "slds-popover": true }, attrs: { role: "dialog", hidden: $cmp.__popupOpen ? null : "" }, key: 4 }, [api_slot("", { key: 5 }, [], $slotset)])]`
+}
+func richTextToolbarButtonGroupTemplateJS() string {
+	return `[api_element("div", { classMap: { "slds-button-group": true, "slds-m-right_xx-small": true, "slds-m-bottom_xx-small": true }, attrs: { role: "group", "aria-label": $cmp.ariaLabel || null, part: "button-group" }, key: 0 }, [api_slot("", { key: 1 }, [], $slotset)])]`
 }
 
 func spinnerTemplateJS() string {

@@ -1,0 +1,1 @@
+public class ShSubSubWo67 extends ShSubWo67 {}

@@ -7,12 +7,15 @@ import (
 
 func reportsRuntimeDTOType(typeName string) bool {
 	switch strings.ToLower(typeName) {
-	case "reports.reportfilter", "reports.sortcolumn", "reports.groupinginfo",
+	case "reports.reportfilter", "reports.sortcolumn", "reports.groupinginfo", "reports.aggregatecolumn",
 		"reports.standarddatefilter", "reports.toprows", "reports.reporttype",
 		"reports.reportmetadata", "reports.reportresults", "reports.reportdescriberesult",
 		"reports.reportextendedmetadata", "reports.reporttypemetadata", "reports.reportfactwithdetails",
 		"reports.reportfactwithsummaries", "reports.summaryvalue",
-		"reports.detailcolumn", "reports.groupingcolumn":
+		"reports.detailcolumn", "reports.groupingcolumn", "reports.reportdetailrow", "reports.reportdatacell",
+		"reports.dimension", "reports.groupingvalue", "reports.reportcurrency", "reports.standardfilter",
+		"reports.reporttypecolumn", "reports.reporttypecolumncategory", "reports.reportscopeinfo", "reports.reportscopevalue",
+		"reports.standarddatefilterduration", "reports.standarddatefilterdurationgroup", "reports.filtervalue", "reports.standardfilterinfo", "reports.standardfilterinfopicklist":
 		return true
 	default:
 		return false
@@ -132,6 +135,22 @@ func (vm *VM) reportsDTOAccessor(receiver Value, methodName string, args []Value
 	_, value, found := objectFieldValue(receiver, passiveAccessorFieldName(receiver, suffix))
 	if found && value.Kind != ValueNull {
 		return value, receiver, false, true
+	}
+	// Captured report type DTO getters initialize null collections on first access.
+	switch key {
+	case "reports.reporttypecolumn.getfiltervalues", "reports.reportscopeinfo.getvalues",
+		"reports.standarddatefilterdurationgroup.getstandarddatefilterdurations",
+		"reports.reporttypemetadata.getcategories", "reports.reporttypemetadata.getstandarddatefilterdurationgroups":
+		value := typedList(method.ReturnType)
+		receiver.Fields[passiveAccessorFieldName(receiver, suffix)] = value
+		return value, receiver, true, true
+	case "reports.reporttypecolumncategory.getcolumns", "reports.reporttypemetadata.getstandardfilterinfos":
+		value := typedMap(method.ReturnType)
+		receiver.Fields[passiveAccessorFieldName(receiver, suffix)] = value
+		return value, receiver, true, true
+	}
+	if key == "reports.dimension.getgroupings" && receiver.reportEmptyDimension {
+		return typedList(method.ReturnType), receiver, false, true
 	}
 	// R137/R140/R143, R150-R152, R155/R162, R177-R182, R186-R196;
 	// K007/K011-K014 distinguish empty getter collections from raw null fields.

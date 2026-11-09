@@ -52,7 +52,7 @@ func TestPlan7RichMessagingOverlayContainsNewPaymentContracts(t *testing.T) {
 	}
 
 	foundMergedCurrency := false
-	for _, symbol := range buildStandardPlatformSymbols() {
+	for _, symbol := range buildStandardPlatformSymbols(ConnectAPIShapeRequested()) {
 		if !strings.EqualFold(symbol.Namespace, "RichMessaging") || !strings.EqualFold(symbol.Name, "CurrencyAmount") {
 			continue
 		}

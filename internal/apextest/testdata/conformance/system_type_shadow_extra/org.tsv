@@ -1,0 +1,5 @@
+api	route	case	observation
+62.0	anonymous	specific_before_general	{"local":"user","system":"exception","case":"QueryException","class":"QueryException"}
+62.0	anonymous	general_before_specific	compile rejection: Exception type already caught: QueryException
+67.0	anonymous	specific_before_general	{"local":"user","system":"exception","case":"QueryException","class":"QueryException"}
+67.0	anonymous	general_before_specific	compile rejection: Exception type already caught: QueryException

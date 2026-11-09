@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>P2__c</fullName><label>Parent 2</label><referenceTo>IspP2__c</referenceTo><relationshipLabel>Inventory Sharing Junctions 2</relationshipLabel><relationshipName>IspJunctions2</relationshipName><relationshipOrder>1</relationshipOrder><reparentableMasterDetail>true</reparentableMasterDetail><type>MasterDetail</type><writeRequiresMasterRead>true</writeRequiresMasterRead></CustomField>

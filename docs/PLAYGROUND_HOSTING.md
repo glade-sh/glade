@@ -29,6 +29,18 @@ port only to loopback, as shown: this option is for local validation, not hosted
 deployments. It is ignored for configured trusted proxies and App Platform;
 HTTPS and non-loopback URL hosts still receive Secure cookies.
 
+For a non-public local `glade playground` listener, a direct browser open first
+shows **Open local preview**; select **Continue** to reach the workbench.
+Command-line clients without browser origin metadata must identify themselves.
+For example:
+
+```bash
+curl -H 'X-Glade-Client: 1' http://127.0.0.1:1789/healthz
+```
+
+This header is for the local listener guard; the public container mode above
+uses its own ingress policy.
+
 The image builds only the Go binary. The playground UI assets are embedded in
 `glade`, so no separate web build is needed. The build uses `CGO_ENABLED=1`
 because the Apex declaration parser is a tree-sitter (C) parser; the binary links
@@ -114,3 +126,9 @@ The built-in server currently has one workspace and runner per process. It does
 not isolate source or file mutations between visitors. Do not expose it to
 untrusted multi-user traffic until request or session isolation is added; public
 mode safeguards do not provide visitor isolation.
+
+For server, database UI and dev listeners, `--allow-public-demo` explicitly disables
+the exposed-listener authorization gate. Anyone who can reach such a listener
+can execute project code and read or modify its data. Use disposable data and
+isolation; this flag does not make a public deployment safe. The separate public
+playground isolation requirements above still apply.

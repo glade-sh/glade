@@ -1,0 +1,1 @@
+@IsTest private class OwnedCache62 { @IsTest static void capture() { List<PlatformCachePartition> rows=[SELECT DeveloperName,MasterLabel,IsDefaultPartition FROM PlatformCachePartition WHERE DeveloperName='OwnedPartition']; System.assertEquals(1,rows.size()); System.assertEquals('OwnedPartition',rows[0].MasterLabel); System.assertEquals(false,rows[0].IsDefaultPartition); } }

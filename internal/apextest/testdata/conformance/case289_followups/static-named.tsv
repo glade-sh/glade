@@ -1,0 +1,16 @@
+source_api	route	case_id	compiled	problem
+62.0	named	ST1	false	Variable does not exist: PermissionsViewAllFields
+62.0	named	ST2	false	Variable does not exist: PermissionsViewAllFields
+62.0	named	ST3	false	"SELECT Id, PermissionsViewAllFields FROM ObjectPermissions
+           ^
+ERROR at Row:1:Column:12
+No such column 'PermissionsViewAllFields' on entity 'ObjectPermissions'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+62.0	named	ST4	false	Field does not exist: PermissionsViewAllFields on ObjectPermissions
+63.0	named	ST1	true	-
+63.0	named	ST2	true	-
+63.0	named	ST3	true	-
+63.0	named	ST4	true	-
+67.0	named	ST1	true	-
+67.0	named	ST2	true	-
+67.0	named	ST3	true	-
+67.0	named	ST4	true	-

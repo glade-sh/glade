@@ -48,9 +48,11 @@ func TestDeletedLookupCrossTransactionNativeConformance(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			// ORG-RUN.txt: OwnedLookupAccess was assigned before the anonymous
+			// setup and restore requests.
+			writeFile(t, filepath.Join(root, "glade.yml"), "test:\n  permissionSets: [OwnedLookupAccess]\n")
 			index := loadTestIndex(t, root)
-			org := orgFromIndex(index)
-			org.APIVersion = api
+			org := capturedFixtureOrg(t, index, api)
 			runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 			machine := runner.newMachine()
 			for _, route := range []string{"setup", "restore"} {

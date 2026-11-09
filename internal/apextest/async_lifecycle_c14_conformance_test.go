@@ -70,7 +70,7 @@ func TestAsyncLifecycleC14NativeConformance(t *testing.T) {
 				}
 				seen[row[1]+"/"+row[2]] = true
 				t.Run(row[1]+"/"+row[2], func(t *testing.T) {
-					run := Run(index, Options{SelectedClasses: []string{row[1]}, SelectedMethod: row[2], NoDiskCache: true, Parallelism: 1})
+					run := Run(index, Options{SelectedClasses: []string{row[1]}, SelectedMethod: row[2], RuntimeRESTAPIVersion: "68.0", NoDiskCache: true, Parallelism: 1})
 					if len(run.Suites) != 1 || len(run.Suites[0].Cases) != 1 {
 						t.Fatalf("expected selected method: %+v", run.Summary())
 					}
@@ -86,33 +86,10 @@ func TestAsyncLifecycleC14NativeConformance(t *testing.T) {
 						if want.Type != "System.UnexpectedException" || want.Message == "" {
 							t.Fatal("invalid native rejection")
 						}
-						if result.Problem == nil || !strings.HasSuffix(result.Problem.Type, "AssertException") {
-							t.Fatalf("Y4 carry changed: %+v", result.Problem)
+						if result.Problem == nil || result.Problem.Type != want.Type || result.Problem.Message != want.Message {
+							t.Fatalf("native=%+v; Glade=%+v", want, result.Problem)
 						}
-						local, err := parseCaptureObservation(result.Problem.Message, "Y4.twoChunks")
-						if err != nil {
-							t.Fatal(err)
-						}
-						var expected map[string]any
-						if err := json.Unmarshal([]byte(`{"cb":{"cb":"Y4.execute","stage":"complete","callbacks":2,"seen":[1,2],"n":1},"job":"<707:1>","stop":true,"submitted":true,"stage":"stopReturned","id":"Y4.twoChunks"}`), &expected); err != nil {
-							t.Fatal(err)
-						}
-						if !reflect.DeepEqual(normalizeCaptureIdentities(local), expected) {
-							t.Fatalf("Y4 carry changed: %+v", local)
-						}
-						t.Logf("known local carry batch Dot stdlib cases Dot Dot SOQL cases and Dot async cases (fix owner pending): native rejects the two-chunk test; Glade executes two callbacks")
-						case345Skip(t)
-					}
-					if row[2] == "oversizedLocator" || row[2] == "oversizedIterable" {
-						expected := "Database.executeBatch scope size must be at most 2000"
-						if row[2] == "oversizedIterable" {
-							expected = "System.scheduleBatch scope size must be at most 2000"
-						}
-						if result.Problem == nil || result.Problem.Type != "RuntimeError" || result.Problem.Message != expected {
-							t.Fatalf("oversized scope carry changed: %+v", result.Problem)
-						}
-						t.Logf("known local carry batch Dot stdlib cases Dot Dot SOQL cases and Dot async cases (fix owner pending): native observation not reached; native=%s; Glade=%s", row[4], expected)
-						case345Skip(t)
+						return
 					}
 					if result.Problem == nil || !strings.HasSuffix(result.Problem.Type, "AssertException") {
 						t.Fatalf("missing capture assertion: %+v", result.Problem)
@@ -126,28 +103,7 @@ func TestAsyncLifecycleC14NativeConformance(t *testing.T) {
 						t.Fatal(err)
 					}
 					got = normalizeCaptureIdentities(got).(map[string]any)
-					fields := map[string][]string{
-						"batchFuture": {"cb", "effect"}, "fromExecute": {"cb", "child"}, "fromStart": {"cb", "child"},
-						"finishSchedules": {"cb"}, "scheduledControl": {"cb", "cronRows"},
-					}[row[2]]
-					if len(fields) > 0 {
-						observed := map[string]string{
-							"batchFuture":      `{"cb":{"cb":"Y1.execute","invoke":true,"n":1,"outcome":"accepted","stage":"complete"},"effect":{"cb":"Y1.future","stage":"complete"}}`,
-							"fromExecute":      `{"cb":{"accepted":true,"cb":"Y2.execute","stage":"complete"},"child":{"cb":"Y2.child.finish","stage":"complete"}}`,
-							"fromStart":        `{"cb":{"accepted":true,"cb":"Y2.start","stage":"complete"},"child":{"cb":"Y2.child.finish","stage":"complete"}}`,
-							"finishSchedules":  `{"cb":{"cb":"Y5.finish","error_scheduleBatch-admission":{"line":1,"message":"System.scheduleBatch cannot be called from a batch start, batch execute, or future method.","type":"System.AsyncException"},"stage":"rejected"}}`,
-							"scheduledControl": `{"cb":{"cb":"Y8.execute","n":1,"stage":"complete"},"cronRows":[{"Id":"<08e:1>","State":"WAITING","attributes":{"type":"CronTrigger","url":"/services/data/v65.0/sobjects/CronTrigger/<08e:1>"}}]}`,
-						}[row[2]]
-						var expected map[string]any
-						if err := json.Unmarshal([]byte(observed), &expected); err != nil {
-							t.Fatal(err)
-						}
-						if !c14ExactCarryEqual(got, want, expected, fields) {
-							t.Fatalf("carry changed: native=%v; Glade=%v", want, got)
-						}
-						t.Logf("known local carry batch Dot stdlib cases Dot Dot SOQL cases and Dot async cases (fix owner pending): fields=%v native=%v; Glade=%v", fields, want, got)
-						case345Skip(t)
-					} else if !reflect.DeepEqual(got, want) {
+					if !reflect.DeepEqual(got, want) {
 						t.Fatalf("native=%v; Glade=%v", want, got)
 					}
 				})

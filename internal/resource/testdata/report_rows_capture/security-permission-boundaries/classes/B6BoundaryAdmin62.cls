@@ -1,0 +1,2 @@
+@IsTest(SeeAllData=true) private class B6BoundaryAdmin62 { @IsTest static void observed(){List<Report> r=[SELECT Id FROM Report WHERE DeveloperName='B6_Account'];String s='rows='+r.size();if(!r.isEmpty()){try{Reports.ReportManager.describeReport(r[0].Id);s+='|describe=ok';}catch(Exception e){s+='|describe='+e.getTypeName()+'~'+e.getMessage();}try{Reports.ReportManager.runReport(r[0].Id,false);s+='|run=ok';}catch(Exception e){s+='|run='+e.getTypeName()+'~'+e.getMessage();}}System.assert(false,s);
+} }

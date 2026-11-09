@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://soap.sforce.com/2006/04/metadata"><format>Summary</format><groupingsDown><field>ACCOUNT.NAME</field><sortOrder>Asc</sortOrder></groupingsDown><name>B6 Summary</name><reportType>AccountList</reportType><scope>organization</scope></Report>

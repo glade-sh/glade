@@ -1759,7 +1759,10 @@ func TestExecuteDatePartSelectFunctionGrouping(t *testing.T) {
 		t.Fatalf("result = %#v", result)
 	}
 	fields := result.Records[0].Fields
-	assertStorageInt(t, fields["CALENDAR_YEAR(RenewalDate__c)"], 2026)
+	// Native identity Q12: the aliased function is exposed only under its alias.
+	if _, present := fields["CALENDAR_YEAR(RenewalDate__c)"]; present {
+		t.Fatalf("aliased grouped function also exposed by expression: %#v", fields)
+	}
 	assertStorageInt(t, fields["renewalYear"], 2026)
 	assertStorageInt(t, fields["total"], 3)
 }

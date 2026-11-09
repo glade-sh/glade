@@ -1,0 +1,1 @@
+@IsTest private class V035DescribeRoute67 { @IsTest static void verify() { Boolean observed=Schema.getGlobalDescribe().get('AssetStatePeriod').getDescribe().fields.getMap().containsKey('RampUpliftType'); System.assertEquals(false, observed); } }

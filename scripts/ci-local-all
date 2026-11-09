@@ -16,8 +16,9 @@ import time
 
 ROOT = Path(__file__).resolve().parent.parent
 SHARDS = {'apextest': 12, 'sema': 2, 'lwc-compile': 8, 'visualforce': 4, 'gladecli': 4, 'vm': 4}
+# CodeQL runs from Security, not Required CI; the local codeql step below stays as an extra check.
 MAPPING = {
-    'codeql': 'codeql', 'workflow-lint': 'workflow-lint', 'site': 'site',
+    'workflow-lint': 'workflow-lint', 'site': 'site',
     'test-binaries': 'test-binaries', 'vet': 'vet', 'apextest': 'apextest',
     'apextest-history': 'apextest-history', 'lwc-compile-history': 'lwc-compile-history',
     'visualforce-history': 'visualforce-history', 'gladecli': 'gladecli',

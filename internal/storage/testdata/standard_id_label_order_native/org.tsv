@@ -1,0 +1,21 @@
+apiVersion	route	object	field	access	label
+62.0	anonymous	Order	Id	getGlobalDescribe	Order ID
+62.0	anonymous	Account	Id	getGlobalDescribe	Account ID
+62.0	anonymous	Contact	Id	getGlobalDescribe	Contact ID
+62.0	anonymous	Lead	Id	getGlobalDescribe	Lead ID
+62.0	anonymous	Order	Id	SObjectType.Order.fields.Id	Order ID
+62.0	istest	Order	Id	getGlobalDescribe	Order ID
+62.0	istest	Account	Id	getGlobalDescribe	Account ID
+62.0	istest	Contact	Id	getGlobalDescribe	Contact ID
+62.0	istest	Lead	Id	getGlobalDescribe	Lead ID
+62.0	istest	Order	Id	SObjectType.Order.fields.Id	Order ID
+67.0	anonymous	Order	Id	getGlobalDescribe	Order ID
+67.0	anonymous	Account	Id	getGlobalDescribe	Account ID
+67.0	anonymous	Contact	Id	getGlobalDescribe	Contact ID
+67.0	anonymous	Lead	Id	getGlobalDescribe	Lead ID
+67.0	anonymous	Order	Id	SObjectType.Order.fields.Id	Order ID
+67.0	istest	Order	Id	getGlobalDescribe	Order ID
+67.0	istest	Account	Id	getGlobalDescribe	Account ID
+67.0	istest	Contact	Id	getGlobalDescribe	Contact ID
+67.0	istest	Lead	Id	getGlobalDescribe	Lead ID
+67.0	istest	Order	Id	SObjectType.Order.fields.Id	Order ID

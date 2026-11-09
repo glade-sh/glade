@@ -9,6 +9,9 @@ import (
 func cartFixtureStorage(t *testing.T) storage.OrgState {
 	t.Helper()
 	org := storage.NewOrgState()
+	// WebStore and WebCart exist only in the captured Order Management shape
+	// (org_commerce_family/org.tsv); a plain org rejects them.
+	storage.ApplyOrgShape(&org, []string{"OrderManagement"})
 	for _, name := range []string{"Account", "WebStore", "WebCart"} {
 		storage.EnsureStandardObject(&org, name)
 		object := org.Objects[name]

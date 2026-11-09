@@ -889,6 +889,10 @@ const documentRoots = new WeakMap();
 const detachedRoot = { children: [] };
 let nextRefreshHandle = 1;
 // Captured named status bindings are undefined; refreshes resolve to 1 or 2.
+export const REFRESH_COMPLETE = 1;
+export const REFRESH_ERROR = 0;
+export const REFRESH_COMPLETE_WITH_ERROR = undefined;
+export const REFRESH_COMPLETE_WITH_ERRORS = 2;
 export const RefreshComplete = undefined;
 export const RefreshCompleteWithError = undefined;
 export const RefreshError = undefined;
@@ -1272,10 +1276,31 @@ export default channel;
 func NavigationModuleJS() string {
 	return `import {
   CurrentPageReferenceAdapter,
+  readShellContext,
   generatePageReferenceUrl as generateUrl,
-  navigate,
+  navigate as shellNavigate,
 } from "/lightning/runtime/shell/navigation-service.js";
 
+// Aura exposes these names as undefined. LWR supplies a single local router.
+const community = readShellContext().community || {};
+const isLwr = Boolean(community.lwr || community.isLwr);
+const localNavigationContext = () => {};
+class LocalNavigationContext {
+  constructor(callback) { this.callback = callback; }
+  connect() { if (typeof this.callback === "function") this.callback(localNavigationContext); }
+  update() {}
+  disconnect() {}
+}
+export const NavigationContext = isLwr ? LocalNavigationContext : undefined;
+export const navigate = isLwr ? function(context, s, replace = false) {
+  // Destructuring preserves the native synchronous null-reference rejection.
+  const { type } = s;
+  void type;
+  if (typeof context !== "function" && typeof context !== "string") {
+    throw new Error("Could not find context to perform navigation action.");
+  }
+  shellNavigate(s, { replace: Boolean(replace) }).catch(() => undefined);
+} : undefined;
 export const supportedPageReferenceTypes = [
   "standard__recordPage",
   "standard__objectPage",
@@ -1297,7 +1322,7 @@ export const CurrentPageReference = CurrentPageReferenceAdapter;
 export function NavigationMixin(Base) {
   return class extends Base {
     [NavigationMixin.Navigate](pageReference, replace) {
-      navigate(pageReference, { replace }).catch(() => undefined);
+      shellNavigate(pageReference, { replace }).catch(() => undefined);
     }
     [NavigationMixin.GenerateUrl](pageReference) {
       return generateUrl(pageReference);
@@ -1316,12 +1341,7 @@ import * as workspace from "/lightning/runtime/shell/workspace-service.js";
 export {
   EnclosingTabId,
   IsConsoleNavigation,
-  closeTab,
   configureWorkspace,
-  disableTabClose,
-  refreshTab,
-  setTabHighlighted,
-  setTabIcon,
   workspaceDiagnosticCodes,
 } from "/lightning/runtime/shell/workspace-service.js";
 function unsupported(method) {
@@ -1352,6 +1372,31 @@ export async function setTabLabel(tabId, label) {
   if (tabId == null || label == null) throw new Error("error: unable to set label to a tab - missing tabId or label");
   await requireConsole("setTabLabel");
   return workspace.setTabLabel(tabId, label);
+}
+export async function closeTab(tabId) {
+  if (tabId == null) throw new Error("error: unable to close a tab - missing tabId");
+  await requireConsole("closeTab");
+  return workspace.closeTab(tabId);
+}
+export async function refreshTab(tabId, options) {
+  if (tabId == null) throw new Error("error: unable to refresh a tab - missing tabId");
+  await requireConsole("refreshTab");
+  return workspace.refreshTab(tabId, options);
+}
+export async function setTabIcon(tabId, icon, options) {
+  if (tabId == null || icon == null) throw new Error("error: unable to set icon to a tab - missing tabId or icon");
+  await requireConsole("setTabIcon");
+  return workspace.setTabIcon(tabId, icon, options);
+}
+export async function setTabHighlighted(tabId, highlighted, options) {
+  if (tabId == null || highlighted == null) throw new Error("error: unable to highlight a tab - missing tabId or highlighted flag");
+  await requireConsole("setTabHighlighted");
+  return workspace.setTabHighlighted(tabId, highlighted, options);
+}
+export async function disableTabClose(tabId, disabled) {
+  if (tabId == null || disabled == null) throw new Error("error: unable to disable tab close - missing tabId or disabled flag");
+  await requireConsole("disableTabClose");
+  return workspace.disableTabClose(tabId, disabled);
 }
 export async function openTab(options = {}) {
   if (!await workspace.isConsoleNavigation()) {

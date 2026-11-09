@@ -1,0 +1,13 @@
+source_api	class	method	kind	observation
+62.0	GyTestTM	itMulti	UNCAUGHT	No more than one executeBatch can be called from within a test method.  Please make sure the iterable returned from your start method matches the batch size, resulting in one executeBatch invocation.
+62.0	GyTestTM	qlMulti	UNCAUGHT	No more than one executeBatch can be called from within a test method.  Please make sure the iterable returned from your start method matches the batch size, resulting in one executeBatch invocation.
+62.0	GyTestTM	qlSingle	CAPTURE	qlSingle|reached|chunks=1
+62.0	GyTestSetupItMulti	t	UNCAUGHT	No more than one executeBatch can be called from within a test method.  Please make sure the iterable returned from your start method matches the batch size, resulting in one executeBatch invocation.
+62.0	GyTestSetupQlMulti	t	UNCAUGHT	No more than one executeBatch can be called from within a test method.  Please make sure the iterable returned from your start method matches the batch size, resulting in one executeBatch invocation.
+62.0	GyTestSetupQlSingle	t	CAPTURE	setupQlSingle|reached|chunks=1
+67.0	GyTestTM	itMulti	UNCAUGHT	No more than one executeBatch can be called from within a test method.  Please make sure the iterable returned from your start method matches the batch size, resulting in one executeBatch invocation.
+67.0	GyTestTM	qlMulti	UNCAUGHT	No more than one executeBatch can be called from within a test method.  Please make sure the iterable returned from your start method matches the batch size, resulting in one executeBatch invocation.
+67.0	GyTestTM	qlSingle	CAPTURE	qlSingle|reached|chunks=1
+67.0	GyTestSetupItMulti	t	UNCAUGHT	No more than one executeBatch can be called from within a test method.  Please make sure the iterable returned from your start method matches the batch size, resulting in one executeBatch invocation.
+67.0	GyTestSetupQlMulti	t	UNCAUGHT	No more than one executeBatch can be called from within a test method.  Please make sure the iterable returned from your start method matches the batch size, resulting in one executeBatch invocation.
+67.0	GyTestSetupQlSingle	t	CAPTURE	setupQlSingle|reached|chunks=1

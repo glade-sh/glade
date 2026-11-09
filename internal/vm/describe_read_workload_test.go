@@ -76,7 +76,7 @@ func testTypedGlobalDescribeAllocation(t *testing.T) {
 			}
 			machine := New(nil)
 			machine.SetOrg(&org)
-			raw := machine.schemaGlobalDescribe()
+			raw := machine.globalDescribeMapValue()
 			keys := orderedValueMapKeys(raw)
 			bind := func() {
 				view, err := machine.coerceAssignable("Map<String,Schema.SObjectType>", machine.globalDescribeMapValue())

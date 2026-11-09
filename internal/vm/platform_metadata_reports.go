@@ -257,6 +257,23 @@ func (vm *VM) reportsDescribeReport(args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Null, fmt.Errorf("reports.ReportManager.describeReport expects report Id")
 	}
+	if report, ok := vm.projectReportDefinition(args[0]); ok {
+		if err := vm.projectReportAccess(report); err != nil {
+			return Null, err
+		}
+		result := Object("reports.ReportDescribeResult")
+		result.Fields["reportMetadata"] = vm.projectReportMetadata(report)
+		result.Fields["reportExtendedMetadata"] = projectReportExtendedMetadata(report)
+		if metadata, ok := vm.projectReportTypeMetadata(report); ok {
+			result.Fields["reportTypeMetadata"] = metadata
+		}
+		return result, nil
+	}
+	if vm.Org != nil {
+		if _, _, found := storage.LookupRecordByID(vm.Org.Objects["Report"].Records, storage.ID(scalarText(args[0]))); !found {
+			return Null, newExceptionError("System.NoDataFoundException", "The data you’re trying to access is unavailable.")
+		}
+	}
 	return Null, reportsReportBoundary("reports.ReportManager.describeReport", args[0])
 }
 
@@ -296,9 +313,20 @@ func (vm *VM) reportsRunAsyncReport(args []Value) (Value, error) {
 }
 
 func (vm *VM) reportsRunReport(args []Value) (Value, error) {
-	reportID, _, _, err := vm.reportsReportArgs(args, "reports.ReportManager.runReport")
+	reportID, metadata, details, err := vm.reportsReportArgs(args, "reports.ReportManager.runReport")
 	if err != nil {
 		return Null, err
+	}
+	if report, ok := vm.projectReportDefinition(reportID); ok {
+		if err := vm.projectReportAccess(report); err != nil {
+			return Null, err
+		}
+		return vm.runProjectReport(report, metadata, details)
+	}
+	if vm.Org != nil {
+		if _, _, found := storage.LookupRecordByID(vm.Org.Objects["Report"].Records, storage.ID(scalarText(reportID))); !found {
+			return Null, newExceptionError("System.NoDataFoundException", "The data you’re trying to access is unavailable.")
+		}
 	}
 	return Null, reportsReportBoundary("reports.ReportManager.runReport", reportID)
 }
@@ -1592,6 +1620,11 @@ func callGeneratedPlatformEnumMember(generated generatedPlatformType, receiver V
 	case "ordinal":
 		return Int(int64(generatedPlatformEnumOrdinal(generated, receiver.Text))), true, nil
 	case "hashCode":
+		if isAccessLevelValue(receiver) && receiver.Ref != accessLevelConstantRefs[0] && receiver.Ref != accessLevelConstantRefs[1] {
+			// A detached AccessLevel hashes apart from the constants (org capture
+			// access_level_rendering).
+			return Int(int64(receiver.Ref%2147483629) + 1), true, nil
+		}
 		if generated.EnumHashBase == nil {
 			return Int(int64(javaStringHashCode(generated.Name + "." + receiver.Text))), true, nil
 		}

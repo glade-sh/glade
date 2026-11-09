@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/glade-sh/glade/internal/apextest"
+	"github.com/glade-sh/glade/internal/resource"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/vm"
@@ -79,7 +80,7 @@ type apiVersionEntry struct {
 	URL     string `json:"url"`
 }
 
-const localOAuthUnsupportedMessage = "Full OAuth flows and token issuance are not implemented by the local server; use deterministic local user stubs via /services/oauth2/userinfo, /id/{org}/{user}, X-GLADE-User-Id, or Authorization: Bearer <userId>"
+const localOAuthUnsupportedMessage = "Full OAuth flows are not implemented by the local server; /services/oauth2/token issues local tokens and /services/oauth2/revoke revokes them"
 
 const apexRestUnsupportedMessage = "Apex @RestResource dispatch is not implemented in the local server"
 
@@ -196,6 +197,13 @@ func (s *Server) ReloadProjectState(source SourceMetadata, index typesys.Index, 
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if err := resource.ApplyProjectEventSubscribers(s.Org, index, nil); err != nil {
+		runtimeErr = err
+	}
+	resource.ApplyHierarchyAccessObjects(s.Org, source.Project.HierarchyAccessObjects)
+	if err := resource.RefreshProjectOwnerSharingRules(s.Org, source.Project); err != nil && runtimeErr == nil {
+		runtimeErr = err
+	}
 	s.Source = source
 	s.Index = &index
 	s.runtime = runtime
@@ -231,7 +239,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}()
 	}
 	if !s.issuedUserStillExists(r) {
-		http.Error(w, "issued token user no longer exists", http.StatusUnauthorized)
+		http.Error(w, "invalid or expired local token", http.StatusUnauthorized)
 		return
 	}
 	s.serveHTTPLocked(w, r, parts)

@@ -1,6 +1,9 @@
 package vm
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 // Native publishing_date_arguments rows accept both immediate (null) and
 // scheduled archiving; the project replay covers the parser and semantic gate.
@@ -24,7 +27,12 @@ func TestPublishingDateArgumentDirectVM(t *testing.T) {
 				if route.storedID {
 					machine.Globals["articleId"] = platformScalar("Id", "ka0000000000001")
 				}
-				if _, err := machine.Execute(program); err != nil {
+				_, err = machine.Execute(program)
+				if strings.HasSuffix(route.name, "null_date") {
+					if err == nil || !strings.Contains(err.Error(), "System.InvalidParameterValueException") {
+						t.Fatalf("native invalid article ID: %v", err)
+					}
+				} else if err != nil {
 					t.Fatal(err)
 				}
 			})

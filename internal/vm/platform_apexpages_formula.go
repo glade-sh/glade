@@ -391,7 +391,7 @@ func (vm *VM) standardControllerFieldProjection(record Value, fields Value) (Val
 	}
 	executionQuery := query
 	executionQuery.SecurityMode = ""
-	rows, err := soql.Execute(*vm.Org, executionQuery)
+	rows, err := soql.ExecuteWithCacheAndContext(*vm.Org, executionQuery, nil, soql.ExecutionContext{SetupUserID: storage.ID(vm.currentUserID())})
 	if err != nil {
 		var unsupported *soql.UnsupportedFeatureError
 		if errors.As(err, &unsupported) {
@@ -1036,7 +1036,7 @@ func (vm *VM) recalculateFormulaSObject(item Value) Value {
 			continue
 		}
 		failure := dml.FormulaError{}
-		options := dml.FormulaEvaluationOptions{FormulaSurface: true, PreserveNumericNull: strings.EqualFold(field.FormulaTreatBlanksAs, "BlankAsBlank"), Error: &failure}
+		options := dml.FormulaEvaluationOptions{UserID: storage.ID(vm.currentUserID()), PermissionUserFields: vm.currentUserPermissionFields(), FormulaSurface: true, PreserveNumericNull: strings.EqualFold(field.FormulaTreatBlanksAs, "BlankAsBlank"), Error: &failure}
 		value, explicitNull, ok := dml.EvaluateRecordFormulaValueInOrgWithOptions(field.Formula, field, vm.Org, definition, record, options)
 		if !ok {
 			result.Fields["success"] = Bool(false)
@@ -1079,7 +1079,7 @@ func (vm *VM) evaluateFormulaInstanceValue(instance Value, context Value, formul
 	}
 	field := storage.Field{APIName: "__formula", Type: formulaReturnFieldType(instance), Formula: formula}
 	failure := dml.FormulaError{}
-	options := dml.FormulaEvaluationOptions{FormulaSurface: true, PreserveNumericNull: true, Error: &failure}
+	options := dml.FormulaEvaluationOptions{UserID: storage.ID(vm.currentUserID()), PermissionUserFields: vm.currentUserPermissionFields(), FormulaSurface: true, PreserveNumericNull: true, Error: &failure}
 	if value, ok := instance.Fields["treatNumericNullAsZero"]; ok && value.Kind == ValueBool {
 		options.PreserveNumericNull = !value.Bool
 	}

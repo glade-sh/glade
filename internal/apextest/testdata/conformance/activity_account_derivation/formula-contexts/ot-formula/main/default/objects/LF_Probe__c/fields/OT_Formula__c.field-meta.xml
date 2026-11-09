@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>OT_Formula__c</fullName>
+    <formula>IF(ISNULL($ObjectType.Account.Fields.Name), 'null', IF(ISBLANK($ObjectType.LF_Probe__c.Fields.Note__c), 'blank', 'set'))</formula>
+    <label>OT Formula</label>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

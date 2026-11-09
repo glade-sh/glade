@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/glade-sh/glade/internal/apexversion"
 )
 
 func platformVersionTypeName(typeName string) bool {
@@ -364,6 +366,11 @@ func (vm *VM) resolveNestedTypeInClassHierarchyUncached(className, typeName stri
 		}
 		seen[key] = true
 		if dot := strings.LastIndexByte(super, '.'); dot > 0 {
+			// Only a declared outer class contributes its nested siblings. A
+			// platform namespace such as Auth does not enter scope.
+			if _, outerOK := vm.lookupClass(super[:dot]); !outerOK {
+				continue
+			}
 			if resolved, ok := vm.resolveLexicalNestedTypeName(super[:dot], typeName); ok {
 				return resolved, true
 			}
@@ -1416,7 +1423,7 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 	if strings.EqualFold(typeName, "Id") && value.Kind == ValueObject && strings.EqualFold(value.Type, "Object") {
 		idText, ok := platformScalarObjectText(value)
 		if ok {
-			if err := validateApexIDShape(idText); err != nil {
+			if err := vm.validateIDConversionShape(idText); err != nil {
 				return Null, newExceptionError("StringException", strings.TrimPrefix(err.Error(), "System.StringException: "))
 			}
 			return platformScalar("Id", idText), nil
@@ -1449,7 +1456,7 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 		}
 		switch typeName {
 		case "Id":
-			if err := validateApexIDShape(value.Text); err != nil {
+			if err := vm.validateIDConversionShape(value.Text); err != nil {
 				return Null, newExceptionError("StringException", strings.TrimPrefix(err.Error(), "System.StringException: "))
 			}
 			value.Type = "Id"
@@ -2073,4 +2080,16 @@ func (vm *VM) resolveAssignableTargetType(typeName string) string {
 		return base + "<" + resolved + ">"
 	}
 	return typeName
+}
+
+// Before API 54 native converts a String to an Id on length alone; from API 54
+// the characters must also be alphanumeric (org capture id_literal_conversion).
+func (vm *VM) validateIDConversionShape(text string) error {
+	if apexversion.Before(vm.currentMethod.APIVersion, 54) {
+		if (len(text) != 15 && len(text) != 18) || text == "000000000000000" {
+			return fmt.Errorf("System.StringException: Invalid id: %s", text)
+		}
+		return nil
+	}
+	return validateApexIDConversionShape(text)
 }

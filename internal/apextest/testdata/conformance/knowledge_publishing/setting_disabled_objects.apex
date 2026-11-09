@@ -1,0 +1,1 @@
+Map<String,Schema.SObjectType> types=Schema.getGlobalDescribe(); System.debug('B4:setting_disabled_ka:'+types.containsKey('Knowledge__ka')); System.debug('B4:setting_disabled_kav:'+types.containsKey('Knowledge__kav'));

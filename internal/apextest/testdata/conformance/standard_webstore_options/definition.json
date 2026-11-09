@@ -1,0 +1,16 @@
+{
+ "edition": "Developer",
+ "features": [
+  "B2BCommerce",
+  "Communities"
+ ],
+ "orgName": "Synthetic webstore options",
+ "settings": {
+  "commerceSettings": {
+   "commerceEnabled": true
+  },
+  "communitiesSettings": {
+   "enableNetworksEnabled": true
+  }
+ }
+}

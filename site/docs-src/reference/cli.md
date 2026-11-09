@@ -721,12 +721,15 @@ Create, start, and register a local Glade org target for supported `sf`
 commands. This is a Glade-backed local API target, not a Salesforce scratch org.
 
 ```bash
+glade org suggest --project .
 glade org create refinement-local
 glade org start refinement-local --project .
 glade org auth refinement-local --project .
 sf data create record -o refinement-local -s FileRow__c -v "Name='Refine 01'"
 sf apex run -o refinement-local -f scripts/refinement.apex
 ```
+
+`glade org suggest` reports source-backed setup advice without changing the project. Add `--json` for structured output.
 
 See [Use Glade as an sf target](/guide/glade-orgs) for the data import path and
 support boundary.

@@ -1,0 +1,1 @@
+public class H12 { public class Quote {} public static Object m() { return Quote.SObjectType; } }

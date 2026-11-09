@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>SetupTone__c</fullName><formula>$Setup.Prefs__c.Tone__c</formula><label>Setup Tone</label><type>Text</type></CustomField>

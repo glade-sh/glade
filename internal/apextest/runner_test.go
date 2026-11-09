@@ -1807,8 +1807,8 @@ func TestRuntimeKeyIncludesSemanticMetadata(t *testing.T) {
 }
 
 func TestRunWithSourceDigestsPersistsExactV7RuntimeKey(t *testing.T) {
-	if testRuntimeCacheABI != "apextest-runtime-v26" {
-		t.Fatalf("test runtime ABI = %q, want apextest-runtime-v26", testRuntimeCacheABI)
+	if testRuntimeCacheABI != "apextest-runtime-v32" {
+		t.Fatalf("test runtime ABI = %q, want apextest-runtime-v32", testRuntimeCacheABI)
 	}
 	wasDisabled := disableDiskCache.Load()
 	disableDiskCache.Store(false)
@@ -3139,7 +3139,8 @@ private class SeeAllDataEnabledTest {
 		statuses["allowedWithSeeAllData"] != testreport.StatusPass {
 		t.Fatalf("summary = %#v statuses=%#v problem=%q", got, statuses, firstRunProblem(run))
 	}
-	if problem := firstRunProblem(run); !strings.Contains(problem, "requires SeeAllData=true") {
+	// Native row call.ChatterUsers.getFollowings.validid (APIs 62/67).
+	if problem := firstRunProblem(run); !strings.Contains(problem, "ConnectApi methods are not supported in data siloed tests. Please use @IsTest(SeeAllData=true).") {
 		t.Fatalf("problem = %q, want SeeAllData execution gate", problem)
 	}
 }
@@ -8493,7 +8494,7 @@ private class AsyncSemanticsTest {
   @isTest static void drainsSupportedAsyncWork() {
     Test.startTest();
     FutureWorker.mark(7);
-    String batchId = Database.executeBatch(new CountingBatch(), 2);
+    String batchId = Database.executeBatch(new CountingBatch(), 3);
     String scheduleId = System.schedule('nightly', '0 0 0 * * ?', new ScheduledWorker());
     String scheduledBatchId = System.scheduleBatch(new CountingBatch(), 'batch later', 1, 2);
     String queueId = System.enqueueJob(new FirstQueue());
@@ -8509,17 +8510,19 @@ private class AsyncSemanticsTest {
     System.assertEquals(0, beforeRows);
     Test.stopTest();
     Integer afterRows = [SELECT COUNT() FROM Account];
-    System.assertEquals(9, afterRows);
+    // One test-method executeBatch chunk (async_lifecycle_c14 Y4), and the
+    // scheduled batch stays pending at stopTest (Y8): only the direct batch ran.
+    System.assertEquals(6, afterRows);
     List<AsyncApexJob> jobs = [SELECT Id, Status, JobType FROM AsyncApexJob];
-    System.assertEquals(7, jobs.size());
-    System.assertEquals(2, [SELECT COUNT() FROM AsyncApexJob WHERE JobType = 'BatchApexWorker']);
+    System.assertEquals(6, jobs.size());
+    System.assertEquals(1, [SELECT COUNT() FROM AsyncApexJob WHERE JobType = 'BatchApexWorker']);
     List<CronTrigger> crons = [SELECT Id, State FROM CronTrigger];
     System.assertEquals(2, crons.size());
     // A38 T047 (API62/67): scheduled batch and recurring schedule crons remain WAITING.
     System.assertEquals(0, [SELECT COUNT() FROM CronTrigger WHERE State = 'Complete']);
     System.assertEquals(2, [SELECT COUNT() FROM CronTrigger WHERE State = 'WAITING']);
     System.assertEquals(7, AsyncState.futureRan);
-    System.assertEquals(12, AsyncState.batchSum);
+    System.assertEquals(6, AsyncState.batchSum);
     System.assertEquals(1, AsyncState.batchFinish);
     System.assertEquals(1, AsyncState.scheduledRan);
     System.assertEquals(1, AsyncState.queueRan);
@@ -8528,26 +8531,26 @@ private class AsyncSemanticsTest {
   @isTest static void acceptsInterfaceTypedBatchable() {
     Database.Batchable<Object> batch = new ObjectCountingBatch();
     Test.startTest();
-    String batchId = Database.executeBatch(batch, 2);
+    String batchId = Database.executeBatch(batch, 3);
     String scheduledBatchId = System.scheduleBatch(batch, 'typed batch later', 1, 2);
     System.assertNotEquals('', batchId);
     System.assertNotEquals('', scheduledBatchId);
     Test.stopTest();
-    System.assertEquals(6, [SELECT COUNT() FROM Account]);
-    System.assertEquals(12, AsyncState.batchSum);
-    System.assertEquals(2, AsyncState.batchFinish);
+    System.assertEquals(3, [SELECT COUNT() FROM Account]);
+    System.assertEquals(6, AsyncState.batchSum);
+    System.assertEquals(1, AsyncState.batchFinish);
   }
 
   @isTest static void acceptsBatchableInheritedFromSuperclass() {
     Test.startTest();
-    String batchId = Database.executeBatch(new ChildObjectCountingBatch(), 2);
+    String batchId = Database.executeBatch(new ChildObjectCountingBatch(), 3);
     String scheduledBatchId = System.scheduleBatch(new ChildObjectCountingBatch(), 'child batch later', 1, 2);
     System.assertNotEquals('', batchId);
     System.assertNotEquals('', scheduledBatchId);
     Test.stopTest();
-    System.assertEquals(6, [SELECT COUNT() FROM Account]);
-    System.assertEquals(12, AsyncState.batchSum);
-    System.assertEquals(2, AsyncState.batchFinish);
+    System.assertEquals(3, [SELECT COUNT() FROM Account]);
+    System.assertEquals(6, AsyncState.batchSum);
+    System.assertEquals(1, AsyncState.batchFinish);
   }
 }
 `)
@@ -8787,7 +8790,7 @@ public class IterableBatch implements Database.Batchable<Integer> {
 private class IterableBatchTest {
   @isTest static void drainsCustomIterableScope() {
     Test.startTest();
-    Database.executeBatch(new IterableBatch(), 2);
+    Database.executeBatch(new IterableBatch(), 3);
     Test.stopTest();
     System.assertEquals(6, IterableBatchState.sum);
   }
@@ -8872,7 +8875,7 @@ private class AsyncContextIdsTest {
   @isTest static void contextsExposeDeterministicIds() {
     Test.startTest();
     String queueId = System.enqueueJob(new ContextQueue());
-    String batchId = Database.executeBatch(new ContextBatch(), 2);
+    String batchId = Database.executeBatch(new ContextBatch(), 3);
     String schedId = System.schedule('nightly', '0 0 0 * * ?', new ContextSchedule());
     System.assertEquals('707000000000001AAA', queueId);
     System.assertEquals('707000000000002', batchId);
@@ -8885,7 +8888,8 @@ private class AsyncContextIdsTest {
     Id triggerBind = (Id) schedId;
     Integer triggerRows = [SELECT COUNT() FROM Account WHERE Name = :triggerBind];
     System.assertEquals(0, [SELECT COUNT() FROM Account WHERE Name = '08e000000000003']);
-    System.assertEquals(2, batchRows);
+    // A test method runs a single executeBatch chunk (async_lifecycle_c14 Y4).
+    System.assertEquals(1, batchRows);
     System.assertEquals(1, queueRows);
     System.assertEquals(1, triggerRows);
     List<AsyncApexJob> batches = [SELECT Id, Status, JobType, TotalJobItems, JobItemsProcessed, NumberOfErrors, CompletedDate FROM AsyncApexJob WHERE Id = '707000000000002'];
@@ -8893,8 +8897,8 @@ private class AsyncContextIdsTest {
     AsyncApexJob batch = batches.get(0);
     System.assertEquals('Completed', batch.Status);
     System.assertEquals('BatchApex', batch.JobType);
-    System.assertEquals(2, batch.TotalJobItems);
-    System.assertEquals(2, batch.JobItemsProcessed);
+    System.assertEquals(1, batch.TotalJobItems);
+    System.assertEquals(1, batch.JobItemsProcessed);
     System.assertEquals(0, batch.NumberOfErrors);
     System.assertNotEquals(null, batch.CompletedDate);
     List<AsyncApexJob> pendingBatches = [

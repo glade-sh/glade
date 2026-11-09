@@ -143,7 +143,7 @@ System.assertEquals(0, Limits.getEmailInvocations());
 
 func TestExecTaskAssignmentNotificationUnsupportedBoundaries(t *testing.T) {
 	for name, source := range map[string]string{
-		"non-task":   `Database.DMLOptions o=new Database.DMLOptions(); o.EmailHeader.triggerUserEmail=true; Database.insert(new Account(Name='not Task'),o);`,
+		"non-task":   `Database.DMLOptions o=new Database.DMLOptions(); o.EmailHeader.triggerUserEmail=true; Database.update(new Account(Id='001000000000001', Name='not Task'),o);`,
 		"other-flag": `Database.DMLOptions o=new Database.DMLOptions(); o.EmailHeader.triggerOtherEmail=false; Database.insert(new Task(Subject='not proved'),o);`,
 		"per-record": `Database.DMLOptions o=new Database.DMLOptions(); o.EmailHeader.triggerUserEmail=true; Task row=new Task(Subject='not proved'); row.setOptions(o); insert row;`,
 	} {

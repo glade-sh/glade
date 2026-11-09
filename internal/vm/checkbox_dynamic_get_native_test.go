@@ -110,12 +110,29 @@ func TestFreshDefaultedCheckboxGetScopeControls(t *testing.T) {
 			}
 		})
 	}
+	// rows (standard_checkbox_new_sobject_get): an unsaved clone and
+	// an inserted caller read null as well.
+	for name, modify := range map[string]func(*Value){
+		"cloneWithoutId": func(row *Value) { row.Fields[sobjectCloneMarkerField] = Bool(false) },
+		"dml": func(row *Value) {
+			row.Fields[sobjectDMLAccessibleField] = Bool(true)
+			row.Fields[sobjectQueriedFieldsField] = Map()
+		},
+	} {
+		t.Run("observed/"+name, func(t *testing.T) {
+			machine, row := freshDefaultedCheckboxGuardMachine("67.0")
+			modify(&row)
+			if !machine.freshDefaultedCheckboxGetIsNull(row, "DoNotCall", Bool(false)) {
+				t.Fatal("observed checkbox context was excluded")
+			}
+		})
+	}
 	for _, cell := range []struct {
 		name   string
 		modify func(*VM, *Value, *string, *Value)
 	}{
 		{"source61", func(machine *VM, _ *Value, _ *string, _ *Value) { machine.currentMethod.APIVersion = "61.0" }},
-		{"source68", func(machine *VM, _ *Value, _ *string, _ *Value) { machine.currentMethod.APIVersion = "68.0" }},
+		{"source69", func(machine *VM, _ *Value, _ *string, _ *Value) { machine.currentMethod.APIVersion = "69.0" }},
 		{"unknownSource", func(machine *VM, _ *Value, _ *string, _ *Value) { machine.currentMethod.APIVersion = "" }},
 		{"orgNamespace", func(machine *VM, _ *Value, _ *string, _ *Value) { machine.Org.Namespace = "owned" }},
 		{"callerNamespace", func(machine *VM, _ *Value, _ *string, _ *Value) {
@@ -132,9 +149,10 @@ func TestFreshDefaultedCheckboxGetScopeControls(t *testing.T) {
 			marker.Runtime = jsonDeserializedSObjectFieldOrder
 			row.Fields[sobjectExplicitFieldsField] = marker
 		}},
-		{"cloneWithId", func(_ *VM, row *Value, _ *string, _ *Value) { row.Fields[sobjectCloneMarkerField] = Bool(true) }},
-		{"cloneWithoutId", func(_ *VM, row *Value, _ *string, _ *Value) { row.Fields[sobjectCloneMarkerField] = Bool(false) }},
-		{"dml", func(_ *VM, row *Value, _ *string, _ *Value) { row.Fields[sobjectDMLAccessibleField] = Bool(true) }},
+		{"cloneWithId", func(_ *VM, row *Value, _ *string, _ *Value) {
+			row.Fields[sobjectCloneMarkerField] = Bool(true)
+			row.Fields["Id"] = String("003000000000071")
+		}},
 		{"trigger", func(_ *VM, row *Value, _ *string, _ *Value) { row.Fields[sobjectTriggerField] = Bool(true) }},
 		{"parentProjection", func(_ *VM, row *Value, _ *string, _ *Value) { row.Fields[sobjectParentProjectionField] = Bool(true) }},
 		{"storedId", func(machine *VM, row *Value, _ *string, _ *Value) {

@@ -86,11 +86,14 @@ var installMu sync.RWMutex
 // EnsureRoot returns the user-global toolchain directory, installing from a discovered
 // source checkout when needed.
 func EnsureRoot() (string, error) {
-	if root, ok := explicitToolchainRoot(); ok && !sameDirectory(root, UserShareDir()) {
+	if root, ok := explicitToolchainRoot(); ok && (requireManagedShare() != nil || !sameDirectory(root, UserShareDir())) {
 		if hasGoMod(root) {
 			return root, nil
 		}
 		return Root()
+	}
+	if err := requireManagedShare(); err != nil {
+		return "", err
 	}
 	installMu.Lock()
 	defer installMu.Unlock()
@@ -251,7 +254,22 @@ func UserShareDir() string {
 	return filepath.Join(home, ".local", "share", "glade")
 }
 
+// requireManagedShare prevents the temporary-directory fallback from becoming
+// an implicit executable toolchain authority when no user home is configured.
+func requireManagedShare() error {
+	if strings.TrimSpace(os.Getenv("XDG_DATA_HOME")) != "" {
+		return nil
+	}
+	if home, err := os.UserHomeDir(); err == nil && strings.TrimSpace(home) != "" {
+		return nil
+	}
+	return fmt.Errorf("cannot locate managed LWC toolchain: set HOME or XDG_DATA_HOME, or select a trusted GLADE_HOME or GLADE_ROOT")
+}
+
 func userShareRoot() (string, bool) {
+	if requireManagedShare() != nil {
+		return "", false
+	}
 	return validateRoot(UserShareDir())
 }
 
@@ -391,6 +409,11 @@ func ToolchainStatus() (path string, ok bool, detail string) {
 	root, detail, err := toolchainRoot()
 	if err == nil {
 		return root, true, detail
+	}
+	if _, ok := explicitToolchainRoot(); !ok {
+		if homeErr := requireManagedShare(); homeErr != nil {
+			return "", false, homeErr.Error()
+		}
 	}
 	if errors.Is(err, os.ErrPermission) || errors.Is(err, syscall.EROFS) {
 		return UserShareDir(), false, err.Error()

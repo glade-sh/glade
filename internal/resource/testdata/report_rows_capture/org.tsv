@@ -1,0 +1,694 @@
+api	route	case	result
+62.0	anonymous	apex-count	1
+62.0	anonymous	apex-report	B6 Accounts|B6_Accounts|B6 Reports|Tabular
+62.0	anonymous	apex-describe	B6 Accounts|TABULAR|(ACCOUNT.NAME)
+62.0	anonymous	apex-run	B6 Accounts|1
+62.0	anonymous	apex-null	System.NoDataFoundException|The data you’re trying to access is unavailable.
+62.0	anonymous	summary-count	1
+62.0	anonymous	summary-report	B6 Summary|B6_Summary|Other B6|Summary
+62.0	anonymous	summary-describe	B6 Summary|SUMMARY|()
+62.0	anonymous	summary-run-error	reports.MetadataException|Can't run the report because it doesn't have any columns selected. Be sure to add fields as columns to the report through the user interface.
+62.0	anonymous	summary-null	System.NoDataFoundException|The data you’re trying to access is unavailable.
+67.0	anonymous	apex-count	1
+67.0	anonymous	apex-report	B6 Accounts|B6_Accounts|B6 Reports|Tabular
+67.0	anonymous	apex-describe	B6 Accounts|TABULAR|(ACCOUNT.NAME)
+67.0	anonymous	apex-run	B6 Accounts|1
+67.0	anonymous	apex-null	System.NoDataFoundException|The data you’re trying to access is unavailable.
+67.0	anonymous	summary-count	1
+67.0	anonymous	summary-report	B6 Summary|B6_Summary|Other B6|Summary
+67.0	anonymous	summary-describe	B6 Summary|SUMMARY|()
+67.0	anonymous	summary-run-error	reports.MetadataException|Can't run the report because it doesn't have any columns selected. Be sure to add fields as columns to the report through the user interface.
+67.0	anonymous	summary-null	System.NoDataFoundException|The data you’re trying to access is unavailable.
+62.0	isolated	accounts	count=0
+67.0	isolated	accounts	count=0
+62.0	seealldata	accounts	count=1;report=B6 Accounts,B6_Accounts,B6 Reports,Tabular;describe=B6 Accounts,TABULAR,(ACCOUNT.NAME);run=B6 Accounts,1
+67.0	seealldata	accounts	count=1;report=B6 Accounts,B6_Accounts,B6 Reports,Tabular;describe=B6 Accounts,TABULAR,(ACCOUNT.NAME);run=B6 Accounts,1
+62.0	anonymous	B6FIELD-Dashboard	Id
+62.0	anonymous	B6FIELD-Dashboard	Title
+62.0	anonymous	B6FIELD-Dashboard	DeveloperName
+62.0	anonymous	B6FIELD-Dashboard	FolderName
+62.0	anonymous	B6FIELD-Dashboard	FolderId
+62.0	anonymous	B6FIELD-Dashboard	Type
+62.0	anonymous	B6FIELD-Dashboard	NamespacePrefix
+62.0	anonymous	B6ROW-Dashboard	Title=B6 Dashboard|DeveloperName=B6_Dashboard|FolderName=B6 Dashboards|Type=LoggedInUser
+62.0	anonymous	B6ROW-Dashboard	Title=B6 Other Dashboard|DeveloperName=B6_Other_Dashboard|FolderName=Another B6|Type=LoggedInUser
+62.0	anonymous	B6FIELD-Folder	Id
+62.0	anonymous	B6FIELD-Folder	Name
+62.0	anonymous	B6FIELD-Folder	DeveloperName
+62.0	anonymous	B6FIELD-Folder	Type
+62.0	anonymous	B6FIELD-Folder	NamespacePrefix
+62.0	anonymous	B6ROW-Folder	Name=Another B6|DeveloperName=B6_Another|Type=Dashboard
+62.0	anonymous	B6ROW-Folder	Name=Other B6|DeveloperName=B6_Other|Type=Report
+62.0	anonymous	B6ROW-Folder	Name=B6 Reports|DeveloperName=B6_Reports|Type=Report
+62.0	anonymous	B6ROW-Folder	Name=B6 Dashboards|DeveloperName=B6_Dashboards|Type=Dashboard
+62.0	anonymous	B6ROW-ReportType	MISSING
+67.0	anonymous	B6FIELD-Dashboard	Id
+67.0	anonymous	B6FIELD-Dashboard	Title
+67.0	anonymous	B6FIELD-Dashboard	DeveloperName
+67.0	anonymous	B6FIELD-Dashboard	FolderName
+67.0	anonymous	B6FIELD-Dashboard	FolderId
+67.0	anonymous	B6FIELD-Dashboard	Type
+67.0	anonymous	B6FIELD-Dashboard	NamespacePrefix
+67.0	anonymous	B6ROW-Dashboard	Title=B6 Dashboard|DeveloperName=B6_Dashboard|FolderName=B6 Dashboards|Type=LoggedInUser
+67.0	anonymous	B6ROW-Dashboard	Title=B6 Other Dashboard|DeveloperName=B6_Other_Dashboard|FolderName=Another B6|Type=LoggedInUser
+67.0	anonymous	B6FIELD-Folder	Id
+67.0	anonymous	B6FIELD-Folder	Name
+67.0	anonymous	B6FIELD-Folder	DeveloperName
+67.0	anonymous	B6FIELD-Folder	Type
+67.0	anonymous	B6FIELD-Folder	NamespacePrefix
+67.0	anonymous	B6ROW-Folder	Name=Another B6|DeveloperName=B6_Another|Type=Dashboard
+67.0	anonymous	B6ROW-Folder	Name=Other B6|DeveloperName=B6_Other|Type=Report
+67.0	anonymous	B6ROW-Folder	Name=B6 Reports|DeveloperName=B6_Reports|Type=Report
+67.0	anonymous	B6ROW-Folder	Name=B6 Dashboards|DeveloperName=B6_Dashboards|Type=Dashboard
+67.0	anonymous	B6ROW-ReportType	MISSING
+62.0	seealldata	dashboard	count=2;B6 Dashboard,B6_Dashboard,B6 Dashboards,LoggedInUser;B6 Other Dashboard,B6_Other_Dashboard,Another B6,LoggedInUser
+67.0	seealldata	dashboard	count=2;B6 Dashboard,B6_Dashboard,B6 Dashboards,LoggedInUser;B6 Other Dashboard,B6_Other_Dashboard,Another B6,LoggedInUser
+62.0	isolated	dashboard	count=0
+67.0	isolated	dashboard	count=0
+62.0	anonymous	details-metadata	{"name":"B6 Accounts","developerName":"B6_Accounts","reportFormat":"TABULAR","detailColumns":["ACCOUNT.NAME"],"reportType":{"type":"AccountList","label":"Accounts"},"aggregates":["RowCount"]}
+62.0	anonymous	details-results-false	{"count":1,"hasDetailRows":false,"labels":[]}
+62.0	anonymous	details-results-true	{"count":1,"hasDetailRows":true,"labels":["Sample Account for Entitlements"]}
+62.0	anonymous	committed-metadata	{"name":"B6 Accounts","developerName":"B6_Accounts","reportFormat":"TABULAR","detailColumns":["ACCOUNT.NAME"],"reportType":{"type":"AccountList","label":"Accounts"},"aggregates":["RowCount"]}
+62.0	anonymous	committed-results-false	{"count":3,"hasDetailRows":false,"labels":[]}
+62.0	anonymous	committed-results-true	{"count":3,"hasDetailRows":true,"labels":["B6 First","B6 Second","Sample Account for Entitlements"]}
+67.0	anonymous	details-metadata	{"name":"B6 Accounts","developerName":"B6_Accounts","reportFormat":"TABULAR","detailColumns":["ACCOUNT.NAME"],"reportType":{"type":"AccountList","label":"Accounts"},"aggregates":["RowCount"]}
+67.0	anonymous	details-results-false	{"count":1,"hasDetailRows":false,"labels":[]}
+67.0	anonymous	details-results-true	{"count":1,"hasDetailRows":true,"labels":["Sample Account for Entitlements"]}
+67.0	anonymous	committed-metadata	{"name":"B6 Accounts","developerName":"B6_Accounts","reportFormat":"TABULAR","detailColumns":["ACCOUNT.NAME"],"reportType":{"type":"AccountList","label":"Accounts"},"aggregates":["RowCount"]}
+67.0	anonymous	committed-results-false	{"count":3,"hasDetailRows":false,"labels":[]}
+67.0	anonymous	committed-results-true	{"count":3,"hasDetailRows":true,"labels":["B6 First","B6 Second","Sample Account for Entitlements"]}
+62.0	seealldata	run-with-uncommitted-account	name=B6 Accounts;format=TABULAR;columns=(ACCOUNT.NAME);plainCount=3;detailCount=3;labels=(B6 First, B6 Second, Sample Account for Entitlements);plainDetail=false;detailDetail=true
+67.0	seealldata	run-with-uncommitted-account	name=B6 Accounts;format=TABULAR;columns=(ACCOUNT.NAME);plainCount=3;detailCount=3;labels=(B6 First, B6 Second, Sample Account for Entitlements);plainDetail=false;detailDetail=true
+62.0	anonymous	summary-success-metadata	{"aggregates":["RowCount"],"detailColumns":["ACCOUNT_NUMBER"],"groupingsDown":[{"dateGranularity":"NONE","name":"ACCOUNT.NAME","sortAggregate":null,"sortOrder":"ASCENDING"}],"name":"B6 Summary","reportFormat":"SUMMARY","reportType":{"label":"Accounts","type":"AccountList"}}
+62.0	anonymous	summary-success-results-false	{"facts":{"0!T":{"count":1,"rowCount":0},"1!T":{"count":1,"rowCount":0},"2!T":{"count":1,"rowCount":0},"T!T":{"count":3,"rowCount":0}},"groupLabels":["B6 First","B6 Second","Sample Account for Entitlements"],"hasDetailRows":false}
+62.0	anonymous	summary-success-results-true	{"facts":{"0!T":{"count":1,"rowCount":1},"1!T":{"count":1,"rowCount":1},"2!T":{"count":1,"rowCount":1},"T!T":{"count":3,"rowCount":0}},"groupLabels":["B6 First","B6 Second","Sample Account for Entitlements"],"hasDetailRows":true}
+67.0	anonymous	summary-success-metadata	{"aggregates":["RowCount"],"detailColumns":["ACCOUNT_NUMBER"],"groupingsDown":[{"dateGranularity":"NONE","name":"ACCOUNT.NAME","sortAggregate":null,"sortOrder":"ASCENDING"}],"name":"B6 Summary","reportFormat":"SUMMARY","reportType":{"label":"Accounts","type":"AccountList"}}
+67.0	anonymous	summary-success-results-false	{"facts":{"0!T":{"count":1,"rowCount":0},"1!T":{"count":1,"rowCount":0},"2!T":{"count":1,"rowCount":0},"T!T":{"count":3,"rowCount":0}},"groupLabels":["B6 First","B6 Second","Sample Account for Entitlements"],"hasDetailRows":false}
+67.0	anonymous	summary-success-results-true	{"facts":{"0!T":{"count":1,"rowCount":1},"1!T":{"count":1,"rowCount":1},"2!T":{"count":1,"rowCount":1},"T!T":{"count":3,"rowCount":0}},"groupLabels":["B6 First","B6 Second","Sample Account for Entitlements"],"hasDetailRows":true}
+62.0	seealldata	summary-success	name=B6 Summary;format=SUMMARY;columns=(ACCOUNT_NUMBER);groups=1;plainCount=3;detailCount=3;plainFacts=4;detailFacts=4;plainDetail=false;detailDetail=true
+67.0	seealldata	summary-success	name=B6 Summary;format=SUMMARY;columns=(ACCOUNT_NUMBER);groups=1;plainCount=3;detailCount=3;plainFacts=4;detailFacts=4;plainDetail=false;detailDetail=true
+62.0	seealldata	folders	count=2
+67.0	seealldata	folders	count=2
+62.0	isolated	folders	count=2
+67.0	isolated	folders	count=2
+62.0	anonymous	reject-describe-null	System.NoDataFoundException|The data you’re trying to access is unavailable.
+62.0	anonymous	reject-run-null	System.NoDataFoundException|The data you’re trying to access is unavailable.
+62.0	anonymous	reject-describe-00O	System.NoDataFoundException|The data you’re trying to access is unavailable.
+62.0	anonymous	reject-run-00O	System.NoDataFoundException|The data you’re trying to access is unavailable.
+62.0	anonymous	reject-describe-001	System.NoDataFoundException|The data you’re trying to access is unavailable.
+62.0	anonymous	reject-run-001	System.NoDataFoundException|The data you’re trying to access is unavailable.
+67.0	anonymous	reject-describe-null	System.NoDataFoundException|The data you’re trying to access is unavailable.
+67.0	anonymous	reject-run-null	System.NoDataFoundException|The data you’re trying to access is unavailable.
+67.0	anonymous	reject-describe-00O	System.NoDataFoundException|The data you’re trying to access is unavailable.
+67.0	anonymous	reject-run-00O	System.NoDataFoundException|The data you’re trying to access is unavailable.
+67.0	anonymous	reject-describe-001	System.NoDataFoundException|The data you’re trying to access is unavailable.
+67.0	anonymous	reject-run-001	System.NoDataFoundException|The data you’re trying to access is unavailable.
+62.0	anonymous	overload-0	count=3|details=false
+62.0	anonymous	overload-1	count=3|details=false
+62.0	anonymous	overload-2	count=3|details=true
+62.0	anonymous	overload-3	count=3|details=false
+62.0	anonymous	overload-4	count=3|details=false
+62.0	anonymous	overload-5	count=3|details=true
+67.0	anonymous	overload-0	count=3|details=false
+67.0	anonymous	overload-1	count=3|details=false
+67.0	anonymous	overload-2	count=3|details=true
+67.0	anonymous	overload-3	count=3|details=false
+67.0	anonymous	overload-4	count=3|details=false
+67.0	anonymous	overload-5	count=3|details=true
+62.0	seealldata	overloads	[3,false][3,false][3,true][3,false][3,false][3,true]
+67.0	seealldata	overloads	[3,false][3,false][3,true][3,false][3,false][3,true]
+62.0	seealldata	direct-known-id	describe=B6 Accounts;run=3
+67.0	seealldata	direct-known-id	describe=B6 Accounts;run=3
+62.0	isolated	direct-known-id	describe=B6 Accounts;run=3
+67.0	isolated	direct-known-id	describe=B6 Accounts;run=3
+62.0	anonymous	dashboard-folder-link-B6_Dashboard	B6_Dashboards|B6 Dashboards|B6 Dashboards
+62.0	anonymous	dashboard-folder-link-B6_Other_Dashboard	B6_Another|Another B6|Another B6
+67.0	anonymous	dashboard-folder-link-B6_Dashboard	B6_Dashboards|B6 Dashboards|B6 Dashboards
+67.0	anonymous	dashboard-folder-link-B6_Other_Dashboard	B6_Another|Another B6|Another B6
+62.0	anonymous	contact-type-metadata	{"aggregates":["RowCount"],"detailColumns":["LAST_NAME"],"name":"B6 Contacts","reportFormat":"TABULAR","reportType":{"label":"Contacts & Accounts","type":"ContactList"}}
+62.0	anonymous	contact-type-results-false	{"count":0,"hasDetailRows":false,"labels":[]}
+62.0	anonymous	contact-type-results-true	{"count":0,"hasDetailRows":true,"labels":[]}
+67.0	anonymous	contact-type-metadata	{"aggregates":["RowCount"],"detailColumns":["LAST_NAME"],"name":"B6 Contacts","reportFormat":"TABULAR","reportType":{"label":"Contacts & Accounts","type":"ContactList"}}
+67.0	anonymous	contact-type-results-false	{"count":0,"hasDetailRows":false,"labels":[]}
+67.0	anonymous	contact-type-results-true	{"count":0,"hasDetailRows":true,"labels":[]}
+62.0	anonymous	rollback-after-report	System.CalloutException: Attempted to rollback in another transaction, probably after a callout.
+67.0	anonymous	rollback-after-report	System.CalloutException: Attempted to rollback in another transaction, probably after a callout.
+62.0	seealldata	update-delete-visibility	count=3;labels=(B6 First, B6 Second, Sample Account for Entitlements)
+67.0	seealldata	update-delete-visibility	count=3;labels=(B6 First, B6 Second, Sample Account for Entitlements)
+62.0	seealldata	contact-type	name=B6 Contacts;format=TABULAR;columns=(LAST_NAME);count=0;details=true
+67.0	seealldata	contact-type	name=B6 Contacts;format=TABULAR;columns=(LAST_NAME);count=0;details=true
+67.0	metadata-deploy	duplicate-report-name	duplicate value found: <unknown> duplicates value on record with id: <unknown>
+62.0	anonymous	reject-metadata-null	System.NoDataFoundException|The data you’re trying to access is unavailable.
+62.0	anonymous	reject-metadata-false-null	System.NoDataFoundException|The data you’re trying to access is unavailable.
+62.0	anonymous	reject-metadata-00O	System.NoDataFoundException|The data you’re trying to access is unavailable.
+62.0	anonymous	reject-metadata-false-00O	System.NoDataFoundException|The data you’re trying to access is unavailable.
+62.0	anonymous	reject-metadata-001	System.NoDataFoundException|The data you’re trying to access is unavailable.
+62.0	anonymous	reject-metadata-false-001	System.NoDataFoundException|The data you’re trying to access is unavailable.
+67.0	anonymous	reject-metadata-null	System.NoDataFoundException|The data you’re trying to access is unavailable.
+67.0	anonymous	reject-metadata-false-null	System.NoDataFoundException|The data you’re trying to access is unavailable.
+67.0	anonymous	reject-metadata-00O	System.NoDataFoundException|The data you’re trying to access is unavailable.
+67.0	anonymous	reject-metadata-false-00O	System.NoDataFoundException|The data you’re trying to access is unavailable.
+67.0	anonymous	reject-metadata-001	System.NoDataFoundException|The data you’re trying to access is unavailable.
+67.0	anonymous	reject-metadata-false-001	System.NoDataFoundException|The data you’re trying to access is unavailable.
+62.0	query	folder-rename	before=B6 Reports|after=B6 Renamed|sameId=true
+67.0	query	folder-rename	before=B6 Reports|after=B6 Renamed|sameId=true
+62.0	anonymous	contact-linked-results-false	{"count":2,"hasDetailRows":false,"labels":[]}
+62.0	anonymous	contact-linked-results-true	{"count":2,"hasDetailRows":true,"labels":["B6 Linked One","B6 Linked Two"]}
+67.0	anonymous	contact-linked-results-false	{"count":2,"hasDetailRows":false,"labels":[]}
+67.0	anonymous	contact-linked-results-true	{"count":2,"hasDetailRows":true,"labels":["B6 Linked One","B6 Linked Two"]}
+62.0	seealldata	query-routes	Report-dynamic=1;Report-locator=1;Dashboard-dynamic=1;Dashboard-locator=1;
+67.0	seealldata	query-routes	Report-dynamic=1;Report-locator=1;Dashboard-dynamic=1;Dashboard-locator=1;
+62.0	isolated	query-routes	Report-dynamic=0;Report-locator=0;Dashboard-dynamic=0;Dashboard-locator=0;
+67.0	isolated	query-routes	Report-dynamic=0;Report-locator=0;Dashboard-dynamic=0;Dashboard-locator=0;
+62.0	anonymous	savepoint	System.CalloutException|Attempted to rollback in another transaction, probably after a callout.
+62.0	anonymous	savepoint_nodml	System.CalloutException|Attempted to rollback in another transaction, probably after a callout.
+67.0	anonymous	savepoint	System.CalloutException|Attempted to rollback in another transaction, probably after a callout.
+67.0	anonymous	savepoint_nodml	System.CalloutException|Attempted to rollback in another transaction, probably after a callout.
+62.0	seealldata	savepoint-tests	ok
+67.0	seealldata	savepoint-tests	ok
+62.0	seealldata	savepoint-dml-tests	ok
+67.0	seealldata	savepoint-dml-tests	ok
+62.0	analytics-rest	AccountList-column-ACCOUNT.NAME	{"dataType":"string","entityColumnName":"Account.Name","fullyQualifiedName":"Account.Name","isLookup":true,"label":"Account Name"}
+62.0	analytics-rest	AccountList-column-ACCOUNT_NUMBER	{"dataType":"string","entityColumnName":"Account.AccountNumber","fullyQualifiedName":"Account.AccountNumber","isLookup":false,"label":"Account Number"}
+62.0	analytics-rest	AccountList-objects	[{"label":"Accounts","primaryEntityField":"ACCOUNT_ID"}]
+62.0	analytics-rest	ContactList-column-LAST_NAME	{"dataType":"string","entityColumnName":"Contact.Name","fullyQualifiedName":"Contact.LastName","isLookup":true,"label":"Last Name"}
+62.0	analytics-rest	ContactList-column-ACCOUNT.NAME	{"dataType":"string","entityColumnName":"Account.Name","fullyQualifiedName":"Contact.Account.Name","isLookup":true,"label":"Account Name"}
+62.0	analytics-rest	ContactList-column-ACCOUNT_NUMBER	{"dataType":"string","entityColumnName":"Account.AccountNumber","fullyQualifiedName":"Contact.Account.AccountNumber","isLookup":false,"label":"Account Number"}
+62.0	analytics-rest	ContactList-objects	[{"label":"Contacts","primaryEntityField":"CONTACT_ID"}]
+67.0	analytics-rest	AccountList-column-ACCOUNT.NAME	{"dataType":"string","entityColumnName":"Account.Name","fullyQualifiedName":"Account.Name","isLookup":true,"label":"Account Name"}
+67.0	analytics-rest	AccountList-column-ACCOUNT_NUMBER	{"dataType":"string","entityColumnName":"Account.AccountNumber","fullyQualifiedName":"Account.AccountNumber","isLookup":false,"label":"Account Number"}
+67.0	analytics-rest	AccountList-objects	[{"label":"Accounts","primaryEntityField":"ACCOUNT_ID"}]
+67.0	analytics-rest	ContactList-column-LAST_NAME	{"dataType":"string","entityColumnName":"Contact.Name","fullyQualifiedName":"Contact.LastName","isLookup":true,"label":"Last Name"}
+67.0	analytics-rest	ContactList-column-ACCOUNT.NAME	{"dataType":"string","entityColumnName":"Account.Name","fullyQualifiedName":"Contact.Account.Name","isLookup":true,"label":"Account Name"}
+67.0	analytics-rest	ContactList-column-ACCOUNT_NUMBER	{"dataType":"string","entityColumnName":"Account.AccountNumber","fullyQualifiedName":"Contact.Account.AccountNumber","isLookup":false,"label":"Account Number"}
+67.0	analytics-rest	ContactList-objects	[{"label":"Contacts","primaryEntityField":"CONTACT_ID"}]
+62.0	query	report-only-deploy	{"DeveloperName":"B6_ReportOnly","FolderName":"B6 Renamed","Format":"Tabular","Name":"B6 Report Only"}
+67.0	query	report-only-deploy	{"DeveloperName":"B6_ReportOnly","FolderName":"B6 Renamed","Format":"Tabular","Name":"B6 Report Only"}
+62.0	query	dashboard-only-deploy	{"DeveloperName":"B6_DashboardOnly","FolderName":"B6 Dashboards","Title":"B6 Dashboard Only","Type":"LoggedInUser"}
+67.0	query	dashboard-only-deploy	{"DeveloperName":"B6_DashboardOnly","FolderName":"B6 Dashboards","Title":"B6 Dashboard Only","Type":"LoggedInUser"}
+62.0	query	dashboard-same-name-new-folder	{"count":1,"records":[{"DeveloperName":"B6_Dashboard","FolderName":"Another B6","Title":"B6 Dashboard"}]}
+67.0	query	dashboard-same-name-new-folder	{"count":1,"records":[{"DeveloperName":"B6_Dashboard","FolderName":"Another B6","Title":"B6 Dashboard"}]}
+62.0	anonymous	account-metadata-extended	{"aggregates":["RowCount"],"buckets":null,"crossFilters":null,"currencyCode":null,"customSummaryFormula":null,"description":null,"detailColumns":["ACCOUNT.NAME"],"developerName":"B6_Accounts","division":null,"groupingsAcross":null,"groupingsDown":null,"hasDetailRows":false,"hasRecordCount":true,"historicalSnapshotDates":null,"name":"B6 Accounts","reportBooleanFilter":null,"reportFilters":null,"reportFormat":"TABULAR","reportType":{"label":"Accounts","type":"AccountList"},"scope":"organization","showGrandTotal":true,"showSubtotals":true,"sortBy":null,"standardDateFilter":{"column":"DUE_DATE","durationValue":"CUSTOM","endDate":null,"startDate":null},"standardFilters":null,"topRows":null}
+62.0	anonymous	contact-metadata-extended	{"aggregates":["RowCount"],"buckets":null,"crossFilters":null,"currencyCode":null,"customSummaryFormula":null,"description":null,"detailColumns":["LAST_NAME"],"developerName":"B6_Contacts","division":null,"groupingsAcross":null,"groupingsDown":null,"hasDetailRows":false,"hasRecordCount":true,"historicalSnapshotDates":null,"name":"B6 Contacts","reportBooleanFilter":null,"reportFilters":null,"reportFormat":"TABULAR","reportType":{"label":"Contacts & Accounts","type":"ContactList"},"scope":"organization","showGrandTotal":true,"showSubtotals":true,"sortBy":null,"standardDateFilter":{"column":"LAST_ACTIVITY","durationValue":"CUSTOM","endDate":null,"startDate":null},"standardFilters":null,"topRows":null}
+62.0	anonymous	summary-metadata-extended	{"aggregates":["RowCount"],"buckets":null,"crossFilters":null,"currencyCode":null,"customSummaryFormula":null,"description":null,"detailColumns":["ACCOUNT_NUMBER"],"developerName":"B6_Summary","division":null,"groupingsAcross":null,"groupingsDown":[{"dateGranularity":"NONE","name":"ACCOUNT.NAME","sortAggregate":null,"sortOrder":"ASCENDING"}],"hasDetailRows":false,"hasRecordCount":true,"historicalSnapshotDates":null,"name":"B6 Summary","reportBooleanFilter":null,"reportFilters":null,"reportFormat":"SUMMARY","reportType":{"label":"Accounts","type":"AccountList"},"scope":"organization","showGrandTotal":true,"showSubtotals":true,"sortBy":null,"standardDateFilter":{"column":"DUE_DATE","durationValue":"CUSTOM","endDate":null,"startDate":null},"standardFilters":null,"topRows":null}
+67.0	anonymous	account-metadata-extended	{"aggregates":["RowCount"],"buckets":null,"crossFilters":null,"currencyCode":null,"customSummaryFormula":null,"description":null,"detailColumns":["ACCOUNT.NAME"],"developerName":"B6_Accounts","division":null,"groupingsAcross":null,"groupingsDown":null,"hasDetailRows":false,"hasRecordCount":true,"historicalSnapshotDates":null,"name":"B6 Accounts","reportBooleanFilter":null,"reportFilters":null,"reportFormat":"TABULAR","reportType":{"label":"Accounts","type":"AccountList"},"scope":"organization","showGrandTotal":true,"showSubtotals":true,"sortBy":null,"standardDateFilter":{"column":"DUE_DATE","durationValue":"CUSTOM","endDate":null,"startDate":null},"standardFilters":null,"topRows":null}
+67.0	anonymous	contact-metadata-extended	{"aggregates":["RowCount"],"buckets":null,"crossFilters":null,"currencyCode":null,"customSummaryFormula":null,"description":null,"detailColumns":["LAST_NAME"],"developerName":"B6_Contacts","division":null,"groupingsAcross":null,"groupingsDown":null,"hasDetailRows":false,"hasRecordCount":true,"historicalSnapshotDates":null,"name":"B6 Contacts","reportBooleanFilter":null,"reportFilters":null,"reportFormat":"TABULAR","reportType":{"label":"Contacts & Accounts","type":"ContactList"},"scope":"organization","showGrandTotal":true,"showSubtotals":true,"sortBy":null,"standardDateFilter":{"column":"LAST_ACTIVITY","durationValue":"CUSTOM","endDate":null,"startDate":null},"standardFilters":null,"topRows":null}
+67.0	anonymous	summary-metadata-extended	{"aggregates":["RowCount"],"buckets":null,"crossFilters":null,"currencyCode":null,"customSummaryFormula":null,"description":null,"detailColumns":["ACCOUNT_NUMBER"],"developerName":"B6_Summary","division":null,"groupingsAcross":null,"groupingsDown":[{"dateGranularity":"NONE","name":"ACCOUNT.NAME","sortAggregate":null,"sortOrder":"ASCENDING"}],"hasDetailRows":false,"hasRecordCount":true,"historicalSnapshotDates":null,"name":"B6 Summary","reportBooleanFilter":null,"reportFilters":null,"reportFormat":"SUMMARY","reportType":{"label":"Accounts","type":"AccountList"},"scope":"organization","showGrandTotal":true,"showSubtotals":true,"sortBy":null,"standardDateFilter":{"column":"DUE_DATE","durationValue":"CUSTOM","endDate":null,"startDate":null},"standardFilters":null,"topRows":null}
+62.0	anonymous	no-scope-metadata	{"aggregates":["RowCount"],"buckets":null,"crossFilters":null,"currencyCode":null,"customSummaryFormula":null,"description":null,"detailColumns":["ACCOUNT.NAME"],"developerName":"B6_NoScope","division":null,"groupingsAcross":null,"groupingsDown":null,"hasDetailRows":false,"hasRecordCount":true,"historicalSnapshotDates":null,"name":"B6 No Scope","reportBooleanFilter":null,"reportFilters":null,"reportFormat":"TABULAR","reportType":{"label":"Accounts","type":"AccountList"},"scope":"user","showGrandTotal":true,"showSubtotals":true,"sortBy":null,"standardDateFilter":{"column":"DUE_DATE","durationValue":"CUSTOM","endDate":null,"startDate":null},"standardFilters":null,"topRows":null}
+67.0	anonymous	no-scope-metadata	{"aggregates":["RowCount"],"buckets":null,"crossFilters":null,"currencyCode":null,"customSummaryFormula":null,"description":null,"detailColumns":["ACCOUNT.NAME"],"developerName":"B6_NoScope","division":null,"groupingsAcross":null,"groupingsDown":null,"hasDetailRows":false,"hasRecordCount":true,"historicalSnapshotDates":null,"name":"B6 No Scope","reportBooleanFilter":null,"reportFilters":null,"reportFormat":"TABULAR","reportType":{"label":"Accounts","type":"AccountList"},"scope":"user","showGrandTotal":true,"showSubtotals":true,"sortBy":null,"standardDateFilter":{"column":"DUE_DATE","durationValue":"CUSTOM","endDate":null,"startDate":null},"standardFilters":null,"topRows":null}
+62.0	anonymous	no-group-metadata	{"aggregates":["RowCount"],"buckets":null,"crossFilters":null,"currencyCode":null,"customSummaryFormula":null,"description":null,"detailColumns":null,"developerName":"B6_NoGroup","division":null,"groupingsAcross":null,"groupingsDown":null,"hasDetailRows":false,"hasRecordCount":true,"historicalSnapshotDates":null,"name":"B6 No Group","reportBooleanFilter":null,"reportFilters":null,"reportFormat":"SUMMARY","reportType":{"label":"Accounts","type":"AccountList"},"scope":"organization","showGrandTotal":true,"showSubtotals":true,"sortBy":null,"standardDateFilter":{"column":"DUE_DATE","durationValue":"CUSTOM","endDate":null,"startDate":null},"standardFilters":null,"topRows":null}
+62.0	anonymous	no-group-error-false	reports.MetadataException|Can't run the report because it doesn't have any columns selected. Be sure to add fields as columns to the report through the user interface.
+62.0	anonymous	no-group-error-true	reports.MetadataException|Can't run the report because it doesn't have any columns selected. Be sure to add fields as columns to the report through the user interface.
+67.0	anonymous	no-group-metadata	{"aggregates":["RowCount"],"buckets":null,"crossFilters":null,"currencyCode":null,"customSummaryFormula":null,"description":null,"detailColumns":null,"developerName":"B6_NoGroup","division":null,"groupingsAcross":null,"groupingsDown":null,"hasDetailRows":false,"hasRecordCount":true,"historicalSnapshotDates":null,"name":"B6 No Group","reportBooleanFilter":null,"reportFilters":null,"reportFormat":"SUMMARY","reportType":{"label":"Accounts","type":"AccountList"},"scope":"organization","showGrandTotal":true,"showSubtotals":true,"sortBy":null,"standardDateFilter":{"column":"DUE_DATE","durationValue":"CUSTOM","endDate":null,"startDate":null},"standardFilters":null,"topRows":null}
+67.0	anonymous	no-group-error-false	reports.MetadataException|Can't run the report because it doesn't have any columns selected. Be sure to add fields as columns to the report through the user interface.
+67.0	anonymous	no-group-error-true	reports.MetadataException|Can't run the report because it doesn't have any columns selected. Be sure to add fields as columns to the report through the user interface.
+62.0	isolated	report-testsetup-visibility	count=3;setupVisible=false
+67.0	isolated	report-testsetup-visibility	count=3;setupVisible=false
+62.0	anonymous	null-metadata-0	count=3|details=false
+62.0	anonymous	null-metadata-1	count=3|details=true
+67.0	anonymous	null-metadata-0	count=3|details=false
+67.0	anonymous	null-metadata-1	count=3|details=true
+62.0	anonymous	owner-scope-run_committed	{"count":4,"labels":["B6 First","B6 Other Owner","B6 Second","Sample Account for Entitlements"]}
+62.0	anonymous	owner-scope-noscope	{"count":2,"labels":["B6 First","B6 Second"]}
+67.0	anonymous	owner-scope-run_committed	{"count":4,"labels":["B6 First","B6 Other Owner","B6 Second","Sample Account for Entitlements"]}
+67.0	anonymous	owner-scope-noscope	{"count":2,"labels":["B6 First","B6 Second"]}
+62.0	seealldata	owner-scope	B6_Accounts=4;B6_NoScope=2;
+67.0	seealldata	owner-scope	B6_Accounts=4;B6_NoScope=2;
+62.0	anonymous	Account-detail-value-is-record-id	true
+62.0	anonymous	Contact-detail-value-is-record-id	true
+67.0	anonymous	Account-detail-value-is-record-id	true
+67.0	anonymous	Contact-detail-value-is-record-id	true
+62.0	anonymous	summary-null-detail-cells	[{"label":"-","value":null},{"label":"-","value":null},{"label":"-","value":null}]
+67.0	anonymous	summary-null-detail-cells	[{"label":"-","value":null},{"label":"-","value":null},{"label":"-","value":null}]
+62.0	anonymous	committed-results-false-flags	{"allData":true,"metadataHasDetailRows":false,"resultHasDetailRows":false}
+62.0	anonymous	committed-results-true-flags	{"allData":true,"metadataHasDetailRows":true,"resultHasDetailRows":true}
+62.0	anonymous	summary-success-results-false-flags	{"allData":true,"metadataHasDetailRows":false,"resultHasDetailRows":false}
+62.0	anonymous	summary-success-results-true-flags	{"allData":true,"metadataHasDetailRows":true,"resultHasDetailRows":true}
+62.0	anonymous	contacts-nonempty-results-false-flags	{"allData":true,"metadataHasDetailRows":false,"resultHasDetailRows":false}
+62.0	anonymous	contacts-nonempty-results-true-flags	{"allData":true,"metadataHasDetailRows":true,"resultHasDetailRows":true}
+67.0	anonymous	committed-results-false-flags	{"allData":true,"metadataHasDetailRows":false,"resultHasDetailRows":false}
+67.0	anonymous	committed-results-true-flags	{"allData":true,"metadataHasDetailRows":true,"resultHasDetailRows":true}
+67.0	anonymous	summary-success-results-false-flags	{"allData":true,"metadataHasDetailRows":false,"resultHasDetailRows":false}
+67.0	anonymous	summary-success-results-true-flags	{"allData":true,"metadataHasDetailRows":true,"resultHasDetailRows":true}
+67.0	anonymous	contacts-nonempty-results-false-flags	{"allData":true,"metadataHasDetailRows":false,"resultHasDetailRows":false}
+67.0	anonymous	contacts-nonempty-results-true-flags	{"allData":true,"metadataHasDetailRows":true,"resultHasDetailRows":true}
+62.0	anonymous	committed-extended-metadata	{"aggregateColumnInfo":{"RowCount":{"acrossGroupingContext":null,"dataType":"INT_DATA","downGroupingContext":null,"label":"Record Count","name":"RowCount"}},"detailColumnInfo":{"ACCOUNT.NAME":{"dataType":"STRING_DATA","label":"Account Name","name":"ACCOUNT.NAME"}},"groupingColumnInfo":null}
+62.0	anonymous	contacts-nonempty-extended-metadata	{"aggregateColumnInfo":{"RowCount":{"acrossGroupingContext":null,"dataType":"INT_DATA","downGroupingContext":null,"label":"Record Count","name":"RowCount"}},"detailColumnInfo":{"LAST_NAME":{"dataType":"STRING_DATA","label":"Last Name","name":"LAST_NAME"}},"groupingColumnInfo":null}
+62.0	anonymous	summary-success-extended-metadata	{"aggregateColumnInfo":{"RowCount":{"acrossGroupingContext":null,"dataType":"INT_DATA","downGroupingContext":null,"label":"Record Count","name":"RowCount"}},"detailColumnInfo":{"ACCOUNT_NUMBER":{"dataType":"STRING_DATA","label":"Account Number","name":"ACCOUNT_NUMBER"}},"groupingColumnInfo":{"ACCOUNT.NAME":{"dataType":"STRING_DATA","groupingLevel":0,"label":"Account Name","name":"ACCOUNT.NAME"}}}
+67.0	anonymous	committed-extended-metadata	{"aggregateColumnInfo":{"RowCount":{"acrossGroupingContext":null,"dataType":"INT_DATA","downGroupingContext":null,"label":"Record Count","name":"RowCount"}},"detailColumnInfo":{"ACCOUNT.NAME":{"dataType":"STRING_DATA","label":"Account Name","name":"ACCOUNT.NAME"}},"groupingColumnInfo":null}
+67.0	anonymous	contacts-nonempty-extended-metadata	{"aggregateColumnInfo":{"RowCount":{"acrossGroupingContext":null,"dataType":"INT_DATA","downGroupingContext":null,"label":"Record Count","name":"RowCount"}},"detailColumnInfo":{"LAST_NAME":{"dataType":"STRING_DATA","label":"Last Name","name":"LAST_NAME"}},"groupingColumnInfo":null}
+67.0	anonymous	summary-success-extended-metadata	{"aggregateColumnInfo":{"RowCount":{"acrossGroupingContext":null,"dataType":"INT_DATA","downGroupingContext":null,"label":"Record Count","name":"RowCount"}},"detailColumnInfo":{"ACCOUNT_NUMBER":{"dataType":"STRING_DATA","label":"Account Number","name":"ACCOUNT_NUMBER"}},"groupingColumnInfo":{"ACCOUNT.NAME":{"dataType":"STRING_DATA","groupingLevel":0,"label":"Account Name","name":"ACCOUNT.NAME"}}}
+62.0	anonymous	describe-extended-B6_Accounts	{"aggregateColumnInfo":{"RowCount":{"acrossGroupingContext":null,"dataType":"INT_DATA","downGroupingContext":null,"label":"Record Count","name":"RowCount"}},"detailColumnInfo":{"ACCOUNT.NAME":{"dataType":"STRING_DATA","label":"Account Name","name":"ACCOUNT.NAME"}},"groupingColumnInfo":null}
+62.0	anonymous	describe-extended-B6_Contacts	{"aggregateColumnInfo":{"RowCount":{"acrossGroupingContext":null,"dataType":"INT_DATA","downGroupingContext":null,"label":"Record Count","name":"RowCount"}},"detailColumnInfo":{"LAST_NAME":{"dataType":"STRING_DATA","label":"Last Name","name":"LAST_NAME"}},"groupingColumnInfo":null}
+62.0	anonymous	describe-extended-B6_Summary	{"aggregateColumnInfo":{"RowCount":{"acrossGroupingContext":null,"dataType":"INT_DATA","downGroupingContext":null,"label":"Record Count","name":"RowCount"}},"detailColumnInfo":{"ACCOUNT_NUMBER":{"dataType":"STRING_DATA","label":"Account Number","name":"ACCOUNT_NUMBER"}},"groupingColumnInfo":{"ACCOUNT.NAME":{"dataType":"STRING_DATA","groupingLevel":0,"label":"Account Name","name":"ACCOUNT.NAME"}}}
+67.0	anonymous	describe-extended-B6_Accounts	{"aggregateColumnInfo":{"RowCount":{"acrossGroupingContext":null,"dataType":"INT_DATA","downGroupingContext":null,"label":"Record Count","name":"RowCount"}},"detailColumnInfo":{"ACCOUNT.NAME":{"dataType":"STRING_DATA","label":"Account Name","name":"ACCOUNT.NAME"}},"groupingColumnInfo":null}
+67.0	anonymous	describe-extended-B6_Contacts	{"aggregateColumnInfo":{"RowCount":{"acrossGroupingContext":null,"dataType":"INT_DATA","downGroupingContext":null,"label":"Record Count","name":"RowCount"}},"detailColumnInfo":{"LAST_NAME":{"dataType":"STRING_DATA","label":"Last Name","name":"LAST_NAME"}},"groupingColumnInfo":null}
+67.0	anonymous	describe-extended-B6_Summary	{"aggregateColumnInfo":{"RowCount":{"acrossGroupingContext":null,"dataType":"INT_DATA","downGroupingContext":null,"label":"Record Count","name":"RowCount"}},"detailColumnInfo":{"ACCOUNT_NUMBER":{"dataType":"STRING_DATA","label":"Account Number","name":"ACCOUNT_NUMBER"}},"groupingColumnInfo":{"ACCOUNT.NAME":{"dataType":"STRING_DATA","groupingLevel":0,"label":"Account Name","name":"ACCOUNT.NAME"}}}
+62.0	seealldata	describe-extended	B6_Accounts=Account Name,STRING_DATA,Record Count;B6_Contacts=Last Name,STRING_DATA,Record Count;
+67.0	seealldata	describe-extended	B6_Accounts=Account Name,STRING_DATA,Record Count;B6_Contacts=Last Name,STRING_DATA,Record Count;
+62.0	anonymous	summary-populated-detail-cells	[{"label":"B6-100","value":"B6-100"},{"label":"B6-200","value":"B6-200"},{"label":"-","value":null},{"label":"-","value":null}]
+67.0	anonymous	summary-populated-detail-cells	[{"label":"B6-100","value":"B6-100"},{"label":"B6-200","value":"B6-200"},{"label":"-","value":null},{"label":"-","value":null}]
+62.0	seealldata	restricted-unshared-folder	visible=1;B6_Accounts=System.NoDataFoundException;B6_NoScope=System.NoDataFoundException
+67.0	seealldata	restricted-unshared-folder	visible=1;B6_Accounts=System.NoDataFoundException;B6_NoScope=System.NoDataFoundException
+62.0	seealldata	restricted-shared-folder	visible=1;B6_Accounts=1;B6_NoScope=1
+67.0	seealldata	restricted-shared-folder	visible=1;B6_Accounts=1;B6_NoScope=1
+62.0	seealldata	restricted-contacts-hidden	visible=1;contacts=0;B6_Accounts=1;B6_Contacts=0;B6_NoScope=1
+67.0	seealldata	restricted-contacts-hidden	visible=1;contacts=0;B6_Accounts=1;B6_Contacts=0;B6_NoScope=1
+62.0	seealldata	restricted-contacts-visible-parent	visible=1;contacts=1;B6_Accounts=1;B6_Contacts=1;B6_NoScope=1
+67.0	seealldata	restricted-contacts-visible-parent	visible=1;contacts=1;B6_Accounts=1;B6_Contacts=1;B6_NoScope=1
+62.0	anonymous	contact-user-scope	organization=3;user=2
+67.0	anonymous	contact-user-scope	organization=3;user=2
+62.0	seealldata	contact-user-scope	organization=1;user=1
+67.0	seealldata	contact-user-scope	organization=1;user=1
+62.0	anonymous	opportunity-metadata	type=Opportunity;label=Opportunities;columns=OPPORTUNITY_NAME,AMOUNT;date=CLOSE_DATE,THIS_FISCAL_QUARTER;standard=open:all,probability:>0
+67.0	anonymous	opportunity-metadata	type=Opportunity;label=Opportunities;columns=OPPORTUNITY_NAME,AMOUNT;date=CLOSE_DATE,THIS_FISCAL_QUARTER;standard=open:all,probability:>0
+62.0	anonymous	opportunity-boundary	count=3;outsideQuarter=false;zeroProbability=true;amount=1234.5,$1,234.50;nullAmount=-;nameValueIsId=true
+67.0	anonymous	opportunity-boundary	count=3;outsideQuarter=false;zeroProbability=true;amount=1234.5,$1,234.50;nullAmount=-;nameValueIsId=true
+62.0	seealldata	opportunity-boundary	count=3;outsideQuarter=false;zeroProbability=true;amount=1234.5,$1,234.50;nullAmount=-
+67.0	seealldata	opportunity-boundary	count=3;outsideQuarter=false;zeroProbability=true;amount=1234.5,$1,234.50;nullAmount=-
+62.0	anonymous	opportunity-extended	OPPORTUNITY_NAME=Opportunity Name,STRING_DATA;AMOUNT=Amount,CURRENCY_DATA;RowCount=Record Count,INT_DATA
+67.0	anonymous	opportunity-extended	OPPORTUNITY_NAME=Opportunity Name,STRING_DATA;AMOUNT=Amount,CURRENCY_DATA;RowCount=Record Count,INT_DATA
+62.0	anonymous	opportunity-negative	negative=-123.45,-$123.45;zero=0,$0.00
+67.0	anonymous	opportunity-negative	negative=-123.45,-$123.45;zero=0,$0.00
+62.0	seealldata	opportunity-negative	negative=-123.45,-$123.45;zero=0,$0.00
+67.0	seealldata	opportunity-negative	negative=-123.45,-$123.45;zero=0,$0.00
+62.0	seealldata	opportunity-fr-runas	label=$1,234.50;amount=1234.5
+67.0	seealldata	opportunity-fr-runas	label=$1,234.50;amount=1234.5
+62.0	seealldata	folder-access-unshared	describe=System.NoDataFoundException;run=System.NoDataFoundException
+67.0	seealldata	folder-access-unshared	describe=System.NoDataFoundException;run=System.NoDataFoundException
+62.0	seealldata	folder-access-shared	describe=B6 Accounts;run=1
+67.0	seealldata	folder-access-shared	describe=B6 Accounts;run=1
+62.0	seealldata	folder-access-edit	describe=B6 Accounts;run=1
+67.0	seealldata	folder-access-edit	describe=B6 Accounts;run=1
+62.0	seealldata	folder-access-manage	describe=B6 Accounts;run=1
+67.0	seealldata	folder-access-manage	describe=B6 Accounts;run=1
+62.0	anonymous	row-count-runtime-type	decimal=true;integer=false;value=1;integerCast=System.TypeException;assertInteger=true;assertDecimal=true
+67.0	anonymous	row-count-runtime-type	decimal=true;integer=false;value=1;integerCast=System.TypeException;assertInteger=true;assertDecimal=true
+62.0	seealldata	row-count-runtime-type	decimal=true;integer=false;integerCast=System.TypeException;value=1
+67.0	seealldata	row-count-runtime-type	decimal=true;integer=false;integerCast=System.TypeException;value=1
+62.0	seealldata	queueable-committed-view	before=1;result=1;parentInsertExcluded=true
+67.0	seealldata	queueable-committed-view	before=1;result=1;parentInsertExcluded=true
+62.0	isolated	queueable-committed-view	before=0;result=1;parentInsertExcluded=true
+67.0	isolated	queueable-committed-view	before=0;result=1;parentInsertExcluded=true
+62.0	anonymous	type-metadata	categories=3;first=Account General;column=ACCOUNT.NAME;label=Account Name;type=STRING_DATA;filterable=true;scope=user;scopeValues=4
+62.0	seealldata	type-metadata	categories=3;first=Account General;column=ACCOUNT.NAME;label=Account Name;type=STRING_DATA;filterable=true;scope=user;scopeValues=4
+67.0	anonymous	type-metadata	categories=3;first=Account General;column=ACCOUNT.NAME;label=Account Name;type=STRING_DATA;filterable=true;scope=user;scopeValues=4
+67.0	seealldata	type-metadata	categories=3;first=Account General;column=ACCOUNT.NAME;label=Account Name;type=STRING_DATA;filterable=true;scope=user;scopeValues=4
+62.0	anonymous	show-details-absent	describe=false;runFalse=false;runTrue=true
+62.0	anonymous	show-details-false	describe=false;runFalse=false;runTrue=true
+62.0	anonymous	show-details-true	describe=true;runFalse=false;runTrue=true
+62.0	seealldata	show-details-absent	describe=false;runFalse=false;runTrue=true
+62.0	seealldata	show-details-false	describe=false;runFalse=false;runTrue=true
+62.0	seealldata	show-details-true	describe=true;runFalse=false;runTrue=true
+67.0	anonymous	show-details-absent	describe=false;runFalse=false;runTrue=true
+67.0	anonymous	show-details-false	describe=false;runFalse=false;runTrue=true
+67.0	anonymous	show-details-true	describe=true;runFalse=false;runTrue=true
+67.0	seealldata	show-details-absent	describe=false;runFalse=false;runTrue=true
+67.0	seealldata	show-details-false	describe=false;runFalse=false;runTrue=true
+67.0	seealldata	show-details-true	describe=true;runFalse=false;runTrue=true
+62.0	anonymous	time-frame-B6_AccountCreated	column=CREATED_DATE;duration=CUSTOM;start=null;end=null;count=1
+62.0	anonymous	time-frame-B6_AccountDue	column=DUE_DATE;duration=CUSTOM;start=null;end=null;count=1
+62.0	anonymous	time-frame-B6_Bounded	column=CREATED_DATE;duration=CUSTOM;start=2099-01-01;end=2099-12-31;count=0
+62.0	anonymous	time-frame-B6_ContactActivity	column=LAST_ACTIVITY;duration=CUSTOM;start=null;end=null;count=0
+62.0	anonymous	time-frame-B6_ContactCreated	column=CREATED_DATE;duration=CUSTOM;start=null;end=null;count=0
+62.0	seealldata	time-frame-B6_AccountCreated	column=CREATED_DATE;duration=CUSTOM;start=null;end=null;count=1
+62.0	seealldata	time-frame-B6_AccountDue	column=DUE_DATE;duration=CUSTOM;start=null;end=null;count=1
+62.0	seealldata	time-frame-B6_Bounded	column=CREATED_DATE;duration=CUSTOM;start=2099-01-01;end=2099-12-31;count=0
+62.0	seealldata	time-frame-B6_ContactActivity	column=LAST_ACTIVITY;duration=CUSTOM;start=null;end=null;count=0
+62.0	seealldata	time-frame-B6_ContactCreated	column=CREATED_DATE;duration=CUSTOM;start=null;end=null;count=0
+67.0	anonymous	time-frame-B6_AccountCreated	column=CREATED_DATE;duration=CUSTOM;start=null;end=null;count=1
+67.0	anonymous	time-frame-B6_AccountDue	column=DUE_DATE;duration=CUSTOM;start=null;end=null;count=1
+67.0	anonymous	time-frame-B6_Bounded	column=CREATED_DATE;duration=CUSTOM;start=2099-01-01;end=2099-12-31;count=0
+67.0	anonymous	time-frame-B6_ContactActivity	column=LAST_ACTIVITY;duration=CUSTOM;start=null;end=null;count=0
+67.0	anonymous	time-frame-B6_ContactCreated	column=CREATED_DATE;duration=CUSTOM;start=null;end=null;count=0
+67.0	seealldata	time-frame-B6_AccountCreated	column=CREATED_DATE;duration=CUSTOM;start=null;end=null;count=1
+67.0	seealldata	time-frame-B6_AccountDue	column=DUE_DATE;duration=CUSTOM;start=null;end=null;count=1
+67.0	seealldata	time-frame-B6_Bounded	column=CREATED_DATE;duration=CUSTOM;start=2099-01-01;end=2099-12-31;count=0
+67.0	seealldata	time-frame-B6_ContactActivity	column=LAST_ACTIVITY;duration=CUSTOM;start=null;end=null;count=0
+67.0	seealldata	time-frame-B6_ContactCreated	column=CREATED_DATE;duration=CUSTOM;start=null;end=null;count=0
+62.0	anonymous	bound-default-B6_After	start=2026-11-04;end=2026-11-04;recordUtc=2026-11-03T17:53:26Z;count=0
+62.0	anonymous	bound-default-B6_AtEnd	start=2026-11-02;end=2026-11-03;recordUtc=2026-11-03T17:53:26Z;count=1
+62.0	anonymous	bound-default-B6_AtStart	start=2026-11-03;end=2026-11-04;recordUtc=2026-11-03T17:53:26Z;count=1
+62.0	anonymous	bound-default-B6_Before	start=2026-11-02;end=2026-11-02;recordUtc=2026-11-03T17:53:26Z;count=0
+62.0	anonymous	bound-default-B6_EndOnly	start=null;end=2026-11-03;recordUtc=2026-11-03T17:53:26Z;count=1
+62.0	anonymous	bound-default-B6_Inside	start=2026-11-02;end=2026-11-04;recordUtc=2026-11-03T17:53:26Z;count=1
+62.0	anonymous	bound-default-B6_OnDay	start=2026-11-03;end=2026-11-03;recordUtc=2026-11-03T17:53:26Z;count=1
+62.0	anonymous	bound-default-B6_StartOnly	start=2026-11-03;end=null;recordUtc=2026-11-03T17:53:26Z;count=1
+62.0	seealldata	bound-default-B6_After	start=2026-11-04;end=2026-11-04;recordUtc=2026-11-03T17:53:26Z;count=0
+62.0	seealldata	bound-default-B6_AtEnd	start=2026-11-02;end=2026-11-03;recordUtc=2026-11-03T17:53:26Z;count=1
+62.0	seealldata	bound-default-B6_AtStart	start=2026-11-03;end=2026-11-04;recordUtc=2026-11-03T17:53:26Z;count=1
+62.0	seealldata	bound-default-B6_Before	start=2026-11-02;end=2026-11-02;recordUtc=2026-11-03T17:53:26Z;count=0
+62.0	seealldata	bound-default-B6_EndOnly	start=null;end=2026-11-03;recordUtc=2026-11-03T17:53:26Z;count=1
+62.0	seealldata	bound-default-B6_Inside	start=2026-11-02;end=2026-11-04;recordUtc=2026-11-03T17:53:26Z;count=1
+62.0	seealldata	bound-default-B6_OnDay	start=2026-11-03;end=2026-11-03;recordUtc=2026-11-03T17:53:26Z;count=1
+62.0	seealldata	bound-default-B6_StartOnly	start=2026-11-03;end=null;recordUtc=2026-11-03T17:53:26Z;count=1
+67.0	anonymous	bound-default-B6_After	start=2026-11-04;end=2026-11-04;recordUtc=2026-11-03T17:53:26Z;count=0
+67.0	anonymous	bound-default-B6_AtEnd	start=2026-11-02;end=2026-11-03;recordUtc=2026-11-03T17:53:26Z;count=1
+67.0	anonymous	bound-default-B6_AtStart	start=2026-11-03;end=2026-11-04;recordUtc=2026-11-03T17:53:26Z;count=1
+67.0	anonymous	bound-default-B6_Before	start=2026-11-02;end=2026-11-02;recordUtc=2026-11-03T17:53:26Z;count=0
+67.0	anonymous	bound-default-B6_EndOnly	start=null;end=2026-11-03;recordUtc=2026-11-03T17:53:26Z;count=1
+67.0	anonymous	bound-default-B6_Inside	start=2026-11-02;end=2026-11-04;recordUtc=2026-11-03T17:53:26Z;count=1
+67.0	anonymous	bound-default-B6_OnDay	start=2026-11-03;end=2026-11-03;recordUtc=2026-11-03T17:53:26Z;count=1
+67.0	anonymous	bound-default-B6_StartOnly	start=2026-11-03;end=null;recordUtc=2026-11-03T17:53:26Z;count=1
+67.0	seealldata	bound-default-B6_After	start=2026-11-04;end=2026-11-04;recordUtc=2026-11-03T17:53:26Z;count=0
+67.0	seealldata	bound-default-B6_AtEnd	start=2026-11-02;end=2026-11-03;recordUtc=2026-11-03T17:53:26Z;count=1
+67.0	seealldata	bound-default-B6_AtStart	start=2026-11-03;end=2026-11-04;recordUtc=2026-11-03T17:53:26Z;count=1
+67.0	seealldata	bound-default-B6_Before	start=2026-11-02;end=2026-11-02;recordUtc=2026-11-03T17:53:26Z;count=0
+67.0	seealldata	bound-default-B6_EndOnly	start=null;end=2026-11-03;recordUtc=2026-11-03T17:53:26Z;count=1
+67.0	seealldata	bound-default-B6_Inside	start=2026-11-02;end=2026-11-04;recordUtc=2026-11-03T17:53:26Z;count=1
+67.0	seealldata	bound-default-B6_OnDay	start=2026-11-03;end=2026-11-03;recordUtc=2026-11-03T17:53:26Z;count=1
+67.0	seealldata	bound-default-B6_StartOnly	start=2026-11-03;end=null;recordUtc=2026-11-03T17:53:26Z;count=1
+62.0	anonymous	bound-pacific-kiritimati-B6_After	start=2026-11-04;end=2026-11-04;recordUtc=2026-11-03T17:53:26Z;count=1
+62.0	anonymous	bound-pacific-kiritimati-B6_AtEnd	start=2026-11-02;end=2026-11-03;recordUtc=2026-11-03T17:53:26Z;count=0
+62.0	anonymous	bound-pacific-kiritimati-B6_AtStart	start=2026-11-03;end=2026-11-04;recordUtc=2026-11-03T17:53:26Z;count=1
+62.0	anonymous	bound-pacific-kiritimati-B6_Before	start=2026-11-02;end=2026-11-02;recordUtc=2026-11-03T17:53:26Z;count=0
+62.0	anonymous	bound-pacific-kiritimati-B6_EndOnly	start=null;end=2026-11-03;recordUtc=2026-11-03T17:53:26Z;count=0
+62.0	anonymous	bound-pacific-kiritimati-B6_Inside	start=2026-11-02;end=2026-11-04;recordUtc=2026-11-03T17:53:26Z;count=1
+62.0	anonymous	bound-pacific-kiritimati-B6_OnDay	start=2026-11-03;end=2026-11-03;recordUtc=2026-11-03T17:53:26Z;count=0
+62.0	anonymous	bound-pacific-kiritimati-B6_StartOnly	start=2026-11-03;end=null;recordUtc=2026-11-03T17:53:26Z;count=1
+62.0	seealldata	bound-pacific-kiritimati-B6_After	start=2026-11-04;end=2026-11-04;recordUtc=2026-11-03T17:53:26Z;count=1
+62.0	seealldata	bound-pacific-kiritimati-B6_AtEnd	start=2026-11-02;end=2026-11-03;recordUtc=2026-11-03T17:53:26Z;count=0
+62.0	seealldata	bound-pacific-kiritimati-B6_AtStart	start=2026-11-03;end=2026-11-04;recordUtc=2026-11-03T17:53:26Z;count=1
+62.0	seealldata	bound-pacific-kiritimati-B6_Before	start=2026-11-02;end=2026-11-02;recordUtc=2026-11-03T17:53:26Z;count=0
+62.0	seealldata	bound-pacific-kiritimati-B6_EndOnly	start=null;end=2026-11-03;recordUtc=2026-11-03T17:53:26Z;count=0
+62.0	seealldata	bound-pacific-kiritimati-B6_Inside	start=2026-11-02;end=2026-11-04;recordUtc=2026-11-03T17:53:26Z;count=1
+62.0	seealldata	bound-pacific-kiritimati-B6_OnDay	start=2026-11-03;end=2026-11-03;recordUtc=2026-11-03T17:53:26Z;count=0
+62.0	seealldata	bound-pacific-kiritimati-B6_StartOnly	start=2026-11-03;end=null;recordUtc=2026-11-03T17:53:26Z;count=1
+67.0	anonymous	bound-pacific-kiritimati-B6_After	start=2026-11-04;end=2026-11-04;recordUtc=2026-11-03T17:53:26Z;count=1
+67.0	anonymous	bound-pacific-kiritimati-B6_AtEnd	start=2026-11-02;end=2026-11-03;recordUtc=2026-11-03T17:53:26Z;count=0
+67.0	anonymous	bound-pacific-kiritimati-B6_AtStart	start=2026-11-03;end=2026-11-04;recordUtc=2026-11-03T17:53:26Z;count=1
+67.0	anonymous	bound-pacific-kiritimati-B6_Before	start=2026-11-02;end=2026-11-02;recordUtc=2026-11-03T17:53:26Z;count=0
+67.0	anonymous	bound-pacific-kiritimati-B6_EndOnly	start=null;end=2026-11-03;recordUtc=2026-11-03T17:53:26Z;count=0
+67.0	anonymous	bound-pacific-kiritimati-B6_Inside	start=2026-11-02;end=2026-11-04;recordUtc=2026-11-03T17:53:26Z;count=1
+67.0	anonymous	bound-pacific-kiritimati-B6_OnDay	start=2026-11-03;end=2026-11-03;recordUtc=2026-11-03T17:53:26Z;count=0
+67.0	anonymous	bound-pacific-kiritimati-B6_StartOnly	start=2026-11-03;end=null;recordUtc=2026-11-03T17:53:26Z;count=1
+67.0	seealldata	bound-pacific-kiritimati-B6_After	start=2026-11-04;end=2026-11-04;recordUtc=2026-11-03T17:53:26Z;count=1
+67.0	seealldata	bound-pacific-kiritimati-B6_AtEnd	start=2026-11-02;end=2026-11-03;recordUtc=2026-11-03T17:53:26Z;count=0
+67.0	seealldata	bound-pacific-kiritimati-B6_AtStart	start=2026-11-03;end=2026-11-04;recordUtc=2026-11-03T17:53:26Z;count=1
+67.0	seealldata	bound-pacific-kiritimati-B6_Before	start=2026-11-02;end=2026-11-02;recordUtc=2026-11-03T17:53:26Z;count=0
+67.0	seealldata	bound-pacific-kiritimati-B6_EndOnly	start=null;end=2026-11-03;recordUtc=2026-11-03T17:53:26Z;count=0
+67.0	seealldata	bound-pacific-kiritimati-B6_Inside	start=2026-11-02;end=2026-11-04;recordUtc=2026-11-03T17:53:26Z;count=1
+67.0	seealldata	bound-pacific-kiritimati-B6_OnDay	start=2026-11-03;end=2026-11-03;recordUtc=2026-11-03T17:53:26Z;count=0
+67.0	seealldata	bound-pacific-kiritimati-B6_StartOnly	start=2026-11-03;end=null;recordUtc=2026-11-03T17:53:26Z;count=1
+62.0	anonymous	catalog-baseline	categories=3
+62.0	seealldata	catalog-baseline	categories=3
+67.0	anonymous	catalog-baseline	categories=3
+67.0	seealldata	catalog-baseline	categories=3
+62.0	anonymous	catalog-custom	categories=3
+62.0	seealldata	catalog-custom	categories=3
+67.0	anonymous	catalog-custom	categories=3
+67.0	seealldata	catalog-custom	categories=3
+62.0	anonymous	catalog-accessible	categories=4|Account: Custom Info:Account.B6_Synthetic__c:Account.B6_Synthetic__c:B6 Synthetic:STRING_DATA:true
+62.0	seealldata	catalog-accessible	categories=4|Account: Custom Info:Account.B6_Synthetic__c:Account.B6_Synthetic__c:B6 Synthetic:STRING_DATA:true
+67.0	anonymous	catalog-accessible	categories=4|Account: Custom Info:Account.B6_Synthetic__c:Account.B6_Synthetic__c:B6 Synthetic:STRING_DATA:true
+67.0	seealldata	catalog-accessible	categories=4|Account: Custom Info:Account.B6_Synthetic__c:Account.B6_Synthetic__c:B6 Synthetic:STRING_DATA:true
+62.0	anonymous	show-overloads-B6_Absent	describe=false;results=false,false|false,false|true,true|false,false|false,false|true,true
+62.0	anonymous	show-overloads-B6_False	describe=false;results=false,false|false,false|true,true|false,false|false,false|true,true
+62.0	anonymous	show-overloads-B6_True	describe=true;results=false,false|false,false|true,true|false,false|false,false|true,true
+62.0	seealldata	show-overloads-B6_Absent	describe=false;results=false,false|false,false|true,true|false,false|false,false|true,true
+62.0	seealldata	show-overloads-B6_False	describe=false;results=false,false|false,false|true,true|false,false|false,false|true,true
+62.0	seealldata	show-overloads-B6_True	describe=true;results=false,false|false,false|true,true|false,false|false,false|true,true
+67.0	anonymous	show-overloads-B6_Absent	describe=false;results=false,false|false,false|true,true|false,false|false,false|true,true
+67.0	anonymous	show-overloads-B6_False	describe=false;results=false,false|false,false|true,true|false,false|false,false|true,true
+67.0	anonymous	show-overloads-B6_True	describe=true;results=false,false|false,false|true,true|false,false|false,false|true,true
+67.0	seealldata	show-overloads-B6_Absent	describe=false;results=false,false|false,false|true,true|false,false|false,false|true,true
+67.0	seealldata	show-overloads-B6_False	describe=false;results=false,false|false,false|true,true|false,false|false,false|true,true
+67.0	seealldata	show-overloads-B6_True	describe=true;results=false,false|false,false|true,true|false,false|false,false|true,true
+62.0	anonymous	description-B6_Absent	describe=null;run=null
+62.0	anonymous	description-B6_Alpha	describe="Alpha notes";run="Alpha notes"
+62.0	anonymous	description-B6_Beta	describe="Beta & Gamma";run="Beta & Gamma"
+62.0	anonymous	description-B6_Empty	describe=null;run=null
+62.0	seealldata	description-B6_Absent	describe=null;run=null
+62.0	seealldata	description-B6_Alpha	describe="Alpha notes";run="Alpha notes"
+62.0	seealldata	description-B6_Beta	describe="Beta & Gamma";run="Beta & Gamma"
+62.0	seealldata	description-B6_Empty	describe=null;run=null
+67.0	anonymous	description-B6_Absent	describe=null;run=null
+67.0	anonymous	description-B6_Alpha	describe="Alpha notes";run="Alpha notes"
+67.0	anonymous	description-B6_Beta	describe="Beta & Gamma";run="Beta & Gamma"
+67.0	anonymous	description-B6_Empty	describe=null;run=null
+67.0	seealldata	description-B6_Absent	describe=null;run=null
+67.0	seealldata	description-B6_Alpha	describe="Alpha notes";run="Alpha notes"
+67.0	seealldata	description-B6_Beta	describe="Beta & Gamma";run="Beta & Gamma"
+67.0	seealldata	description-B6_Empty	describe=null;run=null
+62.0	anonymous	contact-bound-default-B6_After	start=2026-11-04;end=2026-11-04;recordUtc=2026-11-03T21:04:22Z;count=0
+62.0	anonymous	contact-bound-default-B6_AtEnd	start=2026-11-02;end=2026-11-03;recordUtc=2026-11-03T21:04:22Z;count=1
+62.0	anonymous	contact-bound-default-B6_AtStart	start=2026-11-03;end=2026-11-04;recordUtc=2026-11-03T21:04:22Z;count=1
+62.0	anonymous	contact-bound-default-B6_Before	start=2026-11-02;end=2026-11-02;recordUtc=2026-11-03T21:04:22Z;count=0
+62.0	anonymous	contact-bound-default-B6_Inside	start=2026-11-02;end=2026-11-04;recordUtc=2026-11-03T21:04:22Z;count=1
+62.0	anonymous	contact-bound-default-B6_OnDay	start=2026-11-03;end=2026-11-03;recordUtc=2026-11-03T21:04:22Z;count=1
+62.0	seealldata	contact-bound-default-B6_After	start=2026-11-04;end=2026-11-04;recordUtc=2026-11-03T21:04:22Z;count=0
+62.0	seealldata	contact-bound-default-B6_AtEnd	start=2026-11-02;end=2026-11-03;recordUtc=2026-11-03T21:04:22Z;count=1
+62.0	seealldata	contact-bound-default-B6_AtStart	start=2026-11-03;end=2026-11-04;recordUtc=2026-11-03T21:04:22Z;count=1
+62.0	seealldata	contact-bound-default-B6_Before	start=2026-11-02;end=2026-11-02;recordUtc=2026-11-03T21:04:22Z;count=0
+62.0	seealldata	contact-bound-default-B6_Inside	start=2026-11-02;end=2026-11-04;recordUtc=2026-11-03T21:04:22Z;count=1
+62.0	seealldata	contact-bound-default-B6_OnDay	start=2026-11-03;end=2026-11-03;recordUtc=2026-11-03T21:04:22Z;count=1
+67.0	anonymous	contact-bound-default-B6_After	start=2026-11-04;end=2026-11-04;recordUtc=2026-11-03T21:04:22Z;count=0
+67.0	anonymous	contact-bound-default-B6_AtEnd	start=2026-11-02;end=2026-11-03;recordUtc=2026-11-03T21:04:22Z;count=1
+67.0	anonymous	contact-bound-default-B6_AtStart	start=2026-11-03;end=2026-11-04;recordUtc=2026-11-03T21:04:22Z;count=1
+67.0	anonymous	contact-bound-default-B6_Before	start=2026-11-02;end=2026-11-02;recordUtc=2026-11-03T21:04:22Z;count=0
+67.0	anonymous	contact-bound-default-B6_Inside	start=2026-11-02;end=2026-11-04;recordUtc=2026-11-03T21:04:22Z;count=1
+67.0	anonymous	contact-bound-default-B6_OnDay	start=2026-11-03;end=2026-11-03;recordUtc=2026-11-03T21:04:22Z;count=1
+67.0	seealldata	contact-bound-default-B6_After	start=2026-11-04;end=2026-11-04;recordUtc=2026-11-03T21:04:22Z;count=0
+67.0	seealldata	contact-bound-default-B6_AtEnd	start=2026-11-02;end=2026-11-03;recordUtc=2026-11-03T21:04:22Z;count=1
+67.0	seealldata	contact-bound-default-B6_AtStart	start=2026-11-03;end=2026-11-04;recordUtc=2026-11-03T21:04:22Z;count=1
+67.0	seealldata	contact-bound-default-B6_Before	start=2026-11-02;end=2026-11-02;recordUtc=2026-11-03T21:04:22Z;count=0
+67.0	seealldata	contact-bound-default-B6_Inside	start=2026-11-02;end=2026-11-04;recordUtc=2026-11-03T21:04:22Z;count=1
+67.0	seealldata	contact-bound-default-B6_OnDay	start=2026-11-03;end=2026-11-03;recordUtc=2026-11-03T21:04:22Z;count=1
+62.0	anonymous	contact-bound-pacific-kiritimati-B6_After	start=2026-11-04;end=2026-11-04;recordUtc=2026-11-03T21:04:22Z;count=1
+62.0	anonymous	contact-bound-pacific-kiritimati-B6_AtEnd	start=2026-11-02;end=2026-11-03;recordUtc=2026-11-03T21:04:22Z;count=0
+62.0	anonymous	contact-bound-pacific-kiritimati-B6_AtStart	start=2026-11-03;end=2026-11-04;recordUtc=2026-11-03T21:04:22Z;count=1
+62.0	anonymous	contact-bound-pacific-kiritimati-B6_Before	start=2026-11-02;end=2026-11-02;recordUtc=2026-11-03T21:04:22Z;count=0
+62.0	anonymous	contact-bound-pacific-kiritimati-B6_Inside	start=2026-11-02;end=2026-11-04;recordUtc=2026-11-03T21:04:22Z;count=1
+62.0	anonymous	contact-bound-pacific-kiritimati-B6_OnDay	start=2026-11-03;end=2026-11-03;recordUtc=2026-11-03T21:04:22Z;count=0
+62.0	seealldata	contact-bound-pacific-kiritimati-B6_After	start=2026-11-04;end=2026-11-04;recordUtc=2026-11-03T21:04:22Z;count=1
+62.0	seealldata	contact-bound-pacific-kiritimati-B6_AtEnd	start=2026-11-02;end=2026-11-03;recordUtc=2026-11-03T21:04:22Z;count=0
+62.0	seealldata	contact-bound-pacific-kiritimati-B6_AtStart	start=2026-11-03;end=2026-11-04;recordUtc=2026-11-03T21:04:22Z;count=1
+62.0	seealldata	contact-bound-pacific-kiritimati-B6_Before	start=2026-11-02;end=2026-11-02;recordUtc=2026-11-03T21:04:22Z;count=0
+62.0	seealldata	contact-bound-pacific-kiritimati-B6_Inside	start=2026-11-02;end=2026-11-04;recordUtc=2026-11-03T21:04:22Z;count=1
+62.0	seealldata	contact-bound-pacific-kiritimati-B6_OnDay	start=2026-11-03;end=2026-11-03;recordUtc=2026-11-03T21:04:22Z;count=0
+67.0	anonymous	contact-bound-pacific-kiritimati-B6_After	start=2026-11-04;end=2026-11-04;recordUtc=2026-11-03T21:04:22Z;count=1
+67.0	anonymous	contact-bound-pacific-kiritimati-B6_AtEnd	start=2026-11-02;end=2026-11-03;recordUtc=2026-11-03T21:04:22Z;count=0
+67.0	anonymous	contact-bound-pacific-kiritimati-B6_AtStart	start=2026-11-03;end=2026-11-04;recordUtc=2026-11-03T21:04:22Z;count=1
+67.0	anonymous	contact-bound-pacific-kiritimati-B6_Before	start=2026-11-02;end=2026-11-02;recordUtc=2026-11-03T21:04:22Z;count=0
+67.0	anonymous	contact-bound-pacific-kiritimati-B6_Inside	start=2026-11-02;end=2026-11-04;recordUtc=2026-11-03T21:04:22Z;count=1
+67.0	anonymous	contact-bound-pacific-kiritimati-B6_OnDay	start=2026-11-03;end=2026-11-03;recordUtc=2026-11-03T21:04:22Z;count=0
+67.0	seealldata	contact-bound-pacific-kiritimati-B6_After	start=2026-11-04;end=2026-11-04;recordUtc=2026-11-03T21:04:22Z;count=1
+67.0	seealldata	contact-bound-pacific-kiritimati-B6_AtEnd	start=2026-11-02;end=2026-11-03;recordUtc=2026-11-03T21:04:22Z;count=0
+67.0	seealldata	contact-bound-pacific-kiritimati-B6_AtStart	start=2026-11-03;end=2026-11-04;recordUtc=2026-11-03T21:04:22Z;count=1
+67.0	seealldata	contact-bound-pacific-kiritimati-B6_Before	start=2026-11-02;end=2026-11-02;recordUtc=2026-11-03T21:04:22Z;count=0
+67.0	seealldata	contact-bound-pacific-kiritimati-B6_Inside	start=2026-11-02;end=2026-11-04;recordUtc=2026-11-03T21:04:22Z;count=1
+67.0	seealldata	contact-bound-pacific-kiritimati-B6_OnDay	start=2026-11-03;end=2026-11-03;recordUtc=2026-11-03T21:04:22Z;count=0
+62.0	anonymous	totals-B6_SumAbsent	grand=true;sub=true;runGrand=true;runSub=true
+62.0	anonymous	totals-B6_SumFalse	grand=false;sub=false;runGrand=false;runSub=false
+62.0	anonymous	totals-B6_SumMixed	grand=true;sub=false;runGrand=true;runSub=false
+62.0	anonymous	totals-B6_TabAbsent	grand=true;sub=true;runGrand=true;runSub=true
+62.0	anonymous	totals-B6_TabFalse	grand=false;sub=false;runGrand=false;runSub=false
+62.0	anonymous	totals-B6_TabTrue	grand=true;sub=true;runGrand=true;runSub=true
+62.0	seealldata	totals-B6_SumAbsent	grand=true;sub=true;runGrand=true;runSub=true
+62.0	seealldata	totals-B6_SumFalse	grand=false;sub=false;runGrand=false;runSub=false
+62.0	seealldata	totals-B6_SumMixed	grand=true;sub=false;runGrand=true;runSub=false
+62.0	seealldata	totals-B6_TabAbsent	grand=true;sub=true;runGrand=true;runSub=true
+62.0	seealldata	totals-B6_TabFalse	grand=false;sub=false;runGrand=false;runSub=false
+62.0	seealldata	totals-B6_TabTrue	grand=true;sub=true;runGrand=true;runSub=true
+67.0	anonymous	totals-B6_SumAbsent	grand=true;sub=true;runGrand=true;runSub=true
+67.0	anonymous	totals-B6_SumFalse	grand=false;sub=false;runGrand=false;runSub=false
+67.0	anonymous	totals-B6_SumMixed	grand=true;sub=false;runGrand=true;runSub=false
+67.0	anonymous	totals-B6_TabAbsent	grand=true;sub=true;runGrand=true;runSub=true
+67.0	anonymous	totals-B6_TabFalse	grand=false;sub=false;runGrand=false;runSub=false
+67.0	anonymous	totals-B6_TabTrue	grand=true;sub=true;runGrand=true;runSub=true
+67.0	seealldata	totals-B6_SumAbsent	grand=true;sub=true;runGrand=true;runSub=true
+67.0	seealldata	totals-B6_SumFalse	grand=false;sub=false;runGrand=false;runSub=false
+67.0	seealldata	totals-B6_SumMixed	grand=true;sub=false;runGrand=true;runSub=false
+67.0	seealldata	totals-B6_TabAbsent	grand=true;sub=true;runGrand=true;runSub=true
+67.0	seealldata	totals-B6_TabFalse	grand=false;sub=false;runGrand=false;runSub=false
+67.0	seealldata	totals-B6_TabTrue	grand=true;sub=true;runGrand=true;runSub=true
+62.0	anonymous	totals-B6_SumAbsent	true,true,true,true
+62.0	anonymous	totals-B6_SumFalse	false,false,false,false
+62.0	anonymous	totals-B6_SumMixed	true,false,true,false
+62.0	anonymous	totals-B6_TabAbsent	true,true,true,true
+62.0	anonymous	totals-B6_TabFalse	false,false,false,false
+62.0	anonymous	totals-B6_TabTrue	true,true,true,true
+62.0	seealldata	totals-B6_SumAbsent	true,true,true,true
+62.0	seealldata	totals-B6_SumFalse	false,false,false,false
+62.0	seealldata	totals-B6_SumMixed	true,false,true,false
+62.0	seealldata	totals-B6_TabAbsent	true,true,true,true
+62.0	seealldata	totals-B6_TabFalse	false,false,false,false
+62.0	seealldata	totals-B6_TabTrue	true,true,true,true
+67.0	anonymous	totals-B6_SumAbsent	true,true,true,true
+67.0	anonymous	totals-B6_SumFalse	false,false,false,false
+67.0	anonymous	totals-B6_SumMixed	true,false,true,false
+67.0	anonymous	totals-B6_TabAbsent	true,true,true,true
+67.0	anonymous	totals-B6_TabFalse	false,false,false,false
+67.0	anonymous	totals-B6_TabTrue	true,true,true,true
+67.0	seealldata	totals-B6_SumAbsent	true,true,true,true
+67.0	seealldata	totals-B6_SumFalse	false,false,false,false
+67.0	seealldata	totals-B6_SumMixed	true,false,true,false
+67.0	seealldata	totals-B6_TabAbsent	true,true,true,true
+67.0	seealldata	totals-B6_TabFalse	false,false,false,false
+67.0	seealldata	totals-B6_TabTrue	true,true,true,true
+62.0	anonymous	totals-facts-B6_SumAbsent	0!T,T!T,0!T,T!T,1,1
+62.0	anonymous	totals-facts-B6_SumFalse	0!T,T!T,0!T,T!T,1,1
+62.0	anonymous	totals-facts-B6_SumMixed	0!T,T!T,0!T,T!T,1,1
+62.0	anonymous	totals-facts-B6_TabAbsent	T!T,T!T,1,0
+62.0	anonymous	totals-facts-B6_TabFalse	T!T,T!T,1,0
+62.0	anonymous	totals-facts-B6_TabTrue	T!T,T!T,1,0
+62.0	seealldata	totals-facts-B6_SumAbsent	0!T,T!T,0!T,T!T,1,1
+62.0	seealldata	totals-facts-B6_SumFalse	0!T,T!T,0!T,T!T,1,1
+62.0	seealldata	totals-facts-B6_SumMixed	0!T,T!T,0!T,T!T,1,1
+62.0	seealldata	totals-facts-B6_TabAbsent	T!T,T!T,1,0
+62.0	seealldata	totals-facts-B6_TabFalse	T!T,T!T,1,0
+62.0	seealldata	totals-facts-B6_TabTrue	T!T,T!T,1,0
+67.0	anonymous	totals-facts-B6_SumAbsent	0!T,T!T,0!T,T!T,1,1
+67.0	anonymous	totals-facts-B6_SumFalse	0!T,T!T,0!T,T!T,1,1
+67.0	anonymous	totals-facts-B6_SumMixed	0!T,T!T,0!T,T!T,1,1
+67.0	anonymous	totals-facts-B6_TabAbsent	T!T,T!T,1,0
+67.0	anonymous	totals-facts-B6_TabFalse	T!T,T!T,1,0
+67.0	anonymous	totals-facts-B6_TabTrue	T!T,T!T,1,0
+67.0	seealldata	totals-facts-B6_SumAbsent	0!T,T!T,0!T,T!T,1,1
+67.0	seealldata	totals-facts-B6_SumFalse	0!T,T!T,0!T,T!T,1,1
+67.0	seealldata	totals-facts-B6_SumMixed	0!T,T!T,0!T,T!T,1,1
+67.0	seealldata	totals-facts-B6_TabAbsent	T!T,T!T,1,0
+67.0	seealldata	totals-facts-B6_TabFalse	T!T,T!T,1,0
+67.0	seealldata	totals-facts-B6_TabTrue	T!T,T!T,1,0
+62.0	anonymous	totals-dimensions-B6_SumAbsent	1,0,1,0
+62.0	anonymous	totals-dimensions-B6_SumFalse	1,0,1,0
+62.0	anonymous	totals-dimensions-B6_SumMixed	1,0,1,0
+62.0	anonymous	totals-dimensions-B6_TabAbsent	0,0,0,0
+62.0	anonymous	totals-dimensions-B6_TabFalse	0,0,0,0
+62.0	anonymous	totals-dimensions-B6_TabTrue	0,0,0,0
+62.0	seealldata	totals-dimensions-B6_SumAbsent	1,0,1,0
+62.0	seealldata	totals-dimensions-B6_SumFalse	1,0,1,0
+62.0	seealldata	totals-dimensions-B6_SumMixed	1,0,1,0
+62.0	seealldata	totals-dimensions-B6_TabAbsent	0,0,0,0
+62.0	seealldata	totals-dimensions-B6_TabFalse	0,0,0,0
+62.0	seealldata	totals-dimensions-B6_TabTrue	0,0,0,0
+67.0	anonymous	totals-dimensions-B6_SumAbsent	1,0,1,0
+67.0	anonymous	totals-dimensions-B6_SumFalse	1,0,1,0
+67.0	anonymous	totals-dimensions-B6_SumMixed	1,0,1,0
+67.0	anonymous	totals-dimensions-B6_TabAbsent	0,0,0,0
+67.0	anonymous	totals-dimensions-B6_TabFalse	0,0,0,0
+67.0	anonymous	totals-dimensions-B6_TabTrue	0,0,0,0
+67.0	seealldata	totals-dimensions-B6_SumAbsent	1,0,1,0
+67.0	seealldata	totals-dimensions-B6_SumFalse	1,0,1,0
+67.0	seealldata	totals-dimensions-B6_SumMixed	1,0,1,0
+67.0	seealldata	totals-dimensions-B6_TabAbsent	0,0,0,0
+67.0	seealldata	totals-dimensions-B6_TabFalse	0,0,0,0
+67.0	seealldata	totals-dimensions-B6_TabTrue	0,0,0,0
+62.0	anonymous	dimension-json	B6_SumAbsent:populated:{"groupings":null}:populated:{"groupings":null};B6_TabAbsent:{"groupings":null}:{"groupings":null}:{"groupings":null}:{"groupings":null};
+62.0	seealldata	dimension-json	B6_SumAbsent:populated:{"groupings":null}:populated:{"groupings":null};B6_TabAbsent:{"groupings":null}:{"groupings":null}:{"groupings":null}:{"groupings":null};
+67.0	anonymous	dimension-json	B6_SumAbsent:populated:{"groupings":null}:populated:{"groupings":null};B6_TabAbsent:{"groupings":null}:{"groupings":null}:{"groupings":null}:{"groupings":null};
+67.0	seealldata	dimension-json	B6_SumAbsent:populated:{"groupings":null}:populated:{"groupings":null};B6_TabAbsent:{"groupings":null}:{"groupings":null}:{"groupings":null}:{"groupings":null};
+62.0	anonymous	dimension-zero	{"groupings":null}|0|{"groupings":null}|T!T|T!T|0
+62.0	seealldata	dimension-zero	{"groupings":null}|0|{"groupings":null}|T!T|T!T|0
+62.0	anonymous	dimension-constructor-rejection	Method is not visible: reports.Dimension constructor
+67.0	anonymous	dimension-zero	{"groupings":null}|0|{"groupings":null}|T!T|T!T|0
+67.0	seealldata	dimension-zero	{"groupings":null}|0|{"groupings":null}|T!T|T!T|0
+67.0	anonymous	dimension-constructor-rejection	Method is not visible: reports.Dimension constructor
+62.0	anonymous	date-override-inside	ok:CREATED_DATE:CUSTOM:2000-01-01:2100-01-01:1
+62.0	anonymous	date-override-future	ok:CREATED_DATE:CUSTOM:2099-01-01:2100-01-01:0
+62.0	anonymous	date-override-open	ok:CREATED_DATE:CUSTOM:null:null:1
+62.0	anonymous	date-override-invalid	error:reports.InvalidFilterException:[The specified start date of not-date specified for the standard date filter is invalid.]
+62.0	anonymous	date-override-badcolumn	error:reports.InvalidFilterException:[The column NOT_A_DATE specified for the standard date filter is invalid.]
+62.0	anonymous	date-override-badcolumn2	error:reports.InvalidFilterException:[The column OTHER_DATE specified for the standard date filter is invalid.]
+62.0	anonymous	date-override-badstart2	error:reports.InvalidFilterException:[The specified start date of bad-start specified for the standard date filter is invalid.]
+62.0	anonymous	date-override-badend	error:reports.InvalidFilterException:[The specified end date of bad-end specified for the standard date filter is invalid.]
+62.0	anonymous	date-override-reversed	ok:CREATED_DATE:CUSTOM:2100-01-01:2000-01-01:0
+62.0	seealldata	date-override-inside	ok:CREATED_DATE:CUSTOM:2000-01-01:2100-01-01:1
+62.0	seealldata	date-override-future	ok:CREATED_DATE:CUSTOM:2099-01-01:2100-01-01:0
+62.0	seealldata	date-override-open	ok:CREATED_DATE:CUSTOM:null:null:1
+62.0	seealldata	date-override-invalid	error:reports.InvalidFilterException:[The specified start date of not-date specified for the standard date filter is invalid.]
+62.0	seealldata	date-override-badcolumn	error:reports.InvalidFilterException:[The column NOT_A_DATE specified for the standard date filter is invalid.]
+62.0	seealldata	date-override-badcolumn2	error:reports.InvalidFilterException:[The column OTHER_DATE specified for the standard date filter is invalid.]
+62.0	seealldata	date-override-badstart2	error:reports.InvalidFilterException:[The specified start date of bad-start specified for the standard date filter is invalid.]
+62.0	seealldata	date-override-badend	error:reports.InvalidFilterException:[The specified end date of bad-end specified for the standard date filter is invalid.]
+62.0	seealldata	date-override-reversed	ok:CREATED_DATE:CUSTOM:2100-01-01:2000-01-01:0
+67.0	anonymous	date-override-inside	ok:CREATED_DATE:CUSTOM:2000-01-01:2100-01-01:1
+67.0	anonymous	date-override-future	ok:CREATED_DATE:CUSTOM:2099-01-01:2100-01-01:0
+67.0	anonymous	date-override-open	ok:CREATED_DATE:CUSTOM:null:null:1
+67.0	anonymous	date-override-invalid	error:reports.InvalidFilterException:[The specified start date of not-date specified for the standard date filter is invalid.]
+67.0	anonymous	date-override-badcolumn	error:reports.InvalidFilterException:[The column NOT_A_DATE specified for the standard date filter is invalid.]
+67.0	anonymous	date-override-badcolumn2	error:reports.InvalidFilterException:[The column OTHER_DATE specified for the standard date filter is invalid.]
+67.0	anonymous	date-override-badstart2	error:reports.InvalidFilterException:[The specified start date of bad-start specified for the standard date filter is invalid.]
+67.0	anonymous	date-override-badend	error:reports.InvalidFilterException:[The specified end date of bad-end specified for the standard date filter is invalid.]
+67.0	anonymous	date-override-reversed	ok:CREATED_DATE:CUSTOM:2100-01-01:2000-01-01:0
+67.0	seealldata	date-override-inside	ok:CREATED_DATE:CUSTOM:2000-01-01:2100-01-01:1
+67.0	seealldata	date-override-future	ok:CREATED_DATE:CUSTOM:2099-01-01:2100-01-01:0
+67.0	seealldata	date-override-open	ok:CREATED_DATE:CUSTOM:null:null:1
+67.0	seealldata	date-override-invalid	error:reports.InvalidFilterException:[The specified start date of not-date specified for the standard date filter is invalid.]
+67.0	seealldata	date-override-badcolumn	error:reports.InvalidFilterException:[The column NOT_A_DATE specified for the standard date filter is invalid.]
+67.0	seealldata	date-override-badcolumn2	error:reports.InvalidFilterException:[The column OTHER_DATE specified for the standard date filter is invalid.]
+67.0	seealldata	date-override-badstart2	error:reports.InvalidFilterException:[The specified start date of bad-start specified for the standard date filter is invalid.]
+67.0	seealldata	date-override-badend	error:reports.InvalidFilterException:[The specified end date of bad-end specified for the standard date filter is invalid.]
+67.0	seealldata	date-override-reversed	ok:CREATED_DATE:CUSTOM:2100-01-01:2000-01-01:0
+62.0	anonymous	adjacent-B6_Accounts	Account notes:false:false:Account notes:false:false
+62.0	anonymous	adjacent-inside	1
+62.0	anonymous	adjacent-future	0
+62.0	anonymous	adjacent-open	1
+62.0	anonymous	adjacent-B6_Contacts	Contact notes:false:false:Contact notes:false:false
+62.0	anonymous	adjacent-B6_Opportunities	Opportunity notes:false:false:Opportunity notes:false:false
+62.0	seealldata	adjacent-B6_Accounts	Account notes:false:false:Account notes:false:false
+62.0	seealldata	adjacent-inside	1
+62.0	seealldata	adjacent-future	0
+62.0	seealldata	adjacent-open	1
+62.0	seealldata	adjacent-B6_Contacts	Contact notes:false:false:Contact notes:false:false
+62.0	seealldata	adjacent-B6_Opportunities	Opportunity notes:false:false:Opportunity notes:false:false
+67.0	anonymous	adjacent-B6_Accounts	Account notes:false:false:Account notes:false:false
+67.0	anonymous	adjacent-inside	1
+67.0	anonymous	adjacent-future	0
+67.0	anonymous	adjacent-open	1
+67.0	anonymous	adjacent-B6_Contacts	Contact notes:false:false:Contact notes:false:false
+67.0	anonymous	adjacent-B6_Opportunities	Opportunity notes:false:false:Opportunity notes:false:false
+67.0	seealldata	adjacent-B6_Accounts	Account notes:false:false:Account notes:false:false
+67.0	seealldata	adjacent-inside	1
+67.0	seealldata	adjacent-future	0
+67.0	seealldata	adjacent-open	1
+67.0	seealldata	adjacent-B6_Contacts	Contact notes:false:false:Contact notes:false:false
+67.0	seealldata	adjacent-B6_Opportunities	Opportunity notes:false:false:Opportunity notes:false:false
+62.0	anonymous	contact-override-B6_Org-inside	ok:2000-01-01:2100-01-01:1
+62.0	anonymous	contact-override-B6_Org-future	ok:2099-01-01:2100-01-01:0
+62.0	anonymous	contact-override-B6_Org-open	ok:null:null:1
+62.0	anonymous	contact-override-B6_Org-invalid	error:reports.InvalidFilterException:[The specified start date of not-date specified for the standard date filter is invalid.]
+62.0	anonymous	contact-override-B6_Org-badend	error:reports.InvalidFilterException:[The specified end date of bad-end specified for the standard date filter is invalid.]
+62.0	anonymous	contact-override-B6_Org-reversed	ok:2100-01-01:2000-01-01:0
+62.0	anonymous	contact-override-B6_User-inside	ok:2000-01-01:2100-01-01:1
+62.0	anonymous	contact-override-B6_User-future	ok:2099-01-01:2100-01-01:0
+62.0	anonymous	contact-override-B6_User-open	ok:null:null:1
+62.0	anonymous	contact-override-B6_User-invalid	error:reports.InvalidFilterException:[The specified start date of not-date specified for the standard date filter is invalid.]
+62.0	anonymous	contact-override-B6_User-badend	error:reports.InvalidFilterException:[The specified end date of bad-end specified for the standard date filter is invalid.]
+62.0	anonymous	contact-override-B6_User-reversed	ok:2100-01-01:2000-01-01:0
+62.0	seealldata	contact-override-B6_Org-inside	ok:2000-01-01:2100-01-01:1
+62.0	seealldata	contact-override-B6_Org-future	ok:2099-01-01:2100-01-01:0
+62.0	seealldata	contact-override-B6_Org-open	ok:null:null:1
+62.0	seealldata	contact-override-B6_Org-invalid	error:reports.InvalidFilterException:[The specified start date of not-date specified for the standard date filter is invalid.]
+62.0	seealldata	contact-override-B6_Org-badend	error:reports.InvalidFilterException:[The specified end date of bad-end specified for the standard date filter is invalid.]
+62.0	seealldata	contact-override-B6_Org-reversed	ok:2100-01-01:2000-01-01:0
+62.0	seealldata	contact-override-B6_User-inside	ok:2000-01-01:2100-01-01:1
+62.0	seealldata	contact-override-B6_User-future	ok:2099-01-01:2100-01-01:0
+62.0	seealldata	contact-override-B6_User-open	ok:null:null:1
+62.0	seealldata	contact-override-B6_User-invalid	error:reports.InvalidFilterException:[The specified start date of not-date specified for the standard date filter is invalid.]
+62.0	seealldata	contact-override-B6_User-badend	error:reports.InvalidFilterException:[The specified end date of bad-end specified for the standard date filter is invalid.]
+62.0	seealldata	contact-override-B6_User-reversed	ok:2100-01-01:2000-01-01:0
+67.0	anonymous	contact-override-B6_Org-inside	ok:2000-01-01:2100-01-01:1
+67.0	anonymous	contact-override-B6_Org-future	ok:2099-01-01:2100-01-01:0
+67.0	anonymous	contact-override-B6_Org-open	ok:null:null:1
+67.0	anonymous	contact-override-B6_Org-invalid	error:reports.InvalidFilterException:[The specified start date of not-date specified for the standard date filter is invalid.]
+67.0	anonymous	contact-override-B6_Org-badend	error:reports.InvalidFilterException:[The specified end date of bad-end specified for the standard date filter is invalid.]
+67.0	anonymous	contact-override-B6_Org-reversed	ok:2100-01-01:2000-01-01:0
+67.0	anonymous	contact-override-B6_User-inside	ok:2000-01-01:2100-01-01:1
+67.0	anonymous	contact-override-B6_User-future	ok:2099-01-01:2100-01-01:0
+67.0	anonymous	contact-override-B6_User-open	ok:null:null:1
+67.0	anonymous	contact-override-B6_User-invalid	error:reports.InvalidFilterException:[The specified start date of not-date specified for the standard date filter is invalid.]
+67.0	anonymous	contact-override-B6_User-badend	error:reports.InvalidFilterException:[The specified end date of bad-end specified for the standard date filter is invalid.]
+67.0	anonymous	contact-override-B6_User-reversed	ok:2100-01-01:2000-01-01:0
+67.0	seealldata	contact-override-B6_Org-inside	ok:2000-01-01:2100-01-01:1
+67.0	seealldata	contact-override-B6_Org-future	ok:2099-01-01:2100-01-01:0
+67.0	seealldata	contact-override-B6_Org-open	ok:null:null:1
+67.0	seealldata	contact-override-B6_Org-invalid	error:reports.InvalidFilterException:[The specified start date of not-date specified for the standard date filter is invalid.]
+67.0	seealldata	contact-override-B6_Org-badend	error:reports.InvalidFilterException:[The specified end date of bad-end specified for the standard date filter is invalid.]
+67.0	seealldata	contact-override-B6_Org-reversed	ok:2100-01-01:2000-01-01:0
+67.0	seealldata	contact-override-B6_User-inside	ok:2000-01-01:2100-01-01:1
+67.0	seealldata	contact-override-B6_User-future	ok:2099-01-01:2100-01-01:0
+67.0	seealldata	contact-override-B6_User-open	ok:null:null:1
+67.0	seealldata	contact-override-B6_User-invalid	error:reports.InvalidFilterException:[The specified start date of not-date specified for the standard date filter is invalid.]
+67.0	seealldata	contact-override-B6_User-badend	error:reports.InvalidFilterException:[The specified end date of bad-end specified for the standard date filter is invalid.]
+67.0	seealldata	contact-override-B6_User-reversed	ok:2100-01-01:2000-01-01:0

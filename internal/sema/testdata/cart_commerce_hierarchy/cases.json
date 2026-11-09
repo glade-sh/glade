@@ -1,0 +1,1022 @@
+[
+ {
+  "id": "assign_Cart_to_CommerceObject",
+  "name": "Probe000",
+  "source": "public class Probe000 { public static void m(CartExtension.Cart x) { CartExtension.CommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_Cart_to_AbstractCommerceObject",
+  "name": "Probe001",
+  "source": "public class Probe001 { public static void m(CartExtension.Cart x) { CartExtension.AbstractCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_Cart_to_AbstractBaseCommerceObject",
+  "name": "Probe002",
+  "source": "public class Probe002 { public static void m(CartExtension.Cart x) { CartExtension.AbstractBaseCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_Cart_to_AbstractCartList",
+  "name": "Probe003",
+  "source": "public class Probe003 { public static void m(CartExtension.Cart x) { CartExtension.AbstractCartList o = x; } }"
+ },
+ {
+  "id": "assign_Cart_to_BaseSObjectWrapper",
+  "name": "Probe004",
+  "source": "public class Probe004 { public static void m(CartExtension.Cart x) { CartExtension.BaseSObjectWrapper o = x; } }"
+ },
+ {
+  "id": "assign_CartAdjustmentBasis_to_CommerceObject",
+  "name": "Probe005",
+  "source": "public class Probe005 { public static void m(CartExtension.CartAdjustmentBasis x) { CartExtension.CommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartAdjustmentBasis_to_AbstractCommerceObject",
+  "name": "Probe006",
+  "source": "public class Probe006 { public static void m(CartExtension.CartAdjustmentBasis x) { CartExtension.AbstractCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartAdjustmentBasis_to_AbstractBaseCommerceObject",
+  "name": "Probe007",
+  "source": "public class Probe007 { public static void m(CartExtension.CartAdjustmentBasis x) { CartExtension.AbstractBaseCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartAdjustmentBasis_to_AbstractCartList",
+  "name": "Probe008",
+  "source": "public class Probe008 { public static void m(CartExtension.CartAdjustmentBasis x) { CartExtension.AbstractCartList o = x; } }"
+ },
+ {
+  "id": "assign_CartAdjustmentBasis_to_BaseSObjectWrapper",
+  "name": "Probe009",
+  "source": "public class Probe009 { public static void m(CartExtension.CartAdjustmentBasis x) { CartExtension.BaseSObjectWrapper o = x; } }"
+ },
+ {
+  "id": "assign_CartAdjustmentGroup_to_CommerceObject",
+  "name": "Probe010",
+  "source": "public class Probe010 { public static void m(CartExtension.CartAdjustmentGroup x) { CartExtension.CommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartAdjustmentGroup_to_AbstractCommerceObject",
+  "name": "Probe011",
+  "source": "public class Probe011 { public static void m(CartExtension.CartAdjustmentGroup x) { CartExtension.AbstractCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartAdjustmentGroup_to_AbstractBaseCommerceObject",
+  "name": "Probe012",
+  "source": "public class Probe012 { public static void m(CartExtension.CartAdjustmentGroup x) { CartExtension.AbstractBaseCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartAdjustmentGroup_to_AbstractCartList",
+  "name": "Probe013",
+  "source": "public class Probe013 { public static void m(CartExtension.CartAdjustmentGroup x) { CartExtension.AbstractCartList o = x; } }"
+ },
+ {
+  "id": "assign_CartAdjustmentGroup_to_BaseSObjectWrapper",
+  "name": "Probe014",
+  "source": "public class Probe014 { public static void m(CartExtension.CartAdjustmentGroup x) { CartExtension.BaseSObjectWrapper o = x; } }"
+ },
+ {
+  "id": "assign_CartDeliveryGroup_to_CommerceObject",
+  "name": "Probe015",
+  "source": "public class Probe015 { public static void m(CartExtension.CartDeliveryGroup x) { CartExtension.CommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartDeliveryGroup_to_AbstractCommerceObject",
+  "name": "Probe016",
+  "source": "public class Probe016 { public static void m(CartExtension.CartDeliveryGroup x) { CartExtension.AbstractCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartDeliveryGroup_to_AbstractBaseCommerceObject",
+  "name": "Probe017",
+  "source": "public class Probe017 { public static void m(CartExtension.CartDeliveryGroup x) { CartExtension.AbstractBaseCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartDeliveryGroup_to_AbstractCartList",
+  "name": "Probe018",
+  "source": "public class Probe018 { public static void m(CartExtension.CartDeliveryGroup x) { CartExtension.AbstractCartList o = x; } }"
+ },
+ {
+  "id": "assign_CartDeliveryGroup_to_BaseSObjectWrapper",
+  "name": "Probe019",
+  "source": "public class Probe019 { public static void m(CartExtension.CartDeliveryGroup x) { CartExtension.BaseSObjectWrapper o = x; } }"
+ },
+ {
+  "id": "assign_CartDeliveryGroupMethod_to_CommerceObject",
+  "name": "Probe020",
+  "source": "public class Probe020 { public static void m(CartExtension.CartDeliveryGroupMethod x) { CartExtension.CommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartDeliveryGroupMethod_to_AbstractCommerceObject",
+  "name": "Probe021",
+  "source": "public class Probe021 { public static void m(CartExtension.CartDeliveryGroupMethod x) { CartExtension.AbstractCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartDeliveryGroupMethod_to_AbstractBaseCommerceObject",
+  "name": "Probe022",
+  "source": "public class Probe022 { public static void m(CartExtension.CartDeliveryGroupMethod x) { CartExtension.AbstractBaseCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartDeliveryGroupMethod_to_AbstractCartList",
+  "name": "Probe023",
+  "source": "public class Probe023 { public static void m(CartExtension.CartDeliveryGroupMethod x) { CartExtension.AbstractCartList o = x; } }"
+ },
+ {
+  "id": "assign_CartDeliveryGroupMethod_to_BaseSObjectWrapper",
+  "name": "Probe024",
+  "source": "public class Probe024 { public static void m(CartExtension.CartDeliveryGroupMethod x) { CartExtension.BaseSObjectWrapper o = x; } }"
+ },
+ {
+  "id": "assign_CartDeliveryGroupMethodAdj_to_CommerceObject",
+  "name": "Probe025",
+  "source": "public class Probe025 { public static void m(CartExtension.CartDeliveryGroupMethodAdj x) { CartExtension.CommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartDeliveryGroupMethodAdj_to_AbstractCommerceObject",
+  "name": "Probe026",
+  "source": "public class Probe026 { public static void m(CartExtension.CartDeliveryGroupMethodAdj x) { CartExtension.AbstractCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartDeliveryGroupMethodAdj_to_AbstractBaseCommerceObject",
+  "name": "Probe027",
+  "source": "public class Probe027 { public static void m(CartExtension.CartDeliveryGroupMethodAdj x) { CartExtension.AbstractBaseCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartDeliveryGroupMethodAdj_to_AbstractCartList",
+  "name": "Probe028",
+  "source": "public class Probe028 { public static void m(CartExtension.CartDeliveryGroupMethodAdj x) { CartExtension.AbstractCartList o = x; } }"
+ },
+ {
+  "id": "assign_CartDeliveryGroupMethodAdj_to_BaseSObjectWrapper",
+  "name": "Probe029",
+  "source": "public class Probe029 { public static void m(CartExtension.CartDeliveryGroupMethodAdj x) { CartExtension.BaseSObjectWrapper o = x; } }"
+ },
+ {
+  "id": "assign_CartItem_to_CommerceObject",
+  "name": "Probe030",
+  "source": "public class Probe030 { public static void m(CartExtension.CartItem x) { CartExtension.CommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartItem_to_AbstractCommerceObject",
+  "name": "Probe031",
+  "source": "public class Probe031 { public static void m(CartExtension.CartItem x) { CartExtension.AbstractCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartItem_to_AbstractBaseCommerceObject",
+  "name": "Probe032",
+  "source": "public class Probe032 { public static void m(CartExtension.CartItem x) { CartExtension.AbstractBaseCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartItem_to_AbstractCartList",
+  "name": "Probe033",
+  "source": "public class Probe033 { public static void m(CartExtension.CartItem x) { CartExtension.AbstractCartList o = x; } }"
+ },
+ {
+  "id": "assign_CartItem_to_BaseSObjectWrapper",
+  "name": "Probe034",
+  "source": "public class Probe034 { public static void m(CartExtension.CartItem x) { CartExtension.BaseSObjectWrapper o = x; } }"
+ },
+ {
+  "id": "assign_CartItemAttribute_to_CommerceObject",
+  "name": "Probe035",
+  "source": "public class Probe035 { public static void m(CartExtension.CartItemAttribute x) { CartExtension.CommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartItemAttribute_to_AbstractCommerceObject",
+  "name": "Probe036",
+  "source": "public class Probe036 { public static void m(CartExtension.CartItemAttribute x) { CartExtension.AbstractCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartItemAttribute_to_AbstractBaseCommerceObject",
+  "name": "Probe037",
+  "source": "public class Probe037 { public static void m(CartExtension.CartItemAttribute x) { CartExtension.AbstractBaseCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartItemAttribute_to_AbstractCartList",
+  "name": "Probe038",
+  "source": "public class Probe038 { public static void m(CartExtension.CartItemAttribute x) { CartExtension.AbstractCartList o = x; } }"
+ },
+ {
+  "id": "assign_CartItemAttribute_to_BaseSObjectWrapper",
+  "name": "Probe039",
+  "source": "public class Probe039 { public static void m(CartExtension.CartItemAttribute x) { CartExtension.BaseSObjectWrapper o = x; } }"
+ },
+ {
+  "id": "assign_CartItemPriceAdjustment_to_CommerceObject",
+  "name": "Probe040",
+  "source": "public class Probe040 { public static void m(CartExtension.CartItemPriceAdjustment x) { CartExtension.CommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartItemPriceAdjustment_to_AbstractCommerceObject",
+  "name": "Probe041",
+  "source": "public class Probe041 { public static void m(CartExtension.CartItemPriceAdjustment x) { CartExtension.AbstractCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartItemPriceAdjustment_to_AbstractBaseCommerceObject",
+  "name": "Probe042",
+  "source": "public class Probe042 { public static void m(CartExtension.CartItemPriceAdjustment x) { CartExtension.AbstractBaseCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartItemPriceAdjustment_to_AbstractCartList",
+  "name": "Probe043",
+  "source": "public class Probe043 { public static void m(CartExtension.CartItemPriceAdjustment x) { CartExtension.AbstractCartList o = x; } }"
+ },
+ {
+  "id": "assign_CartItemPriceAdjustment_to_BaseSObjectWrapper",
+  "name": "Probe044",
+  "source": "public class Probe044 { public static void m(CartExtension.CartItemPriceAdjustment x) { CartExtension.BaseSObjectWrapper o = x; } }"
+ },
+ {
+  "id": "assign_CartTax_to_CommerceObject",
+  "name": "Probe045",
+  "source": "public class Probe045 { public static void m(CartExtension.CartTax x) { CartExtension.CommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartTax_to_AbstractCommerceObject",
+  "name": "Probe046",
+  "source": "public class Probe046 { public static void m(CartExtension.CartTax x) { CartExtension.AbstractCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartTax_to_AbstractBaseCommerceObject",
+  "name": "Probe047",
+  "source": "public class Probe047 { public static void m(CartExtension.CartTax x) { CartExtension.AbstractBaseCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartTax_to_AbstractCartList",
+  "name": "Probe048",
+  "source": "public class Probe048 { public static void m(CartExtension.CartTax x) { CartExtension.AbstractCartList o = x; } }"
+ },
+ {
+  "id": "assign_CartTax_to_BaseSObjectWrapper",
+  "name": "Probe049",
+  "source": "public class Probe049 { public static void m(CartExtension.CartTax x) { CartExtension.BaseSObjectWrapper o = x; } }"
+ },
+ {
+  "id": "assign_CartValidationOutput_to_CommerceObject",
+  "name": "Probe050",
+  "source": "public class Probe050 { public static void m(CartExtension.CartValidationOutput x) { CartExtension.CommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartValidationOutput_to_AbstractCommerceObject",
+  "name": "Probe051",
+  "source": "public class Probe051 { public static void m(CartExtension.CartValidationOutput x) { CartExtension.AbstractCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartValidationOutput_to_AbstractBaseCommerceObject",
+  "name": "Probe052",
+  "source": "public class Probe052 { public static void m(CartExtension.CartValidationOutput x) { CartExtension.AbstractBaseCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartValidationOutput_to_AbstractCartList",
+  "name": "Probe053",
+  "source": "public class Probe053 { public static void m(CartExtension.CartValidationOutput x) { CartExtension.AbstractCartList o = x; } }"
+ },
+ {
+  "id": "assign_CartValidationOutput_to_BaseSObjectWrapper",
+  "name": "Probe054",
+  "source": "public class Probe054 { public static void m(CartExtension.CartValidationOutput x) { CartExtension.BaseSObjectWrapper o = x; } }"
+ },
+ {
+  "id": "assign_BuyerActionsMock_to_CommerceObject",
+  "name": "Probe055",
+  "source": "public class Probe055 { public static void m(CartExtension.BuyerActionsMock x) { CartExtension.CommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_BuyerActionsMock_to_AbstractCommerceObject",
+  "name": "Probe056",
+  "source": "public class Probe056 { public static void m(CartExtension.BuyerActionsMock x) { CartExtension.AbstractCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_BuyerActionsMock_to_AbstractBaseCommerceObject",
+  "name": "Probe057",
+  "source": "public class Probe057 { public static void m(CartExtension.BuyerActionsMock x) { CartExtension.AbstractBaseCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_BuyerActionsMock_to_AbstractCartList",
+  "name": "Probe058",
+  "source": "public class Probe058 { public static void m(CartExtension.BuyerActionsMock x) { CartExtension.AbstractCartList o = x; } }"
+ },
+ {
+  "id": "assign_BuyerActionsMock_to_BaseSObjectWrapper",
+  "name": "Probe059",
+  "source": "public class Probe059 { public static void m(CartExtension.BuyerActionsMock x) { CartExtension.BaseSObjectWrapper o = x; } }"
+ },
+ {
+  "id": "assign_BuyerActions_to_CommerceObject",
+  "name": "Probe060",
+  "source": "public class Probe060 { public static void m(CartExtension.BuyerActions x) { CartExtension.CommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_BuyerActions_to_AbstractCommerceObject",
+  "name": "Probe061",
+  "source": "public class Probe061 { public static void m(CartExtension.BuyerActions x) { CartExtension.AbstractCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_BuyerActions_to_AbstractBaseCommerceObject",
+  "name": "Probe062",
+  "source": "public class Probe062 { public static void m(CartExtension.BuyerActions x) { CartExtension.AbstractBaseCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_BuyerActions_to_AbstractCartList",
+  "name": "Probe063",
+  "source": "public class Probe063 { public static void m(CartExtension.BuyerActions x) { CartExtension.AbstractCartList o = x; } }"
+ },
+ {
+  "id": "assign_BuyerActions_to_BaseSObjectWrapper",
+  "name": "Probe064",
+  "source": "public class Probe064 { public static void m(CartExtension.BuyerActions x) { CartExtension.BaseSObjectWrapper o = x; } }"
+ },
+ {
+  "id": "assign_CartAdjustmentBasisList_to_CommerceObject",
+  "name": "Probe065",
+  "source": "public class Probe065 { public static void m(CartExtension.CartAdjustmentBasisList x) { CartExtension.CommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartAdjustmentBasisList_to_AbstractCommerceObject",
+  "name": "Probe066",
+  "source": "public class Probe066 { public static void m(CartExtension.CartAdjustmentBasisList x) { CartExtension.AbstractCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartAdjustmentBasisList_to_AbstractBaseCommerceObject",
+  "name": "Probe067",
+  "source": "public class Probe067 { public static void m(CartExtension.CartAdjustmentBasisList x) { CartExtension.AbstractBaseCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartAdjustmentBasisList_to_AbstractCartList",
+  "name": "Probe068",
+  "source": "public class Probe068 { public static void m(CartExtension.CartAdjustmentBasisList x) { CartExtension.AbstractCartList o = x; } }"
+ },
+ {
+  "id": "assign_CartAdjustmentBasisList_to_BaseSObjectWrapper",
+  "name": "Probe069",
+  "source": "public class Probe069 { public static void m(CartExtension.CartAdjustmentBasisList x) { CartExtension.BaseSObjectWrapper o = x; } }"
+ },
+ {
+  "id": "assign_CartAdjustmentGroupList_to_CommerceObject",
+  "name": "Probe070",
+  "source": "public class Probe070 { public static void m(CartExtension.CartAdjustmentGroupList x) { CartExtension.CommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartAdjustmentGroupList_to_AbstractCommerceObject",
+  "name": "Probe071",
+  "source": "public class Probe071 { public static void m(CartExtension.CartAdjustmentGroupList x) { CartExtension.AbstractCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartAdjustmentGroupList_to_AbstractBaseCommerceObject",
+  "name": "Probe072",
+  "source": "public class Probe072 { public static void m(CartExtension.CartAdjustmentGroupList x) { CartExtension.AbstractBaseCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartAdjustmentGroupList_to_AbstractCartList",
+  "name": "Probe073",
+  "source": "public class Probe073 { public static void m(CartExtension.CartAdjustmentGroupList x) { CartExtension.AbstractCartList o = x; } }"
+ },
+ {
+  "id": "assign_CartAdjustmentGroupList_to_BaseSObjectWrapper",
+  "name": "Probe074",
+  "source": "public class Probe074 { public static void m(CartExtension.CartAdjustmentGroupList x) { CartExtension.BaseSObjectWrapper o = x; } }"
+ },
+ {
+  "id": "assign_CartDeliveryGroupList_to_CommerceObject",
+  "name": "Probe075",
+  "source": "public class Probe075 { public static void m(CartExtension.CartDeliveryGroupList x) { CartExtension.CommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartDeliveryGroupList_to_AbstractCommerceObject",
+  "name": "Probe076",
+  "source": "public class Probe076 { public static void m(CartExtension.CartDeliveryGroupList x) { CartExtension.AbstractCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartDeliveryGroupList_to_AbstractBaseCommerceObject",
+  "name": "Probe077",
+  "source": "public class Probe077 { public static void m(CartExtension.CartDeliveryGroupList x) { CartExtension.AbstractBaseCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartDeliveryGroupList_to_AbstractCartList",
+  "name": "Probe078",
+  "source": "public class Probe078 { public static void m(CartExtension.CartDeliveryGroupList x) { CartExtension.AbstractCartList o = x; } }"
+ },
+ {
+  "id": "assign_CartDeliveryGroupList_to_BaseSObjectWrapper",
+  "name": "Probe079",
+  "source": "public class Probe079 { public static void m(CartExtension.CartDeliveryGroupList x) { CartExtension.BaseSObjectWrapper o = x; } }"
+ },
+ {
+  "id": "assign_CartDeliveryGroupMethodAdjList_to_CommerceObject",
+  "name": "Probe080",
+  "source": "public class Probe080 { public static void m(CartExtension.CartDeliveryGroupMethodAdjList x) { CartExtension.CommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartDeliveryGroupMethodAdjList_to_AbstractCommerceObject",
+  "name": "Probe081",
+  "source": "public class Probe081 { public static void m(CartExtension.CartDeliveryGroupMethodAdjList x) { CartExtension.AbstractCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartDeliveryGroupMethodAdjList_to_AbstractBaseCommerceObject",
+  "name": "Probe082",
+  "source": "public class Probe082 { public static void m(CartExtension.CartDeliveryGroupMethodAdjList x) { CartExtension.AbstractBaseCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartDeliveryGroupMethodAdjList_to_AbstractCartList",
+  "name": "Probe083",
+  "source": "public class Probe083 { public static void m(CartExtension.CartDeliveryGroupMethodAdjList x) { CartExtension.AbstractCartList o = x; } }"
+ },
+ {
+  "id": "assign_CartDeliveryGroupMethodAdjList_to_BaseSObjectWrapper",
+  "name": "Probe084",
+  "source": "public class Probe084 { public static void m(CartExtension.CartDeliveryGroupMethodAdjList x) { CartExtension.BaseSObjectWrapper o = x; } }"
+ },
+ {
+  "id": "assign_CartDeliveryGroupMethodList_to_CommerceObject",
+  "name": "Probe085",
+  "source": "public class Probe085 { public static void m(CartExtension.CartDeliveryGroupMethodList x) { CartExtension.CommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartDeliveryGroupMethodList_to_AbstractCommerceObject",
+  "name": "Probe086",
+  "source": "public class Probe086 { public static void m(CartExtension.CartDeliveryGroupMethodList x) { CartExtension.AbstractCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartDeliveryGroupMethodList_to_AbstractBaseCommerceObject",
+  "name": "Probe087",
+  "source": "public class Probe087 { public static void m(CartExtension.CartDeliveryGroupMethodList x) { CartExtension.AbstractBaseCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartDeliveryGroupMethodList_to_AbstractCartList",
+  "name": "Probe088",
+  "source": "public class Probe088 { public static void m(CartExtension.CartDeliveryGroupMethodList x) { CartExtension.AbstractCartList o = x; } }"
+ },
+ {
+  "id": "assign_CartDeliveryGroupMethodList_to_BaseSObjectWrapper",
+  "name": "Probe089",
+  "source": "public class Probe089 { public static void m(CartExtension.CartDeliveryGroupMethodList x) { CartExtension.BaseSObjectWrapper o = x; } }"
+ },
+ {
+  "id": "assign_CartItemAttributeList_to_CommerceObject",
+  "name": "Probe090",
+  "source": "public class Probe090 { public static void m(CartExtension.CartItemAttributeList x) { CartExtension.CommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartItemAttributeList_to_AbstractCommerceObject",
+  "name": "Probe091",
+  "source": "public class Probe091 { public static void m(CartExtension.CartItemAttributeList x) { CartExtension.AbstractCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartItemAttributeList_to_AbstractBaseCommerceObject",
+  "name": "Probe092",
+  "source": "public class Probe092 { public static void m(CartExtension.CartItemAttributeList x) { CartExtension.AbstractBaseCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartItemAttributeList_to_AbstractCartList",
+  "name": "Probe093",
+  "source": "public class Probe093 { public static void m(CartExtension.CartItemAttributeList x) { CartExtension.AbstractCartList o = x; } }"
+ },
+ {
+  "id": "assign_CartItemAttributeList_to_BaseSObjectWrapper",
+  "name": "Probe094",
+  "source": "public class Probe094 { public static void m(CartExtension.CartItemAttributeList x) { CartExtension.BaseSObjectWrapper o = x; } }"
+ },
+ {
+  "id": "assign_CartItemList_to_CommerceObject",
+  "name": "Probe095",
+  "source": "public class Probe095 { public static void m(CartExtension.CartItemList x) { CartExtension.CommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartItemList_to_AbstractCommerceObject",
+  "name": "Probe096",
+  "source": "public class Probe096 { public static void m(CartExtension.CartItemList x) { CartExtension.AbstractCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartItemList_to_AbstractBaseCommerceObject",
+  "name": "Probe097",
+  "source": "public class Probe097 { public static void m(CartExtension.CartItemList x) { CartExtension.AbstractBaseCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartItemList_to_AbstractCartList",
+  "name": "Probe098",
+  "source": "public class Probe098 { public static void m(CartExtension.CartItemList x) { CartExtension.AbstractCartList o = x; } }"
+ },
+ {
+  "id": "assign_CartItemList_to_BaseSObjectWrapper",
+  "name": "Probe099",
+  "source": "public class Probe099 { public static void m(CartExtension.CartItemList x) { CartExtension.BaseSObjectWrapper o = x; } }"
+ },
+ {
+  "id": "assign_CartItemPriceAdjustmentList_to_CommerceObject",
+  "name": "Probe100",
+  "source": "public class Probe100 { public static void m(CartExtension.CartItemPriceAdjustmentList x) { CartExtension.CommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartItemPriceAdjustmentList_to_AbstractCommerceObject",
+  "name": "Probe101",
+  "source": "public class Probe101 { public static void m(CartExtension.CartItemPriceAdjustmentList x) { CartExtension.AbstractCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartItemPriceAdjustmentList_to_AbstractBaseCommerceObject",
+  "name": "Probe102",
+  "source": "public class Probe102 { public static void m(CartExtension.CartItemPriceAdjustmentList x) { CartExtension.AbstractBaseCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartItemPriceAdjustmentList_to_AbstractCartList",
+  "name": "Probe103",
+  "source": "public class Probe103 { public static void m(CartExtension.CartItemPriceAdjustmentList x) { CartExtension.AbstractCartList o = x; } }"
+ },
+ {
+  "id": "assign_CartItemPriceAdjustmentList_to_BaseSObjectWrapper",
+  "name": "Probe104",
+  "source": "public class Probe104 { public static void m(CartExtension.CartItemPriceAdjustmentList x) { CartExtension.BaseSObjectWrapper o = x; } }"
+ },
+ {
+  "id": "assign_CartTaxList_to_CommerceObject",
+  "name": "Probe105",
+  "source": "public class Probe105 { public static void m(CartExtension.CartTaxList x) { CartExtension.CommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartTaxList_to_AbstractCommerceObject",
+  "name": "Probe106",
+  "source": "public class Probe106 { public static void m(CartExtension.CartTaxList x) { CartExtension.AbstractCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartTaxList_to_AbstractBaseCommerceObject",
+  "name": "Probe107",
+  "source": "public class Probe107 { public static void m(CartExtension.CartTaxList x) { CartExtension.AbstractBaseCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartTaxList_to_AbstractCartList",
+  "name": "Probe108",
+  "source": "public class Probe108 { public static void m(CartExtension.CartTaxList x) { CartExtension.AbstractCartList o = x; } }"
+ },
+ {
+  "id": "assign_CartTaxList_to_BaseSObjectWrapper",
+  "name": "Probe109",
+  "source": "public class Probe109 { public static void m(CartExtension.CartTaxList x) { CartExtension.BaseSObjectWrapper o = x; } }"
+ },
+ {
+  "id": "assign_CartValidationOutputList_to_CommerceObject",
+  "name": "Probe110",
+  "source": "public class Probe110 { public static void m(CartExtension.CartValidationOutputList x) { CartExtension.CommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartValidationOutputList_to_AbstractCommerceObject",
+  "name": "Probe111",
+  "source": "public class Probe111 { public static void m(CartExtension.CartValidationOutputList x) { CartExtension.AbstractCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartValidationOutputList_to_AbstractBaseCommerceObject",
+  "name": "Probe112",
+  "source": "public class Probe112 { public static void m(CartExtension.CartValidationOutputList x) { CartExtension.AbstractBaseCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CartValidationOutputList_to_AbstractCartList",
+  "name": "Probe113",
+  "source": "public class Probe113 { public static void m(CartExtension.CartValidationOutputList x) { CartExtension.AbstractCartList o = x; } }"
+ },
+ {
+  "id": "assign_CartValidationOutputList_to_BaseSObjectWrapper",
+  "name": "Probe114",
+  "source": "public class Probe114 { public static void m(CartExtension.CartValidationOutputList x) { CartExtension.BaseSObjectWrapper o = x; } }"
+ },
+ {
+  "id": "assign_OptionalCartItem_to_CommerceObject",
+  "name": "Probe115",
+  "source": "public class Probe115 { public static void m(CartExtension.OptionalCartItem x) { CartExtension.CommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_OptionalCartItem_to_AbstractCommerceObject",
+  "name": "Probe116",
+  "source": "public class Probe116 { public static void m(CartExtension.OptionalCartItem x) { CartExtension.AbstractCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_OptionalCartItem_to_AbstractBaseCommerceObject",
+  "name": "Probe117",
+  "source": "public class Probe117 { public static void m(CartExtension.OptionalCartItem x) { CartExtension.AbstractBaseCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_OptionalCartItem_to_AbstractCartList",
+  "name": "Probe118",
+  "source": "public class Probe118 { public static void m(CartExtension.OptionalCartItem x) { CartExtension.AbstractCartList o = x; } }"
+ },
+ {
+  "id": "assign_OptionalCartItem_to_BaseSObjectWrapper",
+  "name": "Probe119",
+  "source": "public class Probe119 { public static void m(CartExtension.OptionalCartItem x) { CartExtension.BaseSObjectWrapper o = x; } }"
+ },
+ {
+  "id": "assign_CreateOrderRequest_to_CommerceObject",
+  "name": "Probe120",
+  "source": "public class Probe120 { public static void m(CartExtension.CreateOrderRequest x) { CartExtension.CommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CreateOrderRequest_to_AbstractCommerceObject",
+  "name": "Probe121",
+  "source": "public class Probe121 { public static void m(CartExtension.CreateOrderRequest x) { CartExtension.AbstractCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CreateOrderRequest_to_AbstractBaseCommerceObject",
+  "name": "Probe122",
+  "source": "public class Probe122 { public static void m(CartExtension.CreateOrderRequest x) { CartExtension.AbstractBaseCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_CreateOrderRequest_to_AbstractCartList",
+  "name": "Probe123",
+  "source": "public class Probe123 { public static void m(CartExtension.CreateOrderRequest x) { CartExtension.AbstractCartList o = x; } }"
+ },
+ {
+  "id": "assign_CreateOrderRequest_to_BaseSObjectWrapper",
+  "name": "Probe124",
+  "source": "public class Probe124 { public static void m(CartExtension.CreateOrderRequest x) { CartExtension.BaseSObjectWrapper o = x; } }"
+ },
+ {
+  "id": "assign_PlaceOrderRequest_to_CommerceObject",
+  "name": "Probe125",
+  "source": "public class Probe125 { public static void m(CartExtension.PlaceOrderRequest x) { CartExtension.CommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_PlaceOrderRequest_to_AbstractCommerceObject",
+  "name": "Probe126",
+  "source": "public class Probe126 { public static void m(CartExtension.PlaceOrderRequest x) { CartExtension.AbstractCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_PlaceOrderRequest_to_AbstractBaseCommerceObject",
+  "name": "Probe127",
+  "source": "public class Probe127 { public static void m(CartExtension.PlaceOrderRequest x) { CartExtension.AbstractBaseCommerceObject o = x; } }"
+ },
+ {
+  "id": "assign_PlaceOrderRequest_to_AbstractCartList",
+  "name": "Probe128",
+  "source": "public class Probe128 { public static void m(CartExtension.PlaceOrderRequest x) { CartExtension.AbstractCartList o = x; } }"
+ },
+ {
+  "id": "assign_PlaceOrderRequest_to_BaseSObjectWrapper",
+  "name": "Probe129",
+  "source": "public class Probe129 { public static void m(CartExtension.PlaceOrderRequest x) { CartExtension.BaseSObjectWrapper o = x; } }"
+ },
+ {
+  "id": "iterator_next_CartAdjustmentBasisList",
+  "name": "Probe130",
+  "source": "public class Probe130 { public static void m(CartExtension.CartAdjustmentBasisList x) { CartExtension.CartAdjustmentBasis e = x.iterator().next(); } }"
+ },
+ {
+  "id": "iterator_typed_CartAdjustmentBasisList",
+  "name": "Probe131",
+  "source": "public class Probe131 { public static void m(CartExtension.CartAdjustmentBasisList x) { Iterator<CartExtension.CartAdjustmentBasis> it = x.iterator(); } }"
+ },
+ {
+  "id": "get_CartAdjustmentBasisList",
+  "name": "Probe132",
+  "source": "public class Probe132 { public static void m(CartExtension.CartAdjustmentBasisList x) { CartExtension.CartAdjustmentBasis e = x.get(0); } }"
+ },
+ {
+  "id": "add_CartAdjustmentBasisList",
+  "name": "Probe133",
+  "source": "public class Probe133 { public static void m(CartExtension.CartAdjustmentBasisList x) { x.add((CartExtension.CartAdjustmentBasis) null); } }"
+ },
+ {
+  "id": "remove_CartAdjustmentBasisList",
+  "name": "Probe134",
+  "source": "public class Probe134 { public static void m(CartExtension.CartAdjustmentBasisList x) { x.remove((CartExtension.CartAdjustmentBasis) null); } }"
+ },
+ {
+  "id": "size_clear_CartAdjustmentBasisList",
+  "name": "Probe135",
+  "source": "public class Probe135 { public static void m(CartExtension.CartAdjustmentBasisList x) { Integer n = x.size(); Boolean b = x.isEmpty(); x.clear(); } }"
+ },
+ {
+  "id": "index_of_CartAdjustmentBasisList",
+  "name": "Probe136",
+  "source": "public class Probe136 { public static void m(CartExtension.CartAdjustmentBasisList x) { Integer n = x.indexOf((CartExtension.CartAdjustmentBasis) null); } }"
+ },
+ {
+  "id": "iterator_next_CartAdjustmentGroupList",
+  "name": "Probe137",
+  "source": "public class Probe137 { public static void m(CartExtension.CartAdjustmentGroupList x) { CartExtension.CartAdjustmentGroup e = x.iterator().next(); } }"
+ },
+ {
+  "id": "iterator_typed_CartAdjustmentGroupList",
+  "name": "Probe138",
+  "source": "public class Probe138 { public static void m(CartExtension.CartAdjustmentGroupList x) { Iterator<CartExtension.CartAdjustmentGroup> it = x.iterator(); } }"
+ },
+ {
+  "id": "get_CartAdjustmentGroupList",
+  "name": "Probe139",
+  "source": "public class Probe139 { public static void m(CartExtension.CartAdjustmentGroupList x) { CartExtension.CartAdjustmentGroup e = x.get(0); } }"
+ },
+ {
+  "id": "add_CartAdjustmentGroupList",
+  "name": "Probe140",
+  "source": "public class Probe140 { public static void m(CartExtension.CartAdjustmentGroupList x) { x.add((CartExtension.CartAdjustmentGroup) null); } }"
+ },
+ {
+  "id": "remove_CartAdjustmentGroupList",
+  "name": "Probe141",
+  "source": "public class Probe141 { public static void m(CartExtension.CartAdjustmentGroupList x) { x.remove((CartExtension.CartAdjustmentGroup) null); } }"
+ },
+ {
+  "id": "size_clear_CartAdjustmentGroupList",
+  "name": "Probe142",
+  "source": "public class Probe142 { public static void m(CartExtension.CartAdjustmentGroupList x) { Integer n = x.size(); Boolean b = x.isEmpty(); x.clear(); } }"
+ },
+ {
+  "id": "index_of_CartAdjustmentGroupList",
+  "name": "Probe143",
+  "source": "public class Probe143 { public static void m(CartExtension.CartAdjustmentGroupList x) { Integer n = x.indexOf((CartExtension.CartAdjustmentGroup) null); } }"
+ },
+ {
+  "id": "iterator_next_CartDeliveryGroupList",
+  "name": "Probe144",
+  "source": "public class Probe144 { public static void m(CartExtension.CartDeliveryGroupList x) { CartExtension.CartDeliveryGroup e = x.iterator().next(); } }"
+ },
+ {
+  "id": "iterator_typed_CartDeliveryGroupList",
+  "name": "Probe145",
+  "source": "public class Probe145 { public static void m(CartExtension.CartDeliveryGroupList x) { Iterator<CartExtension.CartDeliveryGroup> it = x.iterator(); } }"
+ },
+ {
+  "id": "get_CartDeliveryGroupList",
+  "name": "Probe146",
+  "source": "public class Probe146 { public static void m(CartExtension.CartDeliveryGroupList x) { CartExtension.CartDeliveryGroup e = x.get(0); } }"
+ },
+ {
+  "id": "add_CartDeliveryGroupList",
+  "name": "Probe147",
+  "source": "public class Probe147 { public static void m(CartExtension.CartDeliveryGroupList x) { x.add((CartExtension.CartDeliveryGroup) null); } }"
+ },
+ {
+  "id": "remove_CartDeliveryGroupList",
+  "name": "Probe148",
+  "source": "public class Probe148 { public static void m(CartExtension.CartDeliveryGroupList x) { x.remove((CartExtension.CartDeliveryGroup) null); } }"
+ },
+ {
+  "id": "size_clear_CartDeliveryGroupList",
+  "name": "Probe149",
+  "source": "public class Probe149 { public static void m(CartExtension.CartDeliveryGroupList x) { Integer n = x.size(); Boolean b = x.isEmpty(); x.clear(); } }"
+ },
+ {
+  "id": "index_of_CartDeliveryGroupList",
+  "name": "Probe150",
+  "source": "public class Probe150 { public static void m(CartExtension.CartDeliveryGroupList x) { Integer n = x.indexOf((CartExtension.CartDeliveryGroup) null); } }"
+ },
+ {
+  "id": "iterator_next_CartDeliveryGroupMethodAdjList",
+  "name": "Probe151",
+  "source": "public class Probe151 { public static void m(CartExtension.CartDeliveryGroupMethodAdjList x) { CartExtension.CartDeliveryGroupMethodAdj e = x.iterator().next(); } }"
+ },
+ {
+  "id": "iterator_typed_CartDeliveryGroupMethodAdjList",
+  "name": "Probe152",
+  "source": "public class Probe152 { public static void m(CartExtension.CartDeliveryGroupMethodAdjList x) { Iterator<CartExtension.CartDeliveryGroupMethodAdj> it = x.iterator(); } }"
+ },
+ {
+  "id": "get_CartDeliveryGroupMethodAdjList",
+  "name": "Probe153",
+  "source": "public class Probe153 { public static void m(CartExtension.CartDeliveryGroupMethodAdjList x) { CartExtension.CartDeliveryGroupMethodAdj e = x.get(0); } }"
+ },
+ {
+  "id": "add_CartDeliveryGroupMethodAdjList",
+  "name": "Probe154",
+  "source": "public class Probe154 { public static void m(CartExtension.CartDeliveryGroupMethodAdjList x) { x.add((CartExtension.CartDeliveryGroupMethodAdj) null); } }"
+ },
+ {
+  "id": "remove_CartDeliveryGroupMethodAdjList",
+  "name": "Probe155",
+  "source": "public class Probe155 { public static void m(CartExtension.CartDeliveryGroupMethodAdjList x) { x.remove((CartExtension.CartDeliveryGroupMethodAdj) null); } }"
+ },
+ {
+  "id": "size_clear_CartDeliveryGroupMethodAdjList",
+  "name": "Probe156",
+  "source": "public class Probe156 { public static void m(CartExtension.CartDeliveryGroupMethodAdjList x) { Integer n = x.size(); Boolean b = x.isEmpty(); x.clear(); } }"
+ },
+ {
+  "id": "index_of_CartDeliveryGroupMethodAdjList",
+  "name": "Probe157",
+  "source": "public class Probe157 { public static void m(CartExtension.CartDeliveryGroupMethodAdjList x) { Integer n = x.indexOf((CartExtension.CartDeliveryGroupMethodAdj) null); } }"
+ },
+ {
+  "id": "iterator_next_CartDeliveryGroupMethodList",
+  "name": "Probe158",
+  "source": "public class Probe158 { public static void m(CartExtension.CartDeliveryGroupMethodList x) { CartExtension.CartDeliveryGroupMethod e = x.iterator().next(); } }"
+ },
+ {
+  "id": "iterator_typed_CartDeliveryGroupMethodList",
+  "name": "Probe159",
+  "source": "public class Probe159 { public static void m(CartExtension.CartDeliveryGroupMethodList x) { Iterator<CartExtension.CartDeliveryGroupMethod> it = x.iterator(); } }"
+ },
+ {
+  "id": "get_CartDeliveryGroupMethodList",
+  "name": "Probe160",
+  "source": "public class Probe160 { public static void m(CartExtension.CartDeliveryGroupMethodList x) { CartExtension.CartDeliveryGroupMethod e = x.get(0); } }"
+ },
+ {
+  "id": "add_CartDeliveryGroupMethodList",
+  "name": "Probe161",
+  "source": "public class Probe161 { public static void m(CartExtension.CartDeliveryGroupMethodList x) { x.add((CartExtension.CartDeliveryGroupMethod) null); } }"
+ },
+ {
+  "id": "remove_CartDeliveryGroupMethodList",
+  "name": "Probe162",
+  "source": "public class Probe162 { public static void m(CartExtension.CartDeliveryGroupMethodList x) { x.remove((CartExtension.CartDeliveryGroupMethod) null); } }"
+ },
+ {
+  "id": "size_clear_CartDeliveryGroupMethodList",
+  "name": "Probe163",
+  "source": "public class Probe163 { public static void m(CartExtension.CartDeliveryGroupMethodList x) { Integer n = x.size(); Boolean b = x.isEmpty(); x.clear(); } }"
+ },
+ {
+  "id": "index_of_CartDeliveryGroupMethodList",
+  "name": "Probe164",
+  "source": "public class Probe164 { public static void m(CartExtension.CartDeliveryGroupMethodList x) { Integer n = x.indexOf((CartExtension.CartDeliveryGroupMethod) null); } }"
+ },
+ {
+  "id": "iterator_next_CartItemAttributeList",
+  "name": "Probe165",
+  "source": "public class Probe165 { public static void m(CartExtension.CartItemAttributeList x) { CartExtension.CartItemAttribute e = x.iterator().next(); } }"
+ },
+ {
+  "id": "iterator_typed_CartItemAttributeList",
+  "name": "Probe166",
+  "source": "public class Probe166 { public static void m(CartExtension.CartItemAttributeList x) { Iterator<CartExtension.CartItemAttribute> it = x.iterator(); } }"
+ },
+ {
+  "id": "get_CartItemAttributeList",
+  "name": "Probe167",
+  "source": "public class Probe167 { public static void m(CartExtension.CartItemAttributeList x) { CartExtension.CartItemAttribute e = x.get(0); } }"
+ },
+ {
+  "id": "add_CartItemAttributeList",
+  "name": "Probe168",
+  "source": "public class Probe168 { public static void m(CartExtension.CartItemAttributeList x) { x.add((CartExtension.CartItemAttribute) null); } }"
+ },
+ {
+  "id": "remove_CartItemAttributeList",
+  "name": "Probe169",
+  "source": "public class Probe169 { public static void m(CartExtension.CartItemAttributeList x) { x.remove((CartExtension.CartItemAttribute) null); } }"
+ },
+ {
+  "id": "size_clear_CartItemAttributeList",
+  "name": "Probe170",
+  "source": "public class Probe170 { public static void m(CartExtension.CartItemAttributeList x) { Integer n = x.size(); Boolean b = x.isEmpty(); x.clear(); } }"
+ },
+ {
+  "id": "index_of_CartItemAttributeList",
+  "name": "Probe171",
+  "source": "public class Probe171 { public static void m(CartExtension.CartItemAttributeList x) { Integer n = x.indexOf((CartExtension.CartItemAttribute) null); } }"
+ },
+ {
+  "id": "iterator_next_CartItemList",
+  "name": "Probe172",
+  "source": "public class Probe172 { public static void m(CartExtension.CartItemList x) { CartExtension.CartItem e = x.iterator().next(); } }"
+ },
+ {
+  "id": "iterator_typed_CartItemList",
+  "name": "Probe173",
+  "source": "public class Probe173 { public static void m(CartExtension.CartItemList x) { Iterator<CartExtension.CartItem> it = x.iterator(); } }"
+ },
+ {
+  "id": "get_CartItemList",
+  "name": "Probe174",
+  "source": "public class Probe174 { public static void m(CartExtension.CartItemList x) { CartExtension.CartItem e = x.get(0); } }"
+ },
+ {
+  "id": "add_CartItemList",
+  "name": "Probe175",
+  "source": "public class Probe175 { public static void m(CartExtension.CartItemList x) { x.add((CartExtension.CartItem) null); } }"
+ },
+ {
+  "id": "remove_CartItemList",
+  "name": "Probe176",
+  "source": "public class Probe176 { public static void m(CartExtension.CartItemList x) { x.remove((CartExtension.CartItem) null); } }"
+ },
+ {
+  "id": "size_clear_CartItemList",
+  "name": "Probe177",
+  "source": "public class Probe177 { public static void m(CartExtension.CartItemList x) { Integer n = x.size(); Boolean b = x.isEmpty(); x.clear(); } }"
+ },
+ {
+  "id": "index_of_CartItemList",
+  "name": "Probe178",
+  "source": "public class Probe178 { public static void m(CartExtension.CartItemList x) { Integer n = x.indexOf((CartExtension.CartItem) null); } }"
+ },
+ {
+  "id": "iterator_next_CartItemPriceAdjustmentList",
+  "name": "Probe179",
+  "source": "public class Probe179 { public static void m(CartExtension.CartItemPriceAdjustmentList x) { CartExtension.CartItemPriceAdjustment e = x.iterator().next(); } }"
+ },
+ {
+  "id": "iterator_typed_CartItemPriceAdjustmentList",
+  "name": "Probe180",
+  "source": "public class Probe180 { public static void m(CartExtension.CartItemPriceAdjustmentList x) { Iterator<CartExtension.CartItemPriceAdjustment> it = x.iterator(); } }"
+ },
+ {
+  "id": "get_CartItemPriceAdjustmentList",
+  "name": "Probe181",
+  "source": "public class Probe181 { public static void m(CartExtension.CartItemPriceAdjustmentList x) { CartExtension.CartItemPriceAdjustment e = x.get(0); } }"
+ },
+ {
+  "id": "add_CartItemPriceAdjustmentList",
+  "name": "Probe182",
+  "source": "public class Probe182 { public static void m(CartExtension.CartItemPriceAdjustmentList x) { x.add((CartExtension.CartItemPriceAdjustment) null); } }"
+ },
+ {
+  "id": "remove_CartItemPriceAdjustmentList",
+  "name": "Probe183",
+  "source": "public class Probe183 { public static void m(CartExtension.CartItemPriceAdjustmentList x) { x.remove((CartExtension.CartItemPriceAdjustment) null); } }"
+ },
+ {
+  "id": "size_clear_CartItemPriceAdjustmentList",
+  "name": "Probe184",
+  "source": "public class Probe184 { public static void m(CartExtension.CartItemPriceAdjustmentList x) { Integer n = x.size(); Boolean b = x.isEmpty(); x.clear(); } }"
+ },
+ {
+  "id": "index_of_CartItemPriceAdjustmentList",
+  "name": "Probe185",
+  "source": "public class Probe185 { public static void m(CartExtension.CartItemPriceAdjustmentList x) { Integer n = x.indexOf((CartExtension.CartItemPriceAdjustment) null); } }"
+ },
+ {
+  "id": "iterator_next_CartTaxList",
+  "name": "Probe186",
+  "source": "public class Probe186 { public static void m(CartExtension.CartTaxList x) { CartExtension.CartTax e = x.iterator().next(); } }"
+ },
+ {
+  "id": "iterator_typed_CartTaxList",
+  "name": "Probe187",
+  "source": "public class Probe187 { public static void m(CartExtension.CartTaxList x) { Iterator<CartExtension.CartTax> it = x.iterator(); } }"
+ },
+ {
+  "id": "get_CartTaxList",
+  "name": "Probe188",
+  "source": "public class Probe188 { public static void m(CartExtension.CartTaxList x) { CartExtension.CartTax e = x.get(0); } }"
+ },
+ {
+  "id": "add_CartTaxList",
+  "name": "Probe189",
+  "source": "public class Probe189 { public static void m(CartExtension.CartTaxList x) { x.add((CartExtension.CartTax) null); } }"
+ },
+ {
+  "id": "remove_CartTaxList",
+  "name": "Probe190",
+  "source": "public class Probe190 { public static void m(CartExtension.CartTaxList x) { x.remove((CartExtension.CartTax) null); } }"
+ },
+ {
+  "id": "size_clear_CartTaxList",
+  "name": "Probe191",
+  "source": "public class Probe191 { public static void m(CartExtension.CartTaxList x) { Integer n = x.size(); Boolean b = x.isEmpty(); x.clear(); } }"
+ },
+ {
+  "id": "index_of_CartTaxList",
+  "name": "Probe192",
+  "source": "public class Probe192 { public static void m(CartExtension.CartTaxList x) { Integer n = x.indexOf((CartExtension.CartTax) null); } }"
+ },
+ {
+  "id": "iterator_next_CartValidationOutputList",
+  "name": "Probe193",
+  "source": "public class Probe193 { public static void m(CartExtension.CartValidationOutputList x) { CartExtension.CartValidationOutput e = x.iterator().next(); } }"
+ },
+ {
+  "id": "iterator_typed_CartValidationOutputList",
+  "name": "Probe194",
+  "source": "public class Probe194 { public static void m(CartExtension.CartValidationOutputList x) { Iterator<CartExtension.CartValidationOutput> it = x.iterator(); } }"
+ },
+ {
+  "id": "get_CartValidationOutputList",
+  "name": "Probe195",
+  "source": "public class Probe195 { public static void m(CartExtension.CartValidationOutputList x) { CartExtension.CartValidationOutput e = x.get(0); } }"
+ },
+ {
+  "id": "add_CartValidationOutputList",
+  "name": "Probe196",
+  "source": "public class Probe196 { public static void m(CartExtension.CartValidationOutputList x) { x.add((CartExtension.CartValidationOutput) null); } }"
+ },
+ {
+  "id": "remove_CartValidationOutputList",
+  "name": "Probe197",
+  "source": "public class Probe197 { public static void m(CartExtension.CartValidationOutputList x) { x.remove((CartExtension.CartValidationOutput) null); } }"
+ },
+ {
+  "id": "size_clear_CartValidationOutputList",
+  "name": "Probe198",
+  "source": "public class Probe198 { public static void m(CartExtension.CartValidationOutputList x) { Integer n = x.size(); Boolean b = x.isEmpty(); x.clear(); } }"
+ },
+ {
+  "id": "index_of_CartValidationOutputList",
+  "name": "Probe199",
+  "source": "public class Probe199 { public static void m(CartExtension.CartValidationOutputList x) { Integer n = x.indexOf((CartExtension.CartValidationOutput) null); } }"
+ },
+ {
+  "id": "mock_to_base",
+  "name": "Probe200",
+  "source": "public class Probe200 { public static void m(Integer x) { CartExtension.BuyerActions b = (CartExtension.BuyerActionsMock) null; } }"
+ },
+ {
+  "id": "base_to_mock",
+  "name": "Probe201",
+  "source": "public class Probe201 { public static void m(Integer x) { CartExtension.BuyerActionsMock b = (CartExtension.BuyerActions) null; } }"
+ },
+ {
+  "id": "iterator_next_object",
+  "name": "Probe202",
+  "source": "public class Probe202 { public static void m(CartExtension.CartItemList x) { Object o = x.iterator().next(); } }"
+ },
+ {
+  "id": "iterator_has_next",
+  "name": "Probe203",
+  "source": "public class Probe203 { public static void m(CartExtension.CartItemList x) { Boolean b = x.iterator().hasNext(); } }"
+ }
+]

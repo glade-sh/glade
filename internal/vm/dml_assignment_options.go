@@ -63,9 +63,14 @@ func (vm *VM) validateAssignmentRuleOptionRoute(op string, records, options Valu
 	if records.Kind == ValueList {
 		items = records.List
 	}
+	selection, err := databaseAssignmentRuleOptions(options)
+	if err != nil {
+		return err
+	}
 	for _, record := range items {
 		kind := vm.canonicalSObjectValueType(record)
-		if record.Kind != ValueObject || (!strings.EqualFold(kind, "Lead") && !strings.EqualFold(kind, "Case")) {
+		accountDefault := op == "insert" && strings.EqualFold(kind, "Account") && selection != nil && selection.UseDefault && selection.ID == ""
+		if record.Kind != ValueObject || (!strings.EqualFold(kind, "Lead") && !strings.EqualFold(kind, "Case") && !accountDefault) {
 			return unsupportedCallError("Database.DMLOptions.AssignmentRuleHeader local DML option behavior")
 		}
 	}

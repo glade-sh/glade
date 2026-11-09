@@ -127,16 +127,15 @@ func TestAnalyzeQualifiedReceiverNativeControls(t *testing.T) {
 			t.Fatalf("invalid native row: %v", row)
 		}
 		seen[key] = true
-		// These native rejections remain local false acceptances. Report them
-		// as named KNOWN_GAP skips, never as passing native conformance rows.
-		if c[1] == "known_gap" && row[2] != "standard_schema_fields_map" || row[1] == "anonymous" && c[1] == "receiver" && row[3] == "false" {
-			t.Run("KNOWN_GAP/"+key, func(t *testing.T) {
-				if row[3] != "false" {
-					t.Fatalf("known gap must cite a native rejection: %v", row)
-				}
-				t.Skipf("KNOWN GAP: local analysis accepts %s; native compile.tsv row %s rejects it: %s", c[2], key, row[4])
-			})
-			continue
+		// The capture deployed Flag__c with no field grant. Native anonymous
+		// compilation hides an ungranted custom field (custom_address_fields
+		// ASSIGNMENT-RUN.txt: unassigned "Variable does not exist", assigned
+		// compiles). glade exec passes the runtime's hidden-field answer
+		// (vm.AnonymousPolicyHiddenFields) through WithoutAnonymousHiddenFields;
+		// here the capture's grant state is that answer: Flag__c is hidden.
+		hidden := map[string][]string(nil)
+		if row[1] == "anonymous" && c[1] == "receiver" {
+			hidden = map[string][]string{"Meadow__c": {"Flag__c"}}
 		}
 		// The positive project matrix covers named compilation.
 		if row[1] == "isTest" && c[1] == "receiver" {
@@ -147,13 +146,22 @@ func TestAnalyzeQualifiedReceiverNativeControls(t *testing.T) {
 			index := qualifiedReceiverIndex(t, row[0], "", "present", "public class ReceiverMatrix {}", ".cls")
 			var result Result
 			if row[1] == "anonymous" {
-				result = AnalyzeAnonymous(index, source, row[0])
+				result = AnalyzeAnonymous(WithoutAnonymousHiddenFields(index, hidden), source, row[0])
 			} else {
 				index = qualifiedReceiverIndex(t, row[0], "", "present", "@IsTest private class ReceiverMatrix { @IsTest static void observe() { "+source+" } }", ".cls")
 				result = Analyze(index)
 			}
 			if accepted := len(result.Diagnostics) == 0; accepted != (row[3] == "true") {
 				t.Fatalf("native compiled=%s problem=%q; Glade diagnostics=%+v", row[3], row[4], result.Diagnostics)
+			}
+			if row[3] == "false" {
+				matched := false
+				for _, d := range result.Diagnostics {
+					matched = matched || d.NativeMessage == row[4] || d.Message == row[4]
+				}
+				if !matched {
+					t.Fatalf("native problem %q; Glade diagnostics=%+v", row[4], result.Diagnostics)
+				}
 			}
 		})
 	}

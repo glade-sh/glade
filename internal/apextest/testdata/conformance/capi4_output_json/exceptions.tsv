@@ -1,0 +1,7 @@
+api	connectapi_exception	user_exception
+62.0	X:System.JSONException:Only output types from ConnectApi support serialization	{}
+63.0	X:System.JSONException:Type unsupported in JSON: <SimpleName>	X:System.JSONException:Type unsupported in JSON: MyException
+64.0	X:System.JSONException:Type unsupported in JSON: <SimpleName>	X:System.JSONException:Type unsupported in JSON: MyException
+65.0	X:System.JSONException:Type unsupported in JSON: <SimpleName>	X:System.JSONException:Type unsupported in JSON: MyException
+66.0	X:System.JSONException:Type unsupported in JSON: <SimpleName>	X:System.JSONException:Type unsupported in JSON: MyException
+67.0	X:System.JSONException:Type unsupported in JSON: <SimpleName>	X:System.JSONException:Type unsupported in JSON: MyException

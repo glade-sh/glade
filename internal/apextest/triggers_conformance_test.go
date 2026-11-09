@@ -145,6 +145,14 @@ func TestTriggersOrgConformance(t *testing.T) {
 				}
 				writeFile(t, filepath.Join(root, name), contents)
 			}
+			// triggers_capture_assignment/ASSIGNMENT-RUN.txt: the capture assigned
+			// A37OracleAccess to the running user at both APIs.
+			grant, err := os.ReadFile("testdata/conformance/triggers_capture_assignment/A37OracleAccess.permissionset-meta.xml")
+			if err != nil {
+				t.Fatal(err)
+			}
+			writeFile(t, filepath.Join(root, "force-app/main/default/permissionsets/A37OracleAccess.permissionset-meta.xml"), string(grant))
+			writeCapturedAssignments(t, root, "A37OracleAccess")
 			helperPath := filepath.Join(root, "force-app/main/default/classes/P.cls")
 			writeFile(t, helperPath, helper)
 			writeFile(t, helperPath+"-meta.xml", "<ApexClass><apiVersion>"+api+"</apiVersion></ApexClass>")
@@ -171,8 +179,7 @@ func TestTriggersOrgConformance(t *testing.T) {
 			if analysis := sema.Analyze(index); analysis.HasErrors() {
 				t.Fatalf("helper semantics: %v", analysis.Diagnostics)
 			}
-			org := orgFromIndex(index)
-			org.APIVersion = api
+			org := capturedFixtureOrg(t, index, api)
 			anonymousRuntime, err := CompileProjectRuntimeForRequestWithSourceDigests(index, nil)
 			if err != nil {
 				t.Fatal(err)

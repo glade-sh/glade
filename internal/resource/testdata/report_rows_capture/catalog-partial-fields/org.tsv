@@ -1,0 +1,13 @@
+api	route	case	result
+62.0	anonymous	partial-account	Account: Custom Info~Account.B6_Text__c;
+62.0	anonymous	partial-contact	Contact: Custom Info~Contact.B6_Date__c;Account: Custom Info~Account.B6_Text__c;
+62.0	anonymous	partial-opportunity	Opportunity: Custom Info~Opportunity.B6_Amount__c;Account: Custom Info~Account.B6_Text__c;
+62.0	seealldata	partial-account	Account: Custom Info~Account.B6_Text__c;
+62.0	seealldata	partial-contact	Contact: Custom Info~Contact.B6_Date__c;Account: Custom Info~Account.B6_Text__c;
+62.0	seealldata	partial-opportunity	Opportunity: Custom Info~Opportunity.B6_Amount__c;Account: Custom Info~Account.B6_Text__c;
+67.0	anonymous	partial-account	Account: Custom Info~Account.B6_Text__c;
+67.0	anonymous	partial-contact	Contact: Custom Info~Contact.B6_Date__c;Account: Custom Info~Account.B6_Text__c;
+67.0	anonymous	partial-opportunity	Opportunity: Custom Info~Opportunity.B6_Amount__c;Account: Custom Info~Account.B6_Text__c;
+67.0	seealldata	partial-account	Account: Custom Info~Account.B6_Text__c;
+67.0	seealldata	partial-contact	Contact: Custom Info~Contact.B6_Date__c;Account: Custom Info~Account.B6_Text__c;
+67.0	seealldata	partial-opportunity	Opportunity: Custom Info~Opportunity.B6_Amount__c;Account: Custom Info~Account.B6_Text__c;

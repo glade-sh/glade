@@ -26,13 +26,17 @@ func TestAsyncEntryLimitCapsContracts(t *testing.T) {
 					}
 					machine.SetLimitCaps(caps)
 				} else {
-					want.Queries = 200
 					if route != "Scheduled" {
+						// async_caps_c14 Y7 and scheduled_limit_c09: a Schedulable
+						// keeps the synchronous query cap.
+						want.Queries = 200
 						want.CPUTimeMS = 60000
 						want.HeapSize = asyncHeapLimit
 					}
 				}
-				runAsyncCapsContract(t, machine, route, want, true)
+				// stopTest leaves a scheduled batch pending, so that route runs through
+				// the anonymous local drain.
+				runAsyncCapsContract(t, machine, route, want, route != "ScheduledBatch")
 			})
 		}
 	}

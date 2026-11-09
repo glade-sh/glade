@@ -1,0 +1,1 @@
+SObject r=new GiftTransaction();String msg='accepted';try{r.put('TaxDeductionAmount',null);}catch(SObjectException e){msg=e.getMessage();}System.assertEquals('Invalid field TaxDeductionAmount for GiftTransaction',msg);

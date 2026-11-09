@@ -70,8 +70,7 @@ func TestPersonAccountReadNativeRows(t *testing.T) {
 	}
 }
 
-// Native disabled READ/ADJACENT rows reject in Salesforce; this test pins the
-// accepted Glade compile/runtime split without claiming native parity.
+// Native disabled READ/ADJACENT rows reject at compile time on each route.
 func TestPersonAccountReadRouteShapes(t *testing.T) {
 	cases := personReadRows(t, "cases.tsv")
 	if len(cases) != 6 {
@@ -103,6 +102,25 @@ func TestPersonAccountReadRouteShapes(t *testing.T) {
 						idx := loadTestIndex(t, root)
 						anon := sema.AnalyzeAnonymous(idx, body, api)
 						named := sema.Analyze(idx)
+						field := map[string]string{"READ": "FirstName", "ADJACENT": "LastName"}[id]
+						if !enabled && field != "" {
+							for route, result := range map[string]sema.Result{"anonymous": anon, "project": named} {
+								found := false
+								for _, diagnostic := range result.Diagnostics {
+									if strings.Contains(diagnostic.NativeMessage+" "+diagnostic.Message, "Variable does not exist: "+field) {
+										found = true
+									}
+								}
+								if !found {
+									t.Errorf("%s missing rejection for %s: %v", route, field, result.Diagnostics)
+								}
+							}
+							run := Run(idx, Options{SelectedClasses: []string{"ReadShapeTest"}, SelectedMethod: "sample", NoDiskCache: true, Parallelism: 1})
+							if run.Summary().CompileErrors == 0 {
+								t.Errorf("missing project compile rejection: %+v", run.Summary())
+							}
+							return
+						}
 						if anon.HasErrors() || named.HasErrors() {
 							t.Fatalf("compile shape changed: anonymous=%v project=%v", anon.Diagnostics, named.Diagnostics)
 						}
@@ -116,7 +134,6 @@ func TestPersonAccountReadRouteShapes(t *testing.T) {
 						}
 						org := orgFromIndex(idx)
 						runner := newConformanceRunner(t, idx, conformanceRunnerOptions{LinkProject: true, Org: &org})
-						field := map[string]string{"READ": "FirstName", "ADJACENT": "LastName"}[id]
 						reject := !enabled && field != ""
 						for _, state := range []string{"cold", "warm"} {
 							_, runtimeErr := runner.execute(program)

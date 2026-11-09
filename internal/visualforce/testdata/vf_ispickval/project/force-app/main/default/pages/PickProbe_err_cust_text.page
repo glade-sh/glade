@@ -1,0 +1,3 @@
+<apex:page standardController="PickProbe__c" extensions="PickProbeController" showHeader="false" sidebar="false" standardStylesheets="false">
+<div data-case="err-cust-text">{!ISPICKVAL(PickProbe__c.Note__c, 'Open')}</div>
+</apex:page>

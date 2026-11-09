@@ -31,6 +31,7 @@ func TestPersonAccountDeclaredLabelLookupRegression(t *testing.T) {
 }`, label)
 				writeFile(t, filepath.Join(root, "force-app/main/default/classes/LabelLookupTest.cls"), class)
 				writeFile(t, filepath.Join(root, "force-app/main/default/classes/LabelLookupTest.cls-meta.xml"), fmt.Sprintf(`<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>%s</apiVersion><status>Active</status></ApexClass>`, api))
+				writeSyntheticProbeAccess(t, root, "Probe__c", "Account__c")
 				run := Run(loadTestIndex(t, root), Options{NoDiskCache: true, Parallelism: 1})
 				if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
 					for _, suite := range run.Suites {

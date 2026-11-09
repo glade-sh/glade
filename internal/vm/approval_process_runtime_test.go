@@ -21,7 +21,7 @@ Approval.ProcessResult result = Approval.process(request);
 System.assertEquals(true, result.isSuccess());
 System.assertEquals(account.Id, result.getEntityId());
 System.assertEquals('Pending', result.getInstanceStatus());
-System.assertEquals(0, result.getErrors().size());
+System.assertEquals(null, result.getErrors()); // approval_verify rows: null on success
 System.assertNotEquals(null, result.getInstanceId());
 System.assertEquals(1, result.getNewWorkitemIds().size());
 System.assertEquals('005000000000002', result.getActorIds().get(0));

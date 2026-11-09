@@ -1,0 +1,11 @@
+plain	full
+assignViaSupertypeVar	full|5
+mutateViaSupertypeParam	full|6
+staticHolderAssign	full|9
+loopOverSupertypeList	full|11
+nullReceiver	System.NullPointerException|Attempt to de-reference a null object
+staticPlain	full
+staticAssignViaSupertypeVar	full|5
+staticMutateViaSupertypeParam	full|6
+staticAssignViaLocalAlias	full|9
+staticLoopOverSupertypeList	full|11

@@ -25,6 +25,9 @@ func TestPageNamesPreserveStrictLoaderRegistration(t *testing.T) {
 		files     map[string]string
 		wantNames []string
 		wantError bool
+		// wantRegistered lists the pages Apex can name. It is wantNames unless a
+		// strict rejection leaves siblings that load on their own.
+		wantRegistered []string
 	}{
 		{
 			name:      "valid_page",
@@ -75,7 +78,8 @@ func TestPageNamesPreserveStrictLoaderRegistration(t *testing.T) {
 				"pages/Example.page":         `<apex:page/>`,
 				"pages/Invalid.page":         `<apex:page><apex:form></apex:page>`,
 			},
-			wantError: true,
+			wantError:      true,
+			wantRegistered: []string{"Example"},
 		},
 		{
 			name: "invalid_component_structure",
@@ -83,7 +87,8 @@ func TestPageNamesPreserveStrictLoaderRegistration(t *testing.T) {
 				"pages/Example.page":         `<apex:page/>`,
 				"components/Panel.component": `<apex:component><apex:outputText></apex:component>`,
 			},
-			wantError: true,
+			wantError:      true,
+			wantRegistered: []string{"Example"},
 		},
 		{
 			name: "invalid_component_type",
@@ -91,7 +96,8 @@ func TestPageNamesPreserveStrictLoaderRegistration(t *testing.T) {
 				"pages/Example.page":         `<apex:page/>`,
 				"components/Panel.component": `<apex:component><apex:attribute name="value" type="MissingType" description="Value"/></apex:component>`,
 			},
-			wantError: true,
+			wantError:      true,
+			wantRegistered: []string{"Example"},
 		},
 	}
 	for _, api := range []string{"59.0", "67.0"} {
@@ -121,11 +127,16 @@ func TestPageNamesPreserveStrictLoaderRegistration(t *testing.T) {
 					t.Fatalf("strict page names = %v, want %v", strictNames, tc.wantNames)
 				}
 
+				registered := tc.wantNames
+				if tc.wantRegistered != nil {
+					registered = tc.wantRegistered
+				}
+
 				// Feed an unsorted discovery slice to check sorting without mutation.
 				slices.Reverse(p.VisualforcePageFiles)
 				paths := slices.Clone(p.VisualforcePageFiles)
-				if got := visualforce.PageNames(p); !slices.Equal(got, tc.wantNames) {
-					t.Errorf("page names = %v, want %v", got, tc.wantNames)
+				if got := visualforce.PageNames(p); !slices.Equal(got, registered) {
+					t.Errorf("page names = %v, want %v", got, registered)
 				}
 				if !slices.Equal(p.VisualforcePageFiles, paths) {
 					t.Error("PageNames changed the discovered paths")
@@ -138,7 +149,7 @@ func TestPageNamesPreserveStrictLoaderRegistration(t *testing.T) {
 					t.Fatal(err)
 				}
 				var wantRuntimeNames []string
-				for _, name := range tc.wantNames {
+				for _, name := range registered {
 					wantRuntimeNames = append(wantRuntimeNames, name)
 					if !strings.Contains(name, "__") {
 						wantRuntimeNames = append(wantRuntimeNames, "pkg__"+name)
@@ -152,7 +163,7 @@ func TestPageNamesPreserveStrictLoaderRegistration(t *testing.T) {
 					t.Fatal(err)
 				}
 				wantURL := "Page.Example"
-				if !tc.wantError {
+				if len(registered) > 0 {
 					wantURL = "/apex/Example"
 				}
 				program, err := vm.CompileAnonymousWithOptions(fmt.Sprintf("System.assertEquals('%s', new PageReference('Page.Example').getUrl());", wantURL), vm.CompileOptions{APIVersion: api})
@@ -162,12 +173,14 @@ func TestPageNamesPreserveStrictLoaderRegistration(t *testing.T) {
 				if _, err := machine.Execute(program); err != nil {
 					t.Errorf("PageReference getUrl: %v", err)
 				}
-				program, err = vm.CompileAnonymousWithOptions("System.assertEquals('/apex/Missing', Page.Missing.getUrl());", vm.CompileOptions{APIVersion: api})
+				// An empty registry keeps the native lowercase URL for an
+				// unqualified page (qualified_page_reference, case159_community_page).
+				program, err = vm.CompileAnonymousWithOptions("System.assertEquals('/apex/missing', Page.Missing.getUrl());", vm.CompileOptions{APIVersion: api})
 				if err != nil {
 					t.Fatal(err)
 				}
 				_, err = machine.Execute(program)
-				if tc.wantError {
+				if len(registered) == 0 {
 					if err != nil {
 						t.Errorf("unknown page with empty registry: %v", err)
 					}

@@ -32,6 +32,7 @@ import (
 	"github.com/glade-sh/glade/internal/trace"
 	"github.com/glade-sh/glade/internal/tui"
 	"github.com/glade-sh/glade/internal/typesys"
+	"github.com/glade-sh/glade/internal/visualforce"
 	"github.com/glade-sh/glade/internal/vm"
 	"github.com/glade-sh/glade/internal/watch"
 )
@@ -967,6 +968,12 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		progressReporter.warn(fmt.Sprintf("for this workspace, try: --project %s", index.Project.Root))
 	}
 	if progressReporter != nil {
+		// Pages the loader left out are reported only; results are unchanged.
+		if len(loadedProject.VisualforcePageFiles) > 0 {
+			for _, message := range visualforce.PageRejectionMessages(index.Project.Root, loadedProject) {
+				progressReporter.warn(message)
+			}
+		}
 		progressReporter.finish()
 	}
 	if !perfEnabled && stopProfile != nil {

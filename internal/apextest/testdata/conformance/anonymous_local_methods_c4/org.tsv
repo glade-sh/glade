@@ -1,0 +1,51 @@
+source_api	case	outcome
+62.0	class_calls_method	DEBUG|["9"]
+62.0	counter	DEBUG|["2"]
+62.0	duplicate	COMPILE|2|9|Method already defined: d Integer anon.d() from the type anon
+62.0	early_return	DEBUG|["done"]
+62.0	final_param	DEBUG|["2"]
+62.0	forward	DEBUG|["20"]
+62.0	generic	DEBUG|["(0, 1, 2){a=0, b=1}"]
+62.0	method_uses_class	DEBUG|["4"]
+62.0	missing_return	COMPILE|1|9|Missing return statement required return type: Integer
+62.0	modifiers	DEBUG|["pq"]
+62.0	name_clash	DEBUG|["21"]
+62.0	outer_var	DEBUG|["(a, b)"]
+62.0	overload	DEBUG|["intstr"]
+62.0	recursion	DEBUG|["120"]
+62.0	returning	DEBUG|["5"]
+62.0	static	DEBUG|["6"]
+62.0	static_calls_instance	DEBUG|["5"]
+62.0	static_outer_var	DEBUG|["3"]
+62.0	this_call	COMPILE|2|26|This cannot be referenced in a static context
+62.0	throws	DEBUG|["caught bad"]
+62.0	var_after	DEBUG|["(a)"]
+62.0	void	DEBUG|["hi x"]
+62.0	void_value	COMPILE|2|8|Illegal assignment from void to Object
+62.0	webservice	COMPILE|1|27|Defining type for webService methods must be declared as global
+62.0	with_class	DEBUG|["7"]
+67.0	class_calls_method	DEBUG|["9"]
+67.0	counter	DEBUG|["2"]
+67.0	duplicate	COMPILE|2|9|Method already defined: d Integer anon.d() from the type anon
+67.0	early_return	DEBUG|["done"]
+67.0	final_param	DEBUG|["2"]
+67.0	forward	DEBUG|["20"]
+67.0	generic	DEBUG|["(0, 1, 2){a=0, b=1}"]
+67.0	method_uses_class	DEBUG|["4"]
+67.0	missing_return	COMPILE|1|9|Missing return statement required return type: Integer
+67.0	modifiers	DEBUG|["pq"]
+67.0	name_clash	DEBUG|["21"]
+67.0	outer_var	DEBUG|["(a, b)"]
+67.0	overload	DEBUG|["intstr"]
+67.0	recursion	DEBUG|["120"]
+67.0	returning	DEBUG|["5"]
+67.0	static	DEBUG|["6"]
+67.0	static_calls_instance	DEBUG|["5"]
+67.0	static_outer_var	DEBUG|["3"]
+67.0	this_call	COMPILE|2|26|This cannot be referenced in a static context
+67.0	throws	DEBUG|["caught bad"]
+67.0	var_after	DEBUG|["(a)"]
+67.0	void	DEBUG|["hi x"]
+67.0	void_value	COMPILE|2|8|Illegal assignment from void to Object
+67.0	webservice	COMPILE|1|27|Defining type for webService methods must be declared as global
+67.0	with_class	DEBUG|["7"]

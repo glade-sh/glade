@@ -1,0 +1,54 @@
+@IsTest
+private class StrEqProbe {
+  static String probe() {
+    String o = '';
+    o += 'strasse_upper=' + (String.fromCharArray(new List<Integer>{83,116,114,97,223,101}) == String.fromCharArray(new List<Integer>{83,84,82,65,83,83,69})) + ';';
+    o += 'strasse_lower=' + (String.fromCharArray(new List<Integer>{83,116,114,97,223,101}) == String.fromCharArray(new List<Integer>{115,116,114,97,115,115,101})) + ';';
+    o += 'strasse_mixed=' + (String.fromCharArray(new List<Integer>{83,116,114,97,223,101}) == String.fromCharArray(new List<Integer>{83,116,114,97,115,115,101})) + ';';
+    o += 'ss_upper=' + (String.fromCharArray(new List<Integer>{223}) == String.fromCharArray(new List<Integer>{83,83})) + ';';
+    o += 'ss_lower=' + (String.fromCharArray(new List<Integer>{223}) == String.fromCharArray(new List<Integer>{115,115})) + ';';
+    o += 'ss_capital_sharp=' + (String.fromCharArray(new List<Integer>{223}) == String.fromCharArray(new List<Integer>{7838})) + ';';
+    o += 'capital_sharp_SS=' + (String.fromCharArray(new List<Integer>{7838}) == String.fromCharArray(new List<Integer>{83,83})) + ';';
+    o += 'fi_lig_upper=' + (String.fromCharArray(new List<Integer>{64257}) == String.fromCharArray(new List<Integer>{70,73})) + ';';
+    o += 'fi_lig_lower=' + (String.fromCharArray(new List<Integer>{64257}) == String.fromCharArray(new List<Integer>{102,105})) + ';';
+    o += 'ffl_lig_upper=' + (String.fromCharArray(new List<Integer>{64260}) == String.fromCharArray(new List<Integer>{70,70,76})) + ';';
+    o += 'st_lig_upper=' + (String.fromCharArray(new List<Integer>{64262}) == String.fromCharArray(new List<Integer>{83,84})) + ';';
+    o += 'n_apostrophe=' + (String.fromCharArray(new List<Integer>{329}) == String.fromCharArray(new List<Integer>{700,78})) + ';';
+    o += 'greek_iota_dialytika=' + (String.fromCharArray(new List<Integer>{912}) == String.fromCharArray(new List<Integer>{921,776,769})) + ';';
+    o += 'greek_upsilon_dialytika=' + (String.fromCharArray(new List<Integer>{944}) == String.fromCharArray(new List<Integer>{933,776,769})) + ';';
+    o += 'greek_eta_ypogegrammeni=' + (String.fromCharArray(new List<Integer>{8131}) == String.fromCharArray(new List<Integer>{919,921})) + ';';
+    o += 'greek_eta_prosgegrammeni=' + (String.fromCharArray(new List<Integer>{8131}) == String.fromCharArray(new List<Integer>{8140})) + ';';
+    o += 'armenian_ech_yiwn=' + (String.fromCharArray(new List<Integer>{1415}) == String.fromCharArray(new List<Integer>{1333,1362})) + ';';
+    o += 'I_i=' + (String.fromCharArray(new List<Integer>{73}) == String.fromCharArray(new List<Integer>{105})) + ';';
+    o += 'I_dotless=' + (String.fromCharArray(new List<Integer>{73}) == String.fromCharArray(new List<Integer>{305})) + ';';
+    o += 'dotted_i=' + (String.fromCharArray(new List<Integer>{304}) == String.fromCharArray(new List<Integer>{105})) + ';';
+    o += 'long_s=' + (String.fromCharArray(new List<Integer>{383}) == String.fromCharArray(new List<Integer>{83})) + ';';
+    o += 'micro_mu=' + (String.fromCharArray(new List<Integer>{181}) == String.fromCharArray(new List<Integer>{924})) + ';';
+    o += 'final_sigma=' + (String.fromCharArray(new List<Integer>{962}) == String.fromCharArray(new List<Integer>{931})) + ';';
+    o += 'kelvin=' + (String.fromCharArray(new List<Integer>{8490}) == String.fromCharArray(new List<Integer>{107})) + ';';
+    o += 'ue_plain=' + (String.fromCharArray(new List<Integer>{220,110,239,99,111,100,101}) == String.fromCharArray(new List<Integer>{252,110,239,99,111,100,101})) + ';';
+    o += 'strasse_ne=' + (String.fromCharArray(new List<Integer>{83,116,114,97,223,101}) != String.fromCharArray(new List<Integer>{83,84,82,65,83,83,69})) + ';';
+    o += 'strasse_eqic=' + String.fromCharArray(new List<Integer>{83,116,114,97,223,101}).equalsIgnoreCase(String.fromCharArray(new List<Integer>{83,84,82,65,83,83,69})) + ';';
+    o += 'strasse_upper_cp=' + String.valueOf(String.fromCharArray(new List<Integer>{83,116,114,97,223,101}).toUpperCase().getChars()) + ';';
+    o += 'fi_upper_cp=' + String.valueOf(String.fromCharArray(new List<Integer>{64257}).toUpperCase().getChars()) + ';';
+    o += 'map_strasse=' + new Map<String,Integer>{String.fromCharArray(new List<Integer>{83,116,114,97,223,101}) => 1}.containsKey(String.fromCharArray(new List<Integer>{83,84,82,65,83,83,69})) + ';';
+    o += 'set_strasse=' + new Set<String>{String.fromCharArray(new List<Integer>{83,116,114,97,223,101})}.contains(String.fromCharArray(new List<Integer>{83,84,82,65,83,83,69})) + ';';
+    o += 'list_strasse=' + new List<String>{String.fromCharArray(new List<Integer>{83,116,114,97,223,101})}.contains(String.fromCharArray(new List<Integer>{83,84,82,65,83,83,69})) + ';';
+    o += 'list_idx=' + new List<String>{String.fromCharArray(new List<Integer>{83,116,114,97,223,101})}.indexOf(String.fromCharArray(new List<Integer>{83,84,82,65,83,83,69})) + ';';
+    o += 'locale=' + UserInfo.getLocale() + ';';
+    return o;
+  }
+  @IsTest static void en() {
+    System.assert(false, 'CAP|67|en|' + probe());
+  }
+  @IsTest static void tr() {
+    Profile p = [SELECT Id FROM Profile WHERE Name = 'Standard User' LIMIT 1];
+    User u = new User(Alias = 'trprobe', Email = 'trprobe@example.com', EmailEncodingKey = 'UTF-8',
+      LastName = 'Probe', LanguageLocaleKey = 'en_US', LocaleSidKey = 'tr_TR', ProfileId = p.Id,
+      TimeZoneSidKey = 'GMT', UserName = 'trprobe.67.' + System.currentTimeMillis() + '@example.com');
+    insert u;
+    String o;
+    System.runAs(u) { o = probe(); }
+    System.assert(false, 'CAP|67|tr|' + o);
+  }
+}

@@ -10844,7 +10844,7 @@ System.enqueueJob(new DelayWorker(), opts);
 	if !ok || notBefore.Kind != storage.ValueDateTime {
 		t.Fatalf("NotBefore = %#v, want datetime", notBefore)
 	}
-	want := time.Date(2026, 5, 2, 12, 7, 0, 0, time.UTC).Format(time.RFC3339)
+	want := defaultTestClockStart.Add(7 * time.Minute).Format(time.RFC3339)
 	if notBefore.String != want {
 		t.Fatalf("NotBefore = %q, want %q", notBefore.String, want)
 	}

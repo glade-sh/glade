@@ -63,6 +63,18 @@ func (vm *VM) resolveDMLMode(mode ir.DMLMode) string {
 	}
 }
 
+// recordTypeDMLMode: top-level anonymous Apex checks record types like
+// USER_MODE at every API version. It rejects a record type the running
+// user's profile does not see and accepts an explicit null without a default
+// (record_type_visibility anonymous rows at 62.0 and 67.0; a class at 62.0
+// keeps SYSTEM_MODE). Other access checks keep the source policy.
+func (vm *VM) recordTypeDMLMode(mode string) string {
+	if vm != nil && vm.testContext == nil && vm.currentClass == "" && vm.currentMethod.ClassName == "" && !vm.currentTrigger {
+		return "USER_MODE"
+	}
+	return mode
+}
+
 // Explicit access arguments have an anonymous-only boundary. Source defaults
 // and a WITH SYSTEM_MODE suffix in a dynamic query are separate contracts.
 func (vm *VM) validateExplicitAccessLevel(accessLevel Value) error {

@@ -1,0 +1,13 @@
+api	profile	route	case	outcome	diagnostic
+62.0	commerce-enabled	istest	request	rejected	Type is not visible: commercestorepricing.ContractResolutionRequest
+62.0	commerce-enabled	istest	response	rejected	Type is not visible: commercestorepricing.ContractResolutionResponse
+67.0	commerce-enabled	istest	request	rejected	Type is not visible: commercestorepricing.ContractResolutionRequest
+67.0	commerce-enabled	istest	response	rejected	Type is not visible: commercestorepricing.ContractResolutionResponse
+68.0	commerce-enabled	istest	request	rejected	Type is not visible: commercestorepricing.ContractResolutionRequest
+68.0	commerce-enabled	istest	response	rejected	Type is not visible: commercestorepricing.ContractResolutionResponse
+62.0	contract-pricing-enabled	istest	request	rejected	Type is not visible: commercestorepricing.ContractResolutionRequest
+62.0	contract-pricing-enabled	istest	response	rejected	Type is not visible: commercestorepricing.ContractResolutionResponse
+67.0	contract-pricing-enabled	istest	request	rejected	Type is not visible: commercestorepricing.ContractResolutionRequest
+67.0	contract-pricing-enabled	istest	response	rejected	Type is not visible: commercestorepricing.ContractResolutionResponse
+68.0	contract-pricing-enabled	istest	request	accepted	-
+68.0	contract-pricing-enabled	istest	response	accepted	-

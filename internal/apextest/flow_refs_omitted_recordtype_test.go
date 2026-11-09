@@ -36,6 +36,8 @@ func TestFlowRefsOmittedRecordTypeNative(t *testing.T) {
 					if route == "istest" {
 						classes["FlowBoundary62"] = named
 					}
+					// ASSIGNMENT-RUN.txt: both capture orgs assigned FlowProbe before the routes.
+					files["force-app/main/default/permissionsets/FlowProbe.permissionset-meta.xml"] = read("FlowProbe.permissionset-meta.xml")
 					index := flowRefsIndex(t, api, classes, files)
 					p, err := project.Load(index.Project.Root)
 					if err != nil {
@@ -51,8 +53,7 @@ func TestFlowRefsOmittedRecordTypeNative(t *testing.T) {
 					}
 					baseIndex := flowRefsIndex(t, api, nil, nil)
 					base := newConformanceRunner(t, baseIndex, conformanceRunnerOptions{})
-					org := orgFromIndex(index)
-					org.APIVersion = api
+					org := capturedFixtureOrg(t, index, api)
 					runner := newConformanceRunner(t, index, conformanceRunnerOptions{Base: base, LinkProject: true, Org: &org})
 					var execErr error
 					if route == "anonymous" {

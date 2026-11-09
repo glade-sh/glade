@@ -1,0 +1,3 @@
+source_api	phase	route	observation
+62.0	ps	anonymous_same_transaction	{"before.Alpha":"true","before.Beta":"false","before.Gamma":"false","after.Alpha":"true","after.Beta":"false","after.Gamma":"false","freshDescribe.Alpha":"true","freshDescribe.Beta":"false","freshDescribe.Gamma":"false"}
+67.0	ps	anonymous_next_transaction	{"Alpha":"true","Beta":"true","Gamma":"false"}

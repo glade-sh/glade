@@ -1,0 +1,70 @@
+[
+  {
+    "api": "62.0",
+    "route": "anonymous",
+    "object": "DocumentGenerationProcess",
+    "field": "IsLocalizationEnabled",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsLocalizationEnabled=true;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 73 with the error:\n\nVariable does not exist: IsLocalizationEnabled"
+  },
+  {
+    "api": "62.0",
+    "route": "anonymous",
+    "object": "DocumentTemplate",
+    "field": "ContextMappingName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextMappingName='owned';",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 55 with the error:\n\nVariable does not exist: ContextMappingName"
+  },
+  {
+    "api": "67.0",
+    "route": "anonymous",
+    "object": "DocumentGenerationProcess",
+    "field": "IsLocalizationEnabled",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsLocalizationEnabled=true;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "api": "67.0",
+    "route": "anonymous",
+    "object": "DocumentTemplate",
+    "field": "ContextMappingName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextMappingName='owned';",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "named-positive-deploy",
+    "status": 0,
+    "failures": []
+  },
+  {
+    "route": "istest",
+    "status": 0,
+    "outcome": "Passed"
+  },
+  {
+    "route": "named-negative-deploy",
+    "status": 1,
+    "failures": [
+      {
+        "name": "OwnedWriteNeg0",
+        "problem": "Variable does not exist: IsLocalizationEnabled"
+      },
+      {
+        "name": "OwnedWriteNeg1",
+        "problem": "Variable does not exist: ContextMappingName"
+      }
+    ]
+  }
+]

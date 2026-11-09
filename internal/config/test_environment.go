@@ -16,6 +16,15 @@ type TestUserConfig struct {
 	DefaultCurrencyISOCode string `json:"defaultCurrencyIsoCode,omitempty"`
 }
 
+// DefaultTestClockStart is the deterministic clock start of a run that sets
+// no test.clock.start. Salesforce runs a test at the real date; Glade fixes the
+// instant so results and cached runs repeat. The default is a Wednesday in
+// mid-month and mid-quarter at 12:00 UTC: in every time zone from UTC-12 to
+// UTC+14 that day and the days just before and after it are weekdays, and a
+// week either side stays in the same month. 2026-05-02, the default before
+// v0.3.5, was a Saturday.
+const DefaultTestClockStart = "2026-05-13T12:00:00Z"
+
 type TestClockConfig struct {
 	Start string `json:"start,omitempty"`
 }
@@ -46,7 +55,7 @@ func (c TestConfig) EffectiveEnvironment() TestEnvironment {
 	}
 	clock := c.Clock
 	if clock.Start == "" {
-		clock.Start = "2026-05-02T12:00:00Z"
+		clock.Start = DefaultTestClockStart
 	} else if parsed, err := time.Parse(time.RFC3339Nano, clock.Start); err == nil {
 		clock.Start = parsed.UTC().Truncate(time.Millisecond).Format(time.RFC3339Nano)
 	}

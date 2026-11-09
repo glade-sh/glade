@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -127,6 +128,16 @@ func v15BrowserObservations(t *testing.T, table v15Table, api string, controller
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	output, err := cmd.Output()
+	for _, line := range strings.Split(stderr.String(), "\n") {
+		if probe, ok := strings.CutPrefix(line, "V15_FONT_PROBE "); ok {
+			if width, perr := strconv.ParseFloat(strings.TrimSpace(probe), 64); perr == nil {
+				v15FallbackFont = v15IsFallbackFont(width)
+				if v15FallbackFont {
+					t.Logf("V15 API %s: Helvetica probe measured %.2f (reference %.2f); horizontal chart coordinates use the %gpx fallback-font tolerance", api, width, v15HelveticaReferenceWidth, v15FallbackHorizontalTolerance)
+				}
+			}
+		}
+	}
 	if err != nil {
 		t.Fatalf("V15 API %s local browser: %v: %s", api, err, stderr.String())
 	}

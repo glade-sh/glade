@@ -11,7 +11,15 @@ import (
 )
 
 func (vm *VM) runAsSecureDefaults() bool {
-	return !vm.currentTrigger && vm.testContext != nil && vm.testContext.RunAsDepth > vm.testContext.PackageRunAsDepth &&
+	return !vm.currentTrigger && vm.runAsSecureDefaultsAnyContext()
+}
+
+// runAsSecureDefaultsAnyContext is runAsSecureDefaults without the trigger
+// exclusion. Native api67leads rows run the same unqualified statements inside
+// a trigger body under runAs at API 67 and 68 and report the class-route
+// outcomes for a non-owner text update and for a delete without the grant.
+func (vm *VM) runAsSecureDefaultsAnyContext() bool {
+	return vm.testContext != nil && vm.testContext.RunAsDepth > vm.testContext.PackageRunAsDepth &&
 		apexversion.AtLeast(vm.currentMethod.APIVersion, 67)
 }
 
@@ -20,7 +28,7 @@ func (vm *VM) runAsSecureDefaults() bool {
 // on a Private custom object from source API 67. CRUD/FLS checks precede this
 // route choice. Other payloads and access modes retain their existing paths.
 func (vm *VM) defaultRunAsPrivateTextUpdate(op string, value Value) bool {
-	if op != "update" || value.Kind != ValueObject || !vm.runAsSecureDefaults() || vm.Org == nil {
+	if op != "update" || value.Kind != ValueObject || !vm.runAsSecureDefaultsAnyContext() || vm.Org == nil {
 		return false
 	}
 	objectName, ok := vm.resolveObjectName(value.Type)
@@ -87,7 +95,7 @@ func (vm *VM) defaultRunAsPrivateTextUpdate(op string, value Value) bool {
 // C137 DEFAULT denials distinguish unreadable objects from readable objects
 // without write permission. Explicit modes keep their own enforcement path.
 func (vm *VM) defaultRunAsDMLDenial(op string, value Value) error {
-	if !vm.runAsSecureDefaults() {
+	if !vm.runAsSecureDefaults() && !(op == "delete" && vm.runAsSecureDefaultsAnyContext()) {
 		return nil
 	}
 	switch op {
@@ -110,9 +118,11 @@ func (vm *VM) defaultRunAsDMLDenial(op string, value Value) error {
 		if vm.currentUserObjectPermission(objectName, permission) {
 			continue
 		}
-		if vm.currentUserObjectPermission(objectName, "isCreateable") ||
+		// Native api67leads rows: a readable object that lacks only the delete
+		// grant reports the same TypeException as the no-grant capture.
+		if op != "delete" && (vm.currentUserObjectPermission(objectName, "isCreateable") ||
 			vm.currentUserObjectPermission(objectName, "isUpdateable") ||
-			vm.currentUserObjectPermission(objectName, "isDeletable") {
+			vm.currentUserObjectPermission(objectName, "isDeletable")) {
 			continue // The readable denial capture has no create/edit/delete grants.
 		}
 		if op == "upsert" {
@@ -172,6 +182,9 @@ func (vm *VM) defaultRunAsSOQLDenial(query soql.Query) error {
 	}
 	unfilteredCustomCount := vm.dynamicSOQLBindRoute == "Database.countQuery" &&
 		query.Count && query.Where == nil && vm.ordinaryCustomPermissionObject(query.Object)
+	// no_account_read_profile_user (API 67.0): a static SELECT COUNT() FROM
+	// Account by a profile without Account access raises the entity denial.
+	unfilteredCustomCount = unfilteredCustomCount || query.Count && query.Where == nil && strings.EqualFold(query.Object, "Account")
 	if !unfilteredCustomCount {
 		where := query.Where
 		if where == nil || !strings.EqualFold(where.Field, "Id") || where.Op != "=" || where.Not ||
@@ -204,4 +217,27 @@ func (vm *VM) defaultRunAsSOQLDenial(query soql.Query) error {
 		return newExceptionError("SecurityException", fmt.Sprintf("Access to entity '%s' denied", objectName))
 	}
 	return newExceptionError("QueryException", soql.MissingObjectMessage(objectName))
+}
+
+// Native api67leads rows: Database.delete(ids, false) without an access level
+// on a readable object that lacks the delete grant returns a DELETE_FAILED row
+// for each record, with the statement TypeException's message.
+func (vm *VM) defaultRunAsDeleteFailures(value Value) ([]dml.Result, bool) {
+	if !vm.runAsSecureDefaults() || value.Kind != ValueList || len(value.List) == 0 {
+		return nil, false
+	}
+	results := make([]dml.Result, len(value.List))
+	for i, record := range value.List {
+		if record.Kind != ValueObject {
+			return nil, false
+		}
+		objectName, ok := vm.resolveObjectName(record.Type)
+		if !ok || !vm.currentUserObjectPermission(objectName, "isAccessible") || vm.currentUserObjectPermission(objectName, "isDeletable") {
+			return nil, false
+		}
+		_, id, _ := objectFieldValue(record, "Id")
+		text, _ := idValueText(id)
+		results[i] = dml.Result{ID: storage.ID(text), Error: fmt.Sprintf("DML operation DELETE not allowed on %s", objectName), StatusCode: "DELETE_FAILED"}
+	}
+	return results, true
 }

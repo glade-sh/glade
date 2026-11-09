@@ -65,6 +65,10 @@ func TestNumberTokenProvenanceOrgConformance(t *testing.T) {
 					writeFile(t, path+"-meta.xml", "<ApexClass><apiVersion>"+api+"</apiVersion></ApexClass>")
 				}
 			}
+			// number_token_capture_assignment/ASSIGNMENT-RUN.txt: the capture assigned
+			// its numeric grant to the running user before every row.
+			writeHarnessAccessPermissionSet(t, root, "ProbeGaugeNumericGrant", "ProbeGauge__c", []string{"TickValue__c"}, false)
+			writeCapturedAssignments(t, root, "ProbeGaugeNumericGrant")
 			fixture, err := project.Load(root)
 			if err != nil {
 				t.Fatal(err)
@@ -77,8 +81,7 @@ func TestNumberTokenProvenanceOrgConformance(t *testing.T) {
 			if index.HasErrors() || sema.Analyze(index).HasErrors() {
 				t.Fatal("captured helpers rejected")
 			}
-			org := orgFromIndex(index)
-			org.APIVersion = api
+			org := capturedFixtureOrg(t, index, api)
 			base := newConformanceRunner(t, index, conformanceRunnerOptions{Org: &org, LinkProject: true})
 			for _, row := range data.Rows {
 				t.Run(row.ID, func(t *testing.T) {

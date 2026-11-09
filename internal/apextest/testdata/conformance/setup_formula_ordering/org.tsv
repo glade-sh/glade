@@ -1,0 +1,5 @@
+api	route	case	observation
+62.0	istest	actor_false	{"child":"Z","top":"Z"}
+62.0	istest	actor_true_control	{"child":"A","top":"A"}
+67.0	istest	actor_false	{"child":"Z","top":"Z"}
+67.0	istest	actor_true_control	{"child":"A","top":"A"}

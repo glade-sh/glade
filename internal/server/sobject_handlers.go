@@ -57,7 +57,38 @@ func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, version st
 			writeSalesforceError(w, errUnknownObject)
 			return
 		}
-		writeJSON(w, http.StatusOK, describePayload(object.Definition, s.Org))
+		payload := describePayload(object.Definition, s.Org)
+		original := payload["childRelationships"].([]map[string]any)
+		relationships := make([]map[string]any, 0, len(original))
+		for _, relationship := range original {
+			child, _ := relationship["childSObject"].(string)
+			field, _ := relationship["field"].(string)
+			// Replace post-baseline rows with the captured versioned entry below.
+			// This also removes it from earlier REST versions.
+			if !storage.IsVersionedPlatformChildRelationship(object.Definition.APIName, child, field) {
+				relationships = append(relationships, relationship)
+			}
+		}
+		added := false
+		storage.VisitVersionedPlatformChildRelationships(object.Definition.APIName, version, func(child string, relation storage.Relationship) {
+			relationships = append(relationships, map[string]any{
+				"cascadeDelete": relation.CascadeDelete, "childSObject": child,
+				"deprecatedAndHidden": false, "field": relation.Field,
+				"relationshipName": relation.ChildRelationship, "restrictedDelete": relation.RestrictedDelete,
+			})
+			added = true
+		})
+		if added {
+			sort.SliceStable(relationships, func(i, j int) bool {
+				left, right := relationships[i], relationships[j]
+				if left["childSObject"].(string) != right["childSObject"].(string) {
+					return left["childSObject"].(string) < right["childSObject"].(string)
+				}
+				return left["field"].(string) < right["field"].(string)
+			})
+		}
+		payload["childRelationships"] = relationships
+		writeJSON(w, http.StatusOK, payload)
 	case isObjectMetadataRoute(parts):
 		object, ok := s.Org.Objects[objectName]
 		if !ok {

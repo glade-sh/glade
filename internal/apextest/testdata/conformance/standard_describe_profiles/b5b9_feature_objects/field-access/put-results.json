@@ -1,0 +1,46 @@
+[
+  {
+    "group": "Gift",
+    "api": "62.0",
+    "source": "SObject r=new GiftTransaction();for(String method:new List<String>{'put','isSet'}){try{if(method=='put')r.put('GenerationalCohort','owned');else r.isSet('GenerationalCohort');System.debug('OBSERVED '+method+' accepted');}catch(Exception ex){System.debug('OBSERVED '+method+' '+ex.getTypeName()+': '+ex.getMessage());}}",
+    "observations": [
+      "OBSERVED put System.SObjectException: Invalid field GenerationalCohort for GiftTransaction",
+      "OBSERVED isSet accepted"
+    ],
+    "compiled": true,
+    "success": true
+  },
+  {
+    "group": "Gift",
+    "api": "67.0",
+    "source": "SObject r=new GiftTransaction();for(String method:new List<String>{'put','isSet'}){try{if(method=='put')r.put('GenerationalCohort','owned');else r.isSet('GenerationalCohort');System.debug('OBSERVED '+method+' accepted');}catch(Exception ex){System.debug('OBSERVED '+method+' '+ex.getTypeName()+': '+ex.getMessage());}}",
+    "observations": [
+      "OBSERVED put accepted",
+      "OBSERVED isSet accepted"
+    ],
+    "compiled": true,
+    "success": true
+  },
+  {
+    "group": "Doc",
+    "api": "62.0",
+    "source": "SObject r=new DocumentGenerationProcess();for(String method:new List<String>{'put','isSet'}){try{if(method=='put')r.put('AdditionalMetadata','owned');else r.isSet('AdditionalMetadata');System.debug('OBSERVED '+method+' accepted');}catch(Exception ex){System.debug('OBSERVED '+method+' '+ex.getTypeName()+': '+ex.getMessage());}}",
+    "observations": [
+      "OBSERVED put System.SObjectException: Invalid field AdditionalMetadata for DocumentGenerationProcess",
+      "OBSERVED isSet accepted"
+    ],
+    "compiled": true,
+    "success": true
+  },
+  {
+    "group": "Doc",
+    "api": "67.0",
+    "source": "SObject r=new DocumentGenerationProcess();for(String method:new List<String>{'put','isSet'}){try{if(method=='put')r.put('AdditionalMetadata','owned');else r.isSet('AdditionalMetadata');System.debug('OBSERVED '+method+' accepted');}catch(Exception ex){System.debug('OBSERVED '+method+' '+ex.getTypeName()+': '+ex.getMessage());}}",
+    "observations": [
+      "OBSERVED put accepted",
+      "OBSERVED isSet accepted"
+    ],
+    "compiled": true,
+    "success": true
+  }
+]

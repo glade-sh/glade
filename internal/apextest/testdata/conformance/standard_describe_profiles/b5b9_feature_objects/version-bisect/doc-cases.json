@@ -1,0 +1,17 @@
+{
+  "DocumentGenerationProcess": [
+    "AdditionalMetadata",
+    "DocGenAdditionalInput",
+    "DocGenAdditionalInputType",
+    "EstimatedDocumentSize",
+    "IsLocalizationEnabled",
+    "IsSharedExternally",
+    "IsTocUpdateRequired"
+  ],
+  "DocumentTemplate": [
+    "ContextDefinitionName",
+    "ContextFilterName",
+    "ContextMappingName",
+    "ContextTransformationName"
+  ]
+}

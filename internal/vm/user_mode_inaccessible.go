@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/apexversion"
@@ -25,16 +26,127 @@ func (vm *VM) userModeInaccessibleSecureDenial(query soql.Query, permissionSetID
 // every API 59-67; the same rule therefore covers 59-68. Anonymous twins reject
 // runAs. Documented USER_MODE access details also cover the narrowly admitted
 // ordered four-field projection below; its exact native maps remain pending.
-// Keep scoped permissions, relationships and other shapes unchanged.
+// At API 62 to 68 the user_mode_inaccessible_shapes rows replace these shape
+// gates with one rule (user_mode_access_scan.go). Scoped permissions and
+// API 59 to 61 keep the shape-gated checks.
 func (vm *VM) userModeInaccessibleDenial(query soql.Query, permissionSetID string) error {
+	if (apexversion.Range{Since: 62, Until: 69}).Allows(vm.currentMethod.APIVersion) {
+		// Native rows for 104 query shapes (user_mode_inaccessible_shapes) show
+		// one general rule at API 62 to 68, applied by userModeAccessScanError
+		// in enforceSOQLSecurity. The shape-gated checks below remain for the
+		// older APIs and for the child-to-parent lookup row, which the scan
+		// does not model.
+		if vm.testContext == nil || vm.testContext.RunAsDepth == 0 || permissionSetID != "" || !strings.EqualFold(query.SecurityMode, "USER_MODE") {
+			return nil
+		}
+		if objectName, field, relationship, denied := vm.userModeInaccessibleChildLookup(query, permissionSetID); denied {
+			return userModeFieldExceptionMessage(objectName, []string{field}, soql.MissingRelationshipMessage(relationship, "FROM part of query call"))
+		}
+		return nil
+	}
+	if err := vm.userModeInaccessiblePredicateDenial(query, permissionSetID); err != nil {
+		return err
+	}
+	if objectName, field, denied := vm.userModeInaccessibleAggregateField(query, permissionSetID); denied {
+		return userModeFieldException(objectName, []string{field}, false)
+	}
+	if objectName, field, denied := vm.userModeInaccessibleSumField(query, permissionSetID); denied {
+		return userModeFieldExceptionMessage(objectName, []string{field}, fmt.Sprintf("Invalid field: '%s'", field))
+	}
+	if objectName, field, denied := vm.userModeInaccessibleTypeofField(query, permissionSetID); denied {
+		return userModeFieldException(objectName, []string{field}, false)
+	}
+	if objectName, field, relationship, denied := vm.userModeInaccessibleChildLookup(query, permissionSetID); denied {
+		return userModeFieldExceptionMessage(objectName, []string{field}, soql.MissingRelationshipMessage(relationship, "FROM part of query call"))
+	}
 	objectName, fields, objectDenied := vm.userModeInaccessibleDeniedFields(query, permissionSetID)
 	if len(fields) == 0 {
 		return nil
 	}
+	return userModeFieldException(objectName, fields, objectDenied)
+}
+
+// A captured USER_MODE child query rejects an inaccessible child-to-parent
+// lookup, even when the lookup was omitted from the child SELECT list.
+func (vm *VM) userModeInaccessibleChildLookup(query soql.Query, permissionSetID string) (string, string, string, bool) {
+	if vm.Org == nil || vm.testContext == nil || vm.testContext.RunAsDepth == 0 || permissionSetID != "" ||
+		!(apexversion.Range{Since: 62, Until: 68}).Allows(vm.currentMethod.APIVersion) || !strings.EqualFold(query.SecurityMode, "USER_MODE") ||
+		len(query.Fields) != 1 || !strings.EqualFold(query.Fields[0], "Id") || len(query.ChildQueries) != 1 || len(query.Typeofs) != 0 ||
+		len(query.Aggregates) != 0 || len(query.GroupBy) != 0 || query.Having != nil || len(query.Order) != 0 || query.HasLimit || query.HasOffset ||
+		query.ForUpdate || query.ForView || query.ForReference || query.AllRows || query.UsingScope != "" {
+		return "", "", "", false
+	}
+	where := query.Where
+	if where == nil || !strings.EqualFold(where.Field, "Id") || where.Op != "=" || where.Not || where.Range || where.Subquery != nil || len(where.And) != 0 || len(where.Or) != 0 {
+		return "", "", "", false
+	}
+	child := query.ChildQueries[0]
+	if len(child.Query.Fields) != 2 || !strings.EqualFold(child.Query.Fields[0], "Id") || !strings.EqualFold(child.Query.Fields[1], "Name") ||
+		child.Query.Where != nil || child.Query.HasLimit || child.Query.HasOffset || len(child.Query.ChildQueries) != 0 || len(child.Query.Typeofs) != 0 {
+		return "", "", "", false
+	}
+	parent, ok := vm.resolveObjectName(query.Object)
+	if !ok || !vm.currentUserObjectPermissionWithScope(parent, "isAccessible", "") {
+		return "", "", "", false
+	}
+	childName := vm.childRelationshipLookup(parent, child.Relationship).ChildType
+	state, ok := vm.Org.Objects[childName]
+	if !ok || !vm.currentUserObjectPermissionWithScope(childName, "isAccessible", "") {
+		return "", "", "", false
+	}
+	for _, relation := range state.Definition.Relations {
+		if relation.Field != "" && relation.ChildRelationship != "" && relationshipTargetsObject(relation, parent) &&
+			vmRelationshipNameMatches(vm.Org.Namespace, relation.ChildRelationship, child.Relationship) &&
+			!vm.currentUserFieldPermissionWithScope(childName, relation.Field, "isAccessible", "") {
+			return childName, relation.Field, child.Relationship, true
+		}
+	}
+	return "", "", "", false
+}
+
+// Captured Task.What custom-object TYPEOF queries reject an inaccessible WHEN
+// projection with the target object and field in the exception details.
+func (vm *VM) userModeInaccessibleTypeofField(query soql.Query, permissionSetID string) (string, string, bool) {
+	if vm.Org == nil || vm.testContext == nil || vm.testContext.RunAsDepth == 0 || permissionSetID != "" ||
+		!(apexversion.Range{Since: 62, Until: 69}).Allows(vm.currentMethod.APIVersion) || !strings.EqualFold(query.SecurityMode, "USER_MODE") ||
+		!strings.EqualFold(query.Object, "Task") || len(query.Fields) != 1 || !strings.EqualFold(query.Fields[0], "Id") ||
+		len(query.Typeofs) != 1 || len(query.ChildQueries) != 0 || len(query.Aggregates) != 0 || len(query.GroupBy) != 0 || query.Having != nil || len(query.Order) != 0 ||
+		query.HasLimit || query.HasOffset || query.ForUpdate || query.ForView || query.ForReference || query.AllRows || query.UsingScope != "" {
+		return "", "", false
+	}
+	where := query.Where
+	if where == nil || !strings.EqualFold(where.Field, "Id") || where.Op != "=" || where.Not || where.Range || where.Subquery != nil || len(where.And) != 0 || len(where.Or) != 0 {
+		return "", "", false
+	}
+	spec := query.Typeofs[0]
+	if !strings.EqualFold(spec.Relationship, "What") || len(spec.When) != 1 || len(spec.Else) != 0 {
+		return "", "", false
+	}
+	for name, fields := range spec.When {
+		objectName, ok := vm.resolveObjectName(name)
+		if !ok || len(fields) != 1 || !strings.HasSuffix(strings.ToLower(objectName), "__c") ||
+			!strings.EqualFold(vm.Org.Objects[objectName].Definition.Metadata["enableActivities"], "true") ||
+			!vm.currentUserObjectPermissionWithScope(objectName, "isAccessible", "") {
+			return "", "", false
+		}
+		definition := vm.Org.Objects[objectName].Definition
+		field, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, fields[0])
+		if ok && !vm.currentUserFieldPermissionWithScope(objectName, field, "isAccessible", "") {
+			return objectName, field, true
+		}
+	}
+	return "", "", false
+}
+
+func userModeFieldException(objectName string, fields []string, objectDenied bool) error {
 	message := soql.MissingColumnMessage(fields[0], objectName)
 	if objectDenied {
 		message = soql.MissingObjectMessage(objectName)
 	}
+	return userModeFieldExceptionMessage(objectName, fields, message)
+}
+
+func userModeFieldExceptionMessage(objectName string, fields []string, message string) error {
 	values := make([]Value, len(fields))
 	for i, field := range fields {
 		values[i] = String(field)
@@ -52,6 +164,157 @@ func (vm *VM) userModeInaccessibleDenial(query soql.Query, permissionSetID strin
 	return &apexThrowError{value: exception}
 }
 
+// The C11 capture records an inaccessible numeric SUM over an Id-IN scope,
+// together with readable and SYSTEM_MODE controls at both supported endpoints.
+func (vm *VM) userModeInaccessibleSumField(query soql.Query, permissionSetID string) (string, string, bool) {
+	if vm.Org == nil || vm.testContext == nil || vm.testContext.RunAsDepth == 0 || permissionSetID != "" ||
+		!(apexversion.Range{Since: 62, Until: 68}).Allows(vm.currentMethod.APIVersion) || !strings.EqualFold(query.SecurityMode, "USER_MODE") ||
+		len(query.Aggregates) != 1 || !strings.EqualFold(query.Aggregates[0].Func, "SUM") || len(query.GroupBy) != 0 || query.Having != nil ||
+		len(query.ChildQueries) != 0 || len(query.Typeofs) != 0 || len(query.Order) != 0 || query.HasLimit || query.HasOffset ||
+		query.ForUpdate || query.ForView || query.ForReference || query.AllRows || query.UsingScope != "" {
+		return "", "", false
+	}
+	where := query.Where
+	if where == nil || !strings.EqualFold(where.Field, "Id") || !strings.EqualFold(where.Op, "IN") || where.Not || where.Range || where.Subquery != nil || len(where.And) != 0 || len(where.Or) != 0 {
+		return "", "", false
+	}
+	objectName, ok := vm.resolveObjectName(query.Object)
+	if !ok || !vm.currentUserObjectPermissionWithScope(objectName, "isAccessible", "") {
+		return "", "", false
+	}
+	definition := vm.Org.Objects[objectName].Definition
+	field, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, query.Aggregates[0].Field)
+	if !ok || definition.Fields[field].Type != storage.FieldDecimal || vm.currentUserFieldPermissionWithScope(objectName, field, "isAccessible", "") {
+		return "", "", false
+	}
+	return objectName, field, true
+}
+
+// Q14 captures denied grouping and HAVING fields on a grouped COUNT(Id)
+// with an identity membership filter, together with readable and system controls.
+func (vm *VM) userModeInaccessibleAggregateField(query soql.Query, permissionSetID string) (string, string, bool) {
+	if vm.Org == nil || vm.testContext == nil || vm.testContext.RunAsDepth == 0 || permissionSetID != "" ||
+		!(apexversion.Range{Since: 62, Until: 68}).Allows(vm.currentMethod.APIVersion) || !strings.EqualFold(query.SecurityMode, "USER_MODE") ||
+		len(query.GroupBy) != 1 || len(query.Aggregates) != 1 || !strings.EqualFold(query.Aggregates[0].Func, "COUNT") ||
+		!strings.EqualFold(query.Aggregates[0].Field, "Id") || len(query.ChildQueries) != 0 || len(query.Typeofs) != 0 ||
+		len(query.Order) != 0 || query.HasLimit || query.HasOffset || query.ForUpdate || query.ForView || query.ForReference || query.AllRows || query.UsingScope != "" {
+		return "", "", false
+	}
+	where := query.Where
+	if where == nil || !strings.EqualFold(where.Field, "Id") || !strings.EqualFold(where.Op, "IN") || where.Not || where.Range || where.Subquery != nil || len(where.And) != 0 || len(where.Or) != 0 {
+		return "", "", false
+	}
+	if (query.Having == nil && len(query.HavingAggregates) != 0) || (query.Having != nil && (len(query.HavingAggregates) != 1 || !strings.EqualFold(query.HavingAggregates[0].Func, "SUM"))) {
+		return "", "", false
+	}
+	objectName, ok := vm.resolveObjectName(query.Object)
+	if !ok || !vm.currentUserObjectPermissionWithScope(objectName, "isAccessible", "") {
+		return "", "", false
+	}
+	definition := vm.Org.Objects[objectName].Definition
+	candidates := []string{query.GroupBy[0]}
+	if query.Having != nil {
+		candidates = append(candidates, query.HavingAggregates[0].Field)
+	}
+	for _, candidate := range candidates {
+		field, exists := storage.ResolveFieldName(definition, vm.Org.Namespace, candidate)
+		if !exists {
+			return "", "", false
+		}
+		if !vm.currentUserFieldPermissionWithScope(objectName, field, "isAccessible", "") {
+			return objectName, field, true
+		}
+	}
+	return "", "", false
+}
+
+// C11 Q4 captures an inaccessible text equality in an identity-scoped
+// predicate, including the same predicate inside a semi- or anti-join.
+func (vm *VM) userModeInaccessiblePredicateDenial(query soql.Query, permissionSetID string) error {
+	if vm.Org == nil || vm.testContext == nil || vm.testContext.RunAsDepth == 0 || permissionSetID != "" ||
+		!(apexversion.Range{Since: 62, Until: 68}).Allows(vm.currentMethod.APIVersion) || !strings.EqualFold(query.SecurityMode, "USER_MODE") ||
+		len(query.Fields) != 1 || !strings.EqualFold(query.Fields[0], "Id") || len(query.ChildQueries) != 0 || len(query.Typeofs) != 0 ||
+		len(query.Aggregates) != 0 || len(query.GroupBy) != 0 || query.Having != nil || len(query.Order) != 0 ||
+		query.HasLimit || query.HasOffset || query.Count || query.ForUpdate || query.ForView || query.ForReference || query.AllRows || query.UsingScope != "" {
+		return nil
+	}
+	objectName, ok := vm.resolveObjectName(query.Object)
+	if !ok || !vm.currentUserObjectPermissionWithScope(objectName, "isAccessible", "") {
+		return nil
+	}
+	other, ok := userModeIdentityAndOther(query.Where)
+	if !ok {
+		return nil
+	}
+	if other.Subquery != nil {
+		inner := other.Subquery
+		if !strings.EqualFold(other.Field, "Id") || (other.Op != "IN" && other.Op != "NOT IN") || other.Not ||
+			len(inner.Fields) != 1 || inner.Where == nil || len(inner.ChildQueries) != 0 || len(inner.Typeofs) != 0 ||
+			len(inner.Aggregates) != 0 || len(inner.GroupBy) != 0 || inner.Having != nil || len(inner.Order) != 0 ||
+			inner.HasLimit || inner.HasOffset || inner.Count || inner.ForUpdate || inner.ForView || inner.ForReference || inner.AllRows || inner.UsingScope != "" {
+			return nil
+		}
+		innerName, exists := vm.resolveObjectName(inner.Object)
+		if !exists || !vm.currentUserObjectPermissionWithScope(innerName, "isAccessible", "") {
+			return nil
+		}
+		definition := vm.Org.Objects[innerName].Definition
+		joinField, exists := storage.ResolveFieldName(definition, vm.Org.Namespace, inner.Fields[0])
+		if !exists || definition.Fields[joinField].Type != storage.FieldReference || !vm.currentUserFieldPermissionWithScope(innerName, joinField, "isAccessible", "") {
+			return nil
+		}
+		condition, valid := userModeIdentityAndOther(inner.Where)
+		if !valid {
+			return nil
+		}
+		field, denied := vm.userModeDeniedTextEquality(innerName, condition)
+		if denied {
+			return newExceptionError("QueryException", soql.MissingColumnMessage(field, innerName))
+		}
+		return nil
+	}
+	field, denied := vm.userModeDeniedTextEquality(objectName, other)
+	if !denied {
+		return nil
+	}
+	set := Set(String(field))
+	set.Type = "Set<String>"
+	inaccessible := Map()
+	inaccessible.Type = "Map<String,Set<String>>"
+	key := String(objectName)
+	inaccessible.Map[mapKey(key)] = set
+	inaccessible.MapKeys[mapKey(key)] = key
+	exception := Object("QueryException")
+	exception.Fields["message"] = String(soql.MissingColumnMessage(field, objectName))
+	exception.Fields["__inaccessibleFields"] = inaccessible
+	return &apexThrowError{value: exception}
+}
+
+func userModeIdentityAndOther(condition *soql.Condition) (*soql.Condition, bool) {
+	if condition == nil || condition.Not || len(condition.Or) != 0 || len(condition.And) != 2 {
+		return nil, false
+	}
+	for i := range condition.And {
+		c := &condition.And[i]
+		if strings.EqualFold(c.Field, "Id") && c.Op == "=" && !c.Not && c.Subquery == nil && len(c.And) == 0 && len(c.Or) == 0 && !c.Range {
+			return &condition.And[1-i], true
+		}
+	}
+	return nil, false
+}
+
+func (vm *VM) userModeDeniedTextEquality(objectName string, condition *soql.Condition) (string, bool) {
+	if condition == nil || condition.Op != "=" || condition.Not || condition.Range || condition.Subquery != nil || len(condition.And) != 0 || len(condition.Or) != 0 {
+		return "", false
+	}
+	definition := vm.Org.Objects[objectName].Definition
+	field, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, condition.Field)
+	if !ok || definition.Fields[field].Type != storage.FieldString {
+		return "", false
+	}
+	return field, !vm.currentUserFieldPermissionWithScope(objectName, field, "isAccessible", "")
+}
+
 // Selecting the details route must not change execution of readable queries.
 // This shared predicate allocates no Apex values and applies the same captured
 // permission/shape checks as exception construction.
@@ -62,7 +325,8 @@ func (vm *VM) userModeInaccessibleDeniedFields(query soql.Query, permissionSetID
 	}
 	projection := vm.userModeInaccessibleProjectionQuery(query)
 	expanded := apexversion.AtLeast(vm.currentMethod.APIVersion, 62) && vm.userModeInaccessibleExpandedIDQuery(query)
-	if !projection && !expanded && !vm.userModeInaccessibleFlatIDQuery(query) {
+	single := (apexversion.Range{Since: 62, Until: 68}).Allows(vm.currentMethod.APIVersion) && vm.userModeInaccessibleSingleFieldQuery(query, permissionSetID)
+	if !projection && !expanded && !single && !vm.userModeInaccessibleFlatIDQuery(query) {
 		return "", nil, false
 	}
 	if !(apexversion.Range{Since: 59, Until: 69}).Allows(vm.currentMethod.APIVersion) {
@@ -79,7 +343,7 @@ func (vm *VM) userModeInaccessibleDeniedFields(query soql.Query, permissionSetID
 	definition := vm.Org.Objects[objectName].Definition
 	var fields []string
 	selected := query.Fields[1:]
-	if projection || expanded {
+	if projection || expanded || single {
 		selected = query.Fields
 	}
 	for _, field := range selected {
@@ -87,16 +351,41 @@ func (vm *VM) userModeInaccessibleDeniedFields(query soql.Query, permissionSetID
 		if !ok {
 			return "", nil, false
 		}
-		if (projection || expanded) && strings.EqualFold(name, "Id") {
+		if (projection || expanded || single) && strings.EqualFold(name, "Id") {
 			continue // Identity fields retain their existing readable boundary.
 		}
 		if objectDenied || !vm.currentUserFieldPermissionWithScope(objectName, name, "isAccessible", permissionSetID) {
 			fields = append(fields, name)
-		} else if !projection && !expanded {
+		} else if !projection && !expanded && !single {
 			return "", nil, false // Mixed readable/denied projections have no native row.
 		}
 	}
 	return objectName, fields, objectDenied
+}
+
+// C11 Q5 and corrected Q14 capture direct single-field denials for a
+// readable object with an identity equality or membership predicate.
+func (vm *VM) userModeInaccessibleSingleFieldQuery(query soql.Query, permissionSetID string) bool {
+	if vm.Org == nil || len(query.Fields) != 1 || len(query.ChildQueries) != 0 || len(query.Typeofs) != 0 ||
+		len(query.Aggregates) != 0 || len(query.GroupBy) != 0 || query.Having != nil || len(query.Order) != 0 ||
+		query.HasLimit || query.HasOffset || query.ForUpdate || query.ForView || query.ForReference || query.AllRows || query.UsingScope != "" || query.Count {
+		return false
+	}
+	where := query.Where
+	if where == nil || !strings.EqualFold(where.Field, "Id") || (where.Op != "=" && !strings.EqualFold(where.Op, "IN")) ||
+		where.Not || len(where.And) != 0 || len(where.Or) != 0 || where.Range || where.Subquery != nil {
+		return false
+	}
+	objectName, ok := vm.resolveObjectName(query.Object)
+	if !ok || !vm.currentUserObjectPermissionWithScope(objectName, "isAccessible", permissionSetID) {
+		return false
+	}
+	definition := vm.Org.Objects[objectName].Definition
+	name, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, query.Fields[0])
+	if !ok {
+		return false
+	}
+	return definition.Fields[name].Type == storage.FieldString || definition.Fields[name].Type == storage.FieldDecimal
 }
 
 // USER_MODE reports the full set of access errors, rather than only the first

@@ -1,0 +1,105 @@
+org	api	route	case	type	result	detail
+subscriber	62.0	anonymous	local	Case356Local	accepted	
+subscriber	62.0	istest-compile	local	Case356Local	accepted	
+subscriber	62.0	anonymous	qualified_local	gladens002.Case356Local	rejected	Compilation failed at Ln 1, Col 1 with the error:  Invalid type: gladens002.Case356Local
+subscriber	62.0	istest-compile	qualified_local	gladens002.Case356Local	rejected	Invalid type: gladens002.Case356Local
+subscriber	62.0	anonymous	package	gladens002.E5262V17Te16788acProviderToneRelay	accepted	
+subscriber	62.0	istest-compile	package	gladens002.E5262V17Te16788acProviderToneRelay	accepted	
+subscriber	67.0	anonymous	local	Case356Local	accepted	
+subscriber	67.0	istest-compile	local	Case356Local	accepted	
+subscriber	67.0	anonymous	qualified_local	gladens002.Case356Local	rejected	Compilation failed at Ln 1, Col 1 with the error:  Invalid type: gladens002.Case356Local
+subscriber	67.0	istest-compile	qualified_local	gladens002.Case356Local	rejected	Invalid type: gladens002.Case356Local
+subscriber	67.0	anonymous	package	gladens002.E5262V17Te16788acProviderToneRelay	accepted	
+subscriber	67.0	istest-compile	package	gladens002.E5262V17Te16788acProviderToneRelay	accepted	
+subscriber	68.0	anonymous	local	Case356Local	accepted	
+subscriber	68.0	istest-compile	local	Case356Local	accepted	
+subscriber	68.0	anonymous	qualified_local	gladens002.Case356Local	rejected	Compilation failed at Ln 1, Col 1 with the error:  Invalid type: gladens002.Case356Local
+subscriber	68.0	istest-compile	qualified_local	gladens002.Case356Local	rejected	Invalid type: gladens002.Case356Local
+subscriber	68.0	anonymous	package	gladens002.E5262V17Te16788acProviderToneRelay	accepted	
+subscriber	68.0	istest-compile	package	gladens002.E5262V17Te16788acProviderToneRelay	accepted	
+owner	62.0	anonymous	foreign_own_qualifier	gladens004.E5262V17Te16788acProviderToneRelay	rejected	Compilation failed at Ln 1, Col 1 with the error:  Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	62.0	istest-compile	foreign_own_qualifier	gladens004.E5262V17Te16788acProviderToneRelay	rejected	Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	62.0	anonymous	foreign_correct_qualifier	gladens002.E5262V17Te16788acProviderToneRelay	accepted	
+owner	62.0	istest-compile	foreign_correct_qualifier	gladens002.E5262V17Te16788acProviderToneRelay	accepted	
+owner	67.0	anonymous	foreign_own_qualifier	gladens004.E5262V17Te16788acProviderToneRelay	rejected	Compilation failed at Ln 1, Col 1 with the error:  Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	67.0	istest-compile	foreign_own_qualifier	gladens004.E5262V17Te16788acProviderToneRelay	rejected	Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	67.0	anonymous	foreign_correct_qualifier	gladens002.E5262V17Te16788acProviderToneRelay	accepted	
+owner	67.0	istest-compile	foreign_correct_qualifier	gladens002.E5262V17Te16788acProviderToneRelay	accepted	
+owner	68.0	anonymous	foreign_own_qualifier	gladens004.E5262V17Te16788acProviderToneRelay	rejected	Compilation failed at Ln 1, Col 1 with the error:  Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	68.0	istest-compile	foreign_own_qualifier	gladens004.E5262V17Te16788acProviderToneRelay	rejected	Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	68.0	anonymous	foreign_correct_qualifier	gladens002.E5262V17Te16788acProviderToneRelay	accepted	
+owner	68.0	istest-compile	foreign_correct_qualifier	gladens002.E5262V17Te16788acProviderToneRelay	accepted	
+owner	62.0	named-field-compile	foreign_own_field	gladens004.E5262V17Te16788acProviderToneRelay	rejected	Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	62.0	named-field-compile	foreign_correct_field	gladens002.E5262V17Te16788acProviderToneRelay	accepted	
+owner	67.0	named-field-compile	foreign_own_field	gladens004.E5262V17Te16788acProviderToneRelay	rejected	Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	67.0	named-field-compile	foreign_correct_field	gladens002.E5262V17Te16788acProviderToneRelay	accepted	
+owner	68.0	named-field-compile	foreign_own_field	gladens004.E5262V17Te16788acProviderToneRelay	rejected	Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	68.0	named-field-compile	foreign_correct_field	gladens002.E5262V17Te16788acProviderToneRelay	accepted	
+owner	62.0	anonymous	construct	Object value = new gladens004.E5262V17Te16788acProviderToneRelay();	rejected	Compilation failed at Ln 1, Col 16 with the error:  Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	62.0	istest-compile	construct	Object value = new gladens004.E5262V17Te16788acProviderToneRelay();	rejected	Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	62.0	anonymous	cast	Object value = null; Object casted = (gladens004.E5262V17Te16788acProviderToneRelay)value;	rejected	Compilation failed at Ln 1, Col 38 with the error:  Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	62.0	istest-compile	cast	Object value = null; Object casted = (gladens004.E5262V17Te16788acProviderToneRelay)value;	rejected	Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	62.0	anonymous	generic	List<gladens004.E5262V17Te16788acProviderToneRelay> value;	rejected	Compilation failed at Ln 1, Col 1 with the error:  Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	62.0	istest-compile	generic	List<gladens004.E5262V17Te16788acProviderToneRelay> value;	rejected	Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	67.0	anonymous	construct	Object value = new gladens004.E5262V17Te16788acProviderToneRelay();	rejected	Compilation failed at Ln 1, Col 16 with the error:  Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	67.0	istest-compile	construct	Object value = new gladens004.E5262V17Te16788acProviderToneRelay();	rejected	Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	67.0	anonymous	cast	Object value = null; Object casted = (gladens004.E5262V17Te16788acProviderToneRelay)value;	rejected	Compilation failed at Ln 1, Col 38 with the error:  Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	67.0	istest-compile	cast	Object value = null; Object casted = (gladens004.E5262V17Te16788acProviderToneRelay)value;	rejected	Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	67.0	anonymous	generic	List<gladens004.E5262V17Te16788acProviderToneRelay> value;	rejected	Compilation failed at Ln 1, Col 1 with the error:  Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	67.0	istest-compile	generic	List<gladens004.E5262V17Te16788acProviderToneRelay> value;	rejected	Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	68.0	anonymous	construct	Object value = new gladens004.E5262V17Te16788acProviderToneRelay();	rejected	Compilation failed at Ln 1, Col 16 with the error:  Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	68.0	istest-compile	construct	Object value = new gladens004.E5262V17Te16788acProviderToneRelay();	rejected	Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	68.0	anonymous	cast	Object value = null; Object casted = (gladens004.E5262V17Te16788acProviderToneRelay)value;	rejected	Compilation failed at Ln 1, Col 38 with the error:  Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	68.0	istest-compile	cast	Object value = null; Object casted = (gladens004.E5262V17Te16788acProviderToneRelay)value;	rejected	Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	68.0	anonymous	generic	List<gladens004.E5262V17Te16788acProviderToneRelay> value;	rejected	Compilation failed at Ln 1, Col 1 with the error:  Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	68.0	istest-compile	generic	List<gladens004.E5262V17Te16788acProviderToneRelay> value;	rejected	Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	62.0	named-signature-compile	parameter	public void accept(gladens004.E5262V17Te16788acProviderToneRelay value) {}	rejected	Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	62.0	named-signature-compile	return	public gladens004.E5262V17Te16788acProviderToneRelay getValue() { return null; }	rejected	Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	67.0	named-signature-compile	parameter	public void accept(gladens004.E5262V17Te16788acProviderToneRelay value) {}	rejected	Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	67.0	named-signature-compile	return	public gladens004.E5262V17Te16788acProviderToneRelay getValue() { return null; }	rejected	Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	68.0	named-signature-compile	parameter	public void accept(gladens004.E5262V17Te16788acProviderToneRelay value) {}	rejected	Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	68.0	named-signature-compile	return	public gladens004.E5262V17Te16788acProviderToneRelay getValue() { return null; }	rejected	Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	62.0	vf-check-only	parameter-controller	public void accept(gladens004.E5262V17Te16788acProviderToneRelay value) {}	rejected	Invalid type: gladens004.E5262V17Te16788acProviderToneRelay; Apex class 'gladens004.Case356VFProbe' does not exist
+owner	67.0	vf-check-only	parameter-controller	public void accept(gladens004.E5262V17Te16788acProviderToneRelay value) {}	rejected	Invalid type: gladens004.E5262V17Te16788acProviderToneRelay; Apex class 'gladens004.Case356VFProbe' does not exist
+owner	68.0	vf-check-only	parameter-controller	public void accept(gladens004.E5262V17Te16788acProviderToneRelay value) {}	rejected	Invalid type: gladens004.E5262V17Te16788acProviderToneRelay; Apex class 'gladens004.Case356VFProbe' does not exist
+owner	62.0	named-check-only	same-name	own and package qualified fields	accepted	
+owner	67.0	named-check-only	same-name	own and package qualified fields	accepted	
+owner	68.0	named-check-only	same-name	own and package qualified fields	accepted	
+owner	62.0	anonymous	same-name	gladens004.E5262V17Te16788acProviderToneRelay own; gladens002.E5262V17Te16788acProviderToneRelay foreign;	accepted	
+owner	62.0	istest-compile	same-name	gladens004.E5262V17Te16788acProviderToneRelay own; gladens002.E5262V17Te16788acProviderToneRelay foreign;	accepted	
+owner	67.0	anonymous	same-name	gladens004.E5262V17Te16788acProviderToneRelay own; gladens002.E5262V17Te16788acProviderToneRelay foreign;	accepted	
+owner	67.0	istest-compile	same-name	gladens004.E5262V17Te16788acProviderToneRelay own; gladens002.E5262V17Te16788acProviderToneRelay foreign;	accepted	
+owner	68.0	anonymous	same-name	gladens004.E5262V17Te16788acProviderToneRelay own; gladens002.E5262V17Te16788acProviderToneRelay foreign;	accepted	
+owner	68.0	istest-compile	same-name	gladens004.E5262V17Te16788acProviderToneRelay own; gladens002.E5262V17Te16788acProviderToneRelay foreign;	accepted	
+owner	62.0	vf-check-only	same-name	controller local declarations and page	accepted	
+owner	67.0	vf-check-only	same-name	controller local declarations and page	accepted	
+owner	68.0	vf-check-only	same-name	controller local declarations and page	accepted	
+owner	59.0	vf-check-only	parameter-controller	VF API 59.0, Apex source and transport 62.0	rejected	Invalid type: gladens004.E5262V17Te16788acProviderToneRelay; Apex class 'gladens004.Case356FloorVF' does not exist
+owner	59.0	vf-check-only	same-name	VF API 59.0, Apex source and transport 62.0	accepted	
+owner	62.0	anonymous	class-literal	Type value = gladens004.E5262V17Te16788acProviderToneRelay.class;	rejected	Compilation failed at Ln 1, Col 14 with the error:  Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	62.0	istest-compile	class-literal	Type value = gladens004.E5262V17Te16788acProviderToneRelay.class;	rejected	Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	62.0	istest-compile	static-call	gladens004.E5262V17Te16788acProviderToneRelay.missing();	rejected	Variable does not exist: gladens004.E5262V17Te16788acProviderToneRelay
+owner	62.0	anonymous	catch	try { Integer value = 1; } catch (gladens004.E5262V17Te16788acProviderToneRelay e) { }	rejected	Compilation failed at Ln 1, Col 84 with the error:  Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	67.0	anonymous	static-call	gladens004.E5262V17Te16788acProviderToneRelay.missing();	rejected	Compilation failed at Ln 1, Col 1 with the error:  Variable does not exist: gladens004.E5262V17Te16788acProviderToneRelay
+owner	67.0	istest-compile	static-call	gladens004.E5262V17Te16788acProviderToneRelay.missing();	rejected	Variable does not exist: gladens004.E5262V17Te16788acProviderToneRelay
+owner	67.0	anonymous	catch	try { Integer value = 1; } catch (gladens004.E5262V17Te16788acProviderToneRelay e) { }	rejected	Compilation failed at Ln 1, Col 84 with the error:  Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	67.0	istest-compile	catch	try { Integer value = 1; } catch (gladens004.E5262V17Te16788acProviderToneRelay e) { }	rejected	Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	67.0	anonymous	foreach	for (gladens004.E5262V17Te16788acProviderToneRelay item : new List<gladens004.E5262V17Te16788acProviderToneRelay>()) { }	rejected	Compilation failed at Ln 1, Col 59 with the error:  Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	67.0	istest-compile	foreach	for (gladens004.E5262V17Te16788acProviderToneRelay item : new List<gladens004.E5262V17Te16788acProviderToneRelay>()) { }	rejected	Invalid type: gladens004.E5262V17Te16788acProviderToneRelay; Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	68.0	anonymous	class-literal	Type value = gladens004.E5262V17Te16788acProviderToneRelay.class;	rejected	Compilation failed at Ln 1, Col 14 with the error:  Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	68.0	istest-compile	class-literal	Type value = gladens004.E5262V17Te16788acProviderToneRelay.class;	rejected	Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	68.0	anonymous	static-call	gladens004.E5262V17Te16788acProviderToneRelay.missing();	rejected	Compilation failed at Ln 1, Col 1 with the error:  Variable does not exist: gladens004.E5262V17Te16788acProviderToneRelay
+owner	68.0	istest-compile	static-call	gladens004.E5262V17Te16788acProviderToneRelay.missing();	rejected	Variable does not exist: gladens004.E5262V17Te16788acProviderToneRelay
+owner	68.0	anonymous	catch	try { Integer value = 1; } catch (gladens004.E5262V17Te16788acProviderToneRelay e) { }	rejected	Compilation failed at Ln 1, Col 84 with the error:  Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	68.0	istest-compile	catch	try { Integer value = 1; } catch (gladens004.E5262V17Te16788acProviderToneRelay e) { }	rejected	Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	68.0	anonymous	foreach	for (gladens004.E5262V17Te16788acProviderToneRelay item : new List<gladens004.E5262V17Te16788acProviderToneRelay>()) { }	rejected	Compilation failed at Ln 1, Col 59 with the error:  Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	68.0	istest-compile	foreach	for (gladens004.E5262V17Te16788acProviderToneRelay item : new List<gladens004.E5262V17Te16788acProviderToneRelay>()) { }	rejected	Invalid type: gladens004.E5262V17Te16788acProviderToneRelay; Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	62.0	anonymous	static-call	gladens004.E5262V17Te16788acProviderToneRelay.missing();	rejected	Compilation failed at Ln 1, Col 1 with the error:  Variable does not exist: gladens004.E5262V17Te16788acProviderToneRelay
+owner	62.0	istest-compile	catch	try { Integer value = 1; } catch (gladens004.E5262V17Te16788acProviderToneRelay e) { }	rejected	Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	62.0	anonymous	foreach	for (gladens004.E5262V17Te16788acProviderToneRelay item : new List<gladens004.E5262V17Te16788acProviderToneRelay>()) { }	rejected	Compilation failed at Ln 1, Col 59 with the error:  Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	62.0	istest-compile	foreach	for (gladens004.E5262V17Te16788acProviderToneRelay item : new List<gladens004.E5262V17Te16788acProviderToneRelay>()) { }	rejected	Invalid type: gladens004.E5262V17Te16788acProviderToneRelay; Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	67.0	anonymous	class-literal	Type value = gladens004.E5262V17Te16788acProviderToneRelay.class;	rejected	Compilation failed at Ln 1, Col 14 with the error:  Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	67.0	istest-compile	class-literal	Type value = gladens004.E5262V17Te16788acProviderToneRelay.class;	rejected	Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	62.0	trigger-check-only	trigger	trigger Case356Trg on Account (before insert) { gladens004.E5262V17Te16788acProviderToneRelay value; }	rejected	Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	67.0	trigger-check-only	trigger	trigger Case356Trg on Account (before insert) { gladens004.E5262V17Te16788acProviderToneRelay value; }	rejected	Invalid type: gladens004.E5262V17Te16788acProviderToneRelay
+owner	68.0	trigger-check-only	trigger	trigger Case356Trg on Account (before insert) { gladens004.E5262V17Te16788acProviderToneRelay value; }	rejected	Invalid type: gladens004.E5262V17Te16788acProviderToneRelay

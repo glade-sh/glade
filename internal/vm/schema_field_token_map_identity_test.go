@@ -76,6 +76,7 @@ func TestSchemaFieldTokenMapLookupRepeatedAnonymous(t *testing.T) {
 				{"selection", fieldTokenMapSelection},
 			} {
 				t.Run(api+"/"+valueType+"/"+scenario.name, func(t *testing.T) {
+					t.Parallel()
 					program, err := vm.CompileAnonymousWithOptions(fmt.Sprintf(fieldTokenMapSetup, valueType)+scenario.body, vm.CompileOptions{APIVersion: api})
 					if err != nil {
 						t.Fatal(err)
@@ -122,6 +123,7 @@ func TestSchemaFieldTokenMapLookupRepeatedIsTest(t *testing.T) {
 	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	for _, api := range []string{"62.0", "67.0", "68.0"} {
 		t.Run(api, func(t *testing.T) {
+			t.Parallel()
 			root := t.TempDir()
 			var source strings.Builder
 			source.WriteString("@IsTest private class FieldTokenMapProbe {\n")

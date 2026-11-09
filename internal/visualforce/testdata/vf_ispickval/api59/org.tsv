@@ -1,0 +1,116 @@
+api	case	outcome	value
+59.0	user-match	render	true
+59.0	user-nomatch	render	false
+59.0	user-case-lower	render	true
+59.0	user-case-upper	render	true
+59.0	user-empty	render	false
+59.0	user-padded	render	false
+59.0	user-notavalue	render	false
+59.0	profile-match	render	true
+59.0	profile-nomatch	render	false
+59.0	user-locale-match	render	true
+59.0	user-locale-case	render	true
+59.0	user-timezone-match	render	true
+59.0	user-timezone-raw	error	Field TimeZoneSidKey is a picklist field. Picklist fields are only supported in certain functions.
+59.0	user-language-match	render	true
+59.0	user-encoding-match	error	Field EmailEncodingKey does not exist. Check spelling.
+59.0	user-geocode-null-empty	render	true
+59.0	user-geocode-null-value	render	false
+59.0	user-geocode-raw	error	Field GeocodeAccuracy is a picklist field. Picklist fields are only supported in certain functions.
+59.0	user-startday	render	false
+59.0	user-startday-raw	error	Field StartDay is a picklist field. Picklist fields are only supported in certain functions.
+59.0	user-digest	error	Field DigestFrequency does not exist. Check spelling.
+59.0	user-digest-raw	error	Field DigestFrequency does not exist. Check spelling.
+59.0	user-groupfreq	error	Field DefaultGroupNotificationFrequency does not exist. Check spelling.
+59.0	user-dquote	render	true
+59.0	lower-name	render	true
+59.0	mixed-name	render	true
+59.0	space-before-paren	render	true
+59.0	second-arg-string-var	error	Incorrect parameter type for function 'ISPICKVAL()'. Expected Text Literal, received Text
+59.0	second-arg-concat	error	Incorrect parameter type for function 'ISPICKVAL()'. Expected Text Literal, received Text
+59.0	second-arg-user-text	error	Incorrect parameter type for function 'ISPICKVAL()'. Expected Text Literal, received Text
+59.0	second-arg-null-string	error	Incorrect parameter type for function 'ISPICKVAL()'. Expected Text Literal, received Text
+59.0	in-if	render	yes
+59.0	in-if-false	render	no
+59.0	in-not	render	false
+59.0	in-and	render	true
+59.0	in-or	render	true
+59.0	in-and-op	render	true
+59.0	in-or-op	render	true
+59.0	in-bang	render	false
+59.0	in-case	error	Incorrect argument type for function 'CASE()'.
+59.0	in-equals	render	true
+59.0	in-concat	render	xtruey
+59.0	in-nested-if	render	s
+59.0	text-contrast	render	Standard
+59.0	text-contrast-null	render	[]
+59.0	text-eq	render	true
+59.0	raw-eq	error	Field UserType is a picklist field. Picklist fields are only supported in certain functions.
+59.0	raw-print	error	Field UserType is a picklist field. Picklist fields are only supported in certain functions.
+59.0	rendered-true	render	shown
+59.0	rendered-false	render	|after
+59.0	rendered-null	render	|after
+59.0	rendered-not	render	shown
+59.0	outputtext-value	render	is-standard
+59.0	msg-channel-valid	render	{uuid}
+59.0	msg-channel-script	render	"<script>var ch = ""{uuid}"";</script>"
+59.0	msg-channel-lower	render	{uuid}
+59.0	msg-channel-in-if	render	{uuid}
+59.0	msg-channel-unknown	error	We couldn’t find Lightning Message Channel NoSuchChannel__c. Check your spelling and try again.
+59.0	msg-channel-bare	error	Invalid use of global variable 'ApexPagesELAdapterContext.$MessageChannel'. Expected field selector is missing.
+59.0	msg-channel-nonsuffix	error	We couldn’t find Lightning Message Channel ProbeChannel. Check your spelling and try again.
+59.0	master-bare	error	Field $MASTER does not exist. Check spelling.
+59.0	master-member	error	Field $MASTER.Name does not exist. Check spelling.
+59.0	master-lower	error	Field $master does not exist. Check spelling.
+59.0	err-ctl-prop-picklist	error	Incorrect parameter type for function 'ISPICKVAL()'. Expected Picklist, received Text
+59.0	err-ctl-prop-custom	error	Incorrect parameter type for function 'ISPICKVAL()'. Expected Picklist, received Text
+59.0	err-std-picklist	error	Incorrect parameter type for function 'ISPICKVAL()'. Expected Picklist, received Text
+59.0	err-std-custom-picklist	error	Incorrect parameter type for function 'ISPICKVAL()'. Expected Picklist, received Text
+59.0	err-std-parent-picklist	error	Incorrect parameter type for function 'ISPICKVAL()'. Expected Picklist, received Text
+59.0	err-std-owner-usertype	error	Incorrect parameter type for function 'ISPICKVAL()'. Expected Picklist, received Text
+59.0	err-std-text	error	Incorrect parameter type for function 'ISPICKVAL()'. Expected Picklist, received Text
+59.0	err-cust-text	error	Incorrect parameter type for function 'ISPICKVAL()'. Expected Picklist, received Text
+59.0	err-string-prop	error	Incorrect parameter type for function 'ISPICKVAL()'. Expected Picklist, received Text
+59.0	err-number	error	Incorrect parameter type for function 'ISPICKVAL()'. Expected Picklist, received Number
+59.0	err-checkbox	error	Incorrect parameter type for function 'ISPICKVAL()'. Expected Picklist, received Boolean
+59.0	err-multiselect	error	Incorrect parameter type for function 'ISPICKVAL()'. Expected Picklist, received Text
+59.0	err-literal-first	error	Incorrect parameter type for function 'ISPICKVAL()'. Expected Picklist, received Text
+59.0	err-user-id	error	Incorrect parameter type for function 'ISPICKVAL()'. Expected Picklist, received Lookup(User)
+59.0	err-user-name	error	Incorrect parameter type for function 'ISPICKVAL()'. Expected Picklist, received Text
+59.0	err-user-boolean	error	Incorrect parameter type for function 'ISPICKVAL()'. Expected Picklist, received Boolean
+59.0	err-org-name	error	Incorrect parameter type for function 'ISPICKVAL()'. Expected Picklist, received Text
+59.0	err-one-arg	error	Incorrect number of parameters for function 'ISPICKVAL()'. Expected 2, received 1
+59.0	err-three-args	error	Incorrect number of parameters for function 'ISPICKVAL()'. Expected 2, received 3
+59.0	err-no-args	error	Incorrect number of parameters for function 'ISPICKVAL()'. Expected 2, received 0
+59.0	err-number-second	error	Incorrect parameter type for function 'ISPICKVAL()'. Expected Text Literal, received Number
+59.0	err-bool-second	error	Incorrect parameter type for function 'ISPICKVAL()'. Expected Text Literal, received Boolean
+59.0	err-null-second	error	Incorrect parameter type for function 'ISPICKVAL()'. Expected Text Literal, received Null
+59.0	err-picklist-second	error	Field UserType is a picklist field. Picklist fields are only supported in certain functions.
+59.0	err-text-fn-first	error	Incorrect parameter type for function 'ISPICKVAL()'. Expected Picklist, received Text
+59.0	err-text-fn-second	error	Incorrect parameter type for function 'ISPICKVAL()'. Expected Text Literal, received Text
+59.0	err-unknown-field	error	Field NoSuchField does not exist. Check spelling.
+59.0	err-unclosed	error	Syntax error.  Missing ')'
+59.0	err-bad-global	error	Field $Nope.UserType does not exist. Check spelling.
+59.0	msg-channel-twice	render	{uuid}|{uuid}
+59.0	user-endday	render	false
+59.0	user-usertype-lang-case	render	true
+59.0	profile-raw-print	error	Field UserType is a picklist field. Picklist fields are only supported in certain functions.
+59.0	user-lookup-chain	error	Field Manager.UserType does not exist. Check spelling.
+59.0	err-user-currency	error	Field DefaultCurrencyIsoCode does not exist. Check spelling.
+59.0	err-profile-name	error	Incorrect parameter type for function 'ISPICKVAL()'. Expected Picklist, received Text
+59.0	err-component	error	Field $Label.Nope does not exist. Check spelling.
+59.0	organization-raw	error	Field OrganizationType does not exist. Check spelling.
+59.0	organization-eq	error	Field OrganizationType does not exist. Check spelling.
+59.0	organization-ispickval	error	Field OrganizationType does not exist. Check spelling.
+59.0	portalrole-raw	error	Field PortalRole does not exist. Check spelling.
+59.0	portalrole-eq	error	Field PortalRole does not exist. Check spelling.
+59.0	portalrole-ispickval	error	Field PortalRole does not exist. Check spelling.
+59.0	user-neq	error	Field UserType is a picklist field. Picklist fields are only supported in certain functions.
+59.0	user-plus	error	Field UserType is a picklist field. Picklist fields are only supported in certain functions.
+59.0	user-concat	error	Field UserType is a picklist field. Picklist fields are only supported in certain functions.
+59.0	user-less	error	Field UserType is a picklist field. Picklist fields are only supported in certain functions.
+59.0	case-true	error	Incorrect argument type for function 'CASE()'.
+59.0	case-comparison	error	Incorrect argument type for function 'CASE()'.
+59.0	case-checkbox	error	Incorrect argument type for function 'CASE()'.
+59.0	msg-channel-name-case	render	{uuid}
+59.0	msg-channel-suffix-case	error	We couldn’t find Lightning Message Channel ProbeChannel__C. Check your spelling and try again.

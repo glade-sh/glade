@@ -312,7 +312,7 @@ func TestStaticIndexPublishesLazyDescribeChildList(t *testing.T) {
 	child.Fields["relationshipName"] = String("RelatedRows")
 	child.Fields["junctionIdListNames"] = List(String("LinkedIds"))
 	machine.childRelCache = newChildRelationshipCache()
-	machine.childRelCache.store("catalog__c", []Value{child})
+	machine.childRelCache.store("catalog__c\x00"+machine.currentSourceExecutionPolicy().APIVersion, []Value{child})
 	descriptor := factory.Fields["Descriptor"]
 	if _, exists := descriptor.Fields["childRelationships"]; exists {
 		t.Fatal("fixture must attach its child list lazily")

@@ -1,0 +1,185 @@
+api	route	case	observation
+62.0	anonymous	D1	Customer|D1|yes|tasks=
+62.0	anonymous	D1	Other|D1|no|tasks=
+62.0	anonymous	D2	Customer|D2|yes|tasks=
+62.0	anonymous	D2	Other|D2|no|tasks=
+62.0	anonymous	D3	Customer|D3|yes|tasks=
+62.0	anonymous	D3	Other|D3|no|tasks=
+62.0	anonymous	D4	Customer|D4|no|tasks=
+62.0	anonymous	D4	Other|D4|yes|tasks=
+62.0	anonymous	D5	Customer|D5|no|tasks=
+62.0	anonymous	D5	Other|D5|no|tasks=
+62.0	anonymous	D6	Customer|D6|no|tasks=
+62.0	anonymous	D6	Other|D6|no|tasks=
+62.0	anonymous	D7	Customer|D7|no|tasks=
+62.0	anonymous	D7	Other|D7|yes|tasks=
+62.0	anonymous	D8	Customer|D8|yes|tasks=
+62.0	anonymous	D8	Other|D8|no|tasks=
+62.0	anonymous	D9	Customer|D9|yes|tasks=
+62.0	anonymous	D9	Other|D9|yes|tasks=
+62.0	anonymous	L1	Customer|L1|yes|tasks=
+62.0	anonymous	L1	Other|L1|yes|tasks=
+62.0	anonymous	L2	Customer|L2|yes|tasks=
+62.0	anonymous	L2	Other|L2|yes|tasks=
+62.0	anonymous	V1	Customer|V1|Acme|tasks=
+62.0	anonymous	V1	Other|V1|Acme|tasks=
+62.0	anonymous	V2	Customer|V2|Acme|tasks=
+62.0	anonymous	V2	Other|V2|Acme|tasks=
+62.0	anonymous	C1	Customer|C1|created|tasks=Acme
+62.0	anonymous	C1	Other|C1|created|tasks=Acme
+62.0	istest	D1	Customer|D1|yes|tasks=
+62.0	istest	D1	Other|D1|no|tasks=
+62.0	istest	D2	Customer|D2|yes|tasks=
+62.0	istest	D2	Other|D2|no|tasks=
+62.0	istest	D3	Customer|D3|yes|tasks=
+62.0	istest	D3	Other|D3|no|tasks=
+62.0	istest	D4	Customer|D4|no|tasks=
+62.0	istest	D4	Other|D4|yes|tasks=
+62.0	istest	D5	Customer|D5|no|tasks=
+62.0	istest	D5	Other|D5|no|tasks=
+62.0	istest	D6	Customer|D6|no|tasks=
+62.0	istest	D6	Other|D6|no|tasks=
+62.0	istest	D7	Customer|D7|no|tasks=
+62.0	istest	D7	Other|D7|yes|tasks=
+62.0	istest	D8	Customer|D8|yes|tasks=
+62.0	istest	D8	Other|D8|no|tasks=
+62.0	istest	D9	Customer|D9|yes|tasks=
+62.0	istest	D9	Other|D9|yes|tasks=
+62.0	istest	L1	Customer|L1|yes|tasks=
+62.0	istest	L1	Other|L1|yes|tasks=
+62.0	istest	L2	Customer|L2|yes|tasks=
+62.0	istest	L2	Other|L2|yes|tasks=
+62.0	istest	V1	Customer|V1|Acme|tasks=
+62.0	istest	V1	Other|V1|Acme|tasks=
+62.0	istest	V2	Customer|V2|Acme|tasks=
+62.0	istest	V2	Other|V2|Acme|tasks=
+62.0	istest	C1	Customer|C1|created|tasks=Acme
+62.0	istest	C1	Other|C1|created|tasks=Acme
+67.0	anonymous	D1	Customer|D1|yes|tasks=
+67.0	anonymous	D1	Other|D1|no|tasks=
+67.0	anonymous	D2	Customer|D2|yes|tasks=
+67.0	anonymous	D2	Other|D2|no|tasks=
+67.0	anonymous	D3	Customer|D3|yes|tasks=
+67.0	anonymous	D3	Other|D3|no|tasks=
+67.0	anonymous	D4	Customer|D4|no|tasks=
+67.0	anonymous	D4	Other|D4|yes|tasks=
+67.0	anonymous	D5	Customer|D5|no|tasks=
+67.0	anonymous	D5	Other|D5|no|tasks=
+67.0	anonymous	D6	Customer|D6|no|tasks=
+67.0	anonymous	D6	Other|D6|no|tasks=
+67.0	anonymous	D7	Customer|D7|no|tasks=
+67.0	anonymous	D7	Other|D7|yes|tasks=
+67.0	anonymous	D8	Customer|D8|yes|tasks=
+67.0	anonymous	D8	Other|D8|no|tasks=
+67.0	anonymous	D9	Customer|D9|yes|tasks=
+67.0	anonymous	D9	Other|D9|yes|tasks=
+67.0	anonymous	L1	Customer|L1|yes|tasks=
+67.0	anonymous	L1	Other|L1|yes|tasks=
+67.0	anonymous	L2	Customer|L2|yes|tasks=
+67.0	anonymous	L2	Other|L2|yes|tasks=
+67.0	anonymous	V1	Customer|V1|Acme|tasks=
+67.0	anonymous	V1	Other|V1|Acme|tasks=
+67.0	anonymous	V2	Customer|V2|Acme|tasks=
+67.0	anonymous	V2	Other|V2|Acme|tasks=
+67.0	anonymous	C1	Customer|C1|created|tasks=Acme
+67.0	anonymous	C1	Other|C1|created|tasks=Acme
+67.0	istest	D1	Customer|D1|yes|tasks=
+67.0	istest	D1	Other|D1|no|tasks=
+67.0	istest	D2	Customer|D2|yes|tasks=
+67.0	istest	D2	Other|D2|no|tasks=
+67.0	istest	D3	Customer|D3|yes|tasks=
+67.0	istest	D3	Other|D3|no|tasks=
+67.0	istest	D4	Customer|D4|no|tasks=
+67.0	istest	D4	Other|D4|yes|tasks=
+67.0	istest	D5	Customer|D5|no|tasks=
+67.0	istest	D5	Other|D5|no|tasks=
+67.0	istest	D6	Customer|D6|no|tasks=
+67.0	istest	D6	Other|D6|no|tasks=
+67.0	istest	D7	Customer|D7|no|tasks=
+67.0	istest	D7	Other|D7|yes|tasks=
+67.0	istest	D8	Customer|D8|yes|tasks=
+67.0	istest	D8	Other|D8|no|tasks=
+67.0	istest	D9	Customer|D9|yes|tasks=
+67.0	istest	D9	Other|D9|yes|tasks=
+67.0	istest	L1	Customer|L1|yes|tasks=
+67.0	istest	L1	Other|L1|yes|tasks=
+67.0	istest	L2	Customer|L2|yes|tasks=
+67.0	istest	L2	Other|L2|yes|tasks=
+67.0	istest	V1	Customer|V1|Acme|tasks=
+67.0	istest	V1	Other|V1|Acme|tasks=
+67.0	istest	V2	Customer|V2|Acme|tasks=
+67.0	istest	V2	Other|V2|Acme|tasks=
+67.0	istest	C1	Customer|C1|created|tasks=Acme
+67.0	istest	C1	Other|C1|created|tasks=Acme
+62.0	anonymous	RO1	Customer|RO1|done|tasks=
+62.0	anonymous	RO1	Other|RO1|done|tasks=
+62.0	anonymous	RO2	Customer|RO2|done|tasks=
+62.0	anonymous	RO2	Other|RO2|done|tasks=
+62.0	anonymous	RO3	Customer|RO3|done|tasks=
+62.0	anonymous	RO3	Other|RO3|done|tasks=
+62.0	anonymous	CR1	Customer|CR1|ERR|System.DmlException:Insert failed. First exception on row 0; first error: FIELD_INTEGRITY_EXCEPTION, We can't save this record because the “Rel_CR1” process failed. Give your Salesforce admin these details. CANNOT_EXECUTE_FLOW_TRIGGER: This error occurred when the flow tried to create records: FIELD_INTEGRITY_EXCEPTION: Related To ID: id value of incorrect type: <ID>. You can look up ExceptionCode values in the SOAP API Developer Guide.: []
+62.0	anonymous	CR1	Other|CR1|ERR|System.DmlException:Insert failed. First exception on row 0; first error: FIELD_INTEGRITY_EXCEPTION, We can't save this record because the “Rel_CR1” process failed. Give your Salesforce admin these details. CANNOT_EXECUTE_FLOW_TRIGGER: This error occurred when the flow tried to create records: FIELD_INTEGRITY_EXCEPTION: Related To ID: id value of incorrect type: <ID>. You can look up ExceptionCode values in the SOAP API Developer Guide.: []
+62.0	anonymous	CR2	Customer|CR2|ERR|System.DmlException:Insert failed. First exception on row 0; first error: MALFORMED_ID, We can't save this record because the “Rel_CR2” process failed. Give your Salesforce admin these details. CANNOT_EXECUTE_FLOW_TRIGGER: This error occurred when the flow tried to create records: MALFORMED_ID: Related To ID: id value of incorrect type: bad. You can look up ExceptionCode values in the SOAP API Developer Guide.: []
+62.0	anonymous	CR2	Other|CR2|ERR|System.DmlException:Insert failed. First exception on row 0; first error: MALFORMED_ID, We can't save this record because the “Rel_CR2” process failed. Give your Salesforce admin these details. CANNOT_EXECUTE_FLOW_TRIGGER: This error occurred when the flow tried to create records: MALFORMED_ID: Related To ID: id value of incorrect type: bad. You can look up ExceptionCode values in the SOAP API Developer Guide.: []
+62.0	anonymous	CR3	Customer|CR3|ERR|System.DmlException:Insert failed. First exception on row 0; first error: FIELD_INTEGRITY_EXCEPTION, We can't save this record because the “Rel_CR3” process failed. Give your Salesforce admin these details. CANNOT_EXECUTE_FLOW_TRIGGER: This error occurred when the flow tried to create records: FIELD_INTEGRITY_EXCEPTION: Account ID: id value of incorrect type: <ID>. You can look up ExceptionCode values in the SOAP API Developer Guide.: []
+62.0	anonymous	CR3	Other|CR3|ERR|System.DmlException:Insert failed. First exception on row 0; first error: FIELD_INTEGRITY_EXCEPTION, We can't save this record because the “Rel_CR3” process failed. Give your Salesforce admin these details. CANNOT_EXECUTE_FLOW_TRIGGER: This error occurred when the flow tried to create records: FIELD_INTEGRITY_EXCEPTION: Account ID: id value of incorrect type: <ID>. You can look up ExceptionCode values in the SOAP API Developer Guide.: []
+62.0	istest	RO1	Customer|RO1|done|tasks=
+62.0	istest	RO1	Other|RO1|done|tasks=
+62.0	istest	RO2	Customer|RO2|done|tasks=
+62.0	istest	RO2	Other|RO2|done|tasks=
+62.0	istest	RO3	Customer|RO3|done|tasks=
+62.0	istest	RO3	Other|RO3|done|tasks=
+62.0	istest	CR1	Customer|CR1|ERR|System.DmlException:Insert failed. First exception on row 0; first error: FIELD_INTEGRITY_EXCEPTION, We can't save this record because the “Rel_CR1” process failed. Give your Salesforce admin these details. CANNOT_EXECUTE_FLOW_TRIGGER: This error occurred when the flow tried to create records: FIELD_INTEGRITY_EXCEPTION: Related To ID: id value of incorrect type: <ID>. You can look up ExceptionCode values in the SOAP API Developer Guide.: []
+62.0	istest	CR1	Other|CR1|ERR|System.DmlException:Insert failed. First exception on row 0; first error: FIELD_INTEGRITY_EXCEPTION, We can't save this record because the “Rel_CR1” process failed. Give your Salesforce admin these details. CANNOT_EXECUTE_FLOW_TRIGGER: This error occurred when the flow tried to create records: FIELD_INTEGRITY_EXCEPTION: Related To ID: id value of incorrect type: <ID>. You can look up ExceptionCode values in the SOAP API Developer Guide.: []
+62.0	istest	CR2	Customer|CR2|ERR|System.DmlException:Insert failed. First exception on row 0; first error: MALFORMED_ID, We can't save this record because the “Rel_CR2” process failed. Give your Salesforce admin these details. CANNOT_EXECUTE_FLOW_TRIGGER: This error occurred when the flow tried to create records: MALFORMED_ID: Related To ID: id value of incorrect type: bad. You can look up ExceptionCode values in the SOAP API Developer Guide.: []
+62.0	istest	CR2	Other|CR2|ERR|System.DmlException:Insert failed. First exception on row 0; first error: MALFORMED_ID, We can't save this record because the “Rel_CR2” process failed. Give your Salesforce admin these details. CANNOT_EXECUTE_FLOW_TRIGGER: This error occurred when the flow tried to create records: MALFORMED_ID: Related To ID: id value of incorrect type: bad. You can look up ExceptionCode values in the SOAP API Developer Guide.: []
+62.0	istest	CR3	Customer|CR3|ERR|System.DmlException:Insert failed. First exception on row 0; first error: FIELD_INTEGRITY_EXCEPTION, We can't save this record because the “Rel_CR3” process failed. Give your Salesforce admin these details. CANNOT_EXECUTE_FLOW_TRIGGER: This error occurred when the flow tried to create records: FIELD_INTEGRITY_EXCEPTION: Account ID: id value of incorrect type: <ID>. You can look up ExceptionCode values in the SOAP API Developer Guide.: []
+62.0	istest	CR3	Other|CR3|ERR|System.DmlException:Insert failed. First exception on row 0; first error: FIELD_INTEGRITY_EXCEPTION, We can't save this record because the “Rel_CR3” process failed. Give your Salesforce admin these details. CANNOT_EXECUTE_FLOW_TRIGGER: This error occurred when the flow tried to create records: FIELD_INTEGRITY_EXCEPTION: Account ID: id value of incorrect type: <ID>. You can look up ExceptionCode values in the SOAP API Developer Guide.: []
+67.0	anonymous	RO1	Customer|RO1|done|tasks=
+67.0	anonymous	RO1	Other|RO1|done|tasks=
+67.0	anonymous	RO2	Customer|RO2|done|tasks=
+67.0	anonymous	RO2	Other|RO2|done|tasks=
+67.0	anonymous	RO3	Customer|RO3|done|tasks=
+67.0	anonymous	RO3	Other|RO3|done|tasks=
+67.0	anonymous	CR1	Customer|CR1|ERR|System.DmlException:Insert failed. First exception on row 0; first error: FIELD_INTEGRITY_EXCEPTION, We can't save this record because the “Rel_CR1” process failed. Give your Salesforce admin these details. CANNOT_EXECUTE_FLOW_TRIGGER: This error occurred when the flow tried to create records: FIELD_INTEGRITY_EXCEPTION: Related To ID: id value of incorrect type: <ID>. You can look up ExceptionCode values in the SOAP API Developer Guide.: []
+67.0	anonymous	CR1	Other|CR1|ERR|System.DmlException:Insert failed. First exception on row 0; first error: FIELD_INTEGRITY_EXCEPTION, We can't save this record because the “Rel_CR1” process failed. Give your Salesforce admin these details. CANNOT_EXECUTE_FLOW_TRIGGER: This error occurred when the flow tried to create records: FIELD_INTEGRITY_EXCEPTION: Related To ID: id value of incorrect type: <ID>. You can look up ExceptionCode values in the SOAP API Developer Guide.: []
+67.0	anonymous	CR2	Customer|CR2|ERR|System.DmlException:Insert failed. First exception on row 0; first error: MALFORMED_ID, We can't save this record because the “Rel_CR2” process failed. Give your Salesforce admin these details. CANNOT_EXECUTE_FLOW_TRIGGER: This error occurred when the flow tried to create records: MALFORMED_ID: Related To ID: id value of incorrect type: bad. You can look up ExceptionCode values in the SOAP API Developer Guide.: []
+67.0	anonymous	CR2	Other|CR2|ERR|System.DmlException:Insert failed. First exception on row 0; first error: MALFORMED_ID, We can't save this record because the “Rel_CR2” process failed. Give your Salesforce admin these details. CANNOT_EXECUTE_FLOW_TRIGGER: This error occurred when the flow tried to create records: MALFORMED_ID: Related To ID: id value of incorrect type: bad. You can look up ExceptionCode values in the SOAP API Developer Guide.: []
+67.0	anonymous	CR3	Customer|CR3|ERR|System.DmlException:Insert failed. First exception on row 0; first error: FIELD_INTEGRITY_EXCEPTION, We can't save this record because the “Rel_CR3” process failed. Give your Salesforce admin these details. CANNOT_EXECUTE_FLOW_TRIGGER: This error occurred when the flow tried to create records: FIELD_INTEGRITY_EXCEPTION: Account ID: id value of incorrect type: <ID>. You can look up ExceptionCode values in the SOAP API Developer Guide.: []
+67.0	anonymous	CR3	Other|CR3|ERR|System.DmlException:Insert failed. First exception on row 0; first error: FIELD_INTEGRITY_EXCEPTION, We can't save this record because the “Rel_CR3” process failed. Give your Salesforce admin these details. CANNOT_EXECUTE_FLOW_TRIGGER: This error occurred when the flow tried to create records: FIELD_INTEGRITY_EXCEPTION: Account ID: id value of incorrect type: <ID>. You can look up ExceptionCode values in the SOAP API Developer Guide.: []
+67.0	istest	RO1	Customer|RO1|done|tasks=
+67.0	istest	RO1	Other|RO1|done|tasks=
+67.0	istest	RO2	Customer|RO2|done|tasks=
+67.0	istest	RO2	Other|RO2|done|tasks=
+67.0	istest	RO3	Customer|RO3|done|tasks=
+67.0	istest	RO3	Other|RO3|done|tasks=
+67.0	istest	CR1	Customer|CR1|ERR|System.DmlException:Insert failed. First exception on row 0; first error: FIELD_INTEGRITY_EXCEPTION, We can't save this record because the “Rel_CR1” process failed. Give your Salesforce admin these details. CANNOT_EXECUTE_FLOW_TRIGGER: This error occurred when the flow tried to create records: FIELD_INTEGRITY_EXCEPTION: Related To ID: id value of incorrect type: <ID>. You can look up ExceptionCode values in the SOAP API Developer Guide.: []
+67.0	istest	CR1	Other|CR1|ERR|System.DmlException:Insert failed. First exception on row 0; first error: FIELD_INTEGRITY_EXCEPTION, We can't save this record because the “Rel_CR1” process failed. Give your Salesforce admin these details. CANNOT_EXECUTE_FLOW_TRIGGER: This error occurred when the flow tried to create records: FIELD_INTEGRITY_EXCEPTION: Related To ID: id value of incorrect type: <ID>. You can look up ExceptionCode values in the SOAP API Developer Guide.: []
+67.0	istest	CR2	Customer|CR2|ERR|System.DmlException:Insert failed. First exception on row 0; first error: MALFORMED_ID, We can't save this record because the “Rel_CR2” process failed. Give your Salesforce admin these details. CANNOT_EXECUTE_FLOW_TRIGGER: This error occurred when the flow tried to create records: MALFORMED_ID: Related To ID: id value of incorrect type: bad. You can look up ExceptionCode values in the SOAP API Developer Guide.: []
+67.0	istest	CR2	Other|CR2|ERR|System.DmlException:Insert failed. First exception on row 0; first error: MALFORMED_ID, We can't save this record because the “Rel_CR2” process failed. Give your Salesforce admin these details. CANNOT_EXECUTE_FLOW_TRIGGER: This error occurred when the flow tried to create records: MALFORMED_ID: Related To ID: id value of incorrect type: bad. You can look up ExceptionCode values in the SOAP API Developer Guide.: []
+67.0	istest	CR3	Customer|CR3|ERR|System.DmlException:Insert failed. First exception on row 0; first error: FIELD_INTEGRITY_EXCEPTION, We can't save this record because the “Rel_CR3” process failed. Give your Salesforce admin these details. CANNOT_EXECUTE_FLOW_TRIGGER: This error occurred when the flow tried to create records: FIELD_INTEGRITY_EXCEPTION: Account ID: id value of incorrect type: <ID>. You can look up ExceptionCode values in the SOAP API Developer Guide.: []
+67.0	istest	CR3	Other|CR3|ERR|System.DmlException:Insert failed. First exception on row 0; first error: FIELD_INTEGRITY_EXCEPTION, We can't save this record because the “Rel_CR3” process failed. Give your Salesforce admin these details. CANNOT_EXECUTE_FLOW_TRIGGER: This error occurred when the flow tried to create records: FIELD_INTEGRITY_EXCEPTION: Account ID: id value of incorrect type: <ID>. You can look up ExceptionCode values in the SOAP API Developer Guide.: []
+62.0	anonymous	EM1	Customer|EM1|sent|tasks=
+62.0	anonymous	EM1	Other|EM1|sent|tasks=
+62.0	anonymous	EM2	Customer|EM2|sent|tasks=
+62.0	anonymous	EM2	Other|EM2|sent|tasks=
+62.0	anonymous	EM3	Customer|EM3|sent|tasks=
+62.0	anonymous	EM3	Other|EM3|sent|tasks=
+62.0	istest	EM1	Customer|EM1|sent|tasks=
+62.0	istest	EM1	Other|EM1|sent|tasks=
+62.0	istest	EM2	Customer|EM2|sent|tasks=
+62.0	istest	EM2	Other|EM2|sent|tasks=
+62.0	istest	EM3	Customer|EM3|sent|tasks=
+62.0	istest	EM3	Other|EM3|sent|tasks=
+67.0	anonymous	EM1	Customer|EM1|sent|tasks=
+67.0	anonymous	EM1	Other|EM1|sent|tasks=
+67.0	anonymous	EM2	Customer|EM2|sent|tasks=
+67.0	anonymous	EM2	Other|EM2|sent|tasks=
+67.0	anonymous	EM3	Customer|EM3|sent|tasks=
+67.0	anonymous	EM3	Other|EM3|sent|tasks=
+67.0	istest	EM1	Customer|EM1|sent|tasks=
+67.0	istest	EM1	Other|EM1|sent|tasks=
+67.0	istest	EM2	Customer|EM2|sent|tasks=
+67.0	istest	EM2	Other|EM2|sent|tasks=
+67.0	istest	EM3	Customer|EM3|sent|tasks=
+67.0	istest	EM3	Other|EM3|sent|tasks=

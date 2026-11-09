@@ -1,0 +1,1 @@
+@IsTest private class B4NoKnowledge62 { @IsTest static void observe() { try { KbManagement.PublishingService.publishArticle(null,false); } catch(Exception e) { System.debug(e.getTypeName()); } } }

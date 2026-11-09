@@ -1,0 +1,133 @@
+source_api	test	row	observation
+66.0	adm_loc	0	loc_acc_plain=OK rows=1
+66.0	adm_loc	1	loc_sec_plain=OK rows=1
+66.0	adm_loc	2	loc_acc_scopeint=OK rows=1
+66.0	adm_loc	3	loc_sec_scopeint=OK rows=1
+66.0	adm_loc	4	loc_acc_scopestr=OK rows=1
+66.0	adm_loc	5	loc_sec_scopestr=OK rows=1
+66.0	adm_loc	6	loc_acc_departedint=OK rows=1
+66.0	adm_loc	7	loc_sec_departedint=OK rows=1
+66.0	adm_loc	8	loc_acc_departedstr=OK rows=1
+66.0	adm_loc	9	loc_sec_departedstr=OK rows=1
+66.0	adm_sosl	0	sosl_sec_def=n=2 [open=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Open__c secret=x] [open=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Open__c secret=x]
+66.0	adm_sosl	1	sosl_sec_user=n=2 [open=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Open__c secret=x] [open=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Open__c secret=x]
+66.0	adm_sosl	2	sosl_mix_def=n=2 [open=o secret=x] [open=o secret=x]
+66.0	adm_sosl	3	sosl_mix_user=n=2 [open=o secret=x] [open=o secret=x]
+66.0	adm_sosl	4	sosl_open_def=n=2 [open=o secret=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Secret__c] [open=o secret=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Secret__c]
+66.0	adm_sosl	5	sosl_open_user=n=2 [open=o secret=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Secret__c] [open=o secret=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Secret__c]
+66.0	adm_sosl	6	sosl_sec_where_def=n=2 [open=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Open__c secret=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Secret__c] [open=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Open__c secret=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Secret__c]
+66.0	adm_sosl	7	sosl_sec_where_user=n=2 [open=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Open__c secret=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Secret__c] [open=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Open__c secret=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Secret__c]
+66.0	adm_sosl_edge	0	sosl_sec_def_none=n=0
+66.0	adm_sosl_edge	1	sosl_sec_def_otherowner=n=1 [open=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Open__c secret=x]
+66.0	adm_sosl_edge	2	sosl_sec_user_otherowner=n=1 [open=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Open__c secret=x]
+66.0	adm_sosl_edge	3	sosl_sec_def_nomatchterm=n=1 [open=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Open__c secret=x]
+66.0	std_loc	0	loc_acc_plain=OK rows=1
+66.0	std_loc	1	loc_sec_plain=EX System.QueryException: Variable does not exist: n | inacc={}
+66.0	std_loc	2	loc_acc_scopeint=OK rows=1
+66.0	std_loc	3	loc_sec_scopeint=EX System.QueryException: Invalid bind expression type of Integer for column of type String | inacc={}
+66.0	std_loc	4	loc_acc_scopestr=OK rows=1
+66.0	std_loc	5	loc_sec_scopestr=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+66.0	std_loc	6	loc_acc_departedint=OK rows=1
+66.0	std_loc	7	loc_sec_departedint=EX System.QueryException: Invalid bind expression type of Integer for column of type String | inacc={}
+66.0	std_loc	8	loc_acc_departedstr=OK rows=1
+66.0	std_loc	9	loc_sec_departedstr=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+66.0	std_sosl	0	sosl_sec_def=n=1 [open=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Open__c secret=x]
+66.0	std_sosl	1	sosl_sec_user=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={}
+66.0	std_sosl	2	sosl_mix_def=n=1 [open=o secret=x]
+66.0	std_sosl	3	sosl_mix_user=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={}
+66.0	std_sosl	4	sosl_open_def=n=1 [open=o secret=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Secret__c]
+66.0	std_sosl	5	sosl_open_user=n=1 [open=o secret=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Secret__c]
+66.0	std_sosl	6	sosl_sec_where_def=n=1 [open=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Open__c secret=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Secret__c]
+66.0	std_sosl	7	sosl_sec_where_user=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={}
+66.0	std_sosl_edge	0	sosl_sec_def_none=n=0
+66.0	std_sosl_edge	1	sosl_sec_def_otherowner=n=0
+66.0	std_sosl_edge	2	sosl_sec_user_otherowner=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={}
+66.0	std_sosl_edge	3	sosl_sec_def_nomatchterm=n=1 [open=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Open__c secret=x]
+67.0	adm_loc	0	loc_acc_plain=OK rows=1
+67.0	adm_loc	1	loc_sec_plain=OK rows=1
+67.0	adm_loc	2	loc_acc_scopeint=OK rows=1
+67.0	adm_loc	3	loc_sec_scopeint=OK rows=1
+67.0	adm_loc	4	loc_acc_scopestr=OK rows=1
+67.0	adm_loc	5	loc_sec_scopestr=OK rows=1
+67.0	adm_loc	6	loc_acc_departedint=OK rows=1
+67.0	adm_loc	7	loc_sec_departedint=OK rows=1
+67.0	adm_loc	8	loc_acc_departedstr=OK rows=1
+67.0	adm_loc	9	loc_sec_departedstr=OK rows=1
+67.0	adm_sosl	0	sosl_sec_def=n=2 [open=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Open__c secret=x] [open=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Open__c secret=x]
+67.0	adm_sosl	1	sosl_sec_user=n=2 [open=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Open__c secret=x] [open=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Open__c secret=x]
+67.0	adm_sosl	2	sosl_mix_def=n=2 [open=o secret=x] [open=o secret=x]
+67.0	adm_sosl	3	sosl_mix_user=n=2 [open=o secret=x] [open=o secret=x]
+67.0	adm_sosl	4	sosl_open_def=n=2 [open=o secret=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Secret__c] [open=o secret=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Secret__c]
+67.0	adm_sosl	5	sosl_open_user=n=2 [open=o secret=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Secret__c] [open=o secret=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Secret__c]
+67.0	adm_sosl	6	sosl_sec_where_def=n=2 [open=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Open__c secret=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Secret__c] [open=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Open__c secret=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Secret__c]
+67.0	adm_sosl	7	sosl_sec_where_user=n=2 [open=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Open__c secret=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Secret__c] [open=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Open__c secret=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Secret__c]
+67.0	adm_sosl_edge	0	sosl_sec_def_none=n=0
+67.0	adm_sosl_edge	1	sosl_sec_def_otherowner=n=1 [open=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Open__c secret=x]
+67.0	adm_sosl_edge	2	sosl_sec_user_otherowner=n=1 [open=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Open__c secret=x]
+67.0	adm_sosl_edge	3	sosl_sec_def_nomatchterm=n=1 [open=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Open__c secret=x]
+67.0	std_loc	0	loc_acc_plain=OK rows=1
+67.0	std_loc	1	loc_sec_plain=EX System.QueryException: Variable does not exist: n | inacc={}
+67.0	std_loc	2	loc_acc_scopeint=OK rows=1
+67.0	std_loc	3	loc_sec_scopeint=EX System.QueryException: Invalid bind expression type of Integer for column of type String | inacc={}
+67.0	std_loc	4	loc_acc_scopestr=OK rows=1
+67.0	std_loc	5	loc_sec_scopestr=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+67.0	std_loc	6	loc_acc_departedint=OK rows=1
+67.0	std_loc	7	loc_sec_departedint=EX System.QueryException: Invalid bind expression type of Integer for column of type String | inacc={}
+67.0	std_loc	8	loc_acc_departedstr=OK rows=1
+67.0	std_loc	9	loc_sec_departedstr=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+67.0	std_sosl	0	sosl_sec_def=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={}
+67.0	std_sosl	1	sosl_sec_user=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={}
+67.0	std_sosl	2	sosl_mix_def=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={}
+67.0	std_sosl	3	sosl_mix_user=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={}
+67.0	std_sosl	4	sosl_open_def=n=1 [open=o secret=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Secret__c]
+67.0	std_sosl	5	sosl_open_user=n=1 [open=o secret=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Secret__c]
+67.0	std_sosl	6	sosl_sec_where_def=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={}
+67.0	std_sosl	7	sosl_sec_where_user=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={}
+67.0	std_sosl_edge	0	sosl_sec_def_none=n=0
+67.0	std_sosl_edge	1	sosl_sec_def_otherowner=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={}
+67.0	std_sosl_edge	2	sosl_sec_user_otherowner=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={}
+67.0	std_sosl_edge	3	sosl_sec_def_nomatchterm=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={}
+68.0	adm_loc	0	loc_acc_plain=OK rows=1
+68.0	adm_loc	1	loc_sec_plain=OK rows=1
+68.0	adm_loc	2	loc_acc_scopeint=OK rows=1
+68.0	adm_loc	3	loc_sec_scopeint=OK rows=1
+68.0	adm_loc	4	loc_acc_scopestr=OK rows=1
+68.0	adm_loc	5	loc_sec_scopestr=OK rows=1
+68.0	adm_loc	6	loc_acc_departedint=OK rows=1
+68.0	adm_loc	7	loc_sec_departedint=OK rows=1
+68.0	adm_loc	8	loc_acc_departedstr=OK rows=1
+68.0	adm_loc	9	loc_sec_departedstr=OK rows=1
+68.0	adm_sosl	0	sosl_sec_def=n=2 [open=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Open__c secret=x] [open=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Open__c secret=x]
+68.0	adm_sosl	1	sosl_sec_user=n=2 [open=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Open__c secret=x] [open=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Open__c secret=x]
+68.0	adm_sosl	2	sosl_mix_def=n=2 [open=o secret=x] [open=o secret=x]
+68.0	adm_sosl	3	sosl_mix_user=n=2 [open=o secret=x] [open=o secret=x]
+68.0	adm_sosl	4	sosl_open_def=n=2 [open=o secret=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Secret__c] [open=o secret=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Secret__c]
+68.0	adm_sosl	5	sosl_open_user=n=2 [open=o secret=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Secret__c] [open=o secret=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Secret__c]
+68.0	adm_sosl	6	sosl_sec_where_def=n=2 [open=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Open__c secret=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Secret__c] [open=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Open__c secret=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Secret__c]
+68.0	adm_sosl	7	sosl_sec_where_user=n=2 [open=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Open__c secret=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Secret__c] [open=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Open__c secret=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Secret__c]
+68.0	adm_sosl_edge	0	sosl_sec_def_none=n=0
+68.0	adm_sosl_edge	1	sosl_sec_def_otherowner=n=1 [open=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Open__c secret=x]
+68.0	adm_sosl_edge	2	sosl_sec_user_otherowner=n=1 [open=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Open__c secret=x]
+68.0	adm_sosl_edge	3	sosl_sec_def_nomatchterm=n=1 [open=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Open__c secret=x]
+68.0	std_loc	0	loc_acc_plain=OK rows=1
+68.0	std_loc	1	loc_sec_plain=EX System.QueryException: Variable does not exist: n | inacc={}
+68.0	std_loc	2	loc_acc_scopeint=OK rows=1
+68.0	std_loc	3	loc_sec_scopeint=EX System.QueryException: Invalid bind expression type of Integer for column of type String | inacc={}
+68.0	std_loc	4	loc_acc_scopestr=OK rows=1
+68.0	std_loc	5	loc_sec_scopestr=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+68.0	std_loc	6	loc_acc_departedint=OK rows=1
+68.0	std_loc	7	loc_sec_departedint=EX System.QueryException: Invalid bind expression type of Integer for column of type String | inacc={}
+68.0	std_loc	8	loc_acc_departedstr=OK rows=1
+68.0	std_loc	9	loc_sec_departedstr=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+68.0	std_sosl	0	sosl_sec_def=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={}
+68.0	std_sosl	1	sosl_sec_user=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={}
+68.0	std_sosl	2	sosl_mix_def=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={}
+68.0	std_sosl	3	sosl_mix_user=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={}
+68.0	std_sosl	4	sosl_open_def=n=1 [open=o secret=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Secret__c]
+68.0	std_sosl	5	sosl_open_user=n=1 [open=o secret=System.SObjectException/SObject row was retrieved via SOQL without querying the requested field: Gl_Obj__c.Secret__c]
+68.0	std_sosl	6	sosl_sec_where_def=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={}
+68.0	std_sosl	7	sosl_sec_where_user=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={}
+68.0	std_sosl_edge	0	sosl_sec_def_none=n=0
+68.0	std_sosl_edge	1	sosl_sec_def_otherowner=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={}
+68.0	std_sosl_edge	2	sosl_sec_user_otherowner=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={}
+68.0	std_sosl_edge	3	sosl_sec_def_nomatchterm=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={}

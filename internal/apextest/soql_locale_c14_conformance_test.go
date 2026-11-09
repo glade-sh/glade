@@ -13,12 +13,6 @@ import (
 	"github.com/glade-sh/glade/internal/sema"
 )
 
-var soqlLocaleC14CarryFields = map[string][]string{
-	"DootSoqlU5TestB1031/locale0": {"rows"}, "DootSoqlU5TestB1031/locale1": {"rows"},
-	"DootSoqlU6TestB1031/mismatchedEq": {"rows"}, "DootSoqlU6TestB1031/mismatchedIn": {"rows"},
-	"DootSoqlQ6TestB1031/lowercase": {"rows"}, "DootSoqlQ9TestB1031/converted": {"rows"}, "DootSoqlQ9TestB1031/raw": {"rows"},
-}
-
 func TestSOQLLocaleC14NativeConformance(t *testing.T) {
 	dir := filepath.Join("testdata", "conformance", "soql_locale_c14")
 	file, err := os.Open(filepath.Join(dir, "org.tsv"))
@@ -93,26 +87,7 @@ func TestSOQLLocaleC14NativeConformance(t *testing.T) {
 						t.Fatal(err)
 					}
 					got = normalizeCaptureIdentities(got).(map[string]any)
-					if fields := soqlLocaleC14CarryFields[row[1]+"/"+row[2]]; len(fields) > 0 {
-						observed := map[string]string{
-							"DootSoqlU5TestB1031/locale0":      `{"rows":[{"Id":"<001:1>","Name":"SERVICE"},{"Id":"<001:2>","Name":"Service"}]}`,
-							"DootSoqlU5TestB1031/locale1":      `{"rows":[{"Id":"<001:1>","Name":"SERVICE"},{"Id":"<001:2>","Name":"Service"}]}`,
-							"DootSoqlU6TestB1031/mismatchedEq": `{"rows":[{"CaseKey__c":"North","Id":"<custom1:1>"}]}`,
-							"DootSoqlU6TestB1031/mismatchedIn": `{"rows":[{"CaseKey__c":"North","Id":"<custom1:1>"}]}`,
-							"DootSoqlQ6TestB1031/lowercase":    `{"rows":[{"Id":"<00T:1>","What":{"Id":"<001:1>","Name":"Q6"},"WhatId":"<001:1>"}]}`,
-							"DootSoqlQ9TestB1031/converted":    `{"rows":[{"CALENDAR_MONTH(convertTimezone(CreatedDate))":1,"DAY_ONLY(convertTimezone(CreatedDate))":"2026-01-01","HOUR_IN_DAY(convertTimezone(CreatedDate))":0,"d":"2026-01-01","h":0,"m":1,"n":1}]}`,
-							"DootSoqlQ9TestB1031/raw":          `{"rows":[{"CALENDAR_MONTH(CreatedDate)":1,"DAY_ONLY(CreatedDate)":"2026-01-01","HOUR_IN_DAY(CreatedDate)":0,"d":"2026-01-01","h":0,"m":1,"n":1}]}`,
-						}[row[1]+"/"+row[2]]
-						var expected map[string]any
-						if err := json.Unmarshal([]byte(observed), &expected); err != nil {
-							t.Fatal(err)
-						}
-						if !c14ExactCarryEqual(got, want, expected, fields) {
-							t.Fatalf("carry changed: native=%v; Glade=%v", want, got)
-						}
-						t.Logf("known local carry batch Dot stdlib cases Dot Dot SOQL cases and Dot async cases (fix owner pending): fields=%v native=%v; Glade=%v", fields, want, got)
-						case345Skip(t)
-					} else if !reflect.DeepEqual(got, want) {
+					if !reflect.DeepEqual(got, want) {
 						t.Fatalf("native=%v; Glade=%v", want, got)
 					}
 				})

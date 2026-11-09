@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Target__c</fullName>
+    <fieldManageability>DeveloperControlled</fieldManageability>
+    <label>Target</label>
+    <referenceTo>EntityDefinition</referenceTo>
+    <relationshipLabel>Mdt Rel Probes</relationshipLabel>
+    <relationshipName>MdtRelProbes</relationshipName>
+    <required>false</required>
+    <type>MetadataRelationship</type>
+    <unique>false</unique>
+</CustomField>

@@ -85,8 +85,7 @@ func runContentChildConformance(t *testing.T, cluster string, shapes int) {
 			}
 			counts := newConformanceCountLog(t, "ContentChild-"+cluster, api)
 			index := contentChildIndex(t, api, fixtures, nil)
-			org := orgFromIndex(index)
-			org.APIVersion = api
+			org := capturedFixtureOrg(t, index, api)
 			base := newConformanceRunner(t, index, conformanceRunnerOptions{Org: &org})
 			for _, row := range data.Rows {
 				t.Run(row.ID, func(t *testing.T) {
@@ -173,6 +172,16 @@ func contentChildIndex(t *testing.T, api string, fixtures, classes map[string]st
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"sourceApiVersion":%q,"packageDirectories":[{"path":"force-app","default":true}]}`, api))
 	for name, source := range fixtures {
 		writeFile(t, filepath.Join(root, "force-app/main/default", name), source)
+		// content_child_capture_assignment/ASSIGNMENT-RUN.txt: the capture
+		// assigned Cdl<api><token>Access before every non-control row.
+		if base, ok := strings.CutSuffix(filepath.Base(name), "Child__c.object"); ok {
+			grant := base + "Access"
+			writeFile(t, filepath.Join(root, "force-app/main/default/permissionsets", grant+".permissionset-meta.xml"),
+				`<?xml version='1.0' encoding='utf-8'?><PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata"><fieldPermissions><editable>true</editable><field>`+base+`Child__c.Parent__c</field><readable>true</readable></fieldPermissions><label>`+grant+`</label>`+
+					`<objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>true</modifyAllRecords><object>`+base+`__c</object><viewAllRecords>true</viewAllRecords></objectPermissions>`+
+					`<objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>true</modifyAllRecords><object>`+base+`Child__c</object><viewAllRecords>true</viewAllRecords></objectPermissions></PermissionSet>`)
+			writeCapturedAssignments(t, root, grant)
+		}
 	}
 	for name, source := range classes {
 		path := filepath.Join(root, "force-app/main/default/classes", name+".cls")

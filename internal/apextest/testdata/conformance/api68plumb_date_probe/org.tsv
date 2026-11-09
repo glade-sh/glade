@@ -1,0 +1,46 @@
+source_api	route	case_id	outcome	observation
+62.0	anonymous	boundary	SUCCESS	2026-11-03
+62.0	anonymous	date-null	CAUGHT	System.JSONException|Invalid format: "null"
+62.0	anonymous	date-valid	SUCCESS	SUCCESS
+67.0	anonymous	boundary	SUCCESS	2026-11-03
+67.0	anonymous	date-null	CAUGHT	System.JSONException|Invalid format: "null"
+67.0	anonymous	date-valid	SUCCESS	SUCCESS
+62.0	named	date-null	CAUGHT	System.JSONException|Invalid format: "null"
+62.0	named	date-valid	SUCCESS	2026-11-03
+62.0	isTest	directTest	PASS	null rejection and valid Date assertions
+62.0	isTest	named	PASS	null rejection and valid Date assertions
+67.0	named	date-null	CAUGHT	System.JSONException|Invalid format: "null"
+67.0	named	date-valid	SUCCESS	2026-11-03
+67.0	isTest	directTest	PASS	null rejection and valid Date assertions
+67.0	isTest	named	PASS	null rejection and valid Date assertions
+62.0	anonymous	quoted-null	CAUGHT	System.JSONException|Invalid format: "null"
+62.0	anonymous	strict-null	CAUGHT	System.JSONException|Invalid format: "null"
+62.0	anonymous	strict-quoted-null	CAUGHT	System.JSONException|Invalid format: "null"
+62.0	named	quoted-null	CAUGHT	System.JSONException|Invalid format: "null"
+62.0	named	strict-null	CAUGHT	System.JSONException|Invalid format: "null"
+62.0	named	strict-quoted-null	CAUGHT	System.JSONException|Invalid format: "null"
+62.0	isTest	adjacent-directTest	PASS	all four null variants rejected
+62.0	isTest	adjacent-named	PASS	all four null variants rejected
+67.0	anonymous	quoted-null	CAUGHT	System.JSONException|Invalid format: "null"
+67.0	anonymous	strict-null	CAUGHT	System.JSONException|Invalid format: "null"
+67.0	anonymous	strict-quoted-null	CAUGHT	System.JSONException|Invalid format: "null"
+67.0	named	quoted-null	CAUGHT	System.JSONException|Invalid format: "null"
+67.0	named	strict-null	CAUGHT	System.JSONException|Invalid format: "null"
+67.0	named	strict-quoted-null	CAUGHT	System.JSONException|Invalid format: "null"
+67.0	isTest	adjacent-directTest	PASS	all four null variants rejected
+67.0	isTest	adjacent-named	PASS	all four null variants rejected
+68.0	anonymous	boundary	SUCCESS	2026-11-03
+68.0	anonymous	date-null	CAUGHT	System.JSONException|Invalid format: "null"
+68.0	anonymous	date-valid	SUCCESS	SUCCESS
+68.0	named	date-null	CAUGHT	System.JSONException|Invalid format: "null"
+68.0	named	date-valid	SUCCESS	2026-11-03
+68.0	isTest	directTest	PASS	null rejection and valid Date assertions
+68.0	isTest	named	PASS	null rejection and valid Date assertions
+68.0	anonymous	quoted-null	CAUGHT	System.JSONException|Invalid format: "null"
+68.0	anonymous	strict-null	CAUGHT	System.JSONException|Invalid format: "null"
+68.0	anonymous	strict-quoted-null	CAUGHT	System.JSONException|Invalid format: "null"
+68.0	named	quoted-null	CAUGHT	System.JSONException|Invalid format: "null"
+68.0	named	strict-null	CAUGHT	System.JSONException|Invalid format: "null"
+68.0	named	strict-quoted-null	CAUGHT	System.JSONException|Invalid format: "null"
+68.0	isTest	adjacent-directTest	PASS	all four null variants rejected
+68.0	isTest	adjacent-named	PASS	all four null variants rejected

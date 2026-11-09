@@ -1,3 +1,5 @@
+// Native row: internal/apextest/testdata/conformance/flow_related_fields/org.tsv
+// 67.0 istest: generatedSoqlRelationshipFilterCount=1.
 package apextest
 
 import (
@@ -75,6 +77,12 @@ func TestFlowRelatedFieldsNativeConformance(t *testing.T) {
 				t.Fatal(err)
 			}
 
+			if api == "67.0" {
+				// ASSIGNMENT-RUN.txt: the API 67.0 row reproduces only with
+				// Owned_Relationship_Probe_Access assigned; unassigned, the
+				// probe's insert fails with inaccessible fields.
+				writeFile(t, filepath.Join(root, "glade.yml"), "test:\n  permissionSets: [Owned_Relationship_Probe_Access]\n")
+			}
 			index := loadTestIndex(t, root)
 			if analysis := sema.Analyze(index); index.HasErrors() || analysis.HasErrors() {
 				t.Fatalf("native source compiled; Glade diagnostics: %v %v", index.Diagnostics, analysis.Diagnostics)

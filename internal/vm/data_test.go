@@ -190,7 +190,7 @@ System.assertEquals(true, blockedFailed, 'record options must not make truncatio
 	}
 }
 
-func TestExecNativeInsertRejectsUnsupportedPerRecordDMLOptions(t *testing.T) {
+func TestExecNativeInsertAcceptsPerRecordDMLOptions(t *testing.T) {
 	program, err := CompileAnonymous(`
 Database.DMLOptions opts = new Database.DMLOptions();
 opts.EmailHeader.TriggerUserEmail = true;
@@ -204,11 +204,8 @@ insert account;
 	machine := New(nil)
 	org := testDataOrg()
 	machine.SetOrg(&org)
-	_, err = machine.Execute(program)
-	var runtimeErr *RuntimeError
-	want := `unsupported call "Database.DMLOptions.EmailHeader local DML option behavior"`
-	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != want {
-		t.Fatalf("error = %#v, want UnsupportedFeature %q", err, want)
+	if _, err = machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -4691,6 +4688,16 @@ System.assert(removed.get('Contact').contains('Email'), 'recursive field reporte
 	org.Objects["Account"] = account
 	machine := New(nil)
 	machine.SetOrg(&org)
+	// Native rows (internal/apextest/testdata/conformance/permission_scope_mute/org.tsv), API 62 and 67: a scoped set adds to
+	// the running user. adminScopedOther: the administrator keeps Phone through
+	// the four-argument stripInaccessible with an unrelated scoped set
+	// (stripPhoneKept true); u3ScopedOther: a user with no grants gets only the
+	// scoped set's access. The strip outcome therefore needs a user without its
+	// own grants. No restricted-user stripInaccessible row was captured.
+	scopedStripUser := Object("User")
+	scopedStripUser.Fields["Id"] = String("005000000000997")
+	scopedStripUser.Fields["profileId"] = String("00e000000000002")
+	machine.executionUser = scopedStripUser
 	// Permission metadata is committed separately from data DML.
 	if _, err := machine.Execute(setup); err != nil {
 		t.Fatal(err)
@@ -4726,6 +4733,16 @@ System.assert(caught);
 	storage.EnsureStandardObject(&org, "Account")
 	machine := New(nil)
 	machine.SetOrg(&org)
+	// Native rows (internal/apextest/testdata/conformance/permission_scope_mute/org.tsv), API 62 and 67: a scoped set adds to
+	// the running user. adminScopedOther: the administrator keeps Phone through
+	// the four-argument stripInaccessible with an unrelated scoped set
+	// (stripPhoneKept true); u3ScopedOther: a user with no grants gets only the
+	// scoped set's access. The strip outcome therefore needs a user without its
+	// own grants. No restricted-user stripInaccessible row was captured.
+	scopedStripUser := Object("User")
+	scopedStripUser.Fields["Id"] = String("005000000000997")
+	scopedStripUser.Fields["profileId"] = String("00e000000000002")
+	machine.executionUser = scopedStripUser
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
@@ -8219,7 +8236,8 @@ Object accountType = describes.get('Account');
 Object accountDescribe = accountType.getDescribe();
 System.assertEquals('Account', accountDescribe.getName());
 List<Object> infos = accountDescribe.getRecordTypeInfos();
-System.assertEquals(2, infos.size());
+// Master is listed beside the record types (record_type_shape account_rt).
+System.assertEquals(3, infos.size());
 Map<String,Object> byName = accountDescribe.getRecordTypeInfosByName();
 Map<String,Object> byDeveloperName = accountDescribe.getRecordTypeInfosByDeveloperName();
 Map<String,Object> byId = accountDescribe.getRecordTypeInfosById();
@@ -10332,6 +10350,7 @@ func TestExecDescribePermissionsUseProfileOwnedPermissionSetRows(t *testing.T) {
 		FROM PermissionSet
 		WHERE IsOwnedByProfile = true
 		AND Profile.UserType = 'Standard'
+		AND Profile.Name = 'Minimum Access - Salesforce'
 		AND Id NOT IN (
 			SELECT ParentId
 			FROM ObjectPermissions
@@ -10426,7 +10445,8 @@ System.runAs(u) {
 		AccessType.CREATABLE,
 		new List<Account>{ new Account(Phone = '415-555-0101') }
 	);
-	System.assert(!decision.getRemovedFields().get('Account').contains('Phone'));
+	// strip_omitted_defaults rows: omitted defaults are not removed, so Account has no entry.
+	System.assert(!decision.getRemovedFields().containsKey('Account'));
 	List<Account> stripped = (List<Account>) decision.getRecords();
 	System.assertEquals('415-555-0101', stripped[0].Phone);
 
@@ -11977,6 +11997,7 @@ try {
 	}
 	machine := New(nil)
 	org := testDataOrg()
+	storage.ApplyOrgShape(&org, []string{"Knowledge", "KnowledgeEnabled"})
 	org.Metadata.DataCategoryGroups = []storage.DataCategoryGroup{{
 		Name:        "Products",
 		Label:       "Products",
@@ -13642,12 +13663,20 @@ insert c;
 Task accountTask = new Task(Subject = 'A', WhoId = a.Id);
 Task contactTask = new Task(Subject = 'C', WhoId = c.Id);
 insert new List<Task>{accountTask, contactTask};
-List<Task> rows = [SELECT Id, Subject, Who.Name, TYPEOF Who WHEN Account THEN Name WHEN Contact THEN LastName END FROM Task ORDER BY Subject];
+List<Task> rows = [SELECT Id, Subject, TYPEOF Who WHEN Account THEN Name WHEN Contact THEN LastName END FROM Task ORDER BY Subject];
 System.assertEquals(2, rows.size());
 Task first = rows.get(0);
 System.assertEquals('Acme', first.Who.Name);
 Task second = rows.get(1);
 System.assertEquals('Smith', second.Who.LastName);
+// Native Q7 overlap: a top-level path through the TYPEOF relationship is rejected.
+Boolean rejected = false;
+try {
+    Database.query('SELECT Id, Who.Name, TYPEOF Who WHEN Account THEN Name END FROM Task');
+} catch (QueryException qe) {
+    rejected = qe.getMessage().contains('may not reference the same relationship field');
+}
+System.assert(rejected);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -13921,7 +13950,7 @@ a.City__c = 'Austin';
 insert a;
 System.assertEquals(null, a.Address__c);
 Account queried = [SELECT Address__c FROM Account WHERE Id=:a.Id];
-System.assertEquals('Line1<br />Austin', queried.Address__c);
+System.assertEquals('Line1<br>Austin', queried.Address__c);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -14588,6 +14617,8 @@ System.assertEquals(2, weekRows.size(), 'THIS_WEEK should cover the current Sund
 		t.Fatal(err)
 	}
 	machine := New(nil)
+	// The rows assume a today two days after a month start.
+	pinSaturdayTestClock(machine)
 	org := testDataOrg()
 	account := org.Objects["Account"]
 	account.Definition.Fields["RenewalDate__c"] = storage.Field{APIName: "RenewalDate__c", Type: storage.FieldDate}
@@ -14731,7 +14762,7 @@ a.Name = 'System Fields Updated';
 update a;
 System.assertEquals(null, a.LastModifiedDate);
 Account row = [SELECT Id, CreatedDate, CreatedById, LastModifiedDate, LastModifiedById, SystemModstamp, OwnerId, IsDeleted FROM Account WHERE Id = :a.Id];
-System.assertEquals('2026-05-02 12:00:00', row.CreatedDate.formatGmt('yyyy-MM-dd HH:mm:ss'));
+System.assertEquals('2026-05-13 12:00:00', row.CreatedDate.formatGmt('yyyy-MM-dd HH:mm:ss'));
 System.assertEquals(UserInfo.getUserId(), row.CreatedById);
 System.assertEquals(UserInfo.getUserId(), row.LastModifiedById);
 System.assertEquals(UserInfo.getUserId(), row.OwnerId);
@@ -14803,13 +14834,13 @@ System.assertEquals(account.Id, recent[0].Id);
 System.assertEquals('Viewed', recent[0].Name);
 System.assertEquals('Account', recent[0].Type);
 System.assertEquals(null, recent[0].LastViewedDate);
-System.assertEquals('2026-05-02 12:00:00', recent[0].LastReferencedDate.formatGmt('yyyy-MM-dd HH:mm:ss'));
+System.assertEquals('2026-05-13 12:00:00', recent[0].LastReferencedDate.formatGmt('yyyy-MM-dd HH:mm:ss'));
 List<Account> viewed = [SELECT Id, Name FROM Account WHERE Id = :account.Id FOR VIEW];
 System.assertEquals(1, viewed.size());
 recent = [SELECT Id, Name, Type, LastViewedDate, LastReferencedDate FROM RecentlyViewed WHERE Type = 'Account'];
 System.assertEquals(1, recent.size());
-System.assertEquals('2026-05-02 12:00:00', recent[0].LastViewedDate.formatGmt('yyyy-MM-dd HH:mm:ss'));
-System.assertEquals('2026-05-02 12:00:00', recent[0].LastReferencedDate.formatGmt('yyyy-MM-dd HH:mm:ss'));
+System.assertEquals('2026-05-13 12:00:00', recent[0].LastViewedDate.formatGmt('yyyy-MM-dd HH:mm:ss'));
+System.assertEquals('2026-05-13 12:00:00', recent[0].LastReferencedDate.formatGmt('yyyy-MM-dd HH:mm:ss'));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -19573,7 +19604,10 @@ System.assertEquals(true, Hierarchy_Setting__c.getOrgDefaults().Enabled__c);
 System.assertEquals(true, Hierarchy_Setting__c.getValues('00D000000000mH2').Enabled__c);
 Id ownerId = '00D000000000mH2';
 System.assertEquals(true, Hierarchy_Setting__c.getValues(ownerId).Enabled__c);
-System.assertEquals(null, Hierarchy_Setting__c.getValues('005000000000001').Enabled__c);
+Boolean missingCaught = false;
+try { Boolean value = Hierarchy_Setting__c.getValues('005000000000001').Enabled__c; }
+catch (NullPointerException e) { missingCaught = true; System.assertEquals('Attempt to de-reference a null object', e.getMessage()); }
+System.assert(missingCaught);
 // A24 R228/R235: getValues returns raw null when the requested owner has no row.
 System.assertEquals(null, Hierarchy_Setting__c.getValues('005000000000001'));
 System.assertEquals(true, Hierarchy_Setting__c.getInstance('005000000000001').Enabled__c);

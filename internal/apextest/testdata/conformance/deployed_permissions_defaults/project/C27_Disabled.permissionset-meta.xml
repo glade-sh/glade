@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata"><label>C27 Disabled</label><userPermissions><enabled>false</enabled><name>EmailSingle</name></userPermissions></PermissionSet>

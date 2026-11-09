@@ -1,0 +1,5 @@
+source_api	case	observation
+62.0	ternary_boundary	{"getMapField":false,"readFalse":false,"readTrue":true,"second":"Contact","first":"Account","sameCount":true,"afterKey":false,"beforeKey":false}
+62.0	unknown_key_rejection	compile error: Field does not exist: key on ObjectPermissions
+67.0	ternary_boundary	{"getMapField":false,"readFalse":false,"readTrue":true,"second":"Contact","first":"Account","sameCount":true,"afterKey":false,"beforeKey":false}
+67.0	unknown_key_rejection	compile error: Field does not exist: key on ObjectPermissions

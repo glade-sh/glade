@@ -1,0 +1,1142 @@
+[
+  {
+    "profile": "gift",
+    "api": "62.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcDtTm",
+    "source": "GiftCommitment record=new GiftCommitment();record.LastNextGenCmtProcDtTm=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: LastNextGenCmtProcDtTm"
+  },
+  {
+    "profile": "gift",
+    "api": "62.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcError",
+    "source": "GiftCommitment record=new GiftCommitment();record.LastNextGenCmtProcError=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: LastNextGenCmtProcError"
+  },
+  {
+    "profile": "gift",
+    "api": "62.0",
+    "object": "GiftCommitment",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "GiftCommitment record=new GiftCommitment();record.PartyPhilanthropicRsrchPrflId=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: PartyPhilanthropicRsrchPrflId"
+  },
+  {
+    "profile": "gift",
+    "api": "62.0",
+    "object": "GiftTransaction",
+    "field": "GenerationalCohort",
+    "source": "GiftTransaction record=new GiftTransaction();record.GenerationalCohort=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: GenerationalCohort"
+  },
+  {
+    "profile": "gift",
+    "api": "62.0",
+    "object": "GiftTransaction",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "GiftTransaction record=new GiftTransaction();record.PartyPhilanthropicRsrchPrflId=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: PartyPhilanthropicRsrchPrflId"
+  },
+  {
+    "profile": "gift",
+    "api": "62.0",
+    "object": "GiftTransaction",
+    "field": "TaxDeductionAmount",
+    "source": "GiftTransaction record=new GiftTransaction();record.TaxDeductionAmount=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: TaxDeductionAmount"
+  },
+  {
+    "profile": "gift",
+    "api": "63.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcDtTm",
+    "source": "GiftCommitment record=new GiftCommitment();record.LastNextGenCmtProcDtTm=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: LastNextGenCmtProcDtTm"
+  },
+  {
+    "profile": "gift",
+    "api": "63.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcError",
+    "source": "GiftCommitment record=new GiftCommitment();record.LastNextGenCmtProcError=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: LastNextGenCmtProcError"
+  },
+  {
+    "profile": "gift",
+    "api": "63.0",
+    "object": "GiftCommitment",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "GiftCommitment record=new GiftCommitment();record.PartyPhilanthropicRsrchPrflId=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: PartyPhilanthropicRsrchPrflId"
+  },
+  {
+    "profile": "gift",
+    "api": "63.0",
+    "object": "GiftTransaction",
+    "field": "GenerationalCohort",
+    "source": "GiftTransaction record=new GiftTransaction();record.GenerationalCohort=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "gift",
+    "api": "63.0",
+    "object": "GiftTransaction",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "GiftTransaction record=new GiftTransaction();record.PartyPhilanthropicRsrchPrflId=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: PartyPhilanthropicRsrchPrflId"
+  },
+  {
+    "profile": "gift",
+    "api": "63.0",
+    "object": "GiftTransaction",
+    "field": "TaxDeductionAmount",
+    "source": "GiftTransaction record=new GiftTransaction();record.TaxDeductionAmount=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Field is not writeable: GiftTransaction.TaxDeductionAmount"
+  },
+  {
+    "profile": "gift",
+    "api": "64.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcDtTm",
+    "source": "GiftCommitment record=new GiftCommitment();record.LastNextGenCmtProcDtTm=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: LastNextGenCmtProcDtTm"
+  },
+  {
+    "profile": "gift",
+    "api": "64.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcError",
+    "source": "GiftCommitment record=new GiftCommitment();record.LastNextGenCmtProcError=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: LastNextGenCmtProcError"
+  },
+  {
+    "profile": "gift",
+    "api": "64.0",
+    "object": "GiftCommitment",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "GiftCommitment record=new GiftCommitment();record.PartyPhilanthropicRsrchPrflId=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "gift",
+    "api": "64.0",
+    "object": "GiftTransaction",
+    "field": "GenerationalCohort",
+    "source": "GiftTransaction record=new GiftTransaction();record.GenerationalCohort=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "gift",
+    "api": "64.0",
+    "object": "GiftTransaction",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "GiftTransaction record=new GiftTransaction();record.PartyPhilanthropicRsrchPrflId=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "gift",
+    "api": "64.0",
+    "object": "GiftTransaction",
+    "field": "TaxDeductionAmount",
+    "source": "GiftTransaction record=new GiftTransaction();record.TaxDeductionAmount=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Field is not writeable: GiftTransaction.TaxDeductionAmount"
+  },
+  {
+    "profile": "gift",
+    "api": "65.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcDtTm",
+    "source": "GiftCommitment record=new GiftCommitment();record.LastNextGenCmtProcDtTm=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: LastNextGenCmtProcDtTm"
+  },
+  {
+    "profile": "gift",
+    "api": "65.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcError",
+    "source": "GiftCommitment record=new GiftCommitment();record.LastNextGenCmtProcError=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: LastNextGenCmtProcError"
+  },
+  {
+    "profile": "gift",
+    "api": "65.0",
+    "object": "GiftCommitment",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "GiftCommitment record=new GiftCommitment();record.PartyPhilanthropicRsrchPrflId=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "gift",
+    "api": "65.0",
+    "object": "GiftTransaction",
+    "field": "GenerationalCohort",
+    "source": "GiftTransaction record=new GiftTransaction();record.GenerationalCohort=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "gift",
+    "api": "65.0",
+    "object": "GiftTransaction",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "GiftTransaction record=new GiftTransaction();record.PartyPhilanthropicRsrchPrflId=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "gift",
+    "api": "65.0",
+    "object": "GiftTransaction",
+    "field": "TaxDeductionAmount",
+    "source": "GiftTransaction record=new GiftTransaction();record.TaxDeductionAmount=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Field is not writeable: GiftTransaction.TaxDeductionAmount"
+  },
+  {
+    "profile": "gift",
+    "api": "66.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcDtTm",
+    "source": "GiftCommitment record=new GiftCommitment();record.LastNextGenCmtProcDtTm=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: LastNextGenCmtProcDtTm"
+  },
+  {
+    "profile": "gift",
+    "api": "66.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcError",
+    "source": "GiftCommitment record=new GiftCommitment();record.LastNextGenCmtProcError=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: LastNextGenCmtProcError"
+  },
+  {
+    "profile": "gift",
+    "api": "66.0",
+    "object": "GiftCommitment",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "GiftCommitment record=new GiftCommitment();record.PartyPhilanthropicRsrchPrflId=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "gift",
+    "api": "66.0",
+    "object": "GiftTransaction",
+    "field": "GenerationalCohort",
+    "source": "GiftTransaction record=new GiftTransaction();record.GenerationalCohort=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "gift",
+    "api": "66.0",
+    "object": "GiftTransaction",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "GiftTransaction record=new GiftTransaction();record.PartyPhilanthropicRsrchPrflId=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "gift",
+    "api": "66.0",
+    "object": "GiftTransaction",
+    "field": "TaxDeductionAmount",
+    "source": "GiftTransaction record=new GiftTransaction();record.TaxDeductionAmount=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Field is not writeable: GiftTransaction.TaxDeductionAmount"
+  },
+  {
+    "profile": "gift",
+    "api": "67.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcDtTm",
+    "source": "GiftCommitment record=new GiftCommitment();record.LastNextGenCmtProcDtTm=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "gift",
+    "api": "67.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcError",
+    "source": "GiftCommitment record=new GiftCommitment();record.LastNextGenCmtProcError=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "gift",
+    "api": "67.0",
+    "object": "GiftCommitment",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "GiftCommitment record=new GiftCommitment();record.PartyPhilanthropicRsrchPrflId=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "gift",
+    "api": "67.0",
+    "object": "GiftTransaction",
+    "field": "GenerationalCohort",
+    "source": "GiftTransaction record=new GiftTransaction();record.GenerationalCohort=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "gift",
+    "api": "67.0",
+    "object": "GiftTransaction",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "GiftTransaction record=new GiftTransaction();record.PartyPhilanthropicRsrchPrflId=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "gift",
+    "api": "67.0",
+    "object": "GiftTransaction",
+    "field": "TaxDeductionAmount",
+    "source": "GiftTransaction record=new GiftTransaction();record.TaxDeductionAmount=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Field is not writeable: GiftTransaction.TaxDeductionAmount"
+  },
+  {
+    "profile": "doc",
+    "api": "62.0",
+    "object": "DocumentGenerationProcess",
+    "field": "AdditionalMetadata",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.AdditionalMetadata=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: AdditionalMetadata"
+  },
+  {
+    "profile": "doc",
+    "api": "62.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInput",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenAdditionalInput=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: DocGenAdditionalInput"
+  },
+  {
+    "profile": "doc",
+    "api": "62.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInputType",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenAdditionalInputType=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: DocGenAdditionalInputType"
+  },
+  {
+    "profile": "doc",
+    "api": "62.0",
+    "object": "DocumentGenerationProcess",
+    "field": "EstimatedDocumentSize",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.EstimatedDocumentSize=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: EstimatedDocumentSize"
+  },
+  {
+    "profile": "doc",
+    "api": "62.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsLocalizationEnabled",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsLocalizationEnabled=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: IsLocalizationEnabled"
+  },
+  {
+    "profile": "doc",
+    "api": "62.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsSharedExternally",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsSharedExternally=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: IsSharedExternally"
+  },
+  {
+    "profile": "doc",
+    "api": "62.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsTocUpdateRequired",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsTocUpdateRequired=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: IsTocUpdateRequired"
+  },
+  {
+    "profile": "doc",
+    "api": "62.0",
+    "object": "DocumentTemplate",
+    "field": "ContextDefinitionName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextDefinitionName=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: ContextDefinitionName"
+  },
+  {
+    "profile": "doc",
+    "api": "62.0",
+    "object": "DocumentTemplate",
+    "field": "ContextFilterName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextFilterName=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: ContextFilterName"
+  },
+  {
+    "profile": "doc",
+    "api": "62.0",
+    "object": "DocumentTemplate",
+    "field": "ContextMappingName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextMappingName=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: ContextMappingName"
+  },
+  {
+    "profile": "doc",
+    "api": "62.0",
+    "object": "DocumentTemplate",
+    "field": "ContextTransformationName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextTransformationName=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: ContextTransformationName"
+  },
+  {
+    "profile": "doc",
+    "api": "63.0",
+    "object": "DocumentGenerationProcess",
+    "field": "AdditionalMetadata",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.AdditionalMetadata=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: AdditionalMetadata"
+  },
+  {
+    "profile": "doc",
+    "api": "63.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInput",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenAdditionalInput=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: DocGenAdditionalInput"
+  },
+  {
+    "profile": "doc",
+    "api": "63.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInputType",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenAdditionalInputType=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: DocGenAdditionalInputType"
+  },
+  {
+    "profile": "doc",
+    "api": "63.0",
+    "object": "DocumentGenerationProcess",
+    "field": "EstimatedDocumentSize",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.EstimatedDocumentSize=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: EstimatedDocumentSize"
+  },
+  {
+    "profile": "doc",
+    "api": "63.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsLocalizationEnabled",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsLocalizationEnabled=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: IsLocalizationEnabled"
+  },
+  {
+    "profile": "doc",
+    "api": "63.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsSharedExternally",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsSharedExternally=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: IsSharedExternally"
+  },
+  {
+    "profile": "doc",
+    "api": "63.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsTocUpdateRequired",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsTocUpdateRequired=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: IsTocUpdateRequired"
+  },
+  {
+    "profile": "doc",
+    "api": "63.0",
+    "object": "DocumentTemplate",
+    "field": "ContextDefinitionName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextDefinitionName=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: ContextDefinitionName"
+  },
+  {
+    "profile": "doc",
+    "api": "63.0",
+    "object": "DocumentTemplate",
+    "field": "ContextFilterName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextFilterName=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: ContextFilterName"
+  },
+  {
+    "profile": "doc",
+    "api": "63.0",
+    "object": "DocumentTemplate",
+    "field": "ContextMappingName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextMappingName=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: ContextMappingName"
+  },
+  {
+    "profile": "doc",
+    "api": "63.0",
+    "object": "DocumentTemplate",
+    "field": "ContextTransformationName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextTransformationName=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: ContextTransformationName"
+  },
+  {
+    "profile": "doc",
+    "api": "64.0",
+    "object": "DocumentGenerationProcess",
+    "field": "AdditionalMetadata",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.AdditionalMetadata=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: AdditionalMetadata"
+  },
+  {
+    "profile": "doc",
+    "api": "64.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInput",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenAdditionalInput=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "64.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInputType",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenAdditionalInputType=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "64.0",
+    "object": "DocumentGenerationProcess",
+    "field": "EstimatedDocumentSize",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.EstimatedDocumentSize=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "64.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsLocalizationEnabled",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsLocalizationEnabled=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: IsLocalizationEnabled"
+  },
+  {
+    "profile": "doc",
+    "api": "64.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsSharedExternally",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsSharedExternally=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: IsSharedExternally"
+  },
+  {
+    "profile": "doc",
+    "api": "64.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsTocUpdateRequired",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsTocUpdateRequired=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: IsTocUpdateRequired"
+  },
+  {
+    "profile": "doc",
+    "api": "64.0",
+    "object": "DocumentTemplate",
+    "field": "ContextDefinitionName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextDefinitionName=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "64.0",
+    "object": "DocumentTemplate",
+    "field": "ContextFilterName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextFilterName=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: ContextFilterName"
+  },
+  {
+    "profile": "doc",
+    "api": "64.0",
+    "object": "DocumentTemplate",
+    "field": "ContextMappingName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextMappingName=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "64.0",
+    "object": "DocumentTemplate",
+    "field": "ContextTransformationName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextTransformationName=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: ContextTransformationName"
+  },
+  {
+    "profile": "doc",
+    "api": "65.0",
+    "object": "DocumentGenerationProcess",
+    "field": "AdditionalMetadata",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.AdditionalMetadata=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: AdditionalMetadata"
+  },
+  {
+    "profile": "doc",
+    "api": "65.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInput",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenAdditionalInput=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "65.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInputType",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenAdditionalInputType=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "65.0",
+    "object": "DocumentGenerationProcess",
+    "field": "EstimatedDocumentSize",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.EstimatedDocumentSize=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "65.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsLocalizationEnabled",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsLocalizationEnabled=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: IsLocalizationEnabled"
+  },
+  {
+    "profile": "doc",
+    "api": "65.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsSharedExternally",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsSharedExternally=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: IsSharedExternally"
+  },
+  {
+    "profile": "doc",
+    "api": "65.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsTocUpdateRequired",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsTocUpdateRequired=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: IsTocUpdateRequired"
+  },
+  {
+    "profile": "doc",
+    "api": "65.0",
+    "object": "DocumentTemplate",
+    "field": "ContextDefinitionName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextDefinitionName=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "65.0",
+    "object": "DocumentTemplate",
+    "field": "ContextFilterName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextFilterName=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: ContextFilterName"
+  },
+  {
+    "profile": "doc",
+    "api": "65.0",
+    "object": "DocumentTemplate",
+    "field": "ContextMappingName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextMappingName=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "65.0",
+    "object": "DocumentTemplate",
+    "field": "ContextTransformationName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextTransformationName=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: ContextTransformationName"
+  },
+  {
+    "profile": "doc",
+    "api": "66.0",
+    "object": "DocumentGenerationProcess",
+    "field": "AdditionalMetadata",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.AdditionalMetadata=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "66.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInput",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenAdditionalInput=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "66.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInputType",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenAdditionalInputType=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "66.0",
+    "object": "DocumentGenerationProcess",
+    "field": "EstimatedDocumentSize",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.EstimatedDocumentSize=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "66.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsLocalizationEnabled",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsLocalizationEnabled=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: IsLocalizationEnabled"
+  },
+  {
+    "profile": "doc",
+    "api": "66.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsSharedExternally",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsSharedExternally=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "66.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsTocUpdateRequired",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsTocUpdateRequired=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: IsTocUpdateRequired"
+  },
+  {
+    "profile": "doc",
+    "api": "66.0",
+    "object": "DocumentTemplate",
+    "field": "ContextDefinitionName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextDefinitionName=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "66.0",
+    "object": "DocumentTemplate",
+    "field": "ContextFilterName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextFilterName=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "66.0",
+    "object": "DocumentTemplate",
+    "field": "ContextMappingName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextMappingName=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "66.0",
+    "object": "DocumentTemplate",
+    "field": "ContextTransformationName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextTransformationName=null;",
+    "namedAccepted": false,
+    "anonymousAccepted": false,
+    "namedError": "Variable does not exist: ContextTransformationName"
+  },
+  {
+    "profile": "doc",
+    "api": "67.0",
+    "object": "DocumentGenerationProcess",
+    "field": "AdditionalMetadata",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.AdditionalMetadata=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "67.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInput",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenAdditionalInput=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "67.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInputType",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenAdditionalInputType=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "67.0",
+    "object": "DocumentGenerationProcess",
+    "field": "EstimatedDocumentSize",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.EstimatedDocumentSize=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "67.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsLocalizationEnabled",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsLocalizationEnabled=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "67.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsSharedExternally",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsSharedExternally=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "67.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsTocUpdateRequired",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsTocUpdateRequired=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "67.0",
+    "object": "DocumentTemplate",
+    "field": "ContextDefinitionName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextDefinitionName=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "67.0",
+    "object": "DocumentTemplate",
+    "field": "ContextFilterName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextFilterName=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "67.0",
+    "object": "DocumentTemplate",
+    "field": "ContextMappingName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextMappingName=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "67.0",
+    "object": "DocumentTemplate",
+    "field": "ContextTransformationName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextTransformationName=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": true,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "62.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenerationBatchProcessId",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenerationBatchProcessId=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": false,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "62.0",
+    "object": "DocumentTemplateSection",
+    "field": "DocumentTemplateClauseId",
+    "source": "DocumentTemplateSection record=new DocumentTemplateSection();record.DocumentTemplateClauseId=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": false,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "63.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenerationBatchProcessId",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenerationBatchProcessId=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": false,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "63.0",
+    "object": "DocumentTemplateSection",
+    "field": "DocumentTemplateClauseId",
+    "source": "DocumentTemplateSection record=new DocumentTemplateSection();record.DocumentTemplateClauseId=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": false,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "64.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenerationBatchProcessId",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenerationBatchProcessId=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": false,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "64.0",
+    "object": "DocumentTemplateSection",
+    "field": "DocumentTemplateClauseId",
+    "source": "DocumentTemplateSection record=new DocumentTemplateSection();record.DocumentTemplateClauseId=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": false,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "65.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenerationBatchProcessId",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenerationBatchProcessId=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": false,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "65.0",
+    "object": "DocumentTemplateSection",
+    "field": "DocumentTemplateClauseId",
+    "source": "DocumentTemplateSection record=new DocumentTemplateSection();record.DocumentTemplateClauseId=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": false,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "66.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenerationBatchProcessId",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenerationBatchProcessId=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": false,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "66.0",
+    "object": "DocumentTemplateSection",
+    "field": "DocumentTemplateClauseId",
+    "source": "DocumentTemplateSection record=new DocumentTemplateSection();record.DocumentTemplateClauseId=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": false,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "67.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenerationBatchProcessId",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenerationBatchProcessId=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": false,
+    "namedError": ""
+  },
+  {
+    "profile": "doc",
+    "api": "67.0",
+    "object": "DocumentTemplateSection",
+    "field": "DocumentTemplateClauseId",
+    "source": "DocumentTemplateSection record=new DocumentTemplateSection();record.DocumentTemplateClauseId=null;",
+    "namedAccepted": true,
+    "anonymousAccepted": false,
+    "namedError": ""
+  }
+]

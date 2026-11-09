@@ -154,6 +154,12 @@ func TestJSONOrgConformance(t *testing.T) {
 				writeFile(t, path, data.Declarations[name])
 				writeFile(t, path+"-meta.xml", "<ApexClass><apiVersion>"+api+"</apiVersion></ApexClass>")
 			}
+			// ORG-RUN.txt: "a synthetic permission set granted field access".
+			// admin_field_grant_sources (2026-11-05): anonymous Apex run as the
+			// administrator sees an ordinary custom field only through an
+			// assigned permission set or a profile grant, so replay the grant.
+			writeFile(t, filepath.Join(root, "force-app/main/default/permissionsets/JSONCartAccess.permissionset-meta.xml"), `<?xml version="1.0" encoding="UTF-8"?><PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata"><label>JSON Cart Access</label><fieldPermissions><editable>true</editable><field>CartItem__c.Total__c</field><readable>true</readable></fieldPermissions></PermissionSet>`)
+			writeCapturedAssignments(t, root, "JSONCartAccess")
 			index := loadTestIndex(t, root)
 			if index.HasErrors() {
 				t.Fatal(index.Diagnostics)
@@ -162,6 +168,9 @@ func TestJSONOrgConformance(t *testing.T) {
 				t.Fatal(analysis.Diagnostics)
 			}
 			org := orgFromIndex(index)
+			if err := applyConfiguredTestPermissions(&org, loadProjectForTest(t, root)); err != nil {
+				t.Fatal(err)
+			}
 			runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 			namedResults := map[string]testreport.Case{}
 			namedReady := false

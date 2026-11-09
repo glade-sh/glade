@@ -1,0 +1,10 @@
+api	route	case	result
+62.0	project-compile	ConnectApiException	Non-virtual and non-abstract type cannot be extended: ConnectApi.ConnectApiException
+62.0	project-compile	NotFoundException	Non-virtual and non-abstract type cannot be extended: ConnectApi.NotFoundException
+62.0	project-compile	RateLimitException	Non-virtual and non-abstract type cannot be extended: ConnectApi.RateLimitException
+67.0	project-compile	ConnectApiException	Non-virtual and non-abstract type cannot be extended: ConnectApi.ConnectApiException
+67.0	project-compile	NotFoundException	Non-virtual and non-abstract type cannot be extended: ConnectApi.NotFoundException
+67.0	project-compile	RateLimitException	Non-virtual and non-abstract type cannot be extended: ConnectApi.RateLimitException
+68.0	project-compile	ConnectApiException	Non-virtual and non-abstract type cannot be extended: ConnectApi.ConnectApiException
+68.0	project-compile	NotFoundException	Non-virtual and non-abstract type cannot be extended: ConnectApi.NotFoundException
+68.0	project-compile	RateLimitException	Non-virtual and non-abstract type cannot be extended: ConnectApi.RateLimitException

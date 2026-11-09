@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/glade-sh/glade/internal/testdaemon"
+	"github.com/glade-sh/glade/internal/testutil"
 )
 
 func TestTryTestServerRunAutoConnect(t *testing.T) {
@@ -111,7 +112,7 @@ private class WarmOneTest {
 
 func waitForServer(t *testing.T, ctx context.Context, socket string) {
 	t.Helper()
-	deadline := time.Now().Add(30 * time.Second)
+	deadline := time.Now().Add(testutil.Deadline(30 * time.Second))
 	for {
 		resp, err := testdaemon.Ping(ctx, socket)
 		if err == nil && resp.Ready {

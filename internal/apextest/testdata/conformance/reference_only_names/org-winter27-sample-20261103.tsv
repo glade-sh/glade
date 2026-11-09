@@ -1,0 +1,107 @@
+source_api	route	case_id	outcome	message
+67.0	anonymous	FieldServiceMobileExtension_declaration	COMPILE_ERROR	Invalid type: FieldServiceMobileExtension
+67.0	isTest	FieldServiceMobileExtension_declaration	SUCCESS	
+67.0	anonymous	FieldServiceMobileExtension_describe	COMPILE_ERROR	Variable does not exist: FieldServiceMobileExtension.SObjectType
+67.0	isTest	FieldServiceMobileExtension_describe	SUCCESS	
+67.0	anonymous	FieldServiceMobileExtension_dml	COMPILE_ERROR	Invalid type: FieldServiceMobileExtension
+67.0	isTest	FieldServiceMobileExtension_dml	COMPILE_ERROR	DML operation Insert not allowed on FieldServiceMobileExtension
+67.0	anonymous	FieldServiceMobileExtension_for_name	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	isTest	FieldServiceMobileExtension_for_name	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	anonymous	FieldServiceMobileExtension_for_name_schema	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	isTest	FieldServiceMobileExtension_for_name_schema	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	anonymous	FieldServiceMobileExtension_global_get	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	isTest	FieldServiceMobileExtension_global_get	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+67.0	anonymous	FieldServiceMobileExtension_new	COMPILE_ERROR	Invalid type: FieldServiceMobileExtension
+67.0	isTest	FieldServiceMobileExtension_new	SUCCESS	
+67.0	anonymous	FieldServiceMobileExtension_schema_new	COMPILE_ERROR	Invalid type: Schema.FieldServiceMobileExtension
+67.0	isTest	FieldServiceMobileExtension_schema_new	SUCCESS	
+67.0	anonymous	DataKnowledgeSrcFileRef_describe	COMPILE_ERROR	Variable does not exist: DataKnowledgeSrcFileRef.SObjectType
+67.0	isTest	DataKnowledgeSrcFileRef_describe	COMPILE_ERROR	Variable does not exist: DataKnowledgeSrcFileRef.SObjectType
+67.0	anonymous	DataKnowledgeRsrch_for_name	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	isTest	DataKnowledgeRsrch_for_name	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	anonymous	ActvTgtPlatformFieldValue_for_name	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	isTest	ActvTgtPlatformFieldValue_for_name	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	anonymous	AppointmentReason_declaration	COMPILE_ERROR	Invalid type: AppointmentReason
+67.0	isTest	AppointmentReason_declaration	COMPILE_ERROR	Invalid type: AppointmentReason
+67.0	anonymous	CryptoWalletGroup_for_name	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	isTest	CryptoWalletGroup_for_name	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	anonymous	ActivationTarget_schema_new	COMPILE_ERROR	Invalid type: Schema.ActivationTarget
+67.0	isTest	ActivationTarget_schema_new	COMPILE_ERROR	Invalid type: Schema.ActivationTarget
+67.0	anonymous	ApptReasonEngmtChannelType_new	COMPILE_ERROR	Invalid type: ApptReasonEngmtChannelType
+67.0	isTest	ApptReasonEngmtChannelType_new	COMPILE_ERROR	Invalid type: ApptReasonEngmtChannelType
+67.0	anonymous	DocumentExtractionRqstStep_declaration	COMPILE_ERROR	Invalid type: DocumentExtractionRqstStep
+67.0	isTest	DocumentExtractionRqstStep_declaration	COMPILE_ERROR	Invalid type: DocumentExtractionRqstStep
+67.0	anonymous	DataLakeObjectInstance_schema_new	COMPILE_ERROR	Invalid type: Schema.DataLakeObjectInstance
+67.0	isTest	DataLakeObjectInstance_schema_new	COMPILE_ERROR	Invalid type: Schema.DataLakeObjectInstance
+67.0	anonymous	WorkTypeAssetType_global_get	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	isTest	WorkTypeAssetType_global_get	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	anonymous	OmniGlobalAutoNumber_for_name	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	isTest	OmniGlobalAutoNumber_for_name	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	anonymous	ServiceInfoRespResourceUrl_declaration	COMPILE_ERROR	Invalid type: ServiceInfoRespResourceUrl
+67.0	isTest	ServiceInfoRespResourceUrl_declaration	COMPILE_ERROR	Invalid type: ServiceInfoRespResourceUrl
+67.0	anonymous	DataAssetPromotionRequest_schema_new	COMPILE_ERROR	Invalid type: Schema.DataAssetPromotionRequest
+67.0	isTest	DataAssetPromotionRequest_schema_new	COMPILE_ERROR	Invalid type: Schema.DataAssetPromotionRequest
+67.0	anonymous	DecisionTblFileImportData_new	COMPILE_ERROR	Invalid type: DecisionTblFileImportData
+67.0	isTest	DecisionTblFileImportData_new	COMPILE_ERROR	Invalid type: DecisionTblFileImportData
+67.0	anonymous	DiseaseDefinitionCondition_for_name	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	isTest	DiseaseDefinitionCondition_for_name	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	anonymous	OmniESignatureTemplate_global_get	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	isTest	OmniESignatureTemplate_global_get	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	anonymous	ProductConfigurationFlow_global_get	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	isTest	ProductConfigurationFlow_global_get	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	anonymous	DataAssetPromotionRequest_describe	COMPILE_ERROR	Variable does not exist: DataAssetPromotionRequest.SObjectType
+67.0	isTest	DataAssetPromotionRequest_describe	COMPILE_ERROR	Variable does not exist: DataAssetPromotionRequest.SObjectType
+67.0	anonymous	DiseaseDefinitionCondition_describe	COMPILE_ERROR	Variable does not exist: DiseaseDefinitionCondition.SObjectType
+67.0	isTest	DiseaseDefinitionCondition_describe	COMPILE_ERROR	Variable does not exist: DiseaseDefinitionCondition.SObjectType
+67.0	anonymous	UsageOveragePolicy_describe	COMPILE_ERROR	Variable does not exist: UsageOveragePolicy.SObjectType
+67.0	isTest	UsageOveragePolicy_describe	COMPILE_ERROR	Variable does not exist: UsageOveragePolicy.SObjectType
+67.0	anonymous	DataKnwlgGrphSrcExtrct_schema_new	COMPILE_ERROR	Invalid type: Schema.DataKnwlgGrphSrcExtrct
+67.0	isTest	DataKnwlgGrphSrcExtrct_schema_new	COMPILE_ERROR	Invalid type: Schema.DataKnwlgGrphSrcExtrct
+67.0	anonymous	MarketSegment_describe	COMPILE_ERROR	Variable does not exist: MarketSegment.SObjectType
+67.0	isTest	MarketSegment_describe	COMPILE_ERROR	Variable does not exist: MarketSegment.SObjectType
+67.0	anonymous	RecordActnSelItemExtrc_schema_new	COMPILE_ERROR	Invalid type: Schema.RecordActnSelItemExtrc
+67.0	isTest	RecordActnSelItemExtrc_schema_new	COMPILE_ERROR	Invalid type: Schema.RecordActnSelItemExtrc
+67.0	anonymous	OmniESignatureTemplate_for_name	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	isTest	OmniESignatureTemplate_for_name	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	anonymous	DataObjSecondaryIndex_new	COMPILE_ERROR	Invalid type: DataObjSecondaryIndex
+67.0	isTest	DataObjSecondaryIndex_new	COMPILE_ERROR	Invalid type: DataObjSecondaryIndex
+67.0	anonymous	VoiceChnlInteractionEvent_global_get	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	isTest	VoiceChnlInteractionEvent_global_get	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	anonymous	ProductConfigurationFlow_describe	COMPILE_ERROR	Variable does not exist: ProductConfigurationFlow.SObjectType
+67.0	isTest	ProductConfigurationFlow_describe	COMPILE_ERROR	Variable does not exist: ProductConfigurationFlow.SObjectType
+67.0	anonymous	DecisionTblFileImportData_global_get	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	isTest	DecisionTblFileImportData_global_get	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	anonymous	ScoreCategory_schema_new	COMPILE_ERROR	Invalid type: Schema.ScoreCategory
+67.0	isTest	ScoreCategory_schema_new	COMPILE_ERROR	Invalid type: Schema.ScoreCategory
+67.0	anonymous	SalesTransactionItem_schema_new	COMPILE_ERROR	Invalid type: Schema.SalesTransactionItem
+67.0	isTest	SalesTransactionItem_schema_new	COMPILE_ERROR	Invalid type: Schema.SalesTransactionItem
+67.0	anonymous	DataAssetPromotionRequest_for_name	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	isTest	DataAssetPromotionRequest_for_name	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	anonymous	VideoCallTranscript_schema_new	COMPILE_ERROR	Invalid type: Schema.VideoCallTranscript
+67.0	isTest	VideoCallTranscript_schema_new	COMPILE_ERROR	Invalid type: Schema.VideoCallTranscript
+67.0	anonymous	DataAction_lower_new	COMPILE_ERROR	Invalid type: dataaction
+67.0	isTest	DataAction_lower_new	COMPILE_ERROR	Invalid type: dataaction
+67.0	anonymous	DataAction_declaration	COMPILE_ERROR	Invalid type: DataAction
+67.0	isTest	DataAction_declaration	COMPILE_ERROR	Invalid type: DataAction
+67.0	anonymous	DataLineageNodeDefSyncLog_declaration	COMPILE_ERROR	Invalid type: DataLineageNodeDefSyncLog
+67.0	isTest	DataLineageNodeDefSyncLog_declaration	COMPILE_ERROR	Invalid type: DataLineageNodeDefSyncLog
+67.0	anonymous	ApptReasonEngmtChannelType_global_get	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	isTest	ApptReasonEngmtChannelType_global_get	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	anonymous	ServiceAppointmentAsset_declaration	COMPILE_ERROR	Invalid type: ServiceAppointmentAsset
+67.0	isTest	ServiceAppointmentAsset_declaration	COMPILE_ERROR	Invalid type: ServiceAppointmentAsset
+67.0	anonymous	InsuranceRatingRequest_new	COMPILE_ERROR	Invalid type: InsuranceRatingRequest
+67.0	isTest	InsuranceRatingRequest_new	COMPILE_ERROR	Invalid type: InsuranceRatingRequest
+67.0	anonymous	PriceRevisionPolicy_global_get	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	isTest	PriceRevisionPolicy_global_get	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	anonymous	ServiceAppointmentAsset_new	COMPILE_ERROR	Invalid type: ServiceAppointmentAsset
+67.0	isTest	ServiceAppointmentAsset_new	COMPILE_ERROR	Invalid type: ServiceAppointmentAsset
+67.0	anonymous	DocumentExtractionRqstStep_schema_new	COMPILE_ERROR	Invalid type: Schema.DocumentExtractionRqstStep
+67.0	isTest	DocumentExtractionRqstStep_schema_new	COMPILE_ERROR	Invalid type: Schema.DocumentExtractionRqstStep
+67.0	anonymous	MktDataConnection_global_get	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	isTest	MktDataConnection_global_get	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	anonymous	DataSourceBundle_for_name	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	isTest	DataSourceBundle_for_name	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	anonymous	DataKnowledgeGraph_global_get	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	isTest	DataKnowledgeGraph_global_get	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	anonymous	AiGenActionItemInfo_schema_new	COMPILE_ERROR	Invalid type: Schema.AiGenActionItemInfo
+67.0	isTest	AiGenActionItemInfo_schema_new	COMPILE_ERROR	Invalid type: Schema.AiGenActionItemInfo

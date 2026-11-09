@@ -733,6 +733,17 @@ func applyProjectProfileMetadata(org *storage.OrgState, p project.Project, permi
 		storage.EnsureDeterministicPlatformData(org)
 	}
 	applyProjectProfileRecordTypeDefaults(org, p, readProfile)
+	// Dependency profile files are not in bodies; read them from the
+	// captured dependency sources.
+	applyProjectProfileRecordTypeAvailability(org, p, func(file string) ([]byte, error) {
+		if data, ok := bodies[file]; ok {
+			return data, nil
+		}
+		return readFile(file)
+	})
+	if applyScratchObjectSettingsRecordTypes(org, p) {
+		storage.EnsureDeterministicPlatformData(org)
+	}
 	applyProjectProfileRecords(org, p, permissionSetMetadataCache)
 	applyProjectAccountRecordTypeDefaults(org, p, readProfile)
 	return nil
@@ -778,6 +789,144 @@ func applyProjectProfileRecordTypes(org *storage.OrgState, p project.Project, re
 	}
 	return changed
 }
+
+// applyProjectProfileRecordTypeAvailability: Glade's Apex runs as the System
+// Administrator, whose profile file is Admin.profile-meta.xml. For each object
+// that profile lists in recordTypeVisibilities, a record type it does not mark
+// visible is unavailable (record_type_visibility profile rows: Beta, visible
+// false, and Gamma, unlisted). Objects the profile does not list, and projects
+// without that profile, keep every active record type available. A fresh
+// scratch org reports a deployed record type unavailable until a profile grants
+// it (plain and account_rt rows), but a retrieved project rarely carries the
+// org's profile visibility, so Glade does not infer the absence.
+func applyProjectProfileRecordTypeAvailability(org *storage.OrgState, p project.Project, readers ...func(string) ([]byte, error)) {
+	if org == nil {
+		return
+	}
+	// Profile deploys merge: the administrator sees every record type any
+	// deployed System Administrator profile grants (record_type_installed
+	// rows: one profile lists Extra, another lists Cash, both are available).
+	// Managed package dependencies ship their own profile files.
+	type profileSource struct{ file, namespace string }
+	var sources []profileSource
+	seen := map[*project.Project]bool{}
+	var collect func(proj project.Project, namespace string)
+	collect = func(proj project.Project, namespace string) {
+		for _, file := range proj.ProfileFiles {
+			if profileNameFromPath(file) == "System Administrator" {
+				sources = append(sources, profileSource{file, namespace})
+			}
+		}
+		for i := range proj.ManagedPackageDependencies {
+			dep := proj.ManagedPackageDependencies[i]
+			if dep.Status != "loaded" || dep.Project == nil || seen[dep.Project] {
+				continue
+			}
+			seen[dep.Project] = true
+			collect(*dep.Project, dep.Namespace)
+		}
+	}
+	collect(p, "")
+	visible := map[string]map[string]bool{}
+	canonicals := map[string]string{}
+	for _, source := range sources {
+		data, err := readProfileMetadataFile(source.file, readers...)
+		if err != nil {
+			continue
+		}
+		var profile profileXML
+		if xml.Unmarshal(data, &profile) != nil {
+			continue
+		}
+		for _, visibility := range profile.RecordTypeVisibilities {
+			object, developerName, ok := strings.Cut(strings.TrimSpace(visibility.RecordType), ".")
+			if !ok || object == "" || developerName == "" || strings.EqualFold(object, "PersonAccount") {
+				continue
+			}
+			canonical, ok := storage.ResolveObjectName(*org, object)
+			if !ok && source.namespace != "" && !strings.Contains(strings.TrimSuffix(object, "__c"), "__") {
+				canonical, ok = storage.ResolveObjectName(*org, source.namespace+"__"+object)
+			}
+			if !ok {
+				continue
+			}
+			key := strings.ToLower(canonical)
+			if visible[key] == nil {
+				visible[key] = map[string]bool{}
+				canonicals[key] = canonical
+			}
+			developerKey := strings.ToLower(stripRecordTypeNamespaceToken(developerName))
+			visible[key][developerKey] = visible[key][developerKey] || visibility.Visible
+		}
+	}
+	for key, developers := range visible {
+		canonical := canonicals[key]
+		state := org.Objects[canonical]
+		if hasPersonAccountRecordType(state.Definition.RecordTypes) {
+			continue
+		}
+		definition := state.Definition.Clone()
+		changed := false
+		for i := range definition.RecordTypes {
+			recordType := &definition.RecordTypes[i]
+			if strings.EqualFold(recordType.DeveloperName, "Master") {
+				continue
+			}
+			unavailable := !developers[strings.ToLower(stripRecordTypeNamespaceToken(recordType.DeveloperName))]
+			if recordType.Unavailable != unavailable {
+				recordType.Unavailable = unavailable
+				changed = true
+			}
+		}
+		if changed {
+			state.Definition = definition
+			org.Objects[canonical] = state
+		}
+	}
+}
+
+func hasPersonAccountRecordType(recordTypes []storage.RecordTypeInfo) bool {
+	for _, recordType := range recordTypes {
+		if recordType.PersonAccount {
+			return true
+		}
+	}
+	return false
+}
+
+// applyScratchObjectSettingsRecordTypes adds the record type a scratch
+// definition's objectSettings.<object>.defaultRecordType creates. The object
+// gains RecordTypeId and lists the record type, unavailable and not the
+// default; Master stays the default (record_type_visibility and
+// record_type_shape object_settings Opportunity rows).
+func applyScratchObjectSettingsRecordTypes(org *storage.OrgState, p project.Project) bool {
+	if org == nil {
+		return false
+	}
+	changed := false
+	for object, developerName := range project.ScratchObjectDefaultRecordTypes(p.Root) {
+		canonical, ok := storage.ResolveObjectName(*org, object)
+		if !ok {
+			continue
+		}
+		state := org.Objects[canonical]
+		if recordTypeDeveloperIndex(state.Definition.RecordTypes, developerName) >= 0 {
+			continue
+		}
+		state.Definition = state.Definition.Clone()
+		state.Definition.RecordTypes = append(state.Definition.RecordTypes, storage.RecordTypeInfo{
+			DeveloperName: developerName,
+			Name:          developerName,
+			Active:        true,
+			Unavailable:   true,
+		})
+		storage.EnsureRecordTypeIDField(&state.Definition)
+		org.Objects[canonical] = state
+		changed = true
+	}
+	return changed
+}
+
 func applyProjectProfileRecordTypeDefaults(org *storage.OrgState, p project.Project, readers ...func(string) ([]byte, error)) {
 	if org == nil || len(p.ProfileFiles) == 0 {
 		return
@@ -810,7 +959,7 @@ func applyProjectAccountRecordTypeDefaults(org *storage.OrgState, p project.Proj
 	for _, file := range sortedProfileFilesForDefaults(p.ProfileFiles) {
 		name := profileNameFromPath(file)
 		profileID, found := recordFieldID(org.Objects["Profile"], "Name", name)
-		if strings.EqualFold(name, "Admin") {
+		if name == "System Administrator" {
 			profileID, found = storage.DefaultProfileID, true
 		}
 		if !found {
@@ -903,8 +1052,70 @@ func applyProjectProfileRecords(org *storage.OrgState, p project.Project, permis
 			applyProjectProfileUserPermissions(org, profileID, metadata.UserPermissions)
 		}
 		applyProjectPermissionSetMetadataPermissions(org, file, string(parentID), &generator, objectPermissionKeys, fieldPermissionKeys, permissionSetMetadataCache)
+		if metadata, ok := readPermissionSetMetadata(file, permissionSetMetadataCache); ok {
+			applyProjectProfileLicenseObjectPermissions(org, string(parentID), metadata.UserLicense, &generator, objectPermissionKeys)
+		}
 	}
 	org.IDSequences = generator.Sequences
+}
+
+// licenseDefaultObjectPermissions are the ObjectPermissions rows a deployed
+// profile owns from its user license alone, whatever the profile file lists
+// (custom_profile_unlisted_object_access, API 62.0 and 67.0). A row the
+// profile file lists is never replaced.
+var licenseDefaultObjectPermissions = map[string][]struct {
+	object                   string
+	read, create, edit, drop bool
+}{
+	"salesforce platform": {
+		{"Account", true, true, true, true}, {"AuthorizationForm", true, true, true, true},
+		{"AuthorizationFormDataUse", true, true, true, true}, {"AuthorizationFormText", true, true, true, true},
+		{"BusinessBrand", true, true, true, true}, {"CommSubscription", true, true, true, true},
+		{"CommSubscriptionChannelType", true, true, true, true}, {"CommSubscriptionTiming", true, true, true, true},
+		{"Contact", true, true, true, true}, {"ContactPointEmail", true, true, true, true},
+		{"ContactPointPhone", true, true, true, true}, {"ContactPointTypeConsent", true, false, true, false},
+		{"Customer", true, true, true, true}, {"DandBCompany", true, false, false, false},
+		{"DataUseLegalBasis", true, true, true, true}, {"DataUsePurpose", true, true, true, true},
+		{"Document", true, true, true, true}, {"EngagementChannelType", true, true, true, true},
+		{"Idea", true, true, false, false}, {"Individual", true, true, true, true},
+		{"PartyConsent", true, false, true, false}, {"PushTopic", true, true, true, true},
+		{"Seller", true, true, true, true}, {"StreamingChannel", true, true, true, true},
+		{"UserDefinedLabel", true, true, true, true}, {"UserExternalCredential", true, true, true, true},
+	},
+	"salesforce": {
+		{"ContractLineItem", true, false, false, false}, {"QuickText", true, false, false, false},
+		{"ServiceContract", true, false, false, false},
+	},
+}
+
+func applyProjectProfileLicenseObjectPermissions(org *storage.OrgState, parentID, licenseName string, generator *storage.IDGenerator, objectPermissionKeys map[string]bool) {
+	rows := licenseDefaultObjectPermissions[strings.ToLower(strings.TrimSpace(licenseName))]
+	if org == nil || len(rows) == 0 || generator == nil || strings.TrimSpace(parentID) == "" {
+		return
+	}
+	storage.EnsureStandardObject(org, "ObjectPermissions")
+	state := org.Objects["ObjectPermissions"]
+	if state.Records == nil {
+		state.Records = make(map[storage.ID]storage.Record)
+	}
+	for _, row := range rows {
+		key := objectPermissionRecordKey(parentID, row.object)
+		if key == "" || objectPermissionKeys[key] {
+			continue
+		}
+		id, err := generator.Next("ObjectPermissions")
+		if err != nil {
+			continue
+		}
+		state.Records[id] = storage.Record{ID: id, Object: "ObjectPermissions", Fields: map[string]storage.Value{
+			"ParentId": storage.IDValue(storage.ID(parentID)), "SobjectType": storage.StringValue(row.object),
+			"PermissionsRead": storage.BooleanValue(row.read), "PermissionsCreate": storage.BooleanValue(row.create),
+			"PermissionsEdit": storage.BooleanValue(row.edit), "PermissionsDelete": storage.BooleanValue(row.drop),
+			"PermissionsViewAllRecords": storage.BooleanValue(false), "PermissionsModifyAllRecords": storage.BooleanValue(false),
+		}}
+		objectPermissionKeys[key] = true
+	}
+	org.Objects["ObjectPermissions"] = state
 }
 
 // setUserPermissionFields records enabled <userPermissions> as Permissions<Name>
@@ -1097,6 +1308,20 @@ func seedProjectPermissionSetRecords(org *storage.OrgState, p project.Project, p
 				},
 			}
 		}
+		// Metadata-deployed permission sets materialize omitted permission
+		// checkboxes as false (deployed_permissions_defaults, APIs 62 and 67).
+		record := state.Records[id]
+		if record.Fields == nil {
+			record.Fields = make(map[string]storage.Value)
+		}
+		for fieldName, field := range state.Definition.Fields {
+			if field.Type == storage.FieldBoolean && strings.HasPrefix(fieldName, "Permissions") && observedDeployedPermissionField(org.APIVersion, fieldName) {
+				if _, present := record.GetField(fieldName); !present {
+					record.Fields[fieldName] = storage.BooleanValue(false)
+				}
+			}
+		}
+		state.Records[id] = record
 		metadata, metadataOK := readPermissionSetMetadata(file, permissionSetMetadataCache)
 		if metadataOK {
 			if p.Namespace == "" {
@@ -1128,6 +1353,106 @@ func seedProjectPermissionSetRecords(org *storage.OrgState, p project.Project, p
 	}
 	org.IDSequences = generator.Sequences
 	org.Objects["PermissionSet"] = state
+}
+
+// applyManagedDependencyPermissionSetRecords seeds the permission sets of loaded
+// managed dependency source. A subscriber sees them like installed package
+// metadata: Name stays unprefixed and NamespacePrefix carries the namespace
+// (native rows, api62/api67, permission_set_dependency fixture). Each set also
+// grants its package's custom permissions (SetupEntityAccess), resolved within
+// the package's own namespace. Object, field and user permissions are not
+// applied: the dependency's metadata names are package-local.
+func applyManagedDependencyPermissionSetRecords(org *storage.OrgState, p project.Project, cache map[string]permissionSetMetadataCacheEntry) {
+	if org == nil {
+		return
+	}
+	seen := make(map[string]bool)
+	var walk func(deps []project.ManagedPackageDependency)
+	walk = func(deps []project.ManagedPackageDependency) {
+		for _, dep := range deps {
+			if dep.Project == nil || dep.Status != "loaded" || seen[dep.SourceRoot+"|"+dep.Namespace] {
+				continue
+			}
+			seen[dep.SourceRoot+"|"+dep.Namespace] = true
+			namespace := strings.TrimSpace(dep.Namespace)
+			if namespace == "" {
+				namespace = strings.TrimSpace(dep.Project.Namespace)
+			}
+			if namespace != "" {
+				seedDependencyPermissionSets(org, *dep.Project, namespace, cache)
+			}
+			walk(dep.Project.ManagedPackageDependencies)
+		}
+	}
+	walk(p.ManagedPackageDependencies)
+}
+
+func seedDependencyPermissionSets(org *storage.OrgState, dep project.Project, namespace string, cache map[string]permissionSetMetadataCacheEntry) {
+	if len(dep.PermissionSetFiles) == 0 {
+		return
+	}
+	// The package's custom permissions are visible with their namespace, and its
+	// permission sets grant them (native: FeatureManagement.checkPermission is
+	// true after the set is assigned, at APIs 62.0 and 67.0).
+	applyCustomPermissionRecordsInNamespace(org, dep, namespace)
+	storage.EnsureStandardObject(org, "PermissionSet")
+	state := org.Objects["PermissionSet"]
+	if state.Records == nil {
+		state.Records = make(map[storage.ID]storage.Record)
+	}
+	if org.IDSequences == nil {
+		org.IDSequences = make(map[string]uint64)
+	}
+	generator := storage.NewStandardIDGenerator()
+	generator.Sequences = org.IDSequences
+	type pendingGrant struct {
+		id     storage.ID
+		grants []storage.Value
+	}
+	var pendingGrants []pendingGrant
+	for _, file := range dep.PermissionSetFiles {
+		name := metadataNameFromPath(file, ".permissionset-meta.xml", ".permissionset")
+		if name == "" {
+			continue
+		}
+		exists := false
+		for _, record := range state.Records {
+			if strings.EqualFold(record.Fields["Name"].String, name) && strings.EqualFold(record.Fields["NamespacePrefix"].String, namespace) {
+				exists = true
+				break
+			}
+		}
+		if exists {
+			continue
+		}
+		id, err := generator.Next("PermissionSet")
+		if err != nil {
+			continue
+		}
+		label := strings.ReplaceAll(name, "_", " ")
+		if metadata, ok := readPermissionSetMetadata(file, cache); ok && strings.TrimSpace(metadata.Label) != "" {
+			label = strings.TrimSpace(metadata.Label)
+		}
+		fields := map[string]storage.Value{
+			"Name":             storage.StringValue(name),
+			"Label":            storage.StringValue(label),
+			"NamespacePrefix":  storage.StringValue(namespace),
+			"Type":             storage.StringValue("Regular"),
+			"IsOwnedByProfile": storage.BooleanValue(false),
+		}
+		if metadata, ok := readPermissionSetMetadata(file, cache); ok {
+			if grants := permissionSetCustomPermissionValues(metadata); len(grants) > 0 {
+				fields["CustomPermissions"] = storage.ListValue(grants...)
+				pendingGrants = append(pendingGrants, pendingGrant{id, grants})
+			}
+		}
+		state.Records[id] = storage.Record{ID: id, Object: "PermissionSet", Fields: fields}
+	}
+	org.Objects["PermissionSet"] = state
+	for _, grant := range pendingGrants {
+		applyCustomPermissionGrantsInNamespace(org, grant.id, grant.grants, namespace, &generator)
+	}
+	org.IDSequences = generator.Sequences
 }
 
 func applyProjectGuestPermissionSetAssignment(org *storage.OrgState, permissionSetName string, permissionSetID storage.ID, generator *storage.IDGenerator) {

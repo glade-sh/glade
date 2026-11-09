@@ -103,6 +103,8 @@ func TestConfiguredUserClockNativeConformance(t *testing.T) {
 func TestConfiguredUserClockIsolation(t *testing.T) {
 	root := calendarSettingsFixture(t, "67.0")
 	// Source stays identical across settings changes so compiled runtime reuse is exercised.
+	// Like the native observation (ORG-RUN.txt), DML and queries use system mode
+	// so field permissions do not mask the calendar behavior.
 	source := `@IsTest private class CalendarSettingsObservation {
   static String initialized=String.valueOf(Date.today());
   @TestSetup static void setup(){System.assertEquals(String.valueOf(Date.today()),initialized);}
@@ -112,9 +114,9 @@ func TestConfiguredUserClockIsolation(t *testing.T) {
   @IsTest static void configuredSecond(){check(true);}
   static void check(Boolean configured){
    System.assertEquals(configured?'Europe/Berlin':'America/Los_Angeles',UserInfo.getTimeZone().getID());
-   System.assertEquals(configured?'2026-05-05':'2026-05-02',String.valueOf(Date.today()));
-   System.assertEquals(configured?'2026-05-05':'2026-05-02',initialized);
-   System.assertEquals(configured?'2026-05-04 22:30:00':'2026-05-02 12:00:00',Datetime.now().formatGmt('yyyy-MM-dd HH:mm:ss'));
+   System.assertEquals(configured?'2026-05-05':'2026-05-13',String.valueOf(Date.today()));
+   System.assertEquals(configured?'2026-05-05':'2026-05-13',initialized);
+   System.assertEquals(configured?'2026-05-04 22:30:00':'2026-05-13 12:00:00',Datetime.now().formatGmt('yyyy-MM-dd HH:mm:ss'));
    System.assertEquals(configured?'EUR':'USD',UserInfo.getDefaultCurrency());
    System.assertEquals(configured?'de_DE':'en_US',UserInfo.getLocale());
    System.assertEquals(configured?'de':'en_US',UserInfo.getLanguage());
@@ -123,9 +125,9 @@ func TestConfiguredUserClockIsolation(t *testing.T) {
    System.assertEquals(UserInfo.getLocale(),current.LocaleSidKey);
    System.assertEquals(UserInfo.getLanguage(),current.LanguageLocaleKey);
    if(configured)System.assertEquals('EUR',current.DefaultCurrencyIsoCode);
-   insert new List<CalendarObservation__c>{new CalendarObservation__c(Name='Current',Day__c=Date.today()),new CalendarObservation__c(Name='Tomorrow',Day__c=Date.today().addDays(1)),new CalendarObservation__c(Name='Following',Day__c=Date.today().addDays(7))};
-   System.assertEquals(configured?2:1,[SELECT COUNT() FROM CalendarObservation__c WHERE Day__c=THIS_WEEK]);
-   System.assertEquals(configured?1:2,[SELECT COUNT() FROM CalendarObservation__c WHERE Day__c=NEXT_WEEK]);
+   insert as system new List<CalendarObservation__c>{new CalendarObservation__c(Name='Current',Day__c=Date.today()),new CalendarObservation__c(Name='Tomorrow',Day__c=Date.today().addDays(1)),new CalendarObservation__c(Name='Following',Day__c=Date.today().addDays(7))};
+   System.assertEquals(2,[SELECT COUNT() FROM CalendarObservation__c WHERE Day__c=THIS_WEEK WITH SYSTEM_MODE]);
+   System.assertEquals(1,[SELECT COUNT() FROM CalendarObservation__c WHERE Day__c=NEXT_WEEK WITH SYSTEM_MODE]);
   }
  }`
 	writeFile(t, filepath.Join(root, "force-app/main/default/classes/CalendarSettingsObservation.cls"), source)

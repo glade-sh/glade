@@ -1,0 +1,4 @@
+case	api	result
+clickout	59.0	{"first":{"event":"ready","visible":1},"second":{"event":"ready","visible":1},"escape":{"event":"ready","visible":1}}
+clickout	62.0	{"first":{"event":"ready","visible":1},"second":{"event":"ready","visible":1},"escape":{"event":"ready","visible":1}}
+clickout	67.0	{"first":{"event":"ready","visible":1},"second":{"event":"ready","visible":1},"escape":{"event":"ready","visible":1}}

@@ -1,0 +1,1 @@
+<PaymentGatewayProvider xmlns="http://soap.sforce.com/2006/04/metadata"><apexAdapter>ProbeInherited62</apexAdapter><comments>synthetic inheritance probe</comments><idempotencySupported>Yes</idempotencySupported><masterLabel>Probe Inherited 62</masterLabel></PaymentGatewayProvider>

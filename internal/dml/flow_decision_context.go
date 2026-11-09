@@ -36,3 +36,18 @@ func flowBeforeSaveScalarUpdateMode(flowName string, definition storage.ObjectDe
 	}
 	return false
 }
+
+// An after-save CreateAndUpdate Flow that writes a String interview variable,
+// built by its own assignments, back to a text or rich text field of $Record
+// has native rows at Flow and Apex API 62.0 and 67.0 for both the insert and
+// the update save (flow_tolabel_residuals).
+func flowAfterSaveScalarWriteBackMode(flowName string, definition storage.ObjectDefinition) bool {
+	for _, rule := range definition.FlowRules {
+		if rule.Name != flowName {
+			continue
+		}
+		return strings.EqualFold(strings.TrimSpace(rule.TriggerType), "RecordAfterSave") &&
+			strings.EqualFold(strings.TrimSpace(rule.RecordTriggerType), "CreateAndUpdate")
+	}
+	return false
+}

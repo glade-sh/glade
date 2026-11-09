@@ -29,3 +29,18 @@ api	profile	route	case	outcome	diagnostic	observed
 67.0	contract-pricing-enabled	anonymous	pricing_service_visible	accepted	-	-
 62.0	commerce-enabled	REST describe	webstore_fields	accepted	-	field_count=45; OptionsAutoFacetingEnabled type=boolean; createable=true; updateable=true; nillable=false
 67.0	commerce-enabled	REST describe	webstore_fields	accepted	-	field_count=45; OptionsAutoFacetingEnabled type=boolean; createable=true; updateable=true; nillable=false
+68.0	commerce-enabled	anonymous	pricing_response_visible	compile_error	Compilation failed at Line 1 column 1 with the error: Type is not visible: commercestorepricing.ContractResolutionResponse	-
+68.0	commerce-enabled	anonymous	pricing_request_visible	compile_error	Compilation failed at Line 1 column 1 with the error: Type is not visible: commercestorepricing.ContractResolutionRequest	-
+68.0	commerce-enabled	anonymous	pricing_service_visible	accepted	-	-
+68.0	commerce-enabled	anonymous	inventory_visible	accepted	-	-
+68.0	commerce-enabled	anonymous	checkout_status_visible	accepted	-	-
+68.0	commerce-enabled	anonymous	checkout_interface_visible	accepted	-	-
+68.0	commerce-enabled	anonymous	checkout_info_visible	accepted	-	-
+68.0	commerce-enabled	anonymous	webstore_ctor	accepted	-	-
+68.0	commerce-enabled	anonymous	webstore_rejection	compile_error	Compilation failed at Line 1 column 18 with the error: Field does not exist: OptionsSyntheticMissing on WebStore	-
+68.0	commerce-enabled	anonymous	webstore_boundary	runtime_error	Execution failed at this code: System.AssertException: Assertion Failed: Expected: null, Actual: false	-
+68.0	commerce-enabled	anonymous	webstore_membership	accepted	-	OptionsAutoFacetingEnabled=true; OptionsSyntheticMissing=false
+68.0	contract-pricing-enabled	anonymous	pricing_response_visible	accepted	-	-
+68.0	contract-pricing-enabled	anonymous	pricing_request_visible	accepted	-	-
+68.0	contract-pricing-enabled	anonymous	pricing_service_visible	accepted	-	-
+68.0	commerce-enabled	REST describe	webstore_fields	accepted	-	field_count=45; OptionsAutoFacetingEnabled type=boolean; createable=true; updateable=true; nillable=false

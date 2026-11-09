@@ -6,6 +6,7 @@ import (
 	"maps"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/project"
@@ -37,53 +38,57 @@ type duplicateRuleRecordXML struct {
 // SetupRecordMetadataFiles includes only declared package views. The same paths
 // feed runtime snapshots, so later disk changes cannot replace captured bodies.
 func SetupRecordMetadataFiles(p project.Project) []string {
-	files := make(map[string]bool)
-	seen := make(map[*project.Project]bool)
-	var visit func(*project.Project)
-	visit = func(current *project.Project) {
-		if current == nil || seen[current] {
-			return
-		}
-		seen[current] = true
-		for _, path := range current.BusinessHoursSettingsFiles {
-			files[path] = true
-		}
-		for _, path := range current.AssignmentRuleFiles {
-			files[path] = true
-		}
-		for _, path := range current.MatchingRuleFiles {
-			files[path] = true
-		}
-		for _, path := range current.PlatformEventChannelMemberFiles {
-			files[path] = true
-		}
-		for _, path := range current.DuplicateRuleFiles {
-			files[path] = true
-		}
-		for _, dep := range current.ManagedPackageDependencies {
-			if dep.Status == "loaded" {
-				visit(dep.Project)
-			}
-		}
-		for _, shim := range current.PackageShims {
-			if shim.Status == "loaded" {
-				visit(shim.Project)
-			}
-		}
-	}
-	visit(&p)
-	paths := make([]string, 0, len(files))
-	for path := range files {
+	owners := setupRecordMetadataOwners(p)
+	paths := make([]string, 0, len(owners))
+	for path := range owners {
 		paths = append(paths, path)
 	}
 	sort.Strings(paths)
 	return paths
 }
 
+// setupRecordMetadataOwners maps each declared file to its package view. The
+// root project owns "" and a dependency or shim owns its kind and namespace.
+func setupRecordMetadataOwners(p project.Project) map[string]string {
+	files := make(map[string]string)
+	seen := make(map[*project.Project]bool)
+	var visit func(*project.Project, string)
+	visit = func(current *project.Project, owner string) {
+		if current == nil || seen[current] {
+			return
+		}
+		seen[current] = true
+		lists := [][]string{current.BusinessHoursSettingsFiles, current.AutoResponseRuleFiles, current.ApprovalProcessFiles, current.AssignmentRuleFiles, current.MatchingRuleFiles, current.PlatformEventChannelMemberFiles, current.DuplicateRuleFiles}
+		if len(current.AutoResponseRuleFiles) > 0 {
+			lists = append(lists, current.EmailTemplateFiles)
+		}
+		for _, list := range lists {
+			for _, path := range list {
+				if _, exists := files[path]; !exists {
+					files[path] = owner
+				}
+			}
+		}
+		for _, dep := range current.ManagedPackageDependencies {
+			if dep.Status == "loaded" {
+				visit(dep.Project, "dependency:"+dep.Namespace)
+			}
+		}
+		for _, shim := range current.PackageShims {
+			if shim.Status == "loaded" {
+				visit(shim.Project, "shim:"+shim.Namespace)
+			}
+		}
+	}
+	visit(&p, "")
+	return files
+}
+
 func applySetupRecordMetadata(org *storage.OrgState, p project.Project, readMetadata func(string) ([]byte, error)) error {
 	if org == nil {
 		return nil
 	}
+	owners := setupRecordMetadataOwners(p)
 	paths := SetupRecordMetadataFiles(p)
 	if len(paths) == 0 {
 		return nil
@@ -106,7 +111,7 @@ func applySetupRecordMetadata(org *storage.OrgState, p project.Project, readMeta
 	if staged.IDSequences == nil {
 		staged.IDSequences = make(map[string]uint64)
 	}
-	for _, name := range []string{"BusinessHours", "DuplicateRule", "AssignmentRule"} {
+	for _, name := range []string{"BusinessHours", "DuplicateRule", "AssignmentRule", "ProcessDefinition"} {
 		if state, exists := org.Objects[name]; exists {
 			staged.Objects[name] = state.Clone()
 		}
@@ -123,9 +128,81 @@ func applySetupRecordMetadata(org *storage.OrgState, p project.Project, readMeta
 			return fmt.Errorf("load setup metadata %s: %w", path, err)
 		}
 		lower := strings.ToLower(path)
+		if strings.HasSuffix(lower, ".autoresponserules-meta.xml") || strings.HasSuffix(lower, ".autoresponserules") || strings.HasSuffix(lower, ".email-meta.xml") || strings.HasSuffix(lower, ".email") {
+			continue // Captured for the auto-response loader, not setup rows.
+		}
 		if strings.HasSuffix(lower, ".platformeventchannelmember-meta.xml") || strings.HasSuffix(lower, ".platformeventchannelmember") {
 			if err := applyChangeEventChannelMember(&staged, body); err != nil {
 				return fmt.Errorf("load PlatformEventChannelMember metadata %s: %w", path, err)
+			}
+			continue
+		}
+		if strings.HasSuffix(lower, ".approvalprocess-meta.xml") || strings.HasSuffix(lower, ".approvalprocess") {
+			var definition struct {
+				XMLName     xml.Name `xml:"ApprovalProcess"`
+				Active      bool     `xml:"active"`
+				AllowRecall bool     `xml:"allowRecall"`
+				Label       string   `xml:"label"`
+				Allowed     []struct {
+					Type string `xml:"type"`
+				} `xml:"allowedSubmitters"`
+				RecordEditability string `xml:"recordEditability"`
+				Steps             []struct {
+					AllowDelegate  *bool `xml:"allowDelegate"`
+					RejectBehavior struct {
+						Type string `xml:"type"`
+					} `xml:"rejectBehavior"`
+					Assigned struct {
+						Approvers []struct {
+							Name string `xml:"name"`
+							Type string `xml:"type"`
+						} `xml:"approver"`
+						Multiple string `xml:"whenMultipleApprovers"`
+					} `xml:"assignedApprover"`
+					Criteria         *struct{}  `xml:"entryCriteria"`
+					ApprovalActions  []struct{} `xml:"approvalActions"`
+					RejectionActions []struct{} `xml:"rejectionActions"`
+				} `xml:"approvalStep"`
+				InitialActions     []struct{} `xml:"initialSubmissionActions"`
+				ApprovalActions    []struct{} `xml:"finalApprovalActions"`
+				RejectionActions   []struct{} `xml:"finalRejectionActions"`
+				RecallActions      []struct{} `xml:"recallActions"`
+				FinalApprovalLock  *bool      `xml:"finalApprovalRecordLock"`
+				FinalRejectionLock *bool      `xml:"finalRejectionRecordLock"`
+				Criteria           struct {
+					Formula string     `xml:"formula"`
+					Items   []struct{} `xml:"criteriaItems"`
+				} `xml:"entryCriteria"`
+			}
+			if err := xml.Unmarshal(body, &definition); err != nil {
+				return fmt.Errorf("load ApprovalProcess metadata %s: %w", path, err)
+			}
+			fullName := trimKnownSuffix(trimKnownSuffix(filepath.Base(path), ".approvalProcess-meta.xml"), ".approvalProcess")
+			object, name, ok := strings.Cut(fullName, ".")
+			if !ok || object == "" || name == "" {
+				return fmt.Errorf("load ApprovalProcess metadata %s: expected object and developer name", path)
+			}
+			state := "Inactive"
+			if definition.Active {
+				state = "Active"
+			}
+			criteria := strings.TrimSpace(definition.Criteria.Formula)
+			if len(definition.Criteria.Items) != 0 || criteria == "" {
+				criteria = "unsupported"
+			}
+			routing := "unsupported"
+			if len(definition.Allowed) == 1 && strings.EqualFold(definition.Allowed[0].Type, "owner") && len(definition.Steps) == 1 && strings.EqualFold(definition.RecordEditability, "AdminOnly") && definition.Steps[0].AllowDelegate != nil && !*definition.Steps[0].AllowDelegate && strings.EqualFold(definition.Steps[0].RejectBehavior.Type, "RejectRequest") && len(definition.Steps[0].Assigned.Approvers) == 1 && strings.EqualFold(definition.Steps[0].Assigned.Approvers[0].Name, "Owner") && strings.EqualFold(definition.Steps[0].Assigned.Approvers[0].Type, "relatedUserField") && strings.EqualFold(definition.Steps[0].Assigned.Multiple, "FirstResponse") && definition.Steps[0].Criteria == nil && len(definition.Steps[0].ApprovalActions) == 0 && len(definition.Steps[0].RejectionActions) == 0 && len(definition.InitialActions) == 0 && len(definition.ApprovalActions) == 0 && len(definition.RejectionActions) == 0 && len(definition.RecallActions) == 0 && definition.FinalApprovalLock != nil && !*definition.FinalApprovalLock && definition.FinalRejectionLock != nil && !*definition.FinalRejectionLock {
+				routing = "owner"
+			}
+			// Only the root project's definitions are captured shapes. A package
+			// view keeps its own row and never routes locally.
+			owner := owners[path]
+			if owner != "" {
+				routing = "unsupported"
+			}
+			fields := map[string]storage.Value{"DeveloperName": storage.StringValue(name), "Name": storage.StringValue(definition.Label), "State": storage.StringValue(state), "TableEnumOrId": storage.StringValue(object), "Type": storage.StringValue("Approval"), "GladeApprovalCriteria": storage.StringValue(criteria), "GladeApprovalRouting": storage.StringValue(routing), "GladeApprovalPackage": storage.StringValue(owner), "GladeApprovalRecall": storage.StringValue(strconv.FormatBool(definition.AllowRecall))}
+			if err := upsertSetupMetadataRecord(&staged, &generator, "ProcessDefinition", fields, []string{"DeveloperName", "TableEnumOrId", "GladeApprovalPackage"}); err != nil {
+				return err
 			}
 			continue
 		}
@@ -222,7 +299,7 @@ func applySetupRecordMetadata(org *storage.OrgState, p project.Project, readMeta
 			}
 		}
 	}
-	for _, name := range []string{"BusinessHours", "DuplicateRule", "AssignmentRule"} {
+	for _, name := range []string{"BusinessHours", "DuplicateRule", "AssignmentRule", "ProcessDefinition"} {
 		org.Objects[name] = staged.Objects[name]
 		storage.RebuildObjectIndexes(org, name)
 	}

@@ -1,0 +1,1 @@
+public class H06 { public static Object m() { return Quote.class; } }

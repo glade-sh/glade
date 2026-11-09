@@ -175,6 +175,9 @@ func runFlowCoreConformance(t *testing.T, cluster string, shapes, cells, carried
 							runner := newConformanceRunner(t, index, conformanceRunnerOptions{Base: base, LinkProject: true, Org: base.orgSource})
 							machine := runner.newMachine()
 							automation.ApplyToOrg(machine.Org, automations)
+							if err := applyConfiguredTestPermissions(machine.Org, p); err != nil {
+								t.Fatal(err)
+							}
 							// Flow rules differ per row. Detach metadata caches after applying them
 							// to the row's private org; the linked passive runtime stays shared.
 							machine.SetOrg(machine.Org)
@@ -241,6 +244,7 @@ func flowCoreIndex(t *testing.T, api string, classes, files map[string]string) t
 		writeFile(t, path, source)
 		writeFile(t, path+"-meta.xml", "<ApexClass><apiVersion>"+api+"</apiVersion></ApexClass>")
 	}
+	configureFlowFixtureFieldAccess(t, root)
 	return loadTestIndex(t, root)
 }
 

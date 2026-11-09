@@ -219,7 +219,7 @@ outputs, project scope and plugin boundaries).
 No Salesforce behavior changed or needed clarification; no org was created and
 no native rows were captured. Existing native exports supply the runtime checks.
 
-## Advisor gates and remaining risks
+## Release gates and remaining risks
 
 Use `glade-sh/glade` on Linux/CGO: normal CI and Required CI, scheduled CI and
 Required Scheduled CI, both Race tiers, full Apex/browser race union aggregates,
@@ -236,4 +236,4 @@ no corpus gate was executed.
 The reference scheduled CI run rejected sema fuzz-seed parents absent from
 Test*-only discovery. This branch does not repair that mismatch or rerun the full
 oracle; its current status remains unverified. Hosted savings, the full push race
-matrix, the normal CI 15-minute target and all advisor gates remain unverified.
+matrix, the normal CI 15-minute target and all release gates remain unverified.

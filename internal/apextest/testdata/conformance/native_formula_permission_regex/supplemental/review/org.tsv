@@ -1,0 +1,5 @@
+api	route	observation
+62.0	isTest:runAs	before=permission=false,principal=true,profile=true,workflow=false;after=permission=true,principal=true,profile=true,workflow=true
+67.0	isTest:runAs	before=permission=false,principal=true,profile=true,workflow=false;after=permission=true,principal=true,profile=true,workflow=true
+62.0	deploy:summary	The summarized field in not deterministic.
+67.0	deploy:summary	The summarized field in not deterministic.

@@ -143,3 +143,46 @@ func TestProjectOwnerSharingMetadataUnsupportedShapesAreAtomic(t *testing.T) {
 		})
 	}
 }
+
+func TestProjectOwnerSharingRefreshInvalidIsAtomic(t *testing.T) {
+	org, p := ownerSharingMetadataFixture(t, ownedReadRuleSource)
+	if err := RefreshProjectOwnerSharingRules(&org, p); err != nil {
+		t.Fatal(err)
+	}
+	before := org.Clone()
+	writeFile(t, p.OwnerSharingRuleFiles[0], strings.Replace(ownedReadRuleSource, "Read</accessLevel>", "Edit</accessLevel>", 1))
+	if err := RefreshProjectOwnerSharingRules(&org, p); err == nil {
+		t.Fatal("unsupported replacement accepted")
+	}
+	if !reflect.DeepEqual(before.Objects, org.Objects) || !reflect.DeepEqual(before.IDSequences, org.IDSequences) {
+		t.Fatal("failed refresh changed org state")
+	}
+}
+
+func TestProjectOwnerSharingRefreshAbsentRulesIgnoresGroups(t *testing.T) {
+	org, p := ownerSharingMetadataFixture(t, ownedReadRuleSource)
+	if err := RefreshProjectOwnerSharingRules(&org, p); err != nil {
+		t.Fatal(err)
+	}
+	p.OwnerSharingRuleFiles = nil
+	writeFile(t, p.GroupFiles[0], `<Group><name>Unrelated Group</name></Group>`)
+	if err := RefreshProjectOwnerSharingRules(&org, p); err != nil {
+		t.Fatalf("unrelated group rejected rule removal: %v", err)
+	}
+	if got := len(org.Objects["OwnedBox__c"].Definition.OwnerSharingRules); got != 0 {
+		t.Fatalf("stale rules: %d", got)
+	}
+}
+
+func TestProjectOwnerSharingRefreshIgnoresUnrelatedUnsupportedGroup(t *testing.T) {
+	org, p := ownerSharingMetadataFixture(t, ownedReadRuleSource)
+	unrelated := filepath.Join(t.TempDir(), "Unrelated.group-meta.xml")
+	writeFile(t, unrelated, `<Group><name>Unrelated</name></Group>`)
+	p.GroupFiles = append(p.GroupFiles, unrelated)
+	if err := RefreshProjectOwnerSharingRules(&org, p); err != nil {
+		t.Fatalf("unrelated group blocked owner rule: %v", err)
+	}
+	if got := len(org.Objects["OwnedBox__c"].Definition.OwnerSharingRules); got != 1 {
+		t.Fatalf("rules: %d", got)
+	}
+}

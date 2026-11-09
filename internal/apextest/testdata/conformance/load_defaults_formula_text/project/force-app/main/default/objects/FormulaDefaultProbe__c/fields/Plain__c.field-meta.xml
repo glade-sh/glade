@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Plain__c</fullName><label>Plain</label><formula>Issuer__c</formula><formulaTreatBlanksAs>BlankAsBlank</formulaTreatBlanksAs><required>false</required><type>Text</type><unique>false</unique></CustomField>

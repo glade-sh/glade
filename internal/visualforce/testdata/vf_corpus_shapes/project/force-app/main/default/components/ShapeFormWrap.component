@@ -1,0 +1,3 @@
+<apex:component>
+<apex:form id="theForm"><apex:componentBody/></apex:form>
+</apex:component>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>67.0</apiVersion><environments>Default</environments><processType>AutoLaunchedFlow</processType><status>Active</status><label>R6 Permission</label>
+
+
+<decisions><name>D</name><label>D</label><locationX>0</locationX><locationY>0</locationY><defaultConnectorLabel>Default Outcome</defaultConnectorLabel><rules><name>Over</name><conditionLogic>and</conditionLogic><conditions><leftValueReference>$Permission.R6_Bypass</leftValueReference><operator>EqualTo</operator><rightValue><booleanValue>true</booleanValue></rightValue></conditions><connector><targetReference>E</targetReference></connector><label>Over</label></rules></decisions>
+<customErrors><name>E</name><label>E</label><locationX>0</locationX><locationY>0</locationY><customErrorMessages><errorMessage>R6MATCH</errorMessage><isFieldError>false</isFieldError></customErrorMessages></customErrors>
+<start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>D</targetReference></connector><filterLogic>and</filterLogic><filters><field>Name</field><operator>EqualTo</operator><value><stringValue>R6Perm</stringValue></value></filters><object>Opportunity</object><recordTriggerType>CreateAndUpdate</recordTriggerType><triggerType>RecordBeforeSave</triggerType></start></Flow>

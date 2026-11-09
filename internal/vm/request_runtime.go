@@ -905,6 +905,12 @@ func (vm *VM) kbPublishingServiceVoid(callee string, args []Value) (Value, error
 	if err := vm.validateKbPublishingServiceArgs(callee, args); err != nil {
 		return Null, err
 	}
+	if callee == "KbManagement.PublishingService.assignDraftArticleTask" {
+		return vm.assignKnowledgeDraft(args)
+	}
+	if callee == "KbManagement.PublishingService.archiveOnlineArticle" && args[1].Kind == ValueNull {
+		return vm.transitionKnowledgeOnline(args, false)
+	}
 	return Null, nil
 }
 
@@ -932,11 +938,17 @@ func (vm *VM) validateKbPublishingServiceArgs(callee string, args []Value) error
 		return fmt.Errorf("%s expects %d arguments", callee, len(want))
 	}
 	for i, kind := range want {
-		if callee == "KbManagement.PublishingService.archiveOnlineArticle" {
+		if callee == "KbManagement.PublishingService.assignDraftArticleTask" && i == 3 && args[i].Kind == ValueNull {
+			continue
+		}
+		if callee == "KbManagement.PublishingService.assignDraftArticleTask" && (i == 0 || i == 1) && args[i].Kind == ValueObject && strings.EqualFold(args[i].Type, "Id") {
+			continue
+		}
+		if callee == "KbManagement.PublishingService.archiveOnlineArticle" || callee == "KbManagement.PublishingService.editOnlineArticle" {
 			if i == 0 && args[i].Kind == ValueObject && strings.EqualFold(args[i].Type, "Id") {
 				continue
 			}
-			if i == 1 && args[i].Kind == ValueNull {
+			if callee == "KbManagement.PublishingService.archiveOnlineArticle" && i == 1 && args[i].Kind == ValueNull {
 				continue
 			}
 		}

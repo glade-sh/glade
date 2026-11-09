@@ -83,6 +83,18 @@ func (vm *VM) wrapTriggerExecutionError(trigger Trigger, err error) error {
 	var thrown *apexThrowError
 	var value Value
 	var stack []callFrame
+	var assertion *RuntimeError
+	if errors.As(err, &assertion) && assertion.Type == "System.AssertException" && assertion.stackText != "" {
+		// An assertion fails the DML like any trigger exception (native rows,
+		// APIs 62 and 67); no Apex catch inside the trigger can intercept it.
+		frames := assertion.stackText
+		if assertion.externalEntry {
+			frames = "External entry point\n" + frames
+		}
+		event := strings.ToUpper(trigger.Timing[:1]) + trigger.Timing[1:] + strings.ToUpper(trigger.Operation[:1]) + trigger.Operation[1:]
+		detail := trigger.Name + ": execution of " + event + "\n\ncaused by: System.AssertException: " + assertion.Message + "\n\n" + frames
+		return &triggerExecutionError{cause: err, detail: detail}
+	}
 	if errors.As(err, &thrown) {
 		value, stack = thrown.value, thrown.stack
 	} else {
@@ -102,6 +114,20 @@ func (vm *VM) wrapTriggerExecutionError(trigger Trigger, err error) error {
 	return &triggerExecutionError{cause: err, detail: detail}
 }
 
+// An after-insert addError rolls the row back, so its failure names no record
+// id in the DmlException text or the SaveResult (native rows, APIs 62 and 67).
+func triggerSObjectFailures(trigger Trigger, records []storage.Record, values []Value) []dml.Result {
+	failures := dmlResultsFromSObjectErrors(records, values)
+	if trigger.Timing == triggerTimingAfter && trigger.Operation == "insert" {
+		for i := range failures {
+			if !failures[i].Success {
+				failures[i].ID = ""
+			}
+		}
+	}
+	return failures
+}
+
 func (vm *VM) triggerDMLFailure(op string, allOrNone bool, records []storage.Record, prior []dml.Result, input Value, err error) ([]dml.Result, error) {
 	var failure *triggerExecutionError
 	if !errors.As(err, &failure) {
@@ -117,13 +143,10 @@ func (vm *VM) triggerDMLFailure(op string, allOrNone bool, records []storage.Rec
 	if !allOrNone {
 		return failures, nil
 	}
-	wrapped := rowDMLException(op, failures, vm.dmlExceptionObjectTypes(input)).(*apexThrowError)
-	var thrown *apexThrowError
-	if errors.As(err, &thrown) {
-		wrapped.value.Fields["__cause"] = thrown.value
-		wrapped.stack = append([]callFrame(nil), thrown.stack...)
-	}
-	return nil, wrapped
+	// The DmlException belongs to the DML statement: its stack is the caller's
+	// and it has no cause. The trigger exception's frames appear only in the
+	// message text (C11 capture, APIs 62 and 67).
+	return nil, rowDMLException(op, failures, vm.dmlExceptionObjectTypes(input))
 }
 
 func dmlExceptionFromTriggerError(op string, err error) error {
@@ -140,12 +163,7 @@ func dmlExceptionFromTriggerError(op string, err error) error {
 	}
 	// A trigger failure is a row-bearing DmlException,
 	// including uncatchable readonly failures from a trigger context.
-	wrapped := databaseDMLException(op, []dml.Result{{Error: message, StatusCode: "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY"}}, nil).(*apexThrowError)
-	if thrown != nil {
-		wrapped.value.Fields["__cause"] = thrown.value
-		wrapped.stack = append([]callFrame(nil), thrown.stack...)
-	}
-	return wrapped
+	return databaseDMLException(op, []dml.Result{{Error: message, StatusCode: "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY"}}, nil)
 }
 
 // Read-only trigger failures escape Apex catches but become row-bearing DML
@@ -454,6 +472,62 @@ func (vm *VM) hydrateUpdateTriggerRecords(records, before []storage.Record) []st
 	}
 	return out
 }
+
+// applyTriggerFormulaSurface puts the Trigger.new and Trigger.old records on
+// the trigger read surface (org capture blank_text_formula: a before-update
+// Trigger.new formula follows the new inputs, Trigger.old the old values,
+// JSON.serialize carries the computed value, a one-space result stays one
+// space and BR() reads _BR_ENCODED_). A hydrated before-update record keeps
+// the formula values populateCalculatedTriggerFields computed from its new
+// inputs, with the values that read differently on the trigger surface
+// replaced, so its reads stay direct. Any other formula value is removed so a
+// read computes the formula from the record's own snapshot. The storage
+// records keep their stored-surface values for the save path.
+func (vm *VM) applyTriggerFormulaSurface(objectName string, ctx map[string]Value, records []storage.Record) {
+	if vm == nil || vm.Org == nil {
+		return
+	}
+	canonical, ok := vm.resolveObjectName(objectName)
+	if !ok {
+		return
+	}
+	definition := vm.Org.Objects[canonical].Definition
+	if !objectDefinitionHasFormulaField(definition) {
+		return
+	}
+	for _, name := range []string{"Trigger.new", "Trigger.old"} {
+		list := ctx[name]
+		if list.Kind != ValueList {
+			continue
+		}
+		for i, value := range list.List {
+			if value.Kind != ValueObject {
+				continue
+			}
+			if name == "Trigger.new" && i < len(records) && records[i].TriggerFormulasMaterialized() {
+				for field, formula := range records[i].TriggerFormulas() {
+					value.Fields[field] = vmValueFromStorage(formula)
+				}
+				continue
+			}
+			for field := range value.Fields {
+				if fieldDef, ok := definition.Fields[field]; ok && fieldDef.Type == storage.FieldCalculated && strings.TrimSpace(fieldDef.Formula) != "" {
+					delete(value.Fields, field)
+				}
+			}
+		}
+	}
+}
+
+func objectDefinitionHasFormulaField(definition storage.ObjectDefinition) bool {
+	for _, field := range definition.Fields {
+		if field.Type == storage.FieldCalculated && strings.TrimSpace(field.Formula) != "" {
+			return true
+		}
+	}
+	return false
+}
+
 func (vm *VM) populateCalculatedTriggerFields(record *storage.Record) {
 	if vm == nil || vm.Org == nil || record == nil || record.Object == "" {
 		return
@@ -474,11 +548,19 @@ func (vm *VM) populateCalculatedTriggerFields(record *storage.Record) {
 		if field.Type != storage.FieldCalculated || strings.TrimSpace(field.Formula) == "" {
 			continue
 		}
-		value, explicitNull, ok := dml.EvaluateRecordFormulaValueInOrg(field.Formula, field, vm.Org, object.Definition, *record)
+		surfaces, ok := dml.EvaluateRecordFormulaSurfacesInOrg(field.Formula, field, vm.Org, object.Definition, *record, vm.formulaEvaluationOptions())
 		if !ok {
 			continue
 		}
-		if explicitNull {
+		record.MarkTriggerFormulasMaterialized()
+		if surfaces.Differs {
+			if surfaces.TriggerNull {
+				record.SetTriggerFormula(name, storage.NullValue())
+			} else {
+				record.SetTriggerFormula(name, surfaces.Trigger)
+			}
+		}
+		if surfaces.StoredNull {
 			delete(record.Fields, name)
 			if record.ExplicitNulls == nil {
 				record.ExplicitNulls = make(map[string]bool)
@@ -486,7 +568,7 @@ func (vm *VM) populateCalculatedTriggerFields(record *storage.Record) {
 			record.ExplicitNulls[name] = true
 			continue
 		}
-		record.Fields[name] = value
+		record.Fields[name] = surfaces.Stored
 		if record.ExplicitNulls != nil {
 			delete(record.ExplicitNulls, name)
 		}
@@ -617,6 +699,7 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 	callerHasStatement := vm.hasStatement
 	frame := make(map[string]Value)
 	ctx := triggerContext(trigger, records, oldRecords)
+	vm.applyTriggerFormulaSurface(trigger.Object, ctx, records)
 	vm.materializePlatformEventTriggerNumbers(trigger.Object, ctx)
 	for key, value := range ctx {
 		frame[key] = value
@@ -681,7 +764,7 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 	}
 	if err != nil {
 		if updated.Kind == ValueList {
-			failures := dmlResultsFromSObjectErrors(records, updated.List)
+			failures := triggerSObjectFailures(trigger, records, updated.List)
 			if hasDMLFailures(failures) {
 				return failures, nil
 			}
@@ -690,7 +773,7 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 	}
 	if out.signal == signalThrow {
 		if updated.Kind == ValueList {
-			failures := dmlResultsFromSObjectErrors(records, updated.List)
+			failures := triggerSObjectFailures(trigger, records, updated.List)
 			if hasDMLFailures(failures) {
 				return failures, nil
 			}
@@ -698,7 +781,7 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 		return nil, vm.wrapEventBusTriggerFailure(trigger, records, vm.wrapTriggerExecutionError(trigger, &apexThrowError{value: out.thrown, stack: out.thrownStack}))
 	}
 	if updated.Kind == ValueList {
-		failures := dmlResultsFromSObjectErrors(records, updated.List)
+		failures := triggerSObjectFailures(trigger, records, updated.List)
 		if trigger.Timing == triggerTimingBefore && trigger.Operation != "delete" {
 			for i, item := range updated.List {
 				if i >= len(records) {
@@ -803,11 +886,26 @@ func (vm *VM) materializePlatformEventTriggerNumbers(objectName string, context 
 	}
 }
 
+// A trigger sees null for every field the caller set to an empty string, in
+// the before phase as well as after the save (org capture
+// trigger_empty_string_values, API 62 and 67). The caller's own record keeps
+// the empty string.
+func nullifyEmptyTriggerStrings(value *Value) {
+	for name, field := range value.Fields {
+		if field.Kind == ValueString && field.Text == "" && field.Type == "" {
+			value.Fields[name] = Null
+		}
+	}
+}
+
 func triggerContext(trigger Trigger, records, oldRecords []storage.Record) map[string]Value {
 	newValues := make([]Value, 0, len(records))
 	newMap := Map()
 	for _, record := range records {
 		value := vmValueFromRecord(record)
+		if trigger.Timing == triggerTimingBefore {
+			nullifyEmptyTriggerStrings(&value)
+		}
 		markTriggerSObject(&value)
 		if trigger.Timing == triggerTimingAfter {
 			value.Fields[sobjectReadOnlyField] = String("trigger record")

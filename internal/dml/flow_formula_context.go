@@ -40,6 +40,11 @@ func (e *Engine) flowContextFormulaValueWithCapturedBindings(expression string, 
 		bound = append(bound, token)
 	}
 	resolve := func(reference string) (formulaValue, bool, bool) {
+		if strings.HasPrefix(reference, "$Setup.") && e.Org != nil {
+			parser := formulaParser{org: e.Org, setupUserID: e.systemUserID()}
+			value, handled := parser.setupFieldValue(reference)
+			return value, handled, handled
+		}
 		if strings.EqualFold(reference, "$Profile.Name") && e.Org != nil {
 			parser := formulaParser{org: e.Org, userID: e.systemUserID()}
 			return parser.profileNameValue(), true, true
@@ -59,7 +64,7 @@ func (e *Engine) flowContextFormulaValueWithCapturedBindings(expression string, 
 		}
 		return formulaValue{}, false, false
 	}
-	value, _, ok := evaluateFlowFormulaParser(formulaParser{tokens: bound, record: record, flowTextNulls: true, flowReference: resolve})
+	value, _, ok := evaluateFlowFormulaParser(formulaParser{tokens: bound, record: record, org: e.Org, userID: e.systemUserID(), permissionUserFields: e.PermissionUserFields, flowTextNulls: true, flowReference: resolve})
 	return value, ok
 }
 

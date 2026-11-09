@@ -12,7 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/glade-sh/glade/internal/sema"
 	"github.com/glade-sh/glade/internal/testreport"
 )
 
@@ -40,6 +39,11 @@ func TestC14WarmProjectRoutes(t *testing.T) {
 		file.Close()
 		if err != nil || len(rows) < 2 {
 			t.Fatalf("%s rows: %v", name, err)
+		}
+		if name != "stdlib_core_c14" && !strings.HasSuffix(name, "_c09") && (len(rows[0]) != 5 || rows[0][1] != "class") {
+			// Row-shaped families (anonymous probes, per-expression steps) have
+			// no project-runner route to warm; their family tests cover them.
+			continue
 		}
 		for _, row := range rows[1:] {
 			row := row
@@ -141,14 +145,6 @@ func TestC14WarmProjectRoutes(t *testing.T) {
 					writeFile(t, filepath.Join(root, "glade.yml"), fmt.Sprintf("test:\n  clock:\n    start: '%s'\n  user:\n    timeZone: America/Los_Angeles\n    locale: en_US\n    language: en_US\n", clock))
 				}
 				index := loadTestIndex(t, root)
-				if name == "stdlib_locale_crypto_c14" && api == "62.0" && class == "DootGcmNull67A1031" && method == "observe" {
-					analysis := sema.Analyze(index)
-					if index.HasErrors() || len(analysis.Diagnostics) != 1 || analysis.Diagnostics[0].Code != "GLADESEMA028" || analysis.Diagnostics[0].Message != `method "observe" uses unsupported local feature "Crypto.encryptWithManagedIV"` {
-						t.Fatalf("admission carry changed: %v %v", index.Diagnostics, analysis.Diagnostics)
-					}
-					t.Log("known local carry batch Dot stdlib cases Dot Dot SOQL cases and Dot async cases: exact API 62 compile exclusion; warm native observation not reached")
-					case345Skip(t)
-				}
 				InvalidateRuntimeCaches()
 				opts := Options{SelectedClasses: []string{class}, SelectedMethod: method, Parallelism: 1, PerfCounters: true}
 				cold := Run(index, opts)
@@ -167,15 +163,12 @@ func TestC14WarmProjectRoutes(t *testing.T) {
 				if SnapshotPerfCounters().Phases.MemoryCacheHits == 0 {
 					t.Fatal("second project run did not hit the runtime memory cache")
 				}
-				if name == "async_lifecycle_c14" && ((class == "DootAY3A1031Test" && method == "oversizedLocator") || (class == "DootAY8A1031Test" && method == "oversizedIterable")) {
-					if !c14WarmOversizedCarry(api, class, method, c.Problem) || !c14WarmOversizedCarry(api, class, method, w.Problem) {
-						t.Fatalf("oversized warm rejection changed: cold=%+v warm=%+v", c.Problem, w.Problem)
+				if capture == "UNCAUGHT" {
+					// Native rejection: no capture marker; cold and warm reject alike.
+					if c.Problem == nil || w.Problem == nil || c.Problem.Type != w.Problem.Type || c.Problem.Message != w.Problem.Message {
+						t.Fatalf("cold/warm rejections differ: cold=%+v warm=%+v", c.Problem, w.Problem)
 					}
-					t.Log("known local carry batch Dot stdlib cases Dot Dot SOQL cases and Dot async cases (fix owner pending): exact oversized-scope rejection precedes capture; warm native observation not reached")
-					case345Skip(t)
-				}
-				if capture == "UNCAUGHT" && name == "async_lifecycle_c14" && class == "DootAY4A1031Test" && method == "twoChunks" {
-					capture = "Y4.twoChunks" // Native rejection; local test currently reaches this capture.
+					return
 				}
 				cv, err := c14WarmProblem(c.Problem, capture)
 				if err != nil {
@@ -202,18 +195,4 @@ func c14WarmProblem(problem *testreport.Problem, capture string) (any, error) {
 		return nil, err
 	}
 	return map[string]any{"type": problem.Type, "payload": normalizeCaptureIdentities(payload)}, nil
-}
-
-// This carry records an existing runtime rejection, not a native capture.
-func c14WarmOversizedCarry(api, class, method string, problem *testreport.Problem) bool {
-	if (api != "62.0" && api != "67.0") || problem == nil || problem.Type != "RuntimeError" {
-		return false
-	}
-	switch {
-	case class == "DootAY3A1031Test" && method == "oversizedLocator":
-		return problem.Message == "Database.executeBatch scope size must be at most 2000"
-	case class == "DootAY8A1031Test" && method == "oversizedIterable":
-		return problem.Message == "System.scheduleBatch scope size must be at most 2000"
-	}
-	return false
 }

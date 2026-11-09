@@ -1,0 +1,1 @@
+<?xml version="1.0" encoding="UTF-8"?><CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>SetupDefault__c</fullName><label>Setup Default</label><defaultValue>$Setup.Prefs__c.Flag__c</defaultValue><type>Checkbox</type></CustomField>

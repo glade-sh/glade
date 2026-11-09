@@ -1,0 +1,1 @@
+public class H14 { public enum Survey { A } public static Survey m() { return Survey.A; } }

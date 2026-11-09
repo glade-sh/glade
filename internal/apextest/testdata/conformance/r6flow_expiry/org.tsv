@@ -1,0 +1,13 @@
+api	route	case	result
+62.0	anonymous	future	true|MATCH
+62.0	anonymous	past	false|PASS
+62.0	anonymous	revoked	false|PASS
+62.0	isTest	future	true|MATCH
+62.0	isTest	past	false|PASS
+62.0	isTest	revoked	false|PASS
+67.0	anonymous	future	true|MATCH
+67.0	anonymous	past	false|PASS
+67.0	anonymous	revoked	false|PASS
+67.0	isTest	future	true|MATCH
+67.0	isTest	past	false|PASS
+67.0	isTest	revoked	SETUP|Operation failed due to fields being inaccessible on Sobject PermissionSetAssignment, check errors on Exception or Result!

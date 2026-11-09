@@ -1,0 +1,107 @@
+api	variant	route	case	outcome	observation
+62.0	feature-only	deploy-compile	order_ordereddate_ctor	rejected	Field does not exist: OrderedDate on Order
+62.0	feature-only	deploy-compile	order_ordereddate_datetime	rejected	Field does not exist: OrderedDate on Order
+62.0	feature-only	deploy-compile	order_ordereddate_read	rejected	Variable does not exist: OrderedDate
+62.0	feature-only	deploy-compile	order_ordereddate_describe	accepted	-
+62.0	feature-only	deploy-compile	orderitem_totallineamount_read	rejected	Variable does not exist: TotalLineAmount
+62.0	feature-only	deploy-compile	orderitem_totallineamount_ctor	rejected	Field does not exist: TotalLineAmount on OrderItem
+62.0	feature-only	deploy-compile	orderitem_totallineamount_describe	accepted	-
+62.0	feature-only	deploy-compile	order_effectivedate_control	accepted	-
+62.0	setting-only	deploy-compile	order_ordereddate_ctor	accepted	-
+62.0	setting-only	deploy-compile	order_ordereddate_datetime	accepted	-
+62.0	setting-only	deploy-compile	order_ordereddate_read	accepted	-
+62.0	setting-only	deploy-compile	order_ordereddate_describe	accepted	-
+62.0	setting-only	deploy-compile	orderitem_totallineamount_read	accepted	-
+62.0	setting-only	deploy-compile	orderitem_totallineamount_ctor	accepted	-
+62.0	setting-only	deploy-compile	orderitem_totallineamount_describe	accepted	-
+62.0	setting-only	deploy-compile	order_effectivedate_control	accepted	-
+62.0	feature-and-setting	deploy-compile	order_ordereddate_ctor	accepted	-
+62.0	feature-and-setting	deploy-compile	order_ordereddate_datetime	accepted	-
+62.0	feature-and-setting	deploy-compile	order_ordereddate_read	accepted	-
+62.0	feature-and-setting	deploy-compile	order_ordereddate_describe	accepted	-
+62.0	feature-and-setting	deploy-compile	orderitem_totallineamount_read	accepted	-
+62.0	feature-and-setting	deploy-compile	orderitem_totallineamount_ctor	accepted	-
+62.0	feature-and-setting	deploy-compile	orderitem_totallineamount_describe	accepted	-
+62.0	feature-and-setting	deploy-compile	order_effectivedate_control	accepted	-
+67.0	feature-only	deploy-compile	order_ordereddate_ctor	rejected	Field does not exist: OrderedDate on Order
+67.0	feature-only	deploy-compile	order_ordereddate_datetime	rejected	Field does not exist: OrderedDate on Order
+67.0	feature-only	deploy-compile	order_ordereddate_read	rejected	Variable does not exist: OrderedDate
+67.0	feature-only	deploy-compile	order_ordereddate_describe	accepted	-
+67.0	feature-only	deploy-compile	orderitem_totallineamount_read	rejected	Variable does not exist: TotalLineAmount
+67.0	feature-only	deploy-compile	orderitem_totallineamount_ctor	rejected	Field does not exist: TotalLineAmount on OrderItem
+67.0	feature-only	deploy-compile	orderitem_totallineamount_describe	accepted	-
+67.0	feature-only	deploy-compile	order_effectivedate_control	accepted	-
+67.0	setting-only	deploy-compile	order_ordereddate_ctor	accepted	-
+67.0	setting-only	deploy-compile	order_ordereddate_datetime	accepted	-
+67.0	setting-only	deploy-compile	order_ordereddate_read	accepted	-
+67.0	setting-only	deploy-compile	order_ordereddate_describe	accepted	-
+67.0	setting-only	deploy-compile	orderitem_totallineamount_read	accepted	-
+67.0	setting-only	deploy-compile	orderitem_totallineamount_ctor	accepted	-
+67.0	setting-only	deploy-compile	orderitem_totallineamount_describe	accepted	-
+67.0	setting-only	deploy-compile	order_effectivedate_control	accepted	-
+67.0	feature-and-setting	deploy-compile	order_ordereddate_ctor	accepted	-
+67.0	feature-and-setting	deploy-compile	order_ordereddate_datetime	accepted	-
+67.0	feature-and-setting	deploy-compile	order_ordereddate_read	accepted	-
+67.0	feature-and-setting	deploy-compile	order_ordereddate_describe	accepted	-
+67.0	feature-and-setting	deploy-compile	orderitem_totallineamount_read	accepted	-
+67.0	feature-and-setting	deploy-compile	orderitem_totallineamount_ctor	accepted	-
+67.0	feature-and-setting	deploy-compile	orderitem_totallineamount_describe	accepted	-
+67.0	feature-and-setting	deploy-compile	order_effectivedate_control	accepted	-
+62.0	feature-only	test-runner-compile	runtime-class	rejected	Field does not exist: OrderedDate on Order | Field does not exist: TotalLineAmount on OrderItem | SELECT Id, OrderedDate FROM Order WHERE Id | SELECT Id, TotalLineAmount FROM OrderItem WHERE | SELECT Id, TotalLineAmount, TotalPrice FROM | Variable does not exist: OrderedDate | Variable does not exist: TotalLineAmount
+62.0	setting-only	test-runner-compile	runtime-class	accepted	-
+62.0	feature-and-setting	test-runner-compile	runtime-class	accepted	-
+67.0	feature-only	test-runner-compile	runtime-class	rejected	Field does not exist: OrderedDate on Order | Field does not exist: TotalLineAmount on OrderItem | SELECT Id, OrderedDate FROM Order WHERE Id | SELECT Id, TotalLineAmount FROM OrderItem WHERE | SELECT Id, TotalLineAmount, TotalPrice FROM | Variable does not exist: OrderedDate | Variable does not exist: TotalLineAmount
+67.0	setting-only	test-runner-compile	runtime-class	accepted	-
+67.0	feature-and-setting	test-runner-compile	runtime-class	accepted	-
+62.0	setting-only	test-runner-granted	dml:order_date_value	observed	2023-01-01 00:00:00
+62.0	setting-only	test-runner-granted	dml:order_datetime_value	observed	2023-01-01 05:06:07
+62.0	setting-only	test-runner-granted	dml:order_default_value	observed	null
+62.0	setting-only	test-runner-granted	dml:item_total_line_amount	observed	20.00|total_price=20.00
+62.0	setting-only	test-runner-granted	dml:item_default_total_line_amount	observed	null
+62.0	setting-only	test-runner-granted	members:has_OrderedDate	observed	true
+62.0	setting-only	test-runner-granted	members:has_TotalLineAmount	observed	true
+62.0	setting-only	test-runner-granted	members:ordereddate_desc	observed	OrderedDate|DATETIME|ctrue|utrue|ntrue|calcfalse|len0|p0|s0|label Ordered Date
+62.0	setting-only	test-runner-granted	members:totallineamount_desc	observed	TotalLineAmount|CURRENCY|ctrue|utrue|ntrue|calcfalse|len0|p18|s2|label Product Subtotal
+62.0	feature-and-setting	test-runner-granted	dml:order_date_value	observed	2023-01-01 00:00:00
+62.0	feature-and-setting	test-runner-granted	dml:order_datetime_value	observed	2023-01-01 05:06:07
+62.0	feature-and-setting	test-runner-granted	dml:order_default_value	observed	null
+62.0	feature-and-setting	test-runner-granted	dml:item_total_line_amount	observed	20.00|total_price=20.00
+62.0	feature-and-setting	test-runner-granted	dml:item_default_total_line_amount	observed	null
+62.0	feature-and-setting	test-runner-granted	members:has_OrderedDate	observed	true
+62.0	feature-and-setting	test-runner-granted	members:has_TotalLineAmount	observed	true
+62.0	feature-and-setting	test-runner-granted	members:ordereddate_desc	observed	OrderedDate|DATETIME|ctrue|utrue|ntrue|calcfalse|len0|p0|s0|label Ordered Date
+62.0	feature-and-setting	test-runner-granted	members:totallineamount_desc	observed	TotalLineAmount|CURRENCY|ctrue|utrue|ntrue|calcfalse|len0|p18|s2|label Product Subtotal
+67.0	setting-only	test-runner-granted	dml:order_date_value	observed	2023-01-01 00:00:00
+67.0	setting-only	test-runner-granted	dml:order_datetime_value	observed	2023-01-01 05:06:07
+67.0	setting-only	test-runner-granted	dml:order_default_value	observed	null
+67.0	setting-only	test-runner-granted	dml:item_total_line_amount	observed	20.00|total_price=20.00
+67.0	setting-only	test-runner-granted	dml:item_default_total_line_amount	observed	null
+67.0	setting-only	test-runner-granted	members:has_OrderedDate	observed	true
+67.0	setting-only	test-runner-granted	members:has_TotalLineAmount	observed	true
+67.0	setting-only	test-runner-granted	members:ordereddate_desc	observed	OrderedDate|DATETIME|ctrue|utrue|ntrue|calcfalse|len0|p0|s0|label Ordered Date
+67.0	setting-only	test-runner-granted	members:totallineamount_desc	observed	TotalLineAmount|CURRENCY|ctrue|utrue|ntrue|calcfalse|len0|p18|s2|label Product Subtotal
+67.0	feature-and-setting	test-runner-granted	dml:order_date_value	observed	2023-01-01 00:00:00
+67.0	feature-and-setting	test-runner-granted	dml:order_datetime_value	observed	2023-01-01 05:06:07
+67.0	feature-and-setting	test-runner-granted	dml:order_default_value	observed	null
+67.0	feature-and-setting	test-runner-granted	dml:item_total_line_amount	observed	20.00|total_price=20.00
+67.0	feature-and-setting	test-runner-granted	dml:item_default_total_line_amount	observed	null
+67.0	feature-and-setting	test-runner-granted	members:has_OrderedDate	observed	true
+67.0	feature-and-setting	test-runner-granted	members:has_TotalLineAmount	observed	true
+67.0	feature-and-setting	test-runner-granted	members:ordereddate_desc	observed	OrderedDate|DATETIME|ctrue|utrue|ntrue|calcfalse|len0|p0|s0|label Ordered Date
+67.0	feature-and-setting	test-runner-granted	members:totallineamount_desc	observed	TotalLineAmount|CURRENCY|ctrue|utrue|ntrue|calcfalse|len0|p18|s2|label Product Subtotal
+62.0	capitalized-settings	deploy-compile	order_ordereddate_ctor	accepted	-
+62.0	capitalized-settings	deploy-compile	order_ordereddate_datetime	accepted	-
+62.0	capitalized-settings	deploy-compile	order_ordereddate_read	accepted	-
+62.0	capitalized-settings	deploy-compile	order_ordereddate_describe	accepted	-
+62.0	capitalized-settings	deploy-compile	orderitem_totallineamount_read	accepted	-
+62.0	capitalized-settings	deploy-compile	orderitem_totallineamount_ctor	accepted	-
+62.0	capitalized-settings	deploy-compile	orderitem_totallineamount_describe	accepted	-
+62.0	capitalized-settings	deploy-compile	order_effectivedate_control	accepted	-
+67.0	capitalized-settings	deploy-compile	order_ordereddate_ctor	accepted	-
+67.0	capitalized-settings	deploy-compile	order_ordereddate_datetime	accepted	-
+67.0	capitalized-settings	deploy-compile	order_ordereddate_read	accepted	-
+67.0	capitalized-settings	deploy-compile	order_ordereddate_describe	accepted	-
+67.0	capitalized-settings	deploy-compile	orderitem_totallineamount_read	accepted	-
+67.0	capitalized-settings	deploy-compile	orderitem_totallineamount_ctor	accepted	-
+67.0	capitalized-settings	deploy-compile	orderitem_totallineamount_describe	accepted	-
+67.0	capitalized-settings	deploy-compile	order_effectivedate_control	accepted	-

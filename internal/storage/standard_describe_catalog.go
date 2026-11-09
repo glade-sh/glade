@@ -35,6 +35,9 @@ var standardObjectTriggerableCache sync.Map
 // a captured null key prefix. Objects without a stable prefix return null from
 // Apex describe, even when local storage assigned an internal identifier prefix.
 func StandardObjectDescribeKeyPrefix(objectName string) (prefix *string, known bool) {
+	if name, ok := standardFeatureDescribeName(objectName); ok {
+		return loadStandardFeatureDescribes().Objects[name].KeyPrefix, true
+	}
 	canonical, ok := standardDescribeCatalogCanonicalName(objectName)
 	if !ok {
 		return nil, false
@@ -124,7 +127,31 @@ func StandardFieldRichTextLength(objectName, fieldName string) (length int, know
 	return field.Length, true
 }
 
+// CapturedStandardSharingReasonObject limits compiler-token resolution to
+// standard share objects whose full catalog reason set has been observed.
+func CapturedStandardSharingReasonObject(objectName string) bool {
+	return strings.EqualFold(objectName, "AccountShare") || strings.EqualFold(objectName, "OpportunityShare")
+}
+
+// StandardPicklistValue returns the canonical catalog value for a named entry.
+// It does not alter the storage field type or hydrate the runtime schema.
+func StandardPicklistValue(objectName, fieldName, valueName string) (string, bool) {
+	field, ok := standardDescribeFieldForName(objectName, fieldName)
+	if !ok || !strings.EqualFold(field.Type, "picklist") {
+		return "", false
+	}
+	for _, value := range field.PicklistValues {
+		if value.Value != "" && strings.EqualFold(value.Value, valueName) {
+			return value.Value, true
+		}
+	}
+	return "", false
+}
+
 func standardDescribeFieldForName(objectName, fieldName string) (standardDescribeField, bool) {
+	if field, ok := standardFeatureDescribeField(objectName, fieldName); ok {
+		return field, true
+	}
 	canonical, ok := standardDescribeCatalogCanonicalName(objectName)
 	if !ok {
 		return standardDescribeField{}, false
@@ -218,6 +245,9 @@ var standardObjectCatalogLookupCache struct {
 }
 
 func standardObjectCatalogEntryForName(objectName string) (standardObjectCatalogEntry, bool) {
+	if entry, ok := standardFeatureDescribeEntry(objectName); ok {
+		return entry, true
+	}
 	objectName = strings.TrimSpace(objectName)
 	if objectName == "" {
 		return standardObjectCatalogEntry{}, false
@@ -250,6 +280,9 @@ func standardObjectCatalogEntryForName(objectName string) (standardObjectCatalog
 }
 
 func standardDescribeCatalogCanonicalName(objectName string) (string, bool) {
+	if name, ok := standardFeatureDescribeName(objectName); ok {
+		return name, true
+	}
 	objectName = strings.TrimSpace(objectName)
 	if objectName == "" {
 		return "", false

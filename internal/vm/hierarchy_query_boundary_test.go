@@ -105,8 +105,13 @@ func TestHierarchyQueryBoundaryDirectVMNativeRows(t *testing.T) {
 	}
 }
 
-// These handle controls preserve integration behavior; they do not assert native
-// parity. The ordinary-query capture contains no locator or cursor observations.
+// Query locators and cursors of an ungranted Standard User follow the native
+// rows of hierarchy_setting_runas_handles and hierarchy_setting_runas_pagination (62.0, 67.0 and 68.0): USER_MODE
+// raises System.QueryException, SYSTEM_MODE reads the row, and the default
+// mode is SYSTEM_MODE through API 62 and USER_MODE from API 67. The rows are
+// the same under with sharing and without sharing; a setting is not subject
+// to record sharing. The conformance test with the same name pins the VM
+// through Apex source; this test pins the direct VM entry.
 func TestHierarchyQueryBoundaryQueryHandleDirectVMPreservation(t *testing.T) {
 	for _, api := range []string{"62.0", "67.0"} {
 		for _, sharing := range []string{"with sharing", "without sharing"} {
@@ -146,19 +151,23 @@ func TestHierarchyQueryBoundaryQueryHandleDirectVMPreservation(t *testing.T) {
 							t.Fatal(err)
 						}
 						got, err := machine.callMethod(Method{Name: "HandleReader.read", ClassName: "HandleReader", IsStatic: true, APIVersion: api, SourceContextBound: true, SharingMode: sharing, Program: program}, nil, &Result{})
-						want := "0"
 						effectiveMode := mode
-						if mode == "DEFAULT" || route.name == "paginationCursor" {
+						if mode == "DEFAULT" {
 							effectiveMode = "USER_MODE"
 							if api == "62.0" {
 								effectiveMode = "SYSTEM_MODE"
 							}
 						}
-						if sharing == "without sharing" && effectiveMode == "SYSTEM_MODE" {
-							want = "1"
+						if effectiveMode == "USER_MODE" {
+							var thrown *apexThrowError
+							if !errors.As(err, &thrown) || exceptionQualifiedTypeName(thrown.value.Type) != "System.QueryException" {
+								t.Fatalf("native System.QueryException; got=%s error=%v", got.String(), err)
+							}
+							return
 						}
+						want := "1"
 						if err != nil || got.String() != want {
-							t.Fatalf("integration control rows=%s; got=%s error=%v", want, got.String(), err)
+							t.Fatalf("native rows=%s; got=%s error=%v", want, got.String(), err)
 						}
 					})
 				}

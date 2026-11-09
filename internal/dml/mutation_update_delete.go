@@ -26,6 +26,7 @@ func (e *Engine) updateOne(record storage.Record) error {
 	if record.ID == "" {
 		return errUpdateRequiresID
 	}
+	applyUpdateNullRecordTypeDefault(object.Definition, &record)
 	stripImplicitReadOnlyDefaultFields(object.Definition, e.Org.Namespace, &record, false)
 	if err := e.validateObjectID(object.Definition, record); err != nil {
 		return err
@@ -35,7 +36,10 @@ func (e *Engine) updateOne(record storage.Record) error {
 		return fmt.Errorf("dml: record %s does not exist", record.ID)
 	}
 	if existing.System.IsDeleted && !e.Options.AllowUpdateDeleted {
-		return fmt.Errorf("dml: record %s is deleted", record.ID)
+		return dmlErrorf("ENTITY_IS_DELETED", nil, "entity is deleted")
+	}
+	if err := e.validateApexRecordTypeUpdate(object.Definition, record, existing); err != nil {
+		return err
 	}
 	if strings.EqualFold(objectName, "Account") && suppliedAccountName {
 		if person, ok := existing.GetField("IsPersonAccount"); ok && person.Kind == storage.ValueBoolean && person.Boolean {
@@ -47,6 +51,9 @@ func (e *Engine) updateOne(record storage.Record) error {
 	}
 	if err := validateBusinessAccountContacts(objectName, object.Definition, record, existing); err != nil {
 		return err
+	}
+	if existing.System.Locked && !e.canEditLockedRecord(objectName) {
+		return lockedRecordError()
 	}
 	if err := e.validatePersonAccountCustomFieldWrites(record, existing); err != nil {
 		return err
@@ -64,6 +71,9 @@ func (e *Engine) updateOne(record storage.Record) error {
 		return err
 	}
 	if err := e.validateUpdateReferences(object.Definition, record); err != nil {
+		return err
+	}
+	if err := e.validateActiveOwner(object.Definition, record.System.OwnerID, existing.System.OwnerID); err != nil {
 		return err
 	}
 	if err := e.validateUnique(objectName, object.Definition, record, storedID); err != nil {
@@ -112,8 +122,12 @@ func (e *Engine) updateOne(record storage.Record) error {
 		return err
 	}
 	e.applyTaskPriorityFlag(&finalRecord)
+	e.applyActivityAccountFromWhat(&finalRecord)
 	e.applyOrderItemDerivedFields(&finalRecord)
+	e.applyRegulatoryCodeActive(&finalRecord)
 	e.applyOpportunityLineItemDerivedFields(&finalRecord, record, existing)
+	e.applyQuoteLineItemDerivedFields(&finalRecord)
+	e.applyQuoteDerivedFields(&finalRecord)
 	priorRecord := e.priorRecordForValidation(record.ID, existing)
 	if err := e.validateValidationRules(objectName, object.Definition, finalRecord, &priorRecord, false); err != nil {
 		return err
@@ -157,9 +171,12 @@ func (e *Engine) updateOne(record storage.Record) error {
 		}
 	}
 	e.applyTaskPriorityFlag(&existing)
+	e.applyActivityAccountFromWhat(&existing)
 	stripStoredCalculatedFields(object.Definition, &existing)
 	e.applyOrderItemDerivedFields(&existing)
 	e.applyOpportunityLineItemDerivedFields(&existing, record, oldRecord)
+	e.applyQuoteLineItemDerivedFields(&existing)
+	e.applyQuoteDerivedFields(&existing)
 	materializeEmailMessageName(&existing)
 	existing.System.LastModifiedDate = stamp
 	existing.System.SystemModstamp = stamp
@@ -173,6 +190,7 @@ func (e *Engine) updateOne(record storage.Record) error {
 	e.removeUniqueIndexRecord(objectName, object.Definition, oldRecord)
 	e.addUniqueIndexRecord(objectName, object.Definition, existing)
 	e.recalculateSummaryFieldsForChildren(objectName, oldRecord, finalRecord)
+	e.refreshActivityAccounts(objectName, object.Definition, storedID, oldRecord, existing)
 	if !storage.IDsEqual(oldRecord.System.OwnerID, existing.System.OwnerID) {
 		if err := e.reconcilePrivateOwnerShares(objectName, storedID); err != nil {
 			if rollbackErr := e.restoreRollbackPoint(rollback); rollbackErr != nil {
@@ -190,6 +208,7 @@ func (e *Engine) updateOne(record storage.Record) error {
 		}
 	}
 	if !e.DeferAutomation {
+		e.flushActivityRefresh()
 		if err := e.withPriorRecordForAutomation(storedID, oldRecord, func() error {
 			_, err := e.ApplyAutomation(objectName, storedID, record)
 			return err
@@ -243,7 +262,7 @@ func stripStoredCalculatedFields(definition storage.ObjectDefinition, record *st
 		if !ok {
 			continue
 		}
-		if isFormulaBackedField(fieldDef) {
+		if isFormulaBackedField(fieldDef) && !quoteRollupField(record.Object, field) {
 			delete(record.Fields, field)
 		}
 	}
@@ -280,7 +299,10 @@ func (e *Engine) deleteOneWithContext(record storage.Record, ctx *deleteContext)
 		return fmt.Errorf("dml: record %s does not exist", record.ID)
 	}
 	if stored.System.IsDeleted {
-		return fmt.Errorf("dml: record %s is deleted", record.ID)
+		return dmlErrorf("ENTITY_IS_DELETED", nil, "entity is deleted")
+	}
+	if stored.System.Locked && !e.canEditLockedRecord(objectName) {
+		return lockedRecordError()
 	}
 	return e.deleteRecord(objectName, storedID, make(map[string]bool), ctx, nil)
 }
@@ -302,7 +324,7 @@ func (e *Engine) deleteRecord(objectName string, id storage.ID, seen map[string]
 		return fmt.Errorf("dml: record %s does not exist", id)
 	}
 	if stored.System.IsDeleted {
-		return fmt.Errorf("dml: record %s is deleted", id)
+		return dmlErrorf("ENTITY_IS_DELETED", nil, "entity is deleted")
 	}
 	if err := e.validateDeleteReferences(objectName, id, ctx); err != nil {
 		return err

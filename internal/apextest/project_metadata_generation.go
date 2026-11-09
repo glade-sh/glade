@@ -30,21 +30,20 @@ func (cache *sourceCache) captureProjectRuntimeMetadata(index typesys.Index, gen
 			capturedProject = &loaded
 			paths := append([]string(nil), loaded.ListViewFiles...)
 			paths = append(paths, resource.LayoutMetadataFiles(loaded)...)
+			paths = append(paths, resource.FolderItemMetadataFiles(loaded)...)
 			paths = append(paths, loaded.FlowFiles...)
 			paths = append(paths, loaded.NetworkFiles...)
+			paths = append(paths, loaded.PaymentGatewayProviderFiles...)
+			paths = append(paths, resource.NamedCredentialMetadataFiles(loaded)...)
 			paths = append(paths, loaded.PermissionSetGroupFiles...)
 			paths = append(paths, loaded.ProfileFiles...)
+			paths = append(paths, dependencyAdminProfileFiles(loaded)...)
 			paths = append(paths, resource.FeatureParameterMetadataFiles(loaded)...)
 			paths = append(paths, resource.StandardValueSetTranslationMetadataFiles(loaded)...)
 			paths = append(paths, resource.SetupRecordMetadataFiles(loaded)...)
 			paths = append(paths, project.EmailServiceMetadataFiles(loaded)...)
-			for _, path := range paths {
-				data, err := readProjectMetadataFile(loaded, path)
-				if err != nil {
-					return err
-				}
-				bodies[path] = string(data)
-				generation.inputs[path] = typesys.ApexMetadataInput{Present: true, Digest: sha256.Sum256(data)}
+			if err := captureProviderAdapterGeneration(loaded, paths, bodies, generation, func(path string) ([]byte, error) { return readProjectMetadataFile(loaded, path) }); err != nil {
+				return err
 			}
 		}
 	}
@@ -67,6 +66,72 @@ func (cache *sourceCache) captureProjectRuntimeMetadata(index typesys.Index, gen
 	}
 	for path := range generation.inputs {
 		cache.capturedMetadata[path] = generation.inputs[path]
+	}
+	return nil
+}
+
+// dependencyAdminProfileFiles lists the System Administrator profile files of
+// loaded managed package dependencies; record type availability merges them
+// with the project's own Admin profile.
+func dependencyAdminProfileFiles(p project.Project) []string {
+	seen := make(map[*project.Project]bool)
+	var files []string
+	var visit func(*project.Project)
+	visit = func(proj *project.Project) {
+		for _, dep := range proj.ManagedPackageDependencies {
+			if dep.Status != "loaded" || dep.Project == nil || seen[dep.Project] {
+				continue
+			}
+			seen[dep.Project] = true
+			for _, file := range dep.Project.ProfileFiles {
+				if profileNameFromPath(file) == "System Administrator" {
+					files = append(files, file)
+				}
+			}
+			visit(dep.Project)
+		}
+	}
+	visit(&p)
+	return files
+}
+
+// captureProviderAdapterGeneration derives adapter paths from the same metadata
+// bytes stored in the generation, never a second read of a changing file.
+func captureProviderAdapterGeneration(p project.Project, paths []string, bodies map[string]string, generation *runtimeMetadataGeneration, read func(string) ([]byte, error)) error {
+	capture := func(path string) error {
+		if _, exists := bodies[path]; exists {
+			return nil
+		}
+		data, err := read(path)
+		if err != nil {
+			return err
+		}
+		bodies[path] = string(data)
+		generation.inputs[path] = typesys.ApexMetadataInput{Present: true, Digest: sha256.Sum256(data)}
+		return nil
+	}
+	for _, path := range paths {
+		if err := capture(path); err != nil {
+			return err
+		}
+	}
+	adapterPaths, err := resource.PaymentGatewayProviderSourceFiles(p, func(path string) ([]byte, error) {
+		if err := capture(path); err != nil {
+			return nil, err
+		}
+		body, ok := bodies[path]
+		if !ok {
+			return nil, fmt.Errorf("provider metadata %q missing from snapshot", path)
+		}
+		return []byte(body), nil
+	})
+	if err != nil {
+		return err
+	}
+	for _, path := range adapterPaths {
+		if err := capture(path); err != nil {
+			return err
+		}
 	}
 	return nil
 }

@@ -1,0 +1,7 @@
+feature	route	observation
+Territory2	scratch_create	INVALID_INPUT: not a valid Features value
+AccountTeams	scratch_create	INVALID_INPUT: not a valid Features value
+Forecasts	scratch_create	INVALID_INPUT: not a valid Features value
+OpportunityTeam	scratch_create	INVALID_INPUT: not a valid Features value
+OmniChannel	scratch_create	INVALID_INPUT: not a valid Features value
+Surveys	scratch_create	INVALID_INPUT: not a valid Features value

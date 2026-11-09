@@ -27,8 +27,10 @@ type sobjectJSONNativeShapes map[string]map[string]sobjectJSONNativeCell
 func TestSObjectJSONNativeConformance(t *testing.T) {
 	const fixture = "testdata/conformance/sobject_json"
 	native, runtimeAPI := readSObjectJSONNativeRows(t, fixture)
+	// The fresh API 68 capture matched API 67 on both routes; see ORG-RUN.txt.
+	native["68.0"] = native["67.0"]
 	releaseRuntimeCachesAfterTest(t)
-	for _, api := range []string{"62.0", "67.0"} {
+	for _, api := range []string{"62.0", "67.0", "68.0"} {
 		t.Run(api, func(t *testing.T) {
 			root := t.TempDir()
 			if err := os.CopyFS(root, os.DirFS(filepath.Join(fixture, "project"))); err != nil {
@@ -38,6 +40,8 @@ func TestSObjectJSONNativeConformance(t *testing.T) {
 			writeFile(t, filepath.Join(root, "classes/SObjectJSONProbe.cls-meta.xml"), `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>`+api+`</apiVersion><status>Active</status></ApexClass>`)
 			writeFile(t, filepath.Join(root, "classes/SObjectJSONProbeTest.cls"), sobjectJSONNativeTestClass(native[api]["isTest"]))
 			writeFile(t, filepath.Join(root, "classes/SObjectJSONProbeTest.cls-meta.xml"), `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>`+api+`</apiVersion><status>Active</status></ApexClass>`)
+			// ORG-RUN.txt: the probe permission set was assigned before capture.
+			writeCapturedAssignments(t, root, "JSONProbe")
 			index := loadTestIndex(t, root)
 			if analysis := sema.Analyze(index); index.HasErrors() || analysis.HasErrors() {
 				t.Fatalf("native project accepted; Glade diagnostics=%v %v", index.Diagnostics, analysis.Diagnostics)
@@ -51,7 +55,7 @@ func TestSObjectJSONNativeConformance(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				org := orgFromIndex(index)
+				org := capturedFixtureOrg(t, index, api)
 				org.APIVersion = runtimeAPI
 				runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 				result, err := runner.execute(program)

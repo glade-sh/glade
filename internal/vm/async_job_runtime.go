@@ -56,8 +56,9 @@ func (vm *VM) testStop(result *Result) (Value, error) {
 }
 
 // Queueables, futures and scheduled Apex submitted before startTest execute at
-// stopTest. Scheduled batches expose their queued job then, but
-// pre-start scheduled batch payloads do not run.
+// stopTest (async execution F036/F040), and so does Batch Apex (batch_event_async
+// two_beforeOnly and two_beforeAndInside, API 62/67). Scheduled batches expose
+// their queued job then, but pre-start scheduled batch payloads do not run.
 func (vm *VM) prepareTestStopAsyncJobs() {
 	jobs := vm.testContext.AsyncJobs
 	boundary := min(max(vm.testContext.AsyncStartIndex, 0), len(jobs))
@@ -80,7 +81,7 @@ func (vm *VM) prepareTestStopAsyncJobs() {
 		if job.Kind == "ScheduledBatch" {
 			vm.recordAsyncJob(job, "Queued", "")
 		}
-		if i < boundary && job.Kind != "Queueable" && job.Kind != "Future" && job.Kind != "ScheduledApex" && !reused {
+		if i < boundary && job.Kind != "Queueable" && job.Kind != "Future" && job.Kind != "ScheduledApex" && job.Kind != "BatchApex" && !reused {
 			prior = append(prior, job)
 		} else {
 			ready = append(ready, job)
@@ -108,7 +109,7 @@ func (vm *VM) drainTestWork(result *Result) error {
 		if err := vm.drainTestAsync(result); err != nil {
 			return err
 		}
-		if err := vm.drainChangeDataCapture(result); err != nil {
+		if err := vm.drainChangeDataCapture(result, true); err != nil {
 			return err
 		}
 		if err := vm.drainTestPlatformEventsFrom(result, vm.testContext.PlatformEventStartIndex, true); err != nil {
@@ -243,7 +244,9 @@ func (vm *VM) enqueueJob(args []Value, result *Result) (Value, error) {
 	// its object graph. A Queueable may attach a Finalizer that is also stored
 	// in one of its fields; both references must observe the Queueable's
 	// mutations when the finalizer runs after the async body.
-	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "Queueable", Object: cloneValueDetachedPreserveRefs(args[0]), QueueableDelayMinutes: delayMinutes, QueueableDelaySet: delaySet, QueueableDuplicateSignature: duplicateSignature}
+	queued := cloneValueDetachedPreserveRefs(args[0])
+	detachAccessLevels(&queued, make(map[uint64]bool))
+	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "Queueable", Object: queued, QueueableDelayMinutes: delayMinutes, QueueableDelaySet: delaySet, QueueableDuplicateSignature: duplicateSignature}
 	if delayMinutes > 0 {
 		job.NotBefore = vm.fakeNow.Add(time.Duration(delayMinutes) * time.Minute)
 	}
@@ -285,7 +288,9 @@ func (vm *VM) executeBatch(args []Value, result *Result) (Value, error) {
 	}
 	// async_stack_depth mixed_four (anonymous, API 62/67): observed from a
 	// future body; batch start/execute contexts have no captured row.
-	if vm.futureBodyDepth > 0 {
+	// async_lifecycle_c14 Y2 (API 62/67): batch start and execute reject it
+	// with the same AsyncException; batch finish keeps chaining.
+	if vm.futureBodyDepth > 0 || vm.inBatchStartOrExecute() {
 		return Null, newExceptionError("System.AsyncException", "Database.executeBatch cannot be called from a batch start, batch execute, or future method.")
 	}
 	if args[0].Kind == ValueNull {
@@ -307,12 +312,13 @@ func (vm *VM) executeBatch(args []Value, result *Result) (Value, error) {
 			return Null, newExceptionError("System.InvalidParameterValueException", "batchSize must be greater than or equal to one")
 		}
 		if batchSize > 2000 {
-			// R151 uses an Iterable start result. Preserve the existing
-			// QueryLocator path until its upper-bound behavior is captured.
+			// async_lifecycle_c14 Y3 (API 62/67): an oversized QueryLocator
+			// scope is accepted and runs. R151 keeps an Iterable start result
+			// at the requested size; the platform maximum caps the locator.
 			start, ok, _ := vm.resolveInstanceMethodForArgs(args[0].Type, "start", []Value{asyncContext("Database.BatchableContext", "")})
 			base, generic := genericBaseName(start.ReturnType)
 			if !ok || !generic || (!strings.EqualFold(base, "Iterable") && !strings.EqualFold(base, "System.Iterable")) {
-				return Null, fmt.Errorf("Database.executeBatch scope size must be at most 2000")
+				batchSize = 2000
 			}
 		}
 	}
@@ -335,6 +341,11 @@ func (vm *VM) executeBatch(args []Value, result *Result) (Value, error) {
 		"batchSize": batchSize,
 	})
 	return String(job.ID), nil
+}
+
+// inBatchStartOrExecute reports the batch phases that reject async admission.
+func (vm *VM) inBatchStartOrExecute() bool {
+	return vm.currentAsyncKind == "BatchApex" && !vm.inBatchFinish
 }
 
 func (vm *VM) isBatchableObject(value Value) bool {
@@ -433,12 +444,19 @@ func (vm *VM) scheduleBatch(args []Value, result *Result) (Value, error) {
 		if batchSize <= 0 {
 			return Null, fmt.Errorf("System.scheduleBatch scope size must be positive")
 		}
-		if batchSize > 2000 {
-			return Null, fmt.Errorf("System.scheduleBatch scope size must be at most 2000")
-		}
+		// async_lifecycle_c14 Y8 (API 62/67): an oversized scope is accepted.
+		batchSize = min(batchSize, 2000)
 	}
-	if vm.currentAsyncKind == "BatchApex" {
-		return Null, newExceptionError("System.AsyncException", "System.scheduleBatch cannot be called from a batch start, batch execute, or future method.")
+	// async_lifecycle_c14 Y5 (API 62/67): batch finish may schedule a batch.
+	// Probe 2026-11-06 (batch class API 25..62): finish rejects it only for a
+	// batch class at API 25 or older. The message follows the calling method's
+	// API: API 25 reads "a batch or future method".
+	if vm.inBatchStartOrExecute() || (vm.inBatchFinish && apiVersionAtMost(vm.batchFinishAPIVersion, 25)) {
+		message := "System.scheduleBatch cannot be called from a batch start, batch execute, or future method."
+		if apiVersionAtMost(vm.currentMethod.APIVersion, 25) {
+			message = "System.scheduleBatch cannot be called from a batch or future method."
+		}
+		return Null, newExceptionError("System.AsyncException", message)
 	}
 	if vm.hasWaitingScheduledJob(args[1].Text) {
 		return Null, newExceptionError("System.AsyncException", fmt.Sprintf("The Apex job named \"%s\" is already scheduled for execution.", args[1].Text))
@@ -797,7 +815,7 @@ func (vm *VM) drainTestPlatformEvents(result *Result) error {
 	if vm.testContext == nil {
 		return nil
 	}
-	if err := vm.drainChangeDataCapture(result); err != nil {
+	if err := vm.drainChangeDataCapture(result, false); err != nil {
 		return err
 	}
 	return vm.drainTestPlatformEventsFrom(result, 0, false)
@@ -829,35 +847,11 @@ func (vm *VM) drainTestPlatformEventsFrom(result *Result, startIndex int, stopTi
 					vm.testContext.PlatformEvents = append(vm.testContext.PlatformEvents, grouped[later]...)
 				}
 			}
-			if stopTimeDelivery {
-				wasDraining := vm.testContext.Draining
-				vm.testContext.Draining = true
-				// Native named tests at APIs 62/67/68 retain test statics in
-				// subscribers, including writes visible after stopTest returns.
-				err := func() error {
-					restoreCreations := vm.beginRecordCreationTransaction()
-					defer restoreCreations()
-					return vm.deliverPlatformEventSubscribers(grouped[objectName], result)
-				}()
-				vm.testContext.Draining = wasDraining
-				if err != nil {
-					var subscriber *eventBusTriggerRetryError
-					var thrown *apexThrowError
-					if errors.As(err, &subscriber) && !subscriber.handled && errors.As(subscriber.cause, &thrown) {
-						// Native stopTest delivery consumes ordinary subscriber
-						// exceptions without failing the test or rolling back prior
-						// writes. Keep retries/checkpoints and VM errors separate.
-						continue
-					}
-					if vm.requeueEventBusRetry(err) {
-						preserveLaterGroups()
-						return nil
-					}
-					return err
-				}
-				continue
-			}
-			if err := vm.deliverPlatformEventSubscribers(grouped[objectName], result); err != nil {
+			wasStopTime := vm.testContext.StopTimeEventDelivery
+			vm.testContext.StopTimeEventDelivery = stopTimeDelivery
+			err := vm.deliverPlatformEventGroup(grouped[objectName], result, stopTimeDelivery)
+			vm.testContext.StopTimeEventDelivery = wasStopTime
+			if err != nil {
 				if vm.requeueEventBusRetry(err) {
 					preserveLaterGroups()
 					return nil
@@ -867,6 +861,59 @@ func (vm *VM) drainTestPlatformEventsFrom(result *Result, startIndex int, stopTi
 		}
 	}
 	return nil
+}
+
+// deliverPlatformEventGroup runs the subscribers of one event object. Native
+// batch_event_async throw_* rows (API 62/67): an ordinary exception thrown by
+// a platform event or change event trigger fails neither Test.stopTest() nor an
+// explicit Test.getEventBus().deliver(), keeps the trigger's earlier writes and
+// is not redelivered. Retryable exceptions, checkpoints and VM errors keep their
+// own paths.
+func (vm *VM) deliverPlatformEventGroup(records []storage.Record, result *Result, stopTimeDelivery bool) error {
+	var err error
+	if stopTimeDelivery {
+		wasDraining := vm.testContext.Draining
+		vm.testContext.Draining = true
+		// Native named tests at APIs 62/67/68 retain test statics in
+		// subscribers, including writes visible after stopTest returns.
+		err = func() error {
+			restoreCreations := vm.beginRecordCreationTransaction()
+			defer restoreCreations()
+			return vm.deliverPlatformEventSubscribers(records, result)
+		}()
+		vm.testContext.Draining = wasDraining
+	} else {
+		err = vm.deliverPlatformEventSubscribers(records, result)
+	}
+	if err == nil {
+		return nil
+	}
+	var subscriber *eventBusTriggerRetryError
+	if errors.As(err, &subscriber) {
+		if !subscriber.handled && consumedSubscriberException(subscriber.cause) {
+			return nil
+		}
+		return err
+	}
+	if len(records) > 0 && isChangeEventObjectName(records[0].Object) && consumedSubscriberException(err) {
+		return nil
+	}
+	return err
+}
+
+// consumedSubscriberException reports an exception that ends an event trigger
+// without reaching deliver() or Test.stopTest(): any thrown or system exception
+// (k3c81d5f0e29; event_trigger_exceptions_c4 NullPointerException, DmlException
+// and ListException) and a LimitException (event_trigger_exceptions_c4, 101st
+// SOQL query in the trigger), at APIs 62.0 and 67.0. The trigger's earlier DML
+// stays.
+func consumedSubscriberException(err error) bool {
+	var thrown *apexThrowError
+	if errors.As(err, &thrown) {
+		return true
+	}
+	var runtime *RuntimeError
+	return errors.As(err, &runtime) && strings.EqualFold(runtime.Type, "System.LimitException")
 }
 
 func (vm *VM) requeueEventBusRetry(err error) bool {
@@ -1141,9 +1188,16 @@ func (vm *VM) markAsyncChainEnqueued() {
 	}
 }
 func (vm *VM) enqueueAsyncJob(job AsyncJob) {
+	if vm.inEventSubscriberTrigger() {
+		return
+	}
 	if vm.testContext != nil {
+		job.RunAsUser = vm.eventSubscriberRunAsUser()
 		vm.recordApexClass(vm.asyncClassName(job))
-		if vm.testContext.Draining && job.Kind == "ScheduledBatch" {
+		// async_lifecycle_c14 Y8 (API 62/67) and the scheduleBatch-isTest rows
+		// of async_static_callbacks, async_context_ids and async_route_twins:
+		// stopTest leaves a scheduled batch pending; its payload never runs.
+		if job.Kind == "ScheduledBatch" {
 			job.Deferred = true
 		}
 		// stopTest admits schedules from batch finish and first-level queueable
@@ -1236,8 +1290,14 @@ func (vm *VM) canDrainQueueableJob(job AsyncJob) bool {
 	return job.QueueableDepth > 0 && job.QueueableDepth <= job.QueueableMaxDepth
 }
 func (vm *VM) runAsyncJob(job AsyncJob, result *Result, batchProjection ...*bool) error {
+	defer vm.BeginReportTransaction()()
 	restoreMixedDML := vm.beginMixedDMLTransaction()
 	defer restoreMixedDML()
+	// The job is its own transaction: a warm direct UserRecordAccess row of
+	// the enqueuing block does not reach it (ura_direct_carry).
+	previousWarmDirectAccess := vm.road174WarmDirectAccess
+	vm.road174WarmDirectAccess = nil
+	defer func() { vm.road174WarmDirectAccess = previousWarmDirectAccess }()
 	_, err := vm.withQueueableDuplicateSignatureTransaction(func() (Value, error) {
 		return Null, vm.runAsyncJobInTransaction(job, result, batchProjection...)
 	})
@@ -1245,6 +1305,11 @@ func (vm *VM) runAsyncJob(job AsyncJob, result *Result, batchProjection ...*bool
 }
 
 func (vm *VM) runAsyncJobInTransaction(job AsyncJob, result *Result, batchProjection ...*bool) error {
+	if job.RunAsUser.Kind != "" && vm.testContext != nil {
+		previousExecutionUser, previousTestUser := vm.executionUser, vm.testContext.CurrentUser
+		vm.executionUser, vm.testContext.CurrentUser = job.RunAsUser, job.RunAsUser
+		defer func() { vm.executionUser, vm.testContext.CurrentUser = previousExecutionUser, previousTestUser }()
+	}
 	switch job.Kind {
 	case "FlowAsyncPath":
 		return vm.runFlowAsyncPath(job, result)
@@ -1253,6 +1318,9 @@ func (vm *VM) runAsyncJobInTransaction(job AsyncJob, result *Result, batchProjec
 	case "Future":
 		_, err := vm.withAsyncLimitWindow(func() (Value, error) {
 			return vm.withAsyncKind("Future", func() (Value, error) {
+				previous := vm.futureCalloutDisabled
+				vm.futureCalloutDisabled = !futureMethodAllowsCallout(job.Method)
+				defer func() { vm.futureCalloutDisabled = previous }()
 				return vm.callAsyncEntry(job.Method, Null, job.Args, result, false)
 			})
 		})
@@ -1570,6 +1638,15 @@ func (vm *VM) runBatchJob(job AsyncJob, result *Result, batchProjection ...*bool
 	projectNative = projectNative && !locatorStart && vm.capturedBatchFaultScope(scope)
 	projectedErrors := 0
 	chunks := batchChunks(scope, job.BatchSize)
+	if vm.testContext != nil && vm.testExecutionEntry != nil && job.DirectBatchSubmission && len(chunks) > 1 {
+		// async_lifecycle_c14 Y4 (API 62/67 and 68): a test method may run one
+		// executeBatch chunk. The rejection is not catchable. Scoped to a test
+		// method entry so direct VM chunk-semantics runs keep multi chunks.
+		err := &RuntimeError{Type: "System.UnexpectedException", Message: "No more than one executeBatch can be called from within a test method.  Please make sure the iterable returned from your start method matches the batch size, resulting in one executeBatch invocation.", Stack: vm.stackFrames()}
+		vm.recordAsyncJobTotals(job, 0, 0, 1)
+		vm.recordAsyncJob(job, "Failed", err.Error())
+		return err
+	}
 	executeArgs := []Value{asyncContext("Database.BatchableContext", job.ID), List()}
 	execute, ok, ambiguous := vm.resolveAsyncCallbackForArgs(job.Object.Type, "execute", executeArgs)
 	if ambiguous {
@@ -1653,9 +1730,10 @@ func (vm *VM) runBatchJob(job AsyncJob, result *Result, batchProjection ...*bool
 		_, err := vm.withAsyncLimitWindow(func() (Value, error) {
 			restoreMixedDML := vm.beginMixedDMLTransaction()
 			defer restoreMixedDML()
-			previous := vm.inBatchFinish
+			previous, previousAPI := vm.inBatchFinish, vm.batchFinishAPIVersion
 			vm.inBatchFinish = true
-			defer func() { vm.inBatchFinish = previous }()
+			vm.batchFinishAPIVersion = finish.APIVersion
+			defer func() { vm.inBatchFinish, vm.batchFinishAPIVersion = previous, previousAPI }()
 			return vm.callAsyncEntry(finish, receiver, batchArgs(finish, "Database.BatchableContext", job.ID), result, false)
 		})
 		if err != nil {
@@ -3128,4 +3206,22 @@ func (vm *VM) activeTestScheduledReuse(job AsyncJob) bool {
 		}
 	}
 	return false
+}
+
+// futureMethodAllowsCallout reads callout=true from the @future annotation.
+func futureMethodAllowsCallout(method Method) bool {
+	for _, modifier := range method.Modifiers {
+		if !strings.EqualFold(baseModifierName(modifier), "future") {
+			continue
+		}
+		text := strings.ToLower(strings.Join(strings.Fields(modifier), ""))
+		return strings.Contains(text, "callout=true")
+	}
+	return true
+}
+
+// apiVersionAtMost reports a known source API at or below major.
+func apiVersionAtMost(raw string, major int) bool {
+	value, ok := apexversion.Major(raw)
+	return ok && value <= major
 }

@@ -1,0 +1,42 @@
+[
+ {
+  "id": "order_ordereddate_ctor",
+  "source": "public class Probe000 { public static Order m() { return new Order(OrderedDate = Date.newInstance(2023,1,1)); } }",
+  "name": "Probe000"
+ },
+ {
+  "id": "order_ordereddate_datetime",
+  "source": "public class Probe001 { public static Order m() { return new Order(OrderedDate = Datetime.newInstance(2023,1,1)); } }",
+  "name": "Probe001"
+ },
+ {
+  "id": "order_ordereddate_read",
+  "source": "public class Probe002 { public static Object m(Order o) { return o.OrderedDate; } }",
+  "name": "Probe002"
+ },
+ {
+  "id": "order_ordereddate_describe",
+  "source": "public class Probe003 { public static Object m() { return Order.SObjectType.getDescribe().fields.getMap().get('OrderedDate'); } }",
+  "name": "Probe003"
+ },
+ {
+  "id": "orderitem_totallineamount_read",
+  "source": "public class Probe004 { public static Object m(OrderItem o) { return o.TotalLineAmount; } }",
+  "name": "Probe004"
+ },
+ {
+  "id": "orderitem_totallineamount_ctor",
+  "source": "public class Probe005 { public static OrderItem m() { return new OrderItem(TotalLineAmount = 1); } }",
+  "name": "Probe005"
+ },
+ {
+  "id": "orderitem_totallineamount_describe",
+  "source": "public class Probe006 { public static Object m() { return OrderItem.SObjectType.getDescribe().fields.getMap().get('TotalLineAmount'); } }",
+  "name": "Probe006"
+ },
+ {
+  "id": "order_effectivedate_control",
+  "source": "public class Probe007 { public static Order m() { return new Order(EffectiveDate = Date.newInstance(2023,1,1)); } }",
+  "name": "Probe007"
+ }
+]

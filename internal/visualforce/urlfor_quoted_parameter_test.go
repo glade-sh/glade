@@ -2,7 +2,6 @@ package visualforce_test
 
 import (
 	"fmt"
-	"html"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/project"
@@ -11,7 +10,9 @@ import (
 
 func TestURLFORSingleQuotedParameterValidation(t *testing.T) {
 	// URLFOR documents quoted input names. Exact single/double-quote native
-	// acceptance is pending VFPAR01-03; this candidate adds single quotes only.
+	// acceptance was pending VFPAR01-03. Native rows in testdata/vf_corpus_shapes
+	// (API 59.0-68.0, ShapeMapLiteralRaw, ShapeMapLiteralBareQuotes and
+	// ShapeMapLiteralDistinct) accept double-quoted keys in a bracket parameter map.
 	// https://help.salesforce.com/s/articleView?id=platform.customize_functions_urlfor.htm&language=en_US&type=5
 	cases := []struct {
 		name, expression string
@@ -24,7 +25,7 @@ func TestURLFORSingleQuotedParameterValidation(t *testing.T) {
 		{"dynamic_key", "URLFOR($Page.orbitpanel,null,['id'+'suffix'='owned'])", true},
 		{"empty_key", "URLFOR($Page.orbitpanel,null,[''='owned'])", true},
 		{"missing_bracket", "URLFOR($Page.orbitpanel,null,['id'='owned')", true},
-		{"double_quote_outside_candidate", `URLFOR($Page.orbitpanel,null,["id"='owned'])`, true},
+		{"double_quoted_native", `URLFOR($Page.orbitpanel,null,["id"='owned'])`, false},
 	}
 	for _, api := range []string{"62.0", "67.0", "68.0"} {
 		for _, tc := range cases {
@@ -34,7 +35,7 @@ func TestURLFORSingleQuotedParameterValidation(t *testing.T) {
 				base := "force-app/main/default/"
 				writePageNameFixture(t, root, base+"classes/OwnedPageController.cls", `public class OwnedPageController { public String getMessage() { return 'ready'; } }`)
 				writePageNameFixture(t, root, base+"pages/orbitpanel.page", `<apex:page/>`)
-				writePageNameFixture(t, root, base+"pages/linkpanel.page", fmt.Sprintf(`<apex:page controller="OwnedPageController"><apex:outputLink value="{!%s}">Open</apex:outputLink></apex:page>`, html.EscapeString(tc.expression)))
+				writePageNameFixture(t, root, base+"pages/linkpanel.page", fmt.Sprintf(`<apex:page controller="OwnedPageController"><apex:outputLink value="{!%s}">Open</apex:outputLink></apex:page>`, tc.expression))
 				p, err := project.Load(root)
 				if err != nil {
 					t.Fatal(err)

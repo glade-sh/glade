@@ -25,7 +25,7 @@ func TestSupplementalSourceWatchLocalAndDaemonRoutes(t *testing.T) {
 					service := filepath.Join(extra, "classes/SupplementalService.cls")
 					network := filepath.Join(extra, "networks/Synthetic Portal.network-meta.xml")
 					writeTestFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"sourceApiVersion":%q,"packageDirectories":[{"path":"force-app","default":true}]}`, api))
-					writeTestFile(t, filepath.Join(root, "glade.yml"), "org:\n  features: [Communities]\nproject:\n  extraMetadataDirs: [../supplemental]\n")
+					writeTestFile(t, filepath.Join(root, "glade.yml"), "org:\n  features: [Communities, NetworksEnabled]\nproject:\n  extraMetadataDirs: [../supplemental]\n")
 					writeTestFile(t, service, "public class SupplementalService { public static Integer value() { return 1; } }")
 					writeTestFile(t, network, `<Network><status>UnderConstruction</status><urlPathPrefix>synthetic</urlPathPrefix></Network>`)
 					writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/ServiceWatchTest.cls"), "@IsTest private class ServiceWatchTest { @IsTest static void edited() { System.assertEquals(2, SupplementalService.value()); } }")

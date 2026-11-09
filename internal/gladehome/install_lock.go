@@ -13,6 +13,9 @@ import (
 // lockInstall requires installMu. Closing the returned file releases the lock,
 // including when an installer exits unexpectedly.
 func lockInstall() (*os.File, error) {
+	if err := requireManagedShare(); err != nil {
+		return nil, err
+	}
 	dir := UserShareDir()
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return nil, fmt.Errorf("create toolchain install directory: %w", err)

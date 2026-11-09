@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>62.0</apiVersion>
+    <assignments><name>SetMain</name><label>SetMain</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>outBr</assignToReference><operator>Assign</operator><value><elementReference>FBr</elementReference></value></assignmentItems><assignmentItems><assignToReference>outLen</assignToReference><operator>Assign</operator><value><elementReference>FLen</elementReference></value></assignmentItems><assignmentItems><assignToReference>outSub1</assignToReference><operator>Assign</operator><value><elementReference>FSub1</elementReference></value></assignmentItems><assignmentItems><assignToReference>outSub2</assignToReference><operator>Assign</operator><value><elementReference>FSub2</elementReference></value></assignmentItems><assignmentItems><assignToReference>outSub3</assignToReference><operator>Assign</operator><value><elementReference>FSub3</elementReference></value></assignmentItems><assignmentItems><assignToReference>outNest</assignToReference><operator>Assign</operator><value><elementReference>FNest</elementReference></value></assignmentItems><connector><targetReference>Dec</targetReference></connector></assignments>
+    <assignments><name>SetDec14</name><label>SetDec14</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>outDec</assignToReference><operator>Assign</operator><value><stringValue>len14</stringValue></value></assignmentItems></assignments>
+    <assignments><name>SetDec6</name><label>SetDec6</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>outDec</assignToReference><operator>Assign</operator><value><stringValue>len6</stringValue></value></assignmentItems></assignments>
+    <assignments><name>SetDecOther</name><label>SetDecOther</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>outDec</assignToReference><operator>Assign</operator><value><stringValue>other</stringValue></value></assignmentItems></assignments>
+    <decisions><name>Dec</name><label>Dec</label><locationX>0</locationX><locationY>0</locationY><defaultConnector><targetReference>SetDecOther</targetReference></defaultConnector><defaultConnectorLabel>Other</defaultConnectorLabel>
+        <rules><name>Is14</name><conditionLogic>and</conditionLogic><conditions><leftValueReference>FIs14</leftValueReference><operator>EqualTo</operator><rightValue><booleanValue>true</booleanValue></rightValue></conditions><connector><targetReference>SetDec14</targetReference></connector><label>Is14</label></rules>
+        <rules><name>Is6</name><conditionLogic>and</conditionLogic><conditions><leftValueReference>FIs6</leftValueReference><operator>EqualTo</operator><rightValue><booleanValue>true</booleanValue></rightValue></conditions><connector><targetReference>SetDec6</targetReference></connector><label>Is6</label></rules>
+    </decisions>
+    <formulas><name>FBr</name><dataType>String</dataType><expression>&apos;a&apos; &amp; BR() &amp; &apos;b&apos;</expression></formulas>
+    <formulas><name>FLen</name><dataType>String</dataType><expression>TEXT(LEN(&apos;a&apos; &amp; BR() &amp; &apos;b&apos;))</expression></formulas>
+    <formulas><name>FSub1</name><dataType>String</dataType><expression>SUBSTITUTE(&apos;a&apos; &amp; BR() &amp; &apos;b&apos;, BR(), &apos;|&apos;)</expression></formulas>
+    <formulas><name>FSub2</name><dataType>String</dataType><expression>SUBSTITUTE(&apos;a&apos; &amp; BR() &amp; &apos;b&apos;, &apos;&lt;br&gt;&apos;, &apos;|&apos;)</expression></formulas>
+    <formulas><name>FSub3</name><dataType>String</dataType><expression>SUBSTITUTE(&apos;a&apos; &amp; BR() &amp; &apos;b&apos;, &apos;_BR_ENCODED_&apos;, &apos;|&apos;)</expression></formulas>
+    <formulas><name>FNest</name><dataType>String</dataType><expression>TEXT(LEN({!FBr}))</expression></formulas>
+    <formulas><name>FIs14</name><dataType>Boolean</dataType><expression>LEN(&apos;a&apos; &amp; BR() &amp; &apos;b&apos;) = 14</expression></formulas>
+    <formulas><name>FIs6</name><dataType>Boolean</dataType><expression>LEN(&apos;a&apos; &amp; BR() &amp; &apos;b&apos;) = 6</expression></formulas>
+    <interviewLabel>BrResources {!$Flow.CurrentDateTime}</interviewLabel><label>BrResources</label><processType>AutoLaunchedFlow</processType>
+    <start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>SetMain</targetReference></connector></start>
+    <status>Active</status>
+    <variables><name>outBr</name><dataType>String</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>true</isOutput></variables>
+    <variables><name>outLen</name><dataType>String</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>true</isOutput></variables>
+    <variables><name>outSub1</name><dataType>String</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>true</isOutput></variables>
+    <variables><name>outSub2</name><dataType>String</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>true</isOutput></variables>
+    <variables><name>outSub3</name><dataType>String</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>true</isOutput></variables>
+    <variables><name>outNest</name><dataType>String</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>true</isOutput></variables>
+    <variables><name>outDec</name><dataType>String</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>true</isOutput></variables>
+</Flow>

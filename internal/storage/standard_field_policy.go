@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/glade-sh/glade/internal/project"
 )
@@ -19,11 +20,12 @@ import (
 var standardFieldPolicyData []byte
 
 type standardFieldPolicyGate struct {
-	RecordTypes bool `json:"record_types"`
-	Object      string
-	Features    []string
-	Field       standardDescribeField
-	Legacy      bool
+	RecordTypes      bool `json:"record_types"`
+	OverrideStubType bool `json:"override_stub_type"`
+	Object           string
+	Features         []string
+	Field            standardDescribeField
+	Legacy           bool
 }
 
 type standardFieldPolicyObject struct {
@@ -32,12 +34,17 @@ type standardFieldPolicyObject struct {
 	RequiredFeatures      []string   `json:"required_features"`
 	RequiredFeaturesAnyOf [][]string `json:"required_features_any_of"`
 	Present               []string
-	Fields                []standardDescribeField
-	Absent                []string
-	fields                map[string]Field
-	picklistFields        []Field
-	absent                map[string]bool
-	gates                 map[string]standardFieldPolicyGate
+	// CapturedFields name policy fields whose native facets replace a field
+	// that the stub overlay supplies with only a name and a type. A field that
+	// the project itself configures is never replaced.
+	CapturedFields     []string        `json:"captured_fields"`
+	InsertForcedValues map[string]bool `json:"insert_forced_values"`
+	Fields             []standardDescribeField
+	Absent             []string
+	fields             map[string]Field
+	picklistFields     []Field
+	absent             map[string]bool
+	gates              map[string]standardFieldPolicyGate
 }
 
 type standardFieldPolicyBundle struct {
@@ -46,11 +53,25 @@ type standardFieldPolicyBundle struct {
 	Gates    []standardFieldPolicyGate
 	Sources  map[string]string
 	Evidence struct {
-		Profiles map[string]map[string]StandardDescribeCatalogDelta `json:"profiles"`
+		Profiles       map[string]map[string]StandardDescribeCatalogDelta `json:"profiles"`
+		ProfileAliases map[string]map[string]string                       `json:"profile_aliases"`
 	} `json:"evidence"`
 }
 
-var standardFieldPolicies = loadStandardFieldPolicies()
+var standardFieldPolicyCache struct {
+	once     sync.Once
+	policies map[string]*standardFieldPolicyObject
+}
+
+// standardFieldPolicies decodes the embedded policy sidecar on first use. The
+// decode costs about a third of package init when it runs eagerly, which every
+// process pays, including ones that never touch a standard object.
+func standardFieldPolicies() map[string]*standardFieldPolicyObject {
+	standardFieldPolicyCache.once.Do(func() {
+		standardFieldPolicyCache.policies = loadStandardFieldPolicies()
+	})
+	return standardFieldPolicyCache.policies
+}
 
 func loadStandardFieldPolicies() map[string]*standardFieldPolicyObject {
 	stream, err := gzip.NewReader(bytes.NewReader(standardFieldPolicyData))
@@ -66,6 +87,7 @@ func loadStandardFieldPolicies() map[string]*standardFieldPolicyObject {
 		panic("unsupported standard field policy version")
 	}
 	standardDescribeProfileCatalog = bundle.Evidence.Profiles
+	standardDescribeProfileAliases = bundle.Evidence.ProfileAliases
 	policies := make(map[string]*standardFieldPolicyObject, len(bundle.Objects))
 	for object, policy := range bundle.Objects {
 		policy.fields = map[string]Field{}
@@ -96,7 +118,7 @@ func loadStandardFieldPolicies() map[string]*standardFieldPolicyObject {
 }
 
 func standardFieldPolicyFor(object string) *standardFieldPolicyObject {
-	policy, _ := standardPolicyLookup(standardFieldPolicies, object)
+	policy, _ := standardPolicyLookup(standardFieldPolicies(), object)
 	return policy
 }
 
@@ -194,6 +216,40 @@ func removeDisabledStandardFeatureRecordTypes(definition *ObjectDefinition, feat
 	definition.RecordTypes = recordTypes
 }
 
+// A gate opts into a more precise native storage type only for its captured
+// field. Other catalog fields retain their established representation.
+func standardPolicyGateDescribeField(gate standardFieldPolicyGate) Field {
+	field := describeField(gate.Field)
+	if gate.OverrideStubType && strings.EqualFold(gate.Field.Type, "multipicklist") {
+		field.Type = FieldMultiPicklist
+	}
+	return field
+}
+
+func standardPolicyStubFieldNeedsRepair(definition ObjectDefinition, gate standardFieldPolicyGate, name string, field Field) bool {
+	if !gate.OverrideStubType {
+		return false
+	}
+	if standardFieldPolicyPreservesConfiguredField(definition, name) {
+		return false
+	}
+	stubs, ok := standardSObjectStubFieldsFor(definition.APIName)
+	if !ok {
+		return false
+	}
+	stub, ok := stubs[gate.Field.Name]
+	return ok && field.Type == stub.Type && field.DisplayType == stub.DisplayType
+}
+
+func policyCapturesField(policy *standardFieldPolicyObject, name string) bool {
+	for _, captured := range policy.CapturedFields {
+		if stringsEqualFold(captured, name) {
+			return true
+		}
+	}
+	return false
+}
+
 func applyStandardFieldPolicy(definition *ObjectDefinition, signature string) {
 	policy := standardFieldPolicyFor(definition.APIName)
 	if policy == nil {
@@ -202,6 +258,8 @@ func applyStandardFieldPolicy(definition *ObjectDefinition, signature string) {
 	for _, field := range policy.fields {
 		if name, exists := ResolveFieldName(*definition, "", field.APIName); !exists {
 			definition.Fields[field.APIName] = cloneField(field)
+		} else if policyCapturesField(policy, field.APIName) && !standardFieldPolicyPreservesConfiguredField(*definition, field.APIName) {
+			definition.Fields[name] = cloneField(field)
 		} else if len(field.PicklistValues) != 0 {
 			existing := definition.Fields[name]
 			if !existing.PicklistValuesConfigured && len(existing.PicklistValues) == 0 {
@@ -214,9 +272,13 @@ func applyStandardFieldPolicy(definition *ObjectDefinition, signature string) {
 		if gate.Legacy || !standardFieldPolicyGateEnabledForDefinition(gate, *definition, signature) {
 			continue
 		}
-		field := describeField(gate.Field)
+		field := standardPolicyGateDescribeField(gate)
 		if name, exists := ResolveFieldName(*definition, "", field.APIName); exists {
 			existing := definition.Fields[name]
+			if standardPolicyStubFieldNeedsRepair(*definition, gate, name, existing) {
+				existing.Type = field.Type
+				existing.DisplayType = field.DisplayType
+			}
 			enrichStandardField(&existing, field)
 			definition.Fields[name] = existing
 		} else {
@@ -238,6 +300,28 @@ func applyStandardFieldPolicy(definition *ObjectDefinition, signature string) {
 	for name := range policy.gates {
 		removeGenerated(name)
 	}
+}
+
+// StandardObjectPolicyGateFields returns the captured describe facets for the
+// fields that the standard field policy gates behind an org feature. They
+// carry the native type, so a consumer that holds a feature-independent field
+// model can give an enabled gate field its real type instead of a guess from
+// its name. Whether the field exists in a given org is still decided by the
+// gate and the org's features. Legacy gates carry no facets and are skipped.
+func StandardObjectPolicyGateFields(object string) []Field {
+	policy := standardFieldPolicyFor(object)
+	if policy == nil {
+		return nil
+	}
+	var fields []Field
+	for _, gate := range policy.gates {
+		if gate.Legacy || gate.Field.Type == "" {
+			continue
+		}
+		fields = append(fields, describeField(gate.Field))
+	}
+	sort.Slice(fields, func(i, j int) bool { return fields[i].APIName < fields[j].APIName })
+	return fields
 }
 
 // StandardObjectConstructorAvailableForFeatures applies only observed object
@@ -329,7 +413,7 @@ const standardConfiguredPolicyFieldsLabelProvenance = "__glade_standard_configur
 // The native baseline catalog is a delta over project schema. Preserve fields
 // supplied by that schema before adding the catalog's own compatibility fields.
 func snapshotConfiguredStandardPolicyFields(definition *ObjectDefinition) {
-	if standardFieldPolicyFor(definition.APIName) == nil {
+	if standardFieldPolicyFor(definition.APIName) == nil && !standardAPI68CapturedNewObject(definition.APIName) {
 		return
 	}
 	if _, recorded := definition.Metadata[standardConfiguredPolicyFields]; recorded {
@@ -398,4 +482,18 @@ func StandardObjectInsertInputFieldAllowed(object, field string) bool {
 		}
 	}
 	return false
+}
+
+// StandardObjectInsertForcedValues returns captured Boolean values forced on insert.
+// The returned map is a copy of immutable policy data.
+func StandardObjectInsertForcedValues(object string) map[string]bool {
+	policy := standardFieldPolicyFor(object)
+	if policy == nil || len(policy.InsertForcedValues) == 0 {
+		return nil
+	}
+	values := make(map[string]bool, len(policy.InsertForcedValues))
+	for name, value := range policy.InsertForcedValues {
+		values[name] = value
+	}
+	return values
 }

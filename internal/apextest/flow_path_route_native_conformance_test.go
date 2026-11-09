@@ -1,3 +1,5 @@
+// Native row: internal/apextest/testdata/conformance/platform_transaction_paths/flow_path_routes/native/api67/istest/org.tsv
+// 67.0 istest S01: immediateAfter=true, delayedAfter=false.
 package apextest
 
 import (
@@ -132,6 +134,8 @@ func TestFlowPathRouteNativeConformance(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			// ORG-RUN.txt: fixture_permission_set_assigned=true.
+			writeFile(t, filepath.Join(root, "glade.yml"), "test:\n  permissionSets: [FlowRouteFixture]\n")
 			index := loadTestIndex(t, root)
 			analysis := sema.Analyze(index)
 			if index.HasErrors() || analysis.HasErrors() {
@@ -141,8 +145,7 @@ func TestFlowPathRouteNativeConformance(t *testing.T) {
 			if len(own) != len(named) {
 				t.Fatalf("discovered=%d native=%d", len(own), len(named))
 			}
-			org := orgFromIndex(index)
-			org.APIVersion = api
+			org := capturedFixtureOrg(t, index, api)
 			runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 			methods, methodErrors := compileTestMethodsForIndex(&index, own)
 			programs, programErrors := compileTestInvokePrograms(own)

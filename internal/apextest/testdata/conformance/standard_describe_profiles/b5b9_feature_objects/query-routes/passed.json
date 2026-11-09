@@ -1,0 +1,14 @@
+{
+  "status": 0,
+  "outcome": "Passed",
+  "tests": [
+    {
+      "class": "OwnedQueryRoutesTest67",
+      "outcome": "Pass"
+    },
+    {
+      "class": "OwnedQueryRoutesTest62",
+      "outcome": "Pass"
+    }
+  ]
+}

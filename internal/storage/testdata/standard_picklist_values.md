@@ -29,18 +29,19 @@ extracted from the export being sanitized. Salesforce's
 also documents the five LeadSource labels. These seven additions are standard
 labels without customer or package identifiers.
 
-Regenerate using the first-party tools checkout:
+The allowlist also contains `Pickup`, independently observed through named Apex
+at API 68.0 in a fresh Developer scratch org. The complete entry, label, active
+and default flags are in `standard_describe_api68_drift/P0-field-access/org.tsv`;
+it was observed after an explicit field grant and is not extracted from the
+describe export. This generic platform term contains no customer or package
+identifier. The observation makes no claim about other profiles or API versions.
+
+Regenerate and verify from the pinned public catalog and the separately reviewed
+additions above:
 
 ```sh
-git show origin/main:internal/storage/standard_describe_catalog.json.gz > /tmp/public-standard-describe.json.gz
-node ../glade-tools/scripts/sanitize-standard-describe-catalog.mjs --extract-allowlist /tmp/public-standard-describe.json.gz internal/storage/testdata/standard_picklist_values.json.gz
+python3 scripts/generate-standard-picklist-allowlist.py
+python3 scripts/generate-standard-picklist-allowlist.py --check
 ```
 
-Use the linked public revision when reproducing this version of the allowlist.
-Then add the five documented Account.Type choices missing from that revision
-and sort the unique values by UTF-8 bytes before writing the gzip JSON array.
-The sanitizer prints counts and never prints rejected values.
-
-Finally add the seven independently captured Opportunity.Type and Lead.LeadSource
-values above before sorting and writing the gzip array. The resulting unique
-allowlist contains 59,049 values.
+The resulting unique allowlist contains 59,050 values.

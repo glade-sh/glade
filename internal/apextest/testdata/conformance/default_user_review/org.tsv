@@ -1,0 +1,20 @@
+source_api	route	case	result
+62.0	anonymous	default-profile-and-upsert	"CAP|{""secondErrors"":0,""secondCreated"":false,""secondSuccess"":true,""firstCreated"":true,""firstSuccess"":true,""manageUsers"":true,""viewAllData"":true,""modifyAllData"":true,""userDelete"":false,""userUpdate"":true,""userRead"":true,""userCreate"":true}"
+62.0	istest	modify-all/privileged	System.AssertException: Assertion Failed: CAP|INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY|Probe
+62.0	istest	modify-all/unprivileged	System.AssertException: Assertion Failed: CAP|INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY|Probe
+62.0	istest	modify-all-and-manage-users/privileged	System.AssertException: Assertion Failed: CAP|ok|Changed
+62.0	istest	modify-all-and-manage-users/unprivileged	System.AssertException: Assertion Failed: CAP|INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY|Probe
+67.0	anonymous	default-profile-and-upsert-after-62	"CAP|{""secondErrors"":1,""secondCreated"":true,""secondSuccess"":false,""firstCreated"":true,""firstSuccess"":false,""manageUsers"":true,""viewAllData"":true,""modifyAllData"":true,""userDelete"":false,""userUpdate"":true,""userRead"":true,""userCreate"":true}"
+67.0	istest	modify-all/privileged	System.AssertException: Assertion Failed: CAP|INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY|Probe
+67.0	istest	modify-all/unprivileged	System.AssertException: Assertion Failed: CAP|INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY|Probe
+67.0	istest	modify-all-and-manage-users/privileged	System.AssertException: Assertion Failed: CAP|ok|Changed
+67.0	istest	modify-all-and-manage-users/unprivileged	System.AssertException: Assertion Failed: CAP|INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY|Probe
+67.0	anonymous	default-profile-and-upsert-fresh	"CAP|{""secondErrors"":0,""secondCreated"":false,""secondSuccess"":true,""firstCreated"":true,""firstSuccess"":true,""manageUsers"":true,""viewAllData"":true,""modifyAllData"":true,""userDelete"":false,""userUpdate"":true,""userRead"":true,""userCreate"":true}"
+62.0	istest	modify-all-and-manage-internal-users/privileged	System.AssertException: Assertion Failed: CAP|ok|Changed
+62.0	istest	modify-all-and-manage-internal-users/unprivileged	System.AssertException: Assertion Failed: CAP|INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY|Probe
+62.0	istest	manage-internal-users/privileged	System.AssertException: Assertion Failed: CAP|ok|Changed
+62.0	istest	manage-internal-users/unprivileged	System.AssertException: Assertion Failed: CAP|INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY|Probe
+67.0	istest	modify-all-and-manage-internal-users/privileged	System.AssertException: Assertion Failed: CAP|ok|Changed
+67.0	istest	modify-all-and-manage-internal-users/unprivileged	System.AssertException: Assertion Failed: CAP|INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY|Probe
+67.0	istest	manage-internal-users/privileged	System.AssertException: Assertion Failed: CAP|ok|Changed
+67.0	istest	manage-internal-users/unprivileged	System.AssertException: Assertion Failed: CAP|INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY|Probe

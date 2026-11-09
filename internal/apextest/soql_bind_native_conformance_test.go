@@ -9,6 +9,8 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
+	"sort"
 	"strings"
 	"testing"
 
@@ -221,7 +223,7 @@ func soqlBindNativeAnonymous(t *testing.T, bases *conformanceSchemaCache, projec
 	}
 	runtime := conformanceSchemaRequestRuntime(t, index)
 	base := bases.get(t, api, "", source.Objects, func(t *testing.T) *conformanceRunner {
-		return conformanceSchemaBase(t, soqlBindNativeIndex(t, api, nil, source.Objects, projects), api)
+		return soqlBindNativeBase(t, soqlBindNativeIndex(t, api, nil, source.Objects, projects), api)
 	})
 	runner := newConformanceRunner(t, index, conformanceRunnerOptions{Base: base, RequestRuntime: &runtime, Org: base.orgSource})
 	machine := runner.newMachine()
@@ -257,7 +259,7 @@ func soqlBindNativeTest(t *testing.T, bases *conformanceSchemaCache, projects *c
 		t.Fatalf("named compile: %v %v", methodErrors[key], programErrors[key])
 	}
 	base := bases.get(t, api, "", source.Objects, func(t *testing.T) *conformanceRunner {
-		return conformanceSchemaBase(t, soqlBindNativeIndex(t, api, nil, source.Objects, projects), api)
+		return soqlBindNativeBase(t, soqlBindNativeIndex(t, api, nil, source.Objects, projects), api)
 	})
 	runner := newConformanceRunner(t, index, conformanceRunnerOptions{Base: base, LinkProject: true, Org: base.orgSource})
 	machine := runner.newMachine()
@@ -324,10 +326,51 @@ func soqlBindNativeAnonymousDeclarations(t *testing.T, source string) map[string
 	return declarations
 }
 
+// soqlBindCaptureObject matches the fresh per-run objects of the bind capture
+// fixture, E5<Run><12 hex>__c, whose <stem>Access set the capture assigned.
+var soqlBindCaptureObject = regexp.MustCompile(`^(E5[A-Z][a-z]+[0-9a-f]{12})__c$`)
+
+// soqlBindCaptureGrants returns the permission metadata files and glade.yml
+// that replay the capture's assignment (soql_bind_capture_assignment/
+// ASSIGNMENT-RUN.txt): read/edit on Choice__c and object CRUD.
+func soqlBindCaptureGrants(objects map[string]string) map[string]string {
+	files := map[string]string{}
+	var names []string
+	for object := range objects {
+		match := soqlBindCaptureObject.FindStringSubmatch(object)
+		if match == nil {
+			continue
+		}
+		name := match[1] + "Access"
+		names = append(names, name)
+		files[filepath.Join("force-app/main/default/permissionsets", name+".permissionset-meta.xml")] = `<?xml version='1.0' encoding='utf-8'?>` +
+			`<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata"><label>` + name + `</label><fieldPermissions><editable>true</editable><field>` + object + `.Choice__c</field><readable>true</readable></fieldPermissions>` +
+			`<objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>` + object + `</object><viewAllRecords>false</viewAllRecords></objectPermissions></PermissionSet>`
+	}
+	if len(names) == 0 {
+		return nil
+	}
+	sort.Strings(names)
+	files["glade.yml"] = "test:\n  permissionSets: [" + strings.Join(names, ", ") + "]\n"
+	return files
+}
+
+// soqlBindNativeBase builds the shared schema runner with the capture's
+// assignment applied to its org.
+func soqlBindNativeBase(t *testing.T, index typesys.Index, api string) *conformanceRunner {
+	t.Helper()
+	org := capturedFixtureOrg(t, index, api)
+	return newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
+}
+
 func soqlBindNativeIndex(t *testing.T, api string, classes, objects map[string]string, projects ...*conformanceProjectCache) typesys.Index {
 	t.Helper()
+	grants := soqlBindCaptureGrants(objects)
 	if len(projects) != 0 {
-		files := make(map[string]string, 2*len(classes)+len(objects))
+		files := make(map[string]string, 2*len(classes)+len(objects)+len(grants))
+		for path, source := range grants {
+			files[path] = source
+		}
 		for name, source := range classes {
 			path := filepath.Join("force-app/main/default/classes", name+".cls")
 			files[path] = source
@@ -347,6 +390,9 @@ func soqlBindNativeIndex(t *testing.T, api string, classes, objects map[string]s
 	}
 	for name, source := range objects {
 		writeFile(t, filepath.Join(root, "force-app/main/default/objects", name, name+".object-meta.xml"), source)
+	}
+	for path, source := range grants {
+		writeFile(t, filepath.Join(root, path), source)
 	}
 	return loadTestIndex(t, root)
 }

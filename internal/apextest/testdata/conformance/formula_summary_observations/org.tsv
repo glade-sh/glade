@@ -1,0 +1,7 @@
+api	route	id	value
+62.0	anonymous	D_GUARD	{"fieldsRead":8,"allReadable":true,"assignmentCount":1,"readBackComplete":true,"stage":"begin"}
+62.0	anonymous	E_GUARD	{"assignmentCount":1,"countAccessible":true,"parentAccessible":true,"value":1,"readBackComplete":true,"stage":"begin"}
+67.0	anonymous	D_GUARD	{"fieldsRead":8,"allReadable":true,"assignmentCount":1,"readBackComplete":true,"stage":"begin"}
+67.0	anonymous	E_GUARD	{"assignmentCount":1,"countAccessible":true,"parentAccessible":true,"value":1,"readBackComplete":true,"stage":"begin"}
+68.0	anonymous	D_GUARD	{"fieldsRead":8,"allReadable":true,"assignmentCount":1,"readBackComplete":true,"stage":"begin"}
+68.0	anonymous	E_GUARD	{"assignmentCount":1,"countAccessible":true,"parentAccessible":true,"value":1,"readBackComplete":true,"stage":"begin"}

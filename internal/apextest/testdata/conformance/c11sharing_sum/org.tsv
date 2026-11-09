@@ -1,0 +1,7 @@
+api	case	result
+62.0	sum	{"exception":{"inaccessible":{"DootSecQ14B1031__c":["Value__c"]},"message":"Invalid field: 'Value__c'","stage":"query","type":"System.QueryException"},"stage":"query","status":"operation_exception"}
+62.0	systemSum	{"rows":[{"total":150.0}],"stage":"query","status":"observed"}
+62.0	allowedGroup	{"rows":[{"n":2}],"stage":"query","status":"observed"}
+67.0	sum	{"exception":{"inaccessible":{"DootSecQ14B1031__c":["Value__c"]},"message":"Invalid field: 'Value__c'","stage":"query","type":"System.QueryException"},"stage":"query","status":"operation_exception"}
+67.0	systemSum	{"rows":[{"total":150.0}],"stage":"query","status":"observed"}
+67.0	allowedGroup	{"rows":[{"n":2}],"stage":"query","status":"observed"}

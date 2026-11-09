@@ -30,6 +30,8 @@ type typeMembers struct {
 	partialSObject                    bool
 	completeSchemaSObject             bool
 	nestingDepth                      int
+	testVisible                       bool
+	isTest                            bool
 	kind                              apexast.DeclarationKind
 	superClass                        string
 	interfaces                        []string
@@ -322,20 +324,13 @@ func (v *semaTypeMemberView) shortCandidateKeys(short string) []string {
 	return out
 }
 
-var semaPlatformTypeMemberModelCache struct {
-	once  sync.Once
-	model *semaTypeMemberModel
-}
+var semaPlatformTypeMemberModelCache typesys.PlatformViewCache[*semaTypeMemberModel]
 
 func semaPlatformTypeMemberModel() *semaTypeMemberModel {
-	semaPlatformTypeMemberModelCache.once.Do(func() {
-		semaPlatformTypeMemberModelCache.model = buildSemaPlatformTypeMemberModel()
-	})
-	return semaPlatformTypeMemberModelCache.model
+	return semaPlatformTypeMemberModelCache.Get(buildSemaPlatformTypeMemberModel)
 }
 
-func buildSemaPlatformTypeMemberModel() *semaTypeMemberModel {
-	symbols := typesys.StandardPlatformSymbolView()
+func buildSemaPlatformTypeMemberModel(symbols []typesys.TypeSymbol) *semaTypeMemberModel {
 	return &semaTypeMemberModel{
 		members:  map[string]typeMembers{},
 		platform: newSemaLazyPlatformTypeMemberModel(symbols),
@@ -1188,6 +1183,8 @@ func semaTypeMembersFromSymbol(typ typesys.TypeSymbol) typeMembers {
 		dependency:                typ.Dependency,
 		receiverDependencySource:  typ.HasSourceSnapshot() && typ.SourceRoot != "" && !typ.Artifact,
 		nestingDepth:              typ.NestingDepth,
+		testVisible:               hasAnnotation(typ.Annotations, "TestVisible"),
+		isTest:                    typ.IsTest || hasAnnotation(typ.Annotations, "IsTest"),
 		kind:                      typ.Kind,
 		superClass:                typ.SuperClass,
 		interfaces:                append([]string(nil), typ.Interfaces...),
@@ -1252,6 +1249,8 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 			dependency:                typ.Dependency,
 			receiverDependencySource:  typ.HasSourceSnapshot() && typ.SourceRoot != "" && !typ.Artifact,
 			nestingDepth:              typ.NestingDepth,
+			testVisible:               hasAnnotation(typ.Annotations, "TestVisible"),
+			isTest:                    typ.IsTest || hasAnnotation(typ.Annotations, "IsTest"),
 			kind:                      typ.Kind,
 			superClass:                typ.SuperClass,
 			interfaces:                append([]string(nil), typ.Interfaces...),
@@ -1272,13 +1271,15 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 			case apexast.DeclarationEnum:
 				nestedName := typ.Name + "." + member.Name
 				enumMembers := typeMembers{
-					name:       semaQualifiedDependencyTypeName(typ.Namespace, nestedName, typ.Dependency, typ.Artifact, typ.SourceRoot),
-					shortKey:   semaShortTypeKey(nestedName),
-					namespace:  typ.Namespace,
-					dependency: typ.Dependency,
-					kind:       apexast.DeclarationEnum,
-					methods:    make(map[string][]typesys.MemberSymbol),
-					fields:     make(map[string]typesys.MemberSymbol),
+					name:        semaQualifiedDependencyTypeName(typ.Namespace, nestedName, typ.Dependency, typ.Artifact, typ.SourceRoot),
+					shortKey:    semaShortTypeKey(nestedName),
+					namespace:   typ.Namespace,
+					dependency:  typ.Dependency,
+					kind:        apexast.DeclarationEnum,
+					modifiers:   append([]string(nil), member.Modifiers...),
+					testVisible: hasAnnotation(member.Annotations, "TestVisible"),
+					methods:     make(map[string][]typesys.MemberSymbol),
+					fields:      make(map[string]typesys.MemberSymbol),
 				}
 				enumType := typesys.TypeSymbol{
 					Kind:  apexast.DeclarationEnum,

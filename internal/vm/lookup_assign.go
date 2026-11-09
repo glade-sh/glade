@@ -47,6 +47,13 @@ func (vm *VM) lookup(name string) (Value, error) {
 		}
 		return value, nil
 	}
+	if actual, ok := vm.anonymousOuterName(name); ok {
+		value := vm.anonymousLocal.frame[actual]
+		if declaredType := vm.anonymousLocal.types[actual]; declaredType != "" {
+			value.Static = declaredType
+		}
+		return value, nil
+	}
 	if value, ok, err := vm.lookupRestContextField(name); ok || err != nil {
 		return value, err
 	}
@@ -85,7 +92,7 @@ func (vm *VM) lookup(name string) (Value, error) {
 	}
 	if hasSuffixFold(name, ".class") {
 		className := name[:len(name)-len(".class")]
-		if exceptionName := exceptionTypeName(className); isBuiltinExceptionType(exceptionName) {
+		if exceptionName := exceptionTypeName(className); isBuiltinExceptionType(exceptionName) && !vm.sourceClassShadowsException(className) {
 			return vm.markReflectionTypeToken(Value{Kind: ValueObject, Type: "Type", Text: "System." + exceptionName}, "System."+exceptionName), nil
 		}
 		if resolved, ok := vm.resolveClassName(className); ok {
@@ -109,9 +116,6 @@ func (vm *VM) lookup(name string) (Value, error) {
 		return vm.lexicalClassLiteralToken(className, vm.markReflectionTypeToken(Value{Kind: ValueObject, Type: "Type", Text: className}, className)), nil
 	}
 	parts := strings.Split(name, ".")
-	if token, ok := vm.lookupSObjectSharingReasonToken(parts); ok {
-		return token, nil
-	}
 	// A qualified Schema object member is normally a field token, even when a
 	// generated platform type exposes a same-named static member for the object
 	// segment. SObjectType is the one object-level member and must win before
@@ -235,6 +239,11 @@ func (vm *VM) lookup(name string) (Value, error) {
 				return vm.lookupPath(root, parts[1:])
 			}
 		}
+		// Locals, instance fields, and static fields retain their ordinary
+		// precedence over the qualified sharing-reason token surface.
+		if token, ok := vm.lookupSObjectSharingReasonToken(parts); ok {
+			return token, nil
+		}
 		if token, ok := vm.sObjectTypeFieldToken(parts); ok {
 			return token, nil
 		}
@@ -300,17 +309,29 @@ func (vm *VM) lookup(name string) (Value, error) {
 					}
 					pageName = registered
 					// document loading R004 at API 62/67 observes lowercase URLs for
-					// registered, unqualified pages. The nil-registry path
-					// remains a local fallback without a native URL observation.
+					// registered, unqualified pages.
 					if !strings.Contains(pageName, "__") {
 						pageName = strings.ToLower(pageName)
 					}
+				} else if !strings.Contains(pageName, "__") {
+					// An empty registry means the Visualforce loader could not
+					// analyze the project's pages, not that native would keep the
+					// spelling: a page token's URL is lowercase for every
+					// unqualified page (qualified_page_reference, case159_community_page).
+					pageName = strings.ToLower(pageName)
 				}
 				return newPageTokenReference("/apex/" + pageName), nil
 			}
 		}
 		if len(parts) == 2 {
 			if value, ok := builtinStaticField(parts[0], parts[1]); ok {
+				return value, nil
+			}
+		}
+		// System.AccessLevel.X is the same object as AccessLevel.X (org capture
+		// queueable_accesslevel_identity), not a default platform value.
+		if len(parts) == 3 && strings.EqualFold(parts[0], "System") && strings.EqualFold(parts[1], "AccessLevel") {
+			if value, ok := builtinEnumStaticValue(parts[0]+"."+parts[1], parts[2]); ok {
 				return value, nil
 			}
 		}
@@ -666,7 +687,7 @@ func (vm *VM) lookupThisPath(this Value, parts []string) (Value, error) {
 	if len(parts) == 1 {
 		return value, nil
 	}
-	return vm.lookupPath(value, parts[1:])
+	return vm.lookupPathFromHop(value, parts[1:], 1)
 }
 
 func (vm *VM) lookupDeclaredThisFieldValue(this Value, name string) (string, Value, Field, string, bool) {
@@ -1696,7 +1717,7 @@ func (vm *VM) lookupSObjectSharingReasonToken(parts []string) (Value, bool) {
 	default:
 		return Null, false
 	}
-	if !strings.HasSuffix(strings.ToLower(strings.TrimSpace(shareName)), "__share") {
+	if !strings.HasSuffix(strings.ToLower(strings.TrimSpace(shareName)), "share") {
 		return Null, false
 	}
 	_, definition, ok := vm.describeObjectDefinition(shareName)
@@ -1708,7 +1729,17 @@ func (vm *VM) lookupSObjectSharingReasonToken(parts []string) (Value, bool) {
 		return Null, false
 	}
 	field, ok := definition.Fields[fieldName]
-	if !ok || (field.Type != storage.FieldPicklist && field.Type != storage.FieldMultiPicklist) {
+	if !ok {
+		return Null, false
+	}
+	if field.Type != storage.FieldPicklist && field.Type != storage.FieldMultiPicklist {
+		// Standard share field stubs expose RowCause as String even when the
+		// describe catalog carries the platform's sharing reason values.
+		if storage.CapturedStandardSharingReasonObject(definition.APIName) {
+			if reason, found := storage.StandardPicklistValue(definition.APIName, fieldName, reasonName); found {
+				return String(reason), true
+			}
+		}
 		return Null, false
 	}
 	for _, picklistValue := range field.PicklistValues {
@@ -2104,6 +2135,13 @@ func (vm *VM) sObjectFieldTokenFromField(objectName string, field storage.Field)
 }
 
 func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
+	return vm.lookupPathFromHop(root, parts, 0)
+}
+
+// lookupPathFromHop resolves parts below root. hops counts the dotted
+// segments already consumed before root, so a null SObject member reached
+// through "this.member" behaves like one reached through "holder.member".
+func (vm *VM) lookupPathFromHop(root Value, parts []string, hops int) (Value, error) {
 	current := root
 	for i, part := range parts {
 		// Publishing identity is not a readable event Id.
@@ -2114,9 +2152,13 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 		}
 		if current.Kind == ValueNull {
 			if vm.isSObjectLikeType(current.Type) {
-				if defaultValue, ok := vm.defaultNullSObjectAccessValue(current.Type); ok {
-					current = defaultValue
-				} else if isRelationshipNull(current) || i > 0 {
+				if isRelationshipNull(current) || i+hops > 0 {
+					// Native shapemisc_capture cs2 c02-c04, d01: Id of a null SObject
+					// member read through a dotted chain throws; other fields read
+					// as null or their default.
+					if !isRelationshipNull(current) && strings.EqualFold(part, "Id") {
+						return Null, newNullDereferenceError("while accessing " + strings.Join(parts[:i+1], "."))
+					}
 					if value, ok := vm.relationshipNullFieldAccessValue(current.Type, part); ok {
 						current = value
 						continue
@@ -2568,31 +2610,6 @@ func (vm *VM) sObjectParentRelationshipField(typeName, field string) bool {
 	return ok
 }
 
-func (vm *VM) defaultNullSObjectAccessValue(typeName string) (Value, bool) {
-	if vm == nil || vm.Org == nil {
-		return Null, false
-	}
-	objectName, ok := vm.resolveObjectName(typeName)
-	if !ok {
-		return Null, false
-	}
-	object, ok := vm.Org.Objects[objectName]
-	if !ok {
-		return Null, false
-	}
-	if storage.IsCustomMetadataDefinition(object.Definition) {
-		value := vm.readOnlyCustomDataDefaultValue(objectName, "custom metadata")
-		value.Type = typeName
-		return value, true
-	}
-	if storage.IsCustomSettingDefinition(object.Definition) {
-		value := vm.readOnlyCustomDataDefaultValue(objectName, "custom setting")
-		value.Type = typeName
-		return value, true
-	}
-	return Null, false
-}
-
 func (vm *VM) relationshipNullFieldAccessValue(typeName, field string) (Value, bool) {
 	if relation, ok := vm.parentRelationshipForName(Object(typeName), field); ok {
 		return vm.parentRelationshipTypedNull(relation), true
@@ -2741,6 +2758,18 @@ func (vm *VM) assignValue(name string, value Value, rebind bool) error {
 		if rebind && final {
 			vm.finalLocals[actual] = true
 		}
+		return nil
+	}
+	if actual, ok := vm.anonymousOuterName(name); ok {
+		if typeName := vm.anonymousLocal.types[actual]; typeName != "" {
+			coerced, err := vm.coerceAssignable(typeName, value)
+			if err != nil {
+				return fmt.Errorf("%s: %w", name, err)
+			}
+			value = coerced
+			value.Static = typeName
+		}
+		vm.anonymousLocal.frame[actual] = value
 		return nil
 	}
 	if ok, err := vm.assignRestContextField(name, value); ok || err != nil {
@@ -3193,6 +3222,14 @@ func (vm *VM) assignPathWithStaticIndexDelta(root Value, parts []string, value V
 					(fieldDef.MasterDetail || (fieldDef.Required && fieldDef.Updateable != nil && !storage.FieldFlagValue(fieldDef.Updateable, true))) &&
 					!fieldDef.ReparentableMasterDetail {
 					return newExceptionError("SObjectException", fmt.Sprintf("Field is not writeable: %s.%s", object.Definition.APIName, canonical))
+				}
+				// Under runAs a Standard User cannot assign the User fields its
+				// describe reports neither createable nor updateable (native
+				// user_self_update byIdProfileId and assignManagerInside, API
+				// 62.0 and 67.0). Constructor arguments are not checked.
+				if vm.testContext != nil && vm.testContext.RunAsDepth > 0 && standardUserManagedUserField(objectName, canonical) &&
+					!vm.currentUserFieldPermission(objectName, canonical, "isUpdateable") && !vm.currentUserFieldPermission(objectName, canonical, "isCreateable") {
+					return newExceptionError("SObjectException", fmt.Sprintf("Field is not writeable: %s.%s", object.Definition.APIName, object.Definition.Fields[canonical].APIName))
 				}
 			}
 		}

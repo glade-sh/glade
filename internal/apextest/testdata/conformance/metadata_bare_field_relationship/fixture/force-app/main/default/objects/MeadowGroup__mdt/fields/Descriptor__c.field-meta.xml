@@ -1,0 +1,1 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Descriptor__c</fullName><label>Descriptor</label><type>MetadataRelationship</type><referenceTo>MeadowField__mdt</referenceTo><relationshipLabel>Groups</relationshipLabel><relationshipName>Groups</relationshipName></CustomField>

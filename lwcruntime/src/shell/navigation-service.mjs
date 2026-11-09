@@ -128,7 +128,7 @@ export async function navigate(pageReference, options = {}) {
   if (pageReference?.type === "standard__navItemPage" &&
       current.type === pageReference.type &&
       pageReference.attributes?.apiName === current.attributes.apiName) {
-    const url = withPageReferenceState(`/lwc/preview/tab/${enc(pageReference.attributes.apiName)}`, pageReference.state);
+    const url = preserveLWR(withPageReferenceState(`/lwc/preview/tab/${enc(pageReference.attributes.apiName)}`, pageReference.state), pageReference);
     const state = {};
     for (const [key, value] of new URL(url, window.location.href).searchParams) {
       if (key.includes("__")) state[key] = value;
@@ -239,11 +239,35 @@ export function navigateToUrl(url, options = {}) {
   if (!url || url === currentPath()) {
     return;
   }
-  const assign = options.assign || ((nextUrl) => window.location.assign(nextUrl));
+  const assign = options.assign || (options.replace
+    ? (nextUrl) => window.location.replace(nextUrl)
+    : (nextUrl) => window.location.assign(nextUrl));
   assign(url);
 }
 
 export function buildLocalUrl(pageReference) {
+  return preserveLWR(buildLocalUrlUnscoped(pageReference), pageReference);
+}
+
+function preserveLWR(destination, reference) {
+  if (typeof document === "undefined" || !destination.startsWith("/lwc/preview/")) return destination;
+  const community = readShellContext().community || {};
+  if (!community.lwr && !community.isLwr) return destination;
+  const url = new URL(destination, "http://glade.invalid");
+  const sitePath = url.pathname.match(/^\/lwc\/preview\/community\/([^/]+)/);
+  const targetSites = [reference?.attributes?.site, reference?.attributes?.siteName, url.searchParams.get("site"), sitePath && decodeURIComponent(sitePath[1])].filter(Boolean);
+  const sameSite = site => String(site).toLowerCase() === String(community.site || "").toLowerCase();
+  if (targetSites.some(site => !sameSite(site)) ||
+      ["siteId", "networkId"].some(key => url.searchParams.has(key) && url.searchParams.get(key) !== community[key])) return destination;
+  url.searchParams.set("lwr", "true");
+  for (const key of ["site", "basePath", "siteId", "networkId", "language"]) {
+    if (community[key] && !url.searchParams.has(key)) url.searchParams.set(key, String(community[key]));
+  }
+  if (!url.searchParams.has("guest")) url.searchParams.set("guest", String(!!community.guest));
+  return url.pathname + url.search + url.hash;
+}
+
+function buildLocalUrlUnscoped(pageReference) {
   const ref = pageReference || {};
   const attrs = ref.attributes || {};
   const state = ref.state || {};

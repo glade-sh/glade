@@ -1,0 +1,16 @@
+api	object	http_status
+62.0	FulfillmentOrderHistory	404
+62.0	FulfillmentOrderLineItemHistory	404
+62.0	WebCartActivityLogChangeEvent	404
+62.0	WebCartCollaboratorChangeEvent	404
+62.0	WishlistItemRelationship	404
+67.0	FulfillmentOrderHistory	404
+67.0	FulfillmentOrderLineItemHistory	404
+67.0	WebCartActivityLogChangeEvent	404
+67.0	WebCartCollaboratorChangeEvent	404
+67.0	WishlistItemRelationship	404
+68.0	FulfillmentOrderHistory	200
+68.0	FulfillmentOrderLineItemHistory	200
+68.0	WebCartActivityLogChangeEvent	200
+68.0	WebCartCollaboratorChangeEvent	200
+68.0	WishlistItemRelationship	200

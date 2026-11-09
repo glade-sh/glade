@@ -137,9 +137,9 @@
           {
             "attributes": {
               "type": "User",
-              "url": "/services/data/v67.0/sobjects/User/005iz000002HSj5AAG"
+              "url": "/services/data/v67.0/sobjects/User/{userId}"
             },
-            "Id": "005iz000002HSj5AAG",
+            "Id": "{userId}",
             "ProfileId": "00eiz000000V89xAAC",
             "UserType": "Standard",
             "Profile": {
@@ -261,7 +261,7 @@
               "url": "/services/data/v67.0/sobjects/PermissionSetAssignment/0Paiz000001PMm3CAG"
             },
             "Id": "0Paiz000001PMm3CAG",
-            "AssigneeId": "005iz000002HSj5AAG",
+            "AssigneeId": "{userId}",
             "PermissionSetId": "0PSiz000000arkIGAQ",
             "PermissionSet": {
               "attributes": {
@@ -277,7 +277,7 @@
               "url": "/services/data/v67.0/sobjects/PermissionSetAssignment/0Paiz000001PUEMCA4"
             },
             "Id": "0Paiz000001PUEMCA4",
-            "AssigneeId": "005iz000002HSj5AAG",
+            "AssigneeId": "{userId}",
             "PermissionSetId": "0PSiz000000bDXoGAM",
             "PermissionSet": {
               "attributes": {
@@ -299,7 +299,7 @@
             "url": "/services/data/v68.0/sobjects/PermissionSetAssignment/0Paiz000001PMm3CAG"
           },
           "Id": "0Paiz000001PMm3CAG",
-          "AssigneeId": "005iz000002HSj5AAG",
+          "AssigneeId": "{userId}",
           "PermissionSetId": "0PSiz000000arkIGAQ",
           "PermissionSet": {
             "attributes": {
@@ -322,7 +322,7 @@
             "url": "/services/data/v68.0/sobjects/PermissionSetAssignment/0Paiz000001PUEMCA4"
           },
           "Id": "0Paiz000001PUEMCA4",
-          "AssigneeId": "005iz000002HSj5AAG",
+          "AssigneeId": "{userId}",
           "PermissionSetId": "0PSiz000000bDXoGAM",
           "PermissionSet": {
             "attributes": {
@@ -345,7 +345,7 @@
             "url": "/services/data/v68.0/sobjects/PermissionSetAssignment/0Paiz000001PUZGCA4"
           },
           "Id": "0Paiz000001PUZGCA4",
-          "AssigneeId": "005iz000002HSj5AAG",
+          "AssigneeId": "{userId}",
           "PermissionSetId": "0PSiz000000bMMcGAM",
           "PermissionSet": {
             "attributes": {
@@ -371,7 +371,7 @@
           "url": "/services/data/v67.0/sobjects/PermissionSetAssignment/0Paiz000001PMm3CAG"
         },
         "Id": "0Paiz000001PMm3CAG",
-        "AssigneeId": "005iz000002HSj5AAG",
+        "AssigneeId": "{userId}",
         "PermissionSetId": "0PSiz000000arkIGAQ",
         "PermissionSet": {
           "attributes": {
@@ -387,7 +387,7 @@
           "url": "/services/data/v67.0/sobjects/PermissionSetAssignment/0Paiz000001PUZGCA4"
         },
         "Id": "0Paiz000001PUZGCA4",
-        "AssigneeId": "005iz000002HSj5AAG",
+        "AssigneeId": "{userId}",
         "PermissionSetId": "0PSiz000000bMMcGAM",
         "PermissionSet": {
           "attributes": {

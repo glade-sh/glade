@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/schema"
@@ -262,6 +263,11 @@ func (s *Server) handleExecuteAnonymous(w http.ResponseWriter, r *http.Request, 
 		}
 		sort.Slice(index.Objects, func(i, j int) bool { return index.Objects[i].Name < index.Objects[j].Name })
 	}
+	// Anonymous execution targets the live org, which can differ from the
+	// project scratch definition. Keep the shared project index immutable.
+	if s.Org != nil {
+		index.OrgShapeFeatures = append([]string(nil), s.Org.Features...)
+	}
 	analysis := sema.AnalyzeAnonymous(index, source, apiVersion)
 	if len(analysis.Diagnostics) > 0 {
 		writeJSON(w, http.StatusOK, executeAnonymousFailure(false, analysis.Diagnostics[0].Message, nil))
@@ -274,9 +280,24 @@ func (s *Server) handleExecuteAnonymous(w http.ResponseWriter, r *http.Request, 
 		return
 	}
 	next := s.Org.Clone()
+	if s.runtimeErr != nil {
+		writeJSON(w, http.StatusOK, executeAnonymousFailure(false, "project runtime setup failed: "+s.runtimeErr.Error(), nil))
+		return
+	}
+	// Anonymous Apex runs against the project's classes in the org namespace,
+	// as glade exec does (native: namespace_anonymous_owner rows).
 	machine := vm.New(nil)
+	if s.runtime != nil {
+		machine = s.runtime.CloneRuntime(nil)
+	} else if s.Index != nil {
+		if err := apextest.RegisterProjectRuntimeForRequest(machine, *s.Index); err != nil {
+			writeJSON(w, http.StatusOK, executeAnonymousFailure(false, "project runtime setup failed: "+err.Error(), nil))
+			return
+		}
+	}
 	machine.SetToolingExecuteAnonymous(true)
 	machine.SetOrg(&next)
+	machine.SetCurrentNamespace(next.Namespace)
 	machine.SetCurrentUser(s.currentUser(r, ""))
 	if s.LimitMode != "" {
 		machine.SetLimitMode(s.LimitMode)

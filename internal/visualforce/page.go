@@ -93,6 +93,7 @@ func RenderPage(req PageRenderRequest) (PageRenderResult, error) {
 	if err != nil {
 		return PageRenderResult{}, fmt.Errorf("parse markup: %w", err)
 	}
+	spliceIncludedPages(tree, &req.VFIndex, map[string]bool{strings.ToLower(req.PageName): true})
 	machine := req.Machine
 	if machine == nil {
 		machine = vm.New(nil)
@@ -100,6 +101,7 @@ func RenderPage(req PageRenderRequest) (PageRenderResult, error) {
 	if req.Org != nil {
 		machine.Org = req.Org
 	}
+	defer machine.BeginReportTransaction()()
 	if err := machine.LoadStandardSetListViews(req.Project.ListViewFiles); err != nil {
 		return PageRenderResult{}, err
 	}
@@ -160,6 +162,7 @@ func RenderPage(req PageRenderRequest) (PageRenderResult, error) {
 		ProjectNamespace:         namespace,
 		Scope:                    NewScopeStack(),
 	}
+	req.FormValues = visualforceClientIDFormAliases(tree, req.FormValues)
 	formState, err := prepareFormLifecycle(tree, &req, machine, &controller, exprCtx)
 	if err != nil {
 		return PageRenderResult{}, err

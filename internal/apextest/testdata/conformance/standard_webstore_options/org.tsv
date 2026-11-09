@@ -1,0 +1,99 @@
+api	route	case	outcome	observation
+62.0	deploy-compile	webstore_options_ctor	accepted	-
+62.0	deploy-compile	webstore_options_read	accepted	-
+62.0	deploy-compile	webstore_options_assign	accepted	-
+62.0	deploy-compile	webstore_unknown_ctor_control	rejected	Field does not exist: OptionsNoSuchField on WebStore
+62.0	deploy-compile	webstore_soql_options	accepted	-
+62.0	test-runner	dyn_put_all_false:insert_all_false	observed	OK false,false,false,false,false,false,false,false,false,false,true,false,false,false
+62.0	test-runner	dyn_put_missing_one:insert_missing_OptionsGuestCartEnabled	observed	OK
+62.0	test-runner	dyn_put_missing_one:insert_missing_OptionsAutoFacetingEnabled	observed	OK
+62.0	test-runner	dyn_put_mixed:insert_mixed	observed	OK true,false,true,false,true,false,true,false,true,false,true,false,true,false
+62.0	test-runner	members:OptionsAutoFacetingEnabled	observed	BOOLEAN|ctrue|utrue|nfalse|dfltfalse|atrue
+62.0	test-runner	members:OptionsCartAsyncProcessingEnabled	observed	BOOLEAN|ctrue|utrue|nfalse|dfltfalse|atrue
+62.0	test-runner	members:OptionsCartCalculateEnabled	observed	BOOLEAN|ctrue|utrue|nfalse|dfltfalse|atrue
+62.0	test-runner	members:OptionsCartToOrderAutoCustomFieldMapping	observed	BOOLEAN|ctrue|utrue|nfalse|dfltfalse|atrue
+62.0	test-runner	members:OptionsCommerceEinsteinActivitiesTracked	observed	BOOLEAN|ctrue|utrue|nfalse|dfltfalse|atrue
+62.0	test-runner	members:OptionsCommerceEinsteinDeployed	observed	BOOLEAN|ctrue|utrue|nfalse|dfltfalse|atrue
+62.0	test-runner	members:OptionsDuplicateCartItemsEnabled	observed	BOOLEAN|ctrue|utrue|nfalse|dfltfalse|atrue
+62.0	test-runner	members:OptionsGuestBrowsingEnabled	observed	BOOLEAN|ctrue|utrue|nfalse|dfltfalse|atrue
+62.0	test-runner	members:OptionsGuestCartEnabled	observed	BOOLEAN|ctrue|utrue|nfalse|dfltfalse|atrue
+62.0	test-runner	members:OptionsGuestCheckoutEnabled	observed	BOOLEAN|ctrue|utrue|nfalse|dfltfalse|atrue
+62.0	test-runner	members:OptionsPreserveGuestCartEnabled	observed	BOOLEAN|ctrue|utrue|nfalse|dfltfalse|atrue
+62.0	test-runner	members:OptionsSkipAdditionalEntitlementCheckForSearch	observed	BOOLEAN|ctrue|utrue|nfalse|dfltfalse|atrue
+62.0	test-runner	members:OptionsSkuDetectionEnabled	observed	BOOLEAN|ctrue|utrue|nfalse|dfltfalse|atrue
+62.0	test-runner	members:OptionsSplitShipmentEnabled	observed	BOOLEAN|ctrue|utrue|nfalse|dfltfalse|atrue
+62.0	test-runner	names_only:insert_name_only	observed	OK
+62.0	test-runner	put_unknown:put_unknown	observed	EXC System.SObjectException: Invalid field OptionsNoSuchField for WebStore
+67.0	deploy-compile	webstore_options_ctor	accepted	-
+67.0	deploy-compile	webstore_options_read	accepted	-
+67.0	deploy-compile	webstore_options_assign	accepted	-
+67.0	deploy-compile	webstore_unknown_ctor_control	rejected	Field does not exist: OptionsNoSuchField on WebStore
+67.0	deploy-compile	webstore_soql_options	accepted	-
+67.0	test-runner	dyn_put_all_false:insert_all_false	observed	OK false,false,false,false,false,false,false,false,false,false,true,false,false,false
+67.0	test-runner	dyn_put_missing_one:insert_missing_OptionsGuestCartEnabled	observed	OK
+67.0	test-runner	dyn_put_missing_one:insert_missing_OptionsAutoFacetingEnabled	observed	OK
+67.0	test-runner	dyn_put_mixed:insert_mixed	observed	OK true,false,true,false,true,false,true,false,true,false,true,false,true,false
+67.0	test-runner	members:OptionsAutoFacetingEnabled	observed	BOOLEAN|ctrue|utrue|nfalse|dfltfalse|atrue
+67.0	test-runner	members:OptionsCartAsyncProcessingEnabled	observed	BOOLEAN|ctrue|utrue|nfalse|dfltfalse|atrue
+67.0	test-runner	members:OptionsCartCalculateEnabled	observed	BOOLEAN|ctrue|utrue|nfalse|dfltfalse|atrue
+67.0	test-runner	members:OptionsCartToOrderAutoCustomFieldMapping	observed	BOOLEAN|ctrue|utrue|nfalse|dfltfalse|atrue
+67.0	test-runner	members:OptionsCommerceEinsteinActivitiesTracked	observed	BOOLEAN|ctrue|utrue|nfalse|dfltfalse|atrue
+67.0	test-runner	members:OptionsCommerceEinsteinDeployed	observed	BOOLEAN|ctrue|utrue|nfalse|dfltfalse|atrue
+67.0	test-runner	members:OptionsDuplicateCartItemsEnabled	observed	BOOLEAN|ctrue|utrue|nfalse|dfltfalse|atrue
+67.0	test-runner	members:OptionsGuestBrowsingEnabled	observed	BOOLEAN|ctrue|utrue|nfalse|dfltfalse|atrue
+67.0	test-runner	members:OptionsGuestCartEnabled	observed	BOOLEAN|ctrue|utrue|nfalse|dfltfalse|atrue
+67.0	test-runner	members:OptionsGuestCheckoutEnabled	observed	BOOLEAN|ctrue|utrue|nfalse|dfltfalse|atrue
+67.0	test-runner	members:OptionsPreserveGuestCartEnabled	observed	BOOLEAN|ctrue|utrue|nfalse|dfltfalse|atrue
+67.0	test-runner	members:OptionsSkipAdditionalEntitlementCheckForSearch	observed	BOOLEAN|ctrue|utrue|nfalse|dfltfalse|atrue
+67.0	test-runner	members:OptionsSkuDetectionEnabled	observed	BOOLEAN|ctrue|utrue|nfalse|dfltfalse|atrue
+67.0	test-runner	members:OptionsSplitShipmentEnabled	observed	BOOLEAN|ctrue|utrue|nfalse|dfltfalse|atrue
+67.0	test-runner	names_only:insert_name_only	observed	OK
+67.0	test-runner	put_unknown:put_unknown	observed	EXC System.SObjectException: Invalid field OptionsNoSuchField for WebStore
+62.0	test-runner	preserve:preserve_unset_guestfalse	observed	insert true,update_false false
+62.0	test-runner	preserve:preserve_unset_guesttrue	observed	insert true,update_false false
+62.0	test-runner	preserve:preserve_false_guestfalse	observed	insert true,update_false false
+62.0	test-runner	preserve:preserve_false_guesttrue	observed	insert true,update_false false
+62.0	test-runner	preserve:preserve_true_guestfalse	observed	insert true,update_false false
+62.0	test-runner	preserve:preserve_true_guesttrue	observed	insert true,update_false false
+67.0	test-runner	preserve:preserve_unset_guestfalse	observed	insert true,update_false false
+67.0	test-runner	preserve:preserve_unset_guesttrue	observed	insert true,update_false false
+67.0	test-runner	preserve:preserve_false_guestfalse	observed	insert true,update_false false
+67.0	test-runner	preserve:preserve_false_guesttrue	observed	insert true,update_false false
+67.0	test-runner	preserve:preserve_true_guestfalse	observed	insert true,update_false false
+67.0	test-runner	preserve:preserve_true_guesttrue	observed	insert true,update_false false
+62.0	test-runner	ce_chain:store_group_link	observed	true,true
+62.0	test-runner	ce_chain:policy_values	observed	p1,true,false,false
+62.0	test-runner	ce_chain:policy_product	observed	true,true
+62.0	test-runner	ce_chain:policy_buyergroup	observed	true,true
+62.0	test-runner	ce_members:BuyerGroup.Name	observed	STRING|ctrue|utrue|nfalse|atrue
+62.0	test-runner	ce_members:BuyerGroup.Description	observed	STRING|ctrue|utrue|ntrue|atrue
+62.0	test-runner	ce_members:CommerceEntitlementBuyerGroup.PolicyId	observed	REFERENCE|ctrue|ufalse|nfalse|atrue
+62.0	test-runner	ce_members:CommerceEntitlementBuyerGroup.BuyerGroupId	observed	REFERENCE|ctrue|ufalse|nfalse|atrue
+62.0	test-runner	ce_members:CommerceEntitlementPolicy.Name	observed	STRING|ctrue|utrue|nfalse|atrue
+62.0	test-runner	ce_members:CommerceEntitlementPolicy.CanViewProduct	observed	BOOLEAN|ctrue|utrue|nfalse|atrue
+62.0	test-runner	ce_members:CommerceEntitlementPolicy.CanViewPrice	observed	BOOLEAN|ctrue|utrue|nfalse|atrue
+62.0	test-runner	ce_members:CommerceEntitlementPolicy.IsActive	observed	BOOLEAN|ctrue|utrue|nfalse|atrue
+62.0	test-runner	ce_members:CommerceEntitlementPolicy.Description	observed	STRING|ctrue|utrue|ntrue|atrue
+62.0	test-runner	ce_members:CommerceEntitlementProduct.PolicyId	observed	REFERENCE|ctrue|ufalse|nfalse|atrue
+62.0	test-runner	ce_members:CommerceEntitlementProduct.ProductId	observed	REFERENCE|ctrue|ufalse|nfalse|atrue
+62.0	test-runner	ce_members:WebStoreBuyerGroup.WebStoreId	observed	REFERENCE|ctrue|ufalse|nfalse|atrue
+62.0	test-runner	ce_members:WebStoreBuyerGroup.BuyerGroupId	observed	REFERENCE|ctrue|utrue|nfalse|atrue
+62.0	test-runner	ce_policy_name_only:policy_name_only	observed	OK false,false,false
+67.0	test-runner	ce_chain:store_group_link	observed	true,true
+67.0	test-runner	ce_chain:policy_values	observed	p1,true,false,false
+67.0	test-runner	ce_chain:policy_product	observed	true,true
+67.0	test-runner	ce_chain:policy_buyergroup	observed	true,true
+67.0	test-runner	ce_members:BuyerGroup.Name	observed	STRING|ctrue|utrue|nfalse|atrue
+67.0	test-runner	ce_members:BuyerGroup.Description	observed	STRING|ctrue|utrue|ntrue|atrue
+67.0	test-runner	ce_members:CommerceEntitlementBuyerGroup.PolicyId	observed	REFERENCE|ctrue|ufalse|nfalse|atrue
+67.0	test-runner	ce_members:CommerceEntitlementBuyerGroup.BuyerGroupId	observed	REFERENCE|ctrue|ufalse|nfalse|atrue
+67.0	test-runner	ce_members:CommerceEntitlementPolicy.Name	observed	STRING|ctrue|utrue|nfalse|atrue
+67.0	test-runner	ce_members:CommerceEntitlementPolicy.CanViewProduct	observed	BOOLEAN|ctrue|utrue|nfalse|atrue
+67.0	test-runner	ce_members:CommerceEntitlementPolicy.CanViewPrice	observed	BOOLEAN|ctrue|utrue|nfalse|atrue
+67.0	test-runner	ce_members:CommerceEntitlementPolicy.IsActive	observed	BOOLEAN|ctrue|utrue|nfalse|atrue
+67.0	test-runner	ce_members:CommerceEntitlementPolicy.Description	observed	STRING|ctrue|utrue|ntrue|atrue
+67.0	test-runner	ce_members:CommerceEntitlementProduct.PolicyId	observed	REFERENCE|ctrue|ufalse|nfalse|atrue
+67.0	test-runner	ce_members:CommerceEntitlementProduct.ProductId	observed	REFERENCE|ctrue|ufalse|nfalse|atrue
+67.0	test-runner	ce_members:WebStoreBuyerGroup.WebStoreId	observed	REFERENCE|ctrue|ufalse|nfalse|atrue
+67.0	test-runner	ce_members:WebStoreBuyerGroup.BuyerGroupId	observed	REFERENCE|ctrue|utrue|nfalse|atrue
+67.0	test-runner	ce_policy_name_only:policy_name_only	observed	OK false,false,false

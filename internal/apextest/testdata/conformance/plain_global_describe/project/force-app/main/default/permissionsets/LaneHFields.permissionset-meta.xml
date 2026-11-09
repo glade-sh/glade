@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata"><label>LaneH Fields</label>
+<fieldPermissions><editable>true</editable><field>Contact.V35H_Acc__c</field><readable>true</readable></fieldPermissions>
+<fieldPermissions><editable>true</editable><field>Contact.V35H_Ext__c</field><readable>true</readable></fieldPermissions>
+<fieldPermissions><editable>true</editable><field>Contact.V35H_Txt__c</field><readable>true</readable></fieldPermissions>
+<fieldPermissions><editable>true</editable><field>V35H_Pick__c.RPick__c</field><readable>true</readable></fieldPermissions>
+<fieldPermissions><editable>true</editable><field>V35H_Pick__c.UPick__c</field><readable>true</readable></fieldPermissions>
+<fieldPermissions><editable>true</editable><field>V35H_Pick__c.RMulti__c</field><readable>true</readable></fieldPermissions>
+<fieldPermissions><editable>true</editable><field>V35H_Pick__c.UMulti__c</field><readable>true</readable></fieldPermissions>
+<objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>V35H_Pick__c</object><viewAllRecords>false</viewAllRecords></objectPermissions>
+</PermissionSet>

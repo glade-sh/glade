@@ -44,6 +44,8 @@ func TestTextDefaultExpressionNativeConformance(t *testing.T) {
 				}
 				writeFile(t, filepath.Join(root, "force-app/main/default/classes", name+".cls-meta.xml"), string(body))
 			}
+			// Each ORG-RUN.txt records TextDefaultAccess assigned to the capture user.
+			writeFile(t, filepath.Join(root, "glade.yml"), "test:\n  permissionSets: [TextDefaultAccess]\n")
 			index := loadTestIndex(t, root)
 			for _, route := range []string{"anonymous", "istest"} {
 				t.Run(route, func(t *testing.T) {
@@ -91,7 +93,7 @@ func TestTextDefaultExpressionNativeConformance(t *testing.T) {
 						if analysis := sema.AnalyzeAnonymous(index, body, api); analysis.HasErrors() {
 							t.Fatalf("anonymous: %v", analysis.Diagnostics)
 						}
-						org := orgFromIndex(index)
+						org := capturedFixtureOrg(t, index, api)
 						runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 						program, err := vm.CompileAnonymousWithOptions(body, vm.CompileOptions{APIVersion: api})
 						if err != nil {

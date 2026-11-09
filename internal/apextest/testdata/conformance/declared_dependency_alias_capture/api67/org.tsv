@@ -1,0 +1,9 @@
+id	api	route	outcome	value
+missing_static	67.0	anonymous	rejected	Compilation failed at Ln 1, Col 24 with the error: Variable does not exist: BirchDependency67
+missing_static	67.0	istest	rejected	Variable does not exist: BirchDependency67
+dynamic_boundary	67.0	anonymous	accepted	assertions passed
+dynamic_boundary	67.0	istest	accepted	assertions passed
+loaded_static	67.0	anonymous	accepted	assertions passed
+loaded_static	67.0	istest	accepted	assertions passed
+member_rejection	67.0	anonymous	rejected	Compilation failed at Ln 1, Col 19 with the error: Method does not exist or incorrect signature: void absentMember() from the type BirchDependency67
+member_rejection	67.0	istest	rejected	Method does not exist or incorrect signature: void absentMember() from the type BirchDependency67

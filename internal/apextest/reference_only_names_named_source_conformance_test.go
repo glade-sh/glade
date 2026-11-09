@@ -26,6 +26,7 @@ func TestReferenceOnlyNameNamedSourceNativeConformance(t *testing.T) {
 	const placeholder = "RefSigCase"
 	cases := readReferenceOnlyNativeTable(t, filepath.Join(fixture, "named-cases.tsv"), 3)
 	rows := readReferenceOnlyNativeTable(t, filepath.Join(fixture, "named-org.tsv"), 5)
+	overlayReferenceOnlyWinterRows(t, rows, filepath.Join(fixture, "org-winter27-warm-recheck.tsv"), map[string]string{"FieldServiceMobileExtension_soql": "soql", "FieldServiceMobileExtension_soql_count": "soql_count", "FieldServiceMobileExtension_soql_named": "soql_named", "FieldServiceMobileExtension_soql_typed_named": "soql_typed_named"}, map[string]string{"isTest": "isTest", "named_isTest": "isTest"})
 	type probe struct {
 		index       int
 		class, body string
@@ -235,11 +236,11 @@ func TestReferenceOnlyNameNamedSourceNativeConformance(t *testing.T) {
 	}
 }
 
-// Static SOQL in a named @IsTest method follows the reflection boundary:
-// no rows at API 62-66 and an unsupported sObject type at API 67.
+// Static SOQL in a named @IsTest method throws at API 62-67 on Winter 27.
 func TestReferenceOnlyNameFieldServiceSOQLVersionsNativeConformance(t *testing.T) {
 	const fixture = "testdata/conformance/reference_only_names"
 	rows := readReferenceOnlyNativeTable(t, filepath.Join(fixture, "soql-version-org.tsv"), 5)
+	overlayReferenceOnlyWinterRows(t, rows, "testdata/conformance/reference_only_surfaces/org.tsv", map[string]string{"FieldServiceMobileExtension_soql": "query_static_list", "FieldServiceMobileExtension_soql_count": "query_static_count"}, map[string]string{"isTest": "isTest"})
 	bodies := make(map[string]string)
 	for _, row := range readReferenceOnlyNativeTable(t, filepath.Join(fixture, "named-cases.tsv"), 3)[1:] {
 		bodies[row[0]] = row[2]

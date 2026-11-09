@@ -26,11 +26,16 @@ type describeCacheKey struct {
 	PermissionSets              string
 	TaskFieldOrder              bool
 	OmitPermissionViewAllFields bool
+	FeatureAPIVersion           string
+	FeatureNamedSource          bool
+	API68CapturedShape          bool
+	API68NamedRoute             bool
+	AnonymousFieldPolicy        bool
 }
 
 // childRelationshipCache memoizes parent-object -> child relationship describe
-// values. The result depends only on the org schema (object definitions and
-// namespace), which is immutable across test methods that share a schema, so
+// values. The key includes the source API; org schema (object definitions and
+// namespace) is immutable across test methods that share a schema, so
 // the cache is shared across runtime clones produced by CloneRuntime. The
 // RWMutex makes concurrent reuse by parallel test workers safe. Schema-mutating
 // tests get a fresh private instance via clearMetadataCaches, preserving
@@ -43,6 +48,7 @@ type childRelationshipCache struct {
 type childRelationshipLookupKey struct {
 	ParentObject string
 	Relationship string
+	APIVersion   string
 }
 
 type childRelationshipLookup struct {
@@ -272,7 +278,7 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 		}
 	}
 	share, source := vm.sharedDescribeFor(name, definition)
-	definition = vm.describePreparedDefinition(name, definition)
+	definition = vm.projectStandardAPI68Fields(name, vm.describePreparedDefinition(name, definition), definition)
 	desc := Object("Schema.DescribeSObjectResult")
 	desc.Fields["name"] = String(vm.describeObjectName(name))
 	desc.Fields["localName"] = String(vm.localSchemaName(vm.describeObjectName(name)))
@@ -295,6 +301,13 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 		desc.Fields["updateable"] = Bool(false)
 		desc.Fields["deletable"] = Bool(false)
 	}
+	if storage.IsCustomMetadataDefinition(definition) {
+		// A custom metadata type is never written through DML
+		// (cmdt_describe_flags).
+		desc.Fields["createable"] = Bool(false)
+		desc.Fields["updateable"] = Bool(false)
+		desc.Fields["deletable"] = Bool(false)
+	}
 	desc.Fields["searchable"] = Bool(vm.currentUserObjectPermission(name, "isSearchable"))
 	desc.Fields["customSetting"] = Bool(storage.IsCustomSettingDefinition(definition))
 	desc.Fields["custom"] = Bool(isCustomObjectLikeName(definition.APIName))
@@ -307,7 +320,7 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 	desc.Fields["feedEnabled"] = feedEnabled
 	desc.Fields["mergeable"] = describeMetadataBoolValue(definition.Metadata, "mergeable", false)
 	desc.Fields["mruEnabled"] = Bool(true)
-	desc.Fields["undeletable"] = Bool(true)
+	desc.Fields["undeletable"] = Bool(!storage.IsCustomMetadataDefinition(definition))
 	desc.Fields["deprecatedAndHidden"] = Bool(false)
 	desc.Fields["associateEntityType"] = describeMetadataStringValue(definition.Metadata, "associateEntityType")
 	desc.Fields["associateParentEntity"] = describeMetadataStringValue(definition.Metadata, "associateParentEntity")
@@ -341,8 +354,15 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 	byDeveloperName.Type = "Map<String,Schema.RecordTypeInfo>"
 	byID := Map()
 	byID.Type = "Map<Id,Schema.RecordTypeInfo>"
-	for _, recordType := range definition.RecordTypes {
+	masterDefault := !hasNonMasterDefaultRecordType(definition.RecordTypes)
+	for _, recordType := range describeRecordTypesWithMaster(definition.RecordTypes) {
 		value := recordTypeInfoValue(recordType)
+		if masterDefault && strings.EqualFold(recordType.DeveloperName, "Master") {
+			// record_type_field_presence and record_type_shape: Master is the
+			// default mapping unless another record type is the profile default.
+			value.Fields["default"] = Bool(true)
+			value.Fields["defaultRecordTypeMapping"] = Bool(true)
+		}
 		recordTypes = append(recordTypes, value)
 		if name := recordTypeName(recordType); name != "" {
 			key := String(name)
@@ -386,6 +406,10 @@ func (vm *VM) describeSObjectFieldMap(name string, definition storage.ObjectDefi
 	}
 	vm.sortDescribeFieldNames(name, definition, fieldNames)
 	omitViewAllFields := vm.omitPermissionViewAllFields(name)
+	featureVersion := vm.featureDescribeVersion(name)
+	namedOnly := storage.StandardFeatureHasNamedOnlyFields(name)
+	namedSource := vm.featureNamedSource(name)
+	anonymousPolicy := vm.anonymousFieldPolicyScope() && vm.ordinaryCustomPermissionObject(name)
 	for _, fieldName := range fieldNames {
 		field := definition.Fields[fieldName]
 		apiName := field.APIName
@@ -395,7 +419,18 @@ func (vm *VM) describeSObjectFieldMap(name string, definition storage.ObjectDefi
 		if strings.TrimSpace(apiName) == "" {
 			continue
 		}
+		if namedOnly && !namedSource && storage.StandardFeatureNamedOnlyField(name, apiName) {
+			continue
+		}
+		if featureVersion != "" {
+			if visible, captured := storage.StandardFeatureFieldVersion(name, apiName, featureVersion); captured && !visible {
+				continue
+			}
+		}
 		if omitViewAllFields && strings.EqualFold(apiName, "PermissionsViewAllFields") {
+			continue
+		}
+		if anonymousPolicy && vm.policyHiddenField(name, apiName) {
 			continue
 		}
 		field.APIName = apiName
@@ -404,7 +439,7 @@ func (vm *VM) describeSObjectFieldMap(name string, definition storage.ObjectDefi
 		vm.addSObjectFieldMapFieldEntry(&fieldsMap, name, definition, field, token)
 	}
 	defaultFieldNames := []string{"Id", "CreatedDate", "CreatedById", "LastModifiedDate", "LastModifiedById", "SystemModstamp"}
-	if storage.IsGeneratedHistoryObject(definition) || storage.IsChangeEventObject(definition) {
+	if vm.isStandardAPI68NewObject(name) || storage.IsGeneratedHistoryObject(definition) || storage.IsChangeEventObject(definition) {
 		// A change event's captured fields are already in its definition.
 		defaultFieldNames = nil
 	} else if vm.isNamedApexReferenceDescribe(definition.APIName) {
@@ -420,8 +455,16 @@ func (vm *VM) describeSObjectFieldMap(name string, definition storage.ObjectDefi
 			defaultFieldNames = append(defaultFieldNames, "OwnerId")
 		}
 	}
+	if storage.IsGeneratedShareObject(definition) {
+		// Native custom-object share tables have no creation audit, system
+		// timestamp, Name or OwnerId field.
+		defaultFieldNames = []string{"Id", "LastModifiedDate", "LastModifiedById"}
+	}
 	for _, fieldName := range defaultFieldNames {
 		if _, ok := fieldsMap.Map[mapKey(String(fieldName))]; ok {
+			continue
+		}
+		if storage.StandardObjectOmitsAuditField(definition.APIName, fieldName) {
 			continue
 		}
 		token := vm.sObjectFieldToken(name, fieldName)
@@ -434,8 +477,11 @@ func (vm *VM) describeChildRelationshipsForDescribe(receiver *Value) (Value, err
 	if receiver == nil || receiver.Fields == nil {
 		return Null, fmt.Errorf("Schema.DescribeSObjectResult token missing object")
 	}
+	api := vm.currentSourceExecutionPolicy().APIVersion
 	if existing, ok := receiver.Fields["childRelationships"]; ok && existing.Kind == ValueList {
-		return existing, nil
+		if version, marked := receiver.Fields["__gladeChildRelationshipsAPIVersion"]; !marked || version.Text == api {
+			return existing, nil
+		}
 	}
 	name, ok := receiver.Fields["name"]
 	if !ok || name.Kind != ValueString || strings.TrimSpace(name.Text) == "" {
@@ -444,6 +490,7 @@ func (vm *VM) describeChildRelationshipsForDescribe(receiver *Value) (Value, err
 	childRelationships := List(vm.describeChildRelationships(name.Text)...)
 	childRelationships.Type = "List<Schema.ChildRelationship>"
 	receiver.Fields["childRelationships"] = childRelationships
+	receiver.Fields["__gladeChildRelationshipsAPIVersion"] = String(api)
 	vm.rememberPublishedObjectFieldRefs(*receiver, Null, childRelationships)
 	return childRelationships, nil
 }
@@ -495,6 +542,9 @@ func (vm *VM) prepareDescribeDefinition(name string, definition storage.ObjectDe
 		storage.EnsureStandardObjectFields(&definition)
 	}
 	storage.RemoveCustomSettingUnsupportedFields(&definition)
+	if !isCustomSchemaName(definition.APIName) {
+		storage.NameIndustriesChildRelationships(&definition)
+	}
 	if storage.IsCustomMetadataDefinition(definition) {
 		// Custom metadata has metadata identity fields instead of the audit
 		// and ownership fields of ordinary records.
@@ -660,6 +710,7 @@ func (vm *VM) sObjectFieldMapAliases(objectName, fieldName string) []string {
 }
 
 func (vm *VM) describeChildRelationships(name string) []Value {
+	vm.materializeLazyStandardSpread()
 	vm.ensureMetadataCacheGeneration()
 	if vm == nil || vm.Org == nil {
 		return nil
@@ -671,10 +722,14 @@ func (vm *VM) describeChildRelationships(name string) []Value {
 	if vm.childRelCache == nil {
 		vm.childRelCache = newChildRelationshipCache()
 	}
-	if cached, ok := vm.childRelCache.load(target); ok {
+	cacheKey := target + "\x00" + vm.currentSourceExecutionPolicy().APIVersion
+	if cached, ok := vm.childRelCache.load(cacheKey); ok {
 		return cached
 	}
 	platformChildren := vm.contentChildRelationships(name)
+	storage.VisitVersionedPlatformChildRelationships(name, vm.currentSourceExecutionPolicy().APIVersion, func(child string, relation storage.Relationship) {
+		platformChildren = append(platformChildren, contentChildRelationship{childObject: child, relationship: relation})
+	})
 	platformByField := make(map[string]storage.Relationship, len(platformChildren))
 	childFieldKey := func(child, field string) string { return strings.ToLower(child) + "\x00" + strings.ToLower(field) }
 	for _, child := range platformChildren {
@@ -702,6 +757,9 @@ func (vm *VM) describeChildRelationships(name string) []Value {
 			return relationships[i].Field < relationships[j].Field
 		})
 		for _, relationship := range relationships {
+			if !storage.PlatformChildRelationshipAvailableAtVersion(name, childName, relationship.Field, vm.currentSourceExecutionPolicy().APIVersion) {
+				continue
+			}
 			// A208/A217: inherited Activity lookups are not separate Task/Event
 			// entries in the referenced object's child relationship describe.
 			if relationship.InheritedFrom != "" {
@@ -730,7 +788,7 @@ func (vm *VM) describeChildRelationships(name string) []Value {
 			childRelationships = append(childRelationships, vm.childRelationshipValue(child.childObject, child.relationship))
 		}
 	}
-	vm.childRelCache.store(target, childRelationships)
+	vm.childRelCache.store(cacheKey, childRelationships)
 	return childRelationships
 }
 
@@ -767,8 +825,11 @@ const globalDescribeMapType = "Schema.GlobalDescribeMap"
 
 func (vm *VM) globalDescribeMapValue() Value {
 	value := vm.schemaGlobalDescribe()
+	value = vm.projectStandardAPI68Global(value)
 	value.Runtime = globalDescribeMapType
 	value, extended := vm.withNamedApexReferenceGlobalEntries(value)
+	value, changeEvents := vm.withChangeEventGlobalEntries(value)
+	extended = extended || changeEvents
 	if vm.Org == nil || vm.Org.Namespace == "" {
 		if extended {
 			vm.fillGlobalDescribeProjectionKeys(&value, vm.currentCallerNamespace())
@@ -837,6 +898,11 @@ func (vm *VM) globalDescribeCacheEntry(ref uint64) (*Value, bool) {
 	if vm.globalDescribeCache != nil && vm.globalDescribeCache.Ref == ref {
 		return vm.globalDescribeCache, true
 	}
+	for _, entry := range vm.globalDescribeVersionCaches {
+		if entry != nil && entry.Ref == ref {
+			return entry, true
+		}
+	}
 	return nil, false
 }
 
@@ -847,11 +913,11 @@ func (vm *VM) storeGlobalDescribeCacheEntry(entry Value) {
 	if isGlobalDescribeMap(entry) && vm.Org != nil && vm.Org.Namespace != "" {
 		return
 	}
-	if vm.globalDescribeCache != nil && vm.globalDescribeCache.Ref == entry.Ref {
+	if cached, ok := vm.globalDescribeCacheEntry(entry.Ref); ok {
 		// The base cache also backs app/module describe. The global-only
 		// lookup marker belongs to the returned view, never to that base.
 		entry.Runtime = ""
-		*vm.globalDescribeCache = entry
+		*cached = entry
 		return
 	}
 }
@@ -918,8 +984,10 @@ func (vm *VM) schemaDescribeMapAliases(name string) []string {
 	return aliases
 }
 
-// In an unmanaged subscriber the installed CMT's global
-// describe key retains the type namespace. Other describe aliases are unchanged.
+// In an unmanaged subscriber the global describe key of an installed package's
+// object retains the package namespace, for custom metadata types and for
+// custom objects alike (global_describe_subscriber_bare_alias). Other describe
+// aliases are unchanged.
 func (vm *VM) subscriberNamespacedCustomMetadataDescribe(name string) bool {
 	if vm.Org == nil || vm.Org.Namespace != "" || vm.currentCallerNamespace() != "" {
 		return false
@@ -927,8 +995,8 @@ func (vm *VM) subscriberNamespacedCustomMetadataDescribe(name string) bool {
 	if _, namespaced := namespaceTokenPrefix(name); !namespaced {
 		return false
 	}
-	object, exists := vm.Org.Objects[name]
-	return exists && storage.IsCustomMetadataDefinition(object.Definition)
+	_, exists := vm.Org.Objects[name]
+	return exists
 }
 
 // schemaDescribeLookupAliases are the keys a containsKey/get key may match.
@@ -960,7 +1028,8 @@ func (vm *VM) schemaDescribeAliases(name string) []string {
 	return aliases
 }
 
-// The captured containsKey shape is handled here; the existing get lookup path is retained.
+// A bare key never names an installed package's object in an unmanaged subscriber:
+// containsKey and get both answer false/null (global_describe_subscriber_bare_alias).
 func (vm *VM) globalDescribeContainsKeyNamesObject(key, resolved string) bool {
 	if _, prefixed := namespaceTokenPrefix(strings.TrimSpace(key)); !prefixed && vm.subscriberNamespacedCustomMetadataDescribe(resolved) {
 		return false
@@ -995,6 +1064,21 @@ func (vm *VM) globalDescribeKeyNamesObject(key, resolved string) bool {
 	return false
 }
 
+// describeAPI68ObjectDefinition adds captured API68 objects only to describe
+// entry points. Shared resolution used by DML, SOQL and JSON keeps its existing
+// catalog semantics until those routes have their own native evidence.
+func (vm *VM) describeAPI68ObjectDefinition(objectName string) (string, storage.ObjectDefinition, bool) {
+	if vm.Org != nil {
+		if canonical, ok := vm.resolveObjectName(objectName); ok {
+			return canonical, vm.Org.Objects[canonical].Definition, true
+		}
+	}
+	if definition, ok := vm.standardAPI68ObjectDefinition(objectName); ok {
+		return definition.APIName, definition, true
+	}
+	return vm.describeObjectDefinition(objectName)
+}
+
 func (vm *VM) describeObjectDefinition(objectName string) (string, storage.ObjectDefinition, bool) {
 	if vm.Org != nil {
 		if canonical, ok := vm.resolveObjectName(objectName); ok {
@@ -1009,14 +1093,17 @@ func (vm *VM) describeObjectDefinition(objectName string) (string, storage.Objec
 		return canonical, storage.ObjectDefinition{APIName: canonical, Label: label, PluralLabel: plural, KeyPrefix: prefix}, true
 	}
 	if event, ok := standardChangeEventName(objectName); ok {
-		return event, storage.ObjectDefinition{APIName: event}, true
+		return event, storage.ObjectDefinition{APIName: event, Label: changeEventLabel(event[:len(event)-len("ChangeEvent")], false)}, true
+	}
+	if event, label, ok := vm.listedChangeEventDefinition(objectName); ok {
+		return event, storage.ObjectDefinition{APIName: event, Label: label}, true
 	}
 	if vm.Org != nil && hasSuffixFold(objectName, "__ChangeEvent") {
 		base := objectName[:len(objectName)-len("__ChangeEvent")] + "__c"
 		if canonical, ok := vm.resolveObjectName(base); ok && vm.ownedNamespacedCustomGlobalDescribe(canonical) {
 			event := canonical[:len(canonical)-len("__c")] + "__ChangeEvent"
 			if strings.EqualFold(event, objectName) {
-				return event, storage.ObjectDefinition{APIName: event}, true
+				return event, storage.ObjectDefinition{APIName: event, Label: changeEventLabel(vm.Org.Objects[canonical].Definition.Label, true)}, true
 			}
 		}
 	}
@@ -1125,7 +1212,9 @@ func (vm *VM) defaultValueForNewSObjectField(definition storage.ObjectDefinition
 	}
 	rawDefault := strings.TrimSpace(field.DefaultValue)
 	if rawDefault != "" && (strings.Contains(rawDefault, "$RecordType") || strings.ContainsAny(rawDefault, "()+-*/&<>=")) {
-		if value, _, ok := dml.EvaluateRecordFormulaValueInOrg(rawDefault, field, vm.Org, definition, stored); ok {
+		defaultOptions := vm.formulaEvaluationOptions()
+		defaultOptions.LineFeedBR = true
+		if value, _, ok := dml.EvaluateRecordFormulaValueInOrgWithOptions(rawDefault, field, vm.Org, definition, stored, defaultOptions); ok {
 			if rawRecordTypeDefaultStorageValue(value, field) {
 				return storage.Value{}, false
 			}
@@ -1849,13 +1938,39 @@ func metadataObjectNameMatches(namespace, canonical, candidate string) bool {
 	return strings.EqualFold(strippedCanonical, strippedCandidate)
 }
 
+// describeRecordTypesWithMaster lists Master beside an object's record types
+// (record_type_shape account_rt and profile rows: Account lists LgAcct and
+// Master). Only the describe view gains it.
+func describeRecordTypesWithMaster(recordTypes []storage.RecordTypeInfo) []storage.RecordTypeInfo {
+	if len(recordTypes) == 0 {
+		return recordTypes
+	}
+	for _, recordType := range recordTypes {
+		if strings.EqualFold(recordType.DeveloperName, "Master") {
+			return recordTypes
+		}
+	}
+	out := make([]storage.RecordTypeInfo, 0, len(recordTypes)+1)
+	out = append(out, recordTypes...)
+	return append(out, storage.RecordTypeInfo{ID: storage.ID("012000000000000AAA"), DeveloperName: "Master", Name: "Master", Active: true, Available: true})
+}
+
+func hasNonMasterDefaultRecordType(recordTypes []storage.RecordTypeInfo) bool {
+	for _, recordType := range recordTypes {
+		if recordType.Default && !strings.EqualFold(recordType.DeveloperName, "Master") {
+			return true
+		}
+	}
+	return false
+}
+
 func recordTypeInfoValue(recordType storage.RecordTypeInfo) Value {
 	value := Object("Schema.RecordTypeInfo")
 	value.Fields["recordTypeId"] = platformScalar("Id", recordType.ID.String())
 	value.Fields["developerName"] = String(recordType.DeveloperName)
 	value.Fields["name"] = String(recordTypeName(recordType))
 	value.Fields["active"] = Bool(recordType.Active)
-	value.Fields["available"] = Bool(recordType.Available || recordType.Active)
+	value.Fields["available"] = Bool((recordType.Available || recordType.Active) && !recordType.Unavailable)
 	value.Fields["default"] = Bool(recordType.Default)
 	value.Fields["defaultRecordTypeMapping"] = Bool(recordType.Default)
 	value.Fields["master"] = Bool(strings.EqualFold(recordType.DeveloperName, "Master"))
@@ -1864,7 +1979,7 @@ func recordTypeInfoValue(recordType storage.RecordTypeInfo) Value {
 
 func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	vm.ensureMetadataCacheGeneration()
-	objectName, definition, ok := vm.describeObjectDefinition(objectName)
+	objectName, definition, ok := vm.describeAPI68ObjectDefinition(objectName)
 	if !ok {
 		return Null, fmt.Errorf("Schema field describe unknown object %s", objectName)
 	}
@@ -1873,7 +1988,7 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 		return cached, nil
 	}
 	orgDefinition := definition
-	definition = vm.describePreparedDefinition(objectName, definition)
+	definition = vm.projectStandardAPI68Fields(objectName, vm.describePreparedDefinition(objectName, definition), definition)
 	namespace := ""
 	if vm.Org != nil {
 		namespace = vm.Org.Namespace
@@ -1942,6 +2057,13 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	if displayType == "" {
 		displayType = string(field.Type)
 	}
+	// A MetadataRelationship to EntityDefinition or FieldDefinition describes as
+	// a plain STRING with no reference target or relationship name
+	// (cmdt_metadata_relationship_assignment). Queries still traverse it.
+	namedMetadata := fieldReferencesNamedMetadata(field)
+	if namedMetadata {
+		displayType = "STRING"
+	}
 	desc.Fields["type"] = schemaDisplayTypeValue(displayType)
 	desc.Fields["soapType"] = schemaSOAPTypeValue(soapTypeForStorageField(field))
 	desc.Fields["nillable"] = Bool(storage.FieldFlagValue(field.Nillable, describeFieldNillable(field)))
@@ -1998,7 +2120,7 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 			relationshipName = storage.NamespaceTokenName(vm.Org.Namespace, relationshipName)
 		}
 	}
-	if relationshipName == "" {
+	if relationshipName == "" || namedMetadata {
 		desc.Fields["relationshipName"] = Null
 	} else {
 		desc.Fields["relationshipName"] = String(relationshipName)
@@ -2010,6 +2132,12 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 		desc.Fields["relationshipOrder"] = Int(int64(*field.RelationshipOrder))
 	}
 	referenceTo := describeFieldReferenceTargets(definition, field)
+	if activityWhatIDField(objectName, field.APIName) {
+		referenceTo = vm.availableReferenceTargets(referenceTo)
+	}
+	if namedMetadata {
+		referenceTo = nil
+	}
 	references := make([]Value, 0, len(referenceTo))
 	for _, target := range referenceTo {
 		references = append(references, sObjectTypeToken(target))
@@ -2018,6 +2146,17 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	desc.Fields["accessible"] = Bool(storage.FieldFlagValue(field.Accessible, true) && vm.currentUserFieldPermission(objectName, field.APIName, "isAccessible"))
 	desc.Fields["createable"] = Bool(storage.FieldFlagValue(field.Createable, !calculated && !field.AutoNumber) && vm.currentUserFieldPermission(objectName, field.APIName, "isCreateable"))
 	desc.Fields["updateable"] = Bool(storage.FieldFlagValue(field.Updateable, !calculated && !field.AutoNumber) && vm.currentUserFieldPermission(objectName, field.APIName, "isUpdateable"))
+	if profile, major, named, known := vm.standardAPI68Context(); known && major == 68 && named {
+		switch storage.StandardAPI68DescribeAccessRule(profile, objectName, field.APIName) {
+		case "inaccessible":
+			desc.Fields["accessible"], desc.Fields["createable"], desc.Fields["updateable"] = Bool(false), Bool(false), Bool(false)
+		case "explicit_read":
+			read := vm.standardAPI68ExplicitFieldRead(objectName, field.APIName)
+			desc.Fields["accessible"] = Bool(read)
+			desc.Fields["createable"] = Bool(read && storage.FieldFlagValue(field.Createable, false))
+			desc.Fields["updateable"] = Bool(read && storage.FieldFlagValue(field.Updateable, false))
+		}
+	}
 	desc.Fields["filterable"] = Bool(storage.FieldFlagValue(field.Filterable, describeFieldFilterable(field)))
 	desc.Fields["groupable"] = Bool(storage.FieldFlagValue(field.Groupable, describeFieldGroupable(field)))
 	desc.Fields["sortable"] = Bool(storage.FieldFlagValue(field.Sortable, describeFieldSortable(field)))
@@ -2037,8 +2176,15 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	}
 	desc.Fields["controllerValues"] = describeFieldControllerValues(definition, controllerField, hasController)
 	vm.completeDescribeFieldResult(&desc, objectName, field)
-	picklistValues := make([]Value, 0, len(field.PicklistValues))
-	for _, value := range field.PicklistValues {
+	customMetadataFieldDescribeFlags(&desc, definition, field, namedMetadata)
+	field.PicklistValues = vm.userLocaleDescribeValues(objectName, field)
+	values := field.PicklistValues
+	if profile, major, named, known := vm.standardAPI68Context(); known && major == 68 && named && storage.StandardAPI68DescribeAccessRule(profile, objectName, field.APIName) == "explicit_read" && !vm.standardAPI68ExplicitFieldRead(objectName, field.APIName) {
+		// The added picklist was observed only after an explicit field grant.
+		values = nil
+	}
+	picklistValues := make([]Value, 0, len(values))
+	for _, value := range values {
 		entry := Object("Schema.PicklistEntry")
 		entry.Fields["value"] = String(value.Value)
 		label := value.Label
@@ -2157,7 +2303,7 @@ func (vm *VM) fieldDescribeCacheKeys(objectName, fieldName string) []describeCac
 		if alias == "" {
 			continue
 		}
-		key := vm.describePermissionCacheKey(base, alias)
+		key := vm.fieldDescribeCacheKey(base, alias)
 		if _, ok := seen[key]; ok {
 			continue
 		}
@@ -2171,7 +2317,58 @@ func (vm *VM) describeSObjectCacheKey(objectName string) describeCacheKey {
 	key := vm.describePermissionCacheKey(strings.ToLower(strings.TrimSpace(objectName)), "")
 	key.TaskFieldOrder = vm.usesCapturedTaskDescribeFieldOrder(objectName)
 	key.OmitPermissionViewAllFields = vm.omitPermissionViewAllFields(objectName)
+	key.FeatureAPIVersion = vm.featureDescribeVersion(objectName)
+	key.FeatureNamedSource = vm.featureNamedSource(objectName)
+	_, major, named, known := vm.standardAPI68Context()
+	key.API68CapturedShape = known && major == 68
+	key.API68NamedRoute = key.API68CapturedShape && named
+	// Only custom objects can hide policy fields; keep other keys
+	// allocation-free (TestDescribeCacheKeyWarmAllocations).
+	key.AnonymousFieldPolicy = key != (describeCacheKey{}) && hasSuffixFold(strings.TrimSpace(objectName), "__c") && vm.anonymousFieldPolicyScope()
 	return key
+}
+
+func (vm *VM) featureDescribeVersion(objectName string) string {
+	if vm == nil || (!storage.StandardFeatureHasVersionedFields(objectName) && !storage.StandardFeatureHasNamedOnlyFields(objectName)) {
+		return ""
+	}
+	version := vm.currentMethod.APIVersion
+	if version == "" && vm.Org != nil {
+		version = vm.Org.APIVersion
+	}
+	return version
+}
+
+// The captured named-only field set follows the currently executing source
+// frame. Include it in describe cache identity so anonymous and named callers
+// sharing one VM do not reuse one another's field maps.
+func (vm *VM) featureNamedSource(objectName string) bool {
+	if vm == nil || !storage.StandardFeatureHasNamedOnlyFields(objectName) || vm.currentClass == "" || vm.currentTrigger {
+		return false
+	}
+	class, ok := vm.lookupClass(vm.currentClass)
+	return ok && !class.PlatformType && !methodHasModifier(class.Modifiers, AnonymousClassModifier)
+}
+
+func (vm *VM) featureFieldHiddenForAccess(objectName, field string) bool {
+	if storage.StandardFeatureNamedOnlyField(objectName, field) {
+		return !vm.featureNamedSource(objectName)
+	}
+	version := vm.featureDescribeVersion(objectName)
+	// Direct access was independently captured for every supported API version.
+	visible, captured := storage.StandardFeatureFieldVersion(objectName, field, version)
+	return captured && !visible
+}
+
+func (vm *VM) featureFieldHiddenForQuery(objectName, field string) bool {
+	if storage.StandardFeatureNamedOnlyField(objectName, field) {
+		if !vm.featureNamedSource(objectName) {
+			return true
+		}
+		allowed, captured := storage.StandardFeatureNamedQueryVersion(objectName, field, vm.featureDescribeVersion(objectName))
+		return captured && !allowed
+	}
+	return vm.featureFieldHiddenForAccess(objectName, field)
 }
 
 // The captured field map omits this member at API 62 and exposes it at 63/67.
@@ -2196,7 +2393,11 @@ func (vm *VM) permissionViewAllFieldsHidden(objectName, field string) bool {
 }
 
 func (vm *VM) fieldDescribeCacheKey(objectName, fieldName string) describeCacheKey {
-	return vm.describePermissionCacheKey(strings.ToLower(strings.TrimSpace(objectName)), strings.ToLower(strings.TrimSpace(fieldName)))
+	key := vm.describePermissionCacheKey(strings.ToLower(strings.TrimSpace(objectName)), strings.ToLower(strings.TrimSpace(fieldName)))
+	_, major, named, known := vm.standardAPI68Context()
+	key.API68CapturedShape = known && major == 68
+	key.API68NamedRoute = key.API68CapturedShape && named
+	return key
 }
 
 func (vm *VM) describePermissionCacheKey(objectName, fieldName string) describeCacheKey {
@@ -2232,6 +2433,30 @@ func describeFieldReferenceTargets(definition storage.ObjectDefinition, field st
 		referenceTo = appendUniqueStringFold(referenceTo, "User")
 	}
 	return referenceTo
+}
+
+// activityWhatIDField limits the target filter to the captured fields. Native
+// Task.WhatId and Event.WhatId list only global describe objects; other
+// polymorphic fields (ContentDocumentLink.LinkedEntityId, FeedItem.ParentId)
+// list targets outside it (record_type_shape reference_targets rows).
+func activityWhatIDField(objectName, fieldName string) bool {
+	return strings.EqualFold(fieldName, "WhatId") && (strings.EqualFold(objectName, "Task") || strings.EqualFold(objectName, "Event"))
+}
+
+// availableReferenceTargets drops standard targets the org shape lacks:
+// every native Task.WhatId target is in the global describe
+// (record_type_shape whatRefInGlobal). Custom targets are kept.
+func (vm *VM) availableReferenceTargets(targets []string) []string {
+	if vm == nil || vm.Org == nil {
+		return targets
+	}
+	out := targets[:0]
+	for _, target := range targets {
+		if hasSuffixFold(target, "__c") || vm.allowsStandardObject(target) {
+			out = append(out, target)
+		}
+	}
+	return out
 }
 
 func describeProviderIDAllowsUserTarget(definition storage.ObjectDefinition, field storage.Field) bool {
@@ -2708,4 +2933,56 @@ func (vm *VM) ownedGlobalDescribeLocalKeyForCaller(key, resolved, caller string)
 		resolved = canonical
 	}
 	return vm.ownedNamespacedCustomGlobalDescribeForCaller(resolved, caller)
+}
+
+// customMetadataFieldDescribeFlags applies the native describe flags of a
+// custom metadata type field (cmdt_describe_flags): no field is createable,
+// updateable or permissionable, and the system fields carry their own lengths,
+// nillability and defaults.
+func customMetadataFieldDescribeFlags(desc *Value, definition storage.ObjectDefinition, field storage.Field, namedMetadata bool) {
+	if desc == nil || desc.Fields == nil || !storage.IsCustomMetadataDefinition(definition) {
+		return
+	}
+	desc.Fields["createable"] = Bool(false)
+	desc.Fields["updateable"] = Bool(false)
+	desc.Fields["permissionable"] = Bool(false)
+	setLength := func(length int64) { desc.Fields["length"] = Int(length) }
+	switch strings.ToLower(field.APIName) {
+	case "id":
+		desc.Fields["nillable"] = Bool(false)
+		desc.Fields["defaultedOnCreate"] = Bool(true)
+		desc.Fields["idLookup"] = Bool(true)
+		setLength(18)
+	case "developername":
+		desc.Fields["nillable"] = Bool(false)
+		desc.Fields["defaultedOnCreate"] = Bool(true)
+		desc.Fields["nameField"] = Bool(true)
+		setLength(40)
+	case "masterlabel":
+		desc.Fields["nillable"] = Bool(false)
+		setLength(40)
+	case "label":
+		desc.Fields["nillable"] = Bool(true)
+		setLength(40)
+	case "language":
+		desc.Fields["nillable"] = Bool(false)
+		desc.Fields["restrictedPicklist"] = Bool(true)
+		setLength(40)
+	case "namespaceprefix":
+		desc.Fields["nillable"] = Bool(true)
+		setLength(15)
+	case "qualifiedapiname":
+		desc.Fields["nillable"] = Bool(true)
+		setLength(70)
+	case "systemmodstamp":
+		desc.Fields["nillable"] = Bool(false)
+		desc.Fields["defaultedOnCreate"] = Bool(true)
+	default:
+		if namedMetadata {
+			setLength(255)
+		}
+		if field.Type == storage.FieldReference && !namedMetadata {
+			desc.Fields["restrictedDelete"] = Bool(true)
+		}
+	}
 }

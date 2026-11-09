@@ -1,0 +1,6 @@
+case	result
+lead_missing	true,0
+case_missing	true,0
+account_combined	true
+lead_record	true,1
+lead_partial	true,false,REQUIRED_FIELD_MISSING,1

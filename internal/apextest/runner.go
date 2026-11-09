@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"hash/fnv"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -17,6 +18,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/glade-sh/glade/internal/apexast"
@@ -447,6 +449,8 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 			return compileErrorRun(cases, err, started, opts)
 		}
 		testSettings = p.Test
+		testSettings.User = project.ScratchCountryUserDefaults(index.Project.Root, testSettings.User)
+		applyScratchCountryOrg(&org, index.Project.Root)
 		if err := applyConfiguredTestPermissions(&org, p); err != nil {
 			return compileErrorRun(cases, err, started, opts)
 		}
@@ -460,6 +464,8 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 	baseMachine.SetExpressionTypeResolver(sema.RuntimeExpressionTypeResolver(index))
 	recordCloneRuntimeMachineDuration(time.Since(machineCloneStarted), runState.counters)
 	baseMachine.SetTestDocumentBaseline(&org)
+	baseMachine.SetTestReportBaseline(&org)
+	baseMachine.SetTestDashboardBaseline(&org)
 	baseMachine.SetTestStandardPricebookBaseline(&org)
 	baseMachine.SetPerfRecorder(runState.vmPerf)
 	baseMachine.SetTraceEnabled(false)
@@ -609,19 +615,32 @@ func compileErrorRun(cases []TestCase, compileErr error, started time.Time, opts
 		}}
 	}
 	suiteIndexes := make(map[string]int)
-	for _, testCase := range cases {
+	fullMessage := compileErr.Error()
+	// Only the dependency diagnostic list is shortened on later cases. Any
+	// other error (snapshot, version, runtime, generation, gate, setup or test
+	// source) keeps its complete text on every case.
+	repeatedMessage := fullMessage
+	var listed *compileDiagnosticsError
+	if errors.As(compileErr, &listed) {
+		repeatedMessage = compileErrorRepeatedMessage(listed.lines, cases[0])
+	}
+	for i, testCase := range cases {
 		index, ok := suiteIndexes[testCase.ClassName]
 		if !ok {
 			index = len(run.Suites)
 			suiteIndexes[testCase.ClassName] = index
 			run.Suites = append(run.Suites, testreport.Suite{Name: testCase.ClassName})
 		}
+		message := fullMessage
+		if i > 0 {
+			message = repeatedMessage
+		}
 		result := testreport.Case{
 			ClassName:          testCase.ClassName,
 			MethodName:         testCase.MethodName,
 			SelectedSourceFile: testCase.File,
 			Status:             testreport.StatusCompileError,
-			Problem:            problem("CompileError", compileErr.Error(), testCase),
+			Problem:            problem("CompileError", message, testCase),
 		}
 		run.Suites[index].Cases = append(run.Suites[index].Cases, result)
 	}
@@ -639,8 +658,37 @@ func compileErrorRun(cases []TestCase, compileErr error, started time.Time, opts
 	return run
 }
 
+// compileErrorRepeatedMessage is the problem message of every whole-project
+// compile-error case after the first. The first case carries the complete
+// diagnostic list; repeating it on every selected test made one run's output
+// grow with tests times diagnostics. Each later case keeps the first
+// diagnostic, which names the root cause, and points to the full list. A
+// diagnostic whose own message spans lines stays whole.
+func compileErrorRepeatedMessage(lines []string, first TestCase) string {
+	if len(lines) <= 1 {
+		return strings.Join(lines, "\n")
+	}
+	more := len(lines) - 1
+	noun := "diagnostics"
+	if more == 1 {
+		noun = "diagnostic"
+	}
+	return fmt.Sprintf("%s\n(%d more compile %s; the full list is on %s.%s)", lines[0], more, noun, first.ClassName, first.MethodName)
+}
+
+// compileDiagnosticsError is the error-diagnostic list indexCompileError
+// builds, one entry per distinct diagnostic.
+type compileDiagnosticsError struct {
+	lines []string
+}
+
+func (e *compileDiagnosticsError) Error() string {
+	return strings.Join(e.lines, "\n")
+}
+
 func indexCompileError(diagnostics []diagnostic.Diagnostic) error {
 	var messages []string
+	seen := make(map[string]bool)
 	for _, diag := range diagnostics {
 		if diag.Severity != diagnostic.Error {
 			continue
@@ -662,12 +710,17 @@ func indexCompileError(diagnostics []diagnostic.Diagnostic) error {
 		} else {
 			message.WriteString(diag.Message)
 		}
-		messages = append(messages, message.String())
+		// Identical lines (for example one ambiguity reported for each package
+		// of the same project) add nothing; list each once.
+		if line := message.String(); !seen[line] {
+			seen[line] = true
+			messages = append(messages, line)
+		}
 	}
 	if len(messages) == 0 {
 		return nil
 	}
-	return errors.New(strings.Join(messages, "\n"))
+	return &compileDiagnosticsError{lines: messages}
 }
 
 var (
@@ -1261,10 +1314,19 @@ func runtimeKeyWithDigestLookup(index typesys.Index, lookup func(string) ([sha25
 	write(index.Project.Root)
 	write(index.Project.Namespace)
 	write(index.Project.SourceAPIVersion)
-	if domainURL, err := project.OrgDomainURL(index.Project.Root); err != nil {
+	write("event-trigger-subscribers-v1")
+	// Invalidate seeds created before hierarchy settings entered this identity,
+	// including a cached enabled seed produced under the old empty key.
+	write("org-hierarchy-access-v1")
+	if domainURL, objects, err := project.OrgRuntimeSettings(index.Project.Root); err != nil {
 		write("org-domain-url-error:" + err.Error())
-	} else if domainURL != "" {
-		write("org-domain-url:" + domainURL)
+	} else {
+		if domainURL != "" {
+			write("org-domain-url:" + domainURL)
+		}
+		for _, object := range objects {
+			write("org-hierarchy-access:" + strings.ToLower(object))
+		}
 	}
 	write(fmt.Sprintf("types:%d triggers:%d objects:%d cmdt:%d", len(index.Types), len(index.Triggers), len(index.Objects), len(index.CustomMetadataRecords)))
 	semanticMetadata, err := json.Marshal(struct {
@@ -3633,6 +3695,11 @@ func appendVisualforcePageNames(names *[]string, seen map[string]bool, p project
 	} else {
 		pageNames = visualforce.PageNames(p)
 	}
+	if dependency {
+		// A dependency's pages are installed in the org that packaged them. Keep
+		// every declared name even when one fails local validation.
+		pageNames = append(pageNames, visualforce.DeclaredPageNames(p)...)
+	}
 	for _, name := range pageNames {
 		appendVisualforcePageName(names, seen, name)
 		if p.Namespace != "" {
@@ -4235,21 +4302,19 @@ type passiveStandardRuntimeClassTemplate struct {
 }
 
 var passiveStandardRuntimeClassCache struct {
-	once      sync.Once
-	templates []passiveStandardRuntimeClassTemplate
+	templates typesys.PlatformViewCache[[]passiveStandardRuntimeClassTemplate]
 	builds    int
 }
 
 // passiveStandardRuntimeClassTemplates builds the passive platform classes once
-// per process, in symbol-view order with the first spelling of each runtime name.
-// Callers filter by project names and clone; RegisterClass writes the maps and
-// slices it is given, so templates are never handed out directly.
+// per symbol view, in symbol-view order with the first spelling of each runtime
+// name. Callers filter by project names and clone; RegisterClass writes the maps
+// and slices it is given, so templates are never handed out directly.
 func passiveStandardRuntimeClassTemplates() []passiveStandardRuntimeClassTemplate {
-	passiveStandardRuntimeClassCache.once.Do(func() {
-		passiveStandardRuntimeClassCache.templates = buildPassiveStandardRuntimeClassTemplates(typesys.StandardPlatformSymbolView())
+	return passiveStandardRuntimeClassCache.templates.Get(func(view []typesys.TypeSymbol) []passiveStandardRuntimeClassTemplate {
 		passiveStandardRuntimeClassCache.builds++
+		return buildPassiveStandardRuntimeClassTemplates(view)
 	})
-	return passiveStandardRuntimeClassCache.templates
 }
 
 func buildPassiveStandardRuntimeClassTemplates(view []typesys.TypeSymbol) []passiveStandardRuntimeClassTemplate {
@@ -4811,23 +4876,80 @@ func testClassSharingMode(modifiers []string) string {
 }
 
 var standardApexTestOrgCache struct {
-	once sync.Once
-	org  storage.OrgState
+	mu    sync.Mutex
+	built bool
+	org   storage.OrgState
 }
 
 func standardApexTestOrg() storage.OrgState {
-	standardApexTestOrgCache.once.Do(func() {
+	standardApexTestOrgCache.mu.Lock()
+	if !standardApexTestOrgCache.built {
 		org := storage.NewOrgState()
 		org.OrgID = storage.DefaultOrgID
-		for _, objectName := range storage.KnownStandardObjectNames() {
-			if objectName == "Network" || objectName == "NetworkMember" {
-				continue
-			}
-			storage.EnsureStandardObject(&org, objectName)
-		}
+		EnsureStandardObjectSpread(&org)
 		standardApexTestOrgCache.org = org
-	})
-	return standardApexTestOrgCache.org.CloneRuntimeFrozenDefinition()
+		standardApexTestOrgCache.built = true
+	}
+	seed := standardApexTestOrgCache.org
+	standardApexTestOrgCache.mu.Unlock()
+	return seed.CloneRuntimeFrozenDefinition()
+}
+
+// releaseStandardSeedMemory drops the unshaped standard org and the decoded
+// describe catalogs once a shaped seed exists. Both rebuild on demand, so a
+// later caller that needs them pays the decode again and sees the same bytes.
+// It does nothing unless the process opted in with
+// storage.EnableStandardCatalogRelease.
+func releaseStandardSeedMemory() {
+	if !storage.StandardCatalogReleaseEnabled() {
+		return
+	}
+	standardApexTestOrgCache.mu.Lock()
+	standardApexTestOrgCache.built = false
+	standardApexTestOrgCache.org = storage.OrgState{}
+	standardApexTestOrgCache.mu.Unlock()
+	storage.ReleaseStandardCatalogCaches()
+	// Collect now so the freed catalog is gone before the VM tables build.
+	runtime.GC()
+}
+
+// unshapedCatalogReleased records the one release the unshaped route makes per
+// process. Every later unshaped build keeps what it decodes, so a long-lived
+// process (server, daemon, dev loop) pays the catalog decode once more at most.
+var unshapedCatalogReleased atomic.Bool
+
+// releaseStandardCatalogMemoryOnce drops the decoded describe catalogs after
+// the first unshaped org build of the process and keeps the unshaped seed.
+// Projects whose org cannot start from the shaped seed (custom objects, a
+// namespace) call it once their org is built: the seed's frozen definitions
+// are shared with that org, so keeping it costs little, and a later build
+// clones it instead of rebuilding the spread. The catalogs rebuild on demand
+// with the same bytes. No collection is forced: the dead catalog goes with the
+// next natural cycle, which then marks a smaller live heap. It does nothing
+// unless the process opted in with storage.EnableStandardCatalogRelease.
+func releaseStandardCatalogMemoryOnce() {
+	if !storage.StandardCatalogReleaseEnabled() {
+		return
+	}
+	if !unshapedCatalogReleased.CompareAndSwap(false, true) {
+		return
+	}
+	storage.ReleaseStandardCatalogCaches()
+}
+
+// StandardOrgSeed returns a private runtime clone of the shared standard org.
+// Callers must use storage's copy-on-write helpers when changing definitions.
+func StandardOrgSeed() storage.OrgState {
+	return standardApexTestOrg()
+}
+
+// EnsureStandardObjectSpread materializes the full standard schema catalog,
+// the starting point of every `glade test` org. Network and NetworkMember wait
+// for the Communities feature. Callers apply the project feature shape
+// afterward, which removes any object the declared features turn off.
+// `glade exec` uses it so anonymous Apex sees the same standard objects.
+func EnsureStandardObjectSpread(org *storage.OrgState) {
+	storage.EnsureStandardObjectSpread(org)
 }
 
 var shapedStandardApexTestOrgCache struct {
@@ -4854,6 +4976,7 @@ func shapedStandardApexTestOrg(features []string, domainURL string) storage.OrgS
 		storage.ApplyProjectOrgShape(&org, features)
 		shapedStandardApexTestOrgCache.key = string(key)
 		shapedStandardApexTestOrgCache.org = org
+		releaseStandardSeedMemory()
 	}
 	seed := shapedStandardApexTestOrgCache.org
 	shapedStandardApexTestOrgCache.mu.Unlock()
@@ -4893,6 +5016,10 @@ func orgFromIndexWithError(index typesys.Index, caches ...*sourceCache) (storage
 		org = shapedStandardApexTestOrg(features, domainURL)
 	} else {
 		org = standardApexTestOrg()
+		// The shaped route released the catalogs when its seed was built. This
+		// route reads them while the project objects and shape apply, so it
+		// releases once the org is complete, and only once per process.
+		defer releaseStandardCatalogMemoryOnce()
 	}
 	org.APIVersion = storage.DefaultRESTAPIVersion
 	org.Namespace = index.Project.Namespace
@@ -4935,6 +5062,12 @@ func orgFromIndexWithError(index typesys.Index, caches ...*sourceCache) (storage
 	foldPersonAccountObjectIntoAccount(&org)
 	applyApexClassRecords(&org, index, caches...)
 	applyApexTriggerRecords(&org, index, caches...)
+	if err := resource.ApplyProjectEventSubscribers(&org, index, func(path string) ([]byte, error) {
+		body, err := sources.read(path)
+		return []byte(body), err
+	}); err != nil {
+		return org, err
+	}
 	metadataRecords := append([]schema.CustomMetadataRecord(nil), index.CustomMetadataRecords...)
 	for i := range metadataRecords {
 		unit := sources.runtimeSourceUnit(metadataRecords[i].File)
@@ -5000,6 +5133,7 @@ func orgFromIndexWithError(index typesys.Index, caches ...*sourceCache) (storage
 			return org, err
 		}
 		applyProjectPermissionSetRecords(&org, *loadedProject, permissionSetMetadataCache)
+		applyManagedDependencyPermissionSetRecords(&org, *loadedProject, permissionSetMetadataCache)
 		storage.EnsureDeterministicPlatformData(&org)
 		applyProjectAdminSecurityDefaults(&org, index.Objects)
 		applyProjectPermissionSetGroupRecords(&org, *loadedProject, sources.readCapturedProjectMetadata)
@@ -5184,6 +5318,36 @@ var apexVariableFieldNumericLeftLiteralPattern = regexp.MustCompile(`\b-?(?:\d+(
 var apexCustomSettingGetAllPattern = regexp.MustCompile(`\b([A-Za-z_][A-Za-z0-9_]*(?:__[A-Za-z0-9_]+)?)\s*\.\s*(?i:getAll)\s*\(`)
 var apexExplicitParentChildRelationshipFromPattern = regexp.MustCompile(`(?i:\bFROM\s+)([A-Za-z_][A-Za-z0-9_]*)\s*\.\s*([A-Za-z_][A-Za-z0-9_]*__r)\b`)
 
+// apexNamedArgumentStartsArgument reports whether the name matched at
+// body[start:end] is a constructor named argument: it opens an argument of
+// the literal (nothing before it but the opening parenthesis or a top-level
+// comma) and is followed by a single "=" that starts at nameEnd or later. A name inside an argument value,
+// such as the operand of "key == x" in a ternary condition, is not one.
+func apexNamedArgumentStartsArgument(body string, start, nameEnd int) bool {
+	assign := nameEnd
+	for assign < len(body) && (body[assign] == ' ' || body[assign] == '\t' || body[assign] == '\r' || body[assign] == '\n') {
+		assign++
+	}
+	if assign+1 < len(body) && body[assign+1] == '=' {
+		return false
+	}
+	depth := 0
+	argumentStart := 0
+	for i := 0; i < start; i++ {
+		switch body[i] {
+		case '(', '[', '{':
+			depth++
+		case ')', ']', '}':
+			depth--
+		case ',':
+			if depth == 0 {
+				argumentStart = i + 1
+			}
+		}
+	}
+	return depth == 0 && strings.TrimSpace(body[argumentStart:start]) == ""
+}
+
 type projectChildRelationshipSourceReference struct {
 	ParentObject      string
 	ChildObject       string
@@ -5270,6 +5434,9 @@ func recordProjectReferencedSObjectLiteralFields(org *storage.OrgState, inferred
 			if len(argMatch) != 4 {
 				continue
 			}
+			if !apexNamedArgumentStartsArgument(body, argMatch[0], argMatch[3]) {
+				continue
+			}
 			fieldName := body[argMatch[2]:argMatch[3]]
 			recordProjectReferencedStandardField(org, inferred, childRelationshipLookup, objectName, fieldName)
 		}
@@ -5287,7 +5454,7 @@ func recordProjectReferencedSObjectLiteralLookupFields(org *storage.OrgState, in
 		}
 		body := scanSource[match[4]:match[5]]
 		for _, argMatch := range apexNamedArgumentSObjectIDPattern.FindAllStringSubmatchIndex(body, -1) {
-			if len(argMatch) != 6 {
+			if len(argMatch) != 6 || !apexNamedArgumentStartsArgument(body, argMatch[0], argMatch[3]) {
 				continue
 			}
 			parentObjectName, ok := varTypes[body[argMatch[4]:argMatch[5]]]
@@ -6544,8 +6711,8 @@ func projectProfileRecordTypeDefaults(files []string, readers ...func(string) ([
 func sortedProfileFilesForDefaults(files []string) []string {
 	out := append([]string(nil), files...)
 	sort.SliceStable(out, func(i, j int) bool {
-		leftAdmin := strings.EqualFold(profileNameFromPath(out[i]), "Admin")
-		rightAdmin := strings.EqualFold(profileNameFromPath(out[j]), "Admin")
+		leftAdmin := profileNameFromPath(out[i]) == "System Administrator"
+		rightAdmin := profileNameFromPath(out[j]) == "System Administrator"
 		if leftAdmin != rightAdmin {
 			return leftAdmin
 		}
@@ -6587,10 +6754,39 @@ func profileNameFromPath(path string) string {
 	name := filepath.Base(path)
 	for _, suffix := range []string{".profile-meta.xml", ".profile"} {
 		if hasSuffixFold(name, suffix) {
-			return norm.NFC.String(strings.TrimSpace(name[:len(name)-len(suffix)]))
+			return profileNameFromMetadataFileName(norm.NFC.String(strings.TrimSpace(name[:len(name)-len(suffix)])))
 		}
 	}
 	return ""
+}
+
+// standardProfileMetadataFileNames maps the Metadata API file names of
+// standard profiles to their Profile.Name. Retrieve writes the System
+// Administrator profile as Admin.profile, Standard User as Standard.profile and
+// so on; deploying the file updates that standard profile, not a new one.
+var standardProfileMetadataFileNames = map[string]string{
+	"admin":            "System Administrator",
+	"standard":         "Standard User",
+	"readonly":         "Read Only",
+	"solutionmanager":  "Solution Manager",
+	"marketingprofile": "Marketing User",
+	"contractmanager":  "Contract Manager",
+	"standardaul":      "Standard Platform User",
+}
+
+// profileNameFromMetadataFileName resolves a profile metadata file name (no
+// suffix) to the Profile.Name it deploys to. Metadata file names percent-encode
+// characters such as the colon of "Custom: Sales Profile".
+func profileNameFromMetadataFileName(name string) string {
+	if standard, ok := standardProfileMetadataFileNames[strings.ToLower(name)]; ok {
+		return standard
+	}
+	if strings.Contains(name, "%") {
+		if decoded, err := url.PathUnescape(name); err == nil {
+			return norm.NFC.String(strings.TrimSpace(decoded))
+		}
+	}
+	return name
 }
 
 func profileRecordExists(state storage.ObjectState, name string) bool {
@@ -6841,6 +7037,10 @@ func applyApexClassRecords(org *storage.OrgState, index typesys.Index, caches ..
 	}
 	generator := storage.NewIDGenerator(map[string]string{"ApexClass": "01p"})
 	sources := sourceCacheFor(caches)
+	projectClassUnit := ""
+	if index.Project.Root != "" {
+		projectClassUnit = resource.ProjectApexClassSourceUnit(index.Project.Root)
+	}
 	for _, typ := range index.Types {
 		if !typ.HasSourceSnapshot() || typ.Kind != apexast.DeclarationClass || strings.Contains(typ.Name, ".") {
 			continue
@@ -6862,9 +7062,14 @@ func applyApexClassRecords(org *storage.OrgState, index typesys.Index, caches ..
 		if typ.Namespace != "" {
 			namespace = storage.StringValue(typ.Namespace)
 		}
+		sourceUnit := ""
+		if !typ.Dependency {
+			sourceUnit = projectClassUnit
+		}
 		state.Records[id] = storage.Record{
-			ID:     id,
-			Object: "ApexClass",
+			ID:                 id,
+			Object:             "ApexClass",
+			MetadataSourceUnit: sourceUnit,
 			Fields: map[string]storage.Value{
 				"Name":                  {Kind: storage.ValueString, String: typ.Name},
 				"NamespacePrefix":       namespace,
@@ -6872,10 +7077,18 @@ func applyApexClassRecords(org *storage.OrgState, index typesys.Index, caches ..
 				"ApiVersion":            storage.DecimalValue("65.0"),
 				"LengthWithoutComments": storage.IntegerValue(int64(len(source))),
 			},
+			// Native ApexClass rows carry deployment audit dates (apex_class_modified_dates):
+			// never null and never after now. Use the deterministic seed stamp.
+			System: storage.SystemFields{
+				CreatedDate: apexClassSeedTimestamp, LastModifiedDate: apexClassSeedTimestamp, SystemModstamp: apexClassSeedTimestamp,
+				CreatedByID: storage.ID(storage.DefaultUserID), LastModifiedByID: storage.ID(storage.DefaultUserID),
+			},
 		}
 	}
 	org.Objects["ApexClass"] = state
 }
+
+const apexClassSeedTimestamp = "2000-01-01T00:00:00Z"
 
 func apexClassBodyHiddenFromProject(projectNamespace string, typ typesys.TypeSymbol) bool {
 	if !typ.Dependency {

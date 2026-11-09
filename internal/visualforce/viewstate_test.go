@@ -754,11 +754,45 @@ func TestRenderPageInjectsCSRFFieldForLocalClients(t *testing.T) {
 }
 
 func TestInjectViewStateAddsFieldToEveryForm(t *testing.T) {
-	rendered := InjectViewState(`<form id="a"></form><form id="b"></form>`, "state")
+	apexForm := func(id string) string {
+		return `<form id="` + id + `" method="post" action="/apex/P">` + "\n\n\n" + `<input type="hidden" name="` + ViewStateActionFieldName() + `" value="" />x` + "\n</form>"
+	}
+	rendered := InjectViewState(apexForm("a")+apexForm("b"), "state")
 	// View state native rows include Version and MAC fields with the same prefix.
 	// Count the state field's exact name, not all three prefixed names.
 	if got := strings.Count(rendered, `name="`+ViewStateFormFieldName()+`"`); got != 2 {
 		t.Fatalf("view state fields = %d html=%s", got, rendered)
+	}
+}
+
+// The org writes its view state only into an apex:form, not into a plain HTML
+// form of the page (row IdEmptyFormHtml of testdata/vf_render_markup).
+func TestInjectViewStateSkipsPlainHTMLForms(t *testing.T) {
+	apexForm := `<form id="j_id0:f" method="post" action="/apex/P">` + "\n\n\n" + `<input type="hidden" name="__vf_form" value="j_id0:f" /><input type="hidden" name="` + ViewStateActionFieldName() + `" value="" />` +
+		`<form>inner</form>` + "\n</form>"
+	for _, tc := range []struct {
+		name, html string
+		want       int
+		plain      []string
+	}{
+		{"plain only", `<html><body><form>x</form></body></html>`, 1, []string{`<form>x</form>`}},
+		{"plain before apex", `<form>x</form>` + apexForm, 1, []string{`<form>x</form>`, `<form>inner</form>`}},
+		{"plain after apex", apexForm + `<form action="/x">y</form>`, 1, []string{`<form action="/x">y</form>`, `<form>inner</form>`}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			rendered := InjectCSRF(InjectViewState(tc.html, "state"), "token")
+			if got := strings.Count(rendered, `name="`+ViewStateFormFieldName()+`"`); got != tc.want {
+				t.Fatalf("view state fields = %d html=%s", got, rendered)
+			}
+			if got := strings.Count(rendered, `name="__vf_csrf"`); got != tc.want {
+				t.Fatalf("csrf fields = %d html=%s", got, rendered)
+			}
+			for _, plain := range tc.plain {
+				if !strings.Contains(rendered, plain) {
+					t.Fatalf("plain form %q changed: %s", plain, rendered)
+				}
+			}
+		})
 	}
 }
 

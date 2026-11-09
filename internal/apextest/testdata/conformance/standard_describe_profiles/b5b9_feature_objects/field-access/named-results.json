@@ -1,0 +1,94 @@
+[
+  {
+    "group": "Gift",
+    "api": "62.0",
+    "route": "istest",
+    "outcome": "Passed",
+    "tests": [
+      [
+        "probe",
+        "Pass",
+        ""
+      ]
+    ]
+  },
+  {
+    "group": "Gift",
+    "api": "67.0",
+    "route": "istest",
+    "outcome": "Passed",
+    "tests": [
+      [
+        "probe",
+        "Pass",
+        ""
+      ]
+    ]
+  },
+  {
+    "group": "Gift",
+    "api": "62.0",
+    "route": "named-compile",
+    "case": 0,
+    "success": false,
+    "problems": [
+      "Variable does not exist: GenerationalCohort"
+    ]
+  },
+  {
+    "group": "Gift",
+    "api": "62.0",
+    "route": "named-compile",
+    "case": 1,
+    "success": false,
+    "problems": [
+      "Variable does not exist: PartyPhilanthropicRsrchPrflId"
+    ]
+  },
+  {
+    "group": "Doc",
+    "api": "62.0",
+    "route": "istest",
+    "outcome": "Passed",
+    "tests": [
+      [
+        "probe",
+        "Pass",
+        ""
+      ]
+    ]
+  },
+  {
+    "group": "Doc",
+    "api": "67.0",
+    "route": "istest",
+    "outcome": "Passed",
+    "tests": [
+      [
+        "probe",
+        "Pass",
+        ""
+      ]
+    ]
+  },
+  {
+    "group": "Doc",
+    "api": "62.0",
+    "route": "named-compile",
+    "case": 0,
+    "success": false,
+    "problems": [
+      "Variable does not exist: AdditionalMetadata"
+    ]
+  },
+  {
+    "group": "Doc",
+    "api": "62.0",
+    "route": "named-compile",
+    "case": 1,
+    "success": false,
+    "problems": [
+      "Variable does not exist: IsLocalizationEnabled"
+    ]
+  }
+]

@@ -79,7 +79,7 @@ test("installation docs disclose both destinations and the observed footprint", 
 
 for (const [route, doc] of [["quickstart", quickstart], ["support-map", supportMap]]) {
 	test(`${route} keeps v0.3.0 API axes and Salesforce proof separate`, () => {
-		assert.match(doc, /Apex 62\.0-67\.0, LWC and Visualforce 59\.0-67\.0/);
+		assert.match(doc, /Apex 62\.0-68\.0, LWC and Visualforce 59\.0-67\.0/);
 		assert.match(doc, /(?:Historical Apex source below 62\.0[^\n]*Unsupported[^\n]*preserved|Apex source API below 62\.0 is unsupported,[\s\S]*?loader preserves the\s+version)/);
 		assert.match(doc, /Do not (?:bump|raise|upgrade|change)[\s\S]*?metadata/i);
 		assert.match(doc, /65\.0, 66\.0, 67\.0, (?:and )?68\.0/);

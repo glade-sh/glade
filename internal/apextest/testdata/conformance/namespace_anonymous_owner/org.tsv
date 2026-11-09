@@ -1,0 +1,141 @@
+case_id	api	kind	route	compile_outcome	observed_value_or_diagnostic	source
+a01	62.0	ns	anonymous	COMPILE_OK	3	anon/a01.apex
+a02	62.0	ns	anonymous	COMPILE_OK	3	anon/a02.apex
+a03	62.0	ns	anonymous	COMPILE_OK	1	anon/a03.apex
+a04	62.0	ns	anonymous	COMPILE_OK	1	anon/a04.apex
+a05	62.0	ns	anonymous	COMPILE_OK	4	anon/a05.apex
+a06	62.0	ns	anonymous	COMPILE_OK	4	anon/a06.apex
+a07	62.0	ns	anonymous	COMPILE_OK	6	anon/a07.apex
+a08	62.0	ns	anonymous	COMPILE_OK	6	anon/a08.apex
+a09	62.0	ns	anonymous	COMPILE_OK	5	anon/a09.apex
+a10	62.0	ns	anonymous	COMPILE_OK	5	anon/a10.apex
+a11	62.0	ns	anonymous	COMPILE_OK	B	anon/a11.apex
+a12	62.0	ns	anonymous	COMPILE_OK	B	anon/a12.apex
+a13	62.0	ns	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: gladens004.V035OwnPub.Pv	anon/a13.apex
+a14	62.0	ns	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: gladens004.V035OwnPub.Pv	anon/a14.apex
+a15	62.0	ns	anonymous	COMPILE_OK	gladens004.V035OwnPub	anon/a15.apex
+a16	62.0	ns	anonymous	COMPILE_OK	gladens004.V035OwnPub	anon/a16.apex
+a17	62.0	ns	anonymous	COMPILE_OK	gladens004.V035OwnPub	anon/a17.apex
+a18	62.0	ns	anonymous	COMPILE_OK	gladens004.V035OwnPub.Pn	anon/a18.apex
+a19	62.0	ns	anonymous	COMPILE_OK	gladens004.V035OwnPub.Pn	anon/a19.apex
+a20	62.0	ns	anonymous	COMPILE_OK	null	anon/a20.apex
+a21	62.0	ns	anonymous	COMPILE_OK	3	anon/a21.apex
+a22	62.0	ns	anonymous	COMPILE_OK	3	anon/a22.apex
+a23	62.0	ns	anonymous	COMPILE_OK	gladens004.V035OwnPub	anon/a23.apex
+a24	62.0	ns	anonymous	COMPILE_OK	gladens004.V035OwnPub.Pn	anon/a24.apex
+a25	62.0	ns	anonymous	COMPILE_OK	Pn	anon/a25.apex
+a26	62.0	ns	anonymous	COMPILE_OK	true	anon/a26.apex
+a27	62.0	ns	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: gladens004.V035Missing	anon/a27.apex
+a28	62.0	ns	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: V035Missing	anon/a28.apex
+a29	62.0	ns	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: gladens004.V035OwnPub.Bogus	anon/a29.apex
+a30	62.0	ns	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: V035OwnPub.Bogus	anon/a30.apex
+a31	62.0	ns	anonymous	COMPILE_ERROR	line 1 col 10: Type is not visible: gladens004.V035OwnPub.Pv	anon/a31.apex
+a32	62.0	ns	anonymous	COMPILE_OK	V035OwnPub	anon/a32.apex
+a33	62.0	ns	anonymous	COMPILE_OK	gladens004.V035OwnPub.Pn	anon/a33.apex
+a34	62.0	ns	anonymous	COMPILE_OK	ok	anon/a34.apex
+a35	62.0	ns	anonymous	COMPILE_OK	gladens004.V035OwnGlob.Pn2	anon/a35.apex
+a01	62.0	ns	istest	COMPILE_OK	3	rt/V035OwnProbeT.cls
+a02	62.0	ns	istest	COMPILE_OK	3	rt/V035OwnProbeT.cls
+a03	62.0	ns	istest	COMPILE_OK	1	rt/V035OwnProbeT.cls
+a04	62.0	ns	istest	COMPILE_OK	1	rt/V035OwnProbeT.cls
+a05	62.0	ns	istest	COMPILE_OK	4	rt/V035OwnProbeT.cls
+a06	62.0	ns	istest	COMPILE_OK	4	rt/V035OwnProbeT.cls
+a07	62.0	ns	istest	COMPILE_OK	6	rt/V035OwnProbeT.cls
+a08	62.0	ns	istest	COMPILE_OK	6	rt/V035OwnProbeT.cls
+a09	62.0	ns	istest	COMPILE_OK	5	rt/V035OwnProbeT.cls
+a10	62.0	ns	istest	COMPILE_OK	5	rt/V035OwnProbeT.cls
+a11	62.0	ns	istest	COMPILE_OK	B	rt/V035OwnProbeT.cls
+a12	62.0	ns	istest	COMPILE_OK	B	rt/V035OwnProbeT.cls
+a15	62.0	ns	istest	COMPILE_OK	gladens004.V035OwnPub	rt/V035OwnProbeT.cls
+a16	62.0	ns	istest	COMPILE_OK	gladens004.V035OwnPub	rt/V035OwnProbeT.cls
+a17	62.0	ns	istest	COMPILE_OK	gladens004.V035OwnPub	rt/V035OwnProbeT.cls
+a18	62.0	ns	istest	COMPILE_OK	gladens004.V035OwnPub.Pn	rt/V035OwnProbeT.cls
+a19	62.0	ns	istest	COMPILE_OK	gladens004.V035OwnPub.Pn	rt/V035OwnProbeT.cls
+a20	62.0	ns	istest	COMPILE_OK	null	rt/V035OwnProbeT.cls
+a21	62.0	ns	istest	COMPILE_OK	3	rt/V035OwnProbeT.cls
+a22	62.0	ns	istest	COMPILE_OK	3	rt/V035OwnProbeT.cls
+a23	62.0	ns	istest	COMPILE_OK	gladens004.V035OwnPub	rt/V035OwnProbeT.cls
+a24	62.0	ns	istest	COMPILE_OK	gladens004.V035OwnPub.Pn	rt/V035OwnProbeT.cls
+a25	62.0	ns	istest	COMPILE_OK	Pn	rt/V035OwnProbeT.cls
+a26	62.0	ns	istest	COMPILE_OK	true	rt/V035OwnProbeT.cls
+a32	62.0	ns	istest	COMPILE_OK	V035OwnPub	rt/V035OwnProbeT.cls
+a33	62.0	ns	istest	COMPILE_OK	gladens004.V035OwnPub.Pn	rt/V035OwnProbeT.cls
+a34	62.0	ns	istest	COMPILE_OK	ok	rt/V035OwnProbeT.cls
+a35	62.0	ns	istest	COMPILE_OK	gladens004.V035OwnGlob.Pn2	rt/V035OwnProbeT.cls
+a13	62.0	ns	named	COMPILE_ERROR	line 1 col 57: Type is not visible: gladens004.V035OwnPub.Pv	named/V035OwnRej_a13.cls
+a14	62.0	ns	named	COMPILE_ERROR	line 1 col 57: Type is not visible: gladens004.V035OwnPub.Pv	named/V035OwnRej_a14.cls
+a27	62.0	ns	named	COMPILE_ERROR	line 1 col 57: Invalid type: gladens004.V035Missing	named/V035OwnRej_a27.cls
+a28	62.0	ns	named	COMPILE_ERROR	line 1 col 57: Invalid type: V035Missing	named/V035OwnRej_a28.cls
+a29	62.0	ns	named	COMPILE_ERROR	line 1 col 57: Invalid type: gladens004.V035OwnPub.Bogus	named/V035OwnRej_a29.cls
+a30	62.0	ns	named	COMPILE_ERROR	line 1 col 57: Invalid type: V035OwnPub.Bogus	named/V035OwnRej_a30.cls
+a31	62.0	ns	named	COMPILE_ERROR	line 1 col 66: Type is not visible: gladens004.V035OwnPub.Pv	named/V035OwnRej_a31.cls
+a01	67.0	ns	anonymous	COMPILE_OK	3	anon/a01.apex
+a02	67.0	ns	anonymous	COMPILE_OK	3	anon/a02.apex
+a03	67.0	ns	anonymous	COMPILE_OK	1	anon/a03.apex
+a04	67.0	ns	anonymous	COMPILE_OK	1	anon/a04.apex
+a05	67.0	ns	anonymous	COMPILE_OK	4	anon/a05.apex
+a06	67.0	ns	anonymous	COMPILE_OK	4	anon/a06.apex
+a07	67.0	ns	anonymous	COMPILE_OK	6	anon/a07.apex
+a08	67.0	ns	anonymous	COMPILE_OK	6	anon/a08.apex
+a09	67.0	ns	anonymous	COMPILE_OK	5	anon/a09.apex
+a10	67.0	ns	anonymous	COMPILE_OK	5	anon/a10.apex
+a11	67.0	ns	anonymous	COMPILE_OK	B	anon/a11.apex
+a12	67.0	ns	anonymous	COMPILE_OK	B	anon/a12.apex
+a13	67.0	ns	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: gladens004.V035OwnPub.Pv	anon/a13.apex
+a14	67.0	ns	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: gladens004.V035OwnPub.Pv	anon/a14.apex
+a15	67.0	ns	anonymous	COMPILE_OK	gladens004.V035OwnPub	anon/a15.apex
+a16	67.0	ns	anonymous	COMPILE_OK	gladens004.V035OwnPub	anon/a16.apex
+a17	67.0	ns	anonymous	COMPILE_OK	gladens004.V035OwnPub	anon/a17.apex
+a18	67.0	ns	anonymous	COMPILE_OK	gladens004.V035OwnPub.Pn	anon/a18.apex
+a19	67.0	ns	anonymous	COMPILE_OK	gladens004.V035OwnPub.Pn	anon/a19.apex
+a20	67.0	ns	anonymous	COMPILE_OK	null	anon/a20.apex
+a21	67.0	ns	anonymous	COMPILE_OK	3	anon/a21.apex
+a22	67.0	ns	anonymous	COMPILE_OK	3	anon/a22.apex
+a23	67.0	ns	anonymous	COMPILE_OK	gladens004.V035OwnPub	anon/a23.apex
+a24	67.0	ns	anonymous	COMPILE_OK	gladens004.V035OwnPub.Pn	anon/a24.apex
+a25	67.0	ns	anonymous	COMPILE_OK	Pn	anon/a25.apex
+a26	67.0	ns	anonymous	COMPILE_OK	true	anon/a26.apex
+a27	67.0	ns	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: gladens004.V035Missing	anon/a27.apex
+a28	67.0	ns	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: V035Missing	anon/a28.apex
+a29	67.0	ns	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: gladens004.V035OwnPub.Bogus	anon/a29.apex
+a30	67.0	ns	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: V035OwnPub.Bogus	anon/a30.apex
+a31	67.0	ns	anonymous	COMPILE_ERROR	line 1 col 10: Type is not visible: gladens004.V035OwnPub.Pv	anon/a31.apex
+a32	67.0	ns	anonymous	COMPILE_OK	V035OwnPub	anon/a32.apex
+a33	67.0	ns	anonymous	COMPILE_OK	gladens004.V035OwnPub.Pn	anon/a33.apex
+a34	67.0	ns	anonymous	COMPILE_OK	ok	anon/a34.apex
+a35	67.0	ns	anonymous	COMPILE_OK	gladens004.V035OwnGlob.Pn2	anon/a35.apex
+a01	67.0	ns	istest	COMPILE_OK	3	rt/V035OwnProbeT.cls
+a02	67.0	ns	istest	COMPILE_OK	3	rt/V035OwnProbeT.cls
+a03	67.0	ns	istest	COMPILE_OK	1	rt/V035OwnProbeT.cls
+a04	67.0	ns	istest	COMPILE_OK	1	rt/V035OwnProbeT.cls
+a05	67.0	ns	istest	COMPILE_OK	4	rt/V035OwnProbeT.cls
+a06	67.0	ns	istest	COMPILE_OK	4	rt/V035OwnProbeT.cls
+a07	67.0	ns	istest	COMPILE_OK	6	rt/V035OwnProbeT.cls
+a08	67.0	ns	istest	COMPILE_OK	6	rt/V035OwnProbeT.cls
+a09	67.0	ns	istest	COMPILE_OK	5	rt/V035OwnProbeT.cls
+a10	67.0	ns	istest	COMPILE_OK	5	rt/V035OwnProbeT.cls
+a11	67.0	ns	istest	COMPILE_OK	B	rt/V035OwnProbeT.cls
+a12	67.0	ns	istest	COMPILE_OK	B	rt/V035OwnProbeT.cls
+a15	67.0	ns	istest	COMPILE_OK	gladens004.V035OwnPub	rt/V035OwnProbeT.cls
+a16	67.0	ns	istest	COMPILE_OK	gladens004.V035OwnPub	rt/V035OwnProbeT.cls
+a17	67.0	ns	istest	COMPILE_OK	gladens004.V035OwnPub	rt/V035OwnProbeT.cls
+a18	67.0	ns	istest	COMPILE_OK	gladens004.V035OwnPub.Pn	rt/V035OwnProbeT.cls
+a19	67.0	ns	istest	COMPILE_OK	gladens004.V035OwnPub.Pn	rt/V035OwnProbeT.cls
+a20	67.0	ns	istest	COMPILE_OK	null	rt/V035OwnProbeT.cls
+a21	67.0	ns	istest	COMPILE_OK	3	rt/V035OwnProbeT.cls
+a22	67.0	ns	istest	COMPILE_OK	3	rt/V035OwnProbeT.cls
+a23	67.0	ns	istest	COMPILE_OK	gladens004.V035OwnPub	rt/V035OwnProbeT.cls
+a24	67.0	ns	istest	COMPILE_OK	gladens004.V035OwnPub.Pn	rt/V035OwnProbeT.cls
+a25	67.0	ns	istest	COMPILE_OK	Pn	rt/V035OwnProbeT.cls
+a26	67.0	ns	istest	COMPILE_OK	true	rt/V035OwnProbeT.cls
+a32	67.0	ns	istest	COMPILE_OK	V035OwnPub	rt/V035OwnProbeT.cls
+a33	67.0	ns	istest	COMPILE_OK	gladens004.V035OwnPub.Pn	rt/V035OwnProbeT.cls
+a34	67.0	ns	istest	COMPILE_OK	ok	rt/V035OwnProbeT.cls
+a35	67.0	ns	istest	COMPILE_OK	gladens004.V035OwnGlob.Pn2	rt/V035OwnProbeT.cls
+a13	67.0	ns	named	COMPILE_ERROR	line 1 col 57: Type is not visible: gladens004.V035OwnPub.Pv	named/V035OwnRej_a13.cls
+a14	67.0	ns	named	COMPILE_ERROR	line 1 col 57: Type is not visible: gladens004.V035OwnPub.Pv	named/V035OwnRej_a14.cls
+a27	67.0	ns	named	COMPILE_ERROR	line 1 col 57: Invalid type: gladens004.V035Missing	named/V035OwnRej_a27.cls
+a28	67.0	ns	named	COMPILE_ERROR	line 1 col 57: Invalid type: V035Missing	named/V035OwnRej_a28.cls
+a29	67.0	ns	named	COMPILE_ERROR	line 1 col 57: Invalid type: gladens004.V035OwnPub.Bogus	named/V035OwnRej_a29.cls
+a30	67.0	ns	named	COMPILE_ERROR	line 1 col 57: Invalid type: V035OwnPub.Bogus	named/V035OwnRej_a30.cls
+a31	67.0	ns	named	COMPILE_ERROR	line 1 col 66: Type is not visible: gladens004.V035OwnPub.Pv	named/V035OwnRej_a31.cls

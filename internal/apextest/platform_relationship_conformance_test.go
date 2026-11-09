@@ -30,7 +30,7 @@ func platformRelationshipRows(t *testing.T) []platformRelationshipRow {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(table) != 1403 {
+	if len(table) != 2115 {
 		t.Fatal("incomplete native relationship sweep")
 	}
 	var rows []platformRelationshipRow
@@ -48,7 +48,7 @@ func platformRelationshipRows(t *testing.T) []platformRelationshipRow {
 		cells[r[0]+"/"+r[1]]++
 		rows = append(rows, platformRelationshipRow{r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[9], r[10]})
 	}
-	for cell, count := range map[string]int{"62.0/anonymous": 346, "62.0/istest": 346, "67.0/anonymous": 355, "67.0/istest": 355} {
+	for cell, count := range map[string]int{"62.0/anonymous": 346, "62.0/istest": 346, "67.0/anonymous": 355, "67.0/istest": 355, "68.0/anonymous": 356, "68.0/istest": 356} {
 		if cells[cell] != count {
 			t.Fatalf("native cell %s: %d rows; want %d", cell, cells[cell], count)
 		}
@@ -60,7 +60,7 @@ func platformRelationshipRows(t *testing.T) []platformRelationshipRow {
 // Feature-dependent describe entries remain observations, not portability gates.
 func TestPlatformRelationshipsNativeConformance(t *testing.T) {
 	rows := platformRelationshipRows(t)
-	for _, api := range []string{"62.0", "67.0"} {
+	for _, api := range []string{"62.0", "67.0", "68.0"} {
 		t.Run(api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "PlatformRelationships", api)
 			root := t.TempDir()
@@ -88,9 +88,22 @@ func TestPlatformRelationshipsNativeConformance(t *testing.T) {
 			staticSource = "@IsTest public class PlatformRelationshipNativeTest {\n" + staticSource[start:]
 			writeFile(t, filepath.Join(root, "force-app/main/default/classes/PlatformRelationshipNativeTest.cls"), staticSource)
 			writeFile(t, filepath.Join(root, "force-app/main/default/classes/PlatformRelationshipNativeTest.cls-meta.xml"), "<ApexClass><apiVersion>"+api+"</apiVersion></ApexClass>")
+			if api != "62.0" {
+				// ORG-RUN.txt: the retained set's object CRUD and lookup-field
+				// grants were assigned to the observing admin before the API 67
+				// captures, and the 2026-11-04 recapture at 62.0, 67.0 and 68.0
+				// ran with the same permission set. admin_field_grant_sources
+				// (2026-11-05) shows the administrator needs it for the lookup
+				// field from API 67.
+				raw, err := os.ReadFile(filepath.Join(fixtureRoot, "PlatformRelationshipProbe.permissionset-meta.xml"))
+				if err != nil {
+					t.Fatal(err)
+				}
+				writeFile(t, filepath.Join(root, "force-app/main/default/permissionsets/PlatformRelationshipProbe.permissionset-meta.xml"), string(raw))
+				writeFile(t, filepath.Join(root, "glade.yml"), "test:\n  permissionSets: [PlatformRelationshipProbe]\n")
+			}
 			index := loadTestIndex(t, root)
-			org := orgFromIndex(index)
-			org.APIVersion = api
+			org := capturedFixtureOrg(t, index, api)
 			for _, name := range []string{"Account", "User", "Case", "Contact", "Opportunity"} {
 				storage.EnsureStandardObject(&org, name)
 			}
@@ -221,4 +234,53 @@ func platformAccessAssertions(value map[string]any, receiver string) string {
 		}
 	}
 	return source
+}
+
+func TestPlatformRelationshipAPI68Boundary(t *testing.T) {
+	for _, api := range []string{"62.0", "67.0", "68.0"} {
+		t.Run(api, func(t *testing.T) {
+			root := t.TempDir()
+			writeFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"sourceApiVersion":%q,"packageDirectories":[{"path":"force-app","default":true}]}`, api))
+			index := loadTestIndex(t, root)
+			org := orgFromIndex(index)
+			org.APIVersion = api
+			storage.EnsureStandardObject(&org, "Account")
+			base := newConformanceRunner(t, index, conformanceRunnerOptions{Org: &org, LinkProject: true})
+			query := "SELECT Id,(SELECT Id FROM ContactPointOttSvcs LIMIT 1) FROM Account LIMIT 1"
+			analysis := sema.AnalyzeAnonymous(index, "List<Account> rows=["+query+"];", api)
+			if got, want := analysis.HasErrors(), api != "68.0"; got != want {
+				t.Errorf("static query has errors = %t, want %t: %v", got, want, analysis.Diagnostics)
+			}
+			source := "Boolean caught=false;try{Database.query('" + query + "');}catch(QueryException e){caught=true;}System.assertEquals(" + fmt.Sprint(api != "68.0") + ",caught);"
+			program, err := vm.CompileAnonymousWithOptions(source, vm.CompileOptions{APIVersion: api})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := base.newMachine().Execute(program); err != nil {
+				t.Fatalf("dynamic query: %v", err)
+			}
+		})
+	}
+}
+
+func TestPlatformRelationshipAPI68DescribeBoundary(t *testing.T) {
+	for _, api := range []string{"62.0", "67.0", "68.0"} {
+		t.Run(api, func(t *testing.T) {
+			root := t.TempDir()
+			writeFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"sourceApiVersion":%q,"packageDirectories":[{"path":"force-app","default":true}]}`, api))
+			index := loadTestIndex(t, root)
+			org := orgFromIndex(index)
+			org.APIVersion = api
+			storage.EnsureStandardObject(&org, "Account")
+			base := newConformanceRunner(t, index, conformanceRunnerOptions{Org: &org, LinkProject: true})
+			source := `Boolean found=false; for (Schema.ChildRelationship r : Account.SObjectType.getDescribe().getChildRelationships()) { if (r.getRelationshipName() == 'ContactPointOttSvcs') found=true; } System.assertEquals(` + fmt.Sprint(api == "68.0") + `,found);`
+			program, err := vm.CompileAnonymousWithOptions(source, vm.CompileOptions{APIVersion: api})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := base.newMachine().Execute(program); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
 }

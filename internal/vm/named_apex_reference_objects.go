@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/glade-sh/glade/internal/apexversion"
+	"github.com/glade-sh/glade/internal/soql"
 	"github.com/glade-sh/glade/internal/storage"
 )
 
@@ -14,8 +15,13 @@ import (
 // caches: an anonymous caller regains its own visibility when a helper returns.
 func (vm *VM) namedApexReferenceObjectName(name string) (string, bool) {
 	canonical, ok := storage.ResolveNamedApexReferenceObjectName(name)
-	if !ok || vm == nil || vm.currentClass == "" || vm.currentTrigger {
+	if !ok || vm == nil || vm.currentClass == "" {
 		return "", false
+	}
+	// A trigger body is named source: native sees the same reference targets
+	// there as in a class. The trigger is not a class, so skip the class lookup.
+	if vm.currentTrigger {
+		return canonical, true
 	}
 	class, ok := vm.lookupClass(vm.currentClass)
 	if !ok || class.PlatformType || methodHasModifier(class.Modifiers, AnonymousClassModifier) {
@@ -31,17 +37,25 @@ func (vm *VM) namedApexReferenceClassShadow(name string) bool {
 	return ok && !class.PlatformType && strings.EqualFold(runtimeClassName(class), name)
 }
 
-// Native API 62-66 exposes these types through reflection in named transactions.
-// API 67 and Tooling executeAnonymous transactions return null, including calls
-// made by named helpers within an anonymous transaction.
+// Winter 27 hides these types through reflection at API 62-66 as well as 67+.
+// The gate is scoped to the captured API range; other versions retain the
+// previous behavior, including Tooling executeAnonymous transactions.
 func (vm *VM) namedApexReferenceReflectionAvailable() bool {
+	// Native trigger bodies resolve these targets through reflection at every
+	// API (Type.forName and Schema.getGlobalDescribe are non-null).
+	if vm != nil && vm.currentTrigger {
+		return true
+	}
+	if vm != nil && apexversion.AtLeast(vm.currentMethod.APIVersion, 62) && apexversion.Before(vm.currentMethod.APIVersion, 67) {
+		return false
+	}
 	return vm != nil && !vm.toolingExecuteAnonymous &&
 		apexversion.AtLeast(vm.currentMethod.APIVersion, 62) && apexversion.Before(vm.currentMethod.APIVersion, 67)
 }
 
 // Native static SOQL over these reference objects compiles only in named source.
-// Named transactions at API 62-66 return no rows; API 67 and Tooling
-// executeAnonymous transactions throw. Only the failed static query is
+// API 62-67 and Tooling executeAnonymous transactions throw on Winter 27.
+// Only the failed static query is
 // reinterpreted, so ordinary queries keep their existing path and cost.
 func (vm *VM) namedApexReferenceStaticQuery(raw string, err error) (Value, error) {
 	var thrown *apexThrowError
@@ -64,6 +78,15 @@ func (vm *VM) namedApexReferenceStaticQuery(raw string, err error) (Value, error
 	}
 	if _, defined := vm.resolveObjectName(query.Object); defined {
 		return Null, err
+	}
+	if vm.currentTrigger {
+		// A trigger body compiles the query and fails it at run time: the
+		// scalar count() form with SecurityException, every other form with
+		// the long unsupported-sObject QueryException.
+		if query.Count && len(query.GroupBy) == 0 && query.Having == nil {
+			return Null, newExceptionError("SecurityException", "Access to entity '"+canonical+"' denied")
+		}
+		return Null, newExceptionError("QueryException", soql.MissingObjectMessage(canonical))
 	}
 	if !vm.namedApexReferenceReflectionAvailable() {
 		return Null, newExceptionError("QueryException", "sObject type '"+canonical+"' is not supported.")
@@ -171,7 +194,7 @@ func (vm *VM) namedApexReferenceDynamicQueryFault(value Value, err error) (Value
 		return value, err
 	}
 	canonical, ok := vm.namedApexReferenceObjectName(message[len(prefix) : len(prefix)+end])
-	if !ok {
+	if !ok || vm.currentTrigger {
 		return value, err
 	}
 	return Null, newExceptionError("QueryException", prefix+canonical+"' is not supported.")

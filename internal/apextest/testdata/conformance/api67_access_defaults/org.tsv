@@ -1,0 +1,763 @@
+source_api	test	row	observation
+66.0	adm_g1	0	dml_ins_secret=OK
+66.0	adm_g1	1	dml_ins_open=OK
+66.0	adm_g1	2	dml_upd_secret=OK
+66.0	adm_g1	3	dml_upd_open=OK
+66.0	adm_g1	4	dml_ups_secret=OK
+66.0	adm_g1	5	dml_ins_as_system=OK
+66.0	adm_g2	0	db_ins_default=OK
+66.0	adm_g2	1	db_ins_partial=ok
+66.0	adm_g2	2	db_upd_partial=ok
+66.0	adm_g2	3	db_ups_partial=ok
+66.0	adm_g2	4	db_ins_user=OK
+66.0	adm_g2	5	db_ins_system=OK
+66.0	adm_g3	0	soql_sel_secret=n=2
+66.0	adm_g3	1	soql_sel_open=n=2
+66.0	adm_g3	2	soql_where_secret=n=2
+66.0	adm_g3	3	soql_order_secret=n=2
+66.0	adm_g3	4	soql_count_secret=n=2
+66.0	adm_g3	5	soql_sys_secret=n=2
+66.0	adm_g3	6	soql_user_secret=n=2
+66.0	adm_g3	7	sosl_secret=n=0
+66.0	adm_g3	8	sosl_user_secret=n=0
+66.0	adm_g3	9	soql_where_user=n=2
+66.0	adm_g4	0	dyn_count_user=n=2
+66.0	adm_g4	1	dyn_q_secret=n=2
+66.0	adm_g4	2	dyn_q_where=n=2
+66.0	adm_g4	3	dyn_q_open=n=2
+66.0	adm_g4	4	dyn_q_sys=n=2
+66.0	adm_g4	5	dyn_q_user=n=2
+66.0	adm_g4	6	dyn_count_where=n=2
+66.0	adm_g4	7	dyn_count_sys=n=2
+66.0	adm_g4	8	dyn_loc_secret=OK
+66.0	adm_g4	9	dyn_loc_sys=OK
+66.0	adm_g5	0	dyn_bind_user=n=1
+66.0	adm_g5	1	dyn_bind_sys=n=1
+66.0	adm_g5	2	dyn_cntbind_user=n=0
+66.0	adm_g5	3	dyn_cntbind_sys=n=0
+66.0	adm_g5	4	dyn_locbind_user=OK
+66.0	adm_g5	5	dyn_locbind_sys=OK
+66.0	adm_g6	0	dml_del=OK
+66.0	adm_g7	0	dml_del_as_system=OK
+66.0	adm_g8	0	db_del_partial=ok
+66.0	adm_g9	0	db_ins_mixed=okok count=2
+66.0	adm_g9	1	db_ins_user_partial=okok count=4
+66.0	adm_g9	2	db_ins_list_true=no-ex count=6
+66.0	adm_g9	3	stmt_ins_list=no-ex count=8
+66.0	adm_shdirect	0	direct>ShBase: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	adm_shdirect	1	direct>ShWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	adm_shdirect	2	direct>ShW: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	adm_shdirect	3	direct>ShInh: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	adm_shdirect	4	direct>ShSubBase: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	adm_shdirect	5	direct>ShSubWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	adm_shdirect	6	direct>ShSubW: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	adm_shdirect	7	direct>ShSubInh: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	adm_shdirect	8	direct>ShSubSubWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	adm_shviaNone	0	None>ShBase: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	adm_shviaNone	1	None>ShWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	adm_shviaNone	2	None>ShW: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	adm_shviaNone	3	None>ShInh: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	adm_shviaNone	4	None>ShSubBase: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	adm_shviaNone	5	None>ShSubWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	adm_shviaNone	6	None>ShSubW: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	adm_shviaNone	7	None>ShSubInh: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	adm_shviaNone	8	None>ShSubSubWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	adm_shviaW	0	W>ShBase: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	adm_shviaW	1	W>ShWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	adm_shviaW	2	W>ShW: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	adm_shviaW	3	W>ShInh: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	adm_shviaW	4	W>ShSubBase: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	adm_shviaW	5	W>ShSubWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	adm_shviaW	6	W>ShSubW: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	adm_shviaW	7	W>ShSubInh: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	adm_shviaW	8	W>ShSubSubWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	adm_shviaWo	0	Wo>ShBase: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	adm_shviaWo	1	Wo>ShWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	adm_shviaWo	2	Wo>ShW: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	adm_shviaWo	3	Wo>ShInh: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	adm_shviaWo	4	Wo>ShSubBase: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	adm_shviaWo	5	Wo>ShSubWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	adm_shviaWo	6	Wo>ShSubW: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	adm_shviaWo	7	Wo>ShSubInh: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	adm_shviaWo	8	Wo>ShSubSubWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	adm_trg_bind	0	t_dyn_bind_user=n=1
+66.0	adm_trg_bind	1	t_dyn_bind_sys=n=1
+66.0	adm_trg_bind	2	t_dyn_cntbind_user=n=0
+66.0	adm_trg_bind	3	t_dyn_cntbind_sys=n=0
+66.0	adm_trg_bind	4	t_dyn_locbind_user=OK
+66.0	adm_trg_bind	5	t_dyn_locbind_sys=OK
+66.0	adm_trg_bind	6	t_cnt=n=9
+66.0	adm_trg_bind	7	t_dyncnt=n=9
+66.0	adm_trg_bind	8	t_syscnt=n=9
+66.0	adm_trg_bind	9	t_upd_adm=OK
+66.0	adm_trg_bind	10	t_upd_adm_sys=OK
+66.0	adm_trg_db	0	t_db_ins_default=OK
+66.0	adm_trg_db	1	t_db_ins_partial=ok
+66.0	adm_trg_db	2	t_db_upd_partial=ok
+66.0	adm_trg_db	3	t_db_ups_partial=ok
+66.0	adm_trg_db	4	t_db_ins_user=OK
+66.0	adm_trg_db	5	t_db_ins_system=OK
+66.0	adm_trg_dml	0	t_dml_ins_secret=OK
+66.0	adm_trg_dml	1	t_dml_ins_open=OK
+66.0	adm_trg_dml	2	t_dml_upd_secret=OK
+66.0	adm_trg_dml	3	t_dml_upd_open=OK
+66.0	adm_trg_dml	4	t_dml_ups_secret=OK
+66.0	adm_trg_dml	5	t_dml_ins_as_system=OK
+66.0	adm_trg_dml	6	t_dml_del=OK
+66.0	adm_trg_dyn	0	t_dyn_count_user=n=1
+66.0	adm_trg_dyn	1	t_dyn_q_secret=n=9
+66.0	adm_trg_dyn	2	t_dyn_q_where=n=1
+66.0	adm_trg_dyn	3	t_dyn_q_open=n=9
+66.0	adm_trg_dyn	4	t_dyn_q_sys=n=9
+66.0	adm_trg_dyn	5	t_dyn_q_user=n=9
+66.0	adm_trg_dyn	6	t_dyn_count_where=n=1
+66.0	adm_trg_dyn	7	t_dyn_count_sys=n=1
+66.0	adm_trg_dyn	8	t_dyn_loc_secret=OK
+66.0	adm_trg_dyn	9	t_dyn_loc_sys=OK
+66.0	adm_trg_dyn	10	t_dyn_locbind_user=OK
+66.0	adm_trg_dyn	11	t_dyn_locbind_sys=OK
+66.0	adm_trg_soql	0	t_soql_sel_secret=n=9
+66.0	adm_trg_soql	1	t_soql_sel_open=n=9
+66.0	adm_trg_soql	2	t_soql_where_secret=n=1
+66.0	adm_trg_soql	3	t_soql_order_secret=n=9
+66.0	adm_trg_soql	4	t_soql_count_secret=n=1
+66.0	adm_trg_soql	5	t_soql_sys_secret=n=9
+66.0	adm_trg_soql	6	t_soql_user_secret=n=9
+66.0	adm_trg_soql	7	t_sosl_secret=n=0
+66.0	adm_trg_soql	8	t_sosl_user_secret=n=0
+66.0	adm_trg_soql	9	t_soql_where_user=n=1
+66.0	std_g1	0	dml_ins_secret=OK
+66.0	std_g1	1	dml_ins_open=OK
+66.0	std_g1	2	dml_upd_secret=OK
+66.0	std_g1	3	dml_upd_open=OK
+66.0	std_g1	4	dml_ups_secret=OK
+66.0	std_g1	5	dml_ins_as_system=OK
+66.0	std_g2	0	db_ins_default=OK
+66.0	std_g2	1	db_ins_partial=ok
+66.0	std_g2	2	db_upd_partial=ok
+66.0	std_g2	3	db_ups_partial=ok
+66.0	std_g2	4	db_ins_user=EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! | f=(Secret__c) st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY n=1
+66.0	std_g2	5	db_ins_system=OK
+66.0	std_g3	0	soql_sel_secret=n=1
+66.0	std_g3	1	soql_sel_open=n=1
+66.0	std_g3	2	soql_where_secret=n=1
+66.0	std_g3	3	soql_order_secret=n=1
+66.0	std_g3	4	soql_count_secret=n=1
+66.0	std_g3	5	soql_sys_secret=n=1
+66.0	std_g3	6	soql_user_secret=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+66.0	std_g3	7	sosl_secret=n=0
+66.0	std_g3	8	sosl_user_secret=n=0
+66.0	std_g3	9	soql_where_user=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+66.0	std_g4	0	dyn_count_user=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+66.0	std_g4	1	dyn_q_secret=n=1
+66.0	std_g4	2	dyn_q_where=n=1
+66.0	std_g4	3	dyn_q_open=n=1
+66.0	std_g4	4	dyn_q_sys=n=1
+66.0	std_g4	5	dyn_q_user=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+66.0	std_g4	6	dyn_count_where=n=1
+66.0	std_g4	7	dyn_count_sys=n=1
+66.0	std_g4	8	dyn_loc_secret=OK
+66.0	std_g4	9	dyn_loc_sys=OK
+66.0	std_g5	0	dyn_bind_user=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+66.0	std_g5	1	dyn_bind_sys=n=1
+66.0	std_g5	2	dyn_cntbind_user=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+66.0	std_g5	3	dyn_cntbind_sys=n=0
+66.0	std_g5	4	dyn_locbind_user=EX System.QueryException: Variable does not exist: n | inacc={}
+66.0	std_g5	5	dyn_locbind_sys=OK
+66.0	std_g6	0	dml_del=OK
+66.0	std_g7	0	dml_del_as_system=OK
+66.0	std_g8	0	db_del_partial=ok
+66.0	std_g9	0	db_ins_mixed=okok count=2
+66.0	std_g9	1	db_ins_user_partial=okFAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! fieldNames: Secret__c:(Secret__c) count=3
+66.0	std_g9	2	db_ins_list_true=no-ex count=5
+66.0	std_g9	3	stmt_ins_list=no-ex count=7
+66.0	std_shdirect	0	direct>ShBase: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+66.0	std_shdirect	1	direct>ShWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	std_shdirect	2	direct>ShW: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+66.0	std_shdirect	3	direct>ShInh: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+66.0	std_shdirect	4	direct>ShSubBase: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+66.0	std_shdirect	5	direct>ShSubWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	std_shdirect	6	direct>ShSubW: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+66.0	std_shdirect	7	direct>ShSubInh: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+66.0	std_shdirect	8	direct>ShSubSubWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	std_shviaNone	0	None>ShBase: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+66.0	std_shviaNone	1	None>ShWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	std_shviaNone	2	None>ShW: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+66.0	std_shviaNone	3	None>ShInh: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+66.0	std_shviaNone	4	None>ShSubBase: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+66.0	std_shviaNone	5	None>ShSubWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	std_shviaNone	6	None>ShSubW: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+66.0	std_shviaNone	7	None>ShSubInh: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+66.0	std_shviaNone	8	None>ShSubSubWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	std_shviaW	0	W>ShBase: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+66.0	std_shviaW	1	W>ShWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	std_shviaW	2	W>ShW: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+66.0	std_shviaW	3	W>ShInh: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+66.0	std_shviaW	4	W>ShSubBase: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+66.0	std_shviaW	5	W>ShSubWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	std_shviaW	6	W>ShSubW: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+66.0	std_shviaW	7	W>ShSubInh: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+66.0	std_shviaW	8	W>ShSubSubWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	std_shviaWo	0	Wo>ShBase: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	std_shviaWo	1	Wo>ShWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	std_shviaWo	2	Wo>ShW: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+66.0	std_shviaWo	3	Wo>ShInh: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	std_shviaWo	4	Wo>ShSubBase: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	std_shviaWo	5	Wo>ShSubWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	std_shviaWo	6	Wo>ShSubW: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+66.0	std_shviaWo	7	Wo>ShSubInh: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	std_shviaWo	8	Wo>ShSubSubWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+66.0	std_trg_bind	0	t_dyn_bind_user=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+66.0	std_trg_bind	1	t_dyn_bind_sys=n=1
+66.0	std_trg_bind	2	t_dyn_cntbind_user=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+66.0	std_trg_bind	3	t_dyn_cntbind_sys=n=0
+66.0	std_trg_bind	4	t_dyn_locbind_user=EX System.QueryException: Invalid bind expression type of Integer for column of type String | inacc={}
+66.0	std_trg_bind	5	t_dyn_locbind_sys=OK
+66.0	std_trg_bind	6	t_cnt=n=8
+66.0	std_trg_bind	7	t_dyncnt=n=8
+66.0	std_trg_bind	8	t_syscnt=n=8
+66.0	std_trg_bind	9	t_upd_adm=OK
+66.0	std_trg_bind	10	t_upd_adm_sys=OK
+66.0	std_trg_db	0	t_db_ins_default=OK
+66.0	std_trg_db	1	t_db_ins_partial=ok
+66.0	std_trg_db	2	t_db_upd_partial=ok
+66.0	std_trg_db	3	t_db_ups_partial=ok
+66.0	std_trg_db	4	t_db_ins_user=EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! | f=(Secret__c) st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY n=1
+66.0	std_trg_db	5	t_db_ins_system=OK
+66.0	std_trg_dml	0	t_dml_ins_secret=OK
+66.0	std_trg_dml	1	t_dml_ins_open=OK
+66.0	std_trg_dml	2	t_dml_upd_secret=OK
+66.0	std_trg_dml	3	t_dml_upd_open=OK
+66.0	std_trg_dml	4	t_dml_ups_secret=OK
+66.0	std_trg_dml	5	t_dml_ins_as_system=OK
+66.0	std_trg_dml	6	t_dml_del=OK
+66.0	std_trg_dyn	0	t_dyn_count_user=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+66.0	std_trg_dyn	1	t_dyn_q_secret=n=8
+66.0	std_trg_dyn	2	t_dyn_q_where=n=1
+66.0	std_trg_dyn	3	t_dyn_q_open=n=8
+66.0	std_trg_dyn	4	t_dyn_q_sys=n=8
+66.0	std_trg_dyn	5	t_dyn_q_user=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+66.0	std_trg_dyn	6	t_dyn_count_where=n=1
+66.0	std_trg_dyn	7	t_dyn_count_sys=n=1
+66.0	std_trg_dyn	8	t_dyn_loc_secret=OK
+66.0	std_trg_dyn	9	t_dyn_loc_sys=OK
+66.0	std_trg_dyn	10	t_dyn_locbind_user=EX System.QueryException: Invalid bind expression type of Integer for column of type String | inacc={}
+66.0	std_trg_dyn	11	t_dyn_locbind_sys=OK
+66.0	std_trg_soql	0	t_soql_sel_secret=n=8
+66.0	std_trg_soql	1	t_soql_sel_open=n=8
+66.0	std_trg_soql	2	t_soql_where_secret=n=1
+66.0	std_trg_soql	3	t_soql_order_secret=n=8
+66.0	std_trg_soql	4	t_soql_count_secret=n=1
+66.0	std_trg_soql	5	t_soql_sys_secret=n=8
+66.0	std_trg_soql	6	t_soql_user_secret=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+66.0	std_trg_soql	7	t_sosl_secret=n=0
+66.0	std_trg_soql	8	t_sosl_user_secret=n=0
+66.0	std_trg_soql	9	t_soql_where_user=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+67.0	adm_g1	0	dml_ins_secret=OK
+67.0	adm_g1	1	dml_ins_open=OK
+67.0	adm_g1	2	dml_upd_secret=OK
+67.0	adm_g1	3	dml_upd_open=OK
+67.0	adm_g1	4	dml_ups_secret=OK
+67.0	adm_g1	5	dml_ins_as_system=OK
+67.0	adm_g2	0	db_ins_default=OK
+67.0	adm_g2	1	db_ins_partial=ok
+67.0	adm_g2	2	db_upd_partial=ok
+67.0	adm_g2	3	db_ups_partial=ok
+67.0	adm_g2	4	db_ins_user=OK
+67.0	adm_g2	5	db_ins_system=OK
+67.0	adm_g3	0	soql_sel_secret=n=2
+67.0	adm_g3	1	soql_sel_open=n=2
+67.0	adm_g3	2	soql_where_secret=n=2
+67.0	adm_g3	3	soql_order_secret=n=2
+67.0	adm_g3	4	soql_count_secret=n=2
+67.0	adm_g3	5	soql_sys_secret=n=2
+67.0	adm_g3	6	soql_user_secret=n=2
+67.0	adm_g3	7	sosl_secret=n=0
+67.0	adm_g3	8	sosl_user_secret=n=0
+67.0	adm_g3	9	soql_where_user=n=2
+67.0	adm_g4	0	dyn_count_user=n=2
+67.0	adm_g4	1	dyn_q_secret=n=2
+67.0	adm_g4	2	dyn_q_where=n=2
+67.0	adm_g4	3	dyn_q_open=n=2
+67.0	adm_g4	4	dyn_q_sys=n=2
+67.0	adm_g4	5	dyn_q_user=n=2
+67.0	adm_g4	6	dyn_count_where=n=2
+67.0	adm_g4	7	dyn_count_sys=n=2
+67.0	adm_g4	8	dyn_loc_secret=OK
+67.0	adm_g4	9	dyn_loc_sys=OK
+67.0	adm_g5	0	dyn_bind_user=n=1
+67.0	adm_g5	1	dyn_bind_sys=n=1
+67.0	adm_g5	2	dyn_cntbind_user=n=0
+67.0	adm_g5	3	dyn_cntbind_sys=n=0
+67.0	adm_g5	4	dyn_locbind_user=OK
+67.0	adm_g5	5	dyn_locbind_sys=OK
+67.0	adm_g6	0	dml_del=OK
+67.0	adm_g7	0	dml_del_as_system=OK
+67.0	adm_g8	0	db_del_partial=ok
+67.0	adm_g9	0	db_ins_mixed=okok count=2
+67.0	adm_g9	1	db_ins_user_partial=okok count=4
+67.0	adm_g9	2	db_ins_list_true=no-ex count=6
+67.0	adm_g9	3	stmt_ins_list=no-ex count=8
+67.0	adm_shdirect	0	direct>ShBase: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+67.0	adm_shdirect	1	direct>ShWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+67.0	adm_shdirect	2	direct>ShW: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+67.0	adm_shdirect	3	direct>ShInh: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+67.0	adm_shdirect	4	direct>ShSubBase: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+67.0	adm_shdirect	5	direct>ShSubWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+67.0	adm_shdirect	6	direct>ShSubW: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+67.0	adm_shdirect	7	direct>ShSubInh: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+67.0	adm_shdirect	8	direct>ShSubSubWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+67.0	adm_shviaNone	0	None>ShBase: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+67.0	adm_shviaNone	1	None>ShWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+67.0	adm_shviaNone	2	None>ShW: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+67.0	adm_shviaNone	3	None>ShInh: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+67.0	adm_shviaNone	4	None>ShSubBase: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+67.0	adm_shviaNone	5	None>ShSubWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+67.0	adm_shviaNone	6	None>ShSubW: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+67.0	adm_shviaNone	7	None>ShSubInh: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+67.0	adm_shviaNone	8	None>ShSubSubWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+67.0	adm_shviaW	0	W>ShBase: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+67.0	adm_shviaW	1	W>ShWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+67.0	adm_shviaW	2	W>ShW: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+67.0	adm_shviaW	3	W>ShInh: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+67.0	adm_shviaW	4	W>ShSubBase: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+67.0	adm_shviaW	5	W>ShSubWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+67.0	adm_shviaW	6	W>ShSubW: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+67.0	adm_shviaW	7	W>ShSubInh: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+67.0	adm_shviaW	8	W>ShSubSubWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+67.0	adm_shviaWo	0	Wo>ShBase: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+67.0	adm_shviaWo	1	Wo>ShWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+67.0	adm_shviaWo	2	Wo>ShW: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+67.0	adm_shviaWo	3	Wo>ShInh: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+67.0	adm_shviaWo	4	Wo>ShSubBase: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+67.0	adm_shviaWo	5	Wo>ShSubWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+67.0	adm_shviaWo	6	Wo>ShSubW: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+67.0	adm_shviaWo	7	Wo>ShSubInh: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+67.0	adm_shviaWo	8	Wo>ShSubSubWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+67.0	adm_trg_bind	0	t_dyn_bind_user=n=1
+67.0	adm_trg_bind	1	t_dyn_bind_sys=n=1
+67.0	adm_trg_bind	2	t_dyn_cntbind_user=n=0
+67.0	adm_trg_bind	3	t_dyn_cntbind_sys=n=0
+67.0	adm_trg_bind	4	t_dyn_locbind_user=OK
+67.0	adm_trg_bind	5	t_dyn_locbind_sys=OK
+67.0	adm_trg_bind	6	t_cnt=n=9
+67.0	adm_trg_bind	7	t_dyncnt=n=9
+67.0	adm_trg_bind	8	t_syscnt=n=9
+67.0	adm_trg_bind	9	t_upd_adm=OK
+67.0	adm_trg_bind	10	t_upd_adm_sys=OK
+67.0	adm_trg_db	0	t_db_ins_default=OK
+67.0	adm_trg_db	1	t_db_ins_partial=ok
+67.0	adm_trg_db	2	t_db_upd_partial=ok
+67.0	adm_trg_db	3	t_db_ups_partial=ok
+67.0	adm_trg_db	4	t_db_ins_user=OK
+67.0	adm_trg_db	5	t_db_ins_system=OK
+67.0	adm_trg_dml	0	t_dml_ins_secret=OK
+67.0	adm_trg_dml	1	t_dml_ins_open=OK
+67.0	adm_trg_dml	2	t_dml_upd_secret=OK
+67.0	adm_trg_dml	3	t_dml_upd_open=OK
+67.0	adm_trg_dml	4	t_dml_ups_secret=OK
+67.0	adm_trg_dml	5	t_dml_ins_as_system=OK
+67.0	adm_trg_dml	6	t_dml_del=OK
+67.0	adm_trg_dyn	0	t_dyn_count_user=n=1
+67.0	adm_trg_dyn	1	t_dyn_q_secret=n=9
+67.0	adm_trg_dyn	2	t_dyn_q_where=n=1
+67.0	adm_trg_dyn	3	t_dyn_q_open=n=9
+67.0	adm_trg_dyn	4	t_dyn_q_sys=n=9
+67.0	adm_trg_dyn	5	t_dyn_q_user=n=9
+67.0	adm_trg_dyn	6	t_dyn_count_where=n=1
+67.0	adm_trg_dyn	7	t_dyn_count_sys=n=1
+67.0	adm_trg_dyn	8	t_dyn_loc_secret=OK
+67.0	adm_trg_dyn	9	t_dyn_loc_sys=OK
+67.0	adm_trg_dyn	10	t_dyn_locbind_user=OK
+67.0	adm_trg_dyn	11	t_dyn_locbind_sys=OK
+67.0	adm_trg_soql	0	t_soql_sel_secret=n=9
+67.0	adm_trg_soql	1	t_soql_sel_open=n=9
+67.0	adm_trg_soql	2	t_soql_where_secret=n=1
+67.0	adm_trg_soql	3	t_soql_order_secret=n=9
+67.0	adm_trg_soql	4	t_soql_count_secret=n=1
+67.0	adm_trg_soql	5	t_soql_sys_secret=n=9
+67.0	adm_trg_soql	6	t_soql_user_secret=n=9
+67.0	adm_trg_soql	7	t_sosl_secret=n=0
+67.0	adm_trg_soql	8	t_sosl_user_secret=n=0
+67.0	adm_trg_soql	9	t_soql_where_user=n=1
+67.0	std_g1	0	dml_ins_secret=EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! | f=(Secret__c) st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY n=1
+67.0	std_g1	1	dml_ins_open=OK
+67.0	std_g1	2	dml_upd_secret=EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! | f=(Secret__c) st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY n=1
+67.0	std_g1	3	dml_upd_open=OK
+67.0	std_g1	4	dml_ups_secret=EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! | f=(Secret__c) st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY n=1
+67.0	std_g1	5	dml_ins_as_system=OK
+67.0	std_g2	0	db_ins_default=EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! | f=(Secret__c) st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY n=1
+67.0	std_g2	1	db_ins_partial=FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! fieldNames: Secret__c:(Secret__c)
+67.0	std_g2	2	db_upd_partial=FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! fieldNames: Secret__c:(Secret__c)
+67.0	std_g2	3	db_ups_partial=FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! fieldNames: Secret__c:(Secret__c)
+67.0	std_g2	4	db_ins_user=EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! | f=(Secret__c) st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY n=1
+67.0	std_g2	5	db_ins_system=OK
+67.0	std_g3	0	soql_sel_secret=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+67.0	std_g3	1	soql_sel_open=n=1
+67.0	std_g3	2	soql_where_secret=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+67.0	std_g3	3	soql_order_secret=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+67.0	std_g3	4	soql_count_secret=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+67.0	std_g3	5	soql_sys_secret=n=1
+67.0	std_g3	6	soql_user_secret=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+67.0	std_g3	7	sosl_secret=n=0
+67.0	std_g3	8	sosl_user_secret=n=0
+67.0	std_g3	9	soql_where_user=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+67.0	std_g4	0	dyn_count_user=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+67.0	std_g4	1	dyn_q_secret=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+67.0	std_g4	2	dyn_q_where=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+67.0	std_g4	3	dyn_q_open=n=1
+67.0	std_g4	4	dyn_q_sys=n=1
+67.0	std_g4	5	dyn_q_user=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+67.0	std_g4	6	dyn_count_where=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+67.0	std_g4	7	dyn_count_sys=n=1
+67.0	std_g4	8	dyn_loc_secret=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+67.0	std_g4	9	dyn_loc_sys=OK
+67.0	std_g5	0	dyn_bind_user=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+67.0	std_g5	1	dyn_bind_sys=n=1
+67.0	std_g5	2	dyn_cntbind_user=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+67.0	std_g5	3	dyn_cntbind_sys=n=0
+67.0	std_g5	4	dyn_locbind_user=EX System.QueryException: Variable does not exist: n | inacc={}
+67.0	std_g5	5	dyn_locbind_sys=OK
+67.0	std_g6	0	dml_del=EX System.TypeException: DML operation DELETE not allowed on Gl_Obj__c
+67.0	std_g7	0	dml_del_as_system=OK
+67.0	std_g8	0	db_del_partial=FAIL DELETE_FAILED:DML operation DELETE not allowed on Gl_Obj__c:()
+67.0	std_g9	0	db_ins_mixed=okFAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! fieldNames: Secret__c:(Secret__c) count=1
+67.0	std_g9	1	db_ins_user_partial=okFAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! fieldNames: Secret__c:(Secret__c) count=2
+67.0	std_g9	2	db_ins_list_true=EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! | f=(Secret__c) st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY n=1 count=2
+67.0	std_g9	3	stmt_ins_list=EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! | f=(Secret__c) st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY n=1 count=2
+67.0	std_shdirect	0	direct>ShBase: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+67.0	std_shdirect	1	direct>ShWo: cnt=n=1 dyn=n=1 sys=n=2 sysDyn=n=2 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=OK
+67.0	std_shdirect	2	direct>ShW: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+67.0	std_shdirect	3	direct>ShInh: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+67.0	std_shdirect	4	direct>ShSubBase: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+67.0	std_shdirect	5	direct>ShSubWo: cnt=n=1 dyn=n=1 sys=n=2 sysDyn=n=2 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=OK
+67.0	std_shdirect	6	direct>ShSubW: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+67.0	std_shdirect	7	direct>ShSubInh: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+67.0	std_shdirect	8	direct>ShSubSubWo: cnt=n=1 dyn=n=1 sys=n=2 sysDyn=n=2 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=OK
+67.0	std_shviaNone	0	None>ShBase: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+67.0	std_shviaNone	1	None>ShWo: cnt=n=1 dyn=n=1 sys=n=2 sysDyn=n=2 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=OK
+67.0	std_shviaNone	2	None>ShW: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+67.0	std_shviaNone	3	None>ShInh: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+67.0	std_shviaNone	4	None>ShSubBase: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+67.0	std_shviaNone	5	None>ShSubWo: cnt=n=1 dyn=n=1 sys=n=2 sysDyn=n=2 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=OK
+67.0	std_shviaNone	6	None>ShSubW: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+67.0	std_shviaNone	7	None>ShSubInh: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+67.0	std_shviaNone	8	None>ShSubSubWo: cnt=n=1 dyn=n=1 sys=n=2 sysDyn=n=2 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=OK
+67.0	std_shviaW	0	W>ShBase: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+67.0	std_shviaW	1	W>ShWo: cnt=n=1 dyn=n=1 sys=n=2 sysDyn=n=2 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=OK
+67.0	std_shviaW	2	W>ShW: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+67.0	std_shviaW	3	W>ShInh: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+67.0	std_shviaW	4	W>ShSubBase: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+67.0	std_shviaW	5	W>ShSubWo: cnt=n=1 dyn=n=1 sys=n=2 sysDyn=n=2 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=OK
+67.0	std_shviaW	6	W>ShSubW: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+67.0	std_shviaW	7	W>ShSubInh: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+67.0	std_shviaW	8	W>ShSubSubWo: cnt=n=1 dyn=n=1 sys=n=2 sysDyn=n=2 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=OK
+67.0	std_shviaWo	0	Wo>ShBase: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+67.0	std_shviaWo	1	Wo>ShWo: cnt=n=1 dyn=n=1 sys=n=2 sysDyn=n=2 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=OK
+67.0	std_shviaWo	2	Wo>ShW: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+67.0	std_shviaWo	3	Wo>ShInh: cnt=n=1 dyn=n=1 sys=n=2 sysDyn=n=2 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=OK
+67.0	std_shviaWo	4	Wo>ShSubBase: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+67.0	std_shviaWo	5	Wo>ShSubWo: cnt=n=1 dyn=n=1 sys=n=2 sysDyn=n=2 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=OK
+67.0	std_shviaWo	6	Wo>ShSubW: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+67.0	std_shviaWo	7	Wo>ShSubInh: cnt=n=1 dyn=n=1 sys=n=2 sysDyn=n=2 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=OK
+67.0	std_shviaWo	8	Wo>ShSubSubWo: cnt=n=1 dyn=n=1 sys=n=2 sysDyn=n=2 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=OK
+67.0	std_trg_bind	0	t_dyn_bind_user=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+67.0	std_trg_bind	1	t_dyn_bind_sys=n=1
+67.0	std_trg_bind	2	t_dyn_cntbind_user=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+67.0	std_trg_bind	3	t_dyn_cntbind_sys=n=0
+67.0	std_trg_bind	4	t_dyn_locbind_user=EX System.QueryException: Invalid bind expression type of Integer for column of type String | inacc={}
+67.0	std_trg_bind	5	t_dyn_locbind_sys=OK
+67.0	std_trg_bind	6	t_cnt=n=4
+67.0	std_trg_bind	7	t_dyncnt=n=4
+67.0	std_trg_bind	8	t_syscnt=n=5
+67.0	std_trg_bind	9	t_upd_adm=EX System.DmlException: Update failed. First exception on row 0 with id ID; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: ID: [] | f=() st=INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY n=1
+67.0	std_trg_bind	10	t_upd_adm_sys=OK
+67.0	std_trg_db	0	t_db_ins_default=EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! | f=(Secret__c) st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY n=1
+67.0	std_trg_db	1	t_db_ins_partial=FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! fieldNames: Secret__c:(Secret__c)
+67.0	std_trg_db	2	t_db_upd_partial=FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! fieldNames: Secret__c:(Secret__c)
+67.0	std_trg_db	3	t_db_ups_partial=FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! fieldNames: Secret__c:(Secret__c)
+67.0	std_trg_db	4	t_db_ins_user=EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! | f=(Secret__c) st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY n=1
+67.0	std_trg_db	5	t_db_ins_system=OK
+67.0	std_trg_dml	0	t_dml_ins_secret=EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! | f=(Secret__c) st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY n=1
+67.0	std_trg_dml	1	t_dml_ins_open=OK
+67.0	std_trg_dml	2	t_dml_upd_secret=EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! | f=(Secret__c) st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY n=1
+67.0	std_trg_dml	3	t_dml_upd_open=OK
+67.0	std_trg_dml	4	t_dml_ups_secret=EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! | f=(Secret__c) st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY n=1
+67.0	std_trg_dml	5	t_dml_ins_as_system=OK
+67.0	std_trg_dml	6	t_dml_del=EX System.TypeException: DML operation DELETE not allowed on Gl_Obj__c
+67.0	std_trg_dyn	0	t_dyn_count_user=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+67.0	std_trg_dyn	1	t_dyn_q_secret=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+67.0	std_trg_dyn	2	t_dyn_q_where=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+67.0	std_trg_dyn	3	t_dyn_q_open=n=4
+67.0	std_trg_dyn	4	t_dyn_q_sys=n=5
+67.0	std_trg_dyn	5	t_dyn_q_user=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+67.0	std_trg_dyn	6	t_dyn_count_where=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+67.0	std_trg_dyn	7	t_dyn_count_sys=n=2
+67.0	std_trg_dyn	8	t_dyn_loc_secret=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+67.0	std_trg_dyn	9	t_dyn_loc_sys=OK
+67.0	std_trg_dyn	10	t_dyn_locbind_user=EX System.QueryException: Invalid bind expression type of Integer for column of type String | inacc={}
+67.0	std_trg_dyn	11	t_dyn_locbind_sys=OK
+67.0	std_trg_soql	0	t_soql_sel_secret=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+67.0	std_trg_soql	1	t_soql_sel_open=n=4
+67.0	std_trg_soql	2	t_soql_where_secret=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+67.0	std_trg_soql	3	t_soql_order_secret=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+67.0	std_trg_soql	4	t_soql_count_secret=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+67.0	std_trg_soql	5	t_soql_sys_secret=n=5
+67.0	std_trg_soql	6	t_soql_user_secret=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+67.0	std_trg_soql	7	t_sosl_secret=n=0
+67.0	std_trg_soql	8	t_sosl_user_secret=n=0
+67.0	std_trg_soql	9	t_soql_where_user=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+68.0	adm_g1	0	dml_ins_secret=OK
+68.0	adm_g1	1	dml_ins_open=OK
+68.0	adm_g1	2	dml_upd_secret=OK
+68.0	adm_g1	3	dml_upd_open=OK
+68.0	adm_g1	4	dml_ups_secret=OK
+68.0	adm_g1	5	dml_ins_as_system=OK
+68.0	adm_g2	0	db_ins_default=OK
+68.0	adm_g2	1	db_ins_partial=ok
+68.0	adm_g2	2	db_upd_partial=ok
+68.0	adm_g2	3	db_ups_partial=ok
+68.0	adm_g2	4	db_ins_user=OK
+68.0	adm_g2	5	db_ins_system=OK
+68.0	adm_g3	0	soql_sel_secret=n=2
+68.0	adm_g3	1	soql_sel_open=n=2
+68.0	adm_g3	2	soql_where_secret=n=2
+68.0	adm_g3	3	soql_order_secret=n=2
+68.0	adm_g3	4	soql_count_secret=n=2
+68.0	adm_g3	5	soql_sys_secret=n=2
+68.0	adm_g3	6	soql_user_secret=n=2
+68.0	adm_g3	7	sosl_secret=n=0
+68.0	adm_g3	8	sosl_user_secret=n=0
+68.0	adm_g3	9	soql_where_user=n=2
+68.0	adm_g4	0	dyn_count_user=n=2
+68.0	adm_g4	1	dyn_q_secret=n=2
+68.0	adm_g4	2	dyn_q_where=n=2
+68.0	adm_g4	3	dyn_q_open=n=2
+68.0	adm_g4	4	dyn_q_sys=n=2
+68.0	adm_g4	5	dyn_q_user=n=2
+68.0	adm_g4	6	dyn_count_where=n=2
+68.0	adm_g4	7	dyn_count_sys=n=2
+68.0	adm_g4	8	dyn_loc_secret=OK
+68.0	adm_g4	9	dyn_loc_sys=OK
+68.0	adm_g5	0	dyn_bind_user=n=1
+68.0	adm_g5	1	dyn_bind_sys=n=1
+68.0	adm_g5	2	dyn_cntbind_user=n=0
+68.0	adm_g5	3	dyn_cntbind_sys=n=0
+68.0	adm_g5	4	dyn_locbind_user=OK
+68.0	adm_g5	5	dyn_locbind_sys=OK
+68.0	adm_g6	0	dml_del=OK
+68.0	adm_g7	0	dml_del_as_system=OK
+68.0	adm_g8	0	db_del_partial=ok
+68.0	adm_g9	0	db_ins_mixed=okok count=2
+68.0	adm_g9	1	db_ins_user_partial=okok count=4
+68.0	adm_g9	2	db_ins_list_true=no-ex count=6
+68.0	adm_g9	3	stmt_ins_list=no-ex count=8
+68.0	adm_shdirect	0	direct>ShBase: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+68.0	adm_shdirect	1	direct>ShWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+68.0	adm_shdirect	2	direct>ShW: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+68.0	adm_shdirect	3	direct>ShInh: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+68.0	adm_shdirect	4	direct>ShSubBase: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+68.0	adm_shdirect	5	direct>ShSubWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+68.0	adm_shdirect	6	direct>ShSubW: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+68.0	adm_shdirect	7	direct>ShSubInh: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+68.0	adm_shdirect	8	direct>ShSubSubWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+68.0	adm_shviaNone	0	None>ShBase: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+68.0	adm_shviaNone	1	None>ShWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+68.0	adm_shviaNone	2	None>ShW: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+68.0	adm_shviaNone	3	None>ShInh: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+68.0	adm_shviaNone	4	None>ShSubBase: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+68.0	adm_shviaNone	5	None>ShSubWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+68.0	adm_shviaNone	6	None>ShSubW: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+68.0	adm_shviaNone	7	None>ShSubInh: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+68.0	adm_shviaNone	8	None>ShSubSubWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+68.0	adm_shviaW	0	W>ShBase: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+68.0	adm_shviaW	1	W>ShWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+68.0	adm_shviaW	2	W>ShW: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+68.0	adm_shviaW	3	W>ShInh: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+68.0	adm_shviaW	4	W>ShSubBase: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+68.0	adm_shviaW	5	W>ShSubWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+68.0	adm_shviaW	6	W>ShSubW: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+68.0	adm_shviaW	7	W>ShSubInh: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+68.0	adm_shviaW	8	W>ShSubSubWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+68.0	adm_shviaWo	0	Wo>ShBase: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+68.0	adm_shviaWo	1	Wo>ShWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+68.0	adm_shviaWo	2	Wo>ShW: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+68.0	adm_shviaWo	3	Wo>ShInh: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+68.0	adm_shviaWo	4	Wo>ShSubBase: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+68.0	adm_shviaWo	5	Wo>ShSubWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+68.0	adm_shviaWo	6	Wo>ShSubW: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+68.0	adm_shviaWo	7	Wo>ShSubInh: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+68.0	adm_shviaWo	8	Wo>ShSubSubWo: cnt=n=2 dyn=n=2 sys=n=2 sysDyn=n=2 upd=OK updSys=OK
+68.0	adm_trg_bind	0	t_dyn_bind_user=n=1
+68.0	adm_trg_bind	1	t_dyn_bind_sys=n=1
+68.0	adm_trg_bind	2	t_dyn_cntbind_user=n=0
+68.0	adm_trg_bind	3	t_dyn_cntbind_sys=n=0
+68.0	adm_trg_bind	4	t_dyn_locbind_user=OK
+68.0	adm_trg_bind	5	t_dyn_locbind_sys=OK
+68.0	adm_trg_bind	6	t_cnt=n=9
+68.0	adm_trg_bind	7	t_dyncnt=n=9
+68.0	adm_trg_bind	8	t_syscnt=n=9
+68.0	adm_trg_bind	9	t_upd_adm=OK
+68.0	adm_trg_bind	10	t_upd_adm_sys=OK
+68.0	adm_trg_db	0	t_db_ins_default=OK
+68.0	adm_trg_db	1	t_db_ins_partial=ok
+68.0	adm_trg_db	2	t_db_upd_partial=ok
+68.0	adm_trg_db	3	t_db_ups_partial=ok
+68.0	adm_trg_db	4	t_db_ins_user=OK
+68.0	adm_trg_db	5	t_db_ins_system=OK
+68.0	adm_trg_dml	0	t_dml_ins_secret=OK
+68.0	adm_trg_dml	1	t_dml_ins_open=OK
+68.0	adm_trg_dml	2	t_dml_upd_secret=OK
+68.0	adm_trg_dml	3	t_dml_upd_open=OK
+68.0	adm_trg_dml	4	t_dml_ups_secret=OK
+68.0	adm_trg_dml	5	t_dml_ins_as_system=OK
+68.0	adm_trg_dml	6	t_dml_del=OK
+68.0	adm_trg_dyn	0	t_dyn_count_user=n=1
+68.0	adm_trg_dyn	1	t_dyn_q_secret=n=9
+68.0	adm_trg_dyn	2	t_dyn_q_where=n=1
+68.0	adm_trg_dyn	3	t_dyn_q_open=n=9
+68.0	adm_trg_dyn	4	t_dyn_q_sys=n=9
+68.0	adm_trg_dyn	5	t_dyn_q_user=n=9
+68.0	adm_trg_dyn	6	t_dyn_count_where=n=1
+68.0	adm_trg_dyn	7	t_dyn_count_sys=n=1
+68.0	adm_trg_dyn	8	t_dyn_loc_secret=OK
+68.0	adm_trg_dyn	9	t_dyn_loc_sys=OK
+68.0	adm_trg_dyn	10	t_dyn_locbind_user=OK
+68.0	adm_trg_dyn	11	t_dyn_locbind_sys=OK
+68.0	adm_trg_soql	0	t_soql_sel_secret=n=9
+68.0	adm_trg_soql	1	t_soql_sel_open=n=9
+68.0	adm_trg_soql	2	t_soql_where_secret=n=1
+68.0	adm_trg_soql	3	t_soql_order_secret=n=9
+68.0	adm_trg_soql	4	t_soql_count_secret=n=1
+68.0	adm_trg_soql	5	t_soql_sys_secret=n=9
+68.0	adm_trg_soql	6	t_soql_user_secret=n=9
+68.0	adm_trg_soql	7	t_sosl_secret=n=0
+68.0	adm_trg_soql	8	t_sosl_user_secret=n=0
+68.0	adm_trg_soql	9	t_soql_where_user=n=1
+68.0	std_g1	0	dml_ins_secret=EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! | f=(Secret__c) st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY n=1
+68.0	std_g1	1	dml_ins_open=OK
+68.0	std_g1	2	dml_upd_secret=EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! | f=(Secret__c) st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY n=1
+68.0	std_g1	3	dml_upd_open=OK
+68.0	std_g1	4	dml_ups_secret=EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! | f=(Secret__c) st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY n=1
+68.0	std_g1	5	dml_ins_as_system=OK
+68.0	std_g2	0	db_ins_default=EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! | f=(Secret__c) st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY n=1
+68.0	std_g2	1	db_ins_partial=FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! fieldNames: Secret__c:(Secret__c)
+68.0	std_g2	2	db_upd_partial=FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! fieldNames: Secret__c:(Secret__c)
+68.0	std_g2	3	db_ups_partial=FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! fieldNames: Secret__c:(Secret__c)
+68.0	std_g2	4	db_ins_user=EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! | f=(Secret__c) st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY n=1
+68.0	std_g2	5	db_ins_system=OK
+68.0	std_g3	0	soql_sel_secret=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+68.0	std_g3	1	soql_sel_open=n=1
+68.0	std_g3	2	soql_where_secret=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+68.0	std_g3	3	soql_order_secret=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+68.0	std_g3	4	soql_count_secret=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+68.0	std_g3	5	soql_sys_secret=n=1
+68.0	std_g3	6	soql_user_secret=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+68.0	std_g3	7	sosl_secret=n=0
+68.0	std_g3	8	sosl_user_secret=n=0
+68.0	std_g3	9	soql_where_user=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+68.0	std_g4	0	dyn_count_user=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+68.0	std_g4	1	dyn_q_secret=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+68.0	std_g4	2	dyn_q_where=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+68.0	std_g4	3	dyn_q_open=n=1
+68.0	std_g4	4	dyn_q_sys=n=1
+68.0	std_g4	5	dyn_q_user=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+68.0	std_g4	6	dyn_count_where=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+68.0	std_g4	7	dyn_count_sys=n=1
+68.0	std_g4	8	dyn_loc_secret=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+68.0	std_g4	9	dyn_loc_sys=OK
+68.0	std_g5	0	dyn_bind_user=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+68.0	std_g5	1	dyn_bind_sys=n=1
+68.0	std_g5	2	dyn_cntbind_user=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+68.0	std_g5	3	dyn_cntbind_sys=n=0
+68.0	std_g5	4	dyn_locbind_user=EX System.QueryException: Variable does not exist: n | inacc={}
+68.0	std_g5	5	dyn_locbind_sys=OK
+68.0	std_g6	0	dml_del=EX System.TypeException: DML operation DELETE not allowed on Gl_Obj__c
+68.0	std_g7	0	dml_del_as_system=OK
+68.0	std_g8	0	db_del_partial=FAIL DELETE_FAILED:DML operation DELETE not allowed on Gl_Obj__c:()
+68.0	std_g9	0	db_ins_mixed=okFAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! fieldNames: Secret__c:(Secret__c) count=1
+68.0	std_g9	1	db_ins_user_partial=okFAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! fieldNames: Secret__c:(Secret__c) count=2
+68.0	std_g9	2	db_ins_list_true=EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! | f=(Secret__c) st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY n=1 count=2
+68.0	std_g9	3	stmt_ins_list=EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! | f=(Secret__c) st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY n=1 count=2
+68.0	std_shdirect	0	direct>ShBase: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+68.0	std_shdirect	1	direct>ShWo: cnt=n=1 dyn=n=1 sys=n=2 sysDyn=n=2 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=OK
+68.0	std_shdirect	2	direct>ShW: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+68.0	std_shdirect	3	direct>ShInh: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+68.0	std_shdirect	4	direct>ShSubBase: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+68.0	std_shdirect	5	direct>ShSubWo: cnt=n=1 dyn=n=1 sys=n=2 sysDyn=n=2 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=OK
+68.0	std_shdirect	6	direct>ShSubW: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+68.0	std_shdirect	7	direct>ShSubInh: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+68.0	std_shdirect	8	direct>ShSubSubWo: cnt=n=1 dyn=n=1 sys=n=2 sysDyn=n=2 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=OK
+68.0	std_shviaNone	0	None>ShBase: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+68.0	std_shviaNone	1	None>ShWo: cnt=n=1 dyn=n=1 sys=n=2 sysDyn=n=2 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=OK
+68.0	std_shviaNone	2	None>ShW: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+68.0	std_shviaNone	3	None>ShInh: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+68.0	std_shviaNone	4	None>ShSubBase: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+68.0	std_shviaNone	5	None>ShSubWo: cnt=n=1 dyn=n=1 sys=n=2 sysDyn=n=2 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=OK
+68.0	std_shviaNone	6	None>ShSubW: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+68.0	std_shviaNone	7	None>ShSubInh: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+68.0	std_shviaNone	8	None>ShSubSubWo: cnt=n=1 dyn=n=1 sys=n=2 sysDyn=n=2 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=OK
+68.0	std_shviaW	0	W>ShBase: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+68.0	std_shviaW	1	W>ShWo: cnt=n=1 dyn=n=1 sys=n=2 sysDyn=n=2 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=OK
+68.0	std_shviaW	2	W>ShW: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+68.0	std_shviaW	3	W>ShInh: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+68.0	std_shviaW	4	W>ShSubBase: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+68.0	std_shviaW	5	W>ShSubWo: cnt=n=1 dyn=n=1 sys=n=2 sysDyn=n=2 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=OK
+68.0	std_shviaW	6	W>ShSubW: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+68.0	std_shviaW	7	W>ShSubInh: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+68.0	std_shviaW	8	W>ShSubSubWo: cnt=n=1 dyn=n=1 sys=n=2 sysDyn=n=2 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=OK
+68.0	std_shviaWo	0	Wo>ShBase: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+68.0	std_shviaWo	1	Wo>ShWo: cnt=n=1 dyn=n=1 sys=n=2 sysDyn=n=2 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=OK
+68.0	std_shviaWo	2	Wo>ShW: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+68.0	std_shviaWo	3	Wo>ShInh: cnt=n=1 dyn=n=1 sys=n=2 sysDyn=n=2 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=OK
+68.0	std_shviaWo	4	Wo>ShSubBase: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+68.0	std_shviaWo	5	Wo>ShSubWo: cnt=n=1 dyn=n=1 sys=n=2 sysDyn=n=2 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=OK
+68.0	std_shviaWo	6	Wo>ShSubW: cnt=n=1 dyn=n=1 sys=n=1 sysDyn=n=1 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+68.0	std_shviaWo	7	Wo>ShSubInh: cnt=n=1 dyn=n=1 sys=n=2 sysDyn=n=2 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=OK
+68.0	std_shviaWo	8	Wo>ShSubSubWo: cnt=n=1 dyn=n=1 sys=n=2 sysDyn=n=2 upd=System.DmlException:INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY updSys=OK
+68.0	std_trg_bind	0	t_dyn_bind_user=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+68.0	std_trg_bind	1	t_dyn_bind_sys=n=1
+68.0	std_trg_bind	2	t_dyn_cntbind_user=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+68.0	std_trg_bind	3	t_dyn_cntbind_sys=n=0
+68.0	std_trg_bind	4	t_dyn_locbind_user=EX System.QueryException: Invalid bind expression type of Integer for column of type String | inacc={}
+68.0	std_trg_bind	5	t_dyn_locbind_sys=OK
+68.0	std_trg_bind	6	t_cnt=n=4
+68.0	std_trg_bind	7	t_dyncnt=n=4
+68.0	std_trg_bind	8	t_syscnt=n=5
+68.0	std_trg_bind	9	t_upd_adm=EX System.DmlException: Update failed. First exception on row 0 with id ID; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: ID: [] | f=() st=INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY n=1
+68.0	std_trg_bind	10	t_upd_adm_sys=OK
+68.0	std_trg_db	0	t_db_ins_default=EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! | f=(Secret__c) st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY n=1
+68.0	std_trg_db	1	t_db_ins_partial=FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! fieldNames: Secret__c:(Secret__c)
+68.0	std_trg_db	2	t_db_upd_partial=FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! fieldNames: Secret__c:(Secret__c)
+68.0	std_trg_db	3	t_db_ups_partial=FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! fieldNames: Secret__c:(Secret__c)
+68.0	std_trg_db	4	t_db_ins_user=EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! | f=(Secret__c) st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY n=1
+68.0	std_trg_db	5	t_db_ins_system=OK
+68.0	std_trg_dml	0	t_dml_ins_secret=EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! | f=(Secret__c) st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY n=1
+68.0	std_trg_dml	1	t_dml_ins_open=OK
+68.0	std_trg_dml	2	t_dml_upd_secret=EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! | f=(Secret__c) st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY n=1
+68.0	std_trg_dml	3	t_dml_upd_open=OK
+68.0	std_trg_dml	4	t_dml_ups_secret=EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Gl_Obj__c, check errors on Exception or Result! | f=(Secret__c) st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY n=1
+68.0	std_trg_dml	5	t_dml_ins_as_system=OK
+68.0	std_trg_dml	6	t_dml_del=EX System.TypeException: DML operation DELETE not allowed on Gl_Obj__c
+68.0	std_trg_dyn	0	t_dyn_count_user=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+68.0	std_trg_dyn	1	t_dyn_q_secret=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+68.0	std_trg_dyn	2	t_dyn_q_where=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+68.0	std_trg_dyn	3	t_dyn_q_open=n=4
+68.0	std_trg_dyn	4	t_dyn_q_sys=n=5
+68.0	std_trg_dyn	5	t_dyn_q_user=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+68.0	std_trg_dyn	6	t_dyn_count_where=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+68.0	std_trg_dyn	7	t_dyn_count_sys=n=2
+68.0	std_trg_dyn	8	t_dyn_loc_secret=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+68.0	std_trg_dyn	9	t_dyn_loc_sys=OK
+68.0	std_trg_dyn	10	t_dyn_locbind_user=EX System.QueryException: Invalid bind expression type of Integer for column of type String | inacc={}
+68.0	std_trg_dyn	11	t_dyn_locbind_sys=OK
+68.0	std_trg_soql	0	t_soql_sel_secret=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+68.0	std_trg_soql	1	t_soql_sel_open=n=4
+68.0	std_trg_soql	2	t_soql_where_secret=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+68.0	std_trg_soql	3	t_soql_order_secret=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+68.0	std_trg_soql	4	t_soql_count_secret=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+68.0	std_trg_soql	5	t_soql_sys_secret=n=5
+68.0	std_trg_soql	6	t_soql_user_secret=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}
+68.0	std_trg_soql	7	t_sosl_secret=n=0
+68.0	std_trg_soql	8	t_sosl_user_secret=n=0
+68.0	std_trg_soql	9	t_soql_where_user=EX System.QueryException: No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Gl_Obj__c={Secret__c}}

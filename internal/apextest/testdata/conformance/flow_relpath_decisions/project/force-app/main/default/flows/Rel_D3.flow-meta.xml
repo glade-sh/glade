@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>67.0</apiVersion>
+    <label>Rel_D3</label>
+    <processType>AutoLaunchedFlow</processType>
+    <recordLookups><name>G</name><label>G</label><locationX>0</locationX><locationY>0</locationY>
+        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
+        <connector><targetReference>D</targetReference></connector>
+        <filterLogic>and</filterLogic>
+        <filters><field>Id</field><operator>EqualTo</operator><value><elementReference>$Record.AccountId</elementReference></value></filters>
+        <getFirstRecordOnly>true</getFirstRecordOnly><object>Account</object><storeOutputAutomatically>true</storeOutputAutomatically></recordLookups>
+    <decisions><name>D</name><label>D</label><locationX>0</locationX><locationY>0</locationY>
+        <defaultConnector><targetReference>N</targetReference></defaultConnector><defaultConnectorLabel>No</defaultConnectorLabel>
+        <rules><name>R</name><conditionLogic>and</conditionLogic>
+        <conditions><leftValueReference>G.Parent.Type</leftValueReference><operator>EqualTo</operator><rightValue><stringValue>Customer</stringValue></rightValue></conditions>
+        <connector><targetReference>Y</targetReference></connector><label>R</label></rules></decisions>
+    <recordUpdates><name>Y</name><label>Y</label><locationX>0</locationX><locationY>0</locationY>
+        <inputAssignments><field>Description</field><value><stringValue>yes</stringValue></value></inputAssignments>
+        <inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>N</name><label>N</label><locationX>0</locationX><locationY>0</locationY>
+        <inputAssignments><field>Description</field><value><stringValue>no</stringValue></value></inputAssignments>
+        <inputReference>$Record</inputReference></recordUpdates>
+
+    <start>
+        <locationX>0</locationX><locationY>0</locationY>
+        <connector><targetReference>G</targetReference></connector>
+        <filterLogic>and</filterLogic>
+        <filters><field>LastName</field><operator>EqualTo</operator><value><stringValue>D3</stringValue></value></filters>
+        <object>Contact</object>
+        <recordTriggerType>Create</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+</Flow>

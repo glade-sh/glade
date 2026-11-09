@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MutingPermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>X10bMuteA62</label>
+    <objectPermissions><allowCreate>false</allowCreate><allowDelete>true</allowDelete><allowEdit>false</allowEdit><allowRead>false</allowRead><modifyAllRecords>false</modifyAllRecords><object>C1XBA62__c</object><viewAllRecords>false</viewAllRecords></objectPermissions>
+    <objectPermissions><allowCreate>false</allowCreate><allowDelete>false</allowDelete><allowEdit>true</allowEdit><allowRead>false</allowRead><modifyAllRecords>false</modifyAllRecords><object>C1XAA62__c</object><viewAllRecords>false</viewAllRecords></objectPermissions>
+</MutingPermissionSet>

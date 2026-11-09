@@ -1,0 +1,25 @@
+class	method	description	observation
+GxTest	c1	owner25|QL|h48	System.AsyncException:System.scheduleBatch cannot be called from a batch start, batch execute, or future method.
+GxTest	c2	owner62|QL|h62	accepted
+GxTest	c3	owner62|IT|direct	accepted
+GxTest	c4	owner25|IT|direct	System.AsyncException:System.scheduleBatch cannot be called from a batch or future method.
+GxTest	c5	owner25|QL|direct	System.AsyncException:System.scheduleBatch cannot be called from a batch or future method.
+GxTest	c6	owner62|QL|h48	accepted
+GxTest	c7	owner48|IT|direct	accepted
+GxTest	c8	owner55|IT|direct	accepted
+GxTest2	d1	owner28|finish	accepted
+GxTest2	d2	owner30|finish	accepted
+GxTest2	d3	owner33|finish	accepted
+GxTest2	d4	owner36|finish	accepted
+GxTest2	d5	owner40|finish	accepted
+GxTest2	d6	owner44|finish	accepted
+GxTest2	e1	owner62|execute	System.AsyncException:System.scheduleBatch cannot be called from a batch start, batch execute, or future method.
+GxTest2	e2	owner62|start	System.AsyncException:System.scheduleBatch cannot be called from a batch start, batch execute, or future method.
+GxTest3	f1	owner26 direct	accepted
+GxTest3	f2	owner27 direct	accepted
+GxTest3	g1	owner25 helper26	System.AsyncException:System.scheduleBatch cannot be called from a batch start, batch execute, or future method.
+GxTest3	g2	owner25 helper27	System.AsyncException:System.scheduleBatch cannot be called from a batch start, batch execute, or future method.
+GxTest3	g3	owner25 helper28	System.AsyncException:System.scheduleBatch cannot be called from a batch start, batch execute, or future method.
+GxTest3	g4	owner25 helper30	System.AsyncException:System.scheduleBatch cannot be called from a batch start, batch execute, or future method.
+GxTest3	g5	owner25 helper36	System.AsyncException:System.scheduleBatch cannot be called from a batch start, batch execute, or future method.
+GxTest3	g6	owner25 helper40	System.AsyncException:System.scheduleBatch cannot be called from a batch start, batch execute, or future method.

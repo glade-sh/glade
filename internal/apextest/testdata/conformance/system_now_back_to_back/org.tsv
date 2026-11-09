@@ -1,0 +1,5 @@
+source_api	route	observation
+62.0	anonymous	{"rawElapsedMs20000":58,"readsPerMsBucket":"ge100","distinctMsIn2000Reads":2,"currentTimeMillisSame":true,"endMinusStartMsIsExact36h":true,"datetimeNowPlusOne":0,"datetimeNowSame":300,"more":0,"plusOne":1,"sameInSameStatementPairs":299}
+62.0	isTest	{"rawElapsedMs20000":55,"readsPerMsBucket":"ge100","distinctMsIn2000Reads":2,"currentTimeMillisSame":true,"endMinusStartMsIsExact36h":true,"datetimeNowPlusOne":1,"datetimeNowSame":299,"more":0,"plusOne":0,"sameInSameStatementPairs":300}
+67.0	anonymous	{"rawElapsedMs20000":57,"readsPerMsBucket":"ge100","distinctMsIn2000Reads":2,"currentTimeMillisSame":true,"endMinusStartMsIsExact36h":true,"datetimeNowPlusOne":2,"datetimeNowSame":298,"more":0,"plusOne":1,"sameInSameStatementPairs":299}
+67.0	isTest	{"rawElapsedMs20000":56,"readsPerMsBucket":"ge100","distinctMsIn2000Reads":2,"currentTimeMillisSame":true,"endMinusStartMsIsExact36h":true,"datetimeNowPlusOne":0,"datetimeNowSame":300,"more":0,"plusOne":0,"sameInSameStatementPairs":300}

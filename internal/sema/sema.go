@@ -23,12 +23,12 @@ import (
 // SemanticABI identifies the behavior of semantic diagnostics, inference,
 // visibility, and exported types. Any change to those behaviors must bump this
 // value so persisted semantic results fail closed.
-const SemanticABI = "sema-v79"
+const SemanticABI = "sema-v83"
 
 // PlatformABI identifies the built-in Salesforce platform model consumed by
 // semantic analysis. Changes to built-in signatures, aliases, or visibility
 // must bump this value so persisted semantic results fail closed.
-const PlatformABI = "salesforce-platform-v60"
+const PlatformABI = "salesforce-platform-v64"
 
 type Result struct {
 	Project     typesys.ProjectInfo      `json:"project"`
@@ -65,7 +65,9 @@ type Analyzer struct {
 	canonicalNames                *semaCanonicalNames
 	namespace                     string
 	deps                          map[string]bool
+	opaqueDeps                    map[string]bool
 	sourceNamespaces              map[string]bool
+	depSourceNamespaces           map[string]bool
 	includePerformanceDiagnostics bool
 	queryDeclaredObjects          []schema.Object
 	visualforcePageNames          map[string]bool
@@ -243,9 +245,9 @@ func (a *Analyzer) analyzeWithOptions(index typesys.Index, opts AnalyzeOptions, 
 			recorder.endPhase(&recorder.counters.QuerySemantics, queryStarted)
 		}
 		result.Diagnostics = NativeLifecycleDiagnostics(index, result.Diagnostics)
-	}
-	if indexHasSourceBackedDependency(index) {
-		result.Diagnostics = downgradeSourceDependencySemanticDiagnostics(result.Diagnostics)
+		if indexHasSourceBackedDependency(index) {
+			result.Diagnostics = downgradeSourceDependencySemanticDiagnostics(index, result.Diagnostics, a, typeMemberView)
+		}
 	}
 
 	result.Summary = Summary{
@@ -268,6 +270,8 @@ func (a *Analyzer) prepareAnalysisContext(index typesys.Index, opts AnalyzeOptio
 	a.canonicalNames = newSemaCanonicalNames(semaAnalysisCanonicalNameLimit)
 	a.namespace = index.Project.Namespace
 	a.deps = make(map[string]bool)
+	a.opaqueDeps = make(map[string]bool)
+	a.depSourceNamespaces = nil
 	a.sourceNamespaces = make(map[string]bool, len(index.SourceNamespaces))
 	for _, namespace := range index.SourceNamespaces {
 		a.sourceNamespaces[normalizeName(namespace)] = true
@@ -305,6 +309,9 @@ func prepareAnalysisIndexWithSources(index typesys.Index, sources *semaSources) 
 }
 
 func (a *Analyzer) prepareAnalysisModel(index typesys.Index) {
+	// Signatures that name ConnectApi (artifact types, hand-built indexes)
+	// request its shape before the platform view below is read.
+	typesys.NoteIndexSignatures(index)
 	for _, object := range index.Objects {
 		a.addKnown(object.Name, TypeSchema, "")
 	}
@@ -315,9 +322,13 @@ func (a *Analyzer) prepareAnalysisModel(index typesys.Index) {
 		// Declaration establishes namespace openness even when its symbol
 		// index is unavailable. Loading symbols is a separate operation.
 		a.deps[normalizeName(dep.Namespace)] = true
+		if dep.Status != "loaded" {
+			a.opaqueDeps[normalizeName(dep.Namespace)] = true
+		}
 		if dep.Status == "loaded" {
 			a.addKnown(dep.Namespace, TypePlatform, dep.SourceRoot)
 		}
+		a.noteDependencySourceNamespace(index, dep)
 	}
 	workspace := make(map[string]TypeReference, len(index.Types))
 	addWorkspace := func(name string, kind TypeKind, source string) {
@@ -413,16 +424,27 @@ func indexHasSourceBackedDependency(index typesys.Index) bool {
 	return false
 }
 
-func downgradeSourceDependencySemanticDiagnostics(diagnostics []diagnostic.Diagnostic) []diagnostic.Diagnostic {
+func downgradeSourceDependencySemanticDiagnostics(index typesys.Index, diagnostics []diagnostic.Diagnostic, a *Analyzer, model *semaTypeMemberView) []diagnostic.Diagnostic {
 	out := append([]diagnostic.Diagnostic(nil), diagnostics...)
+	scope := newSourceDependencyScope(index, a)
 	for i := range out {
 		if out[i].Severity != diagnostic.Error {
+			continue
+		}
+		// A file that never names a loaded source dependency, directly or
+		// through its supertypes, cannot be made incomplete by that source.
+		if scope.localToFile(out[i]) {
 			continue
 		}
 		// Same-owner declaration/member collisions must stay hard errors even when
 		// source-backed dependencies are loaded (see GLADETYPE001 severity semantics).
 		// The captured named-test DTO field rejection is retained as well.
-		if out[i].Code == "GLADESEMA031" || out[i].Code == "GLADESEMA032" || out[i].Code == metadataNamespaceFieldDiagnosticCode {
+		if out[i].Code == nestedTypeVisibilityCode || out[i].Code == "GLADESEMA031" || out[i].Code == "GLADESEMA032" || out[i].Code == metadataNamespaceFieldDiagnosticCode || semaCrossNamespaceSourceRejection(a, model, out[i]) {
+			continue
+		}
+		// Captured subscriber rows (namespace_subscriber_members) reject a
+		// package type the loaded source does not make visible.
+		if dependencySourceTypeDiagnosticAuthoritative(index, out[i]) {
 			continue
 		}
 		if strings.HasPrefix(out[i].Code, "GLADESEMA") || strings.HasPrefix(out[i].Code, "dependency_") {
@@ -430,6 +452,31 @@ func downgradeSourceDependencySemanticDiagnostics(diagnostics []diagnostic.Diagn
 		}
 	}
 	return out
+}
+
+// A closed source namespace cannot borrow another namespace's type suffix.
+// Native: testdata/namespace_cross_owner/org.tsv subscriber and owner rows.
+func semaCrossNamespaceSourceRejection(a *Analyzer, model *semaTypeMemberView, d diagnostic.Diagnostic) bool {
+	if d.Code != "GLADESEMA002" && d.Code != "GLADESEMA004" && d.Code != "GLADESEMA006" {
+		return false
+	}
+	ref, ok := strings.CutPrefix(d.NativeMessage, "Invalid type: ")
+	if !ok {
+		return false
+	}
+	return semaCrossNamespaceSourceMismatch(a, model, "", ref)
+}
+
+func semaCrossNamespaceSourceMismatch(a *Analyzer, model *semaTypeMemberView, owner, ref string) bool {
+	root, suffix, qualified := strings.Cut(ref, ".")
+	if !qualified || !semaQualifierNamesProjectSource(a, root) || a.opaqueDeps[normalizeName(root)] {
+		return false
+	}
+	if exact, found := model.lookupName(ref); found && !exact.platform && !exact.dependency && semaSourceMemberMatchesQualifier(a, model, owner, root, exact) {
+		return false
+	}
+	members, found := model.lookupName(suffix)
+	return found && !members.platform && !members.dependency && !semaSourceMemberMatchesQualifier(a, model, owner, root, members)
 }
 
 func enrichIndexWithSchemaDerivedObjects(index typesys.Index) typesys.Index {
@@ -454,6 +501,14 @@ func enrichIndexWithSchemaDerivedObjects(index typesys.Index) typesys.Index {
 }
 
 func semaEnrichSchemaObject(object schema.Object) schema.Object {
+	// object.Fields is shared with the caller's index. semaMergeSchemaField
+	// rewrites entries in place and appends into spare capacity, so merge into
+	// a private copy.
+	if strings.HasSuffix(normalizeName(object.Name), "__mdt") ||
+		strings.EqualFold(object.CustomSettingsType, "Hierarchy") ||
+		hasQuerySchemaField(object.Fields, "RecordTypeId") || len(object.RecordTypes) > 0 {
+		object.Fields = append(make([]schema.Field, 0, len(object.Fields)+8), object.Fields...)
+	}
 	if strings.HasSuffix(normalizeName(object.Name), "__mdt") {
 		notGroupable := false
 		for _, field := range []schema.Field{
@@ -1159,12 +1214,15 @@ func (a *Analyzer) collectSemaLocalDecl(typ typesys.TypeSymbol, member typesys.M
 			if semaFormulaEvalQualifiedType(ref) || storage.IsReferenceOnlyStandardObject(ref) {
 				message = "Invalid type: " + ref
 			}
+			// Native (namespace_anonymous_owner a28): an unknown local type is
+			// "Invalid type: <spelling>" on the named route as well.
 			diagnostics = append(diagnostics, diagnostic.Diagnostic{
-				Severity: diagnostic.Error,
-				Code:     "GLADESEMA006",
-				Message:  message,
-				File:     typ.File,
-				Range:    semaRange(source, bodyOffset+match[2], bodyOffset+match[3]),
+				Severity:      diagnostic.Error,
+				Code:          "GLADESEMA006",
+				Message:       message,
+				NativeMessage: "Invalid type: " + ref,
+				File:          typ.File,
+				Range:         semaRange(source, bodyOffset+match[2], bodyOffset+match[3]),
 			})
 		}
 	}
@@ -1597,12 +1655,19 @@ func (a *Analyzer) expressionTypeReferenceDiagnostics(typ typesys.TypeSymbol, me
 		}
 		seen[key] = true
 		if !semaTypeReferenceKnownAtVersion(a, model, typ.Name, ref, typ.EffectiveAPIVersion) {
+			nativeMessage := ""
+			message := fmt.Sprintf("%s %q references unknown expression type %q", member.Kind, member.Name, ref)
+			if semaCrossNamespaceSourceMismatch(a, model, typ.Name, ref) || a.standardObjectAbsentFromDeclaredShape(model, typ.Name, ref) {
+				nativeMessage = "Invalid type: " + ref
+				message = nativeMessage
+			}
 			diagnostics = append(diagnostics, diagnostic.Diagnostic{
-				Severity: diagnostic.Error,
-				Code:     "GLADESEMA006",
-				Message:  fmt.Sprintf("%s %q references unknown expression type %q", member.Kind, member.Name, ref),
-				File:     typ.File,
-				Range:    semaRange(source, start, start+max(1, len(typeName))),
+				Severity:      diagnostic.Error,
+				Code:          "GLADESEMA006",
+				Message:       message,
+				NativeMessage: nativeMessage,
+				File:          typ.File,
+				Range:         semaRange(source, start, start+max(1, len(typeName))),
 			})
 		}
 	}
@@ -1783,34 +1848,32 @@ func semaExplicitPlatformEnumType(typeName string) bool {
 	return semaStandardPlatformEnumType(canonical)
 }
 
-var (
-	semaStandardPlatformEnumOnce   sync.Once
-	semaStandardPlatformEnumTypes  map[string]string
-	semaStandardPlatformEnumValues map[string]map[string]bool
-)
+type semaStandardPlatformEnumIndex struct {
+	types  map[string]string
+	values map[string]map[string]bool
+}
+
+var semaStandardPlatformEnumCache typesys.PlatformViewCache[*semaStandardPlatformEnumIndex]
 
 func semaStandardPlatformEnumType(typeName string) bool {
-	semaInitStandardPlatformEnums()
-	_, ok := semaStandardPlatformEnumTypes[normalizeName(typeName)]
+	_, ok := semaStandardPlatformEnums().types[normalizeName(typeName)]
 	return ok
 }
 
 func semaStandardPlatformEnumValue(typeName, valueName string) bool {
-	semaInitStandardPlatformEnums()
-	values := semaStandardPlatformEnumValues[normalizeName(typeName)]
+	values := semaStandardPlatformEnums().values[normalizeName(typeName)]
 	return values != nil && values[normalizeName(valueName)]
 }
 
-func semaInitStandardPlatformEnums() {
-	semaStandardPlatformEnumOnce.Do(func() {
-		semaStandardPlatformEnumTypes = map[string]string{}
-		semaStandardPlatformEnumValues = map[string]map[string]bool{}
-		for _, symbol := range typesys.StandardPlatformSymbolView() {
+func semaStandardPlatformEnums() *semaStandardPlatformEnumIndex {
+	return semaStandardPlatformEnumCache.Get(func(view []typesys.TypeSymbol) *semaStandardPlatformEnumIndex {
+		index := &semaStandardPlatformEnumIndex{types: map[string]string{}, values: map[string]map[string]bool{}}
+		for _, symbol := range view {
 			if symbol.Kind != apexast.DeclarationEnum {
 				continue
 			}
 			typeKey := normalizeName(symbol.Name)
-			semaStandardPlatformEnumTypes[typeKey] = symbol.Name
+			index.types[typeKey] = symbol.Name
 			values := map[string]bool{}
 			for _, member := range symbol.Members {
 				if member.Kind == apexast.DeclarationMethod || !hasModifier(member.Modifiers, "static") {
@@ -1818,8 +1881,9 @@ func semaInitStandardPlatformEnums() {
 				}
 				values[normalizeName(member.Name)] = true
 			}
-			semaStandardPlatformEnumValues[typeKey] = values
+			index.values[typeKey] = values
 		}
+		return index
 	})
 }
 
@@ -3619,7 +3683,7 @@ var (
 	typeReferencePattern           = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*$`)
 	lineLocalDeclPattern           = regexp.MustCompile(`(?m)^\s*(?:(?:final|transient)\s+)?([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:,|=|;)`)
 	wrappedLocalDeclPattern        = regexp.MustCompile(`(?m)^\s*(?:(?:final|transient)\s+)?([A-Za-z_][^\n;=(){}]+)[ \t]*\r?\n\s+([A-Za-z_][A-Za-z0-9_]*)\s*=`)
-	noSpaceGenericLocalDeclPattern = regexp.MustCompile(`(?m)(?:^|[;\n])\s*(?:(?:final|transient)\s+)?([A-Za-z_][A-Za-z0-9_.]*\s*<[^;=(){}]+>)([A-Za-z_][A-Za-z0-9_]*)\s*(?:,|=|;)`)
+	noSpaceGenericLocalDeclPattern = regexp.MustCompile(`(?m)(?:^|[;\n])\s*(?:(?:final|transient)\s+)?([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>|(?:\s*\[\s*\])+))([A-Za-z_][A-Za-z0-9_]*)\s*(?:,|=|;)`)
 	localDeclPattern               = regexp.MustCompile(`(?m)(?:^|[;{}\n])\s*(?:(?:final|transient)\s+)?([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:,|=|;)`)
 	enhancedForLocalPattern        = regexp.MustCompile(`(?im)\bfor\s*\(\s*(?:final\s+)?([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*:`)
 	forHeaderPattern               = regexp.MustCompile(`(?i)\bfor\s*\(`)

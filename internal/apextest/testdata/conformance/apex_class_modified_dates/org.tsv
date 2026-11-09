@@ -1,0 +1,5 @@
+source_api	route	observation
+62.0	anonymous	{"orderedCount":2,"filterLmdLeNowCount":1,"createdByIdNull":false,"lmdByIdNull":false,"lmdNotBeforeCreated":true,"createdNotAfterNow":true,"lmdNotAfterNow":true,"modstampNull":false,"createdNull":false,"lmdNull":false}
+62.0	isTest	{"orderedCount":2,"filterLmdLeNowCount":1,"createdByIdNull":false,"lmdByIdNull":false,"lmdNotBeforeCreated":true,"createdNotAfterNow":true,"lmdNotAfterNow":true,"modstampNull":false,"createdNull":false,"lmdNull":false}
+67.0	anonymous	{"orderedCount":2,"filterLmdLeNowCount":1,"createdByIdNull":false,"lmdByIdNull":false,"lmdNotBeforeCreated":true,"createdNotAfterNow":true,"lmdNotAfterNow":true,"modstampNull":false,"createdNull":false,"lmdNull":false}
+67.0	isTest	{"orderedCount":2,"filterLmdLeNowCount":1,"createdByIdNull":false,"lmdByIdNull":false,"lmdNotBeforeCreated":true,"createdNotAfterNow":true,"lmdNotAfterNow":true,"modstampNull":false,"createdNull":false,"lmdNull":false}

@@ -142,6 +142,9 @@ def diff_pack(profile, deadline=None):
             raise ValueError("invalid PR diff path")
         if type(start) is not int or type(end) is not int or start < 0 or end < start:
             raise ValueError("invalid PR diff lines")
+        # Diff filtering affects only alert ranges; never omit product paths.
+        if path.endswith("_test.go") or "testdata" in Path(path).parts:
+            continue
         data.append([(Path(os.environ["GITHUB_WORKSPACE"]) / path).as_posix(), start, end])
     pack = Path(temp, "pr-diff-range")
     pack.mkdir(parents=True, exist_ok=True)

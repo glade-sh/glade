@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/glade-sh/glade/internal/apexlang"
 )
@@ -94,7 +95,7 @@ func ensureStandardObjectFieldsForFeatures(definition *ObjectDefinition, feature
 	}()
 	removeDisabledStandardFeatureRecordTypes(definition, features)
 	removeMasterDetailOwnerFields(definition)
-	if _, ok := standardObjectCatalogEntryForName(definition.APIName); ok {
+	if _, _, ok := standardObjectCatalogLabels(definition.APIName); ok {
 		definition.EnableSearch = true
 	}
 	if standardFieldsOverlayApplied(*definition, featureSignature) &&
@@ -165,7 +166,7 @@ func standardObjectFieldsNeedWrite(definition ObjectDefinition, featureSignature
 	if generatedStandardIDLabelRepair(definition) != "" {
 		return true
 	}
-	if accountTeamReferencesNeedRepair(definition) || organizationFeatureFlagsNeedRepair(definition) || standardOptionalFieldsNeedRepair(definition, featureSignature) || userLicenseStatusDescribeNeedsRepair(definition) || permissionSetCheckboxSchemaNeedsRepair(definition) || objectPermissionCheckboxSchemaNeedsRepair(definition) || knowledgeLanguageCreationNeedsRepair(definition) || apexClassLengthNillabilityNeedsRepair(definition) || platformChildEdgeFieldsNeedRepair(definition) {
+	if accountTeamReferencesNeedRepair(definition) || organizationFeatureFlagsNeedRepair(definition) || standardOptionalFieldsNeedRepair(definition, featureSignature) || userLicenseStatusDescribeNeedsRepair(definition) || permissionSetCheckboxSchemaNeedsRepair(definition) || objectPermissionCheckboxSchemaNeedsRepair(definition) || knowledgeLanguageCreationNeedsRepair(definition) || knowledgeCategorySelectionCreationNeedsRepair(definition) || apexClassLengthNillabilityNeedsRepair(definition) || platformChildEdgeFieldsNeedRepair(definition) {
 		return true
 	}
 	if masterDetailOwnerFieldsNeedRepair(definition) {
@@ -204,7 +205,7 @@ func generatedStandardIDLabelRepair(definition ObjectDefinition) string {
 
 func standardNativeIDLabel(object string) string {
 	// These objects have matching API 62 and 67 Id labels in the captured
-	// granted describes; other catalog labels are not assumed version-stable.
+	// granted describes (Order: native rows, standard_id_label_order_native); other catalog labels are not assumed version-stable.
 	if !strings.EqualFold(object, "Account") && !strings.EqualFold(object, "Contact") &&
 		!strings.EqualFold(object, "Lead") && !strings.EqualFold(object, "Order") {
 		return ""
@@ -227,7 +228,7 @@ func standardFieldsOverlayNeedsRefresh(definition ObjectDefinition, featureSigna
 	if generatedStandardIDLabelRepair(definition) != "" {
 		return true
 	}
-	return accountTeamReferencesNeedRepair(definition) || organizationFeatureFlagsNeedRepair(definition) || standardOptionalFieldsNeedRepair(definition, featureSignature) || userLicenseStatusDescribeNeedsRepair(definition) || permissionSetCheckboxSchemaNeedsRepair(definition) || objectPermissionCheckboxSchemaNeedsRepair(definition) || knowledgeLanguageCreationNeedsRepair(definition) || apexClassLengthNillabilityNeedsRepair(definition) || platformChildEdgeFieldsNeedRepair(definition) || standardOverlayCheckPlanFor(definition.APIName).needsRefresh(definition, featureSignature)
+	return accountTeamReferencesNeedRepair(definition) || organizationFeatureFlagsNeedRepair(definition) || standardOptionalFieldsNeedRepair(definition, featureSignature) || userLicenseStatusDescribeNeedsRepair(definition) || permissionSetCheckboxSchemaNeedsRepair(definition) || objectPermissionCheckboxSchemaNeedsRepair(definition) || knowledgeLanguageCreationNeedsRepair(definition) || knowledgeCategorySelectionCreationNeedsRepair(definition) || apexClassLengthNillabilityNeedsRepair(definition) || platformChildEdgeFieldsNeedRepair(definition) || standardOverlayCheckPlanFor(definition.APIName).needsRefresh(definition, featureSignature)
 }
 
 func apexClassLengthNillabilityNeedsRepair(definition ObjectDefinition) bool {
@@ -265,6 +266,19 @@ func knowledgeLanguageCreationNeedsRepair(definition ObjectDefinition) bool {
 	return createable == nil || !*createable
 }
 
+func knowledgeCategorySelectionCreationNeedsRepair(definition ObjectDefinition) bool {
+	if !stringsEqualFold(definition.APIName, "Knowledge__DataCategorySelection") {
+		return false
+	}
+	for _, field := range []string{"ParentId", "DataCategoryGroupName", "DataCategoryName"} {
+		name, exists := ResolveFieldName(definition, "", field)
+		if !exists || definition.Fields[name].Createable == nil || !*definition.Fields[name].Createable {
+			return true
+		}
+	}
+	return false
+}
+
 func userLicenseStatusDescribeNeedsRepair(definition ObjectDefinition) bool {
 	if !stringsEqualFold(definition.APIName, "UserLicense") {
 		return false
@@ -274,7 +288,7 @@ func userLicenseStatusDescribeNeedsRepair(definition ObjectDefinition) bool {
 		return true
 	}
 	field := definition.Fields[name]
-	return field.Type != FieldPicklist || !strings.EqualFold(field.DisplayType, "PICKLIST") || field.Nillable == nil || *field.Nillable
+	return field.Type != FieldPicklist || !strings.EqualFold(field.DisplayType, "PICKLIST") || field.Nillable == nil || *field.Nillable || !field.RestrictedPicklist || len(field.PicklistValues) == 0
 }
 
 func groupTypePicklistNeedsRepair(definition ObjectDefinition) bool {
@@ -286,7 +300,7 @@ func groupTypePicklistNeedsRepair(definition ObjectDefinition) bool {
 		return true
 	}
 	field := definition.Fields[name]
-	if field.Type != FieldPicklist || !strings.EqualFold(field.DisplayType, "PICKLIST") {
+	if field.Type != FieldPicklist || !strings.EqualFold(field.DisplayType, "PICKLIST") || !field.RestrictedPicklist {
 		return true
 	}
 	for _, expected := range observedGroupTypePicklistValues() {
@@ -432,10 +446,21 @@ func ensureCoreSystemFields(definition *ObjectDefinition) {
 		field.Updateable = BoolFlag(false)
 		return field
 	}
+	if IsGeneratedShareObject(*definition) {
+		// Native custom-object share tables carry Id, IsDeleted, the last
+		// modified audit pair and their own columns; no CreatedBy/CreatedDate,
+		// SystemModstamp, Name or OwnerId.
+		ensureField(definition, readOnly(Field{APIName: "LastModifiedDate", Label: "Last Modified Date", Type: FieldDateTime, DisplayType: "DATETIME"}))
+		ensureField(definition, readOnly(Field{APIName: "LastModifiedById", Label: "Last Modified By ID", Type: FieldReference, DisplayType: "REFERENCE", ReferenceTo: []string{"User"}, RelationshipName: "LastModifiedBy"}))
+		ensureField(definition, readOnly(Field{APIName: "IsDeleted", Label: "Deleted", Type: FieldBoolean, DisplayType: "BOOLEAN"}))
+		return
+	}
 	ensureField(definition, readOnly(Field{APIName: "CreatedDate", Label: "Created Date", Type: FieldDateTime, DisplayType: "DATETIME"}))
 	ensureField(definition, readOnly(Field{APIName: "CreatedById", Label: "Created By ID", Type: FieldReference, DisplayType: "REFERENCE", ReferenceTo: []string{"User"}, RelationshipName: "CreatedBy"}))
-	ensureField(definition, readOnly(Field{APIName: "LastModifiedDate", Label: "Last Modified Date", Type: FieldDateTime, DisplayType: "DATETIME"}))
-	ensureField(definition, readOnly(Field{APIName: "LastModifiedById", Label: "Last Modified By ID", Type: FieldReference, DisplayType: "REFERENCE", ReferenceTo: []string{"User"}, RelationshipName: "LastModifiedBy"}))
+	if !StandardObjectOmitsAuditField(definition.APIName, "LastModifiedDate") {
+		ensureField(definition, readOnly(Field{APIName: "LastModifiedDate", Label: "Last Modified Date", Type: FieldDateTime, DisplayType: "DATETIME"}))
+		ensureField(definition, readOnly(Field{APIName: "LastModifiedById", Label: "Last Modified By ID", Type: FieldReference, DisplayType: "REFERENCE", ReferenceTo: []string{"User"}, RelationshipName: "LastModifiedBy"}))
+	}
 	ensureField(definition, readOnly(Field{APIName: "SystemModstamp", Label: "System Modstamp", Type: FieldDateTime, DisplayType: "DATETIME"}))
 	if isOwnerBackedObject(definition.APIName) && !IsMasterDetailCustomObject(*definition) {
 		targets := []string{"Group", "User"}
@@ -493,7 +518,7 @@ func ensureCommonRecordTypeField(definition *ObjectDefinition) {
 }
 
 func standardFieldsForObject(objectName string) []Field {
-	if _, ok := standardObjectCatalogEntryForName(objectName); ok && !stringsEqualFold(objectName, "Account") {
+	if _, _, ok := standardObjectCatalogLabels(objectName); ok && !stringsEqualFold(objectName, "Account") {
 		return nil
 	}
 	switch {
@@ -773,6 +798,14 @@ func EnsureStandardObject(org *OrgState, objectName string) {
 		return
 	}
 	org.ensureFeatureProfile()
+	ensureStandardObjectWithProfile(org, objectName, org.Features)
+}
+
+// ensureStandardObjectWithProfile is EnsureStandardObject for an explicit
+// feature profile. A nil profile keeps the definition's own overlay profile,
+// which for a new object is the plain catalog shape the standard spread seeds
+// before a project shape refreshes it.
+func ensureStandardObjectWithProfile(org *OrgState, objectName string, profile []string) {
 	if canonical, ok := ResolveKnownStandardObjectName(objectName); ok {
 		objectName = canonical
 	}
@@ -781,8 +814,8 @@ func EnsureStandardObject(org *OrgState, objectName string) {
 	}
 	state, existed := org.Objects[objectName]
 	features := strings.Split(state.Definition.Metadata[standardFieldsOverlayMarker], ",")
-	if org.Features != nil {
-		features = org.Features
+	if profile != nil {
+		features = profile
 	}
 	featureSignature := canonicalFeatureSignature(features)
 	fieldsNeedWrite := standardObjectFieldsNeedWrite(state.Definition, featureSignature)
@@ -815,12 +848,12 @@ func EnsureStandardObject(org *OrgState, objectName string) {
 		state.Indexes = make(map[string]IndexSet)
 	}
 	EnsureStandardObjectFieldsForFeatures(&state.Definition, features)
-	if entry, ok := standardObjectCatalogEntryForName(objectName); ok {
-		if state.Definition.Label == objectName && entry.Definition.Label != "" {
-			state.Definition.Label = entry.Definition.Label
+	if label, pluralLabel, ok := standardObjectCatalogLabels(objectName); ok {
+		if state.Definition.Label == objectName && label != "" {
+			state.Definition.Label = label
 		}
-		if state.Definition.PluralLabel == objectName+"s" && entry.Definition.PluralLabel != "" {
-			state.Definition.PluralLabel = entry.Definition.PluralLabel
+		if state.Definition.PluralLabel == objectName+"s" && pluralLabel != "" {
+			state.Definition.PluralLabel = pluralLabel
 		}
 	}
 	if state.Definition.KeyPrefix == "" {
@@ -856,11 +889,11 @@ func standardObjectDefinitionNeedsWrite(definition ObjectDefinition, objectName,
 	if standardReadOnlyFlagsNeedRepair(&definition) {
 		return true
 	}
-	if entry, ok := standardObjectCatalogEntryForName(objectName); ok {
-		if definition.Label == objectName && entry.Definition.Label != "" && entry.Definition.Label != definition.Label {
+	if label, pluralLabel, ok := standardObjectCatalogLabels(objectName); ok {
+		if definition.Label == objectName && label != "" && label != definition.Label {
 			return true
 		}
-		if definition.PluralLabel == objectName+"s" && entry.Definition.PluralLabel != "" && entry.Definition.PluralLabel != definition.PluralLabel {
+		if definition.PluralLabel == objectName+"s" && pluralLabel != "" && pluralLabel != definition.PluralLabel {
 			return true
 		}
 	}
@@ -907,7 +940,60 @@ func isKnownStandardObjectExact(objectName string) bool {
 	return false
 }
 
+// knownStandardObjectMemo remembers ResolveKnownStandardObjectName answers by
+// trimmed spelling. Everything the lookup reads is embedded, generated or
+// built once per process, so a remembered answer equals a fresh one. The VM
+// asks the same handful of class names on every static call, and since the
+// feature-describe catalog joined the name resolution (v0.3.5 b5b9features)
+// each miss walks several catalogs; the memo keeps that walk to one per
+// spelling. The memo is generational: an org build asks about every catalog
+// object once, which would fill a fixed-size memo before the first Apex call,
+// so a full memo is cleared and the names in use are retained again. Memory
+// stays bounded by the limit; a spelling asked twice in a row is served once.
+var knownStandardObjectMemo struct {
+	names sync.Map
+	mu    sync.Mutex
+	count int
+}
+
+const knownStandardObjectMemoLimit = 4096
+
+type knownStandardObjectResult struct {
+	canonical string
+	ok        bool
+}
+
 func ResolveKnownStandardObjectName(objectName string) (string, bool) {
+	objectName = strings.TrimSpace(objectName)
+	if cached, ok := knownStandardObjectMemo.names.Load(objectName); ok {
+		result := cached.(knownStandardObjectResult)
+		return result.canonical, result.ok
+	}
+	canonical, ok := resolveKnownStandardObjectNameUncached(objectName)
+	knownStandardObjectMemo.mu.Lock()
+	if knownStandardObjectMemo.count >= knownStandardObjectMemoLimit {
+		knownStandardObjectMemo.names.Clear()
+		knownStandardObjectMemo.count = 0
+	}
+	if _, loaded := knownStandardObjectMemo.names.LoadOrStore(strings.Clone(objectName), knownStandardObjectResult{canonical: canonical, ok: ok}); !loaded {
+		knownStandardObjectMemo.count++
+	}
+	knownStandardObjectMemo.mu.Unlock()
+	return canonical, ok
+}
+
+func resetKnownStandardObjectMemo() {
+	knownStandardObjectMemo.mu.Lock()
+	knownStandardObjectMemo.names.Clear()
+	knownStandardObjectMemo.count = 0
+	knownStandardObjectMemo.mu.Unlock()
+}
+
+// knownStandardObjectResolves counts uncached resolutions; a test bounds it.
+var knownStandardObjectResolves atomic.Uint64
+
+func resolveKnownStandardObjectNameUncached(objectName string) (string, bool) {
+	knownStandardObjectResolves.Add(1)
 	objectName = strings.TrimSpace(objectName)
 	if isKnownStandardObjectExact(objectName) {
 		return objectName, true
@@ -956,6 +1042,9 @@ func buildKnownStandardObjectNameSet() map[string]bool {
 // derives that list reads this set, so it must not include the list itself.
 func buildKnownStandardObjectNameSetWithoutReferenceOnly() map[string]bool {
 	names := make(map[string]bool)
+	for name := range loadStandardFeatureDescribes().Objects {
+		names[name] = true
+	}
 	for _, name := range platformRelationshipChildObjectNames {
 		names[name] = true
 	}
@@ -1303,6 +1392,14 @@ func mergeStandardSObjectStubFields(definition *ObjectDefinition, features []str
 	applyStandardSObjectStubReadOnlyFields(definition)
 }
 
+// Stub field lists come from Apex signatures and carry no precision or scale.
+// QuoteLineItem rows are captured natively with the describe scale, so this
+// object takes both facets from the embedded describe. Other stub objects
+// await their own captured rows.
+func standardStubScaleFromDescribe(objectName string) bool {
+	return stringsEqualFold(objectName, "QuoteLineItem")
+}
+
 func enrichStandardStubWriteFlagsFromV2Describe(definition *ObjectDefinition) {
 	describe, ok, err := lookupStandardDescribeCatalogV2(definition.APIName)
 	if err != nil || !ok {
@@ -1328,6 +1425,9 @@ func enrichStandardStubWriteFlagsFromV2Describe(definition *ObjectDefinition) {
 			field.ReferenceTo = append([]string(nil), captured.ReferenceTo...)
 			field.RelationshipName = captured.RelationshipName
 			field.Aggregatable = cloneBoolFlag(captured.Aggregatable)
+		}
+		if standardStubScaleFromDescribe(definition.APIName) && field.Precision == 0 && field.Scale == 0 {
+			field.Precision, field.Scale, field.ScaleSpecified = captured.Precision, captured.Scale, true
 		}
 		if field.Createable == nil {
 			field.Createable = cloneBoolFlag(captured.Createable)
@@ -1611,6 +1711,10 @@ func applyStandardObjectCompatibilityOverlays(definition *ObjectDefinition) {
 		// The concrete Language field is createable; retain its native
 		// non-updateable describe facet and every other field's flags.
 		markFieldCreateable(definition, "Language")
+	case stringsEqualFold(definition.APIName, "Knowledge__DataCategorySelection"):
+		markFieldCreateable(definition, "ParentId")
+		markFieldCreateable(definition, "DataCategoryGroupName")
+		markFieldCreateable(definition, "DataCategoryName")
 	case stringsEqualFold(definition.APIName, "UserLicense"):
 		// The owned setup-license observations distinguish the describe
 		// picklist type from the String value returned by a record projection.
@@ -1618,6 +1722,12 @@ func applyStandardObjectCompatibilityOverlays(definition *ObjectDefinition) {
 		if name, ok := ResolveFieldName(*definition, "", "Status"); ok {
 			field := definition.Fields[name]
 			field.Nillable = BoolFlag(false)
+			// P0 describes (API 62.0/67.0): a restricted picklist of
+			// Active and Disabled.
+			markStandardDescribeRestricted(&field)
+			if len(field.PicklistValues) == 0 {
+				field.PicklistValues = []PicklistValue{{Value: "Active", Label: "Active", Active: true}, {Value: "Disabled", Label: "Disabled", Active: true}}
+			}
 			definition.Fields[name] = field
 		}
 	case stringsEqualFold(definition.APIName, "Account"):
@@ -1645,6 +1755,8 @@ func applyStandardObjectCompatibilityOverlays(definition *ObjectDefinition) {
 		if name, ok := ResolveFieldName(*definition, "", "Type"); ok {
 			field := definition.Fields[name]
 			field.PicklistValues = mergeObservedGroupTypePicklistValues(field.PicklistValues)
+			// P0 describes (API 62.0/67.0): a restricted picklist.
+			markStandardDescribeRestricted(&field)
 			definition.Fields[name] = field
 		}
 		ensureFieldDefault(definition, "Type", "Regular")
@@ -1762,6 +1874,10 @@ func applyStandardObjectCompatibilityOverlays(definition *ObjectDefinition) {
 		ensureReferenceShape(definition, "RunningUserFieldAccessId", []string{"UserFieldAccess"}, "RunningUserFieldAccess")
 	case stringsEqualFold(definition.APIName, "Activity"):
 		ensureField(definition, Field{APIName: "IsClosed", Label: "Closed", Type: FieldBoolean, DisplayType: "BOOLEAN", Createable: BoolFlag(false), Updateable: BoolFlag(false)})
+	case stringsEqualFold(definition.APIName, "NetworkMember"):
+		for _, name := range []string{"LastModifiedDate", "LastModifiedById"} {
+			removeField(definition, name)
+		}
 	case stringsEqualFold(definition.APIName, "Event"):
 		removeField(definition, "Name")
 		ensureField(definition, Field{APIName: "IsClosed", Label: "Closed", Type: FieldBoolean, DisplayType: "BOOLEAN", Createable: BoolFlag(false), Updateable: BoolFlag(false)})
@@ -1795,7 +1911,8 @@ func standardObjectCompatibilitySupplementFields(objectName string) []Field {
 			{APIName: "DandbCompanyId", Type: FieldReference, DisplayType: "REFERENCE", Length: 18, ReferenceTo: []string{"DandBCompany"}, RelationshipName: "DandbCompany"},
 		}
 	case stringsEqualFold(objectName, "Contact"):
-		fields = []Field{{APIName: "CleanStatus", Type: FieldPicklist, DisplayType: "PICKLIST", Length: 40}}
+		// P0 describes (API 62.0/67.0) report Contact.CleanStatus restricted.
+		fields = []Field{{APIName: "CleanStatus", Type: FieldPicklist, DisplayType: "PICKLIST", Length: 40, RestrictedPicklist: true, RestrictedPicklistFromCatalog: true}}
 	case stringsEqualFold(objectName, "Order"):
 		fields = []Field{
 			{APIName: "PoNumber", Type: FieldString, DisplayType: "STRING", Length: 80},
@@ -1837,6 +1954,16 @@ func standardObjectCompatibilitySupplementFields(objectName string) []Field {
 		}
 	}
 	return fields
+}
+
+// markStandardDescribeRestricted sets the native describe facet with catalog
+// provenance: DML enforces catalog restrictions only for captured fields
+// (standard_picklist_validation.go).
+func markStandardDescribeRestricted(field *Field) {
+	if !field.RestrictedPicklist {
+		field.RestrictedPicklist = true
+		field.RestrictedPicklistFromCatalog = true
+	}
 }
 
 func observedGroupTypePicklistValues() []PicklistValue {
@@ -2387,6 +2514,36 @@ func canonicalFeatureName(feature string) string {
 		return "PersonAccounts"
 	case stringsEqualFold(feature, "MultiCurrency"):
 		return "MultiCurrency"
+	case stringsEqualFold(feature, "Quotes"):
+		return "Quotes"
+	case stringsEqualFold(feature, "OrderManagement"):
+		return "OrderManagement"
+	case stringsEqualFold(feature, "OrderManagementEnabled"):
+		return "OrderManagementEnabled"
+	case stringsEqualFold(feature, "B2BCommerce"):
+		return "B2BCommerce"
+	case stringsEqualFold(feature, "CommerceEnabled"):
+		return "CommerceEnabled"
+	case stringsEqualFold(feature, "Territory2"):
+		return "Territory2"
+	case stringsEqualFold(feature, "AccountTeams"):
+		return "AccountTeams"
+	case stringsEqualFold(feature, "Forecasts"):
+		return "Forecasts"
+	case stringsEqualFold(feature, "OpportunityTeam"):
+		return "OpportunityTeam"
+	case stringsEqualFold(feature, "OpportunitySplits"):
+		return "OpportunitySplits"
+	case stringsEqualFold(feature, "OmniChannel"):
+		return "OmniChannel"
+	case stringsEqualFold(feature, "Surveys"):
+		return "Surveys"
+	case stringsEqualFold(feature, "CampaignInfluence2Enabled"):
+		return "CampaignInfluence2Enabled"
+	case stringsEqualFold(feature, "KnowledgeEnabled"):
+		return "KnowledgeEnabled"
+	case stringsEqualFold(feature, "NetworksEnabled"):
+		return "NetworksEnabled"
 	case stringsEqualFold(feature, "Sites"):
 		return "Sites"
 	case stringsEqualFold(feature, "Communities") || stringsEqualFold(feature, "FlowSites"):
@@ -2409,6 +2566,14 @@ func canonicalFeatureName(feature string) string {
 		return "LightningExperience"
 	case stringsEqualFold(feature, "Chatter"):
 		return "Chatter"
+	case stringsEqualFold(feature, "Fundraising"):
+		return "Fundraising"
+	case stringsEqualFold(feature, "FundraisingEnabled"):
+		return "FundraisingEnabled"
+	case stringsEqualFold(feature, "DocGen"):
+		return "DocGen"
+	case stringsEqualFold(feature, "PublicSectorAccess"):
+		return "PublicSectorAccess"
 	default:
 		return feature
 	}
@@ -2513,4 +2678,14 @@ func ChildRelationshipName(field Field) string {
 		return field.RelationshipName + "__r"
 	}
 	return ""
+}
+
+// StandardObjectOmitsAuditField reports an audit field that the captured native
+// describe of a standard object does not carry, so generic audit defaults must
+// not add it. The NetworkMember describe has no last-modified pair.
+func StandardObjectOmitsAuditField(objectName, fieldName string) bool {
+	if !stringsEqualFold(objectName, "NetworkMember") {
+		return false
+	}
+	return stringsEqualFold(fieldName, "LastModifiedDate") || stringsEqualFold(fieldName, "LastModifiedById")
 }

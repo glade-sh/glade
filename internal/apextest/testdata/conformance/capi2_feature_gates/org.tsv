@@ -1,0 +1,107 @@
+scratch-shape	service	visible
+features=B2BCommerce,Communities	ConnectApi.CdpQuery	no
+features=B2BCommerce,Communities	ConnectApi.CommerceCart	no
+features=B2BCommerce,Communities	ConnectApi.EinsteinLlm	no
+features=B2BCommerce,Communities	ConnectApi.Knowledge	no
+features=B2BCommerce,Communities	ConnectApi.NavigationMenu	no
+features=B2BCommerce,Communities	ConnectApi.OmniDesignerConnect	no
+features=B2BCommerce,Communities	ConnectApi.Personalization	no
+features=B2BCommerce,Communities	ConnectApi.Wave	no
+features=Communities	ConnectApi.CdpQuery	no
+features=Communities	ConnectApi.CommerceCart	no
+features=Communities	ConnectApi.EinsteinLlm	no
+features=Communities	ConnectApi.Knowledge	no
+features=Communities	ConnectApi.NavigationMenu	no
+features=Communities	ConnectApi.OmniDesignerConnect	no
+features=Communities	ConnectApi.Personalization	no
+features=Communities	ConnectApi.Wave	no
+features=Communities,ServiceCloud	ConnectApi.CdpQuery	no
+features=Communities,ServiceCloud	ConnectApi.CommerceCart	no
+features=Communities,ServiceCloud	ConnectApi.EinsteinLlm	no
+features=Communities,ServiceCloud	ConnectApi.Knowledge	no
+features=Communities,ServiceCloud	ConnectApi.NavigationMenu	no
+features=Communities,ServiceCloud	ConnectApi.OmniDesignerConnect	no
+features=Communities,ServiceCloud	ConnectApi.Personalization	no
+features=Communities,ServiceCloud	ConnectApi.Wave	no
+features=Communities,ServiceCloud; settings=communitiesSettings.enableNetworksEnabled,experienceBundleSettings.enableExperienceBundleMetadata	ConnectApi.CdpQuery	no
+features=Communities,ServiceCloud; settings=communitiesSettings.enableNetworksEnabled,experienceBundleSettings.enableExperienceBundleMetadata	ConnectApi.CommerceCart	no
+features=Communities,ServiceCloud; settings=communitiesSettings.enableNetworksEnabled,experienceBundleSettings.enableExperienceBundleMetadata	ConnectApi.EinsteinLlm	no
+features=Communities,ServiceCloud; settings=communitiesSettings.enableNetworksEnabled,experienceBundleSettings.enableExperienceBundleMetadata	ConnectApi.Knowledge	no
+features=Communities,ServiceCloud; settings=communitiesSettings.enableNetworksEnabled,experienceBundleSettings.enableExperienceBundleMetadata	ConnectApi.NavigationMenu	yes
+features=Communities,ServiceCloud; settings=communitiesSettings.enableNetworksEnabled,experienceBundleSettings.enableExperienceBundleMetadata	ConnectApi.OmniDesignerConnect	no
+features=Communities,ServiceCloud; settings=communitiesSettings.enableNetworksEnabled,experienceBundleSettings.enableExperienceBundleMetadata	ConnectApi.Personalization	yes
+features=Communities,ServiceCloud; settings=communitiesSettings.enableNetworksEnabled,experienceBundleSettings.enableExperienceBundleMetadata	ConnectApi.Wave	no
+features=Communities; settings=enableNetworksEnabled,enableExperienceBundleMetadata	ConnectApi.CdpQuery	no
+features=Communities; settings=enableNetworksEnabled,enableExperienceBundleMetadata	ConnectApi.CommerceCart	no
+features=Communities; settings=enableNetworksEnabled,enableExperienceBundleMetadata	ConnectApi.EinsteinLlm	no
+features=Communities; settings=enableNetworksEnabled,enableExperienceBundleMetadata	ConnectApi.Knowledge	no
+features=Communities; settings=enableNetworksEnabled,enableExperienceBundleMetadata	ConnectApi.NavigationMenu	yes
+features=Communities; settings=enableNetworksEnabled,enableExperienceBundleMetadata	ConnectApi.OmniDesignerConnect	no
+features=Communities; settings=enableNetworksEnabled,enableExperienceBundleMetadata	ConnectApi.Personalization	yes
+features=Communities; settings=enableNetworksEnabled,enableExperienceBundleMetadata	ConnectApi.Wave	no
+features=Einstein1AIPlatform	ConnectApi.CdpQuery	no
+features=Einstein1AIPlatform	ConnectApi.CommerceCart	no
+features=Einstein1AIPlatform	ConnectApi.EinsteinLlm	yes
+features=Einstein1AIPlatform	ConnectApi.Knowledge	no
+features=Einstein1AIPlatform	ConnectApi.NavigationMenu	no
+features=Einstein1AIPlatform	ConnectApi.OmniDesignerConnect	no
+features=Einstein1AIPlatform	ConnectApi.Personalization	no
+features=Einstein1AIPlatform	ConnectApi.Wave	no
+features=Einstein1AIPlatform,Communities	ConnectApi.CdpQuery	no
+features=Einstein1AIPlatform,Communities	ConnectApi.CommerceCart	no
+features=Einstein1AIPlatform,Communities	ConnectApi.EinsteinLlm	yes
+features=Einstein1AIPlatform,Communities	ConnectApi.Knowledge	no
+features=Einstein1AIPlatform,Communities	ConnectApi.NavigationMenu	no
+features=Einstein1AIPlatform,Communities	ConnectApi.OmniDesignerConnect	no
+features=Einstein1AIPlatform,Communities	ConnectApi.Personalization	no
+features=Einstein1AIPlatform,Communities	ConnectApi.Wave	no
+features=Knowledge; settings=knowledgeSettings.enableKnowledge	ConnectApi.CdpQuery	no
+features=Knowledge; settings=knowledgeSettings.enableKnowledge	ConnectApi.CommerceCart	no
+features=Knowledge; settings=knowledgeSettings.enableKnowledge	ConnectApi.EinsteinLlm	no
+features=Knowledge; settings=knowledgeSettings.enableKnowledge	ConnectApi.Knowledge	yes
+features=Knowledge; settings=knowledgeSettings.enableKnowledge	ConnectApi.NavigationMenu	no
+features=Knowledge; settings=knowledgeSettings.enableKnowledge	ConnectApi.OmniDesignerConnect	no
+features=Knowledge; settings=knowledgeSettings.enableKnowledge	ConnectApi.Personalization	no
+features=Knowledge; settings=knowledgeSettings.enableKnowledge	ConnectApi.Wave	no
+features=OmniStudioDesigner	ConnectApi.CdpQuery	no
+features=OmniStudioDesigner	ConnectApi.CommerceCart	no
+features=OmniStudioDesigner	ConnectApi.EinsteinLlm	no
+features=OmniStudioDesigner	ConnectApi.Knowledge	no
+features=OmniStudioDesigner	ConnectApi.NavigationMenu	no
+features=OmniStudioDesigner	ConnectApi.OmniDesignerConnect	yes
+features=OmniStudioDesigner	ConnectApi.Personalization	no
+features=OmniStudioDesigner	ConnectApi.Wave	no
+features=OmniStudioDesigner,Communities	ConnectApi.CdpQuery	no
+features=OmniStudioDesigner,Communities	ConnectApi.CommerceCart	no
+features=OmniStudioDesigner,Communities	ConnectApi.EinsteinLlm	no
+features=OmniStudioDesigner,Communities	ConnectApi.Knowledge	no
+features=OmniStudioDesigner,Communities	ConnectApi.NavigationMenu	no
+features=OmniStudioDesigner,Communities	ConnectApi.OmniDesignerConnect	yes
+features=OmniStudioDesigner,Communities	ConnectApi.Personalization	no
+features=OmniStudioDesigner,Communities	ConnectApi.Wave	no
+features=OrderManagement	ConnectApi.CdpQuery	no
+features=OrderManagement	ConnectApi.CommerceCart	yes
+features=OrderManagement	ConnectApi.EinsteinLlm	no
+features=OrderManagement	ConnectApi.Knowledge	no
+features=OrderManagement	ConnectApi.NavigationMenu	no
+features=OrderManagement	ConnectApi.OmniDesignerConnect	no
+features=OrderManagement	ConnectApi.Personalization	no
+features=OrderManagement	ConnectApi.Wave	no
+features=OrderManagement,B2BCommerce,Communities	ConnectApi.CdpQuery	no
+features=OrderManagement,B2BCommerce,Communities	ConnectApi.CommerceCart	yes
+features=OrderManagement,B2BCommerce,Communities	ConnectApi.EinsteinLlm	no
+features=OrderManagement,B2BCommerce,Communities	ConnectApi.Knowledge	no
+features=OrderManagement,B2BCommerce,Communities	ConnectApi.NavigationMenu	no
+features=OrderManagement,B2BCommerce,Communities	ConnectApi.OmniDesignerConnect	no
+features=OrderManagement,B2BCommerce,Communities	ConnectApi.Personalization	no
+features=OrderManagement,B2BCommerce,Communities	ConnectApi.Wave	no
+settings=enableNetworksEnabled,enableExperienceBundleMetadata	ConnectApi.CdpQuery	no
+settings=enableNetworksEnabled,enableExperienceBundleMetadata	ConnectApi.CommerceCart	no
+settings=enableNetworksEnabled,enableExperienceBundleMetadata	ConnectApi.EinsteinLlm	no
+settings=enableNetworksEnabled,enableExperienceBundleMetadata	ConnectApi.Knowledge	no
+settings=enableNetworksEnabled,enableExperienceBundleMetadata	ConnectApi.NavigationMenu	yes
+settings=enableNetworksEnabled,enableExperienceBundleMetadata	ConnectApi.OmniDesignerConnect	no
+settings=enableNetworksEnabled,enableExperienceBundleMetadata	ConnectApi.Personalization	yes
+settings=enableNetworksEnabled,enableExperienceBundleMetadata	ConnectApi.Wave	no
+features=Knowledge	ConnectApi.Knowledge	no
+settings=knowledgeSettings.enableKnowledge	ConnectApi.Knowledge	yes

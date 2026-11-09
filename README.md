@@ -87,7 +87,7 @@ or [Choose a workflow](https://glade.sh/guide/workflows).
 - Supported local behavior is not blanket Salesforce parity. Hosted services,
   live auth, deployment, exact Lightning Experience behavior, and final
   production validation remain with Salesforce.
-- The supported window is Apex 62.0-67.0, LWC and Visualforce 59.0-67.0.
+- The supported window is Apex 62.0-68.0, LWC and Visualforce 59.0-67.0.
   Apex source API below 62.0 is unsupported, even when a project loads.
   HTTP Execute Anonymous admits 65.0, 66.0, 67.0, and 68.0. Checked HTTP endpoints
   are a separate axis: 60.0, 65.0, 66.0, 67.0, and 68.0; the default is 65.0.

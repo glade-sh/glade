@@ -167,6 +167,12 @@ func FormulaDefaultShouldEvaluate(field storage.Field, rawDefault string) bool {
 	}
 	switch field.Type {
 	case storage.FieldString, storage.FieldPicklist, storage.FieldMultiPicklist, storage.FieldDate, storage.FieldDateTime, storage.FieldTime, storage.FieldAny:
+		if field.Type == storage.FieldString && !field.AutoNumber && (field.DisplayType == "" || strings.EqualFold(field.DisplayType, "STRING")) {
+			tokens := tokenizeFormula(rawDefault)
+			if len(tokens) == 2 && tokens[0].typ == formulaTokenIdent && strings.HasPrefix(tokens[0].text, "$Setup.") && len(strings.Split(tokens[0].text, ".")) == 3 {
+				return true
+			}
+		}
 		if rawDefault[0] == '"' || rawDefault[0] == '\'' {
 			// Tokenize so an ampersand inside a single literal stays text.
 			tokens := tokenizeFormula(rawDefault)

@@ -3,10 +3,13 @@ package storage
 import (
 	"strings"
 	"sync"
+
+	"github.com/glade-sh/glade/internal/apexversion"
 )
 
 type platformChildRelationship struct {
 	name, child, field string
+	feature            string
 	relationship       Relationship
 }
 
@@ -233,7 +236,19 @@ func platformChildRelationships(parent ObjectDefinition) []platformChildRelation
 			cache.rows = append(cache.rows, row)
 		}
 	})
-	return cache.rows
+	rows := cache.rows
+	for i := range rows {
+		if rows[i].feature != "" && !childRelationshipFeatureAllowed(parent, rows[i].feature) {
+			filtered := make([]platformChildRelationship, 0, len(rows))
+			for _, row := range rows {
+				if row.feature == "" || childRelationshipFeatureAllowed(parent, row.feature) {
+					filtered = append(filtered, row)
+				}
+			}
+			return filtered
+		}
+	}
+	return rows
 }
 
 // VisitPlatformChildRelationships reads only the requested parent's catalog.
@@ -254,6 +269,73 @@ func LookupPlatformChildRelationship(parent ObjectDefinition, relationship strin
 		}
 	}
 	return "", Relationship{}, false
+}
+
+// versionedPlatformChildRelationships records relationships introduced after
+// the baseline catalog. The source API belongs to the caller, not the cache.
+var versionedPlatformChildRelationships = []struct {
+	parent, name, child, field string
+	since                      int
+	cascade                    bool
+}{
+	{parent: "Account", name: "ContactPointOttSvcs", child: "ContactPointOttSvc", field: "ParentId", since: 68, cascade: true},
+}
+
+// IsVersionedPlatformChildRelationship identifies a post-baseline edge.
+func IsVersionedPlatformChildRelationship(parent, child, field string) bool {
+	for _, edge := range versionedPlatformChildRelationships {
+		if strings.EqualFold(parent, edge.parent) && strings.EqualFold(child, edge.child) && strings.EqualFold(field, edge.field) {
+			return true
+		}
+	}
+	return false
+}
+
+// PlatformChildRelationshipAvailableAtVersion applies the same source boundary
+// when an edge is already present in a loaded or persisted schema.
+func PlatformChildRelationshipAvailableAtVersion(parent, child, field, api string) bool {
+	for _, edge := range versionedPlatformChildRelationships {
+		if strings.EqualFold(parent, edge.parent) && strings.EqualFold(child, edge.child) && strings.EqualFold(field, edge.field) {
+			return apexversion.AtLeast(strings.TrimPrefix(api, "v"), edge.since)
+		}
+	}
+	return true
+}
+
+// VisitVersionedPlatformChildRelationships visits only post-baseline edges.
+func VisitVersionedPlatformChildRelationships(parent, api string, visit func(string, Relationship)) {
+	for _, edge := range versionedPlatformChildRelationships {
+		if strings.EqualFold(parent, edge.parent) && apexversion.AtLeast(strings.TrimPrefix(api, "v"), edge.since) {
+			visit(edge.child, Relationship{Field: edge.field, ParentObjects: []string{edge.parent}, ChildRelationship: edge.name, CascadeDelete: edge.cascade})
+		}
+	}
+}
+
+// VersionedPlatformChildObject supplies the captured Id projection for a
+// post-baseline relationship without adding the object to older global catalogs.
+func VersionedPlatformChildObject(name, api string) (ObjectDefinition, bool) {
+	for _, edge := range versionedPlatformChildRelationships {
+		if strings.EqualFold(edge.child, name) && apexversion.AtLeast(strings.TrimPrefix(api, "v"), edge.since) {
+			return ObjectDefinition{APIName: edge.child, Fields: map[string]Field{"Id": {APIName: "Id", Type: FieldID}}}, true
+		}
+	}
+	return ObjectDefinition{}, false
+}
+
+// LookupPlatformChildRelationshipAtVersion resolves a source-versioned edge
+// without adding it to the shared version-independent catalog.
+func LookupPlatformChildRelationshipAtVersion(parent ObjectDefinition, name, api string) (string, Relationship, bool) {
+	if child, relation, ok := LookupPlatformChildRelationship(parent, name); ok {
+		return child, relation, true
+	}
+	var child string
+	var relation Relationship
+	VisitVersionedPlatformChildRelationships(parent.APIName, api, func(candidate string, edge Relationship) {
+		if strings.EqualFold(edge.ChildRelationship, name) {
+			child, relation = candidate, edge
+		}
+	})
+	return child, relation, child != ""
 }
 
 // SupportsUserRecordAccessRelationship covers the captured record-bearing

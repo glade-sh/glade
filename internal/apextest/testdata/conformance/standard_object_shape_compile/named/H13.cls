@@ -1,0 +1,1 @@
+public class H13 { public class Survey { } public static void m() { Object o = new Survey(); Boolean b = o instanceof Survey; Survey s = (Survey) o; } }

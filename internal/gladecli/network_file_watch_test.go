@@ -24,7 +24,7 @@ func TestNetworkFileProjectWatchLocalAndDaemonRoutes(t *testing.T) {
 						root := filepath.Join(workspace, "project")
 						extra := filepath.Join(workspace, "supplemental")
 						writeTestFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"sourceApiVersion":%q,"packageDirectories":[{"path":"force-app","default":true}]}`, api))
-						writeTestFile(t, filepath.Join(root, "glade.yml"), "org:\n  features: [Communities]\nproject:\n  extraMetadataDirs: [../supplemental]\n")
+						writeTestFile(t, filepath.Join(root, "glade.yml"), "org:\n  features: [Communities, NetworksEnabled]\nproject:\n  extraMetadataDirs: [../supplemental]\n")
 						writeTestFile(t, filepath.Join(extra, "README.md"), "Supplemental metadata")
 						metadataRoot := extra
 						if location == "package" {

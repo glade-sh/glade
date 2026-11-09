@@ -444,10 +444,6 @@
       "durationMillis": 0
     },
     {
-      "name": "TestC14WarmOversizedCarryIsExact",
-      "durationMillis": 0
-    },
-    {
       "name": "TestC14WarmProblemRejectsMissingCapture",
       "durationMillis": 0
     },
@@ -1352,7 +1348,7 @@
       "durationMillis": 568
     },
     {
-      "name": "TestDefaultCustomAccessPermissiveDefault",
+      "name": "TestDefaultCustomAccessNoProfileDefault",
       "durationMillis": 484
     },
     {
@@ -5150,10 +5146,6 @@
     {
       "name": "TestReferenceOnlySurfacesNativeConformance",
       "durationMillis": 15710
-    },
-    {
-      "name": "TestReferenceOnlySurfacesTriggerRowsRecorded",
-      "durationMillis": 0
     },
     {
       "name": "TestReferenceTargetsOfIndustriesObjectsCompileAndStayUnqueryable",

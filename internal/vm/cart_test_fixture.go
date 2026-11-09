@@ -21,7 +21,9 @@ func (vm *VM) cartTestFixture(method string, args []Value) (Value, bool) {
 			return Null, false
 		}
 		if _, record, found := storage.LookupRecordByID(vm.Org.Objects["WebCart"].Records, storage.ID(id)); found {
-			return cartTestFixtureValue(record), true
+			cart := cartTestFixtureValue(record)
+			vm.seedCartLists(&cart, record.ID)
+			return cart, true
 		}
 		return Null, false
 	}

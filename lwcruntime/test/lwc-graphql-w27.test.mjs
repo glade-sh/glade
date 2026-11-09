@@ -109,12 +109,12 @@ test("W27 wire cursor attempts settle without publishing; imperative cursor erro
   assert.equal(values.length, count);
 });
 
-test("W27 LIKE preserves literal backslashes for inline and variable patterns", async t => {
+test("W27 LIKE escapes wildcards and backslashes for inline and variable patterns", async t => {
   mockData(t);
   const variable = gql(`query Filter($pattern: String) { uiapi { query { W27Probe__c(first: 5, where: { Label__c: { like: $pattern } }) { ${selection} } } } }`);
   const patterns = [
     ["a_b", ["a", "b", "d", "p"]], ["a%b", ["a", "b", "c", "d", "p"]],
-    ["a\\_b", ["c"]], ["a\\%b", ["b", "c"]], ["a\\\\b", []], ["a\\\\_b", []],
+    ["a\\_b", ["p"]], ["a\\%b", ["a"]], ["a\\\\b", ["b"]], ["a\\\\_b", ["c"]],
   ];
   for (const [pattern, ids] of patterns) {
     const inline = gql(`query { uiapi { query { W27Probe__c(first: 5, where: { Label__c: { like: ${JSON.stringify(pattern)} } }) { ${selection} } } } }`);

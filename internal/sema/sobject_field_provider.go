@@ -251,6 +251,14 @@ func (p *semaStandardSObjectFieldProvider) load() *semaSObjectFieldMapProvider {
 		if strings.EqualFold(p.objectName, "Account") {
 			storage.EnsureStandardObjectFieldsForFeatures(&definition, []string{"PersonAccounts"})
 		}
+		// A field the policy gates behind a feature is absent from the base
+		// definition. Give the shared model its native type, so source that
+		// uses the field is typed from the capture. The gate decides existence.
+		for _, gated := range storage.StandardObjectPolicyGateFields(p.objectName) {
+			if _, exists := storage.ResolveFieldName(definition, "", gated.APIName); !exists {
+				definition.Fields[gated.APIName] = gated
+			}
+		}
 		p.fields = newSemaSObjectFieldMapProvider("", p.objectName, semaSchemaFieldsFromStandardDefinition(definition))
 	})
 	return p.fields

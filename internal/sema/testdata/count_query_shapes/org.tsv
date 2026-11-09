@@ -1,0 +1,71 @@
+api	class	outcome	line	column	problem
+62.0	SnA1	rejected	3	21	Expression must be a list type: Integer
+62.0	SnA2	rejected	3	20	Expression must be a list type: Integer
+62.0	SnA3	rejected	3	16	Expression must be a list type: Integer
+62.0	SnA4	rejected	3	51	Method does not exist or incorrect signature: void size() from the type Integer
+62.0	SnA5	rejected	3	22	Expression must be a list type: Integer
+62.0	SnB1	rejected	3	16	Illegal assignment from Integer to String
+62.0	SnB10	rejected	3	25	Illegal assignment from Integer to AggregateResult
+62.0	SnB11	rejected	3	17	Illegal assignment from Integer to SObject
+62.0	SnB12	rejected	3	9	Illegal conversion from Integer to String
+62.0	SnB13	accepted	-	-	-
+62.0	SnB2	accepted	-	-	-
+62.0	SnB3	accepted	-	-	-
+62.0	SnB4	rejected	3	23	Illegal assignment from Integer to List<Account>
+62.0	SnB5	rejected	3	17	Illegal assignment from Integer to Account
+62.0	SnB6	accepted	-	-	-
+62.0	SnB7	rejected	3	31	Illegal assignment from Integer to List<AggregateResult>
+62.0	SnB8	rejected	3	17	Illegal assignment from Integer to Boolean
+62.0	SnB9	accepted	-	-	-
+62.0	SnC1	rejected	3	9	Loop must iterate over collection: Integer
+62.0	SnC2	rejected	3	9	Loop must iterate over collection: Integer
+62.0	SnC3	rejected	3	9	Loop must iterate over collection: Integer
+62.0	SnC4	rejected	3	9	Loop must iterate over collection: Integer
+62.0	SnC5	rejected	3	9	Loop must iterate over collection: Integer
+62.0	SnD1	rejected	3	21	COUNT() cannot be used with GROUP BY - use COUNT(Id) instead
+62.0	SnD2	rejected	3	35	COUNT() cannot be used with GROUP BY - use COUNT(Id) instead
+62.0	SnD3	rejected	3	34	COUNT() cannot be used with GROUP BY - use COUNT(Id) instead
+62.0	SnD4	rejected	3	55	Unexpected token ')'.
+62.0	SnD4	rejected	3	62	Variable does not exist: Account
+62.0	SnD4	rejected	3	70	Missing ';' at 'GROUP'
+62.0	SnD4	rejected	3	76	Unexpected token 'BY'.
+62.0	SnD4	rejected	3	79	Variable does not exist: Name
+62.0	SnD4	rejected	3	83	Extra ';', at ']'.
+62.0	SnD5	rejected	3	21	COUNT() cannot be used with GROUP BY - use COUNT(Id) instead
+62.0	SnD6	rejected	3	29	COUNT() cannot be used with GROUP BY - use COUNT(Id) instead
+62.0	SnD7	rejected	3	21	COUNT() cannot be used with GROUP BY - use COUNT(Id) instead
+67.0	SnA1	rejected	3	21	Expression must be a list type: Integer
+67.0	SnA2	rejected	3	20	Expression must be a list type: Integer
+67.0	SnA3	rejected	3	16	Expression must be a list type: Integer
+67.0	SnA4	rejected	3	51	Method does not exist or incorrect signature: void size() from the type Integer
+67.0	SnA5	rejected	3	22	Expression must be a list type: Integer
+67.0	SnB1	rejected	3	16	Illegal assignment from Integer to String
+67.0	SnB10	rejected	3	25	Illegal assignment from Integer to AggregateResult
+67.0	SnB11	rejected	3	17	Illegal assignment from Integer to SObject
+67.0	SnB12	rejected	3	9	Illegal conversion from Integer to String
+67.0	SnB13	accepted	-	-	-
+67.0	SnB2	accepted	-	-	-
+67.0	SnB3	accepted	-	-	-
+67.0	SnB4	rejected	3	23	Illegal assignment from Integer to List<Account>
+67.0	SnB5	rejected	3	17	Illegal assignment from Integer to Account
+67.0	SnB6	accepted	-	-	-
+67.0	SnB7	rejected	3	31	Illegal assignment from Integer to List<AggregateResult>
+67.0	SnB8	rejected	3	17	Illegal assignment from Integer to Boolean
+67.0	SnB9	accepted	-	-	-
+67.0	SnC1	rejected	3	9	Loop must iterate over collection: Integer
+67.0	SnC2	rejected	3	9	Loop must iterate over collection: Integer
+67.0	SnC3	rejected	3	9	Loop must iterate over collection: Integer
+67.0	SnC4	rejected	3	9	Loop must iterate over collection: Integer
+67.0	SnC5	rejected	3	9	Loop must iterate over collection: Integer
+67.0	SnD1	rejected	3	21	COUNT() cannot be used with GROUP BY - use COUNT(Id) instead
+67.0	SnD2	rejected	3	35	COUNT() cannot be used with GROUP BY - use COUNT(Id) instead
+67.0	SnD3	rejected	3	34	COUNT() cannot be used with GROUP BY - use COUNT(Id) instead
+67.0	SnD4	rejected	3	55	Unexpected token ')'.
+67.0	SnD4	rejected	3	62	Variable does not exist: Account
+67.0	SnD4	rejected	3	70	Missing ';' at 'GROUP'
+67.0	SnD4	rejected	3	76	Unexpected token 'BY'.
+67.0	SnD4	rejected	3	79	Variable does not exist: Name
+67.0	SnD4	rejected	3	83	Extra ';', at ']'.
+67.0	SnD5	rejected	3	21	COUNT() cannot be used with GROUP BY - use COUNT(Id) instead
+67.0	SnD6	rejected	3	29	COUNT() cannot be used with GROUP BY - use COUNT(Id) instead
+67.0	SnD7	rejected	3	21	COUNT() cannot be used with GROUP BY - use COUNT(Id) instead

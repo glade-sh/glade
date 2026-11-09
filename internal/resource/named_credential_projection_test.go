@@ -31,6 +31,7 @@ func TestApplyProjectProjectsLegacyAnonymousNamedCredential(t *testing.T) {
 		"Id":              storage.IDValue(projected.ID),
 		"DeveloperName":   storage.StringValue("ProbeEndpoint"),
 		"Endpoint":        storage.StringValue("https://example.invalid"),
+		"PrincipalType":   storage.StringValue("Anonymous"),
 		"NamespacePrefix": storage.NullValue(),
 	}
 	if projected.Object != "NamedCredential" || !reflect.DeepEqual(projected.Fields, wantFields) {

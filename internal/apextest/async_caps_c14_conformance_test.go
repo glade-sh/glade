@@ -4,7 +4,6 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"io/fs"
-	"maps"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -87,33 +86,7 @@ func TestAsyncCapsC14NativeConformance(t *testing.T) {
 					if err := json.Unmarshal([]byte(row[4]), &want); err != nil {
 						t.Fatal(err)
 					}
-					if row[2] == "asyncY6" || row[2] == "asyncY7" {
-						gotCB, ok := got["cb"].(map[string]any)
-						if !ok {
-							t.Fatal("missing Glade callback")
-						}
-						wantCB, ok := want["cb"].(map[string]any)
-						if !ok {
-							t.Fatal("missing native callback")
-						}
-						localCap, nativeCap := float64(50), float64(1)
-						if row[2] == "asyncY7" {
-							localCap, nativeCap = 200, 100
-						}
-						if gotCB["cap"] != localCap || wantCB["cap"] != nativeCap {
-							t.Fatalf("capacity carry changed: native=%v; Glade=%v", wantCB, gotCB)
-						}
-						got, want = maps.Clone(got), maps.Clone(want)
-						gotCB, wantCB = maps.Clone(gotCB), maps.Clone(wantCB)
-						delete(gotCB, "cap")
-						delete(wantCB, "cap")
-						got["cb"], want["cb"] = gotCB, wantCB
-						if !reflect.DeepEqual(got, want) {
-							t.Fatalf("other callback fields changed: native=%v; Glade=%v", want, got)
-						}
-						t.Logf("known local carry batch Dot stdlib cases Dot Dot SOQL cases and Dot async cases (fix owner pending): native cap=%v; Glade cap=%v", nativeCap, localCap)
-						case345Skip(t)
-					} else if !reflect.DeepEqual(got, want) {
+					if !reflect.DeepEqual(got, want) {
 						t.Fatalf("native=%v; Glade=%v", want, got)
 					}
 				})

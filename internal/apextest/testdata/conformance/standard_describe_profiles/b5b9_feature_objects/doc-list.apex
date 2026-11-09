@@ -1,0 +1,1 @@
+Map<String,Schema.SObjectType> m=Schema.getGlobalDescribe();List<String> names=new List<String>();for(String n:m.keySet()) if(n.toLowerCase().startsWith('documenttemplate') || n.toLowerCase().startsWith('documentgeneration')) names.add(n);names.sort();System.debug('ROW names '+JSON.serialize(names));

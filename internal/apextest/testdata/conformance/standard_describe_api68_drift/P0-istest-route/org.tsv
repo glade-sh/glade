@@ -1,0 +1,4 @@
+api	route	case	field_present	assertion_outcome
+62.0	istest	AssetStatePeriod.RampUpliftType	false	Pass
+67.0	istest	AssetStatePeriod.RampUpliftType	false	Pass
+68.0	istest	AssetStatePeriod.RampUpliftType	true	Pass

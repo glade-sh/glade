@@ -1,0 +1,1 @@
+<apex:page controller="FieldQualified67"><apex:outputText value="{!value}"/></apex:page>

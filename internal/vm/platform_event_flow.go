@@ -18,6 +18,7 @@ func (vm *VM) deliverPublishedPlatformEventSubscribers(records []storage.Record,
 		return err
 	}
 	var payloads []Value
+	convertRecord := vm.recordConverterForOrg(vm.Org)
 	for _, record := range records {
 		if vm.Org == nil {
 			continue
@@ -28,7 +29,7 @@ func (vm *VM) deliverPublishedPlatformEventSubscribers(records []storage.Record,
 		}
 		for _, rule := range vm.Org.Objects[name].Definition.FlowRules {
 			if rule.Active && strings.EqualFold(strings.TrimSpace(rule.TriggerType), "PlatformEvent") {
-				payloads = append(payloads, vm.vmValueFromRecord(record.Clone()))
+				payloads = append(payloads, convertRecord(record.Clone()))
 				break
 			}
 		}
@@ -64,6 +65,11 @@ func (vm *VM) deliverPlatformEventSubscribers(records []storage.Record, result *
 }
 
 func (vm *VM) runPlatformEventTriggers(records []storage.Record, result *Result) error {
+	// Event subscribers run in their own transaction. Setup DML earlier in the
+	// publisher's test must not trip mixed-DML checks on subscriber DML (native
+	// event_created_by rows, EvtRunAs.deliverOutsideRunAs, APIs 62.0 and 67.0).
+	restoreMixedDML := vm.beginMixedDMLTransaction()
+	defer restoreMixedDML()
 	// Native delivery uses Automated Process for Apex triggers, while Flow and
 	// its invocable Apex actions retain the caller. Scope the switch to Apex.
 	if user := vm.automatedProcessUser(); user.Kind != "" {
@@ -76,7 +82,19 @@ func (vm *VM) runPlatformEventTriggers(records []storage.Record, result *Result)
 			defer func() { vm.testContext.CurrentUser = previousTestUser }()
 		}
 	}
+	// event_trigger_exceptions_c4 (APIs 62.0 and 67.0): the subscriber starts
+	// with its own governor limits (Limits.getQueries() and getDmlStatements()
+	// are 0 after the publisher's DML), and its usage does not reach the
+	// publisher.
+	parentLimits := vm.limits
+	vm.limits = Limits{}
+	defer func() { vm.limits = parentLimits }()
+	vm.eventSubscriberTriggerDepth++
 	_, err := vm.runTriggers(triggerTimingAfter, "insert", records, nil, result)
+	vm.eventSubscriberTriggerDepth--
+	if err == nil && vm.testContext != nil {
+		storage.AdvanceProjectEventSubscriberTestPositions(vm.Org, records)
+	}
 	return err
 }
 
@@ -98,4 +116,26 @@ func (vm *VM) platformEventFlowActionInput(action storage.FlowAction, record sto
 		return Value{}, false
 	}
 	return vm.vmValueFromRecord(record), true
+}
+
+// inEventSubscriberTrigger reports Apex running inside an event trigger frame
+// (runPlatformEventTriggers) in a test. Native automated_process_user_mode rows
+// (62.0 to 68.0): async work enqueued there, queueable or future, does not run
+// during the test, including at Test.stopTest(), when the event is delivered at
+// stopTest. An explicit Test.getEventBus().deliver() does run them at stopTest
+// (automated_process_deliver rows), also when the deliver() call itself runs
+// inside a batch execute drained by stopTest (batch_event_async
+// b_execute_*_queue_dlv, API 62/67). Publish success callbacks and runAs of the
+// Automated Process user are other contexts and are not covered.
+func (vm *VM) inEventSubscriberTrigger() bool {
+	return vm.testContext != nil && vm.eventSubscriberTriggerDepth > 0 && vm.testContext.StopTimeEventDelivery
+}
+
+// eventSubscriberRunAsUser is the Automated Process user while an event trigger
+// frame runs, so jobs it enqueues keep that user when they run later.
+func (vm *VM) eventSubscriberRunAsUser() Value {
+	if vm.testContext == nil || vm.eventSubscriberTriggerDepth == 0 {
+		return Value{}
+	}
+	return vm.testContext.CurrentUser
 }

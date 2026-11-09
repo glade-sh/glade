@@ -86,7 +86,7 @@ func (s *Server) handleQuery(w http.ResponseWriter, r *http.Request, version str
 	if allRows {
 		query.AllRows = true
 	}
-	result, err := soql.Execute(*s.Org, query)
+	result, err := soql.ExecuteWithCacheAndContext(*s.Org, query, nil, soql.ExecutionContext{SetupUserID: s.currentUser(r, "").ID})
 	if err != nil {
 		writeSalesforceError(w, errMalformedQuery, err.Error())
 		return

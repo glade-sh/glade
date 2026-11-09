@@ -21,7 +21,7 @@ concurrency:
 jobs:
   govulncheck:
     name: govulncheck
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
@@ -79,6 +79,17 @@ jobs:
       - name: Run Go vulnerability reachability scan
         run: go run golang.org/x/vuln/cmd/govulncheck@v1.6.0 ./... # v1.6.0
 
+  codeql-fast:
+    name: CodeQL
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref_type != 'tag')
+    uses: ./.github/workflows/codeql.yml
+    with:
+      profile: fast
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
   codeql:
     name: CodeQL
     if: github.event_name == 'schedule' || github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
@@ -92,7 +103,7 @@ jobs:
 
   gosec:
     name: gosec
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       actions: read
       contents: read
@@ -162,7 +173,7 @@ jobs:
 
   npm-audit:
     name: npm audit
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
@@ -178,7 +189,7 @@ jobs:
   dependency-review:
     name: Dependency review
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     steps:
@@ -190,7 +201,7 @@ jobs:
   scorecard:
     name: OpenSSF Scorecard
     if: ${{ !startsWith(github.ref, 'refs/tags/') }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       actions: read
       contents: read

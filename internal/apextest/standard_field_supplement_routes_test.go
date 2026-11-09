@@ -18,7 +18,7 @@ func TestStandardFieldSupplementRoutes(t *testing.T) {
 System.assertEquals(Schema.DisplayType.Date, Schema.SObjectType.Lead.fields.getMap().get('LastTransferDate').getDescribe().getType());
 List<Lead> found = [SELECT LastTransferDate FROM Lead LIMIT 1];
 System.assertEquals(0, found.size());`
-	for _, api := range []string{"62.0", "67.0"} {
+	for _, api := range []string{"62.0", "67.0", "68.0"} {
 		t.Run(api, func(t *testing.T) {
 			root := t.TempDir()
 			writeFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":%q}`, api))

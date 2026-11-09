@@ -52,10 +52,8 @@ func (e *Engine) flowCoreRecordCreateWithFrame(create storage.FlowRecordCreate, 
 			var ok bool
 			if e.InvocableFlow {
 				value, ok = e.flowContextFormulaValue(assignment.Formula, frame)
-			} else if assignment.FlowFrameFormula {
-				value, ok = flowFrameCapturedFormulaValue(assignment.Formula, frame)
 			} else {
-				value, ok = flowFrameFormulaValue(assignment.Formula, frame)
+				value, ok = e.flowFrameFormulaValue(assignment.Formula, frame, assignment.FlowFrameFormula)
 			}
 			if !ok {
 				return "", dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{assignment.Field}, "dml: flow record create %s has unsupported scalar expression", create.Name)

@@ -146,7 +146,7 @@ func TestCIActionlintCIJobInstallsAndRunsOfflineChecks(t *testing.T) {
 		}
 	}
 	for _, want := range []string{
-		"runs-on: ubuntu-latest", "contents: read", "persist-credentials: false",
+		"runs-on: ubuntu-24.04", "contents: read", "persist-credentials: false",
 		"scripts/install-actionlint.sh", "$GITHUB_PATH",
 		"scripts/ci-resource-run.sh ci-artifacts/go-test/resource-workflow-lint.json workflow-lint -- scripts/ci-go-test.sh lane workflow-lint",
 		"name: go-test-workflow-lint", "if: always()", "if-no-files-found: error",

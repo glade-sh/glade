@@ -10,6 +10,7 @@ import (
 func TestEmptyNetworkQuerySingletonNativeBoundary(t *testing.T) {
 	machine := New(nil)
 	org := testDataOrg()
+	storage.ApplyOrgShape(&org, []string{"NetworksEnabled"})
 	storage.EnsureStandardObject(&org, "Network")
 	machine.SetOrg(&org)
 	empty, err := machine.executeSOQLQuery("SELECT Id FROM Network WHERE Name = 'Missing Synthetic Community'", &Result{})

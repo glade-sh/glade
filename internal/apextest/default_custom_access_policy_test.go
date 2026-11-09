@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-func TestDefaultCustomAccessPermissiveDefault(t *testing.T) {
+func TestDefaultCustomAccessNoProfileDefault(t *testing.T) {
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api, func(t *testing.T) {
 			root := t.TempDir()
@@ -39,20 +39,18 @@ func TestDefaultCustomAccessPermissiveDefault(t *testing.T) {
 			}
 
 			class := `@IsTest private class DefaultAccessPolicyProbe {
- @IsTest static void keepsDefaultAccessWithoutProfileMetadata() {
+ @IsTest static void enforcesDefaultAccessWithoutProfileMetadata() {
   Schema.DescribeSObjectResult objectInfo=AccessNote__c.SObjectType.getDescribe();
   Schema.DescribeFieldResult fieldInfo=AccessNote__c.Detail__c.getDescribe();
   System.assert(objectInfo.isAccessible(),'default custom-object read access');
   System.assert(objectInfo.isCreateable(),'default custom-object create access');
   System.assert(objectInfo.isUpdateable(),'default custom-object update access');
   System.assert(objectInfo.isDeletable(),'default custom-object delete access');
-  System.assert(fieldInfo.isAccessible(),'default custom-field read access');
-  System.assert(fieldInfo.isCreateable(),'default custom-field create access');
-  System.assert(fieldInfo.isUpdateable(),'default custom-field update access');
-  insert new AccessNote__c(Name='Default access',Detail__c='local');
-  Database.insert(new AccessNote__c(Name='User mode access',Detail__c='user-mode'),AccessLevel.USER_MODE);
-  System.assertEquals('local',[SELECT Detail__c FROM AccessNote__c WHERE Name='Default access' WITH USER_MODE LIMIT 1].Detail__c);
-  System.assertEquals(2,[SELECT COUNT() FROM AccessNote__c WITH USER_MODE]);
+  System.assertEquals(false,fieldInfo.isAccessible(),'default custom-field read access');
+  System.assertEquals(false,fieldInfo.isCreateable(),'default custom-field create access');
+  System.assertEquals(false,fieldInfo.isUpdateable(),'default custom-field update access');
+  Database.insert(new AccessNote__c(Name='Default access',Detail__c='local'),AccessLevel.SYSTEM_MODE);
+  System.assertEquals(1,[SELECT COUNT() FROM AccessNote__c WITH USER_MODE]);
  }
 }`
 			writeFile(t, filepath.Join(root, "force-app/main/default/classes/DefaultAccessPolicyProbe.cls"), class)
@@ -65,7 +63,7 @@ func TestDefaultCustomAccessPermissiveDefault(t *testing.T) {
 			run := Run(index, Options{SelectedClasses: []string{"DefaultAccessPolicyProbe"}, NoDiskCache: true, Parallelism: 1})
 			if summary := run.Summary(); summary.Total != 1 || summary.Passed != 1 {
 				data, _ := json.Marshal(run)
-				t.Fatalf("permissive default without profile metadata: summary=%+v run=%s", summary, data)
+				t.Fatalf("default without profile metadata: summary=%+v run=%s", summary, data)
 			}
 		})
 	}

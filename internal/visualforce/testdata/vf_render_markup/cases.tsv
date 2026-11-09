@@ -1,0 +1,588 @@
+case	kind	markup
+InputTextPlain	ctl	<apex:form><apex:inputText value="{!s}"/></apex:form>
+InputTextAttrs	ctl	<apex:form><apex:inputText value="{!s}" title="tip" styleClass="c1 c2" style="color:red"/></apex:form>
+InputTextMore	ctl	<apex:form><apex:inputText value="{!s}" size="10" maxlength="20" required="true" disabled="true" id="f1" label="Lbl"/></apex:form>
+InputTextEntity	ctl	<apex:form><apex:inputText value="{!s}" title="a &amp; b &quot;c&quot; &lt;d&gt;" styleClass="x&amp;y" style="s:&quot;t&quot;"/></apex:form>
+InputTextareaPlain	ctl	<apex:form><apex:inputTextarea value="{!s}"/></apex:form>
+InputTextareaAttrs	ctl	<apex:form><apex:inputTextarea value="{!s}" title="tip" styleClass="c1" style="color:red" rows="3" cols="20"/></apex:form>
+InputTextareaEntity	ctl	<apex:form><apex:inputTextarea value="{!s}" title="a &amp; b" styleClass="x&amp;y" style="s:&quot;t&quot;"/></apex:form>
+InputSecretPlain	ctl	<apex:form><apex:inputSecret value="{!s}"/></apex:form>
+InputSecretAttrs	ctl	<apex:form><apex:inputSecret value="{!s}" title="tip" styleClass="c1" style="color:red" redisplay="true"/></apex:form>
+InputSecretEntity	ctl	<apex:form><apex:inputSecret value="{!s}" title="a &amp; b" styleClass="x&amp;y"/></apex:form>
+InputCheckboxPlain	ctl	<apex:form><apex:inputCheckbox value="{!b}"/></apex:form>
+InputCheckboxAttrs	ctl	<apex:form><apex:inputCheckbox value="{!b}" title="tip" styleClass="c1" style="color:red"/></apex:form>
+InputCheckboxEntity	ctl	<apex:form><apex:inputCheckbox value="{!b}" title="a &amp; b" styleClass="x&amp;y"/></apex:form>
+SelectListPlain	ctl	<apex:form><apex:selectList value="{!s}" size="1"><apex:selectOption itemValue="a" itemLabel="A"/><apex:selectOption itemValue="b" itemLabel="B"/></apex:selectList></apex:form>
+SelectListAttrs	ctl	<apex:form><apex:selectList value="{!s}" size="1" title="tip" styleClass="c1" style="color:red"><apex:selectOption itemValue="a" itemLabel="A"/></apex:selectList></apex:form>
+SelectListMulti	ctl	<apex:form><apex:selectList value="{!s}" size="3" multiselect="true"><apex:selectOption itemValue="a" itemLabel="A"/><apex:selectOption itemValue="b" itemLabel="B"/></apex:selectList></apex:form>
+SelectListId	ctl	<apex:form><apex:selectList id="sl" value="{!s}" size="1"><apex:selectOption itemValue="a" itemLabel="A"/></apex:selectList></apex:form>
+LabelForInput	ctl	<apex:form><apex:outputLabel for="f1" value="Name"/><apex:inputText id="f1" value="{!s}"/></apex:form>
+InputTextLit	ctl	<apex:form><apex:inputText value="abc"/></apex:form>
+InputTextLitEmpty	ctl	<apex:form><apex:inputText value=""/></apex:form>
+InputTextLitMixed	ctl	<apex:form><apex:inputText value="abc {!s}"/></apex:form>
+InputTextareaLit	ctl	<apex:form><apex:inputTextarea value="abc"/></apex:form>
+InputSecretLit	ctl	<apex:form><apex:inputSecret value="abc"/></apex:form>
+InputCheckboxLit	ctl	<apex:form><apex:inputCheckbox value="true"/></apex:form>
+SelectListLit	ctl	<apex:form><apex:selectList value="abc" size="1"><apex:selectOption itemValue="a" itemLabel="A"/></apex:selectList></apex:form>
+OutLabelPlain	page	<apex:outputLabel value="Name"/>
+OutLabelAttrs	page	<apex:outputLabel value="Name" title="tip" style="color:red" styleClass="c1 c2"/>
+OutLabelFor	page	<apex:outputLabel value="Name" for="x" title="tip"/>
+OutLabelEntity	page	<apex:outputLabel value="Name" title="a &amp; b" style="s:&quot;t&quot;" styleClass="x&amp;y"/>
+OutLabelExpr	page	<apex:outputLabel value="{!'a'}" title="{!'t'}" styleClass="{!'k'}"/>
+OutLabelEscF	page	<apex:outputLabel value="a &lt;b&gt; c" escape="false" title="tip"/>
+PageMsgInfo	page	<apex:pageMessage summary="Sum" detail="Det" severity="info" strength="1"/>
+PageMsgWarning	page	<apex:pageMessage summary="Sum" detail="Det" severity="warning" strength="2"/>
+PageMsgError	page	<apex:pageMessage summary="Sum" detail="Det" severity="error" strength="3"/>
+PageMsgConfirm	page	<apex:pageMessage summary="Sum" detail="Det" severity="confirm" strength="1"/>
+PageMsgStrength0	page	<apex:pageMessage summary="Sum" detail="Det" severity="info" strength="0"/>
+PageMsgStrength2	page	<apex:pageMessage summary="Sum" detail="Det" severity="error" strength="2"/>
+PageMsgStrength3Info	page	<apex:pageMessage summary="Sum" detail="Det" severity="info" strength="3"/>
+PageMsgNoSeverity	page	<apex:pageMessage summary="Sum"/>
+PageMsgTitle	page	<apex:pageMessage title="Ttl" summary="Sum" severity="warning" strength="1"/>
+PageMsgDetailOnly	page	<apex:pageMessage detail="Det" severity="info"/>
+PageMsgNoStrength	page	<apex:pageMessage summary="Sum" severity="error"/>
+PageMsgEscT	page	<apex:pageMessage summary="a &lt;b&gt; c" detail="d &amp; e" severity="info" strength="1" escape="true"/>
+PageMsgEscF	page	<apex:pageMessage summary="a &lt;b&gt; c" detail="d &amp; e" severity="info" strength="1" escape="false"/>
+PageMsgEntity	page	<apex:pageMessage summary="a &amp; b &lt; c" detail="d &amp; e" severity="info" strength="1"/>
+PageMsgRenderedF	page	<apex:pageMessage summary="Sum" severity="info" rendered="false"/>
+PageMsgStyle	page	<apex:pageMessage summary="Sum" severity="info" strength="1" id="pm" styleClass="c1" />
+PageMsgBody	page	<apex:pageMessage summary="Sum" severity="info" strength="1">body text</apex:pageMessage>
+SecHdrTitle	page	<apex:sectionHeader title="Ttl"/>
+SecHdrSub	page	<apex:sectionHeader title="Ttl" subtitle="Sub"/>
+SecHdrSubOnly	page	<apex:sectionHeader subtitle="Sub"/>
+SecHdrDesc	page	<apex:sectionHeader title="Ttl" description="Desc"/>
+SecHdrHelp	page	<apex:sectionHeader title="Ttl" help="http://example.com/h"/>
+SecHdrPrint	page	<apex:sectionHeader title="Ttl" printUrl="http://example.com/p"/>
+SecHdrIcon	page	<apex:sectionHeader title="Ttl" subtitle="Sub" description="Desc" help="http://example.com/h" printUrl="http://example.com/p"/>
+SecHdrEntity	page	<apex:sectionHeader title="a &amp; b" subtitle="c &lt; d"/>
+SecHdrExpr	page	<apex:sectionHeader title="{!'T'}" subtitle="{!'S'}"/>
+SecHdrRenderedF	page	<apex:sectionHeader title="Ttl" rendered="false"/>
+SecHdrBody	page	<apex:sectionHeader title="Ttl">body</apex:sectionHeader>
+LinkPlain	page	<apex:outputLink value="http://example.com/a">go</apex:outputLink>
+LinkAmp	page	<apex:outputLink value="http://example.com/a?x=1&amp;y=2">go</apex:outputLink>
+LinkBareAmp	page	<apex:outputLink value="http://example.com/a?x=1&y=2">go</apex:outputLink>
+LinkNumAmp	page	<apex:outputLink value="http://example.com/a?x=1&#38;y=2">go</apex:outputLink>
+LinkLtQuot	page	<apex:outputLink value="http://example.com/a?x=&lt;&quot;&gt;">go</apex:outputLink>
+LinkUnknownEnt	page	<apex:outputLink value="http://example.com/a?x=&foo;y">go</apex:outputLink>
+LinkExpr	page	<apex:outputLink value="{!'http://example.com/a?x=1&amp;y=2'}">go</apex:outputLink>
+LinkExprRaw	page	<apex:outputLink value="{!'http://example.com/a?x=1&y=2'}">go</apex:outputLink>
+LinkAttrs	page	<apex:outputLink value="http://example.com/a" title="tip" styleClass="c1" style="color:red" target="_blank" id="l1">go</apex:outputLink>
+ImagePlain	page	<apex:image url="http://example.com/i.png"/>
+ImageAmp	page	<apex:image url="http://example.com/i.png?x=1&amp;y=2"/>
+ImageBareAmp	page	<apex:image url="http://example.com/i.png?x=1&y=2"/>
+ImageNumAmp	page	<apex:image url="http://example.com/i.png?x=1&#38;y=2"/>
+ImageLtQuot	page	<apex:image url="http://example.com/i.png?x=&lt;&quot;&gt;"/>
+ImageExpr	page	<apex:image url="{!'http://example.com/i.png?x=1&amp;y=2'}"/>
+ImageAttrs	page	<apex:image url="http://example.com/i.png" alt="a &amp; b" title="t &amp; u" width="10" height="20" styleClass="c1" style="color:red" id="im1"/>
+ImageValue	page	<apex:image value="http://example.com/i.png?x=1&amp;y=2"/>
+ActStatPlain	page	<apex:actionStatus startText="Working" stopText="Done"/>
+ActStatId	page	<apex:actionStatus id="st" startText="Working" stopText="Done"/>
+ActStatAmp	page	<apex:actionStatus startText="a &amp; b" stopText="c &lt; d"/>
+ActStatMarkup	page	<apex:actionStatus startText="&lt;b&gt;x&lt;/b&gt;" stopText="&lt;i&gt;y&lt;/i&gt;"/>
+ActStatQuot	page	<apex:actionStatus startText="say &quot;hi&quot;" stopText="it&apos;s"/>
+ActStatExpr	page	<apex:actionStatus startText="{!'a&amp;b'}" stopText="{!'c&lt;d'}"/>
+ActStatStartOnly	page	<apex:actionStatus startText="Working"/>
+ActStatStopOnly	page	<apex:actionStatus stopText="Done"/>
+ActStatStyle	page	<apex:actionStatus startText="Working" stopText="Done" startStyle="color:red" stopStyle="color:blue" startStyleClass="s1" stopStyleClass="s2" style="color:green" styleClass="k1"/>
+ActStatNone	page	<apex:actionStatus/>
+ActStatRenderedF	page	<apex:actionStatus startText="Working" rendered="false"/>
+ActStatForm	page	<apex:form><apex:actionStatus id="st" startText="a &amp; b" stopText="c &lt; d"/><apex:commandButton value="Go" status="st"/></apex:form>
+SeqPageMsg	ctl	<apex:pageMessage summary="s" severity="info"/><apex:form><apex:inputText value="{!s}"/></apex:form>
+SeqPageMsgTwo	ctl	<apex:pageMessage summary="s" severity="info"/><apex:pageMessage summary="t" severity="error"/><apex:form><apex:inputText value="{!s}"/></apex:form>
+SeqPageMsgDetail	ctl	<apex:pageMessage summary="s" detail="d" title="t" severity="info"/><apex:form><apex:inputText value="{!s}"/></apex:form>
+SeqPageMsgBody	ctl	<apex:pageMessage summary="s" severity="info">body</apex:pageMessage><apex:form><apex:inputText value="{!s}"/></apex:form>
+SeqPageMsgInForm	ctl	<apex:form><apex:pageMessage summary="s" severity="info"/><apex:inputText value="{!s}"/></apex:form>
+SeqSecHdr	ctl	<apex:sectionHeader title="T"/><apex:form><apex:inputText value="{!s}"/></apex:form>
+SeqSecHdrFull	ctl	<apex:sectionHeader title="T" subtitle="S" description="D" help="http://example.com/h" printUrl="http://example.com/p"/><apex:form><apex:inputText value="{!s}"/></apex:form>
+SeqOutLabel	ctl	<apex:outputLabel value="L"/><apex:form><apex:inputText value="{!s}"/></apex:form>
+SeqActStat	ctl	<apex:actionStatus startText="a" stopText="b"/><apex:form><apex:inputText value="{!s}"/></apex:form>
+SeqOutLink	ctl	<apex:outputLink value="http://example.com/">go</apex:outputLink><apex:form><apex:inputText value="{!s}"/></apex:form>
+SeqImage	ctl	<apex:image url="http://example.com/i.png"/><apex:form><apex:inputText value="{!s}"/></apex:form>
+SeqSelect	ctl	<apex:form><apex:selectList value="{!s}" size="1"><apex:selectOption itemValue="a" itemLabel="A"/></apex:selectList><apex:inputText value="{!t}"/></apex:form>
+SeqTwoInputs	ctl	<apex:form><apex:inputText value="{!s}"/><apex:inputTextarea value="{!t}"/><apex:inputCheckbox value="{!b}"/><apex:inputSecret value="{!s}"/></apex:form>
+PosPageMsgSecond	page	<apex:outputLabel value="L"/><apex:pageMessage summary="s" severity="info"/>
+PosPageMsgTwo	page	<apex:pageMessage summary="s" severity="info"/><apex:pageMessage summary="t" severity="error"/>
+PosPageMsgForm	ctl	<apex:form><apex:pageMessage summary="s" severity="info"/></apex:form>
+PosPageMsgBlock	page	<apex:pageBlock><apex:pageMessage summary="s" severity="info"/></apex:pageBlock>
+PosPageMsgTitleDetail	page	<apex:pageMessage title="t" summary="s" detail="d" severity="warning" strength="2"/>
+PosSecHdrSecond	page	<apex:outputLabel value="L"/><apex:sectionHeader title="T"/>
+PosActStatSecond	page	<apex:outputLabel value="L"/><apex:actionStatus startText="a" stopText="b"/>
+PosActStatBlock	page	<apex:pageBlock><apex:actionStatus startText="a" stopText="b"/></apex:pageBlock>
+PosLabelForExpr	page	<apex:outputLabel value="L" for="{!'x'}"/>
+LinkParam	page	<apex:outputLink value="http://example.com/a"><apex:param name="k" value="v"/>go</apex:outputLink>
+LinkParamTwo	page	<apex:outputLink value="http://example.com/a"><apex:param name="k" value="v"/><apex:param name="m" value="n"/>go</apex:outputLink>
+LinkParamQuery	page	<apex:outputLink value="http://example.com/a?x=1"><apex:param name="k" value="v"/>go</apex:outputLink>
+LinkParamQueryEnd	page	<apex:outputLink value="http://example.com/a?"><apex:param name="k" value="v"/>go</apex:outputLink>
+LinkParamFragment	page	<apex:outputLink value="http://example.com/a#frag"><apex:param name="k" value="v"/>go</apex:outputLink>
+LinkParamExpr	page	<apex:outputLink value="http://example.com/a"><apex:param name="k" value="{!'p q'}"/>go</apex:outputLink>
+LinkParamSpace	page	<apex:outputLink value="http://example.com/a"><apex:param name="a b" value="x y"/>go</apex:outputLink>
+LinkParamSpecial	page	<apex:outputLink value="http://example.com/a"><apex:param name="k" value="a&amp;b=c/d?e"/>go</apex:outputLink>
+LinkParamQuote	page	<apex:outputLink value="http://example.com/a"><apex:param name="k" value="a&quot;b'c"/>go</apex:outputLink>
+LinkParamEmpty	page	<apex:outputLink value="http://example.com/a"><apex:param name="k" value=""/>go</apex:outputLink>
+LinkParamNoValue	page	<apex:outputLink value="http://example.com/a"><apex:param name="k"/>go</apex:outputLink>
+LinkParamNoName	page	<apex:outputLink value="http://example.com/a"><apex:param value="v"/>go</apex:outputLink>
+LinkParamNonAscii	page	<apex:outputLink value="http://example.com/a"><apex:param name="k" value="caf&#233;"/>go</apex:outputLink>
+LinkParamAttrs	page	<apex:outputLink value="http://example.com/a" title="tip" styleClass="c1" target="_blank" id="l2"><apex:param name="k" value="v"/>go</apex:outputLink>
+LinkSpacePath	page	<apex:outputLink value="/a b/c d">go</apex:outputLink>
+LinkSpaceQuery	page	<apex:outputLink value="http://example.com/a?x=1 2&amp;y=a b">go</apex:outputLink>
+LinkSpaceFragment	page	<apex:outputLink value="http://example.com/a b#f g">go</apex:outputLink>
+LinkSpaceExpr	page	<apex:outputLink value="{!'/a b?x=1 2'}">go</apex:outputLink>
+LinkQuoteSingle	page	<apex:outputLink value='http://example.com/a?x=1"2'>go</apex:outputLink>
+LinkApos	page	<apex:outputLink value="http://example.com/a?x=it's">go</apex:outputLink>
+LinkAposEnt	page	<apex:outputLink value="http://example.com/a?x=it&apos;s">go</apex:outputLink>
+LinkExprQuote	page	<apex:outputLink value="{!'http://example.com/a?x=1&quot;2'}">go</apex:outputLink>
+LinkEscF	page	<apex:outputLink value="http://example.com/a" escape="false">go</apex:outputLink>
+LinkEscFSelf	page	<apex:outputLink value="http://example.com/a" escape="false"/>
+LinkEscT	page	<apex:outputLink value="http://example.com/a" escape="true">go</apex:outputLink>
+LinkEscFParam	page	<apex:outputLink value="http://example.com/a" escape="false"><apex:param name="k" value="v"/>go</apex:outputLink>
+ImageSpaces	page	<apex:image url="/a b.png"/>
+ImageSpaceQuery	page	<apex:image url="http://example.com/i.png?x=1 2&amp;y=a b"/>
+ImageSpaceFragment	page	<apex:image url="/a b.png#f g"/>
+ImageQuoteSingle	page	<apex:image url='http://example.com/i.png?x=1"2'/>
+ImageApos	page	<apex:image url="http://example.com/i.png?x=it's"/>
+ImageAposEnt	page	<apex:image url="http://example.com/i.png?x=it&apos;s"/>
+ImageQuoteExpr	page	<apex:image url="{!'http://example.com/i.png?x=1&quot;2'}"/>
+StatusSpanAll	page	<apex:actionStatus startText="Working" stopText="Done" startStyle="color:red" stopStyle="color:blue" startStyleClass="s1" stopStyleClass="s2"/>
+StatusSpanStartStyle	page	<apex:actionStatus startText="Working" stopText="Done" startStyle="color:red"/>
+StatusSpanStopStyle	page	<apex:actionStatus startText="Working" stopText="Done" stopStyle="color:blue"/>
+StatusSpanStartClass	page	<apex:actionStatus startText="Working" stopText="Done" startStyleClass="s1"/>
+StatusSpanStopClass	page	<apex:actionStatus startText="Working" stopText="Done" stopStyleClass="s2"/>
+StatusSpanOwn	page	<apex:actionStatus startText="Working" stopText="Done" style="color:green" styleClass="k1"/>
+StatusSpanAllOwn	page	<apex:actionStatus id="st" startText="Working" stopText="Done" startStyle="color:red" stopStyle="color:blue" startStyleClass="s1" stopStyleClass="s2" style="color:green" styleClass="k1"/>
+StatusSpanEntity	page	<apex:actionStatus startText="Working" stopText="Done" startStyle="a:&quot;b&quot;" stopStyle="c:&amp;d" startStyleClass="x&amp;y" stopStyleClass="p&lt;q"/>
+StatusSpanExpr	page	<apex:actionStatus startText="Working" stopText="Done" startStyle="{!'color:red'}" stopStyleClass="{!'s2'}"/>
+StatusSpanNoText	page	<apex:actionStatus startStyle="color:red" stopStyle="color:blue" startStyleClass="s1" stopStyleClass="s2"/>
+StatusSpanForm	page	<apex:form><apex:actionStatus id="st" startText="Working" stopText="Done" startStyle="color:red" stopStyleClass="s2"/><apex:commandButton value="Go" status="st"/></apex:form>
+PageMsgTitleEscF	page	<apex:pageMessage title="a &lt;b&gt; &amp; c" summary="Sum" severity="info" strength="1" escape="false"/>
+PageMsgTitleEscT	page	<apex:pageMessage title="a &lt;b&gt; &amp; c" summary="Sum" severity="info" strength="1" escape="true"/>
+PageMsgTitleEntity	page	<apex:pageMessage title="a &lt;b&gt; &amp; c &quot;d&quot;" summary="Sum" severity="info" strength="1"/>
+PageMsgTitleExprEscF	page	<apex:pageMessage title="{!'<i>x</i>'}" summary="Sum" severity="info" strength="1" escape="false"/>
+PageMsgTitleExpr	page	<apex:pageMessage title="{!'<i>x</i>'}" summary="Sum" severity="info" strength="1"/>
+PageMsgTitleEscFNoSummary	page	<apex:pageMessage title="a &lt;b&gt;" detail="d &lt;i&gt;" severity="info" strength="1" escape="false"/>
+SecHdrId	page	<apex:sectionHeader title="Ttl" id="sh1"/>
+SecHdrIdSub	page	<apex:sectionHeader title="Ttl" subtitle="Sub" id="sh1"/>
+SecHdrIdForm	page	<apex:form id="f1"><apex:sectionHeader title="Ttl" id="sh1"/></apex:form>
+SecHdrIdBlock	page	<apex:pageBlock id="pb1"><apex:sectionHeader title="Ttl" id="sh1"/></apex:pageBlock>
+SecHdrIdExpr	page	<apex:sectionHeader title="Ttl" id="{!'sh1'}"/>
+OutLabelId	page	<apex:outputLabel value="Name" id="ol1"/>
+OutLabelIdFor	page	<apex:outputLabel value="Name" for="x" id="ol1" title="tip"/>
+OutLabelIdForm	page	<apex:form id="f1"><apex:outputLabel value="Name" id="ol1"/></apex:form>
+OutLabelIdFormFor	page	<apex:form id="f1"><apex:outputLabel value="Name" for="in1" id="ol1"/><apex:inputText id="in1"/></apex:form>
+OutLabelIdBlock	page	<apex:pageBlock id="pb1"><apex:outputLabel value="Name" id="ol1"/></apex:pageBlock>
+OutLabelForMissingForm	page	<apex:form id="f1"><apex:outputLabel value="Name" for="nosuch"/></apex:form>
+OutLabelForMissingFormNoId	page	<apex:form><apex:outputLabel value="Name" for="nosuch"/></apex:form>
+PageMsgStrength4	page	<apex:pageMessage summary="Sum" severity="info" strength="4"/>
+PageMsgStrength5	page	<apex:pageMessage summary="Sum" severity="warning" strength="5"/>
+PageMsgStrength9	page	<apex:pageMessage summary="Sum" severity="error" strength="9"/>
+PageMsgStrength10	page	<apex:pageMessage summary="Sum" severity="confirm" strength="10"/>
+PageMsgStrength99	page	<apex:pageMessage summary="Sum" severity="info" strength="99"/>
+PageMsgStrengthNeg	page	<apex:pageMessage summary="Sum" severity="info" strength="-1"/>
+PageMsgStrengthText	page	<apex:pageMessage summary="Sum" severity="info" strength="high"/>
+PageMsgStrengthFrac	page	<apex:pageMessage summary="Sum" severity="info" strength="1.5"/>
+PageMsgStrengthExpr	page	<apex:pageMessage summary="Sum" severity="info" strength="{!4}"/>
+PageMsgStrength4Error	page	<apex:pageMessage summary="Sum" detail="Det" title="Ttl" severity="error" strength="4"/>
+SeqSecHdrId	ctl	<apex:sectionHeader title="Ttl" id="sh1"/><apex:form><apex:inputText value="{!s}"/></apex:form>
+SeqOutLabelId	ctl	<apex:outputLabel value="L" id="ol1"/><apex:form><apex:inputText value="{!s}"/></apex:form>
+SeqPageMsgStrength4	ctl	<apex:pageMessage summary="Sum" severity="info" strength="4"/><apex:form><apex:inputText value="{!s}"/></apex:form>
+SeqPageMsgTitle	ctl	<apex:pageMessage title="T" summary="Sum" severity="info" strength="1"/><apex:form><apex:inputText value="{!s}"/></apex:form>
+LinkRelPlain	page	<apex:outputLink value="/a/b">go</apex:outputLink>
+LinkRelQuery	page	<apex:outputLink value="/a?x=1">go</apex:outputLink>
+LinkRelNoSlash	page	<apex:outputLink value="a/b">go</apex:outputLink>
+LinkRelSpaceQuery	page	<apex:outputLink value="/a?x=1 2">go</apex:outputLink>
+LinkRelParam	page	<apex:outputLink value="/a"><apex:param name="k" value="v"/>go</apex:outputLink>
+LinkRelParamSpace	page	<apex:outputLink value="/a b"><apex:param name="k" value="v w"/>go</apex:outputLink>
+LinkRelFragment	page	<apex:outputLink value="#top">go</apex:outputLink>
+LinkRelRoot	page	<apex:outputLink value="/">go</apex:outputLink>
+LinkPlusQuery	page	<apex:outputLink value="http://example.com/a?x=1+2">go</apex:outputLink>
+LinkPctQuery	page	<apex:outputLink value="http://example.com/a?x=1%202">go</apex:outputLink>
+LinkPipeQuery	page	<apex:outputLink value="http://example.com/a?x=1|2">go</apex:outputLink>
+LinkBraceQuery	page	<apex:outputLink value="http://example.com/a?x=[1]{2}^3">go</apex:outputLink>
+LinkColonQuery	page	<apex:outputLink value="http://example.com/a?x=a:b,c;d@e$f">go</apex:outputLink>
+LinkQMarkQuery	page	<apex:outputLink value="http://example.com/a?x=a?b">go</apex:outputLink>
+LinkNonAsciiPath	page	<apex:outputLink value="http://example.com/café?x=é">go</apex:outputLink>
+LinkSpaceTab	page	<apex:outputLink value="http://example.com/a&#9;b c">go</apex:outputLink>
+LinkSpaceLead	page	<apex:outputLink value=" http://example.com/a ">go</apex:outputLink>
+LinkParamPlus	page	<apex:outputLink value="http://example.com/a"><apex:param name="k" value="a+b"/>go</apex:outputLink>
+LinkParamPct	page	<apex:outputLink value="http://example.com/a"><apex:param name="k" value="50%"/>go</apex:outputLink>
+LinkParamColon	page	<apex:outputLink value="http://example.com/a"><apex:param name="k:j" value="a:b,c;d@e$f|g"/>go</apex:outputLink>
+LinkParamAfterFragment	page	<apex:outputLink value="http://example.com/a?x=1#f"><apex:param name="k" value="v"/>go</apex:outputLink>
+LinkParamExprName	page	<apex:outputLink value="http://example.com/a"><apex:param name="{!'n m'}" value="v"/>go</apex:outputLink>
+LinkParamFormId	page	<apex:form id="f1"><apex:outputLink value="http://example.com/a"><apex:param value="v"/>go</apex:outputLink></apex:form>
+LinkParamOthers	page	<apex:outputLink value="http://example.com/a"><apex:param name="k" value="v" id="p1"/>go</apex:outputLink>
+LinkParamText	page	<apex:outputLink value="http://example.com/a"><apex:param name="k" value="v"/>text <b>bold</b></apex:outputLink>
+ImageSpacePlus	page	<apex:image url="/a+b c.png"/>
+ImageNonAscii	page	<apex:image url="/café.png"/>
+ImageRelPlain	page	<apex:image url="/a/b.png"/>
+ImageRelQuery	page	<apex:image url="/a.png?x=1 2"/>
+ImageColonQuery	page	<apex:image url="http://example.com/i.png?x=a:b|c"/>
+IdExprLabel	page	<apex:outputLabel value="L" id="{!'a'}"/>
+IdExprLink	page	<apex:outputLink value="http://example.com/" id="{!'a'}">go</apex:outputLink>
+IdExprText	page	<apex:outputText value="t" id="{!'a'}"/>
+IdExprPageMsg	page	<apex:pageMessage summary="s" severity="info" id="{!'a'}"/>
+IdExprStatus	page	<apex:actionStatus startText="a" id="{!'a'}"/>
+IdExprBlock	page	<apex:pageBlock id="{!'a'}"/>
+IdExprForm	ctl	<apex:form id="{!'a'}"><apex:inputText value="{!s}"/></apex:form>
+IdExprInput	ctl	<apex:form><apex:inputText value="{!s}" id="{!'a'}"/></apex:form>
+IdExprImage	page	<apex:image url="/a.png" id="{!'a'}"/>
+IdLiteralChars	page	<apex:outputLabel value="L" id="a-b"/>
+IdLiteralSpace	page	<apex:outputLabel value="L" id="a b"/>
+IdLiteralDigit	page	<apex:outputLabel value="L" id="1a"/>
+IdLiteralColon	page	<apex:outputLabel value="L" id="a:b"/>
+IdDuplicate	page	<apex:outputLabel value="L" id="d"/><apex:outputLabel value="M" id="d"/>
+IdDuplicateSecHdr	page	<apex:sectionHeader title="T" id="d"/><apex:outputLabel value="M" id="d"/>
+InputTextWsBoth	ctl	<apex:form><apex:inputText value=" {!s} "/></apex:form>
+InputTextWsLead	ctl	<apex:form><apex:inputText value=" {!s}"/></apex:form>
+InputTextWsTrail	ctl	<apex:form><apex:inputText value="{!s} "/></apex:form>
+InputTextTwoExpr	ctl	<apex:form><apex:inputText value="{!s}{!t}"/></apex:form>
+InputTextareaWsBoth	ctl	<apex:form><apex:inputTextarea value=" {!s} "/></apex:form>
+InputTextareaWsLead	ctl	<apex:form><apex:inputTextarea value=" {!s}"/></apex:form>
+InputTextareaWsTrail	ctl	<apex:form><apex:inputTextarea value="{!s} "/></apex:form>
+InputTextareaTwoExpr	ctl	<apex:form><apex:inputTextarea value="{!s}{!t}"/></apex:form>
+InputSecretWsBoth	ctl	<apex:form><apex:inputSecret value=" {!s} "/></apex:form>
+InputSecretWsLead	ctl	<apex:form><apex:inputSecret value=" {!s}"/></apex:form>
+InputSecretWsTrail	ctl	<apex:form><apex:inputSecret value="{!s} "/></apex:form>
+InputSecretTwoExpr	ctl	<apex:form><apex:inputSecret value="{!s}{!t}"/></apex:form>
+InputCheckboxWsBoth	ctl	<apex:form><apex:inputCheckbox value=" {!b} "/></apex:form>
+InputCheckboxWsLead	ctl	<apex:form><apex:inputCheckbox value=" {!b}"/></apex:form>
+InputCheckboxWsTrail	ctl	<apex:form><apex:inputCheckbox value="{!b} "/></apex:form>
+InputCheckboxTwoExpr	ctl	<apex:form><apex:inputCheckbox value="{!b}{!b}"/></apex:form>
+SelectListWsBoth	ctl	<apex:form><apex:selectList value=" {!s} " size="1"><apex:selectOption itemValue="a" itemLabel="A"/></apex:selectList></apex:form>
+SelectListWsLead	ctl	<apex:form><apex:selectList value=" {!s}" size="1"><apex:selectOption itemValue="a" itemLabel="A"/></apex:selectList></apex:form>
+SelectListWsTrail	ctl	<apex:form><apex:selectList value="{!s} " size="1"><apex:selectOption itemValue="a" itemLabel="A"/></apex:selectList></apex:form>
+SelectListTwoExpr	ctl	<apex:form><apex:selectList value="{!s}{!t}" size="1"><apex:selectOption itemValue="a" itemLabel="A"/></apex:selectList></apex:form>
+UnbText	page	<apex:form id="f1"><apex:inputText id="i1"/></apex:form>
+UnbTextNoFormId	page	<apex:form><apex:inputText id="i1"/></apex:form>
+UnbTextNoId	page	<apex:form><apex:inputText/></apex:form>
+UnbTextTwo	page	<apex:form id="f1"><apex:inputText id="i1"/><apex:inputText id="i2"/></apex:form>
+UnbTextMixed	ctl	<apex:form id="f1"><apex:inputText id="i1"/><apex:inputText value="{!s}" id="i2"/><apex:inputText/></apex:form>
+UnbTextBlock	page	<apex:form id="f1"><apex:pageBlock id="pb1"><apex:pageBlockSection id="ps1"><apex:inputText id="i1"/></apex:pageBlockSection></apex:pageBlock></apex:form>
+UnbTextBlockNoIds	page	<apex:form><apex:pageBlock><apex:pageBlockSection><apex:inputText id="i1"/></apex:pageBlockSection></apex:pageBlock></apex:form>
+UnbTextPanel	page	<apex:form id="f1"><apex:outputPanel id="op1"><apex:inputText id="i1"/></apex:outputPanel></apex:form>
+UnbTextLit	page	<apex:form id="f1"><apex:inputText value="lit" id="i1"/></apex:form>
+UnbTextRender	page	<apex:form id="f1"><apex:inputText id="i1" rendered="true"/></apex:form>
+UnbTextOutsideForm	page	<apex:inputText id="i1"/>
+UnbArea	page	<apex:form id="f1"><apex:inputTextarea id="i1"/></apex:form>
+UnbSecret	page	<apex:form id="f1"><apex:inputSecret id="i1"/></apex:form>
+UnbCheck	page	<apex:form id="f1"><apex:inputCheckbox id="i1"/></apex:form>
+UnbSelect	page	<apex:form id="f1"><apex:selectList id="i1" size="1"><apex:selectOption itemValue="a" itemLabel="A"/></apex:selectList></apex:form>
+UnbSelectNoId	page	<apex:form id="f1"><apex:selectList size="1"><apex:selectOption itemValue="a" itemLabel="A"/></apex:selectList></apex:form>
+UnbBoundText	ctl	<apex:form id="f1"><apex:inputText value="{!s}" id="i1"/></apex:form>
+UnbBoundTextNoFormId	ctl	<apex:form><apex:inputText value="{!s}" id="i1"/></apex:form>
+UnbBoundArea	ctl	<apex:form id="f1"><apex:inputTextarea value="{!s}" id="i1"/></apex:form>
+UnbBoundCheck	ctl	<apex:form id="f1"><apex:inputCheckbox value="{!b}" id="i1"/></apex:form>
+SHFForm	page	<apex:form><apex:sectionHeader title="Ttl"/></apex:form>
+SHFFormId	page	<apex:form id="f1"><apex:sectionHeader title="Ttl" id="sh1"/></apex:form>
+SHFFormSub	page	<apex:form><apex:sectionHeader title="Ttl" subtitle="Sub" description="Desc" help="http://example.com/h" printUrl="http://example.com/p"/></apex:form>
+SHFFormAfter	page	<apex:form><apex:outputLabel value="L"/><apex:sectionHeader title="Ttl"/></apex:form>
+SHFFormInput	page	<apex:form><apex:sectionHeader title="Ttl"/><apex:inputText id="i1"/></apex:form>
+SHFFormTwo	page	<apex:form><apex:sectionHeader title="A"/><apex:sectionHeader title="B"/></apex:form>
+SHFBlock	page	<apex:pageBlock><apex:sectionHeader title="Ttl"/></apex:pageBlock>
+SHFBlockTitle	page	<apex:pageBlock title="PB"><apex:sectionHeader title="Ttl"/><apex:outputText value="body"/></apex:pageBlock>
+SHFBlockId	page	<apex:pageBlock id="pb1"><apex:sectionHeader title="Ttl" id="sh1"/></apex:pageBlock>
+SHFFormBlock	page	<apex:form><apex:pageBlock><apex:sectionHeader title="Ttl"/></apex:pageBlock></apex:form>
+SHFFormBlockTitle	page	<apex:form><apex:pageBlock title="PB"><apex:sectionHeader title="Ttl"/><apex:outputText value="body"/></apex:pageBlock></apex:form>
+SHFPanel	page	<apex:outputPanel><apex:sectionHeader title="Ttl"/></apex:outputPanel>
+SHFFormPanel	page	<apex:form><apex:outputPanel><apex:sectionHeader title="Ttl"/></apex:outputPanel></apex:form>
+SHFFormRendered	page	<apex:form><apex:sectionHeader title="Ttl" rendered="false"/></apex:form>
+SHFFormControl	page	<apex:form><apex:sectionHeader title="Ttl"/></apex:form><apex:form><apex:outputText value="x"/></apex:form>
+SHCBlock	page	<apex:pageBlock><apex:outputText value="x"/></apex:pageBlock>
+LinkUniPathEur	page	<apex:outputLink value="http://example.com/a/€b">go</apex:outputLink>
+LinkUniQueryEur	page	<apex:outputLink value="http://example.com/a?x=€&amp;y=1">go</apex:outputLink>
+ImageUniPathEur	page	<apex:image url="http://example.com/a/€b.png"/>
+ImageUniQueryEur	page	<apex:image url="http://example.com/i.png?x=€"/>
+LinkUniPathA100	page	<apex:outputLink value="http://example.com/a/āb">go</apex:outputLink>
+LinkUniQueryA100	page	<apex:outputLink value="http://example.com/a?x=ā&amp;y=1">go</apex:outputLink>
+ImageUniPathA100	page	<apex:image url="http://example.com/a/āb.png"/>
+ImageUniQueryA100	page	<apex:image url="http://example.com/i.png?x=ā"/>
+LinkUniPathCjk	page	<apex:outputLink value="http://example.com/a/日本b">go</apex:outputLink>
+LinkUniQueryCjk	page	<apex:outputLink value="http://example.com/a?x=日本&amp;y=1">go</apex:outputLink>
+ImageUniPathCjk	page	<apex:image url="http://example.com/a/日本b.png"/>
+ImageUniQueryCjk	page	<apex:image url="http://example.com/i.png?x=日本"/>
+LinkUniPathEmoji	page	<apex:outputLink value="http://example.com/a/😀b">go</apex:outputLink>
+LinkUniQueryEmoji	page	<apex:outputLink value="http://example.com/a?x=😀&amp;y=1">go</apex:outputLink>
+ImageUniPathEmoji	page	<apex:image url="http://example.com/a/😀b.png"/>
+ImageUniQueryEmoji	page	<apex:image url="http://example.com/i.png?x=😀"/>
+LinkUniPathMix	page	<apex:outputLink value="http://example.com/a/é€b">go</apex:outputLink>
+LinkUniQueryMix	page	<apex:outputLink value="http://example.com/a?x=é€&amp;y=1">go</apex:outputLink>
+ImageUniPathMix	page	<apex:image url="http://example.com/a/é€b.png"/>
+ImageUniQueryMix	page	<apex:image url="http://example.com/i.png?x=é€"/>
+LinkUniPathCyr	page	<apex:outputLink value="http://example.com/a/Жb">go</apex:outputLink>
+LinkUniQueryCyr	page	<apex:outputLink value="http://example.com/a?x=Ж&amp;y=1">go</apex:outputLink>
+ImageUniPathCyr	page	<apex:image url="http://example.com/a/Жb.png"/>
+ImageUniQueryCyr	page	<apex:image url="http://example.com/i.png?x=Ж"/>
+LinkUniPathNbsp	page	<apex:outputLink value="http://example.com/a/ b">go</apex:outputLink>
+LinkUniQueryNbsp	page	<apex:outputLink value="http://example.com/a?x= &amp;y=1">go</apex:outputLink>
+ImageUniPathNbsp	page	<apex:image url="http://example.com/a/ b.png"/>
+ImageUniQueryNbsp	page	<apex:image url="http://example.com/i.png?x= "/>
+LinkUniPathDash	page	<apex:outputLink value="http://example.com/a/–b">go</apex:outputLink>
+LinkUniQueryDash	page	<apex:outputLink value="http://example.com/a?x=–&amp;y=1">go</apex:outputLink>
+ImageUniPathDash	page	<apex:image url="http://example.com/a/–b.png"/>
+ImageUniQueryDash	page	<apex:image url="http://example.com/i.png?x=–"/>
+LinkUniFragment	page	<apex:outputLink value="http://example.com/a#€f">go</apex:outputLink>
+LinkUniFragmentQuery	page	<apex:outputLink value="http://example.com/a?q=1#€f">go</apex:outputLink>
+LinkUniRelative	page	<apex:outputLink value="/a/€?x=€">go</apex:outputLink>
+LinkUniExpr	page	<apex:outputLink value="{!'http://example.com/a?x=€'}">go</apex:outputLink>
+LinkUniNumRef	page	<apex:outputLink value="http://example.com/a?x=&#8364;">go</apex:outputLink>
+LinkUniHexRef	page	<apex:outputLink value="http://example.com/a/&#x20AC;?x=&#x20AC;">go</apex:outputLink>
+LinkUniParamValue	page	<apex:outputLink value="http://example.com/a"><apex:param name="k" value="€"/>go</apex:outputLink>
+LinkUniParamName	page	<apex:outputLink value="http://example.com/a"><apex:param name="€" value="v"/>go</apex:outputLink>
+LinkUniParamEmoji	page	<apex:outputLink value="http://example.com/a"><apex:param name="k" value="😀"/>go</apex:outputLink>
+LinkUniParamNumRef	page	<apex:outputLink value="http://example.com/a"><apex:param name="k" value="&#8364;"/>go</apex:outputLink>
+LinkUniSpace	page	<apex:outputLink value="http://example.com/a b?x=€ y">go</apex:outputLink>
+ImageUniFragment	page	<apex:image url="/a.png#€f"/>
+ImageUniExpr	page	<apex:image url="{!'http://example.com/i.png?x=€'}"/>
+ImageUniNumRef	page	<apex:image url="http://example.com/i.png?x=&#8364;"/>
+ImageUniSpace	page	<apex:image url="http://example.com/a b.png?x=€ y"/>
+ImageUniValue	page	<apex:image value="http://example.com/i.png?x=€"/>
+PageMsgStrengthEmpty	page	<apex:pageMessage summary="Sum" severity="info" strength=""/>
+PageMsgStrengthEmptyDet	page	<apex:pageMessage summary="Sum" detail="Det" title="Ttl" severity="error" strength=""/>
+PageMsgStrengthSpace	page	<apex:pageMessage summary="Sum" severity="info" strength=" "/>
+PageMsgStrengthLead	page	<apex:pageMessage summary="Sum" severity="info" strength=" 2"/>
+PageMsgStrengthTrail	page	<apex:pageMessage summary="Sum" severity="info" strength="2 "/>
+PageMsgStrengthPlus	page	<apex:pageMessage summary="Sum" severity="info" strength="+2"/>
+PageMsgStrengthZeroPad	page	<apex:pageMessage summary="Sum" severity="info" strength="02"/>
+PageMsgStrengthExprEmpty	page	<apex:pageMessage summary="Sum" severity="info" strength="{!''}"/>
+PageMsgStrengthExprText	page	<apex:pageMessage summary="Sum" severity="info" strength="{!'x'}"/>
+SeqPageMsgStrengthEmpty	ctl	<apex:pageMessage summary="Sum" severity="info" strength=""/><apex:form><apex:inputText value="{!s}"/></apex:form>
+IdXRepeat	ctl	<apex:repeat value="{!lst}" var="x" id="{!'a'}"></apex:repeat>
+IdXVariable	page	<apex:variable var="v" value="a" id="{!'a'}"/>
+IdXParam	page	<apex:outputLink value="http://example.com/a"><apex:param name="k" value="v" id="{!'a'}"/>go</apex:outputLink>
+IdXIncludeScript	page	<apex:includeScript value="/a.js" id="{!'a'}"/>
+IdXActionFunction	ctl	<apex:form><apex:actionFunction name="af" action="{!go}" id="{!'a'}"/></apex:form>
+IdXOutputPanel	page	<apex:outputPanel id="{!'a'}"/>
+IdXOutputPanelBody	page	<apex:outputPanel layout="block" id="{!'a'}">x</apex:outputPanel>
+IdXPanelGrid	page	<apex:panelGrid columns="1" id="{!'a'}"><apex:outputText value="x"/></apex:panelGrid>
+IdXPanelGroup	page	<apex:panelGroup id="{!'a'}">x</apex:panelGroup>
+IdXCommandButton	ctl	<apex:form><apex:commandButton value="b" action="{!go}" id="{!'a'}"/></apex:form>
+IdXCommandLink	ctl	<apex:form><apex:commandLink value="b" action="{!go}" id="{!'a'}"/></apex:form>
+IdXDataTable	ctl	<apex:dataTable value="{!lst}" var="x" id="{!'a'}"><apex:column value="{!x}"/></apex:dataTable>
+IdXPageBlockSection	page	<apex:pageBlock><apex:pageBlockSection id="{!'a'}"/></apex:pageBlock>
+IdXPageBlockButtons	page	<apex:form><apex:pageBlock><apex:pageBlockButtons id="{!'a'}"/></apex:pageBlock></apex:form>
+IdXPageBlockTable	ctl	<apex:pageBlock><apex:pageBlockTable value="{!lst}" var="x" id="{!'a'}"><apex:column value="{!x}"/></apex:pageBlockTable></apex:pageBlock>
+IdXInputHidden	ctl	<apex:form><apex:inputHidden value="{!s}" id="{!'a'}"/></apex:form>
+IdXInputTextarea	ctl	<apex:form><apex:inputTextarea value="{!s}" id="{!'a'}"/></apex:form>
+IdXSelectList	ctl	<apex:form><apex:selectList value="{!s}" size="1" id="{!'a'}"><apex:selectOption itemValue="a"/></apex:selectList></apex:form>
+IdXStylesheet	page	<apex:stylesheet value="/a.css" id="{!'a'}"/>
+IdXIframe	page	<apex:iframe src="http://example.com/" id="{!'a'}"/>
+IdXFacet	page	<apex:pageBlock><apex:facet name="header" id="{!'a'}">x</apex:facet></apex:pageBlock>
+IdXToolbar	page	<apex:toolbar id="{!'a'}"/>
+IdXTabPanel	page	<apex:tabPanel id="{!'a'}"><apex:tab label="t" name="n1">x</apex:tab></apex:tabPanel>
+IdXTab	page	<apex:tabPanel><apex:tab label="t" name="n1" id="{!'a'}">x</apex:tab></apex:tabPanel>
+IdXOutputField	ctl	<apex:form><apex:outputField value="{!acc.Name}" id="{!'a'}"/></apex:form>
+IdXDetail	ctl	<apex:detail subject="{!acc.Id}" id="{!'a'}"/>
+IdXPageMessages	page	<apex:pageMessages id="{!'a'}"/>
+IdXMessage	page	<apex:message for="x" id="{!'a'}"/>
+IdXActionPoller	ctl	<apex:form><apex:actionPoller action="{!go}" interval="60" enabled="false" id="{!'a'}"/></apex:form>
+IdXActionSupport	ctl	<apex:form><apex:inputText value="{!s}"><apex:actionSupport event="onchange" action="{!go}" id="{!'a'}"/></apex:inputText></apex:form>
+IdXSelectOptions	ctl	<apex:form><apex:selectList value="{!s}" size="1"><apex:selectOptions value="{!opts}" id="{!'a'}"/></apex:selectList></apex:form>
+IdXSelectRadio	ctl	<apex:form><apex:selectRadio value="{!s}" id="{!'a'}"><apex:selectOption itemValue="a"/></apex:selectRadio></apex:form>
+IdXInputCheckbox	ctl	<apex:form><apex:inputCheckbox value="{!b}" id="{!'a'}"/></apex:form>
+IdXOutputText	page	<apex:outputText value="t" id="{!'a'}"/>
+IdLRepeat	ctl	<apex:repeat value="{!lst}" var="x" id="lit1"></apex:repeat>
+IdLVariable	page	<apex:variable var="v" value="a" id="lit1"/>
+IdLParam	page	<apex:outputLink value="http://example.com/a"><apex:param name="k" value="v" id="lit1"/>go</apex:outputLink>
+IdLIncludeScript	page	<apex:includeScript value="/a.js" id="lit1"/>
+IdLActionFunction	ctl	<apex:form><apex:actionFunction name="af" action="{!go}" id="lit1"/></apex:form>
+IdLOutputPanel	page	<apex:outputPanel id="lit1"/>
+IdLPanelGrid	page	<apex:panelGrid columns="1" id="lit1"><apex:outputText value="x"/></apex:panelGrid>
+IdLCommandButton	ctl	<apex:form><apex:commandButton value="b" action="{!go}" id="lit1"/></apex:form>
+IdLDataTable	ctl	<apex:dataTable value="{!lst}" var="x" id="lit1"><apex:column value="{!x}"/></apex:dataTable>
+IdLInputHidden	ctl	<apex:form><apex:inputHidden value="{!s}" id="lit1"/></apex:form>
+IdLStylesheet	page	<apex:stylesheet value="/a.css" id="lit1"/>
+IdLIframe	page	<apex:iframe src="http://example.com/" id="lit1"/>
+IdLFacet	page	<apex:pageBlock><apex:facet name="header" id="lit1">x</apex:facet></apex:pageBlock>
+IdXRepeatVar	ctl	<apex:repeat value="{!lst}" var="x" id="{!s}"></apex:repeat>
+IdXRepeatMixed	ctl	<apex:repeat value="{!lst}" var="x" id="a{!s}"></apex:repeat>
+IdXOutputPanelVar	ctl	<apex:outputPanel id="{!s}"/>
+IdXOutputPanelMixed	ctl	<apex:outputPanel id="a{!s}"/>
+IdXOutputPanelTail	page	<apex:outputPanel id="a{!'b'}c"/>
+IdXVariableVar	ctl	<apex:variable var="v" value="a" id="{!s}"/>
+IdXParamVar	ctl	<apex:outputLink value="http://example.com/a"><apex:param name="k" value="v" id="{!s}"/>go</apex:outputLink>
+IdXIncludeScriptVar	ctl	<apex:includeScript value="/a.js" id="{!s}"/>
+IdXActionFunctionVar	ctl	<apex:form><apex:actionFunction name="af" action="{!go}" id="{!s}"/></apex:form>
+IdXDiv	ctl	<div id="{!s}">x</div>
+IdXSpan	page	<span id="{!'a'}">x</span>
+IdXOutputPanelHtml	page	<apex:outputPanel layout="block" style="x"><div id="{!'a'}">x</div></apex:outputPanel>
+IdXRepeatEmpty	ctl	<apex:repeat value="{!lst}" var="x" id=""></apex:repeat>
+IdXOutputPanelEmpty	page	<apex:outputPanel id=""/>
+IdLOutputPanelColon	page	<apex:outputPanel id="a:b"/>
+IdLRepeatDigit	ctl	<apex:repeat value="{!lst}" var="x" id="1a"></apex:repeat>
+IdLVariableSpace	page	<apex:variable var="v" value="a" id="a b"/>
+IdLOutputPanelDup	page	<apex:outputPanel id="d"/><apex:outputPanel id="d"/>
+LinkUniLow00	page	<apex:outputLink value="http://example.com/a/Āb">go</apex:outputLink>
+LinkUniLow20	page	<apex:outputLink value="http://example.com/a/Ġb">go</apex:outputLink>
+LinkUniLow22	page	<apex:outputLink value="http://example.com/a/Ģb">go</apex:outputLink>
+LinkUniLow23	page	<apex:outputLink value="http://example.com/a/ģb">go</apex:outputLink>
+LinkUniLow25	page	<apex:outputLink value="http://example.com/a/ĥb">go</apex:outputLink>
+LinkUniLow26	page	<apex:outputLink value="http://example.com/a/Ħb">go</apex:outputLink>
+LinkUniLow27	page	<apex:outputLink value="http://example.com/a/ħb">go</apex:outputLink>
+LinkUniLow2B	page	<apex:outputLink value="http://example.com/a/īb">go</apex:outputLink>
+LinkUniLow2C	page	<apex:outputLink value="http://example.com/a/Ĭb">go</apex:outputLink>
+LinkUniLow2D	page	<apex:outputLink value="http://example.com/a/ĭb">go</apex:outputLink>
+LinkUniLow2E	page	<apex:outputLink value="http://example.com/a/Įb">go</apex:outputLink>
+LinkUniLow2F	page	<apex:outputLink value="http://example.com/a/įb">go</apex:outputLink>
+LinkUniLow30	page	<apex:outputLink value="http://example.com/a/İb">go</apex:outputLink>
+LinkUniLow3B	page	<apex:outputLink value="http://example.com/a/Ļb">go</apex:outputLink>
+LinkUniLow3C	page	<apex:outputLink value="http://example.com/a/ļb">go</apex:outputLink>
+LinkUniLow3D	page	<apex:outputLink value="http://example.com/a/Ľb">go</apex:outputLink>
+LinkUniLow3E	page	<apex:outputLink value="http://example.com/a/ľb">go</apex:outputLink>
+LinkUniLow3F	page	<apex:outputLink value="http://example.com/a/Ŀb">go</apex:outputLink>
+LinkUniLow41	page	<apex:outputLink value="http://example.com/a/Łb">go</apex:outputLink>
+LinkUniLow5C	page	<apex:outputLink value="http://example.com/a/Ŝb">go</apex:outputLink>
+LinkUniLow5F	page	<apex:outputLink value="http://example.com/a/şb">go</apex:outputLink>
+LinkUniLow61	page	<apex:outputLink value="http://example.com/a/šb">go</apex:outputLink>
+LinkUniLow7E	page	<apex:outputLink value="http://example.com/a/žb">go</apex:outputLink>
+LinkUniLow7F	page	<apex:outputLink value="http://example.com/a/ſb">go</apex:outputLink>
+LinkUniLow80	page	<apex:outputLink value="http://example.com/a/ƀb">go</apex:outputLink>
+LinkUniLowFF	page	<apex:outputLink value="http://example.com/a/ǿb">go</apex:outputLink>
+LinkUniLowQuery20	page	<apex:outputLink value="http://example.com/a?x=Ġb">go</apex:outputLink>
+LinkUniLowQuery26	page	<apex:outputLink value="http://example.com/a?x=Ħb">go</apex:outputLink>
+LinkUniLowQuery41	page	<apex:outputLink value="http://example.com/a?x=Łb">go</apex:outputLink>
+LinkUniLowQuery25	page	<apex:outputLink value="http://example.com/a?x=ĥb">go</apex:outputLink>
+LinkUniLowQuery3F	page	<apex:outputLink value="http://example.com/a?x=Ŀb">go</apex:outputLink>
+LinkUniLowQuery80	page	<apex:outputLink value="http://example.com/a?x=ƀb">go</apex:outputLink>
+ImageUniLow20	page	<apex:image url="http://example.com/a/Ġb.png"/>
+ImageUniLowQuery20	page	<apex:image url="http://example.com/i.png?x=Ġb"/>
+ImageUniLow41	page	<apex:image url="http://example.com/a/Łb.png"/>
+ImageUniLowQuery41	page	<apex:image url="http://example.com/i.png?x=Łb"/>
+ImageUniLow3F	page	<apex:image url="http://example.com/a/Ŀb.png"/>
+ImageUniLowQuery3F	page	<apex:image url="http://example.com/i.png?x=Ŀb"/>
+LinkUniQueryEmojiPair	page	<apex:outputLink value="http://example.com/a?x=😀€">go</apex:outputLink>
+LinkUniQueryEmojiTwo	page	<apex:outputLink value="http://example.com/a?x=😀😀">go</apex:outputLink>
+LinkUniPathEmojiTwo	page	<apex:outputLink value="http://example.com/a/😀😀">go</apex:outputLink>
+LinkPunctPath	page	<apex:outputLink value="http://example.com/a,b=c;d">go</apex:outputLink>
+LinkUniParamSpace	page	<apex:outputLink value="http://example.com/a"><apex:param name="k" value="€ a"/>go</apex:outputLink>
+IdEmptyOutputLabel	page	<apex:outputLabel value="L" id=""/>
+IdEmptyOutputText	page	<apex:outputText value="t" id=""/>
+IdEmptyForm	page	<apex:form id=""><apex:outputText value="t"/></apex:form>
+IdEmptyInputText	page	<apex:form><apex:inputText id=""/></apex:form>
+IdEmptyPageBlock	page	<apex:pageBlock id=""/>
+IdEmptyImage	page	<apex:image url="/a.png" id=""/>
+IdEmptyOutputLink	page	<apex:outputLink value="/a" id="">go</apex:outputLink>
+IdEmptyCommandButton	page	<apex:form><apex:commandButton value="b" id=""/></apex:form>
+IdEmptyVariable	page	<apex:variable var="v" value="a" id=""/>
+IdEmptyPageMessage	page	<apex:pageMessage summary="s" severity="info" id=""/>
+IdEmptySectionHeader	page	<apex:sectionHeader title="t" id=""/>
+IdEmptyDiv	page	<div id="">x</div>
+IdEmptyActionFunction	ctl	<apex:form><apex:actionFunction name="af" action="{!go}" id=""/></apex:form>
+IdEmptyRepeat	ctl	<apex:repeat value="{!lst}" var="x" id=""></apex:repeat>
+PageMsgStrengthExprVar	ctl	<apex:pageMessage summary="Sum" severity="info" strength="{!s}"/>
+PageMsgStrengthExprBool	ctl	<apex:pageMessage summary="Sum" severity="info" strength="{!b}"/>
+PageMsgStrengthExprNumText	page	<apex:pageMessage summary="Sum" severity="info" strength="{!'4'}"/>
+PageMsgStrengthExprSum	page	<apex:pageMessage summary="Sum" severity="info" strength="{!1+1}"/>
+PageMsgStrengthExprNull	page	<apex:pageMessage summary="Sum" severity="info" strength="{!null}"/>
+HidNoId	post	<apex:form id="f1"><apex:inputHidden value="{!hid}"/><apex:commandButton value="Save" action="{!save}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+HidId	post	<apex:form id="f1"><apex:inputHidden value="{!hid}" id="h1"/><apex:commandButton value="Save" action="{!save}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+HidNoFormId	post	<apex:form><apex:inputHidden value="{!hid}"/><apex:commandButton value="Save" action="{!save}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+HidIdNoFormId	post	<apex:form><apex:inputHidden value="{!hid}" id="h1"/><apex:commandButton value="Save" action="{!save}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+HidUnbound	post	<apex:form id="f1"><apex:inputHidden/><apex:commandButton value="Save" action="{!save}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+HidTwo	post	<apex:form id="f1"><apex:inputHidden value="{!hid}"/><apex:inputText value="{!s}"/><apex:inputHidden value="{!mode}"/><apex:commandButton value="Save" action="{!save}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+RepText	post	<apex:form id="f1"><apex:repeat value="{!rows}" var="r"><apex:inputText value="{!r.v}"/></apex:repeat><apex:commandButton value="Save" action="{!save}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+RepTextId	post	<apex:form id="f1"><apex:repeat value="{!rows}" var="r"><apex:inputText value="{!r.v}" id="t1"/></apex:repeat><apex:commandButton value="Save" action="{!save}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+RepTextRepId	post	<apex:form id="f1"><apex:repeat value="{!rows}" var="r" id="rp"><apex:inputText value="{!r.v}"/></apex:repeat><apex:commandButton value="Save" action="{!save}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+RepTextMode	post	<apex:form id="f1"><apex:repeat value="{!rows}" var="r"><apex:inputText value="{!mode}"/></apex:repeat><apex:commandButton value="Save" action="{!save}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+RepTextUnbound	post	<apex:form id="f1"><apex:repeat value="{!rows}" var="r"><apex:inputText/></apex:repeat><apex:commandButton value="Save" action="{!save}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+RepCheck	post	<apex:form id="f1"><apex:repeat value="{!rows}" var="r"><apex:inputCheckbox value="{!r.c}"/></apex:repeat><apex:commandButton value="Save" action="{!save}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+RepSelect	post	<apex:form id="f1"><apex:repeat value="{!rows}" var="r"><apex:selectList value="{!r.sel}" size="1"><apex:selectOptions value="{!opts}"/></apex:selectList></apex:repeat><apex:commandButton value="Save" action="{!save}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+RepArea	post	<apex:form id="f1"><apex:repeat value="{!rows}" var="r"><apex:inputTextarea value="{!r.v}"/></apex:repeat><apex:commandButton value="Save" action="{!save}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+RepSecret	post	<apex:form id="f1"><apex:repeat value="{!rows}" var="r"><apex:inputSecret value="{!r.v}"/></apex:repeat><apex:commandButton value="Save" action="{!save}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+RepHidden	post	<apex:form id="f1"><apex:repeat value="{!rows}" var="r"><apex:inputHidden value="{!r.v}"/></apex:repeat><apex:commandButton value="Save" action="{!save}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+RepTwoInputs	post	<apex:form id="f1"><apex:repeat value="{!rows}" var="r"><apex:inputText value="{!r.v}"/><apex:inputCheckbox value="{!r.c}"/></apex:repeat><apex:commandButton value="Save" action="{!save}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+RepNested	post	<apex:form id="f1"><apex:repeat value="{!rows}" var="r"><apex:outputPanel><apex:inputText value="{!r.v}"/></apex:outputPanel></apex:repeat><apex:commandButton value="Save" action="{!save}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+PstText	post	<apex:form id="f1"><apex:inputText value="{!s}"/><apex:commandButton value="Save" action="{!save}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+PstTextId	post	<apex:form id="f1"><apex:inputText value="{!s}" id="i1"/><apex:commandButton value="Save" action="{!save}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+PstArea	post	<apex:form id="f1"><apex:inputTextarea value="{!s}"/><apex:commandButton value="Save" action="{!save}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+PstSecret	post	<apex:form id="f1"><apex:inputSecret value="{!s}"/><apex:commandButton value="Save" action="{!save}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+PstCheck	post	<apex:form id="f1"><apex:inputCheckbox value="{!b}"/><apex:commandButton value="Save" action="{!save}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+PstSelect	post	<apex:form id="f1"><apex:selectList value="{!sel}" size="1"><apex:selectOptions value="{!opts}"/></apex:selectList><apex:commandButton value="Save" action="{!save}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+PstTextTwoForms	post	<apex:form id="f1"><apex:inputText value="{!s}" id="q"/></apex:form><apex:form id="f2"><apex:inputText value="{!t}" id="q"/><apex:commandButton value="Save" action="{!save}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+PageMsgStrengthExprGetter	ctl	<apex:pageMessage summary="Sum" severity="info" strength="{!flag2}"/>
+PageMsgStrengthExprField	ctl	<apex:pageMessage summary="Sum" severity="info" strength="{!fld}"/>
+PageMsgStrengthEmptyNoRender	page	<apex:pageMessage summary="Sum" severity="info" strength="" rendered="false"/>
+PageMsgStrengthEmptyInPanel	page	<apex:outputPanel rendered="false"><apex:pageMessage summary="Sum" severity="info" strength=""/></apex:outputPanel>
+IdEmptyFacet	page	<apex:pageBlock><apex:facet name="header" id="">x</apex:facet></apex:pageBlock>
+IdEmptySpan	page	<span id="">x</span>
+IdEmptyP	page	<p id="">x</p>
+IdEmptyAnchor	page	<a id="" href="#">x</a>
+IdEmptyTable	page	<table id=""><tr><td>x</td></tr></table>
+IdEmptyInputHtml	page	<input id="" type="text"/>
+IdPageEmpty	raw	<apex:page id="" showHeader="false"><div data-case="IdPageEmpty">x</div></apex:page>
+IdPageLiteral	raw	<apex:page id="pg1" showHeader="false"><div data-case="IdPageLiteral"><apex:outputText value="t" id="o1"/></div></apex:page>
+IdPageExpr	raw	<apex:page id="{!'a'}" showHeader="false"><div data-case="IdPageExpr">x</div></apex:page>
+PostRerenderSecHdr	post	<apex:form id="f1"><apex:commandButton value="Go" rerender="op" id="btn"/><apex:outputPanel id="op"><apex:sectionHeader title="Ttl"/></apex:outputPanel></apex:form>
+SHFBlockSection	page	<apex:pageBlock><apex:pageBlockSection><apex:sectionHeader title="Ttl"/></apex:pageBlockSection></apex:pageBlock>
+SHCForm	page	<apex:form><apex:outputText value="x"/></apex:form>
+SHCFormBlock	page	<apex:form><apex:pageBlock title="PB"><apex:outputText value="x"/></apex:pageBlock></apex:form>
+PageMsgStrengthExprConcat	page	<apex:pageMessage summary="Sum" severity="info" strength="{!'1' &amp; '2'}"/>
+RepCheckId	post	<apex:form id="f1"><apex:repeat value="{!rows}" var="r"><apex:inputCheckbox value="{!r.c}" id="c1"/></apex:repeat><apex:commandButton value="Save" action="{!save}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+RepSelectId	post	<apex:form id="f1"><apex:repeat value="{!rows}" var="r"><apex:selectList value="{!r.sel}" size="1" id="s1"><apex:selectOptions value="{!opts}"/></apex:selectList></apex:repeat><apex:commandButton value="Save" action="{!save}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+RepHiddenId	post	<apex:form id="f1"><apex:repeat value="{!rows}" var="r"><apex:inputHidden value="{!r.v}" id="h1"/></apex:repeat><apex:commandButton value="Save" action="{!save}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+RepTextModeId	post	<apex:form id="f1"><apex:repeat value="{!rows}" var="r"><apex:inputText value="{!mode}" id="m1"/></apex:repeat><apex:commandButton value="Save" action="{!save}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+RepHiddenMode	post	<apex:form id="f1"><apex:repeat value="{!rows}" var="r"><apex:inputHidden value="{!mode}"/></apex:repeat><apex:commandButton value="Save" action="{!save}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+RepConText	post	<apex:form id="f1"><apex:repeat value="{!cons}" var="c"><apex:inputText value="{!c.LastName}"/></apex:repeat><apex:commandButton value="Save" action="{!save2}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+RepConTextId	post	<apex:form id="f1"><apex:repeat value="{!cons}" var="c"><apex:inputText value="{!c.LastName}" id="t1"/></apex:repeat><apex:commandButton value="Save" action="{!save2}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+RepConCheck	post	<apex:form id="f1"><apex:repeat value="{!cons}" var="c"><apex:inputCheckbox value="{!c.DoNotCall}"/></apex:repeat><apex:commandButton value="Save" action="{!save2}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+RepConCheckId	post	<apex:form id="f1"><apex:repeat value="{!cons}" var="c"><apex:inputCheckbox value="{!c.DoNotCall}" id="c1"/></apex:repeat><apex:commandButton value="Save" action="{!save2}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+RepConSelect	post	<apex:form id="f1"><apex:repeat value="{!cons}" var="c"><apex:selectList value="{!c.LeadSource}" size="1"><apex:selectOptions value="{!opts}"/></apex:selectList></apex:repeat><apex:commandButton value="Save" action="{!save2}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+RepConSelectId	post	<apex:form id="f1"><apex:repeat value="{!cons}" var="c"><apex:selectList value="{!c.LeadSource}" size="1" id="s1"><apex:selectOptions value="{!opts}"/></apex:selectList></apex:repeat><apex:commandButton value="Save" action="{!save2}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+RepConHidden	post	<apex:form id="f1"><apex:repeat value="{!cons}" var="c"><apex:inputHidden value="{!c.Description}"/></apex:repeat><apex:commandButton value="Save" action="{!save2}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+RepConHiddenId	post	<apex:form id="f1"><apex:repeat value="{!cons}" var="c"><apex:inputHidden value="{!c.Description}" id="h1"/></apex:repeat><apex:commandButton value="Save" action="{!save2}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+RepConAll	post	<apex:form id="f1"><apex:repeat value="{!cons}" var="c"><apex:inputText value="{!c.LastName}"/><apex:inputCheckbox value="{!c.DoNotCall}"/><apex:selectList value="{!c.LeadSource}" size="1"><apex:selectOptions value="{!opts}"/></apex:selectList><apex:inputHidden value="{!c.Description}"/></apex:repeat><apex:commandButton value="Save" action="{!save2}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+SHFBlockSectionOne	page	<apex:pageBlock><apex:pageBlockSection columns="1"><apex:sectionHeader title="Ttl"/></apex:pageBlockSection></apex:pageBlock>
+SHFBlockSectionTwo	page	<apex:pageBlock><apex:pageBlockSection><apex:sectionHeader title="Ttl"/><apex:outputText value="x"/></apex:pageBlockSection></apex:pageBlock>
+IdLInputHiddenLit	page	<apex:form><apex:inputHidden value="abc" id="lit1"/></apex:form>
+IdLInputHiddenNoId	page	<apex:form><apex:inputHidden value="abc"/></apex:form>
+IdLInputHiddenQuote	page	<apex:form><apex:inputHidden value="a&quot;b&lt;c" id="lit1"/></apex:form>
+IframeNoId	page	<apex:iframe src="http://example.com/"/>
+IframeAttrs	page	<apex:iframe src="http://example.com/" height="100px" width="50%" scrolling="true" frameborder="true" title="T" id="f2"/>
+IframeAmp	page	<apex:iframe src="http://example.com/a?x=1&amp;y=2"/>
+IncScriptNoId	page	<apex:includeScript value="/b.js"/>
+ExprFieldOut	ctl	<apex:outputText value="{!fld}"/>
+ExprFieldStrOut	ctl	<apex:outputText value="{!fs}"/>
+ExprFieldInput	ctl	<apex:form><apex:inputText value="{!fs}"/></apex:form>
+ExprFieldRendered	ctl	<apex:outputText value="x" rendered="{!fld}"/>
+ConcatOutText	page	<apex:outputText value="{!'1' &amp; '2'}"/>
+ConcatSummary	page	<apex:pageMessage summary="{!'1' &amp; '2'}" severity="info" strength="1"/>
+ConcatStrengthNum	page	<apex:pageMessage summary="Sum" severity="info" strength="{!1 &amp; 2}"/>
+ConcatStrengthIf	page	<apex:pageMessage summary="Sum" severity="info" strength="{!IF(true &amp;&amp; true, 1, 2)}"/>
+ConcatStrengthValue	page	<apex:pageMessage summary="Sum" severity="info" strength="{!VALUE('1' &amp; '2')}"/>
+ConcatGridColumns	page	<apex:panelGrid columns="{!'1' &amp; ''}"><apex:outputText value="x"/></apex:panelGrid>
+ConcatRendered	page	<apex:outputText value="x" rendered="{!'a' &amp; 'b' == 'ab'}"/>
+LinkUniUrlforPath	page	<apex:outputLink value="{!URLFOR('/a/€b')}">go</apex:outputLink>
+LinkUniUrlforAbs	page	<apex:outputLink value="{!URLFOR('http://example.com/a/€b?x=€')}">go</apex:outputLink>
+LinkUniUrlforQuery	page	<apex:outputLink value="{!URLFOR('/a', null, [x='€'])}">go</apex:outputLink>
+LinkUniResource	res	<apex:outputLink value="{!URLFOR($Resource.vfr4res, 'a/€b.png')}">go</apex:outputLink>
+LinkUniResourceRoot	res	<apex:outputLink value="{!$Resource.vfr4res}">go</apex:outputLink>
+LinkUniResourceEmoji	res	<apex:outputLink value="{!URLFOR($Resource.vfr4res, '😀.png')}">go</apex:outputLink>
+ImageUniResource	res	<apex:image value="{!URLFOR($Resource.vfr4res, '€.png')}"/>
+ImageUniResourceUrl	res	<apex:image url="{!URLFOR($Resource.vfr4res, 'a/Ġb.png')}"/>
+ImageUniUrlfor	page	<apex:image value="{!URLFOR('/i/€.png')}"/>
+ImageUniUrlforQuery	page	<apex:image url="{!URLFOR('/i.png', null, [x='€'])}"/>
+IdEmptyLi	page	<ul><li id="">x</li></ul>
+IdEmptyTd	page	<table><tr><td id="">x</td></tr></table>
+IdEmptyFormHtml	page	<form id="">x</form>
+IdEmptyImg	page	<img id="" src="/a.png"/>
+IdEmptyLabel	page	<label id="">x</label>
+IdEmptyH1	page	<h1 id="">x</h1>
+IdEmptyButtonHtml	page	<button id="" type="button">x</button>
+IdEmptySelectHtml	page	<select id=""><option>a</option></select>
+IdEmptyTextareaHtml	page	<textarea id="">x</textarea>
+IncIdChild	raw	<apex:page id="pgc" showHeader="false"><div data-case="IncIdChild"><apex:outputText value="c" id="o2"/><apex:outputPanel/></div></apex:page>
+IncNoIdChild	raw	<apex:page showHeader="false"><div data-case="IncNoIdChild"><apex:outputText value="c" id="o2"/><apex:outputPanel/></div></apex:page>
+IncParentNoId	raw	<apex:page showHeader="false"><div data-case="IncParentNoId"><apex:outputText value="p" id="o1"/><apex:include pageName="IncIdChild"/><apex:outputPanel/></div></apex:page>
+IncParentId	raw	<apex:page id="pgp" showHeader="false"><div data-case="IncParentId"><apex:outputText value="p" id="o1"/><apex:include pageName="IncIdChild"/><apex:outputPanel/></div></apex:page>
+IncParentIdNoIdChild	raw	<apex:page id="pgp" showHeader="false"><div data-case="IncParentIdNoIdChild"><apex:outputText value="p" id="o1"/><apex:include pageName="IncNoIdChild"/><apex:outputPanel/></div></apex:page>
+IncIncludeId	raw	<apex:page showHeader="false"><div data-case="IncIncludeId"><apex:include pageName="IncIdChild" id="inc1"/></div></apex:page>
+ConcatRawOutText	page	<apex:outputText value="{!'1' & '2'}"/>
+ConcatRawStrength	page	<apex:pageMessage summary="Sum" severity="info" strength="{!'1' & '2'}"/>
+ConcatRawAnd	page	<apex:outputText value="x" rendered="{!true && true}"/>
+ConcatLtOperator	page	<apex:outputText value="x" rendered="{!1 &lt; 2}"/>
+ConcatGtOperator	page	<apex:outputText value="x" rendered="{!2 &gt; 1}"/>
+ConcatAmpInString	page	<apex:outputText value="{!'a &amp; b'}"/>
+ConcatAmpEntityInText	page	<apex:outputText value="a &amp; {!'b'}"/>
+IdLInputHiddenGetter	ctl	<apex:form><apex:inputHidden value="{!flag2}" id="lit1"/></apex:form>
+IdLInputTextGetter	ctl	<apex:form><apex:inputText value="{!flag2}" id="lit1"/></apex:form>
+IdLInputHiddenNoIdNull	ctl	<apex:form><apex:inputHidden value="{!s}"/></apex:form>
+RepConCheckEmail	post	<apex:form id="f1"><apex:repeat value="{!cons}" var="c"><apex:inputCheckbox value="{!c.HasOptedOutOfEmail}"/></apex:repeat><apex:commandButton value="Save" action="{!save2}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+RepConCheckEmailId	post	<apex:form id="f1"><apex:repeat value="{!cons}" var="c"><apex:inputCheckbox value="{!c.HasOptedOutOfEmail}" id="c1"/></apex:repeat><apex:commandButton value="Save" action="{!save2}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>
+RepNestedRows	post	<apex:form id="f1"><apex:repeat value="{!rows}" var="r"><apex:repeat value="{!cons}" var="c"><apex:inputText value="{!c.LastName}"/></apex:repeat><apex:inputText value="{!r.v}"/></apex:repeat><apex:commandButton value="Save" action="{!save2}" id="btn"/><apex:outputText value="{!msg}" id="msg"/></apex:form>

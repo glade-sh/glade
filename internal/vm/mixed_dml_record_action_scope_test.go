@@ -16,6 +16,7 @@ func TestMixedDMLRecordActionAnonymousScopeAndTestContextRoutes(t *testing.T) {
 			for _, operation := range []string{"lock", "unlock", "emptyRecycleBin"} {
 				for _, order := range []string{"setup_first", "record_action_first"} {
 					t.Run(api+"/"+context+"/"+operation+"/"+order, func(t *testing.T) {
+						t.Parallel()
 						machine := mixedDMLRouteVM(api)
 						if context == "test" {
 							machine.EnableTestContext()
@@ -64,6 +65,7 @@ func TestMixedDMLRecordActionAnonymousAndTestPublicDispatcherRoutes(t *testing.T
 				for _, shape := range []string{"scalar", "list", "id", "ids"} {
 					for _, mode := range []string{"default", "true", "false"} {
 						t.Run(api+"/"+context+"/"+action+"/"+shape+"/"+mode, func(t *testing.T) {
+							t.Parallel()
 							machine := mixedDMLRouteVM(api)
 							seed, err := CompileAnonymousWithOptions(`Account live=[SELECT Id FROM Account LIMIT 1]; Approval.lock(live); Account deleted=new Account(Name='Deleted'); insert deleted; delete deleted;`, CompileOptions{APIVersion: api})
 							if err != nil {
@@ -120,6 +122,7 @@ func TestMixedDMLCapturedOperationsRemainGuardedAnonymousAndTestRoutes(t *testin
 		for _, context := range []string{"anonymous", "test"} {
 			for _, operation := range []string{"insert", "update", "upsert", "delete", "undelete", "merge"} {
 				t.Run(api+"/"+context+"/"+operation, func(t *testing.T) {
+					t.Parallel()
 					machine := mixedDMLRouteVM(api)
 					if context == "test" {
 						machine.EnableTestContext()

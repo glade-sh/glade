@@ -703,7 +703,7 @@ try {
 		when Npi {
 		}
 		when else {
-			throw new AuraHandledException('Unsupported object type.');
+			throw new TypeException('Unsupported object type.');
 		}
 	}
 } catch (Exception e) {
@@ -732,7 +732,7 @@ try {
 		when Npi {
 		}
 		when else {
-			throw new AuraHandledException('Unsupported object type.');
+			throw new TypeException('Unsupported object type.');
 		}
 	}
 } catch (Exception e) {
@@ -801,7 +801,11 @@ ConnectApi.AiGroundingLibrary.setTestGetLibrary('local-library', output);
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Execute(program, nil); err != nil {
+	// Native rows call.*.setTest* (APIs 62/67): setTest registers inside an
+	// Apex test; output classes are constructed only there.
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -810,14 +814,18 @@ func TestExecGeneratedPlatformConstructsPassiveValueObjectWithProperties(t *test
 	program, err := CompileAnonymous(`
 ConnectApi.QuestionAndAnswersSuggestions suggestions =
 	new ConnectApi.QuestionAndAnswersSuggestions();
-System.assertEquals(0, suggestions.articles.size());
-suggestions.questions = new List<ConnectApi.FeedElement>{ new ConnectApi.FeedElement() };
+System.assertEquals(null, suggestions.articles);
+suggestions.questions = new List<ConnectApi.FeedElement>{ new ConnectApi.FeedItem() };
 System.assertEquals(1, suggestions.questions.size());
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Execute(program, nil); err != nil {
+	// Native TD67/TD62 dumps: a new output object has null properties, and
+	// output classes are constructed only inside Apex tests.
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -925,8 +933,7 @@ func writeDataCategoryVMTestFile(t *testing.T, path, content string) {
 }
 
 func TestGeneratedPlatformFallbackRejectsUnclassifiedStaticMethod(t *testing.T) {
-	original := generatedPlatformMethods()
-	generatedPlatformMethodIndex = map[string]map[string][]Method{
+	generatedPlatformMethodIndexOverride = map[string]map[string][]Method{
 		"generated.overload": {
 			"pick": {
 				{
@@ -946,7 +953,7 @@ func TestGeneratedPlatformFallbackRejectsUnclassifiedStaticMethod(t *testing.T) 
 			},
 		},
 	}
-	defer func() { generatedPlatformMethodIndex = original }()
+	defer func() { generatedPlatformMethodIndexOverride = nil }()
 
 	machine := New(nil)
 	for _, args := range [][]Value{{Bool(true)}, {Int(1)}} {
@@ -1008,7 +1015,9 @@ System.assertEquals(false, rows.hasNext());
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Execute(program, nil); err != nil {
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -7946,10 +7955,13 @@ func TestTypeTextGlobalDescribePreservesBaseCountsAndOtherDescribeMaps(t *testin
 	machine.SetOrg(&org)
 	program, err := CompileAnonymous(`
 Map<String, Schema.SObjectType> globalMap = Schema.getGlobalDescribe();
-System.assertEquals(2, globalMap.size());
-System.assertEquals(2, globalMap.values().size());
-System.assertEquals(1, globalMap.keySet().size());
+Integer ownKeys = 0;
+for (String key : globalMap.keySet()) { if (!key.endsWith('changeevent')) { ownKeys++; } }
+System.assertEquals(1, ownKeys);
+System.assertEquals(globalMap.size(), globalMap.values().size());
+System.assertEquals(globalMap.size(), globalMap.keySet().size());
 System.assert(globalMap.keySet().contains('widget__c'));
+System.assert(globalMap.keySet().contains('widget__changeevent'));
 System.assert(!globalMap.keySet().contains('Widget__c'));
 System.assert(globalMap.containsKey('WIDGET__C'));
 System.assertNotEquals(null, globalMap.get('WIDGET__C'));

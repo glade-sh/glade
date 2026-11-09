@@ -117,6 +117,9 @@ func TestFlowAsyncPathContinuationNativeConformanceAnonymousAndIsTestAPIRoutes(t
 			if err != nil {
 				t.Fatal(err)
 			}
+			// flow_async_capture_assignment/ASSIGNMENT-RUN.txt: the recapture reproduced
+			// every retained row only with AsyncPathFixture assigned.
+			writeFile(t, filepath.Join(root, "glade.yml"), "test:\n  permissionSets: [AsyncPathFixture]\n")
 			index := loadTestIndex(t, root)
 			selected := Discover(index, Options{SelectedClasses: []string{"AsyncContinuationProbeTest"}})
 			if len(selected) != 2 {
@@ -124,6 +127,9 @@ func TestFlowAsyncPathContinuationNativeConformanceAnonymousAndIsTestAPIRoutes(t
 			}
 			org := orgFromIndex(index)
 			org.APIVersion = api
+			if err := applyConfiguredTestPermissions(&org, loadProjectForTest(t, root)); err != nil {
+				t.Fatal(err)
+			}
 			runtime, err := CompileProjectRuntimeForRequestWithSourceDigests(index, nil)
 			if err != nil {
 				t.Fatal(err)

@@ -1,13 +1,16 @@
 package vm
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/storage"
 )
 
-// WITH SECURITY_ENFORCED has no native hierarchy-setting row. The boundary
-// policy must leave its record-sharing behavior at the pre-existing baseline.
+// WITH SECURITY_ENFORCED on a hierarchy setting for an ungranted Standard User
+// raises System.QueryException through API 62, with sharing and without, static
+// and dynamic (native rows hierarchy_setting_runas_secenforced). API 67 rejects
+// the clause.
 func TestHierarchyQuerySecurityEnforcedKeepsBaselineSharing(t *testing.T) {
 	for _, api := range []string{"62.0", "67.0"} {
 		for _, sharing := range []string{"with sharing", "without sharing"} {
@@ -45,15 +48,9 @@ func TestHierarchyQuerySecurityEnforcedKeepsBaselineSharing(t *testing.T) {
 						}
 						return
 					}
-					if err != nil {
-						t.Fatal(err)
-					}
-					wantRows := 1
-					if sharing == "with sharing" {
-						wantRows = 0 // baseline record sharing hides the org row; no native row changes it
-					}
-					if len(got.List) != wantRows {
-						t.Fatalf("rows=%d want %d", len(got.List), wantRows)
+					var thrown *apexThrowError
+					if !errors.As(err, &thrown) || exceptionQualifiedTypeName(thrown.value.Type) != "System.QueryException" {
+						t.Fatalf("native System.QueryException; got=%s error=%v", got.String(), err)
 					}
 				})
 			}

@@ -1,0 +1,7 @@
+source_api	phase	route	observation
+62.0	setting_enabled	anonymous	{"absent":false,"account":true,"empty_namespace":true,"null_namespace":true,"qualified":true,"schema_namespace":false,"unqualified":true}
+67.0	setting_enabled	anonymous	{"absent":false,"account":true,"empty_namespace":true,"null_namespace":true,"qualified":true,"schema_namespace":false,"unqualified":true}
+62.0	setting_disabled	anonymous	{"absent":false,"account":true,"empty_namespace":false,"null_namespace":false,"qualified":false,"schema_namespace":false,"unqualified":false}
+67.0	setting_disabled	anonymous	{"absent":false,"account":true,"empty_namespace":false,"null_namespace":false,"qualified":false,"schema_namespace":false,"unqualified":false}
+62.0	same_org_setting_off	anonymous	{"absent":false,"account":true,"empty_namespace":false,"null_namespace":false,"qualified":false,"schema_namespace":false,"unqualified":false}
+67.0	same_org_setting_off	anonymous	{"absent":false,"account":true,"empty_namespace":false,"null_namespace":false,"qualified":false,"schema_namespace":false,"unqualified":false}

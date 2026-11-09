@@ -252,7 +252,7 @@ func TestVisualforceExpressionContractFamily(t *testing.T) {
 				t.Fatalf("EvaluateExpression(%q) = %q, %v; want %q, nil", tc.expr, got, err, tc.want)
 			}
 		}
-		tree, err := ParseMarkupTree(`<apex:page><apex:outputText value="{!nullable &lt; 1}"/></apex:page>`)
+		tree, err := ParseMarkupTree(`<apex:page><apex:outputText value="{!nullable < 1}"/></apex:page>`)
 		if err != nil {
 			t.Fatal(err)
 		}

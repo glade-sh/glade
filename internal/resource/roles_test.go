@@ -34,7 +34,7 @@ func TestProjectRoleMetadataHydration(t *testing.T) {
 	for _, r := range org.Objects["UserRole"].Records {
 		byName[r.Fields["DeveloperName"].String] = r
 	}
-	if len(byName) != 3 || byName["AChild"].Fields["Name"].String != "Child Label" || byName["ZParent"].Fields["Name"].String != "Parent Label" || byName["AChild"].Fields["ParentRoleId"].ID != byName["ZParent"].ID {
+	if len(byName) != len(seed.Objects["UserRole"].Records)+2 || byName["AChild"].Fields["Name"].String != "Child Label" || byName["ZParent"].Fields["Name"].String != "Parent Label" || byName["AChild"].Fields["ParentRoleId"].ID != byName["ZParent"].ID {
 		t.Fatalf("source hierarchy: %+v", byName)
 	}
 	if byName["ZParent"].Fields["ParentRoleId"].Kind != storage.ValueNull {
@@ -99,7 +99,7 @@ func TestProjectRoleMetadataResolvesExistingParentAndPreservesIdentity(t *testin
 	if err := ApplyProjectRoles(&org, p); err != nil {
 		t.Fatal(err)
 	}
-	if org.Objects["UserRole"].Records[child.ID].Fields["Name"].String != "Renamed Label" || len(org.Objects["UserRole"].Records) != 2 {
+	if org.Objects["UserRole"].Records[child.ID].Fields["Name"].String != "Renamed Label" || len(org.Objects["UserRole"].Records) != 19 {
 		t.Fatal("label update lost developer identity")
 	}
 }

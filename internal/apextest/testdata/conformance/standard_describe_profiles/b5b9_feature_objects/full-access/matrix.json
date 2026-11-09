@@ -1,0 +1,1022 @@
+[
+  {
+    "profile": "gift",
+    "api": "62.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcDtTm",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "gift",
+    "api": "62.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcError",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "gift",
+    "api": "62.0",
+    "object": "GiftCommitment",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "gift",
+    "api": "62.0",
+    "object": "GiftTransaction",
+    "field": "GenerationalCohort",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "gift",
+    "api": "62.0",
+    "object": "GiftTransaction",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "gift",
+    "api": "62.0",
+    "object": "GiftTransaction",
+    "field": "TaxDeductionAmount",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "gift",
+    "api": "63.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcDtTm",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "gift",
+    "api": "63.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcError",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "gift",
+    "api": "63.0",
+    "object": "GiftCommitment",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "gift",
+    "api": "63.0",
+    "object": "GiftTransaction",
+    "field": "GenerationalCohort",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "gift",
+    "api": "63.0",
+    "object": "GiftTransaction",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "gift",
+    "api": "63.0",
+    "object": "GiftTransaction",
+    "field": "TaxDeductionAmount",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": false
+  },
+  {
+    "profile": "gift",
+    "api": "64.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcDtTm",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "gift",
+    "api": "64.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcError",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "gift",
+    "api": "64.0",
+    "object": "GiftCommitment",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "gift",
+    "api": "64.0",
+    "object": "GiftTransaction",
+    "field": "GenerationalCohort",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "gift",
+    "api": "64.0",
+    "object": "GiftTransaction",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "gift",
+    "api": "64.0",
+    "object": "GiftTransaction",
+    "field": "TaxDeductionAmount",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": false
+  },
+  {
+    "profile": "gift",
+    "api": "65.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcDtTm",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "gift",
+    "api": "65.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcError",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "gift",
+    "api": "65.0",
+    "object": "GiftCommitment",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "gift",
+    "api": "65.0",
+    "object": "GiftTransaction",
+    "field": "GenerationalCohort",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "gift",
+    "api": "65.0",
+    "object": "GiftTransaction",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "gift",
+    "api": "65.0",
+    "object": "GiftTransaction",
+    "field": "TaxDeductionAmount",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": false
+  },
+  {
+    "profile": "gift",
+    "api": "66.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcDtTm",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "gift",
+    "api": "66.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcError",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "gift",
+    "api": "66.0",
+    "object": "GiftCommitment",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "gift",
+    "api": "66.0",
+    "object": "GiftTransaction",
+    "field": "GenerationalCohort",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "gift",
+    "api": "66.0",
+    "object": "GiftTransaction",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "gift",
+    "api": "66.0",
+    "object": "GiftTransaction",
+    "field": "TaxDeductionAmount",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": false
+  },
+  {
+    "profile": "gift",
+    "api": "67.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcDtTm",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "gift",
+    "api": "67.0",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcError",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "gift",
+    "api": "67.0",
+    "object": "GiftCommitment",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "gift",
+    "api": "67.0",
+    "object": "GiftTransaction",
+    "field": "GenerationalCohort",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "gift",
+    "api": "67.0",
+    "object": "GiftTransaction",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "gift",
+    "api": "67.0",
+    "object": "GiftTransaction",
+    "field": "TaxDeductionAmount",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": false
+  },
+  {
+    "profile": "doc",
+    "api": "62.0",
+    "object": "DocumentGenerationProcess",
+    "field": "AdditionalMetadata",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "doc",
+    "api": "62.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInput",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "doc",
+    "api": "62.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInputType",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "doc",
+    "api": "62.0",
+    "object": "DocumentGenerationProcess",
+    "field": "EstimatedDocumentSize",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "doc",
+    "api": "62.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsLocalizationEnabled",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "doc",
+    "api": "62.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsSharedExternally",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "doc",
+    "api": "62.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsTocUpdateRequired",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "doc",
+    "api": "62.0",
+    "object": "DocumentTemplate",
+    "field": "ContextDefinitionName",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "doc",
+    "api": "62.0",
+    "object": "DocumentTemplate",
+    "field": "ContextFilterName",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "doc",
+    "api": "62.0",
+    "object": "DocumentTemplate",
+    "field": "ContextMappingName",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "doc",
+    "api": "62.0",
+    "object": "DocumentTemplate",
+    "field": "ContextTransformationName",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "doc",
+    "api": "63.0",
+    "object": "DocumentGenerationProcess",
+    "field": "AdditionalMetadata",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "doc",
+    "api": "63.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInput",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "doc",
+    "api": "63.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInputType",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "doc",
+    "api": "63.0",
+    "object": "DocumentGenerationProcess",
+    "field": "EstimatedDocumentSize",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "doc",
+    "api": "63.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsLocalizationEnabled",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "doc",
+    "api": "63.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsSharedExternally",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "doc",
+    "api": "63.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsTocUpdateRequired",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "doc",
+    "api": "63.0",
+    "object": "DocumentTemplate",
+    "field": "ContextDefinitionName",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "doc",
+    "api": "63.0",
+    "object": "DocumentTemplate",
+    "field": "ContextFilterName",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "doc",
+    "api": "63.0",
+    "object": "DocumentTemplate",
+    "field": "ContextMappingName",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "doc",
+    "api": "63.0",
+    "object": "DocumentTemplate",
+    "field": "ContextTransformationName",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "doc",
+    "api": "64.0",
+    "object": "DocumentGenerationProcess",
+    "field": "AdditionalMetadata",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "doc",
+    "api": "64.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInput",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "doc",
+    "api": "64.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInputType",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "doc",
+    "api": "64.0",
+    "object": "DocumentGenerationProcess",
+    "field": "EstimatedDocumentSize",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "doc",
+    "api": "64.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsLocalizationEnabled",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "doc",
+    "api": "64.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsSharedExternally",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "doc",
+    "api": "64.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsTocUpdateRequired",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "doc",
+    "api": "64.0",
+    "object": "DocumentTemplate",
+    "field": "ContextDefinitionName",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "doc",
+    "api": "64.0",
+    "object": "DocumentTemplate",
+    "field": "ContextFilterName",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "doc",
+    "api": "64.0",
+    "object": "DocumentTemplate",
+    "field": "ContextMappingName",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "doc",
+    "api": "64.0",
+    "object": "DocumentTemplate",
+    "field": "ContextTransformationName",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "doc",
+    "api": "65.0",
+    "object": "DocumentGenerationProcess",
+    "field": "AdditionalMetadata",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "doc",
+    "api": "65.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInput",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "doc",
+    "api": "65.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInputType",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "doc",
+    "api": "65.0",
+    "object": "DocumentGenerationProcess",
+    "field": "EstimatedDocumentSize",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "doc",
+    "api": "65.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsLocalizationEnabled",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "doc",
+    "api": "65.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsSharedExternally",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "doc",
+    "api": "65.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsTocUpdateRequired",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "doc",
+    "api": "65.0",
+    "object": "DocumentTemplate",
+    "field": "ContextDefinitionName",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "doc",
+    "api": "65.0",
+    "object": "DocumentTemplate",
+    "field": "ContextFilterName",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "doc",
+    "api": "65.0",
+    "object": "DocumentTemplate",
+    "field": "ContextMappingName",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "doc",
+    "api": "65.0",
+    "object": "DocumentTemplate",
+    "field": "ContextTransformationName",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "doc",
+    "api": "66.0",
+    "object": "DocumentGenerationProcess",
+    "field": "AdditionalMetadata",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "doc",
+    "api": "66.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInput",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "doc",
+    "api": "66.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInputType",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "doc",
+    "api": "66.0",
+    "object": "DocumentGenerationProcess",
+    "field": "EstimatedDocumentSize",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "doc",
+    "api": "66.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsLocalizationEnabled",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "doc",
+    "api": "66.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsSharedExternally",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "doc",
+    "api": "66.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsTocUpdateRequired",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "doc",
+    "api": "66.0",
+    "object": "DocumentTemplate",
+    "field": "ContextDefinitionName",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "doc",
+    "api": "66.0",
+    "object": "DocumentTemplate",
+    "field": "ContextFilterName",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "doc",
+    "api": "66.0",
+    "object": "DocumentTemplate",
+    "field": "ContextMappingName",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "doc",
+    "api": "66.0",
+    "object": "DocumentTemplate",
+    "field": "ContextTransformationName",
+    "read": false,
+    "query": false,
+    "get": false,
+    "put": false
+  },
+  {
+    "profile": "doc",
+    "api": "67.0",
+    "object": "DocumentGenerationProcess",
+    "field": "AdditionalMetadata",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "doc",
+    "api": "67.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInput",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "doc",
+    "api": "67.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInputType",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "doc",
+    "api": "67.0",
+    "object": "DocumentGenerationProcess",
+    "field": "EstimatedDocumentSize",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "doc",
+    "api": "67.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsLocalizationEnabled",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "doc",
+    "api": "67.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsSharedExternally",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "doc",
+    "api": "67.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsTocUpdateRequired",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "doc",
+    "api": "67.0",
+    "object": "DocumentTemplate",
+    "field": "ContextDefinitionName",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "doc",
+    "api": "67.0",
+    "object": "DocumentTemplate",
+    "field": "ContextFilterName",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "doc",
+    "api": "67.0",
+    "object": "DocumentTemplate",
+    "field": "ContextMappingName",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  },
+  {
+    "profile": "doc",
+    "api": "67.0",
+    "object": "DocumentTemplate",
+    "field": "ContextTransformationName",
+    "read": true,
+    "query": true,
+    "get": true,
+    "put": true
+  }
+]

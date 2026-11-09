@@ -7,12 +7,14 @@ import (
 	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/base64"
+	"fmt"
 	"net"
 	"net/http"
 	"os"
 	"reflect"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/glade-sh/glade/internal/storage"
 )
@@ -20,7 +22,13 @@ import (
 // GuardHTTPAuthority checks the HTTP authority before routing to a local server.
 // Public wildcard listeners may specify explicit hostnames in
 // GLADE_SERVER_ALLOWED_HOSTS, separated by commas.
+type AuthorityOptions struct{ AllowPublicDemo bool }
+
 func GuardHTTPAuthority(next http.Handler, addr string, configured ...string) http.Handler {
+	return GuardHTTPAuthorityWithOptions(next, addr, AuthorityOptions{}, configured...)
+}
+
+func GuardHTTPAuthorityWithOptions(next http.Handler, addr string, options AuthorityOptions, configured ...string) http.Handler {
 	configuredHost, port, err := net.SplitHostPort(addr)
 	allowed := map[string]bool{}
 	if err == nil {
@@ -53,18 +61,21 @@ func GuardHTTPAuthority(next http.Handler, addr string, configured ...string) ht
 	// is configured, extra hosts are allowed, or the bind address is not loopback.
 	// In that case an origin-less Bearer header is not enough; it must be a
 	// token this server issued.
+	networkExposed := false
 	exposed := capability != "" || strings.TrimSpace(os.Getenv("GLADE_SERVER_ALLOWED_HOSTS")) != ""
 	for _, configuredAddr := range configured {
 		host, _, parseErr := net.SplitHostPort(configuredAddr)
 		ip := net.ParseIP(host)
 		if parseErr != nil || !(strings.EqualFold(host, "localhost") || (ip != nil && ip.IsLoopback())) {
 			exposed = true
+			networkExposed = true
 		}
 	}
 	if err == nil {
 		ip := net.ParseIP(configuredHost)
 		if !(configuredHost == "localhost" || (ip != nil && ip.IsLoopback())) {
 			exposed = true
+			networkExposed = true
 		}
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -130,6 +141,12 @@ func GuardHTTPAuthority(next http.Handler, addr string, configured ...string) ht
 				}
 			}
 		}
+		// The exposed listener protects all routes, including page controllers.
+		// This is deliberately independent of browser and client marker headers.
+		if (networkExposed || proxyAuthority) && !options.AllowPublicDemo && !hasCapability && !issuedBearer {
+			http.Error(w, "capability or issued token required", http.StatusForbidden)
+			return
+		}
 		if strings.EqualFold(site, "none") && !hasCapability && !explicitClient && r.Method == http.MethodGet {
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			w.Header().Set("Content-Security-Policy", "default-src 'none'; base-uri 'none'; frame-ancestors 'none'")
@@ -151,7 +168,7 @@ func GuardHTTPAuthority(next http.Handler, addr string, configured ...string) ht
 		}
 		anonymousREST := len(parts) == 5 && parts[0] == "services" && parts[1] == "data" && parts[3] == "tooling" && parts[4] == "executeAnonymous"
 		anonymousSOAP := len(parts) == 5 && parts[0] == "services" && parts[1] == "Soap" && parts[2] == "s"
-		if (anonymousREST || anonymousSOAP) && !hasCapability && !issuedBearer {
+		if (anonymousREST || anonymousSOAP) && !hasCapability && !issuedBearer && !(options.AllowPublicDemo && (networkExposed || proxyAuthority)) {
 			http.Error(w, "capability required", http.StatusForbidden)
 			return
 		}
@@ -177,9 +194,10 @@ type issuedUserContextKey struct{}
 type issuedTokenContextKey struct{}
 
 type issuedTokenEntry struct {
-	hash   [sha256.Size]byte
-	userID string
-	owner  *Server
+	hash    [sha256.Size]byte
+	userID  string
+	owner   *Server
+	expires time.Time
 }
 
 func hasIssuedTokens() bool {
@@ -202,6 +220,14 @@ func issueToken(userID string) (string, error) {
 }
 
 func issueTokenFor(owner *Server, userID string) (string, error) {
+	var expires time.Time
+	if value := strings.TrimSpace(os.Getenv("GLADE_SERVER_TOKEN_TTL")); value != "" {
+		ttl, err := time.ParseDuration(value)
+		if err != nil || ttl <= 0 {
+			return "", fmt.Errorf("GLADE_SERVER_TOKEN_TTL must be a positive duration")
+		}
+		expires = time.Now().Add(ttl)
+	}
 	var raw [32]byte
 	if _, err := rand.Read(raw[:]); err != nil {
 		return "", err
@@ -215,7 +241,7 @@ func issueTokenFor(owner *Server, userID string) (string, error) {
 		delete(issuedTokens.byHash, oldest.Value.(*issuedTokenEntry).hash)
 		issuedTokens.order.Remove(oldest)
 	}
-	issuedTokens.byHash[hash] = issuedTokens.order.PushFront(&issuedTokenEntry{hash: hash, userID: userID, owner: owner})
+	issuedTokens.byHash[hash] = issuedTokens.order.PushFront(&issuedTokenEntry{hash: hash, userID: userID, owner: owner, expires: expires})
 	return token, nil
 }
 
@@ -228,6 +254,11 @@ func issuedTokenUserFor(token string, owner *Server) (string, bool) {
 		return "", false
 	}
 	entry := el.Value.(*issuedTokenEntry)
+	if !entry.expires.IsZero() && !time.Now().Before(entry.expires) {
+		delete(issuedTokens.byHash, hash)
+		issuedTokens.order.Remove(el)
+		return "", false
+	}
 	if entry.owner != nil && entry.owner != owner {
 		return "", false
 	}
@@ -294,6 +325,22 @@ func revokeFixtureUserTokens(owner *Server, fixture storage.Fixture) {
 	}
 }
 
+func revokeIssuedToken(owner *Server, token string) bool {
+	hash := sha256.Sum256([]byte(token))
+	issuedTokens.Lock()
+	defer issuedTokens.Unlock()
+	if el, ok := issuedTokens.byHash[hash]; ok {
+		entry := el.Value.(*issuedTokenEntry)
+		if entry.owner == owner {
+			valid := entry.expires.IsZero() || time.Now().Before(entry.expires)
+			delete(issuedTokens.byHash, hash)
+			issuedTokens.order.Remove(el)
+			return valid
+		}
+	}
+	return false
+}
+
 func revokeServerTokens(owner *Server) {
 	issuedTokens.Lock()
 	defer issuedTokens.Unlock()
@@ -319,6 +366,11 @@ func issuedTokenUser(token string) (string, bool) {
 		return "", false
 	}
 	entry := el.Value.(*issuedTokenEntry)
+	if !entry.expires.IsZero() && !time.Now().Before(entry.expires) {
+		delete(issuedTokens.byHash, hash)
+		issuedTokens.order.Remove(el)
+		return "", false
+	}
 	if subtle.ConstantTimeCompare(entry.hash[:], hash[:]) != 1 {
 		return "", false
 	}

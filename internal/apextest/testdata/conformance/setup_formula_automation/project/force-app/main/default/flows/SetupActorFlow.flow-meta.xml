@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+ <apiVersion>62.0</apiVersion>
+ <assignments><name>SetValue</name><label>Set Value</label><locationX>100</locationX><locationY>100</locationY><assignmentItems><assignToReference>$Record.FlowResult__c</assignToReference><operator>Assign</operator><value><elementReference>Preference</elementReference></value></assignmentItems></assignments>
+ <formulas><name>Preference</name><dataType>Boolean</dataType><expression>{!$Setup.Prefs__c.Flag__c}</expression></formulas>
+ <label>Setup Actor Flow</label><processType>AutoLaunchedFlow</processType>
+ <start><locationX>50</locationX><locationY>0</locationY><connector><targetReference>SetValue</targetReference></connector><object>Account</object><recordTriggerType>Create</recordTriggerType><triggerType>RecordBeforeSave</triggerType></start><status>Active</status>
+</Flow>

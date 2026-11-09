@@ -157,11 +157,9 @@ func runSetNullNumericConformance(t *testing.T, cluster string, shapes, cells, c
 						}
 						t.Run(route, func(t *testing.T) {
 							want := source.ExpectedByAPI[api]
-							if want.CarryReason != "" {
-								counts.TrackKind(t, route, "carried", 1)
-								t.Logf("carried %s/%s/%s: %s; native rejection <%s>", row.ID, route, api, want.CarryReason, want.Primary)
-								return
-							}
+							// E23C005's carry annotation predates the field
+							// initializer check; Glade now rejects the captured
+							// declaration, so the cell is asserted like any other.
 							kind := "exact"
 							if source.ExpectedByAPI[api].Outcome == "reject" {
 								kind = "category"

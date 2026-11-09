@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/sema"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
@@ -148,9 +149,18 @@ func runReplayDescribeConformance(t *testing.T, cluster string, shapes, cells, c
 		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			// Each runtime cell executes on a private clone of the API base.
 			counts := newConformanceCountLog(t, "ReplayDescribe-"+cluster, api)
-			baseIndex := replayDescribeIndex(t, api, nil)
+			baseIndex := replayDescribeIndex(t, cluster, api, nil)
 			org := orgFromIndex(baseIndex)
 			org.APIVersion = api
+			if cluster == "ordinary_controls" {
+				p, err := project.Load(baseIndex.Project.Root)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := applyConfiguredTestPermissions(&org, p); err != nil {
+					t.Fatal(err)
+				}
+			}
 			storage.EnsureStandardObject(&org, "BatchApexErrorEvent")
 			storage.EnsureUniqueKeyPrefixes(&org)
 			prefixes := map[string]string{"e00": org.Objects["C168A"+api[:2]+"00000000Event__e"].Definition.KeyPrefix, "1QQ": org.Objects["BatchApexErrorEvent"].Definition.KeyPrefix}
@@ -176,7 +186,7 @@ func runReplayDescribeConformance(t *testing.T, cluster string, shapes, cells, c
 							counts.TrackKind(t, route, kind, 1)
 							var execErr error
 							if route == "anonymous" {
-								index := replayDescribeIndex(t, api, source.Classes)
+								index := replayDescribeIndex(t, cluster, api, source.Classes)
 								setup := sema.Analyze(index)
 								if index.HasErrors() || setup.HasErrors() {
 									t.Fatalf("native setup accepted; Glade diagnostics=%v %v", index.Diagnostics, setup.Diagnostics)
@@ -190,7 +200,7 @@ func runReplayDescribeConformance(t *testing.T, cluster string, shapes, cells, c
 								runner := newConformanceRunner(t, index, conformanceRunnerOptions{Base: base, LinkProject: true, Org: &org})
 								_, execErr = runner.execute(program)
 							} else {
-								index := replayDescribeIndex(t, api, source.Classes)
+								index := replayDescribeIndex(t, cluster, api, source.Classes)
 								analysis := sema.Analyze(index)
 								diagnostics := append(append([]diagnostic.Diagnostic{}, index.Diagnostics...), analysis.Diagnostics...)
 								if want.Outcome == "reject" {
@@ -241,7 +251,7 @@ func runReplayDescribeConformance(t *testing.T, cluster string, shapes, cells, c
 	}
 }
 
-func replayDescribeIndex(t *testing.T, api string, classes map[string]string) typesys.Index {
+func replayDescribeIndex(t *testing.T, cluster, api string, classes map[string]string) typesys.Index {
 	t.Helper()
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"sourceApiVersion":%q,"packageDirectories":[{"path":"force-app","default":true}]}`, api))
@@ -269,6 +279,32 @@ func replayDescribeIndex(t *testing.T, api string, classes map[string]string) ty
 		}
 		name := "C168A" + api[:2] + "00000000" + item.stem + item.suffix
 		writeFile(t, filepath.Join(root, "force-app/main/default/objects", name+".object"), string(metadata))
+	}
+	if cluster == "ordinary_controls" {
+		dir := filepath.Join(fixtureRoot, "assignments", cluster)
+		record, err := os.ReadFile(filepath.Join(dir, "ASSIGNMENT-RUN.txt"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		entries := map[string]string{}
+		for _, line := range strings.Split(string(record), "\n") {
+			if k, v, ok := strings.Cut(line, "="); ok {
+				entries[k] = v
+			}
+		}
+		access := entries["replay_assignment:"+api]
+		if access != "C168A"+api[:2]+"00000000Access" {
+			t.Fatal("incomplete native assignment record")
+		}
+		metadata, err := os.ReadFile(filepath.Join(dir, "api"+api[:2]+".permissionset-meta.xml"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if fmt.Sprintf("%x", sha256.Sum256(metadata)) != entries["permission_sha256:"+api] {
+			t.Fatal("native permission metadata changed")
+		}
+		writeFile(t, filepath.Join(root, "force-app/main/default/permissionsets", access+".permissionset-meta.xml"), string(metadata))
+		writeFile(t, filepath.Join(root, "glade.yml"), "test:\n  permissionSets: ["+access+"]\n")
 	}
 	for name, source := range allClasses {
 		path := filepath.Join(root, "force-app/main/default/classes", name+".cls")

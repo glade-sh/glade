@@ -31,6 +31,9 @@ glade doctor --project "$GLADE_PROJECT"
 glade test --project "$GLADE_PROJECT" --class RefinementServiceTest --method createsAndLabelsFileRow --json --no-progress
 ```
 
+Select **Continue** on the **Open local preview** confirmation. For HTTP clients
+without browser origin metadata, send `X-Glade-Client: 1`.
+
 Useful first examples:
 
 | ID | Use it for |

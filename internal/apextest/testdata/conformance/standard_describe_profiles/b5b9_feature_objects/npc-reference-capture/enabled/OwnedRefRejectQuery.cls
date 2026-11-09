@@ -1,0 +1,1 @@
+public class OwnedRefRejectQuery { public static void probe(){List<GiftCommitmentSchedule> v=[SELECT GenerationalCohort FROM GiftCommitmentSchedule LIMIT 1];} }

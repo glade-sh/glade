@@ -1,0 +1,1382 @@
+{
+  "status": 0,
+  "result": {
+    "records": [
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kuwo3OAB"
+        },
+        "Id": "0PSRu00000Kuwo3OAB",
+        "Name": "AccessMerchantPayments",
+        "Label": "Access Merchant Payments",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "0PLRu000004zwdnOAA"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8aoOAB"
+        },
+        "Id": "0PSRu00000Kv8aoOAB",
+        "Name": "ActorCASCPermSet",
+        "Label": "ActorCASCPermSet",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "100Ru00000kOKfuIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8apOAB"
+        },
+        "Id": "0PSRu00000Kv8apOAB",
+        "Name": "AncCrmIntegrationUser",
+        "Label": "Agentic Near Core CRM",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "100Ru00000kOKfuIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8aqOAB"
+        },
+        "Id": "0PSRu00000Kv8aqOAB",
+        "Name": "AncMarketingIntegrationUser",
+        "Label": "Agentic Near Core Marketing",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "100Ru00000kOKfuIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8arOAB"
+        },
+        "Id": "0PSRu00000Kv8arOAB",
+        "Name": "AncPersonalizationIntegrationUser",
+        "Label": "Agentic Near Core Personalization",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "100Ru00000kOKfuIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8asOAB"
+        },
+        "Id": "0PSRu00000Kv8asOAB",
+        "Name": "AncProvisioningIntegrationUser",
+        "Label": "Agentic Near Core Provisioning",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "100Ru00000kOKfuIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8atOAB"
+        },
+        "Id": "0PSRu00000Kv8atOAB",
+        "Name": "ApexGuruStandardPermSet",
+        "Label": "Salesforce Apex Guru",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "100Ru00000kOKfuIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kuwo4OAB"
+        },
+        "Id": "0PSRu00000Kuwo4OAB",
+        "Name": "AuthenticatedPayer",
+        "Label": "Authenticated Payer",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "0PLRu000004zwdgOAA"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8amOAB"
+        },
+        "Id": "0PSRu00000Kv8amOAB",
+        "Name": "B2BBuyer",
+        "Label": "Buyer",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "0PLRu000004zzkZOAQ"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8akOAB"
+        },
+        "Id": "0PSRu00000Kv8akOAB",
+        "Name": "B2BBuyerManager",
+        "Label": "Buyer Manager",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "0PLRu000004zzkXOAQ"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8auOAB"
+        },
+        "Id": "0PSRu00000Kv8auOAB",
+        "Name": "C2CCapstonePermSet",
+        "Label": "C2CCapstonePermSet",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "100Ru00000kOKfuIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000KuwnqOAB"
+        },
+        "Id": "0PSRu00000KuwnqOAB",
+        "Name": "C2CDataDetectMetabolismIntegrationUser",
+        "Label": "C2CDataDetectMetabolismIntegrationUser",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "100Ru00000kOKfuIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8avOAB"
+        },
+        "Id": "0PSRu00000Kv8avOAB",
+        "Name": "C2CE360EmailPermSet",
+        "Label": "C2CE360EmailPermSet",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "100Ru00000kOKfuIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8ahOAB"
+        },
+        "Id": "0PSRu00000Kv8ahOAB",
+        "Name": "C2CHeadlessCMSAccessPermSet",
+        "Label": "Salesforce CMS Integration Admin",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "100Ru00000kOKfuIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8awOAB"
+        },
+        "Id": "0PSRu00000Kv8awOAB",
+        "Name": "C2CMcpServicePermSet",
+        "Label": "C2CMcpServicePermSet",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "100Ru00000kOKfuIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kuwo5OAB"
+        },
+        "Id": "0PSRu00000Kuwo5OAB",
+        "Name": "CommandCenter",
+        "Label": "Command Center",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "0PLRu000004zwdmOAA"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8anOAB"
+        },
+        "Id": "0PSRu00000Kv8anOAB",
+        "Name": "CommerceAdmin",
+        "Label": "Commerce Admin",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "0PLRu000004zwdlOAA"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8alOAB"
+        },
+        "Id": "0PSRu00000Kv8alOAB",
+        "Name": "CommerceUser",
+        "Label": "Shopper",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "0PLRu000004zzkaOAA"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8axOAB"
+        },
+        "Id": "0PSRu00000Kv8axOAB",
+        "Name": "ConnectivityServiceCASCPermSet",
+        "Label": "ConnectivityServiceCASCPermSet",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "100Ru00000kOKfuIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8ayOAB"
+        },
+        "Id": "0PSRu00000Kv8ayOAB",
+        "Name": "D360HomeOrgPermSet",
+        "Label": "Data Cloud Home Org Integration User",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "100Ru00000kOKfuIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8azOAB"
+        },
+        "Id": "0PSRu00000Kv8azOAB",
+        "Name": "DeliveryEstimationServicePermSet",
+        "Label": "DeliveryEstimationServicePermSet",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "100Ru00000kOKfuIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000KuwnvOAB"
+        },
+        "Id": "0PSRu00000KuwnvOAB",
+        "Name": "EventBusRelayC2CPermSet",
+        "Label": "EventBusRelayC2CPermSet",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "100Ru00000kOKfuIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8b0OAB"
+        },
+        "Id": "0PSRu00000Kv8b0OAB",
+        "Name": "EventMonitoringPermSet",
+        "Label": "Event Monitoring User",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "100Ru00000kOKfpIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8b1OAB"
+        },
+        "Id": "0PSRu00000Kv8b1OAB",
+        "Name": "FieldServiceMobileStandardPermSet",
+        "Label": "FieldServiceMobileStandardPermSet",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "0PLRu000004zzkQOAQ"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000KuwnwOAB"
+        },
+        "Id": "0PSRu00000KuwnwOAB",
+        "Name": "FweO2EngineC2CPermSet",
+        "Label": "FweO2EngineC2CPermSet",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "100Ru00000kOKfuIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8b2OAB"
+        },
+        "Id": "0PSRu00000Kv8b2OAB",
+        "Name": "HighScaleFlowC2CPermSet",
+        "Label": "C360 High Scale Flow Integration User",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "100Ru00000kOKfuIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8b3OAB"
+        },
+        "Id": "0PSRu00000Kv8b3OAB",
+        "Name": "HyperionCASCPermSet",
+        "Label": "HyperionCASCPermSet",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "100Ru00000kOKfuIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8b4OAB"
+        },
+        "Id": "0PSRu00000Kv8b4OAB",
+        "Name": "MarketingCloudPublishingC2CPermSet",
+        "Label": "MarketingCloudPublishingC2CPermSet",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "100Ru00000kOKfuIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8b5OAB"
+        },
+        "Id": "0PSRu00000Kv8b5OAB",
+        "Name": "MarketingCloudReportingC2CPermSet",
+        "Label": "Marketing Cloud Reporting C2C Perm",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "100Ru00000kOKfuIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8ajOAB"
+        },
+        "Id": "0PSRu00000Kv8ajOAB",
+        "Name": "Merchandiser",
+        "Label": "Merchandiser",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "0PLRu000004zwdoOAA"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8b6OAB"
+        },
+        "Id": "0PSRu00000Kv8b6OAB",
+        "Name": "MuleSoftPublishInvocableActionsC2CPermSet",
+        "Label": "MuleSoftPublishInvocableActionsC2CPermSet",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "100Ru00000kOKfuIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8b7OAB"
+        },
+        "Id": "0PSRu00000Kv8b7OAB",
+        "Name": "MuleSoftSeamlessLoginC2CPermSet",
+        "Label": "MuleSoftSeamlessLoginC2CPermSet",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "100Ru00000kOKfuIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8b8OAB"
+        },
+        "Id": "0PSRu00000Kv8b8OAB",
+        "Name": "OrchestrationProcessManagerPermissionSet",
+        "Label": "Orchestration Process Manager",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "100Ru00000kOKfpIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000KuwnxOAB"
+        },
+        "Id": "0PSRu00000KuwnxOAB",
+        "Name": "PagesCreator",
+        "Label": "Create and View Quick Pages (Beta)",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "100Ru00000kOKfpIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000KuwnyOAB"
+        },
+        "Id": "0PSRu00000KuwnyOAB",
+        "Name": "PagesViewer",
+        "Label": "View Quick Pages (Beta)",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "100Ru00000kOKfpIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8b9OAB"
+        },
+        "Id": "0PSRu00000Kv8b9OAB",
+        "Name": "PartnerConnectPartnerAdminSetup",
+        "Label": "Partner Connect Partner Admin Setup",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "100Ru00000kOKfpIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kuwo6OAB"
+        },
+        "Id": "0PSRu00000Kuwo6OAB",
+        "Name": "PaymentsAdministrator",
+        "Label": "Payments Administrator",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "0PLRu000004zwdnOAA"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8bAOAR"
+        },
+        "Id": "0PSRu00000Kv8bAOAR",
+        "Name": "PromptTemplatePermSet",
+        "Label": "PromptTemplatePermSet",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "100Ru00000kOKfuIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8bBOAR"
+        },
+        "Id": "0PSRu00000Kv8bBOAR",
+        "Name": "RPAC2CPermSet",
+        "Label": "RPAC2CPermSet",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "100Ru00000kOKfuIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8bCOAR"
+        },
+        "Id": "0PSRu00000Kv8bCOAR",
+        "Name": "RegrelloC2CPermSet",
+        "Label": "RegrelloC2CPermSet",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "100Ru00000kOKfuIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8bDOAR"
+        },
+        "Id": "0PSRu00000Kv8bDOAR",
+        "Name": "SalesCloudMobileUser",
+        "Label": "Seller-Focused Sales Mobile Experience",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "100Ru00000kOKfpIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8afOAB"
+        },
+        "Id": "0PSRu00000Kv8afOAB",
+        "Name": "SalesConsoleUser",
+        "Label": "Salesforce Console User",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "0PLRu000004zzkIOAQ"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000KuwnzOAB"
+        },
+        "Id": "0PSRu00000KuwnzOAB",
+        "Name": "Scheduling_Console_User",
+        "Label": "Access Scheduling Console Phased Rollout",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "0PLRu000004zzkROAQ"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8bEOAR"
+        },
+        "Id": "0PSRu00000Kv8bEOAR",
+        "Name": "SeasIndexingPermSet",
+        "Label": "SeaS Indexing C2C User Perm",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "100Ru00000kOKfuIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8aiOAB"
+        },
+        "Id": "0PSRu00000Kv8aiOAB",
+        "Name": "SecurityCommandCenterStandardPermSet",
+        "Label": "Security Center Integration User",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "100Ru00000kOKfuIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8agOAB"
+        },
+        "Id": "0PSRu00000Kv8agOAB",
+        "Name": "SurveyCreator",
+        "Label": "Survey Creator",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "0PLRu000004zzkTOAQ"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kuwo0OAB"
+        },
+        "Id": "0PSRu00000Kuwo0OAB",
+        "Name": "UseSetupWithAgentforce",
+        "Label": "Use Setup with Agentforce",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "100Ru00000kOKfpIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8a5OAB"
+        },
+        "Id": "0PSRu00000Kv8a5OAB",
+        "Name": "X00e1a000000MWa8AAG",
+        "Label": "00e000000000w0tAAA",
+        "IsOwnedByProfile": true,
+        "ProfileId": "00eRu00000JTfucIAD",
+        "Profile": {
+          "attributes": {
+            "type": "Profile",
+            "url": "/services/data/v62.0/sobjects/Profile/00eRu00000JTfucIAD"
+          },
+          "Name": "Standard Platform User"
+        },
+        "LicenseId": "100Ru00000kOKfxIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8aBOAR"
+        },
+        "Id": "0PSRu00000Kv8aBOAR",
+        "Name": "X00e1a000000MWa9AAG",
+        "Label": "00e000000000d1eAAA",
+        "IsOwnedByProfile": true,
+        "ProfileId": "00eRu00000JTfudIAD",
+        "Profile": {
+          "attributes": {
+            "type": "Profile",
+            "url": "/services/data/v62.0/sobjects/Profile/00eRu00000JTfudIAD"
+          },
+          "Name": "Customer Community Login User"
+        },
+        "LicenseId": "100Ru00000kOKfyIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8aeOAB"
+        },
+        "Id": "0PSRu00000Kv8aeOAB",
+        "Name": "X00e1a000000MWaAAAW",
+        "Label": "00e000000000kPJAAY",
+        "IsOwnedByProfile": true,
+        "ProfileId": "00eRu00000JTfueIAD",
+        "Profile": {
+          "attributes": {
+            "type": "Profile",
+            "url": "/services/data/v62.0/sobjects/Profile/00eRu00000JTfueIAD"
+          },
+          "Name": "Cross Org Data Proxy User"
+        },
+        "LicenseId": "100Ru00000kOKfzIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8aCOAR"
+        },
+        "Id": "0PSRu00000Kv8aCOAR",
+        "Name": "X00e1a000000MWaBAAW",
+        "Label": "00e000000000qwoAAA",
+        "IsOwnedByProfile": true,
+        "ProfileId": "00eRu00000JTfufIAD",
+        "Profile": {
+          "attributes": {
+            "type": "Profile",
+            "url": "/services/data/v62.0/sobjects/Profile/00eRu00000JTfufIAD"
+          },
+          "Name": "Authenticated Website"
+        },
+        "LicenseId": "100Ru00000kOKg0IAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8aDOAR"
+        },
+        "Id": "0PSRu00000Kv8aDOAR",
+        "Name": "X00e1a000000MWaCAAW",
+        "Label": "00e000000000xMDAAY",
+        "IsOwnedByProfile": true,
+        "ProfileId": "00eRu00000JTfugIAD",
+        "Profile": {
+          "attributes": {
+            "type": "Profile",
+            "url": "/services/data/v62.0/sobjects/Profile/00eRu00000JTfugIAD"
+          },
+          "Name": "Work.com Only User"
+        },
+        "LicenseId": "100Ru00000kOKg1IAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8aEOAR"
+        },
+        "Id": "0PSRu00000Kv8aEOAR",
+        "Name": "X00e1a000000MWaDAAW",
+        "Label": "00e000000000ud1AAA",
+        "IsOwnedByProfile": true,
+        "ProfileId": "00eRu00000JTfuhIAD",
+        "Profile": {
+          "attributes": {
+            "type": "Profile",
+            "url": "/services/data/v62.0/sobjects/Profile/00eRu00000JTfuhIAD"
+          },
+          "Name": "Customer Portal Manager Custom"
+        },
+        "LicenseId": "100Ru00000kOKg2IAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8aFOAR"
+        },
+        "Id": "0PSRu00000Kv8aFOAR",
+        "Name": "X00e1a000000MWaEAAW",
+        "Label": "00e000000000ahrAAA",
+        "IsOwnedByProfile": true,
+        "ProfileId": "00eRu00000JTfuiIAD",
+        "Profile": {
+          "attributes": {
+            "type": "Profile",
+            "url": "/services/data/v62.0/sobjects/Profile/00eRu00000JTfuiIAD"
+          },
+          "Name": "Identity User"
+        },
+        "LicenseId": "100Ru00000kOKg3IAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8aGOAR"
+        },
+        "Id": "0PSRu00000Kv8aGOAR",
+        "Name": "X00e1a000000MWaFAAW",
+        "Label": "00e000000000dPWAAY",
+        "IsOwnedByProfile": true,
+        "ProfileId": "00eRu00000JTfujIAD",
+        "Profile": {
+          "attributes": {
+            "type": "Profile",
+            "url": "/services/data/v62.0/sobjects/Profile/00eRu00000JTfujIAD"
+          },
+          "Name": "Customer Community Plus User"
+        },
+        "LicenseId": "100Ru00000kOKg4IAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8aHOAR"
+        },
+        "Id": "0PSRu00000Kv8aHOAR",
+        "Name": "X00e1a000000MWaGAAW",
+        "Label": "00e000000000cN4AAI",
+        "IsOwnedByProfile": true,
+        "ProfileId": "00eRu00000JTfukIAD",
+        "Profile": {
+          "attributes": {
+            "type": "Profile",
+            "url": "/services/data/v62.0/sobjects/Profile/00eRu00000JTfukIAD"
+          },
+          "Name": "Silver Partner User"
+        },
+        "LicenseId": "100Ru00000kOKg5IAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8aIOAR"
+        },
+        "Id": "0PSRu00000Kv8aIOAR",
+        "Name": "X00e1a000000MWaHAAW",
+        "Label": "00e000000000c80AAA",
+        "IsOwnedByProfile": true,
+        "ProfileId": "00eRu00000JTfulIAD",
+        "Profile": {
+          "attributes": {
+            "type": "Profile",
+            "url": "/services/data/v62.0/sobjects/Profile/00eRu00000JTfulIAD"
+          },
+          "Name": "High Volume Customer Portal"
+        },
+        "LicenseId": "100Ru00000kOKg6IAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8aJOAR"
+        },
+        "Id": "0PSRu00000Kv8aJOAR",
+        "Name": "X00e1a000000MWaIAAW",
+        "Label": "00e000000000gj9AAA",
+        "IsOwnedByProfile": true,
+        "ProfileId": "00eRu00000JTfumIAD",
+        "Profile": {
+          "attributes": {
+            "type": "Profile",
+            "url": "/services/data/v62.0/sobjects/Profile/00eRu00000JTfumIAD"
+          },
+          "Name": "Gold Partner User"
+        },
+        "LicenseId": "100Ru00000kOKg7IAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8aKOAR"
+        },
+        "Id": "0PSRu00000Kv8aKOAR",
+        "Name": "X00e1a000000MWaJAAW",
+        "Label": "00e000000000jDfAAI",
+        "IsOwnedByProfile": true,
+        "ProfileId": "00eRu00000JTfunIAD",
+        "Profile": {
+          "attributes": {
+            "type": "Profile",
+            "url": "/services/data/v62.0/sobjects/Profile/00eRu00000JTfunIAD"
+          },
+          "Name": "Customer Portal Manager Standard"
+        },
+        "LicenseId": "100Ru00000kOKg8IAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8aLOAR"
+        },
+        "Id": "0PSRu00000Kv8aLOAR",
+        "Name": "X00e1a000000MWaKAAW",
+        "Label": "00e000000000ccoAAA",
+        "IsOwnedByProfile": true,
+        "ProfileId": "00eRu00000JTfuoIAD",
+        "Profile": {
+          "attributes": {
+            "type": "Profile",
+            "url": "/services/data/v62.0/sobjects/Profile/00eRu00000JTfuoIAD"
+          },
+          "Name": "Force.com - App Subscription User"
+        },
+        "LicenseId": "100Ru00000kOKg9IAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8aMOAR"
+        },
+        "Id": "0PSRu00000Kv8aMOAR",
+        "Name": "X00e1a000000MWaLAAW",
+        "Label": "00e000000000zY1AAI",
+        "IsOwnedByProfile": true,
+        "ProfileId": "00eRu00000JTfupIAD",
+        "Profile": {
+          "attributes": {
+            "type": "Profile",
+            "url": "/services/data/v62.0/sobjects/Profile/00eRu00000JTfupIAD"
+          },
+          "Name": "Customer Community Plus Login User"
+        },
+        "LicenseId": "100Ru00000kOKgAIAW"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8aNOAR"
+        },
+        "Id": "0PSRu00000Kv8aNOAR",
+        "Name": "X00e1a000000MWaMAAW",
+        "Label": "00e000000000lp6AAA",
+        "IsOwnedByProfile": true,
+        "ProfileId": "00eRu00000JTfuqIAD",
+        "Profile": {
+          "attributes": {
+            "type": "Profile",
+            "url": "/services/data/v62.0/sobjects/Profile/00eRu00000JTfuqIAD"
+          },
+          "Name": "Partner App Subscription User"
+        },
+        "LicenseId": "100Ru00000kOKgBIAW"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8aOOAR"
+        },
+        "Id": "0PSRu00000Kv8aOOAR",
+        "Name": "X00e1a000000MWaNAAW",
+        "Label": "00e000000000fQkAAI",
+        "IsOwnedByProfile": true,
+        "ProfileId": "00eRu00000JTfurIAD",
+        "Profile": {
+          "attributes": {
+            "type": "Profile",
+            "url": "/services/data/v62.0/sobjects/Profile/00eRu00000JTfurIAD"
+          },
+          "Name": "External Identity User"
+        },
+        "LicenseId": "100Ru00000kOKgCIAW"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8aPOAR"
+        },
+        "Id": "0PSRu00000Kv8aPOAR",
+        "Name": "X00e1a000000MWaOAAW",
+        "Label": "00e000000000p6vAAA",
+        "IsOwnedByProfile": true,
+        "ProfileId": "00eRu00000JTfusIAD",
+        "Profile": {
+          "attributes": {
+            "type": "Profile",
+            "url": "/services/data/v62.0/sobjects/Profile/00eRu00000JTfusIAD"
+          },
+          "Name": "Partner Community User"
+        },
+        "LicenseId": "100Ru00000kOKgDIAW"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8aQOAR"
+        },
+        "Id": "0PSRu00000Kv8aQOAR",
+        "Name": "X00e1a000000MWaPAAW",
+        "Label": "00e000000000bAFAAY",
+        "IsOwnedByProfile": true,
+        "ProfileId": "00eRu00000JTfutIAD",
+        "Profile": {
+          "attributes": {
+            "type": "Profile",
+            "url": "/services/data/v62.0/sobjects/Profile/00eRu00000JTfutIAD"
+          },
+          "Name": "Partner Community Login User"
+        },
+        "LicenseId": "100Ru00000kOKgEIAW"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8aROAR"
+        },
+        "Id": "0PSRu00000Kv8aROAR",
+        "Name": "X00e1a000000MWaQAAW",
+        "Label": "00e000000000sC4AAI",
+        "IsOwnedByProfile": true,
+        "ProfileId": "00eRu00000JTfuuIAD",
+        "Profile": {
+          "attributes": {
+            "type": "Profile",
+            "url": "/services/data/v62.0/sobjects/Profile/00eRu00000JTfuuIAD"
+          },
+          "Name": "Customer Community User"
+        },
+        "LicenseId": "100Ru00000kOKgFIAW"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8aSOAR"
+        },
+        "Id": "0PSRu00000Kv8aSOAR",
+        "Name": "X00e1a000000MWaRAAW",
+        "Label": "00e000000000jpWAAQ",
+        "IsOwnedByProfile": true,
+        "ProfileId": "00eRu00000JTfuvIAD",
+        "Profile": {
+          "attributes": {
+            "type": "Profile",
+            "url": "/services/data/v62.0/sobjects/Profile/00eRu00000JTfuvIAD"
+          },
+          "Name": "Force.com - Free User"
+        },
+        "LicenseId": "100Ru00000kOKgGIAW"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8aTOAR"
+        },
+        "Id": "0PSRu00000Kv8aTOAR",
+        "Name": "X00e1a000000MWaSAAW",
+        "Label": "00e000000000nFcAAI",
+        "IsOwnedByProfile": true,
+        "ProfileId": "00eRu00000JTfuwIAD",
+        "Profile": {
+          "attributes": {
+            "type": "Profile",
+            "url": "/services/data/v62.0/sobjects/Profile/00eRu00000JTfuwIAD"
+          },
+          "Name": "Chatter Moderator User"
+        },
+        "LicenseId": "100Ru00000kOKftIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8aUOAR"
+        },
+        "Id": "0PSRu00000Kv8aUOAR",
+        "Name": "X00e1a000000MWaTAAW",
+        "Label": "00e000000000bQ0AAI",
+        "IsOwnedByProfile": true,
+        "ProfileId": "00eRu00000JTfuYIAT",
+        "Profile": {
+          "attributes": {
+            "type": "Profile",
+            "url": "/services/data/v62.0/sobjects/Profile/00eRu00000JTfuYIAT"
+          },
+          "Name": "Chatter Free User"
+        },
+        "LicenseId": "100Ru00000kOKftIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8aVOAR"
+        },
+        "Id": "0PSRu00000Kv8aVOAR",
+        "Name": "X00e1a000000MWaUAAW",
+        "Label": "00e000000000c4OAAQ",
+        "IsOwnedByProfile": true,
+        "ProfileId": "00eRu00000JTfuxIAD",
+        "Profile": {
+          "attributes": {
+            "type": "Profile",
+            "url": "/services/data/v62.0/sobjects/Profile/00eRu00000JTfuxIAD"
+          },
+          "Name": "Chatter External User"
+        },
+        "LicenseId": "100Ru00000kOKgHIAW"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8a3OAB"
+        },
+        "Id": "0PSRu00000Kv8a3OAB",
+        "Name": "X00e1a000000N1LRAA0",
+        "Label": "00e000000000dVAAAY",
+        "IsOwnedByProfile": true,
+        "ProfileId": "00eRu00000JTfuyIAD",
+        "Profile": {
+          "attributes": {
+            "type": "Profile",
+            "url": "/services/data/v62.0/sobjects/Profile/00eRu00000JTfuyIAD"
+          },
+          "Name": "High Volume Customer Portal User"
+        },
+        "LicenseId": "100Ru00000kOKgIIAW"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8a4OAB"
+        },
+        "Id": "0PSRu00000Kv8a4OAB",
+        "Name": "X00e1a000000N1LSAA0",
+        "Label": "00e000000000dfmAAA",
+        "IsOwnedByProfile": true,
+        "ProfileId": "00eRu00000JTfuaIAD",
+        "Profile": {
+          "attributes": {
+            "type": "Profile",
+            "url": "/services/data/v62.0/sobjects/Profile/00eRu00000JTfuaIAD"
+          },
+          "Name": "Authenticated Website"
+        },
+        "LicenseId": "100Ru00000kOKfvIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8aXOAR"
+        },
+        "Id": "0PSRu00000Kv8aXOAR",
+        "Name": "X00e1a000000N1wKAAS",
+        "Label": "00e000000000d5aAAA",
+        "IsOwnedByProfile": true,
+        "ProfileId": "00eRu00000JTfuXIAT",
+        "Profile": {
+          "attributes": {
+            "type": "Profile",
+            "url": "/services/data/v62.0/sobjects/Profile/00eRu00000JTfuXIAT"
+          },
+          "Name": "Analytics Cloud Security User"
+        },
+        "LicenseId": "100Ru00000kOKfqIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8aYOAR"
+        },
+        "Id": "0PSRu00000Kv8aYOAR",
+        "Name": "X00e1a000000N1wLAAS",
+        "Label": "00e000000000dsTAAQ",
+        "IsOwnedByProfile": true,
+        "ProfileId": "00eRu00000JTfuUIAT",
+        "Profile": {
+          "attributes": {
+            "type": "Profile",
+            "url": "/services/data/v62.0/sobjects/Profile/00eRu00000JTfuUIAT"
+          },
+          "Name": "Analytics Cloud Integration User"
+        },
+        "LicenseId": "100Ru00000kOKfqIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8a2OAB"
+        },
+        "Id": "0PSRu00000Kv8a2OAB",
+        "Name": "X00eB0000000Qlc9IAC",
+        "Label": "00e000000000cFNAAY",
+        "IsOwnedByProfile": true,
+        "ProfileId": "00eRu00000JTfubIAD",
+        "Profile": {
+          "attributes": {
+            "type": "Profile",
+            "url": "/services/data/v62.0/sobjects/Profile/00eRu00000JTfubIAD"
+          },
+          "Name": "Company Communities User"
+        },
+        "LicenseId": "100Ru00000kOKfwIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8aZOAR"
+        },
+        "Id": "0PSRu00000Kv8aZOAR",
+        "Name": "X00eB0000000cSXXIA2",
+        "Label": "00e000000000kaRAAQ",
+        "IsOwnedByProfile": true,
+        "ProfileId": "00eRu00000JTfv3IAD",
+        "Profile": {
+          "attributes": {
+            "type": "Profile",
+            "url": "/services/data/v62.0/sobjects/Profile/00eRu00000JTfv3IAD"
+          },
+          "Name": "CPQ Integration User"
+        },
+        "LicenseId": "100Ru00000kOKgJIAW"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8abOAB"
+        },
+        "Id": "0PSRu00000Kv8abOAB",
+        "Name": "X00eB0000000yeByIAI",
+        "Label": "00e000000000zWUAAY",
+        "IsOwnedByProfile": true,
+        "ProfileId": "00eRu00000JTfv4IAD",
+        "Profile": {
+          "attributes": {
+            "type": "Profile",
+            "url": "/services/data/v62.0/sobjects/Profile/00eRu00000JTfv4IAD"
+          },
+          "Name": "Minimum Access - Salesforce"
+        },
+        "LicenseId": "100Ru00000kOKfpIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8acOAB"
+        },
+        "Id": "0PSRu00000Kv8acOAB",
+        "Name": "X00eB0000000zHKTIA2",
+        "Label": "00e000000000i4CAAQ",
+        "IsOwnedByProfile": true,
+        "ProfileId": "00eRu00000JTfv5IAD",
+        "Profile": {
+          "attributes": {
+            "type": "Profile",
+            "url": "/services/data/v62.0/sobjects/Profile/00eRu00000JTfv5IAD"
+          },
+          "Name": "External Apps Login User"
+        },
+        "LicenseId": "100Ru00000kOKgKIAW"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000KuhuuOAB"
+        },
+        "Id": "0PSRu00000KuhuuOAB",
+        "Name": "X00eRu00000JTONOIA5",
+        "Label": "00eRu00000JTONOIA5",
+        "IsOwnedByProfile": true,
+        "ProfileId": "00eRu00000JTONOIA5",
+        "Profile": {
+          "attributes": {
+            "type": "Profile",
+            "url": "/services/data/v62.0/sobjects/Profile/00eRu00000JTONOIA5"
+          },
+          "Name": "B2B Reordering Portal Buyer Profile"
+        },
+        "LicenseId": "100Ru00000kOKgKIAW"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kuwo2OAB"
+        },
+        "Id": "0PSRu00000Kuwo2OAB",
+        "Name": "X00eRu00000JTOs4IAH",
+        "Label": "00eRu00000JTOs4IAH",
+        "IsOwnedByProfile": true,
+        "ProfileId": "00eRu00000JTOs4IAH",
+        "Profile": {
+          "attributes": {
+            "type": "Profile",
+            "url": "/services/data/v62.0/sobjects/Profile/00eRu00000JTOs4IAH"
+          },
+          "Name": "Minimum Access - API Only Integrations"
+        },
+        "LicenseId": "100Ru00000kNvRjIAK"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8a8OAB"
+        },
+        "Id": "0PSRu00000Kv8a8OAB",
+        "Name": "X00ex00000018ozh_128_09_04_12_1",
+        "Label": "00ex00000018ozh_128_09_04_12_1",
+        "IsOwnedByProfile": true,
+        "ProfileId": "00eRu00000JTfuTIAT",
+        "Profile": {
+          "attributes": {
+            "type": "Profile",
+            "url": "/services/data/v62.0/sobjects/Profile/00eRu00000JTfuTIAT"
+          },
+          "Name": "System Administrator"
+        },
+        "LicenseId": "100Ru00000kOKfpIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8a6OAB"
+        },
+        "Id": "0PSRu00000Kv8a6OAB",
+        "Name": "X00ex00000018ozj_128_09_04_12_3",
+        "Label": "00ex00000018ozj_128_09_04_12_3",
+        "IsOwnedByProfile": true,
+        "ProfileId": "00eRu00000JTfuzIAD",
+        "Profile": {
+          "attributes": {
+            "type": "Profile",
+            "url": "/services/data/v62.0/sobjects/Profile/00eRu00000JTfuzIAD"
+          },
+          "Name": "Solution Manager"
+        },
+        "LicenseId": "100Ru00000kOKfpIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8a7OAB"
+        },
+        "Id": "0PSRu00000Kv8a7OAB",
+        "Name": "X00ex00000018ozo_128_09_04_12_8",
+        "Label": "00ex00000018ozo_128_09_04_12_8",
+        "IsOwnedByProfile": true,
+        "ProfileId": "00eRu00000JTfv0IAD",
+        "Profile": {
+          "attributes": {
+            "type": "Profile",
+            "url": "/services/data/v62.0/sobjects/Profile/00eRu00000JTfv0IAD"
+          },
+          "Name": "Marketing User"
+        },
+        "LicenseId": "100Ru00000kOKfpIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8aAOAR"
+        },
+        "Id": "0PSRu00000Kv8aAOAR",
+        "Name": "X00ex00000018ozp_128_09_04_12_9",
+        "Label": "00ex00000018ozp_128_09_04_12_9",
+        "IsOwnedByProfile": true,
+        "ProfileId": "00eRu00000JTfv1IAD",
+        "Profile": {
+          "attributes": {
+            "type": "Profile",
+            "url": "/services/data/v62.0/sobjects/Profile/00eRu00000JTfv1IAD"
+          },
+          "Name": "Contract Manager"
+        },
+        "LicenseId": "100Ru00000kOKfpIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8a9OAB"
+        },
+        "Id": "0PSRu00000Kv8a9OAB",
+        "Name": "X00ex00000018ozq_128_09_04_12_10",
+        "Label": "00ex00000018ozq_128_09_04_12_10",
+        "IsOwnedByProfile": true,
+        "ProfileId": "00eRu00000JTfv2IAD",
+        "Profile": {
+          "attributes": {
+            "type": "Profile",
+            "url": "/services/data/v62.0/sobjects/Profile/00eRu00000JTfv2IAD"
+          },
+          "Name": "Standard User"
+        },
+        "LicenseId": "100Ru00000kOKfpIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8bFOAR"
+        },
+        "Id": "0PSRu00000Kv8bFOAR",
+        "Name": "YukonNudgeHeadlessPublishPermSet",
+        "Label": "Publish Suggested for You Nudges: Integration User",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "100Ru00000kOKfuIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8a1OAB"
+        },
+        "Id": "0PSRu00000Kv8a1OAB",
+        "Name": "sfdc_nc_constraints_engine_deploy",
+        "Label": "Constraint Rules Engine Licenseless permission set",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "100Ru00000kOKfuIAG"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSet",
+          "url": "/services/data/v62.0/sobjects/PermissionSet/0PSRu00000Kv8zpOAB"
+        },
+        "Id": "0PSRu00000Kv8zpOAB",
+        "Name": "sfdc_scrt2",
+        "Label": "SCRT2 Integration User",
+        "IsOwnedByProfile": false,
+        "ProfileId": null,
+        "Profile": null,
+        "LicenseId": "100Ru00000kOKfuIAG"
+      }
+    ],
+    "totalSize": 88,
+    "done": true
+  },
+  "warnings": []
+}

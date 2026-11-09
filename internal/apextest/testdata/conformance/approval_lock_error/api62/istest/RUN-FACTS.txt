@@ -1,0 +1,14 @@
+api=62.0
+context=istest
+principal=standard
+rows=3
+native_complete=true
+deployment_success=true
+transport=debug-or-terminal
+captured_utc=2026-11-03T16:18:18.004119+00:00
+source_sha256:anonymous.apex=097006b25fd0461a966d88b34b5f521a7fee1d58a99468bb07f100129900491e
+source_sha256:force-app/main/default/classes/ApprovalMutationCapture.cls=3df786ce31a4a7c5ada73ce812bc5a405e40867b2333129d8157061b5926723e
+source_sha256:force-app/main/default/classes/ApprovalMutationCapture.cls-meta.xml=f9ddfae4e2884110898df0560e759150baca0624d21ac7c95c0f6f445815db83
+source_sha256:force-app/main/default/classes/ApprovalMutationCaptureTest.cls=cb3e6724c1795e852c18c41cf09789f45db007f833ad9d84adbda21c4f866508
+source_sha256:force-app/main/default/classes/ApprovalMutationCaptureTest.cls-meta.xml=f9ddfae4e2884110898df0560e759150baca0624d21ac7c95c0f6f445815db83
+source_sha256:sfdx-project.json=4b2a7f569178c65189d19514cf4d27fe63a8dd437e9e0b51a808d7f0ec1bef7f

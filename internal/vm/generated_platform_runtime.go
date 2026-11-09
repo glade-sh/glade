@@ -150,6 +150,9 @@ func (vm *VM) generatedUnsupportedFamilyExplicitMethodDefault(method Method, rec
 	case "cartextension.cartdeliverygroup.getisgift":
 		return Bool(false), true
 	case "cartextension.cartdeliverygroup.getname":
+		if name, ok := receiver.Fields["name"]; ok && name.Kind == ValueString {
+			return name, true
+		}
 		return String("Shipment 1"), true
 	case "cartextension.ordergraph.getorder":
 		order := Object("Order")
@@ -418,6 +421,9 @@ func (vm *VM) constructGeneratedPlatformValue(typeName string, args []Value, nam
 	}
 	if generated.IsAbstract {
 		return Null, true, fmt.Errorf("cannot instantiate abstract class %s", generated.Name)
+	}
+	if value, handled, err := vm.constructConnectAPIValue(generated, args, namedArgs); handled || err != nil {
+		return value, handled, err
 	}
 	if value, handled, err := vm.constructGeneratedMetadataDTO(generated, args, namedArgs); handled || err != nil {
 		return value, handled, err

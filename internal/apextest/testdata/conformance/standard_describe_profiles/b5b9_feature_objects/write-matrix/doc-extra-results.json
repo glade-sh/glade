@@ -1,0 +1,290 @@
+[
+  {
+    "route": "named-source",
+    "api": "62.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenerationBatchProcessId",
+    "class": "OwnedExtra62_0",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenerationBatchProcessId=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "62.0",
+    "object": "DocumentTemplateSection",
+    "field": "DocumentTemplateClauseId",
+    "class": "OwnedExtra62_1",
+    "source": "DocumentTemplateSection record=new DocumentTemplateSection();record.DocumentTemplateClauseId=null;"
+  },
+  {
+    "route": "named-deploy",
+    "api": "62.0",
+    "status": 0,
+    "failures": [],
+    "successes": [
+      "OwnedExtra62_0",
+      "OwnedExtra62_1"
+    ]
+  },
+  {
+    "route": "anonymous",
+    "api": "62.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenerationBatchProcessId",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenerationBatchProcessId=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 73 with the error:\n\nVariable does not exist: DocGenerationBatchProcessId"
+  },
+  {
+    "route": "anonymous",
+    "api": "62.0",
+    "object": "DocumentTemplateSection",
+    "field": "DocumentTemplateClauseId",
+    "source": "DocumentTemplateSection record=new DocumentTemplateSection();record.DocumentTemplateClauseId=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 69 with the error:\n\nVariable does not exist: DocumentTemplateClauseId"
+  },
+  {
+    "route": "named-source",
+    "api": "63.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenerationBatchProcessId",
+    "class": "OwnedExtra63_0",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenerationBatchProcessId=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "63.0",
+    "object": "DocumentTemplateSection",
+    "field": "DocumentTemplateClauseId",
+    "class": "OwnedExtra63_1",
+    "source": "DocumentTemplateSection record=new DocumentTemplateSection();record.DocumentTemplateClauseId=null;"
+  },
+  {
+    "route": "named-deploy",
+    "api": "63.0",
+    "status": 0,
+    "failures": [],
+    "successes": [
+      "OwnedExtra63_0",
+      "OwnedExtra63_1"
+    ]
+  },
+  {
+    "route": "anonymous",
+    "api": "63.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenerationBatchProcessId",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenerationBatchProcessId=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 73 with the error:\n\nVariable does not exist: DocGenerationBatchProcessId"
+  },
+  {
+    "route": "anonymous",
+    "api": "63.0",
+    "object": "DocumentTemplateSection",
+    "field": "DocumentTemplateClauseId",
+    "source": "DocumentTemplateSection record=new DocumentTemplateSection();record.DocumentTemplateClauseId=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 69 with the error:\n\nVariable does not exist: DocumentTemplateClauseId"
+  },
+  {
+    "route": "named-source",
+    "api": "64.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenerationBatchProcessId",
+    "class": "OwnedExtra64_0",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenerationBatchProcessId=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "64.0",
+    "object": "DocumentTemplateSection",
+    "field": "DocumentTemplateClauseId",
+    "class": "OwnedExtra64_1",
+    "source": "DocumentTemplateSection record=new DocumentTemplateSection();record.DocumentTemplateClauseId=null;"
+  },
+  {
+    "route": "named-deploy",
+    "api": "64.0",
+    "status": 0,
+    "failures": [],
+    "successes": [
+      "OwnedExtra64_0",
+      "OwnedExtra64_1"
+    ]
+  },
+  {
+    "route": "anonymous",
+    "api": "64.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenerationBatchProcessId",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenerationBatchProcessId=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 73 with the error:\n\nVariable does not exist: DocGenerationBatchProcessId"
+  },
+  {
+    "route": "anonymous",
+    "api": "64.0",
+    "object": "DocumentTemplateSection",
+    "field": "DocumentTemplateClauseId",
+    "source": "DocumentTemplateSection record=new DocumentTemplateSection();record.DocumentTemplateClauseId=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 69 with the error:\n\nVariable does not exist: DocumentTemplateClauseId"
+  },
+  {
+    "route": "named-source",
+    "api": "65.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenerationBatchProcessId",
+    "class": "OwnedExtra65_0",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenerationBatchProcessId=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "65.0",
+    "object": "DocumentTemplateSection",
+    "field": "DocumentTemplateClauseId",
+    "class": "OwnedExtra65_1",
+    "source": "DocumentTemplateSection record=new DocumentTemplateSection();record.DocumentTemplateClauseId=null;"
+  },
+  {
+    "route": "named-deploy",
+    "api": "65.0",
+    "status": 0,
+    "failures": [],
+    "successes": [
+      "OwnedExtra65_0",
+      "OwnedExtra65_1"
+    ]
+  },
+  {
+    "route": "anonymous",
+    "api": "65.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenerationBatchProcessId",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenerationBatchProcessId=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 73 with the error:\n\nVariable does not exist: DocGenerationBatchProcessId"
+  },
+  {
+    "route": "anonymous",
+    "api": "65.0",
+    "object": "DocumentTemplateSection",
+    "field": "DocumentTemplateClauseId",
+    "source": "DocumentTemplateSection record=new DocumentTemplateSection();record.DocumentTemplateClauseId=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 69 with the error:\n\nVariable does not exist: DocumentTemplateClauseId"
+  },
+  {
+    "route": "named-source",
+    "api": "66.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenerationBatchProcessId",
+    "class": "OwnedExtra66_0",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenerationBatchProcessId=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "66.0",
+    "object": "DocumentTemplateSection",
+    "field": "DocumentTemplateClauseId",
+    "class": "OwnedExtra66_1",
+    "source": "DocumentTemplateSection record=new DocumentTemplateSection();record.DocumentTemplateClauseId=null;"
+  },
+  {
+    "route": "named-deploy",
+    "api": "66.0",
+    "status": 0,
+    "failures": [],
+    "successes": [
+      "OwnedExtra66_0",
+      "OwnedExtra66_1"
+    ]
+  },
+  {
+    "route": "anonymous",
+    "api": "66.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenerationBatchProcessId",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenerationBatchProcessId=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 73 with the error:\n\nVariable does not exist: DocGenerationBatchProcessId"
+  },
+  {
+    "route": "anonymous",
+    "api": "66.0",
+    "object": "DocumentTemplateSection",
+    "field": "DocumentTemplateClauseId",
+    "source": "DocumentTemplateSection record=new DocumentTemplateSection();record.DocumentTemplateClauseId=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 69 with the error:\n\nVariable does not exist: DocumentTemplateClauseId"
+  },
+  {
+    "route": "named-source",
+    "api": "67.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenerationBatchProcessId",
+    "class": "OwnedExtra67_0",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenerationBatchProcessId=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "67.0",
+    "object": "DocumentTemplateSection",
+    "field": "DocumentTemplateClauseId",
+    "class": "OwnedExtra67_1",
+    "source": "DocumentTemplateSection record=new DocumentTemplateSection();record.DocumentTemplateClauseId=null;"
+  },
+  {
+    "route": "named-deploy",
+    "api": "67.0",
+    "status": 0,
+    "failures": [],
+    "successes": [
+      "OwnedExtra67_0",
+      "OwnedExtra67_1"
+    ]
+  },
+  {
+    "route": "anonymous",
+    "api": "67.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenerationBatchProcessId",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenerationBatchProcessId=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 73 with the error:\n\nVariable does not exist: DocGenerationBatchProcessId"
+  },
+  {
+    "route": "anonymous",
+    "api": "67.0",
+    "object": "DocumentTemplateSection",
+    "field": "DocumentTemplateClauseId",
+    "source": "DocumentTemplateSection record=new DocumentTemplateSection();record.DocumentTemplateClauseId=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 69 with the error:\n\nVariable does not exist: DocumentTemplateClauseId"
+  }
+]

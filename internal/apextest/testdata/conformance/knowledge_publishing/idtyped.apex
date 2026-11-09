@@ -1,0 +1,1 @@
+Id articleId=(Id)'ka0000000000001'; try { KbManagement.PublishingService.archiveOnlineArticle(articleId,null); System.debug('B4:typed_missing:returned'); } catch(Exception e) { System.debug('B4:typed_missing:'+e.getTypeName()); }

@@ -98,7 +98,10 @@ func runScaleZeroNumberConformance(t *testing.T, group string, shapes int) {
 			counts := newConformanceCountLog(t, "ScaleZeroNumber_"+group, api)
 			root := t.TempDir()
 			writeFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"sourceApiVersion":%q,"packageDirectories":[{"path":"force-app","default":true}]}`, api))
-			for name, folder := range map[string]string{"C155Number__c.object": "objects/C155Number__c/C155Number__c.object-meta.xml", "C155NITriggerView.cls": "classes/C155NITriggerView.cls", "C155NIObserve.trigger": "triggers/C155NIObserve.trigger"} {
+			// The capture fixture deployed C155NumberAccess and assigned it to the
+			// running user before every route; replay that assignment.
+			writeFile(t, filepath.Join(root, "glade.yml"), "test:\n  permissionSets: [C155NumberAccess]\n")
+			for name, folder := range map[string]string{"C155Number__c.object": "objects/C155Number__c/C155Number__c.object-meta.xml", "C155NumberAccess.permissionset": "permissionsets/C155NumberAccess.permissionset-meta.xml", "C155NITriggerView.cls": "classes/C155NITriggerView.cls", "C155NIObserve.trigger": "triggers/C155NIObserve.trigger"} {
 				text, err := os.ReadFile(filepath.Join(scaleZeroNumberFixture, "setup", name))
 				if err != nil {
 					t.Fatal(err)
@@ -137,8 +140,7 @@ func runScaleZeroNumberConformance(t *testing.T, group string, shapes int) {
 			if len(index.Triggers) != 1 || !strings.EqualFold(index.Triggers[0].Name, "C155NIObserve") || !strings.EqualFold(index.Triggers[0].ObjectName, "C155Number__c") || len(index.Triggers[0].Events) != 2 {
 				t.Fatalf("captured setup requires one two-event trigger declaration: %v", index.Triggers)
 			}
-			org := orgFromIndex(index)
-			org.APIVersion = api
+			org := capturedFixtureOrg(t, index, api)
 			runtime, err := CompileProjectRuntimeForRequestWithSourceDigests(index, nil)
 			if err != nil {
 				t.Fatal(err)

@@ -34,6 +34,15 @@ func runInnerTypeNativeConformanceWithComparison(t *testing.T, family, class str
 
 func runInnerTypeNativeRoutes(t *testing.T, family, class string, routes []string, compare func(*testing.T, any, any), apiVersions ...string) {
 	t.Helper()
+	runInnerTypeNativeRoutesParts(t, family, class, false, routes, compare, apiVersions...)
+}
+
+// runInnerTypeNativeRoutesParts is runInnerTypeNativeRoutes for a family whose
+// named-class observation exceeds the 4000 character assertion message limit.
+// With multiPart every test method of class transports one JSON object and the
+// objects merge into the single observation the org.tsv row records.
+func runInnerTypeNativeRoutesParts(t *testing.T, family, class string, multiPart bool, routes []string, compare func(*testing.T, any, any), apiVersions ...string) {
+	t.Helper()
 	if compare == nil {
 		compare = func(t *testing.T, got, want any) {
 			if !reflect.DeepEqual(got, want) {
@@ -92,6 +101,9 @@ func runInnerTypeNativeRoutes(t *testing.T, family, class string, routes []strin
 			if err != nil {
 				t.Fatal(err)
 			}
+			// Families whose ORG-RUN.txt records `sf org assign permset` ran as an
+			// administrator holding those sets (case196 API 67 admin FLS).
+			replayRecordedPermissionSetAssignments(t, dir, root, "force-app/main/default/permissionsets")
 			index := loadTestIndex(t, root)
 			analysis := sema.Analyze(index)
 			if index.HasErrors() || analysis.HasErrors() {
@@ -110,6 +122,10 @@ func runInnerTypeNativeRoutes(t *testing.T, family, class string, routes []strin
 				}
 				org := orgFromIndex(index)
 				org.APIVersion = api
+				applyConformanceScratchCountry(t, &org, root)
+				if names := configuredTestPermissionSets(t, root); len(names) > 0 {
+					assignCapturedPermissionSets(t, &org, names...)
+				}
 				runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 				triggers, failures := compileProjectTriggers(index)
 				if len(failures) != 0 {
@@ -137,15 +153,39 @@ func runInnerTypeNativeRoutes(t *testing.T, family, class string, routes []strin
 					}
 				}
 			} else {
-				run := Run(index, Options{SelectedClasses: []string{class}, SelectedMethod: "observe", NoDiskCache: true, Parallelism: 1})
-				if len(run.Suites) != 1 || len(run.Suites[0].Cases) != 1 {
+				method := "observe"
+				if multiPart {
+					method = ""
+				}
+				run := Run(index, Options{SelectedClasses: []string{class}, SelectedMethod: method, NoDiskCache: true, Parallelism: 1})
+				if len(run.Suites) != 1 || len(run.Suites[0].Cases) < 1 || (!multiPart && len(run.Suites[0].Cases) != 1) {
 					t.Fatalf("expected one observation: %+v", run.Summary())
 				}
-				result := run.Suites[0].Cases[0]
-				if result.Problem == nil || !strings.HasSuffix(result.Problem.Type, "AssertException") {
-					t.Fatalf("missing assertion transport: %+v; problem: %+v", result, result.Problem)
+				merged := map[string]any{}
+				for _, result := range run.Suites[0].Cases {
+					if result.Problem == nil || !strings.HasSuffix(result.Problem.Type, "AssertException") {
+						t.Fatalf("missing assertion transport: %+v; problem: %+v", result, result.Problem)
+					}
+					_, part, _ := strings.Cut(result.Problem.Message, "OBS|")
+					if !multiPart {
+						observed = part
+						continue
+					}
+					var decoded map[string]any
+					if err := json.Unmarshal([]byte(part), &decoded); err != nil {
+						t.Fatalf("invalid observation part: %q", part)
+					}
+					for key, value := range decoded {
+						merged[key] = value
+					}
 				}
-				_, observed, _ = strings.Cut(result.Problem.Message, "OBS|")
+				if multiPart {
+					encoded, err := json.Marshal(merged)
+					if err != nil {
+						t.Fatal(err)
+					}
+					observed = string(encoded)
+				}
 			}
 			var got, want any
 			if json.Unmarshal([]byte(observed), &got) != nil || json.Unmarshal([]byte(row[2]), &want) != nil {

@@ -1,0 +1,1535 @@
+{
+  "categories": [
+    {
+      "columns": {
+        "ASSISTANT_NAME": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Assistant",
+          "name": "ASSISTANT_NAME"
+        },
+        "BIRTHDATE": {
+          "dataType": "DATE_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Birthdate",
+          "name": "BIRTHDATE"
+        },
+        "CLEAN_STATUS": {
+          "dataType": "PICKLIST_DATA",
+          "filterValues": [
+            {
+              "label": "In Sync",
+              "name": "In Sync"
+            },
+            {
+              "label": "Different",
+              "name": "Different"
+            },
+            {
+              "label": "Reviewed",
+              "name": "Reviewed"
+            },
+            {
+              "label": "Not Found",
+              "name": "Not Found"
+            },
+            {
+              "label": "Inactive",
+              "name": "Inactive"
+            },
+            {
+              "label": "Not Compared",
+              "name": "Not Compared"
+            },
+            {
+              "label": "Select Match",
+              "name": "Select Match"
+            },
+            {
+              "label": "Skipped",
+              "name": "Skipped"
+            }
+          ],
+          "filterable": true,
+          "label": "Clean Status",
+          "name": "CLEAN_STATUS"
+        },
+        "CONTACT_ALIAS": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Contact Owner Alias",
+          "name": "CONTACT_ALIAS"
+        },
+        "CONTACT_CREATED": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Created By",
+          "name": "CONTACT_CREATED"
+        },
+        "CONTACT_CREATED_ALIAS": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Created Alias",
+          "name": "CONTACT_CREATED_ALIAS"
+        },
+        "CONTACT_ID": {
+          "dataType": "ID_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Contact ID",
+          "name": "CONTACT_ID"
+        },
+        "CONTACT_LAST_UPDATE_BY": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Last Modified By",
+          "name": "CONTACT_LAST_UPDATE_BY"
+        },
+        "CONTACT_LAST_UPDATE_BY_ALIAS": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Last Modified Alias",
+          "name": "CONTACT_LAST_UPDATE_BY_ALIAS"
+        },
+        "CONTACT_OWNER": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Contact Owner",
+          "name": "CONTACT_OWNER"
+        },
+        "CONTACT_SOURCE": {
+          "dataType": "PICKLIST_DATA",
+          "filterValues": [
+            {
+              "label": "Auto Create",
+              "name": "Auto Create"
+            },
+            {
+              "label": "Email Message",
+              "name": "Email Message"
+            },
+            {
+              "label": "Meeting Digest",
+              "name": "Meeting Digest"
+            },
+            {
+              "label": "Seller Home",
+              "name": "Seller Home"
+            }
+          ],
+          "filterable": true,
+          "label": "Creation Source",
+          "name": "CONTACT_SOURCE"
+        },
+        "CREATED_DATE": {
+          "dataType": "DATE_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Created Date",
+          "name": "CREATED_DATE"
+        },
+        "DEPARTMENT": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Department",
+          "name": "DEPARTMENT"
+        },
+        "DESCRIPTION": {
+          "dataType": "TEXTAREA_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Description",
+          "name": "DESCRIPTION"
+        },
+        "FIRST_NAME": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "First Name",
+          "name": "FIRST_NAME"
+        },
+        "JIGSAW_KEY": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Data.com Key",
+          "name": "JIGSAW_KEY"
+        },
+        "LAST_ACTIVITY": {
+          "dataType": "DATE_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Last Activity",
+          "name": "LAST_ACTIVITY"
+        },
+        "LAST_NAME": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Last Name",
+          "name": "LAST_NAME"
+        },
+        "LAST_SIT_REQUEST": {
+          "dataType": "DATE_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Last Stay-in-Touch Request Date",
+          "name": "LAST_SIT_REQUEST"
+        },
+        "LAST_SIT_UPDATE": {
+          "dataType": "DATE_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Last Stay-in-Touch Save Date",
+          "name": "LAST_SIT_UPDATE"
+        },
+        "LAST_UPDATE": {
+          "dataType": "DATE_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Last Modified Date",
+          "name": "LAST_UPDATE"
+        },
+        "LEAD_SOURCE": {
+          "dataType": "PICKLIST_DATA",
+          "filterValues": [
+            {
+              "label": "Web",
+              "name": "Web"
+            },
+            {
+              "label": "Phone Inquiry",
+              "name": "Phone Inquiry"
+            },
+            {
+              "label": "Partner Referral",
+              "name": "Partner Referral"
+            },
+            {
+              "label": "Purchased List",
+              "name": "Purchased List"
+            },
+            {
+              "label": "Other",
+              "name": "Other"
+            }
+          ],
+          "filterable": true,
+          "label": "Lead Source",
+          "name": "LEAD_SOURCE"
+        },
+        "OWNER_ROLE": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Owner Role Name",
+          "name": "OWNER_ROLE"
+        },
+        "OWNER_ROLE_DISPLAY": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Owner Role Display",
+          "name": "OWNER_ROLE_DISPLAY"
+        },
+        "PHONE6": {
+          "dataType": "PHONE_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Asst. Phone",
+          "name": "PHONE6"
+        },
+        "REPORTS_TO": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Reports To",
+          "name": "REPORTS_TO"
+        },
+        "SALUTATION": {
+          "dataType": "PICKLIST_DATA",
+          "filterValues": [
+            {
+              "label": "Mr.",
+              "name": "Mr."
+            },
+            {
+              "label": "Ms.",
+              "name": "Ms."
+            },
+            {
+              "label": "Mrs.",
+              "name": "Mrs."
+            },
+            {
+              "label": "Dr.",
+              "name": "Dr."
+            },
+            {
+              "label": "Prof.",
+              "name": "Prof."
+            },
+            {
+              "label": "Mx.",
+              "name": "Mx."
+            }
+          ],
+          "filterable": true,
+          "label": "Salutation",
+          "name": "SALUTATION"
+        },
+        "TITLE": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Title",
+          "name": "TITLE"
+        }
+      },
+      "label": "Contact: General"
+    },
+    {
+      "columns": {
+        "ADDRESS1_CITY": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Other City",
+          "name": "ADDRESS1_CITY"
+        },
+        "ADDRESS1_COUNTRY": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Other Country",
+          "name": "ADDRESS1_COUNTRY"
+        },
+        "ADDRESS1_LINE1": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Other Address Line 1",
+          "name": "ADDRESS1_LINE1"
+        },
+        "ADDRESS1_LINE2": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Other Address Line 2",
+          "name": "ADDRESS1_LINE2"
+        },
+        "ADDRESS1_LINE3": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Other Address Line 3",
+          "name": "ADDRESS1_LINE3"
+        },
+        "ADDRESS1_STATE": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Other State/Province",
+          "name": "ADDRESS1_STATE"
+        },
+        "ADDRESS1_STREET": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Other Street",
+          "name": "ADDRESS1_STREET"
+        },
+        "ADDRESS1_ZIP": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Other Zip/Postal Code",
+          "name": "ADDRESS1_ZIP"
+        },
+        "ADDRESS2_CITY": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Mailing City",
+          "name": "ADDRESS2_CITY"
+        },
+        "ADDRESS2_COUNTRY": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Mailing Country",
+          "name": "ADDRESS2_COUNTRY"
+        },
+        "ADDRESS2_LINE1": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Mailing Address Line 1",
+          "name": "ADDRESS2_LINE1"
+        },
+        "ADDRESS2_LINE2": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Mailing Address Line 2",
+          "name": "ADDRESS2_LINE2"
+        },
+        "ADDRESS2_LINE3": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Mailing Address Line 3",
+          "name": "ADDRESS2_LINE3"
+        },
+        "ADDRESS2_STATE": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Mailing State/Province",
+          "name": "ADDRESS2_STATE"
+        },
+        "ADDRESS2_STREET": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Mailing Street",
+          "name": "ADDRESS2_STREET"
+        },
+        "ADDRESS2_ZIP": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Mailing Zip/Postal Code",
+          "name": "ADDRESS2_ZIP"
+        }
+      },
+      "label": "Contact: Address"
+    },
+    {
+      "columns": {
+        "EMAIL": {
+          "dataType": "EMAIL_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Email",
+          "name": "EMAIL"
+        },
+        "EMAIL_BOUNCED_DATE": {
+          "dataType": "DATETIME_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Email Bounced Date",
+          "name": "EMAIL_BOUNCED_DATE"
+        },
+        "EMAIL_BOUNCED_REASON": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Email Bounced Reason",
+          "name": "EMAIL_BOUNCED_REASON"
+        },
+        "IS_EMAIL_BOUNCED": {
+          "dataType": "BOOLEAN_DATA",
+          "filterValues": [
+            {
+              "label": "True",
+              "name": "True"
+            },
+            {
+              "label": "False",
+              "name": "False"
+            }
+          ],
+          "filterable": true,
+          "label": "Is Email Bounced",
+          "name": "IS_EMAIL_BOUNCED"
+        },
+        "PHONE1": {
+          "dataType": "PHONE_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Phone",
+          "name": "PHONE1"
+        },
+        "PHONE2": {
+          "dataType": "PHONE_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Fax",
+          "name": "PHONE2"
+        },
+        "PHONE3": {
+          "dataType": "PHONE_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Mobile",
+          "name": "PHONE3"
+        },
+        "PHONE4": {
+          "dataType": "PHONE_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Home Phone",
+          "name": "PHONE4"
+        },
+        "PHONE5": {
+          "dataType": "PHONE_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Other Phone",
+          "name": "PHONE5"
+        }
+      },
+      "label": "Contact: Ph/Fax/Email"
+    },
+    {
+      "columns": {
+        "ACCOUNT.CREATED_DATE": {
+          "dataType": "DATE_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Account: Created Date",
+          "name": "ACCOUNT.CREATED_DATE"
+        },
+        "ACCOUNT.DESCRIPTION": {
+          "dataType": "TEXTAREA_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Account Description",
+          "name": "ACCOUNT.DESCRIPTION"
+        },
+        "ACCOUNT.LAST_ACTIVITY": {
+          "dataType": "DATE_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Account: Last Activity",
+          "name": "ACCOUNT.LAST_ACTIVITY"
+        },
+        "ACCOUNT.LAST_UPDATE": {
+          "dataType": "DATE_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Account: Last Modified Date",
+          "name": "ACCOUNT.LAST_UPDATE"
+        },
+        "ACCOUNT.NAME": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Account Name",
+          "name": "ACCOUNT.NAME"
+        },
+        "ACCOUNT_ID": {
+          "dataType": "ID_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Account ID",
+          "name": "ACCOUNT_ID"
+        },
+        "ACCOUNT_NUMBER": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Account Number",
+          "name": "ACCOUNT_NUMBER"
+        },
+        "ACCOUNT_OWNER_ROLE": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Account Owner Role Name",
+          "name": "ACCOUNT_OWNER_ROLE"
+        },
+        "ACCOUNT_OWNER_ROLE_DISPLAY": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Account Owner Role Display",
+          "name": "ACCOUNT_OWNER_ROLE_DISPLAY"
+        },
+        "ACCOUNT_SOURCE": {
+          "dataType": "PICKLIST_DATA",
+          "filterValues": [
+            {
+              "label": "Web",
+              "name": "Web"
+            },
+            {
+              "label": "Phone Inquiry",
+              "name": "Phone Inquiry"
+            },
+            {
+              "label": "Partner Referral",
+              "name": "Partner Referral"
+            },
+            {
+              "label": "Purchased List",
+              "name": "Purchased List"
+            },
+            {
+              "label": "Other",
+              "name": "Other"
+            }
+          ],
+          "filterable": true,
+          "label": "Account Source",
+          "name": "ACCOUNT_SOURCE"
+        },
+        "ALIAS": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Account Owner Alias",
+          "name": "ALIAS"
+        },
+        "CLEAN_STATUS_A": {
+          "dataType": "PICKLIST_DATA",
+          "filterValues": [
+            {
+              "label": "In Sync",
+              "name": "In Sync"
+            },
+            {
+              "label": "Different",
+              "name": "Different"
+            },
+            {
+              "label": "Reviewed",
+              "name": "Reviewed"
+            },
+            {
+              "label": "Not Found",
+              "name": "Not Found"
+            },
+            {
+              "label": "Inactive",
+              "name": "Inactive"
+            },
+            {
+              "label": "Not Compared",
+              "name": "Not Compared"
+            },
+            {
+              "label": "Select Match",
+              "name": "Select Match"
+            },
+            {
+              "label": "Skipped",
+              "name": "Skipped"
+            }
+          ],
+          "filterable": true,
+          "label": "Clean Status",
+          "name": "CLEAN_STATUS_A"
+        },
+        "DBA_NAME": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Tradestyle",
+          "name": "DBA_NAME"
+        },
+        "DNB_COMPANY": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "D&B Company",
+          "name": "DNB_COMPANY"
+        },
+        "DUNS_NUMBER": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "D-U-N-S Number",
+          "name": "DUNS_NUMBER"
+        },
+        "EMPLOYEES": {
+          "dataType": "DOUBLE_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Employees",
+          "name": "EMPLOYEES"
+        },
+        "INDUSTRY": {
+          "dataType": "PICKLIST_DATA",
+          "filterValues": [
+            {
+              "label": "Agriculture",
+              "name": "Agriculture"
+            },
+            {
+              "label": "Apparel",
+              "name": "Apparel"
+            },
+            {
+              "label": "Banking",
+              "name": "Banking"
+            },
+            {
+              "label": "Biotechnology",
+              "name": "Biotechnology"
+            },
+            {
+              "label": "Chemicals",
+              "name": "Chemicals"
+            },
+            {
+              "label": "Communications",
+              "name": "Communications"
+            },
+            {
+              "label": "Construction",
+              "name": "Construction"
+            },
+            {
+              "label": "Consulting",
+              "name": "Consulting"
+            },
+            {
+              "label": "Education",
+              "name": "Education"
+            },
+            {
+              "label": "Electronics",
+              "name": "Electronics"
+            },
+            {
+              "label": "Energy",
+              "name": "Energy"
+            },
+            {
+              "label": "Engineering",
+              "name": "Engineering"
+            },
+            {
+              "label": "Entertainment",
+              "name": "Entertainment"
+            },
+            {
+              "label": "Environmental",
+              "name": "Environmental"
+            },
+            {
+              "label": "Finance",
+              "name": "Finance"
+            },
+            {
+              "label": "Food & Beverage",
+              "name": "Food & Beverage"
+            },
+            {
+              "label": "Government",
+              "name": "Government"
+            },
+            {
+              "label": "Healthcare",
+              "name": "Healthcare"
+            },
+            {
+              "label": "Hospitality",
+              "name": "Hospitality"
+            },
+            {
+              "label": "Insurance",
+              "name": "Insurance"
+            },
+            {
+              "label": "Machinery",
+              "name": "Machinery"
+            },
+            {
+              "label": "Manufacturing",
+              "name": "Manufacturing"
+            },
+            {
+              "label": "Media",
+              "name": "Media"
+            },
+            {
+              "label": "Not For Profit",
+              "name": "Not For Profit"
+            },
+            {
+              "label": "Recreation",
+              "name": "Recreation"
+            },
+            {
+              "label": "Retail",
+              "name": "Retail"
+            },
+            {
+              "label": "Shipping",
+              "name": "Shipping"
+            },
+            {
+              "label": "Technology",
+              "name": "Technology"
+            },
+            {
+              "label": "Telecommunications",
+              "name": "Telecommunications"
+            },
+            {
+              "label": "Transportation",
+              "name": "Transportation"
+            },
+            {
+              "label": "Utilities",
+              "name": "Utilities"
+            },
+            {
+              "label": "Other",
+              "name": "Other"
+            }
+          ],
+          "filterable": true,
+          "label": "Industry",
+          "name": "INDUSTRY"
+        },
+        "JIGSAW_KEY_A": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Data.com Key",
+          "name": "JIGSAW_KEY_A"
+        },
+        "NAICS_CODE": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "NAICS Code",
+          "name": "NAICS_CODE"
+        },
+        "NAICS_DESC": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "NAICS Description",
+          "name": "NAICS_DESC"
+        },
+        "OWNERSHIP": {
+          "dataType": "PICKLIST_DATA",
+          "filterValues": [
+            {
+              "label": "Public",
+              "name": "Public"
+            },
+            {
+              "label": "Private",
+              "name": "Private"
+            },
+            {
+              "label": "Subsidiary",
+              "name": "Subsidiary"
+            },
+            {
+              "label": "Other",
+              "name": "Other"
+            }
+          ],
+          "filterable": true,
+          "label": "Ownership",
+          "name": "OWNERSHIP"
+        },
+        "OWNER_FULL_NAME": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Account Owner",
+          "name": "OWNER_FULL_NAME"
+        },
+        "PARENT.NAME": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Parent Account",
+          "name": "PARENT.NAME"
+        },
+        "PARENT_ID": {
+          "dataType": "ID_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Parent Account ID",
+          "name": "PARENT_ID"
+        },
+        "RATING": {
+          "dataType": "PICKLIST_DATA",
+          "filterValues": [
+            {
+              "label": "Hot",
+              "name": "Hot"
+            },
+            {
+              "label": "Warm",
+              "name": "Warm"
+            },
+            {
+              "label": "Cold",
+              "name": "Cold"
+            }
+          ],
+          "filterable": true,
+          "label": "Rating",
+          "name": "RATING"
+        },
+        "SALES": {
+          "dataType": "CURRENCY_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Annual Revenue",
+          "name": "SALES"
+        },
+        "SIC": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "SIC Code",
+          "name": "SIC"
+        },
+        "SIC_DESC": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "SIC Description",
+          "name": "SIC_DESC"
+        },
+        "SITE": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Account Site",
+          "name": "SITE"
+        },
+        "TICKER": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Ticker Symbol",
+          "name": "TICKER"
+        },
+        "TYPE": {
+          "dataType": "PICKLIST_DATA",
+          "filterValues": [
+            {
+              "label": "Prospect",
+              "name": "Prospect"
+            },
+            {
+              "label": "Customer - Direct",
+              "name": "Customer - Direct"
+            },
+            {
+              "label": "Customer - Channel",
+              "name": "Customer - Channel"
+            },
+            {
+              "label": "Channel Partner / Reseller",
+              "name": "Channel Partner / Reseller"
+            },
+            {
+              "label": "Installation Partner",
+              "name": "Installation Partner"
+            },
+            {
+              "label": "Technology Partner",
+              "name": "Technology Partner"
+            },
+            {
+              "label": "Other",
+              "name": "Other"
+            }
+          ],
+          "filterable": true,
+          "label": "Type",
+          "name": "TYPE"
+        },
+        "YEAR_STARTED": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Year Started",
+          "name": "YEAR_STARTED"
+        }
+      },
+      "label": "Account: General"
+    },
+    {
+      "columns": {
+        "ACCOUNT.ADDRESS1_CITY": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Billing City",
+          "name": "ACCOUNT.ADDRESS1_CITY"
+        },
+        "ACCOUNT.ADDRESS1_COUNTRY": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Billing Country",
+          "name": "ACCOUNT.ADDRESS1_COUNTRY"
+        },
+        "ACCOUNT.ADDRESS1_LINE1": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Billing Address Line 1",
+          "name": "ACCOUNT.ADDRESS1_LINE1"
+        },
+        "ACCOUNT.ADDRESS1_LINE2": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Billing Address Line 2",
+          "name": "ACCOUNT.ADDRESS1_LINE2"
+        },
+        "ACCOUNT.ADDRESS1_LINE3": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Billing Address Line 3",
+          "name": "ACCOUNT.ADDRESS1_LINE3"
+        },
+        "ACCOUNT.ADDRESS1_STATE": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Billing State/Province",
+          "name": "ACCOUNT.ADDRESS1_STATE"
+        },
+        "ACCOUNT.ADDRESS1_STREET": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Billing Street",
+          "name": "ACCOUNT.ADDRESS1_STREET"
+        },
+        "ACCOUNT.ADDRESS1_ZIP": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Billing Zip/Postal Code",
+          "name": "ACCOUNT.ADDRESS1_ZIP"
+        },
+        "ACCOUNT.ADDRESS2_CITY": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Shipping City",
+          "name": "ACCOUNT.ADDRESS2_CITY"
+        },
+        "ACCOUNT.ADDRESS2_COUNTRY": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Shipping Country",
+          "name": "ACCOUNT.ADDRESS2_COUNTRY"
+        },
+        "ACCOUNT.ADDRESS2_LINE1": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Shipping Address Line 1",
+          "name": "ACCOUNT.ADDRESS2_LINE1"
+        },
+        "ACCOUNT.ADDRESS2_LINE2": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Shipping Address Line 2",
+          "name": "ACCOUNT.ADDRESS2_LINE2"
+        },
+        "ACCOUNT.ADDRESS2_LINE3": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Shipping Address Line 3",
+          "name": "ACCOUNT.ADDRESS2_LINE3"
+        },
+        "ACCOUNT.ADDRESS2_STATE": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Shipping State/Province",
+          "name": "ACCOUNT.ADDRESS2_STATE"
+        },
+        "ACCOUNT.ADDRESS2_STREET": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Shipping Street",
+          "name": "ACCOUNT.ADDRESS2_STREET"
+        },
+        "ACCOUNT.ADDRESS2_ZIP": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Shipping Zip/Postal Code",
+          "name": "ACCOUNT.ADDRESS2_ZIP"
+        }
+      },
+      "label": "Account: Address"
+    },
+    {
+      "columns": {
+        "ACCOUNT.PHONE1": {
+          "dataType": "PHONE_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Account: Phone",
+          "name": "ACCOUNT.PHONE1"
+        },
+        "ACCOUNT.PHONE2": {
+          "dataType": "PHONE_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Account: Fax",
+          "name": "ACCOUNT.PHONE2"
+        },
+        "URL": {
+          "dataType": "URL_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "Website",
+          "name": "URL"
+        }
+      },
+      "label": "Account: Ph/Fax/URL"
+    },
+    {
+      "columns": {
+        "Contact.B6_Amount__c": {
+          "dataType": "DOUBLE_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "B6 Amount",
+          "name": "Contact.B6_Amount__c"
+        },
+        "Contact.B6_Date__c": {
+          "dataType": "DATE_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "B6 Date",
+          "name": "Contact.B6_Date__c"
+        },
+        "Contact.B6_Text__c": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "B6 Text",
+          "name": "Contact.B6_Text__c"
+        }
+      },
+      "label": "Contact: Custom Info"
+    },
+    {
+      "columns": {
+        "Account.B6_Amount__c": {
+          "dataType": "DOUBLE_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "B6 Amount",
+          "name": "Account.B6_Amount__c"
+        },
+        "Account.B6_Date__c": {
+          "dataType": "DATE_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "B6 Date",
+          "name": "Account.B6_Date__c"
+        },
+        "Account.B6_Text__c": {
+          "dataType": "STRING_DATA",
+          "filterValues": null,
+          "filterable": true,
+          "label": "B6 Text",
+          "name": "Account.B6_Text__c"
+        }
+      },
+      "label": "Account: Custom Info"
+    }
+  ],
+  "divisionInfo": null,
+  "scopeInfo": {
+    "defaultValue": "my",
+    "values": [
+      {
+        "allowsDivision": false,
+        "label": "My contacts",
+        "value": "my"
+      },
+      {
+        "allowsDivision": false,
+        "label": "My accounts",
+        "value": "user"
+      },
+      {
+        "allowsDivision": false,
+        "label": "My team's accounts",
+        "value": "team"
+      },
+      {
+        "allowsDivision": true,
+        "label": "All accounts",
+        "value": "organization"
+      },
+      {
+        "allowsDivision": false,
+        "label": "Filter by scope",
+        "value": "scopingRule"
+      }
+    ]
+  },
+  "standardDateFilterDurationGroups": [
+    {
+      "label": "",
+      "standardDateFilterDurations": [
+        {
+          "endDate": "2026-11-02",
+          "label": "Custom",
+          "startDate": "2026-11-03",
+          "value": "CUSTOM"
+        }
+      ]
+    },
+    {
+      "label": "Fiscal Year",
+      "standardDateFilterDurations": [
+        {
+          "endDate": "2026-12-31",
+          "label": "Current FY",
+          "startDate": "2026-01-01",
+          "value": "THIS_FISCAL_YEAR"
+        },
+        {
+          "endDate": "2025-12-31",
+          "label": "Previous FY",
+          "startDate": "2025-01-01",
+          "value": "LAST_FISCAL_YEAR"
+        },
+        {
+          "endDate": "2025-12-31",
+          "label": "Previous 2 FY",
+          "startDate": "2024-01-01",
+          "value": "LAST_N_FISCAL_YEARS:2"
+        },
+        {
+          "endDate": "2024-12-31",
+          "label": "2 FY Ago",
+          "startDate": "2024-01-01",
+          "value": "LAST_N_FISCAL_YEARS_AGO:2"
+        },
+        {
+          "endDate": "2027-12-31",
+          "label": "Next FY",
+          "startDate": "2027-01-01",
+          "value": "NEXT_FISCAL_YEAR"
+        },
+        {
+          "endDate": "2026-12-31",
+          "label": "Current and Previous FY",
+          "startDate": "2025-01-01",
+          "value": "THIS_AND_LAST_FISCAL_YEAR:2"
+        },
+        {
+          "endDate": "2026-12-31",
+          "label": "Current and Previous 2 FY",
+          "startDate": "2024-01-01",
+          "value": "THIS_AND_LAST_N_FISCAL_YEARS:2"
+        },
+        {
+          "endDate": "2027-12-31",
+          "label": "Current and Next FY",
+          "startDate": "2026-01-01",
+          "value": "THIS_AND_NEXT_FISCAL_YEAR"
+        }
+      ]
+    },
+    {
+      "label": "Fiscal Quarter",
+      "standardDateFilterDurations": [
+        {
+          "endDate": "2026-12-31",
+          "label": "Current FQ",
+          "startDate": "2026-10-01",
+          "value": "THIS_FISCAL_QUARTER"
+        },
+        {
+          "endDate": "2027-03-31",
+          "label": "Current and Next FQ",
+          "startDate": "2026-10-01",
+          "value": "THIS_AND_NEXT_FISCAL_QUARTER"
+        },
+        {
+          "endDate": "2026-12-31",
+          "label": "Current and Previous FQ",
+          "startDate": "2026-07-01",
+          "value": "LAST_AND_THIS_FISCAL_QUARTER"
+        },
+        {
+          "endDate": "2027-03-31",
+          "label": "Next FQ",
+          "startDate": "2027-01-01",
+          "value": "NEXT_FISCAL_QUARTER"
+        },
+        {
+          "endDate": "2026-09-30",
+          "label": "Previous FQ",
+          "startDate": "2026-07-01",
+          "value": "LAST_FISCAL_QUARTER"
+        },
+        {
+          "endDate": "2027-09-30",
+          "label": "Current and Next 3 FQ",
+          "startDate": "2026-10-01",
+          "value": "THIS_AND_NEXT_N_FISCAL_QUARTERS:3"
+        }
+      ]
+    },
+    {
+      "label": "Calendar Year",
+      "standardDateFilterDurations": [
+        {
+          "endDate": "2026-12-31",
+          "label": "Current CY",
+          "startDate": "2026-01-01",
+          "value": "THIS_YEAR"
+        },
+        {
+          "endDate": "2025-12-31",
+          "label": "Previous CY",
+          "startDate": "2025-01-01",
+          "value": "LAST_YEAR"
+        },
+        {
+          "endDate": "2025-12-31",
+          "label": "Previous 2 CY",
+          "startDate": "2024-01-01",
+          "value": "LAST_N_YEARS:2"
+        },
+        {
+          "endDate": "2024-12-31",
+          "label": "2 CY Ago",
+          "startDate": "2024-01-01",
+          "value": "LAST_N_YEARS_AGO:2"
+        },
+        {
+          "endDate": "2027-12-31",
+          "label": "Next CY",
+          "startDate": "2027-01-01",
+          "value": "NEXT_YEAR"
+        },
+        {
+          "endDate": "2026-12-31",
+          "label": "Current and Previous CY",
+          "startDate": "2025-01-01",
+          "value": "THIS_AND_LAST_YEAR:2"
+        },
+        {
+          "endDate": "2026-12-31",
+          "label": "Current and Previous 2 CY",
+          "startDate": "2024-01-01",
+          "value": "THIS_AND_LAST_N_YEARS:2"
+        },
+        {
+          "endDate": "2027-12-31",
+          "label": "Current and Next CY",
+          "startDate": "2026-01-01",
+          "value": "THIS_AND_NEXT_YEAR"
+        }
+      ]
+    },
+    {
+      "label": "Calendar Quarter",
+      "standardDateFilterDurations": [
+        {
+          "endDate": "2026-12-31",
+          "label": "Current CQ",
+          "startDate": "2026-10-01",
+          "value": "THIS_QUARTER"
+        },
+        {
+          "endDate": "2027-03-31",
+          "label": "Current and Next CQ",
+          "startDate": "2026-10-01",
+          "value": "THIS_AND_NEXT_QUARTER"
+        },
+        {
+          "endDate": "2026-12-31",
+          "label": "Current and Previous CQ",
+          "startDate": "2026-07-01",
+          "value": "LAST_AND_THIS_QUARTER"
+        },
+        {
+          "endDate": "2027-03-31",
+          "label": "Next CQ",
+          "startDate": "2027-01-01",
+          "value": "NEXT_QUARTER"
+        },
+        {
+          "endDate": "2026-09-30",
+          "label": "Previous CQ",
+          "startDate": "2026-07-01",
+          "value": "LAST_QUARTER"
+        },
+        {
+          "endDate": "2027-09-30",
+          "label": "Current and Next 3 CQ",
+          "startDate": "2026-10-01",
+          "value": "THIS_AND_NEXT_N_QUARTERS:3"
+        }
+      ]
+    },
+    {
+      "label": "Calendar Month",
+      "standardDateFilterDurations": [
+        {
+          "endDate": "2026-10-31",
+          "label": "Last Month",
+          "startDate": "2026-10-01",
+          "value": "LAST_MONTH"
+        },
+        {
+          "endDate": "2026-11-30",
+          "label": "This Month",
+          "startDate": "2026-11-01",
+          "value": "THIS_MONTH"
+        },
+        {
+          "endDate": "2026-12-31",
+          "label": "Next Month",
+          "startDate": "2026-12-01",
+          "value": "NEXT_MONTH"
+        },
+        {
+          "endDate": "2026-11-30",
+          "label": "Current and Previous Month",
+          "startDate": "2026-10-01",
+          "value": "LAST_AND_THIS_MONTH"
+        },
+        {
+          "endDate": "2026-12-31",
+          "label": "Current and Next Month",
+          "startDate": "2026-11-01",
+          "value": "THIS_AND_NEXT_MONTH"
+        }
+      ]
+    },
+    {
+      "label": "Calendar Week",
+      "standardDateFilterDurations": [
+        {
+          "endDate": "2026-10-31",
+          "label": "Last Week",
+          "startDate": "2026-10-25",
+          "value": "LAST_WEEK"
+        },
+        {
+          "endDate": "2026-11-07",
+          "label": "This Week",
+          "startDate": "2026-11-01",
+          "value": "THIS_WEEK"
+        },
+        {
+          "endDate": "2026-11-14",
+          "label": "Next Week",
+          "startDate": "2026-11-08",
+          "value": "NEXT_WEEK"
+        }
+      ]
+    },
+    {
+      "label": "Day",
+      "standardDateFilterDurations": [
+        {
+          "endDate": "2026-11-02",
+          "label": "Yesterday",
+          "startDate": "2026-11-02",
+          "value": "YESTERDAY"
+        },
+        {
+          "endDate": "2026-11-03",
+          "label": "Today",
+          "startDate": "2026-11-03",
+          "value": "TODAY"
+        },
+        {
+          "endDate": "2026-11-04",
+          "label": "Tomorrow",
+          "startDate": "2026-11-04",
+          "value": "TOMORROW"
+        },
+        {
+          "endDate": "2026-11-03",
+          "label": "Last 7 Days",
+          "startDate": "2026-10-28",
+          "value": "LAST_N_DAYS:7"
+        },
+        {
+          "endDate": "2026-11-03",
+          "label": "Last 30 Days",
+          "startDate": "2026-10-05",
+          "value": "LAST_N_DAYS:30"
+        },
+        {
+          "endDate": "2026-11-03",
+          "label": "Last 60 Days",
+          "startDate": "2026-09-05",
+          "value": "LAST_N_DAYS:60"
+        },
+        {
+          "endDate": "2026-11-03",
+          "label": "Last 90 Days",
+          "startDate": "2026-08-06",
+          "value": "LAST_N_DAYS:90"
+        },
+        {
+          "endDate": "2026-11-03",
+          "label": "Last 120 Days",
+          "startDate": "2026-07-07",
+          "value": "LAST_N_DAYS:120"
+        },
+        {
+          "endDate": "2026-11-09",
+          "label": "Next 7 Days",
+          "startDate": "2026-11-03",
+          "value": "NEXT_N_DAYS:7"
+        },
+        {
+          "endDate": "2026-12-02",
+          "label": "Next 30 Days",
+          "startDate": "2026-11-03",
+          "value": "NEXT_N_DAYS:30"
+        },
+        {
+          "endDate": "2027-01-01",
+          "label": "Next 60 Days",
+          "startDate": "2026-11-03",
+          "value": "NEXT_N_DAYS:60"
+        },
+        {
+          "endDate": "2027-01-31",
+          "label": "Next 90 Days",
+          "startDate": "2026-11-03",
+          "value": "NEXT_N_DAYS:90"
+        },
+        {
+          "endDate": "2027-03-02",
+          "label": "Next 120 Days",
+          "startDate": "2026-11-03",
+          "value": "NEXT_N_DAYS:120"
+        }
+      ]
+    }
+  ],
+  "standardFilterInfos": null
+}

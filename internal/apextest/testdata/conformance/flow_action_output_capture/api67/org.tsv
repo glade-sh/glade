@@ -1,0 +1,4 @@
+case	result	observed
+OutputProbeTest.single	Pass	text=one; explicitNull=null; untouched=null; amount=12.5; day=2026-11-03; items=[one,two]
+OutputProbeCoercion.decimalToText	Pass	12.5 -> "12.5"; -7.25 -> "-7.25"; 0 -> "0"
+OutputCoerceTest.decimalText	Pass	Decimal 12.5 assigned to String value "12.5"

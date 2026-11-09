@@ -89,7 +89,7 @@ func TestNetworkQueryResultNativeTestRunnerRoutes(t *testing.T) {
  }
 }`)
 			writeFile(t, filepath.Join(root, "force-app/main/default/classes/CommunityQueryTest.cls-meta.xml"), fmt.Sprintf(`<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>%s</apiVersion><status>Active</status></ApexClass>`, api))
-			writeFile(t, filepath.Join(root, "glade.yml"), "org:\n  features: [Communities]\n")
+			writeFile(t, filepath.Join(root, "glade.yml"), "org:\n  features: [Communities, NetworksEnabled]\n")
 			writeFile(t, filepath.Join(root, "force-app/main/default/networks/Synthetic Portal.network-meta.xml"), `<Network><status>UnderConstruction</status><urlPathPrefix>synthetic</urlPathPrefix></Network>`)
 			index := loadTestIndex(t, root)
 			org := orgFromIndex(index)

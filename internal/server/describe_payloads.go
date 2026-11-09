@@ -755,12 +755,19 @@ func recordPayloadWithProjection(record storage.Record, version string, objectNa
 	if record.ID != "" {
 		id = record.ID
 	}
+	visibleID := id
+	if storage.IsProjectEventSubscriber(record) {
+		visibleID = storage.EventSubscriberVisibleID
+		if triggerID := storage.ProjectEventSubscriberTriggerID(record); triggerID != "" {
+			id = triggerID
+		}
+	}
 	out := map[string]any{
 		"attributes": map[string]any{
 			"type": objectName,
 			"url":  "/services/data/" + version + "/sobjects/" + objectName + "/" + string(id),
 		},
-		"Id": string(id),
+		"Id": string(visibleID),
 	}
 	if projected {
 		for _, name := range projection {

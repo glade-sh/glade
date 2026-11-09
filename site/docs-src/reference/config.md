@@ -58,7 +58,7 @@ Use `--force` to replace an existing file.
 | `project.namespaceRemaps` | string list | no remaps | Each entry pairs source and local namespaces. |
 | `project.dependencies` | mapping list | no explicit source mappings | Map consumer-declared package names or aliases to local directories. |
 | `test.user.*` | strings | deterministic running-user defaults | Validate time zone, locale, language and currency keys. |
-| `test.clock.start` | RFC3339 string | `2026-05-02T12:00:00Z` | Use Z or an explicit UTC offset. |
+| `test.clock.start` | RFC3339 string | `2026-05-13T12:00:00Z` | Use Z or an explicit UTC offset. |
 | `project.managedPackageDependencies` | dependency list | no configured dependencies | Use a source path or the documented artifact syntax. |
 | `project.dependencyPaths` | path list | normal local workspace discovery | Relative paths resolve from `glade.yml`; each entry adds a directory and its immediate child projects. |
 | `project.packageShims` | string list | no local method bodies from shims | A captured artifact still owns the contract. |
@@ -115,6 +115,13 @@ test:
 | `test.user.defaultCurrencyIsoCode` | Default running test user's currency code. |
 | `test.clock.start` | Deterministic test clock start as an RFC3339 timestamp. |
 
+When `config/project-scratch-def.json` names a `country` of `NO`, `DE` or `GB` and
+`test.user.locale` or `test.user.timeZone` is unset, the running test user takes the
+locale and time zone Salesforce gives a fresh org for that country (`no_NO` and
+`Europe/Paris`, `de_DE` and `Europe/Berlin`, `en_GB` and `Europe/London`). The
+Organization row and the user also report that country. Other countries keep the
+defaults above.
+
 ### Test user and clock
 
 Set the default running test user and deterministic clock in `glade.yml`:
@@ -135,10 +142,17 @@ and async work. `System.runAs` uses that user's own settings and restores the
 configured running user on exit. The configured user fields can also be queried
 from `User`. They do not change the Organization defaults or the host clock.
 
-Omitted values keep the existing defaults: `America/Los_Angeles`, `en_US` locale
-and language, `USD`, and a clock starting at `2026-05-02T12:00:00Z`. Choose a weekday
-when a test deliberately assumes that today and tomorrow are in the same week.
-Choose `GMT` when a UTC timestamp's calendar date is the intended local date.
+Omitted values keep the defaults: `America/Los_Angeles`, `en_US` locale and
+language, `USD`, and a clock starting at `2026-05-13T12:00:00Z`. Salesforce runs
+a test at the real date, so `Date.today()` changes from run to run. Glade fixes
+the start instead, so a run, its cached results and CI repeat exactly. The
+default is a Wednesday in mid-month and mid-quarter (05:00 in the default
+`America/Los_Angeles` zone). In every time zone that day and the days just
+before and after it are weekdays, and a week on either side stays in May. Before v0.3.5
+the default was `2026-05-02T12:00:00Z`, a Saturday; set that value to keep the old
+clock. Set `start` explicitly when a test assumes a particular weekday, month
+end or year end. Choose `GMT` when a UTC timestamp's calendar date is the
+intended local date.
 
 `timeZone` must be a recognized IANA identifier (or `UTC`/`GMT`); host-dependent
 `Local` and unknown identifiers fail validation. A recognized zone outside the
@@ -189,9 +203,11 @@ project:
 listed in `packageAliases`. `path` is relative to the `glade.yml` file and may
 point to an SFDX project or a bare source directory without a manifest. When
 pointing to an SFDX project, `package` optionally selects one
-`packageDirectories[].package`; if omitted, the project’s default package
-directories are used, or all declared package directories if none is marked
-default. Source namespaces come from the source project and are not inferred
+`packageDirectories[].package`. If `package` is omitted and `name` is itself a
+package that the project declares, that package is selected; otherwise the
+project’s default package directories are used, or all declared package
+directories if none is marked default. Two entries may point to the same `path`
+and select different packages; each loads its own package directories. Source namespaces come from the source project and are not inferred
 from the mapping name. The optional `version` is recorded for the local
 dependency and does not prevent loading a checkout.
 
@@ -288,7 +304,10 @@ packages use local workspace discovery plus these paths. One match loads;
 `dependency_missing` means no matching source was found, and
 `dependency_ambiguous` lists multiple matching roots. Narrow the search or remove
 duplicate checkouts to resolve ambiguity. `packageAliases` does not map package
-names to local paths.
+names to local paths, and it does not change what a missing source does: a
+declared package with no source fails only the tests that reference it, aliased
+or not. `dependency_ambiguous` and `dependency_load_error` fail every test until
+fixed.
 
 The project's own `glade.yml`, or otherwise the nearest ancestor configuration,
 supplies these paths. `glade config show` prints them. Changing the paths or
@@ -302,7 +321,8 @@ discovered scratch definition. Features configure local schema and runtime
 behavior; they do not provision hosted Salesforce services.
 
 Features are combined from `glade.yml`, `config/project-scratch-def.json`,
-`config/hc-project-scratch-def.json`, and relative `config_file:` entries in
+`config/hc-project-scratch-def.json`, the `definitionFile` of each
+`sfdx-project.json` package directory, and relative `config_file:` entries in
 `cumulusci.yml` or `cumulusci.template.yml`. Those relative paths must stay inside
 the project. A false setting does not remove a feature enabled by another input.
 

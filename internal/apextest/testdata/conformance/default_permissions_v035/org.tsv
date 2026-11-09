@@ -1,0 +1,7 @@
+source_api	method	observation
+62.0	adminDirect	"{""strip"":[false,true],""systemInsert"":""ok"",""userInsert"":""System.DmlException"",""enforcedQuery"":""System.QueryException"",""userQuery"":""System.QueryException"",""describe"":[true,true,true,true,false,false,false]}"
+62.0	adminRunAs	"{""strip"":[false,true],""systemInsert"":""ok"",""userInsert"":""System.DmlException"",""enforcedQuery"":""System.QueryException"",""userQuery"":""System.QueryException"",""describe"":[true,true,true,true,false,false,false]}"
+62.0	standardRunAs	"{""strip"":[true,true],""systemInsert"":""ok"",""userInsert"":""System.SecurityException"",""enforcedQuery"":""System.QueryException"",""userQuery"":""System.QueryException"",""describe"":[false,false,false,false,false,false,false]}"
+67.0	adminDirect	"{""strip"":[false,true],""systemInsert"":""ok"",""userInsert"":""System.DmlException"",""enforcedQuery"":""System.QueryException"",""userQuery"":""System.QueryException"",""describe"":[true,true,true,true,false,false,false]}"
+67.0	adminRunAs	"{""strip"":[false,true],""systemInsert"":""ok"",""userInsert"":""System.DmlException"",""enforcedQuery"":""System.QueryException"",""userQuery"":""System.QueryException"",""describe"":[true,true,true,true,false,false,false]}"
+67.0	standardRunAs	"{""strip"":[true,true],""systemInsert"":""ok"",""userInsert"":""System.SecurityException"",""enforcedQuery"":""System.QueryException"",""userQuery"":""System.QueryException"",""describe"":[false,false,false,false,false,false,false]}"

@@ -1,0 +1,1 @@
+User u=[SELECT Id FROM User WHERE Alias='b6usr' LIMIT 1];Account a=[SELECT Id FROM Account WHERE Name='B6 Other Owner' LIMIT 1];insert new Opportunity(Name='B6 Limited Opportunity',AccountId=a.Id,OwnerId=u.Id,StageName='Prospecting',CloseDate=Date.today(),Amount=1234.5);

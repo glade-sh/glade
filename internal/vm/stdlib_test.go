@@ -142,12 +142,16 @@ System.assertEquals('xaxbxcx', 'abc'.replace('', 'x'));
 	}
 }
 
+// A boundary inside the surrogate pair yields that pair's lone unit, as the
+// captured rows substring_0_1 / substring_1_2 in stdlib_surrogate_c14 show.
 func TestExecStringSubstringUsesApexUTF16Indexes(t *testing.T) {
 	program, err := CompileAnonymous(`
 String text = 'a😀b';
 System.assertEquals(4, text.length());
-System.assertEquals('😀', text.substring(1, 2));
-System.assertEquals('', text.substring(2, 3));
+System.assertEquals(new List<Integer>{55357}, text.substring(1, 2).getChars());
+System.assertEquals(1, text.substring(1, 2).length());
+System.assertEquals(new List<Integer>{56832}, text.substring(2, 3).getChars());
+System.assertEquals('😀', text.substring(1, 2) + text.substring(2, 3));
 System.assertEquals('😀', text.substring(1, 3));
 System.assertEquals('b', text.substring(3));
 `)
@@ -1026,10 +1030,9 @@ System.assertEquals('Flow', (String)clonedAction.actionType);
 ConnectApi.AccountSyncToExternalInputRepresentation sync = new ConnectApi.AccountSyncToExternalInputRepresentation();
 sync.adServerAccountId = 'external-account';
 sync.contactIds = new List<String>{'003000000000001AAA'};
-sync.customFields = new Map<String,Object>{'region' => 'NA'};
 System.assertEquals('external-account', (String)sync.adServerAccountId);
 System.assertEquals(1, ((List<String>)sync.contactIds).size());
-System.assertEquals('NA', (String)((Map<String,Object>)sync.customFields).get('region'));
+System.assertEquals(null, sync.customFields);
 
 ConnectApi.NamedCredentialInput namedCredential = new ConnectApi.NamedCredentialInput();
 namedCredential.developerName = 'googleBooksAPIApex';
@@ -3144,7 +3147,9 @@ System.debug('logged without level');
 	if err != nil {
 		t.Fatal(err)
 	}
-	result, err := Execute(program, nil)
+	machine := New(nil)
+	pinSaturdayTestClock(machine)
+	result, err := machine.Execute(program)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3213,7 +3218,9 @@ System.assertEquals('System.QueryException:bad query', caught);
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Execute(program, nil); err != nil {
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -3545,7 +3552,11 @@ func TestExecCoreBuiltinExceptionMatrix(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Execute(program, nil); err != nil {
+	machine := New(nil)
+	// Five of these types are only constructible from test or UI context
+	// natively (system_exception_hierarchy winter27_context rows).
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }

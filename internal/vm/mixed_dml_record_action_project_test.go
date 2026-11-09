@@ -89,6 +89,7 @@ func TestMixedDMLRecordActionAnonymousHelperAndProjectTestScopeRoutes(t *testing
 	}
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api, func(t *testing.T) {
+			t.Parallel()
 			index := executionCaptureIndex(t, fixture, api)
 			runtime, err := apextest.CompileProjectRuntimeForRequestWithSourceDigests(index, nil)
 			if err != nil {

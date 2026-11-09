@@ -1,0 +1,7 @@
+source_api	method	observation
+62.0	caseVisibility	"{""userMode"":""System.QueryException"",""readable"":false,""without"":1,""with"":1}"
+62.0	userVisibility	"{""readable"":true,""inherited"":1,""without"":1,""with"":1}"
+67.0	caseVisibility	"{""userMode"":""System.QueryException"",""readable"":false,""without"":""System.SecurityException"",""with"":""System.SecurityException""}"
+67.0	userVisibility	"{""readable"":true,""inherited"":1,""without"":1,""with"":1}"
+68.0	caseVisibility	"{""userMode"":""System.QueryException"",""readable"":false,""without"":""System.SecurityException"",""with"":""System.SecurityException""}"
+68.0	userVisibility	"{""readable"":true,""inherited"":1,""without"":1,""with"":1}"

@@ -36,6 +36,7 @@ func TestPersonAccountBoundaryHostNativeConformance(t *testing.T) {
 	}
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api, func(t *testing.T) {
+			t.Parallel()
 			root := t.TempDir()
 			err := filepath.WalkDir(fixture, func(path string, entry os.DirEntry, err error) error {
 				if err != nil || entry.IsDir() {
@@ -94,6 +95,7 @@ func TestPersonAccountBoundaryHostNativeConformance(t *testing.T) {
 			}
 			for _, route := range []string{"lwc", "visualforce"} {
 				t.Run(route, func(t *testing.T) {
+					t.Parallel()
 					machine := vm.New(nil)
 					org := apextest.OrgFromIndex(index)
 					org.APIVersion = api

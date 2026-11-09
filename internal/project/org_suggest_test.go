@@ -76,12 +76,13 @@ func TestSuggestOrgSetupCustomPersonFieldsAndMerge(t *testing.T) {
 	writeFile(t, filepath.Join(root, "force-app/c/classes/B.cls"), "class B { Object o = new Account().get('Loyalty__pc'); }")
 	writeFile(t, filepath.Join(root, "force-app/c/classes/C.cls"), "class C { void m() { List<Network> n = [SELECT Id FROM Network]; Id x = Network.getNetworkId(); } }")
 	got := SuggestOrgSetup(root)
-	if len(got) != 2 {
+	// PersonAccounts, Communities (the Network class call) and NetworksEnabled (the Network query).
+	if len(got) != 3 {
 		t.Fatalf("got %+v", got)
 	}
 	p := suggestionFor(t, got, "feature")
 	// Existing glade.yml entries are kept in the printed list.
-	if !strings.Contains(p.YAML, "MultiCurrency") || !strings.Contains(p.YAML, "PersonAccounts") || !strings.Contains(p.YAML, "Communities") {
+	if !strings.Contains(p.YAML, "MultiCurrency") || !strings.Contains(p.YAML, "PersonAccounts") || !strings.Contains(p.YAML, "Communities") || !strings.Contains(p.YAML, "NetworksEnabled") {
 		t.Fatalf("yaml=%q", p.YAML)
 	}
 }

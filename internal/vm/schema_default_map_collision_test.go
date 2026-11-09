@@ -49,8 +49,12 @@ func TestSchemaDefaultMapLookupCompatibilityExclusions(t *testing.T) {
 				t.Fatal("control lacks distinct record presence")
 			}
 			encoded := machine.mapKey(stored)
-			if encoded != machine.mapKey(key) {
-				t.Fatal("control lacks physical key collision")
+			// An SObject key hashes over the == projection, so unequal presence gives
+			// distinct physical keys and the collision guard has nothing to separate.
+			// Only the class control (a user hashCode) still collides physically.
+			collides := encoded == machine.mapKey(key)
+			if collides != (control == "class") {
+				t.Fatalf("physical key collision = %t for control %s", collides, control)
 			}
 			keyed := Map()
 			keyed.Type = mapType
@@ -61,11 +65,11 @@ func TestSchemaDefaultMapLookupCompatibilityExclusions(t *testing.T) {
 			keyed = machine.Globals["keyed"]
 			for i, probe := range []Value{key, stored} {
 				got, handled, err := machine.callMapValueMember("", keyed, "get", []Value{probe}, &Result{})
-				if control == "id" && i == 0 {
-					// The existing Id-backed path already distinguishes these
-					// unequal records; the new physical-slot guard is not involved.
+				if control != "class" && i == 0 {
+					// The == projection already distinguishes these unequal records;
+					// the physical-slot guard is not involved.
 					if err != nil || !handled || got.Kind != ValueNull {
-						t.Fatalf("Id-backed lookup changed: %v %t %v", got, handled, err)
+						t.Fatalf("projected-key lookup changed: %v %t %v", got, handled, err)
 					}
 					continue
 				}

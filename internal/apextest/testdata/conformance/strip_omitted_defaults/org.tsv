@@ -1,0 +1,303 @@
+source_api	class	method	subject	observation
+62.0	MdtAbsentProbe	matrix	isNull	value=true
+62.0	MdtAbsentProbe	matrix	flag	threw=System.NullPointerException
+62.0	MdtAbsentProbe	matrix	note	threw=System.NullPointerException
+62.0	MdtAbsentProbe	matrix	developerName	threw=System.NullPointerException
+62.0	MdtAbsentProbe	matrix	localFlag	threw=System.NullPointerException
+62.0	MdtAbsentProbe	matrix	getAllFlag	threw=System.NullPointerException
+62.0	MdtAbsentProbe	matrix	safeNavFlag	value=null
+62.0	MdtAbsentProbe	matrix	presentFlag	value=true
+62.0	MdtAbsentProbe	matrix	presentNote	value=note
+62.0	MdtAbsentProbe	matrix	assignFlag	threw=System.NullPointerException
+67.0	MdtAbsentProbe	matrix	isNull	value=true
+67.0	MdtAbsentProbe	matrix	flag	threw=System.NullPointerException
+67.0	MdtAbsentProbe	matrix	note	threw=System.NullPointerException
+67.0	MdtAbsentProbe	matrix	developerName	threw=System.NullPointerException
+67.0	MdtAbsentProbe	matrix	localFlag	threw=System.NullPointerException
+67.0	MdtAbsentProbe	matrix	getAllFlag	threw=System.NullPointerException
+67.0	MdtAbsentProbe	matrix	safeNavFlag	value=null
+67.0	MdtAbsentProbe	matrix	presentFlag	value=true
+67.0	MdtAbsentProbe	matrix	presentNote	value=note
+67.0	MdtAbsentProbe	matrix	assignFlag	threw=System.NullPointerException
+55.0	StripDefaultProbe	byIdUpdatableStandard	Account	populated=Id removed=
+55.0	StripDefaultProbe	byIdUpdatableStandard	Contact	populated=Id removed=
+55.0	StripDefaultProbe	byIdUpdatableStandard	Lead	populated=Id removed=
+55.0	StripDefaultProbe	byIdUpdatableStandard	Case	populated=Id removed=
+55.0	StripDefaultProbe	byIdUpdatableStandard	Opportunity	populated=Id removed=
+55.0	StripDefaultProbe	byIdUpdatableStandard	Task	populated=Id removed=
+55.0	StripDefaultProbe	byIdUpdatableStandard	Product2	populated=Id threw=System.NoAccessException
+55.0	StripDefaultProbe	byIdUpdatableStandard	Pricebook2	populated=Id threw=System.NoAccessException
+55.0	StripDefaultProbe	byIdUpdatableStandard	Campaign	populated=Id threw=System.NoAccessException
+55.0	StripDefaultProbe	byIdUpdatableStandard	StripProbe__c	populated=Id threw=System.NoAccessException
+55.0	StripDefaultProbe	explicitCreatableAdmin	Contact	populated=DoNotCall,LastName removed=DoNotCall
+55.0	StripDefaultProbe	explicitCreatableAdmin	Lead	populated=Company,DoNotCall,LastName removed=DoNotCall
+55.0	StripDefaultProbe	explicitCreatableAdmin	Case	populated=IsEscalated,Subject removed=
+55.0	StripDefaultProbe	explicitCreatableAdmin	Product2	populated=IsActive,Name removed=
+55.0	StripDefaultProbe	explicitCreatableAdmin	Pricebook2	populated=IsActive,Name removed=
+55.0	StripDefaultProbe	explicitCreatableAdmin	Campaign	populated=IsActive,Name threw=System.NoAccessException
+55.0	StripDefaultProbe	explicitCreatableAdmin	StripProbe__c	populated=Flag__c,Name removed=Flag__c
+55.0	StripDefaultProbe	explicitCreatableStandard	Contact	populated=DoNotCall,LastName removed=DoNotCall
+55.0	StripDefaultProbe	explicitCreatableStandard	Lead	populated=Company,DoNotCall,LastName removed=DoNotCall
+55.0	StripDefaultProbe	explicitCreatableStandard	Case	populated=IsEscalated,Subject removed=IsEscalated
+55.0	StripDefaultProbe	explicitCreatableStandard	Product2	populated=IsActive,Name threw=System.NoAccessException
+55.0	StripDefaultProbe	explicitCreatableStandard	Pricebook2	populated=IsActive,Name threw=System.NoAccessException
+55.0	StripDefaultProbe	explicitCreatableStandard	Campaign	populated=IsActive,Name threw=System.NoAccessException
+55.0	StripDefaultProbe	explicitCreatableStandard	StripProbe__c	populated=Flag__c,Name threw=System.NoAccessException
+55.0	StripDefaultProbe	freshCreatableAdmin	Account	populated=Name removed= insert=ok
+55.0	StripDefaultProbe	freshCreatableAdmin	Contact	populated=LastName removed= insert=ok
+55.0	StripDefaultProbe	freshCreatableAdmin	Lead	populated=Company,LastName removed= insert=ok
+55.0	StripDefaultProbe	freshCreatableAdmin	Case	populated=Subject removed= insert=ok
+55.0	StripDefaultProbe	freshCreatableAdmin	Opportunity	populated=CloseDate,Name,StageName removed= insert=ok
+55.0	StripDefaultProbe	freshCreatableAdmin	Task	populated=Subject removed= insert=ok
+55.0	StripDefaultProbe	freshCreatableAdmin	Product2	populated=Name removed= insert=ok
+55.0	StripDefaultProbe	freshCreatableAdmin	Pricebook2	populated=Name removed= insert=ok
+55.0	StripDefaultProbe	freshCreatableAdmin	Campaign	populated=Name threw=System.NoAccessException
+55.0	StripDefaultProbe	freshCreatableAdmin	StripProbe__c	populated=Name removed= insert=ok
+55.0	StripDefaultProbe	freshCreatableMinimal	Account	populated=Name threw=System.NoAccessException
+55.0	StripDefaultProbe	freshCreatableMinimal	Contact	populated=LastName threw=System.NoAccessException
+55.0	StripDefaultProbe	freshCreatableMinimal	Lead	populated=Company,LastName threw=System.NoAccessException
+55.0	StripDefaultProbe	freshCreatableMinimal	Case	populated=Subject threw=System.NoAccessException
+55.0	StripDefaultProbe	freshCreatableMinimal	Opportunity	populated=CloseDate,Name,StageName threw=System.NoAccessException
+55.0	StripDefaultProbe	freshCreatableMinimal	Task	populated=Subject threw=System.NoAccessException
+55.0	StripDefaultProbe	freshCreatableMinimal	Product2	populated=Name threw=System.NoAccessException
+55.0	StripDefaultProbe	freshCreatableMinimal	Pricebook2	populated=Name threw=System.NoAccessException
+55.0	StripDefaultProbe	freshCreatableMinimal	Campaign	populated=Name threw=System.NoAccessException
+55.0	StripDefaultProbe	freshCreatableMinimal	StripProbe__c	populated=Name threw=System.NoAccessException
+55.0	StripDefaultProbe	freshCreatableStandard	Account	populated=Name removed= insert=ok
+55.0	StripDefaultProbe	freshCreatableStandard	Contact	populated=LastName removed= insert=ok
+55.0	StripDefaultProbe	freshCreatableStandard	Lead	populated=Company,LastName removed= insert=ok
+55.0	StripDefaultProbe	freshCreatableStandard	Case	populated=Subject removed= insert=ok
+55.0	StripDefaultProbe	freshCreatableStandard	Opportunity	populated=CloseDate,Name,StageName removed= insert=ok
+55.0	StripDefaultProbe	freshCreatableStandard	Task	populated=Subject removed= insert=ok
+55.0	StripDefaultProbe	freshCreatableStandard	Product2	populated=Name threw=System.NoAccessException
+55.0	StripDefaultProbe	freshCreatableStandard	Pricebook2	populated=Name threw=System.NoAccessException
+55.0	StripDefaultProbe	freshCreatableStandard	Campaign	populated=Name threw=System.NoAccessException
+55.0	StripDefaultProbe	freshCreatableStandard	StripProbe__c	populated=Name threw=System.NoAccessException
+55.0	StripDefaultProbe	freshUpdatableStandard	Account	populated=Name removed=
+55.0	StripDefaultProbe	freshUpdatableStandard	Contact	populated=LastName removed=
+55.0	StripDefaultProbe	freshUpdatableStandard	Lead	populated=Company,LastName removed=
+55.0	StripDefaultProbe	freshUpdatableStandard	Case	populated=Subject removed=
+55.0	StripDefaultProbe	freshUpdatableStandard	Opportunity	populated=CloseDate,Name,StageName removed=
+55.0	StripDefaultProbe	freshUpdatableStandard	Task	populated=Subject removed=
+55.0	StripDefaultProbe	freshUpdatableStandard	Product2	populated=Name threw=System.NoAccessException
+55.0	StripDefaultProbe	freshUpdatableStandard	Pricebook2	populated=Name threw=System.NoAccessException
+55.0	StripDefaultProbe	freshUpdatableStandard	Campaign	populated=Name threw=System.NoAccessException
+55.0	StripDefaultProbe	freshUpdatableStandard	StripProbe__c	populated=Name threw=System.NoAccessException
+55.0	StripDefaultProbe	loadDefaultsCreatableAdmin	Account	populated=IsDeleted,OwnerId removed=IsDeleted
+55.0	StripDefaultProbe	loadDefaultsCreatableAdmin	Contact	populated=DoNotCall,HasOptedOutOfEmail,HasOptedOutOfFax,IsDeleted,IsEmailBounced,OwnerId removed=DoNotCall,HasOptedOutOfEmail,HasOptedOutOfFax,IsDeleted,IsEmailBounced
+55.0	StripDefaultProbe	loadDefaultsCreatableAdmin	Lead	populated=DoNotCall,HasOptedOutOfEmail,HasOptedOutOfFax,IsConverted,IsDeleted,IsUnreadByOwner,OwnerId,Status removed=DoNotCall,HasOptedOutOfEmail,HasOptedOutOfFax,IsDeleted
+55.0	StripDefaultProbe	loadDefaultsCreatableAdmin	Case	populated=IsClosed,IsClosedOnCreate,IsDeleted,IsEscalated,IsStopped,OwnerId,Priority,Status removed=ClosedOnCreate,IsClosed,IsClosedOnCreate,IsDeleted,IsStopped
+55.0	StripDefaultProbe	loadDefaultsCreatableAdmin	Opportunity	populated=HasOpenActivity,HasOpportunityLineItem,HasOverdueTask,IsClosed,IsDeleted,IsPrivate,IsWon,OwnerId removed=HasOpenActivity,HasOpportunityLineItem,HasOverdueTask,IsClosed,IsDeleted,IsWon
+55.0	StripDefaultProbe	loadDefaultsCreatableAdmin	Task	populated=IsArchived,IsClosed,IsDeleted,IsHighPriority,IsRecurrence,IsReminderSet,OwnerId,Priority,Status removed=IsArchived,IsClosed,IsDeleted,IsHighPriority,IsRecurrence2,IsRecurrence2Exception,IsRecurrence2Exclusion
+55.0	StripDefaultProbe	loadDefaultsCreatableAdmin	Product2	populated=IsActive,IsArchived,IsDeleted,IsSerialized,TransferRecordMode removed=IsArchived,IsDeleted,TransferRecordMode
+55.0	StripDefaultProbe	loadDefaultsCreatableAdmin	Pricebook2	populated=IsActive,IsArchived,IsDeleted,IsStandard removed=IsArchived,IsDeleted,IsStandard
+55.0	StripDefaultProbe	loadDefaultsCreatableAdmin	Campaign	populated=ExpectedResponse,IsActive,IsDeleted,NumberSent,OwnerId,Status,Type threw=System.NoAccessException
+55.0	StripDefaultProbe	loadDefaultsCreatableAdmin	StripProbe__c	populated=Flag__c,IsDeleted,OwnerId removed=Flag__c,IsDeleted
+55.0	StripDefaultProbe	loadDefaultsCreatableStandard	Account	populated=IsDeleted,OwnerId removed=IsDeleted
+55.0	StripDefaultProbe	loadDefaultsCreatableStandard	Contact	populated=DoNotCall,HasOptedOutOfEmail,HasOptedOutOfFax,IsDeleted,IsEmailBounced,OwnerId removed=DoNotCall,HasOptedOutOfEmail,HasOptedOutOfFax,IsDeleted,IsEmailBounced
+55.0	StripDefaultProbe	loadDefaultsCreatableStandard	Lead	populated=DoNotCall,HasOptedOutOfEmail,HasOptedOutOfFax,IsConverted,IsDeleted,IsUnreadByOwner,OwnerId,Status removed=DoNotCall,HasOptedOutOfEmail,HasOptedOutOfFax,IsDeleted
+55.0	StripDefaultProbe	loadDefaultsCreatableStandard	Case	populated=IsClosed,IsClosedOnCreate,IsDeleted,IsEscalated,IsStopped,OwnerId,Priority,Status removed=ClosedOnCreate,IsClosed,IsClosedOnCreate,IsDeleted,IsEscalated,IsStopped
+55.0	StripDefaultProbe	loadDefaultsCreatableStandard	Opportunity	populated=HasOpenActivity,HasOpportunityLineItem,HasOverdueTask,IsClosed,IsDeleted,IsPrivate,IsWon,OwnerId removed=HasOpenActivity,HasOpportunityLineItem,HasOverdueTask,IsClosed,IsDeleted,IsWon
+55.0	StripDefaultProbe	loadDefaultsCreatableStandard	Task	populated=IsArchived,IsClosed,IsDeleted,IsHighPriority,IsRecurrence,IsReminderSet,OwnerId,Priority,Status removed=IsArchived,IsClosed,IsDeleted,IsHighPriority,IsRecurrence2,IsRecurrence2Exception,IsRecurrence2Exclusion
+55.0	StripDefaultProbe	loadDefaultsCreatableStandard	Product2	populated=IsActive,IsArchived,IsDeleted,IsSerialized,TransferRecordMode threw=System.NoAccessException
+55.0	StripDefaultProbe	loadDefaultsCreatableStandard	Pricebook2	populated=IsActive,IsArchived,IsDeleted,IsStandard threw=System.NoAccessException
+55.0	StripDefaultProbe	loadDefaultsCreatableStandard	Campaign	populated=ExpectedResponse,IsActive,IsDeleted,NumberSent,OwnerId,Status,Type threw=System.NoAccessException
+55.0	StripDefaultProbe	loadDefaultsCreatableStandard	StripProbe__c	populated=Flag__c,IsDeleted,OwnerId threw=System.NoAccessException
+55.0	StripDefaultProbe	queriedUpdatableStandard	Account	populated=Id removed=
+55.0	StripDefaultProbe	queriedUpdatableStandard	Contact	populated=Id removed=
+55.0	StripDefaultProbe	queriedUpdatableStandard	Lead	populated=Id removed=
+55.0	StripDefaultProbe	queriedUpdatableStandard	Case	populated=Id removed=
+55.0	StripDefaultProbe	queriedUpdatableStandard	Opportunity	populated=Id removed=
+55.0	StripDefaultProbe	queriedUpdatableStandard	Task	populated=Id removed=
+55.0	StripDefaultProbe	queriedUpdatableStandard	Product2	populated=Id threw=System.NoAccessException
+55.0	StripDefaultProbe	queriedUpdatableStandard	Pricebook2	populated=Id threw=System.NoAccessException
+55.0	StripDefaultProbe	queriedUpdatableStandard	Campaign	populated=Id threw=System.NoAccessException
+55.0	StripDefaultProbe	queriedUpdatableStandard	StripProbe__c	populated=Id threw=System.NoAccessException
+62.0	StripDefaultProbe	byIdUpdatableStandard	Account	populated=Id removed=
+62.0	StripDefaultProbe	byIdUpdatableStandard	Contact	populated=Id removed=
+62.0	StripDefaultProbe	byIdUpdatableStandard	Lead	populated=Id removed=
+62.0	StripDefaultProbe	byIdUpdatableStandard	Case	populated=Id removed=
+62.0	StripDefaultProbe	byIdUpdatableStandard	Opportunity	populated=Id removed=
+62.0	StripDefaultProbe	byIdUpdatableStandard	Task	populated=Id removed=
+62.0	StripDefaultProbe	byIdUpdatableStandard	Product2	populated=Id threw=System.NoAccessException
+62.0	StripDefaultProbe	byIdUpdatableStandard	Pricebook2	populated=Id threw=System.NoAccessException
+62.0	StripDefaultProbe	byIdUpdatableStandard	Campaign	populated=Id threw=System.NoAccessException
+62.0	StripDefaultProbe	byIdUpdatableStandard	StripProbe__c	populated=Id threw=System.NoAccessException
+62.0	StripDefaultProbe	explicitCreatableAdmin	Contact	populated=DoNotCall,LastName removed=DoNotCall
+62.0	StripDefaultProbe	explicitCreatableAdmin	Lead	populated=Company,DoNotCall,LastName removed=DoNotCall
+62.0	StripDefaultProbe	explicitCreatableAdmin	Case	populated=IsEscalated,Subject removed=
+62.0	StripDefaultProbe	explicitCreatableAdmin	Product2	populated=IsActive,Name removed=
+62.0	StripDefaultProbe	explicitCreatableAdmin	Pricebook2	populated=IsActive,Name removed=
+62.0	StripDefaultProbe	explicitCreatableAdmin	Campaign	populated=IsActive,Name threw=System.NoAccessException
+62.0	StripDefaultProbe	explicitCreatableAdmin	StripProbe__c	populated=Flag__c,Name removed=Flag__c
+62.0	StripDefaultProbe	explicitCreatableStandard	Contact	populated=DoNotCall,LastName removed=DoNotCall
+62.0	StripDefaultProbe	explicitCreatableStandard	Lead	populated=Company,DoNotCall,LastName removed=DoNotCall
+62.0	StripDefaultProbe	explicitCreatableStandard	Case	populated=IsEscalated,Subject removed=IsEscalated
+62.0	StripDefaultProbe	explicitCreatableStandard	Product2	populated=IsActive,Name threw=System.NoAccessException
+62.0	StripDefaultProbe	explicitCreatableStandard	Pricebook2	populated=IsActive,Name threw=System.NoAccessException
+62.0	StripDefaultProbe	explicitCreatableStandard	Campaign	populated=IsActive,Name threw=System.NoAccessException
+62.0	StripDefaultProbe	explicitCreatableStandard	StripProbe__c	populated=Flag__c,Name threw=System.NoAccessException
+62.0	StripDefaultProbe	freshCreatableAdmin	Account	populated=Name removed= insert=ok
+62.0	StripDefaultProbe	freshCreatableAdmin	Contact	populated=LastName removed= insert=ok
+62.0	StripDefaultProbe	freshCreatableAdmin	Lead	populated=Company,LastName removed= insert=ok
+62.0	StripDefaultProbe	freshCreatableAdmin	Case	populated=Subject removed= insert=ok
+62.0	StripDefaultProbe	freshCreatableAdmin	Opportunity	populated=CloseDate,Name,StageName removed= insert=ok
+62.0	StripDefaultProbe	freshCreatableAdmin	Task	populated=Subject removed= insert=ok
+62.0	StripDefaultProbe	freshCreatableAdmin	Product2	populated=Name removed= insert=ok
+62.0	StripDefaultProbe	freshCreatableAdmin	Pricebook2	populated=Name removed= insert=ok
+62.0	StripDefaultProbe	freshCreatableAdmin	Campaign	populated=Name threw=System.NoAccessException
+62.0	StripDefaultProbe	freshCreatableAdmin	StripProbe__c	populated=Name removed= insert=ok
+62.0	StripDefaultProbe	freshCreatableMinimal	Account	populated=Name threw=System.NoAccessException
+62.0	StripDefaultProbe	freshCreatableMinimal	Contact	populated=LastName threw=System.NoAccessException
+62.0	StripDefaultProbe	freshCreatableMinimal	Lead	populated=Company,LastName threw=System.NoAccessException
+62.0	StripDefaultProbe	freshCreatableMinimal	Case	populated=Subject threw=System.NoAccessException
+62.0	StripDefaultProbe	freshCreatableMinimal	Opportunity	populated=CloseDate,Name,StageName threw=System.NoAccessException
+62.0	StripDefaultProbe	freshCreatableMinimal	Task	populated=Subject threw=System.NoAccessException
+62.0	StripDefaultProbe	freshCreatableMinimal	Product2	populated=Name threw=System.NoAccessException
+62.0	StripDefaultProbe	freshCreatableMinimal	Pricebook2	populated=Name threw=System.NoAccessException
+62.0	StripDefaultProbe	freshCreatableMinimal	Campaign	populated=Name threw=System.NoAccessException
+62.0	StripDefaultProbe	freshCreatableMinimal	StripProbe__c	populated=Name threw=System.NoAccessException
+62.0	StripDefaultProbe	freshCreatableStandard	Account	populated=Name removed= insert=ok
+62.0	StripDefaultProbe	freshCreatableStandard	Contact	populated=LastName removed= insert=ok
+62.0	StripDefaultProbe	freshCreatableStandard	Lead	populated=Company,LastName removed= insert=ok
+62.0	StripDefaultProbe	freshCreatableStandard	Case	populated=Subject removed= insert=ok
+62.0	StripDefaultProbe	freshCreatableStandard	Opportunity	populated=CloseDate,Name,StageName removed= insert=ok
+62.0	StripDefaultProbe	freshCreatableStandard	Task	populated=Subject removed= insert=ok
+62.0	StripDefaultProbe	freshCreatableStandard	Product2	populated=Name threw=System.NoAccessException
+62.0	StripDefaultProbe	freshCreatableStandard	Pricebook2	populated=Name threw=System.NoAccessException
+62.0	StripDefaultProbe	freshCreatableStandard	Campaign	populated=Name threw=System.NoAccessException
+62.0	StripDefaultProbe	freshCreatableStandard	StripProbe__c	populated=Name threw=System.NoAccessException
+62.0	StripDefaultProbe	freshUpdatableStandard	Account	populated=Name removed=
+62.0	StripDefaultProbe	freshUpdatableStandard	Contact	populated=LastName removed=
+62.0	StripDefaultProbe	freshUpdatableStandard	Lead	populated=Company,LastName removed=
+62.0	StripDefaultProbe	freshUpdatableStandard	Case	populated=Subject removed=
+62.0	StripDefaultProbe	freshUpdatableStandard	Opportunity	populated=CloseDate,Name,StageName removed=
+62.0	StripDefaultProbe	freshUpdatableStandard	Task	populated=Subject removed=
+62.0	StripDefaultProbe	freshUpdatableStandard	Product2	populated=Name threw=System.NoAccessException
+62.0	StripDefaultProbe	freshUpdatableStandard	Pricebook2	populated=Name threw=System.NoAccessException
+62.0	StripDefaultProbe	freshUpdatableStandard	Campaign	populated=Name threw=System.NoAccessException
+62.0	StripDefaultProbe	freshUpdatableStandard	StripProbe__c	populated=Name threw=System.NoAccessException
+62.0	StripDefaultProbe	loadDefaultsCreatableAdmin	Account	populated=IsDeleted,OwnerId removed=IsDeleted
+62.0	StripDefaultProbe	loadDefaultsCreatableAdmin	Contact	populated=DoNotCall,HasOptedOutOfEmail,HasOptedOutOfFax,IsDeleted,IsEmailBounced,OwnerId removed=DoNotCall,HasOptedOutOfEmail,HasOptedOutOfFax,IsDeleted,IsEmailBounced
+62.0	StripDefaultProbe	loadDefaultsCreatableAdmin	Lead	populated=DoNotCall,HasOptedOutOfEmail,HasOptedOutOfFax,IsConverted,IsDeleted,IsUnreadByOwner,OwnerId,Status removed=DoNotCall,HasOptedOutOfEmail,HasOptedOutOfFax,IsDeleted
+62.0	StripDefaultProbe	loadDefaultsCreatableAdmin	Case	populated=IsClosed,IsClosedOnCreate,IsDeleted,IsEscalated,IsStopped,OwnerId,Priority,Status removed=ClosedOnCreate,IsClosed,IsClosedOnCreate,IsDeleted,IsStopped
+62.0	StripDefaultProbe	loadDefaultsCreatableAdmin	Opportunity	populated=HasOpenActivity,HasOpportunityLineItem,HasOverdueTask,IsClosed,IsDeleted,IsPrivate,IsWon,OwnerId removed=HasOpenActivity,HasOpportunityLineItem,HasOverdueTask,IsClosed,IsDeleted,IsWon
+62.0	StripDefaultProbe	loadDefaultsCreatableAdmin	Task	populated=IsArchived,IsClosed,IsDeleted,IsHighPriority,IsRecurrence,IsReminderSet,OwnerId,Priority,Status removed=IsArchived,IsClosed,IsDeleted,IsHighPriority,IsRecurrence2,IsRecurrence2Exception,IsRecurrence2Exclusion
+62.0	StripDefaultProbe	loadDefaultsCreatableAdmin	Product2	populated=IsActive,IsArchived,IsDeleted,IsSerialized,TransferRecordMode removed=IsArchived,IsDeleted,TransferRecordMode
+62.0	StripDefaultProbe	loadDefaultsCreatableAdmin	Pricebook2	populated=IsActive,IsArchived,IsDeleted,IsStandard removed=IsArchived,IsDeleted,IsStandard
+62.0	StripDefaultProbe	loadDefaultsCreatableAdmin	Campaign	populated=ExpectedResponse,IsActive,IsDeleted,NumberSent,OwnerId,Status,Type threw=System.NoAccessException
+62.0	StripDefaultProbe	loadDefaultsCreatableAdmin	StripProbe__c	populated=Flag__c,IsDeleted,OwnerId removed=Flag__c,IsDeleted
+62.0	StripDefaultProbe	loadDefaultsCreatableStandard	Account	populated=IsDeleted,OwnerId removed=IsDeleted
+62.0	StripDefaultProbe	loadDefaultsCreatableStandard	Contact	populated=DoNotCall,HasOptedOutOfEmail,HasOptedOutOfFax,IsDeleted,IsEmailBounced,OwnerId removed=DoNotCall,HasOptedOutOfEmail,HasOptedOutOfFax,IsDeleted,IsEmailBounced
+62.0	StripDefaultProbe	loadDefaultsCreatableStandard	Lead	populated=DoNotCall,HasOptedOutOfEmail,HasOptedOutOfFax,IsConverted,IsDeleted,IsUnreadByOwner,OwnerId,Status removed=DoNotCall,HasOptedOutOfEmail,HasOptedOutOfFax,IsDeleted
+62.0	StripDefaultProbe	loadDefaultsCreatableStandard	Case	populated=IsClosed,IsClosedOnCreate,IsDeleted,IsEscalated,IsStopped,OwnerId,Priority,Status removed=ClosedOnCreate,IsClosed,IsClosedOnCreate,IsDeleted,IsEscalated,IsStopped
+62.0	StripDefaultProbe	loadDefaultsCreatableStandard	Opportunity	populated=HasOpenActivity,HasOpportunityLineItem,HasOverdueTask,IsClosed,IsDeleted,IsPrivate,IsWon,OwnerId removed=HasOpenActivity,HasOpportunityLineItem,HasOverdueTask,IsClosed,IsDeleted,IsWon
+62.0	StripDefaultProbe	loadDefaultsCreatableStandard	Task	populated=IsArchived,IsClosed,IsDeleted,IsHighPriority,IsRecurrence,IsReminderSet,OwnerId,Priority,Status removed=IsArchived,IsClosed,IsDeleted,IsHighPriority,IsRecurrence2,IsRecurrence2Exception,IsRecurrence2Exclusion
+62.0	StripDefaultProbe	loadDefaultsCreatableStandard	Product2	populated=IsActive,IsArchived,IsDeleted,IsSerialized,TransferRecordMode threw=System.NoAccessException
+62.0	StripDefaultProbe	loadDefaultsCreatableStandard	Pricebook2	populated=IsActive,IsArchived,IsDeleted,IsStandard threw=System.NoAccessException
+62.0	StripDefaultProbe	loadDefaultsCreatableStandard	Campaign	populated=ExpectedResponse,IsActive,IsDeleted,NumberSent,OwnerId,Status,Type threw=System.NoAccessException
+62.0	StripDefaultProbe	loadDefaultsCreatableStandard	StripProbe__c	populated=Flag__c,IsDeleted,OwnerId threw=System.NoAccessException
+62.0	StripDefaultProbe	queriedUpdatableStandard	Account	populated=Id removed=
+62.0	StripDefaultProbe	queriedUpdatableStandard	Contact	populated=Id removed=
+62.0	StripDefaultProbe	queriedUpdatableStandard	Lead	populated=Id removed=
+62.0	StripDefaultProbe	queriedUpdatableStandard	Case	populated=Id removed=
+62.0	StripDefaultProbe	queriedUpdatableStandard	Opportunity	populated=Id removed=
+62.0	StripDefaultProbe	queriedUpdatableStandard	Task	populated=Id removed=
+62.0	StripDefaultProbe	queriedUpdatableStandard	Product2	populated=Id threw=System.NoAccessException
+62.0	StripDefaultProbe	queriedUpdatableStandard	Pricebook2	populated=Id threw=System.NoAccessException
+62.0	StripDefaultProbe	queriedUpdatableStandard	Campaign	populated=Id threw=System.NoAccessException
+62.0	StripDefaultProbe	queriedUpdatableStandard	StripProbe__c	populated=Id threw=System.NoAccessException
+67.0	StripDefaultProbe	byIdUpdatableStandard	Account	populated=Id removed=
+67.0	StripDefaultProbe	byIdUpdatableStandard	Contact	populated=Id removed=
+67.0	StripDefaultProbe	byIdUpdatableStandard	Lead	populated=Id removed=
+67.0	StripDefaultProbe	byIdUpdatableStandard	Case	populated=Id removed=
+67.0	StripDefaultProbe	byIdUpdatableStandard	Opportunity	populated=Id removed=
+67.0	StripDefaultProbe	byIdUpdatableStandard	Task	populated=Id removed=
+67.0	StripDefaultProbe	byIdUpdatableStandard	Product2	populated=Id threw=System.NoAccessException
+67.0	StripDefaultProbe	byIdUpdatableStandard	Pricebook2	populated=Id threw=System.NoAccessException
+67.0	StripDefaultProbe	byIdUpdatableStandard	Campaign	populated=Id threw=System.NoAccessException
+67.0	StripDefaultProbe	byIdUpdatableStandard	StripProbe__c	populated=Id threw=System.NoAccessException
+67.0	StripDefaultProbe	explicitCreatableAdmin	Contact	populated=DoNotCall,LastName removed=DoNotCall
+67.0	StripDefaultProbe	explicitCreatableAdmin	Lead	populated=Company,DoNotCall,LastName removed=DoNotCall
+67.0	StripDefaultProbe	explicitCreatableAdmin	Case	populated=IsEscalated,Subject removed=
+67.0	StripDefaultProbe	explicitCreatableAdmin	Product2	populated=IsActive,Name removed=
+67.0	StripDefaultProbe	explicitCreatableAdmin	Pricebook2	populated=IsActive,Name removed=
+67.0	StripDefaultProbe	explicitCreatableAdmin	Campaign	populated=IsActive,Name threw=System.NoAccessException
+67.0	StripDefaultProbe	explicitCreatableAdmin	StripProbe__c	populated=Flag__c,Name removed=Flag__c
+67.0	StripDefaultProbe	explicitCreatableStandard	Contact	populated=DoNotCall,LastName removed=DoNotCall
+67.0	StripDefaultProbe	explicitCreatableStandard	Lead	populated=Company,DoNotCall,LastName removed=DoNotCall
+67.0	StripDefaultProbe	explicitCreatableStandard	Case	populated=IsEscalated,Subject removed=IsEscalated
+67.0	StripDefaultProbe	explicitCreatableStandard	Product2	populated=IsActive,Name threw=System.NoAccessException
+67.0	StripDefaultProbe	explicitCreatableStandard	Pricebook2	populated=IsActive,Name threw=System.NoAccessException
+67.0	StripDefaultProbe	explicitCreatableStandard	Campaign	populated=IsActive,Name threw=System.NoAccessException
+67.0	StripDefaultProbe	explicitCreatableStandard	StripProbe__c	populated=Flag__c,Name threw=System.NoAccessException
+67.0	StripDefaultProbe	freshCreatableAdmin	Account	populated=Name removed= insert=ok
+67.0	StripDefaultProbe	freshCreatableAdmin	Contact	populated=LastName removed= insert=ok
+67.0	StripDefaultProbe	freshCreatableAdmin	Lead	populated=Company,LastName removed= insert=ok
+67.0	StripDefaultProbe	freshCreatableAdmin	Case	populated=Subject removed= insert=ok
+67.0	StripDefaultProbe	freshCreatableAdmin	Opportunity	populated=CloseDate,Name,StageName removed= insert=ok
+67.0	StripDefaultProbe	freshCreatableAdmin	Task	populated=Subject removed= insert=ok
+67.0	StripDefaultProbe	freshCreatableAdmin	Product2	populated=Name removed= insert=ok
+67.0	StripDefaultProbe	freshCreatableAdmin	Pricebook2	populated=Name removed= insert=ok
+67.0	StripDefaultProbe	freshCreatableAdmin	Campaign	populated=Name threw=System.NoAccessException
+67.0	StripDefaultProbe	freshCreatableAdmin	StripProbe__c	populated=Name removed= insert=ok
+67.0	StripDefaultProbe	freshCreatableMinimal	Account	populated=Name threw=System.NoAccessException
+67.0	StripDefaultProbe	freshCreatableMinimal	Contact	populated=LastName threw=System.NoAccessException
+67.0	StripDefaultProbe	freshCreatableMinimal	Lead	populated=Company,LastName threw=System.NoAccessException
+67.0	StripDefaultProbe	freshCreatableMinimal	Case	populated=Subject threw=System.NoAccessException
+67.0	StripDefaultProbe	freshCreatableMinimal	Opportunity	populated=CloseDate,Name,StageName threw=System.NoAccessException
+67.0	StripDefaultProbe	freshCreatableMinimal	Task	populated=Subject threw=System.NoAccessException
+67.0	StripDefaultProbe	freshCreatableMinimal	Product2	populated=Name threw=System.NoAccessException
+67.0	StripDefaultProbe	freshCreatableMinimal	Pricebook2	populated=Name threw=System.NoAccessException
+67.0	StripDefaultProbe	freshCreatableMinimal	Campaign	populated=Name threw=System.NoAccessException
+67.0	StripDefaultProbe	freshCreatableMinimal	StripProbe__c	populated=Name threw=System.NoAccessException
+67.0	StripDefaultProbe	freshCreatableStandard	Account	populated=Name removed= insert=ok
+67.0	StripDefaultProbe	freshCreatableStandard	Contact	populated=LastName removed= insert=ok
+67.0	StripDefaultProbe	freshCreatableStandard	Lead	populated=Company,LastName removed= insert=ok
+67.0	StripDefaultProbe	freshCreatableStandard	Case	populated=Subject removed= insert=ok
+67.0	StripDefaultProbe	freshCreatableStandard	Opportunity	populated=CloseDate,Name,StageName removed= insert=ok
+67.0	StripDefaultProbe	freshCreatableStandard	Task	populated=Subject removed= insert=ok
+67.0	StripDefaultProbe	freshCreatableStandard	Product2	populated=Name threw=System.NoAccessException
+67.0	StripDefaultProbe	freshCreatableStandard	Pricebook2	populated=Name threw=System.NoAccessException
+67.0	StripDefaultProbe	freshCreatableStandard	Campaign	populated=Name threw=System.NoAccessException
+67.0	StripDefaultProbe	freshCreatableStandard	StripProbe__c	populated=Name threw=System.NoAccessException
+67.0	StripDefaultProbe	freshUpdatableStandard	Account	populated=Name removed=
+67.0	StripDefaultProbe	freshUpdatableStandard	Contact	populated=LastName removed=
+67.0	StripDefaultProbe	freshUpdatableStandard	Lead	populated=Company,LastName removed=
+67.0	StripDefaultProbe	freshUpdatableStandard	Case	populated=Subject removed=
+67.0	StripDefaultProbe	freshUpdatableStandard	Opportunity	populated=CloseDate,Name,StageName removed=
+67.0	StripDefaultProbe	freshUpdatableStandard	Task	populated=Subject removed=
+67.0	StripDefaultProbe	freshUpdatableStandard	Product2	populated=Name threw=System.NoAccessException
+67.0	StripDefaultProbe	freshUpdatableStandard	Pricebook2	populated=Name threw=System.NoAccessException
+67.0	StripDefaultProbe	freshUpdatableStandard	Campaign	populated=Name threw=System.NoAccessException
+67.0	StripDefaultProbe	freshUpdatableStandard	StripProbe__c	populated=Name threw=System.NoAccessException
+67.0	StripDefaultProbe	loadDefaultsCreatableAdmin	Account	populated=IsDeleted,OwnerId removed=IsDeleted
+67.0	StripDefaultProbe	loadDefaultsCreatableAdmin	Contact	populated=DoNotCall,HasOptedOutOfEmail,HasOptedOutOfFax,IsDeleted,IsEmailBounced,OwnerId removed=DoNotCall,HasOptedOutOfEmail,HasOptedOutOfFax,IsDeleted,IsEmailBounced
+67.0	StripDefaultProbe	loadDefaultsCreatableAdmin	Lead	populated=DoNotCall,HasOptedOutOfEmail,HasOptedOutOfFax,IsConverted,IsDeleted,IsUnreadByOwner,OwnerId,Status removed=DoNotCall,HasOptedOutOfEmail,HasOptedOutOfFax,IsDeleted
+67.0	StripDefaultProbe	loadDefaultsCreatableAdmin	Case	populated=IsClosed,IsClosedOnCreate,IsDeleted,IsEscalated,IsStopped,OwnerId,Priority,Status removed=ClosedOnCreate,IsClosed,IsClosedOnCreate,IsDeleted,IsStopped
+67.0	StripDefaultProbe	loadDefaultsCreatableAdmin	Opportunity	populated=HasOpenActivity,HasOpportunityLineItem,HasOverdueTask,IsClosed,IsDeleted,IsPrivate,IsWon,OwnerId removed=HasOpenActivity,HasOpportunityLineItem,HasOverdueTask,IsClosed,IsDeleted,IsWon
+67.0	StripDefaultProbe	loadDefaultsCreatableAdmin	Task	populated=IsArchived,IsClosed,IsDeleted,IsHighPriority,IsRecurrence,IsReminderSet,OwnerId,Priority,Status removed=IsArchived,IsClosed,IsDeleted,IsHighPriority,IsRecurrence2,IsRecurrence2Exception,IsRecurrence2Exclusion
+67.0	StripDefaultProbe	loadDefaultsCreatableAdmin	Product2	populated=IsActive,IsArchived,IsDeleted,IsSerialized,TransferRecordMode removed=IsArchived,IsDeleted,TransferRecordMode
+67.0	StripDefaultProbe	loadDefaultsCreatableAdmin	Pricebook2	populated=IsActive,IsArchived,IsDeleted,IsStandard removed=IsArchived,IsDeleted,IsStandard
+67.0	StripDefaultProbe	loadDefaultsCreatableAdmin	Campaign	populated=ExpectedResponse,IsActive,IsDeleted,NumberSent,OwnerId,Status,Type threw=System.NoAccessException
+67.0	StripDefaultProbe	loadDefaultsCreatableAdmin	StripProbe__c	populated=Flag__c,IsDeleted,OwnerId removed=Flag__c,IsDeleted
+67.0	StripDefaultProbe	loadDefaultsCreatableStandard	Account	populated=IsDeleted,OwnerId removed=IsDeleted
+67.0	StripDefaultProbe	loadDefaultsCreatableStandard	Contact	populated=DoNotCall,HasOptedOutOfEmail,HasOptedOutOfFax,IsDeleted,IsEmailBounced,OwnerId removed=DoNotCall,HasOptedOutOfEmail,HasOptedOutOfFax,IsDeleted,IsEmailBounced
+67.0	StripDefaultProbe	loadDefaultsCreatableStandard	Lead	populated=DoNotCall,HasOptedOutOfEmail,HasOptedOutOfFax,IsConverted,IsDeleted,IsUnreadByOwner,OwnerId,Status removed=DoNotCall,HasOptedOutOfEmail,HasOptedOutOfFax,IsDeleted
+67.0	StripDefaultProbe	loadDefaultsCreatableStandard	Case	populated=IsClosed,IsClosedOnCreate,IsDeleted,IsEscalated,IsStopped,OwnerId,Priority,Status removed=ClosedOnCreate,IsClosed,IsClosedOnCreate,IsDeleted,IsEscalated,IsStopped
+67.0	StripDefaultProbe	loadDefaultsCreatableStandard	Opportunity	populated=HasOpenActivity,HasOpportunityLineItem,HasOverdueTask,IsClosed,IsDeleted,IsPrivate,IsWon,OwnerId removed=HasOpenActivity,HasOpportunityLineItem,HasOverdueTask,IsClosed,IsDeleted,IsWon
+67.0	StripDefaultProbe	loadDefaultsCreatableStandard	Task	populated=IsArchived,IsClosed,IsDeleted,IsHighPriority,IsRecurrence,IsReminderSet,OwnerId,Priority,Status removed=IsArchived,IsClosed,IsDeleted,IsHighPriority,IsRecurrence2,IsRecurrence2Exception,IsRecurrence2Exclusion
+67.0	StripDefaultProbe	loadDefaultsCreatableStandard	Product2	populated=IsActive,IsArchived,IsDeleted,IsSerialized,TransferRecordMode threw=System.NoAccessException
+67.0	StripDefaultProbe	loadDefaultsCreatableStandard	Pricebook2	populated=IsActive,IsArchived,IsDeleted,IsStandard threw=System.NoAccessException
+67.0	StripDefaultProbe	loadDefaultsCreatableStandard	Campaign	populated=ExpectedResponse,IsActive,IsDeleted,NumberSent,OwnerId,Status,Type threw=System.NoAccessException
+67.0	StripDefaultProbe	loadDefaultsCreatableStandard	StripProbe__c	populated=Flag__c,IsDeleted,OwnerId threw=System.NoAccessException
+67.0	StripDefaultProbe	queriedUpdatableStandard	Account	populated=Id removed=
+67.0	StripDefaultProbe	queriedUpdatableStandard	Contact	populated=Id removed=
+67.0	StripDefaultProbe	queriedUpdatableStandard	Lead	populated=Id removed=
+67.0	StripDefaultProbe	queriedUpdatableStandard	Case	populated=Id removed=
+67.0	StripDefaultProbe	queriedUpdatableStandard	Opportunity	populated=Id removed=
+67.0	StripDefaultProbe	queriedUpdatableStandard	Task	populated=Id removed=
+67.0	StripDefaultProbe	queriedUpdatableStandard	Product2	populated=Id threw=System.NoAccessException
+67.0	StripDefaultProbe	queriedUpdatableStandard	Pricebook2	populated=Id threw=System.NoAccessException
+67.0	StripDefaultProbe	queriedUpdatableStandard	Campaign	populated=Id threw=System.NoAccessException
+67.0	StripDefaultProbe	queriedUpdatableStandard	StripProbe__c	populated=Id threw=System.NoAccessException

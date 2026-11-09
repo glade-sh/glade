@@ -116,3 +116,44 @@ func TestReferenceOnlySObjectTypeReadCompilesInTriggerBody(t *testing.T) {
 		}
 	}
 }
+
+// Native reference_only_surfaces trigger-org.tsv (62.0, 66.0, 67.0):
+// trg_decl, trg_new, trg_describe, trg_helper_sig and trg_tf admit the
+// reference-only type in a trigger body and in the helper classes it calls.
+// Every named-source position must compile; only anonymous Apex rejects the
+// bare read.
+func TestReferenceOnlySObjectTypeReadCompilesInNamedPositions(t *testing.T) {
+	const fsme = "FieldServiceMobileExtension"
+	cases := map[string]struct {
+		file string
+		body string
+	}{
+		"trigger describe chain": {"T.trigger", "trigger T on Account (before insert) { System.assert(false, 'OBS|' + " + fsme + ".SObjectType.getDescribe().getName()); }"},
+		"trigger string value":   {"T.trigger", "trigger T on Account (before insert) { System.assert(false, 'OBS|' + String.valueOf(" + fsme + ".SObjectType)); }"},
+		"trigger newSObject":     {"T.trigger", "trigger T on Account (before insert) { SObject s = " + fsme + ".SObjectType.newSObject(); }"},
+		"trigger handler call":   {"T.trigger", "trigger T on Account (before insert) { TH.run(); }"},
+		"handler class local":    {"TH.cls", "public class TH { public static void run() { Schema.SObjectType t = " + fsme + ".SObjectType; } }"},
+		"handler class field":    {"TH.cls", "public class TH { static Schema.SObjectType T = " + fsme + ".SObjectType; public static void run() {} }"},
+		"handler class return":   {"TH.cls", "public class TH { public static Schema.SObjectType run() { return " + fsme + ".SObjectType; } }"},
+		"handler class describe": {"TH.cls", "public class TH { public static String run() { return " + fsme + ".SObjectType.getDescribe().getName(); } }"},
+		"istest class":           {"TH.cls", "@IsTest private class TH { @IsTest static void run() { System.assert(false, 'OBS|' + String.valueOf(" + fsme + ".SObjectType)); } }"},
+	}
+	for _, version := range []string{"62.0", "66.0", "67.0"} {
+		for name, c := range cases {
+			root := t.TempDir()
+			files := []string{filepath.Join(root, c.file)}
+			writeSemaFile(t, files[0], c.body)
+			if c.file == "T.trigger" {
+				helper := filepath.Join(root, "TH.cls")
+				writeSemaFile(t, helper, "public class TH { public static void run() { Schema.SObjectType t = "+fsme+".SObjectType; } }")
+				files = append(files, helper)
+			}
+			index := typesys.Build(project.Project{Root: root, SourceAPIVersion: version, ApexFiles: files}, schema.Schema{Objects: []schema.Object{{Name: "Account"}}})
+			for _, d := range Analyze(index).Diagnostics {
+				if d.NativeMessage == "Variable does not exist: "+fsme {
+					t.Errorf("API %s %s rejected: %#v", version, name, d)
+				}
+			}
+		}
+	}
+}

@@ -55,6 +55,28 @@ func validateSourceTagBalance(source string) error {
 	}
 }
 
+// The HTML fragment parser moves or drops table-structure elements that sit
+// outside a table: <apex:repeat> inside <table>/<tr> is foster-parented out of
+// its table and a <tr> inside <apex:repeat> is ignored, which put row variables
+// out of scope. Visualforce markup is well-formed XML, so these elements are
+// renamed to plain custom elements while parsing and restored afterwards.
+var htmlTableTagRE = regexp.MustCompile(`(?i)<(/?)(table|thead|tbody|tfoot|tr|td|th|caption|colgroup|col)([\s>/])`)
+
+const htmlTableTagPrefix = "vftable-"
+
+func hideHTMLTableTags(source string) string {
+	return htmlTableTagRE.ReplaceAllString(source, "<${1}"+htmlTableTagPrefix+"${2}${3}")
+}
+
+var htmlTableTagRestoreRE = regexp.MustCompile(`(?i)<(/?)` + htmlTableTagPrefix)
+
+func restoreHTMLTableTags(value string) string {
+	if !strings.Contains(value, htmlTableTagPrefix) {
+		return value
+	}
+	return htmlTableTagRestoreRE.ReplaceAllString(value, "<$1")
+}
+
 func normalizeSelfClosingVFTags(source string) string {
 	return selfClosingVFTagRE.ReplaceAllString(source, "<$1$2></$1>")
 }
@@ -87,11 +109,17 @@ func ParseMarkupTree(source string) (*MarkupNode, error) {
 }
 
 func parseMarkupTree(source, sourceName string) (*MarkupNode, error) {
+	if err := textEntityError(source); err != nil {
+		return nil, err
+	}
+	entityErr := entityInExpressionError(source)
+	tokenizerSource := normalizeExpressionQuotes(protectNativeEntities(source))
+	source = normalizeExpressionQuotes(source)
 	if err := validateRepetitionSource(source, sourceName); err != nil {
 		return nil, err
 	}
 	sourceTags := scanSourceTags(source)
-	normalized := normalizeSelfClosingVFTags(source)
+	normalized := hideHTMLTableTags(normalizeSelfClosingVFTags(tokenizerSource))
 	nodes, err := html.ParseFragment(bytes.NewReader([]byte(normalized)), &html.Node{
 		Type:     html.ElementNode,
 		DataAtom: atom.Body,
@@ -129,6 +157,9 @@ func parseMarkupTree(source, sourceName string) (*MarkupNode, error) {
 	if err := validateMarkupStructure(root, sourceName); err != nil {
 		return nil, err
 	}
+	if entityErr != nil {
+		return nil, entityErr
+	}
 	return root, nil
 }
 
@@ -152,9 +183,12 @@ func convertHTMLNode(node *html.Node, sourceTags []sourceTag, tagIndex *int) *Ma
 	}
 	switch node.Type {
 	case html.TextNode:
-		return &MarkupNode{Type: MarkupNodeText, Text: node.Data}
+		return &MarkupNode{Type: MarkupNodeText, Text: restoreHTMLTableTags(node.Data)}
 	case html.ElementNode:
 		rawName := strings.TrimSpace(node.Data)
+		if strings.HasPrefix(strings.ToLower(rawName), htmlTableTagPrefix) {
+			rawName = rawName[len(htmlTableTagPrefix):]
+		}
 		if rawName == "" {
 			return nil
 		}
@@ -185,7 +219,7 @@ func convertHTMLNode(node *html.Node, sourceTags []sourceTag, tagIndex *int) *Ma
 			if key == "" {
 				continue
 			}
-			out.Attributes[key] = attr.Val
+			out.Attributes[key] = restoreHTMLTableTags(attr.Val)
 		}
 		for child := node.FirstChild; child != nil; child = child.NextSibling {
 			parsed := convertHTMLNode(child, sourceTags, tagIndex)

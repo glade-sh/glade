@@ -212,6 +212,11 @@ func (vm *VM) constructCollectionValue(typeName string, args []Value, namedArgs 
 			for _, rawKey := range orderedValueMapKeys(source) {
 				item := source.Map[rawKey]
 				keyValue := mapStoredKey(source, rawKey)
+				if isGlobalDescribeMap(source) && keyValue.Kind == ValueString && hasUpperCaseLetter(keyValue.Text) {
+					// The global describe stores case aliases for lookups; a copy holds
+					// only its lower-case keys (org capture global_describe_size).
+					continue
+				}
 				key, coerced, err := vm.coerceMapEntry(typeName, keyValue, item)
 				if err != nil {
 					return Null, true, fmt.Errorf("Map constructor: %w", err)
@@ -293,6 +298,27 @@ func (vm *VM) constructValueWithNamedArgOrder(typeName string, args []Value, nam
 		strings.EqualFold(typeName[:len("System.")], "System.") &&
 		isCanonicalRuntimeTypeName(typeName[len("System."):])
 	typeName = vm.resolveConstructorTypeName(typeName, args, namedArgs)
+	if hasTypePrefixFold(typeName, "ConnectApi") {
+		if generated, ok := generatedPlatformTypes()[strings.ToLower(typeName)]; ok {
+			if class, registered := vm.classEntry(generated.Name); !registered || class.PlatformType {
+				if value, handled, err := vm.constructConnectAPIValue(generated, args, namedArgs); handled || err != nil {
+					return value, err
+				}
+			}
+		}
+	}
+	// Native winter27_context controls show these platform constructors abort
+	// outside test or UI execution, before Apex catch clauses can run.
+	if vm.testContext == nil && !vm.uiExceptionContext && vm.currentPage.Kind != ValueObject {
+		name := strings.TrimPrefix(strings.ToLower(typeName), "system.")
+		switch name {
+		case "aurahandledexception", "invalidparametervalueexception", "noaccessexception", "nodatafoundexception", "touchhandledexception":
+			class, found := vm.lookupClass(typeName)
+			if explicitSystemRuntimeType || !found || class.PlatformType {
+				return Null, &RuntimeError{Type: "System.LimitException", Message: "Can only throw this exception type from VisualForce or Aura context"}
+			}
+		}
+	}
 	if strings.HasPrefix(strings.ToLower(typeName), "flow.interview.") {
 		if len(args) != 1 || args[0].Kind != ValueMap || len(namedArgs) != 0 {
 			return Null, fmt.Errorf("%s constructor expects input variable map", typeName)
@@ -360,6 +386,14 @@ func (vm *VM) constructValueWithNamedArgOrder(typeName string, args []Value, nam
 		value := Object("Auth.TokenValidationResult")
 		value.Fields["isValid"] = args[0]
 		return value, nil
+	}
+	if strings.EqualFold(typeName, "Auth.JWTBearerTokenExchange") && len(args) == 2 && len(namedArgs) == 0 {
+		// The two-argument constructor keeps the endpoint and the signed JWS
+		// so a missing certificate can surface when the request is made.
+		exchange := Object("Auth.JWTBearerTokenExchange")
+		exchange.Fields["tokenEndpoint"] = args[0]
+		exchange.Fields["jws"] = args[1]
+		return exchange, nil
 	}
 	if strings.EqualFold(typeName, "Auth.JWT") {
 		if len(args) != 0 {
@@ -443,7 +477,7 @@ func (vm *VM) constructValueWithNamedArgOrder(typeName string, args []Value, nam
 		vm.initializeFields(&object, typeName)
 		initializeGeneratedPlatformValue(&object)
 		if isSObjectCtor {
-			vm.initializeSObjectSchemaDefaults(&object, typeName)
+			vm.initializeConstructedSObjectSchemaDefaults(&object, typeName)
 		}
 		if passiveDTO {
 			vm.initializePassiveCollectionFields(&object, typeName)
@@ -1253,7 +1287,7 @@ func (vm *VM) constructValueWithNamedArgOrder(typeName string, args []Value, nam
 		object = annotateConstructedException(object, stack)
 	}
 	if definition.APIName != "" {
-		vm.initializeSObjectSchemaDefaults(&object, objectType)
+		vm.initializeConstructedSObjectSchemaDefaults(&object, objectType)
 	}
 	for _, field := range sObjectConstructorNamedArgFields(objectType, definition.APIName != "", namedArgs, namedArgOrder) {
 		value := namedArgs[field]
@@ -1784,6 +1818,7 @@ func isCustomExceptionWithoutExplicitMessage(value Value) bool {
 
 func typeNewInstanceAllowsDottedBuiltin(typeName string) bool {
 	return isExceptionType(typeName) ||
+		connectAPIObjectType(typeName) ||
 		strings.HasPrefix(typeName, "Schema.") ||
 		typeName == "ApexPages.Message" ||
 		typeNewInstanceAllowsDottedCollection(typeName)
@@ -1843,6 +1878,18 @@ func (vm *VM) initializeFields(object *Value, typeName string) {
 }
 
 func (vm *VM) initializeSObjectSchemaDefaults(object *Value, typeName string) {
+	vm.initializeSObjectSchemaDefaultsFor(object, typeName, false)
+}
+
+// initializeConstructedSObjectSchemaDefaults seeds a record built by an Apex
+// constructor. A true standard checkbox default belongs to persistence there:
+// new User() reads IsActive false dotted and null dynamically (
+// standard_checkbox_new_sobject_get).
+func (vm *VM) initializeConstructedSObjectSchemaDefaults(object *Value, typeName string) {
+	vm.initializeSObjectSchemaDefaultsFor(object, typeName, true)
+}
+
+func (vm *VM) initializeSObjectSchemaDefaultsFor(object *Value, typeName string, constructed bool) {
 	if vm.Org == nil || object == nil {
 		return
 	}
@@ -1865,8 +1912,12 @@ func (vm *VM) initializeSObjectSchemaDefaults(object *Value, typeName string) {
 		}
 		// Ordinary custom objects retain false-default provenance for security
 		// stripping. A true schema default still belongs to persistence, as the
-		// constructed-object native rows show (dot=false, get=null).
-		if hasSuffixFold(definition.APIName, "__c") && !storage.IsCustomSettingDefinition(definition) && defaultValue.Boolean {
+		// constructed-object native rows show (dot=false, get=null). Custom
+		// settings behave the same way (C11 capture, APIs 62 and 67).
+		if hasSuffixFold(definition.APIName, "__c") && defaultValue.Boolean {
+			continue
+		}
+		if constructed && defaultValue.Boolean && !hasSuffixFold(definition.APIName, "__c") && !storage.IsCustomSettingDefinition(definition) {
 			continue
 		}
 		if current, exists := object.Fields[name]; exists && current.Kind != ValueNull {
@@ -2238,6 +2289,11 @@ func (vm *VM) callChainedConstructor(callee string, args []Value, result *Result
 		return Null, err
 	}
 	_, err := vm.callConstructorWithReceiver(targetClass, target, receiver, args, result)
+	if err == nil && callee == "super" && targetClass.PlatformType && cartExtensionMockBackedRuntimeType(targetClass.Name) {
+		// A project subclass hands its mock executor or service to the platform
+		// base class, which is what later delegation reads.
+		bindPassiveConstructorArgs(&receiver, target, args)
+	}
 	return Null, err
 }
 
@@ -3966,16 +4022,20 @@ func stackTraceString(stack []callFrame) string {
 		stack = append([]callFrame(nil), stack...)
 		stack[0].Symbol = "AnonymousBlock"
 	}
-	// The current statement locates the active method; its entry frame is
-	// bookkeeping, not another invocation. Keep recursive caller frames.
-	// This projection affects Apex text only, leaving diagnostic positions intact.
-	// Owned hierarchy_exception_native rows retain the named helper/caller frames.
+	return apexStackTraceString(stackFrames(dropActiveEntryFrame(stack)))
+}
+
+// dropActiveEntryFrame removes the active method's entry frame when the
+// current statement already locates that method. The entry frame is
+// bookkeeping, not another invocation. Recursive caller frames stay.
+// Owned hierarchy_exception_native rows retain the named helper/caller frames.
+func dropActiveEntryFrame(stack []callFrame) []callFrame {
 	if n := len(stack); n >= 2 && stack[n-1].statement &&
 		stack[n-1].Symbol == stack[n-2].Symbol && stack[n-1].File == stack[n-2].File {
 		projected := append([]callFrame(nil), stack[:n-2]...)
-		stack = append(projected, stack[n-1])
+		return append(projected, stack[n-1])
 	}
-	return apexStackTraceString(stackFrames(stack))
+	return stack
 }
 
 func apexStackTraceString(frames []StackFrame) string {
@@ -4058,6 +4118,12 @@ func (vm *VM) exceptionMatches(catchType string, thrown Value) bool {
 		return true
 	}
 	if thrown.Kind == ValueObject {
+		// A catch type that resolves to a user-declared class (for example an
+		// inner class named like a System exception) is that class alone. A
+		// System exception with the same short name must not satisfy it.
+		if resolved, ok := vm.catchSourceClass(catchType); ok {
+			return vm.sourceCatchMatches(thrown.Type, resolved)
+		}
 		if vm.typeMatches(thrown.Type, catchType, make(map[string]bool)) {
 			return true
 		}
@@ -4072,6 +4138,57 @@ func lastTypeSegment(typeName string) string {
 		return typeName[i+1:]
 	}
 	return typeName
+}
+
+// catchSourceClass resolves a catch type in the current class scope and
+// reports its runtime name when it is a user-declared class whose short name
+// collides with a System exception type.
+func (vm *VM) catchSourceClass(catchType string) (string, bool) {
+	if !isBuiltinExceptionType(shortTypeName(catchType)) {
+		return "", false
+	}
+	resolved := vm.resolveTypeNameInClass(vm.currentClass, catchType)
+	class, ok := vm.lookupClass(resolved)
+	if !ok || class.PlatformType {
+		return "", false
+	}
+	return resolved, true
+}
+
+// sourceClassShadowsException reports whether an unqualified exception name
+// resolves, from the current class, to a user-declared class.
+func (vm *VM) sourceClassShadowsException(name string) bool {
+	if strings.HasPrefix(strings.ToLower(strings.TrimSpace(name)), "system.") {
+		return false
+	}
+	_, ok := vm.catchSourceClass(name)
+	return ok
+}
+
+func (vm *VM) sourceCatchMatches(thrownType, resolved string) bool {
+	// A runtime-generated System exception is never a user-declared class,
+	// even when a source class in scope shares its short name.
+	if isBuiltinExceptionType(thrownType) && !strings.Contains(strings.TrimPrefix(thrownType, "System."), ".") {
+		if class, ok := vm.lookupClass(thrownType); !ok || class.PlatformType {
+			return false
+		}
+	}
+	if strings.Contains(resolved, ".") {
+		return vm.typeMatches(thrownType, resolved, make(map[string]bool))
+	}
+	seen := make(map[string]bool)
+	for current := thrownType; current != "" && !seen[current]; {
+		seen[current] = true
+		if strings.EqualFold(current, resolved) {
+			return true
+		}
+		class, ok := vm.lookupClass(current)
+		if !ok || class.PlatformType {
+			return false
+		}
+		current = vm.resolvedSuperClassName(class)
+	}
+	return false
 }
 
 func (vm *VM) classNamesReferToSameRuntimeType(left, right string) bool {

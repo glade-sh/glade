@@ -2,6 +2,7 @@ package apextest_test
 
 // Unrun Q2 proposal. IDs are checked per source path; no cross-run identity is inferred.
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
@@ -10,6 +11,8 @@ import (
 	"github.com/glade-sh/glade/internal/testreport"
 	"path/filepath"
 	"reflect"
+	"regexp"
+	"sort"
 	"strings"
 	"testing"
 )
@@ -155,6 +158,56 @@ func c11q345Project(o map[string]any, c c11q345Case) error {
 	}
 	return nil
 }
+
+// c11Q345LocalSnapshot retains every field and preserves equality between
+// synthetic IDs while removing per-run identities and private exception text.
+func c11Q345LocalSnapshot(raw []byte) ([]byte, error) {
+	value, err := c12JSONObject(raw)
+	if err != nil {
+		return nil, err
+	}
+	ids := map[string]string{}
+	var normalize func(any) any
+	normalize = func(value any) any {
+		switch x := value.(type) {
+		case map[string]any:
+			keys := make([]string, 0, len(x))
+			for key := range x {
+				keys = append(keys, key)
+			}
+			sort.Strings(keys)
+			out := map[string]any{}
+			for _, key := range keys {
+				if key == "message" {
+					if message, ok := x[key].(string); ok {
+						out[key] = fmt.Sprintf("sha256:%x", sha256.Sum256([]byte(message)))
+						continue
+					}
+				}
+				out[key] = normalize(x[key])
+			}
+			return out
+		case []any:
+			out := make([]any, len(x))
+			for i, item := range x {
+				out[i] = normalize(item)
+			}
+			return out
+		case string:
+			if originalValid18(x) {
+				if _, found := ids[x]; !found {
+					ids[x] = fmt.Sprintf("<id%d>", len(ids)+1)
+				}
+				return ids[x]
+			}
+			return x
+		default:
+			return value
+		}
+	}
+	return json.Marshal(normalize(value))
+}
+
 func TestC11Q345CaptureProposal(t *testing.T) {
 	dir := filepath.Join("testdata", "conformance", "c11_q345")
 	raw := c12Read(t, filepath.Join(dir, "provenance.json"))
@@ -207,31 +260,33 @@ func TestC11Q345CaptureProposal(t *testing.T) {
 				return r.Suites[0].Cases[0]
 			}
 			base := run("baseline")
-			if c11ActorGateCarry(t, base, c.Class, "baseline", c.Arm) {
-				t.Log("known local carry batch Dot stdlib cases Dot Dot SOQL cases and Dot async cases: actor profile prerequisite prevents native observation")
-				apextest.Case345Skip(t)
-			}
 			if base.Status != testreport.StatusPass || base.Problem != nil || base.ClassName != c.Class || base.MethodName != "baseline" {
 				t.Fatalf("baseline failed: %s", c11Diagnostic(base))
 			}
 			result := run(c.Method)
-			if c11ActorGateCarry(t, result, c.Class, c.Method, c.Arm) {
-				t.Log("known local carry batch Dot stdlib cases Dot Dot SOQL cases and Dot async cases: actor profile prerequisite prevents native observation")
-				apextest.Case345Skip(t)
-			}
 			raw, e := c12CapturePayload(result, c.Class, c.Method, c.Marker)
 			if e != nil {
 				t.Fatal(e)
 			}
+
 			o, e := c12JSONObject(raw)
 			if e != nil {
 				t.Fatal(e)
 			}
 			if e = c11q345Project(o, c); e != nil {
+				if ex, ok := o["exception"].(map[string]any); ok {
+					if message, ok := ex["message"].(string); ok {
+						t.Logf("query diagnostic: %s", regexp.MustCompile(`[A-Za-z0-9]{15,18}`).ReplaceAllString(message, "<redacted>"))
+					}
+				}
 				t.Fatal(e)
 			}
 			if !reflect.DeepEqual(o, rows[c.API+"/"+c.Class+"."+c.Method]) {
-				t.Fatal("observation differs")
+				snapshot, err := c11Q345LocalSnapshot(raw)
+				if err != nil {
+					t.Fatal(err)
+				}
+				t.Fatalf("observation differs: %s", snapshot)
 			}
 		})
 	}
@@ -256,6 +311,29 @@ func TestC11Q345RejectsInvalidRelations(t *testing.T) {
 		}
 		if e = c11q345Project(o, c11q345Case{Route: tc.route, Method: tc.method, Omit: tc.omit}); e == nil {
 			t.Fatal("invalid observation accepted", tc.method)
+		}
+	}
+}
+
+func TestC11Q345LocalSnapshotPreservesRelationships(t *testing.T) {
+	first := []byte(`{"a":"001000000000001AAA","b":"001000000000001AAA","exception":{"message":"one"}}`)
+	renamed := []byte(`{"a":"001000000000002AAA","b":"001000000000002AAA","exception":{"message":"one"}}`)
+	distinct := []byte(`{"a":"001000000000002AAA","b":"001000000000003AAA","exception":{"message":"one"}}`)
+	changedMessage := []byte(`{"a":"001000000000002AAA","b":"001000000000002AAA","exception":{"message":"two"}}`)
+	a, err := c11Q345LocalSnapshot(first)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct {
+		raw   []byte
+		equal bool
+	}{{renamed, true}, {distinct, false}, {changedMessage, false}} {
+		b, err := c11Q345LocalSnapshot(tc.raw)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if bytes.Equal(a, b) != tc.equal {
+			t.Fatal("snapshot did not preserve identity relationship or message")
 		}
 	}
 }

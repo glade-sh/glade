@@ -75,11 +75,15 @@ try {
 }
 System.assertEquals(true, targetFieldDenied);
 
+// Task.AccountId is non-permissionable (describe, API 62.0 and 67.0), so the
+// relationship itself resolves with Task and Account read, as for the native
+// Case Status and OwnerId rows (dotfix_fls_followups case.select.user). The
+// target field Account.Type still needs its own grant.
 Boolean nonPolymorphicTypeDenied = false;
 try {
 	Database.query('SELECT Id, Account.Type FROM Task WITH USER_MODE');
 } catch (QueryException qe) {
-	nonPolymorphicTypeDenied = qe.getMessage().contains('Account.Type') && qe.getMessage().contains('USER_MODE');
+	nonPolymorphicTypeDenied = qe.getMessage().contains('No such column \'Type\' on entity \'Account\'');
 }
 System.assertEquals(true, nonPolymorphicTypeDenied);
 
@@ -273,6 +277,14 @@ func relationshipUserModeApexOrg(readWhoID, readTask, denyTaskAtProfile, private
 		objectPermissions["0OP000000000005"] = storage.Record{ID: "0OP000000000005", Object: "ObjectPermissions", Fields: map[string]storage.Value{"ParentId": storage.IDValue(profileOwnedPermissionSetID), "SObjectType": storage.StringValue("Task"), "PermissionsRead": storage.BooleanValue(false)}}
 	}
 	org.Objects["ObjectPermissions"] = storage.ObjectState{Records: objectPermissions}
+	// The captured standard inventory no longer seeds a counter-style set with
+	// this ID, so the fixture declares the granting set itself.
+	sets := org.Objects["PermissionSet"]
+	if sets.Records == nil {
+		sets.Records = map[storage.ID]storage.Record{}
+	}
+	sets.Records[permissionSetID] = storage.Record{ID: permissionSetID, Object: "PermissionSet", Fields: map[string]storage.Value{"Name": storage.StringValue("RelationshipGrant"), "Label": storage.StringValue("Relationship Grant"), "IsOwnedByProfile": storage.BooleanValue(false)}}
+	org.Objects["PermissionSet"] = sets
 	org.Objects["PermissionSetAssignment"] = storage.ObjectState{Records: map[storage.ID]storage.Record{
 		"0Pa000000000001": {ID: "0Pa000000000001", Object: "PermissionSetAssignment", Fields: map[string]storage.Value{"AssigneeId": storage.IDValue(userID), "PermissionSetId": storage.IDValue(permissionSetID)}},
 	}}

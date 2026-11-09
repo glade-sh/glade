@@ -252,6 +252,11 @@ func databaseDMLResultIDValue(op string, result dml.Result) Value {
 		if strings.EqualFold(op, "update") || (strings.EqualFold(op, "undelete") && result.StatusCode == "UNDELETE_FAILED") {
 			return databaseResultIDValue(result.ID)
 		}
+		// A denied-field upsert by Id keeps the input Id; one by external id has none
+		// (native partial_dml_multifield upsertId and upsertExternal partial rows).
+		if strings.EqualFold(op, "upsert") && result.StatusCode == "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY" && len(result.Fields) > 0 {
+			return databaseResultIDValue(result.ID)
+		}
 		return Null
 	}
 	return databaseResultIDValue(result.ID)

@@ -18,6 +18,7 @@ func TestRetryPrematureRegexTimeoutGates(t *testing.T) {
 	// A suspension sleeps past half the budget. The budget leaves room for the
 	// CPU other goroutines, GC and earlier subtests use in the sample window.
 	const suspendedBudget, suspendedSleep = 400 * time.Millisecond, 250 * time.Millisecond
+	clock := newVirtualRegexClock(t)
 	t.Run("premature timeout retries", func(t *testing.T) {
 		calls := 0
 		got, err := retryPrematureRegexTimeout(2*time.Second, func() (*regexp2.Match, error) {
@@ -46,39 +47,35 @@ func TestRetryPrematureRegexTimeoutGates(t *testing.T) {
 	})
 	t.Run("timeouts until the budget is spent are returned", func(t *testing.T) {
 		const budget = 300 * time.Millisecond
-		started := time.Now()
+		started := clock.now()
 		calls := 0
 		_, err := retryPrematureRegexTimeout(budget, func() (*regexp2.Match, error) {
 			calls++
 			return nil, errPrematureTimeout
 		})
-		if err != errPrematureTimeout || calls < 3 || time.Since(started) < budget {
-			t.Fatalf("err=%v calls=%d elapsed=%s", err, calls, time.Since(started))
+		if elapsed := clock.now().Sub(started); err != errPrematureTimeout || calls < 3 || elapsed < budget {
+			t.Fatalf("err=%v calls=%d elapsed=%s", err, calls, elapsed)
 		}
 	})
 	t.Run("spent budget is not retried", func(t *testing.T) {
-		clock := &regexRetryTestClock{available: true}
+		clock.reset()
 		calls := 0
-		_, err := retryPrematureRegexTimeoutWithRuntime(200*time.Millisecond, func() (*regexp2.Match, error) {
+		_, err := retryPrematureRegexTimeout(200*time.Millisecond, func() (*regexp2.Match, error) {
 			calls++
-			clock.wall += 150 * time.Millisecond
-			clock.cpu += 150 * time.Millisecond
+			clock.burn(150 * time.Millisecond)
 			return nil, errPrematureTimeout
-		}, clock.runtime())
+		})
 		if err != errPrematureTimeout || calls != 1 {
 			t.Fatalf("err=%v calls=%d", err, calls)
 		}
 	})
 	t.Run("search suspended in flight retries", func(t *testing.T) {
-		if _, ok := regexProcessCPUTime(); !ok {
-			t.Skip("process CPU time unavailable on this platform")
-		}
-		regexCPUSampleCache.Store(nil)
+		clock.reset()
 		calls := 0
 		got, err := retryPrematureRegexTimeout(suspendedBudget, func() (*regexp2.Match, error) {
 			calls++
 			if calls == 1 {
-				time.Sleep(suspendedSleep)
+				clock.sleep(suspendedSleep)
 				return nil, errPrematureTimeout
 			}
 			return want, nil
@@ -88,16 +85,13 @@ func TestRetryPrematureRegexTimeoutGates(t *testing.T) {
 		}
 	})
 	t.Run("stale clock after a suspended search retries", func(t *testing.T) {
-		if _, ok := regexProcessCPUTime(); !ok {
-			t.Skip("process CPU time unavailable on this platform")
-		}
-		regexCPUSampleCache.Store(nil)
+		clock.reset()
 		calls := 0
 		got, err := retryPrematureRegexTimeout(suspendedBudget, func() (*regexp2.Match, error) {
 			calls++
 			switch calls {
 			case 1:
-				time.Sleep(suspendedSleep)
+				clock.sleep(suspendedSleep)
 				return nil, errPrematureTimeout
 			case 2:
 				return nil, errPrematureTimeout
@@ -109,11 +103,11 @@ func TestRetryPrematureRegexTimeoutGates(t *testing.T) {
 		}
 	})
 	t.Run("a second suspended search is returned", func(t *testing.T) {
-		regexCPUSampleCache.Store(nil)
+		clock.reset()
 		calls := 0
 		_, err := retryPrematureRegexTimeout(suspendedBudget, func() (*regexp2.Match, error) {
 			calls++
-			time.Sleep(suspendedSleep)
+			clock.sleep(suspendedSleep)
 			return nil, errPrematureTimeout
 		})
 		if err != errPrematureTimeout || calls > 2 {
@@ -130,6 +124,15 @@ func TestRetryPrematureRegexTimeoutGates(t *testing.T) {
 			t.Fatalf("err=%v calls=%d", err, calls)
 		}
 	})
+}
+
+// virtualRegexClock replaces the wall, sleep and process CPU clocks behind the
+// premature-timeout retry for one test. Time moves only when the test says so:
+// sleep advances wall time alone (a suspended process), burn advances wall and
+// CPU time (a genuine search). The product budgets and comparisons are unchanged.
+type virtualRegexClock struct {
+	wall time.Time
+	cpu  time.Duration
 }
 
 type regexRetryTestClock struct {
@@ -212,3 +215,32 @@ func TestRegexRetryRealCPUBudget(t *testing.T) {
 		t.Fatalf("err=%v calls=%d", err, calls)
 	}
 }
+
+func newVirtualRegexClock(t *testing.T) *virtualRegexClock {
+	t.Helper()
+	clock := &virtualRegexClock{wall: time.Unix(1_700_000_000, 0)}
+	saved := regexClock
+	regexClock = regexTimeSource{
+		now:     clock.now,
+		sleep:   clock.sleep,
+		cpuTime: func() (time.Duration, bool) { return clock.cpu, true },
+	}
+	regexCPUSampleCache.Store(nil)
+	t.Cleanup(func() {
+		regexClock = saved
+		regexCPUSampleCache.Store(nil)
+	})
+	return clock
+}
+
+func (c *virtualRegexClock) now() time.Time { return c.wall }
+
+func (c *virtualRegexClock) sleep(d time.Duration) { c.wall = c.wall.Add(d) }
+
+func (c *virtualRegexClock) burn(d time.Duration) {
+	c.wall = c.wall.Add(d)
+	c.cpu += d
+}
+
+// reset drops the cached CPU sample so the next search takes a fresh one.
+func (c *virtualRegexClock) reset() { regexCPUSampleCache.Store(nil) }

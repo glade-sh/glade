@@ -1,0 +1,5 @@
+case	routes	apis	observation
+admin_unassigned	anonymous,isTest:administrator	62.0,67.0	$Permission false for a user with no assignment; PhoneFormat, GuardedName fire; BypassOnlyName does not
+row_only	isTest:rowOnly	62.0,67.0	Assigned set without the custom permission behaves like the unassigned administrator
+bypass	isTest:bypass	62.0,67.0	$Permission true through an assigned permission set: FeatureManagement agrees, PhoneFormat and GuardedName skipped, BypassOnlyName fires
+regex_quantifier	all	62.0,67.0	REGEX with {n} and {n,m} quantifiers, anchors, and whole-string matching (unanchored pattern must match the entire value)

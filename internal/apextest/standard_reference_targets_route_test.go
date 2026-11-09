@@ -2,6 +2,7 @@ package apextest
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -13,7 +14,10 @@ import (
 // name objects with no describe at API 62.0 or 67.0 in native scratch orgs
 // (testdata/standard_reference_targets_native). A project that customizes the owners
 // must compile and run; queries and describes of the targets stay unsupported
-// like the native "sObject type ... is not supported" answer.
+// like the native "sObject type ... is not supported" answer. The same capture
+// finds DocumentGenerationProcess absent in every org state, so once the
+// project declares an org shape its static references are "Invalid type"
+// (standard_object_shape_compile rows); an unspecified shape stays ungated.
 func TestReferenceTargetsOfIndustriesObjectsCompileAndStayUnqueryable(t *testing.T) {
 	for _, api := range []string{"62.0", "67.0"} {
 		for _, features := range []bool{false, true} {
@@ -31,14 +35,39 @@ func TestReferenceTargetsOfIndustriesObjectsCompileAndStayUnqueryable(t *testing
 					writeFile(t, filepath.Join(root, "force-app/main/default/objects", object, "fields/Note__c.field-meta.xml"),
 						`<?xml version="1.0" encoding="UTF-8"?><CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Note__c</fullName><label>Note</label><type>Text</type><length>20</length></CustomField>`)
 				}
+				if features {
+					absent := filepath.Join(root, "force-app/main/default/classes/DocGenOwner.cls")
+					writeFile(t, absent, `public class DocGenOwner { public static Object make() { DocumentGenerationProcess p = new DocumentGenerationProcess(Note__c = 'n'); return p; } }`)
+					writeFile(t, absent+"-meta.xml", "<ApexClass><apiVersion>"+api+"</apiVersion></ApexClass>")
+					index := loadTestIndex(t, root)
+					rejected := false
+					for _, diag := range sema.Analyze(index).Diagnostics {
+						if strings.Contains(diag.Message, "DocumentGenerationProcess") {
+							rejected = true
+						}
+					}
+					if !rejected {
+						t.Fatal("a declared shape without DocGen compiled a static DocumentGenerationProcess reference")
+					}
+					if err := os.Remove(absent); err != nil {
+						t.Fatal(err)
+					}
+					if err := os.Remove(absent + "-meta.xml"); err != nil {
+						t.Fatal(err)
+					}
+				}
+				docGen := `
+    DocumentGenerationProcess p = new DocumentGenerationProcess(Note__c = 'n');
+    System.assertEquals('n', p.Note__c);`
+				if features {
+					docGen = ""
+				}
 				cls := filepath.Join(root, "force-app/main/default/classes/ReferenceTargetProbeTest.cls")
 				writeFile(t, cls, `@IsTest
 private class ReferenceTargetProbeTest {
   @IsTest static void ownersConstruct() {
     Assessment a = new Assessment(Name = 'x', Note__c = 'n');
-    DocumentGenerationProcess p = new DocumentGenerationProcess(Note__c = 'n');
-    System.assertEquals('n', a.Note__c);
-    System.assertEquals('n', p.Note__c);
+    System.assertEquals('n', a.Note__c);`+docGen+`
     System.assert(Schema.SObjectType.Assessment.fields.getMap().containsKey('note__c'));
   }
   @IsTest static void targetsAreNotQueryable() {

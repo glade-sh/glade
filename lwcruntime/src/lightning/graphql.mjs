@@ -1,4 +1,4 @@
-import { parseDocument } from "./graphql-document.mjs";
+import { parseDocument, opaqueDocument, isOpaqueDocument, unwrapDocument } from "./graphql-document.mjs";
 import { executeQuery, NO_WIRE_PROVISION } from "./graphql-query.mjs";
 
 const documents = new Map();
@@ -23,13 +23,17 @@ export function gql(strings, ...values) {
   const source = sourceFromTemplate(strings, values);
   if (!source.trim()) return undefined;
   if (documents.has(source)) return documents.get(source);
-  const document = parseDocument(source);
-  const unsupported = document.definitions.filter(node => node.kind === "OperationDefinition" && node.operation !== "query");
-  if (unsupported.length) throw new SyntaxError("There are unsupported operations in the graphql query:\n" + unsupported.map(node => `Unsupported ${node.operation} (${node.name || "anonymous"}) operation.`).join("\n"));
-  document.loc = { source: { body: source, name: "GraphQL request" } };
-  document.toString = () => source;
-  documents.set(source, document);
-  return document;
+  let document, parseError;
+  try { document = parseDocument(source); } catch (error) { parseError = error; }
+  if (document) {
+    const unsupported = document.definitions.filter(node => node.kind === "OperationDefinition" && node.operation !== "query" && node.operation !== "mutation");
+    if (unsupported.length) throw new SyntaxError("There are unsupported operations in the graphql query:\n" + unsupported.map(node => `Unsupported ${node.operation} (${node.name || "anonymous"}) operation.`).join("\n"));
+    document.loc = { source: { body: source, name: "GraphQL request" } };
+    document.toString = () => source;
+  }
+  const value = opaqueDocument(document, source, parseError);
+  documents.set(source, value);
+  return value;
 }
 
 function readGraphQLData() {
@@ -50,7 +54,10 @@ export function graphql(input) {
     this.connected = false;
     return;
   }
-  if (input?.query?.kind === "Document" && typeof window !== "undefined") return executeQuery(input.query, input.variables, input.operationName);
+  let parsed;
+  try { parsed = unwrapDocument(input?.query); }
+  catch (error) { return Promise.resolve({ data: undefined, errors: [{ errorType: "localBoundary", message: error.message }] }); }
+  if (parsed?.kind === "Document" && typeof window !== "undefined") return executeQuery(parsed, input.variables, input.operationName);
   return Promise.resolve({ data: readGraphQLData(), errors: [] });
 }
 graphql.prototype.connect = function () { this.connected = true; if (this.config) this.update(this.config); };
@@ -58,11 +65,18 @@ graphql.prototype.disconnect = function () { this.connected = false; this.genera
 graphql.prototype.update = function (config) {
   this.config = config;
   if (!this.connected) return;
-  if (config?.query?.kind !== "Document" || (Object.prototype.hasOwnProperty.call(config, "variables") && config.variables === undefined)) {
+  let parsed;
+  try { parsed = unwrapDocument(config?.query); }
+  catch (error) {
+    this.generation++;
+    publish(this, { data: undefined, errors: [{ errorType: "localBoundary", message: error.message }] });
+    return;
+  }
+  if (parsed?.kind !== "Document" || (Object.prototype.hasOwnProperty.call(config, "variables") && config.variables === undefined)) {
     this.generation++; return;
   }
   const generation = ++this.generation;
-  this.pending = executeQuery(config.query, config.variables ?? {}, config.operationName, true).then(value => {
+  this.pending = executeQuery(parsed, config.variables ?? {}, config.operationName, true).then(value => {
     if (!this.connected || generation !== this.generation || value === NO_WIRE_PROVISION) return;
     publish(this, value);
   }).catch(error => {
@@ -71,6 +85,14 @@ graphql.prototype.update = function (config) {
     publish(this, value);
   });
 };
+// Invalid inputs match the captured desktop adapter envelope. Mutation execution
+// itself remains a hosted boundary and is not simulated as a successful write.
+export function executeMutation(config) {
+  if (!isOpaqueDocument(config?.query) && config?.query?.kind !== "Document") {
+    return Promise.resolve({ errors: [{ message: "Internal error in GraphQL adapter occurred", locations: [] }] });
+  }
+  return Promise.resolve({ errors: [{ errorType: "localBoundary", message: "GraphQL mutation execution is not supported locally" }] });
+}
 export function refreshGraphQL(value) {
   const adapter = value && typeof value === "object" ? provisions.get(value) || value[provision]?.() : null;
   if (!adapter?.config) return Promise.resolve();

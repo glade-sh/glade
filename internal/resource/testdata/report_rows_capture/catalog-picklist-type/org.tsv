@@ -1,0 +1,5 @@
+api	route	case	result
+62.0	anonymous	opportunity-open-filter	true~all~4~Opportunity Status~PICKLIST
+62.0	seealldata	opportunity-open-filter	true~all~4~Opportunity Status~PICKLIST
+67.0	anonymous	opportunity-open-filter	true~all~4~Opportunity Status~PICKLIST
+67.0	seealldata	opportunity-open-filter	true~all~4~Opportunity Status~PICKLIST

@@ -1,0 +1,13 @@
+{
+ "edition": "Developer",
+ "features": [
+  "OrderSaveBehaviorBoth"
+ ],
+ "orgName": "Synthetic enhanced orders feature-and-setting",
+ "settings": {
+  "orderSettings": {
+   "enableEnhancedCommerceOrders": true,
+   "enableOrders": true
+  }
+ }
+}

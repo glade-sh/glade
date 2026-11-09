@@ -1,0 +1,335 @@
+api	route	class_or_script	probe	observation
+62.0	isTest	NpAgg62.q00	Pa-cf-g	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	anonymous	anon/q00.apex	Pa-cf-g	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAgg67.q00	Pa-cf-g	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	anonymous	anon/q00.apex	Pa-cf-g	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAgg62.q01	Pa-fc-g	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	anonymous	anon/q01.apex	Pa-fc-g	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAgg67.q01	Pa-fc-g	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	anonymous	anon/q01.apex	Pa-fc-g	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAgg62.q02	Pa-cf-n	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	anonymous	anon/q02.apex	Pa-cf-n	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAgg67.q02	Pa-cf-n	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	anonymous	anon/q02.apex	Pa-cf-n	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAgg62.q03	Pa-fc-n	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	anonymous	anon/q03.apex	Pa-fc-n	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAgg67.q03	Pa-fc-n	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	anonymous	anon/q03.apex	Pa-fc-n	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAgg62.q04	Pn-cf-g	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	anonymous	anon/q04.apex	Pn-cf-g	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAgg67.q04	Pn-cf-g	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	anonymous	anon/q04.apex	Pn-cf-g	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAgg62.q05	Pn-fc-g	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	anonymous	anon/q05.apex	Pn-fc-g	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAgg67.q05	Pn-fc-g	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	anonymous	anon/q05.apex	Pn-fc-g	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAgg62.q06	Pn-cf-n	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	anonymous	anon/q06.apex	Pn-cf-n	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAgg67.q06	Pn-cf-n	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	anonymous	anon/q06.apex	Pn-cf-n	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAgg62.q07	Pn-fc-n	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	anonymous	anon/q07.apex	Pn-fc-n	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAgg67.q07	Pn-fc-n	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	anonymous	anon/q07.apex	Pn-fc-n	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAgg62.q08	Pa-cf-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	anonymous	anon/q08.apex	Pa-cf-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAgg67.q08	Pa-cf-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	anonymous	anon/q08.apex	Pa-cf-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAgg62.q09	Pa-fc-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	anonymous	anon/q09.apex	Pa-fc-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAgg67.q09	Pa-fc-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	anonymous	anon/q09.apex	Pa-fc-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAgg62.q10	Pa-cf-ge	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	anonymous	anon/q10.apex	Pa-cf-ge	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAgg67.q10	Pa-cf-ge	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	anonymous	anon/q10.apex	Pa-cf-ge	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAgg62.q11	Ta-cf-g	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+62.0	anonymous	anon/q11.apex	Ta-cf-g	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+67.0	isTest	NpAgg67.q11	Ta-cf-g	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+67.0	anonymous	anon/q11.apex	Ta-cf-g	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+62.0	isTest	NpAgg62.q12	Ta-fc-g	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+62.0	anonymous	anon/q12.apex	Ta-fc-g	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+67.0	isTest	NpAgg67.q12	Ta-fc-g	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+67.0	anonymous	anon/q12.apex	Ta-fc-g	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+62.0	isTest	NpAgg62.q13	Ta-cf-n	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+62.0	anonymous	anon/q13.apex	Ta-cf-n	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+67.0	isTest	NpAgg67.q13	Ta-cf-n	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+67.0	anonymous	anon/q13.apex	Ta-cf-n	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+62.0	isTest	NpAgg62.q14	Ta-fc-n	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+62.0	anonymous	anon/q14.apex	Ta-fc-n	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+67.0	isTest	NpAgg67.q14	Ta-fc-n	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+67.0	anonymous	anon/q14.apex	Ta-fc-n	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+62.0	isTest	NpAgg62.q15	Tn-cf-g	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+62.0	anonymous	anon/q15.apex	Tn-cf-g	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+67.0	isTest	NpAgg67.q15	Tn-cf-g	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+67.0	anonymous	anon/q15.apex	Tn-cf-g	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+62.0	isTest	NpAgg62.q16	Tn-fc-g	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+62.0	anonymous	anon/q16.apex	Tn-fc-g	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+67.0	isTest	NpAgg67.q16	Tn-fc-g	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+67.0	anonymous	anon/q16.apex	Tn-fc-g	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+62.0	isTest	NpAgg62.q17	Tn-cf-n	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+62.0	anonymous	anon/q17.apex	Tn-cf-n	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+67.0	isTest	NpAgg67.q17	Tn-cf-n	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+67.0	anonymous	anon/q17.apex	Tn-cf-n	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+62.0	isTest	NpAgg62.q18	Tn-fc-n	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+62.0	anonymous	anon/q18.apex	Tn-fc-n	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+67.0	isTest	NpAgg67.q18	Tn-fc-n	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+67.0	anonymous	anon/q18.apex	Tn-fc-n	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+62.0	isTest	NpAgg62.q19	Ta-cf-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+62.0	anonymous	anon/q19.apex	Ta-cf-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+67.0	isTest	NpAgg67.q19	Ta-cf-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+67.0	anonymous	anon/q19.apex	Ta-cf-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+62.0	isTest	NpAgg62.q20	Ta-fc-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+62.0	anonymous	anon/q20.apex	Ta-fc-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+67.0	isTest	NpAgg67.q20	Ta-fc-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+67.0	anonymous	anon/q20.apex	Ta-fc-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+62.0	isTest	NpAgg62.q21	Ta-cf-ge	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+62.0	anonymous	anon/q21.apex	Ta-cf-ge	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+67.0	isTest	NpAgg67.q21	Ta-cf-ge	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+67.0	anonymous	anon/q21.apex	Ta-cf-ge	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+62.0	isTest	NpAgg62.q22	AN-fc-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+62.0	anonymous	anon/q22.apex	AN-fc-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+67.0	isTest	NpAgg67.q22	AN-fc-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+67.0	anonymous	anon/q22.apex	AN-fc-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+62.0	isTest	NpAgg62.q23	AN-cf-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+62.0	anonymous	anon/q23.apex	AN-cf-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+67.0	isTest	NpAgg67.q23	AN-cf-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+67.0	anonymous	anon/q23.apex	AN-cf-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+62.0	isTest	NpAgg62.q24	AN-fc-nw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+62.0	anonymous	anon/q24.apex	AN-fc-nw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+67.0	isTest	NpAgg67.q24	AN-fc-nw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+67.0	anonymous	anon/q24.apex	AN-fc-nw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+62.0	isTest	NpAgg62.q25	AN-cf-nw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+62.0	anonymous	anon/q25.apex	AN-cf-nw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+67.0	isTest	NpAgg67.q25	AN-cf-nw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+67.0	anonymous	anon/q25.apex	AN-cf-nw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+62.0	isTest	NpAgg62.q26	AI-fc-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Industry
+62.0	anonymous	anon/q26.apex	AI-fc-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Industry
+67.0	isTest	NpAgg67.q26	AI-fc-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Industry
+67.0	anonymous	anon/q26.apex	AI-fc-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Industry
+62.0	isTest	NpAgg62.q27	AI-cf-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Industry
+62.0	anonymous	anon/q27.apex	AI-cf-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Industry
+67.0	isTest	NpAgg67.q27	AI-cf-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Industry
+67.0	anonymous	anon/q27.apex	AI-cf-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Industry
+62.0	isTest	NpAgg62.q28	AI-fc-nw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Industry
+62.0	anonymous	anon/q28.apex	AI-fc-nw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Industry
+67.0	isTest	NpAgg67.q28	AI-fc-nw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Industry
+67.0	anonymous	anon/q28.apex	AI-fc-nw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Industry
+62.0	isTest	NpAgg62.q29	AI-cf-nw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Industry
+62.0	anonymous	anon/q29.apex	AI-cf-nw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Industry
+67.0	isTest	NpAgg67.q29	AI-cf-nw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Industry
+67.0	anonymous	anon/q29.apex	AI-cf-nw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Industry
+62.0	isTest	NpAgg62.q30	AB-fc-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: BillingCity
+62.0	anonymous	anon/q30.apex	AB-fc-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: BillingCity
+67.0	isTest	NpAgg67.q30	AB-fc-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: BillingCity
+67.0	anonymous	anon/q30.apex	AB-fc-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: BillingCity
+62.0	isTest	NpAgg62.q31	AB-cf-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: BillingCity
+62.0	anonymous	anon/q31.apex	AB-cf-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: BillingCity
+67.0	isTest	NpAgg67.q31	AB-cf-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: BillingCity
+67.0	anonymous	anon/q31.apex	AB-cf-gw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: BillingCity
+62.0	isTest	NpAgg62.q32	AB-fc-nw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: BillingCity
+62.0	anonymous	anon/q32.apex	AB-fc-nw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: BillingCity
+67.0	isTest	NpAgg67.q32	AB-fc-nw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: BillingCity
+67.0	anonymous	anon/q32.apex	AB-fc-nw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: BillingCity
+62.0	isTest	NpAgg62.q33	AB-cf-nw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: BillingCity
+62.0	anonymous	anon/q33.apex	AB-cf-nw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: BillingCity
+67.0	isTest	NpAgg67.q33	AB-cf-nw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: BillingCity
+67.0	anonymous	anon/q33.apex	AB-cf-nw	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: BillingCity
+62.0	isTest	NpAgg62.q34	R213	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+62.0	anonymous	anon/q34.apex	R213	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+67.0	isTest	NpAgg67.q34	R213	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+67.0	anonymous	anon/q34.apex	R213	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+62.0	isTest	NpAgg62.q35	R213-cf	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+62.0	anonymous	anon/q35.apex	R213-cf	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+67.0	isTest	NpAgg67.q35	R213-cf	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+67.0	anonymous	anon/q35.apex	R213-cf	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+62.0	isTest	NpAgg62.q36	R212	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: BillingCity
+62.0	anonymous	anon/q36.apex	R212	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: BillingCity
+67.0	isTest	NpAgg67.q36	R212	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: BillingCity
+67.0	anonymous	anon/q36.apex	R212	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: BillingCity
+62.0	isTest	NpAgg62.q37	R213-e	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+62.0	anonymous	anon/q37.apex	R213-e	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+67.0	isTest	NpAgg67.q37	R213-e	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+67.0	anonymous	anon/q37.apex	R213-e	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+62.0	isTest	NpAggLoop62.q00	Pa-cf-g@listSObject	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	anonymous	anon2/q00.apex	Pa-cf-g@listSObject	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAggLoop67.q00	Pa-cf-g@listSObject	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	anonymous	anon2/q00.apex	Pa-cf-g@listSObject	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAggLoop62.q01	Pa-cf-g@listAgg	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	anonymous	anon2/q01.apex	Pa-cf-g@listAgg	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAggLoop67.q01	Pa-cf-g@listAgg	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	anonymous	anon2/q01.apex	Pa-cf-g@listAgg	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAggLoop62.q02	Pa-cf-g@forAgg	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+62.0	anonymous	anon2/q02.apex	Pa-cf-g@forAgg	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAggLoop67.q02	Pa-cf-g@forAgg	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+67.0	anonymous	anon2/q02.apex	Pa-cf-g@forAgg	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAggLoop62.q03	Pa-cf-g@forSObject	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+62.0	anonymous	anon2/q03.apex	Pa-cf-g@forSObject	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAggLoop67.q03	Pa-cf-g@forSObject	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+67.0	anonymous	anon2/q03.apex	Pa-cf-g@forSObject	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAggLoop62.q04	Pa-cf-g@forChunkAgg	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+62.0	anonymous	anon2/q04.apex	Pa-cf-g@forChunkAgg	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAggLoop67.q04	Pa-cf-g@forChunkAgg	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+67.0	anonymous	anon2/q04.apex	Pa-cf-g@forChunkAgg	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAggLoop62.q05	Pa-cf-g@forChunkSObject	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+62.0	anonymous	anon2/q05.apex	Pa-cf-g@forChunkSObject	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAggLoop67.q05	Pa-cf-g@forChunkSObject	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+67.0	anonymous	anon2/q05.apex	Pa-cf-g@forChunkSObject	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAggLoop62.q06	Pa-cf-g@sizeExpr	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	anonymous	anon2/q06.apex	Pa-cf-g@sizeExpr	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAggLoop67.q06	Pa-cf-g@sizeExpr	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	anonymous	anon2/q06.apex	Pa-cf-g@sizeExpr	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAggLoop62.q07	Pa-fc-g@listSObject	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAggLoop67.q07	Pa-fc-g@listSObject	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAggLoop62.q08	Pa-fc-g@listAgg	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAggLoop67.q08	Pa-fc-g@listAgg	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAggLoop62.q09	Pa-fc-g@forAgg	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAggLoop67.q09	Pa-fc-g@forAgg	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAggLoop62.q10	Pa-fc-g@forSObject	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAggLoop67.q10	Pa-fc-g@forSObject	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAggLoop62.q11	Pa-fc-g@forChunkAgg	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAggLoop67.q11	Pa-fc-g@forChunkAgg	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAggLoop62.q12	Pa-fc-g@forChunkSObject	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAggLoop67.q12	Pa-fc-g@forChunkSObject	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAggLoop62.q13	Pa-fc-g@sizeExpr	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAggLoop67.q13	Pa-fc-g@sizeExpr	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAggLoop62.q14	Ta-cf-g@listSObject	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+67.0	isTest	NpAggLoop67.q14	Ta-cf-g@listSObject	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+62.0	isTest	NpAggLoop62.q15	Ta-cf-g@listAgg	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+67.0	isTest	NpAggLoop67.q15	Ta-cf-g@listAgg	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+62.0	isTest	NpAggLoop62.q16	Ta-cf-g@forAgg	EXC|System.QueryException|Field must be grouped or aggregated: Txt__c
+67.0	isTest	NpAggLoop67.q16	Ta-cf-g@forAgg	EXC|System.QueryException|Field must be grouped or aggregated: Txt__c
+62.0	isTest	NpAggLoop62.q17	Ta-cf-g@forSObject	EXC|System.QueryException|Field must be grouped or aggregated: Txt__c
+67.0	isTest	NpAggLoop67.q17	Ta-cf-g@forSObject	EXC|System.QueryException|Field must be grouped or aggregated: Txt__c
+62.0	isTest	NpAggLoop62.q18	Ta-cf-g@forChunkAgg	EXC|System.QueryException|Field must be grouped or aggregated: Txt__c
+67.0	isTest	NpAggLoop67.q18	Ta-cf-g@forChunkAgg	EXC|System.QueryException|Field must be grouped or aggregated: Txt__c
+62.0	isTest	NpAggLoop62.q19	Ta-cf-g@forChunkSObject	EXC|System.QueryException|Field must be grouped or aggregated: Txt__c
+67.0	isTest	NpAggLoop67.q19	Ta-cf-g@forChunkSObject	EXC|System.QueryException|Field must be grouped or aggregated: Txt__c
+62.0	isTest	NpAggLoop62.q20	Ta-cf-g@sizeExpr	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+67.0	isTest	NpAggLoop67.q20	Ta-cf-g@sizeExpr	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+62.0	isTest	NpAggLoop62.q21	Ta-fc-g@listSObject	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+62.0	anonymous	anon2/q21.apex	Ta-fc-g@listSObject	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+67.0	isTest	NpAggLoop67.q21	Ta-fc-g@listSObject	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+67.0	anonymous	anon2/q21.apex	Ta-fc-g@listSObject	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+62.0	isTest	NpAggLoop62.q22	Ta-fc-g@listAgg	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+62.0	anonymous	anon2/q22.apex	Ta-fc-g@listAgg	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+67.0	isTest	NpAggLoop67.q22	Ta-fc-g@listAgg	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+67.0	anonymous	anon2/q22.apex	Ta-fc-g@listAgg	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+62.0	isTest	NpAggLoop62.q23	Ta-fc-g@forAgg	EXC|System.QueryException|Field must be grouped or aggregated: Txt__c
+62.0	anonymous	anon2/q23.apex	Ta-fc-g@forAgg	EXC|System.QueryException|Field must be grouped or aggregated: Txt__c
+67.0	isTest	NpAggLoop67.q23	Ta-fc-g@forAgg	EXC|System.QueryException|Field must be grouped or aggregated: Txt__c
+67.0	anonymous	anon2/q23.apex	Ta-fc-g@forAgg	EXC|System.QueryException|Field must be grouped or aggregated: Txt__c
+62.0	isTest	NpAggLoop62.q24	Ta-fc-g@forSObject	EXC|System.QueryException|Field must be grouped or aggregated: Txt__c
+62.0	anonymous	anon2/q24.apex	Ta-fc-g@forSObject	EXC|System.QueryException|Field must be grouped or aggregated: Txt__c
+67.0	isTest	NpAggLoop67.q24	Ta-fc-g@forSObject	EXC|System.QueryException|Field must be grouped or aggregated: Txt__c
+67.0	anonymous	anon2/q24.apex	Ta-fc-g@forSObject	EXC|System.QueryException|Field must be grouped or aggregated: Txt__c
+62.0	isTest	NpAggLoop62.q25	Ta-fc-g@forChunkAgg	EXC|System.QueryException|Field must be grouped or aggregated: Txt__c
+62.0	anonymous	anon2/q25.apex	Ta-fc-g@forChunkAgg	EXC|System.QueryException|Field must be grouped or aggregated: Txt__c
+67.0	isTest	NpAggLoop67.q25	Ta-fc-g@forChunkAgg	EXC|System.QueryException|Field must be grouped or aggregated: Txt__c
+67.0	anonymous	anon2/q25.apex	Ta-fc-g@forChunkAgg	EXC|System.QueryException|Field must be grouped or aggregated: Txt__c
+62.0	isTest	NpAggLoop62.q26	Ta-fc-g@forChunkSObject	EXC|System.QueryException|Field must be grouped or aggregated: Txt__c
+62.0	anonymous	anon2/q26.apex	Ta-fc-g@forChunkSObject	EXC|System.QueryException|Field must be grouped or aggregated: Txt__c
+67.0	isTest	NpAggLoop67.q26	Ta-fc-g@forChunkSObject	EXC|System.QueryException|Field must be grouped or aggregated: Txt__c
+67.0	anonymous	anon2/q26.apex	Ta-fc-g@forChunkSObject	EXC|System.QueryException|Field must be grouped or aggregated: Txt__c
+62.0	isTest	NpAggLoop62.q27	Ta-fc-g@sizeExpr	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+62.0	anonymous	anon2/q27.apex	Ta-fc-g@sizeExpr	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+67.0	isTest	NpAggLoop67.q27	Ta-fc-g@sizeExpr	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+67.0	anonymous	anon2/q27.apex	Ta-fc-g@sizeExpr	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Txt__c
+62.0	isTest	NpAggLoop62.q28	Pn-cf-g@listSObject	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAggLoop67.q28	Pn-cf-g@listSObject	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAggLoop62.q29	Pn-cf-g@listAgg	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAggLoop67.q29	Pn-cf-g@listAgg	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAggLoop62.q30	Pn-cf-g@forAgg	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAggLoop67.q30	Pn-cf-g@forAgg	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAggLoop62.q31	Pn-cf-g@forSObject	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAggLoop67.q31	Pn-cf-g@forSObject	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAggLoop62.q32	Pn-cf-g@forChunkAgg	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAggLoop67.q32	Pn-cf-g@forChunkAgg	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAggLoop62.q33	Pn-cf-g@forChunkSObject	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAggLoop67.q33	Pn-cf-g@forChunkSObject	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAggLoop62.q34	Pn-cf-g@sizeExpr	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAggLoop67.q34	Pn-cf-g@sizeExpr	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAggLoop62.q35	Pa-cf-n@listSObject	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAggLoop67.q35	Pa-cf-n@listSObject	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAggLoop62.q36	Pa-cf-n@listAgg	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAggLoop67.q36	Pa-cf-n@listAgg	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAggLoop62.q37	Pa-cf-n@forAgg	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAggLoop67.q37	Pa-cf-n@forAgg	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAggLoop62.q38	Pa-cf-n@forSObject	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAggLoop67.q38	Pa-cf-n@forSObject	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAggLoop62.q39	Pa-cf-n@forChunkAgg	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAggLoop67.q39	Pa-cf-n@forChunkAgg	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAggLoop62.q40	Pa-cf-n@forChunkSObject	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAggLoop67.q40	Pa-cf-n@forChunkSObject	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAggLoop62.q41	Pa-cf-n@sizeExpr	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAggLoop67.q41	Pa-cf-n@sizeExpr	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAggLoop62.q42	Pa-cf-ge@listSObject	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAggLoop67.q42	Pa-cf-ge@listSObject	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAggLoop62.q43	Pa-cf-ge@listAgg	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAggLoop67.q43	Pa-cf-ge@listAgg	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAggLoop62.q44	Pa-cf-ge@forAgg	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAggLoop67.q44	Pa-cf-ge@forAgg	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAggLoop62.q45	Pa-cf-ge@forSObject	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAggLoop67.q45	Pa-cf-ge@forSObject	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAggLoop62.q46	Pa-cf-ge@forChunkAgg	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAggLoop67.q46	Pa-cf-ge@forChunkAgg	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAggLoop62.q47	Pa-cf-ge@forChunkSObject	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAggLoop67.q47	Pa-cf-ge@forChunkSObject	EXC|System.QueryException|Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAggLoop62.q48	Pa-cf-ge@sizeExpr	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+67.0	isTest	NpAggLoop67.q48	Pa-cf-ge@sizeExpr	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Pick__c
+62.0	isTest	NpAggLoop62.q49	R213@listSObject	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+62.0	anonymous	anon2/q49.apex	R213@listSObject	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+67.0	isTest	NpAggLoop67.q49	R213@listSObject	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+67.0	anonymous	anon2/q49.apex	R213@listSObject	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+62.0	isTest	NpAggLoop62.q50	R213@listAgg	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+62.0	anonymous	anon2/q50.apex	R213@listAgg	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+67.0	isTest	NpAggLoop67.q50	R213@listAgg	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+67.0	anonymous	anon2/q50.apex	R213@listAgg	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+62.0	isTest	NpAggLoop62.q51	R213@forAgg	EXC|System.QueryException|Field must be grouped or aggregated: Name
+62.0	anonymous	anon2/q51.apex	R213@forAgg	EXC|System.QueryException|Field must be grouped or aggregated: Name
+67.0	isTest	NpAggLoop67.q51	R213@forAgg	EXC|System.QueryException|Field must be grouped or aggregated: Name
+67.0	anonymous	anon2/q51.apex	R213@forAgg	EXC|System.QueryException|Field must be grouped or aggregated: Name
+62.0	isTest	NpAggLoop62.q52	R213@forSObject	EXC|System.QueryException|Field must be grouped or aggregated: Name
+62.0	anonymous	anon2/q52.apex	R213@forSObject	EXC|System.QueryException|Field must be grouped or aggregated: Name
+67.0	isTest	NpAggLoop67.q52	R213@forSObject	EXC|System.QueryException|Field must be grouped or aggregated: Name
+67.0	anonymous	anon2/q52.apex	R213@forSObject	EXC|System.QueryException|Field must be grouped or aggregated: Name
+62.0	isTest	NpAggLoop62.q53	R213@forChunkAgg	EXC|System.QueryException|Field must be grouped or aggregated: Name
+62.0	anonymous	anon2/q53.apex	R213@forChunkAgg	EXC|System.QueryException|Field must be grouped or aggregated: Name
+67.0	isTest	NpAggLoop67.q53	R213@forChunkAgg	EXC|System.QueryException|Field must be grouped or aggregated: Name
+67.0	anonymous	anon2/q53.apex	R213@forChunkAgg	EXC|System.QueryException|Field must be grouped or aggregated: Name
+62.0	isTest	NpAggLoop62.q54	R213@forChunkSObject	EXC|System.QueryException|Field must be grouped or aggregated: Name
+62.0	anonymous	anon2/q54.apex	R213@forChunkSObject	EXC|System.QueryException|Field must be grouped or aggregated: Name
+67.0	isTest	NpAggLoop67.q54	R213@forChunkSObject	EXC|System.QueryException|Field must be grouped or aggregated: Name
+67.0	anonymous	anon2/q54.apex	R213@forChunkSObject	EXC|System.QueryException|Field must be grouped or aggregated: Name
+62.0	isTest	NpAggLoop62.q55	R213@sizeExpr	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+62.0	anonymous	anon2/q55.apex	R213@sizeExpr	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+67.0	isTest	NpAggLoop67.q55	R213@sizeExpr	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+67.0	anonymous	anon2/q55.apex	R213@sizeExpr	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name
+62.0	isTest	NpAggLoop62.q56	R212@listSObject	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: BillingCity
+67.0	isTest	NpAggLoop67.q56	R212@listSObject	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: BillingCity
+62.0	isTest	NpAggLoop62.q57	R212@listAgg	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: BillingCity
+67.0	isTest	NpAggLoop67.q57	R212@listAgg	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: BillingCity
+62.0	isTest	NpAggLoop62.q58	R212@forAgg	EXC|System.QueryException|Field must be grouped or aggregated: BillingCity
+67.0	isTest	NpAggLoop67.q58	R212@forAgg	EXC|System.QueryException|Field must be grouped or aggregated: BillingCity
+62.0	isTest	NpAggLoop62.q59	R212@forSObject	EXC|System.QueryException|Field must be grouped or aggregated: BillingCity
+67.0	isTest	NpAggLoop67.q59	R212@forSObject	EXC|System.QueryException|Field must be grouped or aggregated: BillingCity
+62.0	isTest	NpAggLoop62.q60	R212@forChunkAgg	EXC|System.QueryException|Field must be grouped or aggregated: BillingCity
+67.0	isTest	NpAggLoop67.q60	R212@forChunkAgg	EXC|System.QueryException|Field must be grouped or aggregated: BillingCity
+62.0	isTest	NpAggLoop62.q61	R212@forChunkSObject	EXC|System.QueryException|Field must be grouped or aggregated: BillingCity
+67.0	isTest	NpAggLoop67.q61	R212@forChunkSObject	EXC|System.QueryException|Field must be grouped or aggregated: BillingCity
+62.0	isTest	NpAggLoop62.q62	R212@sizeExpr	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: BillingCity
+67.0	isTest	NpAggLoop67.q62	R212@sizeExpr	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: BillingCity
+62.0	isTest	NpAggLoop62.q63	AI-cf-gw@listSObject	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Industry
+67.0	isTest	NpAggLoop67.q63	AI-cf-gw@listSObject	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Industry
+62.0	isTest	NpAggLoop62.q64	AI-cf-gw@listAgg	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Industry
+67.0	isTest	NpAggLoop67.q64	AI-cf-gw@listAgg	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Industry
+62.0	isTest	NpAggLoop62.q65	AI-cf-gw@forAgg	EXC|System.QueryException|Field must be grouped or aggregated: Industry
+67.0	isTest	NpAggLoop67.q65	AI-cf-gw@forAgg	EXC|System.QueryException|Field must be grouped or aggregated: Industry
+62.0	isTest	NpAggLoop62.q66	AI-cf-gw@forSObject	EXC|System.QueryException|Field must be grouped or aggregated: Industry
+67.0	isTest	NpAggLoop67.q66	AI-cf-gw@forSObject	EXC|System.QueryException|Field must be grouped or aggregated: Industry
+62.0	isTest	NpAggLoop62.q67	AI-cf-gw@forChunkAgg	EXC|System.QueryException|Field must be grouped or aggregated: Industry
+67.0	isTest	NpAggLoop67.q67	AI-cf-gw@forChunkAgg	EXC|System.QueryException|Field must be grouped or aggregated: Industry
+62.0	isTest	NpAggLoop62.q68	AI-cf-gw@forChunkSObject	EXC|System.QueryException|Field must be grouped or aggregated: Industry
+67.0	isTest	NpAggLoop67.q68	AI-cf-gw@forChunkSObject	EXC|System.QueryException|Field must be grouped or aggregated: Industry
+62.0	isTest	NpAggLoop62.q69	AI-cf-gw@sizeExpr	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Industry
+67.0	isTest	NpAggLoop67.q69	AI-cf-gw@sizeExpr	UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Industry

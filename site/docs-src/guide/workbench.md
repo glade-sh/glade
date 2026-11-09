@@ -30,7 +30,9 @@ For actual execution on your machine, install Glade and run the [local Playgroun
 glade playground --examples --addr 127.0.0.1:1789 --open
 ```
 
-The local Playground serves your own Glade runtime. Its execution and local data are separate from the illustrations on this website.
+Select **Continue** on the **Open local preview** confirmation. HTTP clients
+without browser origin metadata need `X-Glade-Client: 1`. The local Playground
+serves your own Glade runtime. Its execution and local data are separate from the illustrations on this website.
 
 <section class="coverage-workbench" data-coverage-workbench aria-label="Glade interactive capability map">
   <div class="coverage-workbench-intro">

@@ -64,6 +64,11 @@ func leaseActiveRootWith(ensure bool, open func(string, int, os.FileMode) (*os.F
 	if root, ok := explicitToolchainRoot(); ok && !selectedRootIsShare(root) && hasGoMod(root) {
 		return root, func() {}, nil
 	}
+	if _, ok := explicitToolchainRoot(); !ok {
+		if err := requireManagedShare(); err != nil {
+			return "", nil, err
+		}
+	}
 	dir := selectedInstallDir()
 	file, release, err := acquireReadLease(dir, open, lock)
 	if err != nil {

@@ -6,8 +6,10 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
-// Assigned defaults are outside the native packet. Preserve the existing engine
-// path for those mappings; this is a scope control, not a native parity claim.
+// Assigned defaults: omission keeps the existing engine path. An explicit null
+// RecordTypeId with a profile default is rejected (native rows
+// record_type_id_null_insert_default, APIs 62, 67 and 68), and so is the Master
+// token in Apex modes (record_type_visibility profile rows).
 func TestApexRecordTypeInsertPreservesAssignedDefaults(t *testing.T) {
 	for _, mode := range []string{"", "SYSTEM_MODE", "USER_MODE"} {
 		t.Run(mode, func(t *testing.T) {
@@ -30,6 +32,18 @@ func TestApexRecordTypeInsertPreservesAssignedDefaults(t *testing.T) {
 				{Object: "ScopedRecord__c", Fields: map[string]storage.Value{"Name": storage.StringValue("Master"), "RecordTypeId": storage.IDValue("012000000000000AAA")}},
 			})
 			for index, result := range results {
+				if index == 2 && mode != "" {
+					if result.Success || result.StatusCode != "INVALID_CROSS_REFERENCE_KEY" {
+						t.Fatalf("Master token with a default = %#v", result)
+					}
+					continue
+				}
+				if index == 1 {
+					if result.Success || result.StatusCode != "INVALID_CROSS_REFERENCE_KEY" {
+						t.Fatalf("explicit null with a default = %#v", result)
+					}
+					continue
+				}
 				if !result.Success {
 					t.Fatalf("assigned-default row %d: %#v", index, result)
 				}

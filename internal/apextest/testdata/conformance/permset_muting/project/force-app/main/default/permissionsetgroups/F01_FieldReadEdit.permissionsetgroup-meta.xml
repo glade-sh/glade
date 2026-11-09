@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSetGroup xmlns="http://soap.sforce.com/2006/04/metadata"><label>F01_FieldReadEdit</label><mutingPermissionSets>F01_FieldReadEditMute</mutingPermissionSets><permissionSets>MuteGrant</permissionSets></PermissionSetGroup>

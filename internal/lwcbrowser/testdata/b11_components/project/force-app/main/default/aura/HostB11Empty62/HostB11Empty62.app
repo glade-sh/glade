@@ -1,0 +1,1 @@
+<aura:application access="GLOBAL" extends="force:slds"><c:b11empty62/></aura:application>

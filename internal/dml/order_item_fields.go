@@ -30,7 +30,7 @@ func (e *Engine) applyOrderItemDerivedFields(record *storage.Record) {
 	}
 	field := storage.Field{APIName: "TotalPrice", Type: storage.FieldCalculated, DisplayType: "CURRENCY", Formula: "Quantity * UnitPrice", Scale: 2, ScaleSpecified: true}
 	definition := e.Org.Objects["OrderItem"].Definition
-	if value, _, resolved := EvaluateRecordFormulaValueInOrg(field.Formula, field, e.Org, definition, *record); resolved {
+	if value, _, resolved := EvaluateRecordFormulaValueInOrgWithOptions(field.Formula, field, e.Org, definition, *record, e.formulaEvaluationOptions()); resolved {
 		record.Fields["TotalPrice"] = value
 	}
 }

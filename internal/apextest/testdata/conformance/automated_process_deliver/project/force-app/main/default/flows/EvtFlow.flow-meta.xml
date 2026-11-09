@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionCalls>
+        <name>Rec</name>
+        <label>Rec</label>
+        <locationX>176</locationX>
+        <locationY>158</locationY>
+        <actionName>APProbe</actionName>
+        <actionType>apex</actionType>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>ctxs</name>
+            <value>
+                <stringValue>flow</stringValue>
+            </value>
+        </inputParameters>
+    </actionCalls>
+    <apiVersion>62.0</apiVersion>
+    <label>EvtFlow</label>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>50</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Rec</targetReference>
+        </connector>
+        <object>Evt__e</object>
+        <triggerType>PlatformEvent</triggerType>
+    </start>
+    <status>Active</status>
+</Flow>

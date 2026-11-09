@@ -2,6 +2,7 @@ package vm
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/dml"
@@ -15,6 +16,7 @@ func (vm *VM) databaseAccessLevelDenial(op string, value Value, accessLevel Valu
 		return nil
 	}
 	scope := accessLevelPermissionSetID(accessLevel)
+	defer vm.beginPermissionCheckMemo()()
 	for index, record := range dmlAccessRecords(value) {
 		if record.Kind != ValueObject {
 			continue
@@ -39,9 +41,29 @@ func (vm *VM) databaseAccessLevelDenial(op string, value Value, accessLevel Valu
 		if id != "" {
 			permission = "isUpdateable"
 		}
-		denied := !vm.currentUserObjectPermissionWithScope(objectName, permission, scope)
+		objectDenied := !vm.currentUserObjectPermissionWithScope(objectName, permission, scope)
+		var deniedFields []string
+		fieldNames := make([]string, 0, len(record.Fields))
 		for field := range record.Fields {
-			if denied {
+			fieldNames = append(fieldNames, field)
+		}
+		sort.Strings(fieldNames)
+		// Explicit assignment order first (the marker holds lowercase names),
+		// then the remaining fields alphabetically.
+		order := map[string]int{}
+		for i, field := range explicitSObjectFieldNamesInInsertionOrder(record) {
+			order[strings.ToLower(field)] = i
+		}
+		sort.SliceStable(fieldNames, func(i, j int) bool {
+			a, aok := order[strings.ToLower(fieldNames[i])]
+			b, bok := order[strings.ToLower(fieldNames[j])]
+			if aok && bok {
+				return a < b
+			}
+			return aok && !bok
+		})
+		for _, field := range fieldNames {
+			if objectDenied {
 				break
 			}
 			if isInternalSObjectField(field) || isSObjectSystemField(field) || isDefaultedSObjectField(record, field) {
@@ -51,13 +73,22 @@ func (vm *VM) databaseAccessLevelDenial(op string, value Value, accessLevel Valu
 				continue
 			}
 			canonicalField := vm.resolveSObjectFieldName(objectName, field)
-			if strings.EqualFold(canonicalField, "Id") {
+			// Native shapemisc_capture fm rows: Database.upsert(..., USER_MODE)
+			// accepts formula and auto-number values the admin has no grant on.
+			if strings.EqualFold(canonicalField, "Id") || vm.sobjectFormulaField(objectName, canonicalField) {
 				continue
 			}
-			denied = !vm.currentUserFieldPermissionWithScope(objectName, canonicalField, permission, scope)
+			if !vm.currentUserFieldPermissionWithScope(objectName, canonicalField, permission, scope) {
+				deniedFields = append(deniedFields, canonicalField)
+			}
 		}
-		if !denied {
+		if !objectDenied && len(deniedFields) == 0 {
 			continue
+		}
+		if !objectDenied {
+			// Native partial_dml_multifield upsert throw rows: the exception
+			// lists every denied field on the row, in assignment order.
+			return userModeFieldDMLException(op, objectName, record, deniedFields, index)
 		}
 		message := fmt.Sprintf("Operation failed due to fields being inaccessible on Sobject %s, check errors on Exception or Result! ", objectName)
 		return newExceptionError("System.DmlException", message)

@@ -1,0 +1,3 @@
+source_api	phase	route	observation
+62.0	setting_only	isTest	{"countDefault":"ok","countSystem":"ok","countUser":"System.QueryException","queryDefault":"ok","querySystem":"ok","queryUser":"System.QueryException"}
+67.0	setting_only	isTest	{"countDefault":"System.SecurityException","countSystem":"ok","countUser":"System.QueryException","queryDefault":"System.QueryException","querySystem":"ok","queryUser":"System.QueryException"}

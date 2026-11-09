@@ -82,6 +82,7 @@ func TestStringLengthNativeConformance(t *testing.T) {
 			t.Fatalf("missing native source: %s", key)
 		}
 		t.Run(key, func(t *testing.T) {
+			t.Parallel()
 			c := cases[index]
 			var named typesys.Index
 			name := "StringLengthProbe" + strconv.Itoa(index)
@@ -105,6 +106,7 @@ func TestStringLengthNativeConformance(t *testing.T) {
 			}
 			for _, mode := range []vm.LimitMode{vm.LimitModePermissive, vm.LimitModeStrict} {
 				t.Run(string(mode), func(t *testing.T) {
+					t.Parallel()
 					gotType, gotMessage, gotLine := "", "", 0
 					if row[2] == "anonymous" {
 						program, err := vm.CompileAnonymousWithOptions(c.Body, vm.CompileOptions{APIVersion: row[1]})

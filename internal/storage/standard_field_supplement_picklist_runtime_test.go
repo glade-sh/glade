@@ -85,7 +85,7 @@ func TestStandardPolicyPicklistsRepairAllNativeFields(t *testing.T) {
 		t.Fatal(err)
 	}
 	count := 0
-	for key, policy := range standardFieldPolicies {
+	for key, policy := range standardFieldPolicies() {
 		object := ""
 		for name := range native.Describes {
 			if strings.EqualFold(name, key) {

@@ -7,6 +7,13 @@ const { chromium } = require(config.playwrightModule);
 const browser = await chromium.launch({headless:true,timeout:15000,...(config.executablePath ? {executablePath:config.executablePath} : {})});
 try {
  const context = await browser.newContext();
+ {
+  // Chart text uses "Helvetica, sans-serif"; report how that stack measures on this host.
+  const probe = await context.newPage();
+  const width = await probe.evaluate(()=>{const ns="http://www.w3.org/2000/svg",svg=document.createElementNS(ns,"svg"),text=document.createElementNS(ns,"text");text.style.font="12px Helvetica, sans-serif";text.textContent="0123456789 Quick";svg.append(text);document.body.append(svg);return text.getBBox().width;});
+  await probe.close();
+  console.error("V15_FONT_PROBE "+width);
+ }
  const values = {};
  // Each spec observes its own page; the 500ms DOM-quiet wait dominates the cost,
  // so a small pool of concurrent pages overlaps those waits without changing

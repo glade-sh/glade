@@ -20,6 +20,12 @@ func IsVisualforceControllerDiagnostic(diag diagnostic.Diagnostic) bool {
 	if diag.Severity != diagnostic.Error {
 		return false
 	}
+	// The API 62 static-field check emits this exact diagnostic only for the
+	// captured ObjectPermissions field. Its rejected controller also rejects
+	// the dependent Visualforce page (static_vf_controller/org.tsv).
+	if diag.Code == "GLADESEMA019" && diag.Message == "Variable does not exist: PermissionsViewAllFields" {
+		return true
+	}
 	if diag.Code == "GLADESEMA_QUERY_FIELD" || diag.Code == "GLADESEMA_QUERY_OBJECT" ||
 		(diag.Code == "GLADESEMA006" && strings.HasPrefix(diag.Message, "Invalid type: ")) {
 		return true
@@ -53,6 +59,13 @@ func IsVisualforceControllerDiagnostic(diag diagnostic.Diagnostic) bool {
 		}
 	case "GLADESEMA002":
 		if strings.HasPrefix(diag.NativeMessage, "Invalid type: ") {
+			return true
+		}
+	case "GLADESEMA004":
+		// Cross-namespace parameter errors publish their captured native text
+		// as the diagnostic message. Other parameter diagnostics remain outside
+		// the measured controller gate. namespace_cross_owner/org.tsv:62-64.
+		if diag.Message == diag.NativeMessage && strings.HasPrefix(diag.NativeMessage, "Invalid type: ") {
 			return true
 		}
 	case "GLADESEMA018":

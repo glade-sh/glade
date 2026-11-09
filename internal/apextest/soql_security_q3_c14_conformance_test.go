@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -90,23 +91,9 @@ func TestSOQLSecurityQ3C14NativeConformance(t *testing.T) {
 					} else {
 						got = normalizeCaptureIdentities(got).(map[string]any)
 					}
-					fields := []string{"childProjection"}
-					if row[2] == "childProjection" {
-						fields = append(fields, "rows")
+					if !reflect.DeepEqual(got, want) {
+						t.Fatalf("native=%v; Glade=%v", want, got)
 					}
-					observed := map[string]string{
-						"childProjection":         `{"childProjection":[{"childCount":1,"childIds":["<custom2:1>"],"parentId":"<custom1:1>","relationshipNull":false,"relationshipPresent":true}],"rows":[{"Id":"<custom1:1>","OwnedChildren__r":{"Id":"<custom2:1>","Name":"hidden-child"}}]}`,
-						"positiveChildProjection": `{"childProjection":[{"childCount":2,"childIds":["<custom1:1>","<custom1:2>"],"parentId":"<custom2:1>","relationshipNull":false,"relationshipPresent":true}]}`,
-					}[row[2]]
-					var expected map[string]any
-					if err := json.Unmarshal([]byte(observed), &expected); err != nil {
-						t.Fatal(err)
-					}
-					if !c14ExactCarryEqual(got, want, expected, fields) {
-						t.Fatalf("child sharing gap changed: native=%v; Glade=%v", want, got)
-					}
-					t.Logf("known local carry batch Dot stdlib cases Dot Dot SOQL cases and Dot async cases (fix owner pending): native=%v; Glade=%v", want, got)
-					case345Skip(t)
 				})
 			}
 			if len(seen) != 2 {

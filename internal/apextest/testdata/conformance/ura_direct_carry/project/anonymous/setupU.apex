@@ -1,0 +1,10 @@
+Profile pr=[SELECT Id FROM Profile WHERE Name='Minimum Access - Salesforce' LIMIT 1];
+User u=new User(Username='lc2anon.'+System.now().getTime()+'@example.invalid',Alias='lc2a',Email='lc2@example.invalid',LastName='LC2Anon',ProfileId=pr.Id,TimeZoneSidKey='America/Los_Angeles',LocaleSidKey='en_US',EmailEncodingKey='UTF-8',LanguageLocaleKey='en_US');
+insert u;
+PermissionSet ps=new PermissionSet(Name='LC2Anon',Label='LC2Anon'); insert ps;
+List<ObjectPermissions> ops=new List<ObjectPermissions>();
+for(String o:new List<String>{'Account','Opportunity','Asset','Contract','Order'}) ops.add(new ObjectPermissions(ParentId=ps.Id,SObjectType=o,PermissionsRead=true,PermissionsCreate=true,PermissionsEdit=true,PermissionsDelete=false));
+ops.add(new ObjectPermissions(ParentId=ps.Id,SObjectType='Pricebook2',PermissionsRead=true));
+for(Database.SaveResult s:Database.insert(ops,false)) System.debug('LC2GRANT|'+s.isSuccess()+'|'+(s.isSuccess()?'':String.valueOf(s.getErrors()[0].getStatusCode())));
+insert new PermissionSetAssignment(AssigneeId=u.Id,PermissionSetId=ps.Id);
+System.debug('LC2USER|'+u.Id);

@@ -97,6 +97,13 @@ func TestSchemaDescribeOrgConformance(t *testing.T) {
 			for path, source := range data.Metadata {
 				writeFile(t, filepath.Join(root, path), source)
 			}
+			// R027 and R074 natively find Total__c in the anonymous field map.
+			// admin_field_grant_sources (2026-11-05): anonymous Apex run as the
+			// administrator sees an ordinary custom field only through an
+			// assigned permission set or a profile grant, so the capture user held
+			// one; replay a read/edit grant on the field.
+			writeFile(t, filepath.Join(root, "force-app/main/default/permissionsets/A23CartAccess.permissionset-meta.xml"), `<?xml version="1.0" encoding="UTF-8"?><PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata"><label>A23 Cart Access</label><fieldPermissions><editable>true</editable><field>CartItem__c.Total__c</field><readable>true</readable></fieldPermissions></PermissionSet>`)
+			writeCapturedAssignments(t, root, "A23CartAccess")
 			p, err := project.Load(root)
 			if err != nil {
 				t.Fatal(err)
@@ -137,6 +144,9 @@ func TestSchemaDescribeOrgConformance(t *testing.T) {
 			}
 			org := orgFromIndex(index)
 			org.APIVersion = api
+			if err := applyConfiguredTestPermissions(&org, p); err != nil {
+				t.Fatal(err)
+			}
 			runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 			var namedSource strings.Builder
 			namedSource.WriteString("@IsTest private class SchemaDescribeProbe {\n")

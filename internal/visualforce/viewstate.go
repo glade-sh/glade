@@ -268,13 +268,7 @@ func InjectCSRF(html string, csrf string) string {
 	}
 	field := `<input type="hidden" name="` + viewStateCSRFFieldName + `" value="` + htmlAttrEscape(csrf) + `" />` +
 		`<input type="hidden" name="__vf_csrf" value="` + htmlAttrEscape(csrf) + `" />`
-	if strings.Contains(html, "</form>") {
-		return strings.ReplaceAll(html, "</form>", field+"</form>")
-	}
-	if strings.Contains(html, "</body>") {
-		return strings.Replace(html, "</body>", field+"</body>", 1)
-	}
-	return html + field
+	return InjectFormFields(html, field)
 }
 
 func randomToken(size int) (string, error) {
@@ -298,13 +292,74 @@ func InjectViewState(html string, viewState string) string {
 	field := `<input type="hidden" name="` + viewStateFieldName + `" value="` + htmlAttrEscape(viewState) + `" />` +
 		`<input type="hidden" name="` + viewStateVersionFieldName + `" value="` + strconv.Itoa(CurrentViewStateVersion) + `" />` +
 		`<input type="hidden" name="` + viewStateMACFieldName + `" value="` + htmlAttrEscape(mac) + `" />`
-	if strings.Contains(html, "</form>") {
-		return strings.ReplaceAll(html, "</form>", field+"</form>")
+	return InjectFormFields(html, field)
+}
+
+// apexFormOpenSuffix follows the opening tag of every form renderApexForm
+// writes: three line breaks, then the __vf_form marker or the __vf_action
+// field. A plain HTML <form> in the page has neither.
+const apexFormOpenSuffix = ">\n\n\n<input type=\"hidden\" name=\"__vf_"
+
+// InjectFormFields writes Glade's state fields before the end of every
+// apex:form, else before </body>, else at the end. The org writes its view
+// state only into an apex:form, never into a plain HTML form of the page (row
+// IdEmptyFormHtml of testdata/vf_render_markup: <form>x</form>).
+func InjectFormFields(html, field string) string {
+	if out, ok := injectBeforeApexFormEnds(html, field); ok {
+		return out
 	}
 	if strings.Contains(html, "</body>") {
 		return strings.Replace(html, "</body>", field+"</body>", 1)
 	}
 	return html + field
+}
+
+// injectBeforeApexFormEnds inserts field before each </form> that closes an
+// apex:form, pairing form tags in order so a plain form nested in an
+// apex:form does not take the apex form's fields.
+func injectBeforeApexFormEnds(html, field string) (string, bool) {
+	if !strings.Contains(html, "</form>") {
+		return html, false
+	}
+	var out strings.Builder
+	var stack []bool
+	last, injected := 0, false
+	for i := 0; i < len(html); {
+		next := strings.Index(html[i:], "<form")
+		closing := strings.Index(html[i:], "</form>")
+		if next < 0 && closing < 0 {
+			break
+		}
+		if next >= 0 && (closing < 0 || next < closing) {
+			at := i + next
+			end := at + len("<form")
+			if end < len(html) && (html[end] == ' ' || html[end] == '>' || html[end] == '\t' || html[end] == '\n' || html[end] == '/') {
+				apex := false
+				if gt := strings.IndexByte(html[end:], '>'); gt >= 0 {
+					apex = strings.HasPrefix(html[end+gt:], apexFormOpenSuffix)
+				}
+				stack = append(stack, apex)
+			}
+			i = end
+			continue
+		}
+		at := i + closing
+		if len(stack) > 0 {
+			apex := stack[len(stack)-1]
+			stack = stack[:len(stack)-1]
+			if apex {
+				out.WriteString(html[last:at])
+				out.WriteString(field)
+				last, injected = at, true
+			}
+		}
+		i = at + len("</form>")
+	}
+	if !injected {
+		return html, false
+	}
+	out.WriteString(html[last:])
+	return out.String(), true
 }
 
 func htmlAttrEscape(raw string) string {

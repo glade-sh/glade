@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><deploymentStatus>Deployed</deploymentStatus><enableSharing>true</enableSharing><externalSharingModel>Private</externalSharingModel><label>ISP Parent 2</label><nameField><label>ISP Parent 2 Name</label><type>Text</type></nameField><pluralLabel>ISP Parent 2 Records</pluralLabel><sharingModel>Private</sharingModel></CustomObject>

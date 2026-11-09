@@ -23,12 +23,21 @@ func TestRoad174AccessMatrix(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// The Winter 27 recapture records API 68 as equal to 67 for this matrix.
+	for _, row := range rows[1:] {
+		if row[0] == "67.0" {
+			api68 := append([]string(nil), row...)
+			api68[0] = "68.0"
+			rows = append(rows, api68)
+		}
+	}
 	for _, r := range rows[1:] {
-		if (r[0] != "62.0" && r[0] != "67.0") || !strings.HasPrefix(r[1], "istest") || (r[4] != "restricted" && r[4] != "admin") || r[3] == "-" || r[6] != "relationship" {
+		if (r[0] != "62.0" && r[0] != "67.0" && r[0] != "68.0") || !strings.HasPrefix(r[1], "istest") || (r[4] != "restricted" && r[4] != "admin") || r[3] == "-" || r[6] != "relationship" {
 			continue
 		}
 		row := r
 		t.Run(strings.Join(row[:7], "/"), func(t *testing.T) {
+			t.Parallel()
 			var want []any
 			if err := json.Unmarshal([]byte(row[7]), &want); err != nil || len(want) != 6 {
 				t.Fatalf("bad observation %v %v", want, err)

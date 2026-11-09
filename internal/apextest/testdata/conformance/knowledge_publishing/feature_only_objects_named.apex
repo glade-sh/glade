@@ -1,0 +1,1 @@
+@IsTest private class B4FeatureObjects62 { @IsTest static void observe() { Map<String,Schema.SObjectType> types=Schema.getGlobalDescribe(); System.assertEquals(false,types.containsKey('Knowledge__ka')); System.assertEquals(false,types.containsKey('Knowledge__kav')); } }

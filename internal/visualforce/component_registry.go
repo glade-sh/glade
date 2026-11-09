@@ -338,41 +338,69 @@ func renderApexPanelGroup(node *MarkupNode, ctx *RenderContext) (string, error) 
 	return "<" + tag + attrs + ">" + children + "</" + tag + ">", nil
 }
 
+// renderApexSectionHeader writes the org's page title markup. The org also
+// writes a user-context script before it, which a local render does not need.
 func renderApexSectionHeader(node *MarkupNode, ctx *RenderContext) (string, error) {
-	title, err := RenderExpressionTemplate(node.Attribute("title"), ctx.Expression)
+	text := func(name string) (string, error) {
+		return RenderExpressionTemplate(node.Attribute(name), ctx.Expression)
+	}
+	title, err := text("title")
 	if err != nil {
 		return "", err
 	}
-	subtitle, err := RenderExpressionTemplate(node.Attribute("subtitle"), ctx.Expression)
+	subtitle, err := text("subtitle")
 	if err != nil {
 		return "", err
 	}
-	description, err := RenderExpressionTemplate(node.Attribute("description"), ctx.Expression)
+	description, err := text("description")
+	if err != nil {
+		return "", err
+	}
+	help, err := text("help")
+	if err != nil {
+		return "", err
+	}
+	printURL, err := text("printUrl")
+	if err != nil {
+		return "", err
+	}
+	body, err := renderChildren(node, ctx)
 	if err != nil {
 		return "", err
 	}
 	escape := !strings.EqualFold(strings.TrimSpace(node.Attribute("escape")), "false")
-	builder := strings.Builder{}
-	builder.WriteString(`<div`)
-	builder.WriteString(componentIDAttr(node, ctx))
-	builder.WriteString(` class="sectionHeader">`)
-	if title != "" {
-		builder.WriteString(`<h1>`)
-		builder.WriteString(visualforceMaybeEscaped(title, escape))
-		builder.WriteString(`</h1>`)
+	var links []string
+	if printURL != "" {
+		links = append(links, `<a href="javascript:openPopupFocus('`+escapeURLAttribute(printURL)+`', 'PrintableView', 800, 600, 'width=800,height=600,resizable=yes,toolbar=no,status=no,scrollbars=yes,menubar=yes,directories=no,location=no,dependant=no', false, false);" title="Printable View (New Window)"><span class="configLinks">Printable View</span></a>`)
 	}
-	if subtitle != "" {
-		builder.WriteString(`<h2>`)
-		builder.WriteString(visualforceMaybeEscaped(subtitle, escape))
-		builder.WriteString(`</h2>`)
+	if help != "" {
+		links = append(links, `<a href="javascript:openPopupFocus('`+escapeURLAttribute(help)+`', 'Help', 700, 600, 'width=700,height=600,resizable=yes,toolbar=yes,status=no,scrollbars=yes,menubar=yes,directories=no,location=no,dependant=no', false, false);" title="Help for this Page (New Window)"><span class="helpLink">Help for this Page</span><img src="/img/s.gif" alt="" class="helpIcon" title="" /></a>`)
 	}
+	var out strings.Builder
+	out.WriteString(`<div class="bPageTitle"><div class="ptBody secondaryPalette brandSecondaryBrd"><div class="content"><img src="/img/s.gif" class="pageTitleIcon" title="" alt="" />`)
+	if subtitle == "" {
+		out.WriteString(`<h1 class="pageType noSecondHeader">` + visualforceMaybeEscaped(title, escape) + `</h1>`)
+	} else {
+		out.WriteString(`<h1 class="pageType">` + visualforceMaybeEscaped(title, escape) + `</h1><span class="titleSeparatingColon">:</span><h2 class="pageDescription">` + visualforceMaybeEscaped(subtitle, escape) + `</h2>`)
+	}
+	out.WriteString(`<div class="blank"></div></div>`)
+	if len(links) > 0 {
+		out.WriteString(`<div class="links">` + strings.Join(links, " | ") + `</div>`)
+	}
+	out.WriteString(`</div></div>`)
 	if description != "" {
-		builder.WriteString(`<p>`)
-		builder.WriteString(visualforceMaybeEscaped(description, escape))
-		builder.WriteString(`</p>`)
+		out.WriteString(`<div class="bDescription">` + visualforceMaybeEscaped(description, escape) + `</div>`)
 	}
-	builder.WriteString(`</div>`)
-	return builder.String(), nil
+	if ctx.formDepth > 0 {
+		// Inside a form the org adds the list-view state fields of the header,
+		// named by the header's client ID (rows SHF* of testdata/vf_render_markup).
+		clientID := visualforceComponentClientID(node, ctx)
+		for _, field := range []string{"rowsperlist", "lsi", "rowsperpage", "fcf", "lsr", "lsc", "rlx"} {
+			out.WriteString(`<input type="hidden" name="` + html.EscapeString(clientID) + `:` + field + `" />`)
+		}
+	}
+	out.WriteString(body)
+	return out.String(), nil
 }
 
 func renderApexToolbar(node *MarkupNode, ctx *RenderContext) (string, error) {

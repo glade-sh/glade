@@ -10,6 +10,24 @@ import (
 )
 
 func applyProjectCustomPermissionRecords(org *storage.OrgState, p project.Project) {
+	applyCustomPermissionRecordsInNamespace(org, p, "")
+}
+
+// customPermissionID finds a CustomPermission by DeveloperName within one
+// namespace. Two packages may define the same DeveloperName; their rows stay
+// separate, and the project's own rows carry no NamespacePrefix.
+func customPermissionID(state storage.ObjectState, name, namespace string) (storage.ID, bool) {
+	for _, record := range state.Records {
+		if strings.EqualFold(record.Fields["DeveloperName"].String, name) && strings.EqualFold(record.Fields["NamespacePrefix"].String, namespace) {
+			return record.ID, true
+		}
+	}
+	return "", false
+}
+
+// applyCustomPermissionRecordsInNamespace seeds the project's custom permissions;
+// a non-empty namespace stamps NamespacePrefix on each new row.
+func applyCustomPermissionRecordsInNamespace(org *storage.OrgState, p project.Project, namespace string) {
 	if org == nil || len(p.CustomPermissionFiles) == 0 {
 		return
 	}
@@ -38,7 +56,7 @@ func applyProjectCustomPermissionRecords(org *storage.OrgState, p project.Projec
 		if xml.Unmarshal(data, &metadata) != nil || name == "" {
 			continue
 		}
-		if _, exists := recordFieldID(state, "DeveloperName", name); exists {
+		if _, exists := customPermissionID(state, name, namespace); exists {
 			continue
 		}
 		id, err := generator.Next("CustomPermission")
@@ -49,7 +67,11 @@ func applyProjectCustomPermissionRecords(org *storage.OrgState, p project.Projec
 		if label == "" {
 			label = strings.ReplaceAll(name, "_", " ")
 		}
-		state.Records[id] = storage.Record{ID: id, Object: "CustomPermission", Fields: map[string]storage.Value{"DeveloperName": storage.StringValue(name), "MasterLabel": storage.StringValue(label), "Description": storage.StringValue(metadata.Description), "IsLicensed": storage.BooleanValue(metadata.IsLicensed)}}
+		fields := map[string]storage.Value{"DeveloperName": storage.StringValue(name), "MasterLabel": storage.StringValue(label), "Description": storage.StringValue(metadata.Description), "IsLicensed": storage.BooleanValue(metadata.IsLicensed)}
+		if namespace != "" {
+			fields["NamespacePrefix"] = storage.StringValue(namespace)
+		}
+		state.Records[id] = storage.Record{ID: id, Object: "CustomPermission", Fields: fields}
 	}
 	org.IDSequences = generator.Sequences
 	org.Objects["CustomPermission"] = state
@@ -59,13 +81,20 @@ func applyProjectCustomPermissionRecords(org *storage.OrgState, p project.Projec
 // PermissionSet. See Salesforce's admin_troubleshoot_queries Access Settings
 // section. Resolve existing metadata only; never synthesize a missing permission.
 func applyProjectCustomPermissionGrants(org *storage.OrgState, parentID storage.ID, permissions []storage.Value, generator *storage.IDGenerator) {
+	applyCustomPermissionGrantsInNamespace(org, parentID, permissions, "", generator)
+}
+
+// applyCustomPermissionGrantsInNamespace resolves each permission among the
+// rows of one namespace, so a set never grants another package's same-named
+// permission.
+func applyCustomPermissionGrantsInNamespace(org *storage.OrgState, parentID storage.ID, permissions []storage.Value, namespace string, generator *storage.IDGenerator) {
 	if org == nil || generator == nil || len(permissions) == 0 {
 		return
 	}
 	storage.EnsureStandardObject(org, "SetupEntityAccess")
 	state := org.Objects["SetupEntityAccess"]
 	for _, permission := range permissions {
-		permissionID, ok := recordFieldID(org.Objects["CustomPermission"], "DeveloperName", permission.String)
+		permissionID, ok := customPermissionID(org.Objects["CustomPermission"], permission.String, namespace)
 		if !ok {
 			continue
 		}

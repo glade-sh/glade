@@ -1,0 +1,310 @@
+[
+  {
+    "profile": "gift",
+    "api": "62.0",
+    "case": "static-primary",
+    "source": "GiftTransaction record=new GiftTransaction(); Object value=record.GenerationalCohort; System.debug('OBSERVED '+String.valueOf(value));",
+    "status": 1,
+    "name": "executeCompileFailure",
+    "message": "Compilation failed at Ln 1, Col 67 with the error:\n\nVariable does not exist: GenerationalCohort",
+    "compiled": null,
+    "success": null,
+    "compileProblem": null,
+    "exceptionMessage": null,
+    "observations": []
+  },
+  {
+    "profile": "gift",
+    "api": "62.0",
+    "case": "static-adjacent",
+    "source": "GiftTransaction record=new GiftTransaction(); Object value=record.PartyPhilanthropicRsrchPrflId; System.debug('OBSERVED '+String.valueOf(value));",
+    "status": 1,
+    "name": "executeCompileFailure",
+    "message": "Compilation failed at Ln 1, Col 67 with the error:\n\nVariable does not exist: PartyPhilanthropicRsrchPrflId",
+    "compiled": null,
+    "success": null,
+    "compileProblem": null,
+    "exceptionMessage": null,
+    "observations": []
+  },
+  {
+    "profile": "gift",
+    "api": "62.0",
+    "case": "dynamic-get",
+    "source": "SObject record=new GiftTransaction(); try{Object value=record.get('GenerationalCohort');System.debug('OBSERVED accepted '+String.valueOf(value));}catch(Exception ex){System.debug('OBSERVED '+ex.getTypeName()+': '+ex.getMessage());}",
+    "status": 0,
+    "name": null,
+    "message": null,
+    "compiled": true,
+    "success": true,
+    "compileProblem": "",
+    "exceptionMessage": "",
+    "observations": [
+      "OBSERVED System.SObjectException: Invalid field GenerationalCohort for GiftTransaction"
+    ]
+  },
+  {
+    "profile": "gift",
+    "api": "62.0",
+    "case": "dynamic-soql",
+    "source": "try{List<SObject> rows=Database.query('SELECT GenerationalCohort FROM GiftTransaction LIMIT 1');System.debug('OBSERVED accepted '+rows.size());}catch(Exception ex){System.debug('OBSERVED '+ex.getTypeName()+': '+ex.getMessage());}",
+    "status": 0,
+    "name": null,
+    "message": null,
+    "compiled": true,
+    "success": true,
+    "compileProblem": "",
+    "exceptionMessage": "",
+    "observations": [
+      "OBSERVED System.QueryException: No such column 'GenerationalCohort' on entity 'GiftTransaction'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+    ]
+  },
+  {
+    "profile": "gift",
+    "api": "62.0",
+    "case": "static-soql",
+    "source": "List<GiftTransaction> rows=[SELECT GenerationalCohort FROM GiftTransaction LIMIT 1];System.debug('OBSERVED accepted '+rows.size());",
+    "status": 1,
+    "name": "executeCompileFailure",
+    "message": "Compilation failed at Ln 1, Col 28 with the error:\n\n\nSELECT GenerationalCohort FROM GiftTransaction\n       ^\nERROR at Row:1:Column:8\nNo such column 'GenerationalCohort' on entity 'GiftTransaction'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+    "compiled": null,
+    "success": null,
+    "compileProblem": null,
+    "exceptionMessage": null,
+    "observations": []
+  },
+  {
+    "profile": "gift",
+    "api": "67.0",
+    "case": "static-primary",
+    "source": "GiftTransaction record=new GiftTransaction(); Object value=record.GenerationalCohort; System.debug('OBSERVED '+String.valueOf(value));",
+    "status": 0,
+    "name": null,
+    "message": null,
+    "compiled": true,
+    "success": true,
+    "compileProblem": "",
+    "exceptionMessage": "",
+    "observations": [
+      "OBSERVED null"
+    ]
+  },
+  {
+    "profile": "gift",
+    "api": "67.0",
+    "case": "static-adjacent",
+    "source": "GiftTransaction record=new GiftTransaction(); Object value=record.PartyPhilanthropicRsrchPrflId; System.debug('OBSERVED '+String.valueOf(value));",
+    "status": 0,
+    "name": null,
+    "message": null,
+    "compiled": true,
+    "success": true,
+    "compileProblem": "",
+    "exceptionMessage": "",
+    "observations": [
+      "OBSERVED null"
+    ]
+  },
+  {
+    "profile": "gift",
+    "api": "67.0",
+    "case": "dynamic-get",
+    "source": "SObject record=new GiftTransaction(); try{Object value=record.get('GenerationalCohort');System.debug('OBSERVED accepted '+String.valueOf(value));}catch(Exception ex){System.debug('OBSERVED '+ex.getTypeName()+': '+ex.getMessage());}",
+    "status": 0,
+    "name": null,
+    "message": null,
+    "compiled": true,
+    "success": true,
+    "compileProblem": "",
+    "exceptionMessage": "",
+    "observations": [
+      "OBSERVED accepted null"
+    ]
+  },
+  {
+    "profile": "gift",
+    "api": "67.0",
+    "case": "dynamic-soql",
+    "source": "try{List<SObject> rows=Database.query('SELECT GenerationalCohort FROM GiftTransaction LIMIT 1');System.debug('OBSERVED accepted '+rows.size());}catch(Exception ex){System.debug('OBSERVED '+ex.getTypeName()+': '+ex.getMessage());}",
+    "status": 0,
+    "name": null,
+    "message": null,
+    "compiled": true,
+    "success": true,
+    "compileProblem": "",
+    "exceptionMessage": "",
+    "observations": [
+      "OBSERVED accepted 0"
+    ]
+  },
+  {
+    "profile": "gift",
+    "api": "67.0",
+    "case": "static-soql",
+    "source": "List<GiftTransaction> rows=[SELECT GenerationalCohort FROM GiftTransaction LIMIT 1];System.debug('OBSERVED accepted '+rows.size());",
+    "status": 0,
+    "name": null,
+    "message": null,
+    "compiled": true,
+    "success": true,
+    "compileProblem": "",
+    "exceptionMessage": "",
+    "observations": [
+      "OBSERVED accepted 0"
+    ]
+  },
+  {
+    "profile": "doc",
+    "api": "62.0",
+    "case": "static-primary",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess(); Object value=record.AdditionalMetadata; System.debug('OBSERVED '+String.valueOf(value));",
+    "status": 1,
+    "name": "executeCompileFailure",
+    "message": "Compilation failed at Ln 1, Col 87 with the error:\n\nVariable does not exist: AdditionalMetadata",
+    "compiled": null,
+    "success": null,
+    "compileProblem": null,
+    "exceptionMessage": null,
+    "observations": []
+  },
+  {
+    "profile": "doc",
+    "api": "62.0",
+    "case": "static-adjacent",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess(); Object value=record.IsLocalizationEnabled; System.debug('OBSERVED '+String.valueOf(value));",
+    "status": 1,
+    "name": "executeCompileFailure",
+    "message": "Compilation failed at Ln 1, Col 87 with the error:\n\nVariable does not exist: IsLocalizationEnabled",
+    "compiled": null,
+    "success": null,
+    "compileProblem": null,
+    "exceptionMessage": null,
+    "observations": []
+  },
+  {
+    "profile": "doc",
+    "api": "62.0",
+    "case": "dynamic-get",
+    "source": "SObject record=new DocumentGenerationProcess(); try{Object value=record.get('AdditionalMetadata');System.debug('OBSERVED accepted '+String.valueOf(value));}catch(Exception ex){System.debug('OBSERVED '+ex.getTypeName()+': '+ex.getMessage());}",
+    "status": 0,
+    "name": null,
+    "message": null,
+    "compiled": true,
+    "success": true,
+    "compileProblem": "",
+    "exceptionMessage": "",
+    "observations": [
+      "OBSERVED System.SObjectException: Invalid field AdditionalMetadata for DocumentGenerationProcess"
+    ]
+  },
+  {
+    "profile": "doc",
+    "api": "62.0",
+    "case": "dynamic-soql",
+    "source": "try{List<SObject> rows=Database.query('SELECT AdditionalMetadata FROM DocumentGenerationProcess LIMIT 1');System.debug('OBSERVED accepted '+rows.size());}catch(Exception ex){System.debug('OBSERVED '+ex.getTypeName()+': '+ex.getMessage());}",
+    "status": 0,
+    "name": null,
+    "message": null,
+    "compiled": true,
+    "success": true,
+    "compileProblem": "",
+    "exceptionMessage": "",
+    "observations": [
+      "OBSERVED System.QueryException: No such column 'AdditionalMetadata' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+    ]
+  },
+  {
+    "profile": "doc",
+    "api": "62.0",
+    "case": "static-soql",
+    "source": "List<DocumentGenerationProcess> rows=[SELECT AdditionalMetadata FROM DocumentGenerationProcess LIMIT 1];System.debug('OBSERVED accepted '+rows.size());",
+    "status": 1,
+    "name": "executeCompileFailure",
+    "message": "Compilation failed at Ln 1, Col 38 with the error:\n\n\nSELECT AdditionalMetadata FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'AdditionalMetadata' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+    "compiled": null,
+    "success": null,
+    "compileProblem": null,
+    "exceptionMessage": null,
+    "observations": []
+  },
+  {
+    "profile": "doc",
+    "api": "67.0",
+    "case": "static-primary",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess(); Object value=record.AdditionalMetadata; System.debug('OBSERVED '+String.valueOf(value));",
+    "status": 0,
+    "name": null,
+    "message": null,
+    "compiled": true,
+    "success": true,
+    "compileProblem": "",
+    "exceptionMessage": "",
+    "observations": [
+      "OBSERVED null"
+    ]
+  },
+  {
+    "profile": "doc",
+    "api": "67.0",
+    "case": "static-adjacent",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess(); Object value=record.IsLocalizationEnabled; System.debug('OBSERVED '+String.valueOf(value));",
+    "status": 0,
+    "name": null,
+    "message": null,
+    "compiled": true,
+    "success": true,
+    "compileProblem": "",
+    "exceptionMessage": "",
+    "observations": [
+      "OBSERVED false"
+    ]
+  },
+  {
+    "profile": "doc",
+    "api": "67.0",
+    "case": "dynamic-get",
+    "source": "SObject record=new DocumentGenerationProcess(); try{Object value=record.get('AdditionalMetadata');System.debug('OBSERVED accepted '+String.valueOf(value));}catch(Exception ex){System.debug('OBSERVED '+ex.getTypeName()+': '+ex.getMessage());}",
+    "status": 0,
+    "name": null,
+    "message": null,
+    "compiled": true,
+    "success": true,
+    "compileProblem": "",
+    "exceptionMessage": "",
+    "observations": [
+      "OBSERVED accepted null"
+    ]
+  },
+  {
+    "profile": "doc",
+    "api": "67.0",
+    "case": "dynamic-soql",
+    "source": "try{List<SObject> rows=Database.query('SELECT AdditionalMetadata FROM DocumentGenerationProcess LIMIT 1');System.debug('OBSERVED accepted '+rows.size());}catch(Exception ex){System.debug('OBSERVED '+ex.getTypeName()+': '+ex.getMessage());}",
+    "status": 0,
+    "name": null,
+    "message": null,
+    "compiled": true,
+    "success": true,
+    "compileProblem": "",
+    "exceptionMessage": "",
+    "observations": [
+      "OBSERVED accepted 0"
+    ]
+  },
+  {
+    "profile": "doc",
+    "api": "67.0",
+    "case": "static-soql",
+    "source": "List<DocumentGenerationProcess> rows=[SELECT AdditionalMetadata FROM DocumentGenerationProcess LIMIT 1];System.debug('OBSERVED accepted '+rows.size());",
+    "status": 0,
+    "name": null,
+    "message": null,
+    "compiled": true,
+    "success": true,
+    "compileProblem": "",
+    "exceptionMessage": "",
+    "observations": [
+      "OBSERVED accepted 0"
+    ]
+  }
+]

@@ -1,0 +1,1 @@
+global class GxD_g1 implements Database.Batchable<SObject>{global Iterable<SObject> start(Database.BatchableContext c){return new List<SObject>{new Account(Name='it')};}global void execute(Database.BatchableContext c,List<SObject> s){}global void finish(Database.BatchableContext c){GxH26.go('g1');}}

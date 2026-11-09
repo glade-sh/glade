@@ -85,8 +85,9 @@ func compileGateIdentifierByte(ch byte) bool {
 }
 
 type compileGateRefWalker struct {
-	source string
-	units  compileGateUnits
+	source     string
+	apiVersion string
+	units      compileGateUnits
 	// schema enables object references in queries and the Schema namespace;
 	// the ordinary class-dependency walk keeps its existing binding rules.
 	schema bool

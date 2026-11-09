@@ -1,0 +1,177 @@
+package apextest
+
+import (
+	"compress/gzip"
+	"encoding/json"
+	"os"
+	"path/filepath"
+	"sort"
+	"strings"
+	"testing"
+
+	"github.com/glade-sh/glade/internal/vm"
+)
+
+const standardRestrictedP0 = "testdata/conformance/standard_describe_profiles/P0"
+
+type standardRestrictedNativeField struct {
+	Name               string `json:"name"`
+	Type               string `json:"type"`
+	RestrictedPicklist bool   `json:"restrictedPicklist"`
+	PicklistValues     []struct {
+		Value string `json:"value"`
+	} `json:"picklistValues"`
+}
+
+func standardRestrictedNativeDescribes(t *testing.T, api string) map[string][]standardRestrictedNativeField {
+	t.Helper()
+	f, err := os.Open(filepath.Join(standardRestrictedP0, "api"+strings.TrimSuffix(api, ".0"), "default", "describes.json.gz"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	reader, err := gzip.NewReader(f)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var doc struct {
+		Describes map[string]struct {
+			Fields []standardRestrictedNativeField `json:"fields"`
+		} `json:"describes"`
+	}
+	if err := json.NewDecoder(reader).Decode(&doc); err != nil {
+		t.Fatal(err)
+	}
+	out := make(map[string][]standardRestrictedNativeField, len(doc.Describes))
+	for name, describe := range doc.Describes {
+		out[name] = describe.Fields
+	}
+	return out
+}
+
+func standardRestrictedAllowlist(t *testing.T) map[string]bool {
+	t.Helper()
+	f, err := os.Open("../storage/testdata/standard_picklist_values.json.gz")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	reader, err := gzip.NewReader(f)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var values []string
+	if err := json.NewDecoder(reader).Decode(&values); err != nil {
+		t.Fatal(err)
+	}
+	out := make(map[string]bool, len(values))
+	for _, value := range values {
+		out[value] = true
+	}
+	return out
+}
+
+// standardRestrictedValuesWithheld names allowlisted native lists Glade does
+// not carry, with the reason.
+var standardRestrictedValuesWithheld = map[string]string{
+	"PermissionSetEvent.SessionLevel": "native entries have a null label; Glade renders the value as the label",
+}
+
+// TestStandardRestrictedPicklistNativeDescribe compares Apex describe with the
+// owned P0 REST describes (fresh plain Developer org, default profile, API
+// 62.0 and 67.0). Every standard field native reports as a restricted picklist
+// and Glade describes as a picklist must report isRestrictedPicklist(). An
+// empty Glade value list is accepted only where a native value is outside the
+// reviewed public allowlist. Fields Glade still types as STRING (the Apex stub
+// path) are counted, not asserted.
+func TestStandardRestrictedPicklistNativeDescribe(t *testing.T) {
+	allowed := standardRestrictedAllowlist(t)
+	describes := map[string]map[string][]standardRestrictedNativeField{}
+	for _, api := range []string{"62.0", "67.0"} {
+		describes[api] = standardRestrictedNativeDescribes(t, api)
+	}
+	for _, api := range []string{"62.0", "67.0"} {
+		t.Run(api, func(t *testing.T) {
+			native := describes[api]
+			var specs []string
+			want := map[string]standardRestrictedNativeField{}
+			for object, fields := range native {
+				for _, field := range fields {
+					if field.RestrictedPicklist {
+						spec := object + "." + field.Name
+						specs = append(specs, spec)
+						want[spec] = field
+					}
+				}
+			}
+			sort.Strings(specs)
+			root := t.TempDir()
+			writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"`+api+`"}`)
+			writeFile(t, filepath.Join(root, "force-app/.keep"), "")
+			index := loadTestIndex(t, root)
+			quoted := make([]string, len(specs))
+			for i, spec := range specs {
+				quoted[i] = "'" + spec + "'"
+			}
+			source := `Map<String, Schema.SObjectType> g = Schema.getGlobalDescribe();
+for (String spec : new List<String>{` + strings.Join(quoted, ",") + `}) {
+  List<String> p = spec.split('\\.');
+  Schema.SObjectType t = g.get(p[0]);
+  if (t == null) continue;
+  Schema.SObjectField f = t.getDescribe().fields.getMap().get(p[1]);
+  if (f == null) continue;
+  Schema.DescribeFieldResult d = f.getDescribe();
+  System.debug('RP|' + spec + '|' + d.getType() + '|' + d.isRestrictedPicklist() + '|' + d.getPicklistValues().size());
+}`
+			org := capturedFixtureOrg(t, index, api)
+			runner := newConformanceRunner(t, index, conformanceRunnerOptions{Org: &org})
+			program, err := vm.CompileAnonymousWithOptions(source, vm.CompileOptions{APIVersion: api})
+			if err != nil {
+				t.Fatal(err)
+			}
+			result, err := runner.execute(program)
+			if err != nil {
+				t.Fatal(err)
+			}
+			checked, stringTyped := 0, 0
+			for _, line := range result.Debug {
+				_, row, ok := strings.Cut(line, "RP|")
+				if !ok {
+					continue
+				}
+				cells := strings.Split(row, "|")
+				spec, kind, restricted, count := cells[0], cells[1], cells[2], cells[3]
+				if kind != "PICKLIST" && kind != "MULTIPICKLIST" {
+					stringTyped++
+					continue
+				}
+				checked++
+				if restricted != "true" {
+					t.Errorf("%s: native restricted picklist; glade isRestrictedPicklist()=%s", spec, restricted)
+				}
+				if count == "0" && len(want[spec].PicklistValues) != 0 {
+					// A list is withheld when a value at either API is outside
+					// the allowlist: a partial list must not look complete.
+					blocked := standardRestrictedValuesWithheld[spec] != ""
+					for _, other := range []string{"62.0", "67.0"} {
+						for _, field := range describes[other][strings.SplitN(spec, ".", 2)[0]] {
+							if field.Name != strings.SplitN(spec, ".", 2)[1] {
+								continue
+							}
+							for _, value := range field.PicklistValues {
+								blocked = blocked || !allowed[value.Value]
+							}
+						}
+					}
+					if !blocked {
+						t.Errorf("%s: native lists %d allowlisted values; glade lists none", spec, len(want[spec].PicklistValues))
+					}
+				}
+			}
+			if checked < 575 {
+				t.Errorf("checked %d picklist-typed fields; want at least 575", checked)
+			}
+			t.Logf("API %s: %d native restricted fields, %d picklist-typed checked, %d typed STRING by Glade", api, len(specs), checked, stringTyped)
+		})
+	}
+}

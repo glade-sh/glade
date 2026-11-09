@@ -36,7 +36,7 @@ func TestDescribeChildRelationshipMapConflictIsOrderIndependent(t *testing.T) {
 }
 
 func TestStandardDescribeCatalogV2IndexCanonicalAndBounded(t *testing.T) {
-	if got, want := len(standardDescribeCatalogV2Index), 5323; got != want {
+	if got, want := len(standardDescribeCatalogV2Index), 5330; got != want {
 		t.Fatalf("catalog index entries = %d, want %d", got, want)
 	}
 	assertStandardDescribeV2IndexBounded(t, standardDescribeCatalogV2Pack, standardDescribeCatalogV2Index, standardDescribeCatalogV2Magic, standardDescribeCatalogV2PackSHA256)

@@ -42,7 +42,7 @@ func applyCustomSettingInsertDefaults(org *storage.OrgState, definition storage.
 	_, ownerDeclared := definition.Fields["SetupOwnerId"]
 	if _, fieldOK := definition.Fields["SetupOwnerId"]; fieldOK {
 		if value, ok := record.Fields["SetupOwnerId"]; !ok || value.Kind == storage.ValueNull || (value.Kind == storage.ValueString && strings.TrimSpace(value.String) == "") {
-			record.Fields["SetupOwnerId"] = storage.StringValue(orgID)
+			record.Fields["SetupOwnerId"] = storage.StringValue(storage.ID18(orgID))
 		}
 	}
 	if value, ok := record.Fields["Name"]; !ok || value.Kind == storage.ValueNull || (value.Kind == storage.ValueString && strings.TrimSpace(value.String) == "") {
@@ -64,12 +64,12 @@ func applyCustomSettingInsertDefaults(org *storage.OrgState, definition storage.
 		record.HierarchyNameUsesRecordID = !ok && !record.HasExplicitNull("Name") && !ownerSupplied && !record.HasExplicitNull("SetupOwnerId") &&
 			ownerDeclared && nameDeclared && nameField.Type == storage.FieldString && !nameField.AutoNumber && strings.TrimSpace(definition.Label) != ""
 		if record.HierarchyNameUsesRecordID && definition.Fields["SetupOwnerId"].Type == storage.FieldReference {
-			record.Fields["SetupOwnerId"] = storage.IDValue(storage.ID(orgID))
+			record.Fields["SetupOwnerId"] = storage.IDValue(storage.ID(storage.ID18(orgID)))
 		}
 	}
 }
 
-func applyFieldDefaults(org *storage.OrgState, definition storage.ObjectDefinition, record *storage.Record, userID storage.ID) {
+func applyFieldDefaults(org *storage.OrgState, definition storage.ObjectDefinition, record *storage.Record, userID storage.ID, permissionFields map[string]storage.Value) {
 	if record == nil {
 		return
 	}
@@ -79,7 +79,7 @@ func applyFieldDefaults(org *storage.OrgState, definition storage.ObjectDefiniti
 	for name, field := range definition.Fields {
 		if existing, ok := formulaRecordField(*record, name); ok {
 			if shouldRefreshRecordTypeDerivedDefault(definition, *record, field, existing) {
-				if value, ok := defaultValueForRecordFieldWithOptions(org, definition, *record, field, FormulaEvaluationOptions{UserID: userID}); ok {
+				if value, ok := defaultValueForRecordFieldWithOptions(org, definition, *record, field, FormulaEvaluationOptions{UserID: userID, PermissionUserFields: permissionFields}); ok {
 					record.Fields[name] = value
 				}
 			}
@@ -91,7 +91,13 @@ func applyFieldDefaults(org *storage.OrgState, definition storage.ObjectDefiniti
 		if record.ExplicitNulls != nil && record.ExplicitNulls[name] {
 			continue
 		}
-		if value, ok := defaultValueForRecordFieldWithOptions(org, definition, *record, field, FormulaEvaluationOptions{UserID: userID}); ok {
+		// A calculated field without a formula is computed by the platform
+		// (for example RegulatoryCode.IsActive); its describe default is not an
+		// insert-time write. industries_standard_objects/org.tsv.
+		if field.Type == storage.FieldCalculated && strings.TrimSpace(field.Formula) == "" {
+			continue
+		}
+		if value, ok := defaultValueForRecordFieldWithOptions(org, definition, *record, field, FormulaEvaluationOptions{UserID: userID, PermissionUserFields: permissionFields}); ok {
 			record.Fields[name] = value
 		}
 	}
@@ -224,6 +230,7 @@ func defaultValueForRecordFieldWithOptions(org *storage.OrgState, definition sto
 		return storage.Value{}, false
 	}
 	rawDefault := strings.TrimSpace(field.DefaultValue)
+	options.LineFeedBR = true
 	if strings.EqualFold(rawDefault, "$RecordType.Name") || strings.EqualFold(rawDefault, "$RecordType.DeveloperName") {
 		if value, _, ok := workflowLiteralValue(field, formulaRecordTypeValue(definition, record, rawDefault)); ok {
 			return value, true
@@ -337,7 +344,7 @@ func (e *Engine) insertPlatformRecord(record storage.Record) (storage.ID, error)
 	if err != nil {
 		return "", err
 	}
-	applyFieldDefaults(e.Org, object.Definition, &record, e.systemUserID())
+	applyFieldDefaults(e.Org, object.Definition, &record, e.systemUserID(), e.PermissionUserFields)
 	if err := validateFields(object.Definition, e.Org.Namespace, record); err != nil {
 		return "", err
 	}

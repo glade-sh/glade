@@ -8,6 +8,9 @@ import (
 )
 
 func semaTypeReferenceKnownAtVersion(a *Analyzer, model *semaTypeMemberView, owner, reference, version string) bool {
+	if a.standardObjectAbsentFromDeclaredShape(model, owner, reference) {
+		return false
+	}
 	if !strings.Contains(reference, ".") {
 		return a.hasKnownAtVersion(reference, version)
 	}
@@ -15,9 +18,22 @@ func semaTypeReferenceKnownAtVersion(a *Analyzer, model *semaTypeMemberView, own
 	// by a sub-project whose source it loads names that source, including
 	// inner types: ns.Outer.Inner is the source type Outer.Inner.
 	if root, suffix, _ := strings.Cut(reference, "."); semaQualifierNamesProjectSource(a, root) {
-		if members, known := model.lookupName(suffix); known && !members.platform && !members.dependency {
-			return a.hasKnownAtVersion(suffix, version)
+		if members, known := model.lookupName(reference); known && !members.platform && !members.dependency && semaSourceMemberMatchesQualifier(a, model, owner, root, members) {
+			return a.hasKnownAtVersion(reference, version)
 		}
+		if members, known := model.lookupName(suffix); known && !members.platform && !members.dependency {
+			if semaSourceMemberMatchesQualifier(a, model, owner, root, members) {
+				return a.hasKnownAtVersion(suffix, version)
+			}
+			if !a.opaqueDeps[normalizeName(root)] {
+				return false
+			}
+		}
+	}
+	// Captured Commerce type visibility applies to signatures as well as bodies.
+	if _, observed := observedPlatformSourceTypeRejections[normalizeName(reference)]; observed &&
+		semaPlatformTypeUnavailableInModel(version, reference, model) {
+		return false
 	}
 	switch normalizeName(reference) {
 	case "schema.address":
@@ -157,6 +173,21 @@ func semaCapturedFormulaTypeAbsent(reference string) bool {
 	default:
 		return false
 	}
+}
+
+// A blank symbol namespace can belong to the current project when the
+// index was built before its project namespace was supplied. Only its own
+// source scope can provide that fallback.
+func semaSourceMemberMatchesQualifier(a *Analyzer, model *semaTypeMemberView, owner, root string, members typeMembers) bool {
+	if strings.EqualFold(members.namespace, root) ||
+		(members.namespace == "" && strings.EqualFold(a.namespace, root) && semaSourceTypeInCallingScope(model, owner, members)) {
+		return true
+	}
+	// A sub-project namespace's class can lose the cross-package selection to
+	// an unnamespaced class of the same name (Project.SelectedApexFiles keeps
+	// the later path), so the selected unnamespaced copy stands in for it.
+	// Another namespace's class still does not satisfy the qualifier.
+	return members.namespace == "" && a.sourceNamespaces[normalizeName(root)] && !strings.EqualFold(a.namespace, root)
 }
 
 // semaQualifierNamesProjectSource reports whether root is a namespace that

@@ -1,0 +1,3 @@
+<apex:page controller="PickProbeController" showHeader="false" sidebar="false" standardStylesheets="false">
+<div data-case="in-or-op">{!ISPICKVAL($User.UserType, 'Guest') || ISPICKVAL($User.UserType, 'Standard')}</div>
+</apex:page>

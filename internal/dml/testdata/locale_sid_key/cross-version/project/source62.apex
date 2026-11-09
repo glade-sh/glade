@@ -1,0 +1,1 @@
+System.assert(false,'LOCALE_SINGLE|'+JSON.serialize(LocaleObserver62.sample()));

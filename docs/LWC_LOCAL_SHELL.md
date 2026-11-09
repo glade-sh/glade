@@ -35,6 +35,17 @@ the project and its surroundings. Exactly `1` permits discovery beside the
 executable and in project ancestors, including executable preparation scripts.
 Node must be available on PATH. Prefer an explicit trusted root.
 
+Toolchain roots are an authority decision, not an ownership or permission
+check. Glade trusts the installed user share and explicitly selected roots;
+the legacy opt-in also trusts discovered project and executable ancestors.
+Keep those roots and their parent directories protected from modification by
+other users. A group-writable or world-writable ancestor, including a sticky
+directory, does not revoke this authorization; the sticky bit alone does not
+protect files inside a selected checkout.
+If neither `HOME` nor `XDG_DATA_HOME` is set, Glade does not use the shared
+temporary directory as its managed LWC toolchain. Set one of them, or select a
+trusted existing root with `GLADE_HOME` or `GLADE_ROOT`.
+
 Then start the local workbench from the project root:
 
 ```bash
@@ -205,7 +216,10 @@ Supported context targets are `component`, `urlAddressable`, `recordPage`,
 `flowScreen`, `flowAction`, and `communityPage`. Community routes are
 preset-backed; use `--context` or `--context-file` to select them. Community
 presets use `community.site`, `basePath`, `siteId`, `networkId`, `guest`,
-`language`, and an optional configured `pageReference`. Flow presets use
+`language`, and an optional configured `pageReference`. Set `community.lwr` to
+`true` for an LWR site to enable its functional navigation bindings; omitted
+values retain the Aura host behavior. Community preview URLs also accept
+`?lwr=true`. Flow presets use
 `flow.apiName` and optional `flow.inputVariables`. Direct flags include
 `--component`, `--object`, `--record`, `--page`, `--tab`, `--action`, `--app`,
 `--flow`, `--flow-input key=value`, `--form-factor`, and repeated

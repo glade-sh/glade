@@ -1,0 +1,1 @@
+public class OwnedRefRejectRead { public static void probe(){GiftCommitmentSchedule r=new GiftCommitmentSchedule(); Object v=r.GenerationalCohort;} }

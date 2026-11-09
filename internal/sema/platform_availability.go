@@ -46,6 +46,8 @@ var observedPlatformSourceMemberAvailability = map[string]apexversion.Range{
 
 var observedPlatformSourceExactAvailability = map[string]apexversion.Range{
 	"apex:richmessaging.processformhandler.processformrequest(richmessaging.processformresponse)": {Since: 65},
+	// stdlib_locale_crypto_c14 location Address parked (API 62.0): the authenticated-data overload ran natively although the docs date it to 64.
+	"apex:system.crypto.encryptwithmanagediv(string,blob,blob,blob)":                                       {Since: 62},
 	"apex:system.limits.getapexcursors()":                                                                  {Since: 62},
 	"apex:system.limits.getlimitapexcursors()":                                                             {Since: 62},
 	"apex:connectapi.namedcredentials.updatenamedcredential(string,connectapi.namedcredentialinput)":       {Since: 62},
@@ -64,7 +66,7 @@ func semaPlatformTypeUnavailableInModel(version, typeName string, model *semaTyp
 			return true
 		}
 		if versions, ok := observedPlatformSourceTypeRejections[key]; ok {
-			if resolved, err := apexversion.PreserveSource(version); err == nil && versions[resolved] {
+			if resolved, err := apexversion.PreserveSource(version); err == nil && (versions[resolved] || resolved == "68.0" && semaCommercePricingDisabled(model)) {
 				// A declared source or dependency type can have the same
 				// qualified name. Only skip this platform observation; ordinary
 				// source constructor and method checks still apply.
@@ -88,15 +90,62 @@ func semaPlatformTypeUnavailableInModel(version, typeName string, model *semaTyp
 	return false
 }
 
+// Commerce-enabled API 68 orgs expose the contract types only when contract
+// pricing is enabled. An unspecified org shape retains the existing open-world
+// behavior; it is not evidence that the setting is disabled.
+func semaCommercePricingDisabled(model *semaTypeMemberView) bool {
+	if model == nil || model.state == nil || model.state.base == nil {
+		return false
+	}
+	commerce, pricing := false, false
+	for _, feature := range model.state.base.orgShapeFeatures {
+		if strings.EqualFold(feature, "CommerceEnabled") {
+			commerce = true
+		}
+		if strings.EqualFold(feature, "CommerceContractPricing") {
+			pricing = true
+		}
+	}
+	return commerce && !pricing
+}
+
 func semaPlatformMemberUnavailable(version, receiver, member string) bool {
 	member = normalizeName(member)
 	for _, owner := range semaPlatformTypeKeys(receiver) {
 		if rng, ok := observedPlatformSourceMemberAvailability[owner+"."+member]; ok {
 			return !semaVersionAllows(version, rng)
 		}
+		if rng, ok := typesys.ConnectAPIMemberAvailability(owner, member); ok {
+			return !semaVersionAllows(version, rng)
+		}
 		if rng, ok := generatedPlatformMemberAvailability[owner+"."+member]; ok {
 			return !semaVersionAllows(version, rng)
 		}
+	}
+	return false
+}
+
+// Captured ConnectApi member ranges belong to the declaring class, including
+// inherited properties (capi2_assigned_outputs/org.tsv).
+func semaConnectAPIInheritedFieldUnavailable(version, receiver, member string, model *semaTypeMemberView) bool {
+	if len(receiver) < len("ConnectApi.") || !strings.EqualFold(receiver[:len("ConnectApi.")], "ConnectApi.") || model == nil {
+		return false
+	}
+	seen := map[string]bool{}
+	for current := receiver; current != ""; {
+		key := strings.ToLower(current)
+		if seen[key] {
+			break
+		}
+		seen[key] = true
+		if semaPlatformMemberUnavailable(version, current, member) {
+			return true
+		}
+		members, _, ok := semaLookupTypeMembers(model, current)
+		if !ok || !members.platform {
+			break
+		}
+		current = members.superClass
 	}
 	return false
 }
@@ -117,6 +166,9 @@ func semaPlatformExactUnavailable(version, surfaceID string) bool {
 		return true
 	}
 	if rng, ok := observedPlatformSourceExactAvailability[normalizeName(surfaceID)]; ok {
+		return !semaVersionAllows(version, rng)
+	}
+	if rng, ok := typesys.ConnectAPIExactAvailability(normalizeName(surfaceID)); ok {
 		return !semaVersionAllows(version, rng)
 	}
 	if rng, ok := generatedPlatformExactAvailability[normalizeName(surfaceID)]; ok {
@@ -195,4 +247,48 @@ func sourceAPIVersionDiagnostics(index typesys.Index) []diagnostic.Diagnostic {
 		}
 	}
 	return diagnostics
+}
+
+// semaObjectPermissionsViewAllFieldsHidden reports ObjectPermissions.
+// PermissionsViewAllFields at source API 62.x. Native case289_followups ST1-ST4
+// (anonymous, static) reject the member at 62.0 and compile it at 67.0; the
+// describe map and dynamic routes expose it from 63 (OPV rows). The storage
+// catalog keeps the field; only the source API gates it.
+func semaObjectPermissionsViewAllFieldsHidden(version, object, field string) bool {
+	if !strings.EqualFold(strings.TrimSpace(field), "PermissionsViewAllFields") {
+		return false
+	}
+	if !strings.EqualFold(strings.TrimSpace(object), "ObjectPermissions") && !strings.EqualFold(strings.TrimSpace(object), "Schema.ObjectPermissions") {
+		return false
+	}
+	return apexversion.AtLeast(version, 62) && !apexversion.AtLeast(version, 63)
+}
+
+// semaConnectAPICallUnavailable applies the captured per-overload ConnectApi
+// boundaries ("Method not added until", "Method was removed after") when every
+// platform overload the arguments can select is outside the running version.
+func semaConnectAPICallUnavailable(version, receiver, method string, argTypes []string, model *semaTypeMemberView) bool {
+	if !strings.HasPrefix(normalizeName(receiver), "connectapi.") || model == nil {
+		return false
+	}
+	matched := false
+	for _, candidate := range resolveMemberMethods(model, receiver, method) {
+		params := make([]string, len(candidate.member.Parameters))
+		for i, parameter := range candidate.member.Parameters {
+			params[i] = parameter.Type
+		}
+		if !semaArgsMatch(params, argTypes, model) {
+			continue
+		}
+		matched = true
+		keyParams := make([]string, len(params))
+		for i, param := range params {
+			keyParams[i] = strings.ReplaceAll(normalizeName(semaCanonicalPlatformAlias(param)), " ", "")
+		}
+		rng, ok := typesys.ConnectAPIExactAvailability("apex:" + normalizeName(receiver) + "." + normalizeName(method) + "(" + strings.Join(keyParams, ",") + ")")
+		if !ok || semaVersionAllows(version, rng) {
+			return false
+		}
+	}
+	return matched
 }

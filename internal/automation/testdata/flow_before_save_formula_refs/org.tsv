@@ -1,0 +1,25 @@
+source_api	variant	deploy
+62.0	V1	field integrity exception: unknown (When the TriggerType field is set to "RecordBeforeSave", the $Record.Calc__c field isn't supported.)
+62.0	V2	field integrity exception: unknown (When the TriggerType field is set to "RecordBeforeSave", the $Record.Calc__c field isn't supported.)
+62.0	V3	field integrity exception: unknown (When the TriggerType field is set to "RecordBeforeSave", the $Record.Calc__c field isn't supported.)
+62.0	V4	field integrity exception: unknown (When the TriggerType field is set to "RecordBeforeSave", the $Record.AcctName__c field isn't supported.)
+62.0	V5	field integrity exception: unknown (When the TriggerType field is set to "RecordBeforeSave", the $Record.Account.Calc__c field isn't supported.)
+62.0	V6	field integrity exception: unknown (When the TriggerType field is set to "RecordBeforeSave", the $Record.Calc__c field isn't supported.)
+62.0	V7	Succeeded
+62.0	V8	field integrity exception: unknown (When the TriggerType field is set to "RecordBeforeSave", the $Record.Calc__c field isn't supported.)
+62.0	V9	field integrity exception: unknown (When the TriggerType field is set to "RecordBeforeSave", the $Record.Calc__c field isn't supported.)
+62.0	V9C	Succeeded
+62.0	V10	field integrity exception: unknown (When the TriggerType field is set to "RecordBeforeSave", the $Record.Calc__c field isn't supported.)
+62.0	V10C	Succeeded
+67.0	V1	field integrity exception: unknown (When the TriggerType field is set to "RecordBeforeSave", the $Record.Calc__c field isn't supported.)
+67.0	V2	field integrity exception: unknown (When the TriggerType field is set to "RecordBeforeSave", the $Record.Calc__c field isn't supported.)
+67.0	V3	field integrity exception: unknown (When the TriggerType field is set to "RecordBeforeSave", the $Record.Calc__c field isn't supported.)
+67.0	V4	field integrity exception: unknown (When the TriggerType field is set to "RecordBeforeSave", the $Record.AcctName__c field isn't supported.)
+67.0	V5	field integrity exception: unknown (When the TriggerType field is set to "RecordBeforeSave", the $Record.Account.Calc__c field isn't supported.)
+67.0	V6	field integrity exception: unknown (When the TriggerType field is set to "RecordBeforeSave", the $Record.Calc__c field isn't supported.)
+67.0	V7	Succeeded
+67.0	V8	field integrity exception: unknown (When the TriggerType field is set to "RecordBeforeSave", the $Record.Calc__c field isn't supported.)
+67.0	V9	field integrity exception: unknown (When the TriggerType field is set to "RecordBeforeSave", the $Record.Calc__c field isn't supported.)
+67.0	V9C	Succeeded
+67.0	V10	field integrity exception: unknown (When the TriggerType field is set to "RecordBeforeSave", the $Record.Calc__c field isn't supported.)
+67.0	V10C	Succeeded

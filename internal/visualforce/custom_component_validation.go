@@ -48,10 +48,17 @@ type customComponentValidation struct {
 }
 
 func validateCustomComponentProject(p project.Project) error {
+	return validateCustomComponentProjectWith(p, nil)
+}
+
+func validateCustomComponentProjectWith(p project.Project, cache *loadCache) error {
 	v := customComponentValidation{definitions: map[string]customComponentDefinition{}, knownTypes: map[string]bool{}, namespace: p.Namespace}
 	for _, typ := range typesys.StandardPlatformSymbolView() {
 		v.knownTypes[strings.ToLower(typ.Name)] = true
 	}
+	// Native rows (vf_corpus_shapes) accept ApexPages.Action as an attribute type;
+	// the platform symbol view carries it only as a stub.
+	v.knownTypes["apexpages.action"] = true
 	for _, path := range p.VisualforceComponentFiles {
 		name := nameFromPath(path, ".component")
 		source, err := os.ReadFile(path)
@@ -63,7 +70,7 @@ func validateCustomComponentProject(p project.Project) error {
 		v.index.Components = append(v.index.Components, Component{Name: name, File: path})
 	}
 	v.index.sortAndBuildLookups()
-	expressions, err := newExpressionValidationContext(p, &v.index)
+	expressions, err := newExpressionValidationContextWith(p, &v.index, cache)
 	if err != nil {
 		return err
 	}
@@ -211,6 +218,16 @@ func (v *customComponentValidation) knownAttributeType(typ string) bool {
 		return true
 	}
 	if _, known := v.expressions.objects[typ]; known {
+		return true
+	}
+	// Source refers to its own custom objects without the namespace prefix,
+	// and to its own interfaces and enums by their plain names (rows NsAttr*).
+	if namespace := strings.ToLower(strings.TrimSpace(v.namespace)); namespace != "" && strings.HasSuffix(typ, "__c") {
+		if _, known := v.expressions.objects[namespace+"__"+typ]; known {
+			return true
+		}
+	}
+	if v.expressions.declaredTypes[typ] {
 		return true
 	}
 	_, known := storage.StandardObjectDefinition(typ)

@@ -1,0 +1,10 @@
+{
+ "edition": "Developer",
+ "orgName": "Synthetic enhanced orders capitalized-settings",
+ "settings": {
+  "OrderSettings": {
+   "enableEnhancedCommerceOrders": true,
+   "enableOrders": true
+  }
+ }
+}

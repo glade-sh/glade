@@ -1,0 +1,1 @@
+public class I09 extends NsOuter { public static void m() { NsOuter.Pb a = new NsOuter.Pb(); } }

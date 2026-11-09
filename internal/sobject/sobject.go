@@ -148,6 +148,8 @@ type DescribeSObjectResult struct {
 	Relationships   []storage.Relationship         `json:"relationships,omitempty"`
 	RecordTypes     []DescribeRecordTypeInfo       `json:"recordTypes,omitempty"`
 	ValidationRules []storage.ValidationRule       `json:"validationRules,omitempty"`
+
+	ExternalSharingModel string `json:"externalSharingModel,omitempty"`
 }
 
 type DescribeFieldResult struct {
@@ -187,6 +189,7 @@ type DescribeFieldResult struct {
 	RelationshipName         string                      `json:"relationshipName,omitempty"`
 	RelationshipOrder        *int                        `json:"relationshipOrder,omitempty"`
 	ReparentableMasterDetail bool                        `json:"reparentableMasterDetail,omitempty"`
+	WriteRequiresMasterRead  bool                        `json:"writeRequiresMasterRead,omitempty"`
 	ChildRelationshipName    string                      `json:"childRelationshipName,omitempty"`
 	DeleteConstraint         string                      `json:"deleteConstraint,omitempty"`
 	DefaultValue             string                      `json:"defaultValue,omitempty"`
@@ -259,6 +262,8 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 			EnableSearch: object.EnableSearch,
 			Fields:       make(map[string]DescribeFieldResult, len(object.Fields)),
 		}
+		describe.ExternalSharingModel = object.ExternalSharingModel
+
 		if parent, generated := generatedShareParents[strings.ToLower(object.Name)]; generated {
 			describe.Metadata = map[string]string{"kind": "generatedShare", "parentObject": parent}
 		}
@@ -389,6 +394,7 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 				FilteredLookupInfo:       storageFilteredLookupInfo(field.FilteredLookupInfo),
 				RelationshipOrder:        cloneIntPtr(field.RelationshipOrder),
 				ReparentableMasterDetail: field.ReparentableMasterDetail,
+				WriteRequiresMasterRead:  field.WriteRequiresMasterRead,
 				RelationshipName:         field.RelationshipName,
 				ChildRelationshipName:    childRelationshipName,
 				DeleteConstraint:         field.DeleteConstraint,
@@ -660,6 +666,9 @@ func mergeSchemaObject(base, overlay schema.Object) schema.Object {
 	if overlay.SharingModel != "" {
 		base.SharingModel = overlay.SharingModel
 	}
+	if overlay.ExternalSharingModel != "" {
+		base.ExternalSharingModel = overlay.ExternalSharingModel
+	}
 	if overlay.EnableSharing {
 		base.EnableSharing = true
 	}
@@ -818,6 +827,8 @@ func ToObjectDefinition(describe DescribeSObjectResult) storage.ObjectDefinition
 		RecordTypes:     make([]storage.RecordTypeInfo, 0, len(describe.RecordTypes)),
 		ValidationRules: append([]storage.ValidationRule(nil), describe.ValidationRules...),
 	}
+	definition.ExternalSharingModel = describe.ExternalSharingModel
+
 	if describe.Metadata != nil {
 		definition.Metadata = make(map[string]string, len(describe.Metadata))
 		for key, value := range describe.Metadata {
@@ -872,6 +883,7 @@ func ToObjectDefinition(describe DescribeSObjectResult) storage.ObjectDefinition
 			RelationshipName:         field.RelationshipName,
 			RelationshipOrder:        cloneIntPtr(field.RelationshipOrder),
 			ReparentableMasterDetail: field.ReparentableMasterDetail,
+			WriteRequiresMasterRead:  field.WriteRequiresMasterRead,
 			ChildRelationshipName:    field.ChildRelationshipName,
 			PicklistController:       field.PicklistController,
 			PicklistValueSettings:    cloneStoragePicklistSettings(field.PicklistValueSettings),
@@ -916,6 +928,8 @@ func FromObjectDefinition(definition storage.ObjectDefinition) DescribeSObjectRe
 		RecordTypes:     make([]DescribeRecordTypeInfo, 0, len(definition.RecordTypes)),
 		ValidationRules: append([]storage.ValidationRule(nil), definition.ValidationRules...),
 	}
+	describe.ExternalSharingModel = definition.ExternalSharingModel
+
 	if definition.Metadata != nil {
 		describe.Metadata = make(map[string]string, len(definition.Metadata))
 		for key, value := range definition.Metadata {
@@ -960,6 +974,7 @@ func FromObjectDefinition(definition storage.ObjectDefinition) DescribeSObjectRe
 			RelationshipName:         field.RelationshipName,
 			RelationshipOrder:        cloneIntPtr(field.RelationshipOrder),
 			ReparentableMasterDetail: field.ReparentableMasterDetail,
+			WriteRequiresMasterRead:  field.WriteRequiresMasterRead,
 			ChildRelationshipName:    field.ChildRelationshipName,
 			DefaultValue:             field.DefaultValue,
 			Required:                 field.Required,

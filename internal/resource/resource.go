@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"crypto/sha256"
 	"encoding/xml"
 	"fmt"
 	"os"
@@ -45,12 +46,14 @@ type standardValueSetTranslationXML struct {
 }
 
 type tabXML struct {
-	CustomObject bool   `xml:"customObject"`
-	Page         string `xml:"page"`
-	URL          string `xml:"url"`
-	Description  string `xml:"description"`
-	Label        string `xml:"label"`
-	Motif        string `xml:"motif"`
+	LWCComponent  string `xml:"lwcComponent"`
+	AuraComponent string `xml:"auraComponent"`
+	CustomObject  bool   `xml:"customObject"`
+	Page          string `xml:"page"`
+	URL           string `xml:"url"`
+	Description   string `xml:"description"`
+	Label         string `xml:"label"`
+	Motif         string `xml:"motif"`
 }
 
 type applicationXML struct {
@@ -145,6 +148,11 @@ type folderXML struct {
 	Name               string `xml:"name"`
 	AccessType         string `xml:"accessType"`
 	PublicFolderAccess string `xml:"publicFolderAccess"`
+	FolderShares       []struct {
+		AccessLevel  string `xml:"accessLevel"`
+		SharedTo     string `xml:"sharedTo"`
+		SharedToType string `xml:"sharedToType"`
+	} `xml:"folderShares"`
 }
 
 type documentXML struct {
@@ -155,9 +163,43 @@ type documentXML struct {
 }
 
 type reportXML struct {
-	XMLName xml.Name `xml:"Report"`
-	Format  string   `xml:"format"`
-	Name    string   `xml:"name"`
+	XMLName        xml.Name            `xml:"Report"`
+	Format         string              `xml:"format"`
+	Name           string              `xml:"name"`
+	Description    string              `xml:"description"`
+	ReportType     string              `xml:"reportType"`
+	Scope          string              `xml:"scope"`
+	ShowDetails    string              `xml:"showDetails"`
+	ShowGrandTotal string              `xml:"showGrandTotal"`
+	ShowSubTotals  string              `xml:"showSubTotals"`
+	TimeFrame      *reportTimeFrameXML `xml:"timeFrameFilter"`
+	Columns        []reportColumnXML   `xml:"columns"`
+	GroupingsDown  []reportGroupingXML `xml:"groupingsDown"`
+	Other          []reportOtherXML    `xml:",any"`
+}
+
+type reportOtherXML struct{ XMLName xml.Name }
+type reportTimeFrameXML struct {
+	DateColumn string           `xml:"dateColumn"`
+	Interval   string           `xml:"interval"`
+	StartDate  *string          `xml:"startDate"`
+	EndDate    *string          `xml:"endDate"`
+	Other      []reportOtherXML `xml:",any"`
+}
+type reportColumnXML struct {
+	Field string           `xml:"field"`
+	Other []reportOtherXML `xml:",any"`
+}
+type reportGroupingXML struct {
+	Field     string           `xml:"field"`
+	SortOrder string           `xml:"sortOrder"`
+	Other     []reportOtherXML `xml:",any"`
+}
+
+type dashboardXML struct {
+	XMLName xml.Name `xml:"Dashboard"`
+	Title   string   `xml:"title"`
+	Type    string   `xml:"dashboardType"`
 }
 
 type visualforcePageXML struct {
@@ -250,7 +292,7 @@ func loadProject(p project.Project, readMetadata func(string) ([]byte, error)) (
 	}
 	registry.ManagedLabelNamespaces = managedLabelNamespaces(p)
 	for _, path := range p.TabFiles {
-		tab, err := loadTab(path)
+		tab, err := loadTab(path, p.Namespace)
 		if err != nil {
 			return storage.MetadataRegistry{}, err
 		}
@@ -292,7 +334,7 @@ func loadProject(p project.Project, readMetadata func(string) ([]byte, error)) (
 		registry.FieldSets = append(registry.FieldSets, fieldSets...)
 	}
 	for _, path := range p.NamedCredentialFiles {
-		endpoint, err := loadNamedCredential(path)
+		endpoint, err := loadNamedCredential(path, readMetadata)
 		if err != nil {
 			return storage.MetadataRegistry{}, err
 		}
@@ -336,11 +378,15 @@ func applyProject(org *storage.OrgState, p project.Project, tolerant bool, metad
 		return nil, err
 	}
 	org.Metadata = registry
-	ensureMetadataObjects(org, p)
+	ApplyHierarchyAccessObjects(org, p.HierarchyAccessObjects)
+	ensureMetadataObjects(org, p, readMetadata)
+	if err := applyPaymentGatewayProviders(org, p, readMetadata); err != nil {
+		return nil, err
+	}
 	if err := applyPlatformCachePartitions(org, p); err != nil {
 		return nil, err
 	}
-	if err := ensureFolderObject(org, projectFolderFilesWithDependencies(p), p.Namespace); err != nil {
+	if err := ensureFolderObject(org, projectFolderFilesWithDependencies(p), p.Namespace, readMetadata); err != nil {
 		return nil, err
 	}
 	// Email template FolderId must reference the loaded folder record so
@@ -348,7 +394,10 @@ func applyProject(org *storage.OrgState, p project.Project, tolerant bool, metad
 	if len(org.Metadata.EmailTemplates) > 0 {
 		ensureEmailTemplateObject(org)
 	}
-	if err := ensureDocumentAndReportObjects(org, projectFolderFilesWithDependencies(p), p.Namespace); err != nil {
+	if err := ensureDocumentAndReportObjects(org, projectFolderFilesWithDependencies(p), p.Namespace, len(metadataReaders) == 0 && len(p.ReportFiles) == 0 && len(p.DashboardFiles) == 0); err != nil {
+		return nil, err
+	}
+	if err := applyProjectFolderItems(org, p, readMetadata); err != nil {
 		return nil, err
 	}
 	if err := ensureApexPageObject(org, p.VisualforcePageFiles, p.Namespace, p.SourceAPIVersion); err != nil {
@@ -381,6 +430,42 @@ func applyProject(org *storage.OrgState, p project.Project, tolerant bool, metad
 		}
 	}
 	return rejections, nil
+}
+
+// ApplyHierarchyAccessObjects applies the explicit org-level hierarchy setting.
+// Hierarchy access is an org setting, not a CustomObject metadata field. Only
+// explicitly configured custom objects receive this grant; an absent setting
+// preserves the existing fail-closed behavior.
+func ApplyHierarchyAccessObjects(org *storage.OrgState, names []string) {
+	if org == nil {
+		return
+	}
+	for name, state := range org.Objects {
+		if !strings.HasSuffix(strings.ToLower(name), "__c") {
+			continue
+		}
+		enabled := false
+		for _, configured := range names {
+			if strings.EqualFold(name, configured) {
+				enabled = true
+				break
+			}
+		}
+		if !enabled && state.Definition.Metadata["gladeHierarchyAccess"] == "" {
+			continue
+		}
+		metadata := make(map[string]string, len(state.Definition.Metadata)+1)
+		for key, value := range state.Definition.Metadata {
+			if key != "gladeHierarchyAccess" {
+				metadata[key] = value
+			}
+		}
+		if enabled {
+			metadata["gladeHierarchyAccess"] = "true"
+		}
+		state.Definition.Metadata = metadata
+		org.Objects[name] = state
+	}
 }
 
 // LayoutMetadataFiles includes declarations from loaded project dependencies.
@@ -579,7 +664,7 @@ func URLForStaticResource(registry storage.MetadataRegistry, name, path string) 
 	return "", false
 }
 
-func loadTab(path string) (storage.TabMetadata, error) {
+func loadTab(path string, namespace ...string) (storage.TabMetadata, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return storage.TabMetadata{}, err
@@ -606,10 +691,26 @@ func loadTab(path string) (storage.TabMetadata, error) {
 		Description: strings.TrimSpace(raw.Description),
 		File:        path,
 	}
+	componentNamespace := ""
+	if len(namespace) > 0 {
+		componentNamespace = namespace[0]
+	}
+	if target := strings.TrimSpace(raw.LWCComponent); target != "" {
+		tab.ComponentBundleID = localComponentBundleID("0Rb", componentNamespace, target)
+	} else if target := strings.TrimSpace(raw.AuraComponent); target != "" {
+		tab.ComponentBundleID = localComponentBundleID("0Ab", componentNamespace, target)
+	}
 	if raw.CustomObject || hasSuffixFold(name, "__c") {
 		tab.SObjectName = name
 	}
 	return tab, nil
+}
+
+// Local IDs preserve the captured bundle prefix and identity relationships;
+// their org-specific Salesforce suffix is unavailable in an offline project.
+func localComponentBundleID(prefix, namespace, target string) string {
+	sum := sha256.Sum256([]byte(strings.ToLower(namespace) + "\x00" + strings.ToLower(target)))
+	return fmt.Sprintf("%s%x", prefix, sum[:6])
 }
 
 func loadApplication(path, namespace string) (storage.ApplicationMetadata, error) {
@@ -1265,8 +1366,8 @@ func loadResourceMeta(path string) (staticResourceXML, error) {
 	return raw, nil
 }
 
-func loadNamedCredential(path string) (storage.EndpointMetadata, error) {
-	data, err := os.ReadFile(path)
+func loadNamedCredential(path string, readMetadata func(string) ([]byte, error)) (storage.EndpointMetadata, error) {
+	data, err := readMetadata(path)
 	if err != nil {
 		return storage.EndpointMetadata{}, err
 	}
@@ -1301,7 +1402,7 @@ func loadRemoteSite(path string) (storage.EndpointMetadata, error) {
 	return storage.EndpointMetadata{Kind: "RemoteSiteSetting", Name: name, URL: strings.TrimSpace(raw.URL), Active: active, File: path}, nil
 }
 
-func ensureMetadataObjects(org *storage.OrgState, p project.Project) {
+func ensureMetadataObjects(org *storage.OrgState, p project.Project, readMetadata func(string) ([]byte, error)) {
 	if org == nil {
 		return
 	}
@@ -1309,7 +1410,7 @@ func ensureMetadataObjects(org *storage.OrgState, p project.Project) {
 		org.Objects = make(map[string]storage.ObjectState)
 	}
 	ensureStaticResourceObject(org)
-	ensureNamedCredentialObject(org, p)
+	ensureNamedCredentialObject(org, p, readMetadata)
 	if len(org.Metadata.EmailTemplates) > 0 {
 		ensureEmailTemplateObject(org)
 	}
@@ -1487,7 +1588,7 @@ func ensureEmailTemplateObject(org *storage.OrgState) {
 	org.Objects["EmailTemplate"] = object
 }
 
-func ensureFolderObject(org *storage.OrgState, folderFiles []string, namespace string) error {
+func ensureFolderObject(org *storage.OrgState, folderFiles []string, namespace string, readers ...func(string) ([]byte, error)) error {
 	if org == nil || len(folderFiles) == 0 {
 		return nil
 	}
@@ -1515,8 +1616,8 @@ func ensureFolderObject(org *storage.OrgState, folderFiles []string, namespace s
 
 	paths := append([]string(nil), folderFiles...)
 	sort.Strings(paths)
-	for i, path := range paths {
-		meta, err := loadFolderMeta(path)
+	for _, path := range paths {
+		meta, err := loadFolderMeta(path, readers...)
 		if err != nil {
 			return err
 		}
@@ -1529,12 +1630,20 @@ func ensureFolderObject(org *storage.OrgState, folderFiles []string, namespace s
 		if strings.TrimSpace(namespace) != "" {
 			namespaceValue = storage.StringValue(strings.TrimSpace(namespace))
 		}
-		id := storage.ID("00l" + leftPad(i+1, 12))
+		folderType := folderTypeFromPath(path)
+		id := metadataRecordIDForIdentity(object, func(record storage.Record) bool {
+			return strings.EqualFold(record.Fields["Type"].String, folderType) && strings.EqualFold(record.Fields["DeveloperName"].String, developerName)
+		})
+		if folderType == "Report" {
+			for _, share := range meta.FolderShares {
+				org.Metadata.ReportFolderShares = append(org.Metadata.ReportFolderShares, storage.ProjectReportFolderShare{FolderID: id, AccessLevel: strings.TrimSpace(share.AccessLevel), SharedTo: strings.TrimSpace(share.SharedTo), SharedToType: strings.TrimSpace(share.SharedToType)})
+			}
+		}
 		object.Records[id] = storage.Record{ID: id, Object: "Folder", Fields: map[string]storage.Value{
 			"Id":                 storage.IDValue(id),
 			"Name":               storage.StringValue(name),
 			"DeveloperName":      storage.StringValue(developerName),
-			"Type":               storage.StringValue(folderTypeFromPath(path)),
+			"Type":               storage.StringValue(folderType),
 			"NamespacePrefix":    namespaceValue,
 			"AccessType":         storage.StringValue(strings.TrimSpace(meta.AccessType)),
 			"PublicFolderAccess": storage.StringValue(strings.TrimSpace(meta.PublicFolderAccess)),
@@ -1544,7 +1653,7 @@ func ensureFolderObject(org *storage.OrgState, folderFiles []string, namespace s
 	return nil
 }
 
-func ensureDocumentAndReportObjects(org *storage.OrgState, folderFiles []string, namespace string) error {
+func ensureDocumentAndReportObjects(org *storage.OrgState, folderFiles []string, namespace string, scanFolderItems bool) error {
 	if org == nil || len(folderFiles) == 0 {
 		return nil
 	}
@@ -1557,7 +1666,17 @@ func ensureDocumentAndReportObjects(org *storage.OrgState, folderFiles []string,
 				return err
 			}
 		case "Report":
+			if !scanFolderItems {
+				continue
+			}
 			if err := loadFolderReports(org, path, namespace); err != nil {
+				return err
+			}
+		case "Dashboard":
+			if !scanFolderItems {
+				continue
+			}
+			if err := loadFolderDashboards(org, path, namespace); err != nil {
 				return err
 			}
 		}
@@ -1657,6 +1776,11 @@ func loadFolderReports(org *storage.OrgState, folderPath, namespace string) erro
 	storage.EnsureStandardObject(org, "Report")
 	object := org.Objects["Report"]
 	folderName := folderDeveloperName(folderPath)
+	folderMeta, err := loadFolderMeta(folderPath)
+	if err != nil {
+		return err
+	}
+	folderLabel := firstNonEmpty(strings.TrimSpace(folderMeta.Name), folderName)
 	for _, entry := range entries {
 		name := entry.Name()
 		if entry.IsDir() || (!strings.HasSuffix(strings.ToLower(name), ".report-meta.xml") && !strings.HasSuffix(strings.ToLower(name), ".report")) {
@@ -1669,18 +1793,71 @@ func loadFolderReports(org *storage.OrgState, folderPath, namespace string) erro
 		}
 		developerName := metadataNameFromPath(metaPath, ".report-meta.xml", ".report")
 		id := metadataRecordIDForIdentity(object, func(record storage.Record) bool {
-			return strings.EqualFold(record.Fields["FolderName"].String, folderName) && strings.EqualFold(record.Fields["DeveloperName"].String, developerName)
+			return strings.EqualFold(record.Fields["DeveloperName"].String, developerName) && strings.EqualFold(record.Fields["NamespacePrefix"].String, strings.TrimSpace(namespace))
 		})
 		object.Records[id] = storage.Record{ID: id, Object: "Report", Fields: map[string]storage.Value{
 			"Id":              storage.IDValue(id),
 			"Name":            storage.StringValue(firstNonEmpty(strings.TrimSpace(meta.Name), developerName)),
 			"DeveloperName":   storage.StringValue(developerName),
-			"FolderName":      storage.StringValue(folderName),
+			"FolderName":      storage.StringValue(folderLabel),
 			"Format":          storage.StringValue(strings.TrimSpace(meta.Format)),
 			"NamespacePrefix": nullableNamespace(namespace),
 		}}
 	}
 	org.Objects["Report"] = object
+	return nil
+}
+
+func loadFolderDashboards(org *storage.OrgState, folderPath, namespace string) error {
+	folderDeveloperName := folderDeveloperName(folderPath)
+	folderID, ok := projectFolderID(org, "Dashboard", folderDeveloperName)
+	if !ok {
+		return fmt.Errorf("dashboard folder %q not found", folderDeveloperName)
+	}
+	folderMeta, err := loadFolderMeta(folderPath)
+	if err != nil {
+		return err
+	}
+	folderLabel := firstNonEmpty(strings.TrimSpace(folderMeta.Name), folderDeveloperName)
+	directory := filepath.Join(filepath.Dir(folderPath), folderDeveloperName)
+	entries, err := os.ReadDir(directory)
+	if os.IsNotExist(err) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	storage.EnsureStandardObject(org, "Dashboard")
+	object := org.Objects["Dashboard"]
+	for _, entry := range entries {
+		name := entry.Name()
+		if entry.IsDir() || (!hasSuffixFold(name, ".dashboard-meta.xml") && !hasSuffixFold(name, ".dashboard")) {
+			continue
+		}
+		path := filepath.Join(directory, name)
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		var meta dashboardXML
+		if err := xml.Unmarshal(data, &meta); err != nil {
+			return fmt.Errorf("load Dashboard metadata %s: %w", path, err)
+		}
+		developerName := metadataNameFromPath(path, ".dashboard-meta.xml", ".dashboard")
+		id := metadataRecordIDForIdentity(object, func(record storage.Record) bool {
+			return strings.EqualFold(record.Fields["DeveloperName"].String, developerName) && strings.EqualFold(record.Fields["NamespacePrefix"].String, strings.TrimSpace(namespace))
+		})
+		object.Records[id] = storage.Record{ID: id, Object: "Dashboard", Fields: map[string]storage.Value{
+			"Id":              storage.IDValue(id),
+			"DeveloperName":   storage.StringValue(developerName),
+			"Title":           storage.StringValue(firstNonEmpty(strings.TrimSpace(meta.Title), developerName)),
+			"FolderId":        storage.IDValue(folderID),
+			"FolderName":      storage.StringValue(folderLabel),
+			"Type":            storage.StringValue(strings.TrimSpace(meta.Type)),
+			"NamespacePrefix": nullableNamespace(namespace),
+		}}
+	}
+	org.Objects["Dashboard"] = object
 	return nil
 }
 
@@ -1772,8 +1949,12 @@ func ensureFolderFields(definition *storage.ObjectDefinition) {
 	}
 }
 
-func loadFolderMeta(path string) (folderXML, error) {
-	data, err := os.ReadFile(path)
+func loadFolderMeta(path string, readers ...func(string) ([]byte, error)) (folderXML, error) {
+	read := os.ReadFile
+	if len(readers) > 0 && readers[0] != nil {
+		read = readers[0]
+	}
+	data, err := read(path)
 	if err != nil {
 		return folderXML{}, err
 	}
@@ -1804,7 +1985,7 @@ func isLegacyFolderMetadataPath(path string) bool {
 		return false
 	}
 	switch strings.ToLower(filepath.Base(filepath.Dir(path))) {
-	case "documents", "reports":
+	case "documents", "reports", "dashboards":
 		return true
 	default:
 		return false
@@ -1818,6 +1999,8 @@ func folderTypeFromPath(path string) string {
 			return "Document"
 		case "reports":
 			return "Report"
+		case "dashboards":
+			return "Dashboard"
 		}
 	}
 	lower := strings.ToLower(filepath.Base(path))

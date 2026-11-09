@@ -1,0 +1,1 @@
+public class H04 { public Quote q; }

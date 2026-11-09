@@ -1,0 +1,16 @@
+{
+ "Account.ParentId": "{\"DESC NULLS FIRST\":\"n1,n2,n3\",\"DESC\":\"n1,n2,n3\",\"ASC NULLS LAST\":\"n3,n2,n1\",\"ASC\":\"n3,n2,n1\"}",
+ "Campaign.ParentId": "{\"DESC NULLS FIRST\":\"n1,n2,n3\",\"DESC\":\"n1,n2,n3\",\"ASC NULLS LAST\":\"n3,n2,n1\",\"ASC\":\"n3,n2,n1\"}",
+ "Case.AccountId": "{\"DESC NULLS FIRST\":\"n1,n2,n3\",\"DESC\":\"n1,n2,n3\",\"ASC NULLS LAST\":\"n3,n2,n1\",\"ASC\":\"n3,n2,n1\"}",
+ "Case.ContactId": "{\"DESC NULLS FIRST\":\"n1,n2,n3\",\"DESC\":\"n1,n2,n3\",\"ASC NULLS LAST\":\"n3,n2,n1\",\"ASC\":\"n3,n2,n1\"}",
+ "Case.ParentId": "{\"DESC NULLS FIRST\":\"n1,n2,n3\",\"DESC\":\"n1,n2,n3\",\"ASC NULLS LAST\":\"n3,n2,n1\",\"ASC\":\"n3,n2,n1\"}",
+ "Contact.AccountId": "{\"DESC NULLS FIRST\":\"n1,n2,n3\",\"DESC\":\"n1,n2,n3\",\"ASC NULLS LAST\":\"n3,n2,n1\",\"ASC\":\"n3,n2,n1\"}",
+ "Contact.MasterRecordId": "{\"DESC NULLS FIRST\":\"n1,n2,n3\",\"DESC\":\"n1,n2,n3\",\"ASC NULLS LAST\":\"n1,n2,n3\",\"ASC\":\"n1,n2,n3\"}",
+ "Contact.OwnerId": "{\"DESC NULLS FIRST\":\"n1,n2,n3\",\"DESC\":\"n1,n2,n3\",\"ASC NULLS LAST\":\"n1,n2,n3\",\"ASC\":\"n1,n2,n3\"}",
+ "Contact.ReportsToId": "{\"DESC NULLS FIRST\":\"n3,n1,n2\",\"DESC\":\"n3,n1,n2\",\"ASC NULLS LAST\":\"n2,n1,n3\",\"ASC\":\"n3,n2,n1\"}",
+ "GapLk.Acc__c": "{\"DESC NULLS FIRST\":\"n3,n1,n2\",\"DESC\":\"n3,n1,n2\",\"ASC NULLS LAST\":\"n2,n1,n3\",\"ASC\":\"n3,n2,n1\"}",
+ "Opportunity.AccountId": "{\"DESC NULLS FIRST\":\"n1,n2,n3\",\"DESC\":\"n1,n2,n3\",\"ASC NULLS LAST\":\"n3,n2,n1\",\"ASC\":\"n3,n2,n1\"}",
+ "Opportunity.CampaignId": "{\"DESC NULLS FIRST\":\"n1,n2,n3\",\"DESC\":\"n1,n2,n3\",\"ASC NULLS LAST\":\"n3,n2,n1\",\"ASC\":\"n3,n2,n1\"}",
+ "Task.WhatId": "{\"DESC NULLS FIRST\":\"n1,n2,n3\",\"DESC\":\"n1,n2,n3\",\"ASC NULLS LAST\":\"n3,n2,n1\",\"ASC\":\"n3,n2,n1\"}",
+ "Task.WhoId": "{\"DESC NULLS FIRST\":\"n1,n2,n3\",\"DESC\":\"n1,n2,n3\",\"ASC NULLS LAST\":\"n3,n2,n1\",\"ASC\":\"n3,n2,n1\"}"
+}

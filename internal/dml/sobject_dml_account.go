@@ -457,6 +457,32 @@ func businessAccountRecordType(recordTypes []storage.RecordTypeInfo) (storage.Re
 	return storage.RecordTypeInfo{}, false
 }
 
+// validateContactPersonAccountParent rejects an inserted Contact whose
+// AccountId is a person account. Native (record_save_residuals person rows at
+// API 62.0 and 67.0) reports INVALID_CROSS_REFERENCE_KEY "Cannot select a
+// person account" on AccountId, ahead of the Contact.AccountId lookup filter.
+func (e *Engine) validateContactPersonAccountParent(objectName string, record storage.Record) error {
+	if !strings.EqualFold(objectName, "Contact") || e.Org == nil {
+		return nil
+	}
+	value, ok := record.GetField("AccountId")
+	if !ok {
+		return nil
+	}
+	id := idFromStorageValue(value)
+	if id == "" {
+		return nil
+	}
+	_, account, found := storage.LookupRecordByID(e.Org.Objects["Account"].Records, id)
+	if !found {
+		return nil
+	}
+	if person, ok := account.GetField("IsPersonAccount"); ok && person.Kind == storage.ValueBoolean && person.Boolean {
+		return dmlErrorf("INVALID_CROSS_REFERENCE_KEY", []string{"AccountId"}, "Cannot select a person account")
+	}
+	return nil
+}
+
 func (e *Engine) afterInsertPersonAccount(account storage.Record) error {
 	if _, ok := e.Org.Objects["Contact"]; !ok {
 		return nil
@@ -465,7 +491,9 @@ func (e *Engine) afterInsertPersonAccount(account storage.Record) error {
 		Object: "Contact",
 		Fields: e.personContactFields(account),
 	}
+	e.personContactInsert = true
 	contactID, err := e.insertOne(contact, nil)
+	e.personContactInsert = false
 	if err != nil {
 		return err
 	}

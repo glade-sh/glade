@@ -1,0 +1,3 @@
+<apex:page controller="PickProbeController" showHeader="false" sidebar="false" standardStylesheets="false">
+<div data-case="err-org-name">{!ISPICKVAL($Organization.Name, 'x')}</div>
+</apex:page>

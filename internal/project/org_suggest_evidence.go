@@ -12,6 +12,9 @@ var (
 	setupQueryRootRE      = regexp.MustCompile(`(?i)\bFROM\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s+([A-Za-z_][A-Za-z0-9_]*))?`)
 	setupCodeTokenRE      = regexp.MustCompile(`[A-Za-z_][A-Za-z0-9_]*|[^\s]`)
 	networkCallRE         = regexp.MustCompile(`(?i)\bNetwork\s*\.\s*(getNetworkId|getLoginUrl|getLogoutUrl|getSelfRegUrl|forgotPassword|communitiesLanding)\s*\(`)
+	networkObjectRE       = regexp.MustCompile(`(?i)^(Network|NetworkMember)$`)
+	networkSchemaTokenRE  = regexp.MustCompile(`(?i)\b(?:Schema\s*\.\s*SObjectType\s*\.\s*(?:Network|NetworkMember)\b|(?:Network|NetworkMember)\s*\.\s*SObjectType\b)`)
+	networkSchemaLookupRE = regexp.MustCompile(`(?i)\bSchema\s*\.\s*getGlobalDescribe\s*\(\s*\)\s*\.\s*get\s*\(\s*'(?:Network|NetworkMember)'\s*\)`)
 	portalFieldRE         = regexp.MustCompile(`(?i)\bIsPortalEnabled\b`)
 	portalAssignmentRE    = regexp.MustCompile(`(?i)\bIsPortalEnabled\s*=`)
 	territoryFieldRE      = regexp.MustCompile(`(?i)\bTerritory2Id\b`)
@@ -51,11 +54,15 @@ func matchesSetupFeature(rule featureEvidence, source string, metadata bool) boo
 			return true
 		}
 	}
+	// NetworksEnabled needs no pattern here: only queries and schema references
+	// of the objects count, and the Network class calls are Communities evidence.
 	if rule.feature == "Communities" {
 		if networkCallRE.MatchString(code) || typedSetupFieldEvidence(source, code, "User", `IsPortalEnabled\b|UserType\s*={1,2}\s*'(?:CustomerSuccess|PowerCustomerSuccess|PowerPartner|CspLitePortal)'|(?:get|put)\s*\(\s*'IsPortalEnabled'`) || setupConstructorEvidence(source, code, "User", portalAssignmentRE) {
 			return true
 		}
-	} else if territoryUseRE.MatchString(code) || territoryNewRE.MatchString(code) || setupMatchOutsideString(territorySchemaRE, source, code) || typedSetupFieldEvidence(source, code, "Opportunity", `Territory2Id\b|(?:get|put)\s*\(\s*'Territory2Id'`) || setupConstructorEvidence(source, code, "Opportunity", territoryAssignmentRE) {
+	} else if rule.feature == "NetworksEnabled" && (networkSchemaTokenRE.MatchString(code) || setupMatchOutsideString(networkSchemaLookupRE, source, code)) {
+		return true
+	} else if rule.feature == "Territory2" && (territoryUseRE.MatchString(code) || territoryNewRE.MatchString(code) || setupMatchOutsideString(territorySchemaRE, source, code) || typedSetupFieldEvidence(source, code, "Opportunity", `Territory2Id\b|(?:get|put)\s*\(\s*'Territory2Id'`) || setupConstructorEvidence(source, code, "Opportunity", territoryAssignmentRE)) {
 		return true
 	}
 	for _, query := range setupExecutedQueries(source, code) {
@@ -68,7 +75,11 @@ func matchesSetupFeature(rule featureEvidence, source string, metadata bool) boo
 			if territoryTypeRE.MatchString(root[1]) || (strings.EqualFold(root[1], "Opportunity") && territoryFieldRE.MatchString(queryCode)) {
 				return true
 			}
-		} else if strings.EqualFold(root[1], "Network") || strings.EqualFold(root[1], "NetworkMember") || (strings.EqualFold(root[1], "User") && (portalFieldRE.MatchString(queryCode) || setupMatchOutsideString(externalUserTypeRE, query, queryCode))) {
+		} else if rule.feature == "NetworksEnabled" {
+			if networkObjectRE.MatchString(root[1]) {
+				return true
+			}
+		} else if strings.EqualFold(root[1], "User") && (portalFieldRE.MatchString(queryCode) || setupMatchOutsideString(externalUserTypeRE, query, queryCode)) {
 			return true
 		}
 	}
@@ -185,5 +196,8 @@ func setupMetadataReference(value, feature string) bool {
 	if feature == "Territory2" {
 		return territoryTypeRE.MatchString(strings.SplitN(value, ".", 2)[0]) || strings.EqualFold(value, "Opportunity.Territory2Id")
 	}
-	return strings.EqualFold(value, "User.IsPortalEnabled") || strings.EqualFold(value, "Network") || strings.EqualFold(value, "NetworkMember")
+	if feature == "NetworksEnabled" {
+		return networkObjectRE.MatchString(strings.SplitN(value, ".", 2)[0])
+	}
+	return strings.EqualFold(value, "User.IsPortalEnabled")
 }

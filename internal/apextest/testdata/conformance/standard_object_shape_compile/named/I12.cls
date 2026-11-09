@@ -1,0 +1,1 @@
+public class I12 extends NsOuter { public Pv f; }

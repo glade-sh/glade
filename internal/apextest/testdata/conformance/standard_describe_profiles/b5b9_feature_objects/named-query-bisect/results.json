@@ -1,0 +1,102 @@
+[
+  {
+    "api": "63.0",
+    "tests": [
+      {
+        "method": "dynamicBatch",
+        "outcome": "Fail",
+        "message": "System.AssertException: Assertion Failed: OBSERVED accepted"
+      },
+      {
+        "method": "dynamicClause",
+        "outcome": "Fail",
+        "message": "System.AssertException: Assertion Failed: OBSERVED accepted"
+      },
+      {
+        "method": "staticBatch",
+        "outcome": "Fail",
+        "message": "System.AssertException: Assertion Failed: OBSERVED accepted"
+      },
+      {
+        "method": "staticClause",
+        "outcome": "Fail",
+        "message": "System.AssertException: Assertion Failed: OBSERVED accepted"
+      }
+    ]
+  },
+  {
+    "api": "64.0",
+    "tests": [
+      {
+        "method": "dynamicBatch",
+        "outcome": "Fail",
+        "message": "System.AssertException: Assertion Failed: OBSERVED accepted"
+      },
+      {
+        "method": "dynamicClause",
+        "outcome": "Fail",
+        "message": "System.AssertException: Assertion Failed: OBSERVED accepted"
+      },
+      {
+        "method": "staticBatch",
+        "outcome": "Fail",
+        "message": "System.AssertException: Assertion Failed: OBSERVED accepted"
+      },
+      {
+        "method": "staticClause",
+        "outcome": "Fail",
+        "message": "System.AssertException: Assertion Failed: OBSERVED accepted"
+      }
+    ]
+  },
+  {
+    "api": "65.0",
+    "tests": [
+      {
+        "method": "dynamicBatch",
+        "outcome": "Fail",
+        "message": "System.AssertException: Assertion Failed: OBSERVED accepted"
+      },
+      {
+        "method": "dynamicClause",
+        "outcome": "Fail",
+        "message": "System.AssertException: Assertion Failed: OBSERVED accepted"
+      },
+      {
+        "method": "staticBatch",
+        "outcome": "Fail",
+        "message": "System.AssertException: Assertion Failed: OBSERVED accepted"
+      },
+      {
+        "method": "staticClause",
+        "outcome": "Fail",
+        "message": "System.AssertException: Assertion Failed: OBSERVED accepted"
+      }
+    ]
+  },
+  {
+    "api": "66.0",
+    "tests": [
+      {
+        "method": "dynamicBatch",
+        "outcome": "Fail",
+        "message": "System.AssertException: Assertion Failed: OBSERVED accepted"
+      },
+      {
+        "method": "dynamicClause",
+        "outcome": "Fail",
+        "message": "System.AssertException: Assertion Failed: OBSERVED accepted"
+      },
+      {
+        "method": "staticBatch",
+        "outcome": "Fail",
+        "message": "System.AssertException: Assertion Failed: OBSERVED accepted"
+      },
+      {
+        "method": "staticClause",
+        "outcome": "Fail",
+        "message": "System.AssertException: Assertion Failed: OBSERVED accepted"
+      }
+    ]
+  }
+]

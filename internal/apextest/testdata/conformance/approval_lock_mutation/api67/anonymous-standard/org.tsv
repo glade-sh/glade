@@ -1,0 +1,4 @@
+case	observation
+delete	"false:ENTITY_IS_LOCKED"
+update	"false:ENTITY_IS_LOCKED"
+upsert	"false:ENTITY_IS_LOCKED"

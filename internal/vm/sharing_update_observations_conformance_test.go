@@ -299,7 +299,9 @@ func TestDefaultRunAsPrivateTextUpdateScope(t *testing.T) {
 				machine.Org.Objects["SharingNote__c"] = state
 				value.Fields["Assignee__c"] = String("005000000000001")
 			}
-			if got := machine.defaultRunAsPrivateTextUpdate(op, value); got != (variant == "captured" || variant == "hydrated caller") {
+			// A trigger body under runAs takes the class route (native
+			// api67_access_defaults std_trg_bind t_upd_adm rows, API 67.0 and 68.0).
+			if got := machine.defaultRunAsPrivateTextUpdate(op, value); got != (variant == "captured" || variant == "hydrated caller" || variant == "trigger") {
 				t.Fatalf("special default route=%t", got)
 			}
 		})

@@ -130,7 +130,17 @@ func runSemiJoinConformance(t *testing.T, cluster string, shapes int) {
 
 func semiJoinCell(t *testing.T, api, route string, source semiJoinRoute, want semiJoinExpected) {
 	t.Helper()
-	index := nativeBoundaryIndex(t, api, source.Classes, source.Objects)
+	var setup []nativeBoundaryMetadata
+	if _, ok := source.Objects["C157Child__c"]; ok {
+		// semi_join_capture_assignment/ASSIGNMENT-RUN.txt: the C157 capture
+		// assigned C157E6ChildAccess to the capture user before the routes.
+		grant, err := os.ReadFile("testdata/conformance/semi_join_capture_assignment/C157E6ChildAccess.permissionset-meta.xml")
+		if err != nil {
+			t.Fatal(err)
+		}
+		setup = append(setup, nativeBoundaryMetadata{permissionSets: map[string]string{"C157E6ChildAccess": string(grant)}})
+	}
+	index := nativeBoundaryIndexWithClassAPIs(t, api, source.Classes, source.Objects, nil, setup...)
 	analysis := sema.Analyze(index)
 	diagnostics := append(append([]diagnostic.Diagnostic{}, index.Diagnostics...), analysis.Diagnostics...)
 	var execErr error
@@ -147,8 +157,7 @@ func semiJoinCell(t *testing.T, api, route string, source semiJoinRoute, want se
 		if anonymous.HasErrors() || compileErr != nil {
 			t.Fatalf("native executes; anonymous diagnostics=%v compile=%v", anonymous.Diagnostics, compileErr)
 		}
-		org := orgFromIndex(index)
-		org.APIVersion = api
+		org := capturedFixtureOrg(t, index, api)
 		runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 		_, execErr = runner.execute(program)
 	} else {
@@ -172,8 +181,7 @@ func semiJoinCell(t *testing.T, api, route string, source semiJoinRoute, want se
 		if methodErrors[key] != nil || programErrors[key] != nil {
 			t.Fatalf("named compile: %v %v", methodErrors[key], programErrors[key])
 		}
-		org := orgFromIndex(index)
-		org.APIVersion = api
+		org := capturedFixtureOrg(t, index, api)
 		runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 		machine := runner.newMachine()
 		if err := machine.RegisterMethod(methods[key]); err != nil {

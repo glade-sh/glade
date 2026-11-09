@@ -1,0 +1,34 @@
+[
+ {
+  "id": "all.CommerceCart.abortCartOperation(String,String,String)",
+  "code": "String o;\ntry {\n    Object r = ConnectApi.CommerceCart.abortCartOperation(UserInfo.getUserId(), UserInfo.getUserId(), UserInfo.getUserId());\n    o = 'OK|' + (r == null ? 'null' : 'value');\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}"
+ },
+ {
+  "id": "all.CdpQuery.cancelQuerySql(String)",
+  "code": "String o;\ntry {\n    ConnectApi.CdpQuery.cancelQuerySql(UserInfo.getUserId());\n    o = 'OK|void';\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}"
+ },
+ {
+  "id": "all.Personalization.createAudience(String,ConnectApi.AudienceInput)",
+  "code": "String o;\ntry {\n    Object r = ConnectApi.Personalization.createAudience(null, new ConnectApi.AudienceInput());\n    o = 'OK|' + (r == null ? 'null' : 'value');\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}"
+ },
+ {
+  "id": "all.EinsteinLlm.createEmbeddings(ConnectApi.EinsteinLlmEmbeddingsInput)",
+  "code": "String o;\ntry {\n    Object r = ConnectApi.EinsteinLlm.createEmbeddings(new ConnectApi.EinsteinLlmEmbeddingsInput());\n    o = 'OK|' + (r == null ? 'null' : 'value');\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}"
+ },
+ {
+  "id": "all.Wave.executeQuery(String)",
+  "code": "String o;\ntry {\n    Object r = ConnectApi.Wave.executeQuery(UserInfo.getUserId());\n    o = 'OK|' + (r == null ? 'null' : 'value');\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}"
+ },
+ {
+  "id": "all.OmniDesignerConnect.clearDatamapperCache(ConnectApi.DatamapperCacheInputParamRepresentation)",
+  "code": "String o;\ntry {\n    Object r = ConnectApi.OmniDesignerConnect.clearDatamapperCache(new ConnectApi.DatamapperCacheInputParamRepresentation());\n    o = 'OK|' + (r == null ? 'null' : 'value');\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}"
+ },
+ {
+  "id": "all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)",
+  "code": "String o;\ntry {\n    Object r = ConnectApi.Knowledge.getTopViewedArticlesForTopic(null, UserInfo.getUserId(), 1);\n    o = 'OK|' + (r == null ? 'null' : 'value');\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}"
+ },
+ {
+  "id": "all.NavigationMenu.getCommunityNavigationMenu(String,String,String,ConnectApi.PublishStatus,Boolean,Boolean,List<ConnectApi.NavigationMenuItemType>)",
+  "code": "String o;\ntry {\n    Object r = ConnectApi.NavigationMenu.getCommunityNavigationMenu(null, UserInfo.getUserId(), UserInfo.getUserId(), ConnectApi.PublishStatus.Draft, false, false, (List<ConnectApi.NavigationMenuItemType>) null);\n    o = 'OK|' + (r == null ? 'null' : 'value');\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}"
+ }
+]

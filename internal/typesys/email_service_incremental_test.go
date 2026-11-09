@@ -3,6 +3,7 @@ package typesys
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/project"
@@ -109,4 +110,37 @@ func equalStrings(a, b []string) bool {
 		}
 	}
 	return true
+}
+
+func TestPermissionMutingFilesChangeIncrementalIdentity(t *testing.T) {
+	root := t.TempDir()
+	writeIncrementalSFDXProject(t, root, "")
+	load := func() project.Project {
+		p, err := project.Load(root)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return p
+	}
+	base := incrementalProjectIdentity(load())
+	if strings.Contains(base, "PermissionMutingDigests") {
+		t.Fatalf("project without muting files must keep the base identity: %s", base)
+	}
+	muting := filepath.Join(root, "force-app/main/default/mutingpermissionsets/M.mutingpermissionset-meta.xml")
+	group := filepath.Join(root, "force-app/main/default/permissionsetgroups/G.permissionsetgroup-meta.xml")
+	writeFile(t, muting, `<MutingPermissionSet><label>M</label></MutingPermissionSet>`)
+	writeFile(t, group, `<PermissionSetGroup><label>G</label><mutingPermissionSets>M</mutingPermissionSets></PermissionSetGroup>`)
+	first := incrementalProjectIdentity(load())
+	if first == base {
+		t.Fatal("adding muting files did not change the identity")
+	}
+	writeFile(t, muting, `<MutingPermissionSet><objectPermissions><allowEdit>true</allowEdit><object>X__c</object></objectPermissions><label>M</label></MutingPermissionSet>`)
+	second := incrementalProjectIdentity(load())
+	if second == first {
+		t.Fatal("editing the muting file did not change the identity")
+	}
+	writeFile(t, group, `<PermissionSetGroup><label>G2</label><mutingPermissionSets>M</mutingPermissionSets></PermissionSetGroup>`)
+	if incrementalProjectIdentity(load()) == second {
+		t.Fatal("editing the group file did not change the identity")
+	}
 }

@@ -1,0 +1,38 @@
+[
+  {
+    "calculated": false,
+    "createable": false,
+    "defaultedOnCreate": false,
+    "label": "Document Generation Batch Process ID",
+    "length": 18,
+    "name": "DocGenerationBatchProcessId",
+    "nillable": true,
+    "object": "DocumentGenerationProcess",
+    "precision": 0,
+    "referenceTo": [
+      "DocGenerationBatchProcess"
+    ],
+    "relationshipName": "DocGenerationBatchProcess",
+    "scale": 0,
+    "type": "REFERENCE",
+    "updateable": false
+  },
+  {
+    "calculated": false,
+    "createable": false,
+    "defaultedOnCreate": false,
+    "label": "Document Clause ID",
+    "length": 18,
+    "name": "DocumentTemplateClauseId",
+    "nillable": true,
+    "object": "DocumentTemplateSection",
+    "precision": 0,
+    "referenceTo": [
+      "DocumentClause"
+    ],
+    "relationshipName": "DocumentTemplateClause",
+    "scale": 0,
+    "type": "REFERENCE",
+    "updateable": false
+  }
+]

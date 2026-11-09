@@ -592,6 +592,7 @@ var commandReferences = []CommandHelp{
 		Usage: []string{
 			"glade org create <alias> [--project <root>] [--db <path>] [--addr <host:port>] [--json]",
 			"glade org list [--project <root>] [--json]",
+			"glade org suggest [--project <root>] [--json]",
 			"glade org status <alias> [--project <root>] [--json]",
 			"glade org start <alias> [--project <root>]",
 			"glade org auth <alias> [--project <root>] [--sf-config-dir <path>] [--print]",
@@ -599,6 +600,7 @@ var commandReferences = []CommandHelp{
 		Subcommands: []SubcommandHelp{
 			{Name: "create", Description: "Create a local org config and initialize its SQLite database."},
 			{Name: "list", Description: "List configured local orgs."},
+			{Name: "suggest", Description: "Suggest org setup from project source and metadata."},
 			{Name: "status", Description: "Check the local org userinfo endpoint."},
 			{Name: "start", Description: "Start the local Salesforce-compatible API for an org."},
 			{Name: "auth", Description: "Log the Salesforce CLI into the local org target."},

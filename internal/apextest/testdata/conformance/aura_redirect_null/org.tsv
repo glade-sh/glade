@@ -1,0 +1,5 @@
+source_api	route	observation
+62.0	anonymous	{"loginThenRedirect":"no exception","siteLoginAllNull":"null","siteLoginStart":"null","siteLoginNull":"null","redirectPage":"no exception","redirectNull":"no exception"}
+62.0	isTest	{"loginThenRedirect":"no exception","siteLoginAllNull":"null","siteLoginStart":"null","siteLoginNull":"null","redirectPage":"no exception","redirectNull":"no exception"}
+67.0	anonymous	{"loginThenRedirect":"no exception","siteLoginAllNull":"null","siteLoginStart":"null","siteLoginNull":"null","redirectPage":"no exception","redirectNull":"no exception"}
+67.0	isTest	{"loginThenRedirect":"no exception","siteLoginAllNull":"null","siteLoginStart":"null","siteLoginNull":"null","redirectPage":"no exception","redirectNull":"no exception"}

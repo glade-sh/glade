@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+  <label>V035 Field Access</label>
+  <objectPermissions><allowCreate>false</allowCreate><allowDelete>false</allowDelete><allowEdit>false</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>ShiftAllocationRequest</object><viewAllRecords>false</viewAllRecords></objectPermissions>
+  <fieldPermissions><editable>false</editable><field>ShiftAllocationRequest.CurrentAssigneeId</field><readable>true</readable></fieldPermissions>
+  <fieldPermissions><editable>false</editable><field>ShiftAllocationRequest.RequestType</field><readable>true</readable></fieldPermissions>
+</PermissionSet>

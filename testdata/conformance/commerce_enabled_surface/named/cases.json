@@ -1,0 +1,4 @@
+[
+  {"id":"request","source":"commercestorepricing.ContractResolutionRequest value;"},
+  {"id":"response","source":"commercestorepricing.ContractResolutionResponse value;"}
+]

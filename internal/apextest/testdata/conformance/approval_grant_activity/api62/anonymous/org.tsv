@@ -1,0 +1,5 @@
+case	observation
+active_direct	"true:NONE"
+expired_muted	"false:ENTITY_IS_LOCKED"
+revoked_muted	"false:ENTITY_IS_LOCKED"
+unmuted_group	"true:NONE"

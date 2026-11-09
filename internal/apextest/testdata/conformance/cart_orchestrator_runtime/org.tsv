@@ -1,0 +1,11 @@
+source_api	method	observation
+62.0	add_to_cart	{"status":"ACTIVE","name":"Cart,P,M"}
+62.0	checkout_recalc	{"status":"CHECKOUT","name":"Cart,P,M,I"}
+62.0	no_flags	{"status":"ACTIVE","name":"Cart"}
+62.0	shipping_and_taxes	{"status":"CHECKOUT","name":"Cart,S,SP,PS,T"}
+62.0	start_checkout	{"status":"ACTIVE","name":"Cart,I"}
+67.0	add_to_cart	{"status":"ACTIVE","name":"Cart,P,M"}
+67.0	checkout_recalc	{"status":"CHECKOUT","name":"Cart,P,M,I"}
+67.0	no_flags	{"status":"ACTIVE","name":"Cart"}
+67.0	shipping_and_taxes	{"status":"CHECKOUT","name":"Cart,S,SP,PS,T"}
+67.0	start_checkout	{"status":"ACTIVE","name":"Cart,I"}

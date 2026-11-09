@@ -64,6 +64,11 @@ func TestAggregateSumNumberOrgConformance(t *testing.T) {
 				t.Fatal(err)
 			}
 			writeFile(t, filepath.Join(root, "force-app/main/default/objects/SumProbe__c/SumProbe__c.object-meta.xml"), string(object))
+			// The capture harness deployed <token>Access
+			// with read/edit on all eleven fields and object CRUD, and assigned it to
+			// the running user before every route.
+			writeHarnessAccessPermissionSet(t, root, "SumProbeAccess", "SumProbe__c", customFieldNames(t, object), false)
+			writeCapturedAssignments(t, root, "SumProbeAccess")
 			fixtureProject, err := project.Load(root)
 			if err != nil {
 				t.Fatal(err)
@@ -87,8 +92,7 @@ func TestAggregateSumNumberOrgConformance(t *testing.T) {
 			if analysis := sema.Analyze(index); index.HasErrors() || analysis.HasErrors() {
 				t.Fatalf("native setup accepted; Glade rejected: %v %v", index.Diagnostics, analysis.Diagnostics)
 			}
-			org := orgFromIndex(index)
-			org.APIVersion = api
+			org := capturedFixtureOrg(t, index, api)
 			base := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 			for ordinal, row := range data.Rows {
 				t.Run(fmt.Sprintf("case_%02d", ordinal), func(t *testing.T) {

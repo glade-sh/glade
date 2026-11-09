@@ -1,0 +1,27 @@
+source_api	route	case	result
+62.0	anonymous	standard_manual	AccountShare and OpportunityShare Manual each stringify to Manual
+67.0	anonymous	standard_manual	AccountShare and OpportunityShare Manual each stringify to Manual
+62.0	istest	standard_manual	AccountShare and OpportunityShare Manual each stringify to Manual
+67.0	istest	standard_manual	AccountShare and OpportunityShare Manual each stringify to Manual
+62.0	anonymous	invalid_reason	Variable does not exist: NotARealReason
+67.0	anonymous	invalid_reason	Variable does not exist: NotARealReason
+62.0	class_compile	invalid_reason	Variable does not exist: NotARealReason
+67.0	class_compile	invalid_reason	Variable does not exist: NotARealReason
+62.0	anonymous	standard_boundary	AccountShare Owner and Rule each stringify to their name
+67.0	anonymous	standard_boundary	AccountShare Owner and Rule each stringify to their name
+62.0	anonymous	variable_member	Variable does not exist: Manual
+67.0	anonymous	variable_member	Variable does not exist: Manual
+62.0	class_compile	variable_member	Variable does not exist: Manual
+67.0	class_compile	variable_member	Variable does not exist: Manual
+62.0	anonymous	shadowed_roots	local AccountShare and Schema chains return local
+67.0	anonymous	shadowed_roots	local AccountShare and Schema chains return local
+62.0	istest	shadowed_roots	local AccountShare and Schema chains return local
+67.0	istest	shadowed_roots	local AccountShare and Schema chains return local
+62.0	anonymous	catalog_reasons	all 52 catalog-listed reason members compiled and returned their names
+67.0	anonymous	catalog_reasons	all 52 catalog-listed reason members compiled and returned their names
+62.0	istest	catalog_reasons	all 52 catalog-listed reason members compiled and returned their names
+67.0	istest	catalog_reasons	all 52 catalog-listed reason members compiled and returned their names
+62.0	anonymous	variable_boundaries	Manual, Owner, Name, and NotARealMember reject; getDescribe().getName() returns RowCause
+67.0	anonymous	variable_boundaries	Manual, Owner, Name, and NotARealMember reject; getDescribe().getName() returns RowCause
+62.0	istest_compile	variable_boundaries	Manual, Owner, Name, and NotARealMember reject; valid method test passes
+67.0	istest_compile	variable_boundaries	Manual, Owner, Name, and NotARealMember reject; valid method test passes

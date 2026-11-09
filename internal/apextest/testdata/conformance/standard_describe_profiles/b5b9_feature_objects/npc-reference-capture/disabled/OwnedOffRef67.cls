@@ -1,0 +1,1 @@
+@IsTest private class OwnedOffRef67 { @IsTest static void probe(){Map<String,Schema.SObjectType> m=Schema.getGlobalDescribe();for(String n:new List<String>{'GiftCommitmentSchedule','OutreachSourceCode','PaymentInstrument'})System.assertEquals(false,m.containsKey(n));System.assert(m.containsKey('Account'));}}

@@ -1,0 +1,7 @@
+source_api	route	case_id	outcome	observation
+62.0	trigger	field_service_token	PASS	trigger deployed; test insert passed and getDescribe().getName() returned FieldServiceMobileExtension
+62.0	trigger	account_boundary	PASS	same trigger test passed and Account.SObjectType.getDescribe().getName() returned Account
+62.0	trigger	unknown_object	COMPILE_ERROR	Variable does not exist: Case377Missing
+67.0	trigger	field_service_token	PASS	trigger deployed; test insert passed and getDescribe().getName() returned FieldServiceMobileExtension
+67.0	trigger	account_boundary	PASS	same trigger test passed and Account.SObjectType.getDescribe().getName() returned Account
+67.0	trigger	unknown_object	COMPILE_ERROR	Variable does not exist: Case377Missing

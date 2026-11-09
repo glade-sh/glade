@@ -1,0 +1,1315 @@
+{
+  "licenses": [
+    {
+      "kind": "PermissionSetLicense",
+      "name": "Sales Console User",
+      "key": "SalesConsoleUser"
+    },
+    {
+      "kind": "PermissionSetLicense",
+      "name": "Field Service Mobile",
+      "key": "FieldServiceMobilePsl"
+    },
+    {
+      "kind": "PermissionSetLicense",
+      "name": "Field Service Dispatcher",
+      "key": "FieldServiceDispatcherPsl"
+    },
+    {
+      "kind": "PermissionSetLicense",
+      "name": "Survey Creator User - 1 Seats",
+      "key": "SurveyCreatorPsl"
+    },
+    {
+      "kind": "PermissionSetLicense",
+      "name": "B2B Buyer Manager Permission Set One Seat",
+      "key": "B2BBuyerManagerPsl"
+    },
+    {
+      "kind": "PermissionSetLicense",
+      "name": "B2B Buyer Permission Set One Seat",
+      "key": "B2BBuyerPsl"
+    },
+    {
+      "kind": "PermissionSetLicense",
+      "name": "Commerce User",
+      "key": "CommerceUserPsl"
+    },
+    {
+      "kind": "PermissionSetLicense",
+      "name": "Salesforce Payments External",
+      "key": "SalesforcePaymentsExtUserPsl"
+    },
+    {
+      "kind": "PermissionSetLicense",
+      "name": "Commerce Admin Permission Set License Seat",
+      "key": "CommerceAdminUserPsl"
+    },
+    {
+      "kind": "PermissionSetLicense",
+      "name": "Command Center",
+      "key": "CommandCenterPsl"
+    },
+    {
+      "kind": "PermissionSetLicense",
+      "name": "Salesforce Payments Internal",
+      "key": "SalesforcePaymentsIntUserPsl"
+    },
+    {
+      "kind": "PermissionSetLicense",
+      "name": "Commerce Merchandiser User Permission Set License Seat",
+      "key": "CommerceMerchandiserUserPsl"
+    },
+    {
+      "kind": "UserLicense",
+      "name": "Salesforce",
+      "key": "SFDC"
+    },
+    {
+      "kind": "UserLicense",
+      "name": "Analytics Cloud Integration User",
+      "key": "INSIGHTS_INTEGRATION_USER"
+    },
+    {
+      "kind": "UserLicense",
+      "name": "Chatter Free",
+      "key": "CSN_User"
+    },
+    {
+      "kind": "UserLicense",
+      "name": "Cloud Integration User",
+      "key": "CLOUD_INTEGRATION_USER"
+    },
+    {
+      "kind": "UserLicense",
+      "name": "Authenticated Website",
+      "key": "Platform_Portal_User"
+    },
+    {
+      "kind": "UserLicense",
+      "name": "Company Communities",
+      "key": "PID_COMPANY_COMMUNITIES"
+    },
+    {
+      "kind": "UserLicense",
+      "name": "Salesforce Platform",
+      "key": "AUL"
+    },
+    {
+      "kind": "UserLicense",
+      "name": "Customer Community Login",
+      "key": "PID_Customer_Community_Login"
+    },
+    {
+      "kind": "UserLicense",
+      "name": "XOrg Proxy User",
+      "key": "PID_XOrg_Proxy_User"
+    },
+    {
+      "kind": "UserLicense",
+      "name": "Authenticated Website",
+      "key": "PLATFORM_PORTAL"
+    },
+    {
+      "kind": "UserLicense",
+      "name": "Work.com Only",
+      "key": "PID_WCUSER"
+    },
+    {
+      "kind": "UserLicense",
+      "name": "Customer Portal Manager Custom",
+      "key": "PID_Customer_Portal_Standard"
+    },
+    {
+      "kind": "UserLicense",
+      "name": "Identity",
+      "key": "PID_Identity_User"
+    },
+    {
+      "kind": "UserLicense",
+      "name": "Customer Community Plus",
+      "key": "PID_Customer_Community_Plus"
+    },
+    {
+      "kind": "UserLicense",
+      "name": "Silver Partner",
+      "key": "PID_STANDARD_PRM"
+    },
+    {
+      "kind": "UserLicense",
+      "name": "High Volume Customer Portal",
+      "key": "HIGH_VOLUME_PORTAL"
+    },
+    {
+      "kind": "UserLicense",
+      "name": "Gold Partner",
+      "key": "PID_STRATEGIC_PRM"
+    },
+    {
+      "kind": "UserLicense",
+      "name": "Customer Portal Manager Standard",
+      "key": "PID_Customer_Portal_Basic"
+    },
+    {
+      "kind": "UserLicense",
+      "name": "Force.com - App Subscription",
+      "key": "FDC_SUB"
+    },
+    {
+      "kind": "UserLicense",
+      "name": "Customer Community Plus Login",
+      "key": "PID_Customer_Community_Plus_Login"
+    },
+    {
+      "kind": "UserLicense",
+      "name": "Partner App Subscription",
+      "key": "FDC_ISV_SUB"
+    },
+    {
+      "kind": "UserLicense",
+      "name": "External Identity",
+      "key": "PID_External_Identity"
+    },
+    {
+      "kind": "UserLicense",
+      "name": "Partner Community",
+      "key": "PID_Partner_Community"
+    },
+    {
+      "kind": "UserLicense",
+      "name": "Partner Community Login",
+      "key": "PID_Partner_Community_Login"
+    },
+    {
+      "kind": "UserLicense",
+      "name": "Customer Community",
+      "key": "PID_Customer_Community"
+    },
+    {
+      "kind": "UserLicense",
+      "name": "Force.com - Free",
+      "key": "PID_FDC_FREE"
+    },
+    {
+      "kind": "UserLicense",
+      "name": "Chatter External",
+      "key": "CSN_External_User"
+    },
+    {
+      "kind": "UserLicense",
+      "name": "High Volume Customer Portal",
+      "key": "High_Volume_Customer_Portal_User"
+    },
+    {
+      "kind": "UserLicense",
+      "name": "CPQ Integration User",
+      "key": "PID_CpqIntegration"
+    },
+    {
+      "kind": "UserLicense",
+      "name": "External Apps Login",
+      "key": "PID_External_Apps_Login"
+    },
+    {
+      "kind": "UserLicense",
+      "name": "Salesforce Integration",
+      "key": "SALESFORCE_INTEGRATION_USER"
+    }
+  ],
+  "permissionSets": [
+    {
+      "name": "sfdc_nc_constraints_engine_deploy",
+      "label": "Constraint Rules Engine Licenseless permission set",
+      "type": "Session",
+      "namespace": "sfdcInternalInt",
+      "custom": true,
+      "profile": null,
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 15
+    },
+    {
+      "name": "X00eB0000000Qlc9IAC",
+      "label": "00e000000000cFNAAY",
+      "type": "Profile",
+      "namespace": null,
+      "custom": false,
+      "profile": "Company Communities User",
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 17,
+      "userType": "Standard"
+    },
+    {
+      "name": "X00e1a000000N1LRAA0",
+      "label": "00e000000000dVAAAY",
+      "type": "Profile",
+      "namespace": null,
+      "custom": false,
+      "profile": "High Volume Customer Portal User",
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 39,
+      "userType": "CspLitePortal"
+    },
+    {
+      "name": "X00e1a000000N1LSAA0",
+      "label": "00e000000000dfmAAA",
+      "type": "Profile",
+      "namespace": null,
+      "custom": false,
+      "profile": "Authenticated Website",
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 16,
+      "userType": "CspLitePortal"
+    },
+    {
+      "name": "X00e1a000000MWa8AAG",
+      "label": "00e000000000w0tAAA",
+      "type": "Profile",
+      "namespace": null,
+      "custom": false,
+      "profile": "Standard Platform User",
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 18,
+      "userType": "Standard"
+    },
+    {
+      "name": "X00ex00000018ozj_128_09_04_12_3",
+      "label": "00ex00000018ozj_128_09_04_12_3",
+      "type": "Profile",
+      "namespace": null,
+      "custom": false,
+      "profile": "Solution Manager",
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 12,
+      "userType": "Standard"
+    },
+    {
+      "name": "X00ex00000018ozo_128_09_04_12_8",
+      "label": "00ex00000018ozo_128_09_04_12_8",
+      "type": "Profile",
+      "namespace": null,
+      "custom": false,
+      "profile": "Marketing User",
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 12,
+      "userType": "Standard"
+    },
+    {
+      "name": "X00ex00000018ozh_128_09_04_12_1",
+      "label": "00ex00000018ozh_128_09_04_12_1",
+      "type": "Profile",
+      "namespace": null,
+      "custom": false,
+      "profile": "System Administrator",
+      "apiOnly": false,
+      "modifyAll": true,
+      "viewAll": true,
+      "license": 12,
+      "userType": "Standard"
+    },
+    {
+      "name": "X00ex00000018ozq_128_09_04_12_10",
+      "label": "00ex00000018ozq_128_09_04_12_10",
+      "type": "Profile",
+      "namespace": null,
+      "custom": false,
+      "profile": "Standard User",
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 12,
+      "userType": "Standard"
+    },
+    {
+      "name": "X00ex00000018ozp_128_09_04_12_9",
+      "label": "00ex00000018ozp_128_09_04_12_9",
+      "type": "Profile",
+      "namespace": null,
+      "custom": false,
+      "profile": "Contract Manager",
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 12,
+      "userType": "Standard"
+    },
+    {
+      "name": "X00e1a000000MWa9AAG",
+      "label": "00e000000000d1eAAA",
+      "type": "Profile",
+      "namespace": null,
+      "custom": false,
+      "profile": "Customer Community Login User",
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 19,
+      "userType": "CspLitePortal"
+    },
+    {
+      "name": "X00e1a000000MWaBAAW",
+      "label": "00e000000000qwoAAA",
+      "type": "Profile",
+      "namespace": null,
+      "custom": false,
+      "profile": "Authenticated Website",
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 21,
+      "userType": "CspLitePortal"
+    },
+    {
+      "name": "X00e1a000000MWaCAAW",
+      "label": "00e000000000xMDAAY",
+      "type": "Profile",
+      "namespace": null,
+      "custom": false,
+      "profile": "Work.com Only User",
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 22,
+      "userType": "Standard"
+    },
+    {
+      "name": "X00e1a000000MWaDAAW",
+      "label": "00e000000000ud1AAA",
+      "type": "Profile",
+      "namespace": null,
+      "custom": false,
+      "profile": "Customer Portal Manager Custom",
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 23,
+      "userType": "PowerCustomerSuccess"
+    },
+    {
+      "name": "X00e1a000000MWaEAAW",
+      "label": "00e000000000ahrAAA",
+      "type": "Profile",
+      "namespace": null,
+      "custom": false,
+      "profile": "Identity User",
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 24,
+      "userType": "Standard"
+    },
+    {
+      "name": "X00e1a000000MWaFAAW",
+      "label": "00e000000000dPWAAY",
+      "type": "Profile",
+      "namespace": null,
+      "custom": false,
+      "profile": "Customer Community Plus User",
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 25,
+      "userType": "PowerCustomerSuccess"
+    },
+    {
+      "name": "X00e1a000000MWaGAAW",
+      "label": "00e000000000cN4AAI",
+      "type": "Profile",
+      "namespace": null,
+      "custom": false,
+      "profile": "Silver Partner User",
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 26,
+      "userType": "PowerPartner"
+    },
+    {
+      "name": "X00e1a000000MWaHAAW",
+      "label": "00e000000000c80AAA",
+      "type": "Profile",
+      "namespace": null,
+      "custom": false,
+      "profile": "High Volume Customer Portal",
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 27,
+      "userType": "CspLitePortal"
+    },
+    {
+      "name": "X00e1a000000MWaIAAW",
+      "label": "00e000000000gj9AAA",
+      "type": "Profile",
+      "namespace": null,
+      "custom": false,
+      "profile": "Gold Partner User",
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 28,
+      "userType": "PowerPartner"
+    },
+    {
+      "name": "X00e1a000000MWaJAAW",
+      "label": "00e000000000jDfAAI",
+      "type": "Profile",
+      "namespace": null,
+      "custom": false,
+      "profile": "Customer Portal Manager Standard",
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 29,
+      "userType": "PowerCustomerSuccess"
+    },
+    {
+      "name": "X00e1a000000MWaKAAW",
+      "label": "00e000000000ccoAAA",
+      "type": "Profile",
+      "namespace": null,
+      "custom": false,
+      "profile": "Force.com - App Subscription User",
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 30,
+      "userType": "Standard"
+    },
+    {
+      "name": "X00e1a000000MWaLAAW",
+      "label": "00e000000000zY1AAI",
+      "type": "Profile",
+      "namespace": null,
+      "custom": false,
+      "profile": "Customer Community Plus Login User",
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 31,
+      "userType": "PowerCustomerSuccess"
+    },
+    {
+      "name": "X00e1a000000MWaMAAW",
+      "label": "00e000000000lp6AAA",
+      "type": "Profile",
+      "namespace": null,
+      "custom": false,
+      "profile": "Partner App Subscription User",
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 32,
+      "userType": "Standard"
+    },
+    {
+      "name": "X00e1a000000MWaNAAW",
+      "label": "00e000000000fQkAAI",
+      "type": "Profile",
+      "namespace": null,
+      "custom": false,
+      "profile": "External Identity User",
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 33,
+      "userType": "CspLitePortal"
+    },
+    {
+      "name": "X00e1a000000MWaOAAW",
+      "label": "00e000000000p6vAAA",
+      "type": "Profile",
+      "namespace": null,
+      "custom": false,
+      "profile": "Partner Community User",
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 34,
+      "userType": "PowerPartner"
+    },
+    {
+      "name": "X00e1a000000MWaPAAW",
+      "label": "00e000000000bAFAAY",
+      "type": "Profile",
+      "namespace": null,
+      "custom": false,
+      "profile": "Partner Community Login User",
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 35,
+      "userType": "PowerPartner"
+    },
+    {
+      "name": "X00e1a000000MWaQAAW",
+      "label": "00e000000000sC4AAI",
+      "type": "Profile",
+      "namespace": null,
+      "custom": false,
+      "profile": "Customer Community User",
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 36,
+      "userType": "CspLitePortal"
+    },
+    {
+      "name": "X00e1a000000MWaRAAW",
+      "label": "00e000000000jpWAAQ",
+      "type": "Profile",
+      "namespace": null,
+      "custom": false,
+      "profile": "Force.com - Free User",
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 37,
+      "userType": "Standard"
+    },
+    {
+      "name": "X00e1a000000MWaSAAW",
+      "label": "00e000000000nFcAAI",
+      "type": "Profile",
+      "namespace": null,
+      "custom": false,
+      "profile": "Chatter Moderator User",
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 14,
+      "userType": "CsnOnly"
+    },
+    {
+      "name": "X00e1a000000MWaTAAW",
+      "label": "00e000000000bQ0AAI",
+      "type": "Profile",
+      "namespace": null,
+      "custom": false,
+      "profile": "Chatter Free User",
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 14,
+      "userType": "CsnOnly"
+    },
+    {
+      "name": "X00e1a000000MWaUAAW",
+      "label": "00e000000000c4OAAQ",
+      "type": "Profile",
+      "namespace": null,
+      "custom": false,
+      "profile": "Chatter External User",
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 38,
+      "userType": "CsnOnly"
+    },
+    {
+      "name": "X00e1a000000N1wKAAS",
+      "label": "00e000000000d5aAAA",
+      "type": "Profile",
+      "namespace": null,
+      "custom": false,
+      "profile": "Analytics Cloud Security User",
+      "apiOnly": true,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 13,
+      "userType": "Standard"
+    },
+    {
+      "name": "X00e1a000000N1wLAAS",
+      "label": "00e000000000dsTAAQ",
+      "type": "Profile",
+      "namespace": null,
+      "custom": false,
+      "profile": "Analytics Cloud Integration User",
+      "apiOnly": true,
+      "modifyAll": false,
+      "viewAll": true,
+      "license": 13,
+      "userType": "Standard"
+    },
+    {
+      "name": "X00eB0000000cSXXIA2",
+      "label": "00e000000000kaRAAQ",
+      "type": "Profile",
+      "namespace": null,
+      "custom": false,
+      "profile": "CPQ Integration User",
+      "apiOnly": true,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 40,
+      "userType": "Standard"
+    },
+    {
+      "name": "X00eB0000000yeByIAI",
+      "label": "00e000000000zWUAAY",
+      "type": "Profile",
+      "namespace": null,
+      "custom": false,
+      "profile": "Minimum Access - Salesforce",
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 12,
+      "userType": "Standard"
+    },
+    {
+      "name": "X00eB0000000zHKTIA2",
+      "label": "00e000000000i4CAAQ",
+      "type": "Profile",
+      "namespace": null,
+      "custom": false,
+      "profile": "External Apps Login User",
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 41,
+      "userType": "CspLitePortal"
+    },
+    {
+      "name": "X00e1a000000MWaAAAW",
+      "label": "00e000000000kPJAAY",
+      "type": "Profile",
+      "namespace": null,
+      "custom": false,
+      "profile": "Cross Org Data Proxy User",
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 20,
+      "userType": "Standard"
+    },
+    {
+      "name": "SalesConsoleUser",
+      "label": "Salesforce Console User",
+      "type": "Standard",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 0
+    },
+    {
+      "name": "SurveyCreator",
+      "label": "Survey Creator",
+      "type": "Standard",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 3
+    },
+    {
+      "name": "C2CHeadlessCMSAccessPermSet",
+      "label": "Salesforce CMS Integration Admin",
+      "type": "Session",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": true,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 15
+    },
+    {
+      "name": "SecurityCommandCenterStandardPermSet",
+      "label": "Security Center Integration User",
+      "type": "Session",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 15
+    },
+    {
+      "name": "Merchandiser",
+      "label": "Merchandiser",
+      "type": "Standard",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 11
+    },
+    {
+      "name": "B2BBuyerManager",
+      "label": "Buyer Manager",
+      "type": "Standard",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 4
+    },
+    {
+      "name": "CommerceUser",
+      "label": "Shopper",
+      "type": "Standard",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 6
+    },
+    {
+      "name": "B2BBuyer",
+      "label": "Buyer",
+      "type": "Standard",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 5
+    },
+    {
+      "name": "CommerceAdmin",
+      "label": "Commerce Admin",
+      "type": "Standard",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 8
+    },
+    {
+      "name": "ActorCASCPermSet",
+      "label": "ActorCASCPermSet",
+      "type": "Session",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": true,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 15
+    },
+    {
+      "name": "AncCrmIntegrationUser",
+      "label": "Agentic Near Core CRM",
+      "type": "Session",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 15
+    },
+    {
+      "name": "AncMarketingIntegrationUser",
+      "label": "Agentic Near Core Marketing",
+      "type": "Session",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 15
+    },
+    {
+      "name": "AncPersonalizationIntegrationUser",
+      "label": "Agentic Near Core Personalization",
+      "type": "Session",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 15
+    },
+    {
+      "name": "AncProvisioningIntegrationUser",
+      "label": "Agentic Near Core Provisioning",
+      "type": "Session",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 15
+    },
+    {
+      "name": "ApexGuruStandardPermSet",
+      "label": "Salesforce Apex Guru",
+      "type": "Session",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": true,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 15
+    },
+    {
+      "name": "C2CCapstonePermSet",
+      "label": "C2CCapstonePermSet",
+      "type": "Session",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": true,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 15
+    },
+    {
+      "name": "C2CE360EmailPermSet",
+      "label": "C2CE360EmailPermSet",
+      "type": "Session",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": true,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 15
+    },
+    {
+      "name": "C2CMcpServicePermSet",
+      "label": "C2CMcpServicePermSet",
+      "type": "Session",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": true,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 15
+    },
+    {
+      "name": "ConnectivityServiceCASCPermSet",
+      "label": "ConnectivityServiceCASCPermSet",
+      "type": "Session",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": true,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 15
+    },
+    {
+      "name": "D360HomeOrgPermSet",
+      "label": "Data Cloud Home Org Integration User",
+      "type": "Session",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": true,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 15
+    },
+    {
+      "name": "DeliveryEstimationServicePermSet",
+      "label": "DeliveryEstimationServicePermSet",
+      "type": "Session",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": true,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 15
+    },
+    {
+      "name": "EventMonitoringPermSet",
+      "label": "Event Monitoring User",
+      "type": "Standard",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 12
+    },
+    {
+      "name": "FieldServiceMobileStandardPermSet",
+      "label": "FieldServiceMobileStandardPermSet",
+      "type": "Standard",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 1
+    },
+    {
+      "name": "HighScaleFlowC2CPermSet",
+      "label": "C360 High Scale Flow Integration User",
+      "type": "Session",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": true,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 15
+    },
+    {
+      "name": "HyperionCASCPermSet",
+      "label": "HyperionCASCPermSet",
+      "type": "Session",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": true,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 15
+    },
+    {
+      "name": "MarketingCloudPublishingC2CPermSet",
+      "label": "MarketingCloudPublishingC2CPermSet",
+      "type": "Session",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": true,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 15
+    },
+    {
+      "name": "MarketingCloudReportingC2CPermSet",
+      "label": "Marketing Cloud Reporting C2C Perm",
+      "type": "Session",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": true,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 15
+    },
+    {
+      "name": "MuleSoftPublishInvocableActionsC2CPermSet",
+      "label": "MuleSoftPublishInvocableActionsC2CPermSet",
+      "type": "Session",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": true,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 15
+    },
+    {
+      "name": "MuleSoftSeamlessLoginC2CPermSet",
+      "label": "MuleSoftSeamlessLoginC2CPermSet",
+      "type": "Session",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": true,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 15
+    },
+    {
+      "name": "OrchestrationProcessManagerPermissionSet",
+      "label": "Orchestration Process Manager",
+      "type": "Standard",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 12
+    },
+    {
+      "name": "PartnerConnectPartnerAdminSetup",
+      "label": "Partner Connect Partner Admin Setup",
+      "type": "Standard",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 12
+    },
+    {
+      "name": "PromptTemplatePermSet",
+      "label": "PromptTemplatePermSet",
+      "type": "Session",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": true,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 15
+    },
+    {
+      "name": "RPAC2CPermSet",
+      "label": "RPAC2CPermSet",
+      "type": "Session",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": true,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 15
+    },
+    {
+      "name": "RegrelloC2CPermSet",
+      "label": "RegrelloC2CPermSet",
+      "type": "Session",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": true,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 15
+    },
+    {
+      "name": "SalesCloudMobileUser",
+      "label": "Seller-Focused Sales Mobile Experience",
+      "type": "Standard",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 12
+    },
+    {
+      "name": "SeasIndexingPermSet",
+      "label": "SeaS Indexing C2C User Perm",
+      "type": "Session",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": true,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 15
+    },
+    {
+      "name": "YukonNudgeHeadlessPublishPermSet",
+      "label": "Publish Suggested for You Nudges: Integration User",
+      "type": "Session",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": true,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 15
+    },
+    {
+      "name": "C2CDataDetectMetabolismIntegrationUser",
+      "label": "C2CDataDetectMetabolismIntegrationUser",
+      "type": "Session",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 15
+    },
+    {
+      "name": "EventBusRelayC2CPermSet",
+      "label": "EventBusRelayC2CPermSet",
+      "type": "Session",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": true,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 15
+    },
+    {
+      "name": "FweO2EngineC2CPermSet",
+      "label": "FweO2EngineC2CPermSet",
+      "type": "Session",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 15
+    },
+    {
+      "name": "PagesCreator",
+      "label": "Create and View Quick Pages (Beta)",
+      "type": "Standard",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 12
+    },
+    {
+      "name": "PagesViewer",
+      "label": "View Quick Pages (Beta)",
+      "type": "Standard",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 12
+    },
+    {
+      "name": "Scheduling_Console_User",
+      "label": "Access Scheduling Console Phased Rollout",
+      "type": "Standard",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 2
+    },
+    {
+      "name": "UseSetupWithAgentforce",
+      "label": "Use Setup with Agentforce",
+      "type": "Standard",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 12
+    },
+    {
+      "name": "",
+      "label": "",
+      "type": "Profile",
+      "namespace": null,
+      "custom": false,
+      "profile": "Minimum Access - API Only Integrations",
+      "apiOnly": true,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 42,
+      "userType": "Standard"
+    },
+    {
+      "name": "AccessMerchantPayments",
+      "label": "Access Merchant Payments",
+      "type": "Standard",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 10
+    },
+    {
+      "name": "AuthenticatedPayer",
+      "label": "Authenticated Payer",
+      "type": "Standard",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 7
+    },
+    {
+      "name": "CommandCenter",
+      "label": "Command Center",
+      "type": "Standard",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 9
+    },
+    {
+      "name": "PaymentsAdministrator",
+      "label": "Payments Administrator",
+      "type": "Standard",
+      "namespace": "force",
+      "custom": false,
+      "profile": null,
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 10
+    },
+    {
+      "name": "",
+      "label": "",
+      "type": "Profile",
+      "namespace": null,
+      "custom": true,
+      "profile": "B2B Reordering Portal Buyer Profile",
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 41,
+      "userType": "CspLitePortal"
+    },
+    {
+      "name": "sfdc_scrt2",
+      "label": "SCRT2 Integration User",
+      "type": "Session",
+      "namespace": "sfdcInternalInt",
+      "custom": true,
+      "profile": null,
+      "apiOnly": false,
+      "modifyAll": false,
+      "viewAll": false,
+      "license": 15
+    }
+  ]
+}

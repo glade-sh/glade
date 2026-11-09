@@ -37,6 +37,22 @@ type formInput struct {
 	required   bool
 	repeated   bool
 	repeatPath []string
+	// row is set for an input bound to a field of the apex:repeat variable
+	// ({!r.v}); each iteration binds its own row (rows Rep* of
+	// testdata/vf_render_markup/postback.tsv).
+	row *formRowTarget
+}
+
+// formRowTarget is one iteration's row object and the submitted value already
+// converted while that iteration's variable was in scope.
+type formRowTarget struct {
+	receiver  vm.Value
+	field     string
+	sobject   bool
+	supplied  bool
+	raw       string
+	converted vm.Value
+	message   string
 }
 
 // Command identity distinguishes repeated instances and ordinary commands that
@@ -152,6 +168,7 @@ func prepareFormLifecycle(tree *MarkupNode, req *PageRenderRequest, machine *vm.
 	var activeForm, activeRegion, actionNode *MarkupNode
 	var activeRegionID string
 	hasPartialCommand := false
+	var rowVars []string
 	var walk func(*MarkupNode, *MarkupNode, *MarkupNode) error
 	walk = func(node, form, region *MarkupNode) error {
 		if node == nil {
@@ -189,6 +206,17 @@ func prepareFormLifecycle(tree *MarkupNode, req *PageRenderRequest, machine *vm.
 				immediate = isTruthyExpression(node.Attribute("immediate"), ctx)
 			}
 		}
+		if len(rowVars) != 0 && (req.ViewState != nil || req.FormValues != nil) {
+			input, ok, err := formRowInput(node, ctx, machine, rowVars, req.FormValues)
+			if err != nil {
+				return err
+			}
+			if ok {
+				input.form, input.region = form, region
+				inputs = append(inputs, input)
+				return nil
+			}
+		}
 		if property := formLifecycleProperty(node); property != "" {
 			typeName, writable, err := machine.InstancePropertyType(*controller, property)
 			if err != nil {
@@ -197,7 +225,7 @@ func prepareFormLifecycle(tree *MarkupNode, req *PageRenderRequest, machine *vm.
 			selection := formSelectionControl(node)
 			if writable && ((!selection && formLifecycleType(typeName)) || (selection && formSelectionType(typeName))) {
 				name := visualforceComponentClientID(node, ctx)
-				if selection {
+				if selection && !isApexStructureTag(node, "selectList") {
 					name = fieldName(node)
 				}
 				inputs = append(inputs, formInput{node: node, form: form, region: region, property: property, name: name, typeName: typeName, disabled: isTruthyExpression(node.Attribute("disabled"), ctx), required: isTruthyExpression(node.Attribute("required"), ctx), repeated: len(ctx.repeatPath) != 0, repeatPath: append([]string(nil), ctx.repeatPath...)})
@@ -207,6 +235,10 @@ func prepareFormLifecycle(tree *MarkupNode, req *PageRenderRequest, machine *vm.
 			items, err := evaluateListExpression(node.Attribute("value"), ctx)
 			if err != nil {
 				return err
+			}
+			if name := strings.TrimSpace(node.Attribute("var")); name != "" {
+				rowVars = append(rowVars, name)
+				defer func() { rowVars = rowVars[:len(rowVars)-1] }()
 			}
 			for i, item := range items {
 				ctx.repeatPath = append(ctx.repeatPath, refs.clientIDs[node]+":"+strconv.Itoa(i))
@@ -255,7 +287,9 @@ func prepareFormLifecycle(tree *MarkupNode, req *PageRenderRequest, machine *vm.
 		}
 	}
 	for _, input := range inputs {
-		state.properties[strings.ToLower(input.property)] = input.typeName
+		if input.row == nil {
+			state.properties[strings.ToLower(input.property)] = input.typeName
+		}
 	}
 	if req.ViewState == nil && req.FormValues == nil {
 		return state, nil
@@ -297,7 +331,8 @@ func prepareFormLifecycle(tree *MarkupNode, req *PageRenderRequest, machine *vm.
 	}
 	for _, input := range inputs {
 		for name := range remaining {
-			if strings.EqualFold(name, input.name) || strings.EqualFold(formFieldBindingName(name), inputFieldName(input.node)) {
+			// A row input owns only its own iteration's client ID.
+			if strings.EqualFold(name, input.name) || (input.row == nil && strings.EqualFold(formFieldBindingName(name), inputFieldName(input.node))) {
 				delete(remaining, name)
 			}
 		}
@@ -315,6 +350,9 @@ func prepareFormLifecycle(tree *MarkupNode, req *PageRenderRequest, machine *vm.
 	// validation, then invoke every submitted component's setter in tree order.
 	read := map[string]bool{}
 	for _, input := range selected {
+		if input.row != nil {
+			continue
+		}
 		key := strings.ToLower(input.property)
 		if read[key] {
 			continue
@@ -325,6 +363,12 @@ func prepareFormLifecycle(tree *MarkupNode, req *PageRenderRequest, machine *vm.
 		read[key] = true
 	}
 	for _, input := range selected {
+		if input.row != nil {
+			if err := applyFormRowInput(machine, state, input); err != nil {
+				return nil, err
+			}
+			continue
+		}
 		raw, supplied := formInputSubmittedValue(values, input)
 		selection := formSelectionControl(input.node)
 		if (!supplied && !selection) || input.disabled {
@@ -371,6 +415,141 @@ func prepareFormLifecycle(tree *MarkupNode, req *PageRenderRequest, machine *vm.
 		}
 	}
 	return state, nil
+}
+
+// formRowInput recognizes an input bound to a field of an enclosing
+// apex:repeat variable ({!r.v}, {!c.LastName}). The org posts each iteration
+// under its own client ID and binds it to that iteration's row (rows Rep* of
+// testdata/vf_render_markup/postback.tsv), for a list of an Apex class and of
+// SObjects. The value is converted now, while the iteration's scope holds
+// the row; it is assigned with the other inputs.
+func formRowInput(node *MarkupNode, ctx *RenderContext, machine *vm.VM, rowVars []string, values map[string]string) (formInput, bool, error) {
+	if node == nil || node.Namespace != "apex" {
+		return formInput{}, false, nil
+	}
+	switch node.Name {
+	case "inputtext", "inputsecret", "inputtextarea", "inputhidden", "inputcheckbox", "selectlist":
+	default:
+		return formInput{}, false, nil
+	}
+	raw := strings.TrimSpace(node.Attribute("value"))
+	if !strings.HasPrefix(raw, "{!") || !strings.HasSuffix(raw, "}") {
+		return formInput{}, false, nil
+	}
+	parts := strings.Split(strings.TrimSpace(raw[2:len(raw)-1]), ".")
+	if len(parts) != 2 || !visualforceControllerMethodName.MatchString(parts[0]) || !visualforceControllerMethodName.MatchString(parts[1]) {
+		return formInput{}, false, nil
+	}
+	bound := false
+	for _, name := range rowVars {
+		bound = bound || strings.EqualFold(name, parts[0])
+	}
+	if !bound {
+		return formInput{}, false, nil
+	}
+	item, ok := ctx.Scope.Get(parts[0])
+	if !ok || item.Kind != vm.ValueObject {
+		return formInput{}, false, nil
+	}
+	target := &formRowTarget{receiver: item, field: parts[1]}
+	typeName := ""
+	if field, resolved := formRowFieldSchema(machine, item, parts[1]); field != nil {
+		switch field.Type {
+		case storage.FieldBoolean:
+			typeName = "Boolean"
+		case storage.FieldString, storage.FieldPicklist:
+			typeName = "String"
+		default:
+			return formInput{}, false, nil
+		}
+		if field.Formula != "" || fieldIsReadonly(*field) {
+			return formInput{}, false, nil
+		}
+		target.sobject, target.field = true, resolved
+	} else {
+		name, writable, err := machine.InstancePropertyType(item, parts[1])
+		if err != nil {
+			return formInput{}, false, err
+		}
+		if !writable {
+			return formInput{}, false, nil
+		}
+		typeName = name
+	}
+	selection := formSelectionControl(node)
+	if (!selection && !formLifecycleType(typeName)) || (selection && !formSelectionType(typeName)) {
+		return formInput{}, false, nil
+	}
+	name := visualforceComponentClientID(node, ctx)
+	target.raw, target.supplied = values[name]
+	required := isTruthyExpression(node.Attribute("required"), ctx)
+	if selection {
+		var err error
+		target.converted, target.message, err = formSelectionValue(target.raw, typeName, target.supplied, node, ctx, name)
+		if err != nil {
+			return formInput{}, false, err
+		}
+	} else if target.supplied {
+		target.converted, target.message = formConvertedValue(target.raw, typeName, node.Name)
+	}
+	if target.message == "" && target.supplied && target.raw == "" && required {
+		target.message = name + ": Validation Error: Value is required."
+	}
+	return formInput{
+		node: node, property: parts[1], name: name, typeName: typeName,
+		disabled: isTruthyExpression(node.Attribute("disabled"), ctx), required: required,
+		repeated: true, repeatPath: append([]string(nil), ctx.repeatPath...), row: target,
+	}, true, nil
+}
+
+// formRowFieldSchema resolves an SObject row's field from the org's objects,
+// then from the standard object schema.
+func formRowFieldSchema(machine *vm.VM, item vm.Value, name string) (*storage.Field, string) {
+	if machine != nil && machine.Org != nil {
+		if objectName, ok := storage.ResolveObjectName(*machine.Org, item.Type); ok {
+			if resolved, ok := storage.ResolveFieldName(machine.Org.Objects[objectName].Definition, machine.Org.Namespace, name); ok {
+				field := machine.Org.Objects[objectName].Definition.Fields[resolved]
+				return &field, resolved
+			}
+		}
+	}
+	if definition, ok := storage.StandardObjectDefinition(item.Type); ok {
+		if resolved, ok := storage.ResolveFieldName(definition, "", name); ok {
+			field := definition.Fields[resolved]
+			return &field, resolved
+		}
+	}
+	return nil, ""
+}
+
+// applyFormRowInput assigns one iteration's converted value to its row.
+func applyFormRowInput(machine *vm.VM, state *formLifecycle, input formInput) error {
+	row := input.row
+	if input.disabled || (!row.supplied && !formSelectionControl(input.node)) {
+		return nil
+	}
+	if row.message != "" {
+		state.allowAction = false
+		formAddError(machine, row.message)
+		return nil
+	}
+	if row.sobject {
+		if row.receiver.Fields == nil {
+			return nil
+		}
+		row.receiver.Fields[row.field] = row.converted
+		return nil
+	}
+	if _, err := machine.AssignInstanceProperty(row.receiver, row.field, row.converted); err != nil {
+		state.allowAction = false
+		message := err.Error()
+		var runtimeErr *vm.RuntimeError
+		if errors.As(err, &runtimeErr) {
+			message = runtimeErr.Message
+		}
+		formAddError(machine, "common.apex.runtime.impl.ExecutionException: "+message)
+	}
+	return nil
 }
 
 const formComponentStatePrefix = "form-input:"
@@ -442,8 +621,13 @@ func formInputSubmittedValue(values map[string]string, input formInput) (string,
 	return formSubmittedValue(values, inputFieldName(input.node))
 }
 
+// formRenderedInputName is the name an input posts under. The org names every
+// input control by its client ID, bound or not, with or without an id attribute
+// (rows Unb* of testdata/vf_render_markup). Submitted values still bind through
+// the last segment of the name (formFieldBindingName), so a payload keyed by the
+// bare id keeps working.
 func formRenderedInputName(node *MarkupNode, ctx *RenderContext) string {
-	if ctx != nil && ctx.formLifecycle != nil && ctx.formLifecycle.properties[strings.ToLower(formInputProperty(node))] != "" {
+	if ctx != nil {
 		if name := visualforceComponentClientID(node, ctx); name != "" {
 			return name
 		}

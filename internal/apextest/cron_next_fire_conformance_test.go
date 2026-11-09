@@ -95,9 +95,10 @@ func TestCronNextFireNativeConformance(t *testing.T) {
 			}
 		}
 	}
-	// The raw read advances the clock by one unit; +1 samples the post-read
-	// clock so the first public now read lands on the captured instant.
-	clockProgram, err := vm.CompileAnonymous("Long sampleClock=System.currentTimeMillis()+1;")
+	// Back-to-back clock reads share a millisecond (system_now_back_to_back),
+	// so the sampled clock is the instant the first public now read returns;
+	// advancing by native now minus the sample lands that read on the capture.
+	clockProgram, err := vm.CompileAnonymous("Long sampleClock=System.currentTimeMillis();")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -1,0 +1,5 @@
+api	route	case	observation
+62.0	istest	actor_false	{"flowCriterion":true,"nested":false,"semijoin":1,"aggregate":4.0}
+62.0	istest	actor_true_control	{"flowCriterion":false,"nested":true,"semijoin":0,"aggregate":2.0}
+67.0	istest	actor_false	{"flowCriterion":true,"nested":false,"semijoin":1,"aggregate":4.0}
+67.0	istest	actor_true_control	{"flowCriterion":false,"nested":true,"semijoin":0,"aggregate":2.0}

@@ -1,0 +1,116 @@
+case	group	std	record	markup
+user-match	ok	-	-	{!ISPICKVAL($User.UserType, 'Standard')}
+user-nomatch	ok	-	-	{!ISPICKVAL($User.UserType, 'PowerPartner')}
+user-case-lower	ok	-	-	{!ISPICKVAL($User.UserType, 'standard')}
+user-case-upper	ok	-	-	{!ISPICKVAL($User.UserType, 'STANDARD')}
+user-empty	ok	-	-	{!ISPICKVAL($User.UserType, '')}
+user-padded	ok	-	-	{!ISPICKVAL($User.UserType, ' Standard ')}
+user-notavalue	ok	-	-	{!ISPICKVAL($User.UserType, 'NotAUserType')}
+profile-match	ok	-	-	{!ISPICKVAL($Profile.UserType, 'Standard')}
+profile-nomatch	ok	-	-	{!ISPICKVAL($Profile.UserType, 'Guest')}
+user-locale-match	ok	-	-	{!ISPICKVAL($User.LocaleSidKey, 'en_US')}
+user-locale-case	ok	-	-	{!ISPICKVAL($User.LocaleSidKey, 'EN_us')}
+user-timezone-match	ok	-	-	{!ISPICKVAL($User.TimeZoneSidKey, 'America/Los_Angeles')}
+user-timezone-raw	ok	-	-	{!$User.TimeZoneSidKey}
+user-language-match	ok	-	-	{!ISPICKVAL($User.LanguageLocaleKey, 'en_US')}
+user-encoding-match	ok	-	-	{!ISPICKVAL($User.EmailEncodingKey, 'UTF-8')}
+user-geocode-null-empty	ok	-	-	{!ISPICKVAL($User.GeocodeAccuracy, '')}
+user-geocode-null-value	ok	-	-	{!ISPICKVAL($User.GeocodeAccuracy, 'Address')}
+user-geocode-raw	ok	-	-	[{!$User.GeocodeAccuracy}]
+user-startday	ok	-	-	{!ISPICKVAL($User.StartDay, 'Monday')}
+user-startday-raw	ok	-	-	[{!$User.StartDay}]
+user-digest	ok	-	-	{!ISPICKVAL($User.DigestFrequency, 'D')}
+user-digest-raw	ok	-	-	[{!$User.DigestFrequency}]
+user-groupfreq	ok	-	-	{!ISPICKVAL($User.DefaultGroupNotificationFrequency, 'N')}
+user-dquote	ok	-	-	{!ISPICKVAL($User.UserType, "Standard")}
+lower-name	ok	-	-	{!ispickval($User.UserType, 'Standard')}
+mixed-name	ok	-	-	{!IsPickVal($User.UserType, 'Standard')}
+space-before-paren	ok	-	-	{!ISPICKVAL ($User.UserType, 'Standard')}
+second-arg-string-var	ok	-	-	{!ISPICKVAL($User.UserType, str)}
+second-arg-concat	ok	-	-	{!ISPICKVAL($User.UserType, 'Stand' & 'ard')}
+second-arg-user-text	ok	-	-	{!ISPICKVAL($User.UserType, $User.FirstName)}
+second-arg-null-string	ok	-	-	{!ISPICKVAL($User.UserType, nullStr)}
+in-if	ok	-	-	{!IF(ISPICKVAL($User.UserType, 'Standard'), 'yes', 'no')}
+in-if-false	ok	-	-	{!IF(ISPICKVAL($User.UserType, 'Guest'), 'yes', 'no')}
+in-not	ok	-	-	{!NOT(ISPICKVAL($User.UserType, 'Standard'))}
+in-and	ok	-	-	{!AND(ISPICKVAL($User.UserType, 'Standard'), ISPICKVAL($Profile.UserType, 'Standard'))}
+in-or	ok	-	-	{!OR(ISPICKVAL($User.UserType, 'Guest'), ISPICKVAL($User.UserType, 'Standard'))}
+in-and-op	ok	-	-	{!ISPICKVAL($User.UserType, 'Standard') && ISPICKVAL($Profile.UserType, 'Standard')}
+in-or-op	ok	-	-	{!ISPICKVAL($User.UserType, 'Guest') || ISPICKVAL($User.UserType, 'Standard')}
+in-bang	ok	-	-	{!!ISPICKVAL($User.UserType, 'Standard')}
+in-case	ok	-	-	{!CASE(ISPICKVAL($User.UserType, 'Standard'), true, 'T', false, 'F', 'other')}
+in-equals	ok	-	-	{!ISPICKVAL($User.UserType, 'Standard') = true}
+in-concat	ok	-	-	x{!ISPICKVAL($User.UserType, 'Standard')}y
+in-nested-if	ok	-	-	{!IF(ISPICKVAL($User.UserType, 'Guest'), 'g', IF(ISPICKVAL($User.UserType, 'Standard'), 's', 'o'))}
+text-contrast	ok	-	-	{!TEXT($User.UserType)}
+text-contrast-null	ok	-	-	[{!TEXT($User.GeocodeAccuracy)}]
+text-eq	ok	-	-	{!TEXT($User.UserType) = 'Standard'}
+raw-eq	ok	-	-	{!$User.UserType = 'Standard'}
+raw-print	ok	-	-	{!$User.UserType}
+rendered-true	ok	-	-	<apex:outputText rendered="{!ISPICKVAL($User.UserType, 'Standard')}" value="shown"/>
+rendered-false	ok	-	-	<apex:outputText rendered="{!ISPICKVAL($User.UserType, 'Guest')}" value="shown"/>|after
+rendered-null	ok	-	-	<apex:outputText rendered="{!ISPICKVAL($User.GeocodeAccuracy, 'Address')}" value="shown"/>|after
+rendered-not	ok	-	-	<apex:outputText rendered="{!NOT(ISPICKVAL($User.UserType, 'Guest'))}" value="shown"/>
+outputtext-value	ok	-	-	<apex:outputText value="{!IF(ISPICKVAL($User.UserType, 'Standard'), 'is-standard', 'not-standard')}"/>
+msg-channel-valid	ok	-	-	{!$MessageChannel.ProbeChannel__c}
+msg-channel-script	ok	-	-	<script>var ch = "{!$MessageChannel.ProbeChannel__c}";</script>
+msg-channel-lower	ok	-	-	{!$messagechannel.ProbeChannel__c}
+msg-channel-in-if	ok	-	-	{!IF(true, $MessageChannel.ProbeChannel__c, 'n')}
+msg-channel-unknown	ok	-	-	{!$MessageChannel.NoSuchChannel__c}
+msg-channel-bare	ok	-	-	{!$MessageChannel}
+msg-channel-nonsuffix	ok	-	-	{!$MessageChannel.ProbeChannel}
+master-bare	ok	-	-	{!$MASTER}
+master-member	ok	-	-	{!$MASTER.Name}
+master-lower	ok	-	-	{!$master}
+err-ctl-prop-picklist	err	-	-	{!ISPICKVAL(acct.Industry, 'Banking')}
+err-ctl-prop-custom	err	-	-	{!ISPICKVAL(rec.Stage__c, 'Open')}
+err-std-picklist	err	Account	-	{!ISPICKVAL(Account.Industry, 'Banking')}
+err-std-custom-picklist	err	PickProbe__c	-	{!ISPICKVAL(PickProbe__c.Stage__c, 'Open')}
+err-std-parent-picklist	err	PickProbe__c	-	{!ISPICKVAL(PickProbe__c.Acct__r.Industry, 'Banking')}
+err-std-owner-usertype	err	Account	-	{!ISPICKVAL(Account.Owner.UserType, 'Standard')}
+err-std-text	err	Account	-	{!ISPICKVAL(Account.Name, 'Acme')}
+err-cust-text	err	PickProbe__c	-	{!ISPICKVAL(PickProbe__c.Note__c, 'Open')}
+err-string-prop	err	-	-	{!ISPICKVAL(str, 'Open')}
+err-number	err	PickProbe__c	-	{!ISPICKVAL(PickProbe__c.Count__c, 'x')}
+err-checkbox	err	PickProbe__c	-	{!ISPICKVAL(PickProbe__c.Flag__c, 'x')}
+err-multiselect	err	PickProbe__c	-	{!ISPICKVAL(PickProbe__c.Multi__c, 'A')}
+err-literal-first	err	-	-	{!ISPICKVAL('Standard', 'Standard')}
+err-user-id	err	-	-	{!ISPICKVAL($User.Id, 'x')}
+err-user-name	err	-	-	{!ISPICKVAL($User.LastName, 'x')}
+err-user-boolean	err	-	-	{!ISPICKVAL($User.IsActive, 'x')}
+err-org-name	err	-	-	{!ISPICKVAL($Organization.Name, 'x')}
+err-one-arg	err	-	-	{!ISPICKVAL($User.UserType)}
+err-three-args	err	-	-	{!ISPICKVAL($User.UserType, 'a', 'b')}
+err-no-args	err	-	-	{!ISPICKVAL()}
+err-number-second	err	-	-	{!ISPICKVAL($User.UserType, 5)}
+err-bool-second	err	-	-	{!ISPICKVAL($User.UserType, true)}
+err-null-second	err	-	-	{!ISPICKVAL($User.UserType, null)}
+err-picklist-second	err	-	-	{!ISPICKVAL($User.UserType, $Profile.UserType)}
+err-text-fn-first	err	-	-	{!ISPICKVAL(TEXT($User.UserType), 'Standard')}
+err-text-fn-second	err	-	-	{!ISPICKVAL($User.UserType, TEXT($Profile.UserType))}
+err-unknown-field	err	-	-	{!ISPICKVAL($User.NoSuchField, 'x')}
+err-unclosed	err	-	-	{!ISPICKVAL($User.UserType, 'Standard'}
+err-bad-global	err	-	-	{!ISPICKVAL($Nope.UserType, 'x')}
+msg-channel-twice	ok	-	-	{!$MessageChannel.ProbeChannel__c}|{!$MessageChannel.ProbeChannel__c}
+user-endday	ok	-	-	{!ISPICKVAL($User.EndDay, 'Friday')}
+user-usertype-lang-case	ok	-	-	{!ISPICKVAL($User.LanguageLocaleKey, 'EN_US')}
+profile-raw-print	err	-	-	{!$Profile.UserType}
+user-lookup-chain	ok	-	-	{!ISPICKVAL($User.Manager.UserType, 'Standard')}
+err-user-currency	err	-	-	{!ISPICKVAL($User.DefaultCurrencyIsoCode, 'USD')}
+err-profile-name	err	-	-	{!ISPICKVAL($Profile.Name, 'x')}
+err-component	err	-	-	{!ISPICKVAL($Label.Nope, 'x')}
+organization-raw	ok	-	-	{!$Organization.OrganizationType}
+organization-eq	ok	-	-	{!$Organization.OrganizationType = 'Developer Edition'}
+organization-ispickval	ok	-	-	{!ISPICKVAL($Organization.OrganizationType, 'Developer Edition')}
+portalrole-raw	ok	-	-	{!$User.PortalRole}
+portalrole-eq	ok	-	-	{!$User.PortalRole = 'Executive'}
+portalrole-ispickval	ok	-	-	{!ISPICKVAL($User.PortalRole, 'Executive')}
+user-neq	ok	-	-	{!$User.UserType != 'Standard'}
+user-plus	ok	-	-	{!$User.UserType + 'x'}
+user-concat	ok	-	-	{!$User.UserType & 'x'}
+user-less	ok	-	-	{!$User.UserType < 'x'}
+case-true	ok	-	-	{!CASE(true, true, 'T', 'F')}
+case-comparison	ok	-	-	{!CASE(1 = 1, true, 'T', 'F')}
+case-checkbox	ok	-	-	{!CASE(rec.Flag__c, true, 'T', 'F')}
+msg-channel-name-case	ok	-	-	{!$MessageChannel.pRoBeChAnNeL__c}
+msg-channel-suffix-case	ok	-	-	{!$MessageChannel.ProbeChannel__C}

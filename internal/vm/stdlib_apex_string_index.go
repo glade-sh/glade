@@ -2,11 +2,17 @@ package vm
 
 import (
 	"fmt"
-	"strings"
 	"unicode/utf16"
+	"unicode/utf8"
 )
 
+// apexStringLength is the UTF-16 length. Text without an ED lead byte (so
+// without an encoded lone surrogate) keeps the plain range loop; the rest takes
+// the exact loop, which decodes lone surrogates as one unit.
 func apexStringLength(text string) int {
+	if mayHoldLoneSurrogate(text) {
+		return apexStringLengthExact(text)
+	}
 	count := 0
 	for _, r := range text {
 		if r <= 0xffff {
@@ -18,9 +24,46 @@ func apexStringLength(text string) int {
 	return count
 }
 
+func apexStringLengthExact(text string) int {
+	count := 0
+	for i := 0; i < len(text); {
+		if text[i] < utf8.RuneSelf {
+			count++
+			i++
+			continue
+		}
+		r, size := decodeApexRune(text[i:])
+		count += apexRuneWidth(r)
+		i += size
+	}
+	return count
+}
+
 func apexStringUTF16Units(text string) []uint16 {
 	units := make([]uint16, 0, apexStringLength(text))
+	if mayHoldLoneSurrogate(text) {
+		return apexStringUTF16UnitsExact(text, units)
+	}
 	for _, r := range text {
+		if r <= 0xffff {
+			units = append(units, uint16(r))
+			continue
+		}
+		hi, lo := utf16.EncodeRune(r)
+		units = append(units, uint16(hi), uint16(lo))
+	}
+	return units
+}
+
+func apexStringUTF16UnitsExact(text string, units []uint16) []uint16 {
+	for i := 0; i < len(text); {
+		if text[i] < utf8.RuneSelf {
+			units = append(units, uint16(text[i]))
+			i++
+			continue
+		}
+		r, size := decodeApexRune(text[i:])
+		i += size
 		if r <= 0xffff {
 			units = append(units, uint16(r))
 			continue
@@ -36,18 +79,17 @@ func byteIndexForApexStringIndex(input string, unitIndex int) (int, error) {
 		return 0, fmt.Errorf("string index must be non-negative")
 	}
 	units := 0
-	for byteIndex, r := range input {
+	for byteIndex := 0; byteIndex < len(input); {
 		if units == unitIndex {
 			return byteIndex, nil
 		}
-		width := 1
-		if r > 0xffff {
-			width = 2
-		}
+		r, size := decodeApexRune(input[byteIndex:])
+		width := apexRuneWidth(r)
 		if unitIndex > units && unitIndex < units+width {
 			return 0, fmt.Errorf("string index splits a surrogate pair")
 		}
 		units += width
+		byteIndex += size
 	}
 	if units == unitIndex {
 		return len(input), nil
@@ -139,18 +181,16 @@ func apexStringIndexForByteIndex(input string, targetByte int) (int, error) {
 		return 0, fmt.Errorf("byte index out of range")
 	}
 	units := 0
-	for byteIndex, r := range input {
+	for byteIndex := 0; byteIndex < len(input); {
 		if byteIndex == targetByte {
 			return units, nil
 		}
 		if byteIndex > targetByte {
 			return 0, fmt.Errorf("byte index is not a rune boundary")
 		}
-		if r <= 0xffff {
-			units++
-			continue
-		}
-		units += 2
+		r, size := decodeApexRune(input[byteIndex:])
+		units += apexRuneWidth(r)
+		byteIndex += size
 	}
 	if targetByte == len(input) {
 		return units, nil
@@ -167,9 +207,5 @@ func apexStringFromCharArray(values []Value) (string, error) {
 		// Salesforce truncates each Integer to its low UTF-16 code unit.
 		units = append(units, uint16(item.Int&0xffff))
 	}
-	var b strings.Builder
-	for _, r := range utf16.Decode(units) {
-		b.WriteRune(r)
-	}
-	return b.String(), nil
+	return apexStringFromUTF16Units(units), nil
 }

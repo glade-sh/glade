@@ -1,0 +1,29 @@
+api	route	case	result
+62.0	anonymous	site.local	isnull=true valueOf=null pick=PageReference inst=false
+62.0	anonymous	site.direct	isnull=true valueOf=null pick=PageReference
+62.0	anonymous	site.two	isnull=true valueOf=null pick=Object inst=false
+62.0	anonymous	session.local	isnull=true valueOf=null pick=SessionLevel inst=false
+62.0	anonymous	session.direct	isnull=true valueOf=null pick=SessionLevel
+62.0	anonymous	session.profile	isnull=true valueOf=null pick=SessionLevel
+62.0	anonymous	async.outside	EXC System.AsyncException: getMinimumQueueableDelayInMinutes is not allowed outside a Queueable of Finalizer execution
+62.0	istest	asyncDelay	async.delay1 isnull=false valueOf=1 pick=Integer direct=Integer
+62.0	istest	asyncNoDelay	async.nodelay isnull=true valueOf=null pick=Integer direct=Integer
+62.0	istest	asyncOptions	async.options2 isnull=false valueOf=2 pick=Integer direct=Integer
+62.0	istest	asyncOutside	async.outside EXC System.AsyncException: getMinimumQueueableDelayInMinutes is not allowed outside a Queueable of Finalizer execution
+62.0	istest	site	site.local isnull=true valueOf=null pick=PageReference inst=false | site.direct isnull=true valueOf=null pick=PageReference | site.two isnull=true valueOf=null pick=Object inst=false
+62.0	istest	sessionProfile	System.UnexpectedException: Salesforce System Error (uncatchable)
+62.0	istest	sessionNull	System.UnexpectedException: Salesforce System Error (uncatchable)
+67.0	anonymous	site.local	isnull=true valueOf=null pick=PageReference inst=false
+67.0	anonymous	site.direct	isnull=true valueOf=null pick=PageReference
+67.0	anonymous	site.two	isnull=true valueOf=null pick=Object inst=false
+67.0	anonymous	session.local	isnull=true valueOf=null pick=SessionLevel inst=false
+67.0	anonymous	session.direct	isnull=true valueOf=null pick=SessionLevel
+67.0	anonymous	session.profile	isnull=true valueOf=null pick=SessionLevel
+67.0	anonymous	async.outside	EXC System.AsyncException: getMinimumQueueableDelayInMinutes is not allowed outside a Queueable of Finalizer execution
+67.0	istest	asyncDelay	async.delay1 isnull=false valueOf=1 pick=Integer direct=Integer
+67.0	istest	asyncNoDelay	async.nodelay isnull=true valueOf=null pick=Integer direct=Integer
+67.0	istest	asyncOptions	async.options2 isnull=false valueOf=2 pick=Integer direct=Integer
+67.0	istest	asyncOutside	async.outside EXC System.AsyncException: getMinimumQueueableDelayInMinutes is not allowed outside a Queueable of Finalizer execution
+67.0	istest	site	site.local isnull=true valueOf=null pick=PageReference inst=false | site.direct isnull=true valueOf=null pick=PageReference | site.two isnull=true valueOf=null pick=Object inst=false
+67.0	istest	sessionProfile	System.UnexpectedException: Salesforce System Error (uncatchable)
+67.0	istest	sessionNull	System.UnexpectedException: Salesforce System Error (uncatchable)

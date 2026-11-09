@@ -1,0 +1,13 @@
+api=62.0
+context=istest
+principal=standard
+rows=5
+native_complete=true
+deployment_success=true
+transport=debug-or-terminal
+captured_utc=2026-11-03T17:54:58.663900+00:00
+source_sha256:sfdx-project.json=b063f59b61a4d3b3f9881fddbd2b6c5a9fef3c1658f243c0d9854b114b24c837
+source_sha256:anonymous.apex=9f784022aa8fdfc5a46d2fda76e265d3096805a8d051d565c83a85e89bead3ab
+source_sha256:force-app/main/default/classes/ApprovalGrantCaptureTest.cls=7e99f625fba644011adbd96b4dc5789d4370a7d3981ef9eae00e440eb5d419be
+source_sha256:force-app/main/default/classes/ApprovalGrantCaptureTest.cls-meta.xml=f9ddfae4e2884110898df0560e759150baca0624d21ac7c95c0f6f445815db83
+source_sha256:bootstrap.apex=dd789a9fb688d66e8dcc32e4e4ce92c2919c3b9e352ec443ae81cb2cb73904af

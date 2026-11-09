@@ -1,0 +1,9 @@
+case	result
+Lead_default	true,true,false
+Lead_active	true,true,false
+Lead_inactive	true,true,false
+Lead_false	true,false,true
+Case_default	true,true,false
+Case_active	true,true,false
+Case_inactive	true,true,false
+Case_false	true,false,true

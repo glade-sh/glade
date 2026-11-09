@@ -1,0 +1,35 @@
+api	variant	case	observation
+62.0	setting-only	dml:ordered_date_insert_select	2023-01-01 00:00:00
+62.0	setting-only	dml:ordered_datetime_insert_select	2023-01-01 13:06:07
+62.0	setting-only	dml:ordered_default_select	null
+62.0	setting-only	dml:tla_insert_select	20.00|total=20.00
+62.0	setting-only	dml:tla_default_select	null
+62.0	setting-only	members:has_OrderedDate	true
+62.0	setting-only	members:has_TotalLineAmount	true
+62.0	setting-only	members:ordereddate_desc	OrderedDate|DATETIME|cfalse|ufalse|ntrue|calcfalse|len0|p0|s0|label Ordered Date
+62.0	setting-only	members:totallineamount_desc	TotalLineAmount|CURRENCY|ctrue|utrue|ntrue|calcfalse|len0|p18|s2|label Product Subtotal
+62.0	feature-and-setting	dml:ordered_date_insert_select	2023-01-01 00:00:00
+62.0	feature-and-setting	dml:ordered_datetime_insert_select	2023-01-01 13:06:07
+62.0	feature-and-setting	dml:ordered_default_select	null
+62.0	feature-and-setting	dml:tla_insert_select	20.00|total=20.00
+62.0	feature-and-setting	dml:tla_default_select	null
+62.0	feature-and-setting	members:has_OrderedDate	true
+62.0	feature-and-setting	members:has_TotalLineAmount	true
+62.0	feature-and-setting	members:ordereddate_desc	OrderedDate|DATETIME|cfalse|ufalse|ntrue|calcfalse|len0|p0|s0|label Ordered Date
+62.0	feature-and-setting	members:totallineamount_desc	TotalLineAmount|CURRENCY|ctrue|utrue|ntrue|calcfalse|len0|p18|s2|label Product Subtotal
+67.0	setting-only	dml:ordered_date_insert	EXC System.DmlException: Operation failed due to fields being inaccessible on Sobject Order, check errors on Exception or Result!
+67.0	setting-only	dml:ordered_datetime_insert	EXC System.DmlException: Operation failed due to fields being inaccessible on Sobject Order, check errors on Exception or Result!
+67.0	setting-only	dml:tla_insert	EXC System.QueryException: No such column 'OrderedDate' on entity 'Order'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+67.0	setting-only	dml:tla_default_select	null
+67.0	setting-only	members:has_OrderedDate	true
+67.0	setting-only	members:has_TotalLineAmount	true
+67.0	setting-only	members:ordereddate_desc	OrderedDate|DATETIME|cfalse|ufalse|ntrue|calcfalse|len0|p0|s0|label Ordered Date
+67.0	setting-only	members:totallineamount_desc	TotalLineAmount|CURRENCY|ctrue|utrue|ntrue|calcfalse|len0|p18|s2|label Product Subtotal
+67.0	feature-and-setting	dml:ordered_date_insert	EXC System.DmlException: Operation failed due to fields being inaccessible on Sobject Order, check errors on Exception or Result!
+67.0	feature-and-setting	dml:ordered_datetime_insert	EXC System.DmlException: Operation failed due to fields being inaccessible on Sobject Order, check errors on Exception or Result!
+67.0	feature-and-setting	dml:tla_insert	EXC System.QueryException: No such column 'OrderedDate' on entity 'Order'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+67.0	feature-and-setting	dml:tla_default_select	null
+67.0	feature-and-setting	members:has_OrderedDate	true
+67.0	feature-and-setting	members:has_TotalLineAmount	true
+67.0	feature-and-setting	members:ordereddate_desc	OrderedDate|DATETIME|cfalse|ufalse|ntrue|calcfalse|len0|p0|s0|label Ordered Date
+67.0	feature-and-setting	members:totallineamount_desc	TotalLineAmount|CURRENCY|ctrue|utrue|ntrue|calcfalse|len0|p18|s2|label Product Subtotal

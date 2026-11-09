@@ -75,7 +75,7 @@ func TestProjectGroupSourceHydration(t *testing.T) {
 			if org.Objects["Shield__c"].Definition.SharingModel != "Private" {
 				t.Fatal("group metadata changed private sharing")
 			}
-			if org.Objects["User"].Records[storage.DefaultUserID].Fields["UserRoleId"].ID != "00E000000000001" {
+			if org.Objects["User"].Records[storage.DefaultUserID].Fields["UserRoleId"].Kind != storage.ValueNull {
 				t.Fatal("group metadata changed default user's role")
 			}
 			second := orgFromIndex(index)

@@ -1,0 +1,27 @@
+[
+ {
+  "id": "webstore_options_ctor",
+  "source": "public class WsProbe000 { public static WebStore m() { return new WebStore(Name = 'x', OptionsAutoFacetingEnabled = true, OptionsCartAsyncProcessingEnabled = true, OptionsCartCalculateEnabled = true, OptionsCartToOrderAutoCustomFieldMapping = true, OptionsCommerceEinsteinActivitiesTracked = true, OptionsCommerceEinsteinDeployed = true, OptionsDuplicateCartItemsEnabled = true, OptionsGuestBrowsingEnabled = true, OptionsGuestCartEnabled = true, OptionsGuestCheckoutEnabled = true, OptionsPreserveGuestCartEnabled = true, OptionsSkipAdditionalEntitlementCheckForSearch = true, OptionsSkuDetectionEnabled = true, OptionsSplitShipmentEnabled = true); } }",
+  "name": "WsProbe000"
+ },
+ {
+  "id": "webstore_options_read",
+  "source": "public class WsProbe001 { public static void m(WebStore s) { Boolean b0 = s.OptionsAutoFacetingEnabled; Boolean b1 = s.OptionsCartAsyncProcessingEnabled; Boolean b2 = s.OptionsCartCalculateEnabled; Boolean b3 = s.OptionsCartToOrderAutoCustomFieldMapping; Boolean b4 = s.OptionsCommerceEinsteinActivitiesTracked; Boolean b5 = s.OptionsCommerceEinsteinDeployed; Boolean b6 = s.OptionsDuplicateCartItemsEnabled; Boolean b7 = s.OptionsGuestBrowsingEnabled; Boolean b8 = s.OptionsGuestCartEnabled; Boolean b9 = s.OptionsGuestCheckoutEnabled; Boolean b10 = s.OptionsPreserveGuestCartEnabled; Boolean b11 = s.OptionsSkipAdditionalEntitlementCheckForSearch; Boolean b12 = s.OptionsSkuDetectionEnabled; Boolean b13 = s.OptionsSplitShipmentEnabled; } }",
+  "name": "WsProbe001"
+ },
+ {
+  "id": "webstore_options_assign",
+  "source": "public class WsProbe002 { public static WebStore m() { WebStore s = new WebStore(Name = 'x'); s.OptionsAutoFacetingEnabled = false; s.OptionsCartAsyncProcessingEnabled = false; s.OptionsCartCalculateEnabled = false; s.OptionsCartToOrderAutoCustomFieldMapping = false; s.OptionsCommerceEinsteinActivitiesTracked = false; s.OptionsCommerceEinsteinDeployed = false; s.OptionsDuplicateCartItemsEnabled = false; s.OptionsGuestBrowsingEnabled = false; s.OptionsGuestCartEnabled = false; s.OptionsGuestCheckoutEnabled = false; s.OptionsPreserveGuestCartEnabled = false; s.OptionsSkipAdditionalEntitlementCheckForSearch = false; s.OptionsSkuDetectionEnabled = false; s.OptionsSplitShipmentEnabled = false; return s; } }",
+  "name": "WsProbe002"
+ },
+ {
+  "id": "webstore_unknown_ctor_control",
+  "source": "public class WsProbe003 { public static WebStore m() { return new WebStore(Name = 'x', OptionsNoSuchField = true); } }",
+  "name": "WsProbe003"
+ },
+ {
+  "id": "webstore_soql_options",
+  "source": "public class WsProbe004 { public static List<WebStore> m() { return [SELECT Id, OptionsAutoFacetingEnabled, OptionsCartAsyncProcessingEnabled, OptionsCartCalculateEnabled, OptionsCartToOrderAutoCustomFieldMapping, OptionsCommerceEinsteinActivitiesTracked, OptionsCommerceEinsteinDeployed, OptionsDuplicateCartItemsEnabled, OptionsGuestBrowsingEnabled, OptionsGuestCartEnabled, OptionsGuestCheckoutEnabled, OptionsPreserveGuestCartEnabled, OptionsSkipAdditionalEntitlementCheckForSearch, OptionsSkuDetectionEnabled, OptionsSplitShipmentEnabled FROM WebStore LIMIT 1]; } }",
+  "name": "WsProbe004"
+ }
+]

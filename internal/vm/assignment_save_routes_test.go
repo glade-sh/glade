@@ -83,6 +83,16 @@ func testAssignmentSaveVMAPIRoutes(t *testing.T, fixture string, routes ...strin
 				}
 				id := cells[0]
 				t.Run(api+"/"+route+"/"+id, func(t *testing.T) {
+					t.Parallel()
+					var err error
+					compile := func(body string) ir.Program {
+						t.Helper()
+						program, err := CompileAnonymousWithOptions(body, CompileOptions{APIVersion: api})
+						if err != nil {
+							t.Fatal(err)
+						}
+						return program
+					}
 					org := storage.NewOrgState()
 					org.APIVersion = api
 					storage.EnsureDeterministicPlatformData(&org)

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+<fieldPermissions><editable>true</editable><field>C11Rec__c.Kind__c</field><readable>true</readable></fieldPermissions>
+<fieldPermissions><editable>true</editable><field>C11Def__c.Flag__c</field><readable>true</readable></fieldPermissions>
+<fieldPermissions><editable>true</editable><field>C11Def__c.Txt__c</field><readable>true</readable></fieldPermissions>
+<fieldPermissions><editable>true</editable><field>C11Def__c.Num__c</field><readable>true</readable></fieldPermissions>
+<hasActivationRequired>false</hasActivationRequired>
+<label>C11 Access</label>
+<objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>true</modifyAllRecords><object>C11Rec__c</object><viewAllRecords>true</viewAllRecords></objectPermissions>
+<objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>true</modifyAllRecords><object>C11Def__c</object><viewAllRecords>true</viewAllRecords></objectPermissions>
+</PermissionSet>

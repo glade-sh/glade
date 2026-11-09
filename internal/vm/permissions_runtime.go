@@ -5,7 +5,10 @@ import (
 	"maps"
 	"sort"
 	"strings"
+	"time"
 
+	"github.com/glade-sh/glade/internal/apexversion"
+	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/storage"
 )
 
@@ -31,56 +34,73 @@ func userHasPermission(user Value, permission string) bool {
 	}
 	return false
 }
-func (vm *VM) currentUserHasPermission(permission string) bool {
+func (vm *VM) currentUserPermissionFields() map[string]storage.Value {
 	user := vm.executionUser
 	if vm.testContext != nil && vm.testContext.CurrentUser.Kind != "" {
 		user = vm.testContext.CurrentUser
 	}
-	if userHasPermission(user, permission) {
-		return true
-	}
-	for _, permissionSetID := range vm.assignedPermissionSetIDs(stringField(user, "Id")) {
-		if vm.permissionSetHasPermission(permissionSetID, permission) {
-			return true
+	var fields map[string]storage.Value
+	for _, field := range []string{"Permissions", "PermissionSets"} {
+		if _, value, ok := objectFieldValue(user, field); ok {
+			converted, ok := permissionFixtureStorageValue(value)
+			if !ok {
+				continue
+			}
+			if fields == nil {
+				fields = make(map[string]storage.Value, 2)
+			}
+			fields[field] = converted
 		}
 	}
-	return false
+	return fields
 }
-func (vm *VM) permissionSetHasPermission(permissionSetID, permission string) bool {
-	if vm == nil || vm.Org == nil || strings.TrimSpace(permissionSetID) == "" {
-		return false
-	}
-	state, ok := vm.Org.Objects["PermissionSet"]
-	if !ok {
-		return false
-	}
-	record, ok := state.Records[storage.ID(permissionSetID)]
-	if !ok {
-		return false
-	}
-	for _, field := range []string{"Permissions", "PermissionSets", "CustomPermissions"} {
-		value, ok := record.GetField(field)
-		if !ok {
-			continue
-		}
-		if storagePermissionValueMatches(value, permission) {
-			return true
-		}
-	}
-	return vm.permissionSetGrantsCustomPermission(permissionSetID, permission)
-}
-func storagePermissionValueMatches(value storage.Value, permission string) bool {
-	if value.Kind == storage.ValueString && strings.EqualFold(strings.TrimSpace(value.String), strings.TrimSpace(permission)) {
-		return true
-	}
-	if value.Kind == storage.ValueList {
+
+// Convert supported fixture values independently so an unrelated list member
+// cannot hide another grant. Matching remains in the shared storage lookup.
+func permissionFixtureStorageValue(value Value) (storage.Value, bool) {
+	if value.Kind == ValueList {
+		items := make([]storage.Value, 0, len(value.List))
 		for _, item := range value.List {
-			if storagePermissionValueMatches(item, permission) {
-				return true
+			if converted, ok := permissionFixtureStorageValue(item); ok {
+				items = append(items, converted)
 			}
 		}
+		return storage.ListValue(items...), true
 	}
-	return false
+	converted, err := storageValueFromVM(value)
+	return converted, err == nil && converted.Kind == storage.ValueString
+}
+func (vm *VM) formulaEvaluationOptions() dml.FormulaEvaluationOptions {
+	return dml.FormulaEvaluationOptions{UserID: storage.ID(vm.currentUserID()), PermissionUserFields: vm.currentUserPermissionFields()}
+}
+
+// sObjectFormulaEvaluationOptions reads a formula on a record; a Trigger.new or
+// Trigger.old record selects the trigger read surface (blank_text_formula).
+func (vm *VM) sObjectFormulaEvaluationOptions(receiver Value) dml.FormulaEvaluationOptions {
+	options := vm.formulaEvaluationOptions()
+	options.TriggerRecord = isTriggerSObject(receiver)
+	return options
+}
+func (vm *VM) currentUserHasDirectPermission(permission string) bool {
+	user := vm.executionUser
+	if vm.testContext != nil && vm.testContext.CurrentUser.Kind != "" {
+		user = vm.testContext.CurrentUser
+	}
+	return userHasPermission(user, permission)
+}
+
+// currentUserHasPermission shares the formula lookup (permission set groups
+// and SetupEntityAccess, q1formula). As assignedPermissionSetIDsFiltered does,
+// a direct assignment captured as revoked, expired or inactive grants nothing
+// (r6flow_expiry); group and uncaptured states keep the existing lookup.
+func (vm *VM) currentUserHasPermission(permission string) bool {
+	return storage.CustomPermissionGrantedWhere(vm.Org, storage.ID(vm.currentUserID()), vm.currentUserPermissionFields(), permission, func(assignment storage.Record) bool {
+		if group, ok := assignment.GetField("PermissionSetGroupId"); ok && storageValueIDText(group) != "" {
+			return true
+		}
+		active, known := dml.PermissionAssignmentState(assignment, func() time.Time { return vm.fakeNow })
+		return !known || active
+	})
 }
 func (vm *VM) currentUserObjectPermission(objectName, method string) bool {
 	if method != "isQueryable" && method != "isSearchable" && vm.isNamedApexReferenceDescribe(objectName) {
@@ -91,7 +111,8 @@ func (vm *VM) currentUserObjectPermission(objectName, method string) bool {
 	if method == "isCreateable" || method == "isUpdateable" || method == "isDeletable" {
 		// These objects have no Apex object write access, including
 		// for administrators. Profile privileges cannot enable this surface.
-		if strings.EqualFold(objectName, "Organization") || strings.EqualFold(objectName, "Profile") || strings.EqualFold(objectName, "RecordType") || strings.EqualFold(objectName, "ApexLog") {
+		if strings.EqualFold(objectName, "Organization") || strings.EqualFold(objectName, "Profile") || strings.EqualFold(objectName, "RecordType") || strings.EqualFold(objectName, "ApexLog") ||
+			strings.EqualFold(objectName, "ApexClass") || strings.EqualFold(objectName, "ApexTrigger") || strings.EqualFold(objectName, "UserLicense") {
 			return false
 		}
 	}
@@ -105,6 +126,11 @@ func (vm *VM) currentUserObjectPermission(objectName, method string) bool {
 			}
 		}
 		return true
+	}
+	if (method == "isQueryable" || method == "isCreateable" || method == "isUpdateable" || method == "isDeletable") && isChangeEventObjectName(objectName) {
+		// A change event is neither queryable nor writable
+		// (global_describe_changeevent_keys).
+		return false
 	}
 	if method == "isQueryable" {
 		return true
@@ -125,19 +151,21 @@ func (vm *VM) currentUserObjectPermission(objectName, method string) bool {
 	if method == "isAccessible" && vm.apexMetadataObjectReadable(objectName) {
 		return true
 	}
-	for _, permissionSetID := range vm.assignedPermissionSetIDs(stringField(user, "Id")) {
-		if storage.IDsEqual(storage.ID(permissionSetID), storage.ID(profilePermissionSetID)) {
+	for _, source := range vm.assignedPermissionSources(stringField(user, "Id"), false) {
+		if storage.IDsEqual(storage.ID(source.ID), storage.ID(profilePermissionSetID)) {
 			continue
 		}
-		if allowed, ok := vm.explicitObjectPermission(permissionSetID, objectName, method); ok && allowed {
+		if vm.sourceObjectPermission(source, objectName, method) {
 			return true
 		}
 	}
-	if allowed, ok := vm.explicitObjectPermission(profilePermissionSetID, objectName, method); ok {
-		return allowed
+	ownedAllowed, ownedKnown := vm.explicitObjectPermission(profilePermissionSetID, objectName, method)
+	profileAllowed, profileKnown := vm.explicitObjectPermission(profileID, objectName, method)
+	if ownedKnown && (method != "isAccessible" || !strings.EqualFold(objectName, "Account")) {
+		return ownedAllowed
 	}
-	if allowed, ok := vm.explicitObjectPermission(profileID, objectName, method); ok {
-		return allowed
+	if ownedKnown || profileKnown {
+		return ownedAllowed || profileAllowed
 	}
 	if vm.profileHasCapturedAccountLicenseRestriction(profileID, objectName) {
 		return false
@@ -151,11 +179,51 @@ func (vm *VM) currentUserObjectPermission(objectName, method string) bool {
 	if method == "isAccessible" && vm.configuredUserDirectoryReadable(objectName, profileID) {
 		return true
 	}
+	// The captured standard profile inventory at API 62 and 67 grants Account
+	// read exactly when its profile-owned set has a read row. Assigned and
+	// profile grants have already been checked above. The same capture lists
+	// every Account and Contact object permission row of every standard profile
+	// (profile_object_permissions), so a standard profile without a row has no
+	// access of any kind to either object (no_account_read_profile_user, API
+	// 62.0 and 67.0).
+	accountRead := method == "isAccessible" && strings.EqualFold(objectName, "Account")
+	capturedStandardObject := (strings.EqualFold(objectName, "Account") || strings.EqualFold(objectName, "Contact")) &&
+		(method == "isAccessible" || method == "isCreateable" || method == "isUpdateable" || method == "isDeletable")
+	if accountRead || capturedStandardObject {
+		owner, ok := vm.findOrgRecord("PermissionSet", storage.ID(profilePermissionSetID))
+		custom, hasCustom := owner.GetField("IsCustom")
+		standardOwner := ok && hasCustom && custom.Kind == storage.ValueBoolean && !custom.Boolean &&
+			storageStringValueEquals(owner.Fields["Type"], "Profile")
+		// A deployed custom profile on the full Salesforce license that lists no
+		// Account or Contact row has none either
+		// (custom_profile_unlisted_object_access; the Salesforce Platform license
+		// carries default Account and Contact rows instead).
+		fullLicenseOwner := ok && storageStringValueEquals(owner.Fields["Type"], "Profile") && vm.profileHasLicense(profileID, "Salesforce")
+		if standardOwner || fullLicenseOwner {
+			return false
+		}
+		if accountRead {
+			// An unrelated profile retains the ordinary fallback, irrespective of
+			// whether its display name matches a captured standard profile.
+			return true
+		}
+	}
 	switch profileName {
 	case "Standard User":
 		// Owned user_field_permission_fallback observations have no custom
 		// object CRUD without an effective profile or permission-set grant.
-		if vm.ordinaryCustomPermissionObject(objectName) || strings.EqualFold(objectName, "AccountBrand") {
+		// Native event_publish_list_profiles rows: an ungranted platform event
+		// is neither accessible nor creatable (API 62.0 to 68.0).
+		if vm.ordinaryCustomPermissionObject(objectName) || vm.ordinaryCustomEvent(objectName) || strings.EqualFold(objectName, "AccountBrand") {
+			return false
+		}
+		// An ungranted Standard User has no CRUD on a hierarchy or list custom
+		// setting (list_setting_runas_standard_user).
+		if (method == "isAccessible" || method == "isCreateable" || method == "isUpdateable" || method == "isDeletable") &&
+			vm.hierarchyCustomSettingQueryDenied(objectName, "") {
+			return false
+		}
+		if !standardUserObjectPermission(objectName, method) {
 			return false
 		}
 		if method == "isUpdateable" {
@@ -171,6 +239,12 @@ func (vm *VM) currentUserObjectPermission(objectName, method string) bool {
 	case "Minimum Access - Salesforce":
 		return method == "isAccessible" && isBaselineReadableObject(objectName)
 	case "Standard Platform User":
+		// Native event_publish_list_profiles rows (62.0 to 68.0): an ordinary
+		// custom object or platform event with no grant is not accessible or
+		// creatable, as for the Standard User.
+		if vm.ordinaryCustomPermissionObject(objectName) || vm.ordinaryCustomEvent(objectName) {
+			return false
+		}
 		return standardPlatformUserObjectPermission(objectName, method)
 	case "Read Only":
 		return method == "isAccessible"
@@ -178,16 +252,19 @@ func (vm *VM) currentUserObjectPermission(objectName, method string) bool {
 	return true
 }
 
-// Owned user_visibility_current_configuration observations permit User reads
-// for internal Standard/SFDC actors with explicit User Read sharing. Keep this
-// after explicit CRUD checks; other models, licenses and write facets are not
-// implied. Existing field permissions and record sharing still apply.
+// Owned User visibility observations permit reads for internal Standard/SFDC
+// actors with User Read sharing. A fresh Developer org defaults User to Read
+// (case159_sharing); explicit sharing models and CRUD checks still take precedence.
 func (vm *VM) configuredUserDirectoryReadable(objectName, profileID string) bool {
 	if !strings.EqualFold(objectName, "User") || !vm.currentProfileHasUserType(profileID, "Standard") {
 		return false
 	}
 	canonical, ok := vm.resolveObjectName(objectName)
-	if !ok || !strings.EqualFold(strings.TrimSpace(vm.Org.Objects[canonical].Definition.SharingModel), "Read") {
+	if !ok {
+		return false
+	}
+	model := strings.TrimSpace(vm.Org.Objects[canonical].Definition.SharingModel)
+	if model != "" && !strings.EqualFold(model, "Read") {
 		return false
 	}
 	profile, ok := vm.findOrgRecord("Profile", storage.ID(profileID))
@@ -211,6 +288,11 @@ func (vm *VM) apexMetadataObjectReadable(objectName string) bool {
 		return false
 	}
 	return storage.IsCustomMetadataDefinition(vm.Org.Objects[resolved].Definition)
+}
+
+// ordinaryCustomEvent reports a custom platform event (an __e object).
+func (vm *VM) ordinaryCustomEvent(objectName string) bool {
+	return hasSuffixFold(objectName, "__e") && vm.hasPlatformEventMetadata(objectName)
 }
 
 func (vm *VM) ordinaryCustomPermissionObject(objectName string) bool {
@@ -281,17 +363,51 @@ func (vm *VM) customSettingManagementPermission(user Value, profilePermissionSet
 	return false
 }
 
-func (vm *VM) currentUserFieldPermission(objectName, fieldName, method string) bool {
-	if vm.Org == nil {
-		return true
-	}
+// fieldPermissionPrincipal is the user whose field permissions apply.
+func (vm *VM) fieldPermissionPrincipal() Value {
 	user := vm.executionUser
 	if vm.testContext != nil && vm.testContext.CurrentUser.Kind != "" {
 		user = vm.testContext.CurrentUser
 	}
+	if user.Kind == "" || user.Kind == ValueNull {
+		// The captured anonymous route uses the default administrator. Keep
+		// other implicit principals on their existing fallback until observed.
+		if candidate := vm.defaultTestCurrentUser(); vm.currentUserProfileName(candidate) == "System Administrator" {
+			user = candidate
+		}
+	}
+	return user
+}
+
+func (vm *VM) currentUserFieldPermission(objectName, fieldName, method string) bool {
+	if vm.Org == nil {
+		return true
+	}
+	user := vm.fieldPermissionPrincipal()
 	profileID := stringField(user, "ProfileId")
 	profileName := vm.currentUserProfileName(user)
 	if profileName == "System Administrator" {
+		// Optional custom fields on ordinary custom objects need an effective
+		// field grant even for the administrator in a freshly deployed org.
+		if adminOptionalFieldPolicyAPI(vm.currentSourceExecutionPolicy().APIVersion) && vm.ordinaryCustomPermissionObject(objectName) && isCustomSchemaName(fieldName) && !vm.customFieldHasIntrinsicAccess(objectName, fieldName) {
+			parents := []string{vm.profileOwnedPermissionSetID(profileID), profileID}
+			// glade exec cannot know assignment: a deployed set that grants the
+			// field counts as assigned (native admin_field_grant_sources rows).
+			if vm.assumeDeployedPermissionSets && vm.testContext == nil {
+				parents = append(parents, vm.deployedPermissionSetIDs()...)
+			}
+			for _, parent := range parents {
+				if allowed, ok := vm.explicitFieldPermission(parent, objectName, fieldName, method); ok && allowed {
+					return true
+				}
+			}
+			for _, source := range vm.assignedPermissionSources(stringField(user, "Id"), false) {
+				if vm.sourceFieldPermission(source, objectName, fieldName, method) {
+					return true
+				}
+			}
+			return false
+		}
 		return true
 	}
 	intrinsicAccess := vm.customFieldHasIntrinsicAccess(objectName, fieldName)
@@ -303,11 +419,12 @@ func (vm *VM) currentUserFieldPermission(objectName, fieldName, method string) b
 		return false
 	}
 	profilePermissionSetID := vm.profileOwnedPermissionSetID(profileID)
-	for _, permissionSetID := range vm.assignedPermissionSetIDs(stringField(user, "Id")) {
+	for _, source := range vm.assignedPermissionSources(stringField(user, "Id"), false) {
+		permissionSetID := source.ID
 		if storage.IDsEqual(storage.ID(permissionSetID), storage.ID(profilePermissionSetID)) {
 			continue
 		}
-		if allowed, ok := vm.explicitFieldPermission(permissionSetID, objectName, fieldName, method); ok && allowed {
+		if vm.sourceFieldPermission(source, objectName, fieldName, method) {
 			return true
 		}
 		// CR-039: assigned object CRUD grants apply to schema-designated,
@@ -326,6 +443,28 @@ func (vm *VM) currentUserFieldPermission(objectName, fieldName, method string) b
 	if allowed, ok := vm.explicitFieldPermission(profileID, objectName, fieldName, method); ok {
 		return allowed
 	}
+	if (profileName == "Standard User" || profileName == "Standard Platform User") &&
+		standardProfileHiddenOptOutField(objectName, fieldName) {
+		return false
+	}
+	if profileName == "Standard User" && (method == "isCreateable" || method == "isUpdateable") &&
+		standardUserManagedUserField(objectName, fieldName) {
+		return false
+	}
+	// Non-permissionable fields do not require a FieldPermissions grant. Their
+	// schema read/write facets and object CRUD still apply. The native restricted
+	// Case capture observes this (after explicit rows) for Status and OwnerId,
+	// and standard_profile_object_crud (Account.Name TTT) and
+	// native_formula_permission_regex (Contact.LastName insert) observe it for
+	// the Standard User, whose profile-owned set lists every permissionable
+	// Account and Contact field.
+	nonPermissionable, nonPermissionableField := false, fieldName
+	if _, field, ok := vm.sObjectFieldDefinition(objectName, fieldName); ok && field.Permissionable != nil && !*field.Permissionable {
+		nonPermissionable, nonPermissionableField = true, field.APIName
+	}
+	if nonPermissionable && !strings.EqualFold(objectName, "User") {
+		return vm.stripInaccessibleIntrinsicFieldPermission(objectName, nonPermissionableField, method)
+	}
 	if intrinsicAccess {
 		return true
 	}
@@ -342,6 +481,13 @@ func (vm *VM) currentUserFieldPermission(objectName, fieldName, method string) b
 	}
 	if profileID != "" && vm.parentHasFieldPermissionsForObject(profileID, objectName) {
 		return false
+	}
+	// User is the one object whose non-permissionable fields a profile field
+	// listing still hides: invocable_record_followups userFields denies
+	// User.ProfileId and User.UserRoleId (API 62.0, 67.0) under a profile that
+	// lists other User fields, so for User the rule follows the two checks above.
+	if nonPermissionable {
+		return vm.stripInaccessibleIntrinsicFieldPermission(objectName, nonPermissionableField, method)
 	}
 	if vm.currentProfileHasUserType(profileID, "Guest") {
 		return method == "isAccessible"
@@ -434,6 +580,7 @@ func (vm *VM) stripInaccessibleRecords(accessType string, records Value, enforce
 			return Null, Null, Null, newExceptionError("NoDataFoundException", fmt.Sprintf("Invalid permission set id: %s", scopedPermissionSetID))
 		}
 	}
+	defer vm.beginPermissionCheckMemo()()
 	out := cloneValue(records)
 	out.Type = records.Type
 	removedFields := Map()
@@ -452,42 +599,309 @@ func (vm *VM) stripInaccessibleRecords(accessType string, records Value, enforce
 	return out, removedFields, modifiedIndexes, nil
 }
 func (vm *VM) enforceUserModeDMLAccess(op string, value Value, accessLevel Value) error {
+	return vm.enforceUserModeDMLAccessDeferring(op, value, accessLevel, false)
+}
+
+// userModeFieldDMLException builds the statement-level exception for denied
+// fields on the record at index. The outer message omits the field names; the
+// row detail carries them and, for update and upsert by Id, the record Id
+// (native partial_dml_multifield throw rows, APIs 62.0, 67.0 and 68.0).
+func userModeFieldDMLException(op, objectName string, record Value, fields []string, index int) error {
+	message := fmt.Sprintf("Operation failed due to fields being inaccessible on Sobject %s, check errors on Exception or Result! ", objectName)
+	exception := Object("DmlException")
+	exception.Fields["message"] = String(message)
+	types := make([]string, index+1)
+	results := make([]dml.Result, index+1)
+	types[index] = objectName
+	// Native rows join field names with "," and no space
+	// (partial_dml_multifield/org.tsv); single-field dotfix_fls_followups rows agree.
+	results[index] = userModeFieldDMLRowFailure(op, objectName, record, fields)
+	exception.Fields["__dmlErrors"] = dmlExceptionErrorDetails(results, types)
+	return &apexThrowError{value: exception}
+}
+
+// userModeFieldDMLRowFailure is the partial-DML counterpart: the row message
+// appends the field names, as the native SaveResult errors do. A failed update
+// keeps the record Id and a failed insert has none (native
+// admin_optional_field_api_matrix mixedLists_noGrant rows, API 67.0 and 68.0).
+func userModeFieldDMLRowFailure(op, objectName string, record Value, fields []string) dml.Result {
+	message := fmt.Sprintf("Operation failed due to fields being inaccessible on Sobject %s, check errors on Exception or Result!  fieldNames: %s", objectName, strings.Join(fields, ","))
+	failure := dml.Result{Error: message, StatusCode: "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", Fields: fields}
+	if op == "update" || op == "upsert" {
+		if _, id, ok := objectFieldValue(record, "Id"); ok {
+			if text, ok := idValueText(id); ok {
+				failure.ID = storage.ID(text)
+			}
+		}
+	}
+	return failure
+}
+
+// userModeDMLFieldFailures evaluates the captured field denial for each target
+// of a partial-DML call. Rows without a denial keep their position and run.
+func (vm *VM) userModeDMLFieldFailures(op string, targets []*Value) []dml.Result {
+	objectPermission, fieldPermission := userModeDMLPermissions(op)
+	if fieldPermission == "" {
+		return nil
+	}
+	var failures []dml.Result
+	for i, target := range targets {
+		if target == nil || target.Kind != ValueObject {
+			continue
+		}
+		// The statement check already ran CRUD and the SecurityException
+		// fields; only policy-denied fields are left here.
+		denied, _ := vm.userModeDMLRecordAccess(op, *target, objectPermission, fieldPermission, "")
+		if len(denied) == 0 {
+			continue
+		}
+		if failures == nil {
+			failures = make([]dml.Result, len(targets))
+		}
+		failures[i] = userModeFieldDMLRowFailure(op, vm.canonicalSObjectValueType(*target), *target, denied)
+	}
+	return failures
+}
+
+// enforceUserModeDMLAccessDeferring checks CRUD and FLS for user-mode DML.
+// With deferFieldRows, captured-shape field denials are left for the partial
+// DML engine, which fails only the denied rows.
+func (vm *VM) enforceUserModeDMLAccessDeferring(op string, value Value, accessLevel Value, deferFieldRows bool) error {
 	objectPermission, fieldPermission := userModeDMLPermissions(op)
 	if objectPermission == "" {
 		return nil
 	}
 	scopedPermissionSetID := accessLevelPermissionSetID(accessLevel)
 	records := dmlAccessRecords(value)
-	for _, record := range records {
-		if record.Kind != ValueObject {
-			continue
+	defer vm.beginPermissionCheckMemo()()
+	for index, record := range records {
+		fields, err := vm.userModeDMLRecordAccess(op, record, objectPermission, fieldPermission, scopedPermissionSetID)
+		if err != nil {
+			return err
 		}
-		objectName := record.Type
-		if vm.Org != nil {
-			if resolved, ok := vm.resolveObjectName(objectName); ok {
-				objectName = resolved
-			}
-		}
-		if !vm.currentUserObjectPermissionWithScope(objectName, objectPermission, scopedPermissionSetID) {
-			return newExceptionError("SecurityException", fmt.Sprintf("Access to entity '%s' denied", objectName))
-		}
-		for field := range record.Fields {
-			if fieldPermission == "" || isInternalSObjectField(field) || isSObjectSystemField(field) || isDefaultedSObjectField(record, field) {
-				continue
-			}
-			if record.Fields[field].Kind == ValueList && vm.childRelationshipLookup(objectName, field).ChildType != "" {
-				continue
-			}
-			canonicalField := vm.resolveSObjectFieldName(objectName, field)
-			if strings.EqualFold(canonicalField, "Id") {
-				continue
-			}
-			if !vm.currentUserFieldPermissionWithScope(objectName, canonicalField, fieldPermission, scopedPermissionSetID) {
-				return newExceptionError("SecurityException", fmt.Sprintf("Access to field '%s.%s' denied", objectName, canonicalField))
-			}
+		// Scoped permission sets keep the statement exception: the partial
+		// engine checks rows without the scope.
+		if len(fields) > 0 && (!deferFieldRows || scopedPermissionSetID != "") {
+			return userModeFieldDMLException(op, vm.canonicalSObjectValueType(record), record, fields, index)
 		}
 	}
 	return nil
+}
+
+// userModeDMLRecordAccess checks one record's user-mode object and field
+// access. Fields denied only by the API 62+ ordinary custom field policy are
+// returned in explicit assignment order for the caller to raise as a DmlException or failed row;
+// other denials fail with a SecurityException. Upsert follows insert and
+// update with or without an Id (native shapemisc_capture upsertInsertPath_text
+// and api67_access_defaults dml_ups_secret rows).
+func (vm *VM) userModeDMLRecordAccess(op string, record Value, objectPermission, fieldPermission, scopedPermissionSetID string) ([]string, error) {
+	if record.Kind != ValueObject {
+		return nil, nil
+	}
+	objectName := record.Type
+	if vm.Org != nil {
+		if resolved, ok := vm.resolveObjectName(objectName); ok {
+			objectName = resolved
+		}
+	}
+	if !vm.currentUserObjectPermissionWithScope(objectName, objectPermission, scopedPermissionSetID) {
+		return nil, newExceptionError("SecurityException", fmt.Sprintf("Access to entity '%s' denied", objectName))
+	}
+	var policyFields []string
+	for field := range record.Fields {
+		if fieldPermission == "" || isInternalSObjectField(field) || isSObjectSystemField(field) || isDefaultedSObjectField(record, field) {
+			continue
+		}
+		if record.Fields[field].Kind == ValueList && vm.childRelationshipLookup(objectName, field).ChildType != "" {
+			continue
+		}
+		canonicalField := vm.resolveSObjectFieldName(objectName, field)
+		if strings.EqualFold(canonicalField, "Id") || vm.sobjectFormulaField(objectName, canonicalField) {
+			continue
+		}
+		// A queried null User field that no assignment or constructor argument
+		// set is not written: native user_self_update queriedRoleActive (API
+		// 67.0) saves a queried null ManagerId that an explicit null denies.
+		if strings.EqualFold(objectName, "User") && record.Fields[field].Kind == ValueNull && !isExplicitSObjectField(record, field) {
+			continue
+		}
+		if !vm.currentUserFieldPermissionWithScope(objectName, canonicalField, fieldPermission, scopedPermissionSetID) || vm.automatedProcessCustomFieldDenied(op, objectName, canonicalField, scopedPermissionSetID) {
+			// Native dotfix_fls_followups case.insert.user rows (restricted user,
+			// API 62.0, 67.0, 68.0): a denied standard field on a standard object
+			// raises the same statement DmlException, with the field name.
+			standardFieldDenial := !vm.ordinaryCustomPermissionObject(objectName) && !isCustomSchemaName(canonicalField)
+			if (op == "insert" || op == "update" || op == "upsert") && adminOptionalFieldPolicyAPI(vm.currentSourceExecutionPolicy().APIVersion) && (vm.ordinaryCustomPermissionObject(objectName) && isCustomSchemaName(canonicalField) || standardFieldDenial) {
+				policyFields = append(policyFields, canonicalField)
+				continue
+			}
+			return nil, newExceptionError("SecurityException", fmt.Sprintf("Access to field '%s.%s' denied", objectName, canonicalField))
+		}
+	}
+	order := make(map[string]int)
+	for i, field := range explicitSObjectFieldNamesInInsertionOrder(record) {
+		order[strings.ToLower(field)] = i
+	}
+	sort.SliceStable(policyFields, func(i, j int) bool {
+		a, aok := order[strings.ToLower(policyFields[i])]
+		b, bok := order[strings.ToLower(policyFields[j])]
+		if aok && bok {
+			return a < b
+		}
+		if aok != bok {
+			return aok
+		}
+		return policyFields[i] < policyFields[j]
+	})
+	return policyFields, nil
+}
+
+// automatedProcessCustomFieldDenied reports the Automated Process user's
+// USER_MODE write to an ungranted custom field below API 66.0. Native
+// automated_process_user_mode rows (62.0, event trigger and the queueable and
+// future jobs it enqueues): the insert and update fail with the ordinary
+// custom field DmlException, while 66.0 to 68.0 succeed. Reads and deletes are
+// unaffected at every API.
+func (vm *VM) automatedProcessCustomFieldDenied(op, objectName, fieldName, scopedPermissionSetID string) bool {
+	if scopedPermissionSetID != "" || (op != "insert" && op != "update" && op != "upsert") {
+		return false
+	}
+	user := vm.executionUser
+	if vm.testContext != nil && vm.testContext.CurrentUser.Kind != "" {
+		user = vm.testContext.CurrentUser
+	}
+	if !strings.EqualFold(stringField(user, "UserType"), "AutomatedProcess") {
+		return false
+	}
+	version := vm.currentSourceExecutionPolicy().APIVersion
+	if !apexversion.AtLeast(version, 62) || !apexversion.Before(version, 66) {
+		return false
+	}
+	return vm.ordinaryCustomPermissionObject(objectName) && isCustomSchemaName(fieldName) && !vm.customFieldHasIntrinsicAccess(objectName, fieldName)
+}
+
+// userModeUpsertKeyFieldDenial rejects a user-mode upsert whose external id
+// field the ordinary custom field policy hides. Native rows (administrator,
+// no grant on the key field, API 62.0 USER_MODE and 67.0/68.0 default and
+// USER_MODE, which run in user mode): every upsert onto an existing or new
+// record, Database.upsert with allOrNone true or false and the statement,
+// throws SObjectException "Field Object.Field__c is inaccessible in this
+// context" before any record is checked. With the key field granted and an
+// optional field ungranted, the upsert follows the insert and update denials
+// instead (userModeDMLRecordAccess).
+func (vm *VM) userModeUpsertKeyFieldDenial(op string, value Value, externalIDField, scopedPermissionSetID string) error {
+	if vm == nil || vm.Org == nil || op != "upsert" || externalIDField == "" || strings.EqualFold(externalIDField, "Id") {
+		return nil
+	}
+	if !adminOptionalFieldPolicyAPI(vm.currentSourceExecutionPolicy().APIVersion) {
+		return nil
+	}
+	records := dmlAccessRecords(value)
+	if len(records) == 0 || records[0].Kind != ValueObject {
+		return nil
+	}
+	objectName := records[0].Type
+	if resolved, ok := vm.resolveObjectName(objectName); ok {
+		objectName = resolved
+	}
+	canonical := vm.resolveSObjectFieldName(objectName, externalIDField)
+	if !vm.ordinaryCustomPermissionObject(objectName) || !isCustomSchemaName(canonical) {
+		return nil
+	}
+	if vm.currentUserFieldPermissionWithScope(objectName, canonical, "isAccessible", scopedPermissionSetID) {
+		return nil
+	}
+	return newExceptionError("SObjectException", "Field "+objectName+"."+canonical+" is inaccessible in this context")
+}
+
+// userModeFieldPolicyPartialFailures returns, for default-mode
+// Database.insert/update(records, false), one failed SaveResult per record that
+// writes an ordinary custom field the API 62+ field policy denies; records that
+// write no denied field have a nil entry and are saved normally. Native
+// admin_optional_field_api_matrix rows at 67.0 and 68.0 (administrator, no
+// grant): no exception, isSuccess=false, CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY,
+// fields (Optional__c), message "Operation failed due to fields being
+// inaccessible on Sobject X, check errors on Exception or Result!  fieldNames:
+// Optional__c"; a mixed list fails only the denied records (insert result Id
+// null, update result Id the record Id). handled is false when no record is
+// denied. Native multi-field rows use commas without spaces.
+func (vm *VM) userModeFieldPolicyPartialFailures(op string, value Value) ([]*dml.Result, bool) {
+	if op != "insert" && op != "update" {
+		return nil, false
+	}
+	objectPermission, fieldPermission := userModeDMLPermissions(op)
+	records := dmlAccessRecords(value)
+	if len(records) == 0 {
+		return nil, false
+	}
+	defer vm.beginPermissionCheckMemo()()
+	results := make([]*dml.Result, len(records))
+	denied := false
+	for i, record := range records {
+		if record.Kind != ValueObject {
+			return nil, false
+		}
+		fields, err := vm.userModeDMLRecordAccess(op, record, objectPermission, fieldPermission, "")
+		if err != nil {
+			return nil, false
+		}
+		if len(fields) == 0 {
+			continue
+		}
+		denied = true
+		objectName := vm.canonicalSObjectValueType(record)
+		failure := &dml.Result{
+			StatusCode: "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY",
+			Error:      fmt.Sprintf("Operation failed due to fields being inaccessible on Sobject %s, check errors on Exception or Result!  fieldNames: %s", objectName, strings.Join(fields, ",")),
+			Fields:     fields,
+		}
+		if op == "update" {
+			if _, id, ok := objectFieldValue(record, "Id"); ok {
+				if text, ok := idValueText(id); ok {
+					failure.ID = storage.ID(text)
+				}
+			}
+		}
+		results[i] = failure
+	}
+	return results, denied
+}
+
+// adminOptionalFieldSecureDenial reports a WITH SECURITY_ENFORCED projection
+// of an ordinary custom field the API 62+ field policy hides. Native
+// admin_optional_field_api_matrix rows at 62.0 and 66.0 (administrator, no
+// grant): QueryException "Insufficient permissions: secure query included
+// inaccessible field". API 67+ rejects SECURITY_ENFORCED before this check.
+func (vm *VM) adminOptionalFieldSecureDenial(objectName, fieldName, mode, permissionSetID string) bool {
+	return mode == "SECURITY_ENFORCED" && permissionSetID == "" &&
+		adminOptionalFieldPolicyAPI(vm.currentSourceExecutionPolicy().APIVersion) &&
+		vm.ordinaryCustomPermissionObject(objectName) && isCustomSchemaName(fieldName) &&
+		!vm.customFieldHasIntrinsicAccess(objectName, fieldName)
+}
+
+// adminOptionalFieldPolicyAPI bounds the ordinary custom field policy to the
+// captured source APIs 62.0-68.0: 62.0 and 67.0 (default_permissions_v035,
+// ordinary_controls), 66.0 and 68.0 (admin_optional_field_api_matrix,
+// ordinary_controls). 68.0 behaves exactly as 67.0 in every captured row.
+func adminOptionalFieldPolicyAPI(version string) bool {
+	return apexversion.AtLeast(version, 62) && !apexversion.AtLeast(version, 69)
+}
+
+// sobjectFormulaField reports a formula or auto-number field of objectName.
+// DML never writes one, so a queried value on the record is not a write the
+// user-mode field check governs. Native rows at API 67.0 with the capture's
+// read-only grant: flow_refs record rows update records queried with a formula
+// field; field_key_upsert the captured row upserts a clone carrying an auto-number
+// key and fails on the key, not on field access.
+func (vm *VM) sobjectFormulaField(objectName, field string) bool {
+	if vm.Org == nil {
+		return false
+	}
+	definition, ok := vm.Org.Objects[objectName]
+	if !ok {
+		return false
+	}
+	metadata, ok := definition.Definition.Fields[field]
+	return ok && (describeFieldCalculated(metadata) || metadata.AutoNumber)
 }
 
 func (vm *VM) enforceDMLRecordAccess(op string, value Value, externalIDField string, userMode bool) error {
@@ -515,7 +929,20 @@ func (vm *VM) enforceDMLRecordAccess(op string, value Value, externalIDField str
 		} else if record.ID != "" {
 			stored, found = vm.findOrgRecord(record.Object, record.ID)
 		}
+		if found && userMode && op == "update" {
+			if _, applicable := vm.junctionParentsReadable(record.Object, stored, vm.currentUserID()); applicable {
+				// Captured junction updates report row-level DML failures.
+				continue
+			}
+		}
 		if found && !vm.currentUserCanWriteRecord(record.Object, stored, vm.currentUserID(), op) {
+			// A denied User update is a DmlException row failure at API 67.0
+			// too, not the SecurityException (native user_self_update
+			// otherUserTitle and otherStandardUserTitle rows); the DML record
+			// access check reports it.
+			if strings.EqualFold(record.Object, "User") && (op == "update" || op == "upsert") {
+				continue
+			}
 			return newExceptionError("SecurityException", fmt.Sprintf("Access to record '%s' denied", stored.ID))
 		}
 	}
@@ -539,20 +966,95 @@ func accessLevelPermissionSetID(accessLevel Value) string {
 	return ""
 }
 
-func (vm *VM) currentUserObjectPermissionWithScope(objectName, method, permissionSetID string) bool {
-	if permissionSetID != "" {
-		allowed, ok := vm.explicitObjectPermission(permissionSetID, objectName, method)
-		return ok && allowed
+type permissionCheckKey struct {
+	object, field, method, scope string
+}
+
+type permissionCheckMemo struct {
+	objects map[permissionCheckKey]bool
+	fields  map[permissionCheckKey]bool
+}
+
+// beginPermissionCheckMemo memoizes object and field permission answers until
+// the returned function runs. Callers hold it only across a loop over the
+// records of one statement that runs no Apex and writes no org state, so the
+// user, source API and permission rows are fixed for its lifetime and every
+// answer is the one the uncached check would give. Nested calls share the
+// outer memo.
+func (vm *VM) beginPermissionCheckMemo() func() {
+	if vm == nil || vm.permissionChecks != nil {
+		return func() {}
 	}
-	return vm.currentUserObjectPermission(objectName, method)
+	vm.permissionChecks = &permissionCheckMemo{}
+	return func() { vm.permissionChecks = nil }
+}
+
+// canonicalPermissionSetKey maps an Id spelling (an Apex Id expands to
+// eighteen characters) onto the key the permission rows were stored under.
+func (vm *VM) canonicalPermissionSetKey(id string) string {
+	if id == "" || vm == nil || vm.Org == nil {
+		return id
+	}
+	if stored, _, found := storage.LookupRecordByID(vm.Org.Objects["PermissionSet"].Records, storage.ID(id)); found {
+		return string(stored)
+	}
+	return id
+}
+
+func (vm *VM) currentUserObjectPermissionWithScope(objectName, method, permissionSetID string) bool {
+	permissionSetID = vm.canonicalPermissionSetKey(permissionSetID)
+	memo := vm.permissionChecks
+	key := permissionCheckKey{object: objectName, method: method, scope: permissionSetID}
+	if memo != nil {
+		if allowed, ok := memo.objects[key]; ok {
+			return allowed
+		}
+	}
+	// A scoped permission set adds to the running user's own grants (native
+	// rows, API 62 and 67): the user's access stays effective and the set
+	// can only widen it.
+	allowed := vm.currentUserObjectPermission(objectName, method)
+	if !allowed && permissionSetID != "" {
+		explicit, ok := vm.explicitObjectPermission(permissionSetID, objectName, method)
+		allowed = ok && explicit
+	}
+	if memo != nil {
+		if memo.objects == nil {
+			memo.objects = make(map[permissionCheckKey]bool)
+		}
+		memo.objects[key] = allowed
+	}
+	return allowed
 }
 
 func (vm *VM) currentUserFieldPermissionWithScope(objectName, fieldName, method, permissionSetID string) bool {
-	if permissionSetID != "" {
-		allowed, ok := vm.explicitFieldPermission(permissionSetID, objectName, fieldName, method)
-		return ok && allowed
+	permissionSetID = vm.canonicalPermissionSetKey(permissionSetID)
+	memo := vm.permissionChecks
+	key := permissionCheckKey{object: objectName, field: fieldName, method: method, scope: permissionSetID}
+	if memo != nil {
+		if allowed, ok := memo.fields[key]; ok {
+			return allowed
+		}
 	}
-	return vm.currentUserFieldPermission(objectName, fieldName, method)
+	allowed := vm.currentUserFieldPermission(objectName, fieldName, method)
+	if !allowed && permissionSetID != "" {
+		explicit, ok := vm.explicitFieldPermission(permissionSetID, objectName, fieldName, method)
+		allowed = ok && explicit
+		// A custom object's Text Name field has no field permission; the
+		// scoped set's object grant carries it (native rows, API 62 and 67).
+		if !allowed && vm.nameFieldHasNoFieldLevelPermissions(objectName, fieldName) {
+			if objectAllowed, ok := vm.explicitObjectPermission(permissionSetID, objectName, fieldPermissionObjectMethod(method)); ok && objectAllowed {
+				allowed = vm.stripInaccessibleIntrinsicFieldPermission(objectName, fieldName, method)
+			}
+		}
+	}
+	if memo != nil {
+		if memo.fields == nil {
+			memo.fields = make(map[permissionCheckKey]bool)
+		}
+		memo.fields[key] = allowed
+	}
+	return allowed
 }
 func dmlAccessRecords(value Value) []Value {
 	if value.Kind == ValueList {
@@ -619,7 +1121,9 @@ func (vm *VM) stripInaccessibleRecord(accessType string, record *Value, enforceR
 			(storage.IsKnownStandardObject(objectName) || accessType == "UPDATABLE" && vm.ordinaryCustomPermissionObject(objectName)) {
 			canonicalField := vm.resolveSObjectFieldName(objectName, field)
 			_, definition, declared := vm.sObjectFieldDefinition(objectName, canonicalField)
-			if declared && isCustomSchemaName(canonicalField) && definition.Type == storage.FieldBoolean &&
+			// strip_omitted_defaults (API 55.0, 62.0, 67.0): an omitted checkbox stays
+			// out of the removed set for custom and standard fields alike.
+			if declared && definition.Type == storage.FieldBoolean &&
 				strings.EqualFold(strings.TrimSpace(definition.DefaultValue), "false") {
 				continue
 			}
@@ -1068,6 +1572,30 @@ func objectPermissionField(method string) string {
 	}
 }
 func (vm *VM) assignedPermissionSetIDs(userID string) []string {
+	return vm.assignedPermissionSetIDsFiltered(userID, false)
+}
+
+// permissionGrantSource is one assigned permission set and the muting sets of
+// the group that supplied it. Muting affects that group's grant only; the same
+// set assigned directly or through another group stays independent.
+type permissionGrantSource struct {
+	ID    string
+	Mutes []string
+}
+
+func (vm *VM) assignedPermissionSetIDsFiltered(userID string, activeOnly bool) []string {
+	sources := vm.assignedPermissionSources(userID, activeOnly)
+	if len(sources) == 0 {
+		return nil
+	}
+	out := make([]string, 0, len(sources))
+	for _, source := range sources {
+		out = append(out, source.ID)
+	}
+	return out
+}
+
+func (vm *VM) assignedPermissionSources(userID string, activeOnly bool) []permissionGrantSource {
 	if userID == "" || vm.Org == nil {
 		return nil
 	}
@@ -1075,10 +1603,17 @@ func (vm *VM) assignedPermissionSetIDs(userID string) []string {
 	if !ok {
 		return nil
 	}
-	var out []string
+	var out []permissionGrantSource
 	for _, record := range state.Records {
 		if record.System.IsDeleted {
 			continue
+		}
+		group, hasGroup := record.GetField("PermissionSetGroupId")
+		if activeOnly && (!hasGroup || storageValueIDText(group) == "") {
+			active, known := dml.PermissionAssignmentState(record, func() time.Time { return vm.fakeNow })
+			if known && !active {
+				continue
+			}
 		}
 		if assigneeValue, ok := record.GetField("AssigneeId"); ok && storage.IDsEqual(storage.ID(storageValueIDText(assigneeValue)), storage.ID(userID)) {
 			if permissionSetValue, ok := record.GetField("PermissionSetId"); ok {
@@ -1088,36 +1623,81 @@ func (vm *VM) assignedPermissionSetIDs(userID string) []string {
 					if storedID, _, found := storage.LookupRecordByID(vm.Org.Objects["PermissionSet"].Records, storage.ID(id)); found {
 						id = string(storedID)
 					}
-					out = append(out, id)
+					out = append(out, permissionGrantSource{ID: id})
 				}
 			}
 			if permissionSetGroupValue, ok := record.GetField("PermissionSetGroupId"); ok {
-				out = append(out, vm.permissionSetGroupComponentIDs(storageValueIDText(permissionSetGroupValue))...)
+				members, mutes := vm.permissionSetGroupGrantSets(storageValueIDText(permissionSetGroupValue))
+				for _, member := range members {
+					out = append(out, permissionGrantSource{ID: member, Mutes: mutes})
+				}
 			}
 		}
 	}
 	return out
 }
+
+// sourceObjectPermission reports an explicit object grant on the source that
+// none of its group's muting sets removes (same permission flag).
+func (vm *VM) sourceObjectPermission(source permissionGrantSource, objectName, method string) bool {
+	if allowed, ok := vm.explicitObjectPermission(source.ID, objectName, method); !ok || !allowed {
+		return false
+	}
+	for _, mute := range source.Mutes {
+		if muted, ok := vm.explicitObjectPermission(mute, objectName, method); ok && muted {
+			return false
+		}
+	}
+	return true
+}
+
+func (vm *VM) sourceFieldPermission(source permissionGrantSource, objectName, fieldName, method string) bool {
+	if allowed, ok := vm.explicitFieldPermission(source.ID, objectName, fieldName, method); !ok || !allowed {
+		return false
+	}
+	for _, mute := range source.Mutes {
+		if muted, ok := vm.explicitFieldPermission(mute, objectName, fieldName, method); ok && muted {
+			return false
+		}
+	}
+	return true
+}
+
 func (vm *VM) permissionSetGroupComponentIDs(groupID string) []string {
+	members, _ := vm.permissionSetGroupGrantSets(groupID)
+	return members
+}
+
+// permissionSetGroupGrantSets splits a group's components into granting sets
+// and the muting sets recorded in MutingPermissionSet.
+func (vm *VM) permissionSetGroupGrantSets(groupID string) (members, mutes []string) {
 	if groupID == "" || vm.Org == nil {
-		return nil
+		return nil, nil
 	}
 	state, ok := vm.Org.Objects["PermissionSetGroupComponent"]
 	if !ok {
-		return nil
+		return nil, nil
 	}
-	var out []string
+	muting := vm.Org.Objects["MutingPermissionSet"].Records
 	for _, record := range state.Records {
 		if groupValue, ok := record.GetField("PermissionSetGroupId"); !ok || !storageIDValueEquals(groupValue, groupID) {
 			continue
 		}
 		if permissionSetValue, ok := record.GetField("PermissionSetId"); ok {
-			if id := storageValueIDText(permissionSetValue); id != "" {
-				out = append(out, id)
+			id := storageValueIDText(permissionSetValue)
+			if id == "" {
+				continue
 			}
+			if _, mute, isMute := storage.LookupRecordByID(muting, storage.ID(id)); isMute {
+				if !mute.System.IsDeleted {
+					mutes = append(mutes, id)
+				}
+				continue
+			}
+			members = append(members, id)
 		}
 	}
-	return out
+	return members, mutes
 }
 func (vm *VM) currentProfileIsSystemAdministrator(profileID string) bool {
 	return vm.currentProfileName(profileID) == "System Administrator"
@@ -1145,7 +1725,7 @@ func (vm *VM) currentProfileName(profileID string) string {
 	if !ok {
 		return ""
 	}
-	profile, ok := profiles.Records[storage.ID(profileID)]
+	_, profile, ok := storage.LookupRecordByID(profiles.Records, storage.ID(profileID))
 	if !ok {
 		return ""
 	}
@@ -1163,7 +1743,7 @@ func (vm *VM) currentProfileHasUserType(profileID, userType string) bool {
 	if !ok {
 		return false
 	}
-	profile, ok := profiles.Records[storage.ID(profileID)]
+	_, profile, ok := storage.LookupRecordByID(profiles.Records, storage.ID(profileID))
 	if !ok {
 		return false
 	}
@@ -1223,7 +1803,7 @@ func (vm *VM) profileHasLicense(profileID, licenseName string) bool {
 	if !ok {
 		return false
 	}
-	profile, ok := profiles.Records[storage.ID(profileID)]
+	_, profile, ok := storage.LookupRecordByID(profiles.Records, storage.ID(profileID))
 	if !ok {
 		return false
 	}
@@ -1242,30 +1822,26 @@ func (vm *VM) profileHasLicense(profileID, licenseName string) bool {
 	return storageStringValueEquals(license.Fields["Name"], licenseName)
 }
 
-// SetupEntityAccess links assigned permission sets to standalone metadata rows.
-func (vm *VM) permissionSetGrantsCustomPermission(permissionSetID, permission string) bool {
-	permissions := vm.Org.Objects["CustomPermission"]
-	for _, access := range vm.Org.Objects["SetupEntityAccess"].Records {
-		parent, ok := access.GetField("ParentId")
-		if !ok || !storageIDValueEquals(parent, permissionSetID) {
+// deployedPermissionSetIDs lists the stored keys of every permission set that
+// is not owned by a profile.
+func (vm *VM) deployedPermissionSetIDs() []string {
+	if vm == nil || vm.Org == nil {
+		return nil
+	}
+	state, ok := vm.Org.Objects["PermissionSet"]
+	if !ok {
+		return nil
+	}
+	var out []string
+	for id, record := range state.Records {
+		if owned, ok := record.Fields["IsOwnedByProfile"]; ok && owned.Kind == storage.ValueBoolean && owned.Boolean {
 			continue
 		}
-		entity, ok := access.GetField("SetupEntityId")
-		if !ok {
-			continue
-		}
-		for id, record := range permissions.Records {
-			if !storageIDValueEquals(entity, string(id)) {
-				continue
-			}
-			name, ok := record.GetField("DeveloperName")
-			if !ok {
-				continue
-			}
-			if storagePermissionValueMatches(name, permission) {
-				return true
-			}
+		if record.ID != "" {
+			out = append(out, string(record.ID))
+		} else {
+			out = append(out, string(id))
 		}
 	}
-	return false
+	return out
 }

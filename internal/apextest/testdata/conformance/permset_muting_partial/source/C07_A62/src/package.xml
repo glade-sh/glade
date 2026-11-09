@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata"><types><members>MPC07_A62__c</members><name>CustomObject</name></types><types><members>MPC07_A62Grant</members><name>PermissionSet</name></types><types><members>MPC07_A62Mute</members><name>MutingPermissionSet</name></types><types><members>MPC07_A62Group</members><name>PermissionSetGroup</name></types><version>62.0</version></Package>

@@ -2320,10 +2320,6 @@
    "durationMillis": 0
   },
   {
-   "name": "TestDatabaseInsertHeaderExcludedOverloads",
-   "durationMillis": 0
-  },
-  {
    "name": "TestDatetimeApexGMTStringConversions",
    "durationMillis": 20
   },
@@ -5108,7 +5104,7 @@
    "durationMillis": 0
   },
   {
-   "name": "TestExecEventBusFailureWithoutCheckpointRetriesWholeBatch",
+   "name": "TestExecEventBusOrdinaryTriggerExceptionIsConsumedByDeliver",
    "durationMillis": 0
   },
   {
@@ -5224,7 +5220,7 @@
    "durationMillis": 0
   },
   {
-   "name": "TestExecExecuteBatchRejectsScopeAbovePlatformMaximum",
+   "name": "TestExecExecuteBatchAcceptsScopeAbovePlatformMaximum",
    "durationMillis": 0
   },
   {
@@ -6161,10 +6157,6 @@
   },
   {
    "name": "TestExecJSONGeneratorUnhandledFieldNameInArrayHasJSONExceptionType",
-   "durationMillis": 0
-  },
-  {
-   "name": "TestExecJSONGeneratorWriteAfterGetAsStringIsCatchableJSONException",
    "durationMillis": 0
   },
   {
@@ -7129,10 +7121,6 @@
   },
   {
    "name": "TestExecNamespacedUnitOfWorkNewInstanceHonorsMockInstance",
-   "durationMillis": 0
-  },
-  {
-   "name": "TestExecNativeInsertRejectsUnsupportedPerRecordDMLOptions",
    "durationMillis": 0
   },
   {
@@ -8644,7 +8632,7 @@
    "durationMillis": 0
   },
   {
-   "name": "TestExecScheduleBatchSuppressesWorkerJobsForChunks",
+   "name": "TestExecScheduleBatchStaysPendingAtStopTest",
    "durationMillis": 0
   },
   {
@@ -16030,10 +16018,6 @@
   {
    "name": "TestUpdateErrorMessagePreservesUncapturedAliases",
    "durationMillis": 10
-  },
-  {
-   "name": "TestUpdateErrorMessagePreservesUncapturedOverloads",
-   "durationMillis": 20
   },
   {
    "name": "TestUpdateHydrationPreservesIncomingOwnerForValidation",

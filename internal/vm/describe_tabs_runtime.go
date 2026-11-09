@@ -306,6 +306,9 @@ func (vm *VM) describeTabValue(tab storage.TabMetadata) Value {
 }
 
 func (vm *VM) describeNonObjectTabName(tab storage.TabMetadata) Value {
+	if tab.ComponentBundleID != "" {
+		return String(tab.ComponentBundleID)
+	}
 	if tab.Page != "" && vm.Org != nil {
 		for _, record := range vm.Org.Objects["ApexPage"].Records {
 			if name := record.Fields["Name"]; name.Kind == storage.ValueString && name.String == tab.Page {

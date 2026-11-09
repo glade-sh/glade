@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       profile:
-        description: "fast for CI; full for weekly and release scans"
+        description: "fast for Security PRs and main pushes; full for weekly and release scans"
         required: true
         type: string
 
@@ -14,7 +14,7 @@ permissions:
 jobs:
   codeql:
     name: CodeQL (${{ inputs.profile }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     # Setup and upload are bounded separately from the analysis process.
     timeout-minutes: 15
     permissions:
@@ -93,6 +93,8 @@ jobs:
           config: |
             paths-ignore:
               - '**/*_generated.go'
+              - '**/*_test.go'
+              - '**/testdata/**'
             queries:
               - uses: security-extended
             query-filters:

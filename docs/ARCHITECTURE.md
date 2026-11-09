@@ -97,6 +97,16 @@ and composed by the CLI.
 - `internal/namespaceremap`, `internal/refactor`, and `internal/refactorproof`:
   namespace aliasing and conservative refactor/proof support.
 - `internal/startupcache`: validated local test-runtime startup state.
+- `internal/frontendcache`: validated frontend generations restored before
+  index construction. A cache failure falls back to a fresh build.
+- `internal/testdaemon`: long-lived test daemon that holds one immutable
+  project generation (index, artifacts, selection graph) for repeated runs.
+- `internal/packageartifact`: package build artifacts for dependency source.
+- `internal/apexversion` and `internal/apexlang`: API-version ranges and
+  version-gated features, and shared Apex language helpers (annotation
+  catalog, case-insensitive name lowering).
+- `internal/tzdata`, `internal/testutil`, and `internal/repoguard`: embedded
+  timezone data, test-only helpers, and repository convention tests.
 - `internal/semanticcache`: checksummed, bounded exact semantic results for
   checks and the test semantic gate.
 - Maintenance scanners, compatibility fixtures, capability catalogs, advisory

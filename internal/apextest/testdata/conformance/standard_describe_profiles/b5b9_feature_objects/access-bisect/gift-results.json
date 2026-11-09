@@ -1,0 +1,922 @@
+[
+  {
+    "api": "63.0",
+    "kind": "dynamic",
+    "compiled": true,
+    "success": true,
+    "observations": [
+      {
+        "field": "GiftCommitment.LastNextGenCmtProcDtTm",
+        "route": "get",
+        "result": "System.SObjectException: Invalid field LastNextGenCmtProcDtTm for GiftCommitment"
+      },
+      {
+        "field": "GiftCommitment.LastNextGenCmtProcDtTm",
+        "route": "put",
+        "result": "System.SObjectException: Invalid field LastNextGenCmtProcDtTm for GiftCommitment"
+      },
+      {
+        "field": "GiftCommitment.LastNextGenCmtProcDtTm",
+        "route": "query",
+        "result": "System.QueryException: No such column 'LastNextGenCmtProcDtTm' on entity 'GiftCommitment'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "field": "GiftCommitment.LastNextGenCmtProcError",
+        "route": "get",
+        "result": "System.SObjectException: Invalid field LastNextGenCmtProcError for GiftCommitment"
+      },
+      {
+        "field": "GiftCommitment.LastNextGenCmtProcError",
+        "route": "put",
+        "result": "System.SObjectException: Invalid field LastNextGenCmtProcError for GiftCommitment"
+      },
+      {
+        "field": "GiftCommitment.LastNextGenCmtProcError",
+        "route": "query",
+        "result": "System.QueryException: No such column 'LastNextGenCmtProcError' on entity 'GiftCommitment'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "field": "GiftCommitment.PartyPhilanthropicRsrchPrflId",
+        "route": "get",
+        "result": "System.SObjectException: Invalid field PartyPhilanthropicRsrchPrflId for GiftCommitment"
+      },
+      {
+        "field": "GiftCommitment.PartyPhilanthropicRsrchPrflId",
+        "route": "put",
+        "result": "System.SObjectException: Invalid field PartyPhilanthropicRsrchPrflId for GiftCommitment"
+      },
+      {
+        "field": "GiftCommitment.PartyPhilanthropicRsrchPrflId",
+        "route": "query",
+        "result": "System.QueryException: No such column 'PartyPhilanthropicRsrchPrflId' on entity 'GiftCommitment'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "field": "GiftTransaction.GenerationalCohort",
+        "route": "get",
+        "result": "accepted"
+      },
+      {
+        "field": "GiftTransaction.GenerationalCohort",
+        "route": "put",
+        "result": "accepted"
+      },
+      {
+        "field": "GiftTransaction.GenerationalCohort",
+        "route": "query",
+        "result": "accepted"
+      },
+      {
+        "field": "GiftTransaction.PartyPhilanthropicRsrchPrflId",
+        "route": "get",
+        "result": "System.SObjectException: Invalid field PartyPhilanthropicRsrchPrflId for GiftTransaction"
+      },
+      {
+        "field": "GiftTransaction.PartyPhilanthropicRsrchPrflId",
+        "route": "put",
+        "result": "System.SObjectException: Invalid field PartyPhilanthropicRsrchPrflId for GiftTransaction"
+      },
+      {
+        "field": "GiftTransaction.PartyPhilanthropicRsrchPrflId",
+        "route": "query",
+        "result": "System.QueryException: No such column 'PartyPhilanthropicRsrchPrflId' on entity 'GiftTransaction'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "field": "GiftTransaction.TaxDeductionAmount",
+        "route": "get",
+        "result": "accepted"
+      },
+      {
+        "field": "GiftTransaction.TaxDeductionAmount",
+        "route": "put",
+        "result": "System.SObjectException: Field TaxDeductionAmount is not editable"
+      },
+      {
+        "field": "GiftTransaction.TaxDeductionAmount",
+        "route": "query",
+        "result": "accepted"
+      }
+    ]
+  },
+  {
+    "api": "63.0",
+    "kind": "static-read",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcDtTm",
+    "source": "GiftCommitment record=new GiftCommitment();Object value=record.LastNextGenCmtProcDtTm;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 64 with the error:\n\nVariable does not exist: LastNextGenCmtProcDtTm",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "63.0",
+    "kind": "static-query",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcDtTm",
+    "source": "List<GiftCommitment> rows=[SELECT LastNextGenCmtProcDtTm FROM GiftCommitment LIMIT 1];",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 27 with the error:\n\n\nSELECT LastNextGenCmtProcDtTm FROM GiftCommitment\n       ^\nERROR at Row:1:Column:8\nNo such column 'LastNextGenCmtProcDtTm' on entity 'GiftCommitment'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "63.0",
+    "kind": "static-read",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcError",
+    "source": "GiftCommitment record=new GiftCommitment();Object value=record.LastNextGenCmtProcError;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 64 with the error:\n\nVariable does not exist: LastNextGenCmtProcError",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "63.0",
+    "kind": "static-query",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcError",
+    "source": "List<GiftCommitment> rows=[SELECT LastNextGenCmtProcError FROM GiftCommitment LIMIT 1];",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 27 with the error:\n\n\nSELECT LastNextGenCmtProcError FROM GiftCommitment\n       ^\nERROR at Row:1:Column:8\nNo such column 'LastNextGenCmtProcError' on entity 'GiftCommitment'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "63.0",
+    "kind": "static-read",
+    "object": "GiftCommitment",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "GiftCommitment record=new GiftCommitment();Object value=record.PartyPhilanthropicRsrchPrflId;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 64 with the error:\n\nVariable does not exist: PartyPhilanthropicRsrchPrflId",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "63.0",
+    "kind": "static-query",
+    "object": "GiftCommitment",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "List<GiftCommitment> rows=[SELECT PartyPhilanthropicRsrchPrflId FROM GiftCommitment LIMIT 1];",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 27 with the error:\n\n\nSELECT PartyPhilanthropicRsrchPrflId FROM\n       ^\nERROR at Row:1:Column:8\nNo such column 'PartyPhilanthropicRsrchPrflId' on entity 'GiftCommitment'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "63.0",
+    "kind": "static-read",
+    "object": "GiftTransaction",
+    "field": "GenerationalCohort",
+    "source": "GiftTransaction record=new GiftTransaction();Object value=record.GenerationalCohort;",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "63.0",
+    "kind": "static-query",
+    "object": "GiftTransaction",
+    "field": "GenerationalCohort",
+    "source": "List<GiftTransaction> rows=[SELECT GenerationalCohort FROM GiftTransaction LIMIT 1];",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "63.0",
+    "kind": "static-read",
+    "object": "GiftTransaction",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "GiftTransaction record=new GiftTransaction();Object value=record.PartyPhilanthropicRsrchPrflId;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 66 with the error:\n\nVariable does not exist: PartyPhilanthropicRsrchPrflId",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "63.0",
+    "kind": "static-query",
+    "object": "GiftTransaction",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "List<GiftTransaction> rows=[SELECT PartyPhilanthropicRsrchPrflId FROM GiftTransaction LIMIT 1];",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 28 with the error:\n\n\nSELECT PartyPhilanthropicRsrchPrflId FROM\n       ^\nERROR at Row:1:Column:8\nNo such column 'PartyPhilanthropicRsrchPrflId' on entity 'GiftTransaction'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "63.0",
+    "kind": "static-read",
+    "object": "GiftTransaction",
+    "field": "TaxDeductionAmount",
+    "source": "GiftTransaction record=new GiftTransaction();Object value=record.TaxDeductionAmount;",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "63.0",
+    "kind": "static-query",
+    "object": "GiftTransaction",
+    "field": "TaxDeductionAmount",
+    "source": "List<GiftTransaction> rows=[SELECT TaxDeductionAmount FROM GiftTransaction LIMIT 1];",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "64.0",
+    "kind": "dynamic",
+    "compiled": true,
+    "success": true,
+    "observations": [
+      {
+        "field": "GiftCommitment.LastNextGenCmtProcDtTm",
+        "route": "get",
+        "result": "System.SObjectException: Invalid field LastNextGenCmtProcDtTm for GiftCommitment"
+      },
+      {
+        "field": "GiftCommitment.LastNextGenCmtProcDtTm",
+        "route": "put",
+        "result": "System.SObjectException: Invalid field LastNextGenCmtProcDtTm for GiftCommitment"
+      },
+      {
+        "field": "GiftCommitment.LastNextGenCmtProcDtTm",
+        "route": "query",
+        "result": "System.QueryException: No such column 'LastNextGenCmtProcDtTm' on entity 'GiftCommitment'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "field": "GiftCommitment.LastNextGenCmtProcError",
+        "route": "get",
+        "result": "System.SObjectException: Invalid field LastNextGenCmtProcError for GiftCommitment"
+      },
+      {
+        "field": "GiftCommitment.LastNextGenCmtProcError",
+        "route": "put",
+        "result": "System.SObjectException: Invalid field LastNextGenCmtProcError for GiftCommitment"
+      },
+      {
+        "field": "GiftCommitment.LastNextGenCmtProcError",
+        "route": "query",
+        "result": "System.QueryException: No such column 'LastNextGenCmtProcError' on entity 'GiftCommitment'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "field": "GiftCommitment.PartyPhilanthropicRsrchPrflId",
+        "route": "get",
+        "result": "accepted"
+      },
+      {
+        "field": "GiftCommitment.PartyPhilanthropicRsrchPrflId",
+        "route": "put",
+        "result": "accepted"
+      },
+      {
+        "field": "GiftCommitment.PartyPhilanthropicRsrchPrflId",
+        "route": "query",
+        "result": "accepted"
+      },
+      {
+        "field": "GiftTransaction.GenerationalCohort",
+        "route": "get",
+        "result": "accepted"
+      },
+      {
+        "field": "GiftTransaction.GenerationalCohort",
+        "route": "put",
+        "result": "accepted"
+      },
+      {
+        "field": "GiftTransaction.GenerationalCohort",
+        "route": "query",
+        "result": "accepted"
+      },
+      {
+        "field": "GiftTransaction.PartyPhilanthropicRsrchPrflId",
+        "route": "get",
+        "result": "accepted"
+      },
+      {
+        "field": "GiftTransaction.PartyPhilanthropicRsrchPrflId",
+        "route": "put",
+        "result": "accepted"
+      },
+      {
+        "field": "GiftTransaction.PartyPhilanthropicRsrchPrflId",
+        "route": "query",
+        "result": "accepted"
+      },
+      {
+        "field": "GiftTransaction.TaxDeductionAmount",
+        "route": "get",
+        "result": "accepted"
+      },
+      {
+        "field": "GiftTransaction.TaxDeductionAmount",
+        "route": "put",
+        "result": "System.SObjectException: Field TaxDeductionAmount is not editable"
+      },
+      {
+        "field": "GiftTransaction.TaxDeductionAmount",
+        "route": "query",
+        "result": "accepted"
+      }
+    ]
+  },
+  {
+    "api": "64.0",
+    "kind": "static-read",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcDtTm",
+    "source": "GiftCommitment record=new GiftCommitment();Object value=record.LastNextGenCmtProcDtTm;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 64 with the error:\n\nVariable does not exist: LastNextGenCmtProcDtTm",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "64.0",
+    "kind": "static-query",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcDtTm",
+    "source": "List<GiftCommitment> rows=[SELECT LastNextGenCmtProcDtTm FROM GiftCommitment LIMIT 1];",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 27 with the error:\n\n\nSELECT LastNextGenCmtProcDtTm FROM GiftCommitment\n       ^\nERROR at Row:1:Column:8\nNo such column 'LastNextGenCmtProcDtTm' on entity 'GiftCommitment'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "64.0",
+    "kind": "static-read",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcError",
+    "source": "GiftCommitment record=new GiftCommitment();Object value=record.LastNextGenCmtProcError;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 64 with the error:\n\nVariable does not exist: LastNextGenCmtProcError",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "64.0",
+    "kind": "static-query",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcError",
+    "source": "List<GiftCommitment> rows=[SELECT LastNextGenCmtProcError FROM GiftCommitment LIMIT 1];",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 27 with the error:\n\n\nSELECT LastNextGenCmtProcError FROM GiftCommitment\n       ^\nERROR at Row:1:Column:8\nNo such column 'LastNextGenCmtProcError' on entity 'GiftCommitment'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "64.0",
+    "kind": "static-read",
+    "object": "GiftCommitment",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "GiftCommitment record=new GiftCommitment();Object value=record.PartyPhilanthropicRsrchPrflId;",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "64.0",
+    "kind": "static-query",
+    "object": "GiftCommitment",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "List<GiftCommitment> rows=[SELECT PartyPhilanthropicRsrchPrflId FROM GiftCommitment LIMIT 1];",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "64.0",
+    "kind": "static-read",
+    "object": "GiftTransaction",
+    "field": "GenerationalCohort",
+    "source": "GiftTransaction record=new GiftTransaction();Object value=record.GenerationalCohort;",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "64.0",
+    "kind": "static-query",
+    "object": "GiftTransaction",
+    "field": "GenerationalCohort",
+    "source": "List<GiftTransaction> rows=[SELECT GenerationalCohort FROM GiftTransaction LIMIT 1];",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "64.0",
+    "kind": "static-read",
+    "object": "GiftTransaction",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "GiftTransaction record=new GiftTransaction();Object value=record.PartyPhilanthropicRsrchPrflId;",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "64.0",
+    "kind": "static-query",
+    "object": "GiftTransaction",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "List<GiftTransaction> rows=[SELECT PartyPhilanthropicRsrchPrflId FROM GiftTransaction LIMIT 1];",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "64.0",
+    "kind": "static-read",
+    "object": "GiftTransaction",
+    "field": "TaxDeductionAmount",
+    "source": "GiftTransaction record=new GiftTransaction();Object value=record.TaxDeductionAmount;",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "64.0",
+    "kind": "static-query",
+    "object": "GiftTransaction",
+    "field": "TaxDeductionAmount",
+    "source": "List<GiftTransaction> rows=[SELECT TaxDeductionAmount FROM GiftTransaction LIMIT 1];",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "65.0",
+    "kind": "dynamic",
+    "compiled": true,
+    "success": true,
+    "observations": [
+      {
+        "field": "GiftCommitment.LastNextGenCmtProcDtTm",
+        "route": "get",
+        "result": "System.SObjectException: Invalid field LastNextGenCmtProcDtTm for GiftCommitment"
+      },
+      {
+        "field": "GiftCommitment.LastNextGenCmtProcDtTm",
+        "route": "put",
+        "result": "System.SObjectException: Invalid field LastNextGenCmtProcDtTm for GiftCommitment"
+      },
+      {
+        "field": "GiftCommitment.LastNextGenCmtProcDtTm",
+        "route": "query",
+        "result": "System.QueryException: No such column 'LastNextGenCmtProcDtTm' on entity 'GiftCommitment'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "field": "GiftCommitment.LastNextGenCmtProcError",
+        "route": "get",
+        "result": "System.SObjectException: Invalid field LastNextGenCmtProcError for GiftCommitment"
+      },
+      {
+        "field": "GiftCommitment.LastNextGenCmtProcError",
+        "route": "put",
+        "result": "System.SObjectException: Invalid field LastNextGenCmtProcError for GiftCommitment"
+      },
+      {
+        "field": "GiftCommitment.LastNextGenCmtProcError",
+        "route": "query",
+        "result": "System.QueryException: No such column 'LastNextGenCmtProcError' on entity 'GiftCommitment'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "field": "GiftCommitment.PartyPhilanthropicRsrchPrflId",
+        "route": "get",
+        "result": "accepted"
+      },
+      {
+        "field": "GiftCommitment.PartyPhilanthropicRsrchPrflId",
+        "route": "put",
+        "result": "accepted"
+      },
+      {
+        "field": "GiftCommitment.PartyPhilanthropicRsrchPrflId",
+        "route": "query",
+        "result": "accepted"
+      },
+      {
+        "field": "GiftTransaction.GenerationalCohort",
+        "route": "get",
+        "result": "accepted"
+      },
+      {
+        "field": "GiftTransaction.GenerationalCohort",
+        "route": "put",
+        "result": "accepted"
+      },
+      {
+        "field": "GiftTransaction.GenerationalCohort",
+        "route": "query",
+        "result": "accepted"
+      },
+      {
+        "field": "GiftTransaction.PartyPhilanthropicRsrchPrflId",
+        "route": "get",
+        "result": "accepted"
+      },
+      {
+        "field": "GiftTransaction.PartyPhilanthropicRsrchPrflId",
+        "route": "put",
+        "result": "accepted"
+      },
+      {
+        "field": "GiftTransaction.PartyPhilanthropicRsrchPrflId",
+        "route": "query",
+        "result": "accepted"
+      },
+      {
+        "field": "GiftTransaction.TaxDeductionAmount",
+        "route": "get",
+        "result": "accepted"
+      },
+      {
+        "field": "GiftTransaction.TaxDeductionAmount",
+        "route": "put",
+        "result": "System.SObjectException: Field TaxDeductionAmount is not editable"
+      },
+      {
+        "field": "GiftTransaction.TaxDeductionAmount",
+        "route": "query",
+        "result": "accepted"
+      }
+    ]
+  },
+  {
+    "api": "65.0",
+    "kind": "static-read",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcDtTm",
+    "source": "GiftCommitment record=new GiftCommitment();Object value=record.LastNextGenCmtProcDtTm;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 64 with the error:\n\nVariable does not exist: LastNextGenCmtProcDtTm",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "65.0",
+    "kind": "static-query",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcDtTm",
+    "source": "List<GiftCommitment> rows=[SELECT LastNextGenCmtProcDtTm FROM GiftCommitment LIMIT 1];",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 27 with the error:\n\n\nSELECT LastNextGenCmtProcDtTm FROM GiftCommitment\n       ^\nERROR at Row:1:Column:8\nNo such column 'LastNextGenCmtProcDtTm' on entity 'GiftCommitment'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "65.0",
+    "kind": "static-read",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcError",
+    "source": "GiftCommitment record=new GiftCommitment();Object value=record.LastNextGenCmtProcError;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 64 with the error:\n\nVariable does not exist: LastNextGenCmtProcError",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "65.0",
+    "kind": "static-query",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcError",
+    "source": "List<GiftCommitment> rows=[SELECT LastNextGenCmtProcError FROM GiftCommitment LIMIT 1];",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 27 with the error:\n\n\nSELECT LastNextGenCmtProcError FROM GiftCommitment\n       ^\nERROR at Row:1:Column:8\nNo such column 'LastNextGenCmtProcError' on entity 'GiftCommitment'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "65.0",
+    "kind": "static-read",
+    "object": "GiftCommitment",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "GiftCommitment record=new GiftCommitment();Object value=record.PartyPhilanthropicRsrchPrflId;",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "65.0",
+    "kind": "static-query",
+    "object": "GiftCommitment",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "List<GiftCommitment> rows=[SELECT PartyPhilanthropicRsrchPrflId FROM GiftCommitment LIMIT 1];",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "65.0",
+    "kind": "static-read",
+    "object": "GiftTransaction",
+    "field": "GenerationalCohort",
+    "source": "GiftTransaction record=new GiftTransaction();Object value=record.GenerationalCohort;",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "65.0",
+    "kind": "static-query",
+    "object": "GiftTransaction",
+    "field": "GenerationalCohort",
+    "source": "List<GiftTransaction> rows=[SELECT GenerationalCohort FROM GiftTransaction LIMIT 1];",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "65.0",
+    "kind": "static-read",
+    "object": "GiftTransaction",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "GiftTransaction record=new GiftTransaction();Object value=record.PartyPhilanthropicRsrchPrflId;",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "65.0",
+    "kind": "static-query",
+    "object": "GiftTransaction",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "List<GiftTransaction> rows=[SELECT PartyPhilanthropicRsrchPrflId FROM GiftTransaction LIMIT 1];",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "65.0",
+    "kind": "static-read",
+    "object": "GiftTransaction",
+    "field": "TaxDeductionAmount",
+    "source": "GiftTransaction record=new GiftTransaction();Object value=record.TaxDeductionAmount;",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "65.0",
+    "kind": "static-query",
+    "object": "GiftTransaction",
+    "field": "TaxDeductionAmount",
+    "source": "List<GiftTransaction> rows=[SELECT TaxDeductionAmount FROM GiftTransaction LIMIT 1];",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "66.0",
+    "kind": "dynamic",
+    "compiled": true,
+    "success": true,
+    "observations": [
+      {
+        "field": "GiftCommitment.LastNextGenCmtProcDtTm",
+        "route": "get",
+        "result": "System.SObjectException: Invalid field LastNextGenCmtProcDtTm for GiftCommitment"
+      },
+      {
+        "field": "GiftCommitment.LastNextGenCmtProcDtTm",
+        "route": "put",
+        "result": "System.SObjectException: Invalid field LastNextGenCmtProcDtTm for GiftCommitment"
+      },
+      {
+        "field": "GiftCommitment.LastNextGenCmtProcDtTm",
+        "route": "query",
+        "result": "System.QueryException: No such column 'LastNextGenCmtProcDtTm' on entity 'GiftCommitment'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "field": "GiftCommitment.LastNextGenCmtProcError",
+        "route": "get",
+        "result": "System.SObjectException: Invalid field LastNextGenCmtProcError for GiftCommitment"
+      },
+      {
+        "field": "GiftCommitment.LastNextGenCmtProcError",
+        "route": "put",
+        "result": "System.SObjectException: Invalid field LastNextGenCmtProcError for GiftCommitment"
+      },
+      {
+        "field": "GiftCommitment.LastNextGenCmtProcError",
+        "route": "query",
+        "result": "System.QueryException: No such column 'LastNextGenCmtProcError' on entity 'GiftCommitment'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "field": "GiftCommitment.PartyPhilanthropicRsrchPrflId",
+        "route": "get",
+        "result": "accepted"
+      },
+      {
+        "field": "GiftCommitment.PartyPhilanthropicRsrchPrflId",
+        "route": "put",
+        "result": "accepted"
+      },
+      {
+        "field": "GiftCommitment.PartyPhilanthropicRsrchPrflId",
+        "route": "query",
+        "result": "accepted"
+      },
+      {
+        "field": "GiftTransaction.GenerationalCohort",
+        "route": "get",
+        "result": "accepted"
+      },
+      {
+        "field": "GiftTransaction.GenerationalCohort",
+        "route": "put",
+        "result": "accepted"
+      },
+      {
+        "field": "GiftTransaction.GenerationalCohort",
+        "route": "query",
+        "result": "accepted"
+      },
+      {
+        "field": "GiftTransaction.PartyPhilanthropicRsrchPrflId",
+        "route": "get",
+        "result": "accepted"
+      },
+      {
+        "field": "GiftTransaction.PartyPhilanthropicRsrchPrflId",
+        "route": "put",
+        "result": "accepted"
+      },
+      {
+        "field": "GiftTransaction.PartyPhilanthropicRsrchPrflId",
+        "route": "query",
+        "result": "accepted"
+      },
+      {
+        "field": "GiftTransaction.TaxDeductionAmount",
+        "route": "get",
+        "result": "accepted"
+      },
+      {
+        "field": "GiftTransaction.TaxDeductionAmount",
+        "route": "put",
+        "result": "System.SObjectException: Field TaxDeductionAmount is not editable"
+      },
+      {
+        "field": "GiftTransaction.TaxDeductionAmount",
+        "route": "query",
+        "result": "accepted"
+      }
+    ]
+  },
+  {
+    "api": "66.0",
+    "kind": "static-read",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcDtTm",
+    "source": "GiftCommitment record=new GiftCommitment();Object value=record.LastNextGenCmtProcDtTm;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 64 with the error:\n\nVariable does not exist: LastNextGenCmtProcDtTm",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "66.0",
+    "kind": "static-query",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcDtTm",
+    "source": "List<GiftCommitment> rows=[SELECT LastNextGenCmtProcDtTm FROM GiftCommitment LIMIT 1];",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 27 with the error:\n\n\nSELECT LastNextGenCmtProcDtTm FROM GiftCommitment\n       ^\nERROR at Row:1:Column:8\nNo such column 'LastNextGenCmtProcDtTm' on entity 'GiftCommitment'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "66.0",
+    "kind": "static-read",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcError",
+    "source": "GiftCommitment record=new GiftCommitment();Object value=record.LastNextGenCmtProcError;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 64 with the error:\n\nVariable does not exist: LastNextGenCmtProcError",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "66.0",
+    "kind": "static-query",
+    "object": "GiftCommitment",
+    "field": "LastNextGenCmtProcError",
+    "source": "List<GiftCommitment> rows=[SELECT LastNextGenCmtProcError FROM GiftCommitment LIMIT 1];",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 27 with the error:\n\n\nSELECT LastNextGenCmtProcError FROM GiftCommitment\n       ^\nERROR at Row:1:Column:8\nNo such column 'LastNextGenCmtProcError' on entity 'GiftCommitment'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "66.0",
+    "kind": "static-read",
+    "object": "GiftCommitment",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "GiftCommitment record=new GiftCommitment();Object value=record.PartyPhilanthropicRsrchPrflId;",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "66.0",
+    "kind": "static-query",
+    "object": "GiftCommitment",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "List<GiftCommitment> rows=[SELECT PartyPhilanthropicRsrchPrflId FROM GiftCommitment LIMIT 1];",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "66.0",
+    "kind": "static-read",
+    "object": "GiftTransaction",
+    "field": "GenerationalCohort",
+    "source": "GiftTransaction record=new GiftTransaction();Object value=record.GenerationalCohort;",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "66.0",
+    "kind": "static-query",
+    "object": "GiftTransaction",
+    "field": "GenerationalCohort",
+    "source": "List<GiftTransaction> rows=[SELECT GenerationalCohort FROM GiftTransaction LIMIT 1];",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "66.0",
+    "kind": "static-read",
+    "object": "GiftTransaction",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "GiftTransaction record=new GiftTransaction();Object value=record.PartyPhilanthropicRsrchPrflId;",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "66.0",
+    "kind": "static-query",
+    "object": "GiftTransaction",
+    "field": "PartyPhilanthropicRsrchPrflId",
+    "source": "List<GiftTransaction> rows=[SELECT PartyPhilanthropicRsrchPrflId FROM GiftTransaction LIMIT 1];",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "66.0",
+    "kind": "static-read",
+    "object": "GiftTransaction",
+    "field": "TaxDeductionAmount",
+    "source": "GiftTransaction record=new GiftTransaction();Object value=record.TaxDeductionAmount;",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  },
+  {
+    "api": "66.0",
+    "kind": "static-query",
+    "object": "GiftTransaction",
+    "field": "TaxDeductionAmount",
+    "source": "List<GiftTransaction> rows=[SELECT TaxDeductionAmount FROM GiftTransaction LIMIT 1];",
+    "status": 0,
+    "message": null,
+    "compiled": true,
+    "success": true
+  }
+]

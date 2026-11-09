@@ -1,0 +1,830 @@
+[
+  {
+    "api": "62.0",
+    "route": "anonymous",
+    "object": "GiftCommitment",
+    "fields": [
+      "LastNextGenCmtProcDtTm",
+      "LastNextGenCmtProcError",
+      "PartyPhilanthropicRsrchPrflId"
+    ],
+    "result": "LastNextGenCmtProcDtTm.getToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context|LastNextGenCmtProcDtTm.putToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context|LastNextGenCmtProcError.getToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context|LastNextGenCmtProcError.putToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context|PartyPhilanthropicRsrchPrflId.getToken=System.SObjectException: Field GiftCommitment.PartyPhilanthropicRsrchPrflId is inaccessible in this context|PartyPhilanthropicRsrchPrflId.putToken=System.SObjectException: Field GiftCommitment.PartyPhilanthropicRsrchPrflId is inaccessible in this context",
+    "source": "SObject r=new GiftCommitment();List<String> out=new List<String>();for(String name:new List<String>{'LastNextGenCmtProcDtTm','LastNextGenCmtProcError','PartyPhilanthropicRsrchPrflId'}){Schema.SObjectField token=OwnedFullTokenSource.field('GiftCommitment',name);try{r.get(token);out.add(name+'.getToken=accepted');}catch(Exception e){out.add(name+'.getToken='+e.getTypeName()+': '+e.getMessage());}try{r.put(token,null);out.add(name+'.putToken=accepted');}catch(Exception e){out.add(name+'.putToken='+e.getTypeName()+': '+e.getMessage());}}String observation=String.join(out,'|');System.debug('B5B9FULLTOKEN:'+observation);",
+    "profile": "gift"
+  },
+  {
+    "api": "62.0",
+    "route": "anonymous",
+    "object": "GiftTransaction",
+    "fields": [
+      "GenerationalCohort",
+      "PartyPhilanthropicRsrchPrflId",
+      "TaxDeductionAmount"
+    ],
+    "result": "GenerationalCohort.getToken=System.SObjectException: Field GiftTransaction.GenerationalCohort is inaccessible in this context|GenerationalCohort.putToken=System.SObjectException: Field GiftTransaction.GenerationalCohort is inaccessible in this context|PartyPhilanthropicRsrchPrflId.getToken=System.SObjectException: Field GiftTransaction.PartyPhilanthropicRsrchPrflId is inaccessible in this context|PartyPhilanthropicRsrchPrflId.putToken=System.SObjectException: Field GiftTransaction.PartyPhilanthropicRsrchPrflId is inaccessible in this context|TaxDeductionAmount.getToken=System.SObjectException: Field GiftTransaction.TaxDeductionAmount is inaccessible in this context|TaxDeductionAmount.putToken=System.SObjectException: Field GiftTransaction.TaxDeductionAmount is inaccessible in this context",
+    "source": "SObject r=new GiftTransaction();List<String> out=new List<String>();for(String name:new List<String>{'GenerationalCohort','PartyPhilanthropicRsrchPrflId','TaxDeductionAmount'}){Schema.SObjectField token=OwnedFullTokenSource.field('GiftTransaction',name);try{r.get(token);out.add(name+'.getToken=accepted');}catch(Exception e){out.add(name+'.getToken='+e.getTypeName()+': '+e.getMessage());}try{r.put(token,null);out.add(name+'.putToken=accepted');}catch(Exception e){out.add(name+'.putToken='+e.getTypeName()+': '+e.getMessage());}}String observation=String.join(out,'|');System.debug('B5B9FULLTOKEN:'+observation);",
+    "profile": "gift"
+  },
+  {
+    "api": "63.0",
+    "route": "anonymous",
+    "object": "GiftCommitment",
+    "fields": [
+      "LastNextGenCmtProcDtTm",
+      "LastNextGenCmtProcError",
+      "PartyPhilanthropicRsrchPrflId"
+    ],
+    "result": "LastNextGenCmtProcDtTm.getToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context|LastNextGenCmtProcDtTm.putToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context|LastNextGenCmtProcError.getToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context|LastNextGenCmtProcError.putToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context|PartyPhilanthropicRsrchPrflId.getToken=System.SObjectException: Field GiftCommitment.PartyPhilanthropicRsrchPrflId is inaccessible in this context|PartyPhilanthropicRsrchPrflId.putToken=System.SObjectException: Field GiftCommitment.PartyPhilanthropicRsrchPrflId is inaccessible in this context",
+    "source": "SObject r=new GiftCommitment();List<String> out=new List<String>();for(String name:new List<String>{'LastNextGenCmtProcDtTm','LastNextGenCmtProcError','PartyPhilanthropicRsrchPrflId'}){Schema.SObjectField token=OwnedFullTokenSource.field('GiftCommitment',name);try{r.get(token);out.add(name+'.getToken=accepted');}catch(Exception e){out.add(name+'.getToken='+e.getTypeName()+': '+e.getMessage());}try{r.put(token,null);out.add(name+'.putToken=accepted');}catch(Exception e){out.add(name+'.putToken='+e.getTypeName()+': '+e.getMessage());}}String observation=String.join(out,'|');System.debug('B5B9FULLTOKEN:'+observation);",
+    "profile": "gift"
+  },
+  {
+    "api": "63.0",
+    "route": "anonymous",
+    "object": "GiftTransaction",
+    "fields": [
+      "GenerationalCohort",
+      "PartyPhilanthropicRsrchPrflId",
+      "TaxDeductionAmount"
+    ],
+    "result": "GenerationalCohort.getToken=accepted|GenerationalCohort.putToken=accepted|PartyPhilanthropicRsrchPrflId.getToken=System.SObjectException: Field GiftTransaction.PartyPhilanthropicRsrchPrflId is inaccessible in this context|PartyPhilanthropicRsrchPrflId.putToken=System.SObjectException: Field GiftTransaction.PartyPhilanthropicRsrchPrflId is inaccessible in this context|TaxDeductionAmount.getToken=accepted|TaxDeductionAmount.putToken=System.SObjectException: Field TaxDeductionAmount is not editable",
+    "source": "SObject r=new GiftTransaction();List<String> out=new List<String>();for(String name:new List<String>{'GenerationalCohort','PartyPhilanthropicRsrchPrflId','TaxDeductionAmount'}){Schema.SObjectField token=OwnedFullTokenSource.field('GiftTransaction',name);try{r.get(token);out.add(name+'.getToken=accepted');}catch(Exception e){out.add(name+'.getToken='+e.getTypeName()+': '+e.getMessage());}try{r.put(token,null);out.add(name+'.putToken=accepted');}catch(Exception e){out.add(name+'.putToken='+e.getTypeName()+': '+e.getMessage());}}String observation=String.join(out,'|');System.debug('B5B9FULLTOKEN:'+observation);",
+    "profile": "gift"
+  },
+  {
+    "api": "64.0",
+    "route": "anonymous",
+    "object": "GiftCommitment",
+    "fields": [
+      "LastNextGenCmtProcDtTm",
+      "LastNextGenCmtProcError",
+      "PartyPhilanthropicRsrchPrflId"
+    ],
+    "result": "LastNextGenCmtProcDtTm.getToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context|LastNextGenCmtProcDtTm.putToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context|LastNextGenCmtProcError.getToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context|LastNextGenCmtProcError.putToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context|PartyPhilanthropicRsrchPrflId.getToken=accepted|PartyPhilanthropicRsrchPrflId.putToken=accepted",
+    "source": "SObject r=new GiftCommitment();List<String> out=new List<String>();for(String name:new List<String>{'LastNextGenCmtProcDtTm','LastNextGenCmtProcError','PartyPhilanthropicRsrchPrflId'}){Schema.SObjectField token=OwnedFullTokenSource.field('GiftCommitment',name);try{r.get(token);out.add(name+'.getToken=accepted');}catch(Exception e){out.add(name+'.getToken='+e.getTypeName()+': '+e.getMessage());}try{r.put(token,null);out.add(name+'.putToken=accepted');}catch(Exception e){out.add(name+'.putToken='+e.getTypeName()+': '+e.getMessage());}}String observation=String.join(out,'|');System.debug('B5B9FULLTOKEN:'+observation);",
+    "profile": "gift"
+  },
+  {
+    "api": "64.0",
+    "route": "anonymous",
+    "object": "GiftTransaction",
+    "fields": [
+      "GenerationalCohort",
+      "PartyPhilanthropicRsrchPrflId",
+      "TaxDeductionAmount"
+    ],
+    "result": "GenerationalCohort.getToken=accepted|GenerationalCohort.putToken=accepted|PartyPhilanthropicRsrchPrflId.getToken=accepted|PartyPhilanthropicRsrchPrflId.putToken=accepted|TaxDeductionAmount.getToken=accepted|TaxDeductionAmount.putToken=System.SObjectException: Field TaxDeductionAmount is not editable",
+    "source": "SObject r=new GiftTransaction();List<String> out=new List<String>();for(String name:new List<String>{'GenerationalCohort','PartyPhilanthropicRsrchPrflId','TaxDeductionAmount'}){Schema.SObjectField token=OwnedFullTokenSource.field('GiftTransaction',name);try{r.get(token);out.add(name+'.getToken=accepted');}catch(Exception e){out.add(name+'.getToken='+e.getTypeName()+': '+e.getMessage());}try{r.put(token,null);out.add(name+'.putToken=accepted');}catch(Exception e){out.add(name+'.putToken='+e.getTypeName()+': '+e.getMessage());}}String observation=String.join(out,'|');System.debug('B5B9FULLTOKEN:'+observation);",
+    "profile": "gift"
+  },
+  {
+    "api": "65.0",
+    "route": "anonymous",
+    "object": "GiftCommitment",
+    "fields": [
+      "LastNextGenCmtProcDtTm",
+      "LastNextGenCmtProcError",
+      "PartyPhilanthropicRsrchPrflId"
+    ],
+    "result": "LastNextGenCmtProcDtTm.getToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context|LastNextGenCmtProcDtTm.putToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context|LastNextGenCmtProcError.getToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context|LastNextGenCmtProcError.putToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context|PartyPhilanthropicRsrchPrflId.getToken=accepted|PartyPhilanthropicRsrchPrflId.putToken=accepted",
+    "source": "SObject r=new GiftCommitment();List<String> out=new List<String>();for(String name:new List<String>{'LastNextGenCmtProcDtTm','LastNextGenCmtProcError','PartyPhilanthropicRsrchPrflId'}){Schema.SObjectField token=OwnedFullTokenSource.field('GiftCommitment',name);try{r.get(token);out.add(name+'.getToken=accepted');}catch(Exception e){out.add(name+'.getToken='+e.getTypeName()+': '+e.getMessage());}try{r.put(token,null);out.add(name+'.putToken=accepted');}catch(Exception e){out.add(name+'.putToken='+e.getTypeName()+': '+e.getMessage());}}String observation=String.join(out,'|');System.debug('B5B9FULLTOKEN:'+observation);",
+    "profile": "gift"
+  },
+  {
+    "api": "65.0",
+    "route": "anonymous",
+    "object": "GiftTransaction",
+    "fields": [
+      "GenerationalCohort",
+      "PartyPhilanthropicRsrchPrflId",
+      "TaxDeductionAmount"
+    ],
+    "result": "GenerationalCohort.getToken=accepted|GenerationalCohort.putToken=accepted|PartyPhilanthropicRsrchPrflId.getToken=accepted|PartyPhilanthropicRsrchPrflId.putToken=accepted|TaxDeductionAmount.getToken=accepted|TaxDeductionAmount.putToken=System.SObjectException: Field TaxDeductionAmount is not editable",
+    "source": "SObject r=new GiftTransaction();List<String> out=new List<String>();for(String name:new List<String>{'GenerationalCohort','PartyPhilanthropicRsrchPrflId','TaxDeductionAmount'}){Schema.SObjectField token=OwnedFullTokenSource.field('GiftTransaction',name);try{r.get(token);out.add(name+'.getToken=accepted');}catch(Exception e){out.add(name+'.getToken='+e.getTypeName()+': '+e.getMessage());}try{r.put(token,null);out.add(name+'.putToken=accepted');}catch(Exception e){out.add(name+'.putToken='+e.getTypeName()+': '+e.getMessage());}}String observation=String.join(out,'|');System.debug('B5B9FULLTOKEN:'+observation);",
+    "profile": "gift"
+  },
+  {
+    "api": "66.0",
+    "route": "anonymous",
+    "object": "GiftCommitment",
+    "fields": [
+      "LastNextGenCmtProcDtTm",
+      "LastNextGenCmtProcError",
+      "PartyPhilanthropicRsrchPrflId"
+    ],
+    "result": "LastNextGenCmtProcDtTm.getToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context|LastNextGenCmtProcDtTm.putToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context|LastNextGenCmtProcError.getToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context|LastNextGenCmtProcError.putToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context|PartyPhilanthropicRsrchPrflId.getToken=accepted|PartyPhilanthropicRsrchPrflId.putToken=accepted",
+    "source": "SObject r=new GiftCommitment();List<String> out=new List<String>();for(String name:new List<String>{'LastNextGenCmtProcDtTm','LastNextGenCmtProcError','PartyPhilanthropicRsrchPrflId'}){Schema.SObjectField token=OwnedFullTokenSource.field('GiftCommitment',name);try{r.get(token);out.add(name+'.getToken=accepted');}catch(Exception e){out.add(name+'.getToken='+e.getTypeName()+': '+e.getMessage());}try{r.put(token,null);out.add(name+'.putToken=accepted');}catch(Exception e){out.add(name+'.putToken='+e.getTypeName()+': '+e.getMessage());}}String observation=String.join(out,'|');System.debug('B5B9FULLTOKEN:'+observation);",
+    "profile": "gift"
+  },
+  {
+    "api": "66.0",
+    "route": "anonymous",
+    "object": "GiftTransaction",
+    "fields": [
+      "GenerationalCohort",
+      "PartyPhilanthropicRsrchPrflId",
+      "TaxDeductionAmount"
+    ],
+    "result": "GenerationalCohort.getToken=accepted|GenerationalCohort.putToken=accepted|PartyPhilanthropicRsrchPrflId.getToken=accepted|PartyPhilanthropicRsrchPrflId.putToken=accepted|TaxDeductionAmount.getToken=accepted|TaxDeductionAmount.putToken=System.SObjectException: Field TaxDeductionAmount is not editable",
+    "source": "SObject r=new GiftTransaction();List<String> out=new List<String>();for(String name:new List<String>{'GenerationalCohort','PartyPhilanthropicRsrchPrflId','TaxDeductionAmount'}){Schema.SObjectField token=OwnedFullTokenSource.field('GiftTransaction',name);try{r.get(token);out.add(name+'.getToken=accepted');}catch(Exception e){out.add(name+'.getToken='+e.getTypeName()+': '+e.getMessage());}try{r.put(token,null);out.add(name+'.putToken=accepted');}catch(Exception e){out.add(name+'.putToken='+e.getTypeName()+': '+e.getMessage());}}String observation=String.join(out,'|');System.debug('B5B9FULLTOKEN:'+observation);",
+    "profile": "gift"
+  },
+  {
+    "api": "67.0",
+    "route": "anonymous",
+    "object": "GiftCommitment",
+    "fields": [
+      "LastNextGenCmtProcDtTm",
+      "LastNextGenCmtProcError",
+      "PartyPhilanthropicRsrchPrflId"
+    ],
+    "result": "LastNextGenCmtProcDtTm.getToken=accepted|LastNextGenCmtProcDtTm.putToken=accepted|LastNextGenCmtProcError.getToken=accepted|LastNextGenCmtProcError.putToken=accepted|PartyPhilanthropicRsrchPrflId.getToken=accepted|PartyPhilanthropicRsrchPrflId.putToken=accepted",
+    "source": "SObject r=new GiftCommitment();List<String> out=new List<String>();for(String name:new List<String>{'LastNextGenCmtProcDtTm','LastNextGenCmtProcError','PartyPhilanthropicRsrchPrflId'}){Schema.SObjectField token=OwnedFullTokenSource.field('GiftCommitment',name);try{r.get(token);out.add(name+'.getToken=accepted');}catch(Exception e){out.add(name+'.getToken='+e.getTypeName()+': '+e.getMessage());}try{r.put(token,null);out.add(name+'.putToken=accepted');}catch(Exception e){out.add(name+'.putToken='+e.getTypeName()+': '+e.getMessage());}}String observation=String.join(out,'|');System.debug('B5B9FULLTOKEN:'+observation);",
+    "profile": "gift"
+  },
+  {
+    "api": "67.0",
+    "route": "anonymous",
+    "object": "GiftTransaction",
+    "fields": [
+      "GenerationalCohort",
+      "PartyPhilanthropicRsrchPrflId",
+      "TaxDeductionAmount"
+    ],
+    "result": "GenerationalCohort.getToken=accepted|GenerationalCohort.putToken=accepted|PartyPhilanthropicRsrchPrflId.getToken=accepted|PartyPhilanthropicRsrchPrflId.putToken=accepted|TaxDeductionAmount.getToken=accepted|TaxDeductionAmount.putToken=System.SObjectException: Field TaxDeductionAmount is not editable",
+    "source": "SObject r=new GiftTransaction();List<String> out=new List<String>();for(String name:new List<String>{'GenerationalCohort','PartyPhilanthropicRsrchPrflId','TaxDeductionAmount'}){Schema.SObjectField token=OwnedFullTokenSource.field('GiftTransaction',name);try{r.get(token);out.add(name+'.getToken=accepted');}catch(Exception e){out.add(name+'.getToken='+e.getTypeName()+': '+e.getMessage());}try{r.put(token,null);out.add(name+'.putToken=accepted');}catch(Exception e){out.add(name+'.putToken='+e.getTypeName()+': '+e.getMessage());}}String observation=String.join(out,'|');System.debug('B5B9FULLTOKEN:'+observation);",
+    "profile": "gift"
+  },
+  {
+    "api": "63.0",
+    "route": "istest",
+    "object": "GiftCommitment",
+    "fields": [
+      "LastNextGenCmtProcDtTm",
+      "LastNextGenCmtProcError",
+      "PartyPhilanthropicRsrchPrflId"
+    ],
+    "result": "LastNextGenCmtProcDtTm.getToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context|LastNextGenCmtProcDtTm.putToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context|LastNextGenCmtProcError.getToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context|LastNextGenCmtProcError.putToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context|PartyPhilanthropicRsrchPrflId.getToken=System.SObjectException: Field GiftCommitment.PartyPhilanthropicRsrchPrflId is inaccessible in this context|PartyPhilanthropicRsrchPrflId.putToken=System.SObjectException: Field GiftCommitment.PartyPhilanthropicRsrchPrflId is inaccessible in this context",
+    "source": "@IsTest private class OwnedFullTokenTest63_0 {@IsTest static void probe(){System.assert(false,'B5B9FULLTOKEN:'+OwnedFullTokenProbe63_0.observe());}}",
+    "profile": "gift"
+  },
+  {
+    "api": "63.0",
+    "route": "istest",
+    "object": "GiftTransaction",
+    "fields": [
+      "GenerationalCohort",
+      "PartyPhilanthropicRsrchPrflId",
+      "TaxDeductionAmount"
+    ],
+    "result": "GenerationalCohort.getToken=accepted|GenerationalCohort.putToken=accepted|PartyPhilanthropicRsrchPrflId.getToken=System.SObjectException: Field GiftTransaction.PartyPhilanthropicRsrchPrflId is inaccessible in this context|PartyPhilanthropicRsrchPrflId.putToken=System.SObjectException: Field GiftTransaction.PartyPhilanthropicRsrchPrflId is inaccessible in this context|TaxDeductionAmount.getToken=accepted|TaxDeductionAmount.putToken=System.SObjectException: Field TaxDeductionAmount is not editable",
+    "source": "@IsTest private class OwnedFullTokenTest63_1 {@IsTest static void probe(){System.assert(false,'B5B9FULLTOKEN:'+OwnedFullTokenProbe63_1.observe());}}",
+    "profile": "gift"
+  },
+  {
+    "api": "64.0",
+    "route": "istest",
+    "object": "GiftTransaction",
+    "fields": [
+      "GenerationalCohort",
+      "PartyPhilanthropicRsrchPrflId",
+      "TaxDeductionAmount"
+    ],
+    "result": "GenerationalCohort.getToken=accepted|GenerationalCohort.putToken=accepted|PartyPhilanthropicRsrchPrflId.getToken=accepted|PartyPhilanthropicRsrchPrflId.putToken=accepted|TaxDeductionAmount.getToken=accepted|TaxDeductionAmount.putToken=System.SObjectException: Field TaxDeductionAmount is not editable",
+    "source": "@IsTest private class OwnedFullTokenTest64_1 {@IsTest static void probe(){System.assert(false,'B5B9FULLTOKEN:'+OwnedFullTokenProbe64_1.observe());}}",
+    "profile": "gift"
+  },
+  {
+    "api": "65.0",
+    "route": "istest",
+    "object": "GiftCommitment",
+    "fields": [
+      "LastNextGenCmtProcDtTm",
+      "LastNextGenCmtProcError",
+      "PartyPhilanthropicRsrchPrflId"
+    ],
+    "result": "LastNextGenCmtProcDtTm.getToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context|LastNextGenCmtProcDtTm.putToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context|LastNextGenCmtProcError.getToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context|LastNextGenCmtProcError.putToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context|PartyPhilanthropicRsrchPrflId.getToken=accepted|PartyPhilanthropicRsrchPrflId.putToken=accepted",
+    "source": "@IsTest private class OwnedFullTokenTest65_0 {@IsTest static void probe(){System.assert(false,'B5B9FULLTOKEN:'+OwnedFullTokenProbe65_0.observe());}}",
+    "profile": "gift"
+  },
+  {
+    "api": "62.0",
+    "route": "istest",
+    "object": "GiftCommitment",
+    "fields": [
+      "LastNextGenCmtProcDtTm",
+      "LastNextGenCmtProcError",
+      "PartyPhilanthropicRsrchPrflId"
+    ],
+    "result": "LastNextGenCmtProcDtTm.getToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context|LastNextGenCmtProcDtTm.putToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context|LastNextGenCmtProcError.getToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context|LastNextGenCmtProcError.putToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context|PartyPhilanthropicRsrchPrflId.getToken=System.SObjectException: Field GiftCommitment.PartyPhilanthropicRsrchPrflId is inaccessible in this context|PartyPhilanthropicRsrchPrflId.putToken=System.SObjectException: Field GiftCommitment.PartyPhilanthropicRsrchPrflId is inaccessible in this context",
+    "source": "@IsTest private class OwnedFullTokenTest62_0 {@IsTest static void probe(){System.assert(false,'B5B9FULLTOKEN:'+OwnedFullTokenProbe62_0.observe());}}",
+    "profile": "gift"
+  },
+  {
+    "api": "64.0",
+    "route": "istest",
+    "object": "GiftCommitment",
+    "fields": [
+      "LastNextGenCmtProcDtTm",
+      "LastNextGenCmtProcError",
+      "PartyPhilanthropicRsrchPrflId"
+    ],
+    "result": "LastNextGenCmtProcDtTm.getToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context|LastNextGenCmtProcDtTm.putToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context|LastNextGenCmtProcError.getToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context|LastNextGenCmtProcError.putToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context|PartyPhilanthropicRsrchPrflId.getToken=accepted|PartyPhilanthropicRsrchPrflId.putToken=accepted",
+    "source": "@IsTest private class OwnedFullTokenTest64_0 {@IsTest static void probe(){System.assert(false,'B5B9FULLTOKEN:'+OwnedFullTokenProbe64_0.observe());}}",
+    "profile": "gift"
+  },
+  {
+    "api": "67.0",
+    "route": "istest",
+    "object": "GiftCommitment",
+    "fields": [
+      "LastNextGenCmtProcDtTm",
+      "LastNextGenCmtProcError",
+      "PartyPhilanthropicRsrchPrflId"
+    ],
+    "result": "LastNextGenCmtProcDtTm.getToken=accepted|LastNextGenCmtProcDtTm.putToken=accepted|LastNextGenCmtProcError.getToken=accepted|LastNextGenCmtProcError.putToken=accepted|PartyPhilanthropicRsrchPrflId.getToken=accepted|PartyPhilanthropicRsrchPrflId.putToken=accepted",
+    "source": "@IsTest private class OwnedFullTokenTest67_0 {@IsTest static void probe(){System.assert(false,'B5B9FULLTOKEN:'+OwnedFullTokenProbe67_0.observe());}}",
+    "profile": "gift"
+  },
+  {
+    "api": "66.0",
+    "route": "istest",
+    "object": "GiftTransaction",
+    "fields": [
+      "GenerationalCohort",
+      "PartyPhilanthropicRsrchPrflId",
+      "TaxDeductionAmount"
+    ],
+    "result": "GenerationalCohort.getToken=accepted|GenerationalCohort.putToken=accepted|PartyPhilanthropicRsrchPrflId.getToken=accepted|PartyPhilanthropicRsrchPrflId.putToken=accepted|TaxDeductionAmount.getToken=accepted|TaxDeductionAmount.putToken=System.SObjectException: Field TaxDeductionAmount is not editable",
+    "source": "@IsTest private class OwnedFullTokenTest66_1 {@IsTest static void probe(){System.assert(false,'B5B9FULLTOKEN:'+OwnedFullTokenProbe66_1.observe());}}",
+    "profile": "gift"
+  },
+  {
+    "api": "67.0",
+    "route": "istest",
+    "object": "GiftTransaction",
+    "fields": [
+      "GenerationalCohort",
+      "PartyPhilanthropicRsrchPrflId",
+      "TaxDeductionAmount"
+    ],
+    "result": "GenerationalCohort.getToken=accepted|GenerationalCohort.putToken=accepted|PartyPhilanthropicRsrchPrflId.getToken=accepted|PartyPhilanthropicRsrchPrflId.putToken=accepted|TaxDeductionAmount.getToken=accepted|TaxDeductionAmount.putToken=System.SObjectException: Field TaxDeductionAmount is not editable",
+    "source": "@IsTest private class OwnedFullTokenTest67_1 {@IsTest static void probe(){System.assert(false,'B5B9FULLTOKEN:'+OwnedFullTokenProbe67_1.observe());}}",
+    "profile": "gift"
+  },
+  {
+    "api": "62.0",
+    "route": "istest",
+    "object": "GiftTransaction",
+    "fields": [
+      "GenerationalCohort",
+      "PartyPhilanthropicRsrchPrflId",
+      "TaxDeductionAmount"
+    ],
+    "result": "GenerationalCohort.getToken=System.SObjectException: Field GiftTransaction.GenerationalCohort is inaccessible in this context|GenerationalCohort.putToken=System.SObjectException: Field GiftTransaction.GenerationalCohort is inaccessible in this context|PartyPhilanthropicRsrchPrflId.getToken=System.SObjectException: Field GiftTransaction.PartyPhilanthropicRsrchPrflId is inaccessible in this context|PartyPhilanthropicRsrchPrflId.putToken=System.SObjectException: Field GiftTransaction.PartyPhilanthropicRsrchPrflId is inaccessible in this context|TaxDeductionAmount.getToken=System.SObjectException: Field GiftTransaction.TaxDeductionAmount is inaccessible in this context|TaxDeductionAmount.putToken=System.SObjectException: Field GiftTransaction.TaxDeductionAmount is inaccessible in this context",
+    "source": "@IsTest private class OwnedFullTokenTest62_1 {@IsTest static void probe(){System.assert(false,'B5B9FULLTOKEN:'+OwnedFullTokenProbe62_1.observe());}}",
+    "profile": "gift"
+  },
+  {
+    "api": "65.0",
+    "route": "istest",
+    "object": "GiftTransaction",
+    "fields": [
+      "GenerationalCohort",
+      "PartyPhilanthropicRsrchPrflId",
+      "TaxDeductionAmount"
+    ],
+    "result": "GenerationalCohort.getToken=accepted|GenerationalCohort.putToken=accepted|PartyPhilanthropicRsrchPrflId.getToken=accepted|PartyPhilanthropicRsrchPrflId.putToken=accepted|TaxDeductionAmount.getToken=accepted|TaxDeductionAmount.putToken=System.SObjectException: Field TaxDeductionAmount is not editable",
+    "source": "@IsTest private class OwnedFullTokenTest65_1 {@IsTest static void probe(){System.assert(false,'B5B9FULLTOKEN:'+OwnedFullTokenProbe65_1.observe());}}",
+    "profile": "gift"
+  },
+  {
+    "api": "66.0",
+    "route": "istest",
+    "object": "GiftCommitment",
+    "fields": [
+      "LastNextGenCmtProcDtTm",
+      "LastNextGenCmtProcError",
+      "PartyPhilanthropicRsrchPrflId"
+    ],
+    "result": "LastNextGenCmtProcDtTm.getToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context|LastNextGenCmtProcDtTm.putToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context|LastNextGenCmtProcError.getToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context|LastNextGenCmtProcError.putToken=System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context|PartyPhilanthropicRsrchPrflId.getToken=accepted|PartyPhilanthropicRsrchPrflId.putToken=accepted",
+    "source": "@IsTest private class OwnedFullTokenTest66_0 {@IsTest static void probe(){System.assert(false,'B5B9FULLTOKEN:'+OwnedFullTokenProbe66_0.observe());}}",
+    "profile": "gift"
+  },
+  {
+    "api": "62.0",
+    "route": "anonymous",
+    "object": "DocumentGenerationProcess",
+    "fields": [
+      "AdditionalMetadata",
+      "DocGenAdditionalInput",
+      "DocGenAdditionalInputType",
+      "EstimatedDocumentSize",
+      "IsLocalizationEnabled",
+      "IsSharedExternally",
+      "IsTocUpdateRequired",
+      "DocGenerationBatchProcessId"
+    ],
+    "result": "AdditionalMetadata.getToken=System.SObjectException: Field DocumentGenerationProcess.AdditionalMetadata is inaccessible in this context|AdditionalMetadata.putToken=System.SObjectException: Field DocumentGenerationProcess.AdditionalMetadata is inaccessible in this context|DocGenAdditionalInput.getToken=System.SObjectException: Field DocumentGenerationProcess.DocGenAdditionalInput is inaccessible in this context|DocGenAdditionalInput.putToken=System.SObjectException: Field DocumentGenerationProcess.DocGenAdditionalInput is inaccessible in this context|DocGenAdditionalInputType.getToken=System.SObjectException: Field DocumentGenerationProcess.DocGenAdditionalInputType is inaccessible in this context|DocGenAdditionalInputType.putToken=System.SObjectException: Field DocumentGenerationProcess.DocGenAdditionalInputType is inaccessible in this context|EstimatedDocumentSize.getToken=System.SObjectException: Field DocumentGenerationProcess.EstimatedDocumentSize is inaccessible in this context|EstimatedDocumentSize.putToken=System.SObjectException: Field DocumentGenerationProcess.EstimatedDocumentSize is inaccessible in this context|IsLocalizationEnabled.getToken=System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context|IsLocalizationEnabled.putToken=System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context|IsSharedExternally.getToken=System.SObjectException: Field DocumentGenerationProcess.IsSharedExternally is inaccessible in this context|IsSharedExternally.putToken=System.SObjectException: Field DocumentGenerationProcess.IsSharedExternally is inaccessible in this context|IsTocUpdateRequired.getToken=System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context|IsTocUpdateRequired.putToken=System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context|DocGenerationBatchProcessId.getToken=System.SObjectException: Field DocumentGenerationProcess.DocGenerationBatchProcessId is inaccessible in this context|DocGenerationBatchProcessId.putToken=System.SObjectException: Field DocumentGenerationProcess.DocGenerationBatchProcessId is inaccessible in this context",
+    "source": "SObject r=new DocumentGenerationProcess();List<String> out=new List<String>();for(String name:new List<String>{'AdditionalMetadata','DocGenAdditionalInput','DocGenAdditionalInputType','EstimatedDocumentSize','IsLocalizationEnabled','IsSharedExternally','IsTocUpdateRequired','DocGenerationBatchProcessId'}){Schema.SObjectField token=OwnedFullTokenSource.field('DocumentGenerationProcess',name);try{r.get(token);out.add(name+'.getToken=accepted');}catch(Exception e){out.add(name+'.getToken='+e.getTypeName()+': '+e.getMessage());}try{r.put(token,null);out.add(name+'.putToken=accepted');}catch(Exception e){out.add(name+'.putToken='+e.getTypeName()+': '+e.getMessage());}}String observation=String.join(out,'|');System.debug('B5B9FULLTOKEN:'+observation);",
+    "profile": "doc"
+  },
+  {
+    "api": "62.0",
+    "route": "anonymous",
+    "object": "DocumentTemplate",
+    "fields": [
+      "ContextDefinitionName",
+      "ContextFilterName",
+      "ContextMappingName",
+      "ContextTransformationName"
+    ],
+    "result": "ContextDefinitionName.getToken=System.SObjectException: Field DocumentTemplate.ContextDefinitionName is inaccessible in this context|ContextDefinitionName.putToken=System.SObjectException: Field DocumentTemplate.ContextDefinitionName is inaccessible in this context|ContextFilterName.getToken=System.SObjectException: Field DocumentTemplate.ContextFilterName is inaccessible in this context|ContextFilterName.putToken=System.SObjectException: Field DocumentTemplate.ContextFilterName is inaccessible in this context|ContextMappingName.getToken=System.SObjectException: Field DocumentTemplate.ContextMappingName is inaccessible in this context|ContextMappingName.putToken=System.SObjectException: Field DocumentTemplate.ContextMappingName is inaccessible in this context|ContextTransformationName.getToken=System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context|ContextTransformationName.putToken=System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context",
+    "source": "SObject r=new DocumentTemplate();List<String> out=new List<String>();for(String name:new List<String>{'ContextDefinitionName','ContextFilterName','ContextMappingName','ContextTransformationName'}){Schema.SObjectField token=OwnedFullTokenSource.field('DocumentTemplate',name);try{r.get(token);out.add(name+'.getToken=accepted');}catch(Exception e){out.add(name+'.getToken='+e.getTypeName()+': '+e.getMessage());}try{r.put(token,null);out.add(name+'.putToken=accepted');}catch(Exception e){out.add(name+'.putToken='+e.getTypeName()+': '+e.getMessage());}}String observation=String.join(out,'|');System.debug('B5B9FULLTOKEN:'+observation);",
+    "profile": "doc"
+  },
+  {
+    "api": "62.0",
+    "route": "anonymous",
+    "object": "DocumentTemplateSection",
+    "fields": [
+      "DocumentTemplateClauseId"
+    ],
+    "result": "DocumentTemplateClauseId.getToken=System.SObjectException: Field DocumentTemplateSection.DocumentTemplateClauseId is inaccessible in this context|DocumentTemplateClauseId.putToken=System.SObjectException: Field DocumentTemplateSection.DocumentTemplateClauseId is inaccessible in this context",
+    "source": "SObject r=new DocumentTemplateSection();List<String> out=new List<String>();for(String name:new List<String>{'DocumentTemplateClauseId'}){Schema.SObjectField token=OwnedFullTokenSource.field('DocumentTemplateSection',name);try{r.get(token);out.add(name+'.getToken=accepted');}catch(Exception e){out.add(name+'.getToken='+e.getTypeName()+': '+e.getMessage());}try{r.put(token,null);out.add(name+'.putToken=accepted');}catch(Exception e){out.add(name+'.putToken='+e.getTypeName()+': '+e.getMessage());}}String observation=String.join(out,'|');System.debug('B5B9FULLTOKEN:'+observation);",
+    "profile": "doc"
+  },
+  {
+    "api": "63.0",
+    "route": "anonymous",
+    "object": "DocumentGenerationProcess",
+    "fields": [
+      "AdditionalMetadata",
+      "DocGenAdditionalInput",
+      "DocGenAdditionalInputType",
+      "EstimatedDocumentSize",
+      "IsLocalizationEnabled",
+      "IsSharedExternally",
+      "IsTocUpdateRequired",
+      "DocGenerationBatchProcessId"
+    ],
+    "result": "AdditionalMetadata.getToken=System.SObjectException: Field DocumentGenerationProcess.AdditionalMetadata is inaccessible in this context|AdditionalMetadata.putToken=System.SObjectException: Field DocumentGenerationProcess.AdditionalMetadata is inaccessible in this context|DocGenAdditionalInput.getToken=System.SObjectException: Field DocumentGenerationProcess.DocGenAdditionalInput is inaccessible in this context|DocGenAdditionalInput.putToken=System.SObjectException: Field DocumentGenerationProcess.DocGenAdditionalInput is inaccessible in this context|DocGenAdditionalInputType.getToken=System.SObjectException: Field DocumentGenerationProcess.DocGenAdditionalInputType is inaccessible in this context|DocGenAdditionalInputType.putToken=System.SObjectException: Field DocumentGenerationProcess.DocGenAdditionalInputType is inaccessible in this context|EstimatedDocumentSize.getToken=System.SObjectException: Field DocumentGenerationProcess.EstimatedDocumentSize is inaccessible in this context|EstimatedDocumentSize.putToken=System.SObjectException: Field DocumentGenerationProcess.EstimatedDocumentSize is inaccessible in this context|IsLocalizationEnabled.getToken=System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context|IsLocalizationEnabled.putToken=System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context|IsSharedExternally.getToken=System.SObjectException: Field DocumentGenerationProcess.IsSharedExternally is inaccessible in this context|IsSharedExternally.putToken=System.SObjectException: Field DocumentGenerationProcess.IsSharedExternally is inaccessible in this context|IsTocUpdateRequired.getToken=System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context|IsTocUpdateRequired.putToken=System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context|DocGenerationBatchProcessId.getToken=System.SObjectException: Field DocumentGenerationProcess.DocGenerationBatchProcessId is inaccessible in this context|DocGenerationBatchProcessId.putToken=System.SObjectException: Field DocumentGenerationProcess.DocGenerationBatchProcessId is inaccessible in this context",
+    "source": "SObject r=new DocumentGenerationProcess();List<String> out=new List<String>();for(String name:new List<String>{'AdditionalMetadata','DocGenAdditionalInput','DocGenAdditionalInputType','EstimatedDocumentSize','IsLocalizationEnabled','IsSharedExternally','IsTocUpdateRequired','DocGenerationBatchProcessId'}){Schema.SObjectField token=OwnedFullTokenSource.field('DocumentGenerationProcess',name);try{r.get(token);out.add(name+'.getToken=accepted');}catch(Exception e){out.add(name+'.getToken='+e.getTypeName()+': '+e.getMessage());}try{r.put(token,null);out.add(name+'.putToken=accepted');}catch(Exception e){out.add(name+'.putToken='+e.getTypeName()+': '+e.getMessage());}}String observation=String.join(out,'|');System.debug('B5B9FULLTOKEN:'+observation);",
+    "profile": "doc"
+  },
+  {
+    "api": "63.0",
+    "route": "anonymous",
+    "object": "DocumentTemplate",
+    "fields": [
+      "ContextDefinitionName",
+      "ContextFilterName",
+      "ContextMappingName",
+      "ContextTransformationName"
+    ],
+    "result": "ContextDefinitionName.getToken=System.SObjectException: Field DocumentTemplate.ContextDefinitionName is inaccessible in this context|ContextDefinitionName.putToken=System.SObjectException: Field DocumentTemplate.ContextDefinitionName is inaccessible in this context|ContextFilterName.getToken=System.SObjectException: Field DocumentTemplate.ContextFilterName is inaccessible in this context|ContextFilterName.putToken=System.SObjectException: Field DocumentTemplate.ContextFilterName is inaccessible in this context|ContextMappingName.getToken=System.SObjectException: Field DocumentTemplate.ContextMappingName is inaccessible in this context|ContextMappingName.putToken=System.SObjectException: Field DocumentTemplate.ContextMappingName is inaccessible in this context|ContextTransformationName.getToken=System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context|ContextTransformationName.putToken=System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context",
+    "source": "SObject r=new DocumentTemplate();List<String> out=new List<String>();for(String name:new List<String>{'ContextDefinitionName','ContextFilterName','ContextMappingName','ContextTransformationName'}){Schema.SObjectField token=OwnedFullTokenSource.field('DocumentTemplate',name);try{r.get(token);out.add(name+'.getToken=accepted');}catch(Exception e){out.add(name+'.getToken='+e.getTypeName()+': '+e.getMessage());}try{r.put(token,null);out.add(name+'.putToken=accepted');}catch(Exception e){out.add(name+'.putToken='+e.getTypeName()+': '+e.getMessage());}}String observation=String.join(out,'|');System.debug('B5B9FULLTOKEN:'+observation);",
+    "profile": "doc"
+  },
+  {
+    "api": "63.0",
+    "route": "anonymous",
+    "object": "DocumentTemplateSection",
+    "fields": [
+      "DocumentTemplateClauseId"
+    ],
+    "result": "DocumentTemplateClauseId.getToken=System.SObjectException: Field DocumentTemplateSection.DocumentTemplateClauseId is inaccessible in this context|DocumentTemplateClauseId.putToken=System.SObjectException: Field DocumentTemplateSection.DocumentTemplateClauseId is inaccessible in this context",
+    "source": "SObject r=new DocumentTemplateSection();List<String> out=new List<String>();for(String name:new List<String>{'DocumentTemplateClauseId'}){Schema.SObjectField token=OwnedFullTokenSource.field('DocumentTemplateSection',name);try{r.get(token);out.add(name+'.getToken=accepted');}catch(Exception e){out.add(name+'.getToken='+e.getTypeName()+': '+e.getMessage());}try{r.put(token,null);out.add(name+'.putToken=accepted');}catch(Exception e){out.add(name+'.putToken='+e.getTypeName()+': '+e.getMessage());}}String observation=String.join(out,'|');System.debug('B5B9FULLTOKEN:'+observation);",
+    "profile": "doc"
+  },
+  {
+    "api": "64.0",
+    "route": "anonymous",
+    "object": "DocumentGenerationProcess",
+    "fields": [
+      "AdditionalMetadata",
+      "DocGenAdditionalInput",
+      "DocGenAdditionalInputType",
+      "EstimatedDocumentSize",
+      "IsLocalizationEnabled",
+      "IsSharedExternally",
+      "IsTocUpdateRequired",
+      "DocGenerationBatchProcessId"
+    ],
+    "result": "AdditionalMetadata.getToken=System.SObjectException: Field DocumentGenerationProcess.AdditionalMetadata is inaccessible in this context|AdditionalMetadata.putToken=System.SObjectException: Field DocumentGenerationProcess.AdditionalMetadata is inaccessible in this context|DocGenAdditionalInput.getToken=accepted|DocGenAdditionalInput.putToken=accepted|DocGenAdditionalInputType.getToken=accepted|DocGenAdditionalInputType.putToken=accepted|EstimatedDocumentSize.getToken=accepted|EstimatedDocumentSize.putToken=accepted|IsLocalizationEnabled.getToken=System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context|IsLocalizationEnabled.putToken=System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context|IsSharedExternally.getToken=System.SObjectException: Field DocumentGenerationProcess.IsSharedExternally is inaccessible in this context|IsSharedExternally.putToken=System.SObjectException: Field DocumentGenerationProcess.IsSharedExternally is inaccessible in this context|IsTocUpdateRequired.getToken=System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context|IsTocUpdateRequired.putToken=System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context|DocGenerationBatchProcessId.getToken=System.SObjectException: Field DocumentGenerationProcess.DocGenerationBatchProcessId is inaccessible in this context|DocGenerationBatchProcessId.putToken=System.SObjectException: Field DocumentGenerationProcess.DocGenerationBatchProcessId is inaccessible in this context",
+    "source": "SObject r=new DocumentGenerationProcess();List<String> out=new List<String>();for(String name:new List<String>{'AdditionalMetadata','DocGenAdditionalInput','DocGenAdditionalInputType','EstimatedDocumentSize','IsLocalizationEnabled','IsSharedExternally','IsTocUpdateRequired','DocGenerationBatchProcessId'}){Schema.SObjectField token=OwnedFullTokenSource.field('DocumentGenerationProcess',name);try{r.get(token);out.add(name+'.getToken=accepted');}catch(Exception e){out.add(name+'.getToken='+e.getTypeName()+': '+e.getMessage());}try{r.put(token,null);out.add(name+'.putToken=accepted');}catch(Exception e){out.add(name+'.putToken='+e.getTypeName()+': '+e.getMessage());}}String observation=String.join(out,'|');System.debug('B5B9FULLTOKEN:'+observation);",
+    "profile": "doc"
+  },
+  {
+    "api": "64.0",
+    "route": "anonymous",
+    "object": "DocumentTemplate",
+    "fields": [
+      "ContextDefinitionName",
+      "ContextFilterName",
+      "ContextMappingName",
+      "ContextTransformationName"
+    ],
+    "result": "ContextDefinitionName.getToken=accepted|ContextDefinitionName.putToken=accepted|ContextFilterName.getToken=System.SObjectException: Field DocumentTemplate.ContextFilterName is inaccessible in this context|ContextFilterName.putToken=System.SObjectException: Field DocumentTemplate.ContextFilterName is inaccessible in this context|ContextMappingName.getToken=accepted|ContextMappingName.putToken=accepted|ContextTransformationName.getToken=System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context|ContextTransformationName.putToken=System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context",
+    "source": "SObject r=new DocumentTemplate();List<String> out=new List<String>();for(String name:new List<String>{'ContextDefinitionName','ContextFilterName','ContextMappingName','ContextTransformationName'}){Schema.SObjectField token=OwnedFullTokenSource.field('DocumentTemplate',name);try{r.get(token);out.add(name+'.getToken=accepted');}catch(Exception e){out.add(name+'.getToken='+e.getTypeName()+': '+e.getMessage());}try{r.put(token,null);out.add(name+'.putToken=accepted');}catch(Exception e){out.add(name+'.putToken='+e.getTypeName()+': '+e.getMessage());}}String observation=String.join(out,'|');System.debug('B5B9FULLTOKEN:'+observation);",
+    "profile": "doc"
+  },
+  {
+    "api": "64.0",
+    "route": "anonymous",
+    "object": "DocumentTemplateSection",
+    "fields": [
+      "DocumentTemplateClauseId"
+    ],
+    "result": "DocumentTemplateClauseId.getToken=System.SObjectException: Field DocumentTemplateSection.DocumentTemplateClauseId is inaccessible in this context|DocumentTemplateClauseId.putToken=System.SObjectException: Field DocumentTemplateSection.DocumentTemplateClauseId is inaccessible in this context",
+    "source": "SObject r=new DocumentTemplateSection();List<String> out=new List<String>();for(String name:new List<String>{'DocumentTemplateClauseId'}){Schema.SObjectField token=OwnedFullTokenSource.field('DocumentTemplateSection',name);try{r.get(token);out.add(name+'.getToken=accepted');}catch(Exception e){out.add(name+'.getToken='+e.getTypeName()+': '+e.getMessage());}try{r.put(token,null);out.add(name+'.putToken=accepted');}catch(Exception e){out.add(name+'.putToken='+e.getTypeName()+': '+e.getMessage());}}String observation=String.join(out,'|');System.debug('B5B9FULLTOKEN:'+observation);",
+    "profile": "doc"
+  },
+  {
+    "api": "65.0",
+    "route": "anonymous",
+    "object": "DocumentGenerationProcess",
+    "fields": [
+      "AdditionalMetadata",
+      "DocGenAdditionalInput",
+      "DocGenAdditionalInputType",
+      "EstimatedDocumentSize",
+      "IsLocalizationEnabled",
+      "IsSharedExternally",
+      "IsTocUpdateRequired",
+      "DocGenerationBatchProcessId"
+    ],
+    "result": "AdditionalMetadata.getToken=System.SObjectException: Field DocumentGenerationProcess.AdditionalMetadata is inaccessible in this context|AdditionalMetadata.putToken=System.SObjectException: Field DocumentGenerationProcess.AdditionalMetadata is inaccessible in this context|DocGenAdditionalInput.getToken=accepted|DocGenAdditionalInput.putToken=accepted|DocGenAdditionalInputType.getToken=accepted|DocGenAdditionalInputType.putToken=accepted|EstimatedDocumentSize.getToken=accepted|EstimatedDocumentSize.putToken=accepted|IsLocalizationEnabled.getToken=System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context|IsLocalizationEnabled.putToken=System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context|IsSharedExternally.getToken=System.SObjectException: Field DocumentGenerationProcess.IsSharedExternally is inaccessible in this context|IsSharedExternally.putToken=System.SObjectException: Field DocumentGenerationProcess.IsSharedExternally is inaccessible in this context|IsTocUpdateRequired.getToken=System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context|IsTocUpdateRequired.putToken=System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context|DocGenerationBatchProcessId.getToken=System.SObjectException: Field DocumentGenerationProcess.DocGenerationBatchProcessId is inaccessible in this context|DocGenerationBatchProcessId.putToken=System.SObjectException: Field DocumentGenerationProcess.DocGenerationBatchProcessId is inaccessible in this context",
+    "source": "SObject r=new DocumentGenerationProcess();List<String> out=new List<String>();for(String name:new List<String>{'AdditionalMetadata','DocGenAdditionalInput','DocGenAdditionalInputType','EstimatedDocumentSize','IsLocalizationEnabled','IsSharedExternally','IsTocUpdateRequired','DocGenerationBatchProcessId'}){Schema.SObjectField token=OwnedFullTokenSource.field('DocumentGenerationProcess',name);try{r.get(token);out.add(name+'.getToken=accepted');}catch(Exception e){out.add(name+'.getToken='+e.getTypeName()+': '+e.getMessage());}try{r.put(token,null);out.add(name+'.putToken=accepted');}catch(Exception e){out.add(name+'.putToken='+e.getTypeName()+': '+e.getMessage());}}String observation=String.join(out,'|');System.debug('B5B9FULLTOKEN:'+observation);",
+    "profile": "doc"
+  },
+  {
+    "api": "65.0",
+    "route": "anonymous",
+    "object": "DocumentTemplate",
+    "fields": [
+      "ContextDefinitionName",
+      "ContextFilterName",
+      "ContextMappingName",
+      "ContextTransformationName"
+    ],
+    "result": "ContextDefinitionName.getToken=accepted|ContextDefinitionName.putToken=accepted|ContextFilterName.getToken=System.SObjectException: Field DocumentTemplate.ContextFilterName is inaccessible in this context|ContextFilterName.putToken=System.SObjectException: Field DocumentTemplate.ContextFilterName is inaccessible in this context|ContextMappingName.getToken=accepted|ContextMappingName.putToken=accepted|ContextTransformationName.getToken=System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context|ContextTransformationName.putToken=System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context",
+    "source": "SObject r=new DocumentTemplate();List<String> out=new List<String>();for(String name:new List<String>{'ContextDefinitionName','ContextFilterName','ContextMappingName','ContextTransformationName'}){Schema.SObjectField token=OwnedFullTokenSource.field('DocumentTemplate',name);try{r.get(token);out.add(name+'.getToken=accepted');}catch(Exception e){out.add(name+'.getToken='+e.getTypeName()+': '+e.getMessage());}try{r.put(token,null);out.add(name+'.putToken=accepted');}catch(Exception e){out.add(name+'.putToken='+e.getTypeName()+': '+e.getMessage());}}String observation=String.join(out,'|');System.debug('B5B9FULLTOKEN:'+observation);",
+    "profile": "doc"
+  },
+  {
+    "api": "65.0",
+    "route": "anonymous",
+    "object": "DocumentTemplateSection",
+    "fields": [
+      "DocumentTemplateClauseId"
+    ],
+    "result": "DocumentTemplateClauseId.getToken=System.SObjectException: Field DocumentTemplateSection.DocumentTemplateClauseId is inaccessible in this context|DocumentTemplateClauseId.putToken=System.SObjectException: Field DocumentTemplateSection.DocumentTemplateClauseId is inaccessible in this context",
+    "source": "SObject r=new DocumentTemplateSection();List<String> out=new List<String>();for(String name:new List<String>{'DocumentTemplateClauseId'}){Schema.SObjectField token=OwnedFullTokenSource.field('DocumentTemplateSection',name);try{r.get(token);out.add(name+'.getToken=accepted');}catch(Exception e){out.add(name+'.getToken='+e.getTypeName()+': '+e.getMessage());}try{r.put(token,null);out.add(name+'.putToken=accepted');}catch(Exception e){out.add(name+'.putToken='+e.getTypeName()+': '+e.getMessage());}}String observation=String.join(out,'|');System.debug('B5B9FULLTOKEN:'+observation);",
+    "profile": "doc"
+  },
+  {
+    "api": "66.0",
+    "route": "anonymous",
+    "object": "DocumentGenerationProcess",
+    "fields": [
+      "AdditionalMetadata",
+      "DocGenAdditionalInput",
+      "DocGenAdditionalInputType",
+      "EstimatedDocumentSize",
+      "IsLocalizationEnabled",
+      "IsSharedExternally",
+      "IsTocUpdateRequired",
+      "DocGenerationBatchProcessId"
+    ],
+    "result": "AdditionalMetadata.getToken=accepted|AdditionalMetadata.putToken=accepted|DocGenAdditionalInput.getToken=accepted|DocGenAdditionalInput.putToken=accepted|DocGenAdditionalInputType.getToken=accepted|DocGenAdditionalInputType.putToken=accepted|EstimatedDocumentSize.getToken=accepted|EstimatedDocumentSize.putToken=accepted|IsLocalizationEnabled.getToken=System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context|IsLocalizationEnabled.putToken=System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context|IsSharedExternally.getToken=accepted|IsSharedExternally.putToken=accepted|IsTocUpdateRequired.getToken=System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context|IsTocUpdateRequired.putToken=System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context|DocGenerationBatchProcessId.getToken=System.SObjectException: Field DocumentGenerationProcess.DocGenerationBatchProcessId is inaccessible in this context|DocGenerationBatchProcessId.putToken=System.SObjectException: Field DocumentGenerationProcess.DocGenerationBatchProcessId is inaccessible in this context",
+    "source": "SObject r=new DocumentGenerationProcess();List<String> out=new List<String>();for(String name:new List<String>{'AdditionalMetadata','DocGenAdditionalInput','DocGenAdditionalInputType','EstimatedDocumentSize','IsLocalizationEnabled','IsSharedExternally','IsTocUpdateRequired','DocGenerationBatchProcessId'}){Schema.SObjectField token=OwnedFullTokenSource.field('DocumentGenerationProcess',name);try{r.get(token);out.add(name+'.getToken=accepted');}catch(Exception e){out.add(name+'.getToken='+e.getTypeName()+': '+e.getMessage());}try{r.put(token,null);out.add(name+'.putToken=accepted');}catch(Exception e){out.add(name+'.putToken='+e.getTypeName()+': '+e.getMessage());}}String observation=String.join(out,'|');System.debug('B5B9FULLTOKEN:'+observation);",
+    "profile": "doc"
+  },
+  {
+    "api": "66.0",
+    "route": "anonymous",
+    "object": "DocumentTemplate",
+    "fields": [
+      "ContextDefinitionName",
+      "ContextFilterName",
+      "ContextMappingName",
+      "ContextTransformationName"
+    ],
+    "result": "ContextDefinitionName.getToken=accepted|ContextDefinitionName.putToken=accepted|ContextFilterName.getToken=accepted|ContextFilterName.putToken=accepted|ContextMappingName.getToken=accepted|ContextMappingName.putToken=accepted|ContextTransformationName.getToken=System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context|ContextTransformationName.putToken=System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context",
+    "source": "SObject r=new DocumentTemplate();List<String> out=new List<String>();for(String name:new List<String>{'ContextDefinitionName','ContextFilterName','ContextMappingName','ContextTransformationName'}){Schema.SObjectField token=OwnedFullTokenSource.field('DocumentTemplate',name);try{r.get(token);out.add(name+'.getToken=accepted');}catch(Exception e){out.add(name+'.getToken='+e.getTypeName()+': '+e.getMessage());}try{r.put(token,null);out.add(name+'.putToken=accepted');}catch(Exception e){out.add(name+'.putToken='+e.getTypeName()+': '+e.getMessage());}}String observation=String.join(out,'|');System.debug('B5B9FULLTOKEN:'+observation);",
+    "profile": "doc"
+  },
+  {
+    "api": "66.0",
+    "route": "anonymous",
+    "object": "DocumentTemplateSection",
+    "fields": [
+      "DocumentTemplateClauseId"
+    ],
+    "result": "DocumentTemplateClauseId.getToken=System.SObjectException: Field DocumentTemplateSection.DocumentTemplateClauseId is inaccessible in this context|DocumentTemplateClauseId.putToken=System.SObjectException: Field DocumentTemplateSection.DocumentTemplateClauseId is inaccessible in this context",
+    "source": "SObject r=new DocumentTemplateSection();List<String> out=new List<String>();for(String name:new List<String>{'DocumentTemplateClauseId'}){Schema.SObjectField token=OwnedFullTokenSource.field('DocumentTemplateSection',name);try{r.get(token);out.add(name+'.getToken=accepted');}catch(Exception e){out.add(name+'.getToken='+e.getTypeName()+': '+e.getMessage());}try{r.put(token,null);out.add(name+'.putToken=accepted');}catch(Exception e){out.add(name+'.putToken='+e.getTypeName()+': '+e.getMessage());}}String observation=String.join(out,'|');System.debug('B5B9FULLTOKEN:'+observation);",
+    "profile": "doc"
+  },
+  {
+    "api": "67.0",
+    "route": "anonymous",
+    "object": "DocumentGenerationProcess",
+    "fields": [
+      "AdditionalMetadata",
+      "DocGenAdditionalInput",
+      "DocGenAdditionalInputType",
+      "EstimatedDocumentSize",
+      "IsLocalizationEnabled",
+      "IsSharedExternally",
+      "IsTocUpdateRequired",
+      "DocGenerationBatchProcessId"
+    ],
+    "result": "AdditionalMetadata.getToken=accepted|AdditionalMetadata.putToken=accepted|DocGenAdditionalInput.getToken=accepted|DocGenAdditionalInput.putToken=accepted|DocGenAdditionalInputType.getToken=accepted|DocGenAdditionalInputType.putToken=accepted|EstimatedDocumentSize.getToken=accepted|EstimatedDocumentSize.putToken=accepted|IsLocalizationEnabled.getToken=accepted|IsLocalizationEnabled.putToken=accepted|IsSharedExternally.getToken=accepted|IsSharedExternally.putToken=accepted|IsTocUpdateRequired.getToken=accepted|IsTocUpdateRequired.putToken=accepted|DocGenerationBatchProcessId.getToken=System.SObjectException: Field DocumentGenerationProcess.DocGenerationBatchProcessId is inaccessible in this context|DocGenerationBatchProcessId.putToken=System.SObjectException: Field DocumentGenerationProcess.DocGenerationBatchProcessId is inaccessible in this context",
+    "source": "SObject r=new DocumentGenerationProcess();List<String> out=new List<String>();for(String name:new List<String>{'AdditionalMetadata','DocGenAdditionalInput','DocGenAdditionalInputType','EstimatedDocumentSize','IsLocalizationEnabled','IsSharedExternally','IsTocUpdateRequired','DocGenerationBatchProcessId'}){Schema.SObjectField token=OwnedFullTokenSource.field('DocumentGenerationProcess',name);try{r.get(token);out.add(name+'.getToken=accepted');}catch(Exception e){out.add(name+'.getToken='+e.getTypeName()+': '+e.getMessage());}try{r.put(token,null);out.add(name+'.putToken=accepted');}catch(Exception e){out.add(name+'.putToken='+e.getTypeName()+': '+e.getMessage());}}String observation=String.join(out,'|');System.debug('B5B9FULLTOKEN:'+observation);",
+    "profile": "doc"
+  },
+  {
+    "api": "67.0",
+    "route": "anonymous",
+    "object": "DocumentTemplate",
+    "fields": [
+      "ContextDefinitionName",
+      "ContextFilterName",
+      "ContextMappingName",
+      "ContextTransformationName"
+    ],
+    "result": "ContextDefinitionName.getToken=accepted|ContextDefinitionName.putToken=accepted|ContextFilterName.getToken=accepted|ContextFilterName.putToken=accepted|ContextMappingName.getToken=accepted|ContextMappingName.putToken=accepted|ContextTransformationName.getToken=accepted|ContextTransformationName.putToken=accepted",
+    "source": "SObject r=new DocumentTemplate();List<String> out=new List<String>();for(String name:new List<String>{'ContextDefinitionName','ContextFilterName','ContextMappingName','ContextTransformationName'}){Schema.SObjectField token=OwnedFullTokenSource.field('DocumentTemplate',name);try{r.get(token);out.add(name+'.getToken=accepted');}catch(Exception e){out.add(name+'.getToken='+e.getTypeName()+': '+e.getMessage());}try{r.put(token,null);out.add(name+'.putToken=accepted');}catch(Exception e){out.add(name+'.putToken='+e.getTypeName()+': '+e.getMessage());}}String observation=String.join(out,'|');System.debug('B5B9FULLTOKEN:'+observation);",
+    "profile": "doc"
+  },
+  {
+    "api": "67.0",
+    "route": "anonymous",
+    "object": "DocumentTemplateSection",
+    "fields": [
+      "DocumentTemplateClauseId"
+    ],
+    "result": "DocumentTemplateClauseId.getToken=System.SObjectException: Field DocumentTemplateSection.DocumentTemplateClauseId is inaccessible in this context|DocumentTemplateClauseId.putToken=System.SObjectException: Field DocumentTemplateSection.DocumentTemplateClauseId is inaccessible in this context",
+    "source": "SObject r=new DocumentTemplateSection();List<String> out=new List<String>();for(String name:new List<String>{'DocumentTemplateClauseId'}){Schema.SObjectField token=OwnedFullTokenSource.field('DocumentTemplateSection',name);try{r.get(token);out.add(name+'.getToken=accepted');}catch(Exception e){out.add(name+'.getToken='+e.getTypeName()+': '+e.getMessage());}try{r.put(token,null);out.add(name+'.putToken=accepted');}catch(Exception e){out.add(name+'.putToken='+e.getTypeName()+': '+e.getMessage());}}String observation=String.join(out,'|');System.debug('B5B9FULLTOKEN:'+observation);",
+    "profile": "doc"
+  },
+  {
+    "api": "66.0",
+    "route": "istest",
+    "object": "DocumentTemplate",
+    "fields": [
+      "ContextDefinitionName",
+      "ContextFilterName",
+      "ContextMappingName",
+      "ContextTransformationName"
+    ],
+    "result": "ContextDefinitionName.getToken=accepted|ContextDefinitionName.putToken=accepted|ContextFilterName.getToken=accepted|ContextFilterName.putToken=accepted|ContextMappingName.getToken=accepted|ContextMappingName.putToken=accepted|ContextTransformationName.getToken=System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context|ContextTransformationName.putToken=System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context",
+    "source": "@IsTest private class OwnedFullTokenTest66_1 {@IsTest static void probe(){System.assert(false,'B5B9FULLTOKEN:'+OwnedFullTokenProbe66_1.observe());}}",
+    "profile": "doc"
+  },
+  {
+    "api": "66.0",
+    "route": "istest",
+    "object": "DocumentGenerationProcess",
+    "fields": [
+      "AdditionalMetadata",
+      "DocGenAdditionalInput",
+      "DocGenAdditionalInputType",
+      "EstimatedDocumentSize",
+      "IsLocalizationEnabled",
+      "IsSharedExternally",
+      "IsTocUpdateRequired",
+      "DocGenerationBatchProcessId"
+    ],
+    "result": "AdditionalMetadata.getToken=accepted|AdditionalMetadata.putToken=accepted|DocGenAdditionalInput.getToken=accepted|DocGenAdditionalInput.putToken=accepted|DocGenAdditionalInputType.getToken=accepted|DocGenAdditionalInputType.putToken=accepted|EstimatedDocumentSize.getToken=accepted|EstimatedDocumentSize.putToken=accepted|IsLocalizationEnabled.getToken=System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context|IsLocalizationEnabled.putToken=System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context|IsSharedExternally.getToken=accepted|IsSharedExternally.putToken=accepted|IsTocUpdateRequired.getToken=System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context|IsTocUpdateRequired.putToken=System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context|DocGenerationBatchProcessId.getToken=accepted|DocGenerationBatchProcessId.putToken=accepted",
+    "source": "@IsTest private class OwnedFullTokenTest66_0 {@IsTest static void probe(){System.assert(false,'B5B9FULLTOKEN:'+OwnedFullTokenProbe66_0.observe());}}",
+    "profile": "doc"
+  },
+  {
+    "api": "62.0",
+    "route": "istest",
+    "object": "DocumentGenerationProcess",
+    "fields": [
+      "AdditionalMetadata",
+      "DocGenAdditionalInput",
+      "DocGenAdditionalInputType",
+      "EstimatedDocumentSize",
+      "IsLocalizationEnabled",
+      "IsSharedExternally",
+      "IsTocUpdateRequired",
+      "DocGenerationBatchProcessId"
+    ],
+    "result": "AdditionalMetadata.getToken=System.SObjectException: Field DocumentGenerationProcess.AdditionalMetadata is inaccessible in this context|AdditionalMetadata.putToken=System.SObjectException: Field DocumentGenerationProcess.AdditionalMetadata is inaccessible in this context|DocGenAdditionalInput.getToken=System.SObjectException: Field DocumentGenerationProcess.DocGenAdditionalInput is inaccessible in this context|DocGenAdditionalInput.putToken=System.SObjectException: Field DocumentGenerationProcess.DocGenAdditionalInput is inaccessible in this context|DocGenAdditionalInputType.getToken=System.SObjectException: Field DocumentGenerationProcess.DocGenAdditionalInputType is inaccessible in this context|DocGenAdditionalInputType.putToken=System.SObjectException: Field DocumentGenerationProcess.DocGenAdditionalInputType is inaccessible in this context|EstimatedDocumentSize.getToken=System.SObjectException: Field DocumentGenerationProcess.EstimatedDocumentSize is inaccessible in this context|EstimatedDocumentSize.putToken=System.SObjectException: Field DocumentGenerationProcess.EstimatedDocumentSize is inaccessible in this context|IsLocalizationEnabled.getToken=System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context|IsLocalizationEnabled.putToken=System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context|IsSharedExternally.getToken=System.SObjectException: Field DocumentGenerationProcess.IsSharedExternally is inaccessible in this context|IsSharedExternally.putToken=System.SObjectException: Field DocumentGenerationProcess.IsSharedExternally is inaccessible in this context|IsTocUpdateRequired.getToken=System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context|IsTocUpdateRequired.putToken=System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context|DocGenerationBatchProcessId.getToken=accepted|DocGenerationBatchProcessId.putToken=accepted",
+    "source": "@IsTest private class OwnedFullTokenTest62_0 {@IsTest static void probe(){System.assert(false,'B5B9FULLTOKEN:'+OwnedFullTokenProbe62_0.observe());}}",
+    "profile": "doc"
+  },
+  {
+    "api": "64.0",
+    "route": "istest",
+    "object": "DocumentTemplateSection",
+    "fields": [
+      "DocumentTemplateClauseId"
+    ],
+    "result": "DocumentTemplateClauseId.getToken=accepted|DocumentTemplateClauseId.putToken=accepted",
+    "source": "@IsTest private class OwnedFullTokenTest64_2 {@IsTest static void probe(){System.assert(false,'B5B9FULLTOKEN:'+OwnedFullTokenProbe64_2.observe());}}",
+    "profile": "doc"
+  },
+  {
+    "api": "67.0",
+    "route": "istest",
+    "object": "DocumentTemplateSection",
+    "fields": [
+      "DocumentTemplateClauseId"
+    ],
+    "result": "DocumentTemplateClauseId.getToken=accepted|DocumentTemplateClauseId.putToken=accepted",
+    "source": "@IsTest private class OwnedFullTokenTest67_2 {@IsTest static void probe(){System.assert(false,'B5B9FULLTOKEN:'+OwnedFullTokenProbe67_2.observe());}}",
+    "profile": "doc"
+  },
+  {
+    "api": "67.0",
+    "route": "istest",
+    "object": "DocumentTemplate",
+    "fields": [
+      "ContextDefinitionName",
+      "ContextFilterName",
+      "ContextMappingName",
+      "ContextTransformationName"
+    ],
+    "result": "ContextDefinitionName.getToken=accepted|ContextDefinitionName.putToken=accepted|ContextFilterName.getToken=accepted|ContextFilterName.putToken=accepted|ContextMappingName.getToken=accepted|ContextMappingName.putToken=accepted|ContextTransformationName.getToken=accepted|ContextTransformationName.putToken=accepted",
+    "source": "@IsTest private class OwnedFullTokenTest67_1 {@IsTest static void probe(){System.assert(false,'B5B9FULLTOKEN:'+OwnedFullTokenProbe67_1.observe());}}",
+    "profile": "doc"
+  },
+  {
+    "api": "66.0",
+    "route": "istest",
+    "object": "DocumentTemplateSection",
+    "fields": [
+      "DocumentTemplateClauseId"
+    ],
+    "result": "DocumentTemplateClauseId.getToken=accepted|DocumentTemplateClauseId.putToken=accepted",
+    "source": "@IsTest private class OwnedFullTokenTest66_2 {@IsTest static void probe(){System.assert(false,'B5B9FULLTOKEN:'+OwnedFullTokenProbe66_2.observe());}}",
+    "profile": "doc"
+  },
+  {
+    "api": "63.0",
+    "route": "istest",
+    "object": "DocumentTemplate",
+    "fields": [
+      "ContextDefinitionName",
+      "ContextFilterName",
+      "ContextMappingName",
+      "ContextTransformationName"
+    ],
+    "result": "ContextDefinitionName.getToken=System.SObjectException: Field DocumentTemplate.ContextDefinitionName is inaccessible in this context|ContextDefinitionName.putToken=System.SObjectException: Field DocumentTemplate.ContextDefinitionName is inaccessible in this context|ContextFilterName.getToken=System.SObjectException: Field DocumentTemplate.ContextFilterName is inaccessible in this context|ContextFilterName.putToken=System.SObjectException: Field DocumentTemplate.ContextFilterName is inaccessible in this context|ContextMappingName.getToken=System.SObjectException: Field DocumentTemplate.ContextMappingName is inaccessible in this context|ContextMappingName.putToken=System.SObjectException: Field DocumentTemplate.ContextMappingName is inaccessible in this context|ContextTransformationName.getToken=System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context|ContextTransformationName.putToken=System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context",
+    "source": "@IsTest private class OwnedFullTokenTest63_1 {@IsTest static void probe(){System.assert(false,'B5B9FULLTOKEN:'+OwnedFullTokenProbe63_1.observe());}}",
+    "profile": "doc"
+  },
+  {
+    "api": "62.0",
+    "route": "istest",
+    "object": "DocumentTemplate",
+    "fields": [
+      "ContextDefinitionName",
+      "ContextFilterName",
+      "ContextMappingName",
+      "ContextTransformationName"
+    ],
+    "result": "ContextDefinitionName.getToken=System.SObjectException: Field DocumentTemplate.ContextDefinitionName is inaccessible in this context|ContextDefinitionName.putToken=System.SObjectException: Field DocumentTemplate.ContextDefinitionName is inaccessible in this context|ContextFilterName.getToken=System.SObjectException: Field DocumentTemplate.ContextFilterName is inaccessible in this context|ContextFilterName.putToken=System.SObjectException: Field DocumentTemplate.ContextFilterName is inaccessible in this context|ContextMappingName.getToken=System.SObjectException: Field DocumentTemplate.ContextMappingName is inaccessible in this context|ContextMappingName.putToken=System.SObjectException: Field DocumentTemplate.ContextMappingName is inaccessible in this context|ContextTransformationName.getToken=System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context|ContextTransformationName.putToken=System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context",
+    "source": "@IsTest private class OwnedFullTokenTest62_1 {@IsTest static void probe(){System.assert(false,'B5B9FULLTOKEN:'+OwnedFullTokenProbe62_1.observe());}}",
+    "profile": "doc"
+  },
+  {
+    "api": "62.0",
+    "route": "istest",
+    "object": "DocumentTemplateSection",
+    "fields": [
+      "DocumentTemplateClauseId"
+    ],
+    "result": "DocumentTemplateClauseId.getToken=accepted|DocumentTemplateClauseId.putToken=accepted",
+    "source": "@IsTest private class OwnedFullTokenTest62_2 {@IsTest static void probe(){System.assert(false,'B5B9FULLTOKEN:'+OwnedFullTokenProbe62_2.observe());}}",
+    "profile": "doc"
+  },
+  {
+    "api": "63.0",
+    "route": "istest",
+    "object": "DocumentTemplateSection",
+    "fields": [
+      "DocumentTemplateClauseId"
+    ],
+    "result": "DocumentTemplateClauseId.getToken=accepted|DocumentTemplateClauseId.putToken=accepted",
+    "source": "@IsTest private class OwnedFullTokenTest63_2 {@IsTest static void probe(){System.assert(false,'B5B9FULLTOKEN:'+OwnedFullTokenProbe63_2.observe());}}",
+    "profile": "doc"
+  },
+  {
+    "api": "63.0",
+    "route": "istest",
+    "object": "DocumentGenerationProcess",
+    "fields": [
+      "AdditionalMetadata",
+      "DocGenAdditionalInput",
+      "DocGenAdditionalInputType",
+      "EstimatedDocumentSize",
+      "IsLocalizationEnabled",
+      "IsSharedExternally",
+      "IsTocUpdateRequired",
+      "DocGenerationBatchProcessId"
+    ],
+    "result": "AdditionalMetadata.getToken=System.SObjectException: Field DocumentGenerationProcess.AdditionalMetadata is inaccessible in this context|AdditionalMetadata.putToken=System.SObjectException: Field DocumentGenerationProcess.AdditionalMetadata is inaccessible in this context|DocGenAdditionalInput.getToken=System.SObjectException: Field DocumentGenerationProcess.DocGenAdditionalInput is inaccessible in this context|DocGenAdditionalInput.putToken=System.SObjectException: Field DocumentGenerationProcess.DocGenAdditionalInput is inaccessible in this context|DocGenAdditionalInputType.getToken=System.SObjectException: Field DocumentGenerationProcess.DocGenAdditionalInputType is inaccessible in this context|DocGenAdditionalInputType.putToken=System.SObjectException: Field DocumentGenerationProcess.DocGenAdditionalInputType is inaccessible in this context|EstimatedDocumentSize.getToken=System.SObjectException: Field DocumentGenerationProcess.EstimatedDocumentSize is inaccessible in this context|EstimatedDocumentSize.putToken=System.SObjectException: Field DocumentGenerationProcess.EstimatedDocumentSize is inaccessible in this context|IsLocalizationEnabled.getToken=System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context|IsLocalizationEnabled.putToken=System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context|IsSharedExternally.getToken=System.SObjectException: Field DocumentGenerationProcess.IsSharedExternally is inaccessible in this context|IsSharedExternally.putToken=System.SObjectException: Field DocumentGenerationProcess.IsSharedExternally is inaccessible in this context|IsTocUpdateRequired.getToken=System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context|IsTocUpdateRequired.putToken=System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context|DocGenerationBatchProcessId.getToken=accepted|DocGenerationBatchProcessId.putToken=accepted",
+    "source": "@IsTest private class OwnedFullTokenTest63_0 {@IsTest static void probe(){System.assert(false,'B5B9FULLTOKEN:'+OwnedFullTokenProbe63_0.observe());}}",
+    "profile": "doc"
+  },
+  {
+    "api": "65.0",
+    "route": "istest",
+    "object": "DocumentGenerationProcess",
+    "fields": [
+      "AdditionalMetadata",
+      "DocGenAdditionalInput",
+      "DocGenAdditionalInputType",
+      "EstimatedDocumentSize",
+      "IsLocalizationEnabled",
+      "IsSharedExternally",
+      "IsTocUpdateRequired",
+      "DocGenerationBatchProcessId"
+    ],
+    "result": "AdditionalMetadata.getToken=System.SObjectException: Field DocumentGenerationProcess.AdditionalMetadata is inaccessible in this context|AdditionalMetadata.putToken=System.SObjectException: Field DocumentGenerationProcess.AdditionalMetadata is inaccessible in this context|DocGenAdditionalInput.getToken=accepted|DocGenAdditionalInput.putToken=accepted|DocGenAdditionalInputType.getToken=accepted|DocGenAdditionalInputType.putToken=accepted|EstimatedDocumentSize.getToken=accepted|EstimatedDocumentSize.putToken=accepted|IsLocalizationEnabled.getToken=System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context|IsLocalizationEnabled.putToken=System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context|IsSharedExternally.getToken=System.SObjectException: Field DocumentGenerationProcess.IsSharedExternally is inaccessible in this context|IsSharedExternally.putToken=System.SObjectException: Field DocumentGenerationProcess.IsSharedExternally is inaccessible in this context|IsTocUpdateRequired.getToken=System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context|IsTocUpdateRequired.putToken=System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context|DocGenerationBatchProcessId.getToken=accepted|DocGenerationBatchProcessId.putToken=accepted",
+    "source": "@IsTest private class OwnedFullTokenTest65_0 {@IsTest static void probe(){System.assert(false,'B5B9FULLTOKEN:'+OwnedFullTokenProbe65_0.observe());}}",
+    "profile": "doc"
+  },
+  {
+    "api": "67.0",
+    "route": "istest",
+    "object": "DocumentGenerationProcess",
+    "fields": [
+      "AdditionalMetadata",
+      "DocGenAdditionalInput",
+      "DocGenAdditionalInputType",
+      "EstimatedDocumentSize",
+      "IsLocalizationEnabled",
+      "IsSharedExternally",
+      "IsTocUpdateRequired",
+      "DocGenerationBatchProcessId"
+    ],
+    "result": "AdditionalMetadata.getToken=accepted|AdditionalMetadata.putToken=accepted|DocGenAdditionalInput.getToken=accepted|DocGenAdditionalInput.putToken=accepted|DocGenAdditionalInputType.getToken=accepted|DocGenAdditionalInputType.putToken=accepted|EstimatedDocumentSize.getToken=accepted|EstimatedDocumentSize.putToken=accepted|IsLocalizationEnabled.getToken=accepted|IsLocalizationEnabled.putToken=accepted|IsSharedExternally.getToken=accepted|IsSharedExternally.putToken=accepted|IsTocUpdateRequired.getToken=accepted|IsTocUpdateRequired.putToken=accepted|DocGenerationBatchProcessId.getToken=accepted|DocGenerationBatchProcessId.putToken=accepted",
+    "source": "@IsTest private class OwnedFullTokenTest67_0 {@IsTest static void probe(){System.assert(false,'B5B9FULLTOKEN:'+OwnedFullTokenProbe67_0.observe());}}",
+    "profile": "doc"
+  },
+  {
+    "api": "65.0",
+    "route": "istest",
+    "object": "DocumentTemplateSection",
+    "fields": [
+      "DocumentTemplateClauseId"
+    ],
+    "result": "DocumentTemplateClauseId.getToken=accepted|DocumentTemplateClauseId.putToken=accepted",
+    "source": "@IsTest private class OwnedFullTokenTest65_2 {@IsTest static void probe(){System.assert(false,'B5B9FULLTOKEN:'+OwnedFullTokenProbe65_2.observe());}}",
+    "profile": "doc"
+  },
+  {
+    "api": "64.0",
+    "route": "istest",
+    "object": "DocumentTemplate",
+    "fields": [
+      "ContextDefinitionName",
+      "ContextFilterName",
+      "ContextMappingName",
+      "ContextTransformationName"
+    ],
+    "result": "ContextDefinitionName.getToken=accepted|ContextDefinitionName.putToken=accepted|ContextFilterName.getToken=System.SObjectException: Field DocumentTemplate.ContextFilterName is inaccessible in this context|ContextFilterName.putToken=System.SObjectException: Field DocumentTemplate.ContextFilterName is inaccessible in this context|ContextMappingName.getToken=accepted|ContextMappingName.putToken=accepted|ContextTransformationName.getToken=System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context|ContextTransformationName.putToken=System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context",
+    "source": "@IsTest private class OwnedFullTokenTest64_1 {@IsTest static void probe(){System.assert(false,'B5B9FULLTOKEN:'+OwnedFullTokenProbe64_1.observe());}}",
+    "profile": "doc"
+  },
+  {
+    "api": "64.0",
+    "route": "istest",
+    "object": "DocumentGenerationProcess",
+    "fields": [
+      "AdditionalMetadata",
+      "DocGenAdditionalInput",
+      "DocGenAdditionalInputType",
+      "EstimatedDocumentSize",
+      "IsLocalizationEnabled",
+      "IsSharedExternally",
+      "IsTocUpdateRequired",
+      "DocGenerationBatchProcessId"
+    ],
+    "result": "AdditionalMetadata.getToken=System.SObjectException: Field DocumentGenerationProcess.AdditionalMetadata is inaccessible in this context|AdditionalMetadata.putToken=System.SObjectException: Field DocumentGenerationProcess.AdditionalMetadata is inaccessible in this context|DocGenAdditionalInput.getToken=accepted|DocGenAdditionalInput.putToken=accepted|DocGenAdditionalInputType.getToken=accepted|DocGenAdditionalInputType.putToken=accepted|EstimatedDocumentSize.getToken=accepted|EstimatedDocumentSize.putToken=accepted|IsLocalizationEnabled.getToken=System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context|IsLocalizationEnabled.putToken=System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context|IsSharedExternally.getToken=System.SObjectException: Field DocumentGenerationProcess.IsSharedExternally is inaccessible in this context|IsSharedExternally.putToken=System.SObjectException: Field DocumentGenerationProcess.IsSharedExternally is inaccessible in this context|IsTocUpdateRequired.getToken=System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context|IsTocUpdateRequired.putToken=System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context|DocGenerationBatchProcessId.getToken=accepted|DocGenerationBatchProcessId.putToken=accepted",
+    "source": "@IsTest private class OwnedFullTokenTest64_0 {@IsTest static void probe(){System.assert(false,'B5B9FULLTOKEN:'+OwnedFullTokenProbe64_0.observe());}}",
+    "profile": "doc"
+  },
+  {
+    "api": "65.0",
+    "route": "istest",
+    "object": "DocumentTemplate",
+    "fields": [
+      "ContextDefinitionName",
+      "ContextFilterName",
+      "ContextMappingName",
+      "ContextTransformationName"
+    ],
+    "result": "ContextDefinitionName.getToken=accepted|ContextDefinitionName.putToken=accepted|ContextFilterName.getToken=System.SObjectException: Field DocumentTemplate.ContextFilterName is inaccessible in this context|ContextFilterName.putToken=System.SObjectException: Field DocumentTemplate.ContextFilterName is inaccessible in this context|ContextMappingName.getToken=accepted|ContextMappingName.putToken=accepted|ContextTransformationName.getToken=System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context|ContextTransformationName.putToken=System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context",
+    "source": "@IsTest private class OwnedFullTokenTest65_1 {@IsTest static void probe(){System.assert(false,'B5B9FULLTOKEN:'+OwnedFullTokenProbe65_1.observe());}}",
+    "profile": "doc"
+  }
+]

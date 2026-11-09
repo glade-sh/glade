@@ -126,7 +126,7 @@ func TestReleaseWorkflowRequiresSalesforceAuthorityBeforePrepare(t *testing.T) {
 		`scripts/verify-salesforce-check.sh "$GITHUB_SHA" "$glade_tools_sha" > salesforce-release-authority.json`,
 		"name: salesforce-release-authority",
 		"path: salesforce-release-authority.json",
-		"needs: [required-ci-attestation, salesforce-authority]",
+		"needs: [required-ci-attestation, salesforce-authority, codeql-release]",
 	} {
 		if !strings.Contains(workflow, want) {
 			t.Fatalf("release workflow missing Salesforce authority contract %q", want)

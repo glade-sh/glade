@@ -1,0 +1,1 @@
+public class OwnedFullTokenSource {public static Schema.SObjectField field(String objectName,String name){return Schema.getGlobalDescribe().get(objectName).getDescribe().fields.getMap().get(name);}}

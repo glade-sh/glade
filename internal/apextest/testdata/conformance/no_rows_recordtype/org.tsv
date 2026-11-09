@@ -1,0 +1,5 @@
+source_api	route	observation
+62.0	anonymous	{"existing":1,"missing":0,"singleton":"System.QueryException"}
+62.0	isTest	{"existing":1,"missing":0,"singleton":"System.QueryException"}
+67.0	anonymous	{"existing":1,"missing":0,"singleton":"System.QueryException"}
+67.0	isTest	{"existing":1,"missing":0,"singleton":"System.QueryException"}

@@ -1,0 +1,12 @@
+{
+  "GiftCommitment": [
+    "LastNextGenCmtProcDtTm",
+    "LastNextGenCmtProcError",
+    "PartyPhilanthropicRsrchPrflId"
+  ],
+  "GiftTransaction": [
+    "GenerationalCohort",
+    "PartyPhilanthropicRsrchPrflId",
+    "TaxDeductionAmount"
+  ]
+}

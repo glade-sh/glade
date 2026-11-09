@@ -4,8 +4,9 @@ import "testing"
 
 // Pins the runtime normalization the scratch-feature registry must not alter:
 // only the names below fold case or alias; every other name keeps its spelling
-// and loses only a ":arg" suffix. No native row shows case-insensitive Quotes
-// or OrderManagement, so those pass through unchanged.
+// and loses only a ":arg" suffix. Quotes and OrderManagement are Glade feature
+// names, not Salesforce ones, and docs/CONFIG.md says feature names match case
+// insensitively, so they fold to their registry spelling like the setup gates.
 func TestCanonicalFeatureNameRuntimeNormalization(t *testing.T) {
 	for _, tc := range []struct{ in, want string }{
 		{"multicurrency", "MultiCurrency"},
@@ -15,9 +16,9 @@ func TestCanonicalFeatureNameRuntimeNormalization(t *testing.T) {
 		{"AddCustomApps:3", "AddCustomApps"},
 		{"B2BCommerce:1", "B2BCommerce"},
 		{"CommerceEnabled:1", "CommerceEnabled"},
-		{"quotes", "quotes"},
+		{"quotes", "Quotes"},
 		{"Quotes:1", "Quotes"},
-		{"ordermanagement", "ordermanagement"},
+		{"ordermanagement", "OrderManagement"},
 		{"OrderManagement", "OrderManagement"},
 	} {
 		if got := canonicalFeatureName(tc.in); got != tc.want {

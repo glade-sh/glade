@@ -22,10 +22,20 @@ func (e *Engine) renderFlowCustomErrorText(message string, frame *flowFrame, for
 }
 
 func (e *Engine) renderFlowCustomErrorTextWithConstants(message string, frame *flowFrame, constants map[string]string, formulaMaps ...map[string]string) string {
-	var formulas map[string]string
-	if len(formulaMaps) > 0 {
-		formulas = formulaMaps[0]
+	return e.renderFlowCustomErrorMessage(message, frame, constants, firstFlowFormulaMap(formulaMaps), nil)
+}
+
+func firstFlowFormulaMap(maps []map[string]string) map[string]string {
+	if len(maps) > 0 {
+		return maps[0]
 	}
+	return nil
+}
+
+// renderFlowCustomErrorMessage also finishes a merge field that names a flow
+// formula resource outside the captured frame-bound set (resources): native
+// rows (flow_assign_routes, API 62.0 and 67.0) render its result.
+func (e *Engine) renderFlowCustomErrorMessage(message string, frame *flowFrame, constants, formulas, resources map[string]string) string {
 	if frame == nil || !strings.Contains(message, "{!") {
 		return message
 	}
@@ -50,6 +60,8 @@ func (e *Engine) renderFlowCustomErrorTextWithConstants(message string, frame *f
 		value, found := e.flowFrameReferenceValue(reference, frame)
 		if expression, formula := formulas[flowFrameKey(reference)]; formula && capturedFormula && flowCoreFormulaUsesScalars(expression, frame, true) {
 			value, found = e.flowContextFormulaValueWithCapturedBindings(expression, frame, true)
+		} else if expression, formula := resources[strings.ToLower(strings.TrimSpace(reference))]; formula && !found {
+			value, found = e.flowContextFormulaValue(expression, frame)
 		}
 		if !found {
 			return storage.Value{}, false

@@ -5,6 +5,27 @@ type Program struct {
 	Source       string        `json:"source,omitempty"`
 	APIVersion   string        `json:"apiVersion,omitempty"`
 	Trigger      bool          `json:"trigger,omitempty"`
+	// LocalMethods are the method declarations of an execute-anonymous body.
+	LocalMethods []LocalMethod `json:"localMethods,omitempty"`
+}
+
+// LocalMethod is a method declared at the top level of an anonymous block.
+type LocalMethod struct {
+	Name       string        `json:"name"`
+	ReturnType string        `json:"returnType"`
+	Params     []LocalParam  `json:"params,omitempty"`
+	Modifiers  []string      `json:"modifiers,omitempty"`
+	Body       []Instruction `json:"body,omitempty"`
+	Pos        int           `json:"pos,omitempty"`
+	NamePos    int           `json:"namePos,omitempty"`
+	// BodyStart and BodyEnd bound the body's braces in the source.
+	BodyStart int `json:"bodyStart,omitempty"`
+	BodyEnd   int `json:"bodyEnd,omitempty"`
+}
+
+type LocalParam struct {
+	Name string `json:"name"`
+	Type string `json:"type"`
 }
 
 type Instruction struct {

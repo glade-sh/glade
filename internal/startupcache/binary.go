@@ -24,8 +24,8 @@ const (
 	// Keep the historical filename so an older JSON header is observed and
 	// rejected instead of accidentally enabling legacy-gob fallback.
 	stateHeaderFile = "startup.meta.json"
-	// Format 3 adds ZeroFieldFlags; format 2 payloads lost false field flags.
-	testCacheFormatVersion = 3
+	// Format 4 rejects snapshots predating the v0.3.5 persisted shape changes.
+	testCacheFormatVersion = 4
 	payloadFilePrefix      = "startup.payload."
 	payloadFileSuffix      = ".gob"
 )

@@ -122,18 +122,10 @@ func TestC11Q2CaptureProposal(t *testing.T) {
 				t.Run(c.Class+"/"+c.Method, func(t *testing.T) {
 					c12VerifyContext(t, index, c.Class, "", api)
 					base := run(c.Class, "baseline")
-					if c11ActorGateCarry(t, base, c.Class, "baseline", c.Arm) {
-						t.Log("known local carry batch Dot stdlib cases Dot Dot SOQL cases and Dot async cases: actor profile prerequisite prevents native observation")
-						apextest.Case345Skip(t)
-					}
 					if base.Status != testreport.StatusPass || base.Problem != nil || base.ClassName != c.Class || base.MethodName != "baseline" {
 						t.Fatalf("baseline failed: %s", c11Diagnostic(base))
 					}
 					result := run(c.Class, c.Method)
-					if c11ActorGateCarry(t, result, c.Class, c.Method, c.Arm) {
-						t.Log("known local carry batch Dot stdlib cases Dot Dot SOQL cases and Dot async cases: actor profile prerequisite prevents native observation")
-						apextest.Case345Skip(t)
-					}
 					raw, e := c12CapturePayload(result, c.Class, c.Method, c.Marker)
 					if e != nil {
 						t.Fatal(e)
@@ -145,7 +137,8 @@ func TestC11Q2CaptureProposal(t *testing.T) {
 					if e = c11q2Project(o); e != nil {
 						t.Fatal(e)
 					}
-					if !reflect.DeepEqual(o, rows[c.API+"/"+c.Class+"."+c.Method]) {
+					want := rows[c.API+"/"+c.Class+"."+c.Method]
+					if !reflect.DeepEqual(o, want) {
 						t.Fatal("observation differs")
 					}
 				})

@@ -1,0 +1,1 @@
+<Queue xmlns="http://soap.sforce.com/2006/04/metadata"><doesSendEmailToMembers>false</doesSendEmailToMembers><name>Synthetic Routing</name><queueSobject><sobjectType>Case</sobjectType></queueSobject><queueSobject><sobjectType>Lead</sobjectType></queueSobject></Queue>

@@ -9,6 +9,16 @@ A release can be promoted when:
 
 - The tagged commit has an exact-SHA successful `Required CI` authority from a
   push to `main`; PR and manual CI runs do not qualify.
+  A squash-merged commit also qualifies by tree equality when an operator sets
+  `REQUIRED_CI_ALLOW_TREE_ATTESTATION=1` for `scripts/verify-required-ci.sh`
+  (it calls `scripts/ci-verify-pr-tree.sh`). The merged pull request must have a
+  successful `Required CI` run on its head commit. That run's `ci-tree` receipt
+  must name the run, attempt and pull request. The named checkout must be a
+  merge commit whose second parent is the pull request head and whose git tree
+  equals the tree of the tagged commit. Any mismatch, missing receipt or API
+  error is a refusal. The receipt is written by the PR workflow itself, so it
+  is not proof against a writer who edits the workflow; branch protection and
+  review cover that case. The default release gate does not use this path.
 - The tagged commit has exactly one successful `Salesforce Correctness` check
   from the trusted GitHub App and the check binds the exact `glade-tools` commit.
 - `scripts/release-check.sh` passes.
@@ -28,12 +38,15 @@ memory-safe release lanes. Raw lane events and each validated
 `package-summary.json` are written under `ci-artifacts/local-release/`. The
 lanes run one at a time; `LOCAL_GO_TEST_JOBS` does not make them overlap.
 
-CodeQL is not a complete-scan guarantee. The fast profile inside `Required CI`
-and the full profile in Security both succeed with a warning when their
-analysis budget expires, and upload no results. On large changes this is the
-common case. A release does not treat an incomplete scan as proof that there
-are no findings, and its notes say so. The waiver list in
-[CODEQL_BUDGET.md](CODEQL_BUDGET.md) is reviewed for every release.
+The fast CodeQL profile in Security warns when its analysis budget expires, so
+its success is not proof of a complete scan. The release workflow requires a
+full-profile scan job of the tagged SHA to succeed before publication. A full-scan
+timeout stays a warning and a known issue (the v0.3.2 to v0.3.4 tag scans all stopped
+at 23 of 25 queries), so the gate fails only on findings or errors. The full
+profile skips five queries the fast PR scan runs (ReflectedXss,
+BadRedirectCheck, OpenUrlRedirect, UncontrolledAllocationSize, StringBreak), so
+their alerts gate nothing now that CodeQL is outside `Required CI`. The waiver
+list in [CODEQL_BUDGET.md](CODEQL_BUDGET.md) is reviewed for every release.
 
 The local gate does not include the built-site, rendered-site browser, or preview
 smoke checks. Run those as described in [site/README.md](../site/README.md);
@@ -54,7 +67,7 @@ source tree, not broad promises that every Salesforce behavior is implemented.
 
 ## Salesforce API Versions
 
-The supported window is Apex 62.0-67.0, LWC and Visualforce 59.0-67.0.
+The supported window is Apex 62.0-68.0, LWC and Visualforce 59.0-67.0.
 Apex source API below 62.0, including legacy 24.0, 29.0, 36.0, 39.0, and 40.0
 behavior, is unsupported. The loader preserves well-formed positive whole
 historical Apex versions for compatibility; loading or passing a local test
@@ -74,8 +87,19 @@ bundle `apiVersion` values must be whole versions from 59.0 through 68.0.
 Unversioned bundles use the compiler default, 68.0; module availability follows
 the effective bundle version.
 
-DataWeave, ConnectApi, and Slack are excluded and unsupported. Hosted services
-remain outside the local runtime contract even when a local DTO or mock exists.
+DataWeave and Slack are excluded and unsupported. Hosted services remain outside
+the local runtime contract even when a local DTO or mock exists.
+
+ConnectApi is a passive surface. Its input and output classes and enums carry the
+shape a Salesforce org reports at API 62.0 and 67.0: typed properties, superclasses,
+null defaults, and member version ranges. `ConnectApi.ConnectApiException` is an
+exception type. In an `@IsTest` method without `SeeAllData=true`, a service call
+behaves as the org does: it returns a result registered with the matching `setTest`
+method, fails the test with the native `System.AssertException` when none is
+registered, and otherwise throws the native data-siloed
+`System.UnsupportedOperationException` after the captured argument checks. Glade does
+not implement the Chatter, Einstein, Data Cloud, credential, or other ConnectApi
+services.
 
 Salesforce release support is generated from the checked Glade Tools release
 contract. Each release snapshot carries a checked source receipt for the exact

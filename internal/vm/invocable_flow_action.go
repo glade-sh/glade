@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/storage"
 )
@@ -304,6 +305,16 @@ func (vm *VM) invokeInvocableFlowAction(action, invocation Value, executionResul
 	if err != nil {
 		set("Flow__InterviewStatus", String("Error"))
 		if fault, ok := engine.InvocableFlowActionError(err); ok {
+			// Native Flow integer-input failures change their action error code
+			// only when both the Flow source and request APIs are 68 or newer.
+			if _, inputFailure := dml.FlowActionInputFailureResult(err); inputFailure && vm.Org != nil {
+				flowMajor, flowOK := apexversion.Major(rule.APIVersion)
+				restAPI, restErr := storage.ResolveRESTAPIVersion(vm.Org.APIVersion)
+				restMajor, restOK := apexversion.Major(restAPI)
+				if flowOK && restErr == nil && restOK && flowMajor >= 68 && restMajor >= 68 {
+					fault.StatusCode = "INVOCABLE_ACTION_EXCEPTION"
+				}
+			}
 			return outputs, false, &invocableFlowActionFault{code: fault.StatusCode, message: fault.Message}
 		}
 		return Null, false, err

@@ -1,0 +1,11 @@
+{
+  "accessible": false,
+  "createable": false,
+  "length": 0,
+  "nillable": true,
+  "permissionable": false,
+  "precision": 0,
+  "scale": 0,
+  "type": "INTEGER",
+  "updateable": false
+}

@@ -38,7 +38,7 @@ func ClassifyPath(path string) FileClassification {
 	lowerSlash := strings.ToLower(slash)
 
 	switch {
-	case lowerBase == "sfdx-project.json" || lowerBase == "glade.yml":
+	case lowerBase == "sfdx-project.json" || lowerBase == "glade.yml" || lowerBase == ".forceignore":
 		return FileClassification{
 			Path:      clean,
 			Kind:      FileKindIgnored,

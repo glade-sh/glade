@@ -57,6 +57,10 @@ func TestLookupFilterRelationshipPathsMatchNativeRows(t *testing.T) {
 			for _, name := range []string{"LookupFilterPathsProbeTest.cls", "LookupFilterPathsProbeTest.cls-meta.xml"} {
 				writeFile(t, filepath.Join(root, "force-app/main/default/classes", name), strings.ReplaceAll(readFixtureFile(t, filepath.Join(fixture, name)), "<apiVersion>67.0</apiVersion>", "<apiVersion>"+api+"</apiVersion>"))
 			}
+			// ASSIGNMENT-RUN.txt: at 67.0 the named class fails natively
+			// unassigned and passes with LookupFilterPathsAccess assigned; at
+			// 62.0 it passes unassigned.
+			writeRecordedFixtureAssignment(t, fixture, api, root, "force-app/main/default/permissionsets")
 			run := Run(loadTestIndex(t, root), Options{NoDiskCache: true, Parallelism: 1})
 			if got := run.Summary(); got.Total != 1 || got.Passed != 1 || len(run.ExcludedClasses) != 0 {
 				var problems []string

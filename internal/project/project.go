@@ -51,76 +51,87 @@ type Project struct {
 	// part of this project, so a qualifier naming one names project source.
 	SourceNamespaces []string `json:"sourceNamespaces,omitempty"`
 	// SourceNamespaceRoots maps nested project directories to their declared namespaces.
-	SourceNamespaceRoots       map[string]string          `json:"sourceNamespaceRoots,omitempty"`
-	SourceAPIVersion           string                     `json:"sourceApiVersion,omitempty"`
-	OrgDomainURL               string                     `json:"orgDomainUrl,omitempty"`
-	SchemaSnapshot             string                     `json:"schemaSnapshot,omitempty"`
-	SchemaSnapshotSHA256       string                     `json:"schemaSnapshotSHA256,omitempty"`
-	PackageDirectories         []PackageDirectory         `json:"packageDirectories"`
-	ExtraMetadataDirs          []string                   `json:"extraMetadataDirs,omitempty"`
-	ApexFiles                  []string                   `json:"apexFiles"`
-	ObjectFiles                []string                   `json:"objectFiles"`
-	FieldFiles                 []string                   `json:"fieldFiles"`
-	FieldSetFiles              []string                   `json:"fieldSetFiles"`
-	RecordTypeFiles            []string                   `json:"recordTypeFiles"`
-	ValidationRuleFiles        []string                   `json:"validationRuleFiles"`
-	LabelFiles                 []string                   `json:"labelFiles"`
-	TranslationFiles           []string                   `json:"translationFiles,omitempty"`
-	StaticResourceFiles        []string                   `json:"staticResourceFiles"`
-	StaticResourceMetas        []string                   `json:"staticResourceMetas"`
-	DataCategoryGroupFiles     []string                   `json:"dataCategoryGroupFiles,omitempty"`
-	CachePartitionFiles        []string                   `json:"cachePartitionFiles,omitempty"`
-	DataWeaveFiles             []string                   `json:"dataWeaveFiles,omitempty"`
-	DataWeaveMetas             []string                   `json:"dataWeaveMetas,omitempty"`
-	ContentAssetFiles          []string                   `json:"contentAssetFiles,omitempty"`
-	ContentAssetMetas          []string                   `json:"contentAssetMetas,omitempty"`
-	EmailTemplateFiles         []string                   `json:"emailTemplateFiles,omitempty"`
-	EmailServiceFiles          []string                   `json:"emailServiceFiles,omitempty"`
-	FolderFiles                []string                   `json:"folderFiles,omitempty"`
-	NamedCredentialFiles       []string                   `json:"namedCredentialFiles"`
-	RemoteSiteFiles            []string                   `json:"remoteSiteFiles"`
-	CustomPermissionFiles      []string                   `json:"customPermissionFiles"`
-	CustomMetadataFiles        []string                   `json:"customMetadataFiles"`
-	FeatureParameterFiles      []string                   `json:"featureParameterFiles,omitempty"`
-	AssignmentRuleFiles        []string                   `json:"assignmentRuleFiles,omitempty"`
-	WorkflowFiles              []string                   `json:"workflowFiles"`
-	FlowFiles                  []string                   `json:"flowFiles"`
-	OwnerSharingRuleFiles      []string                   `json:"ownerSharingRuleFiles,omitempty"`
-	GroupFiles                 []string                   `json:"groupFiles,omitempty"`
-	QueueFiles                 []string                   `json:"queueFiles,omitempty"`
-	RoleFiles                  []string                   `json:"roleFiles,omitempty"`
-	ProfileFiles               []string                   `json:"profileFiles"`
-	NetworkFiles               []string                   `json:"networkFiles,omitempty"`
-	PermissionSetFiles         []string                   `json:"permissionSetFiles"`
-	PermissionSetGroupFiles    []string                   `json:"permissionSetGroupFiles,omitempty"`
-	BusinessHoursSettingsFiles []string                   `json:"businessHoursSettingsFiles,omitempty"`
-	MatchingRuleFiles          []string                   `json:"matchingRuleFiles,omitempty"`
-	DuplicateRuleFiles         []string                   `json:"duplicateRuleFiles,omitempty"`
-	PermissionAssignmentFiles  []string                   `json:"permissionAssignmentFiles"`
-	ListViewFiles              []string                   `json:"listViewFiles"`
-	LayoutFiles                []string                   `json:"layoutFiles"`
-	CompactLayoutFiles         []string                   `json:"compactLayoutFiles"`
-	TabFiles                   []string                   `json:"tabFiles"`
-	WebLinkFiles               []string                   `json:"webLinkFiles"`
-	QuickActionFiles           []string                   `json:"quickActionFiles"`
-	GlobalValueSetFiles        []string                   `json:"globalValueSetFiles"`
-	StandardValueSetFiles      []string                   `json:"standardValueSetFiles"`
-	ValueSetTranslationFiles   []string                   `json:"standardValueSetTranslationFiles,omitempty"`
-	FlexiPageFiles             []string                   `json:"flexiPageFiles"`
-	ApplicationFiles           []string                   `json:"applicationFiles"`
-	VisualforcePageFiles       []string                   `json:"visualforcePageFiles"`
-	VisualforceComponentFiles  []string                   `json:"visualforceComponentFiles"`
-	AuraFiles                  []string                   `json:"auraFiles"`
-	LWCFiles                   []string                   `json:"lwcFiles"`
-	LWCHTMLFiles               []string                   `json:"lwcHtmlFiles"`
-	LWCCSSFiles                []string                   `json:"lwcCssFiles"`
-	LWCMetaFiles               []string                   `json:"lwcMetaFiles"`
-	MessageChannelFiles        []string                   `json:"messageChannelFiles,omitempty"`
-	NamespaceRemaps            []namespaceremap.Rule      `json:"namespaceRemaps,omitempty"`
-	ManagedPackageDependencies []ManagedPackageDependency `json:"managedPackageDependencies,omitempty"`
-	PackageShims               []PackageShim              `json:"packageShims,omitempty"`
-	DependencyDiagnostics      []DependencyDiagnostic     `json:"dependencyDiagnostics,omitempty"`
-	SourceWarnings             []string                   `json:"-"`
+	SourceNamespaceRoots        map[string]string          `json:"sourceNamespaceRoots,omitempty"`
+	SourceAPIVersion            string                     `json:"sourceApiVersion,omitempty"`
+	OrgDomainURL                string                     `json:"orgDomainUrl,omitempty"`
+	HierarchyAccessObjects      []string                   `json:"hierarchyAccessObjects,omitempty"`
+	SchemaSnapshot              string                     `json:"schemaSnapshot,omitempty"`
+	SchemaSnapshotSHA256        string                     `json:"schemaSnapshotSHA256,omitempty"`
+	PackageDirectories          []PackageDirectory         `json:"packageDirectories"`
+	ExtraMetadataDirs           []string                   `json:"extraMetadataDirs,omitempty"`
+	ApexFiles                   []string                   `json:"apexFiles"`
+	ObjectFiles                 []string                   `json:"objectFiles"`
+	FieldFiles                  []string                   `json:"fieldFiles"`
+	FieldSetFiles               []string                   `json:"fieldSetFiles"`
+	RecordTypeFiles             []string                   `json:"recordTypeFiles"`
+	ValidationRuleFiles         []string                   `json:"validationRuleFiles"`
+	LabelFiles                  []string                   `json:"labelFiles"`
+	TranslationFiles            []string                   `json:"translationFiles,omitempty"`
+	StaticResourceFiles         []string                   `json:"staticResourceFiles"`
+	StaticResourceMetas         []string                   `json:"staticResourceMetas"`
+	DataCategoryGroupFiles      []string                   `json:"dataCategoryGroupFiles,omitempty"`
+	CachePartitionFiles         []string                   `json:"cachePartitionFiles,omitempty"`
+	DataWeaveFiles              []string                   `json:"dataWeaveFiles,omitempty"`
+	DataWeaveMetas              []string                   `json:"dataWeaveMetas,omitempty"`
+	ContentAssetFiles           []string                   `json:"contentAssetFiles,omitempty"`
+	ContentAssetMetas           []string                   `json:"contentAssetMetas,omitempty"`
+	EmailTemplateFiles          []string                   `json:"emailTemplateFiles,omitempty"`
+	EmailServiceFiles           []string                   `json:"emailServiceFiles,omitempty"`
+	FolderFiles                 []string                   `json:"folderFiles,omitempty"`
+	ReportFiles                 []string                   `json:"reportFiles,omitempty"`
+	DashboardFiles              []string                   `json:"dashboardFiles,omitempty"`
+	PaymentGatewayProviderFiles []string                   `json:"paymentGatewayProviderFiles,omitempty"`
+	NamedCredentialFiles        []string                   `json:"namedCredentialFiles"`
+	RemoteSiteFiles             []string                   `json:"remoteSiteFiles"`
+	CustomPermissionFiles       []string                   `json:"customPermissionFiles"`
+	CustomMetadataFiles         []string                   `json:"customMetadataFiles"`
+	FeatureParameterFiles       []string                   `json:"featureParameterFiles,omitempty"`
+	AutoResponseRuleFiles       []string                   `json:"autoResponseRuleFiles,omitempty"`
+	ApprovalProcessFiles        []string                   `json:"approvalProcessFiles,omitempty"`
+	AssignmentRuleFiles         []string                   `json:"assignmentRuleFiles,omitempty"`
+	WorkflowFiles               []string                   `json:"workflowFiles"`
+	FlowFiles                   []string                   `json:"flowFiles"`
+	OwnerSharingRuleFiles       []string                   `json:"ownerSharingRuleFiles,omitempty"`
+	GroupFiles                  []string                   `json:"groupFiles,omitempty"`
+	QueueFiles                  []string                   `json:"queueFiles,omitempty"`
+	RoleFiles                   []string                   `json:"roleFiles,omitempty"`
+	ProfileFiles                []string                   `json:"profileFiles"`
+	NetworkFiles                []string                   `json:"networkFiles,omitempty"`
+	PermissionSetFiles          []string                   `json:"permissionSetFiles"`
+	PermissionSetGroupFiles     []string                   `json:"permissionSetGroupFiles,omitempty"`
+	MutingPermissionSetFiles    []string                   `json:"mutingPermissionSetFiles,omitempty"`
+	BusinessHoursSettingsFiles  []string                   `json:"businessHoursSettingsFiles,omitempty"`
+	MatchingRuleFiles           []string                   `json:"matchingRuleFiles,omitempty"`
+	DuplicateRuleFiles          []string                   `json:"duplicateRuleFiles,omitempty"`
+	PermissionAssignmentFiles   []string                   `json:"permissionAssignmentFiles"`
+	ListViewFiles               []string                   `json:"listViewFiles"`
+	LayoutFiles                 []string                   `json:"layoutFiles"`
+	CompactLayoutFiles          []string                   `json:"compactLayoutFiles"`
+	TabFiles                    []string                   `json:"tabFiles"`
+	WebLinkFiles                []string                   `json:"webLinkFiles"`
+	QuickActionFiles            []string                   `json:"quickActionFiles"`
+	GlobalValueSetFiles         []string                   `json:"globalValueSetFiles"`
+	StandardValueSetFiles       []string                   `json:"standardValueSetFiles"`
+	ValueSetTranslationFiles    []string                   `json:"standardValueSetTranslationFiles,omitempty"`
+	FlexiPageFiles              []string                   `json:"flexiPageFiles"`
+	ApplicationFiles            []string                   `json:"applicationFiles"`
+	VisualforcePageFiles        []string                   `json:"visualforcePageFiles"`
+	VisualforceComponentFiles   []string                   `json:"visualforceComponentFiles"`
+	AuraFiles                   []string                   `json:"auraFiles"`
+	LWCFiles                    []string                   `json:"lwcFiles"`
+	LWCHTMLFiles                []string                   `json:"lwcHtmlFiles"`
+	LWCCSSFiles                 []string                   `json:"lwcCssFiles"`
+	LWCMetaFiles                []string                   `json:"lwcMetaFiles"`
+	MessageChannelFiles         []string                   `json:"messageChannelFiles,omitempty"`
+	NamespaceRemaps             []namespaceremap.Rule      `json:"namespaceRemaps,omitempty"`
+	ManagedPackageDependencies  []ManagedPackageDependency `json:"managedPackageDependencies,omitempty"`
+	PackageShims                []PackageShim              `json:"packageShims,omitempty"`
+	DependencyDiagnostics       []DependencyDiagnostic     `json:"dependencyDiagnostics,omitempty"`
+	SourceWarnings              []string                   `json:"-"`
+	// ForceIgnored lists package source paths a deploy skips because a
+	// .forceignore matches them; ForceIgnoreConfigs lists the governing files.
+	ForceIgnored       []string `json:"-"`
+	ForceIgnoreConfigs []string `json:"-"`
 }
 
 type ManagedPackageDependency struct {
@@ -162,10 +173,13 @@ func NormalizeApexNamespaceTokens(source, namespace string) string {
 }
 
 type PackageDirectory struct {
-	Path         string              `json:"path"`
-	Default      bool                `json:"default,omitempty"`
-	Package      string              `json:"package,omitempty"`
-	Dependencies []PackageDependency `json:"dependencies,omitempty"`
+	Path    string `json:"path"`
+	Default bool   `json:"default,omitempty"`
+	Package string `json:"package,omitempty"`
+	// DefinitionFile is the scratch definition Salesforce uses when creating a
+	// scratch org for this package directory.
+	DefinitionFile string              `json:"definitionFile,omitempty"`
+	Dependencies   []PackageDependency `json:"dependencies,omitempty"`
 }
 
 type PackageDependency struct {
@@ -174,8 +188,54 @@ type PackageDependency struct {
 }
 
 type scratchOrgDefinition struct {
-	Features scratchFeatureNames `json:"features"`
-	Settings map[string]any      `json:"settings"`
+	Features       scratchFeatureNames                  `json:"features"`
+	Settings       map[string]any                       `json:"settings"`
+	ObjectSettings map[string]scratchObjectSettingsInfo `json:"objectSettings"`
+}
+
+type scratchObjectSettingsInfo struct {
+	DefaultRecordType string `json:"defaultRecordType"`
+}
+
+// ObjectDefaultRecordTypeFeature marks an object whose scratch definition sets
+// objectSettings.<object>.defaultRecordType. Scratch creation makes that record
+// type, so the object has RecordTypeId (record_type_shape object_settings rows).
+const ObjectDefaultRecordTypeFeature = "ObjectDefaultRecordType"
+
+// ObjectDefaultRecordTypeFeatureFor names the per-object feature token.
+func ObjectDefaultRecordTypeFeatureFor(object string) string {
+	return ObjectDefaultRecordTypeFeature + strings.ToLower(strings.TrimSpace(object))
+}
+
+// ScratchObjectDefaultRecordTypes maps each object whose scratch definition
+// sets objectSettings.<object>.defaultRecordType to that developer name.
+// Scratch creation makes the record type; the running administrator does not
+// see it (record_type_visibility Opportunity rows).
+func ScratchObjectDefaultRecordTypes(root string) map[string]string {
+	out := map[string]string{}
+	if strings.TrimSpace(root) == "" {
+		return out
+	}
+	for _, path := range scratchOrgConfigFiles(root) {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			continue
+		}
+		var def scratchOrgDefinition
+		if json.Unmarshal(data, &def) != nil {
+			continue
+		}
+		for object, settings := range def.ObjectSettings {
+			object, developerName := strings.TrimSpace(object), strings.TrimSpace(settings.DefaultRecordType)
+			if object == "" || developerName == "" {
+				continue
+			}
+			if _, seen := out[strings.ToLower(object)]; !seen {
+				out[strings.ToLower(object)] = developerName
+			}
+		}
+	}
+	return out
 }
 
 // Scratch definitions may express one feature as a string or use an array.
@@ -198,17 +258,23 @@ func (features *scratchFeatureNames) UnmarshalJSON(data []byte) error {
 // OrgDomainURL returns the optional canonical org-origin seed from the nearest
 // glade.yml. The VM resolves the local default when this seed and saved state are unset.
 func OrgDomainURL(root string) (string, error) {
+	domain, _, err := OrgRuntimeSettings(root)
+	return domain, err
+}
+
+// OrgRuntimeSettings returns the org settings included in a runtime seed.
+func OrgRuntimeSettings(root string) (string, []string, error) {
 	if strings.TrimSpace(root) == "" {
-		return "", nil
+		return "", nil, nil
 	}
 	cfg, _, err := config.LoadNearest(root)
 	if errors.Is(err, config.ErrNotFound) {
-		return "", nil
+		return "", nil, nil
 	}
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
-	return cfg.Org.DomainURL, nil
+	return cfg.Org.DomainURL, cfg.Org.HierarchyAccessObjects, nil
 }
 
 func OrgShapeFeatures(root string) []string {
@@ -223,23 +289,48 @@ func OrgShapeFeatures(root string) []string {
 		}
 		var def scratchOrgDefinition
 		if err := json.Unmarshal(data, &def); err == nil {
-			configured := append([]string(nil), def.Features...)
-			configured = append(configured, scratchSettingsFeatures(def.Settings)...)
-			communities, _ := def.Settings["communitiesSettings"].(map[string]any)
-			enabled, specified := communities["enableNetworksEnabled"].(bool)
-			for _, feature := range configured {
-				// The capability can exist while Networks is explicitly disabled.
-				if specified && !enabled && strings.EqualFold(strings.TrimSpace(feature), "Communities") {
-					continue
-				}
-				features = append(features, feature)
-			}
+			features = append(features, scratchDefinitionFeatures(def)...)
 		}
+	}
+	// Deployed settings files reach the same trigger table as scratch settings.
+	if def, ok := sourceSettingsDefinition(root); ok {
+		features = append(features, scratchDefinitionFeatures(def)...)
 	}
 	if len(personAccountRecordTypePaths(root)) > 0 {
 		features = append(features, "PersonAccounts")
 	}
 	return dedupeStrings(features)
+}
+
+// scratchDefinitionFeatures lists the features a definition's feature list and
+// settings establish.
+func scratchDefinitionFeatures(def scratchOrgDefinition) []string {
+	configured := append([]string(nil), def.Features...)
+	configured = append(configured, scratchSettingsFeatures(def.Settings)...)
+	objects := make([]string, 0, len(def.ObjectSettings))
+	for object, settings := range def.ObjectSettings {
+		if strings.TrimSpace(settings.DefaultRecordType) != "" && strings.TrimSpace(object) != "" {
+			objects = append(objects, ObjectDefaultRecordTypeFeatureFor(object))
+		}
+	}
+	sort.Strings(objects)
+	configured = append(configured, objects...)
+	communities, _ := def.Settings["communitiesSettings"].(map[string]any)
+	enabled, specified := communities["enableNetworksEnabled"].(bool)
+	var features []string
+	for _, feature := range configured {
+		// Knowledge availability follows the scratch setting; its license
+		// feature alone does not enable the API.
+		if strings.EqualFold(strings.TrimSpace(feature), "Knowledge") && !nestedBool(def.Settings, "knowledgeSettings", "enableKnowledge") {
+			continue
+		}
+		// The capability can exist while Networks is explicitly disabled.
+		if specified && !enabled && strings.EqualFold(strings.TrimSpace(feature), "Communities") {
+			continue
+		}
+		features = append(features, feature)
+	}
+	return features
 }
 
 func cumulusCIOrgConfigFiles(root string) []string {
@@ -261,7 +352,7 @@ func cumulusCIOrgConfigFiles(root string) []string {
 				continue
 			}
 			full := filepath.Clean(filepath.Join(root, path))
-			if !strings.HasPrefix(full, filepath.Clean(root)+string(os.PathSeparator)) {
+			if !strings.HasPrefix(full, filepath.Clean(root)+string(os.PathSeparator)) || !PathInsideRoot(root, full) {
 				continue
 			}
 			if !seen[full] {
@@ -274,25 +365,59 @@ func cumulusCIOrgConfigFiles(root string) []string {
 	return paths
 }
 
-var scratchSettingTriggers = []struct{ block, key, feature string }{
-	{"communitiesSettings", "enableNetworksEnabled", "Communities"},
-	{"communitiesSettings", "enableOotbProfExtUserOpsEnable", "Communities"},
-	{"chatterSettings", "enableChatter", "Chatter"},
-	{"lightningExperienceSettings", "enableS1DesktopEnabled", "LightningExperience"},
-	{"currencySettings", "enableMultiCurrency", "MultiCurrency"},
-	{"quoteSettings", "enableQuote", "Quotes"},
-	{"commerceSettings", "commerceEnabled", "CommerceEnabled"},
-	{"liveAgentSettings", "enableLiveAgent", "LiveAgentEnabled"},
+// foldCase marks a setting whose block spelling was captured as case
+// insensitive: native accepts OrderSettings as orderSettings with identical
+// results (standard_enhanced_commerce_orders, capitalized-settings).
+var scratchSettingTriggers = []struct {
+	block, key string
+	foldCase   bool
+	feature    string
+}{
+	{"knowledgeSettings", "enableKnowledge", false, "Knowledge"},
+	{"communitiesSettings", "enableNetworksEnabled", false, "Communities"},
+	{"communitiesSettings", "enableNetworksEnabled", false, "NetworksEnabled"},
+	{"communitiesSettings", "enableOotbProfExtUserOpsEnable", false, "Communities"},
+	{"chatterSettings", "enableChatter", false, "Chatter"},
+	{"lightningExperienceSettings", "enableS1DesktopEnabled", false, "LightningExperience"},
+	{"currencySettings", "enableMultiCurrency", false, "MultiCurrency"},
+	{"quoteSettings", "enableQuote", false, "Quotes"},
+	{"commerceSettings", "commerceEnabled", false, "CommerceEnabled"},
+	{"commerceSettings", "commerceContractPricing", false, "CommerceContractPricing"},
+	{"industriesSettings", "enableFundraising", false, "FundraisingEnabled"},
+	{"nameSettings", "enableMiddleName", false, "MiddleNameEnabled"},
+	{"orderSettings", "enableEnhancedCommerceOrders", true, "EnhancedCommerceOrders"},
+	{"territory2Settings", "enableTerritoryManagement2", false, "Territory2"},
+	{"accountSettings", "enableAccountTeams", false, "AccountTeams"},
+	{"forecastingSettings", "enableForecasts", false, "Forecasts"},
+	{"opportunitySettings", "enableOpportunityTeam", false, "OpportunityTeam"},
+	{"omniChannelSettings", "enableOmniChannel", false, "OmniChannel"},
+	{"surveySettings", "enableSurvey", false, "Surveys"},
+	{"campaignSettings", "enableCampaignInfluence2", false, "CampaignInfluence2Enabled"},
+	{"knowledgeSettings", "enableKnowledge", false, "KnowledgeEnabled"},
+	{"orderManagementSettings", "enableOrderManagement", false, "OrderManagementEnabled"},
+	{"liveAgentSettings", "enableLiveAgent", false, "LiveAgentEnabled"},
 }
 
 func scratchSettingsFeatures(settings map[string]any) []string {
 	var features []string
 	for _, trigger := range scratchSettingTriggers {
-		if nestedBool(settings, trigger.block, trigger.key) {
+		if trigger.foldCase && nestedBoolBlockFold(settings, trigger.block, trigger.key) || nestedBool(settings, trigger.block, trigger.key) {
 			features = append(features, trigger.feature)
 		}
 	}
 	return dedupeStrings(features)
+}
+
+// nestedBoolBlockFold folds only the captured block name; setting keys remain exact.
+func nestedBoolBlockFold(root map[string]any, block, key string) bool {
+	for name, value := range root {
+		if strings.EqualFold(name, block) {
+			if settings, ok := value.(map[string]any); ok && nestedBool(settings, key) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func nestedBool(root map[string]any, path ...string) bool {
@@ -512,6 +637,7 @@ func load(root string, stack map[string]bool, dependency bool, requestedPackages
 		p.PDF = gladeCfg.PDF
 		p.ExtraMetadataDirs = gladeCfg.Project.ExtraMetadataDirs
 		p.OrgDomainURL = gladeCfg.Org.DomainURL
+		p.HierarchyAccessObjects = append([]string(nil), gladeCfg.Org.HierarchyAccessObjects...)
 		p.SchemaSnapshot = gladeCfg.Project.SchemaSnapshot
 		p.SchemaSnapshotSHA256 = gladeCfg.Project.SchemaSnapshotSHA256
 		p.NamespaceRemaps = gladeCfg.Project.NamespaceRemaps
@@ -525,6 +651,7 @@ func load(root string, stack map[string]bool, dependency bool, requestedPackages
 			}
 			p.PDF = nearestCfg.PDF
 			p.OrgDomainURL = nearestCfg.Org.DomainURL
+			p.HierarchyAccessObjects = append([]string(nil), nearestCfg.Org.HierarchyAccessObjects...)
 			dependencyCfg = nearestCfg
 			dependencyCfgOK = true
 			loadManagedDependenciesFromConfig = true
@@ -541,6 +668,7 @@ func load(root string, stack map[string]bool, dependency bool, requestedPackages
 	p.ManagedPackageDependencies, p.DependencyDiagnostics = loadLocalSFDXPackageDependencies(absRoot, cfg, p, stack, dependencyCfg, dependencyCfgOK, loadManagedDependenciesFromConfig, dependencyPaths)
 
 	includeConventionalRoots := !dependency && !cfg.HasManifest
+	ignore := newForceIgnoreSet()
 	for _, pkgRoot := range packageRoots(absRoot, p.PackageDirectories, includeConventionalRoots) {
 		if _, err := os.Stat(pkgRoot); err != nil {
 			if errors.Is(err, os.ErrNotExist) {
@@ -549,7 +677,7 @@ func load(root string, stack map[string]bool, dependency bool, requestedPackages
 			return Project{}, err
 		}
 		collectAncestorSourceNamespaces(absRoot, pkgRoot, &p)
-		if err := collectFiles(pkgRoot, &p); err != nil {
+		if err := collectFiles(pkgRoot, &p, ignore); err != nil {
 			return Project{}, err
 		}
 	}
@@ -562,13 +690,15 @@ func load(root string, stack map[string]bool, dependency bool, requestedPackages
 		if !info.IsDir() {
 			return Project{}, fmt.Errorf("project.extraMetadataDirs: %q is not a directory", dir)
 		}
-		if err := collectFiles(dir, &p); err != nil {
+		if err := collectFiles(dir, &p, nil); err != nil {
 			return Project{}, err
 		}
 	}
+	p.ForceIgnoreConfigs = ignore.Files()
+	sort.Strings(p.ForceIgnoreConfigs)
 	if !dependency {
 		for _, dir := range setupMetadataRoots(absRoot) {
-			if err := collectFiles(dir, &p); err != nil {
+			if err := collectFiles(dir, &p, nil); err != nil {
 				return Project{}, err
 			}
 		}
@@ -601,11 +731,16 @@ func load(root string, stack map[string]bool, dependency bool, requestedPackages
 	sort.Strings(p.EmailTemplateFiles)
 	sort.Strings(p.EmailServiceFiles)
 	sort.Strings(p.FolderFiles)
+	sort.Strings(p.PaymentGatewayProviderFiles)
+	sort.Strings(p.ReportFiles)
+	sort.Strings(p.DashboardFiles)
 	sort.Strings(p.NamedCredentialFiles)
 	sort.Strings(p.RemoteSiteFiles)
 	sort.Strings(p.CustomPermissionFiles)
 	sort.Strings(p.CustomMetadataFiles)
 	sort.Strings(p.FeatureParameterFiles)
+	sort.Strings(p.AutoResponseRuleFiles)
+	sort.Strings(p.ApprovalProcessFiles)
 	sort.Strings(p.AssignmentRuleFiles)
 	sort.Strings(p.WorkflowFiles)
 	sort.Strings(p.FlowFiles)
@@ -617,6 +752,7 @@ func load(root string, stack map[string]bool, dependency bool, requestedPackages
 	sort.Strings(p.NetworkFiles)
 	sort.Strings(p.PermissionSetFiles)
 	sort.Strings(p.PermissionSetGroupFiles)
+	sort.Strings(p.MutingPermissionSetFiles)
 	sort.Strings(p.BusinessHoursSettingsFiles)
 	sort.Strings(p.DuplicateRuleFiles)
 	sort.Strings(p.MatchingRuleFiles)
@@ -668,11 +804,16 @@ func dedupeProjectFiles(p *Project) {
 	p.EmailTemplateFiles = dedupeFilePaths(p.EmailTemplateFiles)
 	p.EmailServiceFiles = dedupeFilePaths(p.EmailServiceFiles)
 	p.FolderFiles = dedupeFilePaths(p.FolderFiles)
+	p.PaymentGatewayProviderFiles = dedupeFilePaths(p.PaymentGatewayProviderFiles)
+	p.ReportFiles = dedupeFilePaths(p.ReportFiles)
+	p.DashboardFiles = dedupeFilePaths(p.DashboardFiles)
 	p.NamedCredentialFiles = dedupeFilePaths(p.NamedCredentialFiles)
 	p.RemoteSiteFiles = dedupeFilePaths(p.RemoteSiteFiles)
 	p.CustomPermissionFiles = dedupeFilePaths(p.CustomPermissionFiles)
 	p.CustomMetadataFiles = dedupeFilePaths(p.CustomMetadataFiles)
 	p.FeatureParameterFiles = dedupeFilePaths(p.FeatureParameterFiles)
+	p.AutoResponseRuleFiles = dedupeFilePaths(p.AutoResponseRuleFiles)
+	p.ApprovalProcessFiles = dedupeFilePaths(p.ApprovalProcessFiles)
 	p.AssignmentRuleFiles = dedupeFilePaths(p.AssignmentRuleFiles)
 	p.WorkflowFiles = dedupeFilePaths(p.WorkflowFiles)
 	p.FlowFiles = dedupeFilePaths(p.FlowFiles)
@@ -684,6 +825,7 @@ func dedupeProjectFiles(p *Project) {
 	p.NetworkFiles = dedupeFilePaths(p.NetworkFiles)
 	p.PermissionSetFiles = dedupeFilePaths(p.PermissionSetFiles)
 	p.PermissionSetGroupFiles = dedupeFilePaths(p.PermissionSetGroupFiles)
+	p.MutingPermissionSetFiles = dedupeFilePaths(p.MutingPermissionSetFiles)
 	p.BusinessHoursSettingsFiles = dedupeFilePaths(p.BusinessHoursSettingsFiles)
 	p.DuplicateRuleFiles = dedupeFilePaths(p.DuplicateRuleFiles)
 	p.MatchingRuleFiles = dedupeFilePaths(p.MatchingRuleFiles)
@@ -1141,6 +1283,13 @@ func loadConfiguredLocalPackageDependencies(consumer sfdxProject, configured []c
 				continue
 			}
 			requestedPackages = []string{configuredDep.Package}
+		} else if dependencyProject, err := loadSFDXProject(root); err == nil && dependencyProject.HasManifest &&
+			sfdxProjectDeclaresPackage(dependencyProject, normalizeSFDXPackageName(configuredDep.Name)) {
+			// With no explicit package, a mapping name that is itself a package of
+			// the source project selects that package. Two mappings to the same
+			// source then load their own package directories instead of both
+			// collapsing onto the default package view.
+			requestedPackages = []string{configuredDep.Name}
 		}
 
 		loaded, err := load(root, stack, true, requestedPackages...)
@@ -1942,7 +2091,10 @@ func recordSourceNamespace(dir string, p *Project) {
 	}
 }
 
-func collectFiles(root string, p *Project) error {
+// collectFiles walks one source root. ignore, when set, applies the
+// deploy-time .forceignore rules; package directories pass it, while
+// glade-only extra metadata dirs and setup stages do not.
+func collectFiles(root string, p *Project, ignore *forceIgnoreSet) error {
 	return filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -1957,6 +2109,10 @@ func collectFiles(root string, p *Project) error {
 			if shouldSkipDir(d.Name()) && path != root {
 				return filepath.SkipDir
 			}
+			return nil
+		}
+		if ignore != nil && ignore.Ignored(path) {
+			p.ForceIgnored = append(p.ForceIgnored, path)
 			return nil
 		}
 
@@ -2008,8 +2164,14 @@ func collectFiles(root string, p *Project) error {
 			p.EmailTemplateFiles = append(p.EmailTemplateFiles, path)
 		case strings.HasSuffix(lower, ".xml") && strings.EqualFold(filepath.Base(filepath.Dir(path)), "emailservices"):
 			p.EmailServiceFiles = append(p.EmailServiceFiles, path)
+		case isFolderItemMetadataPath(lower, "reports", ".report"):
+			p.ReportFiles = append(p.ReportFiles, path)
+		case isFolderItemMetadataPath(lower, "dashboards", ".dashboard"):
+			p.DashboardFiles = append(p.DashboardFiles, path)
 		case isFolderMetadataPath(lower):
 			p.FolderFiles = append(p.FolderFiles, path)
+		case strings.HasSuffix(lower, ".paymentgatewayprovider"), strings.HasSuffix(lower, ".paymentgatewayprovider-meta.xml"):
+			p.PaymentGatewayProviderFiles = append(p.PaymentGatewayProviderFiles, path)
 		case strings.HasSuffix(lower, ".namedcredential"), strings.HasSuffix(lower, ".namedcredential-meta.xml"):
 			p.NamedCredentialFiles = append(p.NamedCredentialFiles, path)
 		case strings.HasSuffix(lower, ".remotesite"), strings.HasSuffix(lower, ".remotesite-meta.xml"):
@@ -2018,6 +2180,10 @@ func collectFiles(root string, p *Project) error {
 			p.CustomMetadataFiles = append(p.CustomMetadataFiles, path)
 		case isFeatureParameterMetadataPath(path):
 			p.FeatureParameterFiles = append(p.FeatureParameterFiles, path)
+		case strings.HasSuffix(lower, ".autoresponserules-meta.xml"), strings.HasSuffix(lower, ".autoresponserules"):
+			p.AutoResponseRuleFiles = append(p.AutoResponseRuleFiles, path)
+		case strings.HasSuffix(lower, ".approvalprocess-meta.xml"), strings.HasSuffix(lower, ".approvalprocess"):
+			p.ApprovalProcessFiles = append(p.ApprovalProcessFiles, path)
 		case strings.HasSuffix(lower, ".assignmentrules-meta.xml"), strings.HasSuffix(lower, ".assignmentrules"):
 			p.AssignmentRuleFiles = append(p.AssignmentRuleFiles, path)
 		case strings.HasSuffix(lower, ".workflow-meta.xml"), strings.HasSuffix(lower, ".workflow"):
@@ -2046,6 +2212,8 @@ func collectFiles(root string, p *Project) error {
 			p.MatchingRuleFiles = append(p.MatchingRuleFiles, path)
 		case strings.HasSuffix(lower, ".duplicaterule"), strings.HasSuffix(lower, ".duplicaterule-meta.xml"):
 			p.DuplicateRuleFiles = append(p.DuplicateRuleFiles, path)
+		case strings.HasSuffix(lower, ".mutingpermissionset"), strings.HasSuffix(lower, ".mutingpermissionset-meta.xml"):
+			p.MutingPermissionSetFiles = append(p.MutingPermissionSetFiles, path)
 		case strings.HasSuffix(lower, ".permissionsetgroup"), strings.HasSuffix(lower, ".permissionsetgroup-meta.xml"):
 			p.PermissionSetGroupFiles = append(p.PermissionSetGroupFiles, path)
 		case strings.HasSuffix(lower, ".permissionsetassignment"), strings.HasSuffix(lower, ".permissionsetassignment-meta.xml"):
@@ -2168,6 +2336,11 @@ func isStaticResourceContentFile(path string) bool {
 	return false
 }
 
+func isFolderItemMetadataPath(path, directory, suffix string) bool {
+	path = filepath.ToSlash(path)
+	return strings.Contains(path, "/"+directory+"/") && (strings.HasSuffix(path, suffix) || strings.HasSuffix(path, suffix+"-meta.xml"))
+}
+
 func isFolderMetadataPath(path string) bool {
 	for _, suffix := range []string{
 		".documentfolder-meta.xml",
@@ -2183,7 +2356,7 @@ func isFolderMetadataPath(path string) bool {
 		return false
 	}
 	switch strings.ToLower(filepath.Base(filepath.Dir(path))) {
-	case "documents", "reports":
+	case "documents", "reports", "dashboards":
 		return true
 	default:
 		return false

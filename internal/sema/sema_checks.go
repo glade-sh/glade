@@ -3,11 +3,11 @@ package sema
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 	"unicode"
 
 	"github.com/glade-sh/glade/internal/apexast"
@@ -121,6 +121,9 @@ func (a *Analyzer) checkMemberTypes(index typesys.Index, model *semaTypeMemberVi
 			if member.Type == "" || member.Type == "void" {
 				continue
 			}
+			if message, hidden := analyzer.nestedTypeVisibilityMessage(model, typ, member.Type); hidden {
+				diagnostics = append(diagnostics, nestedTypeVisibilityDiagnostic(typ, message, &member.Range))
+			}
 			for _, ref := range extractTypeNames(member.Type) {
 				if semaTypeReferenceKnownAtVersion(analyzer, model, typ.Name, ref, typ.EffectiveAPIVersion) {
 					continue
@@ -154,6 +157,9 @@ func (a *Analyzer) checkMethodParameters(index typesys.Index, model *semaTypeMem
 				continue
 			}
 			for _, param := range member.Parameters {
+				if message, hidden := analyzer.nestedTypeVisibilityMessage(model, typ, param.Type); hidden {
+					diagnostics = append(diagnostics, nestedTypeVisibilityDiagnostic(typ, message, &param.Range))
+				}
 				for _, ref := range extractTypeNames(param.Type) {
 					if semaTypeReferenceKnownAtVersion(analyzer, model, typ.Name, ref, typ.EffectiveAPIVersion) {
 						continue
@@ -166,8 +172,13 @@ func (a *Analyzer) checkMethodParameters(index typesys.Index, model *semaTypeMem
 						Range:    &param.Range,
 					}
 					// Captured reference-only parameter rejections (named-org.tsv).
-					if storage.IsReferenceOnlyStandardObject(ref) {
+					crossNamespace := semaCrossNamespaceSourceMismatch(analyzer, model, typ.Name, ref)
+					absentFromShape := analyzer.standardObjectAbsentFromDeclaredShape(model, typ.Name, ref)
+					if storage.IsReferenceOnlyStandardObject(ref) || crossNamespace || absentFromShape {
 						item.NativeMessage = "Invalid type: " + ref
+						if crossNamespace || absentFromShape {
+							item.Message = item.NativeMessage
+						}
 					}
 					diagnostics = append(diagnostics, item)
 				}
@@ -181,7 +192,7 @@ func (a *Analyzer) checkSchemaReferences(index typesys.Index) []diagnostic.Diagn
 	for _, object := range index.Objects {
 		for _, field := range object.Fields {
 			for _, referenceTo := range field.ReferenceTo {
-				if referenceTo == "" || a.hasKnown(referenceTo) || storage.IsReferenceOnlyStandardObject(referenceTo) {
+				if referenceTo == "" || a.hasKnown(referenceTo) || storage.IsReferenceOnlyStandardObject(referenceTo) || storage.StandardFeatureCapturedReference(object.Name, field.Name, referenceTo) {
 					continue
 				}
 				diagnostics = append(diagnostics, diagnostic.Diagnostic{
@@ -335,10 +346,14 @@ type querySemanticsChecker struct {
 	providers      map[string]semaSObjectFieldProvider
 	declaredFields map[string]int
 	knownTypes     map[string]bool
+	topLevelTypes  map[string]bool
 	bindingTypes   []typesys.TypeSymbol
 	hasBaseline    bool
+	shapeFeatures  []string
 	// namedApexReferenceObjects is set for files declaring named classes.
 	namedApexReferenceObjects bool
+	// anonymousRoute is set for the execute-anonymous body.
+	anonymousRoute bool
 }
 
 func newQuerySemanticsChecker(index typesys.Index, declaredObjects ...schema.Object) querySemanticsChecker {
@@ -348,13 +363,18 @@ func newQuerySemanticsChecker(index typesys.Index, declaredObjects ...schema.Obj
 		providers:      make(map[string]semaSObjectFieldProvider, len(index.Objects)),
 		declaredFields: make(map[string]int, len(index.Objects)),
 		knownTypes:     make(map[string]bool, len(index.Types)),
+		topLevelTypes:  make(map[string]bool, len(index.Types)),
 		bindingTypes:   index.Types,
 		hasBaseline:    len(declaredObjects) > 0,
+		shapeFeatures:  index.OrgShapeFeatures,
 	}
 	checker.apiVersion, _ = apexversion.Major(index.Project.SourceAPIVersion)
 	for _, typ := range index.Types {
 		checker.knownTypes[strings.ToLower(typ.Name)] = true
 		checker.knownTypes[strings.ToLower(typ.LocalName)] = true
+		if !strings.Contains(typ.Name, ".") {
+			checker.topLevelTypes[strings.ToLower(typ.Name)] = true
+		}
 	}
 	for _, object := range declaredObjects {
 		checker.recordDeclaredFields(object)
@@ -366,10 +386,7 @@ func newQuerySemanticsChecker(index typesys.Index, declaredObjects ...schema.Obj
 	return checker
 }
 
-var (
-	semaPlatformKnownTypesOnce  sync.Once
-	semaPlatformKnownTypesCache map[string]bool
-)
+var semaPlatformKnownTypesCache typesys.PlatformViewCache[map[string]bool]
 
 // semaPlatformKnownTypes returns the lowered standard-platform type names.
 // The set is identical for every index, so every checker shares one copy
@@ -378,17 +395,16 @@ var (
 // it needs no project/API/org invalidation. Project names belong exclusively
 // to querySemanticsChecker.knownTypes. Readers never mutate the shared map.
 func semaPlatformKnownTypes() map[string]bool {
-	semaPlatformKnownTypesOnce.Do(func() {
+	return semaPlatformKnownTypesCache.Get(func(view []typesys.TypeSymbol) map[string]bool {
 		known := make(map[string]bool)
-		for _, typ := range typesys.StandardPlatformSymbolView() {
+		for _, typ := range view {
 			known[strings.ToLower(typ.Name)] = true
 			if typ.Namespace != "" {
 				known[strings.ToLower(typ.Namespace+"."+typ.Name)] = true
 			}
 		}
-		semaPlatformKnownTypesCache = known
+		return known
 	})
-	return semaPlatformKnownTypesCache
 }
 
 // isKnownType reports whether key, already lowered exactly as the previous
@@ -1195,6 +1211,13 @@ func (c querySemanticsChecker) checkSOQLQuery(query soql.Query, objectName strin
 
 	object, ok := c.object(objectName)
 	objectCursor := findSOQLFromObject(ctx.queryText, objectName, cursor)
+	if ok && !c.topLevelTypes[normalizeName(objectName)] && semaStandardObjectAbsentFromShape(c.shapeFeatures, objectName) {
+		// Native (standard_object_shape_compile): a static query over an
+		// object the declared shape lacks is "Invalid type: Schema.<name>".
+		item := ctx.diagnostic("GLADESEMA_QUERY_OBJECT", fmt.Sprintf("SOQL query references unknown SObject %q", objectName), objectName, objectCursor)
+		item.NativeMessage = "Invalid type: Schema." + objectName
+		return append(diagnostics, item)
+	}
 	if !ok {
 		if !c.isKnownType(normalizeName(objectName)) && ctx.rejectedListQueryDeclaration(objectName) {
 			return diagnostics
@@ -1209,6 +1232,27 @@ func (c querySemanticsChecker) checkSOQLQuery(query soql.Query, objectName strin
 			item.NativeMessage = "Invalid type: Schema." + objectName
 		}
 		return append(diagnostics, item)
+	}
+	// In API 62 the absent field yields one compile error even when it is
+	// repeated in SELECT, GROUP BY and HAVING. Native distinguishes the
+	// selected grouping key from a grouping-only reference.
+	if c.apiVersion == 62 {
+		for _, group := range query.GroupBy {
+			field := objectPermissionsQueryField(object.Name, semaSOQLFieldReference(group))
+			if !objectPermissionsFieldHidden("62.0", object.Name, field) {
+				continue
+			}
+			message, token := soql.MissingColumnMessage(field, object.Name), group
+			for _, selected := range query.Fields {
+				selectedField := objectPermissionsQueryField(object.Name, semaSOQLFieldReference(selected))
+				if objectPermissionsFieldHidden("62.0", object.Name, selectedField) {
+					message, token = "Invalid field: '"+field+"'", selected
+					break
+				}
+			}
+			offset := findQueryIdentifier(ctx.queryText, token, cursor)
+			return append(diagnostics, ctx.nativeSOQLDiagnostic("GLADESEMA_QUERY_FIELD", message, token, offset-1, true))
+		}
 	}
 	diagnostics = append(diagnostics, contentChildInnerEntityDiagnostics(object, query, ctx, cursor)...)
 	if aggregateAliases == nil {
@@ -1274,7 +1318,16 @@ func (c querySemanticsChecker) checkSOQLQuery(query soql.Query, objectName strin
 			diagnostics = append(diagnostics, ctx.nativeSOQLDiagnostic("GLADESEMA_QUERY_RELATIONSHIP", message, child.Relationship, childOffset, true))
 			continue
 		}
-		diagnostics = append(diagnostics, c.checkSOQLQuery(child.Query, childObject.Name, ctx, childCursor, nil)...)
+		childChecker := c
+		if _, synthetic := storage.VersionedPlatformChildObject(childObject.Name, strconv.Itoa(c.apiVersion)+".0"); synthetic {
+			// The observed Id-only shape is scoped to this child query; do not
+			// publish it into the checker's shared root-object catalog.
+			childChecker.objects = maps.Clone(c.objects)
+			childChecker.providers = maps.Clone(c.providers)
+			childChecker.declaredFields = maps.Clone(c.declaredFields)
+			childChecker.addObject(childObject)
+		}
+		diagnostics = append(diagnostics, childChecker.checkSOQLQuery(child.Query, childObject.Name, ctx, childCursor, nil)...)
 	}
 	for _, spec := range query.Typeofs {
 		field, _, known := c.relationshipField(object.Name, spec.Relationship)
@@ -1378,8 +1431,24 @@ func queryShapeDiagnostics(query soql.Query, ctx queryTextContext) []diagnostic.
 	diagnosticFor := func(message, token string) {
 		diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_CONTRACT", message, token, findQueryIdentifier(ctx.queryText, token, 0)))
 	}
+	if knowledgeLatestWithoutArchived(query) {
+		diagnosticFor("Implementation restriction: When filtering by isLatestVersion=false, you also filter by PublishStatus = 'archived'", "IsLatestVersion")
+	}
 	if len(query.Aggregates) > 0 && !query.Count && query.HasLimit && len(query.GroupBy) == 0 {
 		diagnosticFor("aggregate SOQL queries require GROUP BY before LIMIT", "LIMIT")
+	}
+	if query.Count && len(query.GroupBy) > 0 {
+		// Native count_query_shapes rows (62.0, 67.0) report this at the query's opening
+		// bracket for assignment, for-loop and indexed uses alike.
+		start := max(0, ctx.queryOffset-1)
+		rng := ctx.locator.rangeFor(start, start+1)
+		diagnostics = append(diagnostics, diagnostic.Diagnostic{
+			Severity: diagnostic.Error,
+			Code:     "GLADESEMA_QUERY_CONTRACT",
+			Message:  "COUNT() cannot be used with GROUP BY - use COUNT(Id) instead",
+			File:     ctx.file,
+			Range:    &rng,
+		})
 	}
 	if strings.EqualFold(query.GroupMode, "ROLLUP") && len(query.GroupBy) > 2 {
 		diagnosticFor("ROLLUP supports at most two grouping fields", "ROLLUP")
@@ -1514,6 +1583,16 @@ func (c querySemanticsChecker) checkQueryFilterLiteral(objectName, fieldPath str
 }
 
 func (c querySemanticsChecker) checkSOQLFieldCapability(objectName, fieldPath, capability string, ctx queryTextContext, cursor int) []diagnostic.Diagnostic {
+	// The API 62 field-absence error takes precedence over capability checks.
+	if c.apiVersion == 62 && objectPermissionsFieldHidden("62.0", objectName, semaSOQLFieldReference(fieldPath)) {
+		return nil
+	}
+	// Native accepts this ORDER BY at compile time and rejects it at execution.
+	// case289_followups/static-adjacent.tsv records APIs 63 through 67 and
+	// ORG-RUN.txt records that 68 agrees with 67.
+	if c.apiVersion >= 63 && (capability == "sortable" || capability == "groupable") && strings.EqualFold(objectName, "ObjectPermissions") && strings.EqualFold(semaSOQLFieldReference(fieldPath), "PermissionsViewAllFields") {
+		return nil
+	}
 	fieldPath = semaSOQLFieldReference(fieldPath)
 	if fieldPath == "" || strings.Contains(fieldPath, ".") || strings.Contains(fieldPath, "(") || !c.hasFieldMetadata(objectName) {
 		return nil
@@ -1552,6 +1631,11 @@ func (c querySemanticsChecker) checkSOQLFieldCapability(objectName, fieldPath, c
 }
 
 func (c querySemanticsChecker) checkSOQLField(objectName, fieldPath string, ctx queryTextContext, cursor int) []diagnostic.Diagnostic {
+	field := objectPermissionsQueryField(objectName, semaSOQLFieldReference(fieldPath))
+	if c.apiVersion == 62 && objectPermissionsFieldHidden("62.0", objectName, field) {
+		offset := findQueryIdentifier(ctx.queryText, fieldPath, cursor)
+		return []diagnostic.Diagnostic{ctx.nativeSOQLDiagnostic("GLADESEMA_QUERY_FIELD", soql.MissingColumnMessage(field, objectName), fieldPath, offset-1, true)}
+	}
 	return c.checkQueryField(objectName, fieldPath, ctx, cursor, true)
 }
 
@@ -1559,6 +1643,28 @@ func (c querySemanticsChecker) checkQueryField(objectName, fieldPath string, ctx
 	fieldPath = semaSOQLFieldReference(fieldPath)
 	if fieldPath == "" || fieldPath == "COUNT()" || strings.HasPrefix(strings.ToUpper(fieldPath), "FIELDS(") || strings.Contains(fieldPath, "(") {
 		return nil
+	}
+	// A project that only references the standard object marks it partial,
+	// so the source API gate runs before the field-metadata check.
+	if semaObjectPermissionsViewAllFieldsHidden(fmt.Sprintf("%d.0", c.apiVersion), objectName, fieldPath) {
+		offset := findQueryIdentifier(ctx.queryText, fieldPath, cursor)
+		if cursor > 0 {
+			return []diagnostic.Diagnostic{ctx.nativeSOQLDiagnostic("GLADESEMA_QUERY_FIELD", soql.MissingColumnMessage(fieldPath, objectName), fieldPath, offset, true)}
+		}
+		return []diagnostic.Diagnostic{ctx.diagnostic("GLADESEMA_QUERY_FIELD", fmt.Sprintf("SOQL query references unknown field %s.%s", objectName, fieldPath), fieldPath, offset)}
+	}
+	// Feature profiles are represented by partial schema objects. Their
+	// captured version boundaries remain authoritative for these fields even
+	// though unrelated unknown fields on a partial object stay open.
+	if !strings.Contains(fieldPath, ".") && c.featureFieldUnavailable(objectName, fieldPath) {
+		offset := findQueryIdentifier(ctx.queryText, fieldPath, cursor)
+		return []diagnostic.Diagnostic{ctx.nativeSOQLDiagnostic("GLADESEMA_QUERY_FIELD", soql.MissingColumnMessage(fieldPath, objectName), fieldPath, offset, true)}
+	}
+	// record_type_shape c2: RecordTypeId of an object with no record type in a
+	// declared shape is "No such column" (semaRecordTypeFieldAbsent).
+	if c.anonymousRoute && strings.EqualFold(fieldPath, "RecordTypeId") && c.recordTypeFieldUnavailable(objectName) {
+		offset := findQueryIdentifier(ctx.queryText, fieldPath, cursor)
+		return []diagnostic.Diagnostic{ctx.nativeSOQLDiagnostic("GLADESEMA_QUERY_FIELD", soql.MissingColumnMessage(fieldPath, objectName), fieldPath, offset, true)}
 	}
 	if !c.hasFieldMetadata(objectName) {
 		return nil
@@ -1767,6 +1873,9 @@ func (c querySemanticsChecker) field(objectName, fieldName string) (schema.Field
 	if !ok || provider == nil {
 		return schema.Field{}, false
 	}
+	if c.featureFieldUnavailable(object.Name, fieldName) {
+		return schema.Field{}, false
+	}
 	if field, ok := provider.lookup(fieldName); ok {
 		return field, true
 	}
@@ -1774,6 +1883,34 @@ func (c querySemanticsChecker) field(objectName, fieldName string) (schema.Field
 		return field, true
 	}
 	return schema.Field{}, false
+}
+
+func (c querySemanticsChecker) featureFieldUnavailable(objectName, fieldName string) bool {
+	if !storage.StandardFeatureHasVersionedFields(objectName) && !storage.StandardFeatureHasNamedOnlyFields(objectName) {
+		return false
+	}
+	visible, captured := storage.StandardFeatureFieldVersion(objectName, fieldName, strconv.Itoa(c.apiVersion)+".0")
+	if !(captured && !visible) && (c.namedApexReferenceObjects || !storage.StandardFeatureNamedOnlyField(objectName, fieldName)) {
+		return false
+	}
+	if object, ok := c.object(objectName); ok {
+		if provider := c.providers[normalizeName(object.Name)]; provider != nil {
+			declared := false
+			provider.visitDeclared(func(field schema.Field) {
+				if field.File != "" && strings.EqualFold(field.Name, fieldName) {
+					declared = true
+				}
+			})
+			return !declared
+		}
+	}
+	return true
+}
+
+func (c querySemanticsChecker) recordTypeFieldUnavailable(objectName string) bool {
+	object, ok := c.object(objectName)
+	return ok && !semaIsExternalManagedPackageAPIName(c.namespace, object.Name) &&
+		semaDeclaredShapeLacksRecordTypeField(c.shapeFeatures, object.Name, []schema.Object{object})
 }
 
 func (c querySemanticsChecker) locationComponentField(objectName, fieldName string) (schema.Field, bool) {
@@ -1964,6 +2101,9 @@ func (c querySemanticsChecker) childObjectForRelationship(parentObject, relation
 			if matched {
 				return
 			}
+			if !storage.PlatformChildRelationshipAvailableAtVersion(parentObject, object.Name, field.Name, strconv.Itoa(c.apiVersion)+".0") {
+				return
+			}
 			if !c.apiNamesMatch(field.ChildRelationshipName, relationship) {
 				return
 			}
@@ -1992,9 +2132,12 @@ func (c querySemanticsChecker) childObjectForRelationship(parentObject, relation
 	}
 	if parent, known := c.object(parentObject); known && parent.CustomSettingsType == "" {
 		definition := storage.ObjectDefinition{APIName: parent.Name}
-		if child, _, ok := storage.LookupPlatformChildRelationship(definition, relationship); ok {
+		if child, _, ok := storage.LookupPlatformChildRelationshipAtVersion(definition, relationship, strconv.Itoa(c.apiVersion)+".0"); ok {
 			if object, ok := c.object(child); ok {
 				return object, true
+			}
+			if object, ok := storage.VersionedPlatformChildObject(child, strconv.Itoa(c.apiVersion)+".0"); ok {
+				return schema.Object{Name: object.APIName, Fields: []schema.Field{{Name: "Id", Type: "Id"}}}, true
 			}
 			if share, ok := semaShareObjectForSchemaObject(parent); ok && strings.EqualFold(share.Name, child) {
 				c.addObject(share)
@@ -2910,7 +3053,7 @@ func (a *Analyzer) checkInheritanceContractsWithView(index typesys.Index, model 
 			// global duplicate winners can belong to different projects.
 			model = semaModelWithCurrentType(sharedModel, typ)
 		}
-		diagnostics = append(diagnostics, inheritanceTargetDiagnostics(model, typ)...)
+		diagnostics = append(diagnostics, inheritanceTargetDiagnostics(a, model, typ)...)
 		if typ.Kind != apexast.DeclarationClass {
 			continue
 		}
@@ -3277,12 +3420,17 @@ func hasExplicitDeclarationVisibility(modifiers []string) bool {
 	return hasModifier(modifiers, "private") || hasModifier(modifiers, "protected") || hasModifier(modifiers, "public") || hasModifier(modifiers, "global")
 }
 
-func inheritanceTargetDiagnostics(model *semaTypeMemberView, typ typesys.TypeSymbol) []diagnostic.Diagnostic {
+func inheritanceTargetDiagnostics(a *Analyzer, model *semaTypeMemberView, typ typesys.TypeSymbol) []diagnostic.Diagnostic {
 	if typ.Kind != apexast.DeclarationClass && typ.Kind != apexast.DeclarationInterface {
 		return nil
 	}
 	var diagnostics []diagnostic.Diagnostic
-	if semaGenericInterfaceInnerBatchRejected(typ, model) {
+	// One diagnostic per inner Batchable class, with the native text when the
+	// platform interface resolves; this also covers abstract classes, which
+	// skip checkDatabaseBatchableGenericContract.
+	if d, rejected := semaInnerDatabaseBatchableDiagnostic(model, typ); rejected {
+		diagnostics = append(diagnostics, d)
+	} else if semaGenericInterfaceInnerBatchRejected(typ, model) {
 		diagnostics = append(diagnostics, declarationContractDiagnostic(typ, typ.Range, "inner class cannot implement the Batchable<SObject> interface"))
 	}
 	if semaComparatorQualifiedDatetimeRejected(typ, model) {
@@ -3298,6 +3446,12 @@ func inheritanceTargetDiagnostics(model *semaTypeMemberView, typ typesys.TypeSym
 			resolved = target
 		}
 		members, _, ok := semaLookupTypeMembers(model, resolved)
+		if ok && role == "implements" {
+			if message, hidden := a.nestedTypeVisibilityMessage(model, typ, target); hidden {
+				diagnostics = append(diagnostics, nestedTypeVisibilityDiagnostic(typ, message, &typ.Range))
+				return
+			}
+		}
 		if ok && role == "implements" && expected == apexast.DeclarationInterface {
 			if d, rejected := namespaceInterfaceVisibilityDiagnostic(typ, target, members); rejected {
 				diagnostics = append(diagnostics, d)
@@ -3331,7 +3485,9 @@ func inheritanceTargetDiagnostics(model *semaTypeMemberView, typ typesys.TypeSym
 			// Platform dependencies normally bypass this check, but
 			// the captured LimitException superclass is explicitly non-virtual.
 			platformLimitException := members.platform && strings.EqualFold(semaCanonicalPlatformAlias(members.name), "LimitException")
-			if ok && (!members.dependency || platformLimitException) && members.kind == apexast.DeclarationClass &&
+			// Native ConnectApi classes follow the normal non-virtual superclass rule.
+			platformConnectAPI := members.platform && (strings.EqualFold(members.namespace, "ConnectApi") || strings.HasPrefix(strings.ToLower(members.name), "connectapi."))
+			if ok && (!members.dependency || platformLimitException || platformConnectAPI) && members.kind == apexast.DeclarationClass &&
 				!hasModifier(members.modifiers, "virtual") && !hasModifier(members.modifiers, "abstract") {
 				d := diagnostic.Diagnostic{
 					Severity: diagnostic.Error,
@@ -3492,6 +3648,11 @@ func sameInheritedSemaParameterType(left, right string) bool {
 }
 
 func checkDatabaseBatchableGenericContract(model *semaTypeMemberView, typ typesys.TypeSymbol) []diagnostic.Diagnostic {
+	// inheritanceTargetDiagnostics reports an inner Batchable class; native
+	// compilation adds no generic-contract errors for it.
+	if _, rejected := semaInnerDatabaseBatchableDiagnostic(model, typ); rejected {
+		return nil
+	}
 	var diagnostics []diagnostic.Diagnostic
 	interfaces := semaBatchableContractInterfaces(model, typ.Name)
 	// platform_batch_superclass/org.tsv:4,11: only a platform superclass's
@@ -3551,6 +3712,37 @@ func checkDatabaseBatchableGenericContract(model *semaTypeMemberView, typ typesy
 		}
 	}
 	return diagnostics
+}
+
+// semaInnerDatabaseBatchableDiagnostic rejects an inner class that directly
+// implements the platform Database.Batchable interface, whatever its type
+// argument. Native inner_batchable_change_event_header org.tsv (class and
+// isTest deploys, API 62.0 and 67.0): "Only top-level classes can implement
+// Database.Batchable<String>" for List and Iterable start methods, and the
+// same for <SObject>, <Object>, <Integer> and <Account>; the top-level classes
+// of the same shapes compile. The anonymous route has its own check
+// (AnalyzeAnonymousDeclarationsInContext).
+func semaInnerDatabaseBatchableDiagnostic(model *semaTypeMemberView, typ typesys.TypeSymbol) (diagnostic.Diagnostic, bool) {
+	if typ.Kind != apexast.DeclarationClass || typ.NestingDepth == 0 || hasModifier(typ.Modifiers, vm.AnonymousClassModifier) {
+		return diagnostic.Diagnostic{}, false
+	}
+	for _, iface := range typ.Interfaces {
+		base, args := semaGenericBaseAndArgs(iface)
+		if !strings.EqualFold(base, "Database.Batchable") || len(args) != 1 || strings.TrimSpace(args[0]) == "" {
+			continue
+		}
+		if members, known := model.lookupName(resolveNestedTypeReference(model, typ.Name, base)); !known || !members.platform {
+			continue
+		}
+		return diagnostic.Diagnostic{
+			Severity: diagnostic.Error,
+			Code:     "GLADESEMA017",
+			Message:  "Only top-level classes can implement Database.Batchable<" + strings.TrimSpace(args[0]) + ">",
+			File:     typ.File,
+			Range:    &typ.Range,
+		}, true
+	}
+	return diagnostic.Diagnostic{}, false
 }
 
 func concreteMethodsByName(model *semaTypeMemberView, typeName, methodName string) []typesys.MemberSymbol {
@@ -4029,6 +4221,9 @@ func checkSemaPlatformCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, 
 		for i, arg := range args {
 			argTypes[i] = inferSemaArgTypeWithModel(arg.text, scope, model)
 		}
+	}
+	if semaConnectAPICallUnavailable(typ.EffectiveAPIVersion, receiverType, method, argTypes, model) {
+		return []diagnostic.Diagnostic{unsupportedLocalFeatureDiagnostic(typ, member, receiverType+"."+method, start, end, source)}, true
 	}
 	if d, rejected := semaTestCallDiagnostic(typ, receiverType, method, argTypes, start, end, source, model); rejected {
 		return []diagnostic.Diagnostic{d}, true

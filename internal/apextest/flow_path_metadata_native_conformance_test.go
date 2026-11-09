@@ -30,8 +30,7 @@ func TestFlowPathMetadataNativeConformanceAPIRoutes(t *testing.T) {
 			if len(own) != 4 {
 				t.Fatalf("discovered %d path observation methods, want 4", len(own))
 			}
-			org := orgFromIndex(index)
-			org.APIVersion = api
+			org := capturedFixtureOrg(t, index, api)
 			runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 			methods, methodErrors := compileTestMethodsForIndex(&index, own)
 			programs, programErrors := compileTestInvokePrograms(own)

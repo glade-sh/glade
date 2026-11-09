@@ -109,36 +109,8 @@ func TestSOQLClockC14NativeConformance(t *testing.T) {
 					t.Fatalf("native clock: %v", err)
 				}
 			}
-			if row[2] == "locale1ThisWeek" {
-				var expected map[string]any
-				if err := json.Unmarshal([]byte(`{"rows":[{"Birthdate":"2026-10-26","Id":"<003:1>","LastName":"Monday"},{"Birthdate":"2026-10-25","Id":"<003:2>","LastName":"Sunday"}]}`), &expected); err != nil {
-					t.Fatal(err)
-				}
-				if !c14ExactCarryEqual(got, want, expected, []string{"rows"}) {
-					t.Fatalf("week boundary gap changed: native=%v; Glade=%v", want, got)
-				}
-				t.Log("known local carry batch Dot stdlib cases Dot Dot SOQL cases and Dot async cases: locale week boundary; owner pending")
-				case345Skip(t)
-			}
-			if row[2] == "formatFunction" {
-				localRows, ok := got["rows"].([]any)
-				nativeRows, nativeOK := want["rows"].([]any)
-				if !ok || !nativeOK || len(localRows) != 1 || len(nativeRows) != 1 {
-					t.Fatalf("format rows changed: native=%v; Glade=%v", want, got)
-				}
-				local := localRows[0].(map[string]any)
-				native := nativeRows[0].(map[string]any)
-				if local["CreatedDate"] != clock || local["CreatedDate"] == native["CreatedDate"] {
-					t.Fatalf("format gap changed: native=%v; Glade=%v", want, got)
-				}
-				local["CreatedDate"] = native["CreatedDate"]
-			}
 			if !reflect.DeepEqual(got, want) {
 				t.Fatalf("native=%v; Glade=%v", want, got)
-			}
-			if row[2] == "formatFunction" {
-				t.Log("known local carry batch Dot stdlib cases Dot Dot SOQL cases and Dot async cases (fix owner pending): FORMAT datetime representation differs")
-				case345Skip(t)
 			}
 		})
 	}

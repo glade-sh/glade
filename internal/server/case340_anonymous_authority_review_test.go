@@ -52,8 +52,19 @@ func TestCase340AnonymousRoutesRequireCapabilityOrIssuedBearer(t *testing.T) {
 			req.Header.Set("X-Glade-Client", "1")
 			rec := httptest.NewRecorder()
 			h.ServeHTTP(rec, req)
+			want := http.StatusNoContent
+			if bind.name == "exposed" {
+				want = http.StatusForbidden
+			}
+			if rec.Code != want {
+				t.Errorf("partner SOAP status=%d want=%d", rec.Code, want)
+			}
+			req = httptest.NewRequest("POST", "http://"+bind.host+"/services/Soap/u/67.0/example", nil)
+			req.Header.Set("Authorization", "Bearer "+token)
+			rec = httptest.NewRecorder()
+			h.ServeHTTP(rec, req)
 			if rec.Code != http.StatusNoContent {
-				t.Errorf("partner SOAP status=%d", rec.Code)
+				t.Errorf("authorized partner SOAP status=%d", rec.Code)
 			}
 		})
 	}

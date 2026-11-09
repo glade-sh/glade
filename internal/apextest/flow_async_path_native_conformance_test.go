@@ -142,6 +142,9 @@ func copyFlowAsyncPathProject(t *testing.T, api string) string {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// flow_async_capture_assignment/ASSIGNMENT-RUN.txt: the recapture reproduced
+	// every retained row only with AsyncPathFixture assigned.
+	writeFile(t, filepath.Join(root, "glade.yml"), "test:\n  permissionSets: [AsyncPathFixture]\n")
 	return root
 }
 
@@ -162,7 +165,8 @@ func TestFlowAsyncPathNativeConformanceAnonymousAndIsTestAPIRoutes(t *testing.T)
 		t.Run(api, func(t *testing.T) {
 			anonymous := readFlowAsyncPathNative(t, api, "anonymous")
 			named := readFlowAsyncPathNative(t, api, "istest")
-			index := loadTestIndex(t, copyFlowAsyncPathProject(t, api))
+			root := copyFlowAsyncPathProject(t, api)
+			index := loadTestIndex(t, root)
 			analysis := sema.Analyze(index)
 			if index.HasErrors() || analysis.HasErrors() {
 				t.Fatalf("native project accepted; diagnostics=%v %v", index.Diagnostics, analysis.Diagnostics)
@@ -173,6 +177,9 @@ func TestFlowAsyncPathNativeConformanceAnonymousAndIsTestAPIRoutes(t *testing.T)
 			}
 			org := orgFromIndex(index)
 			org.APIVersion = api
+			if err := applyConfiguredTestPermissions(&org, loadProjectForTest(t, root)); err != nil {
+				t.Fatal(err)
+			}
 			runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 			methods, methodErrors := compileTestMethodsForIndex(&index, selected)
 			programs, programErrors := compileTestInvokePrograms(selected)

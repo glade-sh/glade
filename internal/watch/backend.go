@@ -360,7 +360,7 @@ func scopeCapturesPath(scope Scope, path string, classification FileClassificati
 		if !pathWithin(path, root) {
 			continue
 		}
-		return classification.Watchable && (classification.Kind != FileKindIgnored || isRootConfigPath(path, root))
+		return classification.Watchable && (classification.Kind != FileKindIgnored || isScopeConfigPath(path, root))
 	}
 	return false
 }

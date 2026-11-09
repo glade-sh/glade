@@ -54,10 +54,18 @@ System.assertEquals(2,[SELECT COUNT() FROM Knowledge__ka WITH SYSTEM_MODE]);`,
 					t.Fatal(err)
 				}
 				org := testDataOrg()
+				// Knowledge__ka and Knowledge__kav exist only with the captured Knowledge setting (org_knowledge_availability/org.tsv).
+				storage.ApplyOrgShape(&org, []string{"Knowledge", "KnowledgeEnabled"})
 				storage.EnsureStandardObject(&org, "Knowledge__kav")
 				storage.EnsureStandardObject(&org, "Knowledge__ka")
+				storage.EnsureStandardObject(&org, "User")
+				users, _ := storage.EnsureMutableObjectRecords(&org, "User")
+				actor := storage.Record{ID: storage.DefaultUserID, Object: "User", Fields: map[string]storage.Value{"UserPermissionsKnowledgeUser": storage.BooleanValue(true)}}
+				users.Records[actor.ID] = actor
+				org.Objects["User"] = *users
 				machine := New(nil)
 				machine.SetOrg(&org)
+				machine.SetCurrentUser(actor)
 				machine.EnableTestContext()
 				if journal {
 					machine.SetIsolationJournal(storage.NewIsolationJournal(&org))

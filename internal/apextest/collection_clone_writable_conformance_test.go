@@ -37,11 +37,16 @@ func TestCollectionCloneWritableNativeConformance(t *testing.T) {
 			}); err != nil {
 				t.Fatal(err)
 			}
+			if api == "67.0" {
+				// ASSIGNMENT-RUN.txt: the API 67.0 rows reproduce only with
+				// CloneWriteAccess assigned to the capture user.
+				writeFile(t, filepath.Join(root, "glade.yml"), "test:\n  permissionSets: [CloneWriteAccess]\n")
+			}
 			index := loadTestIndex(t, root)
 			if analysis := sema.Analyze(index); index.HasErrors() || analysis.HasErrors() {
 				t.Fatalf("project compile: %v %v", index.Diagnostics, analysis.Diagnostics)
 			}
-			org := orgFromIndex(index)
+			org := capturedFixtureOrg(t, index, api)
 			runner := newConformanceRunner(t, index, conformanceRunnerOptions{Org: &org, LinkProject: true})
 			triggers, failures := compileProjectTriggers(index)
 			if len(failures) != 0 {

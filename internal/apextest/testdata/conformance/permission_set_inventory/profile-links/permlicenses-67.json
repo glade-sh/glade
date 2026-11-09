@@ -1,0 +1,307 @@
+{
+  "status": 0,
+  "result": {
+    "records": [
+      {
+        "attributes": {
+          "type": "PermissionSetLicense",
+          "url": "/services/data/v67.0/sobjects/PermissionSetLicense/0PLRu000004zzkJOAQ"
+        },
+        "Id": "0PLRu000004zzkJOAQ",
+        "MasterLabel": "Analytics Cloud Builder",
+        "DeveloperName": "InsightsBuilderPsl"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSetLicense",
+          "url": "/services/data/v67.0/sobjects/PermissionSetLicense/0PLRu000004zzkKOAQ"
+        },
+        "Id": "0PLRu000004zzkKOAQ",
+        "MasterLabel": "Analytics Cloud Explorer",
+        "DeveloperName": "InsightsExplorerPsl"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSetLicense",
+          "url": "/services/data/v67.0/sobjects/PermissionSetLicense/0PLRu000004zzkEOAQ"
+        },
+        "Id": "0PLRu000004zzkEOAQ",
+        "MasterLabel": "Analytics Embedded App",
+        "DeveloperName": "WaveEmbeddedApp"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSetLicense",
+          "url": "/services/data/v67.0/sobjects/PermissionSetLicense/0PLRu000004zzkXOAQ"
+        },
+        "Id": "0PLRu000004zzkXOAQ",
+        "MasterLabel": "B2B Buyer Manager Permission Set One Seat",
+        "DeveloperName": "B2BBuyerManagerPsl"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSetLicense",
+          "url": "/services/data/v67.0/sobjects/PermissionSetLicense/0PLRu000004zzkZOAQ"
+        },
+        "Id": "0PLRu000004zzkZOAQ",
+        "MasterLabel": "B2B Buyer Permission Set One Seat",
+        "DeveloperName": "B2BBuyerPsl"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSetLicense",
+          "url": "/services/data/v67.0/sobjects/PermissionSetLicense/0PLRu000004zwdmOAA"
+        },
+        "Id": "0PLRu000004zwdmOAA",
+        "MasterLabel": "Command Center",
+        "DeveloperName": "CommandCenterPsl"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSetLicense",
+          "url": "/services/data/v67.0/sobjects/PermissionSetLicense/0PLRu000004zwdlOAA"
+        },
+        "Id": "0PLRu000004zwdlOAA",
+        "MasterLabel": "Commerce Admin Permission Set License Seat",
+        "DeveloperName": "CommerceAdminUserPsl"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSetLicense",
+          "url": "/services/data/v67.0/sobjects/PermissionSetLicense/0PLRu000004zzkYOAQ"
+        },
+        "Id": "0PLRu000004zzkYOAQ",
+        "MasterLabel": "Commerce Business User",
+        "DeveloperName": "CommerceBusinessUserPsl"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSetLicense",
+          "url": "/services/data/v67.0/sobjects/PermissionSetLicense/0PLRu000004zwdoOAA"
+        },
+        "Id": "0PLRu000004zwdoOAA",
+        "MasterLabel": "Commerce Merchandiser User Permission Set License Seat",
+        "DeveloperName": "CommerceMerchandiserUserPsl"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSetLicense",
+          "url": "/services/data/v67.0/sobjects/PermissionSetLicense/0PLRu000004zzkaOAA"
+        },
+        "Id": "0PLRu000004zzkaOAA",
+        "MasterLabel": "Commerce User",
+        "DeveloperName": "CommerceUserPsl"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSetLicense",
+          "url": "/services/data/v67.0/sobjects/PermissionSetLicense/0PLRu000004zwdjOAA"
+        },
+        "Id": "0PLRu000004zwdjOAA",
+        "MasterLabel": "Cross Org Data Proxy",
+        "DeveloperName": "PID_XOrg_Proxy_User"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSetLicense",
+          "url": "/services/data/v67.0/sobjects/PermissionSetLicense/0PLRu000004zwdhOAA"
+        },
+        "Id": "0PLRu000004zwdhOAA",
+        "MasterLabel": "Enablement Lite",
+        "DeveloperName": "EnablementLitePsl"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSetLicense",
+          "url": "/services/data/v67.0/sobjects/PermissionSetLicense/0PLRu000004zwdiOAA"
+        },
+        "Id": "0PLRu000004zwdiOAA",
+        "MasterLabel": "Enhanced Chat User",
+        "DeveloperName": "EmbeddedServiceMessagingUserPsl"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSetLicense",
+          "url": "/services/data/v67.0/sobjects/PermissionSetLicense/0PLRu000004zzkROAQ"
+        },
+        "Id": "0PLRu000004zzkROAQ",
+        "MasterLabel": "Field Service Dispatcher",
+        "DeveloperName": "FieldServiceDispatcherPsl"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSetLicense",
+          "url": "/services/data/v67.0/sobjects/PermissionSetLicense/0PLRu000004zzkOOAQ"
+        },
+        "Id": "0PLRu000004zzkOOAQ",
+        "MasterLabel": "Field Service Dispatcher",
+        "DeveloperName": "FieldServiceDispatcher"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSetLicense",
+          "url": "/services/data/v67.0/sobjects/PermissionSetLicense/0PLRu000004zzkQOAQ"
+        },
+        "Id": "0PLRu000004zzkQOAQ",
+        "MasterLabel": "Field Service Mobile",
+        "DeveloperName": "FieldServiceMobilePsl"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSetLicense",
+          "url": "/services/data/v67.0/sobjects/PermissionSetLicense/0PLRu000004zzkLOAQ"
+        },
+        "Id": "0PLRu000004zzkLOAQ",
+        "MasterLabel": "Field Service Mobile",
+        "DeveloperName": "FieldServiceMobile"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSetLicense",
+          "url": "/services/data/v67.0/sobjects/PermissionSetLicense/0PLRu000004zzkPOAQ"
+        },
+        "Id": "0PLRu000004zzkPOAQ",
+        "MasterLabel": "Field Service Scheduling",
+        "DeveloperName": "FieldServiceSchedulingPsl"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSetLicense",
+          "url": "/services/data/v67.0/sobjects/PermissionSetLicense/0PLRu000004zzkMOAQ"
+        },
+        "Id": "0PLRu000004zzkMOAQ",
+        "MasterLabel": "Field Service Scheduling",
+        "DeveloperName": "FieldServiceScheduling"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSetLicense",
+          "url": "/services/data/v67.0/sobjects/PermissionSetLicense/0PLRu000004zzkNOAQ"
+        },
+        "Id": "0PLRu000004zzkNOAQ",
+        "MasterLabel": "Field Service Standard",
+        "DeveloperName": "FieldServiceStandard"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSetLicense",
+          "url": "/services/data/v67.0/sobjects/PermissionSetLicense/0PLRu000004zzkSOAQ"
+        },
+        "Id": "0PLRu000004zzkSOAQ",
+        "MasterLabel": "Field Service Standard",
+        "DeveloperName": "FieldServiceStandardPsl"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSetLicense",
+          "url": "/services/data/v67.0/sobjects/PermissionSetLicense/0PLRu000004zzkFOAQ"
+        },
+        "Id": "0PLRu000004zzkFOAQ",
+        "MasterLabel": "Financial Services Cloud Basic",
+        "DeveloperName": "FinServ_FinancialServicesCloudBasicPsl"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSetLicense",
+          "url": "/services/data/v67.0/sobjects/PermissionSetLicense/0PLRu000004zzkDOAQ"
+        },
+        "Id": "0PLRu000004zzkDOAQ",
+        "MasterLabel": "Financial Services Cloud Standard",
+        "DeveloperName": "FinServ_FinancialServicesCloudStandardPsl"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSetLicense",
+          "url": "/services/data/v67.0/sobjects/PermissionSetLicense/0PLRu000004zzkUOAQ"
+        },
+        "Id": "0PLRu000004zzkUOAQ",
+        "MasterLabel": "Health Cloud",
+        "DeveloperName": "HealthCloudGA_HealthCloudPsl"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSetLicense",
+          "url": "/services/data/v67.0/sobjects/PermissionSetLicense/0PLRu000004zzkGOAQ"
+        },
+        "Id": "0PLRu000004zzkGOAQ",
+        "MasterLabel": "Identity Connect",
+        "DeveloperName": "IdentityConnect"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSetLicense",
+          "url": "/services/data/v67.0/sobjects/PermissionSetLicense/0PLRu000004zzkHOAQ"
+        },
+        "Id": "0PLRu000004zzkHOAQ",
+        "MasterLabel": "Orders Platform",
+        "DeveloperName": "ContractsOrdersProductsPsl"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSetLicense",
+          "url": "/services/data/v67.0/sobjects/PermissionSetLicense/0PLRu000004zzkIOAQ"
+        },
+        "Id": "0PLRu000004zzkIOAQ",
+        "MasterLabel": "Sales Console User",
+        "DeveloperName": "SalesConsoleUser"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSetLicense",
+          "url": "/services/data/v67.0/sobjects/PermissionSetLicense/0PLRu000004zwdkOAA"
+        },
+        "Id": "0PLRu000004zwdkOAA",
+        "MasterLabel": "Salesforce API Integration",
+        "DeveloperName": "SalesforceAPIIntegrationPsl"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSetLicense",
+          "url": "/services/data/v67.0/sobjects/PermissionSetLicense/0PLRu000004zzkVOAQ"
+        },
+        "Id": "0PLRu000004zzkVOAQ",
+        "MasterLabel": "Salesforce CPQ AA License",
+        "DeveloperName": "SalesforceCPQ_CPQAAPerm"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSetLicense",
+          "url": "/services/data/v67.0/sobjects/PermissionSetLicense/0PLRu000004zzkWOAQ"
+        },
+        "Id": "0PLRu000004zzkWOAQ",
+        "MasterLabel": "Salesforce CPQ License",
+        "DeveloperName": "SalesforceCPQ_CPQStandardPerm"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSetLicense",
+          "url": "/services/data/v67.0/sobjects/PermissionSetLicense/0PLRu000004zwdgOAA"
+        },
+        "Id": "0PLRu000004zwdgOAA",
+        "MasterLabel": "Salesforce Payments External",
+        "DeveloperName": "SalesforcePaymentsExtUserPsl"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSetLicense",
+          "url": "/services/data/v67.0/sobjects/PermissionSetLicense/0PLRu000004zwdnOAA"
+        },
+        "Id": "0PLRu000004zwdnOAA",
+        "MasterLabel": "Salesforce Payments Internal",
+        "DeveloperName": "SalesforcePaymentsIntUserPsl"
+      },
+      {
+        "attributes": {
+          "type": "PermissionSetLicense",
+          "url": "/services/data/v67.0/sobjects/PermissionSetLicense/0PLRu000004zzkTOAQ"
+        },
+        "Id": "0PLRu000004zzkTOAQ",
+        "MasterLabel": "Survey Creator User - 1 Seats",
+        "DeveloperName": "SurveyCreatorPsl"
+      }
+    ],
+    "totalSize": 33,
+    "done": true
+  },
+  "warnings": []
+}

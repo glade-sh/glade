@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Ent__c</fullName>
+    <fieldManageability>DeveloperControlled</fieldManageability>
+    <label>Ent</label>
+    <referenceTo>EntityDefinition</referenceTo>
+    <relationshipLabel>V35 Children Ent</relationshipLabel>
+    <relationshipName>V35ChildrenEnt</relationshipName>
+    <required>false</required>
+    <unique>false</unique>
+    <type>MetadataRelationship</type>
+</CustomField>

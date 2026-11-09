@@ -38,10 +38,15 @@ func validateVisualforceFileStructure(path, expected string) error {
 	if err != nil {
 		return fmt.Errorf("read Visualforce source for structure validation: %w", err)
 	}
+	original := string(source)
+	source = []byte(normalizeExpressionQuotes(original))
 	if err := validateSourceTagBalance(string(source)); err != nil {
 		return err
 	}
 	if err := validateFormSource(string(source), nameFromPath(path, filepath.Ext(path))); err != nil {
+		return err
+	}
+	if err := validateInputValueSource(string(source), nameFromPath(path, filepath.Ext(path))); err != nil {
 		return err
 	}
 	if err := validateSelectSource(string(source), nameFromPath(path, filepath.Ext(path))); err != nil {
@@ -56,7 +61,9 @@ func validateVisualforceFileStructure(path, expected string) error {
 	if err := validateAjaxSource(string(source), nameFromPath(path, filepath.Ext(path))); err != nil {
 		return err
 	}
-	root, err := parseMarkupTree(string(source), nameFromPath(path, filepath.Ext(path)))
+	// parseMarkupTree normalizes quotes itself and needs the original text to
+	// tell a written entity from a rewritten quote.
+	root, err := parseMarkupTree(original, nameFromPath(path, filepath.Ext(path)))
 	if err != nil {
 		return err
 	}

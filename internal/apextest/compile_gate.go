@@ -88,29 +88,33 @@ func (g *compileGate) cacheSlot() string {
 // classes by file (compile unit) and by lowercased name, and every type by
 // lowercased full name for name binding.
 type compileGateUnits struct {
-	order           []string
-	classes         map[string][]string
-	fileOf          map[string]string
-	types           map[string]typesys.TypeSymbol
-	namespace       string
-	objects         map[string]schema.Object
-	features        []string
-	querySchema     *compileGateQuerySchema
-	schemaObjects   []schema.Object
-	expressionType  vm.ExpressionTypeResolver
-	triggerContexts map[string]compileGateTriggerContext
+	order            []string
+	classes          map[string][]string
+	fileOf           map[string]string
+	types            map[string]typesys.TypeSymbol
+	namespace        string
+	sourceAPIVersion string
+	fileAPIVersions  map[string]string
+	objects          map[string]schema.Object
+	features         []string
+	querySchema      *compileGateQuerySchema
+	schemaObjects    []schema.Object
+	expressionType   vm.ExpressionTypeResolver
+	triggerContexts  map[string]compileGateTriggerContext
 }
 
 func newCompileGateUnits(index typesys.Index) compileGateUnits {
 	units := compileGateUnits{
-		classes:       make(map[string][]string),
-		fileOf:        make(map[string]string),
-		types:         make(map[string]typesys.TypeSymbol),
-		namespace:     index.Project.Namespace,
-		objects:       make(map[string]schema.Object, len(index.Objects)),
-		features:      index.OrgShapeFeatures,
-		querySchema:   &compileGateQuerySchema{},
-		schemaObjects: index.Objects,
+		classes:          make(map[string][]string),
+		fileOf:           make(map[string]string),
+		types:            make(map[string]typesys.TypeSymbol),
+		namespace:        index.Project.Namespace,
+		sourceAPIVersion: index.Project.SourceAPIVersion,
+		fileAPIVersions:  make(map[string]string),
+		objects:          make(map[string]schema.Object, len(index.Objects)),
+		features:         index.OrgShapeFeatures,
+		querySchema:      &compileGateQuerySchema{},
+		schemaObjects:    index.Objects,
 	}
 	for _, object := range index.Objects {
 		units.objects[strings.ToLower(object.Name)] = object
@@ -128,6 +132,9 @@ func newCompileGateUnits(index typesys.Index) compileGateUnits {
 			continue
 		}
 		file := filepath.Clean(typ.File)
+		if typ.EffectiveAPIVersion != "" {
+			units.fileAPIVersions[file] = typ.EffectiveAPIVersion
+		}
 		if _, ok := units.classes[file]; !ok {
 			units.order = append(units.order, file)
 		}
@@ -144,6 +151,9 @@ func newCompileGateUnits(index typesys.Index) compileGateUnits {
 	expressionIndex.Types = append([]typesys.TypeSymbol(nil), index.Types...)
 	units.triggerContexts = make(map[string]compileGateTriggerContext)
 	for i, trigger := range index.Triggers {
+		if trigger.EffectiveAPIVersion != "" {
+			units.fileAPIVersions[filepath.Clean(trigger.File)] = trigger.EffectiveAPIVersion
+		}
 		owner := fmt.Sprintf("__GladeCompileGateTrigger%d", i)
 		for units.types[strings.ToLower(owner)].Name != "" {
 			owner += "_"

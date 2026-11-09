@@ -17,3 +17,6 @@ consumer of a source-backed dependency whose validation field is already
 qualified. The DML test retains standard, record-level, already-qualified,
 foreign-qualified, unknown, ownerless, unrelated-owner and local-only controls.
 No native capture is required or invoked by these tests.
+
+The fixture DML and query run in system mode, so the API 62-67 default field
+permissions of the running administrator do not mask the validation errors.

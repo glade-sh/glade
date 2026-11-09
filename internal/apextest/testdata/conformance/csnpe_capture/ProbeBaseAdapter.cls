@@ -1,0 +1,1 @@
+global virtual class ProbeBaseAdapter implements commercepayments.PaymentGatewayAdapter { global virtual commercepayments.GatewayResponse processRequest(commercepayments.PaymentGatewayContext context) { return null; } }

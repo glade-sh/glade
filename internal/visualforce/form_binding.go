@@ -2,6 +2,7 @@ package visualforce
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -185,8 +186,15 @@ func VisualforceFormBindingsForFields(values map[string]string, allowedFields ma
 	if len(values) == 0 {
 		return nil
 	}
+	// Map order is random; apply in natural order so a later iteration wins.
+	keys := make([]string, 0, len(values))
+	for key := range values {
+		keys = append(keys, key)
+	}
+	sort.Slice(keys, func(i, j int) bool { return naturalLess(keys[i], keys[j]) })
 	out := make([]FormBinding, 0, len(values))
-	for key, value := range values {
+	for _, key := range keys {
+		value := values[key]
 		if strings.TrimSpace(key) == "" || strings.HasPrefix(key, "__") || key == viewStateFieldName {
 			continue
 		}
@@ -454,4 +462,127 @@ func visualforceConversionDiagnostic(fieldName, fieldType, raw, reason string) *
 		Reason:    reason,
 		Message:   message,
 	}
+}
+
+// visualforceClientIDFormAliases keeps a posted form binding to its input now
+// that every input control posts under its client ID (rows Unb*, Hid*, Rep* and
+// Pst* of testdata/vf_render_markup). An input that binds through its bare id or
+// its value expression receives a copy of the value posted under its client ID,
+// keyed by that bare name, unless the payload already carries the bare name.
+// Inside an apex:repeat the posted client ID carries the iteration index
+// (j_id0:f1:j_id2:0:j_id3); the index segments are dropped to find the input.
+// When a property is bound in every iteration the org keeps the last
+// iteration's value (row RepTextMode of postback.tsv: mode=v2), so a later
+// iteration replaces an earlier one; a bare name in the payload itself wins.
+func visualforceClientIDFormAliases(tree *MarkupNode, values map[string]string) map[string]string {
+	if len(values) == 0 || tree == nil {
+		return values
+	}
+	refs := newComponentReferenceResolver(tree, nil)
+	legacyByID := map[string]string{}
+	var rowVars []string
+	var walk func(*MarkupNode)
+	walk = func(node *MarkupNode) {
+		if node == nil {
+			return
+		}
+		if isApexStructureTag(node, "repeat") {
+			if name := strings.TrimSpace(node.Attribute("var")); name != "" {
+				rowVars = append(rowVars, name)
+				defer func() { rowVars = rowVars[:len(rowVars)-1] }()
+			}
+		}
+		// An input bound to a field of the repeat variable binds to its row
+		// (prepareFormLifecycle), never to a controller property of that name.
+		if node.Type == MarkupNodeElement && strings.EqualFold(node.Namespace, "apex") && !boundToRowVariable(node, rowVars) {
+			legacy := ""
+			switch strings.ToLower(node.Name) {
+			case "inputtext", "inputsecret", "inputtextarea", "inputcheckbox", "inputhidden":
+				legacy = inputFieldName(node)
+			case "selectlist":
+				legacy = fieldName(node)
+			}
+			if id := refs.clientIDs[node]; legacy != "" && id != "" && id != legacy {
+				legacyByID[id] = legacy
+			}
+		}
+		for _, child := range node.Children {
+			walk(child)
+		}
+	}
+	walk(tree)
+	if len(legacyByID) == 0 {
+		return values
+	}
+	keys := make([]string, 0, len(values))
+	for key := range values {
+		keys = append(keys, key)
+	}
+	sort.Slice(keys, func(i, j int) bool { return naturalLess(keys[i], keys[j]) })
+	out := values
+	for _, key := range keys {
+		legacy, ok := legacyByID[withoutIterationIndexes(key)]
+		if !ok {
+			continue
+		}
+		if _, taken := values[legacy]; taken {
+			continue
+		}
+		if len(out) == len(values) {
+			out = make(map[string]string, len(values)+1)
+			for k, v := range values {
+				out[k] = v
+			}
+		}
+		out[legacy] = values[key]
+	}
+	return out
+}
+
+// boundToRowVariable reports a value expression {!x.y} whose root x is the
+// var of an enclosing apex:repeat.
+func boundToRowVariable(node *MarkupNode, rowVars []string) bool {
+	raw := strings.TrimSpace(node.Attribute("value"))
+	if len(rowVars) == 0 || !strings.HasPrefix(raw, "{!") || !strings.HasSuffix(raw, "}") {
+		return false
+	}
+	root, _, dotted := strings.Cut(strings.TrimSpace(raw[2:len(raw)-1]), ".")
+	if !dotted {
+		return false
+	}
+	for _, name := range rowVars {
+		if strings.EqualFold(name, strings.TrimSpace(root)) {
+			return true
+		}
+	}
+	return false
+}
+
+// withoutIterationIndexes drops the all-digit segments of a client ID.
+func withoutIterationIndexes(id string) string {
+	parts := strings.Split(id, ":")
+	kept := parts[:0]
+	for _, part := range parts {
+		if part == "" || strings.Trim(part, "0123456789") != "" {
+			kept = append(kept, part)
+		}
+	}
+	return strings.Join(kept, ":")
+}
+
+// naturalLess orders client IDs so that iteration 2 comes before iteration 10.
+func naturalLess(a, b string) bool {
+	as, bs := strings.Split(a, ":"), strings.Split(b, ":")
+	for i := 0; i < len(as) && i < len(bs); i++ {
+		if as[i] == bs[i] {
+			continue
+		}
+		ai, aerr := strconv.Atoi(as[i])
+		bi, berr := strconv.Atoi(bs[i])
+		if aerr == nil && berr == nil {
+			return ai < bi
+		}
+		return as[i] < bs[i]
+	}
+	return len(as) < len(bs)
 }

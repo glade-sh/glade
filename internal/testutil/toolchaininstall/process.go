@@ -82,7 +82,7 @@ func shareInstallRoutes(t *testing.T, firstRoutes, secondRoutes []string, instal
 	if err != nil {
 		t.Fatal(err)
 	}
-	root := t.TempDir()
+	root := realTempDir(t)
 	src := filepath.Join(root, "source")
 	files := sourceFixture(t, src)
 	bin := filepath.Join(root, "bin")
@@ -314,7 +314,7 @@ func SelectShare(t *testing.T, selector string) {
 			}
 			share = relative + string(os.PathSeparator) + ".." + string(os.PathSeparator) + "glade"
 		case "_symlink":
-			alias := filepath.Join(t.TempDir(), "share-link")
+			alias := filepath.Join(realTempDir(t), "share-link")
 			if err := os.Symlink(share, alias); err != nil {
 				t.Fatal(err)
 			}

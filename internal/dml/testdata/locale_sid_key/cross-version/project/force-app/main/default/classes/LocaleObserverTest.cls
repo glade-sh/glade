@@ -1,0 +1,1 @@
+@IsTest private class LocaleObserverTest { @IsTest static void observe() { System.assert(false,'LOCALE_CROSS|'+JSON.serialize(new Map<String,Object>{'source62'=>LocaleObserver62.sample(),'source67'=>LocaleObserver67.sample(),'source68'=>LocaleObserver68.sample()})); } }

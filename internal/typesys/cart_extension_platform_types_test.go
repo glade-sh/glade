@@ -22,8 +22,8 @@ func TestCartExtensionPlatformSymbolsConstructorAndInheritanceRoutes(t *testing.
 			})
 			for _, name := range []string{"CartExtension.CartItem", "CartExtension.CartDeliveryGroup"} {
 				t.Run("commerce-assignment-and-list-argument/"+name, func(t *testing.T) {
-					if symbol := requireStandardSymbol(t, symbols, name); symbol.SuperClass != "CartExtension.CommerceObject" {
-						t.Fatalf("native accepts CommerceObject assignment and list arguments; superclass=%q", symbol.SuperClass)
+					if !standardSuperChainContains(t, symbols, name, "CartExtension.CommerceObject") {
+						t.Fatalf("native accepts CommerceObject assignment and list arguments; %s does not reach it", name)
 					}
 				})
 			}

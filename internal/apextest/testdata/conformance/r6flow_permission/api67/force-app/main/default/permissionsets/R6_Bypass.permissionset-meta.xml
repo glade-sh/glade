@@ -1,0 +1,1 @@
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata"><label>R6 Bypass</label><customPermissions><enabled>true</enabled><name>R6_Bypass</name></customPermissions></PermissionSet>

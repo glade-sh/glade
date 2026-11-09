@@ -1,0 +1,4 @@
+case	result
+case_auto_false	true,0,none
+case_auto_true	true,0,none
+case_unmatched_true	true,0,none

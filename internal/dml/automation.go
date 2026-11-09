@@ -48,7 +48,7 @@ func (e *Engine) applyWorkflowFieldUpdates(objectName string, id storage.ID) (bo
 		if !rule.Active {
 			continue
 		}
-		matches, ok := evaluateWorkflowRuleWithUser(rule, record, object.Definition, e.Org, e.systemUserID())
+		matches, ok := evaluateWorkflowRuleWithUser(rule, record, object.Definition, e.Org, e.systemUserID(), e.PermissionUserFields)
 		if !ok || !matches {
 			continue
 		}
@@ -60,7 +60,7 @@ func (e *Engine) applyWorkflowFieldUpdates(objectName string, id storage.ID) (bo
 			if isCalculatedOrSummaryField(object.Definition.Fields[fieldName]) {
 				return false, dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{fieldName}, "dml: workflow field update %s targets calculated field %s.%s", update.Name, objectName, fieldName)
 			}
-			value, explicitNull, ok := workflowUpdateValue(object.Definition.Fields[fieldName], record, update, object.Definition, e.Org)
+			value, explicitNull, ok := workflowUpdateValue(object.Definition.Fields[fieldName], record, update, object.Definition, e.Org, e.setupFormulaEvaluationOptions())
 			if !ok {
 				return false, dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{fieldName}, "dml: workflow field update %s has unsupported value expression", update.Name)
 			}
@@ -262,7 +262,10 @@ func (e *Engine) applyTriggeredFlows(objectName string, record *storage.Record, 
 			continue
 		}
 		if len(rule.Branches) > 0 {
-			branch, matched := e.selectFlowBranch(rule, *record, object.Definition)
+			branch, matched, branchErr := e.selectFlowBranch(rule, *record, object.Definition)
+			if branchErr != nil {
+				return branchErr
+			}
 			e.traceAutomation("apex.flow.decision", map[string]any{
 				"flow":    rule.Name,
 				"object":  objectName,
@@ -363,13 +366,17 @@ func flowStepsBeforeSaveSafeWithTargets(steps []storage.FlowStep, allowApexActio
 	// flow_null_comparisons before_delete rows). A flow that also reads Get
 	// Records output keeps the root-only boundary: no native row covers lookup
 	// criteria that gate a create (TestFlowDeleteLookupEqualityProjectRoutes).
-	nestedCreates := allowDeleteEffects && flowStepsSatisfy(steps, targets, func(step storage.FlowStep, _ bool) bool {
+	nestedCreates := allowDeleteEffects && flowStepsSatisfyWithLoopBodies(steps, targets, func(step storage.FlowStep, _ bool) bool {
 		return step.Kind != "recordLookup"
-	})
-	return flowStepsSatisfy(steps, targets, func(step storage.FlowStep, root bool) bool {
+	}, true)
+	return flowStepsSatisfyWithLoopBodies(steps, targets, func(step storage.FlowStep, root bool) bool {
 		switch step.Kind {
 		case "fieldUpdate", "assignment", "recordLookup", "customError", "decision":
 			return true
+		case "loop":
+			// Native coverage permits loops in before-save flows. Preserve the
+			// existing before-delete boundary until that route is captured.
+			return !allowApexActions && !allowDeleteEffects && strings.TrimSpace(step.Loop.CollectionReference) != "" && strings.EqualFold(strings.TrimSpace(step.Loop.IterationOrder), "Asc") && len(step.Loop.Steps) > 0
 		case "action":
 			return allowApexActions && strings.EqualFold(strings.TrimSpace(step.Action.ActionType), "apex")
 		case "recordCreate":
@@ -379,7 +386,7 @@ func flowStepsBeforeSaveSafeWithTargets(steps []storage.FlowStep, allowApexActio
 		default:
 			return false
 		}
-	})
+	}, true)
 }
 
 func hasObjectAutomation(definition storage.ObjectDefinition) bool {
@@ -567,7 +574,10 @@ func (e *Engine) applyFlowFieldUpdates(objectName string, id storage.ID) (bool, 
 			deferred = append(deferred, rule)
 		}
 		if len(rule.Branches) > 0 {
-			branch, matched := e.selectFlowBranch(rule, record, object.Definition)
+			branch, matched, branchErr := e.selectFlowBranch(rule, record, object.Definition)
+			if branchErr != nil {
+				return false, flowCoreRecordTriggerError(rule, branchErr)
+			}
 			e.traceAutomation("apex.flow.decision", map[string]any{
 				"flow":    rule.Name,
 				"object":  objectName,
@@ -663,7 +673,7 @@ func flowRuleLess(left, right storage.FlowRule) bool {
 	return left.Name < right.Name
 }
 
-func (e *Engine) selectFlowBranch(rule storage.FlowRule, record storage.Record, definition storage.ObjectDefinition) (storage.FlowBranch, bool) {
+func (e *Engine) selectFlowBranch(rule storage.FlowRule, record storage.Record, definition storage.ObjectDefinition) (storage.FlowBranch, bool, error) {
 	var defaultBranch storage.FlowBranch
 	hasDefault := false
 	for _, branch := range rule.Branches {
@@ -677,15 +687,30 @@ func (e *Engine) selectFlowBranch(rule storage.FlowRule, record storage.Record, 
 			}
 			continue
 		}
+		if !strings.EqualFold(strings.TrimSpace(rule.TriggerType), "RecordBeforeSave") || !strings.EqualFold(strings.TrimSpace(rule.RecordTriggerType), "CreateAndUpdate") {
+			for _, item := range branch.Criteria {
+				if flowGlobalDecisionReference(item.Field) {
+					return storage.FlowBranch{}, false, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow decision branch %s has unsupported criteria", branch.Name)
+				}
+			}
+		}
 		matches, ok := e.evaluateFlowBranch(branch, record, definition, flowRuleHasSaveDecisions(rule))
+		if !ok {
+			for _, item := range branch.Criteria {
+				reference := strings.TrimSpace(item.Field)
+				if strings.EqualFold(reference, "$Profile.Name") || strings.EqualFold(reference, "$User.Id") || len(reference) > len("$Permission.") && strings.EqualFold(reference[:len("$Permission.")], "$Permission.") {
+					return storage.FlowBranch{}, false, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow decision branch %s has unsupported criteria", branch.Name)
+				}
+			}
+		}
 		if ok && matches {
-			return branch, true
+			return branch, true, nil
 		}
 	}
 	if hasDefault {
-		return defaultBranch, true
+		return defaultBranch, true, nil
 	}
-	return storage.FlowBranch{}, false
+	return storage.FlowBranch{}, false, nil
 }
 
 func (e *Engine) applyFlowEffects(flowName, objectName string, record *storage.Record, definition storage.ObjectDefinition, steps []storage.FlowStep, updates []storage.WorkflowFieldUpdate, actions []storage.FlowAction, lookups []storage.FlowRecordLookup, creates []storage.FlowRecordCreate, textTemplates map[string]string, variables []storage.FlowVariable) (bool, error) {
@@ -778,6 +803,7 @@ func (e *Engine) newFlowStepFrame(flowName string, record *storage.Record, defin
 	}
 	frame.saveDecisions, frame.priorDecisions, frame.beforeSaveDecisions = flowSaveDecisionMode(flowName, definition)
 	frame.scalarBeforeSave = flowBeforeSaveScalarUpdateMode(flowName, definition)
+	frame.afterSaveWriteBack = flowAfterSaveScalarWriteBackMode(flowName, definition)
 	frame.createDecision = record.ID != "" && record.ID == e.activeCreatedAutomationID
 	frame.recordCreations = e.RecordCreations
 	frame.textTemplates = cloneFlowTextTemplates(textTemplates)
@@ -813,6 +839,7 @@ type flowFrame struct {
 	priorDecisions          bool
 	beforeSaveDecisions     bool
 	scalarBeforeSave        bool
+	afterSaveWriteBack      bool
 	createDecision          bool
 	lookupOutputs           map[string]flowLookupOutput
 	subflowInputs           map[string]flowLookupOutput
@@ -840,6 +867,7 @@ type flowPreparedAction struct {
 	name      string
 	output    storage.Value
 	hasOutput bool
+	fields    map[string]storage.Value
 	err       error
 }
 
@@ -1155,6 +1183,9 @@ func (e *Engine) applyFlowStep(flowName, objectName string, record *storage.Reco
 			if prepared.hasOutput {
 				receive(prepared.output)
 			}
+			if prepared.fields != nil {
+				frame.actionOutputFieldReceiver(step.Action)(prepared.fields)
+			}
 			if prepared.err != nil {
 				return false, flowActionFailure(step.Action.Name, prepared.err)
 			}
@@ -1163,6 +1194,7 @@ func (e *Engine) applyFlowStep(flowName, objectName string, record *storage.Reco
 		if e.FlowActionInvokerWithContext != nil {
 			context := e.flowActionContextFromFrame(frame)
 			context.Output = frame.actionOutputReceiver(step.Action.Name)
+			context.OutputFields = frame.actionOutputFieldReceiver(step.Action)
 			if err := e.FlowActionInvokerWithContext(step.Action, record.Clone(), context); err != nil {
 				return false, flowActionFailure(step.Action.Name, err)
 			}
@@ -1184,6 +1216,13 @@ func (e *Engine) applyFlowStep(flowName, objectName string, record *storage.Reco
 			}
 		}
 	case "loop":
+		if frame.beforeSaveDecisions {
+			key := flowFrameKey(step.Loop.CollectionReference)
+			variable, declared := frame.variables[key]
+			if !declared || !variable.IsCollection || !strings.EqualFold(variable.DataType, "SObject") || !frame.assigned[key] {
+				return false, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: before-save flow loop %s requires an assigned record collection", step.Loop.Name)
+			}
+		}
 		if handled, changed, err := e.flowCorePrimitiveLoop(flowName, objectName, record, definition, step.Loop, frame); handled {
 			return changed, err
 		}
@@ -1247,6 +1286,8 @@ func (e *Engine) applyFlowStep(flowName, objectName string, record *storage.Reco
 			"subflow": step.Subflow.FlowName,
 			"record":  string(record.ID),
 		})
+	case "wait":
+		return false, e.pauseFlowInterview(flowName, step, frame)
 	case "customError":
 		msg := ""
 		var numberConstants map[string]string
@@ -1260,13 +1301,18 @@ func (e *Engine) applyFlowStep(flowName, objectName string, record *storage.Reco
 		if msg == "" {
 			msg = step.CustomError.Name
 		}
-		var formulas map[string]string
+		var formulas, resources map[string]string
+		var fields []string
 		if len(step.CustomError.Messages) > 0 {
 			formulas = step.CustomError.Messages[0].Formulas
+			resources = step.CustomError.Messages[0].ResourceFormulas
+			if field := step.CustomError.Messages[0].Field; field != "" {
+				fields = []string{field}
+			}
 		}
 		capturedFormula := flowCapturedCustomErrorFormula(msg, formulas, frame)
-		msg = e.renderFlowCustomErrorTextWithConstants(msg, frame, numberConstants, formulas)
-		return false, &flowCustomErrorFailure{cause: dmlErrorf("FIELD_CUSTOM_VALIDATION_EXCEPTION", nil, "%s", msg), capturedFormula: capturedFormula}
+		msg = e.renderFlowCustomErrorMessage(msg, frame, numberConstants, formulas, resources)
+		return false, &flowCustomErrorFailure{cause: dmlErrorf("FIELD_CUSTOM_VALIDATION_EXCEPTION", fields, "%s", msg), capturedFormula: capturedFormula}
 	case "transform":
 		if err := e.applyFlowTransformStep(step.Transform, frame); err != nil {
 			return false, err
@@ -1573,12 +1619,17 @@ func flowFrameFormulaValue(expression string, frame *flowFrame) (storage.Value, 
 	return value, ok
 }
 
-// Only captured assignment and record-create consumers opt into frame bindings.
-func flowFrameCapturedFormulaValue(expression string, frame *flowFrame) (storage.Value, bool) {
+// Scalar-consuming Flow operations retain their existing frame binding and
+// text semantics while evaluating globals for the current principal.
+func (e *Engine) flowFrameFormulaValue(expression string, frame *flowFrame, captured bool) (storage.Value, bool) {
 	if frame == nil {
 		return storage.Value{}, false
 	}
-	value, _, ok := evaluateFlowFormulaValue(expression, flowFrameCapturedFormulaRecord(frame, expression))
+	record := flowFrameFormulaRecord(frame)
+	if captured {
+		record = flowFrameCapturedFormulaRecord(frame, expression)
+	}
+	value, _, ok := evaluateFlowFormulaParser(formulaParser{tokens: tokenizeFormula(html.UnescapeString(expression)), record: record, org: e.Org, userID: e.systemUserID(), permissionUserFields: e.PermissionUserFields})
 	return value, ok
 }
 
@@ -1670,7 +1721,9 @@ func evaluateFlowFormulaParser(parser formulaParser) (storage.Value, bool, bool)
 		}
 		return storage.DateValue(value.text), false, true
 	default:
-		return storage.StringValue(value.asString()), false, true
+		// A finished flow formula reads BR() as a line feed (org capture
+		// flow_br_surfaces, API 62 and 67).
+		return storage.StringValue(renderFormulaBR(value, true).asString()), false, true
 	}
 }
 
@@ -2306,7 +2359,7 @@ func (e *Engine) flowRecordUpdateAssignmentValue(field storage.Field, source sto
 		value, ok := e.flowContextFormulaValue(assignment.Formula, frame)
 		return value, value.Kind == storage.ValueNull, ok
 	}
-	return workflowUpdateValue(field, source, assignment, sourceDefinition, e.Org)
+	return workflowUpdateValue(field, source, assignment, sourceDefinition, e.Org, e.flowFormulaEvaluationOptions())
 }
 
 func (e *Engine) selectFlowStepBranch(branches []storage.FlowBranch, source storage.Record, definition storage.ObjectDefinition, frame *flowFrame) (storage.FlowBranch, bool, error) {
@@ -2345,7 +2398,17 @@ func (e *Engine) evaluateFlowFrameBranch(branch storage.FlowBranch, source stora
 	if len(branch.Criteria) == 0 {
 		return true, true
 	}
+	source = e.flowRecordWithCriteriaFormulas(source, definition, branch.Criteria)
 	for _, item := range branch.Criteria {
+		if flowGlobalDecisionReference(item.Field) && (frame == nil || !frame.beforeSaveDecisions || frame.autolaunched) {
+			return false, false
+		}
+		if matches, supported, handled := e.flowGlobalDecisionCriterion(item); handled {
+			if !supported || !matches {
+				return matches, supported
+			}
+			continue
+		}
 		if matches, supported, handled := e.flowVariableOperandCriterion(item, frame); handled {
 			if !supported || !matches {
 				return matches, supported
@@ -2407,7 +2470,7 @@ func (e *Engine) evaluateFlowFrameBranch(branch storage.FlowBranch, source stora
 			}
 		}
 		if strings.HasPrefix(strings.ToLower(strings.TrimSpace(item.Field)), "$setup.") {
-			value, ok := flowSetupFieldValue(e.Org, item.Field)
+			value, ok := flowSetupFieldValue(e.Org, item.Field, e.setupFormulaEvaluationOptions())
 			if !ok {
 				return false, false
 			}
@@ -2485,7 +2548,9 @@ func (e *Engine) evaluateFlowFrameBranch(branch storage.FlowBranch, source stora
 				continue
 			}
 		}
-		if strings.EqualFold(strings.TrimSpace(item.Operation), "equals") {
+		// A relationship-path left value reads the same through every comparison
+		// operator (native API 62.0 and 67.0: EqualTo, NotEqualTo and IsNull).
+		if flowDecisionRelationshipOperator(item.Operation) {
 			if value, ok := e.flowRefsDecisionRelationshipValue(item.Field, source, definition, frame); ok {
 				matches, supported := evaluateFlowValueCriteria(value, item)
 				if !supported || !matches {
@@ -2536,19 +2601,27 @@ func (e *Engine) evaluateFlowFrameBranch(branch storage.FlowBranch, source stora
 	return true, true
 }
 
-func flowSetupFieldValue(org *storage.OrgState, reference string) (storage.Value, bool) {
+// flowDecisionRelationshipOperator reports the operators captured natively for
+// a relationship-path left value (flow_relpath_decisions: EqualTo, NotEqualTo
+// and IsNull at API 62.0 and 67.0). Other operators keep their existing
+// boundary until a native row exists.
+func flowDecisionRelationshipOperator(operation string) bool {
+	switch strings.ToLower(strings.TrimSpace(operation)) {
+	case "equals", "notequals", "notequalto", "notequal", "isnull":
+		return true
+	default:
+		return false
+	}
+}
+
+func flowSetupFieldValue(org *storage.OrgState, reference string, options ...FormulaEvaluationOptions) (storage.Value, bool) {
 	if org == nil {
 		return storage.Value{}, false
 	}
-	field := storage.Field{Type: storage.FieldString, DisplayType: "String"}
-	value, explicitNull, ok := EvaluateRecordFormulaValueInOrg(reference, field, org, storage.ObjectDefinition{}, storage.Record{})
-	if !ok {
-		return storage.Value{}, false
-	}
-	if explicitNull {
-		return storage.NullValue(), true
-	}
-	return value, true
+	opts := firstFormulaOptions(options)
+	parser := formulaParser{tokens: tokenizeFormula(html.UnescapeString(reference)), org: org, userID: opts.UserID, permissionUserFields: opts.PermissionUserFields, setupUserID: opts.SetupUserID}
+	value, _, ok := evaluateFlowFormulaParser(parser)
+	return value, ok
 }
 
 func evaluateFlowValueCriteria(value storage.Value, item storage.WorkflowCriteriaItem) (bool, bool) {
@@ -2669,6 +2742,15 @@ func (e *Engine) applyFlowFieldUpdate(flowName, objectName string, record *stora
 			explicitNull = lookupValue.Kind == storage.ValueNull
 		}
 	}
+	if !resolved && frame != nil && strings.Count(update.SourceField, ".") >= 2 {
+		// A relationship path through a Get Records output (Output.Lookup.Field).
+		if name, _, _ := strings.Cut(update.SourceField, "."); frame.lookupOutputs[flowFrameKey(name)].definition.APIName != "" {
+			if relValue, ok := e.flowFrameReferenceValue(update.SourceField, frame); ok {
+				value, resolved = relValue, true
+				explicitNull = relValue.Kind == storage.ValueNull
+			}
+		}
+	}
 	save, _, _ := flowSaveDecisionMode(flowName, definition)
 	if !resolved && save && update.SourceField != "" {
 		value, resolved = e.flowRefsRelationshipIDValue(update.SourceField, *record, definition, definition.Fields[fieldName])
@@ -2684,7 +2766,7 @@ func (e *Engine) applyFlowFieldUpdate(flowName, objectName string, record *stora
 		}
 	}
 	if !resolved {
-		value, explicitNull, resolved = workflowUpdateValue(definition.Fields[fieldName], *record, update, definition, e.Org)
+		value, explicitNull, resolved = workflowUpdateValue(definition.Fields[fieldName], *record, update, definition, e.Org, e.flowFormulaEvaluationOptions())
 	}
 	if !resolved {
 		return false, dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{fieldName}, "dml: flow field update %s has unsupported value expression", update.Name)
@@ -2693,6 +2775,12 @@ func (e *Engine) applyFlowFieldUpdate(flowName, objectName string, record *stora
 		delete(record.Fields, fieldName)
 		record.ExplicitNulls[fieldName] = true
 	} else {
+		// A flow assignment stores a line break in a single-line Text field as
+		// a space (flow_br_surfaces: before-save and after-save flows), unlike a
+		// workflow field update, which keeps it.
+		if value.Kind == storage.ValueString && isSingleLineTextField(definition.Fields[fieldName]) && strings.ContainsAny(value.String, "\r\n") {
+			value.String = singleLineTextReplacer.Replace(value.String)
+		}
 		record.Fields[fieldName] = value
 		delete(record.ExplicitNulls, fieldName)
 	}
@@ -2720,6 +2808,31 @@ func (frame *flowFrame) actionOutputReceiver(name string) func(storage.Value) {
 	// null for absent positions; unconvertible output types remain unresolved.
 	delete(frame.actionOutputs, key)
 	return func(value storage.Value) { frame.actionOutputs[key] = value.Clone() }
+}
+
+// actionOutputFieldReceiver assigns the returned element's fields named by the
+// action's outputParameters to Flow variables. Native: an Apex action's
+// isSuccess/status style fields reach the interview's output variables
+// (flow_action_namespace rows).
+func (frame *flowFrame) actionOutputFieldReceiver(action storage.FlowAction) func(map[string]storage.Value) {
+	if frame == nil || len(action.Outputs) == 0 {
+		return nil
+	}
+	return func(fields map[string]storage.Value) {
+		for _, output := range action.Outputs {
+			value, ok := fields[strings.ToLower(strings.TrimSpace(output.Name))]
+			if !ok {
+				continue
+			}
+			key := flowFrameKey(output.AssignTo)
+			if variable, declared := frame.variables[key]; declared && !variable.IsCollection && strings.EqualFold(variable.DataType, "String") && value.Kind == storage.ValueDecimal {
+				// Native Flow action output mapping converts Decimal to text.
+				value = storage.StringValue(value.Decimal)
+			}
+			frame.scalars[key] = value.Clone()
+			frame.assigned[key] = true
+		}
+	}
 }
 
 // The captured single-output actions return Datetime values. Date destinations
@@ -2830,6 +2943,9 @@ func (e *Engine) executeFlowEmailSimple(flowName string, action storage.FlowActi
 	if !ok {
 		return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow action %s has unsupported email input", action.Name)
 	}
+	if handled, err := e.flowEmailToRecipientID(flowName, action, inputs, frame); handled {
+		return err
+	}
 	isAlert := strings.EqualFold(action.ActionType, "emailAlert") || strings.EqualFold(action.ActionName, "emailAlert")
 	if (!isAlert || frame != nil && frame.autolaunched) && !flowEmailLogOnSend(inputs["logemailonsend"]) {
 		// Send Email records an EmailMessage only when logEmailOnSend is true.
@@ -2906,9 +3022,16 @@ func (e *Engine) flowActionInputValue(input storage.WorkflowFieldUpdate, source 
 				return value.Clone(), true
 			}
 		}
+		if name, path, nested := strings.Cut(strings.TrimSpace(input.SourceField), "."); nested && strings.Contains(path, ".") {
+			if output, found := lookupOutputs[flowFrameKey(name)]; found {
+				return e.flowRefsRelationshipValue(path, output.record, output.definition)
+			}
+		}
 		value, ok := sourceRecordResolvedFieldValue(source, sourceDefinition, namespace, input.SourceField)
 		if !ok {
-			return storage.Value{}, false
+			// A text relationship path on the triggering record
+			// ($Record.Lookup.Field) reads the stored parent (native: EM2).
+			return e.flowRefsRelationshipValue(input.SourceField, source, sourceDefinition)
 		}
 		return value, true
 	}
@@ -3072,7 +3195,7 @@ func (e *Engine) applyFlowRecordLookupStep(lookup storage.FlowRecordLookup, sour
 			if strings.TrimSpace(field.Formula) == "" {
 				continue
 			}
-			value, isNull, ok := EvaluateRecordFormulaValueInOrg(field.Formula, field, e.Org, definition, records[index])
+			value, isNull, ok := EvaluateRecordFormulaValueInOrgWithOptions(field.Formula, field, e.Org, definition, records[index], e.setupFormulaEvaluationOptions())
 			if !ok {
 				continue
 			}
@@ -3145,7 +3268,24 @@ func (e *Engine) executeFlowRecordCreate(create storage.FlowRecordCreate, source
 		if isCalculatedOrSummaryField(field) {
 			return "", dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{fieldName}, "dml: flow record create %s targets calculated field %s.%s", create.Name, targetName, fieldName)
 		}
-		value, explicitNull, ok := flowRecordCreateAssignmentValue(field, source, assignment, sourceDefinition, e.Org, lookupOutputs)
+		value, explicitNull, ok := flowRecordCreateAssignmentValue(field, source, assignment, sourceDefinition, e.Org, lookupOutputs, e.flowFormulaEvaluationOptions())
+		if !ok {
+			// $Record.<relationship>.<field> reads the triggering record's
+			// parent (record_save_residuals flow rows: Task Account.Name and
+			// RecordType.DeveloperName into Text fields at API 62.0 and 67.0).
+			reference := strings.TrimSpace(assignment.SourceField)
+			if reference == "" {
+				reference = strings.TrimSpace(assignment.Formula)
+			}
+			if len(reference) > len("$Record.") && strings.EqualFold(reference[:len("$Record.")], "$Record.") {
+				reference = reference[len("$Record."):]
+			}
+			if strings.Contains(reference, ".") && !strings.ContainsAny(reference, "{}()$ ") {
+				if parent, found := e.flowRefsRelationshipValue(reference, source, sourceDefinition); found {
+					value, explicitNull, ok = parent, parent.Kind == storage.ValueNull, true
+				}
+			}
+		}
 		if !ok {
 			return "", dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{fieldName}, "dml: flow record create %s has unsupported value expression for %s.%s", create.Name, targetName, fieldName)
 		}
@@ -3156,6 +3296,9 @@ func (e *Engine) executeFlowRecordCreate(create storage.FlowRecordCreate, source
 			record.Fields[fieldName] = value
 			delete(record.ExplicitNulls, fieldName)
 		}
+	}
+	if err := e.flowCreateReferenceTypeCheck(target.Definition, record); err != nil {
+		return "", err
 	}
 	createdID, err := e.insertInvocableFlowRecord(record)
 	if err != nil {
@@ -3413,7 +3556,7 @@ func (e *Engine) runSubflow(rule storage.FlowRule, def storage.ObjectDefinition,
 	return nil
 }
 
-func flowRecordCreateAssignmentValue(field storage.Field, source storage.Record, assignment storage.WorkflowFieldUpdate, sourceDefinition storage.ObjectDefinition, org *storage.OrgState, lookupOutputs map[string]flowLookupOutput) (storage.Value, bool, bool) {
+func flowRecordCreateAssignmentValue(field storage.Field, source storage.Record, assignment storage.WorkflowFieldUpdate, sourceDefinition storage.ObjectDefinition, org *storage.OrgState, lookupOutputs map[string]flowLookupOutput, options ...FormulaEvaluationOptions) (storage.Value, bool, bool) {
 	namespace := ""
 	if org != nil {
 		namespace = org.Namespace
@@ -3457,7 +3600,7 @@ func flowRecordCreateAssignmentValue(field storage.Field, source storage.Record,
 		}
 		flowFrameFormulaRecordOwner(source.Fields, "", source)
 	}
-	return workflowUpdateValue(field, source, assignment, sourceDefinition, org)
+	return workflowUpdateValue(field, source, assignment, sourceDefinition, org, options...)
 }
 
 func flowLookupSourceValue(sourceField string, lookupOutputs map[string]flowLookupOutput, namespace string) (storage.Value, bool, bool) {
@@ -3843,14 +3986,14 @@ func evaluateWorkflowRule(rule storage.WorkflowRule, record storage.Record, defi
 	return evaluateWorkflowRuleWithUser(rule, record, definition, org, "")
 }
 
-func evaluateWorkflowRuleWithUser(rule storage.WorkflowRule, record storage.Record, definition storage.ObjectDefinition, org *storage.OrgState, userID storage.ID) (bool, bool) {
+func evaluateWorkflowRuleWithUser(rule storage.WorkflowRule, record storage.Record, definition storage.ObjectDefinition, org *storage.OrgState, userID storage.ID, permissionFields ...map[string]storage.Value) (bool, bool) {
 	namespace := ""
 	if org != nil {
 		namespace = org.Namespace
 	}
 	if strings.TrimSpace(rule.Formula) != "" {
 		if org != nil {
-			return evaluateRecordFormulaInOrgWithNamespace(rule.Formula, "", org, definition, record, nil, false, userID)
+			return evaluateRecordFormulaInOrgWithNamespace(rule.Formula, "", org, definition, record, nil, false, userID, permissionFields...)
 		}
 		return evaluateValidationFormula(rule.Formula, record)
 	}
@@ -3895,7 +4038,7 @@ func (e *Engine) evaluateFlowRule(rule storage.FlowRule, record storage.Record, 
 					}
 				}
 			}
-			return evaluateRecordFormulaInOrgWithNamespace(rule.Formula, "", e.Org, definition, record, prior, false, e.systemUserID())
+			return evaluateRecordFormulaInOrgWithNamespace(rule.Formula, "", e.Org, definition, record, prior, false, e.systemUserID(), e.PermissionUserFields)
 		}
 		return evaluateValidationFormula(rule.Formula, record)
 	}
@@ -3952,7 +4095,7 @@ func (e *Engine) evaluateFlowRule(rule storage.FlowRule, record storage.Record, 
 func (e *Engine) evaluateFlowBranch(branch storage.FlowBranch, record storage.Record, definition storage.ObjectDefinition, save bool) (bool, bool) {
 	if strings.TrimSpace(branch.Formula) != "" {
 		if e.Org != nil {
-			matches, ok := evaluateRecordFormulaInOrgWithNamespace(branch.Formula, "", e.Org, definition, record, e.flowPriorRecord(record.ID), false, e.systemUserID())
+			matches, ok := evaluateRecordFormulaInOrgWithNamespace(branch.Formula, "", e.Org, definition, record, e.flowPriorRecord(record.ID), false, e.systemUserID(), e.PermissionUserFields)
 			if !ok || !matches {
 				return matches, ok
 			}
@@ -3966,12 +4109,30 @@ func (e *Engine) evaluateFlowBranch(branch storage.FlowBranch, record storage.Re
 	if len(branch.Criteria) == 0 {
 		return true, true
 	}
+	record = e.flowRecordWithCriteriaFormulas(record, definition, branch.Criteria)
 	namespace := ""
 	if e.Org != nil {
 		namespace = e.Org.Namespace
 	}
 	prior := e.flowPriorRecord(record.ID)
 	for _, item := range branch.Criteria {
+		if matches, supported, handled := e.flowGlobalDecisionCriterion(item); handled {
+			if !supported || !matches {
+				return matches, supported
+			}
+			continue
+		}
+		if strings.HasPrefix(strings.ToLower(strings.TrimSpace(item.Field)), "$setup.") {
+			value, ok := flowSetupFieldValue(e.Org, item.Field, e.setupFormulaEvaluationOptions())
+			if !ok {
+				return false, false
+			}
+			matches, supported := evaluateFlowValueCriteria(value, item)
+			if !supported || !matches {
+				return matches, supported
+			}
+			continue
+		}
 		if save {
 			if value, ok := flowLookupNotNullDecisionValue(item, record, definition, namespace); ok {
 				matches, supported := evaluateFlowValueCriteria(value, item)
@@ -3981,7 +4142,7 @@ func (e *Engine) evaluateFlowBranch(branch storage.FlowBranch, record storage.Re
 				continue
 			}
 		}
-		if strings.EqualFold(strings.TrimSpace(item.Operation), "equals") {
+		if flowDecisionRelationshipOperator(item.Operation) && strings.Contains(item.Field, ".") {
 			if value, ok := e.flowRefsDecisionRelationshipValue(item.Field, record, definition, nil); ok {
 				matches, supported := evaluateFlowValueCriteria(value, item)
 				if !supported || !matches {
@@ -4080,7 +4241,7 @@ func evaluateWorkflowCriteriaWithPrior(item storage.WorkflowCriteriaItem, record
 	}
 }
 
-func workflowUpdateValue(field storage.Field, record storage.Record, update storage.WorkflowFieldUpdate, definition storage.ObjectDefinition, org *storage.OrgState) (storage.Value, bool, bool) {
+func workflowUpdateValue(field storage.Field, record storage.Record, update storage.WorkflowFieldUpdate, definition storage.ObjectDefinition, org *storage.OrgState, options ...FormulaEvaluationOptions) (storage.Value, bool, bool) {
 	namespace := ""
 	if org != nil {
 		namespace = org.Namespace
@@ -4093,11 +4254,18 @@ func workflowUpdateValue(field storage.Field, record storage.Record, update stor
 		}
 		value, ok := record.Fields[sourceField]
 		if !ok {
+			// A stored formula field is not in the record; a flow reads its
+			// finished value (flow_br_surfaces: BR() reads as a line feed).
+			if formulaField := definition.Fields[sourceField]; org != nil && strings.TrimSpace(formulaField.Formula) != "" && firstFormulaOptions(options).FlowContext {
+				if value, isNull, ok := EvaluateRecordFormulaValueInOrgWithOptions(formulaField.Formula, formulaField, org, definition, record, firstFormulaOptions(options)); ok {
+					return value, isNull, true
+				}
+			}
 			return storage.NullValue(), true, true
 		}
 		return value.Clone(), false, true
 	case update.Formula != "":
-		return workflowExpressionValue(field, record, update.Formula, definition, org)
+		return workflowExpressionValue(field, record, update.Formula, definition, org, options...)
 	default:
 		literal := update.LiteralValue
 		if strings.Contains(literal, "{!") {
@@ -4166,7 +4334,7 @@ func flowMergeValueString(value storage.Value) string {
 	return workflowValueString(value)
 }
 
-func workflowExpressionValue(field storage.Field, record storage.Record, expression string, definition storage.ObjectDefinition, org *storage.OrgState) (storage.Value, bool, bool) {
+func workflowExpressionValue(field storage.Field, record storage.Record, expression string, definition storage.ObjectDefinition, org *storage.OrgState, options ...FormulaEvaluationOptions) (storage.Value, bool, bool) {
 	expression = strings.TrimSpace(expression)
 	if expression == "" || strings.EqualFold(expression, "NULL") {
 		return storage.NullValue(), true, true
@@ -4182,11 +4350,13 @@ func workflowExpressionValue(field storage.Field, record storage.Record, express
 		return storage.NullValue(), true, true
 	}
 	if org != nil {
-		if value, explicitNull, ok := EvaluateRecordFormulaValueInOrg(expression, field, org, definition, record); ok {
+		formulaOptions := firstFormulaOptions(options)
+		formulaOptions.LineFeedBR = true
+		if value, explicitNull, ok := EvaluateRecordFormulaValueInOrgWithOptions(expression, field, org, definition, record, formulaOptions); ok {
 			return value, explicitNull, true
 		}
 	}
-	if value, explicitNull, ok := evaluateRecordFormulaValue(expression, field, record); ok {
+	if value, explicitNull, ok := evaluateRecordFormulaValueLineFeed(expression, field, record); ok {
 		return value, explicitNull, true
 	}
 	return workflowLiteralValue(field, trimFormulaLiteral(expression))
@@ -4278,4 +4448,124 @@ func flowEmailLogOnSend(value storage.Value) bool {
 		return value.Boolean
 	}
 	return strings.EqualFold(strings.TrimSpace(workflowValueString(value)), "true")
+}
+
+// flowEmailToRecipientID handles an interview Send Email action addressed by
+// recipientId (flow_email_log_activity). A Contact or Lead recipient with
+// logEmailOnSend true records a sent EmailMessage and a completed Email task;
+// with logging off the action finds no recipient and the interview faults.
+func (e *Engine) flowEmailToRecipientID(flowName string, action storage.FlowAction, inputs map[string]storage.Value, frame *flowFrame) (bool, error) {
+	recipient, ok := inputs["recipientid"]
+	if !ok || recipient.Kind == storage.ValueNull || frame == nil || !frame.autolaunched {
+		return false, nil
+	}
+	recipientID := strings.TrimSpace(workflowValueString(recipient))
+	if recipientID == "" {
+		return false, nil
+	}
+	if !flowEmailLogOnSend(inputs["logemailonsend"]) {
+		return true, &FlowActionInputError{Cause: errors.New("0 recipients\n")}
+	}
+	related := ""
+	if value, ok := inputs["relatedrecordid"]; ok && value.Kind != storage.ValueNull {
+		related = strings.TrimSpace(workflowValueString(value))
+	}
+	subject := ""
+	if value, ok := inputs["emailsubject"]; ok && value.Kind != storage.ValueNull {
+		subject = workflowValueString(value)
+	}
+	storage.EnsureStandardObject(e.Org, "Task")
+	storage.EnsureStandardObject(e.Org, "EmailMessage")
+	taskFields := map[string]storage.Value{
+		"Subject":     storage.StringValue("Email: " + subject),
+		"Status":      storage.StringValue("Completed"),
+		"TaskSubtype": storage.StringValue("Email"),
+		"Priority":    storage.StringValue("Normal"),
+	}
+	if related != "" {
+		taskFields["WhatId"] = storage.IDValue(storage.ID(related))
+	}
+	if prefix := recipientID; len(prefix) >= 3 && (prefix[:3] == "003" || prefix[:3] == "00Q") {
+		taskFields["WhoId"] = storage.IDValue(storage.ID(recipientID))
+	}
+	taskID, err := e.insertOne(storage.Record{Object: "Task", Fields: taskFields}, nil)
+	if err != nil {
+		return true, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow action %s emailSimple failed: %v", action.Name, err)
+	}
+	if e.IDs.Prefixes["EmailMessage"] == "" && e.Org.Objects["EmailMessage"].Definition.KeyPrefix != "" {
+		e.IDs.Prefixes["EmailMessage"] = e.Org.Objects["EmailMessage"].Definition.KeyPrefix
+	}
+	emailFields := map[string]storage.Value{
+		"Status":     storage.StringValue("3"),
+		"Subject":    storage.StringValue(subject),
+		"ActivityId": storage.IDValue(taskID),
+	}
+	if value, ok := inputs["emailbody"]; ok && value.Kind != storage.ValueNull {
+		emailFields["TextBody"] = storage.StringValue(workflowValueString(value))
+	}
+	if related != "" {
+		emailFields["RelatedToId"] = storage.IDValue(storage.ID(related))
+	}
+	emailID, err := e.insertOne(storage.Record{Object: "EmailMessage", Fields: emailFields}, nil)
+	if err != nil {
+		return true, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow action %s emailSimple failed: %v", action.Name, err)
+	}
+	e.traceAutomation("apex.flow.email", map[string]any{
+		"flow":    flowName,
+		"action":  action.Name,
+		"emailId": string(emailID),
+		"taskId":  string(taskID),
+	})
+	return true, nil
+}
+
+// pauseFlowInterview records the interview that a Wait element paused. Native
+// (process_builder_wait waits rows, API 62.0 and 67.0): an autolaunched flow
+// started from Apex creates the records before its WaitDuration element, not
+// those after it, and one FlowInterview reads back with InterviewStatus
+// Paused, a null PauseLabel and the flow's interview label.
+func (e *Engine) pauseFlowInterview(flowName string, step storage.FlowStep, frame *flowFrame) error {
+	if e == nil || e.Org == nil {
+		return nil
+	}
+	if _, ok := e.Org.Objects["FlowInterview"]; !ok {
+		return nil
+	}
+	label := step.Target
+	if label == "" {
+		label = flowName
+	}
+	if rendered, ok := renderFlowTextTemplate(label, frame, func(name string) (storage.Value, bool) {
+		if strings.EqualFold(strings.TrimSpace(name), "$Flow.CurrentDateTime") {
+			now := time.Now()
+			if e.Now != nil {
+				now = e.Now()
+			}
+			return storage.DateTimeValue(now.UTC().Format("2006-01-02T15:04:05.000Z")), true
+		}
+		return e.flowFrameReferenceValue(name, frame)
+	}); ok && rendered.Kind == storage.ValueString {
+		label = rendered.String
+	}
+	storage.EnsureMutableObjectRecords(e.Org, "FlowInterview")
+	object := e.Org.Objects["FlowInterview"]
+	if object.Records == nil {
+		object.Records = make(map[storage.ID]storage.Record)
+	}
+	id, err := e.IDs.Next("FlowInterview")
+	if err != nil {
+		return err
+	}
+	record := storage.Record{ID: id, Object: "FlowInterview", Fields: map[string]storage.Value{
+		"InterviewLabel":  storage.StringValue(label),
+		"InterviewStatus": storage.StringValue("Paused"),
+		"CurrentElement":  storage.StringValue(step.VisitKey),
+		"PauseLabel":      storage.NullValue(),
+	}}
+	if e.IsolationJournal != nil {
+		e.IsolationJournal.RecordInsert("FlowInterview", id)
+	}
+	object.Records[id] = record
+	e.Org.Objects["FlowInterview"] = object
+	return nil
 }

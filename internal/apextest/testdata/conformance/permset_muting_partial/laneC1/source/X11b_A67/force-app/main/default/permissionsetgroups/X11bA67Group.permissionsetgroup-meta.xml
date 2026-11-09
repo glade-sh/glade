@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSetGroup xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>X11bA67Group</label>
+    <mutingPermissionSets>X11bMuteAA67</mutingPermissionSets>
+    <mutingPermissionSets>X11bMuteBA67</mutingPermissionSets>
+    <permissionSets>X11bA67Grant</permissionSets>
+</PermissionSetGroup>

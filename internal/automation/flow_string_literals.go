@@ -26,3 +26,13 @@ func (value *flowValueXML) UnmarshalXML(decoder *xml.Decoder, start xml.StartEle
 	}
 	return nil
 }
+
+// flowNullTextLiteralFormula keeps a Text literal spelled null as text. The
+// workflow literal path reads NULL as an empty value, but a Flow stringValue
+// "null" assigns the four characters (flow_assign_routes, API 62.0 and 67.0).
+func flowNullTextLiteralFormula(value flowValueXML, formula string) string {
+	if formula != "" || !strings.EqualFold(strings.TrimSpace(value.StringValue), "null") {
+		return formula
+	}
+	return `"` + strings.TrimSpace(value.StringValue) + `"`
+}

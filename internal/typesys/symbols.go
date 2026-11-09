@@ -277,6 +277,14 @@ func buildWithWorkspaceSources(p project.Project, s schema.Schema, sources *Work
 			Message:  rejection.Message,
 		})
 	}
+	for _, rejection := range project.PermissionMutingRejections(p, nil) {
+		idx.Diagnostics = append(idx.Diagnostics, diagnostic.Diagnostic{
+			Severity: diagnostic.Error,
+			Code:     permissionMutingDiagnosticCode,
+			File:     rejection.File,
+			Message:  rejection.Message,
+		})
+	}
 	appendFlowInterviewSymbols(&idx, p, "", false)
 	if p.Namespace != "" {
 		appendFlowInterviewSymbols(&idx, p, p.Namespace, false)
@@ -429,7 +437,7 @@ func typeSymbolFromArtifact(namespace, version, sourceAPIVersion string, typ pac
 	if dot := strings.LastIndexByte(typ.Name, '.'); dot >= 0 {
 		localName, ownerName = typ.Name[dot+1:], typ.Name[:dot]
 	}
-	return TypeSymbol{
+	symbol := TypeSymbol{
 		Kind:                typ.Kind,
 		Name:                typ.Name,
 		LocalName:           localName,
@@ -449,6 +457,12 @@ func typeSymbolFromArtifact(namespace, version, sourceAPIVersion string, typ pac
 		Range:               typ.Range,
 		Members:             memberSymbolsFromArtifact(typ.Members),
 	}
+	// Artifact types arrive without source; their signatures may still name
+	// ConnectApi types the project reaches through them.
+	if !connectAPIShapeRequested.Load() && typeSymbolNamesConnectAPI(&symbol) {
+		connectAPIShapeRequested.Store(true)
+	}
+	return symbol
 }
 
 func memberSymbolsFromArtifact(members []packageartifact.ApexMember) []MemberSymbol {
@@ -1178,6 +1192,30 @@ type incrementalProjectIdentityLedger struct {
 	DependencyDiagnostics []project.DependencyDiagnostic
 	// EmailServiceDigests binds the index warnings to the setup file contents.
 	EmailServiceDigests map[string]string
+	// PermissionMutingDigests binds the muting deploy rejections to the
+	// muting permission set and group file contents.
+	PermissionMutingDigests map[string]string `json:",omitempty"`
+}
+
+// permissionMutingDiagnosticCode marks a muting permission set or group that
+// native deployment rejects.
+const permissionMutingDiagnosticCode = "GLADEPERMMUTE001"
+
+func permissionMutingDigests(p project.Project) map[string]string {
+	files := project.PermissionMutingMetadataFiles(p)
+	if len(p.MutingPermissionSetFiles) == 0 {
+		return nil
+	}
+	digests := make(map[string]string, len(files))
+	for _, path := range files {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			digests[path] = "unreadable"
+			continue
+		}
+		digests[path] = fmt.Sprintf("%x", sha256.Sum256(data))
+	}
+	return digests
 }
 
 func emailServiceDigests(p project.Project) map[string]string {
@@ -1229,6 +1267,7 @@ func capturedOrgShapeFeatures(p project.Project) []string {
 		return nil
 	}
 	features := append([]string(nil), project.StandardFieldPolicyFeatures(p)...)
+	features = append(features, project.StaticOnlyShapeFeatures(p)...)
 	sort.Strings(features)
 	return features
 }
@@ -1240,14 +1279,15 @@ func incrementalProjectIdentity(p project.Project) string {
 
 func incrementalProjectIdentityWithFeatures(p project.Project, features, labelNames []string, labelsKnown bool) string {
 	ledger := incrementalProjectIdentityLedger{
-		OrgShapeFeatures:      features,
-		VisualforcePageNames:  projectVisualforcePageNames(p),
-		VisualforcePagesKnown: projectVisualforcePagesKnown(p),
-		CustomLabelNames:      labelNames,
-		CustomLabelsKnown:     labelsKnown,
-		Project:               incrementalProjectConfigForIdentity(p),
-		DependencyDiagnostics: p.DependencyDiagnostics,
-		EmailServiceDigests:   emailServiceDigests(p),
+		OrgShapeFeatures:        features,
+		VisualforcePageNames:    projectVisualforcePageNames(p),
+		VisualforcePagesKnown:   projectVisualforcePagesKnown(p),
+		CustomLabelNames:        labelNames,
+		CustomLabelsKnown:       labelsKnown,
+		Project:                 incrementalProjectConfigForIdentity(p),
+		DependencyDiagnostics:   p.DependencyDiagnostics,
+		EmailServiceDigests:     emailServiceDigests(p),
+		PermissionMutingDigests: permissionMutingDigests(p),
 	}
 	for _, dep := range p.ManagedPackageDependencies {
 		identity := incrementalManagedDependencyIdentity{

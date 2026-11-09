@@ -1,0 +1,1468 @@
+api	profile	route	case	result
+62.0	developer	anonymous	custom-metadata-map	true
+62.0	developer	anonymous	custom-metadata-value	Owned example|Owned example
+62.0	developer	anonymous	custom-metadata-absent	false
+62.0	developer	anonymous	partition-count	0
+62.0	developer	anonymous	builder-empty-size	0|32|32
+62.0	developer	anonymous	builder-value	'owned'_42_001000000000001
+62.0	developer	anonymous	duplicate	System.DuplicateMessageException|Attempt to enqueue job with duplicate queueable signature
+62.0	developer	anonymous	delay--1	System.InvalidParameterValueException|Delay must be greater than or equal to 0 minutes
+62.0	developer	anonymous	delay-0	accepted
+62.0	developer	anonymous	delay-1	accepted
+62.0	developer	anonymous	delay-10	accepted
+62.0	developer	anonymous	delay-11	System.InvalidParameterValueException|Delay must be less than or equal to 10 minutes
+62.0	developer	anonymous	depth--1	System.InvalidParameterValueException|System.InvalidParameterValueException: Stack depth must be greater than 0
+62.0	developer	anonymous	depth-0	System.AsyncException|Maximum stack depth has been reached.
+62.0	developer	anonymous	depth-1	accepted
+62.0	developer	anonymous	depth-2	accepted
+62.0	developer	istest	customMetadata	pass
+62.0	developer	istest	signature	pass
+62.0	developer	istest	delayBoundary	pass
+62.0	developer	istest	delayLower	pass
+62.0	developer	istest	delayUpper	pass
+62.0	developer	istest	depthBoundary	pass
+62.0	developer	istest	depthNegative	pass
+62.0	developer	istest	depthZero	pass
+62.0	developer	anonymous	unqualified-builder	Invalid type: QueueableDuplicateSignature.Builder
+62.0	developer	named	unqualified-builder	Invalid type: QueueableDuplicateSignature.Builder
+62.0	fundraising-license-only	anonymous	GiftTransaction	object-absent
+62.0	fundraising-license-only	anonymous	GiftCommitment	object-absent
+62.0	fundraising-license-only	anonymous	RegulatoryCode	object-absent
+62.0	fundraising-enabled	anonymous	GiftTransaction	present
+62.0	fundraising-enabled	anonymous	GiftCommitment	present
+62.0	fundraising-enabled	anonymous	RegulatoryCode	present
+62.0	docgen	anonymous	DocumentTemplateContentDoc	present
+62.0	docgen	anonymous	DocumentGenerationProcess	present
+62.0	fundraising-enabled	istest	field-membership	pass
+62.0	docgen	istest	field-membership	pass
+67.0	developer	anonymous	custom-metadata-map	true
+67.0	developer	anonymous	custom-metadata-value	Owned example|Owned example
+67.0	developer	anonymous	custom-metadata-absent	false
+67.0	developer	anonymous	partition-count	0
+67.0	developer	anonymous	builder-empty-size	0|32|32
+67.0	developer	anonymous	builder-value	'owned'_42_001000000000001
+67.0	developer	anonymous	duplicate	System.DuplicateMessageException|Attempt to enqueue job with duplicate queueable signature
+67.0	developer	anonymous	delay--1	System.InvalidParameterValueException|Delay must be greater than or equal to 0 minutes
+67.0	developer	anonymous	delay-0	accepted
+67.0	developer	anonymous	delay-1	accepted
+67.0	developer	anonymous	delay-10	accepted
+67.0	developer	anonymous	delay-11	System.InvalidParameterValueException|Delay must be less than or equal to 10 minutes
+67.0	developer	anonymous	depth--1	System.InvalidParameterValueException|System.InvalidParameterValueException: Stack depth must be greater than 0
+67.0	developer	anonymous	depth-0	System.AsyncException|Maximum stack depth has been reached.
+67.0	developer	anonymous	depth-1	accepted
+67.0	developer	anonymous	depth-2	accepted
+67.0	developer	istest	customMetadata	pass
+67.0	developer	istest	signature	pass
+67.0	developer	istest	delayBoundary	pass
+67.0	developer	istest	delayLower	pass
+67.0	developer	istest	delayUpper	pass
+67.0	developer	istest	depthBoundary	pass
+67.0	developer	istest	depthNegative	pass
+67.0	developer	istest	depthZero	pass
+67.0	developer	anonymous	unqualified-builder	Invalid type: QueueableDuplicateSignature.Builder
+67.0	developer	named	unqualified-builder	Invalid type: QueueableDuplicateSignature.Builder
+67.0	fundraising-license-only	anonymous	GiftTransaction	object-absent
+67.0	fundraising-license-only	anonymous	GiftCommitment	object-absent
+67.0	fundraising-license-only	anonymous	RegulatoryCode	object-absent
+67.0	fundraising-enabled	anonymous	GiftTransaction	present
+67.0	fundraising-enabled	anonymous	GiftCommitment	present
+67.0	fundraising-enabled	anonymous	RegulatoryCode	present
+67.0	docgen	anonymous	DocumentTemplateContentDoc	present
+67.0	docgen	anonymous	DocumentGenerationProcess	present
+67.0	fundraising-enabled	istest	field-membership	pass
+67.0	docgen	istest	field-membership	pass
+62.0	fundraising-isolated	anonymous	GiftTransaction	present
+62.0	fundraising-isolated	anonymous	GiftCommitment	present
+62.0	fundraising-isolated	anonymous	RegulatoryCode	object-absent
+62.0	fundraising-isolated	istest	gift-field-membership	pass
+62.0	docgen-isolated	anonymous	DocumentTemplateContentDoc	present
+62.0	docgen-isolated	anonymous	DocumentGenerationProcess	present
+62.0	docgen-isolated	istest	field-membership	pass
+67.0	fundraising-isolated	anonymous	GiftTransaction	present
+67.0	fundraising-isolated	anonymous	GiftCommitment	present
+67.0	fundraising-isolated	anonymous	RegulatoryCode	object-absent
+67.0	fundraising-isolated	istest	gift-field-membership	pass
+67.0	docgen-isolated	anonymous	DocumentTemplateContentDoc	present
+67.0	docgen-isolated	anonymous	DocumentGenerationProcess	present
+67.0	docgen-isolated	istest	field-membership	pass
+62.0	publicsector-isolated	anonymous	RegulatoryCode.IsActive	present
+62.0	publicsector-isolated	istest	regulatory-field-membership	pass
+62.0	docgen-isolated	anonymous	DocumentTemplate	present
+62.0	docgen-isolated	anonymous	DocumentTemplateSection	present
+62.0	docgen-isolated	anonymous	DocumentTemplateToken	present
+67.0	publicsector-isolated	anonymous	RegulatoryCode.IsActive	present
+67.0	publicsector-isolated	istest	regulatory-field-membership	pass
+67.0	docgen-isolated	anonymous	DocumentTemplate	present
+67.0	docgen-isolated	anonymous	DocumentTemplateSection	present
+67.0	docgen-isolated	anonymous	DocumentTemplateToken	present
+62.0	gift-bisect	anonymous	GiftCommitment.LastNextGenCmtProcDtTm	false
+62.0	gift-bisect	istest	GiftCommitment.LastNextGenCmtProcDtTm	false
+62.0	gift-bisect	anonymous	GiftCommitment.LastNextGenCmtProcError	false
+62.0	gift-bisect	istest	GiftCommitment.LastNextGenCmtProcError	false
+62.0	gift-bisect	anonymous	GiftCommitment.PartyPhilanthropicRsrchPrflId	false
+62.0	gift-bisect	istest	GiftCommitment.PartyPhilanthropicRsrchPrflId	false
+62.0	gift-bisect	anonymous	GiftTransaction.GenerationalCohort	false
+62.0	gift-bisect	istest	GiftTransaction.GenerationalCohort	false
+62.0	gift-bisect	anonymous	GiftTransaction.PartyPhilanthropicRsrchPrflId	false
+62.0	gift-bisect	istest	GiftTransaction.PartyPhilanthropicRsrchPrflId	false
+62.0	gift-bisect	anonymous	GiftTransaction.TaxDeductionAmount	false
+62.0	gift-bisect	istest	GiftTransaction.TaxDeductionAmount	false
+63.0	gift-bisect	anonymous	GiftCommitment.LastNextGenCmtProcDtTm	false
+63.0	gift-bisect	istest	GiftCommitment.LastNextGenCmtProcDtTm	false
+63.0	gift-bisect	anonymous	GiftCommitment.LastNextGenCmtProcError	false
+63.0	gift-bisect	istest	GiftCommitment.LastNextGenCmtProcError	false
+63.0	gift-bisect	anonymous	GiftCommitment.PartyPhilanthropicRsrchPrflId	false
+63.0	gift-bisect	istest	GiftCommitment.PartyPhilanthropicRsrchPrflId	false
+63.0	gift-bisect	anonymous	GiftTransaction.GenerationalCohort	true
+63.0	gift-bisect	istest	GiftTransaction.GenerationalCohort	true
+63.0	gift-bisect	anonymous	GiftTransaction.PartyPhilanthropicRsrchPrflId	false
+63.0	gift-bisect	istest	GiftTransaction.PartyPhilanthropicRsrchPrflId	false
+63.0	gift-bisect	anonymous	GiftTransaction.TaxDeductionAmount	true
+63.0	gift-bisect	istest	GiftTransaction.TaxDeductionAmount	true
+64.0	gift-bisect	anonymous	GiftCommitment.LastNextGenCmtProcDtTm	false
+64.0	gift-bisect	istest	GiftCommitment.LastNextGenCmtProcDtTm	false
+64.0	gift-bisect	anonymous	GiftCommitment.LastNextGenCmtProcError	false
+64.0	gift-bisect	istest	GiftCommitment.LastNextGenCmtProcError	false
+64.0	gift-bisect	anonymous	GiftCommitment.PartyPhilanthropicRsrchPrflId	true
+64.0	gift-bisect	istest	GiftCommitment.PartyPhilanthropicRsrchPrflId	true
+64.0	gift-bisect	anonymous	GiftTransaction.GenerationalCohort	true
+64.0	gift-bisect	istest	GiftTransaction.GenerationalCohort	true
+64.0	gift-bisect	anonymous	GiftTransaction.PartyPhilanthropicRsrchPrflId	true
+64.0	gift-bisect	istest	GiftTransaction.PartyPhilanthropicRsrchPrflId	true
+64.0	gift-bisect	anonymous	GiftTransaction.TaxDeductionAmount	true
+64.0	gift-bisect	istest	GiftTransaction.TaxDeductionAmount	true
+65.0	gift-bisect	anonymous	GiftCommitment.LastNextGenCmtProcDtTm	false
+65.0	gift-bisect	istest	GiftCommitment.LastNextGenCmtProcDtTm	false
+65.0	gift-bisect	anonymous	GiftCommitment.LastNextGenCmtProcError	false
+65.0	gift-bisect	istest	GiftCommitment.LastNextGenCmtProcError	false
+65.0	gift-bisect	anonymous	GiftCommitment.PartyPhilanthropicRsrchPrflId	true
+65.0	gift-bisect	istest	GiftCommitment.PartyPhilanthropicRsrchPrflId	true
+65.0	gift-bisect	anonymous	GiftTransaction.GenerationalCohort	true
+65.0	gift-bisect	istest	GiftTransaction.GenerationalCohort	true
+65.0	gift-bisect	anonymous	GiftTransaction.PartyPhilanthropicRsrchPrflId	true
+65.0	gift-bisect	istest	GiftTransaction.PartyPhilanthropicRsrchPrflId	true
+65.0	gift-bisect	anonymous	GiftTransaction.TaxDeductionAmount	true
+65.0	gift-bisect	istest	GiftTransaction.TaxDeductionAmount	true
+66.0	gift-bisect	anonymous	GiftCommitment.LastNextGenCmtProcDtTm	false
+66.0	gift-bisect	istest	GiftCommitment.LastNextGenCmtProcDtTm	false
+66.0	gift-bisect	anonymous	GiftCommitment.LastNextGenCmtProcError	false
+66.0	gift-bisect	istest	GiftCommitment.LastNextGenCmtProcError	false
+66.0	gift-bisect	anonymous	GiftCommitment.PartyPhilanthropicRsrchPrflId	true
+66.0	gift-bisect	istest	GiftCommitment.PartyPhilanthropicRsrchPrflId	true
+66.0	gift-bisect	anonymous	GiftTransaction.GenerationalCohort	true
+66.0	gift-bisect	istest	GiftTransaction.GenerationalCohort	true
+66.0	gift-bisect	anonymous	GiftTransaction.PartyPhilanthropicRsrchPrflId	true
+66.0	gift-bisect	istest	GiftTransaction.PartyPhilanthropicRsrchPrflId	true
+66.0	gift-bisect	anonymous	GiftTransaction.TaxDeductionAmount	true
+66.0	gift-bisect	istest	GiftTransaction.TaxDeductionAmount	true
+67.0	gift-bisect	anonymous	GiftCommitment.LastNextGenCmtProcDtTm	true
+67.0	gift-bisect	istest	GiftCommitment.LastNextGenCmtProcDtTm	true
+67.0	gift-bisect	anonymous	GiftCommitment.LastNextGenCmtProcError	true
+67.0	gift-bisect	istest	GiftCommitment.LastNextGenCmtProcError	true
+67.0	gift-bisect	anonymous	GiftCommitment.PartyPhilanthropicRsrchPrflId	true
+67.0	gift-bisect	istest	GiftCommitment.PartyPhilanthropicRsrchPrflId	true
+67.0	gift-bisect	anonymous	GiftTransaction.GenerationalCohort	true
+67.0	gift-bisect	istest	GiftTransaction.GenerationalCohort	true
+67.0	gift-bisect	anonymous	GiftTransaction.PartyPhilanthropicRsrchPrflId	true
+67.0	gift-bisect	istest	GiftTransaction.PartyPhilanthropicRsrchPrflId	true
+67.0	gift-bisect	anonymous	GiftTransaction.TaxDeductionAmount	true
+67.0	gift-bisect	istest	GiftTransaction.TaxDeductionAmount	true
+62.0	doc-bisect	anonymous	DocumentGenerationProcess.AdditionalMetadata	false
+62.0	doc-bisect	istest	DocumentGenerationProcess.AdditionalMetadata	false
+62.0	doc-bisect	anonymous	DocumentGenerationProcess.DocGenAdditionalInput	false
+62.0	doc-bisect	istest	DocumentGenerationProcess.DocGenAdditionalInput	false
+62.0	doc-bisect	anonymous	DocumentGenerationProcess.DocGenAdditionalInputType	false
+62.0	doc-bisect	istest	DocumentGenerationProcess.DocGenAdditionalInputType	false
+62.0	doc-bisect	anonymous	DocumentGenerationProcess.EstimatedDocumentSize	false
+62.0	doc-bisect	istest	DocumentGenerationProcess.EstimatedDocumentSize	false
+62.0	doc-bisect	anonymous	DocumentGenerationProcess.IsLocalizationEnabled	false
+62.0	doc-bisect	istest	DocumentGenerationProcess.IsLocalizationEnabled	false
+62.0	doc-bisect	anonymous	DocumentGenerationProcess.IsSharedExternally	false
+62.0	doc-bisect	istest	DocumentGenerationProcess.IsSharedExternally	false
+62.0	doc-bisect	anonymous	DocumentGenerationProcess.IsTocUpdateRequired	false
+62.0	doc-bisect	istest	DocumentGenerationProcess.IsTocUpdateRequired	false
+62.0	doc-bisect	anonymous	DocumentTemplate.ContextDefinitionName	false
+62.0	doc-bisect	istest	DocumentTemplate.ContextDefinitionName	false
+62.0	doc-bisect	anonymous	DocumentTemplate.ContextFilterName	false
+62.0	doc-bisect	istest	DocumentTemplate.ContextFilterName	false
+62.0	doc-bisect	anonymous	DocumentTemplate.ContextMappingName	false
+62.0	doc-bisect	istest	DocumentTemplate.ContextMappingName	false
+62.0	doc-bisect	anonymous	DocumentTemplate.ContextTransformationName	false
+62.0	doc-bisect	istest	DocumentTemplate.ContextTransformationName	false
+63.0	doc-bisect	anonymous	DocumentGenerationProcess.AdditionalMetadata	false
+63.0	doc-bisect	istest	DocumentGenerationProcess.AdditionalMetadata	false
+63.0	doc-bisect	anonymous	DocumentGenerationProcess.DocGenAdditionalInput	false
+63.0	doc-bisect	istest	DocumentGenerationProcess.DocGenAdditionalInput	false
+63.0	doc-bisect	anonymous	DocumentGenerationProcess.DocGenAdditionalInputType	false
+63.0	doc-bisect	istest	DocumentGenerationProcess.DocGenAdditionalInputType	false
+63.0	doc-bisect	anonymous	DocumentGenerationProcess.EstimatedDocumentSize	false
+63.0	doc-bisect	istest	DocumentGenerationProcess.EstimatedDocumentSize	false
+63.0	doc-bisect	anonymous	DocumentGenerationProcess.IsLocalizationEnabled	false
+63.0	doc-bisect	istest	DocumentGenerationProcess.IsLocalizationEnabled	false
+63.0	doc-bisect	anonymous	DocumentGenerationProcess.IsSharedExternally	false
+63.0	doc-bisect	istest	DocumentGenerationProcess.IsSharedExternally	false
+63.0	doc-bisect	anonymous	DocumentGenerationProcess.IsTocUpdateRequired	false
+63.0	doc-bisect	istest	DocumentGenerationProcess.IsTocUpdateRequired	false
+63.0	doc-bisect	anonymous	DocumentTemplate.ContextDefinitionName	false
+63.0	doc-bisect	istest	DocumentTemplate.ContextDefinitionName	false
+63.0	doc-bisect	anonymous	DocumentTemplate.ContextFilterName	false
+63.0	doc-bisect	istest	DocumentTemplate.ContextFilterName	false
+63.0	doc-bisect	anonymous	DocumentTemplate.ContextMappingName	false
+63.0	doc-bisect	istest	DocumentTemplate.ContextMappingName	false
+63.0	doc-bisect	anonymous	DocumentTemplate.ContextTransformationName	false
+63.0	doc-bisect	istest	DocumentTemplate.ContextTransformationName	false
+64.0	doc-bisect	anonymous	DocumentGenerationProcess.AdditionalMetadata	false
+64.0	doc-bisect	istest	DocumentGenerationProcess.AdditionalMetadata	false
+64.0	doc-bisect	anonymous	DocumentGenerationProcess.DocGenAdditionalInput	true
+64.0	doc-bisect	istest	DocumentGenerationProcess.DocGenAdditionalInput	true
+64.0	doc-bisect	anonymous	DocumentGenerationProcess.DocGenAdditionalInputType	true
+64.0	doc-bisect	istest	DocumentGenerationProcess.DocGenAdditionalInputType	true
+64.0	doc-bisect	anonymous	DocumentGenerationProcess.EstimatedDocumentSize	true
+64.0	doc-bisect	istest	DocumentGenerationProcess.EstimatedDocumentSize	true
+64.0	doc-bisect	anonymous	DocumentGenerationProcess.IsLocalizationEnabled	false
+64.0	doc-bisect	istest	DocumentGenerationProcess.IsLocalizationEnabled	false
+64.0	doc-bisect	anonymous	DocumentGenerationProcess.IsSharedExternally	false
+64.0	doc-bisect	istest	DocumentGenerationProcess.IsSharedExternally	false
+64.0	doc-bisect	anonymous	DocumentGenerationProcess.IsTocUpdateRequired	false
+64.0	doc-bisect	istest	DocumentGenerationProcess.IsTocUpdateRequired	false
+64.0	doc-bisect	anonymous	DocumentTemplate.ContextDefinitionName	true
+64.0	doc-bisect	istest	DocumentTemplate.ContextDefinitionName	true
+64.0	doc-bisect	anonymous	DocumentTemplate.ContextFilterName	false
+64.0	doc-bisect	istest	DocumentTemplate.ContextFilterName	false
+64.0	doc-bisect	anonymous	DocumentTemplate.ContextMappingName	true
+64.0	doc-bisect	istest	DocumentTemplate.ContextMappingName	true
+64.0	doc-bisect	anonymous	DocumentTemplate.ContextTransformationName	false
+64.0	doc-bisect	istest	DocumentTemplate.ContextTransformationName	false
+65.0	doc-bisect	anonymous	DocumentGenerationProcess.AdditionalMetadata	false
+65.0	doc-bisect	istest	DocumentGenerationProcess.AdditionalMetadata	false
+65.0	doc-bisect	anonymous	DocumentGenerationProcess.DocGenAdditionalInput	true
+65.0	doc-bisect	istest	DocumentGenerationProcess.DocGenAdditionalInput	true
+65.0	doc-bisect	anonymous	DocumentGenerationProcess.DocGenAdditionalInputType	true
+65.0	doc-bisect	istest	DocumentGenerationProcess.DocGenAdditionalInputType	true
+65.0	doc-bisect	anonymous	DocumentGenerationProcess.EstimatedDocumentSize	true
+65.0	doc-bisect	istest	DocumentGenerationProcess.EstimatedDocumentSize	true
+65.0	doc-bisect	anonymous	DocumentGenerationProcess.IsLocalizationEnabled	false
+65.0	doc-bisect	istest	DocumentGenerationProcess.IsLocalizationEnabled	false
+65.0	doc-bisect	anonymous	DocumentGenerationProcess.IsSharedExternally	false
+65.0	doc-bisect	istest	DocumentGenerationProcess.IsSharedExternally	false
+65.0	doc-bisect	anonymous	DocumentGenerationProcess.IsTocUpdateRequired	false
+65.0	doc-bisect	istest	DocumentGenerationProcess.IsTocUpdateRequired	false
+65.0	doc-bisect	anonymous	DocumentTemplate.ContextDefinitionName	true
+65.0	doc-bisect	istest	DocumentTemplate.ContextDefinitionName	true
+65.0	doc-bisect	anonymous	DocumentTemplate.ContextFilterName	false
+65.0	doc-bisect	istest	DocumentTemplate.ContextFilterName	false
+65.0	doc-bisect	anonymous	DocumentTemplate.ContextMappingName	true
+65.0	doc-bisect	istest	DocumentTemplate.ContextMappingName	true
+65.0	doc-bisect	anonymous	DocumentTemplate.ContextTransformationName	false
+65.0	doc-bisect	istest	DocumentTemplate.ContextTransformationName	false
+66.0	doc-bisect	anonymous	DocumentGenerationProcess.AdditionalMetadata	true
+66.0	doc-bisect	istest	DocumentGenerationProcess.AdditionalMetadata	true
+66.0	doc-bisect	anonymous	DocumentGenerationProcess.DocGenAdditionalInput	true
+66.0	doc-bisect	istest	DocumentGenerationProcess.DocGenAdditionalInput	true
+66.0	doc-bisect	anonymous	DocumentGenerationProcess.DocGenAdditionalInputType	true
+66.0	doc-bisect	istest	DocumentGenerationProcess.DocGenAdditionalInputType	true
+66.0	doc-bisect	anonymous	DocumentGenerationProcess.EstimatedDocumentSize	true
+66.0	doc-bisect	istest	DocumentGenerationProcess.EstimatedDocumentSize	true
+66.0	doc-bisect	anonymous	DocumentGenerationProcess.IsLocalizationEnabled	false
+66.0	doc-bisect	istest	DocumentGenerationProcess.IsLocalizationEnabled	false
+66.0	doc-bisect	anonymous	DocumentGenerationProcess.IsSharedExternally	true
+66.0	doc-bisect	istest	DocumentGenerationProcess.IsSharedExternally	true
+66.0	doc-bisect	anonymous	DocumentGenerationProcess.IsTocUpdateRequired	false
+66.0	doc-bisect	istest	DocumentGenerationProcess.IsTocUpdateRequired	false
+66.0	doc-bisect	anonymous	DocumentTemplate.ContextDefinitionName	true
+66.0	doc-bisect	istest	DocumentTemplate.ContextDefinitionName	true
+66.0	doc-bisect	anonymous	DocumentTemplate.ContextFilterName	true
+66.0	doc-bisect	istest	DocumentTemplate.ContextFilterName	true
+66.0	doc-bisect	anonymous	DocumentTemplate.ContextMappingName	true
+66.0	doc-bisect	istest	DocumentTemplate.ContextMappingName	true
+66.0	doc-bisect	anonymous	DocumentTemplate.ContextTransformationName	false
+66.0	doc-bisect	istest	DocumentTemplate.ContextTransformationName	false
+67.0	doc-bisect	anonymous	DocumentGenerationProcess.AdditionalMetadata	true
+67.0	doc-bisect	istest	DocumentGenerationProcess.AdditionalMetadata	true
+67.0	doc-bisect	anonymous	DocumentGenerationProcess.DocGenAdditionalInput	true
+67.0	doc-bisect	istest	DocumentGenerationProcess.DocGenAdditionalInput	true
+67.0	doc-bisect	anonymous	DocumentGenerationProcess.DocGenAdditionalInputType	true
+67.0	doc-bisect	istest	DocumentGenerationProcess.DocGenAdditionalInputType	true
+67.0	doc-bisect	anonymous	DocumentGenerationProcess.EstimatedDocumentSize	true
+67.0	doc-bisect	istest	DocumentGenerationProcess.EstimatedDocumentSize	true
+67.0	doc-bisect	anonymous	DocumentGenerationProcess.IsLocalizationEnabled	true
+67.0	doc-bisect	istest	DocumentGenerationProcess.IsLocalizationEnabled	true
+67.0	doc-bisect	anonymous	DocumentGenerationProcess.IsSharedExternally	true
+67.0	doc-bisect	istest	DocumentGenerationProcess.IsSharedExternally	true
+67.0	doc-bisect	anonymous	DocumentGenerationProcess.IsTocUpdateRequired	true
+67.0	doc-bisect	istest	DocumentGenerationProcess.IsTocUpdateRequired	true
+67.0	doc-bisect	anonymous	DocumentTemplate.ContextDefinitionName	true
+67.0	doc-bisect	istest	DocumentTemplate.ContextDefinitionName	true
+67.0	doc-bisect	anonymous	DocumentTemplate.ContextFilterName	true
+67.0	doc-bisect	istest	DocumentTemplate.ContextFilterName	true
+67.0	doc-bisect	anonymous	DocumentTemplate.ContextMappingName	true
+67.0	doc-bisect	istest	DocumentTemplate.ContextMappingName	true
+67.0	doc-bisect	anonymous	DocumentTemplate.ContextTransformationName	true
+67.0	doc-bisect	istest	DocumentTemplate.ContextTransformationName	true
+62.0	gift-access	anonymous	static-primary	compile-rejected
+62.0	gift-access	anonymous	static-adjacent	compile-rejected
+62.0	gift-access	anonymous	dynamic-get	OBSERVED System.SObjectException: Invalid field GenerationalCohort for GiftTransaction
+62.0	gift-access	anonymous	dynamic-soql	OBSERVED System.QueryException: No such column 'GenerationalCohort' on entity 'GiftTransaction'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	gift-access	anonymous	static-soql	compile-rejected
+67.0	gift-access	anonymous	static-primary	compiled
+67.0	gift-access	anonymous	static-adjacent	compiled
+67.0	gift-access	anonymous	dynamic-get	OBSERVED accepted null
+67.0	gift-access	anonymous	dynamic-soql	OBSERVED accepted 0
+67.0	gift-access	anonymous	static-soql	compiled
+62.0	doc-access	anonymous	static-primary	compile-rejected
+62.0	doc-access	anonymous	static-adjacent	compile-rejected
+62.0	doc-access	anonymous	dynamic-get	OBSERVED System.SObjectException: Invalid field AdditionalMetadata for DocumentGenerationProcess
+62.0	doc-access	anonymous	dynamic-soql	OBSERVED System.QueryException: No such column 'AdditionalMetadata' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	doc-access	anonymous	static-soql	compile-rejected
+67.0	doc-access	anonymous	static-primary	compiled
+67.0	doc-access	anonymous	static-adjacent	compiled
+67.0	doc-access	anonymous	dynamic-get	OBSERVED accepted null
+67.0	doc-access	anonymous	dynamic-soql	OBSERVED accepted 0
+67.0	doc-access	anonymous	static-soql	compiled
+62.0	gift-access	anonymous	put	OBSERVED put System.SObjectException: Invalid field GenerationalCohort for GiftTransaction
+62.0	gift-access	anonymous	isSet	OBSERVED isSet accepted
+67.0	gift-access	anonymous	put	OBSERVED put accepted
+67.0	gift-access	anonymous	isSet	OBSERVED isSet accepted
+62.0	doc-access	anonymous	put	OBSERVED put System.SObjectException: Invalid field AdditionalMetadata for DocumentGenerationProcess
+62.0	doc-access	anonymous	isSet	OBSERVED isSet accepted
+67.0	doc-access	anonymous	put	OBSERVED put accepted
+67.0	doc-access	anonymous	isSet	OBSERVED isSet accepted
+62.0	gift-access	istest	field-access	pass
+67.0	gift-access	istest	field-access	pass
+62.0	gift-access	named	static-primary	compile-rejected
+62.0	gift-access	named	static-adjacent	compile-rejected
+62.0	gift-access	named	static-soql	compile-rejected
+62.0	doc-access	istest	field-access	pass
+67.0	doc-access	istest	field-access	pass
+62.0	doc-access	named	static-primary	compile-rejected
+62.0	doc-access	named	static-adjacent	compile-rejected
+62.0	doc-access	named	static-soql	compile-rejected
+62.0	gift-shapes	istest	complete-field-membership	pass
+62.0	doc-shapes	istest	complete-field-membership	pass
+62.0	reg-shapes	istest	complete-field-membership	pass
+62.0	docgen-isolated	anonymous	DocumentGenerationProcess.DocGenerationBatchProcessId	absent
+62.0	docgen-isolated	named	DocumentGenerationProcess.DocGenerationBatchProcessId	present
+62.0	docgen-isolated	istest	DocumentGenerationProcess.DocGenerationBatchProcessId-read-put	accepted
+62.0	docgen-isolated	istest	DocumentGenerationProcess.DocGenerationBatchProcessId-query	accepted
+62.0	docgen-isolated	anonymous	DocumentTemplateSection.DocumentTemplateClauseId	absent
+62.0	docgen-isolated	named	DocumentTemplateSection.DocumentTemplateClauseId	present
+62.0	docgen-isolated	istest	DocumentTemplateSection.DocumentTemplateClauseId-read-put	accepted
+62.0	docgen-isolated	istest	DocumentTemplateSection.DocumentTemplateClauseId-query	accepted
+67.0	gift-shapes	istest	complete-field-membership	pass
+67.0	doc-shapes	istest	complete-field-membership	pass
+67.0	reg-shapes	istest	complete-field-membership	pass
+67.0	docgen-isolated	anonymous	DocumentGenerationProcess.DocGenerationBatchProcessId	absent
+67.0	docgen-isolated	named	DocumentGenerationProcess.DocGenerationBatchProcessId	present
+67.0	docgen-isolated	istest	DocumentGenerationProcess.DocGenerationBatchProcessId-read-put	accepted
+67.0	docgen-isolated	istest	DocumentGenerationProcess.DocGenerationBatchProcessId-query	query-rejected
+67.0	docgen-isolated	anonymous	DocumentTemplateSection.DocumentTemplateClauseId	absent
+67.0	docgen-isolated	named	DocumentTemplateSection.DocumentTemplateClauseId	present
+67.0	docgen-isolated	istest	DocumentTemplateSection.DocumentTemplateClauseId-read-put	accepted
+67.0	docgen-isolated	istest	DocumentTemplateSection.DocumentTemplateClauseId-query	query-rejected
+63.0	docgen-isolated	named-static-query	DocumentGenerationProcess.DocGenerationBatchProcessId	accepted
+63.0	docgen-isolated	named-dynamic-query	DocumentGenerationProcess.DocGenerationBatchProcessId	accepted
+63.0	docgen-isolated	named-static-query	DocumentTemplateSection.DocumentTemplateClauseId	accepted
+63.0	docgen-isolated	named-dynamic-query	DocumentTemplateSection.DocumentTemplateClauseId	accepted
+64.0	docgen-isolated	named-static-query	DocumentGenerationProcess.DocGenerationBatchProcessId	accepted
+64.0	docgen-isolated	named-dynamic-query	DocumentGenerationProcess.DocGenerationBatchProcessId	accepted
+64.0	docgen-isolated	named-static-query	DocumentTemplateSection.DocumentTemplateClauseId	accepted
+64.0	docgen-isolated	named-dynamic-query	DocumentTemplateSection.DocumentTemplateClauseId	accepted
+65.0	docgen-isolated	named-static-query	DocumentGenerationProcess.DocGenerationBatchProcessId	accepted
+65.0	docgen-isolated	named-dynamic-query	DocumentGenerationProcess.DocGenerationBatchProcessId	accepted
+65.0	docgen-isolated	named-static-query	DocumentTemplateSection.DocumentTemplateClauseId	accepted
+65.0	docgen-isolated	named-dynamic-query	DocumentTemplateSection.DocumentTemplateClauseId	accepted
+66.0	docgen-isolated	named-static-query	DocumentGenerationProcess.DocGenerationBatchProcessId	accepted
+66.0	docgen-isolated	named-dynamic-query	DocumentGenerationProcess.DocGenerationBatchProcessId	accepted
+66.0	docgen-isolated	named-static-query	DocumentTemplateSection.DocumentTemplateClauseId	accepted
+66.0	docgen-isolated	named-dynamic-query	DocumentTemplateSection.DocumentTemplateClauseId	accepted
+62.0	cache-deployed	anonymous	OwnedPartition	OwnedPartition|OwnedPartition|false
+62.0	cache-deployed	istest	OwnedPartition	OwnedPartition|OwnedPartition|false
+67.0	cache-deployed	anonymous	OwnedPartition	OwnedPartition|OwnedPartition|false
+67.0	cache-deployed	istest	OwnedPartition	OwnedPartition|OwnedPartition|false
+62.0	gift-full-access	anonymous	GiftCommitment.LastNextGenCmtProcDtTm	read=false|query=false|get=false|put=false
+62.0	gift-full-access	istest	GiftCommitment.LastNextGenCmtProcDtTm	read=false|query=false|get=false|put=false
+62.0	gift-full-access	anonymous	GiftCommitment.LastNextGenCmtProcError	read=false|query=false|get=false|put=false
+62.0	gift-full-access	istest	GiftCommitment.LastNextGenCmtProcError	read=false|query=false|get=false|put=false
+62.0	gift-full-access	anonymous	GiftCommitment.PartyPhilanthropicRsrchPrflId	read=false|query=false|get=false|put=false
+62.0	gift-full-access	istest	GiftCommitment.PartyPhilanthropicRsrchPrflId	read=false|query=false|get=false|put=false
+62.0	gift-full-access	anonymous	GiftTransaction.GenerationalCohort	read=false|query=false|get=false|put=false
+62.0	gift-full-access	istest	GiftTransaction.GenerationalCohort	read=false|query=false|get=false|put=false
+62.0	gift-full-access	anonymous	GiftTransaction.PartyPhilanthropicRsrchPrflId	read=false|query=false|get=false|put=false
+62.0	gift-full-access	istest	GiftTransaction.PartyPhilanthropicRsrchPrflId	read=false|query=false|get=false|put=false
+62.0	gift-full-access	anonymous	GiftTransaction.TaxDeductionAmount	read=false|query=false|get=false|put=false
+62.0	gift-full-access	istest	GiftTransaction.TaxDeductionAmount	read=false|query=false|get=false|put=false
+63.0	gift-full-access	anonymous	GiftCommitment.LastNextGenCmtProcDtTm	read=false|query=false|get=false|put=false
+63.0	gift-full-access	istest	GiftCommitment.LastNextGenCmtProcDtTm	read=false|query=false|get=false|put=false
+63.0	gift-full-access	anonymous	GiftCommitment.LastNextGenCmtProcError	read=false|query=false|get=false|put=false
+63.0	gift-full-access	istest	GiftCommitment.LastNextGenCmtProcError	read=false|query=false|get=false|put=false
+63.0	gift-full-access	anonymous	GiftCommitment.PartyPhilanthropicRsrchPrflId	read=false|query=false|get=false|put=false
+63.0	gift-full-access	istest	GiftCommitment.PartyPhilanthropicRsrchPrflId	read=false|query=false|get=false|put=false
+63.0	gift-full-access	anonymous	GiftTransaction.GenerationalCohort	read=true|query=true|get=true|put=true
+63.0	gift-full-access	istest	GiftTransaction.GenerationalCohort	read=true|query=true|get=true|put=true
+63.0	gift-full-access	anonymous	GiftTransaction.PartyPhilanthropicRsrchPrflId	read=false|query=false|get=false|put=false
+63.0	gift-full-access	istest	GiftTransaction.PartyPhilanthropicRsrchPrflId	read=false|query=false|get=false|put=false
+63.0	gift-full-access	anonymous	GiftTransaction.TaxDeductionAmount	read=true|query=true|get=true|put=false
+63.0	gift-full-access	istest	GiftTransaction.TaxDeductionAmount	read=true|query=true|get=true|put=false
+64.0	gift-full-access	anonymous	GiftCommitment.LastNextGenCmtProcDtTm	read=false|query=false|get=false|put=false
+64.0	gift-full-access	istest	GiftCommitment.LastNextGenCmtProcDtTm	read=false|query=false|get=false|put=false
+64.0	gift-full-access	anonymous	GiftCommitment.LastNextGenCmtProcError	read=false|query=false|get=false|put=false
+64.0	gift-full-access	istest	GiftCommitment.LastNextGenCmtProcError	read=false|query=false|get=false|put=false
+64.0	gift-full-access	anonymous	GiftCommitment.PartyPhilanthropicRsrchPrflId	read=true|query=true|get=true|put=true
+64.0	gift-full-access	istest	GiftCommitment.PartyPhilanthropicRsrchPrflId	read=true|query=true|get=true|put=true
+64.0	gift-full-access	anonymous	GiftTransaction.GenerationalCohort	read=true|query=true|get=true|put=true
+64.0	gift-full-access	istest	GiftTransaction.GenerationalCohort	read=true|query=true|get=true|put=true
+64.0	gift-full-access	anonymous	GiftTransaction.PartyPhilanthropicRsrchPrflId	read=true|query=true|get=true|put=true
+64.0	gift-full-access	istest	GiftTransaction.PartyPhilanthropicRsrchPrflId	read=true|query=true|get=true|put=true
+64.0	gift-full-access	anonymous	GiftTransaction.TaxDeductionAmount	read=true|query=true|get=true|put=false
+64.0	gift-full-access	istest	GiftTransaction.TaxDeductionAmount	read=true|query=true|get=true|put=false
+65.0	gift-full-access	anonymous	GiftCommitment.LastNextGenCmtProcDtTm	read=false|query=false|get=false|put=false
+65.0	gift-full-access	istest	GiftCommitment.LastNextGenCmtProcDtTm	read=false|query=false|get=false|put=false
+65.0	gift-full-access	anonymous	GiftCommitment.LastNextGenCmtProcError	read=false|query=false|get=false|put=false
+65.0	gift-full-access	istest	GiftCommitment.LastNextGenCmtProcError	read=false|query=false|get=false|put=false
+65.0	gift-full-access	anonymous	GiftCommitment.PartyPhilanthropicRsrchPrflId	read=true|query=true|get=true|put=true
+65.0	gift-full-access	istest	GiftCommitment.PartyPhilanthropicRsrchPrflId	read=true|query=true|get=true|put=true
+65.0	gift-full-access	anonymous	GiftTransaction.GenerationalCohort	read=true|query=true|get=true|put=true
+65.0	gift-full-access	istest	GiftTransaction.GenerationalCohort	read=true|query=true|get=true|put=true
+65.0	gift-full-access	anonymous	GiftTransaction.PartyPhilanthropicRsrchPrflId	read=true|query=true|get=true|put=true
+65.0	gift-full-access	istest	GiftTransaction.PartyPhilanthropicRsrchPrflId	read=true|query=true|get=true|put=true
+65.0	gift-full-access	anonymous	GiftTransaction.TaxDeductionAmount	read=true|query=true|get=true|put=false
+65.0	gift-full-access	istest	GiftTransaction.TaxDeductionAmount	read=true|query=true|get=true|put=false
+66.0	gift-full-access	anonymous	GiftCommitment.LastNextGenCmtProcDtTm	read=false|query=false|get=false|put=false
+66.0	gift-full-access	istest	GiftCommitment.LastNextGenCmtProcDtTm	read=false|query=false|get=false|put=false
+66.0	gift-full-access	anonymous	GiftCommitment.LastNextGenCmtProcError	read=false|query=false|get=false|put=false
+66.0	gift-full-access	istest	GiftCommitment.LastNextGenCmtProcError	read=false|query=false|get=false|put=false
+66.0	gift-full-access	anonymous	GiftCommitment.PartyPhilanthropicRsrchPrflId	read=true|query=true|get=true|put=true
+66.0	gift-full-access	istest	GiftCommitment.PartyPhilanthropicRsrchPrflId	read=true|query=true|get=true|put=true
+66.0	gift-full-access	anonymous	GiftTransaction.GenerationalCohort	read=true|query=true|get=true|put=true
+66.0	gift-full-access	istest	GiftTransaction.GenerationalCohort	read=true|query=true|get=true|put=true
+66.0	gift-full-access	anonymous	GiftTransaction.PartyPhilanthropicRsrchPrflId	read=true|query=true|get=true|put=true
+66.0	gift-full-access	istest	GiftTransaction.PartyPhilanthropicRsrchPrflId	read=true|query=true|get=true|put=true
+66.0	gift-full-access	anonymous	GiftTransaction.TaxDeductionAmount	read=true|query=true|get=true|put=false
+66.0	gift-full-access	istest	GiftTransaction.TaxDeductionAmount	read=true|query=true|get=true|put=false
+67.0	gift-full-access	anonymous	GiftCommitment.LastNextGenCmtProcDtTm	read=true|query=true|get=true|put=true
+67.0	gift-full-access	istest	GiftCommitment.LastNextGenCmtProcDtTm	read=true|query=true|get=true|put=true
+67.0	gift-full-access	anonymous	GiftCommitment.LastNextGenCmtProcError	read=true|query=true|get=true|put=true
+67.0	gift-full-access	istest	GiftCommitment.LastNextGenCmtProcError	read=true|query=true|get=true|put=true
+67.0	gift-full-access	anonymous	GiftCommitment.PartyPhilanthropicRsrchPrflId	read=true|query=true|get=true|put=true
+67.0	gift-full-access	istest	GiftCommitment.PartyPhilanthropicRsrchPrflId	read=true|query=true|get=true|put=true
+67.0	gift-full-access	anonymous	GiftTransaction.GenerationalCohort	read=true|query=true|get=true|put=true
+67.0	gift-full-access	istest	GiftTransaction.GenerationalCohort	read=true|query=true|get=true|put=true
+67.0	gift-full-access	anonymous	GiftTransaction.PartyPhilanthropicRsrchPrflId	read=true|query=true|get=true|put=true
+67.0	gift-full-access	istest	GiftTransaction.PartyPhilanthropicRsrchPrflId	read=true|query=true|get=true|put=true
+67.0	gift-full-access	anonymous	GiftTransaction.TaxDeductionAmount	read=true|query=true|get=true|put=false
+67.0	gift-full-access	istest	GiftTransaction.TaxDeductionAmount	read=true|query=true|get=true|put=false
+62.0	doc-full-access	anonymous	DocumentGenerationProcess.AdditionalMetadata	read=false|query=false|get=false|put=false
+62.0	doc-full-access	istest	DocumentGenerationProcess.AdditionalMetadata	read=false|query=false|get=false|put=false
+62.0	doc-full-access	anonymous	DocumentGenerationProcess.DocGenAdditionalInput	read=false|query=false|get=false|put=false
+62.0	doc-full-access	istest	DocumentGenerationProcess.DocGenAdditionalInput	read=false|query=false|get=false|put=false
+62.0	doc-full-access	anonymous	DocumentGenerationProcess.DocGenAdditionalInputType	read=false|query=false|get=false|put=false
+62.0	doc-full-access	istest	DocumentGenerationProcess.DocGenAdditionalInputType	read=false|query=false|get=false|put=false
+62.0	doc-full-access	anonymous	DocumentGenerationProcess.EstimatedDocumentSize	read=false|query=false|get=false|put=false
+62.0	doc-full-access	istest	DocumentGenerationProcess.EstimatedDocumentSize	read=false|query=false|get=false|put=false
+62.0	doc-full-access	anonymous	DocumentGenerationProcess.IsLocalizationEnabled	read=false|query=false|get=false|put=false
+62.0	doc-full-access	istest	DocumentGenerationProcess.IsLocalizationEnabled	read=false|query=false|get=false|put=false
+62.0	doc-full-access	anonymous	DocumentGenerationProcess.IsSharedExternally	read=false|query=false|get=false|put=false
+62.0	doc-full-access	istest	DocumentGenerationProcess.IsSharedExternally	read=false|query=false|get=false|put=false
+62.0	doc-full-access	anonymous	DocumentGenerationProcess.IsTocUpdateRequired	read=false|query=false|get=false|put=false
+62.0	doc-full-access	istest	DocumentGenerationProcess.IsTocUpdateRequired	read=false|query=false|get=false|put=false
+62.0	doc-full-access	anonymous	DocumentTemplate.ContextDefinitionName	read=false|query=false|get=false|put=false
+62.0	doc-full-access	istest	DocumentTemplate.ContextDefinitionName	read=false|query=false|get=false|put=false
+62.0	doc-full-access	anonymous	DocumentTemplate.ContextFilterName	read=false|query=false|get=false|put=false
+62.0	doc-full-access	istest	DocumentTemplate.ContextFilterName	read=false|query=false|get=false|put=false
+62.0	doc-full-access	anonymous	DocumentTemplate.ContextMappingName	read=false|query=false|get=false|put=false
+62.0	doc-full-access	istest	DocumentTemplate.ContextMappingName	read=false|query=false|get=false|put=false
+62.0	doc-full-access	anonymous	DocumentTemplate.ContextTransformationName	read=false|query=false|get=false|put=false
+62.0	doc-full-access	istest	DocumentTemplate.ContextTransformationName	read=false|query=false|get=false|put=false
+63.0	doc-full-access	anonymous	DocumentGenerationProcess.AdditionalMetadata	read=false|query=false|get=false|put=false
+63.0	doc-full-access	istest	DocumentGenerationProcess.AdditionalMetadata	read=false|query=false|get=false|put=false
+63.0	doc-full-access	anonymous	DocumentGenerationProcess.DocGenAdditionalInput	read=false|query=false|get=false|put=false
+63.0	doc-full-access	istest	DocumentGenerationProcess.DocGenAdditionalInput	read=false|query=false|get=false|put=false
+63.0	doc-full-access	anonymous	DocumentGenerationProcess.DocGenAdditionalInputType	read=false|query=false|get=false|put=false
+63.0	doc-full-access	istest	DocumentGenerationProcess.DocGenAdditionalInputType	read=false|query=false|get=false|put=false
+63.0	doc-full-access	anonymous	DocumentGenerationProcess.EstimatedDocumentSize	read=false|query=false|get=false|put=false
+63.0	doc-full-access	istest	DocumentGenerationProcess.EstimatedDocumentSize	read=false|query=false|get=false|put=false
+63.0	doc-full-access	anonymous	DocumentGenerationProcess.IsLocalizationEnabled	read=false|query=false|get=false|put=false
+63.0	doc-full-access	istest	DocumentGenerationProcess.IsLocalizationEnabled	read=false|query=false|get=false|put=false
+63.0	doc-full-access	anonymous	DocumentGenerationProcess.IsSharedExternally	read=false|query=false|get=false|put=false
+63.0	doc-full-access	istest	DocumentGenerationProcess.IsSharedExternally	read=false|query=false|get=false|put=false
+63.0	doc-full-access	anonymous	DocumentGenerationProcess.IsTocUpdateRequired	read=false|query=false|get=false|put=false
+63.0	doc-full-access	istest	DocumentGenerationProcess.IsTocUpdateRequired	read=false|query=false|get=false|put=false
+63.0	doc-full-access	anonymous	DocumentTemplate.ContextDefinitionName	read=false|query=false|get=false|put=false
+63.0	doc-full-access	istest	DocumentTemplate.ContextDefinitionName	read=false|query=false|get=false|put=false
+63.0	doc-full-access	anonymous	DocumentTemplate.ContextFilterName	read=false|query=false|get=false|put=false
+63.0	doc-full-access	istest	DocumentTemplate.ContextFilterName	read=false|query=false|get=false|put=false
+63.0	doc-full-access	anonymous	DocumentTemplate.ContextMappingName	read=false|query=false|get=false|put=false
+63.0	doc-full-access	istest	DocumentTemplate.ContextMappingName	read=false|query=false|get=false|put=false
+63.0	doc-full-access	anonymous	DocumentTemplate.ContextTransformationName	read=false|query=false|get=false|put=false
+63.0	doc-full-access	istest	DocumentTemplate.ContextTransformationName	read=false|query=false|get=false|put=false
+64.0	doc-full-access	anonymous	DocumentGenerationProcess.AdditionalMetadata	read=false|query=false|get=false|put=false
+64.0	doc-full-access	istest	DocumentGenerationProcess.AdditionalMetadata	read=false|query=false|get=false|put=false
+64.0	doc-full-access	anonymous	DocumentGenerationProcess.DocGenAdditionalInput	read=true|query=true|get=true|put=true
+64.0	doc-full-access	istest	DocumentGenerationProcess.DocGenAdditionalInput	read=true|query=true|get=true|put=true
+64.0	doc-full-access	anonymous	DocumentGenerationProcess.DocGenAdditionalInputType	read=true|query=true|get=true|put=true
+64.0	doc-full-access	istest	DocumentGenerationProcess.DocGenAdditionalInputType	read=true|query=true|get=true|put=true
+64.0	doc-full-access	anonymous	DocumentGenerationProcess.EstimatedDocumentSize	read=true|query=true|get=true|put=true
+64.0	doc-full-access	istest	DocumentGenerationProcess.EstimatedDocumentSize	read=true|query=true|get=true|put=true
+64.0	doc-full-access	anonymous	DocumentGenerationProcess.IsLocalizationEnabled	read=false|query=false|get=false|put=false
+64.0	doc-full-access	istest	DocumentGenerationProcess.IsLocalizationEnabled	read=false|query=false|get=false|put=false
+64.0	doc-full-access	anonymous	DocumentGenerationProcess.IsSharedExternally	read=false|query=false|get=false|put=false
+64.0	doc-full-access	istest	DocumentGenerationProcess.IsSharedExternally	read=false|query=false|get=false|put=false
+64.0	doc-full-access	anonymous	DocumentGenerationProcess.IsTocUpdateRequired	read=false|query=false|get=false|put=false
+64.0	doc-full-access	istest	DocumentGenerationProcess.IsTocUpdateRequired	read=false|query=false|get=false|put=false
+64.0	doc-full-access	anonymous	DocumentTemplate.ContextDefinitionName	read=true|query=true|get=true|put=true
+64.0	doc-full-access	istest	DocumentTemplate.ContextDefinitionName	read=true|query=true|get=true|put=true
+64.0	doc-full-access	anonymous	DocumentTemplate.ContextFilterName	read=false|query=false|get=false|put=false
+64.0	doc-full-access	istest	DocumentTemplate.ContextFilterName	read=false|query=false|get=false|put=false
+64.0	doc-full-access	anonymous	DocumentTemplate.ContextMappingName	read=true|query=true|get=true|put=true
+64.0	doc-full-access	istest	DocumentTemplate.ContextMappingName	read=true|query=true|get=true|put=true
+64.0	doc-full-access	anonymous	DocumentTemplate.ContextTransformationName	read=false|query=false|get=false|put=false
+64.0	doc-full-access	istest	DocumentTemplate.ContextTransformationName	read=false|query=false|get=false|put=false
+65.0	doc-full-access	anonymous	DocumentGenerationProcess.AdditionalMetadata	read=false|query=false|get=false|put=false
+65.0	doc-full-access	istest	DocumentGenerationProcess.AdditionalMetadata	read=false|query=false|get=false|put=false
+65.0	doc-full-access	anonymous	DocumentGenerationProcess.DocGenAdditionalInput	read=true|query=true|get=true|put=true
+65.0	doc-full-access	istest	DocumentGenerationProcess.DocGenAdditionalInput	read=true|query=true|get=true|put=true
+65.0	doc-full-access	anonymous	DocumentGenerationProcess.DocGenAdditionalInputType	read=true|query=true|get=true|put=true
+65.0	doc-full-access	istest	DocumentGenerationProcess.DocGenAdditionalInputType	read=true|query=true|get=true|put=true
+65.0	doc-full-access	anonymous	DocumentGenerationProcess.EstimatedDocumentSize	read=true|query=true|get=true|put=true
+65.0	doc-full-access	istest	DocumentGenerationProcess.EstimatedDocumentSize	read=true|query=true|get=true|put=true
+65.0	doc-full-access	anonymous	DocumentGenerationProcess.IsLocalizationEnabled	read=false|query=false|get=false|put=false
+65.0	doc-full-access	istest	DocumentGenerationProcess.IsLocalizationEnabled	read=false|query=false|get=false|put=false
+65.0	doc-full-access	anonymous	DocumentGenerationProcess.IsSharedExternally	read=false|query=false|get=false|put=false
+65.0	doc-full-access	istest	DocumentGenerationProcess.IsSharedExternally	read=false|query=false|get=false|put=false
+65.0	doc-full-access	anonymous	DocumentGenerationProcess.IsTocUpdateRequired	read=false|query=false|get=false|put=false
+65.0	doc-full-access	istest	DocumentGenerationProcess.IsTocUpdateRequired	read=false|query=false|get=false|put=false
+65.0	doc-full-access	anonymous	DocumentTemplate.ContextDefinitionName	read=true|query=true|get=true|put=true
+65.0	doc-full-access	istest	DocumentTemplate.ContextDefinitionName	read=true|query=true|get=true|put=true
+65.0	doc-full-access	anonymous	DocumentTemplate.ContextFilterName	read=false|query=false|get=false|put=false
+65.0	doc-full-access	istest	DocumentTemplate.ContextFilterName	read=false|query=false|get=false|put=false
+65.0	doc-full-access	anonymous	DocumentTemplate.ContextMappingName	read=true|query=true|get=true|put=true
+65.0	doc-full-access	istest	DocumentTemplate.ContextMappingName	read=true|query=true|get=true|put=true
+65.0	doc-full-access	anonymous	DocumentTemplate.ContextTransformationName	read=false|query=false|get=false|put=false
+65.0	doc-full-access	istest	DocumentTemplate.ContextTransformationName	read=false|query=false|get=false|put=false
+66.0	doc-full-access	anonymous	DocumentGenerationProcess.AdditionalMetadata	read=true|query=true|get=true|put=true
+66.0	doc-full-access	istest	DocumentGenerationProcess.AdditionalMetadata	read=true|query=true|get=true|put=true
+66.0	doc-full-access	anonymous	DocumentGenerationProcess.DocGenAdditionalInput	read=true|query=true|get=true|put=true
+66.0	doc-full-access	istest	DocumentGenerationProcess.DocGenAdditionalInput	read=true|query=true|get=true|put=true
+66.0	doc-full-access	anonymous	DocumentGenerationProcess.DocGenAdditionalInputType	read=true|query=true|get=true|put=true
+66.0	doc-full-access	istest	DocumentGenerationProcess.DocGenAdditionalInputType	read=true|query=true|get=true|put=true
+66.0	doc-full-access	anonymous	DocumentGenerationProcess.EstimatedDocumentSize	read=true|query=true|get=true|put=true
+66.0	doc-full-access	istest	DocumentGenerationProcess.EstimatedDocumentSize	read=true|query=true|get=true|put=true
+66.0	doc-full-access	anonymous	DocumentGenerationProcess.IsLocalizationEnabled	read=false|query=false|get=false|put=false
+66.0	doc-full-access	istest	DocumentGenerationProcess.IsLocalizationEnabled	read=false|query=false|get=false|put=false
+66.0	doc-full-access	anonymous	DocumentGenerationProcess.IsSharedExternally	read=true|query=true|get=true|put=true
+66.0	doc-full-access	istest	DocumentGenerationProcess.IsSharedExternally	read=true|query=true|get=true|put=true
+66.0	doc-full-access	anonymous	DocumentGenerationProcess.IsTocUpdateRequired	read=false|query=false|get=false|put=false
+66.0	doc-full-access	istest	DocumentGenerationProcess.IsTocUpdateRequired	read=false|query=false|get=false|put=false
+66.0	doc-full-access	anonymous	DocumentTemplate.ContextDefinitionName	read=true|query=true|get=true|put=true
+66.0	doc-full-access	istest	DocumentTemplate.ContextDefinitionName	read=true|query=true|get=true|put=true
+66.0	doc-full-access	anonymous	DocumentTemplate.ContextFilterName	read=true|query=true|get=true|put=true
+66.0	doc-full-access	istest	DocumentTemplate.ContextFilterName	read=true|query=true|get=true|put=true
+66.0	doc-full-access	anonymous	DocumentTemplate.ContextMappingName	read=true|query=true|get=true|put=true
+66.0	doc-full-access	istest	DocumentTemplate.ContextMappingName	read=true|query=true|get=true|put=true
+66.0	doc-full-access	anonymous	DocumentTemplate.ContextTransformationName	read=false|query=false|get=false|put=false
+66.0	doc-full-access	istest	DocumentTemplate.ContextTransformationName	read=false|query=false|get=false|put=false
+67.0	doc-full-access	anonymous	DocumentGenerationProcess.AdditionalMetadata	read=true|query=true|get=true|put=true
+67.0	doc-full-access	istest	DocumentGenerationProcess.AdditionalMetadata	read=true|query=true|get=true|put=true
+67.0	doc-full-access	anonymous	DocumentGenerationProcess.DocGenAdditionalInput	read=true|query=true|get=true|put=true
+67.0	doc-full-access	istest	DocumentGenerationProcess.DocGenAdditionalInput	read=true|query=true|get=true|put=true
+67.0	doc-full-access	anonymous	DocumentGenerationProcess.DocGenAdditionalInputType	read=true|query=true|get=true|put=true
+67.0	doc-full-access	istest	DocumentGenerationProcess.DocGenAdditionalInputType	read=true|query=true|get=true|put=true
+67.0	doc-full-access	anonymous	DocumentGenerationProcess.EstimatedDocumentSize	read=true|query=true|get=true|put=true
+67.0	doc-full-access	istest	DocumentGenerationProcess.EstimatedDocumentSize	read=true|query=true|get=true|put=true
+67.0	doc-full-access	anonymous	DocumentGenerationProcess.IsLocalizationEnabled	read=true|query=true|get=true|put=true
+67.0	doc-full-access	istest	DocumentGenerationProcess.IsLocalizationEnabled	read=true|query=true|get=true|put=true
+67.0	doc-full-access	anonymous	DocumentGenerationProcess.IsSharedExternally	read=true|query=true|get=true|put=true
+67.0	doc-full-access	istest	DocumentGenerationProcess.IsSharedExternally	read=true|query=true|get=true|put=true
+67.0	doc-full-access	anonymous	DocumentGenerationProcess.IsTocUpdateRequired	read=true|query=true|get=true|put=true
+67.0	doc-full-access	istest	DocumentGenerationProcess.IsTocUpdateRequired	read=true|query=true|get=true|put=true
+67.0	doc-full-access	anonymous	DocumentTemplate.ContextDefinitionName	read=true|query=true|get=true|put=true
+67.0	doc-full-access	istest	DocumentTemplate.ContextDefinitionName	read=true|query=true|get=true|put=true
+67.0	doc-full-access	anonymous	DocumentTemplate.ContextFilterName	read=true|query=true|get=true|put=true
+67.0	doc-full-access	istest	DocumentTemplate.ContextFilterName	read=true|query=true|get=true|put=true
+67.0	doc-full-access	anonymous	DocumentTemplate.ContextMappingName	read=true|query=true|get=true|put=true
+67.0	doc-full-access	istest	DocumentTemplate.ContextMappingName	read=true|query=true|get=true|put=true
+67.0	doc-full-access	anonymous	DocumentTemplate.ContextTransformationName	read=true|query=true|get=true|put=true
+67.0	doc-full-access	istest	DocumentTemplate.ContextTransformationName	read=true|query=true|get=true|put=true
+62.0	gift-readonly	anonymous	GiftTransaction.TaxDeductionAmount.put	Invalid field TaxDeductionAmount for GiftTransaction
+62.0	gift-readonly	istest	GiftTransaction.TaxDeductionAmount.put	Invalid field TaxDeductionAmount for GiftTransaction
+67.0	gift-readonly	anonymous	GiftTransaction.TaxDeductionAmount.put	Field TaxDeductionAmount is not editable
+67.0	gift-readonly	istest	GiftTransaction.TaxDeductionAmount.put	Field TaxDeductionAmount is not editable
+62.0	doc-query-boundary	anonymous	DocumentGenerationProcess.IsLocalizationEnabled-where-static	rejected
+62.0	doc-query-boundary	istest	DocumentGenerationProcess.IsLocalizationEnabled-where-static	rejected
+62.0	doc-query-boundary	anonymous	DocumentGenerationProcess.IsLocalizationEnabled-where-dynamic	rejected
+62.0	doc-query-boundary	istest	DocumentGenerationProcess.IsLocalizationEnabled-where-dynamic	rejected
+62.0	doc-query-boundary	anonymous	DocumentGenerationProcess.IsLocalizationEnabled-order-static	rejected
+62.0	doc-query-boundary	istest	DocumentGenerationProcess.IsLocalizationEnabled-order-static	rejected
+62.0	doc-query-boundary	anonymous	DocumentGenerationProcess.IsLocalizationEnabled-order-dynamic	rejected
+62.0	doc-query-boundary	istest	DocumentGenerationProcess.IsLocalizationEnabled-order-dynamic	rejected
+62.0	doc-query-boundary	anonymous	DocumentTemplate.ContextMappingName-where-static	rejected
+62.0	doc-query-boundary	istest	DocumentTemplate.ContextMappingName-where-static	rejected
+62.0	doc-query-boundary	anonymous	DocumentTemplate.ContextMappingName-where-dynamic	rejected
+62.0	doc-query-boundary	istest	DocumentTemplate.ContextMappingName-where-dynamic	rejected
+62.0	doc-query-boundary	anonymous	DocumentTemplate.ContextMappingName-order-static	rejected
+62.0	doc-query-boundary	istest	DocumentTemplate.ContextMappingName-order-static	rejected
+62.0	doc-query-boundary	anonymous	DocumentTemplate.ContextMappingName-order-dynamic	rejected
+62.0	doc-query-boundary	istest	DocumentTemplate.ContextMappingName-order-dynamic	rejected
+67.0	doc-query-boundary	anonymous	DocumentGenerationProcess.IsLocalizationEnabled-where-static	accepted
+67.0	doc-query-boundary	istest	DocumentGenerationProcess.IsLocalizationEnabled-where-static	accepted
+67.0	doc-query-boundary	anonymous	DocumentGenerationProcess.IsLocalizationEnabled-where-dynamic	accepted
+67.0	doc-query-boundary	istest	DocumentGenerationProcess.IsLocalizationEnabled-where-dynamic	accepted
+67.0	doc-query-boundary	anonymous	DocumentGenerationProcess.IsLocalizationEnabled-order-static	accepted
+67.0	doc-query-boundary	istest	DocumentGenerationProcess.IsLocalizationEnabled-order-static	accepted
+67.0	doc-query-boundary	anonymous	DocumentGenerationProcess.IsLocalizationEnabled-order-dynamic	accepted
+67.0	doc-query-boundary	istest	DocumentGenerationProcess.IsLocalizationEnabled-order-dynamic	accepted
+67.0	doc-query-boundary	anonymous	DocumentTemplate.ContextMappingName-where-static	accepted
+67.0	doc-query-boundary	istest	DocumentTemplate.ContextMappingName-where-static	accepted
+67.0	doc-query-boundary	anonymous	DocumentTemplate.ContextMappingName-where-dynamic	accepted
+67.0	doc-query-boundary	istest	DocumentTemplate.ContextMappingName-where-dynamic	accepted
+67.0	doc-query-boundary	anonymous	DocumentTemplate.ContextMappingName-order-static	accepted
+67.0	doc-query-boundary	istest	DocumentTemplate.ContextMappingName-order-static	accepted
+67.0	doc-query-boundary	anonymous	DocumentTemplate.ContextMappingName-order-dynamic	accepted
+67.0	doc-query-boundary	istest	DocumentTemplate.ContextMappingName-order-dynamic	accepted
+62.0	doc-write-boundary	anonymous	DocumentGenerationProcess.IsLocalizationEnabled	rejected
+62.0	doc-write-boundary	istest	DocumentGenerationProcess.IsLocalizationEnabled	rejected
+62.0	doc-write-boundary	anonymous	DocumentTemplate.ContextMappingName	rejected
+62.0	doc-write-boundary	istest	DocumentTemplate.ContextMappingName	rejected
+67.0	doc-write-boundary	anonymous	DocumentGenerationProcess.IsLocalizationEnabled	accepted
+67.0	doc-write-boundary	istest	DocumentGenerationProcess.IsLocalizationEnabled	accepted
+67.0	doc-write-boundary	anonymous	DocumentTemplate.ContextMappingName	accepted
+67.0	doc-write-boundary	istest	DocumentTemplate.ContextMappingName	accepted
+62.0	gift-full-write	anonymous	GiftCommitment.LastNextGenCmtProcDtTm	rejected
+62.0	gift-full-write	istest	GiftCommitment.LastNextGenCmtProcDtTm	rejected
+62.0	gift-full-write	anonymous	GiftCommitment.LastNextGenCmtProcError	rejected
+62.0	gift-full-write	istest	GiftCommitment.LastNextGenCmtProcError	rejected
+62.0	gift-full-write	anonymous	GiftCommitment.PartyPhilanthropicRsrchPrflId	rejected
+62.0	gift-full-write	istest	GiftCommitment.PartyPhilanthropicRsrchPrflId	rejected
+62.0	gift-full-write	anonymous	GiftTransaction.GenerationalCohort	rejected
+62.0	gift-full-write	istest	GiftTransaction.GenerationalCohort	rejected
+62.0	gift-full-write	anonymous	GiftTransaction.PartyPhilanthropicRsrchPrflId	rejected
+62.0	gift-full-write	istest	GiftTransaction.PartyPhilanthropicRsrchPrflId	rejected
+62.0	gift-full-write	anonymous	GiftTransaction.TaxDeductionAmount	rejected
+62.0	gift-full-write	istest	GiftTransaction.TaxDeductionAmount	rejected
+63.0	gift-full-write	anonymous	GiftCommitment.LastNextGenCmtProcDtTm	rejected
+63.0	gift-full-write	istest	GiftCommitment.LastNextGenCmtProcDtTm	rejected
+63.0	gift-full-write	anonymous	GiftCommitment.LastNextGenCmtProcError	rejected
+63.0	gift-full-write	istest	GiftCommitment.LastNextGenCmtProcError	rejected
+63.0	gift-full-write	anonymous	GiftCommitment.PartyPhilanthropicRsrchPrflId	rejected
+63.0	gift-full-write	istest	GiftCommitment.PartyPhilanthropicRsrchPrflId	rejected
+63.0	gift-full-write	anonymous	GiftTransaction.GenerationalCohort	accepted
+63.0	gift-full-write	istest	GiftTransaction.GenerationalCohort	accepted
+63.0	gift-full-write	anonymous	GiftTransaction.PartyPhilanthropicRsrchPrflId	rejected
+63.0	gift-full-write	istest	GiftTransaction.PartyPhilanthropicRsrchPrflId	rejected
+63.0	gift-full-write	anonymous	GiftTransaction.TaxDeductionAmount	rejected
+63.0	gift-full-write	istest	GiftTransaction.TaxDeductionAmount	rejected
+64.0	gift-full-write	anonymous	GiftCommitment.LastNextGenCmtProcDtTm	rejected
+64.0	gift-full-write	istest	GiftCommitment.LastNextGenCmtProcDtTm	rejected
+64.0	gift-full-write	anonymous	GiftCommitment.LastNextGenCmtProcError	rejected
+64.0	gift-full-write	istest	GiftCommitment.LastNextGenCmtProcError	rejected
+64.0	gift-full-write	anonymous	GiftCommitment.PartyPhilanthropicRsrchPrflId	accepted
+64.0	gift-full-write	istest	GiftCommitment.PartyPhilanthropicRsrchPrflId	accepted
+64.0	gift-full-write	anonymous	GiftTransaction.GenerationalCohort	accepted
+64.0	gift-full-write	istest	GiftTransaction.GenerationalCohort	accepted
+64.0	gift-full-write	anonymous	GiftTransaction.PartyPhilanthropicRsrchPrflId	accepted
+64.0	gift-full-write	istest	GiftTransaction.PartyPhilanthropicRsrchPrflId	accepted
+64.0	gift-full-write	anonymous	GiftTransaction.TaxDeductionAmount	rejected
+64.0	gift-full-write	istest	GiftTransaction.TaxDeductionAmount	rejected
+65.0	gift-full-write	anonymous	GiftCommitment.LastNextGenCmtProcDtTm	rejected
+65.0	gift-full-write	istest	GiftCommitment.LastNextGenCmtProcDtTm	rejected
+65.0	gift-full-write	anonymous	GiftCommitment.LastNextGenCmtProcError	rejected
+65.0	gift-full-write	istest	GiftCommitment.LastNextGenCmtProcError	rejected
+65.0	gift-full-write	anonymous	GiftCommitment.PartyPhilanthropicRsrchPrflId	accepted
+65.0	gift-full-write	istest	GiftCommitment.PartyPhilanthropicRsrchPrflId	accepted
+65.0	gift-full-write	anonymous	GiftTransaction.GenerationalCohort	accepted
+65.0	gift-full-write	istest	GiftTransaction.GenerationalCohort	accepted
+65.0	gift-full-write	anonymous	GiftTransaction.PartyPhilanthropicRsrchPrflId	accepted
+65.0	gift-full-write	istest	GiftTransaction.PartyPhilanthropicRsrchPrflId	accepted
+65.0	gift-full-write	anonymous	GiftTransaction.TaxDeductionAmount	rejected
+65.0	gift-full-write	istest	GiftTransaction.TaxDeductionAmount	rejected
+66.0	gift-full-write	anonymous	GiftCommitment.LastNextGenCmtProcDtTm	rejected
+66.0	gift-full-write	istest	GiftCommitment.LastNextGenCmtProcDtTm	rejected
+66.0	gift-full-write	anonymous	GiftCommitment.LastNextGenCmtProcError	rejected
+66.0	gift-full-write	istest	GiftCommitment.LastNextGenCmtProcError	rejected
+66.0	gift-full-write	anonymous	GiftCommitment.PartyPhilanthropicRsrchPrflId	accepted
+66.0	gift-full-write	istest	GiftCommitment.PartyPhilanthropicRsrchPrflId	accepted
+66.0	gift-full-write	anonymous	GiftTransaction.GenerationalCohort	accepted
+66.0	gift-full-write	istest	GiftTransaction.GenerationalCohort	accepted
+66.0	gift-full-write	anonymous	GiftTransaction.PartyPhilanthropicRsrchPrflId	accepted
+66.0	gift-full-write	istest	GiftTransaction.PartyPhilanthropicRsrchPrflId	accepted
+66.0	gift-full-write	anonymous	GiftTransaction.TaxDeductionAmount	rejected
+66.0	gift-full-write	istest	GiftTransaction.TaxDeductionAmount	rejected
+67.0	gift-full-write	anonymous	GiftCommitment.LastNextGenCmtProcDtTm	accepted
+67.0	gift-full-write	istest	GiftCommitment.LastNextGenCmtProcDtTm	accepted
+67.0	gift-full-write	anonymous	GiftCommitment.LastNextGenCmtProcError	accepted
+67.0	gift-full-write	istest	GiftCommitment.LastNextGenCmtProcError	accepted
+67.0	gift-full-write	anonymous	GiftCommitment.PartyPhilanthropicRsrchPrflId	accepted
+67.0	gift-full-write	istest	GiftCommitment.PartyPhilanthropicRsrchPrflId	accepted
+67.0	gift-full-write	anonymous	GiftTransaction.GenerationalCohort	accepted
+67.0	gift-full-write	istest	GiftTransaction.GenerationalCohort	accepted
+67.0	gift-full-write	anonymous	GiftTransaction.PartyPhilanthropicRsrchPrflId	accepted
+67.0	gift-full-write	istest	GiftTransaction.PartyPhilanthropicRsrchPrflId	accepted
+67.0	gift-full-write	anonymous	GiftTransaction.TaxDeductionAmount	rejected
+67.0	gift-full-write	istest	GiftTransaction.TaxDeductionAmount	rejected
+62.0	doc-full-write	anonymous	DocumentGenerationProcess.AdditionalMetadata	rejected
+62.0	doc-full-write	istest	DocumentGenerationProcess.AdditionalMetadata	rejected
+62.0	doc-full-write	anonymous	DocumentGenerationProcess.DocGenAdditionalInput	rejected
+62.0	doc-full-write	istest	DocumentGenerationProcess.DocGenAdditionalInput	rejected
+62.0	doc-full-write	anonymous	DocumentGenerationProcess.DocGenAdditionalInputType	rejected
+62.0	doc-full-write	istest	DocumentGenerationProcess.DocGenAdditionalInputType	rejected
+62.0	doc-full-write	anonymous	DocumentGenerationProcess.EstimatedDocumentSize	rejected
+62.0	doc-full-write	istest	DocumentGenerationProcess.EstimatedDocumentSize	rejected
+62.0	doc-full-write	anonymous	DocumentGenerationProcess.IsLocalizationEnabled	rejected
+62.0	doc-full-write	istest	DocumentGenerationProcess.IsLocalizationEnabled	rejected
+62.0	doc-full-write	anonymous	DocumentGenerationProcess.IsSharedExternally	rejected
+62.0	doc-full-write	istest	DocumentGenerationProcess.IsSharedExternally	rejected
+62.0	doc-full-write	anonymous	DocumentGenerationProcess.IsTocUpdateRequired	rejected
+62.0	doc-full-write	istest	DocumentGenerationProcess.IsTocUpdateRequired	rejected
+62.0	doc-full-write	anonymous	DocumentTemplate.ContextDefinitionName	rejected
+62.0	doc-full-write	istest	DocumentTemplate.ContextDefinitionName	rejected
+62.0	doc-full-write	anonymous	DocumentTemplate.ContextFilterName	rejected
+62.0	doc-full-write	istest	DocumentTemplate.ContextFilterName	rejected
+62.0	doc-full-write	anonymous	DocumentTemplate.ContextMappingName	rejected
+62.0	doc-full-write	istest	DocumentTemplate.ContextMappingName	rejected
+62.0	doc-full-write	anonymous	DocumentTemplate.ContextTransformationName	rejected
+62.0	doc-full-write	istest	DocumentTemplate.ContextTransformationName	rejected
+63.0	doc-full-write	anonymous	DocumentGenerationProcess.AdditionalMetadata	rejected
+63.0	doc-full-write	istest	DocumentGenerationProcess.AdditionalMetadata	rejected
+63.0	doc-full-write	anonymous	DocumentGenerationProcess.DocGenAdditionalInput	rejected
+63.0	doc-full-write	istest	DocumentGenerationProcess.DocGenAdditionalInput	rejected
+63.0	doc-full-write	anonymous	DocumentGenerationProcess.DocGenAdditionalInputType	rejected
+63.0	doc-full-write	istest	DocumentGenerationProcess.DocGenAdditionalInputType	rejected
+63.0	doc-full-write	anonymous	DocumentGenerationProcess.EstimatedDocumentSize	rejected
+63.0	doc-full-write	istest	DocumentGenerationProcess.EstimatedDocumentSize	rejected
+63.0	doc-full-write	anonymous	DocumentGenerationProcess.IsLocalizationEnabled	rejected
+63.0	doc-full-write	istest	DocumentGenerationProcess.IsLocalizationEnabled	rejected
+63.0	doc-full-write	anonymous	DocumentGenerationProcess.IsSharedExternally	rejected
+63.0	doc-full-write	istest	DocumentGenerationProcess.IsSharedExternally	rejected
+63.0	doc-full-write	anonymous	DocumentGenerationProcess.IsTocUpdateRequired	rejected
+63.0	doc-full-write	istest	DocumentGenerationProcess.IsTocUpdateRequired	rejected
+63.0	doc-full-write	anonymous	DocumentTemplate.ContextDefinitionName	rejected
+63.0	doc-full-write	istest	DocumentTemplate.ContextDefinitionName	rejected
+63.0	doc-full-write	anonymous	DocumentTemplate.ContextFilterName	rejected
+63.0	doc-full-write	istest	DocumentTemplate.ContextFilterName	rejected
+63.0	doc-full-write	anonymous	DocumentTemplate.ContextMappingName	rejected
+63.0	doc-full-write	istest	DocumentTemplate.ContextMappingName	rejected
+63.0	doc-full-write	anonymous	DocumentTemplate.ContextTransformationName	rejected
+63.0	doc-full-write	istest	DocumentTemplate.ContextTransformationName	rejected
+64.0	doc-full-write	anonymous	DocumentGenerationProcess.AdditionalMetadata	rejected
+64.0	doc-full-write	istest	DocumentGenerationProcess.AdditionalMetadata	rejected
+64.0	doc-full-write	anonymous	DocumentGenerationProcess.DocGenAdditionalInput	accepted
+64.0	doc-full-write	istest	DocumentGenerationProcess.DocGenAdditionalInput	accepted
+64.0	doc-full-write	anonymous	DocumentGenerationProcess.DocGenAdditionalInputType	accepted
+64.0	doc-full-write	istest	DocumentGenerationProcess.DocGenAdditionalInputType	accepted
+64.0	doc-full-write	anonymous	DocumentGenerationProcess.EstimatedDocumentSize	accepted
+64.0	doc-full-write	istest	DocumentGenerationProcess.EstimatedDocumentSize	accepted
+64.0	doc-full-write	anonymous	DocumentGenerationProcess.IsLocalizationEnabled	rejected
+64.0	doc-full-write	istest	DocumentGenerationProcess.IsLocalizationEnabled	rejected
+64.0	doc-full-write	anonymous	DocumentGenerationProcess.IsSharedExternally	rejected
+64.0	doc-full-write	istest	DocumentGenerationProcess.IsSharedExternally	rejected
+64.0	doc-full-write	anonymous	DocumentGenerationProcess.IsTocUpdateRequired	rejected
+64.0	doc-full-write	istest	DocumentGenerationProcess.IsTocUpdateRequired	rejected
+64.0	doc-full-write	anonymous	DocumentTemplate.ContextDefinitionName	accepted
+64.0	doc-full-write	istest	DocumentTemplate.ContextDefinitionName	accepted
+64.0	doc-full-write	anonymous	DocumentTemplate.ContextFilterName	rejected
+64.0	doc-full-write	istest	DocumentTemplate.ContextFilterName	rejected
+64.0	doc-full-write	anonymous	DocumentTemplate.ContextMappingName	accepted
+64.0	doc-full-write	istest	DocumentTemplate.ContextMappingName	accepted
+64.0	doc-full-write	anonymous	DocumentTemplate.ContextTransformationName	rejected
+64.0	doc-full-write	istest	DocumentTemplate.ContextTransformationName	rejected
+65.0	doc-full-write	anonymous	DocumentGenerationProcess.AdditionalMetadata	rejected
+65.0	doc-full-write	istest	DocumentGenerationProcess.AdditionalMetadata	rejected
+65.0	doc-full-write	anonymous	DocumentGenerationProcess.DocGenAdditionalInput	accepted
+65.0	doc-full-write	istest	DocumentGenerationProcess.DocGenAdditionalInput	accepted
+65.0	doc-full-write	anonymous	DocumentGenerationProcess.DocGenAdditionalInputType	accepted
+65.0	doc-full-write	istest	DocumentGenerationProcess.DocGenAdditionalInputType	accepted
+65.0	doc-full-write	anonymous	DocumentGenerationProcess.EstimatedDocumentSize	accepted
+65.0	doc-full-write	istest	DocumentGenerationProcess.EstimatedDocumentSize	accepted
+65.0	doc-full-write	anonymous	DocumentGenerationProcess.IsLocalizationEnabled	rejected
+65.0	doc-full-write	istest	DocumentGenerationProcess.IsLocalizationEnabled	rejected
+65.0	doc-full-write	anonymous	DocumentGenerationProcess.IsSharedExternally	rejected
+65.0	doc-full-write	istest	DocumentGenerationProcess.IsSharedExternally	rejected
+65.0	doc-full-write	anonymous	DocumentGenerationProcess.IsTocUpdateRequired	rejected
+65.0	doc-full-write	istest	DocumentGenerationProcess.IsTocUpdateRequired	rejected
+65.0	doc-full-write	anonymous	DocumentTemplate.ContextDefinitionName	accepted
+65.0	doc-full-write	istest	DocumentTemplate.ContextDefinitionName	accepted
+65.0	doc-full-write	anonymous	DocumentTemplate.ContextFilterName	rejected
+65.0	doc-full-write	istest	DocumentTemplate.ContextFilterName	rejected
+65.0	doc-full-write	anonymous	DocumentTemplate.ContextMappingName	accepted
+65.0	doc-full-write	istest	DocumentTemplate.ContextMappingName	accepted
+65.0	doc-full-write	anonymous	DocumentTemplate.ContextTransformationName	rejected
+65.0	doc-full-write	istest	DocumentTemplate.ContextTransformationName	rejected
+66.0	doc-full-write	anonymous	DocumentGenerationProcess.AdditionalMetadata	accepted
+66.0	doc-full-write	istest	DocumentGenerationProcess.AdditionalMetadata	accepted
+66.0	doc-full-write	anonymous	DocumentGenerationProcess.DocGenAdditionalInput	accepted
+66.0	doc-full-write	istest	DocumentGenerationProcess.DocGenAdditionalInput	accepted
+66.0	doc-full-write	anonymous	DocumentGenerationProcess.DocGenAdditionalInputType	accepted
+66.0	doc-full-write	istest	DocumentGenerationProcess.DocGenAdditionalInputType	accepted
+66.0	doc-full-write	anonymous	DocumentGenerationProcess.EstimatedDocumentSize	accepted
+66.0	doc-full-write	istest	DocumentGenerationProcess.EstimatedDocumentSize	accepted
+66.0	doc-full-write	anonymous	DocumentGenerationProcess.IsLocalizationEnabled	rejected
+66.0	doc-full-write	istest	DocumentGenerationProcess.IsLocalizationEnabled	rejected
+66.0	doc-full-write	anonymous	DocumentGenerationProcess.IsSharedExternally	accepted
+66.0	doc-full-write	istest	DocumentGenerationProcess.IsSharedExternally	accepted
+66.0	doc-full-write	anonymous	DocumentGenerationProcess.IsTocUpdateRequired	rejected
+66.0	doc-full-write	istest	DocumentGenerationProcess.IsTocUpdateRequired	rejected
+66.0	doc-full-write	anonymous	DocumentTemplate.ContextDefinitionName	accepted
+66.0	doc-full-write	istest	DocumentTemplate.ContextDefinitionName	accepted
+66.0	doc-full-write	anonymous	DocumentTemplate.ContextFilterName	accepted
+66.0	doc-full-write	istest	DocumentTemplate.ContextFilterName	accepted
+66.0	doc-full-write	anonymous	DocumentTemplate.ContextMappingName	accepted
+66.0	doc-full-write	istest	DocumentTemplate.ContextMappingName	accepted
+66.0	doc-full-write	anonymous	DocumentTemplate.ContextTransformationName	rejected
+66.0	doc-full-write	istest	DocumentTemplate.ContextTransformationName	rejected
+67.0	doc-full-write	anonymous	DocumentGenerationProcess.AdditionalMetadata	accepted
+67.0	doc-full-write	istest	DocumentGenerationProcess.AdditionalMetadata	accepted
+67.0	doc-full-write	anonymous	DocumentGenerationProcess.DocGenAdditionalInput	accepted
+67.0	doc-full-write	istest	DocumentGenerationProcess.DocGenAdditionalInput	accepted
+67.0	doc-full-write	anonymous	DocumentGenerationProcess.DocGenAdditionalInputType	accepted
+67.0	doc-full-write	istest	DocumentGenerationProcess.DocGenAdditionalInputType	accepted
+67.0	doc-full-write	anonymous	DocumentGenerationProcess.EstimatedDocumentSize	accepted
+67.0	doc-full-write	istest	DocumentGenerationProcess.EstimatedDocumentSize	accepted
+67.0	doc-full-write	anonymous	DocumentGenerationProcess.IsLocalizationEnabled	accepted
+67.0	doc-full-write	istest	DocumentGenerationProcess.IsLocalizationEnabled	accepted
+67.0	doc-full-write	anonymous	DocumentGenerationProcess.IsSharedExternally	accepted
+67.0	doc-full-write	istest	DocumentGenerationProcess.IsSharedExternally	accepted
+67.0	doc-full-write	anonymous	DocumentGenerationProcess.IsTocUpdateRequired	accepted
+67.0	doc-full-write	istest	DocumentGenerationProcess.IsTocUpdateRequired	accepted
+67.0	doc-full-write	anonymous	DocumentTemplate.ContextDefinitionName	accepted
+67.0	doc-full-write	istest	DocumentTemplate.ContextDefinitionName	accepted
+67.0	doc-full-write	anonymous	DocumentTemplate.ContextFilterName	accepted
+67.0	doc-full-write	istest	DocumentTemplate.ContextFilterName	accepted
+67.0	doc-full-write	anonymous	DocumentTemplate.ContextMappingName	accepted
+67.0	doc-full-write	istest	DocumentTemplate.ContextMappingName	accepted
+67.0	doc-full-write	anonymous	DocumentTemplate.ContextTransformationName	accepted
+67.0	doc-full-write	istest	DocumentTemplate.ContextTransformationName	accepted
+62.0	doc-full-write	anonymous	DocumentGenerationProcess.DocGenerationBatchProcessId	rejected
+62.0	doc-full-write	istest	DocumentGenerationProcess.DocGenerationBatchProcessId	accepted
+62.0	doc-full-write	anonymous	DocumentTemplateSection.DocumentTemplateClauseId	rejected
+62.0	doc-full-write	istest	DocumentTemplateSection.DocumentTemplateClauseId	accepted
+63.0	doc-full-write	anonymous	DocumentGenerationProcess.DocGenerationBatchProcessId	rejected
+63.0	doc-full-write	istest	DocumentGenerationProcess.DocGenerationBatchProcessId	accepted
+63.0	doc-full-write	anonymous	DocumentTemplateSection.DocumentTemplateClauseId	rejected
+63.0	doc-full-write	istest	DocumentTemplateSection.DocumentTemplateClauseId	accepted
+64.0	doc-full-write	anonymous	DocumentGenerationProcess.DocGenerationBatchProcessId	rejected
+64.0	doc-full-write	istest	DocumentGenerationProcess.DocGenerationBatchProcessId	accepted
+64.0	doc-full-write	anonymous	DocumentTemplateSection.DocumentTemplateClauseId	rejected
+64.0	doc-full-write	istest	DocumentTemplateSection.DocumentTemplateClauseId	accepted
+65.0	doc-full-write	anonymous	DocumentGenerationProcess.DocGenerationBatchProcessId	rejected
+65.0	doc-full-write	istest	DocumentGenerationProcess.DocGenerationBatchProcessId	accepted
+65.0	doc-full-write	anonymous	DocumentTemplateSection.DocumentTemplateClauseId	rejected
+65.0	doc-full-write	istest	DocumentTemplateSection.DocumentTemplateClauseId	accepted
+66.0	doc-full-write	anonymous	DocumentGenerationProcess.DocGenerationBatchProcessId	rejected
+66.0	doc-full-write	istest	DocumentGenerationProcess.DocGenerationBatchProcessId	accepted
+66.0	doc-full-write	anonymous	DocumentTemplateSection.DocumentTemplateClauseId	rejected
+66.0	doc-full-write	istest	DocumentTemplateSection.DocumentTemplateClauseId	accepted
+67.0	doc-full-write	anonymous	DocumentGenerationProcess.DocGenerationBatchProcessId	rejected
+67.0	doc-full-write	istest	DocumentGenerationProcess.DocGenerationBatchProcessId	accepted
+67.0	doc-full-write	anonymous	DocumentTemplateSection.DocumentTemplateClauseId	rejected
+67.0	doc-full-write	istest	DocumentTemplateSection.DocumentTemplateClauseId	accepted
+62.0	docgen-isolated	anonymous	DocumentTemplateContentDoc.ContentDocumentId-facets	REFERENCE|ContentDocument|ContentDocument|true|true
+62.0	docgen-isolated	anonymous	DocumentTemplateContentDoc.DocumentTemplateId-facets	REFERENCE|DocumentTemplate|DocumentTemplate|true|false
+62.0	docgen-isolated	anonymous	DocumentTemplateContentDoc.LatestContentVersionId-facets	REFERENCE|ContentVersion|LatestContentVersion|false|false
+67.0	docgen-isolated	anonymous	DocumentTemplateContentDoc.ContentDocumentId-facets	REFERENCE|ContentDocument|ContentDocument|true|true
+67.0	docgen-isolated	anonymous	DocumentTemplateContentDoc.DocumentTemplateId-facets	REFERENCE|DocumentTemplate|DocumentTemplate|true|false
+67.0	docgen-isolated	anonymous	DocumentTemplateContentDoc.LatestContentVersionId-facets	REFERENCE|ContentVersion|LatestContentVersion|false|false
+62.0	gift-token-overload	anonymous	GiftCommitment.LastNextGenCmtProcDtTm.getToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context
+62.0	gift-token-overload	anonymous	GiftCommitment.LastNextGenCmtProcDtTm.putToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context
+62.0	gift-token-overload	anonymous	GiftCommitment.LastNextGenCmtProcError.getToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context
+62.0	gift-token-overload	anonymous	GiftCommitment.LastNextGenCmtProcError.putToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context
+62.0	gift-token-overload	anonymous	GiftCommitment.PartyPhilanthropicRsrchPrflId.getToken	System.SObjectException: Field GiftCommitment.PartyPhilanthropicRsrchPrflId is inaccessible in this context
+62.0	gift-token-overload	anonymous	GiftCommitment.PartyPhilanthropicRsrchPrflId.putToken	System.SObjectException: Field GiftCommitment.PartyPhilanthropicRsrchPrflId is inaccessible in this context
+62.0	gift-token-overload	anonymous	GiftTransaction.GenerationalCohort.getToken	System.SObjectException: Field GiftTransaction.GenerationalCohort is inaccessible in this context
+62.0	gift-token-overload	anonymous	GiftTransaction.GenerationalCohort.putToken	System.SObjectException: Field GiftTransaction.GenerationalCohort is inaccessible in this context
+62.0	gift-token-overload	anonymous	GiftTransaction.PartyPhilanthropicRsrchPrflId.getToken	System.SObjectException: Field GiftTransaction.PartyPhilanthropicRsrchPrflId is inaccessible in this context
+62.0	gift-token-overload	anonymous	GiftTransaction.PartyPhilanthropicRsrchPrflId.putToken	System.SObjectException: Field GiftTransaction.PartyPhilanthropicRsrchPrflId is inaccessible in this context
+62.0	gift-token-overload	anonymous	GiftTransaction.TaxDeductionAmount.getToken	System.SObjectException: Field GiftTransaction.TaxDeductionAmount is inaccessible in this context
+62.0	gift-token-overload	anonymous	GiftTransaction.TaxDeductionAmount.putToken	System.SObjectException: Field GiftTransaction.TaxDeductionAmount is inaccessible in this context
+63.0	gift-token-overload	anonymous	GiftCommitment.LastNextGenCmtProcDtTm.getToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context
+63.0	gift-token-overload	anonymous	GiftCommitment.LastNextGenCmtProcDtTm.putToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context
+63.0	gift-token-overload	anonymous	GiftCommitment.LastNextGenCmtProcError.getToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context
+63.0	gift-token-overload	anonymous	GiftCommitment.LastNextGenCmtProcError.putToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context
+63.0	gift-token-overload	anonymous	GiftCommitment.PartyPhilanthropicRsrchPrflId.getToken	System.SObjectException: Field GiftCommitment.PartyPhilanthropicRsrchPrflId is inaccessible in this context
+63.0	gift-token-overload	anonymous	GiftCommitment.PartyPhilanthropicRsrchPrflId.putToken	System.SObjectException: Field GiftCommitment.PartyPhilanthropicRsrchPrflId is inaccessible in this context
+63.0	gift-token-overload	anonymous	GiftTransaction.GenerationalCohort.getToken	accepted
+63.0	gift-token-overload	anonymous	GiftTransaction.GenerationalCohort.putToken	accepted
+63.0	gift-token-overload	anonymous	GiftTransaction.PartyPhilanthropicRsrchPrflId.getToken	System.SObjectException: Field GiftTransaction.PartyPhilanthropicRsrchPrflId is inaccessible in this context
+63.0	gift-token-overload	anonymous	GiftTransaction.PartyPhilanthropicRsrchPrflId.putToken	System.SObjectException: Field GiftTransaction.PartyPhilanthropicRsrchPrflId is inaccessible in this context
+63.0	gift-token-overload	anonymous	GiftTransaction.TaxDeductionAmount.getToken	accepted
+63.0	gift-token-overload	anonymous	GiftTransaction.TaxDeductionAmount.putToken	System.SObjectException: Field TaxDeductionAmount is not editable
+64.0	gift-token-overload	anonymous	GiftCommitment.LastNextGenCmtProcDtTm.getToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context
+64.0	gift-token-overload	anonymous	GiftCommitment.LastNextGenCmtProcDtTm.putToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context
+64.0	gift-token-overload	anonymous	GiftCommitment.LastNextGenCmtProcError.getToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context
+64.0	gift-token-overload	anonymous	GiftCommitment.LastNextGenCmtProcError.putToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context
+64.0	gift-token-overload	anonymous	GiftCommitment.PartyPhilanthropicRsrchPrflId.getToken	accepted
+64.0	gift-token-overload	anonymous	GiftCommitment.PartyPhilanthropicRsrchPrflId.putToken	accepted
+64.0	gift-token-overload	anonymous	GiftTransaction.GenerationalCohort.getToken	accepted
+64.0	gift-token-overload	anonymous	GiftTransaction.GenerationalCohort.putToken	accepted
+64.0	gift-token-overload	anonymous	GiftTransaction.PartyPhilanthropicRsrchPrflId.getToken	accepted
+64.0	gift-token-overload	anonymous	GiftTransaction.PartyPhilanthropicRsrchPrflId.putToken	accepted
+64.0	gift-token-overload	anonymous	GiftTransaction.TaxDeductionAmount.getToken	accepted
+64.0	gift-token-overload	anonymous	GiftTransaction.TaxDeductionAmount.putToken	System.SObjectException: Field TaxDeductionAmount is not editable
+65.0	gift-token-overload	anonymous	GiftCommitment.LastNextGenCmtProcDtTm.getToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context
+65.0	gift-token-overload	anonymous	GiftCommitment.LastNextGenCmtProcDtTm.putToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context
+65.0	gift-token-overload	anonymous	GiftCommitment.LastNextGenCmtProcError.getToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context
+65.0	gift-token-overload	anonymous	GiftCommitment.LastNextGenCmtProcError.putToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context
+65.0	gift-token-overload	anonymous	GiftCommitment.PartyPhilanthropicRsrchPrflId.getToken	accepted
+65.0	gift-token-overload	anonymous	GiftCommitment.PartyPhilanthropicRsrchPrflId.putToken	accepted
+65.0	gift-token-overload	anonymous	GiftTransaction.GenerationalCohort.getToken	accepted
+65.0	gift-token-overload	anonymous	GiftTransaction.GenerationalCohort.putToken	accepted
+65.0	gift-token-overload	anonymous	GiftTransaction.PartyPhilanthropicRsrchPrflId.getToken	accepted
+65.0	gift-token-overload	anonymous	GiftTransaction.PartyPhilanthropicRsrchPrflId.putToken	accepted
+65.0	gift-token-overload	anonymous	GiftTransaction.TaxDeductionAmount.getToken	accepted
+65.0	gift-token-overload	anonymous	GiftTransaction.TaxDeductionAmount.putToken	System.SObjectException: Field TaxDeductionAmount is not editable
+66.0	gift-token-overload	anonymous	GiftCommitment.LastNextGenCmtProcDtTm.getToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context
+66.0	gift-token-overload	anonymous	GiftCommitment.LastNextGenCmtProcDtTm.putToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context
+66.0	gift-token-overload	anonymous	GiftCommitment.LastNextGenCmtProcError.getToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context
+66.0	gift-token-overload	anonymous	GiftCommitment.LastNextGenCmtProcError.putToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context
+66.0	gift-token-overload	anonymous	GiftCommitment.PartyPhilanthropicRsrchPrflId.getToken	accepted
+66.0	gift-token-overload	anonymous	GiftCommitment.PartyPhilanthropicRsrchPrflId.putToken	accepted
+66.0	gift-token-overload	anonymous	GiftTransaction.GenerationalCohort.getToken	accepted
+66.0	gift-token-overload	anonymous	GiftTransaction.GenerationalCohort.putToken	accepted
+66.0	gift-token-overload	anonymous	GiftTransaction.PartyPhilanthropicRsrchPrflId.getToken	accepted
+66.0	gift-token-overload	anonymous	GiftTransaction.PartyPhilanthropicRsrchPrflId.putToken	accepted
+66.0	gift-token-overload	anonymous	GiftTransaction.TaxDeductionAmount.getToken	accepted
+66.0	gift-token-overload	anonymous	GiftTransaction.TaxDeductionAmount.putToken	System.SObjectException: Field TaxDeductionAmount is not editable
+67.0	gift-token-overload	anonymous	GiftCommitment.LastNextGenCmtProcDtTm.getToken	accepted
+67.0	gift-token-overload	anonymous	GiftCommitment.LastNextGenCmtProcDtTm.putToken	accepted
+67.0	gift-token-overload	anonymous	GiftCommitment.LastNextGenCmtProcError.getToken	accepted
+67.0	gift-token-overload	anonymous	GiftCommitment.LastNextGenCmtProcError.putToken	accepted
+67.0	gift-token-overload	anonymous	GiftCommitment.PartyPhilanthropicRsrchPrflId.getToken	accepted
+67.0	gift-token-overload	anonymous	GiftCommitment.PartyPhilanthropicRsrchPrflId.putToken	accepted
+67.0	gift-token-overload	anonymous	GiftTransaction.GenerationalCohort.getToken	accepted
+67.0	gift-token-overload	anonymous	GiftTransaction.GenerationalCohort.putToken	accepted
+67.0	gift-token-overload	anonymous	GiftTransaction.PartyPhilanthropicRsrchPrflId.getToken	accepted
+67.0	gift-token-overload	anonymous	GiftTransaction.PartyPhilanthropicRsrchPrflId.putToken	accepted
+67.0	gift-token-overload	anonymous	GiftTransaction.TaxDeductionAmount.getToken	accepted
+67.0	gift-token-overload	anonymous	GiftTransaction.TaxDeductionAmount.putToken	System.SObjectException: Field TaxDeductionAmount is not editable
+63.0	gift-token-overload	istest	GiftCommitment.LastNextGenCmtProcDtTm.getToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context
+63.0	gift-token-overload	istest	GiftCommitment.LastNextGenCmtProcDtTm.putToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context
+63.0	gift-token-overload	istest	GiftCommitment.LastNextGenCmtProcError.getToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context
+63.0	gift-token-overload	istest	GiftCommitment.LastNextGenCmtProcError.putToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context
+63.0	gift-token-overload	istest	GiftCommitment.PartyPhilanthropicRsrchPrflId.getToken	System.SObjectException: Field GiftCommitment.PartyPhilanthropicRsrchPrflId is inaccessible in this context
+63.0	gift-token-overload	istest	GiftCommitment.PartyPhilanthropicRsrchPrflId.putToken	System.SObjectException: Field GiftCommitment.PartyPhilanthropicRsrchPrflId is inaccessible in this context
+63.0	gift-token-overload	istest	GiftTransaction.GenerationalCohort.getToken	accepted
+63.0	gift-token-overload	istest	GiftTransaction.GenerationalCohort.putToken	accepted
+63.0	gift-token-overload	istest	GiftTransaction.PartyPhilanthropicRsrchPrflId.getToken	System.SObjectException: Field GiftTransaction.PartyPhilanthropicRsrchPrflId is inaccessible in this context
+63.0	gift-token-overload	istest	GiftTransaction.PartyPhilanthropicRsrchPrflId.putToken	System.SObjectException: Field GiftTransaction.PartyPhilanthropicRsrchPrflId is inaccessible in this context
+63.0	gift-token-overload	istest	GiftTransaction.TaxDeductionAmount.getToken	accepted
+63.0	gift-token-overload	istest	GiftTransaction.TaxDeductionAmount.putToken	System.SObjectException: Field TaxDeductionAmount is not editable
+64.0	gift-token-overload	istest	GiftTransaction.GenerationalCohort.getToken	accepted
+64.0	gift-token-overload	istest	GiftTransaction.GenerationalCohort.putToken	accepted
+64.0	gift-token-overload	istest	GiftTransaction.PartyPhilanthropicRsrchPrflId.getToken	accepted
+64.0	gift-token-overload	istest	GiftTransaction.PartyPhilanthropicRsrchPrflId.putToken	accepted
+64.0	gift-token-overload	istest	GiftTransaction.TaxDeductionAmount.getToken	accepted
+64.0	gift-token-overload	istest	GiftTransaction.TaxDeductionAmount.putToken	System.SObjectException: Field TaxDeductionAmount is not editable
+65.0	gift-token-overload	istest	GiftCommitment.LastNextGenCmtProcDtTm.getToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context
+65.0	gift-token-overload	istest	GiftCommitment.LastNextGenCmtProcDtTm.putToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context
+65.0	gift-token-overload	istest	GiftCommitment.LastNextGenCmtProcError.getToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context
+65.0	gift-token-overload	istest	GiftCommitment.LastNextGenCmtProcError.putToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context
+65.0	gift-token-overload	istest	GiftCommitment.PartyPhilanthropicRsrchPrflId.getToken	accepted
+65.0	gift-token-overload	istest	GiftCommitment.PartyPhilanthropicRsrchPrflId.putToken	accepted
+62.0	gift-token-overload	istest	GiftCommitment.LastNextGenCmtProcDtTm.getToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context
+62.0	gift-token-overload	istest	GiftCommitment.LastNextGenCmtProcDtTm.putToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context
+62.0	gift-token-overload	istest	GiftCommitment.LastNextGenCmtProcError.getToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context
+62.0	gift-token-overload	istest	GiftCommitment.LastNextGenCmtProcError.putToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context
+62.0	gift-token-overload	istest	GiftCommitment.PartyPhilanthropicRsrchPrflId.getToken	System.SObjectException: Field GiftCommitment.PartyPhilanthropicRsrchPrflId is inaccessible in this context
+62.0	gift-token-overload	istest	GiftCommitment.PartyPhilanthropicRsrchPrflId.putToken	System.SObjectException: Field GiftCommitment.PartyPhilanthropicRsrchPrflId is inaccessible in this context
+64.0	gift-token-overload	istest	GiftCommitment.LastNextGenCmtProcDtTm.getToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context
+64.0	gift-token-overload	istest	GiftCommitment.LastNextGenCmtProcDtTm.putToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context
+64.0	gift-token-overload	istest	GiftCommitment.LastNextGenCmtProcError.getToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context
+64.0	gift-token-overload	istest	GiftCommitment.LastNextGenCmtProcError.putToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context
+64.0	gift-token-overload	istest	GiftCommitment.PartyPhilanthropicRsrchPrflId.getToken	accepted
+64.0	gift-token-overload	istest	GiftCommitment.PartyPhilanthropicRsrchPrflId.putToken	accepted
+67.0	gift-token-overload	istest	GiftCommitment.LastNextGenCmtProcDtTm.getToken	accepted
+67.0	gift-token-overload	istest	GiftCommitment.LastNextGenCmtProcDtTm.putToken	accepted
+67.0	gift-token-overload	istest	GiftCommitment.LastNextGenCmtProcError.getToken	accepted
+67.0	gift-token-overload	istest	GiftCommitment.LastNextGenCmtProcError.putToken	accepted
+67.0	gift-token-overload	istest	GiftCommitment.PartyPhilanthropicRsrchPrflId.getToken	accepted
+67.0	gift-token-overload	istest	GiftCommitment.PartyPhilanthropicRsrchPrflId.putToken	accepted
+66.0	gift-token-overload	istest	GiftTransaction.GenerationalCohort.getToken	accepted
+66.0	gift-token-overload	istest	GiftTransaction.GenerationalCohort.putToken	accepted
+66.0	gift-token-overload	istest	GiftTransaction.PartyPhilanthropicRsrchPrflId.getToken	accepted
+66.0	gift-token-overload	istest	GiftTransaction.PartyPhilanthropicRsrchPrflId.putToken	accepted
+66.0	gift-token-overload	istest	GiftTransaction.TaxDeductionAmount.getToken	accepted
+66.0	gift-token-overload	istest	GiftTransaction.TaxDeductionAmount.putToken	System.SObjectException: Field TaxDeductionAmount is not editable
+67.0	gift-token-overload	istest	GiftTransaction.GenerationalCohort.getToken	accepted
+67.0	gift-token-overload	istest	GiftTransaction.GenerationalCohort.putToken	accepted
+67.0	gift-token-overload	istest	GiftTransaction.PartyPhilanthropicRsrchPrflId.getToken	accepted
+67.0	gift-token-overload	istest	GiftTransaction.PartyPhilanthropicRsrchPrflId.putToken	accepted
+67.0	gift-token-overload	istest	GiftTransaction.TaxDeductionAmount.getToken	accepted
+67.0	gift-token-overload	istest	GiftTransaction.TaxDeductionAmount.putToken	System.SObjectException: Field TaxDeductionAmount is not editable
+62.0	gift-token-overload	istest	GiftTransaction.GenerationalCohort.getToken	System.SObjectException: Field GiftTransaction.GenerationalCohort is inaccessible in this context
+62.0	gift-token-overload	istest	GiftTransaction.GenerationalCohort.putToken	System.SObjectException: Field GiftTransaction.GenerationalCohort is inaccessible in this context
+62.0	gift-token-overload	istest	GiftTransaction.PartyPhilanthropicRsrchPrflId.getToken	System.SObjectException: Field GiftTransaction.PartyPhilanthropicRsrchPrflId is inaccessible in this context
+62.0	gift-token-overload	istest	GiftTransaction.PartyPhilanthropicRsrchPrflId.putToken	System.SObjectException: Field GiftTransaction.PartyPhilanthropicRsrchPrflId is inaccessible in this context
+62.0	gift-token-overload	istest	GiftTransaction.TaxDeductionAmount.getToken	System.SObjectException: Field GiftTransaction.TaxDeductionAmount is inaccessible in this context
+62.0	gift-token-overload	istest	GiftTransaction.TaxDeductionAmount.putToken	System.SObjectException: Field GiftTransaction.TaxDeductionAmount is inaccessible in this context
+65.0	gift-token-overload	istest	GiftTransaction.GenerationalCohort.getToken	accepted
+65.0	gift-token-overload	istest	GiftTransaction.GenerationalCohort.putToken	accepted
+65.0	gift-token-overload	istest	GiftTransaction.PartyPhilanthropicRsrchPrflId.getToken	accepted
+65.0	gift-token-overload	istest	GiftTransaction.PartyPhilanthropicRsrchPrflId.putToken	accepted
+65.0	gift-token-overload	istest	GiftTransaction.TaxDeductionAmount.getToken	accepted
+65.0	gift-token-overload	istest	GiftTransaction.TaxDeductionAmount.putToken	System.SObjectException: Field TaxDeductionAmount is not editable
+66.0	gift-token-overload	istest	GiftCommitment.LastNextGenCmtProcDtTm.getToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context
+66.0	gift-token-overload	istest	GiftCommitment.LastNextGenCmtProcDtTm.putToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcDtTm is inaccessible in this context
+66.0	gift-token-overload	istest	GiftCommitment.LastNextGenCmtProcError.getToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context
+66.0	gift-token-overload	istest	GiftCommitment.LastNextGenCmtProcError.putToken	System.SObjectException: Field GiftCommitment.LastNextGenCmtProcError is inaccessible in this context
+66.0	gift-token-overload	istest	GiftCommitment.PartyPhilanthropicRsrchPrflId.getToken	accepted
+66.0	gift-token-overload	istest	GiftCommitment.PartyPhilanthropicRsrchPrflId.putToken	accepted
+62.0	doc-token-overload	anonymous	DocumentGenerationProcess.AdditionalMetadata.getToken	System.SObjectException: Field DocumentGenerationProcess.AdditionalMetadata is inaccessible in this context
+62.0	doc-token-overload	anonymous	DocumentGenerationProcess.AdditionalMetadata.putToken	System.SObjectException: Field DocumentGenerationProcess.AdditionalMetadata is inaccessible in this context
+62.0	doc-token-overload	anonymous	DocumentGenerationProcess.DocGenAdditionalInput.getToken	System.SObjectException: Field DocumentGenerationProcess.DocGenAdditionalInput is inaccessible in this context
+62.0	doc-token-overload	anonymous	DocumentGenerationProcess.DocGenAdditionalInput.putToken	System.SObjectException: Field DocumentGenerationProcess.DocGenAdditionalInput is inaccessible in this context
+62.0	doc-token-overload	anonymous	DocumentGenerationProcess.DocGenAdditionalInputType.getToken	System.SObjectException: Field DocumentGenerationProcess.DocGenAdditionalInputType is inaccessible in this context
+62.0	doc-token-overload	anonymous	DocumentGenerationProcess.DocGenAdditionalInputType.putToken	System.SObjectException: Field DocumentGenerationProcess.DocGenAdditionalInputType is inaccessible in this context
+62.0	doc-token-overload	anonymous	DocumentGenerationProcess.EstimatedDocumentSize.getToken	System.SObjectException: Field DocumentGenerationProcess.EstimatedDocumentSize is inaccessible in this context
+62.0	doc-token-overload	anonymous	DocumentGenerationProcess.EstimatedDocumentSize.putToken	System.SObjectException: Field DocumentGenerationProcess.EstimatedDocumentSize is inaccessible in this context
+62.0	doc-token-overload	anonymous	DocumentGenerationProcess.IsLocalizationEnabled.getToken	System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context
+62.0	doc-token-overload	anonymous	DocumentGenerationProcess.IsLocalizationEnabled.putToken	System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context
+62.0	doc-token-overload	anonymous	DocumentGenerationProcess.IsSharedExternally.getToken	System.SObjectException: Field DocumentGenerationProcess.IsSharedExternally is inaccessible in this context
+62.0	doc-token-overload	anonymous	DocumentGenerationProcess.IsSharedExternally.putToken	System.SObjectException: Field DocumentGenerationProcess.IsSharedExternally is inaccessible in this context
+62.0	doc-token-overload	anonymous	DocumentGenerationProcess.IsTocUpdateRequired.getToken	System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context
+62.0	doc-token-overload	anonymous	DocumentGenerationProcess.IsTocUpdateRequired.putToken	System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context
+62.0	doc-token-overload	anonymous	DocumentGenerationProcess.DocGenerationBatchProcessId.getToken	System.SObjectException: Field DocumentGenerationProcess.DocGenerationBatchProcessId is inaccessible in this context
+62.0	doc-token-overload	anonymous	DocumentGenerationProcess.DocGenerationBatchProcessId.putToken	System.SObjectException: Field DocumentGenerationProcess.DocGenerationBatchProcessId is inaccessible in this context
+62.0	doc-token-overload	anonymous	DocumentTemplate.ContextDefinitionName.getToken	System.SObjectException: Field DocumentTemplate.ContextDefinitionName is inaccessible in this context
+62.0	doc-token-overload	anonymous	DocumentTemplate.ContextDefinitionName.putToken	System.SObjectException: Field DocumentTemplate.ContextDefinitionName is inaccessible in this context
+62.0	doc-token-overload	anonymous	DocumentTemplate.ContextFilterName.getToken	System.SObjectException: Field DocumentTemplate.ContextFilterName is inaccessible in this context
+62.0	doc-token-overload	anonymous	DocumentTemplate.ContextFilterName.putToken	System.SObjectException: Field DocumentTemplate.ContextFilterName is inaccessible in this context
+62.0	doc-token-overload	anonymous	DocumentTemplate.ContextMappingName.getToken	System.SObjectException: Field DocumentTemplate.ContextMappingName is inaccessible in this context
+62.0	doc-token-overload	anonymous	DocumentTemplate.ContextMappingName.putToken	System.SObjectException: Field DocumentTemplate.ContextMappingName is inaccessible in this context
+62.0	doc-token-overload	anonymous	DocumentTemplate.ContextTransformationName.getToken	System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context
+62.0	doc-token-overload	anonymous	DocumentTemplate.ContextTransformationName.putToken	System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context
+62.0	doc-token-overload	anonymous	DocumentTemplateSection.DocumentTemplateClauseId.getToken	System.SObjectException: Field DocumentTemplateSection.DocumentTemplateClauseId is inaccessible in this context
+62.0	doc-token-overload	anonymous	DocumentTemplateSection.DocumentTemplateClauseId.putToken	System.SObjectException: Field DocumentTemplateSection.DocumentTemplateClauseId is inaccessible in this context
+63.0	doc-token-overload	anonymous	DocumentGenerationProcess.AdditionalMetadata.getToken	System.SObjectException: Field DocumentGenerationProcess.AdditionalMetadata is inaccessible in this context
+63.0	doc-token-overload	anonymous	DocumentGenerationProcess.AdditionalMetadata.putToken	System.SObjectException: Field DocumentGenerationProcess.AdditionalMetadata is inaccessible in this context
+63.0	doc-token-overload	anonymous	DocumentGenerationProcess.DocGenAdditionalInput.getToken	System.SObjectException: Field DocumentGenerationProcess.DocGenAdditionalInput is inaccessible in this context
+63.0	doc-token-overload	anonymous	DocumentGenerationProcess.DocGenAdditionalInput.putToken	System.SObjectException: Field DocumentGenerationProcess.DocGenAdditionalInput is inaccessible in this context
+63.0	doc-token-overload	anonymous	DocumentGenerationProcess.DocGenAdditionalInputType.getToken	System.SObjectException: Field DocumentGenerationProcess.DocGenAdditionalInputType is inaccessible in this context
+63.0	doc-token-overload	anonymous	DocumentGenerationProcess.DocGenAdditionalInputType.putToken	System.SObjectException: Field DocumentGenerationProcess.DocGenAdditionalInputType is inaccessible in this context
+63.0	doc-token-overload	anonymous	DocumentGenerationProcess.EstimatedDocumentSize.getToken	System.SObjectException: Field DocumentGenerationProcess.EstimatedDocumentSize is inaccessible in this context
+63.0	doc-token-overload	anonymous	DocumentGenerationProcess.EstimatedDocumentSize.putToken	System.SObjectException: Field DocumentGenerationProcess.EstimatedDocumentSize is inaccessible in this context
+63.0	doc-token-overload	anonymous	DocumentGenerationProcess.IsLocalizationEnabled.getToken	System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context
+63.0	doc-token-overload	anonymous	DocumentGenerationProcess.IsLocalizationEnabled.putToken	System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context
+63.0	doc-token-overload	anonymous	DocumentGenerationProcess.IsSharedExternally.getToken	System.SObjectException: Field DocumentGenerationProcess.IsSharedExternally is inaccessible in this context
+63.0	doc-token-overload	anonymous	DocumentGenerationProcess.IsSharedExternally.putToken	System.SObjectException: Field DocumentGenerationProcess.IsSharedExternally is inaccessible in this context
+63.0	doc-token-overload	anonymous	DocumentGenerationProcess.IsTocUpdateRequired.getToken	System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context
+63.0	doc-token-overload	anonymous	DocumentGenerationProcess.IsTocUpdateRequired.putToken	System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context
+63.0	doc-token-overload	anonymous	DocumentGenerationProcess.DocGenerationBatchProcessId.getToken	System.SObjectException: Field DocumentGenerationProcess.DocGenerationBatchProcessId is inaccessible in this context
+63.0	doc-token-overload	anonymous	DocumentGenerationProcess.DocGenerationBatchProcessId.putToken	System.SObjectException: Field DocumentGenerationProcess.DocGenerationBatchProcessId is inaccessible in this context
+63.0	doc-token-overload	anonymous	DocumentTemplate.ContextDefinitionName.getToken	System.SObjectException: Field DocumentTemplate.ContextDefinitionName is inaccessible in this context
+63.0	doc-token-overload	anonymous	DocumentTemplate.ContextDefinitionName.putToken	System.SObjectException: Field DocumentTemplate.ContextDefinitionName is inaccessible in this context
+63.0	doc-token-overload	anonymous	DocumentTemplate.ContextFilterName.getToken	System.SObjectException: Field DocumentTemplate.ContextFilterName is inaccessible in this context
+63.0	doc-token-overload	anonymous	DocumentTemplate.ContextFilterName.putToken	System.SObjectException: Field DocumentTemplate.ContextFilterName is inaccessible in this context
+63.0	doc-token-overload	anonymous	DocumentTemplate.ContextMappingName.getToken	System.SObjectException: Field DocumentTemplate.ContextMappingName is inaccessible in this context
+63.0	doc-token-overload	anonymous	DocumentTemplate.ContextMappingName.putToken	System.SObjectException: Field DocumentTemplate.ContextMappingName is inaccessible in this context
+63.0	doc-token-overload	anonymous	DocumentTemplate.ContextTransformationName.getToken	System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context
+63.0	doc-token-overload	anonymous	DocumentTemplate.ContextTransformationName.putToken	System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context
+63.0	doc-token-overload	anonymous	DocumentTemplateSection.DocumentTemplateClauseId.getToken	System.SObjectException: Field DocumentTemplateSection.DocumentTemplateClauseId is inaccessible in this context
+63.0	doc-token-overload	anonymous	DocumentTemplateSection.DocumentTemplateClauseId.putToken	System.SObjectException: Field DocumentTemplateSection.DocumentTemplateClauseId is inaccessible in this context
+64.0	doc-token-overload	anonymous	DocumentGenerationProcess.AdditionalMetadata.getToken	System.SObjectException: Field DocumentGenerationProcess.AdditionalMetadata is inaccessible in this context
+64.0	doc-token-overload	anonymous	DocumentGenerationProcess.AdditionalMetadata.putToken	System.SObjectException: Field DocumentGenerationProcess.AdditionalMetadata is inaccessible in this context
+64.0	doc-token-overload	anonymous	DocumentGenerationProcess.DocGenAdditionalInput.getToken	accepted
+64.0	doc-token-overload	anonymous	DocumentGenerationProcess.DocGenAdditionalInput.putToken	accepted
+64.0	doc-token-overload	anonymous	DocumentGenerationProcess.DocGenAdditionalInputType.getToken	accepted
+64.0	doc-token-overload	anonymous	DocumentGenerationProcess.DocGenAdditionalInputType.putToken	accepted
+64.0	doc-token-overload	anonymous	DocumentGenerationProcess.EstimatedDocumentSize.getToken	accepted
+64.0	doc-token-overload	anonymous	DocumentGenerationProcess.EstimatedDocumentSize.putToken	accepted
+64.0	doc-token-overload	anonymous	DocumentGenerationProcess.IsLocalizationEnabled.getToken	System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context
+64.0	doc-token-overload	anonymous	DocumentGenerationProcess.IsLocalizationEnabled.putToken	System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context
+64.0	doc-token-overload	anonymous	DocumentGenerationProcess.IsSharedExternally.getToken	System.SObjectException: Field DocumentGenerationProcess.IsSharedExternally is inaccessible in this context
+64.0	doc-token-overload	anonymous	DocumentGenerationProcess.IsSharedExternally.putToken	System.SObjectException: Field DocumentGenerationProcess.IsSharedExternally is inaccessible in this context
+64.0	doc-token-overload	anonymous	DocumentGenerationProcess.IsTocUpdateRequired.getToken	System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context
+64.0	doc-token-overload	anonymous	DocumentGenerationProcess.IsTocUpdateRequired.putToken	System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context
+64.0	doc-token-overload	anonymous	DocumentGenerationProcess.DocGenerationBatchProcessId.getToken	System.SObjectException: Field DocumentGenerationProcess.DocGenerationBatchProcessId is inaccessible in this context
+64.0	doc-token-overload	anonymous	DocumentGenerationProcess.DocGenerationBatchProcessId.putToken	System.SObjectException: Field DocumentGenerationProcess.DocGenerationBatchProcessId is inaccessible in this context
+64.0	doc-token-overload	anonymous	DocumentTemplate.ContextDefinitionName.getToken	accepted
+64.0	doc-token-overload	anonymous	DocumentTemplate.ContextDefinitionName.putToken	accepted
+64.0	doc-token-overload	anonymous	DocumentTemplate.ContextFilterName.getToken	System.SObjectException: Field DocumentTemplate.ContextFilterName is inaccessible in this context
+64.0	doc-token-overload	anonymous	DocumentTemplate.ContextFilterName.putToken	System.SObjectException: Field DocumentTemplate.ContextFilterName is inaccessible in this context
+64.0	doc-token-overload	anonymous	DocumentTemplate.ContextMappingName.getToken	accepted
+64.0	doc-token-overload	anonymous	DocumentTemplate.ContextMappingName.putToken	accepted
+64.0	doc-token-overload	anonymous	DocumentTemplate.ContextTransformationName.getToken	System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context
+64.0	doc-token-overload	anonymous	DocumentTemplate.ContextTransformationName.putToken	System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context
+64.0	doc-token-overload	anonymous	DocumentTemplateSection.DocumentTemplateClauseId.getToken	System.SObjectException: Field DocumentTemplateSection.DocumentTemplateClauseId is inaccessible in this context
+64.0	doc-token-overload	anonymous	DocumentTemplateSection.DocumentTemplateClauseId.putToken	System.SObjectException: Field DocumentTemplateSection.DocumentTemplateClauseId is inaccessible in this context
+65.0	doc-token-overload	anonymous	DocumentGenerationProcess.AdditionalMetadata.getToken	System.SObjectException: Field DocumentGenerationProcess.AdditionalMetadata is inaccessible in this context
+65.0	doc-token-overload	anonymous	DocumentGenerationProcess.AdditionalMetadata.putToken	System.SObjectException: Field DocumentGenerationProcess.AdditionalMetadata is inaccessible in this context
+65.0	doc-token-overload	anonymous	DocumentGenerationProcess.DocGenAdditionalInput.getToken	accepted
+65.0	doc-token-overload	anonymous	DocumentGenerationProcess.DocGenAdditionalInput.putToken	accepted
+65.0	doc-token-overload	anonymous	DocumentGenerationProcess.DocGenAdditionalInputType.getToken	accepted
+65.0	doc-token-overload	anonymous	DocumentGenerationProcess.DocGenAdditionalInputType.putToken	accepted
+65.0	doc-token-overload	anonymous	DocumentGenerationProcess.EstimatedDocumentSize.getToken	accepted
+65.0	doc-token-overload	anonymous	DocumentGenerationProcess.EstimatedDocumentSize.putToken	accepted
+65.0	doc-token-overload	anonymous	DocumentGenerationProcess.IsLocalizationEnabled.getToken	System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context
+65.0	doc-token-overload	anonymous	DocumentGenerationProcess.IsLocalizationEnabled.putToken	System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context
+65.0	doc-token-overload	anonymous	DocumentGenerationProcess.IsSharedExternally.getToken	System.SObjectException: Field DocumentGenerationProcess.IsSharedExternally is inaccessible in this context
+65.0	doc-token-overload	anonymous	DocumentGenerationProcess.IsSharedExternally.putToken	System.SObjectException: Field DocumentGenerationProcess.IsSharedExternally is inaccessible in this context
+65.0	doc-token-overload	anonymous	DocumentGenerationProcess.IsTocUpdateRequired.getToken	System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context
+65.0	doc-token-overload	anonymous	DocumentGenerationProcess.IsTocUpdateRequired.putToken	System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context
+65.0	doc-token-overload	anonymous	DocumentGenerationProcess.DocGenerationBatchProcessId.getToken	System.SObjectException: Field DocumentGenerationProcess.DocGenerationBatchProcessId is inaccessible in this context
+65.0	doc-token-overload	anonymous	DocumentGenerationProcess.DocGenerationBatchProcessId.putToken	System.SObjectException: Field DocumentGenerationProcess.DocGenerationBatchProcessId is inaccessible in this context
+65.0	doc-token-overload	anonymous	DocumentTemplate.ContextDefinitionName.getToken	accepted
+65.0	doc-token-overload	anonymous	DocumentTemplate.ContextDefinitionName.putToken	accepted
+65.0	doc-token-overload	anonymous	DocumentTemplate.ContextFilterName.getToken	System.SObjectException: Field DocumentTemplate.ContextFilterName is inaccessible in this context
+65.0	doc-token-overload	anonymous	DocumentTemplate.ContextFilterName.putToken	System.SObjectException: Field DocumentTemplate.ContextFilterName is inaccessible in this context
+65.0	doc-token-overload	anonymous	DocumentTemplate.ContextMappingName.getToken	accepted
+65.0	doc-token-overload	anonymous	DocumentTemplate.ContextMappingName.putToken	accepted
+65.0	doc-token-overload	anonymous	DocumentTemplate.ContextTransformationName.getToken	System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context
+65.0	doc-token-overload	anonymous	DocumentTemplate.ContextTransformationName.putToken	System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context
+65.0	doc-token-overload	anonymous	DocumentTemplateSection.DocumentTemplateClauseId.getToken	System.SObjectException: Field DocumentTemplateSection.DocumentTemplateClauseId is inaccessible in this context
+65.0	doc-token-overload	anonymous	DocumentTemplateSection.DocumentTemplateClauseId.putToken	System.SObjectException: Field DocumentTemplateSection.DocumentTemplateClauseId is inaccessible in this context
+66.0	doc-token-overload	anonymous	DocumentGenerationProcess.AdditionalMetadata.getToken	accepted
+66.0	doc-token-overload	anonymous	DocumentGenerationProcess.AdditionalMetadata.putToken	accepted
+66.0	doc-token-overload	anonymous	DocumentGenerationProcess.DocGenAdditionalInput.getToken	accepted
+66.0	doc-token-overload	anonymous	DocumentGenerationProcess.DocGenAdditionalInput.putToken	accepted
+66.0	doc-token-overload	anonymous	DocumentGenerationProcess.DocGenAdditionalInputType.getToken	accepted
+66.0	doc-token-overload	anonymous	DocumentGenerationProcess.DocGenAdditionalInputType.putToken	accepted
+66.0	doc-token-overload	anonymous	DocumentGenerationProcess.EstimatedDocumentSize.getToken	accepted
+66.0	doc-token-overload	anonymous	DocumentGenerationProcess.EstimatedDocumentSize.putToken	accepted
+66.0	doc-token-overload	anonymous	DocumentGenerationProcess.IsLocalizationEnabled.getToken	System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context
+66.0	doc-token-overload	anonymous	DocumentGenerationProcess.IsLocalizationEnabled.putToken	System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context
+66.0	doc-token-overload	anonymous	DocumentGenerationProcess.IsSharedExternally.getToken	accepted
+66.0	doc-token-overload	anonymous	DocumentGenerationProcess.IsSharedExternally.putToken	accepted
+66.0	doc-token-overload	anonymous	DocumentGenerationProcess.IsTocUpdateRequired.getToken	System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context
+66.0	doc-token-overload	anonymous	DocumentGenerationProcess.IsTocUpdateRequired.putToken	System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context
+66.0	doc-token-overload	anonymous	DocumentGenerationProcess.DocGenerationBatchProcessId.getToken	System.SObjectException: Field DocumentGenerationProcess.DocGenerationBatchProcessId is inaccessible in this context
+66.0	doc-token-overload	anonymous	DocumentGenerationProcess.DocGenerationBatchProcessId.putToken	System.SObjectException: Field DocumentGenerationProcess.DocGenerationBatchProcessId is inaccessible in this context
+66.0	doc-token-overload	anonymous	DocumentTemplate.ContextDefinitionName.getToken	accepted
+66.0	doc-token-overload	anonymous	DocumentTemplate.ContextDefinitionName.putToken	accepted
+66.0	doc-token-overload	anonymous	DocumentTemplate.ContextFilterName.getToken	accepted
+66.0	doc-token-overload	anonymous	DocumentTemplate.ContextFilterName.putToken	accepted
+66.0	doc-token-overload	anonymous	DocumentTemplate.ContextMappingName.getToken	accepted
+66.0	doc-token-overload	anonymous	DocumentTemplate.ContextMappingName.putToken	accepted
+66.0	doc-token-overload	anonymous	DocumentTemplate.ContextTransformationName.getToken	System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context
+66.0	doc-token-overload	anonymous	DocumentTemplate.ContextTransformationName.putToken	System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context
+66.0	doc-token-overload	anonymous	DocumentTemplateSection.DocumentTemplateClauseId.getToken	System.SObjectException: Field DocumentTemplateSection.DocumentTemplateClauseId is inaccessible in this context
+66.0	doc-token-overload	anonymous	DocumentTemplateSection.DocumentTemplateClauseId.putToken	System.SObjectException: Field DocumentTemplateSection.DocumentTemplateClauseId is inaccessible in this context
+67.0	doc-token-overload	anonymous	DocumentGenerationProcess.AdditionalMetadata.getToken	accepted
+67.0	doc-token-overload	anonymous	DocumentGenerationProcess.AdditionalMetadata.putToken	accepted
+67.0	doc-token-overload	anonymous	DocumentGenerationProcess.DocGenAdditionalInput.getToken	accepted
+67.0	doc-token-overload	anonymous	DocumentGenerationProcess.DocGenAdditionalInput.putToken	accepted
+67.0	doc-token-overload	anonymous	DocumentGenerationProcess.DocGenAdditionalInputType.getToken	accepted
+67.0	doc-token-overload	anonymous	DocumentGenerationProcess.DocGenAdditionalInputType.putToken	accepted
+67.0	doc-token-overload	anonymous	DocumentGenerationProcess.EstimatedDocumentSize.getToken	accepted
+67.0	doc-token-overload	anonymous	DocumentGenerationProcess.EstimatedDocumentSize.putToken	accepted
+67.0	doc-token-overload	anonymous	DocumentGenerationProcess.IsLocalizationEnabled.getToken	accepted
+67.0	doc-token-overload	anonymous	DocumentGenerationProcess.IsLocalizationEnabled.putToken	accepted
+67.0	doc-token-overload	anonymous	DocumentGenerationProcess.IsSharedExternally.getToken	accepted
+67.0	doc-token-overload	anonymous	DocumentGenerationProcess.IsSharedExternally.putToken	accepted
+67.0	doc-token-overload	anonymous	DocumentGenerationProcess.IsTocUpdateRequired.getToken	accepted
+67.0	doc-token-overload	anonymous	DocumentGenerationProcess.IsTocUpdateRequired.putToken	accepted
+67.0	doc-token-overload	anonymous	DocumentGenerationProcess.DocGenerationBatchProcessId.getToken	System.SObjectException: Field DocumentGenerationProcess.DocGenerationBatchProcessId is inaccessible in this context
+67.0	doc-token-overload	anonymous	DocumentGenerationProcess.DocGenerationBatchProcessId.putToken	System.SObjectException: Field DocumentGenerationProcess.DocGenerationBatchProcessId is inaccessible in this context
+67.0	doc-token-overload	anonymous	DocumentTemplate.ContextDefinitionName.getToken	accepted
+67.0	doc-token-overload	anonymous	DocumentTemplate.ContextDefinitionName.putToken	accepted
+67.0	doc-token-overload	anonymous	DocumentTemplate.ContextFilterName.getToken	accepted
+67.0	doc-token-overload	anonymous	DocumentTemplate.ContextFilterName.putToken	accepted
+67.0	doc-token-overload	anonymous	DocumentTemplate.ContextMappingName.getToken	accepted
+67.0	doc-token-overload	anonymous	DocumentTemplate.ContextMappingName.putToken	accepted
+67.0	doc-token-overload	anonymous	DocumentTemplate.ContextTransformationName.getToken	accepted
+67.0	doc-token-overload	anonymous	DocumentTemplate.ContextTransformationName.putToken	accepted
+67.0	doc-token-overload	anonymous	DocumentTemplateSection.DocumentTemplateClauseId.getToken	System.SObjectException: Field DocumentTemplateSection.DocumentTemplateClauseId is inaccessible in this context
+67.0	doc-token-overload	anonymous	DocumentTemplateSection.DocumentTemplateClauseId.putToken	System.SObjectException: Field DocumentTemplateSection.DocumentTemplateClauseId is inaccessible in this context
+66.0	doc-token-overload	istest	DocumentTemplate.ContextDefinitionName.getToken	accepted
+66.0	doc-token-overload	istest	DocumentTemplate.ContextDefinitionName.putToken	accepted
+66.0	doc-token-overload	istest	DocumentTemplate.ContextFilterName.getToken	accepted
+66.0	doc-token-overload	istest	DocumentTemplate.ContextFilterName.putToken	accepted
+66.0	doc-token-overload	istest	DocumentTemplate.ContextMappingName.getToken	accepted
+66.0	doc-token-overload	istest	DocumentTemplate.ContextMappingName.putToken	accepted
+66.0	doc-token-overload	istest	DocumentTemplate.ContextTransformationName.getToken	System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context
+66.0	doc-token-overload	istest	DocumentTemplate.ContextTransformationName.putToken	System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context
+66.0	doc-token-overload	istest	DocumentGenerationProcess.AdditionalMetadata.getToken	accepted
+66.0	doc-token-overload	istest	DocumentGenerationProcess.AdditionalMetadata.putToken	accepted
+66.0	doc-token-overload	istest	DocumentGenerationProcess.DocGenAdditionalInput.getToken	accepted
+66.0	doc-token-overload	istest	DocumentGenerationProcess.DocGenAdditionalInput.putToken	accepted
+66.0	doc-token-overload	istest	DocumentGenerationProcess.DocGenAdditionalInputType.getToken	accepted
+66.0	doc-token-overload	istest	DocumentGenerationProcess.DocGenAdditionalInputType.putToken	accepted
+66.0	doc-token-overload	istest	DocumentGenerationProcess.EstimatedDocumentSize.getToken	accepted
+66.0	doc-token-overload	istest	DocumentGenerationProcess.EstimatedDocumentSize.putToken	accepted
+66.0	doc-token-overload	istest	DocumentGenerationProcess.IsLocalizationEnabled.getToken	System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context
+66.0	doc-token-overload	istest	DocumentGenerationProcess.IsLocalizationEnabled.putToken	System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context
+66.0	doc-token-overload	istest	DocumentGenerationProcess.IsSharedExternally.getToken	accepted
+66.0	doc-token-overload	istest	DocumentGenerationProcess.IsSharedExternally.putToken	accepted
+66.0	doc-token-overload	istest	DocumentGenerationProcess.IsTocUpdateRequired.getToken	System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context
+66.0	doc-token-overload	istest	DocumentGenerationProcess.IsTocUpdateRequired.putToken	System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context
+66.0	doc-token-overload	istest	DocumentGenerationProcess.DocGenerationBatchProcessId.getToken	accepted
+66.0	doc-token-overload	istest	DocumentGenerationProcess.DocGenerationBatchProcessId.putToken	accepted
+62.0	doc-token-overload	istest	DocumentGenerationProcess.AdditionalMetadata.getToken	System.SObjectException: Field DocumentGenerationProcess.AdditionalMetadata is inaccessible in this context
+62.0	doc-token-overload	istest	DocumentGenerationProcess.AdditionalMetadata.putToken	System.SObjectException: Field DocumentGenerationProcess.AdditionalMetadata is inaccessible in this context
+62.0	doc-token-overload	istest	DocumentGenerationProcess.DocGenAdditionalInput.getToken	System.SObjectException: Field DocumentGenerationProcess.DocGenAdditionalInput is inaccessible in this context
+62.0	doc-token-overload	istest	DocumentGenerationProcess.DocGenAdditionalInput.putToken	System.SObjectException: Field DocumentGenerationProcess.DocGenAdditionalInput is inaccessible in this context
+62.0	doc-token-overload	istest	DocumentGenerationProcess.DocGenAdditionalInputType.getToken	System.SObjectException: Field DocumentGenerationProcess.DocGenAdditionalInputType is inaccessible in this context
+62.0	doc-token-overload	istest	DocumentGenerationProcess.DocGenAdditionalInputType.putToken	System.SObjectException: Field DocumentGenerationProcess.DocGenAdditionalInputType is inaccessible in this context
+62.0	doc-token-overload	istest	DocumentGenerationProcess.EstimatedDocumentSize.getToken	System.SObjectException: Field DocumentGenerationProcess.EstimatedDocumentSize is inaccessible in this context
+62.0	doc-token-overload	istest	DocumentGenerationProcess.EstimatedDocumentSize.putToken	System.SObjectException: Field DocumentGenerationProcess.EstimatedDocumentSize is inaccessible in this context
+62.0	doc-token-overload	istest	DocumentGenerationProcess.IsLocalizationEnabled.getToken	System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context
+62.0	doc-token-overload	istest	DocumentGenerationProcess.IsLocalizationEnabled.putToken	System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context
+62.0	doc-token-overload	istest	DocumentGenerationProcess.IsSharedExternally.getToken	System.SObjectException: Field DocumentGenerationProcess.IsSharedExternally is inaccessible in this context
+62.0	doc-token-overload	istest	DocumentGenerationProcess.IsSharedExternally.putToken	System.SObjectException: Field DocumentGenerationProcess.IsSharedExternally is inaccessible in this context
+62.0	doc-token-overload	istest	DocumentGenerationProcess.IsTocUpdateRequired.getToken	System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context
+62.0	doc-token-overload	istest	DocumentGenerationProcess.IsTocUpdateRequired.putToken	System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context
+62.0	doc-token-overload	istest	DocumentGenerationProcess.DocGenerationBatchProcessId.getToken	accepted
+62.0	doc-token-overload	istest	DocumentGenerationProcess.DocGenerationBatchProcessId.putToken	accepted
+64.0	doc-token-overload	istest	DocumentTemplateSection.DocumentTemplateClauseId.getToken	accepted
+64.0	doc-token-overload	istest	DocumentTemplateSection.DocumentTemplateClauseId.putToken	accepted
+67.0	doc-token-overload	istest	DocumentTemplateSection.DocumentTemplateClauseId.getToken	accepted
+67.0	doc-token-overload	istest	DocumentTemplateSection.DocumentTemplateClauseId.putToken	accepted
+67.0	doc-token-overload	istest	DocumentTemplate.ContextDefinitionName.getToken	accepted
+67.0	doc-token-overload	istest	DocumentTemplate.ContextDefinitionName.putToken	accepted
+67.0	doc-token-overload	istest	DocumentTemplate.ContextFilterName.getToken	accepted
+67.0	doc-token-overload	istest	DocumentTemplate.ContextFilterName.putToken	accepted
+67.0	doc-token-overload	istest	DocumentTemplate.ContextMappingName.getToken	accepted
+67.0	doc-token-overload	istest	DocumentTemplate.ContextMappingName.putToken	accepted
+67.0	doc-token-overload	istest	DocumentTemplate.ContextTransformationName.getToken	accepted
+67.0	doc-token-overload	istest	DocumentTemplate.ContextTransformationName.putToken	accepted
+66.0	doc-token-overload	istest	DocumentTemplateSection.DocumentTemplateClauseId.getToken	accepted
+66.0	doc-token-overload	istest	DocumentTemplateSection.DocumentTemplateClauseId.putToken	accepted
+63.0	doc-token-overload	istest	DocumentTemplate.ContextDefinitionName.getToken	System.SObjectException: Field DocumentTemplate.ContextDefinitionName is inaccessible in this context
+63.0	doc-token-overload	istest	DocumentTemplate.ContextDefinitionName.putToken	System.SObjectException: Field DocumentTemplate.ContextDefinitionName is inaccessible in this context
+63.0	doc-token-overload	istest	DocumentTemplate.ContextFilterName.getToken	System.SObjectException: Field DocumentTemplate.ContextFilterName is inaccessible in this context
+63.0	doc-token-overload	istest	DocumentTemplate.ContextFilterName.putToken	System.SObjectException: Field DocumentTemplate.ContextFilterName is inaccessible in this context
+63.0	doc-token-overload	istest	DocumentTemplate.ContextMappingName.getToken	System.SObjectException: Field DocumentTemplate.ContextMappingName is inaccessible in this context
+63.0	doc-token-overload	istest	DocumentTemplate.ContextMappingName.putToken	System.SObjectException: Field DocumentTemplate.ContextMappingName is inaccessible in this context
+63.0	doc-token-overload	istest	DocumentTemplate.ContextTransformationName.getToken	System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context
+63.0	doc-token-overload	istest	DocumentTemplate.ContextTransformationName.putToken	System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context
+62.0	doc-token-overload	istest	DocumentTemplate.ContextDefinitionName.getToken	System.SObjectException: Field DocumentTemplate.ContextDefinitionName is inaccessible in this context
+62.0	doc-token-overload	istest	DocumentTemplate.ContextDefinitionName.putToken	System.SObjectException: Field DocumentTemplate.ContextDefinitionName is inaccessible in this context
+62.0	doc-token-overload	istest	DocumentTemplate.ContextFilterName.getToken	System.SObjectException: Field DocumentTemplate.ContextFilterName is inaccessible in this context
+62.0	doc-token-overload	istest	DocumentTemplate.ContextFilterName.putToken	System.SObjectException: Field DocumentTemplate.ContextFilterName is inaccessible in this context
+62.0	doc-token-overload	istest	DocumentTemplate.ContextMappingName.getToken	System.SObjectException: Field DocumentTemplate.ContextMappingName is inaccessible in this context
+62.0	doc-token-overload	istest	DocumentTemplate.ContextMappingName.putToken	System.SObjectException: Field DocumentTemplate.ContextMappingName is inaccessible in this context
+62.0	doc-token-overload	istest	DocumentTemplate.ContextTransformationName.getToken	System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context
+62.0	doc-token-overload	istest	DocumentTemplate.ContextTransformationName.putToken	System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context
+62.0	doc-token-overload	istest	DocumentTemplateSection.DocumentTemplateClauseId.getToken	accepted
+62.0	doc-token-overload	istest	DocumentTemplateSection.DocumentTemplateClauseId.putToken	accepted
+63.0	doc-token-overload	istest	DocumentTemplateSection.DocumentTemplateClauseId.getToken	accepted
+63.0	doc-token-overload	istest	DocumentTemplateSection.DocumentTemplateClauseId.putToken	accepted
+63.0	doc-token-overload	istest	DocumentGenerationProcess.AdditionalMetadata.getToken	System.SObjectException: Field DocumentGenerationProcess.AdditionalMetadata is inaccessible in this context
+63.0	doc-token-overload	istest	DocumentGenerationProcess.AdditionalMetadata.putToken	System.SObjectException: Field DocumentGenerationProcess.AdditionalMetadata is inaccessible in this context
+63.0	doc-token-overload	istest	DocumentGenerationProcess.DocGenAdditionalInput.getToken	System.SObjectException: Field DocumentGenerationProcess.DocGenAdditionalInput is inaccessible in this context
+63.0	doc-token-overload	istest	DocumentGenerationProcess.DocGenAdditionalInput.putToken	System.SObjectException: Field DocumentGenerationProcess.DocGenAdditionalInput is inaccessible in this context
+63.0	doc-token-overload	istest	DocumentGenerationProcess.DocGenAdditionalInputType.getToken	System.SObjectException: Field DocumentGenerationProcess.DocGenAdditionalInputType is inaccessible in this context
+63.0	doc-token-overload	istest	DocumentGenerationProcess.DocGenAdditionalInputType.putToken	System.SObjectException: Field DocumentGenerationProcess.DocGenAdditionalInputType is inaccessible in this context
+63.0	doc-token-overload	istest	DocumentGenerationProcess.EstimatedDocumentSize.getToken	System.SObjectException: Field DocumentGenerationProcess.EstimatedDocumentSize is inaccessible in this context
+63.0	doc-token-overload	istest	DocumentGenerationProcess.EstimatedDocumentSize.putToken	System.SObjectException: Field DocumentGenerationProcess.EstimatedDocumentSize is inaccessible in this context
+63.0	doc-token-overload	istest	DocumentGenerationProcess.IsLocalizationEnabled.getToken	System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context
+63.0	doc-token-overload	istest	DocumentGenerationProcess.IsLocalizationEnabled.putToken	System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context
+63.0	doc-token-overload	istest	DocumentGenerationProcess.IsSharedExternally.getToken	System.SObjectException: Field DocumentGenerationProcess.IsSharedExternally is inaccessible in this context
+63.0	doc-token-overload	istest	DocumentGenerationProcess.IsSharedExternally.putToken	System.SObjectException: Field DocumentGenerationProcess.IsSharedExternally is inaccessible in this context
+63.0	doc-token-overload	istest	DocumentGenerationProcess.IsTocUpdateRequired.getToken	System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context
+63.0	doc-token-overload	istest	DocumentGenerationProcess.IsTocUpdateRequired.putToken	System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context
+63.0	doc-token-overload	istest	DocumentGenerationProcess.DocGenerationBatchProcessId.getToken	accepted
+63.0	doc-token-overload	istest	DocumentGenerationProcess.DocGenerationBatchProcessId.putToken	accepted
+65.0	doc-token-overload	istest	DocumentGenerationProcess.AdditionalMetadata.getToken	System.SObjectException: Field DocumentGenerationProcess.AdditionalMetadata is inaccessible in this context
+65.0	doc-token-overload	istest	DocumentGenerationProcess.AdditionalMetadata.putToken	System.SObjectException: Field DocumentGenerationProcess.AdditionalMetadata is inaccessible in this context
+65.0	doc-token-overload	istest	DocumentGenerationProcess.DocGenAdditionalInput.getToken	accepted
+65.0	doc-token-overload	istest	DocumentGenerationProcess.DocGenAdditionalInput.putToken	accepted
+65.0	doc-token-overload	istest	DocumentGenerationProcess.DocGenAdditionalInputType.getToken	accepted
+65.0	doc-token-overload	istest	DocumentGenerationProcess.DocGenAdditionalInputType.putToken	accepted
+65.0	doc-token-overload	istest	DocumentGenerationProcess.EstimatedDocumentSize.getToken	accepted
+65.0	doc-token-overload	istest	DocumentGenerationProcess.EstimatedDocumentSize.putToken	accepted
+65.0	doc-token-overload	istest	DocumentGenerationProcess.IsLocalizationEnabled.getToken	System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context
+65.0	doc-token-overload	istest	DocumentGenerationProcess.IsLocalizationEnabled.putToken	System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context
+65.0	doc-token-overload	istest	DocumentGenerationProcess.IsSharedExternally.getToken	System.SObjectException: Field DocumentGenerationProcess.IsSharedExternally is inaccessible in this context
+65.0	doc-token-overload	istest	DocumentGenerationProcess.IsSharedExternally.putToken	System.SObjectException: Field DocumentGenerationProcess.IsSharedExternally is inaccessible in this context
+65.0	doc-token-overload	istest	DocumentGenerationProcess.IsTocUpdateRequired.getToken	System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context
+65.0	doc-token-overload	istest	DocumentGenerationProcess.IsTocUpdateRequired.putToken	System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context
+65.0	doc-token-overload	istest	DocumentGenerationProcess.DocGenerationBatchProcessId.getToken	accepted
+65.0	doc-token-overload	istest	DocumentGenerationProcess.DocGenerationBatchProcessId.putToken	accepted
+67.0	doc-token-overload	istest	DocumentGenerationProcess.AdditionalMetadata.getToken	accepted
+67.0	doc-token-overload	istest	DocumentGenerationProcess.AdditionalMetadata.putToken	accepted
+67.0	doc-token-overload	istest	DocumentGenerationProcess.DocGenAdditionalInput.getToken	accepted
+67.0	doc-token-overload	istest	DocumentGenerationProcess.DocGenAdditionalInput.putToken	accepted
+67.0	doc-token-overload	istest	DocumentGenerationProcess.DocGenAdditionalInputType.getToken	accepted
+67.0	doc-token-overload	istest	DocumentGenerationProcess.DocGenAdditionalInputType.putToken	accepted
+67.0	doc-token-overload	istest	DocumentGenerationProcess.EstimatedDocumentSize.getToken	accepted
+67.0	doc-token-overload	istest	DocumentGenerationProcess.EstimatedDocumentSize.putToken	accepted
+67.0	doc-token-overload	istest	DocumentGenerationProcess.IsLocalizationEnabled.getToken	accepted
+67.0	doc-token-overload	istest	DocumentGenerationProcess.IsLocalizationEnabled.putToken	accepted
+67.0	doc-token-overload	istest	DocumentGenerationProcess.IsSharedExternally.getToken	accepted
+67.0	doc-token-overload	istest	DocumentGenerationProcess.IsSharedExternally.putToken	accepted
+67.0	doc-token-overload	istest	DocumentGenerationProcess.IsTocUpdateRequired.getToken	accepted
+67.0	doc-token-overload	istest	DocumentGenerationProcess.IsTocUpdateRequired.putToken	accepted
+67.0	doc-token-overload	istest	DocumentGenerationProcess.DocGenerationBatchProcessId.getToken	accepted
+67.0	doc-token-overload	istest	DocumentGenerationProcess.DocGenerationBatchProcessId.putToken	accepted
+65.0	doc-token-overload	istest	DocumentTemplateSection.DocumentTemplateClauseId.getToken	accepted
+65.0	doc-token-overload	istest	DocumentTemplateSection.DocumentTemplateClauseId.putToken	accepted
+64.0	doc-token-overload	istest	DocumentTemplate.ContextDefinitionName.getToken	accepted
+64.0	doc-token-overload	istest	DocumentTemplate.ContextDefinitionName.putToken	accepted
+64.0	doc-token-overload	istest	DocumentTemplate.ContextFilterName.getToken	System.SObjectException: Field DocumentTemplate.ContextFilterName is inaccessible in this context
+64.0	doc-token-overload	istest	DocumentTemplate.ContextFilterName.putToken	System.SObjectException: Field DocumentTemplate.ContextFilterName is inaccessible in this context
+64.0	doc-token-overload	istest	DocumentTemplate.ContextMappingName.getToken	accepted
+64.0	doc-token-overload	istest	DocumentTemplate.ContextMappingName.putToken	accepted
+64.0	doc-token-overload	istest	DocumentTemplate.ContextTransformationName.getToken	System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context
+64.0	doc-token-overload	istest	DocumentTemplate.ContextTransformationName.putToken	System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context
+64.0	doc-token-overload	istest	DocumentGenerationProcess.AdditionalMetadata.getToken	System.SObjectException: Field DocumentGenerationProcess.AdditionalMetadata is inaccessible in this context
+64.0	doc-token-overload	istest	DocumentGenerationProcess.AdditionalMetadata.putToken	System.SObjectException: Field DocumentGenerationProcess.AdditionalMetadata is inaccessible in this context
+64.0	doc-token-overload	istest	DocumentGenerationProcess.DocGenAdditionalInput.getToken	accepted
+64.0	doc-token-overload	istest	DocumentGenerationProcess.DocGenAdditionalInput.putToken	accepted
+64.0	doc-token-overload	istest	DocumentGenerationProcess.DocGenAdditionalInputType.getToken	accepted
+64.0	doc-token-overload	istest	DocumentGenerationProcess.DocGenAdditionalInputType.putToken	accepted
+64.0	doc-token-overload	istest	DocumentGenerationProcess.EstimatedDocumentSize.getToken	accepted
+64.0	doc-token-overload	istest	DocumentGenerationProcess.EstimatedDocumentSize.putToken	accepted
+64.0	doc-token-overload	istest	DocumentGenerationProcess.IsLocalizationEnabled.getToken	System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context
+64.0	doc-token-overload	istest	DocumentGenerationProcess.IsLocalizationEnabled.putToken	System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context
+64.0	doc-token-overload	istest	DocumentGenerationProcess.IsSharedExternally.getToken	System.SObjectException: Field DocumentGenerationProcess.IsSharedExternally is inaccessible in this context
+64.0	doc-token-overload	istest	DocumentGenerationProcess.IsSharedExternally.putToken	System.SObjectException: Field DocumentGenerationProcess.IsSharedExternally is inaccessible in this context
+64.0	doc-token-overload	istest	DocumentGenerationProcess.IsTocUpdateRequired.getToken	System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context
+64.0	doc-token-overload	istest	DocumentGenerationProcess.IsTocUpdateRequired.putToken	System.SObjectException: Field DocumentGenerationProcess.IsTocUpdateRequired is inaccessible in this context
+64.0	doc-token-overload	istest	DocumentGenerationProcess.DocGenerationBatchProcessId.getToken	accepted
+64.0	doc-token-overload	istest	DocumentGenerationProcess.DocGenerationBatchProcessId.putToken	accepted
+65.0	doc-token-overload	istest	DocumentTemplate.ContextDefinitionName.getToken	accepted
+65.0	doc-token-overload	istest	DocumentTemplate.ContextDefinitionName.putToken	accepted
+65.0	doc-token-overload	istest	DocumentTemplate.ContextFilterName.getToken	System.SObjectException: Field DocumentTemplate.ContextFilterName is inaccessible in this context
+65.0	doc-token-overload	istest	DocumentTemplate.ContextFilterName.putToken	System.SObjectException: Field DocumentTemplate.ContextFilterName is inaccessible in this context
+65.0	doc-token-overload	istest	DocumentTemplate.ContextMappingName.getToken	accepted
+65.0	doc-token-overload	istest	DocumentTemplate.ContextMappingName.putToken	accepted
+65.0	doc-token-overload	istest	DocumentTemplate.ContextTransformationName.getToken	System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context
+65.0	doc-token-overload	istest	DocumentTemplate.ContextTransformationName.putToken	System.SObjectException: Field DocumentTemplate.ContextTransformationName is inaccessible in this context
+62.0	docgen-isolated	istest	DocumentTemplateContentDoc.ContentDocumentId-facets	REFERENCE|ContentDocument|ContentDocument|true|true
+62.0	docgen-isolated	istest	DocumentTemplateContentDoc.DocumentTemplateId-facets	REFERENCE|DocumentTemplate|DocumentTemplate|true|false
+62.0	docgen-isolated	istest	DocumentTemplateContentDoc.LatestContentVersionId-facets	REFERENCE|ContentVersion|LatestContentVersion|false|false
+67.0	docgen-isolated	istest	DocumentTemplateContentDoc.ContentDocumentId-facets	REFERENCE|ContentDocument|ContentDocument|true|true
+67.0	docgen-isolated	istest	DocumentTemplateContentDoc.DocumentTemplateId-facets	REFERENCE|DocumentTemplate|DocumentTemplate|true|false
+67.0	docgen-isolated	istest	DocumentTemplateContentDoc.LatestContentVersionId-facets	REFERENCE|ContentVersion|LatestContentVersion|false|false
+62.0	docgen-isolated	anonymous	DocumentTemplateContentDoc.OwnedMissingField	false
+62.0	docgen-isolated	istest	DocumentTemplateContentDoc.OwnedMissingField	false
+67.0	docgen-isolated	anonymous	DocumentTemplateContentDoc.OwnedMissingField	false
+67.0	docgen-isolated	istest	DocumentTemplateContentDoc.OwnedMissingField	false
+62.0	doc-query-routes	anonymous	DocumentGenerationProcess.IsLocalizationEnabled.countQuery	System.QueryException: No such column 'IsLocalizationEnabled' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	doc-query-routes	anonymous	DocumentGenerationProcess.IsLocalizationEnabled.queryLocator	System.QueryException: No such column 'IsLocalizationEnabled' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	doc-query-routes	anonymous	DocumentTemplate.ContextMappingName.countQuery	System.QueryException: No such column 'ContextMappingName' on entity 'DocumentTemplate'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	doc-query-routes	anonymous	DocumentTemplate.ContextMappingName.queryLocator	System.QueryException: No such column 'ContextMappingName' on entity 'DocumentTemplate'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+67.0	doc-query-routes	anonymous	DocumentGenerationProcess.IsLocalizationEnabled.countQuery	accepted
+67.0	doc-query-routes	anonymous	DocumentGenerationProcess.IsLocalizationEnabled.queryLocator	accepted
+67.0	doc-query-routes	anonymous	DocumentTemplate.ContextMappingName.countQuery	accepted
+67.0	doc-query-routes	anonymous	DocumentTemplate.ContextMappingName.queryLocator	accepted
+62.0	doc-query-routes	istest	DocumentGenerationProcess.IsLocalizationEnabled.countQuery	System.QueryException: No such column 'IsLocalizationEnabled' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	doc-query-routes	istest	DocumentGenerationProcess.IsLocalizationEnabled.queryLocator	System.QueryException: No such column 'IsLocalizationEnabled' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	doc-query-routes	istest	DocumentTemplate.ContextMappingName.countQuery	System.QueryException: No such column 'ContextMappingName' on entity 'DocumentTemplate'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	doc-query-routes	istest	DocumentTemplate.ContextMappingName.queryLocator	System.QueryException: No such column 'ContextMappingName' on entity 'DocumentTemplate'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+67.0	doc-query-routes	istest	DocumentGenerationProcess.IsLocalizationEnabled.countQuery	accepted
+67.0	doc-query-routes	istest	DocumentGenerationProcess.IsLocalizationEnabled.queryLocator	accepted
+67.0	doc-query-routes	istest	DocumentTemplate.ContextMappingName.countQuery	accepted
+67.0	doc-query-routes	istest	DocumentTemplate.ContextMappingName.queryLocator	accepted
+62.0	fundraising-isolated	anonymous	GiftTransaction.GiftCommitmentScheduleId-reference	REFERENCE|GiftCommitmentSchedule|GiftCommitmentSchedule
+62.0	fundraising-isolated	anonymous	GiftTransaction.OutreachSourceCodeId-reference	REFERENCE|OutreachSourceCode|OutreachSourceCode
+62.0	fundraising-isolated	anonymous	GiftTransaction.PaymentInstrumentId-reference	REFERENCE|PaymentInstrument|PaymentInstrument
+67.0	fundraising-isolated	anonymous	GiftTransaction.GiftCommitmentScheduleId-reference	REFERENCE|GiftCommitmentSchedule|GiftCommitmentSchedule
+67.0	fundraising-isolated	anonymous	GiftTransaction.OutreachSourceCodeId-reference	REFERENCE|OutreachSourceCode|OutreachSourceCode
+67.0	fundraising-isolated	anonymous	GiftTransaction.PartyPhilanthropicRsrchPrflId-reference	REFERENCE|PartyPhilanthropicRsrchPrfl|PartyPhilanthropicRsrchPrfl
+67.0	fundraising-isolated	anonymous	GiftTransaction.PaymentInstrumentId-reference	REFERENCE|PaymentInstrument|PaymentInstrument
+62.0	gift-bisect	anonymous	GiftCommitmentSchedule.GenerationalCohort	false
+62.0	npc-reference-access	anonymous	GiftCommitmentSchedule.GenerationalCohort-read	rejected
+62.0	npc-reference-access	anonymous	GiftCommitmentSchedule.GenerationalCohort-write	rejected
+62.0	npc-reference-access	anonymous	GiftCommitmentSchedule.GenerationalCohort-query	rejected
+62.0	npc-reference-access	anonymous	GiftCommitmentSchedule.GenerationalCohort-get	rejected
+62.0	npc-reference-access	anonymous	GiftCommitmentSchedule.GenerationalCohort-put	rejected
+62.0	gift-bisect	istest	GiftCommitmentSchedule.GenerationalCohort	false
+62.0	npc-reference-access	istest	GiftCommitmentSchedule.GenerationalCohort-read	rejected
+62.0	npc-reference-access	istest	GiftCommitmentSchedule.GenerationalCohort-write	rejected
+62.0	npc-reference-access	istest	GiftCommitmentSchedule.GenerationalCohort-query	rejected
+62.0	npc-reference-access	istest	GiftCommitmentSchedule.GenerationalCohort-get	rejected
+62.0	npc-reference-access	istest	GiftCommitmentSchedule.GenerationalCohort-put	rejected
+62.0	npc-reference-enabled	anonymous	GiftCommitmentSchedule	present|describe|shape-pass
+62.0	npc-reference-disabled	anonymous	GiftCommitmentSchedule	absent
+62.0	npc-reference-enabled	istest	GiftCommitmentSchedule	present|describe|shape-pass
+62.0	npc-reference-disabled	istest	GiftCommitmentSchedule	absent
+62.0	npc-reference-enabled	anonymous	OutreachSourceCode	present|describe|shape-pass
+62.0	npc-reference-disabled	anonymous	OutreachSourceCode	absent
+62.0	npc-reference-enabled	istest	OutreachSourceCode	present|describe|shape-pass
+62.0	npc-reference-disabled	istest	OutreachSourceCode	absent
+62.0	npc-reference-enabled	anonymous	PaymentInstrument	present|describe|shape-pass
+62.0	npc-reference-disabled	anonymous	PaymentInstrument	absent
+62.0	npc-reference-enabled	istest	PaymentInstrument	present|describe|shape-pass
+62.0	npc-reference-disabled	istest	PaymentInstrument	absent
+62.0	npc-reference-disabled	anonymous	Account	present
+62.0	npc-reference-disabled	istest	Account	present
+63.0	gift-bisect	anonymous	GiftCommitmentSchedule.GenerationalCohort	true
+63.0	npc-reference-access	anonymous	GiftCommitmentSchedule.GenerationalCohort-read	accepted
+63.0	npc-reference-access	anonymous	GiftCommitmentSchedule.GenerationalCohort-write	accepted
+63.0	npc-reference-access	anonymous	GiftCommitmentSchedule.GenerationalCohort-query	accepted
+63.0	npc-reference-access	anonymous	GiftCommitmentSchedule.GenerationalCohort-get	accepted
+63.0	npc-reference-access	anonymous	GiftCommitmentSchedule.GenerationalCohort-put	accepted
+63.0	gift-bisect	istest	GiftCommitmentSchedule.GenerationalCohort	true
+63.0	npc-reference-access	istest	GiftCommitmentSchedule.GenerationalCohort-read	accepted
+63.0	npc-reference-access	istest	GiftCommitmentSchedule.GenerationalCohort-write	accepted
+63.0	npc-reference-access	istest	GiftCommitmentSchedule.GenerationalCohort-query	accepted
+63.0	npc-reference-access	istest	GiftCommitmentSchedule.GenerationalCohort-get	accepted
+63.0	npc-reference-access	istest	GiftCommitmentSchedule.GenerationalCohort-put	accepted
+64.0	gift-bisect	anonymous	GiftCommitmentSchedule.GenerationalCohort	true
+64.0	npc-reference-access	anonymous	GiftCommitmentSchedule.GenerationalCohort-read	accepted
+64.0	npc-reference-access	anonymous	GiftCommitmentSchedule.GenerationalCohort-write	accepted
+64.0	npc-reference-access	anonymous	GiftCommitmentSchedule.GenerationalCohort-query	accepted
+64.0	npc-reference-access	anonymous	GiftCommitmentSchedule.GenerationalCohort-get	accepted
+64.0	npc-reference-access	anonymous	GiftCommitmentSchedule.GenerationalCohort-put	accepted
+64.0	gift-bisect	istest	GiftCommitmentSchedule.GenerationalCohort	true
+64.0	npc-reference-access	istest	GiftCommitmentSchedule.GenerationalCohort-read	accepted
+64.0	npc-reference-access	istest	GiftCommitmentSchedule.GenerationalCohort-write	accepted
+64.0	npc-reference-access	istest	GiftCommitmentSchedule.GenerationalCohort-query	accepted
+64.0	npc-reference-access	istest	GiftCommitmentSchedule.GenerationalCohort-get	accepted
+64.0	npc-reference-access	istest	GiftCommitmentSchedule.GenerationalCohort-put	accepted
+65.0	gift-bisect	anonymous	GiftCommitmentSchedule.GenerationalCohort	true
+65.0	npc-reference-access	anonymous	GiftCommitmentSchedule.GenerationalCohort-read	accepted
+65.0	npc-reference-access	anonymous	GiftCommitmentSchedule.GenerationalCohort-write	accepted
+65.0	npc-reference-access	anonymous	GiftCommitmentSchedule.GenerationalCohort-query	accepted
+65.0	npc-reference-access	anonymous	GiftCommitmentSchedule.GenerationalCohort-get	accepted
+65.0	npc-reference-access	anonymous	GiftCommitmentSchedule.GenerationalCohort-put	accepted
+65.0	gift-bisect	istest	GiftCommitmentSchedule.GenerationalCohort	true
+65.0	npc-reference-access	istest	GiftCommitmentSchedule.GenerationalCohort-read	accepted
+65.0	npc-reference-access	istest	GiftCommitmentSchedule.GenerationalCohort-write	accepted
+65.0	npc-reference-access	istest	GiftCommitmentSchedule.GenerationalCohort-query	accepted
+65.0	npc-reference-access	istest	GiftCommitmentSchedule.GenerationalCohort-get	accepted
+65.0	npc-reference-access	istest	GiftCommitmentSchedule.GenerationalCohort-put	accepted
+66.0	gift-bisect	anonymous	GiftCommitmentSchedule.GenerationalCohort	true
+66.0	npc-reference-access	anonymous	GiftCommitmentSchedule.GenerationalCohort-read	accepted
+66.0	npc-reference-access	anonymous	GiftCommitmentSchedule.GenerationalCohort-write	accepted
+66.0	npc-reference-access	anonymous	GiftCommitmentSchedule.GenerationalCohort-query	accepted
+66.0	npc-reference-access	anonymous	GiftCommitmentSchedule.GenerationalCohort-get	accepted
+66.0	npc-reference-access	anonymous	GiftCommitmentSchedule.GenerationalCohort-put	accepted
+66.0	gift-bisect	istest	GiftCommitmentSchedule.GenerationalCohort	true
+66.0	npc-reference-access	istest	GiftCommitmentSchedule.GenerationalCohort-read	accepted
+66.0	npc-reference-access	istest	GiftCommitmentSchedule.GenerationalCohort-write	accepted
+66.0	npc-reference-access	istest	GiftCommitmentSchedule.GenerationalCohort-query	accepted
+66.0	npc-reference-access	istest	GiftCommitmentSchedule.GenerationalCohort-get	accepted
+66.0	npc-reference-access	istest	GiftCommitmentSchedule.GenerationalCohort-put	accepted
+67.0	gift-bisect	anonymous	GiftCommitmentSchedule.GenerationalCohort	true
+67.0	npc-reference-access	anonymous	GiftCommitmentSchedule.GenerationalCohort-read	accepted
+67.0	npc-reference-access	anonymous	GiftCommitmentSchedule.GenerationalCohort-write	accepted
+67.0	npc-reference-access	anonymous	GiftCommitmentSchedule.GenerationalCohort-query	accepted
+67.0	npc-reference-access	anonymous	GiftCommitmentSchedule.GenerationalCohort-get	accepted
+67.0	npc-reference-access	anonymous	GiftCommitmentSchedule.GenerationalCohort-put	accepted
+67.0	gift-bisect	istest	GiftCommitmentSchedule.GenerationalCohort	true
+67.0	npc-reference-access	istest	GiftCommitmentSchedule.GenerationalCohort-read	accepted
+67.0	npc-reference-access	istest	GiftCommitmentSchedule.GenerationalCohort-write	accepted
+67.0	npc-reference-access	istest	GiftCommitmentSchedule.GenerationalCohort-query	accepted
+67.0	npc-reference-access	istest	GiftCommitmentSchedule.GenerationalCohort-get	accepted
+67.0	npc-reference-access	istest	GiftCommitmentSchedule.GenerationalCohort-put	accepted
+67.0	npc-reference-enabled	anonymous	GiftCommitmentSchedule	present|describe|shape-pass
+67.0	npc-reference-disabled	anonymous	GiftCommitmentSchedule	absent
+67.0	npc-reference-enabled	istest	GiftCommitmentSchedule	present|describe|shape-pass
+67.0	npc-reference-disabled	istest	GiftCommitmentSchedule	absent
+67.0	npc-reference-enabled	anonymous	OutreachSourceCode	present|describe|shape-pass
+67.0	npc-reference-disabled	anonymous	OutreachSourceCode	absent
+67.0	npc-reference-enabled	istest	OutreachSourceCode	present|describe|shape-pass
+67.0	npc-reference-disabled	istest	OutreachSourceCode	absent
+67.0	npc-reference-enabled	anonymous	PaymentInstrument	present|describe|shape-pass
+67.0	npc-reference-disabled	anonymous	PaymentInstrument	absent
+67.0	npc-reference-enabled	istest	PaymentInstrument	present|describe|shape-pass
+67.0	npc-reference-disabled	istest	PaymentInstrument	absent
+67.0	npc-reference-disabled	anonymous	Account	present
+67.0	npc-reference-disabled	istest	Account	present
+62.0	npc-reference-license-only	anonymous	GiftCommitmentSchedule	absent
+62.0	npc-reference-license-only	anonymous	OutreachSourceCode	absent
+62.0	npc-reference-license-only	anonymous	PaymentInstrument	absent
+62.0	npc-reference-license-only	anonymous	Account	present
+62.0	npc-reference-license-only	istest	GiftCommitmentSchedule	absent
+62.0	npc-reference-license-only	istest	OutreachSourceCode	absent
+62.0	npc-reference-license-only	istest	PaymentInstrument	absent
+62.0	npc-reference-license-only	istest	Account	present
+67.0	npc-reference-license-only	anonymous	GiftCommitmentSchedule	absent
+67.0	npc-reference-license-only	anonymous	OutreachSourceCode	absent
+67.0	npc-reference-license-only	anonymous	PaymentInstrument	absent
+67.0	npc-reference-license-only	anonymous	Account	present
+67.0	npc-reference-license-only	istest	GiftCommitmentSchedule	absent
+67.0	npc-reference-license-only	istest	OutreachSourceCode	absent
+67.0	npc-reference-license-only	istest	PaymentInstrument	absent
+67.0	npc-reference-license-only	istest	Account	present

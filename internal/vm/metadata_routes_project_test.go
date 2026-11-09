@@ -56,6 +56,7 @@ func testDefaultRoutesProjectNativeConformance(t *testing.T, objectName, oracle 
 	for _, namespace := range namespaces {
 		for _, api := range []string{"62.0", "67.0"} {
 			t.Run(namespace+"/"+api, func(t *testing.T) {
+				t.Parallel()
 				root := t.TempDir()
 				if err := os.CopyFS(root, os.DirFS("testdata/constructed_metadata_defaults")); err != nil {
 					t.Fatal(err)

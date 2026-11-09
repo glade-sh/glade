@@ -94,6 +94,9 @@ func (w *jsonValueWalker) convert(value Value, suppressObjectNulls bool) any {
 	case ValueInt:
 		return value.Int
 	case ValueDecimal:
+		if encoded, ok := jsonDecimalNumberValue(value); ok {
+			return encoded
+		}
 		if strings.TrimSpace(value.Text) != "" {
 			return json.Number(value.Text)
 		}
@@ -101,6 +104,9 @@ func (w *jsonValueWalker) convert(value Value, suppressObjectNulls bool) any {
 	case ValueBool:
 		return value.Bool
 	case ValueString:
+		if hasLoneSurrogate(value.Text) {
+			return jsonLoneSurrogateString(value.Text)
+		}
 		return value.Text
 	case ValueList:
 		out := make([]any, 0, len(value.List))
@@ -272,8 +278,10 @@ func (vm *VM) jsonFromValueForSerializeWithState(value Value, suppressObjectNull
 			defer delete(state.active, identity)
 		}
 	}
-	if encoded, captured := capturedDoubleSingletonJSON(value); captured {
-		return encoded
+	if state.generator && value.Kind == ValueDecimal && isFloatBackedDecimal(value) &&
+		(math.IsNaN(value.Decimal) || math.IsInf(value.Decimal, 0)) {
+		// JSONGenerator writes a non-finite Double as a quoted token.
+		return doubleDisplayText(value.Decimal)
 	}
 	// Empty collections cannot recurse, so they cannot participate in a cycle.
 	// Preserve the ordered-object representation for maps while avoiding the
@@ -435,10 +443,15 @@ func (vm *VM) jsonFromValueForSerializeWithState(value Value, suppressObjectNull
 			// when the overload's Boolean argument is true. That flag only
 			// suppresses nulls on Apex objects and collections.
 			value = vm.jsonCompoundSObjectValue(value)
+			value = vm.jsonTriggerFormulaSObjectValue(value)
 			return jsonSObjectFromValue(value, false, func(item Value, suppress bool) any {
 				return vm.jsonFromValueForSerializeWithState(item, suppress, state)
 			}, version, urlType)
 		}
+		if serialized, handled := vm.connectAPIOutputJSON(value, suppressObjectNulls, state); handled {
+			return serialized
+		}
+		value = connectAPISegmentJSONView(value)
 		base := orderedJSONObject{}
 		seen := map[string]bool{}
 		getterNames := vm.jsonSerializableGetterNameSet(value.Type)
@@ -645,6 +658,17 @@ type orderedJSONField struct {
 
 type orderedJSONObject []orderedJSONField
 
+func jsonListKeyIsPrimitive(key Value) bool {
+	for _, item := range key.List {
+		switch item.Kind {
+		case ValueNull, ValueString, ValueInt, ValueDecimal, ValueBool:
+		default:
+			return false
+		}
+	}
+	return true
+}
+
 func jsonMapKeyText(key Value) string {
 	if key.Kind == ValueObject && strings.EqualFold(key.Type, "Blob") {
 		if raw, ok := key.Fields["value"]; ok && raw.Kind == ValueString {
@@ -659,6 +683,12 @@ func (vm *VM) jsonMapKeyText(key Value) string {
 	// serialized enum values. Other keys keep their existing rendering.
 	if vm.isEnumObjectValue(key) {
 		return key.Text
+	}
+	// A List key serializes as its String.valueOf text, "(x, y)" (native stdlib_core_c14 XML).
+	if key.Kind == ValueList && jsonListKeyIsPrimitive(key) {
+		if text, err := vm.displayString(key, nil); err == nil {
+			return text
+		}
 	}
 	return jsonMapKeyText(key)
 }
@@ -716,11 +746,11 @@ func (object orderedJSONObject) MarshalJSON() ([]byte, error) {
 		if i > 0 {
 			out.WriteByte(',')
 		}
-		name, err := jsonMarshalNoEscape(field.name)
+		name, err := jsonMarshalNoEscapeRaw(field.name)
 		if err != nil {
 			return nil, err
 		}
-		value, err := jsonMarshalNoEscape(field.value)
+		value, err := jsonMarshalNoEscapeRaw(field.value)
 		if err != nil {
 			return nil, err
 		}
@@ -733,6 +763,11 @@ func (object orderedJSONObject) MarshalJSON() ([]byte, error) {
 }
 
 func jsonMarshalNoEscape(value any) ([]byte, error) {
+	data, err := jsonMarshalNoEscapeRaw(value)
+	return jsonRestoreNonFiniteNumbers(data), err
+}
+
+func jsonMarshalNoEscapeRaw(value any) ([]byte, error) {
 	var out bytes.Buffer
 	encoder := json.NewEncoder(&out)
 	encoder.SetEscapeHTML(false)
@@ -751,6 +786,11 @@ func jsonMarshalNoEscape(value any) ([]byte, error) {
 }
 
 func jsonMarshalNoEscapeIndent(value any, prefix, indent string) ([]byte, error) {
+	data, err := jsonMarshalNoEscapeIndentRaw(value, prefix, indent)
+	return jsonRestoreNonFiniteNumbers(data), err
+}
+
+func jsonMarshalNoEscapeIndentRaw(value any, prefix, indent string) ([]byte, error) {
 	var out bytes.Buffer
 	encoder := json.NewEncoder(&out)
 	encoder.SetEscapeHTML(false)
@@ -1043,6 +1083,14 @@ func (vm *VM) jsonSerializableFieldNames(typeName string) []string {
 		fields = append(fields, current...)
 	}
 	visit(typeName)
+	if _, registered := vm.lookupClass(typeName); !registered && reportsRuntimeDTOType(typeName) {
+		if dtoFields, ok := platformJSONDTOFields(typeName); ok {
+			for name := range dtoFields {
+				fields = append(fields, name)
+			}
+			sort.SliceStable(fields, func(i, j int) bool { return strings.ToLower(fields[i]) > strings.ToLower(fields[j]) })
+		}
+	}
 	// Salesforce reflects Apex object members in case-insensitive descending
 	// name order within each inheritance level. This is observable for
 	// generated SOAP classes, where private *_type_info members are serialized
@@ -1094,13 +1142,12 @@ func (vm *VM) getterOwner(typeName string, field Field) string {
 }
 
 func decodeJSONValue(text string) (any, error) {
-	decoder := json.NewDecoder(strings.NewReader(text))
-	decoder.UseNumber()
+	decoder, text := newApexJSONDecoder(text)
 	value, err := decodeJSONToken(decoder, text)
 	return value, jsonSyntaxErrorAtInput(err, text, int(decoder.InputOffset()))
 }
 
-func decodeJSONToken(decoder *json.Decoder, source string) (any, error) {
+func decodeJSONToken(decoder *apexJSONDecoder, source string) (any, error) {
 	token, err := decoder.Token()
 	if err != nil {
 		return nil, err
@@ -1115,11 +1162,18 @@ func decodeJSONToken(decoder *json.Decoder, source string) (any, error) {
 				enumStart := jsonEnumTokenInputStart(source, start)
 				keyToken, err := decoder.Token()
 				if err != nil {
+					if keyErr := jsonObjectKeyInputErrorAt(source, start, err); keyErr != nil {
+						return nil, keyErr
+					}
 					return nil, err
 				}
 				key, ok := keyToken.(string)
 				if !ok {
-					return nil, fmt.Errorf("expected object field name")
+					err := fmt.Errorf("expected object field name")
+					if keyErr := jsonObjectKeyInputErrorAt(source, start, err); keyErr != nil {
+						return nil, keyErr
+					}
+					return nil, err
 				}
 				start = jsonTokenInputStart(source, start)
 				item, err := decodeJSONToken(decoder, source)
@@ -1160,8 +1214,7 @@ func decodeJSONToken(decoder *json.Decoder, source string) (any, error) {
 }
 
 func decodeJSONUntypedValue(text string) (Value, error) {
-	decoder := json.NewDecoder(strings.NewReader(text))
-	decoder.UseNumber()
+	decoder, text := newApexJSONDecoder(text)
 	value, err := decodeJSONUntypedToken(decoder, text)
 	if err != nil {
 		return Null, jsonUnexpectedCharacterError(jsonSyntaxErrorAtInput(err, text, int(decoder.InputOffset())), text)
@@ -1169,7 +1222,7 @@ func decodeJSONUntypedValue(text string) (Value, error) {
 	return value, nil
 }
 
-func decodeJSONUntypedToken(decoder *json.Decoder, source string) (Value, error) {
+func decodeJSONUntypedToken(decoder *apexJSONDecoder, source string) (Value, error) {
 	token, err := decoder.Token()
 	if err != nil {
 		return Null, jsonStringEOFError(err, source)
@@ -1282,7 +1335,7 @@ func (err *jsonContainerInputError) Error() string {
 // whose reported close-marker position includes the input span. Strings use
 // the ordinary EOF position, while the other JSON scalar tokens use the
 // Salesforce-admitted scalar position.
-func jsonValueAtInputEnd(value Value, decoder *json.Decoder, source string) (bool, bool) {
+func jsonValueAtInputEnd(value Value, decoder *apexJSONDecoder, source string) (bool, bool) {
 	if decoder.InputOffset() != int64(len(source)) {
 		return false, false
 	}
@@ -1330,6 +1383,38 @@ func jsonContainerEOFError(err error, source, container string, withinEntries, s
 	}
 	line, column := jsonEOFPosition(source, scalarAtEnd)
 	return &jsonContainerInputError{container: container, withinEntries: withinEntries, line: line, column: column}
+}
+
+// The captured malformed keys start with an ASCII letter or digit, either
+// after the opening brace or after a separating comma.
+type jsonObjectKeyInputError struct {
+	char         byte
+	line, column int
+	original     error
+}
+
+func (err *jsonObjectKeyInputError) Error() string { return err.original.Error() }
+func (err *jsonObjectKeyInputError) Unwrap() error { return err.original }
+
+func (err *jsonObjectKeyInputError) nativeMessage() string {
+	return fmt.Sprintf("Unexpected character ('%c' (code %d)): was expecting double-quote to start field name at [line:%d, column:%d]", err.char, err.char, err.line, err.column)
+}
+
+func jsonObjectKeyInputErrorAt(source string, start int, original error) error {
+	index := jsonTokenInputStart(source, start)
+	if index >= len(source) {
+		return nil
+	}
+	ch := source[index]
+	if !(ch >= 'a' && ch <= 'z' || ch >= 'A' && ch <= 'Z' || ch >= '0' && ch <= '9') {
+		return nil
+	}
+	before := strings.TrimRight(source[:index], " \t\r\n")
+	if len(before) == 0 || (before[len(before)-1] != '{' && before[len(before)-1] != ',') {
+		return nil
+	}
+	line, column := jsonInputPosition(source, index+1)
+	return &jsonObjectKeyInputError{char: ch, line: line, column: column, original: original}
 }
 
 type jsonStringInputError struct {
@@ -1516,9 +1601,15 @@ func jsonNumberErrorBoundary(source string, end int) int {
 	return boundary
 }
 
-func decodeJSONValueForDeserialize(text string, strict bool) (any, error) {
+func decodeJSONValueForDeserialize(text string, strict, reportColumnKeyDiagnostic bool) (any, error) {
 	decoded, err := decodeJSONValue(text)
 	if err != nil {
+		if keyErr, ok := err.(*jsonObjectKeyInputError); ok {
+			if reportColumnKeyDiagnostic {
+				return nil, fmt.Errorf("%s", keyErr.nativeMessage())
+			}
+			return nil, normalizeJSONDeserializeError(keyErr.original)
+		}
 		if character, ok := jsonUnexpectedCharacterError(err, text).(*jsonCharacterInputError); ok &&
 			(character.nested || (character.char != '}' && character.char != ']')) {
 			// Typed invalid values agree with
@@ -1761,6 +1852,9 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 	if !vm.jsonAccessAllowed(typeName, "deserializable") {
 		return Null, jsonDeserializeException("Type cannot be deserialized")
 	}
+	if value, handled, err := vm.systemAddressFromJSON(typeName, raw, input); handled {
+		return value, err
+	}
 	// R179-R184/N022-N038: query handles have their own closed JSON surface.
 	// Raw null has already followed the ordinary scalar-null path above.
 	if strings.EqualFold(typeName, "Database.QueryLocator") {
@@ -1990,6 +2084,9 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 		}
 		if typedObjectIsSObject {
 			if relationshipType, ok := vm.jsonSObjectParentRelationshipType(typeName, key); ok {
+				if vm.jsonWrongCaseParentRelationship(typeName, key, item) {
+					continue
+				}
 				value, handled, err := vm.capturedOwnerValueFromJSON(typeName, key, item, strict)
 				if !handled {
 					value, err = vm.jsonSObjectParentValueFromJSON(typeName, relationshipType, key, item, strict)
@@ -2036,6 +2133,10 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 					continue
 				}
 			}
+		}
+		// Native deserialization into the base filter type drops subtype fields.
+		if strings.EqualFold(typeName, "reports.StandardFilterInfo") && (strings.EqualFold(key, "defaultValue") || strings.EqualFold(key, "filterValues")) {
+			continue
 		}
 		if field, owner, ok := vm.lookupField(typeName, key); ok && field.Type != "" {
 			fieldType := vm.resolveTypeNameInClass(owner, field.Type)
@@ -2111,6 +2212,18 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 				} else {
 					value, err = vm.typedValueFromJSON(fieldType, item, strict)
 				}
+			} else if strings.EqualFold(typeName, "reports.ReportTypeColumn") && strings.EqualFold(fieldType, "reports.ColumnDataType") {
+				if text, ok := item.(string); ok {
+					value = reportsEnumStringValue(fieldType, String(text))
+					if value.Kind == ValueNull {
+						line, column := jsonInputPosition(inputField.source, inputField.enumStart)
+						err = jsonDeserializeException("The type %s does not have an enum value %s at [line:%d, column:%d]", fieldType, text, line, column)
+					}
+				} else {
+					value, err = vm.typedValueFromJSON(fieldType, item, strict)
+				}
+			} else if strings.EqualFold(typeName, "reports.StandardFilterInfo") && strings.EqualFold(fieldType, "reports.StandardFilterType") && item == "PICKLIST" {
+				value = reportsEnumStringValue(fieldType, String("PICKLIST"))
 			} else {
 				value, err = vm.typedValueFromJSON(fieldType, item, strict)
 			}
@@ -2246,6 +2359,15 @@ func (vm *VM) jsonObjectBaseValue(typeName string) (Value, error) {
 	// initializers, including ones that throw. Declared fields start at null.
 	obj := Object(typeName)
 	vm.initializeFields(&obj, typeName)
+	if reportsRuntimeDTOType(typeName) {
+		if fields, ok := platformJSONDTOFields(typeName); ok {
+			for name := range fields {
+				if _, _, exists := objectFieldValue(obj, name); !exists {
+					obj.Fields[name] = Null
+				}
+			}
+		}
+	}
 	obj.pluginBatchableDetached = vm.extendsPluginBatchable(typeName)
 	if strings.EqualFold(typeName, "Invocable.Action.Result") {
 		// The captured row and RDTO01/02: omitted Result properties are null,
@@ -2417,6 +2539,9 @@ func (vm *VM) sObjectValueFromJSON(raw any, strict bool) (Value, error) {
 			}
 		}
 		if relationshipType, ok := vm.jsonSObjectParentRelationshipType(typeName, key); ok {
+			if vm.jsonWrongCaseParentRelationship(typeName, key, item) {
+				continue
+			}
 			value, handled, err := vm.capturedOwnerValueFromJSON(typeName, key, item, strict)
 			if !handled {
 				value, err = vm.jsonSObjectParentValueFromJSON(typeName, relationshipType, key, item, strict)
@@ -2508,31 +2633,176 @@ func jsonUnknownSObjectPayloadError(typeName string, raw any) error {
 // Decoder twins retain field input boundaries for concrete targets; SObject.class
 // reports the captured unavailable-source location instead.
 func (vm *VM) typedSchemaSObjectFieldValueFromJSON(typeName, fieldName, fieldType string, input jsonTypedInput, strict, genericSObject bool) (Value, error) {
+	// The schema lookup runs for string payloads (as before) and otherwise only
+	// after a decode failure, keeping the successful numeric path unchanged.
+	var field storage.Field
+	known, looked := false, false
+	lookup := func() {
+		if !looked {
+			looked = true
+			_, field, known = vm.jsonActiveSObjectField(typeName, fieldName)
+		}
+	}
 	if text, ok := input.value.(string); ok && strings.TrimSpace(text) != "" {
-		if _, field, known := vm.jsonActiveSObjectField(typeName, fieldName); known && strings.EqualFold(field.DisplayType, "CURRENCY") {
+		lookup()
+		if known && strings.EqualFold(field.DisplayType, "CURRENCY") {
 			if _, err := decimalFromText(text); err != nil {
-				message := fmt.Sprintf("Cannot deserialize instance of currency from VALUE_STRING value %s or request may be missing a required field", text)
-				if !genericSObject && input.source != "" {
-					// Currency errors identify the separator before the field,
-					// not its key (sobject_json2_decoders rows 18-21). Derive
-					// it from the key position shared by both decoder routes.
-					boundary := input.start
-					for boundary > 0 && strings.ContainsRune(" \t\r\n", rune(input.source[boundary-1])) {
-						boundary--
-					}
-					if boundary > 0 && input.source[boundary-1] == ',' {
-						boundary--
-					} else {
-						boundary = input.start
-					}
-					line, column := jsonInputPosition(input.source, boundary)
-					return Null, jsonDeserializeException("%s at [line:%d, column:%d]", message, line, column)
-				}
-				return Null, jsonDeserializeException("%s at [Source: N/A; line: -1, column: -1][line:-1, column:-1]", message)
+				return Null, jsonScalarMismatchError("currency", "VALUE_STRING", text, input, genericSObject)
+			}
+		}
+		if known {
+			if message, rejected := jsonScalarMismatchDescription(field.DisplayType, input.value); rejected {
+				return Null, jsonScalarMismatchError(message.name, message.token, message.text, input, genericSObject && message.located)
 			}
 		}
 	}
-	return vm.typedSObjectFieldValueFromJSON(fieldType, input, strict)
+	if number, ok := input.value.(json.Number); ok {
+		lookup()
+		if known {
+			if value, accepted := jsonSObjectIntegerScalar(field.DisplayType, number.String()); accepted {
+				return value, nil
+			}
+		}
+	}
+	value, err := vm.typedSObjectFieldValueFromJSON(fieldType, input, strict)
+	if err != nil {
+		lookup()
+		if known {
+			if message, ok := jsonScalarTokenDescription(field.DisplayType, input.value); ok {
+				return Null, jsonScalarMismatchError(message.name, message.token, message.text, input, genericSObject && message.located)
+			}
+		}
+	}
+	return value, err
+}
+
+// Native SObject decoding (json_sobject_number_* rows) accepts a JSON integer
+// token for Date, Datetime and Checkbox fields. A Checkbox is true for any
+// nonzero integer. Date and Datetime read an integer inside the Java Gregorian
+// calendar year range as that year (January 1); any other integer is epoch
+// milliseconds. Fractional and exponent tokens keep the mismatch error.
+const (
+	jsonSObjectMinCalendarYear = -292275054
+	jsonSObjectMaxCalendarYear = 292278994
+)
+
+func jsonSObjectIntegerScalar(displayType, token string) (Value, bool) {
+	if token == "" || strings.ContainsAny(token, ".eE") {
+		return Null, false
+	}
+	switch strings.ToUpper(strings.TrimSpace(displayType)) {
+	case "BOOLEAN":
+		if strings.Trim(token, "-+0") == "" {
+			return Bool(false), true
+		}
+		return Bool(true), true
+	case "DATE", "DATETIME":
+		n, err := strconv.ParseInt(token, 10, 64)
+		if err != nil {
+			return Null, false
+		}
+		var moment time.Time
+		if n >= jsonSObjectMinCalendarYear && n <= jsonSObjectMaxCalendarYear {
+			moment = time.Date(int(n), time.January, 1, 0, 0, 0, 0, time.UTC)
+		} else {
+			moment = time.UnixMilli(n).UTC()
+		}
+		if strings.EqualFold(strings.TrimSpace(displayType), "DATE") {
+			return platformScalar("Date", moment.Format("2006-01-02")), true
+		}
+		// Years outside 0001-9999 keep the serialized text form.
+		return platformScalar("Datetime", moment.Format("2006-01-02T15:04:05.000Z")), true
+	}
+	return Null, false
+}
+
+type jsonScalarMismatch struct {
+	name    string
+	token   string
+	text    string
+	located bool
+}
+
+// jsonScalarMismatchName gives the type name native SObject JSON decoding
+// reports for a typed field (json_sobject_scalar_mismatch rows).
+func jsonScalarMismatchName(displayType string) (name string, located bool) {
+	switch strings.ToUpper(strings.TrimSpace(displayType)) {
+	case "INTEGER":
+		return "int", true
+	case "DOUBLE":
+		return "double", true
+	case "PERCENT":
+		return "percent", true
+	case "CURRENCY":
+		return "currency", true
+	case "DATETIME":
+		return "datetime", true
+	case "BOOLEAN":
+		return "boolean", true
+	case "DATE":
+		// Date diagnostics carry no source location.
+		return "date", false
+	}
+	return "", false
+}
+
+// jsonScalarTokenDescription names the JSON token a scalar field rejected.
+func jsonScalarTokenDescription(displayType string, raw any) (jsonScalarMismatch, bool) {
+	name, located := jsonScalarMismatchName(displayType)
+	if name == "" {
+		return jsonScalarMismatch{}, false
+	}
+	switch value := raw.(type) {
+	case string:
+		return jsonScalarMismatch{name: name, token: "VALUE_STRING", text: value, located: located}, true
+	case bool:
+		if value {
+			return jsonScalarMismatch{name: name, token: "VALUE_TRUE", text: "true", located: located}, true
+		}
+		return jsonScalarMismatch{name: name, token: "VALUE_FALSE", text: "false", located: located}, true
+	case json.Number:
+		text := value.String()
+		if strings.ContainsAny(text, ".eE") {
+			return jsonScalarMismatch{name: name, token: "VALUE_NUMBER_FLOAT", text: text, located: located}, true
+		}
+		return jsonScalarMismatch{name: name, token: "VALUE_NUMBER_INT", text: text, located: located}, true
+	}
+	return jsonScalarMismatch{}, false
+}
+
+// jsonScalarMismatchDescription rejects inputs the local decoder accepts but
+// native SObject decoding refuses: a Boolean field reads only the exact
+// strings true and false.
+func jsonScalarMismatchDescription(displayType string, raw any) (jsonScalarMismatch, bool) {
+	text, ok := raw.(string)
+	if !ok || !strings.EqualFold(strings.TrimSpace(displayType), "BOOLEAN") || text == "true" || text == "false" {
+		return jsonScalarMismatch{}, false
+	}
+	return jsonScalarTokenDescription(displayType, raw)
+}
+
+// jsonScalarMismatchError formats the native scalar diagnostic. Typed targets
+// identify the separator before the field, not its key (sobject_json2_decoders
+// rows 18-21); SObject.class reports the captured unavailable-source location.
+func jsonScalarMismatchError(name, token, text string, input jsonTypedInput, genericSObject bool) error {
+	message := fmt.Sprintf("Cannot deserialize instance of %s from %s value %s or request may be missing a required field", name, token, text)
+	if name == "date" {
+		return jsonDeserializeException("%s", message)
+	}
+	if !genericSObject && input.source != "" {
+		boundary := input.start
+		for boundary > 0 && strings.ContainsRune(" \t\r\n", rune(input.source[boundary-1])) {
+			boundary--
+		}
+		if boundary > 0 && input.source[boundary-1] == ',' {
+			boundary--
+		} else {
+			boundary = input.start
+		}
+		line, column := jsonInputPosition(input.source, boundary)
+		return jsonDeserializeException("%s at [line:%d, column:%d]", message, line, column)
+	}
+	return jsonDeserializeException("%s at [Source: N/A; line: -1, column: -1][line:-1, column:-1]", message)
 }
 
 func (vm *VM) typedSObjectFieldValueFromJSON(fieldType string, raw any, strict bool) (Value, error) {
@@ -3218,6 +3488,31 @@ func (vm *VM) jsonSObjectParentRelationshipType(typeName, relationshipName strin
 	return "", false
 }
 
+// Salesforce binds nested parent relationship payloads only under the
+// relationship's exact spelling, even though scalar fields are case-folded.
+func (vm *VM) jsonWrongCaseParentRelationship(typeName, name string, raw any) bool {
+	if _, ok := jsonObjectMap(raw); !ok || vm.Org == nil {
+		return false
+	}
+	_, definition, ok := vm.sObjectDefinitionForRead(typeName)
+	if !ok {
+		return false
+	}
+	for _, relation := range definition.Relations {
+		canonical := relation.ParentRelationship
+		if canonical == "" {
+			canonical = lookupFieldRelationshipName(relation.Field)
+		}
+		if canonical != name && strings.EqualFold(canonical, name) {
+			return true
+		}
+	}
+	if relation, ok := vm.syntheticParentRelationship(definition, name); ok {
+		return relation.ParentRelationship != name && strings.EqualFold(relation.ParentRelationship, name)
+	}
+	return false
+}
+
 func (vm *VM) jsonSObjectChildRelationshipType(typeName, relationshipName string) (string, bool) {
 	vm.ensureMetadataCacheGeneration()
 	if vm.Org == nil {
@@ -3245,6 +3540,11 @@ func (vm *VM) jsonSObjectChildRelationshipType(typeName, relationshipName string
 	vm.jsonChildRelTypeCache.storeParent(parentKey, index)
 	if cached, ok := index[relationshipKey]; ok {
 		return cached.Type, cached.OK
+	}
+	// A lazy org may not hold the child object yet. Complete the spread once
+	// and answer from the full schema, as an eagerly built org would.
+	if vm.materializeLazyStandardSpread() {
+		return vm.jsonSObjectChildRelationshipType(typeName, relationshipName)
 	}
 	return "", false
 }
@@ -3745,6 +4045,24 @@ func platformJSONDTOFields(typeName string) (map[string]string, bool) {
 		"updatedRelatedIds": "List<Id>",
 	}
 	switch {
+	case strings.EqualFold(typeName, "reports.FilterValue"):
+		return map[string]string{"name": "String", "label": "String"}, true
+	case strings.EqualFold(typeName, "reports.StandardFilterInfo"):
+		return map[string]string{"label": "String", "type": "reports.StandardFilterType"}, true
+	case strings.EqualFold(typeName, "reports.ReportTypeColumn"):
+		return map[string]string{"name": "String", "label": "String", "dataType": "reports.ColumnDataType", "filterable": "Boolean", "filterValues": "List<reports.FilterValue>"}, true
+	case strings.EqualFold(typeName, "reports.ReportTypeColumnCategory"):
+		return map[string]string{"label": "String", "columns": "Map<String,reports.ReportTypeColumn>"}, true
+	case strings.EqualFold(typeName, "reports.ReportScopeInfo"):
+		return map[string]string{"defaultValue": "String", "values": "List<reports.ReportScopeValue>"}, true
+	case strings.EqualFold(typeName, "reports.ReportScopeValue"):
+		return map[string]string{"value": "String", "label": "String", "allowsDivision": "Boolean"}, true
+	case strings.EqualFold(typeName, "reports.StandardDateFilterDuration"):
+		return map[string]string{"value": "String", "label": "String", "startDate": "String", "endDate": "String"}, true
+	case strings.EqualFold(typeName, "reports.StandardDateFilterDurationGroup"):
+		return map[string]string{"label": "String", "standardDateFilterDurations": "List<reports.StandardDateFilterDuration>"}, true
+	case strings.EqualFold(typeName, "reports.ReportTypeMetadata"):
+		return map[string]string{"categories": "List<reports.ReportTypeColumnCategory>", "divisionInfo": "reports.ReportDivisionInfo", "scopeInfo": "reports.ReportScopeInfo", "standardDateFilterDurationGroups": "List<reports.StandardDateFilterDurationGroup>", "standardFilterInfos": "Map<String,reports.StandardFilterInfo>"}, true
 	case strings.EqualFold(typeName, "Invocable.Action.Result"):
 		// RDTO01/02: a JSON-created Result retains its empty output map,
 		// success flag and typed errors. The captured rows still reject

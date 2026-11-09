@@ -10,6 +10,23 @@ import (
 // locals for dynamic SOQL. dynamic_bind_closed_id_set_native.json also observes
 // non-null Set<Id> locals for countQuery at source APIs 60/62/67/68 in plain
 // methods. Other types, contexts and routes keep their existing lookup.
+// closedSOQLIntegerKey names a departed Integer local from a completed block.
+// Only the USER_MODE getQueryLocatorWithBinds scope lookup reads it
+// (api67_access_defaults std_trg_bind/std_trg_dyn); lookupSOQLBind never does.
+func closedSOQLIntegerKey(name string) string {
+	return "\x00int:" + strings.ToLower(name)
+}
+
+func (vm *VM) rememberClosedSOQLInteger(name string, value Value) {
+	if value.Kind != ValueInt {
+		return
+	}
+	if vm.closedSOQLLocals == nil {
+		vm.closedSOQLLocals = make(map[string]Value)
+	}
+	vm.closedSOQLLocals[closedSOQLIntegerKey(name)] = value
+}
+
 func (vm *VM) rememberClosedSOQLLocal(name, typeName string, value Value) {
 	typ := canonicalRuntimePlatformType(typeName)
 	retain := strings.EqualFold(typ, "String") && (value.Kind == ValueString || value.Kind == ValueNull)

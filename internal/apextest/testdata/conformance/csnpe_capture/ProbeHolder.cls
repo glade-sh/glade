@@ -1,0 +1,1 @@
+public class ProbeHolder { public ProbeList__c setting; }

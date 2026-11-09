@@ -31,6 +31,10 @@ func flowRefsValidateProjectDecisions(p project.Project, idx *Index) error {
 	for name, describe := range sobject.BuildDescribeRegistry(s).Objects {
 		org.Objects[name] = storage.ObjectState{Definition: sobject.ToObjectDefinition(describe)}
 	}
+	definitions := make(map[string]storage.ObjectDefinition, len(org.Objects))
+	for name, object := range org.Objects {
+		definitions[name] = object.Definition
+	}
 	for i := range idx.Flows {
 		flow := &idx.Flows[i]
 		data, err := os.ReadFile(flow.File)
@@ -42,6 +46,10 @@ func flowRefsValidateProjectDecisions(p project.Project, idx *Index) error {
 			continue
 		}
 		if !flowActive(raw.Status) || raw.Start.Object == "" || !flowTriggerTypeDML(raw.Start.TriggerType) {
+			continue
+		}
+		if flowBeforeSaveFormulaFieldReference(raw, definitions) != "" {
+			// The loader already reported the native deploy error.
 			continue
 		}
 		invalid := false

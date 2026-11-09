@@ -129,6 +129,38 @@ func l12SalesforceConformance(t *testing.T) {
 	if len(reviewCases) != 30 {
 		t.Fatalf("L12 requires 30 retained review controls, got %d", len(reviewCases))
 	}
+	// The fresh Winter 27 scratch org recapture supersedes the older release
+	// observation without replacing the retained oracle in review_controls.json.
+	for _, api := range []string{"59.0", "67.0", "68.0"} {
+		path := "testdata/l12_w27_20261103/api" + api[:2] + "/org.tsv"
+		data, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		const id = "r_control_filter_like_escaped_underscore"
+		var answer string
+		for _, line := range strings.Split(strings.TrimSpace(string(data)), "\n") {
+			if key, value, ok := strings.Cut(line, "\t"); ok && key == id {
+				if answer != "" {
+					t.Fatalf("duplicate fresh L12 row %s", id)
+				}
+				answer = value
+			}
+		}
+		if !strings.HasPrefix(answer, "BROWSER|") || !json.Valid([]byte(strings.TrimPrefix(answer, "BROWSER|"))) {
+			t.Fatalf("missing fresh L12 row %s API %s", id, api)
+		}
+		found := false
+		for i := range reviewCases {
+			if reviewCases[i].ID == id {
+				reviewCases[i].Expected[api] = answer
+				found = true
+			}
+		}
+		if !found {
+			t.Fatalf("missing retained L12 control %s", id)
+		}
+	}
 	reviewIDs := map[string]bool{}
 	for _, c := range reviewCases {
 		if !strings.HasPrefix(c.ID, "r_control_") || c.Kind != "runtime" {

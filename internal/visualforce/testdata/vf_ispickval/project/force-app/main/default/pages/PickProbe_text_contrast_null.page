@@ -1,0 +1,3 @@
+<apex:page controller="PickProbeController" showHeader="false" sidebar="false" standardStylesheets="false">
+<div data-case="text-contrast-null">[{!TEXT($User.GeocodeAccuracy)}]</div>
+</apex:page>

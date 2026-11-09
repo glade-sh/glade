@@ -66,7 +66,7 @@ func personAccountCustomFieldsNativeConformance(t *testing.T, mutationRoute stri
 	for _, api := range []string{"62.0", "67.0"} {
 		root := t.TempDir()
 		writeFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":%q}`, api))
-		writeFile(t, filepath.Join(root, "glade.yml"), "org:\n  features: [PersonAccounts]\n")
+		writeFile(t, filepath.Join(root, "glade.yml"), "org:\n  features: [PersonAccounts]\ntest:\n  permissionSets: [PersonFieldProbe]\n") // the captured PersonFieldProbe set is assigned to the capture user
 		for name, body := range cases.Files {
 			if strings.HasSuffix(name, ".cls") {
 				switch mutationRoute {
@@ -98,8 +98,7 @@ func personAccountCustomFieldsNativeConformance(t *testing.T, mutationRoute stri
 					if err != nil {
 						t.Fatal(err)
 					}
-					org := orgFromIndex(index)
-					org.APIVersion = api
+					org := capturedFixtureOrg(t, index, api)
 					runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 					_, err = runner.newMachine().Execute(program)
 					var observation *vm.RuntimeError

@@ -268,9 +268,10 @@ func TestRESTDescribeChildRelationshipOrderConformance(t *testing.T) {
 
 	for _, apiVersion := range cases.NativeAPIVersions {
 		for _, parentObject := range cases.ParentObjects {
+			sourceVersion := childRelationshipOrderSourceVersion(apiVersion, parentObject)
 			found := false
 			for _, row := range rows {
-				if row.APIVersion == apiVersion && row.ParentObject == parentObject {
+				if row.APIVersion == sourceVersion && row.ParentObject == parentObject {
 					found = true
 					break
 				}
@@ -283,9 +284,10 @@ func TestRESTDescribeChildRelationshipOrderConformance(t *testing.T) {
 	for _, apiVersion := range cases.LocalAPIVersions {
 		for _, parentObject := range cases.ParentObjects {
 			t.Run(apiVersion+"/"+parentObject, func(t *testing.T) {
+				sourceVersion := childRelationshipOrderSourceVersion(apiVersion, parentObject)
 				var native []childRelationshipOrderKey
 				for _, row := range rows {
-					if row.APIVersion == apiVersion && row.ParentObject == parentObject {
+					if row.APIVersion == sourceVersion && row.ParentObject == parentObject {
 						native = append(native, childRelationshipOrderKey{child: row.ChildSObject, field: row.Field})
 					}
 				}
@@ -354,6 +356,14 @@ func TestRESTDescribeChildRelationshipOrderConformance(t *testing.T) {
 			})
 		}
 	}
+}
+
+// The 68.0 capture matched 67.0 for these complete ordered arrays; see ORG-RUN.txt.
+func childRelationshipOrderSourceVersion(apiVersion, parentObject string) string {
+	if apiVersion == "68.0" && (parentObject == "Contact" || parentObject == "Case") {
+		return "67.0"
+	}
+	return apiVersion
 }
 
 func readNativeChildRelationshipOrderRows(t *testing.T, path string) []nativeChildRelationshipOrderRow {
@@ -431,4 +441,87 @@ func containsChildRelationshipOrderKeys(haystack, needles []childRelationshipOrd
 		}
 	}
 	return true
+}
+
+func TestRESTDescribeChildRelationshipAPI68Availability(t *testing.T) {
+	rows := readNativeChildRelationshipOrderRows(t, "testdata/child_relationship_order/org.tsv")
+	org := standardChildRelationshipOrderOrg(t, []string{"Account"}, rows)
+	handler := New(&org)
+	for _, api := range []string{"67.0", "68.0"} {
+		t.Run(api, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data/v"+api+"/sobjects/Account/describe", nil))
+			if rec.Code != http.StatusOK {
+				t.Fatalf("describe status %d: %s", rec.Code, rec.Body.String())
+			}
+			var payload struct {
+				ChildRelationships []struct {
+					Child      string `json:"childSObject"`
+					Field      string `json:"field"`
+					Name       string `json:"relationshipName"`
+					Cascade    bool   `json:"cascadeDelete"`
+					Restricted bool   `json:"restrictedDelete"`
+					Hidden     bool   `json:"deprecatedAndHidden"`
+				} `json:"childRelationships"`
+			}
+			if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+				t.Fatal(err)
+			}
+			found := false
+			for _, relationship := range payload.ChildRelationships {
+				if relationship.Child == "ContactPointOttSvc" && relationship.Field == "ParentId" && relationship.Name == "ContactPointOttSvcs" {
+					found = true
+					if !relationship.Cascade || relationship.Restricted || relationship.Hidden {
+						t.Fatalf("native flags: cascade=%t restricted=%t hidden=%t", relationship.Cascade, relationship.Restricted, relationship.Hidden)
+					}
+				}
+			}
+			if want := api == "68.0"; found != want {
+				t.Fatalf("ContactPointOttSvc.ParentId present = %t, native = %t", found, want)
+			}
+		})
+	}
+}
+
+func TestRESTDescribeAPI68LoadedRelationshipVersionBoundary(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	org.Objects["ContactPointOttSvc"] = storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "ContactPointOttSvc", Relations: []storage.Relationship{{Field: "ParentId", ParentObjects: []string{"Account", "Individual"}, ChildRelationship: "ContactPointOttSvcs", CascadeDelete: true}}}}
+	handler := New(&org)
+	for _, api := range []string{"67.0", "68.0"} {
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data/v"+api+"/sobjects/Account/describe", nil))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("%s status %d", api, rec.Code)
+		}
+		var payload struct {
+			ChildRelationships []struct {
+				Child      string `json:"childSObject"`
+				Field      string `json:"field"`
+				Name       string `json:"relationshipName"`
+				Cascade    bool   `json:"cascadeDelete"`
+				Restricted bool   `json:"restrictedDelete"`
+				Hidden     bool   `json:"deprecatedAndHidden"`
+			} `json:"childRelationships"`
+		}
+		if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+			t.Fatal(err)
+		}
+		count := 0
+		for _, row := range payload.ChildRelationships {
+			if row.Child == "ContactPointOttSvc" && row.Field == "ParentId" {
+				count++
+				if row.Name != "ContactPointOttSvcs" || !row.Cascade || row.Restricted || row.Hidden {
+					t.Fatalf("API %s native relationship facets: %+v", api, row)
+				}
+			}
+		}
+		want := 0
+		if api == "68.0" {
+			want = 1
+		}
+		if count != want {
+			t.Errorf("API %s loaded relationship count = %d, want %d", api, count, want)
+		}
+	}
 }

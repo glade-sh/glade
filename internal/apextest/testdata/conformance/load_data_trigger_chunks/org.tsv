@@ -1,0 +1,5 @@
+source_api	route	observation
+62.0	anonymous	{"plainBulkReflected":0,"plainSingleVariable":null,"error":"System.TypeException:Test.loadData() can only be called from test methods"}
+62.0	isTest	{"plainBulkReflected":0,"plainSingleVariable":null,"storedWithTriggerValue":250,"stored":250,"returnedWithTriggerValue":250,"distinctIds":250,"withoutId":0,"returned":250}
+67.0	anonymous	{"plainBulkReflected":0,"plainSingleVariable":null,"error":"System.TypeException:Test.loadData() can only be called from test methods"}
+67.0	isTest	{"plainBulkReflected":0,"plainSingleVariable":null,"storedWithTriggerValue":250,"stored":250,"returnedWithTriggerValue":250,"distinctIds":250,"withoutId":0,"returned":250}

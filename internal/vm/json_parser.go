@@ -261,7 +261,7 @@ func (vm *VM) jsonParserReadValueAs(receiver Value, typeArg Value, strict bool) 
 		}
 		receiver.Fields["index"] = Int(next - 1)
 	} else {
-		raw, err = decodeJSONValueForDeserialize(source.Text, false)
+		raw, err = decodeJSONValueForDeserialize(source.Text, false, false)
 		if err != nil {
 			return Null, receiver, jsonDeserializeException("JSONParser.readValueAs invalid JSON input: %v", err)
 		}
@@ -343,8 +343,7 @@ func jsonParserRawValueAt(tokens []Value, index int64, source string) (any, int6
 }
 
 func jsonParserTokenize(text string) ([]Value, error) {
-	decoder := json.NewDecoder(strings.NewReader(text))
-	decoder.UseNumber()
+	decoder, text := newApexJSONDecoder(text)
 	var tokens []Value
 	var stack []jsonParserFrame
 	rootWritten := false

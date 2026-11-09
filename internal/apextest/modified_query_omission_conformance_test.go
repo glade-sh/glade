@@ -166,12 +166,16 @@ func TestModifiedQueryOmissionNativeConformance(t *testing.T) {
 			if len(rows) != 413 || strings.Join(rows[0], "\t") != "class\tmethod\ttag\tmode\tresult" {
 				t.Fatalf("expected 412 native matrix cells, got %d", len(rows)-1)
 			}
+			if api == "67.0" {
+				// api67 ORG-RUN.txt: sf org assign permset --name QueryObservation
+				// before the retained run. The API 62 record has no assignment.
+				writeFile(t, filepath.Join(root, "glade.yml"), "test:\n  permissionSets: [QueryObservation]\n")
+			}
 			index := loadTestIndex(t, root)
 			if index.HasErrors() {
 				t.Fatal(index.Diagnostics)
 			}
-			org := orgFromIndex(index)
-			org.APIVersion = api
+			org := capturedFixtureOrg(t, index, api)
 			runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 			cases := Discover(index, Options{SelectedClasses: []string{"MxTest", "MyTest"}})
 			if len(cases) != 46 {

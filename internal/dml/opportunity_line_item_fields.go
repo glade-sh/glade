@@ -48,7 +48,7 @@ func (e *Engine) applyOpportunityLineItemDerivedFields(record *storage.Record, i
 		name, formula = "UnitPrice", "TotalPrice / Quantity"
 	}
 	field := storage.Field{APIName: name, Type: storage.FieldCalculated, DisplayType: "CURRENCY", Formula: formula, Scale: 2, ScaleSpecified: true}
-	if value, _, resolved := EvaluateRecordFormulaValueInOrg(formula, field, e.Org, definition, *record); resolved {
+	if value, _, resolved := EvaluateRecordFormulaValueInOrgWithOptions(formula, field, e.Org, definition, *record, e.formulaEvaluationOptions()); resolved {
 		if record.Fields == nil {
 			record.Fields = make(map[string]storage.Value)
 		}

@@ -2,10 +2,10 @@ package vm
 
 import "testing"
 
-// These compatibility controls keep the header correction for SYSTEM_MODE list
-// inserts from changing excluded overloads. Native parity for the corrected
-// overload is asserted by TestSelfLookupInsertNativeConformance in apextest.
-func TestDatabaseInsertHeaderExcludedOverloads(t *testing.T) {
+// Explicit access-level overloads use the native first-exception header like
+// every other all-or-none Database call (dml_envelope_insert and
+// dml_envelope_other rows in apextest).
+func TestDatabaseInsertHeaderAccessLevelOverloads(t *testing.T) {
 	for name, call := range map[string]string{
 		"systemSingleton": "Database.insert(bad, true, AccessLevel.SYSTEM_MODE)",
 		"userList":        "Database.insert(new List<Account>{bad}, true, AccessLevel.USER_MODE)",
@@ -18,7 +18,7 @@ try {
 	` + call + `;
 } catch (DmlException error) {
 	caught = true;
-	System.assert(error.getMessage().startsWith('Database.insert failed: '));
+	System.assert(error.getMessage().startsWith('Insert failed. First exception on row 0; first error: '));
 }
 System.assertEquals(true, caught);
 System.assertEquals(null, bad.Id);

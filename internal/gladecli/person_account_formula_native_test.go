@@ -5,6 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/glade-sh/glade/internal/apextest"
+	"github.com/glade-sh/glade/internal/project"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -65,7 +67,7 @@ func personAccountFormulaNativeAnonymousExecRoute(t *testing.T, readOnly bool, t
 			}
 			root := t.TempDir()
 			writeTestFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":%q}`, api))
-			writeTestFile(t, filepath.Join(root, "glade.yml"), "org:\n  features: [PersonAccounts]\n")
+			writeTestFile(t, filepath.Join(root, "glade.yml"), "org:\n  features: [PersonAccounts]\ntest:\n  permissionSets: [PersonFormulaProbe]\n")
 			for name, body := range cases.Files {
 				if typed {
 					body = regexp.MustCompile(`Flow\.Interview\.createInterview\('([^']+)',`).ReplaceAllString(body, "new Flow.Interview.$1(")
@@ -79,9 +81,25 @@ func personAccountFormulaNativeAnonymousExecRoute(t *testing.T, readOnly bool, t
 				}
 				writeTestFile(t, filepath.Join(root, name), strings.ReplaceAll(body, "62.0", api))
 			}
-			var stdout, stderr bytes.Buffer
-			if code := Run(context.Background(), []string{"exec", "--project", root, "--json", "System.debug(PersonFormulaProbe.observe());"}, &stdout, &stderr); code != 0 {
-				t.Fatalf("native probe succeeded; exit=%d stderr=%s stdout=%s", code, stderr.String(), stdout.String())
+			// person_account_formulas/ORG-RUN.txt:3 records the capture user's PersonFormulaProbe assignment.
+			var stdout bytes.Buffer
+			// The native capture user held the recorded PersonFormulaProbe assignment
+			// (person_account_formulas/ORG-RUN.txt:3). The product exec route leaves
+			// test.permissionSets unapplied, so replay it through the loader seam.
+			loader := func(root string, loadOrg bool) execProjectLoad {
+				load := loadExecProject(root, loadOrg)
+				if load.err == nil && load.orgErr == nil && loadOrg {
+					p, err := project.Load(root)
+					if err != nil {
+						load.err = err
+						return load
+					}
+					load.orgErr = apextest.ApplyConfiguredTestPermissions(&load.org, p)
+				}
+				return load
+			}
+			if err := runExecWithProjectLoader(context.Background(), []string{"--project", root, "--json", "System.debug(PersonFormulaProbe.observe());"}, &stdout, loader); err != nil {
+				t.Fatalf("native probe succeeded; err=%v stdout=%s", err, stdout.String())
 			}
 			var result struct{ Debug []string }
 			decodeCLIEnvelopeData(t, stdout.Bytes(), "exec", &result)

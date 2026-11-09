@@ -218,8 +218,8 @@ func canonicalJSONGeneratorMethod(method string) string {
 }
 
 func jsonGeneratorWriteContainer(receiver Value, kind string) (Value, Value, bool, bool, error) {
-	if err := jsonGeneratorEnsureOpen(receiver); err != nil {
-		return Null, receiver, false, true, err
+	if jsonGeneratorBoolField(receiver, "closed").Bool {
+		return Null, receiver, false, true, jsonGeneratorClosedInternalError()
 	}
 	updated, err := jsonGeneratorBeforeValue(receiver)
 	if err != nil {
@@ -242,15 +242,12 @@ func jsonGeneratorWriteContainer(receiver Value, kind string) (Value, Value, boo
 }
 
 func jsonGeneratorEndContainer(receiver Value, kind string) (Value, Value, bool, bool, error) {
-	if err := jsonGeneratorEnsureOpen(receiver); err != nil {
-		return Null, receiver, false, true, err
-	}
 	stack := jsonGeneratorStack(receiver)
 	if len(stack.List) == 0 {
 		if kind == "object" {
 			return Null, receiver, false, true, jsonGeneratorException("Current context not an object but ROOT")
 		}
-		return Null, receiver, false, true, jsonGeneratorException("JSONGenerator.writeEnd%s has no open %s", jsonGeneratorContainerName(kind), kind)
+		return Null, receiver, false, true, jsonGeneratorException("Current context not an ARRAY but ROOT")
 	}
 	frame := stack.List[len(stack.List)-1]
 	openKind := jsonGeneratorStringField(frame, "kind").Text
@@ -323,9 +320,6 @@ func (vm *VM) jsonGeneratorWriteAnyField(receiver Value, name string, value Valu
 }
 
 func jsonGeneratorWriteFieldName(receiver Value, name string) (Value, error) {
-	if err := jsonGeneratorEnsureOpen(receiver); err != nil {
-		return receiver, err
-	}
 	stack := jsonGeneratorStack(receiver)
 	if len(stack.List) == 0 {
 		return receiver, jsonGeneratorException("Can not write a field name, expecting a value")
@@ -359,8 +353,8 @@ func jsonGeneratorWriteFieldName(receiver Value, name string) (Value, error) {
 }
 
 func jsonGeneratorWriteScalar(receiver Value, value Value) (Value, Value, bool, bool, error) {
-	if err := jsonGeneratorEnsureOpen(receiver); err != nil {
-		return Null, receiver, false, true, err
+	if jsonGeneratorBoolField(receiver, "closed").Bool {
+		return Null, receiver, false, true, jsonGeneratorClosedInternalError()
 	}
 	if value.Kind == ValueString {
 		stack := jsonGeneratorStack(receiver)
@@ -384,8 +378,8 @@ func jsonGeneratorWriteScalar(receiver Value, value Value) (Value, Value, bool, 
 }
 
 func (vm *VM) jsonGeneratorWriteAny(receiver Value, value Value) (Value, Value, bool, bool, error) {
-	if err := jsonGeneratorEnsureOpen(receiver); err != nil {
-		return Null, receiver, false, true, err
+	if jsonGeneratorBoolField(receiver, "closed").Bool {
+		return Null, receiver, false, true, newExceptionError("JSONException", `Cannot store to char array because "this._outputBuffer" is null`)
 	}
 	updated, err := jsonGeneratorBeforeValue(receiver)
 	if err != nil {
@@ -530,6 +524,12 @@ func jsonGeneratorFinish(receiver Value) (Value, error) {
 	return jsonGeneratorClose(receiver)
 }
 
+// Salesforce reports an uncatchable internal error for scalar and container
+// starts after close. Its request-specific identifier cannot be reproduced.
+func jsonGeneratorClosedInternalError() error {
+	return &RuntimeError{Type: "System.UnexpectedException", Message: "Salesforce System Error"}
+}
+
 func jsonGeneratorEnsureOpen(receiver Value) error {
 	if jsonGeneratorBoolField(receiver, "closed").Bool {
 		return newExceptionError("JSONException", "JSONGenerator is closed")
@@ -552,7 +552,11 @@ func jsonGeneratorRenderScalar(value Value) (string, error) {
 		return strconv.FormatInt(value.Int, 10), nil
 	case ValueDecimal:
 		if math.IsNaN(value.Decimal) || math.IsInf(value.Decimal, 0) {
-			return "", jsonGeneratorException("JSONGenerator.writeNumber cannot write non-finite number")
+			// The platform writes a non-finite Double as a quoted token.
+			return jsonGeneratorQuote(doubleDisplayText(value.Decimal)), nil
+		}
+		if text, ok := jsonDecimalNumberText(value); ok {
+			return text, nil
 		}
 		if value.Text != "" {
 			return value.Text, nil

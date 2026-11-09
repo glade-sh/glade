@@ -1,6 +1,9 @@
 package vm
 
-import "testing"
+import (
+	"reflect"
+	"testing"
+)
 
 // BenchmarkNamedGlobalDescribeGet measures 1000 getGlobalDescribe().get(...)
 // calls made by named code, where the reference objects extend the base map.
@@ -51,3 +54,40 @@ func TestNamedGlobalDescribeExtensionTracksBaseWrites(t *testing.T) {
 		t.Fatal("anonymous view exposes the reference object")
 	}
 }
+
+// A same-size overwrite keeps the base map length, so only the backing map
+// identity can invalidate the memo. The next named view must show the new value.
+func TestNamedGlobalDescribeExtensionTracksSameSizeOverwrite(t *testing.T) {
+	machine := describeShareUnprimedFor(false)
+	if err := machine.RegisterClass(Class{Name: "NamedDescribeCaller"}); err != nil {
+		t.Fatal(err)
+	}
+	machine.currentClass = "NamedDescribeCaller"
+	account := mapKey(String("account"))
+	first := machine.globalDescribeMapValue()
+	before, ok := first.Map[account]
+	if !ok {
+		t.Fatal("named view lost account")
+	}
+	size := len(first.Map)
+	replacement := sObjectTypeToken("Contact")
+	if valuesEqualForMemoTest(before, replacement) {
+		t.Fatal("replacement must differ from the original entry")
+	}
+	if _, _, err := machine.callValueMember("", machine.schemaGlobalDescribe(), "put", []Value{String("account"), replacement}, &Result{}); err != nil {
+		t.Fatal(err)
+	}
+	after := machine.globalDescribeMapValue()
+	if len(after.Map) != size {
+		t.Fatalf("overwrite changed the size: %d -> %d", size, len(after.Map))
+	}
+	got := after.Map[account]
+	if !valuesEqualForMemoTest(got, replacement) {
+		t.Fatalf("named view is stale after a same-size overwrite: got %#v", got)
+	}
+	if _, ok := after.Map[mapKey(String("fieldservicemobileextension"))]; !ok {
+		t.Fatal("named view lost the reference object")
+	}
+}
+
+func valuesEqualForMemoTest(a, b Value) bool { return reflect.DeepEqual(a, b) }

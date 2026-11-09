@@ -1,0 +1,92 @@
+[
+  {
+    "api": "62.0",
+    "tests": [
+      {
+        "method": "readBatch",
+        "outcome": "Pass",
+        "message": ""
+      },
+      {
+        "method": "readClause",
+        "outcome": "Pass",
+        "message": ""
+      },
+      {
+        "method": "dynamicBatch",
+        "outcome": "Fail",
+        "message": "System.AssertException: Assertion Failed: OBSERVED accepted"
+      },
+      {
+        "method": "dynamicClause",
+        "outcome": "Fail",
+        "message": "System.AssertException: Assertion Failed: OBSERVED accepted"
+      },
+      {
+        "method": "putBatch",
+        "outcome": "Fail",
+        "message": "System.AssertException: Assertion Failed: OBSERVED accepted"
+      },
+      {
+        "method": "putClause",
+        "outcome": "Fail",
+        "message": "System.AssertException: Assertion Failed: OBSERVED accepted"
+      },
+      {
+        "method": "staticBatch",
+        "outcome": "Fail",
+        "message": "System.AssertException: Assertion Failed: OBSERVED accepted"
+      },
+      {
+        "method": "staticClause",
+        "outcome": "Fail",
+        "message": "System.AssertException: Assertion Failed: OBSERVED accepted"
+      }
+    ]
+  },
+  {
+    "api": "67.0",
+    "tests": [
+      {
+        "method": "readBatch",
+        "outcome": "Pass",
+        "message": ""
+      },
+      {
+        "method": "readClause",
+        "outcome": "Pass",
+        "message": ""
+      },
+      {
+        "method": "dynamicBatch",
+        "outcome": "Fail",
+        "message": "System.AssertException: Assertion Failed: OBSERVED System.QueryException: No such column 'DocGenerationBatchProcessId' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "method": "dynamicClause",
+        "outcome": "Fail",
+        "message": "System.AssertException: Assertion Failed: OBSERVED System.QueryException: No such column 'DocumentTemplateClauseId' on entity 'DocumentTemplateSection'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "method": "putBatch",
+        "outcome": "Fail",
+        "message": "System.AssertException: Assertion Failed: OBSERVED accepted"
+      },
+      {
+        "method": "putClause",
+        "outcome": "Fail",
+        "message": "System.AssertException: Assertion Failed: OBSERVED accepted"
+      },
+      {
+        "method": "staticBatch",
+        "outcome": "Fail",
+        "message": "System.AssertException: Assertion Failed: OBSERVED System.QueryException: No such column 'DocGenerationBatchProcessId' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "method": "staticClause",
+        "outcome": "Fail",
+        "message": "System.AssertException: Assertion Failed: OBSERVED System.QueryException: No such column 'DocumentTemplateClauseId' on entity 'DocumentTemplateSection'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      }
+    ]
+  }
+]

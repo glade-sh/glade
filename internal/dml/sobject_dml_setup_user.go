@@ -213,7 +213,7 @@ func profileOwnedPermissionSetID(org storage.OrgState, profileID storage.ID) sto
 		if !ok || ownedByProfile.Kind != storage.ValueBoolean || !ownedByProfile.Boolean {
 			continue
 		}
-		if idFromStorageValue(record.Fields["ProfileId"]) == profileID {
+		if storage.IDsEqual(idFromStorageValue(record.Fields["ProfileId"]), profileID) {
 			if record.ID != "" {
 				return record.ID
 			}

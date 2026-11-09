@@ -1,0 +1,674 @@
+[
+{
+"profile": "Analytics Cloud Integration User",
+"object": "Account",
+"flags": [
+true,
+false,
+false,
+false,
+true,
+false
+]
+},
+{
+"profile": "Analytics Cloud Integration User",
+"object": "Contact",
+"flags": [
+true,
+false,
+false,
+false,
+true,
+false
+]
+},
+{
+"profile": "Analytics Cloud Security User",
+"object": "Account",
+"flags": [
+true,
+false,
+false,
+false,
+true,
+false
+]
+},
+{
+"profile": "Analytics Cloud Security User",
+"object": "Contact",
+"flags": [
+true,
+false,
+false,
+false,
+true,
+false
+]
+},
+{
+"profile": "B2B Reordering Portal Buyer Profile",
+"object": "Account",
+"flags": [
+true,
+false,
+false,
+false,
+false,
+false
+]
+},
+{
+"profile": "B2B Reordering Portal Buyer Profile",
+"object": "Contact",
+"flags": [
+true,
+false,
+false,
+false,
+false,
+false
+]
+},
+{
+"profile": "Company Communities User",
+"object": "Account",
+"flags": [
+true,
+true,
+true,
+true,
+false,
+false
+]
+},
+{
+"profile": "Company Communities User",
+"object": "Contact",
+"flags": [
+true,
+true,
+true,
+true,
+false,
+false
+]
+},
+{
+"profile": "Contract Manager",
+"object": "Account",
+"flags": [
+true,
+true,
+true,
+true,
+false,
+false
+]
+},
+{
+"profile": "Contract Manager",
+"object": "Contact",
+"flags": [
+true,
+true,
+true,
+true,
+false,
+false
+]
+},
+{
+"profile": "CPQ Integration User",
+"object": "Account",
+"flags": [
+true,
+false,
+false,
+false,
+true,
+false
+]
+},
+{
+"profile": "CPQ Integration User",
+"object": "Contact",
+"flags": [
+true,
+false,
+false,
+false,
+true,
+false
+]
+},
+{
+"profile": "Cross Org Data Proxy User",
+"object": "Account",
+"flags": [
+true,
+true,
+true,
+true,
+false,
+false
+]
+},
+{
+"profile": "Cross Org Data Proxy User",
+"object": "Contact",
+"flags": [
+true,
+true,
+true,
+true,
+false,
+false
+]
+},
+{
+"profile": "Customer Community Login User",
+"object": "Account",
+"flags": [
+true,
+false,
+true,
+false,
+false,
+false
+]
+},
+{
+"profile": "Customer Community Login User",
+"object": "Contact",
+"flags": [
+true,
+true,
+true,
+false,
+false,
+false
+]
+},
+{
+"profile": "Customer Community Plus Login User",
+"object": "Account",
+"flags": [
+true,
+true,
+true,
+false,
+false,
+false
+]
+},
+{
+"profile": "Customer Community Plus Login User",
+"object": "Contact",
+"flags": [
+true,
+true,
+true,
+false,
+false,
+false
+]
+},
+{
+"profile": "Customer Community Plus User",
+"object": "Account",
+"flags": [
+true,
+true,
+true,
+false,
+false,
+false
+]
+},
+{
+"profile": "Customer Community Plus User",
+"object": "Contact",
+"flags": [
+true,
+true,
+true,
+false,
+false,
+false
+]
+},
+{
+"profile": "Customer Community User",
+"object": "Account",
+"flags": [
+true,
+false,
+true,
+false,
+false,
+false
+]
+},
+{
+"profile": "Customer Community User",
+"object": "Contact",
+"flags": [
+true,
+true,
+true,
+false,
+false,
+false
+]
+},
+{
+"profile": "Customer Portal Manager Custom",
+"object": "Account",
+"flags": [
+true,
+true,
+true,
+false,
+false,
+false
+]
+},
+{
+"profile": "Customer Portal Manager Custom",
+"object": "Contact",
+"flags": [
+true,
+true,
+true,
+false,
+false,
+false
+]
+},
+{
+"profile": "Customer Portal Manager Standard",
+"object": "Account",
+"flags": [
+true,
+false,
+true,
+false,
+false,
+false
+]
+},
+{
+"profile": "Customer Portal Manager Standard",
+"object": "Contact",
+"flags": [
+true,
+false,
+false,
+false,
+false,
+false
+]
+},
+{
+"profile": "External Apps Login User",
+"object": "Account",
+"flags": [
+true,
+false,
+false,
+false,
+false,
+false
+]
+},
+{
+"profile": "External Apps Login User",
+"object": "Contact",
+"flags": [
+true,
+false,
+false,
+false,
+false,
+false
+]
+},
+{
+"profile": "External Identity User",
+"object": "Account",
+"flags": [
+true,
+false,
+true,
+false,
+false,
+false
+]
+},
+{
+"profile": "External Identity User",
+"object": "Contact",
+"flags": [
+true,
+true,
+true,
+false,
+false,
+false
+]
+},
+{
+"profile": "Force.com - App Subscription User",
+"object": "Account",
+"flags": [
+true,
+true,
+true,
+true,
+true,
+true
+]
+},
+{
+"profile": "Force.com - App Subscription User",
+"object": "Contact",
+"flags": [
+true,
+true,
+true,
+true,
+true,
+true
+]
+},
+{
+"profile": "Gold Partner User",
+"object": "Account",
+"flags": [
+true,
+true,
+true,
+false,
+false,
+false
+]
+},
+{
+"profile": "Gold Partner User",
+"object": "Contact",
+"flags": [
+true,
+true,
+true,
+false,
+false,
+false
+]
+},
+{
+"profile": "High Volume Customer Portal",
+"object": "Account",
+"flags": [
+true,
+false,
+true,
+false,
+false,
+false
+]
+},
+{
+"profile": "High Volume Customer Portal",
+"object": "Contact",
+"flags": [
+true,
+true,
+true,
+false,
+false,
+false
+]
+},
+{
+"profile": "High Volume Customer Portal User",
+"object": "Account",
+"flags": [
+true,
+false,
+true,
+false,
+false,
+false
+]
+},
+{
+"profile": "High Volume Customer Portal User",
+"object": "Contact",
+"flags": [
+true,
+true,
+true,
+false,
+false,
+false
+]
+},
+{
+"profile": "Marketing User",
+"object": "Account",
+"flags": [
+true,
+true,
+true,
+true,
+false,
+false
+]
+},
+{
+"profile": "Marketing User",
+"object": "Contact",
+"flags": [
+true,
+true,
+true,
+true,
+false,
+false
+]
+},
+{
+"profile": "Partner App Subscription User",
+"object": "Account",
+"flags": [
+true,
+true,
+true,
+true,
+true,
+true
+]
+},
+{
+"profile": "Partner App Subscription User",
+"object": "Contact",
+"flags": [
+true,
+true,
+true,
+true,
+true,
+true
+]
+},
+{
+"profile": "Partner Community Login User",
+"object": "Account",
+"flags": [
+true,
+true,
+true,
+false,
+false,
+false
+]
+},
+{
+"profile": "Partner Community Login User",
+"object": "Contact",
+"flags": [
+true,
+true,
+true,
+false,
+false,
+false
+]
+},
+{
+"profile": "Partner Community User",
+"object": "Account",
+"flags": [
+true,
+true,
+true,
+false,
+false,
+false
+]
+},
+{
+"profile": "Partner Community User",
+"object": "Contact",
+"flags": [
+true,
+true,
+true,
+false,
+false,
+false
+]
+},
+{
+"profile": "Silver Partner User",
+"object": "Account",
+"flags": [
+true,
+false,
+true,
+false,
+false,
+false
+]
+},
+{
+"profile": "Silver Partner User",
+"object": "Contact",
+"flags": [
+true,
+false,
+false,
+false,
+false,
+false
+]
+},
+{
+"profile": "Solution Manager",
+"object": "Account",
+"flags": [
+true,
+true,
+true,
+true,
+false,
+false
+]
+},
+{
+"profile": "Solution Manager",
+"object": "Contact",
+"flags": [
+true,
+true,
+true,
+true,
+false,
+false
+]
+},
+{
+"profile": "Standard Platform User",
+"object": "Account",
+"flags": [
+true,
+true,
+true,
+true,
+false,
+false
+]
+},
+{
+"profile": "Standard Platform User",
+"object": "Contact",
+"flags": [
+true,
+true,
+true,
+true,
+false,
+false
+]
+},
+{
+"profile": "Standard User",
+"object": "Account",
+"flags": [
+true,
+true,
+true,
+true,
+false,
+false
+]
+},
+{
+"profile": "Standard User",
+"object": "Contact",
+"flags": [
+true,
+true,
+true,
+true,
+false,
+false
+]
+},
+{
+"profile": "System Administrator",
+"object": "Account",
+"flags": [
+true,
+true,
+true,
+true,
+true,
+true
+]
+},
+{
+"profile": "System Administrator",
+"object": "Contact",
+"flags": [
+true,
+true,
+true,
+true,
+true,
+true
+]
+}
+]

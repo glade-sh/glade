@@ -1,0 +1,39 @@
+case	where	markup
+BlockExclusivePg	page	<apex:pageBlock id="d" rendered="{!1==1}"/><apex:pageBlock id="d" rendered="{!1==2}"/>
+BlockExclusiveCmp	comp	<apex:pageBlock id="d" rendered="{!1==1}"/><apex:pageBlock id="d" rendered="{!1==2}"/>
+BlockPlainPg	page	<apex:pageBlock id="d"/><apex:pageBlock id="d"/>
+BlockPlainCmp	comp	<apex:pageBlock id="d"/><apex:pageBlock id="d"/>
+ItemsSameIdPg	page	<apex:pageBlock><apex:pageBlockSection><apex:pageBlockSectionItem><apex:outputText value="a"/><apex:outputLink value="/x" id="d">a</apex:outputLink></apex:pageBlockSectionItem><apex:pageBlockSectionItem><apex:outputText value="b"/><apex:outputLink value="/y" id="d">b</apex:outputLink></apex:pageBlockSectionItem></apex:pageBlockSection></apex:pageBlock>
+ItemsSameIdCmp	comp	<apex:pageBlock><apex:pageBlockSection><apex:pageBlockSectionItem><apex:outputText value="a"/><apex:outputLink value="/x" id="d">a</apex:outputLink></apex:pageBlockSectionItem><apex:pageBlockSectionItem><apex:outputText value="b"/><apex:outputLink value="/y" id="d">b</apex:outputLink></apex:pageBlockSectionItem></apex:pageBlockSection></apex:pageBlock>
+ItemsOwnIdsPg	page	<apex:pageBlock><apex:pageBlockSection><apex:pageBlockSectionItem id="i1"><apex:outputText value="a"/><apex:outputLink value="/x" id="d">a</apex:outputLink></apex:pageBlockSectionItem><apex:pageBlockSectionItem id="i2"><apex:outputText value="b"/><apex:outputLink value="/y" id="d">b</apex:outputLink></apex:pageBlockSectionItem></apex:pageBlockSection></apex:pageBlock>
+ItemsOwnIdsCmp	comp	<apex:pageBlock><apex:pageBlockSection><apex:pageBlockSectionItem id="i1"><apex:outputText value="a"/><apex:outputLink value="/x" id="d">a</apex:outputLink></apex:pageBlockSectionItem><apex:pageBlockSectionItem id="i2"><apex:outputText value="b"/><apex:outputLink value="/y" id="d">b</apex:outputLink></apex:pageBlockSectionItem></apex:pageBlockSection></apex:pageBlock>
+BodyAndSiblingPg	page	<c:CedarWrap><apex:outputLabel value="a" id="d"/></c:CedarWrap><apex:outputLabel value="b" id="d"/>
+BodyAndSiblingCmp	comp	<c:CedarWrap><apex:outputLabel value="a" id="d"/></c:CedarWrap><apex:outputLabel value="b" id="d"/>
+BodyTwicePg	page	<c:CedarWrap><apex:outputLabel value="a" id="d"/></c:CedarWrap><c:CedarWrap><apex:outputLabel value="b" id="d"/></c:CedarWrap>
+BodyTwiceCmp	comp	<c:CedarWrap><apex:outputLabel value="a" id="d"/></c:CedarWrap><c:CedarWrap><apex:outputLabel value="b" id="d"/></c:CedarWrap>
+BodyExclusivePg	page	<c:CedarWrap rendered="{!1==1}"><apex:outputLabel value="a" id="d"/></c:CedarWrap><apex:outputLabel value="b" id="d" rendered="{!1==2}"/>
+BodyExclusiveCmp	comp	<c:CedarWrap rendered="{!1==1}"><apex:outputLabel value="a" id="d"/></c:CedarWrap><apex:outputLabel value="b" id="d" rendered="{!1==2}"/>
+LabelExclusivePg	page	<apex:outputLabel value="a" id="d" rendered="{!1==1}"/><apex:outputLabel value="b" id="d" rendered="{!1==2}"/>
+LabelExclusiveCmp	comp	<apex:outputLabel value="a" id="d" rendered="{!1==1}"/><apex:outputLabel value="b" id="d" rendered="{!1==2}"/>
+ActionAccountNewPg	page	<apex:outputLink value="{!URLFOR($Action.Account.New)}">x</apex:outputLink>
+ActionAccountListPg	page	<apex:outputLink value="{!URLFOR($Action.Account.List)}">x</apex:outputLink>
+ActionCustomNewPg	page	<apex:outputLink value="{!URLFOR($Action.CedarObj__c.New, $ObjectType.CedarObj__c)}">x</apex:outputLink>
+ActionCustomNewBarePg	page	<apex:outputLink value="{!URLFOR($Action.CedarObj__c.New)}">x</apex:outputLink>
+ActionCustomViewPg	page	<apex:outputLink value="{!URLFOR($Action.CedarObj__c.View, 'a0A000000000000')}">x</apex:outputLink>
+ActionBogusVerbPg	page	<apex:outputLink value="{!URLFOR($Action.Account.Bogus)}">x</apex:outputLink>
+ActionNoObjectPg	page	<apex:outputLink value="{!URLFOR($Action.CedarNoSuch__c.New)}">x</apex:outputLink>
+ScriptRepeatFieldPg	ctl	<script>var m = [<apex:repeat value="{!rows}" var="f">{"Name": "{!f.Name}"},</apex:repeat>];</script>
+ScriptRepeatTextPg	ctl	<script>function g(){var s="";<apex:repeat value="{!items}" var="p">s += '<apex:outputText value="{!p}"/>;';</apex:repeat>return s;}</script>
+ScriptUnknownPg	ctl	<script>var x = "{!noSuchProp}";</script>
+ScriptRepeatUnknownVarPg	ctl	<script><apex:repeat value="{!items}" var="p">"{!q}"</apex:repeat></script>
+ActionTabNewPg	page	<apex:outputLink value="{!URLFOR($Action.CedarTabObj__c.New, $ObjectType.CedarTabObj__c)}">x</apex:outputLink>
+ActionTabNewBarePg	page	<apex:outputLink value="{!URLFOR($Action.CedarTabObj__c.New)}">x</apex:outputLink>
+ActionTabViewPg	page	<apex:outputLink value="{!URLFOR($Action.CedarTabObj__c.View, 'a0A000000000000')}">x</apex:outputLink>
+ActionTabTabPg	page	<apex:outputLink value="{!URLFOR($Action.CedarTabObj__c.Tab, $ObjectType.CedarTabObj__c)}">x</apex:outputLink>
+ActionTabBogusPg	page	<apex:outputLink value="{!URLFOR($Action.CedarTabObj__c.Bogus)}">x</apex:outputLink>
+ActionAccountViewPg	page	<apex:outputLink value="{!URLFOR($Action.Account.View, '001000000000000')}">x</apex:outputLink>
+ActionAccountTabPg	page	<apex:outputLink value="{!URLFOR($Action.Account.Tab, $ObjectType.Account)}">x</apex:outputLink>
+ActionAcctEditPg	page	<apex:outputLink value="{!URLFOR($Action.Account.Edit, '001000000000000')}">x</apex:outputLink>
+ActionAcctDeletePg	page	<apex:outputLink value="{!URLFOR($Action.Account.Delete, '001000000000000')}">x</apex:outputLink>
+ActionAcctClonePg	page	<apex:outputLink value="{!URLFOR($Action.Account.Clone, '001000000000000')}">x</apex:outputLink>
+ActionAcctAcceptPg	page	<apex:outputLink value="{!URLFOR($Action.Account.Accept, '001000000000000')}">x</apex:outputLink>

@@ -16,6 +16,10 @@ import (
 
 const dependencyMissingReason testreport.Reason = "dependency-missing"
 
+// flowActionMissingMarker prefixes the class name in the VM error for a flow
+// action whose Apex class has no invocable method.
+const flowActionMissingMarker = "no static @InvocableMethod found on "
+
 func missingDependencyNames(index typesys.Index) []string {
 	seen := map[string]bool{}
 	for _, dep := range index.Dependencies {
@@ -88,6 +92,12 @@ func ExplainDependencyError(index typesys.Index, source string, err error) error
 	explained := func() error {
 		return &vm.RuntimeError{Type: "dependency_missing", Message: fmt.Sprintf("unresolved Apex reference %q; unloaded declared dependencies: %s; %s", reference, strings.Join(names, ", "), message), Stack: append([]vm.StackFrame(nil), stack...)}
 	}
+	// A flow action names its class in flow metadata, not in Apex source, so
+	// there is no source reference to confirm. An unknown class with unloaded
+	// declared dependencies is the dependency_missing shape.
+	if strings.Contains(message, flowActionMissingMarker) {
+		return explained()
+	}
 	shadowed := false
 	for file, text := range sources {
 		if len(compileGateReferences(file, text, targets)) > 0 {
@@ -115,6 +125,14 @@ func ExplainDependencyError(index typesys.Index, source string, err error) error
 }
 
 func dependencyErrorReference(message string) string {
+	if start := strings.Index(message, flowActionMissingMarker); start >= 0 {
+		tail := message[start+len(flowActionMissingMarker):]
+		end := 0
+		for end < len(tail) && (compileGateIdentifierByte(tail[end]) || tail[end] == '.') {
+			end++
+		}
+		return strings.TrimRight(tail[:end], ".")
+	}
 	for _, prefix := range []string{"Variable does not exist: ", "Invalid type: "} {
 		if start := strings.Index(message, prefix); start >= 0 {
 			tail := message[start+len(prefix):]
@@ -212,6 +230,42 @@ func explainDependencyRun(index typesys.Index, run *testreport.Run) {
 			problem.Type, problem.Message = explained.Type, "dependency_missing: "+explained.Message
 		}
 	}
+	for i := range run.ExcludedClasses {
+		entry := &run.ExcludedClasses[i]
+		root := excluded[strings.ToLower(entry.Root)]
+		problem := &testreport.Problem{Type: "CompileError", Message: entry.Message, Stack: []testreport.StackFrame{{File: entry.File}}}
+		explain(problem, root)
+		if problem.Type == "dependency_missing" {
+			entry.Message = problem.Message
+		}
+	}
+	// A flow action names its class in flow metadata. When the compile gate
+	// excluded that class because it depends on an unloaded declared
+	// dependency, the action fails for the same reason as the class.
+	explainedExcluded := map[string]string{}
+	for _, entry := range run.ExcludedClasses {
+		if strings.HasPrefix(entry.Message, "dependency_missing: ") {
+			explainedExcluded[strings.ToLower(entry.ClassName)] = entry.Message
+		}
+	}
+	explainFlowAction := func(problem *testreport.Problem) {
+		if problem == nil || problem.Type == "dependency_missing" {
+			return
+		}
+		start := strings.Index(problem.Message, flowActionMissingMarker)
+		if start < 0 {
+			return
+		}
+		target := dependencyErrorReference(problem.Message[start:])
+		message, ok := explainedExcluded[strings.ToLower(target)]
+		if !ok {
+			return
+		}
+		if problem.Detail == "" {
+			problem.Detail = problem.Type + ": " + problem.Message
+		}
+		problem.Type, problem.Message = "dependency_missing", message+"; flow action Apex class "+target+" is excluded; "+problem.Message
+	}
 	for suiteIndex := range run.Suites {
 		for caseIndex := range run.Suites[suiteIndex].Cases {
 			result := &run.Suites[suiteIndex].Cases[caseIndex]
@@ -221,21 +275,13 @@ func explainDependencyRun(index typesys.Index, run *testreport.Run) {
 			entry := excluded[strings.ToLower(result.ClassName)]
 			root := excluded[strings.ToLower(entry.Root)]
 			explain(result.Problem, root)
+			explainFlowAction(result.Problem)
 			if result.Problem != nil && result.Problem.Type == "dependency_missing" {
 				result.Reason = dependencyMissingReason
 				if result.Status != testreport.StatusCompileError {
 					result.Status = testreport.StatusRuntimeError
 				}
 			}
-		}
-	}
-	for i := range run.ExcludedClasses {
-		entry := &run.ExcludedClasses[i]
-		root := excluded[strings.ToLower(entry.Root)]
-		problem := &testreport.Problem{Type: "CompileError", Message: entry.Message, Stack: []testreport.StackFrame{{File: entry.File}}}
-		explain(problem, root)
-		if problem.Type == "dependency_missing" {
-			entry.Message = problem.Message
 		}
 	}
 }

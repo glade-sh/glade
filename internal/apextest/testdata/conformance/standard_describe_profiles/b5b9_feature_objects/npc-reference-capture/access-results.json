@@ -1,0 +1,110 @@
+[
+  {
+    "api": "62.0",
+    "case": "GiftCommitmentSchedule.GenerationalCohort",
+    "operation": "get",
+    "result": "System.SObjectException: Invalid field GenerationalCohort for GiftCommitmentSchedule"
+  },
+  {
+    "api": "62.0",
+    "case": "GiftCommitmentSchedule.GenerationalCohort",
+    "operation": "put",
+    "result": "System.SObjectException: Invalid field GenerationalCohort for GiftCommitmentSchedule"
+  },
+  {
+    "api": "62.0",
+    "case": "GiftCommitmentSchedule.GenerationalCohort",
+    "operation": "query",
+    "result": "System.QueryException: No such column 'GenerationalCohort' on entity 'GiftCommitmentSchedule'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+  },
+  {
+    "api": "63.0",
+    "case": "GiftCommitmentSchedule.GenerationalCohort",
+    "operation": "get",
+    "result": "accepted"
+  },
+  {
+    "api": "63.0",
+    "case": "GiftCommitmentSchedule.GenerationalCohort",
+    "operation": "put",
+    "result": "accepted"
+  },
+  {
+    "api": "63.0",
+    "case": "GiftCommitmentSchedule.GenerationalCohort",
+    "operation": "query",
+    "result": "accepted"
+  },
+  {
+    "api": "64.0",
+    "case": "GiftCommitmentSchedule.GenerationalCohort",
+    "operation": "get",
+    "result": "accepted"
+  },
+  {
+    "api": "64.0",
+    "case": "GiftCommitmentSchedule.GenerationalCohort",
+    "operation": "put",
+    "result": "accepted"
+  },
+  {
+    "api": "64.0",
+    "case": "GiftCommitmentSchedule.GenerationalCohort",
+    "operation": "query",
+    "result": "accepted"
+  },
+  {
+    "api": "65.0",
+    "case": "GiftCommitmentSchedule.GenerationalCohort",
+    "operation": "get",
+    "result": "accepted"
+  },
+  {
+    "api": "65.0",
+    "case": "GiftCommitmentSchedule.GenerationalCohort",
+    "operation": "put",
+    "result": "accepted"
+  },
+  {
+    "api": "65.0",
+    "case": "GiftCommitmentSchedule.GenerationalCohort",
+    "operation": "query",
+    "result": "accepted"
+  },
+  {
+    "api": "66.0",
+    "case": "GiftCommitmentSchedule.GenerationalCohort",
+    "operation": "get",
+    "result": "accepted"
+  },
+  {
+    "api": "66.0",
+    "case": "GiftCommitmentSchedule.GenerationalCohort",
+    "operation": "put",
+    "result": "accepted"
+  },
+  {
+    "api": "66.0",
+    "case": "GiftCommitmentSchedule.GenerationalCohort",
+    "operation": "query",
+    "result": "accepted"
+  },
+  {
+    "api": "67.0",
+    "case": "GiftCommitmentSchedule.GenerationalCohort",
+    "operation": "get",
+    "result": "accepted"
+  },
+  {
+    "api": "67.0",
+    "case": "GiftCommitmentSchedule.GenerationalCohort",
+    "operation": "put",
+    "result": "accepted"
+  },
+  {
+    "api": "67.0",
+    "case": "GiftCommitmentSchedule.GenerationalCohort",
+    "operation": "query",
+    "result": "accepted"
+  }
+]

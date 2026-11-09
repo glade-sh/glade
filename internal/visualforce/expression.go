@@ -149,6 +149,7 @@ type ExpressionContext struct {
 	repetitionFieldAccess    bool
 	standardRecordRoot       string
 	syntax                   *expressionSyntaxCache
+	messageChannelTokens     map[string]string
 }
 
 type expressionSyntaxEntry struct {
@@ -516,6 +517,7 @@ func evalVisualforceURLFor(ctx *ExpressionContext, args []Expression) *vm.Value 
 			base = strings.TrimRight(base, "/") + "/" + strings.TrimLeft(path.String(), "/")
 		}
 	}
+	base = urlforEncodeQueryText(base)
 	if len(args) >= 3 {
 		if len(args) >= 4 {
 			override := evalExpressionValue(args[3], ctx)
@@ -528,6 +530,35 @@ func evalVisualforceURLFor(ctx *ExpressionContext, args []Expression) *vm.Value 
 	}
 	out := vm.String(base)
 	return &out
+}
+
+// urlforEncodeQueryText percent-encodes, as UTF-8, each character above
+// U+007F in the query of a URLFOR target; the path keeps them as typed (row
+// LinkUniUrlforAbs: /a/€b?x=€ gives /a/%ACb?x=%E2%82%AC once outputLink
+// writes the path).
+func urlforEncodeQueryText(base string) string {
+	q := strings.IndexByte(base, '?')
+	if q < 0 {
+		return base
+	}
+	end := len(base)
+	if f := strings.IndexByte(base[q:], '#'); f >= 0 {
+		end = q + f
+	}
+	var out strings.Builder
+	changed := false
+	for i := q; i < end; i++ {
+		if c := base[i]; c >= 0x80 {
+			fmt.Fprintf(&out, "%%%02X", c)
+			changed = true
+		} else {
+			out.WriteByte(c)
+		}
+	}
+	if !changed {
+		return base
+	}
+	return base[:q] + out.String() + base[end:]
 }
 
 func appendURLForParams(base string, params vm.Value) string {
@@ -621,7 +652,7 @@ func unsupportedVisualforceGlobalName(parts []string) string {
 
 func supportedVisualforceGlobal(name string) bool {
 	switch strings.ToLower(name) {
-	case "$currentpage", "$page", "$label", "$resource", "$objecttype", "$user", "$profile", "$organization", "$permission", "$setup", "$site", "$component", "$remoteaction":
+	case "$currentpage", "$page", "$label", "$resource", "$objecttype", "$user", "$profile", "$organization", "$permission", "$setup", "$site", "$component", "$remoteaction", "$messagechannel":
 		return true
 	default:
 		return false
@@ -729,9 +760,6 @@ func resolveLabel(parts []string, ctx *ExpressionContext) vm.Value {
 	if ctx == nil || ctx.VM == nil || len(parts) < 2 {
 		return vm.Null
 	}
-	if ctx.VM.Org == nil {
-		return vm.Null
-	}
 	namespace := ""
 	name := strings.TrimSpace(parts[1])
 	if len(parts) >= 3 {
@@ -739,6 +767,15 @@ func resolveLabel(parts []string, ctx *ExpressionContext) vm.Value {
 		name = strings.TrimSpace(parts[2])
 	}
 	if name == "" {
+		return vm.Null
+	}
+	if strings.EqualFold(namespace, "site") {
+		if value, ok := resource.SiteSystemLabel(name); ok {
+			return vm.String(value)
+		}
+		return vm.Null
+	}
+	if ctx.VM.Org == nil {
 		return vm.Null
 	}
 	value, status := resource.ResolveLabel(storage.MetadataRegistry(ctx.VM.Org.Metadata), ctx.VM.Org.Namespace, namespace, name)
@@ -980,12 +1017,16 @@ func resolveVisualforceGlobal(ctx *ExpressionContext, name string) (vm.Value, bo
 			user.Fields["Id"] = storageRecordFieldValue(record, "Id")
 			user.Fields["Username"] = storageRecordFieldValue(record, "Username")
 			user.Fields["Email"] = storageRecordFieldValue(record, "Email")
+			for _, field := range visualforceUserPicklistFields {
+				user.Fields[field] = storageRecordFieldValue(record, field)
+			}
 		}
 		return user, true
 	case "$profile":
 		profile := vm.Object("Profile")
 		if record, ok := visualforceCurrentUserRecord(ctx); ok {
 			profile.Fields["Id"] = storageRecordFieldValue(record, "ProfileId")
+			profile.Fields["UserType"] = visualforceProfileUserType(ctx, record)
 		}
 		return profile, true
 	case "$organization":
@@ -1003,6 +1044,24 @@ func resolveVisualforceGlobal(ctx *ExpressionContext, name string) (vm.Value, bo
 	default:
 		return vm.Null, false
 	}
+}
+
+// visualforceUserPicklistFields are the picklist fields $User exposes to
+// Visualforce formulas (captured: EmailEncodingKey, DigestFrequency and
+// DefaultGroupNotificationFrequency are not part of $User).
+var visualforceUserPicklistFields = []string{"UserType", "LocaleSidKey", "TimeZoneSidKey", "LanguageLocaleKey", "GeocodeAccuracy", "StartDay", "EndDay"}
+
+// visualforceProfileUserType reads the user license type from the running
+// user's Profile row, or from the user row when no Profile row is loaded.
+func visualforceProfileUserType(ctx *ExpressionContext, user storage.Record) vm.Value {
+	if profileID := storageRecordFieldValue(user, "ProfileId"); profileID.Kind != vm.ValueNull {
+		if profiles, ok := visualforceObjectState(ctx, "Profile"); ok {
+			if profile, ok := profiles.Records[storage.ID(profileID.String())]; ok {
+				return storageRecordFieldValue(profile, "UserType")
+			}
+		}
+	}
+	return storageRecordFieldValue(user, "UserType")
 }
 
 func visualforceCurrentUserRecord(ctx *ExpressionContext) (storage.Record, bool) {

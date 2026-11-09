@@ -81,12 +81,12 @@ func (vm *VM) continuationGetResponse(args []Value) (Value, error) {
 		return Null, fmt.Errorf("Continuation.getResponse expects label String")
 	}
 	if args[0].Kind == ValueNull || vm.testContext == nil || vm.testContext.ContinuationResponses == nil {
-		return Null, nil
+		return typedNull("HttpResponse"), nil
 	}
 	if response, ok := vm.testContext.ContinuationResponses[args[0].Text]; ok {
 		return response, nil
 	}
-	return Null, nil
+	return typedNull("HttpResponse"), nil
 }
 func (vm *VM) testInvokeContinuationMethod(args []Value, result *Result) (Value, error) {
 	if len(args) != 2 || args[0].Kind != ValueObject || args[1].Kind != ValueObject || !strings.EqualFold(args[1].Type, "Continuation") {
@@ -456,11 +456,64 @@ func (vm *VM) testLoadData(args []Value, result *Result) (Value, error) {
 	if len(out.List) == 0 {
 		return Null, newExceptionError("System.StringException", "Static Resource has no content: "+args[1].Text)
 	}
-	if _, err := vm.applyDML("insert", out, true, "", dml.Options{}, result); err != nil {
-		return Null, err
+	// Triggers run in chunks of 200 records. Insert each chunk from a window of
+	// the returned list so the Ids land on the records the caller receives, and
+	// roll back the earlier chunks when a later one fails (org capture
+	// load_data_trigger_chunks).
+	const loadDataChunkSize = 200
+	rollback := vm.beginDMLRollbackPoint(len(out.List) > loadDataChunkSize, false)
+	defer vm.finishDMLRollbackPoint(rollback)
+	for start := 0; start < len(out.List); start += loadDataChunkSize {
+		chunk := out
+		chunk.Ref = 0
+		chunk.List = out.List[start:min(start+loadDataChunkSize, len(out.List))]
+		if _, err := vm.applyDML("insert", chunk, true, "", dml.Options{}, result); err != nil {
+			if rollbackErr := vm.restoreDMLRollbackPoint(rollback); rollbackErr != nil {
+				return Null, rollbackErr
+			}
+			return Null, err
+		}
 	}
+	vm.refreshLoadedRecords(objectName, out.List)
 	return out, nil
 }
+
+// refreshLoadedRecords copies the stored values of fields that differ from the
+// loaded records, which is how a trigger change reaches the list that
+// Test.loadData returns while plain DML leaves its variables unchanged.
+func (vm *VM) refreshLoadedRecords(objectName string, records []Value) {
+	if vm == nil || vm.Org == nil {
+		return
+	}
+	canonical, ok := vm.resolveObjectName(objectName)
+	if !ok {
+		return
+	}
+	state := vm.Org.Objects[canonical]
+	for i := range records {
+		_, idValue, ok := objectFieldValue(records[i], "Id")
+		if !ok || idValue.Kind == ValueNull {
+			continue
+		}
+		idText, ok := idValueText(idValue)
+		if !ok || idText == "" {
+			continue
+		}
+		stored, found := state.Records[storage.ID(idText)]
+		if !found {
+			continue
+		}
+		for name, value := range stored.Fields {
+			current, present := records[i].Fields[name]
+			next := vmValueFromStorage(value)
+			if present && current.Kind == next.Kind && current.String() == next.String() {
+				continue
+			}
+			vm.setExplicitSObjectFieldValue(&records[i], name, next)
+		}
+	}
+}
+
 func (vm *VM) validateTestLoadDataHeaders(objectName string, headers []string) error {
 	if vm == nil || vm.Org == nil {
 		return nil

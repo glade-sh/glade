@@ -71,10 +71,12 @@ func TestLookupFollowupsNativeConformance(t *testing.T) {
 			writeFile(t, filepath.Join(root, "force-app/main/default/classes/LookupFollowupsOutcome.cls-meta.xml"), "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>"+api+"</apiVersion><status>Active</status></ApexClass>")
 			anonymous = strings.Replace(anonymous, helper, "", 1)
 			anonymous = strings.ReplaceAll(anonymous, "outcome(", "LookupFollowupsOutcome.outcome(")
+			// ORG-RUN.txt step 3: FollowupAccess was deployed and assigned to the
+			// scratch administrator before both routes.
+			writeCapturedAssignments(t, root, "FollowupAccess")
 			index := loadTestIndex(t, root)
 			t.Run("anonymous", func(t *testing.T) {
-				org := orgFromIndex(index)
-				org.APIVersion = api
+				org := capturedFixtureOrg(t, index, api)
 				runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 				source := anonymous + "\nSystem.assertEquals('" + strings.Join(expected, ";") + "', String.join(rows, ';'));"
 				program, err := vm.CompileAnonymousWithOptions(source, vm.CompileOptions{APIVersion: api})

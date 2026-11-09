@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <label>V35NoRt</label>
+    <nameField>
+        <label>V35NoRt Name</label>
+        <type>Text</type>
+    </nameField>
+    <pluralLabel>V35NoRts</pluralLabel>
+    <sharingModel>ReadWrite</sharingModel>
+</CustomObject>

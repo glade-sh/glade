@@ -86,17 +86,6 @@ func TestDateLocaleA12C14NativeConformance(t *testing.T) {
 					if err := json.Unmarshal([]byte(row[4]), &want); err != nil {
 						t.Fatal(err)
 					}
-					if row[2] == "fr" {
-						var expected map[string]any
-						if err := json.Unmarshal([]byte(`{"error":{"em":"Invalid date: 28/01/2008","et":"System.TypeException","stage":"parse"}}`), &expected); err != nil {
-							t.Fatal(err)
-						}
-						if !c14ExactCarryEqual(got, want, expected, []string{"error", "parsed", "status"}) {
-							t.Fatalf("French date parse gap changed: native=%v; Glade=%v", want, got)
-						}
-						t.Logf("known local carry batch Dot stdlib cases Dot Dot SOQL cases and Dot async cases (fix owner pending): French formatted date fails to parse")
-						case345Skip(t)
-					}
 					if !reflect.DeepEqual(got, want) {
 						t.Fatalf("native=%v; Glade=%v", want, got)
 					}

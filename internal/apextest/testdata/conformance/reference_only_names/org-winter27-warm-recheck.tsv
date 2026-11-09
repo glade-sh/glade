@@ -1,0 +1,17 @@
+source_api	route	case_id	outcome	message
+62.0	anonymous	warm_named_availability	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true|true|FieldServiceMobileExtension|false|true|true|true
+62.0	isTest	warm_named_availability	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false|true|FieldServiceMobileExtension|false|true|false|true
+62.0	isTest	reflection_bare	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+62.0	isTest	reflection_schema	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+62.0	isTest	soql	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+62.0	isTest	soql_count	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+62.0	isTest	soql_named	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+62.0	isTest	soql_typed_named	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+67.0	anonymous	warm_named_availability	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true|true|FieldServiceMobileExtension|false|true|true|true
+67.0	isTest	warm_named_availability	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false|true|FieldServiceMobileExtension|false|true|false|true
+67.0	isTest	reflection_bare	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	isTest	reflection_schema	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	isTest	soql	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+67.0	isTest	soql_count	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+67.0	isTest	soql_named	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.
+67.0	isTest	soql_typed_named	RUNTIME_ERROR	System.QueryException: sObject type 'FieldServiceMobileExtension' is not supported.

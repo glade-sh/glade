@@ -48,8 +48,13 @@ var featureEvidenceRules = []featureEvidence{
 	},
 	{
 		feature: "Communities",
-		reason:  "source uses Network or Experience Cloud users (IsPortalEnabled or an external UserType)",
+		reason:  "source uses the Network class or Experience Cloud users (IsPortalEnabled or an external UserType)",
 		covered: []string{"Communities", "FlowSites", "Sites"},
+	},
+	{
+		feature: "NetworksEnabled",
+		reason:  "source uses the Network or NetworkMember object; Salesforce adds them with the communitiesSettings enableNetworksEnabled setting (scratch definition or settings file), and the Communities feature alone does not",
+		covered: []string{"NetworksEnabled"},
 	},
 	{
 		feature: "Sites",
@@ -194,6 +199,12 @@ func SuggestOrgSetup(root string) []OrgSetupSuggestion {
 	if len(featureSuggestions) > 0 {
 		list := dedupeStrings(append(append([]string{}, configured...), newFeatures...))
 		yaml := "org:\n  features: [" + strings.Join(list, ", ") + "]"
+		for _, f := range newFeatures {
+			if f == "NetworksEnabled" {
+				// Name the native setting where only the YAML is printed.
+				yaml += "\n  # NetworksEnabled mirrors the native communitiesSettings enableNetworksEnabled setting"
+			}
+		}
 		for i := range featureSuggestions {
 			featureSuggestions[i].YAML = yaml
 		}

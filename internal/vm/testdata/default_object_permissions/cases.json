@@ -1,0 +1,61 @@
+{
+  "sourceAPIs": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "nativeObservationCount": 39,
+  "configurations": {
+    "baseline": {
+      "assignedPermissionSets": []
+    },
+    "object-granted": {
+      "assignedPermissionSets": [
+        "AccessSlipObjectAccess"
+      ]
+    },
+    "granted": {
+      "assignedPermissionSets": [
+        "AccessSlipAccess"
+      ]
+    }
+  },
+  "cases": [
+    {
+      "actor": "administrator",
+      "routes": [
+        "anonymous",
+        "named",
+        "istest",
+        "runAs"
+      ]
+    },
+    {
+      "actor": "standard",
+      "routes": [
+        "istest-runAs"
+      ]
+    },
+    {
+      "actor": "administrator",
+      "routes": [
+        "anonymous-runAs-rejection"
+      ]
+    }
+  ],
+  "files": {
+    "anonymous.apex": "delete [SELECT Id FROM AccessSlip__c];\nSystem.debug('OBSERVED|'+DefaultPermissionProbe.observe());\n",
+    "assign_grant.apex": "insert new PermissionSetAssignment(AssigneeId=UserInfo.getUserId(),PermissionSetId=[SELECT Id FROM PermissionSet WHERE Name='AccessSlipAccess'].Id);\n",
+    "assign_object_grant.apex": "insert new PermissionSetAssignment(AssigneeId=UserInfo.getUserId(),PermissionSetId=[SELECT Id FROM PermissionSet WHERE Name='AccessSlipObjectAccess'].Id);\n",
+    "grant/permissionsets/AccessSlipAccess.permissionset-meta.xml": "<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Access Slip Access</label><fieldPermissions><editable>true</editable><field>AccessSlip__c.Detail__c</field><readable>true</readable></fieldPermissions><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>AccessSlip__c</object><viewAllRecords>false</viewAllRecords></objectPermissions></PermissionSet>\n",
+    "object_grant/permissionsets/AccessSlipObjectAccess.permissionset-meta.xml": "<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Access Slip Object Access</label><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>AccessSlip__c</object><viewAllRecords>false</viewAllRecords></objectPermissions></PermissionSet>\n",
+    "project/force-app/main/default/classes/DefaultPermissionProbe.cls": "public class DefaultPermissionProbe {\n public static String observe() {\n  Map<String,Object> row=new Map<String,Object>();\n  Schema.DescribeSObjectResult obj=AccessSlip__c.SObjectType.getDescribe();\n  Schema.DescribeFieldResult field=AccessSlip__c.Detail__c.getDescribe();\n  row.put('crud',new List<Boolean>{obj.isAccessible(),obj.isCreateable(),obj.isUpdateable(),obj.isDeletable()});\n  row.put('fls',new List<Boolean>{field.isAccessible(),field.isCreateable(),field.isUpdateable()});\n  row.put('name',new List<Boolean>{AccessSlip__c.Name.getDescribe().isAccessible(),AccessSlip__c.Name.getDescribe().isCreateable(),AccessSlip__c.Name.getDescribe().isUpdateable()});\n  try { row.put('plainCount',String.valueOf(Database.countQuery('SELECT COUNT() FROM AccessSlip__c'))); } catch(Exception e) {row.put('plainCount',e.getTypeName());}\n  try { row.put('systemCount',String.valueOf(Database.countQuery('SELECT COUNT() FROM AccessSlip__c WITH SYSTEM_MODE'))); } catch(Exception e) {row.put('systemCount',e.getTypeName());}\n  try { Database.query('SELECT Id,Detail__c FROM AccessSlip__c WITH USER_MODE');row.put('userQuery','ok'); } catch(Exception e) {row.put('userQuery',e.getTypeName());}\n  try { List<AccessSlip__c> rows=[SELECT Id,Detail__c FROM AccessSlip__c WITH USER_MODE];row.put('inlineUserQuery','ok'); } catch(Exception e) {row.put('inlineUserQuery',e.getTypeName());}\n  try { Database.query('SELECT Id,Detail__c FROM AccessSlip__c WITH SECURITY_ENFORCED');row.put('enforcedQuery','ok'); } catch(Exception e) {row.put('enforcedQuery',e.getTypeName());}\n  try { insert new AccessSlip__c(Name='Plain');row.put('plainInsert','ok'); } catch(Exception e) {row.put('plainInsert',e.getTypeName());}\n  try { Database.insert(new AccessSlip__c(Name='User'),AccessLevel.USER_MODE);row.put('userInsert','ok'); } catch(Exception e) {row.put('userInsert',e.getTypeName());}\n  try { Database.insert(new AccessSlip__c(Name='System'),AccessLevel.SYSTEM_MODE);row.put('systemInsert','ok'); } catch(Exception e) {row.put('systemInsert',e.getTypeName());}\n  try { Database.insert(new AccessSlip__c(Name='User field',Detail__c='detail'),AccessLevel.USER_MODE);row.put('userFieldInsert','ok'); } catch(Exception e) {row.put('userFieldInsert',e.getTypeName());}\n  try { insert as user new AccessSlip__c(Name='Inline user field',Detail__c='detail');row.put('inlineUserFieldInsert','ok'); } catch(Exception e) {row.put('inlineUserFieldInsert',e.getTypeName());}\n  AccessSlip__c writable=new AccessSlip__c(Name='System field',Detail__c='detail');\n  Database.insert(writable,AccessLevel.SYSTEM_MODE);\n  try { Database.update(new AccessSlip__c(Id=writable.Id,Detail__c='updated'),AccessLevel.USER_MODE);row.put('userFieldUpdate','ok'); } catch(Exception e) {row.put('userFieldUpdate',e.getTypeName());}\n  try { update as user new AccessSlip__c(Id=writable.Id,Detail__c='updated');row.put('inlineUserFieldUpdate','ok'); } catch(Exception e) {row.put('inlineUserFieldUpdate',e.getTypeName());}\n  for(System.AccessType mode:new List<System.AccessType>{System.AccessType.READABLE,System.AccessType.CREATABLE,System.AccessType.UPDATABLE}) {\n   try {\n    AccessSlip__c original=new AccessSlip__c(Name='Strip',Detail__c='detail');\n    SObjectAccessDecision decision=Security.stripInaccessible(mode,new List<SObject>{original},false);\n    Set<String> removed=decision.getRemovedFields().get('AccessSlip__c');\n    AccessSlip__c result=(AccessSlip__c)decision.getRecords()[0];\n    row.put(String.valueOf(mode),new List<Boolean>{removed!=null&&removed.contains('Name'),removed!=null&&removed.contains('Detail__c'),result.Name==null,result.Detail__c==null,original.Name=='Strip',original.Detail__c=='detail'});\n   } catch(Exception e) {row.put(String.valueOf(mode),e.getTypeName());}\n  }\n  try { Security.stripInaccessible(System.AccessType.READABLE,new List<SObject>{new AccessSlip__c(Name='Enforced')});row.put('rootEnforced','ok'); } catch(Exception e) {row.put('rootEnforced',e.getTypeName());}\n  return JSON.serialize(row);\n }\n}\n",
+    "project/force-app/main/default/classes/DefaultPermissionProbe.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+    "project/force-app/main/default/classes/DefaultPermissionRouteTest.cls": "@IsTest private class DefaultPermissionRouteTest {\n static void emit(String value) { System.assert(false,'OBSERVED|'+value); }\n @IsTest static void admin() { emit(DefaultPermissionProbe.observe()); }\n @IsTest static void adminRunAs() { System.runAs(new User(Id=UserInfo.getUserId())) { emit(DefaultPermissionProbe.observe()); } }\n @IsTest static void standardRunAs() {\n  User actor=new User(Alias='access',Email='access@example.invalid',EmailEncodingKey='UTF-8',LastName='Access Observer',LanguageLocaleKey='en_US',LocaleSidKey='en_US',TimeZoneSidKey='America/Los_Angeles',Username='access-'+UserInfo.getOrganizationId()+'@example.invalid',ProfileId=[SELECT Id FROM Profile WHERE Name='Standard User'].Id);\n  insert actor;\n  System.runAs(actor) { emit(DefaultPermissionProbe.observe()); }\n }\n}\n",
+    "project/force-app/main/default/classes/DefaultPermissionRouteTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+    "project/force-app/main/default/objects/AccessSlip__c/AccessSlip__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Access Slip</label><pluralLabel>Access Slips</pluralLabel><nameField><label>Access Slip Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>\n",
+    "project/force-app/main/default/objects/AccessSlip__c/fields/Detail__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Detail__c</fullName><label>Detail</label><length>80</length><type>Text</type></CustomField>\n",
+    "project/sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+    "runas_rejection.apex": "System.runAs(new User(Id=UserInfo.getUserId())) { System.debug('unreachable'); }\n"
+  }
+}

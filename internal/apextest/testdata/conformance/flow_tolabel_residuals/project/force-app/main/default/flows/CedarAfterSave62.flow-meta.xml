@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>62.0</apiVersion>
+<assignments><name>Build</name><label>Build</label><locationX>0</locationX><locationY>0</locationY>
+<assignmentItems><assignToReference>varLog</assignToReference><operator>Add</operator><value><stringValue>created</stringValue></value></assignmentItems>
+<assignmentItems><assignToReference>varLog</assignToReference><operator>Add</operator><value><stringValue>&lt;br&gt;</stringValue></value></assignmentItems>
+<assignmentItems><assignToReference>varLog</assignToReference><operator>Add</operator><value><elementReference>$Record.Cedar_Log__c</elementReference></value></assignmentItems>
+<connector><targetReference>Changed</targetReference></connector></assignments>
+<decisions><name>Changed</name><label>Changed</label><locationX>0</locationX><locationY>0</locationY><defaultConnectorLabel>Default</defaultConnectorLabel>
+<rules><name>isChanged</name><conditionLogic>and</conditionLogic><conditions><leftValueReference>varLog</leftValueReference><operator>IsNull</operator><rightValue><booleanValue>false</booleanValue></rightValue></conditions><connector><targetReference>WriteBack</targetReference></connector><label>isChanged</label></rules></decisions>
+<interviewLabel>CedarAfterSave62 {!$Flow.CurrentDateTime}</interviewLabel><label>CedarAfterSave62</label><processMetadataValues><name>BuilderType</name><value><stringValue>LightningFlowBuilder</stringValue></value></processMetadataValues>
+<processType>AutoLaunchedFlow</processType>
+<recordUpdates><name>WriteBack</name><label>WriteBack</label><locationX>0</locationX><locationY>0</locationY>
+<inputAssignments><field>Cedar_Flag__c</field><value><booleanValue>false</booleanValue></value></inputAssignments>
+<inputAssignments><field>Cedar_Log__c</field><value><elementReference>varLog</elementReference></value></inputAssignments>
+<inputAssignments><field>Cedar_Text__c</field><value><elementReference>varLog</elementReference></value></inputAssignments>
+<inputReference>$Record</inputReference></recordUpdates>
+<start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Build</targetReference></connector>
+<filterLogic>and</filterLogic><filters><field>Cedar_Flag__c</field><operator>EqualTo</operator><value><booleanValue>true</booleanValue></value></filters>
+<object>Cedar_Report62__c</object><recordTriggerType>CreateAndUpdate</recordTriggerType><triggerType>RecordAfterSave</triggerType></start><status>Active</status>
+<variables><name>varLog</name><dataType>String</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>false</isOutput></variables></Flow>

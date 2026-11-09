@@ -2,6 +2,7 @@ package sema
 
 import (
 	"strings"
+	"sync"
 
 	"github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/storage"
@@ -163,6 +164,9 @@ type semaProjectReferencedSchemaContext struct {
 	inferenceAllowedObjectKeys map[string]bool
 	childRelationshipTargetSet map[string]map[string]struct{}
 	inferObjectReferences      bool
+	// ownedFields marks objects whose Fields slice this context has copied.
+	// The incoming index is shared, so the first write to an object clones it.
+	ownedFields map[int]bool
 }
 
 func newSemaProjectReferencedSchemaContext(objects []schema.Object, namespace string) *semaProjectReferencedSchemaContext {
@@ -183,6 +187,19 @@ func newSemaProjectReferencedSchemaContext(objects []schema.Object, namespace st
 	}
 	ctx.indexChildRelationships()
 	return ctx
+}
+
+// ownFields returns the object's Fields after copying them once, so upserts
+// never write through to a slice shared with another analysis of the same index.
+func (ctx *semaProjectReferencedSchemaContext) ownFields(idx int) []schema.Field {
+	if !ctx.ownedFields[idx] {
+		if ctx.ownedFields == nil {
+			ctx.ownedFields = make(map[int]bool)
+		}
+		ctx.ownedFields[idx] = true
+		ctx.objects[idx].Fields = append([]schema.Field(nil), ctx.objects[idx].Fields...)
+	}
+	return ctx.objects[idx].Fields
 }
 
 func (ctx *semaProjectReferencedSchemaContext) indexObject(idx int) {
@@ -814,7 +831,7 @@ func semaRecordProjectReferencedSchemaFieldWithType(ctx *semaProjectReferencedSc
 	for _, field := range ctx.objects[idx].Fields {
 		if semaProjectReferencedSchemaAPINamesMatch(ctx.namespace, field.Name, fieldName) || semaProjectReferencedSchemaAPINamesMatch(ctx.namespace, field.RelationshipName, fieldName) {
 			if fieldType != "" {
-				ctx.objects[idx].Fields = semaProjectReferencedUpsertSchemaField(ctx.objects[idx].Fields, schema.Field{Name: fieldName, Type: fieldType})
+				ctx.objects[idx].Fields = semaProjectReferencedUpsertSchemaField(ctx.ownFields(idx), schema.Field{Name: fieldName, Type: fieldType})
 			}
 			return
 		}
@@ -828,7 +845,7 @@ func semaRecordProjectReferencedSchemaFieldWithType(ctx *semaProjectReferencedSc
 	if fieldType == "" {
 		fieldType = "Any"
 	}
-	ctx.objects[idx].Fields = semaProjectReferencedUpsertSchemaField(ctx.objects[idx].Fields, schema.Field{Name: fieldName, Type: fieldType})
+	ctx.objects[idx].Fields = semaProjectReferencedUpsertSchemaField(ctx.ownFields(idx), schema.Field{Name: fieldName, Type: fieldType})
 }
 
 func semaRecordProjectReferencedLookupSchemaField(ctx *semaProjectReferencedSchemaContext, objectName, fieldName, parentObjectName string) {
@@ -861,7 +878,7 @@ func semaRecordProjectReferencedLookupSchemaField(ctx *semaProjectReferencedSche
 	if !ctx.allowsFieldInference(ctx.objects[idx].Name) {
 		return
 	}
-	ctx.objects[idx].Fields = semaProjectReferencedUpsertSchemaField(ctx.objects[idx].Fields, schema.Field{
+	ctx.objects[idx].Fields = semaProjectReferencedUpsertSchemaField(ctx.ownFields(idx), schema.Field{
 		Name:             fieldName,
 		Type:             "Lookup",
 		ReferenceTo:      []string{parentObjectName},
@@ -947,18 +964,29 @@ func semaProjectReferencedSchemaObjectLikeName(name string) bool {
 	if semaHasAPISuffixFold(name, "__c") || semaHasAPISuffixFold(name, "__mdt") || semaHasAPISuffixFold(name, "__e") {
 		return true
 	}
-	_, ok := semaProjectReferencedStandardSObjectNames[name]
+	_, ok := semaProjectReferencedStandardSObjectNames()[name]
 	return ok
 }
 
-var semaProjectReferencedStandardSObjectNames = func() map[string]struct{} {
-	names := append(storage.KnownStandardObjectNames(), semaAdditionalStandardSObjectNames()...)
-	out := make(map[string]struct{}, len(names))
-	for _, name := range names {
-		out[name] = struct{}{}
-	}
-	return out
-}()
+var semaProjectReferencedStandardSObjectNameCache struct {
+	once  sync.Once
+	names map[string]struct{}
+}
+
+// semaProjectReferencedStandardSObjectNames builds the set on first use. At
+// package init it forced storage to decode its feature describe sidecar in
+// every process, including ones that never check a class.
+func semaProjectReferencedStandardSObjectNames() map[string]struct{} {
+	semaProjectReferencedStandardSObjectNameCache.once.Do(func() {
+		names := append(storage.KnownStandardObjectNames(), semaAdditionalStandardSObjectNames()...)
+		out := make(map[string]struct{}, len(names))
+		for _, name := range names {
+			out[name] = struct{}{}
+		}
+		semaProjectReferencedStandardSObjectNameCache.names = out
+	})
+	return semaProjectReferencedStandardSObjectNameCache.names
+}
 
 func semaProjectReferencedParentRelationshipName(fieldName string) string {
 	fieldName = strings.TrimSpace(fieldName)

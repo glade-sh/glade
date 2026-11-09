@@ -1,0 +1,1 @@
+public class H10 { public class Quote {} public static void m() { insert new Quote(); } }

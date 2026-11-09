@@ -82,11 +82,11 @@ System.assertEquals(byDeveloper,byName);`
 			writeFile(t, filepath.Join(root, "force-app/main/default/classes/LabelRoute.cls-meta.xml"), `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>`+api+`</apiVersion><status>Active</status></ApexClass>`)
 			writeFile(t, filepath.Join(root, "force-app/main/default/classes/LabelRouteTest.cls"), "@IsTest private class LabelRouteTest { @IsTest static void check(){ LabelRoute.check(); } }")
 			writeFile(t, filepath.Join(root, "force-app/main/default/classes/LabelRouteTest.cls-meta.xml"), `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>`+api+`</apiVersion><status>Active</status></ApexClass>`)
+			writeSyntheticProbeAccess(t, root, "Probe__c", "Account__c")
 			index := loadTestIndex(t, root)
 			for _, route := range []struct{ name, source string }{{"anonymous", body}, {"named", "LabelRoute.check();"}} {
 				t.Run(route.name, func(t *testing.T) {
-					org := orgFromIndex(index)
-					org.APIVersion = api
+					org := capturedFixtureOrg(t, index, api)
 					runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 					program, err := vm.CompileAnonymousWithOptions(route.source, vm.CompileOptions{APIVersion: api})
 					if err != nil {

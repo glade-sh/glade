@@ -87,21 +87,6 @@ func TestSOQLSecurityQ2C14NativeConformance(t *testing.T) {
 						t.Fatal(err)
 					}
 					got = normalizeCaptureIdentities(got).(map[string]any)
-					if row[2] == "limitRows" || row[2] == "offsetRows" {
-						observed := map[string]string{
-							"limitRows":  `{"rows":[]}`,
-							"offsetRows": `{"rows":[{"Id":"<custom1:1>","Name":"B-visible"}]}`,
-						}[row[2]]
-						var expected map[string]any
-						if err := json.Unmarshal([]byte(observed), &expected); err != nil {
-							t.Fatal(err)
-						}
-						if !c14ExactCarryEqual(got, want, expected, []string{"rows"}) {
-							t.Fatalf("sharing window gap changed: native=%v; Glade=%v", want, got)
-						}
-						t.Logf("known local carry batch Dot stdlib cases Dot Dot SOQL cases and Dot async cases (fix owner pending): sharing and window order differs")
-						case345Skip(t)
-					}
 					if !reflect.DeepEqual(got, want) {
 						t.Fatalf("native=%v; Glade=%v", want, got)
 					}

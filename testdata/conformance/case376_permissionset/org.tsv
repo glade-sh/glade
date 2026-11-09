@@ -1,0 +1,10 @@
+case	api	route	result	diagnostic
+probe	62.0	anonymous	rejected	Compilation failed at Ln 1, Col 28 with the error: Variable does not exist: PermissionsViewAllFields
+soql	62.0	anonymous	rejected	Compilation failed at Ln 1, Col 38 with the error: SELECT PermissionsViewAllFields FROM PermissionSet ^ ERROR at Row:1:Column:8 No such column 'PermissionsViewAllFields' on entity 'PermissionSet'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+reject	62.0	anonymous	rejected	Compilation failed at Ln 1, Col 28 with the error: Variable does not exist: Case376AbsentField__c
+probe	63.0	anonymous	rejected	Compilation failed at Ln 1, Col 28 with the error: Variable does not exist: PermissionsViewAllFields
+soql	63.0	anonymous	rejected	Compilation failed at Ln 1, Col 38 with the error: SELECT PermissionsViewAllFields FROM PermissionSet ^ ERROR at Row:1:Column:8 No such column 'PermissionsViewAllFields' on entity 'PermissionSet'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+reject	63.0	anonymous	rejected	Compilation failed at Ln 1, Col 28 with the error: Variable does not exist: Case376AbsentField__c
+probe	67.0	anonymous	rejected	Compilation failed at Ln 1, Col 28 with the error: Variable does not exist: PermissionsViewAllFields
+soql	67.0	anonymous	rejected	Compilation failed at Ln 1, Col 38 with the error: SELECT PermissionsViewAllFields FROM PermissionSet ^ ERROR at Row:1:Column:8 No such column 'PermissionsViewAllFields' on entity 'PermissionSet'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+reject	67.0	anonymous	rejected	Compilation failed at Ln 1, Col 28 with the error: Variable does not exist: Case376AbsentField__c

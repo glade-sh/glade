@@ -46,8 +46,8 @@ func TestStandardDescribeProfileCatalogNativeDeltas(t *testing.T) {
 	fieldRows := readDescribeProfileDeltaRows(t, filepath.Join(root, "feature-set-differences.tsv"))
 	objectRows := readDescribeProfileDeltaRows(t, filepath.Join(root, "global-object-differences.tsv"))
 	for profile, apis := range retained.Evidence.Profiles {
-		if len(apis) != 2 {
-			t.Fatalf("%s retained %d APIs, want 2", profile, len(apis))
+		if len(apis) < 2 || len(apis) > 3 {
+			t.Fatalf("%s retained %d APIs, want 2 or 3", profile, len(apis))
 		}
 		for _, api := range []string{"62.0", "67.0"} {
 			t.Run(profile+"/"+api, func(t *testing.T) {
@@ -145,7 +145,7 @@ func TestStandardDescribeProfileCatalogLookupRoutes(t *testing.T) {
 			})
 		}
 	}
-	for _, key := range [][2]string{{"", "62.0"}, {"unknown", "67.0"}, {"P0", ""}, {"P0", "62"}, {"P0", "63.0"}, {"P0", "68.0"}} {
+	for _, key := range [][2]string{{"", "62.0"}, {"unknown", "67.0"}, {"P0", ""}, {"P0", "62"}, {"P0", "63.0"}} {
 		t.Run("uncaptured/"+key[0]+"/"+key[1], func(t *testing.T) {
 			got, ok := StandardDescribeCatalogProfileDelta(key[0], key[1])
 			if ok || !reflect.DeepEqual(got, StandardDescribeCatalogDelta{}) {

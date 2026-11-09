@@ -1,0 +1,10 @@
+[
+  {
+    "id": "request",
+    "body": "commercestorepricing.ContractResolutionRequest value; System.assertEquals(null,value);"
+  },
+  {
+    "id": "response",
+    "body": "commercestorepricing.ContractResolutionResponse value; System.assertEquals(null,value);"
+  }
+]

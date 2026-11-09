@@ -1,0 +1,51 @@
+case_id	api_version	context	route	compile_outcome	runtime_outcome	observed_value_or_diagnostic	source
+O01_qualified_leaf	62.0	owner_namespaced_org	anonymous	ok	ok	qualifiedLeaf|3	anon/O01_qualified_leaf.apex
+O02_nested_bogus_local	62.0	owner_namespaced_org	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Invalid type: {{NAMESPACE}}.V035Outer.Bogus	anon/O02_nested_bogus_local.apex
+O03_missing_direct_local	62.0	owner_namespaced_org	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Invalid type: {{NAMESPACE}}.V035Missing	anon/O03_missing_direct_local.apex
+O04_missing_outer_nested_local	62.0	owner_namespaced_org	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Invalid type: {{NAMESPACE}}.V035Missing.Nested	anon/O04_missing_outer_nested_local.apex
+O05_nested_bogus_static_receiver	62.0	owner_namespaced_org	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 13: Variable does not exist: {{NAMESPACE}}.V035Outer.Bogus	anon/O05_nested_bogus_static_receiver.apex
+O06_qualified_static	62.0	owner_namespaced_org	anonymous	ok	ok	qualifiedStatic|1	anon/O06_qualified_static.apex
+O07_lowercase_qualified_leaf	62.0	owner_namespaced_org	anonymous	ok	ok	lowercaseQualifiedLeaf|3	anon/O07_lowercase_qualified_leaf.apex
+O08_nested_bogus_new	62.0	owner_namespaced_org	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 12: Invalid type: {{NAMESPACE}}.V035Outer.Bogus	anon/O08_nested_bogus_new.apex
+O09_forname_private_child_dotted	62.0	owner_namespaced_org	anonymous	ok	ok	forNamePrivateChildDotted|null	anon/O09_forname_private_child_dotted.apex
+O10_forname_private_child_two_arg	62.0	owner_namespaced_org	anonymous	ok	ok	forNamePrivateChildTwoArg|null	anon/O10_forname_private_child_two_arg.apex
+O11_forname_public_pub_dotted	62.0	owner_namespaced_org	anonymous	ok	ok	forNamePublicPubDotted|constructed	anon/O11_forname_public_pub_dotted.apex
+O12_forname_private_child_unqualified	62.0	owner_namespaced_org	anonymous	ok	ok	forNamePrivateChildUnqualified|null	anon/O12_forname_private_child_unqualified.apex
+O13_forname_private_class_public_ctor	62.0	owner_namespaced_org	anonymous	ok	ok	forNamePrivateClassPublicCtor|null	anon/O13_forname_private_class_public_ctor.apex
+O14_private_child_class_literal	62.0	owner_namespaced_org	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 10: Type is not visible: {{NAMESPACE}}.V035Owner.Child	anon/O14_private_child_class_literal.apex
+O15_public_pub_class_literal_newinstance	62.0	owner_namespaced_org	anonymous	ok	ok	publicPubLiteralNewInstance|constructed	anon/O15_public_pub_class_literal_newinstance.apex
+O16_nested_bogus_generic	62.0	owner_namespaced_org	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Invalid type: {{NAMESPACE}}.V035Outer.Bogus	anon/O16_nested_bogus_generic.apex
+O17_forname_missing_own_ns	62.0	owner_namespaced_org	anonymous	ok	ok	forNameMissingOwnNs|true|null	anon/O17_forname_missing_own_ns.apex
+O18_unqualified_leaf_control	62.0	owner_namespaced_org	anonymous	ok	ok	unqualifiedLeaf|3	anon/O18_unqualified_leaf_control.apex
+O19_private_quiet_class_literal	62.0	owner_namespaced_org	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 10: Type is not visible: {{NAMESPACE}}.V035Owner.Quiet	anon/O19_private_quiet_class_literal.apex
+V035MissingNamed	62.0	owner_namespaced_org	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 2 col 32: Invalid type: {{NAMESPACE}}.V035Missing	named/V035MissingNamed.cls
+V035MissingOuterNestedNamed	62.0	owner_namespaced_org	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 2 col 32: Invalid type: {{NAMESPACE}}.V035Missing.Nested	named/V035MissingOuterNestedNamed.cls
+V035NestedBogusNamed	62.0	owner_namespaced_org	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 2 col 32: Invalid type: {{NAMESPACE}}.V035Outer.Bogus	named/V035NestedBogusNamed.cls
+V035PrivateLiteralNamed	62.0	owner_namespaced_org	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 2 col 41: Type is not visible: {{NAMESPACE}}.V035Owner.Child	named/V035PrivateLiteralNamed.cls
+V035StaticBogusNamed	62.0	owner_namespaced_org	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 2 col 44: Variable does not exist: {{NAMESPACE}}.V035Outer.Bogus	named/V035StaticBogusNamed.cls
+V035ReflectTest.observe	62.0	owner_namespaced_org	istest	Fail	ran	childDotted=null;childTwoArg=null;childUnqualified=null;pubDotted=constructed;quietDotted=null;pubLiteral=constructed;missingDotted=null;qualifiedLeaf=3;lowercaseLeaf=3	transport/V035ReflectTest.cls
+O01_qualified_leaf	67.0	owner_namespaced_org	anonymous	ok	ok	qualifiedLeaf|3	anon/O01_qualified_leaf.apex
+O02_nested_bogus_local	67.0	owner_namespaced_org	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Invalid type: {{NAMESPACE}}.V035Outer.Bogus	anon/O02_nested_bogus_local.apex
+O03_missing_direct_local	67.0	owner_namespaced_org	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Invalid type: {{NAMESPACE}}.V035Missing	anon/O03_missing_direct_local.apex
+O04_missing_outer_nested_local	67.0	owner_namespaced_org	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Invalid type: {{NAMESPACE}}.V035Missing.Nested	anon/O04_missing_outer_nested_local.apex
+O05_nested_bogus_static_receiver	67.0	owner_namespaced_org	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 13: Variable does not exist: {{NAMESPACE}}.V035Outer.Bogus	anon/O05_nested_bogus_static_receiver.apex
+O06_qualified_static	67.0	owner_namespaced_org	anonymous	ok	ok	qualifiedStatic|1	anon/O06_qualified_static.apex
+O07_lowercase_qualified_leaf	67.0	owner_namespaced_org	anonymous	ok	ok	lowercaseQualifiedLeaf|3	anon/O07_lowercase_qualified_leaf.apex
+O08_nested_bogus_new	67.0	owner_namespaced_org	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 12: Invalid type: {{NAMESPACE}}.V035Outer.Bogus	anon/O08_nested_bogus_new.apex
+O09_forname_private_child_dotted	67.0	owner_namespaced_org	anonymous	ok	ok	forNamePrivateChildDotted|null	anon/O09_forname_private_child_dotted.apex
+O10_forname_private_child_two_arg	67.0	owner_namespaced_org	anonymous	ok	ok	forNamePrivateChildTwoArg|null	anon/O10_forname_private_child_two_arg.apex
+O11_forname_public_pub_dotted	67.0	owner_namespaced_org	anonymous	ok	ok	forNamePublicPubDotted|constructed	anon/O11_forname_public_pub_dotted.apex
+O12_forname_private_child_unqualified	67.0	owner_namespaced_org	anonymous	ok	ok	forNamePrivateChildUnqualified|null	anon/O12_forname_private_child_unqualified.apex
+O13_forname_private_class_public_ctor	67.0	owner_namespaced_org	anonymous	ok	ok	forNamePrivateClassPublicCtor|null	anon/O13_forname_private_class_public_ctor.apex
+O14_private_child_class_literal	67.0	owner_namespaced_org	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 10: Type is not visible: {{NAMESPACE}}.V035Owner.Child	anon/O14_private_child_class_literal.apex
+O15_public_pub_class_literal_newinstance	67.0	owner_namespaced_org	anonymous	ok	ok	publicPubLiteralNewInstance|constructed	anon/O15_public_pub_class_literal_newinstance.apex
+O16_nested_bogus_generic	67.0	owner_namespaced_org	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Invalid type: {{NAMESPACE}}.V035Outer.Bogus	anon/O16_nested_bogus_generic.apex
+O17_forname_missing_own_ns	67.0	owner_namespaced_org	anonymous	ok	ok	forNameMissingOwnNs|true|null	anon/O17_forname_missing_own_ns.apex
+O18_unqualified_leaf_control	67.0	owner_namespaced_org	anonymous	ok	ok	unqualifiedLeaf|3	anon/O18_unqualified_leaf_control.apex
+O19_private_quiet_class_literal	67.0	owner_namespaced_org	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 10: Type is not visible: {{NAMESPACE}}.V035Owner.Quiet	anon/O19_private_quiet_class_literal.apex
+V035MissingNamed	67.0	owner_namespaced_org	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 2 col 32: Invalid type: {{NAMESPACE}}.V035Missing	named/V035MissingNamed.cls
+V035MissingOuterNestedNamed	67.0	owner_namespaced_org	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 2 col 32: Invalid type: {{NAMESPACE}}.V035Missing.Nested	named/V035MissingOuterNestedNamed.cls
+V035NestedBogusNamed	67.0	owner_namespaced_org	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 2 col 32: Invalid type: {{NAMESPACE}}.V035Outer.Bogus	named/V035NestedBogusNamed.cls
+V035PrivateLiteralNamed	67.0	owner_namespaced_org	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 2 col 41: Type is not visible: {{NAMESPACE}}.V035Owner.Child	named/V035PrivateLiteralNamed.cls
+V035StaticBogusNamed	67.0	owner_namespaced_org	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 2 col 44: Variable does not exist: {{NAMESPACE}}.V035Outer.Bogus	named/V035StaticBogusNamed.cls
+V035ReflectTest.observe	67.0	owner_namespaced_org	istest	Fail	ran	childDotted=null;childTwoArg=null;childUnqualified=null;pubDotted=constructed;quietDotted=null;pubLiteral=constructed;missingDotted=null;qualifiedLeaf=3;lowercaseLeaf=3	transport/V035ReflectTest.cls

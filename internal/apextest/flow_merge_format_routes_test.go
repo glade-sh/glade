@@ -76,7 +76,7 @@ func TestFlowMergeFormatNativeRoutes(t *testing.T) {
 								message = result.Suites[0].Cases[0].Problem.Message
 							}
 							if kind == "datetime" {
-								if !strings.Contains(message, "OBS|datetime|FIELD_CUSTOM_VALIDATION_EXCEPTION|datetime=5/2/2026, 5:00 AM") {
+								if !strings.Contains(message, "OBS|datetime|FIELD_CUSTOM_VALIDATION_EXCEPTION|datetime=5/13/2026, 5:00 AM") {
 									t.Fatalf("incorrect datetime for the VM's fixed clock: %q", message)
 								}
 							} else {

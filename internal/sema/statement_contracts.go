@@ -148,6 +148,14 @@ func (a *Analyzer) checkIRStatementContracts(typ typesys.TypeSymbol, member type
 						}
 						seenCatchTypes[key] = true
 						resolvedCatch := resolveNestedTypeReference(model, typ.Name, catchType)
+						if semaCrossNamespaceSourceMismatch(a, model, typ.Name, catchType) {
+							message := "Invalid type: " + catchType
+							d := statementContractDiagnostic(typ, member, message, bodyOffset+catchClause.Pos, source)
+							d.Code = "GLADESEMA006"
+							d.NativeMessage = message
+							diagnostics = append(diagnostics, d)
+							continue
+						}
 						deferredCatch := semaUnknownExternalType(model, resolvedCatch) &&
 							semaTypeReferenceKnownAtVersion(a, model, typ.Name, catchType, typ.EffectiveAPIVersion)
 						if !deferredCatch && !semaAssignableToType("Exception", catchType, model) {

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionCalls>
+        <name>actionSend</name>
+        <label>Send</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <actionName>emailSimple</actionName>
+        <actionType>emailSimple</actionType>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>composeEmailContent</name>
+            <value><stringValue>True</stringValue></value>
+        </inputParameters>
+        <inputParameters>
+            <name>emailSubject</name>
+            <value><elementReference>varSubject</elementReference></value>
+        </inputParameters>
+        <inputParameters>
+            <name>emailBody</name>
+            <value><elementReference>varBody</elementReference></value>
+        </inputParameters>
+        <inputParameters>
+            <name>recipientId</name>
+            <value><elementReference>varRecipient</elementReference></value>
+        </inputParameters>
+        <inputParameters>
+            <name>relatedRecordId</name>
+            <value><elementReference>varRelated</elementReference></value>
+        </inputParameters>
+        <inputParameters>
+            <name>logEmailOnSend</name>
+            <value><elementReference>varLog</elementReference></value>
+        </inputParameters>
+        <nameSegment>emailSimple</nameSegment>
+        <offset>0</offset>
+        <versionString>2.0.1</versionString>
+    </actionCalls>
+    <apiVersion>62.0</apiVersion>
+    <environments>Default</environments>
+    <interviewLabel>V35EmailLog {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>V35 Email Log</label>
+    <processType>AutoLaunchedFlow</processType>
+    <runInMode>DefaultMode</runInMode>
+    <start>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <connector><targetReference>actionSend</targetReference></connector>
+    </start>
+    <status>Active</status>
+    <variables><name>varBody</name><dataType>String</dataType><isCollection>false</isCollection><isInput>true</isInput><isOutput>false</isOutput></variables>
+    <variables><name>varLog</name><dataType>Boolean</dataType><isCollection>false</isCollection><isInput>true</isInput><isOutput>false</isOutput></variables>
+    <variables><name>varRecipient</name><dataType>String</dataType><isCollection>false</isCollection><isInput>true</isInput><isOutput>false</isOutput></variables>
+    <variables><name>varRelated</name><dataType>String</dataType><isCollection>false</isCollection><isInput>true</isInput><isOutput>false</isOutput></variables>
+    <variables><name>varSubject</name><dataType>String</dataType><isCollection>false</isCollection><isInput>true</isInput><isOutput>false</isOutput></variables>
+</Flow>

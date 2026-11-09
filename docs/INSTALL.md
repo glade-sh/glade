@@ -354,8 +354,9 @@ Use `glade db inspect --json` before and after mutating server requests as the
 basic operational check. Counts should change after successful mutations and
 stay fixed after failed mutations.
 
-The local API server accepts missing `Authorization` headers and local
-`Authorization: Bearer ...` values without validating OAuth tokens. Use the
+On loopback, the local API server accepts missing `Authorization` headers and local
+`Authorization: Bearer ...` user stubs. On an exposed listener, requests require
+the configured capability or a token issued by that server. Use the
 `X-GLADE-User-Id` header only to select an existing local `User` record for test
 requests. Direct REST DML uses that local user for system field stamping;
 Tooling `executeAnonymous` still uses the VM's local default user context. Do
@@ -365,9 +366,14 @@ proxy.
 Local server, database UI, and development listeners reject unrecognized HTTP
 Host authorities and browser requests from another origin. For a wildcard
 network listener, set `GLADE_SERVER_ALLOWED_HOSTS` to a comma-separated list of
-hostnames accepted by that listener. A Tooling `executeAnonymous` GET also
-requires a nonempty `GLADE_SERVER_CAPABILITY` in the server environment and the
-same value in the `X-Glade-Capability` request header. Requests without an
+hostnames accepted by that listener. Tooling `executeAnonymous` over REST (all methods) and SOAP requires the
+`GLADE_SERVER_CAPABILITY` value in `X-Glade-Capability`, or a server-issued token.
+On exposed listeners the same requirement applies to all routes, including VF
+controllers, LWC actions, Apex REST, data, composite and tooling. Set the
+capability before starting the listener and use it to obtain an issued token.
+`--allow-public-demo` disables this exposed-listener gate for intentional public
+demos: anyone who can reach the listener can execute project code and read or
+change its data. Use only disposable data in an isolated environment. Requests without an
 `Origin` or trusted `Sec-Fetch-Site` metadata require the capability or an
 `X-Glade-Client: 1` header from a non-browser client. User-initiated browser
 navigation with `Sec-Fetch-Site: none` shows a confirmation before opening the
@@ -381,9 +387,23 @@ without `..` components for `TMPDIR` and test-daemon sockets.
 The default test daemon also requires a trusted project and socket-directory
 ancestry; move the project or temporary directory to a securely owned location
 if daemon startup reports an insecure discovery directory.
+On Unix, discovery checks that ancestors are owned by the current user or root
+and rejects group- or world-writable directories unless they have the sticky
+bit. The socket directory itself must be owned by the current user and cannot
+be group- or world-writable. If optional daemon discovery is untrusted, `glade
+test` runs locally instead of connecting; an explicit `--connect` reports an
+error. This fallback does not authorize project toolchain discovery: the LWC
+toolchain uses the installed user share or explicitly authorized roots, and
+legacy project discovery requires `GLADE_ALLOW_PROJECT_TOOLCHAIN=1`. Protect
+the user share and authorized roots from other users; Glade does not check their
+ownership or ancestor permissions. See [LWC local shell](LWC_LOCAL_SHELL.md).
 
 Cross-origin browser requests remain rejected even if they include the client
-header. The Tooling `executeAnonymous` GET always requires the capability.
+header. Issued tokens can be revoked through `POST /services/oauth2/revoke`
+with a form-encoded `token` parameter or `GET /services/oauth2/revoke?token=…`.
+Prefer POST because query parameters can be recorded in access logs. Set `GLADE_SERVER_TOKEN_TTL` to a positive
+Go duration such as `30m` to expire newly issued tokens; by default they do not
+expire by time. Invalid TTL settings prevent token issuance.
 
 For a reverse proxy that terminates TLS or uses a different external port, set
 `GLADE_SERVER_PROXY_ORIGINS` to a comma-separated list of exact external origins,

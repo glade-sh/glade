@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import {gql,executeMutation} from '../../../../lwcruntime/src/lightning/graphql.mjs';
+import {gql as legacyGql} from '../../../../lwcruntime/src/lightning/uiGraphQLApi.mjs';
+let input='';for await(const c of process.stdin)input+=c;const native=JSON.parse(JSON.parse(input).expected);
+const doc=gql`mutation M { uiapi { bogus } }`;
+assert.equal(typeof doc,native.mutation.type);
+assert.deepEqual(Object.keys(doc),native.mutation.keys);
+assert.equal(doc.kind,undefined);
+const queryDoc=gql`query Q { uiapi { bogus } }`;assert.equal(typeof queryDoc,native.query.type);assert.deepEqual(Object.keys(queryDoc),native.query.keys);assert.equal(queryDoc.kind,undefined);
+const malformed=gql`mutation {`;assert.equal(typeof malformed,native.bad.type);assert.deepEqual(Object.keys(malformed),native.bad.keys);
+assert.deepEqual(await executeMutation({query:doc}),{errors:[{errorType:'localBoundary',message:'GraphQL mutation execution is not supported locally'}]});
+assert.throws(()=>legacyGql`mutation M { uiapi { bogus } }`,/Unsupported mutation/);

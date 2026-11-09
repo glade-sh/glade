@@ -33,6 +33,10 @@ func (vm *VM) captureSetInsertionHash(value Value) (setInsertionHash, error) {
 	if value.Kind == ValueInt || value.Kind == ValueDecimal {
 		return setInsertionHash{key: mapKey(value), tracked: true}, nil
 	}
+	if value.Kind == ValueObject && sObjectValueType(value.Type) && !vm.userClassShadowsSObjectType(value.Type) {
+		// Set<SObject> hashes like Map<SObject>: a member mutated after add is missed.
+		return setInsertionHash{key: mapKey(value), tracked: true}, nil
+	}
 	key, handled, err := vm.apexObjectHashMapKeyChecked(value)
 	if err != nil {
 		return setInsertionHash{}, err

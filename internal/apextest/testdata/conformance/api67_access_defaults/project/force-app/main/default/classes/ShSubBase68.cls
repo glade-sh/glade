@@ -1,0 +1,1 @@
+public virtual class ShSubBase68 extends ShBase68 {}

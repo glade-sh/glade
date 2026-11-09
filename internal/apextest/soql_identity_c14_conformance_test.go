@@ -13,11 +13,8 @@ import (
 	"github.com/glade-sh/glade/internal/sema"
 )
 
-var soqlIdentityC14Carries = map[string]bool{
-	"DootSoqlU10TestB1031/caseLiteral": true, "DootSoqlU10TestB1031/one": true,
-	"DootSoqlQ12TestB1031/calendar_year": true, "DootSoqlQ13TestB1031/extrema": true, "DootSoqlQ1TestB1031/last": true,
-}
-
+// Q1 last: native ignores NULLS LAST on Contact.AccountId; soql follows the
+// nulls_order_standard_lookups rows (StandardLookupIgnoresNullsClause).
 func TestSOQLIdentityC14NativeConformance(t *testing.T) {
 	dir := filepath.Join("testdata", "conformance", "soql_identity_c14")
 	file, err := os.Open(filepath.Join(dir, "org.tsv"))
@@ -92,24 +89,7 @@ func TestSOQLIdentityC14NativeConformance(t *testing.T) {
 						t.Fatal(err)
 					}
 					got = normalizeCaptureIdentities(got).(map[string]any)
-					if soqlIdentityC14Carries[row[1]+"/"+row[2]] {
-						observed := map[string]string{
-							"DootSoqlU10TestB1031/caseLiteral":   `{"rows":[]}`,
-							"DootSoqlU10TestB1031/one":           `{"rows":[]}`,
-							"DootSoqlQ12TestB1031/calendar_year": `{"rows":[{"CALENDAR_YEAR(Birthdate)":2024,"n":1,"part":2024}]}`,
-							"DootSoqlQ13TestB1031/extrema":       `{"rows":[{"hi":"Hot","lo":"Cold"}]}`,
-							"DootSoqlQ1TestB1031/last":           `{"rows":[{"AccountId":"<001:1>","Id":"<003:1>","LastName":"linked"},{"Id":"<003:2>","LastName":"unlinked"}]}`,
-						}[row[1]+"/"+row[2]]
-						var expected map[string]any
-						if err := json.Unmarshal([]byte(observed), &expected); err != nil {
-							t.Fatal(err)
-						}
-						if !c14ExactCarryEqual(got, want, expected, []string{"rows"}) {
-							t.Fatalf("carry changed: native=%v; Glade=%v", want, got)
-						}
-						t.Logf("known local carry batch Dot stdlib cases Dot Dot SOQL cases and Dot async cases (fix owner pending): native=%v; Glade=%v", want, got)
-						case345Skip(t)
-					} else if !reflect.DeepEqual(got, want) {
+					if !reflect.DeepEqual(got, want) {
 						t.Fatalf("native=%v; Glade=%v", want, got)
 					}
 				})

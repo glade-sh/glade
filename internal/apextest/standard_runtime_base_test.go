@@ -183,7 +183,7 @@ func TestSingleProjectRunStartupDoesNotRetainStandardRuntime(t *testing.T) {
 	if standardRuntimeBase.prefix.Value() != nil {
 		t.Fatal("single-project Run retained a reusable standard runtime")
 	}
-	if passiveStandardRuntimeClassCache.templates != nil || passiveStandardRuntimeClassCache.builds != 0 {
+	if _, cached := passiveStandardRuntimeClassCache.templates.Cached(); cached || passiveStandardRuntimeClassCache.builds != 0 {
 		t.Fatal("single-project Run retained pristine passive templates alongside its runtime classes")
 	}
 
@@ -200,8 +200,8 @@ func TestSingleProjectRunStartupDoesNotRetainStandardRuntime(t *testing.T) {
 	if standardRuntimeBase.prefix.Value() == nil {
 		t.Fatal("second cold Run did not establish the reusable standard runtime")
 	}
-	if len(passiveStandardRuntimeClassCache.templates) == 0 || passiveStandardRuntimeClassCache.builds != 1 {
-		t.Fatalf("second cold Run template cache: %d classes, %d builds; want nonempty, 1 build", len(passiveStandardRuntimeClassCache.templates), passiveStandardRuntimeClassCache.builds)
+	if templates, _ := passiveStandardRuntimeClassCache.templates.Cached(); len(templates) == 0 || passiveStandardRuntimeClassCache.builds != 1 {
+		t.Fatalf("second cold Run template cache: %d classes, %d builds; want nonempty, 1 build", len(templates), passiveStandardRuntimeClassCache.builds)
 	}
 }
 
@@ -220,7 +220,7 @@ func TestFirstColdRuntimePassiveClassesMatchCachedRegistration(t *testing.T) {
 		}
 		return
 	}
-	if standardRuntimeBase.used.Load() || passiveStandardRuntimeClassCache.templates != nil {
+	if _, cached := passiveStandardRuntimeClassCache.templates.Cached(); standardRuntimeBase.used.Load() || cached {
 		t.Fatal("first-cold passive child was already warmed")
 	}
 	index := typesys.Index{Types: []typesys.TypeSymbol{
@@ -238,7 +238,7 @@ func TestFirstColdRuntimePassiveClassesMatchCachedRegistration(t *testing.T) {
 	}
 	private := compileProjectClassesWhere(index, nil, func(typesys.TypeSymbol) bool { return true }, newSourceCache())
 	prepared := prepareProjectClassRuntime(index, nil, newSourceCache())
-	if passiveStandardRuntimeClassCache.templates != nil || passiveStandardRuntimeClassCache.builds != 0 {
+	if _, cached := passiveStandardRuntimeClassCache.templates.Cached(); cached || passiveStandardRuntimeClassCache.builds != 0 {
 		t.Fatal("first-cold preparation retained the pristine passive template cache")
 	}
 	if prepared.machine != nil || standardRuntimeBase.prefix.Value() != nil {
