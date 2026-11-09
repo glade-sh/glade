@@ -91,3 +91,35 @@ func TestRecordNavigationNativeObjectResolution(t *testing.T) {
 		})
 	}
 }
+
+// Unknown and ambiguous local prefixes retain the requested route. These are
+// preservation controls for incomplete local schema, not native parity rows.
+func TestRecordNavigationUnresolvedIDPreservesRoute(t *testing.T) {
+	root := t.TempDir()
+	writeLWCShellServerTestFile(t, root, "sfdx-project.json", `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	for _, object := range []string{"Account", "Contact"} {
+		writeLWCShellServerTestFile(t, root, "force-app/main/default/flexipages/"+object+"_Page.flexipage-meta.xml", `<FlexiPage xmlns="http://soap.sforce.com/2006/04/metadata"><sobjectType>`+object+`</sobjectType><type>RecordPage</type></FlexiPage>`)
+	}
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	for name, prefix := range map[string]string{"Account": "001", "Contact": "003", "Other__c": "001"} {
+		org.Objects[name] = storage.ObjectState{Definition: storage.ObjectDefinition{APIName: name, KeyPrefix: prefix}}
+	}
+	handler := newLightningTestServer(t, &org, SourceMetadata{Project: p})
+	for _, tc := range []struct{ name, object, id string }{
+		{"unknown", "Account", "999000000000099AAA"},
+		{"ambiguous", "Contact", "001000000000099AAA"},
+		{"malformed", "Account", "001short"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "/lwc/preview/record/"+tc.object+"/"+tc.id, nil)
+			shell, redirect, diagnostics, err := handler.resolveLWCShellRequest(req, []string{"record", tc.object, tc.id})
+			if err != nil || redirect != "" || shell.Context.ObjectAPIName != tc.object {
+				t.Fatalf("shell object %q, redirect %q, err %v, diagnostics %#v", shell.Context.ObjectAPIName, redirect, err, diagnostics)
+			}
+		})
+	}
+}
