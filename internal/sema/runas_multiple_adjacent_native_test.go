@@ -54,7 +54,7 @@ func TestRunAsMultipleRecoveryPreservesOtherSyntax(t *testing.T) {
 	for _, body := range []string{
 		`System.runAs(new User(), new Version(1,0)) {} Integer n = ;`,
 		`String text = 'System.runAs(x,y)'; Integer n = ;`,
-		`// System.runAs(x,y) {} 
+		`// System.runAs(x,y) {}
  Integer n = ;`,
 	} {
 		result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{"Probe.cls": `@IsTest private class Probe { @IsTest static void check() { ` + body + ` } }`}, "67.0")
