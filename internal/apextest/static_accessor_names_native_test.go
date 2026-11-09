@@ -17,6 +17,13 @@ func TestStaticAccessorNamesNative(t *testing.T) {
 		t.Fatal("expected six native observations")
 	}
 	run := Run(loadTestIndex(t, filepath.Join(fixture, "project")), Options{NoDiskCache: true, Parallelism: 1})
+	for _, suite := range run.Suites {
+		for _, result := range suite.Cases {
+			if result.Status != "pass" {
+				t.Errorf("%s.%s: %+v", result.ClassName, result.MethodName, result.Problem)
+			}
+		}
+	}
 	if summary := run.Summary(); summary.Total != 6 || summary.Passed != 6 {
 		t.Fatalf("summary=%#v, problem=%s", summary, firstRunProblem(run))
 	}
