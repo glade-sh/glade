@@ -278,7 +278,12 @@ func finishRecordFormulaValue(formula string, field storage.Field, value formula
 
 func formulaIsDirectReference(formula string) bool {
 	tokens := tokenizeFormula(html.UnescapeString(formula))
-	return len(tokens) == 2 && tokens[0].typ == formulaTokenIdent && tokens[1].typ == formulaTokenEOF
+	start, end := 0, len(tokens)-1
+	for end-start >= 3 && tokens[start].text == "(" && tokens[end-1].text == ")" {
+		start++
+		end--
+	}
+	return end-start == 1 && tokens[start].typ == formulaTokenIdent && tokens[len(tokens)-1].typ == formulaTokenEOF
 }
 
 // formulaBRText is the value of BR() inside a formula (org capture
