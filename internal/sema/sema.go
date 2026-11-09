@@ -1524,11 +1524,15 @@ func findSemaLocalDeclMatches(body string) [][]int {
 				prev--
 			}
 			if prev >= 0 && body[prev] == '=' {
-				next := strings.IndexAny(body[searchStart:], ";{}\n")
+				next := strings.IndexAny(body[searchStart:], ";{}")
 				if next < 0 {
 					break
 				}
-				searchStart += next
+				if next == 0 {
+					searchStart++
+				} else {
+					searchStart += next
+				}
 				continue
 			}
 		}

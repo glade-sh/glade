@@ -5739,6 +5739,15 @@ func (a *Analyzer) collectBodyScopesWithLocalDeclMatches(typ typesys.TypeSymbol,
 	}
 	sort.SliceStable(declScans, func(i, j int) bool { return declScans[i].match[2] < declScans[j].match[2] })
 	for _, scan := range declScans {
+		// A line beginning after an initializer's equals sign is still part of
+		// the expression, even when its tokens resemble a generic type.
+		previous := scan.match[2] - 1
+		for previous >= 0 && isWhitespace(body[previous]) {
+			previous--
+		}
+		if previous >= 0 && body[previous] == '=' {
+			continue
+		}
 		if semaLocalDeclMatchInIgnoredText(ignored, scan.match) {
 			continue
 		}
