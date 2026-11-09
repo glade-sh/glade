@@ -128,3 +128,77 @@ func TestCapturedStaticFieldTypeBoundary(t *testing.T) {
 		})
 	}
 }
+
+func TestCapturedStaticFieldTypeOverloads(t *testing.T) {
+	const fixture = "testdata/conformance/static_field_type_overload"
+	project, err := os.ReadFile(filepath.Join(fixture, "project.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var config struct {
+		Namespace string `json:"namespace"`
+	}
+	if err := json.Unmarshal(project, &config); err != nil || config.Namespace == "" {
+		t.Fatalf("invalid namespace config: %v", err)
+	}
+	rows := readScopeRunnerTSV(t, filepath.Join(fixture, "org.tsv"), []string{"case", "api", "route", "outcome"})
+	outcomes := map[string]string{}
+	for _, row := range rows {
+		if len(row) != 4 {
+			t.Fatalf("invalid row %v", row)
+		}
+		key := strings.Join(row[:3], "/")
+		if _, exists := outcomes[key]; exists {
+			t.Fatalf("duplicate row %s", key)
+		}
+		outcomes[key] = row[3]
+	}
+	for _, api := range []string{"62.0", "67.0"} {
+		for _, name := range []string{"overload_mismatch", "overload_match", "type_control"} {
+			t.Run(name+"/"+api, func(t *testing.T) {
+				data, err := os.ReadFile(filepath.Join(fixture, "cases", name+".json"))
+				if err != nil {
+					t.Fatal(err)
+				}
+				var classes map[string]string
+				if err := json.Unmarshal(data, &classes); err != nil {
+					t.Fatal(err)
+				}
+				root := t.TempDir()
+				writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"`+config.Namespace+`","sourceApiVersion":"`+api+`","packageDirectories":[{"path":"force-app","default":true}]}`)
+				testClass := ""
+				for filename, source := range classes {
+					path := filepath.Join(root, "force-app/main/default/classes", filename)
+					writeFile(t, path, source)
+					writeFile(t, path+"-meta.xml", `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>`+api+`</apiVersion><status>Active</status></ApexClass>`)
+					if strings.Contains(source, "@IsTest") {
+						testClass = strings.TrimSuffix(filename, ".cls")
+					}
+				}
+				index := loadTestIndex(t, root)
+				analysis := sema.Analyze(index)
+				rejected := index.HasErrors() || analysis.HasErrors()
+				if name == "overload_mismatch" {
+					want := outcomes[name+"/"+api+"/metadata-diagnostic"]
+					matched := false
+					for _, d := range analysis.Diagnostics {
+						if d.NativeMessage == want {
+							matched = true
+						}
+					}
+					if want == "" || !rejected || !matched {
+						t.Fatalf("native diagnostic %q; local diagnostics %v %v", want, index.Diagnostics, analysis.Diagnostics)
+					}
+					return
+				}
+				if outcomes[name+"/"+api+"/metadata-compilation"] != "accepted" || outcomes[name+"/"+api+"/named-test"] != "passed" || rejected || testClass == "" {
+					t.Fatalf("native success; local diagnostics %v %v", index.Diagnostics, analysis.Diagnostics)
+				}
+				run := Run(index, Options{SelectedClasses: []string{testClass}, SelectedMethod: "verify", NoDiskCache: true, Parallelism: 1})
+				if len(run.Suites) != 1 || len(run.Suites[0].Cases) != 1 || run.Suites[0].Cases[0].Problem != nil {
+					t.Fatalf("native test passed; local runner: %+v", run.Summary())
+				}
+			})
+		}
+	}
+}

@@ -1,0 +1,19 @@
+case	api	route	outcome
+overload_mismatch	62.0	metadata-validation-status	Failed
+overload_mismatch	62.0	metadata-diagnostic	Static method cannot be referenced from a non static context: String gladetest1.NqAdjacent1ea6663a.choose(String)
+overload_mismatch	67.0	metadata-validation-status	Failed
+overload_mismatch	67.0	metadata-diagnostic	Static method cannot be referenced from a non static context: String gladetest1.NqAdjacent1ea6663a.choose(String)
+overload_match	62.0	metadata-validation-status	Failed
+overload_match	62.0	metadata-compilation	accepted
+overload_match	62.0	named-test	passed
+overload_match	62.0	coverage-warning	Test coverage of selected Apex Class is 66.667%, at least 75% test coverage is required
+overload_match	67.0	metadata-validation-status	Failed
+overload_match	67.0	metadata-compilation	accepted
+overload_match	67.0	named-test	passed
+overload_match	67.0	coverage-warning	Test coverage of selected Apex Class is 66.667%, at least 75% test coverage is required
+type_control	62.0	metadata-validation-status	Succeeded
+type_control	62.0	metadata-compilation	accepted
+type_control	62.0	named-test	passed
+type_control	67.0	metadata-validation-status	Succeeded
+type_control	67.0	metadata-compilation	accepted
+type_control	67.0	named-test	passed
