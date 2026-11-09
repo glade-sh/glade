@@ -4097,7 +4097,7 @@ func (vm *VM) resolveLabelMethodValue(namespace, name, language string) (string,
 	if language != "" && vm != nil && vm.Org != nil {
 		filtered := labelRegistryForNamespace(vm.Org.Metadata, namespace)
 		if namespace == "" && vm.Org.Namespace == "" {
-			filtered, _, _ = labelEmptyTranslationScope(filtered, name)
+			filtered, _, _ = resource.LocalLabelTranslationScope(filtered, name)
 		}
 		filtered.Labels = labelsForLanguage(filtered.Labels, language)
 		if value, status := resource.ResolveLabel(filtered, vm.Org.Namespace, namespace, name); status != resource.LabelLookupMissing {
@@ -4131,7 +4131,7 @@ func (vm *VM) labelTranslationExists(namespace, name, language string) bool {
 	}
 	filtered := labelRegistryForNamespace(vm.Org.Metadata, namespace)
 	if namespace == "" && vm.Org.Namespace == "" {
-		filtered, _, _ = labelEmptyTranslationScope(filtered, name)
+		filtered, _, _ = resource.LocalLabelTranslationScope(filtered, name)
 	}
 	filtered.Labels = labelsForLanguage(filtered.Labels, language)
 	_, status := resource.ResolveLabel(filtered, vm.Org.Namespace, namespace, name)

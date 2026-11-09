@@ -1152,33 +1152,14 @@ func loadTranslations(path, namespace string) ([]storage.LabelMetadata, error) {
 		if name == "" {
 			continue
 		}
-		value := strings.TrimSpace(label.Label)
-		exact := false
+		entry := storage.LabelMetadata{Name: name, Namespace: namespace, Language: language, Value: strings.TrimSpace(label.Label), File: path}
 		if namespace == "" {
-			value = normalizeTranslationValue(label.Label)
-			exact = true
+			raw := label.Label
+			entry.TranslationSourceRaw = &raw
 		}
-		labels = append(labels, storage.LabelMetadata{Name: name, Namespace: namespace, Language: language, Value: value, File: path, TranslationSourceExact: exact})
+		labels = append(labels, entry)
 	}
 	return labels, nil
-}
-
-// Native translation captures distinguish blank values from nonbreaking
-// characters, and retain surrounding whitespace on nonblank values. Limit
-// blank normalization to the captured XML-valid whitespace characters.
-func normalizeTranslationValue(value string) string {
-	for _, r := range value {
-		if !capturedTranslationBlankRune(r) {
-			return value
-		}
-	}
-	return ""
-}
-
-func capturedTranslationBlankRune(r rune) bool {
-	return r == '\t' || r == '\n' || r == '\r' || r == ' ' || r == '\u1680' ||
-		(r >= '\u2000' && r <= '\u2006') || (r >= '\u2008' && r <= '\u200a') ||
-		r == '\u2028' || r == '\u2029' || r == '\u205f' || r == '\u3000'
 }
 
 func loadStaticResources(contentFiles, metaFiles []string, namespace string) ([]storage.StaticResourceMetadata, error) {
