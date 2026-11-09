@@ -61,5 +61,8 @@ func TestRunAsMultipleRecoveryPreservesOtherSyntax(t *testing.T) {
 		if !hasDiagnosticCode(result.Diagnostics, "APEXPARSE001") {
 			t.Fatalf("unrelated syntax error lost: %#v", result.Diagnostics)
 		}
+		if hasDiagnosticCode(result.Diagnostics, "GLADESEMA023") {
+			t.Fatalf("unsafe runAs recovery: %#v", result.Diagnostics)
+		}
 	}
 }
