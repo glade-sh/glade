@@ -3549,8 +3549,13 @@ func (vm *VM) defaultValueForRecordField(definition storage.ObjectDefinition, re
 	if !dml.PersonAccountCustomFieldDefaultAllowed(vm.Org, definition, record, field) {
 		return storage.Value{}, false
 	}
-	if value, ok := storage.CurrencyDefaultForField(vm.Org, storage.ID(vm.currentUserID()), field); ok {
-		return value, true
+	// Only the currency default reads the running user. Resolving the user id
+	// walks the user object's fields, and this runs for every field of every
+	// DML row without a value.
+	if strings.EqualFold(field.APIName, "CurrencyIsoCode") {
+		if value, ok := storage.CurrencyDefaultForField(vm.Org, storage.ID(vm.currentUserID()), field); ok {
+			return value, true
+		}
 	}
 	rawDefault := strings.TrimSpace(field.DefaultValue)
 	// This runs for every field of every DML row without a value. Resolve the
