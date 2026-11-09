@@ -2251,6 +2251,10 @@ func collectFiles(root string, p *Project, ignore *forceIgnoreSet) error {
 		case isLWCPath(lower):
 			switch {
 			case strings.HasSuffix(lower, ".js"):
+				// Loose JavaScript under lwc is not a component source file.
+				if strings.EqualFold(filepath.Base(filepath.Dir(path)), "lwc") {
+					return nil
+				}
 				p.LWCFiles = append(p.LWCFiles, path)
 			case strings.HasSuffix(lower, ".html"):
 				p.LWCHTMLFiles = append(p.LWCHTMLFiles, path)
