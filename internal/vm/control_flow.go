@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -700,6 +701,68 @@ func (vm *VM) executeBlockScope(program ir.Program, inst ir.Instruction, result 
 	return out, err
 }
 
+// sourceLineTable holds the newline offsets of one program source so that
+// line and column lookups are a binary search instead of a scan from the
+// start of the source, which setCurrentStatement otherwise repeats for every
+// executed instruction.
+type sourceLineTable struct {
+	source   string
+	newlines []int
+}
+
+func newSourceLineTable(source string) *sourceLineTable {
+	table := &sourceLineTable{source: source}
+	for i := 0; i < len(source); i++ {
+		if source[i] == '\n' {
+			table.newlines = append(table.newlines, i)
+		}
+	}
+	return table
+}
+
+// lineColumn matches sourceLineColumn: the line is one more than the number of
+// newlines before offset, and the column counts bytes since the last of them.
+func (t *sourceLineTable) lineColumn(offset int) (int, int) {
+	if offset < 0 {
+		offset = 0
+	}
+	if offset > len(t.source) {
+		offset = len(t.source)
+	}
+	before := sort.SearchInts(t.newlines, offset)
+	if before == 0 {
+		return 1, offset + 1
+	}
+	return before + 1, offset - t.newlines[before-1]
+}
+
+// sourceLineColumnCached is sourceLineColumn through a per-VM table of the
+// sources this VM has executed. Entries are keyed by source length and
+// compared by content; a repeated source compares by pointer first.
+func (vm *VM) sourceLineColumnCached(source string, offset int) (int, int) {
+	if strings.IndexByte(source, '\n') < 0 {
+		// A single-line source needs no table: every offset is on line one.
+		if offset < 0 {
+			offset = 0
+		}
+		if offset > len(source) {
+			offset = len(source)
+		}
+		return 1, offset + 1
+	}
+	for _, table := range vm.sourceLineTables[len(source)] {
+		if table.source == source {
+			return table.lineColumn(offset)
+		}
+	}
+	table := newSourceLineTable(source)
+	if vm.sourceLineTables == nil {
+		vm.sourceLineTables = make(map[int][]*sourceLineTable)
+	}
+	vm.sourceLineTables[len(source)] = append(vm.sourceLineTables[len(source)], table)
+	return table.lineColumn(offset)
+}
+
 func sourceLineColumn(source string, offset int) (int, int) {
 	if offset < 0 {
 		offset = 0
@@ -724,7 +787,7 @@ func (vm *VM) setCurrentStatement(inst ir.Instruction, source string) {
 		vm.hasStatement = false
 		return
 	}
-	line, column := sourceLineColumn(source, inst.Pos)
+	line, column := vm.sourceLineColumnCached(source, inst.Pos)
 	symbol := string(inst.Op)
 	file := ""
 	if vm.currentMethod.Name != "" {
