@@ -103,7 +103,7 @@ func (e *Engine) RecalculatePermissionSetGroups(ids []storage.ID, beforeUpdate f
 }
 
 // projectCapturedGroupUserPermissions projects the user-permission fields
-// observed in psg_recalculation_union. Leave groups with a muting component
+// observed in psg_recalculation_union and adjacent captures. Leave groups with a muting component
 // or an unavailable member unchanged until those shapes have native rows.
 func (e *Engine) projectCapturedGroupUserPermissions(groupID storage.ID) {
 	sets := e.Org.Objects["PermissionSet"]
@@ -119,7 +119,7 @@ func (e *Engine) projectCapturedGroupUserPermissions(groupID storage.ID) {
 	if aggregateID == "" {
 		return
 	}
-	fields := []string{"PermissionsApiEnabled", "PermissionsRunReports"}
+	fields := []string{"PermissionsApiEnabled", "PermissionsRunReports", "PermissionsViewSetup", "PermissionsExportReport", "PermissionsViewRoles"}
 	values := make(map[string]bool, len(fields))
 	for _, component := range e.Org.Objects["PermissionSetGroupComponent"].Records {
 		if component.System.IsDeleted || !storage.IDsEqual(idFromStorageValue(component.Fields["PermissionSetGroupId"]), groupID) {
