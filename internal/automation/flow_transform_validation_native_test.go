@@ -16,7 +16,7 @@ import (
 func TestFlowTransformTargetValidationNative(t *testing.T) {
 	for _, api := range []string{"api62", "api67"} {
 		t.Run(api, func(t *testing.T) {
-			fixture := filepath.Join("..", "apextest", "testdata", "conformance")
+			fixture := filepath.Join("..", "apextest", "testdata", "native-capture")
 			for _, tc := range []struct {
 				name, family, file string
 				complete, reject   bool
@@ -60,7 +60,7 @@ func TestFlowTransformTargetValidationNative(t *testing.T) {
 }
 
 func TestFlowTransformValidationSnapshotBoundaries(t *testing.T) {
-	fixture := filepath.Join("..", "apextest", "testdata", "conformance", "flow_transform_record_map", "api62")
+	fixture := filepath.Join("..", "apextest", "testdata", "native-capture", "flow_transform_record_map", "api62")
 	valid, err := os.ReadFile(filepath.Join(fixture, "TransformProbe.flow-meta.xml"))
 	if err != nil {
 		t.Fatal(err)

@@ -9,7 +9,7 @@ import (
 
 // The native capture observes null write-back when a mapped record is updated.
 func TestFlowTransformRecordNullUpdateNative(t *testing.T) {
-	const root = "testdata/conformance/flow_transform_record_update"
+	const root = "testdata/native-capture/flow_transform_record_update"
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api, func(t *testing.T) {
 			path := filepath.Join(root, "api"+strings.TrimSuffix(api, ".0"), "TransformUpdate.flow-meta.xml")

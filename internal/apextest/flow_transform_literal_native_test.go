@@ -8,7 +8,7 @@ import (
 )
 
 func TestFlowTransformStringLiteralNative(t *testing.T) {
-	const root = "testdata/conformance/flow_transform_literal"
+	const root = "testdata/native-capture/flow_transform_literal"
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api, func(t *testing.T) {
 			for _, tc := range []struct{ name, want string }{{"TransformLiteral", "Mapped"}, {"TransformEmpty", ""}} {

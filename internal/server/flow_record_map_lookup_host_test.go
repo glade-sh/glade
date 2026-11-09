@@ -56,11 +56,11 @@ func TestFlowRecordMapLookupHostRoutes(t *testing.T) {
 					writeServerTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"sourceApiVersion":"`+api+`","packageDirectories":[{"path":"force-app","default":true}]}`)
 					dir := "api" + strings.TrimSuffix(api, ".0")
 					fixtures := map[string]string{
-						"TransformProbe":       filepath.Join("..", "apextest", "testdata", "conformance", "flow_transform_record_map", dir, "TransformProbe.flow-meta.xml"),
-						"TransformLiteral":     filepath.Join("..", "apextest", "testdata", "conformance", "flow_transform_literal", dir, "TransformLiteral.flow-meta.xml"),
-						"TransformEmpty":       filepath.Join("..", "apextest", "testdata", "conformance", "flow_transform_literal", dir, "TransformEmpty.flow-meta.xml"),
-						"Capture_Filter_In":    filepath.Join("..", "apextest", "testdata", "conformance", "pr163_flow_lookup_collection", dir, "Capture_Filter_In.flow-meta.xml"),
-						"Capture_Filter_NotIn": filepath.Join("..", "apextest", "testdata", "conformance", "pr163_flow_lookup_collection", dir, "Capture_Filter_NotIn.flow-meta.xml"),
+						"TransformProbe":       filepath.Join("..", "apextest", "testdata", "native-capture", "flow_transform_record_map", dir, "TransformProbe.flow-meta.xml"),
+						"TransformLiteral":     filepath.Join("..", "apextest", "testdata", "native-capture", "flow_transform_literal", dir, "TransformLiteral.flow-meta.xml"),
+						"TransformEmpty":       filepath.Join("..", "apextest", "testdata", "native-capture", "flow_transform_literal", dir, "TransformEmpty.flow-meta.xml"),
+						"Capture_Filter_In":    filepath.Join("..", "apextest", "testdata", "native-capture", "pr163_flow_lookup_collection", dir, "Capture_Filter_In.flow-meta.xml"),
+						"Capture_Filter_NotIn": filepath.Join("..", "apextest", "testdata", "native-capture", "pr163_flow_lookup_collection", dir, "Capture_Filter_NotIn.flow-meta.xml"),
 					}
 					for name, path := range fixtures {
 						data, err := os.ReadFile(path)

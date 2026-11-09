@@ -8,7 +8,7 @@ import (
 )
 
 func TestFlowTransformRecordMapNative(t *testing.T) {
-	const root = "testdata/conformance/flow_transform_record_map"
+	const root = "testdata/native-capture/flow_transform_record_map"
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api, func(t *testing.T) {
 			path := filepath.Join(root, "api"+strings.TrimSuffix(api, ".0"), "TransformProbe.flow-meta.xml")

@@ -8,7 +8,7 @@ import (
 )
 
 func TestFlowTransformCollectionNullUpdateNative(t *testing.T) {
-	const root = "testdata/conformance/flow_transform_collection_null"
+	const root = "testdata/native-capture/flow_transform_collection_null"
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api, func(t *testing.T) {
 			path := filepath.Join(root, "api"+strings.TrimSuffix(api, ".0"), "TransformCollection.flow-meta.xml")

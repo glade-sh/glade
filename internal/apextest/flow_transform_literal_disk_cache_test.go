@@ -17,7 +17,7 @@ func TestFlowTransformStringLiteralDiskRuntime(t *testing.T) {
 		t.Run(api, func(t *testing.T) {
 			files := make(map[string]string)
 			for _, name := range []string{"TransformLiteral", "TransformEmpty"} {
-				path := filepath.Join("testdata/conformance/flow_transform_literal", "api"+strings.TrimSuffix(api, ".0"), name+".flow-meta.xml")
+				path := filepath.Join("testdata/native-capture/flow_transform_literal", "api"+strings.TrimSuffix(api, ".0"), name+".flow-meta.xml")
 				flow, err := os.ReadFile(path)
 				if err != nil {
 					t.Fatal(err)

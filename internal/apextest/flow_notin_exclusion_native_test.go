@@ -10,7 +10,7 @@ import (
 func TestFlowNotInExcludesMatchingRecord(t *testing.T) {
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api, func(t *testing.T) {
-			path := filepath.Join("testdata/conformance/pr163_flow_notin_exclusion", "api"+strings.TrimSuffix(api, ".0"), "Capture_Filter_NotIn.flow-meta.xml")
+			path := filepath.Join("testdata/native-capture/pr163_flow_notin_exclusion", "api"+strings.TrimSuffix(api, ".0"), "Capture_Filter_NotIn.flow-meta.xml")
 			metadata, err := os.ReadFile(path)
 			if err != nil {
 				t.Fatal(err)

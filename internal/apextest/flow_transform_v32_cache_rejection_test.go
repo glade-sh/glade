@@ -18,7 +18,7 @@ func TestFlowTransformRejectV32DiskRuntime(t *testing.T) {
 	t.Cleanup(InvalidateRuntimeCaches)
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api, func(t *testing.T) {
-			path := filepath.Join("testdata/conformance/flow_transform_record_map", "api"+strings.TrimSuffix(api, ".0"), "TransformProbe.flow-meta.xml")
+			path := filepath.Join("testdata/native-capture/flow_transform_record_map", "api"+strings.TrimSuffix(api, ".0"), "TransformProbe.flow-meta.xml")
 			flow, err := os.ReadFile(path)
 			if err != nil {
 				t.Fatal(err)

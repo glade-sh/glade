@@ -7,7 +7,7 @@ import (
 )
 
 // The anonymous Salesforce observations are recorded in
-// testdata/conformance/pr163_flow_lookup_collection/org.tsv.
+// testdata/native-capture/pr163_flow_lookup_collection/org.tsv.
 func TestFlowLookupCollectionCapturedProjectRoutes(t *testing.T) {
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api, func(t *testing.T) {
@@ -19,7 +19,7 @@ func TestFlowLookupCollectionCapturedProjectRoutes(t *testing.T) {
 			}
 			for _, op := range []string{"In", "NotIn"} {
 				name := "Capture_Filter_" + op
-				data, err := os.ReadFile(filepath.Join("testdata", "conformance", "pr163_flow_lookup_collection", dir, name+".flow-meta.xml"))
+				data, err := os.ReadFile(filepath.Join("testdata", "native-capture", "pr163_flow_lookup_collection", dir, name+".flow-meta.xml"))
 				if err != nil {
 					t.Fatal(err)
 				}

@@ -21,7 +21,7 @@ func TestFlowLookupCollectionDiskRuntime(t *testing.T) {
 			body.WriteString(`Account a=new Account(Name='Capture Collection Seed A'); Account b=new Account(Name='Capture Collection Seed B'); insert new List<Account>{a,b};`)
 			for _, op := range []string{"In", "NotIn"} {
 				name := "Capture_Filter_" + op
-				path := filepath.Join("testdata/conformance/pr163_flow_lookup_collection", "api"+strings.TrimSuffix(api, ".0"), name+".flow-meta.xml")
+				path := filepath.Join("testdata/native-capture/pr163_flow_lookup_collection", "api"+strings.TrimSuffix(api, ".0"), name+".flow-meta.xml")
 				flow, err := os.ReadFile(path)
 				if err != nil {
 					t.Fatal(err)
