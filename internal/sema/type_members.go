@@ -2152,36 +2152,32 @@ func ensureSemaStandardChildRelationshipMembers() {
 	semaStandardChildRelationshipCache.once.Do(func() {
 		byParent := make(map[string][]semaStandardChildRelationshipMember)
 		seen := make(map[string]bool)
-		for _, childObject := range storage.KnownStandardObjectNames() {
-			childName := childObject
-			if canonical, ok := storage.ResolveKnownStandardObjectName(childObject); ok {
-				childName = canonical
+		// The generated table is the catalog walk over every known standard
+		// object (storage.TestStandardChildRelationshipsMatchCatalog pins it);
+		// reading it keeps the first child-relationship lookup from decoding
+		// every catalog member.
+		for _, relationship := range storage.StandardChildRelationships() {
+			childName := relationship.Child
+			for _, parent := range relationship.Parents {
+				parentName := parent
+				if canonical, ok := storage.ResolveKnownStandardObjectName(parent); ok {
+					parentName = canonical
+				}
+				parentKey := normalizeName(parentName)
+				if parentKey == "" {
+					continue
+				}
+				member := semaStandardChildRelationshipMember{
+					name: relationship.Name,
+					typ:  "List<" + childName + ">",
+				}
+				dedupeKey := parentKey + "\x00" + normalizeName(member.name) + "\x00" + normalizeName(member.typ)
+				if seen[dedupeKey] {
+					continue
+				}
+				seen[dedupeKey] = true
+				byParent[parentKey] = append(byParent[parentKey], member)
 			}
-			storage.VisitStandardObjectRelationships(childName, nil, func(relationship storage.Relationship) {
-				if relationship.ChildRelationship == "" {
-					return
-				}
-				for _, parent := range relationship.ParentObjects {
-					parentName := parent
-					if canonical, ok := storage.ResolveKnownStandardObjectName(parent); ok {
-						parentName = canonical
-					}
-					parentKey := normalizeName(parentName)
-					if parentKey == "" {
-						continue
-					}
-					member := semaStandardChildRelationshipMember{
-						name: relationship.ChildRelationship,
-						typ:  "List<" + childName + ">",
-					}
-					dedupeKey := parentKey + "\x00" + normalizeName(member.name) + "\x00" + normalizeName(member.typ)
-					if seen[dedupeKey] {
-						continue
-					}
-					seen[dedupeKey] = true
-					byParent[parentKey] = append(byParent[parentKey], member)
-				}
-			})
 		}
 		semaStandardChildRelationshipCache.byParent = byParent
 	})
