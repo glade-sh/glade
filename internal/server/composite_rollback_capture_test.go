@@ -127,3 +127,72 @@ func TestCompositeDeleteStoredIDVariantsRemainDeleted(t *testing.T) {
 		t.Fatalf("status %d, body %s", rec.Code, rec.Body.String())
 	}
 }
+
+func TestCompositeUpsertNewInsertRollbackNative(t *testing.T) {
+	for _, all := range []bool{true, false} {
+		t.Run(fmt.Sprint(all), func(t *testing.T) {
+			org := testOrg()
+			body := fmt.Sprintf(`{"allOrNone":%t,"records":[{"attributes":{"type":"Account"},"Name":"Valid","External_Id__c":"good"},{"attributes":{"type":"Account"},"External_Id__c":"bad"}]}`, all)
+			rec := httptest.NewRecorder()
+			New(&org).ServeHTTP(rec, httptest.NewRequest(http.MethodPatch, serverTestDataPath+"/composite/sobjects/Account/External_Id__c", strings.NewReader(body)))
+			var rows []map[string]any
+			if err := json.Unmarshal(rec.Body.Bytes(), &rows); err != nil || rec.Code != http.StatusOK || len(rows) != 2 {
+				t.Fatalf("status %d body %s: %v", rec.Code, rec.Body.String(), err)
+			}
+			if rows[0]["success"] != !all || rows[0]["created"] != true || rows[1]["success"] != false || rows[1]["created"] != true {
+				t.Fatalf("rows = %#v", rows)
+			}
+			if id, exists := rows[0]["id"]; all && exists || !all && (!exists || id == "") {
+				t.Fatalf("first row id = %#v (present=%t), allOrNone=%t", id, exists, all)
+			}
+			if _, exists := rows[1]["id"]; exists {
+				t.Fatalf("failed insert has id: %#v", rows[1])
+			}
+			want := 1
+			if all {
+				want = 0
+			}
+			if got := len(org.Objects["Account"].Records); got != want {
+				t.Fatalf("stored records = %d, want %d", got, want)
+			}
+		})
+	}
+}
+
+func TestCompositeTreeMultipleFailuresNative(t *testing.T) {
+	for _, good := range []bool{true, false} {
+		t.Run(fmt.Sprint(good), func(t *testing.T) {
+			org := testOrg()
+			first := ""
+			if good {
+				first = `{"attributes":{"type":"Account","referenceId":"good"},"Name":"Valid"},`
+			}
+			body := `{"records":[` + first + `{"attributes":{"type":"Account","referenceId":"bad1"}},{"attributes":{"type":"Account","referenceId":"bad2"}}]}`
+			rec := httptest.NewRecorder()
+			New(&org).ServeHTTP(rec, httptest.NewRequest(http.MethodPost, serverTestDataPath+"/composite/tree/Account", strings.NewReader(body)))
+			var response struct {
+				HasErrors bool `json:"hasErrors"`
+				Results   []struct {
+					ReferenceID string `json:"referenceId"`
+					Errors      []struct {
+						StatusCode string `json:"statusCode"`
+					} `json:"errors"`
+				} `json:"results"`
+			}
+			if err := json.Unmarshal(rec.Body.Bytes(), &response); err != nil {
+				t.Fatal(err)
+			}
+			if rec.Code != http.StatusBadRequest || !response.HasErrors || len(response.Results) != 2 {
+				t.Fatalf("status %d body %s", rec.Code, rec.Body.String())
+			}
+			for i, want := range []string{"bad1", "bad2"} {
+				if response.Results[i].ReferenceID != want || len(response.Results[i].Errors) != 1 || response.Results[i].Errors[0].StatusCode != "REQUIRED_FIELD_MISSING" {
+					t.Fatalf("result %d = %#v", i, response.Results[i])
+				}
+			}
+			if got := len(org.Objects["Account"].Records); got != 0 {
+				t.Fatalf("tree left %d accounts", got)
+			}
+		})
+	}
+}
