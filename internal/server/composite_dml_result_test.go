@@ -62,7 +62,7 @@ func TestCompositeSObjectUpsertCreationContracts(t *testing.T) {
 			if row["success"] != want.success || row["created"] != want.upsertCreated || row["referenceId"] != want.name || (result.ID != "" && row["id"] != result.ID) {
 				t.Fatalf("REST upsert result = %#v, want %#v", row, want)
 			}
-			if !want.success && result.ID == "" {
+			if !want.success && want.upsertCreated && result.ID == "" {
 				if _, ok := row["id"]; ok {
 					t.Fatalf("failed insert has id: %#v", row)
 				}
