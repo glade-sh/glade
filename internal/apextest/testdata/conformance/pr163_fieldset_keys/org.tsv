@@ -7,3 +7,11 @@ api	case	route	outcome
 67.0	namespaced_lookup	anonymous	size=2; values=2; keys=2; qualifiedContains=true; qualifiedGet=true; upperContains=true; upperGet=true; localContains=false; localGet=false; missingContains=false; missingGet=false
 62.0	namespaced_custom_object_lookup	anonymous	keys=[gladetest1__codexc163capture]; qualifiedContains=true; qualifiedGet=true; upperContains=true; upperGet=true; localContains=false; localGet=false; missingContains=false; missingGet=false
 67.0	namespaced_custom_object_lookup	anonymous	keys=[gladetest1__codexc163capture]; qualifiedContains=true; qualifiedGet=true; upperContains=true; upperGet=true; localContains=false; localGet=false; missingContains=false; missingGet=false
+62.0	namespaced_remove	anonymous	compiled; System.FinalException: Collection is read-only
+67.0	namespaced_remove	anonymous	compiled; System.FinalException: Collection is read-only
+62.0	namespaced_put	anonymous	compiled; System.FinalException: Collection is read-only
+67.0	namespaced_put	anonymous	compiled; System.FinalException: Collection is read-only
+62.0	namespaced_putAll	anonymous	compiled; System.FinalException: Collection is read-only
+67.0	namespaced_putAll	anonymous	compiled; System.FinalException: Collection is read-only
+62.0	namespaced_clear_isolation	anonymous	afterSize=0; afterContains=false; afterGet=false; secondSize=1; secondContains=true; freshSize=1; freshContains=true
+67.0	namespaced_clear_isolation	anonymous	afterSize=0; afterContains=false; afterGet=false; secondSize=1; secondContains=true; freshSize=1; freshContains=true
