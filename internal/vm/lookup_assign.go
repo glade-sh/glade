@@ -1095,7 +1095,7 @@ func (vm *VM) callGetter(owner string, field Field, receiver Value) (Value, erro
 		}
 	}
 	if value, ok := vm.activeSetterStoredValue(owner, fieldName, field, receiver); ok {
-		if vm.isCurrentGetter(field.Getter) {
+		if vm.isCurrentGetter(field.Getter) || vm.isCurrentGetter(field.Setter) {
 			return value, nil
 		}
 	}
@@ -1104,6 +1104,7 @@ func (vm *VM) callGetter(owner string, field Field, receiver Value) (Value, erro
 	// continue to use backing storage. Instance Set behavior stays bounded.
 	allowHelperReentry := len(field.Getter.Program.Instructions) > 0 &&
 		((receiver.Kind == ValueNull && field.Static && !vm.isCurrentGetter(field.Getter) && !vm.isCurrentGetter(field.Setter)) ||
+			(receiver.Kind == ValueObject && propertyAccessorMethod(vm.currentMethod) && !vm.isCurrentGetter(field.Getter) && !vm.isCurrentGetter(field.Setter)) ||
 			(vm.activeGetters[key] == 1 && !propertyAccessorMethod(vm.currentMethod) && strings.EqualFold(vm.currentMethod.ClassName, field.Getter.ClassName) && receiver.projectClass && collectionBase(field.Type) == "Set" && field.Setter != nil &&
 				len(field.Setter.Program.Instructions) > 0))
 	if vm.activeGetters[key] > 0 && !allowHelperReentry {
@@ -1169,6 +1170,14 @@ func (vm *VM) activeSetterStoredValue(owner, fieldName string, field Field, rece
 		return defaultValue(field.Type, field.InitialValue), true
 	}
 	return Null, false
+}
+
+func (vm *VM) staticSetterReentryError(key string, err error) error {
+	var fault *RuntimeError
+	if vm.activeSetters[key] > 1 && errors.As(err, &fault) && fault.callStackLimit {
+		return &RuntimeError{Type: "System.LimitException", Message: "Maximum stack depth reached: 1001", Stack: fault.Stack}
+	}
+	return err
 }
 
 func propertyAccessorMethod(method Method) bool {
@@ -2704,6 +2713,9 @@ func (vm *VM) isCurrentGetter(getter *Method) bool {
 	if getter == nil || vm.currentMethod.Name == "" {
 		return false
 	}
+	if getter.ClassName != "" && vm.currentMethod.ClassName != "" && !strings.EqualFold(getter.ClassName, vm.currentMethod.ClassName) {
+		return false
+	}
 	if strings.EqualFold(getter.Name, vm.currentMethod.Name) {
 		return true
 	}
@@ -2884,7 +2896,7 @@ func (vm *VM) assignValue(name string, value Value, rebind bool) error {
 				if field.Setter != nil {
 					storageName := staticFieldStorageName(memberName, field)
 					key := owner + "." + storageName
-					if vm.activeSetters[key] > 0 {
+					if vm.activeSetters[key] > 0 && (vm.isCurrentGetter(field.Setter) || !propertyAccessorMethod(vm.currentMethod)) {
 						class, _ := vm.classEntry(owner)
 						vm.writeStaticFieldValue(owner, memberName, class, field, value)
 						return nil
@@ -2898,7 +2910,7 @@ func (vm *VM) assignValue(name string, value Value, rebind bool) error {
 					}()
 					_, err := vm.callMethod(*field.Setter, []Value{value}, resultForLookup())
 					if err != nil {
-						return err
+						return vm.staticSetterReentryError(key, err)
 					}
 					if vm.isCurrentGetter(field.Getter) {
 						class, _ := vm.classEntry(owner)
@@ -3046,7 +3058,7 @@ func (vm *VM) assignValue(name string, value Value, rebind bool) error {
 			if field.Setter != nil {
 				storageName := staticFieldStorageName(name, field)
 				key := owner + "." + storageName
-				if vm.activeSetters[key] > 0 {
+				if vm.activeSetters[key] > 0 && (vm.isCurrentGetter(field.Setter) || !propertyAccessorMethod(vm.currentMethod)) {
 					class, _ := vm.classEntry(owner)
 					vm.writeStaticFieldValue(owner, name, class, field, value)
 					return nil
@@ -3060,7 +3072,7 @@ func (vm *VM) assignValue(name string, value Value, rebind bool) error {
 				}()
 				_, err := vm.callMethod(*field.Setter, []Value{value}, resultForLookup())
 				if err != nil {
-					return err
+					return vm.staticSetterReentryError(key, err)
 				}
 				if vm.isCurrentGetter(field.Getter) {
 					class, _ := vm.classEntry(owner)
