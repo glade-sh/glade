@@ -1413,8 +1413,28 @@ func privateDescribeFieldSet(value Value) Value {
 
 func privateDescribeFieldSetMap(value Value) Value {
 	out := privateDescribeCollection(value)
+	out.Fields = make(map[string]Value, len(value.Fields)+1)
+	for name, field := range value.Fields {
+		out.Fields[name] = field
+	}
+	out.Fields["__caseInsensitiveStringKeys"] = Bool(true)
 	byRef := map[uint64]Value{}
 	for key, fieldSet := range out.Map {
+		name, ok := fieldSetMapCanonicalName(fieldSet)
+		if !ok {
+			delete(out.Map, key)
+			delete(out.MapKeys, key)
+			continue
+		}
+		if namespace, ok := fieldSet.Fields["namespace"]; ok && namespace.Kind == ValueString && strings.TrimSpace(namespace.Text) != "" {
+			name = namespace.Text + "__" + name
+		}
+		storedKey := mapStoredKey(out, key)
+		if storedKey.Kind != ValueString || !strings.EqualFold(storedKey.Text, name) {
+			delete(out.Map, key)
+			delete(out.MapKeys, key)
+			continue
+		}
 		private, ok := byRef[fieldSet.Ref]
 		if !ok {
 			private = privateDescribeFieldSet(fieldSet)
