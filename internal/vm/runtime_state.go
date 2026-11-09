@@ -94,7 +94,10 @@ type VM struct {
 	// which runs once per executed instruction. The symbol depends on the
 	// method identity, the execution namespace and the class registry, so the
 	// key carries the first two and the access-cache reset covers the third.
-	frameSymbolCache         map[frameSymbolKey]string
+	frameSymbolCache map[frameSymbolKey]string
+	// sourceLineTables caches newline offsets per executed program source for
+	// setCurrentStatement's line and column (see sourceLineColumnCached).
+	sourceLineTables         map[int][]*sourceLineTable
 	nestedTypeHierarchyCache map[nestedTypeKey]nestedTypeResult
 	enumLookup               map[string]enumClassLookup
 	enumSuffixLookup         map[string]enumClassLookup
