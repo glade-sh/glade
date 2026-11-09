@@ -1084,6 +1084,12 @@ func aggregateRecords(org storage.OrgState, definition storage.ObjectDefinition,
 	var order []string
 	sets := groupingSets(query.GroupBy, query.GroupMode)
 	scratch := make([]storage.Value, len(query.GroupBy))
+	// The declared kind of each grouped field is fixed for the scan; resolve it
+	// once instead of copying its definition per record.
+	kinds := make([]groupFieldKind, len(query.GroupBy))
+	for i, field := range query.GroupBy {
+		kinds[i] = declaredGroupFieldKind(org, definition, field)
+	}
 	for _, record := range records {
 		for setIndex, active := range sets {
 			parts := []string{strconv.Itoa(setIndex)}
@@ -1105,13 +1111,11 @@ func aggregateRecords(org storage.OrgState, definition storage.ObjectDefinition,
 				}
 				// R127/N019: grouped dates retain their field type, including
 				// records loaded from fixtures that store the date as text.
-				if value.Kind == storage.ValueString {
-					if definitions, known := fieldDefinitionsForReference(org, definition, field); known && len(definitions) == 1 && definitions[0].Type == storage.FieldDate {
-						value = storage.DateValue(value.String)
-					}
+				if value.Kind == storage.ValueString && kinds[i].date {
+					value = storage.DateValue(value.String)
 				}
 				scratch[i] = value
-				parts = append(parts, "0:"+aggregateGroupValueKey(org, definition, field, value))
+				parts = append(parts, "0:"+groupValueKey(value, kinds[i]))
 			}
 			key := strings.Join(parts, "\x00")
 			current, ok := groups[key]
@@ -1232,14 +1236,35 @@ func addAggregateToLabelFields(fields map[string]storage.Value, org storage.OrgS
 	return nil
 }
 
+// groupFieldKind is what the grouping loop needs to know about a grouped
+// field's single declaration: whether it is a Date (text values group as
+// dates) and whether it is an Id or reference (18-character Ids group with
+// their 15-character form).
+type groupFieldKind struct {
+	date bool
+	id   bool
+}
+
+func declaredGroupFieldKind(org storage.OrgState, definition storage.ObjectDefinition, field string) groupFieldKind {
+	fields, known := fieldDefinitionsForReference(org, definition, field)
+	if !known || len(fields) != 1 {
+		return groupFieldKind{}
+	}
+	return groupFieldKind{
+		date: fields[0].Type == storage.FieldDate,
+		id:   fields[0].Type == storage.FieldID || fields[0].Type == storage.FieldReference,
+	}
+}
+
 // Native NPG API62/67/68: a lookup retains one group across equivalent
 // 15/18-character Id representations. Keep the projected representative intact.
 func aggregateGroupValueKey(org storage.OrgState, definition storage.ObjectDefinition, field string, value storage.Value) string {
-	if value.Kind == storage.ValueID && len(value.ID) == 18 {
-		if fields, known := fieldDefinitionsForReference(org, definition, field); known && len(fields) == 1 &&
-			(fields[0].Type == storage.FieldID || fields[0].Type == storage.FieldReference) {
-			value.ID = value.ID[:15]
-		}
+	return groupValueKey(value, declaredGroupFieldKind(org, definition, field))
+}
+
+func groupValueKey(value storage.Value, kind groupFieldKind) string {
+	if value.Kind == storage.ValueID && len(value.ID) == 18 && kind.id {
+		value.ID = value.ID[:15]
 	}
 	return valueKey(value)
 }
