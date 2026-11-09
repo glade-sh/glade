@@ -73,12 +73,12 @@ func TestLeakScan(t *testing.T) {
 		notOut   string
 	}{
 		{name: "clean addition", file: "docs/notes.md", content: "base\nplain documentation line\n", wantOut: "leak-scan: clean"},
-		{name: "personal path", file: "docs/notes.md", content: "base\nsee " + personal + "\n", wantFail: true, wantOut: "docs/notes.md:2: personal-path", notOut: "someone"},
+		{name: "personal path", file: "docs/notes.md", content: "base\nsee " + personal + "\n", wantFail: true, wantOut: "file 1:2: personal-path", notOut: "someone"},
 		{name: "linux home path", file: "docs/notes.md", content: "base\nsee " + linuxHome + "\n", wantFail: true, wantOut: "personal-path"},
 		{name: "runner home path is fine", file: "docs/notes.md", content: "base\nPLAYWRIGHT_BROWSERS_PATH: " + runnerHome + "\n", wantOut: "leak-scan: clean"},
 		{name: "volume path", file: "docs/notes.md", content: "base\ncopied from " + volume + "\n", wantFail: true, wantOut: "volume-path"},
 		{name: "private tmp path", file: "docs/notes.md", content: "base\nlog at " + privateTmp + "\n", wantFail: true, wantOut: "private-tmp"},
-		{name: "denylist entry case-insensitive", file: "docs/notes.md", content: "base\ntested against zephyr-internal-project yesterday\n", env: []string{"LEAK_SCAN_DENYLIST=" + deny}, wantFail: true, wantOut: "docs/notes.md:2: denylist", notOut: "zephyr"},
+		{name: "denylist entry case-insensitive", file: "docs/notes.md", content: "base\ntested against zephyr-internal-project yesterday\n", env: []string{"LEAK_SCAN_DENYLIST=" + deny}, wantFail: true, wantOut: "file 1:2: denylist", notOut: "zephyr"},
 		{name: "second denylist entry", file: "docs/notes.md", content: "base\nssh marmoset.local\n", env: []string{"LEAK_SCAN_DENYLIST=" + deny}, wantFail: true, wantOut: "denylist"},
 		{name: "allowlisted path skips denylist", file: "docs/pinned-projects.md", content: "Zephyr-Internal-Project at v1\n", env: []string{"LEAK_SCAN_DENYLIST=" + deny}, wantOut: "leak-scan: clean"},
 		{name: "allowlisted path keeps builtins", file: "docs/pinned-projects.md", content: personal + "\n", env: []string{"LEAK_SCAN_DENYLIST=" + deny}, wantFail: true, wantOut: "personal-path"},
@@ -118,7 +118,7 @@ func TestLeakScan(t *testing.T) {
 			t.Fatal(err)
 		}
 		out, err := run(nil, "--diff", path)
-		if err == nil || !strings.Contains(out, "x.txt:2: volume-path") {
+		if err == nil || !strings.Contains(out, "file 1:2: volume-path") {
 			t.Fatalf("diff input: %v: %s", err, out)
 		}
 	})
@@ -177,6 +177,7 @@ func TestLeakScanAdversarialDiffs(t *testing.T) {
 		{"runner first", runner + " " + private + "\n", "personal-path"},
 		{"runner last", private + " " + runner + "\n", "personal-path"},
 		{"multiple runners", runner + " " + runner + " " + private + "\n", "personal-path"},
+		{"overlapping paths", "/ho" + "me/runner" + private + "\n", "personal-path"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			write("input", tc.content)

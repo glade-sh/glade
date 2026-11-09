@@ -5,8 +5,8 @@
 # public tree: personal absolute paths, host volume paths, private temp paths,
 # and every entry of LEAK_SCAN_DENYLIST (newline-separated, case-insensitive
 # substrings; comments start with #). Files under a prefix listed in
-# .github/leak-scan-allow.txt skip the denylist entries only. The output names
-# the file, line and pattern class, never the matched text.
+# .github/leak-scan-allow.txt skip the denylist entries only. The output identifies
+# the file by ordinal, line and pattern class, never filenames or matched text.
 #
 # Exit 0 when clean, 1 when there are findings, 2 on usage or git errors.
 set -euo pipefail
@@ -29,7 +29,7 @@ trap 'rm -rf "$work"' EXIT
 if [ -n "$difffile" ]; then
   cp "$difffile" "$work/diff"
 else
-  git -C "$root" diff -U0 --no-color --no-ext-diff "${range:-HEAD~1..HEAD}" -- . >"$work/diff" || exit 2
+  git -C "$root" diff -U0 --no-color --no-ext-diff --no-textconv "${range:-HEAD~1..HEAD}" -- . >"$work/diff" || exit 2
 fi
 printf '%s\n' "${LEAK_SCAN_DENYLIST:-}" >"$work/deny"
 allow="$root/.github/leak-scan-allow.txt"
@@ -51,37 +51,58 @@ BEGIN {
     allow[++na] = line
   }
   close(allowfile)
-  file = ""; lineno = 0; added = 0; findings = 0
+  file = ""; lineno = 0; added = 0; findings = 0; fileid = 0; in_hunk = 0
+}
+# Hunk counts determine when metadata resumes. Added lines can look exactly
+# like headers, so their contents must never change the current file.
+in_hunk {
+  prefix = substr($0, 1, 1)
+  if (prefix == "+") {
+    added++
+    text = substr($0, 2)
+    class = ""
+    homecheck = text; personalhome = 0
+    while (match(homecheck, /\/home\/[a-z][a-z0-9_-]*\//)) {
+      if (substr(homecheck, RSTART, RLENGTH) != "/home/runner/") personalhome = 1
+      homecheck = substr(homecheck, RSTART + 1)
+    }
+    if (text ~ /\/Users\/[A-Za-z0-9_]/) class = "personal-path"
+    else if (personalhome) class = "personal-path"
+    else if (text ~ /\/Volumes\//) class = "volume-path"
+    else if (text ~ /\/private\/tmp\//) class = "private-tmp"
+    if (class == "" && !allowed) {
+      lower = tolower(text)
+      for (i = 1; i <= nd; i++) if (index(lower, deny[i]) > 0) { class = "denylist"; break }
+    }
+    if (class != "") { findings++; files[fileid] = 1; printf "file %d:%d: %s\n", fileid, lineno, class }
+    lineno++; newleft--
+  } else if (prefix == "-") oldleft--
+  else if (prefix == " ") { oldleft--; newleft--; lineno++ }
+  if (oldleft <= 0 && newleft <= 0) in_hunk = 0
+  next
+}
+/^diff --git / { fileid++; file = ""; allowed = 0; next }
+/^Binary files .* differ$/ || /^GIT binary patch$/ {
+  findings++; files[fileid] = 1
+  printf "file %d: binary change cannot be scanned\n", fileid
+  next
 }
 /^\+\+\+ / {
   file = substr($0, 5)
   sub(/^b\//, "", file)
-  if (file == "/dev/null") file = ""
   allowed = 0
   for (i = 1; i <= na; i++) if (index(file, allow[i]) == 1) allowed = 1
   next
 }
 /^@@ / {
   split($0, parts, " ")
-  plus = parts[3]; sub(/^\+/, "", plus); sub(/,.*/, "", plus)
-  lineno = plus + 0
-  next
-}
-/^\+/ {
-  if (file == "") next
-  added++
-  text = substr($0, 2)
-  class = ""
-  if (text ~ /\/Users\/[A-Za-z0-9_]/) class = "personal-path"
-  else if (text ~ /\/home\/[a-z][a-z0-9_-]*\// && text !~ /\/home\/runner\//) class = "personal-path"
-  else if (text ~ /\/Volumes\//) class = "volume-path"
-  else if (text ~ /\/private\/tmp\//) class = "private-tmp"
-  if (class == "" && !allowed) {
-    lower = tolower(text)
-    for (i = 1; i <= nd; i++) if (index(lower, deny[i]) > 0) { class = "denylist"; break }
-  }
-  if (class != "") { findings++; files[file] = 1; printf "%s:%d: %s\n", file, lineno, class }
-  lineno++
+  old = parts[2]; plus = parts[3]
+  sub(/^-/, "", old); sub(/^\+/, "", plus)
+  split(old, oldparts, ","); split(plus, newparts, ",")
+  oldleft = index(old, ",") ? oldparts[2] + 0 : 1
+  newleft = index(plus, ",") ? newparts[2] + 0 : 1
+  lineno = newparts[1] + 0
+  in_hunk = (oldleft > 0 || newleft > 0)
   next
 }
 END {
