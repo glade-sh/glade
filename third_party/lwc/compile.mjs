@@ -262,7 +262,7 @@ function rewriteStylesheetImports(code, bundleName) {
     );
 }
 
-function compileBundle(bundleDir, bundleName, namespace, outDir, apiVersion, moduleAvailability, configuredProperties, salesforceImports, capabilities, lightningModules, localModules) {
+function compileBundle(bundleDir, bundleName, namespace, outDir, apiVersion, moduleAvailability, configuredProperties, salesforceImports, capabilities, lightningModules, localModules, localStylesheetSources) {
   const jsPath = path.join(bundleDir, `${bundleName}.js`);
   const htmlPath = path.join(bundleDir, `${bundleName}.html`);
   const cssPath = path.join(bundleDir, `${bundleName}.css`);
@@ -271,7 +271,7 @@ function compileBundle(bundleDir, bundleName, namespace, outDir, apiVersion, mod
       assertCompilerPreservesAPIVersion(apiVersion);
       const moduleKey = `${namespace}/${bundleName}`;
       const entryFile = path.join(outDir, moduleKey, `${bundleName}.js`);
-      compileSharedStylesheetGraph(cssPath, entryFile, bundleDir, namespace, bundleName, apiVersion, localModules);
+      compileSharedStylesheetGraph(cssPath, entryFile, bundleDir, namespace, bundleName, apiVersion, localModules, localStylesheetSources);
       return { qualified: `${namespace}:${bundleName}`, moduleKey, file: entryFile, tag: `${namespace}-${kebabCase(bundleName)}` };
     }
     return null;
@@ -428,9 +428,10 @@ function compileAdditionalTemplateModules(bundleDir, bundleName, namespace, bund
   });
 }
 
-// Relative stylesheet imports must resolve to emitted JavaScript modules. Keep
-// a per-bundle map so transitive imports and cycles refer to the same output.
-function compileSharedStylesheetGraph(cssPath, entryFile, bundleDir, namespace, name, apiVersion, localModules) {
+// Build a self-contained stylesheet graph per entry. Replacing an ancestor
+// back-edge with an empty module prevents an ESM initialization cycle while
+// retaining the reachable styles once for that entry.
+function compileSharedStylesheetGraph(cssPath, entryFile, bundleDir, namespace, name, apiVersion, localModules, localStylesheetSources) {
   const bundleOut = path.dirname(entryFile);
   const outputs = new Map([[path.resolve(cssPath), entryFile]]);
   // Reserve a directory that no source within the bundle can map onto. A
@@ -440,7 +441,10 @@ function compileSharedStylesheetGraph(cssPath, entryFile, bundleDir, namespace, 
     externalDir = `__external_styles_${suffix}`;
   }
   let externalCount = 0;
+  const active = new Set();
+  let emptyCycleFile;
   function emit(sourcePath) {
+    active.add(sourcePath);
     const outputPath = outputs.get(sourcePath);
     const result = transformStylesheet(sourcePath, namespace, name, apiVersion, localModules);
     const ast = parse(result.code, { sourceType: "module" });
@@ -448,16 +452,31 @@ function compileSharedStylesheetGraph(cssPath, entryFile, bundleDir, namespace, 
     for (const node of ast.program.body) {
       if (node.type !== "ImportDeclaration") continue;
       const specifier = node.source.value;
-      if (!(specifier.startsWith("./") || specifier.startsWith("../")) || !specifier.endsWith(".css")) continue;
-      const target = path.resolve(path.dirname(sourcePath), specifier);
-      if (!outputs.has(target)) {
-        const relative = path.relative(bundleDir, target);
-        const inside = relative !== ".." && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative);
-        const file = inside ? `${relative}.js` : path.join(externalDir, `${externalCount++}.css.js`);
-        outputs.set(target, path.join(bundleOut, file));
-        emit(target);
+      let target;
+      if ((specifier.startsWith("./") || specifier.startsWith("../")) && specifier.endsWith(".css")) {
+        target = path.resolve(path.dirname(sourcePath), specifier);
+      } else if (specifier.startsWith(`${namespace}/`)) {
+        target = localStylesheetSources.get(specifier.slice(namespace.length + 1));
       }
-      let emittedSpecifier = path.relative(path.dirname(outputPath), outputs.get(target)).split(path.sep).join("/");
+      if (!target) continue;
+      let dependency;
+      if (active.has(target)) {
+        if (!emptyCycleFile) {
+          emptyCycleFile = path.join(bundleOut, externalDir, "cycle-empty.js");
+          writeCompiled(emptyCycleFile, "export default [];\n");
+        }
+        dependency = emptyCycleFile;
+      } else {
+        if (!outputs.has(target)) {
+          const relative = path.relative(bundleDir, target);
+          const inside = relative !== ".." && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative);
+          const file = inside ? `${relative}.js` : path.join(externalDir, `${externalCount++}.css.js`);
+          outputs.set(target, path.join(bundleOut, file));
+          emit(target);
+        }
+        dependency = outputs.get(target);
+      }
+      let emittedSpecifier = path.relative(path.dirname(outputPath), dependency).split(path.sep).join("/");
       if (!emittedSpecifier.startsWith(".")) emittedSpecifier = `./${emittedSpecifier}`;
       replacements.push({ start: node.source.start, end: node.source.end, value: JSON.stringify(emittedSpecifier) });
     }
@@ -466,6 +485,7 @@ function compileSharedStylesheetGraph(cssPath, entryFile, bundleDir, namespace, 
       code = code.slice(0, replacement.start) + replacement.value + code.slice(replacement.end);
     }
     writeCompiled(outputPath, code);
+    active.delete(sourcePath);
   }
   emit(path.resolve(cssPath));
 }
@@ -981,6 +1001,15 @@ async function main() {
   // An opt-in complete source inventory makes local-module absence meaningful.
   const localModules = config.completeLocalModuleInventory
     ? new Set([...lwcRoots].map((dir) => path.basename(dir))) : null;
+  const localStylesheetSources = new Map();
+  for (const dir of lwcRoots) {
+    const name = path.basename(dir);
+    const cssPath = path.resolve(dir, `${name}.css`);
+    if (!fs.existsSync(cssPath) || fs.existsSync(path.join(dir, `${name}.js`)) || fs.existsSync(path.join(dir, `${name}.html`))) continue;
+    // Ambiguous source roots cannot safely identify an installed module.
+    if (localStylesheetSources.has(name)) localStylesheetSources.set(name, null);
+    else localStylesheetSources.set(name, cssPath);
+  }
 
   const schemaReferencesOnly = process.argv.includes("--salesforce-schema-references");
   if (schemaReferencesOnly || process.argv.includes("--salesforce-import-references")) {
@@ -1024,7 +1053,7 @@ async function main() {
         throw new Error(`missing component API version for bundle ${bundleKey}`);
       }
       const imports = schemaImportsForBundle(config.salesforceImports, config.lwcConsumerOwned?.[bundleKey]);
-      const entry = compileBundle(bundleDir, bundleName, namespace, bundleOut, apiVersion, config.lwcModuleAvailability || {}, config.lwcConfiguredProperties?.[bundleKey] || [], imports, config.lwcCapabilities?.[bundleKey] || [], config.lightningModules, localModules);
+      const entry = compileBundle(bundleDir, bundleName, namespace, bundleOut, apiVersion, config.lwcModuleAvailability || {}, config.lwcConfiguredProperties?.[bundleKey] || [], imports, config.lwcCapabilities?.[bundleKey] || [], config.lightningModules, localModules, localStylesheetSources);
       // Native c_metadata_* checks capability declarations after template
       // compilation; invalid dynamic usage keeps its actual compiler error.
       const capabilityError = config.lwcCapabilityErrors?.[bundleKey];
