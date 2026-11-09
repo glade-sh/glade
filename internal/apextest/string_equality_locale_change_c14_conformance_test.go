@@ -92,6 +92,13 @@ func TestStringEqualityLocaleChangeC14NativeConformance(t *testing.T) {
 					marker := "CAP|n6." + probe + "|"
 					at := strings.Index(result.Problem.Message, marker)
 					if at < 0 {
+						if api == "67.0" && (probe == "p3" || probe == "p4") {
+							want := "Operation failed due to fields being inaccessible on Sobject User, check errors on Exception or Result!"
+							if result.Problem.Type != "System.DmlException" || !strings.Contains(result.Problem.Message, want) {
+								t.Fatalf("native System.DmlException %q; Glade %s: %s", want, result.Problem.Type, result.Problem.Message)
+							}
+							return
+						}
 						// The method threw before emitting. p3, p3b and p4 update the runAs
 						// user's own User record as a Standard User: native allows it (p3/p4
 						// at 62.0, p3b at both APIs) and rejects the full-object update at
