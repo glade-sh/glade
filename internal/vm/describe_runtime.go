@@ -1418,6 +1418,7 @@ func privateDescribeFieldSetMap(value Value) Value {
 		out.Fields[name] = field
 	}
 	out.Fields["__caseInsensitiveStringKeys"] = Bool(true)
+	out.Fields["__collection_readonly"] = Bool(true)
 	byRef := map[uint64]Value{}
 	for key, fieldSet := range out.Map {
 		name, ok := fieldSetMapCanonicalName(fieldSet)
