@@ -931,6 +931,7 @@ type FlowTransform struct {
 	TargetCollection string                `json:"targetCollection"`
 	FieldMappings    []WorkflowFieldUpdate `json:"fieldMappings,omitempty"`
 	SumField         string                `json:"sumField,omitempty"`
+	ObjectType       string                `json:"objectType,omitempty"`
 }
 
 type FlowCollectionProcessor struct {
