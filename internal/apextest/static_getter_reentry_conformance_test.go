@@ -49,7 +49,7 @@ func TestStaticGetterReentryNative(t *testing.T) {
 			if !tc.fail && result.Problem != nil {
 				t.Fatalf("native passed, local failed: %+v", result.Problem)
 			}
-			if tc.fail && (result.Problem == nil || !strings.Contains(result.Problem.Message, "Maximum stack depth reached: 1001")) {
+			if tc.fail && (result.Problem == nil || result.Problem.Type != "System.LimitException" || !strings.Contains(result.Problem.Message, "Maximum stack depth reached: 1001")) {
 				t.Fatalf("native recursion reached stack limit, local result: %+v", result)
 			}
 		})
