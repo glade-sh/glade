@@ -5,3 +5,4 @@ The accompanying API-versioned test classes assert the same cases via @IsTest.
 Scratch org deletion is recorded in the campaign report.
 Both API-versioned @IsTest methods passed with the same assertions.
 The scratch org was deleted and a subsequent org lookup returned not found.
+The ProbeAccess permission set in project/permissionsets was deployed and assigned before the captures.

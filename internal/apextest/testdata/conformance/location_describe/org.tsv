@@ -11,3 +11,5 @@ api	route	case	contains	name	compound
 67.0	anonymous	Probe_Text__c	true	Probe_Text__c	null
 67.0	anonymous	Probe_Text__Latitude__s	false	null	null
 67.0	anonymous	Absent__Latitude__s	false	null	null
+62.0	istest	all assertions	pass	-	-
+67.0	istest	all assertions	pass	-	-
