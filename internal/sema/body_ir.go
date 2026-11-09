@@ -5742,7 +5742,7 @@ func (a *Analyzer) collectBodyScopesWithLocalDeclMatches(typ typesys.TypeSymbol,
 		// A line beginning after an initializer's equals sign is still part of
 		// the expression, even when its tokens resemble a generic type.
 		previous := scan.match[2] - 1
-		for previous >= 0 && isWhitespace(body[previous]) {
+		for previous >= 0 && (isWhitespace(body[previous]) || ignored.contains(previous)) {
 			previous--
 		}
 		if previous >= 0 && body[previous] == '=' {
