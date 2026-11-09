@@ -1,0 +1,1 @@
+public class ProtectedProbe { public virtual class Base { protected virtual Integer value() { return 1; } public Integer observe() { return value(); } } public class Child extends Base { protected override Integer value() { return 2; } } public static Integer run() { return new Child().observe(); } }
