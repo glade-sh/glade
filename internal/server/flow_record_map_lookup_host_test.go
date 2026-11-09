@@ -73,6 +73,8 @@ func TestFlowRecordMapLookupHostRoutes(t *testing.T) {
 					}
 					org := storage.NewOrgState()
 					org.APIVersion = api
+					storage.EnsureStandardObject(&org, "Account")
+					storage.EnsureStandardObject(&org, "Contact")
 					automation.ApplyToOrg(&org, flows)
 					if route == "soap" {
 						handler := New(&org)
