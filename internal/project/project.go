@@ -2123,6 +2123,11 @@ func collectFiles(root string, p *Project, ignore *forceIgnoreSet) error {
 			return nil
 		}
 		lower := strings.ToLower(path)
+		// Files directly under an LWC root are outside any component bundle,
+		// including names that otherwise resemble a different metadata type.
+		if isLWCPath(lower) && strings.EqualFold(filepath.Base(filepath.Dir(path)), "lwc") {
+			return nil
+		}
 		switch {
 		case isStaticResourceContentFile(path):
 			p.StaticResourceFiles = append(p.StaticResourceFiles, path)
@@ -2249,10 +2254,6 @@ func collectFiles(root string, p *Project, ignore *forceIgnoreSet) error {
 		case isAuraPath(lower) && isAuraSourceFile(lower):
 			p.AuraFiles = append(p.AuraFiles, path)
 		case isLWCPath(lower):
-			// Files directly under lwc are outside any component bundle.
-			if strings.EqualFold(filepath.Base(filepath.Dir(path)), "lwc") {
-				return nil
-			}
 			switch {
 			case strings.HasSuffix(lower, ".js"):
 				p.LWCFiles = append(p.LWCFiles, path)
