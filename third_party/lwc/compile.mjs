@@ -67,6 +67,7 @@ function transformOptions(namespace, name, apiVersion, capabilities = []) {
     apiVersion,
     enableLwcOn: true,
     enableDynamicComponents: capabilities.includes("lightning__dynamicComponent"),
+    ...(capabilities.includes("lightning__dynamicComponent") ? { dynamicImports: { strictSpecifier: false } } : {}),
     // Keep parsing enabled so the compiler itself enforces the API-66 gate.
     // Native c_event_call answers at 59/63/65 report LWC1210, not the older
     // flag-disabled LWC1060 diagnostic; 66/67 report LWC1208.
@@ -107,10 +108,15 @@ function transformTemplate(source, filename, namespace, name, apiVersion, capabi
   return result;
 }
 
-function transformJavaScript(source, filename, namespace, name, apiVersion) {
+function transformJavaScript(source, filename, namespace, name, apiVersion, capabilities = []) {
   try {
-    return transformSync(source, filename, transformOptions(namespace, name, apiVersion));
+    return transformSync(source, filename, transformOptions(namespace, name, apiVersion, capabilities));
   } catch (error) {
+    // The captured nonliteral-import control reports the deployment diagnostic
+    // when the bundle has not declared dynamic-component capability.
+    if (!capabilities.includes("lightning__dynamicComponent") && error?.code === 1121) {
+      throw new Error("LWC1503: Dynamic imports are not allowed.", { cause: error });
+    }
     throw wireDeploymentDiagnostic(error, source, filename, namespace, name, apiVersion);
   }
 }
@@ -307,7 +313,7 @@ function compileBundle(bundleDir, bundleName, namespace, outDir, apiVersion, mod
   }
 
   const jsSource = fs.readFileSync(jsPath, "utf8");
-  const jsResult = transformJavaScript(jsSource, jsPath, namespace, bundleName, apiVersion);
+  const jsResult = transformJavaScript(jsSource, jsPath, namespace, bundleName, apiVersion, capabilities);
   const jsCode = rewriteComponentShadowReads(rewriteStylesheetImports(jsResult.code, bundleName), namespace);
 
   const entryFile = path.join(bundleOut, `${bundleName}.js`);
