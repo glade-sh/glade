@@ -26,13 +26,14 @@ const (
 )
 
 type formulaValue struct {
-	kind       formulaKind
-	bool       bool
-	text       string
-	number     float64
-	numberText string
-	fieldType  storage.FieldType
-	display    string
+	kind                formulaKind
+	bool                bool
+	text                string
+	number              float64
+	numberText          string
+	fieldType           storage.FieldType
+	display             string
+	missingRelationship bool
 }
 
 func evaluateRecordFormula(formula string, record storage.Record) (bool, bool) {
@@ -116,11 +117,6 @@ func evaluateRecordFormulaValue(formula string, field storage.Field, record stor
 		return storage.Value{}, false, false
 	}
 	if value.kind == formulaNull {
-		if !options.FormulaSurface && field.Type == storage.FieldCalculated &&
-			strings.EqualFold(field.DisplayType, "BOOLEAN") &&
-			strings.EqualFold(field.FormulaTreatBlanksAs, "BlankAsZero") && value.fieldType == storage.FieldBoolean {
-			return storage.BooleanValue(false), false, true
-		}
 		return storage.NullValue(), true, true
 	}
 	value = renderFormulaBR(value, false)
@@ -256,6 +252,11 @@ func parseRecordFormulaValue(formula string, field storage.Field, org *storage.O
 
 func finishRecordFormulaValue(formula string, field storage.Field, value formulaValue, options FormulaEvaluationOptions) (storage.Value, bool, bool) {
 	if value.kind == formulaNull {
+		if !options.FormulaSurface && field.Type == storage.FieldCalculated &&
+			strings.EqualFold(field.DisplayType, "BOOLEAN") &&
+			strings.EqualFold(field.FormulaTreatBlanksAs, "BlankAsZero") && value.missingRelationship && value.fieldType == storage.FieldBoolean {
+			return storage.BooleanValue(false), false, true
+		}
 		return storage.NullValue(), true, true
 	}
 	if options.TriggerRecord && isTextCalculatedField(field) && value.kind == formulaString {
@@ -1988,7 +1989,9 @@ func formulaMissingRelationshipValue(org storage.OrgState, lookup storage.Field,
 				return value
 			}
 		}
-		return formulaFieldValueForDefinition(storage.Record{}, name, field)
+		value := formulaFieldValueForDefinition(storage.Record{}, name, field)
+		value.missingRelationship = true
+		return value
 	}
 	return formulaValue{kind: formulaNull}
 }
