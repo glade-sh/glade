@@ -4,7 +4,7 @@ import "testing"
 
 func TestCapturedEnclosingStaticDispatch(t *testing.T) {
 	machine := New(nil)
-	for _, class := range []Class{{Name: "Probe"}, {Name: "Probe.Adapter"}} {
+	for _, class := range []Class{{Name: "Probe"}, {Name: "Probe.Adapter", Nested: true}} {
 		if err := machine.RegisterClass(class); err != nil {
 			t.Fatal(err)
 		}
@@ -26,7 +26,7 @@ func TestCapturedEnclosingStaticDispatch(t *testing.T) {
 
 func TestCapturedInheritedEnclosingStaticDispatch(t *testing.T) {
 	machine := New(nil)
-	for _, class := range []Class{{Name: "Parent"}, {Name: "Probe", SuperClass: "Parent"}, {Name: "Probe.Adapter"}} {
+	for _, class := range []Class{{Name: "Parent"}, {Name: "Probe", SuperClass: "Parent"}, {Name: "Probe.Adapter", Nested: true}} {
 		if err := machine.RegisterClass(class); err != nil {
 			t.Fatal(err)
 		}
@@ -43,5 +43,24 @@ func TestCapturedInheritedEnclosingStaticDispatch(t *testing.T) {
 	}
 	if _, ok, _ := machine.resolveStaticMethodForArgs("Probe.Missing", "ok", nil); ok {
 		t.Fatal("unknown inner type resolved")
+	}
+}
+
+func TestNamespaceQualifierIsNotEnclosingClass(t *testing.T) {
+	machine := New(nil)
+	for _, class := range []Class{{Name: "Prefix"}, {Name: "Type", Namespace: "Prefix"}} {
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	program, err := CompileAnonymous("return true;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterMethod(Method{Name: "Prefix.ok", ClassName: "Prefix", ReturnType: "Boolean", IsStatic: true, Program: program}); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok, _ := machine.resolveStaticMethodForArgs("Prefix.Type", "ok", nil); ok {
+		t.Fatal("namespace qualifier was mistaken for an enclosing class")
 	}
 }
