@@ -953,10 +953,11 @@ func (s *Server) handleCompositeSObjectDelete(w http.ResponseWriter, r *http.Req
 			continue
 		}
 		object, ok := s.Org.Objects[records[i].Object]
-		if ok {
-			if _, exists := object.Records[records[i].ID]; exists {
-				continue
-			}
+		if !ok {
+			continue
+		}
+		if _, _, exists := storage.LookupRecordByID(object.Records, records[i].ID); exists {
+			continue
 		}
 		results[i].StatusCode = "INVALID_CROSS_REFERENCE_KEY"
 		results[i].Error = "invalid cross reference id"
