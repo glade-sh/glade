@@ -1,0 +1,2 @@
+Map<String, Schema.FieldSet> sets = Account.SObjectType.getDescribe().fieldSets.getMap();
+System.debug('CAPTURE:' + JSON.serialize(new Map<String,Object>{'keys'=>sets.keySet(), 'local'=>sets.containsKey('CodexC163Capture'), 'qualified'=>sets.containsKey('gladetest1__CodexC163Capture'), 'upper'=>sets.containsKey('GLADETEST1__CODEXC163CAPTURE'), 'missing'=>sets.containsKey('gladetest1__MissingCapture')}));

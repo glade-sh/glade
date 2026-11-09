@@ -1,0 +1,5 @@
+api	case	route	outcome
+62.0	namespaced_keys	anonymous	[gladetest1__codexc163capture,gladetest1__codexc163second]; qualified=true; uppercase=true; local=false; missing=false
+67.0	namespaced_keys	anonymous	[gladetest1__codexc163capture,gladetest1__codexc163second]; qualified=true; uppercase=true; local=false; missing=false
+62.0	unmanaged_key	anonymous	[codexc163capture]; qualified=false; uppercase=false; local=true; missing=false
+67.0	unmanaged_key	anonymous	[codexc163capture]; qualified=false; uppercase=false; local=true; missing=false
