@@ -271,8 +271,7 @@ function compileBundle(bundleDir, bundleName, namespace, outDir, apiVersion, mod
       assertCompilerPreservesAPIVersion(apiVersion);
       const moduleKey = `${namespace}/${bundleName}`;
       const entryFile = path.join(outDir, moduleKey, `${bundleName}.js`);
-      const cssResult = transformStylesheet(cssPath, namespace, bundleName, apiVersion, localModules);
-      writeCompiled(entryFile, cssResult.code);
+      compileSharedStylesheetGraph(cssPath, entryFile, bundleDir, namespace, bundleName, apiVersion, localModules);
       return { qualified: `${namespace}:${bundleName}`, moduleKey, file: entryFile, tag: `${namespace}-${kebabCase(bundleName)}` };
     }
     return null;
@@ -407,6 +406,42 @@ function compileAdditionalTemplateModules(bundleDir, bundleName, namespace, bund
       "export default '';\n"
     );
   });
+}
+
+// Relative stylesheet imports must resolve to emitted JavaScript modules. Keep
+// a per-bundle map so transitive imports and cycles refer to the same output.
+function compileSharedStylesheetGraph(cssPath, entryFile, bundleDir, namespace, name, apiVersion, localModules) {
+  const bundleOut = path.dirname(entryFile);
+  const outputs = new Map([[path.resolve(cssPath), entryFile]]);
+  let externalCount = 0;
+  function emit(sourcePath) {
+    const outputPath = outputs.get(sourcePath);
+    const result = transformStylesheet(sourcePath, namespace, name, apiVersion, localModules);
+    const ast = parse(result.code, { sourceType: "module" });
+    const replacements = [];
+    for (const node of ast.program.body) {
+      if (node.type !== "ImportDeclaration") continue;
+      const specifier = node.source.value;
+      if (!(specifier.startsWith("./") || specifier.startsWith("../")) || !specifier.endsWith(".css")) continue;
+      const target = path.resolve(path.dirname(sourcePath), specifier);
+      if (!outputs.has(target)) {
+        const relative = path.relative(bundleDir, target);
+        const inside = relative !== ".." && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative);
+        const file = inside ? `${relative}.js` : path.join("__external_styles", `${externalCount++}.css.js`);
+        outputs.set(target, path.join(bundleOut, file));
+        emit(target);
+      }
+      let emittedSpecifier = path.relative(path.dirname(outputPath), outputs.get(target)).split(path.sep).join("/");
+      if (!emittedSpecifier.startsWith(".")) emittedSpecifier = `./${emittedSpecifier}`;
+      replacements.push({ start: node.source.start, end: node.source.end, value: JSON.stringify(emittedSpecifier) });
+    }
+    let code = result.code;
+    for (const replacement of replacements.reverse()) {
+      code = code.slice(0, replacement.start) + replacement.value + code.slice(replacement.end);
+    }
+    writeCompiled(outputPath, code);
+  }
+  emit(path.resolve(cssPath));
 }
 
 function compileCSSModule(cssPath, name, namespace, bundleDir, bundleOut, apiVersion, localModules) {
