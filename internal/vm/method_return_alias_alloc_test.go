@@ -51,8 +51,9 @@ func TestMethodReturnAliasBookkeepingAvoidsEagerSliceAllocation(t *testing.T) {
 		}
 	})
 	// Each measured call creates a fresh VM; its first collection mutation
-	// allocates the reference map used by nested-alias refresh checks.
-	if oneTargetAllocs > 116 {
-		t.Fatalf("one-target method allocated %.0f objects, want at most 116 without an alias target slice", oneTargetAllocs)
+	// allocates the reference map used by nested-alias refresh checks, and its
+	// first statement allocates the frame-symbol memo (map plus one entry).
+	if oneTargetAllocs > 118 {
+		t.Fatalf("one-target method allocated %.0f objects, want at most 118 without an alias target slice", oneTargetAllocs)
 	}
 }

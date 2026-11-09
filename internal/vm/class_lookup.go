@@ -240,6 +240,18 @@ func (vm *VM) classForAccess(className string) (Class, bool) {
 	return store(class, ok)
 }
 func (vm *VM) lookupClassInNamespace(namespace, className string) (Class, bool) {
+	rawKey := namespaceClassRawKey{Namespace: namespace, ClassName: className}
+	if cached, ok := vm.namespaceClassRawLookup[rawKey]; ok {
+		return cached.Class, cached.OK
+	}
+	class, ok := vm.lookupClassInNamespaceUncached(namespace, className)
+	if vm.namespaceClassRawLookup == nil {
+		vm.namespaceClassRawLookup = make(map[namespaceClassRawKey]namespaceClassLookup)
+	}
+	vm.namespaceClassRawLookup[rawKey] = namespaceClassLookup{Class: class, OK: ok}
+	return class, ok
+}
+func (vm *VM) lookupClassInNamespaceUncached(namespace, className string) (Class, bool) {
 	if vm.namespaceClassLookup == nil {
 		vm.namespaceClassLookup = make(map[string]map[string]namespaceClassLookup)
 	}
@@ -1541,8 +1553,11 @@ func (vm *VM) rebuildClassLookup() {
 }
 func (vm *VM) resetClassAccessCaches() {
 	vm.namespaceClassLookup = make(map[string]map[string]namespaceClassLookup)
+	vm.namespaceClassRawLookup = nil
 	vm.classNamespaceCache = make(map[string]string)
 	vm.classForAccessCache = make(map[classForAccessKey]classForAccessLookup)
+	vm.accessScopeCache = nil
+	vm.frameSymbolCache = nil
 	vm.resetClassLookupNameCache()
 	vm.nestedTypeHierarchyCache = nil
 	vm.topLevelTypeCache = nil

@@ -62,26 +62,39 @@ type VM struct {
 	stringASCII             []stringASCIIEntry
 	stringASCIIBytes        int
 	// --- Class/method/type registries and lookup caches ---
-	Globals                  map[string]Value
-	VarTypes                 map[string]string
-	expressionTypeResolver   ExpressionTypeResolver
-	Methods                  map[string]Method
-	MethodOverloads          map[string][]Method
-	MethodFolded             map[string][]Method
-	methodCandidates         map[string][]Method
-	methodResolveCache       map[string]methodResolution
-	Classes                  map[string]Class
-	classLookup              map[string]Class
-	frozenClassLookup        *frozenClassLookup
-	sharedClassCopyPlan      *classCopyPlan
-	classLookupGeneration    uint64
-	classLookupNameCache     map[string]classLookupNameResult
-	classLookupNameOrder     []string
-	classLookupNameBytes     int
-	classLookupNameStats     classLookupNameCacheStats
-	namespaceClassLookup     map[string]map[string]namespaceClassLookup
-	classNamespaceCache      map[string]string
-	classForAccessCache      map[classForAccessKey]classForAccessLookup
+	Globals                map[string]Value
+	VarTypes               map[string]string
+	expressionTypeResolver ExpressionTypeResolver
+	Methods                map[string]Method
+	MethodOverloads        map[string][]Method
+	MethodFolded           map[string][]Method
+	methodCandidates       map[string][]Method
+	methodResolveCache     map[string]methodResolution
+	Classes                map[string]Class
+	classLookup            map[string]Class
+	frozenClassLookup      *frozenClassLookup
+	sharedClassCopyPlan    *classCopyPlan
+	classLookupGeneration  uint64
+	classLookupNameCache   map[string]classLookupNameResult
+	classLookupNameOrder   []string
+	classLookupNameBytes   int
+	classLookupNameStats   classLookupNameCacheStats
+	namespaceClassLookup   map[string]map[string]namespaceClassLookup
+	// namespaceClassRawLookup memoizes lookupClassInNamespace by its raw
+	// arguments so steady-state lookups skip the two case folds that build the
+	// namespaceClassLookup keys. It is reset with the access caches.
+	namespaceClassRawLookup map[namespaceClassRawKey]namespaceClassLookup
+	classNamespaceCache     map[string]string
+	classForAccessCache     map[classForAccessKey]classForAccessLookup
+	// accessScopeCache memoizes sameAccessScope. Its inputs are the two names
+	// plus the current class and namespace that classForAccess reads, so the
+	// key carries all four. It is reset with the access caches.
+	accessScopeCache map[accessScopeKey]bool
+	// frameSymbolCache memoizes apexMethodFrameSymbol for setCurrentStatement,
+	// which runs once per executed instruction. The symbol depends on the
+	// method identity, the execution namespace and the class registry, so the
+	// key carries the first two and the access-cache reset covers the third.
+	frameSymbolCache         map[frameSymbolKey]string
 	nestedTypeHierarchyCache map[nestedTypeKey]nestedTypeResult
 	enumLookup               map[string]enumClassLookup
 	enumSuffixLookup         map[string]enumClassLookup
@@ -466,6 +479,32 @@ type classForAccessKey struct {
 	ClassName        string
 	CurrentClass     string
 	CurrentNamespace string
+}
+
+// namespaceClassRawKey is the lookupClassInNamespace memo key: the untrimmed,
+// unfolded arguments. Case and whitespace variants get distinct entries that
+// each hold the folded lookup's result.
+type namespaceClassRawKey struct {
+	Namespace string
+	ClassName string
+}
+
+// accessScopeKey is the sameAccessScope memo key. fillAccessScopeNames reads
+// vm.currentClass and vm.currentNamespace through classForAccess, so both are
+// part of the key.
+type accessScopeKey struct {
+	Left             string
+	Right            string
+	CurrentClass     string
+	CurrentNamespace string
+}
+
+// frameSymbolKey is the setCurrentStatement frame-symbol memo key.
+type frameSymbolKey struct {
+	MethodName         string
+	MethodClassName    string
+	ExecutionNamespace string
+	OrgNamespace       string
 }
 
 // nestedTypeKey memoizes resolveNestedTypeInClassHierarchy. The resolution is a

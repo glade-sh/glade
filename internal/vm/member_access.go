@@ -108,6 +108,18 @@ func sameLexicalTopLevel(a, b string) bool {
 	return aNested && bNested && strings.EqualFold(aTop, bTop)
 }
 func (vm *VM) sameAccessScope(left, right string) bool {
+	key := accessScopeKey{Left: left, Right: right, CurrentClass: vm.currentClass, CurrentNamespace: vm.currentNamespace}
+	if cached, ok := vm.accessScopeCache[key]; ok {
+		return cached
+	}
+	same := vm.sameAccessScopeUncached(left, right)
+	if vm.accessScopeCache == nil {
+		vm.accessScopeCache = make(map[accessScopeKey]bool)
+	}
+	vm.accessScopeCache[key] = same
+	return same
+}
+func (vm *VM) sameAccessScopeUncached(left, right string) bool {
 	var lbuf, rbuf [3]string
 	ln := vm.fillAccessScopeNames(left, &lbuf)
 	rn := vm.fillAccessScopeNames(right, &rbuf)
