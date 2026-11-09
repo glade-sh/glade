@@ -1,0 +1,1 @@
+public class I02 extends NsOuter { public static void m() { Pv a; } }

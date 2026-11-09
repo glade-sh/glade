@@ -49,7 +49,7 @@ func TestStandardConstructorCompleteNativePolicy(t *testing.T) {
 		})
 	}
 	var closed []string
-	for object, policy := range standardFieldPolicies {
+	for object, policy := range standardFieldPolicies() {
 		if len(policy.ConstructorFields) > 0 {
 			closed = append(closed, object)
 		}

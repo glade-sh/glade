@@ -214,7 +214,7 @@ func TestOrgShapeFeaturesLoadsScratchDefinition(t *testing.T) {
 }`)
 
 	got := OrgShapeFeatures(root)
-	want := []string{"MultiCurrency", "PersonAccounts", "AddCustomApps:30", "Communities", "Chatter"}
+	want := []string{"MultiCurrency", "PersonAccounts", "AddCustomApps:30", "Communities", "NetworksEnabled", "Chatter"}
 	if len(got) != len(want) {
 		t.Fatalf("features = %#v, want %#v", got, want)
 	}
@@ -1313,5 +1313,112 @@ func TestLoadAndOrgDomainURLWithoutConfigLeaveSeedUnset(t *testing.T) {
 	}
 	if seed, err := OrgDomainURL(""); err != nil || seed != "" {
 		t.Fatalf("empty-root origin = %q, %v; want unset", seed, err)
+	}
+}
+
+func TestOrgShapeFeaturesReadsPackageDefinitionFiles(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{
+  "packageDirectories": [
+    {"path": "base", "default": true},
+    {"path": "ext", "definitionFile": "config/ext-scratch-def.json"},
+    {"path": "evil", "definitionFile": "../outside-def.json"}
+  ]
+}`)
+	writeFile(t, filepath.Join(root, "config/project-scratch-def.json"), `{"features": ["MultiCurrency"]}`)
+	writeFile(t, filepath.Join(root, "config/ext-scratch-def.json"), `{
+  "features": ["Einstein1AIPlatform"],
+  "settings": {"chatterSettings": {"enableChatter": true}}
+}`)
+	writeFile(t, filepath.Join(filepath.Dir(root), "outside-def.json"), `{"features": ["PersonAccounts"]}`)
+
+	got := OrgShapeFeatures(root)
+	for _, want := range []string{"MultiCurrency", "Einstein1AIPlatform", "Chatter"} {
+		if !slices.Contains(got, want) {
+			t.Errorf("features = %#v, missing %q", got, want)
+		}
+	}
+	if slices.Contains(got, "PersonAccounts") {
+		t.Errorf("definitionFile outside the project root was read: %#v", got)
+	}
+	inputs := OrgShapeInputFiles(root)
+	for _, want := range []string{"sfdx-project.json", "config/ext-scratch-def.json"} {
+		if !slices.Contains(inputs, filepath.Join(root, want)) {
+			t.Errorf("OrgShapeInputFiles missing %s", want)
+		}
+	}
+}
+
+func TestOrgShapeFeaturesRefusesSymlinkEscapes(t *testing.T) {
+	root := t.TempDir()
+	outside := t.TempDir()
+	writeFile(t, filepath.Join(outside, "evil-def.json"), `{"features": ["PersonAccounts"]}`)
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{
+  "packageDirectories": [
+    {"path": "base", "default": true},
+    {"path": "a", "definitionFile": "config/escape-def.json"},
+    {"path": "b", "definitionFile": "config/inside-def.json"},
+    {"path": "c", "definitionFile": "config/missing-def.json"},
+    {"path": "d", "definitionFile": "linkdir/in-linkdir.json"}
+  ]
+}`)
+	writeFile(t, filepath.Join(root, "cumulusci.yml"), "orgs:\n  scratch:\n    dev:\n      config_file: config/cci-escape.json\n    qa:\n      config_file: config/cci-inside.json\n")
+	writeFile(t, filepath.Join(root, "config/real-def.json"), `{"features": ["Einstein1AIPlatform"]}`)
+	writeFile(t, filepath.Join(root, "config/cci-real.json"), `{"features": ["MultiCurrency"]}`)
+	for link, target := range map[string]string{
+		"config/escape-def.json":  filepath.Join(outside, "evil-def.json"),
+		"config/cci-escape.json":  filepath.Join(outside, "evil-def.json"),
+		"config/inside-def.json":  filepath.Join(root, "config/real-def.json"),
+		"config/cci-inside.json":  filepath.Join(root, "config/cci-real.json"),
+		"config/missing-def.json": filepath.Join(outside, "nope.json"),
+		"linkdir":                 outside,
+	} {
+		if err := os.Symlink(target, filepath.Join(root, link)); err != nil {
+			t.Skipf("symlinks unavailable: %v", err)
+		}
+	}
+	got := OrgShapeFeatures(root)
+	for _, want := range []string{"Einstein1AIPlatform", "MultiCurrency"} {
+		if !slices.Contains(got, want) {
+			t.Errorf("in-project symlink not followed, features = %#v, missing %q", got, want)
+		}
+	}
+	if slices.Contains(got, "PersonAccounts") {
+		t.Errorf("symlink escaping the project was read: %#v", got)
+	}
+	for _, path := range OrgShapeInputFiles(root) {
+		if strings.HasSuffix(path, "escape-def.json") || strings.HasSuffix(path, "cci-escape.json") || strings.HasSuffix(path, "in-linkdir.json") || strings.HasSuffix(path, "missing-def.json") {
+			t.Errorf("escaping or dangling link listed as input: %s", path)
+		}
+	}
+}
+
+func TestPathInsideRoot(t *testing.T) {
+	root := t.TempDir()
+	outside := t.TempDir()
+	writeFile(t, filepath.Join(root, "in/real.json"), "{}")
+	writeFile(t, filepath.Join(outside, "out.json"), "{}")
+	if err := os.Symlink(outside, filepath.Join(root, "outdir")); err != nil {
+		t.Skipf("symlinks unavailable: %v", err)
+	}
+	if err := os.Symlink(filepath.Join(root, "in"), filepath.Join(root, "indir")); err != nil {
+		t.Fatal(err)
+	}
+	cases := []struct {
+		name string
+		path string
+		want bool
+	}{
+		{"plain file", "in/real.json", true},
+		{"link to inside dir", "indir/real.json", true},
+		{"missing under real dir", "in/missing.json", true},
+		{"missing under escaping link", "outdir/missing.json", false},
+		{"file under escaping link", "outdir/out.json", false},
+		{"lexical escape", "../x.json", false},
+	}
+	for _, tc := range cases {
+		if got := PathInsideRoot(root, filepath.Join(root, tc.path)); got != tc.want {
+			t.Errorf("%s: PathInsideRoot = %v, want %v", tc.name, got, tc.want)
+		}
 	}
 }

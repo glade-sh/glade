@@ -1,0 +1,132 @@
+import json,os,collections
+rows=json.load(open('refs.json'))
+c=[r for r in rows if r['createable'] and r['nillable'] and r['sortable']]
+byobj=collections.OrderedDict()
+for r in c: byobj.setdefault(r['obj'],[]).append(r['field'])
+objs=list(byobj)
+json.dump(byobj,open('targets.json','w'),indent=0)
+core=r'''@IsTest public without sharing class NullCore%(v)s {
+ static Map<String,Schema.SObjectType> gd;
+ static Map<String,Schema.SObjectType> g(){ if(gd==null) gd=Schema.getGlobalDescribe(); return gd; }
+ static Integer seq=0;
+ static Map<String,List<Id>> existing=new Map<String,List<Id>>();
+ public static String typeName(Schema.SObjectType t){ return String.valueOf(t); }
+ static Object filler(Schema.DescribeFieldResult d, Integer depth){
+  Schema.DisplayType ty=d.getType(); seq++;
+  if(ty==Schema.DisplayType.STRING||ty==Schema.DisplayType.TEXTAREA||ty==Schema.DisplayType.ENCRYPTEDSTRING){ String s='NP'+seq; Integer l=d.getLength(); return l>0&&s.length()>l?s.left(l):s; }
+  if(ty==Schema.DisplayType.EMAIL) return 'np'+seq+'@example.invalid';
+  if(ty==Schema.DisplayType.PHONE) return '555'+seq;
+  if(ty==Schema.DisplayType.URL) return 'https://example.invalid/'+seq;
+  if(ty==Schema.DisplayType.PICKLIST||ty==Schema.DisplayType.MULTIPICKLIST){ for(Schema.PicklistEntry p:d.getPicklistValues()) if(p.isActive()) return p.getValue(); return null; }
+  if(ty==Schema.DisplayType.BOOLEAN) return false;
+  if(ty==Schema.DisplayType.DATE) return Date.today();
+  if(ty==Schema.DisplayType.DATETIME) return System.now();
+  if(ty==Schema.DisplayType.TIME) return Time.newInstance(1,0,0,0);
+  if(ty==Schema.DisplayType.INTEGER) return 1;
+  if(ty==Schema.DisplayType.DOUBLE||ty==Schema.DisplayType.CURRENCY||ty==Schema.DisplayType.PERCENT) return 1;
+  if(ty==Schema.DisplayType.REFERENCE){ List<Id> p=parents(d.getReferenceTo(),1,depth+1); return p==null||p.isEmpty()?null:p[0]; }
+  return null;
+ }
+ public static SObject build(Schema.SObjectType t, Integer depth, String skipField){
+  SObject s=t.newSObject(null,true);
+  for(Schema.SObjectField f:t.getDescribe().fields.getMap().values()){
+   Schema.DescribeFieldResult d=f.getDescribe();
+   if(!d.isCreateable()||d.isNillable()||d.isDefaultedOnCreate()) continue;
+   if(d.getName()==skipField) continue;
+   if(s.get(d.getName())!=null) continue;
+   Object v=filler(d,depth); if(v!=null) s.put(d.getName(),v);
+  }
+  return s;
+ }
+ // returns n parent ids of one of the target types, sorted ascending
+ public static String lastParentType; public static String lastParentMode;
+ public static List<Id> parents(List<Schema.SObjectType> targets, Integer n, Integer depth){
+  if(depth>3) return null;
+  List<Schema.SObjectType> order=new List<Schema.SObjectType>();
+  for(Schema.SObjectType t:targets) if(typeName(t)=='Account') order.add(t);
+  for(Schema.SObjectType t:targets) if(typeName(t)!='Account') order.add(t);
+  for(Schema.SObjectType t:order){
+   String tn=typeName(t);
+   if(tn=='User'){
+    if(n==1) { lastParentType=tn; lastParentMode='existing'; return new List<Id>{UserInfo.getUserId()}; }
+    List<User> us=new List<User>();
+    for(Integer i=0;i<n;i++){ seq++; us.add(new User(Alias='np'+seq,LastName='NullProbe'+seq,Email='np'+seq+'@example.invalid',EmailEncodingKey='UTF-8',LanguageLocaleKey='en_US',LocaleSidKey='en_US',TimeZoneSidKey='GMT',ProfileId=UserInfo.getProfileId(),Username='np'+seq+'.'+UserInfo.getOrganizationId()+'.'+System.now().getTime()+'@example.invalid')); }
+    try{ System.runAs(new User(Id=UserInfo.getUserId())){ insert us; } List<Id> ids=new List<Id>(); for(User u:us) ids.add(u.Id); ids.sort(); lastParentType=tn; lastParentMode='created'; return ids; }catch(Exception e){}
+    continue;
+   }
+   Schema.DescribeSObjectResult dr=t.getDescribe();
+   if(dr.isCreateable() && depth<=3){
+    try{
+     List<SObject> ps=new List<SObject>(); for(Integer i=0;i<n;i++) ps.add(build(t,depth,null));
+     insert ps; List<Id> ids=new List<Id>(); for(SObject p:ps) ids.add(p.Id); ids.sort(); lastParentType=tn; lastParentMode='created'; return ids;
+    }catch(Exception e){}
+   }
+   if(dr.isQueryable()){
+    try{
+     List<Id> ids=new List<Id>(); for(SObject p:Database.query('SELECT Id FROM '+tn+' ORDER BY Id LIMIT '+n)) ids.add(p.Id);
+     if(ids.size()==n){ lastParentType=tn; lastParentMode='existing'; return ids; }
+    }catch(Exception e){}
+   }
+  }
+  return null;
+ }
+ public static String label(Id x, Map<Id,String> m){ return m.containsKey(x)?m.get(x):'?'; }
+ public static Map<String,Object> probeField(String objName, String field){
+  Map<String,Object> o=new Map<String,Object>();
+  Schema.SObjectType t=g().get(objName.toLowerCase());
+  Schema.DescribeFieldResult d=t.getDescribe().fields.getMap().get(field).getDescribe();
+  o.put('groupable',d.isGroupable()); o.put('sortable',d.isSortable()); o.put('filterable',d.isFilterable());
+  o.put('cascadeDelete',d.isCascadeDelete()); o.put('restrictedDelete',d.isRestrictedDelete()); o.put('namePointing',d.isNamePointing());
+  o.put('idLookup',d.isIdLookup()); o.put('custom',d.isCustom()); o.put('relationshipName',d.getRelationshipName()); o.put('relationshipOrder',d.getRelationshipOrder());
+  List<String> refs=new List<String>(); for(Schema.SObjectType r:d.getReferenceTo()) refs.add(typeName(r)); o.put('referenceTo',refs);
+  Savepoint sp=Database.setSavepoint();
+  try{
+   lastParentType=null; lastParentMode=null;
+   List<Id> ps=parents(d.getReferenceTo(),2,1);
+   if(ps==null||ps.size()<2){ o.put('skip','no two parents'); Database.rollback(sp); return o; }
+   o.put('parentType',lastParentType); o.put('parentMode',lastParentMode);
+   // reverse-name the parents when Name is updateable, so Id order and Name order disagree
+   try{
+    Schema.SObjectType pt=g().get(lastParentType.toLowerCase());
+    Schema.SObjectField nf=pt.getDescribe().fields.getMap().get('Name');
+    if(lastParentMode=='created' && nf!=null && nf.getDescribe().isUpdateable()){
+     SObject lo=pt.newSObject(ps[0]); lo.put('Name','zz null probe'); SObject hi=pt.newSObject(ps[1]); hi.put('Name','aa null probe');
+     update new List<SObject>{lo,hi}; o.put('parentNames','lo=zz,hi=aa');
+    }
+   }catch(Exception e){ o.put('parentNames','EXC '+e.getMessage().left(80)); }
+   List<SObject> kids=new List<SObject>();
+   for(Integer i=0;i<3;i++){ SObject k=build(t,1,field); k.put(field, i==0?null:ps[i-1]); kids.add(k); }
+   insert kids;
+   Map<Id,String> lab=new Map<Id,String>{kids[0].Id=>'N',kids[1].Id=>'L',kids[2].Id=>'H'};
+   Set<Id> ids=lab.keySet();
+   for(String tail:new List<String>{'NULLS FIRST','NULLS LAST','ASC','DESC','DESC NULLS LAST'}){
+    List<String> got=new List<String>();
+    for(SObject r:Database.query('SELECT Id FROM '+objName+' WHERE Id IN :ids ORDER BY '+field+' '+tail)) got.add(label(r.Id,lab));
+    o.put(tail,String.join(got,''));
+   }
+  }catch(Exception e){ o.put('skip','EXC '+e.getTypeName()+': '+e.getMessage().left(160)); }
+  Database.rollback(sp);
+  return o;
+ }
+ public static String probeObject(String objName, List<String> fields){
+  Map<String,Object> out=new Map<String,Object>();
+  for(String f:fields){ try{ out.put(f,probeField(objName,f)); }catch(Exception e){ out.put(f,new Map<String,Object>{'skip'=>'EXC '+e.getMessage().left(160)}); } }
+  return JSON.serialize(out);
+ }
+}
+'''
+meta='<?xml version="1.0" encoding="UTF-8"?>\n<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>%s.0</apiVersion><status>Active</status></ApexClass>\n'
+d='proj/force-app/main/default/classes'; os.makedirs(d,exist_ok=True)
+open('proj/sfdx-project.json','w').write('{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"","sourceApiVersion":"67.0"}')
+for v in ('62','67'):
+    open(f'{d}/NullCore{v}.cls','w').write(core%{'v':v}); open(f'{d}/NullCore{v}.cls-meta.xml','w').write(meta%v)
+    units=[(ob,byobj[ob][i:i+5]) for ob in objs for i in range(0,len(byobj[ob]),5)]
+    for ci in range(0,len(units),20):
+        n=f'NullProbe{v}_{ci//20:02d}'
+        body=[f'@IsTest(SeeAllData=false) private class {n} {{']
+        for j,(ob,fs) in enumerate(units[ci:ci+20]):
+            fl=','.join("'%s'"%f for f in fs)
+            body.append(f" @IsTest static void m{j:02d}(){{ System.assert(false,'CAPTURE|{ob}|'+NullCore{v}.probeObject('{ob}',new List<String>{{{fl}}})); }}")
+        body.append('}')
+        open(f'{d}/{n}.cls','w').write('\n'.join(body)+'\n'); open(f'{d}/{n}.cls-meta.xml','w').write(meta%v)
+print(len(objs), sum(len(v) for v in byobj.values()))

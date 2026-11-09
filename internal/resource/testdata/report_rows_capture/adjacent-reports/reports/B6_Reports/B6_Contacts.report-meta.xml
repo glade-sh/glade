@@ -1,0 +1,1 @@
+<Report xmlns="http://soap.sforce.com/2006/04/metadata"><columns><field>LAST_NAME</field></columns><description> Contact notes </description><format>Tabular</format><name>B6 Contacts</name><reportType>ContactList</reportType><scope>organization</scope><showGrandTotal>false</showGrandTotal><showSubTotals>false</showSubTotals></Report>

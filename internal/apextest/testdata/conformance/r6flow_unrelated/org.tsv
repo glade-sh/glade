@@ -1,0 +1,5 @@
+api	route	case	result
+62.0	anonymous	unrelated_future	false|PASS
+62.0	isTest	unrelated_future	false|PASS
+67.0	anonymous	unrelated_future	false|PASS
+67.0	isTest	unrelated_future	false|PASS

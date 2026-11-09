@@ -6,6 +6,7 @@ import (
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/ir"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 // C005/C006 and NC001: the generated security symbol is an interface, with
@@ -156,7 +157,13 @@ func (a *Analyzer) securityAccessFieldMessage(name string, scope irSemaScope, mo
 	}
 	// Resolve value bindings before interpreting a receiver as a platform type.
 	// Fields and properties shadow tokens just as locals and parameters do.
-	if _, bound := scope.lookup(parts[0]); bound {
+	if valueType, bound := scope.lookup(parts[0]); bound {
+		// A field-token value supports methods such as getDescribe, but has
+		// no value fields. Qualified sharing reasons are handled separately
+		// below and never apply to a local token variable.
+		if len(parts) == 2 && (strings.EqualFold(valueType, "Schema.SObjectField") || strings.EqualFold(valueType, "SObjectField")) {
+			return "Variable does not exist: " + parts[1]
+		}
 		return ""
 	}
 	// N056/N058/N062: resolve enclosing types before closing the platform
@@ -193,6 +200,21 @@ func (a *Analyzer) securityAccessFieldMessage(name string, scope irSemaScope, mo
 		members, _, ok := semaLookupTypeMembers(model, parts[0])
 		if !ok || !members.sobject {
 			return ""
+		}
+		// Standard share stubs expose RowCause as String. Use the describe
+		// catalog to validate qualified static reasons without changing the
+		// field's runtime schema type.
+		if strings.HasSuffix(normalizeName(parts[0]), "share") {
+			if canonical, known := storage.ResolveKnownStandardObjectName(parts[0]); known && storage.CapturedStandardSharingReasonObject(canonical) {
+				if definition, found := storage.StandardObjectDefinition(canonical); found {
+					if _, hasRowCause := storage.ResolveFieldName(definition, "", "RowCause"); hasRowCause {
+						if _, valid := storage.StandardPicklistValue(canonical, "RowCause", parts[2]); valid {
+							return ""
+						}
+						return "Variable does not exist: " + parts[2]
+					}
+				}
+			}
 		}
 		// C016 rejects an undeclared custom reason. Leave the existing
 		// generated system-reason surface unchanged.

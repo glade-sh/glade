@@ -3,6 +3,8 @@ package storage
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"strings"
 	"testing"
 )
 
@@ -89,5 +91,39 @@ func TestStandardIDLabelLeavesUnprovenObjectsOnLegacyBaseline(t *testing.T) {
 				t.Fatalf("uncaptured Id label=%q want legacy Record ID", got)
 			}
 		})
+	}
+}
+
+// native rows behind the Order entry on the Id-label allowlist
+// (API 62 and 67, anonymous and @IsTest routes).
+func TestStandardIDLabelAllowlistMatchesOrderNativeRows(t *testing.T) {
+	data, err := os.ReadFile("testdata/standard_id_label_order_native/org.tsv")
+	if err != nil {
+		t.Fatal(err)
+	}
+	seen := map[string]bool{}
+	for i, line := range strings.Split(strings.TrimSpace(string(data)), "\n") {
+		if i == 0 {
+			continue
+		}
+		c := strings.Split(line, "\t")
+		if len(c) != 6 {
+			t.Fatalf("bad row %q", line)
+		}
+		def, ok := StandardObjectDefinition(c[2])
+		if !ok {
+			t.Fatalf("missing %s", c[2])
+		}
+		if got := def.Fields[c[3]].Label; got != c[5] {
+			t.Fatalf("%s %s %s.%s label=%q native=%q", c[0], c[1], c[2], c[3], got, c[5])
+		}
+		if c[2] == "Order" {
+			seen[c[0]+"/"+c[1]] = true
+		}
+	}
+	for _, k := range []string{"62.0/anonymous", "62.0/istest", "67.0/anonymous", "67.0/istest"} {
+		if !seen[k] {
+			t.Fatalf("missing native Order row %s", k)
+		}
 	}
 }

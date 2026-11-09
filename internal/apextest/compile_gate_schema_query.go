@@ -163,6 +163,9 @@ func (w *compileGateRefWalker) schemaQueryChildren(parents []string, relationshi
 	for _, parent := range parents {
 		for object, relations := range w.units.querySchema.relationships {
 			for _, relation := range relations {
+				if !storage.PlatformChildRelationshipAvailableAtVersion(parent, object, relation.Field, w.apiVersion) {
+					continue
+				}
 				if !w.schemaQueryNameMatches(relation.ChildRelationship, relationship) {
 					continue
 				}
@@ -173,7 +176,7 @@ func (w *compileGateRefWalker) schemaQueryChildren(parents []string, relationshi
 				}
 			}
 		}
-		if child, _, ok := storage.LookupPlatformChildRelationship(storage.ObjectDefinition{APIName: parent}, relationship); ok {
+		if child, _, ok := storage.LookupPlatformChildRelationshipAtVersion(storage.ObjectDefinition{APIName: parent}, relationship, w.apiVersion); ok {
 			children = append(children, child)
 		}
 	}

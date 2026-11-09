@@ -1,0 +1,44 @@
+api	type	operation	route	exceptionMessage
+62.0	AuraHandledException	identity	anonymous	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+62.0	InvalidParameterValueException	identity	anonymous	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+62.0	NoAccessException	identity	anonymous	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+62.0	NoDataFoundException	identity	anonymous	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+62.0	TouchHandledException	identity	anonymous	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+67.0	AuraHandledException	identity	anonymous	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+67.0	InvalidParameterValueException	identity	anonymous	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+67.0	NoAccessException	identity	anonymous	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+67.0	NoDataFoundException	identity	anonymous	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+67.0	TouchHandledException	identity	anonymous	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+68.0	AuraHandledException	identity	anonymous	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+68.0	InvalidParameterValueException	identity	anonymous	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+68.0	NoAccessException	identity	anonymous	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+68.0	NoDataFoundException	identity	anonymous	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+68.0	TouchHandledException	identity	anonymous	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+67.0	AssertException	extend	isTest	Non-virtual and non-abstract type cannot be extended: System.AssertException | Non-virtual, non-abstract methods cannot be overridden: String LarchAssertException.getTypeName()
+67.0	AsyncException	extend	isTest	Non-virtual and non-abstract type cannot be extended: System.AsyncException | Non-virtual, non-abstract methods cannot be overridden: String LarchAsyncException.getTypeName()
+67.0	IllegalStateException	shortIdentity	isTest	Invalid type: IllegalStateException
+67.0	PatternSyntaxException	shortIdentity	isTest	Invalid type: PatternSyntaxException
+68.0	AssertException	extend	isTest	Non-virtual and non-abstract type cannot be extended: System.AssertException | Non-virtual, non-abstract methods cannot be overridden: String LarchAssertException.getTypeName()
+68.0	AsyncException	extend	isTest	Non-virtual and non-abstract type cannot be extended: System.AsyncException | Non-virtual, non-abstract methods cannot be overridden: String LarchAsyncException.getTypeName()
+68.0	IllegalStateException	shortIdentity	isTest	Invalid type: IllegalStateException
+68.0	PatternSyntaxException	shortIdentity	isTest	Invalid type: PatternSyntaxException
+62.0	AuraHandledException	self	anonymous	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+62.0	AuraHandledException	parent	anonymous	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+62.0	InvalidParameterValueException	self	anonymous	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+62.0	InvalidParameterValueException	parent	anonymous	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+62.0	NoAccessException	self	anonymous	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+62.0	NoAccessException	parent	anonymous	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+62.0	NoDataFoundException	self	anonymous	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+62.0	NoDataFoundException	parent	anonymous	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+62.0	TouchHandledException	self	anonymous	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+62.0	TouchHandledException	parent	anonymous	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+67.0	AuraHandledException	self	anonymous	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+67.0	AuraHandledException	parent	anonymous	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+67.0	InvalidParameterValueException	self	anonymous	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+67.0	InvalidParameterValueException	parent	anonymous	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+67.0	NoAccessException	self	anonymous	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+67.0	NoAccessException	parent	anonymous	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+67.0	NoDataFoundException	self	anonymous	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+67.0	NoDataFoundException	parent	anonymous	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+67.0	TouchHandledException	self	anonymous	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+67.0	TouchHandledException	parent	anonymous	System.LimitException: Can only throw this exception type from VisualForce or Aura context

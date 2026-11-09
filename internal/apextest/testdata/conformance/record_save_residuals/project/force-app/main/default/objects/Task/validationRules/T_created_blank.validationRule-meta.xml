@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>T_created_blank</fullName><active>true</active><errorConditionFormula>AND(Subject = &apos;vr_created_blank&apos;, ISBLANK(CreatedById))</errorConditionFormula><errorMessage>T_created_blank fired</errorMessage></ValidationRule>

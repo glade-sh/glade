@@ -130,16 +130,21 @@ func TestRoad174InvalidProjectionPrecedence(t *testing.T) {
 	}
 }
 
-// Scoped access has no native enabled-feature rows. Retain the old security
-// contract rather than applying the unscoped projection exemption.
+// A scoped set adds to the running user (native rows, API 62 and 67). The
+// unscoped projection exemption still does not apply to a scoped query.
 func TestRoad174ScopedProjectionPreservesPriorSecurity(t *testing.T) {
 	machine := road174ControlVM(t, "67.0", "std-object", "named")
 	q, err := machine.parseSOQLAt("SELECT UserRecordAccess.HasAllAccess FROM Order WITH USER_MODE")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err = machine.enforceSOQLSecurity(q, "0PS000000000099"); err == nil {
-		t.Fatal("scoped projection unexpectedly bypassed prior field security")
+	// Native rows (u1ScopedOther, u1ScopedFalse in
+	// internal/apextest/testdata/conformance/permission_scope_mute/org.tsv; API 62 and 67): a scoped set adds to
+	// the running user's grants, so the user's own access still satisfies the
+	// projection. The UserRecordAccess projection itself was captured only for
+	// the administrator (adminScopedOther qURA ok).
+	if err = machine.enforceSOQLSecurity(q, "0PS000000000099"); err != nil {
+		t.Fatalf("scoped set removed the running user's own field access: %v", err)
 	}
 	record := machine.Org.Objects["Order"].Records[storage.ID("801000000000001")]
 	want := machine.userRecordAccessForRecord("Order", record)
@@ -186,14 +191,15 @@ func TestRoad174PermissionChangeSequence(t *testing.T) {
 	}
 }
 
-// Local route control only: enabled custom-scope Salesforce behavior is not
-// captured; the expected query denial is the shipping field-security path.
+// Native row adminScopedOther (qURA ok, API 62 and 67, internal/apextest/testdata/conformance/permission_scope_mute/org.tsv):
+// the administrator keeps its own access when a scoped set adds nothing, so
+// the UserRecordAccess query succeeds.
 func TestRoad174ScopedProjectionAnonymousRoute(t *testing.T) {
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api, func(t *testing.T) {
 			machine := road174ControlVM(t, api, "std-object", "anonymous")
 			machine.Org.Features = append(machine.Org.Features, "ApexUserModeWithPermset")
-			src := "AccessLevel level=AccessLevel.USER_MODE.withPermissionSetId('0PS000000000099');String got='';try{Database.query('SELECT UserRecordAccess.HasAllAccess FROM Order',level);}catch(Exception e){got=e.getTypeName();}System.assertEquals('System.QueryException',got);"
+			src := "AccessLevel level=AccessLevel.USER_MODE.withPermissionSetId('0PS000000000099');String got='';try{Database.query('SELECT UserRecordAccess.HasAllAccess FROM Order',level);}catch(Exception e){got=e.getTypeName();}System.assertEquals('',got);"
 			prog, err := CompileAnonymousWithOptions(src, CompileOptions{APIVersion: api})
 			if err != nil {
 				t.Fatal(err)

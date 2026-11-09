@@ -9,6 +9,7 @@ import (
 )
 
 func TestCase340ProxyExplicitOrigins(t *testing.T) {
+	t.Setenv("GLADE_SERVER_CAPABILITY", "proxy-test-secret")
 	t.Setenv("GLADE_SERVER_PROXY_ORIGINS", "https://preview.example.test,https://preview.example.test:8443,http://dev.example.test:9000")
 	for _, tc := range []struct {
 		name, host, origin, site, forwarded string
@@ -30,6 +31,7 @@ func TestCase340ProxyExplicitOrigins(t *testing.T) {
 				handler := GuardHTTPAuthority(New(&org), "127.0.0.1:1789")
 				req := httptest.NewRequest(http.MethodGet, "http://127.0.0.1:1789"+path, nil)
 				req.Host = tc.host
+				req.Header.Set("X-Glade-Capability", "proxy-test-secret")
 				if tc.origin != "" {
 					req.Header.Set("Origin", tc.origin)
 				}
@@ -69,6 +71,7 @@ func TestCase340ProxyForgedHeadersDoNotAuthorize(t *testing.T) {
 }
 
 func TestCase340ProxyGuardEnforcesOriginForAnyHandler(t *testing.T) {
+	t.Setenv("GLADE_SERVER_CAPABILITY", "proxy-test-secret")
 	t.Setenv("GLADE_SERVER_PROXY_ORIGINS", "https://preview.example.test")
 	handler := GuardHTTPAuthority(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusNoContent) }), "127.0.0.1:1789")
 	for _, tc := range []struct {
@@ -83,6 +86,7 @@ func TestCase340ProxyGuardEnforcesOriginForAnyHandler(t *testing.T) {
 	} {
 		req := httptest.NewRequest(http.MethodGet, "http://127.0.0.1:1789/", nil)
 		req.Host = tc.host
+		req.Header.Set("X-Glade-Capability", "proxy-test-secret")
 		req.Header.Set("Origin", tc.origin)
 		req.Header.Set("Sec-Fetch-Site", tc.site)
 		rec := httptest.NewRecorder()

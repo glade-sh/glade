@@ -46,6 +46,9 @@ func TestCase349NativeConformance(t *testing.T) {
 			objectRoot := filepath.Join(root, "force-app/main/default/objects/EqualityProbe__c")
 			writeFile(t, filepath.Join(objectRoot, "EqualityProbe__c.object-meta.xml"), readFixtureFile(t, filepath.Join(fixture, "objects/EqualityProbe__c/EqualityProbe__c.object-meta.xml")))
 			writeFile(t, filepath.Join(objectRoot, "fields/Key__c.field-meta.xml"), readFixtureFile(t, filepath.Join(fixture, "objects/EqualityProbe__c/fields/Key__c.field-meta.xml")))
+			// ORG-RUN.txt: the permission set is assigned to the scratch administrator.
+			writeFile(t, filepath.Join(root, "force-app/main/default/permissionsets/Case349Access.permissionset-meta.xml"), readFixtureFile(t, filepath.Join(fixture, "permissionsets/Case349Access.permissionset-meta.xml")))
+			writeFile(t, filepath.Join(root, "glade.yml"), "test:\n  permissionSets: [Case349Access]\n")
 			for _, name := range []string{"Person_Commerce", "Individual_Business"} {
 				path := "objects/Account/recordTypes/" + name + ".recordType-meta.xml"
 				writeFile(t, filepath.Join(root, "force-app/main/default", path), readFixtureFile(t, filepath.Join("../../testdata/conformance/case349_review/force-app/main/default", path)))
@@ -127,8 +130,7 @@ System.assertEquals(false,[SELECT IsPersonAccount FROM Account WHERE Id=:busines
 			writeFile(t, filepath.Join(triggers, "Case349Observer.trigger-meta.xml"), fmt.Sprintf(`<ApexTrigger xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>%s</apiVersion><status>Active</status></ApexTrigger>`, api))
 			index := loadTestIndex(t, root)
 			t.Run("anonymous", func(t *testing.T) {
-				org := orgFromIndex(index)
-				org.APIVersion = api
+				org := capturedFixtureOrg(t, index, api)
 				runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 				program, err := vm.CompileAnonymousWithOptions(source, vm.CompileOptions{APIVersion: api})
 				if err != nil {

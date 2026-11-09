@@ -1,0 +1,26 @@
+[
+  {
+    "api": "62.0",
+    "route": "anonymous",
+    "result": "AdditionalMetadata.getString=System.SObjectException: Invalid field AdditionalMetadata for DocumentGenerationProcess|AdditionalMetadata.getToken=System.SObjectException: Field DocumentGenerationProcess.AdditionalMetadata is inaccessible in this context|AdditionalMetadata.putString=System.SObjectException: Invalid field AdditionalMetadata for DocumentGenerationProcess|AdditionalMetadata.putToken=System.SObjectException: Field DocumentGenerationProcess.AdditionalMetadata is inaccessible in this context|IsLocalizationEnabled.getString=System.SObjectException: Invalid field IsLocalizationEnabled for DocumentGenerationProcess|IsLocalizationEnabled.getToken=System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context|IsLocalizationEnabled.putString=System.SObjectException: Invalid field IsLocalizationEnabled for DocumentGenerationProcess|IsLocalizationEnabled.putToken=System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context",
+    "source": "SObject r=new DocumentGenerationProcess();List<String> out=new List<String>();for(String name:new List<String>{'AdditionalMetadata','IsLocalizationEnabled'}){Schema.SObjectField token=OwnedTokenSource.field(name);try{r.get(name);out.add(name+'.getString=accepted');}catch(Exception e){out.add(name+'.getString='+e.getTypeName()+': '+e.getMessage());}try{r.get(token);out.add(name+'.getToken=accepted');}catch(Exception e){out.add(name+'.getToken='+e.getTypeName()+': '+e.getMessage());}try{r.put(name,null);out.add(name+'.putString=accepted');}catch(Exception e){out.add(name+'.putString='+e.getTypeName()+': '+e.getMessage());}try{r.put(token,null);out.add(name+'.putToken=accepted');}catch(Exception e){out.add(name+'.putToken='+e.getTypeName()+': '+e.getMessage());}}String observation=String.join(out,'|');System.debug('B5B9TOKEN:'+observation);"
+  },
+  {
+    "api": "67.0",
+    "route": "anonymous",
+    "result": "AdditionalMetadata.getString=accepted|AdditionalMetadata.getToken=accepted|AdditionalMetadata.putString=accepted|AdditionalMetadata.putToken=accepted|IsLocalizationEnabled.getString=accepted|IsLocalizationEnabled.getToken=accepted|IsLocalizationEnabled.putString=accepted|IsLocalizationEnabled.putToken=accepted",
+    "source": "SObject r=new DocumentGenerationProcess();List<String> out=new List<String>();for(String name:new List<String>{'AdditionalMetadata','IsLocalizationEnabled'}){Schema.SObjectField token=OwnedTokenSource.field(name);try{r.get(name);out.add(name+'.getString=accepted');}catch(Exception e){out.add(name+'.getString='+e.getTypeName()+': '+e.getMessage());}try{r.get(token);out.add(name+'.getToken=accepted');}catch(Exception e){out.add(name+'.getToken='+e.getTypeName()+': '+e.getMessage());}try{r.put(name,null);out.add(name+'.putString=accepted');}catch(Exception e){out.add(name+'.putString='+e.getTypeName()+': '+e.getMessage());}try{r.put(token,null);out.add(name+'.putToken=accepted');}catch(Exception e){out.add(name+'.putToken='+e.getTypeName()+': '+e.getMessage());}}String observation=String.join(out,'|');System.debug('B5B9TOKEN:'+observation);"
+  },
+  {
+    "api": "67.0",
+    "route": "istest",
+    "result": "AdditionalMetadata.getString=accepted|AdditionalMetadata.getToken=accepted|AdditionalMetadata.putString=accepted|AdditionalMetadata.putToken=accepted|IsLocalizationEnabled.getString=accepted|IsLocalizationEnabled.getToken=accepted|IsLocalizationEnabled.putString=accepted|IsLocalizationEnabled.putToken=accepted",
+    "source": "@IsTest private class OwnedTokenTest67 {@IsTest static void probe(){System.assert(false,'B5B9TOKEN:'+OwnedTokenProbe67.observe());}}"
+  },
+  {
+    "api": "62.0",
+    "route": "istest",
+    "result": "AdditionalMetadata.getString=System.SObjectException: Invalid field AdditionalMetadata for DocumentGenerationProcess|AdditionalMetadata.getToken=System.SObjectException: Field DocumentGenerationProcess.AdditionalMetadata is inaccessible in this context|AdditionalMetadata.putString=System.SObjectException: Invalid field AdditionalMetadata for DocumentGenerationProcess|AdditionalMetadata.putToken=System.SObjectException: Field DocumentGenerationProcess.AdditionalMetadata is inaccessible in this context|IsLocalizationEnabled.getString=System.SObjectException: Invalid field IsLocalizationEnabled for DocumentGenerationProcess|IsLocalizationEnabled.getToken=System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context|IsLocalizationEnabled.putString=System.SObjectException: Invalid field IsLocalizationEnabled for DocumentGenerationProcess|IsLocalizationEnabled.putToken=System.SObjectException: Field DocumentGenerationProcess.IsLocalizationEnabled is inaccessible in this context",
+    "source": "@IsTest private class OwnedTokenTest62 {@IsTest static void probe(){System.assert(false,'B5B9TOKEN:'+OwnedTokenProbe62.observe());}}"
+  }
+]

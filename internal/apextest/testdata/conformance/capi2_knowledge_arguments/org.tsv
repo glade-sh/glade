@@ -1,0 +1,88 @@
+api	route	case	result
+62.0	istest	all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)|communityId prefixes	
+62.0	istest	all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)|communityId=bad	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': abc
+62.0	istest	all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)|communityId=me	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': me
+62.0	istest	all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)|communityId=null	EX|ConnectApi.ConnectApiException|Parameter required: topicId
+62.0	istest	all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)|communityId=topic	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': 0TO000000000001
+62.0	istest	all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)|communityId=user	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': {userId}
+62.0	istest	all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)|topicId prefixes	0TO
+62.0	istest	all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)|topicId=bad	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'topicId': abc
+62.0	istest	all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)|topicId=me	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'topicId': me
+62.0	istest	all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)|topicId=null	EX|ConnectApi.ConnectApiException|Parameter required: topicId
+62.0	istest	all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)|topicId=topic	EX|System.UnsupportedOperationException|ConnectApi methods are not supported in data siloed tests. Please use @IsTest(SeeAllData=true).
+62.0	istest	all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)|topicId=user	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'topicId': {userId}
+62.0	istest	all.Knowledge.getTrendingArticles(String,Integer)|communityId prefixes	
+62.0	istest	all.Knowledge.getTrendingArticles(String,Integer)|communityId=bad	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': abc
+62.0	istest	all.Knowledge.getTrendingArticles(String,Integer)|communityId=me	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': me
+62.0	istest	all.Knowledge.getTrendingArticles(String,Integer)|communityId=null	No matching test result found for Knowledge.getTrendingArticles(String communityId, Integer maxResults). Before calling this, call Knowledge.setTestGetTrendingArticles(String communityId, Integer maxResults, ConnectApi.KnowledgeArticleVersionCollection result) to set the expected test result.
+62.0	istest	all.Knowledge.getTrendingArticles(String,Integer)|communityId=topic	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': 0TO000000000001
+62.0	istest	all.Knowledge.getTrendingArticles(String,Integer)|communityId=user	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': {userId}
+62.0	istest	all.Knowledge.getTrendingArticlesForTopic(String,String,Integer)|communityId=bad	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': abc
+62.0	istest	all.Knowledge.getTrendingArticlesForTopic(String,String,Integer)|communityId=me	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': me
+62.0	istest	all.Knowledge.getTrendingArticlesForTopic(String,String,Integer)|communityId=null	EX|ConnectApi.ConnectApiException|Parameter required: topicId
+62.0	istest	all.Knowledge.getTrendingArticlesForTopic(String,String,Integer)|communityId=topic	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': 0TO000000000001
+62.0	istest	all.Knowledge.getTrendingArticlesForTopic(String,String,Integer)|communityId=user	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': {userId}
+62.0	istest	all.Knowledge.getTrendingArticlesForTopic(String,String,Integer)|topicId prefixes	0TO
+62.0	istest	all.Knowledge.getTrendingArticlesForTopic(String,String,Integer)|topicId=bad	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'topicId': abc
+62.0	istest	all.Knowledge.getTrendingArticlesForTopic(String,String,Integer)|topicId=me	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'topicId': me
+62.0	istest	all.Knowledge.getTrendingArticlesForTopic(String,String,Integer)|topicId=null	EX|ConnectApi.ConnectApiException|Parameter required: topicId
+62.0	istest	all.Knowledge.getTrendingArticlesForTopic(String,String,Integer)|topicId=topic	No matching test result found for Knowledge.getTrendingArticlesForTopic(String communityId, String topicId, Integer maxResults). Before calling this, call Knowledge.setTestGetTrendingArticlesForTopic(String communityId, String topicId, Integer maxResults, ConnectApi.KnowledgeArticleVersionCollection result) to set the expected test result.
+62.0	istest	all.Knowledge.getTrendingArticlesForTopic(String,String,Integer)|topicId=user	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'topicId': {userId}
+67.0	istest	all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)|communityId prefixes	
+67.0	istest	all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)|communityId=bad	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': abc
+67.0	istest	all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)|communityId=me	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': me
+67.0	istest	all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)|communityId=null	EX|ConnectApi.ConnectApiException|Parameter required: topicId
+67.0	istest	all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)|communityId=topic	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': 0TO000000000001
+67.0	istest	all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)|communityId=user	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': {userId}
+67.0	istest	all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)|topicId prefixes	0TO
+67.0	istest	all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)|topicId=bad	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'topicId': abc
+67.0	istest	all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)|topicId=me	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'topicId': me
+67.0	istest	all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)|topicId=null	EX|ConnectApi.ConnectApiException|Parameter required: topicId
+67.0	istest	all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)|topicId=topic	EX|System.UnsupportedOperationException|ConnectApi methods are not supported in data siloed tests. Please use @IsTest(SeeAllData=true).
+67.0	istest	all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)|topicId=user	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'topicId': {userId}
+67.0	istest	all.Knowledge.getTrendingArticles(String,Integer)|communityId prefixes	
+67.0	istest	all.Knowledge.getTrendingArticles(String,Integer)|communityId=bad	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': abc
+67.0	istest	all.Knowledge.getTrendingArticles(String,Integer)|communityId=me	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': me
+67.0	istest	all.Knowledge.getTrendingArticles(String,Integer)|communityId=null	No matching test result found for Knowledge.getTrendingArticles(String communityId, Integer maxResults). Before calling this, call Knowledge.setTestGetTrendingArticles(String communityId, Integer maxResults, ConnectApi.KnowledgeArticleVersionCollection result) to set the expected test result.
+67.0	istest	all.Knowledge.getTrendingArticles(String,Integer)|communityId=topic	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': 0TO000000000001
+67.0	istest	all.Knowledge.getTrendingArticles(String,Integer)|communityId=user	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': {userId}
+67.0	istest	all.Knowledge.getTrendingArticlesForTopic(String,String,Integer)|communityId=bad	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': abc
+67.0	istest	all.Knowledge.getTrendingArticlesForTopic(String,String,Integer)|communityId=me	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': me
+67.0	istest	all.Knowledge.getTrendingArticlesForTopic(String,String,Integer)|communityId=null	EX|ConnectApi.ConnectApiException|Parameter required: topicId
+67.0	istest	all.Knowledge.getTrendingArticlesForTopic(String,String,Integer)|communityId=topic	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': 0TO000000000001
+67.0	istest	all.Knowledge.getTrendingArticlesForTopic(String,String,Integer)|communityId=user	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': {userId}
+67.0	istest	all.Knowledge.getTrendingArticlesForTopic(String,String,Integer)|topicId prefixes	0TO
+67.0	istest	all.Knowledge.getTrendingArticlesForTopic(String,String,Integer)|topicId=bad	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'topicId': abc
+67.0	istest	all.Knowledge.getTrendingArticlesForTopic(String,String,Integer)|topicId=me	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'topicId': me
+67.0	istest	all.Knowledge.getTrendingArticlesForTopic(String,String,Integer)|topicId=null	EX|ConnectApi.ConnectApiException|Parameter required: topicId
+67.0	istest	all.Knowledge.getTrendingArticlesForTopic(String,String,Integer)|topicId=topic	No matching test result found for Knowledge.getTrendingArticlesForTopic(String communityId, String topicId, Integer maxResults). Before calling this, call Knowledge.setTestGetTrendingArticlesForTopic(String communityId, String topicId, Integer maxResults, ConnectApi.KnowledgeArticleVersionCollection result) to set the expected test result.
+67.0	istest	all.Knowledge.getTrendingArticlesForTopic(String,String,Integer)|topicId=user	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'topicId': {userId}
+68.0	istest	all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)|communityId prefixes	
+68.0	istest	all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)|communityId=bad	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': abc
+68.0	istest	all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)|communityId=me	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': me
+68.0	istest	all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)|communityId=null	EX|ConnectApi.ConnectApiException|Parameter required: topicId
+68.0	istest	all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)|communityId=topic	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': 0TO000000000001
+68.0	istest	all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)|communityId=user	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': {userId}
+68.0	istest	all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)|topicId prefixes	0TO
+68.0	istest	all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)|topicId=bad	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'topicId': abc
+68.0	istest	all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)|topicId=me	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'topicId': me
+68.0	istest	all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)|topicId=null	EX|ConnectApi.ConnectApiException|Parameter required: topicId
+68.0	istest	all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)|topicId=topic	EX|System.UnsupportedOperationException|ConnectApi methods are not supported in data siloed tests. Please use @IsTest(SeeAllData=true).
+68.0	istest	all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)|topicId=user	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'topicId': {userId}
+68.0	istest	all.Knowledge.getTrendingArticles(String,Integer)|communityId prefixes	
+68.0	istest	all.Knowledge.getTrendingArticles(String,Integer)|communityId=bad	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': abc
+68.0	istest	all.Knowledge.getTrendingArticles(String,Integer)|communityId=me	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': me
+68.0	istest	all.Knowledge.getTrendingArticles(String,Integer)|communityId=null	No matching test result found for Knowledge.getTrendingArticles(String communityId, Integer maxResults). Before calling this, call Knowledge.setTestGetTrendingArticles(String communityId, Integer maxResults, ConnectApi.KnowledgeArticleVersionCollection result) to set the expected test result.
+68.0	istest	all.Knowledge.getTrendingArticles(String,Integer)|communityId=topic	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': 0TO000000000001
+68.0	istest	all.Knowledge.getTrendingArticles(String,Integer)|communityId=user	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': {userId}
+68.0	istest	all.Knowledge.getTrendingArticlesForTopic(String,String,Integer)|communityId=bad	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': abc
+68.0	istest	all.Knowledge.getTrendingArticlesForTopic(String,String,Integer)|communityId=me	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': me
+68.0	istest	all.Knowledge.getTrendingArticlesForTopic(String,String,Integer)|communityId=null	EX|ConnectApi.ConnectApiException|Parameter required: topicId
+68.0	istest	all.Knowledge.getTrendingArticlesForTopic(String,String,Integer)|communityId=topic	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': 0TO000000000001
+68.0	istest	all.Knowledge.getTrendingArticlesForTopic(String,String,Integer)|communityId=user	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': {userId}
+68.0	istest	all.Knowledge.getTrendingArticlesForTopic(String,String,Integer)|topicId prefixes	0TO
+68.0	istest	all.Knowledge.getTrendingArticlesForTopic(String,String,Integer)|topicId=bad	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'topicId': abc
+68.0	istest	all.Knowledge.getTrendingArticlesForTopic(String,String,Integer)|topicId=me	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'topicId': me
+68.0	istest	all.Knowledge.getTrendingArticlesForTopic(String,String,Integer)|topicId=null	EX|ConnectApi.ConnectApiException|Parameter required: topicId
+68.0	istest	all.Knowledge.getTrendingArticlesForTopic(String,String,Integer)|topicId=topic	No matching test result found for Knowledge.getTrendingArticlesForTopic(String communityId, String topicId, Integer maxResults). Before calling this, call Knowledge.setTestGetTrendingArticlesForTopic(String communityId, String topicId, Integer maxResults, ConnectApi.KnowledgeArticleVersionCollection result) to set the expected test result.
+68.0	istest	all.Knowledge.getTrendingArticlesForTopic(String,String,Integer)|topicId=user	EX|ConnectApi.ConnectApiException|Illegal value for parameter: 'topicId': {userId}

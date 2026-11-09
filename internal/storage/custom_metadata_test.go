@@ -343,3 +343,114 @@ func TestApplyCustomMetadataRecordsCanonicalNameRouteTwins(t *testing.T) {
 		}
 	}
 }
+
+func TestApplyCustomMetadataRecordsQualifiesLocalEntityAndFieldDefinitionNames(t *testing.T) {
+	org := NewOrgState()
+	org.Namespace = "pkg"
+	local := ObjectDefinition{APIName: "pkg__Delivery__c", Fields: map[string]Field{
+		"pkg__Status__c": {APIName: "pkg__Status__c", Type: FieldString},
+	}}
+	EnsureStandardObjectFields(&local)
+	org.Objects["pkg__Delivery__c"] = ObjectState{Definition: local, Records: map[ID]Record{}}
+	bucket := ObjectDefinition{APIName: "pkg__Grouped__mdt", Metadata: map[string]string{"kind": "customMetadata"}, Fields: map[string]Field{
+		"pkg__Object__c": {APIName: "pkg__Object__c", Type: FieldReference, ReferenceTo: []string{"EntityDefinition"}},
+		"pkg__Field__c": {APIName: "pkg__Field__c", Type: FieldReference, ReferenceTo: []string{"FieldDefinition"},
+			MetadataRelationshipControllingField: "Grouped__mdt.Object__c"},
+	}}
+	EnsureStandardObjectFields(&bucket)
+	org.Objects["pkg__Grouped__mdt"] = ObjectState{Definition: bucket, Records: map[ID]Record{}}
+
+	err := ApplyCustomMetadataRecords(&org, []schema.CustomMetadataRecord{
+		{FullName: "Grouped.Local", ObjectName: "pkg__Grouped__mdt", DeveloperName: "Local", Values: []schema.CustomMetadataValue{
+			{Field: "Object__c", Value: "Delivery__c"}, {Field: "Field__c", Value: "Status__c"}}},
+		{FullName: "Grouped.Other", ObjectName: "pkg__Grouped__mdt", DeveloperName: "Other", Values: []schema.CustomMetadataValue{
+			{Field: "Object__c", Value: "Elsewhere__c"}, {Field: "Field__c", Value: "Status__c"}}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, record := range org.Objects["pkg__Grouped__mdt"].Records {
+		object, field := record.Fields["pkg__Object__c"].String, record.Fields["pkg__Field__c"].String
+		switch record.Fields["DeveloperName"].String {
+		case "Local":
+			if object != "pkg__Delivery__c" || field != "pkg__Status__c" {
+				t.Fatalf("local = %q, %q", object, field)
+			}
+		case "Other":
+			if object != "Elsewhere__c" || field != "Status__c" {
+				t.Fatalf("other = %q, %q", object, field)
+			}
+		}
+	}
+}
+
+func TestApplyCustomMetadataRecordsResolvesFifteenAndEighteenLetterDeveloperNamesInAnyOrder(t *testing.T) {
+	names := []string{"AlphaBetaGamma1", "AlphaBetaGammaDel1", "AlphaBetaGammaDeltaEps"}
+	for _, name := range names {
+		org := NewOrgState()
+		parent := ObjectDefinition{APIName: "Parent__mdt", Metadata: map[string]string{"kind": "customMetadata"}, Fields: map[string]Field{}}
+		child := ObjectDefinition{APIName: "Child__mdt", Metadata: map[string]string{"kind": "customMetadata"}, Fields: map[string]Field{
+			"Parent__c": {APIName: "Parent__c", Type: FieldReference, ReferenceTo: []string{"Parent__mdt"}, RelationshipName: "Parent__r"},
+		}}
+		EnsureStandardObjectFields(&parent)
+		EnsureStandardObjectFields(&child)
+		org.Objects["Parent__mdt"] = ObjectState{Definition: parent, Records: map[ID]Record{}}
+		org.Objects["Child__mdt"] = ObjectState{Definition: child, Records: map[ID]Record{}}
+		childRecord := schema.CustomMetadataRecord{FullName: "Child.One", ObjectName: "Child__mdt", DeveloperName: "One",
+			Values: []schema.CustomMetadataValue{{Field: "Parent__c", Value: name}}}
+		// The child alone cannot resolve: the parent is not loaded yet.
+		if err := ApplyCustomMetadataRecords(&org, []schema.CustomMetadataRecord{childRecord}); err == nil {
+			t.Fatalf("%s (%d letters): child applied before its parent existed", name, len(name))
+		}
+		org = NewOrgState()
+		org.Objects["Parent__mdt"] = ObjectState{Definition: parent, Records: map[ID]Record{}}
+		org.Objects["Child__mdt"] = ObjectState{Definition: child, Records: map[ID]Record{}}
+		err := ApplyCustomMetadataRecords(&org, []schema.CustomMetadataRecord{
+			childRecord,
+			{FullName: "Parent." + name, ObjectName: "Parent__mdt", DeveloperName: name},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		parentID := onlyRecordID(t, org.Objects["Parent__mdt"].Records)
+		childID := onlyRecordID(t, org.Objects["Child__mdt"].Records)
+		if got := org.Objects["Child__mdt"].Records[childID].Fields["Parent__c"]; got.ID != parentID {
+			t.Fatalf("%s: Parent__c = %#v, want %s", name, got, parentID)
+		}
+	}
+}
+
+func TestResolveCustomMetadataRecordIDRawIDBoundary(t *testing.T) {
+	build := func(keyPrefix string) OrgState {
+		org := NewOrgState()
+		def := ObjectDefinition{APIName: "Parent__mdt", KeyPrefix: keyPrefix, Metadata: map[string]string{"kind": "customMetadata"}, Fields: map[string]Field{}}
+		EnsureStandardObjectFields(&def)
+		org.Objects["Parent__mdt"] = ObjectState{Definition: def, Records: map[ID]Record{}}
+		return org
+	}
+	cases := []struct {
+		name      string
+		keyPrefix string
+		raw       string
+		want      bool
+	}{
+		{"matching prefix, 15 characters", "m09", "m09000000000001", true},
+		{"matching prefix, 18 characters", "m09", "m09000000000001AAA", true},
+		{"non-matching prefix", "m09", "m0A000000000001", false},
+		{"empty KeyPrefix", "", "m09000000000001", false},
+		{"15-letter name", "m09", "AlphaBetaGamma1", false},
+		{"18-letter name", "m09", "AlphaBetaGammaDel1", false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			org := build(tc.keyPrefix)
+			got, ok := resolveCustomMetadataRecordID(org, tc.raw, []string{"Parent__mdt"})
+			if ok != tc.want {
+				t.Fatalf("resolveCustomMetadataRecordID(%q) ok = %v, want %v", tc.raw, ok, tc.want)
+			}
+			if ok && string(got) != tc.raw {
+				t.Fatalf("id = %q, want %q", got, tc.raw)
+			}
+		})
+	}
+}

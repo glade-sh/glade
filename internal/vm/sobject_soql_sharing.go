@@ -17,14 +17,25 @@ func (vm *VM) currentUserCanSeeSharedRecord(objectName string, record storage.Re
 		return storage.IDsEqual(record.ID, storage.ID(vm.currentUserContactAccountID())) ||
 			vm.currentUserHasDirectAccountShare(record.ID, userID)
 	}
-	return vm.currentUserHasDirectCustomShare(objectName, record.ID, userID, false)
+	return vm.currentUserHasHierarchyOwnerRead(objectName, record, userID) ||
+		vm.currentUserHasOwnerRuleRead(objectName, record, userID) ||
+		vm.currentUserHasDirectCustomShare(objectName, record.ID, userID, false)
+}
+
+// userModeUnrestrictedObject reports whether every record of the object is
+// visible to the actor, independent of the record.
+func (vm *VM) userModeUnrestrictedObject(objectName, userID string) bool {
+	return vm == nil || vm.soqlObjectHasPublicReadSharing(objectName) || vm.currentUserBypassesRecordSharing() || vm.currentUserObjectRecordGrant(objectName, "PermissionsViewAllRecords", "PermissionsModifyAllRecords") || userID == ""
 }
 
 func (vm *VM) userModeRecordVisible(objectName string, record storage.Record, userID string) bool {
-	if vm == nil || vm.soqlObjectHasPublicReadSharing(objectName) || vm.currentUserBypassesRecordSharing() || vm.currentUserObjectRecordGrant(objectName, "PermissionsViewAllRecords", "PermissionsModifyAllRecords") || userID == "" {
+	if vm.userModeUnrestrictedObject(objectName, userID) {
 		return true
 	}
-	return vm.controlledParentHasPublicReadSharing(objectName, record) || record.System.OwnerID == "" || storage.IDsEqual(record.System.OwnerID, storage.ID(userID)) || vm.currentUserCanSeeSharedRecord(objectName, record, userID) || vm.leadCreatorReadsFromEmptyQueue(objectName, record, userID)
+	if allowed, applicable := vm.junctionParentsReadable(objectName, record, userID); applicable {
+		return allowed
+	}
+	return vm.controlledParentHasSupportedReadSharing(objectName, record, userID) || record.System.OwnerID == "" || storage.IDsEqual(record.System.OwnerID, storage.ID(userID)) || vm.currentUserCanSeeSharedRecord(objectName, record, userID) || vm.leadCreatorReadsFromEmptyQueue(objectName, record, userID)
 }
 
 // flow_followups/org.tsv:63,125 observe one read: a Standard User who created
@@ -58,11 +69,10 @@ func (vm *VM) leadCreatorReadsFromEmptyQueue(objectName string, record storage.R
 	return true
 }
 
-// A controlled detail inherits read access from its master, including the
-// standard Contact-to-Account relationship. Keep this grant limited to one
-// live master whose object has unconditional public read access; ordinary
-// lookups and record-specific parent shares do not establish it.
-func (vm *VM) controlledParentHasPublicReadSharing(objectName string, record storage.Record) bool {
+// A controlled detail inherits supported read access from its one live master.
+// Native controlledDetail rows cover a private custom master shared by a
+// direct owner rule or a direct user share; ordinary lookups do not inherit it.
+func (vm *VM) controlledParentHasSupportedReadSharing(objectName string, record storage.Record, userID string) bool {
 	if vm == nil || vm.Org == nil {
 		return false
 	}
@@ -92,7 +102,7 @@ func (vm *VM) controlledParentHasPublicReadSharing(objectName string, record sto
 			masterField, parentObject = name, field.ReferenceTo[0]
 		}
 	}
-	if masterField == "" || !vm.soqlObjectHasPublicReadSharing(parentObject) {
+	if masterField == "" {
 		return false
 	}
 	parentObject, ok = vm.resolveObjectName(parentObject)
@@ -109,7 +119,80 @@ func (vm *VM) controlledParentHasPublicReadSharing(objectName string, record sto
 		return false
 	}
 	_, parent, ok := storage.LookupRecordByID(vm.Org.Objects[parentObject].Records, storage.ID(storageValueIDText(foreignKey)))
-	return ok && !parent.System.IsDeleted
+	if !ok || parent.System.IsDeleted {
+		return false
+	}
+	if vm.soqlObjectHasPublicReadSharing(parentObject) {
+		return true
+	}
+	// portal_sharing_timing_c4: a portal user reads the Contact on its own
+	// Account under a Private external Account model.
+	if strings.EqualFold(parentObject, "Account") && vm.currentUserIsCapturedPortalUser() && vm.currentUserCanSeeSharedRecord(parentObject, parent, userID) {
+		return true
+	}
+	parentDefinition := vm.Org.Objects[parentObject].Definition
+	if !hasSuffixFold(parentObject, "__c") || !strings.EqualFold(parentDefinition.SharingModel, "Private") || storage.IsCustomSettingDefinition(parentDefinition) || storage.IsCustomMetadataDefinition(parentDefinition) {
+		return false
+	}
+	return userID != "" && (storage.IDsEqual(parent.System.OwnerID, storage.ID(userID)) ||
+		vm.currentUserHasHierarchyOwnerRead(parentObject, parent, userID) ||
+		vm.currentUserHasOwnerRuleRead(parentObject, parent, userID) ||
+		vm.currentUserHasDirectCustomShare(parentObject, parent.ID, userID, false))
+}
+
+// junctionParentsReadable is limited to the captured two-private-master
+// configuration, where both relationships require master read on writes.
+func (vm *VM) junctionParentsReadable(objectName string, record storage.Record, userID string) (bool, bool) {
+	if vm == nil || vm.Org == nil {
+		return false, false
+	}
+	canonical, ok := vm.resolveObjectName(objectName)
+	if !ok {
+		return false, false
+	}
+	definition := vm.Org.Objects[canonical].Definition
+	if !strings.EqualFold(definition.SharingModel, "ControlledByParent") {
+		return false, false
+	}
+	type master struct{ field, object string }
+	var masters []master
+	for name, field := range definition.Fields {
+		if !field.MasterDetail {
+			continue
+		}
+		if !field.WriteRequiresMasterRead || field.Type != storage.FieldReference || len(field.ReferenceTo) != 1 {
+			return false, false
+		}
+		parent, ok := vm.resolveObjectName(field.ReferenceTo[0])
+		if !ok {
+			return false, false
+		}
+		parentDef := vm.Org.Objects[parent].Definition
+		if !hasSuffixFold(parent, "__c") || !strings.EqualFold(parentDef.SharingModel, "Private") || storage.IsCustomSettingDefinition(parentDef) || storage.IsCustomMetadataDefinition(parentDef) {
+			return false, false
+		}
+		masters = append(masters, master{name, parent})
+	}
+	if len(masters) != 2 {
+		return false, false
+	}
+	if stored, found := vm.findOrgRecord(canonical, record.ID); found {
+		record = stored
+	}
+	for _, m := range masters {
+		foreignKey, ok := record.GetField(m.field)
+		if !ok {
+			return false, true
+		}
+		_, parent, ok := storage.LookupRecordByID(vm.Org.Objects[m.object].Records, storage.ID(storageValueIDText(foreignKey)))
+		if !ok || parent.System.IsDeleted {
+			return false, true
+		}
+		if userID == "" || !(storage.IDsEqual(parent.System.OwnerID, storage.ID(userID)) || vm.currentUserHasHierarchyOwnerRead(m.object, parent, userID) || vm.currentUserHasOwnerRuleRead(m.object, parent, userID) || vm.currentUserHasDirectCustomShare(m.object, parent.ID, userID, false)) {
+			return false, true
+		}
+	}
+	return true, true
 }
 
 func (vm *VM) currentUserHasDirectAccountShare(accountID storage.ID, userID string) bool {
@@ -383,8 +466,19 @@ func (vm *VM) currentUserCanWriteRecord(objectName string, record storage.Record
 	if vm == nil || userID == "" {
 		return true
 	}
+	// User records have a distinct authorization rule from record sharing.
+	// The captured Standard User can edit itself; a different internal User
+	// requires user-management authority even with Modify All Data.
+	if (operation == "update" || operation == "upsert") && (strings.EqualFold(objectName, "User") || strings.EqualFold(record.Object, "User")) {
+		return storage.IDsEqual(record.ID, storage.ID(userID)) || vm.currentUserBypassesRecordSharingWithPermissions("PermissionsManageInternalUsers", "PermissionsManageUsers")
+	}
 	if vm.currentUserBypassesRecordSharingForWrite() || vm.currentUserObjectRecordGrant(objectName, "PermissionsModifyAllRecords") {
 		return true
+	}
+	if operation == "update" || operation == "upsert" {
+		if allowed, applicable := vm.junctionParentsReadable(objectName, record, userID); applicable {
+			return allowed
+		}
 	}
 	// Public read/write grants edits, but does not grant deletion or undeletion.
 	if operation == "update" || operation == "upsert" {

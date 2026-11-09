@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Kind__c</fullName><label>Kind</label><required>false</required><type>Picklist</type><valueSet><restricted>false</restricted><valueSetDefinition><sorted>false</sorted><value><fullName>Card</fullName><default>false</default><label>Card</label></value></valueSetDefinition></valueSet></CustomField>

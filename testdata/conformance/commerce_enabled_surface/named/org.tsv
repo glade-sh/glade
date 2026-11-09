@@ -1,0 +1,9 @@
+api	profile	route	case	outcome	diagnostic
+62.0	contract-pricing-enabled	named	request	rejected	Type is not visible: commercestorepricing.ContractResolutionRequest
+62.0	contract-pricing-enabled	named	response	rejected	Type is not visible: commercestorepricing.ContractResolutionResponse
+67.0	contract-pricing-enabled	named	request	rejected	Type is not visible: commercestorepricing.ContractResolutionRequest
+67.0	contract-pricing-enabled	named	response	rejected	Type is not visible: commercestorepricing.ContractResolutionResponse
+68.0	contract-pricing-enabled	named	request	accepted	-
+68.0	contract-pricing-enabled	named	response	accepted	-
+68.0	commerce-enabled	named	request	rejected	Type is not visible: commercestorepricing.ContractResolutionRequest
+68.0	commerce-enabled	named	response	rejected	Type is not visible: commercestorepricing.ContractResolutionResponse

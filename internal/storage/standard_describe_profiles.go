@@ -3,6 +3,7 @@ package storage
 import "slices"
 
 var standardDescribeProfileCatalog map[string]map[string]StandardDescribeCatalogDelta
+var standardDescribeProfileAliases map[string]map[string]string
 
 // StandardDescribeCatalogDelta records one captured profile relative to its
 // named baseline. Field entries are pairs of object and field API names.
@@ -22,7 +23,13 @@ type StandardDescribeCatalogDelta struct {
 // profile/API delta. Unknown keys have no result; an observed empty delta does.
 // These observations do not select runtime field gates from project features.
 func StandardDescribeCatalogProfileDelta(profile, api string) (StandardDescribeCatalogDelta, bool) {
+	standardFieldPolicies()
 	delta, ok := standardDescribeProfileCatalog[profile][api]
+	if !ok {
+		if source, observed := standardDescribeProfileAliases[profile][api]; observed {
+			delta, ok = standardDescribeProfileCatalog[profile][source]
+		}
+	}
 	if !ok {
 		return StandardDescribeCatalogDelta{}, false
 	}

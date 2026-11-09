@@ -1,0 +1,21 @@
+api	route	case	result
+62.0	anonymous	feed-dynamic	EX|System.UnsupportedOperationException|ConnectApi.AbstractMessageBody cannot be constructed directly outside of a test
+62.0	istest	feed-dynamic	OK|ConnectApi.FeedBody[buildVersion=68.0, isRichText=null, messageSegments=null, text=null]
+62.0	anonymous	row-namespace	EX|System.UnsupportedOperationException|ConnectApi.QuerySqlRow cannot be constructed directly outside of a test
+62.0	istest	row-namespace	OK|ConnectApi.QuerySqlRow[buildVersion=68.0, row=null]
+62.0	anonymous	unknown-boundary	OK|null
+62.0	istest	unknown-boundary	OK|null
+62.0	anonymous	json-output	EX|System.JSONException|Only top-level input types from ConnectApi support deserialization at [line:1, column:2]
+62.0	istest	json-output	EX|System.JSONException|Only top-level input types from ConnectApi support deserialization at [line:1, column:2]
+62.0	anonymous	json-strict-output	EX|System.JSONException|Only top-level input types from ConnectApi support deserialization at [line:1, column:2]
+62.0	istest	json-strict-output	EX|System.JSONException|Only top-level input types from ConnectApi support deserialization at [line:1, column:2]
+67.0	anonymous	feed-dynamic	EX|System.UnsupportedOperationException|ConnectApi.AbstractMessageBody cannot be constructed directly outside of a test
+67.0	istest	feed-dynamic	OK|ConnectApi.FeedBody[buildVersion=68.0, isRichText=null, messageSegments=null, text=null]
+67.0	anonymous	row-namespace	EX|System.UnsupportedOperationException|ConnectApi.QuerySqlRow cannot be constructed directly outside of a test
+67.0	istest	row-namespace	OK|ConnectApi.QuerySqlRow[buildVersion=68.0, row=null]
+67.0	anonymous	unknown-boundary	OK|null
+67.0	istest	unknown-boundary	OK|null
+67.0	anonymous	json-output	EX|System.JSONException|Only top-level input types from ConnectApi support deserialization at [line:1, column:2]
+67.0	istest	json-output	EX|System.JSONException|Only top-level input types from ConnectApi support deserialization at [line:1, column:2]
+67.0	anonymous	json-strict-output	EX|System.JSONException|Only top-level input types from ConnectApi support deserialization at [line:1, column:2]
+67.0	istest	json-strict-output	EX|System.JSONException|Only top-level input types from ConnectApi support deserialization at [line:1, column:2]

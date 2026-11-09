@@ -1,0 +1,1 @@
+public class H09 { public class Quote {} public static void m() { Quote q = new Quote(); } }

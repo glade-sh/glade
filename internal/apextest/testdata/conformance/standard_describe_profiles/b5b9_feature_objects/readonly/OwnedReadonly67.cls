@@ -1,0 +1,1 @@
+@IsTest private class OwnedReadonly67 { @IsTest static void probe(){SObject r=new GiftTransaction();String msg='accepted';try{r.put('TaxDeductionAmount',null);}catch(SObjectException e){msg=e.getMessage();}System.assertEquals('Field TaxDeductionAmount is not editable',msg);} }

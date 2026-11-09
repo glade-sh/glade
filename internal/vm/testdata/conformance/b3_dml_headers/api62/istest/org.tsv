@@ -1,0 +1,21 @@
+case	result
+Account_user_false	true
+Account_user_true	true
+Account_other_false	true
+Account_other_true	true
+Account_auto_false	true
+Account_auto_true	true
+Lead_user_false	true
+Lead_user_true	true
+Lead_other_false	true
+Lead_other_true	true
+Lead_auto_false	true
+Lead_auto_true	true
+Case_user_false	true
+Case_user_true	true
+Case_other_false	true
+Case_other_true	false,FIELD_INTEGRITY_EXCEPTION,No selected contact
+Case_auto_false	true
+Case_auto_true	true
+account_assignment	true
+partial	true,false,REQUIRED_FIELD_MISSING

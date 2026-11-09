@@ -1,0 +1,18 @@
+case	code
+stmt_req_acc	insert badAcc;
+db1_req_acc	Database.insert(badAcc);
+db1t_req_acc	Database.insert(badAcc, true);
+dbl_req_acc	Database.insert(new List<Account>{badAcc});
+dblt_req_acc	Database.insert(new List<Account>{badAcc}, true);
+dblu_req_acc	Database.insert(new List<Account>{badAcc}, true, AccessLevel.USER_MODE);
+dbls_req_acc	Database.insert(new List<Account>{badAcc}, true, AccessLevel.SYSTEM_MODE);
+db1u_req_acc	Database.insert(badAcc, true, AccessLevel.USER_MODE);
+stmt_req_opp	insert badOpp;
+db1_req_opp	Database.insert(badOpp);
+dblt_req_opp	Database.insert(new List<Opportunity>{badOpp}, true);
+dbl_row1_opp	Database.insert(new List<Opportunity>{goodOpp.clone(), badOpp});
+stmt_row1_opp	insert new List<Opportunity>{goodOpp.clone(), badOpp};
+db1_toolong	Database.insert(longAcc);
+stmt_toolong	insert longAcc;
+db1_withid	Database.insert(withId);
+stmt_withid	insert withId;

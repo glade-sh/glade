@@ -1,0 +1,5 @@
+source_api	route	method	observation
+62.0	anonymous	observe	{"contactExact":"A","contactLower":null,"control":"Account","dynamicExact":null,"dynamicLower":null,"exact":"Account","mixed":"upper","nested":null,"parent":null,"rejection":"System.SObjectException","scalar":"Account","upper":"Account"}
+62.0	isTest	observe	{"contactExact":"A","contactLower":null,"control":"Account","dynamicExact":null,"dynamicLower":null,"exact":"Account","mixed":"upper","nested":null,"parent":null,"rejection":"System.SObjectException","scalar":"Account","upper":"Account"}
+67.0	anonymous	observe	{"contactExact":"A","contactLower":null,"control":"Account","dynamicExact":null,"dynamicLower":null,"exact":"Account","mixed":"upper","nested":null,"parent":null,"rejection":"System.SObjectException","scalar":"Account","upper":"Account"}
+67.0	isTest	observe	{"contactExact":"A","contactLower":null,"control":"Account","dynamicExact":null,"dynamicLower":null,"exact":"Account","mixed":"upper","nested":null,"parent":null,"rejection":"System.SObjectException","scalar":"Account","upper":"Account"}

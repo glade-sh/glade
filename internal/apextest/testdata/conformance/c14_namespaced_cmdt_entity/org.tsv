@@ -1,0 +1,9 @@
+api_version	context	check	expected	result
+62.0	@IsTest	SELECT Object__r.QualifiedApiName|Field__r.QualifiedApiName, record Plain	gladens004__C14Delivery__c|gladens004__Status__c	pass
+62.0	@IsTest	SELECT Object__r.QualifiedApiName|Field__r.QualifiedApiName, record Prefixed	gladens004__C14Delivery__c|gladens004__Status__c	pass
+62.0	@IsTest	getDescribe().getName() of object|field	gladens004__C14Delivery__c|gladens004__Status__c	pass
+62.0	@IsTest	getAll().size() and SOQL COUNT()	2	pass
+67.0	@IsTest	getAll().size()	2	pass
+67.0	@IsTest	EntityDefinition.QualifiedApiName by DurableId of getAll() Object__c, records Plain and Prefixed	gladens004__C14Delivery__c	pass
+67.0	@IsTest	SOQL COUNT() over the metadata type with relationship fields	0	observed-unmodeled
+67.0	@IsTest	FieldDefinition by DurableId of getAll() Field__c	0 rows	observed-unresolved

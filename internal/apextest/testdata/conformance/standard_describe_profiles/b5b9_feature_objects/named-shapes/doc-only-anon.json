@@ -1,0 +1,54 @@
+[
+  {
+    "api": "62.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenerationBatchProcessId",
+    "source": "SObject r=new DocumentGenerationProcess();for(String method:new List<String>{'get','put','query'}){try{if(method=='get')r.get('DocGenerationBatchProcessId');else if(method=='put')r.put('DocGenerationBatchProcessId',null);else Database.query('SELECT DocGenerationBatchProcessId FROM DocumentGenerationProcess LIMIT 1');System.debug('OBSERVED '+method+' accepted');}catch(Exception ex){System.debug('OBSERVED '+method+' '+ex.getTypeName()+': '+ex.getMessage());}}",
+    "compiled": true,
+    "success": true,
+    "observations": [
+      "OBSERVED get System.SObjectException: Invalid field DocGenerationBatchProcessId for DocumentGenerationProcess",
+      "OBSERVED put System.SObjectException: Invalid field DocGenerationBatchProcessId for DocumentGenerationProcess",
+      "OBSERVED query System.QueryException: No such column 'DocGenerationBatchProcessId' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+    ]
+  },
+  {
+    "api": "62.0",
+    "object": "DocumentTemplateSection",
+    "field": "DocumentTemplateClauseId",
+    "source": "SObject r=new DocumentTemplateSection();for(String method:new List<String>{'get','put','query'}){try{if(method=='get')r.get('DocumentTemplateClauseId');else if(method=='put')r.put('DocumentTemplateClauseId',null);else Database.query('SELECT DocumentTemplateClauseId FROM DocumentTemplateSection LIMIT 1');System.debug('OBSERVED '+method+' accepted');}catch(Exception ex){System.debug('OBSERVED '+method+' '+ex.getTypeName()+': '+ex.getMessage());}}",
+    "compiled": true,
+    "success": true,
+    "observations": [
+      "OBSERVED get System.SObjectException: Invalid field DocumentTemplateClauseId for DocumentTemplateSection",
+      "OBSERVED put System.SObjectException: Invalid field DocumentTemplateClauseId for DocumentTemplateSection",
+      "OBSERVED query System.QueryException: No such column 'DocumentTemplateClauseId' on entity 'DocumentTemplateSection'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+    ]
+  },
+  {
+    "api": "67.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenerationBatchProcessId",
+    "source": "SObject r=new DocumentGenerationProcess();for(String method:new List<String>{'get','put','query'}){try{if(method=='get')r.get('DocGenerationBatchProcessId');else if(method=='put')r.put('DocGenerationBatchProcessId',null);else Database.query('SELECT DocGenerationBatchProcessId FROM DocumentGenerationProcess LIMIT 1');System.debug('OBSERVED '+method+' accepted');}catch(Exception ex){System.debug('OBSERVED '+method+' '+ex.getTypeName()+': '+ex.getMessage());}}",
+    "compiled": true,
+    "success": true,
+    "observations": [
+      "OBSERVED get System.SObjectException: Invalid field DocGenerationBatchProcessId for DocumentGenerationProcess",
+      "OBSERVED put System.SObjectException: Invalid field DocGenerationBatchProcessId for DocumentGenerationProcess",
+      "OBSERVED query System.QueryException: No such column 'DocGenerationBatchProcessId' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+    ]
+  },
+  {
+    "api": "67.0",
+    "object": "DocumentTemplateSection",
+    "field": "DocumentTemplateClauseId",
+    "source": "SObject r=new DocumentTemplateSection();for(String method:new List<String>{'get','put','query'}){try{if(method=='get')r.get('DocumentTemplateClauseId');else if(method=='put')r.put('DocumentTemplateClauseId',null);else Database.query('SELECT DocumentTemplateClauseId FROM DocumentTemplateSection LIMIT 1');System.debug('OBSERVED '+method+' accepted');}catch(Exception ex){System.debug('OBSERVED '+method+' '+ex.getTypeName()+': '+ex.getMessage());}}",
+    "compiled": true,
+    "success": true,
+    "observations": [
+      "OBSERVED get System.SObjectException: Invalid field DocumentTemplateClauseId for DocumentTemplateSection",
+      "OBSERVED put System.SObjectException: Invalid field DocumentTemplateClauseId for DocumentTemplateSection",
+      "OBSERVED query System.QueryException: No such column 'DocumentTemplateClauseId' on entity 'DocumentTemplateSection'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+    ]
+  }
+]

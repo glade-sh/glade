@@ -13,6 +13,7 @@ import (
 // ipv4_validation/literal_splits/org.tsv:2-5.
 func prematureRegexTimeouts(t *testing.T, input string, n int) *int {
 	t.Helper()
+	newVirtualRegexClock(t)
 	calls := 0
 	regexp2SearchFault = func(searched string) error {
 		if searched != input {
@@ -81,9 +82,7 @@ func TestPrematureRegexTimeoutMatchAndReplaceRoutesRetry(t *testing.T) {
 // budget in wall time but not in CPU time, so it must be retried rather than
 // kept as the base unsplit result. The sleeping fault models that suspension.
 func TestRegexSplitSearchSuspendedInFlightIsRetried(t *testing.T) {
-	if _, ok := regexProcessCPUTime(); !ok {
-		t.Skip("process CPU time unavailable on this platform")
-	}
+	clock := newVirtualRegexClock(t)
 	const input = "5.6.7.8"
 	for _, limit := range []int64{-1, 0} {
 		calls := 0
@@ -93,7 +92,7 @@ func TestRegexSplitSearchSuspendedInFlightIsRetried(t *testing.T) {
 			}
 			calls++
 			if calls == 1 {
-				time.Sleep(regexp2MatchTimeout/2 + 100*time.Millisecond)
+				clock.sleep(regexp2MatchTimeout/2 + 100*time.Millisecond)
 				return errPrematureTimeout
 			}
 			return nil

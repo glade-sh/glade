@@ -270,12 +270,13 @@ func runDB(ctx context.Context, args []string, w io.Writer, progressW io.Writer)
 }
 
 type dbUIOptions struct {
-	addr      string
-	dbPath    string
-	envName   string
-	root      string
-	readyFile string
-	open      bool
+	publicDemo bool
+	addr       string
+	dbPath     string
+	envName    string
+	root       string
+	readyFile  string
+	open       bool
 }
 
 type dbUIReadyFile struct {
@@ -337,7 +338,7 @@ func runDBUIWithOpenURLAndListen(ctx context.Context, args []string, w io.Writer
 		}
 	}
 	handler := dbUIRouteScopedHandler{next: server.NewWithStore(&org, store)}
-	httpServer := &http.Server{Addr: opts.addr, Handler: server.GuardHTTPAuthority(handler, actualAddr, opts.addr), ReadHeaderTimeout: localHTTPReadHeaderTimeout, ReadTimeout: localHTTPReadTimeout}
+	httpServer := &http.Server{Addr: opts.addr, Handler: server.GuardHTTPAuthorityWithOptions(handler, actualAddr, server.AuthorityOptions{AllowPublicDemo: opts.publicDemo}, opts.addr), ReadHeaderTimeout: localHTTPReadHeaderTimeout, ReadTimeout: localHTTPReadTimeout}
 	renderer.Render(cliui.Event{Kind: cliui.EventPhaseEnd, Phase: "db ui", Label: "Record manager ready", Current: 2, Total: 2})
 	renderer.Finish(cliui.Result{OK: true, Label: "db ui ready"})
 	printDBUIStartupSummary(w, url, actualAddr, dbPath, opts.root)
@@ -400,6 +401,8 @@ func parseDBUIOptions(args []string) (dbUIOptions, error) {
 				return opts, err
 			}
 			opts.root = value
+		case "--allow-public-demo":
+			opts.publicDemo = true
 		case "--addr":
 			value, err := takeFlagValue(args, &i, "--addr requires a value")
 			if err != nil {
@@ -667,10 +670,8 @@ func openDBStore(path, root string) (*storage.SQLiteStore, storage.OrgState, err
 				return nil, storage.OrgState{}, flowProjectIdentityError(path)
 			}
 			if org.Metadata.ProjectFlowOwnershipVersion == 0 {
-				if legacyOrgHasFileBackedFlow(org, false) {
-					_ = store.Close()
-					return nil, storage.OrgState{}, fmt.Errorf("cannot establish legacy project Flow ownership outside its bound project; reopen with the previous metadata roots configured")
-				}
+				_ = store.Close()
+				return nil, storage.OrgState{}, flowProjectIdentityError(path)
 			} else {
 				// A missing directory must not be treated as an empty project.
 				// When it is available, always refresh so new Flows are found
@@ -724,10 +725,8 @@ func openDBStore(path, root string) (*storage.SQLiteStore, storage.OrgState, err
 		}
 	} else if hasBinding {
 		if org.Metadata.ProjectFlowOwnershipVersion == 0 {
-			if err := validateLegacyProjectFlowOwnership(org, root); err != nil {
-				_ = store.Close()
-				return nil, storage.OrgState{}, err
-			}
+			_ = store.Close()
+			return nil, storage.OrgState{}, flowProjectIdentityError(path)
 		}
 		org, err = validateDBProjectBinding(store, path, root, binding, org, projectOrg)
 		if err != nil {
@@ -735,10 +734,6 @@ func openDBStore(path, root string) (*storage.SQLiteStore, storage.OrgState, err
 			return nil, storage.OrgState{}, err
 		}
 		changed := refreshDBProjectFlows(&org, projectOrg, root)
-		if org.Metadata.ProjectFlowOwnershipVersion == 0 {
-			org.Metadata.ProjectFlowOwnershipVersion = 1
-			changed = true
-		}
 		if org.Metadata.ProjectFlowRootID == "" && projectOrg.Metadata.ProjectFlowRootID != "" {
 			org.Metadata.ProjectFlowRootID = projectOrg.Metadata.ProjectFlowRootID
 			changed = true
@@ -754,6 +749,27 @@ func openDBStore(path, root string) (*storage.SQLiteStore, storage.OrgState, err
 	if hasBinding && org.DomainURL == "" && projectOrg.DomainURL != "" {
 		org.DomainURL = projectOrg.DomainURL
 		if err := store.Save(org); err != nil {
+			_ = store.Close()
+			return nil, storage.OrgState{}, err
+		}
+	}
+	if hasBinding {
+		resource.SyncProjectEventSubscribers(&org, &projectOrg)
+		// Hierarchy grants are org configuration, not part of the structural
+		// schema fingerprint. Reapply them even when the saved schema matches.
+		var hierarchyObjects []string
+		for name, state := range projectOrg.Objects {
+			if state.Definition.Metadata["gladeHierarchyAccess"] == "true" {
+				hierarchyObjects = append(hierarchyObjects, name)
+			}
+		}
+		resource.ApplyHierarchyAccessObjects(&org, hierarchyObjects)
+		currentProject, err := project.Load(root)
+		if err != nil {
+			_ = store.Close()
+			return nil, storage.OrgState{}, err
+		}
+		if err := resource.RefreshProjectOwnerSharingRules(&org, currentProject); err != nil {
 			_ = store.Close()
 			return nil, storage.OrgState{}, err
 		}
@@ -844,44 +860,10 @@ func legacyOrgHasFileBackedFlow(org storage.OrgState, projectOnly bool) bool {
 	return hasFile(org.Metadata.Flows) || hasFile(org.Metadata.FlowDeclarations)
 }
 
-// Legacy databases cannot distinguish a former external project Flow from a
-// runtime-owned file after that root disappears. Refuse the ambiguous open
-// instead of silently retaining or deleting an unknown executable rule.
-func validateLegacyProjectFlowOwnership(org storage.OrgState, root string) error {
-	owned, err := projectFlowSourceOwner(root)
-	if err != nil {
-		return err
-	}
-	check := func(rules []storage.FlowRule) error {
-		for _, rule := range rules {
-			file := strings.TrimSpace(rule.File)
-			lower := strings.ToLower(file)
-			if file != "" && (strings.HasSuffix(lower, ".flow") || strings.HasSuffix(lower, ".flow-meta.xml")) && !owned(rule) {
-				return fmt.Errorf("cannot establish legacy project Flow ownership; reopen with the previous metadata roots configured")
-			}
-		}
-		return nil
-	}
-	for _, object := range org.Objects {
-		if err := check(object.Definition.FlowRules); err != nil {
-			return err
-		}
-	}
-	if err := check(org.Metadata.Flows); err != nil {
-		return err
-	}
-	return check(org.Metadata.FlowDeclarations)
-}
-
 // Project Flow metadata can change independently of the database schema.
 // Reconcile source-owned rules while preserving runtime-only rules and data.
-func refreshDBProjectFlows(org *storage.OrgState, projectOrg storage.OrgState, root string) bool {
-	owned, err := projectFlowSourceOwner(root)
-	if err != nil {
-		return false
-	}
+func refreshDBProjectFlows(org *storage.OrgState, projectOrg storage.OrgState, _ string) bool {
 	changed := false
-	legacyOwnership := org.Metadata.ProjectFlowOwnershipVersion == 0
 	reconcile := func(existing, source []storage.FlowRule) []storage.FlowRule {
 		out := make([]storage.FlowRule, 0, len(existing)+len(source))
 		used := make([]bool, len(source))
@@ -900,7 +882,7 @@ func refreshDBProjectFlows(org *storage.OrgState, projectOrg storage.OrgState, r
 				}
 				continue
 			}
-			if (!legacyOwnership && !old.ProjectSourceOwned) || (legacyOwnership && !owned(old)) {
+			if !old.ProjectSourceOwned {
 				out = append(out, old)
 			}
 		}
@@ -1230,7 +1212,43 @@ func orgForProject(root string) (storage.OrgState, error) {
 }
 
 func orgStateFromIndex(root string, p project.Project, index typesys.Index) (storage.OrgState, error) {
+	return orgStateFromIndexWithSpread(root, p, index, false)
+}
+
+// orgStateFromIndexWithSpread optionally gives the org the standard object
+// spread that `glade test` uses. The spread is lazy: catalog objects are added
+// on first reference with the feature shape applied below, which also turns
+// off objects the project's features exclude. Building the whole catalog here
+// cost `glade exec` about 70% more instructions on a minimal project.
+//
+// The standard objects the lean org installs anyway (platform fixtures, project
+// metadata, flows) start from the catalog, as they did in the eager spread, so
+// their definitions do not depend on which fixture created them. A first pass
+// finds that set; the second pass seeds it before anything else runs.
+func orgStateFromIndexWithSpread(root string, p project.Project, index typesys.Index, standardSpread bool) (storage.OrgState, error) {
+	if !standardSpread {
+		return buildExecOrgState(root, p, index, nil, false)
+	}
+	lean, err := buildExecOrgState(root, p, index, nil, true)
+	if err != nil {
+		return storage.OrgState{}, err
+	}
+	org, err := buildExecOrgState(root, p, index, storage.StandardSpreadObjectsOf(lean), true)
+	if err != nil {
+		return storage.OrgState{}, err
+	}
+	org.EnableLazyStandardSpread()
+	return org, nil
+}
+
+func buildExecOrgState(root string, p project.Project, index typesys.Index, catalogSeed []string, standardSpread bool) (storage.OrgState, error) {
 	org := storage.NewOrgState()
+	if standardSpread {
+		org.OrgID = storage.DefaultOrgID
+		for _, name := range catalogSeed {
+			storage.EnsureStandardObject(&org, name)
+		}
+	}
 	domainURL, err := storage.NormalizeOrgDomainURL(p.OrgDomainURL)
 	if err != nil {
 		return storage.OrgState{}, err
@@ -1244,6 +1262,12 @@ func orgStateFromIndex(root string, p project.Project, index typesys.Index) (sto
 			Definition: sobject.ToObjectDefinition(describe),
 			Records:    make(map[storage.ID]storage.Record),
 		}
+		if standardSpread && storage.IsKnownStandardObject(name) {
+			storage.EnsureStandardObject(&org, name)
+		}
+	}
+	if err := resource.ApplyProjectEventSubscribers(&org, index, nil); err != nil {
+		return storage.OrgState{}, err
 	}
 	if err := storage.ApplyCustomMetadataRecords(&org, index.CustomMetadataRecords); err != nil {
 		return storage.OrgState{}, err
@@ -1280,6 +1304,7 @@ func orgStateFromIndex(root string, p project.Project, index typesys.Index) (sto
 		return storage.OrgState{}, err
 	}
 	apextest.ApplyProjectPermissionSets(&org, p)
+	apextest.ApplyScratchCountryAnonymousOrg(&org, p)
 	return org, nil
 }
 

@@ -265,8 +265,21 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 	EnsureDeterministicPlatformData(&org)
 	for _, objectName := range []string{"Organization", "UserRole", "User", "UserLogin", "Profile", "UserLicense", "Network", "PermissionSet", "PermissionSetAssignment", "ObjectPermissions", "RecordType"} {
 		want := 1
+		// permission_set_inventory (API 62.0/67.0): 88 sets, 39 profiles
+		// (14 setup profiles plus 25 inventory-only ones), 31 user licenses.
+		// profile_account_contact_rows: 56 Account/Contact rows, two of which
+		// merge into the fixed-ID seed rows; the seed adds 4 more rows.
 		if objectName == "Profile" {
-			want = 14
+			want = 39
+		}
+		if objectName == "UserLicense" {
+			want = 31
+		}
+		if objectName == "ObjectPermissions" {
+			want = 58
+		}
+		if objectName == "UserRole" {
+			want = 18
 		}
 		if objectName == "User" {
 			want = 2
@@ -278,13 +291,7 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 			want = 0
 		}
 		if objectName == "PermissionSet" {
-			want = 11
-		}
-		if objectName == "ObjectPermissions" {
-			want = 6
-		}
-		if objectName == "UserLicense" {
-			want = 6
+			want = 88
 		}
 		if objectName == "RecordType" {
 			want = 0
@@ -315,7 +322,7 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 			t.Fatalf("describe-only Master was seeded as a record for %s", objectName)
 		}
 	}
-	if len(org.Objects["User"].Records) != 2 || len(org.Objects["UserLogin"].Records) != 2 || len(org.Objects["Profile"].Records) != 14 || len(org.Objects["UserLicense"].Records) != 6 {
+	if len(org.Objects["User"].Records) != 2 || len(org.Objects["UserLogin"].Records) != 2 || len(org.Objects["Profile"].Records) != 39 || len(org.Objects["UserLicense"].Records) != 31 {
 		t.Fatalf("platform records = %#v", InspectOrg("", org))
 	}
 	if _, ok := findRecordByStringField(org.Objects["Profile"].Records, "Name", "Customer Community Guest User"); !ok {
@@ -328,7 +335,7 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 	if !ok {
 		t.Fatalf("missing deterministic user: %#v", org.Objects["User"].Records)
 	}
-	if user.Fields["UserRoleId"].ID != "00E000000000001" || user.Fields["LocaleSidKey"].String != "en_US" || user.Fields["TimeZoneSidKey"].String != "America/Los_Angeles" {
+	if user.Fields["UserRoleId"].Kind != ValueNull || user.Fields["LocaleSidKey"].String != "en_US" || user.Fields["TimeZoneSidKey"].String != "America/Los_Angeles" {
 		t.Fatalf("user fields = %#v", user.Fields)
 	}
 	if org.Objects["Organization"].Records["00D000000000mH2"].Fields["TimeZoneSidKey"].String != "America/Los_Angeles" {
@@ -365,9 +372,14 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 	if _, ok := org.Objects["Network"]; ok {
 		t.Fatal("default org without Communities must not expose Network schema")
 	}
-	minimumAccessPermissionSet, ok := org.Objects["PermissionSet"].Records["0PS000000000004"]
-	if !ok || !minimumAccessPermissionSet.Fields["IsOwnedByProfile"].Boolean || minimumAccessPermissionSet.Fields["ProfileId"].ID != "00e000000000002" {
-		t.Fatalf("minimum access permission set = %#v, %v", minimumAccessPermissionSet, ok)
+	minimumAccessSets := 0
+	for _, permissionSet := range org.Objects["PermissionSet"].Records {
+		if permissionSet.Fields["IsOwnedByProfile"].Boolean && IDsEqual(permissionSet.Fields["ProfileId"].ID, "00e000000000002") {
+			minimumAccessSets++
+		}
+	}
+	if minimumAccessSets != 1 {
+		t.Fatalf("minimum access profile-owned permission sets = %d, want 1", minimumAccessSets)
 	}
 	if refs := org.Objects["Attachment"].Definition.Fields["ParentId"].ReferenceTo; !containsStringFold(refs, "User") {
 		t.Fatalf("Attachment.ParentId references = %#v, want User", refs)

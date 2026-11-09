@@ -1,0 +1,4 @@
+api	case	result
+62.0	event_custom	{"disabledTarget":"System.QueryException","targetField":"C11 event custom"}
+67.0	event_custom	{"disabledTarget":"System.QueryException","targetField":"C11 event custom"}
+68.0	event_custom	{"disabledTarget":"System.QueryException","targetField":"C11 event custom"}

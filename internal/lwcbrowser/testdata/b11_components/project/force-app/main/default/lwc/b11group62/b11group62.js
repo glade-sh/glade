@@ -1,0 +1,1 @@
+import { LightningElement } from 'lwc'; export default class Probe extends LightningElement { result='pending'; renderedCallback() { if(this.result==='pending') {const els=[...this.template.querySelectorAll('lightning-rich-text-toolbar-button-group')]; this.result=JSON.stringify(els.map(el=>({html:el.outerHTML,text:el.textContent,shadow:el.shadowRoot?.innerHTML})));} } }

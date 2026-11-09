@@ -3,7 +3,6 @@ package apextest
 import (
 	"encoding/csv"
 	"encoding/json"
-	"maps"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -71,19 +70,7 @@ func TestScheduledLimitC09NativeConformance(t *testing.T) {
 			if err := json.Unmarshal([]byte(row[2]), &want); err != nil {
 				t.Fatal(err)
 			}
-			if api == "62" {
-				if !reflect.DeepEqual(want["Queries"], []any{float64(0), float64(100)}) || !reflect.DeepEqual(got["Queries"], []any{float64(0), float64(200)}) {
-					t.Fatalf("scheduled query carry changed: native=%v; Glade=%v", want, got)
-				}
-				got, want = maps.Clone(got), maps.Clone(want)
-				delete(got, "Queries")
-				delete(want, "Queries")
-				if !reflect.DeepEqual(got, want) {
-					t.Fatalf("other scheduled fields changed: native=%v; Glade=%v", want, got)
-				}
-				t.Log("known local carry batch Dot stdlib cases Dot Dot SOQL cases and Dot async cases (fix owner pending): native scheduled Queries cap=100; Glade=200")
-				case345Skip(t)
-			} else if !reflect.DeepEqual(got, want) {
+			if !reflect.DeepEqual(got, want) {
 				t.Fatalf("native=%v; Glade=%v", want, got)
 			}
 		})

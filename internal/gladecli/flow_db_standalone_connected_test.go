@@ -73,7 +73,7 @@ func TestFlowDBStandaloneLegacyConnectedRoutes(t *testing.T) {
 	}
 	for _, route := range routes {
 		t.Run(route.name, func(t *testing.T) {
-			if err := route.run(); err == nil || !strings.Contains(err.Error(), "cannot establish") {
+			if err := route.run(); err == nil || !strings.Contains(err.Error(), "rebuild the database") {
 				t.Fatalf("error=%v", err)
 			}
 		})

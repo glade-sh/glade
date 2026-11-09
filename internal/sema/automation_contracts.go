@@ -6,6 +6,7 @@ import (
 
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/ir"
+	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
@@ -28,6 +29,9 @@ func semaAutomationTypeMessage(typeName string, model *semaTypeMemberView) strin
 	if semaAutomationSourceType(model, typeName) {
 		return ""
 	}
+	if message := semaConnectAPIFeatureGateMessage(typeName, model); message != "" {
+		return message
+	}
 	for _, name := range []string{"lxscheduler.GetAppointmentCandidatesInput", "lxscheduler.GetAppointmentSlotsInput", "lxscheduler.SkillRequirement", "lxscheduler.WorkType", "lxscheduler.SchedulerResources", "KbManagement.PublishingService"} {
 		if strings.EqualFold(typeName, name) {
 			return "Type is not visible: " + name
@@ -45,7 +49,7 @@ func semaAutomationCallTypeMessage(typeName, method string, model *semaTypeMembe
 	// ordinary member resolution still checks the method's argument types.
 	if model != nil && model.state != nil && model.state.base != nil && model.state.base.knowledgeEnabled &&
 		strings.EqualFold(typeName, "KbManagement.PublishingService") &&
-		(strings.EqualFold(method, "publishArticle") || strings.EqualFold(method, "archiveOnlineArticle")) {
+		(strings.EqualFold(method, "publishArticle") || strings.EqualFold(method, "archiveOnlineArticle") || strings.EqualFold(method, "assignDraftArticleTask") || strings.EqualFold(method, "editOnlineArticle")) {
 		return ""
 	}
 	return semaAutomationTypeMessage(typeName, model)
@@ -193,4 +197,98 @@ func (a *Analyzer) semaAutomationCallMessage(receiverType, method string, args [
 		return ""
 	}
 	return fmt.Sprintf("Method does not exist or incorrect signature: void %s(%s) from the type %s", method, strings.Join(argTypes, ", "), canonicalType)
+}
+
+// capi2_feature_gates/org.tsv and capi3_feature_gates/org.tsv: each service
+// compiles only in a scratch shape that enables every listed feature or
+// setting. The name is the platform's own casing. A DTO type is never gated:
+// only the static service classes are hidden.
+type semaConnectAPIFeatureGate struct {
+	name     string
+	features []string
+}
+
+var semaConnectAPIFeatureGates = buildSemaConnectAPIFeatureGates(map[string][]string{
+	"ConnectApi.OmniDesignerConnect": {"OmniStudioDesigner"},
+	"ConnectApi.EinsteinLLM":         {"Einstein1AIPlatform"},
+	// The Knowledge setting, not the license feature, enables it;
+	// project.scratchDefinitionFeatures emits "Knowledge" only with
+	// knowledgeSettings.enableKnowledge, as for the Knowledge objects.
+	"ConnectApi.Knowledge": {"Knowledge"},
+	// CRM Analytics and Data Cloud services appear with DevelopmentWave;
+	// AnalyticsAdminPerms does not.
+	"ConnectApi.Wave":               {"DevelopmentWave"},
+	"ConnectApi.CdpQuery":           {"DevelopmentWave"},
+	"ConnectApi.CdpCatalog":         {"DevelopmentWave"},
+	"ConnectApi.SmartDataDiscovery": {"DevelopmentWave"},
+	// The Experience Cloud networks setting (communitiesSettings.
+	// enableNetworksEnabled, the NetworksEnabled token); the Communities
+	// feature alone does not enable them (capi3_feature_gates, shape
+	// "features=Communities").
+	"ConnectApi.NavigationMenu":         {"NetworksEnabled"},
+	"ConnectApi.Personalization":        {"NetworksEnabled"},
+	"ConnectApi.ExternalManagedAccount": {"NetworksEnabled"},
+	"ConnectApi.MarketingIntegration":   {"NetworksEnabled"},
+	"ConnectApi.Sites":                  {"NetworksEnabled"},
+	// Order Management: the feature opens the first group, its setting the
+	// second, enhanced orders the third (OrderSummaryCreation needs only the
+	// enhanced setting), and both settings the last.
+	"ConnectApi.CommerceCart":         {"OrderManagement"},
+	"ConnectApi.CommerceInventory":    {"OrderManagement"},
+	"ConnectApi.CommercePromotions":   {"OrderManagement"},
+	"ConnectApi.RegisterGuestBuyer":   {"OrderManagement"},
+	"ConnectApi.Repricing":            {"OrderManagement"},
+	"ConnectApi.ReturnOrder":          {"OrderManagement"},
+	"ConnectApi.OMSAnalytics":         {"OrderManagement", "OrderManagementEnabled"},
+	"ConnectApi.PickTicket":           {"OrderManagement", "OrderManagementEnabled"},
+	"ConnectApi.Routing":              {"OrderManagement", "OrderManagementEnabled"},
+	"ConnectApi.EnsurePaymentCredit":  {"OrderManagement", "EnhancedCommerceOrders"},
+	"ConnectApi.Exchanges":            {"OrderManagement", "EnhancedCommerceOrders"},
+	"ConnectApi.OrderSummaryCreation": {"EnhancedCommerceOrders"},
+	"ConnectApi.OrderSummary":         {"OrderManagement", "OrderManagementEnabled", "EnhancedCommerceOrders"},
+	"ConnectApi.FulfillmentOrder":     {"OrderManagement", "OrderManagementEnabled", "EnhancedCommerceOrders"},
+	"ConnectApi.OrderPaymentSummary":  {"OrderManagement", "OrderManagementEnabled", "EnhancedCommerceOrders"},
+})
+
+func buildSemaConnectAPIFeatureGates(table map[string][]string) map[string]semaConnectAPIFeatureGate {
+	out := make(map[string]semaConnectAPIFeatureGate, len(table))
+	for name, features := range table {
+		out[strings.ToLower(name)] = semaConnectAPIFeatureGate{name: name, features: features}
+	}
+	return out
+}
+
+// semaConnectAPIFeatureGateMessage hides a gated service only when the project
+// declares an org shape that lacks the feature. Without a declared shape the
+// service stays visible, because the real org is unknown.
+func semaConnectAPIFeatureGateMessage(typeName string, model *semaTypeMemberView) string {
+	gate, gated := semaConnectAPIFeatureGates[strings.ToLower(typeName)]
+	if !gated || model == nil || model.state == nil || model.state.base == nil {
+		return ""
+	}
+	features := model.state.base.orgShapeFeatures
+	if len(features) == 0 {
+		return ""
+	}
+	// The token is appended to positive evidence (Person Accounts, dependency
+	// scratch definitions) when the project declares no shape, so it can sit
+	// beside real features.
+	for _, feature := range features {
+		if feature == project.UnspecifiedStandardFieldShape {
+			return ""
+		}
+	}
+	for _, required := range gate.features {
+		found := false
+		for _, feature := range features {
+			if strings.EqualFold(feature, required) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return "Type is not visible: " + gate.name
+		}
+	}
+	return ""
 }

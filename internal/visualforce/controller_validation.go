@@ -121,6 +121,7 @@ func visualforceControllerCompilationWith(p project.Project, compilation *Contro
 	if err != nil {
 		return typesys.Index{}, nil, err
 	}
+	controllerCompiles.Add(1)
 	index := typesys.Build(p, objects)
 	analysis := sema.AnalyzeWithOptions(index, sema.AnalyzeOptions{Diagnostics: true, SuppressPerformanceDiagnostics: true})
 	diagnostics, err := visualforceControllerDiagnostics(p, analysis.Diagnostics)

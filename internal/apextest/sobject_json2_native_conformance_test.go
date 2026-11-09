@@ -42,8 +42,14 @@ func runSObjectJSON2NativeConformance(t *testing.T, fixture, probe, prefix, name
 
 func runSObjectJSON2NativeConformanceWithLanguage(t *testing.T, fixture, probe, prefix, namespace, shapes, language string, operations ...string) {
 	native, runtimeAPI := readSObjectJSON2NativeRows(t, fixture, shapes, operations...)
+	apis := []string{"62.0", "67.0"}
+	if fixture == "testdata/conformance/sobject_json2" || fixture == "testdata/conformance/sobject_json2_decoders" {
+		// API 68 matched API 67 on both routes; see this fixture's ORG-RUN.txt.
+		native["68.0"] = native["67.0"]
+		apis = append(apis, "68.0")
+	}
 	releaseRuntimeCachesAfterTest(t)
-	for _, api := range []string{"62.0", "67.0"} {
+	for _, api := range apis {
 		t.Run(api, func(t *testing.T) {
 			root := t.TempDir()
 			if err := os.CopyFS(root, os.DirFS(filepath.Join(fixture, "project"))); err != nil {
@@ -61,6 +67,9 @@ func runSObjectJSON2NativeConformanceWithLanguage(t *testing.T, fixture, probe, 
 			}
 			writeFile(t, filepath.Join(root, "classes/"+probe+"Test.cls"), named)
 			writeFile(t, filepath.Join(root, "classes/"+probe+"Test.cls-meta.xml"), `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>`+api+`</apiVersion><status>Active</status></ApexClass>`)
+			// Replay the owned permission set assignment where the fixture's
+			// ORG-RUN.txt records `sf org assign permset`.
+			replayRecordedPermissionSetAssignments(t, fixture, root, "permissionsets")
 			index := loadTestIndex(t, root)
 			if analysis := sema.Analyze(index); index.HasErrors() || analysis.HasErrors() {
 				t.Fatalf("native project accepted; Glade diagnostics=%v %v", index.Diagnostics, analysis.Diagnostics)
@@ -80,7 +89,7 @@ func runSObjectJSON2NativeConformanceWithLanguage(t *testing.T, fixture, probe, 
 				if err != nil {
 					t.Fatal(err)
 				}
-				org := orgFromIndex(index)
+				org := capturedFixtureOrg(t, index, api)
 				org.APIVersion = runtimeAPI
 				runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 				result, err := runner.execute(program, func(machine *vm.VM) {

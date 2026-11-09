@@ -222,9 +222,9 @@ func TestRenderActionSupportEscapesMalformedEventAttributeName(t *testing.T) {
 	rendered := renderAjaxMarkupForTest(t, `<apex:page><apex:form>
 		<apex:outputPanel id="eventParent" layout="block">
 			<button type="button">Update value</button>
-			<apex:actionSupport event="on&#34;click" action="{!updateVisibleValue}" reRender="targetPanel"/>
+			<apex:actionSupport event='on"click' action="{!updateVisibleValue}" reRender="targetPanel"/>
 		</apex:outputPanel>
-		<apex:actionSupport event="on&#34;click" action="{!updateVisibleValue}" reRender="targetPanel"/>
+		<apex:actionSupport event='on"click' action="{!updateVisibleValue}" reRender="targetPanel"/>
 	</apex:form></apex:page>`)
 	if got := strings.Count(rendered, ` on&#34;click="`); got != 2 {
 		t.Fatalf("escaped event attribute occurrences = %d, want both parent and standalone emissions: %s", got, rendered)

@@ -139,14 +139,11 @@ func TestC11Q3RepairAdmin(t *testing.T) {
 				return r.Suites[0].Cases[0]
 			}
 			b := run("baseline")
-			if c11ActorGateCarry(t, b, c.Class, "baseline", "admin") {
-				t.Log("known local carry batch Dot stdlib cases Dot Dot SOQL cases and Dot async cases: actor profile prerequisite prevents native observation")
-				apextest.Case345Skip(t)
-			}
+			result := run(c.Method)
 			if b.ClassName != c.Class || b.MethodName != "baseline" || b.Status != testreport.StatusPass || b.Problem != nil {
 				t.Fatalf("baseline failed: %s", c11Diagnostic(b))
 			}
-			raw, err := c12CapturePayload(run(c.Method), c.Class, c.Method, c.Marker)
+			raw, err := c12CapturePayload(result, c.Class, c.Method, c.Marker)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -158,7 +155,7 @@ func TestC11Q3RepairAdmin(t *testing.T) {
 				t.Fatal(err)
 			}
 			if !reflect.DeepEqual(got, rows[c.API+"/"+c.Method]) {
-				t.Fatal("projected observation differs")
+				t.Fatal("observation differs from native child projection")
 			}
 		})
 	}

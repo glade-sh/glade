@@ -1,0 +1,7 @@
+source_api	object	result	diagnostic
+62.0	AccountChangeEvent	accepted	-
+62.0	UserChangeEvent	accepted	-
+62.0	MissingB7ObjectChangeEvent	rejected	Invalid type: Schema.MissingB7ObjectChangeEvent
+67.0	AccountChangeEvent	accepted	-
+67.0	UserChangeEvent	accepted	-
+67.0	MissingB7ObjectChangeEvent	rejected	Invalid type: Schema.MissingB7ObjectChangeEvent

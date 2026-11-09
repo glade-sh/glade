@@ -61,6 +61,9 @@ func canonicalizeRecord(namespace string, definition storage.ObjectDefinition, o
 			return storage.Record{}, fmt.Errorf("dml: duplicate field alias %s.%s", objectName, field)
 		}
 		normalized := normalizeStoredFieldValue(definition.Fields[canonical], value)
+		if value.Kind == storage.ValueString && normalized.Kind == storage.ValueString && record.KeepsDefaultedLineBreak(canonical) && strings.ContainsAny(value.String, "\r\n") {
+			normalized = value
+		}
 		if normalized.Kind == storage.ValueNull {
 			if record.ExplicitNulls == nil {
 				record.ExplicitNulls = make(map[string]bool)
@@ -107,6 +110,15 @@ func normalizeStoredFieldValue(field storage.Field, value storage.Value) storage
 		return value
 	}
 	if field.Type == storage.FieldString {
+		// An empty text area or long text area is stored as null (org capture
+		// sobject_empty_string_fields, API 62 and 67). Only the exact empty string
+		// is established; whitespace-only shapes keep their existing handling.
+		if value.String == "" {
+			switch strings.ToUpper(strings.TrimSpace(field.DisplayType)) {
+			case "TEXTAREA", "LONGTEXTAREA":
+				return storage.NullValue()
+			}
+		}
 		// Normalize the stored copy without rewriting the caller's SObject.
 		value.String = strings.Trim(value.String, " ")
 		if field.LongTextArea {
@@ -804,7 +816,7 @@ func validateRequiredWithInsertDefaults(definition storage.ObjectDefinition, rec
 	}
 	missing = appendMissingListCustomSettingName(definition, record, missing)
 	if len(missing) > 0 {
-		sortRequiredFields(missing)
+		sortRequiredFields(definition, missing)
 		return dmlErrorf("REQUIRED_FIELD_MISSING", missing, "%s", requiredFieldsMessage(definition, missing))
 	}
 	if inserting && strings.EqualFold(definition.APIName, "Asset") &&
@@ -863,7 +875,7 @@ func validateRequiredUpdate(definition storage.ObjectDefinition, record, final s
 	}
 	missing = appendUpdatedMissingListCustomSettingName(definition, record, missing)
 	if len(missing) > 0 {
-		sortRequiredFields(missing)
+		sortRequiredFields(definition, missing)
 		return dmlErrorf("REQUIRED_FIELD_MISSING", missing, "%s", requiredFieldsMessage(definition, missing))
 	}
 	return nil
@@ -952,14 +964,50 @@ func requiredFieldsMessage(definition storage.ObjectDefinition, missing []string
 	return fmt.Sprintf("Required fields are missing: [%s]", strings.Join(missing, ", "))
 }
 
-func sortRequiredFields(fields []string) {
+// sortRequiredFields orders a REQUIRED_FIELD_MISSING list. LastName, Company
+// and Name lead; other standard fields follow the object's describe sequence
+// (Opportunity reports Name, StageName, CloseDate; dml_envelope_insert rows);
+// remaining fields are alphabetical.
+func sortRequiredFields(definition storage.ObjectDefinition, fields []string) {
+	positions := standardRequiredFieldPositions(definition.APIName, fields)
 	sort.SliceStable(fields, func(i, j int) bool {
 		left, right := requiredFieldOrder(fields[i]), requiredFieldOrder(fields[j])
 		if left != right {
 			return left < right
 		}
+		li, lok := positions[strings.ToLower(fields[i])]
+		ri, rok := positions[strings.ToLower(fields[j])]
+		if lok != rok {
+			return lok
+		}
+		if lok && li != ri {
+			return li < ri
+		}
 		return strings.ToLower(fields[i]) < strings.ToLower(fields[j])
 	})
+}
+
+func standardRequiredFieldPositions(objectName string, fields []string) map[string]int {
+	if len(fields) < 2 || strings.HasSuffix(objectName, "__c") {
+		return nil
+	}
+	wanted := make(map[string]bool, len(fields))
+	for _, field := range fields {
+		wanted[strings.ToLower(field)] = true
+	}
+	positions := map[string]int{}
+	index := 0
+	if !storage.VisitStandardFields(objectName, func(name string) {
+		if key := strings.ToLower(name); wanted[key] {
+			if _, seen := positions[key]; !seen {
+				positions[key] = index
+			}
+		}
+		index++
+	}) {
+		return nil
+	}
+	return positions
 }
 
 func requiredFieldOrder(field string) int {
@@ -1226,6 +1274,16 @@ func (e *Engine) validateReferencesWithLoadedView(definition storage.ObjectDefin
 				deleted = true
 			}
 		}
+		// Captured muting permission sets can be the parent of an object
+		// permission or the member of a permission-set group. Keep this
+		// extension scoped to those two references.
+		if !found && ((strings.EqualFold(definition.APIName, "ObjectPermissions") && strings.EqualFold(name, "ParentId")) || (strings.EqualFold(definition.APIName, "PermissionSetGroupComponent") && strings.EqualFold(name, "PermissionSetId"))) {
+			_, parent, exists := storage.LookupRecordByID(e.Org.Objects["MutingPermissionSet"].Records, id)
+			if exists {
+				found = !parent.System.IsDeleted
+				deleted = deleted || parent.System.IsDeleted
+			}
+		}
 		if !found && deleted {
 			return dmlErrorf("ENTITY_IS_DELETED", nil, "entity is deleted")
 		}
@@ -1273,6 +1331,13 @@ func (e *Engine) validTaskWhatReferenceType(field storage.Field, id storage.ID) 
 
 func missingReferenceError(record storage.Record, field string, id storage.ID) error {
 	if strings.EqualFold(record.Object, "Task") && strings.EqualFold(field, "WhatId") {
+		return dmlErrorf("INVALID_CROSS_REFERENCE_KEY", nil, "invalid cross reference id")
+	}
+	// case289_followups OPV8 (API 62.0, 67.0): an ObjectPermissions row whose
+	// ParentId is a permission set Id (0PS) that no set holds fails with the
+	// bare cross-reference error. An Id of another type (approval_reference
+	// "wrong": a User Id) keeps FIELD_INTEGRITY_EXCEPTION.
+	if strings.EqualFold(record.Object, "ObjectPermissions") && strings.EqualFold(field, "ParentId") && strings.HasPrefix(string(id), storage.StandardKeyPrefix("PermissionSet")) {
 		return dmlErrorf("INVALID_CROSS_REFERENCE_KEY", nil, "invalid cross reference id")
 	}
 	return dmlErrorf("FIELD_INTEGRITY_EXCEPTION", []string{field}, "dml: reference %s.%s points to missing record %s", record.Object, field, id)
@@ -1323,6 +1388,44 @@ func (e *Engine) validSystemOwnerID(definition storage.ObjectDefinition, id stor
 		}
 	}
 	return false
+}
+
+// validateActiveOwner rejects an insert, or an update that changes the owner, when the
+// new owner is an inactive user (org capture inactive_owner_dml, API 62 and 67). An update that
+// keeps its current owner passes, as does any later change to another field. A
+// standard object's message names its lower-case label; a custom object's names
+// its entity id, which Glade does not model.
+func (e *Engine) validateActiveOwner(definition storage.ObjectDefinition, id storage.ID, previous storage.ID) error {
+	if id == "" || !strings.HasPrefix(string(id), "005") || storage.ValidateID(id) != nil {
+		return nil
+	}
+	if previous != "" && storage.IDsEqual(previous, id) {
+		return nil
+	}
+	userObject, ok := storage.ResolveObjectName(*e.Org, "User")
+	if !ok {
+		return nil
+	}
+	_, user, found := storage.LookupRecordByID(e.Org.Objects[userObject].Records, id)
+	if !found {
+		return nil
+	}
+	active, ok := user.GetField("IsActive")
+	if !ok || active.Kind != storage.ValueBoolean || active.Boolean {
+		return nil
+	}
+	owner := string(id)
+	if len(owner) > 15 {
+		owner = owner[:15]
+	}
+	entity := "01I000000000000"
+	if !hasSuffixFold(definition.APIName, "__c") {
+		entity = strings.ToLower(definition.Label)
+		if entity == "" {
+			entity = strings.ToLower(definition.APIName)
+		}
+	}
+	return dmlErrorf("INACTIVE_OWNER_OR_USER", nil, "operation performed with inactive user [%s] as owner of %s", owner, entity)
 }
 
 func (e *Engine) validateUserOwnerReference(id storage.ID) error {
@@ -1622,7 +1725,7 @@ func (e *Engine) validateValidationRules(objectName string, definition storage.O
 		return nil
 	}
 	for _, rule := range activeRules {
-		matches, ok := evaluateValidationFormulaInOrgWithNamespace(rule.ErrorConditionFormula, rule.Namespace, e.Org, definition, record, prior, isNew, e.systemUserID())
+		matches, ok := evaluateValidationFormulaInOrgWithNamespace(rule.ErrorConditionFormula, rule.Namespace, e.Org, definition, record, prior, isNew, e.systemUserID(), e.PermissionUserFields)
 		if !ok || !matches {
 			continue
 		}
@@ -1662,6 +1765,6 @@ func evaluateValidationFormulaInOrg(formula string, org *storage.OrgState, defin
 	return evaluateRecordFormulaInOrgWithContext(formula, org, definition, record, prior, isNew)
 }
 
-func evaluateValidationFormulaInOrgWithNamespace(formula, namespace string, org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record, prior *storage.Record, isNew bool, userID storage.ID) (bool, bool) {
-	return evaluateCustomValidationFormulaInOrgWithNamespace(formula, namespace, org, definition, record, prior, isNew, userID)
+func evaluateValidationFormulaInOrgWithNamespace(formula, namespace string, org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record, prior *storage.Record, isNew bool, userID storage.ID, permissionFields ...map[string]storage.Value) (bool, bool) {
+	return evaluateCustomValidationFormulaInOrgWithNamespace(formula, namespace, org, definition, record, prior, isNew, userID, permissionFields...)
 }

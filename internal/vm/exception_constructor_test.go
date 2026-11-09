@@ -63,7 +63,9 @@ System.assertEquals('changed message', exceptionValue.getMessage());
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := New(nil).Execute(program); err != nil {
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -78,7 +80,9 @@ System.assertEquals('changed', value.getMessage());
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := New(nil).Execute(program); err != nil {
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }

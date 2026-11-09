@@ -116,6 +116,8 @@ func eventElementsProject(t *testing.T, api string) string {
 	}); err != nil {
 		t.Fatal(err)
 	}
+	// native/api*/ORG-RUN.txt: fixture_permission_set_assigned=true.
+	configureCapturedFixturePermissions(t, root, eventElementsFixture+"/project/force-app/main/default", "ElementFixture")
 	return root
 }
 
@@ -159,8 +161,7 @@ func TestPlatformEventElementsNativeConformance(t *testing.T) {
 			if len(cases) != 20 {
 				t.Fatalf("discovered %d methods, want 20", len(cases))
 			}
-			org := orgFromIndex(index)
-			org.APIVersion = api
+			org := capturedFixtureOrg(t, index, api)
 			runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 			triggers, triggerErrors := compileProjectTriggers(index)
 			if len(triggerErrors) != 0 || len(triggers) != 1 {

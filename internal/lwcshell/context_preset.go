@@ -237,6 +237,7 @@ func copyPermissionContext(in map[string]bool) map[string]bool {
 
 func normalizeCommunityContext(in CommunityContext) CommunityContext {
 	out := CommunityContext{
+		LWR:            in.LWR,
 		Site:           strings.TrimSpace(in.Site),
 		BasePath:       strings.TrimSpace(in.BasePath),
 		SiteID:         strings.TrimSpace(in.SiteID),

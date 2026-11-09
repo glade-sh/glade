@@ -1,0 +1,3 @@
+api	case	result
+62.0	child_projection	{"contact_email_populated":false,"contact_parent_populated":true,"opportunity_description_populated":false,"opportunity_parent_populated":true}
+67.0	child_projection	{"contact_email_populated":false,"contact_parent_populated":true,"opportunity_description_populated":false,"opportunity_parent_populated":true}

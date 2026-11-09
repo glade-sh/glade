@@ -478,13 +478,14 @@ func (vm *VM) flowInterviewOutputValue(output dml.FlowInterviewOutput) Value {
 	for name, value := range output.Scalars {
 		set(name, vmValueFromStorage(value))
 	}
+	convertRecord := vm.recordConverterForOrg(vm.Org)
 	for name, record := range output.Records {
-		set(name, vm.vmValueFromRecord(record))
+		set(name, convertRecord(record))
 	}
 	for name, records := range output.Collections {
 		items := make([]Value, 0, len(records))
 		for _, record := range records {
-			items = append(items, vm.vmValueFromRecord(record))
+			items = append(items, convertRecord(record))
 		}
 		set(name, List(items...))
 	}
@@ -498,6 +499,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		}
 	}()
 	method = canonicalPlatformObjectMemberName(receiver.Type, method)
+	if value, ok := vm.callConnectAPIObjectMember(receiver, method, args); ok {
+		return value, receiver, false, true, nil
+	}
 	if value, updated, mutated, handled, err := callApprovalRequestMember(receiver, method, args); handled || err != nil {
 		return value, updated, mutated, handled, err
 	}
@@ -511,6 +515,19 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			return vm.callPlatformObjectMember(Object("Http"), "send", args, result)
 		}
 		return Null, receiver, false, true, newExceptionError("CalloutException", "Callout without PaymentsContext is not Allowed")
+	}
+	// An Auth.JWS names a certificate by developer name. Glade models no
+	// certificates, so every named certificate is missing, and the org
+	// capture jws_missing_certificate shows native raising NoDataFoundException
+	// when the signed form or the token request needs it. Constructing the JWS
+	// or the exchange does not raise.
+	if strings.EqualFold(receiver.Type, "Auth.JWS") && strings.EqualFold(method, "getCompactSerialization") && len(args) == 0 {
+		return Null, receiver, false, true, newExceptionError("System.NoDataFoundException", missingCertificateMessage)
+	}
+	if strings.EqualFold(receiver.Type, "Auth.JWTBearerTokenExchange") && strings.EqualFold(method, "getHttpResponse") && len(args) == 0 {
+		if _, jws, ok := objectFieldValue(receiver, "jws"); ok && jws.Kind != ValueNull {
+			return Null, receiver, false, true, newExceptionError("System.NoDataFoundException", missingCertificateMessage)
+		}
 	}
 	if strings.EqualFold(receiver.Type, "Auth.JWTBearerTokenExchange") && strings.EqualFold(method, "getAccessToken") && len(args) == 0 {
 		for _, field := range []string{"tokenEndpoint", "jws", "grantType"} {
@@ -896,6 +913,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 					return tokens, receiver, false, true, nil
 				}
 				value, ok := detail.Fields["fields"]
+				// A sharing denial names no field and returns null (native
+				// user_self_update otherUserTitle rows, API 62.0 and 67.0).
+				if code, coded := detail.Fields["statusCode"]; coded && code.String() == "INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY" && (!ok || value.Kind != ValueList || len(value.List) == 0) {
+					return Null, receiver, false, true, nil
+				}
 				if !ok || value.Kind != ValueList {
 					return List(), receiver, false, true, nil
 				}
@@ -1682,6 +1704,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 						if _, _, exists := objectFieldValue(record, name); exists {
 							continue
 						}
+						if vm.standardFieldAbsentFromDeclaredBaseline(objectName, field) {
+							continue
+						}
 						if defaultValue, ok := vm.defaultValueForNewSObjectField(definition, record, field); ok {
 							putVMFieldPath(record, name, vmValueFromStorage(defaultValue))
 							rememberSchemaCheckboxEquality(&record, definition, field, defaultValue)
@@ -1711,11 +1736,16 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 					// Evaluate calculated defaults after their input defaults are loaded.
 					// Keep this snapshot on the caller without changing ordinary construction.
 					if stored, err := vm.recordFromValue(&record); err == nil {
+						// A loadDefaults Text formula keeps its whitespace and only an
+						// empty result is null, as on a trigger record
+						// (load_defaults_formula_text).
+						loadOptions := vm.formulaEvaluationOptions()
+						loadOptions.TriggerRecord = true
 						for name, field := range definition.Fields {
 							if strings.TrimSpace(field.Formula) == "" {
 								continue
 							}
-							if value, isNull, ok := dml.EvaluateRecordFormulaValueInOrg(field.Formula, field, vm.Org, definition, stored); ok {
+							if value, isNull, ok := dml.EvaluateRecordFormulaValueInOrgWithOptions(field.Formula, field, vm.Org, definition, stored, loadOptions); ok {
 								if isNull {
 									putVMFieldPath(record, name, Null)
 								} else {
@@ -1738,7 +1768,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if !ok || objectValue.Kind != ValueString {
 				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectType token missing object")
 			}
-			objectName, definition, ok := vm.describeObjectDefinition(objectValue.Text)
+			objectName, definition, ok := vm.describeAPI68ObjectDefinition(objectValue.Text)
 			if !ok {
 				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectType.getDescribe unknown object %s", objectValue.Text)
 			}
@@ -2475,7 +2505,8 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if err != nil {
 				return Null, receiver, false, true, err
 			}
-			return Int(int64(end.Sub(start).Hours() / 24)), receiver, false, true, nil
+			// Duration saturates near 292 years, so count days from Unix seconds.
+			return Int((end.Unix() - start.Unix()) / 86400), receiver, false, true, nil
 		case "isSameDay":
 			if len(args) != 1 || args[0].Kind != ValueObject || (args[0].Type != "Date" && args[0].Type != "Datetime") {
 				return Null, receiver, false, true, fmt.Errorf("Date.isSameDay expects Date or Datetime")
@@ -2682,7 +2713,8 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if datetimeLegacyIsoFractionalTruncate(receiver) {
 				t = t.Truncate(time.Second)
 			}
-			return longIntValue(t.UnixNano() / int64(time.Millisecond)), receiver, false, true, nil
+			// UnixNano overflows past year 2262.
+			return longIntValue(t.UnixMilli()), receiver, false, true, nil
 		case "time", "timeGmt":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Datetime.%s expects 0 arguments", method)
@@ -2793,7 +2825,13 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if err != nil {
 				return Null, receiver, false, true, err
 			}
-			return Bool(left.Year() == right.Year() && left.Month() == right.Month() && left.Day() == right.Day()), receiver, false, true, nil
+			// Native Datetime.isSameDay compares calendar days in the running user's time zone.
+			_, _, leftLocal, _, leftOK := resolveTimeZoneForInstant(vm.currentUserTimeZoneID(), left)
+			_, _, rightLocal, _, rightOK := resolveTimeZoneForInstant(vm.currentUserTimeZoneID(), right)
+			if !leftOK || !rightOK {
+				return Null, receiver, false, true, unsupportedCallError("Datetime.isSameDay timezone " + vm.currentUserTimeZoneID())
+			}
+			return Bool(leftLocal.Year() == rightLocal.Year() && leftLocal.Month() == rightLocal.Month() && leftLocal.Day() == rightLocal.Day()), receiver, false, true, nil
 		}
 	case "Time", "Blob":
 		switch method {
@@ -3247,7 +3285,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				}
 			}
 			if vm.Org != nil && (method == "isCreateable" || method == "isUpdateable" || method == "isDeletable") {
-				if resolved, ok := storage.ResolveObjectName(*vm.Org, name.Text); ok && storage.IsGeneratedHistoryObject(vm.Org.Objects[resolved].Definition) {
+				if resolved, ok := storage.ResolveObjectName(*vm.Org, name.Text); ok && (storage.IsGeneratedHistoryObject(vm.Org.Objects[resolved].Definition) || storage.IsCustomMetadataDefinition(vm.Org.Objects[resolved].Definition)) {
 					return Bool(false), receiver, false, true, nil
 				}
 			}
@@ -3273,7 +3311,8 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 					user = vm.testContext.CurrentUser
 				}
 				if name := receiver.Fields["name"]; name.Kind == ValueString &&
-					vm.profileHasCapturedAccountLicenseRestriction(stringField(user, "ProfileId"), name.Text) {
+					(vm.profileHasCapturedAccountLicenseRestriction(stringField(user, "ProfileId"), name.Text) ||
+						vm.undeletableFollowsDeletable(user)) {
 					if !vm.currentUserObjectPermission(name.Text, "isDeletable") {
 						return Bool(false), receiver, false, true, nil
 					}
@@ -5095,6 +5134,9 @@ func (vm *VM) callTypeObjectMember(receiver Value, method string, args []Value, 
 			return Null, true, fmt.Errorf("Type.newInstance expects 0 arguments")
 		}
 		typeName := typeValueIdentityName(receiver)
+		if failure, message, ok := connectAPIReflectionFailure(typeName, "newInstance"); ok {
+			return Null, true, newExceptionError(failure.Exception, message)
+		}
 		// R235: reflective String construction yields the empty string.
 		if strings.EqualFold(canonicalRuntimePlatformType(typeName), "String") {
 			return String(""), true, nil
@@ -6122,3 +6164,7 @@ func (vm *VM) callSObjectFieldDescribe(receiver Value, args []Value, result *Res
 	})
 	return describe, receiver, false, true, nil
 }
+
+// missingCertificateMessage is the stable prefix of the native message; the
+// platform appends a help link whose release and instance vary per org.
+const missingCertificateMessage = "Data Not Available: The data you were trying to access could not be found."

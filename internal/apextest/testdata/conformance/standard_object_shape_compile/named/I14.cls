@@ -1,0 +1,1 @@
+public class I14 extends NsOuter { public static void m() { DnE a; } }

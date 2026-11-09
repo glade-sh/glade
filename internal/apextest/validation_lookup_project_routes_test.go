@@ -23,6 +23,15 @@ func TestValidationAndLookupProjectAnonymousAndIsTestNativeRoutes(t *testing.T) 
 				classPath := filepath.Join(root, "force-app/main/default/classes/ValidationLookupRouteTest.cls")
 				writeFile(t, classPath, "@IsTest private class ValidationLookupRouteTest { @IsTest static void nativeOutcomes() {\n"+body+"\n} }")
 				writeFile(t, classPath+"-meta.xml", `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>`+api+`</apiVersion><status>Active</status></ApexClass>`)
+				// Replay the retained rows' recorded assignments:
+				// validation_rule_formula_semantics/ORG-RUN.txt at both APIs and
+				// lookup_filter_validation/native/api67/ORG-RUN.txt at API 67 only.
+				switch {
+				case family == "validation_rule_formula_semantics":
+					writeCapturedAssignments(t, root, "ValidationProbeAccess")
+				case family == "lookup_filter_validation" && api == "67.0":
+					writeCapturedAssignments(t, root, "LookupFilterValidationAccess")
+				}
 				index := loadTestIndex(t, root)
 				if index.HasErrors() {
 					t.Fatal(index.Diagnostics)
@@ -38,8 +47,7 @@ func TestValidationAndLookupProjectAnonymousAndIsTestNativeRoutes(t *testing.T) 
 					if err != nil {
 						t.Fatal(err)
 					}
-					org := orgFromIndex(index)
-					org.APIVersion = api
+					org := capturedFixtureOrg(t, index, api)
 					runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 					if result, err := runner.execute(program); err != nil {
 						t.Fatalf("anonymous native outcomes: %v; result=%#v", err, result)

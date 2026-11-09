@@ -14,9 +14,9 @@ with one of these statuses:
 Silent wrong behavior is a release blocker for any feature marked `supported`.
 Unsupported behavior should fail loudly and predictably.
 
-The supported window is Apex 62.0-67.0, LWC and Visualforce 59.0-67.0.
-Apex source API below 62.0 is unsupported. DataWeave, ConnectApi, and Slack
-are excluded and unsupported. See [release policy](RELEASE_POLICY.md#salesforce-api-versions)
+The supported window is Apex 62.0-68.0, LWC and Visualforce 59.0-67.0.
+Apex source API below 62.0 is unsupported. DataWeave and Slack are excluded and
+unsupported. ConnectApi types are passive shapes without the hosted services. See [release policy](RELEASE_POLICY.md#salesforce-api-versions)
 for the separate endpoint and Execute Anonymous version contracts, and
 [release notes](RELEASE_NOTES.md#v030) for known issues.
 

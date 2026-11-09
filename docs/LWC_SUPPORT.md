@@ -14,7 +14,7 @@ Glade supports LWC and Visualforce API 59.0-67.0. Explicit LWC bundle
 `apiVersion` values must be whole versions; the compiler accepts 59.0 through
 68.0. Unversioned bundles
 use compiler default 68.0; module availability follows the effective version.
-The supported window is Apex 62.0-67.0, LWC and Visualforce 59.0-67.0.
+The supported window is Apex 62.0-68.0, LWC and Visualforce 59.0-67.0.
 
 The local shell UI is the Workbench Console. Component Lab filters exposed
 LWCs, reads target metadata and `@api` properties, edits preview properties and
@@ -122,7 +122,7 @@ the builder's record-page object and record pickers.
 | `lightning/platformShowToastEvent` | Local support as a browser event shim | LWC shell and Visualforce Lightning Out. |
 | `lightning/showToastEvent` | Local support as a browser event shim | Alias for the package-exposed toast event contract. Exports `SHOW_TOAST_EVENT_NAME`, `ShowToastEvent`, and the local toast recorder hook. |
 | `lightning/toast` | Local support as a browser event shim | `LightningToast.show()` dispatches the local toast event so shell toast UI and tests observe the same path. |
-| `lightning/platformWorkspaceApi` | Local console tab model | Returns the active local route, tab info, and console wire values; supports local no-op tab open, close, focus, refresh, highlight, label, and icon helpers. Marked with `GLADELWC072`; full console workspace behavior stays hosted-only. |
+| `lightning/platformWorkspaceApi` | Local console tab model | Returns the active local route, tab info, and console wire values; models console tab state (workspace tabs and subtabs) for open, close, focus, refresh, highlight, label, icon, and disable-close helpers, with native result shapes and error messages captured in a Lightning console app. Outside a console every tab method rejects as native does. Marked with `GLADELWC072`; console chrome stays hosted-only. |
 | `lightning/platformUtilityBarApi` | Local utility-bar model | Returns deterministic utility item state for local utility routes, with open, close, minimize, focus, label, icon, highlighted state, and callback helpers. Hosted utility-bar chrome remains a Salesforce check. |
 | `lightning/actions` | Local event shim | Exports local `CloseActionScreenEvent` for quick-action flows. |
 | `lightning/alert` | Local overlay shim | `LightningAlert.open()` dispatches a browser event and resolves locally for package flows. |

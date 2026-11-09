@@ -1,3 +1,27 @@
+// Keep tagged documents opaque at the public boundary while retaining an
+// internal parsed form for the local query executor.
+const opaqueDocumentKey = Symbol("glade.graphql.document");
+const opaqueDocumentEntries = new Map();
+let nextDocumentKey = 0;
+export function opaqueDocument(parsed, source, error) {
+  const value = {};
+  Object.defineProperty(value, "source", { value: source });
+  Object.defineProperty(value, "toString", { value: () => source });
+  const key = String(++nextDocumentKey);
+  opaqueDocumentEntries.set(key, { parsed, error });
+  Object.defineProperty(value, opaqueDocumentKey, { get: () => key });
+  return value;
+}
+export function isOpaqueDocument(value) {
+  return !!value && typeof value === "object" && opaqueDocumentEntries.has(value[opaqueDocumentKey]);
+}
+export function unwrapDocument(value) {
+  if (!isOpaqueDocument(value)) return value;
+  const entry = opaqueDocumentEntries.get(value[opaqueDocumentKey]);
+  if (entry.error) throw entry.error;
+  return entry.parsed;
+}
+
 // A document parser for the local UI GraphQL query surface. Syntax errors are
 // construction errors; schema validation belongs to query execution.
 export class GraphQLError extends Error {
@@ -175,7 +199,7 @@ export function printDocument(document) {
   return document.definitions.map(node => {
     let head = node.kind === "FragmentDefinition" ? "fragment " + node.name + " on " + node.type : node.operation + (node.name ? " " + node.name : "");
     if (node.variables?.length) head += "(" + node.variables.map(v => "$" + v.name + ": " + v.type + (v.defaultValue !== undefined ? " = " + printValue(v.defaultValue) : "")).join(", ") + ")";
-    if (node.kind === "OperationDefinition" && !node.name && !node.variables.length && !node.directives.length) head = "";
+    if (node.kind === "OperationDefinition" && node.operation === "query" && !node.name && !node.variables.length && !node.directives.length) head = "";
     // Captured validation locations retain two extra operation separator lines;
     // consecutive fragment definitions share the ordinary two-line separator.
     return head + directives(node) + (head ? " " : "") + "{\n" + selections(node.selection, 1) + "\n}" + (node.kind === "OperationDefinition" ? "\n\n" : "");

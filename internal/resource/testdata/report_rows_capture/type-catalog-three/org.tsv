@@ -1,0 +1,37 @@
+api	route	case	result
+62.0	anonymous	catalog-baseline-account	3~Account General~user~4
+62.0	seealldata	catalog-baseline-account	3~Account General~user~4
+62.0	anonymous	catalog-baseline-contact	6~Contact: General~my~5
+62.0	seealldata	catalog-baseline-contact	6~Contact: General~my~5
+62.0	anonymous	catalog-baseline-opportunity	7~Opportunity Information~organization~4
+62.0	seealldata	catalog-baseline-opportunity	7~Opportunity Information~organization~4
+67.0	anonymous	catalog-baseline-account	3~Account General~user~4
+67.0	seealldata	catalog-baseline-account	3~Account General~user~4
+67.0	anonymous	catalog-baseline-contact	6~Contact: General~my~5
+67.0	seealldata	catalog-baseline-contact	6~Contact: General~my~5
+67.0	anonymous	catalog-baseline-opportunity	7~Opportunity Information~organization~4
+67.0	seealldata	catalog-baseline-opportunity	7~Opportunity Information~organization~4
+62.0	anonymous	catalog-hidden-account	categories=3
+62.0	seealldata	catalog-hidden-account	categories=3
+62.0	anonymous	catalog-hidden-contact	categories=6
+62.0	seealldata	catalog-hidden-contact	categories=6
+62.0	anonymous	catalog-hidden-opportunity	categories=7
+62.0	seealldata	catalog-hidden-opportunity	categories=7
+67.0	anonymous	catalog-hidden-account	categories=3
+67.0	seealldata	catalog-hidden-account	categories=3
+67.0	anonymous	catalog-hidden-contact	categories=6
+67.0	seealldata	catalog-hidden-contact	categories=6
+67.0	anonymous	catalog-hidden-opportunity	categories=7
+67.0	seealldata	catalog-hidden-opportunity	categories=7
+62.0	anonymous	catalog-visible-account	categories=4|Account: Custom Info~Account.B6_Amount__c~Account.B6_Amount__c~B6 Amount~DOUBLE_DATA~true|Account: Custom Info~Account.B6_Date__c~Account.B6_Date__c~B6 Date~DATE_DATA~true|Account: Custom Info~Account.B6_Text__c~Account.B6_Text__c~B6 Text~STRING_DATA~true
+62.0	seealldata	catalog-visible-account	categories=4|Account: Custom Info~Account.B6_Amount__c~Account.B6_Amount__c~B6 Amount~DOUBLE_DATA~true|Account: Custom Info~Account.B6_Date__c~Account.B6_Date__c~B6 Date~DATE_DATA~true|Account: Custom Info~Account.B6_Text__c~Account.B6_Text__c~B6 Text~STRING_DATA~true
+62.0	anonymous	catalog-visible-contact	categories=8|Contact: Custom Info~Contact.B6_Amount__c~Contact.B6_Amount__c~B6 Amount~DOUBLE_DATA~true|Contact: Custom Info~Contact.B6_Date__c~Contact.B6_Date__c~B6 Date~DATE_DATA~true|Contact: Custom Info~Contact.B6_Text__c~Contact.B6_Text__c~B6 Text~STRING_DATA~true|Account: Custom Info~Account.B6_Amount__c~Account.B6_Amount__c~B6 Amount~DOUBLE_DATA~true|Account: Custom Info~Account.B6_Date__c~Account.B6_Date__c~B6 Date~DATE_DATA~true|Account: Custom Info~Account.B6_Text__c~Account.B6_Text__c~B6 Text~STRING_DATA~true
+62.0	seealldata	catalog-visible-contact	categories=8|Contact: Custom Info~Contact.B6_Amount__c~Contact.B6_Amount__c~B6 Amount~DOUBLE_DATA~true|Contact: Custom Info~Contact.B6_Date__c~Contact.B6_Date__c~B6 Date~DATE_DATA~true|Contact: Custom Info~Contact.B6_Text__c~Contact.B6_Text__c~B6 Text~STRING_DATA~true|Account: Custom Info~Account.B6_Amount__c~Account.B6_Amount__c~B6 Amount~DOUBLE_DATA~true|Account: Custom Info~Account.B6_Date__c~Account.B6_Date__c~B6 Date~DATE_DATA~true|Account: Custom Info~Account.B6_Text__c~Account.B6_Text__c~B6 Text~STRING_DATA~true
+62.0	anonymous	catalog-visible-opportunity	categories=9|Opportunity: Custom Info~Opportunity.B6_Amount__c~Opportunity.B6_Amount__c~B6 Amount~DOUBLE_DATA~true|Opportunity: Custom Info~Opportunity.B6_Date__c~Opportunity.B6_Date__c~B6 Date~DATE_DATA~true|Opportunity: Custom Info~Opportunity.B6_Text__c~Opportunity.B6_Text__c~B6 Text~STRING_DATA~true|Account: Custom Info~Account.B6_Amount__c~Account.B6_Amount__c~B6 Amount~DOUBLE_DATA~true|Account: Custom Info~Account.B6_Date__c~Account.B6_Date__c~B6 Date~DATE_DATA~true|Account: Custom Info~Account.B6_Text__c~Account.B6_Text__c~B6 Text~STRING_DATA~true
+62.0	seealldata	catalog-visible-opportunity	categories=9|Opportunity: Custom Info~Opportunity.B6_Amount__c~Opportunity.B6_Amount__c~B6 Amount~DOUBLE_DATA~true|Opportunity: Custom Info~Opportunity.B6_Date__c~Opportunity.B6_Date__c~B6 Date~DATE_DATA~true|Opportunity: Custom Info~Opportunity.B6_Text__c~Opportunity.B6_Text__c~B6 Text~STRING_DATA~true|Account: Custom Info~Account.B6_Amount__c~Account.B6_Amount__c~B6 Amount~DOUBLE_DATA~true|Account: Custom Info~Account.B6_Date__c~Account.B6_Date__c~B6 Date~DATE_DATA~true|Account: Custom Info~Account.B6_Text__c~Account.B6_Text__c~B6 Text~STRING_DATA~true
+67.0	anonymous	catalog-visible-account	categories=4|Account: Custom Info~Account.B6_Amount__c~Account.B6_Amount__c~B6 Amount~DOUBLE_DATA~true|Account: Custom Info~Account.B6_Date__c~Account.B6_Date__c~B6 Date~DATE_DATA~true|Account: Custom Info~Account.B6_Text__c~Account.B6_Text__c~B6 Text~STRING_DATA~true
+67.0	seealldata	catalog-visible-account	categories=4|Account: Custom Info~Account.B6_Amount__c~Account.B6_Amount__c~B6 Amount~DOUBLE_DATA~true|Account: Custom Info~Account.B6_Date__c~Account.B6_Date__c~B6 Date~DATE_DATA~true|Account: Custom Info~Account.B6_Text__c~Account.B6_Text__c~B6 Text~STRING_DATA~true
+67.0	anonymous	catalog-visible-contact	categories=8|Contact: Custom Info~Contact.B6_Amount__c~Contact.B6_Amount__c~B6 Amount~DOUBLE_DATA~true|Contact: Custom Info~Contact.B6_Date__c~Contact.B6_Date__c~B6 Date~DATE_DATA~true|Contact: Custom Info~Contact.B6_Text__c~Contact.B6_Text__c~B6 Text~STRING_DATA~true|Account: Custom Info~Account.B6_Amount__c~Account.B6_Amount__c~B6 Amount~DOUBLE_DATA~true|Account: Custom Info~Account.B6_Date__c~Account.B6_Date__c~B6 Date~DATE_DATA~true|Account: Custom Info~Account.B6_Text__c~Account.B6_Text__c~B6 Text~STRING_DATA~true
+67.0	seealldata	catalog-visible-contact	categories=8|Contact: Custom Info~Contact.B6_Amount__c~Contact.B6_Amount__c~B6 Amount~DOUBLE_DATA~true|Contact: Custom Info~Contact.B6_Date__c~Contact.B6_Date__c~B6 Date~DATE_DATA~true|Contact: Custom Info~Contact.B6_Text__c~Contact.B6_Text__c~B6 Text~STRING_DATA~true|Account: Custom Info~Account.B6_Amount__c~Account.B6_Amount__c~B6 Amount~DOUBLE_DATA~true|Account: Custom Info~Account.B6_Date__c~Account.B6_Date__c~B6 Date~DATE_DATA~true|Account: Custom Info~Account.B6_Text__c~Account.B6_Text__c~B6 Text~STRING_DATA~true
+67.0	anonymous	catalog-visible-opportunity	categories=9|Opportunity: Custom Info~Opportunity.B6_Amount__c~Opportunity.B6_Amount__c~B6 Amount~DOUBLE_DATA~true|Opportunity: Custom Info~Opportunity.B6_Date__c~Opportunity.B6_Date__c~B6 Date~DATE_DATA~true|Opportunity: Custom Info~Opportunity.B6_Text__c~Opportunity.B6_Text__c~B6 Text~STRING_DATA~true|Account: Custom Info~Account.B6_Amount__c~Account.B6_Amount__c~B6 Amount~DOUBLE_DATA~true|Account: Custom Info~Account.B6_Date__c~Account.B6_Date__c~B6 Date~DATE_DATA~true|Account: Custom Info~Account.B6_Text__c~Account.B6_Text__c~B6 Text~STRING_DATA~true
+67.0	seealldata	catalog-visible-opportunity	categories=9|Opportunity: Custom Info~Opportunity.B6_Amount__c~Opportunity.B6_Amount__c~B6 Amount~DOUBLE_DATA~true|Opportunity: Custom Info~Opportunity.B6_Date__c~Opportunity.B6_Date__c~B6 Date~DATE_DATA~true|Opportunity: Custom Info~Opportunity.B6_Text__c~Opportunity.B6_Text__c~B6 Text~STRING_DATA~true|Account: Custom Info~Account.B6_Amount__c~Account.B6_Amount__c~B6 Amount~DOUBLE_DATA~true|Account: Custom Info~Account.B6_Date__c~Account.B6_Date__c~B6 Date~DATE_DATA~true|Account: Custom Info~Account.B6_Text__c~Account.B6_Text__c~B6 Text~STRING_DATA~true

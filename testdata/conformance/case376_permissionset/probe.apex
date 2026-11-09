@@ -1,0 +1,1 @@
+System.debug(PermissionSet.PermissionsViewAllFields);

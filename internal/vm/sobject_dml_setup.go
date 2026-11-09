@@ -20,7 +20,7 @@ func isSetupDMLRecord(record storage.Record) bool {
 }
 
 func mixedDMLRecordKind(record storage.Record) string {
-	if !isSetupObject(record.Object) {
+	if !isSetupObject(record.Object) && !strings.EqualFold(record.Object, "MutingPermissionSet") {
 		return "nonsetup"
 	}
 	if !strings.EqualFold(record.Object, "User") {

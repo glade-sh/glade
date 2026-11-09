@@ -1,0 +1,6 @@
+case	observation
+both_muted	"false:ENTITY_IS_LOCKED"
+direct_global	"true:NONE"
+global_muted	"true:NONE"
+object_muted	"true:NONE"
+revoked_global	"false:ENTITY_IS_LOCKED"

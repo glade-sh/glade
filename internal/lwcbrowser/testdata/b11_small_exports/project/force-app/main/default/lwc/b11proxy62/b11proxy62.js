@@ -1,0 +1,1 @@
+import {LightningElement,wire} from 'lwc'; import {gql,graphql} from 'lightning/graphql'; export default class Probe extends LightningElement { result='pending'; document=new Proxy(gql`query { __typename }`,{}); @wire(graphql,{query:'$document'}) receive(value){if(value.data)this.result=value.data.__typename; else if(value.errors)this.result=JSON.stringify(value.errors);} }

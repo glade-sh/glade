@@ -22,7 +22,9 @@ func (vm *VM) lexicalClassLiteralToken(name string, token Value) Value {
 			if token.Fields == nil {
 				token.Fields = make(map[string]Value)
 			}
-			token.Fields[reflectionTypeIdentityField] = String(identity)
+			// Identity uses the schema-qualified spelling that Type.forName and
+			// stub parameter types carry (org capture stub_param_types_namespaced).
+			token.Fields[reflectionTypeIdentityField] = String(vm.typeTokenName(identity))
 			token.lexicalClassLiteral = true
 		}
 		return token

@@ -11,10 +11,10 @@ import (
 )
 
 type messageChannelXML struct {
-	XMLName     xml.Name `xml:"LightningMessageChannel"`
-	MasterLabel *string  `xml:"masterLabel"`
-	IsExposed   *string  `xml:"isExposed"`
-	Description string   `xml:"description"`
+	XMLName     xml.Name
+	MasterLabel *string `xml:"masterLabel"`
+	IsExposed   *string `xml:"isExposed"`
+	Description string  `xml:"description"`
 	Fields      []struct {
 		Name        *string `xml:"fieldName"`
 		Description string  `xml:"description"`

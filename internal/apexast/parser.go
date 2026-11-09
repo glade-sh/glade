@@ -22,6 +22,30 @@ type Parser struct {
 
 var openParsers atomic.Int64
 
+// sourceObserver sees the text of every Apex source this package parses.
+// typesys registers one so a source that names an optional platform namespace
+// (ConnectApi) can request that namespace's shape before analysis needs it.
+var sourceObserver atomic.Pointer[func(string)]
+
+// SetSourceObserver installs fn as the parse-time source observer and returns
+// the previous one. A nil fn removes the observer.
+func SetSourceObserver(fn func(string)) (previous func(string)) {
+	var next *func(string)
+	if fn != nil {
+		next = &fn
+	}
+	if old := sourceObserver.Swap(next); old != nil {
+		previous = *old
+	}
+	return previous
+}
+
+func observeSource(source string) {
+	if fn := sourceObserver.Load(); fn != nil {
+		(*fn)(source)
+	}
+}
+
 var parserPool = sync.Pool{New: func() any { return NewParser() }}
 
 func NewParser() *Parser {
@@ -86,6 +110,7 @@ func (p *Parser) ParseFileAST(path string) (ASTFile, error) {
 
 func (p *Parser) ParseSource(path, source string) File {
 	defer runtime.KeepAlive(p)
+	observeSource(source)
 	file := p.parser.ParseSource(path, source)
 	file.Diagnostics = p.refineInlineSOSLDiagnostics(path, source, file.Diagnostics)
 	return nativeReservedStaticPriority(withSharingDeclarationDiagnostics(nativePropertySyntax(nativeAnnotationSyntax(convertFile(file), source), source), source))
@@ -93,6 +118,7 @@ func (p *Parser) ParseSource(path, source string) File {
 
 func (p *Parser) ParseSourceAST(path, source string) ASTFile {
 	defer runtime.KeepAlive(p)
+	observeSource(source)
 	file := p.parser.ParseSourceAST(path, source)
 	file.Diagnostics = p.refineInlineSOSLDiagnostics(path, source, file.Diagnostics)
 	return file

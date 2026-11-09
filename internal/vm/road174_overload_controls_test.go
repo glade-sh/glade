@@ -11,6 +11,21 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
+func requireRoad174API68Rows(t *testing.T, rows [][]string, keys ...string) {
+	t.Helper()
+	seen := map[string]bool{}
+	for _, row := range rows[1:] {
+		if len(row) == 7 && row[0] == "68.0" && row[1] == "std-object" {
+			seen[strings.Join(row[2:6], "/")] = true
+		}
+	}
+	for _, key := range keys {
+		if !seen[key] {
+			t.Fatalf("missing literal API 68 native row: %s", key)
+		}
+	}
+}
+
 // Captured at road174_overload_controls/org.tsv:2-73, including cold and
 // repeated overload calls in the same Apex execution.
 func TestRoad174OverloadControls(t *testing.T) {
@@ -25,12 +40,14 @@ func TestRoad174OverloadControls(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	requireRoad174API68Rows(t, rows, "named/cold/arg/user", "named/cold/binds/user", "named/sequence/arg/mixed")
 	for _, row := range rows[1:] {
 		if row[3] != "cold" && row[3] != "sequence" {
 			continue
 		}
 		row := row
 		t.Run(strings.Join(row[:6], "/"), func(t *testing.T) {
+			t.Parallel()
 			machine := road174ControlVM(t, row[0], row[1], row[2])
 			fields := "UserRecordAccess.HasReadAccess,UserRecordAccess.HasEditAccess,UserRecordAccess.HasDeleteAccess,UserRecordAccess.HasTransferAccess,UserRecordAccess.HasAllAccess,UserRecordAccess.MaxAccessLevel"
 			q := "SELECT " + fields + " FROM Order WHERE OwnerId = :uid"
@@ -44,7 +61,11 @@ func TestRoad174OverloadControls(t *testing.T) {
 				call = "Database.queryWithBinds(q,new Map<String,Object>{'uid'=>uid},AccessLevel.USER_MODE)"
 			}
 			if row[3] == "cold" {
-				source.WriteString("List<SObject> z=" + call + ";SObject a=z[0].getSObject('UserRecordAccess');System.assertEquals(false,a.get('HasAllAccess'));System.assertEquals('All',a.get('MaxAccessLevel'));")
+				var value []any
+				if err := json.Unmarshal([]byte(row[6]), &value); err != nil || len(value) != 2 {
+					t.Fatalf("invalid native cold row %q: %v", row[6], err)
+				}
+				fmt.Fprintf(&source, "List<SObject> z=%s;SObject a=z[0].getSObject('UserRecordAccess');System.assertEquals(%v,a.get('HasAllAccess'));System.assertEquals('%s',a.get('MaxAccessLevel'));", call, value[0], value[1])
 			} else {
 				var sequence [][]any
 				if err := json.Unmarshal([]byte(row[6]), &sequence); err != nil {
@@ -156,12 +177,14 @@ func TestRoad174AnonymousSystemControls(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	requireRoad174API68Rows(t, rows, "anonymous/base/arg/system", "anonymous/base/binds/system", "anonymous/base/clause/system")
 	for _, row := range rows[1:] {
 		if row[2] != "anonymous" || row[5] != "system" || row[3] == "cold" || row[3] == "sequence" {
 			continue
 		}
 		row := row
 		t.Run(strings.Join(row[:6], "/"), func(t *testing.T) {
+			t.Parallel()
 			machine := road174ControlVM(t, row[0], row[1], "anonymous")
 			fields := "UserRecordAccess.HasReadAccess,UserRecordAccess.HasEditAccess,UserRecordAccess.HasDeleteAccess,UserRecordAccess.HasTransferAccess,UserRecordAccess.HasAllAccess,UserRecordAccess.MaxAccessLevel"
 			q := "SELECT " + fields + " FROM Order WHERE OwnerId = :uid"
@@ -224,10 +247,11 @@ func TestRoad174CapturedUserShapeLoop(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, api := range []string{"62.0", "67.0"} {
+	for _, api := range []string{"62.0", "67.0", "68.0"} {
 		for _, group := range []string{"std-object", "std-global", "min-object", "min-global", "admin"} {
 			api, group := api, group
 			t.Run(api+"/"+group, func(t *testing.T) {
+				t.Parallel()
 				machine := road174ControlVM(t, api, group, "anonymous")
 				// The native setup inserted the other-owner record first.
 				object := machine.Org.Objects["Order"]
@@ -241,8 +265,12 @@ func TestRoad174CapturedUserShapeLoop(t *testing.T) {
 				var source strings.Builder
 				source.Write(native)
 				count := 0
+				nativeAPI := api
+				if api == "68.0" {
+					nativeAPI = "67.0"
+				}
 				for _, row := range rows[1:] {
-					if row[0] != api || row[1] != group || row[2] != "anonymous" || row[5] != "user" || row[3] == "cold" || row[3] == "sequence" {
+					if row[0] != nativeAPI || row[1] != group || row[2] != "anonymous" || row[5] != "user" || row[3] == "cold" || row[3] == "sequence" {
 						continue
 					}
 					key := row[3] + "|USER|" + row[4]

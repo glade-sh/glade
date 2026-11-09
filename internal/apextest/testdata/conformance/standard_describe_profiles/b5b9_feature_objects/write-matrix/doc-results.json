@@ -1,0 +1,1484 @@
+[
+  {
+    "route": "named-source",
+    "api": "62.0",
+    "object": "DocumentGenerationProcess",
+    "field": "AdditionalMetadata",
+    "class": "OwnedAssign62_0",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.AdditionalMetadata=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "62.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInput",
+    "class": "OwnedAssign62_1",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenAdditionalInput=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "62.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInputType",
+    "class": "OwnedAssign62_2",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenAdditionalInputType=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "62.0",
+    "object": "DocumentGenerationProcess",
+    "field": "EstimatedDocumentSize",
+    "class": "OwnedAssign62_3",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.EstimatedDocumentSize=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "62.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsLocalizationEnabled",
+    "class": "OwnedAssign62_4",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsLocalizationEnabled=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "62.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsSharedExternally",
+    "class": "OwnedAssign62_5",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsSharedExternally=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "62.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsTocUpdateRequired",
+    "class": "OwnedAssign62_6",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsTocUpdateRequired=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "62.0",
+    "object": "DocumentTemplate",
+    "field": "ContextDefinitionName",
+    "class": "OwnedAssign62_7",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextDefinitionName=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "62.0",
+    "object": "DocumentTemplate",
+    "field": "ContextFilterName",
+    "class": "OwnedAssign62_8",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextFilterName=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "62.0",
+    "object": "DocumentTemplate",
+    "field": "ContextMappingName",
+    "class": "OwnedAssign62_9",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextMappingName=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "62.0",
+    "object": "DocumentTemplate",
+    "field": "ContextTransformationName",
+    "class": "OwnedAssign62_10",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextTransformationName=null;"
+  },
+  {
+    "route": "named-deploy",
+    "api": "62.0",
+    "status": 1,
+    "failures": [
+      {
+        "name": "OwnedAssign62_0",
+        "problem": "Variable does not exist: AdditionalMetadata"
+      },
+      {
+        "name": "OwnedAssign62_1",
+        "problem": "Variable does not exist: DocGenAdditionalInput"
+      },
+      {
+        "name": "OwnedAssign62_10",
+        "problem": "Variable does not exist: ContextTransformationName"
+      },
+      {
+        "name": "OwnedAssign62_2",
+        "problem": "Variable does not exist: DocGenAdditionalInputType"
+      },
+      {
+        "name": "OwnedAssign62_3",
+        "problem": "Variable does not exist: EstimatedDocumentSize"
+      },
+      {
+        "name": "OwnedAssign62_4",
+        "problem": "Variable does not exist: IsLocalizationEnabled"
+      },
+      {
+        "name": "OwnedAssign62_5",
+        "problem": "Variable does not exist: IsSharedExternally"
+      },
+      {
+        "name": "OwnedAssign62_6",
+        "problem": "Variable does not exist: IsTocUpdateRequired"
+      },
+      {
+        "name": "OwnedAssign62_7",
+        "problem": "Variable does not exist: ContextDefinitionName"
+      },
+      {
+        "name": "OwnedAssign62_8",
+        "problem": "Variable does not exist: ContextFilterName"
+      },
+      {
+        "name": "OwnedAssign62_9",
+        "problem": "Variable does not exist: ContextMappingName"
+      }
+    ],
+    "successes": []
+  },
+  {
+    "route": "anonymous",
+    "api": "62.0",
+    "object": "DocumentGenerationProcess",
+    "field": "AdditionalMetadata",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.AdditionalMetadata=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 73 with the error:\n\nVariable does not exist: AdditionalMetadata"
+  },
+  {
+    "route": "anonymous",
+    "api": "62.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInput",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenAdditionalInput=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 73 with the error:\n\nVariable does not exist: DocGenAdditionalInput"
+  },
+  {
+    "route": "anonymous",
+    "api": "62.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInputType",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenAdditionalInputType=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 73 with the error:\n\nVariable does not exist: DocGenAdditionalInputType"
+  },
+  {
+    "route": "anonymous",
+    "api": "62.0",
+    "object": "DocumentGenerationProcess",
+    "field": "EstimatedDocumentSize",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.EstimatedDocumentSize=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 73 with the error:\n\nVariable does not exist: EstimatedDocumentSize"
+  },
+  {
+    "route": "anonymous",
+    "api": "62.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsLocalizationEnabled",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsLocalizationEnabled=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 73 with the error:\n\nVariable does not exist: IsLocalizationEnabled"
+  },
+  {
+    "route": "anonymous",
+    "api": "62.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsSharedExternally",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsSharedExternally=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 73 with the error:\n\nVariable does not exist: IsSharedExternally"
+  },
+  {
+    "route": "anonymous",
+    "api": "62.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsTocUpdateRequired",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsTocUpdateRequired=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 73 with the error:\n\nVariable does not exist: IsTocUpdateRequired"
+  },
+  {
+    "route": "anonymous",
+    "api": "62.0",
+    "object": "DocumentTemplate",
+    "field": "ContextDefinitionName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextDefinitionName=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 55 with the error:\n\nVariable does not exist: ContextDefinitionName"
+  },
+  {
+    "route": "anonymous",
+    "api": "62.0",
+    "object": "DocumentTemplate",
+    "field": "ContextFilterName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextFilterName=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 55 with the error:\n\nVariable does not exist: ContextFilterName"
+  },
+  {
+    "route": "anonymous",
+    "api": "62.0",
+    "object": "DocumentTemplate",
+    "field": "ContextMappingName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextMappingName=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 55 with the error:\n\nVariable does not exist: ContextMappingName"
+  },
+  {
+    "route": "anonymous",
+    "api": "62.0",
+    "object": "DocumentTemplate",
+    "field": "ContextTransformationName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextTransformationName=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 55 with the error:\n\nVariable does not exist: ContextTransformationName"
+  },
+  {
+    "route": "named-source",
+    "api": "63.0",
+    "object": "DocumentGenerationProcess",
+    "field": "AdditionalMetadata",
+    "class": "OwnedAssign63_0",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.AdditionalMetadata=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "63.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInput",
+    "class": "OwnedAssign63_1",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenAdditionalInput=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "63.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInputType",
+    "class": "OwnedAssign63_2",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenAdditionalInputType=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "63.0",
+    "object": "DocumentGenerationProcess",
+    "field": "EstimatedDocumentSize",
+    "class": "OwnedAssign63_3",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.EstimatedDocumentSize=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "63.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsLocalizationEnabled",
+    "class": "OwnedAssign63_4",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsLocalizationEnabled=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "63.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsSharedExternally",
+    "class": "OwnedAssign63_5",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsSharedExternally=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "63.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsTocUpdateRequired",
+    "class": "OwnedAssign63_6",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsTocUpdateRequired=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "63.0",
+    "object": "DocumentTemplate",
+    "field": "ContextDefinitionName",
+    "class": "OwnedAssign63_7",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextDefinitionName=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "63.0",
+    "object": "DocumentTemplate",
+    "field": "ContextFilterName",
+    "class": "OwnedAssign63_8",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextFilterName=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "63.0",
+    "object": "DocumentTemplate",
+    "field": "ContextMappingName",
+    "class": "OwnedAssign63_9",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextMappingName=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "63.0",
+    "object": "DocumentTemplate",
+    "field": "ContextTransformationName",
+    "class": "OwnedAssign63_10",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextTransformationName=null;"
+  },
+  {
+    "route": "named-deploy",
+    "api": "63.0",
+    "status": 1,
+    "failures": [
+      {
+        "name": "OwnedAssign63_0",
+        "problem": "Variable does not exist: AdditionalMetadata"
+      },
+      {
+        "name": "OwnedAssign63_1",
+        "problem": "Variable does not exist: DocGenAdditionalInput"
+      },
+      {
+        "name": "OwnedAssign63_10",
+        "problem": "Variable does not exist: ContextTransformationName"
+      },
+      {
+        "name": "OwnedAssign63_2",
+        "problem": "Variable does not exist: DocGenAdditionalInputType"
+      },
+      {
+        "name": "OwnedAssign63_3",
+        "problem": "Variable does not exist: EstimatedDocumentSize"
+      },
+      {
+        "name": "OwnedAssign63_4",
+        "problem": "Variable does not exist: IsLocalizationEnabled"
+      },
+      {
+        "name": "OwnedAssign63_5",
+        "problem": "Variable does not exist: IsSharedExternally"
+      },
+      {
+        "name": "OwnedAssign63_6",
+        "problem": "Variable does not exist: IsTocUpdateRequired"
+      },
+      {
+        "name": "OwnedAssign63_7",
+        "problem": "Variable does not exist: ContextDefinitionName"
+      },
+      {
+        "name": "OwnedAssign63_8",
+        "problem": "Variable does not exist: ContextFilterName"
+      },
+      {
+        "name": "OwnedAssign63_9",
+        "problem": "Variable does not exist: ContextMappingName"
+      }
+    ],
+    "successes": []
+  },
+  {
+    "route": "anonymous",
+    "api": "63.0",
+    "object": "DocumentGenerationProcess",
+    "field": "AdditionalMetadata",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.AdditionalMetadata=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 73 with the error:\n\nVariable does not exist: AdditionalMetadata"
+  },
+  {
+    "route": "anonymous",
+    "api": "63.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInput",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenAdditionalInput=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 73 with the error:\n\nVariable does not exist: DocGenAdditionalInput"
+  },
+  {
+    "route": "anonymous",
+    "api": "63.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInputType",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenAdditionalInputType=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 73 with the error:\n\nVariable does not exist: DocGenAdditionalInputType"
+  },
+  {
+    "route": "anonymous",
+    "api": "63.0",
+    "object": "DocumentGenerationProcess",
+    "field": "EstimatedDocumentSize",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.EstimatedDocumentSize=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 73 with the error:\n\nVariable does not exist: EstimatedDocumentSize"
+  },
+  {
+    "route": "anonymous",
+    "api": "63.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsLocalizationEnabled",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsLocalizationEnabled=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 73 with the error:\n\nVariable does not exist: IsLocalizationEnabled"
+  },
+  {
+    "route": "anonymous",
+    "api": "63.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsSharedExternally",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsSharedExternally=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 73 with the error:\n\nVariable does not exist: IsSharedExternally"
+  },
+  {
+    "route": "anonymous",
+    "api": "63.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsTocUpdateRequired",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsTocUpdateRequired=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 73 with the error:\n\nVariable does not exist: IsTocUpdateRequired"
+  },
+  {
+    "route": "anonymous",
+    "api": "63.0",
+    "object": "DocumentTemplate",
+    "field": "ContextDefinitionName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextDefinitionName=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 55 with the error:\n\nVariable does not exist: ContextDefinitionName"
+  },
+  {
+    "route": "anonymous",
+    "api": "63.0",
+    "object": "DocumentTemplate",
+    "field": "ContextFilterName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextFilterName=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 55 with the error:\n\nVariable does not exist: ContextFilterName"
+  },
+  {
+    "route": "anonymous",
+    "api": "63.0",
+    "object": "DocumentTemplate",
+    "field": "ContextMappingName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextMappingName=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 55 with the error:\n\nVariable does not exist: ContextMappingName"
+  },
+  {
+    "route": "anonymous",
+    "api": "63.0",
+    "object": "DocumentTemplate",
+    "field": "ContextTransformationName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextTransformationName=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 55 with the error:\n\nVariable does not exist: ContextTransformationName"
+  },
+  {
+    "route": "named-source",
+    "api": "64.0",
+    "object": "DocumentGenerationProcess",
+    "field": "AdditionalMetadata",
+    "class": "OwnedAssign64_0",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.AdditionalMetadata=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "64.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInput",
+    "class": "OwnedAssign64_1",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenAdditionalInput=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "64.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInputType",
+    "class": "OwnedAssign64_2",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenAdditionalInputType=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "64.0",
+    "object": "DocumentGenerationProcess",
+    "field": "EstimatedDocumentSize",
+    "class": "OwnedAssign64_3",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.EstimatedDocumentSize=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "64.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsLocalizationEnabled",
+    "class": "OwnedAssign64_4",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsLocalizationEnabled=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "64.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsSharedExternally",
+    "class": "OwnedAssign64_5",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsSharedExternally=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "64.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsTocUpdateRequired",
+    "class": "OwnedAssign64_6",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsTocUpdateRequired=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "64.0",
+    "object": "DocumentTemplate",
+    "field": "ContextDefinitionName",
+    "class": "OwnedAssign64_7",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextDefinitionName=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "64.0",
+    "object": "DocumentTemplate",
+    "field": "ContextFilterName",
+    "class": "OwnedAssign64_8",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextFilterName=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "64.0",
+    "object": "DocumentTemplate",
+    "field": "ContextMappingName",
+    "class": "OwnedAssign64_9",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextMappingName=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "64.0",
+    "object": "DocumentTemplate",
+    "field": "ContextTransformationName",
+    "class": "OwnedAssign64_10",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextTransformationName=null;"
+  },
+  {
+    "route": "named-deploy",
+    "api": "64.0",
+    "status": 1,
+    "failures": [
+      {
+        "name": "OwnedAssign64_0",
+        "problem": "Variable does not exist: AdditionalMetadata"
+      },
+      {
+        "name": "OwnedAssign64_10",
+        "problem": "Variable does not exist: ContextTransformationName"
+      },
+      {
+        "name": "OwnedAssign64_4",
+        "problem": "Variable does not exist: IsLocalizationEnabled"
+      },
+      {
+        "name": "OwnedAssign64_5",
+        "problem": "Variable does not exist: IsSharedExternally"
+      },
+      {
+        "name": "OwnedAssign64_6",
+        "problem": "Variable does not exist: IsTocUpdateRequired"
+      },
+      {
+        "name": "OwnedAssign64_8",
+        "problem": "Variable does not exist: ContextFilterName"
+      }
+    ],
+    "successes": [
+      "OwnedAssign64_1",
+      "OwnedAssign64_2",
+      "OwnedAssign64_3",
+      "OwnedAssign64_7",
+      "OwnedAssign64_9"
+    ]
+  },
+  {
+    "route": "anonymous",
+    "api": "64.0",
+    "object": "DocumentGenerationProcess",
+    "field": "AdditionalMetadata",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.AdditionalMetadata=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 73 with the error:\n\nVariable does not exist: AdditionalMetadata"
+  },
+  {
+    "route": "anonymous",
+    "api": "64.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInput",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenAdditionalInput=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "64.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInputType",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenAdditionalInputType=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "64.0",
+    "object": "DocumentGenerationProcess",
+    "field": "EstimatedDocumentSize",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.EstimatedDocumentSize=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "64.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsLocalizationEnabled",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsLocalizationEnabled=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 73 with the error:\n\nVariable does not exist: IsLocalizationEnabled"
+  },
+  {
+    "route": "anonymous",
+    "api": "64.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsSharedExternally",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsSharedExternally=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 73 with the error:\n\nVariable does not exist: IsSharedExternally"
+  },
+  {
+    "route": "anonymous",
+    "api": "64.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsTocUpdateRequired",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsTocUpdateRequired=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 73 with the error:\n\nVariable does not exist: IsTocUpdateRequired"
+  },
+  {
+    "route": "anonymous",
+    "api": "64.0",
+    "object": "DocumentTemplate",
+    "field": "ContextDefinitionName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextDefinitionName=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "64.0",
+    "object": "DocumentTemplate",
+    "field": "ContextFilterName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextFilterName=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 55 with the error:\n\nVariable does not exist: ContextFilterName"
+  },
+  {
+    "route": "anonymous",
+    "api": "64.0",
+    "object": "DocumentTemplate",
+    "field": "ContextMappingName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextMappingName=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "64.0",
+    "object": "DocumentTemplate",
+    "field": "ContextTransformationName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextTransformationName=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 55 with the error:\n\nVariable does not exist: ContextTransformationName"
+  },
+  {
+    "route": "named-source",
+    "api": "65.0",
+    "object": "DocumentGenerationProcess",
+    "field": "AdditionalMetadata",
+    "class": "OwnedAssign65_0",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.AdditionalMetadata=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "65.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInput",
+    "class": "OwnedAssign65_1",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenAdditionalInput=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "65.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInputType",
+    "class": "OwnedAssign65_2",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenAdditionalInputType=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "65.0",
+    "object": "DocumentGenerationProcess",
+    "field": "EstimatedDocumentSize",
+    "class": "OwnedAssign65_3",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.EstimatedDocumentSize=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "65.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsLocalizationEnabled",
+    "class": "OwnedAssign65_4",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsLocalizationEnabled=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "65.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsSharedExternally",
+    "class": "OwnedAssign65_5",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsSharedExternally=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "65.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsTocUpdateRequired",
+    "class": "OwnedAssign65_6",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsTocUpdateRequired=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "65.0",
+    "object": "DocumentTemplate",
+    "field": "ContextDefinitionName",
+    "class": "OwnedAssign65_7",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextDefinitionName=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "65.0",
+    "object": "DocumentTemplate",
+    "field": "ContextFilterName",
+    "class": "OwnedAssign65_8",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextFilterName=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "65.0",
+    "object": "DocumentTemplate",
+    "field": "ContextMappingName",
+    "class": "OwnedAssign65_9",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextMappingName=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "65.0",
+    "object": "DocumentTemplate",
+    "field": "ContextTransformationName",
+    "class": "OwnedAssign65_10",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextTransformationName=null;"
+  },
+  {
+    "route": "named-deploy",
+    "api": "65.0",
+    "status": 1,
+    "failures": [
+      {
+        "name": "OwnedAssign65_0",
+        "problem": "Variable does not exist: AdditionalMetadata"
+      },
+      {
+        "name": "OwnedAssign65_10",
+        "problem": "Variable does not exist: ContextTransformationName"
+      },
+      {
+        "name": "OwnedAssign65_4",
+        "problem": "Variable does not exist: IsLocalizationEnabled"
+      },
+      {
+        "name": "OwnedAssign65_5",
+        "problem": "Variable does not exist: IsSharedExternally"
+      },
+      {
+        "name": "OwnedAssign65_6",
+        "problem": "Variable does not exist: IsTocUpdateRequired"
+      },
+      {
+        "name": "OwnedAssign65_8",
+        "problem": "Variable does not exist: ContextFilterName"
+      }
+    ],
+    "successes": [
+      "OwnedAssign65_1",
+      "OwnedAssign65_2",
+      "OwnedAssign65_3",
+      "OwnedAssign65_7",
+      "OwnedAssign65_9"
+    ]
+  },
+  {
+    "route": "anonymous",
+    "api": "65.0",
+    "object": "DocumentGenerationProcess",
+    "field": "AdditionalMetadata",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.AdditionalMetadata=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 73 with the error:\n\nVariable does not exist: AdditionalMetadata"
+  },
+  {
+    "route": "anonymous",
+    "api": "65.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInput",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenAdditionalInput=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "65.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInputType",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenAdditionalInputType=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "65.0",
+    "object": "DocumentGenerationProcess",
+    "field": "EstimatedDocumentSize",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.EstimatedDocumentSize=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "65.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsLocalizationEnabled",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsLocalizationEnabled=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 73 with the error:\n\nVariable does not exist: IsLocalizationEnabled"
+  },
+  {
+    "route": "anonymous",
+    "api": "65.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsSharedExternally",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsSharedExternally=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 73 with the error:\n\nVariable does not exist: IsSharedExternally"
+  },
+  {
+    "route": "anonymous",
+    "api": "65.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsTocUpdateRequired",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsTocUpdateRequired=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 73 with the error:\n\nVariable does not exist: IsTocUpdateRequired"
+  },
+  {
+    "route": "anonymous",
+    "api": "65.0",
+    "object": "DocumentTemplate",
+    "field": "ContextDefinitionName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextDefinitionName=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "65.0",
+    "object": "DocumentTemplate",
+    "field": "ContextFilterName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextFilterName=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 55 with the error:\n\nVariable does not exist: ContextFilterName"
+  },
+  {
+    "route": "anonymous",
+    "api": "65.0",
+    "object": "DocumentTemplate",
+    "field": "ContextMappingName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextMappingName=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "65.0",
+    "object": "DocumentTemplate",
+    "field": "ContextTransformationName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextTransformationName=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 55 with the error:\n\nVariable does not exist: ContextTransformationName"
+  },
+  {
+    "route": "named-source",
+    "api": "66.0",
+    "object": "DocumentGenerationProcess",
+    "field": "AdditionalMetadata",
+    "class": "OwnedAssign66_0",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.AdditionalMetadata=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "66.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInput",
+    "class": "OwnedAssign66_1",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenAdditionalInput=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "66.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInputType",
+    "class": "OwnedAssign66_2",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenAdditionalInputType=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "66.0",
+    "object": "DocumentGenerationProcess",
+    "field": "EstimatedDocumentSize",
+    "class": "OwnedAssign66_3",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.EstimatedDocumentSize=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "66.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsLocalizationEnabled",
+    "class": "OwnedAssign66_4",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsLocalizationEnabled=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "66.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsSharedExternally",
+    "class": "OwnedAssign66_5",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsSharedExternally=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "66.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsTocUpdateRequired",
+    "class": "OwnedAssign66_6",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsTocUpdateRequired=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "66.0",
+    "object": "DocumentTemplate",
+    "field": "ContextDefinitionName",
+    "class": "OwnedAssign66_7",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextDefinitionName=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "66.0",
+    "object": "DocumentTemplate",
+    "field": "ContextFilterName",
+    "class": "OwnedAssign66_8",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextFilterName=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "66.0",
+    "object": "DocumentTemplate",
+    "field": "ContextMappingName",
+    "class": "OwnedAssign66_9",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextMappingName=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "66.0",
+    "object": "DocumentTemplate",
+    "field": "ContextTransformationName",
+    "class": "OwnedAssign66_10",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextTransformationName=null;"
+  },
+  {
+    "route": "named-deploy",
+    "api": "66.0",
+    "status": 1,
+    "failures": [
+      {
+        "name": "OwnedAssign66_10",
+        "problem": "Variable does not exist: ContextTransformationName"
+      },
+      {
+        "name": "OwnedAssign66_4",
+        "problem": "Variable does not exist: IsLocalizationEnabled"
+      },
+      {
+        "name": "OwnedAssign66_6",
+        "problem": "Variable does not exist: IsTocUpdateRequired"
+      }
+    ],
+    "successes": [
+      "OwnedAssign66_0",
+      "OwnedAssign66_1",
+      "OwnedAssign66_2",
+      "OwnedAssign66_3",
+      "OwnedAssign66_5",
+      "OwnedAssign66_7",
+      "OwnedAssign66_8",
+      "OwnedAssign66_9"
+    ]
+  },
+  {
+    "route": "anonymous",
+    "api": "66.0",
+    "object": "DocumentGenerationProcess",
+    "field": "AdditionalMetadata",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.AdditionalMetadata=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "66.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInput",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenAdditionalInput=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "66.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInputType",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenAdditionalInputType=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "66.0",
+    "object": "DocumentGenerationProcess",
+    "field": "EstimatedDocumentSize",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.EstimatedDocumentSize=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "66.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsLocalizationEnabled",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsLocalizationEnabled=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 73 with the error:\n\nVariable does not exist: IsLocalizationEnabled"
+  },
+  {
+    "route": "anonymous",
+    "api": "66.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsSharedExternally",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsSharedExternally=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "66.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsTocUpdateRequired",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsTocUpdateRequired=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 73 with the error:\n\nVariable does not exist: IsTocUpdateRequired"
+  },
+  {
+    "route": "anonymous",
+    "api": "66.0",
+    "object": "DocumentTemplate",
+    "field": "ContextDefinitionName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextDefinitionName=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "66.0",
+    "object": "DocumentTemplate",
+    "field": "ContextFilterName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextFilterName=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "66.0",
+    "object": "DocumentTemplate",
+    "field": "ContextMappingName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextMappingName=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "66.0",
+    "object": "DocumentTemplate",
+    "field": "ContextTransformationName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextTransformationName=null;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "Compilation failed at Ln 1, Col 55 with the error:\n\nVariable does not exist: ContextTransformationName"
+  },
+  {
+    "route": "named-source",
+    "api": "67.0",
+    "object": "DocumentGenerationProcess",
+    "field": "AdditionalMetadata",
+    "class": "OwnedAssign67_0",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.AdditionalMetadata=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "67.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInput",
+    "class": "OwnedAssign67_1",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenAdditionalInput=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "67.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInputType",
+    "class": "OwnedAssign67_2",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenAdditionalInputType=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "67.0",
+    "object": "DocumentGenerationProcess",
+    "field": "EstimatedDocumentSize",
+    "class": "OwnedAssign67_3",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.EstimatedDocumentSize=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "67.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsLocalizationEnabled",
+    "class": "OwnedAssign67_4",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsLocalizationEnabled=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "67.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsSharedExternally",
+    "class": "OwnedAssign67_5",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsSharedExternally=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "67.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsTocUpdateRequired",
+    "class": "OwnedAssign67_6",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsTocUpdateRequired=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "67.0",
+    "object": "DocumentTemplate",
+    "field": "ContextDefinitionName",
+    "class": "OwnedAssign67_7",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextDefinitionName=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "67.0",
+    "object": "DocumentTemplate",
+    "field": "ContextFilterName",
+    "class": "OwnedAssign67_8",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextFilterName=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "67.0",
+    "object": "DocumentTemplate",
+    "field": "ContextMappingName",
+    "class": "OwnedAssign67_9",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextMappingName=null;"
+  },
+  {
+    "route": "named-source",
+    "api": "67.0",
+    "object": "DocumentTemplate",
+    "field": "ContextTransformationName",
+    "class": "OwnedAssign67_10",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextTransformationName=null;"
+  },
+  {
+    "route": "named-deploy",
+    "api": "67.0",
+    "status": 0,
+    "failures": [],
+    "successes": [
+      "OwnedAssign67_0",
+      "OwnedAssign67_1",
+      "OwnedAssign67_10",
+      "OwnedAssign67_2",
+      "OwnedAssign67_3",
+      "OwnedAssign67_4",
+      "OwnedAssign67_5",
+      "OwnedAssign67_6",
+      "OwnedAssign67_7",
+      "OwnedAssign67_8",
+      "OwnedAssign67_9"
+    ]
+  },
+  {
+    "route": "anonymous",
+    "api": "67.0",
+    "object": "DocumentGenerationProcess",
+    "field": "AdditionalMetadata",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.AdditionalMetadata=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "67.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInput",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenAdditionalInput=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "67.0",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenAdditionalInputType",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.DocGenAdditionalInputType=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "67.0",
+    "object": "DocumentGenerationProcess",
+    "field": "EstimatedDocumentSize",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.EstimatedDocumentSize=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "67.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsLocalizationEnabled",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsLocalizationEnabled=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "67.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsSharedExternally",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsSharedExternally=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "67.0",
+    "object": "DocumentGenerationProcess",
+    "field": "IsTocUpdateRequired",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsTocUpdateRequired=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "67.0",
+    "object": "DocumentTemplate",
+    "field": "ContextDefinitionName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextDefinitionName=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "67.0",
+    "object": "DocumentTemplate",
+    "field": "ContextFilterName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextFilterName=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "67.0",
+    "object": "DocumentTemplate",
+    "field": "ContextMappingName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextMappingName=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "67.0",
+    "object": "DocumentTemplate",
+    "field": "ContextTransformationName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextTransformationName=null;",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  }
+]

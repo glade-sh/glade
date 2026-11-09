@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSetGroup xmlns="http://soap.sforce.com/2006/04/metadata"><label>MPC02_A67Group</label><mutingPermissionSets>MPC02_A67Mute</mutingPermissionSets><permissionSets>MPC02_A67Grant</permissionSets></PermissionSetGroup>

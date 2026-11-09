@@ -1,0 +1,1 @@
+public class I16 extends NsOuter { public static void m() { Object o = Pv.class; } }

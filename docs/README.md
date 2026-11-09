@@ -2,9 +2,9 @@
 
 This map keeps first-use docs in one place.
 
-The supported window is Apex 62.0-67.0, LWC and Visualforce 59.0-67.0.
-Apex source API below 62.0 is unsupported. DataWeave, ConnectApi, and Slack
-are excluded and unsupported. See [RELEASE_POLICY.md](RELEASE_POLICY.md#salesforce-api-versions)
+The supported window is Apex 62.0-68.0, LWC and Visualforce 59.0-67.0.
+Apex source API below 62.0 is unsupported. DataWeave and Slack are excluded and
+unsupported. ConnectApi types are passive shapes without the hosted services. See [RELEASE_POLICY.md](RELEASE_POLICY.md#salesforce-api-versions)
 for endpoint versions and Execute Anonymous eligibility.
 
 The generated capability reports are incomplete snapshots: their Flow limits

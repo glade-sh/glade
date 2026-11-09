@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/glade-sh/glade/internal/sema"
+	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/vm"
 )
 
@@ -67,7 +68,14 @@ func TestFormulaSummaryObservationsConformance(t *testing.T) {
 	for _, api := range data.APIVersions {
 		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "FormulaSummaryObservations", api)
-			base := conformanceSchemaBase(t, nativeBoundaryIndex(t, api, nil, data.Objects), api)
+			baseIndex := formulaSummaryObservationIndex(t, api, nil, data.Objects)
+			org := orgFromIndex(baseIndex)
+			org.APIVersion = api
+			if err := applyConfiguredTestPermissions(&org, loadProjectForTest(t, baseIndex.Project.Root)); err != nil {
+				t.Fatal(err)
+			}
+			base := newConformanceRunner(t, baseIndex, conformanceRunnerOptions{LinkProject: true, Org: &org})
+			assertCapturedPermissionAssignments(t, base.orgSource, "P10DProbeAccess", "P10EProbeAccess")
 			for _, row := range data.Rows {
 				for _, cell := range row.Cells {
 					if cell.API != api {
@@ -114,7 +122,7 @@ func executeFormulaSummaryObservation(t *testing.T, base *conformanceRunner, api
 	if route == "istest" {
 		classes["FormulaSummaryObservationSpec"] = row.NamedSource
 	}
-	index := nativeBoundaryIndex(t, api, classes, objects)
+	index := formulaSummaryObservationIndex(t, api, classes, objects)
 	analysis := sema.Analyze(index)
 	if index.HasErrors() || analysis.HasErrors() {
 		t.Fatalf("native metadata/source accepted; local diagnostics=%v %v", index.Diagnostics, analysis.Diagnostics)
@@ -146,4 +154,12 @@ func executeFormulaSummaryObservation(t *testing.T, base *conformanceRunner, api
 	machine.EnableTestContext()
 	_, execErr := machine.ExecuteInClass(programs[key], cases[0].ClassName)
 	return execErr
+}
+
+func formulaSummaryObservationIndex(t *testing.T, api string, classes, objects map[string]string) typesys.Index {
+	t.Helper()
+	index := nativeBoundaryIndex(t, api, classes, objects)
+	root := index.Project.Root
+	configureCapturedFixturePermissions(t, root, "testdata/conformance/formula_summary_observations", "P10DProbeAccess", "P10EProbeAccess")
+	return loadTestIndex(t, root)
 }

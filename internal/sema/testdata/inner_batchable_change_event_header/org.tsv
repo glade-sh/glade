@@ -1,0 +1,139 @@
+source_api	route	case	compiled	problem
+62.0	class	LsBatInnerAcct	false	Only top-level classes can implement Database.Batchable<Account>
+62.0	class	LsBatInnerInt	false	Only top-level classes can implement Database.Batchable<Integer>
+62.0	class	LsBatInnerIter	false	Only top-level classes can implement Database.Batchable<String>
+62.0	class	LsBatInnerList	false	Only top-level classes can implement Database.Batchable<String>
+62.0	class	LsBatInnerObj	false	Only top-level classes can implement Database.Batchable<Object>
+62.0	class	LsBatInnerSObj	false	Only top-level classes can implement Database.Batchable<SObject>
+62.0	class	LsBatOuterAcct	true	
+62.0	class	LsBatOuterInt	true	
+62.0	class	LsBatOuterIter	true	
+62.0	class	LsBatOuterList	true	
+62.0	class	LsBatOuterObj	true	
+62.0	class	LsBatOuterSObj	true	
+62.0	isTest	LsBatTestInnerList	false	Only top-level classes can implement Database.Batchable<String>
+62.0	isTest	LsCeTE00	true	
+62.0	isTest	LsCeTE01	false	A non foreign key field cannot be referenced in a path expression: ChangeEventHeader
+62.0	isTest	LsCeTE02	true	
+62.0	isTest	LsCeTE03	true	
+62.0	isTest	LsCeTE04	true	
+62.0	isTest	LsCeTE05	true	
+62.0	isTest	LsCeTE06	true	
+62.0	isTest	LsCeTE07	true	
+62.0	isTest	LsCeTE08	true	
+62.0	isTest	LsCeTE09	true	
+62.0	isTest	LsCeTE10	true	
+62.0	isTest	LsCeTE11	true	
+62.0	isTest	LsCeTE12	true	
+62.0	isTest	LsCeTE13	false	A non foreign key field cannot be referenced in a path expression: ChangeEventHeader
+62.0	isTest	LsCeTE14	true	
+62.0	isTest	LsCeTE15	false	A non foreign key field cannot be referenced in a path expression: ChangeEventHeader
+62.0	isTest	LsCeTE16	true	
+62.0	trigger	LsCeTrE01	false	A non foreign key field cannot be referenced in a path expression: ChangeEventHeader
+62.0	trigger	LsCeTrE02	true	
+62.0	trigger	LsCeTrE03	true	
+62.0	trigger	LsCeTrE04	true	
+62.0	trigger	LsCeTrE05	true	
+62.0	trigger	LsCeTrE06	true	
+62.0	trigger	LsCeTrE07	true	
+62.0	trigger	LsCeTrE08	true	
+62.0	trigger	LsCeTrE09	true	
+62.0	trigger	LsCeTrE10	true	
+62.0	trigger	LsCeTrE11	true	
+62.0	trigger	LsCeTrE12	true	
+62.0	trigger	LsCeTrE13	false	A non foreign key field cannot be referenced in a path expression: ChangeEventHeader
+62.0	trigger	LsCeTrE15	false	A non foreign key field cannot be referenced in a path expression: ChangeEventHeader
+62.0	trigger	LsCeTrE16	true	
+67.0	class	LsBatInnerAcct	false	Only top-level classes can implement Database.Batchable<Account>
+67.0	class	LsBatInnerInt	false	Only top-level classes can implement Database.Batchable<Integer>
+67.0	class	LsBatInnerIter	false	Only top-level classes can implement Database.Batchable<String>
+67.0	class	LsBatInnerList	false	Only top-level classes can implement Database.Batchable<String>
+67.0	class	LsBatInnerObj	false	Only top-level classes can implement Database.Batchable<Object>
+67.0	class	LsBatInnerSObj	false	Only top-level classes can implement Database.Batchable<SObject>
+67.0	class	LsBatOuterAcct	true	
+67.0	class	LsBatOuterInt	true	
+67.0	class	LsBatOuterIter	true	
+67.0	class	LsBatOuterList	true	
+67.0	class	LsBatOuterObj	true	
+67.0	class	LsBatOuterSObj	true	
+67.0	isTest	LsBatTestInnerList	false	Only top-level classes can implement Database.Batchable<String>
+67.0	isTest	LsCeTE00	true	
+67.0	isTest	LsCeTE01	false	A non foreign key field cannot be referenced in a path expression: ChangeEventHeader
+67.0	isTest	LsCeTE02	true	
+67.0	isTest	LsCeTE03	true	
+67.0	isTest	LsCeTE04	true	
+67.0	isTest	LsCeTE05	true	
+67.0	isTest	LsCeTE06	true	
+67.0	isTest	LsCeTE07	true	
+67.0	isTest	LsCeTE08	true	
+67.0	isTest	LsCeTE09	true	
+67.0	isTest	LsCeTE10	true	
+67.0	isTest	LsCeTE11	true	
+67.0	isTest	LsCeTE12	true	
+67.0	isTest	LsCeTE13	false	A non foreign key field cannot be referenced in a path expression: ChangeEventHeader
+67.0	isTest	LsCeTE14	true	
+67.0	isTest	LsCeTE15	false	A non foreign key field cannot be referenced in a path expression: ChangeEventHeader
+67.0	isTest	LsCeTE16	true	
+67.0	trigger	LsCeTrE01	false	A non foreign key field cannot be referenced in a path expression: ChangeEventHeader
+67.0	trigger	LsCeTrE02	true	
+67.0	trigger	LsCeTrE03	true	
+67.0	trigger	LsCeTrE04	true	
+67.0	trigger	LsCeTrE05	true	
+67.0	trigger	LsCeTrE06	true	
+67.0	trigger	LsCeTrE07	true	
+67.0	trigger	LsCeTrE08	true	
+67.0	trigger	LsCeTrE09	true	
+67.0	trigger	LsCeTrE10	true	
+67.0	trigger	LsCeTrE11	true	
+67.0	trigger	LsCeTrE12	true	
+67.0	trigger	LsCeTrE13	false	A non foreign key field cannot be referenced in a path expression: ChangeEventHeader
+67.0	trigger	LsCeTrE15	false	A non foreign key field cannot be referenced in a path expression: ChangeEventHeader
+67.0	trigger	LsCeTrE16	true	
+62.0	anonymous	batAcct	false	Only top-level classes can implement Database.Batchable<Account>
+62.0	anonymous	batInt	false	Only top-level classes can implement Database.Batchable<Integer>
+62.0	anonymous	batIter	false	Only top-level classes can implement Database.Batchable<String>
+62.0	anonymous	batList	false	Only top-level classes can implement Database.Batchable<String>
+62.0	anonymous	batObj	false	Only top-level classes can implement Database.Batchable<Object>
+62.0	anonymous	batSObj	false	Only top-level classes can implement Database.Batchable<SObject>
+67.0	anonymous	batAcct	false	Only top-level classes can implement Database.Batchable<Account>
+67.0	anonymous	batInt	false	Only top-level classes can implement Database.Batchable<Integer>
+67.0	anonymous	batIter	false	Only top-level classes can implement Database.Batchable<String>
+67.0	anonymous	batList	false	Only top-level classes can implement Database.Batchable<String>
+67.0	anonymous	batObj	false	Only top-level classes can implement Database.Batchable<Object>
+67.0	anonymous	batSObj	false	Only top-level classes can implement Database.Batchable<SObject>
+62.0	anonymous	ceE00	true	
+62.0	anonymous	ceE01	false	A non foreign key field cannot be referenced in a path expression: ChangeEventHeader
+62.0	anonymous	ceE02	true	
+62.0	anonymous	ceE03	true	
+62.0	anonymous	ceE04	true	
+62.0	anonymous	ceE05	true	
+62.0	anonymous	ceE06	true	
+62.0	anonymous	ceE07	true	
+62.0	anonymous	ceE08	true	
+62.0	anonymous	ceE09	true	
+62.0	anonymous	ceE10	true	
+62.0	anonymous	ceE11	true	
+62.0	anonymous	ceE12	true	
+62.0	anonymous	ceE13	false	A non foreign key field cannot be referenced in a path expression: ChangeEventHeader
+62.0	anonymous	ceE14	true	
+62.0	anonymous	ceE15	false	A non foreign key field cannot be referenced in a path expression: ChangeEventHeader
+62.0	anonymous	ceE16	true	
+67.0	anonymous	ceE00	true	
+67.0	anonymous	ceE01	false	A non foreign key field cannot be referenced in a path expression: ChangeEventHeader
+67.0	anonymous	ceE02	true	
+67.0	anonymous	ceE03	true	
+67.0	anonymous	ceE04	true	
+67.0	anonymous	ceE05	true	
+67.0	anonymous	ceE06	true	
+67.0	anonymous	ceE07	true	
+67.0	anonymous	ceE08	true	
+67.0	anonymous	ceE09	true	
+67.0	anonymous	ceE10	true	
+67.0	anonymous	ceE11	true	
+67.0	anonymous	ceE12	true	
+67.0	anonymous	ceE13	false	A non foreign key field cannot be referenced in a path expression: ChangeEventHeader
+67.0	anonymous	ceE14	true	
+67.0	anonymous	ceE15	false	A non foreign key field cannot be referenced in a path expression: ChangeEventHeader
+67.0	anonymous	ceE16	true	
+62.0	anonymous	ceHeaderWrite	false	Field is not writeable: AccountChangeEvent.ChangeEventHeader
+67.0	anonymous	ceHeaderWrite	false	Field is not writeable: AccountChangeEvent.ChangeEventHeader

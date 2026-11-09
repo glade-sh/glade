@@ -1,0 +1,5 @@
+source_api	route	observation
+62.0	anonymous	{"hasBr":true,"hasBrSlash":false,"length":30,"value":"banana<br>x<br>b<br>n<br>n<br>"}
+62.0	isTest	{"hasBr":true,"hasBrSlash":false,"length":30,"value":"banana<br>x<br>b<br>n<br>n<br>"}
+67.0	anonymous	{"hasBr":true,"hasBrSlash":false,"length":30,"value":"banana<br>x<br>b<br>n<br>n<br>"}
+67.0	isTest	{"hasBr":true,"hasBrSlash":false,"length":30,"value":"banana<br>x<br>b<br>n<br>n<br>"}

@@ -393,6 +393,7 @@ func (vm *VM) propagateCollectionMutationFromSnapshotWithStaticIndexDelta(previo
 	vm.propagateTopLevelCollectionAliases(vm.Globals, updated)
 	localOnly := vm.localOnlyAlias(previous)
 	if !localOnly {
+		vm.rememberEscapedCollectionMutation(updated)
 		vm.propagateAliasSnapshotToScope(vm.Globals, previous, updated)
 	}
 	if !localOnly {
@@ -876,6 +877,7 @@ func valueSameHeaderAndBacking(before, after Value) bool {
 		before.exceptionAnonymousCallerLine == after.exceptionAnonymousCallerLine &&
 		before.exceptionMessageConstructor == after.exceptionMessageConstructor &&
 		before.idOriginalDisplay == after.idOriginalDisplay &&
+		before.reportEmptyDimension == after.reportEmptyDimension &&
 		before.Kind == after.Kind &&
 		before.Int == after.Int &&
 		before.Decimal == after.Decimal &&
@@ -1305,7 +1307,7 @@ func (vm *VM) propagateAliasSnapshotToStaticsWithIndexDelta(previous aliasSnapsh
 		}
 		if field.Value.Ref != 0 && field.Value.Ref == previous.ref && field.Value.Kind == previous.kind {
 			previousFieldValue := field.Value
-			field.Value = updated
+			field.Value = aliasReplacementKeepingSlotView(field.Value, updated)
 			class.StaticFields[location.FieldName] = field
 			vm.storeMutableClassAtAlias(location.ClassName, class)
 			if !vm.rememberStaticIndexDeltaInField(delta, location) {
@@ -3228,7 +3230,7 @@ func (vm *VM) replaceStaticAliasUsingDirectChildIndex(value Value, location stat
 	if vm.perfRecorder != nil {
 		vm.perfRecorder.recordStaticAliasDirectChildHit()
 	}
-	return replaceStaticAliasChildHintValue(value, hint, updated), hint, true
+	return replaceStaticAliasChildHintValue(value, hint, aliasReplacementKeepingSlotView(child, updated)), hint, true
 }
 
 func (vm *VM) staticAliasDirectChildIndex(value Value, location staticFieldRef) (staticAliasDirectChildIndex, bool) {
@@ -3495,7 +3497,7 @@ func replaceAliasSnapshotWithStaticChildHint(value Value, previous aliasSnapshot
 		return value, false, staticAliasChildHint{}, false
 	}
 	if value.Ref != 0 && value.Ref == previous.ref && value.Kind == previous.kind {
-		return updated, true, staticAliasChildHint{}, false
+		return aliasReplacementKeepingSlotView(value, updated), true, staticAliasChildHint{}, false
 	}
 	changedCount := 0
 	var hint staticAliasChildHint
@@ -3638,6 +3640,18 @@ func replaceValueAlias(value, previous, updated Value, seen map[uint64]bool) (Va
 	}
 	return replaceValueAliasRef(value, snapshotAlias(previous), updated, seen)
 }
+
+// aliasReplacementKeepingSlotView stores the updated reference in the slot of
+// the value it replaces without changing that slot's declared type view. The
+// updated value carries the view of the variable that was mutated, which can
+// be a supertype of the field or element it is written back into.
+func aliasReplacementKeepingSlotView(slot, updated Value) Value {
+	if slot.Kind == ValueObject && updated.Kind == ValueObject && slot.Static != "" && slot.Static != updated.Static {
+		updated.Static = slot.Static
+	}
+	return updated
+}
+
 func replaceAliasSnapshot(value Value, previous aliasSnapshot, updated Value, seen map[uint64]bool) (Value, bool) {
 	if !previous.valid() {
 		return value, false
@@ -3653,7 +3667,7 @@ func replaceValueAliasRefWithCache(vm *VM, value Value, previous aliasSnapshot, 
 func replaceValueAliasRefWithMissCache(vm *VM, value Value, previous aliasSnapshot, updated Value, seen map[uint64]bool, useMissCache bool) (Value, bool) {
 	if value.Ref != 0 {
 		if value.Ref == previous.ref && value.Kind == previous.kind {
-			return updated, true
+			return aliasReplacementKeepingSlotView(value, updated), true
 		}
 		if seen[value.Ref] {
 			return value, false
@@ -4447,4 +4461,45 @@ func findValueByRefInScope(scope map[string]Value, ref uint64, seen map[uint64]b
 		}
 	}
 	return Null, false
+}
+
+// escapedCollectionMutation is the newest value of a collection that left its
+// creating frame (stored in a static or field) and was mutated in place.
+type escapedCollectionMutation struct {
+	seq   uint64
+	value Value
+}
+
+const escapedCollectionLatestMaxEntries = 1 << 14
+
+func (vm *VM) rememberEscapedCollectionMutation(updated Value) {
+	if vm == nil || updated.Ref == 0 || !mutableCollectionKind(updated.Kind) {
+		return
+	}
+	if vm.escapedCollectionLatest == nil {
+		vm.escapedCollectionLatest = make(map[uint64]escapedCollectionMutation, 16)
+	} else if len(vm.escapedCollectionLatest) >= escapedCollectionLatestMaxEntries {
+		clear(vm.escapedCollectionLatest)
+	}
+	vm.escapedCollectionLatest[updated.Ref] = escapedCollectionMutation{seq: vm.collectionMutationSeq, value: updated}
+}
+
+// refreshCallerEscapedCollectionAliases gives a caller's local the in-place
+// mutation a callee made through a static or field that shares the collection.
+// Parameters and the receiver reach the caller through the argument path; a
+// collection reached only through shared state needs this identity refresh.
+func (vm *VM) refreshCallerEscapedCollectionAliases(caller map[string]Value, since uint64) {
+	if vm == nil || len(vm.escapedCollectionLatest) == 0 || len(caller) == 0 || vm.collectionMutationSeq == since {
+		return
+	}
+	for name, local := range caller {
+		if local.Ref == 0 || !mutableCollectionKind(local.Kind) {
+			continue
+		}
+		latest, ok := vm.escapedCollectionLatest[local.Ref]
+		if !ok || latest.seq <= since || latest.value.Kind != local.Kind {
+			continue
+		}
+		caller[name] = latest.value
+	}
 }

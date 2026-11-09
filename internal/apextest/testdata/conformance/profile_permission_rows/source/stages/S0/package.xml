@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata"><types><members>SynthFlsParent__c</members><members>SynthFlsChild__c</members><name>CustomObject</name></types><types><members>SynthFlsProbe62</members><members>SynthFlsCapture62</members><members>SynthFlsProbe67</members><members>SynthFlsCapture67</members><members>SynthFlsProbe68</members><members>SynthFlsCapture68</members><name>ApexClass</name></types><version>68.0</version></Package>

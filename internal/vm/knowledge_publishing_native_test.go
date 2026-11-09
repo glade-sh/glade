@@ -92,11 +92,14 @@ catch (System.InvalidParameterValueException expected) { }`,
 						t.Fatal(err)
 					}
 					org := testDataOrg()
+					// Knowledge__ka and Knowledge__kav exist only with the captured Knowledge setting (org_knowledge_availability/org.tsv).
+					storage.ApplyOrgShape(&org, []string{"Knowledge", "KnowledgeEnabled"})
 					storage.EnsureStandardObject(&org, "Knowledge__kav")
 					// Both schemas exist before the savepoint in the native org.
 					storage.EnsureStandardObject(&org, "Knowledge__ka")
 					m := New(nil)
 					m.SetOrg(&org)
+					m.SetCurrentUser(storage.Record{ID: storage.DefaultUserID, Object: "User", Fields: map[string]storage.Value{"UserPermissionsKnowledgeUser": storage.BooleanValue(true)}})
 					m.EnableTestContext()
 					if _, err = m.Execute(p); err != nil {
 						t.Fatal(err)

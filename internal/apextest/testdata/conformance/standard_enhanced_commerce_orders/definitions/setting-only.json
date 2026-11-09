@@ -1,0 +1,10 @@
+{
+ "edition": "Developer",
+ "orgName": "Synthetic enhanced orders setting-only",
+ "settings": {
+  "orderSettings": {
+   "enableEnhancedCommerceOrders": true,
+   "enableOrders": true
+  }
+ }
+}

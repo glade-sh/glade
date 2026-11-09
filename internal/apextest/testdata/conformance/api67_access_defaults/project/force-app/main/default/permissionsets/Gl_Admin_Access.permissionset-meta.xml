@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata"><label>Gl Admin Access</label>
+<objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>true</modifyAllRecords><object>Gl_Obj__c</object><viewAllRecords>true</viewAllRecords></objectPermissions>
+<objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>true</modifyAllRecords><object>Gl_Trg__c</object><viewAllRecords>true</viewAllRecords></objectPermissions>
+<fieldPermissions><editable>true</editable><field>Gl_Obj__c.Open__c</field><readable>true</readable></fieldPermissions>
+<fieldPermissions><editable>true</editable><field>Gl_Obj__c.Secret__c</field><readable>true</readable></fieldPermissions>
+<fieldPermissions><editable>true</editable><field>Gl_Trg__c.Note__c</field><readable>true</readable></fieldPermissions>
+</PermissionSet>

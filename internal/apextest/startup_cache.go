@@ -15,7 +15,7 @@ import (
 
 var disableDiskCache atomic.Bool
 
-const testRuntimeCacheABI = "apextest-runtime-v26"
+const testRuntimeCacheABI = "apextest-runtime-v32"
 
 func DisableDiskCacheForTesting() func() {
 	wasDisabled := disableDiskCache.Load()
@@ -383,13 +383,13 @@ func scanProjectReferencedStandardFieldsFromSource(org *storage.OrgState, source
 		result.ListCustomSettings[scanSource[match[2]:match[3]]] = struct{}{}
 	}
 	for _, match := range apexSchemaSObjectTypeFieldReferencePattern.FindAllStringSubmatchIndex(scanSource, -1) {
-		if len(match) != 6 {
+		if len(match) != 6 || apexMemberReferenceIsCall(scanSource, match[1]) {
 			continue
 		}
 		recordProjectReferencedStandardFieldReadOnly(org, result.Inferred, result.CustomObjects, childRelationshipLookup, scanSource[match[2]:match[3]], scanSource[match[4]:match[5]])
 	}
 	for _, match := range apexSObjectTypeFieldReferencePattern.FindAllStringSubmatchIndex(scanSource, -1) {
-		if len(match) != 6 {
+		if len(match) != 6 || apexMemberReferenceIsCall(scanSource, match[1]) {
 			continue
 		}
 		recordProjectReferencedStandardFieldReadOnly(org, result.Inferred, result.CustomObjects, childRelationshipLookup, scanSource[match[2]:match[3]], scanSource[match[4]:match[5]])
@@ -473,7 +473,7 @@ func recordSObjectLiteralFieldsReadOnly(org *storage.OrgState, inferred map[stri
 	}
 	body := scanSource[match[4]:match[5]]
 	for _, argMatch := range apexNamedArgumentPattern.FindAllStringSubmatchIndex(body, -1) {
-		if len(argMatch) != 4 {
+		if len(argMatch) != 4 || !apexNamedArgumentStartsArgument(body, argMatch[0], argMatch[3]) {
 			continue
 		}
 		recordProjectReferencedStandardFieldReadOnly(org, inferred, nil, childRelationshipLookup, objectName, body[argMatch[2]:argMatch[3]])
@@ -490,7 +490,7 @@ func recordSObjectLiteralLookupFieldsReadOnly(org *storage.OrgState, inferred ma
 	}
 	body := scanSource[match[4]:match[5]]
 	for _, argMatch := range apexNamedArgumentSObjectIDPattern.FindAllStringSubmatchIndex(body, -1) {
-		if len(argMatch) != 6 {
+		if len(argMatch) != 6 || !apexNamedArgumentStartsArgument(body, argMatch[0], argMatch[3]) {
 			continue
 		}
 		parentObjectName, ok := varTypes[body[argMatch[4]:argMatch[5]]]

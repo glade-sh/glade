@@ -1,0 +1,1 @@
+public class H03 { public static void m() { Survey s = Survey.A; } }

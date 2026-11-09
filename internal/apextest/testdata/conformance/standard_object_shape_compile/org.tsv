@@ -1,0 +1,321 @@
+case_id	api	route	compile_outcome	observed_value_or_diagnostic	source
+b01	62.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.NavigationMenuItem	anon/b01.apex
+b02	62.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: NavigationMenuItem	anon/b02.apex
+b03	62.0	anonymous	COMPILE_ERROR	line 1 col 8: Invalid type: ProductCatalog	anon/b03.apex
+b04	62.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: ProductCatalog	anon/b04.apex
+b05	62.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: ProductCatalog	anon/b05.apex
+b06	62.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: ProductCatalog	anon/b06.apex
+b07	62.0	anonymous	COMPILE_ERROR	line 1 col 24: Variable does not exist: ProductCatalog	anon/b07.apex
+b08	62.0	anonymous	COMPILE_ERROR	line 1 col 24: Variable does not exist: Schema.ProductCatalog	anon/b08.apex
+b09	62.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: NavigationMenuItem	anon/b09.apex
+b10	62.0	anonymous	COMPILE_ERROR	line 1 col 8: Invalid type: Schema.ProductCatalog	anon/b10.apex
+b11	62.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: ProductCatalog	anon/b11.apex
+b12	62.0	anonymous	COMPILE_ERROR	line 1 col 17: Invalid type: ProductCatalog	anon/b12.apex
+b13	62.0	anonymous	RUNTIME_ERROR	System.QueryException: sObject type 'ProductCatalog' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.	anon/b13.apex
+b14	62.0	anonymous	COMPILE_OK	false	anon/b14.apex
+b15	62.0	anonymous	COMPILE_OK	null	anon/b15.apex
+b16	62.0	anonymous	COMPILE_OK	null	anon/b16.apex
+b17	62.0	anonymous	COMPILE_ERROR	line 1 col 29: Invalid type: Schema.NavigationMenuItem	anon/b17.apex
+b18	62.0	anonymous	COMPILE_ERROR	line 1 col 42: Invalid type: Schema.ProductCatalog	anon/b18.apex
+b19	62.0	anonymous	COMPILE_ERROR	line 1 col 59: Invalid type: ProductCatalog	anon/b19.apex
+b20	62.0	anonymous	COMPILE_ERROR	line 1 col 18: Invalid type: ProductCatalog	anon/b20.apex
+b21	62.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: ProductCatalog	anon/b21.apex
+b22	62.0	anonymous	COMPILE_OK	x	anon/b22.apex
+b23	62.0	anonymous	COMPILE_ERROR	line 1 col 13: Invalid type: ProductCatalog	anon/b23.apex
+b24	62.0	anonymous	COMPILE_ERROR	line 1 col 10: Invalid type: ProductCatalog	anon/b24.apex
+b25	62.0	anonymous	COMPILE_ERROR	line 1 col 8: Invalid type: ProductCatalog	anon/b25.apex
+b26	62.0	anonymous	COMPILE_ERROR	line 1 col 10: Invalid type: ProductCatalog	anon/b26.apex
+b27	62.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: ProductCatalog	anon/b27.apex
+b28	62.0	anonymous	COMPILE_ERROR	line 1 col 42: Invalid type: Schema.ProductCatalog	anon/b28.apex
+b29	62.0	anonymous	COMPILE_ERROR	line 1 col 17: Invalid type: ProductCatalog	anon/b29.apex
+b30	62.0	anonymous	COMPILE_ERROR	line 1 col 8: Variable does not exist: ProductCatalog.SObjectType	anon/b30.apex
+b31	62.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: productcatalog	anon/b31.apex
+b32	62.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.productcatalog	anon/b32.apex
+b33	62.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: Schema.ProductCatalog	anon/b33.apex
+b34	62.0	anonymous	COMPILE_ERROR	line 1 col 8: Invalid type: productcatalog	anon/b34.apex
+b35	62.0	anonymous	COMPILE_ERROR	line 1 col 24: Variable does not exist: productcatalog	anon/b35.apex
+N01	62.0	named	COMPILE_ERROR	line 1 col 52: Invalid type: ProductCatalog	named/N01.cls
+N02	62.0	named	COMPILE_ERROR	line 1 col 63: Invalid type: Schema.NavigationMenuItem	named/N02.cls
+N03	62.0	named	COMPILE_ERROR	line 1 col 45: Invalid type: ProductCatalog	named/N03.cls
+N04	62.0	named	COMPILE_ERROR	line 1 col 45: Invalid type: ProductCatalog	named/N04.cls
+N05	62.0	named	COMPILE_ERROR	line 1 col 56: Variable does not exist: ProductCatalog	named/N05.cls
+N06	62.0	named	COMPILE_OK		named/N06.cls
+N07	62.0	named	COMPILE_ERROR	line 1 col 73: Invalid type: Schema.NavigationMenuItem	named/N07.cls
+N07	62.0	named	COMPILE_ERROR	line 1 col 50: Invalid type: NavigationMenuItem	named/N07.cls
+N08	62.0	named	COMPILE_ERROR	line 1 col 52: Invalid type: Schema.ProductCatalog	named/N08.cls
+N09	62.0	named	COMPILE_ERROR	line 1 col 74: Invalid type: ProductCatalog	named/N09.cls
+N10	62.0	named	COMPILE_ERROR	line 1 col 57: Invalid type: Schema.ProductCatalog	named/N10.cls
+N11	62.0	named	COMPILE_ERROR	line 1 col 61: Invalid type: ProductCatalog	named/N11.cls
+N12	62.0	named	COMPILE_ERROR	line 1 col 20: Invalid type: ProductCatalog	named/N12.cls
+N13	62.0	named	COMPILE_ERROR	line 1 col 49: Invalid type: ProductCatalog	named/N13.cls
+N14	62.0	named	COMPILE_ERROR	line 1 col 42: Invalid type: ProductCatalog	named/N14.cls
+N15	62.0	named	COMPILE_ERROR	line 1 col 52: Invalid type: NavigationMenuItem	named/N15.cls
+N15	62.0	named	COMPILE_ERROR	line 1 col 52: Invalid type: NavigationMenuItem	named/N15.cls
+b01	67.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.NavigationMenuItem	anon/b01.apex
+b02	67.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: NavigationMenuItem	anon/b02.apex
+b03	67.0	anonymous	COMPILE_ERROR	line 1 col 8: Invalid type: ProductCatalog	anon/b03.apex
+b04	67.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: ProductCatalog	anon/b04.apex
+b05	67.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: ProductCatalog	anon/b05.apex
+b06	67.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: ProductCatalog	anon/b06.apex
+b07	67.0	anonymous	COMPILE_ERROR	line 1 col 24: Variable does not exist: ProductCatalog	anon/b07.apex
+b08	67.0	anonymous	COMPILE_ERROR	line 1 col 24: Variable does not exist: Schema.ProductCatalog	anon/b08.apex
+b09	67.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: NavigationMenuItem	anon/b09.apex
+b10	67.0	anonymous	COMPILE_ERROR	line 1 col 8: Invalid type: Schema.ProductCatalog	anon/b10.apex
+b11	67.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: ProductCatalog	anon/b11.apex
+b12	67.0	anonymous	COMPILE_ERROR	line 1 col 17: Invalid type: ProductCatalog	anon/b12.apex
+b13	67.0	anonymous	RUNTIME_ERROR	System.QueryException: sObject type 'ProductCatalog' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.	anon/b13.apex
+b14	67.0	anonymous	COMPILE_OK	false	anon/b14.apex
+b15	67.0	anonymous	COMPILE_OK	null	anon/b15.apex
+b16	67.0	anonymous	COMPILE_OK	null	anon/b16.apex
+b17	67.0	anonymous	COMPILE_ERROR	line 1 col 29: Invalid type: Schema.NavigationMenuItem	anon/b17.apex
+b18	67.0	anonymous	COMPILE_ERROR	line 1 col 42: Invalid type: Schema.ProductCatalog	anon/b18.apex
+b19	67.0	anonymous	COMPILE_ERROR	line 1 col 59: Invalid type: ProductCatalog	anon/b19.apex
+b20	67.0	anonymous	COMPILE_ERROR	line 1 col 18: Invalid type: ProductCatalog	anon/b20.apex
+b21	67.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: ProductCatalog	anon/b21.apex
+b22	67.0	anonymous	COMPILE_OK	x	anon/b22.apex
+b23	67.0	anonymous	COMPILE_ERROR	line 1 col 13: Invalid type: ProductCatalog	anon/b23.apex
+b24	67.0	anonymous	COMPILE_ERROR	line 1 col 10: Invalid type: ProductCatalog	anon/b24.apex
+b25	67.0	anonymous	COMPILE_ERROR	line 1 col 8: Invalid type: ProductCatalog	anon/b25.apex
+b26	67.0	anonymous	COMPILE_ERROR	line 1 col 10: Invalid type: ProductCatalog	anon/b26.apex
+b27	67.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: ProductCatalog	anon/b27.apex
+b28	67.0	anonymous	COMPILE_ERROR	line 1 col 42: Invalid type: Schema.ProductCatalog	anon/b28.apex
+b29	67.0	anonymous	COMPILE_ERROR	line 1 col 17: Invalid type: ProductCatalog	anon/b29.apex
+b30	67.0	anonymous	COMPILE_ERROR	line 1 col 8: Variable does not exist: ProductCatalog.SObjectType	anon/b30.apex
+b31	67.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: productcatalog	anon/b31.apex
+b32	67.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.productcatalog	anon/b32.apex
+b33	67.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: Schema.ProductCatalog	anon/b33.apex
+b34	67.0	anonymous	COMPILE_ERROR	line 1 col 8: Invalid type: productcatalog	anon/b34.apex
+b35	67.0	anonymous	COMPILE_ERROR	line 1 col 24: Variable does not exist: productcatalog	anon/b35.apex
+N01	67.0	named	COMPILE_ERROR	line 1 col 52: Invalid type: ProductCatalog	named/N01.cls
+N02	67.0	named	COMPILE_ERROR	line 1 col 63: Invalid type: Schema.NavigationMenuItem	named/N02.cls
+N03	67.0	named	COMPILE_ERROR	line 1 col 45: Invalid type: ProductCatalog	named/N03.cls
+N04	67.0	named	COMPILE_ERROR	line 1 col 45: Invalid type: ProductCatalog	named/N04.cls
+N05	67.0	named	COMPILE_ERROR	line 1 col 56: Variable does not exist: ProductCatalog	named/N05.cls
+N06	67.0	named	COMPILE_OK		named/N06.cls
+N07	67.0	named	COMPILE_ERROR	line 1 col 73: Invalid type: Schema.NavigationMenuItem	named/N07.cls
+N07	67.0	named	COMPILE_ERROR	line 1 col 50: Invalid type: NavigationMenuItem	named/N07.cls
+N08	67.0	named	COMPILE_ERROR	line 1 col 52: Invalid type: Schema.ProductCatalog	named/N08.cls
+N09	67.0	named	COMPILE_ERROR	line 1 col 74: Invalid type: ProductCatalog	named/N09.cls
+N10	67.0	named	COMPILE_ERROR	line 1 col 57: Invalid type: Schema.ProductCatalog	named/N10.cls
+N11	67.0	named	COMPILE_ERROR	line 1 col 61: Invalid type: ProductCatalog	named/N11.cls
+N12	67.0	named	COMPILE_ERROR	line 1 col 20: Invalid type: ProductCatalog	named/N12.cls
+N13	67.0	named	COMPILE_ERROR	line 1 col 49: Invalid type: ProductCatalog	named/N13.cls
+N14	67.0	named	COMPILE_ERROR	line 1 col 42: Invalid type: ProductCatalog	named/N14.cls
+N15	67.0	named	COMPILE_ERROR	line 1 col 52: Invalid type: NavigationMenuItem	named/N15.cls
+N15	67.0	named	COMPILE_ERROR	line 1 col 52: Invalid type: NavigationMenuItem	named/N15.cls
+fam_AccountContactRelation_n	62.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: AccountContactRelation	family/AccountContactRelation_n.apex
+fam_AccountContactRelation_q	62.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.AccountContactRelation	family/AccountContactRelation_q.apex
+fam_AccountContactRelation_t	62.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: AccountContactRelation	family/AccountContactRelation_t.apex
+fam_AccountTeamMember_n	62.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: AccountTeamMember	family/AccountTeamMember_n.apex
+fam_AccountTeamMember_q	62.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.AccountTeamMember	family/AccountTeamMember_q.apex
+fam_AccountTeamMember_t	62.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: AccountTeamMember	family/AccountTeamMember_t.apex
+fam_CampaignInfluenceModel_n	62.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: CampaignInfluenceModel	family/CampaignInfluenceModel_n.apex
+fam_CampaignInfluenceModel_q	62.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.CampaignInfluenceModel	family/CampaignInfluenceModel_q.apex
+fam_CampaignInfluenceModel_t	62.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: CampaignInfluenceModel	family/CampaignInfluenceModel_t.apex
+fam_CurrencyType_n	62.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: CurrencyType	family/CurrencyType_n.apex
+fam_CurrencyType_q	62.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.CurrencyType	family/CurrencyType_q.apex
+fam_CurrencyType_t	62.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: CurrencyType	family/CurrencyType_t.apex
+fam_DocumentTemplate_n	62.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: DocumentTemplate	family/DocumentTemplate_n.apex
+fam_DocumentTemplate_q	62.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.DocumentTemplate	family/DocumentTemplate_q.apex
+fam_DocumentTemplate_t	62.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: DocumentTemplate	family/DocumentTemplate_t.apex
+fam_ForecastingItem_n	62.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: ForecastingItem	family/ForecastingItem_n.apex
+fam_ForecastingItem_q	62.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.ForecastingItem	family/ForecastingItem_q.apex
+fam_ForecastingItem_t	62.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: ForecastingItem	family/ForecastingItem_t.apex
+fam_GiftTransaction_n	62.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: GiftTransaction	family/GiftTransaction_n.apex
+fam_GiftTransaction_q	62.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.GiftTransaction	family/GiftTransaction_q.apex
+fam_GiftTransaction_t	62.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: GiftTransaction	family/GiftTransaction_t.apex
+fam_NetworkMember_n	62.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: NetworkMember	family/NetworkMember_n.apex
+fam_NetworkMember_q	62.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.NetworkMember	family/NetworkMember_q.apex
+fam_NetworkMember_t	62.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: NetworkMember	family/NetworkMember_t.apex
+fam_Network_n	62.0	anonymous	COMPILE_OK	ok	family/Network_n.apex
+fam_Network_q	62.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.Network	family/Network_q.apex
+fam_Network_t	62.0	anonymous	COMPILE_OK	ok	family/Network_t.apex
+fam_OpportunitySplit_n	62.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: OpportunitySplit	family/OpportunitySplit_n.apex
+fam_OpportunitySplit_q	62.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.OpportunitySplit	family/OpportunitySplit_q.apex
+fam_OpportunitySplit_t	62.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: OpportunitySplit	family/OpportunitySplit_t.apex
+fam_OpportunityTeamMember_n	62.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: OpportunityTeamMember	family/OpportunityTeamMember_n.apex
+fam_OpportunityTeamMember_q	62.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.OpportunityTeamMember	family/OpportunityTeamMember_q.apex
+fam_OpportunityTeamMember_t	62.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: OpportunityTeamMember	family/OpportunityTeamMember_t.apex
+fam_PaymentCredit_n	62.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: PaymentCredit	family/PaymentCredit_n.apex
+fam_PaymentCredit_q	62.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.PaymentCredit	family/PaymentCredit_q.apex
+fam_PaymentCredit_t	62.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: PaymentCredit	family/PaymentCredit_t.apex
+fam_PickTicket_n	62.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: PickTicket	family/PickTicket_n.apex
+fam_PickTicket_q	62.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.PickTicket	family/PickTicket_q.apex
+fam_PickTicket_t	62.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: PickTicket	family/PickTicket_t.apex
+fam_QuoteLineItem_n	62.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: QuoteLineItem	family/QuoteLineItem_n.apex
+fam_QuoteLineItem_q	62.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.QuoteLineItem	family/QuoteLineItem_q.apex
+fam_QuoteLineItem_t	62.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: QuoteLineItem	family/QuoteLineItem_t.apex
+fam_Quote_n	62.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: Quote	family/Quote_n.apex
+fam_Quote_q	62.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.Quote	family/Quote_q.apex
+fam_Quote_t	62.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: Quote	family/Quote_t.apex
+fam_RegulatoryCode_n	62.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: RegulatoryCode	family/RegulatoryCode_n.apex
+fam_RegulatoryCode_q	62.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.RegulatoryCode	family/RegulatoryCode_q.apex
+fam_RegulatoryCode_t	62.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: RegulatoryCode	family/RegulatoryCode_t.apex
+fam_ServiceChannel_n	62.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: ServiceChannel	family/ServiceChannel_n.apex
+fam_ServiceChannel_q	62.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.ServiceChannel	family/ServiceChannel_q.apex
+fam_ServiceChannel_t	62.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: ServiceChannel	family/ServiceChannel_t.apex
+fam_Survey_n	62.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: Survey	family/Survey_n.apex
+fam_Survey_q	62.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.Survey	family/Survey_q.apex
+fam_Survey_t	62.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: Survey	family/Survey_t.apex
+fam_Territory2Model_n	62.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: Territory2Model	family/Territory2Model_n.apex
+fam_Territory2Model_q	62.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.Territory2Model	family/Territory2Model_q.apex
+fam_Territory2Model_t	62.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: Territory2Model	family/Territory2Model_t.apex
+fam_Territory2_n	62.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: Territory2	family/Territory2_n.apex
+fam_Territory2_q	62.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.Territory2	family/Territory2_q.apex
+fam_Territory2_t	62.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: Territory2	family/Territory2_t.apex
+fam_WebStore_n	62.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: WebStore	family/WebStore_n.apex
+fam_WebStore_q	62.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.WebStore	family/WebStore_q.apex
+fam_WebStore_t	62.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: WebStore	family/WebStore_t.apex
+fam_AccountContactRelation_n	67.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: AccountContactRelation	family/AccountContactRelation_n.apex
+fam_AccountContactRelation_q	67.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.AccountContactRelation	family/AccountContactRelation_q.apex
+fam_AccountContactRelation_t	67.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: AccountContactRelation	family/AccountContactRelation_t.apex
+fam_AccountTeamMember_n	67.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: AccountTeamMember	family/AccountTeamMember_n.apex
+fam_AccountTeamMember_q	67.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.AccountTeamMember	family/AccountTeamMember_q.apex
+fam_AccountTeamMember_t	67.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: AccountTeamMember	family/AccountTeamMember_t.apex
+fam_CampaignInfluenceModel_n	67.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: CampaignInfluenceModel	family/CampaignInfluenceModel_n.apex
+fam_CampaignInfluenceModel_q	67.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.CampaignInfluenceModel	family/CampaignInfluenceModel_q.apex
+fam_CampaignInfluenceModel_t	67.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: CampaignInfluenceModel	family/CampaignInfluenceModel_t.apex
+fam_CurrencyType_n	67.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: CurrencyType	family/CurrencyType_n.apex
+fam_CurrencyType_q	67.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.CurrencyType	family/CurrencyType_q.apex
+fam_CurrencyType_t	67.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: CurrencyType	family/CurrencyType_t.apex
+fam_DocumentTemplate_n	67.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: DocumentTemplate	family/DocumentTemplate_n.apex
+fam_DocumentTemplate_q	67.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.DocumentTemplate	family/DocumentTemplate_q.apex
+fam_DocumentTemplate_t	67.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: DocumentTemplate	family/DocumentTemplate_t.apex
+fam_ForecastingItem_n	67.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: ForecastingItem	family/ForecastingItem_n.apex
+fam_ForecastingItem_q	67.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.ForecastingItem	family/ForecastingItem_q.apex
+fam_ForecastingItem_t	67.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: ForecastingItem	family/ForecastingItem_t.apex
+fam_GiftTransaction_n	67.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: GiftTransaction	family/GiftTransaction_n.apex
+fam_GiftTransaction_q	67.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.GiftTransaction	family/GiftTransaction_q.apex
+fam_GiftTransaction_t	67.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: GiftTransaction	family/GiftTransaction_t.apex
+fam_NetworkMember_n	67.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: NetworkMember	family/NetworkMember_n.apex
+fam_NetworkMember_q	67.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.NetworkMember	family/NetworkMember_q.apex
+fam_NetworkMember_t	67.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: NetworkMember	family/NetworkMember_t.apex
+fam_Network_n	67.0	anonymous	COMPILE_OK	ok	family/Network_n.apex
+fam_Network_q	67.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.Network	family/Network_q.apex
+fam_Network_t	67.0	anonymous	COMPILE_OK	ok	family/Network_t.apex
+fam_OpportunitySplit_n	67.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: OpportunitySplit	family/OpportunitySplit_n.apex
+fam_OpportunitySplit_q	67.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.OpportunitySplit	family/OpportunitySplit_q.apex
+fam_OpportunitySplit_t	67.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: OpportunitySplit	family/OpportunitySplit_t.apex
+fam_OpportunityTeamMember_n	67.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: OpportunityTeamMember	family/OpportunityTeamMember_n.apex
+fam_OpportunityTeamMember_q	67.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.OpportunityTeamMember	family/OpportunityTeamMember_q.apex
+fam_OpportunityTeamMember_t	67.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: OpportunityTeamMember	family/OpportunityTeamMember_t.apex
+fam_PaymentCredit_n	67.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: PaymentCredit	family/PaymentCredit_n.apex
+fam_PaymentCredit_q	67.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.PaymentCredit	family/PaymentCredit_q.apex
+fam_PaymentCredit_t	67.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: PaymentCredit	family/PaymentCredit_t.apex
+fam_PickTicket_n	67.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: PickTicket	family/PickTicket_n.apex
+fam_PickTicket_q	67.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.PickTicket	family/PickTicket_q.apex
+fam_PickTicket_t	67.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: PickTicket	family/PickTicket_t.apex
+fam_QuoteLineItem_n	67.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: QuoteLineItem	family/QuoteLineItem_n.apex
+fam_QuoteLineItem_q	67.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.QuoteLineItem	family/QuoteLineItem_q.apex
+fam_QuoteLineItem_t	67.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: QuoteLineItem	family/QuoteLineItem_t.apex
+fam_Quote_n	67.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: Quote	family/Quote_n.apex
+fam_Quote_q	67.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.Quote	family/Quote_q.apex
+fam_Quote_t	67.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: Quote	family/Quote_t.apex
+fam_RegulatoryCode_n	67.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: RegulatoryCode	family/RegulatoryCode_n.apex
+fam_RegulatoryCode_q	67.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.RegulatoryCode	family/RegulatoryCode_q.apex
+fam_RegulatoryCode_t	67.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: RegulatoryCode	family/RegulatoryCode_t.apex
+fam_ServiceChannel_n	67.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: ServiceChannel	family/ServiceChannel_n.apex
+fam_ServiceChannel_q	67.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.ServiceChannel	family/ServiceChannel_q.apex
+fam_ServiceChannel_t	67.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: ServiceChannel	family/ServiceChannel_t.apex
+fam_Survey_n	67.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: Survey	family/Survey_n.apex
+fam_Survey_q	67.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.Survey	family/Survey_q.apex
+fam_Survey_t	67.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: Survey	family/Survey_t.apex
+fam_Territory2Model_n	67.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: Territory2Model	family/Territory2Model_n.apex
+fam_Territory2Model_q	67.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.Territory2Model	family/Territory2Model_q.apex
+fam_Territory2Model_t	67.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: Territory2Model	family/Territory2Model_t.apex
+fam_Territory2_n	67.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: Territory2	family/Territory2_n.apex
+fam_Territory2_q	67.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.Territory2	family/Territory2_q.apex
+fam_Territory2_t	67.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: Territory2	family/Territory2_t.apex
+fam_WebStore_n	67.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: WebStore	family/WebStore_n.apex
+fam_WebStore_q	67.0	anonymous	COMPILE_ERROR	line 1 col 19: Invalid type: Schema.WebStore	family/WebStore_q.apex
+fam_WebStore_t	67.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: WebStore	family/WebStore_t.apex
+A01	62.0	anonymous	COMPILE_OK	1	anon/A01.apex
+A02	62.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: Quote	anon/A02.apex
+A03	62.0	anonymous	COMPILE_OK	1|B|1|true|1|NsHolder.Quote	anon/A03.apex
+A04	62.0	anonymous	COMPILE_OK	1	anon/A04.apex
+A05	62.0	anonymous	COMPILE_OK	2	anon/A05.apex
+A06	62.0	anonymous	COMPILE_OK	7	anon/A06.apex
+A07	62.0	anonymous	COMPILE_OK	1|A|0	anon/A07.apex
+A08	62.0	anonymous	COMPILE_OK	B	anon/A08.apex
+A09	62.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: Survey	anon/A09.apex
+A10	62.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: Quote	anon/A10.apex
+A11	62.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: Quote	anon/A11.apex
+A12	62.0	anonymous	COMPILE_OK	NsHolder.Quote	anon/A12.apex
+A13	62.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: Territory2	anon/A13.apex
+H01	62.0	named	COMPILE_OK		named/H01.cls
+H02	62.0	named	COMPILE_ERROR	line 1 col 45: Invalid type: Quote	named/H02.cls
+H03	62.0	named	COMPILE_ERROR	line 1 col 45: Invalid type: Survey	named/H03.cls
+H04	62.0	named	COMPILE_ERROR	line 1 col 27: Invalid type: Quote	named/H04.cls
+H05	62.0	named	COMPILE_ERROR	line 1 col 53: Invalid type: Quote	named/H05.cls
+H06	62.0	named	COMPILE_ERROR	line 1 col 54: Invalid type: Quote	named/H06.cls
+H07	62.0	named	COMPILE_OK		named/H07.cls
+H08	62.0	named	COMPILE_OK		named/H08.cls
+H09	62.0	named	COMPILE_OK		named/H09.cls
+H10	62.0	named	COMPILE_ERROR	line 1 col 67: DML requires SObject or SObject list type: H10.Quote	named/H10.cls
+H11	62.0	named	COMPILE_ERROR	line 1 col 85: Invalid type: Schema.Quote	named/H11.cls
+H12	62.0	named	COMPILE_ERROR	line 1 col 82: Variable does not exist: SObjectType	named/H12.cls
+H13	62.0	named	COMPILE_OK		named/H13.cls
+H14	62.0	named	COMPILE_OK		named/H14.cls
+H15	62.0	named	COMPILE_OK		named/H15.cls
+H16	62.0	named	COMPILE_OK		named/H16.cls
+I01	62.0	named	COMPILE_ERROR	line 1 col 61: Type is not visible: NsOuter.Pv	named/I01.cls
+I02	62.0	named	COMPILE_ERROR	line 1 col 61: Type is not visible: NsOuter.Pv	named/I02.cls
+I03	62.0	named	COMPILE_ERROR	line 1 col 61: Type is not visible: NsOuter.Dn	named/I03.cls
+I04	62.0	named	COMPILE_ERROR	line 1 col 61: Type is not visible: NsOuter.Dn	named/I04.cls
+I05	62.0	named	COMPILE_ERROR	line 1 col 61: Type is not visible: NsOuter.PvE	named/I05.cls
+I06	62.0	named	COMPILE_ERROR	line 1 col 61: Type is not visible: NsOuter.PvE	named/I06.cls
+I07	62.0	named	COMPILE_ERROR	line 1 col 61: Type is not visible: NsOuter.PvI	named/I07.cls
+I08	62.0	named	COMPILE_ERROR	line 1 col 61: Type is not visible: NsOuter.PvI	named/I08.cls
+I09	62.0	named	COMPILE_OK		named/I09.cls
+I10	62.0	named	COMPILE_OK		named/I10.cls
+I11	62.0	named	COMPILE_ERROR	line 1 col 61: Type is not visible: NsOuter.Pv	named/I11.cls
+I12	62.0	named	COMPILE_ERROR	line 1 col 43: Type is not visible: NsOuter.Pv	named/I12.cls
+I13	62.0	named	COMPILE_ERROR	line 1 col 43: Type is not visible: NsOuter.Pv	named/I13.cls
+I14	62.0	named	COMPILE_ERROR	line 1 col 61: Type is not visible: NsOuter.DnE	named/I14.cls
+I15	62.0	named	COMPILE_ERROR	line 1 col 61: Type is not visible: NsOuter.DnE	named/I15.cls
+I16	62.0	named	COMPILE_ERROR	line 1 col 72: Type is not visible: NsOuter.Pv	named/I16.cls
+A01	67.0	anonymous	COMPILE_OK	1	anon/A01.apex
+A02	67.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: Quote	anon/A02.apex
+A03	67.0	anonymous	COMPILE_OK	1|B|1|true|1|NsHolder.Quote	anon/A03.apex
+A04	67.0	anonymous	COMPILE_OK	1	anon/A04.apex
+A05	67.0	anonymous	COMPILE_OK	2	anon/A05.apex
+A06	67.0	anonymous	COMPILE_OK	7	anon/A06.apex
+A07	67.0	anonymous	COMPILE_OK	1|A|0	anon/A07.apex
+A08	67.0	anonymous	COMPILE_OK	B	anon/A08.apex
+A09	67.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: Survey	anon/A09.apex
+A10	67.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: Quote	anon/A10.apex
+A11	67.0	anonymous	COMPILE_ERROR	line 1 col 12: Invalid type: Quote	anon/A11.apex
+A12	67.0	anonymous	COMPILE_OK	NsHolder.Quote	anon/A12.apex
+A13	67.0	anonymous	COMPILE_ERROR	line 1 col 1: Invalid type: Territory2	anon/A13.apex
+H01	67.0	named	COMPILE_OK		named/H01.cls
+H02	67.0	named	COMPILE_ERROR	line 1 col 45: Invalid type: Quote	named/H02.cls
+H03	67.0	named	COMPILE_ERROR	line 1 col 45: Invalid type: Survey	named/H03.cls
+H04	67.0	named	COMPILE_ERROR	line 1 col 27: Invalid type: Quote	named/H04.cls
+H05	67.0	named	COMPILE_ERROR	line 1 col 53: Invalid type: Quote	named/H05.cls
+H06	67.0	named	COMPILE_ERROR	line 1 col 54: Invalid type: Quote	named/H06.cls
+H07	67.0	named	COMPILE_OK		named/H07.cls
+H08	67.0	named	COMPILE_OK		named/H08.cls
+H09	67.0	named	COMPILE_OK		named/H09.cls
+H10	67.0	named	COMPILE_ERROR	line 1 col 67: DML requires SObject or SObject list type: H10.Quote	named/H10.cls
+H11	67.0	named	COMPILE_ERROR	line 1 col 85: Invalid type: Schema.Quote	named/H11.cls
+H12	67.0	named	COMPILE_ERROR	line 1 col 82: Variable does not exist: SObjectType	named/H12.cls
+H13	67.0	named	COMPILE_OK		named/H13.cls
+H14	67.0	named	COMPILE_OK		named/H14.cls
+H15	67.0	named	COMPILE_OK		named/H15.cls
+H16	67.0	named	COMPILE_OK		named/H16.cls
+I01	67.0	named	COMPILE_ERROR	line 1 col 61: Type is not visible: NsOuter.Pv	named/I01.cls
+I02	67.0	named	COMPILE_ERROR	line 1 col 61: Type is not visible: NsOuter.Pv	named/I02.cls
+I03	67.0	named	COMPILE_ERROR	line 1 col 61: Type is not visible: NsOuter.Dn	named/I03.cls
+I04	67.0	named	COMPILE_ERROR	line 1 col 61: Type is not visible: NsOuter.Dn	named/I04.cls
+I05	67.0	named	COMPILE_ERROR	line 1 col 61: Type is not visible: NsOuter.PvE	named/I05.cls
+I06	67.0	named	COMPILE_ERROR	line 1 col 61: Type is not visible: NsOuter.PvE	named/I06.cls
+I07	67.0	named	COMPILE_ERROR	line 1 col 61: Type is not visible: NsOuter.PvI	named/I07.cls
+I08	67.0	named	COMPILE_ERROR	line 1 col 61: Type is not visible: NsOuter.PvI	named/I08.cls
+I09	67.0	named	COMPILE_OK		named/I09.cls
+I10	67.0	named	COMPILE_OK		named/I10.cls
+I11	67.0	named	COMPILE_ERROR	line 1 col 61: Type is not visible: NsOuter.Pv	named/I11.cls
+I12	67.0	named	COMPILE_ERROR	line 1 col 43: Type is not visible: NsOuter.Pv	named/I12.cls
+I13	67.0	named	COMPILE_ERROR	line 1 col 43: Type is not visible: NsOuter.Pv	named/I13.cls
+I14	67.0	named	COMPILE_ERROR	line 1 col 61: Type is not visible: NsOuter.DnE	named/I14.cls
+I15	67.0	named	COMPILE_ERROR	line 1 col 61: Type is not visible: NsOuter.DnE	named/I15.cls
+I16	67.0	named	COMPILE_ERROR	line 1 col 72: Type is not visible: NsOuter.Pv	named/I16.cls

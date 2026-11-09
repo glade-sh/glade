@@ -1,0 +1,5 @@
+api	route	case	observation
+62.0	istest	amount10_phrase_NULL	{"text":true,"numeric":true}
+62.0	istest	amount1_phrase_other	{"text":false,"numeric":false}
+67.0	istest	amount10_phrase_NULL	{"text":true,"numeric":true}
+67.0	istest	amount1_phrase_other	{"text":false,"numeric":false}

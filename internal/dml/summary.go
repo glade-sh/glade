@@ -59,6 +59,7 @@ func (e *Engine) recalculateSummaryFieldsForChildren(childObjectName string, chi
 				parentRecord.Fields = make(map[string]storage.Value)
 			}
 			parentRecord.Fields[relation.parentField] = value
+			e.applyQuoteDerivedFields(&parentRecord)
 			parentObject.Records[storedParentID] = parentRecord
 			e.recordSummaryUpdate(parentObjectName, beforeParent, parentRecord)
 			updatedParents[parentObjectName] = append(updatedParents[parentObjectName], parentRecord)
@@ -181,6 +182,23 @@ func (e *Engine) summaryRelationsForChild(childObjectName string) []summaryRelat
 			field.SummaryForeignKey = "OpportunityLineItem.OpportunityId"
 			field.SummarizedField = "OpportunityLineItem.TotalPrice"
 			relations = append(relations, summaryRelation{parentObject: "Opportunity", parentField: "Amount", field: field, fkFieldName: "OpportunityId"})
+		}
+	}
+	if strings.EqualFold(childObjectName, "QuoteLineItem") {
+		parent, parentOK := e.Org.Objects["Quote"]
+		for _, rollup := range []struct{ field, operation, summarized string }{
+			{"Subtotal", "sum", "QuoteLineItem.Subtotal"},
+			{"TotalPrice", "sum", "QuoteLineItem.TotalPrice"},
+			{"LineItemCount", "count", ""},
+		} {
+			field, fieldOK := parent.Definition.Fields[rollup.field]
+			if !parentOK || !fieldOK || field.Type == storage.FieldSummary {
+				continue
+			}
+			field.SummaryOperation = rollup.operation
+			field.SummaryForeignKey = "QuoteLineItem.QuoteId"
+			field.SummarizedField = rollup.summarized
+			relations = append(relations, summaryRelation{parentObject: "Quote", parentField: rollup.field, field: field, fkFieldName: "QuoteId"})
 		}
 	}
 	e.SummaryByChild.store(childObjectName, relations)

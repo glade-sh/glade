@@ -1,0 +1,13 @@
+api	route	object	field	present
+62.0	anonymous	AssetStatePeriod	ApplUnitPriceUpliftPct	false
+62.0	anonymous	AssetStatePeriod	RampUpliftType	false
+62.0	anonymous	Conversation	ActiveModalities	false
+62.0	anonymous	CronJobDetail	CronJobType	false
+67.0	anonymous	AssetStatePeriod	ApplUnitPriceUpliftPct	false
+67.0	anonymous	AssetStatePeriod	RampUpliftType	false
+67.0	anonymous	Conversation	ActiveModalities	false
+67.0	anonymous	CronJobDetail	CronJobType	false
+68.0	anonymous	AssetStatePeriod	ApplUnitPriceUpliftPct	true
+68.0	anonymous	AssetStatePeriod	RampUpliftType	true
+68.0	anonymous	Conversation	ActiveModalities	true
+68.0	anonymous	CronJobDetail	CronJobType	true

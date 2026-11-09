@@ -2,6 +2,7 @@ package visualforce
 
 import (
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -17,6 +18,7 @@ type expressionValidationContext struct {
 	index               *Index
 	registry            storage.MetadataRegistry
 	classes             map[string]apexast.Declaration
+	declaredTypes       map[string]bool // the project's interfaces and enums
 	objects             map[string]schema.Object
 	namespace           string
 	tabFiles            []string
@@ -29,46 +31,166 @@ type expressionValidationContext struct {
 	ajaxAssignments     map[*MarkupNode]bool
 }
 
-func newExpressionValidationContext(p project.Project, index *Index) (*expressionValidationContext, error) {
-	ctx := &expressionValidationContext{index: index, classes: map[string]apexast.Declaration{}, objects: map[string]schema.Object{}, namespace: strings.TrimSpace(p.Namespace), tabFiles: p.TabFiles}
+// expressionValidationSources is the project-wide input of expression
+// validation: the Apex class declarations, the resource registry and the
+// schema. It does not depend on which pages a load validates, so one load
+// sequence computes it once (see loadCache).
+type expressionValidationSources struct {
+	registry storage.MetadataRegistry
+	classes  map[string]apexast.Declaration
+	// declaredTypes holds the project's interfaces and enums, which a component
+	// attribute may name like a class.
+	declaredTypes map[string]bool
+	objects       map[string]schema.Object
+	namespace     string
+	tabFiles      []string
+}
+
+func loadExpressionValidationSources(p project.Project) (*expressionValidationSources, error) {
+	src := &expressionValidationSources{classes: map[string]apexast.Declaration{}, declaredTypes: map[string]bool{}, objects: map[string]schema.Object{}, namespace: strings.TrimSpace(p.Namespace), tabFiles: p.TabFiles}
 	if len(p.ApexFiles) != 0 {
 		parser := apexast.NewParser()
 		defer parser.Close()
 		for _, path := range p.ApexFiles {
+			apexSourceParses.Add(1)
 			file, err := parser.ParseFile(path)
 			if err != nil {
 				return nil, err
 			}
 			for _, declaration := range file.Declarations {
 				if declaration.Kind == apexast.DeclarationClass {
-					ctx.classes[strings.ToLower(declaration.Name)] = declaration
+					src.classes[strings.ToLower(declaration.Name)] = declaration
+				}
+				if declaration.Kind == apexast.DeclarationInterface || declaration.Kind == apexast.DeclarationEnum {
+					src.declaredTypes[strings.ToLower(declaration.Name)] = true
 				}
 			}
 		}
 	}
-	if len(ctx.classes) == 0 {
-		return ctx, nil
+	if len(src.classes) == 0 {
+		return src, nil
 	}
 	// Load only metadata used by expressions. Unrelated resource types must not
 	// become new prerequisites for indexing Visualforce pages.
 	registry, err := resource.LoadProject(project.Project{
 		Root: p.Root, Namespace: p.Namespace,
 		LabelFiles: p.LabelFiles, TranslationFiles: p.TranslationFiles,
-		StaticResourceFiles: p.StaticResourceFiles, StaticResourceMetas: p.StaticResourceMetas,
+		StaticResourceFiles: p.StaticResourceFiles, StaticResourceMetas: p.StaticResourceMetas, MessageChannelFiles: p.MessageChannelFiles,
 		ManagedPackageDependencies: p.ManagedPackageDependencies,
 	})
 	if err != nil {
 		return nil, err
 	}
-	ctx.registry = registry
+	src.registry = registry
 	objects, err := schema.LoadProject(p)
 	if err != nil {
 		return nil, err
 	}
 	for _, object := range objects.Objects {
-		ctx.objects[strings.ToLower(object.Name)] = object
+		src.objects[strings.ToLower(object.Name)] = object
 	}
-	return ctx, nil
+	mergeDependencyExpressionFields(src.objects, p, map[string]bool{})
+	inheritExpressionActivityFields(src.objects)
+	return src, nil
+}
+
+// mergeDependencyExpressionFields adds the custom fields that loaded
+// dependency projects declare on standard objects, and on objects the
+// project itself declares, to those objects. An installed dependency's fields
+// exist in the org, so a page that binds one (for example an Activity lookup
+// on an Event row) compiles natively. A dependency object the project does not
+// declare stays out of the index, so its paths keep the deferred validation
+// (its own source may be partial).
+func mergeDependencyExpressionFields(objects map[string]schema.Object, p project.Project, seen map[string]bool) {
+	for _, dep := range p.ManagedPackageDependencies {
+		if dep.Status != "loaded" || dep.Project == nil {
+			continue
+		}
+		key := strings.ToLower(dep.Project.Root + "\x00" + dep.Namespace)
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		depSchema, err := schema.LoadProject(*dep.Project)
+		if err != nil {
+			// A dependency whose metadata does not load contributes nothing,
+			// as before; the dependency's own pages report it.
+			continue
+		}
+		for _, object := range depSchema.Objects {
+			name := strings.ToLower(object.Name)
+			existing, declared := objects[name]
+			if !declared {
+				// Activity holds the shared Task and Event custom fields.
+				if _, standard := storage.StandardObjectDefinition(object.Name); !standard && name != "activity" {
+					continue
+				}
+				existing = schema.Object{Name: object.Name}
+			}
+			fields := append([]schema.Field(nil), existing.Fields...)
+			for _, field := range object.Fields {
+				present := false
+				for _, current := range fields {
+					if strings.EqualFold(current.Name, field.Name) {
+						present = true
+						break
+					}
+				}
+				if !present {
+					fields = append(fields, field)
+				}
+			}
+			existing.Fields = fields
+			objects[name] = existing
+		}
+		mergeDependencyExpressionFields(objects, *dep.Project, seen)
+	}
+}
+
+// inheritExpressionActivityFields gives Task and Event the custom fields
+// declared on Activity, as Apex and runtime describe already do. A concrete
+// object that redeclares one of those fields keeps its own fields unchanged
+// (M002/M003 reject that shape; no precedence is assigned here).
+func inheritExpressionActivityFields(objects map[string]schema.Object) {
+	activity, ok := objects["activity"]
+	if !ok || len(activity.Fields) == 0 {
+		return
+	}
+	for _, target := range []string{"Task", "Event"} {
+		key := strings.ToLower(target)
+		object, exists := objects[key]
+		if !exists {
+			object = schema.Object{Name: target}
+		}
+		conflict := false
+		for _, field := range activity.Fields {
+			for _, concrete := range object.Fields {
+				if strings.EqualFold(field.Name, concrete.Name) {
+					conflict = true
+				}
+			}
+		}
+		if conflict {
+			continue
+		}
+		object.Fields = append(append([]schema.Field(nil), object.Fields...), activity.Fields...)
+		objects[key] = object
+	}
+}
+
+func newExpressionValidationContext(p project.Project, index *Index) (*expressionValidationContext, error) {
+	return newExpressionValidationContextWith(p, index, nil)
+}
+
+// newExpressionValidationContextWith builds the context from cached sources
+// when a loadCache is supplied. The context's own fields (bindings, controller,
+// form state) are per page and set by validate.
+func newExpressionValidationContextWith(p project.Project, index *Index, cache *loadCache) (*expressionValidationContext, error) {
+	src, err := cache.expressionSources(p)
+	if err != nil {
+		return nil, err
+	}
+	return &expressionValidationContext{index: index, registry: src.registry, classes: src.classes, declaredTypes: src.declaredTypes, objects: src.objects, namespace: src.namespace, tabFiles: src.tabFiles}, nil
 }
 
 // Expression validation is separate from markup/metadata checks. Bindings
@@ -144,7 +266,7 @@ func (ctx *expressionValidationContext) validate(tree *MarkupNode, sourceName st
 			}
 		}
 		if node.Type == MarkupNodeText {
-			if err := current.validateTemplate(node.Text, node, "", sourceName, root.Name); err != nil {
+			if err := current.validateTextTemplate(node, sourceName, root.Name); err != nil {
 				return err
 			}
 		}
@@ -162,10 +284,70 @@ func (ctx *expressionValidationContext) validate(tree *MarkupNode, sourceName st
 			if err := walk(child, bindings); err != nil {
 				return err
 			}
+			// Native rows (vf_corpus_shapes): an <apex:variable> is visible to
+			// the siblings that follow it and their descendants, not to earlier
+			// siblings and not outside its parent.
+			if child.Namespace == "apex" && child.Name == "variable" {
+				if name := strings.ToLower(strings.TrimSpace(child.Attribute("var"))); name != "" {
+					copy := make(map[string]string, len(bindings)+1)
+					for key, typ := range bindings {
+						copy[key] = typ
+					}
+					copy[name] = ""
+					bindings = copy
+				}
+			}
 		}
 		return nil
 	}
 	return walk(tree, local.bindings)
+}
+
+var scriptRepeatTag = regexp.MustCompile(`(?is)<apex:repeat\b[^>]*>|</apex:repeat\s*>`)
+var scriptRepeatVar = regexp.MustCompile(`(?is)\bvar\s*=\s*["']([^"']+)["']`)
+
+// validateTextTemplate validates the expressions of a text node. The content of
+// a script element is raw text, so an <apex:repeat> inside it reaches the
+// validator as text; the org still repeats it, and its variable is bound for the
+// expressions up to the closing tag (rows ScriptRepeat* of testdata/vf_component_ids).
+func (ctx *expressionValidationContext) validateTextTemplate(node *MarkupNode, sourceName, rootName string) error {
+	text := node.Text
+	if !strings.Contains(strings.ToLower(text), "<apex:repeat") {
+		return ctx.validateTemplate(text, node, "", sourceName, rootName)
+	}
+	current := *ctx
+	var stack []map[string]string
+	bindings := ctx.bindings
+	last := 0
+	for _, loc := range scriptRepeatTag.FindAllStringIndex(text, -1) {
+		current.bindings = bindings
+		if err := current.validateTemplate(text[last:loc[0]], node, "", sourceName, rootName); err != nil {
+			return err
+		}
+		last = loc[1]
+		tag := text[loc[0]:loc[1]]
+		if strings.HasPrefix(tag, "</") {
+			if len(stack) > 0 {
+				bindings, stack = stack[len(stack)-1], stack[:len(stack)-1]
+			}
+			continue
+		}
+		// The tag's own attributes are validated with the enclosing bindings.
+		if err := current.validateTemplate(tag, node, "", sourceName, rootName); err != nil {
+			return err
+		}
+		stack = append(stack, bindings)
+		if match := scriptRepeatVar.FindStringSubmatch(tag); match != nil {
+			next := make(map[string]string, len(bindings)+1)
+			for name, typ := range bindings {
+				next[name] = typ
+			}
+			next[strings.ToLower(match[1])] = ""
+			bindings = next
+		}
+	}
+	current.bindings = bindings
+	return current.validateTemplate(text[last:], node, "", sourceName, rootName)
 }
 
 func sortedExpressionAttributeNames(attributes map[string]string) []string {
@@ -189,6 +371,11 @@ func (ctx *expressionValidationContext) addBindings(name string, seen map[string
 	}
 	ctx.addBindings(class.SuperClass, seen)
 	for _, member := range class.Members {
+		// A field without accessors is not a page property: the org reports
+		// "Unknown property" (rows ExprField*, PageMsgStrengthExprField).
+		if member.Kind == apexast.DeclarationField {
+			continue
+		}
 		name := member.Name
 		if member.Kind == apexast.DeclarationMethod && len(member.Parameters) == 0 && strings.HasPrefix(strings.ToLower(name), "get") && len(name) > 3 {
 			name = name[3:]
@@ -238,6 +425,9 @@ func (ctx *expressionValidationContext) validateTemplate(raw string, node *Marku
 		if _, err := ctx.expressionType(expr); err != nil {
 			return err
 		}
+		if err := ctx.rejectBarePicklist(expr); err != nil {
+			return err
+		}
 		offset = end + 1
 	}
 	return nil
@@ -269,6 +459,15 @@ func (ctx *expressionValidationContext) expressionType(expr Expression) (string,
 		if err != nil {
 			return "", err
 		}
+		// Only these operators have native picklist operand captures.
+		switch expr.op {
+		case "==", "!=", "+", "&", "<":
+			for _, operand := range []Expression{expr.left, expr.right} {
+				if err := ctx.rejectBarePicklist(operand); err != nil {
+					return "", err
+				}
+			}
+		}
 		if (expr.op == "==" || expr.op == "!=" || expr.op == "+") && left != "" && right != "" && left != right {
 			op := expr.op
 			if op == "==" {
@@ -284,6 +483,9 @@ func (ctx *expressionValidationContext) expressionType(expr Expression) (string,
 		}
 		return left, nil
 	case visualforceFunctionExpr:
+		if strings.EqualFold(expr.name, "ISPICKVAL") {
+			return ctx.isPickValType(expr)
+		}
 		return ctx.functionType(expr.name, expr.args)
 	case functionExpr:
 		return ctx.functionType(expr.name, expr.args)
@@ -366,6 +568,11 @@ func (ctx *expressionValidationContext) functionType(name string, args []Express
 		if err != nil {
 			return "", err
 		}
+		// Only the captured selector shapes are rejected; other Boolean
+		// expressions retain their pre-ISPICKVAL behavior.
+		if name == "CASE" && i == 0 && ctx.rejectedCaseSelector(arg) {
+			return "", fmt.Errorf("Incorrect argument type for function 'CASE()'.")
+		}
 		if (name == "JSENCODE" || name == "HTMLENCODE" || name == "JSINHTMLENCODE") && typ != "" && typ != "Text" {
 			return "", fmt.Errorf("Incorrect argument type for function '%s()'.", name)
 		}
@@ -393,6 +600,23 @@ func (ctx *expressionValidationContext) identifierType(parts []string) (string, 
 	path, root := strings.Join(parts, "."), strings.ToLower(parts[0])
 	missing := func() (string, error) { return "", fmt.Errorf("Field %s does not exist. Check spelling.", path) }
 	if strings.HasPrefix(root, "$") {
+		// $Label.site.* is a closed system namespace; it needs no controller
+		// or project source to validate.
+		if root == "$label" && len(parts) >= 2 && strings.EqualFold(parts[1], "site") {
+			if len(parts) != 3 {
+				return missing()
+			}
+			if _, ok := resource.SiteSystemLabel(parts[2]); !ok {
+				return missing()
+			}
+			return "Text", nil
+		}
+		// $User, $Profile and $Organization resolve against the standard
+		// definitions and need no controller: native rows reject an unknown
+		// field on a controller-less page too.
+		if root == "$user" || root == "$profile" || root == "$organization" {
+			return ctx.globalIdentifierType(root, parts, missing)
+		}
 		// LoadProject also indexes projects whose controllers and metadata are
 		// supplied later by a VM. Validate reference existence only when the
 		// page's controller/extension source participates in this project.
@@ -400,6 +624,8 @@ func (ctx *expressionValidationContext) identifierType(parts []string) (string, 
 			return "", nil
 		}
 		switch root {
+		case "$action":
+			return ctx.actionReferenceType(parts, missing)
 		case "$remoteaction":
 			return "", ctx.validateRemoteActionReference(parts)
 		case "$asset":
@@ -456,19 +682,8 @@ func (ctx *expressionValidationContext) identifierType(parts []string) (string, 
 				return missing()
 			}
 			return "", nil
-		case "$user", "$profile", "$organization":
-			if len(parts) < 2 {
-				return "", nil
-			}
-			definition, ok := storage.StandardObjectDefinition(parts[0][1:])
-			if !ok {
-				return missing()
-			}
-			fieldName, ok := storage.ResolveFieldName(definition, "", parts[1])
-			if !ok {
-				return "", fmt.Errorf("Field %s does not exist. Check spelling.", parts[1])
-			}
-			return expressionStorageFieldType(definition.Fields[fieldName]), nil
+		case "$messagechannel":
+			return ctx.messageChannelType(parts)
 		default:
 			if !supportedVisualforceGlobal(parts[0]) {
 				return missing()
@@ -491,7 +706,15 @@ func (ctx *expressionValidationContext) identifierType(parts []string) (string, 
 	}
 	if len(parts) > 1 {
 		for _, field := range ctx.objects[strings.ToLower(typ)].Fields {
-			if strings.EqualFold(field.Name, parts[1]) {
+			if ctx.sameOwnName(field.Name, parts[1]) {
+				return "", nil
+			}
+			// A custom lookup declared in project metadata is also a member
+			// by its relationship name (Field__r), as on the standard
+			// controller path.
+			if len(field.ReferenceTo) != 0 && ctx.sameOwnName(storage.ParentRelationshipName(storage.Field{
+				APIName: field.Name, Type: storage.FieldReference, RelationshipName: field.RelationshipName,
+			}), parts[1]) {
 				return "", nil
 			}
 		}
@@ -523,6 +746,17 @@ func (ctx *expressionValidationContext) identifierType(parts []string) (string, 
 	return "", nil
 }
 
+// sameOwnName reports whether a declared custom name is the requested one. A
+// namespaced package's source names its own fields, relationships and objects
+// without the namespace prefix while the project index qualifies them (rows
+// NsRel* and NsAttr* of testdata/vf_component_ids).
+func (ctx *expressionValidationContext) sameOwnName(declared, requested string) bool {
+	if strings.EqualFold(declared, requested) {
+		return true
+	}
+	return ctx.namespace != "" && strings.EqualFold(declared, ctx.namespace+"__"+requested)
+}
+
 func (ctx *expressionValidationContext) standardControllerPath(parts []string) bool {
 	if !ctx.sourceBindings || ctx.standardController == "" || len(parts) == 0 || !strings.EqualFold(parts[0], ctx.standardController) {
 		return false
@@ -540,10 +774,10 @@ func (ctx *expressionValidationContext) validateStandardControllerFieldPath(obje
 		return nil
 	}
 	for _, field := range ctx.objects[strings.ToLower(objectName)].Fields {
-		if strings.EqualFold(field.Name, parts[0]) {
+		if ctx.sameOwnName(field.Name, parts[0]) {
 			return nil
 		}
-		if len(field.ReferenceTo) != 0 && strings.EqualFold(storage.ParentRelationshipName(storage.Field{
+		if len(field.ReferenceTo) != 0 && ctx.sameOwnName(storage.ParentRelationshipName(storage.Field{
 			APIName: field.Name, Type: storage.FieldReference, RelationshipName: field.RelationshipName,
 		}), parts[0]) {
 			if len(field.ReferenceTo) == 1 {
@@ -582,9 +816,148 @@ func expressionStorageFieldType(field storage.Field) string {
 	return ""
 }
 
+// $User does not expose every User picklist to Visualforce formulas.
+func visualforceHiddenUserPicklist(field string) bool {
+	switch strings.ToLower(field) {
+	case "emailencodingkey", "digestfrequency", "defaultgroupnotificationfrequency":
+		return true
+	}
+	return false
+}
+
+func (ctx *expressionValidationContext) messageChannelType(parts []string) (string, error) {
+	if len(parts) == 1 {
+		return "", fmt.Errorf("Invalid use of global variable 'ApexPagesELAdapterContext.$MessageChannel'. Expected field selector is missing.")
+	}
+	name := parts[1]
+	if len(name) > len("__c") && name[len(name)-len("__c"):] == "__c" {
+		local := name[:len(name)-len("__c")]
+		for _, channel := range ctx.registry.MessageChannels {
+			if strings.EqualFold(channel.Name, local) {
+				return "Text", nil
+			}
+		}
+	}
+	return "", fmt.Errorf("We couldn\u2019t find Lightning Message Channel %s. Check your spelling and try again.", name)
+}
+
+// A picklist global is legal only as the first ISPICKVAL argument and inside
+// TEXT; used as a plain value it fails to compile (captured for a printed
+// value, an operator operand and the ISPICKVAL literal argument).
+func (ctx *expressionValidationContext) rejectBarePicklist(expr Expression) error {
+	identifier, ok := expr.(visualforceIdentifierExpr)
+	if !ok || len(identifier.parts) != 2 || (!strings.EqualFold(identifier.parts[0], "$User") && !strings.EqualFold(identifier.parts[0], "$Profile")) {
+		return nil
+	}
+	if field, ok := ctx.globalField(expr); ok && field.Type == storage.FieldPicklist {
+		return fmt.Errorf("Field %s is a picklist field. Picklist fields are only supported in certain functions.", field.APIName)
+	}
+	return nil
+}
+
+// rejectedCaseSelector recognizes the captured ISPICKVAL, true, equality,
+// and checkbox selector shapes without rejecting unrelated Boolean functions.
+func (ctx *expressionValidationContext) rejectedCaseSelector(expr Expression) bool {
+	switch value := expr.(type) {
+	case visualforceFunctionExpr:
+		return strings.EqualFold(value.name, "ISPICKVAL")
+	case literalExpr:
+		return value.value.Kind == vm.ValueBool && value.value.Bool
+	case binaryExpr:
+		return value.op == "=="
+	case visualforceIdentifierExpr:
+		if len(value.parts) != 2 {
+			return false
+		}
+		typ := ctx.bindings[strings.ToLower(value.parts[0])]
+		if ctx.standardControllerPath(value.parts) {
+			typ = ctx.standardController
+		}
+		for _, field := range ctx.objects[strings.ToLower(typ)].Fields {
+			if strings.EqualFold(field.Name, value.parts[1]) && strings.EqualFold(field.Type, "Checkbox") {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// isPickValType checks ISPICKVAL(picklist, 'literal'). Record fields reach a
+// formula as Text, so only picklist globals ($User, $Profile) qualify.
+func (ctx *expressionValidationContext) isPickValType(expr visualforceFunctionExpr) (string, error) {
+	spelling := expr.spelling
+	if spelling == "" {
+		spelling = strings.ToUpper(expr.name)
+	}
+	if len(expr.args) != 2 {
+		return "", fmt.Errorf("Incorrect number of parameters for function 'ISPICKVAL()'. Expected 2, received %d", len(expr.args))
+	}
+	first, err := ctx.expressionType(expr.args[0])
+	if err != nil {
+		return "", err
+	}
+	if field, ok := ctx.globalField(expr.args[0]); !ok || field.Type != storage.FieldPicklist {
+		return "", fmt.Errorf("Incorrect parameter type for function '%s()'. Expected Picklist, received %s", spelling, ctx.isPickValOperandType(expr.args[0], first))
+	}
+	second, err := ctx.expressionType(expr.args[1])
+	if err != nil {
+		return "", err
+	}
+	if err := ctx.rejectBarePicklist(expr.args[1]); err != nil {
+		return "", err
+	}
+	if literal, isLiteral := expr.args[1].(literalExpr); !isLiteral || literal.value.Kind != vm.ValueString {
+		return "", fmt.Errorf("Incorrect parameter type for function '%s()'. Expected Text Literal, received %s", spelling, ctx.isPickValOperandType(expr.args[1], second))
+	}
+	return "Boolean", nil
+}
+
+// isPickValOperandType names an operand's type the way the compiler reports it.
+func (ctx *expressionValidationContext) isPickValOperandType(arg Expression, inferred string) string {
+	if literal, ok := arg.(literalExpr); ok {
+		switch literal.value.Kind {
+		case vm.ValueNull:
+			return "Null"
+		case vm.ValueBool:
+			return "Boolean"
+		case vm.ValueInt, vm.ValueDecimal:
+			return "Number"
+		}
+		return "Text"
+	}
+	if field, ok := ctx.globalField(arg); ok {
+		if field.Type == storage.FieldID {
+			return "Lookup(User)"
+		}
+		if typ := expressionStorageFieldType(field); typ != "" {
+			return typ
+		}
+		return "Text"
+	}
+	if identifier, ok := arg.(visualforceIdentifierExpr); ok && ctx.standardControllerPath(identifier.parts) && len(identifier.parts) == 2 {
+		for _, field := range ctx.objects[strings.ToLower(ctx.standardController)].Fields {
+			if strings.EqualFold(field.Name, identifier.parts[1]) {
+				switch strings.ToLower(field.Type) {
+				case "number", "currency", "percent":
+					return "Number"
+				case "checkbox":
+					return "Boolean"
+				}
+			}
+		}
+	}
+	if inferred == "" {
+		return "Text"
+	}
+	return inferred
+}
+
+// globalField resolves a $User, $Profile or $Organization field from the
+// standard definitions. It does not depend on a controller: native rows for
+// controller-less pages and components accept the same picklist uses.
 func (ctx *expressionValidationContext) globalField(expr Expression) (storage.Field, bool) {
 	identifier, ok := expr.(visualforceIdentifierExpr)
-	if !ok || !ctx.sourceBindings || len(identifier.parts) != 2 {
+	if !ok || len(identifier.parts) != 2 {
 		return storage.Field{}, false
 	}
 	root := strings.ToLower(identifier.parts[0])
@@ -597,4 +970,62 @@ func (ctx *expressionValidationContext) globalField(expr Expression) (storage.Fi
 	}
 	name, ok := storage.ResolveFieldName(definition, "", identifier.parts[1])
 	return definition.Fields[name], ok
+}
+
+func (ctx *expressionValidationContext) globalIdentifierType(root string, parts []string, missing func() (string, error)) (string, error) {
+	if len(parts) < 2 {
+		return "", nil
+	}
+	definition, ok := storage.StandardObjectDefinition(root[1:])
+	if !ok {
+		if !ctx.sourceBindings {
+			return "", nil
+		}
+		return missing()
+	}
+	if root == "$user" && len(parts) == 2 && (strings.EqualFold(parts[1], "UITheme") || strings.EqualFold(parts[1], "UIThemeDisplayed")) {
+		// Documented $User globals that the sObject describe does not carry.
+		return "Text", nil
+	}
+	fieldName, ok := storage.ResolveFieldName(definition, "", parts[1])
+	if !ok && !ctx.sourceBindings && (strings.Contains(parts[1], "__") || len(parts) > 2) {
+		// Without project source, custom fields and relationship paths the
+		// standard definition cannot see stay accepted.
+		return "", nil
+	}
+	if !ok || (root == "$user" && (visualforceHiddenUserPicklist(fieldName) || strings.EqualFold(fieldName, "PortalRole"))) ||
+		(root == "$organization" && (strings.EqualFold(fieldName, "OrganizationType") || strings.EqualFold(fieldName, "LanguageLocaleKey"))) {
+		return "", fmt.Errorf("Field %s does not exist. Check spelling.", strings.Join(parts[1:], "."))
+	}
+	return expressionStorageFieldType(definition.Fields[fieldName]), nil
+}
+
+// actionVerbs are the $Action verbs the org compiles for a standard or custom
+// object (rows Action* of testdata/vf_component_ids).
+var actionVerbs = map[string]bool{"new": true, "view": true, "edit": true, "delete": true, "list": true}
+
+// actionReferenceType validates $Action.<Object>.<Verb>. A custom object's Tab
+// action needs its tab metadata and is validated with URLFOR (customTabURLTarget).
+func (ctx *expressionValidationContext) actionReferenceType(parts []string, missing func() (string, error)) (string, error) {
+	if len(parts) != 3 {
+		return missing()
+	}
+	verb := strings.ToLower(parts[2])
+	_, standard := storage.StandardObjectDefinition(parts[1])
+	if standard && (actionVerbs[verb] || verb == "tab") {
+		return "Text", nil
+	}
+	custom := false
+	if _, ok := ctx.objects[strings.ToLower(parts[1])]; ok {
+		custom = true
+	} else if ctx.namespace != "" && strings.Count(parts[1], "__") == 1 {
+		_, custom = ctx.objects[strings.ToLower(ctx.namespace+"__"+parts[1])]
+	}
+	if !custom && len(ctx.objects) == 0 && strings.HasSuffix(strings.ToLower(parts[1]), "__c") {
+		custom = true // no project schema was indexed for this page
+	}
+	if custom && actionVerbs[verb] {
+		return "Text", nil
+	}
+	return missing()
 }

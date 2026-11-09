@@ -2,7 +2,7 @@ package storage
 
 import "testing"
 
-// Ruling 38b: definition family remains explicit; an existing row is not overwritten.
+// Definition family remains explicit; an existing row is not overwritten.
 func TestCase349ExplicitFamilyDoesNotUseSeedRow38b(t *testing.T) {
 	for _, family := range []bool{false, true} {
 		t.Run(map[bool]string{false: "business", true: "person"}[family], func(t *testing.T) {

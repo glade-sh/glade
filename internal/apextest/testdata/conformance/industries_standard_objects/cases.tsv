@@ -1,0 +1,26 @@
+shape	boundary
+describe_AccountApplicants	Account describe child relationship list
+describe_ApplicationForms	Account describe child relationship list
+describe_BusinessLicenseApplicationAccount	Account describe child relationship list
+describe_BusinessProfiles	Account describe child relationship list
+describe_Cases	Account describe child relationship list
+describe_Contacts	Account describe child relationship list
+describe_IndividualApplicationAccount	Account describe child relationship list
+describe_PublicComplaintAccount	Account describe child relationship list
+describe_RegulatoryTrxnFees	Account describe child relationship list
+regulatory_code_active_filter	RegulatoryCode.IsActive (calculated, defaulted, not createable)
+regulatory_code_describe	RegulatoryCode.IsActive (calculated, defaulted, not createable)
+regulatory_code_is_active	RegulatoryCode.IsActive (calculated, defaulted, not createable)
+regulatory_code_no_from	RegulatoryCode.IsActive (calculated, defaulted, not createable)
+regulatory_code_window_future_future	RegulatoryCode.IsActive (calculated, defaulted, not createable)
+regulatory_code_window_future_open	RegulatoryCode.IsActive (calculated, defaulted, not createable)
+regulatory_code_window_past_future	RegulatoryCode.IsActive (calculated, defaulted, not createable)
+regulatory_code_window_past_open	RegulatoryCode.IsActive (calculated, defaulted, not createable)
+regulatory_code_window_past_past	RegulatoryCode.IsActive (calculated, defaulted, not createable)
+subquery_applicants_empty	subquery by standard industries child relationship
+subquery_application_forms_empty	subquery by standard industries child relationship
+subquery_business_profiles	subquery by standard industries child relationship
+subquery_individual_applications_empty	subquery by standard industries child relationship
+subquery_license_applications_empty	subquery by standard industries child relationship
+subquery_public_complaints	subquery by standard industries child relationship
+subquery_regulatory_fees	subquery by standard industries child relationship

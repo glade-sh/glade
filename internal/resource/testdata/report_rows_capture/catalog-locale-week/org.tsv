@@ -1,0 +1,25 @@
+api	route	case	result
+62.0	anonymous	locale-week-fr_FR-account	3~Account General~user~4~2026-11-02~2026-11-08~2026-11-04
+62.0	seealldata	locale-week-fr_FR-account	3~Account General~user~4~2026-11-02~2026-11-08~2026-11-04
+62.0	anonymous	locale-week-fr_FR-contact	6~Contact: General~my~5~2026-11-02~2026-11-08~2026-11-04
+62.0	seealldata	locale-week-fr_FR-contact	6~Contact: General~my~5~2026-11-02~2026-11-08~2026-11-04
+62.0	anonymous	locale-week-fr_FR-opportunity	7~Opportunity Information~organization~4~2026-11-02~2026-11-08~2026-11-04
+62.0	seealldata	locale-week-fr_FR-opportunity	7~Opportunity Information~organization~4~2026-11-02~2026-11-08~2026-11-04
+67.0	anonymous	locale-week-fr_FR-account	3~Account General~user~4~2026-11-02~2026-11-08~2026-11-04
+67.0	seealldata	locale-week-fr_FR-account	3~Account General~user~4~2026-11-02~2026-11-08~2026-11-04
+67.0	anonymous	locale-week-fr_FR-contact	6~Contact: General~my~5~2026-11-02~2026-11-08~2026-11-04
+67.0	seealldata	locale-week-fr_FR-contact	6~Contact: General~my~5~2026-11-02~2026-11-08~2026-11-04
+67.0	anonymous	locale-week-fr_FR-opportunity	7~Opportunity Information~organization~4~2026-11-02~2026-11-08~2026-11-04
+67.0	seealldata	locale-week-fr_FR-opportunity	7~Opportunity Information~organization~4~2026-11-02~2026-11-08~2026-11-04
+62.0	anonymous	locale-week-en_US-account	3~Account General~user~4~2026-11-01~2026-11-07~2026-11-04
+62.0	seealldata	locale-week-en_US-account	3~Account General~user~4~2026-11-01~2026-11-07~2026-11-04
+62.0	anonymous	locale-week-en_US-contact	6~Contact: General~my~5~2026-11-01~2026-11-07~2026-11-04
+62.0	seealldata	locale-week-en_US-contact	6~Contact: General~my~5~2026-11-01~2026-11-07~2026-11-04
+62.0	anonymous	locale-week-en_US-opportunity	7~Opportunity Information~organization~4~2026-11-01~2026-11-07~2026-11-04
+62.0	seealldata	locale-week-en_US-opportunity	7~Opportunity Information~organization~4~2026-11-01~2026-11-07~2026-11-04
+67.0	anonymous	locale-week-en_US-account	3~Account General~user~4~2026-11-01~2026-11-07~2026-11-04
+67.0	seealldata	locale-week-en_US-account	3~Account General~user~4~2026-11-01~2026-11-07~2026-11-04
+67.0	anonymous	locale-week-en_US-contact	6~Contact: General~my~5~2026-11-01~2026-11-07~2026-11-04
+67.0	seealldata	locale-week-en_US-contact	6~Contact: General~my~5~2026-11-01~2026-11-07~2026-11-04
+67.0	anonymous	locale-week-en_US-opportunity	7~Opportunity Information~organization~4~2026-11-01~2026-11-07~2026-11-04
+67.0	seealldata	locale-week-en_US-opportunity	7~Opportunity Information~organization~4~2026-11-01~2026-11-07~2026-11-04

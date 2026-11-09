@@ -1,0 +1,1 @@
+<ReportFolder xmlns="http://soap.sforce.com/2006/04/metadata"><name>B6 Reports</name><folderShares><accessLevel>View</accessLevel><sharedTo>synthetic.user@example.invalid</sharedTo><sharedToType>User</sharedToType></folderShares></ReportFolder>

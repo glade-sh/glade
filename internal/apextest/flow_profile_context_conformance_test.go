@@ -46,6 +46,8 @@ func TestFlowProfileContextNativeConformance(t *testing.T) {
 		seen[key] = true
 		projectRoot := filepath.Join(root, strings.TrimSuffix(row[0], ".0"))
 		copyDiskRuntimeScopeProject(t, filepath.Join(fixture, "api"+strings.TrimSuffix(row[0], ".0")), projectRoot)
+		// ORG-RUN.txt: the administrator holds the Flow_Profile_Access grant.
+		writeFile(t, filepath.Join(projectRoot, "glade.yml"), "test:\n  permissionSets: [Flow_Profile_Access]\n")
 		index := loadTestIndex(t, projectRoot)
 		if analysis := sema.Analyze(index); index.HasErrors() || analysis.HasErrors() {
 			t.Fatalf("diagnostics: %v %v", index.Diagnostics, analysis.Diagnostics)
@@ -78,7 +80,7 @@ func TestFlowProfileContextNativeConformance(t *testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
-					org := orgFromIndex(index)
+					org := capturedFixtureOrg(t, index, row[0])
 					runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 					result, err := runner.execute(program)
 					if err != nil {

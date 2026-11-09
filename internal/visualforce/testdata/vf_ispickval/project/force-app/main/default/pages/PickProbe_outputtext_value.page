@@ -1,0 +1,3 @@
+<apex:page controller="PickProbeController" showHeader="false" sidebar="false" standardStylesheets="false">
+<div data-case="outputtext-value"><apex:outputText value="{!IF(ISPICKVAL($User.UserType, 'Standard'), 'is-standard', 'not-standard')}"/></div>
+</apex:page>

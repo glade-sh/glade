@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>Lookup Filter Paths Access</label>
+    <fieldPermissions><editable>true</editable><field>Case.NotProviderContact__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>true</editable><field>Case.ProviderContactOpt__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>true</editable><field>Case.ProviderContact__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>true</editable><field>Trail2__c.ContactRtDev__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>true</editable><field>Trail2__c.Holder__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>true</editable><field>Trail2__c.RtDev__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>true</editable><field>Trail2__c.RtNameNe__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>true</editable><field>Trail2__c.RtName__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>true</editable><field>Trail__c.NotPerson__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>true</editable><field>Trail__c.NotProviderRt__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>true</editable><field>Trail__c.PersonOnly__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>true</editable><field>Trail__c.ProviderOpt__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>true</editable><field>Trail__c.ProviderRt__c</field><readable>true</readable></fieldPermissions>
+    <objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Trail2__c</object><viewAllRecords>false</viewAllRecords></objectPermissions>
+    <objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Trail__c</object><viewAllRecords>false</viewAllRecords></objectPermissions>
+    <recordTypeVisibilities><recordType>Account.Org_Standard</recordType><visible>true</visible></recordTypeVisibilities>
+    <recordTypeVisibilities><recordType>PersonAccount.Patient</recordType><visible>true</visible></recordTypeVisibilities>
+    <recordTypeVisibilities><recordType>PersonAccount.Provider</recordType><visible>true</visible></recordTypeVisibilities>
+</PermissionSet>

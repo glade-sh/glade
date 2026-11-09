@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>62.0</apiVersion>
+    <interviewLabel>Cedar Wait Flow {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Cedar Wait Flow</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <recordCreates>
+        <name>Create_Before</name>
+        <label>Create Before</label>
+        <locationX>176</locationX>
+        <locationY>134</locationY>
+        <connector>
+            <targetReference>Wait_One_Minute</targetReference>
+        </connector>
+        <inputAssignments>
+            <field>Case__c</field>
+            <value>
+                <stringValue>before</stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Name</field>
+            <value>
+                <elementReference>tag</elementReference>
+            </value>
+        </inputAssignments>
+        <object>Cedar_Probe__c</object>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </recordCreates>
+    <recordCreates>
+        <name>Create_After</name>
+        <label>Create After</label>
+        <locationX>176</locationX>
+        <locationY>458</locationY>
+        <inputAssignments>
+            <field>Case__c</field>
+            <value>
+                <stringValue>after</stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Name</field>
+            <value>
+                <elementReference>tag</elementReference>
+            </value>
+        </inputAssignments>
+        <object>Cedar_Probe__c</object>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </recordCreates>
+    <start>
+        <locationX>50</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Create_Before</targetReference>
+        </connector>
+    </start>
+    <status>Active</status>
+    <variables>
+        <name>tag</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <waits>
+        <name>Wait_One_Minute</name>
+        <elementSubtype>WaitDuration</elementSubtype>
+        <label>Wait One Minute</label>
+        <locationX>176</locationX>
+        <locationY>242</locationY>
+        <defaultConnectorLabel>Default Path</defaultConnectorLabel>
+        <timeZoneId>Europe/Paris</timeZoneId>
+        <waitEvents>
+            <conditionLogic>and</conditionLogic>
+            <connector>
+                <targetReference>Create_After</targetReference>
+            </connector>
+            <label>el_0</label>
+            <offset>1</offset>
+            <offsetUnit>Minutes</offsetUnit>
+            <resumeTime>23:59:00.000Z</resumeTime>
+        </waitEvents>
+    </waits>
+</Flow>

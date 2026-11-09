@@ -32,11 +32,13 @@ const (
 )
 
 type CommunityContext struct {
+	LWR            bool                            `json:"lwr,omitempty"`
 	Site           string                          `json:"site,omitempty"`
 	BasePath       string                          `json:"basePath,omitempty"`
 	SiteID         string                          `json:"siteId,omitempty"`
 	NetworkID      string                          `json:"networkId,omitempty"`
 	Guest          bool                            `json:"guest,omitempty"`
+	GuestSet       bool                            `json:"-"`
 	Language       string                          `json:"language,omitempty"`
 	RouteParams    map[string]string               `json:"routeParams,omitempty"`
 	Menus          map[string][]CommunityMenuItem  `json:"menus,omitempty"`

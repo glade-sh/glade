@@ -10,6 +10,7 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
+// Version 0 with a saved identity fails closed with the rebuild message.
 func TestFlowDBLegacyExternalOwnershipFailsClosed(t *testing.T) {
 	source, err := os.ReadFile("../automation/testdata/flow_merge_format/Format_constant.flow-meta.xml")
 	if err != nil {
@@ -62,35 +63,12 @@ func TestFlowDBLegacyExternalOwnershipFailsClosed(t *testing.T) {
 			if strings.HasPrefix(mode, "standalone-") {
 				openRoot = "."
 			}
-			reopened, migrated, err := openDBStore(db, openRoot)
-			if mode == "restored" {
-				if err != nil {
-					t.Fatal(err)
-				}
-				if migrated.Metadata.ProjectFlowOwnershipVersion != 1 {
-					t.Fatal("legacy ownership version not upgraded")
-				}
-				if err := reopened.Close(); err != nil {
-					t.Fatal(err)
-				}
-				writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
-				reopened, current, err := openDBStore(db, root)
-				if err != nil {
-					t.Fatal(err)
-				}
-				defer reopened.Close()
-				for _, rule := range current.Objects["Account"].Definition.FlowRules {
-					if strings.EqualFold(rule.Name, "Old") {
-						t.Fatal("marked Flow survived removal")
-					}
-				}
-				return
-			}
+			reopened, _, err := openDBStore(db, openRoot)
 			if err == nil {
 				reopened.Close()
-				t.Fatal("legacy external source opened without establishing ownership")
+				t.Fatal("version 0 ownership opened instead of failing closed")
 			}
-			if !strings.Contains(err.Error(), "cannot establish") {
+			if !strings.Contains(err.Error(), "rebuild the database") {
 				t.Fatalf("unexpected error: %v", err)
 			}
 		})

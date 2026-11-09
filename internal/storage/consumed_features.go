@@ -7,7 +7,7 @@ import "sort"
 // gate added to the data appears here without a separate list.
 func PolicyFeatureNames() []string {
 	seen := map[string]bool{}
-	for _, policy := range standardFieldPolicies {
+	for _, policy := range standardFieldPolicies() {
 		for _, feature := range policy.RequiredFeatures {
 			seen[canonicalFeatureName(feature)] = true
 		}

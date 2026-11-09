@@ -180,6 +180,7 @@ func copyPlatformTransactionProject(t *testing.T, family, api string) string {
 	}); err != nil {
 		t.Fatal(err)
 	}
+	configureCapturedFixturePermissions(t, root, platformTransactionFixture+"/setup/force-app/main/default", "CaptureFixture")
 	return root
 }
 
@@ -244,8 +245,7 @@ func TestPlatformTransactionPathsNativeConformance(t *testing.T) {
 					if len(own) != len(named) {
 						t.Fatalf("discovered %d native methods, want %d", len(own), len(named))
 					}
-					org := orgFromIndex(index)
-					org.APIVersion = api
+					org := capturedFixtureOrg(t, index, api)
 					runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 					methods, methodErrors := compileTestMethodsForIndex(&index, own)
 					programs, programErrors := compileTestInvokePrograms(own)
@@ -402,8 +402,7 @@ func TestPlatformCommittedDeliveryNativeConformance(t *testing.T) {
 				// must not prevent observing the committed record paths.
 				root := copyPlatformTransactionProject(t, family, api)
 				index := loadTestIndex(t, root)
-				org := orgFromIndex(index)
-				org.APIVersion = api
+				org := capturedFixtureOrg(t, index, api)
 				runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 				machine := runner.newMachine()
 				execute := func(name string) vm.Result {

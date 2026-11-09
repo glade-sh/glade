@@ -532,6 +532,12 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (ou
 		if vm.permissionViewAllFieldsHidden(receiver.Type, field) {
 			return Null, true, newExceptionError("SObjectException", "Invalid field "+field+" for "+receiver.Type)
 		}
+		if vm.featureFieldHiddenForAccess(receiver.Type, field) {
+			if args[0].Kind == ValueString {
+				return Null, true, newExceptionError("SObjectException", "Invalid field "+field+" for "+receiver.Type)
+			}
+			return Null, true, newExceptionError("SObjectException", "Field "+receiver.Type+"."+field+" is inaccessible in this context")
+		}
 		diagnosticField := field
 		if !isCustomObjectLikeName(receiver.Type) && vm.Org != nil && vm.Org.Namespace != "" && strings.EqualFold(vm.currentCallerNamespace(), vm.Org.Namespace) && strings.HasSuffix(strings.ToLower(fieldArg), "__c") {
 			if prefix, qualified := namespaceTokenPrefix(fieldArg); qualified && strings.EqualFold(prefix, vm.Org.Namespace) {
@@ -590,6 +596,9 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (ou
 					return typedNull("Boolean"), true, nil
 				}
 			}
+			if vm.unpopulatedStandardCheckboxGetIsNull(receiver, field) {
+				return typedNull("Boolean"), true, nil
+			}
 			if value, ok := vm.missingSObjectFieldValue(receiver, field); ok {
 				return value, true, nil
 			}
@@ -617,12 +626,15 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (ou
 			if strings.TrimSpace(fieldDef.Formula) != "" && calculatedDateFormulaBlankValue(fieldDef, value) {
 				return Null, true, nil
 			}
+			// A trigger record carries its materialized formula values; a
+			// present value is read as it stands (blank_text_formula).
 			if fieldDef.Type == storage.FieldCalculated &&
+				!(ok && isTriggerSObject(receiver)) &&
 				!isExplicitSObjectField(receiver, field) &&
 				!vm.queriedSObjectFieldsIncludes(receiver, field) &&
 				shouldEvaluateSObjectFormulaField(receiver, fieldDef) {
 				if record, ok := vm.formulaRecordFromSObject(receiver); ok {
-					if evaluated, _, ok := dml.EvaluateRecordFormulaValueInOrg(fieldDef.Formula, fieldDef, vm.Org, definition, record); ok {
+					if evaluated, _, ok := dml.EvaluateRecordFormulaValueInOrgWithOptions(fieldDef.Formula, fieldDef, vm.Org, definition, record, vm.sObjectFormulaEvaluationOptions(receiver)); ok {
 						formulaValue := vmValueFromStorage(evaluated)
 						if calculatedDateFormulaBlankValue(fieldDef, formulaValue) {
 							return Null, true, nil
@@ -658,8 +670,14 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (ou
 			return Null, true, fmt.Errorf("SObject.put expects field name String or Schema.SObjectField and value")
 		}
 		field := vm.resolveSObjectFieldName(receiver.Type, fieldArg)
-		if vm.permissionViewAllFieldsHidden(receiver.Type, field) {
+		if vm.permissionViewAllFieldsHidden(receiver.Type, field) || vm.anonymousPolicyHiddenField(receiver.Type, field) {
 			return Null, true, newExceptionError("SObjectException", "Invalid field "+field+" for "+receiver.Type)
+		}
+		if vm.featureFieldHiddenForAccess(receiver.Type, field) {
+			if args[0].Kind == ValueString {
+				return Null, true, newExceptionError("SObjectException", "Invalid field "+field+" for "+receiver.Type)
+			}
+			return Null, true, newExceptionError("SObjectException", "Field "+receiver.Type+"."+field+" is inaccessible in this context")
 		}
 		if strings.HasPrefix(strings.ToLower(fieldArg), "__glade_") || strings.HasPrefix(strings.ToLower(field), "__glade_") {
 			if err := vm.unknownSObjectFieldError(receiver, field); err != nil {
@@ -690,7 +708,9 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (ou
 		if err := vm.nonScalarSObjectFieldAssignmentError(receiver, field, args[1]); err != nil {
 			return Null, true, err
 		}
-		if !receiver.classInstance && storage.StandardFieldDynamicPutReadOnly(receiver.Type, field) {
+		// Both captured overloads reject writes to this calculated field.
+		_, _, featureReadOnly := storage.StandardFeatureReadOnlyField(receiver.Type, field)
+		if !receiver.classInstance && (featureReadOnly || storage.StandardFieldDynamicPutReadOnly(receiver.Type, field)) {
 			return Null, true, newExceptionError("SObjectException", "Field "+field+" is not editable")
 		}
 		if reason, ok := sobjectReadOnlyReason(receiver); ok {

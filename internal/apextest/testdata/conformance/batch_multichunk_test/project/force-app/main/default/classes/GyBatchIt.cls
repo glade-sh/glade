@@ -1,0 +1,1 @@
+global class GyBatchIt implements Database.Batchable<SObject>{global Iterable<SObject> start(Database.BatchableContext c){return new List<SObject>{new Account(Name='a'),new Account(Name='b')};}global void execute(Database.BatchableContext c,List<SObject> s){insert new Account(Name='chunk');}global void finish(Database.BatchableContext c){}}

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Profile xmlns="http://soap.sforce.com/2006/04/metadata">
+    <custom>false</custom>
+    <recordTypeVisibilities>
+        <default>true</default>
+        <recordType>gladens004__V035Env__c.Extra</recordType>
+        <visible>true</visible>
+    </recordTypeVisibilities>
+</Profile>

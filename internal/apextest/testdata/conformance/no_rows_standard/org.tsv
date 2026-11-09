@@ -1,0 +1,5 @@
+source_api	route	observation
+62.0	anonymous	{"caseSingleton":"System.QueryException","existingCase":1,"existingPermission":1,"missingCases":0,"missingPermission":0,"permissionSingleton":"System.QueryException"}
+62.0	isTest	{"caseSingleton":"System.QueryException","existingCase":1,"existingPermission":1,"missingCases":0,"missingPermission":0,"permissionSingleton":"System.QueryException"}
+67.0	anonymous	{"caseSingleton":"System.QueryException","existingCase":1,"existingPermission":1,"missingCases":0,"missingPermission":0,"permissionSingleton":"System.QueryException"}
+67.0	isTest	{"caseSingleton":"System.QueryException","existingCase":1,"existingPermission":1,"missingCases":0,"missingPermission":0,"permissionSingleton":"System.QueryException"}

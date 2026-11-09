@@ -24,18 +24,43 @@ func AnalyzeAnonymous(index typesys.Index, source, apiVersion string) Result {
 	if diagnostics := apexast.SharingDeclarationDiagnostics("", source); len(diagnostics) != 0 {
 		return Result{Project: index.Project, Summary: Summary{Diagnostics: len(diagnostics)}, Diagnostics: diagnostics}
 	}
-	if _, err := vm.CompileAnonymousWithOptions(source, vm.CompileOptions{APIVersion: apiVersion, PrefixStatementCandidates: true}); err != nil {
+	program, err := vm.CompileAnonymousWithOptions(source, vm.CompileOptions{APIVersion: apiVersion, PrefixStatementCandidates: true})
+	if err != nil {
 		return anonymousCompileFailure(index, source, rng, err)
+	}
+	if diagnostics := anonymousThisDiagnostic(program, source); len(diagnostics) != 0 {
+		return Result{Project: index.Project, Summary: Summary{Diagnostics: len(diagnostics)}, Diagnostics: diagnostics}
 	}
 	setup := anonymousSetupFor(index, apiVersion)
 	analyzer := setup.analyzer()
 	index = setup.index
 	model := setup.typeMembers.anonymousView()
 	typ, member := anonymousExecuteSymbols(apiVersion, rng)
+	if diagnostics := installAnonymousLocalMethods(model, typ, program, source); len(diagnostics) != 0 {
+		return Result{Project: index.Project, Summary: Summary{Diagnostics: len(diagnostics)}, Diagnostics: diagnostics}
+	}
 	queryChecker := setup.newQueryChecker()
 	queryChecker.apiVersion, _ = apexversion.Major(apiVersion)
+	queryChecker.anonymousRoute = true
 	diagnostics := queryChecker.checkFile(typ.File, source)
 	bodyDiagnostics, compiled := analyzer.checkBodyIRWithScopeOptions(typ, member, source, 0, source, map[string]string{}, model, buildConstructability(index), true, nil)
+	if compiled && len(program.LocalMethods) > 0 {
+		outer := anonymousTopLevelScope(program)
+		for _, local := range program.LocalMethods {
+			scope := map[string]string{}
+			for name, typeName := range outer {
+				scope[name] = typeName
+			}
+			for _, param := range local.Params {
+				scope[param.Name] = param.Type
+			}
+			symbol := anonymousLocalMemberSymbol(local, source)
+			body := source[local.BodyStart+1 : local.BodyEnd-1]
+			methodDiagnostics, _ := analyzer.checkBodyIRWithScopeOptions(typ, symbol, body, local.BodyStart+1, source, scope, model, buildConstructability(index), true, nil)
+			bodyDiagnostics = append(bodyDiagnostics, anonymousLocalMethodNativeDiagnostics(methodDiagnostics, local, source)...)
+		}
+		bodyDiagnostics = anonymousVoidAssignmentNativeDiagnostics(bodyDiagnostics, outer, program, source)
+	}
 	if !compiled {
 		// A body that does not compile with a ++/-- statement only the VM
 		// prefix fallback lowers keeps the name-path compile error.

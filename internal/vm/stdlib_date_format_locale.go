@@ -33,6 +33,9 @@ func formatApexDateForLocale(date time.Time, locale string) string {
 		return fmt.Sprintf("%d/%d/%d", date.Year(), int(date.Month()), date.Day())
 	case "sv_SE":
 		return date.Format("2006-01-02")
+	case "en_CA":
+		// date_parse_pivot_c14 (API 62.0 and 67.0, en_CA user): Date 2008-01-28 formats as 2008-01-28.
+		return date.Format("2006-01-02")
 	default:
 		// Preserve the historical output for all profiles not qualified here.
 		return fmt.Sprintf("%d/%d/%d", int(date.Month()), date.Day(), date.Year())
@@ -44,6 +47,12 @@ func formatApexDatetimeForLocale(value time.Time, locale string) string {
 	switch locale {
 	case "en_GB", "de_DE", "no", "no_NO":
 		return formatApexDateForLocale(value, locale) + value.Format(", 15:04")
+	case "fr_FR":
+		// date_parse_pivot_locales_c4 (API 62.0 and 67.0, fr_FR user): "28/01/2008 15:04".
+		return formatApexDateForLocale(value, locale) + value.Format(" 15:04")
+	case "en_CA":
+		// date_parse_pivot_c14: Datetime 2008-01-28 15:04 formats as "2008-01-28, 3:04 p.m." (a.m./p.m. with periods).
+		return fmt.Sprintf("%s, %d:%02d %s.m.", formatApexDateForLocale(value, locale), toTwelveHour(value.Hour()), value.Minute(), map[string]string{"AM": "a", "PM": "p"}[ampm(value.Hour())])
 	default:
 		return fmt.Sprintf("%d/%d/%d, %d:%02d %s", int(value.Month()), value.Day(), value.Year(), toTwelveHour(value.Hour()), value.Minute(), ampm(value.Hour()))
 	}

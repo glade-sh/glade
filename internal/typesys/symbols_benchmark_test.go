@@ -94,7 +94,7 @@ func BenchmarkStandardPlatformSymbolView(b *testing.B) {
 func BenchmarkBuildStandardPlatformSymbolsUncached(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		symbols := buildStandardPlatformSymbols()
+		symbols := buildStandardPlatformSymbols(ConnectAPIShapeRequested())
 		if len(symbols) == 0 {
 			b.Fatal("missing standard symbols")
 		}

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>62.0</apiVersion>
+    <customErrors><name>E</name><label>E</label><locationX>0</locationX><locationY>0</locationY><customErrorMessages><errorMessage>Bad {!FErr} [{!$Record.Name}]</errorMessage><isFieldError>false</isFieldError></customErrorMessages></customErrors>
+    <environments>Default</environments>
+    <formulas><name>FErr</name><dataType>String</dataType><expression>UPPER({!$Record.Name}) &amp; &apos;-&apos; &amp; TEXT(LEN({!$Record.Name}))</expression></formulas>
+    <interviewLabel>Fasg_Err {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Fasg_Err</label>
+    <processMetadataValues><name>BuilderType</name><value><stringValue>LightningFlowBuilder</stringValue></value></processMetadataValues>
+    <processMetadataValues><name>CanvasMode</name><value><stringValue>AUTO_LAYOUT_CANVAS</stringValue></value></processMetadataValues>
+    <processMetadataValues><name>OriginBuilderType</name><value><stringValue>LightningFlowBuilder</stringValue></value></processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>E</targetReference></connector><filterLogic>and</filterLogic><filters><field>Kind__c</field><operator>EqualTo</operator><value><stringValue>FH</stringValue></value></filters><object>Account</object><recordTriggerType>Create</recordTriggerType><triggerType>RecordBeforeSave</triggerType></start>
+    <status>Active</status>
+</Flow>

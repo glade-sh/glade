@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"testing"
 
@@ -251,6 +252,9 @@ func nativeBoundaryIndex(t *testing.T, api string, classes, objects map[string]s
 
 type nativeBoundaryMetadata struct {
 	roles, groups, sharingRules map[string]string
+	// permissionSets are deployed and assigned to the running user, as the
+	// fixture's capture recorded.
+	permissionSets map[string]string
 }
 
 func nativeBoundaryIndexWithClassAPIs(t *testing.T, api string, classes, objects, fixedClassAPIs map[string]string, metadata ...nativeBoundaryMetadata) typesys.Index {
@@ -277,6 +281,15 @@ func nativeBoundaryIndexWithClassAPIs(t *testing.T, api string, classes, objects
 			for name, source := range files {
 				writeFile(t, filepath.Join(root, "force-app/main/default", kind+"s", name+"."+kind+"-meta.xml"), source)
 			}
+		}
+		var assigned []string
+		for name, source := range setup.permissionSets {
+			writeFile(t, filepath.Join(root, "force-app/main/default/permissionsets", name+".permissionset-meta.xml"), source)
+			assigned = append(assigned, name)
+		}
+		if len(assigned) != 0 {
+			sort.Strings(assigned)
+			writeCapturedAssignments(t, root, assigned...)
 		}
 	}
 	return loadTestIndex(t, root)

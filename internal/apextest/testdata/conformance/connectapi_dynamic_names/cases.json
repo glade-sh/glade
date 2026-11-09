@@ -1,0 +1,22 @@
+[
+  {
+    "id": "feed-dynamic",
+    "code": "String o;\ntry {\n  Type t = Type.forName('Connect'+'Api'+'.FeedBody'); o = 'OK|' + String.valueOf(t.newInstance());\n} catch (Exception e) {\n  o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}"
+  },
+  {
+    "id": "row-namespace",
+    "code": "String o;\ntry {\n  Type t = Type.forName('connect'+'api', 'QuerySqlRow'); o = 'OK|' + String.valueOf(t.newInstance());\n} catch (Exception e) {\n  o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}"
+  },
+  {
+    "id": "unknown-boundary",
+    "code": "String o;\ntry {\n  Type t = Type.forName('Connect'+'Api'+'.DefinitelyMissing'); o = 'OK|' + String.valueOf(t);\n} catch (Exception e) {\n  o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}"
+  },
+  {
+    "id": "json-output",
+    "code": "String o;\ntry {\n  Type t = Type.forName('Connect'+'Api'+'.FeedBody'); o = 'OK|' + String.valueOf(JSON.deserialize('{}', t));\n} catch (Exception e) {\n  o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}"
+  },
+  {
+    "id": "json-strict-output",
+    "code": "String o;\ntry {\n  Type t = Type.forName('Connect'+'Api'+'.FeedBody'); o = 'OK|' + String.valueOf(JSON.deserializeStrict('{}', t));\n} catch (Exception e) {\n  o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}"
+  }
+]

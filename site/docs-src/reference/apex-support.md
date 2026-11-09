@@ -11,8 +11,9 @@ for receiver-level behavior and named limits.
 Use this page when deciding if an Apex loop belongs in Glade.
 The full support map carries the current local contract.
 
-Glade supports Apex source API 62.0-67.0. Source API below 62.0 is unsupported;
-DataWeave, ConnectApi, and Slack are excluded and unsupported.
+Glade supports Apex source API 62.0-68.0. Source API below 62.0 is unsupported;
+DataWeave and Slack are excluded and unsupported. ConnectApi types are passive
+shapes; its hosted services are not implemented.
 
 ## Start here
 

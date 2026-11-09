@@ -1,9 +1,11 @@
+let tabCounter = 0;
 const state = {
   console: false,
   focusedTabId: "workspace-tab-1",
-  tabs: [{ tabId: "workspace-tab-1", label: "Local", url: currentUrl(), workspaceTab: true }],
+  tabs: [],
   utilities: [],
 };
+state.tabs.push(normalizeTab({ tabId: "workspace-tab-1", label: "Local", url: currentUrl(), workspaceTab: true }));
 
 configureWorkspace(readWorkspaceContext());
 
@@ -23,23 +25,50 @@ export function configureWorkspace(next = {}) {
   }
 }
 
+// Tab behavior follows native rows captured in a scratch org Lightning console
+// app (desktop Chromium, component API 59.0 and 67.0). Rejection messages,
+// result shapes and option validation below are those rows. Where a row was
+// not captured (openTab focus default, closing an already closed id, which
+// stays pending natively) the earlier local behavior is kept.
+const HIGHLIGHT_STATES = ["success", "error", "warning"];
+
+function fail(message) {
+  return Promise.reject(new Error("Error: " + message));
+}
+
+function findTab(tabId) {
+  return state.tabs.find((tab) => tab.tabId === tabId);
+}
+
+function tabInfo(tab) {
+  const focused = tab.tabId === state.focusedTabId || state.tabs.some((other) => other.parentTabId === tab.tabId && other.tabId === state.focusedTabId);
+  const info = { ...tab, focused };
+  if (!tab.isSubtab) {
+    info.subtabs = state.tabs.filter((other) => other.parentTabId === tab.tabId).map(tabInfo);
+  }
+  return info;
+}
+
 export async function getFocusedTabInfo() {
-  return cloneTab(state.tabs.find((tab) => tab.tabId === state.focusedTabId) || state.tabs[0]);
+  return tabInfo(findTab(state.focusedTabId) || state.tabs[0]);
 }
 
 export async function getAllTabInfo() {
-  return state.tabs.map(cloneTab);
+  return state.tabs.filter((tab) => !tab.isSubtab).map(tabInfo);
 }
 
 export async function getTabInfo(tabId) {
-  return cloneTab(state.tabs.find((tab) => tab.tabId === tabId) || state.tabs[0]);
+  const tab = findTab(tabId);
+  if (!tab) return fail("getTabInfo() - Failed to get tabInfo for tabId `" + tabId + "`");
+  return tabInfo(tab);
 }
 
 export async function openTab(options = {}) {
   const tab = normalizeTab({
-    tabId: options.tabId || `workspace-tab-${state.tabs.length + 1}`,
+    tabId: options.tabId || `workspace-tab-${nextTabNumber()}`,
     label: options.label || options.title || options.url || "Tab",
     url: options.url || "",
+    pageReference: options.pageReference,
     workspaceTab: true,
   });
   state.tabs.push(tab);
@@ -47,63 +76,81 @@ export async function openTab(options = {}) {
   return tab.tabId;
 }
 
-export async function openSubtab(_parentTabId, options = {}) {
-  return openTab({ ...options, workspaceTab: false });
+export async function openSubtab(parentTabId, options = {}) {
+  const parent = findTab(parentTabId);
+  if (!parent || parent.isSubtab) return fail("openSubtab() - Could not open subtab.");
+  const tab = normalizeTab({
+    tabId: options.tabId || `workspace-subtab-${nextTabNumber()}`,
+    label: options.label || options.title || options.url || "Tab",
+    url: options.url || "",
+    pageReference: options.pageReference,
+    parentTabId: parent.tabId,
+    workspaceTab: false,
+  });
+  state.tabs.push(tab);
+  // Native focus defaults to false for a subtab.
+  if (options.focus === true) state.focusedTabId = tab.tabId;
+  return tab.tabId;
 }
 
 export async function closeTab(tabId) {
-  const index = state.tabs.findIndex((tab) => tab.tabId === tabId);
-  if (index >= 0) {
-    state.tabs.splice(index, 1);
-  }
+  const tab = findTab(tabId);
+  if (!tab || !tab.closeable) return fail("closeTab() - Could not close tab.");
+  const closing = new Set([tab.tabId]);
+  for (const other of state.tabs) if (other.parentTabId === tab.tabId) closing.add(other.tabId);
+  state.tabs = state.tabs.filter((other) => !closing.has(other.tabId));
   if (!state.tabs.length) {
     state.tabs.push(normalizeTab({ tabId: "workspace-tab-1", label: "Local", url: currentUrl(), workspaceTab: true }));
   }
-  if (state.focusedTabId === tabId) {
-    state.focusedTabId = state.tabs[0].tabId;
+  if (closing.has(state.focusedTabId)) {
+    state.focusedTabId = (tab.parentTabId && findTab(tab.parentTabId) ? tab.parentTabId : state.tabs[0].tabId);
   }
   return true;
 }
 
 export async function focusTab(tabId) {
-  if (state.tabs.some((tab) => tab.tabId === tabId)) {
-    state.focusedTabId = tabId;
-  }
+  if (!findTab(tabId)) return fail("focusTab() - Could not focus tab.");
+  state.focusedTabId = tabId;
   return true;
 }
 
-export async function refreshTab(_tabId, _options = {}) {
+export async function refreshTab(tabId, _options = {}) {
+  if (!findTab(tabId)) return fail("Unable to refresh tab `" + tabId + "`");
   return true;
 }
 
-export async function disableTabClose(_tabId, _disabled) {
-  return true;
+export async function disableTabClose(tabId, disabled) {
+  const tab = findTab(tabId);
+  if (!tab) return fail("disableTabClose() - Failed to update tab disable close.");
+  tab.closeable = !disabled;
+  return tabInfo(tab);
 }
 
 export async function setTabLabel(tabId, label) {
-  const tab = state.tabs.find((item) => item.tabId === tabId) || state.tabs[0];
-  if (tab && label) {
-    tab.label = String(label);
-    tab.title = tab.label;
-    tab.customTitle = tab.label;
-  }
-  return cloneTab(tab);
+  if (typeof label !== "string") return fail("Invalid or missing label `" + label + "`");
+  const tab = findTab(tabId);
+  if (!tab) return fail("setTabLabel() - Failed to update tab label.");
+  tab.customTitle = label;
+  return tabInfo(tab);
 }
 
-export async function setTabIcon(tabId, icon) {
-  const tab = state.tabs.find((item) => item.tabId === tabId) || state.tabs[0];
-  if (tab && icon) {
-    tab.icon = String(icon);
-  }
-  return cloneTab(tab);
+export async function setTabIcon(tabId, icon, options) {
+  const tab = findTab(tabId);
+  if (!tab) return fail("setTabIcon() - Failed to update tab icon.");
+  tab.customIcon = String(icon);
+  tab.customIconAlt = options?.iconAlt;
+  return tabInfo(tab);
 }
 
-export async function setTabHighlighted(tabId, highlighted) {
-  const tab = state.tabs.find((item) => item.tabId === tabId) || state.tabs[0];
-  if (tab) {
-    tab.highlighted = Boolean(highlighted);
+export async function setTabHighlighted(tabId, highlighted, options) {
+  const requested = options?.state;
+  if (requested !== undefined && !HIGHLIGHT_STATES.includes(requested)) {
+    return fail("Invalid value `" + requested + "` for state option property");
   }
-  return cloneTab(tab);
+  const tab = findTab(tabId);
+  if (!tab) return fail("setTabHighlighted() - Failed to update tab highlight.");
+  tab.highlighted = Boolean(highlighted);
+  return tabInfo(tab);
 }
 
 export async function isConsoleNavigation() {
@@ -148,18 +195,33 @@ function readWorkspaceContext() {
   }
 }
 
+function nextTabNumber() {
+  tabCounter = Math.max(tabCounter, state.tabs.length) + 1;
+  return tabCounter;
+}
+
 function normalizeTab(tab = {}) {
   const label = String(tab.label || tab.title || tab.url || "Local");
+  const url = String(tab.url || "");
+  const subtab = Boolean(tab.parentTabId);
   return {
-    tabId: String(tab.tabId || `workspace-tab-${state.tabs.length + 1}`),
+    tabId: String(tab.tabId || `workspace-tab-${nextTabNumber()}`),
     label,
     title: String(tab.title || label),
-    customTitle: String(tab.customTitle || label),
-    url: String(tab.url || ""),
+    customTitle: tab.customTitle === undefined ? undefined : String(tab.customTitle),
+    customIcon: tab.customIcon,
+    customIconAlt: tab.customIconAlt,
+    url,
     icon: String(tab.icon || "utility:preview"),
+    iconAlt: tab.iconAlt === undefined ? undefined : String(tab.iconAlt),
     highlighted: Boolean(tab.highlighted),
-    closeable: Boolean(tab.closeable),
-    workspaceTab: tab.workspaceTab !== false,
+    closeable: tab.closeable !== false,
+    pinned: Boolean(tab.pinned),
+    recordId: tab.recordId ?? null,
+    pageReference: tab.pageReference ?? null,
+    isSubtab: subtab,
+    parentTabId: subtab ? String(tab.parentTabId) : null,
+    workspaceTab: !subtab && tab.workspaceTab !== false,
     gladeDiagnostic: "GLADELWC072",
   };
 }
@@ -171,10 +233,6 @@ function normalizeUtility(item = {}) {
     componentName: String(item.componentName || ""),
     url: String(item.url || ""),
   };
-}
-
-function cloneTab(tab) {
-  return tab ? { ...tab } : null;
 }
 
 function currentUrl() {

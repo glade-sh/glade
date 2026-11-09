@@ -4434,11 +4434,14 @@ func TestGLADEResetScopesPreserveAndClearExpectedState(t *testing.T) {
 		wantProfiles int
 		wantNoOps    string
 	}{
-		{name: "data", scope: "data", wantAccounts: 0, wantUsers: 2, wantProfiles: 14},
-		{name: "users", scope: "users", wantAccounts: 1, wantUsers: 1, wantProfiles: 14},
-		{name: "platform", scope: "platform", wantAccounts: 1, wantUsers: 1, wantProfiles: 14},
-		{name: "all", scope: "all", wantAccounts: 0, wantUsers: 1, wantProfiles: 14},
-		{name: "limits async", scope: "limits,async", wantAccounts: 1, wantUsers: 2, wantProfiles: 14, wantNoOps: "limits,async"},
+		// 39 profiles: the 14 setup profiles plus the 25 profile-owned sets
+		// of the permission_set_inventory capture (API 62.0 and 67.0) that
+		// name no setup profile.
+		{name: "data", scope: "data", wantAccounts: 0, wantUsers: 2, wantProfiles: 39},
+		{name: "users", scope: "users", wantAccounts: 1, wantUsers: 1, wantProfiles: 39},
+		{name: "platform", scope: "platform", wantAccounts: 1, wantUsers: 1, wantProfiles: 39},
+		{name: "all", scope: "all", wantAccounts: 0, wantUsers: 1, wantProfiles: 39},
+		{name: "limits async", scope: "limits,async", wantAccounts: 1, wantUsers: 2, wantProfiles: 39, wantNoOps: "limits,async"},
 	}
 	for _, api := range storage.SupportedRESTAPIVersions {
 		t.Run(api, func(t *testing.T) {
@@ -4815,14 +4818,13 @@ func TestOAuthUnsupportedStubsAreExplicit(t *testing.T) {
 		method string
 		path   string
 	}{
-		{name: "revoke", method: http.MethodPost, path: "/services/oauth2/revoke"},
 		{name: "introspect", method: http.MethodPost, path: "/services/oauth2/introspect"},
 		{name: "authorize", method: http.MethodGet, path: "/services/oauth2/authorize?response_type=code&client_id=local&redirect_uri=http://localhost/callback"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			rec := httptest.NewRecorder()
 			handler.ServeHTTP(rec, httptest.NewRequest(tc.method, tc.path, nil))
-			assertSalesforceError(t, rec, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "Full OAuth flows and token issuance are not implemented")
+			assertSalesforceError(t, rec, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "Full OAuth flows are not implemented")
 		})
 	}
 }
@@ -4865,7 +4867,6 @@ func TestOAuthUnsupportedStubsMethodHandling(t *testing.T) {
 		allowHeader string
 	}{
 		{name: "token-get", method: http.MethodGet, path: "/services/oauth2/token", allowHeader: http.MethodPost},
-		{name: "revoke-get", method: http.MethodGet, path: "/services/oauth2/revoke", allowHeader: http.MethodPost},
 		{name: "introspect-get", method: http.MethodGet, path: "/services/oauth2/introspect", allowHeader: http.MethodPost},
 		{name: "authorize-post", method: http.MethodPost, path: "/services/oauth2/authorize", allowHeader: http.MethodGet},
 	} {

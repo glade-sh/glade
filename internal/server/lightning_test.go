@@ -174,6 +174,7 @@ func TestLightningCacheRootIncludesProjectIdentity(t *testing.T) {
 	parent := t.TempDir()
 	first := filepath.Join(parent, "a", "same")
 	second := filepath.Join(parent, "b", "same")
+	t.Setenv("TMPDIR", t.TempDir()) // the cache root derives from os.TempDir(); keep the assertion off the host's shared TMPDIR
 
 	firstRoot := lightningCacheRoot(project.Project{Root: first})
 	secondRoot := lightningCacheRoot(project.Project{Root: second})
@@ -448,6 +449,7 @@ func TestStaticResourceRejectsEncodedFilesMapTraversal(t *testing.T) {
 
 func TestStaticResourceServesInlineContentWithoutSharedTempFile(t *testing.T) {
 	const name = "InlineNoTemp"
+	t.Setenv("TMPDIR", t.TempDir()) // never remove or probe files under the host's shared TMPDIR (lane jobs share it)
 	legacyPath := filepath.Join(os.TempDir(), "glade-static-resource", name+".resource")
 	if err := os.Remove(legacyPath); err != nil && !os.IsNotExist(err) {
 		t.Fatal(err)

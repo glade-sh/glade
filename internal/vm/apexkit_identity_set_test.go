@@ -4,10 +4,12 @@ import "testing"
 
 // SF159 establishes the two collection identities below at API 63. The Id
 // loop retains the construction used by ApexKit's IdFactory; the String set
-// retains the Id-shaped String contrast from PolyfillsTests.
+// retains the Id-shaped String contrast from PolyfillsTests. The server part
+// is fixed to a native-shaped value because a bare VM reports the user Id as
+// the text "system", which native String to Id conversion rejects.
 func TestApexKitIdentitySetsKeepIdAndStringContracts(t *testing.T) {
 	program, err := CompileAnonymousWithOptions(`
-String serverId = UserInfo.getUserId().left(7).right(4);
+String serverId = '5j00';
 Set<Id> fakeIds = new Set<Id>();
 for (Integer sequence = 2; sequence <= 400; sequence += 2) {
   String raw = '001' + serverId + '0'.repeat(18 - 7 - String.valueOf(sequence).length()) + String.valueOf(sequence);

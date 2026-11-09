@@ -7,32 +7,38 @@ import (
 )
 
 type Query struct {
-	Fields           []string
-	ChildQueries     []ChildQuery
-	Typeofs          []TypeofSpec
-	Object           string
-	Where            *Condition
-	Having           *Condition
-	OrderBy          string
-	OrderDesc        bool
-	Order            []OrderSpec
-	Limit            int
-	HasLimit         bool
-	LimitBind        string
-	Offset           int
-	HasOffset        bool
-	OffsetBind       string
-	Count            bool
-	ForUpdate        bool
-	ForView          bool
-	ForReference     bool
-	AllRows          bool
-	UsingScope       string
-	SecurityMode     string
-	Aggregates       []Aggregate
-	HavingAggregates []Aggregate
-	GroupBy          []string
-	GroupMode        string
+	Fields               []string
+	ChildQueries         []ChildQuery
+	Typeofs              []TypeofSpec
+	Object               string
+	Where                *Condition
+	Having               *Condition
+	OrderBy              string
+	OrderDesc            bool
+	Order                []OrderSpec
+	Limit                int
+	HasLimit             bool
+	LimitBind            string
+	Offset               int
+	HasOffset            bool
+	OffsetBind           string
+	Count                bool
+	ForUpdate            bool
+	ForView              bool
+	ForReference         bool
+	AllRows              bool
+	UsingScope           string
+	SecurityMode         string
+	DataCategoryGroup    string
+	DataCategoryOperator string
+	DataCategoryName     string
+	Aggregates           []Aggregate
+	HavingAggregates     []Aggregate
+	GroupBy              []string
+	GroupMode            string
+	// TimeZoneID is the user zone the query was parsed for; convertTimezone()
+	// in grouped date functions shifts into it.
+	TimeZoneID string
 
 	// orderAggregates contains execution-only values for ORDER BY expressions
 	// absent from SELECT. They are removed after sorting and windowing.
@@ -52,11 +58,16 @@ type OrderSpec struct {
 type ChildQuery struct {
 	Relationship string
 	Query        Query
+	// After is the number of plain select-list entries written before the
+	// subquery, so a security check can report denials in source order.
+	After int
 }
 type TypeofSpec struct {
 	Relationship string
 	When         map[string][]string
 	Else         []string
+	// After is the number of plain select-list entries written before TYPEOF.
+	After int
 }
 type Aggregate struct {
 	Func  string

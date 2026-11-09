@@ -1,0 +1,5 @@
+source_api	route	case	result
+62.0	anonymous	other-owned-private-object	CAP|1|true|true|ok
+62.0	istest	admin-and-standard	System.AssertException: Assertion Failed: CAP|1|true|true|ok|0|false|false|INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+67.0	anonymous	other-owned-private-object	CAP|1|true|true|ok
+67.0	istest	admin-and-standard	System.AssertException: Assertion Failed: CAP|1|true|true|ok|0|false|false|INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY

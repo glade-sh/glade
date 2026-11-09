@@ -40,6 +40,7 @@ func TestReferenceOnlyNamesNativeConformance(t *testing.T) {
 	}
 	cases := readTable("cases.tsv", 2)
 	rows := readTable("org.tsv", 5)
+	overlayReferenceOnlyWinterRows(t, rows, "testdata/conformance/reference_only_surfaces/org.tsv", map[string]string{"FieldServiceMobileExtension_for_name": "construct_type_forName", "FieldServiceMobileExtension_for_name_schema": "construct_type_forName_schema"}, map[string]string{"isTest": "isTest"})
 	bodies := make(map[string]string)
 	for _, row := range cases[1:] {
 		if _, exists := bodies[row[0]]; exists {
@@ -280,6 +281,7 @@ func TestReferenceOnlyNameAllowsOwnedClassNativeConformance(t *testing.T) {
 func TestReferenceOnlyNameFieldServiceContextNativeConformance(t *testing.T) {
 	const fixture = "testdata/conformance/reference_only_names"
 	rows := readReferenceOnlyNativeTable(t, filepath.Join(fixture, "context-org.tsv"), 5)
+	overlayReferenceOnlyWinterRows(t, rows, filepath.Join(fixture, "org-winter27-warm-recheck.tsv"), map[string]string{"warm_named_availability": "warm_named_availability"}, map[string]string{"anonymous": "anonymous", "isTest": "isTest"})
 	if len(rows) != 5 {
 		t.Fatalf("context rows=%d want=4", len(rows)-1)
 	}
@@ -377,6 +379,7 @@ func TestReferenceOnlyNameFieldServiceContextNativeConformance(t *testing.T) {
 func TestReferenceOnlyNameFieldServiceReflectionVersionsNativeConformance(t *testing.T) {
 	const fixture = "testdata/conformance/reference_only_names"
 	rows := readReferenceOnlyNativeTable(t, filepath.Join(fixture, "reflection-version-org.tsv"), 5)
+	overlayReferenceOnlyWinterRows(t, rows, "testdata/conformance/reference_only_surfaces/org.tsv", map[string]string{"bare": "construct_type_forName", "schema": "construct_type_forName_schema"}, map[string]string{"isTest": "isTest"})
 	cases := readReferenceOnlyNativeTable(t, filepath.Join(fixture, "reflection-version-cases.tsv"), 2)
 	if len(rows) != 13 || len(cases) != 3 {
 		t.Fatalf("reflection rows=%d cases=%d", len(rows)-1, len(cases)-1)
@@ -429,6 +432,68 @@ func readReferenceOnlyNativeTable(t *testing.T, path string, columns int) [][]st
 		t.Fatal(err)
 	}
 	return rows
+}
+
+// TestReferenceOnlyWinterReflectionControls replays the fresh positive and
+// missing-name controls next to the reference-only target at both API bounds.
+func TestReferenceOnlyWinterReflectionControls(t *testing.T) {
+	rows := readReferenceOnlyNativeTable(t, "testdata/conformance/reference_only_names/org-winter27-controls.tsv", 5)[1:]
+	names := map[string]string{"target": "FieldServiceMobileExtension", "missing": "RefOnlyMissingType", "available": "Account"}
+	if len(rows) != 6 {
+		t.Fatalf("control rows=%d", len(rows))
+	}
+	for _, api := range []string{"62.0", "67.0"} {
+		t.Run(api, func(t *testing.T) {
+			var methods strings.Builder
+			expected := make(map[string]string)
+			for _, row := range rows {
+				if row[0] != api {
+					continue
+				}
+				name, ok := names[row[2]]
+				if !ok || row[1] != "isTest" || row[3] != "RUNTIME_ERROR" || expected[row[2]] != "" {
+					t.Fatalf("invalid control row: %v", row)
+				}
+				expected[row[2]] = row[4]
+				fmt.Fprintf(&methods, "@IsTest static void %s() { System.assert(false, 'OBS|' + String.valueOf(Type.forName('%s') == null)); } ", row[2], name)
+			}
+			if len(expected) != len(names) {
+				t.Fatalf("incomplete control rows: %v", expected)
+			}
+			root := t.TempDir()
+			path := filepath.Join(root, "WinterReflectionControl.cls")
+			writeFile(t, path, "@IsTest private class WinterReflectionControl { "+methods.String()+" }")
+			writeFile(t, path+"-meta.xml", "<ApexClass><apiVersion>"+api+"</apiVersion></ApexClass>")
+			index := typesys.Build(project.Project{Root: root, SourceAPIVersion: api, ApexFiles: []string{path}}, schema.Schema{})
+			if analysis := sema.Analyze(index); analysis.HasErrors() {
+				t.Fatal(analysis.Diagnostics)
+			}
+			assertReferenceOnlyNamedRuntime(t, index, "WinterReflectionControl", expected)
+		})
+	}
+}
+
+// overlayReferenceOnlyWinterRows keeps the original Summer observations intact while
+// replaying subsequent Winter observations for the same case and route. Each
+// mapping identifies an equivalent captured source, not an inferred result.
+func overlayReferenceOnlyWinterRows(t *testing.T, rows [][]string, source string, ids, routes map[string]string) {
+	t.Helper()
+	observed := make(map[string][]string)
+	for _, row := range readReferenceOnlyNativeTable(t, source, 5)[1:] {
+		observed[strings.Join(row[:3], "/")] = row
+	}
+	for _, row := range rows[1:] {
+		id, idOK := ids[row[2]]
+		route, routeOK := routes[row[1]]
+		if !idOK || !routeOK {
+			continue
+		}
+		native := observed[row[0]+"/"+route+"/"+id]
+		if native == nil {
+			t.Fatalf("missing current native observation for %s/%s/%s in %s", row[0], route, id, source)
+		}
+		row[3], row[4] = native[3], native[4]
+	}
 }
 
 func assertReferenceOnlyNamedRuntime(t *testing.T, index typesys.Index, class string, expected map[string]string) {

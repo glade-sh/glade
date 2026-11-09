@@ -94,7 +94,11 @@ func runStandardFieldEvidenceRoutes(t *testing.T, root, api, body string) {
 			t.Fatalf("%s compilation: %v %v", route, index.Diagnostics, analysis.Diagnostics)
 		}
 	}
+	// Projects without a captured assignment have no glade.yml; the org is unchanged.
 	org := orgFromIndex(index)
+	if err := applyConfiguredTestPermissions(&org, loadProjectForTest(t, root)); err != nil {
+		t.Fatal(err)
+	}
 	runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 	program, err := vm.CompileAnonymousWithOptions(body, vm.CompileOptions{APIVersion: api})
 	if err != nil {

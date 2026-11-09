@@ -1,0 +1,1 @@
+@IsTest private class OwnedQueryNeg0 { @IsTest static void probe(){List<DocumentGenerationProcess> rows=[SELECT Id FROM DocumentGenerationProcess WHERE IsLocalizationEnabled = true LIMIT 1];} }

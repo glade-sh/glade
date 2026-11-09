@@ -50,6 +50,8 @@ type Object struct {
 	Fields                 []Field           `json:"fields,omitempty"`
 	RecordTypes            []RecordType      `json:"recordTypes,omitempty"`
 	ValidationRules        []ValidationRule  `json:"validationRules,omitempty"`
+
+	ExternalSharingModel string `json:"externalSharingModel,omitempty"`
 }
 
 // SharingReasonLabel returns the authored label without substituting its token.
@@ -99,6 +101,7 @@ type Field struct {
 	RelationshipName              string             `json:"relationshipName,omitempty"`
 	RelationshipOrder             *int               `json:"relationshipOrder,omitempty"`
 	ReparentableMasterDetail      bool               `json:"reparentableMasterDetail,omitempty"`
+	WriteRequiresMasterRead       bool               `json:"writeRequiresMasterRead,omitempty"`
 	ChildRelationshipName         string             `json:"childRelationshipName,omitempty"`
 	ChildRelationshipNameInferred bool               `json:"-"`
 	DeleteConstraint              string             `json:"deleteConstraint,omitempty"`
@@ -261,6 +264,8 @@ type customObjectXML struct {
 	Fields             []customFieldXML    `xml:"fields"`
 	RecordTypes        []recordTypeXML     `xml:"recordTypes"`
 	ValidationRules    []validationRuleXML `xml:"validationRules"`
+
+	ExternalSharing string `xml:"externalSharingModel"`
 }
 
 type nameFieldXML struct {
@@ -283,6 +288,7 @@ type customFieldXML struct {
 	RelationshipName         string             `xml:"relationshipName"`
 	RelationshipOrder        *int               `xml:"relationshipOrder"`
 	ReparentableMasterDetail bool               `xml:"reparentableMasterDetail"`
+	WriteRequiresMasterRead  bool               `xml:"writeRequiresMasterRead"`
 	ChildRelationshipName    string             `xml:"childRelationshipName"`
 	DeleteConstraint         string             `xml:"deleteConstraint"`
 	DefaultValue             string             `xml:"defaultValue"`
@@ -609,6 +615,9 @@ func mergeObjectMetadataIndexed(dst *Object, src Object, index *memberIndexes) {
 	if dst.SharingModel == "" {
 		dst.SharingModel = src.SharingModel
 	}
+	if dst.ExternalSharingModel == "" {
+		dst.ExternalSharingModel = src.ExternalSharingModel
+	}
 	if src.EnableSharing {
 		dst.EnableSharing = true
 	}
@@ -875,6 +884,7 @@ func loadObject(path string, p project.Project) (Object, error) {
 			Length:        raw.NameField.Length,
 		},
 	}
+	object.ExternalSharingModel = strings.TrimSpace(raw.ExternalSharing)
 	object.SharingReasons, object.SharingReasonLabels = loadSharingReasons(path, p)
 	for _, rawField := range raw.Fields {
 		field := fieldFromXML(rawField, "")
@@ -1006,6 +1016,7 @@ func fieldFromXML(raw customFieldXML, fallback string) Field {
 		RelationshipName:              relationshipName,
 		RelationshipOrder:             raw.RelationshipOrder,
 		ReparentableMasterDetail:      raw.ReparentableMasterDetail,
+		WriteRequiresMasterRead:       raw.WriteRequiresMasterRead,
 		ChildRelationshipName:         childRelationshipName,
 		ChildRelationshipNameInferred: childRelationshipNameInferred,
 		DeleteConstraint:              raw.DeleteConstraint,

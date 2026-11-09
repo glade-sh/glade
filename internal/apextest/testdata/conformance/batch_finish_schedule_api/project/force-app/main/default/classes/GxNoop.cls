@@ -1,0 +1,1 @@
+global class GxNoop implements Database.Batchable<SObject>{global Iterable<SObject> start(Database.BatchableContext c){return new List<SObject>();}global void execute(Database.BatchableContext c,List<SObject> s){}global void finish(Database.BatchableContext c){}}

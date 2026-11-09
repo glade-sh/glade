@@ -12,9 +12,10 @@ pkg='github.com/glade-sh/glade/internal/apextest'
 reason='captured native observation has a known local gap'
 with tempfile.TemporaryDirectory() as tmp:
  d=pathlib.Path(tmp); events=d/'events'; metadata=d/'metadata'; summary=d/'summary'
- for api in ('62.0','67.0'):
-  test='TestAsyncCapsC14NativeConformance/'+api+'/DootAsyncCaps67C26302350/asyncY6'
-  cases=[(pkg,test,reason,True), (pkg,test.replace('asyncY6','syncY6'),reason,False),
+ # Registered leaves come from the live ledger, so clearing entries never
+ # strands this fixture; the first two registered leaves exercise the policy.
+ for test in json.loads(pathlib.Path('ci-apex-native-gaps.json').read_text())[:2]:
+  cases=[(pkg,test,reason,True), (pkg,test.rsplit('/',1)[0]+'/unregistered-control',reason,False),
          (pkg,test+'/nested',reason,False), (pkg,test.split('/')[0],reason,False),
          (pkg+'other',test,reason,False), (pkg,test,'different reason',False)]
   for package,name,cause,valid in cases:

@@ -1,0 +1,7 @@
+source_api	case	outcome
+62.0	void_assigned_to_string	Illegal assignment from void to String
+62.0	deprecated_class_unmanaged	Only managed identifiers can be marked deprecated: DepProbe
+62.0	deprecated_method_unmanaged	Only managed identifiers can be marked deprecated: String DepProbe.old()
+67.0	void_assigned_to_string	Illegal assignment from void to String
+67.0	deprecated_class_unmanaged	Only managed identifiers can be marked deprecated: DepProbe
+67.0	deprecated_method_unmanaged	Only managed identifiers can be marked deprecated: String DepProbe.old()

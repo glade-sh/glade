@@ -6,12 +6,13 @@ import (
 	"strings"
 	"unicode/utf16"
 
+	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/storage"
 )
 
 func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
-	return vm.eventBusPublishWithNamedSource(args, result, true)
+	return vm.eventBusPublishWithNamedSource(args, result, true, true)
 }
 
 // Captures cover scalar and erased single publication, plus homogeneous blank
@@ -32,7 +33,7 @@ func (vm *VM) namedStandardPublishShape(arg Value) bool {
 	return true
 }
 
-func (vm *VM) eventBusPublishWithNamedSource(args []Value, result *Result, namedSource bool) (Value, error) {
+func (vm *VM) eventBusPublishWithNamedSource(args []Value, result *Result, namedSource, defaultAccessCheck bool) (Value, error) {
 	if vm.rejectAsyncActions {
 		return Null, vm.rejectSynchronousAsyncAction("EventBus.publish cannot cross the synchronous LWC action boundary")
 	}
@@ -175,6 +176,22 @@ func (vm *VM) eventBusPublishWithNamedSource(args []Value, result *Result, named
 			}
 			return Null, newExceptionError("UnexpectedException", message)
 		}
+		// Native event_publish_entity_access rows cover one custom event in
+		// scalar, concrete-list and erased-list form in a Standard User runAs;
+		// event_publish_list_profiles rows add lists of two and the Standard
+		// Platform User and Minimum Access profiles (each result fails alike).
+		if defaultAccessCheck && namedSource && len(args) == 1 && vm.runAsSecureDefaults() && hasSuffixFold(stored.Object, "__e") && vm.eventPublishStandardUser() {
+			readable := vm.eventPublishObjectPermission(stored.Object, "isAccessible")
+			creatable := vm.eventPublishObjectPermission(stored.Object, "isCreateable")
+			if !readable || !creatable {
+				message := fmt.Sprintf("Access to entity '%s' denied", stored.Object)
+				if readable {
+					message = fmt.Sprintf("DML operation INSERT not allowed on %s", stored.Object)
+				}
+				results = append(results, platformEventSaveResult("", false, "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", message, nil))
+				continue
+			}
+		}
 		eventUUID, hasEventUUID := vm.platformEventUUID(record)
 		if publishedID, ok := record.Fields[sobjectPublishedEventIDField]; ok {
 			if text, ok := idTextFromValue(publishedID); ok {
@@ -211,6 +228,11 @@ func (vm *VM) eventBusPublishWithNamedSource(args []Value, result *Result, named
 		// keeps its unset CreatedDate and ReplayId fields.
 		if stored.System.CreatedDate == "" && vm.hasPlatformEventMetadata(stored.Object) {
 			stored.System.CreatedDate = formatPlatformDatetime(vm.fakeNow)
+		}
+		// Native subscribers see the publishing user in CreatedById (captured at
+		// APIs 62.0 and 67.0 with Test.getEventBus().deliver()).
+		if stored.System.CreatedByID == "" && vm.hasPlatformEventMetadata(stored.Object) {
+			stored.System.CreatedByID = storage.ID(vm.currentUserInfoField("Id", storage.DefaultUserID))
 		}
 		stored.Fields["ReplayId"] = storage.StringValue(vm.nextEventBusReplayID())
 		stored.Fields["EventUuid"] = storage.StringValue(eventUUID)
@@ -295,6 +317,34 @@ func (vm *VM) platformEventCanEnqueue(record Value) bool {
 }
 
 // Platform event publication uses the captured SaveResult shape.
+// These permission defaults are scoped to the captured Standard User event
+// publish route; they do not change describes or other object operations.
+func (vm *VM) eventPublishStandardUser() bool {
+	if vm.testContext == nil {
+		return false
+	}
+	switch vm.currentUserProfileName(vm.testContext.CurrentUser) {
+	case "Standard User", "Standard Platform User", "Minimum Access - Salesforce":
+		return true
+	}
+	return false
+}
+
+func (vm *VM) eventPublishObjectPermission(objectName, method string) bool {
+	if !vm.currentUserObjectPermission(objectName, method) {
+		return false
+	}
+	user := vm.testContext.CurrentUser
+	profileID := stringField(user, "ProfileId")
+	parents := append([]string{profileID, vm.profileOwnedPermissionSetID(profileID)}, vm.assignedPermissionSetIDs(stringField(user, "Id"))...)
+	for _, parent := range parents {
+		if _, present := vm.explicitObjectPermission(parent, objectName, method); present {
+			return true
+		}
+	}
+	return false
+}
+
 func platformEventSaveResult(id storage.ID, success bool, code, message string, fields []string) Value {
 	row := Object("Database.SaveResult")
 	row.Fields["success"] = Bool(success)
@@ -361,11 +411,11 @@ func eventBusGetOperationID(args []Value) (Value, error) {
 		return Null, fmt.Errorf("EventBus.getOperationId expects result")
 	}
 	if args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "Database.SaveResult") {
-		return Null, nil
+		return typedNull("String"), nil
 	}
 	operationID, ok := args[0].Fields[sobjectEventOperationIDField]
 	if !ok || operationID.Kind != ValueString || operationID.Text == "" {
-		return Null, nil
+		return typedNull("String"), nil
 	}
 	return operationID, nil
 }
@@ -376,15 +426,15 @@ func (vm *VM) eventBusPublishWithAccessLevel(args []Value, result *Result) (Valu
 		if !isDatabaseAccessLevelValue(args[1]) {
 			return Null, fmt.Errorf("EventBus.publishWithAccessLevel AccessLevel overload expects AccessLevel")
 		}
-		return vm.eventBusPublish([]Value{args[0]}, result)
+		return vm.eventBusPublishWithNamedSource([]Value{args[0]}, result, true, false)
 	case 3:
 		if !isDatabaseAccessLevelValue(args[2]) {
 			return Null, fmt.Errorf("EventBus.publishWithAccessLevel AccessLevel overload expects AccessLevel")
 		}
 		if args[1].Kind == ValueNull {
-			return vm.eventBusPublish([]Value{args[0]}, result)
+			return vm.eventBusPublishWithNamedSource([]Value{args[0]}, result, true, false)
 		}
-		return vm.eventBusPublish([]Value{args[0], args[1]}, result)
+		return vm.eventBusPublishWithNamedSource([]Value{args[0], args[1]}, result, true, false)
 	default:
 		return Null, fmt.Errorf("EventBus.publishWithAccessLevel expects event record or list, optional callback, and AccessLevel")
 	}
@@ -743,7 +793,9 @@ func (vm *VM) discardMetadataCaches() {
 	vm.describeShare = nil
 	vm.describeShareDefinitions = nil
 	vm.globalDescribeCache = nil
+	vm.globalDescribeVersionCaches = nil
 	vm.namedGlobalDescribe = nil
+	vm.changeEventGlobal = nil
 	vm.globalDescribeProjectionKeys = nil
 	vm.describeTabsCache = nil
 	vm.childRelCandidates = nil
@@ -922,12 +974,31 @@ dispatchCustomData:
 				return Null, true, fmt.Errorf("%s.getValues expects optional String name", typeName)
 			}
 			cacheKey := "getValues:" + strings.ToLower(objectName) + ":" + customDataArgsCacheKey(args)
+			if args[0].Kind == ValueNull {
+				cacheKey += ":" + vm.currentMethod.APIVersion
+			}
 			if cached, ok := vm.customDataCachedValue(cacheKey); ok {
 				return cached, true, nil
 			}
-			// A null name never selects a populated list setting.
+			// The captured API 37 route returns the existing row; 62 and 67 return null.
 			if args[0].Kind == ValueNull {
-				return vm.storeCustomDataCachedValue(cacheKey, typedNull(objectName)), true, nil
+				major, known := apexversion.Major(vm.currentMethod.APIVersion)
+				if !known || major != 37 {
+					return vm.storeCustomDataCachedValue(cacheKey, typedNull(objectName)), true, nil
+				}
+				// The API 37 capture contains one active list-setting row. Do not
+				// infer which record getValues(null) selects when there are more.
+				count := 0
+				if vm.Org != nil {
+					for _, record := range vm.Org.Objects[objectName].Records {
+						if !record.System.IsDeleted {
+							count++
+						}
+					}
+				}
+				if count != 1 {
+					return vm.storeCustomDataCachedValue(cacheKey, typedNull(objectName)), true, nil
+				}
 			}
 			record, found, err := vm.customDataGetInstance(objectName, definition, kind, args)
 			if err != nil || !found {

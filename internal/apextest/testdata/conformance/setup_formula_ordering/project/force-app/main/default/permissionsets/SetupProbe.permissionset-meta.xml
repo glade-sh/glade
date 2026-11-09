@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fieldPermissions><editable>false</editable><field>Account.SetupFlag__c</field><readable>true</readable></fieldPermissions>
+  <fieldPermissions><editable>false</editable><field>Account.SetupTone__c</field><readable>true</readable></fieldPermissions>
+  <fieldPermissions><editable>true</editable><field>Account.Other__c</field><readable>true</readable></fieldPermissions>
+  <fieldPermissions><editable>false</editable><field>Account.Sort__c</field><readable>true</readable></fieldPermissions>
+  <fieldPermissions><editable>true</editable><field>Contact.Other__c</field><readable>true</readable></fieldPermissions>
+  <fieldPermissions><editable>false</editable><field>Contact.Sort__c</field><readable>true</readable></fieldPermissions>
+  <label>Setup Probe</label>
+</PermissionSet>

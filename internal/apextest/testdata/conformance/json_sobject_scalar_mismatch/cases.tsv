@@ -1,0 +1,22 @@
+case	type	json
+int_str	Account.class	{"Name":"x","NumberOfEmployees":"abc"}
+int_str_first	Account.class	{"NumberOfEmployees":"abc","Name":"x"}
+int_decstr	Account.class	{"Name":"x","NumberOfEmployees":"1.5"}
+int_true	Account.class	{"Name":"x","NumberOfEmployees":true}
+int_false_strict	Account.class	{"Name":"x","NumberOfEmployees":false}
+int_list	List<Account>.class	[{"Name":"a"},{"Name":"x","NumberOfEmployees":"abc"}]
+int_generic	SObject.class	{"attributes":{"type":"Account"},"Name":"x","NumberOfEmployees":"abc"}
+dt_str	Account.class	{"Name":"x","CreatedDate":"abc"}
+dt_utc	Account.class	{"Name":"x","CreatedDate":"2025-01-31 06:00:00.000 UTC"}
+dt_float	Account.class	{"Name":"x","CreatedDate":1.5}
+dt_task	Task.class	{"Subject":"x","ReminderDateTime":"abc"}
+dt_generic	SObject.class	{"attributes":{"type":"Account"},"Name":"x","CreatedDate":"abc"}
+pct_str	Opportunity.class	{"Name":"x","Probability":"abc"}
+pct_true	Opportunity.class	{"Name":"x","Probability":true}
+dbl_str	Opportunity.class	{"Name":"x","TotalOpportunityQuantity":"abc"}
+cur_true	Opportunity.class	{"Name":"x","Amount":true}
+bool_str	Opportunity.class	{"Name":"x","IsPrivate":"abc"}
+bool_upper	Opportunity.class	{"Name":"x","IsPrivate":"TRUE"}
+date_true	Contact.class	{"LastName":"x","Birthdate":true}
+date_str	Contact.class	{"LastName":"x","Birthdate":"garbage"}
+int_strict_strict	Account.class	{"Name":"x","NumberOfEmployees":"abc"}

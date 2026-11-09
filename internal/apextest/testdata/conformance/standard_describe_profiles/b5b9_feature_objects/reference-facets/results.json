@@ -1,0 +1,40 @@
+[
+  {
+    "route": "deploy",
+    "status": 0,
+    "failures": []
+  },
+  {
+    "route": "istest",
+    "status": 0,
+    "outcome": "Passed",
+    "tests": [
+      {
+        "class": "OwnedFacetNative67",
+        "outcome": "Pass",
+        "message": null
+      },
+      {
+        "class": "OwnedFacetNative62",
+        "outcome": "Pass",
+        "message": null
+      }
+    ]
+  },
+  {
+    "route": "anonymous",
+    "api": "62.0",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  },
+  {
+    "route": "anonymous",
+    "api": "67.0",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "message": ""
+  }
+]

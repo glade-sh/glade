@@ -1271,6 +1271,12 @@ func (vm *VM) renderStoredEmailTemplate(args []Value, attachmentOption Value) (V
 		return Null, newExceptionError("EmailTemplateRenderException", "INVALID_CROSS_REFERENCE_KEY: invalid cross reference id\n")
 	}
 
+	for _, arg := range args[1:] {
+		if vm.renderTemplateRecordDeleted(arg) {
+			return Null, newExceptionError("EmailTemplateRenderException", "ENTITY_IS_DELETED: entity is deleted\n")
+		}
+	}
+
 	message := newSingleEmailMessage()
 	message.Fields["templateId"] = String(templateID)
 	message.Fields["targetObjectId"] = args[1]
@@ -2231,4 +2237,26 @@ func (vm *VM) captureTaskAssignmentNotificationRequests(results []dml.Result, re
 			"task": captured.WhatID, "owner": captured.TargetObjectID,
 		})
 	}
+}
+
+// renderTemplateRecordDeleted reports a who or what id whose record is in the
+// recycle bin (render_template_what_id).
+func (vm *VM) renderTemplateRecordDeleted(arg Value) bool {
+	if vm == nil || vm.Org == nil || arg.Kind == ValueNull {
+		return false
+	}
+	text, ok := idValueText(arg)
+	if !ok || text == "" {
+		return false
+	}
+	objectName, found := vm.sObjectNameForID(text)
+	if !found {
+		return false
+	}
+	state, ok := vm.Org.Objects[objectName]
+	if !ok {
+		return false
+	}
+	_, record, found := storage.LookupRecordByID(state.Records, storage.ID(text))
+	return found && record.System.IsDeleted
 }

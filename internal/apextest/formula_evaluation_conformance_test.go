@@ -88,6 +88,7 @@ func TestFormulaEvaluationOrgConformance(t *testing.T) {
 				writeFile(t, filepath.Join(root, rel), source)
 				declarationPaths = append(declarationPaths, filepath.Join(root, rel))
 			}
+			configureCapturedFixturePermissions(t, root, "testdata/conformance/formula_evaluation", "A25FormulaProbe")
 			baseIndex := loadTestIndex(t, root)
 			if baseIndex.HasErrors() {
 				t.Fatal(baseIndex.Diagnostics)
@@ -119,6 +120,11 @@ func TestFormulaEvaluationOrgConformance(t *testing.T) {
 				t.Fatal(result.Diagnostics)
 			}
 			org := orgFromIndex(index)
+			org.APIVersion = api
+			if err := applyConfiguredTestPermissions(&org, loadProjectForTest(t, root)); err != nil {
+				t.Fatal(err)
+			}
+			assertCapturedPermissionAssignments(t, &org, "A25FormulaProbe")
 			runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 			// Project linking excludes void @IsTest entries. Compile and register
 			// them once on the unexecuted base before cloning either row route.

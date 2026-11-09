@@ -1,0 +1,9 @@
+api	route	case	observation
+62.0	istest	flow_actor	false
+62.0	istest	workflow_actor	false
+62.0	deploy	rollup_setup_formula	rejected: The summarized field in not deterministic.
+62.0	deploy	rollup_constant_control	accepted
+67.0	istest	flow_actor	false
+67.0	istest	workflow_actor	false
+67.0	deploy	rollup_setup_formula	rejected: The summarized field in not deterministic.
+67.0	deploy	rollup_constant_control	accepted

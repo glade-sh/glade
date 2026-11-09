@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>67.0</apiVersion>
+    <label>Rel_EM1</label>
+    <processType>AutoLaunchedFlow</processType>
+    <recordLookups><name>G</name><label>G</label><locationX>0</locationX><locationY>0</locationY>
+        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
+        <connector><targetReference>M</targetReference></connector>
+        <filterLogic>and</filterLogic>
+        <filters><field>Id</field><operator>EqualTo</operator><value><elementReference>$Record.Id</elementReference></value></filters>
+        <getFirstRecordOnly>true</getFirstRecordOnly><object>Contact</object><storeOutputAutomatically>true</storeOutputAutomatically></recordLookups>
+    <actionCalls><name>M</name><label>M</label><locationX>0</locationX><locationY>0</locationY>
+        <actionName>emailSimple</actionName><actionType>emailSimple</actionType>
+        <connector><targetReference>Y</targetReference></connector>
+        <inputParameters><name>emailAddresses</name><value><stringValue>nobody@example.com</stringValue></value></inputParameters>
+        <inputParameters><name>emailSubject</name><value><stringValue>subj</stringValue></value></inputParameters>
+        <inputParameters><name>emailBody</name><value><elementReference>G.Account.Name</elementReference></value></inputParameters>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+    </actionCalls>
+    <recordUpdates><name>Y</name><label>Y</label><locationX>0</locationX><locationY>0</locationY>
+        <inputAssignments><field>Description</field><value><stringValue>sent</stringValue></value></inputAssignments>
+        <inputReference>$Record</inputReference></recordUpdates>
+
+    <start>
+        <locationX>0</locationX><locationY>0</locationY>
+        <connector><targetReference>G</targetReference></connector>
+        <filterLogic>and</filterLogic>
+        <filters><field>LastName</field><operator>EqualTo</operator><value><stringValue>EM1</stringValue></value></filters>
+        <object>Contact</object>
+        <recordTriggerType>Create</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+</Flow>

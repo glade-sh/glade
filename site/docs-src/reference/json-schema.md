@@ -55,6 +55,10 @@ triggers. Each `excludedClasses` entry has `className`, `file`, `line`,
 `dependsOn`, `root`, and `message`. A root with multiple errors may include
 `problems`, an array of line/message pairs. Excluded tests appear as
 `compile_error` test rows. Any exclusion makes the command exit `1`.
+When a compile error keeps the whole project from running, every selected test
+is a `compile_error` row. Only the first row's `problem.message` lists every
+diagnostic, each once; later rows keep the first diagnostic line and name the
+row that carries the full list.
 
 ## Doctor JSON
 

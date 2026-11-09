@@ -1,0 +1,5 @@
+api	route	case	observation
+62.0	istest	caller_supplied_record_actor	SObjectException: addFields cannot be called when data is supplied by the caller
+62.0	istest	caller_supplied_record_control	SObjectException: addFields cannot be called when data is supplied by the caller
+67.0	istest	caller_supplied_record_actor	SObjectException: addFields cannot be called when data is supplied by the caller
+67.0	istest	caller_supplied_record_control	SObjectException: addFields cannot be called when data is supplied by the caller

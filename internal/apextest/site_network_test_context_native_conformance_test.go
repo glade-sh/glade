@@ -62,13 +62,13 @@ func TestSiteNetworkTestContextNativeProjectRoutes(t *testing.T) {
 					writeFile(t, filepath.Join(root, path), string(source))
 				case "explicit_features":
 					configuration = "community_created"
-					writeFile(t, filepath.Join(root, "glade.yml"), "org:\n  features: [Sites, Communities]\n")
+					writeFile(t, filepath.Join(root, "glade.yml"), "org:\n  features: [Sites, Communities, NetworksEnabled]\n")
 				case "scratch_setting":
 					configuration = "networks_enabled"
 					writeFile(t, filepath.Join(root, "config/project-scratch-def.json"), `{"settings":{"communitiesSettings":{"enableNetworksEnabled":true}}}`)
 				case "site_metadata":
 					configuration = "community_created"
-					writeFile(t, filepath.Join(root, "glade.yml"), "org:\n  features: [Sites, Communities]\n")
+					writeFile(t, filepath.Join(root, "glade.yml"), "org:\n  features: [Sites, Communities, NetworksEnabled]\n")
 					writeFile(t, filepath.Join(root, "force-app/main/default/sites/Synthetic.site-meta.xml"), `<CustomSite xmlns="http://soap.sforce.com/2006/04/metadata"><active>false</active><label>Synthetic</label><siteType>ChatterNetwork</siteType></CustomSite>`)
 				}
 				for _, name := range []string{"AuthContextProbe", "AuthContextProbeTest"} {

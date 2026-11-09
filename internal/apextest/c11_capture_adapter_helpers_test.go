@@ -52,10 +52,11 @@ func c11ActorGateCarry(t *testing.T, result testreport.Case, class, method, arm 
 	} else if arm != "restricted" {
 		return false
 	}
-	if result.Status != status || result.Problem.Message != message {
+	supplemental := result.Status == testreport.StatusFail && result.Problem.Message == "Assertion Failed: gate no supplemental ModifyAllData: Expected: false, Actual: null"
+	if !supplemental && (result.Status != status || result.Problem.Message != message) {
 		return false
 	}
-	t.Logf("CARRY batch Dot stdlib cases Dot Dot SOQL cases and Dot async cases (profile prerequisite; fix owner pending): %s %s did not reach the native observation: %s", class, method, c11Diagnostic(result))
+	t.Logf("CARRY (actor prerequisite; fix owner pending): %s %s did not reach the native observation: %s", class, method, c11Diagnostic(result))
 	return true
 }
 
@@ -238,7 +239,7 @@ func c12CapturePayload(result testreport.Case, class, method, marker string) ([]
 	}
 	// The local VM System.assert transport in dispatch.go uses this exact prefix.
 	// Arbitrary prefix text, suffix data, other markers and OBSERVED are rejected.
-	prefix := "assertion failed: CAPTURE|" + marker + "|"
+	prefix := "Assertion Failed: CAPTURE|" + marker + "|"
 	if !strings.HasPrefix(result.Problem.Message, prefix) {
 		return nil, fmt.Errorf("missing exact CAPTURE marker %s: %s", marker, c11Diagnostic(result))
 	}

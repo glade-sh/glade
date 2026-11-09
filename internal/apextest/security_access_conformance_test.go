@@ -293,6 +293,10 @@ func TestSecurityAccessOrgConformance(t *testing.T) {
 			}
 			org := orgFromIndex(index)
 			org.APIVersion = api
+			p.Test.PermissionSets = []string{"A28OracleAccess"}
+			if err := applyConfiguredTestPermissions(&org, p); err != nil {
+				t.Fatal(err)
+			}
 			// Match exec's transient declaration path: no metadata sidecars,
 			// with the anonymous source API retained by the captured index.
 			anonymousRoot := t.TempDir()

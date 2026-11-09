@@ -1,0 +1,17 @@
+api	profile	CustomizeApplication	ModifyAllData	AuthorApex	ViewAllData	EditPublicTemplates	ManageSolutions	ActivateContract
+62.0	Chatter External User	0	0	0	0	0	0	0
+62.0	Chatter Free User	0	0	0	0	0	0	0
+62.0	Customer Community Login User	0	0	0	0	0	0	0
+62.0	Marketing User	0	0	0	0	1	0	0
+62.0	Minimum Access - Salesforce	0	0	0	0	0	0	0
+62.0	Standard Platform User	0	0	0	0	0	0	0
+62.0	Standard User	0	0	0	0	0	0	0
+62.0	System Administrator	1	1	1	1	1	1	1
+67.0	Chatter External User	0	0	0	0	0	0	0
+67.0	Chatter Free User	0	0	0	0	0	0	0
+67.0	Customer Community Login User	0	0	0	0	0	0	0
+67.0	Marketing User	0	0	0	0	1	0	0
+67.0	Minimum Access - Salesforce	0	0	0	0	0	0	0
+67.0	Standard Platform User	0	0	0	0	0	0	0
+67.0	Standard User	0	0	0	0	0	0	0
+67.0	System Administrator	1	1	1	1	1	1	1

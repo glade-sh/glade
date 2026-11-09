@@ -240,6 +240,7 @@ func applyProjectPermissionSetGroupGrants(org *storage.OrgState) {
 			}
 			existing := make(map[string]storage.ID)
 			projected := make(map[string]storage.Record)
+			mutedRows := make(map[string][]storage.Record)
 			for _, rowID := range sortedSecurityRecordIDs(state) {
 				row := state.Records[rowID]
 				if row.System.IsDeleted {
@@ -248,10 +249,18 @@ func applyProjectPermissionSetGroupGrants(org *storage.OrgState) {
 				if storage.IDsEqual(storage.ID(storageRecordKeyText(row.Fields["ParentId"])), id) {
 					existing[keyFor(row)] = rowID
 				}
-				if !members[projectSecurityIDKey(storageRecordKeyText(row.Fields["ParentId"]))] {
+				parentKey := projectSecurityIDKey(storageRecordKeyText(row.Fields["ParentId"]))
+				if !members[parentKey] {
 					continue
 				}
 				key := keyFor(row)
+				if _, _, muting := storage.LookupRecordByID(org.Objects["MutingPermissionSet"].Records, storage.ID(storageRecordKeyText(row.Fields["ParentId"]))); muting {
+					// A muting set removes the permissions it lists from this
+					// group's effective row; it grants nothing (native rows,
+					// permission_scope_mute).
+					mutedRows[key] = append(mutedRows[key], row)
+					continue
+				}
 				combined, found := projected[key]
 				if !found {
 					combined = row.Clone()
@@ -261,6 +270,20 @@ func applyProjectPermissionSetGroupGrants(org *storage.OrgState) {
 				for _, field := range shape.permissions {
 					if row.Fields[field].Boolean {
 						combined.Fields[field] = storage.BooleanValue(true)
+					}
+				}
+				projected[key] = combined
+			}
+			for key, mutes := range mutedRows {
+				combined, found := projected[key]
+				if !found {
+					continue
+				}
+				for _, mute := range mutes {
+					for _, field := range shape.permissions {
+						if mute.Fields[field].Boolean {
+							combined.Fields[field] = storage.BooleanValue(false)
+						}
 					}
 				}
 				projected[key] = combined

@@ -21,15 +21,8 @@ const customAddressFixture = "../../testdata/conformance/custom_address_fields"
 
 // customAddressKnownGaps lists native rows Glade does not match for reasons
 // unrelated to custom Address fields. Each gap reproduces with ordinary fields.
-var customAddressKnownGaps = map[string]string{
-	"P07b": "getPopulatedFieldsAsMap key order follows the SELECT list natively (generic)",
-	"P08b": "getPopulatedFieldsAsMap key order follows the SELECT list natively (generic)",
-	"P10":  "Database.query checks COUNT() routing before WHERE validity (generic); P10x covers the Address rule",
-	"P10d": "AggregateResult debug text includes the grouped field next to its alias (generic)",
-	"C06":  "unknown fields on project custom objects compile in Glade anonymous Apex (generic)",
-	"C07":  "unknown fields on project custom objects compile in Glade anonymous Apex (generic)",
-	"C08":  "System.Address is not modeled as a System.Location subtype (generic)",
-}
+// P07b, P08b, P10, P10d and C08 match at v0.3.5 (generic fixes elsewhere).
+var customAddressKnownGaps = map[string]string{}
 
 type customAddressRow struct{ route, id, observation string }
 
@@ -79,6 +72,10 @@ func customAddressProject(t *testing.T, api string) typesys.Index {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// ASSIGNMENT-RUN.txt: at 62.0 and 67.0 the retained org.tsv, followup.tsv
+	// and describe.tsv rows reproduce only with AddrCap assigned; unassigned,
+	// anonymous compile hides the Address field and its components.
+	writeRecordedFixtureAssignment(t, customAddressFixture, api, root, "force-app/main/default/permissionsets")
 	index := loadTestIndex(t, root)
 	if analysis := sema.Analyze(index); index.HasErrors() || analysis.HasErrors() {
 		t.Fatalf("project compilation: %v %v", index.Diagnostics, analysis.Diagnostics)
@@ -88,8 +85,18 @@ func customAddressProject(t *testing.T, api string) typesys.Index {
 
 func customAddressRun(t *testing.T, index typesys.Index, api, source string) ([]string, error) {
 	t.Helper()
-	org := orgFromIndex(index)
-	org.APIVersion = api
+	return customAddressRunAt(t, index, api, "", source)
+}
+
+// customAddressRunAt runs source with the org's REST release set to
+// runtimeAPI when it is not empty. Record attributes.url carries the org's
+// release version, not the caller's API version.
+func customAddressRunAt(t *testing.T, index typesys.Index, api, runtimeAPI, source string) ([]string, error) {
+	t.Helper()
+	org := capturedFixtureOrg(t, index, api)
+	if runtimeAPI != "" {
+		org.APIVersion = runtimeAPI
+	}
 	runner := newConformanceRunner(t, index, conformanceRunnerOptions{Org: &org, LinkProject: true})
 	program, err := vm.CompileAnonymousWithOptions(source, vm.CompileOptions{APIVersion: api})
 	if err != nil {
@@ -162,8 +169,8 @@ func TestCustomAddressFieldsNativeConformance(t *testing.T) {
 				}
 				matched++
 			}
-			if matched != 49 {
-				t.Errorf("matched anonymous rows = %d; want 49", matched)
+			if matched != 53 {
+				t.Errorf("matched anonymous rows = %d; want 53", matched)
 			}
 			for _, row := range native {
 				if row.route != "compile" {

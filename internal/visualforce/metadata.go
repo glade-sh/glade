@@ -109,7 +109,7 @@ type VisualforceAccessMetadataError struct {
 func (e *VisualforceAccessMetadataError) Error() string { return e.Message }
 
 // ValidateVisualforceAccessMetadata checks only the pageAccesses/classAccesses
-// section. CRUD, FLS, permission assignments and query security stay with security and access modes.
+// section of profiles and permission sets. CRUD, FLS, permission assignments and query security stay with security and access modes.
 func ValidateVisualforceAccessMetadata(p project.Project) error {
 	if len(p.VisualforcePageFiles) == 0 {
 		return nil
@@ -152,7 +152,11 @@ func ValidateVisualforceAccessMetadata(p project.Project) error {
 		}
 	}
 	collectNames(projectView{source: &p})
-	for _, path := range p.PermissionSetFiles {
+	// Native validates profile and permission set entries alike (:
+	// profile rows at API 59.0 and 67.0, plus the Standard profile rows in
+	// dependency_access_nonnamespaced_consumer).
+	accessFiles := append(append([]string{}, p.PermissionSetFiles...), p.ProfileFiles...)
+	for _, path := range accessFiles {
 		data, err := os.ReadFile(path)
 		if err != nil {
 			return err

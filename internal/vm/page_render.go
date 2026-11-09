@@ -32,11 +32,13 @@ func NewExecutionException(message string) error {
 }
 
 func (vm *VM) ConstructController(className string) (_ Value, err error) {
+	defer vm.BeginReportTransaction()()
 	defer recoverJSONConversionError(&err)
 	return vm.constructValue(className, nil, nil, nil)
 }
 
 func (vm *VM) ConstructControllerWithArgs(className string, args []Value) (_ Value, err error) {
+	defer vm.BeginReportTransaction()()
 	defer recoverJSONConversionError(&err)
 	for _, value := range args {
 		vm.registerSObjectAliasRecord(value)
@@ -51,6 +53,7 @@ func (vm *VM) ReadInstanceProperty(receiver Value, name string) (_ Value, _ bool
 	if vm == nil || receiver.Kind != ValueObject || strings.TrimSpace(name) == "" {
 		return Null, false, nil
 	}
+	defer vm.BeginReportTransaction()()
 	// A restored view-state graph may have come from a different VM.
 	vm.registerSObjectAliasRecord(receiver)
 	typeName := strings.TrimSpace(receiver.Type)
@@ -152,6 +155,7 @@ func (vm *VM) AssignInstanceProperty(receiver Value, name string, value Value) (
 	if vm == nil {
 		return receiver, fmt.Errorf("cannot assign Visualforce property without a VM")
 	}
+	defer vm.BeginReportTransaction()()
 	if _, ok, err := vm.InstancePropertyType(receiver, name); err != nil {
 		return receiver, err
 	} else if !ok {

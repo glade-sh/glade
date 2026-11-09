@@ -18,7 +18,7 @@ func ReadOnlyCompleted(t *testing.T, consumers []string, run func(*testing.T, st
 	}
 	for _, lockMode := range []string{"absent", "read-only", "inaccessible"} {
 		t.Run(lockMode, func(t *testing.T) {
-			base := t.TempDir()
+			base := realTempDir(t)
 			t.Chdir(base)
 			t.Setenv("XDG_DATA_HOME", base)
 			// Match an installed distribution: the source checkout supplies the

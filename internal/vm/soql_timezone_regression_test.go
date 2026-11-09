@@ -18,6 +18,7 @@ System.assertEquals(0, [SELECT count() FROM Account WHERE Name = 'timezone-befor
 		t.Fatal(err)
 	}
 	machine := New(nil)
+	pinSaturdayTestClock(machine)
 	org := testDataOrg()
 	account := org.Objects["Account"]
 	account.Definition.Fields["LastSeen__c"] = storage.Field{APIName: "LastSeen__c", Type: storage.FieldDateTime}

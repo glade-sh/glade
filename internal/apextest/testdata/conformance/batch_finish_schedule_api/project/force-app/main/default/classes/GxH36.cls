@@ -1,0 +1,1 @@
+global class GxH36{global static void go(String tag){String r;try{System.scheduleBatch(new GxNoop(),'gx-'+tag,1,100);r='accepted';}catch(Exception e){r=e.getTypeName()+':'+e.getMessage();}insert new Account(Name='R-'+tag,Description=r);}}

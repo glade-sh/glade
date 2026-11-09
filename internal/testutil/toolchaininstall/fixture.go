@@ -43,3 +43,16 @@ if (process.argv.includes('--salesforce-import-references')) {
 `, 0o644)
 	return files
 }
+
+// realTempDir returns t.TempDir() with symlinks resolved. On macOS TMPDIR is
+// under /var, a symlink to /private/var; os.Getwd in a child process reports the
+// resolved form while XDG_DATA_HOME would carry the lexical one, so relative
+// aliases computed between the two climb through the wrong ancestors.
+func realTempDir(t *testing.T) string {
+	t.Helper()
+	dir, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	return dir
+}

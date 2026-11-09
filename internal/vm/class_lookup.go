@@ -8,6 +8,7 @@ import (
 	"github.com/glade-sh/glade/internal/apexlang"
 	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/typesys"
 )
 
 type runtimeClassNameCacheKey struct {
@@ -487,13 +488,57 @@ func (vm *VM) reflectionTypeToken(name string) Value {
 	return vm.markReflectionTypeToken(platformScalar("Type", display), name)
 }
 
+// typeForNameDollarNested spells a namespace-qualified nested class written as
+// "ns.Outer$Inner" as "ns.Outer.Inner". Native rows
+// (namespace_forname_nested d5_Pb, API 40.0/62.0/67.0, namespaced project):
+// the single-argument form finds a public nested class under that spelling,
+// and a private one stays null. Only the caller's own namespace prefix is
+// rewritten; other spellings keep their previous result.
+func (vm *VM) typeForNameDollarNested(name string) string {
+	namespace := vm.currentCallerNamespace()
+	if namespace == "" || strings.Count(name, "$") != 1 || !hasPrefixFold(name, namespace+".") {
+		return name
+	}
+	rest := name[len(namespace)+1:]
+	if strings.Contains(rest, ".") || strings.HasPrefix(rest, "$") || strings.HasSuffix(rest, "$") {
+		return name
+	}
+	return name[:len(namespace)+1] + strings.Replace(rest, "$", ".", 1)
+}
+
 func (vm *VM) typeForName(namespace, name string, explicitNamespace bool) Value {
+	if strings.EqualFold(namespace, "ConnectApi") || namespace == "" && hasPrefixFold(name, "ConnectApi.") {
+		typesys.RequestConnectAPIShape()
+		qualified := name
+		if namespace != "" {
+			qualified = namespace + "." + name
+		}
+		if _, _, missing := connectAPIReflectionFailure(qualified, "forName"); missing {
+			return Null
+		}
+	}
+	if vm.Org != nil && namespace == "" && !explicitNamespace &&
+		strings.EqualFold(name, "CampaignInfluence") && !vm.Org.AllowsStandardObject(name) {
+		// Preserve user-class lookup; the captured setting controls the schema
+		// alias even when the unlicensed object is not queryable.
+		if class, ok := vm.lookupClass(name); !ok || class.PlatformType {
+			if vm.Org.HasFeature("CampaignInfluence2Enabled") {
+				return vm.reflectionTypeToken("Schema.CampaignInfluence")
+			}
+			return Null
+		}
+	}
 	if vm.Org != nil && namespace == "" && hasPrefixFold(name, "Schema.") &&
-		!vm.Org.AllowsStandardObject(name[len("Schema."):]) {
+		!vm.allowsStandardObject(name[len("Schema."):]) {
+		// Native unlicensed campaign shapes expose this type token after the
+		// setting is enabled, despite rejecting describe and dynamic queries.
+		if strings.EqualFold(name, "Schema.CampaignInfluence") && vm.Org.HasFeature("CampaignInfluence2Enabled") {
+			return vm.reflectionTypeToken("Schema.CampaignInfluence")
+		}
 		return Null
 	}
 	// The platform Network class remains available when its schema object is off.
-	if namespace == "" && strings.EqualFold(name, "Schema.Network") && (vm.Org == nil || !vm.Org.HasFeature("Communities")) {
+	if namespace == "" && strings.EqualFold(name, "Schema.Network") && (vm.Org == nil || !vm.Org.AllowsStandardObject("Network")) {
 		return Null
 	}
 	// R195: forName does not trim a type-name argument.
@@ -530,13 +575,15 @@ func (vm *VM) typeForName(namespace, name string, explicitNamespace bool) Value 
 	// The single-name overload prefers a schema record even when a project
 	// class has the same name. Empty/null explicit namespaces keep class lookup.
 	if namespace == "" && !explicitNamespace {
-		if record, ok := vm.resolveObjectName(name); ok {
+		if record, ok := vm.resolveObjectName(name); ok && vm.allowsStandardObject(record) {
 			return vm.reflectionTypeToken("Schema." + record)
 		}
 		if event, ok := standardChangeEventName(name); ok {
 			return vm.reflectionTypeToken("Schema." + event)
 		}
-		if record, ok := storage.ResolveKnownStandardObjectName(name); ok {
+		// Native (standard_object_shape_compile b15): a standard object the
+		// declared shape lacks is not found by Type.forName.
+		if record, ok := storage.ResolveKnownStandardObjectName(name); ok && (vm.Org == nil || vm.Org.AllowsStandardObject(record)) {
 			return vm.reflectionTypeToken("Schema." + record)
 		}
 	}
@@ -596,6 +643,11 @@ func (vm *VM) typeForName(namespace, name string, explicitNamespace bool) Value 
 			if !vm.typeForNameNestedClassVisible(class, namespace, name) {
 				return Null
 			}
+			if class.PlatformType && !strings.EqualFold(name, "Network") {
+				if record, known := storage.ResolveKnownStandardObjectName(name); known && vm.Org != nil && !vm.Org.AllowsStandardObject(record) {
+					return Null
+				}
+			}
 			// H01/H05 API62/67/68 local observations also hide private
 			// top-level tests through empty/null explicit namespaces.
 			if !strings.Contains(name, ".") && !typeForNameClassVisible(class) &&
@@ -605,6 +657,9 @@ func (vm *VM) typeForName(namespace, name string, explicitNamespace bool) Value 
 			return vm.reflectionTypeToken(vm.classTypeToken(class))
 		}
 		if _, class := vm.lookupClass(resolved); !class {
+			if record, known := storage.ResolveKnownStandardObjectName(strings.TrimPrefix(resolved, "Schema.")); known && !strings.EqualFold(record, "Network") && vm.Org != nil && !vm.Org.AllowsStandardObject(record) {
+				return Null
+			}
 			return vm.reflectionTypeToken(resolved)
 		}
 	}
@@ -614,7 +669,7 @@ func (vm *VM) typeForName(namespace, name string, explicitNamespace bool) Value 
 		}
 	}
 	if vm.Org != nil {
-		if canonical, ok := vm.resolveObjectName(name); ok {
+		if canonical, ok := vm.resolveObjectName(name); ok && vm.allowsStandardObject(canonical) {
 			return vm.reflectionTypeToken("Schema." + canonical)
 		}
 	}
@@ -623,6 +678,9 @@ func (vm *VM) typeForName(namespace, name string, explicitNamespace bool) Value 
 	}
 	if resolved, ok := vm.resolveTypeNameToken(name); ok {
 		if class, exists := vm.lookupClass(resolved); exists && methodHasModifier(class.Modifiers, AnonymousClassModifier) {
+			return Null
+		}
+		if record, known := storage.ResolveKnownStandardObjectName(strings.TrimPrefix(resolved, "Schema.")); known && !strings.EqualFold(record, "Network") && vm.Org != nil && !vm.Org.AllowsStandardObject(record) {
 			return Null
 		}
 		return vm.reflectionTypeToken(resolved)
@@ -634,6 +692,9 @@ func (vm *VM) typeForName(namespace, name string, explicitNamespace bool) Value 
 		if alias, ok := vm.rawListReflectionAlias(name); ok {
 			return vm.reflectionTypeToken(alias)
 		}
+	}
+	if record, ok := storage.ResolveKnownStandardObjectName(name); ok && vm.Org != nil && !vm.Org.AllowsStandardObject(record) {
+		return Null
 	}
 	if isBuiltinTypeName(name) || isGenericTypeName(name) || isCommonSObjectTypeName(name) {
 		return vm.reflectionTypeToken(name)
@@ -697,6 +758,24 @@ func generatedPlatformTypeForName(namespace, name string) (string, bool) {
 	return "", false
 }
 func (vm *VM) typeForNameNestedClassVisible(class Class, namespace, name string) bool {
+	// Native rows (namespace_subscriber_members S05-S08): a subscriber cannot
+	// look up a package's non-global nested class by name.
+	if class.Dependency && class.Nested && class.Namespace != "" && !strings.EqualFold(class.Namespace, vm.currentCallerNamespace()) {
+		return strings.EqualFold(class.Access, "global")
+	}
+	// Native rows (nested_type_visibility v13-v24, namespace_owner_nested_inventory
+	// O09-O13), plain and namespaced orgs: a nested source class that is neither
+	// public nor global is not found by name, from outside or inside its top-level
+	// type and for default access as well as private.
+	// Native rows (namespace_forname_independent): before API 28.0 such a class
+	// is found. The calling class's API version decides, not the target's.
+	if class.Nested && !class.Dependency && !class.PlatformType && strings.Contains(name, ".") && strings.Contains(class.Name, ".") && !vm.callerBeforeAPI(28) {
+		switch strings.ToLower(class.Access) {
+		case "public", "global":
+		default:
+			return false
+		}
+	}
 	if class.Namespace != "" || vm.currentCallerNamespace() != "" ||
 		(vm.Org != nil && strings.TrimSpace(vm.Org.Namespace) != "") ||
 		!strings.Contains(name, ".") || !strings.Contains(class.Name, ".") {
@@ -710,6 +789,10 @@ func (vm *VM) typeForNameNestedClassVisible(class Class, namespace, name string)
 	// Local private nested classes are not discoverable by qualified name,
 	// including from their declaring class. Class literals remain usable.
 	return !strings.EqualFold(class.Access, "private")
+}
+
+func (vm *VM) callerBeforeAPI(minimum int) bool {
+	return apexversion.Before(vm.currentMethod.APIVersion, minimum)
 }
 
 func typeForNameClassVisible(class Class) bool {
@@ -894,6 +977,16 @@ func (vm *VM) resolveClassName(typeName string) (string, bool) {
 		return "Schema." + record, true
 	}
 	if isCommonSObjectTypeName(typeName) {
+		// A nested class named like a standard object the org lacks is the
+		// type of the bare name inside its outer class (standard_object_shape_
+		// compile expressions null Boolean and control flow). An object the org has keeps the class literal.
+		if !strings.Contains(typeName, ".") && vm.currentClass != "" && vm.Org != nil {
+			if record, known := storage.ResolveKnownStandardObjectName(typeName); known && !vm.Org.AllowsStandardObject(record) {
+				if resolved, ok := vm.resolveNestedTypeInClassHierarchy(vm.currentClass, typeName); ok {
+					return resolved, true
+				}
+			}
+		}
 		return typeName, true
 	}
 	if !strings.Contains(typeName, ".") && vm.currentClass != "" {
@@ -1238,7 +1331,8 @@ func (vm *VM) storeClassAliases(class Class) {
 func (vm *VM) writeRegisteredClass(overlay *classLookupOverlay, alias string, class Class) {
 	// Frozen clones can already have a static index before registration.
 	// Replacing or adding static fields makes that index stale.
-	previous := vm.Classes[alias]
+	previous, previousExists := vm.Classes[alias]
+	vm.noteClassStaticRootsWrite(previous, previousExists, class)
 	if len(previous.StaticFields) != 0 || len(class.StaticFields) != 0 {
 		vm.invalidateStaticValueRefs()
 	}
@@ -1308,6 +1402,10 @@ func (vm *VM) storeClassValue(class Class) {
 // writeClassValue writes a class value outside registration, keeping the
 // pending overlay's view of the values its lookups were taken from.
 func (vm *VM) writeClassValue(alias string, class Class) {
+	if vm.heapStaticRootsOK {
+		previous, exists := vm.Classes[alias]
+		vm.noteClassStaticRootsWrite(previous, exists, class)
+	}
 	if vm.classOverlay != nil {
 		vm.classOverlay.recordPrior(vm.Classes, alias)
 	}

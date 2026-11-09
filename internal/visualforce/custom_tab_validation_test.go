@@ -25,7 +25,9 @@ func TestURLFORCustomTabValidation(t *testing.T) {
 		{"missing_foreign", "lyx", "URLFOR($Action.vend__OrbitRecord__c.Tab,$ObjectType.vend__OrbitRecord__c)", true, true},
 		{"setting", "lyx", "URLFOR($Action.OrbitConfig__c.Tab,$ObjectType.OrbitConfig__c)", true, true},
 		{"different_object_type", "lyx", "URLFOR($Action.OrbitRecord__c.Tab,$ObjectType.OrbitConfig__c)", true, true},
-		{"other_action", "lyx", "URLFOR($Action.OrbitRecord__c.New,$ObjectType.OrbitRecord__c)", true, true},
+		// Native rows Action* of testdata/vf_component_ids: New compiles for a custom object, an unknown verb does not.
+		{"new_action", "lyx", "URLFOR($Action.OrbitRecord__c.New,$ObjectType.OrbitRecord__c)", true, false},
+		{"other_action", "lyx", "URLFOR($Action.OrbitRecord__c.Bogus,$ObjectType.OrbitRecord__c)", true, true},
 		{"extra_path", "lyx", "URLFOR($Action.OrbitRecord__c.Tab.Nested,$ObjectType.OrbitRecord__c)", true, true},
 		{"outside_urlfor", "lyx", "$Action.OrbitRecord__c.Tab", true, true},
 	}

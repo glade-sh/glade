@@ -13,7 +13,6 @@ import (
 	"testing"
 
 	"github.com/glade-sh/glade/internal/sema"
-	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/vm"
 )
 
@@ -68,18 +67,6 @@ func testApprovalSubmissionNativeConformance(t *testing.T, fixture string, shape
 			}
 			org := orgFromIndex(index)
 			org.APIVersion = api
-			// The runtime consumes ProcessDefinition rows. Approval metadata loading
-			// is outside this test; seed the two definitions deployed natively.
-			storage.EnsureStandardObject(&org, "ProcessDefinition")
-			definitions := org.Objects["ProcessDefinition"]
-			for i, state := range []string{"Active", "Inactive"} {
-				id := storage.ID(fmt.Sprintf("04a00000000000%dAAA", i+1))
-				definitions.Records[id] = storage.Record{ID: id, Object: "ProcessDefinition", Fields: map[string]storage.Value{
-					"Id": storage.IDValue(id), "DeveloperName": storage.StringValue("Owned_" + state),
-					"State": storage.StringValue(state), "TableEnumOrId": storage.StringValue("Account"), "Type": storage.StringValue("Approval"),
-				}}
-			}
-			org.Objects["ProcessDefinition"] = definitions
 			runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 			for _, route := range []string{"anonymous", "istest"} {
 				t.Run(route, func(t *testing.T) {

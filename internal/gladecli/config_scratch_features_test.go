@@ -16,8 +16,8 @@ func TestRunConfigValidateReportsUnreadScratchFeatures(t *testing.T) {
 		{
 			name:       "unread features in default definition",
 			configFile: "config/project-scratch-def.json",
-			definition: `{"features":["MultiCurrency","ServiceCloud","Knowledge"],"settings":{"currencySettings":{"enableMultiCurrency":true}}}`,
-			warnings:   []string{"features.Knowledge", "features.ServiceCloud"},
+			definition: `{"features":["MultiCurrency","ServiceCloud","Knowledge"],"settings":{"currencySettings":{"enableMultiCurrency":true},"knowledgeSettings":{"enableKnowledge":true}}}`,
+			warnings:   []string{"features.ServiceCloud"},
 		},
 		{
 			name:       "unread single string feature",

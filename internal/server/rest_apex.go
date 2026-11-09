@@ -42,7 +42,17 @@ func (s *Server) handleOAuth(w http.ResponseWriter, r *http.Request, parts []str
 			return
 		}
 		writeJSON(w, http.StatusOK, payload)
-	case "revoke", "introspect":
+	case "revoke":
+		if r.Method != http.MethodPost && r.Method != http.MethodGet {
+			writeMethodNotAllowed(w, http.MethodGet, http.MethodPost)
+			return
+		}
+		if err := r.ParseForm(); err != nil || r.Form.Get("token") == "" || !revokeIssuedToken(s, r.Form.Get("token")) {
+			http.Error(w, "invalid or expired local token", http.StatusBadRequest)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	case "introspect":
 		if r.Method != http.MethodPost {
 			writeMethodNotAllowed(w, http.MethodPost)
 			return

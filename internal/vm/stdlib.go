@@ -614,7 +614,7 @@ func numericStatic(callee string, args []Value) (Value, error) {
 		switch args[0].Kind {
 		case ValueNull:
 			if integerValueOfNullReturnsNull(args[0]) {
-				return Null, nil
+				return typedNull("Integer"), nil
 			}
 			return Null, newExceptionError("System.NullPointerException", "Argument cannot be null.")
 		case ValueInt:
@@ -668,7 +668,7 @@ func numericStatic(callee string, args []Value) (Value, error) {
 		switch args[0].Kind {
 		case ValueDecimal:
 			if callee == "Decimal.valueOf" && isFloatBackedDecimal(args[0]) {
-				return decimalFromText(doubleDisplayText(args[0].Decimal))
+				return decimalFromDouble(args[0].Decimal)
 			}
 			return tagDouble(args[0]), nil
 		case ValueInt:
@@ -680,7 +680,7 @@ func numericStatic(callee string, args []Value) (Value, error) {
 		case ValueString:
 			text := strings.TrimSpace(args[0].Text)
 			if callee == "Decimal.valueOf" {
-				value, err := decimalFromText(text)
+				value, err := decimalValueOfText(text)
 				if err != nil || text != args[0].Text {
 					return Null, newExceptionError("System.TypeException", "Invalid decimal: "+args[0].Text)
 				}
@@ -1431,7 +1431,7 @@ func matcherGroupValue(matcher Value, input string, groupIndex int) (Value, erro
 		return Null, err
 	}
 	if start < 0 || end < 0 {
-		return Null, nil
+		return typedNull("String"), nil
 	}
 	return String(input[start:end]), nil
 }
@@ -1897,6 +1897,88 @@ func stringCharSearchArgs(name string, args []Value, defaultStart int) (int, int
 	return int(args[0].Int), start, nil
 }
 
+// hasPrefixFoldRunes and hasSuffixFoldRunes compare whole code points in place:
+// a folded rune can have a different UTF-8 width (KELVIN SIGN folds to k).
+func hasPrefixFoldRunes(value, prefix string) bool {
+	for len(prefix) > 0 {
+		if len(value) == 0 {
+			return false
+		}
+		pr, ps := rune(prefix[0]), 1
+		vr, vs := rune(value[0]), 1
+		if pr >= utf8.RuneSelf {
+			pr, ps = utf8.DecodeRuneInString(prefix)
+		}
+		if vr >= utf8.RuneSelf {
+			vr, vs = utf8.DecodeRuneInString(value)
+		}
+		if !foldRuneEqual(vr, pr) {
+			return false
+		}
+		prefix, value = prefix[ps:], value[vs:]
+	}
+	return true
+}
+
+func hasSuffixFoldRunes(value, suffix string) bool {
+	for len(suffix) > 0 {
+		if len(value) == 0 {
+			return false
+		}
+		sr, ss := rune(suffix[len(suffix)-1]), 1
+		vr, vs := rune(value[len(value)-1]), 1
+		if sr >= utf8.RuneSelf {
+			sr, ss = utf8.DecodeLastRuneInString(suffix)
+		}
+		if vr >= utf8.RuneSelf {
+			vr, vs = utf8.DecodeLastRuneInString(value)
+		}
+		if !foldRuneEqual(vr, sr) {
+			return false
+		}
+		suffix, value = suffix[:len(suffix)-ss], value[:len(value)-vs]
+	}
+	return true
+}
+
+// foldRuneEqual is the per-rune test strings.EqualFold applies.
+func foldRuneEqual(a, b rune) bool {
+	if a == b {
+		return true
+	}
+	if a < utf8.RuneSelf && b < utf8.RuneSelf {
+		if 'A' <= a && a <= 'Z' {
+			a += 'a' - 'A'
+		}
+		if 'A' <= b && b <= 'Z' {
+			b += 'a' - 'A'
+		}
+		return a == b
+	}
+	for r := unicode.SimpleFold(a); r != a; r = unicode.SimpleFold(r) {
+		if r == b {
+			return true
+		}
+	}
+	return false
+}
+
+func lowerASCIIByte(b byte) byte {
+	if 'A' <= b && b <= 'Z' {
+		return b + ('a' - 'A')
+	}
+	return b
+}
+
+func isASCIIString(text string) bool {
+	for i := 0; i < len(text); i++ {
+		if text[i] >= utf8.RuneSelf {
+			return false
+		}
+	}
+	return true
+}
+
 func dropFirstRunes(text string, count int) string {
 	if count <= 0 {
 		return text
@@ -1999,6 +2081,32 @@ func stringIndexOfFold(text, needle string, start int) int {
 	if start < 0 {
 		start = 0
 	}
+	if isASCIIString(text) && isASCIIString(needle) {
+		// Rune and byte positions coincide, and ASCII folds byte for byte.
+		if start > len(text) {
+			if len(needle) == 0 {
+				return len(text)
+			}
+			return -1
+		}
+		if len(needle) == 0 {
+			return start
+		}
+		first := lowerASCIIByte(needle[0])
+		for i := start; i+len(needle) <= len(text); i++ {
+			if lowerASCIIByte(text[i]) != first {
+				continue
+			}
+			j := 1
+			for j < len(needle) && lowerASCIIByte(text[i+j]) == lowerASCIIByte(needle[j]) {
+				j++
+			}
+			if j == len(needle) {
+				return i
+			}
+		}
+		return -1
+	}
 	textRunes := []rune(text)
 	needleRunes := []rune(needle)
 	if start > len(textRunes) {
@@ -2014,7 +2122,14 @@ func stringIndexOfFold(text, needle string, start int) int {
 		return -1
 	}
 	for i := start; i <= len(textRunes)-len(needleRunes); i++ {
-		if strings.EqualFold(string(textRunes[i:i+len(needleRunes)]), needle) {
+		match := true
+		for j, r := range needleRunes {
+			if !foldRuneEqual(textRunes[i+j], r) {
+				match = false
+				break
+			}
+		}
+		if match {
 			return i
 		}
 	}
@@ -2282,10 +2397,14 @@ func stringRotate(text string, shift int) string {
 }
 
 func stringSwapCase(text string) string {
+	return mapApexStringSegments(text, stringSwapCaseSegment)
+}
+
+func stringSwapCaseSegment(text string) string {
 	var b strings.Builder
 	for _, r := range text {
 		switch {
-		case unicode.IsUpper(r):
+		case unicode.IsUpper(r), unicode.IsTitle(r):
 			b.WriteString(strings.ToLower(string(r)))
 		case unicode.IsLower(r):
 			b.WriteString(strings.ToUpper(string(r)))
@@ -2520,7 +2639,8 @@ func splitRegex(name, pattern, text string, limit int64) ([]string, error) {
 }
 
 func splitStringCharacters(text string, limit int64) []string {
-	if limit == 1 {
+	// The only empty match in "" is at index 0 and never splits, so no trailing empty part exists.
+	if limit == 1 || text == "" {
 		return []string{text}
 	}
 	var parts []string
@@ -3217,7 +3337,9 @@ func isUTF16Surrogate(r rune) bool {
 
 func escapeJavaLike(text string, escapeSingleQuote, escapeSlash bool) string {
 	var b strings.Builder
-	for _, r := range text {
+	for i := 0; i < len(text); {
+		r, size := decodeApexRune(text[i:])
+		i += size
 		switch r {
 		case '\b':
 			b.WriteString(`\b`)
@@ -3261,6 +3383,11 @@ func escapeUnicode(text string) string {
 }
 
 func writeUnicodeEscapes(b *strings.Builder, r rune) {
+	if r >= 0xD800 && r <= 0xDFFF {
+		// A lone surrogate is its own code unit; utf16.Encode would replace it.
+		b.WriteString(fmt.Sprintf(`\u%04X`, r))
+		return
+	}
 	for _, unit := range utf16.Encode([]rune{r}) {
 		b.WriteString(`\u`)
 		b.WriteString(fmt.Sprintf("%04X", unit))
@@ -3268,11 +3395,13 @@ func writeUnicodeEscapes(b *strings.Builder, r rune) {
 }
 
 func unescapeJavaLike(name, text string) (string, error) {
-	var out []rune
+	// Lone surrogates, raw or from a \u escape, keep their code unit; a []rune
+	// round trip would turn them into U+FFFD.
+	out := make([]byte, 0, len(text))
 	for i := 0; i < len(text); i++ {
 		if text[i] != '\\' {
-			r, size := utf8.DecodeRuneInString(text[i:])
-			out = append(out, r)
+			_, size := decodeApexRune(text[i:])
+			out = append(out, text[i:i+size]...)
 			i += size - 1
 			continue
 		}
@@ -3292,7 +3421,7 @@ func unescapeJavaLike(name, text string) (string, error) {
 		case 'r':
 			out = append(out, '\r')
 		case '"', '\'', '\\', '/':
-			out = append(out, rune(text[i]))
+			out = append(out, text[i])
 		case '0', '1', '2', '3', '4', '5', '6', '7':
 			value := int(text[i] - '0')
 			maxDigits := 2
@@ -3307,7 +3436,7 @@ func unescapeJavaLike(name, text string) (string, error) {
 				value = value*8 + int(next-'0')
 				i++
 			}
-			out = append(out, rune(value))
+			out = utf8.AppendRune(out, rune(value))
 		case 'u':
 			units := []uint16{}
 			for {
@@ -3325,9 +3454,9 @@ func unescapeJavaLike(name, text string) (string, error) {
 				}
 				i += 2
 			}
-			out = append(out, utf16.Decode(units)...)
+			out = append(out, apexStringFromUTF16Units(units)...)
 		default:
-			out = append(out, rune(text[i]))
+			out = append(out, text[i])
 		}
 	}
 	return string(out), nil
@@ -3527,19 +3656,19 @@ func abbreviateApexString(text string, offset, maxWidth int) (string, error) {
 		offset = length - (maxWidth - 3)
 	}
 	if offset <= 4 {
-		return text[:apexSubstringBoundary(text, maxWidth-3)] + "...", nil
+		return apexSubstringUnits(text, 0, maxWidth-3) + "...", nil
 	}
 	if maxWidth < 7 {
 		return "", newExceptionError("StringException", "Minimum abbreviation width with offset is 7")
 	}
 	if offset+maxWidth-3 < length {
-		abbreviated, err := abbreviateApexString(text[apexSubstringBoundary(text, offset):], 0, maxWidth-3)
+		abbreviated, err := abbreviateApexString(apexSubstringUnits(text, offset, length), 0, maxWidth-3)
 		if err != nil {
 			return "", err
 		}
 		return "..." + abbreviated, nil
 	}
-	return "..." + text[apexSubstringBoundary(text, length-(maxWidth-3)):], nil
+	return "..." + apexSubstringUnits(text, length-(maxWidth-3), length), nil
 }
 
 func stringDifference(left, right string) string {
@@ -3716,7 +3845,7 @@ func characterType(r rune) stringCharType {
 }
 
 func transformFirstRune(text string, transform func(string) string) string {
-	if text == "" {
+	if text == "" || isLoneSurrogateAt(text, 0) {
 		return text
 	}
 	runes := []rune(text)
@@ -3831,41 +3960,7 @@ func substringWithASCII(text string, args []Value, ascii bool) (Value, bool, err
 	if start > end {
 		return Null, true, newExceptionError("StringException", fmt.Sprintf("Ending position out of bounds: %d", end))
 	}
-	startByte, endByte := apexSubstringByteRange(text, start, end)
-	return String(text[startByte:endByte]), true, nil
-}
-
-func apexSubstringByteRange(text string, start, end int) (int, int) {
-	if start == end {
-		startByte := apexSubstringBoundary(text, start)
-		return startByte, startByte
-	}
-	return apexSubstringBoundary(text, start), apexSubstringBoundary(text, end)
-}
-
-func apexSubstringBoundary(text string, index int) int {
-	if index <= 0 {
-		return 0
-	}
-	unitStart := 0
-	for byteStart, r := range text {
-		unitWidth := 1
-		if r > 0xffff {
-			unitWidth = 2
-		}
-		unitEnd := unitStart + unitWidth
-		byteEnd := byteStart + utf8.RuneLen(r)
-		switch {
-		case index == unitStart:
-			return byteStart
-		case index > unitStart && index < unitEnd:
-			return byteEnd
-		case index == unitEnd:
-			return byteEnd
-		}
-		unitStart = unitEnd
-	}
-	return len(text)
+	return String(apexSubstringUnits(text, start, end)), true, nil
 }
 
 func asciiPrefixLen(text string, limit int) int {
@@ -3942,6 +4037,9 @@ func canonicalObjectMemberMethod(method string) string {
 }
 
 func javaStringHashCode(text string) int32 {
+	if mayHoldLoneSurrogate(text) {
+		return javaStringHashCodeExact(text)
+	}
 	var hash int32
 	for _, r := range text {
 		if r <= 0xffff {
@@ -3951,6 +4049,16 @@ func javaStringHashCode(text string) int32 {
 		hi, lo := utf16.EncodeRune(r)
 		hash = 31*hash + int32(hi)
 		hash = 31*hash + int32(lo)
+	}
+	return hash
+}
+
+// javaStringHashCodeExact folds the UTF-16 units of text that may hold an
+// encoded lone surrogate, which counts as one unit.
+func javaStringHashCodeExact(text string) int32 {
+	var hash int32
+	for _, unit := range apexStringUTF16Units(text) {
+		hash = 31*hash + int32(unit)
 	}
 	return hash
 }
@@ -3983,7 +4091,7 @@ func valueHashCode(value Value) int32 {
 			parts = append(parts, int(valueHashCode(item)))
 		}
 		sort.Ints(parts)
-		var hash int32
+		hash := int32(1)
 		for _, part := range parts {
 			hash += int32(part)
 		}
@@ -3994,18 +4102,28 @@ func valueHashCode(value Value) int32 {
 			keys = append(keys, key)
 		}
 		sort.Strings(keys)
-		var hash int32
+		hash := int32(1)
 		for _, key := range keys {
-			logicalKey := key
-			if base, _, collision := strings.Cut(key, "\x00collision:"); collision && customObjectHashKey(mapStoredKey(value, key), base) {
-				logicalKey = base
-			}
-			hash += javaStringHashCode(logicalKey) ^ valueHashCode(value.Map[key])
+			hash += valueHashCode(mapStoredKey(value, key)) ^ valueHashCode(value.Map[key])
 		}
 		return hash
 	case ValueObject:
 		if sObjectValueType(value.Type) {
 			return sObjectHashCode(value, make(map[uint64]bool))
+		}
+		// Equal SObjectType and SObjectField tokens share a hash (org capture
+		// schema_token_hash); equality ignores case, so the hash does too.
+		if strings.EqualFold(value.Type, "Schema.SObjectType") {
+			if objectName, ok := value.Fields["object"]; ok && objectName.Kind == ValueString {
+				return javaStringHashCode("schema.sobjecttype:" + strings.ToLower(objectName.Text))
+			}
+		}
+		if strings.EqualFold(value.Type, "Schema.SObjectField") {
+			objectName, objectOK := value.Fields["object"]
+			fieldName, fieldOK := value.Fields["field"]
+			if objectOK && fieldOK && objectName.Kind == ValueString && fieldName.Kind == ValueString {
+				return javaStringHashCode("schema.sobjectfield:" + strings.ToLower(objectName.Text) + "." + strings.ToLower(fieldName.Text))
+			}
 		}
 		if isDescribeSObjectResultType(value.Type) {
 			if sObjectType, ok := value.Fields["sObjectType"]; ok && sObjectType.Kind == ValueObject && strings.EqualFold(sObjectType.Type, "Schema.SObjectType") {
@@ -4157,7 +4275,7 @@ func idMemberReceiver(value Value, method string) bool {
 }
 
 func validateApexID(text string) error {
-	if err := validateApexIDShape(text); err != nil {
+	if err := validateApexIDConversionShape(text); err != nil {
 		return err
 	}
 	if len(text) == 18 && apexIDTo18(text[:15]) != text {
@@ -4170,10 +4288,30 @@ func validateApexIDShape(text string) error {
 	if len(text) != 15 && len(text) != 18 {
 		return fmt.Errorf("System.StringException: Invalid id: %s", text)
 	}
+	// The all-zero 15 character form is the null Id and never converts, while
+	// the 18 character zero string does (org capture id_literal_validity).
+	if text == "000000000000000" {
+		return fmt.Errorf("System.StringException: Invalid id: %s", text)
+	}
 	for _, r := range text {
 		if !((r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9')) {
 			return fmt.Errorf("System.StringException: Invalid id: %s", text)
 		}
+	}
+	return nil
+}
+
+// validateApexIDConversionShape adds the String to Id conversion rules of org
+// capture id_letter_strings (3000 random strings at 62.0 and 67.0): the first
+// character is never an upper case letter, and the fifth and seventh
+// characters are never both non-zero. Id literals in queries and DML keep the
+// plain shape check.
+func validateApexIDConversionShape(text string) error {
+	if err := validateApexIDShape(text); err != nil {
+		return err
+	}
+	if (text[0] >= 'A' && text[0] <= 'Z') || (text[4] != '0' && text[6] != '0') {
+		return fmt.Errorf("System.StringException: Invalid id: %s", text)
 	}
 	return nil
 }
@@ -4194,7 +4332,11 @@ func apexIDTo18(text string) string {
 	return out
 }
 
-func idStatic(callee string, args []Value) (Value, error) {
+// idStatic implements Id.valueOf. Before API 54 native validates only the
+// length and not the characters or the checksum suffix; from API 54 it requires
+// alphanumeric characters and a matching suffix (org capture id_literal_validity,
+// API 51 to 67).
+func idStatic(callee string, args []Value, lenient bool) (Value, error) {
 	if callee != "Id.valueOf" {
 		return Null, unsupportedCallError(callee)
 	}
@@ -4229,6 +4371,15 @@ func idStatic(callee string, args []Value) (Value, error) {
 			}
 			return platformScalar("Id", restored), nil
 		}
+	}
+	if lenient {
+		if len(idText) != 15 && len(idText) != 18 || idText == "000000000000000" {
+			return Null, newExceptionError("System.StringException", "Invalid id: "+idText)
+		}
+		if len(idText) == 15 {
+			return platformScalar("Id", apexIDTo18(idText)), nil
+		}
+		return platformScalar("Id", idText), nil
 	}
 	if err := validateApexID(idText); err != nil {
 		return Null, newExceptionError("System.StringException", "Invalid id: "+idText)
@@ -4302,4 +4453,114 @@ func parseApexIntegralText(text string, bits int) (int64, error) {
 		integer = whole
 	}
 	return strconv.ParseInt(integer, 10, bits)
+}
+
+// decimalValueOfText parses Decimal.valueOf(String). Native keeps at most 33
+// significant digits (the same precision as division) and may exceed the
+// Double range, so wide values are held as exact text with a clamped float.
+func decimalValueOfText(text string) (Value, error) {
+	text = strings.TrimSpace(text)
+	if text == "" {
+		return Null, fmt.Errorf("decimal value cannot be empty")
+	}
+	// Only decimal digits, a sign, a point and an exponent are decimal lexemes;
+	// big.Rat would also accept hexadecimal and underscore forms.
+	for _, r := range text {
+		if !(r >= '0' && r <= '9') && r != '+' && r != '-' && r != '.' && r != 'e' && r != 'E' {
+			return Null, fmt.Errorf("invalid decimal %q", text)
+		}
+	}
+	canonical, err := canonicalDecimalText(text)
+	if err != nil {
+		return Null, err
+	}
+	parsed, err := strconv.ParseFloat(text, 64)
+	if err != nil {
+		var numErr *strconv.NumError
+		// Only plain digit lexemes may exceed the Double range (native a7Magnitude);
+		// the exponent form stays rejected, as before.
+		if !errors.As(err, &numErr) || numErr.Err != strconv.ErrRange || strings.ContainsAny(text, "eE") {
+			return Null, err
+		}
+		// ParseFloat returns the signed infinity on overflow; keep the text exact.
+		parsed = math.MaxFloat64 * float64(1-2*b2i(strings.HasPrefix(text, "-")))
+	}
+	value := Value{Kind: ValueDecimal, Decimal: parsed, Text: canonical}
+	if decimalPrecision(value) <= 33 {
+		return value, nil
+	}
+	rat, ok := valueDecimalRat(value)
+	if !ok {
+		return value, nil
+	}
+	scale := 33 - 1 - decimalRatExponent(new(big.Rat).Abs(rat))
+	rounded, err := roundRatToScaleUnchecked("Decimal.valueOf", rat, scale, "HALF_EVEN")
+	if err != nil {
+		return Null, err
+	}
+	out := decimalFromRat(rounded, scale)
+	if math.IsInf(out.Decimal, 0) {
+		out.Decimal = parsed
+	}
+	return out, nil
+}
+
+func b2i(value bool) int {
+	if value {
+		return 1
+	}
+	return 0
+}
+
+// apexToLowerCase lowers text like Java String.toLowerCase, including the
+// context-sensitive GREEK CAPITAL SIGMA rule: it lowers to the final form
+// (U+03C2) when a cased letter precedes it and none follows.
+func apexToLowerCase(text string) string {
+	if !strings.ContainsRune(text, 'Σ') {
+		return mapApexStringSegments(text, strings.ToLower)
+	}
+	runes := []rune(text)
+	var b strings.Builder
+	for i, r := range runes {
+		if r != 'Σ' {
+			b.WriteString(strings.ToLower(string(r)))
+			continue
+		}
+		if sigmaPrecededByCased(runes, i) && !sigmaFollowedByCased(runes, i) {
+			b.WriteRune('ς')
+		} else {
+			b.WriteRune('σ')
+		}
+	}
+	return b.String()
+}
+
+func sigmaCased(r rune) bool { return unicode.IsUpper(r) || unicode.IsLower(r) || unicode.IsTitle(r) }
+
+func sigmaCaseIgnorable(r rune) bool {
+	switch r {
+	case '\'', '.', ':', '^', '`', 0xA8, 0xAD, 0xAF, 0xB4, 0xB7, 0xB8, 0x2018, 0x2019, 0x2024, 0x2027:
+		return true
+	}
+	return unicode.In(r, unicode.Mn, unicode.Me, unicode.Cf, unicode.Lm, unicode.Sk)
+}
+
+func sigmaPrecededByCased(runes []rune, at int) bool {
+	for i := at - 1; i >= 0; i-- {
+		if sigmaCaseIgnorable(runes[i]) {
+			continue
+		}
+		return sigmaCased(runes[i])
+	}
+	return false
+}
+
+func sigmaFollowedByCased(runes []rune, at int) bool {
+	for i := at + 1; i < len(runes); i++ {
+		if sigmaCaseIgnorable(runes[i]) {
+			continue
+		}
+		return sigmaCased(runes[i])
+	}
+	return false
 }

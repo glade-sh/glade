@@ -19,7 +19,7 @@ func TestConfigNetworkAnonymousAndTestRunnerRoutes(t *testing.T) {
 				available := "false"
 				count := 0
 				if shape != "disabled" {
-					cfg = "org:\n  features: [Communities]\n"
+					cfg = "org:\n  features: [Communities, NetworksEnabled]\n"
 					available = "true"
 				}
 				if shape == "extra_metadata" {

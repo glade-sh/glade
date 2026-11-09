@@ -1,0 +1,5 @@
+api	case	result
+62.0	missing	rejected: unknown Opportunity field
+62.0	valid	deployed
+67.0	missing	rejected: unknown Opportunity field
+67.0	valid	deployed

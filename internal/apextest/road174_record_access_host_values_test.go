@@ -48,7 +48,7 @@ func TestRoad174RecordAccessHostValues(t *testing.T) {
    try {
     AccessLevel level=AccessLevel.USER_MODE.withPermissionSetId('0PS000000000099');
     Database.query('SELECT UserRecordAccess.HasAllAccess FROM Order',level);
-    return JSON.serialize(new List<Object>{'unexpected-success'});
+    return JSON.serialize(new List<Object>{'success'});
    } catch(Exception e) { return JSON.serialize(new List<Object>{e.getTypeName()}); }
   }
   if(objectName=='OrderArgument'||objectName=='OrderGroup') {
@@ -177,7 +177,7 @@ func TestRoad174RecordAccessHostValues(t *testing.T) {
 				name  string
 				want  []any
 				actor storage.ID
-			}{"OrderScoped", []any{"System.QueryException"}, grantActor})
+			}{"OrderScoped", []any{"success"}, grantActor}) // native rows (API 62 and 67): a scoped set adds to the running user's grants
 			cases = append(cases, struct {
 				name  string
 				want  []any

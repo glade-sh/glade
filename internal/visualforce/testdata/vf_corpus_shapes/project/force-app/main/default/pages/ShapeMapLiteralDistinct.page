@@ -1,0 +1,3 @@
+<apex:page controller="ShapeCtl" showHeader="false" sidebar="false" standardStylesheets="false">
+<div data-case="ShapeMapLiteralDistinct"><apex:repeat value='{!["a"="x","b"="y"]}' var="q">[{!q}]</apex:repeat></div>
+</apex:page>

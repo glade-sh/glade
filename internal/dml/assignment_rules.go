@@ -41,17 +41,28 @@ func (e *Engine) AssignmentRuleOwner(input storage.Record) (storage.ID, error) {
 			if !matches {
 				continue
 			}
-			if !strings.EqualFold(entry.AssignedToType, "Queue") {
+			var owner storage.ID
+			switch {
+			case strings.EqualFold(entry.AssignedToType, "Queue"):
+				for id, group := range e.Org.Objects["Group"].Records {
+					if !group.System.IsDeleted && strings.EqualFold(group.Fields["Type"].String, "Queue") && strings.EqualFold(group.Fields["DeveloperName"].String, entry.AssignedTo) && (owner == "" || id < owner) {
+						owner = id
+					}
+				}
+			case strings.EqualFold(entry.AssignedToType, "User"):
+				for id, user := range e.Org.Objects["User"].Records {
+					if !user.System.IsDeleted && user.Fields["IsActive"].Boolean && strings.EqualFold(user.Fields["Username"].String, entry.AssignedTo) && (owner == "" || id < owner) {
+						owner = id
+					}
+				}
+			default:
 				return "", fmt.Errorf("dml: assignment rule target %s is unsupported", entry.AssignedToType)
 			}
-			var owner storage.ID
-			for id, group := range e.Org.Objects["Group"].Records {
-				if !group.System.IsDeleted && strings.EqualFold(group.Fields["Type"].String, "Queue") && strings.EqualFold(group.Fields["DeveloperName"].String, entry.AssignedTo) && (owner == "" || id < owner) {
-					owner = id
-				}
-			}
 			if owner == "" {
-				return "", fmt.Errorf("dml: assignment rule queue %s is unavailable", entry.AssignedTo)
+				if strings.EqualFold(entry.AssignedToType, "Queue") {
+					return "", fmt.Errorf("dml: assignment rule queue %s is unavailable", entry.AssignedTo)
+				}
+				return "", fmt.Errorf("dml: assignment rule user %s is unavailable", entry.AssignedTo)
 			}
 			return owner, nil
 		}
@@ -74,7 +85,7 @@ func (e *Engine) assignmentEntryMatches(entry storage.AssignmentRuleEntry, recor
 			}
 			record.Fields["OwnerId"] = storage.IDValue(record.System.OwnerID)
 		}
-		return evaluateRecordFormulaInOrgAsUser(entry.Formula, e.Org, definition, record, e.systemUserID())
+		return evaluateRecordFormulaInOrgAsUser(entry.Formula, e.Org, definition, record, e.systemUserID(), e.PermissionUserFields)
 	}
 	if len(entry.Criteria) == 0 {
 		return true, true

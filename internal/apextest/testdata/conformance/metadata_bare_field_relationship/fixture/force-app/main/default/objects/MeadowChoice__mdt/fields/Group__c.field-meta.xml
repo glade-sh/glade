@@ -1,0 +1,1 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Group__c</fullName><label>Group</label><type>MetadataRelationship</type><referenceTo>MeadowGroup__mdt</referenceTo><relationshipLabel>Choices</relationshipLabel><relationshipName>Choices</relationshipName></CustomField>

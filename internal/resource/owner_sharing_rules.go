@@ -3,6 +3,7 @@ package resource
 import (
 	"encoding/xml"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"sort"
@@ -73,8 +74,8 @@ func ApplyProjectOwnerSharingRules(org *storage.OrgState, p project.Project) err
 		if err := xml.Unmarshal(data, &source); err != nil {
 			return fmt.Errorf("load owner sharing metadata %s: %w", path, err)
 		}
-		if len(source.Rules) != 1 || len(source.Other) != 0 {
-			return fmt.Errorf("load owner sharing metadata %s: only a single owner rule is supported", path)
+		if len(source.Rules) == 0 || len(source.Other) != 0 {
+			return fmt.Errorf("load owner sharing metadata %s: only owner rules are supported", path)
 		}
 		name := trimKnownSuffix(trimKnownSuffix(filepath.Base(path), ".sharingRules-meta.xml"), ".sharingRules")
 		object, ok := org.Objects[name]
@@ -84,26 +85,33 @@ func ApplyProjectOwnerSharingRules(org *storage.OrgState, p project.Project) err
 		if _, duplicate := staged[name]; duplicate {
 			return fmt.Errorf("load owner sharing metadata %s: duplicate object rule source is not supported", path)
 		}
-		r := source.Rules[0]
-		if strings.TrimSpace(r.FullName) == "" || r.AccessLevel != "Read" || len(r.Other) != 0 || len(r.SharedFrom.Other) != 0 || len(r.SharedTo.Other) != 0 || r.SharedFrom.Group == "" || r.SharedTo.Group == "" {
-			return fmt.Errorf("load owner sharing metadata %s: only Read rules between public groups are supported", path)
-		}
-		for _, groupName := range []string{r.SharedFrom.Group, r.SharedTo.Group} {
-			if !declaredGroups[groupName] {
-				return fmt.Errorf("load owner sharing metadata %s: group %s is not declared", path, groupName)
+		seen := make(map[string]bool)
+		for _, r := range source.Rules {
+			key := strings.ToLower(strings.TrimSpace(r.FullName))
+			if seen[key] {
+				return fmt.Errorf("load owner sharing metadata %s: duplicate owner rule name", path)
 			}
-			found := false
-			for _, group := range org.Objects["Group"].Records {
-				if group.Fields["DeveloperName"].String == groupName && group.Fields["Type"].String == "Regular" {
-					found = true
-					break
+			seen[key] = true
+			if strings.TrimSpace(r.FullName) == "" || r.AccessLevel != "Read" || len(r.Other) != 0 || len(r.SharedFrom.Other) != 0 || len(r.SharedTo.Other) != 0 || r.SharedFrom.Group == "" || r.SharedTo.Group == "" {
+				return fmt.Errorf("load owner sharing metadata %s: only Read rules between public groups are supported", path)
+			}
+			for _, groupName := range []string{r.SharedFrom.Group, r.SharedTo.Group} {
+				if !declaredGroups[groupName] {
+					return fmt.Errorf("load owner sharing metadata %s: group %s is not declared", path, groupName)
+				}
+				found := false
+				for _, group := range org.Objects["Group"].Records {
+					if group.Fields["DeveloperName"].String == groupName && group.Fields["Type"].String == "Regular" {
+						found = true
+						break
+					}
+				}
+				if !found {
+					return fmt.Errorf("load owner sharing metadata %s: group %s is not loaded", path, groupName)
 				}
 			}
-			if !found {
-				return fmt.Errorf("load owner sharing metadata %s: group %s is not loaded", path, groupName)
-			}
+			staged[name] = append(staged[name], storage.OwnerSharingRule{Name: r.FullName, SourceGroup: r.SharedFrom.Group, TargetGroup: r.SharedTo.Group, AccessLevel: r.AccessLevel})
 		}
-		staged[name] = []storage.OwnerSharingRule{{Name: r.FullName, SourceGroup: r.SharedFrom.Group, TargetGroup: r.SharedTo.Group, AccessLevel: r.AccessLevel}}
 	}
 	for name, rules := range staged {
 		object := org.Objects[name]
@@ -123,4 +131,52 @@ func projectOwnerSharingRuleFiles(p project.Project) []string {
 		}
 	}
 	return files
+}
+
+// RefreshProjectOwnerSharingRules replaces project-owned rule configuration on
+// a retained org. Stage group metadata and all rule validation before making
+// the replacement, so removal revokes stale grants and errors are atomic.
+func RefreshProjectOwnerSharingRules(org *storage.OrgState, p project.Project) error {
+	if org == nil {
+		return nil
+	}
+	staged := *org
+	staged.Objects = maps.Clone(org.Objects)
+	staged.IDSequences = maps.Clone(org.IDSequences)
+	for name, object := range staged.Objects {
+		if len(object.Definition.OwnerSharingRules) == 0 {
+			continue
+		}
+		object.Definition = object.Definition.Clone()
+		object.Definition.OwnerSharingRules = nil
+		staged.Objects[name] = object
+	}
+	if len(projectOwnerSharingRuleFiles(p)) != 0 {
+		// Only hydrate supported direct groups. Unsupported unrelated groups do
+		// not affect these rules; validation below still rejects a rule that
+		// references a group outside the supported direct-membership shape.
+		var supportedGroups []string
+		for _, path := range projectGroupFiles(p) {
+			data, err := os.ReadFile(path)
+			if err != nil {
+				return fmt.Errorf("load owner sharing group %s: %w", path, err)
+			}
+			var group publicGroupXML
+			if err := xml.Unmarshal(data, &group); err != nil {
+				return fmt.Errorf("load owner sharing group %s: %w", path, err)
+			}
+			if group.DoesIncludeBosses != nil && group.Members == nil {
+				supportedGroups = append(supportedGroups, path)
+			}
+		}
+		if err := ApplyProjectGroups(&staged, project.Project{GroupFiles: supportedGroups}); err != nil {
+			return err
+		}
+		if err := ApplyProjectOwnerSharingRules(&staged, p); err != nil {
+			return err
+		}
+	}
+	staged.ClearRuntimeSchemaStamp()
+	*org = staged
+	return nil
 }

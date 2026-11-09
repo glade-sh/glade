@@ -816,7 +816,7 @@ type regexRetryRuntime struct {
 
 func retryPrematureRegexTimeout(budget time.Duration, search func() (*regexp2.Match, error)) (*regexp2.Match, error) {
 	return retryPrematureRegexTimeoutWithRuntime(budget, search, regexRetryRuntime{
-		now: time.Now, sleep: time.Sleep, sample: recentRegexCPUSample, cpu: regexProcessCPUTime,
+		now: regexClock.now, sleep: regexClock.sleep, sample: recentRegexCPUSample, cpu: regexClock.cpuTime,
 	})
 }
 
@@ -849,6 +849,18 @@ func retryPrematureRegexTimeoutWithRuntime(budget time.Duration, search func() (
 	}
 }
 
+// regexTimeSource is the wall and CPU clock behind the premature-timeout
+// retry. Production uses the real clocks; tests swap in a virtual one so the
+// suspension boundaries are crossed without sleeping. It never changes a
+// timeout budget.
+type regexTimeSource struct {
+	now     func() time.Time
+	sleep   func(time.Duration)
+	cpuTime func() (time.Duration, bool)
+}
+
+var regexClock = regexTimeSource{now: time.Now, sleep: time.Sleep, cpuTime: regexProcessCPUTime}
+
 // regexCPUSample pairs a wall time with the process CPU time read then.
 type regexCPUSample struct {
 	wall time.Time
@@ -865,7 +877,7 @@ func recentRegexCPUSample(now time.Time) *regexCPUSample {
 	if sample != nil && !now.Before(sample.wall) && now.Sub(sample.wall) < regexp2.DefaultClockPeriod {
 		return sample
 	}
-	cpu, ok := regexProcessCPUTime()
+	cpu, ok := regexClock.cpuTime()
 	if !ok {
 		return nil
 	}
@@ -879,7 +891,7 @@ func recentRegexCPUSample(now time.Time) *regexCPUSample {
 // A genuine timeout spins one goroutine for the full budget, so it always
 // reads as not suspended.
 func regexSearchWasSuspended(sample *regexCPUSample, budget time.Duration) bool {
-	return regexSearchWasSuspendedWithCPU(sample, budget, regexProcessCPUTime)
+	return regexSearchWasSuspendedWithCPU(sample, budget, regexClock.cpuTime)
 }
 
 func regexSearchWasSuspendedWithCPU(sample *regexCPUSample, budget time.Duration, readCPU func() (time.Duration, bool)) bool {

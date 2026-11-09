@@ -57,8 +57,8 @@ func CountMetadataFiles(p project.Project) int {
 		len(p.RecordTypeFiles) + len(p.ValidationRuleFiles) + len(p.LabelFiles) +
 		len(p.TranslationFiles) + len(p.StaticResourceFiles) + len(p.StaticResourceMetas) +
 		len(p.DataWeaveFiles) + len(p.DataWeaveMetas) + len(p.ContentAssetFiles) +
-		len(p.ContentAssetMetas) + len(p.EmailTemplateFiles) + len(p.FolderFiles) +
-		len(p.NamedCredentialFiles) + len(p.RemoteSiteFiles) + len(p.CustomMetadataFiles) +
+		len(p.ContentAssetMetas) + len(p.EmailTemplateFiles) + len(p.FolderFiles) + len(p.ReportFiles) + len(p.DashboardFiles) +
+		len(p.PaymentGatewayProviderFiles) + len(p.NamedCredentialFiles) + len(p.RemoteSiteFiles) + len(p.CustomMetadataFiles) +
 		len(p.WorkflowFiles) + len(p.FlowFiles) + len(p.ProfileFiles) +
 		len(p.PermissionSetFiles) + len(p.PermissionSetGroupFiles) +
 		len(p.PermissionAssignmentFiles) + len(p.ListViewFiles) + len(p.LayoutFiles) +

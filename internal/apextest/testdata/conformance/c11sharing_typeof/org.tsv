@@ -1,0 +1,3 @@
+api	case	result
+62.0	standard_typeof	{"event_name":"C11 synthetic typeof","invalid_target":"System.QueryException","task_name":"C11 synthetic typeof"}
+67.0	standard_typeof	{"event_name":"C11 synthetic typeof","invalid_target":"System.QueryException","task_name":"C11 synthetic typeof"}

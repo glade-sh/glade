@@ -1,0 +1,1 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Object__c</fullName><label>Object</label><type>MetadataRelationship</type><referenceTo>EntityDefinition</referenceTo><relationshipLabel>Objects</relationshipLabel><relationshipName>Object</relationshipName><unique>false</unique></CustomField>

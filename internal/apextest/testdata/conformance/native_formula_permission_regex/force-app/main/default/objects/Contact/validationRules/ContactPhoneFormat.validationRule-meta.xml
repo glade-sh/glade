@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>ContactPhoneFormat</fullName><active>true</active><errorConditionFormula>AND(NOT($Permission.Probe_Bypass), IF(NOT(ISBLANK(Phone)), NOT(REGEX(Phone, &quot;^[0-9]{10}$&quot;)), False))</errorConditionFormula><errorMessage>ContactPhoneFormat</errorMessage></ValidationRule>

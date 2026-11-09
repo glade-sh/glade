@@ -30,7 +30,6 @@ func TestScratchDefinitionWarningsReportsUnreadFeatures(t *testing.T) {
 				},
 			},
 			warnings: []string{
-				"config/project-scratch-def.json: features.Knowledge is not read by Glade",
 				"config/project-scratch-def.json: features.ServiceCloud is not read by Glade",
 				"config/project-scratch-def.json: settings.currencySettings.unreadCurrencyKey is not read by Glade",
 			},
@@ -150,11 +149,10 @@ func TestScratchDefinitionWarningsDeduplicatesUnreadFeatures(t *testing.T) {
 		t.Fatal(err)
 	}
 	warnings := ScratchDefinitionWarnings(root)
-	if len(warnings) != 2 {
-		t.Fatalf("expected 2 deduplicated warnings, got %d: %v", len(warnings), warnings)
+	if len(warnings) != 1 {
+		t.Fatalf("expected 1 deduplicated warning, got %d: %v", len(warnings), warnings)
 	}
-	if !slices.Contains(warnings, "config/project-scratch-def.json: features.Knowledge is not read by Glade") ||
-		!slices.Contains(warnings, "config/project-scratch-def.json: features.ServiceCloud is not read by Glade") {
+	if !slices.Contains(warnings, "config/project-scratch-def.json: features.ServiceCloud is not read by Glade") {
 		t.Fatalf("unexpected warnings: %v", warnings)
 	}
 	if strings.Contains(strings.Join(warnings, " "), "private-value") {

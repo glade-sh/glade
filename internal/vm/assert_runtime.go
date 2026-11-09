@@ -128,6 +128,17 @@ func (vm *VM) assertionMessage(base string, extra []Value, prefix bool, result *
 }
 
 func (vm *VM) callAssertion(callee string, args []Value, result *Result) (Value, error) {
+	value, err := vm.callAssertionCall(callee, args, result)
+	// Native lists an external entry frame above the caller for every Assert
+	// method but areEqual and areNotEqual (trigger_assert_wrap captures).
+	if runtimeErr, ok := err.(*RuntimeError); ok && runtimeErr.Type == "System.AssertException" &&
+		strings.HasPrefix(callee, "Assert.") && callee != "Assert.areEqual" && callee != "Assert.areNotEqual" {
+		runtimeErr.externalEntry = true
+	}
+	return value, err
+}
+
+func (vm *VM) callAssertionCall(callee string, args []Value, result *Result) (Value, error) {
 	modern := strings.HasPrefix(callee, "Assert.")
 	switch callee {
 	case "System.assert", "Assert.isTrue", "Assert.isFalse":

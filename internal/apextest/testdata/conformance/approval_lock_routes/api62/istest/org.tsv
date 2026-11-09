@@ -1,0 +1,8 @@
+case	observation
+approve	"true:Approved:false:Approved"
+no_process_lock	"true:true"
+no_process_unlock	"true:false"
+pending_lock	"true:NONE"
+pending_locked	"true:true"
+pending_unlock	"true:NONE:false"
+reject	"true:Rejected:false:Rejected"

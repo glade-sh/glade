@@ -9,6 +9,9 @@ func mobileCapabilitiesModuleJS() string {
 function unavailableScan(method) {
   return Promise.reject({ code: "UNKNOWN_REASON", message: unavailableMessage(method) });
 }
+// Desktop capability availability only; hardware operations require a mobile host.
+export function getLocationService() { return { isAvailable() { return false; } }; }
+export function getContactsService() { return { isAvailable() { return false; } }; }
 export function getBarcodeScanner() {
   return {
     isAvailable() { return false; },

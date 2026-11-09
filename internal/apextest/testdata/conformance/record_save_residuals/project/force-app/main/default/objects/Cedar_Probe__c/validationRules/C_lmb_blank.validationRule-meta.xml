@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>C_lmb_blank</fullName><active>true</active><errorConditionFormula>AND(Case__c = &apos;vr_lmb_blank&apos;, ISBLANK(LastModifiedById))</errorConditionFormula><errorMessage>C_lmb_blank fired</errorMessage></ValidationRule>

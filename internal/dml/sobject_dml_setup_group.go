@@ -11,6 +11,13 @@ func (e *Engine) applyPermissionSetAssignmentDefaults(objectName string, record 
 		return
 	}
 	groupID := idFromStorageValue(record.Fields["PermissionSetGroupId"])
+	if groupID == "" && idFromStorageValue(record.Fields["PermissionSetId"]) != "" {
+		state := record.Clone()
+		delete(state.Fields, "IsActive")
+		if active, known := PermissionAssignmentState(state, e.Now); known {
+			record.Fields["IsActive"] = storage.BooleanValue(active)
+		}
+	}
 	if groupID == "" || idFromStorageValue(record.Fields["PermissionSetId"]) != "" {
 		return
 	}
@@ -123,4 +130,38 @@ func (e *Engine) setPermissionSetGroupStatus(id storage.ID, status string) {
 	record.Fields["Status"] = storage.StringValue(status)
 	object.Records[storedID] = record
 	e.Org.Objects["PermissionSetGroup"] = object
+}
+
+// validatePermissionSetAssignmentInsert applies the checks that org capture
+// permset_assignment_invalid_id observes before an assignment is stored.
+func (e *Engine) validatePermissionSetAssignmentInsert(objectName string, record storage.Record) error {
+	if objectName != "PermissionSetAssignment" || e.Org == nil {
+		return nil
+	}
+	assigneeID := idFromStorageValue(record.Fields["AssigneeId"])
+	setID := idFromStorageValue(record.Fields["PermissionSetId"])
+	groupID := idFromStorageValue(record.Fields["PermissionSetGroupId"])
+	if assigneeID == "" {
+		return dmlErrorf("INVALID_CROSS_REFERENCE_KEY", nil, "Invalid assignee ID: {0}.")
+	}
+	if setID == "" && groupID == "" {
+		return dmlErrorf("INVALID_CROSS_REFERENCE_KEY", nil, "We can't save this assignment because there's no permission set ID or permission set group ID.")
+	}
+	if _, user, found := storage.LookupRecordByID(e.Org.Objects["User"].Records, assigneeID); !found || user.System.IsDeleted {
+		return dmlErrorf("INVALID_CROSS_REFERENCE_KEY", nil, "invalid user id")
+	}
+	if setID == "" {
+		return nil
+	}
+	if _, set, found := storage.LookupRecordByID(e.Org.Objects["PermissionSet"].Records, setID); found && !set.System.IsDeleted {
+		return nil
+	}
+	prefix := storage.StandardKeyPrefix("PermissionSet")
+	if prefix == "" {
+		prefix = "0PS"
+	}
+	if strings.HasPrefix(string(setID), prefix) {
+		return dmlErrorf("FIELD_INTEGRITY_EXCEPTION", nil, "Permission set doesn't exist")
+	}
+	return dmlErrorf("FIELD_INTEGRITY_EXCEPTION", []string{"PermissionSetId"}, "Permission Set ID: id value of incorrect type: %s", storage.ID18(string(setID)))
 }

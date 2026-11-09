@@ -6,11 +6,59 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
+// standardPlatformUserObjectPermission follows the owned standard_profile_object_crud
+// rows (API 62.0 and 67.0, plain Developer org): the Standard Platform User
+// profile has no access to the sales and service objects below and full access to
+// Account, Contact, Task and Event. Objects without an owned row stay permitted.
 func standardPlatformUserObjectPermission(objectName, method string) bool {
-	if strings.EqualFold(objectName, "Case") {
+	switch strings.ToLower(strings.TrimSpace(objectName)) {
+	case "case", "lead", "campaign", "opportunity", "product2", "contract", "order", "authprovider":
 		return false
 	}
 	return true
+}
+
+// standardUserObjectPermission follows the same owned rows for the Standard User
+// profile: Campaign and Product2 are read-only, Case cannot be deleted and
+// the AuthProvider setup object is not accessible.
+func standardUserObjectPermission(objectName, method string) bool {
+	switch strings.ToLower(strings.TrimSpace(objectName)) {
+	case "authprovider":
+		return false
+	case "campaign", "product2":
+		return method == "isAccessible"
+	case "case":
+		return method != "isDeletable"
+	}
+	return true
+}
+
+// standardProfileHiddenOptOutField reports the communication opt-out fields that
+// the owned rows show as inaccessible (not readable, creatable or updateable) in
+// a plain Developer org. The administrator rows are not modeled.
+func standardProfileHiddenOptOutField(objectName, fieldName string) bool {
+	switch strings.ToLower(strings.TrimSpace(objectName)) + "." + strings.ToLower(strings.TrimSpace(fieldName)) {
+	case "lead.donotcall", "lead.hasoptedoutofemail", "contact.donotcall":
+		return true
+	}
+	return false
+}
+
+// standardUserManagedUserField lists the User fields a Standard User can read
+// but neither create nor update: native user_self_update describeAsStandard
+// rows (API 62.0 and 67.0) report createable and updateable false for these
+// and true for the other probed User fields (Username, Alias, names, Email,
+// Phone, Title, locale and time zone keys, CommunityNickname, Department,
+// UserRoleId, IsActive).
+func standardUserManagedUserField(objectName, fieldName string) bool {
+	if !strings.EqualFold(objectName, "User") {
+		return false
+	}
+	switch strings.ToLower(strings.TrimSpace(fieldName)) {
+	case "profileid", "managerid", "userpermissionsmarketinguser":
+		return true
+	}
+	return false
 }
 
 func isBaselineReadableObject(objectName string) bool {
@@ -163,4 +211,15 @@ func (vm *VM) profileOwnedPermissionSetID(profileID string) string {
 		}
 	}
 	return ""
+}
+
+// undeletableFollowsDeletable reports whether describe isUndeletable tracks the
+// profile's delete permission. The owned standard_profile_object_crud rows show
+// isUndeletable equal to isDeletable for Standard User and Standard Platform User.
+func (vm *VM) undeletableFollowsDeletable(user Value) bool {
+	switch vm.currentUserProfileName(user) {
+	case "Standard User", "Standard Platform User":
+		return true
+	}
+	return false
 }

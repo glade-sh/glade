@@ -1,0 +1,29 @@
+[
+  {
+    "id": "r_v035_variable_under",
+    "query": "query L12Owned($pattern: String) { uiapi { query { FamilyL12Record__c(where: { and: [ { Key__c: { in: [\"L12_PARENT\", \"L12_A\", \"L12_B\", \"L12_C\", \"L12_D\"] } }, { Label__c: { like: $pattern } } ] }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { cursor node { Id Key__c { value } Name { value } } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } } } }",
+    "variables": {
+      "pattern": "alpha\\_b"
+    },
+    "operation": "snapshot",
+    "scenario": "boundary"
+  },
+  {
+    "id": "r_v035_variable_percent",
+    "query": "query L12Owned($pattern: String) { uiapi { query { FamilyL12Record__c(where: { and: [ { Key__c: { in: [\"L12_PARENT\", \"L12_A\", \"L12_B\", \"L12_C\", \"L12_D\"] } }, { Label__c: { like: $pattern } } ] }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { cursor node { Id Key__c { value } Name { value } } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } } } }",
+    "variables": {
+      "pattern": "alpha\\%b"
+    },
+    "operation": "snapshot",
+    "scenario": "boundary"
+  },
+  {
+    "id": "r_v035_variable_slash_under",
+    "query": "query L12Owned($pattern: String) { uiapi { query { FamilyL12Record__c(where: { and: [ { Key__c: { in: [\"L12_PARENT\", \"L12_A\", \"L12_B\", \"L12_C\", \"L12_D\"] } }, { Label__c: { like: $pattern } } ] }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { cursor node { Id Key__c { value } Name { value } } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } } } }",
+    "variables": {
+      "pattern": "alpha\\\\_b"
+    },
+    "operation": "snapshot",
+    "scenario": "boundary"
+  }
+]

@@ -50,6 +50,10 @@ func TestLookupFilterValidationNativeConformanceIsTestProjectAPIRoutes(t *testin
 			}
 
 			projectRoot := copyLookupFilterValidationProject(t, filepath.Join(fixture, "project"), api)
+			if api == "67.0" {
+				// native/api67/ORG-RUN.txt: permission_set_assigned=true.
+				writeCapturedAssignments(t, projectRoot, "LookupFilterValidationAccess")
+			}
 			index := loadTestIndex(t, projectRoot)
 			// API 62 is retained as source metadata and native evidence. Glade's
 			// REST endpoint contexts currently start at 60.0, 65.0, 66.0, 67.0,

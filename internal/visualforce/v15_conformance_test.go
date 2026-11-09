@@ -54,6 +54,12 @@ type v15Table struct {
 // Literal row comparisons use exact Go string equality, including diagnostic type/text.
 // Cartesian charts also allow bounded horizontal font-metric differences for the
 // portable layout check; those rows do not enter the literal exact-match counts.
+// Chart text is measured with "Helvetica, sans-serif". On a host whose resolved
+// font is not Helvetica/Arial-metric (Linux with only DejaVu Sans, about 13%
+// wider), the browser probe sets v15FallbackFont: horizontal coordinates and widths of all
+// three chart rows, including the pie legend, then get a 4px tolerance while
+// vertical coordinates, path structure, sizes, colors and text stay exact
+// Install fonts-liberation to get literal matches on such a host.
 //
 // GLADE_V15_CAPTURE=1 reports mismatches without failing on the unchanged base.
 // GLADE_V15_REPORT selects the optional per-row TSV output path.
@@ -159,7 +165,7 @@ func TestV15SalesforceConformance(t *testing.T) {
 			want := c.Expected[api]
 			acceptanceMatch, diagnosticMatch := got == want, true
 			layoutMatch := !acceptanceMatch && compileErr == nil && c.Kind == "runtime" &&
-				(c.ID == "dom_widget_chart_bar" || c.ID == "dom_widget_chart_line") &&
+				(c.ID == "dom_widget_chart_bar" || c.ID == "dom_widget_chart_line" || v15FallbackFont && c.ID == "dom_widget_chart_legend") &&
 				v15CartesianLayoutEqual(browserRows[c.ID], native, false)
 			acceptanceStatus, diagnosticStatus := "MISMATCH", "NOT_APPLICABLE"
 			if acceptanceMatch {

@@ -1,12 +1,12 @@
 global class ValidationFieldsObserver {
  global static Database.Error reject(Boolean updating, String shape) {
   ValidationScoreLedger__c row = new ValidationScoreLedger__c(Name='Sample', Score__c=1, QualifiedScore__c=1, RecordOnly__c=shape=='record');
-  if (updating) insert row;
+  if (updating) insert as system row;
   if (shape=='qualified') row.QualifiedScore__c=-1;
   else row.Score__c=-1;
   Database.SaveResult result;
-  if (updating) result=Database.update(row,false);
-  else result=Database.insert(row,false);
+  if (updating) result=Database.update(row,false,AccessLevel.SYSTEM_MODE);
+  else result=Database.insert(row,false,AccessLevel.SYSTEM_MODE);
   System.assertEquals(false,result.isSuccess(),'fixture must exercise validation');
   System.assertEquals(1,result.getErrors().size(),'one error producer');
   return result.getErrors()[0];

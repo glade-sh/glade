@@ -1,0 +1,794 @@
+{
+ "status": 0,
+ "result": {
+  "records": [
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Analytics Cloud Integration User"
+     }
+    },
+    "SobjectType": "Account",
+    "PermissionsRead": true,
+    "PermissionsCreate": false,
+    "PermissionsEdit": false,
+    "PermissionsDelete": false,
+    "PermissionsViewAllRecords": true,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Analytics Cloud Integration User"
+     }
+    },
+    "SobjectType": "Contact",
+    "PermissionsRead": true,
+    "PermissionsCreate": false,
+    "PermissionsEdit": false,
+    "PermissionsDelete": false,
+    "PermissionsViewAllRecords": true,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Analytics Cloud Security User"
+     }
+    },
+    "SobjectType": "Account",
+    "PermissionsRead": true,
+    "PermissionsCreate": false,
+    "PermissionsEdit": false,
+    "PermissionsDelete": false,
+    "PermissionsViewAllRecords": true,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Analytics Cloud Security User"
+     }
+    },
+    "SobjectType": "Contact",
+    "PermissionsRead": true,
+    "PermissionsCreate": false,
+    "PermissionsEdit": false,
+    "PermissionsDelete": false,
+    "PermissionsViewAllRecords": true,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "B2B Reordering Portal Buyer Profile"
+     }
+    },
+    "SobjectType": "Account",
+    "PermissionsRead": true,
+    "PermissionsCreate": false,
+    "PermissionsEdit": false,
+    "PermissionsDelete": false,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "B2B Reordering Portal Buyer Profile"
+     }
+    },
+    "SobjectType": "Contact",
+    "PermissionsRead": true,
+    "PermissionsCreate": false,
+    "PermissionsEdit": false,
+    "PermissionsDelete": false,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Company Communities User"
+     }
+    },
+    "SobjectType": "Account",
+    "PermissionsRead": true,
+    "PermissionsCreate": true,
+    "PermissionsEdit": true,
+    "PermissionsDelete": true,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Company Communities User"
+     }
+    },
+    "SobjectType": "Contact",
+    "PermissionsRead": true,
+    "PermissionsCreate": true,
+    "PermissionsEdit": true,
+    "PermissionsDelete": true,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Contract Manager"
+     }
+    },
+    "SobjectType": "Account",
+    "PermissionsRead": true,
+    "PermissionsCreate": true,
+    "PermissionsEdit": true,
+    "PermissionsDelete": true,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Contract Manager"
+     }
+    },
+    "SobjectType": "Contact",
+    "PermissionsRead": true,
+    "PermissionsCreate": true,
+    "PermissionsEdit": true,
+    "PermissionsDelete": true,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "CPQ Integration User"
+     }
+    },
+    "SobjectType": "Account",
+    "PermissionsRead": true,
+    "PermissionsCreate": false,
+    "PermissionsEdit": false,
+    "PermissionsDelete": false,
+    "PermissionsViewAllRecords": true,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "CPQ Integration User"
+     }
+    },
+    "SobjectType": "Contact",
+    "PermissionsRead": true,
+    "PermissionsCreate": false,
+    "PermissionsEdit": false,
+    "PermissionsDelete": false,
+    "PermissionsViewAllRecords": true,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Cross Org Data Proxy User"
+     }
+    },
+    "SobjectType": "Account",
+    "PermissionsRead": true,
+    "PermissionsCreate": true,
+    "PermissionsEdit": true,
+    "PermissionsDelete": true,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Cross Org Data Proxy User"
+     }
+    },
+    "SobjectType": "Contact",
+    "PermissionsRead": true,
+    "PermissionsCreate": true,
+    "PermissionsEdit": true,
+    "PermissionsDelete": true,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Customer Community Login User"
+     }
+    },
+    "SobjectType": "Account",
+    "PermissionsRead": true,
+    "PermissionsCreate": false,
+    "PermissionsEdit": true,
+    "PermissionsDelete": false,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Customer Community Login User"
+     }
+    },
+    "SobjectType": "Contact",
+    "PermissionsRead": true,
+    "PermissionsCreate": true,
+    "PermissionsEdit": true,
+    "PermissionsDelete": false,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Customer Community Plus Login User"
+     }
+    },
+    "SobjectType": "Account",
+    "PermissionsRead": true,
+    "PermissionsCreate": true,
+    "PermissionsEdit": true,
+    "PermissionsDelete": false,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Customer Community Plus Login User"
+     }
+    },
+    "SobjectType": "Contact",
+    "PermissionsRead": true,
+    "PermissionsCreate": true,
+    "PermissionsEdit": true,
+    "PermissionsDelete": false,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Customer Community Plus User"
+     }
+    },
+    "SobjectType": "Account",
+    "PermissionsRead": true,
+    "PermissionsCreate": true,
+    "PermissionsEdit": true,
+    "PermissionsDelete": false,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Customer Community Plus User"
+     }
+    },
+    "SobjectType": "Contact",
+    "PermissionsRead": true,
+    "PermissionsCreate": true,
+    "PermissionsEdit": true,
+    "PermissionsDelete": false,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Customer Community User"
+     }
+    },
+    "SobjectType": "Account",
+    "PermissionsRead": true,
+    "PermissionsCreate": false,
+    "PermissionsEdit": true,
+    "PermissionsDelete": false,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Customer Community User"
+     }
+    },
+    "SobjectType": "Contact",
+    "PermissionsRead": true,
+    "PermissionsCreate": true,
+    "PermissionsEdit": true,
+    "PermissionsDelete": false,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Customer Portal Manager Custom"
+     }
+    },
+    "SobjectType": "Account",
+    "PermissionsRead": true,
+    "PermissionsCreate": true,
+    "PermissionsEdit": true,
+    "PermissionsDelete": false,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Customer Portal Manager Custom"
+     }
+    },
+    "SobjectType": "Contact",
+    "PermissionsRead": true,
+    "PermissionsCreate": true,
+    "PermissionsEdit": true,
+    "PermissionsDelete": false,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Customer Portal Manager Standard"
+     }
+    },
+    "SobjectType": "Account",
+    "PermissionsRead": true,
+    "PermissionsCreate": false,
+    "PermissionsEdit": true,
+    "PermissionsDelete": false,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Customer Portal Manager Standard"
+     }
+    },
+    "SobjectType": "Contact",
+    "PermissionsRead": true,
+    "PermissionsCreate": false,
+    "PermissionsEdit": false,
+    "PermissionsDelete": false,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "External Apps Login User"
+     }
+    },
+    "SobjectType": "Account",
+    "PermissionsRead": true,
+    "PermissionsCreate": false,
+    "PermissionsEdit": false,
+    "PermissionsDelete": false,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "External Apps Login User"
+     }
+    },
+    "SobjectType": "Contact",
+    "PermissionsRead": true,
+    "PermissionsCreate": false,
+    "PermissionsEdit": false,
+    "PermissionsDelete": false,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "External Identity User"
+     }
+    },
+    "SobjectType": "Account",
+    "PermissionsRead": true,
+    "PermissionsCreate": false,
+    "PermissionsEdit": true,
+    "PermissionsDelete": false,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "External Identity User"
+     }
+    },
+    "SobjectType": "Contact",
+    "PermissionsRead": true,
+    "PermissionsCreate": true,
+    "PermissionsEdit": true,
+    "PermissionsDelete": false,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Force.com - App Subscription User"
+     }
+    },
+    "SobjectType": "Account",
+    "PermissionsRead": true,
+    "PermissionsCreate": true,
+    "PermissionsEdit": true,
+    "PermissionsDelete": true,
+    "PermissionsViewAllRecords": true,
+    "PermissionsModifyAllRecords": true
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Force.com - App Subscription User"
+     }
+    },
+    "SobjectType": "Contact",
+    "PermissionsRead": true,
+    "PermissionsCreate": true,
+    "PermissionsEdit": true,
+    "PermissionsDelete": true,
+    "PermissionsViewAllRecords": true,
+    "PermissionsModifyAllRecords": true
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Gold Partner User"
+     }
+    },
+    "SobjectType": "Account",
+    "PermissionsRead": true,
+    "PermissionsCreate": true,
+    "PermissionsEdit": true,
+    "PermissionsDelete": false,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Gold Partner User"
+     }
+    },
+    "SobjectType": "Contact",
+    "PermissionsRead": true,
+    "PermissionsCreate": true,
+    "PermissionsEdit": true,
+    "PermissionsDelete": false,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "High Volume Customer Portal"
+     }
+    },
+    "SobjectType": "Account",
+    "PermissionsRead": true,
+    "PermissionsCreate": false,
+    "PermissionsEdit": true,
+    "PermissionsDelete": false,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "High Volume Customer Portal"
+     }
+    },
+    "SobjectType": "Contact",
+    "PermissionsRead": true,
+    "PermissionsCreate": true,
+    "PermissionsEdit": true,
+    "PermissionsDelete": false,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "High Volume Customer Portal User"
+     }
+    },
+    "SobjectType": "Account",
+    "PermissionsRead": true,
+    "PermissionsCreate": false,
+    "PermissionsEdit": true,
+    "PermissionsDelete": false,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "High Volume Customer Portal User"
+     }
+    },
+    "SobjectType": "Contact",
+    "PermissionsRead": true,
+    "PermissionsCreate": true,
+    "PermissionsEdit": true,
+    "PermissionsDelete": false,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Marketing User"
+     }
+    },
+    "SobjectType": "Account",
+    "PermissionsRead": true,
+    "PermissionsCreate": true,
+    "PermissionsEdit": true,
+    "PermissionsDelete": true,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Marketing User"
+     }
+    },
+    "SobjectType": "Contact",
+    "PermissionsRead": true,
+    "PermissionsCreate": true,
+    "PermissionsEdit": true,
+    "PermissionsDelete": true,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Partner App Subscription User"
+     }
+    },
+    "SobjectType": "Account",
+    "PermissionsRead": true,
+    "PermissionsCreate": true,
+    "PermissionsEdit": true,
+    "PermissionsDelete": true,
+    "PermissionsViewAllRecords": true,
+    "PermissionsModifyAllRecords": true
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Partner App Subscription User"
+     }
+    },
+    "SobjectType": "Contact",
+    "PermissionsRead": true,
+    "PermissionsCreate": true,
+    "PermissionsEdit": true,
+    "PermissionsDelete": true,
+    "PermissionsViewAllRecords": true,
+    "PermissionsModifyAllRecords": true
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Partner Community Login User"
+     }
+    },
+    "SobjectType": "Account",
+    "PermissionsRead": true,
+    "PermissionsCreate": true,
+    "PermissionsEdit": true,
+    "PermissionsDelete": false,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Partner Community Login User"
+     }
+    },
+    "SobjectType": "Contact",
+    "PermissionsRead": true,
+    "PermissionsCreate": true,
+    "PermissionsEdit": true,
+    "PermissionsDelete": false,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Partner Community User"
+     }
+    },
+    "SobjectType": "Account",
+    "PermissionsRead": true,
+    "PermissionsCreate": true,
+    "PermissionsEdit": true,
+    "PermissionsDelete": false,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Partner Community User"
+     }
+    },
+    "SobjectType": "Contact",
+    "PermissionsRead": true,
+    "PermissionsCreate": true,
+    "PermissionsEdit": true,
+    "PermissionsDelete": false,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Silver Partner User"
+     }
+    },
+    "SobjectType": "Account",
+    "PermissionsRead": true,
+    "PermissionsCreate": false,
+    "PermissionsEdit": true,
+    "PermissionsDelete": false,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Silver Partner User"
+     }
+    },
+    "SobjectType": "Contact",
+    "PermissionsRead": true,
+    "PermissionsCreate": false,
+    "PermissionsEdit": false,
+    "PermissionsDelete": false,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Solution Manager"
+     }
+    },
+    "SobjectType": "Account",
+    "PermissionsRead": true,
+    "PermissionsCreate": true,
+    "PermissionsEdit": true,
+    "PermissionsDelete": true,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Solution Manager"
+     }
+    },
+    "SobjectType": "Contact",
+    "PermissionsRead": true,
+    "PermissionsCreate": true,
+    "PermissionsEdit": true,
+    "PermissionsDelete": true,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Standard Platform User"
+     }
+    },
+    "SobjectType": "Account",
+    "PermissionsRead": true,
+    "PermissionsCreate": true,
+    "PermissionsEdit": true,
+    "PermissionsDelete": true,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Standard Platform User"
+     }
+    },
+    "SobjectType": "Contact",
+    "PermissionsRead": true,
+    "PermissionsCreate": true,
+    "PermissionsEdit": true,
+    "PermissionsDelete": true,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Standard User"
+     }
+    },
+    "SobjectType": "Account",
+    "PermissionsRead": true,
+    "PermissionsCreate": true,
+    "PermissionsEdit": true,
+    "PermissionsDelete": true,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "Standard User"
+     }
+    },
+    "SobjectType": "Contact",
+    "PermissionsRead": true,
+    "PermissionsCreate": true,
+    "PermissionsEdit": true,
+    "PermissionsDelete": true,
+    "PermissionsViewAllRecords": false,
+    "PermissionsModifyAllRecords": false
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "System Administrator"
+     }
+    },
+    "SobjectType": "Account",
+    "PermissionsRead": true,
+    "PermissionsCreate": true,
+    "PermissionsEdit": true,
+    "PermissionsDelete": true,
+    "PermissionsViewAllRecords": true,
+    "PermissionsModifyAllRecords": true
+   },
+   {
+    "Parent": {
+     "Profile": {
+      "Name": "System Administrator"
+     }
+    },
+    "SobjectType": "Contact",
+    "PermissionsRead": true,
+    "PermissionsCreate": true,
+    "PermissionsEdit": true,
+    "PermissionsDelete": true,
+    "PermissionsViewAllRecords": true,
+    "PermissionsModifyAllRecords": true
+   }
+  ],
+  "totalSize": 56,
+  "done": true
+ },
+ "warnings": []
+}

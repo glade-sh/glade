@@ -27,8 +27,16 @@ func parseDateValueOfText(text string) (time.Time, error) {
 	if value, ok := parseExtendedDateYear(trimmed); ok {
 		return value, nil
 	}
+	// Native ignores everything after the date part (org capture
+	// date_valueof_time_text): a time without seconds, a T separator and even
+	// trailing words all parse.
+	if at := strings.IndexAny(trimmed, " T"); at > 0 && dateValueOfDatePartPattern.MatchString(trimmed[:at]) {
+		return parseDateText(trimmed[:at])
+	}
 	return parseDateText(text)
 }
+
+var dateValueOfDatePartPattern = regexp.MustCompile(`^\d{4}-\d{1,2}-\d{1,2}$`)
 
 func parseExtendedDateYear(text string) (time.Time, bool) {
 	parts := dateValueOfExtendedYearPattern.FindStringSubmatch(text)

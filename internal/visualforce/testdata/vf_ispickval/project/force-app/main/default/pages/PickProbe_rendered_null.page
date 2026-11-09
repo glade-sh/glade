@@ -1,0 +1,3 @@
+<apex:page controller="PickProbeController" showHeader="false" sidebar="false" standardStylesheets="false">
+<div data-case="rendered-null"><apex:outputText rendered="{!ISPICKVAL($User.GeocodeAccuracy, 'Address')}" value="shown"/>|after</div>
+</apex:page>

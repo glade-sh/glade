@@ -1,0 +1,1 @@
+GiftCommitmentSchedule s=new GiftCommitmentSchedule(); String value=s.GenerationalCohort; s.GenerationalCohort=null; List<GiftCommitmentSchedule> rows=[SELECT GenerationalCohort FROM GiftCommitmentSchedule LIMIT 1]; System.debug('OWNEDSTATIC accepted');

@@ -1,0 +1,4 @@
+case	api	result
+context	59.0	{"initial":{"navigate":"function","context":"function","wired":"function"},"invalid":{"kind":"throw","name":"TypeError","message":"Cannot destructure property 'type' of 's' as it is null."},"valid":{"kind":"sync","value":"undefined"}}
+context	62.0	{"initial":{"navigate":"function","context":"function","wired":"function"},"invalid":{"kind":"throw","name":"TypeError","message":"Cannot destructure property 'type' of 's' as it is null."},"valid":{"kind":"sync","value":"undefined"}}
+context	67.0	{"initial":{"navigate":"function","context":"function","wired":"function"},"invalid":{"kind":"throw","name":"TypeError","message":"Cannot destructure property 'type' of 's' as it is null."},"valid":{"kind":"sync","value":"undefined"}}

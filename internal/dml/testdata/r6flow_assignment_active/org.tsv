@@ -1,0 +1,13 @@
+api	route	case	IsActive	IsRevoked
+62.0	anonymous	future	true	false
+62.0	anonymous	past	false	false
+62.0	anonymous	revoked	false	true
+62.0	isTest	future	true	false
+62.0	isTest	past	false	false
+62.0	isTest	revoked	false	true
+67.0	anonymous	future	true	false
+67.0	anonymous	past	false	false
+67.0	anonymous	revoked	false	true
+67.0	isTest	future	true	false
+67.0	isTest	past	false	false
+67.0	isTest	revoked	SETUP	SETUP

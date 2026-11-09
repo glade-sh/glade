@@ -1,0 +1,7 @@
+source_api	route	observation
+62.0	anonymous	{"AccountStatementInsert":"ok","Account":"ok"}
+62.0	isTest	{"AccountStatementInsert":"ok","Account":"ok"}
+67.0	anonymous	{"AccountStatementInsert":"ok","Account":"ok"}
+67.0	isTest	{"AccountStatementInsert":"ok","Account":"ok"}
+68.0	anonymous	{"AccountStatementInsert":"ok","Account":"ok"}
+68.0	isTest	{"AccountStatementInsert":"ok","Account":"ok"}

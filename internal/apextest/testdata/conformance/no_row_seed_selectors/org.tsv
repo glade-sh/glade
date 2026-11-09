@@ -1,0 +1,5 @@
+source_api	route	observation
+62.0	anonymous	{"missingError":"List has no rows for assignment to SObject","queue":0,"missingProfile":0,"standardProfile":1,"activeUser":1,"activeNonSystem":true}
+62.0	isTest	{"missingError":"List has no rows for assignment to SObject","queue":0,"missingProfile":0,"standardProfile":1,"activeUser":1,"activeNonSystem":true}
+67.0	anonymous	{"missingError":"List has no rows for assignment to SObject","queue":0,"missingProfile":0,"standardProfile":1,"activeUser":1,"activeNonSystem":true}
+67.0	isTest	{"missingError":"List has no rows for assignment to SObject","queue":0,"missingProfile":0,"standardProfile":1,"activeUser":1,"activeNonSystem":true}

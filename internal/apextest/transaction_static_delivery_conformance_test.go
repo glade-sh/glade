@@ -29,7 +29,20 @@ type nativeObservationCarry struct {
 	Reason    string
 }
 
+// runNativeObservationProjectAssigned replays the permission-set assignments
+// that the family's ORG-RUN.txt records for the capture user. Deployment alone
+// grants nothing; callers name only sets the capture record says were assigned.
+func runNativeObservationProjectAssigned(t *testing.T, family, class string, apis []string, methodsPerAPI int, assigned ...string) {
+	t.Helper()
+	runNativeObservationProjectWith(t, family, class, apis, methodsPerAPI, nil, assigned)
+}
+
 func runNativeObservationProjectWithCarries(t *testing.T, family, class string, apis []string, methodsPerAPI int, carries map[string]nativeObservationCarry) {
+	t.Helper()
+	runNativeObservationProjectWith(t, family, class, apis, methodsPerAPI, carries, nil)
+}
+
+func runNativeObservationProjectWith(t *testing.T, family, class string, apis []string, methodsPerAPI int, carries map[string]nativeObservationCarry, assigned []string) {
 	t.Helper()
 	dir := filepath.Join("testdata", "conformance", family)
 	raw, err := os.Open(filepath.Join(dir, "org.tsv"))
@@ -69,6 +82,9 @@ func runNativeObservationProjectWithCarries(t *testing.T, family, class string, 
 			})
 			if err != nil {
 				t.Fatal(err)
+			}
+			if len(assigned) != 0 {
+				writeFile(t, filepath.Join(root, "glade.yml"), "test:\n  permissionSets: ["+strings.Join(assigned, ", ")+"]\n")
 			}
 			index := loadTestIndex(t, root)
 			analysis := sema.Analyze(index)

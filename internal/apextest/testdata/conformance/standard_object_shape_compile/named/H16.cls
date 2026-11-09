@@ -1,0 +1,1 @@
+public class H16 { public class Quote {} public class Wrap { public Quote m() { return new Quote(); } } }

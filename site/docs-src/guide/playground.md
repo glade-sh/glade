@@ -47,8 +47,15 @@ Start the built-in examples with memory-only state:
 glade playground --examples --no-db --addr 127.0.0.1:1789 --open
 ```
 
-Choose **Account + Contact Query** to load and run it in one click. Then inspect
+On the first direct browser open, select **Continue** on the **Open local
+preview** confirmation. Then choose **Account + Contact Query** to load and run it in one click. Then inspect
 the Apex class, anonymous script, and result; press **Run** again after an edit.
+
+For command-line requests to the local listener, send the client header:
+
+```bash
+curl -H 'X-Glade-Client: 1' http://127.0.0.1:1789/healthz
+```
 
 Expected: Status shows `pass`, DML shows `2`, Rows shows `4`, and Logs contains
 `contacts: 3`. Close the server with `Ctrl-C`; memory-only state is discarded.

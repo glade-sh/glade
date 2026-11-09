@@ -34,7 +34,11 @@ func TestPersonAccountReadCheckRoutes(t *testing.T) {
 						writeTestFile(t, path+"-meta.xml", `<ApexClass><apiVersion>`+api+`</apiVersion></ApexClass>`)
 						var stdout, stderr bytes.Buffer
 						code := Run(context.Background(), []string{"check", "--project", root, "--no-progress"}, &stdout, &stderr)
-						if !enabled && form == "constructor" {
+						if !enabled && form == "read" {
+							if code != 1 || !strings.Contains(stdout.String(), "Variable does not exist: "+field) {
+								t.Fatalf("check exit=%d stdout=%s stderr=%s", code, stdout.String(), stderr.String())
+							}
+						} else if !enabled && form == "constructor" {
 							if code != 1 || !strings.Contains(stdout.String(), "GLADESEMA019") || !strings.Contains(stdout.String(), "Field does not exist: "+field+" on Account") {
 								t.Fatalf("check exit=%d stdout=%s stderr=%s", code, stdout.String(), stderr.String())
 							}

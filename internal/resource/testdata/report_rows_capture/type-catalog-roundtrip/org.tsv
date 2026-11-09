@@ -1,0 +1,13 @@
+api	route	case	result
+62.0	anonymous	catalog-roundtrip-account	false~4~Account General~user~8~6
+62.0	seealldata	catalog-roundtrip-account	false~4~Account General~user~8~6
+62.0	anonymous	catalog-roundtrip-contact	false~8~Contact: General~my~8~11
+62.0	seealldata	catalog-roundtrip-contact	false~8~Contact: General~my~8~11
+62.0	anonymous	catalog-roundtrip-opportunity	false~9~Opportunity Information~organization~8~13
+62.0	seealldata	catalog-roundtrip-opportunity	false~9~Opportunity Information~organization~8~13
+67.0	anonymous	catalog-roundtrip-account	false~4~Account General~user~8~6
+67.0	seealldata	catalog-roundtrip-account	false~4~Account General~user~8~6
+67.0	anonymous	catalog-roundtrip-contact	false~8~Contact: General~my~8~11
+67.0	seealldata	catalog-roundtrip-contact	false~8~Contact: General~my~8~11
+67.0	anonymous	catalog-roundtrip-opportunity	false~9~Opportunity Information~organization~8~13
+67.0	seealldata	catalog-roundtrip-opportunity	false~9~Opportunity Information~organization~8~13

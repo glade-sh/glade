@@ -1216,7 +1216,7 @@ func TestSecurityWorkflowContract(t *testing.T) {
 	}
 	jobs := workflowJobBlocks(t, workflowText)
 
-	wantJobs := []string{"codeql", "dependency-review", "gosec", "govulncheck", "npm-audit", "scorecard"}
+	wantJobs := []string{"codeql", "codeql-fast", "dependency-review", "gosec", "govulncheck", "npm-audit", "scorecard"}
 	gotJobs := make([]string, 0, len(jobs))
 	for name := range jobs {
 		gotJobs = append(gotJobs, name)
@@ -1226,10 +1226,10 @@ func TestSecurityWorkflowContract(t *testing.T) {
 		t.Fatalf("security.yml jobs = %v, want %v", gotJobs, wantJobs)
 	}
 	for _, jobName := range wantJobs {
-		if jobName == "codeql" {
+		if jobName == "codeql" || jobName == "codeql-fast" {
 			continue
 		}
-		for _, marker := range []string{"runs-on: ubuntu-latest", "uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3"} {
+		for _, marker := range []string{"runs-on: ubuntu-24.04", "uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3"} {
 			if !strings.Contains(jobs[jobName], marker) {
 				t.Errorf("%s job missing preserved marker %q", jobName, marker)
 			}
@@ -2014,7 +2014,6 @@ func ciRequiredAggregateProblem(workflow string) string {
 		return "missing single required-ci job"
 	}
 	wantNeeds := `    needs:
-      - codeql
       - workflow-lint
       - site
       - test-binaries
@@ -2069,7 +2068,7 @@ func ciRequiredAggregateProblem(workflow string) string {
 		{name: "name", want: "    name: Required CI"},
 		{name: "needs", want: wantNeeds},
 		{name: "always condition", want: "    if: always()"},
-		{name: "runner", want: "    runs-on: ubuntu-latest"},
+		{name: "runner", want: "    runs-on: ubuntu-24.04"},
 		{name: "timeout", want: "    timeout-minutes: 5"},
 		{name: "needs JSON environment", want: `          REQUIRED_RESULTS: ${{ toJSON(needs) }}`},
 		{name: "fail-closed predicate", want: `select(.value.result != "success")`},
@@ -2235,7 +2234,7 @@ func browserWorkflowProblem(workflow string) string {
 		"  workflow_dispatch:",
 		"jobs:\n  browser:",
 		"name: Browser",
-		"runs-on: ubuntu-latest",
+		"runs-on: ubuntu-24.04",
 		"timeout-minutes: 30",
 		"GOMAXPROCS: \"2\"",
 		"GLADE_LWC_BROWSER: \"1\"",
@@ -3345,7 +3344,7 @@ func TestCINodeIntegrationWorkflowAndPurePartition(t *testing.T) {
 	}
 	node := jobs["node-integration"]
 	for _, marker := range []string{
-		"runs-on: ubuntu-latest", "timeout-minutes: 30", "GOMAXPROCS: \"2\"",
+		"runs-on: ubuntu-24.04", "timeout-minutes: 30", "GOMAXPROCS: \"2\"",
 		"actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0", "go-version: \"1.26.10\"", "cache: false",
 		"actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0", "node-version: \"22\"", "cache: npm",
 		"cache-dependency-path: third_party/lwc/package-lock.json", "npm ci --prefix third_party/lwc",
@@ -3444,7 +3443,7 @@ func TestCINestedSourcesWorkflowContract(t *testing.T) {
 		t.Fatal("CI workflow is missing nested-sources job")
 	}
 	for _, marker := range []string{
-		"runs-on: ubuntu-latest", "timeout-minutes: 30",
+		"runs-on: ubuntu-24.04", "timeout-minutes: 30",
 		"actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3",
 		"actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0", "go-version: \"1.26.10\"", "cache: false",
 		"actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0", "node-version: \"22\"",
@@ -3523,16 +3522,15 @@ func TestCIRequiredAggregateContractRejectsWeakening(t *testing.T) {
 	workflow, _ := readCIWorkflow(t)
 	mutations := map[string]string{
 		"remove workflow lint":    strings.Replace(workflow, "      - workflow-lint\n", "", 1),
-		"remove CodeQL":           strings.Replace(workflow, "      - codeql\n", "", 1),
 		"remove history":          strings.Replace(workflow, "      - apextest-history\n", "", 1),
 		"remove node integration": strings.Replace(workflow, "      - node-integration\n", "", 1),
 		"remove nested sources":   strings.Replace(workflow, "      - nested-sources\n", "", 1),
-		"success-only condition":  strings.Replace(workflow, "    if: always()\n    runs-on: ubuntu-latest\n    timeout-minutes: 5", "    if: success()\n    runs-on: ubuntu-latest\n    timeout-minutes: 5", 1),
+		"success-only condition":  strings.Replace(workflow, "    if: always()\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5", "    if: success()\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5", 1),
 		"failure-only predicate":  strings.Replace(workflow, `select(.value.result != "success")`, `select(.value.result == "failure")`, 1),
 		"remove exit":             strings.Replace(workflow, "            exit 1\n", "", 1),
 		"rename job":              strings.Replace(workflow, "  required-ci:\n", "  required-checks:\n", 1),
 		"rename display":          strings.Replace(workflow, "    name: Required CI\n    needs:\n", "    name: Required Checks\n    needs:\n", 1),
-		"job continue on error":   strings.Replace(workflow, "    if: always()\n    runs-on: ubuntu-latest\n    timeout-minutes: 5\n    steps:\n", "    if: always()\n    runs-on: ubuntu-latest\n    timeout-minutes: 5\n    continue-on-error: true\n    steps:\n", 1),
+		"job continue on error":   strings.Replace(workflow, "    if: always()\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5\n    steps:\n", "    if: always()\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5\n    continue-on-error: true\n    steps:\n", 1),
 		"step continue on error":  strings.Replace(workflow, "      - name: Require all CI jobs\n        env:\n", "      - name: Require all CI jobs\n        continue-on-error: true\n        env:\n", 1),
 		"step skip condition":     strings.Replace(workflow, "      - name: Require all CI jobs\n        env:\n", "      - name: Require all CI jobs\n        if: false\n        env:\n", 1),
 	}
@@ -3551,7 +3549,7 @@ func TestCIRequiredAggregateContractRejectsWeakening(t *testing.T) {
 func TestCIParallelDAGTopology(t *testing.T) {
 	_, jobs := readCIWorkflow(t)
 	wantJobs := []string{
-		"codeql", "apextest", "apextest-history", "gladecli", "nested-sources", "node-integration", "required-ci", "required-scheduled-ci", "sema", "sema-equivalence", "sema-full", "sema-history",
+		"apextest", "apextest-history", "gladecli", "tree-receipt", "nested-sources", "node-integration", "required-ci", "required-scheduled-ci", "sema", "sema-equivalence", "sema-full", "sema-history",
 		"server-and-playground", "site", "smoke-distribution", "smoke-runtime", "test", "test-binaries", "vet", "workflow-lint",
 	}
 	wantJobs = append(wantJobs, "apextest-history-input", "lwc-compile-history-input", "lwc-compile-history", "visualforce-history-input", "visualforce-history", "gladecli-history-input", "gladecli-history", "vm-history-input", "vm", "vm-history")
@@ -3566,8 +3564,8 @@ func TestCIParallelDAGTopology(t *testing.T) {
 	}
 	for _, name := range wantJobs {
 		job := jobs[name]
-		if name != "codeql" && !strings.Contains(job, "runs-on: ubuntu-latest") {
-			t.Errorf("%s is not an ubuntu-latest job", name)
+		if name != "codeql" && !strings.Contains(job, "runs-on: ubuntu-24.04") {
+			t.Errorf("%s is not an ubuntu-24.04 job", name)
 		}
 		if input, serialized := map[string]string{"apextest": "[apextest-history-input, test-binaries]", "sema": "test-binaries", "test": "[lwc-compile-history-input, visualforce-history-input, test-binaries]", "gladecli": "gladecli-history-input", "vm": "vm-history-input"}[name]; serialized {
 			if !strings.Contains(job, "needs: "+input) {
@@ -3575,7 +3573,7 @@ func TestCIParallelDAGTopology(t *testing.T) {
 			}
 			continue
 		}
-		if !map[string]bool{"apextest-history": true, "lwc-compile-history": true, "visualforce-history": true, "required-ci": true, "required-scheduled-ci": true, "sema-history": true, "sema-equivalence": true, "gladecli-history": true, "vm-history": true}[name] && strings.Contains(job, "needs:") {
+		if !map[string]bool{"apextest-history": true, "lwc-compile-history": true, "visualforce-history": true, "required-ci": true, "tree-receipt": true, "required-scheduled-ci": true, "sema-history": true, "sema-equivalence": true, "gladecli-history": true, "vm-history": true}[name] && strings.Contains(job, "needs:") {
 			t.Errorf("root job %s must not be serialized with needs", name)
 		}
 	}

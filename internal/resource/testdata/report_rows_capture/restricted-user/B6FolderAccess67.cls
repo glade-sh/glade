@@ -1,0 +1,4 @@
+@IsTest(SeeAllData=true) private with sharing class B6FolderAccess67 { @IsTest static void capture() {
+ User u=[SELECT Id FROM User WHERE Alias='b6usr' LIMIT 1];Id id=[SELECT Id FROM Report WHERE DeveloperName='B6_Accounts' LIMIT 1].Id;String out='';
+ System.runAs(u){try {out+='describe='+Reports.ReportManager.describeReport(id).getReportMetadata().getName();}catch(Exception e){out+='describe='+e.getTypeName();}try{out+=';run='+Reports.ReportManager.runReport(id,false).getFactMap().get('T!T').getAggregates()[0].getValue();}catch(Exception e){out+=';run='+e.getTypeName();}}System.assert(false,out);
+} }

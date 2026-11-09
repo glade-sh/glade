@@ -15,8 +15,9 @@ func TestStressDescribeHeavyExecution(t *testing.T) {
 	for i := 0; i < 80; i++ {
 		source += fmt.Sprintf("Map<String,Object> fields%d = accountDescribe.fields.getMap();\n", i)
 		source += fmt.Sprintf("System.assert(fields%d.containsKey('Name'));\n", i)
+		// Three record types plus Master (record_type_shape account_rt rows).
 		source += fmt.Sprintf("List<Object> recordTypes%d = accountDescribe.getRecordTypeInfos();\n", i)
-		source += fmt.Sprintf("System.assertEquals(3, recordTypes%d.size());\n", i)
+		source += fmt.Sprintf("System.assertEquals(4, recordTypes%d.size());\n", i)
 		source += fmt.Sprintf("List<Object> children%d = accountDescribe.getChildRelationships();\n", i)
 		source += fmt.Sprintf("System.assert(children%d.size() >= 1);\n", i)
 	}

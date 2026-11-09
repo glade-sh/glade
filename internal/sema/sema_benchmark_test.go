@@ -188,7 +188,7 @@ func BenchmarkBuildPlatformTypeMemberModelCold(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		model = buildSemaPlatformTypeMemberModel()
+		model = buildSemaPlatformTypeMemberModel(typesys.StandardPlatformSymbolView())
 	}
 	b.StopTimer()
 	if model == nil || model.platform == nil || len(model.platform.symbols) == 0 {

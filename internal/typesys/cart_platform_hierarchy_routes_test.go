@@ -16,8 +16,8 @@ func TestCartPlatformHierarchyCatalogRoute(t *testing.T) {
 				symbols = StandardPlatformSymbolView()
 			}
 			for _, name := range []string{"CartExtension.CartItem", "CartExtension.CartDeliveryGroup"} {
-				if symbol := requireStandardSymbol(t, symbols, name); symbol.SuperClass != "CartExtension.CommerceObject" {
-					t.Errorf("%s extends %s; native CommerceObject", name, symbol.SuperClass)
+				if !standardSuperChainContains(t, symbols, name, "CartExtension.CommerceObject") {
+					t.Errorf("%s does not reach CartExtension.CommerceObject; native accepts the assignment", name)
 				}
 			}
 			list := requireStandardSymbol(t, symbols, "CartExtension.CartItemList")
@@ -31,4 +31,21 @@ func TestCartPlatformHierarchyCatalogRoute(t *testing.T) {
 			}
 		})
 	}
+}
+
+// standardSuperChainContains follows SuperClass links through symbols. Native
+// compile rows establish assignability, so any ancestor depth satisfies them.
+func standardSuperChainContains(t *testing.T, symbols []TypeSymbol, name, ancestor string) bool {
+	t.Helper()
+	for depth := 0; depth < 8; depth++ {
+		symbol := requireStandardSymbol(t, symbols, name)
+		if symbol.SuperClass == "" || symbol.SuperClass == "Object" {
+			return false
+		}
+		if symbol.SuperClass == ancestor {
+			return true
+		}
+		name = symbol.SuperClass
+	}
+	return false
 }

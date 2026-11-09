@@ -1,0 +1,3 @@
+<apex:page controller="ShapeCtl" showHeader="false" sidebar="false" standardStylesheets="false">
+<div data-case="ShapeVariableOutside"><apex:outputPanel layout="none"><apex:variable var="s" value="{!msg}"/></apex:outputPanel>[{!s}]</div>
+</apex:page>

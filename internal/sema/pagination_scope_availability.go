@@ -1,18 +1,25 @@
 package sema
 
-import "strings"
+import (
+	"strings"
 
-// The owned source API 62 pagination observations establish these callable
-// signatures independently of their query text. Other source profiles and
-// overloads retain the generated availability ranges.
+	"github.com/glade-sh/glade/internal/apexversion"
+)
+
+// Owned pagination observations establish these callable signatures
+// independently of their query text. pagination_cursor_versions: the three
+// factory calls (getPaginationCursor(String), (String, AccessLevel) and
+// getPaginationCursorWithBinds(String, Map<String,Object>, AccessLevel))
+// compile and run at class API 61.0 through 67.0; the generated range opens
+// them at 66.0. The cursor and fetch-result members keep the source API 62
+// observation only. Other source profiles and overloads retain the generated
+// availability ranges.
 func observedPaginationSourceCallCandidate(version, receiver, method, mode string) bool {
-	if version != "62.0" {
-		return false
+	if (strings.EqualFold(method, "getPaginationCursorWithBinds") || strings.EqualFold(method, "getPaginationCursor")) && mode == "class" {
+		return apexversion.AtLeast(version, 61) && apexversion.Before(version, 66) &&
+			(strings.EqualFold(receiver, "Database") || strings.EqualFold(receiver, "System.Database"))
 	}
-	if strings.EqualFold(method, "getPaginationCursorWithBinds") && mode == "class" {
-		return strings.EqualFold(receiver, "Database") || strings.EqualFold(receiver, "System.Database")
-	}
-	if mode != "instance" {
+	if version != "62.0" || mode != "instance" {
 		return false
 	}
 	return ((strings.EqualFold(method, "getNumRecords") || strings.EqualFold(method, "fetchPage")) &&
@@ -42,6 +49,22 @@ func observedPaginationSourceCall(version, receiver, method string, argTypes []s
 			surfaces = append(surfaces, "apex:"+owner,
 				"apex:"+owner+".getpaginationcursorwithbinds(string,map,object)",
 				"apex:"+owner+".getpaginationcursorwithbinds(string,map,accesslevel)")
+		}
+	} else if strings.EqualFold(method, "getPaginationCursor") {
+		// hierarchy_setting_runas_pagination (HhBody at source API 62.0):
+		// getPaginationCursor(String) and (String, AccessLevel) compile and run.
+		if len(argTypes) < 1 || len(argTypes) > 2 || !strings.EqualFold(semaCanonicalPlatformAlias(argTypes[0]), "String") {
+			return false
+		}
+		signature := "getpaginationcursor(string)"
+		if len(argTypes) == 2 {
+			if !strings.EqualFold(semaCanonicalPlatformAlias(argTypes[1]), "AccessLevel") || semaProjectTypeShadowsPlatform(model, argTypes[1]) {
+				return false
+			}
+			signature = "getpaginationcursor(string,object)"
+		}
+		for _, owner := range []string{"database", "system.database"} {
+			surfaces = append(surfaces, "apex:"+owner, "apex:"+owner+"."+signature)
 		}
 	} else if strings.EqualFold(method, "fetchPage") {
 		if len(argTypes) != 2 || !strings.EqualFold(semaCanonicalPlatformAlias(argTypes[0]), "Integer") ||

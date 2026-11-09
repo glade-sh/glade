@@ -1,0 +1,88 @@
+[
+  {
+    "group": "Gift",
+    "api": "62.0",
+    "outcome": "Passed",
+    "tests": [
+      [
+        "probe",
+        "Pass",
+        ""
+      ],
+      [
+        "putProbe",
+        "Pass",
+        ""
+      ]
+    ]
+  },
+  {
+    "group": "Gift",
+    "api": "67.0",
+    "outcome": "Passed",
+    "tests": [
+      [
+        "probe",
+        "Pass",
+        ""
+      ],
+      [
+        "putProbe",
+        "Pass",
+        ""
+      ]
+    ]
+  },
+  {
+    "group": "Gift",
+    "api": "62.0",
+    "route": "named-soql-compile",
+    "success": false,
+    "problems": [
+      "SELECT GenerationalCohort FROM GiftTransaction\n       ^\nERROR at Row:1:Column:8\nNo such column 'GenerationalCohort' on entity 'GiftTransaction'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+    ]
+  },
+  {
+    "group": "Doc",
+    "api": "62.0",
+    "outcome": "Passed",
+    "tests": [
+      [
+        "probe",
+        "Pass",
+        ""
+      ],
+      [
+        "putProbe",
+        "Pass",
+        ""
+      ]
+    ]
+  },
+  {
+    "group": "Doc",
+    "api": "67.0",
+    "outcome": "Passed",
+    "tests": [
+      [
+        "probe",
+        "Pass",
+        ""
+      ],
+      [
+        "putProbe",
+        "Pass",
+        ""
+      ]
+    ]
+  },
+  {
+    "group": "Doc",
+    "api": "62.0",
+    "route": "named-soql-compile",
+    "success": false,
+    "problems": [
+      "SELECT AdditionalMetadata FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'AdditionalMetadata' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+    ]
+  }
+]

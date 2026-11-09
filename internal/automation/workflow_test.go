@@ -1145,18 +1145,20 @@ func TestLoadProjectFlowStepDecisionFormulaReference(t *testing.T) {
 	if len(idx.Diagnostics) != 0 {
 		t.Fatalf("step formula reference should be supported: %#v", idx.Diagnostics)
 	}
-	if len(idx.Flows) != 1 || len(idx.Flows[0].Rules) != 1 || len(idx.Flows[0].Rules[0].Branches) == 0 {
-		t.Fatalf("flow branches = %#v", idx.Flows)
+	// Two routed Decisions compile through the ordered graph (org capture
+	// flow_assign_routes): the first Decision is the rule's first step.
+	if len(idx.Flows) != 1 || len(idx.Flows[0].Rules) != 1 || len(idx.Flows[0].Rules[0].Branches) != 0 || len(idx.Flows[0].Rules[0].Steps) != 1 || idx.Flows[0].Rules[0].Steps[0].Kind != "decision" {
+		t.Fatalf("flow steps = %#v", idx.Flows)
 	}
 	var outer storage.FlowBranch
-	for _, candidate := range idx.Flows[0].Rules[0].Branches {
+	for _, candidate := range idx.Flows[0].Rules[0].Steps[0].Branches {
 		if candidate.Name == "Continue" {
 			outer = candidate
 			break
 		}
 	}
 	if outer.Name == "" {
-		t.Fatalf("outer routed branch missing: %#v", idx.Flows[0].Rules[0].Branches)
+		t.Fatalf("outer routed branch missing: %#v", idx.Flows[0].Rules[0].Steps[0].Branches)
 	}
 	if len(outer.Steps) != 1 {
 		t.Fatalf("outer branch steps = %#v", outer)
@@ -1416,8 +1418,15 @@ func TestLoadProjectFlowBeforeDeleteLookupAndCreate(t *testing.T) {
 	if len(rule.RecordCreates) != 1 || rule.RecordCreates[0].ObjectName != "ActionRequest__c" {
 		t.Fatalf("creates = %#v", rule.RecordCreates)
 	}
-	if len(rule.Branches) != 2 || rule.Branches[0].Criteria[0].Field != "Name" || !rule.Branches[1].Default {
-		t.Fatalf("branches = %#v", rule.Branches)
+	// Two routed Decisions compile through the ordered graph (org capture
+	// flow_assign_routes): ExistingRequest's default runs only inside
+	// HasSourceValues' outcome, after the lookup, never as a sibling.
+	if len(rule.Branches) != 0 || len(rule.Steps) != 1 || rule.Steps[0].Kind != "decision" || len(rule.Steps[0].Branches) != 1 || rule.Steps[0].Branches[0].Criteria[0].Field != "Name" {
+		t.Fatalf("steps = %#v", rule.Steps)
+	}
+	inner := rule.Steps[0].Branches[0].Steps
+	if len(inner) != 2 || inner[0].Kind != "recordLookup" || inner[1].Kind != "decision" || len(inner[1].Branches) != 2 || !inner[1].Branches[1].Default || len(inner[1].Branches[1].Steps) != 1 || inner[1].Branches[1].Steps[0].Kind != "recordCreate" {
+		t.Fatalf("outcome steps = %#v", inner)
 	}
 	assignments := rule.RecordCreates[0].InputAssignments
 	if len(assignments) != 3 || assignments[1].LiteralValue != `{"id":"{!$Record.Id}"}` || assignments[2].SourceField != "Id" {

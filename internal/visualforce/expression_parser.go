@@ -301,7 +301,7 @@ func (p *exprParser) parseURLForParameters() (Expression, error) {
 			return params, nil
 		}
 		var name string
-		if p.pos < len(p.source) && p.source[p.pos] == '\'' {
+		if p.pos < len(p.source) && (p.source[p.pos] == '\'' || p.source[p.pos] == '"') {
 			literal, err := p.parseString()
 			if err != nil {
 				return nil, err
@@ -354,7 +354,7 @@ func (p *exprParser) parseVisualforceIdentifierOrCall() (Expression, error) {
 				args:   args,
 			}, nil
 		}
-		return visualforceFunctionExpr{name: strings.ToLower(parts[0]), args: args}, nil
+		return visualforceFunctionExpr{name: strings.ToLower(parts[0]), spelling: parts[0], args: args}, nil
 	}
 	return visualforceIdentifierExpr{parts: parts}, nil
 }

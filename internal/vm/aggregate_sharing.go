@@ -10,8 +10,10 @@ import (
 // Sharing restricts the contributing records before grouping, HAVING and LIMIT.
 // AggregateResult has no owner on which the later row filter could operate.
 // Keep the existing COUNT recount and live query-handle paths separate.
+// Record queries with LIMIT or OFFSET get the same treatment: native applies
+// sharing before the row window, so a hidden first row cannot consume LIMIT 1.
 func (vm *VM) orgWithVisibleAggregateInputs(org *storage.OrgState, query soql.Query) *storage.OrgState {
-	if org == nil || len(query.Aggregates) == 0 && len(query.GroupBy) == 0 || soqlSharingCountQuery(query) {
+	if org == nil || len(query.Aggregates) == 0 && len(query.GroupBy) == 0 && !soqlHasRowWindow(query) || soqlSharingCountQuery(query) {
 		return org
 	}
 	userID := vm.soqlSharingUserID(query)
@@ -37,4 +39,8 @@ func (vm *VM) orgWithVisibleAggregateInputs(org *storage.OrgState, query soql.Qu
 	state.Records = visible
 	filtered.Objects[objectName] = state
 	return &filtered
+}
+
+func soqlHasRowWindow(query soql.Query) bool {
+	return query.HasLimit || query.Limit != 0 || query.LimitBind != "" || query.HasOffset || query.Offset != 0 || query.OffsetBind != ""
 }

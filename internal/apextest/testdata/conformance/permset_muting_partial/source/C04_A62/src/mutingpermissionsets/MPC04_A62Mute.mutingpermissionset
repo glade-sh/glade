@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MutingPermissionSet xmlns="http://soap.sforce.com/2006/04/metadata"><objectPermissions><allowCreate>false</allowCreate><allowDelete>true</allowDelete><allowEdit>false</allowEdit><allowRead>true</allowRead><modifyAllRecords>true</modifyAllRecords><object>MPC04_A62__c</object><viewAllRecords>false</viewAllRecords></objectPermissions><label>MPC04_A62Mute</label></MutingPermissionSet>

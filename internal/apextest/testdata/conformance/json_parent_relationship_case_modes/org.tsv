@@ -1,0 +1,5 @@
+source_api	route	method	observation
+62.0	anonymous	observe	{"genericExact":"upper","genericLower":null,"strictExact":"upper","strictLower":null}
+62.0	isTest	observe	{"genericExact":"upper","genericLower":null,"strictExact":"upper","strictLower":null}
+67.0	anonymous	observe	{"genericExact":"upper","genericLower":null,"strictExact":"upper","strictLower":null}
+67.0	isTest	observe	{"genericExact":"upper","genericLower":null,"strictExact":"upper","strictLower":null}

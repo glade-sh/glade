@@ -19,6 +19,7 @@ func validatePresentationSource(source, sourceName string) error {
 	z := html.NewTokenizer(strings.NewReader(source))
 	z.AllowCDATA(true)
 	offset := 0
+	linkDepth := 0
 	for {
 		kind := z.Next()
 		raw := z.Raw()
@@ -28,6 +29,12 @@ func validatePresentationSource(source, sourceName string) error {
 				return nil
 			}
 			return z.Err()
+		}
+		if kind == html.EndTagToken {
+			if name, _ := z.TagName(); strings.EqualFold(string(name), "apex:outputlink") && linkDepth > 0 {
+				linkDepth--
+			}
+			continue
 		}
 		if kind != html.StartTagToken && kind != html.SelfClosingTagToken {
 			continue
@@ -40,14 +47,20 @@ func validatePresentationSource(source, sourceName string) error {
 		if kind == html.SelfClosingTagToken {
 			z.NextIsNotRawText()
 		}
-		tag := presentationCompileTag(token.Data)
-		if tag == "" {
-			continue
-		}
 		line, column := lineColumnAt(source, offset)
 		location := fmt.Sprintf(" in %s at line %d column %d", sourceName, line, column)
 		if sourceName == "" {
 			location = fmt.Sprintf(" at line %d column %d", line, column)
+		}
+		if err := validateNativeIDAndParam(token, startTag, location, linkDepth); err != nil {
+			return err
+		}
+		if kind == html.StartTagToken && strings.EqualFold(token.Data, "apex:outputlink") {
+			linkDepth++
+		}
+		tag := presentationCompileTag(token.Data)
+		if tag == "" {
+			continue
 		}
 		if duplicate := presentationDuplicateAttribute(startTag); duplicate != "" {
 			return fmt.Errorf("Attribute %q was already specified for element %q.", duplicate, token.Data)
@@ -94,6 +107,20 @@ func validatePresentationSource(source, sourceName string) error {
 				if _, err := strconv.ParseFloat(strings.TrimSpace(a.Val), 64); err != nil {
 					return fmt.Errorf("Value '%s' cannot be converted from Text to Number.", a.Val)
 				}
+			}
+		}
+		if tag == "pageMessage" {
+			for _, a := range token.Attr {
+				if strings.EqualFold(a.Key, "strength") && pageMessageStrengthIsText(a.Val) {
+					return fmt.Errorf("Wrong type for attribute <apex:pageMessage strength=\"%s\">. Expected Integer, found String", a.Val)
+				}
+			}
+			severity := false
+			for _, a := range token.Attr {
+				severity = severity || strings.EqualFold(a.Key, "severity")
+			}
+			if !severity {
+				return fmt.Errorf("Missing required attribute severity in <apex:pageMessage>%s", location)
 			}
 		}
 		if tag == "page" {
@@ -201,6 +228,10 @@ func presentationCompileTag(name string) string {
 		return "panelGroup"
 	case "apex:chart":
 		return "chart"
+	case "apex:pagemessage":
+		return "pageMessage"
+	case "apex:outputlink":
+		return "outputLink"
 	}
 	return ""
 }
@@ -213,7 +244,7 @@ func validatePresentationControllerTypes(root *MarkupNode, p project.Project) er
 		return nil
 	}
 	controller := ""
-	var expressions []string
+	var expressions, strengthExpressions []string
 	var visit func(*MarkupNode) error
 	visit = func(n *MarkupNode) error {
 		if n == nil || n.Type != MarkupNodeElement {
@@ -224,6 +255,14 @@ func validatePresentationControllerTypes(root *MarkupNode, p project.Project) er
 		}
 		if isApexStructureTag(n, "chart") && visibleMarkupChildCount(n) == 0 {
 			return fmt.Errorf("Expected child components for tag 'apex:chart'")
+		}
+		if presentationCompileTag(n.RawName) == "pageMessage" {
+			// A Boolean getter bound to strength is a compile error (row
+			// PageMsgStrengthExprBool); a String one is not (PageMsgStrengthExprVar).
+			value := n.Attributes["strength"]
+			if strings.HasPrefix(value, "{!") && strings.HasSuffix(value, "}") {
+				strengthExpressions = append(strengthExpressions, value)
+			}
 		}
 		switch presentationCompileTag(n.RawName) {
 		case "pageBlock", "pageBlockSection", "pageBlockSectionItem", "panelGrid", "panelGroup":
@@ -242,7 +281,7 @@ func validatePresentationControllerTypes(root *MarkupNode, p project.Project) er
 	if err := visit(root); err != nil {
 		return err
 	}
-	if controller == "" || len(expressions) == 0 {
+	if controller == "" || len(expressions)+len(strengthExpressions) == 0 {
 		return nil
 	}
 	parser := apexast.NewParser()
@@ -259,16 +298,96 @@ func validatePresentationControllerTypes(root *MarkupNode, p project.Project) er
 			if !strings.EqualFold(declaration.Name, controller) {
 				continue
 			}
+			// A field without accessors is an unknown property, not a typed
+			// value (rows ExprField*, PageMsgStrengthExprField).
 			for _, value := range expressions {
 				property := strings.TrimSpace(value[2 : len(value)-1])
 				for _, member := range declaration.Members {
-					matched := member.Kind == apexast.DeclarationMethod && len(member.Parameters) == 0 && strings.EqualFold(member.Name, "get"+property) || (member.Kind == apexast.DeclarationProperty || member.Kind == apexast.DeclarationField) && strings.EqualFold(member.Name, property)
+					matched := member.Kind == apexast.DeclarationMethod && len(member.Parameters) == 0 && strings.EqualFold(member.Name, "get"+property) || member.Kind == apexast.DeclarationProperty && strings.EqualFold(member.Name, property)
 					if matched && strings.EqualFold(member.Type, "Integer") {
 						return fmt.Errorf("Cannot convert the value of '%s' to the expected type.", value)
+					}
+				}
+			}
+			for _, value := range strengthExpressions {
+				property := strings.TrimSpace(value[2 : len(value)-1])
+				for _, member := range declaration.Members {
+					matched := member.Kind == apexast.DeclarationMethod && len(member.Parameters) == 0 && strings.EqualFold(member.Name, "get"+property) || member.Kind == apexast.DeclarationProperty && strings.EqualFold(member.Name, property)
+					if matched && strings.EqualFold(member.Type, "Boolean") {
+						return fmt.Errorf("Wrong type for attribute <apex:pageMessage strength=\"%s\">. Expected Integer, found Boolean", value)
 					}
 				}
 			}
 		}
 	}
 	return nil
+}
+
+// validateNativeIDAndParam holds two compile rules every API version shares
+// (rows IdExpr*, IdX*, IdEmpty* and LinkParamNoValue): an id on a standard
+// component must be a non-empty literal, and an apex:param inside an
+// apex:outputLink needs a value.
+func validateNativeIDAndParam(token html.Token, startTag, location string, linkDepth int) error {
+	if !strings.HasPrefix(strings.ToLower(token.Data), "apex:") {
+		return nil
+	}
+	component := token.Data[len("apex:"):]
+	if spec, ok := StandardComponentSpec("apex", component); ok && spec.Name != "" {
+		component = strings.TrimPrefix(spec.Name, "apex:")
+	} else if len(startTag) > len("<apex:") {
+		component = startTag[len("<apex:"):]
+		if end := strings.IndexAny(component, " \t\r\n/>"); end >= 0 {
+			component = component[:end]
+		}
+	}
+	hasValue := false
+	for _, a := range token.Attr {
+		switch strings.ToLower(a.Key) {
+		case "id":
+			if strings.EqualFold(component, "facet") {
+				// Rows IdXFacet and IdLFacet: a facet takes no id, literal or not.
+				return fmt.Errorf("Unsupported attribute id in <apex:facet>%s", location)
+			}
+			if a.Val == "" {
+				// Rows IdEmpty*: an empty id fails the page's validation on every component.
+				return fmt.Errorf("Failed validation: ApexPage")
+			}
+			if strings.Contains(a.Val, "{!") {
+				return fmt.Errorf("Literal value is required for attribute id in <apex:%s>%s", component, location)
+			}
+		case "value":
+			hasValue = true
+		}
+	}
+	if strings.EqualFold(component, "param") && linkDepth > 0 && !hasValue {
+		return fmt.Errorf("Missing required attribute value in <apex:param>%s", location)
+	}
+	return nil
+}
+
+// pageMessageStrengthIsText reports whether a strength attribute is text that
+// the org rejects when it compiles the page (rows PageMsgStrength* of
+// testdata/vf_render_markup): a literal that is not an integer, spaces
+// included, or an expression that is a string constant that is not an integer. An empty
+// literal compiles and fails when the page renders; an expression the org
+// cannot type before the page runs is left to the renderer.
+func pageMessageStrengthIsText(value string) bool {
+	if value == "" {
+		return false
+	}
+	if strings.HasPrefix(value, "{!") && strings.HasSuffix(value, "}") {
+		inner := value[2 : len(value)-1]
+		if len(inner) > 2 && inner[0] == '\'' && inner[len(inner)-1] == '\'' && !strings.Contains(inner[1:len(inner)-1], "'") {
+			// A string constant is converted to an Integer when the page
+			// compiles: '4' is accepted (PageMsgStrengthExprNumText), 'x' is not.
+			_, err := strconv.Atoi(inner[1 : len(inner)-1])
+			return err != nil
+		}
+		return false
+	}
+	if strings.Contains(value, "{!") {
+		return false
+	}
+	_, err := strconv.Atoi(value)
+	return err != nil
 }

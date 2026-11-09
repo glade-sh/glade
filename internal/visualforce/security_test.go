@@ -112,8 +112,8 @@ func TestRenderOutputTextEscapeFalseKeepsExpressionRawButEscapesLiteralMarkup(t 
 	if !strings.Contains(rendered, `<strong>raw</strong>`) {
 		t.Fatalf("rendered = %q, want raw expression output", rendered)
 	}
-	if strings.Contains(rendered, `<safe>`) || !strings.Contains(rendered, `&lt;safe&gt;`) {
-		t.Fatalf("rendered = %q, want literal markup encoded as text", rendered)
+	if strings.Contains(rendered, `<safe>`) || !strings.Contains(rendered, `&#60;safe&#62;`) {
+		t.Fatalf("rendered = %q, want literal markup kept as native decimal references (&#60;safe&#62;), text and not markup", rendered)
 	}
 }
 

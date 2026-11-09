@@ -158,6 +158,7 @@ func copyAssignmentExtensionProject(t *testing.T, api string) string {
 	}); err != nil {
 		t.Fatal(err)
 	}
+	configureCapturedFixturePermissions(t, root, assignmentExtensionFixture+"/project/force-app/main/default", "OracleFixture")
 	return root
 }
 
@@ -204,8 +205,7 @@ func TestAssignmentRuleExtensionNativeConformance(t *testing.T) {
 				anonymous := readAssignmentExtensionNative(t, api, family, "anonymous")
 				named := readAssignmentExtensionNative(t, api, family, "istest")
 				index := loadTestIndex(t, copyAssignmentExtensionProject(t, api))
-				org := orgFromIndex(index)
-				org.APIVersion = api
+				org := capturedFixtureOrg(t, index, api)
 				runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 				triggers, triggerErrors := compileProjectTriggers(index)
 				if len(triggerErrors) > 0 {

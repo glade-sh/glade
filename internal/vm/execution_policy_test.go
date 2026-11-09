@@ -34,11 +34,16 @@ func TestCurrentSourceExecutionPolicyUsesAPIVersionAndTriggerFrame(t *testing.T)
 	}
 }
 
+// Native automated_process_user_mode rows (62.0, 66.0, 67.0, 68.0): WITH USER_MODE
+// reads succeed as the Automated Process user in an event trigger and the jobs it
+// enqueues at every API, so no API 66 read gate applies. This replaces an earlier
+// rule-derived expectation of a QueryException below 66.0 (the name is kept for
+// the shard duration table).
 func TestWithUserModeAutomatedProcessFollowsAPIVersion(t *testing.T) {
 	for _, test := range []struct {
 		version   string
 		wantError bool
-	}{{"65.0", true}, {"66.0", false}, {"67.0", false}} {
+	}{{"62.0", false}, {"65.0", false}, {"66.0", false}, {"67.0", false}} {
 		t.Run(test.version, func(t *testing.T) {
 			machine := New(io.Discard)
 			org := testDataOrg()

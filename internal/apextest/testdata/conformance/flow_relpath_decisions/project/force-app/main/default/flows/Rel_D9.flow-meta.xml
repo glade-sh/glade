@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>67.0</apiVersion>
+    <label>Rel_D9</label>
+    <processType>AutoLaunchedFlow</processType>
+    <decisions><name>D</name><label>D</label><locationX>0</locationX><locationY>0</locationY>
+        <defaultConnector><targetReference>N</targetReference></defaultConnector><defaultConnectorLabel>No</defaultConnectorLabel>
+        <rules><name>R</name><conditionLogic>and</conditionLogic>
+        <conditions><leftValueReference>$Record.Account.Type</leftValueReference><operator>IsNull</operator><rightValue><booleanValue>false</booleanValue></rightValue></conditions>
+        <connector><targetReference>Y</targetReference></connector><label>R</label></rules></decisions>
+    <recordUpdates><name>Y</name><label>Y</label><locationX>0</locationX><locationY>0</locationY>
+        <inputAssignments><field>Description</field><value><stringValue>yes</stringValue></value></inputAssignments>
+        <inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>N</name><label>N</label><locationX>0</locationX><locationY>0</locationY>
+        <inputAssignments><field>Description</field><value><stringValue>no</stringValue></value></inputAssignments>
+        <inputReference>$Record</inputReference></recordUpdates>
+
+    <start>
+        <locationX>0</locationX><locationY>0</locationY>
+        <connector><targetReference>D</targetReference></connector>
+        <filterLogic>and</filterLogic>
+        <filters><field>LastName</field><operator>EqualTo</operator><value><stringValue>D9</stringValue></value></filters>
+        <object>Contact</object>
+        <recordTriggerType>Create</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+</Flow>

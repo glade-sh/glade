@@ -1,0 +1,1 @@
+Contact c=[SELECT CreatedDate FROM Contact WHERE LastName='B6 Boundary' LIMIT 1];System.debug('B6STAMP|'+c.CreatedDate.formatGmt('yyyy-MM-dd\'T\'HH:mm:ss\'Z\''));System.debug('B6DAY|'+c.CreatedDate.date());

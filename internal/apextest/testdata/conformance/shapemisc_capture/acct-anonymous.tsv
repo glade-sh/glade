@@ -1,0 +1,17 @@
+api	case	result
+62.0	d01_acctChainId	EX System.NullPointerException|Attempt to de-reference a null object
+62.0	d02_acctChainOwnerId	null
+62.0	d03_acctChainName	null
+62.0	d04_acctChainCreatedDate	null
+62.0	d05_acctChainIsDeleted	false
+62.0	d06_acctChainWrite	EX System.NullPointerException|Attempt to de-reference a null object
+62.0	d07_acctChainParentId	null
+62.0	d08_acctChainParentName	null
+67.0	d01_acctChainId	EX System.NullPointerException|Attempt to de-reference a null object
+67.0	d02_acctChainOwnerId	null
+67.0	d03_acctChainName	null
+67.0	d04_acctChainCreatedDate	null
+67.0	d05_acctChainIsDeleted	false
+67.0	d06_acctChainWrite	EX System.NullPointerException|Attempt to de-reference a null object
+67.0	d07_acctChainParentId	null
+67.0	d08_acctChainParentName	null

@@ -1,0 +1,179 @@
+api	route	id	observation
+62.0	anonymous	F IF(ISNULL($ObjectType.Account.Fields.Name), 'null', 'set')	EXC System.FormulaValidationException: Field $ObjectType.Account.Fields.Name does not exist. Check spelling.
+62.0	anonymous	F Name	LF F
+62.0	anonymous	V validation rule	inserted
+62.0	anonymous	T01 insert what=Account A1	A1
+62.0	anonymous	T02 update what=Opportunity(A2)	A2
+62.0	anonymous	T03 update what=Case(A3)	null
+62.0	anonymous	T04 update what=Campaign	null
+62.0	anonymous	T05 update what=custom	null
+62.0	anonymous	T06 update what=Account A1	A1
+62.0	anonymous	T07 update what=null	null
+62.0	anonymous	T08 update who=Contact(A3) what=null	A3
+62.0	anonymous	T09 update who=Contact(A3) what=Campaign	A3
+62.0	anonymous	T10 update who=Contact(A3) what=Account A1	A1
+62.0	anonymous	T11 update who=Contact(no account) what=null	null
+62.0	anonymous	T12 update subject only	null
+62.0	anonymous	T13 insert what=Opportunity(A2)	A2
+62.0	anonymous	T14 after Opportunity AccountId->A1	A1
+62.0	anonymous	T15 insert who=Contact(A3)	A3
+62.0	anonymous	T16 insert who=Contact(A3) what=Campaign	A3
+62.0	anonymous	T17 insert what=custom	null
+62.0	anonymous	T18 insert what=Case(A3)	null
+62.0	anonymous	T19 insert A1 then what=Campaign	null
+62.0	anonymous	E01 insert what=Account A1	A1
+62.0	anonymous	E02 update what=Opportunity	A1
+62.0	anonymous	E03 update what=Campaign	null
+62.0	anonymous	E04 update who=Contact(A3) what=null	A3
+62.0	anonymous	E05 insert what=Campaign	null
+62.0	anonymous	E06 insert what=Opportunity(A1 now)	A1
+62.0	anonymous	U01 insert what=Contract(A2)	A2
+62.0	anonymous	U02 insert what=custom lookup child(A2)	null
+62.0	anonymous	U03 insert what=custom master-detail child(A2)	A2
+62.0	anonymous	U04 insert who=Lead	null
+62.0	anonymous	U05 who=Contact after Contact AccountId A3->A1	A1
+62.0	anonymous	U06 insert what=Opportunity(no account) who=Contact(A1)	null
+62.0	anonymous	U07 Contract AccountId A2->A1	A1
+62.0	anonymous	U08 lookup child Account__c A2->A1	null
+62.0	anonymous	U11 insert what=Case(A2) who=Contact(A1)	A1
+62.0	anonymous	U12 insert what=custom lookup child(A1) who=Contact(A1)	A1
+62.0	anonymous	U13 insert what=custom master-detail child(A2) who=Contact(A3)	A2
+62.0	anonymous	U14 insert what=Contract(A1) who=Contact(A3)	A1
+62.0	anonymous	U15 insert what=Case(A2) who=Contact(A3)	A3
+62.0	anonymous	U16 update what=Case who=null	null
+62.0	anonymous	U10 after What Account deleted	deleted
+62.0	istest	T01 insert what=Account A1	A1
+62.0	istest	T02 update what=Opportunity(A2)	A2
+62.0	istest	T03 update what=Case(A3)	null
+62.0	istest	T04 update what=Campaign	null
+62.0	istest	T05 update what=custom	null
+62.0	istest	T06 update what=Account A1	A1
+62.0	istest	T07 update what=null	null
+62.0	istest	T08 update who=Contact(A3) what=null	A3
+62.0	istest	T09 update who=Contact(A3) what=Campaign	A3
+62.0	istest	T10 update who=Contact(A3) what=Account A1	A1
+62.0	istest	T11 update who=Contact(no account) what=null	null
+62.0	istest	T12 update subject only	null
+62.0	istest	T13 insert what=Opportunity(A2)	A2
+62.0	istest	T14 after Opportunity AccountId->A1	A1
+62.0	istest	T15 insert who=Contact(A3)	A3
+62.0	istest	T16 insert who=Contact(A3) what=Campaign	A3
+62.0	istest	T17 insert what=custom	null
+62.0	istest	T18 insert what=Case(A3)	null
+62.0	istest	T19 insert A1 then what=Campaign	null
+62.0	istest	E01 insert what=Account A1	A1
+62.0	istest	E02 update what=Opportunity	A1
+62.0	istest	E03 update what=Campaign	null
+62.0	istest	E04 update who=Contact(A3) what=null	A3
+62.0	istest	E05 insert what=Campaign	null
+62.0	istest	E06 insert what=Opportunity(A1 now)	A1
+62.0	istest	U01 insert what=Contract(A2)	A2
+62.0	istest	U02 insert what=custom lookup child(A2)	null
+62.0	istest	U03 insert what=custom master-detail child(A2)	A2
+62.0	istest	U04 insert who=Lead	null
+62.0	istest	U05 who=Contact after Contact AccountId A3->A1	A1
+62.0	istest	U06 insert what=Opportunity(no account) who=Contact(A1)	null
+62.0	istest	U07 Contract AccountId A2->A1	A1
+62.0	istest	U08 lookup child Account__c A2->A1	null
+62.0	istest	U11 insert what=Case(A2) who=Contact(A1)	A1
+62.0	istest	U12 insert what=custom lookup child(A1) who=Contact(A1)	A1
+62.0	istest	U13 insert what=custom master-detail child(A2) who=Contact(A3)	A2
+62.0	istest	U14 insert what=Contract(A1) who=Contact(A3)	A1
+62.0	istest	U15 insert what=Case(A2) who=Contact(A3)	A3
+62.0	istest	U16 update what=Case who=null	null
+62.0	istest	U10 after What Account deleted	deleted
+67.0	anonymous	F IF(ISNULL($ObjectType.Account.Fields.Name), 'null', 'set')	EXC System.FormulaValidationException: Field $ObjectType.Account.Fields.Name does not exist. Check spelling.
+67.0	anonymous	F Name	LF F
+67.0	anonymous	V validation rule	inserted
+67.0	anonymous	T01 insert what=Account A1	A1
+67.0	anonymous	T02 update what=Opportunity(A2)	A2
+67.0	anonymous	T03 update what=Case(A3)	null
+67.0	anonymous	T04 update what=Campaign	null
+67.0	anonymous	T05 update what=custom	null
+67.0	anonymous	T06 update what=Account A1	A1
+67.0	anonymous	T07 update what=null	null
+67.0	anonymous	T08 update who=Contact(A3) what=null	A3
+67.0	anonymous	T09 update who=Contact(A3) what=Campaign	A3
+67.0	anonymous	T10 update who=Contact(A3) what=Account A1	A1
+67.0	anonymous	T11 update who=Contact(no account) what=null	null
+67.0	anonymous	T12 update subject only	null
+67.0	anonymous	T13 insert what=Opportunity(A2)	A2
+67.0	anonymous	T14 after Opportunity AccountId->A1	A1
+67.0	anonymous	T15 insert who=Contact(A3)	A3
+67.0	anonymous	T16 insert who=Contact(A3) what=Campaign	A3
+67.0	anonymous	T17 insert what=custom	null
+67.0	anonymous	T18 insert what=Case(A3)	null
+67.0	anonymous	T19 insert A1 then what=Campaign	null
+67.0	anonymous	E01 insert what=Account A1	A1
+67.0	anonymous	E02 update what=Opportunity	A1
+67.0	anonymous	E03 update what=Campaign	null
+67.0	anonymous	E04 update who=Contact(A3) what=null	A3
+67.0	anonymous	E05 insert what=Campaign	null
+67.0	anonymous	E06 insert what=Opportunity(A1 now)	A1
+67.0	anonymous	U01 insert what=Contract(A2)	A2
+67.0	anonymous	U02 insert what=custom lookup child(A2)	null
+67.0	anonymous	U03 insert what=custom master-detail child(A2)	A2
+67.0	anonymous	U04 insert who=Lead	null
+67.0	anonymous	U05 who=Contact after Contact AccountId A3->A1	A1
+67.0	anonymous	U06 insert what=Opportunity(no account) who=Contact(A1)	null
+67.0	anonymous	U07 Contract AccountId A2->A1	A1
+67.0	anonymous	U08 lookup child Account__c A2->A1	null
+67.0	anonymous	U11 insert what=Case(A2) who=Contact(A1)	A1
+67.0	anonymous	U12 insert what=custom lookup child(A1) who=Contact(A1)	A1
+67.0	anonymous	U13 insert what=custom master-detail child(A2) who=Contact(A3)	A2
+67.0	anonymous	U14 insert what=Contract(A1) who=Contact(A3)	A1
+67.0	anonymous	U15 insert what=Case(A2) who=Contact(A3)	A3
+67.0	anonymous	U16 update what=Case who=null	null
+67.0	anonymous	U10 after What Account deleted	deleted
+67.0	istest	T01 insert what=Account A1	A1
+67.0	istest	T02 update what=Opportunity(A2)	A2
+67.0	istest	T03 update what=Case(A3)	null
+67.0	istest	T04 update what=Campaign	null
+67.0	istest	T05 update what=custom	null
+67.0	istest	T06 update what=Account A1	A1
+67.0	istest	T07 update what=null	null
+67.0	istest	T08 update who=Contact(A3) what=null	A3
+67.0	istest	T09 update who=Contact(A3) what=Campaign	A3
+67.0	istest	T10 update who=Contact(A3) what=Account A1	A1
+67.0	istest	T11 update who=Contact(no account) what=null	null
+67.0	istest	T12 update subject only	null
+67.0	istest	T13 insert what=Opportunity(A2)	A2
+67.0	istest	T14 after Opportunity AccountId->A1	A1
+67.0	istest	T15 insert who=Contact(A3)	A3
+67.0	istest	T16 insert who=Contact(A3) what=Campaign	A3
+67.0	istest	T17 insert what=custom	null
+67.0	istest	T18 insert what=Case(A3)	null
+67.0	istest	T19 insert A1 then what=Campaign	null
+67.0	istest	E01 insert what=Account A1	A1
+67.0	istest	E02 update what=Opportunity	A1
+67.0	istest	E03 update what=Campaign	null
+67.0	istest	E04 update who=Contact(A3) what=null	A3
+67.0	istest	E05 insert what=Campaign	null
+67.0	istest	E06 insert what=Opportunity(A1 now)	A1
+67.0	istest	U01 insert what=Contract(A2)	A2
+67.0	istest	U02 insert what=custom lookup child(A2)	null
+67.0	istest	U03 insert what=custom master-detail child(A2)	A2
+67.0	istest	U04 insert who=Lead	null
+67.0	istest	U05 who=Contact after Contact AccountId A3->A1	A1
+67.0	istest	U06 insert what=Opportunity(no account) who=Contact(A1)	null
+67.0	istest	U07 Contract AccountId A2->A1	A1
+67.0	istest	U08 lookup child Account__c A2->A1	null
+67.0	istest	U11 insert what=Case(A2) who=Contact(A1)	A1
+67.0	istest	U12 insert what=custom lookup child(A1) who=Contact(A1)	A1
+67.0	istest	U13 insert what=custom master-detail child(A2) who=Contact(A3)	A2
+67.0	istest	U14 insert what=Contract(A1) who=Contact(A3)	A1
+67.0	istest	U15 insert what=Case(A2) who=Contact(A3)	A3
+67.0	istest	U16 update what=Case who=null	null
+67.0	istest	U10 after What Account deleted	deleted
+62.0	deploy	ot-formula LF_Probe__c.OT_Formula__c	Failed: Field $ObjectType.Account.Fields.Name does not exist. Check spelling.
+62.0	deploy	ot-default LF_Probe__c.OT_Default__c	Failed: Field $ObjectType.Account.Fields.Name does not exist. Check spelling.
+62.0	deploy	ot-wf LF_Probe__c.LF_OT_Update	Failed: Field $ObjectType.Account.Fields.Name does not exist. Check spelling.
+62.0	deploy	ot-wf LF_Probe__c.LF_OT_Rule	Failed: Field $ObjectType.Account.Fields.Name does not exist. Check spelling.
+62.0	deploy	ot-flow LF_OT_Flow	Failed: field integrity exception: unknown (The formula expression is invalid: Field $ObjectType.Account.Fields.Name does not exist. Check spelling.)
+62.0	deploy	validation-rule LF_Probe__c.LF_OT_Rule	Succeeded
+67.0	deploy	ot-formula LF_Probe__c.OT_Formula__c	Failed: Field $ObjectType.Account.Fields.Name does not exist. Check spelling.
+67.0	deploy	ot-default LF_Probe__c.OT_Default__c	Failed: Field $ObjectType.Account.Fields.Name does not exist. Check spelling.
+67.0	deploy	ot-wf LF_Probe__c.LF_OT_Update	Failed: Field $ObjectType.Account.Fields.Name does not exist. Check spelling.
+67.0	deploy	ot-wf LF_Probe__c.LF_OT_Rule	Failed: Field $ObjectType.Account.Fields.Name does not exist. Check spelling.
+67.0	deploy	ot-flow LF_OT_Flow	Failed: field integrity exception: unknown (The formula expression is invalid: Field $ObjectType.Account.Fields.Name does not exist. Check spelling.)
+67.0	deploy	validation-rule LF_Probe__c.LF_OT_Rule	Succeeded

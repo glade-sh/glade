@@ -1,0 +1,25 @@
+api	route	case	result
+62.0	project-compile	all.CdpQuery.cancelQuerySql(String)	3:Type is not visible: ConnectApi.CdpQuery
+62.0	project-compile	all.CommerceCart.abortCartOperation(String,String,String)	3:Type is not visible: ConnectApi.CommerceCart
+62.0	project-compile	all.EinsteinLlm.createEmbeddings(ConnectApi.EinsteinLlmEmbeddingsInput)	3:Type is not visible: ConnectApi.EinsteinLLM
+62.0	project-compile	all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)	3:Type is not visible: ConnectApi.Knowledge
+62.0	project-compile	all.NavigationMenu.getCommunityNavigationMenu(String,String,String,ConnectApi.PublishStatus,Boolean,Boolean,List<ConnectApi.NavigationMenuItemType>)	3:Type is not visible: ConnectApi.NavigationMenu
+62.0	project-compile	all.OmniDesignerConnect.clearDatamapperCache(ConnectApi.DatamapperCacheInputParamRepresentation)	3:Method not added until version 64.0: void ConnectApi.DatamapperCacheInputParamRepresentation.<init>()
+62.0	project-compile	all.Personalization.createAudience(String,ConnectApi.AudienceInput)	3:Type is not visible: ConnectApi.Personalization
+62.0	project-compile	all.Wave.executeQuery(String)	3:Type is not visible: ConnectApi.Wave
+67.0	project-compile	all.CdpQuery.cancelQuerySql(String)	3:Type is not visible: ConnectApi.CdpQuery
+67.0	project-compile	all.CommerceCart.abortCartOperation(String,String,String)	3:Type is not visible: ConnectApi.CommerceCart
+67.0	project-compile	all.EinsteinLlm.createEmbeddings(ConnectApi.EinsteinLlmEmbeddingsInput)	3:Type is not visible: ConnectApi.EinsteinLLM
+67.0	project-compile	all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)	3:Type is not visible: ConnectApi.Knowledge
+67.0	project-compile	all.NavigationMenu.getCommunityNavigationMenu(String,String,String,ConnectApi.PublishStatus,Boolean,Boolean,List<ConnectApi.NavigationMenuItemType>)	3:Type is not visible: ConnectApi.NavigationMenu
+67.0	project-compile	all.OmniDesignerConnect.clearDatamapperCache(ConnectApi.DatamapperCacheInputParamRepresentation)	3:Type is not visible: ConnectApi.OmniDesignerConnect
+67.0	project-compile	all.Personalization.createAudience(String,ConnectApi.AudienceInput)	3:Type is not visible: ConnectApi.Personalization
+67.0	project-compile	all.Wave.executeQuery(String)	3:Type is not visible: ConnectApi.Wave
+68.0	project-compile	all.CdpQuery.cancelQuerySql(String)	3:Type is not visible: ConnectApi.CdpQuery
+68.0	project-compile	all.CommerceCart.abortCartOperation(String,String,String)	3:Type is not visible: ConnectApi.CommerceCart
+68.0	project-compile	all.EinsteinLlm.createEmbeddings(ConnectApi.EinsteinLlmEmbeddingsInput)	3:Type is not visible: ConnectApi.EinsteinLLM
+68.0	project-compile	all.Knowledge.getTopViewedArticlesForTopic(String,String,Integer)	3:Type is not visible: ConnectApi.Knowledge
+68.0	project-compile	all.NavigationMenu.getCommunityNavigationMenu(String,String,String,ConnectApi.PublishStatus,Boolean,Boolean,List<ConnectApi.NavigationMenuItemType>)	3:Type is not visible: ConnectApi.NavigationMenu
+68.0	project-compile	all.OmniDesignerConnect.clearDatamapperCache(ConnectApi.DatamapperCacheInputParamRepresentation)	3:Type is not visible: ConnectApi.OmniDesignerConnect
+68.0	project-compile	all.Personalization.createAudience(String,ConnectApi.AudienceInput)	3:Type is not visible: ConnectApi.Personalization
+68.0	project-compile	all.Wave.executeQuery(String)	3:Type is not visible: ConnectApi.Wave

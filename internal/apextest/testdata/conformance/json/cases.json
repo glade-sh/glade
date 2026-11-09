@@ -2405,7 +2405,7 @@
       "expected": "UNCAUGHT|System.UnexpectedException: Salesforce System Error: 614048281-4552867 (308432432) (308432432)",
       "floorExpected": "UNCAUGHT|System.UnexpectedException: Salesforce System Error: 1016898172-3658830 (308432432) (308432432)",
       "compile": false,
-      "carry": "A18 JSON: Salesforce aborts with a volatile internal error ID; local closed-generator JSONException remains explicit."
+      "carry": "A18 JSON: Salesforce aborts with a volatile internal error ID; the stable uncaught category is covered by json_generator_closed native conformance tests."
     },
     {
       "id": "R304",
@@ -2569,7 +2569,7 @@
       "compile": true
     }
   ],
-  "reviewControlSource": "Owned JSON review controls using exception transport at API 62.0 and 67.0; 26 exact floor/ceiling matches observed before mapping fixes.",
+  "reviewControlSource": "json/review-regressions/cases.py and api62/api67 native rows + native run log; <owned-scratch> exception transport; 26 exact floor/ceiling matches captured before mapping fixes.",
   "reviewControls": [
     {
       "id": "R330",
@@ -2780,7 +2780,7 @@
       "nativeNull": false
     }
   ],
-  "orderingControlSource": "Owned JSON serialization-order controls using exception transport at API 62.0 and 67.0; source order, deserialized canonical-name buckets, stable collisions/resizing and assignment updates.",
+  "orderingControlSource": "json/serialization-order and ordering-review/cases.py plus api62/api67 native rows + native run log; assigned <owned-scratch>, exception transport; source order, deserialized canonical-name buckets, stable collisions/resizing and assignment updates.",
   "orderingControls": [
     {
       "id": "R356",
@@ -3021,7 +3021,7 @@
       "compile": false
     }
   ],
-  "diagnosticControlSource": "Owned JSON parent-diagnostic-order controls using exception transport at API 62.0 and 67.0; first unknown parent string field in input order, regular and strict, observed before the fix.",
+  "diagnosticControlSource": "json/parent-diagnostic-order/cases.py and api62/api67 native rows + native run log; <owned-scratch> exception transport; first unknown parent string field in input order, regular and strict, captured before fix.",
   "diagnosticControls": [
     {
       "id": "R390",

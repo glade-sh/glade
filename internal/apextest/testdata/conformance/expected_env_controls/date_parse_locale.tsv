@@ -1,0 +1,45 @@
+source_api	locale	input	outcome
+62.0	en_CA	1990-01-01	1990-01-01
+62.0	en_CA	1990-1-1	1990-01-01
+62.0	en_CA	1990/01/01	System.TypeException: Invalid date: 1990/01/01
+62.0	en_CA	1990-13-01	System.TypeException: Invalid date: 1990-13-01
+62.0	en_CA	1990-02-30	System.TypeException: Invalid date: 1990-02-30
+62.0	en_CA	2020-02-29	2020-02-29
+62.0	en_CA	 1990-01-01	1990-01-01
+62.0	en_CA	1/2/1990	System.TypeException: Invalid date: 1/2/1990
+62.0	en_CA	01/02/1990	System.TypeException: Invalid date: 01/02/1990
+62.0	en_CA	2/1/1990	System.TypeException: Invalid date: 2/1/1990
+62.0	en_CA	1/28/2008	System.TypeException: Invalid date: 1/28/2008
+67.0	en_CA	1990-01-01	1990-01-01
+67.0	en_CA	1990-1-1	1990-01-01
+67.0	en_CA	1990/01/01	System.TypeException: Invalid date: 1990/01/01
+67.0	en_CA	1990-13-01	System.TypeException: Invalid date: 1990-13-01
+67.0	en_CA	1990-02-30	System.TypeException: Invalid date: 1990-02-30
+67.0	en_CA	2020-02-29	2020-02-29
+67.0	en_CA	 1990-01-01	1990-01-01
+67.0	en_CA	1/2/1990	System.TypeException: Invalid date: 1/2/1990
+67.0	en_CA	01/02/1990	System.TypeException: Invalid date: 01/02/1990
+67.0	en_CA	2/1/1990	System.TypeException: Invalid date: 2/1/1990
+67.0	en_CA	1/28/2008	System.TypeException: Invalid date: 1/28/2008
+62.0	en_US	1990-01-01	System.TypeException: Invalid date: 1990-01-01
+62.0	en_US	1990-1-1	System.TypeException: Invalid date: 1990-1-1
+62.0	en_US	1990/01/01	System.TypeException: Invalid date: 1990/01/01
+62.0	en_US	1990-13-01	System.TypeException: Invalid date: 1990-13-01
+62.0	en_US	1990-02-30	System.TypeException: Invalid date: 1990-02-30
+62.0	en_US	2020-02-29	System.TypeException: Invalid date: 2020-02-29
+62.0	en_US	 1990-01-01	System.TypeException: Invalid date:  1990-01-01
+62.0	en_US	1/2/1990	1990-01-02
+62.0	en_US	01/02/1990	1990-01-02
+62.0	en_US	2/1/1990	1990-02-01
+62.0	en_US	1/28/2008	2008-01-28
+67.0	en_US	1990-01-01	System.TypeException: Invalid date: 1990-01-01
+67.0	en_US	1990-1-1	System.TypeException: Invalid date: 1990-1-1
+67.0	en_US	1990/01/01	System.TypeException: Invalid date: 1990/01/01
+67.0	en_US	1990-13-01	System.TypeException: Invalid date: 1990-13-01
+67.0	en_US	1990-02-30	System.TypeException: Invalid date: 1990-02-30
+67.0	en_US	2020-02-29	System.TypeException: Invalid date: 2020-02-29
+67.0	en_US	 1990-01-01	System.TypeException: Invalid date:  1990-01-01
+67.0	en_US	1/2/1990	1990-01-02
+67.0	en_US	01/02/1990	1990-01-02
+67.0	en_US	2/1/1990	1990-02-01
+67.0	en_US	1/28/2008	2008-01-28

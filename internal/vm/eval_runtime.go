@@ -2,7 +2,14 @@ package vm
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
+	"unicode"
+	"unicode/utf8"
+	"unsafe"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	"github.com/glade-sh/glade/internal/ir"
 )
@@ -213,7 +220,13 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 					return safeNavigationNull(), nil
 				}
 			}
-			value, err := vm.lookupPath(receiver, splitFieldPath(fieldName))
+			// Native shapemisc_capture c17: a field read through an earlier
+			// field access counts as a chained read, like "holder.member.field".
+			hops := 0
+			if expr.Left.Kind == ir.ExprCall && (strings.HasPrefix(expr.Left.Callee, "__field:") || strings.HasPrefix(expr.Left.Callee, "__safe_field:")) {
+				hops = 1
+			}
+			value, err := vm.lookupPathFromHop(receiver, splitFieldPath(fieldName), hops)
 			if err == nil && fieldType != "" {
 				value.Static = fieldType
 				if value.Kind == ValueNull {
@@ -587,7 +600,7 @@ func (vm *VM) evalBinary(op string, left, right Value, result *Result) (Value, e
 		// while Object operands use the generic equality path below.
 		if left.Kind == ValueString && right.Kind == ValueString &&
 			canonicalApexScalarType(left.Static) != "Object" && canonicalApexScalarType(right.Static) != "Object" {
-			equal := strings.EqualFold(left.Text, right.Text)
+			equal := vm.apexStringEqualFold(left.Text, right.Text)
 			if strings.EqualFold(left.Type, "Id") || strings.EqualFold(right.Type, "Id") {
 				equal = apexIDTextEqual(left.Text, right.Text)
 			}
@@ -658,7 +671,7 @@ func (vm *VM) apexEquals(left, right Value, result *Result) (bool, error) {
 		if shouldCompareTextAsID(left.Text, right.Text) {
 			return apexIDTextEqual(left.Text, right.Text), nil
 		}
-		return strings.EqualFold(left.Text, right.Text), nil
+		return vm.apexStringEqualFold(left.Text, right.Text), nil
 	}
 	if left.Kind == ValueList && right.Kind == ValueList {
 		if len(left.List) != len(right.List) {
@@ -995,4 +1008,231 @@ func memberlessShadowClass(class Class) bool {
 		len(class.StaticInitializers) == 0 && len(class.InstanceInitializers) == 0 &&
 		len(class.EnumValues) == 0 && class.SuperClass == "" && len(class.Interfaces) == 0 &&
 		!class.IsInterface && !class.PlatformType
+}
+
+// apexStringEqualFold is String ==. Native compares the upper-cased texts in the
+// running user's locale: Turkish and Azeri map i to dotted I, so "I" == "i" is
+// false there, while dotless i (U+0131) equals "I" in every locale.
+func (vm *VM) apexStringEqualFold(left, right string) bool {
+	if left == right {
+		return true
+	}
+	// One pass over the ASCII prefix settles almost every pair without the locale:
+	// a mismatch between two ASCII characters cannot be repaired by later text,
+	// and only an i/I case pair (Turkish dotting) depends on the user's locale.
+	dottedPair := false
+	n := min(len(left), len(right))
+	i := 0
+	for ; i < n; i++ {
+		a, b := left[i], right[i]
+		if a == b {
+			continue
+		}
+		if a|b >= utf8.RuneSelf {
+			return vm.apexStringEqualFoldLocale(left, right)
+		}
+		if 'A' <= a && a <= 'Z' {
+			a += 'a' - 'A'
+		}
+		if 'A' <= b && b <= 'Z' {
+			b += 'a' - 'A'
+		}
+		if a != b {
+			return false
+		}
+		if a == 'i' {
+			dottedPair = true
+		}
+	}
+	if len(left) != len(right) {
+		longer := left
+		if len(right) > len(left) {
+			longer = right
+		}
+		if isASCIIString(longer[n:]) {
+			return false
+		}
+		return vm.apexStringEqualFoldLocale(left, right)
+	}
+	// Both texts are ASCII and equal ignoring case; an i/I pair is unequal only
+	// under Turkish dotting ('i' upper-cases to dotted I there).
+	return !dottedPair || !vm.turkishStringEquality()
+}
+
+// apexStringEqualFoldLocale settles the pairs the ASCII pass could not: text
+// with a non-ASCII byte, or an i/I case pair. Native upper-cases and then
+// lower-cases both texts in the running user's locale with the full Unicode
+// mappings, so 'Straße' == 'STRASSE', 'ﬁ' == 'FI' and U+212A == 'k' hold
+// everywhere while 'ß' != 'ẞ', and under Turkish dotting 'I' == 'i' and
+// 'ﬁ' == 'fi' are false (stdlib_string_equality_c6267).
+func (vm *VM) apexStringEqualFoldLocale(left, right string) bool {
+	if vm.turkishStringEquality() {
+		casers := vm.caseCasers()
+		return casers.turkishKey(left) == casers.turkishKey(right)
+	}
+	equal, needFull := simpleCaseEqual(left, right)
+	if !needFull {
+		return equal
+	}
+	casers := vm.caseCasers()
+	return casers.key(left) == casers.key(right)
+}
+
+// simpleCaseEqual compares the texts rune by rune under the simple uppercase
+// then lowercase mappings in one pass. needFull reports that a rune whose full
+// mapping is several code points (ß, İ, ŉ, ǰ, Greek with dialytika or iota
+// subscript, the Latin and Armenian ligatures) was reached before the texts
+// were settled; only then can the full mapping differ from this answer.
+func simpleCaseEqual(left, right string) (equal, needFull bool) {
+	for len(left) > 0 && len(right) > 0 {
+		a, b := rune(left[0]), rune(right[0])
+		if a < utf8.RuneSelf && b < utf8.RuneSelf {
+			left, right = left[1:], right[1:]
+			if a == b {
+				continue
+			}
+			if 'A' <= a && a <= 'Z' {
+				a += 'a' - 'A'
+			}
+			if 'A' <= b && b <= 'Z' {
+				b += 'a' - 'A'
+			}
+			if a != b {
+				return false, false
+			}
+			continue
+		}
+		var na, nb int
+		a, na = decodeApexRune(left)
+		b, nb = decodeApexRune(right)
+		left, right = left[na:], right[nb:]
+		if hasFullCaseExpansion(a) || hasFullCaseExpansion(b) {
+			return false, true
+		}
+		if a == b || unicode.SimpleFold(a) == b {
+			// Most case pairs are one fold apart; a longer orbit (K/k, ſ/s) or a
+			// one-way mapping (ı/I) falls through to the upper-then-lower keys.
+			continue
+		}
+		ua, ub := unicode.ToUpper(a), unicode.ToUpper(b)
+		if ua != ub && unicode.ToLower(ua) != unicode.ToLower(ub) {
+			return false, false
+		}
+	}
+	// A leftover on one side maps to non-empty text, so the texts differ.
+	return len(left) == 0 && len(right) == 0, false
+}
+
+// hasFullCaseExpansion reports whether r is a code point whose SpecialCasing.txt
+// unconditional uppercase mapping, or the lowercase mapping of that uppercase,
+// is more than one code point. The ranges are conservative supersets; every
+// such rune is inside them (checked against x/text cases over the whole code
+// space: lower(upper(r)) equals the simple mapping for every other rune).
+func hasFullCaseExpansion(r rune) bool {
+	switch {
+	case r < 0xDF:
+		return false
+	case r == 0xDF, r == 0x130, r == 0x149, r == 0x1F0, r == 0x390, r == 0x3B0, r == 0x587:
+		return true
+	case 0x1E96 <= r && r <= 0x1E9A, 0x1F50 <= r && r <= 0x1FFC, 0xFB00 <= r && r <= 0xFB17:
+		return true
+	}
+	return false
+}
+
+// turkishStringEquality reports whether the running user's locale upper-cases
+// with Turkish dotting. Native fixes that locale when the user context starts
+// (string_equality_locale_change_c14, API 62.0 and 67.0): a DML update of the
+// running user's own LocaleSidKey changes UserInfo.getLocale() at once but not
+// String == until the next transaction, Test.startTest does not refresh it,
+// and each System.runAs block reads the stored record on entry. The answer is
+// cached per test context and current-user object (its field map identity);
+// execute resets it per transaction and runAs snapshots it on entry. A user
+// without fields is not cached.
+func (vm *VM) turkishStringEquality() bool {
+	key := localeCaseKey{ctx: vm.testContext}
+	user := &vm.executionUser
+	if vm.testContext != nil {
+		user = &vm.testContext.CurrentUser
+	}
+	cacheable := user.Kind == ValueObject && user.Fields != nil
+	if cacheable {
+		key.fields = reflect.ValueOf(user.Fields).UnsafePointer()
+	} else if vm.testContext == nil && (user.Kind == "" || user.Kind == ValueNull) {
+		// The org's default user answers; SetOrg and SetCurrentUser reset.
+		cacheable = true
+	}
+	if cacheable && vm.localeCase.valid && vm.localeCase.key == key {
+		return vm.localeCase.turkish
+	}
+	lang, _, _ := strings.Cut(vm.currentUserLocale(), "_")
+	turkish := lang == "tr" || lang == "az"
+	if cacheable {
+		vm.localeCase = localeCaseCache{valid: true, key: key, turkish: turkish}
+	}
+	return turkish
+}
+
+// snapshotLocaleCase fixes the String == locale for a user context that starts
+// now (a runAs block): the stored user record decides, whatever an earlier
+// comparison under the same object cached.
+func (vm *VM) snapshotLocaleCase() {
+	vm.localeCase = localeCaseCache{}
+	vm.turkishStringEquality()
+}
+
+// currentUserLocale is the running user's LocaleSidKey as UserInfo.getLocale()
+// reports it: the stored User record first, so a DML update made during the
+// transaction (or before a runAs block that holds a stale User object) shows at
+// once; then the in-memory user object; then en_US.
+func (vm *VM) currentUserLocale() string {
+	user := vm.executionUser
+	if vm.testContext != nil {
+		user = vm.testContext.CurrentUser
+	}
+	if user.Kind == ValueObject {
+		if value, ok := vm.currentUserStoredField(user, "LocaleSidKey"); ok && strings.TrimSpace(value) != "" {
+			return value
+		}
+	}
+	return vm.currentUserInfoField("LocaleSidKey", "en_US")
+}
+
+type localeCaseKey struct {
+	ctx    *TestContext
+	fields unsafe.Pointer
+}
+
+type localeCaseCache struct {
+	valid   bool
+	key     localeCaseKey
+	turkish bool
+}
+
+// caseCasers holds the full case transformers for String ==, created once per
+// machine. Caser.String resets the transformer per call and the machine is
+// single-threaded.
+type caseCasers struct {
+	upper, lower               cases.Caser
+	turkishUpper, turkishLower cases.Caser
+}
+
+// key and turkishKey map the valid runs of text; a lone surrogate (its own
+// code unit, stdlib_surrogate_c14) passes through instead of becoming U+FFFD.
+func (c *caseCasers) key(text string) string {
+	return mapApexStringSegments(text, func(segment string) string { return c.lower.String(c.upper.String(segment)) })
+}
+
+func (c *caseCasers) turkishKey(text string) string {
+	return mapApexStringSegments(text, func(segment string) string { return c.turkishLower.String(c.turkishUpper.String(segment)) })
+}
+
+func (vm *VM) caseCasers() *caseCasers {
+	if vm.casers == nil {
+		vm.casers = &caseCasers{
+			upper: cases.Upper(language.Und), lower: cases.Lower(language.Und),
+			turkishUpper: cases.Upper(language.Turkish), turkishLower: cases.Lower(language.Turkish),
+		}
+	}
+	return vm.casers
 }

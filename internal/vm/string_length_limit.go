@@ -16,5 +16,5 @@ func concatApexStrings(left, right string) (Value, error) {
 	if len(left) > apexStringAllocationLimit-len(right) && apexStringLength(left) > apexStringAllocationLimit-apexStringLength(right) {
 		return Null, newExceptionError("StringException", "String length exceeds maximum: 10000000")
 	}
-	return String(left + right), nil
+	return String(joinApexStrings(left, right)), nil
 }

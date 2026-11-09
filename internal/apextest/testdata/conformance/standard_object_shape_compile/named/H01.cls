@@ -1,0 +1,1 @@
+public class H01 { public static void m() { NsHolder.Quote q = new NsHolder.Quote(); System.debug(q.v); } }

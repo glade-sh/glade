@@ -1,0 +1,682 @@
+[
+  {
+    "route": "named-negative-source",
+    "api": "62.0",
+    "case": "GiftCommitment.LastNextGenCmtProcDtTm",
+    "kind": "read",
+    "class": "OwnedNeg62_0_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "62.0",
+    "case": "GiftCommitment.LastNextGenCmtProcDtTm",
+    "kind": "query",
+    "class": "OwnedNeg62_0_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "62.0",
+    "case": "GiftCommitment.LastNextGenCmtProcError",
+    "kind": "read",
+    "class": "OwnedNeg62_1_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "62.0",
+    "case": "GiftCommitment.LastNextGenCmtProcError",
+    "kind": "query",
+    "class": "OwnedNeg62_1_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "62.0",
+    "case": "GiftCommitment.PartyPhilanthropicRsrchPrflId",
+    "kind": "read",
+    "class": "OwnedNeg62_2_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "62.0",
+    "case": "GiftCommitment.PartyPhilanthropicRsrchPrflId",
+    "kind": "query",
+    "class": "OwnedNeg62_2_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "62.0",
+    "case": "GiftTransaction.GenerationalCohort",
+    "kind": "read",
+    "class": "OwnedNeg62_3_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "62.0",
+    "case": "GiftTransaction.GenerationalCohort",
+    "kind": "query",
+    "class": "OwnedNeg62_3_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "62.0",
+    "case": "GiftTransaction.PartyPhilanthropicRsrchPrflId",
+    "kind": "read",
+    "class": "OwnedNeg62_4_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "62.0",
+    "case": "GiftTransaction.PartyPhilanthropicRsrchPrflId",
+    "kind": "query",
+    "class": "OwnedNeg62_4_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "62.0",
+    "case": "GiftTransaction.TaxDeductionAmount",
+    "kind": "read",
+    "class": "OwnedNeg62_5_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "62.0",
+    "case": "GiftTransaction.TaxDeductionAmount",
+    "kind": "query",
+    "class": "OwnedNeg62_5_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "63.0",
+    "case": "GiftCommitment.LastNextGenCmtProcDtTm",
+    "kind": "read",
+    "class": "OwnedNeg63_0_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "63.0",
+    "case": "GiftCommitment.LastNextGenCmtProcDtTm",
+    "kind": "query",
+    "class": "OwnedNeg63_0_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "63.0",
+    "case": "GiftCommitment.LastNextGenCmtProcError",
+    "kind": "read",
+    "class": "OwnedNeg63_1_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "63.0",
+    "case": "GiftCommitment.LastNextGenCmtProcError",
+    "kind": "query",
+    "class": "OwnedNeg63_1_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "63.0",
+    "case": "GiftCommitment.PartyPhilanthropicRsrchPrflId",
+    "kind": "read",
+    "class": "OwnedNeg63_2_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "63.0",
+    "case": "GiftCommitment.PartyPhilanthropicRsrchPrflId",
+    "kind": "query",
+    "class": "OwnedNeg63_2_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "63.0",
+    "case": "GiftTransaction.PartyPhilanthropicRsrchPrflId",
+    "kind": "read",
+    "class": "OwnedNeg63_4_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "63.0",
+    "case": "GiftTransaction.PartyPhilanthropicRsrchPrflId",
+    "kind": "query",
+    "class": "OwnedNeg63_4_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "64.0",
+    "case": "GiftCommitment.LastNextGenCmtProcDtTm",
+    "kind": "read",
+    "class": "OwnedNeg64_0_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "64.0",
+    "case": "GiftCommitment.LastNextGenCmtProcDtTm",
+    "kind": "query",
+    "class": "OwnedNeg64_0_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "64.0",
+    "case": "GiftCommitment.LastNextGenCmtProcError",
+    "kind": "read",
+    "class": "OwnedNeg64_1_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "64.0",
+    "case": "GiftCommitment.LastNextGenCmtProcError",
+    "kind": "query",
+    "class": "OwnedNeg64_1_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "65.0",
+    "case": "GiftCommitment.LastNextGenCmtProcDtTm",
+    "kind": "read",
+    "class": "OwnedNeg65_0_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "65.0",
+    "case": "GiftCommitment.LastNextGenCmtProcDtTm",
+    "kind": "query",
+    "class": "OwnedNeg65_0_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "65.0",
+    "case": "GiftCommitment.LastNextGenCmtProcError",
+    "kind": "read",
+    "class": "OwnedNeg65_1_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "65.0",
+    "case": "GiftCommitment.LastNextGenCmtProcError",
+    "kind": "query",
+    "class": "OwnedNeg65_1_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "66.0",
+    "case": "GiftCommitment.LastNextGenCmtProcDtTm",
+    "kind": "read",
+    "class": "OwnedNeg66_0_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "66.0",
+    "case": "GiftCommitment.LastNextGenCmtProcDtTm",
+    "kind": "query",
+    "class": "OwnedNeg66_0_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "66.0",
+    "case": "GiftCommitment.LastNextGenCmtProcError",
+    "kind": "read",
+    "class": "OwnedNeg66_1_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "66.0",
+    "case": "GiftCommitment.LastNextGenCmtProcError",
+    "kind": "query",
+    "class": "OwnedNeg66_1_Query"
+  },
+  {
+    "route": "named-positive-deploy",
+    "status": 0,
+    "failures": []
+  },
+  {
+    "route": "named-tests",
+    "status": 100,
+    "summary": "Failed",
+    "tests": [
+      {
+        "class": "OwnedMatrix62",
+        "outcome": "Pass",
+        "message": null
+      },
+      {
+        "class": "OwnedMatrix67",
+        "outcome": "Fail",
+        "message": "System.AssertException: Assertion Failed: put GiftTransaction.TaxDeductionAmount: Expected: true, Actual: false"
+      },
+      {
+        "class": "OwnedMatrix64",
+        "outcome": "Fail",
+        "message": "System.AssertException: Assertion Failed: put GiftTransaction.TaxDeductionAmount: Expected: true, Actual: false"
+      },
+      {
+        "class": "OwnedMatrix65",
+        "outcome": "Fail",
+        "message": "System.AssertException: Assertion Failed: put GiftTransaction.TaxDeductionAmount: Expected: true, Actual: false"
+      },
+      {
+        "class": "OwnedMatrix66",
+        "outcome": "Fail",
+        "message": "System.AssertException: Assertion Failed: put GiftTransaction.TaxDeductionAmount: Expected: true, Actual: false"
+      },
+      {
+        "class": "OwnedMatrix63",
+        "outcome": "Fail",
+        "message": "System.AssertException: Assertion Failed: put GiftTransaction.TaxDeductionAmount: Expected: true, Actual: false"
+      }
+    ]
+  },
+  {
+    "route": "named-negative-deploy",
+    "status": 1,
+    "failures": [
+      {
+        "name": "OwnedNeg62_0_Query",
+        "problem": "SELECT LastNextGenCmtProcDtTm FROM GiftCommitment\n       ^\nERROR at Row:1:Column:8\nNo such column 'LastNextGenCmtProcDtTm' on entity 'GiftCommitment'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg62_0_Read",
+        "problem": "Variable does not exist: LastNextGenCmtProcDtTm"
+      },
+      {
+        "name": "OwnedNeg62_1_Query",
+        "problem": "SELECT LastNextGenCmtProcError FROM GiftCommitment\n       ^\nERROR at Row:1:Column:8\nNo such column 'LastNextGenCmtProcError' on entity 'GiftCommitment'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg62_1_Read",
+        "problem": "Variable does not exist: LastNextGenCmtProcError"
+      },
+      {
+        "name": "OwnedNeg62_2_Query",
+        "problem": "SELECT PartyPhilanthropicRsrchPrflId FROM\n       ^\nERROR at Row:1:Column:8\nNo such column 'PartyPhilanthropicRsrchPrflId' on entity 'GiftCommitment'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg62_2_Read",
+        "problem": "Variable does not exist: PartyPhilanthropicRsrchPrflId"
+      },
+      {
+        "name": "OwnedNeg62_3_Query",
+        "problem": "SELECT GenerationalCohort FROM GiftTransaction\n       ^\nERROR at Row:1:Column:8\nNo such column 'GenerationalCohort' on entity 'GiftTransaction'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg62_3_Read",
+        "problem": "Variable does not exist: GenerationalCohort"
+      },
+      {
+        "name": "OwnedNeg62_4_Query",
+        "problem": "SELECT PartyPhilanthropicRsrchPrflId FROM\n       ^\nERROR at Row:1:Column:8\nNo such column 'PartyPhilanthropicRsrchPrflId' on entity 'GiftTransaction'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg62_4_Read",
+        "problem": "Variable does not exist: PartyPhilanthropicRsrchPrflId"
+      },
+      {
+        "name": "OwnedNeg62_5_Query",
+        "problem": "SELECT TaxDeductionAmount FROM GiftTransaction\n       ^\nERROR at Row:1:Column:8\nNo such column 'TaxDeductionAmount' on entity 'GiftTransaction'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg62_5_Read",
+        "problem": "Variable does not exist: TaxDeductionAmount"
+      },
+      {
+        "name": "OwnedNeg63_0_Query",
+        "problem": "SELECT LastNextGenCmtProcDtTm FROM GiftCommitment\n       ^\nERROR at Row:1:Column:8\nNo such column 'LastNextGenCmtProcDtTm' on entity 'GiftCommitment'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg63_0_Read",
+        "problem": "Variable does not exist: LastNextGenCmtProcDtTm"
+      },
+      {
+        "name": "OwnedNeg63_1_Query",
+        "problem": "SELECT LastNextGenCmtProcError FROM GiftCommitment\n       ^\nERROR at Row:1:Column:8\nNo such column 'LastNextGenCmtProcError' on entity 'GiftCommitment'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg63_1_Read",
+        "problem": "Variable does not exist: LastNextGenCmtProcError"
+      },
+      {
+        "name": "OwnedNeg63_2_Query",
+        "problem": "SELECT PartyPhilanthropicRsrchPrflId FROM\n       ^\nERROR at Row:1:Column:8\nNo such column 'PartyPhilanthropicRsrchPrflId' on entity 'GiftCommitment'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg63_2_Read",
+        "problem": "Variable does not exist: PartyPhilanthropicRsrchPrflId"
+      },
+      {
+        "name": "OwnedNeg63_4_Query",
+        "problem": "SELECT PartyPhilanthropicRsrchPrflId FROM\n       ^\nERROR at Row:1:Column:8\nNo such column 'PartyPhilanthropicRsrchPrflId' on entity 'GiftTransaction'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg63_4_Read",
+        "problem": "Variable does not exist: PartyPhilanthropicRsrchPrflId"
+      },
+      {
+        "name": "OwnedNeg64_0_Query",
+        "problem": "SELECT LastNextGenCmtProcDtTm FROM GiftCommitment\n       ^\nERROR at Row:1:Column:8\nNo such column 'LastNextGenCmtProcDtTm' on entity 'GiftCommitment'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg64_0_Read",
+        "problem": "Variable does not exist: LastNextGenCmtProcDtTm"
+      },
+      {
+        "name": "OwnedNeg64_1_Query",
+        "problem": "SELECT LastNextGenCmtProcError FROM GiftCommitment\n       ^\nERROR at Row:1:Column:8\nNo such column 'LastNextGenCmtProcError' on entity 'GiftCommitment'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg64_1_Read",
+        "problem": "Variable does not exist: LastNextGenCmtProcError"
+      },
+      {
+        "name": "OwnedNeg65_0_Query",
+        "problem": "SELECT LastNextGenCmtProcDtTm FROM GiftCommitment\n       ^\nERROR at Row:1:Column:8\nNo such column 'LastNextGenCmtProcDtTm' on entity 'GiftCommitment'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg65_0_Read",
+        "problem": "Variable does not exist: LastNextGenCmtProcDtTm"
+      },
+      {
+        "name": "OwnedNeg65_1_Query",
+        "problem": "SELECT LastNextGenCmtProcError FROM GiftCommitment\n       ^\nERROR at Row:1:Column:8\nNo such column 'LastNextGenCmtProcError' on entity 'GiftCommitment'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg65_1_Read",
+        "problem": "Variable does not exist: LastNextGenCmtProcError"
+      },
+      {
+        "name": "OwnedNeg66_0_Query",
+        "problem": "SELECT LastNextGenCmtProcDtTm FROM GiftCommitment\n       ^\nERROR at Row:1:Column:8\nNo such column 'LastNextGenCmtProcDtTm' on entity 'GiftCommitment'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg66_0_Read",
+        "problem": "Variable does not exist: LastNextGenCmtProcDtTm"
+      },
+      {
+        "name": "OwnedNeg66_1_Query",
+        "problem": "SELECT LastNextGenCmtProcError FROM GiftCommitment\n       ^\nERROR at Row:1:Column:8\nNo such column 'LastNextGenCmtProcError' on entity 'GiftCommitment'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg66_1_Read",
+        "problem": "Variable does not exist: LastNextGenCmtProcError"
+      }
+    ]
+  },
+  {
+    "route": "anonymous-dynamic",
+    "api": "62.0",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "error": ""
+  },
+  {
+    "route": "anonymous-static",
+    "api": "62.0",
+    "case": "GiftCommitment.LastNextGenCmtProcDtTm",
+    "kind": "read",
+    "source": "GiftCommitment r=new GiftCommitment(); Object x=r.LastNextGenCmtProcDtTm;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "62.0",
+    "case": "GiftCommitment.LastNextGenCmtProcDtTm",
+    "kind": "query",
+    "source": "List<GiftCommitment> x=[SELECT LastNextGenCmtProcDtTm FROM GiftCommitment LIMIT 1];",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "62.0",
+    "case": "GiftCommitment.LastNextGenCmtProcError",
+    "kind": "read",
+    "source": "GiftCommitment r=new GiftCommitment(); Object x=r.LastNextGenCmtProcError;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "62.0",
+    "case": "GiftCommitment.LastNextGenCmtProcError",
+    "kind": "query",
+    "source": "List<GiftCommitment> x=[SELECT LastNextGenCmtProcError FROM GiftCommitment LIMIT 1];",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "62.0",
+    "case": "GiftCommitment.PartyPhilanthropicRsrchPrflId",
+    "kind": "read",
+    "source": "GiftCommitment r=new GiftCommitment(); Object x=r.PartyPhilanthropicRsrchPrflId;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "62.0",
+    "case": "GiftCommitment.PartyPhilanthropicRsrchPrflId",
+    "kind": "query",
+    "source": "List<GiftCommitment> x=[SELECT PartyPhilanthropicRsrchPrflId FROM GiftCommitment LIMIT 1];",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "62.0",
+    "case": "GiftTransaction.GenerationalCohort",
+    "kind": "read",
+    "source": "GiftTransaction r=new GiftTransaction(); Object x=r.GenerationalCohort;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "62.0",
+    "case": "GiftTransaction.GenerationalCohort",
+    "kind": "query",
+    "source": "List<GiftTransaction> x=[SELECT GenerationalCohort FROM GiftTransaction LIMIT 1];",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "62.0",
+    "case": "GiftTransaction.PartyPhilanthropicRsrchPrflId",
+    "kind": "read",
+    "source": "GiftTransaction r=new GiftTransaction(); Object x=r.PartyPhilanthropicRsrchPrflId;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "62.0",
+    "case": "GiftTransaction.PartyPhilanthropicRsrchPrflId",
+    "kind": "query",
+    "source": "List<GiftTransaction> x=[SELECT PartyPhilanthropicRsrchPrflId FROM GiftTransaction LIMIT 1];",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "62.0",
+    "case": "GiftTransaction.TaxDeductionAmount",
+    "kind": "read",
+    "source": "GiftTransaction r=new GiftTransaction(); Object x=r.TaxDeductionAmount;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "62.0",
+    "case": "GiftTransaction.TaxDeductionAmount",
+    "kind": "query",
+    "source": "List<GiftTransaction> x=[SELECT TaxDeductionAmount FROM GiftTransaction LIMIT 1];",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-dynamic",
+    "api": "67.0",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "error": null
+  },
+  {
+    "route": "anonymous-static",
+    "api": "67.0",
+    "case": "GiftCommitment.LastNextGenCmtProcDtTm",
+    "kind": "read",
+    "source": "GiftCommitment r=new GiftCommitment(); Object x=r.LastNextGenCmtProcDtTm;",
+    "status": 0,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "67.0",
+    "case": "GiftCommitment.LastNextGenCmtProcDtTm",
+    "kind": "query",
+    "source": "List<GiftCommitment> x=[SELECT LastNextGenCmtProcDtTm FROM GiftCommitment LIMIT 1];",
+    "status": 0,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "67.0",
+    "case": "GiftCommitment.LastNextGenCmtProcError",
+    "kind": "read",
+    "source": "GiftCommitment r=new GiftCommitment(); Object x=r.LastNextGenCmtProcError;",
+    "status": 0,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "67.0",
+    "case": "GiftCommitment.LastNextGenCmtProcError",
+    "kind": "query",
+    "source": "List<GiftCommitment> x=[SELECT LastNextGenCmtProcError FROM GiftCommitment LIMIT 1];",
+    "status": 0,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "67.0",
+    "case": "GiftCommitment.PartyPhilanthropicRsrchPrflId",
+    "kind": "read",
+    "source": "GiftCommitment r=new GiftCommitment(); Object x=r.PartyPhilanthropicRsrchPrflId;",
+    "status": 0,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "67.0",
+    "case": "GiftCommitment.PartyPhilanthropicRsrchPrflId",
+    "kind": "query",
+    "source": "List<GiftCommitment> x=[SELECT PartyPhilanthropicRsrchPrflId FROM GiftCommitment LIMIT 1];",
+    "status": 0,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "67.0",
+    "case": "GiftTransaction.GenerationalCohort",
+    "kind": "read",
+    "source": "GiftTransaction r=new GiftTransaction(); Object x=r.GenerationalCohort;",
+    "status": 0,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "67.0",
+    "case": "GiftTransaction.GenerationalCohort",
+    "kind": "query",
+    "source": "List<GiftTransaction> x=[SELECT GenerationalCohort FROM GiftTransaction LIMIT 1];",
+    "status": 0,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "67.0",
+    "case": "GiftTransaction.PartyPhilanthropicRsrchPrflId",
+    "kind": "read",
+    "source": "GiftTransaction r=new GiftTransaction(); Object x=r.PartyPhilanthropicRsrchPrflId;",
+    "status": 0,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "67.0",
+    "case": "GiftTransaction.PartyPhilanthropicRsrchPrflId",
+    "kind": "query",
+    "source": "List<GiftTransaction> x=[SELECT PartyPhilanthropicRsrchPrflId FROM GiftTransaction LIMIT 1];",
+    "status": 0,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "67.0",
+    "case": "GiftTransaction.TaxDeductionAmount",
+    "kind": "read",
+    "source": "GiftTransaction r=new GiftTransaction(); Object x=r.TaxDeductionAmount;",
+    "status": 0,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "67.0",
+    "case": "GiftTransaction.TaxDeductionAmount",
+    "kind": "query",
+    "source": "List<GiftTransaction> x=[SELECT TaxDeductionAmount FROM GiftTransaction LIMIT 1];",
+    "status": 0,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  }
+]

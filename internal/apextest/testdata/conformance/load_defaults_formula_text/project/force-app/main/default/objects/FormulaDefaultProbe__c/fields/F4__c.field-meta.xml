@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>F4__c</fullName><label>F4</label><formula>'a' + ' ' + 'b'</formula><formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs><required>false</required><type>Text</type><unique>false</unique></CustomField>

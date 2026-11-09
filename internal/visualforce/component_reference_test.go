@@ -25,11 +25,11 @@ func TestRenderVisualforceComponentReferencesUseHierarchyClientIDs(t *testing.T)
 		`<form id="j_id0:j_id2" name="j_id0:j_id2"`,
 		`var textareaId = "j_id0:j_id2:TemplateTextInput";`,
 		`var buttonId = "j_id0:j_id2:saveTemplate";`,
-		`<textarea name="TemplateTextInput" id="j_id0:j_id2:TemplateTextInput">`,
+		`<textarea name="j_id0:j_id2:TemplateTextInput" id="j_id0:j_id2:TemplateTextInput">`,
 		`<input type="submit" id="j_id0:j_id2:saveTemplate" name="j_id0:j_id2:saveTemplate"`,
 		`<form id="j_id0:namedForm" name="j_id0:namedForm"`,
 		`var nestedTextareaId = "j_id0:namedForm:NestedTextInput";`,
-		`<textarea name="NestedTextInput" id="j_id0:namedForm:NestedTextInput">`,
+		`<textarea name="j_id0:namedForm:NestedTextInput" id="j_id0:namedForm:NestedTextInput">`,
 		`var pageScopeShortPath = "";`,
 	} {
 		if !strings.Contains(rendered, want) {

@@ -97,7 +97,9 @@ func TestGeneratedSOQLRelationshipNativeConformance(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-
+			// ORG-RUN.txt: Owned_Generated_Query_Access was assigned to the scratch
+			// admin before both final captures.
+			writeCapturedAssignments(t, root, "Owned_Generated_Query_Access")
 			index := loadTestIndex(t, root)
 			if analysis := sema.Analyze(index); index.HasErrors() || analysis.HasErrors() {
 				t.Fatalf("native source compiled; Glade diagnostics: %v %v", index.Diagnostics, analysis.Diagnostics)

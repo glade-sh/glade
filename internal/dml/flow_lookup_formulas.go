@@ -9,9 +9,11 @@ import (
 
 // Decision formulas keep their record/prior context while Get Records fields
 // resolve from the interview. Resolving identifiers through the parser preserves
-// quoted strings and lazy evaluation; an absent lookup row supplies null.
+// quoted strings and lazy evaluation; an absent lookup row supplies null. A
+// stored formula field reads finished (flow_assign_routes, API 62.0 and 67.0:
+// LEN of an after-save $Record formula with BR() is 3).
 func (e *Engine) evaluateFlowDecisionFormula(expression string, source storage.Record, definition storage.ObjectDefinition, frame *flowFrame) (bool, bool) {
-	parser := formulaParser{tokens: tokenizeFormula(html.UnescapeString(expression)), record: source, org: e.Org, definition: definition, namespace: formulaSourceNamespace("", definition), prior: e.flowPriorRecord(source.ID), userID: e.systemUserID(), flowRecordContext: true}
+	parser := formulaParser{tokens: tokenizeFormula(html.UnescapeString(expression)), record: source, org: e.Org, definition: definition, namespace: formulaSourceNamespace("", definition), prior: e.flowPriorRecord(source.ID), userID: e.systemUserID(), permissionUserFields: e.PermissionUserFields, flowRecordContext: true, flowFinishFields: true}
 	parser.flowReference = func(reference string) (formulaValue, bool, bool) {
 		name, _, nested := strings.Cut(reference, ".")
 		if frame == nil {

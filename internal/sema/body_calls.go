@@ -406,7 +406,15 @@ func semaSOQLLiteralListType(arg string) string {
 	}
 	queryText := strings.TrimSpace(strings.TrimSuffix(strings.TrimPrefix(arg, "["), "]"))
 	query, err := soql.Parse(queryText)
-	if err != nil || query.Count || len(query.Aggregates) > 0 || len(query.GroupBy) > 0 || query.Having != nil || strings.TrimSpace(query.Object) == "" {
+	if err == nil && (query.Count || len(query.Aggregates) > 0 || len(query.GroupBy) > 0 || query.Having != nil) {
+		// Aggregate queries return AggregateResult rows, never the queried
+		// SObject: native compiles AggregateResult r = [SELECT MAX(f) m FROM O][0].
+		return semaSOQLLiteralType(queryText)
+	}
+	if err != nil || strings.TrimSpace(query.Object) == "" {
+		if semaLooksLikeSOQLAggregateLiteral(queryText) {
+			return semaSOQLLiteralType(queryText)
+		}
 		if objectName := semaSOQLLiteralFallbackObject(queryText); objectName != "" {
 			return "List<" + objectName + ">"
 		}
@@ -3182,7 +3190,7 @@ func inferSemaArgTypeWithModelUncached(arg string, scope map[string]string, mode
 		return typ
 	}
 	if receiver, ok := splitSemaIndexExpression(arg); ok {
-		receiverType := inferSemaArgTypeWithModel(receiver, scope, model)
+		receiverType := semaArgType(receiver, scope, model)
 		if elementType, elementOK := semaIterableElementType(receiverType); elementOK {
 			return elementType
 		}
@@ -3549,7 +3557,7 @@ func semaUnknownExternalDottedType(typeName string, model *semaTypeMemberView) b
 }
 
 func semaFieldReceiverNeedsInference(receiverExpr string) bool {
-	return strings.ContainsAny(receiverExpr, "()")
+	return strings.ContainsAny(receiverExpr, "()[")
 }
 
 func semaLooksLikeSObjectDescribeFieldResultPath(expr string) bool {

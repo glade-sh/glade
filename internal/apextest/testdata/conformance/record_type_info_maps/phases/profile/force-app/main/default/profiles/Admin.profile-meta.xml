@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Profile xmlns="http://soap.sforce.com/2006/04/metadata">
+    <custom>false</custom>
+    <recordTypeVisibilities>
+        <default>true</default>
+        <recordType>V35Rt__c.Alpha</recordType>
+        <visible>true</visible>
+    </recordTypeVisibilities>
+    <recordTypeVisibilities>
+        <default>false</default>
+        <recordType>V35Rt__c.Beta</recordType>
+        <visible>false</visible>
+    </recordTypeVisibilities>
+</Profile>

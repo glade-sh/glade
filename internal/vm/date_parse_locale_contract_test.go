@@ -27,6 +27,9 @@ func TestExecDateParseUsesContextUserLocaleAPI67(t *testing.T) {
 	}{
 		{name: "GermanLocaleEnglishLanguage", locale: "de_DE", language: "en_US", text: "28.01.2008"},
 		{name: "BritishLocaleEnglishLanguage", locale: "en_GB", language: "en_US", text: "28/01/2008"},
+		// date_locale_a12_c14/org.tsv:3,5 (API 62.0 and 67.0): a fr_FR user's
+		// Date.format() gives 28/01/2008 and Date.parse accepts it.
+		{name: "FrenchLocaleEnglishLanguage", locale: "fr_FR", language: "en_US", text: "28/01/2008"},
 		{name: "USLocaleGermanLanguage", locale: "en_US", language: "de", text: "1/28/2008"},
 		{name: "USLocaleEnglishLanguage", locale: "en_US", language: "en_US", text: "1/28/2008"},
 	}

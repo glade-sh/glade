@@ -1,0 +1,1 @@
+User u=new User(Alias='b6usr',Email='b6.synthetic@example.invalid',EmailEncodingKey='UTF-8',LastName='B6 Synthetic',LanguageLocaleKey='en_US',LocaleSidKey='en_US',TimeZoneSidKey='America/Los_Angeles',Username='b6.synthetic.20261103@example.invalid',ProfileId=UserInfo.getProfileId());insert u;

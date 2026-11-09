@@ -1,0 +1,339 @@
+case_id	api	kind	route	compile_outcome	observed_value_or_diagnostic	source
+v01	62.0	ns	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: gladens004.V035Vis.Dn	anon/v01.apex
+v02	62.0	ns	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: gladens004.V035Vis.Pv	anon/v02.apex
+v03	62.0	ns	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: gladens004.V035Vis.Tv	anon/v03.apex
+v04	62.0	ns	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: gladens004.V035Vis.Tdn	anon/v04.apex
+v05	62.0	ns	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: gladens004.V035Vis.Pen	anon/v05.apex
+v06	62.0	ns	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: gladens004.V035Vis.Pi	anon/v06.apex
+v07	62.0	ns	anonymous	COMPILE_OK	15	anon/v07.apex
+v08	62.0	ns	anonymous	COMPILE_OK	15	anon/v08.apex
+v09	62.0	ns	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: List<gladens004.V035Vis.Pv>	anon/v09.apex
+v10	62.0	ns	anonymous	COMPILE_ERROR	line 1 col 59: Type is not visible: gladens004.V035Vis.Pv	anon/v10.apex
+v11	62.0	ns	anonymous	COMPILE_ERROR	line 1 col 18: Type is not visible: gladens004.V035Vis.Pv	anon/v11.apex
+v12	62.0	ns	anonymous	COMPILE_ERROR	line 1 col 10: Type is not visible: gladens004.V035Vis.Pv	anon/v12.apex
+v13	62.0	ns	anonymous	COMPILE_OK	null	anon/v13.apex
+v14	62.0	ns	anonymous	COMPILE_OK	null	anon/v14.apex
+v15	62.0	ns	anonymous	COMPILE_OK	null	anon/v15.apex
+v16	62.0	ns	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: Map<String,gladens004.V035Vis.Pv>	anon/v16.apex
+v17	62.0	ns	anonymous	COMPILE_OK	11	anon/v17.apex
+v18	62.0	ns	anonymous	COMPILE_OK	null	anon/v18.apex
+v19	62.0	ns	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: gladens004.V035Vis.Pen	anon/v19.apex
+v20	62.0	ns	anonymous	COMPILE_OK	null	anon/v20.apex
+v21	62.0	ns	anonymous	COMPILE_OK	null	anon/v21.apex
+v22	62.0	ns	anonymous	COMPILE_OK	null	anon/v22.apex
+v23	62.0	ns	anonymous	COMPILE_OK	gladens004.V035Vis.Pb	anon/v23.apex
+v24	62.0	ns	anonymous	COMPILE_OK	null	anon/v24.apex
+v25	62.0	ns	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: gladens004.V035Vis.Pv	anon/v25.apex
+V035VisOut	62.0	ns	named	COMPILE_ERROR	line 2 col 25: Type is not visible: gladens004.V035Vis.Dn	named/V035VisOut.cls
+V035VisOut	62.0	ns	named	COMPILE_ERROR	line 2 col 85: Type is not visible: gladens004.V035Vis.Dn	named/V035VisOut.cls
+V035VisOut	62.0	ns	named	COMPILE_ERROR	line 3 col 25: Type is not visible: gladens004.V035Vis.Pv	named/V035VisOut.cls
+V035VisOut	62.0	ns	named	COMPILE_ERROR	line 3 col 85: Type is not visible: gladens004.V035Vis.Pv	named/V035VisOut.cls
+V035VisOut	62.0	ns	named	COMPILE_ERROR	line 4 col 25: Type is not visible: gladens004.V035Vis.Tv	named/V035VisOut.cls
+V035VisOut	62.0	ns	named	COMPILE_ERROR	line 4 col 85: Type is not visible: gladens004.V035Vis.Tv	named/V035VisOut.cls
+V035VisOut	62.0	ns	named	COMPILE_ERROR	line 5 col 25: Type is not visible: gladens004.V035Vis.Tdn	named/V035VisOut.cls
+V035VisOut	62.0	ns	named	COMPILE_ERROR	line 5 col 87: Type is not visible: gladens004.V035Vis.Tdn	named/V035VisOut.cls
+V035VisOut	62.0	ns	named	COMPILE_ERROR	line 6 col 25: Type is not visible: gladens004.V035Vis.Pen	named/V035VisOut.cls
+V035VisOut	62.0	ns	named	COMPILE_ERROR	line 6 col 83: Type is not visible: gladens004.V035Vis.Pen	named/V035VisOut.cls
+V035VisOut	62.0	ns	named	COMPILE_ERROR	line 7 col 25: Type is not visible: gladens004.V035Vis.Pi	named/V035VisOut.cls
+V035VisOut	62.0	ns	named	COMPILE_ERROR	line 8 col 25: Type is not visible: List<gladens004.V035Vis.Pv>	named/V035VisOut.cls
+V035VisOut	62.0	ns	named	COMPILE_ERROR	line 9 col 69: Type is not visible: gladens004.V035Vis.Pv	named/V035VisOut.cls
+V035VisOut	62.0	ns	named	COMPILE_ERROR	line 10 col 42: Type is not visible: gladens004.V035Vis.Pv	named/V035VisOut.cls
+V035VisOut	62.0	ns	named	COMPILE_ERROR	line 10 col 100: Type is not visible: gladens004.V035Vis.Pv	named/V035VisOut.cls
+V035VisOut	62.0	ns	named	COMPILE_ERROR	line 11 col 34: Type is not visible: gladens004.V035Vis.Pv	named/V035VisOut.cls
+V035VisOut	62.0	ns	named	COMPILE_ERROR	line 12 col 25: Type is not visible: Map<String,gladens004.V035Vis.Pv>	named/V035VisOut.cls
+V035VisOut	62.0	ns	named	COMPILE_ERROR	line 13 col 25: Type is not visible: gladens004.V035Vis.Pen	named/V035VisOut.cls
+V035VisOut	62.0	ns	named	COMPILE_ERROR	line 14 col 25: Type is not visible: gladens004.V035Vis.Pv	named/V035VisOut.cls
+V035VisOutT	62.0	ns	named	COMPILE_ERROR	line 2 col 33: Type is not visible: gladens004.V035Vis.Dn	named/V035VisOutT.cls
+V035VisOutT	62.0	ns	named	COMPILE_ERROR	line 2 col 93: Type is not visible: gladens004.V035Vis.Dn	named/V035VisOutT.cls
+V035VisOutT	62.0	ns	named	COMPILE_ERROR	line 3 col 33: Type is not visible: gladens004.V035Vis.Pv	named/V035VisOutT.cls
+V035VisOutT	62.0	ns	named	COMPILE_ERROR	line 3 col 93: Type is not visible: gladens004.V035Vis.Pv	named/V035VisOutT.cls
+V035VisOutT	62.0	ns	named	COMPILE_ERROR	line 6 col 33: Type is not visible: gladens004.V035Vis.Pen	named/V035VisOutT.cls
+V035VisOutT	62.0	ns	named	COMPILE_ERROR	line 6 col 91: Type is not visible: gladens004.V035Vis.Pen	named/V035VisOutT.cls
+V035VisOutT	62.0	ns	named	COMPILE_ERROR	line 7 col 33: Type is not visible: gladens004.V035Vis.Pi	named/V035VisOutT.cls
+V035VisOutT	62.0	ns	named	COMPILE_ERROR	line 8 col 33: Type is not visible: List<gladens004.V035Vis.Pv>	named/V035VisOutT.cls
+V035VisOutT	62.0	ns	named	COMPILE_ERROR	line 9 col 77: Type is not visible: gladens004.V035Vis.Pv	named/V035VisOutT.cls
+V035VisOutT	62.0	ns	named	COMPILE_ERROR	line 10 col 50: Type is not visible: gladens004.V035Vis.Pv	named/V035VisOutT.cls
+V035VisOutT	62.0	ns	named	COMPILE_ERROR	line 10 col 108: Type is not visible: gladens004.V035Vis.Pv	named/V035VisOutT.cls
+V035VisOutT	62.0	ns	named	COMPILE_ERROR	line 11 col 42: Type is not visible: gladens004.V035Vis.Pv	named/V035VisOutT.cls
+V035VisOutT	62.0	ns	named	COMPILE_ERROR	line 12 col 33: Type is not visible: Map<String,gladens004.V035Vis.Pv>	named/V035VisOutT.cls
+V035VisOutT	62.0	ns	named	COMPILE_ERROR	line 13 col 33: Type is not visible: gladens004.V035Vis.Pen	named/V035VisOutT.cls
+V035VisOutT	62.0	ns	named	COMPILE_ERROR	line 14 col 33: Type is not visible: gladens004.V035Vis.Pv	named/V035VisOutT.cls
+W01	62.0	ns	named	COMPILE_ERROR	line 1 col 20: Type is not visible: gladens004.V035Vis.Pv	named/W01.cls
+W02	62.0	ns	named	COMPILE_ERROR	line 1 col 45: Type is not visible: gladens004.V035Vis.Pv	named/W02.cls
+W03	62.0	ns	named	COMPILE_ERROR	line 1 col 38: Type is not visible: gladens004.V035Vis.Pv	named/W03.cls
+W04	62.0	ns	named	COMPILE_ERROR	line 1 col 38: Type is not visible: gladens004.V035Vis.Pv	named/W04.cls
+W06	62.0	ns	named	COMPILE_ERROR	line 1 col 49: Type is not visible: gladens004.V035Vis.Pv	named/W06.cls
+W07	62.0	ns	named	COMPILE_ERROR	line 1 col 49: Type is not visible: gladens004.V035Vis.Pv	named/W07.cls
+W08	62.0	ns	named	COMPILE_ERROR	line 1 col 50: Type is not visible: gladens004.V035Vis.Pv	named/W08.cls
+W09	62.0	ns	named	COMPILE_ERROR	line 1 col 46: Type is not visible: gladens004.V035Vis.Pv	named/W09.cls
+W10	62.0	ns	named	COMPILE_ERROR	line 1 col 58: Type is not visible: gladens004.V035Vis.Pv	named/W10.cls
+W10	62.0	ns	named	COMPILE_ERROR	line 1 col 43: Type is not visible: gladens004.V035Vis.Pv	named/W10.cls
+W13	62.0	ns	named	COMPILE_OK		named/W13.cls
+W14	62.0	ns	named	COMPILE_ERROR	line 1 col 38: Type is not visible: gladens004.V035Vis.Pv	named/W14.cls
+W15	62.0	ns	named	COMPILE_OK		named/W15.cls
+W16	62.0	ns	named	COMPILE_ERROR	line 1 col 14: Type is not visible: gladens004.V035Vis.Pi	named/W16.cls
+v07	62.0	ns	istest	COMPILE_OK	15	rt/V035VisRt.cls
+v08	62.0	ns	istest	COMPILE_OK	15	rt/V035VisRt.cls
+v13	62.0	ns	istest	COMPILE_OK	null	rt/V035VisRt.cls
+v14	62.0	ns	istest	COMPILE_OK	null	rt/V035VisRt.cls
+v15	62.0	ns	istest	COMPILE_OK	null	rt/V035VisRt.cls
+v17	62.0	ns	istest	COMPILE_OK	11	rt/V035VisRt.cls
+v18	62.0	ns	istest	COMPILE_OK	null	rt/V035VisRt.cls
+v20	62.0	ns	istest	COMPILE_OK	null	rt/V035VisRt.cls
+v21	62.0	ns	istest	COMPILE_OK	null	rt/V035VisRt.cls
+v22	62.0	ns	istest	COMPILE_OK	null	rt/V035VisRt.cls
+v23	62.0	ns	istest	COMPILE_OK	gladens004.V035Vis.Pb	rt/V035VisRt.cls
+v24	62.0	ns	istest	COMPILE_OK	null	rt/V035VisRt.cls
+v01	67.0	ns	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: gladens004.V035Vis.Dn	anon/v01.apex
+v02	67.0	ns	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: gladens004.V035Vis.Pv	anon/v02.apex
+v03	67.0	ns	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: gladens004.V035Vis.Tv	anon/v03.apex
+v04	67.0	ns	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: gladens004.V035Vis.Tdn	anon/v04.apex
+v05	67.0	ns	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: gladens004.V035Vis.Pen	anon/v05.apex
+v06	67.0	ns	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: gladens004.V035Vis.Pi	anon/v06.apex
+v07	67.0	ns	anonymous	COMPILE_OK	15	anon/v07.apex
+v08	67.0	ns	anonymous	COMPILE_OK	15	anon/v08.apex
+v09	67.0	ns	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: List<gladens004.V035Vis.Pv>	anon/v09.apex
+v10	67.0	ns	anonymous	COMPILE_ERROR	line 1 col 59: Type is not visible: gladens004.V035Vis.Pv	anon/v10.apex
+v11	67.0	ns	anonymous	COMPILE_ERROR	line 1 col 18: Type is not visible: gladens004.V035Vis.Pv	anon/v11.apex
+v12	67.0	ns	anonymous	COMPILE_ERROR	line 1 col 10: Type is not visible: gladens004.V035Vis.Pv	anon/v12.apex
+v13	67.0	ns	anonymous	COMPILE_OK	null	anon/v13.apex
+v14	67.0	ns	anonymous	COMPILE_OK	null	anon/v14.apex
+v15	67.0	ns	anonymous	COMPILE_OK	null	anon/v15.apex
+v16	67.0	ns	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: Map<String,gladens004.V035Vis.Pv>	anon/v16.apex
+v17	67.0	ns	anonymous	COMPILE_OK	11	anon/v17.apex
+v18	67.0	ns	anonymous	COMPILE_OK	null	anon/v18.apex
+v19	67.0	ns	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: gladens004.V035Vis.Pen	anon/v19.apex
+v20	67.0	ns	anonymous	COMPILE_OK	null	anon/v20.apex
+v21	67.0	ns	anonymous	COMPILE_OK	null	anon/v21.apex
+v22	67.0	ns	anonymous	COMPILE_OK	null	anon/v22.apex
+v23	67.0	ns	anonymous	COMPILE_OK	gladens004.V035Vis.Pb	anon/v23.apex
+v24	67.0	ns	anonymous	COMPILE_OK	null	anon/v24.apex
+v25	67.0	ns	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: gladens004.V035Vis.Pv	anon/v25.apex
+V035VisOut	67.0	ns	named	COMPILE_ERROR	line 2 col 25: Type is not visible: gladens004.V035Vis.Dn	named/V035VisOut.cls
+V035VisOut	67.0	ns	named	COMPILE_ERROR	line 2 col 85: Type is not visible: gladens004.V035Vis.Dn	named/V035VisOut.cls
+V035VisOut	67.0	ns	named	COMPILE_ERROR	line 3 col 25: Type is not visible: gladens004.V035Vis.Pv	named/V035VisOut.cls
+V035VisOut	67.0	ns	named	COMPILE_ERROR	line 3 col 85: Type is not visible: gladens004.V035Vis.Pv	named/V035VisOut.cls
+V035VisOut	67.0	ns	named	COMPILE_ERROR	line 4 col 25: Type is not visible: gladens004.V035Vis.Tv	named/V035VisOut.cls
+V035VisOut	67.0	ns	named	COMPILE_ERROR	line 4 col 85: Type is not visible: gladens004.V035Vis.Tv	named/V035VisOut.cls
+V035VisOut	67.0	ns	named	COMPILE_ERROR	line 5 col 25: Type is not visible: gladens004.V035Vis.Tdn	named/V035VisOut.cls
+V035VisOut	67.0	ns	named	COMPILE_ERROR	line 5 col 87: Type is not visible: gladens004.V035Vis.Tdn	named/V035VisOut.cls
+V035VisOut	67.0	ns	named	COMPILE_ERROR	line 6 col 25: Type is not visible: gladens004.V035Vis.Pen	named/V035VisOut.cls
+V035VisOut	67.0	ns	named	COMPILE_ERROR	line 6 col 83: Type is not visible: gladens004.V035Vis.Pen	named/V035VisOut.cls
+V035VisOut	67.0	ns	named	COMPILE_ERROR	line 7 col 25: Type is not visible: gladens004.V035Vis.Pi	named/V035VisOut.cls
+V035VisOut	67.0	ns	named	COMPILE_ERROR	line 8 col 25: Type is not visible: List<gladens004.V035Vis.Pv>	named/V035VisOut.cls
+V035VisOut	67.0	ns	named	COMPILE_ERROR	line 9 col 69: Type is not visible: gladens004.V035Vis.Pv	named/V035VisOut.cls
+V035VisOut	67.0	ns	named	COMPILE_ERROR	line 10 col 42: Type is not visible: gladens004.V035Vis.Pv	named/V035VisOut.cls
+V035VisOut	67.0	ns	named	COMPILE_ERROR	line 10 col 100: Type is not visible: gladens004.V035Vis.Pv	named/V035VisOut.cls
+V035VisOut	67.0	ns	named	COMPILE_ERROR	line 11 col 34: Type is not visible: gladens004.V035Vis.Pv	named/V035VisOut.cls
+V035VisOut	67.0	ns	named	COMPILE_ERROR	line 12 col 25: Type is not visible: Map<String,gladens004.V035Vis.Pv>	named/V035VisOut.cls
+V035VisOut	67.0	ns	named	COMPILE_ERROR	line 13 col 25: Type is not visible: gladens004.V035Vis.Pen	named/V035VisOut.cls
+V035VisOut	67.0	ns	named	COMPILE_ERROR	line 14 col 25: Type is not visible: gladens004.V035Vis.Pv	named/V035VisOut.cls
+V035VisOutT	67.0	ns	named	COMPILE_ERROR	line 2 col 33: Type is not visible: gladens004.V035Vis.Dn	named/V035VisOutT.cls
+V035VisOutT	67.0	ns	named	COMPILE_ERROR	line 2 col 93: Type is not visible: gladens004.V035Vis.Dn	named/V035VisOutT.cls
+V035VisOutT	67.0	ns	named	COMPILE_ERROR	line 3 col 33: Type is not visible: gladens004.V035Vis.Pv	named/V035VisOutT.cls
+V035VisOutT	67.0	ns	named	COMPILE_ERROR	line 3 col 93: Type is not visible: gladens004.V035Vis.Pv	named/V035VisOutT.cls
+V035VisOutT	67.0	ns	named	COMPILE_ERROR	line 6 col 33: Type is not visible: gladens004.V035Vis.Pen	named/V035VisOutT.cls
+V035VisOutT	67.0	ns	named	COMPILE_ERROR	line 6 col 91: Type is not visible: gladens004.V035Vis.Pen	named/V035VisOutT.cls
+V035VisOutT	67.0	ns	named	COMPILE_ERROR	line 7 col 33: Type is not visible: gladens004.V035Vis.Pi	named/V035VisOutT.cls
+V035VisOutT	67.0	ns	named	COMPILE_ERROR	line 8 col 33: Type is not visible: List<gladens004.V035Vis.Pv>	named/V035VisOutT.cls
+V035VisOutT	67.0	ns	named	COMPILE_ERROR	line 9 col 77: Type is not visible: gladens004.V035Vis.Pv	named/V035VisOutT.cls
+V035VisOutT	67.0	ns	named	COMPILE_ERROR	line 10 col 50: Type is not visible: gladens004.V035Vis.Pv	named/V035VisOutT.cls
+V035VisOutT	67.0	ns	named	COMPILE_ERROR	line 10 col 108: Type is not visible: gladens004.V035Vis.Pv	named/V035VisOutT.cls
+V035VisOutT	67.0	ns	named	COMPILE_ERROR	line 11 col 42: Type is not visible: gladens004.V035Vis.Pv	named/V035VisOutT.cls
+V035VisOutT	67.0	ns	named	COMPILE_ERROR	line 12 col 33: Type is not visible: Map<String,gladens004.V035Vis.Pv>	named/V035VisOutT.cls
+V035VisOutT	67.0	ns	named	COMPILE_ERROR	line 13 col 33: Type is not visible: gladens004.V035Vis.Pen	named/V035VisOutT.cls
+V035VisOutT	67.0	ns	named	COMPILE_ERROR	line 14 col 33: Type is not visible: gladens004.V035Vis.Pv	named/V035VisOutT.cls
+W01	67.0	ns	named	COMPILE_ERROR	line 1 col 20: Type is not visible: gladens004.V035Vis.Pv	named/W01.cls
+W02	67.0	ns	named	COMPILE_ERROR	line 1 col 45: Type is not visible: gladens004.V035Vis.Pv	named/W02.cls
+W03	67.0	ns	named	COMPILE_ERROR	line 1 col 38: Type is not visible: gladens004.V035Vis.Pv	named/W03.cls
+W04	67.0	ns	named	COMPILE_ERROR	line 1 col 38: Type is not visible: gladens004.V035Vis.Pv	named/W04.cls
+W06	67.0	ns	named	COMPILE_ERROR	line 1 col 49: Type is not visible: gladens004.V035Vis.Pv	named/W06.cls
+W07	67.0	ns	named	COMPILE_ERROR	line 1 col 49: Type is not visible: gladens004.V035Vis.Pv	named/W07.cls
+W08	67.0	ns	named	COMPILE_ERROR	line 1 col 50: Type is not visible: gladens004.V035Vis.Pv	named/W08.cls
+W09	67.0	ns	named	COMPILE_ERROR	line 1 col 46: Type is not visible: gladens004.V035Vis.Pv	named/W09.cls
+W10	67.0	ns	named	COMPILE_ERROR	line 1 col 58: Type is not visible: gladens004.V035Vis.Pv	named/W10.cls
+W10	67.0	ns	named	COMPILE_ERROR	line 1 col 43: Type is not visible: gladens004.V035Vis.Pv	named/W10.cls
+W13	67.0	ns	named	COMPILE_OK		named/W13.cls
+W14	67.0	ns	named	COMPILE_ERROR	line 1 col 38: Type is not visible: gladens004.V035Vis.Pv	named/W14.cls
+W15	67.0	ns	named	COMPILE_OK		named/W15.cls
+W16	67.0	ns	named	COMPILE_ERROR	line 1 col 14: Type is not visible: gladens004.V035Vis.Pi	named/W16.cls
+v07	67.0	ns	istest	COMPILE_OK	15	rt/V035VisRt.cls
+v08	67.0	ns	istest	COMPILE_OK	15	rt/V035VisRt.cls
+v13	67.0	ns	istest	COMPILE_OK	null	rt/V035VisRt.cls
+v14	67.0	ns	istest	COMPILE_OK	null	rt/V035VisRt.cls
+v15	67.0	ns	istest	COMPILE_OK	null	rt/V035VisRt.cls
+v17	67.0	ns	istest	COMPILE_OK	11	rt/V035VisRt.cls
+v18	67.0	ns	istest	COMPILE_OK	null	rt/V035VisRt.cls
+v20	67.0	ns	istest	COMPILE_OK	null	rt/V035VisRt.cls
+v21	67.0	ns	istest	COMPILE_OK	null	rt/V035VisRt.cls
+v22	67.0	ns	istest	COMPILE_OK	null	rt/V035VisRt.cls
+v23	67.0	ns	istest	COMPILE_OK	gladens004.V035Vis.Pb	rt/V035VisRt.cls
+v24	67.0	ns	istest	COMPILE_OK	null	rt/V035VisRt.cls
+v01	62.0	plain	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: V035Vis.Dn	anon/v01.apex
+v02	62.0	plain	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: V035Vis.Pv	anon/v02.apex
+v03	62.0	plain	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: V035Vis.Tv	anon/v03.apex
+v04	62.0	plain	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: V035Vis.Tdn	anon/v04.apex
+v05	62.0	plain	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: V035Vis.Pen	anon/v05.apex
+v06	62.0	plain	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: V035Vis.Pi	anon/v06.apex
+v07	62.0	plain	anonymous	COMPILE_OK	15	anon/v07.apex
+v08	62.0	plain	anonymous	COMPILE_OK	15	anon/v08.apex
+v09	62.0	plain	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: List<V035Vis.Pv>	anon/v09.apex
+v10	62.0	plain	anonymous	COMPILE_ERROR	line 1 col 59: Type is not visible: V035Vis.Pv	anon/v10.apex
+v11	62.0	plain	anonymous	COMPILE_ERROR	line 1 col 18: Type is not visible: V035Vis.Pv	anon/v11.apex
+v12	62.0	plain	anonymous	COMPILE_ERROR	line 1 col 10: Type is not visible: V035Vis.Pv	anon/v12.apex
+v13	62.0	plain	anonymous	COMPILE_OK	null	anon/v13.apex
+v14	62.0	plain	anonymous	COMPILE_OK	null	anon/v14.apex
+v15	62.0	plain	anonymous	COMPILE_OK	null	anon/v15.apex
+v16	62.0	plain	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: Map<String,V035Vis.Pv>	anon/v16.apex
+v17	62.0	plain	anonymous	COMPILE_OK	11	anon/v17.apex
+v18	62.0	plain	anonymous	COMPILE_OK	null	anon/v18.apex
+v19	62.0	plain	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: V035Vis.Pen	anon/v19.apex
+v20	62.0	plain	anonymous	COMPILE_OK	null	anon/v20.apex
+v21	62.0	plain	anonymous	COMPILE_OK	null	anon/v21.apex
+v22	62.0	plain	anonymous	COMPILE_OK	null	anon/v22.apex
+v23	62.0	plain	anonymous	COMPILE_OK	V035Vis.Pb	anon/v23.apex
+v24	62.0	plain	anonymous	COMPILE_OK	null	anon/v24.apex
+v25	62.0	plain	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: V035Vis.Pv	anon/v25.apex
+V035VisOut	62.0	plain	named	COMPILE_ERROR	line 2 col 25: Type is not visible: V035Vis.Dn	named/V035VisOut.cls
+V035VisOut	62.0	plain	named	COMPILE_ERROR	line 2 col 85: Type is not visible: V035Vis.Dn	named/V035VisOut.cls
+V035VisOut	62.0	plain	named	COMPILE_ERROR	line 3 col 25: Type is not visible: V035Vis.Pv	named/V035VisOut.cls
+V035VisOut	62.0	plain	named	COMPILE_ERROR	line 3 col 85: Type is not visible: V035Vis.Pv	named/V035VisOut.cls
+V035VisOut	62.0	plain	named	COMPILE_ERROR	line 4 col 25: Type is not visible: V035Vis.Tv	named/V035VisOut.cls
+V035VisOut	62.0	plain	named	COMPILE_ERROR	line 4 col 85: Type is not visible: V035Vis.Tv	named/V035VisOut.cls
+V035VisOut	62.0	plain	named	COMPILE_ERROR	line 5 col 25: Type is not visible: V035Vis.Tdn	named/V035VisOut.cls
+V035VisOut	62.0	plain	named	COMPILE_ERROR	line 5 col 87: Type is not visible: V035Vis.Tdn	named/V035VisOut.cls
+V035VisOut	62.0	plain	named	COMPILE_ERROR	line 6 col 25: Type is not visible: V035Vis.Pen	named/V035VisOut.cls
+V035VisOut	62.0	plain	named	COMPILE_ERROR	line 6 col 83: Type is not visible: V035Vis.Pen	named/V035VisOut.cls
+V035VisOut	62.0	plain	named	COMPILE_ERROR	line 7 col 25: Type is not visible: V035Vis.Pi	named/V035VisOut.cls
+V035VisOut	62.0	plain	named	COMPILE_ERROR	line 8 col 25: Type is not visible: List<V035Vis.Pv>	named/V035VisOut.cls
+V035VisOut	62.0	plain	named	COMPILE_ERROR	line 9 col 69: Type is not visible: V035Vis.Pv	named/V035VisOut.cls
+V035VisOut	62.0	plain	named	COMPILE_ERROR	line 10 col 42: Type is not visible: V035Vis.Pv	named/V035VisOut.cls
+V035VisOut	62.0	plain	named	COMPILE_ERROR	line 10 col 100: Type is not visible: V035Vis.Pv	named/V035VisOut.cls
+V035VisOut	62.0	plain	named	COMPILE_ERROR	line 11 col 34: Type is not visible: V035Vis.Pv	named/V035VisOut.cls
+V035VisOut	62.0	plain	named	COMPILE_ERROR	line 12 col 25: Type is not visible: Map<String,V035Vis.Pv>	named/V035VisOut.cls
+V035VisOut	62.0	plain	named	COMPILE_ERROR	line 13 col 25: Type is not visible: V035Vis.Pen	named/V035VisOut.cls
+V035VisOut	62.0	plain	named	COMPILE_ERROR	line 14 col 25: Type is not visible: V035Vis.Pv	named/V035VisOut.cls
+V035VisOutT	62.0	plain	named	COMPILE_ERROR	line 2 col 33: Type is not visible: V035Vis.Dn	named/V035VisOutT.cls
+V035VisOutT	62.0	plain	named	COMPILE_ERROR	line 2 col 93: Type is not visible: V035Vis.Dn	named/V035VisOutT.cls
+V035VisOutT	62.0	plain	named	COMPILE_ERROR	line 3 col 33: Type is not visible: V035Vis.Pv	named/V035VisOutT.cls
+V035VisOutT	62.0	plain	named	COMPILE_ERROR	line 3 col 93: Type is not visible: V035Vis.Pv	named/V035VisOutT.cls
+V035VisOutT	62.0	plain	named	COMPILE_ERROR	line 6 col 33: Type is not visible: V035Vis.Pen	named/V035VisOutT.cls
+V035VisOutT	62.0	plain	named	COMPILE_ERROR	line 6 col 91: Type is not visible: V035Vis.Pen	named/V035VisOutT.cls
+V035VisOutT	62.0	plain	named	COMPILE_ERROR	line 7 col 33: Type is not visible: V035Vis.Pi	named/V035VisOutT.cls
+V035VisOutT	62.0	plain	named	COMPILE_ERROR	line 8 col 33: Type is not visible: List<V035Vis.Pv>	named/V035VisOutT.cls
+V035VisOutT	62.0	plain	named	COMPILE_ERROR	line 9 col 77: Type is not visible: V035Vis.Pv	named/V035VisOutT.cls
+V035VisOutT	62.0	plain	named	COMPILE_ERROR	line 10 col 50: Type is not visible: V035Vis.Pv	named/V035VisOutT.cls
+V035VisOutT	62.0	plain	named	COMPILE_ERROR	line 10 col 108: Type is not visible: V035Vis.Pv	named/V035VisOutT.cls
+V035VisOutT	62.0	plain	named	COMPILE_ERROR	line 11 col 42: Type is not visible: V035Vis.Pv	named/V035VisOutT.cls
+V035VisOutT	62.0	plain	named	COMPILE_ERROR	line 12 col 33: Type is not visible: Map<String,V035Vis.Pv>	named/V035VisOutT.cls
+V035VisOutT	62.0	plain	named	COMPILE_ERROR	line 13 col 33: Type is not visible: V035Vis.Pen	named/V035VisOutT.cls
+V035VisOutT	62.0	plain	named	COMPILE_ERROR	line 14 col 33: Type is not visible: V035Vis.Pv	named/V035VisOutT.cls
+W01	62.0	plain	named	COMPILE_ERROR	line 1 col 20: Type is not visible: V035Vis.Pv	named/W01.cls
+W02	62.0	plain	named	COMPILE_ERROR	line 1 col 45: Type is not visible: V035Vis.Pv	named/W02.cls
+W03	62.0	plain	named	COMPILE_ERROR	line 1 col 38: Type is not visible: V035Vis.Pv	named/W03.cls
+W04	62.0	plain	named	COMPILE_ERROR	line 1 col 38: Type is not visible: V035Vis.Pv	named/W04.cls
+W06	62.0	plain	named	COMPILE_ERROR	line 1 col 49: Type is not visible: V035Vis.Pv	named/W06.cls
+W07	62.0	plain	named	COMPILE_ERROR	line 1 col 49: Type is not visible: V035Vis.Pv	named/W07.cls
+W08	62.0	plain	named	COMPILE_ERROR	line 1 col 50: Type is not visible: V035Vis.Pv	named/W08.cls
+W09	62.0	plain	named	COMPILE_ERROR	line 1 col 46: Type is not visible: V035Vis.Pv	named/W09.cls
+W10	62.0	plain	named	COMPILE_ERROR	line 1 col 58: Type is not visible: V035Vis.Pv	named/W10.cls
+W10	62.0	plain	named	COMPILE_ERROR	line 1 col 43: Type is not visible: V035Vis.Pv	named/W10.cls
+W13	62.0	plain	named	COMPILE_OK		named/W13.cls
+W15	62.0	plain	named	COMPILE_OK		named/W15.cls
+W16	62.0	plain	named	COMPILE_ERROR	line 1 col 14: Type is not visible: V035Vis.Pi	named/W16.cls
+v07	62.0	plain	istest	COMPILE_OK	15	rt/V035VisRt.cls
+v08	62.0	plain	istest	COMPILE_OK	15	rt/V035VisRt.cls
+v13	62.0	plain	istest	COMPILE_OK	null	rt/V035VisRt.cls
+v14	62.0	plain	istest	COMPILE_OK	null	rt/V035VisRt.cls
+v15	62.0	plain	istest	COMPILE_OK	null	rt/V035VisRt.cls
+v17	62.0	plain	istest	COMPILE_OK	11	rt/V035VisRt.cls
+v18	62.0	plain	istest	COMPILE_OK	null	rt/V035VisRt.cls
+v20	62.0	plain	istest	COMPILE_OK	null	rt/V035VisRt.cls
+v21	62.0	plain	istest	COMPILE_OK	null	rt/V035VisRt.cls
+v22	62.0	plain	istest	COMPILE_OK	null	rt/V035VisRt.cls
+v23	62.0	plain	istest	COMPILE_OK	V035Vis.Pb	rt/V035VisRt.cls
+v24	62.0	plain	istest	COMPILE_OK	null	rt/V035VisRt.cls
+v01	67.0	plain	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: V035Vis.Dn	anon/v01.apex
+v02	67.0	plain	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: V035Vis.Pv	anon/v02.apex
+v03	67.0	plain	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: V035Vis.Tv	anon/v03.apex
+v04	67.0	plain	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: V035Vis.Tdn	anon/v04.apex
+v05	67.0	plain	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: V035Vis.Pen	anon/v05.apex
+v06	67.0	plain	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: V035Vis.Pi	anon/v06.apex
+v07	67.0	plain	anonymous	COMPILE_OK	15	anon/v07.apex
+v08	67.0	plain	anonymous	COMPILE_OK	15	anon/v08.apex
+v09	67.0	plain	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: List<V035Vis.Pv>	anon/v09.apex
+v10	67.0	plain	anonymous	COMPILE_ERROR	line 1 col 59: Type is not visible: V035Vis.Pv	anon/v10.apex
+v11	67.0	plain	anonymous	COMPILE_ERROR	line 1 col 18: Type is not visible: V035Vis.Pv	anon/v11.apex
+v12	67.0	plain	anonymous	COMPILE_ERROR	line 1 col 10: Type is not visible: V035Vis.Pv	anon/v12.apex
+v13	67.0	plain	anonymous	COMPILE_OK	null	anon/v13.apex
+v14	67.0	plain	anonymous	COMPILE_OK	null	anon/v14.apex
+v15	67.0	plain	anonymous	COMPILE_OK	null	anon/v15.apex
+v16	67.0	plain	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: Map<String,V035Vis.Pv>	anon/v16.apex
+v17	67.0	plain	anonymous	COMPILE_OK	11	anon/v17.apex
+v18	67.0	plain	anonymous	COMPILE_OK	null	anon/v18.apex
+v19	67.0	plain	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: V035Vis.Pen	anon/v19.apex
+v20	67.0	plain	anonymous	COMPILE_OK	null	anon/v20.apex
+v21	67.0	plain	anonymous	COMPILE_OK	null	anon/v21.apex
+v22	67.0	plain	anonymous	COMPILE_OK	null	anon/v22.apex
+v23	67.0	plain	anonymous	COMPILE_OK	V035Vis.Pb	anon/v23.apex
+v24	67.0	plain	anonymous	COMPILE_OK	null	anon/v24.apex
+v25	67.0	plain	anonymous	COMPILE_ERROR	line 1 col 1: Type is not visible: V035Vis.Pv	anon/v25.apex
+V035VisOut	67.0	plain	named	COMPILE_ERROR	line 2 col 25: Type is not visible: V035Vis.Dn	named/V035VisOut.cls
+V035VisOut	67.0	plain	named	COMPILE_ERROR	line 2 col 85: Type is not visible: V035Vis.Dn	named/V035VisOut.cls
+V035VisOut	67.0	plain	named	COMPILE_ERROR	line 3 col 25: Type is not visible: V035Vis.Pv	named/V035VisOut.cls
+V035VisOut	67.0	plain	named	COMPILE_ERROR	line 3 col 85: Type is not visible: V035Vis.Pv	named/V035VisOut.cls
+V035VisOut	67.0	plain	named	COMPILE_ERROR	line 4 col 25: Type is not visible: V035Vis.Tv	named/V035VisOut.cls
+V035VisOut	67.0	plain	named	COMPILE_ERROR	line 4 col 85: Type is not visible: V035Vis.Tv	named/V035VisOut.cls
+V035VisOut	67.0	plain	named	COMPILE_ERROR	line 5 col 25: Type is not visible: V035Vis.Tdn	named/V035VisOut.cls
+V035VisOut	67.0	plain	named	COMPILE_ERROR	line 5 col 87: Type is not visible: V035Vis.Tdn	named/V035VisOut.cls
+V035VisOut	67.0	plain	named	COMPILE_ERROR	line 6 col 25: Type is not visible: V035Vis.Pen	named/V035VisOut.cls
+V035VisOut	67.0	plain	named	COMPILE_ERROR	line 6 col 83: Type is not visible: V035Vis.Pen	named/V035VisOut.cls
+V035VisOut	67.0	plain	named	COMPILE_ERROR	line 7 col 25: Type is not visible: V035Vis.Pi	named/V035VisOut.cls
+V035VisOut	67.0	plain	named	COMPILE_ERROR	line 8 col 25: Type is not visible: List<V035Vis.Pv>	named/V035VisOut.cls
+V035VisOut	67.0	plain	named	COMPILE_ERROR	line 9 col 69: Type is not visible: V035Vis.Pv	named/V035VisOut.cls
+V035VisOut	67.0	plain	named	COMPILE_ERROR	line 10 col 42: Type is not visible: V035Vis.Pv	named/V035VisOut.cls
+V035VisOut	67.0	plain	named	COMPILE_ERROR	line 10 col 100: Type is not visible: V035Vis.Pv	named/V035VisOut.cls
+V035VisOut	67.0	plain	named	COMPILE_ERROR	line 11 col 34: Type is not visible: V035Vis.Pv	named/V035VisOut.cls
+V035VisOut	67.0	plain	named	COMPILE_ERROR	line 12 col 25: Type is not visible: Map<String,V035Vis.Pv>	named/V035VisOut.cls
+V035VisOut	67.0	plain	named	COMPILE_ERROR	line 13 col 25: Type is not visible: V035Vis.Pen	named/V035VisOut.cls
+V035VisOut	67.0	plain	named	COMPILE_ERROR	line 14 col 25: Type is not visible: V035Vis.Pv	named/V035VisOut.cls
+V035VisOutT	67.0	plain	named	COMPILE_ERROR	line 2 col 33: Type is not visible: V035Vis.Dn	named/V035VisOutT.cls
+V035VisOutT	67.0	plain	named	COMPILE_ERROR	line 2 col 93: Type is not visible: V035Vis.Dn	named/V035VisOutT.cls
+V035VisOutT	67.0	plain	named	COMPILE_ERROR	line 3 col 33: Type is not visible: V035Vis.Pv	named/V035VisOutT.cls
+V035VisOutT	67.0	plain	named	COMPILE_ERROR	line 3 col 93: Type is not visible: V035Vis.Pv	named/V035VisOutT.cls
+V035VisOutT	67.0	plain	named	COMPILE_ERROR	line 6 col 33: Type is not visible: V035Vis.Pen	named/V035VisOutT.cls
+V035VisOutT	67.0	plain	named	COMPILE_ERROR	line 6 col 91: Type is not visible: V035Vis.Pen	named/V035VisOutT.cls
+V035VisOutT	67.0	plain	named	COMPILE_ERROR	line 7 col 33: Type is not visible: V035Vis.Pi	named/V035VisOutT.cls
+V035VisOutT	67.0	plain	named	COMPILE_ERROR	line 8 col 33: Type is not visible: List<V035Vis.Pv>	named/V035VisOutT.cls
+V035VisOutT	67.0	plain	named	COMPILE_ERROR	line 9 col 77: Type is not visible: V035Vis.Pv	named/V035VisOutT.cls
+V035VisOutT	67.0	plain	named	COMPILE_ERROR	line 10 col 50: Type is not visible: V035Vis.Pv	named/V035VisOutT.cls
+V035VisOutT	67.0	plain	named	COMPILE_ERROR	line 10 col 108: Type is not visible: V035Vis.Pv	named/V035VisOutT.cls
+V035VisOutT	67.0	plain	named	COMPILE_ERROR	line 11 col 42: Type is not visible: V035Vis.Pv	named/V035VisOutT.cls
+V035VisOutT	67.0	plain	named	COMPILE_ERROR	line 12 col 33: Type is not visible: Map<String,V035Vis.Pv>	named/V035VisOutT.cls
+V035VisOutT	67.0	plain	named	COMPILE_ERROR	line 13 col 33: Type is not visible: V035Vis.Pen	named/V035VisOutT.cls
+V035VisOutT	67.0	plain	named	COMPILE_ERROR	line 14 col 33: Type is not visible: V035Vis.Pv	named/V035VisOutT.cls
+W01	67.0	plain	named	COMPILE_ERROR	line 1 col 20: Type is not visible: V035Vis.Pv	named/W01.cls
+W02	67.0	plain	named	COMPILE_ERROR	line 1 col 45: Type is not visible: V035Vis.Pv	named/W02.cls
+W03	67.0	plain	named	COMPILE_ERROR	line 1 col 38: Type is not visible: V035Vis.Pv	named/W03.cls
+W04	67.0	plain	named	COMPILE_ERROR	line 1 col 38: Type is not visible: V035Vis.Pv	named/W04.cls
+W06	67.0	plain	named	COMPILE_ERROR	line 1 col 49: Type is not visible: V035Vis.Pv	named/W06.cls
+W07	67.0	plain	named	COMPILE_ERROR	line 1 col 49: Type is not visible: V035Vis.Pv	named/W07.cls
+W08	67.0	plain	named	COMPILE_ERROR	line 1 col 50: Type is not visible: V035Vis.Pv	named/W08.cls
+W09	67.0	plain	named	COMPILE_ERROR	line 1 col 46: Type is not visible: V035Vis.Pv	named/W09.cls
+W10	67.0	plain	named	COMPILE_ERROR	line 1 col 58: Type is not visible: V035Vis.Pv	named/W10.cls
+W10	67.0	plain	named	COMPILE_ERROR	line 1 col 43: Type is not visible: V035Vis.Pv	named/W10.cls
+W13	67.0	plain	named	COMPILE_OK		named/W13.cls
+W15	67.0	plain	named	COMPILE_OK		named/W15.cls
+W16	67.0	plain	named	COMPILE_ERROR	line 1 col 14: Type is not visible: V035Vis.Pi	named/W16.cls
+v07	67.0	plain	istest	COMPILE_OK	15	rt/V035VisRt.cls
+v08	67.0	plain	istest	COMPILE_OK	15	rt/V035VisRt.cls
+v13	67.0	plain	istest	COMPILE_OK	null	rt/V035VisRt.cls
+v14	67.0	plain	istest	COMPILE_OK	null	rt/V035VisRt.cls
+v15	67.0	plain	istest	COMPILE_OK	null	rt/V035VisRt.cls
+v17	67.0	plain	istest	COMPILE_OK	11	rt/V035VisRt.cls
+v18	67.0	plain	istest	COMPILE_OK	null	rt/V035VisRt.cls
+v20	67.0	plain	istest	COMPILE_OK	null	rt/V035VisRt.cls
+v21	67.0	plain	istest	COMPILE_OK	null	rt/V035VisRt.cls
+v22	67.0	plain	istest	COMPILE_OK	null	rt/V035VisRt.cls
+v23	67.0	plain	istest	COMPILE_OK	V035Vis.Pb	rt/V035VisRt.cls
+v24	67.0	plain	istest	COMPILE_OK	null	rt/V035VisRt.cls

@@ -38,6 +38,9 @@ type Value struct {
 	exceptionMessageConstructor bool
 	// Some platform Ids retain their original text for valueOf and concatenation.
 	idOriginalDisplay bool
+	// A report service dimension can expose an empty getter while retaining a
+	// null raw groupings field for JSON serialization.
+	reportEmptyDimension bool
 
 	Kind          ValueKind `json:"kind"`
 	Int           int64     `json:"int,omitempty"`
@@ -427,8 +430,10 @@ func accessLevelObjectString(value Value, seen map[uint64]bool) string {
 		if seen[value.Ref] {
 			return "(already output)"
 		}
+		// Native marks an object "already output" once it has been written
+		// anywhere in the rendering, not only while it is being written (org
+		// capture access_level_rendering).
 		seen[value.Ref] = true
-		defer delete(seen, value.Ref)
 	}
 	return "AccessLevel:[SYSTEM_MODE=" + accessLevelFieldString(value.Fields["SYSTEM_MODE"], seen) +
 		", USER_MODE=" + accessLevelFieldString(value.Fields["USER_MODE"], seen) +
@@ -559,6 +564,10 @@ func databaseDTOString(v Value, seen map[uint64]bool) (string, bool) {
 			";isSendNotificationEmail=" + databaseDTOBooleanString(v, "sendNotificationEmail") + ";]", true
 	case "database.querylocator", "querylocator":
 		return "Database.QueryLocator[Query=" + databaseDTOFieldString(v, "Query") + "]", true
+	case "database.paginationcursor":
+		// pagination_cursor_versions: a cursor from any factory, before any
+		// member call, prints this at class API 61.0 to 67.0.
+		return "PaginationCursor:[numRecords=null, queryId=<empty>]", true
 	case "schema.recordtypeinfo", "recordtypeinfo":
 		return "Schema.RecordTypeInfo[getDeveloperName=" + databaseDTOFieldString(v, "developerName") +
 			";getName=" + databaseDTOFieldString(v, "name") +
@@ -1336,13 +1345,8 @@ func mapKey(v Value) string {
 		if isStubProxy(v) {
 			return string(v.Kind) + ":" + v.Type + ":ref:" + strconv.FormatUint(v.Ref, 10)
 		}
-		if sObjectValueType(v.Type) {
-			if key, ok := objectIDFieldMapKey(v); ok {
-				return key
-			}
-			if key, ok := stableSObjectFieldMapKey(v, make(map[uint64]bool)); ok {
-				return key
-			}
+		if sObjectValueType(v.Type) && !v.classInstance {
+			return sObjectProjectedMapKey(v, make(map[uint64]bool))
 		}
 		if key, ok := stableObjectFieldMapKey(v, make(map[uint64]bool)); ok {
 			return key
@@ -1368,7 +1372,33 @@ func mapKey(v Value) string {
 	if isFloatBackedDecimal(v) {
 		return "double:" + v.String()
 	}
+	switch v.Kind {
+	case ValueList:
+		// Display text is ambiguous: ['a, b'] and ['a', 'b'] print alike (native listKeys).
+		return string(v.Kind) + ":" + collectionElementKeys(v.List, false)
+	case ValueSet:
+		// Set equality ignores insertion order (native setKeys).
+		return string(v.Kind) + ":" + collectionElementKeys(v.Set, true)
+	}
 	return string(v.Kind) + ":" + v.String()
+}
+
+// collectionElementKeys joins length-prefixed element keys, sorted when order does not matter.
+func collectionElementKeys(items []Value, sorted bool) string {
+	keys := make([]string, 0, len(items))
+	for _, item := range items {
+		keys = append(keys, mapKey(item))
+	}
+	if sorted {
+		sort.Strings(keys)
+	}
+	var b strings.Builder
+	for _, key := range keys {
+		b.WriteString(strconv.Itoa(len(key)))
+		b.WriteByte(':')
+		b.WriteString(key)
+	}
+	return b.String()
 }
 
 func objectIDFieldMapKey(v Value) (string, bool) {
@@ -1449,13 +1479,8 @@ func mapKeyWithSeen(v Value, seen map[uint64]bool) string {
 		if isStubProxy(v) {
 			return string(v.Kind) + ":" + v.Type + ":ref:" + strconv.FormatUint(v.Ref, 10)
 		}
-		if sObjectValueType(v.Type) {
-			if key, ok := objectIDFieldMapKey(v); ok {
-				return key
-			}
-			if key, ok := stableSObjectFieldMapKey(v, seen); ok {
-				return key
-			}
+		if sObjectValueType(v.Type) && !v.classInstance {
+			return sObjectProjectedMapKey(v, seen)
 		}
 		if key, ok := stableObjectFieldMapKey(v, seen); ok {
 			return key
@@ -1546,19 +1571,45 @@ func valuesString(values []Value) string {
 }
 
 func apexCollectionString(value Value) string {
+	return apexCollectionStringLimit(value, 0)
+}
+
+// apexMapValueCollectionString renders a List or Set held as a Map value in
+// Map text: native shows its first ten elements, then ", ..."
+// (record_type_shape list_forms mapValue rows).
+func apexMapValueCollectionString(value Value) string {
+	return apexCollectionStringLimit(value, collectionDisplayLimit)
+}
+
+// apexCollectionStringLimit renders a collection; a positive limit keeps the
+// first limit List or Set elements and appends "...".
+func apexCollectionStringLimit(value Value, limit int) string {
 	value = value.currentMapKeySet()
 	parts := make([]string, 0)
 	switch value.Kind {
 	case ValueList:
-		parts = make([]string, 0, len(value.List))
-		for _, item := range value.List {
+		items := value.List
+		truncated := limit > 0 && len(items) > limit
+		if truncated {
+			items = items[:limit]
+		}
+		parts = make([]string, 0, len(items)+1)
+		for _, item := range items {
 			parts = append(parts, collectionElementDisplayText(item))
+		}
+		if truncated {
+			parts = append(parts, "...")
 		}
 		return "(" + strings.Join(parts, ", ") + ")"
 	case ValueSet:
-		parts = make([]string, 0, len(value.Set))
+		items := value.Set
+		truncated := limit > 0 && len(items) > limit
+		if truncated {
+			items = items[:limit]
+		}
+		parts = make([]string, 0, len(items)+1)
 		elementType, typed := collectionElementType(value.Type)
-		for _, item := range value.Set {
+		for _, item := range items {
 			// Preserve stored Id payloads; the captured scalar String view is
 			// expanded only in this typed Set projection. Nested text rows are
 			// still pending, so ordinary String/Object sets retain their path.
@@ -1567,6 +1618,9 @@ func apexCollectionString(value Value) string {
 				continue
 			}
 			parts = append(parts, collectionElementDisplayText(item))
+		}
+		if truncated {
+			parts = append(parts, "...")
 		}
 		return "{" + strings.Join(parts, ", ") + "}"
 	case ValueMap:
@@ -1631,4 +1685,53 @@ func orderedValueMapKeys(value Value) []string {
 		}
 	}
 	return keys
+}
+
+// sObjectProjectedMapKey hashes an SObject over the field projection that
+// SObject == compares (sObjectEqualityFieldIncluded), with case-folded field
+// names and Ids normalized like apexIDTextEqual, so equal records hash equally.
+// Native stdlib_unicode_small_c14 sobjectKeys: equal Ids with different field
+// values are distinct keys.
+func sObjectProjectedMapKey(v Value, seen map[uint64]bool) string {
+	if v.Ref != 0 {
+		if seen[v.Ref] {
+			return string(v.Kind) + ":" + strings.ToLower(v.Type) + ":ref:" + strconv.FormatUint(v.Ref, 10)
+		}
+		seen[v.Ref] = true
+		defer delete(seen, v.Ref)
+	}
+	parts := make(map[string]string, len(v.Fields))
+	names := make([]string, 0, len(v.Fields))
+	for name, raw := range v.Fields {
+		if !sObjectEqualityFieldIncluded(v, name, raw) {
+			continue
+		}
+		value := raw
+		if _, resolved, ok := objectFieldValue(v, name); ok {
+			value = resolved
+		}
+		folded := strings.ToLower(name)
+		var text string
+		if id, ok := sObjectIDFromValue(value); ok {
+			text = "id:" + canonicalIDMapKey(string(id))
+		} else {
+			text = mapKeyWithSeen(value, seen)
+		}
+		if _, dup := parts[folded]; !dup {
+			names = append(names, folded)
+		}
+		parts[folded] = text
+	}
+	sort.Strings(names)
+	var b strings.Builder
+	b.WriteString(string(v.Kind))
+	b.WriteByte(':')
+	b.WriteString(strings.ToLower(v.Type))
+	for _, name := range names {
+		b.WriteByte(':')
+		b.WriteString(name)
+		b.WriteByte('=')
+		b.WriteString(parts[name])
+	}
+	return b.String()
 }

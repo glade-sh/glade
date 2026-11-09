@@ -1,0 +1,14 @@
+api=67.0
+context=istest
+rows=3
+native_complete=true
+deployment_success=true
+transport=System.assert
+captured_utc=2026-11-03T15:37:53.629400+00:00
+source_sha256:anonymous.apex=450fed04165651d0c4a88a89f98cf141446f2e2d728e13ce9b96b97ea6d57a9e
+source_sha256:force-app/main/default/approvalProcesses/Contact.Criteria_False.approvalProcess-meta.xml=784ba3a904ddaa72d32cc3e421729445a8ef17199b73ded5e09eb04be69419f8
+source_sha256:force-app/main/default/classes/ApprovalSkipCapture.cls=8ab7dc1847abb6f007de25ad504605257b12450ba1f21bda59021e34bf83c7de
+source_sha256:force-app/main/default/classes/ApprovalSkipCapture.cls-meta.xml=7fb44201a93dd417225bd29008c7bf3ff37a3feb12b9ebb4c6d08a84388441cb
+source_sha256:force-app/main/default/classes/ApprovalSkipCaptureTest.cls=bf21bf641f87b65aa5926a931015a9b4259f70115a761b6c3d11f127d8c94e03
+source_sha256:force-app/main/default/classes/ApprovalSkipCaptureTest.cls-meta.xml=7fb44201a93dd417225bd29008c7bf3ff37a3feb12b9ebb4c6d08a84388441cb
+source_sha256:sfdx-project.json=5ac435826f76be03ecb82707527fffadcf05ee822d8693b58884842a2f4fbf86

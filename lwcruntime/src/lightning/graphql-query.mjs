@@ -1,4 +1,4 @@
-import { parseDocument, printDocument, resolvedValue } from "./graphql-document.mjs";
+import { parseDocument, printDocument, resolvedValue, unwrapDocument } from "./graphql-document.mjs";
 
 const rest = "/services/data/v67.0";
 const schemas = new Map();
@@ -86,10 +86,16 @@ function matches(record, filter) {
       if (op === "like") {
         if (value === null) return false;
         let pattern = "";
-        for (const character of String(expected)) {
-          // W27 inline/variable controls retain literal backslashes; '_' and
-          // '%' remain wildcards even when preceded by a backslash.
-          pattern += character === "%" ? ".*" : character === "_" ? "." : character.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const characters = Array.from(String(expected));
+        for (let i = 0; i < characters.length; i++) {
+          let character = characters[i];
+          // Captured UI GraphQL LIKE controls treat backslash before a
+          // wildcard or backslash as an escape at source APIs 59, 67 and 68.
+          const escaped = character === "\\" && i + 1 < characters.length &&
+            ["%", "_", "\\"].includes(characters[i + 1]);
+          if (escaped) character = characters[++i];
+          pattern += !escaped && character === "%" ? ".*" :
+            !escaped && character === "_" ? "." : character.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         }
         return new RegExp("^" + pattern + "$", "iu").test(value);
       }
@@ -102,7 +108,7 @@ function matches(record, filter) {
 // answers or fixture-name branches. AST aliases and fragment projections share
 // the same resolver as direct selections.
 export async function executeQuery(input, suppliedVariables = {}, operationName, wireContext = false) {
-  const source = printDocument(input);
+  const source = printDocument(unwrapDocument(input));
   const document = parseDocument(source);
   const errors = [];
   const errorKeys = new Set();
@@ -135,6 +141,9 @@ export async function executeQuery(input, suppliedVariables = {}, operationName,
   if (!operation) {
     error(operationName ? `Unknown operation named '${operationName}'.` : "Must provide operation name if query contains multiple operations.", [], "");
     return { data: undefined, errors: [{ error: errors, errorType: "adapterError" }] };
+  }
+  if (operation.operation !== "query") {
+    return { data: undefined, errors: [{ errorType: "localBoundary", message: "GraphQL mutation execution is not supported locally" }] };
   }
   const variables = {};
   const nonStringVariables = new Set();

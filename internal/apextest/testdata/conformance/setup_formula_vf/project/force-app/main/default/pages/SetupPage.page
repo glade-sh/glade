@@ -1,0 +1,1 @@
+<apex:page standardController="Account"><apex:outputText value="{!Account.SetupFlag__c}"/></apex:page>

@@ -70,6 +70,7 @@ func TestDoubleDecimalConformance(t *testing.T) {
 	floorMismatches := newFloorCompilerMismatches(t, "Double and Decimal", nativeCompilerRows, "anonymous", "@IsTest")
 	for _, api := range []string{"62.0", fixture.APIVersion, fixture.CeilingOracle.APIVersion} {
 		t.Run(api, func(t *testing.T) {
+			t.Parallel()
 			rows := fixture.Cases
 			if api != "62.0" {
 				rows = append(append([]probeCase{}, rows...), fixture.Preservation...)

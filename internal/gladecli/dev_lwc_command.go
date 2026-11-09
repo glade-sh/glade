@@ -123,7 +123,7 @@ func runDevLWCWithOpenURLAndListen(ctx context.Context, args []string, w io.Writ
 			return err
 		}
 	}
-	httpServer := &http.Server{Addr: opts.addr, Handler: server.GuardHTTPAuthority(handler, actualAddr, opts.addr), ReadHeaderTimeout: localHTTPReadHeaderTimeout, ReadTimeout: localHTTPReadTimeout}
+	httpServer := &http.Server{Addr: opts.addr, Handler: server.GuardHTTPAuthorityWithOptions(handler, actualAddr, server.AuthorityOptions{AllowPublicDemo: opts.publicDemo}, opts.addr), ReadHeaderTimeout: localHTTPReadHeaderTimeout, ReadTimeout: localHTTPReadTimeout}
 	renderer.Render(cliui.Event{Kind: cliui.EventPhaseEnd, Phase: "dev lwc", Label: "Shell ready", Current: 6, Total: 6})
 	renderer.Finish(cliui.Result{OK: true, Label: "dev lwc ready"})
 	printDevLWCStartupSummary(w, actualAddr, p, selection)
@@ -140,6 +140,7 @@ func runDevLWCWithOpenURLAndListen(ctx context.Context, args []string, w io.Writ
 var errDevLWCHelp = errors.New("dev lwc help requested")
 
 type devLWCOptions struct {
+	publicDemo   bool
 	addr         string
 	root         string
 	dbPath       string
@@ -186,6 +187,8 @@ func parseDevLWCOptions(args []string) (devLWCOptions, error) {
 				return opts, err
 			}
 			opts.addr = "127.0.0.1:" + value
+		case "--allow-public-demo":
+			opts.publicDemo = true
 		case "--addr":
 			value, err := takeFlagValue(args, &i, "--addr requires a value")
 			if err != nil {

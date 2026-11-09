@@ -1,0 +1,1 @@
+global class GxB_c6 implements Database.Batchable<SObject>{global Database.QueryLocator start(Database.BatchableContext c){return Database.getQueryLocator([SELECT Id FROM Account WHERE Name='zz-in']);}global void execute(Database.BatchableContext c,List<SObject> s){}global void finish(Database.BatchableContext c){GxHelp48.go('c6');}}

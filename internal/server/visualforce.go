@@ -1089,13 +1089,7 @@ func injectVisualforceCSRF(htmlText, encodedViewState string, secret []byte) str
 		return htmlText
 	}
 	field := `<input type="hidden" name="__vf_csrf" value="` + htmlAttrEscape(payload.CSRF) + `" />`
-	if strings.Contains(htmlText, "</form>") {
-		return strings.ReplaceAll(htmlText, "</form>", field+"</form>")
-	}
-	if strings.Contains(htmlText, "</body>") {
-		return strings.Replace(htmlText, "</body>", field+"</body>", 1)
-	}
-	return htmlText + field
+	return visualforce.InjectFormFields(htmlText, field)
 }
 
 var errVisualforceViewStateKey = errors.New("Visualforce view-state key unavailable")

@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>T_shape</fullName><active>true</active><errorConditionFormula>IF( Subject = &apos;vr_shape&apos; &amp;&amp; OR(ISBLANK( WhatId ), LEFT(OwnerId, 3) != &apos;005&apos; ), true, false)</errorConditionFormula><errorMessage>T_shape fired</errorMessage></ValidationRule>

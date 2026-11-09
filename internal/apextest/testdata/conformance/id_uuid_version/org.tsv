@@ -1,0 +1,4 @@
+api	route	case	observation	context
+62.0	anonymous	I051	FamilyBaseline__c	stored cases.json expectation
+67.0	anonymous	I051	FamilyBaseline__c	stored cases.json expectation
+68.0	anonymous	I051	EXC|System.SObjectException|Cannot locate Apex Type for ID: a00000000000001AAA	fresh scratch fixture prefix a06; source uses a00

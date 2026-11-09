@@ -34,6 +34,7 @@ func runServer(ctx context.Context, args []string, w io.Writer, progressW io.Wri
 		return err
 	}
 	addr := "127.0.0.1:8080"
+	publicDemo := false
 	dbPath := ""
 	root := "."
 	projectProvided := false
@@ -53,6 +54,8 @@ func runServer(ctx context.Context, args []string, w io.Writer, progressW io.Wri
 			continue
 		}
 		switch args[i] {
+		case "--allow-public-demo":
+			publicDemo = true
 		case "--addr":
 			value, err := takeFlagValue(args, &i, "--addr requires a value")
 			if err != nil {
@@ -182,9 +185,13 @@ func runServer(ctx context.Context, args []string, w io.Writer, progressW io.Wri
 	fmt.Fprintln(w, "  Ctrl-C")
 	if isPublicServerBind(addr) {
 		fmt.Fprintln(w)
-		fmt.Fprintln(w, "WARNING  Server is network-reachable. Local org data and mutation routes are unauthenticated.")
+		if publicDemo {
+			fmt.Fprintln(w, "WARNING  Public demo mode disables exposed-listener authorization; clients can execute code and change data.")
+		} else {
+			fmt.Fprintln(w, "WARNING  Server is network-reachable. Requests require the configured capability or a server-issued token.")
+		}
 	}
-	return serveHTTPWithContext(ctx, addr, server.GuardHTTPAuthority(handler, addr))
+	return serveHTTPWithContext(ctx, addr, server.GuardHTTPAuthorityWithOptions(handler, addr, server.AuthorityOptions{AllowPublicDemo: publicDemo}))
 }
 
 func runPlayground(ctx context.Context, args []string, w io.Writer, progressW io.Writer) error {
@@ -506,7 +513,18 @@ func runPlayground(ctx context.Context, args []string, w io.Writer, progressW io
 	if openBrowser {
 		_ = openURL(url)
 	}
-	return serveHTTPWithContext(ctx, addr, handler)
+	return serveHTTPWithContext(ctx, addr, playgroundListenerHandler(handler, addr, public))
+}
+
+// playgroundListenerHandler returns the handler the playground listener serves.
+// Local listeners go through the shared HTTP authority guard. Public mode sits
+// behind a hosting ingress with arbitrary Host values and keeps the playground's
+// own same-origin, proxy and rate-limit checks.
+func playgroundListenerHandler(handler http.Handler, addr string, public bool) http.Handler {
+	if public {
+		return handler
+	}
+	return server.GuardHTTPAuthority(handler, addr)
 }
 
 func serveHTTPWithContext(ctx context.Context, addr string, handler http.Handler) error {
@@ -524,7 +542,7 @@ func validateServerBindAllowed(addr string) error {
 	if !isPublicServerBind(addr) || os.Getenv("GLADE_SERVER_PUBLIC") == "1" {
 		return nil
 	}
-	return fmt.Errorf("refusing network-reachable bind %q; set GLADE_SERVER_PUBLIC=1 to expose unauthenticated local server routes", addr)
+	return fmt.Errorf("refusing network-reachable bind %q; set GLADE_SERVER_PUBLIC=1 to allow it; check this command's capability and isolation requirements", addr)
 }
 
 func isPublicServerBind(addr string) bool {

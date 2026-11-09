@@ -12,21 +12,6 @@ import (
 	"github.com/glade-sh/glade/internal/sema"
 )
 
-// Carries are scoped to fields observed to differ at source API 67. API 62
-// runs each independent class separately so one local admission gap cannot
-// suppress observations from other classes.
-var stdlibLocaleCryptoCarries = map[string][]string{
-	"DootLocaleA867A1031/lapair":          {"reverse", "same"},
-	"DootLocaleA867A1031/larev":           {"reverse", "same"},
-	"DootGcmDirect67A1031/observe":        {"bytes", "roundtrip", "status", "error"},
-	"DootGcmManaged67A1031/observe":       {"bytes", "roundtrip", "status", "error"},
-	"DootGcmNull67A1031/observe":          {"error"},
-	"DootEcdsaMalformed67A1031/badSign":   {"error", "bytes", "digest", "status"},
-	"DootEcdsaMalformed67A1031/badVerify": {"error", "out", "status"},
-	"DootLocaleU167A1031/en":              {"equal"},
-	"DootLocaleU167A1031/tr":              {"equal"},
-}
-
 func TestStdlibLocaleCryptoC14NativeConformance(t *testing.T) {
 	dir := filepath.Join("testdata", "conformance", "stdlib_locale_crypto_c14")
 	file, err := os.Open(filepath.Join(dir, "org.tsv"))
@@ -73,13 +58,6 @@ func TestStdlibLocaleCryptoC14NativeConformance(t *testing.T) {
 					writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"","sourceApiVersion":"`+api+`"}`)
 					index := loadTestIndex(t, root)
 					analysis := sema.Analyze(index)
-					if api == "62.0" && key == "DootGcmNull67A1031/observe" {
-						if index.HasErrors() || len(analysis.Diagnostics) != 1 || analysis.Diagnostics[0].Code != "GLADESEMA028" || analysis.Diagnostics[0].Message != `method "observe" uses unsupported local feature "Crypto.encryptWithManagedIV"` {
-							t.Fatalf("admission carry changed: %v %v", index.Diagnostics, analysis.Diagnostics)
-						}
-						t.Log("known local carry batch Dot stdlib cases Dot Dot SOQL cases and Dot async cases (fix owner pending): API 62 native method runs but Glade rejects the supported overload; observation not reached")
-						case345Skip(t)
-					}
 					if index.HasErrors() || analysis.HasErrors() {
 						t.Fatalf("native source diagnostics: %v %v", index.Diagnostics, analysis.Diagnostics)
 					}
@@ -99,28 +77,7 @@ func TestStdlibLocaleCryptoC14NativeConformance(t *testing.T) {
 					if err := json.Unmarshal([]byte(row[4]), &want); err != nil {
 						t.Fatal(err)
 					}
-					if fields := stdlibLocaleCryptoCarries[key]; len(fields) > 0 {
-						observed := map[string]string{
-							"DootLocaleA867A1031/lapair":          `{"reverse":false,"same":false}`,
-							"DootLocaleA867A1031/larev":           `{"reverse":true,"same":true}`,
-							"DootGcmDirect67A1031/observe":        `{"error":{"em":"Argument cannot be null.","et":"System.NullPointerException","stage":"encrypt"}}`,
-							"DootGcmManaged67A1031/observe":       `{"error":{"em":"Invalid algorithm 'AES256-GCM'. Must be AES128, AES192, AES256, AES384, or AES512.","et":"System.InvalidParameterValueException","stage":"encrypt"}}`,
-							"DootGcmNull67A1031/observe":          `{"error":{"em":"Crypto.encryptWithManagedIV authenticated data only supports AES256-GCM","et":"System.InvalidParameterValueException","stage":"encrypt"}}`,
-							"DootEcdsaMalformed67A1031/badSign":   `{"bytes":32,"digest":true,"status":"ok"}`,
-							"DootEcdsaMalformed67A1031/badVerify": `{"out":true,"status":"ok"}`,
-							"DootLocaleU167A1031/en":              `{"equal":[true,false,false]}`,
-							"DootLocaleU167A1031/tr":              `{"equal":[true,false,false]}`,
-						}[key]
-						var expected map[string]any
-						if err := json.Unmarshal([]byte(observed), &expected); err != nil {
-							t.Fatal(err)
-						}
-						if !c14ExactCarryEqual(got, want, expected, fields) {
-							t.Fatalf("carry changed: native=%v; Glade=%v", want, got)
-						}
-						t.Logf("known local carry batch Dot stdlib cases Dot Dot SOQL cases and Dot async cases (fix owner pending): fields=%v native=%v; Glade=%v", fields, want, got)
-						case345Skip(t)
-					} else if !reflect.DeepEqual(got, want) {
+					if !reflect.DeepEqual(got, want) {
 						t.Fatalf("native=%v; Glade=%v", want, got)
 					}
 				})

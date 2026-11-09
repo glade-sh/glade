@@ -1,0 +1,1 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Auto__c</fullName><label>Auto</label><displayFormat>S-{000}</displayFormat><startingNumber>1</startingNumber><type>AutoNumber</type></CustomField>

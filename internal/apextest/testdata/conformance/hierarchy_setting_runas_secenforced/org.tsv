@@ -1,0 +1,3 @@
+source_api	route	observation
+62.0	anonymous	{"standard":"not a test run","adminWithout":{"secDynamic":1,"secStatic":1},"adminWith":{"secDynamic":1,"secStatic":1}}
+62.0	isTest	{"standardWithout":{"secDynamic":"System.QueryException","secStatic":"System.QueryException"},"standardWith":{"secDynamic":"System.QueryException","secStatic":"System.QueryException"},"adminWithout":{"secDynamic":1,"secStatic":1},"adminWith":{"secDynamic":1,"secStatic":1}}

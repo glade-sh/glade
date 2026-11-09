@@ -1,0 +1,1 @@
+public virtual class NsOuter { private class Pv { public Integer v = 1; } class Dn { public Integer v = 2; } private enum PvE { A } enum DnE { A } private interface PvI {} public class Pb { public Integer v = 3; } public static Integer own() { Pv a = new Pv(); Dn b = new Dn(); PvE c = PvE.A; return a.v + b.v; } }

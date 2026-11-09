@@ -25,15 +25,9 @@ func TestReferenceOnlySurfacesNativeConformance(t *testing.T) {
 	const fixture = "testdata/conformance/reference_only_surfaces"
 	cases := readReferenceOnlyNativeTable(t, filepath.Join(fixture, "cases.tsv"), 2)
 	rows := readReferenceOnlyNativeTable(t, filepath.Join(fixture, "org.tsv"), 5)
-	// drift.tsv lists rows captured on the Winter '27 org that contradict the
-	// Summer '26 rows in reference_only_names (API 62-66 reflection and static
-	// SOQL). Advisor ruling 35: each is asserted twice below, as the recorded
-	// Winter '27 native answer and as Glade's current Summer '26 answer, so the
-	// test fails if either changes.
-	drift := make(map[string]bool)
-	for _, row := range readReferenceOnlyNativeTable(t, filepath.Join(fixture, "drift.tsv"), 3)[1:] {
-		drift[row[0]+"/"+row[1]] = true
-	}
+	// The 2026-11-05 Winter '27 org agrees with org.tsv on every isTest row at
+	// API 62 through 67 and adds API 68, which equals API 67.
+	rows = append(rows, referenceOnlySurfacesAPI68Rows(t, fixture, rows)...)
 	bodies := make(map[string]string)
 	for _, row := range cases[1:] {
 		if _, dup := bodies[row[0]]; dup {
@@ -42,7 +36,6 @@ func TestReferenceOnlySurfacesNativeConformance(t *testing.T) {
 		bodies[row[0]] = row[1]
 	}
 	byAPI := make(map[string][][]string)
-	driftRows := make(map[string][][]string)
 	seen := make(map[string]bool)
 	for _, row := range rows[1:] {
 		key := strings.Join(row[:3], "/")
@@ -59,22 +52,14 @@ func TestReferenceOnlySurfacesNativeConformance(t *testing.T) {
 			t.Fatalf("unknown native outcome: %v", row)
 		}
 		seen[key] = true
-		if drift[row[0]+"/"+row[2]] && row[1] == "isTest" {
-			delete(drift, row[0]+"/"+row[2])
-			driftRows[row[0]] = append(driftRows[row[0]], row)
-			continue
-		}
 		byAPI[row[0]] = append(byAPI[row[0]], row)
-	}
-	if len(drift) != 0 {
-		t.Fatalf("drift rows without an isTest observation: %v", drift)
 	}
 	apis := make([]string, 0, len(byAPI))
 	for api := range byAPI {
 		apis = append(apis, api)
 	}
 	sort.Strings(apis)
-	if len(apis) != 6 {
+	if len(apis) != 7 {
 		t.Fatalf("native APIs=%v", apis)
 	}
 	compileMatches := func(t *testing.T, analysis sema.Result, row []string) bool {
@@ -134,7 +119,6 @@ func TestReferenceOnlySurfacesNativeConformance(t *testing.T) {
 					assertReferenceOnlyNamedRuntime(t, index, "SurfaceRuntimeTest", expected)
 				}
 			}
-			assertSurfaceDrift(t, api, bodies, byAPI, driftRows[api])
 			index := typesys.Build(project.Project{Root: t.TempDir(), SourceAPIVersion: api}, schema.Schema{})
 			org := orgFromIndex(index)
 			org.APIVersion = api
@@ -190,11 +174,6 @@ func TestReferenceOnlySurfacesMixedVersionNativeConformance(t *testing.T) {
 		}
 		oracle[key] = row
 	}
-	// Glade still gates reflection and static SOQL on the helper's API version
-	// (reference_only_names rows); the Winter '27 org no longer does. See drift.tsv.
-	drift := func(helperAPI, method string) bool {
-		return helperAPI != "67.0" && (method == "tf" || method == "sq")
-	}
 	for _, callerAPI := range []string{"62.0", "66.0", "67.0"} {
 		t.Run(callerAPI, func(t *testing.T) {
 			root := t.TempDir()
@@ -205,7 +184,6 @@ func TestReferenceOnlySurfacesMixedVersionNativeConformance(t *testing.T) {
 			var anonymous []anon
 			for _, helperAPI := range []string{"62.0", "66.0", "67.0"} {
 				for _, m := range methods {
-					isDrift := drift(helperAPI, m[0])
 					className := "MixedHelper" + strings.TrimSuffix(helperAPI, ".0") + m[0]
 					path := filepath.Join(root, className+".cls")
 					writeFile(t, path, "public class "+className+" { "+m[1]+" }")
@@ -214,21 +192,6 @@ func TestReferenceOnlySurfacesMixedVersionNativeConformance(t *testing.T) {
 					id := "mixed_h" + strings.TrimSuffix(helperAPI, ".0") + "_" + m[0]
 					call := strings.Replace(m[2], "H.", className+".", 1)
 					body := "System.assert(false, 'OBS|' + String.valueOf(" + call + "));"
-					if isDrift {
-						// Winter '27 native rows do not depend on the helper API (compare the
-						// h67 row); Glade still gates on it. Assert both, advisor ruling 35.
-						winter := oracle[callerAPI+"/isTest/mixed_h67_"+m[0]]
-						if oracle[callerAPI+"/isTest/"+id][4] != winter[4] || oracle[callerAPI+"/anonymous/"+id][4] != oracle[callerAPI+"/anonymous/mixed_h67_"+m[0]][4] {
-							t.Fatalf("%s: Winter '27 native row depends on the helper API", id)
-						}
-						want := gladeMixedDrift[m[0]]
-						if want == "" || want == winter[4] {
-							t.Fatalf("%s: Glade drift answer %q must be set and differ from native %q", id, want, winter[4])
-						}
-						expected[id] = want
-						fmt.Fprintf(&testBody, "@IsTest static void %s() { %s }\n", id, body)
-						continue
-					}
 					expected[id] = oracle[callerAPI+"/isTest/"+id][4]
 					fmt.Fprintf(&testBody, "@IsTest static void %s() { %s }\n", id, body)
 					anonymous = append(anonymous, anon{id, body})
@@ -274,75 +237,151 @@ func TestReferenceOnlySurfacesMixedVersionNativeConformance(t *testing.T) {
 	}
 }
 
-// trigger-org.tsv records native trigger-body behaviour that Glade does not model
-// yet (#3). The rows are evidence, not a replay.
-func TestReferenceOnlySurfacesTriggerRowsRecorded(t *testing.T) {
-	rows := readReferenceOnlyNativeTable(t, "testdata/conformance/reference_only_surfaces/trigger-org.tsv", 5)[1:]
-	if len(rows) != 36 {
-		t.Fatalf("trigger rows=%d", len(rows))
-	}
-	for _, row := range rows {
-		if row[1] != "trigger" || row[3] != "RUNTIME_ERROR" || !strings.HasPrefix(row[2], "trg_") {
-			t.Fatalf("invalid trigger row: %v", row)
-		}
-	}
-}
-
-// gladeSurfaceDrift is Glade's current (Summer '26) isTest answer for the rows in
-// drift.tsv. The recorded native rows are the Winter '27 answers.
-var gladeSurfaceDrift = map[string]string{
-	"construct_type_forName":        "System.AssertException: Assertion Failed: OBS|false",
-	"construct_type_forName_schema": "System.AssertException: Assertion Failed: OBS|false",
-	"construct_typeof_newInstance":  "System.AssertException: Assertion Failed: OBS|true",
-	"query_static_list":             "System.AssertException: Assertion Failed: OBS|0",
-	"query_static_count":            "System.AssertException: Assertion Failed: OBS|0",
-	"query_static_list_typed":       "System.AssertException: Assertion Failed: OBS|0",
-}
-
-// assertSurfaceDrift pins both sides of a release-drift row at one API: the
-// recorded Winter '27 native row (equal to the API 67 row) and Glade's current
-// behaviour, run in one @IsTest class at that API.
-func assertSurfaceDrift(t *testing.T, api string, bodies map[string]string, byAPI map[string][][]string, drifted [][]string) {
+// referenceOnlySurfacesAPI68Rows returns the API 68 rows of the 2026-11-05
+// capture. It also requires every row of that capture at API 62 through 67 to
+// equal the matching isTest row of org.tsv, so a later org that disagrees
+// fails here and not silently.
+func referenceOnlySurfacesAPI68Rows(t *testing.T, fixture string, base [][]string) [][]string {
 	t.Helper()
-	if len(drifted) == 0 {
-		return
-	}
-	winter := make(map[string][]string)
-	for _, row := range byAPI["67.0"] {
+	known := make(map[string]string)
+	for _, row := range base[1:] {
 		if row[1] == "isTest" {
-			winter[row[2]] = row
+			known[row[0]+"/"+row[2]] = row[3] + "|" + row[4]
 		}
 	}
-	var methods strings.Builder
-	for _, row := range drifted {
-		id := row[2]
-		if row[3] != "RUNTIME_ERROR" || winter[id] == nil || winter[id][3] != row[3] || winter[id][4] != row[4] {
-			t.Fatalf("%s/%s: Winter '27 native row %v does not match the API 67 row %v", api, id, row, winter[id])
+	var api68 [][]string
+	compared := 0
+	for _, row := range readReferenceOnlyNativeTable(t, filepath.Join(fixture, "org-winter27-20261105.tsv"), 5)[1:] {
+		if row[1] != "isTest" {
+			t.Fatalf("unexpected route: %v", row)
 		}
-		fmt.Fprintf(&methods, "@IsTest static void %s() { %s }\n", id, bodies[id])
-	}
-	root := t.TempDir()
-	path := filepath.Join(root, "SurfaceDriftTest.cls")
-	writeFile(t, path, "@IsTest private class SurfaceDriftTest { "+methods.String()+" }")
-	writeFile(t, path+"-meta.xml", "<ApexClass><apiVersion>"+api+"</apiVersion></ApexClass>")
-	index := typesys.Build(project.Project{Root: root, SourceAPIVersion: api, ApexFiles: []string{path}}, schema.Schema{})
-	if analysis := sema.Analyze(index); analysis.HasErrors() {
-		t.Fatalf("drift bodies rejected: %v", analysis.Diagnostics)
-	}
-	expected := make(map[string]string)
-	for _, row := range drifted {
-		want := gladeSurfaceDrift[row[2]]
-		if want == "" || want == row[4] {
-			t.Fatalf("%s: Glade drift answer %q must be set and differ from the native row %q", row[2], want, row[4])
+		if row[0] == "68.0" {
+			api68 = append(api68, row)
+			continue
 		}
-		expected[row[2]] = want
+		want, ok := known[row[0]+"/"+row[2]]
+		if !ok {
+			continue
+		}
+		compared++
+		if got := row[3] + "|" + row[4]; got != want {
+			t.Fatalf("2026-11-05 %s/%s=%q; org.tsv=%q", row[0], row[2], got, want)
+		}
 	}
-	assertReferenceOnlyNamedRuntime(t, index, "SurfaceDriftTest", expected)
+	if len(api68) != 51 || compared < 130 {
+		t.Fatalf("2026-11-05 capture: api68=%d compared=%d", len(api68), compared)
+	}
+	return api68
 }
 
-// gladeMixedDrift is Glade's current isTest answer for a helper at API 62-66
-// called through reflection (tf) or static SOQL (sq); native Winter '27 differs.
-var gladeMixedDrift = map[string]string{
-	"tf": "System.AssertException: Assertion Failed: OBS|false",
-	"sq": "System.AssertException: Assertion Failed: OBS|0",
+// referenceOnlyTriggerBodies are the trigger-body probes behind trigger-org.tsv
+// and trigger-org-winter27.tsv (#3). Each body runs in a
+// before-insert trigger on Account fired from an @IsTest insert. R292TrgHelper
+// holds the same declaration and query in a class, which stays class-visible.
+var referenceOnlyTriggerBodies = map[string]string{
+	"trg_decl":            "FieldServiceMobileExtension f; System.assert(false, 'OBS|' + String.valueOf(f == null));",
+	"trg_new":             "System.assert(false, 'OBS|' + String.valueOf(new FieldServiceMobileExtension() != null));",
+	"trg_soql":            "System.assert(false, 'OBS|' + String.valueOf([select Id from FieldServiceMobileExtension].size()));",
+	"trg_soql_count":      "System.assert(false, 'OBS|' + String.valueOf([select count() from FieldServiceMobileExtension]));",
+	"trg_soql_typed":      "List<FieldServiceMobileExtension> l = [select Id from FieldServiceMobileExtension]; System.assert(false, 'OBS|' + String.valueOf(l.size()));",
+	"trg_describe":        "System.assert(false, 'OBS|' + String.valueOf(FieldServiceMobileExtension.SObjectType.getDescribe().getName()));",
+	"trg_gd":              "System.assert(false, 'OBS|' + String.valueOf(Schema.getGlobalDescribe().get('FieldServiceMobileExtension') == null));",
+	"trg_dynq":            "System.assert(false, 'OBS|' + String.valueOf(Database.query('select Id from FieldServiceMobileExtension').size()));",
+	"trg_tf":              "System.assert(false, 'OBS|' + String.valueOf(Type.forName('FieldServiceMobileExtension') == null));",
+	"trg_helper_sig":      "System.assert(false, 'OBS|' + String.valueOf(R292TrgHelper.sig()));",
+	"trg_helper_sq":       "System.assert(false, 'OBS|' + String.valueOf(R292TrgHelper.sq()));",
+	"trg_control_account": "System.assert(false, 'OBS|' + String.valueOf([select count() from Account]));",
+}
+
+// TestReferenceOnlySurfacesTriggerNativeConformance replays every trigger-body
+// row. A trigger body sees the reference-only types: declaration, new and
+// describe work, Type.forName and getGlobalDescribe are non-null, static
+// count() throws SecurityException and the other static or dynamic queries throw
+// the long QueryException. The 2026-11-05 capture adds API 68, equal to 67; the
+// first capture must equal it at 62, 66 and 67.
+//
+// An assertion failure inside a trigger is wrapped in the insert's DmlException
+// (CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY, "caused by: System.AssertException"),
+// as natively, so every row compares the whole message with whitespace
+// collapsed (the System. prefix is optional on Glade's side).
+func TestReferenceOnlySurfacesTriggerNativeConformance(t *testing.T) {
+	const fixture = "testdata/conformance/reference_only_surfaces"
+	first := readReferenceOnlyNativeTable(t, filepath.Join(fixture, "trigger-org.tsv"), 5)[1:]
+	recheck := readReferenceOnlyNativeTable(t, filepath.Join(fixture, "trigger-org-winter27-20261105.tsv"), 5)[1:]
+	if len(first) != 36 || len(recheck) != 48 {
+		t.Fatalf("trigger rows first=%d recheck=%d", len(first), len(recheck))
+	}
+	type key struct{ api, id string }
+	native := make(map[key]string)
+	for _, group := range [][][]string{first, recheck} {
+		for _, row := range group {
+			k := key{row[0], row[2]}
+			if row[1] != "trigger" || row[3] != "RUNTIME_ERROR" || referenceOnlyTriggerBodies[row[2]] == "" {
+				t.Fatalf("invalid trigger row: %v", row)
+			}
+			if prior, dup := native[k]; dup && prior != row[4] {
+				t.Fatalf("captures disagree at %v: %q vs %q", k, prior, row[4])
+			}
+			native[k] = row[4]
+		}
+	}
+	for _, id := range sortedKeys(referenceOnlyTriggerBodies) {
+		if native[key{"67.0", id}] != native[key{"68.0", id}] {
+			t.Fatalf("API 68 differs from 67 at %s", id)
+		}
+	}
+	for _, api := range []string{"62.0", "66.0", "67.0", "68.0"} {
+		for _, id := range sortedKeys(referenceOnlyTriggerBodies) {
+			want, ok := native[key{api, id}]
+			if !ok {
+				t.Fatalf("missing native row %s/%s", api, id)
+			}
+			t.Run(api+"/"+id, func(t *testing.T) {
+				root := t.TempDir()
+				writeFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"sourceApiVersion":%q,"packageDirectories":[{"path":"force-app","default":true}]}`, api))
+				base := filepath.Join(root, "force-app/main/default")
+				put := func(rel, src, meta string) {
+					path := filepath.Join(base, rel)
+					writeFile(t, path, src)
+					writeFile(t, path+"-meta.xml", meta)
+				}
+				classMeta := "<ApexClass><apiVersion>" + api + "</apiVersion></ApexClass>"
+				put("classes/R292TrgHelper.cls", "public class R292TrgHelper { public static Boolean sig() { FieldServiceMobileExtension f = new FieldServiceMobileExtension(); return f != null; } public static Integer sq() { return [select Id from FieldServiceMobileExtension].size(); } }", classMeta)
+				put("classes/TrgT.cls", "@IsTest private class TrgT { @IsTest static void m() { insert new Account(Name='r'); } }", classMeta)
+				put("triggers/R292Trg.trigger", "trigger R292Trg on Account (before insert) { "+referenceOnlyTriggerBodies[id]+" }", "<ApexTrigger><apiVersion>"+api+"</apiVersion><status>Active</status></ApexTrigger>")
+				index := loadTestIndex(t, root)
+				if analysis := sema.Analyze(index); analysis.HasErrors() {
+					t.Fatalf("native compiled; Glade diagnostics=%v", analysis.Diagnostics)
+				}
+				run := Run(index, Options{SelectedClasses: []string{"TrgT"}, NoDiskCache: true})
+				got := ""
+				for _, suite := range run.Suites {
+					for _, c := range suite.Cases {
+						if c.Problem != nil {
+							got = c.Problem.Type + ": " + c.Problem.Message
+						}
+					}
+				}
+				if got == "" {
+					t.Fatalf("trigger body passed; native=%q", want)
+				}
+				if !strings.HasPrefix(got, "System.") {
+					got = "System." + got
+				}
+				got = strings.Join(strings.Fields(got), " ")
+				if got != strings.Join(strings.Fields(want), " ") {
+					t.Fatalf("native=%q; Glade=%q", want, got)
+				}
+			})
+		}
+	}
+}
+
+func sortedKeys[V any](m map[string]V) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
 }

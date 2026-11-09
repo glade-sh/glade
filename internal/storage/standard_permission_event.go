@@ -1,7 +1,9 @@
 package storage
 
 // PermissionSetEvent fills a catalog omission with the public field shape
-// observed on Salesforce at source APIs 62 and 67.
+// observed on Salesforce at source APIs 62 and 67. The P0 describes report
+// its four picklists as restricted; the facet carries catalog provenance so
+// DML enforcement stays limited to captured fields.
 var permissionSetEventFields = []Field{
 	{APIName: "ReplayId", Type: FieldString, DisplayType: "STRING", Createable: BoolFlag(false), Updateable: BoolFlag(false), Length: 1000},
 	{APIName: "CreatedDate", Type: FieldDateTime, DisplayType: "DATETIME", Createable: BoolFlag(false), Updateable: BoolFlag(false)},
@@ -12,15 +14,16 @@ var permissionSetEventFields = []Field{
 	{APIName: "EventDate", Type: FieldDateTime, DisplayType: "DATETIME", Createable: BoolFlag(false), Updateable: BoolFlag(false)},
 	{APIName: "RelatedEventIdentifier", Type: FieldString, DisplayType: "STRING", Createable: BoolFlag(false), Updateable: BoolFlag(false), Length: 80},
 	{APIName: "PolicyId", Type: FieldReference, DisplayType: "REFERENCE", Createable: BoolFlag(false), Updateable: BoolFlag(false), ReferenceTo: []string{"TransactionSecurityPolicy"}, RelationshipName: "Policy", Length: 18},
-	{APIName: "PolicyOutcome", Type: FieldPicklist, DisplayType: "PICKLIST", Createable: BoolFlag(false), Updateable: BoolFlag(false), Length: 255},
+	{APIName: "PolicyOutcome", Type: FieldPicklist, DisplayType: "PICKLIST", Createable: BoolFlag(false), Updateable: BoolFlag(false), Length: 255, RestrictedPicklist: true, RestrictedPicklistFromCatalog: true},
 	{APIName: "EvaluationTime", Type: FieldDecimal, DisplayType: "DOUBLE", Createable: BoolFlag(false), Updateable: BoolFlag(false), Precision: 18},
 	{APIName: "SessionKey", Type: FieldString, DisplayType: "STRING", Createable: BoolFlag(false), Updateable: BoolFlag(false), Length: 24},
 	{APIName: "LoginKey", Type: FieldString, DisplayType: "STRING", Createable: BoolFlag(false), Updateable: BoolFlag(false), Length: 24},
-	{APIName: "SessionLevel", Type: FieldPicklist, DisplayType: "PICKLIST", Createable: BoolFlag(false), Updateable: BoolFlag(false), Length: 255},
+	{APIName: "SessionLevel", Type: FieldPicklist, DisplayType: "PICKLIST", Createable: BoolFlag(false), Updateable: BoolFlag(false), Length: 255, RestrictedPicklist: true, RestrictedPicklistFromCatalog: true},
 	{APIName: "SourceIp", Type: FieldString, DisplayType: "STRING", Createable: BoolFlag(false), Updateable: BoolFlag(false), Length: 255},
 	{APIName: "LoginHistoryId", Type: FieldReference, DisplayType: "REFERENCE", Createable: BoolFlag(false), Updateable: BoolFlag(false), ReferenceTo: []string{"LoginHistory"}, RelationshipName: "LoginHistory", Length: 18},
-	{APIName: "EventSource", Type: FieldPicklist, DisplayType: "PICKLIST", Createable: BoolFlag(false), Updateable: BoolFlag(false), Length: 255},
-	{APIName: "Operation", Type: FieldPicklist, DisplayType: "PICKLIST", Createable: BoolFlag(false), Updateable: BoolFlag(false), Length: 255},
+	{APIName: "EventSource", Type: FieldPicklist, DisplayType: "PICKLIST", Createable: BoolFlag(false), Updateable: BoolFlag(false), Length: 255, RestrictedPicklist: true, RestrictedPicklistFromCatalog: true,
+		PicklistValues: []PicklistValue{{Value: "Classic", Label: "Classic", Active: true}, {Value: "API", Label: "API", Active: true}, {Value: "Lightning", Label: "Lightning", Active: true}}},
+	{APIName: "Operation", Type: FieldPicklist, DisplayType: "PICKLIST", Createable: BoolFlag(false), Updateable: BoolFlag(false), Length: 255, RestrictedPicklist: true, RestrictedPicklistFromCatalog: true},
 	{APIName: "ParentIdList", Type: FieldAny, DisplayType: "JSON", Createable: BoolFlag(false), Updateable: BoolFlag(false), Length: 250000},
 	{APIName: "ParentNameList", Type: FieldAny, DisplayType: "JSON", Createable: BoolFlag(false), Updateable: BoolFlag(false), Length: 250000},
 	{APIName: "PermissionType", Type: FieldString, DisplayType: "STRING", Createable: BoolFlag(false), Updateable: BoolFlag(false), Length: 30},

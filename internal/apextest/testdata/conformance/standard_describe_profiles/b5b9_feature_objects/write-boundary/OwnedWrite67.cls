@@ -1,0 +1,1 @@
+@IsTest private class OwnedWrite67 { @IsTest static void probe(){{DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsLocalizationEnabled=true;}{DocumentTemplate record=new DocumentTemplate();record.ContextMappingName='owned';}} }

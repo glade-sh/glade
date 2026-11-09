@@ -20,7 +20,11 @@ func compileGateReferencesSchemaObject(file, source string, units compileGateUni
 	if len(compileGateMentions(source, targets.fileOf)) == 0 && !strings.ContainsAny(source, "[.") {
 		return false
 	}
-	walker := compileGateRefWalker{source: source, units: targets, schema: true, seen: make(map[string]bool)}
+	apiVersion := units.sourceAPIVersion
+	if sourceVersion := units.fileAPIVersions[filepath.Clean(file)]; sourceVersion != "" {
+		apiVersion = sourceVersion
+	}
+	walker := compileGateRefWalker{source: source, apiVersion: apiVersion, units: targets, schema: true, seen: make(map[string]bool)}
 	if context, ok := units.triggerContexts[filepath.Clean(file)]; ok {
 		walker.classes = []compileGateClassScope{{name: context.owner, inner: map[string]bool{}}}
 		walker.push(nil)

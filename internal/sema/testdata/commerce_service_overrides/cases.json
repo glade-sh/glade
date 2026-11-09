@@ -1,0 +1,77 @@
+[
+ {
+  "id": "inventory_override_upsert",
+  "name": "Probe000",
+  "source": "public class Probe000 extends commerce_inventory.CommerceInventoryService { public override commerce_inventory.UpsertReservationResponse upsertReservation(commerce_inventory.UpsertReservationRequest r, commerce_inventory.InventoryReservation c, String t) { return null; } }"
+ },
+ {
+  "id": "inventory_override_delete",
+  "name": "Probe001",
+  "source": "public class Probe001 extends commerce_inventory.CommerceInventoryService { public override commerce_inventory.DeleteReservationResponse deleteReservation(String id, commerce_inventory.InventoryReservation c) { return null; } }"
+ },
+ {
+  "id": "inventory_override_get",
+  "name": "Probe002",
+  "source": "public class Probe002 extends commerce_inventory.CommerceInventoryService { public override commerce_inventory.InventoryReservation getReservation(String id) { return null; } }"
+ },
+ {
+  "id": "inventory_override_check",
+  "name": "Probe003",
+  "source": "public class Probe003 extends commerce_inventory.CommerceInventoryService { public override commerce_inventory.InventoryCheckAvailability checkInventory(commerce_inventory.InventoryCheckAvailability r) { return r; } }"
+ },
+ {
+  "id": "inventory_override_level",
+  "name": "Probe004",
+  "source": "public class Probe004 extends commerce_inventory.CommerceInventoryService { public override commerce_inventory.InventoryLevelsResponse getInventoryLevel(commerce_inventory.InventoryLevelsRequest r) { return null; } }"
+ },
+ {
+  "id": "inventory_override_all",
+  "name": "Probe005",
+  "source": "public virtual class Probe005 extends commerce_inventory.CommerceInventoryService { public override commerce_inventory.UpsertReservationResponse upsertReservation(commerce_inventory.UpsertReservationRequest r, commerce_inventory.InventoryReservation c, String t) { return null; } public override commerce_inventory.DeleteReservationResponse deleteReservation(String id, commerce_inventory.InventoryReservation c) { return null; } public override commerce_inventory.InventoryReservation getReservation(String id) { return null; } public override commerce_inventory.InventoryCheckAvailability checkInventory(commerce_inventory.InventoryCheckAvailability r) { return r; } public override commerce_inventory.InventoryLevelsResponse getInventoryLevel(commerce_inventory.InventoryLevelsRequest r) { return null; } }"
+ },
+ {
+  "id": "inventory_empty",
+  "name": "Probe006",
+  "source": "public class Probe006 extends commerce_inventory.CommerceInventoryService { }"
+ },
+ {
+  "id": "inventory_construct",
+  "name": "Probe007",
+  "source": "public class Probe007 { public static Object make() { return new commerce_inventory.CommerceInventoryService(); } }"
+ },
+ {
+  "id": "inventory_call_default_delete",
+  "name": "Probe008",
+  "source": "public class Probe008 extends commerce_inventory.CommerceInventoryService { public override commerce_inventory.DeleteReservationResponse deleteReservation(String id, commerce_inventory.InventoryReservation c) { return callDefaultDeleteReservation(id, c); } }"
+ },
+ {
+  "id": "inventory_call_default_get",
+  "name": "Probe009",
+  "source": "public class Probe009 extends commerce_inventory.CommerceInventoryService { public override commerce_inventory.InventoryReservation getReservation(String id) { return callDefaultGetReservation(id); } }"
+ },
+ {
+  "id": "inventory_wrong_signature",
+  "name": "Probe010",
+  "source": "public class Probe010 extends commerce_inventory.CommerceInventoryService { public override commerce_inventory.InventoryReservation getReservation(Integer id) { return null; } }"
+ },
+ {
+  "id": "pricing_override_process",
+  "name": "Probe011",
+  "source": "public class Probe011 extends commercestorepricing.PricingService { public override commercestorepricing.PricingResponse processPrice(commercestorepricing.PricingRequest r) { return null; } }"
+ },
+ {
+  "id": "pricing_override_transactional",
+  "name": "Probe012",
+  "source": "public class Probe012 extends commercestorepricing.PricingService { public override commercestorepricing.TransactionalPricingResponse processTransactionalPrice(commercestorepricing.TransactionalPricingRequest r) { return null; } }"
+ },
+ {
+  "id": "pricing_empty",
+  "name": "Probe013",
+  "source": "public class Probe013 extends commercestorepricing.PricingService { }"
+ },
+ {
+  "id": "pricing_construct",
+  "name": "Probe014",
+  "source": "public class Probe014 { public static Object make() { return new commercestorepricing.PricingService(); } }"
+ }
+]

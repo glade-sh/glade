@@ -1,0 +1,1 @@
+@IsTest private class OwnedWriteNeg1 { @IsTest static void probe(){DocumentTemplate record=new DocumentTemplate();record.ContextMappingName='owned';} }

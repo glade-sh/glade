@@ -1,0 +1,13 @@
+api	route	case	result
+62.0	project-compile	BaseEndpointExtension	ACCEPT
+62.0	project-compile	FeedBody	1:Non-virtual and non-abstract type cannot be extended: ConnectApi.FeedBody
+62.0	project-compile	FeedItemInput	1:Non-virtual and non-abstract type cannot be extended: ConnectApi.FeedItemInput
+62.0	project-compile	TextSegment	1:Non-virtual and non-abstract type cannot be extended: ConnectApi.TextSegment
+67.0	project-compile	BaseEndpointExtension	ACCEPT
+67.0	project-compile	FeedBody	1:Non-virtual and non-abstract type cannot be extended: ConnectApi.FeedBody
+67.0	project-compile	FeedItemInput	1:Non-virtual and non-abstract type cannot be extended: ConnectApi.FeedItemInput
+67.0	project-compile	TextSegment	1:Non-virtual and non-abstract type cannot be extended: ConnectApi.TextSegment
+68.0	project-compile	BaseEndpointExtension	ACCEPT
+68.0	project-compile	FeedBody	1:Non-virtual and non-abstract type cannot be extended: ConnectApi.FeedBody
+68.0	project-compile	FeedItemInput	1:Non-virtual and non-abstract type cannot be extended: ConnectApi.FeedItemInput
+68.0	project-compile	TextSegment	1:Non-virtual and non-abstract type cannot be extended: ConnectApi.TextSegment

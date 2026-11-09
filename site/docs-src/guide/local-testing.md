@@ -342,7 +342,10 @@ test that ran passed. Triggers referencing an invalid class are excluded too;
 unrelated tests still run. An attributable missing-package dependency excludes
 static references to its namespace and their dependents. Unattributed errors
 and class metadata errors, such as an unsupported `apiVersion`, retain the
-whole-project fallback.
+whole-project fallback. In that fallback every
+selected test reports `compile_error`. The first test's `problem.message`
+lists each diagnostic once; each later test's message keeps the first
+diagnostic line and names the test that carries the full list.
 
 Read the JSON `summary` counts: `total`, `passed`, `failed`, `errors`, `skipped`,
 `unsupported`, and `excludedClasses`. A run with zero selected tests can exit with code `0`; it
@@ -371,4 +374,7 @@ Exercise the runtime your tests rely on - DML, triggers, and governor limits - i
 ```bash
 glade playground --examples --addr 127.0.0.1:1789 --open
 ```
+
+Select **Continue** on the **Open local preview** confirmation. HTTP clients
+without browser origin metadata need `X-Glade-Client: 1`.
 :::

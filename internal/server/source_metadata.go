@@ -300,6 +300,31 @@ func (m *SourceMetadata) loadToolingObjects() error {
 	return nil
 }
 
+// hasActiveEventTrigger limits the subscriber-specific identity scheme to
+// projects where it is needed to keep subscriber URLs aligned with triggers.
+func hasActiveEventTrigger(p project.Project, paths []string) bool {
+	for _, path := range paths {
+		if p.SourceNamespaceForFile(path, p.Namespace) != "" {
+			continue
+		}
+		body, err := os.ReadFile(path)
+		if err != nil || !strings.HasSuffix(strings.ToLower(triggerObjectName(string(body))), "__e") {
+			continue
+		}
+		metadata, err := os.ReadFile(path + "-meta.xml")
+		if err != nil {
+			continue
+		}
+		var trigger struct {
+			Status string `xml:"status"`
+		}
+		if xml.Unmarshal(metadata, &trigger) == nil && strings.EqualFold(strings.TrimSpace(trigger.Status), "Active") {
+			return true
+		}
+	}
+	return false
+}
+
 func (m *SourceMetadata) addSourceComponents(objectName, prefix string, paths []string, suffix string) error {
 	filtered := make([]string, 0, len(paths))
 	visualforce := objectName == "ApexPage" || objectName == "ApexComponent"
@@ -309,6 +334,8 @@ func (m *SourceMetadata) addSourceComponents(objectName, prefix string, paths []
 		}
 	}
 	sort.Strings(filtered)
+	triggerIDs := storage.NewIDGenerator(map[string]string{"ApexTrigger": "01q"})
+	useSubscriberIDs := objectName == "ApexTrigger" && hasActiveEventTrigger(m.Project, filtered)
 	for i, path := range filtered {
 		bodyBytes, err := os.ReadFile(path)
 		if err != nil {
@@ -321,6 +348,12 @@ func (m *SourceMetadata) addSourceComponents(objectName, prefix string, paths []
 			name = trimKnownSuffix(filepath.Base(path), suffix+"-meta.xml")
 		}
 		id := sequenceID(prefix, i+1)
+		if useSubscriberIDs {
+			id, err = triggerIDs.Next("ApexTrigger")
+			if err != nil {
+				return err
+			}
+		}
 		apiVersion := sourceAPIVersion(m.Project.SourceAPIVersion)
 		if visualforce {
 			apiVersion, err = resource.EffectiveVisualforceAPIVersion(path, m.Project.SourceAPIVersion)

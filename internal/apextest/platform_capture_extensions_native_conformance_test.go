@@ -158,6 +158,7 @@ func copyPathExtensionProject(t *testing.T, api string) string {
 	}); err != nil {
 		t.Fatal(err)
 	}
+	configureCapturedFixturePermissions(t, root, pathExtensionFixture+"/project/force-app/main/default", "OracleFixture")
 	return root
 }
 
@@ -204,8 +205,7 @@ func TestPlatformCaptureExtensionNativeConformance(t *testing.T) {
 				anonymous := readPathExtensionNative(t, api, family, "anonymous")
 				named := readPathExtensionNative(t, api, family, "istest")
 				index := loadTestIndex(t, copyPathExtensionProject(t, api))
-				org := orgFromIndex(index)
-				org.APIVersion = api
+				org := capturedFixtureOrg(t, index, api)
 				runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 				triggers, triggerErrors := compileProjectTriggers(index)
 				if len(triggerErrors) > 0 {

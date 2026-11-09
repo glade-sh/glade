@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>67.0</apiVersion>
+    <label>Rel_RO3</label>
+    <processType>AutoLaunchedFlow</processType>
+    <recordUpdates><name>U</name><label>U</label><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Y</targetReference></connector>
+        <inputAssignments><field>Name</field><value><stringValue>x</stringValue></value></inputAssignments>
+        <inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Y</name><label>Y</label><locationX>0</locationX><locationY>0</locationY>
+        <inputAssignments><field>Description</field><value><stringValue>done</stringValue></value></inputAssignments>
+        <inputReference>$Record</inputReference></recordUpdates>
+
+    <start>
+        <locationX>0</locationX><locationY>0</locationY>
+        <connector><targetReference>U</targetReference></connector>
+        <filterLogic>and</filterLogic>
+        <filters><field>LastName</field><operator>EqualTo</operator><value><stringValue>RO3</stringValue></value></filters>
+        <object>Contact</object>
+        <recordTriggerType>Create</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+</Flow>

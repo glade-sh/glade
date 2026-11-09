@@ -21,6 +21,7 @@ func (e *Engine) afterInsertSObject(objectName string, record storage.Record) er
 		return e.afterInsertEmailMessage(record)
 	case "User":
 		e.afterInsertUser(record)
+		e.afterInsertPortalUser(record)
 	case "PermissionSetGroup":
 		return e.afterInsertPermissionSetGroup(record)
 	case "PermissionSetGroupComponent":

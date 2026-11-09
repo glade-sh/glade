@@ -16,6 +16,7 @@ import (
 
 	"github.com/dlclark/regexp2"
 	"github.com/glade-sh/glade/internal/ir"
+	"github.com/glade-sh/glade/internal/testutil"
 	"github.com/glade-sh/glade/internal/vm"
 )
 
@@ -115,7 +116,7 @@ func ipv4ProjectSuspendedChild(t *testing.T, selection, flag string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cmd := exec.Command(exe, "-test.run="+selection, "-test.v", "-test.timeout=100s")
+	cmd := exec.Command(exe, "-test.run="+selection, "-test.v", "-test.timeout="+testutil.Deadline(100*time.Second).String())
 	cmd.Env = append(childEnvWithoutShardSelector(), flag+"=1", "GOMAXPROCS=2")
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {

@@ -1,0 +1,17 @@
+phase	shape	settings
+plain	plain	
+account	plain	account
+accountteams	plain	account,accountteams
+opportunity	plain	account,accountteams,opportunity
+order	plain	account,accountteams,opportunity,order
+entitlement	plain	account,accountteams,opportunity,order,entitlement
+ideas	plain	account,accountteams,opportunity,order,entitlement,ideas
+campaign	plain	account,accountteams,opportunity,order,entitlement,ideas,campaign
+territory	plain	account,accountteams,opportunity,order,entitlement,ideas,campaign,territory
+forecasting	plain	account,accountteams,opportunity,order,entitlement,ideas,campaign,territory,forecasting
+knowledge	plain	account,accountteams,opportunity,order,entitlement,ideas,campaign,territory,forecasting,knowledge
+currency	plain	account,accountteams,opportunity,order,entitlement,ideas,campaign,territory,forecasting,knowledge,currency
+quote	plain	account,accountteams,opportunity,order,entitlement,ideas,campaign,territory,forecasting,knowledge,currency,quote
+comm_feature	comm	
+comm_feature_networks	comm	networks
+networks_setting	plain	networks

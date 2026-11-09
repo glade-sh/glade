@@ -1,0 +1,4 @@
+source_api	route	case	result
+62.0	istest	recordsAndLists	PASS: schema casts and dynamic query list tokens for two objects; user-class casts rejected
+67.0	istest	recordsAndLists	PASS: schema casts and dynamic query list tokens for two objects; user-class casts rejected
+68.0	istest	recordsAndLists	PASS: schema casts and dynamic query list tokens for two objects; user-class casts rejected

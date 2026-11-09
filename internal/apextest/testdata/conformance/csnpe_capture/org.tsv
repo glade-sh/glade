@@ -1,0 +1,44 @@
+api	route	case	result
+62.0	anonymous	CS_LIST_NULL	true
+62.0	anonymous	CS_LIST_EXCEPTION	System.NullPointerException|Attempt to de-reference a null object|3
+62.0	anonymous	CS_INSTANCE_EXCEPTION	System.NullPointerException|Attempt to de-reference a null object|5
+62.0	anonymous	CS_HVALUES_NULL	true
+62.0	anonymous	CS_HVALUES_EXCEPTION	System.NullPointerException|Attempt to de-reference a null object|8
+62.0	anonymous	CS_HINSTANCE_NULL	false
+62.0	anonymous	CS_HDEFAULT_NULL	false
+62.0	anonymous	NC_ROW	{"DeveloperName":"ProbeEndpoint","Endpoint":"https://example.invalid","MasterLabel":"Probe endpoint","NamespacePrefix":null,"PrincipalType":"Anonymous"}
+62.0	anonymous	NC_MISSING	0
+62.0	named	CS_LIST_NULL	true
+62.0	named	CS_LIST_EXCEPTION	System.NullPointerException|Attempt to de-reference a null object|5
+62.0	named	CS_INSTANCE_EXCEPTION	System.NullPointerException|Attempt to de-reference a null object|7
+62.0	named	CS_HVALUES_NULL	true
+62.0	named	CS_HVALUES_EXCEPTION	System.NullPointerException|Attempt to de-reference a null object|10
+62.0	named	CS_HINSTANCE_NULL	false
+62.0	named	CS_HDEFAULT_NULL	false
+62.0	named	NC_ROW	{"DeveloperName":"ProbeEndpoint","Endpoint":"https://example.invalid","MasterLabel":"Probe endpoint","NamespacePrefix":null,"PrincipalType":"Anonymous"}
+62.0	named	NC_MISSING	0
+67.0	anonymous	CS_LIST_NULL	true
+67.0	anonymous	CS_LIST_EXCEPTION	System.NullPointerException|Attempt to de-reference a null object|3
+67.0	anonymous	CS_INSTANCE_EXCEPTION	System.NullPointerException|Attempt to de-reference a null object|5
+67.0	anonymous	CS_HVALUES_NULL	true
+67.0	anonymous	CS_HVALUES_EXCEPTION	System.NullPointerException|Attempt to de-reference a null object|8
+67.0	anonymous	CS_HINSTANCE_NULL	false
+67.0	anonymous	CS_HDEFAULT_NULL	false
+67.0	anonymous	NC_ROW	{"DeveloperName":"ProbeEndpoint","Endpoint":"https://example.invalid","MasterLabel":"Probe endpoint","NamespacePrefix":null,"PrincipalType":"Anonymous"}
+67.0	anonymous	NC_MISSING	0
+67.0	named	CS_LIST_NULL	true
+67.0	named	CS_LIST_EXCEPTION	System.NullPointerException|Attempt to de-reference a null object|5
+67.0	named	CS_INSTANCE_EXCEPTION	System.NullPointerException|Attempt to de-reference a null object|7
+67.0	named	CS_HVALUES_NULL	true
+67.0	named	CS_HVALUES_EXCEPTION	System.NullPointerException|Attempt to de-reference a null object|10
+67.0	named	CS_HINSTANCE_NULL	false
+67.0	named	CS_HDEFAULT_NULL	false
+67.0	named	NC_ROW	{"DeveloperName":"ProbeEndpoint","Endpoint":"https://example.invalid","MasterLabel":"Probe endpoint","NamespacePrefix":null,"PrincipalType":"Anonymous"}
+67.0	named	NC_MISSING	0
+62.0	anonymous	PG_ROW	ProbeGateway|Probe Gateway|synthetic probe|Yes|null|adapter present
+62.0	anonymous	PG_MISSING	0
+67.0	anonymous	PG_ROW	ProbeGateway|Probe Gateway|synthetic probe|Yes|null|adapter present
+67.0	anonymous	PG_MISSING	0
+62.0	istest	ASSERTIONS	PASS (null dereference, hierarchy defaults, named credential and payment provider counts)
+67.0	istest	ASSERTIONS	PASS (null dereference, hierarchy defaults, named credential and payment provider counts)
+67.0	metadata-deploy	PG_INVALID_ADAPTER	rejected: adapter class does not implement commercepayments.PaymentGatewayAdapter

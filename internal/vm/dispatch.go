@@ -10,8 +10,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/resource"
 	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/typesys"
 )
 
 func validateAuthTokenArguments(args []Value, count int) error {
@@ -38,6 +41,9 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return Null, unsupportedCallError("trigger-local method " + callee)
 		}
 	}
+	if local, ok := vm.anonymousLocalCallee(callee); ok {
+		callee = local
+	}
 	vm.markRootCollectionRefsEscaped(args...)
 	for _, value := range namedArgs {
 		vm.markCollectionRefsEscaped(value)
@@ -53,6 +59,18 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 	}
 	originalCallee := callee
 	callee = normalizeStaticCallCasing(callee)
+	if (hasTypePrefixFold(callee, "ConnectApi") || hasTypePrefixFold(callee, "System.ConnectApi")) && !vm.calleeStartsWithRuntimeReceiver(callee, args) {
+		// Native rows call.CredentialPrincipalType.valueOf.null (APIs 62/67).
+		if className, methodName, ok := vm.splitClassMember(strings.TrimPrefix(callee, "System.")); ok && strings.EqualFold(methodName, "valueOf") &&
+			len(args) == 1 && args[0].Kind == ValueNull {
+			if generated, found := generatedPlatformTypes()[strings.ToLower(className)]; found && generated.Kind == apexast.DeclarationEnum {
+				return Null, newExceptionError("System.NoSuchElementException", "No enum value found called null")
+			}
+		}
+		if value, handled, err := vm.callConnectAPIServiceInSiloedTest(strings.TrimPrefix(callee, "System."), args); handled || err != nil {
+			return value, err
+		}
+	}
 	if (strings.EqualFold(callee, "Quiddity.valueOf") || strings.EqualFold(callee, "System.Quiddity.valueOf")) &&
 		len(args) == 1 && args[0].Kind == ValueNull {
 		return Null, newExceptionError("System.NoSuchElementException", "No enum value found called null")
@@ -397,8 +415,10 @@ platformStaticCall:
 		if len(args) != 1 {
 			return Null, fmt.Errorf("%s expects profile Id", callee)
 		}
-		if args[0].Kind == ValueNull {
-			return Null, nil
+		// typed_null_platform_returns rows (anonymous, 62.0 and 67.0): a null profile Id and a
+		// profile without a session-level policy both return a typed null.
+		if args[0].Kind == ValueNull || (args[0].Kind == ValueString && strings.HasPrefix(args[0].Text, "00e")) {
+			return typedNull("Auth.SessionLevel"), nil
 		}
 		return Null, unsupportedCallError(callee + " hosted session policy")
 	case strings.EqualFold(callee, "Auth.SessionManagement.inOrgNetworkRange"):
@@ -709,7 +729,11 @@ platformStaticCall:
 			if err := vm.scopeMinePaginationBoundary(args[0].Text, false); err != nil {
 				return Null, err
 			}
-			value, err = vm.executePaginationSOQL(args[0].Text, Null, Null, result)
+			accessLevel := Null
+			if len(args) == 2 {
+				accessLevel = args[1]
+			}
+			value, err = vm.executePaginationSOQL(args[0].Text, Null, accessLevel, result)
 		}
 		if err != nil {
 			return Null, err
@@ -867,6 +891,9 @@ platformStaticCall:
 		targetOrder, ok := vm.savepointOrder[idValue.Text]
 		if !ok {
 			return Null, newExceptionError("System.TypeException", "Database.rollback received invalid Savepoint")
+		}
+		if targetOrder <= vm.reportInvalidSavepointOrder {
+			return Null, newExceptionError("System.CalloutException", "Attempted to rollback in another transaction, probably after a callout.")
 		}
 		if err := vm.incrementSavepointStatement(); err != nil {
 			return Null, err
@@ -1177,7 +1204,7 @@ platformStaticCall:
 	case "RoundingMode.valueOf":
 		return roundingModeStatic(args)
 	case "Id.valueOf":
-		return idStatic(callee, args)
+		return idStatic(callee, args, apexversion.Before(vm.currentMethod.APIVersion, 54))
 	case "Pattern.compile":
 		return patternCompile(args)
 	case "Pattern.matches":
@@ -1265,7 +1292,7 @@ platformStaticCall:
 		}
 		if args[0].Kind == ValueNull {
 			if strings.EqualFold(args[0].Static, "Object") || strings.EqualFold(args[0].Type, "Object") {
-				return Null, nil // preservation O017: the Object overload accepts null.
+				return typedNull("Date"), nil // preservation O017: the Object overload accepts null.
 			}
 			return Null, newExceptionError("System.NullPointerException", "Argument cannot be null.")
 		}
@@ -1305,29 +1332,12 @@ platformStaticCall:
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
-
-		now := vm.fakeNow
-		vm.lastNow = now
-		vm.hasLastNow = true
-		vm.hasPendingNowMillis = true
-		// Captured native now values retain milliseconds. Advance the
-		// deterministic clock one millisecond per fresh read.
-		vm.fakeNow = vm.fakeNow.Add(time.Millisecond)
-		return platformScalar("Datetime", formatPlatformDatetime(now)), nil
+		return platformScalar("Datetime", formatPlatformDatetime(vm.readClock())), nil
 	case "System.currentTimeMillis":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("System.currentTimeMillis expects 0 arguments")
 		}
-		now := vm.fakeNow
-		if vm.hasPendingNowMillis && vm.fakeNow.Equal(vm.lastNow.Add(time.Millisecond)) {
-			now = vm.lastNow
-		} else {
-			// Follow the deterministic progression used by Datetime.now; a
-			// bounded elapsed-time loop must be able to observe time passing.
-			vm.fakeNow = vm.fakeNow.Add(time.Millisecond)
-		}
-		vm.hasPendingNowMillis = false
-		return longIntValue(now.UnixMilli()), nil
+		return longIntValue(vm.readClock().UnixMilli()), nil
 	case "System.isBatch", "System.isFuture", "System.isQueueable", "System.isScheduled":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
@@ -1431,7 +1441,7 @@ platformStaticCall:
 			return Null, newExceptionError("System.AsyncException", "getMinimumQueueableDelayInMinutes is not allowed outside a Queueable of Finalizer execution")
 		}
 		if !vm.currentQueueableDelaySet {
-			return Null, nil
+			return typedNull("Integer"), nil // typed_null_platform_returns rows: null with no delay, Integer overload.
 		}
 		return Int(int64(vm.currentQueueableDelay)), nil
 	case "Datetime.newInstance", "Datetime.newInstanceGmt":
@@ -1507,7 +1517,7 @@ platformStaticCall:
 		}
 		if args[0].Kind == ValueNull {
 			if callee == "Datetime.valueOf" && (strings.EqualFold(args[0].Static, "Object") || strings.EqualFold(args[0].Type, "Object")) {
-				return Null, nil // controls K021: preserve the Object-null result.
+				return typedNull("Datetime"), nil // controls K021: preserve the Object-null result.
 			}
 			return Null, newExceptionError("System.NullPointerException", "Argument cannot be null.")
 		}
@@ -1603,7 +1613,7 @@ platformStaticCall:
 			if !ok {
 				return Null, fmt.Errorf("Type.forName expects String")
 			}
-			return vm.typeForName("", typeName, false), nil
+			return vm.typeForName("", vm.typeForNameDollarNested(typeName), false), nil
 		}
 		namespace := ""
 		if args[0].Kind != ValueNull {
@@ -1670,7 +1680,7 @@ platformStaticCall:
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("Blob.valueOf expects String")
 		}
-		return platformScalar("Blob", args[0].Text), nil
+		return platformScalar("Blob", apexStringUTF8Bytes(args[0].Text)), nil
 	case "Blob.toPdf":
 		if len(args) == 1 && args[0].Kind == ValueNull {
 			return Null, newExceptionError("System.NullPointerException", "Argument cannot be null.")
@@ -1736,7 +1746,7 @@ platformStaticCall:
 		if err != nil {
 			return Null, err
 		}
-		encoded, err := urlEncodeWithCharset("EncodingUtil.urlEncode", text, charset)
+		encoded, err := urlEncodeWithCharset("EncodingUtil.urlEncode", apexStringUTF8Bytes(text), charset)
 		if err != nil {
 			return Null, newExceptionError("System.StringException", err.Error())
 		}
@@ -1840,6 +1850,10 @@ platformStaticCall:
 		if len(args) != 4 {
 			return Null, fmt.Errorf("Crypto.encrypt expects algorithm, privateKey Blob, initializationVector Blob, and clearText Blob")
 		}
+		if cryptoGCMManagedRequest(args[0], args[2]) {
+			// Native stdlib_locale_crypto_c14 compression: AES256-GCM with a null IV seals under a managed IV.
+			return cryptoGCMSeal("Crypto.encrypt", args[0], args[1], args[3], Value{Kind: ValueNull})
+		}
 		if err := cryptoRequiredArguments(args); err != nil {
 			return Null, err
 		}
@@ -1870,6 +1884,9 @@ platformStaticCall:
 		if len(args) != 4 {
 			return Null, fmt.Errorf("Crypto.decrypt expects algorithm, privateKey Blob, initializationVector Blob, and cipherText Blob")
 		}
+		if cryptoGCMManagedRequest(args[0], args[2]) {
+			return cryptoGCMOpen("Crypto.decrypt", args[0], args[1], args[3], Value{Kind: ValueNull})
+		}
 		if err := cryptoRequiredArguments(args); err != nil {
 			return Null, err
 		}
@@ -1895,6 +1912,9 @@ platformStaticCall:
 		return platformScalar("Blob", string(clearText)), nil
 	case "Crypto.encryptWithManagedIV":
 		if len(args) == 4 {
+			if err := cryptoRequiredArguments(args[:3]); err != nil {
+				return Null, err
+			}
 			key, err := blobStringArg("Crypto.encryptWithManagedIV privateKey", args[1:2])
 			if err != nil {
 				return Null, err
@@ -1928,6 +1948,9 @@ platformStaticCall:
 		}
 		if args[0].Kind != ValueString {
 			return Null, fmt.Errorf("Crypto.encryptWithManagedIV expects algorithm, privateKey Blob, and clearText Blob")
+		}
+		if cryptoGCMManagedRequest(args[0], Value{Kind: ValueNull}) {
+			return cryptoGCMSeal("Crypto.encryptWithManagedIV", args[0], args[1], args[2], Value{Kind: ValueNull})
 		}
 		key, err := blobStringArg("Crypto.encryptWithManagedIV privateKey", args[1:2])
 		if err != nil {
@@ -1982,6 +2005,9 @@ platformStaticCall:
 		if args[0].Kind != ValueString {
 			return Null, fmt.Errorf("Crypto.decryptWithManagedIV expects algorithm, privateKey Blob, and cipherText Blob")
 		}
+		if cryptoGCMManagedRequest(args[0], Value{Kind: ValueNull}) {
+			return cryptoGCMOpen("Crypto.decryptWithManagedIV", args[0], args[1], args[2], Value{Kind: ValueNull})
+		}
 		key, err := blobStringArg("Crypto.decryptWithManagedIV privateKey", args[1:2])
 		if err != nil {
 			return Null, err
@@ -2031,6 +2057,17 @@ platformStaticCall:
 			}
 			return platformScalar("Blob", string(signature)), nil
 		}
+		if hash, ok := ecdsaSignatureHash(args[0].Text); ok && callee == "Crypto.sign" {
+			key, err := blobStringArg(callee+" privateKey", args[2:3])
+			if err != nil {
+				return Null, err
+			}
+			signature, err := signECDSA(hash, []byte(input), []byte(key))
+			if err != nil {
+				return Null, err
+			}
+			return platformScalar("Blob", string(signature)), nil
+		}
 		signature, err := localCryptoSignature(args[0].Text, []byte(input))
 		if err != nil {
 			if callee == "Crypto.signWithCertificate" {
@@ -2039,7 +2076,7 @@ platformStaticCall:
 			return Null, newExceptionError("System.SecurityException", "Unrecognized algorithm: "+args[0].Text)
 		}
 		if callee == "Crypto.signWithCertificate" && args[2].Kind == ValueString && args[2].Text != "" {
-			return Null, newExceptionError("System.NoDataFoundException", "Data Not Available: The data you were trying to access could not be found.")
+			return Null, newExceptionError("System.NoDataFoundException", missingCertificateMessage)
 		}
 		return platformScalar("Blob", string(signature)), nil
 	case "Crypto.verify", "Crypto.verifyWithCertificate":
@@ -2068,6 +2105,17 @@ platformStaticCall:
 				return Null, err
 			}
 			valid, err := verifyRSA(hash, []byte(input), []byte(signature), []byte(key))
+			if err != nil {
+				return Null, err
+			}
+			return Bool(valid), nil
+		}
+		if hash, ok := ecdsaSignatureHash(args[0].Text); ok && callee == "Crypto.verify" && args[3].Kind == ValueObject && args[3].Type == "Blob" {
+			key, err := blobStringArg(callee+" publicKey", args[3:4])
+			if err != nil {
+				return Null, err
+			}
+			valid, err := verifyECDSA(hash, []byte(input), []byte(signature), []byte(key))
 			if err != nil {
 				return Null, err
 			}
@@ -2135,6 +2183,9 @@ platformStaticCall:
 		if args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Schema.SObjectField") {
 			return Null, jsonDeserializeException("Type cannot be serialized")
 		}
+		if vm.connectAPIInputObjectValue(args[0]) {
+			return Null, jsonDeserializeException("Only output types from ConnectApi support serialization")
+		}
 		if isIteratorValue(args[0]) {
 			return Null, jsonDeserializeException("Apex Type unsupported in JSON: system.ListIterator")
 		}
@@ -2156,6 +2207,9 @@ platformStaticCall:
 		}
 		if args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Schema.SObjectField") {
 			return Null, jsonDeserializeException("Type cannot be serialized")
+		}
+		if vm.connectAPIInputObjectValue(args[0]) {
+			return Null, jsonDeserializeException("Only output types from ConnectApi support serialization")
 		}
 		if isIteratorValue(args[0]) {
 			return Null, jsonDeserializeException("Apex Type unsupported in JSON: system.ListIterator")
@@ -2184,13 +2238,22 @@ platformStaticCall:
 		if len(args) != 2 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("%s expects String and Type", callee)
 		}
+		// Native rows (namespace_forname_independent j_fn, jx_fn): a null Type,
+		// such as Type.forName of a non-public nested class, raises a null dereference.
+		if args[1].Kind == ValueNull {
+			return Null, newExceptionError("System.NullPointerException", "Attempt to de-reference a null object")
+		}
 		strict := callee == "JSON.deserializeStrict"
-		decoded, err := decodeJSONValueForDeserialize(args[0].Text, strict)
+		reportColumn := !strict && args[1].Kind == ValueObject && args[1].Type == "Type" && strings.EqualFold(jsonDeserializeTypeName(args[1]), "reports.ReportTypeColumn")
+		decoded, err := decodeJSONValueForDeserialize(args[0].Text, strict, reportColumn)
 		if err != nil {
 			return Null, jsonDeserializeException("%s", err.Error())
 		}
 		if args[1].Kind == ValueObject && args[1].Type == "Type" {
 			typeName := jsonDeserializeTypeName(args[1])
+			if hasPrefixFold(typeName, "ConnectApi.") {
+				typesys.RequestConnectAPIShape()
+			}
 			_, recordType := vm.explicitSchemaRecordType(typeValueIdentityName(args[1]))
 			if !strict {
 				decoded = vm.jsonRootSObjectPayload(typeValueIdentityName(args[1]), decoded)
@@ -3192,7 +3255,7 @@ platformStaticCall:
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Packaging.getCurrentPackageId expects 0 arguments")
 		}
-		return Null, nil
+		return typedNull("Id"), nil
 	case "NLPPredictions.FAQPrediction.predict":
 		if len(args) != 1 || args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "NLPPredictions.FAQPredictionInput") {
 			return Null, fmt.Errorf("NLPPredictions.FAQPrediction.predict expects FAQPredictionInput")
@@ -3244,6 +3307,9 @@ platformStaticCall:
 		if err := vm.validateKbPublishingServiceArgs(callee, args); err != nil {
 			return Null, err
 		}
+		if callee == "KbManagement.PublishingService.editOnlineArticle" {
+			return vm.transitionKnowledgeOnline(args, true)
+		}
 		if len(args) == 0 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("%s expects article Id String", callee)
 		}
@@ -3291,7 +3357,7 @@ platformStaticCall:
 				return id, nil
 			}
 		}
-		return Null, nil
+		return typedNull("Id"), nil
 	case "Cases.reparentFeedToCaseId":
 		return Null, unsupportedCallError("Cases.reparentFeedToCaseId local feed reparenting surface")
 	case "EmailMessages.getFormattedThreadingToken":
@@ -3347,14 +3413,14 @@ platformStaticCall:
 		if len(args) != 0 {
 			return Null, fmt.Errorf("UserInfo.getCurrentUvid expects 0 arguments")
 		}
-		return Null, nil
+		return typedNull("String"), nil
 	case "UserInfo.getProfileId":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("UserInfo.getProfileId expects 0 arguments")
 		}
 		id := vm.currentUserInfoField("ProfileId", "")
 		if id == "" {
-			return Null, nil
+			return typedNull("Id"), nil
 		}
 		return String(displayIDText(id)), nil
 	case "UserInfo.getUserName":
@@ -3417,14 +3483,16 @@ platformStaticCall:
 		}
 		id := vm.currentUserInfoField("UserRoleId", "")
 		if id == "" {
-			return Null, nil
+			// The declared return type is Id, so overload resolution must
+			// still see Id when the running user has no role.
+			return typedNull("Id"), nil
 		}
 		return String(displayIDText(id)), nil
 	case "UserInfo.getLocale":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("UserInfo.getLocale expects 0 arguments")
 		}
-		return String(vm.currentUserInfoField("LocaleSidKey", "en_US")), nil
+		return String(vm.currentUserLocale()), nil
 	case "UserInfo.getLanguage":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("UserInfo.getLanguage expects 0 arguments")
@@ -3474,7 +3542,7 @@ platformStaticCall:
 			return Null, fmt.Errorf("Site.getSiteId expects 0 arguments")
 		}
 		if !vm.hasOrgRecords("Site") {
-			return Null, nil
+			return typedNull("Id"), nil
 		}
 		return String(vm.firstOrgRecordID("Site", "local-site")), nil
 	case "Site.getBaseUrl":
@@ -3495,7 +3563,7 @@ platformStaticCall:
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
 		if (strings.EqualFold(callee, "Site.getAnalyticsTrackingCode") || strings.EqualFold(callee, "Site.getOriginalUrl")) && !vm.hasOrgRecords("Site") {
-			return Null, nil
+			return typedNull("String"), nil
 		}
 		return String(""), nil
 	case "Site.getPasswordPolicyStatement":
@@ -3515,7 +3583,7 @@ platformStaticCall:
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
-		return Null, nil
+		return typedNull("String"), nil
 	case "Site.getTemplate":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.getTemplate expects 0 arguments")
@@ -3536,7 +3604,7 @@ platformStaticCall:
 			return Null, fmt.Errorf("Site.getAdminEmail expects 0 arguments")
 		}
 		if !vm.hasOrgRecords("Site") {
-			return Null, nil
+			return typedNull("String"), nil
 		}
 		return String(vm.siteAdminEmail()), nil
 	case "Site.getAdminId":
@@ -3544,7 +3612,7 @@ platformStaticCall:
 			return Null, fmt.Errorf("Site.getAdminId expects 0 arguments")
 		}
 		if !vm.hasOrgRecords("Site") {
-			return Null, nil
+			return typedNull("Id"), nil
 		}
 		return String(vm.firstOrgRecordIDField("Site", "AdminId", vm.currentUserInfoField("Id", "005-local-user"))), nil
 	case "Site.getMasterLabel":
@@ -3552,7 +3620,7 @@ platformStaticCall:
 			return Null, fmt.Errorf("Site.getMasterLabel expects 0 arguments")
 		}
 		if !vm.hasOrgRecords("Site") {
-			return Null, nil
+			return typedNull("String"), nil
 		}
 		return String(vm.firstOrgRecordString("Site", "MasterLabel", "Local Site")), nil
 	case "Site.isRegistrationEnabled":
@@ -3605,13 +3673,12 @@ platformStaticCall:
 			return Null, fmt.Errorf("Site.login expects 3 arguments")
 		}
 		if vm.testContext != nil {
-			return Null, nil
+			return typedNull("PageReference"), nil
 		}
-		if args[0].Kind == ValueString && args[0].Text != "" &&
-			args[1].Kind == ValueString && args[1].Text != "" &&
-			(args[2].Kind == ValueNull || args[2].Kind == ValueString) &&
-			!vm.hasOrgRecords("Site") {
-			return Null, nil
+		// Without a site, every argument shape returns null, including null
+		// credentials (org capture aura_redirect_null, API 62 and 67).
+		if (args[2].Kind == ValueNull || args[2].Kind == ValueString) && !vm.hasOrgRecords("Site") {
+			return typedNull("PageReference"), nil
 		}
 		startURL := "/"
 		if args[2].Kind == ValueString && strings.TrimSpace(args[2].Text) != "" {
@@ -3622,8 +3689,9 @@ platformStaticCall:
 		if len(args) != 2 && len(args) != 3 {
 			return Null, fmt.Errorf("Site.changePassword expects 2 or 3 arguments")
 		}
-		if vm.testContext != nil {
-			return Null, nil
+		// typed_null_platform_returns rows: null in tests and outside a site, typed PageReference.
+		if vm.testContext != nil || !vm.hasOrgRecords("Site") {
+			return typedNull("PageReference"), nil
 		}
 		return newPageReference("/" + strings.Trim(vm.firstOrgRecordString("Network", "UrlPathPrefix", "local"), "/")), nil
 	case "Site.validatePassword":
@@ -3636,7 +3704,7 @@ platformStaticCall:
 			return Null, fmt.Errorf("Site.createExternalUser expects 2, 3, or 4 arguments")
 		}
 		if vm.testContext != nil {
-			return Null, nil
+			return typedNull("Id"), nil
 		}
 		userID := String("005000000000E01")
 		if len(args) > 0 && args[0].Kind == ValueObject {
@@ -3648,7 +3716,7 @@ platformStaticCall:
 			return Null, fmt.Errorf("Site.createPortalUser expects 2, 3, or 4 arguments")
 		}
 		if vm.testContext != nil {
-			return Null, nil
+			return typedNull("Id"), nil
 		}
 		userID := String("005000000000E01")
 		if len(args) > 0 && args[0].Kind == ValueObject {
@@ -3660,7 +3728,7 @@ platformStaticCall:
 			return Null, fmt.Errorf("Site.createPersonAccountPortalUser expects 3 or 4 arguments")
 		}
 		if vm.testContext != nil {
-			return Null, nil
+			return typedNull("Id"), nil
 		}
 		userID := String("005000000000E01")
 		if len(args) > 0 && args[0].Kind == ValueObject {
@@ -3686,7 +3754,7 @@ platformStaticCall:
 			return Null, fmt.Errorf("Network.getNetworkId expects 0 arguments")
 		}
 		if !vm.hasOrgRecords("Site") || !vm.hasOrgRecords("Network") {
-			return Null, nil
+			return typedNull("Id"), nil
 		}
 		return String(vm.firstOrgRecordID("Network", "0DB000000000001")), nil
 	case "Network.getLoginUrl":
@@ -3694,7 +3762,7 @@ platformStaticCall:
 			return Null, fmt.Errorf("Network.getLoginUrl expects 1 argument")
 		}
 		if args[0].Kind == ValueNull || (args[0].Kind == ValueString && args[0].Text == "") || !vm.hasOrgRecords("Network") {
-			return Null, nil
+			return typedNull("String"), nil
 		}
 		prefix := strings.Trim(vm.firstOrgRecordString("Network", "UrlPathPrefix", "local"), "/")
 		if prefix == "" {
@@ -3714,12 +3782,12 @@ platformStaticCall:
 			return Null, fmt.Errorf("Network.forwardToAuthPage expects 1 or 2 arguments")
 		}
 		if vm.testContext != nil {
-			return Null, nil
+			return typedNull("PageReference"), nil
 		}
 		if len(args) == 2 && args[1].Kind == ValueNull &&
 			(args[0].Kind == ValueNull || args[0].Kind == ValueString && args[0].Text != "") &&
 			!vm.hasOrgRecords("Site") {
-			return Null, nil
+			return typedNull("PageReference"), nil
 		}
 		startURL := "/"
 		if args[0].Kind == ValueString && strings.TrimSpace(args[0].Text) != "" {
@@ -3731,7 +3799,7 @@ platformStaticCall:
 			return Null, fmt.Errorf("Network.getLogoutUrl expects 1 argument")
 		}
 		if args[0].Kind == ValueNull || (args[0].Kind == ValueString && args[0].Text == "") || !vm.hasOrgRecords("Network") {
-			return Null, nil
+			return typedNull("String"), nil
 		}
 		prefix := strings.Trim(vm.firstOrgRecordString("Network", "UrlPathPrefix", "local"), "/")
 		if prefix == "" {
@@ -3743,7 +3811,7 @@ platformStaticCall:
 			return Null, fmt.Errorf("Network.getSelfRegUrl expects 1 argument")
 		}
 		if args[0].Kind == ValueNull || (args[0].Kind == ValueString && args[0].Text == "") || !vm.hasOrgRecords("Network") {
-			return Null, nil
+			return typedNull("String"), nil
 		}
 		prefix := strings.Trim(vm.firstOrgRecordString("Network", "UrlPathPrefix", "local"), "/")
 		if prefix == "" {
@@ -3758,7 +3826,7 @@ platformStaticCall:
 			return Null, newExceptionError("NoAccessException", "Insufficient Privileges: You do not have the level of access necessary to perform the operation you requested. Please contact the owner of the record or your administrator if access is necessary.")
 		}
 		if vm.testContext != nil {
-			return Null, nil
+			return typedNull("Id"), nil
 		}
 		return String("707000000000001"), nil
 	case "Network.createRecordAsync":
@@ -3806,12 +3874,12 @@ platformStaticCall:
 		if len(args) != 1 {
 			return Null, fmt.Errorf("Support.EmailTemplateSelector.getDefaultEmailTemplateId expects context Id")
 		}
-		return Null, nil
+		return typedNull("Id"), nil
 	case "Support.EmailTemplateSelector.getDefaultTemplateId":
 		if len(args) != 1 {
 			return Null, fmt.Errorf("Support.EmailTemplateSelector.getDefaultTemplateId expects context Id")
 		}
-		return Null, nil
+		return typedNull("Id"), nil
 	case "Support.LifeScienceAttendees.parse":
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("Support.LifeScienceAttendees.parse expects JSON String")
@@ -4158,4 +4226,78 @@ func (vm *VM) staticResourceExists(resourceName string) bool {
 		}
 	}
 	return false
+}
+
+// cryptoGCMManagedRequest reports an AES256-GCM call whose IV is absent, which
+// the platform fills with a managed IV carried in the ciphertext envelope.
+func cryptoGCMManagedRequest(algorithm, iv Value) bool {
+	return algorithm.Kind == ValueString && iv.Kind == ValueNull && normalizeCryptoAlgorithm(algorithm.Text) == "AES256GCM"
+}
+
+// cryptoGCMSeal returns [IV length][12-byte IV][ciphertext][tag], the envelope
+// native AES256-GCM produced in the captured rows (34 bytes for 5 bytes of data).
+func cryptoGCMSeal(name string, algorithm, key, clearText, additionalData Value) (Value, error) {
+	if err := cryptoRequiredArguments([]Value{algorithm, key, clearText}); err != nil {
+		return Null, err
+	}
+	keyBytes, err := blobStringArg(name+" privateKey", []Value{key})
+	if err != nil {
+		return Null, err
+	}
+	clearBytes, err := blobStringArg(name+" clearText", []Value{clearText})
+	if err != nil {
+		return Null, err
+	}
+	if err := cryptoDataSize(len(clearBytes), 1048576); err != nil {
+		return Null, err
+	}
+	var aad []byte
+	if additionalData.Kind != ValueNull {
+		text, err := blobStringArg(name+" additionalData", []Value{additionalData})
+		if err != nil {
+			return Null, err
+		}
+		aad = []byte(text)
+	}
+	const managedIVSize = 12
+	iv := managedIV([]byte(keyBytes), []byte(clearBytes))[:managedIVSize]
+	cipherText, err := encryptAESGCM(algorithm.Text, []byte(keyBytes), iv, []byte(clearBytes), aad)
+	if err != nil {
+		return Null, newExceptionError("System.InvalidParameterValueException", err.Error())
+	}
+	envelope := make([]byte, 1+len(iv)+len(cipherText))
+	envelope[0] = managedIVSize
+	copy(envelope[1:], iv)
+	copy(envelope[1+len(iv):], cipherText)
+	return platformScalar("Blob", string(envelope)), nil
+}
+
+func cryptoGCMOpen(name string, algorithm, key, cipherText, additionalData Value) (Value, error) {
+	if err := cryptoRequiredArguments([]Value{algorithm, key, cipherText}); err != nil {
+		return Null, err
+	}
+	keyBytes, err := blobStringArg(name+" privateKey", []Value{key})
+	if err != nil {
+		return Null, err
+	}
+	envelope, err := blobStringArg(name+" cipherText", []Value{cipherText})
+	if err != nil {
+		return Null, err
+	}
+	var aad []byte
+	if additionalData.Kind != ValueNull {
+		text, err := blobStringArg(name+" additionalData", []Value{additionalData})
+		if err != nil {
+			return Null, err
+		}
+		aad = []byte(text)
+	}
+	if len(envelope) < 1 || int(envelope[0]) != 12 || len(envelope) < 13 {
+		return Null, newExceptionError("System.InvalidParameterValueException", "cipherText must include a 12-byte managed IV")
+	}
+	clearText, err := decryptAESGCM(algorithm.Text, []byte(keyBytes), []byte(envelope[1:13]), []byte(envelope[13:]), aad)
+	if err != nil {
+		return Null, newExceptionError("System.InvalidParameterValueException", err.Error())
+	}
+	return platformScalar("Blob", string(clearText)), nil
 }

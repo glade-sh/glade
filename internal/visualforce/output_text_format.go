@@ -13,7 +13,7 @@ import (
 
 // Keep parameter values typed until formatting. Flattening them through a text
 // template loses the distinction between numbers, dates, strings and nulls.
-func renderOutputTextParameters(node *MarkupNode, ctx *RenderContext, pattern string, literalPattern, escape bool) (string, bool, error) {
+func renderOutputTextParameters(node *MarkupNode, ctx *RenderContext, pattern string, escape bool) (string, bool, error) {
 	var args []vm.Value
 	for _, child := range node.Children {
 		if !isApexStructureTag(child, "param") {
@@ -40,9 +40,10 @@ func renderOutputTextParameters(node *MarkupNode, ctx *RenderContext, pattern st
 	}
 	var out strings.Builder
 	writeLiteral := func(text string) {
-		// Literal markup in the value attribute stays text even with escape=false;
-		// parameter markup follows escape. Never parse substituted values again.
-		if escape || literalPattern {
+		// The pattern is attribute text: Visualforce keeps entities in it as
+		// decimal references (protectNativeEntities), so escape alone decides.
+		// Never parse substituted values again.
+		if escape {
 			text = html.EscapeString(text)
 		}
 		out.WriteString(text)

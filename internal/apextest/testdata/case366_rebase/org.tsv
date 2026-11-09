@@ -1,0 +1,7 @@
+api	case	result
+62.0	control	["0","0","0","0"]
+62.0	boundary	["0.0.0.0"]
+62.0	rejection	System.StringException
+67.0	control	["0","0","0","0"]
+67.0	boundary	["0.0.0.0"]
+67.0	rejection	System.StringException

@@ -145,3 +145,36 @@ System.assert(Schema.getModuleDescribe('module').keySet().contains('Widget__c'))
 `)
 	}
 }
+
+// keySet on the global describe map returns a fresh Set whose contents match
+// the lower-cased unique keys; mutating it must not touch the map.
+func TestGlobalDescribeKeySetIsFreshAndComplete(t *testing.T) {
+	for _, namespaced := range []bool{false, true} {
+		t.Run(fmt.Sprintf("namespace=%v", namespaced), func(t *testing.T) {
+			machine := describeShareUnprimedFor(namespaced)
+			program, err := CompileAnonymousWithOptions(`Map<String,Schema.SObjectType> g = Schema.getGlobalDescribe();
+Set<String> keys = g.keySet();
+System.assert(keys.contains('account'));
+System.assert(!keys.contains('Account'));
+Integer n = keys.size();
+Integer mapSize = g.size();
+keys.remove('account');
+keys.add('private');
+Set<String> again = g.keySet();
+System.assertEquals(n, again.size());
+System.assert(again.contains('account'));
+System.assert(!again.contains('private'));
+System.assertEquals(mapSize, g.size());
+for (String k : again) {
+    System.assertEquals(k, k.toLowerCase());
+}
+`, CompileOptions{APIVersion: "67.0"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := machine.Execute(program); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+}

@@ -1,0 +1,5 @@
+case	result
+lead_notify_false	true,true,0
+case_notify_false	true,true,0
+lead_notify_true	true,true,0
+case_notify_true	true,true,0

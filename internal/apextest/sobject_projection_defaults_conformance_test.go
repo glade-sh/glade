@@ -58,6 +58,14 @@ func TestSObjectProjectionAndDefaultsOrgConformance(t *testing.T) {
 			for name, source := range objects {
 				writeFile(t, filepath.Join(root, "force-app/main/default/objects", name+".object"), source)
 			}
+			// sobject_projection_defaults_capture_assignment/ASSIGNMENT-RUN.txt: the
+			// capture assigned ProbeP9Access to the running user before the rows.
+			grant, err := os.ReadFile("testdata/conformance/sobject_projection_defaults_capture_assignment/ProbeP9Access.permissionset-meta.xml")
+			if err != nil {
+				t.Fatal(err)
+			}
+			writeFile(t, filepath.Join(root, "force-app/main/default/permissionsets/ProbeP9Access.permissionset-meta.xml"), string(grant))
+			writeCapturedAssignments(t, root, "ProbeP9Access")
 			var named strings.Builder
 			named.WriteString("@IsTest private class ProjectionDefaultsProbe {")
 			for _, row := range data.Rows {
@@ -87,10 +95,9 @@ func TestSObjectProjectionAndDefaultsOrgConformance(t *testing.T) {
 			if index.HasErrors() || analysis.HasErrors() {
 				t.Fatalf("captured source rejected: %v %v", index.Diagnostics, analysis.Diagnostics)
 			}
-			org := orgFromIndex(index)
 			// The native source API varies independently of the org's REST
 			// serialization version, which is 68 in every observed snapshot.
-			org.APIVersion = "68.0"
+			org := capturedFixtureOrg(t, index, "68.0")
 			base := newConformanceRunner(t, index, conformanceRunnerOptions{Org: &org, LinkProject: true})
 			cases := Discover(index, Options{SelectedClasses: []string{"ProjectionDefaultsProbe"}})
 			methods, methodErrors := compileTestMethods(cases)

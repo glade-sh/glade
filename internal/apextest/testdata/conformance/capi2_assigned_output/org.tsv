@@ -1,0 +1,4 @@
+api	route	case	result
+62.0	istest	assigned-string-type	{"label":null,"text":null,"type":"Currency"}|field=wrong|{"authentication":null,"features":null,"id":null,"label":null,"motif":null,"mySubscription":null,"name":null,"providerType":null,"rootFolderItemsUrl":null,"type":"ContentHubRepository","url":null}|field=wrong
+67.0	istest	assigned-string-type	{"label":null,"text":null,"type":"Currency"}|field=wrong|{"authentication":null,"features":null,"id":null,"label":null,"motif":null,"mySubscription":null,"name":null,"providerType":null,"rootFolderItemsUrl":null,"type":"ContentHubRepository","url":null}|field=wrong
+68.0	istest	assigned-string-type	{"label":null,"text":null,"type":"Currency"}|field=wrong|{"authentication":null,"features":null,"id":null,"label":null,"motif":null,"mySubscription":null,"name":null,"providerType":null,"rootFolderItemsUrl":null,"type":"ContentHubRepository","url":null}|field=wrong

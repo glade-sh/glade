@@ -1,0 +1,1 @@
+@IsTest private class OwnedQueryRoutesTest67 {@IsTest static void probe(){System.assertEquals('DocumentGenerationProcess.IsLocalizationEnabled.countQuery=accepted|DocumentGenerationProcess.IsLocalizationEnabled.queryLocator=accepted|DocumentTemplate.ContextMappingName.countQuery=accepted|DocumentTemplate.ContextMappingName.queryLocator=accepted',OwnedQueryRoutes67.observe());}}

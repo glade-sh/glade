@@ -23,7 +23,7 @@ func (e *Engine) flowRefsRelationshipValue(reference string, record storage.Reco
 	if !ok || (field.Type != storage.FieldString && field.Type != storage.FieldPicklist) || strings.TrimSpace(field.Formula) != "" {
 		return storage.Value{}, false
 	}
-	value, ok := formulaRelationshipFieldValue(e.Org, definition, record, reference, e.Org.Namespace, nil)
+	value, ok := formulaRelationshipFieldValue(e.Org, definition, record, reference, e.Org.Namespace, nil, e.systemUserID(), e.PermissionUserFields, e.systemUserID())
 	if !ok {
 		return storage.Value{}, false
 	}
@@ -44,7 +44,18 @@ func (e *Engine) flowRefsDecisionRelationshipValue(reference string, source stor
 			}
 		}
 	}
-	return e.flowRefsRelationshipValue(reference, source, definition)
+	if value, ok := e.flowRefsRelationshipValue(reference, source, definition); ok {
+		return value, true
+	}
+	// <relationship>.Id is the triggering record's lookup value
+	// (record_save_residuals flow rows: $Record.Account.Id IsNull false on a
+	// Task whose WhatId is an Account, API 62.0 and 67.0).
+	if e != nil && e.Org != nil {
+		if relationship, field, nested := strings.Cut(strings.TrimSpace(reference), "."); nested && strings.EqualFold(field, "Id") && !strings.HasPrefix(relationship, "$") {
+			return sourceRecordRelationshipValue(source, definition, e.Org.Namespace, reference)
+		}
+	}
+	return storage.Value{}, false
 }
 
 // A typed User relationship does not match a Group owner. Resolve the declared

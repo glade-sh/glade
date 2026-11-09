@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/glade-sh/glade/internal/apexlang"
 )
@@ -62,6 +63,7 @@ type standardDescribeCatalogV2CacheEntry struct {
 	indexEntry standardDescribeCatalogV2IndexEntry
 	value      standardObjectCatalogEntry
 	err        error
+	decoded    atomic.Bool
 }
 
 type standardDescribeCatalogV2RawDecodeFunc func(standardDescribeCatalogV2IndexEntry) (standardDescribeObject, error)
@@ -137,6 +139,7 @@ func (cache *standardDescribeCatalogV2Cache) decodeCachedEntry(cached *standardD
 		if cached.err != nil {
 			cached.value = standardObjectCatalogEntry{}
 		}
+		cached.decoded.Store(true)
 	})
 	// The projected catalog entry contains maps and slices. Production callers
 	// treat these shared values as immutable for the lifetime of the process.
@@ -416,4 +419,84 @@ func readAllSized(reader io.Reader, capacity int) ([]byte, error) {
 			return data, err
 		}
 	}
+}
+
+var standardCatalogReleaseEnabled atomic.Bool
+
+// EnableStandardCatalogRelease lets ReleaseStandardCatalogCaches drop the
+// decoded describe catalogs. A product process that builds one org shape turns
+// it on, because the catalogs are then read only while that org is built.
+// Library callers and tests keep the permanent caches.
+func EnableStandardCatalogRelease() { standardCatalogReleaseEnabled.Store(true) }
+
+// SetStandardCatalogReleaseEnabled sets the opt-in and returns the previous
+// value, so a test can restore it.
+func SetStandardCatalogReleaseEnabled(enabled bool) bool {
+	return standardCatalogReleaseEnabled.Swap(enabled)
+}
+
+// StandardCatalogReleaseEnabled reports whether EnableStandardCatalogRelease ran.
+func StandardCatalogReleaseEnabled() bool { return standardCatalogReleaseEnabled.Load() }
+
+// ReleaseStandardCatalogCaches frees the decoded catalog entries. The next
+// lookup decodes the member again from the embedded pack, with the same
+// result. Callers that already hold an entry keep it. It does nothing unless
+// EnableStandardCatalogRelease ran.
+func ReleaseStandardCatalogCaches() {
+	if !standardCatalogReleaseEnabled.Load() {
+		return
+	}
+	standardDescribeCatalogV2ProductionCache.release()
+	standardDescribeCatalogV2RawProductionCache.release()
+	standardCatalogReleases.Add(1)
+}
+
+var standardCatalogReleases atomic.Uint64
+
+// StandardCatalogReleaseCount reports how many releases ran. Tests use it to
+// bound the releases a sequence of org builds performs.
+func StandardCatalogReleaseCount() uint64 { return standardCatalogReleases.Load() }
+
+// StandardCatalogDecodedObjectCount reports how many catalog objects hold a
+// decoded definition. Tests use it to check that a release ran.
+func StandardCatalogDecodedObjectCount() int {
+	count := 0
+	standardDescribeCatalogV2ProductionCache.entries.Range(func(_, loaded any) bool {
+		if loaded.(*standardDescribeCatalogV2CacheEntry).decoded.Load() {
+			count++
+		}
+		return true
+	})
+	return count
+}
+
+// release keeps each decoded object's label pair, which the per-test schema
+// checks read for every object, then frees the decoded entries.
+func (cache *standardDescribeCatalogV2Cache) release() {
+	cache.entries.Range(func(_, loaded any) bool {
+		cached := loaded.(*standardDescribeCatalogV2CacheEntry)
+		if cached.decoded.Load() {
+			standardObjectCatalogLabels(cached.indexEntry.Name)
+		}
+		return true
+	})
+	cache.entries.Clear()
+}
+
+// release drops decoded objects but keeps the scalar facts (key prefix and
+// triggerable), which callers read for every object and which would otherwise
+// force a full decode per lookup.
+func (cache *standardDescribeCatalogV2RawCache) release() {
+	cache.entries.Range(func(key, loaded any) bool {
+		cached := loaded.(*standardDescribeCatalogV2RawCacheEntry)
+		cached.mu.Lock()
+		keep := &standardDescribeCatalogV2RawCacheEntry{indexEntry: cached.indexEntry, scalarReady: cached.scalarReady, scalar: cached.scalar, scalarErr: cached.scalarErr}
+		cached.mu.Unlock()
+		if keep.scalarReady {
+			cache.entries.CompareAndSwap(key, loaded, keep)
+		} else {
+			cache.entries.CompareAndDelete(key, loaded)
+		}
+		return true
+	})
 }

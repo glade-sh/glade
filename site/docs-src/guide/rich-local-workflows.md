@@ -85,6 +85,10 @@ the server yet.
 glade playground --wizard --project . --examples
 ```
 
+When the resulting command opens the local playground in a browser, select
+**Continue** on the **Open local preview** confirmation. HTTP clients without
+browser origin metadata need `X-Glade-Client: 1`.
+
 ## Package artifacts
 
 ```bash

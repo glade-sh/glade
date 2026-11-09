@@ -18,18 +18,25 @@ func semiJoinCountRejection(joins []Condition) error {
 	return fmt.Errorf("soql: a WHERE clause can contain at most two semi-join or anti-join subqueries")
 }
 
-// Captures admit a single child ID projection with a direct positive semi-join
-// selecting parent IDs. Other child semi-join shapes keep the previous boundary.
+// Captured direct child semi-joins accept both ID-to-reference matching and
+// the earlier reference-to-parent-ID form. Other shapes retain their boundary.
 func semiJoinChildQuerySupported(parent Query, child ChildQuery) bool {
 	query := child.Query
 	join := query.Where
-	if len(parent.ChildQueries) != 1 || len(query.Fields) != 1 || !strings.EqualFold(query.Fields[0], "Id") || len(query.ChildQueries) != 0 ||
+	if len(parent.ChildQueries) != 1 || len(query.ChildQueries) != 0 ||
 		query.Count || len(query.Aggregates) != 0 || len(query.GroupBy) != 0 || query.Having != nil || len(query.Order) != 0 || query.HasLimit || query.HasOffset ||
-		join == nil || join.Subquery == nil || join.Not || join.Parenthesized || len(join.And) != 0 || len(join.Or) != 0 || !strings.EqualFold(join.Op, "IN") || strings.Contains(join.Field, ".") {
+		join == nil || join.Subquery == nil || join.Not || join.Parenthesized || len(join.And) != 0 || len(join.Or) != 0 || strings.Contains(join.Field, ".") {
 		return false
 	}
 	inner := join.Subquery
-	return strings.EqualFold(inner.Object, parent.Object) && len(inner.Fields) == 1 && strings.EqualFold(inner.Fields[0], "Id")
+	if len(inner.Fields) != 1 {
+		return false
+	}
+	if strings.EqualFold(join.Field, "Id") && (strings.EqualFold(join.Op, "IN") || strings.EqualFold(join.Op, "NOT IN")) {
+		return true
+	}
+	return len(query.Fields) == 1 && strings.EqualFold(query.Fields[0], "Id") && strings.EqualFold(join.Op, "IN") &&
+		strings.EqualFold(inner.Object, parent.Object) && strings.EqualFold(inner.Fields[0], "Id")
 }
 
 func semiJoinNestingRejection(query Query) error {

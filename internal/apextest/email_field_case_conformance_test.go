@@ -206,6 +206,14 @@ func emailFieldCaseExecute(t *testing.T, id string, cell emailFieldCaseCell, fix
 			writeFile(t, filepath.Join(root, "force-app", name), source)
 		}
 	}
+	// email_field_case_capture_assignment/ASSIGNMENT-RUN.txt: the capture
+	// assigned ProbeP7Access to the running user before the observations.
+	grant, err := os.ReadFile("testdata/conformance/email_field_case_capture_assignment/ProbeP7Access.permissionset-meta.xml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, filepath.Join(root, "force-app/permissionsets/ProbeP7Access.permissionset-meta.xml"), string(grant))
+	writeCapturedAssignments(t, root, "ProbeP7Access")
 	index := loadTestIndex(t, root)
 	if analysis := sema.Analyze(index); index.HasErrors() || analysis.HasErrors() {
 		t.Fatalf("native compiles; local setup diagnostics=%v %v", index.Diagnostics, analysis.Diagnostics)
@@ -217,8 +225,7 @@ func emailFieldCaseExecute(t *testing.T, id string, cell emailFieldCaseCell, fix
 	if len(runtime.Triggers) != 4 {
 		t.Fatalf("captured two before-insert/update triggers require four event registrations; got %d", len(runtime.Triggers))
 	}
-	org := orgFromIndex(index)
-	org.APIVersion = cell.APIVersion
+	org := capturedFixtureOrg(t, index, cell.APIVersion)
 	runner := newConformanceRunner(t, index, conformanceRunnerOptions{RequestRuntime: &runtime, Org: &org})
 	machine := runner.newMachine()
 	var execErr error

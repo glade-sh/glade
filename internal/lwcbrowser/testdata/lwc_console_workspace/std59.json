@@ -1,0 +1,194 @@
+{
+ "emp.isEmpEnabled": {
+  "kind": "resolve",
+  "value": true
+ },
+ "exports": {
+  "emp": [
+   "default",
+   "isEmpEnabled",
+   "onError",
+   "setDebugFlag",
+   "subscribe",
+   "unsubscribe"
+  ],
+  "ub": [
+   "EnclosingUtilityId",
+   "default",
+   "enableModal",
+   "enablePopout",
+   "getAllUtilityInfo",
+   "getInfo",
+   "minimize",
+   "onUtilityClick",
+   "open",
+   "updatePanel",
+   "updateUtility"
+  ],
+  "ws": [
+   "EnclosingTabId",
+   "IsConsoleNavigation",
+   "closeTab",
+   "default",
+   "disableTabClose",
+   "focusTab",
+   "getAllTabInfo",
+   "getFocusedTabInfo",
+   "getTabInfo",
+   "openSubtab",
+   "openTab",
+   "refreshTab",
+   "setTabHighlighted",
+   "setTabIcon",
+   "setTabLabel"
+  ]
+ },
+ "isConsole": {
+  "kind": "not-function"
+ },
+ "ub.minimize.missing": {
+  "kind": "resolve",
+  "value": true
+ },
+ "ub.minimize.null": {
+  "error": {
+   "message": "Expected a non-empty string value, instead received null",
+   "name": "Error"
+  },
+  "kind": "reject"
+ },
+ "ws.closeTab.missing": {
+  "error": {
+   "message": "Error: API `closeTab` is not currently supported in this application.",
+   "name": "Error"
+  },
+  "kind": "reject"
+ },
+ "ws.closeTab.null": {
+  "error": {
+   "message": "error: unable to close a tab - missing tabId",
+   "name": "Error"
+  },
+  "kind": "reject"
+ },
+ "ws.disableTabClose.missing": {
+  "error": {
+   "message": "Error: API `disableTabClose` is not currently supported in this application.",
+   "name": "Error"
+  },
+  "kind": "reject"
+ },
+ "ws.disableTabClose.null": {
+  "error": {
+   "message": "error: unable to disable tab close - missing tabId or disabled flag",
+   "name": "Error"
+  },
+  "kind": "reject"
+ },
+ "ws.focusTab.missing": {
+  "error": {
+   "message": "Error: API `focusTab` is not currently supported in this application.",
+   "name": "Error"
+  },
+  "kind": "reject"
+ },
+ "ws.getAllTabInfo": {
+  "error": {
+   "message": "Error: API `getAllTabInfo` is not currently supported in this application.",
+   "name": "Error"
+  },
+  "kind": "reject"
+ },
+ "ws.getFocusedTabInfo": {
+  "error": {
+   "message": "Error: API `getFocusedTabInfo` is not currently supported in this application.",
+   "name": "Error"
+  },
+  "kind": "reject"
+ },
+ "ws.getTabInfo.missing": {
+  "error": {
+   "message": "Error: API `getTabInfo` is not currently supported in this application.",
+   "name": "Error"
+  },
+  "kind": "reject"
+ },
+ "ws.getTabInfo.null": {
+  "error": {
+   "message": "error: unable to get info for a tab - missing tabId",
+   "name": "Error"
+  },
+  "kind": "reject"
+ },
+ "ws.openSubtab.missing": {
+  "kind": "resolve",
+  "value": null
+ },
+ "ws.openTab.navItem": {
+  "kind": "resolve",
+  "value": null
+ },
+ "ws.refreshTab.missing": {
+  "error": {
+   "message": "Error: API `refreshTab` is not currently supported in this application.",
+   "name": "Error"
+  },
+  "kind": "reject"
+ },
+ "ws.refreshTab.missing.opts": {
+  "error": {
+   "message": "Error: API `refreshTab` is not currently supported in this application.",
+   "name": "Error"
+  },
+  "kind": "reject"
+ },
+ "ws.refreshTab.null": {
+  "error": {
+   "message": "error: unable to refresh a tab - missing tabId",
+   "name": "Error"
+  },
+  "kind": "reject"
+ },
+ "ws.setTabHighlighted.missing": {
+  "error": {
+   "message": "Error: API `setTabHighlighted` is not currently supported in this application.",
+   "name": "Error"
+  },
+  "kind": "reject"
+ },
+ "ws.setTabHighlighted.null": {
+  "error": {
+   "message": "error: unable to highlight a tab - missing tabId or highlighted flag",
+   "name": "Error"
+  },
+  "kind": "reject"
+ },
+ "ws.setTabIcon.missing": {
+  "error": {
+   "message": "Error: API `setTabIcon` is not currently supported in this application.",
+   "name": "Error"
+  },
+  "kind": "reject"
+ },
+ "ws.setTabIcon.null": {
+  "error": {
+   "message": "error: unable to set icon to a tab - missing tabId or icon",
+   "name": "Error"
+  },
+  "kind": "reject"
+ },
+ "ws.setTabLabel.missing": {
+  "error": {
+   "message": "Error: API `setTabLabel` is not currently supported in this application.",
+   "name": "Error"
+  },
+  "kind": "reject"
+ },
+ "ws.setTabLabel.null": {
+  "error": {
+   "message": "error: unable to set label to a tab - missing tabId or label",
+   "name": "Error"
+  },
+  "kind": "reject"
+ }
+}

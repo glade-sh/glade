@@ -72,6 +72,10 @@ func NormalizeOrgDomainURL(raw string) (string, error) {
 
 type OrgState struct {
 	ChangeDataCaptureTestSetup *ChangeDataCaptureSnapshot `json:"-"`
+	// Formula execution context is set on a per-query OrgState value copy.
+	// It is neither persisted nor stored in query or schema caches.
+	formulaUserID           ID
+	formulaPermissionFields map[string]Value
 
 	OrgID                  string                 `json:"orgId,omitempty"`
 	APIVersion             string                 `json:"apiVersion,omitempty"`
@@ -93,6 +97,7 @@ type OrgState struct {
 
 	objectNameCache                 *sync.Map
 	keyPrefixesValidated            bool
+	lazyStandardSpread              bool
 	keyPrefixesValidatedObjectCount int
 	keyPrefixesValidatedPrefixes    []keyPrefixSnapshotEntry
 	keyPrefixesValidatedGeneration  uint64
@@ -251,6 +256,37 @@ type MetadataRegistry struct {
 	MessageChannels        []MessageChannelMetadata      `json:"messageChannels,omitempty"`
 	FeatureParameters      []FeatureParameterMetadata    `json:"featureParameters,omitempty"`
 	Layouts                []LayoutMetadata              `json:"layouts,omitempty"`
+	ProjectReports         []ProjectReportMetadata       `json:"projectReports,omitempty"`
+	ReportFolderShares     []ProjectReportFolderShare    `json:"reportFolderShares,omitempty"`
+}
+
+// ProjectReportMetadata is the immutable project definition associated with a
+// materialized Report row. Old org snapshots omit this optional field.
+type ProjectReportFolderShare struct {
+	FolderID     ID     `json:"folderId"`
+	AccessLevel  string `json:"accessLevel"`
+	SharedTo     string `json:"sharedTo"`
+	SharedToType string `json:"sharedToType"`
+}
+
+type ProjectReportMetadata struct {
+	FolderID       ID       `json:"folderId,omitempty"`
+	ID             ID       `json:"id"`
+	Name           string   `json:"name"`
+	Description    string   `json:"description,omitempty"`
+	DeveloperName  string   `json:"developerName"`
+	Format         string   `json:"format"`
+	ReportType     string   `json:"reportType"`
+	Scope          string   `json:"scope,omitempty"`
+	ShowDetails    bool     `json:"showDetails,omitempty"`
+	HideGrandTotal bool     `json:"hideGrandTotal,omitempty"`
+	HideSubTotals  bool     `json:"hideSubTotals,omitempty"`
+	DateColumn     string   `json:"dateColumn,omitempty"`
+	StartDate      string   `json:"startDate,omitempty"`
+	EndDate        string   `json:"endDate,omitempty"`
+	Columns        []string `json:"columns,omitempty"`
+	GroupingsDown  []string `json:"groupingsDown,omitempty"`
+	Supported      bool     `json:"supported,omitempty"`
 }
 
 type AccountRecordTypeDefault struct {
@@ -287,6 +323,8 @@ type StandardValueSetTranslation struct {
 }
 
 type TabMetadata struct {
+	// ComponentBundleID is a deterministic local stand-in for a component bundle ID.
+	ComponentBundleID string `json:"componentBundleId,omitempty"`
 	// NavigationIdentity is the host-assigned objectApiName for a component
 	// tab. It is not an SObjectName and does not make the tab an object tab.
 	NavigationIdentity string `json:"navigationIdentity,omitempty"`
@@ -444,12 +482,17 @@ type ObjectDefinition struct {
 	Relations         []Relationship     `json:"relationships,omitempty"`
 	RecordTypes       []RecordTypeInfo   `json:"recordTypes,omitempty"`
 	ValidationRules   []ValidationRule   `json:"validationRules,omitempty"`
+	AutoResponseRules []AutoResponseRule `json:"autoResponseRules,omitempty"`
 	AssignmentRules   []AssignmentRule   `json:"assignmentRules,omitempty"`
 	DuplicateRules    []DuplicateRule    `json:"duplicateRules,omitempty"`
 	WorkflowRules     []WorkflowRule     `json:"workflowRules,omitempty"`
 	FlowRules         []FlowRule         `json:"flowRules,omitempty"`
 	Indexes           []IndexDefinition  `json:"indexes,omitempty"`
 	Metadata          map[string]string  `json:"metadata,omitempty"`
+
+	// ExternalSharingModel is the declared external organization-wide default
+	// (CustomObject externalSharingModel); empty when the metadata omits it.
+	ExternalSharingModel string `json:"externalSharingModel,omitempty"`
 }
 
 type Field struct {
@@ -502,6 +545,7 @@ type Field struct {
 	RelationshipName         string            `json:"relationshipName,omitempty"`
 	RelationshipOrder        *int              `json:"relationshipOrder,omitempty"`
 	ReparentableMasterDetail bool              `json:"reparentableMasterDetail,omitempty"`
+	WriteRequiresMasterRead  bool              `json:"writeRequiresMasterRead,omitempty"`
 	ChildRelationshipName    string            `json:"childRelationshipName,omitempty"`
 	PicklistController       string            `json:"picklistController,omitempty"`
 	PicklistValueSettings    []PicklistSetting `json:"picklistValueSettings,omitempty"`
@@ -603,6 +647,10 @@ type RecordTypeInfo struct {
 	// PersonAccount marks a record type declared under the PersonAccount
 	// metadata object. Its developer name need not mention "person".
 	PersonAccount bool `json:"personAccount,omitempty"`
+	// Unavailable marks a record type the running user's profile does not
+	// see (record_type_visibility rows): describe reports it unavailable and
+	// USER_MODE DML rejects it.
+	Unavailable bool `json:"unavailable,omitempty"`
 }
 
 type ValidationRule struct {
@@ -796,6 +844,15 @@ type FlowAction struct {
 	ClassName  string                `json:"className,omitempty"`
 	MethodName string                `json:"methodName,omitempty"`
 	Inputs     []WorkflowFieldUpdate `json:"inputs,omitempty"`
+	// Outputs maps an Apex action's returned fields to Flow variables
+	// (actionCalls outputParameters with assignToReference).
+	Outputs []FlowActionOutput `json:"outputs,omitempty"`
+}
+
+// FlowActionOutput assigns one returned field of an action to a Flow variable.
+type FlowActionOutput struct {
+	Name     string `json:"name"`
+	AssignTo string `json:"assignTo"`
 }
 
 type FlowRecordLookup struct {
@@ -854,6 +911,11 @@ type FlowCustomErrorMessage struct {
 	Message         string            `json:"message"`
 	Formulas        map[string]string `json:"formulas,omitempty"`
 	NumberConstants map[string]string `json:"numberConstants,omitempty"`
+	// ResourceFormulas holds every flow formula resource a {!name} merge field
+	// may name; Formulas keeps the captured frame-bound subset.
+	ResourceFormulas map[string]string `json:"resourceFormulas,omitempty"`
+	// Field names the record field of a field-level error (isFieldError).
+	Field string `json:"field,omitempty"`
 }
 
 type FlowApexPluginCall struct {
@@ -948,6 +1010,18 @@ type Record struct {
 	// LoadedReferences is transient DML input provenance, never persisted.
 	// Each canonical field retains the reference ID from an unchanged SOQL view.
 	LoadedReferences map[string]ID `json:"-"`
+	// triggerFormulasMaterialized marks a hydrated before-update record whose
+	// formula values are in Fields and ExplicitNulls; triggerFormulas holds the
+	// values that read differently on a Trigger.new record (the trigger
+	// surface keeps whitespace and renders BR() as text). Both are transient
+	// DML provenance, unexported so snapshots never retain them.
+	triggerFormulasMaterialized bool
+	triggerFormulas             map[string]Value
+	// defaultedLineBreaks names the fields whose VM-supplied default value
+	// holds a line feed; DML keeps it in a single-line Text field (org capture
+	// flow_br_surfaces: a default formula with BR() stores a line feed, an
+	// assigned line feed stores a space). Transient and unexported.
+	defaultedLineBreaks map[string]bool
 	// Cleared lookup history is transaction-local and remains unexported so
 	// runtime snapshots and Gob payloads cannot persist a transaction marker.
 	clearedLookupReferences map[string]ID       `json:"-"`
@@ -963,6 +1037,40 @@ type Record struct {
 	// ClearedReferences retains optional lookups cleared by parent deletion.
 	ClearedReferences map[string]ClearedReference `json:"clearedReferences,omitempty"`
 }
+
+// MarkDefaultedLineBreak records that the default supplied for field holds a
+// line break the single-line Text normalization must keep.
+func (r *Record) MarkDefaultedLineBreak(field string) {
+	if r.defaultedLineBreaks == nil {
+		r.defaultedLineBreaks = make(map[string]bool)
+	}
+	r.defaultedLineBreaks[strings.ToLower(field)] = true
+}
+
+// KeepsDefaultedLineBreak reports a MarkDefaultedLineBreak for field.
+func (r Record) KeepsDefaultedLineBreak(field string) bool {
+	return r.defaultedLineBreaks[strings.ToLower(field)]
+}
+
+// MarkTriggerFormulasMaterialized records that the formula values in Fields
+// and ExplicitNulls were computed for this record's Trigger.new view.
+func (r *Record) MarkTriggerFormulasMaterialized() { r.triggerFormulasMaterialized = true }
+
+// TriggerFormulasMaterialized reports whether the formula values in Fields and
+// ExplicitNulls were computed for this record's Trigger.new view.
+func (r Record) TriggerFormulasMaterialized() bool { return r.triggerFormulasMaterialized }
+
+// SetTriggerFormula records a formula value that reads differently on the
+// Trigger.new record than the value in Fields; a null result is a null Value.
+func (r *Record) SetTriggerFormula(field string, value Value) {
+	if r.triggerFormulas == nil {
+		r.triggerFormulas = make(map[string]Value)
+	}
+	r.triggerFormulas[field] = value
+}
+
+// TriggerFormulas returns the recorded trigger-surface formula values, or nil.
+func (r Record) TriggerFormulas() map[string]Value { return r.triggerFormulas }
 
 // MarkDMLTriggerAssignment records a user assignment during a before trigger.
 func (r *Record) MarkDMLTriggerAssignment(field string) {
@@ -1925,6 +2033,18 @@ func (r Record) Clone() Record {
 			out.LoadedReferences[field] = id
 		}
 	}
+	if r.defaultedLineBreaks != nil {
+		out.defaultedLineBreaks = make(map[string]bool, len(r.defaultedLineBreaks))
+		for field := range r.defaultedLineBreaks {
+			out.defaultedLineBreaks[field] = true
+		}
+	}
+	if r.triggerFormulas != nil {
+		out.triggerFormulas = make(map[string]Value, len(r.triggerFormulas))
+		for field, value := range r.triggerFormulas {
+			out.triggerFormulas[field] = value.Clone()
+		}
+	}
 	if r.ClearedReferences != nil {
 		out.ClearedReferences = make(map[string]ClearedReference, len(r.ClearedReferences))
 		for field, reference := range r.ClearedReferences {
@@ -2053,6 +2173,7 @@ func (d ObjectDefinition) Clone() ObjectDefinition {
 	out.ValidationRules = append([]ValidationRule(nil), d.ValidationRules...)
 	out.DuplicateRules = CloneDuplicateRules(d.DuplicateRules)
 	out.AssignmentRules = CloneAssignmentRules(d.AssignmentRules)
+	out.AutoResponseRules = CloneAutoResponseRules(d.AutoResponseRules)
 	out.WorkflowRules = append([]WorkflowRule(nil), d.WorkflowRules...)
 	for i := range out.WorkflowRules {
 		out.WorkflowRules[i].Criteria = append([]WorkflowCriteriaItem(nil), d.WorkflowRules[i].Criteria...)

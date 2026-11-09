@@ -1,10 +1,12 @@
 package visualforce
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 
@@ -64,51 +66,184 @@ type MergeReference struct {
 	Name       string `json:"name,omitempty"`
 }
 
-// PageNames returns the sorted names that a successful LoadProject registers.
-// Check structural rejection first to avoid expression validation and Apex
-// reparsing for projects that cannot load. Other cases use the strict loader.
+// PageRejection names a page or component that the strict loader refused and
+// the reason. PageNames keeps every other page; callers report these so a bad
+// source file is visible without hiding unrelated Page.X references.
+type PageRejection struct {
+	File    string
+	Message string
+}
+
+// PageNames returns the sorted names that LoadProject registers for the pages
+// that load. One page that fails to parse or validate is left out; its siblings
+// stay registered. Metadata no page owns (permission set and profile page and
+// class entries) never hides a page. Use PageNamesWithDiagnostics for the
+// rejected files.
 func PageNames(p project.Project) []string {
-	return pageNames(p, LoadProject)
+	names, _ := PageNamesWithDiagnostics(p, nil)
+	return names
+}
+
+// DeclaredPageNames returns the page names a project's source declares,
+// whether or not the page validates locally. An installed dependency's pages
+// exist in the org that packaged them; a local validation failure there
+// (for example a missing symbol in the dependency's own source) does not make
+// Page.ns__Name unknown to a consumer.
+func DeclaredPageNames(p project.Project) []string {
+	var names []string
+	seen := map[string]bool{}
+	for _, path := range p.VisualforcePageFiles {
+		name := nameFromPath(path, ".page")
+		if name == "" || seen[strings.ToLower(name)] {
+			continue
+		}
+		seen[strings.ToLower(name)] = true
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
 }
 
 // PageNamesWithControllerCompilation is PageNames for a caller that already
 // compiled the project's Apex. The strict loader's controller compile gate
 // reuses that compilation when its index matches p; otherwise it compiles.
 func PageNamesWithControllerCompilation(p project.Project, compilation *ControllerCompilation) []string {
-	return pageNames(p, func(p project.Project) (Index, error) {
-		return loadProjectWithControllerCompilation(p, false, true, compilation)
-	})
+	names, _ := PageNamesWithDiagnostics(p, compilation)
+	return names
 }
 
-func pageNames(p project.Project, load func(project.Project) (Index, error)) []string {
+// PageNamesWithDiagnostics is PageNamesWithControllerCompilation plus the
+// files the loader left out. A nil compilation makes the loader compile.
+func PageNamesWithDiagnostics(p project.Project, compilation *ControllerCompilation) ([]string, []PageRejection) {
+	cache := &loadCache{}
+	names, rejected := pageNames(p, func(p project.Project, projectMetadata bool, only map[string]bool) (Index, error) {
+		return loadProjectWithControllerCompilation(p, false, true, projectMetadata, compilation, only, cache)
+	})
+	recordPageRejections(p, rejected)
+	return names, rejected
+}
+
+// pageLoader is the strict loader. projectMetadata false skips the checks that
+// belong to no page (permission set and profile entries).
+type pageLoader func(p project.Project, projectMetadata bool, only map[string]bool) (Index, error)
+
+func pageNames(p project.Project, load pageLoader) ([]string, []PageRejection) {
 	if len(p.VisualforcePageFiles) == 0 {
-		return nil
+		return nil, nil
 	}
 	fallbackAPIVersion, err := apexversion.PreserveSource(p.SourceAPIVersion)
 	if err != nil {
-		return nil
+		return nil, nil
 	}
-	// These are unconditional checks in LoadProject. Any rejection suppresses
-	// every page in this project, including otherwise valid siblings.
+	var rejected []PageRejection
+	// Parse failures are unconditional in LoadProject. They drop the one page
+	// (all of its files) or component, not the project.
+	badPages := map[string]bool{}
 	for _, path := range p.VisualforcePageFiles {
 		if _, err := parsePageFile(path, fallbackAPIVersion); err != nil {
-			return nil
+			badPages[strings.ToLower(nameFromPath(path, ".page"))] = true
+			rejected = append(rejected, PageRejection{File: path, Message: err.Error()})
+		}
+	}
+	badComponents := map[string]bool{}
+	for _, path := range p.VisualforceComponentFiles {
+		if _, err := parseComponentFile(path, fallbackAPIVersion); err != nil {
+			badComponents[strings.ToLower(nameFromPath(path, ".component"))] = true
+			rejected = append(rejected, PageRejection{File: path, Message: err.Error()})
+		}
+	}
+	live := p
+	live.VisualforcePageFiles = nil
+	live.VisualforceComponentFiles = nil
+	for _, path := range p.VisualforcePageFiles {
+		if !badPages[strings.ToLower(nameFromPath(path, ".page"))] {
+			live.VisualforcePageFiles = append(live.VisualforcePageFiles, path)
 		}
 	}
 	for _, path := range p.VisualforceComponentFiles {
-		if _, err := parseComponentFile(path, fallbackAPIVersion); err != nil {
-			return nil
+		if !badComponents[strings.ToLower(nameFromPath(path, ".component"))] {
+			live.VisualforceComponentFiles = append(live.VisualforceComponentFiles, path)
 		}
 	}
-	idx, err := load(p)
-	if err != nil {
-		return nil
+	if len(live.VisualforcePageFiles) == 0 {
+		return nil, rejected
 	}
-	names := make([]string, 0, len(idx.Pages))
-	for _, page := range idx.Pages {
-		names = append(names, page.Name)
+	collect := func(idx Index) []string {
+		names := make([]string, 0, len(idx.Pages))
+		for _, page := range idx.Pages {
+			names = append(names, page.Name)
+		}
+		return names
 	}
-	return names
+	idx, err := load(live, true, nil)
+	if err == nil {
+		return collect(idx), rejected
+	}
+	// Metadata no page owns (permission set and profile page and class entries)
+	// is still an error for LoadProject, and callers see it here, but a page
+	// does not disappear because a permission set names something else.
+	var access *VisualforceAccessMetadataError
+	if errors.As(err, &access) {
+		rejected = append(rejected, PageRejection{File: access.File, Message: access.Message})
+	}
+	// Component validation reports each failing component and page by file.
+	// Drop those files and load again; a page that uses a failed component is
+	// among them.
+	var projectErr error
+	for {
+		var idx Index
+		idx, projectErr = load(live, false, nil)
+		if projectErr == nil {
+			return collect(idx), rejected
+		}
+		var components *ComponentValidationError
+		if !errors.As(projectErr, &components) {
+			break
+		}
+		drop := map[string]bool{}
+		for _, diagnostic := range components.Diagnostics {
+			drop[diagnostic.File] = true
+			rejected = append(rejected, PageRejection{File: diagnostic.File, Message: diagnostic.Message})
+		}
+		before := len(live.VisualforcePageFiles) + len(live.VisualforceComponentFiles)
+		live.VisualforcePageFiles = slices.DeleteFunc(slices.Clone(live.VisualforcePageFiles), func(path string) bool { return drop[path] })
+		live.VisualforceComponentFiles = slices.DeleteFunc(slices.Clone(live.VisualforceComponentFiles), func(path string) bool { return drop[path] })
+		if len(live.VisualforcePageFiles) == 0 {
+			return nil, rejected
+		}
+		if len(live.VisualforcePageFiles)+len(live.VisualforceComponentFiles) == before {
+			break
+		}
+	}
+	// A page-owned failure: keep each page that loads on its own.
+	groups := map[string][]string{}
+	var order []string
+	for _, path := range live.VisualforcePageFiles {
+		key := strings.ToLower(nameFromPath(path, ".page"))
+		if _, ok := groups[key]; !ok {
+			order = append(order, key)
+		}
+		groups[key] = append(groups[key], path)
+	}
+	var names []string
+	for _, key := range order {
+		own := map[string]bool{}
+		for _, path := range groups[key] {
+			own[path] = true
+		}
+		idx, err := load(live, false, own)
+		if err != nil {
+			rejected = append(rejected, PageRejection{File: groups[key][0], Message: err.Error()})
+			continue
+		}
+		for _, page := range idx.Pages {
+			if strings.EqualFold(page.Name, nameFromPath(groups[key][0], ".page")) {
+				names = append(names, page.Name)
+			}
+		}
+	}
+	sort.Strings(names)
+	return names, rejected
 }
 
 func LoadProject(p project.Project) (Index, error) {
@@ -130,10 +265,15 @@ func LoadProjectBestEffort(p project.Project) Index {
 }
 
 func loadProject(p project.Project, bestEffort, validateExpressions bool) (Index, error) {
-	return loadProjectWithControllerCompilation(p, bestEffort, validateExpressions, nil)
+	return loadProjectWithControllerCompilation(p, bestEffort, validateExpressions, true, nil, nil, nil)
 }
 
-func loadProjectWithControllerCompilation(p project.Project, bestEffort, validateExpressions bool, compilation *ControllerCompilation) (Index, error) {
+// only, when non-nil, limits the per-file validation to those paths. Every file
+// is still parsed and indexed, so a reference from a validated page to another
+// page resolves against the whole project. cache, when non-nil, shares the
+// project-wide work (Apex scan, controller compile gate, project checks, parsed
+// index) between loads of the same project; a nil cache recomputes it.
+func loadProjectWithControllerCompilation(p project.Project, bestEffort, validateExpressions, projectMetadata bool, compilation *ControllerCompilation, only map[string]bool, cache *loadCache) (Index, error) {
 	idx := Index{}
 	fallbackAPIVersion, err := apexversion.PreserveSource(p.SourceAPIVersion)
 	if err != nil {
@@ -142,48 +282,49 @@ func loadProjectWithControllerCompilation(p project.Project, bestEffort, validat
 		}
 		return Index{}, fmt.Errorf("invalid project source API version: %w", err)
 	}
-	if !bestEffort && validateExpressions {
+	if !bestEffort && validateExpressions && projectMetadata {
 		if err := ValidateVisualforceAccessMetadata(p); err != nil {
 			return Index{}, err
 		}
 	}
 	if !bestEffort && validateExpressions && len(p.VisualforceComponentFiles) != 0 {
-		if err := validateCustomComponentProject(p); err != nil {
+		if err := cache.customComponentProject(p); err != nil {
 			return Index{}, err
 		}
 	}
 	if !bestEffort && validateExpressions {
-		if err := validateAlternativeRenderingProject(p); err != nil {
+		if only != nil {
+			// A page-by-page load validates only its own page's alternative
+			// rendering, so one page's stylesheet does not reject the others.
+			if err := validateAlternativeRenderingPages(p, only); err != nil {
+				return Index{}, err
+			}
+		} else if err := cache.alternativeRenderingProject(p); err != nil {
 			return Index{}, err
 		}
 	}
-	for _, path := range p.VisualforcePageFiles {
-		parsePage := parsePageFile
-		if bestEffort {
-			parsePage = parsePageFileLenient
-		}
-		page, err := parsePage(path, fallbackAPIVersion)
-		if err != nil {
-			if bestEffort {
+	if bestEffort {
+		for _, path := range p.VisualforcePageFiles {
+			page, err := parsePageFileLenient(path, fallbackAPIVersion)
+			if err != nil {
 				continue
 			}
-			return Index{}, err
+			idx.Pages = append(idx.Pages, page)
 		}
-		idx.Pages = append(idx.Pages, page)
-	}
-	for _, path := range p.VisualforceComponentFiles {
-		parseComponent := parseComponentFile
-		if bestEffort {
-			parseComponent = parseComponentFileLenient
-		}
-		component, err := parseComponent(path, fallbackAPIVersion)
-		if err != nil {
-			if bestEffort {
+		for _, path := range p.VisualforceComponentFiles {
+			component, err := parseComponentFileLenient(path, fallbackAPIVersion)
+			if err != nil {
 				continue
 			}
+			idx.Components = append(idx.Components, component)
+		}
+	} else {
+		parsed, err := cache.strictIndex(p, fallbackAPIVersion)
+		if err != nil {
 			return Index{}, err
 		}
-		idx.Components = append(idx.Components, component)
+		idx.Pages = append([]Page(nil), parsed.pages...)
+		idx.Components = append([]Component(nil), parsed.components...)
 	}
 	idx.sortAndBuildLookups()
 	if !bestEffort {
@@ -191,6 +332,9 @@ func loadProjectWithControllerCompilation(p project.Project, bestEffort, validat
 		var rejectedControllers map[string]bool
 		for _, path := range append(append([]string(nil), p.VisualforcePageFiles...), p.VisualforceComponentFiles...) {
 			if strings.HasSuffix(strings.ToLower(path), ".page-meta.xml") {
+				continue
+			}
+			if only != nil && !only[path] {
 				continue
 			}
 			source, err := os.ReadFile(path)
@@ -217,13 +361,13 @@ func loadProjectWithControllerCompilation(p project.Project, bestEffort, validat
 			}
 			if root := visualforceControllerRoot(tree); validateExpressions && hasVisualforceControllerCompilationContext(p, path) && root != nil && (root.Attribute("controller") != "" || root.Attribute("extensions") != "") {
 				if expressions == nil {
-					expressions, err = newExpressionValidationContext(p, &idx)
+					expressions, err = newExpressionValidationContextWith(p, &idx, cache)
 					if err != nil {
 						return Index{}, err
 					}
 				}
 				if rejectedControllers == nil {
-					rejectedControllers, err = rejectedVisualforceControllersWith(p, compilation)
+					rejectedControllers, err = cache.rejectedControllers(p, compilation)
 					if err != nil {
 						return Index{}, err
 					}
@@ -237,7 +381,7 @@ func loadProjectWithControllerCompilation(p project.Project, bestEffort, validat
 			}
 			if validateExpressions && strings.Contains(string(source), "{!") {
 				if expressions == nil {
-					expressions, err = newExpressionValidationContext(p, &idx)
+					expressions, err = newExpressionValidationContextWith(p, &idx, cache)
 					if err != nil {
 						return Index{}, err
 					}
@@ -439,7 +583,7 @@ func parseMarkup(path string) (markupDoc, error) {
 		return markupDoc{}, err
 	}
 	doc := markupDoc{}
-	source := string(content)
+	source := normalizeExpressionQuotes(string(content))
 	doc.Tokens = append(doc.Tokens, scanMarkupStartTokens(source)...)
 	if text := strings.TrimSpace(source); text != "" {
 		doc.Tokens = append(doc.Tokens, markupToken{Text: text})

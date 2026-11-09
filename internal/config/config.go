@@ -62,8 +62,9 @@ type TestConfig struct {
 }
 
 type OrgConfig struct {
-	Features  []string `json:"features"`
-	DomainURL string   `json:"domainUrl,omitempty"`
+	Features               []string `json:"features"`
+	DomainURL              string   `json:"domainUrl,omitempty"`
+	HierarchyAccessObjects []string `json:"hierarchyAccessObjects,omitempty"`
 }
 
 // NormalizeOrgDomainURL validates an optional canonical HTTP origin and removes
@@ -310,6 +311,17 @@ func parseYAMLSubset(src string) (Config, error) {
 			}
 			// Preserve an explicitly empty list: it declares a bare org shape.
 			cfg.Org.Features = append([]string{}, values...)
+		case "org.hierarchyAccessObjects":
+			values, err := parseInlineList(value)
+			if err != nil {
+				return Config{}, fmt.Errorf("glade.yml:%d: org.hierarchyAccessObjects: %w", lineNo+1, err)
+			}
+			for _, name := range values {
+				if !(len(name) >= 3 && strings.EqualFold(name[len(name)-3:], "__c")) || strings.TrimSpace(name) != name || len(name) <= 3 {
+					return Config{}, fmt.Errorf("glade.yml:%d: org.hierarchyAccessObjects: expected custom object API names", lineNo+1)
+				}
+			}
+			cfg.Org.HierarchyAccessObjects = values
 		default:
 			if section == "test" {
 				return Config{}, fmt.Errorf("glade.yml:%d: unsupported config key %q", lineNo+1, configKey)

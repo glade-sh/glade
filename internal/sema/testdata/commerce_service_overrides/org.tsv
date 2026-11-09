@@ -1,0 +1,31 @@
+api	route	case	outcome	diagnostic
+62.0	deploy	inventory_override_upsert	accepted	-
+62.0	deploy	inventory_override_delete	accepted	-
+62.0	deploy	inventory_override_get	accepted	-
+62.0	deploy	inventory_override_check	accepted	-
+62.0	deploy	inventory_override_level	accepted	-
+62.0	deploy	inventory_override_all	accepted	-
+62.0	deploy	inventory_empty	accepted	-
+62.0	deploy	inventory_construct	accepted	-
+62.0	deploy	inventory_call_default_delete	rejected	Method does not exist or incorrect signature: void callDefaultDeleteReservation(String, commerce_inventory.InventoryReservation) from the type Probe008
+62.0	deploy	inventory_call_default_get	rejected	Method does not exist or incorrect signature: void callDefaultGetReservation(String) from the type Probe009
+62.0	deploy	inventory_wrong_signature	rejected	@Override specified for non-overriding method: commerce_inventory.InventoryReservation Probe010.getReservation(Integer)
+62.0	deploy	pricing_override_process	accepted	-
+62.0	deploy	pricing_override_transactional	accepted	-
+62.0	deploy	pricing_empty	accepted	-
+62.0	deploy	pricing_construct	accepted	-
+67.0	deploy	inventory_override_upsert	accepted	-
+67.0	deploy	inventory_override_delete	accepted	-
+67.0	deploy	inventory_override_get	accepted	-
+67.0	deploy	inventory_override_check	accepted	-
+67.0	deploy	inventory_override_level	accepted	-
+67.0	deploy	inventory_override_all	accepted	-
+67.0	deploy	inventory_empty	accepted	-
+67.0	deploy	inventory_construct	accepted	-
+67.0	deploy	inventory_call_default_delete	rejected	Method does not exist or incorrect signature: void callDefaultDeleteReservation(String, commerce_inventory.InventoryReservation) from the type Probe008
+67.0	deploy	inventory_call_default_get	rejected	Method does not exist or incorrect signature: void callDefaultGetReservation(String) from the type Probe009
+67.0	deploy	inventory_wrong_signature	rejected	@Override specified for non-overriding method: commerce_inventory.InventoryReservation Probe010.getReservation(Integer)
+67.0	deploy	pricing_override_process	accepted	-
+67.0	deploy	pricing_override_transactional	accepted	-
+67.0	deploy	pricing_empty	accepted	-
+67.0	deploy	pricing_construct	accepted	-

@@ -1,0 +1,3 @@
+<apex:page standardController="Account" extensions="PickProbeController" showHeader="false" sidebar="false" standardStylesheets="false">
+<div data-case="err-std-owner-usertype">{!ISPICKVAL(Account.Owner.UserType, 'Standard')}</div>
+</apex:page>

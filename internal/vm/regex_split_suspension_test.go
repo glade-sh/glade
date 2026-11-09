@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/dlclark/regexp2"
+	"github.com/glade-sh/glade/internal/testutil"
 )
 
 // A paused host must not make a fresh literal search inherit an expired clock.
@@ -80,7 +81,7 @@ func literalSplitSuspendedChild(t *testing.T, selection, flag string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cmd := exec.Command(exe, "-test.run="+selection, "-test.v", "-test.timeout=100s")
+	cmd := exec.Command(exe, "-test.run="+selection, "-test.v", "-test.timeout="+testutil.Deadline(100*time.Second).String())
 	cmd.Env = append(os.Environ(), flag+"=1", "GOMAXPROCS=2")
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {

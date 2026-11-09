@@ -17,6 +17,7 @@ import (
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/sema"
+	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/vm"
 )
@@ -34,6 +35,7 @@ func TestAsyncMixedDMLAnonymousNativeConformance(t *testing.T) {
 	fixture := filepath.Join("testdata", "conformance", "async_mixed_dml")
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api+"/anonymous_queueable_batch_finalizer", func(t *testing.T) {
+			t.Parallel()
 			native := filepath.Join(fixture, "native", "api"+strings.TrimSuffix(api, ".0"))
 			raw, err := os.ReadFile(filepath.Join(native, "anonymous.tsv"))
 			if err != nil {
@@ -83,6 +85,7 @@ func TestAsyncMixedDMLAnonymousNativeConformance(t *testing.T) {
 			}
 			org := apextest.OrgFromIndex(index)
 			org.APIVersion = api
+
 			machine.SetOrg(&org)
 			execute := func(source string) vm.Result {
 				t.Helper()
@@ -181,23 +184,9 @@ func runExecutionCapture(t *testing.T, family string, count int) {
 func runExecutionCaptureFixture(t *testing.T, family string, count int, fixture string, seedSource ...string) {
 	t.Helper()
 	t.Cleanup(apextest.InvalidateRuntimeCaches)
-	read := func(name string) string {
-		t.Helper()
-		raw, err := os.ReadFile(filepath.Join(fixture, name))
-		if err != nil {
-			t.Fatal(err)
-		}
-		return string(raw)
-	}
 	table := func(name, header string) [][]string {
 		t.Helper()
-		reader := csv.NewReader(strings.NewReader(read(name)))
-		reader.Comma = '\t'
-		records, err := reader.ReadAll()
-		if err != nil || len(records) == 0 || strings.Join(records[0], "|") != header {
-			t.Fatalf("invalid %s: %v", name, err)
-		}
-		return records[1:]
+		return executionCaptureTable(t, fixture, name, header)
 	}
 	var cases []executionCaptureCase
 	for _, row := range table("cases.tsv", "id|context|class|method|source") {
@@ -208,6 +197,17 @@ func runExecutionCaptureFixture(t *testing.T, family string, count int, fixture 
 	}
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api, func(t *testing.T) {
+			t.Parallel()
+			// Bind the helpers to this subtest so a failure never touches
+			// the parent after it has returned.
+			read := func(name string) string {
+				t.Helper()
+				return executionCaptureReadFile(t, fixture, name)
+			}
+			table := func(name, header string) [][]string {
+				t.Helper()
+				return executionCaptureTable(t, fixture, name, header)
+			}
 			nativeRoot := filepath.Join("native", "api"+strings.TrimSuffix(api, ".0"))
 			run := read(filepath.Join(nativeRoot, "RUN-FACTS.txt"))
 			for _, fact := range []string{"api=" + api, "native_complete=true", "deployment_success=true", fmt.Sprintf("rows=%d", count)} {
@@ -258,6 +258,17 @@ func runExecutionCaptureFixture(t *testing.T, family string, count int, fixture 
 			}
 			org := apextest.OrgFromIndex(index)
 			org.APIVersion = api
+			if family == "publishing_date_arguments" {
+				users, _ := storage.EnsureMutableObjectRecords(&org, "User")
+				id, user, ok := storage.LookupRecordByID(users.Records, storage.DefaultUserID)
+				if !ok {
+					t.Fatal("missing capture actor")
+				}
+				user = user.Clone()
+				user.Fields["UserPermissionsKnowledgeUser"] = storage.BooleanValue(true)
+				users.Records[id] = user
+				org.Objects["User"] = *users
+			}
 			base := vm.New(nil)
 			if err := apextest.RegisterCompiledProjectRuntimeForRequest(base, runtime); err != nil {
 				t.Fatal(err)
@@ -272,11 +283,22 @@ func runExecutionCaptureFixture(t *testing.T, family string, count int, fixture 
 					routes = []string{"direct_test", "project_test"}
 				}
 				for _, route := range routes {
+					// Cases stay serial: project_test routes run the semantic gate on
+					// the api subtest's shared index, which is not safe to analyze
+					// concurrently.
 					t.Run(route+"/"+tc.id, func(t *testing.T) {
+						read := func(name string) string {
+							t.Helper()
+							return executionCaptureReadFile(t, fixture, name)
+						}
 						var message, kind string
 						var result vm.Result
 						if route == "project_test" {
-							report := apextest.Run(index, apextest.Options{SelectedClasses: []string{tc.class}, SelectedMethod: tc.method, NoDiskCache: true, Parallelism: 1, LimitMode: vm.LimitModeStrict})
+							class := tc.class
+							if family == "publishing_date_arguments" {
+								class = "PublishingDateLicensedSyntheticTest"
+							}
+							report := apextest.Run(index, apextest.Options{SelectedClasses: []string{class}, SelectedMethod: tc.method, NoDiskCache: true, Parallelism: 1, LimitMode: vm.LimitModeStrict})
 							summary := report.Summary()
 							if summary.Total != 1 {
 								t.Fatalf("project selected %d cases: %+v", summary.Total, report)
@@ -456,6 +478,26 @@ func executionCaptureSequence(t *testing.T, value any) []any {
 	return result
 }
 
+func executionCaptureReadFile(t *testing.T, fixture, name string) string {
+	t.Helper()
+	raw, err := os.ReadFile(filepath.Join(fixture, name))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(raw)
+}
+
+func executionCaptureTable(t *testing.T, fixture, name, header string) [][]string {
+	t.Helper()
+	reader := csv.NewReader(strings.NewReader(executionCaptureReadFile(t, fixture, name)))
+	reader.Comma = '\t'
+	records, err := reader.ReadAll()
+	if err != nil || len(records) == 0 || strings.Join(records[0], "|") != header {
+		t.Fatalf("invalid %s: %v", name, err)
+	}
+	return records[1:]
+}
+
 func executionCaptureIndex(t *testing.T, fixture, api string) typesys.Index {
 	t.Helper()
 	root := t.TempDir()
@@ -497,6 +539,7 @@ func executionCaptureIndex(t *testing.T, fixture, api string) typesys.Index {
 			if err != nil {
 				return err
 			}
+
 			target := filepath.Join("force-app/main/default", rel)
 			if dir == "sources" {
 				target = filepath.Join("force-app/main/default/classes", rel)
@@ -508,6 +551,17 @@ func executionCaptureIndex(t *testing.T, fixture, api string) typesys.Index {
 		if err != nil {
 			t.Fatal(err)
 		}
+	}
+	if filepath.Base(fixture) == "publishing_date_arguments" {
+		// Project-runner setup uses a separate synthetic test; captured sources
+		// remain byte-for-byte identical to the native replay.
+		body, err := os.ReadFile(filepath.Join("testdata", "synthetic", "PublishingDateLicensedSyntheticTest.cls"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		name := "force-app/main/default/classes/PublishingDateLicensedSyntheticTest.cls"
+		write(name, body)
+		write(name+"-meta.xml", []byte("<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>"+api+"</apiVersion><status>Active</status></ApexClass>"))
 	}
 	p, err := project.Load(root)
 	if err != nil {

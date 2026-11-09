@@ -1,0 +1,2 @@
+case	routes	apis	observation
+no_space_generic	anonymous	62.0,67.0	Generic, nested generic, array and parameter declarations without whitespace before the name compile and bind the whole declared type

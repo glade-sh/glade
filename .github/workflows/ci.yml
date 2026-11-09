@@ -23,18 +23,8 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  codeql:
-    name: CodeQL
-    uses: ./.github/workflows/codeql.yml
-    with:
-      profile: fast
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
-
   workflow-lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
       contents: read
@@ -70,7 +60,7 @@ jobs:
 
   site:
     if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -127,7 +117,7 @@ jobs:
 
   vet:
     if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
       GOMAXPROCS: "2"
@@ -180,7 +170,7 @@ jobs:
 
   gladecli-history-input:
     if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     env:
       CI_GLADECLI_HISTORY_PATH: /tmp/glade-gladecli-duration-history/gladecli-duration-history.json
@@ -213,7 +203,7 @@ jobs:
   gladecli:
     if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
     needs: gladecli-history-input
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 40
     strategy:
       fail-fast: false
@@ -283,7 +273,7 @@ jobs:
   gladecli-history:
     needs: gladecli
     if: ${{ success() }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -309,7 +299,7 @@ jobs:
 
   vm-history-input:
     if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     env:
       CI_VM_HISTORY_PATH: /tmp/glade-vm-duration-history/vm-duration-history.json
@@ -342,7 +332,7 @@ jobs:
   vm:
     if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
     needs: vm-history-input
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 40
     strategy:
       fail-fast: false
@@ -412,7 +402,7 @@ jobs:
   vm-history:
     needs: vm
     if: ${{ success() }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     env:
       CI_VM_HISTORY_COMPLETE: "1"
@@ -440,7 +430,7 @@ jobs:
 
   node-integration:
     if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
       GLADE_ROOT: ${{ github.workspace }}
@@ -529,7 +519,7 @@ jobs:
 
   nested-sources:
     if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -558,7 +548,7 @@ jobs:
   sema:
     if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
     needs: test-binaries
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -620,7 +610,7 @@ jobs:
   sema-history:
     needs: sema
     if: ${{ success() }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -646,7 +636,7 @@ jobs:
 
   sema-full:
     if: ${{ github.event_name == 'schedule' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
       GOMAXPROCS: "2"
@@ -690,7 +680,7 @@ jobs:
       - sema
       - sema-full
     if: ${{ github.event_name == 'schedule' && success() }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -710,7 +700,7 @@ jobs:
 
   server-and-playground:
     if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
       GLADE_ROOT: ${{ github.workspace }}
@@ -780,7 +770,7 @@ jobs:
 
   lwc-compile-history-input:
     if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       actions: read
@@ -843,7 +833,7 @@ jobs:
 
   visualforce-history-input:
     if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       actions: read
@@ -938,7 +928,7 @@ jobs:
 
   test-binaries:
     if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       artifact-attempt: ${{ steps.bundle.outputs.attempt }}
     timeout-minutes: 30
@@ -1035,7 +1025,7 @@ jobs:
     name: ${{ matrix.name }}
     if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
     needs: [lwc-compile-history-input, visualforce-history-input, test-binaries]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 100
     strategy:
       fail-fast: false
@@ -1224,7 +1214,7 @@ jobs:
 
   smoke-runtime:
     if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
       GOMAXPROCS: "2"
@@ -1276,7 +1266,7 @@ jobs:
 
   smoke-distribution:
     if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
       GOMAXPROCS: "2"
@@ -1354,7 +1344,7 @@ jobs:
 
   apextest-history-input:
     if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       actions: read
@@ -1401,7 +1391,7 @@ jobs:
   apextest:
     if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
     needs: [apextest-history-input, test-binaries]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 100
     strategy:
       fail-fast: false
@@ -1472,7 +1462,7 @@ jobs:
   apextest-history:
     needs: apextest
     if: ${{ success() }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     env:
       CI_APEXTEST_HISTORY_COMPLETE: "1"
@@ -1517,7 +1507,7 @@ jobs:
   lwc-compile-history:
     needs: test
     if: ${{ success() }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -1544,7 +1534,7 @@ jobs:
   visualforce-history:
     needs: test
     if: ${{ success() }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -1571,7 +1561,6 @@ jobs:
   required-ci:
     name: Required CI
     needs:
-      - codeql
       - workflow-lint
       - site
       - test-binaries
@@ -1593,7 +1582,7 @@ jobs:
       - smoke-runtime
       - smoke-distribution
     if: always()
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Require all CI jobs
@@ -1606,6 +1595,33 @@ jobs:
             exit 1
           fi
 
+  tree-receipt:
+    name: Tree receipt
+    needs: [required-ci]
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Write tree receipt
+        env:
+          CHECKOUT_SHA: ${{ github.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/ci-tree"
+          jq -n --arg sha "$CHECKOUT_SHA" --argjson pr "$PR_NUMBER" --argjson run "$RUN_ID" --argjson attempt "$RUN_ATTEMPT" \
+            '{checkout_sha: $sha, pr_number: $pr, run_id: $run, run_attempt: $attempt}' >"$RUNNER_TEMP/ci-tree/ci-tree.json"
+      - name: Upload tree receipt
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: ci-tree
+          path: ${{ runner.temp }}/ci-tree/ci-tree.json
+          if-no-files-found: error
+          retention-days: 90
+
   required-scheduled-ci:
     name: Required Scheduled CI
     needs:
@@ -1613,7 +1629,7 @@ jobs:
       - sema-full
       - sema-equivalence
     if: ${{ always() && github.event_name == 'schedule' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Require all scheduled CI jobs

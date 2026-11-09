@@ -1,0 +1,1 @@
+User u=[SELECT Id FROM User WHERE Id=:UserInfo.getUserId()];u.TimeZoneSidKey='Pacific/Kiritimati';u.LocaleSidKey='en_US';u.LanguageLocaleKey='en_US';update u;

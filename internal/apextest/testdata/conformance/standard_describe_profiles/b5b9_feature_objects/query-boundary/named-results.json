@@ -1,0 +1,46 @@
+[
+  {
+    "route": "named-positive-deploy",
+    "status": 0,
+    "failures": []
+  },
+  {
+    "route": "istest",
+    "status": 0,
+    "outcome": "Passed",
+    "tests": [
+      {
+        "class": "OwnedQuery62",
+        "outcome": "Pass",
+        "message": null
+      },
+      {
+        "class": "OwnedQuery67",
+        "outcome": "Pass",
+        "message": null
+      }
+    ]
+  },
+  {
+    "route": "named-negative-deploy",
+    "status": 1,
+    "failures": [
+      {
+        "name": "OwnedQueryNeg0",
+        "problem": "DocumentGenerationProcess WHERE IsLocalizationEnabled = true LIMIT\n                                ^\nERROR at Row:1:Column:48\nNo such column 'IsLocalizationEnabled' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedQueryNeg1",
+        "problem": "DocumentGenerationProcess ORDER BY IsLocalizationEnabled LIMIT 1\n                                   ^\nERROR at Row:1:Column:51\nNo such column 'IsLocalizationEnabled' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedQueryNeg2",
+        "problem": "Id FROM DocumentTemplate WHERE ContextMappingName = 'owned' LIMIT\n                               ^\nERROR at Row:1:Column:39\nNo such column 'ContextMappingName' on entity 'DocumentTemplate'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedQueryNeg3",
+        "problem": "FROM DocumentTemplate ORDER BY ContextMappingName LIMIT 1\n                               ^\nERROR at Row:1:Column:42\nNo such column 'ContextMappingName' on entity 'DocumentTemplate'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      }
+    ]
+  }
+]

@@ -31,13 +31,13 @@ func callStringMemberWithASCII(receiver Value, method string, args []Value, asci
 		if err != nil {
 			return Null, true, err
 		}
-		return Bool(strings.Contains(receiver.Text, needle)), true, nil
+		return Bool(strings.Contains(receiver.Text, needle) || loneNeedleFound(receiver.Text, needle)), true, nil
 	case "containsIgnoreCase":
 		needle, err := stringArg("String.containsIgnoreCase", args)
 		if err != nil {
 			return Null, true, err
 		}
-		return Bool(strings.Contains(strings.ToLower(receiver.Text), strings.ToLower(needle))), true, nil
+		return Bool(stringIndexOfFold(receiver.Text, needle, 0) >= 0), true, nil
 	case "containsAny":
 		chars, err := stringArg("String.containsAny", args)
 		if err != nil {
@@ -171,25 +171,25 @@ func callStringMemberWithASCII(receiver Value, method string, args []Value, asci
 		if err != nil {
 			return Null, true, err
 		}
-		return Bool(strings.HasPrefix(receiver.Text, prefix)), true, nil
+		return Bool(strings.HasPrefix(receiver.Text, prefix) || loneNeedleAt(receiver.Text, prefix, 0)), true, nil
 	case "startsWithIgnoreCase":
 		prefix, err := stringArg("String.startsWithIgnoreCase", args)
 		if err != nil {
 			return Null, true, err
 		}
-		return Bool(hasPrefixFold(receiver.Text, prefix)), true, nil
+		return Bool(hasPrefixFoldRunes(receiver.Text, prefix)), true, nil
 	case "endsWith":
 		suffix, err := stringArg("String.endsWith", args)
 		if err != nil {
 			return Null, true, err
 		}
-		return Bool(strings.HasSuffix(receiver.Text, suffix)), true, nil
+		return Bool(strings.HasSuffix(receiver.Text, suffix) || loneNeedleAtEnd(receiver.Text, suffix)), true, nil
 	case "endsWithIgnoreCase":
 		suffix, err := stringArg("String.endsWithIgnoreCase", args)
 		if err != nil {
 			return Null, true, err
 		}
-		return Bool(hasSuffixFold(receiver.Text, suffix)), true, nil
+		return Bool(hasSuffixFoldRunes(receiver.Text, suffix)), true, nil
 	case "toLowerCase":
 		if len(args) > 1 {
 			return Null, true, fmt.Errorf("String.toLowerCase expects 0 or 1 arguments")
@@ -197,7 +197,7 @@ func callStringMemberWithASCII(receiver Value, method string, args []Value, asci
 		if len(args) == 1 && args[0].Kind == ValueString && strings.EqualFold(args[0].Text, "tr") {
 			return String(strings.ToLowerSpecial(unicode.TurkishCase, receiver.Text)), true, nil
 		}
-		return String(strings.ToLower(receiver.Text)), true, nil
+		return String(apexToLowerCase(receiver.Text)), true, nil
 	case "toUpperCase":
 		if len(args) > 1 {
 			return Null, true, fmt.Errorf("String.toUpperCase expects 0 or 1 arguments")
@@ -205,7 +205,7 @@ func callStringMemberWithASCII(receiver Value, method string, args []Value, asci
 		if len(args) == 1 && args[0].Kind == ValueString && strings.EqualFold(args[0].Text, "tr") {
 			return String(strings.ToUpperSpecial(unicode.TurkishCase, receiver.Text)), true, nil
 		}
-		return String(cases.Upper(language.Und).String(receiver.Text)), true, nil
+		return String(mapApexStringSegments(receiver.Text, cases.Upper(language.Und).String)), true, nil
 	case "trim":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("String.trim expects 0 arguments")
@@ -237,6 +237,10 @@ func callStringMemberWithASCII(receiver Value, method string, args []Value, asci
 		position := stringIndexOf(receiver.Text, needle, start)
 		if len(args) == 1 && position >= 0 {
 			position = apexStringLength(string([]rune(receiver.Text)[:position]))
+		} else if position < 0 {
+			if at, ok := loneNeedleIndex(receiver.Text, needle, false); ok {
+				position = at
+			}
 		}
 		return Int(int64(position)), true, nil
 	case "lastIndexOf":
@@ -250,6 +254,10 @@ func callStringMemberWithASCII(receiver Value, method string, args []Value, asci
 		position := stringLastIndexOf(receiver.Text, needle, start)
 		if len(args) == 1 && position >= 0 {
 			position = apexStringLength(string([]rune(receiver.Text)[:position]))
+		} else if position < 0 {
+			if at, ok := loneNeedleIndex(receiver.Text, needle, true); ok {
+				position = at
+			}
 		}
 		return Int(int64(position)), true, nil
 	case "indexOfChar":
@@ -352,13 +360,16 @@ func callStringMemberWithASCII(receiver Value, method string, args []Value, asci
 		if err != nil {
 			return Null, true, err
 		}
+		if loneNeedleAt(receiver.Text, prefix, 0) {
+			return String(apexSubstringUnits(receiver.Text, apexStringLength(prefix), apexStringLength(receiver.Text))), true, nil
+		}
 		return String(strings.TrimPrefix(receiver.Text, prefix)), true, nil
 	case "removeStartIgnoreCase":
 		prefix, err := stringArg("String.removeStartIgnoreCase", args)
 		if err != nil {
 			return Null, true, err
 		}
-		if hasPrefixFold(receiver.Text, prefix) {
+		if hasPrefixFoldRunes(receiver.Text, prefix) {
 			return String(dropFirstRunes(receiver.Text, len([]rune(prefix)))), true, nil
 		}
 		return receiver, true, nil
@@ -367,13 +378,16 @@ func callStringMemberWithASCII(receiver Value, method string, args []Value, asci
 		if err != nil {
 			return Null, true, err
 		}
+		if loneNeedleAtEnd(receiver.Text, suffix) {
+			return String(apexSubstringUnits(receiver.Text, 0, apexStringLength(receiver.Text)-apexStringLength(suffix))), true, nil
+		}
 		return String(strings.TrimSuffix(receiver.Text, suffix)), true, nil
 	case "removeEndIgnoreCase":
 		suffix, err := stringArg("String.removeEndIgnoreCase", args)
 		if err != nil {
 			return Null, true, err
 		}
-		if hasSuffixFold(receiver.Text, suffix) {
+		if hasSuffixFoldRunes(receiver.Text, suffix) {
 			return String(dropLastRunes(receiver.Text, len([]rune(suffix)))), true, nil
 		}
 		return receiver, true, nil
@@ -592,11 +606,7 @@ func callStringMemberWithASCII(receiver Value, method string, args []Value, asci
 		}
 		return substringWithASCII(receiver.Text, []Value{Int(int64(start)), Int(int64(end))}, ascii)
 	case "reverse":
-		runes := []rune(receiver.Text)
-		for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
-			runes[i], runes[j] = runes[j], runes[i]
-		}
-		return String(string(runes)), true, nil
+		return String(reverseApexString(receiver.Text)), true, nil
 	case "overlay":
 		overlay, start, end, err := stringStringTwoIntArgs("String.overlay", args)
 		if err != nil {
@@ -643,6 +653,9 @@ func callStringMemberWithASCII(receiver Value, method string, args []Value, asci
 		}
 		i := strings.Index(receiver.Text, separator)
 		if i < 0 {
+			if at, ok := loneNeedleIndex(receiver.Text, separator, false); ok {
+				return String(apexSubstringUnits(receiver.Text, at+apexStringLength(separator), apexStringLength(receiver.Text))), true, nil
+			}
 			return String(""), true, nil
 		}
 		return String(receiver.Text[i+len(separator):]), true, nil
@@ -653,6 +666,9 @@ func callStringMemberWithASCII(receiver Value, method string, args []Value, asci
 		}
 		i := strings.LastIndex(receiver.Text, separator)
 		if i < 0 {
+			if at, ok := loneNeedleIndex(receiver.Text, separator, true); ok {
+				return String(apexSubstringUnits(receiver.Text, at+apexStringLength(separator), apexStringLength(receiver.Text))), true, nil
+			}
 			return String(""), true, nil
 		}
 		return String(receiver.Text[i+len(separator):]), true, nil
@@ -663,6 +679,9 @@ func callStringMemberWithASCII(receiver Value, method string, args []Value, asci
 		}
 		i := strings.Index(receiver.Text, separator)
 		if i < 0 {
+			if at, ok := loneNeedleIndex(receiver.Text, separator, false); ok {
+				return String(apexSubstringUnits(receiver.Text, 0, at)), true, nil
+			}
 			return receiver, true, nil
 		}
 		return String(receiver.Text[:i]), true, nil
@@ -673,6 +692,9 @@ func callStringMemberWithASCII(receiver Value, method string, args []Value, asci
 		}
 		i := strings.LastIndex(receiver.Text, separator)
 		if i < 0 {
+			if at, ok := loneNeedleIndex(receiver.Text, separator, true); ok {
+				return String(apexSubstringUnits(receiver.Text, 0, at)), true, nil
+			}
 			return receiver, true, nil
 		}
 		return String(receiver.Text[:i]), true, nil

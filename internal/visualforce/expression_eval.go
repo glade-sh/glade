@@ -1,6 +1,8 @@
 package visualforce
 
 import (
+	"crypto/rand"
+	"fmt"
 	"math"
 	"sort"
 	"strconv"
@@ -43,7 +45,9 @@ type visualforceIdentifierExpr struct {
 
 type visualforceFunctionExpr struct {
 	name string
-	args []Expression
+	// spelling is the function name as written; diagnostics repeat it.
+	spelling string
+	args     []Expression
 }
 
 type parameterMapExpr struct {
@@ -276,6 +280,10 @@ func (expr visualforceIdentifierExpr) Eval(ctx *ExpressionContext) *vm.Value {
 		value := vm.String(clientID)
 		return &value
 	}
+	if strings.EqualFold(expr.parts[0], "$messagechannel") && len(expr.parts) > 1 {
+		value := vm.String(ctx.messageChannelToken(expr.parts[1]))
+		return &value
+	}
 	value, ok := resolveVisualforceExtraGlobal(ctx, expr.parts[0])
 	if !ok {
 		return identifierExpr{parts: expr.parts}.Eval(ctx)
@@ -300,6 +308,8 @@ func (expr visualforceFunctionExpr) Eval(ctx *ExpressionContext) *vm.Value {
 		return evalVisualforceNullValue(ctx, expr.args)
 	case "VALUE":
 		return evalVisualforceValue(ctx, expr.args)
+	case "ISPICKVAL":
+		return evalVisualforceIsPickVal(ctx, expr.args)
 	case "URLFOR":
 		return evalVisualforceURLFor(ctx, expr.args)
 	default:
@@ -334,6 +344,34 @@ func evalVisualforceCase(ctx *ExpressionContext, args []Expression) *vm.Value {
 		return evalExpressionPointer(fallback, ctx)
 	}
 	return &vm.Null
+}
+
+// evalVisualforceIsPickVal compares a picklist value with a text literal.
+// Captured rows: the comparison ignores case, a null picklist equals only the
+// empty literal, and surrounding spaces are significant.
+func evalVisualforceIsPickVal(ctx *ExpressionContext, args []Expression) *vm.Value {
+	if len(args) != 2 {
+		return &vm.Null
+	}
+	value := evalExpressionValue(args[0], ctx)
+	if expressionEvaluationFailed(ctx) {
+		return &vm.Null
+	}
+	literal := evalExpressionValue(args[1], ctx)
+	if expressionEvaluationFailed(ctx) {
+		return &vm.Null
+	}
+	want := literal.String()
+	if literal.Kind == vm.ValueNull {
+		want = ""
+	}
+	var out vm.Value
+	if value.Kind == vm.ValueNull {
+		out = vm.Bool(want == "")
+	} else {
+		out = vm.Bool(strings.EqualFold(value.String(), want))
+	}
+	return &out
 }
 
 func evalVisualforceBlankValue(ctx *ExpressionContext, args []Expression) *vm.Value {
@@ -435,6 +473,12 @@ func readIndexValue(ctx *ExpressionContext, target, key vm.Value) (vm.Value, boo
 					return value, true
 				}
 			}
+		}
+	}
+	if target.Kind == vm.ValueObject {
+		// $ObjectType[name] and fields[name] index the same tokens as the dot forms.
+		if value, ok := readVisualforceExtraMember(ctx, target, key.String()); ok {
+			return value, true
 		}
 	}
 	return readObjectMember(ctx, target, key.String())
@@ -842,4 +886,33 @@ func valuesComparableEqual(left, right vm.Value) bool {
 		return isTruthy(&left) == isTruthy(&right)
 	}
 	return left.String() == right.String()
+}
+
+// messageChannelToken returns the identifier a page receives for a message
+// channel. Captured rows: one UUID for every reference to a channel within a
+// render, and a new UUID on the next render.
+func (ctx *ExpressionContext) messageChannelToken(channel string) string {
+	if ctx == nil {
+		return newMessageChannelToken()
+	}
+	if ctx.messageChannelTokens == nil {
+		ctx.messageChannelTokens = map[string]string{}
+	}
+	key := strings.ToLower(channel)
+	token, ok := ctx.messageChannelTokens[key]
+	if !ok {
+		token = newMessageChannelToken()
+		ctx.messageChannelTokens[key] = token
+	}
+	return token
+}
+
+func newMessageChannelToken() string {
+	var b [16]byte
+	if _, err := rand.Read(b[:]); err != nil {
+		panic(err)
+	}
+	b[6] = b[6]&0x0f | 0x40
+	b[8] = b[8]&0x3f | 0x80
+	return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
 }

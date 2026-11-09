@@ -136,6 +136,8 @@ func TestValidationRuleFormulaNativeConformanceAnonymousAPIRoutes(t *testing.T) 
 			}
 			org := orgFromIndex(index)
 			org.APIVersion = api
+			// ORG-RUN.txt: permission_set_deployed_and_assigned=true.
+			assignCapturedPermissionSets(t, &org, "ValidationProbeAccess")
 			runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 			result, err := runner.execute(program)
 			if err != nil {

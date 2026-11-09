@@ -228,7 +228,7 @@ PLAYGROUND_DATA_ROOT="${TMP}/playground-live"
 SERVER_PID="$!"
 playground_ready=0
 for _ in $(seq 1 300); do
-  if curl -fsS "http://${PLAYGROUND_ADDR}/playground/api/examples" >"${TMP}/playground-examples.json" 2>/dev/null; then
+  if curl -fsS -H 'X-Glade-Client: 1' "http://${PLAYGROUND_ADDR}/playground/api/examples" >"${TMP}/playground-examples.json" 2>/dev/null; then
     playground_ready=1
     break
   fi
@@ -238,7 +238,7 @@ if [[ "${playground_ready}" != "1" ]]; then
   tail -c 4000 "${TMP}/playground-live.log" >&2
   exit 1
 fi
-curl -fsS -X POST -H 'Content-Type: application/json' --data '{"id":"refinement-service"}' "http://${PLAYGROUND_ADDR}/playground/api/examples/load" >"${TMP}/refinement-meta.json"
+curl -fsS -X POST -H 'X-Glade-Client: 1' -H 'Content-Type: application/json' --data '{"id":"refinement-service"}' "http://${PLAYGROUND_ADDR}/playground/api/examples/load" >"${TMP}/refinement-meta.json"
 REFINEMENT_PROJECT="${PLAYGROUND_DATA_ROOT}/workspaces/default"
 "${GLADE}" init --project "${REFINEMENT_PROJECT}" --yes
 "${GLADE}" check --project "${REFINEMENT_PROJECT}" --json >"${TMP}/refinement-check.json"
@@ -265,7 +265,7 @@ with open(sys.argv[1], encoding="utf-8") as f:
 with open(sys.argv[2], "w", encoding="utf-8") as f:
     json.dump({"anonymousBody": meta["anonymousBody"], "mode": "scratch", "limitMode": "permissive"}, f)
 PY
-curl -fsS -X POST -H 'Content-Type: application/json' --data-binary @"${TMP}/refinement-run.json" "http://${PLAYGROUND_ADDR}/playground/api/run" >"${TMP}/refinement-run-result.json"
+curl -fsS -X POST -H 'X-Glade-Client: 1' -H 'Content-Type: application/json' --data-binary @"${TMP}/refinement-run.json" "http://${PLAYGROUND_ADDR}/playground/api/run" >"${TMP}/refinement-run-result.json"
 python3 - "${TMP}/refinement-run-result.json" <<'PY'
 import json
 import sys
@@ -279,7 +279,7 @@ if "Refine 01 #F-100" not in "\n".join(result.get("logs", [])):
 if not any(diff.get("object") == "Account" and diff.get("inserted") == 1 for diff in result.get("orgDiff", [])):
     raise SystemExit(f"refinement insert missing: {result}")
 PY
-curl -fsS "http://${PLAYGROUND_ADDR}/playground/api/database" >"${TMP}/refinement-before-invalid.json"
+curl -fsS -H 'X-Glade-Client: 1' "http://${PLAYGROUND_ADDR}/playground/api/database" >"${TMP}/refinement-before-invalid.json"
 python3 - "${TMP}/refinement-meta.json" "${TMP}/refinement-invalid-source.json" <<'PY'
 import json
 import sys
@@ -290,9 +290,9 @@ source = next(file for file in meta["files"] if file["path"].endswith("Refinemen
 with open(sys.argv[2], "w", encoding="utf-8") as f:
     json.dump({"path": source["path"], "version": source["version"], "content": "public class RefinementService { public static void broken( { }\n"}, f)
 PY
-curl -fsS -X PUT -H 'Content-Type: application/json' --data-binary @"${TMP}/refinement-invalid-source.json" "http://${PLAYGROUND_ADDR}/playground/api/files" >"${TMP}/refinement-invalid-save.json"
-curl -fsS -X POST -H 'Content-Type: application/json' --data-binary @"${TMP}/refinement-run.json" "http://${PLAYGROUND_ADDR}/playground/api/run" >"${TMP}/refinement-invalid-run.json"
-curl -fsS "http://${PLAYGROUND_ADDR}/playground/api/database" >"${TMP}/refinement-after-invalid.json"
+curl -fsS -X PUT -H 'X-Glade-Client: 1' -H 'Content-Type: application/json' --data-binary @"${TMP}/refinement-invalid-source.json" "http://${PLAYGROUND_ADDR}/playground/api/files" >"${TMP}/refinement-invalid-save.json"
+curl -fsS -X POST -H 'X-Glade-Client: 1' -H 'Content-Type: application/json' --data-binary @"${TMP}/refinement-run.json" "http://${PLAYGROUND_ADDR}/playground/api/run" >"${TMP}/refinement-invalid-run.json"
+curl -fsS -H 'X-Glade-Client: 1' "http://${PLAYGROUND_ADDR}/playground/api/database" >"${TMP}/refinement-after-invalid.json"
 cmp -s "${TMP}/refinement-before-invalid.json" "${TMP}/refinement-after-invalid.json"
 python3 - "${TMP}/refinement-invalid-run.json" <<'PY'
 import json

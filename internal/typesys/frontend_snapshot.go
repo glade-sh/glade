@@ -742,7 +742,9 @@ func captureFrontendInputs(p project.Project, s schema.Schema, artifacts *BuildA
 				}
 				// The incremental compatibility identity uses the prior source
 				// digest. Still read the file so missing sources and read errors
-				// retain the same behavior.
+				// retain the same behavior. A restored snapshot is the only read
+				// of this source before analysis, so note it here.
+				NoteApexSource(string(data))
 				if prior, found := previous.Digest(path); found {
 					digest = prior
 				} else {
@@ -1008,6 +1010,7 @@ func updateFrontendSnapshot(p project.Project, s schema.Schema, data []byte, foo
 		if err != nil {
 			return Index{}, BuildArtifacts{}, err
 		}
+		NoteApexSource(string(raw))
 		if sha256.Sum256(raw) != source.digest {
 			changed = append(changed, path)
 		}

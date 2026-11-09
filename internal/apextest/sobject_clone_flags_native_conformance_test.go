@@ -94,6 +94,9 @@ func TestSObjectCloneFlagsNativeProjectRoutes(t *testing.T) {
 					if route == "istest" {
 						writeFile(t, filepath.Join(root, "force-app/main/default/classes/CloneFlagsObservationTest.cls"), "@IsTest private class CloneFlagsObservationTest { @IsTest static void cloneFlagsAndJSONInsertRoute() {"+body.String()+"} }")
 					}
+					// sobject_clone_flags_capture_assignment/ASSIGNMENT-RUN.txt: the capture
+					// assigned CloneFlagsAccess before both routes.
+					writeCapturedAssignments(t, root, "CloneFlagsAccess")
 					index := loadTestIndex(t, root)
 					if route == "istest" {
 						run := Run(index, Options{RuntimeRESTAPIVersion: "67.0", SelectedClasses: []string{"CloneFlagsObservationTest"}, NoDiskCache: true, Parallelism: 1})
@@ -102,8 +105,7 @@ func TestSObjectCloneFlagsNativeProjectRoutes(t *testing.T) {
 							t.Fatalf("native project route: %s", data)
 						}
 					} else {
-						org := orgFromIndex(index)
-						org.APIVersion = api + ".0"
+						org := capturedFixtureOrg(t, index, api+".0")
 						runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 						program, err := vm.CompileAnonymousWithOptions(body.String(), vm.CompileOptions{APIVersion: api + ".0"})
 						if err != nil {

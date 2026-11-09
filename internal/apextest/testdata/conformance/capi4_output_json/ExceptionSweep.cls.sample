@@ -1,0 +1,8 @@
+@IsTest private class Ex63_0 {
+ private static String s(Object o){ try { return JSON.serialize(o); } catch (Exception e) { return 'X:'+e.getTypeName()+':'+e.getMessage(); } }
+ private static Object n(String t){ return Type.forName(t).newInstance(); }
+ @IsTest static void a(){
+  System.assert(false, 'ROW\n' + s(n('ConnectApi.ConnectApiException')) + '\n' + s(n('ConnectApi.NotFoundException')) + '\n' + s(n('ConnectApi.RateLimitException')) + '\n' + s(new MyException()) + '\n' + s(new CalloutException()) );
+ }
+ public class MyException extends Exception {}
+}

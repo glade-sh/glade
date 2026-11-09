@@ -311,6 +311,10 @@ func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member type
 				base, _ := semaGenericBaseAndArgs(receiverType)
 				if strings.EqualFold(base, "Map") {
 					diagnostics = append(diagnostics, typeContractNativeDiagnostic(typ, "Expression must be a list type: "+receiverType, bodyOffset+pos, bodyOffset+pos+1, source))
+				} else if current.Left.Kind == ir.ExprSOQL && semaSOQLLiteralType(current.Left.Value) == "Integer" {
+					// Native count_query_shapes rows (62.0, 67.0): a scalar COUNT() query is an
+					// Integer, so [SELECT COUNT() FROM Account][0] cannot be indexed.
+					diagnostics = append(diagnostics, typeContractNativeDiagnostic(typ, "Expression must be a list type: Integer", bodyOffset+pos, bodyOffset+pos+1, source))
 				}
 			}
 			if (strings.HasPrefix(current.Callee, "__safe_field:") || strings.HasPrefix(current.Callee, "__safe_call:")) && current.Left != nil {

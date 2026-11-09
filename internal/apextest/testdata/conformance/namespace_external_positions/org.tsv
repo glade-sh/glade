@@ -1,0 +1,49 @@
+case_id	api_version	context	route	compile_outcome	runtime_outcome	observed_value_or_diagnostic	source
+A01_local	62.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Invalid type: MissingNsV035.Thing	anon/A01_local.apex
+A02_new	62.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 12: Invalid type: MissingNsV035.Thing	anon/A02_new.apex
+A03_cast	62.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 2 col 12: Invalid type: MissingNsV035.Thing	anon/A03_cast.apex
+A04_instanceof	62.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 2 col 13: Invalid type: MissingNsV035.Thing	anon/A04_instanceof.apex
+A05_static_receiver	62.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Variable does not exist: MissingNsV035.Thing	anon/A05_static_receiver.apex
+A06_generic_arg	62.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Invalid type: MissingNsV035.Thing	anon/A06_generic_arg.apex
+A07_forname_dotted	62.0	no_package_scratch	anonymous	ok	ok	forNameDottedNull|true	anon/A07_forname_dotted.apex
+A08_forname_two_arg	62.0	no_package_scratch	anonymous	ok	ok	forNameTwoArgNull|true	anon/A08_forname_two_arg.apex
+A09_system_control	62.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Invalid type: System.NotATypeV035	anon/A09_system_control.apex
+A10_nested	62.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Invalid type: MissingNsV035.Outer.Inner	anon/A10_nested.apex
+A11_lowercase	62.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Invalid type: missingnsv035.thing	anon/A11_lowercase.apex
+A12_static_field_receiver	62.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 13: Variable does not exist: MissingNsV035.Thing	anon/A12_static_field_receiver.apex
+A13_forname_newinstance	62.0	no_package_scratch	anonymous	ok	ok	forNameNewInstance|System.NullPointerException	anon/A13_forname_newinstance.apex
+A01_local	67.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Invalid type: MissingNsV035.Thing	anon/A01_local.apex
+A02_new	67.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 12: Invalid type: MissingNsV035.Thing	anon/A02_new.apex
+A03_cast	67.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 2 col 12: Invalid type: MissingNsV035.Thing	anon/A03_cast.apex
+A04_instanceof	67.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 2 col 13: Invalid type: MissingNsV035.Thing	anon/A04_instanceof.apex
+A05_static_receiver	67.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Variable does not exist: MissingNsV035.Thing	anon/A05_static_receiver.apex
+A06_generic_arg	67.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Invalid type: MissingNsV035.Thing	anon/A06_generic_arg.apex
+A07_forname_dotted	67.0	no_package_scratch	anonymous	ok	ok	forNameDottedNull|true	anon/A07_forname_dotted.apex
+A08_forname_two_arg	67.0	no_package_scratch	anonymous	ok	ok	forNameTwoArgNull|true	anon/A08_forname_two_arg.apex
+A09_system_control	67.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Invalid type: System.NotATypeV035	anon/A09_system_control.apex
+A10_nested	67.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Invalid type: MissingNsV035.Outer.Inner	anon/A10_nested.apex
+A11_lowercase	67.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Invalid type: missingnsv035.thing	anon/A11_lowercase.apex
+A12_static_field_receiver	67.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 13: Variable does not exist: MissingNsV035.Thing	anon/A12_static_field_receiver.apex
+A13_forname_newinstance	67.0	no_package_scratch	anonymous	ok	ok	forNameNewInstance|System.NullPointerException	anon/A13_forname_newinstance.apex
+ExtCastOnlyV035	62.0	no_package_scratch	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 2 col 49: Invalid type: MissingNsV035.Thing	named/ExtCastOnlyV035.cls
+ExtExtendsV035	62.0	no_package_scratch	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 1 col 37: Invalid type: MissingNsV035.Base	named/ExtExtendsV035.cls
+ExtFieldOnlyV035	62.0	no_package_scratch	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 2 col 12: Invalid type: MissingNsV035.Thing	named/ExtFieldOnlyV035.cls
+ExtGenericFieldV035	62.0	no_package_scratch	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 2 col 12: Invalid type: MissingNsV035.Thing	named/ExtGenericFieldV035.cls
+ExtImplementsV035	62.0	no_package_scratch	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 1 col 43: Invalid type: MissingNsV035.Contract	named/ExtImplementsV035.cls
+ExtLocalOnlyV035	62.0	no_package_scratch	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 2 col 32: Invalid type: MissingNsV035.Thing	named/ExtLocalOnlyV035.cls
+ExtNewOnlyV035	62.0	no_package_scratch	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 2 col 41: Invalid type: MissingNsV035.Thing	named/ExtNewOnlyV035.cls
+ExtParamOnlyV035	62.0	no_package_scratch	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 2 col 54: Invalid type: MissingNsV035.Thing	named/ExtParamOnlyV035.cls
+ExtReturnOnlyV035	62.0	no_package_scratch	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 2 col 39: Invalid type: MissingNsV035.Thing	named/ExtReturnOnlyV035.cls
+ExtStaticReceiverV035	62.0	no_package_scratch	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 2 col 32: Variable does not exist: MissingNsV035.Thing	named/ExtStaticReceiverV035.cls
+ExtCastOnlyV035	67.0	no_package_scratch	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 2 col 49: Invalid type: MissingNsV035.Thing	named/ExtCastOnlyV035.cls
+ExtExtendsV035	67.0	no_package_scratch	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 1 col 37: Invalid type: MissingNsV035.Base	named/ExtExtendsV035.cls
+ExtFieldOnlyV035	67.0	no_package_scratch	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 2 col 12: Invalid type: MissingNsV035.Thing	named/ExtFieldOnlyV035.cls
+ExtGenericFieldV035	67.0	no_package_scratch	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 2 col 12: Invalid type: MissingNsV035.Thing	named/ExtGenericFieldV035.cls
+ExtImplementsV035	67.0	no_package_scratch	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 1 col 43: Invalid type: MissingNsV035.Contract	named/ExtImplementsV035.cls
+ExtLocalOnlyV035	67.0	no_package_scratch	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 2 col 32: Invalid type: MissingNsV035.Thing	named/ExtLocalOnlyV035.cls
+ExtNewOnlyV035	67.0	no_package_scratch	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 2 col 41: Invalid type: MissingNsV035.Thing	named/ExtNewOnlyV035.cls
+ExtParamOnlyV035	67.0	no_package_scratch	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 2 col 54: Invalid type: MissingNsV035.Thing	named/ExtParamOnlyV035.cls
+ExtReturnOnlyV035	67.0	no_package_scratch	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 2 col 39: Invalid type: MissingNsV035.Thing	named/ExtReturnOnlyV035.cls
+ExtStaticReceiverV035	67.0	no_package_scratch	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 2 col 32: Variable does not exist: MissingNsV035.Thing	named/ExtStaticReceiverV035.cls
+ExtForNameOnlyV035Test.observe	62.0	no_package_scratch	istest	Fail	ran	true|true|System.NullPointerException	controls/ExtForNameOnlyV035Test.cls
+ExtForNameOnlyV035Test.observe	67.0	no_package_scratch	istest	Fail	ran	true|true|System.NullPointerException	controls/ExtForNameOnlyV035Test.cls

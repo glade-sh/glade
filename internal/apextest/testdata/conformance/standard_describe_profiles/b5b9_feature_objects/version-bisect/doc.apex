@@ -1,0 +1,12 @@
+Map<String,Schema.SObjectType> m=Schema.getGlobalDescribe();
+System.debug('ROW DocumentGenerationProcess.AdditionalMetadata '+m.get('DocumentGenerationProcess').getDescribe().fields.getMap().containsKey('AdditionalMetadata'));
+System.debug('ROW DocumentGenerationProcess.DocGenAdditionalInput '+m.get('DocumentGenerationProcess').getDescribe().fields.getMap().containsKey('DocGenAdditionalInput'));
+System.debug('ROW DocumentGenerationProcess.DocGenAdditionalInputType '+m.get('DocumentGenerationProcess').getDescribe().fields.getMap().containsKey('DocGenAdditionalInputType'));
+System.debug('ROW DocumentGenerationProcess.EstimatedDocumentSize '+m.get('DocumentGenerationProcess').getDescribe().fields.getMap().containsKey('EstimatedDocumentSize'));
+System.debug('ROW DocumentGenerationProcess.IsLocalizationEnabled '+m.get('DocumentGenerationProcess').getDescribe().fields.getMap().containsKey('IsLocalizationEnabled'));
+System.debug('ROW DocumentGenerationProcess.IsSharedExternally '+m.get('DocumentGenerationProcess').getDescribe().fields.getMap().containsKey('IsSharedExternally'));
+System.debug('ROW DocumentGenerationProcess.IsTocUpdateRequired '+m.get('DocumentGenerationProcess').getDescribe().fields.getMap().containsKey('IsTocUpdateRequired'));
+System.debug('ROW DocumentTemplate.ContextDefinitionName '+m.get('DocumentTemplate').getDescribe().fields.getMap().containsKey('ContextDefinitionName'));
+System.debug('ROW DocumentTemplate.ContextFilterName '+m.get('DocumentTemplate').getDescribe().fields.getMap().containsKey('ContextFilterName'));
+System.debug('ROW DocumentTemplate.ContextMappingName '+m.get('DocumentTemplate').getDescribe().fields.getMap().containsKey('ContextMappingName'));
+System.debug('ROW DocumentTemplate.ContextTransformationName '+m.get('DocumentTemplate').getDescribe().fields.getMap().containsKey('ContextTransformationName'));

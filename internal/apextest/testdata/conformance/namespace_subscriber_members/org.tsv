@@ -1,0 +1,113 @@
+case_id	consumer_api	provider_api	context	route	compile_outcome	runtime_outcome	observed_value_or_diagnostic	source
+S01	62.0	62.0	subscriber	anonymous	COMPILE_OK	OK	2	anon/S01.apex
+S01	62.0	62.0	subscriber	istest	COMPILE_OK	OK	2	rt/R_S01.cls
+S02	62.0	62.0	subscriber	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Type is not visible: gladens004.V035Provider.PublicInner	anon/S02.apex
+S02	62.0	62.0	subscriber	named	COMPILE_ERROR	NOT_REACHED	line 3 col 9: Type is not visible: gladens004.V035Provider.PublicInner	named/N_S02.cls
+S03	62.0	62.0	subscriber	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Type is not visible: gladens004.V035Provider.PrivateInner	anon/S03.apex
+S03	62.0	62.0	subscriber	named	COMPILE_ERROR	NOT_REACHED	line 3 col 9: Type is not visible: gladens004.V035Provider.PrivateInner	named/N_S03.cls
+S04	62.0	62.0	subscriber	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 10: Type is not visible: gladens004.V035Provider.PrivateInner	anon/S04.apex
+S04	62.0	62.0	subscriber	named	COMPILE_ERROR	NOT_REACHED	line 3 col 18: Type is not visible: gladens004.V035Provider.PrivateInner	named/N_S04.cls
+S05	62.0	62.0	subscriber	anonymous	COMPILE_OK	OK	null	anon/S05.apex
+S05	62.0	62.0	subscriber	istest	COMPILE_OK	OK	null	rt/R_S05.cls
+S06	62.0	62.0	subscriber	anonymous	COMPILE_OK	OK	null	anon/S06.apex
+S06	62.0	62.0	subscriber	istest	COMPILE_OK	OK	null	rt/R_S06.cls
+S07	62.0	62.0	subscriber	anonymous	COMPILE_OK	OK	null	anon/S07.apex
+S07	62.0	62.0	subscriber	istest	COMPILE_OK	OK	null	rt/R_S07.cls
+S08	62.0	62.0	subscriber	anonymous	COMPILE_OK	OK	constructed	anon/S08.apex
+S08	62.0	62.0	subscriber	istest	COMPILE_OK	OK	constructed	rt/R_S08.cls
+S09	62.0	62.0	subscriber	anonymous	COMPILE_OK	OK	System.TypeException	anon/S09.apex
+S09	62.0	62.0	subscriber	istest	COMPILE_OK	OK	System.TypeException	rt/R_S09.cls
+S10	62.0	62.0	subscriber	anonymous	COMPILE_OK	OK	System.TypeException	anon/S10.apex
+S10	62.0	62.0	subscriber	istest	COMPILE_OK	OK	System.TypeException	rt/R_S10.cls
+S11	62.0	62.0	subscriber	anonymous	COMPILE_OK	OK	System.TypeException|constructed|constructed|System.TypeException	anon/S11.apex
+S11	62.0	62.0	subscriber	istest	COMPILE_OK	OK	System.TypeException|constructed|constructed|System.TypeException	rt/R_S11.cls
+S12	62.0	62.0	subscriber	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Invalid type: V035Provider.GlobalInner	anon/S12.apex
+S12	62.0	62.0	subscriber	named	COMPILE_ERROR	NOT_REACHED	line 3 col 9: Invalid type: V035Provider.GlobalInner	named/N_S12.cls
+S13	62.0	62.0	subscriber	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Invalid type: gladens004.V035Provider.Missing	anon/S13.apex
+S13	62.0	62.0	subscriber	named	COMPILE_ERROR	NOT_REACHED	line 3 col 9: Invalid type: gladens004.V035Provider.Missing	named/N_S13.cls
+S14	62.0	62.0	subscriber	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Invalid type: gladens004.V035Missing	anon/S14.apex
+S14	62.0	62.0	subscriber	named	COMPILE_ERROR	NOT_REACHED	line 3 col 9: Invalid type: gladens004.V035Missing	named/N_S14.cls
+S15	62.0	62.0	subscriber	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Invalid type: gladens004.V035Local	anon/S15.apex
+S15	62.0	62.0	subscriber	named	COMPILE_ERROR	NOT_REACHED	line 3 col 9: Invalid type: gladens004.V035Local	named/N_S15.cls
+S16	62.0	62.0	subscriber	anonymous	COMPILE_OK	OK	leaf	anon/S16.apex
+S16	62.0	62.0	subscriber	istest	COMPILE_OK	OK	leaf	rt/R_S16.cls
+S17	62.0	62.0	subscriber	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Invalid type: gladens004.Leaf	anon/S17.apex
+S17	62.0	62.0	subscriber	named	COMPILE_ERROR	NOT_REACHED	line 3 col 9: Invalid type: gladens004.Leaf	named/N_S17.cls
+S18	62.0	62.0	subscriber	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 84: Invalid type: V035Provider.GlobalInner	anon/S18.apex
+S18	62.0	62.0	subscriber	named	COMPILE_ERROR	NOT_REACHED	line 3 col 92: Invalid type: V035Provider.GlobalInner	named/N_S18.cls
+S19	62.0	62.0	subscriber	anonymous	COMPILE_OK	OK	System.TypeException|constructed|constructed|System.TypeException	anon/S19.apex
+S19	62.0	62.0	subscriber	istest	COMPILE_OK	OK	System.TypeException|constructed|constructed|System.TypeException	rt/R_S19.cls
+S20	62.0	62.0	subscriber	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 10: Type is not visible: gladens004.V035Provider.PublicInner	anon/S20.apex
+S20	62.0	62.0	subscriber	named	COMPILE_ERROR	NOT_REACHED	line 3 col 18: Type is not visible: gladens004.V035Provider.PublicInner	named/N_S20.cls
+S21	62.0	62.0	subscriber	anonymous	COMPILE_OK	OK	System.TypeException	anon/S21.apex
+S21	62.0	62.0	subscriber	istest	COMPILE_OK	OK	System.TypeException	rt/R_S21.cls
+X01	62.0	62.0	subscriber	istest	COMPILE_OK	OK	subscriber	xns_classes/ToneChannelProof.cls
+X02	62.0	62.0	subscriber	istest	COMPILE_OK	OK	1	xns_classes/ToneChannelProof.cls
+X03	62.0	62.0	subscriber	istest	COMPILE_OK	OK	subscriber	xns_classes/ToneChannelProof.cls
+X04	62.0	62.0	subscriber	istest	COMPILE_OK	OK	subscriber-text	xns_classes/ToneChannelProof.cls
+X05	62.0	62.0	subscriber	istest	COMPILE_OK	OK	provider	xns_classes/ToneChannelProof.cls
+X06	62.0	62.0	subscriber	istest	COMPILE_OK	OK	provider-text	xns_classes/ToneChannelProof.cls
+X07	62.0	62.0	subscriber	istest	COMPILE_OK	OK	subscriber/1	xns_classes/ToneChannelProof.cls
+X08	62.0	62.0	subscriber	istest	COMPILE_OK	OK	subscriber	xns_classes/ToneChannelProof.cls
+X10	62.0	62.0	subscriber	anonymous	COMPILE_OK	OK	subscriber	xns_anon/X10.apex
+X11	62.0	62.0	subscriber	anonymous	COMPILE_OK	OK	provider	xns_anon/X11.apex
+X12	62.0	62.0	subscriber	anonymous	COMPILE_OK	OK	1	xns_anon/X12.apex
+X13	62.0	62.0	subscriber	anonymous	COMPILE_OK	OK	subscriber-text	xns_anon/X13.apex
+X14	62.0	62.0	subscriber	anonymous	COMPILE_OK	OK	provider|provider-text	xns_anon/X14.apex
+X15	62.0	62.0	subscriber	anonymous	COMPILE_OK	OK	subscriber	xns_anon/X15.apex
+S01	67.0	67.0	subscriber	anonymous	COMPILE_OK	OK	2	anon/S01.apex
+S01	67.0	67.0	subscriber	istest	COMPILE_OK	OK	2	rt/R_S01.cls
+S02	67.0	67.0	subscriber	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Type is not visible: gladens004.V035Provider.PublicInner	anon/S02.apex
+S02	67.0	67.0	subscriber	named	COMPILE_ERROR	NOT_REACHED	line 3 col 9: Type is not visible: gladens004.V035Provider.PublicInner	named/N_S02.cls
+S03	67.0	67.0	subscriber	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Type is not visible: gladens004.V035Provider.PrivateInner	anon/S03.apex
+S03	67.0	67.0	subscriber	named	COMPILE_ERROR	NOT_REACHED	line 3 col 9: Type is not visible: gladens004.V035Provider.PrivateInner	named/N_S03.cls
+S04	67.0	67.0	subscriber	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 10: Type is not visible: gladens004.V035Provider.PrivateInner	anon/S04.apex
+S04	67.0	67.0	subscriber	named	COMPILE_ERROR	NOT_REACHED	line 3 col 18: Type is not visible: gladens004.V035Provider.PrivateInner	named/N_S04.cls
+S05	67.0	67.0	subscriber	anonymous	COMPILE_OK	OK	null	anon/S05.apex
+S05	67.0	67.0	subscriber	istest	COMPILE_OK	OK	null	rt/R_S05.cls
+S06	67.0	67.0	subscriber	anonymous	COMPILE_OK	OK	null	anon/S06.apex
+S06	67.0	67.0	subscriber	istest	COMPILE_OK	OK	null	rt/R_S06.cls
+S07	67.0	67.0	subscriber	anonymous	COMPILE_OK	OK	null	anon/S07.apex
+S07	67.0	67.0	subscriber	istest	COMPILE_OK	OK	null	rt/R_S07.cls
+S08	67.0	67.0	subscriber	anonymous	COMPILE_OK	OK	constructed	anon/S08.apex
+S08	67.0	67.0	subscriber	istest	COMPILE_OK	OK	constructed	rt/R_S08.cls
+S09	67.0	67.0	subscriber	anonymous	COMPILE_OK	OK	System.TypeException	anon/S09.apex
+S09	67.0	67.0	subscriber	istest	COMPILE_OK	OK	System.TypeException	rt/R_S09.cls
+S10	67.0	67.0	subscriber	anonymous	COMPILE_OK	OK	System.TypeException	anon/S10.apex
+S10	67.0	67.0	subscriber	istest	COMPILE_OK	OK	System.TypeException	rt/R_S10.cls
+S11	67.0	67.0	subscriber	anonymous	COMPILE_OK	OK	System.TypeException|constructed|constructed|System.TypeException	anon/S11.apex
+S11	67.0	67.0	subscriber	istest	COMPILE_OK	OK	System.TypeException|constructed|constructed|System.TypeException	rt/R_S11.cls
+S12	67.0	67.0	subscriber	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Invalid type: V035Provider.GlobalInner	anon/S12.apex
+S12	67.0	67.0	subscriber	named	COMPILE_ERROR	NOT_REACHED	line 3 col 9: Invalid type: V035Provider.GlobalInner	named/N_S12.cls
+S13	67.0	67.0	subscriber	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Invalid type: gladens004.V035Provider.Missing	anon/S13.apex
+S13	67.0	67.0	subscriber	named	COMPILE_ERROR	NOT_REACHED	line 3 col 9: Invalid type: gladens004.V035Provider.Missing	named/N_S13.cls
+S14	67.0	67.0	subscriber	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Invalid type: gladens004.V035Missing	anon/S14.apex
+S14	67.0	67.0	subscriber	named	COMPILE_ERROR	NOT_REACHED	line 3 col 9: Invalid type: gladens004.V035Missing	named/N_S14.cls
+S15	67.0	67.0	subscriber	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Invalid type: gladens004.V035Local	anon/S15.apex
+S15	67.0	67.0	subscriber	named	COMPILE_ERROR	NOT_REACHED	line 3 col 9: Invalid type: gladens004.V035Local	named/N_S15.cls
+S16	67.0	67.0	subscriber	anonymous	COMPILE_OK	OK	leaf	anon/S16.apex
+S16	67.0	67.0	subscriber	istest	COMPILE_OK	OK	leaf	rt/R_S16.cls
+S17	67.0	67.0	subscriber	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Invalid type: gladens004.Leaf	anon/S17.apex
+S17	67.0	67.0	subscriber	named	COMPILE_ERROR	NOT_REACHED	line 3 col 9: Invalid type: gladens004.Leaf	named/N_S17.cls
+S18	67.0	67.0	subscriber	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 84: Invalid type: V035Provider.GlobalInner	anon/S18.apex
+S18	67.0	67.0	subscriber	named	COMPILE_ERROR	NOT_REACHED	line 3 col 92: Invalid type: V035Provider.GlobalInner	named/N_S18.cls
+S19	67.0	67.0	subscriber	anonymous	COMPILE_OK	OK	System.TypeException|constructed|constructed|System.TypeException	anon/S19.apex
+S19	67.0	67.0	subscriber	istest	COMPILE_OK	OK	System.TypeException|constructed|constructed|System.TypeException	rt/R_S19.cls
+S20	67.0	67.0	subscriber	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 10: Type is not visible: gladens004.V035Provider.PublicInner	anon/S20.apex
+S20	67.0	67.0	subscriber	named	COMPILE_ERROR	NOT_REACHED	line 3 col 18: Type is not visible: gladens004.V035Provider.PublicInner	named/N_S20.cls
+S21	67.0	67.0	subscriber	anonymous	COMPILE_OK	OK	System.TypeException	anon/S21.apex
+S21	67.0	67.0	subscriber	istest	COMPILE_OK	OK	System.TypeException	rt/R_S21.cls
+X01	67.0	62.0	subscriber	istest	COMPILE_OK	OK	subscriber	xns_classes/ToneChannelProof.cls
+X02	67.0	62.0	subscriber	istest	COMPILE_OK	OK	1	xns_classes/ToneChannelProof.cls
+X03	67.0	62.0	subscriber	istest	COMPILE_OK	OK	subscriber	xns_classes/ToneChannelProof.cls
+X04	67.0	62.0	subscriber	istest	COMPILE_OK	OK	subscriber-text	xns_classes/ToneChannelProof.cls
+X05	67.0	62.0	subscriber	istest	COMPILE_OK	OK	provider	xns_classes/ToneChannelProof.cls
+X06	67.0	62.0	subscriber	istest	COMPILE_OK	OK	provider-text	xns_classes/ToneChannelProof.cls
+X07	67.0	62.0	subscriber	istest	COMPILE_OK	OK	subscriber/1	xns_classes/ToneChannelProof.cls
+X08	67.0	62.0	subscriber	istest	COMPILE_OK	OK	subscriber	xns_classes/ToneChannelProof.cls
+X10	67.0	62.0	subscriber	anonymous	COMPILE_OK	OK	subscriber	xns_anon/X10.apex
+X11	67.0	62.0	subscriber	anonymous	COMPILE_OK	OK	provider	xns_anon/X11.apex
+X12	67.0	62.0	subscriber	anonymous	COMPILE_OK	OK	1	xns_anon/X12.apex
+X13	67.0	62.0	subscriber	anonymous	COMPILE_OK	OK	subscriber-text	xns_anon/X13.apex
+X14	67.0	62.0	subscriber	anonymous	COMPILE_OK	OK	provider|provider-text	xns_anon/X14.apex
+X15	67.0	62.0	subscriber	anonymous	COMPILE_OK	OK	subscriber	xns_anon/X15.apex

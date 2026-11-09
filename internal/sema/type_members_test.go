@@ -763,7 +763,7 @@ func TestLazyPlatformTypeMemberModelDoesNotCacheUnknownLookups(t *testing.T) {
 }
 
 func TestLazyPlatformTypeMemberModelDoesNotExposeCachedMathMembers(t *testing.T) {
-	model := buildSemaPlatformTypeMemberModel().platform
+	model := buildSemaPlatformTypeMemberModel(typesys.StandardPlatformSymbolView()).platform
 	key := normalizeName("Math")
 	fieldKey := normalizeName("PI")
 	first, ok := model.lookup(key)

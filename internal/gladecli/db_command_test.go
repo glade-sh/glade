@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/testutil"
 )
 
 func TestParseDBUIOptions(t *testing.T) {
@@ -236,7 +237,7 @@ func TestWriteDBUIReadyFile(t *testing.T) {
 
 func waitForDBUIReadyFile(t *testing.T, path string) dbUIReadyFile {
 	t.Helper()
-	deadline := time.Now().Add(10 * time.Second)
+	deadline := time.Now().Add(testutil.Deadline(10 * time.Second))
 	var lastErr error
 	for time.Now().Before(deadline) {
 		data, err := os.ReadFile(path)

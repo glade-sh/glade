@@ -51,6 +51,8 @@ func TestNativeBehaviorMatrixConformance(t *testing.T) {
 			root := copyNativeBehaviorProject(t, filepath.Join(fixture, "project"), api)
 			writeFile(t, filepath.Join(root, "force-app/main/default/classes/MatrixNativeProbe.cls"), matrixNativeProbe(nativeBehaviorMatrixAssertion(native[api+"/istest/child_relationship_creation_order"])))
 			writeFile(t, filepath.Join(root, "force-app/main/default/classes/MatrixNativeProbe.cls-meta.xml"), "<ApexClass><apiVersion>"+api+"</apiVersion><status>Active</status></ApexClass>")
+			// ORG-RUN.txt: a permission set granted field access to the running user.
+			writeCapturedAssignments(t, root, "MatrixFieldAccess")
 			index := loadTestIndex(t, root)
 			for _, row := range native {
 				if row.APIVersion != api || !nativeBehaviorMatrixAsserted(row.Case) {
@@ -72,8 +74,7 @@ func TestNativeBehaviorMatrixConformance(t *testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
-					org := orgFromIndex(index)
-					org.APIVersion = api
+					org := capturedFixtureOrg(t, index, api)
 					runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 					if _, err := runner.execute(program); err != nil {
 						t.Fatalf("native row %s actual behavior differs: %v", row.Case, err)

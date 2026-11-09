@@ -14,6 +14,7 @@ import (
 	"runtime"
 	"runtime/debug"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -71,7 +72,36 @@ type v09Case struct {
 // never seed execution. Only the owned Account ID is replaced in fixture source.
 // GLADE_V09_CAPTURE=1 records all row differences without failing on mismatches;
 // GLADE_V09_REPORT selects the optional per-row TSV output path.
+// GLADE_V09_ROW_RANGE selects a zero-based, half-open row range, start:end.
+// Adjacent ranges covering the whole table run every row once per API. The
+// range beginning at zero also runs the API 67 control suites.
 var v09APIVersions = []string{"59.0", "67.0"}
+
+func v09RowRange(value string, count int) (int, int, error) {
+	if value == "" {
+		return 0, count, nil
+	}
+	parts := strings.Split(value, ":")
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		return 0, 0, fmt.Errorf("expected start:end")
+	}
+	for _, part := range parts {
+		for _, c := range part {
+			if c < '0' || c > '9' {
+				return 0, 0, fmt.Errorf("range bounds must be decimal integers")
+			}
+		}
+	}
+	start, err := strconv.Atoi(parts[0])
+	if err != nil {
+		return 0, 0, err
+	}
+	end, err := strconv.Atoi(parts[1])
+	if err != nil || start >= end || end > count {
+		return 0, 0, fmt.Errorf("range must satisfy 0 <= start < end <= %d", count)
+	}
+	return start, end, nil
+}
 
 func TestV09SalesforceConformance(t *testing.T) {
 	capture := os.Getenv("GLADE_V09_CAPTURE") != ""
@@ -147,7 +177,7 @@ func TestV09SalesforceConformance(t *testing.T) {
 		}
 		seen[c.ID], groups[c.Group] = true, groups[c.Group]+1
 		counts[c.Kind]++
-		if (c.Owner == "") != (c.Reason == "") || c.Owner != "" && c.Owner != "V14 / authorization and request context" {
+		if (c.Owner == "") != (c.Reason == "") || c.Owner != "" && c.Owner != "Hosted navigation" {
 			t.Fatalf("%s: carries require an active V14 owner and one-line reason", c.ID)
 		}
 		for _, api := range v09APIVersions {
@@ -195,6 +225,19 @@ func TestV09SalesforceConformance(t *testing.T) {
 		groups["overrides"] != 20 || groups["lookup-destinations"] != 14 {
 		t.Fatalf("V09 requires 146 compile/metadata and 132 DOM rows in all five groups, got %v, %v", counts, groups)
 	}
+
+	start, end, err := v09RowRange(os.Getenv("GLADE_V09_ROW_RANGE"), len(table.Cases))
+	if err != nil {
+		t.Fatalf("invalid GLADE_V09_ROW_RANGE: %v", err)
+	}
+	selected := table.Cases[start:end]
+	compileCount := 0
+	for _, c := range selected {
+		if c.Kind == "compile" {
+			compileCount++
+		}
+	}
+	domCount := len(selected) - compileCount
 
 	var report io.Writer = io.Discard
 	if path := os.Getenv("GLADE_V09_REPORT"); path != "" {
@@ -245,7 +288,7 @@ func TestV09SalesforceConformance(t *testing.T) {
 				v09WriteFiles(t, root, map[string]string{fixture.ControllerPath: controller})
 			}
 			renderer := v09NewRenderer(t, runtimeRoot)
-			for row, c := range table.Cases {
+			for row, c := range selected {
 				func() {
 					input := c.Inputs[api]
 					root := compileRoot
@@ -301,7 +344,7 @@ func TestV09SalesforceConformance(t *testing.T) {
 					if status != "MATCH" && c.Owner != "" {
 						owner, reason = c.Owner, c.Reason
 						t.Logf("V09 API %s carry %s: %s: %s", api, c.ID, owner, reason)
-						if owner == "V14 / authorization and request context" && !v09EqualOutsideDestination(t, got, want) && !capture {
+						if owner == "Hosted navigation" && !v09EqualOutsideDestination(t, got, want) && !capture {
 							t.Errorf("API %s %s: V14 destination carry cannot exempt owned DOM: actual <%s> expected <%s>", api, c.ID, got, want)
 						}
 					}
@@ -316,19 +359,19 @@ func TestV09SalesforceConformance(t *testing.T) {
 				// the progress cadence (every 20 rows and after the last row)
 				// instead of 278 times per API over a half-gigabyte base heap.
 				v09ReleaseRowCaches(runtimeRoot)
-				if (row+1)%20 == 0 || row+1 == len(table.Cases) {
+				if (row+1)%20 == 0 || row+1 == len(selected) {
 					v09ReleaseRowState(t, runtimeRoot)
 					var memory runtime.MemStats
 					runtime.ReadMemStats(&memory)
-					t.Logf("V09 API %s completed %d/278; retained heap %d MiB", api, row+1, memory.HeapAlloc>>20)
+					t.Logf("V09 API %s completed %d/%d selected rows; retained heap %d MiB", api, row+1, len(selected), memory.HeapAlloc>>20)
 				}
 			}
-			writeRow(t, "API_TOTAL", api, fmt.Sprintf("%d/278", apiMatches))
-			writeRow(t, "COMPILE_API_TOTAL", api, fmt.Sprintf("%d/146", apiCompileMatches))
-			writeRow(t, "COMPILE_ACCEPTANCE_API_TOTAL", api, fmt.Sprintf("%d/146", apiAcceptanceMatches))
-			writeRow(t, "DIAGNOSTIC_API_TOTAL", api, fmt.Sprintf("%d/146", apiDiagnosticMatches))
-			writeRow(t, "DOM_API_TOTAL", api, fmt.Sprintf("%d/132", apiDOMMatches))
-			t.Logf("V09 API %s exact %d/278; compile %d/146, acceptance %d/146, diagnostics %d/146; DOM %d/132", api, apiMatches, apiCompileMatches, apiAcceptanceMatches, apiDiagnosticMatches, apiDOMMatches)
+			writeRow(t, "API_TOTAL", api, fmt.Sprintf("%d/%d", apiMatches, len(selected)))
+			writeRow(t, "COMPILE_API_TOTAL", api, fmt.Sprintf("%d/%d", apiCompileMatches, compileCount))
+			writeRow(t, "COMPILE_ACCEPTANCE_API_TOTAL", api, fmt.Sprintf("%d/%d", apiAcceptanceMatches, compileCount))
+			writeRow(t, "DIAGNOSTIC_API_TOTAL", api, fmt.Sprintf("%d/%d", apiDiagnosticMatches, compileCount))
+			writeRow(t, "DOM_API_TOTAL", api, fmt.Sprintf("%d/%d", apiDOMMatches, domCount))
+			t.Logf("V09 API %s exact %d/%d; compile %d/%d, acceptance %d/%d, diagnostics %d/%d; DOM %d/%d", api, apiMatches, len(selected), apiCompileMatches, compileCount, apiAcceptanceMatches, compileCount, apiDiagnosticMatches, compileCount, apiDOMMatches, domCount)
 			// Drop the single API template before building the next one.
 			renderer = nil
 			v09ReleaseRowState(t, runtimeRoot)
@@ -337,7 +380,7 @@ func TestV09SalesforceConformance(t *testing.T) {
 			acceptanceMatches += apiAcceptanceMatches
 			diagnosticMatches += apiDiagnosticMatches
 			domMatches += apiDOMMatches
-			if api == "67.0" {
+			if api == "67.0" && start == 0 {
 				write := func(fields ...string) { writeRow(t, fields...) }
 				v09RunWidgetControls(t, controls, capture, write)
 				v09RunReviewControls(t, capture, write)
@@ -345,12 +388,12 @@ func TestV09SalesforceConformance(t *testing.T) {
 			}
 		})
 	}
-	writeRow(t, "COMPILE_TOTAL", fmt.Sprintf("%d/%d", compileMatches, apiPasses*146))
-	writeRow(t, "COMPILE_ACCEPTANCE_TOTAL", fmt.Sprintf("%d/%d", acceptanceMatches, apiPasses*146))
-	writeRow(t, "DIAGNOSTIC_TOTAL", fmt.Sprintf("%d/%d", diagnosticMatches, apiPasses*146))
-	writeRow(t, "DOM_TOTAL", fmt.Sprintf("%d/%d", domMatches, apiPasses*132))
-	writeRow(t, "TOTAL", fmt.Sprintf("%d/%d", matches, apiPasses*278))
-	t.Logf("V09 exact matches %d/556; compile %d/292; DOM %d/264", matches, compileMatches, domMatches)
+	writeRow(t, "COMPILE_TOTAL", fmt.Sprintf("%d/%d", compileMatches, apiPasses*compileCount))
+	writeRow(t, "COMPILE_ACCEPTANCE_TOTAL", fmt.Sprintf("%d/%d", acceptanceMatches, apiPasses*compileCount))
+	writeRow(t, "DIAGNOSTIC_TOTAL", fmt.Sprintf("%d/%d", diagnosticMatches, apiPasses*compileCount))
+	writeRow(t, "DOM_TOTAL", fmt.Sprintf("%d/%d", domMatches, apiPasses*domCount))
+	writeRow(t, "TOTAL", fmt.Sprintf("%d/%d", matches, apiPasses*len(selected)))
+	t.Logf("V09 exact matches %d/%d; compile %d/%d; DOM %d/%d", matches, apiPasses*len(selected), compileMatches, apiPasses*compileCount, domMatches, apiPasses*domCount)
 }
 
 // The page-content environment registry and request-runtime cache both retain

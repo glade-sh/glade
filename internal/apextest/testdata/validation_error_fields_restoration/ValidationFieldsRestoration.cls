@@ -22,9 +22,9 @@
   Database.Error error=ValidationFieldsObserver.reject(true,'field');
   String caller=ValidationFieldsObserver.assemble(error);
   ValidationErrorNotebook__c log=new ValidationErrorNotebook__c(Name='Control',Transcript__c=caller);
-  insert log;
+  insert as system log;
   System.assertEquals(caller,log.Transcript__c);
-  ValidationErrorNotebook__c stored=[SELECT Transcript__c FROM ValidationErrorNotebook__c WHERE Id=:log.Id];
+  ValidationErrorNotebook__c stored=[SELECT Transcript__c FROM ValidationErrorNotebook__c WHERE Id=:log.Id WITH SYSTEM_MODE];
   System.assertEquals(caller.substring(0,caller.length()-1),stored.Transcript__c);
   System.assertEquals(caller,log.Transcript__c);
   System.assertEquals(10,caller.charAt(caller.length()-1));

@@ -1,0 +1,1292 @@
+[
+ {
+  "api": "62.0",
+  "id": "AmazonMSKRouteDetailsRepresentation",
+  "code": "String o; try { ConnectApi.AmazonMSKRouteDetailsRepresentation x = new ConnectApi.AmazonMSKRouteDetailsRepresentation(); x.type=ConnectApi.PrivateNetworkProvider.BigQuery; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "ArticleSummary",
+  "code": "String o; try { ConnectApi.ArticleSummary x = new ConnectApi.ArticleSummary(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "BigQueryRouteDetailsRepresentation",
+  "code": "String o; try { ConnectApi.BigQueryRouteDetailsRepresentation x = new ConnectApi.BigQueryRouteDetailsRepresentation(); x.type=ConnectApi.PrivateNetworkProvider.AmazonMsk; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "BlankRecordField",
+  "code": "String o; try { ConnectApi.BlankRecordField x = new ConnectApi.BlankRecordField(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "CdpMlBinaryClassificationPredictionResult",
+  "code": "String o; try { ConnectApi.CdpMlBinaryClassificationPredictionResult x = new ConnectApi.CdpMlBinaryClassificationPredictionResult(); x.type=ConnectApi.CdpMlModelPredictionTypeEnum.CausalAttribution; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "CdpMlGenericPredictionResult",
+  "code": "String o; try { ConnectApi.CdpMlGenericPredictionResult x = new ConnectApi.CdpMlGenericPredictionResult(); x.type=ConnectApi.CdpMlModelPredictionTypeEnum.BinaryClassification; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "CdpMlMulticlassClassificationPredictionResult",
+  "code": "String o; try { ConnectApi.CdpMlMulticlassClassificationPredictionResult x = new ConnectApi.CdpMlMulticlassClassificationPredictionResult(); x.type=ConnectApi.CdpMlModelPredictionTypeEnum.BinaryClassification; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "CdpMlRegressionPredictionResult",
+  "code": "String o; try { ConnectApi.CdpMlRegressionPredictionResult x = new ConnectApi.CdpMlRegressionPredictionResult(); x.type=ConnectApi.CdpMlModelPredictionTypeEnum.BinaryClassification; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "ChatterGroupDetail",
+  "code": "String o; try { ConnectApi.ChatterGroupDetail x = new ConnectApi.ChatterGroupDetail(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "ChatterGroupSummary",
+  "code": "String o; try { ConnectApi.ChatterGroupSummary x = new ConnectApi.ChatterGroupSummary(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "ContentHubRepository",
+  "code": "String o; try { ConnectApi.ContentHubRepository x = new ConnectApi.ContentHubRepository(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "CurrencyRecordField",
+  "code": "String o; try { ConnectApi.CurrencyRecordField x = new ConnectApi.CurrencyRecordField(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "CustomListAudienceCriteria",
+  "code": "String o; try { ConnectApi.CustomListAudienceCriteria x = new ConnectApi.CustomListAudienceCriteria(); x.type=ConnectApi.RecommendationAudienceCriteriaType.MaxDaysInCommunity; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "DatabricksInternalStageRouteDetailsRepresentation",
+  "code": "String o; try { ConnectApi.DatabricksInternalStageRouteDetailsRepresentation x = new ConnectApi.DatabricksInternalStageRouteDetailsRepresentation(); x.type=ConnectApi.PrivateNetworkProvider.AmazonMsk; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "DatabricksRouteDetailsRepresentation",
+  "code": "String o; try { ConnectApi.DatabricksRouteDetailsRepresentation x = new ConnectApi.DatabricksRouteDetailsRepresentation(); x.type=ConnectApi.PrivateNetworkProvider.AmazonMsk; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "DistinctFacetValue",
+  "code": "String o; try { ConnectApi.DistinctFacetValue x = new ConnectApi.DistinctFacetValue(); x.type=ConnectApi.CommerceSearchFacetType.Range; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "EntityLinkSegment",
+  "code": "String o; try { ConnectApi.EntityLinkSegment x = new ConnectApi.EntityLinkSegment(); x.type=ConnectApi.MessageSegmentType.FieldChange; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "ExternalLearningOutput",
+  "code": "String o; try { ConnectApi.ExternalLearningOutput x = new ConnectApi.ExternalLearningOutput(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "FieldChangeNameSegment",
+  "code": "String o; try { ConnectApi.FieldChangeNameSegment x = new ConnectApi.FieldChangeNameSegment(); x.type=ConnectApi.MessageSegmentType.EntityLink; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "FieldChangeSegment",
+  "code": "String o; try { ConnectApi.FieldChangeSegment x = new ConnectApi.FieldChangeSegment(); x.type=ConnectApi.MessageSegmentType.EntityLink; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "FieldChangeValueSegment",
+  "code": "String o; try { ConnectApi.FieldChangeValueSegment x = new ConnectApi.FieldChangeValueSegment(); x.type=ConnectApi.MessageSegmentType.EntityLink; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "HashtagSegment",
+  "code": "String o; try { ConnectApi.HashtagSegment x = new ConnectApi.HashtagSegment(); x.type=ConnectApi.MessageSegmentType.EntityLink; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "InlineImageSegment",
+  "code": "String o; try { ConnectApi.InlineImageSegment x = new ConnectApi.InlineImageSegment(); x.type=ConnectApi.MessageSegmentType.EntityLink; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "LearningCourseOutput",
+  "code": "String o; try { ConnectApi.LearningCourseOutput x = new ConnectApi.LearningCourseOutput(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "LearningProgramOutput",
+  "code": "String o; try { ConnectApi.LearningProgramOutput x = new ConnectApi.LearningProgramOutput(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "LinkSegment",
+  "code": "String o; try { ConnectApi.LinkSegment x = new ConnectApi.LinkSegment(); x.type=ConnectApi.MessageSegmentType.EntityLink; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "MarkupBeginSegment",
+  "code": "String o; try { ConnectApi.MarkupBeginSegment x = new ConnectApi.MarkupBeginSegment(); x.type=ConnectApi.MessageSegmentType.EntityLink; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "MarkupEndSegment",
+  "code": "String o; try { ConnectApi.MarkupEndSegment x = new ConnectApi.MarkupEndSegment(); x.type=ConnectApi.MessageSegmentType.EntityLink; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "MentionSegment",
+  "code": "String o; try { ConnectApi.MentionSegment x = new ConnectApi.MentionSegment(); x.type=ConnectApi.MessageSegmentType.EntityLink; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "MoreChangesSegment",
+  "code": "String o; try { ConnectApi.MoreChangesSegment x = new ConnectApi.MoreChangesSegment(); x.type=ConnectApi.MessageSegmentType.EntityLink; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "NewUserAudienceCriteria",
+  "code": "String o; try { ConnectApi.NewUserAudienceCriteria x = new ConnectApi.NewUserAudienceCriteria(); x.type=ConnectApi.RecommendationAudienceCriteriaType.CustomList; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "PercentRecordField",
+  "code": "String o; try { ConnectApi.PercentRecordField x = new ConnectApi.PercentRecordField(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "PicklistRecordField",
+  "code": "String o; try { ConnectApi.PicklistRecordField x = new ConnectApi.PicklistRecordField(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "Price",
+  "code": "String o; try { ConnectApi.Price x = new ConnectApi.Price(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "ProductInventoryPriceAlteration",
+  "code": "String o; try { ConnectApi.ProductInventoryPriceAlteration x = new ConnectApi.ProductInventoryPriceAlteration(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "ProductOfferingPriceRef",
+  "code": "String o; try { ConnectApi.ProductOfferingPriceRef x = new ConnectApi.ProductOfferingPriceRef(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "ProductPriceRef",
+  "code": "String o; try { ConnectApi.ProductPriceRef x = new ConnectApi.ProductPriceRef(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "RecommendedObject",
+  "code": "String o; try { ConnectApi.RecommendedObject x = new ConnectApi.RecommendedObject(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "RedshiftRouteDetailsRepresentation",
+  "code": "String o; try { ConnectApi.RedshiftRouteDetailsRepresentation x = new ConnectApi.RedshiftRouteDetailsRepresentation(); x.type=ConnectApi.PrivateNetworkProvider.AmazonMsk; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "ReferenceRecordField",
+  "code": "String o; try { ConnectApi.ReferenceRecordField x = new ConnectApi.ReferenceRecordField(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "RepositoryFileDetail",
+  "code": "String o; try { ConnectApi.RepositoryFileDetail x = new ConnectApi.RepositoryFileDetail(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "RepositoryFileSummary",
+  "code": "String o; try { ConnectApi.RepositoryFileSummary x = new ConnectApi.RepositoryFileSummary(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "RepositoryFolderDetail",
+  "code": "String o; try { ConnectApi.RepositoryFolderDetail x = new ConnectApi.RepositoryFolderDetail(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "RepositoryFolderItem",
+  "code": "String o; try { ConnectApi.RepositoryFolderItem x = new ConnectApi.RepositoryFolderItem(); x.type=ConnectApi.FolderItemType.File; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "RepositoryFolderSummary",
+  "code": "String o; try { ConnectApi.RepositoryFolderSummary x = new ConnectApi.RepositoryFolderSummary(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "RepositoryGroupSummary",
+  "code": "String o; try { ConnectApi.RepositoryGroupSummary x = new ConnectApi.RepositoryGroupSummary(); x.type=ConnectApi.ContentHubDirectoryEntryType.UserEntry; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "RepositoryUserSummary",
+  "code": "String o; try { ConnectApi.RepositoryUserSummary x = new ConnectApi.RepositoryUserSummary(); x.type=ConnectApi.ContentHubDirectoryEntryType.GroupEntry; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "ResourceLinkSegment",
+  "code": "String o; try { ConnectApi.ResourceLinkSegment x = new ConnectApi.ResourceLinkSegment(); x.type=ConnectApi.MessageSegmentType.EntityLink; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "SmartDataDiscoveryAIModelDiscoverySource",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryAIModelDiscoverySource x = new ConnectApi.SmartDataDiscoveryAIModelDiscoverySource(); x.type=ConnectApi.SmartDataDiscoveryModelSourceTypeEnum.UserUpload; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "SmartDataDiscoveryAIModelUserUploadSource",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryAIModelUserUploadSource x = new ConnectApi.SmartDataDiscoveryAIModelUserUploadSource(); x.type=ConnectApi.SmartDataDiscoveryModelSourceTypeEnum.Discovery; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "SmartDataDiscoveryCategoricalImputationTransformation",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryCategoricalImputationTransformation x = new ConnectApi.SmartDataDiscoveryCategoricalImputationTransformation(); x.type=ConnectApi.SmartDataDiscoveryAIModelTransformationTypeEnum.ExtractDayOfWeek; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "SmartDataDiscoveryCategoricalProjectedPrediction",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryCategoricalProjectedPrediction x = new ConnectApi.SmartDataDiscoveryCategoricalProjectedPrediction(); x.type=ConnectApi.SmartDataDiscoveryProjectedPredictionsType.Numerical; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "SmartDataDiscoveryClassificationPredictionProperty",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryClassificationPredictionProperty x = new ConnectApi.SmartDataDiscoveryClassificationPredictionProperty(); x.type=ConnectApi.SmartDataDiscoveryPredictionTypeEnum.MulticlassClassification; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "SmartDataDiscoveryDiscoveryModelRuntime",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryDiscoveryModelRuntime x = new ConnectApi.SmartDataDiscoveryDiscoveryModelRuntime(); x.type=ConnectApi.SmartDataDiscoveryModelRuntimeTypeEnum.H2O; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "SmartDataDiscoveryExtractDayOfWeekTransformation",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryExtractDayOfWeekTransformation x = new ConnectApi.SmartDataDiscoveryExtractDayOfWeekTransformation(); x.type=ConnectApi.SmartDataDiscoveryAIModelTransformationTypeEnum.CategoricalImputation; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "SmartDataDiscoveryExtractMonthOfYearTransformation",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryExtractMonthOfYearTransformation x = new ConnectApi.SmartDataDiscoveryExtractMonthOfYearTransformation(); x.type=ConnectApi.SmartDataDiscoveryAIModelTransformationTypeEnum.CategoricalImputation; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "SmartDataDiscoveryFieldMappingAnalyticsDatasetField",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryFieldMappingAnalyticsDatasetField x = new ConnectApi.SmartDataDiscoveryFieldMappingAnalyticsDatasetField(); x.type=ConnectApi.SmartDataDiscoveryFieldMapSourceTypeEnum.SalesforceField; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "SmartDataDiscoveryFieldMappingSalesforceField",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryFieldMappingSalesforceField x = new ConnectApi.SmartDataDiscoveryFieldMappingSalesforceField(); x.type=ConnectApi.SmartDataDiscoveryFieldMapSourceTypeEnum.AnalyticsDatasetField; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "SmartDataDiscoveryFreeTextClusteringTransformation",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryFreeTextClusteringTransformation x = new ConnectApi.SmartDataDiscoveryFreeTextClusteringTransformation(); x.type=ConnectApi.SmartDataDiscoveryAIModelTransformationTypeEnum.CategoricalImputation; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "SmartDataDiscoveryH2OModelRuntime",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryH2OModelRuntime x = new ConnectApi.SmartDataDiscoveryH2OModelRuntime(); x.type=ConnectApi.SmartDataDiscoveryModelRuntimeTypeEnum.Discovery; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "SmartDataDiscoveryModelFieldDate",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryModelFieldDate x = new ConnectApi.SmartDataDiscoveryModelFieldDate(); x.type=ConnectApi.SmartDataDiscoveryModelFieldTypeEnum.Number; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "SmartDataDiscoveryModelFieldNumeric",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryModelFieldNumeric x = new ConnectApi.SmartDataDiscoveryModelFieldNumeric(); x.type=ConnectApi.SmartDataDiscoveryModelFieldTypeEnum.Date; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "SmartDataDiscoveryModelFieldText",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryModelFieldText x = new ConnectApi.SmartDataDiscoveryModelFieldText(); x.type=ConnectApi.SmartDataDiscoveryModelFieldTypeEnum.Date; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "SmartDataDiscoveryMulticlassClassificationPredictionProperty",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryMulticlassClassificationPredictionProperty x = new ConnectApi.SmartDataDiscoveryMulticlassClassificationPredictionProperty(); x.type=ConnectApi.SmartDataDiscoveryPredictionTypeEnum.Classification; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "SmartDataDiscoveryMulticlassPredict",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryMulticlassPredict x = new ConnectApi.SmartDataDiscoveryMulticlassPredict(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "SmartDataDiscoveryNumericTransformationFilter",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryNumericTransformationFilter x = new ConnectApi.SmartDataDiscoveryNumericTransformationFilter(); x.type=ConnectApi.SmartDataDiscoveryTransformationFilterTypeEnum.Text; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "SmartDataDiscoveryNumericalImputationTransformation",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryNumericalImputationTransformation x = new ConnectApi.SmartDataDiscoveryNumericalImputationTransformation(); x.type=ConnectApi.SmartDataDiscoveryAIModelTransformationTypeEnum.CategoricalImputation; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "SmartDataDiscoveryNumericalProjectedPrediction",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryNumericalProjectedPrediction x = new ConnectApi.SmartDataDiscoveryNumericalProjectedPrediction(); x.type=ConnectApi.SmartDataDiscoveryProjectedPredictionsType.Categorical; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "SmartDataDiscoveryProjectedPredictionsCountFromDateIntervalSetting",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryProjectedPredictionsCountFromDateIntervalSetting x = new ConnectApi.SmartDataDiscoveryProjectedPredictionsCountFromDateIntervalSetting(); x.type=ConnectApi.SmartDataDiscoveryProjectedPredictionsIntervalSettingType.Count; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "SmartDataDiscoveryProjectedPredictionsCountIntervalSetting",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryProjectedPredictionsCountIntervalSetting x = new ConnectApi.SmartDataDiscoveryProjectedPredictionsCountIntervalSetting(); x.type=ConnectApi.SmartDataDiscoveryProjectedPredictionsIntervalSettingType.CountFromDate; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "SmartDataDiscoveryProjectedPredictionsDateIntervalSetting",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryProjectedPredictionsDateIntervalSetting x = new ConnectApi.SmartDataDiscoveryProjectedPredictionsDateIntervalSetting(); x.type=ConnectApi.SmartDataDiscoveryProjectedPredictionsIntervalSettingType.Count; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "SmartDataDiscoveryProjectedPredictionsOverride",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryProjectedPredictionsOverride x = new ConnectApi.SmartDataDiscoveryProjectedPredictionsOverride(); x.type=ConnectApi.SmartDataDiscoveryAIModelTransformationTypeEnum.CategoricalImputation; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "SmartDataDiscoveryProjectedPredictionsTransformation",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryProjectedPredictionsTransformation x = new ConnectApi.SmartDataDiscoveryProjectedPredictionsTransformation(); x.type=ConnectApi.SmartDataDiscoveryAIModelTransformationTypeEnum.CategoricalImputation; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "SmartDataDiscoveryRegressionPredictionProperty",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryRegressionPredictionProperty x = new ConnectApi.SmartDataDiscoveryRegressionPredictionProperty(); x.type=ConnectApi.SmartDataDiscoveryPredictionTypeEnum.Classification; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "SmartDataDiscoveryScikitLearn102ModelRuntime",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryScikitLearn102ModelRuntime x = new ConnectApi.SmartDataDiscoveryScikitLearn102ModelRuntime(); x.type=ConnectApi.SmartDataDiscoveryModelRuntimeTypeEnum.Discovery; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "SmartDataDiscoverySentimentAnalysisTransformation",
+  "code": "String o; try { ConnectApi.SmartDataDiscoverySentimentAnalysisTransformation x = new ConnectApi.SmartDataDiscoverySentimentAnalysisTransformation(); x.type=ConnectApi.SmartDataDiscoveryAIModelTransformationTypeEnum.CategoricalImputation; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "SmartDataDiscoveryTensorFlow27ModelRuntime",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryTensorFlow27ModelRuntime x = new ConnectApi.SmartDataDiscoveryTensorFlow27ModelRuntime(); x.type=ConnectApi.SmartDataDiscoveryModelRuntimeTypeEnum.Discovery; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "SmartDataDiscoveryTensorFlowModelRuntime",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryTensorFlowModelRuntime x = new ConnectApi.SmartDataDiscoveryTensorFlowModelRuntime(); x.type=ConnectApi.SmartDataDiscoveryModelRuntimeTypeEnum.Discovery; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "SmartDataDiscoveryTextTransformationFilter",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryTextTransformationFilter x = new ConnectApi.SmartDataDiscoveryTextTransformationFilter(); x.type=ConnectApi.SmartDataDiscoveryTransformationFilterTypeEnum.Number; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "SmartDataDiscoveryTypographicClusteringTransformation",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryTypographicClusteringTransformation x = new ConnectApi.SmartDataDiscoveryTypographicClusteringTransformation(); x.type=ConnectApi.SmartDataDiscoveryAIModelTransformationTypeEnum.CategoricalImputation; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "SnowflakeInternalStageRouteDetailsRepresentation",
+  "code": "String o; try { ConnectApi.SnowflakeInternalStageRouteDetailsRepresentation x = new ConnectApi.SnowflakeInternalStageRouteDetailsRepresentation(); x.type=ConnectApi.PrivateNetworkProvider.AmazonMsk; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "SnowflakeRouteDetailsRepresentation",
+  "code": "String o; try { ConnectApi.SnowflakeRouteDetailsRepresentation x = new ConnectApi.SnowflakeRouteDetailsRepresentation(); x.type=ConnectApi.PrivateNetworkProvider.AmazonMsk; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "TextSegment",
+  "code": "String o; try { ConnectApi.TextSegment x = new ConnectApi.TextSegment(); x.type=ConnectApi.MessageSegmentType.EntityLink; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "UnauthenticatedUser",
+  "code": "String o; try { ConnectApi.UnauthenticatedUser x = new ConnectApi.UnauthenticatedUser(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "UserDetail",
+  "code": "String o; try { ConnectApi.UserDetail x = new ConnectApi.UserDetail(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "62.0",
+  "id": "UserSummary",
+  "code": "String o; try { ConnectApi.UserSummary x = new ConnectApi.UserSummary(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "AmazonMSKRouteDetailsRepresentation",
+  "code": "String o; try { ConnectApi.AmazonMSKRouteDetailsRepresentation x = new ConnectApi.AmazonMSKRouteDetailsRepresentation(); x.type=ConnectApi.PrivateNetworkProvider.BigQuery; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "ArticleSummary",
+  "code": "String o; try { ConnectApi.ArticleSummary x = new ConnectApi.ArticleSummary(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "BigQueryRouteDetailsRepresentation",
+  "code": "String o; try { ConnectApi.BigQueryRouteDetailsRepresentation x = new ConnectApi.BigQueryRouteDetailsRepresentation(); x.type=ConnectApi.PrivateNetworkProvider.AmazonMsk; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "BlankRecordField",
+  "code": "String o; try { ConnectApi.BlankRecordField x = new ConnectApi.BlankRecordField(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "CdpMlBinaryClassificationPredictionResult",
+  "code": "String o; try { ConnectApi.CdpMlBinaryClassificationPredictionResult x = new ConnectApi.CdpMlBinaryClassificationPredictionResult(); x.type=ConnectApi.CdpMlModelPredictionTypeEnum.CausalAttribution; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "CdpMlGenericPredictionResult",
+  "code": "String o; try { ConnectApi.CdpMlGenericPredictionResult x = new ConnectApi.CdpMlGenericPredictionResult(); x.type=ConnectApi.CdpMlModelPredictionTypeEnum.BinaryClassification; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "CdpMlMulticlassClassificationPredictionResult",
+  "code": "String o; try { ConnectApi.CdpMlMulticlassClassificationPredictionResult x = new ConnectApi.CdpMlMulticlassClassificationPredictionResult(); x.type=ConnectApi.CdpMlModelPredictionTypeEnum.BinaryClassification; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "CdpMlRegressionPredictionResult",
+  "code": "String o; try { ConnectApi.CdpMlRegressionPredictionResult x = new ConnectApi.CdpMlRegressionPredictionResult(); x.type=ConnectApi.CdpMlModelPredictionTypeEnum.BinaryClassification; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "ChatterGroupDetail",
+  "code": "String o; try { ConnectApi.ChatterGroupDetail x = new ConnectApi.ChatterGroupDetail(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "ChatterGroupSummary",
+  "code": "String o; try { ConnectApi.ChatterGroupSummary x = new ConnectApi.ChatterGroupSummary(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "ContentHubRepository",
+  "code": "String o; try { ConnectApi.ContentHubRepository x = new ConnectApi.ContentHubRepository(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "CurrencyRecordField",
+  "code": "String o; try { ConnectApi.CurrencyRecordField x = new ConnectApi.CurrencyRecordField(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "CustomListAudienceCriteria",
+  "code": "String o; try { ConnectApi.CustomListAudienceCriteria x = new ConnectApi.CustomListAudienceCriteria(); x.type=ConnectApi.RecommendationAudienceCriteriaType.MaxDaysInCommunity; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "DatabricksInternalStageRouteDetailsRepresentation",
+  "code": "String o; try { ConnectApi.DatabricksInternalStageRouteDetailsRepresentation x = new ConnectApi.DatabricksInternalStageRouteDetailsRepresentation(); x.type=ConnectApi.PrivateNetworkProvider.AmazonMsk; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "DatabricksRouteDetailsRepresentation",
+  "code": "String o; try { ConnectApi.DatabricksRouteDetailsRepresentation x = new ConnectApi.DatabricksRouteDetailsRepresentation(); x.type=ConnectApi.PrivateNetworkProvider.AmazonMsk; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "DistinctFacetValue",
+  "code": "String o; try { ConnectApi.DistinctFacetValue x = new ConnectApi.DistinctFacetValue(); x.type=ConnectApi.CommerceSearchFacetType.Range; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "EntityLinkSegment",
+  "code": "String o; try { ConnectApi.EntityLinkSegment x = new ConnectApi.EntityLinkSegment(); x.type=ConnectApi.MessageSegmentType.FieldChange; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "ExternalLearningOutput",
+  "code": "String o; try { ConnectApi.ExternalLearningOutput x = new ConnectApi.ExternalLearningOutput(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "FieldChangeNameSegment",
+  "code": "String o; try { ConnectApi.FieldChangeNameSegment x = new ConnectApi.FieldChangeNameSegment(); x.type=ConnectApi.MessageSegmentType.EntityLink; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "FieldChangeSegment",
+  "code": "String o; try { ConnectApi.FieldChangeSegment x = new ConnectApi.FieldChangeSegment(); x.type=ConnectApi.MessageSegmentType.EntityLink; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "FieldChangeValueSegment",
+  "code": "String o; try { ConnectApi.FieldChangeValueSegment x = new ConnectApi.FieldChangeValueSegment(); x.type=ConnectApi.MessageSegmentType.EntityLink; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "HashtagSegment",
+  "code": "String o; try { ConnectApi.HashtagSegment x = new ConnectApi.HashtagSegment(); x.type=ConnectApi.MessageSegmentType.EntityLink; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "InlineImageSegment",
+  "code": "String o; try { ConnectApi.InlineImageSegment x = new ConnectApi.InlineImageSegment(); x.type=ConnectApi.MessageSegmentType.EntityLink; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "LearningCourseOutput",
+  "code": "String o; try { ConnectApi.LearningCourseOutput x = new ConnectApi.LearningCourseOutput(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "LearningProgramOutput",
+  "code": "String o; try { ConnectApi.LearningProgramOutput x = new ConnectApi.LearningProgramOutput(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "LinkSegment",
+  "code": "String o; try { ConnectApi.LinkSegment x = new ConnectApi.LinkSegment(); x.type=ConnectApi.MessageSegmentType.EntityLink; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "MarkupBeginSegment",
+  "code": "String o; try { ConnectApi.MarkupBeginSegment x = new ConnectApi.MarkupBeginSegment(); x.type=ConnectApi.MessageSegmentType.EntityLink; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "MarkupEndSegment",
+  "code": "String o; try { ConnectApi.MarkupEndSegment x = new ConnectApi.MarkupEndSegment(); x.type=ConnectApi.MessageSegmentType.EntityLink; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "MentionSegment",
+  "code": "String o; try { ConnectApi.MentionSegment x = new ConnectApi.MentionSegment(); x.type=ConnectApi.MessageSegmentType.EntityLink; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "MoreChangesSegment",
+  "code": "String o; try { ConnectApi.MoreChangesSegment x = new ConnectApi.MoreChangesSegment(); x.type=ConnectApi.MessageSegmentType.EntityLink; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "NewUserAudienceCriteria",
+  "code": "String o; try { ConnectApi.NewUserAudienceCriteria x = new ConnectApi.NewUserAudienceCriteria(); x.type=ConnectApi.RecommendationAudienceCriteriaType.CustomList; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "PercentRecordField",
+  "code": "String o; try { ConnectApi.PercentRecordField x = new ConnectApi.PercentRecordField(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "PicklistRecordField",
+  "code": "String o; try { ConnectApi.PicklistRecordField x = new ConnectApi.PicklistRecordField(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "Price",
+  "code": "String o; try { ConnectApi.Price x = new ConnectApi.Price(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "ProductInventoryPriceAlteration",
+  "code": "String o; try { ConnectApi.ProductInventoryPriceAlteration x = new ConnectApi.ProductInventoryPriceAlteration(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "ProductOfferingPriceRef",
+  "code": "String o; try { ConnectApi.ProductOfferingPriceRef x = new ConnectApi.ProductOfferingPriceRef(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "ProductPriceRef",
+  "code": "String o; try { ConnectApi.ProductPriceRef x = new ConnectApi.ProductPriceRef(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "RecommendedObject",
+  "code": "String o; try { ConnectApi.RecommendedObject x = new ConnectApi.RecommendedObject(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "RedshiftRouteDetailsRepresentation",
+  "code": "String o; try { ConnectApi.RedshiftRouteDetailsRepresentation x = new ConnectApi.RedshiftRouteDetailsRepresentation(); x.type=ConnectApi.PrivateNetworkProvider.AmazonMsk; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "ReferenceRecordField",
+  "code": "String o; try { ConnectApi.ReferenceRecordField x = new ConnectApi.ReferenceRecordField(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "RepositoryFileDetail",
+  "code": "String o; try { ConnectApi.RepositoryFileDetail x = new ConnectApi.RepositoryFileDetail(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "RepositoryFileSummary",
+  "code": "String o; try { ConnectApi.RepositoryFileSummary x = new ConnectApi.RepositoryFileSummary(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "RepositoryFolderDetail",
+  "code": "String o; try { ConnectApi.RepositoryFolderDetail x = new ConnectApi.RepositoryFolderDetail(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "RepositoryFolderItem",
+  "code": "String o; try { ConnectApi.RepositoryFolderItem x = new ConnectApi.RepositoryFolderItem(); x.type=ConnectApi.FolderItemType.File; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "RepositoryFolderSummary",
+  "code": "String o; try { ConnectApi.RepositoryFolderSummary x = new ConnectApi.RepositoryFolderSummary(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "RepositoryGroupSummary",
+  "code": "String o; try { ConnectApi.RepositoryGroupSummary x = new ConnectApi.RepositoryGroupSummary(); x.type=ConnectApi.ContentHubDirectoryEntryType.UserEntry; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "RepositoryUserSummary",
+  "code": "String o; try { ConnectApi.RepositoryUserSummary x = new ConnectApi.RepositoryUserSummary(); x.type=ConnectApi.ContentHubDirectoryEntryType.GroupEntry; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "ResourceLinkSegment",
+  "code": "String o; try { ConnectApi.ResourceLinkSegment x = new ConnectApi.ResourceLinkSegment(); x.type=ConnectApi.MessageSegmentType.EntityLink; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "SmartDataDiscoveryAIModelDiscoverySource",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryAIModelDiscoverySource x = new ConnectApi.SmartDataDiscoveryAIModelDiscoverySource(); x.type=ConnectApi.SmartDataDiscoveryModelSourceTypeEnum.UserUpload; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "SmartDataDiscoveryAIModelUserUploadSource",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryAIModelUserUploadSource x = new ConnectApi.SmartDataDiscoveryAIModelUserUploadSource(); x.type=ConnectApi.SmartDataDiscoveryModelSourceTypeEnum.Discovery; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "SmartDataDiscoveryCategoricalImputationTransformation",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryCategoricalImputationTransformation x = new ConnectApi.SmartDataDiscoveryCategoricalImputationTransformation(); x.type=ConnectApi.SmartDataDiscoveryAIModelTransformationTypeEnum.ExtractDayOfWeek; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "SmartDataDiscoveryCategoricalProjectedPrediction",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryCategoricalProjectedPrediction x = new ConnectApi.SmartDataDiscoveryCategoricalProjectedPrediction(); x.type=ConnectApi.SmartDataDiscoveryProjectedPredictionsType.Numerical; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "SmartDataDiscoveryClassificationPredictionProperty",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryClassificationPredictionProperty x = new ConnectApi.SmartDataDiscoveryClassificationPredictionProperty(); x.type=ConnectApi.SmartDataDiscoveryPredictionTypeEnum.MulticlassClassification; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "SmartDataDiscoveryDiscoveryModelRuntime",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryDiscoveryModelRuntime x = new ConnectApi.SmartDataDiscoveryDiscoveryModelRuntime(); x.type=ConnectApi.SmartDataDiscoveryModelRuntimeTypeEnum.H2O; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "SmartDataDiscoveryExtractDayOfWeekTransformation",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryExtractDayOfWeekTransformation x = new ConnectApi.SmartDataDiscoveryExtractDayOfWeekTransformation(); x.type=ConnectApi.SmartDataDiscoveryAIModelTransformationTypeEnum.CategoricalImputation; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "SmartDataDiscoveryExtractMonthOfYearTransformation",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryExtractMonthOfYearTransformation x = new ConnectApi.SmartDataDiscoveryExtractMonthOfYearTransformation(); x.type=ConnectApi.SmartDataDiscoveryAIModelTransformationTypeEnum.CategoricalImputation; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "SmartDataDiscoveryFieldMappingAnalyticsDatasetField",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryFieldMappingAnalyticsDatasetField x = new ConnectApi.SmartDataDiscoveryFieldMappingAnalyticsDatasetField(); x.type=ConnectApi.SmartDataDiscoveryFieldMapSourceTypeEnum.SalesforceField; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "SmartDataDiscoveryFieldMappingSalesforceField",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryFieldMappingSalesforceField x = new ConnectApi.SmartDataDiscoveryFieldMappingSalesforceField(); x.type=ConnectApi.SmartDataDiscoveryFieldMapSourceTypeEnum.AnalyticsDatasetField; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "SmartDataDiscoveryFreeTextClusteringTransformation",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryFreeTextClusteringTransformation x = new ConnectApi.SmartDataDiscoveryFreeTextClusteringTransformation(); x.type=ConnectApi.SmartDataDiscoveryAIModelTransformationTypeEnum.CategoricalImputation; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "SmartDataDiscoveryH2OModelRuntime",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryH2OModelRuntime x = new ConnectApi.SmartDataDiscoveryH2OModelRuntime(); x.type=ConnectApi.SmartDataDiscoveryModelRuntimeTypeEnum.Discovery; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "SmartDataDiscoveryModelFieldDate",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryModelFieldDate x = new ConnectApi.SmartDataDiscoveryModelFieldDate(); x.type=ConnectApi.SmartDataDiscoveryModelFieldTypeEnum.Number; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "SmartDataDiscoveryModelFieldNumeric",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryModelFieldNumeric x = new ConnectApi.SmartDataDiscoveryModelFieldNumeric(); x.type=ConnectApi.SmartDataDiscoveryModelFieldTypeEnum.Date; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "SmartDataDiscoveryModelFieldText",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryModelFieldText x = new ConnectApi.SmartDataDiscoveryModelFieldText(); x.type=ConnectApi.SmartDataDiscoveryModelFieldTypeEnum.Date; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "SmartDataDiscoveryMulticlassClassificationPredictionProperty",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryMulticlassClassificationPredictionProperty x = new ConnectApi.SmartDataDiscoveryMulticlassClassificationPredictionProperty(); x.type=ConnectApi.SmartDataDiscoveryPredictionTypeEnum.Classification; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "SmartDataDiscoveryMulticlassPredict",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryMulticlassPredict x = new ConnectApi.SmartDataDiscoveryMulticlassPredict(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "SmartDataDiscoveryNumericTransformationFilter",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryNumericTransformationFilter x = new ConnectApi.SmartDataDiscoveryNumericTransformationFilter(); x.type=ConnectApi.SmartDataDiscoveryTransformationFilterTypeEnum.Text; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "SmartDataDiscoveryNumericalImputationTransformation",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryNumericalImputationTransformation x = new ConnectApi.SmartDataDiscoveryNumericalImputationTransformation(); x.type=ConnectApi.SmartDataDiscoveryAIModelTransformationTypeEnum.CategoricalImputation; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "SmartDataDiscoveryNumericalProjectedPrediction",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryNumericalProjectedPrediction x = new ConnectApi.SmartDataDiscoveryNumericalProjectedPrediction(); x.type=ConnectApi.SmartDataDiscoveryProjectedPredictionsType.Categorical; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "SmartDataDiscoveryProjectedPredictionsCountFromDateIntervalSetting",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryProjectedPredictionsCountFromDateIntervalSetting x = new ConnectApi.SmartDataDiscoveryProjectedPredictionsCountFromDateIntervalSetting(); x.type=ConnectApi.SmartDataDiscoveryProjectedPredictionsIntervalSettingType.Count; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "SmartDataDiscoveryProjectedPredictionsCountIntervalSetting",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryProjectedPredictionsCountIntervalSetting x = new ConnectApi.SmartDataDiscoveryProjectedPredictionsCountIntervalSetting(); x.type=ConnectApi.SmartDataDiscoveryProjectedPredictionsIntervalSettingType.CountFromDate; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "SmartDataDiscoveryProjectedPredictionsDateIntervalSetting",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryProjectedPredictionsDateIntervalSetting x = new ConnectApi.SmartDataDiscoveryProjectedPredictionsDateIntervalSetting(); x.type=ConnectApi.SmartDataDiscoveryProjectedPredictionsIntervalSettingType.Count; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "SmartDataDiscoveryProjectedPredictionsOverride",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryProjectedPredictionsOverride x = new ConnectApi.SmartDataDiscoveryProjectedPredictionsOverride(); x.type=ConnectApi.SmartDataDiscoveryAIModelTransformationTypeEnum.CategoricalImputation; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "SmartDataDiscoveryProjectedPredictionsTransformation",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryProjectedPredictionsTransformation x = new ConnectApi.SmartDataDiscoveryProjectedPredictionsTransformation(); x.type=ConnectApi.SmartDataDiscoveryAIModelTransformationTypeEnum.CategoricalImputation; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "SmartDataDiscoveryRegressionPredictionProperty",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryRegressionPredictionProperty x = new ConnectApi.SmartDataDiscoveryRegressionPredictionProperty(); x.type=ConnectApi.SmartDataDiscoveryPredictionTypeEnum.Classification; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "SmartDataDiscoveryScikitLearn102ModelRuntime",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryScikitLearn102ModelRuntime x = new ConnectApi.SmartDataDiscoveryScikitLearn102ModelRuntime(); x.type=ConnectApi.SmartDataDiscoveryModelRuntimeTypeEnum.Discovery; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "SmartDataDiscoverySentimentAnalysisTransformation",
+  "code": "String o; try { ConnectApi.SmartDataDiscoverySentimentAnalysisTransformation x = new ConnectApi.SmartDataDiscoverySentimentAnalysisTransformation(); x.type=ConnectApi.SmartDataDiscoveryAIModelTransformationTypeEnum.CategoricalImputation; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "SmartDataDiscoveryTensorFlow27ModelRuntime",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryTensorFlow27ModelRuntime x = new ConnectApi.SmartDataDiscoveryTensorFlow27ModelRuntime(); x.type=ConnectApi.SmartDataDiscoveryModelRuntimeTypeEnum.Discovery; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "SmartDataDiscoveryTensorFlowModelRuntime",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryTensorFlowModelRuntime x = new ConnectApi.SmartDataDiscoveryTensorFlowModelRuntime(); x.type=ConnectApi.SmartDataDiscoveryModelRuntimeTypeEnum.Discovery; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "SmartDataDiscoveryTextTransformationFilter",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryTextTransformationFilter x = new ConnectApi.SmartDataDiscoveryTextTransformationFilter(); x.type=ConnectApi.SmartDataDiscoveryTransformationFilterTypeEnum.Number; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "SmartDataDiscoveryTypographicClusteringTransformation",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryTypographicClusteringTransformation x = new ConnectApi.SmartDataDiscoveryTypographicClusteringTransformation(); x.type=ConnectApi.SmartDataDiscoveryAIModelTransformationTypeEnum.CategoricalImputation; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "SnowflakeInternalStageRouteDetailsRepresentation",
+  "code": "String o; try { ConnectApi.SnowflakeInternalStageRouteDetailsRepresentation x = new ConnectApi.SnowflakeInternalStageRouteDetailsRepresentation(); x.type=ConnectApi.PrivateNetworkProvider.AmazonMsk; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "SnowflakeRouteDetailsRepresentation",
+  "code": "String o; try { ConnectApi.SnowflakeRouteDetailsRepresentation x = new ConnectApi.SnowflakeRouteDetailsRepresentation(); x.type=ConnectApi.PrivateNetworkProvider.AmazonMsk; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "TextSegment",
+  "code": "String o; try { ConnectApi.TextSegment x = new ConnectApi.TextSegment(); x.type=ConnectApi.MessageSegmentType.EntityLink; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "UnauthenticatedUser",
+  "code": "String o; try { ConnectApi.UnauthenticatedUser x = new ConnectApi.UnauthenticatedUser(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "UserDetail",
+  "code": "String o; try { ConnectApi.UserDetail x = new ConnectApi.UserDetail(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "67.0",
+  "id": "UserSummary",
+  "code": "String o; try { ConnectApi.UserSummary x = new ConnectApi.UserSummary(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "AmazonMSKRouteDetailsRepresentation",
+  "code": "String o; try { ConnectApi.AmazonMSKRouteDetailsRepresentation x = new ConnectApi.AmazonMSKRouteDetailsRepresentation(); x.type=ConnectApi.PrivateNetworkProvider.BigQuery; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "ArticleSummary",
+  "code": "String o; try { ConnectApi.ArticleSummary x = new ConnectApi.ArticleSummary(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "BigQueryRouteDetailsRepresentation",
+  "code": "String o; try { ConnectApi.BigQueryRouteDetailsRepresentation x = new ConnectApi.BigQueryRouteDetailsRepresentation(); x.type=ConnectApi.PrivateNetworkProvider.AmazonMsk; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "BlankRecordField",
+  "code": "String o; try { ConnectApi.BlankRecordField x = new ConnectApi.BlankRecordField(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "CdpMlBinaryClassificationPredictionResult",
+  "code": "String o; try { ConnectApi.CdpMlBinaryClassificationPredictionResult x = new ConnectApi.CdpMlBinaryClassificationPredictionResult(); x.type=ConnectApi.CdpMlModelPredictionTypeEnum.CausalAttribution; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "CdpMlGenericPredictionResult",
+  "code": "String o; try { ConnectApi.CdpMlGenericPredictionResult x = new ConnectApi.CdpMlGenericPredictionResult(); x.type=ConnectApi.CdpMlModelPredictionTypeEnum.BinaryClassification; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "CdpMlMulticlassClassificationPredictionResult",
+  "code": "String o; try { ConnectApi.CdpMlMulticlassClassificationPredictionResult x = new ConnectApi.CdpMlMulticlassClassificationPredictionResult(); x.type=ConnectApi.CdpMlModelPredictionTypeEnum.BinaryClassification; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "CdpMlRegressionPredictionResult",
+  "code": "String o; try { ConnectApi.CdpMlRegressionPredictionResult x = new ConnectApi.CdpMlRegressionPredictionResult(); x.type=ConnectApi.CdpMlModelPredictionTypeEnum.BinaryClassification; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "ChatterGroupDetail",
+  "code": "String o; try { ConnectApi.ChatterGroupDetail x = new ConnectApi.ChatterGroupDetail(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "ChatterGroupSummary",
+  "code": "String o; try { ConnectApi.ChatterGroupSummary x = new ConnectApi.ChatterGroupSummary(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "ContentHubRepository",
+  "code": "String o; try { ConnectApi.ContentHubRepository x = new ConnectApi.ContentHubRepository(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "CurrencyRecordField",
+  "code": "String o; try { ConnectApi.CurrencyRecordField x = new ConnectApi.CurrencyRecordField(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "CustomListAudienceCriteria",
+  "code": "String o; try { ConnectApi.CustomListAudienceCriteria x = new ConnectApi.CustomListAudienceCriteria(); x.type=ConnectApi.RecommendationAudienceCriteriaType.MaxDaysInCommunity; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "DatabricksInternalStageRouteDetailsRepresentation",
+  "code": "String o; try { ConnectApi.DatabricksInternalStageRouteDetailsRepresentation x = new ConnectApi.DatabricksInternalStageRouteDetailsRepresentation(); x.type=ConnectApi.PrivateNetworkProvider.AmazonMsk; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "DatabricksRouteDetailsRepresentation",
+  "code": "String o; try { ConnectApi.DatabricksRouteDetailsRepresentation x = new ConnectApi.DatabricksRouteDetailsRepresentation(); x.type=ConnectApi.PrivateNetworkProvider.AmazonMsk; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "DistinctFacetValue",
+  "code": "String o; try { ConnectApi.DistinctFacetValue x = new ConnectApi.DistinctFacetValue(); x.type=ConnectApi.CommerceSearchFacetType.Range; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "EntityLinkSegment",
+  "code": "String o; try { ConnectApi.EntityLinkSegment x = new ConnectApi.EntityLinkSegment(); x.type=ConnectApi.MessageSegmentType.FieldChange; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "ExternalLearningOutput",
+  "code": "String o; try { ConnectApi.ExternalLearningOutput x = new ConnectApi.ExternalLearningOutput(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "FieldChangeNameSegment",
+  "code": "String o; try { ConnectApi.FieldChangeNameSegment x = new ConnectApi.FieldChangeNameSegment(); x.type=ConnectApi.MessageSegmentType.EntityLink; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "FieldChangeSegment",
+  "code": "String o; try { ConnectApi.FieldChangeSegment x = new ConnectApi.FieldChangeSegment(); x.type=ConnectApi.MessageSegmentType.EntityLink; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "FieldChangeValueSegment",
+  "code": "String o; try { ConnectApi.FieldChangeValueSegment x = new ConnectApi.FieldChangeValueSegment(); x.type=ConnectApi.MessageSegmentType.EntityLink; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "HashtagSegment",
+  "code": "String o; try { ConnectApi.HashtagSegment x = new ConnectApi.HashtagSegment(); x.type=ConnectApi.MessageSegmentType.EntityLink; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "InlineImageSegment",
+  "code": "String o; try { ConnectApi.InlineImageSegment x = new ConnectApi.InlineImageSegment(); x.type=ConnectApi.MessageSegmentType.EntityLink; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "LearningCourseOutput",
+  "code": "String o; try { ConnectApi.LearningCourseOutput x = new ConnectApi.LearningCourseOutput(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "LearningProgramOutput",
+  "code": "String o; try { ConnectApi.LearningProgramOutput x = new ConnectApi.LearningProgramOutput(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "LinkSegment",
+  "code": "String o; try { ConnectApi.LinkSegment x = new ConnectApi.LinkSegment(); x.type=ConnectApi.MessageSegmentType.EntityLink; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "MarkupBeginSegment",
+  "code": "String o; try { ConnectApi.MarkupBeginSegment x = new ConnectApi.MarkupBeginSegment(); x.type=ConnectApi.MessageSegmentType.EntityLink; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "MarkupEndSegment",
+  "code": "String o; try { ConnectApi.MarkupEndSegment x = new ConnectApi.MarkupEndSegment(); x.type=ConnectApi.MessageSegmentType.EntityLink; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "MentionSegment",
+  "code": "String o; try { ConnectApi.MentionSegment x = new ConnectApi.MentionSegment(); x.type=ConnectApi.MessageSegmentType.EntityLink; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "MoreChangesSegment",
+  "code": "String o; try { ConnectApi.MoreChangesSegment x = new ConnectApi.MoreChangesSegment(); x.type=ConnectApi.MessageSegmentType.EntityLink; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "NewUserAudienceCriteria",
+  "code": "String o; try { ConnectApi.NewUserAudienceCriteria x = new ConnectApi.NewUserAudienceCriteria(); x.type=ConnectApi.RecommendationAudienceCriteriaType.CustomList; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "PercentRecordField",
+  "code": "String o; try { ConnectApi.PercentRecordField x = new ConnectApi.PercentRecordField(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "PicklistRecordField",
+  "code": "String o; try { ConnectApi.PicklistRecordField x = new ConnectApi.PicklistRecordField(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "Price",
+  "code": "String o; try { ConnectApi.Price x = new ConnectApi.Price(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "ProductInventoryPriceAlteration",
+  "code": "String o; try { ConnectApi.ProductInventoryPriceAlteration x = new ConnectApi.ProductInventoryPriceAlteration(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "ProductOfferingPriceRef",
+  "code": "String o; try { ConnectApi.ProductOfferingPriceRef x = new ConnectApi.ProductOfferingPriceRef(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "ProductPriceRef",
+  "code": "String o; try { ConnectApi.ProductPriceRef x = new ConnectApi.ProductPriceRef(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "RecommendedObject",
+  "code": "String o; try { ConnectApi.RecommendedObject x = new ConnectApi.RecommendedObject(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "RedshiftRouteDetailsRepresentation",
+  "code": "String o; try { ConnectApi.RedshiftRouteDetailsRepresentation x = new ConnectApi.RedshiftRouteDetailsRepresentation(); x.type=ConnectApi.PrivateNetworkProvider.AmazonMsk; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "ReferenceRecordField",
+  "code": "String o; try { ConnectApi.ReferenceRecordField x = new ConnectApi.ReferenceRecordField(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "RepositoryFileDetail",
+  "code": "String o; try { ConnectApi.RepositoryFileDetail x = new ConnectApi.RepositoryFileDetail(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "RepositoryFileSummary",
+  "code": "String o; try { ConnectApi.RepositoryFileSummary x = new ConnectApi.RepositoryFileSummary(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "RepositoryFolderDetail",
+  "code": "String o; try { ConnectApi.RepositoryFolderDetail x = new ConnectApi.RepositoryFolderDetail(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "RepositoryFolderItem",
+  "code": "String o; try { ConnectApi.RepositoryFolderItem x = new ConnectApi.RepositoryFolderItem(); x.type=ConnectApi.FolderItemType.File; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "RepositoryFolderSummary",
+  "code": "String o; try { ConnectApi.RepositoryFolderSummary x = new ConnectApi.RepositoryFolderSummary(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "RepositoryGroupSummary",
+  "code": "String o; try { ConnectApi.RepositoryGroupSummary x = new ConnectApi.RepositoryGroupSummary(); x.type=ConnectApi.ContentHubDirectoryEntryType.UserEntry; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "RepositoryUserSummary",
+  "code": "String o; try { ConnectApi.RepositoryUserSummary x = new ConnectApi.RepositoryUserSummary(); x.type=ConnectApi.ContentHubDirectoryEntryType.GroupEntry; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "ResourceLinkSegment",
+  "code": "String o; try { ConnectApi.ResourceLinkSegment x = new ConnectApi.ResourceLinkSegment(); x.type=ConnectApi.MessageSegmentType.EntityLink; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "SmartDataDiscoveryAIModelDiscoverySource",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryAIModelDiscoverySource x = new ConnectApi.SmartDataDiscoveryAIModelDiscoverySource(); x.type=ConnectApi.SmartDataDiscoveryModelSourceTypeEnum.UserUpload; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "SmartDataDiscoveryAIModelUserUploadSource",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryAIModelUserUploadSource x = new ConnectApi.SmartDataDiscoveryAIModelUserUploadSource(); x.type=ConnectApi.SmartDataDiscoveryModelSourceTypeEnum.Discovery; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "SmartDataDiscoveryCategoricalImputationTransformation",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryCategoricalImputationTransformation x = new ConnectApi.SmartDataDiscoveryCategoricalImputationTransformation(); x.type=ConnectApi.SmartDataDiscoveryAIModelTransformationTypeEnum.ExtractDayOfWeek; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "SmartDataDiscoveryCategoricalProjectedPrediction",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryCategoricalProjectedPrediction x = new ConnectApi.SmartDataDiscoveryCategoricalProjectedPrediction(); x.type=ConnectApi.SmartDataDiscoveryProjectedPredictionsType.Numerical; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "SmartDataDiscoveryClassificationPredictionProperty",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryClassificationPredictionProperty x = new ConnectApi.SmartDataDiscoveryClassificationPredictionProperty(); x.type=ConnectApi.SmartDataDiscoveryPredictionTypeEnum.MulticlassClassification; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "SmartDataDiscoveryDiscoveryModelRuntime",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryDiscoveryModelRuntime x = new ConnectApi.SmartDataDiscoveryDiscoveryModelRuntime(); x.type=ConnectApi.SmartDataDiscoveryModelRuntimeTypeEnum.H2O; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "SmartDataDiscoveryExtractDayOfWeekTransformation",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryExtractDayOfWeekTransformation x = new ConnectApi.SmartDataDiscoveryExtractDayOfWeekTransformation(); x.type=ConnectApi.SmartDataDiscoveryAIModelTransformationTypeEnum.CategoricalImputation; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "SmartDataDiscoveryExtractMonthOfYearTransformation",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryExtractMonthOfYearTransformation x = new ConnectApi.SmartDataDiscoveryExtractMonthOfYearTransformation(); x.type=ConnectApi.SmartDataDiscoveryAIModelTransformationTypeEnum.CategoricalImputation; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "SmartDataDiscoveryFieldMappingAnalyticsDatasetField",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryFieldMappingAnalyticsDatasetField x = new ConnectApi.SmartDataDiscoveryFieldMappingAnalyticsDatasetField(); x.type=ConnectApi.SmartDataDiscoveryFieldMapSourceTypeEnum.SalesforceField; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "SmartDataDiscoveryFieldMappingSalesforceField",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryFieldMappingSalesforceField x = new ConnectApi.SmartDataDiscoveryFieldMappingSalesforceField(); x.type=ConnectApi.SmartDataDiscoveryFieldMapSourceTypeEnum.AnalyticsDatasetField; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "SmartDataDiscoveryFreeTextClusteringTransformation",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryFreeTextClusteringTransformation x = new ConnectApi.SmartDataDiscoveryFreeTextClusteringTransformation(); x.type=ConnectApi.SmartDataDiscoveryAIModelTransformationTypeEnum.CategoricalImputation; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "SmartDataDiscoveryH2OModelRuntime",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryH2OModelRuntime x = new ConnectApi.SmartDataDiscoveryH2OModelRuntime(); x.type=ConnectApi.SmartDataDiscoveryModelRuntimeTypeEnum.Discovery; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "SmartDataDiscoveryModelFieldDate",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryModelFieldDate x = new ConnectApi.SmartDataDiscoveryModelFieldDate(); x.type=ConnectApi.SmartDataDiscoveryModelFieldTypeEnum.Number; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "SmartDataDiscoveryModelFieldNumeric",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryModelFieldNumeric x = new ConnectApi.SmartDataDiscoveryModelFieldNumeric(); x.type=ConnectApi.SmartDataDiscoveryModelFieldTypeEnum.Date; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "SmartDataDiscoveryModelFieldText",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryModelFieldText x = new ConnectApi.SmartDataDiscoveryModelFieldText(); x.type=ConnectApi.SmartDataDiscoveryModelFieldTypeEnum.Date; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "SmartDataDiscoveryMulticlassClassificationPredictionProperty",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryMulticlassClassificationPredictionProperty x = new ConnectApi.SmartDataDiscoveryMulticlassClassificationPredictionProperty(); x.type=ConnectApi.SmartDataDiscoveryPredictionTypeEnum.Classification; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "SmartDataDiscoveryMulticlassPredict",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryMulticlassPredict x = new ConnectApi.SmartDataDiscoveryMulticlassPredict(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "SmartDataDiscoveryNumericTransformationFilter",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryNumericTransformationFilter x = new ConnectApi.SmartDataDiscoveryNumericTransformationFilter(); x.type=ConnectApi.SmartDataDiscoveryTransformationFilterTypeEnum.Text; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "SmartDataDiscoveryNumericalImputationTransformation",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryNumericalImputationTransformation x = new ConnectApi.SmartDataDiscoveryNumericalImputationTransformation(); x.type=ConnectApi.SmartDataDiscoveryAIModelTransformationTypeEnum.CategoricalImputation; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "SmartDataDiscoveryNumericalProjectedPrediction",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryNumericalProjectedPrediction x = new ConnectApi.SmartDataDiscoveryNumericalProjectedPrediction(); x.type=ConnectApi.SmartDataDiscoveryProjectedPredictionsType.Categorical; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "SmartDataDiscoveryProjectedPredictionsCountFromDateIntervalSetting",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryProjectedPredictionsCountFromDateIntervalSetting x = new ConnectApi.SmartDataDiscoveryProjectedPredictionsCountFromDateIntervalSetting(); x.type=ConnectApi.SmartDataDiscoveryProjectedPredictionsIntervalSettingType.Count; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "SmartDataDiscoveryProjectedPredictionsCountIntervalSetting",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryProjectedPredictionsCountIntervalSetting x = new ConnectApi.SmartDataDiscoveryProjectedPredictionsCountIntervalSetting(); x.type=ConnectApi.SmartDataDiscoveryProjectedPredictionsIntervalSettingType.CountFromDate; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "SmartDataDiscoveryProjectedPredictionsDateIntervalSetting",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryProjectedPredictionsDateIntervalSetting x = new ConnectApi.SmartDataDiscoveryProjectedPredictionsDateIntervalSetting(); x.type=ConnectApi.SmartDataDiscoveryProjectedPredictionsIntervalSettingType.Count; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "SmartDataDiscoveryProjectedPredictionsOverride",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryProjectedPredictionsOverride x = new ConnectApi.SmartDataDiscoveryProjectedPredictionsOverride(); x.type=ConnectApi.SmartDataDiscoveryAIModelTransformationTypeEnum.CategoricalImputation; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "SmartDataDiscoveryProjectedPredictionsTransformation",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryProjectedPredictionsTransformation x = new ConnectApi.SmartDataDiscoveryProjectedPredictionsTransformation(); x.type=ConnectApi.SmartDataDiscoveryAIModelTransformationTypeEnum.CategoricalImputation; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "SmartDataDiscoveryRegressionPredictionProperty",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryRegressionPredictionProperty x = new ConnectApi.SmartDataDiscoveryRegressionPredictionProperty(); x.type=ConnectApi.SmartDataDiscoveryPredictionTypeEnum.Classification; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "SmartDataDiscoveryScikitLearn102ModelRuntime",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryScikitLearn102ModelRuntime x = new ConnectApi.SmartDataDiscoveryScikitLearn102ModelRuntime(); x.type=ConnectApi.SmartDataDiscoveryModelRuntimeTypeEnum.Discovery; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "SmartDataDiscoverySentimentAnalysisTransformation",
+  "code": "String o; try { ConnectApi.SmartDataDiscoverySentimentAnalysisTransformation x = new ConnectApi.SmartDataDiscoverySentimentAnalysisTransformation(); x.type=ConnectApi.SmartDataDiscoveryAIModelTransformationTypeEnum.CategoricalImputation; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "SmartDataDiscoveryTensorFlow27ModelRuntime",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryTensorFlow27ModelRuntime x = new ConnectApi.SmartDataDiscoveryTensorFlow27ModelRuntime(); x.type=ConnectApi.SmartDataDiscoveryModelRuntimeTypeEnum.Discovery; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "SmartDataDiscoveryTensorFlowModelRuntime",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryTensorFlowModelRuntime x = new ConnectApi.SmartDataDiscoveryTensorFlowModelRuntime(); x.type=ConnectApi.SmartDataDiscoveryModelRuntimeTypeEnum.Discovery; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "SmartDataDiscoveryTextTransformationFilter",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryTextTransformationFilter x = new ConnectApi.SmartDataDiscoveryTextTransformationFilter(); x.type=ConnectApi.SmartDataDiscoveryTransformationFilterTypeEnum.Number; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "SmartDataDiscoveryTypographicClusteringTransformation",
+  "code": "String o; try { ConnectApi.SmartDataDiscoveryTypographicClusteringTransformation x = new ConnectApi.SmartDataDiscoveryTypographicClusteringTransformation(); x.type=ConnectApi.SmartDataDiscoveryAIModelTransformationTypeEnum.CategoricalImputation; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "SnowflakeInternalStageRouteDetailsRepresentation",
+  "code": "String o; try { ConnectApi.SnowflakeInternalStageRouteDetailsRepresentation x = new ConnectApi.SnowflakeInternalStageRouteDetailsRepresentation(); x.type=ConnectApi.PrivateNetworkProvider.AmazonMsk; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "SnowflakeRouteDetailsRepresentation",
+  "code": "String o; try { ConnectApi.SnowflakeRouteDetailsRepresentation x = new ConnectApi.SnowflakeRouteDetailsRepresentation(); x.type=ConnectApi.PrivateNetworkProvider.AmazonMsk; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "TextSegment",
+  "code": "String o; try { ConnectApi.TextSegment x = new ConnectApi.TextSegment(); x.type=ConnectApi.MessageSegmentType.EntityLink; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "UnauthenticatedUser",
+  "code": "String o; try { ConnectApi.UnauthenticatedUser x = new ConnectApi.UnauthenticatedUser(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "UserDetail",
+  "code": "String o; try { ConnectApi.UserDetail x = new ConnectApi.UserDetail(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ },
+ {
+  "api": "68.0",
+  "id": "UserSummary",
+  "code": "String o; try { ConnectApi.UserSummary x = new ConnectApi.UserSummary(); x.type='wrong'; Map<String,Object> m=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); o='JSON='+String.valueOf(m.get('type'))+'|FIELD='+String.valueOf(x.type); } catch(Exception e) { o='EX|'+e.getTypeName()+'|'+e.getMessage(); }"
+ }
+]

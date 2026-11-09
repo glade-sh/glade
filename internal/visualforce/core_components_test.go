@@ -24,11 +24,12 @@ func TestRenderCoreVisualforceComponents(t *testing.T) {
 		`Hello Ada, balance 42`,
 		`class="message"`,
 		`data-for="name"`,
-		`<textarea name="notes" id="j_id0:notes" rows="4" cols="30">Line 1`,
+		`<textarea name="j_id0:notes" id="j_id0:notes" rows="4" cols="30">Line 1`,
 		`&lt;Line 2&gt;</textarea>`,
-		`<input type="password" name="secret" id="j_id0:secret" value="sauce" />`,
-		`<input type="hidden" name="active" value="false" /><input type="checkbox" name="active" id="j_id0:active" value="true" checked="checked" />`,
-		`<iframe src="/apex/Nested" width="320" height="200"></iframe>`,
+		`<input type="password" name="j_id0:secret" id="j_id0:secret" value="sauce" />`,
+		`<input type="hidden" name="j_id0:active" value="false" /><input type="checkbox" name="j_id0:active" id="j_id0:active" value="true" checked="checked" />`,
+		// Native iframe markup (rows IdLIframe, Iframe* of testdata/vf_render_markup).
+		`<iframe  allow="geolocation *; microphone *; camera *" frameborder="0" height="200" id="j_id5" name="j_id5" scrolling="no" src="/apex/Nested" title="Content" width="320"></iframe>`,
 	} {
 		assertContains(t, rendered, want)
 	}

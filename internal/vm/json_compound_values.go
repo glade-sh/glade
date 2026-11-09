@@ -4,6 +4,7 @@ import (
 	"maps"
 	"strings"
 
+	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/storage"
 )
 
@@ -128,8 +129,16 @@ func (vm *VM) jsonQueryNumericValue(value Value, name string, item Value) Value 
 	}
 	// Only schema-backed currency and coordinate display scales are captured.
 	// Bare Decimal definitions keep their existing arbitrary precision.
-	if !strings.EqualFold(field.DisplayType, "CURRENCY") && !strings.EqualFold(field.DisplayType, "DOUBLE") {
+	if !strings.EqualFold(field.DisplayType, "CURRENCY") && !strings.EqualFold(field.DisplayType, "DOUBLE") &&
+		!strings.EqualFold(field.DisplayType, "PERCENT") {
 		return item
+	}
+	if field.Scale == 0 && !strings.ContainsAny(item.Text, "eE") && strings.Contains(item.Text, ".") {
+		// A queried scale-zero Currency, Number or Percent drops fractional
+		// trailing zeroes (5.0 reads 5, 5.50 reads 5.5) without rounding.
+		if normalized, err := decimalFromText(normalizeComputedDecimalText(item.Text)); err == nil {
+			item = normalized
+		}
 	}
 	scale := field.Scale
 	if base, ok := definition.Fields[field.CompoundFieldName]; ok && base.Type == storage.FieldLocation {
@@ -156,4 +165,130 @@ func (vm *VM) jsonActiveSObjectField(typeName, name string) (storage.ObjectDefin
 	}
 	_, field, ok := storage.ResolveFieldDefinition(definition, vm.Org.Namespace, name)
 	return definition, field, ok
+}
+
+// systemAddressJSONFieldTypes lists the System.Address members JSON.deserialize
+// accepts. Native rows: ../apextest/testdata/conformance/json_system_address.
+var systemAddressJSONFieldTypes = map[string]string{
+	"city": "String", "country": "String", "countryCode": "String", "geocodeAccuracy": "String",
+	"latitude": "Double", "longitude": "Double", "postalCode": "String", "state": "String",
+	"stateCode": "String", "street": "String",
+}
+
+// systemAddressFromJSON deserializes into System.Address. A project class named
+// Address keeps its own deserialization; only the System type is handled here.
+func (vm *VM) systemAddressFromJSON(typeName string, raw any, input jsonTypedInput) (Value, bool, error) {
+	if !strings.EqualFold(typeName, "System.Address") {
+		if !strings.EqualFold(typeName, "Address") {
+			return Null, false, nil
+		}
+		if class, ok := vm.lookupClass(typeName); ok && !class.PlatformType {
+			return Null, false, nil
+		}
+	}
+	fields, ok := jsonObjectFields(raw)
+	if !ok {
+		return Null, true, jsonTypeMappingError("System.Address", raw)
+	}
+	address := newSystemAddress()
+	// Absent components read null. Native serialize omits the code components
+	// when they were not supplied, so those two stay absent.
+	for name := range systemAddressJSONFieldTypes {
+		if name != "stateCode" && name != "countryCode" {
+			address.Fields[name] = Null
+		}
+	}
+	for _, field := range fields {
+		fieldType, known := systemAddressJSONFieldTypes[field.name]
+		if !known {
+			line, column := jsonInputPosition(field.source, systemAddressUnrecognizedOffset(field))
+			return Null, true, jsonDeserializeException("Unrecognized field %q at [line:%d, column:%d]", field.name, line, column)
+		}
+		value, err := vm.typedValueFromJSON(fieldType, jsonTypedInput{value: field.value, source: field.source, start: field.enumStart}, false)
+		if err != nil {
+			return Null, true, err
+		}
+		address.Fields[field.name] = value
+	}
+	return address, true, nil
+}
+
+// systemAddressUnrecognizedOffset reports where native parsing stops after an
+// unknown member: just inside a string, object or array value, and after a
+// scalar value. Rows: json_system_address/native/unrecognized.tsv.
+func systemAddressUnrecognizedOffset(field orderedJSONField) int {
+	source := field.source
+	i := field.start
+	if i < 0 || i >= len(source) || source[i] != '"' {
+		return field.end
+	}
+	for i++; i < len(source) && source[i] != '"'; i++ {
+		if source[i] == '\\' {
+			i++
+		}
+	}
+	for i++; i < len(source) && (source[i] == ' ' || source[i] == '\t' || source[i] == '\n' || source[i] == '\r' || source[i] == ':'); i++ {
+	}
+	if i < len(source) && (source[i] == '"' || source[i] == '{' || source[i] == '[') {
+		return i + 1
+	}
+	return field.end
+}
+
+// jsonTriggerFormulaSObjectValue materializes the computed formula values of a
+// Trigger.new or Trigger.old record for JSON.serialize (org capture
+// blank_text_formula: the key is present for a computed value and absent for a
+// blank one, on the trigger read surface). Other records serialize as they are.
+func (vm *VM) jsonTriggerFormulaSObjectValue(value Value) Value {
+	if value.Kind != ValueObject || vm == nil || vm.Org == nil || !isTriggerSObject(value) {
+		return value
+	}
+	_, definition, ok := vm.sObjectDefinitionForRead(value.Type)
+	if !ok {
+		return value
+	}
+	record, haveRecord := storage.Record{}, false
+	copied := false
+	for name, field := range definition.Fields {
+		if field.Type != storage.FieldCalculated || strings.TrimSpace(field.Formula) == "" {
+			continue
+		}
+		if present, ok := value.Fields[name]; ok {
+			// A materialized null is absent from the serialized record.
+			if present.Kind == ValueNull {
+				if !copied {
+					value.Fields = maps.Clone(value.Fields)
+					copied = true
+				}
+				delete(value.Fields, name)
+			}
+			continue
+		}
+		if !haveRecord {
+			record, ok = vm.formulaRecordFromSObject(value)
+			if !ok {
+				return value
+			}
+			haveRecord = true
+		}
+		evaluated, isNull, ok := dml.EvaluateRecordFormulaValueInOrgWithOptions(field.Formula, field, vm.Org, definition, record, vm.sObjectFormulaEvaluationOptions(value))
+		if !ok {
+			continue
+		}
+		if !copied {
+			value.Fields = maps.Clone(value.Fields)
+			copied = true
+		}
+		if isNull {
+			delete(value.Fields, name)
+			continue
+		}
+		formulaValue := vmValueFromStorage(evaluated)
+		if calculatedDateFormulaBlankValue(field, formulaValue) {
+			delete(value.Fields, name)
+			continue
+		}
+		value.Fields[name] = formulaValue
+	}
+	return value
 }

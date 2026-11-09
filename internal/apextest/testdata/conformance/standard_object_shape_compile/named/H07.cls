@@ -1,0 +1,1 @@
+public class H07 extends NsHolder { public static void m() { Quote q = new Quote(); } }

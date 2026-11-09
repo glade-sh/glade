@@ -1,0 +1,6 @@
+@IsTest private class B4AssignState { @IsTest static void observe() {
+ Knowledge__kav k=new Knowledge__kav(Title='Assignment Test',UrlName='assignment-test',Language='en_US');insert k;
+ k=[SELECT KnowledgeArticleId,AssignedToId,AssignmentNote,AssignmentDueDate FROM Knowledge__kav WHERE Id=:k.Id];System.assertNotEquals(null,k.AssignedToId);System.assertEquals(null,k.AssignmentNote);System.assertEquals(null,k.AssignmentDueDate);
+ Datetime due=Datetime.now().addDays(1);KbManagement.PublishingService.assignDraftArticleTask(k.KnowledgeArticleId,UserInfo.getUserId(),'Synthetic task',due,true);
+ k=[SELECT AssignedToId,AssignedById,AssignmentDate,AssignmentDueDate,AssignmentNote FROM Knowledge__kav WHERE Id=:k.Id];System.assertEquals(UserInfo.getUserId(),k.AssignedToId);System.assertEquals(UserInfo.getUserId(),k.AssignedById);System.assertNotEquals(null,k.AssignmentDate);System.assertEquals(due.getTime()/1000,k.AssignmentDueDate.getTime()/1000);System.assertEquals('Synthetic task',k.AssignmentNote);
+} }

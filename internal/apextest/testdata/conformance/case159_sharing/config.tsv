@@ -1,0 +1,3 @@
+object	internal_sharing	external_sharing
+User	Read	Private
+Case	ReadWriteTransfer	Private

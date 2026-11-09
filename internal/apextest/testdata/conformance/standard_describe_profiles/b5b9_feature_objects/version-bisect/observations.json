@@ -1,0 +1,410 @@
+[
+  {
+    "group": "gift",
+    "api": "63.0",
+    "field": "GiftCommitment.LastNextGenCmtProcDtTm",
+    "present": false
+  },
+  {
+    "group": "gift",
+    "api": "63.0",
+    "field": "GiftCommitment.LastNextGenCmtProcError",
+    "present": false
+  },
+  {
+    "group": "gift",
+    "api": "63.0",
+    "field": "GiftCommitment.PartyPhilanthropicRsrchPrflId",
+    "present": false
+  },
+  {
+    "group": "gift",
+    "api": "63.0",
+    "field": "GiftTransaction.GenerationalCohort",
+    "present": true
+  },
+  {
+    "group": "gift",
+    "api": "63.0",
+    "field": "GiftTransaction.PartyPhilanthropicRsrchPrflId",
+    "present": false
+  },
+  {
+    "group": "gift",
+    "api": "63.0",
+    "field": "GiftTransaction.TaxDeductionAmount",
+    "present": true
+  },
+  {
+    "group": "gift",
+    "api": "64.0",
+    "field": "GiftCommitment.LastNextGenCmtProcDtTm",
+    "present": false
+  },
+  {
+    "group": "gift",
+    "api": "64.0",
+    "field": "GiftCommitment.LastNextGenCmtProcError",
+    "present": false
+  },
+  {
+    "group": "gift",
+    "api": "64.0",
+    "field": "GiftCommitment.PartyPhilanthropicRsrchPrflId",
+    "present": true
+  },
+  {
+    "group": "gift",
+    "api": "64.0",
+    "field": "GiftTransaction.GenerationalCohort",
+    "present": true
+  },
+  {
+    "group": "gift",
+    "api": "64.0",
+    "field": "GiftTransaction.PartyPhilanthropicRsrchPrflId",
+    "present": true
+  },
+  {
+    "group": "gift",
+    "api": "64.0",
+    "field": "GiftTransaction.TaxDeductionAmount",
+    "present": true
+  },
+  {
+    "group": "gift",
+    "api": "65.0",
+    "field": "GiftCommitment.LastNextGenCmtProcDtTm",
+    "present": false
+  },
+  {
+    "group": "gift",
+    "api": "65.0",
+    "field": "GiftCommitment.LastNextGenCmtProcError",
+    "present": false
+  },
+  {
+    "group": "gift",
+    "api": "65.0",
+    "field": "GiftCommitment.PartyPhilanthropicRsrchPrflId",
+    "present": true
+  },
+  {
+    "group": "gift",
+    "api": "65.0",
+    "field": "GiftTransaction.GenerationalCohort",
+    "present": true
+  },
+  {
+    "group": "gift",
+    "api": "65.0",
+    "field": "GiftTransaction.PartyPhilanthropicRsrchPrflId",
+    "present": true
+  },
+  {
+    "group": "gift",
+    "api": "65.0",
+    "field": "GiftTransaction.TaxDeductionAmount",
+    "present": true
+  },
+  {
+    "group": "gift",
+    "api": "66.0",
+    "field": "GiftCommitment.LastNextGenCmtProcDtTm",
+    "present": false
+  },
+  {
+    "group": "gift",
+    "api": "66.0",
+    "field": "GiftCommitment.LastNextGenCmtProcError",
+    "present": false
+  },
+  {
+    "group": "gift",
+    "api": "66.0",
+    "field": "GiftCommitment.PartyPhilanthropicRsrchPrflId",
+    "present": true
+  },
+  {
+    "group": "gift",
+    "api": "66.0",
+    "field": "GiftTransaction.GenerationalCohort",
+    "present": true
+  },
+  {
+    "group": "gift",
+    "api": "66.0",
+    "field": "GiftTransaction.PartyPhilanthropicRsrchPrflId",
+    "present": true
+  },
+  {
+    "group": "gift",
+    "api": "66.0",
+    "field": "GiftTransaction.TaxDeductionAmount",
+    "present": true
+  },
+  {
+    "group": "doc",
+    "api": "63.0",
+    "field": "DocumentGenerationProcess.AdditionalMetadata",
+    "present": false
+  },
+  {
+    "group": "doc",
+    "api": "63.0",
+    "field": "DocumentGenerationProcess.DocGenAdditionalInput",
+    "present": false
+  },
+  {
+    "group": "doc",
+    "api": "63.0",
+    "field": "DocumentGenerationProcess.DocGenAdditionalInputType",
+    "present": false
+  },
+  {
+    "group": "doc",
+    "api": "63.0",
+    "field": "DocumentGenerationProcess.EstimatedDocumentSize",
+    "present": false
+  },
+  {
+    "group": "doc",
+    "api": "63.0",
+    "field": "DocumentGenerationProcess.IsLocalizationEnabled",
+    "present": false
+  },
+  {
+    "group": "doc",
+    "api": "63.0",
+    "field": "DocumentGenerationProcess.IsSharedExternally",
+    "present": false
+  },
+  {
+    "group": "doc",
+    "api": "63.0",
+    "field": "DocumentGenerationProcess.IsTocUpdateRequired",
+    "present": false
+  },
+  {
+    "group": "doc",
+    "api": "63.0",
+    "field": "DocumentTemplate.ContextDefinitionName",
+    "present": false
+  },
+  {
+    "group": "doc",
+    "api": "63.0",
+    "field": "DocumentTemplate.ContextFilterName",
+    "present": false
+  },
+  {
+    "group": "doc",
+    "api": "63.0",
+    "field": "DocumentTemplate.ContextMappingName",
+    "present": false
+  },
+  {
+    "group": "doc",
+    "api": "63.0",
+    "field": "DocumentTemplate.ContextTransformationName",
+    "present": false
+  },
+  {
+    "group": "doc",
+    "api": "64.0",
+    "field": "DocumentGenerationProcess.AdditionalMetadata",
+    "present": false
+  },
+  {
+    "group": "doc",
+    "api": "64.0",
+    "field": "DocumentGenerationProcess.DocGenAdditionalInput",
+    "present": true
+  },
+  {
+    "group": "doc",
+    "api": "64.0",
+    "field": "DocumentGenerationProcess.DocGenAdditionalInputType",
+    "present": true
+  },
+  {
+    "group": "doc",
+    "api": "64.0",
+    "field": "DocumentGenerationProcess.EstimatedDocumentSize",
+    "present": true
+  },
+  {
+    "group": "doc",
+    "api": "64.0",
+    "field": "DocumentGenerationProcess.IsLocalizationEnabled",
+    "present": false
+  },
+  {
+    "group": "doc",
+    "api": "64.0",
+    "field": "DocumentGenerationProcess.IsSharedExternally",
+    "present": false
+  },
+  {
+    "group": "doc",
+    "api": "64.0",
+    "field": "DocumentGenerationProcess.IsTocUpdateRequired",
+    "present": false
+  },
+  {
+    "group": "doc",
+    "api": "64.0",
+    "field": "DocumentTemplate.ContextDefinitionName",
+    "present": true
+  },
+  {
+    "group": "doc",
+    "api": "64.0",
+    "field": "DocumentTemplate.ContextFilterName",
+    "present": false
+  },
+  {
+    "group": "doc",
+    "api": "64.0",
+    "field": "DocumentTemplate.ContextMappingName",
+    "present": true
+  },
+  {
+    "group": "doc",
+    "api": "64.0",
+    "field": "DocumentTemplate.ContextTransformationName",
+    "present": false
+  },
+  {
+    "group": "doc",
+    "api": "65.0",
+    "field": "DocumentGenerationProcess.AdditionalMetadata",
+    "present": false
+  },
+  {
+    "group": "doc",
+    "api": "65.0",
+    "field": "DocumentGenerationProcess.DocGenAdditionalInput",
+    "present": true
+  },
+  {
+    "group": "doc",
+    "api": "65.0",
+    "field": "DocumentGenerationProcess.DocGenAdditionalInputType",
+    "present": true
+  },
+  {
+    "group": "doc",
+    "api": "65.0",
+    "field": "DocumentGenerationProcess.EstimatedDocumentSize",
+    "present": true
+  },
+  {
+    "group": "doc",
+    "api": "65.0",
+    "field": "DocumentGenerationProcess.IsLocalizationEnabled",
+    "present": false
+  },
+  {
+    "group": "doc",
+    "api": "65.0",
+    "field": "DocumentGenerationProcess.IsSharedExternally",
+    "present": false
+  },
+  {
+    "group": "doc",
+    "api": "65.0",
+    "field": "DocumentGenerationProcess.IsTocUpdateRequired",
+    "present": false
+  },
+  {
+    "group": "doc",
+    "api": "65.0",
+    "field": "DocumentTemplate.ContextDefinitionName",
+    "present": true
+  },
+  {
+    "group": "doc",
+    "api": "65.0",
+    "field": "DocumentTemplate.ContextFilterName",
+    "present": false
+  },
+  {
+    "group": "doc",
+    "api": "65.0",
+    "field": "DocumentTemplate.ContextMappingName",
+    "present": true
+  },
+  {
+    "group": "doc",
+    "api": "65.0",
+    "field": "DocumentTemplate.ContextTransformationName",
+    "present": false
+  },
+  {
+    "group": "doc",
+    "api": "66.0",
+    "field": "DocumentGenerationProcess.AdditionalMetadata",
+    "present": true
+  },
+  {
+    "group": "doc",
+    "api": "66.0",
+    "field": "DocumentGenerationProcess.DocGenAdditionalInput",
+    "present": true
+  },
+  {
+    "group": "doc",
+    "api": "66.0",
+    "field": "DocumentGenerationProcess.DocGenAdditionalInputType",
+    "present": true
+  },
+  {
+    "group": "doc",
+    "api": "66.0",
+    "field": "DocumentGenerationProcess.EstimatedDocumentSize",
+    "present": true
+  },
+  {
+    "group": "doc",
+    "api": "66.0",
+    "field": "DocumentGenerationProcess.IsLocalizationEnabled",
+    "present": false
+  },
+  {
+    "group": "doc",
+    "api": "66.0",
+    "field": "DocumentGenerationProcess.IsSharedExternally",
+    "present": true
+  },
+  {
+    "group": "doc",
+    "api": "66.0",
+    "field": "DocumentGenerationProcess.IsTocUpdateRequired",
+    "present": false
+  },
+  {
+    "group": "doc",
+    "api": "66.0",
+    "field": "DocumentTemplate.ContextDefinitionName",
+    "present": true
+  },
+  {
+    "group": "doc",
+    "api": "66.0",
+    "field": "DocumentTemplate.ContextFilterName",
+    "present": true
+  },
+  {
+    "group": "doc",
+    "api": "66.0",
+    "field": "DocumentTemplate.ContextMappingName",
+    "present": true
+  },
+  {
+    "group": "doc",
+    "api": "66.0",
+    "field": "DocumentTemplate.ContextTransformationName",
+    "present": false
+  }
+]

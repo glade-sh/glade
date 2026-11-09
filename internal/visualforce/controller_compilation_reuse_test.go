@@ -70,7 +70,8 @@ func TestPageNamesReuseSuppliedControllerCompilation(t *testing.T) {
 			plain := PageNames(p)
 			before := controllerCompilationReuses.Load()
 			reused := PageNamesWithControllerCompilation(p, compilation)
-			if controllerCompilationReuses.Load() != before+1 {
+			// A rejected controller makes the loader retry per page; each retry reuses it.
+			if got, min := controllerCompilationReuses.Load(), before+1; got < min || (name == "accepted" && got != min) {
 				t.Fatalf("supplied compilation was not reused (%d -> %d)", before, controllerCompilationReuses.Load())
 			}
 			if !reflect.DeepEqual(plain, reused) {
@@ -79,8 +80,8 @@ func TestPageNamesReuseSuppliedControllerCompilation(t *testing.T) {
 			if name == "accepted" && len(plain) != 2 {
 				t.Fatalf("accepted controller registered %v", plain)
 			}
-			if name == "rejected" && plain != nil {
-				t.Fatalf("rejected controller still registered %v", plain)
+			if name == "rejected" && !reflect.DeepEqual(plain, []string{"Plain"}) {
+				t.Fatalf("rejected controller's page registered, or its sibling lost: %v", plain)
 			}
 			if got := diagnosticMessages(compilation); !reflect.DeepEqual(got, original) {
 				t.Fatalf("reuse rewrote the caller's diagnostics in place: %v -> %v", original, got)
@@ -96,10 +97,10 @@ func TestPageNamesIgnoreForeignControllerCompilation(t *testing.T) {
 	rejected := writeControllerPageProject(t, rejectedProbeController)
 	foreign := gateLikeCompilation(t, accepted)
 	before := controllerCompilationReuses.Load()
-	if got := PageNamesWithControllerCompilation(rejected, foreign); got != nil {
+	if got := PageNamesWithControllerCompilation(rejected, foreign); !reflect.DeepEqual(got, []string{"Plain"}) {
 		t.Fatalf("foreign compilation accepted a rejected controller: %v", got)
 	}
-	if got := PageNamesWithControllerCompilation(rejected, &ControllerCompilation{}); got != nil {
+	if got := PageNamesWithControllerCompilation(rejected, &ControllerCompilation{}); !reflect.DeepEqual(got, []string{"Plain"}) {
 		t.Fatalf("empty compilation accepted a rejected controller: %v", got)
 	}
 	if got := PageNamesWithControllerCompilation(accepted, nil); len(got) != 2 {
@@ -125,7 +126,7 @@ func TestPageNamesIgnoreStaleControllerCompilation(t *testing.T) {
 	compilation := gateLikeCompilation(t, p)
 	writeFile(t, filepath.Join(p.Root, "force-app/main/default/classes/ProbeController.cls"), rejectedProbeController)
 	before := controllerCompilationReuses.Load()
-	if got := PageNamesWithControllerCompilation(p, compilation); got != nil {
+	if got := PageNamesWithControllerCompilation(p, compilation); !reflect.DeepEqual(got, []string{"Plain"}) {
 		t.Fatalf("stale compilation accepted a rejected controller: %v", got)
 	}
 	if controllerCompilationReuses.Load() != before {

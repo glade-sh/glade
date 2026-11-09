@@ -1,0 +1,3 @@
+<apex:page controller="PickProbeController" showHeader="false" sidebar="false" standardStylesheets="false">
+<div data-case="in-and-op">{!ISPICKVAL($User.UserType, 'Standard') && ISPICKVAL($Profile.UserType, 'Standard')}</div>
+</apex:page>

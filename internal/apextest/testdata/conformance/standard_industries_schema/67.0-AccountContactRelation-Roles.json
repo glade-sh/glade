@@ -1,0 +1,21 @@
+{
+  "aggregatable": false,
+  "calculated": false,
+  "compoundFieldName": null,
+  "createable": true,
+  "defaultedOnCreate": false,
+  "filterable": true,
+  "groupable": false,
+  "label": "Roles",
+  "length": 4099,
+  "name": "Roles",
+  "nillable": true,
+  "permissionable": true,
+  "precision": 0,
+  "referenceTo": [],
+  "relationshipName": null,
+  "scale": 0,
+  "sortable": false,
+  "type": "multipicklist",
+  "updateable": true
+}

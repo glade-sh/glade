@@ -11,12 +11,15 @@ import (
 )
 
 type Engine struct {
-	Org               *storage.OrgState
-	IDs               storage.IDGenerator
-	Now               func() time.Time
-	UserID            storage.ID
-	Options           Options
-	FlowActionInvoker func(storage.FlowAction, storage.Record) error
+	Org                  *storage.OrgState
+	IDs                  storage.IDGenerator
+	Now                  func() time.Time
+	UserID               storage.ID
+	PermissionUserFields map[string]storage.Value
+	// UserHasCustomPermission consults the host's current execution-user context.
+	UserHasCustomPermission func(string) bool
+	Options                 Options
+	FlowActionInvoker       func(storage.FlowAction, storage.Record) error
 	// FlowPathEnqueuer submits matched deferred paths to the host transaction.
 	FlowPathEnqueuer func(string, storage.FlowRule, storage.FlowPath, storage.ID)
 	// SystemTimestampObserver reports generated audit timestamps to the host
@@ -51,22 +54,26 @@ type Engine struct {
 	RecordCreations    *RecordCreations
 	LookupHistoryScope *storage.LookupHistoryScope
 
-	workflowDepth  int
-	flowDepth      int
-	summaryOrder   []string
-	summaryUpdates map[string]SummaryUpdate
-	automationRoll map[string]bool
-	uniqueBatch    *uniqueBatchContext
-	uniqueFieldMap map[string]bool
-	activeValRules map[string]bool
-	uniqueFields   map[string][]string
-	uniqueIndexes  map[string]map[string]map[storage.ID]bool
-	SummaryByChild *SummaryRelationCache
-	subflowCache   map[string]cachedSubflow
+	workflowDepth   int
+	flowDepth       int
+	summaryOrder    []string
+	summaryUpdates  map[string]SummaryUpdate
+	automationRoll  map[string]bool
+	uniqueBatch     *uniqueBatchContext
+	activityRefresh *activityRefreshBatch
+	uniqueFieldMap  map[string]bool
+	activeValRules  map[string]bool
+	uniqueFields    map[string][]string
+	uniqueIndexes   map[string]map[string]map[storage.ID]bool
+	SummaryByChild  *SummaryRelationCache
+	subflowCache    map[string]cachedSubflow
 
 	pendingCreatedAutomation  map[storage.ID]bool
 	activeCreatedAutomationID storage.ID
 	duplicates                duplicateState
+	// personContactInsert marks the next insertOne as a person account's
+	// platform-created contact.
+	personContactInsert bool
 }
 
 // FlowActionContext contains the runtime references visible to a Flow Apex
@@ -83,6 +90,9 @@ type FlowActionContext struct {
 	// Output receives this interview's element of the action's returned list.
 	// Missing elements become null. It may be nil.
 	Output func(storage.Value)
+	// OutputFields receives the returned element's fields, keyed by lower-case
+	// name, for the action's outputParameters. It may be nil.
+	OutputFields func(map[string]storage.Value)
 }
 
 type FlowActionRequest struct {
@@ -163,11 +173,16 @@ type Options struct {
 	// Resolved access mode for captured Apex custom-object insert contracts.
 	// Empty preserves non-Apex engine callers' existing record-type defaults.
 	ApexRecordTypeInsertMode string
+	// Resolved access mode of an Apex update; USER_MODE rejects a record type
+	// the running user's profile does not see (record_type_visibility rows).
+	ApexRecordTypeUpdateMode string
 	// Captured Apex insert routes reject an explicitly null person-account
 	// record type, independently of their resolved access mode.
 	ApexRejectNullPersonRecordType bool
 	// Consumed by the VM after successful Task DML; it records a notification
 	// request, not delivery or a Messaging.sendEmail invocation.
+	CaptureAutoResponseEmail   bool
+	CaseContactEmail           bool
 	CaptureTaskAssignmentEmail bool
 	AllowFieldTruncation       bool
 	AllowUpdateDeleted         bool
@@ -450,7 +465,7 @@ func (e *Engine) Insert(records []storage.Record) []Result {
 				// The marker only remains valid while the record type is unchanged.
 				record.MarkDMLRecordTypeDefaulted()
 			}
-			applyFieldDefaults(e.Org, object.Definition, &record, e.systemUserID())
+			applyFieldDefaults(e.Org, object.Definition, &record, e.systemUserID(), e.PermissionUserFields)
 			before := []storage.Record{record}
 			if err := e.ApplyBeforeSaveFlows(before); err != nil {
 				results[i] = resultFromError(record.ID, err)
@@ -484,6 +499,8 @@ func (e *Engine) Update(records []storage.Record) []Result {
 	results := make([]Result, len(records))
 	restoreUniqueBatch := e.beginUniqueBatchContext(records)
 	defer restoreUniqueBatch()
+	flushActivities := e.beginActivityRefreshBatch()
+	defer flushActivities()
 	for i, record := range records {
 		if err := e.updateOne(record); err != nil {
 			results[i] = resultFromError(record.ID, err)
@@ -522,6 +539,8 @@ func (e *Engine) upsert(records []storage.Record, externalIDField string) []Resu
 	results := make([]Result, len(records))
 	restoreUniqueBatch := e.beginUniqueBatchContext(records)
 	defer restoreUniqueBatch()
+	flushActivities := e.beginActivityRefreshBatch()
+	defer flushActivities()
 	statementStamp := ""
 	for i, record := range records {
 		if record.ID == "" {
@@ -918,6 +937,10 @@ func (e *Engine) TakeSummaryUpdates() []SummaryUpdate {
 }
 
 func (e *Engine) insertOne(record storage.Record, statementStamp *string) (storage.ID, error) {
+	// Only the person account's own contact insert is the system insert;
+	// anything it causes is an ordinary insert.
+	personContact := e.personContactInsert
+	e.personContactInsert = false
 	object, objectName, err := e.object(record.Object)
 	if err != nil {
 		return "", err
@@ -947,7 +970,7 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string) (stora
 	explicitBusinessRecordType := hasExplicitBusinessAccountRecordType(objectName, object.Definition, record)
 	createPersonContact := createsPersonContactOnInsert(objectName, record)
 	e.applyDefaultRecordTypeID(objectName, object.Definition, &record)
-	applyFieldDefaults(e.Org, object.Definition, &record, e.systemUserID())
+	applyFieldDefaults(e.Org, object.Definition, &record, e.systemUserID(), e.PermissionUserFields)
 	// CleanStatus is initialized on insert even though describe reports no
 	// field default. Preserve explicitly supplied values and nulls.
 	_, hasCleanStatus := storage.ResolveFieldName(object.Definition, e.Org.Namespace, "CleanStatus")
@@ -957,14 +980,28 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string) (stora
 		}
 	}
 	e.applyTaskPriorityFlag(&record)
+	e.applyActivityAccountFromWhat(&record)
 	e.applyCurrencyInsertDefaults(object.Definition, &record)
 	applyAutoNumberName(object.Definition, e.IDs.Sequences[objectName]+1, &record)
 	e.applyContractNumberDefault(objectName, &record)
 	applyCustomSettingInsertDefaults(e.Org, object.Definition, &record)
 	applySetupInsertDefaults(objectName, object.Definition, &record)
 	applyOmittedRequiredCheckboxDefaults(object.Definition, &record)
+	for name, value := range storage.StandardObjectInsertForcedValues(objectName) {
+		if field, ok := storage.ResolveFieldName(object.Definition, e.Org.Namespace, name); ok {
+			deleteExplicitNull(record.ExplicitNulls, field)
+			if record.Fields == nil {
+				record.Fields = make(map[string]storage.Value)
+			}
+			record.Fields[field] = storage.BooleanValue(value)
+		}
+	}
+	if err := e.validatePermissionSetAssignmentInsert(objectName, record); err != nil {
+		return "", err
+	}
 	e.applyPermissionSetAssignmentDefaults(objectName, &record)
 	e.applyUserContactAccountDefault(objectName, object.Definition, &record)
+	e.applyUserPortalDefaults(objectName, object.Definition, &record)
 	e.applyFileInsertDefaults(objectName, object.Definition, &record)
 	e.applyContentChildLinkDefaults(objectName, &record)
 	e.applyOrderItemDerivedFields(&record)
@@ -976,6 +1013,9 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string) (stora
 	if err := validateFields(object.Definition, e.Org.Namespace, record); err != nil {
 		return "", err
 	}
+	e.applyQuoteLineItemDerivedFields(&record)
+	e.applyQuoteDerivedFields(&record)
+	e.applyRegulatoryCodeActive(&record)
 	if err := validatePersonAccountRequiredFields(objectName, record); err != nil {
 		return "", err
 	}
@@ -992,10 +1032,16 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string) (stora
 		}
 		return "", err
 	}
+	if err := e.validateKnowledgeCategoryGroup(record); err != nil {
+		return "", err
+	}
 	if isGeneratedPlaceholderInsertID(record.ID) {
 		record.ID = ""
 	}
 	if err := e.validateObjectID(object.Definition, record); err != nil {
+		return "", err
+	}
+	if err := validateNullRecordTypeWithDefault(object.Definition, record); err != nil {
 		return "", err
 	}
 	if err := e.validateApexRecordTypeInsert(object.Definition, record); err != nil {
@@ -1012,11 +1058,24 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string) (stora
 	if err := e.validateReferences(object.Definition, record); err != nil {
 		return "", err
 	}
-	if err := e.validateValidationRules(objectName, object.Definition, record, nil, true); err != nil {
+	if err := e.validateActiveOwner(object.Definition, record.System.OwnerID, ""); err != nil {
 		return "", err
 	}
-	if err := e.validateLookupFilters(object.Definition, record); err != nil {
-		return "", err
+	if !personContact {
+		if err := e.validateContactPersonAccountParent(objectName, record); err != nil {
+			return "", err
+		}
+	}
+	// A person account's contact is saved by the platform: native runs no
+	// Contact validation rule and no Contact.AccountId lookup filter for it
+	// (record_save_residuals person rows at API 62.0 and 67.0).
+	if !personContact {
+		if err := e.validateValidationRules(objectName, object.Definition, record, nil, true); err != nil {
+			return "", err
+		}
+		if err := e.validateLookupFilters(object.Definition, record); err != nil {
+			return "", err
+		}
 	}
 	duplicateReport, err := e.checkDuplicateRules(record, false, statementStamp, nil)
 	if err != nil {

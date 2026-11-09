@@ -989,6 +989,7 @@ func TestApplyOrgShapeAddsOptionalFeatureObjectsAndRecords(t *testing.T) {
 	ApplyOrgShape(&org, []string{
 		"PersonAccounts",
 		"Communities",
+		"NetworksEnabled",
 		"Sites",
 		"ContactsToMultipleAccounts",
 		"PlatformCache",
@@ -1273,8 +1274,12 @@ func TestEnsureStandardObjectAddsGeneratedSObjectStubOverlayShape(t *testing.T) 
 	if field, ok := org.Objects["AIInsightAction"].Definition.Fields["AiRecordInsightId"]; !ok || field.Type != FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "AIRecordInsight" || field.ChildRelationshipName != "AIInsightActions" {
 		t.Fatalf("AIInsightAction.AiRecordInsightId field = %#v, %v", field, ok)
 	}
-	if field, ok := org.Objects["AccountContactRelation"].Definition.Fields["Roles"]; !ok || field.Label != "Roles" || field.Type != FieldString {
-		t.Fatalf("AccountContactRelation.Roles field = %#v, %v", field, ok)
+	if field, ok := org.Objects["AccountContactRelation"].Definition.Fields["Roles"]; ok {
+		t.Fatalf("bare AccountContactRelation.Roles should be absent: %#v", field)
+	}
+	ApplyOrgShape(&org, []string{"ContactsToMultipleAccounts"})
+	if field, ok := org.Objects["AccountContactRelation"].Definition.Fields["Roles"]; !ok || field.Type != FieldMultiPicklist {
+		t.Fatalf("enabled AccountContactRelation.Roles field = %#v, %v", field, ok)
 	}
 }
 

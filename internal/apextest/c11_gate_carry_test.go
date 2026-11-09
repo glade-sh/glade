@@ -14,6 +14,8 @@ func TestC11ActorGateCarryRejectsOtherFailures(t *testing.T) {
 	}{
 		{"restricted", testreport.StatusFail, "target", "Assertion Failed: gate actor ViewAllData: Expected: false, Actual: null"},
 		{"admin", testreport.StatusRuntimeError, "baseline", "Assertion Failed: gate admin profile ViewAllData: Expected: true, Actual: false"},
+		{"restricted", testreport.StatusFail, "target", "Assertion Failed: gate no supplemental ModifyAllData: Expected: false, Actual: null"},
+		{"admin", testreport.StatusFail, "baseline", "Assertion Failed: gate no supplemental ModifyAllData: Expected: false, Actual: null"},
 	}
 	for _, c := range cases {
 		t.Run(c.arm, func(t *testing.T) {

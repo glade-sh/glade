@@ -102,7 +102,10 @@ func testPlatformEventSubscriberUserRoutes(t *testing.T, withFlow bool) {
 						machine.testContext.PlatformEvents = records
 						err = machine.drainTestPlatformEventsFrom(&Result{}, 0, route == "stop")
 					}
-					if throws && (withFlow || route != "stop") {
+					// An Apex trigger exception is consumed by deliver() and
+					// stopTest (batch_event_async throw_* rows); a direct
+					// subscriber call and flow errors still return it.
+					if throws && (withFlow || route == "anonymous") {
 						if err == nil || !strings.Contains(err.Error(), "owned subscriber error") {
 							t.Fatalf("subscriber error: %v", err)
 						}

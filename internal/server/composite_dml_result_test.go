@@ -8,8 +8,8 @@ import (
 )
 
 func TestCompositeSObjectUpsertCreationContracts(t *testing.T) {
-	// DML transactions row R133 captures Apex isCreated=true for a failed
-	// insert. The existing REST contract is preserved:
+	// A36 R133 captures Apex isCreated=true for a failed insert. The
+	// existing REST contract is preserved:
 	// TestCompositeSObjectTypedUpsertPartialFailureCommitsSuccessfulRows
 	// requires created=false for the same failed row.
 	org := testOrg()

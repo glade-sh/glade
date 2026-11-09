@@ -77,6 +77,32 @@ func TestSystemExceptionHierarchyNativeConformance(t *testing.T) {
 				}
 				native[k] = result
 			}
+			// The original API rows describe an older org release. Current native
+			// controls were captured separately so those historical rows stay intact.
+			controls := csv.NewReader(strings.NewReader(string(read("native/winter27_anonymous/org.tsv"))))
+			controls.Comma = '\t'
+			controlRows, err := controls.ReadAll()
+			if err != nil {
+				t.Fatal(err)
+			}
+			controlCount := 0
+			for _, row := range controlRows[1:] {
+				if len(row) != 5 {
+					t.Fatal("invalid winter control row")
+				}
+				if row[0] != api+".0" || row[3] != "anonymous" {
+					continue
+				}
+				k := key(row[1], row[2], row[3])
+				if _, exists := native[k]; !exists {
+					t.Fatalf("unmatched winter control %s", k)
+				}
+				native[k] = nativeResult{Compiled: true, Success: false, ExceptionMessage: row[4]}
+				controlCount++
+			}
+			if controlCount != 15 {
+				t.Fatalf("winter controls=%d, want 15", controlCount)
+			}
 			classes := map[string]string{}
 			if err := json.Unmarshal(read("classes.json"), &classes); err != nil {
 				t.Fatal(err)

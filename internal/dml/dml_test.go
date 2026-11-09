@@ -1984,7 +1984,10 @@ func TestInsertContactPopulatesCompoundName(t *testing.T) {
 	}
 }
 
-func TestInsertPersonAccountRollbackRemovesAccountWhenSyntheticContactFails(t *testing.T) {
+// A Contact validation rule does not run for a person account's contact
+// (record_save_residuals person rows at API 62.0 and 67.0: a person account
+// whose LastName matches the rule saves, with its contact).
+func TestInsertPersonAccountSyntheticContactSkipsContactValidationRules(t *testing.T) {
 	org := storage.NewOrgState()
 	storage.EnsureDeterministicPlatformData(&org)
 	storage.ApplyOrgShape(&org, []string{"PersonAccounts"})
@@ -2006,14 +2009,14 @@ func TestInsertPersonAccountRollbackRemovesAccountWhenSyntheticContactFails(t *t
 			"LastName":  storage.StringValue("Blocked"),
 		},
 	}})
-	if len(insert) != 1 || insert[0].Success {
-		t.Fatalf("insert = %#v, want failed synthetic contact", insert)
+	if len(insert) != 1 || !insert[0].Success {
+		t.Fatalf("insert = %#v, want the person account saved", insert)
 	}
-	if got := len(org.Objects["Account"].Records); got != beforeAccounts {
-		t.Fatalf("accounts after rollback = %d, want %d", got, beforeAccounts)
+	if got := len(org.Objects["Account"].Records); got != beforeAccounts+1 {
+		t.Fatalf("accounts = %d, want %d", got, beforeAccounts+1)
 	}
-	if got := len(org.Objects["Contact"].Records); got != beforeContacts {
-		t.Fatalf("contacts after rollback = %d, want %d", got, beforeContacts)
+	if got := len(org.Objects["Contact"].Records); got != beforeContacts+1 {
+		t.Fatalf("contacts = %d, want %d", got, beforeContacts+1)
 	}
 }
 
@@ -4246,7 +4249,7 @@ func TestCalculatedFormulaSupportsSubstituteAndBR(t *testing.T) {
 			"City__c":   storage.StringValue("Austin"),
 		},
 	})
-	if !ok || value.Kind != storage.ValueString || value.String != "Line1<br />Line2<br />Austin" {
+	if !ok || value.Kind != storage.ValueString || value.String != "Line1<br />Line2<br>Austin" {
 		t.Fatalf("address formula = %#v, ok=%v; want substituted text", value, ok)
 	}
 }

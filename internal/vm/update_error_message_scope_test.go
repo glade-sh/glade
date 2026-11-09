@@ -52,9 +52,9 @@ System.assert(failed);
 	}
 }
 
-// Options and explicit access-level overloads are outside the captured matrix.
-// Preserve their existing local envelopes without claiming native parity.
-func TestUpdateErrorMessagePreservesUncapturedOverloads(t *testing.T) {
+// Options and explicit access-level overloads use the native first-exception
+// envelope (dml_envelope_other upd_* rows).
+func TestUpdateErrorMessageOverloadsUseRowEnvelope(t *testing.T) {
 	for _, api := range []string{"62.0", "67.0"} {
 		for _, route := range []struct {
 			name string
@@ -82,7 +82,7 @@ Boolean failed = false;
 try { Database.update(%s, %s); }
 catch (DmlException e) {
     failed = true;
-    System.assert(e.getMessage().startsWith('Database.update failed: REQUIRED_FIELD_MISSING,'), e.getMessage());
+    System.assert(e.getMessage().startsWith('Update failed. First exception on row 0 with id '), e.getMessage());
 }
 System.assert(failed);
 `, records, route.args), CompileOptions{APIVersion: api})

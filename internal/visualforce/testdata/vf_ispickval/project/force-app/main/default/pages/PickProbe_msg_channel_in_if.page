@@ -1,0 +1,3 @@
+<apex:page controller="PickProbeController" showHeader="false" sidebar="false" standardStylesheets="false">
+<div data-case="msg-channel-in-if">{!IF(true, $MessageChannel.ProbeChannel__c, 'n')}</div>
+</apex:page>

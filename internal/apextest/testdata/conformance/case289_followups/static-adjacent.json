@@ -1,0 +1,6 @@
+{
+  "read": "ObjectPermissions g=new ObjectPermissions();Boolean x=g.PermissionsViewAllFields;",
+  "where": "List<ObjectPermissions> r=[SELECT Id FROM ObjectPermissions WHERE PermissionsViewAllFields = true];",
+  "order": "List<ObjectPermissions> r=[SELECT Id FROM ObjectPermissions ORDER BY PermissionsViewAllFields];",
+  "qualified": "Schema.DescribeFieldResult f=Schema.SObjectType.ObjectPermissions.fields.PermissionsViewAllFields;"
+}

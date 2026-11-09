@@ -86,48 +86,9 @@ func TestSOQLControlsC14NativeConformance(t *testing.T) {
 					if err := json.Unmarshal([]byte(row[4]), &want); err != nil {
 						t.Fatal(err)
 					}
-					//: retain the native result and expose current gaps until
-					// the coordinator assigns their semantic fix tickets.
-					fields := map[string][]string{
-						"two":         {"rows"},
-						"day_only":    {"exception", "rows", "stage", "status"},
-						"hour_in_day": {"exception", "rows", "stage", "status"},
-						"overlap":     {"exception", "rows", "stage", "status"},
-						"rollover":    {"rows"},
-					}[row[2]]
-					if row[2] == "typeofFirstCount" {
-						g, gok := got["exception"].(map[string]any)
-						w, wok := want["exception"].(map[string]any)
-						if !gok || !wok || g["message"] != "use countQuery() for [select count()...] queries" || w["message"] != "unexpected token: 'COUNT()'" {
-							t.Fatalf("unexpected COUNT rejection: native=%v; Glade=%v", want, got)
-						}
-						g["message"] = w["message"]
-					}
-					if len(fields) != 0 {
-						got = normalizeCaptureIdentities(got).(map[string]any)
-						observed := map[string]string{
-							"two":         `{"rows":[{"Id":"<001:1>","Name":"É"}]}`,
-							"day_only":    `{"rows":[{"DAY_ONLY(Birthdate)":"2024-02-29","n":1,"part":"2024-02-29"}],"stage":"query","status":"observed"}`,
-							"hour_in_day": `{"rows":[{"HOUR_IN_DAY(Birthdate)":null,"n":1,"part":null}],"stage":"query","status":"observed"}`,
-							"overlap":     `{"rows":[{"Id":"<00T:1>","What":{"Id":"<001:1>","Name":"Q7","Phone":"555"},"WhatId":"<001:1>"}],"stage":"query","status":"observed"}`,
-							"rollover":    `{"rows":[{"Birthdate":"2021-01-01","n":1},{"Birthdate":"2021-01-07","n":1},{"Birthdate":"2021-01-08","n":1}]}`,
-						}[row[2]]
-						var expected map[string]any
-						if err := json.Unmarshal([]byte(observed), &expected); err != nil {
-							t.Fatal(err)
-						}
-						if !c14ExactCarryEqual(got, want, expected, fields) {
-							t.Fatalf("known gap changed: native=%v; Glade=%v", want, got)
-						}
-						t.Logf("known local carry batch Dot stdlib cases Dot Dot SOQL cases and Dot async cases: %v; owner pending", fields)
-						case345Skip(t)
-					}
+					got = normalizeCaptureIdentities(got).(map[string]any)
 					if !reflect.DeepEqual(got, want) {
 						t.Fatalf("native=%v; Glade=%v", want, got)
-					}
-					if row[2] == "typeofFirstCount" {
-						t.Log("known local carry batch Dot stdlib cases Dot Dot SOQL cases and Dot async cases (fix owner pending): COUNT rejection message differs")
-						case345Skip(t)
 					}
 				})
 			}

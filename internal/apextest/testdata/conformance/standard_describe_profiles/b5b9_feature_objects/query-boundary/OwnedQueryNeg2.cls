@@ -1,0 +1,1 @@
+@IsTest private class OwnedQueryNeg2 { @IsTest static void probe(){List<DocumentTemplate> rows=[SELECT Id FROM DocumentTemplate WHERE ContextMappingName = 'owned' LIMIT 1];} }

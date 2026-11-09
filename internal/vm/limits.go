@@ -18,6 +18,9 @@ const apexCursorFetchCallLimit = 100
 const apexCursorRowLimit = 50_000_000
 const syncAggregateQueryLimit = 300
 
+// batch_limit_c09 (API 62/67): batch start, execute and finish report 600.
+const batchAggregateQueryLimit = 600
+
 // Limits.getLimitHeapSize() natively: synchronous Apex (anonymous, test
 // methods and Scheduled Apex execute) and async Apex (Queueable, @future,
 // Batchable execute).
@@ -137,11 +140,13 @@ func LimitCapsForProfile(name string) (LimitCaps, bool) {
 
 // withScheduledLimitWindow runs Scheduled Apex execute as its own async
 // transaction, but with the caller's heap and CPU caps: natively a
-// Schedulable reports the synchronous heap and CPU limits.
+// Schedulable reports the synchronous heap, CPU and query limits.
 func (vm *VM) withScheduledLimitWindow(run func() (Value, error)) (Value, error) {
-	heapSize, cpuTimeMS := vm.limitCaps.HeapSize, vm.limitCaps.CPUTimeMS
+	heapSize, cpuTimeMS, queries := vm.limitCaps.HeapSize, vm.limitCaps.CPUTimeMS, vm.limitCaps.Queries
 	return vm.withAsyncLimitWindow(func() (Value, error) {
-		vm.limitCaps.HeapSize, vm.limitCaps.CPUTimeMS = heapSize, cpuTimeMS
+		// async_caps_c14 Y7 and scheduled_limit_c09 (API 62/67): a Schedulable
+		// also keeps the synchronous SOQL query cap.
+		vm.limitCaps.HeapSize, vm.limitCaps.CPUTimeMS, vm.limitCaps.Queries = heapSize, cpuTimeMS, queries
 		return run()
 	})
 }
@@ -389,13 +394,18 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 	case "getQueueableJobs":
 		return Int(int64(vm.limits.QueueableJobs)), true
 	case "getLimitQueueableJobs":
-		if vm.limitCaps.nativeDefaults && vm.currentAsyncKind == "Queueable" {
+		// batch_limit_c09 (API 62/67): batch start, execute and finish report
+		// the same single-job cap as a Queueable body.
+		if vm.limitCaps.nativeDefaults && (vm.currentAsyncKind == "Queueable" || vm.currentAsyncKind == "BatchApex") {
 			return Int(1), true
 		}
 		return Int(int64(vm.limitCaps.QueueableJobs)), true
 	case "getFutureCalls":
 		return Int(int64(vm.limits.FutureCalls)), true
 	case "getLimitFutureCalls":
+		if vm.limitCaps.nativeDefaults && vm.currentAsyncKind == "BatchApex" {
+			return Int(0), true
+		}
 		return Int(int64(vm.limitCaps.FutureCalls)), true
 	case "getBatchJobs":
 		return Int(int64(vm.limits.BatchJobs)), true
@@ -433,6 +443,9 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 	case "getFetchCallsOnApexCursor":
 		return Int(int64(vm.limits.FetchCallsOnApexCursor)), true
 	case "getLimitAggregateQueries":
+		if vm.limitCaps.nativeDefaults && vm.currentAsyncKind == "BatchApex" {
+			return Int(batchAggregateQueryLimit), true
+		}
 		return Int(syncAggregateQueryLimit), true
 	case "getLimitApexCursorRows":
 		return Int(apexCursorRowLimit), true

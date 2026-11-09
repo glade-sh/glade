@@ -231,8 +231,20 @@ func sameChangeDataCaptureBody(a, b map[string]storage.Value) bool {
 	return true
 }
 
-func (vm *VM) drainChangeDataCapture(result *Result) error {
+// drainChangeDataCapture delivers journaled change events. stopTime is true for
+// the Test.stopTest() drain and false for an explicit
+// Test.getEventBus().deliver().
+//
+// Native cdc_async_chain rows (62.0 to 68.0, selected custom entity): stopTest
+// delivers change events only after Test.enableChangeDataCapture(); a selected
+// entity alone delivers nothing at stopTest. Work a CDC trigger enqueues is
+// dropped at stopTest delivery but runs, as Automated Process, when deliver()
+// delivered the event.
+func (vm *VM) drainChangeDataCapture(result *Result, stopTime bool) error {
 	if vm.testContext == nil {
+		return nil
+	}
+	if stopTime && !vm.testContext.ChangeDataCaptureEnabled {
 		return nil
 	}
 	for iteration := 0; iteration < maxLoopIterations; iteration++ {
@@ -265,7 +277,7 @@ func (vm *VM) drainChangeDataCapture(result *Result) error {
 		vm.testContext.PlatformEvents = append(vm.testContext.PlatformEvents, vm.materializeChangeDataCapture(entries)...)
 		// Both explicit and stopTest CDC delivery use Automated Process, while
 		// the header retains the user who made the original mutation.
-		if err := vm.drainTestPlatformEventsFrom(result, start, true); err != nil {
+		if err := vm.drainTestPlatformEventsFrom(result, start, stopTime); err != nil {
 			return err
 		}
 	}

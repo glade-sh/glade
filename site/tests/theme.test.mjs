@@ -206,6 +206,7 @@ test("launch docs identify v0.3.0 and retain historical release notes", () => {
   assert.match(currentText, /Salesforce was not contacted/);
   const unreleased = releaseNotes.match(/^## Unreleased\s+([\s\S]*?)(?=^## v\d+\.\d+\.\d+(?:[ \t].*)?$)/m);
   assert.ok(unreleased, "release notes should contain an Unreleased section");
+  assert.ok(unreleased[1].trim(), "Unreleased section should describe its current state");
   assert.doesNotMatch(unreleased[1], /^## /m);
   assert.match(releaseNotes, /^## v0\.3\.0(?: - \d{4}-\d{2}-\d{2})?$/m);
 
@@ -758,7 +759,8 @@ test("security and release trust claims stay linked to repository proof", () => 
   assert.match(codeqlWorkflow, /- go\/allocation-size-overflow/);
   assert.match(codeqlWorkflow, /- go\/incorrect-integer-conversion/);
   assert.match(codeqlWorkflow, /github\/codeql-action\/upload-sarif@[0-9a-f]{40}/);
-  assert.match(ciWorkflow, /uses: \.\/\.github\/workflows\/codeql.yml/);
+  assert.doesNotMatch(ciWorkflow, /uses: \.\/\.github\/workflows\/codeql\.yml/);
+  assert.match(securityWorkflow, /  codeql-fast:\n[\s\S]*?    uses: \.\/\.github\/workflows\/codeql\.yml\n    with:\n      profile: fast/);
   assert.match(securityWorkflow, /profile: full/);
   assert.match(securityWorkflow, /securego\/gosec@/);
   assert.match(securityWorkflow, /upload-sarif/);

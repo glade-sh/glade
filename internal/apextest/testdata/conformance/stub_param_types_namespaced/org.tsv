@@ -1,0 +1,5 @@
+source_api	route	observation
+62.0	anonymous	{"context":"anonymous"}
+62.0	isTest	{"mapKeyEq":true,"setEq":true,"thingName":"gladens004__Thing__c","elementShortNull":false,"elementShortEq":true,"elementEq":true,"forNameFullNull":false,"forNameShortNull":false,"forNameFullEq":true,"forNameShortEq":true,"directEq":true,"literalValueOf":"List<gladens004__Thing__c>","literalName":"List<gladens004__Thing__c>","stubCalls":["upsertThings","literalEq=true","equalsEq=true","valueOf=List<gladens004__Thing__c>","name=List<gladens004__Thing__c>"]}
+67.0	anonymous	{"context":"anonymous"}
+67.0	isTest	{"mapKeyEq":true,"setEq":true,"thingName":"gladens004__Thing__c","elementShortNull":false,"elementShortEq":true,"elementEq":true,"forNameFullNull":false,"forNameShortNull":false,"forNameFullEq":true,"forNameShortEq":true,"directEq":true,"literalValueOf":"List<gladens004__Thing__c>","literalName":"List<gladens004__Thing__c>","stubCalls":["upsertThings","literalEq=true","equalsEq=true","valueOf=List<gladens004__Thing__c>","name=List<gladens004__Thing__c>"]}

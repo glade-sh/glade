@@ -1,0 +1,13 @@
+source_api	route	case_id	value	capture_org
+62.0	anonymous	limit_heap_size	10000000	A
+62.0	isTest	limit_heap_size	10000000	A
+67.0	anonymous	limit_heap_size	10000000	A
+67.0	isTest	limit_heap_size	10000000	A
+68.0	anonymous	limit_heap_size	10000000	A
+68.0	isTest	limit_heap_size	10000000	A
+62.0	anonymous	limit_heap_size	10000000	B
+62.0	isTest	limit_heap_size	10000000	B
+67.0	anonymous	limit_heap_size	10000000	B
+67.0	isTest	limit_heap_size	10000000	B
+68.0	anonymous	limit_heap_size	10000000	B
+68.0	isTest	limit_heap_size	10000000	B

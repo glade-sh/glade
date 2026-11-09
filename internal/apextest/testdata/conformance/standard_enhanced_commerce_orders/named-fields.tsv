@@ -1,0 +1,908 @@
+api	variant	object	field	type	accessible	createable	updateable	nillable	permissionable	length	precision	scale	label
+62.0	feature-only	Order	AccountId	REFERENCE	true	true	true	true	false	18	0	0	Account ID
+62.0	feature-only	Order	ActivatedById	REFERENCE	true	false	true	true	true	18	0	0	Activated By ID
+62.0	feature-only	Order	ActivatedDate	DATETIME	true	false	true	true	true	0	0	0	Activated Date
+62.0	feature-only	Order	BillingAddress	ADDRESS	true	false	false	true	true	0	0	0	Billing Address
+62.0	feature-only	Order	BillingCity	STRING	true	true	true	true	true	40	0	0	Billing City
+62.0	feature-only	Order	BillingCountry	STRING	true	true	true	true	true	80	0	0	Billing Country
+62.0	feature-only	Order	BillingGeocodeAccuracy	PICKLIST	true	true	true	true	true	40	0	0	Billing Geocode Accuracy
+62.0	feature-only	Order	BillingLatitude	DOUBLE	true	true	true	true	true	0	18	15	Billing Latitude
+62.0	feature-only	Order	BillingLongitude	DOUBLE	true	true	true	true	true	0	18	15	Billing Longitude
+62.0	feature-only	Order	BillingPostalCode	STRING	true	true	true	true	true	20	0	0	Billing Zip/Postal Code
+62.0	feature-only	Order	BillingState	STRING	true	true	true	true	true	80	0	0	Billing State/Province
+62.0	feature-only	Order	BillingStreet	TEXTAREA	true	true	true	true	true	255	0	0	Billing Street
+62.0	feature-only	Order	BillToContactId	REFERENCE	true	true	true	true	true	18	0	0	Bill To Contact ID
+62.0	feature-only	Order	CompanyAuthorizedById	REFERENCE	true	true	true	true	true	18	0	0	Company Authorized By ID
+62.0	feature-only	Order	CompanyAuthorizedDate	DATE	true	true	true	true	true	0	0	0	Company Authorized Date
+62.0	feature-only	Order	ContractId	REFERENCE	true	true	true	true	false	18	0	0	Contract ID
+62.0	feature-only	Order	CreatedById	REFERENCE	true	false	false	false	false	18	0	0	Created By ID
+62.0	feature-only	Order	CreatedDate	DATETIME	true	false	false	false	false	0	0	0	Created Date
+62.0	feature-only	Order	CustomerAuthorizedById	REFERENCE	true	true	true	true	true	18	0	0	Customer Authorized By ID
+62.0	feature-only	Order	CustomerAuthorizedDate	DATE	true	true	true	true	true	0	0	0	Customer Authorized Date
+62.0	feature-only	Order	Description	TEXTAREA	true	true	true	true	true	32000	0	0	Description
+62.0	feature-only	Order	EffectiveDate	DATE	true	true	true	false	false	0	0	0	Order Start Date
+62.0	feature-only	Order	EndDate	DATE	true	true	true	true	false	0	0	0	Order End Date
+62.0	feature-only	Order	Id	ID	true	false	false	false	false	18	0	0	Order ID
+62.0	feature-only	Order	IsDeleted	BOOLEAN	true	false	false	false	false	0	0	0	Deleted
+62.0	feature-only	Order	IsReductionOrder	BOOLEAN	true	true	false	false	false	0	0	0	Reduction Order
+62.0	feature-only	Order	LastModifiedById	REFERENCE	true	false	false	false	false	18	0	0	Last Modified By ID
+62.0	feature-only	Order	LastModifiedDate	DATETIME	true	false	false	false	false	0	0	0	Last Modified Date
+62.0	feature-only	Order	LastReferencedDate	DATETIME	true	false	false	true	false	0	0	0	Last Referenced Date
+62.0	feature-only	Order	LastViewedDate	DATETIME	true	false	false	true	false	0	0	0	Last Viewed Date
+62.0	feature-only	Order	Name	STRING	true	true	true	true	true	80	0	0	Order Name
+62.0	feature-only	Order	OpportunityId	REFERENCE	false	false	false	true	true	18	0	0	Opportunity ID
+62.0	feature-only	Order	OrderNumber	STRING	true	false	false	false	false	30	0	0	Order Number
+62.0	feature-only	Order	OrderReferenceNumber	STRING	true	true	true	true	true	80	0	0	Order Reference Number
+62.0	feature-only	Order	OriginalOrderId	REFERENCE	true	true	false	true	false	18	0	0	Order ID
+62.0	feature-only	Order	OwnerId	REFERENCE	true	true	true	false	false	18	0	0	Owner ID
+62.0	feature-only	Order	PoDate	DATE	true	true	true	true	true	0	0	0	PO Date
+62.0	feature-only	Order	PoNumber	STRING	true	true	true	true	true	80	0	0	PO Number
+62.0	feature-only	Order	Pricebook2Id	REFERENCE	true	true	true	true	false	18	0	0	Price Book ID
+62.0	feature-only	Order	ShippingAddress	ADDRESS	true	false	false	true	true	0	0	0	Shipping Address
+62.0	feature-only	Order	ShippingCity	STRING	true	true	true	true	true	40	0	0	Shipping City
+62.0	feature-only	Order	ShippingCountry	STRING	true	true	true	true	true	80	0	0	Shipping Country
+62.0	feature-only	Order	ShippingGeocodeAccuracy	PICKLIST	true	true	true	true	true	40	0	0	Shipping Geocode Accuracy
+62.0	feature-only	Order	ShippingLatitude	DOUBLE	true	true	true	true	true	0	18	15	Shipping Latitude
+62.0	feature-only	Order	ShippingLongitude	DOUBLE	true	true	true	true	true	0	18	15	Shipping Longitude
+62.0	feature-only	Order	ShippingPostalCode	STRING	true	true	true	true	true	20	0	0	Shipping Zip/Postal Code
+62.0	feature-only	Order	ShippingState	STRING	true	true	true	true	true	80	0	0	Shipping State/Province
+62.0	feature-only	Order	ShippingStreet	TEXTAREA	true	true	true	true	true	255	0	0	Shipping Street
+62.0	feature-only	Order	ShipToContactId	REFERENCE	true	true	true	true	true	18	0	0	Ship To Contact ID
+62.0	feature-only	Order	Status	PICKLIST	true	true	true	false	false	100	0	0	Status
+62.0	feature-only	Order	StatusCode	PICKLIST	true	false	true	false	false	40	0	0	Status Category
+62.0	feature-only	Order	SystemModstamp	DATETIME	true	false	false	false	false	0	0	0	System Modstamp
+62.0	feature-only	Order	TotalAmount	CURRENCY	true	false	false	false	true	0	18	2	Order Amount
+62.0	feature-only	Order	Type	PICKLIST	true	true	true	true	true	255	0	0	Order Type
+62.0	feature-only	OrderItem	AvailableQuantity	DOUBLE	true	false	false	true	false	0	18	2	Available Quantity
+62.0	feature-only	OrderItem	CreatedById	REFERENCE	true	false	false	false	false	18	0	0	Created By ID
+62.0	feature-only	OrderItem	CreatedDate	DATETIME	true	false	false	false	false	0	0	0	Created Date
+62.0	feature-only	OrderItem	Description	STRING	true	true	true	true	true	255	0	0	Line Description
+62.0	feature-only	OrderItem	EndDate	DATE	true	true	true	true	true	0	0	0	End Date
+62.0	feature-only	OrderItem	Id	ID	true	false	false	false	false	18	0	0	Order Product ID
+62.0	feature-only	OrderItem	IsDeleted	BOOLEAN	true	false	false	false	false	0	0	0	Deleted
+62.0	feature-only	OrderItem	LastModifiedById	REFERENCE	true	false	false	false	false	18	0	0	Last Modified By ID
+62.0	feature-only	OrderItem	LastModifiedDate	DATETIME	true	false	false	false	false	0	0	0	Last Modified Date
+62.0	feature-only	OrderItem	ListPrice	CURRENCY	true	true	false	true	true	0	18	2	List Price
+62.0	feature-only	OrderItem	OrderId	REFERENCE	true	true	false	false	false	18	0	0	Order ID
+62.0	feature-only	OrderItem	OrderItemNumber	STRING	true	false	false	false	false	30	0	0	Order Product Number
+62.0	feature-only	OrderItem	OriginalOrderItemId	REFERENCE	true	true	false	true	false	18	0	0	Original Order Item ID
+62.0	feature-only	OrderItem	PricebookEntryId	REFERENCE	true	true	false	false	false	18	0	0	Price Book Entry ID
+62.0	feature-only	OrderItem	Product2Id	REFERENCE	true	true	false	true	false	18	0	0	Product ID
+62.0	feature-only	OrderItem	Quantity	DOUBLE	true	true	true	false	false	0	18	2	Quantity
+62.0	feature-only	OrderItem	ServiceDate	DATE	true	true	true	true	true	0	0	0	Start Date
+62.0	feature-only	OrderItem	SystemModstamp	DATETIME	true	false	false	false	false	0	0	0	System Modstamp
+62.0	feature-only	OrderItem	TotalPrice	CURRENCY	true	false	false	true	false	0	18	2	Total Price
+62.0	feature-only	OrderItem	UnitPrice	CURRENCY	true	true	true	true	false	0	18	2	Unit Price
+62.0	setting-only	Order	AccountId	REFERENCE	true	true	true	true	false	18	0	0	Account ID
+62.0	setting-only	Order	ActivatedById	REFERENCE	true	false	true	true	true	18	0	0	Activated By ID
+62.0	setting-only	Order	ActivatedDate	DATETIME	true	false	true	true	true	0	0	0	Activated Date
+62.0	setting-only	Order	BillingAddress	ADDRESS	true	false	false	true	true	0	0	0	Billing Address
+62.0	setting-only	Order	BillingCity	STRING	true	true	true	true	true	40	0	0	Billing City
+62.0	setting-only	Order	BillingCountry	STRING	true	true	true	true	true	80	0	0	Billing Country
+62.0	setting-only	Order	BillingEmailAddress	EMAIL	false	false	false	true	true	80	0	0	Billing Email Address
+62.0	setting-only	Order	BillingGeocodeAccuracy	PICKLIST	true	true	true	true	true	40	0	0	Billing Geocode Accuracy
+62.0	setting-only	Order	BillingLatitude	DOUBLE	true	true	true	true	true	0	18	15	Billing Latitude
+62.0	setting-only	Order	BillingLongitude	DOUBLE	true	true	true	true	true	0	18	15	Billing Longitude
+62.0	setting-only	Order	BillingPhoneNumber	PHONE	false	false	false	true	true	40	0	0	Billing Phone Number
+62.0	setting-only	Order	BillingPostalCode	STRING	true	true	true	true	true	20	0	0	Billing Zip/Postal Code
+62.0	setting-only	Order	BillingState	STRING	true	true	true	true	true	80	0	0	Billing State/Province
+62.0	setting-only	Order	BillingStreet	TEXTAREA	true	true	true	true	true	255	0	0	Billing Street
+62.0	setting-only	Order	BillToContactId	REFERENCE	true	true	true	true	true	18	0	0	Bill To Contact ID
+62.0	setting-only	Order	CompanyAuthorizedById	REFERENCE	true	true	true	true	true	18	0	0	Company Authorized By ID
+62.0	setting-only	Order	CompanyAuthorizedDate	DATE	true	true	true	true	true	0	0	0	Company Authorized Date
+62.0	setting-only	Order	ContractId	REFERENCE	true	true	true	true	false	18	0	0	Contract ID
+62.0	setting-only	Order	CreatedById	REFERENCE	true	false	false	false	false	18	0	0	Created By ID
+62.0	setting-only	Order	CreatedDate	DATETIME	true	false	false	false	false	0	0	0	Created Date
+62.0	setting-only	Order	CustomerAuthorizedById	REFERENCE	true	true	true	true	true	18	0	0	Customer Authorized By ID
+62.0	setting-only	Order	CustomerAuthorizedDate	DATE	true	true	true	true	true	0	0	0	Customer Authorized Date
+62.0	setting-only	Order	Description	TEXTAREA	true	true	true	true	true	32000	0	0	Description
+62.0	setting-only	Order	EffectiveDate	DATE	true	true	true	false	false	0	0	0	Order Start Date
+62.0	setting-only	Order	EndDate	DATE	true	true	true	true	false	0	0	0	Order End Date
+62.0	setting-only	Order	GrandTotalAmount	CURRENCY	false	false	false	true	true	0	18	2	Total with Tax
+62.0	setting-only	Order	Id	ID	true	false	false	false	false	18	0	0	Order ID
+62.0	setting-only	Order	IsDeleted	BOOLEAN	true	false	false	false	false	0	0	0	Deleted
+62.0	setting-only	Order	IsReductionOrder	BOOLEAN	true	true	false	false	false	0	0	0	Reduction Order
+62.0	setting-only	Order	LastModifiedById	REFERENCE	true	false	false	false	false	18	0	0	Last Modified By ID
+62.0	setting-only	Order	LastModifiedDate	DATETIME	true	false	false	false	false	0	0	0	Last Modified Date
+62.0	setting-only	Order	LastReferencedDate	DATETIME	true	false	false	true	false	0	0	0	Last Referenced Date
+62.0	setting-only	Order	LastViewedDate	DATETIME	true	false	false	true	false	0	0	0	Last Viewed Date
+62.0	setting-only	Order	Name	STRING	true	true	true	true	true	80	0	0	Order Name
+62.0	setting-only	Order	OpportunityId	REFERENCE	false	false	false	true	true	18	0	0	Opportunity ID
+62.0	setting-only	Order	OrderedDate	DATETIME	false	false	false	true	true	0	0	0	Ordered Date
+62.0	setting-only	Order	OrderNumber	STRING	true	false	false	false	false	30	0	0	Order Number
+62.0	setting-only	Order	OrderReferenceNumber	STRING	true	true	true	true	true	80	0	0	Order Reference Number
+62.0	setting-only	Order	OriginalOrderId	REFERENCE	true	true	false	true	false	18	0	0	Order ID
+62.0	setting-only	Order	OwnerId	REFERENCE	true	true	true	false	false	18	0	0	Owner ID
+62.0	setting-only	Order	PoDate	DATE	true	true	true	true	true	0	0	0	PO Date
+62.0	setting-only	Order	PoNumber	STRING	true	true	true	true	true	80	0	0	PO Number
+62.0	setting-only	Order	Pricebook2Id	REFERENCE	true	true	true	true	false	18	0	0	Price Book ID
+62.0	setting-only	Order	RelatedOrderId	REFERENCE	true	false	false	true	false	18	0	0	Order ID
+62.0	setting-only	Order	SalesChannelId	REFERENCE	false	false	false	true	true	18	0	0	Sales Channel ID
+62.0	setting-only	Order	ShippingAddress	ADDRESS	true	false	false	true	true	0	0	0	Shipping Address
+62.0	setting-only	Order	ShippingCity	STRING	true	true	true	true	true	40	0	0	Shipping City
+62.0	setting-only	Order	ShippingCountry	STRING	true	true	true	true	true	80	0	0	Shipping Country
+62.0	setting-only	Order	ShippingGeocodeAccuracy	PICKLIST	true	true	true	true	true	40	0	0	Shipping Geocode Accuracy
+62.0	setting-only	Order	ShippingLatitude	DOUBLE	true	true	true	true	true	0	18	15	Shipping Latitude
+62.0	setting-only	Order	ShippingLongitude	DOUBLE	true	true	true	true	true	0	18	15	Shipping Longitude
+62.0	setting-only	Order	ShippingPostalCode	STRING	true	true	true	true	true	20	0	0	Shipping Zip/Postal Code
+62.0	setting-only	Order	ShippingState	STRING	true	true	true	true	true	80	0	0	Shipping State/Province
+62.0	setting-only	Order	ShippingStreet	TEXTAREA	true	true	true	true	true	255	0	0	Shipping Street
+62.0	setting-only	Order	ShipToContactId	REFERENCE	true	true	true	true	true	18	0	0	Ship To Contact ID
+62.0	setting-only	Order	Status	PICKLIST	true	true	true	false	false	100	0	0	Status
+62.0	setting-only	Order	StatusCode	PICKLIST	true	false	true	false	false	40	0	0	Status Category
+62.0	setting-only	Order	SystemModstamp	DATETIME	true	false	false	false	false	0	0	0	System Modstamp
+62.0	setting-only	Order	TaxLocaleType	PICKLIST	false	false	false	true	true	40	0	0	Tax Locale Type
+62.0	setting-only	Order	TotalAdjDeliveryAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Total Adjusted Delivery Amount with Tax
+62.0	setting-only	Order	TotalAdjProductAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Total Adjusted Product Amount with Tax
+62.0	setting-only	Order	TotalAdjustedDeliveryAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Adjusted Delivery Amount
+62.0	setting-only	Order	TotalAdjustedDeliveryTaxAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Adjusted Delivery Tax
+62.0	setting-only	Order	TotalAdjustedProductAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Adjusted Product Amount
+62.0	setting-only	Order	TotalAdjustedProductTaxAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Adjusted Product Tax
+62.0	setting-only	Order	TotalAmount	CURRENCY	true	false	false	false	true	0	18	2	Order Amount
+62.0	setting-only	Order	TotalDeliveryAdjDistAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Delivery Distributed Adjustments
+62.0	setting-only	Order	TotalDeliveryAdjDistAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Total Delivery Distributed Adjustments with Tax
+62.0	setting-only	Order	TotalDeliveryAdjDistTaxAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Delivery Distributed Adjustment Tax
+62.0	setting-only	Order	TotalProductAdjDistAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Product Distributed Adjustments
+62.0	setting-only	Order	TotalProductAdjDistAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Total Product Distributed Adjustments with Tax
+62.0	setting-only	Order	TotalProductAdjDistTaxAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Product Distributed Adjustment Tax
+62.0	setting-only	Order	TotalTaxAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Tax
+62.0	setting-only	Order	Type	PICKLIST	true	true	true	true	true	255	0	0	Order Type
+62.0	setting-only	OrderItem	AdjustedLineAmount	CURRENCY	false	false	false	true	true	0	18	2	Adjusted Product Subtotal
+62.0	setting-only	OrderItem	AdjustedLineAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Adjusted Product Subtotal with Tax
+62.0	setting-only	OrderItem	AvailableQuantity	DOUBLE	true	false	false	true	false	0	18	2	Available Quantity
+62.0	setting-only	OrderItem	CreatedById	REFERENCE	true	false	false	false	false	18	0	0	Created By ID
+62.0	setting-only	OrderItem	CreatedDate	DATETIME	true	false	false	false	false	0	0	0	Created Date
+62.0	setting-only	OrderItem	Description	STRING	true	true	true	true	true	255	0	0	Line Description
+62.0	setting-only	OrderItem	EarliestEstimatedDeliveryDate	DATE	false	false	false	true	true	0	0	0	Earliest Estimated Delivery Date
+62.0	setting-only	OrderItem	EarliestEstimatedDeliveryTime	TIME	false	false	false	true	true	0	0	0	Earliest Estimated Delivery Time
+62.0	setting-only	OrderItem	EndDate	DATE	true	true	true	true	true	0	0	0	End Date
+62.0	setting-only	OrderItem	EstimatedDeliveryReference	STRING	false	false	false	true	true	255	0	0	Delivery Estimated Reference
+62.0	setting-only	OrderItem	EstimatedDeliveryTimeZone	PICKLIST	false	false	false	true	true	40	0	0	Delivery Estimated Timezone
+62.0	setting-only	OrderItem	GrossUnitPrice	CURRENCY	false	false	false	true	true	0	18	2	Gross Unit Price
+62.0	setting-only	OrderItem	Id	ID	true	false	false	false	false	18	0	0	Order Product ID
+62.0	setting-only	OrderItem	IsDeleted	BOOLEAN	true	false	false	false	false	0	0	0	Deleted
+62.0	setting-only	OrderItem	LastModifiedById	REFERENCE	true	false	false	false	false	18	0	0	Last Modified By ID
+62.0	setting-only	OrderItem	LastModifiedDate	DATETIME	true	false	false	false	false	0	0	0	Last Modified Date
+62.0	setting-only	OrderItem	LatestEstimatedDeliveryDate	DATE	false	false	false	true	true	0	0	0	Latest Estimated Delivery Date
+62.0	setting-only	OrderItem	LatestEstimatedDeliveryTime	TIME	false	false	false	true	true	0	0	0	Latest Estimated Delivery Time
+62.0	setting-only	OrderItem	LineNumber	INTEGER	false	false	false	true	true	0	0	0	Line Number
+62.0	setting-only	OrderItem	ListPrice	CURRENCY	true	true	false	true	true	0	18	2	List Price
+62.0	setting-only	OrderItem	OrderDeliveryGroupId	REFERENCE	false	false	false	true	true	18	0	0	Order Delivery Group ID
+62.0	setting-only	OrderItem	OrderId	REFERENCE	true	true	false	false	false	18	0	0	Order ID
+62.0	setting-only	OrderItem	OrderItemNumber	STRING	true	false	false	false	false	30	0	0	Order Product Number
+62.0	setting-only	OrderItem	OriginalOrderItemId	REFERENCE	true	true	false	true	false	18	0	0	Original Order Item ID
+62.0	setting-only	OrderItem	ParentOrderItemId	REFERENCE	false	false	false	true	true	18	0	0	Order Product ID
+62.0	setting-only	OrderItem	PricebookEntryId	REFERENCE	true	true	false	false	false	18	0	0	Price Book Entry ID
+62.0	setting-only	OrderItem	Product2Id	REFERENCE	true	true	false	true	false	18	0	0	Product ID
+62.0	setting-only	OrderItem	Quantity	DOUBLE	true	true	true	false	false	0	18	2	Quantity
+62.0	setting-only	OrderItem	RelatedOrderItemId	REFERENCE	true	false	false	true	false	18	0	0	Order Product ID
+62.0	setting-only	OrderItem	ReservedAtLocationId	REFERENCE	false	false	false	true	true	18	0	0	Reserved at Location ID
+62.0	setting-only	OrderItem	RoundedLineAmount	CURRENCY	false	false	false	true	true	0	18	2	Product Subtotal (Rounded)
+62.0	setting-only	OrderItem	RoundedLineAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Product Subtotal (Rounded) with Tax
+62.0	setting-only	OrderItem	ServiceDate	DATE	true	true	true	true	true	0	0	0	Start Date
+62.0	setting-only	OrderItem	SystemModstamp	DATETIME	true	false	false	false	false	0	0	0	System Modstamp
+62.0	setting-only	OrderItem	TotalAdjustedLineTaxAmount	CURRENCY	false	false	false	false	true	0	18	2	Adjusted Product Subtotal Tax
+62.0	setting-only	OrderItem	TotalAdjustmentAmount	CURRENCY	false	false	false	false	true	0	18	2	Total Adjustments
+62.0	setting-only	OrderItem	TotalAdjustmentAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Total Adjustments with Tax
+62.0	setting-only	OrderItem	TotalAdjustmentDistAmount	CURRENCY	false	false	false	false	true	0	18	2	Distributed Order Adjustments
+62.0	setting-only	OrderItem	TotalAdjustmentDistAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Distributed Order Adjustments with Tax
+62.0	setting-only	OrderItem	TotalAdjustmentDistTaxAmount	CURRENCY	false	false	false	false	true	0	18	2	Distributed Order Adjustments Tax
+62.0	setting-only	OrderItem	TotalAdjustmentTaxAmount	CURRENCY	false	false	false	false	true	0	18	2	Total Adjustments Tax
+62.0	setting-only	OrderItem	TotalAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Total Amount with Tax
+62.0	setting-only	OrderItem	TotalLineAdjustmentAmount	CURRENCY	false	false	false	false	true	0	18	2	Product Adjustments
+62.0	setting-only	OrderItem	TotalLineAdjustmentAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Product Adjustments with Tax
+62.0	setting-only	OrderItem	TotalLineAdjustmentTaxAmount	CURRENCY	false	false	false	false	true	0	18	2	Product Adjustments Tax
+62.0	setting-only	OrderItem	TotalLineAmount	CURRENCY	true	true	true	true	false	0	18	2	Product Subtotal
+62.0	setting-only	OrderItem	TotalLineTaxAmount	CURRENCY	false	false	false	false	true	0	18	2	Product Subtotal Tax
+62.0	setting-only	OrderItem	TotalPrice	CURRENCY	true	false	false	true	false	0	18	2	Total Price
+62.0	setting-only	OrderItem	TotalTaxAmount	CURRENCY	false	false	false	false	true	0	18	2	Total Tax
+62.0	setting-only	OrderItem	Type	PICKLIST	true	true	true	true	false	100	0	0	Type
+62.0	setting-only	OrderItem	TypeCode	PICKLIST	true	false	false	true	false	40	0	0	Type Code
+62.0	setting-only	OrderItem	UnitPrice	CURRENCY	true	true	true	true	false	0	18	2	Unit Price
+62.0	feature-and-setting	Order	AccountId	REFERENCE	true	true	true	true	false	18	0	0	Account ID
+62.0	feature-and-setting	Order	ActivatedById	REFERENCE	true	false	true	true	true	18	0	0	Activated By ID
+62.0	feature-and-setting	Order	ActivatedDate	DATETIME	true	false	true	true	true	0	0	0	Activated Date
+62.0	feature-and-setting	Order	BillingAddress	ADDRESS	true	false	false	true	true	0	0	0	Billing Address
+62.0	feature-and-setting	Order	BillingCity	STRING	true	true	true	true	true	40	0	0	Billing City
+62.0	feature-and-setting	Order	BillingCountry	STRING	true	true	true	true	true	80	0	0	Billing Country
+62.0	feature-and-setting	Order	BillingEmailAddress	EMAIL	false	false	false	true	true	80	0	0	Billing Email Address
+62.0	feature-and-setting	Order	BillingGeocodeAccuracy	PICKLIST	true	true	true	true	true	40	0	0	Billing Geocode Accuracy
+62.0	feature-and-setting	Order	BillingLatitude	DOUBLE	true	true	true	true	true	0	18	15	Billing Latitude
+62.0	feature-and-setting	Order	BillingLongitude	DOUBLE	true	true	true	true	true	0	18	15	Billing Longitude
+62.0	feature-and-setting	Order	BillingPhoneNumber	PHONE	false	false	false	true	true	40	0	0	Billing Phone Number
+62.0	feature-and-setting	Order	BillingPostalCode	STRING	true	true	true	true	true	20	0	0	Billing Zip/Postal Code
+62.0	feature-and-setting	Order	BillingState	STRING	true	true	true	true	true	80	0	0	Billing State/Province
+62.0	feature-and-setting	Order	BillingStreet	TEXTAREA	true	true	true	true	true	255	0	0	Billing Street
+62.0	feature-and-setting	Order	BillToContactId	REFERENCE	true	true	true	true	true	18	0	0	Bill To Contact ID
+62.0	feature-and-setting	Order	CompanyAuthorizedById	REFERENCE	true	true	true	true	true	18	0	0	Company Authorized By ID
+62.0	feature-and-setting	Order	CompanyAuthorizedDate	DATE	true	true	true	true	true	0	0	0	Company Authorized Date
+62.0	feature-and-setting	Order	ContractId	REFERENCE	true	true	true	true	false	18	0	0	Contract ID
+62.0	feature-and-setting	Order	CreatedById	REFERENCE	true	false	false	false	false	18	0	0	Created By ID
+62.0	feature-and-setting	Order	CreatedDate	DATETIME	true	false	false	false	false	0	0	0	Created Date
+62.0	feature-and-setting	Order	CustomerAuthorizedById	REFERENCE	true	true	true	true	true	18	0	0	Customer Authorized By ID
+62.0	feature-and-setting	Order	CustomerAuthorizedDate	DATE	true	true	true	true	true	0	0	0	Customer Authorized Date
+62.0	feature-and-setting	Order	Description	TEXTAREA	true	true	true	true	true	32000	0	0	Description
+62.0	feature-and-setting	Order	EffectiveDate	DATE	true	true	true	false	false	0	0	0	Order Start Date
+62.0	feature-and-setting	Order	EndDate	DATE	true	true	true	true	false	0	0	0	Order End Date
+62.0	feature-and-setting	Order	GrandTotalAmount	CURRENCY	false	false	false	true	true	0	18	2	Total with Tax
+62.0	feature-and-setting	Order	Id	ID	true	false	false	false	false	18	0	0	Order ID
+62.0	feature-and-setting	Order	IsDeleted	BOOLEAN	true	false	false	false	false	0	0	0	Deleted
+62.0	feature-and-setting	Order	IsReductionOrder	BOOLEAN	true	true	false	false	false	0	0	0	Reduction Order
+62.0	feature-and-setting	Order	LastModifiedById	REFERENCE	true	false	false	false	false	18	0	0	Last Modified By ID
+62.0	feature-and-setting	Order	LastModifiedDate	DATETIME	true	false	false	false	false	0	0	0	Last Modified Date
+62.0	feature-and-setting	Order	LastReferencedDate	DATETIME	true	false	false	true	false	0	0	0	Last Referenced Date
+62.0	feature-and-setting	Order	LastViewedDate	DATETIME	true	false	false	true	false	0	0	0	Last Viewed Date
+62.0	feature-and-setting	Order	Name	STRING	true	true	true	true	true	80	0	0	Order Name
+62.0	feature-and-setting	Order	OpportunityId	REFERENCE	false	false	false	true	true	18	0	0	Opportunity ID
+62.0	feature-and-setting	Order	OrderedDate	DATETIME	false	false	false	true	true	0	0	0	Ordered Date
+62.0	feature-and-setting	Order	OrderNumber	STRING	true	false	false	false	false	30	0	0	Order Number
+62.0	feature-and-setting	Order	OrderReferenceNumber	STRING	true	true	true	true	true	80	0	0	Order Reference Number
+62.0	feature-and-setting	Order	OriginalOrderId	REFERENCE	true	true	false	true	false	18	0	0	Order ID
+62.0	feature-and-setting	Order	OwnerId	REFERENCE	true	true	true	false	false	18	0	0	Owner ID
+62.0	feature-and-setting	Order	PoDate	DATE	true	true	true	true	true	0	0	0	PO Date
+62.0	feature-and-setting	Order	PoNumber	STRING	true	true	true	true	true	80	0	0	PO Number
+62.0	feature-and-setting	Order	Pricebook2Id	REFERENCE	true	true	true	true	false	18	0	0	Price Book ID
+62.0	feature-and-setting	Order	RelatedOrderId	REFERENCE	true	false	false	true	false	18	0	0	Order ID
+62.0	feature-and-setting	Order	SalesChannelId	REFERENCE	false	false	false	true	true	18	0	0	Sales Channel ID
+62.0	feature-and-setting	Order	ShippingAddress	ADDRESS	true	false	false	true	true	0	0	0	Shipping Address
+62.0	feature-and-setting	Order	ShippingCity	STRING	true	true	true	true	true	40	0	0	Shipping City
+62.0	feature-and-setting	Order	ShippingCountry	STRING	true	true	true	true	true	80	0	0	Shipping Country
+62.0	feature-and-setting	Order	ShippingGeocodeAccuracy	PICKLIST	true	true	true	true	true	40	0	0	Shipping Geocode Accuracy
+62.0	feature-and-setting	Order	ShippingLatitude	DOUBLE	true	true	true	true	true	0	18	15	Shipping Latitude
+62.0	feature-and-setting	Order	ShippingLongitude	DOUBLE	true	true	true	true	true	0	18	15	Shipping Longitude
+62.0	feature-and-setting	Order	ShippingPostalCode	STRING	true	true	true	true	true	20	0	0	Shipping Zip/Postal Code
+62.0	feature-and-setting	Order	ShippingState	STRING	true	true	true	true	true	80	0	0	Shipping State/Province
+62.0	feature-and-setting	Order	ShippingStreet	TEXTAREA	true	true	true	true	true	255	0	0	Shipping Street
+62.0	feature-and-setting	Order	ShipToContactId	REFERENCE	true	true	true	true	true	18	0	0	Ship To Contact ID
+62.0	feature-and-setting	Order	Status	PICKLIST	true	true	true	false	false	100	0	0	Status
+62.0	feature-and-setting	Order	StatusCode	PICKLIST	true	false	true	false	false	40	0	0	Status Category
+62.0	feature-and-setting	Order	SystemModstamp	DATETIME	true	false	false	false	false	0	0	0	System Modstamp
+62.0	feature-and-setting	Order	TaxLocaleType	PICKLIST	false	false	false	true	true	40	0	0	Tax Locale Type
+62.0	feature-and-setting	Order	TotalAdjDeliveryAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Total Adjusted Delivery Amount with Tax
+62.0	feature-and-setting	Order	TotalAdjProductAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Total Adjusted Product Amount with Tax
+62.0	feature-and-setting	Order	TotalAdjustedDeliveryAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Adjusted Delivery Amount
+62.0	feature-and-setting	Order	TotalAdjustedDeliveryTaxAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Adjusted Delivery Tax
+62.0	feature-and-setting	Order	TotalAdjustedProductAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Adjusted Product Amount
+62.0	feature-and-setting	Order	TotalAdjustedProductTaxAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Adjusted Product Tax
+62.0	feature-and-setting	Order	TotalAmount	CURRENCY	true	false	false	false	true	0	18	2	Order Amount
+62.0	feature-and-setting	Order	TotalDeliveryAdjDistAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Delivery Distributed Adjustments
+62.0	feature-and-setting	Order	TotalDeliveryAdjDistAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Total Delivery Distributed Adjustments with Tax
+62.0	feature-and-setting	Order	TotalDeliveryAdjDistTaxAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Delivery Distributed Adjustment Tax
+62.0	feature-and-setting	Order	TotalProductAdjDistAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Product Distributed Adjustments
+62.0	feature-and-setting	Order	TotalProductAdjDistAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Total Product Distributed Adjustments with Tax
+62.0	feature-and-setting	Order	TotalProductAdjDistTaxAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Product Distributed Adjustment Tax
+62.0	feature-and-setting	Order	TotalTaxAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Tax
+62.0	feature-and-setting	Order	Type	PICKLIST	true	true	true	true	true	255	0	0	Order Type
+62.0	feature-and-setting	OrderItem	AdjustedLineAmount	CURRENCY	false	false	false	true	true	0	18	2	Adjusted Product Subtotal
+62.0	feature-and-setting	OrderItem	AdjustedLineAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Adjusted Product Subtotal with Tax
+62.0	feature-and-setting	OrderItem	AvailableQuantity	DOUBLE	true	false	false	true	false	0	18	2	Available Quantity
+62.0	feature-and-setting	OrderItem	CreatedById	REFERENCE	true	false	false	false	false	18	0	0	Created By ID
+62.0	feature-and-setting	OrderItem	CreatedDate	DATETIME	true	false	false	false	false	0	0	0	Created Date
+62.0	feature-and-setting	OrderItem	Description	STRING	true	true	true	true	true	255	0	0	Line Description
+62.0	feature-and-setting	OrderItem	EarliestEstimatedDeliveryDate	DATE	false	false	false	true	true	0	0	0	Earliest Estimated Delivery Date
+62.0	feature-and-setting	OrderItem	EarliestEstimatedDeliveryTime	TIME	false	false	false	true	true	0	0	0	Earliest Estimated Delivery Time
+62.0	feature-and-setting	OrderItem	EndDate	DATE	true	true	true	true	true	0	0	0	End Date
+62.0	feature-and-setting	OrderItem	EstimatedDeliveryReference	STRING	false	false	false	true	true	255	0	0	Delivery Estimated Reference
+62.0	feature-and-setting	OrderItem	EstimatedDeliveryTimeZone	PICKLIST	false	false	false	true	true	40	0	0	Delivery Estimated Timezone
+62.0	feature-and-setting	OrderItem	GrossUnitPrice	CURRENCY	false	false	false	true	true	0	18	2	Gross Unit Price
+62.0	feature-and-setting	OrderItem	Id	ID	true	false	false	false	false	18	0	0	Order Product ID
+62.0	feature-and-setting	OrderItem	IsDeleted	BOOLEAN	true	false	false	false	false	0	0	0	Deleted
+62.0	feature-and-setting	OrderItem	LastModifiedById	REFERENCE	true	false	false	false	false	18	0	0	Last Modified By ID
+62.0	feature-and-setting	OrderItem	LastModifiedDate	DATETIME	true	false	false	false	false	0	0	0	Last Modified Date
+62.0	feature-and-setting	OrderItem	LatestEstimatedDeliveryDate	DATE	false	false	false	true	true	0	0	0	Latest Estimated Delivery Date
+62.0	feature-and-setting	OrderItem	LatestEstimatedDeliveryTime	TIME	false	false	false	true	true	0	0	0	Latest Estimated Delivery Time
+62.0	feature-and-setting	OrderItem	LineNumber	INTEGER	false	false	false	true	true	0	0	0	Line Number
+62.0	feature-and-setting	OrderItem	ListPrice	CURRENCY	true	true	false	true	true	0	18	2	List Price
+62.0	feature-and-setting	OrderItem	OrderDeliveryGroupId	REFERENCE	false	false	false	true	true	18	0	0	Order Delivery Group ID
+62.0	feature-and-setting	OrderItem	OrderId	REFERENCE	true	true	false	false	false	18	0	0	Order ID
+62.0	feature-and-setting	OrderItem	OrderItemNumber	STRING	true	false	false	false	false	30	0	0	Order Product Number
+62.0	feature-and-setting	OrderItem	OriginalOrderItemId	REFERENCE	true	true	false	true	false	18	0	0	Original Order Item ID
+62.0	feature-and-setting	OrderItem	ParentOrderItemId	REFERENCE	false	false	false	true	true	18	0	0	Order Product ID
+62.0	feature-and-setting	OrderItem	PricebookEntryId	REFERENCE	true	true	false	false	false	18	0	0	Price Book Entry ID
+62.0	feature-and-setting	OrderItem	Product2Id	REFERENCE	true	true	false	true	false	18	0	0	Product ID
+62.0	feature-and-setting	OrderItem	Quantity	DOUBLE	true	true	true	false	false	0	18	2	Quantity
+62.0	feature-and-setting	OrderItem	RelatedOrderItemId	REFERENCE	true	false	false	true	false	18	0	0	Order Product ID
+62.0	feature-and-setting	OrderItem	ReservedAtLocationId	REFERENCE	false	false	false	true	true	18	0	0	Reserved at Location ID
+62.0	feature-and-setting	OrderItem	RoundedLineAmount	CURRENCY	false	false	false	true	true	0	18	2	Product Subtotal (Rounded)
+62.0	feature-and-setting	OrderItem	RoundedLineAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Product Subtotal (Rounded) with Tax
+62.0	feature-and-setting	OrderItem	ServiceDate	DATE	true	true	true	true	true	0	0	0	Start Date
+62.0	feature-and-setting	OrderItem	SystemModstamp	DATETIME	true	false	false	false	false	0	0	0	System Modstamp
+62.0	feature-and-setting	OrderItem	TotalAdjustedLineTaxAmount	CURRENCY	false	false	false	false	true	0	18	2	Adjusted Product Subtotal Tax
+62.0	feature-and-setting	OrderItem	TotalAdjustmentAmount	CURRENCY	false	false	false	false	true	0	18	2	Total Adjustments
+62.0	feature-and-setting	OrderItem	TotalAdjustmentAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Total Adjustments with Tax
+62.0	feature-and-setting	OrderItem	TotalAdjustmentDistAmount	CURRENCY	false	false	false	false	true	0	18	2	Distributed Order Adjustments
+62.0	feature-and-setting	OrderItem	TotalAdjustmentDistAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Distributed Order Adjustments with Tax
+62.0	feature-and-setting	OrderItem	TotalAdjustmentDistTaxAmount	CURRENCY	false	false	false	false	true	0	18	2	Distributed Order Adjustments Tax
+62.0	feature-and-setting	OrderItem	TotalAdjustmentTaxAmount	CURRENCY	false	false	false	false	true	0	18	2	Total Adjustments Tax
+62.0	feature-and-setting	OrderItem	TotalAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Total Amount with Tax
+62.0	feature-and-setting	OrderItem	TotalLineAdjustmentAmount	CURRENCY	false	false	false	false	true	0	18	2	Product Adjustments
+62.0	feature-and-setting	OrderItem	TotalLineAdjustmentAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Product Adjustments with Tax
+62.0	feature-and-setting	OrderItem	TotalLineAdjustmentTaxAmount	CURRENCY	false	false	false	false	true	0	18	2	Product Adjustments Tax
+62.0	feature-and-setting	OrderItem	TotalLineAmount	CURRENCY	true	true	true	true	false	0	18	2	Product Subtotal
+62.0	feature-and-setting	OrderItem	TotalLineTaxAmount	CURRENCY	false	false	false	false	true	0	18	2	Product Subtotal Tax
+62.0	feature-and-setting	OrderItem	TotalPrice	CURRENCY	true	false	false	true	false	0	18	2	Total Price
+62.0	feature-and-setting	OrderItem	TotalTaxAmount	CURRENCY	false	false	false	false	true	0	18	2	Total Tax
+62.0	feature-and-setting	OrderItem	Type	PICKLIST	true	true	true	true	false	100	0	0	Type
+62.0	feature-and-setting	OrderItem	TypeCode	PICKLIST	true	false	false	true	false	40	0	0	Type Code
+62.0	feature-and-setting	OrderItem	UnitPrice	CURRENCY	true	true	true	true	false	0	18	2	Unit Price
+67.0	feature-only	Order	AccountId	REFERENCE	true	true	true	true	false	18	0	0	Account ID
+67.0	feature-only	Order	ActivatedById	REFERENCE	true	false	true	true	true	18	0	0	Activated By ID
+67.0	feature-only	Order	ActivatedDate	DATETIME	true	false	true	true	true	0	0	0	Activated Date
+67.0	feature-only	Order	BillingAddress	ADDRESS	true	false	false	true	true	0	0	0	Billing Address
+67.0	feature-only	Order	BillingCity	STRING	true	true	true	true	true	40	0	0	Billing City
+67.0	feature-only	Order	BillingCountry	STRING	true	true	true	true	true	80	0	0	Billing Country
+67.0	feature-only	Order	BillingGeocodeAccuracy	PICKLIST	true	true	true	true	true	40	0	0	Billing Geocode Accuracy
+67.0	feature-only	Order	BillingLatitude	DOUBLE	true	true	true	true	true	0	18	15	Billing Latitude
+67.0	feature-only	Order	BillingLongitude	DOUBLE	true	true	true	true	true	0	18	15	Billing Longitude
+67.0	feature-only	Order	BillingPostalCode	STRING	true	true	true	true	true	20	0	0	Billing Zip/Postal Code
+67.0	feature-only	Order	BillingState	STRING	true	true	true	true	true	80	0	0	Billing State/Province
+67.0	feature-only	Order	BillingStreet	TEXTAREA	true	true	true	true	true	255	0	0	Billing Street
+67.0	feature-only	Order	BillToContactId	REFERENCE	true	true	true	true	true	18	0	0	Bill To Contact ID
+67.0	feature-only	Order	CompanyAuthorizedById	REFERENCE	true	true	true	true	true	18	0	0	Company Authorized By ID
+67.0	feature-only	Order	CompanyAuthorizedDate	DATE	true	true	true	true	true	0	0	0	Company Authorized Date
+67.0	feature-only	Order	ContractId	REFERENCE	true	true	true	true	false	18	0	0	Contract ID
+67.0	feature-only	Order	CreatedById	REFERENCE	true	false	false	false	false	18	0	0	Created By ID
+67.0	feature-only	Order	CreatedDate	DATETIME	true	false	false	false	false	0	0	0	Created Date
+67.0	feature-only	Order	CustomerAuthorizedById	REFERENCE	true	true	true	true	true	18	0	0	Customer Authorized By ID
+67.0	feature-only	Order	CustomerAuthorizedDate	DATE	true	true	true	true	true	0	0	0	Customer Authorized Date
+67.0	feature-only	Order	Description	TEXTAREA	true	true	true	true	true	32000	0	0	Description
+67.0	feature-only	Order	EffectiveDate	DATE	true	true	true	false	false	0	0	0	Order Start Date
+67.0	feature-only	Order	EndDate	DATE	true	true	true	true	false	0	0	0	Order End Date
+67.0	feature-only	Order	Id	ID	true	false	false	false	false	18	0	0	Order ID
+67.0	feature-only	Order	IsDeleted	BOOLEAN	true	false	false	false	false	0	0	0	Deleted
+67.0	feature-only	Order	IsReductionOrder	BOOLEAN	true	true	false	false	false	0	0	0	Reduction Order
+67.0	feature-only	Order	LastModifiedById	REFERENCE	true	false	false	false	false	18	0	0	Last Modified By ID
+67.0	feature-only	Order	LastModifiedDate	DATETIME	true	false	false	false	false	0	0	0	Last Modified Date
+67.0	feature-only	Order	LastReferencedDate	DATETIME	true	false	false	true	false	0	0	0	Last Referenced Date
+67.0	feature-only	Order	LastViewedDate	DATETIME	true	false	false	true	false	0	0	0	Last Viewed Date
+67.0	feature-only	Order	Name	STRING	true	true	true	true	true	80	0	0	Order Name
+67.0	feature-only	Order	OpportunityId	REFERENCE	false	false	false	true	true	18	0	0	Opportunity ID
+67.0	feature-only	Order	OrderNumber	STRING	true	false	false	false	false	30	0	0	Order Number
+67.0	feature-only	Order	OrderReferenceNumber	STRING	true	true	true	true	true	80	0	0	Order Reference Number
+67.0	feature-only	Order	OriginalOrderId	REFERENCE	true	true	false	true	false	18	0	0	Order ID
+67.0	feature-only	Order	OwnerId	REFERENCE	true	true	true	false	false	18	0	0	Owner ID
+67.0	feature-only	Order	PoDate	DATE	true	true	true	true	true	0	0	0	PO Date
+67.0	feature-only	Order	PoNumber	STRING	true	true	true	true	true	80	0	0	PO Number
+67.0	feature-only	Order	Pricebook2Id	REFERENCE	true	true	true	true	false	18	0	0	Price Book ID
+67.0	feature-only	Order	ShippingAddress	ADDRESS	true	false	false	true	true	0	0	0	Shipping Address
+67.0	feature-only	Order	ShippingCity	STRING	true	true	true	true	true	40	0	0	Shipping City
+67.0	feature-only	Order	ShippingCountry	STRING	true	true	true	true	true	80	0	0	Shipping Country
+67.0	feature-only	Order	ShippingGeocodeAccuracy	PICKLIST	true	true	true	true	true	40	0	0	Shipping Geocode Accuracy
+67.0	feature-only	Order	ShippingLatitude	DOUBLE	true	true	true	true	true	0	18	15	Shipping Latitude
+67.0	feature-only	Order	ShippingLongitude	DOUBLE	true	true	true	true	true	0	18	15	Shipping Longitude
+67.0	feature-only	Order	ShippingPostalCode	STRING	true	true	true	true	true	20	0	0	Shipping Zip/Postal Code
+67.0	feature-only	Order	ShippingState	STRING	true	true	true	true	true	80	0	0	Shipping State/Province
+67.0	feature-only	Order	ShippingStreet	TEXTAREA	true	true	true	true	true	255	0	0	Shipping Street
+67.0	feature-only	Order	ShipToContactId	REFERENCE	true	true	true	true	true	18	0	0	Ship To Contact ID
+67.0	feature-only	Order	Status	PICKLIST	true	true	true	false	false	100	0	0	Status
+67.0	feature-only	Order	StatusCode	PICKLIST	true	false	true	false	false	40	0	0	Status Category
+67.0	feature-only	Order	SystemModstamp	DATETIME	true	false	false	false	false	0	0	0	System Modstamp
+67.0	feature-only	Order	TotalAmount	CURRENCY	true	false	false	false	true	0	18	2	Order Amount
+67.0	feature-only	Order	Type	PICKLIST	true	true	true	true	true	255	0	0	Order Type
+67.0	feature-only	OrderItem	AvailableQuantity	DOUBLE	true	false	false	true	false	0	18	2	Available Quantity
+67.0	feature-only	OrderItem	CreatedById	REFERENCE	true	false	false	false	false	18	0	0	Created By ID
+67.0	feature-only	OrderItem	CreatedDate	DATETIME	true	false	false	false	false	0	0	0	Created Date
+67.0	feature-only	OrderItem	Description	STRING	true	true	true	true	true	255	0	0	Line Description
+67.0	feature-only	OrderItem	EndDate	DATE	true	true	true	true	true	0	0	0	End Date
+67.0	feature-only	OrderItem	Id	ID	true	false	false	false	false	18	0	0	Order Product ID
+67.0	feature-only	OrderItem	IsDeleted	BOOLEAN	true	false	false	false	false	0	0	0	Deleted
+67.0	feature-only	OrderItem	LastModifiedById	REFERENCE	true	false	false	false	false	18	0	0	Last Modified By ID
+67.0	feature-only	OrderItem	LastModifiedDate	DATETIME	true	false	false	false	false	0	0	0	Last Modified Date
+67.0	feature-only	OrderItem	ListPrice	CURRENCY	true	true	false	true	true	0	18	2	List Price
+67.0	feature-only	OrderItem	OrderId	REFERENCE	true	true	false	false	false	18	0	0	Order ID
+67.0	feature-only	OrderItem	OrderItemNumber	STRING	true	false	false	false	false	30	0	0	Order Product Number
+67.0	feature-only	OrderItem	OriginalOrderItemId	REFERENCE	true	true	false	true	false	18	0	0	Original Order Item ID
+67.0	feature-only	OrderItem	PricebookEntryId	REFERENCE	true	true	false	false	false	18	0	0	Price Book Entry ID
+67.0	feature-only	OrderItem	Product2Id	REFERENCE	true	true	false	true	false	18	0	0	Product ID
+67.0	feature-only	OrderItem	Quantity	DOUBLE	true	true	true	false	false	0	18	2	Quantity
+67.0	feature-only	OrderItem	ServiceDate	DATE	true	true	true	true	true	0	0	0	Start Date
+67.0	feature-only	OrderItem	SystemModstamp	DATETIME	true	false	false	false	false	0	0	0	System Modstamp
+67.0	feature-only	OrderItem	TotalPrice	CURRENCY	true	false	false	true	false	0	18	2	Total Price
+67.0	feature-only	OrderItem	UnitPrice	CURRENCY	true	true	true	true	false	0	18	2	Unit Price
+67.0	setting-only	Order	AccountId	REFERENCE	true	true	true	true	false	18	0	0	Account ID
+67.0	setting-only	Order	ActivatedById	REFERENCE	true	false	true	true	true	18	0	0	Activated By ID
+67.0	setting-only	Order	ActivatedDate	DATETIME	true	false	true	true	true	0	0	0	Activated Date
+67.0	setting-only	Order	BillingAddress	ADDRESS	true	false	false	true	true	0	0	0	Billing Address
+67.0	setting-only	Order	BillingCity	STRING	true	true	true	true	true	40	0	0	Billing City
+67.0	setting-only	Order	BillingCountry	STRING	true	true	true	true	true	80	0	0	Billing Country
+67.0	setting-only	Order	BillingEmailAddress	EMAIL	false	false	false	true	true	80	0	0	Billing Email Address
+67.0	setting-only	Order	BillingGeocodeAccuracy	PICKLIST	true	true	true	true	true	40	0	0	Billing Geocode Accuracy
+67.0	setting-only	Order	BillingLatitude	DOUBLE	true	true	true	true	true	0	18	15	Billing Latitude
+67.0	setting-only	Order	BillingLongitude	DOUBLE	true	true	true	true	true	0	18	15	Billing Longitude
+67.0	setting-only	Order	BillingPhoneNumber	PHONE	false	false	false	true	true	40	0	0	Billing Phone Number
+67.0	setting-only	Order	BillingPostalCode	STRING	true	true	true	true	true	20	0	0	Billing Zip/Postal Code
+67.0	setting-only	Order	BillingState	STRING	true	true	true	true	true	80	0	0	Billing State/Province
+67.0	setting-only	Order	BillingStreet	TEXTAREA	true	true	true	true	true	255	0	0	Billing Street
+67.0	setting-only	Order	BillToContactId	REFERENCE	true	true	true	true	true	18	0	0	Bill To Contact ID
+67.0	setting-only	Order	CompanyAuthorizedById	REFERENCE	true	true	true	true	true	18	0	0	Company Authorized By ID
+67.0	setting-only	Order	CompanyAuthorizedDate	DATE	true	true	true	true	true	0	0	0	Company Authorized Date
+67.0	setting-only	Order	ContractId	REFERENCE	true	true	true	true	false	18	0	0	Contract ID
+67.0	setting-only	Order	CreatedById	REFERENCE	true	false	false	false	false	18	0	0	Created By ID
+67.0	setting-only	Order	CreatedDate	DATETIME	true	false	false	false	false	0	0	0	Created Date
+67.0	setting-only	Order	CustomerAuthorizedById	REFERENCE	true	true	true	true	true	18	0	0	Customer Authorized By ID
+67.0	setting-only	Order	CustomerAuthorizedDate	DATE	true	true	true	true	true	0	0	0	Customer Authorized Date
+67.0	setting-only	Order	Description	TEXTAREA	true	true	true	true	true	32000	0	0	Description
+67.0	setting-only	Order	EffectiveDate	DATE	true	true	true	false	false	0	0	0	Order Start Date
+67.0	setting-only	Order	EndDate	DATE	true	true	true	true	false	0	0	0	Order End Date
+67.0	setting-only	Order	GrandTotalAmount	CURRENCY	false	false	false	true	true	0	18	2	Total with Tax
+67.0	setting-only	Order	Id	ID	true	false	false	false	false	18	0	0	Order ID
+67.0	setting-only	Order	IsDeleted	BOOLEAN	true	false	false	false	false	0	0	0	Deleted
+67.0	setting-only	Order	IsReductionOrder	BOOLEAN	true	true	false	false	false	0	0	0	Reduction Order
+67.0	setting-only	Order	LastModifiedById	REFERENCE	true	false	false	false	false	18	0	0	Last Modified By ID
+67.0	setting-only	Order	LastModifiedDate	DATETIME	true	false	false	false	false	0	0	0	Last Modified Date
+67.0	setting-only	Order	LastReferencedDate	DATETIME	true	false	false	true	false	0	0	0	Last Referenced Date
+67.0	setting-only	Order	LastViewedDate	DATETIME	true	false	false	true	false	0	0	0	Last Viewed Date
+67.0	setting-only	Order	Name	STRING	true	true	true	true	true	80	0	0	Order Name
+67.0	setting-only	Order	OpportunityId	REFERENCE	false	false	false	true	true	18	0	0	Opportunity ID
+67.0	setting-only	Order	OrderedDate	DATETIME	false	false	false	true	true	0	0	0	Ordered Date
+67.0	setting-only	Order	OrderNumber	STRING	true	false	false	false	false	30	0	0	Order Number
+67.0	setting-only	Order	OrderReferenceNumber	STRING	true	true	true	true	true	80	0	0	Order Reference Number
+67.0	setting-only	Order	OriginalOrderId	REFERENCE	true	true	false	true	false	18	0	0	Order ID
+67.0	setting-only	Order	OwnerId	REFERENCE	true	true	true	false	false	18	0	0	Owner ID
+67.0	setting-only	Order	PoDate	DATE	true	true	true	true	true	0	0	0	PO Date
+67.0	setting-only	Order	PoNumber	STRING	true	true	true	true	true	80	0	0	PO Number
+67.0	setting-only	Order	Pricebook2Id	REFERENCE	true	true	true	true	false	18	0	0	Price Book ID
+67.0	setting-only	Order	RelatedOrderId	REFERENCE	true	false	false	true	false	18	0	0	Order ID
+67.0	setting-only	Order	RelatedOrderType	PICKLIST	true	false	false	true	false	40	0	0	Related Order Type
+67.0	setting-only	Order	SalesChannelId	REFERENCE	false	false	false	true	true	18	0	0	Sales Channel ID
+67.0	setting-only	Order	ShippingAddress	ADDRESS	true	false	false	true	true	0	0	0	Shipping Address
+67.0	setting-only	Order	ShippingCity	STRING	true	true	true	true	true	40	0	0	Shipping City
+67.0	setting-only	Order	ShippingCountry	STRING	true	true	true	true	true	80	0	0	Shipping Country
+67.0	setting-only	Order	ShippingGeocodeAccuracy	PICKLIST	true	true	true	true	true	40	0	0	Shipping Geocode Accuracy
+67.0	setting-only	Order	ShippingLatitude	DOUBLE	true	true	true	true	true	0	18	15	Shipping Latitude
+67.0	setting-only	Order	ShippingLongitude	DOUBLE	true	true	true	true	true	0	18	15	Shipping Longitude
+67.0	setting-only	Order	ShippingPostalCode	STRING	true	true	true	true	true	20	0	0	Shipping Zip/Postal Code
+67.0	setting-only	Order	ShippingState	STRING	true	true	true	true	true	80	0	0	Shipping State/Province
+67.0	setting-only	Order	ShippingStreet	TEXTAREA	true	true	true	true	true	255	0	0	Shipping Street
+67.0	setting-only	Order	ShipToContactId	REFERENCE	true	true	true	true	true	18	0	0	Ship To Contact ID
+67.0	setting-only	Order	Status	PICKLIST	true	true	true	false	false	100	0	0	Status
+67.0	setting-only	Order	StatusCode	PICKLIST	true	false	true	false	false	40	0	0	Status Category
+67.0	setting-only	Order	SystemModstamp	DATETIME	true	false	false	false	false	0	0	0	System Modstamp
+67.0	setting-only	Order	TaxLocaleType	PICKLIST	false	false	false	true	true	40	0	0	Tax Locale Type
+67.0	setting-only	Order	TotalAdjDeliveryAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Total Adjusted Delivery Amount with Tax
+67.0	setting-only	Order	TotalAdjProductAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Total Adjusted Product Amount with Tax
+67.0	setting-only	Order	TotalAdjustedDeliveryAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Adjusted Delivery Amount
+67.0	setting-only	Order	TotalAdjustedDeliveryTaxAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Adjusted Delivery Tax
+67.0	setting-only	Order	TotalAdjustedProductAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Adjusted Product Amount
+67.0	setting-only	Order	TotalAdjustedProductTaxAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Adjusted Product Tax
+67.0	setting-only	Order	TotalAmount	CURRENCY	true	false	false	false	true	0	18	2	Order Amount
+67.0	setting-only	Order	TotalDeliveryAdjDistAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Delivery Distributed Adjustments
+67.0	setting-only	Order	TotalDeliveryAdjDistAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Total Delivery Distributed Adjustments with Tax
+67.0	setting-only	Order	TotalDeliveryAdjDistTaxAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Delivery Distributed Adjustment Tax
+67.0	setting-only	Order	TotalProductAdjDistAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Product Distributed Adjustments
+67.0	setting-only	Order	TotalProductAdjDistAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Total Product Distributed Adjustments with Tax
+67.0	setting-only	Order	TotalProductAdjDistTaxAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Product Distributed Adjustment Tax
+67.0	setting-only	Order	TotalTaxAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Tax
+67.0	setting-only	Order	Type	PICKLIST	true	true	true	true	true	255	0	0	Order Type
+67.0	setting-only	OrderItem	AdjustedLineAmount	CURRENCY	false	false	false	true	true	0	18	2	Adjusted Product Subtotal
+67.0	setting-only	OrderItem	AdjustedLineAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Adjusted Product Subtotal with Tax
+67.0	setting-only	OrderItem	AvailableQuantity	DOUBLE	true	false	false	true	false	0	18	2	Available Quantity
+67.0	setting-only	OrderItem	CreatedById	REFERENCE	true	false	false	false	false	18	0	0	Created By ID
+67.0	setting-only	OrderItem	CreatedDate	DATETIME	true	false	false	false	false	0	0	0	Created Date
+67.0	setting-only	OrderItem	Description	STRING	true	true	true	true	true	255	0	0	Line Description
+67.0	setting-only	OrderItem	EarliestEstimatedDeliveryDate	DATE	false	false	false	true	true	0	0	0	Earliest Estimated Delivery Date
+67.0	setting-only	OrderItem	EarliestEstimatedDeliveryTime	TIME	false	false	false	true	true	0	0	0	Earliest Estimated Delivery Time
+67.0	setting-only	OrderItem	EndDate	DATE	true	true	true	true	true	0	0	0	End Date
+67.0	setting-only	OrderItem	EstimatedDeliveryReference	STRING	false	false	false	true	true	255	0	0	Delivery Estimated Reference
+67.0	setting-only	OrderItem	EstimatedDeliveryTimeZone	PICKLIST	false	false	false	true	true	40	0	0	Delivery Estimated Timezone
+67.0	setting-only	OrderItem	GrossUnitPrice	CURRENCY	false	false	false	true	true	0	18	2	Gross Unit Price
+67.0	setting-only	OrderItem	Id	ID	true	false	false	false	false	18	0	0	Order Product ID
+67.0	setting-only	OrderItem	IsDeleted	BOOLEAN	true	false	false	false	false	0	0	0	Deleted
+67.0	setting-only	OrderItem	LastModifiedById	REFERENCE	true	false	false	false	false	18	0	0	Last Modified By ID
+67.0	setting-only	OrderItem	LastModifiedDate	DATETIME	true	false	false	false	false	0	0	0	Last Modified Date
+67.0	setting-only	OrderItem	LatestEstimatedDeliveryDate	DATE	false	false	false	true	true	0	0	0	Latest Estimated Delivery Date
+67.0	setting-only	OrderItem	LatestEstimatedDeliveryTime	TIME	false	false	false	true	true	0	0	0	Latest Estimated Delivery Time
+67.0	setting-only	OrderItem	LineNumber	INTEGER	false	false	false	true	true	0	0	0	Line Number
+67.0	setting-only	OrderItem	ListPrice	CURRENCY	true	true	false	true	true	0	18	2	List Price
+67.0	setting-only	OrderItem	OrderDeliveryGroupId	REFERENCE	false	false	false	true	true	18	0	0	Order Delivery Group ID
+67.0	setting-only	OrderItem	OrderId	REFERENCE	true	true	false	false	false	18	0	0	Order ID
+67.0	setting-only	OrderItem	OrderItemNumber	STRING	true	false	false	false	false	30	0	0	Order Product Number
+67.0	setting-only	OrderItem	OriginalOrderItemId	REFERENCE	true	true	false	true	false	18	0	0	Original Order Item ID
+67.0	setting-only	OrderItem	ParentOrderItemId	REFERENCE	false	false	false	true	true	18	0	0	Order Product ID
+67.0	setting-only	OrderItem	PricebookEntryId	REFERENCE	true	true	false	false	false	18	0	0	Price Book Entry ID
+67.0	setting-only	OrderItem	Product2Id	REFERENCE	true	true	false	true	false	18	0	0	Product ID
+67.0	setting-only	OrderItem	Quantity	DOUBLE	true	true	true	false	false	0	18	2	Quantity
+67.0	setting-only	OrderItem	RelatedOrderItemId	REFERENCE	true	false	false	true	false	18	0	0	Order Product ID
+67.0	setting-only	OrderItem	ReservedAtLocationId	REFERENCE	false	false	false	true	true	18	0	0	Reserved at Location ID
+67.0	setting-only	OrderItem	RoundedLineAmount	CURRENCY	false	false	false	true	true	0	18	2	Product Subtotal (Rounded)
+67.0	setting-only	OrderItem	RoundedLineAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Product Subtotal (Rounded) with Tax
+67.0	setting-only	OrderItem	ServiceDate	DATE	true	true	true	true	true	0	0	0	Start Date
+67.0	setting-only	OrderItem	SystemModstamp	DATETIME	true	false	false	false	false	0	0	0	System Modstamp
+67.0	setting-only	OrderItem	TotalAdjustedLineTaxAmount	CURRENCY	false	false	false	false	true	0	18	2	Adjusted Product Subtotal Tax
+67.0	setting-only	OrderItem	TotalAdjustmentAmount	CURRENCY	false	false	false	false	true	0	18	2	Total Adjustments
+67.0	setting-only	OrderItem	TotalAdjustmentAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Total Adjustments with Tax
+67.0	setting-only	OrderItem	TotalAdjustmentDistAmount	CURRENCY	false	false	false	false	true	0	18	2	Distributed Order Adjustments
+67.0	setting-only	OrderItem	TotalAdjustmentDistAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Distributed Order Adjustments with Tax
+67.0	setting-only	OrderItem	TotalAdjustmentDistTaxAmount	CURRENCY	false	false	false	false	true	0	18	2	Distributed Order Adjustments Tax
+67.0	setting-only	OrderItem	TotalAdjustmentTaxAmount	CURRENCY	false	false	false	false	true	0	18	2	Total Adjustments Tax
+67.0	setting-only	OrderItem	TotalAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Total Amount with Tax
+67.0	setting-only	OrderItem	TotalLineAdjustmentAmount	CURRENCY	false	false	false	false	true	0	18	2	Product Adjustments
+67.0	setting-only	OrderItem	TotalLineAdjustmentAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Product Adjustments with Tax
+67.0	setting-only	OrderItem	TotalLineAdjustmentTaxAmount	CURRENCY	false	false	false	false	true	0	18	2	Product Adjustments Tax
+67.0	setting-only	OrderItem	TotalLineAmount	CURRENCY	true	true	true	true	false	0	18	2	Product Subtotal
+67.0	setting-only	OrderItem	TotalLineTaxAmount	CURRENCY	false	false	false	false	true	0	18	2	Product Subtotal Tax
+67.0	setting-only	OrderItem	TotalPrice	CURRENCY	true	false	false	true	false	0	18	2	Total Price
+67.0	setting-only	OrderItem	TotalTaxAmount	CURRENCY	false	false	false	false	true	0	18	2	Total Tax
+67.0	setting-only	OrderItem	Type	PICKLIST	true	true	true	true	false	100	0	0	Type
+67.0	setting-only	OrderItem	TypeCode	PICKLIST	true	false	false	true	false	40	0	0	Type Code
+67.0	setting-only	OrderItem	UnitPrice	CURRENCY	true	true	true	true	false	0	18	2	Unit Price
+67.0	feature-and-setting	Order	AccountId	REFERENCE	true	true	true	true	false	18	0	0	Account ID
+67.0	feature-and-setting	Order	ActivatedById	REFERENCE	true	false	true	true	true	18	0	0	Activated By ID
+67.0	feature-and-setting	Order	ActivatedDate	DATETIME	true	false	true	true	true	0	0	0	Activated Date
+67.0	feature-and-setting	Order	BillingAddress	ADDRESS	true	false	false	true	true	0	0	0	Billing Address
+67.0	feature-and-setting	Order	BillingCity	STRING	true	true	true	true	true	40	0	0	Billing City
+67.0	feature-and-setting	Order	BillingCountry	STRING	true	true	true	true	true	80	0	0	Billing Country
+67.0	feature-and-setting	Order	BillingEmailAddress	EMAIL	false	false	false	true	true	80	0	0	Billing Email Address
+67.0	feature-and-setting	Order	BillingGeocodeAccuracy	PICKLIST	true	true	true	true	true	40	0	0	Billing Geocode Accuracy
+67.0	feature-and-setting	Order	BillingLatitude	DOUBLE	true	true	true	true	true	0	18	15	Billing Latitude
+67.0	feature-and-setting	Order	BillingLongitude	DOUBLE	true	true	true	true	true	0	18	15	Billing Longitude
+67.0	feature-and-setting	Order	BillingPhoneNumber	PHONE	false	false	false	true	true	40	0	0	Billing Phone Number
+67.0	feature-and-setting	Order	BillingPostalCode	STRING	true	true	true	true	true	20	0	0	Billing Zip/Postal Code
+67.0	feature-and-setting	Order	BillingState	STRING	true	true	true	true	true	80	0	0	Billing State/Province
+67.0	feature-and-setting	Order	BillingStreet	TEXTAREA	true	true	true	true	true	255	0	0	Billing Street
+67.0	feature-and-setting	Order	BillToContactId	REFERENCE	true	true	true	true	true	18	0	0	Bill To Contact ID
+67.0	feature-and-setting	Order	CompanyAuthorizedById	REFERENCE	true	true	true	true	true	18	0	0	Company Authorized By ID
+67.0	feature-and-setting	Order	CompanyAuthorizedDate	DATE	true	true	true	true	true	0	0	0	Company Authorized Date
+67.0	feature-and-setting	Order	ContractId	REFERENCE	true	true	true	true	false	18	0	0	Contract ID
+67.0	feature-and-setting	Order	CreatedById	REFERENCE	true	false	false	false	false	18	0	0	Created By ID
+67.0	feature-and-setting	Order	CreatedDate	DATETIME	true	false	false	false	false	0	0	0	Created Date
+67.0	feature-and-setting	Order	CustomerAuthorizedById	REFERENCE	true	true	true	true	true	18	0	0	Customer Authorized By ID
+67.0	feature-and-setting	Order	CustomerAuthorizedDate	DATE	true	true	true	true	true	0	0	0	Customer Authorized Date
+67.0	feature-and-setting	Order	Description	TEXTAREA	true	true	true	true	true	32000	0	0	Description
+67.0	feature-and-setting	Order	EffectiveDate	DATE	true	true	true	false	false	0	0	0	Order Start Date
+67.0	feature-and-setting	Order	EndDate	DATE	true	true	true	true	false	0	0	0	Order End Date
+67.0	feature-and-setting	Order	GrandTotalAmount	CURRENCY	false	false	false	true	true	0	18	2	Total with Tax
+67.0	feature-and-setting	Order	Id	ID	true	false	false	false	false	18	0	0	Order ID
+67.0	feature-and-setting	Order	IsDeleted	BOOLEAN	true	false	false	false	false	0	0	0	Deleted
+67.0	feature-and-setting	Order	IsReductionOrder	BOOLEAN	true	true	false	false	false	0	0	0	Reduction Order
+67.0	feature-and-setting	Order	LastModifiedById	REFERENCE	true	false	false	false	false	18	0	0	Last Modified By ID
+67.0	feature-and-setting	Order	LastModifiedDate	DATETIME	true	false	false	false	false	0	0	0	Last Modified Date
+67.0	feature-and-setting	Order	LastReferencedDate	DATETIME	true	false	false	true	false	0	0	0	Last Referenced Date
+67.0	feature-and-setting	Order	LastViewedDate	DATETIME	true	false	false	true	false	0	0	0	Last Viewed Date
+67.0	feature-and-setting	Order	Name	STRING	true	true	true	true	true	80	0	0	Order Name
+67.0	feature-and-setting	Order	OpportunityId	REFERENCE	false	false	false	true	true	18	0	0	Opportunity ID
+67.0	feature-and-setting	Order	OrderedDate	DATETIME	false	false	false	true	true	0	0	0	Ordered Date
+67.0	feature-and-setting	Order	OrderNumber	STRING	true	false	false	false	false	30	0	0	Order Number
+67.0	feature-and-setting	Order	OrderReferenceNumber	STRING	true	true	true	true	true	80	0	0	Order Reference Number
+67.0	feature-and-setting	Order	OriginalOrderId	REFERENCE	true	true	false	true	false	18	0	0	Order ID
+67.0	feature-and-setting	Order	OwnerId	REFERENCE	true	true	true	false	false	18	0	0	Owner ID
+67.0	feature-and-setting	Order	PoDate	DATE	true	true	true	true	true	0	0	0	PO Date
+67.0	feature-and-setting	Order	PoNumber	STRING	true	true	true	true	true	80	0	0	PO Number
+67.0	feature-and-setting	Order	Pricebook2Id	REFERENCE	true	true	true	true	false	18	0	0	Price Book ID
+67.0	feature-and-setting	Order	RelatedOrderId	REFERENCE	true	false	false	true	false	18	0	0	Order ID
+67.0	feature-and-setting	Order	RelatedOrderType	PICKLIST	true	false	false	true	false	40	0	0	Related Order Type
+67.0	feature-and-setting	Order	SalesChannelId	REFERENCE	false	false	false	true	true	18	0	0	Sales Channel ID
+67.0	feature-and-setting	Order	ShippingAddress	ADDRESS	true	false	false	true	true	0	0	0	Shipping Address
+67.0	feature-and-setting	Order	ShippingCity	STRING	true	true	true	true	true	40	0	0	Shipping City
+67.0	feature-and-setting	Order	ShippingCountry	STRING	true	true	true	true	true	80	0	0	Shipping Country
+67.0	feature-and-setting	Order	ShippingGeocodeAccuracy	PICKLIST	true	true	true	true	true	40	0	0	Shipping Geocode Accuracy
+67.0	feature-and-setting	Order	ShippingLatitude	DOUBLE	true	true	true	true	true	0	18	15	Shipping Latitude
+67.0	feature-and-setting	Order	ShippingLongitude	DOUBLE	true	true	true	true	true	0	18	15	Shipping Longitude
+67.0	feature-and-setting	Order	ShippingPostalCode	STRING	true	true	true	true	true	20	0	0	Shipping Zip/Postal Code
+67.0	feature-and-setting	Order	ShippingState	STRING	true	true	true	true	true	80	0	0	Shipping State/Province
+67.0	feature-and-setting	Order	ShippingStreet	TEXTAREA	true	true	true	true	true	255	0	0	Shipping Street
+67.0	feature-and-setting	Order	ShipToContactId	REFERENCE	true	true	true	true	true	18	0	0	Ship To Contact ID
+67.0	feature-and-setting	Order	Status	PICKLIST	true	true	true	false	false	100	0	0	Status
+67.0	feature-and-setting	Order	StatusCode	PICKLIST	true	false	true	false	false	40	0	0	Status Category
+67.0	feature-and-setting	Order	SystemModstamp	DATETIME	true	false	false	false	false	0	0	0	System Modstamp
+67.0	feature-and-setting	Order	TaxLocaleType	PICKLIST	false	false	false	true	true	40	0	0	Tax Locale Type
+67.0	feature-and-setting	Order	TotalAdjDeliveryAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Total Adjusted Delivery Amount with Tax
+67.0	feature-and-setting	Order	TotalAdjProductAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Total Adjusted Product Amount with Tax
+67.0	feature-and-setting	Order	TotalAdjustedDeliveryAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Adjusted Delivery Amount
+67.0	feature-and-setting	Order	TotalAdjustedDeliveryTaxAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Adjusted Delivery Tax
+67.0	feature-and-setting	Order	TotalAdjustedProductAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Adjusted Product Amount
+67.0	feature-and-setting	Order	TotalAdjustedProductTaxAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Adjusted Product Tax
+67.0	feature-and-setting	Order	TotalAmount	CURRENCY	true	false	false	false	true	0	18	2	Order Amount
+67.0	feature-and-setting	Order	TotalDeliveryAdjDistAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Delivery Distributed Adjustments
+67.0	feature-and-setting	Order	TotalDeliveryAdjDistAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Total Delivery Distributed Adjustments with Tax
+67.0	feature-and-setting	Order	TotalDeliveryAdjDistTaxAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Delivery Distributed Adjustment Tax
+67.0	feature-and-setting	Order	TotalProductAdjDistAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Product Distributed Adjustments
+67.0	feature-and-setting	Order	TotalProductAdjDistAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Total Product Distributed Adjustments with Tax
+67.0	feature-and-setting	Order	TotalProductAdjDistTaxAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Product Distributed Adjustment Tax
+67.0	feature-and-setting	Order	TotalTaxAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Tax
+67.0	feature-and-setting	Order	Type	PICKLIST	true	true	true	true	true	255	0	0	Order Type
+67.0	feature-and-setting	OrderItem	AdjustedLineAmount	CURRENCY	false	false	false	true	true	0	18	2	Adjusted Product Subtotal
+67.0	feature-and-setting	OrderItem	AdjustedLineAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Adjusted Product Subtotal with Tax
+67.0	feature-and-setting	OrderItem	AvailableQuantity	DOUBLE	true	false	false	true	false	0	18	2	Available Quantity
+67.0	feature-and-setting	OrderItem	CreatedById	REFERENCE	true	false	false	false	false	18	0	0	Created By ID
+67.0	feature-and-setting	OrderItem	CreatedDate	DATETIME	true	false	false	false	false	0	0	0	Created Date
+67.0	feature-and-setting	OrderItem	Description	STRING	true	true	true	true	true	255	0	0	Line Description
+67.0	feature-and-setting	OrderItem	EarliestEstimatedDeliveryDate	DATE	false	false	false	true	true	0	0	0	Earliest Estimated Delivery Date
+67.0	feature-and-setting	OrderItem	EarliestEstimatedDeliveryTime	TIME	false	false	false	true	true	0	0	0	Earliest Estimated Delivery Time
+67.0	feature-and-setting	OrderItem	EndDate	DATE	true	true	true	true	true	0	0	0	End Date
+67.0	feature-and-setting	OrderItem	EstimatedDeliveryReference	STRING	false	false	false	true	true	255	0	0	Delivery Estimated Reference
+67.0	feature-and-setting	OrderItem	EstimatedDeliveryTimeZone	PICKLIST	false	false	false	true	true	40	0	0	Delivery Estimated Timezone
+67.0	feature-and-setting	OrderItem	GrossUnitPrice	CURRENCY	false	false	false	true	true	0	18	2	Gross Unit Price
+67.0	feature-and-setting	OrderItem	Id	ID	true	false	false	false	false	18	0	0	Order Product ID
+67.0	feature-and-setting	OrderItem	IsDeleted	BOOLEAN	true	false	false	false	false	0	0	0	Deleted
+67.0	feature-and-setting	OrderItem	LastModifiedById	REFERENCE	true	false	false	false	false	18	0	0	Last Modified By ID
+67.0	feature-and-setting	OrderItem	LastModifiedDate	DATETIME	true	false	false	false	false	0	0	0	Last Modified Date
+67.0	feature-and-setting	OrderItem	LatestEstimatedDeliveryDate	DATE	false	false	false	true	true	0	0	0	Latest Estimated Delivery Date
+67.0	feature-and-setting	OrderItem	LatestEstimatedDeliveryTime	TIME	false	false	false	true	true	0	0	0	Latest Estimated Delivery Time
+67.0	feature-and-setting	OrderItem	LineNumber	INTEGER	false	false	false	true	true	0	0	0	Line Number
+67.0	feature-and-setting	OrderItem	ListPrice	CURRENCY	true	true	false	true	true	0	18	2	List Price
+67.0	feature-and-setting	OrderItem	OrderDeliveryGroupId	REFERENCE	false	false	false	true	true	18	0	0	Order Delivery Group ID
+67.0	feature-and-setting	OrderItem	OrderId	REFERENCE	true	true	false	false	false	18	0	0	Order ID
+67.0	feature-and-setting	OrderItem	OrderItemNumber	STRING	true	false	false	false	false	30	0	0	Order Product Number
+67.0	feature-and-setting	OrderItem	OriginalOrderItemId	REFERENCE	true	true	false	true	false	18	0	0	Original Order Item ID
+67.0	feature-and-setting	OrderItem	ParentOrderItemId	REFERENCE	false	false	false	true	true	18	0	0	Order Product ID
+67.0	feature-and-setting	OrderItem	PricebookEntryId	REFERENCE	true	true	false	false	false	18	0	0	Price Book Entry ID
+67.0	feature-and-setting	OrderItem	Product2Id	REFERENCE	true	true	false	true	false	18	0	0	Product ID
+67.0	feature-and-setting	OrderItem	Quantity	DOUBLE	true	true	true	false	false	0	18	2	Quantity
+67.0	feature-and-setting	OrderItem	RelatedOrderItemId	REFERENCE	true	false	false	true	false	18	0	0	Order Product ID
+67.0	feature-and-setting	OrderItem	ReservedAtLocationId	REFERENCE	false	false	false	true	true	18	0	0	Reserved at Location ID
+67.0	feature-and-setting	OrderItem	RoundedLineAmount	CURRENCY	false	false	false	true	true	0	18	2	Product Subtotal (Rounded)
+67.0	feature-and-setting	OrderItem	RoundedLineAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Product Subtotal (Rounded) with Tax
+67.0	feature-and-setting	OrderItem	ServiceDate	DATE	true	true	true	true	true	0	0	0	Start Date
+67.0	feature-and-setting	OrderItem	SystemModstamp	DATETIME	true	false	false	false	false	0	0	0	System Modstamp
+67.0	feature-and-setting	OrderItem	TotalAdjustedLineTaxAmount	CURRENCY	false	false	false	false	true	0	18	2	Adjusted Product Subtotal Tax
+67.0	feature-and-setting	OrderItem	TotalAdjustmentAmount	CURRENCY	false	false	false	false	true	0	18	2	Total Adjustments
+67.0	feature-and-setting	OrderItem	TotalAdjustmentAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Total Adjustments with Tax
+67.0	feature-and-setting	OrderItem	TotalAdjustmentDistAmount	CURRENCY	false	false	false	false	true	0	18	2	Distributed Order Adjustments
+67.0	feature-and-setting	OrderItem	TotalAdjustmentDistAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Distributed Order Adjustments with Tax
+67.0	feature-and-setting	OrderItem	TotalAdjustmentDistTaxAmount	CURRENCY	false	false	false	false	true	0	18	2	Distributed Order Adjustments Tax
+67.0	feature-and-setting	OrderItem	TotalAdjustmentTaxAmount	CURRENCY	false	false	false	false	true	0	18	2	Total Adjustments Tax
+67.0	feature-and-setting	OrderItem	TotalAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Total Amount with Tax
+67.0	feature-and-setting	OrderItem	TotalLineAdjustmentAmount	CURRENCY	false	false	false	false	true	0	18	2	Product Adjustments
+67.0	feature-and-setting	OrderItem	TotalLineAdjustmentAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Product Adjustments with Tax
+67.0	feature-and-setting	OrderItem	TotalLineAdjustmentTaxAmount	CURRENCY	false	false	false	false	true	0	18	2	Product Adjustments Tax
+67.0	feature-and-setting	OrderItem	TotalLineAmount	CURRENCY	true	true	true	true	false	0	18	2	Product Subtotal
+67.0	feature-and-setting	OrderItem	TotalLineTaxAmount	CURRENCY	false	false	false	false	true	0	18	2	Product Subtotal Tax
+67.0	feature-and-setting	OrderItem	TotalPrice	CURRENCY	true	false	false	true	false	0	18	2	Total Price
+67.0	feature-and-setting	OrderItem	TotalTaxAmount	CURRENCY	false	false	false	false	true	0	18	2	Total Tax
+67.0	feature-and-setting	OrderItem	Type	PICKLIST	true	true	true	true	false	100	0	0	Type
+67.0	feature-and-setting	OrderItem	TypeCode	PICKLIST	true	false	false	true	false	40	0	0	Type Code
+67.0	feature-and-setting	OrderItem	UnitPrice	CURRENCY	true	true	true	true	false	0	18	2	Unit Price
+62.0	capitalized-settings	Order	AccountId	REFERENCE	true	true	true	true	false	18	0	0	Account ID
+62.0	capitalized-settings	Order	ActivatedById	REFERENCE	true	false	true	true	true	18	0	0	Activated By ID
+62.0	capitalized-settings	Order	ActivatedDate	DATETIME	true	false	true	true	true	0	0	0	Activated Date
+62.0	capitalized-settings	Order	BillingAddress	ADDRESS	true	false	false	true	true	0	0	0	Billing Address
+62.0	capitalized-settings	Order	BillingCity	STRING	true	true	true	true	true	40	0	0	Billing City
+62.0	capitalized-settings	Order	BillingCountry	STRING	true	true	true	true	true	80	0	0	Billing Country
+62.0	capitalized-settings	Order	BillingEmailAddress	EMAIL	false	false	false	true	true	80	0	0	Billing Email Address
+62.0	capitalized-settings	Order	BillingGeocodeAccuracy	PICKLIST	true	true	true	true	true	40	0	0	Billing Geocode Accuracy
+62.0	capitalized-settings	Order	BillingLatitude	DOUBLE	true	true	true	true	true	0	18	15	Billing Latitude
+62.0	capitalized-settings	Order	BillingLongitude	DOUBLE	true	true	true	true	true	0	18	15	Billing Longitude
+62.0	capitalized-settings	Order	BillingPhoneNumber	PHONE	false	false	false	true	true	40	0	0	Billing Phone Number
+62.0	capitalized-settings	Order	BillingPostalCode	STRING	true	true	true	true	true	20	0	0	Billing Zip/Postal Code
+62.0	capitalized-settings	Order	BillingState	STRING	true	true	true	true	true	80	0	0	Billing State/Province
+62.0	capitalized-settings	Order	BillingStreet	TEXTAREA	true	true	true	true	true	255	0	0	Billing Street
+62.0	capitalized-settings	Order	BillToContactId	REFERENCE	true	true	true	true	true	18	0	0	Bill To Contact ID
+62.0	capitalized-settings	Order	CompanyAuthorizedById	REFERENCE	true	true	true	true	true	18	0	0	Company Authorized By ID
+62.0	capitalized-settings	Order	CompanyAuthorizedDate	DATE	true	true	true	true	true	0	0	0	Company Authorized Date
+62.0	capitalized-settings	Order	ContractId	REFERENCE	true	true	true	true	false	18	0	0	Contract ID
+62.0	capitalized-settings	Order	CreatedById	REFERENCE	true	false	false	false	false	18	0	0	Created By ID
+62.0	capitalized-settings	Order	CreatedDate	DATETIME	true	false	false	false	false	0	0	0	Created Date
+62.0	capitalized-settings	Order	CustomerAuthorizedById	REFERENCE	true	true	true	true	true	18	0	0	Customer Authorized By ID
+62.0	capitalized-settings	Order	CustomerAuthorizedDate	DATE	true	true	true	true	true	0	0	0	Customer Authorized Date
+62.0	capitalized-settings	Order	Description	TEXTAREA	true	true	true	true	true	32000	0	0	Description
+62.0	capitalized-settings	Order	EffectiveDate	DATE	true	true	true	false	false	0	0	0	Order Start Date
+62.0	capitalized-settings	Order	EndDate	DATE	true	true	true	true	false	0	0	0	Order End Date
+62.0	capitalized-settings	Order	GrandTotalAmount	CURRENCY	false	false	false	true	true	0	18	2	Total with Tax
+62.0	capitalized-settings	Order	Id	ID	true	false	false	false	false	18	0	0	Order ID
+62.0	capitalized-settings	Order	IsDeleted	BOOLEAN	true	false	false	false	false	0	0	0	Deleted
+62.0	capitalized-settings	Order	IsReductionOrder	BOOLEAN	true	true	false	false	false	0	0	0	Reduction Order
+62.0	capitalized-settings	Order	LastModifiedById	REFERENCE	true	false	false	false	false	18	0	0	Last Modified By ID
+62.0	capitalized-settings	Order	LastModifiedDate	DATETIME	true	false	false	false	false	0	0	0	Last Modified Date
+62.0	capitalized-settings	Order	LastReferencedDate	DATETIME	true	false	false	true	false	0	0	0	Last Referenced Date
+62.0	capitalized-settings	Order	LastViewedDate	DATETIME	true	false	false	true	false	0	0	0	Last Viewed Date
+62.0	capitalized-settings	Order	Name	STRING	true	true	true	true	true	80	0	0	Order Name
+62.0	capitalized-settings	Order	OpportunityId	REFERENCE	false	false	false	true	true	18	0	0	Opportunity ID
+62.0	capitalized-settings	Order	OrderedDate	DATETIME	false	false	false	true	true	0	0	0	Ordered Date
+62.0	capitalized-settings	Order	OrderNumber	STRING	true	false	false	false	false	30	0	0	Order Number
+62.0	capitalized-settings	Order	OrderReferenceNumber	STRING	true	true	true	true	true	80	0	0	Order Reference Number
+62.0	capitalized-settings	Order	OriginalOrderId	REFERENCE	true	true	false	true	false	18	0	0	Order ID
+62.0	capitalized-settings	Order	OwnerId	REFERENCE	true	true	true	false	false	18	0	0	Owner ID
+62.0	capitalized-settings	Order	PoDate	DATE	true	true	true	true	true	0	0	0	PO Date
+62.0	capitalized-settings	Order	PoNumber	STRING	true	true	true	true	true	80	0	0	PO Number
+62.0	capitalized-settings	Order	Pricebook2Id	REFERENCE	true	true	true	true	false	18	0	0	Price Book ID
+62.0	capitalized-settings	Order	RelatedOrderId	REFERENCE	true	false	false	true	false	18	0	0	Order ID
+62.0	capitalized-settings	Order	SalesChannelId	REFERENCE	false	false	false	true	true	18	0	0	Sales Channel ID
+62.0	capitalized-settings	Order	ShippingAddress	ADDRESS	true	false	false	true	true	0	0	0	Shipping Address
+62.0	capitalized-settings	Order	ShippingCity	STRING	true	true	true	true	true	40	0	0	Shipping City
+62.0	capitalized-settings	Order	ShippingCountry	STRING	true	true	true	true	true	80	0	0	Shipping Country
+62.0	capitalized-settings	Order	ShippingGeocodeAccuracy	PICKLIST	true	true	true	true	true	40	0	0	Shipping Geocode Accuracy
+62.0	capitalized-settings	Order	ShippingLatitude	DOUBLE	true	true	true	true	true	0	18	15	Shipping Latitude
+62.0	capitalized-settings	Order	ShippingLongitude	DOUBLE	true	true	true	true	true	0	18	15	Shipping Longitude
+62.0	capitalized-settings	Order	ShippingPostalCode	STRING	true	true	true	true	true	20	0	0	Shipping Zip/Postal Code
+62.0	capitalized-settings	Order	ShippingState	STRING	true	true	true	true	true	80	0	0	Shipping State/Province
+62.0	capitalized-settings	Order	ShippingStreet	TEXTAREA	true	true	true	true	true	255	0	0	Shipping Street
+62.0	capitalized-settings	Order	ShipToContactId	REFERENCE	true	true	true	true	true	18	0	0	Ship To Contact ID
+62.0	capitalized-settings	Order	Status	PICKLIST	true	true	true	false	false	100	0	0	Status
+62.0	capitalized-settings	Order	StatusCode	PICKLIST	true	false	true	false	false	40	0	0	Status Category
+62.0	capitalized-settings	Order	SystemModstamp	DATETIME	true	false	false	false	false	0	0	0	System Modstamp
+62.0	capitalized-settings	Order	TaxLocaleType	PICKLIST	false	false	false	true	true	40	0	0	Tax Locale Type
+62.0	capitalized-settings	Order	TotalAdjDeliveryAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Total Adjusted Delivery Amount with Tax
+62.0	capitalized-settings	Order	TotalAdjProductAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Total Adjusted Product Amount with Tax
+62.0	capitalized-settings	Order	TotalAdjustedDeliveryAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Adjusted Delivery Amount
+62.0	capitalized-settings	Order	TotalAdjustedDeliveryTaxAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Adjusted Delivery Tax
+62.0	capitalized-settings	Order	TotalAdjustedProductAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Adjusted Product Amount
+62.0	capitalized-settings	Order	TotalAdjustedProductTaxAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Adjusted Product Tax
+62.0	capitalized-settings	Order	TotalAmount	CURRENCY	true	false	false	false	true	0	18	2	Order Amount
+62.0	capitalized-settings	Order	TotalDeliveryAdjDistAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Delivery Distributed Adjustments
+62.0	capitalized-settings	Order	TotalDeliveryAdjDistAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Total Delivery Distributed Adjustments with Tax
+62.0	capitalized-settings	Order	TotalDeliveryAdjDistTaxAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Delivery Distributed Adjustment Tax
+62.0	capitalized-settings	Order	TotalProductAdjDistAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Product Distributed Adjustments
+62.0	capitalized-settings	Order	TotalProductAdjDistAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Total Product Distributed Adjustments with Tax
+62.0	capitalized-settings	Order	TotalProductAdjDistTaxAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Product Distributed Adjustment Tax
+62.0	capitalized-settings	Order	TotalTaxAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Tax
+62.0	capitalized-settings	Order	Type	PICKLIST	true	true	true	true	true	255	0	0	Order Type
+62.0	capitalized-settings	OrderItem	AdjustedLineAmount	CURRENCY	false	false	false	true	true	0	18	2	Adjusted Product Subtotal
+62.0	capitalized-settings	OrderItem	AdjustedLineAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Adjusted Product Subtotal with Tax
+62.0	capitalized-settings	OrderItem	AvailableQuantity	DOUBLE	true	false	false	true	false	0	18	2	Available Quantity
+62.0	capitalized-settings	OrderItem	CreatedById	REFERENCE	true	false	false	false	false	18	0	0	Created By ID
+62.0	capitalized-settings	OrderItem	CreatedDate	DATETIME	true	false	false	false	false	0	0	0	Created Date
+62.0	capitalized-settings	OrderItem	Description	STRING	true	true	true	true	true	255	0	0	Line Description
+62.0	capitalized-settings	OrderItem	EarliestEstimatedDeliveryDate	DATE	false	false	false	true	true	0	0	0	Earliest Estimated Delivery Date
+62.0	capitalized-settings	OrderItem	EarliestEstimatedDeliveryTime	TIME	false	false	false	true	true	0	0	0	Earliest Estimated Delivery Time
+62.0	capitalized-settings	OrderItem	EndDate	DATE	true	true	true	true	true	0	0	0	End Date
+62.0	capitalized-settings	OrderItem	EstimatedDeliveryReference	STRING	false	false	false	true	true	255	0	0	Delivery Estimated Reference
+62.0	capitalized-settings	OrderItem	EstimatedDeliveryTimeZone	PICKLIST	false	false	false	true	true	40	0	0	Delivery Estimated Timezone
+62.0	capitalized-settings	OrderItem	GrossUnitPrice	CURRENCY	false	false	false	true	true	0	18	2	Gross Unit Price
+62.0	capitalized-settings	OrderItem	Id	ID	true	false	false	false	false	18	0	0	Order Product ID
+62.0	capitalized-settings	OrderItem	IsDeleted	BOOLEAN	true	false	false	false	false	0	0	0	Deleted
+62.0	capitalized-settings	OrderItem	LastModifiedById	REFERENCE	true	false	false	false	false	18	0	0	Last Modified By ID
+62.0	capitalized-settings	OrderItem	LastModifiedDate	DATETIME	true	false	false	false	false	0	0	0	Last Modified Date
+62.0	capitalized-settings	OrderItem	LatestEstimatedDeliveryDate	DATE	false	false	false	true	true	0	0	0	Latest Estimated Delivery Date
+62.0	capitalized-settings	OrderItem	LatestEstimatedDeliveryTime	TIME	false	false	false	true	true	0	0	0	Latest Estimated Delivery Time
+62.0	capitalized-settings	OrderItem	LineNumber	INTEGER	false	false	false	true	true	0	0	0	Line Number
+62.0	capitalized-settings	OrderItem	ListPrice	CURRENCY	true	true	false	true	true	0	18	2	List Price
+62.0	capitalized-settings	OrderItem	OrderDeliveryGroupId	REFERENCE	false	false	false	true	true	18	0	0	Order Delivery Group ID
+62.0	capitalized-settings	OrderItem	OrderId	REFERENCE	true	true	false	false	false	18	0	0	Order ID
+62.0	capitalized-settings	OrderItem	OrderItemNumber	STRING	true	false	false	false	false	30	0	0	Order Product Number
+62.0	capitalized-settings	OrderItem	OriginalOrderItemId	REFERENCE	true	true	false	true	false	18	0	0	Original Order Item ID
+62.0	capitalized-settings	OrderItem	ParentOrderItemId	REFERENCE	false	false	false	true	true	18	0	0	Order Product ID
+62.0	capitalized-settings	OrderItem	PricebookEntryId	REFERENCE	true	true	false	false	false	18	0	0	Price Book Entry ID
+62.0	capitalized-settings	OrderItem	Product2Id	REFERENCE	true	true	false	true	false	18	0	0	Product ID
+62.0	capitalized-settings	OrderItem	Quantity	DOUBLE	true	true	true	false	false	0	18	2	Quantity
+62.0	capitalized-settings	OrderItem	RelatedOrderItemId	REFERENCE	true	false	false	true	false	18	0	0	Order Product ID
+62.0	capitalized-settings	OrderItem	ReservedAtLocationId	REFERENCE	false	false	false	true	true	18	0	0	Reserved at Location ID
+62.0	capitalized-settings	OrderItem	RoundedLineAmount	CURRENCY	false	false	false	true	true	0	18	2	Product Subtotal (Rounded)
+62.0	capitalized-settings	OrderItem	RoundedLineAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Product Subtotal (Rounded) with Tax
+62.0	capitalized-settings	OrderItem	ServiceDate	DATE	true	true	true	true	true	0	0	0	Start Date
+62.0	capitalized-settings	OrderItem	SystemModstamp	DATETIME	true	false	false	false	false	0	0	0	System Modstamp
+62.0	capitalized-settings	OrderItem	TotalAdjustedLineTaxAmount	CURRENCY	false	false	false	false	true	0	18	2	Adjusted Product Subtotal Tax
+62.0	capitalized-settings	OrderItem	TotalAdjustmentAmount	CURRENCY	false	false	false	false	true	0	18	2	Total Adjustments
+62.0	capitalized-settings	OrderItem	TotalAdjustmentAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Total Adjustments with Tax
+62.0	capitalized-settings	OrderItem	TotalAdjustmentDistAmount	CURRENCY	false	false	false	false	true	0	18	2	Distributed Order Adjustments
+62.0	capitalized-settings	OrderItem	TotalAdjustmentDistAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Distributed Order Adjustments with Tax
+62.0	capitalized-settings	OrderItem	TotalAdjustmentDistTaxAmount	CURRENCY	false	false	false	false	true	0	18	2	Distributed Order Adjustments Tax
+62.0	capitalized-settings	OrderItem	TotalAdjustmentTaxAmount	CURRENCY	false	false	false	false	true	0	18	2	Total Adjustments Tax
+62.0	capitalized-settings	OrderItem	TotalAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Total Amount with Tax
+62.0	capitalized-settings	OrderItem	TotalLineAdjustmentAmount	CURRENCY	false	false	false	false	true	0	18	2	Product Adjustments
+62.0	capitalized-settings	OrderItem	TotalLineAdjustmentAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Product Adjustments with Tax
+62.0	capitalized-settings	OrderItem	TotalLineAdjustmentTaxAmount	CURRENCY	false	false	false	false	true	0	18	2	Product Adjustments Tax
+62.0	capitalized-settings	OrderItem	TotalLineAmount	CURRENCY	true	true	true	true	false	0	18	2	Product Subtotal
+62.0	capitalized-settings	OrderItem	TotalLineTaxAmount	CURRENCY	false	false	false	false	true	0	18	2	Product Subtotal Tax
+62.0	capitalized-settings	OrderItem	TotalPrice	CURRENCY	true	false	false	true	false	0	18	2	Total Price
+62.0	capitalized-settings	OrderItem	TotalTaxAmount	CURRENCY	false	false	false	false	true	0	18	2	Total Tax
+62.0	capitalized-settings	OrderItem	Type	PICKLIST	true	true	true	true	false	100	0	0	Type
+62.0	capitalized-settings	OrderItem	TypeCode	PICKLIST	true	false	false	true	false	40	0	0	Type Code
+62.0	capitalized-settings	OrderItem	UnitPrice	CURRENCY	true	true	true	true	false	0	18	2	Unit Price
+67.0	capitalized-settings	Order	AccountId	REFERENCE	true	true	true	true	false	18	0	0	Account ID
+67.0	capitalized-settings	Order	ActivatedById	REFERENCE	true	false	true	true	true	18	0	0	Activated By ID
+67.0	capitalized-settings	Order	ActivatedDate	DATETIME	true	false	true	true	true	0	0	0	Activated Date
+67.0	capitalized-settings	Order	BillingAddress	ADDRESS	true	false	false	true	true	0	0	0	Billing Address
+67.0	capitalized-settings	Order	BillingCity	STRING	true	true	true	true	true	40	0	0	Billing City
+67.0	capitalized-settings	Order	BillingCountry	STRING	true	true	true	true	true	80	0	0	Billing Country
+67.0	capitalized-settings	Order	BillingEmailAddress	EMAIL	false	false	false	true	true	80	0	0	Billing Email Address
+67.0	capitalized-settings	Order	BillingGeocodeAccuracy	PICKLIST	true	true	true	true	true	40	0	0	Billing Geocode Accuracy
+67.0	capitalized-settings	Order	BillingLatitude	DOUBLE	true	true	true	true	true	0	18	15	Billing Latitude
+67.0	capitalized-settings	Order	BillingLongitude	DOUBLE	true	true	true	true	true	0	18	15	Billing Longitude
+67.0	capitalized-settings	Order	BillingPhoneNumber	PHONE	false	false	false	true	true	40	0	0	Billing Phone Number
+67.0	capitalized-settings	Order	BillingPostalCode	STRING	true	true	true	true	true	20	0	0	Billing Zip/Postal Code
+67.0	capitalized-settings	Order	BillingState	STRING	true	true	true	true	true	80	0	0	Billing State/Province
+67.0	capitalized-settings	Order	BillingStreet	TEXTAREA	true	true	true	true	true	255	0	0	Billing Street
+67.0	capitalized-settings	Order	BillToContactId	REFERENCE	true	true	true	true	true	18	0	0	Bill To Contact ID
+67.0	capitalized-settings	Order	CompanyAuthorizedById	REFERENCE	true	true	true	true	true	18	0	0	Company Authorized By ID
+67.0	capitalized-settings	Order	CompanyAuthorizedDate	DATE	true	true	true	true	true	0	0	0	Company Authorized Date
+67.0	capitalized-settings	Order	ContractId	REFERENCE	true	true	true	true	false	18	0	0	Contract ID
+67.0	capitalized-settings	Order	CreatedById	REFERENCE	true	false	false	false	false	18	0	0	Created By ID
+67.0	capitalized-settings	Order	CreatedDate	DATETIME	true	false	false	false	false	0	0	0	Created Date
+67.0	capitalized-settings	Order	CustomerAuthorizedById	REFERENCE	true	true	true	true	true	18	0	0	Customer Authorized By ID
+67.0	capitalized-settings	Order	CustomerAuthorizedDate	DATE	true	true	true	true	true	0	0	0	Customer Authorized Date
+67.0	capitalized-settings	Order	Description	TEXTAREA	true	true	true	true	true	32000	0	0	Description
+67.0	capitalized-settings	Order	EffectiveDate	DATE	true	true	true	false	false	0	0	0	Order Start Date
+67.0	capitalized-settings	Order	EndDate	DATE	true	true	true	true	false	0	0	0	Order End Date
+67.0	capitalized-settings	Order	GrandTotalAmount	CURRENCY	false	false	false	true	true	0	18	2	Total with Tax
+67.0	capitalized-settings	Order	Id	ID	true	false	false	false	false	18	0	0	Order ID
+67.0	capitalized-settings	Order	IsDeleted	BOOLEAN	true	false	false	false	false	0	0	0	Deleted
+67.0	capitalized-settings	Order	IsReductionOrder	BOOLEAN	true	true	false	false	false	0	0	0	Reduction Order
+67.0	capitalized-settings	Order	LastModifiedById	REFERENCE	true	false	false	false	false	18	0	0	Last Modified By ID
+67.0	capitalized-settings	Order	LastModifiedDate	DATETIME	true	false	false	false	false	0	0	0	Last Modified Date
+67.0	capitalized-settings	Order	LastReferencedDate	DATETIME	true	false	false	true	false	0	0	0	Last Referenced Date
+67.0	capitalized-settings	Order	LastViewedDate	DATETIME	true	false	false	true	false	0	0	0	Last Viewed Date
+67.0	capitalized-settings	Order	Name	STRING	true	true	true	true	true	80	0	0	Order Name
+67.0	capitalized-settings	Order	OpportunityId	REFERENCE	false	false	false	true	true	18	0	0	Opportunity ID
+67.0	capitalized-settings	Order	OrderedDate	DATETIME	false	false	false	true	true	0	0	0	Ordered Date
+67.0	capitalized-settings	Order	OrderNumber	STRING	true	false	false	false	false	30	0	0	Order Number
+67.0	capitalized-settings	Order	OrderReferenceNumber	STRING	true	true	true	true	true	80	0	0	Order Reference Number
+67.0	capitalized-settings	Order	OriginalOrderId	REFERENCE	true	true	false	true	false	18	0	0	Order ID
+67.0	capitalized-settings	Order	OwnerId	REFERENCE	true	true	true	false	false	18	0	0	Owner ID
+67.0	capitalized-settings	Order	PoDate	DATE	true	true	true	true	true	0	0	0	PO Date
+67.0	capitalized-settings	Order	PoNumber	STRING	true	true	true	true	true	80	0	0	PO Number
+67.0	capitalized-settings	Order	Pricebook2Id	REFERENCE	true	true	true	true	false	18	0	0	Price Book ID
+67.0	capitalized-settings	Order	RelatedOrderId	REFERENCE	true	false	false	true	false	18	0	0	Order ID
+67.0	capitalized-settings	Order	RelatedOrderType	PICKLIST	true	false	false	true	false	40	0	0	Related Order Type
+67.0	capitalized-settings	Order	SalesChannelId	REFERENCE	false	false	false	true	true	18	0	0	Sales Channel ID
+67.0	capitalized-settings	Order	ShippingAddress	ADDRESS	true	false	false	true	true	0	0	0	Shipping Address
+67.0	capitalized-settings	Order	ShippingCity	STRING	true	true	true	true	true	40	0	0	Shipping City
+67.0	capitalized-settings	Order	ShippingCountry	STRING	true	true	true	true	true	80	0	0	Shipping Country
+67.0	capitalized-settings	Order	ShippingGeocodeAccuracy	PICKLIST	true	true	true	true	true	40	0	0	Shipping Geocode Accuracy
+67.0	capitalized-settings	Order	ShippingLatitude	DOUBLE	true	true	true	true	true	0	18	15	Shipping Latitude
+67.0	capitalized-settings	Order	ShippingLongitude	DOUBLE	true	true	true	true	true	0	18	15	Shipping Longitude
+67.0	capitalized-settings	Order	ShippingPostalCode	STRING	true	true	true	true	true	20	0	0	Shipping Zip/Postal Code
+67.0	capitalized-settings	Order	ShippingState	STRING	true	true	true	true	true	80	0	0	Shipping State/Province
+67.0	capitalized-settings	Order	ShippingStreet	TEXTAREA	true	true	true	true	true	255	0	0	Shipping Street
+67.0	capitalized-settings	Order	ShipToContactId	REFERENCE	true	true	true	true	true	18	0	0	Ship To Contact ID
+67.0	capitalized-settings	Order	Status	PICKLIST	true	true	true	false	false	100	0	0	Status
+67.0	capitalized-settings	Order	StatusCode	PICKLIST	true	false	true	false	false	40	0	0	Status Category
+67.0	capitalized-settings	Order	SystemModstamp	DATETIME	true	false	false	false	false	0	0	0	System Modstamp
+67.0	capitalized-settings	Order	TaxLocaleType	PICKLIST	false	false	false	true	true	40	0	0	Tax Locale Type
+67.0	capitalized-settings	Order	TotalAdjDeliveryAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Total Adjusted Delivery Amount with Tax
+67.0	capitalized-settings	Order	TotalAdjProductAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Total Adjusted Product Amount with Tax
+67.0	capitalized-settings	Order	TotalAdjustedDeliveryAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Adjusted Delivery Amount
+67.0	capitalized-settings	Order	TotalAdjustedDeliveryTaxAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Adjusted Delivery Tax
+67.0	capitalized-settings	Order	TotalAdjustedProductAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Adjusted Product Amount
+67.0	capitalized-settings	Order	TotalAdjustedProductTaxAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Adjusted Product Tax
+67.0	capitalized-settings	Order	TotalAmount	CURRENCY	true	false	false	false	true	0	18	2	Order Amount
+67.0	capitalized-settings	Order	TotalDeliveryAdjDistAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Delivery Distributed Adjustments
+67.0	capitalized-settings	Order	TotalDeliveryAdjDistAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Total Delivery Distributed Adjustments with Tax
+67.0	capitalized-settings	Order	TotalDeliveryAdjDistTaxAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Delivery Distributed Adjustment Tax
+67.0	capitalized-settings	Order	TotalProductAdjDistAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Product Distributed Adjustments
+67.0	capitalized-settings	Order	TotalProductAdjDistAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Total Product Distributed Adjustments with Tax
+67.0	capitalized-settings	Order	TotalProductAdjDistTaxAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Product Distributed Adjustment Tax
+67.0	capitalized-settings	Order	TotalTaxAmount	CURRENCY	false	false	false	true	true	0	18	2	Total Tax
+67.0	capitalized-settings	Order	Type	PICKLIST	true	true	true	true	true	255	0	0	Order Type
+67.0	capitalized-settings	OrderItem	AdjustedLineAmount	CURRENCY	false	false	false	true	true	0	18	2	Adjusted Product Subtotal
+67.0	capitalized-settings	OrderItem	AdjustedLineAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Adjusted Product Subtotal with Tax
+67.0	capitalized-settings	OrderItem	AvailableQuantity	DOUBLE	true	false	false	true	false	0	18	2	Available Quantity
+67.0	capitalized-settings	OrderItem	CreatedById	REFERENCE	true	false	false	false	false	18	0	0	Created By ID
+67.0	capitalized-settings	OrderItem	CreatedDate	DATETIME	true	false	false	false	false	0	0	0	Created Date
+67.0	capitalized-settings	OrderItem	Description	STRING	true	true	true	true	true	255	0	0	Line Description
+67.0	capitalized-settings	OrderItem	EarliestEstimatedDeliveryDate	DATE	false	false	false	true	true	0	0	0	Earliest Estimated Delivery Date
+67.0	capitalized-settings	OrderItem	EarliestEstimatedDeliveryTime	TIME	false	false	false	true	true	0	0	0	Earliest Estimated Delivery Time
+67.0	capitalized-settings	OrderItem	EndDate	DATE	true	true	true	true	true	0	0	0	End Date
+67.0	capitalized-settings	OrderItem	EstimatedDeliveryReference	STRING	false	false	false	true	true	255	0	0	Delivery Estimated Reference
+67.0	capitalized-settings	OrderItem	EstimatedDeliveryTimeZone	PICKLIST	false	false	false	true	true	40	0	0	Delivery Estimated Timezone
+67.0	capitalized-settings	OrderItem	GrossUnitPrice	CURRENCY	false	false	false	true	true	0	18	2	Gross Unit Price
+67.0	capitalized-settings	OrderItem	Id	ID	true	false	false	false	false	18	0	0	Order Product ID
+67.0	capitalized-settings	OrderItem	IsDeleted	BOOLEAN	true	false	false	false	false	0	0	0	Deleted
+67.0	capitalized-settings	OrderItem	LastModifiedById	REFERENCE	true	false	false	false	false	18	0	0	Last Modified By ID
+67.0	capitalized-settings	OrderItem	LastModifiedDate	DATETIME	true	false	false	false	false	0	0	0	Last Modified Date
+67.0	capitalized-settings	OrderItem	LatestEstimatedDeliveryDate	DATE	false	false	false	true	true	0	0	0	Latest Estimated Delivery Date
+67.0	capitalized-settings	OrderItem	LatestEstimatedDeliveryTime	TIME	false	false	false	true	true	0	0	0	Latest Estimated Delivery Time
+67.0	capitalized-settings	OrderItem	LineNumber	INTEGER	false	false	false	true	true	0	0	0	Line Number
+67.0	capitalized-settings	OrderItem	ListPrice	CURRENCY	true	true	false	true	true	0	18	2	List Price
+67.0	capitalized-settings	OrderItem	OrderDeliveryGroupId	REFERENCE	false	false	false	true	true	18	0	0	Order Delivery Group ID
+67.0	capitalized-settings	OrderItem	OrderId	REFERENCE	true	true	false	false	false	18	0	0	Order ID
+67.0	capitalized-settings	OrderItem	OrderItemNumber	STRING	true	false	false	false	false	30	0	0	Order Product Number
+67.0	capitalized-settings	OrderItem	OriginalOrderItemId	REFERENCE	true	true	false	true	false	18	0	0	Original Order Item ID
+67.0	capitalized-settings	OrderItem	ParentOrderItemId	REFERENCE	false	false	false	true	true	18	0	0	Order Product ID
+67.0	capitalized-settings	OrderItem	PricebookEntryId	REFERENCE	true	true	false	false	false	18	0	0	Price Book Entry ID
+67.0	capitalized-settings	OrderItem	Product2Id	REFERENCE	true	true	false	true	false	18	0	0	Product ID
+67.0	capitalized-settings	OrderItem	Quantity	DOUBLE	true	true	true	false	false	0	18	2	Quantity
+67.0	capitalized-settings	OrderItem	RelatedOrderItemId	REFERENCE	true	false	false	true	false	18	0	0	Order Product ID
+67.0	capitalized-settings	OrderItem	ReservedAtLocationId	REFERENCE	false	false	false	true	true	18	0	0	Reserved at Location ID
+67.0	capitalized-settings	OrderItem	RoundedLineAmount	CURRENCY	false	false	false	true	true	0	18	2	Product Subtotal (Rounded)
+67.0	capitalized-settings	OrderItem	RoundedLineAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Product Subtotal (Rounded) with Tax
+67.0	capitalized-settings	OrderItem	ServiceDate	DATE	true	true	true	true	true	0	0	0	Start Date
+67.0	capitalized-settings	OrderItem	SystemModstamp	DATETIME	true	false	false	false	false	0	0	0	System Modstamp
+67.0	capitalized-settings	OrderItem	TotalAdjustedLineTaxAmount	CURRENCY	false	false	false	false	true	0	18	2	Adjusted Product Subtotal Tax
+67.0	capitalized-settings	OrderItem	TotalAdjustmentAmount	CURRENCY	false	false	false	false	true	0	18	2	Total Adjustments
+67.0	capitalized-settings	OrderItem	TotalAdjustmentAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Total Adjustments with Tax
+67.0	capitalized-settings	OrderItem	TotalAdjustmentDistAmount	CURRENCY	false	false	false	false	true	0	18	2	Distributed Order Adjustments
+67.0	capitalized-settings	OrderItem	TotalAdjustmentDistAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Distributed Order Adjustments with Tax
+67.0	capitalized-settings	OrderItem	TotalAdjustmentDistTaxAmount	CURRENCY	false	false	false	false	true	0	18	2	Distributed Order Adjustments Tax
+67.0	capitalized-settings	OrderItem	TotalAdjustmentTaxAmount	CURRENCY	false	false	false	false	true	0	18	2	Total Adjustments Tax
+67.0	capitalized-settings	OrderItem	TotalAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Total Amount with Tax
+67.0	capitalized-settings	OrderItem	TotalLineAdjustmentAmount	CURRENCY	false	false	false	false	true	0	18	2	Product Adjustments
+67.0	capitalized-settings	OrderItem	TotalLineAdjustmentAmtWithTax	CURRENCY	false	false	false	true	true	0	18	2	Product Adjustments with Tax
+67.0	capitalized-settings	OrderItem	TotalLineAdjustmentTaxAmount	CURRENCY	false	false	false	false	true	0	18	2	Product Adjustments Tax
+67.0	capitalized-settings	OrderItem	TotalLineAmount	CURRENCY	true	true	true	true	false	0	18	2	Product Subtotal
+67.0	capitalized-settings	OrderItem	TotalLineTaxAmount	CURRENCY	false	false	false	false	true	0	18	2	Product Subtotal Tax
+67.0	capitalized-settings	OrderItem	TotalPrice	CURRENCY	true	false	false	true	false	0	18	2	Total Price
+67.0	capitalized-settings	OrderItem	TotalTaxAmount	CURRENCY	false	false	false	false	true	0	18	2	Total Tax
+67.0	capitalized-settings	OrderItem	Type	PICKLIST	true	true	true	true	false	100	0	0	Type
+67.0	capitalized-settings	OrderItem	TypeCode	PICKLIST	true	false	false	true	false	40	0	0	Type Code
+67.0	capitalized-settings	OrderItem	UnitPrice	CURRENCY	true	true	true	true	false	0	18	2	Unit Price

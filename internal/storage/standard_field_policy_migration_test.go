@@ -19,7 +19,7 @@ func TestStandardFieldPolicyConfiguredEveryGateMigration(t *testing.T) {
 		}
 		objects[object][field.APIName] = field
 	}
-	for _, policy := range standardFieldPolicies {
+	for _, policy := range standardFieldPolicies() {
 		for _, gate := range policy.gates {
 			add(gate.Object, describeField(gate.Field))
 		}
@@ -80,7 +80,7 @@ func TestStandardFieldPolicyConfiguredEveryGateMigration(t *testing.T) {
 // org.tsv:2-25. The same metadata rule covers every absence-table object.
 func TestStandardFieldPolicyRecordTypeMetadataEveryAbsentObject(t *testing.T) {
 	names := []string{"Account"}
-	for name, policy := range standardFieldPolicies {
+	for name, policy := range standardFieldPolicies() {
 		if policy.absent["recordtypeid"] {
 			canonical, ok := ResolveKnownStandardObjectName(name)
 			if !ok {

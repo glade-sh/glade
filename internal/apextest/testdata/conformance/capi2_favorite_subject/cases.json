@@ -1,0 +1,218 @@
+[
+ {
+  "api": "62.0",
+  "group": "favorite-subject-prefix",
+  "id": "all.ChatterFavorites.deleteFavorite(String,String,String)",
+  "code": "List<String> observed=new List<String>();\nfor(String prefix:new List<String>{{{PREFIXES}}}) { String candidate=prefix + '000000000001'; {\nString o;\ntry {\n    ConnectApi.ChatterFavorites.deleteFavorite(null, candidate, UserInfo.getUserId());\n    o = 'OK|void';\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}\no = o.replace(UserInfo.getUserId(), '{userId}');\nif (!o.contains('Illegal value for parameter: \\'subjectId\\'')) observed.add(prefix=='' ? '<empty>' : prefix); } }\nString o=String.join(observed, ',');"
+ },
+ {
+  "api": "62.0",
+  "group": "favorite-subject-prefix",
+  "id": "all.ChatterFavorites.getFavorite(String,String,String)",
+  "code": "List<String> observed=new List<String>();\nfor(String prefix:new List<String>{{{PREFIXES}}}) { String candidate=prefix + '000000000001'; {\nString o;\ntry {\n    Object r = ConnectApi.ChatterFavorites.getFavorite(null, candidate, UserInfo.getUserId());\n    o = 'OK|' + (r == null ? 'null' : 'value');\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}\no = o.replace(UserInfo.getUserId(), '{userId}');\nif (!o.contains('Illegal value for parameter: \\'subjectId\\'')) observed.add(prefix=='' ? '<empty>' : prefix); } }\nString o=String.join(observed, ',');"
+ },
+ {
+  "api": "62.0",
+  "group": "favorite-subject-prefix",
+  "id": "all.ChatterFavorites.getFeedElements(String,String,String)",
+  "code": "List<String> observed=new List<String>();\nfor(String prefix:new List<String>{{{PREFIXES}}}) { String candidate=prefix + '000000000001'; {\nString o;\ntry { ConnectApi.ChatterFavorites.setTestGetFeedElements(null, candidate, UserInfo.getUserId(), new ConnectApi.FeedElementPage()); } catch (Exception ignored) {}\n\ntry {\n    Object r = ConnectApi.ChatterFavorites.getFeedElements(null, candidate, UserInfo.getUserId());\n    o = 'OK|' + (r == null ? 'null' : 'value');\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}\no = o.replace(UserInfo.getUserId(), '{userId}');\nif (!o.contains('Illegal value for parameter: \\'subjectId\\'')) observed.add(prefix=='' ? '<empty>' : prefix); } }\nString o=String.join(observed, ',');"
+ },
+ {
+  "api": "62.0",
+  "group": "favorite-subject-prefix",
+  "id": "all.ChatterFavorites.getFeedElements(String,String,String,Integer,Integer,String,Integer,ConnectApi.FeedSortOrder)",
+  "code": "List<String> observed=new List<String>();\nfor(String prefix:new List<String>{{{PREFIXES}}}) { String candidate=prefix + '000000000001'; {\nString o;\ntry { ConnectApi.ChatterFavorites.setTestGetFeedElements(null, candidate, UserInfo.getUserId(), 1, 1, UserInfo.getUserId(), 1, ConnectApi.FeedSortOrder.CreatedDateAsc, new ConnectApi.FeedElementPage()); } catch (Exception ignored) {}\n\ntry {\n    Object r = ConnectApi.ChatterFavorites.getFeedElements(null, candidate, UserInfo.getUserId(), 1, 1, UserInfo.getUserId(), 1, ConnectApi.FeedSortOrder.CreatedDateAsc);\n    o = 'OK|' + (r == null ? 'null' : 'value');\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}\no = o.replace(UserInfo.getUserId(), '{userId}');\nif (!o.contains('Illegal value for parameter: \\'subjectId\\'')) observed.add(prefix=='' ? '<empty>' : prefix); } }\nString o=String.join(observed, ',');"
+ },
+ {
+  "api": "62.0",
+  "group": "favorite-subject-prefix",
+  "id": "all.ChatterFavorites.getFeedElements(String,String,String,String,Integer,ConnectApi.FeedSortOrder)",
+  "code": "List<String> observed=new List<String>();\nfor(String prefix:new List<String>{{{PREFIXES}}}) { String candidate=prefix + '000000000001'; {\nString o;\ntry { ConnectApi.ChatterFavorites.setTestGetFeedElements(null, candidate, UserInfo.getUserId(), UserInfo.getUserId(), 1, ConnectApi.FeedSortOrder.CreatedDateAsc, new ConnectApi.FeedElementPage()); } catch (Exception ignored) {}\n\ntry {\n    Object r = ConnectApi.ChatterFavorites.getFeedElements(null, candidate, UserInfo.getUserId(), UserInfo.getUserId(), 1, ConnectApi.FeedSortOrder.CreatedDateAsc);\n    o = 'OK|' + (r == null ? 'null' : 'value');\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}\no = o.replace(UserInfo.getUserId(), '{userId}');\nif (!o.contains('Illegal value for parameter: \\'subjectId\\'')) observed.add(prefix=='' ? '<empty>' : prefix); } }\nString o=String.join(observed, ',');"
+ },
+ {
+  "api": "62.0",
+  "group": "favorite-subject-prefix",
+  "id": "all.ChatterFavorites.updateFavorite(String,String,String,Boolean)",
+  "code": "List<String> observed=new List<String>();\nfor(String prefix:new List<String>{{{PREFIXES}}}) { String candidate=prefix + '000000000001'; {\nString o;\ntry {\n    Object r = ConnectApi.ChatterFavorites.updateFavorite(null, candidate, UserInfo.getUserId(), false);\n    o = 'OK|' + (r == null ? 'null' : 'value');\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}\no = o.replace(UserInfo.getUserId(), '{userId}');\nif (!o.contains('Illegal value for parameter: \\'subjectId\\'')) observed.add(prefix=='' ? '<empty>' : prefix); } }\nString o=String.join(observed, ',');"
+ },
+ {
+  "api": "67.0",
+  "group": "favorite-subject-prefix",
+  "id": "all.ChatterFavorites.deleteFavorite(String,String,String)",
+  "code": "List<String> observed=new List<String>();\nfor(String prefix:new List<String>{{{PREFIXES}}}) { String candidate=prefix + '000000000001'; {\nString o;\ntry {\n    ConnectApi.ChatterFavorites.deleteFavorite(null, candidate, UserInfo.getUserId());\n    o = 'OK|void';\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}\no = o.replace(UserInfo.getUserId(), '{userId}');\nif (!o.contains('Illegal value for parameter: \\'subjectId\\'')) observed.add(prefix=='' ? '<empty>' : prefix); } }\nString o=String.join(observed, ',');"
+ },
+ {
+  "api": "67.0",
+  "group": "favorite-subject-prefix",
+  "id": "all.ChatterFavorites.getFavorite(String,String,String)",
+  "code": "List<String> observed=new List<String>();\nfor(String prefix:new List<String>{{{PREFIXES}}}) { String candidate=prefix + '000000000001'; {\nString o;\ntry {\n    Object r = ConnectApi.ChatterFavorites.getFavorite(null, candidate, UserInfo.getUserId());\n    o = 'OK|' + (r == null ? 'null' : 'value');\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}\no = o.replace(UserInfo.getUserId(), '{userId}');\nif (!o.contains('Illegal value for parameter: \\'subjectId\\'')) observed.add(prefix=='' ? '<empty>' : prefix); } }\nString o=String.join(observed, ',');"
+ },
+ {
+  "api": "67.0",
+  "group": "favorite-subject-prefix",
+  "id": "all.ChatterFavorites.getFeedElements(String,String,String)",
+  "code": "List<String> observed=new List<String>();\nfor(String prefix:new List<String>{{{PREFIXES}}}) { String candidate=prefix + '000000000001'; {\nString o;\ntry { ConnectApi.ChatterFavorites.setTestGetFeedElements(null, candidate, UserInfo.getUserId(), new ConnectApi.FeedElementPage()); } catch (Exception ignored) {}\n\ntry {\n    Object r = ConnectApi.ChatterFavorites.getFeedElements(null, candidate, UserInfo.getUserId());\n    o = 'OK|' + (r == null ? 'null' : 'value');\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}\no = o.replace(UserInfo.getUserId(), '{userId}');\nif (!o.contains('Illegal value for parameter: \\'subjectId\\'')) observed.add(prefix=='' ? '<empty>' : prefix); } }\nString o=String.join(observed, ',');"
+ },
+ {
+  "api": "67.0",
+  "group": "favorite-subject-prefix",
+  "id": "all.ChatterFavorites.getFeedElements(String,String,String,Integer,Integer,String,Integer,ConnectApi.FeedSortOrder)",
+  "code": "List<String> observed=new List<String>();\nfor(String prefix:new List<String>{{{PREFIXES}}}) { String candidate=prefix + '000000000001'; {\nString o;\ntry { ConnectApi.ChatterFavorites.setTestGetFeedElements(null, candidate, UserInfo.getUserId(), 1, 1, UserInfo.getUserId(), 1, ConnectApi.FeedSortOrder.CreatedDateAsc, new ConnectApi.FeedElementPage()); } catch (Exception ignored) {}\n\ntry {\n    Object r = ConnectApi.ChatterFavorites.getFeedElements(null, candidate, UserInfo.getUserId(), 1, 1, UserInfo.getUserId(), 1, ConnectApi.FeedSortOrder.CreatedDateAsc);\n    o = 'OK|' + (r == null ? 'null' : 'value');\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}\no = o.replace(UserInfo.getUserId(), '{userId}');\nif (!o.contains('Illegal value for parameter: \\'subjectId\\'')) observed.add(prefix=='' ? '<empty>' : prefix); } }\nString o=String.join(observed, ',');"
+ },
+ {
+  "api": "67.0",
+  "group": "favorite-subject-prefix",
+  "id": "all.ChatterFavorites.getFeedElements(String,String,String,String,Integer,ConnectApi.FeedSortOrder)",
+  "code": "List<String> observed=new List<String>();\nfor(String prefix:new List<String>{{{PREFIXES}}}) { String candidate=prefix + '000000000001'; {\nString o;\ntry { ConnectApi.ChatterFavorites.setTestGetFeedElements(null, candidate, UserInfo.getUserId(), UserInfo.getUserId(), 1, ConnectApi.FeedSortOrder.CreatedDateAsc, new ConnectApi.FeedElementPage()); } catch (Exception ignored) {}\n\ntry {\n    Object r = ConnectApi.ChatterFavorites.getFeedElements(null, candidate, UserInfo.getUserId(), UserInfo.getUserId(), 1, ConnectApi.FeedSortOrder.CreatedDateAsc);\n    o = 'OK|' + (r == null ? 'null' : 'value');\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}\no = o.replace(UserInfo.getUserId(), '{userId}');\nif (!o.contains('Illegal value for parameter: \\'subjectId\\'')) observed.add(prefix=='' ? '<empty>' : prefix); } }\nString o=String.join(observed, ',');"
+ },
+ {
+  "api": "67.0",
+  "group": "favorite-subject-prefix",
+  "id": "all.ChatterFavorites.updateFavorite(String,String,String,Boolean)",
+  "code": "List<String> observed=new List<String>();\nfor(String prefix:new List<String>{{{PREFIXES}}}) { String candidate=prefix + '000000000001'; {\nString o;\ntry {\n    Object r = ConnectApi.ChatterFavorites.updateFavorite(null, candidate, UserInfo.getUserId(), false);\n    o = 'OK|' + (r == null ? 'null' : 'value');\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}\no = o.replace(UserInfo.getUserId(), '{userId}');\nif (!o.contains('Illegal value for parameter: \\'subjectId\\'')) observed.add(prefix=='' ? '<empty>' : prefix); } }\nString o=String.join(observed, ',');"
+ },
+ {
+  "api": "68.0",
+  "group": "favorite-subject-prefix",
+  "id": "all.ChatterFavorites.deleteFavorite(String,String,String)",
+  "code": "List<String> observed=new List<String>();\nfor(String prefix:new List<String>{{{PREFIXES}}}) { String candidate=prefix + '000000000001'; {\nString o;\ntry {\n    ConnectApi.ChatterFavorites.deleteFavorite(null, candidate, UserInfo.getUserId());\n    o = 'OK|void';\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}\no = o.replace(UserInfo.getUserId(), '{userId}');\nif (!o.contains('Illegal value for parameter: \\'subjectId\\'')) observed.add(prefix=='' ? '<empty>' : prefix); } }\nString o=String.join(observed, ',');"
+ },
+ {
+  "api": "68.0",
+  "group": "favorite-subject-prefix",
+  "id": "all.ChatterFavorites.getFavorite(String,String,String)",
+  "code": "List<String> observed=new List<String>();\nfor(String prefix:new List<String>{{{PREFIXES}}}) { String candidate=prefix + '000000000001'; {\nString o;\ntry {\n    Object r = ConnectApi.ChatterFavorites.getFavorite(null, candidate, UserInfo.getUserId());\n    o = 'OK|' + (r == null ? 'null' : 'value');\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}\no = o.replace(UserInfo.getUserId(), '{userId}');\nif (!o.contains('Illegal value for parameter: \\'subjectId\\'')) observed.add(prefix=='' ? '<empty>' : prefix); } }\nString o=String.join(observed, ',');"
+ },
+ {
+  "api": "68.0",
+  "group": "favorite-subject-prefix",
+  "id": "all.ChatterFavorites.getFeedElements(String,String,String)",
+  "code": "List<String> observed=new List<String>();\nfor(String prefix:new List<String>{{{PREFIXES}}}) { String candidate=prefix + '000000000001'; {\nString o;\ntry { ConnectApi.ChatterFavorites.setTestGetFeedElements(null, candidate, UserInfo.getUserId(), new ConnectApi.FeedElementPage()); } catch (Exception ignored) {}\n\ntry {\n    Object r = ConnectApi.ChatterFavorites.getFeedElements(null, candidate, UserInfo.getUserId());\n    o = 'OK|' + (r == null ? 'null' : 'value');\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}\no = o.replace(UserInfo.getUserId(), '{userId}');\nif (!o.contains('Illegal value for parameter: \\'subjectId\\'')) observed.add(prefix=='' ? '<empty>' : prefix); } }\nString o=String.join(observed, ',');"
+ },
+ {
+  "api": "68.0",
+  "group": "favorite-subject-prefix",
+  "id": "all.ChatterFavorites.getFeedElements(String,String,String,Integer,Integer,String,Integer,ConnectApi.FeedSortOrder)",
+  "code": "List<String> observed=new List<String>();\nfor(String prefix:new List<String>{{{PREFIXES}}}) { String candidate=prefix + '000000000001'; {\nString o;\ntry { ConnectApi.ChatterFavorites.setTestGetFeedElements(null, candidate, UserInfo.getUserId(), 1, 1, UserInfo.getUserId(), 1, ConnectApi.FeedSortOrder.CreatedDateAsc, new ConnectApi.FeedElementPage()); } catch (Exception ignored) {}\n\ntry {\n    Object r = ConnectApi.ChatterFavorites.getFeedElements(null, candidate, UserInfo.getUserId(), 1, 1, UserInfo.getUserId(), 1, ConnectApi.FeedSortOrder.CreatedDateAsc);\n    o = 'OK|' + (r == null ? 'null' : 'value');\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}\no = o.replace(UserInfo.getUserId(), '{userId}');\nif (!o.contains('Illegal value for parameter: \\'subjectId\\'')) observed.add(prefix=='' ? '<empty>' : prefix); } }\nString o=String.join(observed, ',');"
+ },
+ {
+  "api": "68.0",
+  "group": "favorite-subject-prefix",
+  "id": "all.ChatterFavorites.getFeedElements(String,String,String,String,Integer,ConnectApi.FeedSortOrder)",
+  "code": "List<String> observed=new List<String>();\nfor(String prefix:new List<String>{{{PREFIXES}}}) { String candidate=prefix + '000000000001'; {\nString o;\ntry { ConnectApi.ChatterFavorites.setTestGetFeedElements(null, candidate, UserInfo.getUserId(), UserInfo.getUserId(), 1, ConnectApi.FeedSortOrder.CreatedDateAsc, new ConnectApi.FeedElementPage()); } catch (Exception ignored) {}\n\ntry {\n    Object r = ConnectApi.ChatterFavorites.getFeedElements(null, candidate, UserInfo.getUserId(), UserInfo.getUserId(), 1, ConnectApi.FeedSortOrder.CreatedDateAsc);\n    o = 'OK|' + (r == null ? 'null' : 'value');\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}\no = o.replace(UserInfo.getUserId(), '{userId}');\nif (!o.contains('Illegal value for parameter: \\'subjectId\\'')) observed.add(prefix=='' ? '<empty>' : prefix); } }\nString o=String.join(observed, ',');"
+ },
+ {
+  "api": "68.0",
+  "group": "favorite-subject-prefix",
+  "id": "all.ChatterFavorites.updateFavorite(String,String,String,Boolean)",
+  "code": "List<String> observed=new List<String>();\nfor(String prefix:new List<String>{{{PREFIXES}}}) { String candidate=prefix + '000000000001'; {\nString o;\ntry {\n    Object r = ConnectApi.ChatterFavorites.updateFavorite(null, candidate, UserInfo.getUserId(), false);\n    o = 'OK|' + (r == null ? 'null' : 'value');\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}\no = o.replace(UserInfo.getUserId(), '{userId}');\nif (!o.contains('Illegal value for parameter: \\'subjectId\\'')) observed.add(prefix=='' ? '<empty>' : prefix); } }\nString o=String.join(observed, ',');"
+ },
+ {
+  "api": "62.0",
+  "group": "favorite-subject-format",
+  "id": "all.ChatterFavorites.deleteFavorite(String,String,String)",
+  "code": "List<String> observed=new List<String>();\nfor(String prefix:new List<String>{'bad','me','','001','005','0Bt','000','00000000000000','000000000000000','0000000000000000000','a!0000000000000','005000000000001','001000000000001'}) { String candidate=prefix; {\nString o;\ntry {\n    ConnectApi.ChatterFavorites.deleteFavorite(null, candidate, UserInfo.getUserId());\n    o = 'OK|void';\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}\no = o.replace(UserInfo.getUserId(), '{userId}');\nif (o.contains('Illegal value for parameter: \\'subjectId\\'')) observed.add(prefix=='' ? '<empty>' : prefix); } }\nString o=String.join(observed, ',');"
+ },
+ {
+  "api": "62.0",
+  "group": "favorite-subject-format",
+  "id": "all.ChatterFavorites.getFavorite(String,String,String)",
+  "code": "List<String> observed=new List<String>();\nfor(String prefix:new List<String>{'bad','me','','001','005','0Bt','000','00000000000000','000000000000000','0000000000000000000','a!0000000000000','005000000000001','001000000000001'}) { String candidate=prefix; {\nString o;\ntry {\n    Object r = ConnectApi.ChatterFavorites.getFavorite(null, candidate, UserInfo.getUserId());\n    o = 'OK|' + (r == null ? 'null' : 'value');\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}\no = o.replace(UserInfo.getUserId(), '{userId}');\nif (o.contains('Illegal value for parameter: \\'subjectId\\'')) observed.add(prefix=='' ? '<empty>' : prefix); } }\nString o=String.join(observed, ',');"
+ },
+ {
+  "api": "62.0",
+  "group": "favorite-subject-format",
+  "id": "all.ChatterFavorites.getFeedElements(String,String,String)",
+  "code": "List<String> observed=new List<String>();\nfor(String prefix:new List<String>{'bad','me','','001','005','0Bt','000','00000000000000','000000000000000','0000000000000000000','a!0000000000000','005000000000001','001000000000001'}) { String candidate=prefix; {\nString o;\ntry { ConnectApi.ChatterFavorites.setTestGetFeedElements(null, candidate, UserInfo.getUserId(), new ConnectApi.FeedElementPage()); } catch (Exception ignored) {}\n\ntry {\n    Object r = ConnectApi.ChatterFavorites.getFeedElements(null, candidate, UserInfo.getUserId());\n    o = 'OK|' + (r == null ? 'null' : 'value');\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}\no = o.replace(UserInfo.getUserId(), '{userId}');\nif (o.contains('Illegal value for parameter: \\'subjectId\\'')) observed.add(prefix=='' ? '<empty>' : prefix); } }\nString o=String.join(observed, ',');"
+ },
+ {
+  "api": "62.0",
+  "group": "favorite-subject-format",
+  "id": "all.ChatterFavorites.getFeedElements(String,String,String,Integer,Integer,String,Integer,ConnectApi.FeedSortOrder)",
+  "code": "List<String> observed=new List<String>();\nfor(String prefix:new List<String>{'bad','me','','001','005','0Bt','000','00000000000000','000000000000000','0000000000000000000','a!0000000000000','005000000000001','001000000000001'}) { String candidate=prefix; {\nString o;\ntry { ConnectApi.ChatterFavorites.setTestGetFeedElements(null, candidate, UserInfo.getUserId(), 1, 1, UserInfo.getUserId(), 1, ConnectApi.FeedSortOrder.CreatedDateAsc, new ConnectApi.FeedElementPage()); } catch (Exception ignored) {}\n\ntry {\n    Object r = ConnectApi.ChatterFavorites.getFeedElements(null, candidate, UserInfo.getUserId(), 1, 1, UserInfo.getUserId(), 1, ConnectApi.FeedSortOrder.CreatedDateAsc);\n    o = 'OK|' + (r == null ? 'null' : 'value');\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}\no = o.replace(UserInfo.getUserId(), '{userId}');\nif (o.contains('Illegal value for parameter: \\'subjectId\\'')) observed.add(prefix=='' ? '<empty>' : prefix); } }\nString o=String.join(observed, ',');"
+ },
+ {
+  "api": "62.0",
+  "group": "favorite-subject-format",
+  "id": "all.ChatterFavorites.getFeedElements(String,String,String,String,Integer,ConnectApi.FeedSortOrder)",
+  "code": "List<String> observed=new List<String>();\nfor(String prefix:new List<String>{'bad','me','','001','005','0Bt','000','00000000000000','000000000000000','0000000000000000000','a!0000000000000','005000000000001','001000000000001'}) { String candidate=prefix; {\nString o;\ntry { ConnectApi.ChatterFavorites.setTestGetFeedElements(null, candidate, UserInfo.getUserId(), UserInfo.getUserId(), 1, ConnectApi.FeedSortOrder.CreatedDateAsc, new ConnectApi.FeedElementPage()); } catch (Exception ignored) {}\n\ntry {\n    Object r = ConnectApi.ChatterFavorites.getFeedElements(null, candidate, UserInfo.getUserId(), UserInfo.getUserId(), 1, ConnectApi.FeedSortOrder.CreatedDateAsc);\n    o = 'OK|' + (r == null ? 'null' : 'value');\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}\no = o.replace(UserInfo.getUserId(), '{userId}');\nif (o.contains('Illegal value for parameter: \\'subjectId\\'')) observed.add(prefix=='' ? '<empty>' : prefix); } }\nString o=String.join(observed, ',');"
+ },
+ {
+  "api": "62.0",
+  "group": "favorite-subject-format",
+  "id": "all.ChatterFavorites.updateFavorite(String,String,String,Boolean)",
+  "code": "List<String> observed=new List<String>();\nfor(String prefix:new List<String>{'bad','me','','001','005','0Bt','000','00000000000000','000000000000000','0000000000000000000','a!0000000000000','005000000000001','001000000000001'}) { String candidate=prefix; {\nString o;\ntry {\n    Object r = ConnectApi.ChatterFavorites.updateFavorite(null, candidate, UserInfo.getUserId(), false);\n    o = 'OK|' + (r == null ? 'null' : 'value');\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}\no = o.replace(UserInfo.getUserId(), '{userId}');\nif (o.contains('Illegal value for parameter: \\'subjectId\\'')) observed.add(prefix=='' ? '<empty>' : prefix); } }\nString o=String.join(observed, ',');"
+ },
+ {
+  "api": "67.0",
+  "group": "favorite-subject-format",
+  "id": "all.ChatterFavorites.deleteFavorite(String,String,String)",
+  "code": "List<String> observed=new List<String>();\nfor(String prefix:new List<String>{'bad','me','','001','005','0Bt','000','00000000000000','000000000000000','0000000000000000000','a!0000000000000','005000000000001','001000000000001'}) { String candidate=prefix; {\nString o;\ntry {\n    ConnectApi.ChatterFavorites.deleteFavorite(null, candidate, UserInfo.getUserId());\n    o = 'OK|void';\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}\no = o.replace(UserInfo.getUserId(), '{userId}');\nif (o.contains('Illegal value for parameter: \\'subjectId\\'')) observed.add(prefix=='' ? '<empty>' : prefix); } }\nString o=String.join(observed, ',');"
+ },
+ {
+  "api": "67.0",
+  "group": "favorite-subject-format",
+  "id": "all.ChatterFavorites.getFavorite(String,String,String)",
+  "code": "List<String> observed=new List<String>();\nfor(String prefix:new List<String>{'bad','me','','001','005','0Bt','000','00000000000000','000000000000000','0000000000000000000','a!0000000000000','005000000000001','001000000000001'}) { String candidate=prefix; {\nString o;\ntry {\n    Object r = ConnectApi.ChatterFavorites.getFavorite(null, candidate, UserInfo.getUserId());\n    o = 'OK|' + (r == null ? 'null' : 'value');\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}\no = o.replace(UserInfo.getUserId(), '{userId}');\nif (o.contains('Illegal value for parameter: \\'subjectId\\'')) observed.add(prefix=='' ? '<empty>' : prefix); } }\nString o=String.join(observed, ',');"
+ },
+ {
+  "api": "67.0",
+  "group": "favorite-subject-format",
+  "id": "all.ChatterFavorites.getFeedElements(String,String,String)",
+  "code": "List<String> observed=new List<String>();\nfor(String prefix:new List<String>{'bad','me','','001','005','0Bt','000','00000000000000','000000000000000','0000000000000000000','a!0000000000000','005000000000001','001000000000001'}) { String candidate=prefix; {\nString o;\ntry { ConnectApi.ChatterFavorites.setTestGetFeedElements(null, candidate, UserInfo.getUserId(), new ConnectApi.FeedElementPage()); } catch (Exception ignored) {}\n\ntry {\n    Object r = ConnectApi.ChatterFavorites.getFeedElements(null, candidate, UserInfo.getUserId());\n    o = 'OK|' + (r == null ? 'null' : 'value');\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}\no = o.replace(UserInfo.getUserId(), '{userId}');\nif (o.contains('Illegal value for parameter: \\'subjectId\\'')) observed.add(prefix=='' ? '<empty>' : prefix); } }\nString o=String.join(observed, ',');"
+ },
+ {
+  "api": "67.0",
+  "group": "favorite-subject-format",
+  "id": "all.ChatterFavorites.getFeedElements(String,String,String,Integer,Integer,String,Integer,ConnectApi.FeedSortOrder)",
+  "code": "List<String> observed=new List<String>();\nfor(String prefix:new List<String>{'bad','me','','001','005','0Bt','000','00000000000000','000000000000000','0000000000000000000','a!0000000000000','005000000000001','001000000000001'}) { String candidate=prefix; {\nString o;\ntry { ConnectApi.ChatterFavorites.setTestGetFeedElements(null, candidate, UserInfo.getUserId(), 1, 1, UserInfo.getUserId(), 1, ConnectApi.FeedSortOrder.CreatedDateAsc, new ConnectApi.FeedElementPage()); } catch (Exception ignored) {}\n\ntry {\n    Object r = ConnectApi.ChatterFavorites.getFeedElements(null, candidate, UserInfo.getUserId(), 1, 1, UserInfo.getUserId(), 1, ConnectApi.FeedSortOrder.CreatedDateAsc);\n    o = 'OK|' + (r == null ? 'null' : 'value');\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}\no = o.replace(UserInfo.getUserId(), '{userId}');\nif (o.contains('Illegal value for parameter: \\'subjectId\\'')) observed.add(prefix=='' ? '<empty>' : prefix); } }\nString o=String.join(observed, ',');"
+ },
+ {
+  "api": "67.0",
+  "group": "favorite-subject-format",
+  "id": "all.ChatterFavorites.getFeedElements(String,String,String,String,Integer,ConnectApi.FeedSortOrder)",
+  "code": "List<String> observed=new List<String>();\nfor(String prefix:new List<String>{'bad','me','','001','005','0Bt','000','00000000000000','000000000000000','0000000000000000000','a!0000000000000','005000000000001','001000000000001'}) { String candidate=prefix; {\nString o;\ntry { ConnectApi.ChatterFavorites.setTestGetFeedElements(null, candidate, UserInfo.getUserId(), UserInfo.getUserId(), 1, ConnectApi.FeedSortOrder.CreatedDateAsc, new ConnectApi.FeedElementPage()); } catch (Exception ignored) {}\n\ntry {\n    Object r = ConnectApi.ChatterFavorites.getFeedElements(null, candidate, UserInfo.getUserId(), UserInfo.getUserId(), 1, ConnectApi.FeedSortOrder.CreatedDateAsc);\n    o = 'OK|' + (r == null ? 'null' : 'value');\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}\no = o.replace(UserInfo.getUserId(), '{userId}');\nif (o.contains('Illegal value for parameter: \\'subjectId\\'')) observed.add(prefix=='' ? '<empty>' : prefix); } }\nString o=String.join(observed, ',');"
+ },
+ {
+  "api": "67.0",
+  "group": "favorite-subject-format",
+  "id": "all.ChatterFavorites.updateFavorite(String,String,String,Boolean)",
+  "code": "List<String> observed=new List<String>();\nfor(String prefix:new List<String>{'bad','me','','001','005','0Bt','000','00000000000000','000000000000000','0000000000000000000','a!0000000000000','005000000000001','001000000000001'}) { String candidate=prefix; {\nString o;\ntry {\n    Object r = ConnectApi.ChatterFavorites.updateFavorite(null, candidate, UserInfo.getUserId(), false);\n    o = 'OK|' + (r == null ? 'null' : 'value');\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}\no = o.replace(UserInfo.getUserId(), '{userId}');\nif (o.contains('Illegal value for parameter: \\'subjectId\\'')) observed.add(prefix=='' ? '<empty>' : prefix); } }\nString o=String.join(observed, ',');"
+ },
+ {
+  "api": "68.0",
+  "group": "favorite-subject-format",
+  "id": "all.ChatterFavorites.deleteFavorite(String,String,String)",
+  "code": "List<String> observed=new List<String>();\nfor(String prefix:new List<String>{'bad','me','','001','005','0Bt','000','00000000000000','000000000000000','0000000000000000000','a!0000000000000','005000000000001','001000000000001'}) { String candidate=prefix; {\nString o;\ntry {\n    ConnectApi.ChatterFavorites.deleteFavorite(null, candidate, UserInfo.getUserId());\n    o = 'OK|void';\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}\no = o.replace(UserInfo.getUserId(), '{userId}');\nif (o.contains('Illegal value for parameter: \\'subjectId\\'')) observed.add(prefix=='' ? '<empty>' : prefix); } }\nString o=String.join(observed, ',');"
+ },
+ {
+  "api": "68.0",
+  "group": "favorite-subject-format",
+  "id": "all.ChatterFavorites.getFavorite(String,String,String)",
+  "code": "List<String> observed=new List<String>();\nfor(String prefix:new List<String>{'bad','me','','001','005','0Bt','000','00000000000000','000000000000000','0000000000000000000','a!0000000000000','005000000000001','001000000000001'}) { String candidate=prefix; {\nString o;\ntry {\n    Object r = ConnectApi.ChatterFavorites.getFavorite(null, candidate, UserInfo.getUserId());\n    o = 'OK|' + (r == null ? 'null' : 'value');\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}\no = o.replace(UserInfo.getUserId(), '{userId}');\nif (o.contains('Illegal value for parameter: \\'subjectId\\'')) observed.add(prefix=='' ? '<empty>' : prefix); } }\nString o=String.join(observed, ',');"
+ },
+ {
+  "api": "68.0",
+  "group": "favorite-subject-format",
+  "id": "all.ChatterFavorites.getFeedElements(String,String,String)",
+  "code": "List<String> observed=new List<String>();\nfor(String prefix:new List<String>{'bad','me','','001','005','0Bt','000','00000000000000','000000000000000','0000000000000000000','a!0000000000000','005000000000001','001000000000001'}) { String candidate=prefix; {\nString o;\ntry { ConnectApi.ChatterFavorites.setTestGetFeedElements(null, candidate, UserInfo.getUserId(), new ConnectApi.FeedElementPage()); } catch (Exception ignored) {}\n\ntry {\n    Object r = ConnectApi.ChatterFavorites.getFeedElements(null, candidate, UserInfo.getUserId());\n    o = 'OK|' + (r == null ? 'null' : 'value');\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}\no = o.replace(UserInfo.getUserId(), '{userId}');\nif (o.contains('Illegal value for parameter: \\'subjectId\\'')) observed.add(prefix=='' ? '<empty>' : prefix); } }\nString o=String.join(observed, ',');"
+ },
+ {
+  "api": "68.0",
+  "group": "favorite-subject-format",
+  "id": "all.ChatterFavorites.getFeedElements(String,String,String,Integer,Integer,String,Integer,ConnectApi.FeedSortOrder)",
+  "code": "List<String> observed=new List<String>();\nfor(String prefix:new List<String>{'bad','me','','001','005','0Bt','000','00000000000000','000000000000000','0000000000000000000','a!0000000000000','005000000000001','001000000000001'}) { String candidate=prefix; {\nString o;\ntry { ConnectApi.ChatterFavorites.setTestGetFeedElements(null, candidate, UserInfo.getUserId(), 1, 1, UserInfo.getUserId(), 1, ConnectApi.FeedSortOrder.CreatedDateAsc, new ConnectApi.FeedElementPage()); } catch (Exception ignored) {}\n\ntry {\n    Object r = ConnectApi.ChatterFavorites.getFeedElements(null, candidate, UserInfo.getUserId(), 1, 1, UserInfo.getUserId(), 1, ConnectApi.FeedSortOrder.CreatedDateAsc);\n    o = 'OK|' + (r == null ? 'null' : 'value');\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}\no = o.replace(UserInfo.getUserId(), '{userId}');\nif (o.contains('Illegal value for parameter: \\'subjectId\\'')) observed.add(prefix=='' ? '<empty>' : prefix); } }\nString o=String.join(observed, ',');"
+ },
+ {
+  "api": "68.0",
+  "group": "favorite-subject-format",
+  "id": "all.ChatterFavorites.getFeedElements(String,String,String,String,Integer,ConnectApi.FeedSortOrder)",
+  "code": "List<String> observed=new List<String>();\nfor(String prefix:new List<String>{'bad','me','','001','005','0Bt','000','00000000000000','000000000000000','0000000000000000000','a!0000000000000','005000000000001','001000000000001'}) { String candidate=prefix; {\nString o;\ntry { ConnectApi.ChatterFavorites.setTestGetFeedElements(null, candidate, UserInfo.getUserId(), UserInfo.getUserId(), 1, ConnectApi.FeedSortOrder.CreatedDateAsc, new ConnectApi.FeedElementPage()); } catch (Exception ignored) {}\n\ntry {\n    Object r = ConnectApi.ChatterFavorites.getFeedElements(null, candidate, UserInfo.getUserId(), UserInfo.getUserId(), 1, ConnectApi.FeedSortOrder.CreatedDateAsc);\n    o = 'OK|' + (r == null ? 'null' : 'value');\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}\no = o.replace(UserInfo.getUserId(), '{userId}');\nif (o.contains('Illegal value for parameter: \\'subjectId\\'')) observed.add(prefix=='' ? '<empty>' : prefix); } }\nString o=String.join(observed, ',');"
+ },
+ {
+  "api": "68.0",
+  "group": "favorite-subject-format",
+  "id": "all.ChatterFavorites.updateFavorite(String,String,String,Boolean)",
+  "code": "List<String> observed=new List<String>();\nfor(String prefix:new List<String>{'bad','me','','001','005','0Bt','000','00000000000000','000000000000000','0000000000000000000','a!0000000000000','005000000000001','001000000000001'}) { String candidate=prefix; {\nString o;\ntry {\n    Object r = ConnectApi.ChatterFavorites.updateFavorite(null, candidate, UserInfo.getUserId(), false);\n    o = 'OK|' + (r == null ? 'null' : 'value');\n} catch (Exception e) {\n    o = 'EX|' + e.getTypeName() + '|' + e.getMessage();\n}\no = o.replace(UserInfo.getUserId(), '{userId}');\nif (o.contains('Illegal value for parameter: \\'subjectId\\'')) observed.add(prefix=='' ? '<empty>' : prefix); } }\nString o=String.join(observed, ',');"
+ }
+]

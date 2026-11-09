@@ -1,0 +1,2 @@
+try { KbManagement.PublishingService.archiveOnlineArticle('ka0000000000001',null); System.debug('B4:missing_archive:returned'); } catch(Exception e) { System.debug('B4:missing_archive:'+e.getTypeName()); }
+try { KbManagement.PublishingService.editOnlineArticle('ka0000000000001',false); System.debug('B4:missing_edit:returned'); } catch(Exception e) { System.debug('B4:missing_edit:'+e.getTypeName()); }

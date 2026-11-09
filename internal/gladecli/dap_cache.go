@@ -11,7 +11,7 @@ import (
 )
 
 // Require person-family metadata and the captured business-default fallback in the restored org.
-const dapCacheVersion = 17
+const dapCacheVersion = 18
 
 func loadDAPStartupState(projectRoot string) (storage.OrgState, apextest.CompiledProjectRuntime, string, error) {
 	root, err := filepath.Abs(projectRoot)

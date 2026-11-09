@@ -15,11 +15,23 @@ import (
 
 func flowCoreValidateProjectEntries(p project.Project, idx *Index) error {
 	org := storage.NewOrgState()
-	if len(p.ObjectFiles) != 0 || len(p.FieldFiles) != 0 {
+	updateOrg := storage.NewOrgState()
+	completeObjects := make(map[string]bool)
+	if len(p.ObjectFiles) != 0 || len(p.FieldFiles) != 0 || p.SchemaSnapshot != "" {
 		if s, err := schema.LoadProject(p); err == nil {
+			for _, object := range s.Objects {
+				if object.CompleteSnapshot {
+					completeObjects[strings.ToLower(object.Name)] = true
+				}
+			}
 			org.Namespace = p.Namespace
+			updateOrg.Namespace = p.Namespace
 			for name, describe := range sobject.BuildDescribeRegistry(s).Objects {
-				org.Objects[name] = storage.ObjectState{Definition: sobject.ToObjectDefinition(describe)}
+				state := storage.ObjectState{Definition: sobject.ToObjectDefinition(describe)}
+				updateOrg.Objects[name] = state
+				if len(p.ObjectFiles) != 0 || len(p.FieldFiles) != 0 {
+					org.Objects[name] = state
+				}
 			}
 		}
 	}
@@ -84,6 +96,26 @@ func flowCoreValidateProjectEntries(p project.Project, idx *Index) error {
 					field := flowRecordFieldReference(item.AssignToReference)
 					if strings.EqualFold(item.Operator, "Assign") && knownMissing(field) {
 						reject(fmt.Sprintf("assignment %q references an unknown triggering-record field %q", assignment.Name, item.AssignToReference))
+					}
+				}
+			}
+		}
+		if strings.EqualFold(strings.TrimSpace(raw.Start.TriggerType), "RecordBeforeSave") {
+			// Object metadata can be a partial overlay. Only a verified snapshot
+			// with an explicit completeness assertion proves a field absent.
+			updateObject, updateSupplied := storage.ResolveObjectName(updateOrg, raw.Start.Object)
+			if updateSupplied && completeObjects[strings.ToLower(updateObject)] {
+				definition := updateOrg.Objects[updateObject].Definition
+				for _, update := range raw.RecordUpdates {
+					if !strings.EqualFold(strings.TrimSpace(update.InputReference), "$Record") {
+						continue
+					}
+					for _, field := range update.Fields {
+						name := strings.TrimSpace(field.Field)
+						_, known := storage.ResolveFieldName(definition, updateOrg.Namespace, name)
+						if name != "" && !strings.Contains(name, ".") && !known && !flowRefsStandardMemberGap(definition, name) {
+							reject(fmt.Sprintf("record update %q references an unknown triggering-record field %q", update.Name, name))
+						}
 					}
 				}
 			}

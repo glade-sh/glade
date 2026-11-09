@@ -63,6 +63,7 @@ func TestQueryLiteralRoutesNativeConformance(t *testing.T) {
 						t.Fatalf("missing native cell %s", key)
 					}
 					t.Run(key, func(t *testing.T) {
+						t.Parallel()
 						source := sources[shape[0]+"/"+route[0]]
 						if context == "istest" {
 							checkQueryLiteralProject(t, api, source, row[4], row[5])

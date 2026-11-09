@@ -22,6 +22,10 @@ type standardRuntimePrefix struct {
 	machine *vm.VM
 	classes []vm.Class
 	aliases map[string]bool
+	// generation is the platform symbol view the prefix was built from. A
+	// later ConnectApi shape request publishes a new view (typesys
+	// RequestConnectAPIShape); a prefix from the stub-only view is stale.
+	generation uint64
 }
 
 var standardRuntimeBase struct {
@@ -34,7 +38,8 @@ var standardRuntimeBase struct {
 func sharedStandardRuntimePrefix() *standardRuntimePrefix {
 	standardRuntimeBase.mu.Lock()
 	defer standardRuntimeBase.mu.Unlock()
-	if prefix := standardRuntimeBase.prefix.Value(); prefix != nil {
+	generation := typesys.StandardPlatformSymbolGeneration()
+	if prefix := standardRuntimeBase.prefix.Value(); prefix != nil && prefix.generation == generation {
 		return prefix
 	}
 	if standardRuntimeBase.failed {
@@ -53,7 +58,7 @@ func sharedStandardRuntimePrefix() *standardRuntimePrefix {
 	for name := range machine.Classes {
 		aliases[strings.ToLower(strings.TrimSpace(name))] = true
 	}
-	prefix := &standardRuntimePrefix{machine: machine, classes: classes, aliases: aliases}
+	prefix := &standardRuntimePrefix{machine: machine, classes: classes, aliases: aliases, generation: generation}
 	standardRuntimeBase.prefix = weak.Make(prefix)
 	return prefix
 }

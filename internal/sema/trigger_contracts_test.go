@@ -280,3 +280,30 @@ public class Consumer {
 		}
 	}
 }
+
+// A method declared in a trigger body keeps the pre-anonymous_local_methods_c4
+// result: the body is not lowered (a warning), and calls to the method are
+// not reported as unknown. Only execute-anonymous bodies declare local
+// methods.
+func TestAnalyzeTriggerBodyMethodDeclarationIsNotAnAnonymousLocalMethod(t *testing.T) {
+	t.Parallel()
+	result := analyzeTriggerProject(t, map[string]string{
+		"AccountTrigger.trigger": `
+trigger AccountTrigger on Account (after insert) {
+  for (Account a : Trigger.new) {
+    notify(a.Name);
+  }
+  void notify(String name) {
+    System.debug(name);
+  }
+}
+`,
+	}, schema.Object{Name: "Account"})
+
+	if result.HasErrors() {
+		t.Fatalf("unexpected errors for a trigger method declaration: %#v", result.Diagnostics)
+	}
+	if triggerDiagnosticMatching(result, "calls unknown method") {
+		t.Fatalf("trigger method call reported unknown: %#v", result.Diagnostics)
+	}
+}

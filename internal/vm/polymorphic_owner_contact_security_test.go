@@ -53,6 +53,14 @@ func TestSOQLUserModePolymorphicOwnerContactSecurityControls(t *testing.T) {
 		for _, denied := range denials {
 			t.Run(field+"/"+denied, func(t *testing.T) {
 				org, user := polymorphicOwnerContactOrg()
+				// A scoped set adds to the running user's grants (native rows
+				// u2ScopedBase, u3ScopedOther and adminScopedOther in
+				// internal/apextest/testdata/conformance/permission_scope_mute/org.tsv; API 62 and 67), so the
+				// denial cases need a user that holds none.
+				profiles := org.Objects["Profile"]
+				profiles.Records["00e000000000009"] = storage.Record{ID: "00e000000000009", Object: "Profile", Fields: map[string]storage.Value{"Name": storage.StringValue("Minimum Access - Salesforce")}}
+				org.Objects["Profile"] = profiles
+				user.Fields["ProfileId"] = String("00e000000000009")
 				const scope = "0PS000000000001"
 				org.Objects["ObjectPermissions"] = storage.ObjectState{Records: map[storage.ID]storage.Record{}}
 				for i, object := range []string{"Case", "User", "Group"} {
@@ -79,7 +87,11 @@ func TestSOQLUserModePolymorphicOwnerContactSecurityControls(t *testing.T) {
 				machine.SetOrg(&org)
 				machine.executionUser = user
 				err := machine.enforceSOQLSecurity(soql.Query{Object: "Case", Fields: []string{"Id", "Owner." + field}, SecurityMode: "USER_MODE"}, scope)
-				if denied == "" {
+				// Native rows dotfix_fls_followups/org.tsv:19 and :20 (case.select.user,
+				// case.strip.updatable, restricted user, API 62.0, repeated at 67.0):
+				// Case.OwnerId is non-permissionable and stays readable and updatable
+				// without a field grant, so a scoped set that omits it cannot remove it.
+				if denied == "" || denied == "Case.OwnerId" {
 					if err != nil {
 						t.Fatalf("readable scoped projection: %v", err)
 					}
@@ -87,9 +99,6 @@ func TestSOQLUserModePolymorphicOwnerContactSecurityControls(t *testing.T) {
 				}
 				if err == nil {
 					t.Fatal("expected permission denial")
-				}
-				if denied == "Case.OwnerId" && !strings.Contains(err.Error(), "OwnerId") {
-					t.Fatalf("expected source reference denial, got %v", err)
 				}
 			})
 		}

@@ -1,0 +1,598 @@
+{
+ "c.closeTab.disabled": {
+  "error": {
+   "message": "Error: closeTab() - Could not close tab.",
+   "name": "Error"
+  },
+  "kind": "reject"
+ },
+ "c.closeTab.sub": {
+  "kind": "resolve",
+  "value": true
+ },
+ "c.closeTab.workspace": {
+  "error": {
+   "message": "Error: closeTab() - Could not close tab.",
+   "name": "Error"
+  },
+  "kind": "reject"
+ },
+ "c.disableTabClose.sub": {
+  "kind": "resolve",
+  "value": {
+   "closeable": false,
+   "customIcon": "utility:add",
+   "customIconAlt": {
+    "type": "undefined"
+   },
+   "customTitle": "B10 Label",
+   "focused": true,
+   "highlighted": false,
+   "icon": "standard:account",
+   "iconAlt": "Account",
+   "isSubtab": true,
+   "pageReference": "<pageReference:object>",
+   "parentTabId": "<parentTabId:string>",
+   "pinned": false,
+   "recordId": null,
+   "tabId": "<tabId:string>",
+   "title": "Recently Viewed | Accounts",
+   "url": "<url:string>"
+  }
+ },
+ "c.disableTabClose.sub.off": {
+  "kind": "resolve",
+  "value": {
+   "closeable": true,
+   "customIcon": "utility:add",
+   "customIconAlt": {
+    "type": "undefined"
+   },
+   "customTitle": "B10 Label",
+   "focused": true,
+   "highlighted": false,
+   "icon": "standard:account",
+   "iconAlt": "Account",
+   "isSubtab": true,
+   "pageReference": "<pageReference:object>",
+   "parentTabId": "<parentTabId:string>",
+   "pinned": false,
+   "recordId": null,
+   "tabId": "<tabId:string>",
+   "title": "Recently Viewed | Accounts",
+   "url": "<url:string>"
+  }
+ },
+ "c.focusTab.parent": {
+  "kind": "resolve",
+  "value": true
+ },
+ "c.focusedKeys": [],
+ "c.getAllTabInfo.afterClose": {
+  "kind": "resolve",
+  "value": [
+   {
+    "closeable": true,
+    "customIcon": {
+     "type": "undefined"
+    },
+    "customIconAlt": {
+     "type": "undefined"
+    },
+    "customTitle": {
+     "type": "undefined"
+    },
+    "focused": false,
+    "highlighted": false,
+    "icon": "standard:generic_loading",
+    "iconAlt": "Loading...",
+    "isSubtab": false,
+    "pageReference": "<pageReference:object>",
+    "parentTabId": "<parentTabId:object>",
+    "pinned": false,
+    "recordId": null,
+    "subtabs": [],
+    "tabId": "<tabId:string>",
+    "title": "Loading...",
+    "url": "<url:string>"
+   },
+   {
+    "closeable": true,
+    "customIcon": {
+     "type": "undefined"
+    },
+    "customIconAlt": {
+     "type": "undefined"
+    },
+    "customTitle": {
+     "type": "undefined"
+    },
+    "focused": true,
+    "highlighted": false,
+    "icon": "standard:account",
+    "iconAlt": "Account",
+    "isSubtab": false,
+    "pageReference": "<pageReference:object>",
+    "parentTabId": "<parentTabId:object>",
+    "pinned": false,
+    "recordId": null,
+    "subtabs": [],
+    "tabId": "<tabId:string>",
+    "title": "Recently Viewed | Accounts",
+    "url": "<url:string>"
+   }
+  ]
+ },
+ "c.getAllTabInfo.afterOpen": {
+  "kind": "resolve",
+  "value": [
+   {
+    "closeable": true,
+    "customIcon": {
+     "type": "undefined"
+    },
+    "customIconAlt": {
+     "type": "undefined"
+    },
+    "customTitle": {
+     "type": "undefined"
+    },
+    "focused": true,
+    "highlighted": false,
+    "icon": "standard:generic_loading",
+    "iconAlt": "Loading...",
+    "isSubtab": false,
+    "pageReference": "<pageReference:object>",
+    "parentTabId": "<parentTabId:object>",
+    "pinned": false,
+    "recordId": null,
+    "subtabs": [
+     {
+      "closeable": true,
+      "customIcon": {
+       "type": "undefined"
+      },
+      "customIconAlt": {
+       "type": "undefined"
+      },
+      "customTitle": {
+       "type": "undefined"
+      },
+      "focused": true,
+      "highlighted": false,
+      "icon": "standard:account",
+      "iconAlt": "Account",
+      "isSubtab": true,
+      "pageReference": "<pageReference:object>",
+      "parentTabId": "<parentTabId:string>",
+      "pinned": false,
+      "recordId": null,
+      "tabId": "<tabId:string>",
+      "title": "Recently Viewed | Accounts",
+      "url": "<url:string>"
+     }
+    ],
+    "tabId": "<tabId:string>",
+    "title": "Loading...",
+    "url": "<url:string>"
+   }
+  ]
+ },
+ "c.getFocusedTabInfo.afterOpen": {
+  "kind": "resolve",
+  "value": {
+   "closeable": true,
+   "customIcon": {
+    "type": "undefined"
+   },
+   "customIconAlt": {
+    "type": "undefined"
+   },
+   "customTitle": {
+    "type": "undefined"
+   },
+   "focused": true,
+   "highlighted": false,
+   "icon": "standard:account",
+   "iconAlt": "Account",
+   "isSubtab": true,
+   "pageReference": "<pageReference:object>",
+   "parentTabId": "<parentTabId:string>",
+   "pinned": false,
+   "recordId": null,
+   "tabId": "<tabId:string>",
+   "title": "Recently Viewed | Accounts",
+   "url": "<url:string>"
+  }
+ },
+ "c.getTabInfo.afterLabel": {
+  "kind": "resolve",
+  "value": {
+   "closeable": true,
+   "customIcon": "utility:add",
+   "customIconAlt": {
+    "type": "undefined"
+   },
+   "customTitle": "B10 Label",
+   "focused": false,
+   "highlighted": false,
+   "icon": "standard:account",
+   "iconAlt": "Account",
+   "isSubtab": true,
+   "pageReference": "<pageReference:object>",
+   "parentTabId": "<parentTabId:string>",
+   "pinned": false,
+   "recordId": null,
+   "tabId": "<tabId:string>",
+   "title": "Recently Viewed | Accounts",
+   "url": "<url:string>"
+  }
+ },
+ "c.getTabInfo.sub": {
+  "kind": "resolve",
+  "value": {
+   "closeable": true,
+   "customIcon": {
+    "type": "undefined"
+   },
+   "customIconAlt": {
+    "type": "undefined"
+   },
+   "customTitle": {
+    "type": "undefined"
+   },
+   "focused": true,
+   "highlighted": false,
+   "icon": "standard:account",
+   "iconAlt": "Account",
+   "isSubtab": true,
+   "pageReference": "<pageReference:object>",
+   "parentTabId": "<parentTabId:string>",
+   "pinned": false,
+   "recordId": null,
+   "tabId": "<tabId:string>",
+   "title": "Recently Viewed | Accounts",
+   "url": "<url:string>"
+  }
+ },
+ "c.openSubtab": {
+  "kind": "resolve",
+  "valueType": "string"
+ },
+ "c.openTab": {
+  "kind": "resolve",
+  "valueType": "string"
+ },
+ "c.refreshTab.sub": {
+  "kind": "resolve",
+  "value": true
+ },
+ "c.setTabHighlighted.sub": {
+  "kind": "resolve",
+  "value": {
+   "closeable": true,
+   "customIcon": "utility:add",
+   "customIconAlt": "B10",
+   "customTitle": "B10 Label",
+   "focused": true,
+   "highlighted": true,
+   "icon": "standard:account",
+   "iconAlt": "Account",
+   "isSubtab": true,
+   "pageReference": "<pageReference:object>",
+   "parentTabId": "<parentTabId:string>",
+   "pinned": false,
+   "recordId": null,
+   "tabId": "<tabId:string>",
+   "title": "Recently Viewed | Accounts",
+   "url": "<url:string>"
+  }
+ },
+ "c.setTabHighlighted.sub.off": {
+  "kind": "resolve",
+  "value": {
+   "closeable": true,
+   "customIcon": "utility:add",
+   "customIconAlt": "B10",
+   "customTitle": "B10 Label",
+   "focused": true,
+   "highlighted": false,
+   "icon": "standard:account",
+   "iconAlt": "Account",
+   "isSubtab": true,
+   "pageReference": "<pageReference:object>",
+   "parentTabId": "<parentTabId:string>",
+   "pinned": false,
+   "recordId": null,
+   "tabId": "<tabId:string>",
+   "title": "Recently Viewed | Accounts",
+   "url": "<url:string>"
+  }
+ },
+ "c.setTabHighlighted.sub.plain": {
+  "kind": "resolve",
+  "value": {
+   "closeable": true,
+   "customIcon": "utility:add",
+   "customIconAlt": "B10",
+   "customTitle": "B10 Label",
+   "focused": true,
+   "highlighted": true,
+   "icon": "standard:account",
+   "iconAlt": "Account",
+   "isSubtab": true,
+   "pageReference": "<pageReference:object>",
+   "parentTabId": "<parentTabId:string>",
+   "pinned": false,
+   "recordId": null,
+   "tabId": "<tabId:string>",
+   "title": "Recently Viewed | Accounts",
+   "url": "<url:string>"
+  }
+ },
+ "c.setTabIcon.sub": {
+  "kind": "resolve",
+  "value": {
+   "closeable": true,
+   "customIcon": "utility:add",
+   "customIconAlt": "B10",
+   "customTitle": "B10 Label",
+   "focused": true,
+   "highlighted": false,
+   "icon": "standard:account",
+   "iconAlt": "Account",
+   "isSubtab": true,
+   "pageReference": "<pageReference:object>",
+   "parentTabId": "<parentTabId:string>",
+   "pinned": false,
+   "recordId": null,
+   "tabId": "<tabId:string>",
+   "title": "Recently Viewed | Accounts",
+   "url": "<url:string>"
+  }
+ },
+ "c.setTabIcon.sub.noalt": {
+  "kind": "resolve",
+  "value": {
+   "closeable": true,
+   "customIcon": "utility:add",
+   "customIconAlt": {
+    "type": "undefined"
+   },
+   "customTitle": "B10 Label",
+   "focused": true,
+   "highlighted": false,
+   "icon": "standard:account",
+   "iconAlt": "Account",
+   "isSubtab": true,
+   "pageReference": "<pageReference:object>",
+   "parentTabId": "<parentTabId:string>",
+   "pinned": false,
+   "recordId": null,
+   "tabId": "<tabId:string>",
+   "title": "Recently Viewed | Accounts",
+   "url": "<url:string>"
+  }
+ },
+ "c.setTabLabel.sub": {
+  "kind": "resolve",
+  "value": {
+   "closeable": true,
+   "customIcon": {
+    "type": "undefined"
+   },
+   "customIconAlt": {
+    "type": "undefined"
+   },
+   "customTitle": "B10 Label",
+   "focused": true,
+   "highlighted": false,
+   "icon": "standard:account",
+   "iconAlt": "Account",
+   "isSubtab": true,
+   "pageReference": "<pageReference:object>",
+   "parentTabId": "<parentTabId:string>",
+   "pinned": false,
+   "recordId": null,
+   "tabId": "<tabId:string>",
+   "title": "Recently Viewed | Accounts",
+   "url": "<url:string>"
+  }
+ },
+ "c.setTabLabel.sub.num": {
+  "error": {
+   "message": "Error: Invalid or missing label `42`",
+   "name": "Error"
+  },
+  "kind": "reject"
+ },
+ "emp.isEmpEnabled": {
+  "kind": "resolve",
+  "value": true
+ },
+ "exports": {
+  "emp": [
+   "default",
+   "isEmpEnabled",
+   "onError",
+   "setDebugFlag",
+   "subscribe",
+   "unsubscribe"
+  ],
+  "ub": [
+   "EnclosingUtilityId",
+   "default",
+   "enableModal",
+   "enablePopout",
+   "getAllUtilityInfo",
+   "getInfo",
+   "minimize",
+   "onUtilityClick",
+   "open",
+   "updatePanel",
+   "updateUtility"
+  ],
+  "ws": [
+   "EnclosingTabId",
+   "IsConsoleNavigation",
+   "closeTab",
+   "default",
+   "disableTabClose",
+   "focusTab",
+   "getAllTabInfo",
+   "getFocusedTabInfo",
+   "getTabInfo",
+   "openSubtab",
+   "openTab",
+   "refreshTab",
+   "setTabHighlighted",
+   "setTabIcon",
+   "setTabLabel"
+  ]
+ },
+ "isConsole": {
+  "kind": "not-function"
+ },
+ "ub.minimize.missing": {
+  "kind": "resolve",
+  "value": true
+ },
+ "ub.minimize.null": {
+  "error": {
+   "message": "Expected a non-empty string value, instead received null",
+   "name": "Error"
+  },
+  "kind": "reject"
+ },
+ "ws.closeTab.missing": {
+  "error": {
+   "message": "Error: closeTab() - Could not close tab.",
+   "name": "Error"
+  },
+  "kind": "reject"
+ },
+ "ws.closeTab.null": {
+  "error": {
+   "message": "error: unable to close a tab - missing tabId",
+   "name": "Error"
+  },
+  "kind": "reject"
+ },
+ "ws.disableTabClose.missing": {
+  "error": {
+   "message": "Error: disableTabClose() - Failed to update tab disable close.",
+   "name": "Error"
+  },
+  "kind": "reject"
+ },
+ "ws.disableTabClose.null": {
+  "error": {
+   "message": "error: unable to disable tab close - missing tabId or disabled flag",
+   "name": "Error"
+  },
+  "kind": "reject"
+ },
+ "ws.focusTab.missing": {
+  "error": {
+   "message": "Error: focusTab() - Could not focus tab.",
+   "name": "Error"
+  },
+  "kind": "reject"
+ },
+ "ws.getAllTabInfo": {
+  "kind": "resolve",
+  "value": []
+ },
+ "ws.getFocusedTabInfo": {
+  "kind": "resolve",
+  "value": {}
+ },
+ "ws.getTabInfo.missing": {
+  "error": {
+   "message": "Error: getTabInfo() - Failed to get tabInfo for tabId `b10-missing-tab`",
+   "name": "Error"
+  },
+  "kind": "reject"
+ },
+ "ws.getTabInfo.null": {
+  "error": {
+   "message": "error: unable to get info for a tab - missing tabId",
+   "name": "Error"
+  },
+  "kind": "reject"
+ },
+ "ws.openSubtab.missing": {
+  "error": {
+   "message": "Error: openSubtab() - Could not open subtab.",
+   "name": "Error"
+  },
+  "kind": "reject"
+ },
+ "ws.openTab.navItem": {
+  "kind": "resolve",
+  "value": "ctab0"
+ },
+ "ws.refreshTab.missing": {
+  "error": {
+   "message": "Error: Unable to refresh tab `b10-missing-tab`",
+   "name": "Error"
+  },
+  "kind": "reject"
+ },
+ "ws.refreshTab.missing.opts": {
+  "error": {
+   "message": "Error: Unable to refresh tab `b10-missing-tab`",
+   "name": "Error"
+  },
+  "kind": "reject"
+ },
+ "ws.refreshTab.null": {
+  "error": {
+   "message": "error: unable to refresh a tab - missing tabId",
+   "name": "Error"
+  },
+  "kind": "reject"
+ },
+ "ws.setTabHighlighted.missing": {
+  "error": {
+   "message": "Error: setTabHighlighted() - Failed to update tab highlight.",
+   "name": "Error"
+  },
+  "kind": "reject"
+ },
+ "ws.setTabHighlighted.null": {
+  "error": {
+   "message": "error: unable to highlight a tab - missing tabId or highlighted flag",
+   "name": "Error"
+  },
+  "kind": "reject"
+ },
+ "ws.setTabIcon.missing": {
+  "error": {
+   "message": "Error: setTabIcon() - Failed to update tab icon.",
+   "name": "Error"
+  },
+  "kind": "reject"
+ },
+ "ws.setTabIcon.null": {
+  "error": {
+   "message": "error: unable to set icon to a tab - missing tabId or icon",
+   "name": "Error"
+  },
+  "kind": "reject"
+ },
+ "ws.setTabLabel.missing": {
+  "error": {
+   "message": "Error: setTabLabel() - Failed to update tab label.",
+   "name": "Error"
+  },
+  "kind": "reject"
+ },
+ "ws.setTabLabel.null": {
+  "error": {
+   "message": "error: unable to set label to a tab - missing tabId or label",
+   "name": "Error"
+  },
+  "kind": "reject"
+ }
+}

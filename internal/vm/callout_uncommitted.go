@@ -8,6 +8,11 @@ type calloutPendingWork struct {
 }
 
 func (vm *VM) checkCalloutAllowed() error {
+	if vm.futureCalloutDisabled {
+		// async_y9_c14 omittedFlag (API 62/67): a future body without
+		// callout=true rejects the callout.
+		return newExceptionError("System.CalloutException", "Callout not allowed from this future method. Please enable callout by annotating the future method. eg: @Future(callout=true)")
+	}
 	if vm.calloutPendingWork.pending {
 		return newExceptionError("CalloutException", "You have uncommitted work pending. Please commit or rollback before calling out")
 	}

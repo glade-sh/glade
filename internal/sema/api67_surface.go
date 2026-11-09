@@ -386,5 +386,15 @@ func semaStandardFieldAssignmentReadOnly(model *semaTypeMemberView, receiver, fi
 	if strings.EqualFold(receiver, "Knowledge__kav") && strings.EqualFold(field, "Language") {
 		return false
 	}
+	// inner_batchable_change_event_header ceHeaderWrite (API 62.0, 67.0):
+	// anonymous Apex cannot assign a change event's header; a test class
+	// compiles the assignment and fails at run time instead.
+	if anonymous && strings.EqualFold(field, "ChangeEventHeader") {
+		if _, changeEvent := semaChangeEventBaseObjectName(receiver); changeEvent {
+			if members, _, found := semaLookupTypeMembers(model, receiver); found && members.sobject {
+				return true
+			}
+		}
+	}
 	return storage.StandardFieldAssignmentReadOnly(receiver, field) || anonymous && storage.StandardFieldAssignmentRequiresNamedCode(receiver, field)
 }

@@ -109,6 +109,10 @@ GLADE_EXAMPLE_DIR="$(mktemp -d)"
 glade playground --data-root "$GLADE_EXAMPLE_DIR/playground" --db "$GLADE_EXAMPLE_DIR/org.sqlite" --example refinement-service --open
 ```
 
+Select **Continue** on the **Open local preview** confirmation. HTTP clients
+without browser origin metadata need `X-Glade-Client: 1` when requesting the
+local playground.
+
 Stop the browser workbench with Ctrl-C. v0.3.0 also includes a no-server
 project materializer; see the [playground CLI reference](/reference/cli#glade-playground).
 
@@ -157,7 +161,7 @@ glade test --project .
 
 | Version axis | Current local contract |
 | --- | --- |
-| Apex source | 62.0-67.0 |
+| Apex source | 62.0-68.0 |
 | Historical Apex source below 62.0 | Unsupported, even if a well-formed version is preserved by the loader |
 | HTTP Execute Anonymous | 65.0, 66.0, 67.0, 68.0 (admission, not a support claim) |
 | CLI `glade exec` | Preserves the project source version without applying the HTTP gate |
@@ -165,7 +169,7 @@ glade test --project .
 | Visualforce | 59.0-67.0 |
 | Local HTTP endpoints | 60.0, 65.0, 66.0, 67.0, 68.0; default 65.0 |
 
-The supported window is Apex 62.0-67.0, LWC and Visualforce 59.0-67.0.
+The supported window is Apex 62.0-68.0, LWC and Visualforce 59.0-67.0.
 A clean check or test on an older project does not make HTTP Execute Anonymous
 eligible at that version. An HTTP endpoint version does not change source
 semantics. Do not bump project metadata merely to obtain a green result.

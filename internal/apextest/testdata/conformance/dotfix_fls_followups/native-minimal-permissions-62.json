@@ -1,0 +1,109 @@
+{
+      "describe": {
+        "User": {
+          "fields": {
+            "SynthUserField__c": {
+              "nillable": true,
+              "permissionable": true,
+              "updateable": false,
+              "createable": false,
+              "accessible": false,
+              "present": true
+            },
+            "Email": {
+              "nillable": false,
+              "permissionable": false,
+              "updateable": true,
+              "createable": true,
+              "accessible": true,
+              "present": true
+            },
+            "Name": {
+              "nillable": false,
+              "permissionable": false,
+              "updateable": false,
+              "createable": false,
+              "accessible": true,
+              "present": true
+            },
+            "Id": {
+              "nillable": false,
+              "permissionable": false,
+              "updateable": false,
+              "createable": false,
+              "accessible": true,
+              "present": true
+            }
+          },
+          "updateable": true,
+          "createable": true,
+          "accessible": true
+        },
+        "SynthAccess__c": {
+          "fields": {
+            "HiddenField__c": {
+              "nillable": true,
+              "permissionable": true,
+              "updateable": false,
+              "createable": false,
+              "accessible": false,
+              "present": true
+            },
+            "ReadField__c": {
+              "nillable": true,
+              "permissionable": true,
+              "updateable": false,
+              "createable": false,
+              "accessible": true,
+              "present": true
+            }
+          },
+          "updateable": true,
+          "createable": true,
+          "accessible": true
+        },
+        "Case": {
+          "fields": {
+            "Origin": {
+              "nillable": true,
+              "permissionable": true,
+              "updateable": false,
+              "createable": false,
+              "accessible": false,
+              "present": true
+            },
+            "Status": {
+              "nillable": true,
+              "permissionable": false,
+              "updateable": true,
+              "createable": true,
+              "accessible": true,
+              "present": true
+            },
+            "Subject": {
+              "nillable": true,
+              "permissionable": true,
+              "updateable": true,
+              "createable": true,
+              "accessible": true,
+              "present": true
+            },
+            "OwnerId": {
+              "nillable": false,
+              "permissionable": false,
+              "updateable": true,
+              "createable": true,
+              "accessible": true,
+              "present": true
+            }
+          },
+          "updateable": true,
+          "createable": true,
+          "accessible": true
+        }
+      },
+      "profileId": "00ehs0000015CS0AAM",
+      "userId": "005hs000002pKQ9AAM",
+      "actor": "minimal",
+      "kind": "permissions"
+    }

@@ -1,0 +1,1 @@
+try { KbManagement.PublishingService.publishArticle('ka0000000000001',false); System.debug('B4:unlicensed_valid:returned'); } catch(Exception e) { System.debug('B4:unlicensed_valid:'+e.getTypeName()); }

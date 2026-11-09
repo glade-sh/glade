@@ -1,0 +1,1 @@
+<Report xmlns="http://soap.sforce.com/2006/04/metadata"><columns><field>ACCOUNT.NAME</field></columns><format>Tabular</format><name>B6 TabAbsent</name><reportType>AccountList</reportType><scope>organization</scope></Report>

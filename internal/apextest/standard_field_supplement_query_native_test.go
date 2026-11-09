@@ -26,6 +26,14 @@ func TestStandardFieldSupplementQueryNativeRoutes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// The Winter 27 recapture records the API 68 Apex routes as equal to 67.
+	for _, row := range rows[1:] {
+		if row[0] == "67.0" && (row[1] == "anonymous" || row[1] == "istest") {
+			api68 := append([]string(nil), row...)
+			api68[0] = "68.0"
+			rows = append(rows, api68)
+		}
+	}
 	seen := 0
 	for _, row := range rows[1:] {
 		if row[1] != "anonymous" && row[1] != "istest" {
@@ -38,11 +46,15 @@ func TestStandardFieldSupplementQueryNativeRoutes(t *testing.T) {
 			class := "Case251Query" + suffix
 			root := t.TempDir()
 			writeFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":%q}`, api))
-			source, err := os.ReadFile(filepath.Join(dir, class+".cls"))
+			sourceClass := class
+			if api == "68.0" {
+				sourceClass = "Case251Query67"
+			}
+			source, err := os.ReadFile(filepath.Join(dir, sourceClass+".cls"))
 			if err != nil {
 				t.Fatal(err)
 			}
-			writeFile(t, filepath.Join(root, "force-app/main/default/classes", class+".cls"), string(source))
+			writeFile(t, filepath.Join(root, "force-app/main/default/classes", class+".cls"), strings.ReplaceAll(string(source), sourceClass, class))
 			writeFile(t, filepath.Join(root, "force-app/main/default/classes", class+".cls-meta.xml"), fmt.Sprintf(`<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>%s</apiVersion><status>Active</status></ApexClass>`, api))
 			index := loadTestIndex(t, root)
 			if a := sema.Analyze(index); index.HasErrors() || a.HasErrors() {
@@ -81,7 +93,7 @@ func TestStandardFieldSupplementQueryNativeRoutes(t *testing.T) {
 			}
 		})
 	}
-	if seen != 4 {
-		t.Fatalf("expected four native Apex rows, got %d", seen)
+	if seen != 6 {
+		t.Fatalf("expected six native Apex routes, got %d", seen)
 	}
 }

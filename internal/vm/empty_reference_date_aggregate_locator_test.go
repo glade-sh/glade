@@ -88,6 +88,7 @@ func TestEmptyReferenceDateAggregateLocatorControls(t *testing.T) {
 				{"mapBinds", "MAX(CloseDate)", "CloseDate < TODAY", "", "Database.getQueryLocatorWithBinds(text,new Map<String,Object>{'parents'=>parents},AccessLevel.SYSTEM_MODE)", ""},
 			} {
 				t.Run(api+"/"+locatorPrecedenceRoute(named)+"/"+tc.name, func(t *testing.T) {
+					t.Parallel()
 					machine := emptyReferenceSumLocatorMachine(api)
 					query := strings.ReplaceAll(dateAggregateLocatorQuery(tc.aggregate, tc.criterion)+tc.suffix, "'", "\\'")
 					if tc.name == "unparenthesized" {

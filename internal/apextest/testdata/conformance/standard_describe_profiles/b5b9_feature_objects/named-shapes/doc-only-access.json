@@ -1,0 +1,70 @@
+[
+  {
+    "api": "62.0",
+    "route": "istest",
+    "outcome": "Passed",
+    "tests": [
+      [
+        "probe",
+        "Pass",
+        ""
+      ]
+    ]
+  },
+  {
+    "api": "62.0",
+    "route": "anonymous",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenerationBatchProcessId",
+    "source": "DocumentGenerationProcess r=new DocumentGenerationProcess();Object x=r.DocGenerationBatchProcessId;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 72 with the error:\n\nVariable does not exist: DocGenerationBatchProcessId",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "62.0",
+    "route": "anonymous",
+    "object": "DocumentTemplateSection",
+    "field": "DocumentTemplateClauseId",
+    "source": "DocumentTemplateSection r=new DocumentTemplateSection();Object x=r.DocumentTemplateClauseId;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 68 with the error:\n\nVariable does not exist: DocumentTemplateClauseId",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "67.0",
+    "route": "istest",
+    "outcome": "Failed",
+    "tests": [
+      [
+        "probe",
+        "Fail",
+        "System.QueryException: No such column 'DocGenerationBatchProcessId' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      ]
+    ]
+  },
+  {
+    "api": "67.0",
+    "route": "anonymous",
+    "object": "DocumentGenerationProcess",
+    "field": "DocGenerationBatchProcessId",
+    "source": "DocumentGenerationProcess r=new DocumentGenerationProcess();Object x=r.DocGenerationBatchProcessId;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 72 with the error:\n\nVariable does not exist: DocGenerationBatchProcessId",
+    "compiled": null,
+    "success": null
+  },
+  {
+    "api": "67.0",
+    "route": "anonymous",
+    "object": "DocumentTemplateSection",
+    "field": "DocumentTemplateClauseId",
+    "source": "DocumentTemplateSection r=new DocumentTemplateSection();Object x=r.DocumentTemplateClauseId;",
+    "status": 1,
+    "message": "Compilation failed at Ln 1, Col 68 with the error:\n\nVariable does not exist: DocumentTemplateClauseId",
+    "compiled": null,
+    "success": null
+  }
+]

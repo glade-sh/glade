@@ -34,12 +34,11 @@ func evaluatedTypedComponentAttributes(node *MarkupNode, ctx *RenderContext, def
 				if err != nil {
 					return nil, err
 				}
-				// Captured attribute_string_escaped_runtime preserves numeric
-				// XML references in a literal String binding. Bound HTML strings
-				// (composition_escaped_output_runtime) retain their Apex value.
-				if !strings.Contains(raw, "{!") && componentBindingTypesEqual(attr.Type, "String") {
-					text = strings.NewReplacer("&", "&#38;", "<", "&#60;", ">", "&#62;").Replace(text)
-				}
+				// Captured attribute_string_escaped_runtime keeps numeric XML
+				// references in a literal String binding: the parser already
+				// holds the attribute text that way (protectNativeEntities).
+				// Bound HTML strings (composition_escaped_output_runtime)
+				// retain their Apex value.
 				value = vm.String(text)
 			}
 		}

@@ -164,6 +164,9 @@ func runFlowRefsConformance(t *testing.T, cluster string, shapes, cells, carried
 							}
 							org := orgFromIndex(index)
 							org.APIVersion = api
+							if err := applyConfiguredTestPermissions(&org, p); err != nil {
+								t.Fatal(err)
+							}
 							runner := newConformanceRunner(t, index, conformanceRunnerOptions{Base: base, LinkProject: true, Org: &org})
 							var execErr error
 							if route == "anonymous" {
@@ -225,6 +228,7 @@ func flowRefsIndex(t *testing.T, api string, classes, files map[string]string) t
 		writeFile(t, path, source)
 		writeFile(t, path+"-meta.xml", "<ApexClass><apiVersion>"+api+"</apiVersion></ApexClass>")
 	}
+	configureFlowFixtureFieldAccess(t, root)
 	return loadTestIndex(t, root)
 }
 

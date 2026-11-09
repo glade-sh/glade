@@ -1,0 +1,37 @@
+[
+  {
+    "route": "deploy",
+    "status": 0
+  },
+  {
+    "route": "istest",
+    "status": 0,
+    "outcome": "Passed",
+    "tests": [
+      {
+        "class": "OwnedReadonly62",
+        "outcome": "Pass",
+        "message": null
+      },
+      {
+        "class": "OwnedReadonly67",
+        "outcome": "Pass",
+        "message": null
+      }
+    ]
+  },
+  {
+    "route": "anonymous",
+    "api": "62.0",
+    "status": 0,
+    "success": true,
+    "message": null
+  },
+  {
+    "route": "anonymous",
+    "api": "67.0",
+    "status": 0,
+    "success": true,
+    "message": null
+  }
+]

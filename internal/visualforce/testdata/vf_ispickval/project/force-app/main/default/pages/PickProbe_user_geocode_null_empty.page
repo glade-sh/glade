@@ -1,0 +1,3 @@
+<apex:page controller="PickProbeController" showHeader="false" sidebar="false" standardStylesheets="false">
+<div data-case="user-geocode-null-empty">{!ISPICKVAL($User.GeocodeAccuracy, '')}</div>
+</apex:page>

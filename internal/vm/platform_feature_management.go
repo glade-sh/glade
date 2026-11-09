@@ -18,7 +18,7 @@ func (vm *VM) managedFeatureValue(kind string, args []Value) (Value, error) {
 		if kind == "Boolean" {
 			return Bool(false), nil
 		}
-		return Null, nil
+		return typedNull(kind), nil
 	}
 	key := managedFeatureValueKey(kind, args[0].Text)
 	parameter, ok := vm.managedFeatureParameters[key]

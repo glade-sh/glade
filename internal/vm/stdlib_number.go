@@ -153,8 +153,21 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 		if len(args) != 0 {
 			return Null, receiver, false, true, unsupportedCallError("Decimal/Double.format locale/pattern overloads")
 		}
+		if isFloatBackedDecimal(receiver) && math.IsNaN(receiver.Decimal) {
+			return String("NaN"), receiver, false, true, nil
+		}
+		if isFloatBackedDecimal(receiver) && math.IsInf(receiver.Decimal, 0) {
+			// The platform formats a Double infinity as the infinity sign.
+			if receiver.Decimal < 0 {
+				return String("-\u221e"), receiver, false, true, nil
+			}
+			return String("\u221e"), receiver, false, true, nil
+		}
 		if err := ensureFiniteDecimal("Decimal.format", receiver.Decimal); err != nil {
 			return Null, receiver, false, true, err
+		}
+		if text, ok := decimalFormatRoundedText(receiver); ok {
+			return String(formatDecimalTextWithGrouping(text)), receiver, false, true, nil
 		}
 		return String(formatDecimalTextWithGrouping(decimalDisplayText(receiver))), receiver, false, true, nil
 	case "toPlainString":
@@ -300,17 +313,29 @@ func (vm *VM) callLocaleNumberFormatMember(receiver Value, method string, args [
 	if err != nil || !handled {
 		return value, handled, err
 	}
-	if receiver.Kind == ValueDecimal && isFloatBackedDecimal(receiver) {
+	if receiver.Kind == ValueDecimal && isFloatBackedDecimal(receiver) && !math.IsNaN(receiver.Decimal) && !math.IsInf(receiver.Decimal, 0) {
 		// R103/R113: Double.format retains signed zero and rounds to the
-		// locale formatter's maximum of three fractional digits.
-		text := strconv.FormatFloat(receiver.Decimal, 'f', 3, 64)
-		text = strings.TrimSuffix(strings.TrimRight(text, "0"), ".")
+		// locale formatter's maximum of three fractional digits. A magnitude
+		// of 1E15 or more has no fraction; it keeps the shortest digits that
+		// identify the Double and pads with zeroes (1.5E300 reads 15 then
+		// zeroes), not the exact binary expansion.
+		var text string
+		if math.Abs(receiver.Decimal) >= 1e15 {
+			text = strconv.FormatFloat(receiver.Decimal, 'f', -1, 64)
+		} else {
+			text = strconv.FormatFloat(receiver.Decimal, 'f', 3, 64)
+			text = strings.TrimSuffix(strings.TrimRight(text, "0"), ".")
+		}
 		value = String(formatDecimalTextWithGrouping(text))
 	}
 	// These supported ICU locales use dot grouping and a decimal comma.
 	switch vm.currentUserInfoField("LocaleSidKey", "en_US") {
 	case "de_DE", "it_IT", "es_ES", "pt_BR":
 		value = String(strings.NewReplacer(",", ".", ".", ",").Replace(value.Text))
+	case "no_NO", "no":
+		// Org capture scratch_country_locale_no: a no-break space groups
+		// thousands and a comma marks the decimal.
+		value = String(strings.NewReplacer(",", "\u00a0", ".", ",").Replace(value.Text))
 	case "en_IN", "gu_IN", "hi_IN", "ml_IN", "pa_IN", "ta_IN", "ta_LK", "te_IN":
 		value = String(formatIndianGroupedNumberText(value.Text))
 	}
@@ -436,4 +461,39 @@ func formatIndianGroupedNumberText(text string) string {
 	grouped.WriteByte(',')
 	grouped.WriteString(whole[len(whole)-3:])
 	return sign + grouped.String() + fraction
+}
+
+// decimalFormatRoundedText renders a Decimal for format(): at most three
+// fraction digits, rounded half-even, without trailing zeros. A negative value
+// that rounds to zero keeps its sign ("-0"). Rows: Decimal|fmt* in
+// testdata/conformance/double_json_serialization.
+func decimalFormatRoundedText(value Value) (string, bool) {
+	rat, ok := valueDecimalRat(value)
+	if !ok {
+		return "", false
+	}
+	negative := rat.Sign() < 0
+	if negative {
+		rat = new(big.Rat).Neg(rat)
+	}
+	scaled := new(big.Rat).Mul(rat, big.NewRat(1000, 1))
+	quotient, remainder := new(big.Int).QuoRem(scaled.Num(), scaled.Denom(), new(big.Int))
+	twice := new(big.Int).Lsh(remainder, 1)
+	switch cmp := twice.Cmp(scaled.Denom()); {
+	case cmp > 0, cmp == 0 && quotient.Bit(0) == 1:
+		quotient.Add(quotient, big.NewInt(1))
+	}
+	digits := quotient.String()
+	for len(digits) < 4 {
+		digits = "0" + digits
+	}
+	whole, fraction := digits[:len(digits)-3], strings.TrimRight(digits[len(digits)-3:], "0")
+	text := whole
+	if fraction != "" {
+		text += "." + fraction
+	}
+	if negative {
+		text = "-" + text
+	}
+	return text, true
 }

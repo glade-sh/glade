@@ -1,0 +1,5 @@
+fixtureId	apiVersion	observationComplete	isUpdateable	isDeletable
+C08_A62	62.0	true	false	false
+C08_A67	67.0	true	false	false
+C09_A62	62.0	true	true	true
+C09_A67	67.0	true	true	true

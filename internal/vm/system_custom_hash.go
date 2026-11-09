@@ -21,7 +21,7 @@ func (vm *VM) systemCustomHashCode(value Value, result *Result) (Value, error) {
 		return Int(int64(hash)), nil
 	}
 	if !apexversion.AtLeast(version, 52) || apexversion.AtLeast(version, 69) {
-		return Int(int64(valueHashCode(value))), nil
+		return vm.collectionHashValue(value, result)
 	}
 	if method, _, ok := vm.systemDirectSourceHashMethod(value); ok {
 		hash, err := vm.callMethodWithReceiver(method, value, nil, result)
@@ -52,7 +52,78 @@ func (vm *VM) systemCustomHashCode(value Value, result *Result) (Value, error) {
 			return Int(int64(hash)), nil
 		}
 	}
-	return Int(int64(valueHashCode(value))), nil
+	return vm.collectionHashValue(value, result)
+}
+
+// A List, Set or Map hashes its elements through their source hashCode()
+// declarations, as native Salesforce does (set_hashcode_custom_elements).
+// A Set and a Map start from 1 and sum their element hashes; a List folds
+// them with 31. Other values keep the existing hash.
+func (vm *VM) collectionHashValue(value Value, result *Result) (Value, error) {
+	if value.Kind != ValueList && value.Kind != ValueSet && value.Kind != ValueMap {
+		return Int(int64(valueHashCode(value))), nil
+	}
+	hash, err := vm.collectionHashCode(value, result)
+	return Int(int64(hash)), err
+}
+
+func (vm *VM) collectionHashCode(value Value, result *Result) (int32, error) {
+	value = value.currentMapKeySet()
+	switch value.Kind {
+	case ValueList:
+		hash := int32(1)
+		for _, item := range value.List {
+			part, err := vm.collectionElementHash(item, result)
+			if err != nil {
+				return 0, err
+			}
+			hash = 31*hash + part
+		}
+		return hash, nil
+	case ValueSet:
+		hash := int32(1)
+		for _, item := range value.Set {
+			part, err := vm.collectionElementHash(item, result)
+			if err != nil {
+				return 0, err
+			}
+			hash += part
+		}
+		return hash, nil
+	case ValueMap:
+		hash := int32(1)
+		for key, item := range value.Map {
+			keyHash, err := vm.collectionElementHash(mapStoredKey(value, key), result)
+			if err != nil {
+				return 0, err
+			}
+			part, err := vm.collectionElementHash(item, result)
+			if err != nil {
+				return 0, err
+			}
+			hash += keyHash ^ part
+		}
+		return hash, nil
+	}
+	return valueHashCode(value), nil
+}
+
+func (vm *VM) collectionElementHash(item Value, result *Result) (int32, error) {
+	switch item.Kind {
+	case ValueList, ValueSet, ValueMap:
+		return vm.collectionHashCode(item, result)
+	case ValueObject:
+		if method, _, ok := vm.systemDirectSourceHashMethod(item); ok {
+			hash, err := vm.callMethodWithReceiver(method, item, nil, result)
+			if err != nil {
+				return 0, err
+			}
+			if hash.Kind == ValueInt {
+				return int32(hash.Int), nil
+			}
+		}
+	}
+	return valueHashCode(item), nil
 }
 
 // Captured fresh-record hashes are bounded to the observed types and fields.
@@ -159,7 +230,8 @@ func (vm *VM) systemDirectSourceHashMethod(value Value) (Method, Class, bool) {
 	}
 	method, found, ambiguous := vm.resolveInstanceMethodForArgs(runtimeObjectType(value), "hashCode", nil)
 	if !found || ambiguous || method.Dependency || method.IsStatic || len(method.Params) != 0 ||
-		!strings.EqualFold(method.Access, "public") || !strings.EqualFold(canonicalApexScalarType(method.ReturnType), "Integer") {
+		!(strings.EqualFold(method.Access, "public") || strings.EqualFold(method.Access, "global")) ||
+		!strings.EqualFold(canonicalApexScalarType(method.ReturnType), "Integer") {
 		return Method{}, Class{}, false
 	}
 	declaring, found := vm.lookupClass(method.ClassName)

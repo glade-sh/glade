@@ -1,0 +1,4 @@
+api	route	case	result
+62.0	istest	output-subtype	{"text":"hi","type":"Text"}|{"text":null,"type":"Link","url":null}|{"isRichText":null,"messageSegments":null,"text":null}|field=null
+67.0	istest	output-subtype	{"text":"hi","type":"Text"}|{"text":null,"type":"Link","url":null}|{"isRichText":null,"messageSegments":null,"text":null}|field=null
+68.0	istest	output-subtype	{"text":"hi","type":"Text"}|{"text":null,"type":"Link","url":null}|{"isRichText":null,"messageSegments":null,"text":null}|field=null

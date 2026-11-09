@@ -58,13 +58,7 @@ func TestConfiguredPermissionsNativeConformance(t *testing.T) {
 				t.Fatal(err)
 			}
 			source := strings.ReplaceAll(string(raw), "System.assert(false,'PERMISSION_ROW|'+JSON.serialize(row))", "System.assertEquals('"+row[3]+"',JSON.serialize(row))")
-			if row[1] == "before" && row[2] == "runningUser" {
-				// The default local administrator grants custom-field access without
-				// an explicit profile FLS entry. Keep that existing boundary visible.
-				t.Log("CARRY: unassigned administrator fieldRead/fieldEdit differ; checking custom permission and CRUD")
-				source = strings.ReplaceAll(source, "List<Boolean> row=permissions();", "List<Boolean> row=permissions();row.remove(7);row.remove(6);")
-				source = strings.ReplaceAll(source, row[3], "[false,false,true,true,true,true]")
-			}
+
 			writeFile(t, path, source)
 			run := Run(loadTestIndex(t, root), Options{SelectedClasses: []string{"SyntheticPermissionObservation"}, SelectedMethod: row[2], NoDiskCache: true})
 			if summary := run.Summary(); summary.Total != 1 || summary.Passed != 1 {

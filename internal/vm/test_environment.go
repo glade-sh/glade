@@ -8,6 +8,16 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
+// defaultTestClockStart is the VM clock before any test.clock.start applies;
+// it is the documented config default.
+var defaultTestClockStart = func() time.Time {
+	start, err := time.Parse(time.RFC3339, config.DefaultTestClockStart)
+	if err != nil {
+		panic(err)
+	}
+	return start.UTC()
+}()
+
 // ConfigureTestEnvironment seeds a private run before test context snapshots,
 // static initialization and @TestSetup. It never changes an org template.
 func (vm *VM) ConfigureTestEnvironment(settings config.TestConfig) error {

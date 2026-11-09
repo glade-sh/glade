@@ -29,6 +29,27 @@ func (id ID) String() string {
 	return string(id)
 }
 
+// ID18 returns the 18-character form of a 15-character Salesforce Id. Other
+// inputs are returned unchanged.
+func ID18(text string) string {
+	if len(text) != 15 {
+		return text
+	}
+	const checksumChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ012345"
+	out := make([]byte, 0, 18)
+	out = append(out, text...)
+	for chunk := 0; chunk < 3; chunk++ {
+		mask := 0
+		for bit := 0; bit < 5; bit++ {
+			if ch := text[chunk*5+bit]; ch >= 'A' && ch <= 'Z' {
+				mask |= 1 << bit
+			}
+		}
+		out = append(out, checksumChars[mask])
+	}
+	return string(out)
+}
+
 func IDsEqual(left, right ID) bool {
 	leftText := string(left)
 	rightText := string(right)

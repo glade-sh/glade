@@ -1,0 +1,7 @@
+api	route	case	outcome	observation
+62.0	anonymous	unset	observed	insert=true,update=false
+62.0	anonymous	false	observed	insert=true,update=false
+62.0	anonymous	null	observed	insert=true,update=false
+67.0	anonymous	unset	observed	insert=true,update=false
+67.0	anonymous	false	observed	insert=true,update=false
+67.0	anonymous	null	observed	insert=true,update=false

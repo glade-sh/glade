@@ -1,0 +1,8 @@
+case	observation
+byName	{"count":1,"name":"Q2Pkg_User","namespacePrefix":"gladens004"}
+byPrefixedName	{"count":0}
+byNameAndNamespace	{"count":1}
+byNameNullNamespace	{"count":0}
+assignment	{"count":1}
+customPermissionBefore	{"checkPermission":false}
+customPermissionAfterAssignment	{"checkPermission":true,"prefixedAlsoTrue":true,"namespacePrefix":"gladens004"}

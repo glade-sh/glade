@@ -3,6 +3,16 @@
   "knownSource": "https://developer.salesforce.com/docs/platform/secure-coding/guide/secure-coding-access-control-protect-from-crud-fls-vulnerabilities.html",
   "knownBehavior": "WITH USER_MODE exposes the full set of access errors through QueryException.getInaccessibleFields(). Exact expanded map contents and diagnostic text below are not yet native observations.",
   "scope": "Single-argument Database.query with four flat selected fields, a bare Id IN bind, one ascending text-field ordering, and explicit WITH USER_MODE. No relationship, aggregate, scope overload, handle, five-field, or security-enforced expansion.",
+  "coveredByNativeRows": {
+    "family": "apextest/testdata/conformance/user_mode_inaccessible_shapes",
+    "apis": [
+      "62.0",
+      "67.0",
+      "68.0"
+    ],
+    "statement": "104 USER_MODE shapes, static and dynamic, runAs a Minimum Access user, have native getInaccessibleFields maps and messages at 62.0, 67.0 and 68.0. They cover five or more fields, dotted relationship fields, other WHERE shapes (non-Id, OR, AND, IN list, semi/anti-join), LIMIT and OFFSET, DESC and multiple ORDER BY, aggregates (COUNT, SUM, MIN, MAX, COUNT_DISTINCT, date functions, GROUP BY, HAVING), child subqueries, TYPEOF, FOR UPDATE, ALL ROWS, and an object the user cannot read.",
+    "stillPending": "The two rows below: the helper-63 caller cells, the literal ORDER BY ... NULLS FIRST text, and the anonymous context. Scoped permission sets, query handles and the scope overloads have no rows either."
+  },
   "apis": [
     "62.0",
     "67.0",

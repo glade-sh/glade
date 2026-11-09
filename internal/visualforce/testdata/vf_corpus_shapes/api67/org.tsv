@@ -1,0 +1,22 @@
+api	case	outcome	value
+67.0	ShapeActionType	compiles	
+67.0	ShapeBodyInForm	compiles	
+67.0	ShapeCompositionForm	compiles	
+67.0	ShapeNoFormButton	error	<apex:commandButton> (under <apex:page>) must occur between <apex:form></apex:form> tags.
+67.0	ShapeNoFormFunction	error	<apex:actionFunction> (under <apex:page>) must occur between <apex:form></apex:form> tags.
+67.0	ShapeMapLiteral	error	Syntax error.  Found '&'
+67.0	ShapeMapLiteralRaw	render	[1][2]
+67.0	ShapeMapLiteralBareQuotes	render	[1][2][3]
+67.0	ShapeMapLiteralDistinct	render	[a][b]
+67.0	ShapeNestedTable	render	<table><tr><th>Account Name</th><th>Account Type</th></tr></table>
+67.0	ShapeNestedPlain	render	[Account Name][Account Type]
+67.0	ShapeCompAttrSubscript	render	"<span id=""j_id0:j_id2:0:j_id3:0:j_id4"">
+[Name]</span><span id=""j_id0:j_id2:0:j_id3:1:j_id4"">
+[Type]</span>"
+67.0	ShapeRepeatInTable	render	<table><tr><td><br/>d1</td></tr><tr><td><br/>d2</td></tr></table>
+67.0	ShapeVariableSibling	render	[s]
+67.0	ShapeVariableBefore	error	Unknown property 'ShapeCtl.s'
+67.0	ShapeVariableOutside	error	Unknown property 'ShapeCtl.s'
+67.0	ShapeVariableNested	render	[hi]
+67.0	ShapeVariableRow	render	[A1][A2]
+67.0	ShapeVariableMember	render	[A1]

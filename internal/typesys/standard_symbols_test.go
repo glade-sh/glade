@@ -269,6 +269,7 @@ func TestStandardPlatformSymbolsBusinessHoursUseApi67Signatures(t *testing.T) {
 }
 
 func TestStandardPlatformSymbolsTypeConnectApiCollectionProperties(t *testing.T) {
+	RequestConnectAPIShape() // the captured shape joins the view only once a source names ConnectApi
 	symbols := StandardPlatformSymbols()
 
 	managedContent := requireStandardSymbol(t, symbols, "ConnectApi.ManagedContentVersion")
@@ -279,7 +280,7 @@ func TestStandardPlatformSymbolsTypeConnectApiCollectionProperties(t *testing.T)
 	requireStandardProperty(t, managedCollection, "managedContentTypes", "Map<String,ConnectApi.ManagedContentType>")
 
 	orgSettings := requireStandardSymbol(t, symbols, "ConnectApi.OrganizationSettings")
-	requireStandardProperty(t, orgSettings, "orgId", "Id")
+	requireStandardProperty(t, orgSettings, "orgId", "String") // native compile probe, APIs 62/67
 
 	orchestrationCollection := requireStandardSymbol(t, symbols, "ConnectApi.OrchestrationInstanceCollection")
 	requireStandardProperty(t, orchestrationCollection, "instances", "List<ConnectApi.OrchestrationInstance>")
@@ -1130,11 +1131,12 @@ func TestStandardPlatformSymbolsIncludeTestAndMathRows(t *testing.T) {
 }
 
 func TestStandardPlatformSymbolsIncludeConnectApiFeedInputShapes(t *testing.T) {
+	RequestConnectAPIShape() // the captured shape joins the view only once a source names ConnectApi
 	symbols := StandardPlatformSymbols()
 
 	feedElement := requireStandardSymbol(t, symbols, "ConnectApi.FeedElement")
 	requireStandardProperty(t, feedElement, "body", "ConnectApi.FeedBody")
-	requireStandardProperty(t, feedElement, "id", "Id")
+	requireStandardProperty(t, feedElement, "id", "String") // native compile probe, APIs 62/67
 	feedBody := requireStandardSymbol(t, symbols, "ConnectApi.FeedBody")
 	requireStandardProperty(t, feedBody, "messageSegments", "List<ConnectApi.MessageSegment>")
 
@@ -1187,7 +1189,7 @@ func TestStandardPlatformSymbolsIncludeConnectApiFeedInputShapes(t *testing.T) {
 	text := requireStandardSymbol(t, symbols, "ConnectApi.TextSegmentInput")
 	requireStandardProperty(t, text, "text", "String")
 	reference := requireStandardSymbol(t, symbols, "ConnectApi.Reference")
-	requireStandardProperty(t, reference, "id", "Id")
+	requireStandardProperty(t, reference, "id", "String") // native compile probe, APIs 62/67
 }
 
 func TestStandardPlatformSymbolsIncludeDocumentedOrderSummaryChangeMethods(t *testing.T) {
@@ -1200,12 +1202,13 @@ func TestStandardPlatformSymbolsIncludeDocumentedOrderSummaryChangeMethods(t *te
 }
 
 func TestStandardPlatformSymbolsIncludeConnectApiNBARecommendationShapes(t *testing.T) {
+	RequestConnectAPIShape() // the captured shape joins the view only once a source names ConnectApi
 	symbols := StandardPlatformSymbols()
 
 	recommendations := requireStandardSymbol(t, symbols, "ConnectApi.NBARecommendations")
 	requireStandardProperty(t, recommendations, "recommendations", "List<ConnectApi.NBARecommendation>")
-	requireStandardProperty(t, recommendations, "executionId", "Id")
-	requireStandardProperty(t, recommendations, "onBehalfOfId", "Id")
+	requireStandardProperty(t, recommendations, "executionId", "String")  // native compile probe, APIs 62/67
+	requireStandardProperty(t, recommendations, "onBehalfOfId", "String") // native compile probe, APIs 62/67
 
 	recommendation := requireStandardSymbol(t, symbols, "ConnectApi.NBARecommendation")
 	requireStandardProperty(t, recommendation, "acceptanceLabel", "String")
@@ -1214,7 +1217,7 @@ func TestStandardPlatformSymbolsIncludeConnectApiNBARecommendationShapes(t *test
 	requireStandardProperty(t, recommendation, "rejectionLabel", "String")
 
 	native := requireStandardSymbol(t, symbols, "ConnectApi.NBANativeRecommendation")
-	requireStandardProperty(t, native, "id", "Id")
+	requireStandardProperty(t, native, "id", "String") // native compile probe, APIs 62/67
 	requireStandardProperty(t, native, "name", "String")
 	requireStandardProperty(t, native, "url", "String")
 

@@ -1,0 +1,5 @@
+<apex:component>
+<apex:attribute name="act" type="ApexPages.Action" required="true" description="d"/>
+<apex:actionFunction name="af" action="{!act}" rerender="x"/>
+<span>action comp</span>
+</apex:component>

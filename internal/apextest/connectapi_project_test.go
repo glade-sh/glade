@@ -2,10 +2,13 @@ package apextest
 
 import "testing"
 
+// Native rows call.NamedCredentials.* and call.UserProfiles.* (APIs 62/67):
+// a data-siloed test reaches no ConnectApi service. With SeeAllData=true the
+// org service runs natively; Glade keeps its local dispatch for that case.
 func TestRunProjectConnectApiIdentityUsesBuiltinDispatch(t *testing.T) {
 	project := newSalesforceSurfaceProject(t, `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	project.writeClass("ConnectApiIdentityTest", `
-@isTest private class ConnectApiIdentityTest {
+@isTest(SeeAllData=true) private class ConnectApiIdentityTest {
   @isTest static void testNamedCredentials() {
     ConnectApi.ExternalCredentialInput eci = new ConnectApi.ExternalCredentialInput();
     ConnectApi.ExternalCredential ec = ConnectApi.NamedCredentials.createExternalCredential(eci);
@@ -40,7 +43,7 @@ func TestRunProjectConnectApiIdentityUsesBuiltinDispatch(t *testing.T) {
 func TestRunProjectConnectApiManagedContentUsesBuiltinDispatch(t *testing.T) {
 	project := newSalesforceSurfaceProject(t, `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	project.writeClass("ConnectApiManagedContentTest", `
-@isTest private class ConnectApiManagedContentTest {
+@isTest(SeeAllData=true) private class ConnectApiManagedContentTest {
   @isTest static void testGetAllManagedContent() {
     ConnectApi.ManagedContentVersionCollection result =
       ConnectApi.ManagedContent.getAllManagedContent(null, 0, 1, 'en_US', 'News');

@@ -1,0 +1,14 @@
+{
+  "status": 0,
+  "outcome": "Passed",
+  "tests": [
+    {
+      "class": "OwnedTokenTest67",
+      "outcome": "Pass"
+    },
+    {
+      "class": "OwnedTokenTest62",
+      "outcome": "Pass"
+    }
+  ]
+}

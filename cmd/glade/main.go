@@ -8,10 +8,14 @@ import (
 	"syscall"
 
 	"github.com/glade-sh/glade/internal/gladecli"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 func main() {
 	tuneExecGC(os.Args[1:])
+	// One process builds one org shape. Free the decoded describe catalogs and
+	// the unshaped seed org once that shape exists.
+	storage.EnableStandardCatalogRelease()
 	ctx, stop := rootContext()
 	defer stop()
 	os.Exit(gladecli.Run(ctx, os.Args[1:], os.Stdout, os.Stderr))

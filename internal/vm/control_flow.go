@@ -268,15 +268,45 @@ func (vm *VM) updateHeapLimit() error {
 }
 
 func (vm *VM) currentHeapSize() int {
+	return vm.heapSizeOver(vm.heapStaticRootMaps())
+}
+
+// currentHeapSizeFullWalk is the uncached reference for currentHeapSize. It
+// visits every runtime class and is kept for tests that pin the cache.
+func (vm *VM) currentHeapSizeFullWalk() int {
+	return vm.heapSizeOver(vm.buildHeapStaticRootMaps())
+}
+
+func (vm *VM) heapSizeOver(roots []map[string]Field) int {
 	total := 0
 	seenValues := make(map[approxVisitKey]bool)
-	addScope := func(scope map[string]Value) {
-		for name, value := range scope {
-			total += len(name) + approxValueSizeSeen(value, seenValues)
+	for name, value := range vm.Globals {
+		total += len(name) + approxValueSizeSeen(value, seenValues)
+	}
+	for _, statics := range roots {
+		for fieldName, field := range statics {
+			if field.Static {
+				total += len(fieldName) + approxValueSizeSeen(field.Value, seenValues)
+			}
 		}
 	}
-	addScope(vm.Globals)
+	return total
+}
 
+func (vm *VM) heapStaticRootMaps() []map[string]Field {
+	if vm.heapStaticRootsOK && vm.heapStaticRootsLen == len(vm.Classes) {
+		return vm.heapStaticRoots
+	}
+	vm.heapStaticRoots = vm.buildHeapStaticRootMaps()
+	vm.heapStaticRootsLen = len(vm.Classes)
+	vm.heapStaticRootsOK = true
+	return vm.heapStaticRoots
+}
+
+// buildHeapStaticRootMaps lists the StaticFields map of each non-platform
+// runtime class owner, the first entry seen for an owner winning as before.
+func (vm *VM) buildHeapStaticRootMaps() []map[string]Field {
+	var roots []map[string]Field
 	seenClasses := make(map[string]bool)
 	for name, class := range vm.ClassEntries() {
 		if class.PlatformType {
@@ -290,13 +320,24 @@ func (vm *VM) currentHeapSize() int {
 			continue
 		}
 		seenClasses[owner] = true
-		for fieldName, field := range class.StaticFields {
-			if field.Static {
-				total += len(fieldName) + approxValueSizeSeen(field.Value, seenValues)
-			}
+		if class.StaticFields != nil {
+			roots = append(roots, class.StaticFields)
 		}
 	}
-	return total
+	return roots
+}
+
+// noteClassStaticRootsWrite drops the cached heap roots when a class write
+// changes which StaticFields map an owner contributes.
+func (vm *VM) noteClassStaticRootsWrite(previous Class, existed bool, next Class) {
+	if !vm.heapStaticRootsOK {
+		return
+	}
+	if !existed || previous.PlatformType != next.PlatformType || !sameMap(previous.StaticFields, next.StaticFields) ||
+		previous.Name != next.Name || previous.Namespace != next.Namespace {
+		vm.heapStaticRootsOK = false
+		vm.heapStaticRoots = nil
+	}
 }
 
 func statementTraceEvent(seq int, inst ir.Instruction, source string) trace.Event {
@@ -621,6 +662,11 @@ func (vm *VM) executeBlockScope(program ir.Program, inst ir.Instruction, result 
 			if completed && (inst.Op == ir.OpIf || closedStringLoop) && !binding.existed {
 				if value, ok := vm.Globals[name]; ok {
 					vm.rememberClosedSOQLLocal(name, vm.VarTypes[name], value)
+				}
+			}
+			if completed && !binding.existed {
+				if value, ok := vm.Globals[name]; ok && value.Kind == ValueInt && strings.EqualFold(canonicalRuntimePlatformType(vm.VarTypes[name]), "Integer") {
+					vm.rememberClosedSOQLInteger(name, value)
 				}
 			}
 			if binding.existed {
@@ -960,7 +1006,7 @@ func (vm *VM) rejectActiveCollectionAdd(collection Value) error {
 func (vm *VM) executeForEach(source string, inst ir.Instruction, result *Result) (execOutcome, error) {
 	iterable, err := vm.eval(inst.Expr, result)
 	if err != nil {
-		return execOutcome{}, err
+		return execOutcome{}, dynamicSOQLForLoopError(inst.Expr, err)
 	}
 	if iterable.Kind == ValueObject {
 		return vm.executeObjectForEach(source, inst, result, iterable)
@@ -1378,6 +1424,7 @@ func (vm *VM) executeRunAs(source string, inst ir.Instruction, result *Result) (
 	var priorDescribes map[describeCacheKey]Value
 	var runAsUserID string
 	var isRunAsDescribe func(describeCacheKey) bool
+	var previousLocaleCase localeCaseCache
 	if changesUser {
 		if vm.Org != nil {
 			runAsUserID = strings.TrimSpace(stringField(user, "Id"))
@@ -1397,13 +1444,21 @@ func (vm *VM) executeRunAs(source string, inst ir.Instruction, result *Result) (
 			}
 		}
 		vm.testContext.CurrentUser = user
+		previousLocaleCase = vm.localeCase
+		vm.snapshotLocaleCase()
 	}
 	vm.testContext.RunAsDepth++
 	if packageVersion.Kind != "" {
 		vm.testContext.CurrentPackageVersion = packageVersion
 		vm.testContext.PackageRunAsDepth++
 	}
+	// A direct UserRecordAccess row warmed inside a runAs block does not
+	// survive the block, and an outer warm row does not reach into it
+	// (ura_direct_carry e10).
+	previousWarmDirectAccess := vm.road174WarmDirectAccess
+	vm.road174WarmDirectAccess = nil
 	defer func() {
+		vm.road174WarmDirectAccess = previousWarmDirectAccess
 		if packageVersion.Kind != "" {
 			vm.testContext.PackageRunAsDepth--
 			vm.testContext.CurrentPackageVersion = previousPackageVersion
@@ -1421,6 +1476,7 @@ func (vm *VM) executeRunAs(source string, inst ir.Instruction, result *Result) (
 				}
 			}
 			vm.testContext.CurrentUser = previous
+			vm.localeCase = previousLocaleCase
 		}
 	}()
 	return vm.executeProgram(ir.Program{Instructions: inst.Then, Source: source}, result)
@@ -1547,6 +1603,19 @@ func (vm *VM) ensureRunAsUserRecord(user *Value) error {
 		if _, exists := record.Fields["IsActive"]; !exists {
 			record.Fields["IsActive"] = storage.BooleanValue(true)
 		}
+		// Native runAs inserts the unsaved User with the composed Name
+		// (runas_unsaved_user rows, APIs 62.0 and 67.0): SOQL and
+		// UserInfo.getName() both see FirstName plus LastName.
+		if _, hasName := record.Fields["Name"]; !hasName {
+			first := strings.TrimSpace(recordFieldString(record, "FirstName"))
+			last := strings.TrimSpace(recordFieldString(record, "LastName"))
+			switch {
+			case first != "" && last != "":
+				record.Fields["Name"] = storage.StringValue(first + " " + last)
+			case last != "":
+				record.Fields["Name"] = storage.StringValue(last)
+			}
+		}
 		vm.recordIsolationJournalMutation(objectName, id, storage.Record{}, false)
 		object.Records[id] = record
 	}
@@ -1554,4 +1623,28 @@ func (vm *VM) ensureRunAsUserRecord(user *Value) error {
 	vm.ensureUserProfilePermissionSetAssignment(record)
 	vm.ensureUserRoleGroup(record)
 	return nil
+}
+
+// dynamicSOQLForLoopError: a dynamic query used as a for-loop iterable runs as a
+// SOQL for loop. Native raises its ungrouped-field rejection there as a catchable
+// QueryException; the same query evaluated as a value raises the uncatchable
+// UnexpectedException (aggregate_grouping_routes rows, API 62.0 and 67.0, both
+// routes, every field order, field type and alias form).
+func dynamicSOQLForLoopError(expr ir.Expr, err error) error {
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "System.UnexpectedException" ||
+		!strings.HasPrefix(runtimeErr.Message, "Field must be grouped or aggregated: ") || expr.Kind != ir.ExprCall {
+		return err
+	}
+	callee := expr.Callee
+	if expr.Left != nil {
+		if expr.Left.Kind != ir.ExprVariable {
+			return err
+		}
+		callee = expr.Left.Name + "." + callee
+	}
+	if !strings.EqualFold(callee, "Database.query") && !strings.EqualFold(callee, "System.Database.query") {
+		return err
+	}
+	return newExceptionError("QueryException", runtimeErr.Message)
 }

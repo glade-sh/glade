@@ -1,0 +1,817 @@
+{
+"Account": [
+"ParentId",
+"DandbCompanyId",
+"OperatingHoursId"
+],
+"AccountPartner": [
+"OpportunityId"
+],
+"AdditionalNumber": [
+"CallCenterId"
+],
+"AlternativePaymentMethod": [
+"PaymentGatewayId",
+"AccountId"
+],
+"ApexEmailNotification": [
+"UserId"
+],
+"ApexTestQueueItem": [
+"ApexClassId"
+],
+"ApexTestResult": [
+"ApexClassId",
+"AsyncApexJobId",
+"QueueItemId",
+"ApexLogId",
+"ApexTestRunResultId"
+],
+"ApexTestRunResult": [
+"AsyncApexJobId",
+"UserId"
+],
+"AppointmentTopicTimeSlot": [
+"WorkTypeId",
+"WorkTypeGroupId"
+],
+"ApptBundleAggrPolicy": [
+"FilterCriteriaId"
+],
+"ApptBundleConfig": [
+"CriteriaForAutoUnbundlingId"
+],
+"ApptBundlePolicy": [
+"FilterCriteriaId"
+],
+"ApptBundlePolicySvcTerr": [
+"ServiceTerritoryId"
+],
+"Asset": [
+"ContactId",
+"AccountId",
+"ParentId",
+"Product2Id",
+"LocationId",
+"AssetProvidedById",
+"AssetServicedById"
+],
+"AssetAttribute": [
+"AttributePicklistValueId"
+],
+"AssetWarranty": [
+"Pricebook2Id",
+"WarrantyTermId"
+],
+"AssignedResource": [
+"ServiceCrewId"
+],
+"AttributeDefinition": [
+"UnitOfMeasureId",
+"PicklistId"
+],
+"AuthProvParamFwdAllowlist": [
+"AuthProviderId"
+],
+"AuthProvider": [
+"RegistrationHandlerId",
+"ExecutionUserId",
+"PluginId",
+"FlowDefaultProfileId",
+"FlowDefaultAccountId"
+],
+"AuthorizationForm": [
+"DefaultAuthFormTextId"
+],
+"AuthorizationFormConsent": [
+"AuthorizationFormTextId",
+"DocumentVersionId",
+"RelatedRecordId"
+],
+"AuthorizationFormText": [
+"ContentDocumentId"
+],
+"BusinessBrand": [
+"ParentId"
+],
+"CalendarView": [
+"ListViewFilterId",
+"PublisherId"
+],
+"Campaign": [
+"ParentId",
+"CampaignMemberRecordTypeId"
+],
+"CampaignMember": [
+"LeadId",
+"ContactId"
+],
+"CardPaymentMethod": [
+"AccountId",
+"PaymentGatewayId"
+],
+"Case": [
+"ContactId",
+"AccountId",
+"AssetId",
+"ParentId"
+],
+"CaseTeamTemplateMember": [
+"TeamRoleId"
+],
+"CategoryNode": [
+"ParentId"
+],
+"ChatterExtension": [
+"IconId"
+],
+"ChatterExtensionConfig": [
+"ChatterExtensionId"
+],
+"CollaborationGroup": [
+"AnnouncementId"
+],
+"CommSubscriptionChannelType": [
+"MessagingChannelId",
+"MessagingChannelUsageId"
+],
+"CommSubscriptionConsent": [
+"ConsentGiverId",
+"PartyRoleId",
+"BusinessBrandId",
+"DataUsePurposeId",
+"EngagementChannelTypeId"
+],
+"ConferenceNumber": [
+"ExternalEventId"
+],
+"Contact": [
+"AccountId",
+"ReportsToId",
+"IndividualId"
+],
+"ContactPointAddress": [
+"ParentId",
+"ContactPointPhoneId"
+],
+"ContactPointConsent": [
+"DataUsePurposeId",
+"PartyRoleId",
+"BusinessBrandId"
+],
+"ContactPointEmail": [
+"ParentId"
+],
+"ContactPointPhone": [
+"ParentId"
+],
+"ContactPointTypeConsent": [
+"DataUsePurposeId",
+"PartyRoleId",
+"BusinessBrandId"
+],
+"ContactRequest": [
+"WhatId",
+"WhoId"
+],
+"ContentDistribution": [
+"RelatedRecordId"
+],
+"ContentFolder": [
+"ParentContentFolderId"
+],
+"ContentVersion": [
+"ContentBodyId",
+"FirstPublishLocationId",
+"ExternalDataSourceId"
+],
+"ContentWorkspace": [
+"WorkspaceImageId"
+],
+"ContentWorkspaceMember": [
+"ContentWorkspacePermissionId"
+],
+"Contract": [
+"Pricebook2Id",
+"CompanySignedId",
+"CustomerSignedId"
+],
+"ContractLineItem": [
+"AssetId",
+"ParentContractLineItemId",
+"LocationId"
+],
+"ContractLineOutcome": [
+"RecordsetFilterCriteriaId"
+],
+"ConversationApiLog": [
+"RequestedById"
+],
+"ConversationEntry": [
+"ConversationEntityId",
+"ActorId"
+],
+"CustomBrandAsset": [
+"AssetSourceId"
+],
+"Customer": [
+"PartyId"
+],
+"DataUsePurpose": [
+"LegalBasisId"
+],
+"DevopsActivityLog": [
+"ParentActivityId",
+"PerformedById",
+"DevopsRequestInfoId"
+],
+"DevopsEnvDeployment": [
+"DeployRequestInfoId",
+"CheckDeployRequestInfoId"
+],
+"DevopsEnvDeploymentMbr": [
+"ChangedById"
+],
+"DevopsEnvironment": [
+"RefreshSourceId",
+"ReplacesId"
+],
+"DevopsRequestInfo": [
+"ParentRequestInfoId"
+],
+"DigitalWallet": [
+"PaymentGatewayId",
+"AccountId"
+],
+"DuplicateRecordSet": [
+"DuplicateRuleId"
+],
+"DynamicDataCapture": [
+"PausedFlowInterviewId"
+],
+"EmailMessage": [
+"ParentId",
+"ActivityId",
+"ReplyToEmailMessageId",
+"FromId",
+"RelatedToId",
+"EmailTemplateId"
+],
+"EmailMessageRelation": [
+"RelationId"
+],
+"EmailServicesFunction": [
+"ApexClassId"
+],
+"EmailTemplate": [
+"BrandTemplateId",
+"EnhancedLetterheadId"
+],
+"Entitlement": [
+"ServiceContractId",
+"ContractLineItemId",
+"AssetId",
+"SlaProcessId",
+"BusinessHoursId",
+"SvcApptBookingWindowsId",
+"AssetWarrantyId",
+"LocationId"
+],
+"EntitlementTemplate": [
+"BusinessHoursId",
+"SlaProcessId"
+],
+"Event": [
+"WhoId",
+"WhatId"
+],
+"Expense": [
+"WorkOrderId",
+"AccountId"
+],
+"ExternalDataUserAuth": [
+"UserId",
+"AuthProviderId"
+],
+"ExternalEventMapping": [
+"EventId"
+],
+"ExtlRecShrStagedRecord": [
+"AccountId"
+],
+"FeedAttachment": [
+"RecordId"
+],
+"FeedComment": [
+"LastEditById",
+"RelatedRecordId",
+"ThreadParentId"
+],
+"FeedItem": [
+"LastEditById",
+"RelatedRecordId"
+],
+"FinanceTransaction": [
+"ReferenceEntityId",
+"AccountId",
+"SourceEntityId",
+"DestinationEntityId",
+"LegalEntityId",
+"ParentReferenceEntityId"
+],
+"FlowOrchestrationInstance": [
+"InterviewId"
+],
+"FlowOrchestrationWorkItem": [
+"StepInstanceId",
+"RelatedRecordId",
+"ParentWorkItemId"
+],
+"Folder": [
+"ParentId"
+],
+"GtwyProvPaymentMethodType": [
+"PaymentGatewayProviderId",
+"RecordTypeId"
+],
+"Image": [
+"ContentDocumentId"
+],
+"Lead": [
+"DandbCompanyId",
+"IndividualId"
+],
+"LightningExperienceTheme": [
+"DefaultBrandingSetId"
+],
+"LightningOnboardingConfig": [
+"CollaborationGroupId"
+],
+"ListEmail": [
+"CampaignId",
+"RelatedToId"
+],
+"ListEmailSentResult": [
+"RecipientId",
+"ActivityId"
+],
+"LiveChatTranscriptEvent": [
+"AgentId"
+],
+"Location": [
+"ParentLocationId",
+"VisitorAddressId",
+"LogoId",
+"AccountId"
+],
+"MaintenanceAsset": [
+"WorkTypeId",
+"ContractLineItemId"
+],
+"MaintenancePlan": [
+"WorkTypeId",
+"AccountId",
+"ServiceContractId",
+"LocationId",
+"ContactId"
+],
+"MaintenanceWorkRule": [
+"ParentMaintenanceRecordId",
+"WorkTypeId",
+"ParentMaintenancePlanId",
+"RecordsetFilterCriteriaId"
+],
+"MessagingChannel": [
+"TargetQueueId",
+"SessionHandlerId",
+"FallbackQueueId",
+"BusinessHoursId"
+],
+"MessagingEndUser": [
+"AccountId",
+"ContactId",
+"LeadId"
+],
+"MessagingSession": [
+"CaseId",
+"LeadId",
+"OpportunityId",
+"CampaignId",
+"TargetUserId",
+"ConversationId"
+],
+"MobileSettingsAssignment": [
+"ProfileId"
+],
+"MsgChannelLanguageKeyword": [
+"MessagingChannelUsageId"
+],
+"MyDomainDiscoverableLogin": [
+"ExecuteApexHandlerAsId"
+],
+"OauthTokenExchHandlerApp": [
+"ExternalClientApplicationId",
+"ConnectedApplicationId"
+],
+"Opportunity": [
+"AccountId",
+"CampaignId",
+"Pricebook2Id",
+"ContactId"
+],
+"OpportunityLineItem": [
+"PricebookEntryId",
+"Product2Id"
+],
+"Order": [
+"ContractId",
+"AccountId",
+"Pricebook2Id",
+"OriginalOrderId",
+"CustomerAuthorizedById",
+"CompanyAuthorizedById",
+"BillToContactId",
+"ShipToContactId"
+],
+"OrderItem": [
+"Product2Id",
+"OriginalOrderItemId"
+],
+"OrgMetric": [
+"LatestOrgMetricScanSummaryId"
+],
+"OutboundEngmtContentRsrc": [
+"ResourceReferenceRecordId",
+"TargetReferenceRecordId"
+],
+"OutgoingEmailRelation": [
+"RelationId"
+],
+"Partner": [
+"OpportunityId",
+"AccountFromId"
+],
+"PartyConsent": [
+"PartyRoleId",
+"BusinessBrandId",
+"DataUsePurposeId"
+],
+"Payment": [
+"PaymentGroupId",
+"AccountId",
+"PaymentAuthorizationId",
+"PaymentGatewayId",
+"PaymentMethodId"
+],
+"PaymentAuthAdjustment": [
+"AccountId"
+],
+"PaymentAuthorization": [
+"PaymentGroupId",
+"AccountId",
+"PaymentMethodId",
+"PaymentGatewayId"
+],
+"PaymentGateway": [
+"PaymentGatewayProviderId",
+"MerchantCredentialId"
+],
+"PaymentGatewayLog": [
+"ReferencedEntityId",
+"PaymentGatewayId"
+],
+"PaymentGatewayProvider": [
+"ApexAdapterId"
+],
+"PaymentGroup": [
+"SourceObjectId"
+],
+"PaymentLineInvoice": [
+"AssociatedAccountId",
+"AssociatedPaymentLineId"
+],
+"PermissionSet": [
+"LicenseId"
+],
+"PermissionSetAssignment": [
+"PermissionSetId",
+"PermissionSetGroupId"
+],
+"PrivacyRTBFRequest": [
+"PolicyNameId"
+],
+"ProcessException": [
+"CaseId",
+"AssetId"
+],
+"Product2": [
+"ExternalDataSourceId"
+],
+"ProductConsumed": [
+"WorkOrderLineItemId",
+"ProductItemId",
+"PricebookEntryId"
+],
+"ProductRequest": [
+"WorkOrderId",
+"WorkOrderLineItemId",
+"DestinationLocationId",
+"SourceLocationId",
+"CaseId",
+"AccountId"
+],
+"ProductRequestLineItem": [
+"WorkOrderId",
+"WorkOrderLineItemId",
+"DestinationLocationId",
+"SourceLocationId",
+"CaseId",
+"AccountId"
+],
+"ProductServiceCampaign": [
+"Product2Id",
+"WorkTypeId"
+],
+"ProductServiceCampaignItem": [
+"AssetId",
+"SerializedProductId",
+"Product2Id"
+],
+"ProductTransfer": [
+"ProductRequestLineItemId",
+"SourceProductItemId",
+"Product2Id",
+"SourceLocationId",
+"DestinationLocationId",
+"ReceivedById",
+"ShipmentId",
+"ReturnOrderLineItemId"
+],
+"ProductWarrantyTerm": [
+"CoveredProductId"
+],
+"PromptVersion": [
+"PublishedByUserId",
+"ImageId",
+"TargetRecordTypeId",
+"ExperienceContextId"
+],
+"Recommendation": [
+"ImageId"
+],
+"RecordAction": [
+"FlowInterviewId"
+],
+"RecordType": [
+"BusinessProcessId"
+],
+"Refund": [
+"PaymentGroupId",
+"AccountId",
+"PaymentMethodId",
+"PaymentGatewayId"
+],
+"RefundLinePayment": [
+"AssociatedAccountId",
+"AssociatedRefundLinePaymentId"
+],
+"ReturnOrder": [
+"AccountId",
+"ContactId",
+"ProductRequestId",
+"CaseId",
+"OrderId",
+"SourceLocationId",
+"DestinationLocationId",
+"ReturnedById",
+"ProductServiceCampaignId"
+],
+"ReturnOrderLineItem": [
+"ProductRequestLineItemId",
+"OrderItemId",
+"ProductItemId",
+"Product2Id",
+"SourceLocationId",
+"DestinationLocationId",
+"AssetId",
+"ProductServiceCampaignItemId"
+],
+"SPSamlAttributes": [
+"ConnectivityId"
+],
+"ScorecardMetric": [
+"ReportId"
+],
+"Seller": [
+"PartyId"
+],
+"SerializedProduct": [
+"ProductItemId",
+"AssetId"
+],
+"ServiceAppointment": [
+"ParentRecordId",
+"ContactId",
+"ServiceTerritoryId",
+"RelatedBundleId",
+"BundlePolicyId"
+],
+"ServiceContract": [
+"AccountId",
+"ContactId",
+"Pricebook2Id",
+"ParentServiceContractId"
+],
+"ServiceResource": [
+"RelatedRecordId",
+"LocationId",
+"ServiceCrewId",
+"AccountId",
+"SchedulingConstraintId",
+"PayGroupId"
+],
+"ServiceTerritory": [
+"ParentTerritoryId",
+"SchedulingConstraintId",
+"TravelModeId"
+],
+"ServiceTerritoryMember": [
+"OperatingHoursId",
+"TravelModeId"
+],
+"Shift": [
+"ServiceResourceId",
+"ServiceTerritoryId",
+"JobProfileId",
+"RecordsetFilterCriteriaId",
+"ShiftTemplateId"
+],
+"ShiftTemplate": [
+"JobProfileId",
+"RecordsetFilterCriteriaId"
+],
+"Shipment": [
+"SourceLocationId",
+"DestinationLocationId",
+"DeliveredToId",
+"ReturnOrderId"
+],
+"ShipmentItem": [
+"Product2Id"
+],
+"Skill": [
+"TypeId"
+],
+"Swarm": [
+"CollaborationRoomId"
+],
+"SwarmMember": [
+"SwarmId"
+],
+"Task": [
+"WhoId",
+"WhatId"
+],
+"ThreatDetectionFeedback": [
+"UserId",
+"ThreatDetectionEventId"
+],
+"TimeSheet": [
+"ServiceResourceId"
+],
+"TimeSheetEntry": [
+"WorkOrderId",
+"WorkOrderLineItemId"
+],
+"TimeSlot": [
+"RecordsetFilterCriteriaId"
+],
+"TransactionSecurityPolicy": [
+"ApexPolicyId",
+"ExecutionUserId"
+],
+"User": [
+"UserRoleId",
+"DelegatedApproverId",
+"ManagerId",
+"ContactId",
+"CallCenterId",
+"IndividualId"
+],
+"UserAppInfo": [
+"AppDefinitionId"
+],
+"UserAppMenuCustomization": [
+"ApplicationId"
+],
+"UserProvAccount": [
+"SalesforceUserId",
+"ConnectedAppId"
+],
+"UserProvAccountStaging": [
+"ConnectedAppId",
+"SalesforceUserId"
+],
+"UserProvisioningConfig": [
+"ConnectedAppId",
+"NamedCredentialId"
+],
+"UserProvisioningLog": [
+"UserProvisioningRequestId",
+"UserId"
+],
+"UserProvisioningRequest": [
+"SalesforceUserId",
+"ConnectedAppId",
+"UserProvConfigId",
+"UserProvAccountId",
+"ManagerId",
+"ParentId"
+],
+"UserRole": [
+"ParentRoleId",
+"ForecastUserId",
+"PortalAccountId"
+],
+"WarrantyTerm": [
+"Pricebook2Id"
+],
+"WebLink": [
+"ScontrolId"
+],
+"WorkCapacityAvailability": [
+"ServiceTerritoryId"
+],
+"WorkCapacityLimit": [
+"ServiceTerritoryId"
+],
+"WorkCapacityUsage": [
+"ServiceTerritoryId"
+],
+"WorkDemographic": [
+"ServiceTerritoryId",
+"JobProfileId",
+"HistoricalWorkloadId"
+],
+"WorkOrder": [
+"AccountId",
+"ContactId",
+"CaseId",
+"EntitlementId",
+"ServiceContractId",
+"AssetId",
+"Pricebook2Id",
+"ParentWorkOrderId",
+"BusinessHoursId",
+"WorkTypeId",
+"ServiceTerritoryId",
+"LocationId",
+"MaintenancePlanId",
+"ServiceReportTemplateId",
+"ReturnOrderLineItemId",
+"AssetWarrantyId",
+"ProductServiceCampaignId",
+"ProductServiceCampaignItemId"
+],
+"WorkOrderLineItem": [
+"ParentWorkOrderLineItemId",
+"Product2Id",
+"AssetId",
+"OrderId",
+"PricebookEntryId",
+"WorkTypeId",
+"ServiceTerritoryId",
+"LocationId",
+"ServiceReportTemplateId",
+"ReturnOrderLineItemId",
+"MaintenancePlanId",
+"AssetWarrantyId",
+"ProductServiceCampaignItemId"
+],
+"WorkPlan": [
+"WorkOrderId",
+"WorkOrderLineItemId"
+],
+"WorkPlanSelectionRule": [
+"WorkTypeId",
+"AssetId",
+"LocationId",
+"Product2Id",
+"ServiceContractId",
+"ServiceTerritoryId",
+"AccountId"
+],
+"WorkStep": [
+"PausedFlowInterviewId"
+],
+"WorkType": [
+"ServiceReportTemplateId"
+],
+"WorkforceCapacity": [
+"WorkloadId"
+],
+"WorkforceCapacityUnit": [
+"WorkDemographicId",
+"ShiftTemplateId"
+]
+}

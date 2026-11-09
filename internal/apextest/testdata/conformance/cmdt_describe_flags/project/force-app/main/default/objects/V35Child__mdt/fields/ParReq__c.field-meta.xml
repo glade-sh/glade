@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>ParReq__c</fullName>
+    <fieldManageability>DeveloperControlled</fieldManageability>
+    <label>ParReq</label>
+    <referenceTo>V35Parent__mdt</referenceTo>
+    <relationshipLabel>V35 Children Req</relationshipLabel>
+    <relationshipName>V35ChildrenReq</relationshipName>
+    <required>true</required>
+    <unique>false</unique>
+    <type>MetadataRelationship</type>
+</CustomField>

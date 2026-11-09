@@ -826,7 +826,7 @@ func (s *Server) createBulkQueryJob(w http.ResponseWriter, r *http.Request, vers
 		writeSalesforceError(w, errUnsupportedFeature, "Bulk API v2 query jobs support simple scalar field projections only")
 		return
 	}
-	result, err := soql.Execute(*s.Org, query)
+	result, err := soql.ExecuteWithCacheAndContext(*s.Org, query, nil, soql.ExecutionContext{SetupUserID: s.currentUser(r, "").ID})
 	if err != nil {
 		writeSalesforceError(w, errMalformedQuery, err.Error())
 		return

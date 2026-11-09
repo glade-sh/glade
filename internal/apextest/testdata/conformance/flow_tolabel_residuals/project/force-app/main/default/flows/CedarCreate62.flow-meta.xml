@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>62.0</apiVersion>
+<interviewLabel>CedarCreate62 {!$Flow.CurrentDateTime}</interviewLabel><label>CedarCreate62</label><processMetadataValues><name>BuilderType</name><value><stringValue>LightningFlowBuilder</stringValue></value></processMetadataValues>
+<processType>AutoLaunchedFlow</processType>
+<recordCreates><name>Create_row</name><label>Create row</label><locationX>0</locationX><locationY>0</locationY>
+<inputAssignments><field>Cedar_Note__c</field><value><elementReference>noteIn</elementReference></value></inputAssignments>
+<inputAssignments><field>Cedar_Participant__c</field><value><elementReference>$User.Id</elementReference></value></inputAssignments>
+<inputAssignments><field>Cedar_Version__c</field><value><stringValue>62.0</stringValue></value></inputAssignments>
+<object>Cedar_Response__c</object><storeOutputAutomatically>true</storeOutputAutomatically></recordCreates>
+<start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Create_row</targetReference></connector></start><status>Active</status>
+<variables><name>noteIn</name><dataType>String</dataType><isCollection>false</isCollection><isInput>true</isInput><isOutput>false</isOutput></variables></Flow>

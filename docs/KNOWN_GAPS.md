@@ -59,7 +59,8 @@ No required local support gaps are currently tracked.
 ### `platform.exclusions`: Excluded platforms
 
 - Status: `unsupported`
-- Gap: DataWeave, ConnectApi and Slack are excluded and unsupported.
+- Gap: DataWeave and Slack are excluded and unsupported. ConnectApi types are passive
+  shapes; its hosted services are not implemented (see release policy).
 
 ## Security
 

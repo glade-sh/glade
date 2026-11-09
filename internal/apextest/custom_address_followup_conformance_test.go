@@ -11,36 +11,28 @@ import (
 
 // customAddressFollowupGaps lists followup.tsv rows Glade does not match for
 // reasons unrelated to Address fields or restricted picklists.
-var customAddressFollowupGaps = map[string]string{
-	"R01": "the generated standard Account catalog carries no restrictedPicklist facet for BillingGeocodeAccuracy (generator lives in glade-tools)",
-}
+var customAddressFollowupGaps = map[string]string{}
 
-// customAddressFollowupSObjectJSON lists rows that serialize a whole SObject.
-// Glade's SObject key order and attributes.url differ from native for ordinary
-// fields too (generic gap), so only the nested Address object is compared.
-var customAddressFollowupSObjectJSON = map[string]string{
-	"J07": "BillingAddress", "J07b": "BillingAddress", "J07c": "BillingAddress", "J10": "Home__c", "J11": "Home__c",
-}
+// customAddressFollowupURLVersion finds the org release in the captured
+// record URLs (J07..J11). Native writes the org's release, v68.0, at both
+// source APIs, so the replay sets the org REST release to that version.
+var customAddressFollowupURLVersion = regexp.MustCompile(`/services/data/v([0-9]+\.0)/sobjects/`)
 
-// customAddressNestedObject returns the JSON object text that follows key.
-func customAddressNestedObject(text, key string) string {
-	_, rest, ok := strings.Cut(text, `"`+key+`":`)
-	if !ok || !strings.HasPrefix(rest, "{") {
-		return ""
-	}
-	depth := 0
-	for i, r := range rest {
-		switch r {
-		case '{':
-			depth++
-		case '}':
-			depth--
-			if depth == 0 {
-				return rest[:i+1]
+func customAddressFollowupRuntimeAPI(t *testing.T, rows []customAddressRow) string {
+	t.Helper()
+	version := ""
+	for _, row := range rows {
+		for _, match := range customAddressFollowupURLVersion.FindAllStringSubmatch(row.observation, -1) {
+			if version != "" && version != match[1] {
+				t.Fatalf("followup rows mix URL versions %s and %s", version, match[1])
 			}
+			version = match[1]
 		}
 	}
-	return ""
+	if version == "" {
+		t.Fatal("followup rows carry no record URL")
+	}
+	return version
 }
 
 var customAddressRecordID = regexp.MustCompile(`with id [A-Za-z0-9]{15,18}`)
@@ -80,7 +72,8 @@ func TestCustomAddressFollowupNativeConformance(t *testing.T) {
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api, func(t *testing.T) {
 			index := customAddressProject(t, api)
-			out, err := customAddressRun(t, index, api, "for (String r : AddressFollowup.run()) System.debug(LoggingLevel.ERROR, 'ADDR|' + r);")
+			native := customAddressFollowupNativeRows(t, api)
+			out, err := customAddressRunAt(t, index, api, customAddressFollowupRuntimeAPI(t, native), "for (String r : AddressFollowup.run()) System.debug(LoggingLevel.ERROR, 'ADDR|' + r);")
 			if err != nil {
 				t.Fatalf("followup: %v", err)
 			}
@@ -89,17 +82,11 @@ func TestCustomAddressFollowupNativeConformance(t *testing.T) {
 				id, observation, _ := strings.Cut(row, "|")
 				got[id] = customAddressRecordID.ReplaceAllString(observation, "with id <ID>")
 			}
-			for _, row := range customAddressFollowupNativeRows(t, api) {
+			for _, row := range native {
 				if _, gap := customAddressFollowupGaps[row.id]; gap {
 					continue
 				}
 				want, have := row.observation, got[row.id]
-				if key, nested := customAddressFollowupSObjectJSON[row.id]; nested {
-					want, have = customAddressNestedObject(want, key), customAddressNestedObject(have, key)
-					if want == "" {
-						t.Fatalf("%s: no %s object in native row", row.id, key)
-					}
-				}
 				if have != want {
 					t.Errorf("%s: native <%s> glade <%s>", row.id, want, have)
 				}

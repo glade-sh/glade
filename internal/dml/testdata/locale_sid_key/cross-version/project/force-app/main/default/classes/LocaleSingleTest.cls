@@ -1,0 +1,1 @@
+@IsTest private class LocaleSingleTest { @IsTest static void source62() {System.assert(false,'LOCALE_SINGLE|'+JSON.serialize(LocaleObserver62.sample()));}@IsTest static void source67() {System.assert(false,'LOCALE_SINGLE|'+JSON.serialize(LocaleObserver67.sample()));}@IsTest static void source68() {System.assert(false,'LOCALE_SINGLE|'+JSON.serialize(LocaleObserver68.sample()));} }

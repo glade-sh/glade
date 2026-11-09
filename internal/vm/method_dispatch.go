@@ -73,7 +73,9 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		}
 		// async_stack_depth future_2/future_3 (API 62 and 67): a future called
 		// from a future body throws a catchable AsyncException.
-		if vm.futureBodyDepth > 0 {
+		// async_lifecycle_c14 Y1 (API 62/67): batch start and execute reject
+		// a future submission the same way.
+		if vm.futureBodyDepth > 0 || vm.inBatchStartOrExecute() {
 			return Null, newExceptionError("System.AsyncException", "Future method cannot be called from a future or batch method: "+futureMethodSignature(method))
 		}
 		vm.futureBodyDepth++
@@ -95,6 +97,11 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 			value, _, _, handled, err = vm.callCartExtensionMockBackedCalculator(receiver, apexMethodMemberName(method.Name), args)
 		}
 		if handled || err != nil {
+			return value, err
+		}
+	}
+	if receiver.Kind == ValueObject && strings.HasPrefix(receiver.Type, "CartExtension.") && len(args) == len(method.Params) {
+		if value, handled, err := vm.callCartObjectMember(receiver, apexMethodMemberName(method.Name), args); handled || err != nil {
 			return value, err
 		}
 	}
@@ -250,6 +257,11 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		value, _, _, handled, err := callUserProvisioningBatchableMember(vm, receiver, apexMethodMemberName(method.Name), callArgs)
 		if handled || err != nil {
 			return value, err
+		}
+	}
+	if receiver.Kind == ValueObject && !method.IsStatic && len(method.Params) == 0 && methodHasModifier(method.Modifiers, "passive-generated") {
+		if value, ok := vm.callConnectAPIObjectMember(receiver, apexMethodMemberName(method.Name), nil); ok {
+			return value, nil
 		}
 	}
 	if receiver.Kind == ValueObject && passiveGeneratedMethod(method) &&
@@ -626,6 +638,7 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 			vm.propagateUpdatedValueAliases(caller, mutation.updated, mutation.collectionMutationSeqBefore)
 		}
 	}
+	vm.refreshCallerEscapedCollectionAliases(caller, collectionMutationSeqBefore)
 	if method.IsConstructor {
 		if updated, ok := frame["this"]; ok && updated.Kind == ValueObject {
 			return updated, nil
@@ -1208,6 +1221,11 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 // retains the display-name rule for other source-defined nested objects.
 // The runtime type remains fully qualified for dispatch.
 func (vm *VM) callObjectMember(receiver Value, method string, args []Value) (Value, bool, error) {
+	if len(args) == 0 && strings.EqualFold(method, "hashCode") &&
+		(receiver.Kind == ValueList || receiver.Kind == ValueSet || receiver.Kind == ValueMap) {
+		hash, err := vm.collectionHashCode(receiver, &Result{})
+		return Int(int64(hash)), true, err
+	}
 	if text, captured := vm.stubNamespaceObjectText(receiver, method, args); captured {
 		return String(text), true, nil
 	}
@@ -1238,6 +1256,9 @@ func (vm *VM) callObjectMember(receiver Value, method string, args []Value) (Val
 // platform objects, user-class methods, and
 // SObject members. It is the ValueObject arm of callValueMember.
 func (vm *VM) callObjectValueMember(receiverName string, receiver Value, method string, args []Value, result *Result) (Value, bool, error) {
+	if value, handled, err := vm.callCartObjectMember(receiver, method, args); handled || err != nil {
+		return value, true, err
+	}
 	if vm.equalsUserObjectView(receiverName, receiver, method, args) {
 		return vm.callObjectMember(receiver, method, args)
 	}
@@ -1543,6 +1564,7 @@ func (vm *VM) callObjectValueMember(receiverName string, receiver Value, method 
 func generatedPlatformRuntimePrecedenceType(typeName string) bool {
 	switch {
 	case strings.EqualFold(typeName, "Auth.JWT"),
+		strings.EqualFold(typeName, "Auth.JWS"),
 		strings.EqualFold(typeName, "Auth.JWTBearerTokenExchange"),
 		strings.EqualFold(typeName, "commercepayments.PaymentsHttp"),
 		strings.EqualFold(typeName, "Canvas.RenderContext"),
@@ -1857,6 +1879,9 @@ func (vm *VM) storeReceiver(receiverName string, value Value) error {
 	if _, ok := vm.lookupGlobalName(receiverName); ok {
 		return vm.assignValue(receiverName, value, false)
 	}
+	if _, ok := vm.anonymousOuterName(receiverName); ok {
+		return vm.assignValue(receiverName, value, false)
+	}
 	if vm.currentClass != "" {
 		if _, _, ok := vm.lookupStaticField(vm.currentClass, receiverName); ok {
 			return vm.assignValue(receiverName, value, false)
@@ -1998,7 +2023,7 @@ func (vm *VM) specialMapLookup(receiver, key Value) (Value, bool) {
 	}
 	if isGlobalDescribeMap(receiver) {
 		if vm != nil {
-			if resolved, ok := vm.resolveGlobalDescribeObjectName(key.Text); ok && vm.globalDescribeKeyNamesObject(key.Text, resolved) {
+			if resolved, ok := vm.resolveGlobalDescribeObjectName(key.Text); ok && vm.globalDescribeContainsKeyNamesObject(key.Text, resolved) {
 				return sObjectTypeToken(resolved), true
 			}
 		}
@@ -2195,7 +2220,10 @@ func (vm *VM) resolveGlobalDescribeObjectName(name string) (string, bool) {
 	if name == "" {
 		return "", false
 	}
-	if vm.Org != nil && !vm.Org.AllowsStandardObject(name) {
+	if vm.standardAPI68ObjectHidden(name) {
+		return "", false
+	}
+	if vm.Org != nil && !vm.allowsStandardObject(name) {
 		return "", false
 	}
 	if canonical, ok := vm.namedApexReferenceObjectName(name); ok {
@@ -2238,6 +2266,11 @@ func (vm *VM) resolveGlobalDescribeObjectName(name string) (string, bool) {
 
 func (vm *VM) objectKeyMapLookup(receiver Value, key Value) (Value, bool, error) {
 	if receiver.Kind != ValueMap || len(receiver.Map) == 0 || len(receiver.MapKeys) == 0 {
+		return Null, false, nil
+	}
+	if key.Kind == ValueObject && sObjectValueType(key.Type) && !vm.userClassShadowsSObjectType(key.Type) {
+		// An SObject key is hashed from its field values when it is stored. A key
+		// mutated afterwards no longer matches, and equality cannot rescue it (native a15Mutation).
 		return Null, false, nil
 	}
 	encoded, handled, err := vm.apexObjectHashMapKeyChecked(key)
@@ -3836,8 +3869,10 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 		// Retain base map entries for the uncaptured size()/values() behavior.
 		if isGlobalDescribeMap(receiver) {
 			out := Set()
-			seen := make(map[string]bool)
-			for _, rawKey := range orderedValueMapKeys(receiver) {
+			rawKeys := orderedValueMapKeys(receiver)
+			out.Set = make([]Value, 0, len(rawKeys))
+			seen := make(map[string]bool, len(rawKeys))
+			for _, rawKey := range rawKeys {
 				key := strings.ToLower(mapStoredKey(receiver, rawKey).Text)
 				if !seen[key] {
 					out.Set = append(out.Set, String(key))
@@ -3883,6 +3918,20 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 		if out, ok := fieldSetMapCanonicalValues(receiver); ok {
 			return out, true, nil
 		}
+		if isGlobalDescribeMap(receiver) {
+			// Org capture global_describe_size: values() has one entry per
+			// lower-case key, exactly like keySet().
+			out := List()
+			for _, key := range orderedValueMapKeys(receiver) {
+				if !hasUpperCaseLetter(mapStoredKey(receiver, key).Text) {
+					out.List = append(out.List, receiver.Map[key])
+				}
+			}
+			if _, valueType, ok := mapTypeArgs(receiver.Type); ok {
+				out.Type = "List<" + valueType + ">"
+			}
+			return out, true, nil
+		}
 		out := List()
 		for _, key := range orderedValueMapKeys(receiver) {
 			out.List = append(out.List, receiver.Map[key])
@@ -3900,6 +3949,9 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 		}
 		if size, ok := fieldSetMapCanonicalSize(receiver); ok {
 			return Int(int64(size)), true, nil
+		}
+		if isGlobalDescribeMap(receiver) {
+			return Int(int64(globalDescribeCanonicalSize(receiver))), true, nil
 		}
 		return Int(int64(len(receiver.Map))), true, nil
 	case "isEmpty":
@@ -3988,4 +4040,28 @@ func futureMethodSignature(method Method) string {
 		types[i] = param.Type
 	}
 	return method.ClassName + "." + apexMethodMemberName(method.Name) + "(" + strings.Join(types, ", ") + ")"
+}
+
+// globalDescribeCanonicalSize counts the lower-case keys of a global describe
+// map. The backing map also stores case and namespace aliases for lookups; the
+// native map reports one entry per key (org capture global_describe_size).
+// Removing the lower-case key drops the entry even while a mixed-case alias stays.
+func globalDescribeCanonicalSize(receiver Value) int {
+	count := 0
+	for _, key := range orderedValueMapKeys(receiver) {
+		if !hasUpperCaseLetter(mapStoredKey(receiver, key).Text) {
+			count++
+		}
+	}
+	return count
+}
+
+// hasUpperCaseLetter reports whether text holds a Unicode upper-case letter.
+func hasUpperCaseLetter(text string) bool {
+	for _, r := range text {
+		if unicode.IsUpper(r) {
+			return true
+		}
+	}
+	return false
 }

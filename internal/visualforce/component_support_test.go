@@ -146,7 +146,7 @@ func TestRenderPromotedUIOnlyComponents(t *testing.T) {
 		{
 			name:   "sectionHeader",
 			markup: `<apex:page><apex:sectionHeader title="Accounts" subtitle="Recent" description="Local list"/></apex:page>`,
-			wants:  []string{`<div class="sectionHeader">`, `<h1>Accounts</h1>`, `<h2>Recent</h2>`, `<p>Local list</p>`},
+			wants:  []string{`<div class="bPageTitle">`, `<h1 class="pageType">Accounts</h1>`, `<h2 class="pageDescription">Recent</h2>`, `<div class="bDescription">Local list</div>`},
 		},
 		{
 			name:   "toolbar",

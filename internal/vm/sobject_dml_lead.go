@@ -154,7 +154,11 @@ func (vm *VM) convertLeadAccountID(convert Value, lead storage.Record, result *R
 		if existing, found := vm.findOrgRecord("Account", id); found {
 			account := Object("Account")
 			vm.setExplicitSObjectFieldValue(&account, "Id", value)
-			if vm.copyLeadAddress(&account, existing, lead, "Billing") {
+			changed := vm.copyLeadAddress(&account, existing, lead, "Billing")
+			if vm.copyLeadFields(&account, existing, lead, leadConvertAccountFields) {
+				changed = true
+			}
+			if changed {
 				if err := vm.updateLeadConversionTarget(account, result); err != nil {
 					return "", err
 				}
@@ -175,6 +179,7 @@ func (vm *VM) convertLeadAccountID(convert Value, lead storage.Record, result *R
 		vm.setExplicitSObjectFieldValue(&account, "Name", String(name))
 	}
 	vm.copyLeadAddress(&account, storage.Record{}, lead, "Billing")
+	vm.copyLeadFields(&account, storage.Record{}, lead, leadConvertAccountFields)
 	results, err := vm.applyDML("insert", account, true, "", dml.Options{}, result)
 	if err != nil {
 		return "", err
@@ -193,6 +198,9 @@ func (vm *VM) convertLeadContactID(convert Value, lead storage.Record, accountID
 		changed := false
 		if existing, found := vm.findOrgRecord("Contact", id); found {
 			changed = vm.copyLeadAddress(&contact, existing, lead, "Mailing")
+			if vm.copyLeadFields(&contact, existing, lead, leadConvertContactFields) {
+				changed = true
+			}
 		}
 		if databaseLeadConvertBool(convert, "overwriteLeadSource") {
 			if source, exists := lead.GetField("LeadSource"); exists {
@@ -224,6 +232,8 @@ func (vm *VM) convertLeadContactID(convert Value, lead storage.Record, accountID
 		vm.setExplicitSObjectFieldValue(&contact, "AccountId", platformScalar("Id", string(accountID)))
 	}
 	vm.copyLeadAddress(&contact, storage.Record{}, lead, "Mailing")
+	vm.copyLeadFields(&contact, storage.Record{}, lead, leadConvertContactFields)
+	vm.copyLeadFields(&contact, storage.Record{}, lead, leadConvertContactFlags)
 	results, err := vm.applyDML("insert", contact, true, "", dml.Options{}, result)
 	if err != nil {
 		return "", err
@@ -292,6 +302,7 @@ func (vm *VM) convertLeadOpportunityID(convert Value, lead storage.Record, accou
 		}
 		vm.setExplicitSObjectFieldValue(&opportunity, "Name", String(name))
 	}
+	vm.copyLeadFields(&opportunity, storage.Record{}, lead, leadConvertOpportunityFields)
 	if _, _, ok := objectFieldValue(opportunity, "AccountId"); !ok {
 		vm.setExplicitSObjectFieldValue(&opportunity, "AccountId", platformScalar("Id", string(accountID)))
 	}
@@ -374,4 +385,38 @@ func findRecordByLooseID(object storage.ObjectState, id storage.ID) (storage.ID,
 		}
 	}
 	return "", storage.Record{}, false
+}
+
+// Native lead conversion copies the standard mapped lead fields to the records
+// it creates (org capture lead_convert_field_mapping, API 62 and 67). Fields the
+// caller already set are kept. When the target record already exists, only a
+// field that is empty there is filled. Description maps to the contact and not
+// to the account or opportunity.
+var (
+	leadConvertAccountFields     = []string{"Phone", "Fax", "Website", "Industry", "AnnualRevenue", "NumberOfEmployees", "Rating"}
+	leadConvertContactFields     = []string{"FirstName", "Salutation", "Title", "Email", "Phone", "MobilePhone", "Fax", "Description", "LeadSource"}
+	leadConvertContactFlags      = []string{"HasOptedOutOfEmail", "DoNotCall", "HasOptedOutOfFax"}
+	leadConvertOpportunityFields = []string{"LeadSource"}
+)
+
+func (vm *VM) copyLeadFields(target *Value, existing, lead storage.Record, fields []string) bool {
+	changed := false
+	for _, name := range fields {
+		_, current, present := objectFieldValue(*target, name)
+		if !present {
+			if stored, found := existing.GetField(name); found {
+				current = vmValueFromStorage(stored)
+			}
+		}
+		if current.Kind != ValueNull && !(current.Kind == ValueString && current.Text == "") {
+			continue
+		}
+		value, ok := lead.GetField(name)
+		if !ok || value.Kind == storage.ValueNull || (value.Kind == storage.ValueString && value.String == "") {
+			continue
+		}
+		vm.setExplicitSObjectFieldValue(target, name, vmValueFromStorage(value))
+		changed = true
+	}
+	return changed
 }

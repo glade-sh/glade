@@ -1,0 +1,5 @@
+api	route	observation
+62.0	anonymous:unassigned	apex=false;flow=no
+67.0	anonymous:unassigned	apex=false;flow=no
+62.0	anonymous:assigned	apex=true;flow=yes
+67.0	anonymous:assigned	apex=true;flow=yes

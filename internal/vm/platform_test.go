@@ -2216,7 +2216,10 @@ System.assertEquals(0, [SELECT Id FROM Account WHERE Name = 'resumed First'].siz
 	}
 }
 
-func TestExecEventBusFailureWithoutCheckpointRetriesWholeBatch(t *testing.T) {
+// batch_event_async throw_pe_deliver (API 62/67): an ordinary exception from a
+// platform event trigger without a checkpoint does not fail
+// Test.getEventBus().deliver(), and the batch is not redelivered later.
+func TestExecEventBusOrdinaryTriggerExceptionIsConsumedByDeliver(t *testing.T) {
 	triggerProgram, err := CompileAnonymous(`
 if (RetryState.Attempts == null || RetryState.Attempts == 0) {
 	RetryState.Attempts = 1;
@@ -2235,15 +2238,11 @@ EventBus.publish(new List<Local_Event__e>{
 	new Local_Event__e(Name__c = 'First'),
 	new Local_Event__e(Name__c = 'Second')
 });
-try {
-	Test.getEventBus().deliver();
-	System.assert(false);
-} catch (DmlException err) {
-}
+Test.getEventBus().deliver();
 Test.getEventBus().deliver();
 Test.stopTest();
-System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'whole First'].size());
-System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'whole Second'].size());
+System.assertEquals(1, RetryState.Attempts);
+System.assertEquals(0, [SELECT COUNT() FROM Account WHERE Name LIKE 'whole%']);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -3375,7 +3374,9 @@ System.assertEquals(0, stage.position);
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Native: output classes are constructed only inside Apex tests.
 	machine := New(nil)
+	machine.EnableTestContext()
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
@@ -4895,8 +4896,10 @@ func TestExecDatetimeNowAdvancesBetweenCalls(t *testing.T) {
 	program, err := CompileAnonymous(`
 Datetime before = Datetime.now();
 Datetime after = Datetime.now();
-System.assert(after > before);
-System.assertEquals(1L,after.getTime()-before.getTime());
+System.assertEquals(before, after);
+Integer reads = 0;
+while (Datetime.now() == before) { reads++; }
+System.assert(Datetime.now() > before);
 	`)
 	if err != nil {
 		t.Fatal(err)
@@ -4906,8 +4909,8 @@ System.assertEquals(1L,after.getTime()-before.getTime());
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
-	if elapsed := machine.fakeNow.Sub(initialClock); elapsed != 2*time.Millisecond {
-		t.Fatalf("clock reads advanced private time by %s, want 2ms", elapsed)
+	if elapsed := machine.fakeNow.Sub(initialClock); elapsed != time.Millisecond {
+		t.Fatalf("clock reads advanced private time by %s, want 1ms", elapsed)
 	}
 }
 
@@ -5233,12 +5236,12 @@ KbManagement.PublishingService.cancelScheduledPublicationOfArticle(articleId);
 KbManagement.PublishingService.cancelScheduledArchivingOfArticle(articleId);
 KbManagement.PublishingService.completeTranslation(articleId);
 KbManagement.PublishingService.setTranslationToIncomplete(articleId);
-System.assertEquals(articleId, KbManagement.PublishingService.editOnlineArticle(articleId, false));
+try { KbManagement.PublishingService.editOnlineArticle(articleId, false); System.assert(false); } catch (System.InvalidParameterValueException expected) { }
 System.assertEquals(articleId, KbManagement.PublishingService.editArchivedArticle(articleId));
 System.assertEquals(articleId, KbManagement.PublishingService.restoreOldVersion(articleId, 1));
 System.assertEquals(articleId, KbManagement.PublishingService.submitForTranslation(articleId, 'fr', 'French', Datetime.now()));
 System.assertEquals(articleId, KbManagement.PublishingService.editPublishedTranslation(articleId, 'fr', false));
-KbManagement.PublishingService.assignDraftArticleTask(articleId, '005000000000001AAA', 'Review', Datetime.now(), true);
+try { KbManagement.PublishingService.assignDraftArticleTask(articleId, '005000000000001AAA', 'Review', Datetime.now(), true); System.assert(false); } catch (System.HandledException expected) { }
 KbManagement.PublishingService.assignDraftTranslationTask(articleId, 'fr', 'Review', Datetime.now(), true);
 
 System.assertEquals(true, RemoteObjectController.updat('Account', new Map<String,Object>{ 'Id' => '001000000000001AAA' }).get('success'));
@@ -6147,8 +6150,11 @@ PageReference saved = controller.save();
 System.assertEquals(account.Id, controller.getId());
 System.assertEquals('/' + account.Id, saved.getUrl());
 PageReference token = Page.MyPage;
-System.assertEquals('/apex/MyPage', token.getUrl());
-System.assertEquals('/apex/MyPage', page.MyPage.getUrl());
+// Native lowercases the URL of every unqualified page that exists
+// (qualified_page_reference: Meadow -> /apex/meadow; case159_community_page:
+// RoadMixedPage -> /apex/roadmixedpage), so the empty registry here does too.
+System.assertEquals('/apex/mypage', token.getUrl());
+System.assertEquals('/apex/mypage', page.MyPage.getUrl());
 SelectOption option = new SelectOption('1', 'One', true);
 System.assertEquals('1', option.getValue());
 System.assertEquals('One', option.getLabel());
@@ -7336,7 +7342,9 @@ System.assertEquals('Auth.JWTValidationException', validationType);
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := New(nil).Execute(program); err != nil {
+	machine := New(nil)
+	pinSaturdayTestClock(machine)
+	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -10706,7 +10714,7 @@ System.assertEquals(1, [SELECT COUNT() FROM AsyncApexJob WHERE ParentJobId = :jo
 	}
 }
 
-func TestExecScheduleBatchSuppressesWorkerJobsForChunks(t *testing.T) {
+func TestExecScheduleBatchStaysPendingAtStopTest(t *testing.T) {
 	startProgram, err := CompileAnonymous(`return new List<SObject>{ new Account(Id = '001000000000001', Name = 'one'), new Account(Id = '001000000000002', Name = 'two'), new Account(Id = '001000000000003', Name = 'three') };`)
 	if err != nil {
 		t.Fatal(err)
@@ -10719,9 +10727,10 @@ func TestExecScheduleBatchSuppressesWorkerJobsForChunks(t *testing.T) {
 Test.startTest();
 String cronId = System.scheduleBatch(new BatchWorker(), 'batch later', 1, 2);
 Test.stopTest();
-System.assertEquals(2, [SELECT COUNT() FROM Account WHERE Name = 'chunk']);
-AsyncApexJob job = [SELECT Id FROM AsyncApexJob WHERE CronTriggerId = :cronId AND JobType = 'BatchApex' AND Status = 'Completed' AND TotalJobItems = 2 AND JobItemsProcessed = 2 LIMIT 1];
-System.assertEquals(0, [SELECT COUNT() FROM AsyncApexJob WHERE ParentJobId = :job.Id AND JobType = 'BatchApexWorker']);
+// async_lifecycle_c14 Y8 (API 62/67): stopTest leaves a scheduled batch pending.
+System.assertEquals(0, [SELECT COUNT() FROM Account WHERE Name = 'chunk']);
+System.assertEquals(1, [SELECT COUNT() FROM CronTrigger WHERE Id = :cronId AND State = 'WAITING']);
+System.assertEquals(0, [SELECT COUNT() FROM AsyncApexJob WHERE JobType = 'BatchApexWorker']);
 	`)
 	if err != nil {
 		t.Fatal(err)
@@ -11470,7 +11479,8 @@ System.assertEquals(1, scheduledBatches.size());
 	}
 }
 
-func TestExecExecuteBatchRejectsScopeAbovePlatformMaximum(t *testing.T) {
+// async_lifecycle_c14 Y3 (API 62/67): the oversized scope is accepted.
+func TestExecExecuteBatchAcceptsScopeAbovePlatformMaximum(t *testing.T) {
 	program, err := CompileAnonymous(`Database.executeBatch(new BatchWorker(), 2001);`)
 	if err != nil {
 		t.Fatal(err)
@@ -11480,9 +11490,11 @@ func TestExecExecuteBatchRejectsScopeAbovePlatformMaximum(t *testing.T) {
 	if err := machine.RegisterClass(Class{Name: "BatchWorker", Interfaces: []string{"Database.Batchable<SObject>"}}); err != nil {
 		t.Fatal(err)
 	}
-	_, err = machine.Execute(program)
-	if err == nil || !strings.Contains(err.Error(), "scope size must be at most 2000") {
-		t.Fatalf("err = %v, want scope maximum", err)
+	if _, err = machine.Execute(program); err != nil {
+		t.Fatalf("oversized scope rejected: %v", err)
+	}
+	if len(machine.testContext.AsyncJobs) != 1 || machine.testContext.AsyncJobs[0].BatchSize != 2000 {
+		t.Fatalf("jobs = %+v, want one batch capped at 2000", machine.testContext.AsyncJobs)
 	}
 }
 
@@ -13722,9 +13734,9 @@ System.setPassword(UserInfo.getUserId(), 'local-secret');
 	}
 	org := storage.NewOrgState()
 	storage.EnsureDeterministicPlatformData(&org)
-	storage.ApplyOrgShape(&org, []string{"MultiCurrency", "Sites", "Communities"})
-	// This DTO test supplies its Network explicitly; enabling Communities
-	// alone leaves the native configuration empty.
+	storage.ApplyOrgShape(&org, []string{"MultiCurrency", "Sites", "Communities", "NetworksEnabled"})
+	// This DTO test supplies its Network explicitly after enabling its setting;
+	// the captured enabled configuration has no Network records by default.
 	networks := org.Objects["Network"]
 	networks.Records["0DB000000000001"] = storage.Record{
 		ID: "0DB000000000001", Object: "Network",
@@ -14570,6 +14582,7 @@ System.assert(!ApexPages.hasMessages());
 		t.Fatal(err)
 	}
 	machine := New(nil)
+	pinSaturdayTestClock(machine)
 	org := testDataOrg()
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
@@ -14688,7 +14701,7 @@ System.assertEquals('2026-05-02', String.valueOf(today));
 
 Datetime nowStamp = Datetime.now();
 System.assertEquals('2026-05-02 12:00:00', nowStamp.formatGmt('yyyy-MM-dd HH:mm:ss'));
-System.assertEquals(nowStamp.getTime()+1L, DateTime.Now().getTime());
+System.assertEquals(nowStamp.getTime(), DateTime.Now().getTime());
 Datetime gmt = Datetime.newInstanceGmt(2024, 2, 29, 23, 59, 58);
 Date gmtDate = gmt.dateGmt();
 System.assertEquals('2024-02-29', String.valueOf(gmtDate));
@@ -14798,7 +14811,9 @@ System.assertEquals(36000000, sydney.getOffset(summerNoon));
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := New(nil).Execute(program); err != nil {
+	machine := New(nil)
+	pinSaturdayTestClock(machine)
+	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -15296,7 +15311,6 @@ func TestExecDatabaseDMLOptionsRejectConfiguredUnsupportedHeader(t *testing.T) {
 		want   string
 	}{
 		{name: "assignment rule", config: "opts.AssignmentRuleHeader.AssignmentRuleId = '01Q000000000001';", want: `unsupported call "Database.DMLOptions.AssignmentRuleHeader local DML option behavior"`},
-		{name: "email", config: "opts.EmailHeader.TriggerUserEmail = true;", want: `unsupported call "Database.DMLOptions.EmailHeader local DML option behavior"`},
 		{name: "locale", config: "opts.LocaleOptions = new Database.LocaleOptions();", want: `unsupported call "Database.DMLOptions.LocaleOptions local DML option behavior"`},
 		{name: "localize errors enabled", config: "opts.LocalizeErrors = true;", want: `unsupported call "Database.DMLOptions.LocalizeErrors local DML option behavior"`},
 	}
@@ -15683,7 +15697,7 @@ try {
 	Database.undelete(new List<Account>{deleted, active}, true);
 } catch (DmlException e) {
 	caught = true;
-	System.assert(e.getMessage().contains('Database.undelete failed'));
+	System.assert(e.getMessage().startsWith('Undelete failed. First exception on row 1'), e.getMessage());
 	System.assert(e.getMessage().contains('recycle bin'));
 }
 System.assert(caught);
@@ -15714,7 +15728,7 @@ try {
 	Database.insert(records, true);
 } catch (DmlException e) {
 	caught = true;
-	System.assert(e.getMessage().contains('Database.insert failed'));
+	System.assert(e.getMessage().startsWith('Insert failed. First exception on row 1'), e.getMessage());
 	System.assert(e.getMessage().contains('unknown field'));
 }
 System.assert(caught);
@@ -15850,7 +15864,7 @@ request.setComments('local submit');
 Approval.ProcessResult result = Approval.process(request);
 System.assertEquals(true, result.isSuccess());
 System.assertEquals(account.Id, result.getEntityId());
-System.assertEquals(0, result.getErrors().size());
+System.assertEquals(null, result.getErrors()); // approval_verify rows: null on success
 System.assertNotEquals(null, result.getInstanceId());
 System.assertEquals(1, result.getNewWorkitemIds().size());
 

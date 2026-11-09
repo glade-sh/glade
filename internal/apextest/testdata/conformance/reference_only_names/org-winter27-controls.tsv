@@ -1,0 +1,7 @@
+source_api	route	case_id	outcome	message
+62.0	isTest	target	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+62.0	isTest	missing	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+62.0	isTest	available	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false
+67.0	isTest	target	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	isTest	missing	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|true
+67.0	isTest	available	RUNTIME_ERROR	System.AssertException: Assertion Failed: OBS|false

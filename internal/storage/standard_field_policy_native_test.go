@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -137,13 +138,28 @@ func TestStandardFieldPolicyNativeSidecarProvenance(t *testing.T) {
 	if err := json.NewDecoder(stream).Decode(&policy); err != nil {
 		t.Fatal(err)
 	}
-	if policy.Version != 1 || len(policy.Sources) != 118 || len(policy.Gates) != 108 {
+	if policy.Version != 1 || len(policy.Sources) != 180 || len(policy.Gates) != 164 {
 		t.Fatal("incomplete native field policy")
 	}
 	for _, name := range []string{"definition.json", "org.tsv", "observations.json"} {
 		path := "../standard_case_source_evidence/" + name
 		if _, exists := policy.Sources[path]; !exists {
 			t.Fatalf("missing Case source native policy input: %s", path)
+		}
+	}
+	// standard_enhanced_commerce_orders isolates the enhanced orders setting;
+	// its 52 stable Order and OrderItem fields are the added gates.
+	for _, name := range []string{"definitions/feature-only.json", "definitions/setting-only.json", "definitions/feature-and-setting.json", "definitions/capitalized-settings.json", "named-fields.tsv", "org.tsv", "granted-describe.json.gz", "ungranted-runtime.tsv"} {
+		path := "../standard_enhanced_commerce_orders/" + name
+		if _, exists := policy.Sources[path]; !exists {
+			t.Fatalf("missing enhanced orders policy input: %s", path)
+		}
+	}
+	// standard_webstore_options carries the fourteen Boolean Options* fields.
+	for _, name := range []string{"definition.json", "org.tsv", "commerce-describe.json.gz"} {
+		path := "../standard_webstore_options/" + name
+		if _, exists := policy.Sources[path]; !exists {
+			t.Fatalf("missing WebStore options policy input: %s", path)
 		}
 	}
 	// standard_constructor_complete/org.tsv:2-55 and ORG-RUN.txt qualify the
@@ -157,6 +173,14 @@ func TestStandardFieldPolicyNativeSidecarProvenance(t *testing.T) {
 	// Every captured profile and API must remain an input, even where its
 	// broader field deltas are reserved for the edition/feature sidecar.
 	for _, profile := range []string{"P0", "P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "P9", "P10", "P11", "PU"} {
+		for _, suffix := range []string{"granted-rest", "routes", "global"} {
+			for _, name := range []string{"org.tsv"} {
+				path := "../standard_describe_api68_drift/" + profile + "-" + suffix + "/" + name
+				if _, exists := policy.Sources[path]; !exists {
+					t.Fatalf("missing API68 profile input: %s", path)
+				}
+			}
+		}
 		for _, api := range []string{"62", "67"} {
 			path := profile + "/api" + api + "/default/named-fields.tsv"
 			if _, exists := policy.Sources[path]; !exists {
@@ -232,10 +256,16 @@ func TestStandardFieldPolicyNativeSidecarProvenance(t *testing.T) {
 	}
 	for object, entry := range policy.Objects {
 		for _, field := range entry.Fields {
-			if object == "WebStore" && field.Name == "OptionsAutoFacetingEnabled" {
+			if object == "WebStore" && strings.HasPrefix(field.Name, "Options") {
 				// P10 supplies the rich facets; P8 named Apex also exposes the field.
 				if !reflect.DeepEqual(field, read("P10", "62")[object][field.Name]) {
 					t.Fatal("WebStore metadata differs from the enabled Commerce capture")
+				}
+				continue
+			}
+			if captured, ok := commerceEntitlementField(t, object, field.Name); ok {
+				if !reflect.DeepEqual(field, captured) {
+					t.Fatalf("commerce object metadata differs from its native describe: %s.%s", object, field.Name)
 				}
 				continue
 			}
@@ -253,6 +283,7 @@ func TestStandardFieldPolicyNativeSidecarProvenance(t *testing.T) {
 		}
 		captured["union"] = read("PU", api)
 		captured["case-source"] = read("P11", api)
+		captured["commerce-enabled"] = read("P10", api)
 		for _, gate := range policy.Gates {
 			if gate.Legacy {
 				if api == "62" {
@@ -263,13 +294,48 @@ func TestStandardFieldPolicyNativeSidecarProvenance(t *testing.T) {
 				}
 				continue
 			}
+			if (gate.Object == "AccountContactRelation" && gate.Field.Name == "Roles") ||
+				(gate.Object == "PricebookEntry" && gate.Field.Name == "ProductSellingModelId") ||
+				(gate.Object == "User" && gate.Field.Name == "MiddleName") {
+				path := filepath.Join(dir, "../standard_industries_schema", api+".0-"+gate.Object+"-"+gate.Field.Name+".json")
+				raw, err := os.ReadFile(path)
+				if err != nil {
+					t.Fatal(err)
+				}
+				var field standardDescribeField
+				if err := json.Unmarshal(raw, &field); err != nil {
+					t.Fatal(err)
+				}
+				if !reflect.DeepEqual(gate.Field, field) {
+					t.Fatalf("native gate metadata differs: %s.%s", gate.Object, gate.Field.Name)
+				}
+				continue
+			}
 			key := gate.Features[0]
+			if reflect.DeepEqual(gate.Features, []string{"EnhancedCommerceOrders"}) {
+				field, ok := enhancedOrdersGrantedField(t, api+".0", gate.Object, gate.Field.Name)
+				if !ok {
+					t.Fatalf("enhanced orders gate lacks native positive row: %s/%s.%s", api, gate.Object, gate.Field.Name)
+				}
+				// Picklist value lists are not policy input; their provenance
+				// is not the reviewed public allowlist.
+				field.RestrictedPicklist = false
+				if !reflect.DeepEqual(gate.Field, field) {
+					t.Fatalf("enhanced orders gate metadata differs: %s.%s", gate.Object, gate.Field.Name)
+				}
+				continue
+			}
 			if gate.Object == "Case" && gate.Field.Name == "SourceId" {
 				if !reflect.DeepEqual(gate.Features, []string{"LiveAgent", "LiveAgentEnabled"}) {
 					t.Fatal("Case source availability differs from the isolated native profile")
 				}
 				requireCaseSourceNativeMembership(t, api)
 				key = "case-source"
+			} else if gate.Object == "PricebookEntry" && (gate.Field.Name == "ActivePriceAdjustmentQuantity" || gate.Field.Name == "ProductSellingModelId") {
+				if !reflect.DeepEqual(gate.Features, []string{"B2BCommerce", "Communities", "CommerceEnabled"}) {
+					t.Fatal("pricebook availability differs from the Commerce enablement control")
+				}
+				key = "commerce-enabled"
 			} else if len(gate.Features) > 1 {
 				key = "union"
 			}
@@ -277,7 +343,7 @@ func TestStandardFieldPolicyNativeSidecarProvenance(t *testing.T) {
 			if !ok {
 				t.Fatalf("gate lacks native positive row: %s/%s.%s", api, gate.Object, gate.Field.Name)
 			}
-			if (api == "62" || key == "case-source") && !reflect.DeepEqual(gate.Field, field) {
+			if (api == "62" || key == "case-source" || key == "commerce-enabled") && !reflect.DeepEqual(gate.Field, field) {
 				t.Fatalf("gate metadata differs: %s.%s", gate.Object, gate.Field.Name)
 			}
 		}
@@ -327,4 +393,52 @@ func TestStandardFieldPolicyNativeConstructorAvailabilityRoutes(t *testing.T) {
 			})
 		}
 	}
+}
+
+func enhancedOrdersGrantedField(t *testing.T, api, object, name string) (standardDescribeField, bool) {
+	t.Helper()
+	file, err := os.Open(enhancedCommerceOrdersDir + "granted-describe.json.gz")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+	stream, err := gzip.NewReader(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var described map[string]map[string]map[string][]standardDescribeField
+	if err := json.NewDecoder(stream).Decode(&described); err != nil {
+		t.Fatal(err)
+	}
+	for _, field := range described[api]["setting-only"][object] {
+		if field.Name == name {
+			return field, true
+		}
+	}
+	return standardDescribeField{}, false
+}
+
+// The WebStore link and entitlement objects take their facets from a REST
+// describe in standard_webstore_options, identical at API 62 and 67.
+func commerceEntitlementField(t *testing.T, object, name string) (standardDescribeField, bool) {
+	t.Helper()
+	file, err := os.Open("../apextest/testdata/conformance/standard_webstore_options/commerce-describe.json.gz")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+	stream, err := gzip.NewReader(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var described map[string]map[string][]standardDescribeField
+	if err := json.NewDecoder(stream).Decode(&described); err != nil {
+		t.Fatal(err)
+	}
+	for _, field := range described["62.0"][object] {
+		if field.Name == name {
+			return field, true
+		}
+	}
+	return standardDescribeField{}, false
 }

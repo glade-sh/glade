@@ -9,6 +9,7 @@ import (
 // Native query parity is asserted by the 28-cell apextest family. These scope
 // controls preserve the existing behavior outside its explicit configuration;
 // they do not claim Salesforce answers for the carried configuration twins.
+// An unset model reads like Read (STD-OWD native rows).
 func TestConfiguredUserReadPermissionScope(t *testing.T) {
 	for _, model := range []string{"Read", "", "Private", "ReadWrite", "PublicReadOnly"} {
 		t.Run("model/"+model, func(t *testing.T) {
@@ -16,7 +17,7 @@ func TestConfiguredUserReadPermissionScope(t *testing.T) {
 			users := machine.Org.Objects["User"]
 			users.Definition.SharingModel = model
 			machine.Org.Objects["User"] = users
-			if got := machine.currentUserObjectPermission("User", "isAccessible"); got != (model == "Read") {
+			if got := machine.currentUserObjectPermission("User", "isAccessible"); got != (model == "Read" || model == "") {
 				t.Fatalf("configured %q read=%v", model, got)
 			}
 		})
@@ -66,9 +67,16 @@ func TestConfiguredUserReadPermissionScope(t *testing.T) {
 }
 
 func TestConfiguredUserReadHonorsExplicitPermissions(t *testing.T) {
-	for _, parent := range []string{"00e000000000002", "0PS000000000004"} {
+	for _, parent := range []string{"00e000000000002", "owned-set"} {
 		t.Run(parent, func(t *testing.T) {
 			machine := configuredUserReadMachine(t)
+			if parent == "owned-set" {
+				// The profile-owned set ID is seeded from the captured inventory.
+				parent = machine.profileOwnedPermissionSetID("00e000000000002")
+				if parent == "" {
+					t.Fatal("missing profile-owned permission set")
+				}
+			}
 			if !machine.currentUserObjectPermission("User", "isAccessible") || !machine.currentUserFieldPermission("User", "LastName", "isAccessible") {
 				t.Fatal("missing observed User/LastName read")
 			}
@@ -96,8 +104,12 @@ func TestConfiguredUserReadHonorsExplicitPermissions(t *testing.T) {
 	}
 	t.Run("permission-set-scope", func(t *testing.T) {
 		machine := configuredUserReadMachine(t)
-		if machine.currentUserObjectPermissionWithScope("User", "isAccessible", "0PS000000000001") {
-			t.Fatal("User read configuration escaped explicit permission-set scope")
+		// A scoped set adds to the user's grants (native rows u1ScopedOther and
+		// u1ScopedFalse in internal/apextest/testdata/conformance/permission_scope_mute/org.tsv): the observed
+		// User read is the user's own grant, so it stays effective. The rows were
+		// captured on a custom object, not on User.
+		if !machine.currentUserObjectPermissionWithScope("User", "isAccessible", "0PS000000000001") {
+			t.Fatal("scoped permission set removed the observed User read")
 		}
 	})
 }

@@ -37,7 +37,7 @@ func TestNetworkReflectionNativeVMAnonymousAndTestContextRoutes(t *testing.T) {
 			org := storage.NewOrgState()
 			storage.EnsureDeterministicPlatformData(&org)
 			if row[0] == "enabled" {
-				storage.ApplyOrgShape(&org, []string{"Communities"})
+				storage.ApplyOrgShape(&org, []string{"Communities", "NetworksEnabled"})
 			}
 			machine := New(nil)
 			machine.SetOrg(&org)

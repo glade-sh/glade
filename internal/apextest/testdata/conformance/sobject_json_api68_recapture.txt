@@ -1,0 +1,5 @@
+Addendum to sobject_json/ORG-RUN.txt, kept outside the fixture so its ASSIGNMENT-RUN.txt fixture digest stays bound to the captured tree.
+2026-11-04-recapture_source_apis=62.0,67.0,68.0
+2026-11-04-recapture=one fresh non-namespaced scratch org; source class and anonymous transport versioned per run; runtime REST API 68.0
+2026-11-04-recapture_routes=anonymous: 140 exact observations per API; named @IsTest: one exact assertion test per API, all passed
+2026-11-04-recapture_result=62 and 67 matched the existing rows on their respective routes; 68 = 67 on both routes (140 rows each); no duplicate rows added

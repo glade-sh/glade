@@ -102,8 +102,9 @@ func renderApexPageBlock(node *MarkupNode, ctx *RenderContext) (string, error) {
 	}
 	var out strings.Builder
 	out.WriteString("<div" + presentationAttributeText(outer) + `><div` + inner + eventAttrs + ` class="bPageBlock brandSecondaryBrd apexDefaultPageBlock secondaryPalette">`)
+	// The org writes the title table without a tbody (row SHCFormBlock).
 	if title != "" {
-		out.WriteString(`<div class="pbHeader"><table border="0" cellpadding="0" cellspacing="0" role="presentation"><tbody><tr><td class="pbTitle"><h2 class="mainTitle">` + html.EscapeString(title) + `</h2></td><td>&nbsp;</td></tr></tbody></table></div>`)
+		out.WriteString(`<div class="pbHeader"><table border="0" cellpadding="0" cellspacing="0" role="presentation"><tr><td class="pbTitle"><h2 class="mainTitle">` + html.EscapeString(title) + `</h2></td><td>&nbsp;</td></tr></table></div>`)
 	}
 	out.WriteString(`<div class="pbBody">` + children + `</div><div class="pbFooter secondaryPalette"><div class="bg"></div></div></div></div>`)
 	return out.String(), nil
@@ -129,7 +130,8 @@ func renderApexPageBlockSection(node *MarkupNode, ctx *RenderContext) (string, e
 		return renderApexContainer(node, "div", "pbSubsection", ctx)
 	}
 	for _, child := range children {
-		if !simplePresentationValue(child, "outputText") && !simplePresentationSectionItem(child) {
+		// A sectionHeader takes a data cell like an outputText (rows SHFBlockSection*).
+		if !simplePresentationValue(child, "outputText") && !simplePresentationSectionItem(child) && !isApexStructureTag(child, "sectionHeader") {
 			return renderApexContainer(node, "div", "pbSubsection", ctx)
 		}
 	}
@@ -217,7 +219,7 @@ func renderApexPageBlockSection(node *MarkupNode, ctx *RenderContext) (string, e
 			if err != nil {
 				return "", err
 			}
-			row.WriteString(`<td class="` + dataClass + `  first  last " colspan="2">` + value + `</td>`)
+			row.WriteString(`<td class="` + dataClass + `  first  last " colSpan="2">` + value + `</td>`)
 		}
 		visibleCells++
 	}
@@ -225,7 +227,10 @@ func renderApexPageBlockSection(node *MarkupNode, ctx *RenderContext) (string, e
 		for i := visibleCells; i < columns; i++ {
 			row.WriteString(presentationEmptyCells())
 		}
-		out.WriteString("<tbody><tr" + presentationAttributeText(rowAttrs) + ">" + row.String() + "</tr></tbody>")
+		// The org writes the row without a tbody and the cell's colSpan in
+		// camel case (rows SHFBlockSection*; browser DOM captures show the
+		// parsed tbody and colspan).
+		out.WriteString("<tr" + presentationAttributeText(rowAttrs) + ">" + row.String() + "</tr>")
 	}
 	out.WriteString("</table></div></div>")
 	return out.String(), nil

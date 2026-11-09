@@ -6,7 +6,7 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
-// Explicit business types reject person contact fields under ruling 38b.
+// Explicit business types reject person contact fields.
 // Native mixed controls: case349_review2/org.tsv:2-5,11-14 (API 62/67).
 func TestCase349MixedFullPersonNameRejectsBusinessPersonFields(t *testing.T) {
 	for _, field := range []string{"PersonHomePhone", "PersonMobilePhone"} {

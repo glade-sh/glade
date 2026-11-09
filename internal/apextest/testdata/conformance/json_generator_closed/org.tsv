@@ -1,0 +1,151 @@
+api	route	case	outcome
+62.0	anonymous	closed_null	uncaught|System.UnexpectedException: Salesforce System Error: 1879930454-208103 (308432432) (308432432)
+62.0	anonymous	closed_string	uncaught|System.UnexpectedException: Salesforce System Error: 2040463083-168217 (-1711441501) (-1711441501)
+62.0	anonymous	closed_boolean	uncaught|System.UnexpectedException: Salesforce System Error: 1275820533-233865 (1894968978) (1894968978)
+62.0	anonymous	closed_number	uncaught|System.UnexpectedException: Salesforce System Error: 1275820533-233871 (1578758177) (1578758177)
+62.0	anonymous	closed_array_null	uncaught|System.UnexpectedException: Salesforce System Error: 415264871-184749 (-2020771745) (-2020771745)
+62.0	anonymous	closed_object_end	caught|System.JSONException|Current context not an object but ROOT
+62.0	anonymous	getstring_then_null	uncaught|System.UnexpectedException: Salesforce System Error: 2130156698-273548 (-2020771745) (-2020771745)
+62.0	anonymous	open_write_control	accepted
+62.0	anonymous	closed_read_control	accepted
+67.0	anonymous	closed_null	uncaught|System.UnexpectedException: Salesforce System Error: 537041605-179520 (308432432) (308432432)
+67.0	anonymous	closed_string	uncaught|System.UnexpectedException: Salesforce System Error: 1879930454-208136 (-1711441501) (-1711441501)
+67.0	anonymous	closed_boolean	uncaught|System.UnexpectedException: Salesforce System Error: 537041605-179526 (1894968978) (1894968978)
+67.0	anonymous	closed_number	uncaught|System.UnexpectedException: Salesforce System Error: 537041605-179531 (1578758177) (1578758177)
+67.0	anonymous	closed_array_null	uncaught|System.UnexpectedException: Salesforce System Error: 901478123-227395 (-2020771745) (-2020771745)
+67.0	anonymous	closed_object_end	caught|System.JSONException|Current context not an object but ROOT
+67.0	anonymous	getstring_then_null	uncaught|System.UnexpectedException: Salesforce System Error: 2130156698-273730 (-2020771745) (-2020771745)
+67.0	anonymous	open_write_control	accepted
+67.0	anonymous	closed_read_control	accepted
+68.0	anonymous	closed_null	uncaught|System.UnexpectedException: Salesforce System Error: 1224021019-156977 (308432432) (308432432)
+68.0	anonymous	closed_string	uncaught|System.UnexpectedException: Salesforce System Error: 1879930454-208149 (-1711441501) (-1711441501)
+68.0	anonymous	closed_boolean	uncaught|System.UnexpectedException: Salesforce System Error: 2130156698-274049 (1894968978) (1894968978)
+68.0	anonymous	closed_number	uncaught|System.UnexpectedException: Salesforce System Error: 2040463083-168321 (1578758177) (1578758177)
+68.0	anonymous	closed_array_null	uncaught|System.UnexpectedException: Salesforce System Error: 1275820533-233894 (-2020771745) (-2020771745)
+68.0	anonymous	closed_object_end	caught|System.JSONException|Current context not an object but ROOT
+68.0	anonymous	getstring_then_null	uncaught|System.UnexpectedException: Salesforce System Error: 1879930454-208161 (-2020771745) (-2020771745)
+68.0	anonymous	open_write_control	accepted
+68.0	anonymous	closed_read_control	accepted
+62.0	isTest	closed_array_null	uncaught|System.UnexpectedException: Salesforce System Error: 415264871-184924 (-213573478) (-213573478)
+62.0	isTest	closed_boolean	uncaught|System.UnexpectedException: Salesforce System Error: 415264871-184925 (-1744643145) (-1744643145)
+62.0	isTest	closed_null	uncaught|System.UnexpectedException: Salesforce System Error: 415264871-184926 (-803610399) (-803610399)
+62.0	isTest	closed_number	uncaught|System.UnexpectedException: Salesforce System Error: 415264871-184927 (-680834672) (-680834672)
+62.0	isTest	closed_object_end	caught|System.JSONException|Current context not an object but ROOT
+62.0	isTest	closed_read_control	accepted
+62.0	isTest	closed_string	uncaught|System.UnexpectedException: Salesforce System Error: 415264871-184928 (997264673) (997264673)
+62.0	isTest	getstring_then_null	uncaught|System.UnexpectedException: Salesforce System Error: 415264871-184929 (-213573478) (-213573478)
+62.0	isTest	open_write_control	accepted
+67.0	isTest	closed_array_null	uncaught|System.UnexpectedException: Salesforce System Error: 415264871-184934 (-213573478) (-213573478)
+67.0	isTest	closed_boolean	uncaught|System.UnexpectedException: Salesforce System Error: 415264871-184935 (-1744643145) (-1744643145)
+67.0	isTest	closed_null	uncaught|System.UnexpectedException: Salesforce System Error: 415264871-184936 (-803610399) (-803610399)
+67.0	isTest	closed_number	uncaught|System.UnexpectedException: Salesforce System Error: 415264871-184937 (-680834672) (-680834672)
+67.0	isTest	closed_object_end	caught|System.JSONException|Current context not an object but ROOT
+67.0	isTest	closed_read_control	accepted
+67.0	isTest	closed_string	uncaught|System.UnexpectedException: Salesforce System Error: 415264871-184938 (997264673) (997264673)
+67.0	isTest	getstring_then_null	uncaught|System.UnexpectedException: Salesforce System Error: 415264871-184939 (-213573478) (-213573478)
+67.0	isTest	open_write_control	accepted
+68.0	isTest	closed_array_null	uncaught|System.UnexpectedException: Salesforce System Error: 2130156698-274086 (-213573478) (-213573478)
+68.0	isTest	closed_boolean	uncaught|System.UnexpectedException: Salesforce System Error: 2130156698-274087 (-1744643145) (-1744643145)
+68.0	isTest	closed_null	uncaught|System.UnexpectedException: Salesforce System Error: 2130156698-274088 (-803610399) (-803610399)
+68.0	isTest	closed_number	uncaught|System.UnexpectedException: Salesforce System Error: 2130156698-274089 (-680834672) (-680834672)
+68.0	isTest	closed_object_end	caught|System.JSONException|Current context not an object but ROOT
+68.0	isTest	closed_read_control	accepted
+68.0	isTest	closed_string	uncaught|System.UnexpectedException: Salesforce System Error: 2130156698-274090 (997264673) (997264673)
+68.0	isTest	getstring_then_null	uncaught|System.UnexpectedException: Salesforce System Error: 2130156698-274091 (-213573478) (-213573478)
+68.0	isTest	open_write_control	accepted
+62.0	isTest	closed_array_end	caught|System.JSONException|Current context not an ARRAY but ROOT
+62.0	isTest	closed_field_name	caught|System.JSONException|Can not write a field name, expecting a value
+62.0	isTest	open_root_array_end	caught|System.JSONException|Current context not an ARRAY but ROOT
+62.0	isTest	open_root_object_end	caught|System.JSONException|Current context not an object but ROOT
+62.0	anonymous	closed_array_end	caught|System.JSONException|Current context not an ARRAY but ROOT
+62.0	anonymous	open_root_array_end	caught|System.JSONException|Current context not an ARRAY but ROOT
+62.0	anonymous	open_root_object_end	caught|System.JSONException|Current context not an object but ROOT
+62.0	anonymous	closed_field_name	caught|System.JSONException|Can not write a field name, expecting a value
+67.0	isTest	closed_array_end	caught|System.JSONException|Current context not an ARRAY but ROOT
+67.0	isTest	closed_field_name	caught|System.JSONException|Can not write a field name, expecting a value
+67.0	isTest	open_root_array_end	caught|System.JSONException|Current context not an ARRAY but ROOT
+67.0	isTest	open_root_object_end	caught|System.JSONException|Current context not an object but ROOT
+67.0	anonymous	closed_array_end	caught|System.JSONException|Current context not an ARRAY but ROOT
+67.0	anonymous	open_root_array_end	caught|System.JSONException|Current context not an ARRAY but ROOT
+67.0	anonymous	open_root_object_end	caught|System.JSONException|Current context not an object but ROOT
+67.0	anonymous	closed_field_name	caught|System.JSONException|Can not write a field name, expecting a value
+68.0	isTest	closed_array_end	caught|System.JSONException|Current context not an ARRAY but ROOT
+68.0	isTest	closed_field_name	caught|System.JSONException|Can not write a field name, expecting a value
+68.0	isTest	open_root_array_end	caught|System.JSONException|Current context not an ARRAY but ROOT
+68.0	isTest	open_root_object_end	caught|System.JSONException|Current context not an object but ROOT
+68.0	anonymous	closed_array_end	caught|System.JSONException|Current context not an ARRAY but ROOT
+68.0	anonymous	open_root_array_end	caught|System.JSONException|Current context not an ARRAY but ROOT
+68.0	anonymous	open_root_object_end	caught|System.JSONException|Current context not an object but ROOT
+68.0	anonymous	closed_field_name	caught|System.JSONException|Can not write a field name, expecting a value
+62.0	isTest	closed_null_field	caught|System.JSONException|Can not write a field name, expecting a value
+62.0	isTest	closed_object_field	caught|System.JSONException|Can not write a field name, expecting a value
+62.0	isTest	closed_object_value	"caught|System.JSONException|Cannot store to char array because ""this._outputBuffer"" is null"
+62.0	isTest	closed_start_array	uncaught|System.UnexpectedException: Salesforce System Error: 1275820533-240456 (25705248) (25705248)
+62.0	isTest	closed_start_object	uncaught|System.UnexpectedException: Salesforce System Error: 1275820533-240457 (126938116) (126938116)
+62.0	isTest	closed_string_field	caught|System.JSONException|Can not write a field name, expecting a value
+62.0	isTest	open_root_field_name	caught|System.JSONException|Can not write a field name, expecting a value
+62.0	anonymous	closed_start_object	uncaught|System.UnexpectedException: Salesforce System Error: 1275820533-240458 (-172240137) (-172240137)
+62.0	anonymous	closed_start_array	uncaught|System.UnexpectedException: Salesforce System Error: 2040463083-168753 (-226210797) (-226210797)
+62.0	anonymous	closed_string_field	caught|System.JSONException|Can not write a field name, expecting a value
+62.0	anonymous	closed_null_field	caught|System.JSONException|Can not write a field name, expecting a value
+62.0	anonymous	closed_object_field	caught|System.JSONException|Can not write a field name, expecting a value
+62.0	anonymous	closed_object_value	"caught|System.JSONException|Cannot store to char array because ""this._outputBuffer"" is null"
+62.0	anonymous	open_root_field_name	caught|System.JSONException|Can not write a field name, expecting a value
+67.0	isTest	closed_null_field	caught|System.JSONException|Can not write a field name, expecting a value
+67.0	isTest	closed_object_field	caught|System.JSONException|Can not write a field name, expecting a value
+67.0	isTest	closed_object_value	"caught|System.JSONException|Cannot store to char array because ""this._outputBuffer"" is null"
+67.0	isTest	closed_start_array	uncaught|System.UnexpectedException: Salesforce System Error: 2130156698-274677 (25705248) (25705248)
+67.0	isTest	closed_start_object	uncaught|System.UnexpectedException: Salesforce System Error: 2130156698-274678 (126938116) (126938116)
+67.0	isTest	closed_string_field	caught|System.JSONException|Can not write a field name, expecting a value
+67.0	isTest	open_root_field_name	caught|System.JSONException|Can not write a field name, expecting a value
+67.0	anonymous	closed_start_object	uncaught|System.UnexpectedException: Salesforce System Error: 2040463083-168814 (-172240137) (-172240137)
+67.0	anonymous	closed_start_array	uncaught|System.UnexpectedException: Salesforce System Error: 901478123-228156 (-226210797) (-226210797)
+67.0	anonymous	closed_string_field	caught|System.JSONException|Can not write a field name, expecting a value
+67.0	anonymous	closed_null_field	caught|System.JSONException|Can not write a field name, expecting a value
+67.0	anonymous	closed_object_field	caught|System.JSONException|Can not write a field name, expecting a value
+67.0	anonymous	closed_object_value	"caught|System.JSONException|Cannot store to char array because ""this._outputBuffer"" is null"
+67.0	anonymous	open_root_field_name	caught|System.JSONException|Can not write a field name, expecting a value
+68.0	isTest	closed_null_field	caught|System.JSONException|Can not write a field name, expecting a value
+68.0	isTest	closed_object_field	caught|System.JSONException|Can not write a field name, expecting a value
+68.0	isTest	closed_object_value	"caught|System.JSONException|Cannot store to char array because ""this._outputBuffer"" is null"
+68.0	isTest	closed_start_array	uncaught|System.UnexpectedException: Salesforce System Error: 901478123-228177 (25705248) (25705248)
+68.0	isTest	closed_start_object	uncaught|System.UnexpectedException: Salesforce System Error: 901478123-228178 (126938116) (126938116)
+68.0	isTest	closed_string_field	caught|System.JSONException|Can not write a field name, expecting a value
+68.0	isTest	open_root_field_name	caught|System.JSONException|Can not write a field name, expecting a value
+68.0	anonymous	closed_start_object	uncaught|System.UnexpectedException: Salesforce System Error: 415264871-185133 (-172240137) (-172240137)
+68.0	anonymous	closed_start_array	uncaught|System.UnexpectedException: Salesforce System Error: 901478123-228179 (-226210797) (-226210797)
+68.0	anonymous	closed_string_field	caught|System.JSONException|Can not write a field name, expecting a value
+68.0	anonymous	closed_null_field	caught|System.JSONException|Can not write a field name, expecting a value
+68.0	anonymous	closed_object_field	caught|System.JSONException|Can not write a field name, expecting a value
+68.0	anonymous	closed_object_value	"caught|System.JSONException|Cannot store to char array because ""this._outputBuffer"" is null"
+68.0	anonymous	open_root_field_name	caught|System.JSONException|Can not write a field name, expecting a value
+62.0	isTest	closed_blob	uncaught|System.UnexpectedException: Salesforce System Error: 1275820533-241108 (-1336648444) (-1336648444)
+62.0	isTest	closed_date	uncaught|System.UnexpectedException: Salesforce System Error: 1275820533-241109 (-557526838) (-557526838)
+62.0	isTest	closed_datetime	uncaught|System.UnexpectedException: Salesforce System Error: 1275820533-241110 (-1154254672) (-1154254672)
+62.0	isTest	closed_id	uncaught|System.UnexpectedException: Salesforce System Error: 1275820533-241111 (507501014) (507501014)
+62.0	isTest	closed_time	uncaught|System.UnexpectedException: Salesforce System Error: 1275820533-241112 (-1386060875) (-1386060875)
+62.0	anonymous	closed_date	uncaught|System.UnexpectedException: Salesforce System Error: 1879930454-209185 (747065708) (747065708)
+62.0	anonymous	closed_datetime	uncaught|System.UnexpectedException: Salesforce System Error: 1224021019-157874 (-1035924420) (-1035924420)
+62.0	anonymous	closed_time	uncaught|System.UnexpectedException: Salesforce System Error: 1275820533-241121 (-1200062043) (-1200062043)
+62.0	anonymous	closed_id	uncaught|System.UnexpectedException: Salesforce System Error: 2130156698-275015 (-1562153010) (-1562153010)
+62.0	anonymous	closed_blob	uncaught|System.UnexpectedException: Salesforce System Error: 537041605-181212 (-1129555526) (-1129555526)
+67.0	isTest	closed_blob	uncaught|System.UnexpectedException: Salesforce System Error: 537041605-181223 (-1336648444) (-1336648444)
+67.0	isTest	closed_date	uncaught|System.UnexpectedException: Salesforce System Error: 537041605-181224 (-557526838) (-557526838)
+67.0	isTest	closed_datetime	uncaught|System.UnexpectedException: Salesforce System Error: 537041605-181225 (-1154254672) (-1154254672)
+67.0	isTest	closed_id	uncaught|System.UnexpectedException: Salesforce System Error: 537041605-181226 (507501014) (507501014)
+67.0	isTest	closed_time	uncaught|System.UnexpectedException: Salesforce System Error: 537041605-181227 (-1386060875) (-1386060875)
+67.0	anonymous	closed_date	uncaught|System.UnexpectedException: Salesforce System Error: 2130156698-275022 (747065708) (747065708)
+67.0	anonymous	closed_datetime	uncaught|System.UnexpectedException: Salesforce System Error: 901478123-228819 (-1035924420) (-1035924420)
+67.0	anonymous	closed_time	uncaught|System.UnexpectedException: Salesforce System Error: 901478123-228824 (-1200062043) (-1200062043)
+67.0	anonymous	closed_id	uncaught|System.UnexpectedException: Salesforce System Error: 2040463083-169502 (-1562153010) (-1562153010)
+67.0	anonymous	closed_blob	uncaught|System.UnexpectedException: Salesforce System Error: 1224021019-157901 (-1129555526) (-1129555526)
+68.0	isTest	closed_blob	uncaught|System.UnexpectedException: Salesforce System Error: 2130156698-275044 (-1336648444) (-1336648444)
+68.0	isTest	closed_date	uncaught|System.UnexpectedException: Salesforce System Error: 2130156698-275045 (-557526838) (-557526838)
+68.0	isTest	closed_datetime	uncaught|System.UnexpectedException: Salesforce System Error: 2130156698-275046 (-1154254672) (-1154254672)
+68.0	isTest	closed_id	uncaught|System.UnexpectedException: Salesforce System Error: 2130156698-275047 (507501014) (507501014)
+68.0	isTest	closed_time	uncaught|System.UnexpectedException: Salesforce System Error: 2130156698-275048 (-1386060875) (-1386060875)
+68.0	anonymous	closed_date	uncaught|System.UnexpectedException: Salesforce System Error: 1224021019-157913 (747065708) (747065708)
+68.0	anonymous	closed_datetime	uncaught|System.UnexpectedException: Salesforce System Error: 537041605-181275 (-1035924420) (-1035924420)
+68.0	anonymous	closed_time	uncaught|System.UnexpectedException: Salesforce System Error: 1879930454-209239 (-1200062043) (-1200062043)
+68.0	anonymous	closed_id	uncaught|System.UnexpectedException: Salesforce System Error: 537041605-181276 (-1562153010) (-1562153010)
+68.0	anonymous	closed_blob	uncaught|System.UnexpectedException: Salesforce System Error: 2130156698-275055 (-1129555526) (-1129555526)

@@ -247,7 +247,7 @@
           },
           "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nSchema.DescribeFieldResult f=Task.WhatId.getDescribe();o.put('relationship',f.getRelationshipName());o.put('targets',String.valueOf(f.getReferenceTo()));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126TASKCHILD_003|'+JSON.serialize(o));",
           "objects": {},
-          "carryReason": "Task.WhatId target list needs an org/catalog decision; known gap in the frozen release scope.",
+          "carryReason": "Task.WhatId targets: List text truncation and the drop of shape-absent targets match native (record_type_shape); the plain-shape global describe still lists objects a plain Developer org lacks and the catalog omits PrivacyRTBFRequest (record_type_shape plain_targets rows).",
           "carryOwner": "classify the one shot baselines and the six vetted candidate repos"
         },
         "isTest": {
@@ -292,7 +292,7 @@
             "C126Test"
           ],
           "objects": {},
-          "carryReason": "Task.WhatId target list needs an org/catalog decision; known gap in the frozen release scope.",
+          "carryReason": "Task.WhatId targets: List text truncation and the drop of shape-absent targets match native (record_type_shape); the plain-shape global describe still lists objects a plain Developer org lacks and the catalog omits PrivacyRTBFRequest (record_type_shape plain_targets rows).",
           "carryOwner": "classify the one shot baselines and the six vetted candidate repos"
         }
       }

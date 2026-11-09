@@ -232,7 +232,7 @@ func TestScratchFeatureMapping(t *testing.T) {
 		"AddCustomApps": false, "AddCustomApps:": false, "AddCustomApps:x": false,
 		"B2BCommerce": true, "CommerceEnabled": true, "LiveAgent": true, "LiveAgentEnabled": true,
 		"OrderManagement": true, "Quotes": true, "ApexUserModeWithPermset": true,
-		"MultiCurrency:1": false, "Knowledge": false, "ServiceCloud": false, "": false,
+		"MultiCurrency:1": false, "Knowledge": true, "ServiceCloud": false, "": false,
 	} {
 		if got := project.IsMappedScratchFeature(feature); got != want {
 			t.Errorf("IsMappedScratchFeature(%q) = %v, want %v", feature, got, want)

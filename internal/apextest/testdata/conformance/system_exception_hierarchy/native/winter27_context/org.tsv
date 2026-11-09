@@ -1,0 +1,37 @@
+api	route	type	exceptionMessage
+62.0	isTest	AuraHandledException	System.AssertException: Assertion Failed: OBS|constructed
+62.0	isTest	InvalidParameterValueException	System.AssertException: Assertion Failed: OBS|constructed
+62.0	isTest	NoAccessException	System.AssertException: Assertion Failed: OBS|constructed
+62.0	isTest	NoDataFoundException	System.AssertException: Assertion Failed: OBS|constructed
+62.0	isTest	TouchHandledException	System.AssertException: Assertion Failed: OBS|constructed
+62.0	isTest	TypeException	System.AssertException: Assertion Failed: OBS|constructed
+62.0	named	AuraHandledException	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+62.0	named	InvalidParameterValueException	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+62.0	named	NoAccessException	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+62.0	named	NoDataFoundException	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+62.0	named	TouchHandledException	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+62.0	named	TypeException	System.AssertException: Assertion Failed: OBS|constructed
+67.0	isTest	AuraHandledException	System.AssertException: Assertion Failed: OBS|constructed
+67.0	isTest	InvalidParameterValueException	System.AssertException: Assertion Failed: OBS|constructed
+67.0	isTest	NoAccessException	System.AssertException: Assertion Failed: OBS|constructed
+67.0	isTest	NoDataFoundException	System.AssertException: Assertion Failed: OBS|constructed
+67.0	isTest	TouchHandledException	System.AssertException: Assertion Failed: OBS|constructed
+67.0	isTest	TypeException	System.AssertException: Assertion Failed: OBS|constructed
+67.0	named	AuraHandledException	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+67.0	named	InvalidParameterValueException	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+67.0	named	NoAccessException	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+67.0	named	NoDataFoundException	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+67.0	named	TouchHandledException	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+67.0	named	TypeException	System.AssertException: Assertion Failed: OBS|constructed
+68.0	isTest	AuraHandledException	System.AssertException: Assertion Failed: OBS|constructed
+68.0	isTest	InvalidParameterValueException	System.AssertException: Assertion Failed: OBS|constructed
+68.0	isTest	NoAccessException	System.AssertException: Assertion Failed: OBS|constructed
+68.0	isTest	NoDataFoundException	System.AssertException: Assertion Failed: OBS|constructed
+68.0	isTest	TouchHandledException	System.AssertException: Assertion Failed: OBS|constructed
+68.0	isTest	TypeException	System.AssertException: Assertion Failed: OBS|constructed
+68.0	named	AuraHandledException	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+68.0	named	InvalidParameterValueException	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+68.0	named	NoAccessException	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+68.0	named	NoDataFoundException	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+68.0	named	TouchHandledException	System.LimitException: Can only throw this exception type from VisualForce or Aura context
+68.0	named	TypeException	System.AssertException: Assertion Failed: OBS|constructed

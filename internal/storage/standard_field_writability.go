@@ -58,7 +58,7 @@ func StandardFieldDynamicPutReadOnly(objectName, fieldName string) bool {
 		return true
 	}
 	if !standardRTEMEventAssignable(objectName) {
-		return false
+		return standardQuoteDerivedField(objectName, fieldName)
 	}
 	definition, known := StandardObjectDefinition(objectName)
 	if !known {
@@ -91,4 +91,29 @@ var rtemEventAssignableObjects = map[string]struct{}{
 func standardRTEMEventAssignable(objectName string) bool {
 	_, ok := rtemEventAssignableObjects[strings.ToLower(strings.TrimSpace(objectName))]
 	return ok
+}
+
+// Quote and QuoteLineItem derived totals are neither createable nor updateable.
+// The quote_totals_followup rows capture dynamic put rejecting Quote.GrandTotal
+// and QuoteLineItem.Subtotal with "is not editable"; the other derived fields
+// share the same describe flags.
+func standardQuoteDerivedField(objectName, fieldName string) bool {
+	derived := map[string][]string{"quote": {"GrandTotal", "Discount"}, "quotelineitem": {"Subtotal", "TotalPrice", "ListPrice"}}[strings.ToLower(objectName)]
+	listed := false
+	for _, name := range derived {
+		listed = listed || strings.EqualFold(name, fieldName)
+	}
+	if !listed {
+		return false
+	}
+	definition, known := StandardObjectDefinition(objectName)
+	if !known {
+		return false
+	}
+	for name, field := range definition.Fields {
+		if strings.EqualFold(name, fieldName) {
+			return field.Type != FieldID && !FieldFlagValue(field.Createable, true) && !FieldFlagValue(field.Updateable, true)
+		}
+	}
+	return false
 }

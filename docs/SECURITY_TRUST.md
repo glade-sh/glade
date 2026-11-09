@@ -13,15 +13,16 @@ not public issues. If GitHub reporting is unavailable, use
 - `govulncheck` checks reachable vulnerabilities in Go dependencies and the Go
   standard library.
 - CodeQL runs the Go security-extended query suite with event-specific query
-  filters. Both initialization profiles declare `**/*_generated.go` in
-  `paths-ignore`. Pull requests use only the fast profile. Full scans run weekly,
+  filters. Both initialization profiles declare generated files in `paths-ignore`; the
+  fast profile also declares `*_test.go` and `testdata`. Pull requests use only the fast profile. Full scans run weekly,
   on release tags, and on manual Security dispatch. Analysis has a 300-second
-  deadline, with query evaluation capped at 240 seconds. Timeouts warn; analysis
-  errors and unsuppressed alerts fail. `Required CI` aggregates the fast job.
+  deadline, with query evaluation capped at 240 seconds. Timeouts warn (a known
+  issue for full scans); analysis errors and unsuppressed alerts fail. `Required CI` does not
+  aggregate CodeQL; release tags require a successful full scan.
   The emergency job limit is 15 minutes. Go uses a manual build;
   [GitHub documents](https://docs.github.com/en/code-security/reference/code-scanning/troubleshoot-analysis-errors/alerts-in-generated-code)
   that compiled Go analysis follows the build, so this path setting alone does
-  not prove generated Go is excluded from the database or that analysis will
+  not prove those paths are excluded from the database or that analysis will
   finish within the budget. On large changes the scan often times out; a
   timed-out scan is incomplete coverage, not a clean result.
   Both profiles exclude `go/cookie-httponly-not-set` and

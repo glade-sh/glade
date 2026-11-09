@@ -92,7 +92,17 @@ func runCapturedSemanticBodyProjects(t *testing.T, dir string) {
 			} else if row[1] == "istest" {
 				classes["GardenBodyTest"] = "@IsTest private class GardenBodyTest { @IsTest static void observe() { " + body + " } }"
 			}
-			idx := nativeBoundaryIndex(t, row[0], classes, objects)
+			var grants []nativeBoundaryMetadata
+			if _, ok := objects["TokenEntry__c"]; ok {
+				// The native anonymous custom_assignment row reads the
+				// Value__c token describe. admin_field_grant_sources
+				// (2026-11-05): anonymous Apex run as the administrator sees an
+				// ordinary custom field only through an assigned permission set
+				// or a profile grant, so the capture user held one; replay a
+				// read/edit grant on the field.
+				grants = append(grants, nativeBoundaryMetadata{permissionSets: map[string]string{"TokenEntryAccess": `<?xml version="1.0" encoding="UTF-8"?><PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata"><label>Token Entry Access</label><fieldPermissions><editable>true</editable><field>TokenEntry__c.Value__c</field><readable>true</readable></fieldPermissions></PermissionSet>`}})
+			}
+			idx := nativeBoundaryIndexWithClassAPIs(t, row[0], classes, objects, nil, grants...)
 			analysis := sema.Analyze(idx)
 			if row[1] == "anonymous" {
 				analysis = sema.AnalyzeAnonymous(idx, body, row[0])
@@ -116,6 +126,9 @@ func runCapturedSemanticBodyProjects(t *testing.T, dir string) {
 			}
 			org := orgFromIndex(idx)
 			org.APIVersion = row[0]
+			if err := applyConfiguredTestPermissions(&org, loadProjectForTest(t, idx.Project.Root)); err != nil {
+				t.Fatal(err)
+			}
 			runner := newConformanceRunner(t, idx, conformanceRunnerOptions{LinkProject: true, Org: &org})
 			if _, err := runner.execute(program); err != nil {
 				t.Fatal(err)

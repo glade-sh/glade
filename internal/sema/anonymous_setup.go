@@ -26,7 +26,9 @@ type anonymousSetup struct {
 	known                 map[string]TypeReference
 	namespace             string
 	deps                  map[string]bool
+	opaqueDeps            map[string]bool
 	sourceNamespaces      map[string]bool
+	depSourceNamespaces   map[string]bool
 	queryDeclaredObjects  []schema.Object
 	visualforcePageNames  map[string]bool
 	visualforcePagesKnown bool
@@ -81,7 +83,9 @@ func buildAnonymousSetup(index typesys.Index) (*anonymousSetup, bool) {
 		known:                 analyzer.known,
 		namespace:             analyzer.namespace,
 		deps:                  analyzer.deps,
+		opaqueDeps:            analyzer.opaqueDeps,
 		sourceNamespaces:      analyzer.sourceNamespaces,
+		depSourceNamespaces:   analyzer.depSourceNamespaces,
 		queryDeclaredObjects:  analyzer.queryDeclaredObjects,
 		visualforcePageNames:  analyzer.visualforcePageNames,
 		visualforcePagesKnown: analyzer.visualforcePagesKnown,
@@ -131,7 +135,9 @@ func (s *anonymousSetup) analyzer() *Analyzer {
 		canonicalNames:        newSemaCanonicalNames(semaAnalysisCanonicalNameLimit),
 		namespace:             s.namespace,
 		deps:                  maps.Clone(s.deps),
+		opaqueDeps:            maps.Clone(s.opaqueDeps),
 		sourceNamespaces:      maps.Clone(s.sourceNamespaces),
+		depSourceNamespaces:   s.depSourceNamespaces,
 		queryDeclaredObjects:  append([]schema.Object(nil), s.queryDeclaredObjects...),
 		visualforcePageNames:  s.visualforcePageNames,
 		visualforcePagesKnown: s.visualforcePagesKnown,

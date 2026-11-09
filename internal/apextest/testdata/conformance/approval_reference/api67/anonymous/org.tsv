@@ -1,0 +1,5 @@
+case	observation
+ordinary	"OK"
+muting	"OK"
+component	"OK"
+wrong	"FIELD_INTEGRITY_EXCEPTION"

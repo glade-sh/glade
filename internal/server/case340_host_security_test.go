@@ -11,6 +11,7 @@ import (
 )
 
 func TestCase340HostAuthorityGuard(t *testing.T) {
+	t.Setenv("GLADE_SERVER_CAPABILITY", "host-test-secret")
 	next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusNoContent) })
 	for _, tc := range []struct {
 		addr, host, forwarded string
@@ -28,6 +29,7 @@ func TestCase340HostAuthorityGuard(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, "http://localhost/", nil)
 			req.Host = tc.host
 			req.Header.Set("X-Forwarded-Host", tc.forwarded)
+			req.Header.Set("X-Glade-Capability", "host-test-secret")
 			req.Header.Set("Sec-Fetch-Site", "same-origin")
 			rec := httptest.NewRecorder()
 			GuardHTTPAuthority(next, tc.addr).ServeHTTP(rec, req)
@@ -71,8 +73,10 @@ func TestCase340AnonymousGETRequiresCapability(t *testing.T) {
 }
 
 func TestCase340ConfiguredHostnameWithResolvedListener(t *testing.T) {
+	t.Setenv("GLADE_SERVER_CAPABILITY", "host-test-secret")
 	next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusNoContent) })
 	req := httptest.NewRequest(http.MethodGet, "http://preview.example:1789/", nil)
+	req.Header.Set("X-Glade-Capability", "host-test-secret")
 	req.Header.Set("Sec-Fetch-Site", "same-origin")
 	rec := httptest.NewRecorder()
 	GuardHTTPAuthority(next, "192.0.2.10:1789", "preview.example:1789").ServeHTTP(rec, req)

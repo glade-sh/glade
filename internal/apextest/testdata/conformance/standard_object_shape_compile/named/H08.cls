@@ -1,0 +1,1 @@
+public class H08 extends NsHolder { public static void m() { NsHolder.Quote q = new NsHolder.Quote(); } }

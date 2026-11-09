@@ -1,0 +1,1 @@
+try { KbManagement.PublishingService.assignDraftArticleTask('ka0000000000001','005000000000001AAA','Review',Datetime.now(),true); System.debug('B4:assign_missing:returned'); } catch(Exception e) { System.debug('B4:assign_missing:'+e.getTypeName()); }

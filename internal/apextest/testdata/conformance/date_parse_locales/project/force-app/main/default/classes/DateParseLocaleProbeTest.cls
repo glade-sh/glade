@@ -1,0 +1,1 @@
+@IsTest public class DateParseLocaleProbeTest { @IsTest static void observe() { System.assert(false, 'OBS|' + JSON.serialize(DateParseLocaleProbe.observeLocales(new List<String>{'de_DE','en_GB','no_NO'}))); } }

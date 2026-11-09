@@ -1,0 +1,1 @@
+Account a=new Account(Name='Permission probe'); insert a; Approval.lock(a); a.Name='Changed'; Database.SaveResult r=Database.update(a,false); System.debug('PERMISSION_ROW|'+r.isSuccess()+':'+(r.isSuccess()?'NONE':String.valueOf(r.getErrors()[0].getStatusCode())));

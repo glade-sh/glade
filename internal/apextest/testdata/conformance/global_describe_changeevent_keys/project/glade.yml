@@ -1,0 +1,2 @@
+project:
+  managedPackageDependencies: ["gladens004:./provider:1.0"]

@@ -38,7 +38,10 @@ func TestProjectManifestIncludesOnlyFileListsReview(t *testing.T) {
 			continue
 		}
 		switch field.Name {
-		case "SourceNamespaces", "SourceWarnings", "ExtraMetadataDirs":
+		case "SourceNamespaces", "SourceWarnings", "ExtraMetadataDirs", "HierarchyAccessObjects":
+		// Excluded source is not an input; the governing .forceignore files
+		// are fingerprinted as config files instead.
+		case "ForceIgnored", "ForceIgnoreConfigs":
 		default:
 			t.Errorf("unclassified project string slice %s", field.Name)
 		}

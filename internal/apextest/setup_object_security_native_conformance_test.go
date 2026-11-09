@@ -47,6 +47,11 @@ func TestSetupObjectSecurityEnforcedAPI62NativeProjectRoute(t *testing.T) {
 			if err != nil {
 				return err
 			}
+			// The legacy observation preceded the Communities settings deploy, so
+			// that file must not feed the org shape here.
+			if strings.HasSuffix(name, ".settings-meta.xml") {
+				return nil
+			}
 			writeFile(t, filepath.Join(root, name), string(body))
 			return nil
 		})

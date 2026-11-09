@@ -26,9 +26,7 @@ func TestNamespacedDependencyAccessNativeConformance(t *testing.T) {
 // The consumer org has the managed package installed and no namespace of its
 // own. Unprefixed names for the installed package are rejected there.
 func TestNonNamespacedConsumerDependencyAccessNativeConformance(t *testing.T) {
-	// profile_unprefixed: Glade does not validate Profile access entries at all
-	// (permission sets only); that gap is carried, not part of this ticket.
-	runDependencyAccessNativeConformance(t, "dependency_access_nonnamespaced_consumer", 34, 17, "profile_unprefixed")
+	runDependencyAccessNativeConformance(t, "dependency_access_nonnamespaced_consumer", 34, 17)
 }
 
 func runDependencyAccessNativeConformance(t *testing.T, name string, wantRows, wantCases int, skipCases ...string) {
@@ -132,10 +130,10 @@ func runDependencyAccessNativeConformance(t *testing.T, name string, wantRows, w
 				if (err == nil) != (row[2] == "DEPLOY_OK") {
 					t.Fatalf("strict loader error=%v, native=%s", err, row[2])
 				}
-				var want []string
-				if row[2] == "DEPLOY_OK" {
-					want = []string{"ConsumerAccessPage"}
-				}
+				// Metadata that names a missing page or class fails the deploy
+				// (the strict loader above), but it belongs to no page: the
+				// consumer's own page still registers.
+				want := []string{"ConsumerAccessPage"}
 				if got := PageNames(p); !slices.Equal(got, want) {
 					t.Fatalf("PageNames=%v want %v", got, want)
 				}

@@ -26,11 +26,14 @@ System.assertEquals(null,found[0].getSnippet('Title'));
 					t.Fatal(err)
 				}
 				org := testDataOrg()
+				// Knowledge__ka and Knowledge__kav exist only with the captured Knowledge setting (org_knowledge_availability/org.tsv).
+				storage.ApplyOrgShape(&org, []string{"Knowledge", "KnowledgeEnabled"})
 				for _, name := range []string{"Knowledge__kav", "Knowledge__ka", "KnowledgeArticleVersion"} {
 					storage.EnsureStandardObject(&org, name)
 				}
 				machine := New(nil)
 				machine.SetOrg(&org)
+				machine.SetCurrentUser(storage.Record{ID: storage.DefaultUserID, Object: "User", Fields: map[string]storage.Value{"UserPermissionsKnowledgeUser": storage.BooleanValue(true)}})
 				machine.EnableTestContext()
 				if _, err := machine.Execute(program); err != nil {
 					t.Fatal(err)

@@ -42,15 +42,15 @@ func TestProjectRoleSourceHydration(t *testing.T) {
 				if child.Fields["Name"].String != "Owned Child" || parent.Fields["Name"].String != "Owned Parent" || child.Fields["ParentRoleId"].ID != parent.ID {
 					t.Fatalf("role labels/parent link: child=%+v parent=%+v", child, parent)
 				}
-				if len(roles) != 3 {
-					t.Fatalf("source roles plus seed: got %d, want 3", len(roles))
+				if len(roles) != 20 {
+					t.Fatalf("source roles plus seed: got %d, want 20", len(roles))
 				}
-			} else if len(roles) != 1 {
+			} else if len(roles) != 18 {
 				t.Fatalf("absent metadata fabricated roles: %d", len(roles))
 			}
-			// Metadata must never take over the role to which the seeded user belongs.
-			if roles["CEO"].ID != "00E000000000001" || org.Objects["User"].Records[storage.DefaultUserID].Fields["UserRoleId"].ID != roles["CEO"].ID {
-				t.Fatal("source role changed the seeded user's role")
+			// Source metadata must not assign a role to the fresh running user.
+			if roles["CEO"].ID != "00E000000000001" || org.Objects["User"].Records[storage.DefaultUserID].Fields["UserRoleId"].Kind != storage.ValueNull {
+				t.Fatal("source role assigned the fresh user a role")
 			}
 			second := orgFromIndex(index)
 			if !reflect.DeepEqual(org.Objects["UserRole"].Records, second.Objects["UserRole"].Records) {

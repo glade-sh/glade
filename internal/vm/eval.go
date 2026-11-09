@@ -676,6 +676,10 @@ func decimalRatExponent(value *big.Rat) int64 {
 
 func normalizeComputedDecimalText(text string) string {
 	text = strings.TrimSpace(text)
+	if strings.ContainsAny(text, "eE") {
+		// An exponent form carries its own scale and precision; trimming would eat the exponent digits.
+		return text
+	}
 	if strings.Contains(text, ".") {
 		text = strings.TrimRight(text, "0")
 		text = strings.TrimRight(text, ".")
@@ -735,7 +739,7 @@ func coerceAssignable(typeName string, value Value) (Value, error) {
 				return decimalAsDouble(value), nil
 			}
 			if isFloatBackedDecimal(value) {
-				return decimalFromText(doubleDisplayText(value.Decimal))
+				return decimalFromDouble(value.Decimal)
 			}
 			return value, nil
 		}

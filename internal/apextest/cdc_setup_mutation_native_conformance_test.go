@@ -157,6 +157,11 @@ func TestCdcSetupAndMutationNativeConformance(t *testing.T) {
 			}); err != nil {
 				t.Fatal(err)
 			}
+			if api == "67.0" {
+				// ASSIGNMENT-RUN.txt: the API 67.0 istest rows reproduce only with
+				// CdcFixture assigned; unassigned, every method fails its query.
+				writeFile(t, filepath.Join(root, "glade.yml"), "test:\n  permissionSets: [CdcFixture]\n")
+			}
 			index := loadTestIndex(t, root)
 			t.Run("project_semantics", func(t *testing.T) {
 				analysis := sema.Analyze(index)

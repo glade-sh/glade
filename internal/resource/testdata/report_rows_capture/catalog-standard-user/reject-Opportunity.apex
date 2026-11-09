@@ -1,0 +1,1 @@
+Report r=[SELECT Id FROM Report WHERE DeveloperName='B6_Opportunity' LIMIT 1];try{Reports.ReportManager.describeReport(r.Id);System.debug('B6REJ|ok');}catch(Exception e){System.debug('B6REJ|'+e.getTypeName()+'~'+e.getMessage());}

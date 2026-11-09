@@ -1,0 +1,7 @@
+api_version	case	result
+62.0	read_only_overwrite	System.FinalException: Collection is read-only
+62.0	lookup_boundary	true,true,true
+67.0	read_only_overwrite	System.FinalException: Collection is read-only
+67.0	lookup_boundary	true,true,true
+68.0	read_only_overwrite	System.FinalException: Collection is read-only
+68.0	lookup_boundary	true,true,true

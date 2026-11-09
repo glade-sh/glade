@@ -52,10 +52,15 @@ const (
 // markers below flag the start of a contiguous group. When adding state,
 // place it in the matching group and update New.
 type VM struct {
+	knowledgeIssuedParents map[storage.ID]bool
 	road174WarmOrderAccess map[string]bool
 	road174PermissionStamp map[string]string
-	stringASCII            []stringASCIIEntry
-	stringASCIIBytes       int
+	// road174WarmDirectAccess holds actor:record keys whose direct
+	// UserRecordAccess row was warmed by a system-mode relationship query
+	// (ura_direct_carry). It lives for one System.runAs block.
+	road174WarmDirectAccess map[string]bool
+	stringASCII             []stringASCIIEntry
+	stringASCIIBytes        int
 	// --- Class/method/type registries and lookup caches ---
 	Globals                  map[string]Value
 	VarTypes                 map[string]string
@@ -99,6 +104,14 @@ type VM struct {
 	// Classes, keyed by existing Classes keys. Reads go through classEntry and
 	// ClassEntries; prepareClassMapWrite folds it into a private copy.
 	classValueOverlay map[string]Class
+	// heapStaticRoots caches the StaticFields maps currentHeapSize walks: one
+	// per non-platform runtime class owner. Class writes drop it only when a
+	// class's StaticFields identity, owner name or platform flag changes (see
+	// noteClassStaticRootsWrite). The maps are read live, so field adds and
+	// value updates need no invalidation.
+	heapStaticRoots    []map[string]Field
+	heapStaticRootsLen int
+	heapStaticRootsOK  bool
 	// classOverlay holds registrations made on top of a frozen generation
 	// until the next FreezeClassLookup (see class_lookup_overlay.go).
 	classOverlay *classLookupOverlay
@@ -108,40 +121,54 @@ type VM struct {
 	// classLookupBuilds counts O(len(Classes)) class-lookup builds on this VM.
 	classLookupBuilds int
 	// --- Org storage, triggers, and active execution frame ---
-	Org                     *storage.OrgState
-	Triggers                map[string][]Trigger
-	triggerMatchCache       *triggerMatchCache
-	triggerNamespaceCache   map[triggerNamespaceLookupKey]string
-	Stdout                  io.Writer
-	callStack               []callFrame
-	scopeStack              []map[string]Value
-	finalLocals             map[string]bool // active frame; bool records initialization
-	closedSOQLLocals        map[string]Value
-	dynamicSOQLBindRoute    string
-	currentClass            string
-	currentNamespace        string
-	currentMethod           Method
-	currentTrigger          bool
-	beforeUpdateFrames      []beforeUpdateTriggerFrame
-	eventBusTriggerContext  *eventBusTriggerContext
-	eventBusReplaySequence  int64
-	entrySharingMode        string
-	testExecutionEntry      *testExecutionEntry
-	reflectionConstructType string
-	testContext             *TestContext
-	mixedDML                mixedDMLState
-	localAsyncJobs          []AsyncJob
-	localAsyncSeq           int
-	flowAsyncSeq            uint64
-	flowPathSavepoints      map[string]uint64
-	localAsyncDrain         bool
-	localAsyncChain         bool
-	rejectAsyncActions      bool
-	asyncActionViolation    bool
-	executionUser           Value
+	Org                   *storage.OrgState
+	Triggers              map[string][]Trigger
+	triggerMatchCache     *triggerMatchCache
+	triggerNamespaceCache map[triggerNamespaceLookupKey]string
+	Stdout                io.Writer
+	callStack             []callFrame
+	scopeStack            []map[string]Value
+	finalLocals           map[string]bool // active frame; bool records initialization
+	closedSOQLLocals      map[string]Value
+	dynamicSOQLBindRoute  string
+	currentClass          string
+	// anonymousLocal is the running anonymous block's method table and its
+	// top-level frame (anonymous_local_methods_c4), nil outside such a block.
+	anonymousLocal   *anonymousLocalScope
+	currentNamespace string
+	// assumeDeployedPermissionSets makes the administrator field policy treat
+	// every deployed permission set as assigned (glade exec has no assignment
+	// state; see anonymous_field_policy.go).
+	assumeDeployedPermissionSets bool
+	currentMethod                Method
+	currentTrigger               bool
+	beforeUpdateFrames           []beforeUpdateTriggerFrame
+	eventBusTriggerContext       *eventBusTriggerContext
+	eventBusReplaySequence       int64
+	entrySharingMode             string
+	testExecutionEntry           *testExecutionEntry
+	reflectionConstructType      string
+	testContext                  *TestContext
+	uiExceptionContext           bool
+	mixedDML                     mixedDMLState
+	localAsyncJobs               []AsyncJob
+	localAsyncSeq                int
+	flowAsyncSeq                 uint64
+	flowPathSavepoints           map[string]uint64
+	localAsyncDrain              bool
+	localAsyncChain              bool
+	rejectAsyncActions           bool
+	asyncActionViolation         bool
+	executionUser                Value
 	// Captured once from the runner's initial org, before test setup inserts.
 	// Clones share this immutable ID set; EnableTestContext must not recapture it.
 	testDocumentBaseline          map[storage.ID]struct{}
+	testReportBaseline            map[storage.ID]struct{}
+	testReportSource              map[string]storage.ObjectState
+	reportSource                  map[string]storage.ObjectState
+	reportTransactionDepth        int
+	reportInvalidSavepointOrder   int
+	testDashboardBaseline         map[storage.ID]struct{}
 	testStandardPricebookBaseline map[storage.ID]struct{}
 	// Traversals belong to this VM, independently of method frames and clones.
 	activeCollectionTraversals        map[collectionTraversalKey]int
@@ -161,6 +188,9 @@ type VM struct {
 	// The first millis read can share the most recent now() timestamp without
 	// leaving subsequent millis reads pinned to that cached timestamp.
 	hasPendingNowMillis bool
+	nowReads            int
+	nowSpin             int
+	nowWork             int
 
 	testClockStart    time.Time
 	hasTestClockStart bool
@@ -168,7 +198,9 @@ type VM struct {
 	// --- Async/queueable scheduling ---
 	currentAsyncKind             string
 	futureBodyDepth              int
+	futureCalloutDisabled        bool
 	inBatchFinish                bool
+	batchFinishAPIVersion        string
 	currentQueueableDepth        int
 	currentQueueableMaxDepth     int
 	currentQueueableDelay        int
@@ -178,7 +210,10 @@ type VM struct {
 	// success callbacks expose SYSTEM_MODE reads as their captured user.
 	// The dispatch scope restores this ID; nested runAs users do not inherit it.
 	eventPublishReadUserID string
-	activeExceptions       []activeException
+	// eventSubscriberTriggerDepth is nonzero only inside runTriggers of a platform
+	// event delivery.
+	eventSubscriberTriggerDepth int
+	activeExceptions            []activeException
 	// --- Exception / statement / trigger-depth tracking ---
 	currentStatement        callFrame
 	hasStatement            bool
@@ -252,11 +287,18 @@ type VM struct {
 	staticInitState    map[string]staticInitState
 	lastAmbiguous      *overloadDiagnostic
 	activeConstructors map[string]int
+	// permissionChecks memoizes user permission answers inside one record
+	// loop that cannot change the org or the current user (see
+	// beginPermissionCheckMemo). Nil outside such a loop.
+	permissionChecks *permissionCheckMemo
 	// --- Describe caches ---
-	describeCache       map[describeCacheKey]Value
-	fieldDescribeCache  map[describeCacheKey]Value
-	globalDescribeCache *Value
-	namedGlobalDescribe *namedGlobalDescribeExtension
+	describeCache               map[describeCacheKey]Value
+	fieldDescribeCache          map[describeCacheKey]Value
+	standardAPI68Memo           *standardAPI68ProfileMemo
+	globalDescribeCache         *Value
+	globalDescribeVersionCaches map[string]*Value
+	namedGlobalDescribe         *namedGlobalDescribeExtension
+	changeEventGlobal           *changeEventGlobalExtension
 	// Private immutable key preparation after leaving a frozen generation.
 	// Never cloned; exact key equality is rechecked before each reuse.
 	globalDescribeProjectionKeys map[string]globalDescribeKeyMetadata
@@ -313,6 +355,7 @@ type VM struct {
 	collectionMutationRefSeq    map[uint64]uint64
 	collectionMutationRefFloor  uint64
 	collectionMutationSeq       uint64
+	escapedCollectionLatest     map[uint64]escapedCollectionMutation
 	nestedReceiverCache         map[uint64]nestedReceiverGraph
 	nestedReceiverMapRoots      map[uintptr]map[uint64]struct{}
 	nestedReceiverCacheRefs     int
@@ -330,6 +373,10 @@ type VM struct {
 	scopeAliasTraversalObserver scopeAliasTraversalObserver
 	runtimeArtifactsShared      atomic.Bool
 	methodOverlay               *methodTableOverlay
+	// String == support: the Turkish-dotting decision for the running user and
+	// the full case transformers, created once per machine.
+	localeCase localeCaseCache
+	casers     *caseCasers
 }
 
 type VisualforceActionInvoker func(actionExpr string, pageURL string) (Value, error)
@@ -558,6 +605,11 @@ type RuntimeError struct {
 	Stack   []StackFrame
 	// Preserve the Apex message before adding local diagnostic context.
 	exceptionMessage *string
+	// An assertion records its Apex frames where it fails; a trigger boundary
+	// reports them in the DmlException text. externalEntry marks the Assert
+	// class methods that native Salesforce lists as an external entry frame.
+	stackText     string
+	externalEntry bool
 }
 
 const maxApexCallDepth = 1000
@@ -648,6 +700,10 @@ type TestContext struct {
 	JobSeq                   int
 	ChainEnqueued            bool
 	PreserveAsyncStatics     bool
+
+	// StopTimeEventDelivery is set while Test.stopTest() delivers queued
+	// platform and change events, and cleared by an explicit deliver().
+	StopTimeEventDelivery bool
 }
 
 type eventPublishCallback struct {
@@ -657,6 +713,9 @@ type eventPublishCallback struct {
 }
 
 type AsyncJob struct {
+	// RunAsUser is the Automated Process user of the event trigger that
+	// enqueued the job; the job runs as that user (automated_process_deliver rows).
+	RunAsUser           Value
 	ID                  string
 	Kind                string
 	Object              Value
@@ -748,7 +807,7 @@ func newVM(stdout io.Writer, recorder *PerfRecorder) *VM {
 		activeCollectionTraversals:   make(map[collectionTraversalKey]int),
 		limitCaps:                    defaultLimitCaps(),
 		limitMode:                    LimitModePermissive,
-		fakeNow:                      time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC),
+		fakeNow:                      defaultTestClockStart,
 		queueableDuplicateSignatures: make(map[string]string),
 		savepoints:                   make(map[string]storage.OrgState),
 		savepointMarks:               make(map[string]storage.IsolationMark),
@@ -966,6 +1025,9 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 	clone.managedFeatureValues = copyValueMap(vm.managedFeatureValues)
 	clone.isolationJournal = vm.isolationJournal
 	clone.testDocumentBaseline = vm.testDocumentBaseline
+	clone.testReportBaseline = vm.testReportBaseline
+	clone.testReportSource = vm.testReportSource
+	clone.testDashboardBaseline = vm.testDashboardBaseline
 	clone.testStandardPricebookBaseline = vm.testStandardPricebookBaseline
 	if len(vm.sObjectCollectionAliasRefs) != 0 {
 		clone.sObjectCollectionAliasRefs = make(map[uint64]bool, len(vm.sObjectCollectionAliasRefs))
@@ -1060,6 +1122,10 @@ func (vm *VM) classMapCopy() map[string]Class {
 // map shared with another VM is not written; the value goes to this VM's
 // overlay, so a first static write no longer copies every class entry.
 func (vm *VM) writeExistingClassEntry(name string, class Class) {
+	if vm.heapStaticRootsOK {
+		previous, exists := vm.classEntry(name)
+		vm.noteClassStaticRootsWrite(previous, exists, class)
+	}
 	if vm.classMapShared.Load() {
 		if vm.classValueOverlay == nil {
 			vm.classValueOverlay = make(map[string]Class)
@@ -1698,6 +1764,8 @@ func (vm *VM) SetCurrentPageURLNull() {
 }
 
 func (vm *VM) SetOrg(org *storage.OrgState) {
+	vm.knowledgeIssuedParents = nil
+	vm.localeCase = localeCaseCache{}
 	vm.ensureChangeEventObjects(org)
 	vm.recordCreations = nil
 	vm.lookupHistoryScope = nil
@@ -1753,6 +1821,8 @@ func (vm *VM) SetOrg(org *storage.OrgState) {
 // provenance; an unrelated generation uses SetOrg and discards every cache.
 func (vm *VM) SetRuntimeTemplateOrg(org *storage.OrgState) {
 	vm.ensureChangeEventObjects(org)
+	vm.knowledgeIssuedParents = nil
+	vm.localeCase = localeCaseCache{}
 	vm.recordCreations = nil
 	vm.lookupHistoryScope = nil
 	vm.creationSavepoints = nil
@@ -2159,6 +2229,7 @@ func (vm *VM) SetCurrentUser(record storage.Record) {
 	if record.Fields == nil {
 		record.Fields = make(map[string]storage.Value)
 	}
+	vm.localeCase = localeCaseCache{}
 	if record.ID == "" && len(record.Fields) == 0 {
 		vm.executionUser = Null
 		return
@@ -2169,6 +2240,16 @@ func (vm *VM) SetCurrentUser(record storage.Record) {
 func (vm *VM) SetDebugHooks(hooks DebugHooks) {
 	vm.debugHooks = hooks
 	vm.hasDebugHooks = true
+}
+
+// SetAssumeDeployedPermissionSets makes the administrator optional-field policy
+// count a field grant in any deployed permission set, as if it were assigned to
+// the running administrator. glade exec has no assignment state: a deployed
+// set that grants a field is taken as assigned (native schema_reference_gate
+// and admin_optional_field_api_matrix rows: an assigned set makes the field
+// visible, an unassigned one does not). Test routes assign explicitly.
+func (vm *VM) SetAssumeDeployedPermissionSets(assume bool) {
+	vm.assumeDeployedPermissionSets = assume
 }
 
 func (vm *VM) SetCurrentNamespace(namespace string) {
@@ -2185,6 +2266,8 @@ func (vm *VM) SetContext(ctx context.Context) {
 func (vm *VM) newDMLEngine(result *Result) dml.Engine {
 	vm.ensureMetadataCacheGeneration()
 	engine := dml.NewEngine(vm.Org)
+	engine.UserHasCustomPermission = vm.currentUserHasDirectPermission
+	engine.PermissionUserFields = vm.currentUserPermissionFields()
 	if vm.dmlSummaryByChild == nil {
 		vm.dmlSummaryByChild = dml.NewSummaryRelationCache()
 	}
@@ -2316,6 +2399,20 @@ func (vm *VM) invokeFlowActionBatch(action storage.FlowAction, requests []dml.Fl
 			}
 		}
 	}
+	if err == nil && (returned.Kind == ValueList || returned.Kind == ValueNull) {
+		for i, request := range requests {
+			if request.Context.OutputFields == nil || returned.Kind != ValueList || i >= len(returned.List) || returned.List[i].Kind != ValueObject {
+				continue
+			}
+			fields := make(map[string]storage.Value, len(returned.List[i].Fields))
+			for name, field := range returned.List[i].Fields {
+				if converted, convertErr := storageValueFromVM(field); convertErr == nil {
+					fields[strings.ToLower(name)] = converted
+				}
+			}
+			request.Context.OutputFields(fields)
+		}
+	}
 	if err != nil {
 		var thrown *apexThrowError
 		if errors.As(err, &thrown) {
@@ -2357,6 +2454,15 @@ func (vm *VM) flowActionInputObject(action storage.FlowAction, record storage.Re
 			if recordInput, ok := vm.invocableRecordInput(elementType, parameterName, input.Name, value); ok {
 				return recordInput, nil
 			}
+		}
+	}
+	// Native automated_process_user_mode rows (62.0 to 68.0, event-triggered
+	// flow): a single String input binds straight to a List<String> parameter,
+	// with the input's text as the element.
+	if strings.EqualFold(elementType, "String") && len(action.Inputs) == 1 {
+		value, _ := vm.flowActionInputValue(action.Inputs[0], record, context)
+		if value.Kind == ValueString {
+			return value, nil
 		}
 	}
 	item := Object(elementType)
@@ -2581,6 +2687,7 @@ func (vm *VM) resolveFlowInvocableMethod(action storage.FlowAction) (Method, boo
 	if className == "" {
 		return Method{}, false, fmt.Errorf("flow action %s: missing Apex class name", action.Name)
 	}
+	className = vm.flowActionClassKey(className)
 	methodName := strings.TrimSpace(action.MethodName)
 	if methodName != "" {
 		candidates := vm.registeredOverloads(className + "." + methodName)
@@ -2633,6 +2740,31 @@ func (vm *VM) resolveFlowInvocableMethod(action storage.FlowAction) (Method, boo
 		return Method{}, false, fmt.Errorf("flow action %s: multiple @InvocableMethod candidates on %s: %s", action.Name, className, strings.Join(names, ", "))
 	}
 	return matches[0], true, nil
+}
+
+// flowActionClassKey maps the metadata form ns__Class, which Flow uses for an
+// installed package's invocable class, to the runtime class key ns.Class. A
+// namespaced org also names its own classes with its prefix. Native: an
+// own-namespace invocable resolves as both gladens004__Q3Act and Q3Act at APIs
+// 62.0 and 67.0 (flow_action_namespace rows).
+func (vm *VM) flowActionClassKey(className string) string {
+	if _, ok := vm.classEntry(className); ok {
+		return className
+	}
+	idx := strings.Index(className, "__")
+	if idx <= 0 || idx+2 >= len(className) {
+		return className
+	}
+	namespace, local := className[:idx], className[idx+2:]
+	if _, ok := vm.classEntry(namespace + "." + local); ok {
+		return namespace + "." + local
+	}
+	if vm.Org != nil && strings.EqualFold(strings.TrimSpace(vm.Org.Namespace), namespace) {
+		if _, ok := vm.classEntry(local); ok {
+			return local
+		}
+	}
+	return className
 }
 
 func flowActionTargetName(action storage.FlowAction) string {
@@ -2832,13 +2964,19 @@ func (vm *VM) clearTriggerMatchCache() {
 
 func (vm *VM) EnableTestContext() {
 	vm.mixedDML = mixedDMLState{}
+	vm.localeCase = localeCaseCache{}
 	vm.testContext = &TestContext{
 		CurrentUser:           vm.defaultTestCurrentUser(),
 		ContinuationResponses: make(map[string]Value),
 		ConnectAPIFixtures:    make(map[string]Value),
 		SoqlStubs:             make(map[string]Value),
 	}
+	if vm.Org != nil && vm.Org.HasFeature("CampaignInfluence2Enabled") {
+		storage.EnsureStandardObject(vm.Org, "CampaignInfluence")
+		vm.clearMetadataCaches()
+	}
 	vm.ensureAsyncObjects()
+	storage.SetProjectEventSubscriberTestPositions(vm.Org)
 	vm.restoreChangeDataCaptureTestSetup()
 }
 
@@ -2864,6 +3002,39 @@ func (vm *VM) SetTestDocumentBaseline(org *storage.OrgState) {
 	}
 	for id := range org.Objects[name].Records {
 		vm.testDocumentBaseline[id] = struct{}{}
+	}
+}
+
+// SetTestReportBaseline records project and org reports before test execution.
+// Isolated tests hide these from SOQL while the report service can still use
+// a known report ID, as captured separately.
+func (vm *VM) SetTestReportBaseline(org *storage.OrgState) {
+	vm.testReportBaseline = make(map[storage.ID]struct{})
+	vm.testReportSource = reportSnapshot(org)
+	if org == nil {
+		return
+	}
+	name, ok := storage.ResolveObjectName(*org, "Report")
+	if !ok {
+		return
+	}
+	for id := range org.Objects[name].Records {
+		vm.testReportBaseline[id] = struct{}{}
+	}
+}
+
+// SetTestDashboardBaseline records pre-test Dashboard rows for isolated SOQL.
+func (vm *VM) SetTestDashboardBaseline(org *storage.OrgState) {
+	vm.testDashboardBaseline = make(map[storage.ID]struct{})
+	if org == nil {
+		return
+	}
+	name, ok := storage.ResolveObjectName(*org, "Dashboard")
+	if !ok {
+		return
+	}
+	for id := range org.Objects[name].Records {
+		vm.testDashboardBaseline[id] = struct{}{}
 	}
 }
 
@@ -3123,13 +3294,21 @@ func (vm *VM) ExecuteTestInClass(program ir.Program, className string) (Result, 
 }
 
 func (vm *VM) execute(program ir.Program, className string) (result Result, err error) {
+	defer vm.BeginReportTransaction()()
+	// String == reads the running user's locale once, at transaction start:
+	// a DML update of the user's own LocaleSidKey before the first comparison
+	// must not move it (string_equality_locale_change_c14).
+	vm.snapshotLocaleCase()
 	previousRoad174WarmOrderAccess := vm.road174WarmOrderAccess
 	previousRoad174PermissionStamp := vm.road174PermissionStamp
+	previousRoad174WarmDirectAccess := vm.road174WarmDirectAccess
 	vm.road174WarmOrderAccess = nil
 	vm.road174PermissionStamp = nil
+	vm.road174WarmDirectAccess = nil
 	defer func() {
 		vm.road174WarmOrderAccess = previousRoad174WarmOrderAccess
 		vm.road174PermissionStamp = previousRoad174PermissionStamp
+		vm.road174WarmDirectAccess = previousRoad174WarmDirectAccess
 	}()
 	vm.ensureMetadataCacheGeneration()
 	if vm.testContext == nil {
@@ -3176,6 +3355,13 @@ func (vm *VM) execute(program ir.Program, className string) (result Result, err 
 		if err := vm.ctx.Err(); err != nil {
 			return result, err
 		}
+	}
+	if className == "" && len(program.LocalMethods) > 0 {
+		restore, err := vm.registerAnonymousLocalMethods(program)
+		if err != nil {
+			return result, err
+		}
+		defer restore()
 	}
 	var out execOutcome
 	_, err = vm.withQueueableDuplicateSignatureTransaction(func() (Value, error) {

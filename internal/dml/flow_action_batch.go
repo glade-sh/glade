@@ -97,6 +97,9 @@ func (e *Engine) ApplyFlowActionBatch(records []storage.Record, after func(int, 
 			context.Output = func(value storage.Value) {
 				prepared.output, prepared.hasOutput = value.Clone(), true
 			}
+			if len(action.Outputs) > 0 {
+				context.OutputFields = func(fields map[string]storage.Value) { prepared.fields = fields }
+			}
 			requests = append(requests, FlowActionRequest{Record: working[i].Clone(), Context: context})
 		}
 		restore()

@@ -1,0 +1,1 @@
+for(Report r:[SELECT Id,DeveloperName FROM Report WHERE DeveloperName IN ('B6_Contacts','B6_Contacts_User') ORDER BY DeveloperName]) {Reports.ReportResults x=Reports.ReportManager.runReport(r.Id,false);System.debug('B6CONTACTSCOPE|'+r.DeveloperName+'|'+x.getFactMap().get('T!T').getAggregates()[0].getValue());}

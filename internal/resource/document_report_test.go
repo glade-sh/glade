@@ -151,6 +151,12 @@ func documentRecordID(t *testing.T, org storage.OrgState, developerName string) 
 
 func reportRecordID(t *testing.T, org storage.OrgState, folderName, developerName string) storage.ID {
 	t.Helper()
+	for _, folder := range org.Objects["Folder"].Records {
+		if folder.Fields["DeveloperName"].String == folderName {
+			folderName = folder.Fields["Name"].String
+			break
+		}
+	}
 	for id, record := range org.Objects["Report"].Records {
 		if record.Fields["FolderName"].String == folderName && record.Fields["DeveloperName"].String == developerName {
 			return id

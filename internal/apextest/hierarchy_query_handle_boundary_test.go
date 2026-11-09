@@ -11,7 +11,12 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-// Local preservation controls only: handle behavior is not in the native rows.
+// Handle routes for an ungranted Standard User under System.runAs follow the
+// native hierarchy_setting_runas_handles rows (API 62, 67 and 68): a USER_MODE
+// handle raises System.QueryException, a SYSTEM_MODE handle reads the row with
+// or without sharing, and a handle without an access level reads the row
+// through API 62 and raises from API 67. The binds and pagination variants are
+// local extensions of the captured locator and cursor rows.
 func TestHierarchyQueryBoundaryQueryHandleProjectPreservation(t *testing.T) {
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api, func(t *testing.T) {
@@ -50,18 +55,18 @@ func TestHierarchyQueryBoundaryQueryHandleProjectPreservation(t *testing.T) {
 							call = strings.ReplaceAll(route.call, ",AccessLevel.%s", "")
 						}
 						fmt.Fprintf(&methods, "public static Integer %s(){String q='SELECT Disabled__c FROM BoundaryPreference__c';Database.%s h=Database.%s;return %s;}\n", method, route.kind, call, route.read)
-						want := 0
 						effectiveMode := mode
-						if mode == "DEFAULT" || route.name == "paginationCursor" {
+						if mode == "DEFAULT" {
 							effectiveMode = "USER_MODE"
 							if api == "62.0" {
 								effectiveMode = "SYSTEM_MODE"
 							}
 						}
-						if sharing == "without sharing" && effectiveMode == "SYSTEM_MODE" {
-							want = 1
+						want := "1"
+						if effectiveMode == "USER_MODE" {
+							want = "System.QueryException"
 						}
-						fmt.Fprintf(&calls, "System.assertEquals(%d,%s.%s(),'%s/%s/%s');\n", want, name, method, sharing, mode, route.name)
+						fmt.Fprintf(&calls, "got='';try{got=String.valueOf(%s.%s());}catch(Exception e){got=e.getTypeName();}System.assertEquals('%s',got,'%s/%s/%s');\n", name, method, want, sharing, mode, route.name)
 					}
 				}
 				writeFile(t, filepath.Join(classes, name+".cls"), "public "+sharing+" class "+name+"{"+methods.String()+"}")
@@ -72,6 +77,7 @@ func TestHierarchyQueryBoundaryQueryHandleProjectPreservation(t *testing.T) {
  insert new BoundaryPreference__c(SetupOwnerId=UserInfo.getOrganizationId(),Disabled__c=true);
  User reader=new User(Alias='handle',Email='handle@example.test',EmailEncodingKey='UTF-8',LastName='Handle',LanguageLocaleKey='en_US',LocaleSidKey='en_US',TimeZoneSidKey='America/Los_Angeles',ProfileId=[SELECT Id FROM Profile WHERE Name='Standard User' LIMIT 1].Id,Username='handle.'+UserInfo.getOrganizationId()+'@example.test');
  insert reader;
+ String got;
  System.runAs(reader){` + calls.String() + `}
  }
 }`

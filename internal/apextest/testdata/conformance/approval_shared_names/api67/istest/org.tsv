@@ -1,0 +1,4 @@
+case	observation
+account	"true:Pending"
+contact	"true:Pending"
+definitions	["Shared_Review:Account","Shared_Review:Contact"]

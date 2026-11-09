@@ -1,0 +1,7 @@
+apex_api	vf_api	case	class_result	page_result
+62.0	59.0	token	Variable does not exist: PermissionsViewAllFields	Apex class does not exist
+67.0	67.0	token	accepted	accepted
+62.0	59.0	write	Variable does not exist: PermissionsViewAllFields	Apex class does not exist
+67.0	67.0	write	accepted	accepted
+62.0	59.0	qualified	Variable does not exist: PermissionsViewAllFields	Apex class does not exist
+67.0	67.0	qualified	accepted	accepted

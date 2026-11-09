@@ -58,7 +58,7 @@ func TestStandardDescribeCatalogV2DigestOracle(t *testing.T) {
 		childRowCount += len(describe.ChildRelationships)
 		recordTypeCount += len(describe.RecordTypeInfos)
 	}
-	if got := []int{len(typedBundle.Describes), fieldCount, childRowCount, recordTypeCount}; !reflect.DeepEqual(got, []int{5323, 81928, 43445, 766}) {
+	if got := []int{len(typedBundle.Describes), fieldCount, childRowCount, recordTypeCount}; !reflect.DeepEqual(got, []int{5330, 82041, 43649, 771}) {
 		t.Fatalf("raw counts objects/fields/childRows/recordTypes = %v", got)
 	}
 
@@ -150,8 +150,8 @@ func TestStandardDescribeCatalogV2DigestOracle(t *testing.T) {
 			conflictCount++
 		}
 	}
-	if len(v2Reverse) != 3697 || conflictCount != 52 {
-		t.Fatalf("reverse key/conflict counts = %d/%d, want 3697/52", len(v2Reverse), conflictCount)
+	if len(v2Reverse) != 3716 || conflictCount != 52 {
+		t.Fatalf("reverse key/conflict counts = %d/%d, want 3716/52", len(v2Reverse), conflictCount)
 	}
 	legacyReverse := legacyStandardDescribeReverseOracle(typedBundle.Describes)
 	if len(legacyReverse) != len(v2Reverse) {
@@ -227,16 +227,22 @@ func TestStandardDescribeCatalogV2DigestOracle(t *testing.T) {
 	// OptionsAutoFacetingEnabled field; the rich and reverse catalogs are unchanged.
 	// The raw and projected digests below combine that field with the restricted
 	// picklist projection (the rich digest is unchanged by the Commerce field).
+	// plain_global_describe org.tsv privacyRTBFRequest (API 62/67) and the P0
+	// describes replace the PrivacyRTBFRequest docs placeholders and add the
+	// object to native reference targets (scripts/apply-standard-reference-supplement.py).
+	// The P0 describes (API 62/67) mark 106 docs-placeholder picklists restricted
+	// and fill 62 empty allowlisted value lists
+	// (scripts/apply-standard-restricted-supplement.py); rich and reverse are unchanged.
 	// standard_restricted_picklists/org.tsv:2-5 (API 62/67) qualifies retaining
 	// restrictedPicklist in the rich and projected catalogs; raw input is unchanged.
 	// Projected fields also retain catalog-origin provenance so configuration
 	// exclusions preserve explicit and native validation rules. The raw, rich,
 	// and reverse catalogs are unchanged by this projection-only addition.
 	wantDigests := map[string]string{
-		"RAW-BROAD-v1":       "ecae8f4d84a60b42a5e15419821a5bda9e18082645b65c3ac24aa669013adcec",
-		"PROJECTED-BROAD-v1": "42ae74537e29c90a4e3622117e8ad599ff5ab664c9e0c9cdcb1897c7fcef24b0",
+		"RAW-BROAD-v1":       "3f3c80e921c871add79b787d1d1de92a2c68dbcff121309053adea451e232b52",
+		"PROJECTED-BROAD-v1": "33d69f08396ecabb72a88733395c4271939d13e76d95ecfbb5405ba7de307fe2",
 		"RICH-v1":            "92239c48aed07e0db93739fb128fa64e8ac26d3b22228e79b9cc5fc3d826130f",
-		"REVERSE-v1":         "a7010fc13d96f894dfc7c3efd5e8fe9b23e1a40984f78f972cf161fa59a4cf6f",
+		"REVERSE-v1":         "f3384ddb6255bfc28fd23f827a083e3ddcdc0460e1854b1a48a3ef269c63eeaa",
 	}
 	for _, section := range []string{"RAW-BROAD-v1", "PROJECTED-BROAD-v1", "RICH-v1", "REVERSE-v1"} {
 		if gotDigests[section] != wantDigests[section] {
@@ -319,8 +325,8 @@ func TestStandardDescribeCatalogV2ReverseOracleCoversNonCatalogChildren(t *testi
 			reverseOnly++
 		}
 	}
-	if reverseOnly != 90 {
-		t.Fatalf("reverse-only child objects = %d, want 90 covered by the complete reverse oracle", reverseOnly)
+	if reverseOnly != 91 {
+		t.Fatalf("reverse-only child objects = %d, want 91 covered by the complete reverse oracle", reverseOnly)
 	}
 }
 
@@ -534,8 +540,11 @@ func TestStandardDescribeCatalogStandardPicklistValues(t *testing.T) {
 		}
 		allowed[value] = true
 	}
-	if len(allowed) != 59049 || len(values) != len(allowed) {
+	if len(allowed) != 59050 || len(values) != len(allowed) {
 		t.Fatalf("allowlist count = %d/%d", len(values), len(allowed))
+	}
+	if !allowed["Pickup"] {
+		t.Fatal("missing independently captured standard value")
 	}
 	file, err := standardDescribeCatalogFS.Open("standard_describe_catalog.json.gz")
 	if err != nil {

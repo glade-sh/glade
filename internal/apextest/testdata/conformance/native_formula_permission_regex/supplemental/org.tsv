@@ -1,0 +1,7 @@
+api	route	observation
+62.0	deploy:unknown	Field DoesNotExist does not exist. Check spelling.
+67.0	deploy:unknown	Field DoesNotExist does not exist. Check spelling.
+62.0	isTest:group	before hasBypass=false;guarded=GuardedName;bypassOnly=ok | after hasBypass=true;guarded=ok;bypassOnly=BypassOnlyName
+67.0	isTest:group	before hasBypass=false;guarded=GuardedName;bypassOnly=ok | after hasBypass=true;guarded=ok;bypassOnly=BypassOnlyName
+62.0	anonymous:group	hasBypass=true;guarded=ok
+67.0	anonymous:group	hasBypass=true;guarded=ok

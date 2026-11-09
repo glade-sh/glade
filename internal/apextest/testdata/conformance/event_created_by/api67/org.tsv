@@ -1,0 +1,5 @@
+case	observation
+EvtTest.t	{"createdById_equals_publisher":true,"createdById_text_equals_publisher":true,"createdDate_null":false,"outcome":"Pass","rows":1}
+EvtRunAs.deliverInsideRunAs	{"createdById_equals_runAs_user":true,"createdById_text_equals_runAs_user":true,"outcome":"Pass"}
+EvtRunAs.deliverOutsideRunAs	{"createdById_equals_runAs_user":true,"outcome":"Pass"}
+EvtRunAs.publishOutsideDeliverInside	{"createdById_equals_publisher_not_runAs_user":true,"outcome":"Pass"}

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>67.0</apiVersion>
+    <assignments>
+        <name>Set_Status</name>
+        <label>Set Status</label>
+        <locationX>176</locationX>
+        <locationY>287</locationY>
+        <assignmentItems>
+            <assignToReference>$Record.Note__c</assignToReference>
+            <operator>Assign</operator>
+            <value><elementReference>OTText</elementReference></value>
+        </assignmentItems>
+    </assignments>
+    <formulas>
+        <name>OTText</name>
+        <dataType>String</dataType>
+        <expression>IF(ISNULL({!$ObjectType.Account.Fields.Name}), &apos;flownull&apos;, &apos;flowset&apos;)</expression>
+    </formulas>
+    <label>LF OT Flow</label>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>50</locationX>
+        <locationY>0</locationY>
+        <connector><targetReference>Set_Status</targetReference></connector>
+        <object>LF_Probe__c</object>
+        <recordTriggerType>Create</recordTriggerType>
+        <triggerType>RecordBeforeSave</triggerType>
+    </start>
+    <status>Active</status>
+</Flow>

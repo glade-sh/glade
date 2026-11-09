@@ -1,0 +1,7 @@
+package apextest
+
+import "testing"
+
+func TestComponentTabsCase159NativeConformance(t *testing.T) {
+	runNativeProjectRoutes(t, "case159_component_tabs", "Case159TabTest", []string{"62.0", "67.0", "68.0"}, 1)
+}

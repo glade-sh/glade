@@ -1,0 +1,4 @@
+case	observation
+delete	"false:ENTITY_IS_LOCKED|This record is locked. If you need to edit it, contact your admin.|0"
+update	"false:ENTITY_IS_LOCKED|This record is locked. If you need to edit it, contact your admin.|0"
+upsert	"false:ENTITY_IS_LOCKED|This record is locked. If you need to edit it, contact your admin.|0"

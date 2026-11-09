@@ -272,6 +272,9 @@ func customMetadataFields(org OrgState, definition ObjectDefinition, source sche
 			}
 			continue
 		}
+		if fieldReferencesEntityDefinition(field) {
+			converted = StringValue(qualifyMetadataRelationshipName(org, definition, field, strings.TrimSpace(value.Value), source))
+		}
 		fields[fieldName] = converted
 	}
 	return fields, refs, nil
@@ -318,6 +321,69 @@ func customMetadataValue(field Field, raw string) (Value, bool, error) {
 	}
 }
 
+// qualifyMetadataRelationshipName gives a record's EntityDefinition or
+// FieldDefinition reference the namespace a namespaced deploy would add. Source
+// names the project's own custom objects and fields without their prefix; the
+// org knows them as Namespace__Name. Names that do not resolve to a local
+// custom object or field stay as written.
+func qualifyMetadataRelationshipName(org OrgState, definition ObjectDefinition, field Field, raw string, source schema.CustomMetadataRecord) string {
+	namespace := strings.TrimSpace(org.Namespace)
+	if namespace == "" || raw == "" {
+		return raw
+	}
+	qualifyObject := func(name string) string {
+		if !isCustomAPIName(name) || hasNamespaceToken(name) {
+			return name
+		}
+		candidate := namespace + "__" + name
+		if resolved, ok := ResolveObjectName(org, candidate); ok && strings.EqualFold(resolved, candidate) {
+			return resolved
+		}
+		return name
+	}
+	targetsField := false
+	for _, target := range field.ReferenceTo {
+		if strings.EqualFold(target, "FieldDefinition") {
+			targetsField = true
+		}
+	}
+	if !targetsField {
+		return qualifyObject(raw)
+	}
+	objectName, fieldName, dotted := strings.Cut(raw, ".")
+	if !dotted {
+		fieldName = raw
+		objectName = ""
+		if controlling := field.MetadataRelationshipControllingField; controlling != "" {
+			if idx := strings.LastIndex(controlling, "."); idx >= 0 {
+				controlling = controlling[idx+1:]
+			}
+			for _, value := range source.Values {
+				if strings.EqualFold(StripAnyNamespaceToken(value.Field), StripAnyNamespaceToken(controlling)) {
+					objectName = strings.TrimSpace(value.Value)
+				}
+			}
+		}
+	}
+	if !isCustomAPIName(fieldName) || hasNamespaceToken(fieldName) || objectName == "" {
+		return raw
+	}
+	qualifiedObject := qualifyObject(objectName)
+	resolvedObject, ok := ResolveObjectName(org, qualifiedObject)
+	if !ok {
+		return raw
+	}
+	want := namespace + "__" + fieldName
+	resolvedField, ok := ResolveFieldName(org.Objects[resolvedObject].Definition, org.Namespace, want)
+	if !ok || !strings.EqualFold(resolvedField, want) {
+		return raw
+	}
+	if dotted {
+		return qualifiedObject + "." + resolvedField
+	}
+	return resolvedField
+}
+
 func fieldReferencesEntityDefinition(field Field) bool {
 	for _, target := range field.ReferenceTo {
 		if strings.EqualFold(target, "EntityDefinition") || strings.EqualFold(target, "FieldDefinition") {
@@ -347,10 +413,28 @@ func resolveCustomMetadataRecordID(org OrgState, raw string, targets []string) (
 			}
 		}
 	}
-	if err := ValidateID(ID(raw)); err == nil {
+	// A raw value that matched no record name may be a literal Id. A developer
+	// name can be 15 or 18 letters long, so require the Id to carry the key
+	// prefix of a target type.
+	if err := ValidateID(ID(raw)); err == nil && customMetadataIDMatchesTarget(org, raw, targets) {
 		return ID(raw), true
 	}
 	return "", false
+}
+
+func customMetadataIDMatchesTarget(org OrgState, raw string, targets []string) bool {
+	for objectName, state := range org.Objects {
+		if !IsCustomMetadataDefinition(state.Definition) || state.Definition.KeyPrefix == "" {
+			continue
+		}
+		if len(targets) > 0 && !customMetadataObjectMatchesTarget(org, objectName, state.Definition, targets) {
+			continue
+		}
+		if strings.HasPrefix(raw, state.Definition.KeyPrefix) {
+			return true
+		}
+	}
+	return false
 }
 
 func customMetadataObjectMatchesTarget(org OrgState, objectName string, definition ObjectDefinition, targets []string) bool {

@@ -1,0 +1,4 @@
+case	observation
+delete	"true:NONE"
+update	"true:NONE"
+upsert	"true:NONE"

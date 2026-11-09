@@ -1,0 +1,7 @@
+api	route	case	observation
+62.0	istest	runAs_vm	{"defaultAfter":"actor","defaultBefore":null,"trigger":false,"recalc":false,"recalcSuccess":true}
+62.0	istest	formulaeval_setup	rejected: Field $Setup.Prefs__c.Flag__c does not exist. Check spelling.
+62.0	deploy	checkbox_default_setup	rejected: defaultValue for a Checkbox custom field can only been 'true' or 'false'
+67.0	istest	runAs_vm	{"defaultAfter":"actor","defaultBefore":null,"trigger":false,"recalc":false,"recalcSuccess":true}
+67.0	istest	formulaeval_setup	rejected: Field $Setup.Prefs__c.Flag__c does not exist. Check spelling.
+67.0	deploy	checkbox_default_setup	rejected: defaultValue for a Checkbox custom field can only been 'true' or 'false'

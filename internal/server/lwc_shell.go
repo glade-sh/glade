@@ -349,6 +349,13 @@ func (s *Server) flowContextPreset(apiName string) (lwcshell.PageContext, []lwcs
 
 func mergeFlowRouteContext(preset, route lwcshell.PageContext) lwcshell.PageContext {
 	out := preset
+	community := preset.Community
+	if (route.Community.Site != "" && !strings.EqualFold(route.Community.Site, community.Site)) ||
+		(route.Community.SiteID != "" && community.SiteID != "" && route.Community.SiteID != community.SiteID) ||
+		(route.Community.NetworkID != "" && community.NetworkID != "" && route.Community.NetworkID != community.NetworkID) {
+		community = lwcshell.CommunityContext{}
+	}
+	out.Community = mergeCommunityRouteContext(lwcshell.PageContext{Community: community}, lwcshell.PageContext{Community: route.Community}).Community
 	out.Kind = lwcshell.RenderTargetFlowScreen
 	if route.RecordID != "" {
 		out.RecordID = route.RecordID
@@ -475,7 +482,12 @@ func mergeCommunityRouteContext(preset, route lwcshell.PageContext) lwcshell.Pag
 			out.Community.RouteParams[key] = value
 		}
 	}
-	if route.Community.Guest {
+	if route.Community.LWR {
+		out.Community.LWR = true
+	}
+	if route.Community.GuestSet {
+		out.Community.Guest = route.Community.Guest
+	} else if route.Community.Guest {
 		out.Community.Guest = true
 	}
 	if route.AppName != "" {
@@ -839,10 +851,12 @@ func lwcShellContextFromQuery(r *http.Request) lwcshell.PageContext {
 		State:         map[string]string{},
 		Community: lwcshell.CommunityContext{
 			Site:        q.Get("site"),
+			LWR:         queryBool(q.Get("lwr")),
 			BasePath:    q.Get("basePath"),
 			SiteID:      q.Get("siteId"),
 			NetworkID:   q.Get("networkId"),
 			Guest:       queryBool(q.Get("guest")),
+			GuestSet:    q.Has("guest"),
 			Language:    q.Get("language"),
 			RouteParams: map[string]string{},
 		},
@@ -893,7 +907,7 @@ func lwcShellInvalidURLAddressableStateDiagnostic(r *http.Request) (lwcshell.Dia
 
 func lwcShellReservedQueryKey(key string) bool {
 	switch key {
-	case "app", "recordId", "objectApiName", "formFactor", "site", "basePath", "siteId", "networkId", "guest", "language", "contentKey", "contentType", "relationship", "actionName":
+	case "app", "recordId", "objectApiName", "formFactor", "site", "basePath", "siteId", "networkId", "guest", "lwr", "language", "contentKey", "contentType", "relationship", "actionName":
 		return true
 	default:
 		return false

@@ -1,0 +1,4 @@
+case	result
+case_other_0	false,FIELD_INTEGRITY_EXCEPTION,No selected contact
+case_other_1	false,FIELD_INTEGRITY_EXCEPTION,Contact has an invalid or missing email address
+case_other_2	true

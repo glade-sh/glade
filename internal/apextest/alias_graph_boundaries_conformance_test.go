@@ -16,11 +16,14 @@ func TestAliasGraphBoundariesNativeConformance(t *testing.T) {
 	runStoredGraphNativeConformance(t, "alias_graph_boundaries", "AliasGraphProbeTest", 16)
 }
 
+// Each api*/ORG-RUN.txt permissionSetup records PrefixIdentityAccess deployed and
+// assigned to the scratch user before the retained captures.
+
 func TestPrefixRecordIdentityNativeConformance(t *testing.T) {
-	runStoredGraphNativeConformance(t, "prefix_record_identity", "PrefixIdentityProbeTest", 1)
+	runStoredGraphNativeConformance(t, "prefix_record_identity", "PrefixIdentityProbeTest", 1, "PrefixIdentityAccess")
 }
 
-func runStoredGraphNativeConformance(t *testing.T, family, class string, rowCount int) {
+func runStoredGraphNativeConformance(t *testing.T, family, class string, rowCount int, assigned ...string) {
 	t.Helper()
 	fixture := filepath.Join("testdata", "conformance", family)
 	for _, api := range []string{"62.0", "67.0"} {
@@ -73,6 +76,9 @@ func runStoredGraphNativeConformance(t *testing.T, family, class string, rowCoun
 			lines := strings.Split(strings.TrimSpace(string(raw)), "\n")
 			if len(lines) != rowCount+1 || lines[0] != "source_api\troute\tvariant\tobservation" {
 				t.Fatal("incomplete native graph table")
+			}
+			if len(assigned) != 0 {
+				writeFile(t, filepath.Join(root, "glade.yml"), "test:\n  permissionSets: ["+strings.Join(assigned, ", ")+"]\n")
 			}
 			index := loadTestIndex(t, root)
 			results := Run(index, Options{SelectedClasses: []string{class}, NoDiskCache: true, Parallelism: 1})

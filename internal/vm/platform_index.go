@@ -14,12 +14,14 @@ import (
 )
 
 var (
-	commonSObjectTypeNamesOnce       sync.Once
-	commonSObjectTypeNameSetOnce     sync.Once
-	commonSObjectTypeNameFoldOnce    sync.Once
-	commonSObjectTypeNameFoldSet     map[string]struct{}
-	generatedPlatformTypeIndexOnce   sync.Once
-	generatedPlatformMethodIndexOnce sync.Once
+	commonSObjectTypeNamesOnce        sync.Once
+	commonSObjectTypeNameSetOnce      sync.Once
+	commonSObjectTypeNameFoldOnce     sync.Once
+	commonSObjectTypeNameFoldSet      map[string]struct{}
+	generatedPlatformTypeIndexCache   typesys.PlatformViewCache[map[string]generatedPlatformType]
+	generatedPlatformMethodIndexCache typesys.PlatformViewCache[map[string]map[string][]Method]
+	// generatedPlatformMethodIndexOverride replaces the method index in tests.
+	generatedPlatformMethodIndexOverride map[string]map[string][]Method
 )
 
 var (
@@ -80,17 +82,14 @@ func commonSObjectTypeNameLookup() map[string]bool {
 }
 
 func generatedPlatformTypes() map[string]generatedPlatformType {
-	generatedPlatformTypeIndexOnce.Do(func() {
-		generatedPlatformTypeIndex = buildGeneratedPlatformTypeIndex()
-	})
-	return generatedPlatformTypeIndex
+	return generatedPlatformTypeIndexCache.Get(buildGeneratedPlatformTypeIndex)
 }
 
 func generatedPlatformMethods() map[string]map[string][]Method {
-	generatedPlatformMethodIndexOnce.Do(func() {
-		generatedPlatformMethodIndex = buildGeneratedPlatformMethodIndex()
-	})
-	return generatedPlatformMethodIndex
+	if override := generatedPlatformMethodIndexOverride; override != nil {
+		return override
+	}
+	return generatedPlatformMethodIndexCache.Get(buildGeneratedPlatformMethodIndex)
 }
 
 func warmGeneratedPlatformRuntimeIndexes() {
@@ -119,9 +118,9 @@ func PrewarmPlatformIndexes() {
 	wg.Wait()
 }
 
-func buildGeneratedPlatformTypeIndex() map[string]generatedPlatformType {
+func buildGeneratedPlatformTypeIndex(view []typesys.TypeSymbol) map[string]generatedPlatformType {
 	out := make(map[string]generatedPlatformType)
-	for _, typ := range typesys.StandardPlatformSymbolView() {
+	for _, typ := range view {
 		name := generatedPlatformRuntimeName(typ)
 		if name == "" {
 			continue
@@ -161,9 +160,9 @@ func buildGeneratedPlatformTypeIndex() map[string]generatedPlatformType {
 	}
 	return out
 }
-func buildGeneratedPlatformMethodIndex() map[string]map[string][]Method {
+func buildGeneratedPlatformMethodIndex(view []typesys.TypeSymbol) map[string]map[string][]Method {
 	out := make(map[string]map[string][]Method)
-	for _, typ := range typesys.StandardPlatformSymbolView() {
+	for _, typ := range view {
 		className := generatedPlatformRuntimeName(typ)
 		if className == "" {
 			continue

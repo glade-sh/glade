@@ -208,7 +208,7 @@ func (vm *VM) userTypeFromCurrentUserProfile(user Value, fallback string) string
 	if !ok {
 		return fallback
 	}
-	profile, ok := profiles.Records[storage.ID(profileID)]
+	_, profile, ok := storage.LookupRecordByID(profiles.Records, storage.ID(profileID))
 	if !ok {
 		return fallback
 	}
@@ -284,6 +284,10 @@ func (vm *VM) shouldEnqueueFuture(method Method) bool {
 	if vm.testContext == nil {
 		return false
 	}
+	if vm.inEventSubscriberTrigger() && methodHasModifier(method.Modifiers, "future") {
+		// automated_process_user_mode rows: accepted and never run in a test.
+		return true
+	}
 	if vm.testContext.Draining {
 		// async_stack_depth mixed_four (istest and project runner, API 62/67):
 		// a future submitted by a Queueable body drained at stopTest is
@@ -329,9 +333,10 @@ func (vm *VM) enqueueFuture(method Method, args []Value, result *Result) (Value,
 		Method: method,
 		Args:   coercedArgs,
 	}
-	if vm.testContext.Draining {
+	if vm.testContext.Draining || vm.inEventSubscriberTrigger() {
 		return Null, nil
 	}
+	job.RunAsUser = vm.eventSubscriberRunAsUser()
 	vm.testContext.AsyncJobs = append(vm.testContext.AsyncJobs, job)
 	vm.recordAsyncJob(job, "Queued", "")
 	appendTrace(result, "apex.async.enqueue", "apex.async", map[string]any{
@@ -344,9 +349,10 @@ func (vm *VM) enqueueFuture(method Method, args []Value, result *Result) (Value,
 
 func (vm *VM) assertError(message string) error {
 	return &RuntimeError{
-		Type:    "System.AssertException",
-		Message: message,
-		Stack:   vm.stackFrames(),
+		Type:      "System.AssertException",
+		Message:   message,
+		Stack:     vm.stackFrames(),
+		stackText: stackTraceString(vm.rawStackFrames()),
 	}
 }
 
@@ -953,6 +959,11 @@ func (vm *VM) sObjectNameForIDPrefix(prefix string) (string, bool) {
 				return name, true
 			}
 		}
+		if owner := storage.StandardKeyPrefixOwner(prefix); owner != "" {
+			if name, ok := vm.lazyStandardObject(owner); ok {
+				return name, true
+			}
+		}
 	}
 	name, ok := standardSObjectPrefixes[prefix]
 	return name, ok
@@ -1015,8 +1026,6 @@ var standardSObjectPrefixes = map[string]string{
 
 var commonSObjectTypeNames []string
 var commonSObjectTypeNameSet map[string]bool
-var generatedPlatformTypeIndex map[string]generatedPlatformType
-var generatedPlatformMethodIndex map[string]map[string][]Method
 
 func init() {
 	for objectName, prefix := range storage.StandardKeyPrefixes() {
@@ -1255,31 +1264,38 @@ func parseDatetimeTextAllowDateOnly(text string) (time.Time, error) {
 
 // parse is locale-dependent; it does not share valueOf or ISO assignment grammar.
 func parseDatetimeParseTextForLocale(text, zoneID, locale string) (time.Time, error) {
-	layout := ""
-	switch locale {
-	case "de_DE":
-		layout = "02.01.2006, 15:04"
-	case "en_GB":
-		layout = "02/01/2006, 15:04"
+	if locale == "en_CA" {
+		// date_parse_pivot_c14 (API 62.0 and 67.0, en_CA user): the format() text is
+		// "2008-01-28, 3:04 p.m."; "PM", "pm" and unpadded month/hour parse, while the
+		// 24-hour form, the slash form, a missing comma and "PM." throw. Two-digit years
+		// pivot like Date.parse.
+		return parseDatetimeParseFields(text, zoneID, datetimeParseDashPattern, 2, 3, 1, false)
 	}
-	if layout != "" {
-		location := time.UTC
-		if strings.TrimSpace(zoneID) != "" {
-			if loaded, err := time.LoadLocation(zoneID); err == nil {
-				location = loaded
-			}
-		}
-		if value, err := time.ParseInLocation(layout, strings.TrimSpace(text), location); err == nil {
-			if err := validateDateParts(value.Year(), int(value.Month()), value.Day()); err != nil {
-				return time.Time{}, err
-			}
-			return value, nil
-		}
+	if grammar, ok := dayFirstParseGrammars[locale]; ok {
+		return parseDayFirstDatetimeParse(text, zoneID, grammar)
+	}
+	if !apexYearPivotCaptured(locale) {
+		return parseDatetimeParseTextLegacy(text, zoneID)
 	}
 	return parseDatetimeParseText(text, zoneID)
 }
 
+// apexYearPivotCaptured reports whether date_parse_pivot_c14 covers the
+// locale's month-first fallback grammar. Only en_US (and en_CA, handled
+// above) were captured; the date_parse_pivot_locales_c4 day-first locales
+// (dayFirstParseGrammars) are handled above too. Other locales keep the
+// earlier Go-layout grammar until rows exist for them.
+func apexYearPivotCaptured(locale string) bool {
+	return locale == "" || locale == "en_US"
+}
+
 func parseDatetimeParseText(text, zoneID string) (time.Time, error) {
+	return parseDatetimeParseFields(text, zoneID, datetimeParseSlashPattern, 1, 2, 3, true)
+}
+
+// parseDatetimeParseTextLegacy is the pre-pivot month-first grammar
+// (two- or four-digit years, Go's 69 pivot) kept for uncaptured locales.
+func parseDatetimeParseTextLegacy(text, zoneID string) (time.Time, error) {
 	text = strings.TrimSpace(text)
 	location := time.UTC
 	if strings.TrimSpace(zoneID) != "" {
@@ -1374,25 +1390,31 @@ func parsePlatformDatetimeText(text string) (time.Time, error) {
 
 // Date.parse uses the locale grammar; Date.valueOf retains its separate parser.
 func parseDateParseTextForLocale(text, locale string) (time.Time, error) {
-	layout := ""
-	switch locale {
-	case "de_DE":
-		layout = "02.01.2006"
-	case "en_GB":
-		layout = "02/01/2006"
+	if locale == "en_CA" {
+		// Org capture 2026-11-03 (API 62.0 and 67.0, en_CA user): yyyy-MM-dd and the unpadded
+		// yyyy-M-d parse; m/d/y, y/m/d, month 13 and 1990-02-30 throw "Invalid date". No
+		// fallback to the en_US layouts: the capture rejects them. The year token follows
+		// parseApexYearToken (date_parse_pivot_c14): "00" throws here, unlike en_US.
+		return parseDateParseFields(text, dateParseDashPattern, 2, 3, 1, false)
 	}
-	if layout != "" {
-		if value, err := time.Parse(layout, strings.TrimSpace(text)); err == nil {
-			if err := validateDateParts(value.Year(), int(value.Month()), value.Day()); err != nil {
-				return time.Time{}, err
-			}
-			return value, nil
-		}
+	if grammar, ok := dayFirstParseGrammars[locale]; ok {
+		// Org captures scratch_country_locale_no, _de and _gb: the month-first
+		// layout does not apply to these locales, so there is no fallback.
+		return parseDateParseFields(text, grammar.date, 2, 1, 3, grammar.zeroTwoDigit)
+	}
+	if !apexYearPivotCaptured(locale) {
+		return parseDateParseTextLegacy(text)
 	}
 	return parseDateParseText(text)
 }
 
 func parseDateParseText(text string) (time.Time, error) {
+	return parseDateParseFields(text, dateParseSlashPattern, 1, 2, 3, true)
+}
+
+// parseDateParseTextLegacy is the pre-pivot month-first grammar kept for
+// uncaptured locales (see apexYearPivotCaptured).
+func parseDateParseTextLegacy(text string) (time.Time, error) {
 	text = strings.TrimSpace(text)
 	for _, layout := range []string{"1/2/2006", "01/02/2006", "1/2/06", "01/02/06"} {
 		if value, err := time.Parse(layout, text); err == nil {
@@ -1403,6 +1425,150 @@ func parseDateParseText(text string) (time.Time, error) {
 		}
 	}
 	return time.Time{}, fmt.Errorf("unsupported Date parse value %q", text)
+}
+
+// Date.parse and Datetime.parse field grammars. Month and day take one or two
+// digits; the year token follows parseApexYearToken.
+var (
+	dateParseSlashPattern     = regexp.MustCompile(`^(\d{1,2})/(\d{1,2})/(\d+)$`)
+	dateParseDashPattern      = regexp.MustCompile(`^(\d+)-(\d{1,2})-(\d{1,2})$`)
+	datetimeParseSlashPattern = regexp.MustCompile(`^(\d{1,2})/(\d{1,2})/(\d+), (\d{1,2}):(\d{2}) (AM|PM)$`)
+	datetimeParseDashPattern  = regexp.MustCompile(`^(\d+)-(\d{1,2})-(\d{1,2}), (\d{1,2}):(\d{2}) (AM|PM|am|pm|a\.m\.|p\.m\.)$`)
+)
+
+// dayFirstParseGrammars are the day-first Date.parse and Datetime.parse
+// grammars captured in date_parse_pivot_locales_c4 (API 62.0 and 67.0):
+// dd.MM.y (de_DE, no, no_NO) and dd/MM/y (en_GB, fr_FR; fr_FR date_locale_a12_c14
+// round-trips 28/01/2008 too), then ", HH:mm" or, for fr_FR, " HH:mm". The year
+// token pivots as parseApexYearToken; "00" is 2000 only for de_DE. ISO, slash
+// month-first and 12-hour forms throw.
+type dayFirstParseGrammar struct {
+	date, datetime *regexp.Regexp
+	zeroTwoDigit   bool
+}
+
+var (
+	dayFirstDotDate       = regexp.MustCompile(`^(\d{2})\.(\d{2})\.(\d+)$`)
+	dayFirstDotDatetime   = regexp.MustCompile(`^(\d{2})\.(\d{2})\.(\d+), (\d{1,2}):(\d{2})$`)
+	dayFirstSlashDate     = regexp.MustCompile(`^(\d{2})/(\d{2})/(\d+)$`)
+	dayFirstSlashDatetime = regexp.MustCompile(`^(\d{2})/(\d{2})/(\d+), (\d{1,2}):(\d{2})$`)
+	dayFirstSpaceDatetime = regexp.MustCompile(`^(\d{2})/(\d{2})/(\d+) (\d{1,2}):(\d{2})$`)
+	dayFirstParseGrammars = map[string]dayFirstParseGrammar{
+		"de_DE": {date: dayFirstDotDate, datetime: dayFirstDotDatetime, zeroTwoDigit: true},
+		"no":    {date: dayFirstDotDate, datetime: dayFirstDotDatetime},
+		"no_NO": {date: dayFirstDotDate, datetime: dayFirstDotDatetime},
+		"en_GB": {date: dayFirstSlashDate, datetime: dayFirstSlashDatetime},
+		"fr_FR": {date: dayFirstSlashDate, datetime: dayFirstSpaceDatetime},
+	}
+)
+
+func parseDayFirstDatetimeParse(text, zoneID string, grammar dayFirstParseGrammar) (time.Time, error) {
+	text = strings.TrimSpace(text)
+	match := grammar.datetime.FindStringSubmatch(text)
+	if match == nil {
+		return time.Time{}, fmt.Errorf("unsupported Datetime parse value %q", text)
+	}
+	year, err := parseApexYearToken(match[3], grammar.zeroTwoDigit)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("unsupported Datetime parse value %q", text)
+	}
+	day, _ := strconv.Atoi(match[1])
+	month, _ := strconv.Atoi(match[2])
+	if err := validateDateParts(year, month, day); err != nil {
+		return time.Time{}, err
+	}
+	hour, _ := strconv.Atoi(match[4])
+	minute, _ := strconv.Atoi(match[5])
+	if hour > 23 || minute > 59 {
+		return time.Time{}, fmt.Errorf("unsupported Datetime parse value %q", text)
+	}
+	location := time.UTC
+	if strings.TrimSpace(zoneID) != "" {
+		if loaded, err := time.LoadLocation(zoneID); err == nil {
+			location = loaded
+		}
+	}
+	return time.Date(year, time.Month(month), day, hour, minute, 0, 0, location), nil
+}
+
+// parseApexYearToken resolves the year digits of Date.parse and Datetime.parse
+// as captured in date_parse_pivot_c14 (API 62.0 and 67.0, en_US and en_CA):
+// 1..59 is 20yy and 60..99 is 19yy whatever the digit count ("5", "090" and
+// "0090" pivot too), 100..999 and more than four digits throw, 1000..9999 is
+// literal. "0" throws; "00" is 2000 only in the slash (en_US) grammar.
+func parseApexYearToken(digits string, zeroTwoDigit bool) (int, error) {
+	if len(digits) > 4 {
+		return 0, fmt.Errorf("year out of range")
+	}
+	value, err := strconv.Atoi(digits)
+	if err != nil {
+		return 0, err
+	}
+	switch {
+	case value == 0:
+		if zeroTwoDigit && len(digits) == 2 {
+			return 2000, nil
+		}
+		return 0, fmt.Errorf("year out of range")
+	case value < 60:
+		return 2000 + value, nil
+	case value < 100:
+		return 1900 + value, nil
+	case value < 1000:
+		return 0, fmt.Errorf("year out of range")
+	}
+	return value, nil
+}
+
+func parseDateParseFields(text string, pattern *regexp.Regexp, monthIndex, dayIndex, yearIndex int, zeroTwoDigit bool) (time.Time, error) {
+	text = strings.TrimSpace(text)
+	match := pattern.FindStringSubmatch(text)
+	if match == nil {
+		return time.Time{}, fmt.Errorf("unsupported Date parse value %q", text)
+	}
+	year, err := parseApexYearToken(match[yearIndex], zeroTwoDigit)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("unsupported Date parse value %q", text)
+	}
+	month, _ := strconv.Atoi(match[monthIndex])
+	day, _ := strconv.Atoi(match[dayIndex])
+	if err := validateDateParts(year, month, day); err != nil {
+		return time.Time{}, err
+	}
+	return time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC), nil
+}
+
+func parseDatetimeParseFields(text, zoneID string, pattern *regexp.Regexp, monthIndex, dayIndex, yearIndex int, zeroTwoDigit bool) (time.Time, error) {
+	text = strings.TrimSpace(text)
+	match := pattern.FindStringSubmatch(text)
+	if match == nil {
+		return time.Time{}, fmt.Errorf("unsupported Datetime parse value %q", text)
+	}
+	year, err := parseApexYearToken(match[yearIndex], zeroTwoDigit)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("unsupported Datetime parse value %q", text)
+	}
+	month, _ := strconv.Atoi(match[monthIndex])
+	day, _ := strconv.Atoi(match[dayIndex])
+	if err := validateDateParts(year, month, day); err != nil {
+		return time.Time{}, err
+	}
+	hour, _ := strconv.Atoi(match[4])
+	minute, _ := strconv.Atoi(match[5])
+	if hour < 1 || hour > 12 || minute > 59 {
+		return time.Time{}, fmt.Errorf("unsupported Datetime parse value %q", text)
+	}
+	hour %= 12
+	if strings.HasPrefix(strings.ToLower(match[6]), "p") {
+		hour += 12
+	}
+	location := time.UTC
+	if strings.TrimSpace(zoneID) != "" {
+		if loaded, err := time.LoadLocation(zoneID); err == nil {
+			location = loaded
+		}
+	}
+	return time.Date(year, time.Month(month), day, hour, minute, 0, 0, location), nil
 }
 
 func parseDateObjectText(text string) (time.Time, error) {
@@ -1564,7 +1730,7 @@ func formatApexDatetimeToken(value time.Time, token, zoneID, zoneLabel string, o
 	case 'F':
 		// Java/Apex's F token is the ordinal occurrence of the weekday in
 		// the month (1 through 5), rather than a week-of-year number.
-		return strconv.Itoa((value.Day()-1)/7 + 1), nil
+		return formatPaddedDateNumber((value.Day()-1)/7+1, count), nil
 	case 'G':
 		if value.Year() < 1 {
 			return "BC", nil
@@ -1828,10 +1994,12 @@ var supportedNamedTimeZones = map[string]modeledTimeZone{
 	"Europe/Oslo":         {id: "Europe/Oslo", standardOffset: time.Hour, daylightOffset: 2 * time.Hour, standardLabel: "CET", daylightLabel: "CEST", standardDisplayName: "Central European Standard Time", daylightDisplayName: "Central European Summer Time", daylightRule: "europe"},
 	"Asia/Ho_Chi_Minh":    {id: "Asia/Ho_Chi_Minh", standardOffset: 7 * time.Hour, standardLabel: "ICT", standardDisplayName: "Indochina Time"},
 	"Asia/Kolkata":        {id: "Asia/Kolkata", standardOffset: 5*time.Hour + 30*time.Minute, standardLabel: "IST", standardDisplayName: "India Standard Time"},
-	"Asia/Tokyo":          {id: "Asia/Tokyo", standardOffset: 9 * time.Hour, standardLabel: "JST", standardDisplayName: "Japan Standard Time"},
-	"Pacific/Honolulu":    {id: "Pacific/Honolulu", standardOffset: -10 * time.Hour, standardLabel: "HST", standardDisplayName: "Hawaii-Aleutian Standard Time"},
-	"Pacific/Pago_Pago":   {id: "Pacific/Pago_Pago", standardOffset: -11 * time.Hour, standardLabel: "SST", standardDisplayName: "Samoa Standard Time"},
-	"Australia/Sydney":    {id: "Australia/Sydney", standardOffset: 10 * time.Hour, daylightOffset: 11 * time.Hour, standardLabel: "AEST", daylightLabel: "AEDT", standardDisplayName: "Australian Eastern Standard Time", daylightDisplayName: "Australian Eastern Daylight Time", daylightRule: "sydney"},
+	// Asia/Singapore: stdlib_core_c14 String (API 62.0, 67.0) observed the +0800 offset; label and display name captured 2026-11-06 (scratch org, API 68.0 anonymous).
+	"Asia/Singapore":    {id: "Asia/Singapore", standardOffset: 8 * time.Hour, standardLabel: "SGT", standardDisplayName: "Singapore Time"},
+	"Asia/Tokyo":        {id: "Asia/Tokyo", standardOffset: 9 * time.Hour, standardLabel: "JST", standardDisplayName: "Japan Standard Time"},
+	"Pacific/Honolulu":  {id: "Pacific/Honolulu", standardOffset: -10 * time.Hour, standardLabel: "HST", standardDisplayName: "Hawaii-Aleutian Standard Time"},
+	"Pacific/Pago_Pago": {id: "Pacific/Pago_Pago", standardOffset: -11 * time.Hour, standardLabel: "SST", standardDisplayName: "Samoa Standard Time"},
+	"Australia/Sydney":  {id: "Australia/Sydney", standardOffset: 10 * time.Hour, daylightOffset: 11 * time.Hour, standardLabel: "AEST", daylightLabel: "AEDT", standardDisplayName: "Australian Eastern Standard Time", daylightDisplayName: "Australian Eastern Daylight Time", daylightRule: "sydney"},
 }
 
 func supportedNamedTimeZone(id string) (modeledTimeZone, bool) {
@@ -3156,15 +3324,24 @@ func typedJSONMapKey(typeName, key string, input jsonTypedInput) (Value, error) 
 }
 
 func (vm *VM) schemaGlobalDescribe() Value {
+	vm.materializeLazyStandardSpread()
 	vm.ensureMetadataCacheGeneration()
-	if vm.globalDescribeCache != nil {
-		return *vm.globalDescribeCache
+	key := vm.globalDescribeAvailabilityKey()
+	if vm.globalDescribeVersionCaches != nil {
+		if cached := vm.globalDescribeVersionCaches[key]; cached != nil {
+			vm.globalDescribeCache = cached
+			return *cached
+		}
 	}
 	out, shared := vm.sharedGlobalDescribeBuild()
 	if !shared {
 		out = vm.buildSchemaGlobalDescribe()
 	}
 	vm.globalDescribeCache = &out
+	if vm.globalDescribeVersionCaches == nil {
+		vm.globalDescribeVersionCaches = make(map[string]*Value)
+	}
+	vm.globalDescribeVersionCaches[key] = &out
 	return out
 }
 
@@ -3178,7 +3355,7 @@ func (vm *VM) buildSchemaGlobalDescribe() Value {
 	names := make([]string, 0, len(vm.Org.Objects))
 	seen := make(map[string]bool, cap(names))
 	for name := range vm.Org.Objects {
-		if !vm.Org.AllowsStandardObject(name) {
+		if !vm.allowsStandardObject(name) {
 			continue
 		}
 		key := strings.ToLower(strings.TrimSpace(name))
@@ -4547,7 +4724,7 @@ func (vm *VM) describeFromSObjectTypeToken(value Value) (Value, error) {
 	if !ok || objectValue.Kind != ValueString {
 		return Null, fmt.Errorf("Schema.SObjectType token missing object")
 	}
-	objectName, definition, ok := vm.describeObjectDefinition(objectValue.Text)
+	objectName, definition, ok := vm.describeAPI68ObjectDefinition(objectValue.Text)
 	if !ok {
 		return Null, fmt.Errorf("Schema.SObjectType.getDescribe unknown object %s", objectValue.Text)
 	}
@@ -4848,7 +5025,7 @@ func runtimeError(thrown Value, stack []callFrame) error {
 	}
 	err := &RuntimeError{Type: errorType, Message: message, exceptionMessage: exceptionMessage}
 	if len(stack) != 0 {
-		err.Stack = stackFrames(stack)
+		err.Stack = stackFrames(dropActiveEntryFrame(stack))
 	}
 	return err
 }
@@ -4920,7 +5097,7 @@ func emptySObjectFieldTokenValue(value Value) bool {
 }
 
 func (vm *VM) stackFrames() []StackFrame {
-	return stackFrames(vm.rawStackFrames())
+	return stackFrames(dropActiveEntryFrame(vm.rawStackFrames()))
 }
 
 func (vm *VM) rawStackFrames() []callFrame {

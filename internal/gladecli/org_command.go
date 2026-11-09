@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/server"
 	"github.com/glade-sh/glade/internal/storage"
 )
@@ -48,11 +49,13 @@ func runOrg(ctx context.Context, args []string, w io.Writer, progressW io.Writer
 		return err
 	}
 	if len(args) == 0 || isHelpArg(args[0]) {
-		return errors.New("usage: glade org create|list|status|start|auth|token ...")
+		return errors.New("usage: glade org create|list|status|start|auth|token|suggest ...")
 	}
 	switch args[0] {
 	case "create":
 		return runOrgCreate(args[1:], w)
+	case "suggest":
+		return runOrgSuggest(args[1:], w)
 	case "list":
 		return runOrgList(args[1:], w)
 	case "status":
@@ -64,8 +67,66 @@ func runOrg(ctx context.Context, args []string, w io.Writer, progressW io.Writer
 	case "token":
 		return runOrgToken(ctx, args[1:], w)
 	default:
-		return errors.New("usage: glade org create|list|status|start|auth|token ...")
+		return errors.New("usage: glade org create|list|status|start|auth|token|suggest ...")
 	}
+}
+
+func runOrgSuggest(args []string, w io.Writer) error {
+	root := "."
+	jsonOut := false
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--project":
+			value, err := takeFlagValue(args, &i, "--project requires a value")
+			if err != nil {
+				return err
+			}
+			root = value
+		case "--json":
+			jsonOut = true
+		case "--help", "-h":
+			_, err := fmt.Fprintln(w, "usage: glade org suggest [--project <root>] [--json]")
+			return err
+		default:
+			return fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	info, err := os.Stat(root)
+	if err != nil {
+		return fmt.Errorf("project root %q: %w", root, err)
+	}
+	if !info.IsDir() {
+		return fmt.Errorf("project root %q is not a directory", root)
+	}
+	suggestions := project.SuggestOrgSetup(root)
+	if suggestions == nil {
+		suggestions = []project.OrgSetupSuggestion{}
+	}
+	if jsonOut {
+		return writeOrgJSON(w, "org suggest", struct {
+			Suggestions []project.OrgSetupSuggestion `json:"suggestions"`
+		}{suggestions})
+	}
+	if len(suggestions) == 0 {
+		_, err := fmt.Fprintln(w, "No org setup suggestions found.")
+		return err
+	}
+	for _, suggestion := range suggestions {
+		if _, err := fmt.Fprintln(w, suggestion.Reason); err != nil {
+			return err
+		}
+		if len(suggestion.Files) > 0 {
+			if _, err := fmt.Fprintf(w, "  Evidence: %s\n", strings.Join(suggestion.Files, ", ")); err != nil {
+				return err
+			}
+		}
+		if suggestion.YAML != "" {
+			if _, err := fmt.Fprintln(w, suggestion.YAML); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func runOrgCreate(args []string, w io.Writer) error {

@@ -88,12 +88,16 @@ func TestFlowEntryMatrixNativeConformance(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			if api == "67.0" {
+				// ORG-RUN.txt: CedarEntryCapture was deployed and assigned after the
+				// API 62 captures, for the API 67 object and field access.
+				writeCapturedAssignments(t, root, "CedarEntryCapture")
+			}
 			index := loadTestIndex(t, root)
 			if analysis := sema.Analyze(index); index.HasErrors() || analysis.HasErrors() {
 				t.Fatalf("native source compiled; Glade diagnostics: %v %v", index.Diagnostics, analysis.Diagnostics)
 			}
-			org := orgFromIndex(index)
-			org.APIVersion = api
+			org := capturedFixtureOrg(t, index, api)
 			runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 			for _, group := range groups {
 				t.Run("anonymous/"+group, func(t *testing.T) {

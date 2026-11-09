@@ -1,0 +1,21 @@
+{
+  "aggregatable": true,
+  "calculated": false,
+  "compoundFieldName": "Name",
+  "createable": true,
+  "defaultedOnCreate": false,
+  "filterable": true,
+  "groupable": true,
+  "label": "Middle Name",
+  "length": 40,
+  "name": "MiddleName",
+  "nillable": true,
+  "permissionable": false,
+  "precision": 0,
+  "referenceTo": [],
+  "relationshipName": null,
+  "scale": 0,
+  "sortable": true,
+  "type": "string",
+  "updateable": true
+}

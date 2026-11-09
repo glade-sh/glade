@@ -1,0 +1,1 @@
+@IsTest private class OwnedWriteNeg0 { @IsTest static void probe(){DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsLocalizationEnabled=true;} }

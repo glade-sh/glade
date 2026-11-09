@@ -9,11 +9,37 @@ import (
 // ExecutionContext contains actor state that must not be stored in parsed query
 // or schema caches. An omitted actor keeps owned-record Mine queries unsupported.
 type ExecutionContext struct {
-	APIVersion             string
-	Language               string
-	UserID                 storage.ID
+	APIVersion string
+	Language   string
+	// Locale is the user's LocaleSidKey; text comparison folds by it.
+	Locale string
+	// FormatDatetime renders a stored Datetime for FORMAT() in the user's
+	// time zone and locale.
+	FormatDatetime       func(text string) (string, bool)
+	UserID               storage.ID
+	FormulaUserID        storage.ID
+	PermissionUserFields map[string]storage.Value
+	// SetupUserID selects hierarchy settings without changing query-scope behavior.
+	SetupUserID            storage.ID
 	UserRecordAccess       func(objectName string, record storage.Record) storage.Record
 	NestedUserRecordAccess func(objectName string, record storage.Record) storage.Record
+	ChildRecordVisible     func(objectName string, record storage.Record) bool
+	ChildFieldReadable     func(objectName, field string) bool
+	WindowRecordVisible    func(objectName string, record storage.Record) bool
+}
+
+func (c ExecutionContext) formulaUserID() storage.ID {
+	if c.FormulaUserID != "" {
+		return c.FormulaUserID
+	}
+	return c.UserID
+}
+
+func (context ExecutionContext) formulaActor() storage.ID {
+	if context.SetupUserID != "" {
+		return context.SetupUserID
+	}
+	return context.UserID
 }
 
 func usingScopeOwnerFilter(definition storage.ObjectDefinition, scope string, context ExecutionContext) (string, storage.ID, error) {

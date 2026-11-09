@@ -1,0 +1,12 @@
+[
+  {
+    "object": "DocumentGenerationProcess",
+    "field": "IsLocalizationEnabled",
+    "source": "DocumentGenerationProcess record=new DocumentGenerationProcess();record.IsLocalizationEnabled=true;"
+  },
+  {
+    "object": "DocumentTemplate",
+    "field": "ContextMappingName",
+    "source": "DocumentTemplate record=new DocumentTemplate();record.ContextMappingName='owned';"
+  }
+]

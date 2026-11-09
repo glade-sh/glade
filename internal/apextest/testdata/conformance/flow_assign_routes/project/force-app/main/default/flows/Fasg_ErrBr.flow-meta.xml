@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>62.0</apiVersion>
+    <assignments><name>A1</name><label>A1</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>$Record.Fw1__c</assignToReference><operator>Assign</operator><value><stringValue>pre</stringValue></value></assignmentItems><connector><targetReference>E</targetReference></connector></assignments><customErrors><name>E</name><label>E</label><locationX>0</locationX><locationY>0</locationY><customErrorMessages><errorMessage>E {!FErrBr} L{!FErrLen}</errorMessage><fieldSelection>Fw1__c</fieldSelection><isFieldError>true</isFieldError></customErrorMessages></customErrors>
+    <environments>Default</environments>
+    <formulas><name>FErrBr</name><dataType>String</dataType><expression>&apos;x&apos; &amp; BR() &amp; &apos;y&apos;</expression></formulas><formulas><name>FErrLen</name><dataType>String</dataType><expression>TEXT(LEN(&apos;x&apos; &amp; BR() &amp; &apos;y&apos;))</expression></formulas>
+    <interviewLabel>Fasg_ErrBr {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Fasg_ErrBr</label>
+    <processMetadataValues><name>BuilderType</name><value><stringValue>LightningFlowBuilder</stringValue></value></processMetadataValues>
+    <processMetadataValues><name>CanvasMode</name><value><stringValue>AUTO_LAYOUT_CANVAS</stringValue></value></processMetadataValues>
+    <processMetadataValues><name>OriginBuilderType</name><value><stringValue>LightningFlowBuilder</stringValue></value></processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>A1</targetReference></connector><filterLogic>and</filterLogic><filters><field>Kind__c</field><operator>EqualTo</operator><value><stringValue>FI</stringValue></value></filters><object>Account</object><recordTriggerType>Create</recordTriggerType><triggerType>RecordBeforeSave</triggerType></start>
+    <status>Active</status>
+</Flow>

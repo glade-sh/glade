@@ -1,0 +1,8 @@
+case	outcome
+full legacy keys	OK|San Francisco,USA,null,94103,CA,null,123 Market St,null,null,null
+codes and geocode	OK|A,null,US,null,null,CA,null,37.5,-122.25,Street
+empty object	OK|null,null,null,null,null,null,null,null,null,null
+unknown field	EX|System.JSONException|Unrecognized field "bogus" at [line:1, column:22]
+number for string	OK|1,null,null,null,null,null,null,null,null,null
+json null	OK|null
+serialize	{"city":"X","country":null,"geocodeAccuracy":null,"latitude":null,"longitude":null,"postalCode":null,"state":null,"street":"S"}

@@ -13,7 +13,7 @@ these limits:
 | Full-profile query wall time | 240 seconds |
 
 The fast profile runs for every pull request, regardless of changed-file count,
-and for other CI events. The full profile runs weekly, on `v*` release tags,
+and main pushes in Security. The full profile runs weekly, on `v*` release tags,
 and on manual Security dispatch. The existing query filters are unchanged:
 fast retains the former small-PR profile (7 waivers), and full retains 12.
 Both profiles retain the default suite and add `security-extended`. The full
@@ -22,7 +22,8 @@ profile repeats `go/weak-sensitive-data-hashing`; counts deduplicate it.
 The bounded command uses the configuration recorded by CodeQL init in the
 database. Finalization, evaluation and SARIF interpretation share 300 seconds;
 evaluation also has a 240-second limit. An actual deadline expiry kills the
-process group, reports a warning and leaves the job successful with no upload.
+process group and leaves no upload. Both the fast and the full job warn and
+succeed.
 An analysis error, malformed SARIF or any unsuppressed alert fails the job.
 Setup/build and uploads have a separate 15-minute emergency job limit; failures
 or cancellation there still fail. See the [workflow summary](CODEQL_WORKFLOW.md)

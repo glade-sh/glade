@@ -1,0 +1,3 @@
+<apex:page standardController="PickProbe__c" extensions="PickProbeController" showHeader="false" sidebar="false" standardStylesheets="false">
+<div data-case="err-checkbox">{!ISPICKVAL(PickProbe__c.Flag__c, 'x')}</div>
+</apex:page>

@@ -39,6 +39,20 @@ func validateAlternativeRenderingProject(p project.Project) error {
 	return nil
 }
 
+// validateAlternativeRenderingPages is validateAlternativeRenderingProject
+// limited to the page files in only.
+func validateAlternativeRenderingPages(p project.Project, only map[string]bool) error {
+	for _, path := range p.VisualforcePageFiles {
+		if !only[path] || !strings.HasSuffix(strings.ToLower(path), ".page") {
+			continue
+		}
+		if err := validateAlternativeRenderingFile(path, p); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func validateAlternativeRenderingFile(path string, p project.Project) error {
 	source, err := os.ReadFile(path)
 	if err != nil {
@@ -295,14 +309,11 @@ func validateEmbeddingStylesheetResource(value string, p project.Project) error 
 	if len(parts) < 2 || !strings.EqualFold(parts[0], "$Resource") {
 		return nil
 	}
-	registry, err := resource.LoadProject(project.Project{
-		Root: p.Root, Namespace: p.Namespace, StaticResourceFiles: p.StaticResourceFiles,
-		StaticResourceMetas: p.StaticResourceMetas, ManagedPackageDependencies: p.ManagedPackageDependencies,
-	})
+	resources, err := projectStaticResources(p)
 	if err != nil {
 		return err
 	}
-	for _, entry := range registry.StaticResources {
+	for _, entry := range resources {
 		if strings.EqualFold(entry.Name, parts[1]) || (entry.NamespacePrefix != "" && strings.EqualFold(entry.NamespacePrefix+"__"+entry.Name, parts[1])) {
 			return nil
 		}
@@ -340,4 +351,29 @@ func validateEmbeddingEmailFields(source string, attributes map[string]string, p
 		}
 	}
 	return nil
+}
+
+// projectStaticResources lists the static resources of p and of its loaded
+// dependencies. A loaded dependency is installed in the org with its
+// resources, so a page of p may name them.
+func projectStaticResources(p project.Project) ([]storage.StaticResourceMetadata, error) {
+	registry, err := resource.LoadProject(project.Project{
+		Root: p.Root, Namespace: p.Namespace, StaticResourceFiles: p.StaticResourceFiles,
+		StaticResourceMetas: p.StaticResourceMetas, ManagedPackageDependencies: p.ManagedPackageDependencies,
+	})
+	if err != nil {
+		return nil, err
+	}
+	resources := registry.StaticResources
+	for _, dep := range p.ManagedPackageDependencies {
+		if dep.Status != "loaded" || dep.Project == nil {
+			continue
+		}
+		depResources, err := projectStaticResources(*dep.Project)
+		if err != nil {
+			return nil, err
+		}
+		resources = append(resources, depResources...)
+	}
+	return resources, nil
 }

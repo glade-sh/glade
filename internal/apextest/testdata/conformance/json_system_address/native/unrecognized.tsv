@@ -1,0 +1,10 @@
+case	outcome
+{"bogus":"x"}	System.JSONException|Unrecognized field "bogus" at [line:1, column:11]
+{"bogus":"xyz"}	System.JSONException|Unrecognized field "bogus" at [line:1, column:11]
+{"bogus": 12345}	System.JSONException|Unrecognized field "bogus" at [line:1, column:16]
+{"city":"A","bogus":true,"z":1}	System.JSONException|Unrecognized field "bogus" at [line:1, column:25]
+{"city":"A",~ "bogus":"x"}	System.JSONException|Unrecognized field "bogus" at [line:2, column:11]
+{"bogus":null}	System.JSONException|Unrecognized field "bogus" at [line:1, column:14]
+{"bogus":{"a":1}}	System.JSONException|Unrecognized field "bogus" at [line:1, column:11]
+[1]	System.JSONException|Can not deserialize: unexpected array at [line:1, column:1]
+"s"	System.JSONException|Value does not match expected type.

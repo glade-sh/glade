@@ -11,7 +11,7 @@ import (
 )
 
 func TestGeneratedPlatformSignatureMatchesMaterializedCatalog(t *testing.T) {
-	platform := buildSemaPlatformTypeMemberModel()
+	platform := buildSemaPlatformTypeMemberModel(typesys.StandardPlatformSymbolView())
 	state := newSemaTypeMemberStateWithPlatform(nil, platform)
 	gotView, wantView := state.view(), state.view()
 	keys := make([]string, 0, len(platform.platform.symbolsByKey))

@@ -38,6 +38,10 @@ func flowCoreRecordTriggerError(rule storage.FlowRule, err error) error {
 	if !strings.EqualFold(rule.TriggerType, "RecordAfterSave") {
 		return err
 	}
+	var createType *flowCreateReferenceTypeError
+	if errors.As(err, &createType) {
+		return flowCoreRecordCreateTriggerError(rule, createType)
+	}
 	var unknownOutput *flowCoreUnknownSubflowOutputError
 	var unstoredInput *flowUnstoredSubflowInputFieldError
 	if errors.As(err, &unknownOutput) || errors.As(err, &unstoredInput) {

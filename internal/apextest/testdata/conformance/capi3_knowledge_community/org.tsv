@@ -1,0 +1,145 @@
+api	org	case	result
+62.0	Developer scratch: knowledgeSettings.enableKnowledge only	networkCount	0
+62.0	Developer scratch: knowledgeSettings.enableKnowledge only	top.null	SILOED
+62.0	Developer scratch: knowledgeSettings.enableKnowledge only	top.fake0DB18	SILOED
+62.0	Developer scratch: knowledgeSettings.enableKnowledge only	top.fake0DB15	SILOED
+62.0	Developer scratch: knowledgeSettings.enableKnowledge only	top.fake0DBother	SILOED
+62.0	Developer scratch: knowledgeSettings.enableKnowledge only	top.internal	SILOED
+62.0	Developer scratch: knowledgeSettings.enableKnowledge only	top.me	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': me
+62.0	Developer scratch: knowledgeSettings.enableKnowledge only	top.fake001	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': 001000000000001AAA
+62.0	Developer scratch: knowledgeSettings.enableKnowledge only	top.userId	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': {userId}
+62.0	Developer scratch: knowledgeSettings.enableKnowledge only	top.fake0DBmalformed	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': 0DB00000000000
+62.0	Developer scratch: knowledgeSettings.enableKnowledge only	getTrendingArticles.fake0DB15	NO_MATCHING_TEST_RESULT
+67.0	Developer scratch: knowledgeSettings.enableKnowledge only	networkCount	0
+67.0	Developer scratch: knowledgeSettings.enableKnowledge only	top.null	SILOED
+67.0	Developer scratch: knowledgeSettings.enableKnowledge only	top.fake0DB18	SILOED
+67.0	Developer scratch: knowledgeSettings.enableKnowledge only	top.fake0DB15	SILOED
+67.0	Developer scratch: knowledgeSettings.enableKnowledge only	top.fake0DBother	SILOED
+67.0	Developer scratch: knowledgeSettings.enableKnowledge only	top.internal	SILOED
+67.0	Developer scratch: knowledgeSettings.enableKnowledge only	top.me	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': me
+67.0	Developer scratch: knowledgeSettings.enableKnowledge only	top.fake001	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': 001000000000001AAA
+67.0	Developer scratch: knowledgeSettings.enableKnowledge only	top.userId	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': {userId}
+67.0	Developer scratch: knowledgeSettings.enableKnowledge only	top.fake0DBmalformed	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': 0DB00000000000
+67.0	Developer scratch: knowledgeSettings.enableKnowledge only	getTrendingArticles.fake0DB15	NO_MATCHING_TEST_RESULT
+68.0	Developer scratch: knowledgeSettings.enableKnowledge only	networkCount	0
+68.0	Developer scratch: knowledgeSettings.enableKnowledge only	top.null	SILOED
+68.0	Developer scratch: knowledgeSettings.enableKnowledge only	top.fake0DB18	SILOED
+68.0	Developer scratch: knowledgeSettings.enableKnowledge only	top.fake0DB15	SILOED
+68.0	Developer scratch: knowledgeSettings.enableKnowledge only	top.fake0DBother	SILOED
+68.0	Developer scratch: knowledgeSettings.enableKnowledge only	top.internal	SILOED
+68.0	Developer scratch: knowledgeSettings.enableKnowledge only	top.me	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': me
+68.0	Developer scratch: knowledgeSettings.enableKnowledge only	top.fake001	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': 001000000000001AAA
+68.0	Developer scratch: knowledgeSettings.enableKnowledge only	top.userId	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': {userId}
+68.0	Developer scratch: knowledgeSettings.enableKnowledge only	top.fake0DBmalformed	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': 0DB00000000000
+68.0	Developer scratch: knowledgeSettings.enableKnowledge only	getTrendingArticles.fake0DB15	NO_MATCHING_TEST_RESULT
+62.0	Developer scratch: knowledge + communitiesSettings.enableNetworksEnabled, no site	networkCount	0
+62.0	Developer scratch: knowledge + communitiesSettings.enableNetworksEnabled, no site	top.null	SILOED
+62.0	Developer scratch: knowledge + communitiesSettings.enableNetworksEnabled, no site	top.fake0DB18	SILOED
+62.0	Developer scratch: knowledge + communitiesSettings.enableNetworksEnabled, no site	top.fake0DB15	SILOED
+62.0	Developer scratch: knowledge + communitiesSettings.enableNetworksEnabled, no site	top.fake0DBother	SILOED
+62.0	Developer scratch: knowledge + communitiesSettings.enableNetworksEnabled, no site	top.internal	SILOED
+62.0	Developer scratch: knowledge + communitiesSettings.enableNetworksEnabled, no site	top.me	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': me
+62.0	Developer scratch: knowledge + communitiesSettings.enableNetworksEnabled, no site	top.fake001	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': 001000000000001AAA
+62.0	Developer scratch: knowledge + communitiesSettings.enableNetworksEnabled, no site	top.userId	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': {userId}
+62.0	Developer scratch: knowledge + communitiesSettings.enableNetworksEnabled, no site	top.fake0DBmalformed	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': 0DB00000000000
+62.0	Developer scratch: knowledge + communitiesSettings.enableNetworksEnabled, no site	getTrendingArticles.fake0DB15	NO_MATCHING_TEST_RESULT
+67.0	Developer scratch: knowledge + communitiesSettings.enableNetworksEnabled, no site	networkCount	0
+67.0	Developer scratch: knowledge + communitiesSettings.enableNetworksEnabled, no site	top.null	SILOED
+67.0	Developer scratch: knowledge + communitiesSettings.enableNetworksEnabled, no site	top.fake0DB18	SILOED
+67.0	Developer scratch: knowledge + communitiesSettings.enableNetworksEnabled, no site	top.fake0DB15	SILOED
+67.0	Developer scratch: knowledge + communitiesSettings.enableNetworksEnabled, no site	top.fake0DBother	SILOED
+67.0	Developer scratch: knowledge + communitiesSettings.enableNetworksEnabled, no site	top.internal	SILOED
+67.0	Developer scratch: knowledge + communitiesSettings.enableNetworksEnabled, no site	top.me	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': me
+67.0	Developer scratch: knowledge + communitiesSettings.enableNetworksEnabled, no site	top.fake001	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': 001000000000001AAA
+67.0	Developer scratch: knowledge + communitiesSettings.enableNetworksEnabled, no site	top.userId	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': {userId}
+67.0	Developer scratch: knowledge + communitiesSettings.enableNetworksEnabled, no site	top.fake0DBmalformed	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': 0DB00000000000
+67.0	Developer scratch: knowledge + communitiesSettings.enableNetworksEnabled, no site	getTrendingArticles.fake0DB15	NO_MATCHING_TEST_RESULT
+68.0	Developer scratch: knowledge + communitiesSettings.enableNetworksEnabled, no site	networkCount	0
+68.0	Developer scratch: knowledge + communitiesSettings.enableNetworksEnabled, no site	top.null	SILOED
+68.0	Developer scratch: knowledge + communitiesSettings.enableNetworksEnabled, no site	top.fake0DB18	SILOED
+68.0	Developer scratch: knowledge + communitiesSettings.enableNetworksEnabled, no site	top.fake0DB15	SILOED
+68.0	Developer scratch: knowledge + communitiesSettings.enableNetworksEnabled, no site	top.fake0DBother	SILOED
+68.0	Developer scratch: knowledge + communitiesSettings.enableNetworksEnabled, no site	top.internal	SILOED
+68.0	Developer scratch: knowledge + communitiesSettings.enableNetworksEnabled, no site	top.me	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': me
+68.0	Developer scratch: knowledge + communitiesSettings.enableNetworksEnabled, no site	top.fake001	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': 001000000000001AAA
+68.0	Developer scratch: knowledge + communitiesSettings.enableNetworksEnabled, no site	top.userId	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': {userId}
+68.0	Developer scratch: knowledge + communitiesSettings.enableNetworksEnabled, no site	top.fake0DBmalformed	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': 0DB00000000000
+68.0	Developer scratch: knowledge + communitiesSettings.enableNetworksEnabled, no site	getTrendingArticles.fake0DB15	NO_MATCHING_TEST_RESULT
+62.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	networkCount	1
+62.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	top.null	SILOED
+62.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	top.realId18	SILOED
+62.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	top.realId15	SILOED
+62.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	top.fake0DB18	SILOED
+62.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	top.fake0DB15	SILOED
+62.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	top.fake0DBother	SILOED
+62.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	top.internal	SILOED
+62.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	top.me	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': me
+62.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	top.fake001	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': 001000000000001AAA
+62.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	top.userId	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': {userId}
+62.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	top.fake0DBmalformed	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': 0DB00000000000
+62.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	getTrendingArticles.fake0DB15	NO_MATCHING_TEST_RESULT
+62.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	getTrendingArticles.realId18	NO_MATCHING_TEST_RESULT
+62.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	getTrendingArticlesForTopic.realId18	NO_MATCHING_TEST_RESULT
+67.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	networkCount	1
+67.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	top.null	SILOED
+67.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	top.realId18	SILOED
+67.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	top.realId15	SILOED
+67.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	top.fake0DB18	SILOED
+67.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	top.fake0DB15	SILOED
+67.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	top.fake0DBother	SILOED
+67.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	top.internal	SILOED
+67.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	top.me	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': me
+67.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	top.fake001	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': 001000000000001AAA
+67.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	top.userId	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': {userId}
+67.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	top.fake0DBmalformed	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': 0DB00000000000
+67.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	getTrendingArticles.fake0DB15	NO_MATCHING_TEST_RESULT
+67.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	getTrendingArticles.realId18	NO_MATCHING_TEST_RESULT
+67.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	getTrendingArticlesForTopic.realId18	NO_MATCHING_TEST_RESULT
+68.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	networkCount	1
+68.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	top.null	SILOED
+68.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	top.realId18	SILOED
+68.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	top.realId15	SILOED
+68.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	top.fake0DB18	SILOED
+68.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	top.fake0DB15	SILOED
+68.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	top.fake0DBother	SILOED
+68.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	top.internal	SILOED
+68.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	top.me	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': me
+68.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	top.fake001	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': 001000000000001AAA
+68.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	top.userId	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': {userId}
+68.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	top.fake0DBmalformed	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': 0DB00000000000
+68.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	getTrendingArticles.fake0DB15	NO_MATCHING_TEST_RESULT
+68.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	getTrendingArticles.realId18	NO_MATCHING_TEST_RESULT
+68.0	Developer scratch: knowledge + networks setting + one site (Synthetic Portal)	getTrendingArticlesForTopic.realId18	NO_MATCHING_TEST_RESULT
+62.0	Enterprise trial org (no Network object)	networkCount	0
+62.0	Enterprise trial org (no Network object)	top.null	SILOED
+62.0	Enterprise trial org (no Network object)	top.fake0DB18	SILOED
+62.0	Enterprise trial org (no Network object)	top.fake0DB15	SILOED
+62.0	Enterprise trial org (no Network object)	top.fake0DBother	SILOED
+62.0	Enterprise trial org (no Network object)	top.internal	SILOED
+62.0	Enterprise trial org (no Network object)	top.me	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': me
+62.0	Enterprise trial org (no Network object)	top.fake001	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': 001000000000001AAA
+62.0	Enterprise trial org (no Network object)	top.userId	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': {userId}
+62.0	Enterprise trial org (no Network object)	top.fake0DBmalformed	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': 0DB00000000000
+62.0	Enterprise trial org (no Network object)	getTrendingArticles.fake0DB15	NO_MATCHING_TEST_RESULT
+67.0	Enterprise trial org (no Network object)	networkCount	0
+67.0	Enterprise trial org (no Network object)	top.null	SILOED
+67.0	Enterprise trial org (no Network object)	top.fake0DB18	SILOED
+67.0	Enterprise trial org (no Network object)	top.fake0DB15	SILOED
+67.0	Enterprise trial org (no Network object)	top.fake0DBother	SILOED
+67.0	Enterprise trial org (no Network object)	top.internal	SILOED
+67.0	Enterprise trial org (no Network object)	top.me	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': me
+67.0	Enterprise trial org (no Network object)	top.fake001	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': 001000000000001AAA
+67.0	Enterprise trial org (no Network object)	top.userId	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': {userId}
+67.0	Enterprise trial org (no Network object)	top.fake0DBmalformed	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': 0DB00000000000
+67.0	Enterprise trial org (no Network object)	getTrendingArticles.fake0DB15	NO_MATCHING_TEST_RESULT
+68.0	Enterprise trial org (no Network object)	networkCount	0
+68.0	Enterprise trial org (no Network object)	top.null	SILOED
+68.0	Enterprise trial org (no Network object)	top.fake0DB18	SILOED
+68.0	Enterprise trial org (no Network object)	top.fake0DB15	SILOED
+68.0	Enterprise trial org (no Network object)	top.fake0DBother	SILOED
+68.0	Enterprise trial org (no Network object)	top.internal	SILOED
+68.0	Enterprise trial org (no Network object)	top.me	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': me
+68.0	Enterprise trial org (no Network object)	top.fake001	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': 001000000000001AAA
+68.0	Enterprise trial org (no Network object)	top.userId	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': {userId}
+68.0	Enterprise trial org (no Network object)	top.fake0DBmalformed	ConnectApi.ConnectApiException|Illegal value for parameter: 'communityId': 0DB00000000000
+68.0	Enterprise trial org (no Network object)	getTrendingArticles.fake0DB15	NO_MATCHING_TEST_RESULT

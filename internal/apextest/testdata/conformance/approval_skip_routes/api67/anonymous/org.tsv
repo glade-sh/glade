@@ -1,0 +1,4 @@
+case	observation
+named_false	"false:NO_APPLICABLE_PROCESS"
+named_true	"true:Pending"
+unnamed_true	"false:NO_APPLICABLE_PROCESS"

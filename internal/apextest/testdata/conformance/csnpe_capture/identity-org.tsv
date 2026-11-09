@@ -1,0 +1,5 @@
+api	route	case	result
+62.0	anonymous	PROVIDER_ADAPTER_EQUALS_CLASS	true
+62.0	anonymous	PROVIDER_ADAPTER_DIFFERS_OTHER	true
+67.0	anonymous	PROVIDER_ADAPTER_EQUALS_CLASS	true
+67.0	anonymous	PROVIDER_ADAPTER_DIFFERS_OTHER	true

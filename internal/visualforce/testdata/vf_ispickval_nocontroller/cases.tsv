@@ -1,0 +1,30 @@
+case	kind	markup
+guest	page	{!ISPICKVAL($User.UserType, 'Guest')}
+standard	page	{!ISPICKVAL($User.UserType, 'Standard')}
+lower-guest	page	{!ISPICKVAL($User.UserType, 'guest')}
+locale	page	{!ISPICKVAL($User.LocaleSidKey, 'en_US')}
+timezone	page	{!ISPICKVAL($User.TimeZoneSidKey, 'America/Los_Angeles')}
+language	page	{!ISPICKVAL($User.LanguageLocaleKey, 'en_US')}
+org-type	page	{!ISPICKVAL($Organization.OrganizationType, 'Developer Edition')}
+org-language	page	{!ISPICKVAL($Organization.LanguageLocaleKey, 'en_US')}
+in-if	page	{!IF(ISPICKVAL($User.UserType, 'Guest'), 'yes', 'no')}
+in-not	page	{!NOT(ISPICKVAL($User.UserType, 'Guest'))}
+in-and	page	{!AND(ISPICKVAL($User.UserType, 'Standard'), ISPICKVAL($User.LocaleSidKey, 'en_US'))}
+rendered-true	page	<apex:outputText value="shown" rendered="{!ISPICKVAL($User.UserType, 'Standard')}"/>
+rendered-guest	page	<apex:outputText value="shown" rendered="{!ISPICKVAL($User.UserType, 'Guest')}"/>
+raw-usertype	page	{!$User.UserType}
+raw-locale	page	{!$User.LocaleSidKey}
+eq-usertype	page	{!$User.UserType == 'Standard'}
+err-text-field	page	{!ISPICKVAL($User.FirstName, 'x')}
+err-unknown-field	page	{!ISPICKVAL($User.NoSuchField, 'x')}
+err-second-var	page	{!ISPICKVAL($User.UserType, $User.LastName)}
+err-profile-name	page	{!ISPICKVAL($Profile.Name, 'x')}
+err-one-arg	page	{!ISPICKVAL($User.UserType)}
+comp-guest	comp	{!ISPICKVAL($User.UserType, 'Guest')}
+comp-standard	comp	{!ISPICKVAL($User.UserType, 'Standard')}
+comp-locale	comp	{!ISPICKVAL($User.LocaleSidKey, 'en_US')}
+comp-in-if	comp	{!IF(ISPICKVAL($User.UserType, 'Guest'), 'yes', 'no')}
+comp-rendered	comp	<apex:outputText value="shown" rendered="{!ISPICKVAL($User.UserType, 'Standard')}"/>
+comp-raw-usertype	comp	{!$User.UserType}
+comp-err-text-field	comp	{!ISPICKVAL($User.FirstName, 'x')}
+comp-err-unknown-field	comp	{!ISPICKVAL($User.NoSuchField, 'x')}

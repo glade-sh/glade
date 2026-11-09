@@ -1,0 +1,9 @@
+api	route	case	result	detail
+62.0	named	deploy	Succeeded	
+62.0	named	indexed	Pass	
+62.0	named	inherited	Pass	
+67.0	named	deploy	Succeeded	
+67.0	named	indexed	Pass	
+67.0	named	inherited	Pass	
+62.0	anonymous	indexed_clone_chain	Compiled+Executed	
+67.0	anonymous	indexed_clone_chain	Compiled+Executed	

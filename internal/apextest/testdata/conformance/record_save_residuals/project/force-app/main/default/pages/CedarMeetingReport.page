@@ -1,0 +1,4 @@
+<apex:page standardController="Cedar_Probe__c" extensions="CedarMeetingExt">
+    <apex:repeat value="{!meetings}" var="rel"><apex:outputField value="{!rel.Cedar_Account__r.name}"/></apex:repeat>
+    <apex:repeat value="{!goals}" var="g"><apex:outputField value="{!g.Cedar_Account__r.Name}"/>{!g.Cedar_Account__r.Name}</apex:repeat>
+</apex:page>

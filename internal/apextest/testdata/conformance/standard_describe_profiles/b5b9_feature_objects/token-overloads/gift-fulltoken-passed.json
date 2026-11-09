@@ -1,0 +1,54 @@
+{
+  "status": 0,
+  "outcome": "Passed",
+  "tests": [
+    {
+      "class": "OwnedFullTokenTest66_0",
+      "outcome": "Pass"
+    },
+    {
+      "class": "OwnedFullTokenTest67_0",
+      "outcome": "Pass"
+    },
+    {
+      "class": "OwnedFullTokenTest66_1",
+      "outcome": "Pass"
+    },
+    {
+      "class": "OwnedFullTokenTest65_0",
+      "outcome": "Pass"
+    },
+    {
+      "class": "OwnedFullTokenTest67_1",
+      "outcome": "Pass"
+    },
+    {
+      "class": "OwnedFullTokenTest64_0",
+      "outcome": "Pass"
+    },
+    {
+      "class": "OwnedFullTokenTest64_1",
+      "outcome": "Pass"
+    },
+    {
+      "class": "OwnedFullTokenTest63_1",
+      "outcome": "Pass"
+    },
+    {
+      "class": "OwnedFullTokenTest65_1",
+      "outcome": "Pass"
+    },
+    {
+      "class": "OwnedFullTokenTest62_0",
+      "outcome": "Pass"
+    },
+    {
+      "class": "OwnedFullTokenTest62_1",
+      "outcome": "Pass"
+    },
+    {
+      "class": "OwnedFullTokenTest63_0",
+      "outcome": "Pass"
+    }
+  ]
+}

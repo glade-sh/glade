@@ -1,0 +1,1 @@
+<Report xmlns="http://soap.sforce.com/2006/04/metadata"><columns><field>ACCOUNT_NUMBER</field></columns><format>Summary</format><groupingsDown><field>ACCOUNT.NAME</field><sortOrder>Asc</sortOrder></groupingsDown><name>B6 SumMixed</name><reportType>AccountList</reportType><scope>organization</scope><showGrandTotal>true</showGrandTotal><showSubTotals>false</showSubTotals></Report>

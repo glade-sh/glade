@@ -1,0 +1,1 @@
+Map<String,Object> a=LocaleObserver62.sample(); Map<String,Object> b=LocaleObserver68.sample();System.assert(false,'LOCALE_WARM|'+JSON.serialize(new Map<String,Object>{'first'=>a,'second'=>b}));

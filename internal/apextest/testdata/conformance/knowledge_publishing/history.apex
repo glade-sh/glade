@@ -1,0 +1,7 @@
+String tag=String.valueOf(Datetime.now().getTime());Knowledge__kav k=new Knowledge__kav(Title='History '+tag,UrlName='history-'+tag,Language='en_US');insert k;k=[SELECT KnowledgeArticleId FROM Knowledge__kav WHERE Id=:k.Id];Id parent=k.KnowledgeArticleId;KbManagement.PublishingService.publishArticle(parent,true);Id draft=KbManagement.PublishingService.editOnlineArticle(parent,true);
+System.debug('B4:old_by_id_status:'+ [SELECT COUNT() FROM Knowledge__kav WHERE Id=:k.Id AND PublishStatus='Archived']);
+System.debug('B4:old_by_id_latest:'+ [SELECT COUNT() FROM Knowledge__kav WHERE Id=:k.Id AND PublishStatus='Archived' AND IsLatestVersion=false]);
+System.debug('B4:old_by_status_latest:'+ [SELECT COUNT() FROM Knowledge__kav WHERE PublishStatus='Archived' AND IsLatestVersion=false AND KnowledgeArticleId=:parent]);
+System.debug('B4:base_by_id_status:'+ [SELECT COUNT() FROM KnowledgeArticleVersion WHERE Id=:k.Id AND PublishStatus='Archived']);
+KbManagement.PublishingService.publishArticle(parent,true);draft=KbManagement.PublishingService.editOnlineArticle(parent,false);KbManagement.PublishingService.publishArticle(parent,true);Knowledge__kav latest=[SELECT VersionNumber FROM Knowledge__kav WHERE Id=:draft];System.debug('B4:third_major:'+latest.VersionNumber);
+Id minor=KbManagement.PublishingService.editOnlineArticle(parent,false);KbManagement.PublishingService.publishArticle(parent,false);latest=[SELECT VersionNumber FROM Knowledge__kav WHERE Id=:minor];System.debug('B4:minor_after_major:'+latest.VersionNumber);

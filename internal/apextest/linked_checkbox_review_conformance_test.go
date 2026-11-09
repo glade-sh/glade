@@ -83,6 +83,14 @@ func TestLinkedCheckboxReviewProjectRoutes(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			// linked_checkbox_review_capture_assignment/ASSIGNMENT-RUN.txt: the
+			// review capture assigned Probe before both routes.
+			grant, err := os.ReadFile("testdata/conformance/linked_checkbox_review_capture_assignment/Probe.permissionset-meta.xml")
+			if err != nil {
+				t.Fatal(err)
+			}
+			writeFile(t, filepath.Join(root, "force-app/main/default/permissionsets/Probe.permissionset-meta.xml"), string(grant))
+			writeCapturedAssignments(t, root, "Probe")
 			cell := 0
 			check := func(expected, actual string) string {
 				cell++

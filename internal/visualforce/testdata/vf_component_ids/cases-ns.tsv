@@ -1,0 +1,16 @@
+case	where	markup
+NsAttrObj	comp	<apex:attribute name="a" type="CedarObj__c" description="d"/>x
+NsAttrObjList	comp	<apex:attribute name="a" type="CedarObj__c[]" description="d"/>x
+NsAttrObjQualified	comp	<apex:attribute name="a" type="%NS%__CedarObj__c" description="d"/>x
+NsAttrIface	comp	<apex:attribute name="a" type="CedarIface" description="d"/>x
+NsAttrEnum	comp	<apex:attribute name="a" type="CedarEnum" description="d"/>x
+NsAttrCls	comp	<apex:attribute name="a" type="CedarCls" description="d"/>x
+NsAttrNone	comp	<apex:attribute name="a" type="CedarNoSuch" description="d"/>x
+NsRelRepeat	ctl	<apex:repeat value="{!accs}" var="c"><apex:outputText value="{!c.CedarRel__r.LastName}"/></apex:repeat>
+NsRelField	ctl	<apex:repeat value="{!accs}" var="c"><apex:outputText value="{!c.CedarRel__c}"/></apex:repeat>
+NsRelQualified	ctl	<apex:repeat value="{!accs}" var="c"><apex:outputText value="{!c.%NS%__CedarRel__r.LastName}"/></apex:repeat>
+NsRelNone	ctl	<apex:repeat value="{!accs}" var="c"><apex:outputText value="{!c.CedarNoSuch__r.LastName}"/></apex:repeat>
+NsStdOutputField	std	<apex:outputField value="{!Account.CedarRel__c}"/>
+NsStdOutputRel	std	<apex:outputField value="{!Account.CedarRel__r.LastName}"/>
+NsStdExpr	std	<apex:outputText value="{!Account.CedarRel__c}"/>
+NsStdOutputNone	std	<apex:outputField value="{!Account.CedarNoSuch__c}"/>

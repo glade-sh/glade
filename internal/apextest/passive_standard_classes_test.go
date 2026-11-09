@@ -157,10 +157,16 @@ func TestPassiveStandardRuntimeClassesDoNotAliasTemplate(t *testing.T) {
 }
 
 // TestPassiveStandardRuntimeClassesBuildOncePerProcess fails if the template
-// cache is removed: Runs and direct calls must not rebuild it.
+// cache is removed: Runs and direct calls must not rebuild it. The cache is
+// per symbol view, so the count is taken after the first call; an earlier
+// test may already have moved the process to the ConnectApi view once.
 func TestPassiveStandardRuntimeClassesBuildOncePerProcess(t *testing.T) {
 	passiveStandardRuntimeClasses(nil, nil)
 	passiveStandardRuntimeClasses(nil, []vm.Class{{Name: "XmlTag"}})
+	builds := passiveStandardRuntimeClassCache.builds
+	if builds == 0 {
+		t.Fatal("direct calls did not build the passive template cache")
+	}
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/PassiveOnceTest.cls"), `
@@ -176,8 +182,8 @@ private class PassiveOnceTest {
 			t.Fatalf("run %d summary = %#v", i, got)
 		}
 	}
-	if got := passiveStandardRuntimeClassCache.builds; got != 1 {
-		t.Fatalf("passive class template builds = %d, want 1 per process", got)
+	if got := passiveStandardRuntimeClassCache.builds; got != builds {
+		t.Fatalf("passive class template builds = %d after two Runs, want %d (one per symbol view, none per Run)", got, builds)
 	}
 }
 

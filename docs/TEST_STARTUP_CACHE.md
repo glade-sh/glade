@@ -108,7 +108,7 @@ temporary file and activated atomically.
 ## Freshness: how the cache stays up to date
 
 Each cache entry carries a schema-versioned **manifest** of fingerprints
-recorded at write time. The current cache version is **15** and the current
+recorded at write time. The current cache version is **16** and the current
 manifest schema is **1**. On load, `Fresh()` requires:
 
 - Cache version, manifest schema, and platform ABI match the running Glade
@@ -155,6 +155,7 @@ Unrelated JSON files outside `data` directories are not cache inputs.
 - `cumulusci.yml`
 - `cumulusci.template.yml`
 - JSON scratch definitions referenced by CumulusCI `config_file` entries
+- JSON scratch definitions named by `definitionFile` in `sfdx-project.json`
 
 An optional config file is part of the exact set as soon as it exists. Adding a
 new `glade.yml`, scratch definition, or CumulusCI input invalidates a cache that

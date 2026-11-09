@@ -66,5 +66,11 @@ done < <(jq -r --arg sha "$sha" '
   | @tsv
 ' <<<"$runs_json")
 
+# Opt-in only: accept a pull request run whose checked-out merge tree equals
+# this commit's tree. Release authority stays exact-SHA push CI by default.
+if [[ "${REQUIRED_CI_ALLOW_TREE_ATTESTATION:-}" == "1" ]]; then
+  exec bash "$(dirname "${BASH_SOURCE[0]}")/ci-verify-pr-tree.sh" "$repository" "$sha"
+fi
+
 echo "no successful Required CI authority for $repository@$sha" >&2
 exit 1

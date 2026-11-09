@@ -1,0 +1,1 @@
+<apex:page controller="FieldProbe68"><apex:outputText value="{!value}"/></apex:page>

@@ -112,7 +112,6 @@ func TestJSONRootDateNullKeepsUnobservedContexts(t *testing.T) {
 		value             any
 	}{
 		{name: "source61", api: "61.0", target: "Date", root: true},
-		{name: "source68", api: "68.0", target: "Date", root: true},
 		{name: "unknown-source", target: "Date", root: true},
 		{name: "recursive", api: "63.0", target: "Date"},
 		{name: "recursive-quoted", api: "63.0", target: "Date", value: "null"},

@@ -1,0 +1,2 @@
+source_api	phase	route	observation
+67.0	setting_only	metadata_deploy	Invalid interface: System.SoqlStubProvider; Test.createSoqlStub method unavailable

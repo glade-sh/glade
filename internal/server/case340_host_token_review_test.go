@@ -46,6 +46,12 @@ func TestCase340HostedUserMutationRevokesOwnedToken(t *testing.T) {
 			var s *Server
 			if route == "vf" {
 				s = newVisualforceHTMLTestServer(t, &org, source)
+				// This principal updates a different user, so grant it the
+				// authority required for that mutation.
+				users := s.Org.Objects["User"]
+				principal := users.Records[s.VisualforceHTMLUserID]
+				principal.Fields["PermissionsManageInternalUsers"] = storage.BooleanValue(true)
+				users.Records[s.VisualforceHTMLUserID] = principal
 			} else {
 				s = newLightningTestServer(t, &org, source)
 			}
@@ -62,6 +68,10 @@ func TestCase340HostedUserMutationRevokesOwnedToken(t *testing.T) {
 			s.ServeHTTP(rec, req)
 			if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "ok") {
 				t.Fatalf("host status %d: %s", rec.Code, rec.Body.String())
+			}
+			user := s.Org.Objects["User"].Records["005000000000123"]
+			if user.Fields["LastName"].String != "Changed" {
+				t.Fatal("hosted user mutation did not persist")
 			}
 			if _, ok := issuedTokenUserFor(token, s); ok {
 				t.Fatal("hosted user mutation retained token")

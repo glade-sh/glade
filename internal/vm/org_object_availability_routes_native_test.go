@@ -58,6 +58,7 @@ func TestOrgObjectAvailabilityPublicNativeRoutes(t *testing.T) {
 		for _, object := range []string{"Quote", "QuoteLineItem", "WebStore", "Account"} {
 			for _, route := range routes[1:] {
 				t.Run(row[0]+"/"+row[1]+"/"+row[2]+"/"+object+"/"+route[0], func(t *testing.T) {
+					t.Parallel()
 					want, ok := observed[object][route[0]]
 					if !ok {
 						t.Fatal("missing native facet")
@@ -98,6 +99,7 @@ func TestOrgObjectAvailabilityDescribeAliases(t *testing.T) {
 		for _, phase := range []string{"plain", "quotes_on", "order_management"} {
 			for _, named := range []bool{false, true} {
 				t.Run(fmt.Sprintf("%s/%s/isTest=%t", api, phase, named), func(t *testing.T) {
+					t.Parallel()
 					org := availabilityRouteOrg(phase)
 					machine := New(nil)
 					machine.SetOrg(&org)
@@ -134,6 +136,7 @@ func TestOrgObjectAvailabilityRecordHostTwins(t *testing.T) {
 			for _, named := range []bool{false, true} {
 				for _, object := range []string{"Quote", "QuoteLineItem", "WebStore", "Account"} {
 					t.Run(fmt.Sprintf("%s/%s/isTest=%t/%s", api, phase, named, object), func(t *testing.T) {
+						t.Parallel()
 						org := availabilityRouteOrg(phase)
 						machine := New(nil)
 						machine.SetOrg(&org)
@@ -197,6 +200,7 @@ func TestOrgObjectAvailabilityStaticHydratedRoutes(t *testing.T) {
 		}
 		for _, object := range []string{"Quote", "QuoteLineItem", "WebStore", "Account"} {
 			t.Run(row[0]+"/"+row[1]+"/"+row[2]+"/"+object, func(t *testing.T) {
+				t.Parallel()
 				source := "try { List<SObject> rows=[SELECT Id FROM " + object + "]; return true; } catch (Exception e) { return e.getTypeName(); }"
 				program, err := CompileAnonymousWithOptions(source, CompileOptions{APIVersion: row[0]})
 				if err != nil {
@@ -243,6 +247,7 @@ func TestOrgObjectAvailabilityChildrenNativeDefinitionRoutes(t *testing.T) {
 		for name, query := range queries {
 			for _, hydrated := range []bool{false, true} {
 				t.Run(fmt.Sprintf("%s/%s/%s/%s/hydrated=%t", row[0], row[1], row[2], name, hydrated), func(t *testing.T) {
+					t.Parallel()
 					org := availabilityRouteOrg(row[1])
 					if !hydrated {
 						for _, object := range []string{"Quote", "QuoteLineItem", "WebStore"} {

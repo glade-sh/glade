@@ -41,8 +41,8 @@ func TestOrgStateFromIndexHydratesSourceGroupsAfterSeed(t *testing.T) {
 			if found != present {
 				t.Fatalf("source group present=%v, want %v", found, present)
 			}
-			if org.Objects["UserRole"].Records["00E000000000001"].Fields["DeveloperName"].String != "CEO" || org.Objects["User"].Records[storage.DefaultUserID].Fields["UserRoleId"].ID != "00E000000000001" {
-				t.Fatal("source loading changed default user role")
+			if org.Objects["UserRole"].Records["00E000000000001"].Fields["DeveloperName"].String != "CEO" || org.Objects["User"].Records[storage.DefaultUserID].Fields["UserRoleId"].Kind != storage.ValueNull {
+				t.Fatal("source loading assigned the fresh user a role")
 			}
 		})
 	}

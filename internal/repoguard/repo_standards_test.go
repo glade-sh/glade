@@ -303,6 +303,8 @@ func projectFiles(p project.Project) []string {
 	out = append(out, p.ContentAssetMetas...)
 	out = append(out, p.EmailTemplateFiles...)
 	out = append(out, p.FolderFiles...)
+	out = append(out, p.ReportFiles...)
+	out = append(out, p.DashboardFiles...)
 	out = append(out, p.NamedCredentialFiles...)
 	out = append(out, p.RemoteSiteFiles...)
 	out = append(out, p.CustomMetadataFiles...)

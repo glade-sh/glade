@@ -21,7 +21,7 @@ func TestPageNamesPreflight(t *testing.T) {
 		}{
 			{name: "missing-page"},
 			{name: "invalid-page", page: `<div/>`},
-			{name: "invalid-component", page: `<apex:page/>`, component: `<div/>`},
+			{name: "invalid-component", page: `<apex:page/>`, component: `<div/>`, fallback: true},
 			{name: "invalid-metadata", page: `<apex:page/>`, metadata: `<ApexPage><apiVersion>not-a-version</apiVersion></ApexPage>`},
 			{name: "valid-structure", page: `<apex:page/>`, fallback: true},
 			{name: "expression-needs-strict-loader", page: `<apex:page controller="Controller">{!missing}</apex:page>`, fallback: true, fallbackFail: true},
@@ -42,7 +42,7 @@ func TestPageNamesPreflight(t *testing.T) {
 					p.VisualforceComponentFiles = []string{component}
 				}
 				called := false
-				got := pageNames(p, func(project.Project) (Index, error) {
+				got, _ := pageNames(p, func(project.Project, bool, map[string]bool) (Index, error) {
 					called = true
 					if !tc.fallback {
 						t.Fatal("structural rejection invoked the strict loader")

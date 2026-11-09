@@ -1,0 +1,3 @@
+<apex:page controller="PickProbeController" showHeader="false" sidebar="false" standardStylesheets="false">
+<div data-case="in-nested-if">{!IF(ISPICKVAL($User.UserType, 'Guest'), 'g', IF(ISPICKVAL($User.UserType, 'Standard'), 's', 'o'))}</div>
+</apex:page>

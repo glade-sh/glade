@@ -82,7 +82,7 @@ func validateAjaxPlacement(root *MarkupNode) error {
 	}
 	var walk func(*MarkupNode, bool) error
 	walk = func(node *MarkupNode, inForm bool) error {
-		inForm = inForm || isApexStructureTag(node, "form")
+		inForm = inForm || isApexStructureTag(node, "form") || mayProvideForm(node)
 		if !inForm && (isApexStructureTag(node, "actionFunction") || isApexStructureTag(node, "actionPoller")) {
 			tag := "actionFunction"
 			if node.Name == "actionpoller" {

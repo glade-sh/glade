@@ -5,3 +5,9 @@ package storage
 func IsGeneratedHistoryObject(definition ObjectDefinition) bool {
 	return definition.Metadata["kind"] == "generatedHistory" && definition.Metadata["parentObject"] != ""
 }
+
+// IsGeneratedShareObject distinguishes the share table generated for a custom
+// object from an ordinary object.
+func IsGeneratedShareObject(definition ObjectDefinition) bool {
+	return definition.Metadata["kind"] == "generatedShare" && definition.Metadata["parentObject"] != ""
+}

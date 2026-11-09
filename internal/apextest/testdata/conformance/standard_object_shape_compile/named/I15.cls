@@ -1,0 +1,1 @@
+public class I15 extends NsOuter { public static void m() { NsOuter.DnE a; } }

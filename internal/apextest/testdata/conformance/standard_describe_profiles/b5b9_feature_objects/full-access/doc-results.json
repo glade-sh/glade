@@ -1,0 +1,1364 @@
+[
+  {
+    "route": "named-negative-source",
+    "api": "62.0",
+    "case": "DocumentGenerationProcess.AdditionalMetadata",
+    "kind": "read",
+    "class": "OwnedNeg62_0_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "62.0",
+    "case": "DocumentGenerationProcess.AdditionalMetadata",
+    "kind": "query",
+    "class": "OwnedNeg62_0_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "62.0",
+    "case": "DocumentGenerationProcess.DocGenAdditionalInput",
+    "kind": "read",
+    "class": "OwnedNeg62_1_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "62.0",
+    "case": "DocumentGenerationProcess.DocGenAdditionalInput",
+    "kind": "query",
+    "class": "OwnedNeg62_1_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "62.0",
+    "case": "DocumentGenerationProcess.DocGenAdditionalInputType",
+    "kind": "read",
+    "class": "OwnedNeg62_2_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "62.0",
+    "case": "DocumentGenerationProcess.DocGenAdditionalInputType",
+    "kind": "query",
+    "class": "OwnedNeg62_2_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "62.0",
+    "case": "DocumentGenerationProcess.EstimatedDocumentSize",
+    "kind": "read",
+    "class": "OwnedNeg62_3_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "62.0",
+    "case": "DocumentGenerationProcess.EstimatedDocumentSize",
+    "kind": "query",
+    "class": "OwnedNeg62_3_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "62.0",
+    "case": "DocumentGenerationProcess.IsLocalizationEnabled",
+    "kind": "read",
+    "class": "OwnedNeg62_4_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "62.0",
+    "case": "DocumentGenerationProcess.IsLocalizationEnabled",
+    "kind": "query",
+    "class": "OwnedNeg62_4_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "62.0",
+    "case": "DocumentGenerationProcess.IsSharedExternally",
+    "kind": "read",
+    "class": "OwnedNeg62_5_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "62.0",
+    "case": "DocumentGenerationProcess.IsSharedExternally",
+    "kind": "query",
+    "class": "OwnedNeg62_5_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "62.0",
+    "case": "DocumentGenerationProcess.IsTocUpdateRequired",
+    "kind": "read",
+    "class": "OwnedNeg62_6_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "62.0",
+    "case": "DocumentGenerationProcess.IsTocUpdateRequired",
+    "kind": "query",
+    "class": "OwnedNeg62_6_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "62.0",
+    "case": "DocumentTemplate.ContextDefinitionName",
+    "kind": "read",
+    "class": "OwnedNeg62_7_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "62.0",
+    "case": "DocumentTemplate.ContextDefinitionName",
+    "kind": "query",
+    "class": "OwnedNeg62_7_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "62.0",
+    "case": "DocumentTemplate.ContextFilterName",
+    "kind": "read",
+    "class": "OwnedNeg62_8_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "62.0",
+    "case": "DocumentTemplate.ContextFilterName",
+    "kind": "query",
+    "class": "OwnedNeg62_8_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "62.0",
+    "case": "DocumentTemplate.ContextMappingName",
+    "kind": "read",
+    "class": "OwnedNeg62_9_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "62.0",
+    "case": "DocumentTemplate.ContextMappingName",
+    "kind": "query",
+    "class": "OwnedNeg62_9_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "62.0",
+    "case": "DocumentTemplate.ContextTransformationName",
+    "kind": "read",
+    "class": "OwnedNeg62_10_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "62.0",
+    "case": "DocumentTemplate.ContextTransformationName",
+    "kind": "query",
+    "class": "OwnedNeg62_10_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "63.0",
+    "case": "DocumentGenerationProcess.AdditionalMetadata",
+    "kind": "read",
+    "class": "OwnedNeg63_0_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "63.0",
+    "case": "DocumentGenerationProcess.AdditionalMetadata",
+    "kind": "query",
+    "class": "OwnedNeg63_0_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "63.0",
+    "case": "DocumentGenerationProcess.DocGenAdditionalInput",
+    "kind": "read",
+    "class": "OwnedNeg63_1_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "63.0",
+    "case": "DocumentGenerationProcess.DocGenAdditionalInput",
+    "kind": "query",
+    "class": "OwnedNeg63_1_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "63.0",
+    "case": "DocumentGenerationProcess.DocGenAdditionalInputType",
+    "kind": "read",
+    "class": "OwnedNeg63_2_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "63.0",
+    "case": "DocumentGenerationProcess.DocGenAdditionalInputType",
+    "kind": "query",
+    "class": "OwnedNeg63_2_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "63.0",
+    "case": "DocumentGenerationProcess.EstimatedDocumentSize",
+    "kind": "read",
+    "class": "OwnedNeg63_3_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "63.0",
+    "case": "DocumentGenerationProcess.EstimatedDocumentSize",
+    "kind": "query",
+    "class": "OwnedNeg63_3_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "63.0",
+    "case": "DocumentGenerationProcess.IsLocalizationEnabled",
+    "kind": "read",
+    "class": "OwnedNeg63_4_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "63.0",
+    "case": "DocumentGenerationProcess.IsLocalizationEnabled",
+    "kind": "query",
+    "class": "OwnedNeg63_4_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "63.0",
+    "case": "DocumentGenerationProcess.IsSharedExternally",
+    "kind": "read",
+    "class": "OwnedNeg63_5_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "63.0",
+    "case": "DocumentGenerationProcess.IsSharedExternally",
+    "kind": "query",
+    "class": "OwnedNeg63_5_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "63.0",
+    "case": "DocumentGenerationProcess.IsTocUpdateRequired",
+    "kind": "read",
+    "class": "OwnedNeg63_6_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "63.0",
+    "case": "DocumentGenerationProcess.IsTocUpdateRequired",
+    "kind": "query",
+    "class": "OwnedNeg63_6_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "63.0",
+    "case": "DocumentTemplate.ContextDefinitionName",
+    "kind": "read",
+    "class": "OwnedNeg63_7_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "63.0",
+    "case": "DocumentTemplate.ContextDefinitionName",
+    "kind": "query",
+    "class": "OwnedNeg63_7_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "63.0",
+    "case": "DocumentTemplate.ContextFilterName",
+    "kind": "read",
+    "class": "OwnedNeg63_8_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "63.0",
+    "case": "DocumentTemplate.ContextFilterName",
+    "kind": "query",
+    "class": "OwnedNeg63_8_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "63.0",
+    "case": "DocumentTemplate.ContextMappingName",
+    "kind": "read",
+    "class": "OwnedNeg63_9_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "63.0",
+    "case": "DocumentTemplate.ContextMappingName",
+    "kind": "query",
+    "class": "OwnedNeg63_9_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "63.0",
+    "case": "DocumentTemplate.ContextTransformationName",
+    "kind": "read",
+    "class": "OwnedNeg63_10_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "63.0",
+    "case": "DocumentTemplate.ContextTransformationName",
+    "kind": "query",
+    "class": "OwnedNeg63_10_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "64.0",
+    "case": "DocumentGenerationProcess.AdditionalMetadata",
+    "kind": "read",
+    "class": "OwnedNeg64_0_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "64.0",
+    "case": "DocumentGenerationProcess.AdditionalMetadata",
+    "kind": "query",
+    "class": "OwnedNeg64_0_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "64.0",
+    "case": "DocumentGenerationProcess.IsLocalizationEnabled",
+    "kind": "read",
+    "class": "OwnedNeg64_4_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "64.0",
+    "case": "DocumentGenerationProcess.IsLocalizationEnabled",
+    "kind": "query",
+    "class": "OwnedNeg64_4_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "64.0",
+    "case": "DocumentGenerationProcess.IsSharedExternally",
+    "kind": "read",
+    "class": "OwnedNeg64_5_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "64.0",
+    "case": "DocumentGenerationProcess.IsSharedExternally",
+    "kind": "query",
+    "class": "OwnedNeg64_5_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "64.0",
+    "case": "DocumentGenerationProcess.IsTocUpdateRequired",
+    "kind": "read",
+    "class": "OwnedNeg64_6_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "64.0",
+    "case": "DocumentGenerationProcess.IsTocUpdateRequired",
+    "kind": "query",
+    "class": "OwnedNeg64_6_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "64.0",
+    "case": "DocumentTemplate.ContextFilterName",
+    "kind": "read",
+    "class": "OwnedNeg64_8_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "64.0",
+    "case": "DocumentTemplate.ContextFilterName",
+    "kind": "query",
+    "class": "OwnedNeg64_8_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "64.0",
+    "case": "DocumentTemplate.ContextTransformationName",
+    "kind": "read",
+    "class": "OwnedNeg64_10_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "64.0",
+    "case": "DocumentTemplate.ContextTransformationName",
+    "kind": "query",
+    "class": "OwnedNeg64_10_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "65.0",
+    "case": "DocumentGenerationProcess.AdditionalMetadata",
+    "kind": "read",
+    "class": "OwnedNeg65_0_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "65.0",
+    "case": "DocumentGenerationProcess.AdditionalMetadata",
+    "kind": "query",
+    "class": "OwnedNeg65_0_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "65.0",
+    "case": "DocumentGenerationProcess.IsLocalizationEnabled",
+    "kind": "read",
+    "class": "OwnedNeg65_4_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "65.0",
+    "case": "DocumentGenerationProcess.IsLocalizationEnabled",
+    "kind": "query",
+    "class": "OwnedNeg65_4_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "65.0",
+    "case": "DocumentGenerationProcess.IsSharedExternally",
+    "kind": "read",
+    "class": "OwnedNeg65_5_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "65.0",
+    "case": "DocumentGenerationProcess.IsSharedExternally",
+    "kind": "query",
+    "class": "OwnedNeg65_5_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "65.0",
+    "case": "DocumentGenerationProcess.IsTocUpdateRequired",
+    "kind": "read",
+    "class": "OwnedNeg65_6_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "65.0",
+    "case": "DocumentGenerationProcess.IsTocUpdateRequired",
+    "kind": "query",
+    "class": "OwnedNeg65_6_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "65.0",
+    "case": "DocumentTemplate.ContextFilterName",
+    "kind": "read",
+    "class": "OwnedNeg65_8_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "65.0",
+    "case": "DocumentTemplate.ContextFilterName",
+    "kind": "query",
+    "class": "OwnedNeg65_8_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "65.0",
+    "case": "DocumentTemplate.ContextTransformationName",
+    "kind": "read",
+    "class": "OwnedNeg65_10_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "65.0",
+    "case": "DocumentTemplate.ContextTransformationName",
+    "kind": "query",
+    "class": "OwnedNeg65_10_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "66.0",
+    "case": "DocumentGenerationProcess.IsLocalizationEnabled",
+    "kind": "read",
+    "class": "OwnedNeg66_4_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "66.0",
+    "case": "DocumentGenerationProcess.IsLocalizationEnabled",
+    "kind": "query",
+    "class": "OwnedNeg66_4_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "66.0",
+    "case": "DocumentGenerationProcess.IsTocUpdateRequired",
+    "kind": "read",
+    "class": "OwnedNeg66_6_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "66.0",
+    "case": "DocumentGenerationProcess.IsTocUpdateRequired",
+    "kind": "query",
+    "class": "OwnedNeg66_6_Query"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "66.0",
+    "case": "DocumentTemplate.ContextTransformationName",
+    "kind": "read",
+    "class": "OwnedNeg66_10_Read"
+  },
+  {
+    "route": "named-negative-source",
+    "api": "66.0",
+    "case": "DocumentTemplate.ContextTransformationName",
+    "kind": "query",
+    "class": "OwnedNeg66_10_Query"
+  },
+  {
+    "route": "named-positive-deploy",
+    "status": 0,
+    "failures": []
+  },
+  {
+    "route": "named-tests",
+    "status": 0,
+    "summary": "Passed",
+    "tests": [
+      {
+        "class": "OwnedMatrix66",
+        "outcome": "Pass",
+        "message": null
+      },
+      {
+        "class": "OwnedMatrix62",
+        "outcome": "Pass",
+        "message": null
+      },
+      {
+        "class": "OwnedMatrix67",
+        "outcome": "Pass",
+        "message": null
+      },
+      {
+        "class": "OwnedMatrix65",
+        "outcome": "Pass",
+        "message": null
+      },
+      {
+        "class": "OwnedMatrix63",
+        "outcome": "Pass",
+        "message": null
+      },
+      {
+        "class": "OwnedMatrix64",
+        "outcome": "Pass",
+        "message": null
+      }
+    ]
+  },
+  {
+    "route": "named-negative-deploy",
+    "status": 1,
+    "failures": [
+      {
+        "name": "OwnedNeg62_0_Query",
+        "problem": "SELECT AdditionalMetadata FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'AdditionalMetadata' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg62_0_Read",
+        "problem": "Variable does not exist: AdditionalMetadata"
+      },
+      {
+        "name": "OwnedNeg62_10_Query",
+        "problem": "SELECT ContextTransformationName FROM DocumentTemplate\n       ^\nERROR at Row:1:Column:8\nNo such column 'ContextTransformationName' on entity 'DocumentTemplate'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg62_10_Read",
+        "problem": "Variable does not exist: ContextTransformationName"
+      },
+      {
+        "name": "OwnedNeg62_1_Query",
+        "problem": "SELECT DocGenAdditionalInput FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'DocGenAdditionalInput' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg62_1_Read",
+        "problem": "Variable does not exist: DocGenAdditionalInput"
+      },
+      {
+        "name": "OwnedNeg62_2_Query",
+        "problem": "SELECT DocGenAdditionalInputType FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'DocGenAdditionalInputType' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg62_2_Read",
+        "problem": "Variable does not exist: DocGenAdditionalInputType"
+      },
+      {
+        "name": "OwnedNeg62_3_Query",
+        "problem": "SELECT EstimatedDocumentSize FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'EstimatedDocumentSize' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg62_3_Read",
+        "problem": "Variable does not exist: EstimatedDocumentSize"
+      },
+      {
+        "name": "OwnedNeg62_4_Query",
+        "problem": "SELECT IsLocalizationEnabled FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'IsLocalizationEnabled' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg62_4_Read",
+        "problem": "Variable does not exist: IsLocalizationEnabled"
+      },
+      {
+        "name": "OwnedNeg62_5_Query",
+        "problem": "SELECT IsSharedExternally FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'IsSharedExternally' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg62_5_Read",
+        "problem": "Variable does not exist: IsSharedExternally"
+      },
+      {
+        "name": "OwnedNeg62_6_Query",
+        "problem": "SELECT IsTocUpdateRequired FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'IsTocUpdateRequired' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg62_6_Read",
+        "problem": "Variable does not exist: IsTocUpdateRequired"
+      },
+      {
+        "name": "OwnedNeg62_7_Query",
+        "problem": "SELECT ContextDefinitionName FROM DocumentTemplate\n       ^\nERROR at Row:1:Column:8\nNo such column 'ContextDefinitionName' on entity 'DocumentTemplate'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg62_7_Read",
+        "problem": "Variable does not exist: ContextDefinitionName"
+      },
+      {
+        "name": "OwnedNeg62_8_Query",
+        "problem": "SELECT ContextFilterName FROM DocumentTemplate\n       ^\nERROR at Row:1:Column:8\nNo such column 'ContextFilterName' on entity 'DocumentTemplate'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg62_8_Read",
+        "problem": "Variable does not exist: ContextFilterName"
+      },
+      {
+        "name": "OwnedNeg62_9_Query",
+        "problem": "SELECT ContextMappingName FROM DocumentTemplate\n       ^\nERROR at Row:1:Column:8\nNo such column 'ContextMappingName' on entity 'DocumentTemplate'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg62_9_Read",
+        "problem": "Variable does not exist: ContextMappingName"
+      },
+      {
+        "name": "OwnedNeg63_0_Query",
+        "problem": "SELECT AdditionalMetadata FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'AdditionalMetadata' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg63_0_Read",
+        "problem": "Variable does not exist: AdditionalMetadata"
+      },
+      {
+        "name": "OwnedNeg63_10_Query",
+        "problem": "SELECT ContextTransformationName FROM DocumentTemplate\n       ^\nERROR at Row:1:Column:8\nNo such column 'ContextTransformationName' on entity 'DocumentTemplate'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg63_10_Read",
+        "problem": "Variable does not exist: ContextTransformationName"
+      },
+      {
+        "name": "OwnedNeg63_1_Query",
+        "problem": "SELECT DocGenAdditionalInput FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'DocGenAdditionalInput' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg63_1_Read",
+        "problem": "Variable does not exist: DocGenAdditionalInput"
+      },
+      {
+        "name": "OwnedNeg63_2_Query",
+        "problem": "SELECT DocGenAdditionalInputType FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'DocGenAdditionalInputType' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg63_2_Read",
+        "problem": "Variable does not exist: DocGenAdditionalInputType"
+      },
+      {
+        "name": "OwnedNeg63_3_Query",
+        "problem": "SELECT EstimatedDocumentSize FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'EstimatedDocumentSize' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg63_3_Read",
+        "problem": "Variable does not exist: EstimatedDocumentSize"
+      },
+      {
+        "name": "OwnedNeg63_4_Query",
+        "problem": "SELECT IsLocalizationEnabled FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'IsLocalizationEnabled' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg63_4_Read",
+        "problem": "Variable does not exist: IsLocalizationEnabled"
+      },
+      {
+        "name": "OwnedNeg63_5_Query",
+        "problem": "SELECT IsSharedExternally FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'IsSharedExternally' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg63_5_Read",
+        "problem": "Variable does not exist: IsSharedExternally"
+      },
+      {
+        "name": "OwnedNeg63_6_Query",
+        "problem": "SELECT IsTocUpdateRequired FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'IsTocUpdateRequired' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg63_6_Read",
+        "problem": "Variable does not exist: IsTocUpdateRequired"
+      },
+      {
+        "name": "OwnedNeg63_7_Query",
+        "problem": "SELECT ContextDefinitionName FROM DocumentTemplate\n       ^\nERROR at Row:1:Column:8\nNo such column 'ContextDefinitionName' on entity 'DocumentTemplate'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg63_7_Read",
+        "problem": "Variable does not exist: ContextDefinitionName"
+      },
+      {
+        "name": "OwnedNeg63_8_Query",
+        "problem": "SELECT ContextFilterName FROM DocumentTemplate\n       ^\nERROR at Row:1:Column:8\nNo such column 'ContextFilterName' on entity 'DocumentTemplate'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg63_8_Read",
+        "problem": "Variable does not exist: ContextFilterName"
+      },
+      {
+        "name": "OwnedNeg63_9_Query",
+        "problem": "SELECT ContextMappingName FROM DocumentTemplate\n       ^\nERROR at Row:1:Column:8\nNo such column 'ContextMappingName' on entity 'DocumentTemplate'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg63_9_Read",
+        "problem": "Variable does not exist: ContextMappingName"
+      },
+      {
+        "name": "OwnedNeg64_0_Query",
+        "problem": "SELECT AdditionalMetadata FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'AdditionalMetadata' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg64_0_Read",
+        "problem": "Variable does not exist: AdditionalMetadata"
+      },
+      {
+        "name": "OwnedNeg64_10_Query",
+        "problem": "SELECT ContextTransformationName FROM DocumentTemplate\n       ^\nERROR at Row:1:Column:8\nNo such column 'ContextTransformationName' on entity 'DocumentTemplate'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg64_10_Read",
+        "problem": "Variable does not exist: ContextTransformationName"
+      },
+      {
+        "name": "OwnedNeg64_4_Query",
+        "problem": "SELECT IsLocalizationEnabled FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'IsLocalizationEnabled' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg64_4_Read",
+        "problem": "Variable does not exist: IsLocalizationEnabled"
+      },
+      {
+        "name": "OwnedNeg64_5_Query",
+        "problem": "SELECT IsSharedExternally FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'IsSharedExternally' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg64_5_Read",
+        "problem": "Variable does not exist: IsSharedExternally"
+      },
+      {
+        "name": "OwnedNeg64_6_Query",
+        "problem": "SELECT IsTocUpdateRequired FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'IsTocUpdateRequired' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg64_6_Read",
+        "problem": "Variable does not exist: IsTocUpdateRequired"
+      },
+      {
+        "name": "OwnedNeg64_8_Query",
+        "problem": "SELECT ContextFilterName FROM DocumentTemplate\n       ^\nERROR at Row:1:Column:8\nNo such column 'ContextFilterName' on entity 'DocumentTemplate'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg64_8_Read",
+        "problem": "Variable does not exist: ContextFilterName"
+      },
+      {
+        "name": "OwnedNeg65_0_Query",
+        "problem": "SELECT AdditionalMetadata FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'AdditionalMetadata' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg65_0_Read",
+        "problem": "Variable does not exist: AdditionalMetadata"
+      },
+      {
+        "name": "OwnedNeg65_10_Query",
+        "problem": "SELECT ContextTransformationName FROM DocumentTemplate\n       ^\nERROR at Row:1:Column:8\nNo such column 'ContextTransformationName' on entity 'DocumentTemplate'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg65_10_Read",
+        "problem": "Variable does not exist: ContextTransformationName"
+      },
+      {
+        "name": "OwnedNeg65_4_Query",
+        "problem": "SELECT IsLocalizationEnabled FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'IsLocalizationEnabled' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg65_4_Read",
+        "problem": "Variable does not exist: IsLocalizationEnabled"
+      },
+      {
+        "name": "OwnedNeg65_5_Query",
+        "problem": "SELECT IsSharedExternally FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'IsSharedExternally' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg65_5_Read",
+        "problem": "Variable does not exist: IsSharedExternally"
+      },
+      {
+        "name": "OwnedNeg65_6_Query",
+        "problem": "SELECT IsTocUpdateRequired FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'IsTocUpdateRequired' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg65_6_Read",
+        "problem": "Variable does not exist: IsTocUpdateRequired"
+      },
+      {
+        "name": "OwnedNeg65_8_Query",
+        "problem": "SELECT ContextFilterName FROM DocumentTemplate\n       ^\nERROR at Row:1:Column:8\nNo such column 'ContextFilterName' on entity 'DocumentTemplate'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg65_8_Read",
+        "problem": "Variable does not exist: ContextFilterName"
+      },
+      {
+        "name": "OwnedNeg66_10_Query",
+        "problem": "SELECT ContextTransformationName FROM DocumentTemplate\n       ^\nERROR at Row:1:Column:8\nNo such column 'ContextTransformationName' on entity 'DocumentTemplate'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg66_10_Read",
+        "problem": "Variable does not exist: ContextTransformationName"
+      },
+      {
+        "name": "OwnedNeg66_4_Query",
+        "problem": "SELECT IsLocalizationEnabled FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'IsLocalizationEnabled' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg66_4_Read",
+        "problem": "Variable does not exist: IsLocalizationEnabled"
+      },
+      {
+        "name": "OwnedNeg66_6_Query",
+        "problem": "SELECT IsTocUpdateRequired FROM DocumentGenerationProcess\n       ^\nERROR at Row:1:Column:8\nNo such column 'IsTocUpdateRequired' on entity 'DocumentGenerationProcess'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      {
+        "name": "OwnedNeg66_6_Read",
+        "problem": "Variable does not exist: IsTocUpdateRequired"
+      }
+    ]
+  },
+  {
+    "route": "anonymous-dynamic",
+    "api": "62.0",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "error": ""
+  },
+  {
+    "route": "anonymous-static",
+    "api": "62.0",
+    "case": "DocumentGenerationProcess.AdditionalMetadata",
+    "kind": "read",
+    "source": "DocumentGenerationProcess r=new DocumentGenerationProcess(); Object x=r.AdditionalMetadata;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "62.0",
+    "case": "DocumentGenerationProcess.AdditionalMetadata",
+    "kind": "query",
+    "source": "List<DocumentGenerationProcess> x=[SELECT AdditionalMetadata FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "62.0",
+    "case": "DocumentGenerationProcess.DocGenAdditionalInput",
+    "kind": "read",
+    "source": "DocumentGenerationProcess r=new DocumentGenerationProcess(); Object x=r.DocGenAdditionalInput;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "62.0",
+    "case": "DocumentGenerationProcess.DocGenAdditionalInput",
+    "kind": "query",
+    "source": "List<DocumentGenerationProcess> x=[SELECT DocGenAdditionalInput FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "62.0",
+    "case": "DocumentGenerationProcess.DocGenAdditionalInputType",
+    "kind": "read",
+    "source": "DocumentGenerationProcess r=new DocumentGenerationProcess(); Object x=r.DocGenAdditionalInputType;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "62.0",
+    "case": "DocumentGenerationProcess.DocGenAdditionalInputType",
+    "kind": "query",
+    "source": "List<DocumentGenerationProcess> x=[SELECT DocGenAdditionalInputType FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "62.0",
+    "case": "DocumentGenerationProcess.EstimatedDocumentSize",
+    "kind": "read",
+    "source": "DocumentGenerationProcess r=new DocumentGenerationProcess(); Object x=r.EstimatedDocumentSize;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "62.0",
+    "case": "DocumentGenerationProcess.EstimatedDocumentSize",
+    "kind": "query",
+    "source": "List<DocumentGenerationProcess> x=[SELECT EstimatedDocumentSize FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "62.0",
+    "case": "DocumentGenerationProcess.IsLocalizationEnabled",
+    "kind": "read",
+    "source": "DocumentGenerationProcess r=new DocumentGenerationProcess(); Object x=r.IsLocalizationEnabled;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "62.0",
+    "case": "DocumentGenerationProcess.IsLocalizationEnabled",
+    "kind": "query",
+    "source": "List<DocumentGenerationProcess> x=[SELECT IsLocalizationEnabled FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "62.0",
+    "case": "DocumentGenerationProcess.IsSharedExternally",
+    "kind": "read",
+    "source": "DocumentGenerationProcess r=new DocumentGenerationProcess(); Object x=r.IsSharedExternally;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "62.0",
+    "case": "DocumentGenerationProcess.IsSharedExternally",
+    "kind": "query",
+    "source": "List<DocumentGenerationProcess> x=[SELECT IsSharedExternally FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "62.0",
+    "case": "DocumentGenerationProcess.IsTocUpdateRequired",
+    "kind": "read",
+    "source": "DocumentGenerationProcess r=new DocumentGenerationProcess(); Object x=r.IsTocUpdateRequired;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "62.0",
+    "case": "DocumentGenerationProcess.IsTocUpdateRequired",
+    "kind": "query",
+    "source": "List<DocumentGenerationProcess> x=[SELECT IsTocUpdateRequired FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "62.0",
+    "case": "DocumentTemplate.ContextDefinitionName",
+    "kind": "read",
+    "source": "DocumentTemplate r=new DocumentTemplate(); Object x=r.ContextDefinitionName;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "62.0",
+    "case": "DocumentTemplate.ContextDefinitionName",
+    "kind": "query",
+    "source": "List<DocumentTemplate> x=[SELECT ContextDefinitionName FROM DocumentTemplate LIMIT 1];",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "62.0",
+    "case": "DocumentTemplate.ContextFilterName",
+    "kind": "read",
+    "source": "DocumentTemplate r=new DocumentTemplate(); Object x=r.ContextFilterName;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "62.0",
+    "case": "DocumentTemplate.ContextFilterName",
+    "kind": "query",
+    "source": "List<DocumentTemplate> x=[SELECT ContextFilterName FROM DocumentTemplate LIMIT 1];",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "62.0",
+    "case": "DocumentTemplate.ContextMappingName",
+    "kind": "read",
+    "source": "DocumentTemplate r=new DocumentTemplate(); Object x=r.ContextMappingName;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "62.0",
+    "case": "DocumentTemplate.ContextMappingName",
+    "kind": "query",
+    "source": "List<DocumentTemplate> x=[SELECT ContextMappingName FROM DocumentTemplate LIMIT 1];",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "62.0",
+    "case": "DocumentTemplate.ContextTransformationName",
+    "kind": "read",
+    "source": "DocumentTemplate r=new DocumentTemplate(); Object x=r.ContextTransformationName;",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "62.0",
+    "case": "DocumentTemplate.ContextTransformationName",
+    "kind": "query",
+    "source": "List<DocumentTemplate> x=[SELECT ContextTransformationName FROM DocumentTemplate LIMIT 1];",
+    "status": 1,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-dynamic",
+    "api": "67.0",
+    "status": 0,
+    "compiled": true,
+    "success": true,
+    "error": ""
+  },
+  {
+    "route": "anonymous-static",
+    "api": "67.0",
+    "case": "DocumentGenerationProcess.AdditionalMetadata",
+    "kind": "read",
+    "source": "DocumentGenerationProcess r=new DocumentGenerationProcess(); Object x=r.AdditionalMetadata;",
+    "status": 0,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "67.0",
+    "case": "DocumentGenerationProcess.AdditionalMetadata",
+    "kind": "query",
+    "source": "List<DocumentGenerationProcess> x=[SELECT AdditionalMetadata FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 0,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "67.0",
+    "case": "DocumentGenerationProcess.DocGenAdditionalInput",
+    "kind": "read",
+    "source": "DocumentGenerationProcess r=new DocumentGenerationProcess(); Object x=r.DocGenAdditionalInput;",
+    "status": 0,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "67.0",
+    "case": "DocumentGenerationProcess.DocGenAdditionalInput",
+    "kind": "query",
+    "source": "List<DocumentGenerationProcess> x=[SELECT DocGenAdditionalInput FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 0,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "67.0",
+    "case": "DocumentGenerationProcess.DocGenAdditionalInputType",
+    "kind": "read",
+    "source": "DocumentGenerationProcess r=new DocumentGenerationProcess(); Object x=r.DocGenAdditionalInputType;",
+    "status": 0,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "67.0",
+    "case": "DocumentGenerationProcess.DocGenAdditionalInputType",
+    "kind": "query",
+    "source": "List<DocumentGenerationProcess> x=[SELECT DocGenAdditionalInputType FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 0,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "67.0",
+    "case": "DocumentGenerationProcess.EstimatedDocumentSize",
+    "kind": "read",
+    "source": "DocumentGenerationProcess r=new DocumentGenerationProcess(); Object x=r.EstimatedDocumentSize;",
+    "status": 0,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "67.0",
+    "case": "DocumentGenerationProcess.EstimatedDocumentSize",
+    "kind": "query",
+    "source": "List<DocumentGenerationProcess> x=[SELECT EstimatedDocumentSize FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 0,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "67.0",
+    "case": "DocumentGenerationProcess.IsLocalizationEnabled",
+    "kind": "read",
+    "source": "DocumentGenerationProcess r=new DocumentGenerationProcess(); Object x=r.IsLocalizationEnabled;",
+    "status": 0,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "67.0",
+    "case": "DocumentGenerationProcess.IsLocalizationEnabled",
+    "kind": "query",
+    "source": "List<DocumentGenerationProcess> x=[SELECT IsLocalizationEnabled FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 0,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "67.0",
+    "case": "DocumentGenerationProcess.IsSharedExternally",
+    "kind": "read",
+    "source": "DocumentGenerationProcess r=new DocumentGenerationProcess(); Object x=r.IsSharedExternally;",
+    "status": 0,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "67.0",
+    "case": "DocumentGenerationProcess.IsSharedExternally",
+    "kind": "query",
+    "source": "List<DocumentGenerationProcess> x=[SELECT IsSharedExternally FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 0,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "67.0",
+    "case": "DocumentGenerationProcess.IsTocUpdateRequired",
+    "kind": "read",
+    "source": "DocumentGenerationProcess r=new DocumentGenerationProcess(); Object x=r.IsTocUpdateRequired;",
+    "status": 0,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "67.0",
+    "case": "DocumentGenerationProcess.IsTocUpdateRequired",
+    "kind": "query",
+    "source": "List<DocumentGenerationProcess> x=[SELECT IsTocUpdateRequired FROM DocumentGenerationProcess LIMIT 1];",
+    "status": 0,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "67.0",
+    "case": "DocumentTemplate.ContextDefinitionName",
+    "kind": "read",
+    "source": "DocumentTemplate r=new DocumentTemplate(); Object x=r.ContextDefinitionName;",
+    "status": 0,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "67.0",
+    "case": "DocumentTemplate.ContextDefinitionName",
+    "kind": "query",
+    "source": "List<DocumentTemplate> x=[SELECT ContextDefinitionName FROM DocumentTemplate LIMIT 1];",
+    "status": 0,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "67.0",
+    "case": "DocumentTemplate.ContextFilterName",
+    "kind": "read",
+    "source": "DocumentTemplate r=new DocumentTemplate(); Object x=r.ContextFilterName;",
+    "status": 0,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "67.0",
+    "case": "DocumentTemplate.ContextFilterName",
+    "kind": "query",
+    "source": "List<DocumentTemplate> x=[SELECT ContextFilterName FROM DocumentTemplate LIMIT 1];",
+    "status": 0,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "67.0",
+    "case": "DocumentTemplate.ContextMappingName",
+    "kind": "read",
+    "source": "DocumentTemplate r=new DocumentTemplate(); Object x=r.ContextMappingName;",
+    "status": 0,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "67.0",
+    "case": "DocumentTemplate.ContextMappingName",
+    "kind": "query",
+    "source": "List<DocumentTemplate> x=[SELECT ContextMappingName FROM DocumentTemplate LIMIT 1];",
+    "status": 0,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "67.0",
+    "case": "DocumentTemplate.ContextTransformationName",
+    "kind": "read",
+    "source": "DocumentTemplate r=new DocumentTemplate(); Object x=r.ContextTransformationName;",
+    "status": 0,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  },
+  {
+    "route": "anonymous-static",
+    "api": "67.0",
+    "case": "DocumentTemplate.ContextTransformationName",
+    "kind": "query",
+    "source": "List<DocumentTemplate> x=[SELECT ContextTransformationName FROM DocumentTemplate LIMIT 1];",
+    "status": 0,
+    "compiled": null,
+    "success": null,
+    "message": "invalid json response"
+  }
+]

@@ -1,6 +1,7 @@
 package sema
 
 import (
+	"strconv"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/typesys"
@@ -50,7 +51,10 @@ func TestPaginationScopeAvailabilityPreservesOtherProfiles(t *testing.T) {
 
 func TestPaginationScopeAvailabilityKeepsOtherShapes(t *testing.T) {
 	for _, tc := range []struct{ name, body string }{
-		{"plain factory", `Database.PaginationCursor page=Database.getPaginationCursor('SELECT Id FROM Account USING SCOPE Mine');`},
+		// getPaginationCursor(String) is native at 62.0 since the
+		// hierarchy_setting_runas_pagination capture (TestHierarchySettingRunAsPaginationProjectCompiles).
+		{"unknown factory arity", `Database.PaginationCursor page=Database.getPaginationCursor('SELECT Id FROM Account USING SCOPE Mine', 5, 6);`},
+		{"unknown factory mode type", `Database.PaginationCursor page=Database.getPaginationCursor('SELECT Id FROM Account USING SCOPE Mine', 5);`},
 		{"unknown mode type", `Database.PaginationCursor page=Database.getPaginationCursorWithBinds('SELECT Id FROM Account USING SCOPE Mine',new Map<String,Object>(),(Object)null);`},
 		{"unknown bind type", `Database.PaginationCursor page=Database.getPaginationCursorWithBinds('SELECT Id FROM Account USING SCOPE Mine',new Map<Id,Account>(),AccessLevel.SYSTEM_MODE);`},
 		{"unknown arity", `Database.PaginationCursor page=Database.getPaginationCursorWithBinds('SELECT Id FROM Account USING SCOPE Mine',new Map<String,Object>());`},
@@ -104,5 +108,32 @@ func TestPaginationScopeAvailabilityKeepsOtherResultSurfaces(t *testing.T) {
 				t.Fatalf("unobserved result surface acquired availability: %s", tc.name)
 			}
 		})
+	}
+}
+
+// pagination_cursor_versions rows: each factory call compiles natively at class
+// API 61.0 through 67.0 (result held as Object). API 60.0 has no oracle and
+// keeps the generated gate.
+func TestPaginationCursorFactoryCapturedVersions(t *testing.T) {
+	calls := []string{
+		`Database.getPaginationCursor('SELECT Id FROM Account')`,
+		`Database.getPaginationCursor('SELECT Id FROM Account', AccessLevel.USER_MODE)`,
+		`Database.getPaginationCursorWithBinds('SELECT Id FROM Account WHERE Name = :n', new Map<String,Object>{'n'=>'x'}, AccessLevel.USER_MODE)`,
+	}
+	for _, api := range []string{"60.0", "61.0", "62.0", "63.0", "64.0", "65.0", "66.0", "67.0"} {
+		for i, call := range calls {
+			t.Run(api+"/"+strconv.Itoa(i+1), func(t *testing.T) {
+				result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{"OwnedCursorProbe.cls": "public class OwnedCursorProbe { public static Object read() { Object c = " + call + "; return c; } }"}, api)
+				if api == "60.0" {
+					if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA028") {
+						t.Fatalf("uncaptured API 60.0 lost its gate: %v", result.Diagnostics)
+					}
+					return
+				}
+				if result.HasErrors() {
+					t.Fatalf("native compiles at %s; Glade: %v", api, result.Diagnostics)
+				}
+			})
+		}
 	}
 }

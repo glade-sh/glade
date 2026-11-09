@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>VrMsg</fullName><active>true</active><errorConditionFormula>Name = 'VrMsg'</errorConditionFormula><errorMessage>m1 BR() m2</errorMessage></ValidationRule>

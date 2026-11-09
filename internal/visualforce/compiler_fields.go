@@ -75,10 +75,10 @@ func (ctx *expressionValidationContext) fieldComponentMember(objectType, member 
 	object, indexed := ctx.objects[strings.ToLower(objectType)]
 	if indexed {
 		for _, field := range object.Fields {
-			if strings.EqualFold(field.Name, member) {
+			if ctx.sameOwnName(field.Name, member) {
 				return true, "", true
 			}
-			if len(field.ReferenceTo) == 1 && strings.EqualFold(storage.ParentRelationshipName(storage.Field{APIName: field.Name, Type: storage.FieldReference, RelationshipName: field.RelationshipName}), member) {
+			if len(field.ReferenceTo) == 1 && ctx.sameOwnName(storage.ParentRelationshipName(storage.Field{APIName: field.Name, Type: storage.FieldReference, RelationshipName: field.RelationshipName}), member) {
 				return true, field.ReferenceTo[0], true
 			}
 		}

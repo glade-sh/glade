@@ -569,7 +569,7 @@ func (vm *VM) sortComparableValues(values []Value, result *Result) error {
 		case ValueDecimal:
 			return left.Decimal < right.Decimal
 		case ValueString:
-			return left.Text < right.Text
+			return apexStringLess(left.Text, right.Text)
 		case ValueBool:
 			return !left.Bool && right.Bool
 		default:
@@ -577,6 +577,21 @@ func (vm *VM) sortComparableValues(values []Value, result *Result) error {
 		}
 	})
 	return nil
+}
+
+// apexStringLess orders strings by UTF-16 code unit like String.compareTo. Go's
+// byte order is code point order, which differs once supplementary characters
+// meet U+E000..U+FFFF.
+func apexStringLess(left, right string) bool {
+	for i := 0; i < len(left) && i < len(right); i++ {
+		if left[i] != right[i] {
+			if left[i] < 0x80 && right[i] < 0x80 {
+				return left[i] < right[i]
+			}
+			return compareApexStrings(left, right) < 0
+		}
+	}
+	return len(left) < len(right)
 }
 func (vm *VM) sortValuesWithComparator(values []Value, comparator Value, result *Result) error {
 	if comparator.Kind != ValueObject {
@@ -602,6 +617,25 @@ func (vm *VM) sortValuesWithComparator(values []Value, comparator Value, result 
 		return compare < 0
 	})
 	return sortErr
+}
+func (vm *VM) typeImplementsComparable(typeName string) bool {
+	class, ok := vm.lookupClass(typeName)
+	if !ok {
+		return true
+	}
+	for _, iface := range vm.resolvedInterfaceNamesInHierarchy(class) {
+		base, generic := genericBaseName(iface)
+		if !generic {
+			base = strings.TrimSpace(iface)
+			if unqualified, ok := stripLeadingSystemNamespace(base); ok {
+				base = unqualified
+			}
+		}
+		if strings.EqualFold(base, "Comparable") {
+			return true
+		}
+	}
+	return false
 }
 func (vm *VM) comparatorTypeImplementsInterface(typeName string) bool {
 	class, ok := vm.lookupClass(typeName)
@@ -681,6 +715,10 @@ func (vm *VM) sortApexComparableValues(values []Value, result *Result) error {
 			return vm.ambiguousOverloadError(runtimeType+".compareTo", []Value{value})
 		} else if !ok {
 			return unsupportedCallError("List.sort for non-primitive comparable values")
+		}
+		if len(values) > 1 && !vm.typeImplementsComparable(runtimeType) {
+			// A compareTo method alone does not make a class Comparable.
+			return newExceptionError("System.ListException", "One or more of the items in this list is not Comparable.")
 		}
 		hasComparable = true
 	}

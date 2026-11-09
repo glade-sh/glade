@@ -75,6 +75,17 @@ func TestChangeDataCaptureCoalescingNativeProjectAndVMAPIRoutes(t *testing.T) {
 			writeFile(t, filepath.Join(root, "force-app/main/default/classes/JournalObservationTest.cls"), body+"}")
 			writeFile(t, filepath.Join(root, "force-app/main/default/classes/JournalObservationTest.cls-meta.xml"), meta)
 			methods = append(methods, "CDC17")
+			// The retained CDC slice omits unrelated metadata, but the capture
+			// assigned the complete OracleFixture set shared with the extensions.
+			permissionRoot := filepath.Join(pathExtensionFixture, "project/force-app/main/default")
+			permission, err := os.ReadFile(filepath.Join(permissionRoot, "permissionsets/OracleFixture.permissionset-meta.xml"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !strings.Contains(string(receipt), "fixture_permission_set_assigned=true\n") || !strings.Contains(string(receipt), fmt.Sprintf("source_sha256:project/force-app/main/default/permissionsets/OracleFixture.permissionset-meta.xml=%x\n", sha256.Sum256(permission))) {
+				t.Fatal("native CDC permission setup changed")
+			}
+			configureCapturedFixturePermissions(t, root, permissionRoot, "OracleFixture")
 			index := loadTestIndex(t, root)
 			if analysis := sema.Analyze(index); index.HasErrors() || analysis.HasErrors() {
 				t.Fatalf("diagnostics: %v %v", index.Diagnostics, analysis.Diagnostics)
@@ -103,7 +114,7 @@ func TestChangeDataCaptureCoalescingNativeProjectAndVMAPIRoutes(t *testing.T) {
 				}
 				anonymousRows[cells[0]] = cells[4]
 			}
-			org := orgFromIndex(index)
+			org := capturedFixtureOrg(t, index, api+".0")
 			runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 			triggers, triggerErrors := compileProjectTriggers(index)
 			if len(triggerErrors) != 0 {

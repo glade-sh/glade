@@ -1,0 +1,3 @@
+<apex:page showHeader="false" sidebar="false" standardStylesheets="false">
+<div><apex:insert name="body"/></div>
+</apex:page>

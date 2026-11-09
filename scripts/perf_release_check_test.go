@@ -51,10 +51,44 @@ type perfReleaseCheckRecord struct {
 	} `json:"phases"`
 }
 
+// perfReleaseCheckScript returns a copy of perf-release-check.sh inside a fresh
+// temp git repository with one commit. The script measures the repository that
+// holds it, so running the checked-in copy depends on the source tree being a
+// git checkout (an exported archive has no .git) and on its HEAD and dirtiness.
+func perfReleaseCheckScript(t *testing.T) string {
+	t.Helper()
+	data, err := os.ReadFile("perf-release-check.sh")
+	if err != nil {
+		t.Fatal(err)
+	}
+	repo := t.TempDir()
+	script := filepath.Join(repo, "scripts", "perf-release-check.sh")
+	if err := os.MkdirAll(filepath.Dir(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(script, data, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	env := append(os.Environ(), "GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_SYSTEM=/dev/null", "GIT_CONFIG_NOSYSTEM=1")
+	for _, args := range [][]string{
+		{"init", "-q"},
+		{"add", "scripts/perf-release-check.sh"},
+		{"-c", "user.name=glade-test", "-c", "user.email=glade-test@example.invalid", "-c", "commit.gpgsign=false", "commit", "-q", "-m", "fixture"},
+	} {
+		cmd := exec.Command("git", args...)
+		cmd.Dir = repo
+		cmd.Env = env
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+	}
+	return script
+}
+
 func runPerfReleaseCheck(t *testing.T, label string, command ...string) (perfReleaseCheckRecord, string, error) {
 	t.Helper()
 	output := filepath.Join(t.TempDir(), "caller-selected", "measurements")
-	args := []string{"perf-release-check.sh", "--label", label, "--output", output, "--"}
+	args := []string{perfReleaseCheckScript(t), "--label", label, "--output", output, "--"}
 	args = append(args, command...)
 	cmd := exec.Command("bash", args...)
 	cmd.Env = append(os.Environ(), "GOMAXPROCS=3", "LOCAL_GO_TEST_JOBS=2")
@@ -116,7 +150,7 @@ func TestPerfReleaseCheckPreservesFailureAndRecordsColdWarmAndNoGoCacheLabels(t 
 
 func TestPerfReleaseCheckUsesStableTimerLocaleWithoutChangingChildLocale(t *testing.T) {
 	output := filepath.Join(t.TempDir(), "measurements")
-	cmd := exec.Command("bash", "perf-release-check.sh", "--label", "locale-regression", "--cache-mode", "warm", "--output", output, "--", "bash", "-c", "test \"$LC_ALL\" = fr_FR.UTF-8")
+	cmd := exec.Command("bash", perfReleaseCheckScript(t), "--label", "locale-regression", "--cache-mode", "warm", "--output", output, "--", "bash", "-c", "test \"$LC_ALL\" = fr_FR.UTF-8")
 	cmd.Env = append(os.Environ(), "LC_ALL=fr_FR.UTF-8")
 	stdout, err := cmd.CombinedOutput()
 	if err != nil {
@@ -138,7 +172,7 @@ func TestPerfReleaseCheckUsesStableTimerLocaleWithoutChangingChildLocale(t *test
 func TestPerfReleaseCheckRecordsCallerVerifiedCacheModeAndEnvironmentProvenance(t *testing.T) {
 	dir := t.TempDir()
 	output := filepath.Join(dir, "measurements")
-	cmd := exec.Command("bash", "perf-release-check.sh", "--label", "baseline-no-go-cache", "--cache-mode", "no-go-cache", "--output", output, "--", "true")
+	cmd := exec.Command("bash", perfReleaseCheckScript(t), "--label", "baseline-no-go-cache", "--cache-mode", "no-go-cache", "--output", output, "--", "true")
 	cmd.Env = append(os.Environ(),
 		"GOCACHE="+filepath.Join(dir, "isolated-go-cache"),
 		"npm_config_cache="+filepath.Join(dir, "npm-cache"),
@@ -163,7 +197,7 @@ func TestPerfReleaseCheckRecordsCallerVerifiedCacheModeAndEnvironmentProvenance(
 
 func TestPerfReleaseCheckRecordsAutomaticSelectedJobCount(t *testing.T) {
 	output := filepath.Join(t.TempDir(), "measurements")
-	cmd := exec.Command("bash", "perf-release-check.sh", "--label", "automatic-jobs", "--output", output, "--", "true")
+	cmd := exec.Command("bash", perfReleaseCheckScript(t), "--label", "automatic-jobs", "--output", output, "--", "true")
 	cmd.Env = append(os.Environ(), "LOCAL_GO_TEST_JOBS=auto")
 	stdout, err := cmd.CombinedOutput()
 	if err != nil {
@@ -196,7 +230,7 @@ func TestPerfReleaseCheckDoesNotAlterCacheEnvironment(t *testing.T) {
 		}
 	}
 	output := filepath.Join(dir, "caller-selected-output")
-	cmd := exec.Command("bash", "perf-release-check.sh", "--label", "cache-observation", "--output", output, "--", "bash", "-c", "test \"$GOCACHE\" = \"$EXPECTED_GOCACHE\" && test \"$npm_config_cache\" = \"$EXPECTED_NPM_CACHE\" && test \"$GLADE_CACHE_DIR\" = \"$EXPECTED_GLADE_CACHE\"")
+	cmd := exec.Command("bash", perfReleaseCheckScript(t), "--label", "cache-observation", "--output", output, "--", "bash", "-c", "test \"$GOCACHE\" = \"$EXPECTED_GOCACHE\" && test \"$npm_config_cache\" = \"$EXPECTED_NPM_CACHE\" && test \"$GLADE_CACHE_DIR\" = \"$EXPECTED_GLADE_CACHE\"")
 	cmd.Env = append(os.Environ(),
 		"GOCACHE="+goCache, "npm_config_cache="+npmCache, "GLADE_CACHE_DIR="+gladeCache,
 		"EXPECTED_GOCACHE="+goCache, "EXPECTED_NPM_CACHE="+npmCache, "EXPECTED_GLADE_CACHE="+gladeCache,

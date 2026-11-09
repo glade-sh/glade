@@ -1,0 +1,3 @@
+<apex:page controller="PickProbeController" showHeader="false" sidebar="false" standardStylesheets="false">
+<div data-case="user-locale-case">{!ISPICKVAL($User.LocaleSidKey, 'EN_us')}</div>
+</apex:page>

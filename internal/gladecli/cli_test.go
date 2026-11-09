@@ -28,6 +28,7 @@ import (
 	"github.com/glade-sh/glade/internal/sema"
 	"github.com/glade-sh/glade/internal/testdaemon"
 	"github.com/glade-sh/glade/internal/testreport"
+	"github.com/glade-sh/glade/internal/testutil"
 	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/vm"
 	"github.com/glade-sh/glade/internal/watch"
@@ -399,7 +400,31 @@ func TestToolchainStatusJSONReportsMissingToolchain(t *testing.T) {
 	}
 }
 
+// useDoctorTestToolchain points GLADE_HOME at a synthetic toolchain layout so a
+// doctor run that expects a ready setup does not depend on a toolchain
+// installed on the host (CI runners have none under ~/.local/share/glade).
+// HOME and the XDG directories also point into the test's temp dir, so doctor
+// never reads the host's home or data directories.
+func useDoctorTestToolchain(t *testing.T) {
+	t.Helper()
+	base, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	root := filepath.Join(base, "toolchain")
+	for _, rel := range []string{"third_party/lwc/compile.mjs", "third_party/lwc/node_modules/@lwc/compiler/package.json", "lwcruntime/src/shims/wire-adapter.mjs", "lwcruntime/src/shims/lds-cache.mjs", "lwcruntime/src/shell/app.mjs", "lwcruntime/src/slds/slds-loader.mjs", "lwcruntime/src/lightning/button.mjs"} {
+		writeTestFile(t, filepath.Join(root, rel), "")
+	}
+	t.Setenv("HOME", filepath.Join(base, "home"))
+	t.Setenv("XDG_DATA_HOME", filepath.Join(base, "xdg-data"))
+	t.Setenv("XDG_CONFIG_HOME", filepath.Join(base, "xdg-config"))
+	t.Setenv("XDG_CACHE_HOME", filepath.Join(base, "xdg-cache"))
+	t.Setenv("GLADE_HOME", root)
+	t.Setenv("GLADE_ROOT", "")
+}
+
 func TestRunDoctorReportsParser(t *testing.T) {
+	useDoctorTestToolchain(t)
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"doctor"}, &stdout, &stderr)
 	if code != 0 {
@@ -417,6 +442,7 @@ func TestRunDoctorReportsParser(t *testing.T) {
 }
 
 func TestRunDoctorJSON(t *testing.T) {
+	useDoctorTestToolchain(t)
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"doctor", "--json"}, &stdout, &stderr)
 	if code != 0 {
@@ -617,6 +643,7 @@ func TestRunDoctorMalformedConfigReturnsStructuredJSON(t *testing.T) {
 }
 
 func TestRunDoctorShortFlags(t *testing.T) {
+	useDoctorTestToolchain(t)
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"doctor", "-p", ".", "-j"}, &stdout, &stderr)
 	if code != 0 {
@@ -668,6 +695,7 @@ func TestRunDoctorMissingProjectPathReturnsStructuredJSON(t *testing.T) {
 }
 
 func TestRunDoctorReportsProjectLocalDataEnvironment(t *testing.T) {
+	useDoctorTestToolchain(t)
 	root := t.TempDir()
 	writeProjectWithWidgetField(t, root, "Label__c")
 	writeTestFile(t, filepath.Join(root, "glade.yml"), `project:
@@ -1371,6 +1399,7 @@ func readCLIRecordedPIDIfPresent(path string) (int, bool, error) {
 }
 
 func waitForCLIRecordedPID(path string, timeout time.Duration) (int, error) {
+	timeout = testutil.Deadline(timeout)
 	deadline := time.Now().Add(timeout)
 	for {
 		pid, present, err := readCLIRecordedPIDIfPresent(path)
@@ -1389,6 +1418,7 @@ func waitForCLIRecordedPID(path string, timeout time.Duration) (int, error) {
 
 func waitForCLIProcessAbsent(t *testing.T, pid int, timeout time.Duration) {
 	t.Helper()
+	timeout = testutil.Deadline(timeout)
 	deadline := time.Now().Add(timeout)
 	for {
 		if err := exec.Command("kill", "-0", strconv.Itoa(pid)).Run(); err != nil {
@@ -4290,7 +4320,7 @@ func TestRunDAPAcceptsDBFlag(t *testing.T) {
 	}
 }
 
-const dapTestTimeout = 45 * time.Second
+var dapTestTimeout = testutil.Deadline(45 * time.Second)
 
 func TestRunDAPLaunchEmitsStopped(t *testing.T) {
 	if testing.Short() {
@@ -4760,10 +4790,18 @@ func TestRunExecWithProjectUsesLocalPlatformHarnesses(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{
 		"exec", "--project", root,
-		"Apex.Stack stack = new Apex.Stack(); System.assert(stack.empty()); System.assertEquals('001000000000001', new chatteranswers.AccountCreator().createAccount('Ada', 'Lovelace', UserInfo.getUserId())); List<Datacloud.FindDuplicatesResult> duplicateRows = Datacloud.FindDuplicates.findDuplicates(new List<SObject>{new Account(Name = 'Acme')}); System.assertEquals(1, duplicateRows.size()); System.assert(duplicateRows[0].isSuccess()); System.assertEquals(1, duplicateRows[0].getDuplicateResults().size()); System.assertEquals(0, duplicateRows[0].getDuplicateResults()[0].getMatchResults()[0].getSize()); System.assertEquals(0, duplicateRows[0].getErrors().size()); commerce_inventory.InventoryLevelsResponse levels = new commerce_inventory.CommerceInventoryService().getInventoryLevel(new commerce_inventory.InventoryLevelsRequest('LOCATION', new Set<commerce_inventory.InventoryLevelsItemRequest>())); System.assertEquals(0, levels.getItemsInventoryLevels().size()); commerce_ordermanagement.ProductExpandResponse expand = new commerce_ordermanagement.ProductExpandService().returnReasons(new commerce_ordermanagement.ProductExpandRequest()); System.assertEquals(null, expand.getSucceed()); Exception value = new InvalidParameterValueException('parameter', 'value'); System.assertEquals('System.InvalidParameterValueException', value.getTypeName()); TouchHandledException touch = new TouchHandledException('ignored'); System.assertEquals('Script-thrown exception', touch.getMessage()); touch.setMessage('changed'); System.assertEquals('changed', touch.getMessage());",
+		"Apex.Stack stack = new Apex.Stack(); System.assert(stack.empty()); System.assertEquals('001000000000001', new chatteranswers.AccountCreator().createAccount('Ada', 'Lovelace', UserInfo.getUserId())); List<Datacloud.FindDuplicatesResult> duplicateRows = Datacloud.FindDuplicates.findDuplicates(new List<SObject>{new Account(Name = 'Acme')}); System.assertEquals(1, duplicateRows.size()); System.assert(duplicateRows[0].isSuccess()); System.assertEquals(1, duplicateRows[0].getDuplicateResults().size()); System.assertEquals(0, duplicateRows[0].getDuplicateResults()[0].getMatchResults()[0].getSize()); System.assertEquals(0, duplicateRows[0].getErrors().size()); commerce_inventory.InventoryLevelsResponse levels = new commerce_inventory.CommerceInventoryService().getInventoryLevel(new commerce_inventory.InventoryLevelsRequest('LOCATION', new Set<commerce_inventory.InventoryLevelsItemRequest>())); System.assertEquals(0, levels.getItemsInventoryLevels().size()); commerce_ordermanagement.ProductExpandResponse expand = new commerce_ordermanagement.ProductExpandService().returnReasons(new commerce_ordermanagement.ProductExpandRequest()); System.assertEquals(null, expand.getSucceed());",
 	}, &stdout, &stderr)
 	if code != 0 {
 		t.Fatalf("project-backed local platform harnesses failed code=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	for _, source := range []string{"Exception value = new InvalidParameterValueException('parameter', 'value');", "Exception value = new TouchHandledException('ignored');"} {
+		stdout.Reset()
+		stderr.Reset()
+		code = Run(context.Background(), []string{"exec", "--project", root, source}, &stdout, &stderr)
+		if code == 0 || !strings.Contains(stderr.String(), "Can only throw this exception type from VisualForce or Aura context") {
+			t.Fatalf("restricted constructor: code=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+		}
 	}
 }
 

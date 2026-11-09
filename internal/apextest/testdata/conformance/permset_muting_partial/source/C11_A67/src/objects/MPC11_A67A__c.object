@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><deploymentStatus>Deployed</deploymentStatus><label>MPC11_A67A</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>MPC11_A67A Records</pluralLabel><sharingModel>Private</sharingModel></CustomObject>

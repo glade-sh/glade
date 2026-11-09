@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSetGroup xmlns="http://soap.sforce.com/2006/04/metadata"><label>M04_ObjectDelete</label><mutingPermissionSets>M04_ObjectDeleteMute</mutingPermissionSets><permissionSets>MuteGrant</permissionSets></PermissionSetGroup>

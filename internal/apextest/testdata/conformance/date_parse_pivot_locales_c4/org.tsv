@@ -1,0 +1,2491 @@
+source_api	locale	method	input	outcome
+62.0	de_DE	Date.format	2008-01-28	28.01.2008
+62.0	de_DE	Datetime.format	2008-01-28 15:04:00 America/Los_Angeles	28.01.2008, 15:04
+62.0	de_DE	Date.parse	28.01.00	2000-01-28
+62.0	de_DE	Date.parse	28.01.01	2001-01-28
+62.0	de_DE	Date.parse	28.01.02	2002-01-28
+62.0	de_DE	Date.parse	28.01.03	2003-01-28
+62.0	de_DE	Date.parse	28.01.04	2004-01-28
+62.0	de_DE	Date.parse	28.01.05	2005-01-28
+62.0	de_DE	Date.parse	28.01.06	2006-01-28
+62.0	de_DE	Date.parse	28.01.07	2007-01-28
+62.0	de_DE	Date.parse	28.01.08	2008-01-28
+62.0	de_DE	Date.parse	28.01.09	2009-01-28
+62.0	de_DE	Date.parse	28.01.10	2010-01-28
+62.0	de_DE	Date.parse	28.01.11	2011-01-28
+62.0	de_DE	Date.parse	28.01.12	2012-01-28
+62.0	de_DE	Date.parse	28.01.13	2013-01-28
+62.0	de_DE	Date.parse	28.01.14	2014-01-28
+62.0	de_DE	Date.parse	28.01.15	2015-01-28
+62.0	de_DE	Date.parse	28.01.16	2016-01-28
+62.0	de_DE	Date.parse	28.01.17	2017-01-28
+62.0	de_DE	Date.parse	28.01.18	2018-01-28
+62.0	de_DE	Date.parse	28.01.19	2019-01-28
+62.0	de_DE	Date.parse	28.01.20	2020-01-28
+62.0	de_DE	Date.parse	28.01.21	2021-01-28
+62.0	de_DE	Date.parse	28.01.22	2022-01-28
+62.0	de_DE	Date.parse	28.01.23	2023-01-28
+62.0	de_DE	Date.parse	28.01.24	2024-01-28
+62.0	de_DE	Date.parse	28.01.25	2025-01-28
+62.0	de_DE	Date.parse	28.01.26	2026-01-28
+62.0	de_DE	Date.parse	28.01.27	2027-01-28
+62.0	de_DE	Date.parse	28.01.28	2028-01-28
+62.0	de_DE	Date.parse	28.01.29	2029-01-28
+62.0	de_DE	Date.parse	28.01.30	2030-01-28
+62.0	de_DE	Date.parse	28.01.31	2031-01-28
+62.0	de_DE	Date.parse	28.01.32	2032-01-28
+62.0	de_DE	Date.parse	28.01.33	2033-01-28
+62.0	de_DE	Date.parse	28.01.34	2034-01-28
+62.0	de_DE	Date.parse	28.01.35	2035-01-28
+62.0	de_DE	Date.parse	28.01.36	2036-01-28
+62.0	de_DE	Date.parse	28.01.37	2037-01-28
+62.0	de_DE	Date.parse	28.01.38	2038-01-28
+62.0	de_DE	Date.parse	28.01.39	2039-01-28
+62.0	de_DE	Date.parse	28.01.40	2040-01-28
+62.0	de_DE	Date.parse	28.01.41	2041-01-28
+62.0	de_DE	Date.parse	28.01.42	2042-01-28
+62.0	de_DE	Date.parse	28.01.43	2043-01-28
+62.0	de_DE	Date.parse	28.01.44	2044-01-28
+62.0	de_DE	Date.parse	28.01.45	2045-01-28
+62.0	de_DE	Date.parse	28.01.46	2046-01-28
+62.0	de_DE	Date.parse	28.01.47	2047-01-28
+62.0	de_DE	Date.parse	28.01.48	2048-01-28
+62.0	de_DE	Date.parse	28.01.49	2049-01-28
+62.0	de_DE	Date.parse	28.01.50	2050-01-28
+62.0	de_DE	Date.parse	28.01.51	2051-01-28
+62.0	de_DE	Date.parse	28.01.52	2052-01-28
+62.0	de_DE	Date.parse	28.01.53	2053-01-28
+62.0	de_DE	Date.parse	28.01.54	2054-01-28
+62.0	de_DE	Date.parse	28.01.55	2055-01-28
+62.0	de_DE	Date.parse	28.01.56	2056-01-28
+62.0	de_DE	Date.parse	28.01.57	2057-01-28
+62.0	de_DE	Date.parse	28.01.58	2058-01-28
+62.0	de_DE	Date.parse	28.01.59	2059-01-28
+62.0	de_DE	Date.parse	28.01.60	1960-01-28
+62.0	de_DE	Date.parse	28.01.61	1961-01-28
+62.0	de_DE	Date.parse	28.01.62	1962-01-28
+62.0	de_DE	Date.parse	28.01.63	1963-01-28
+62.0	de_DE	Date.parse	28.01.64	1964-01-28
+62.0	de_DE	Date.parse	28.01.65	1965-01-28
+62.0	de_DE	Date.parse	28.01.66	1966-01-28
+62.0	de_DE	Date.parse	28.01.67	1967-01-28
+62.0	de_DE	Date.parse	28.01.68	1968-01-28
+62.0	de_DE	Date.parse	28.01.69	1969-01-28
+62.0	de_DE	Date.parse	28.01.70	1970-01-28
+62.0	de_DE	Date.parse	28.01.71	1971-01-28
+62.0	de_DE	Date.parse	28.01.72	1972-01-28
+62.0	de_DE	Date.parse	28.01.73	1973-01-28
+62.0	de_DE	Date.parse	28.01.74	1974-01-28
+62.0	de_DE	Date.parse	28.01.75	1975-01-28
+62.0	de_DE	Date.parse	28.01.76	1976-01-28
+62.0	de_DE	Date.parse	28.01.77	1977-01-28
+62.0	de_DE	Date.parse	28.01.78	1978-01-28
+62.0	de_DE	Date.parse	28.01.79	1979-01-28
+62.0	de_DE	Date.parse	28.01.80	1980-01-28
+62.0	de_DE	Date.parse	28.01.81	1981-01-28
+62.0	de_DE	Date.parse	28.01.82	1982-01-28
+62.0	de_DE	Date.parse	28.01.83	1983-01-28
+62.0	de_DE	Date.parse	28.01.84	1984-01-28
+62.0	de_DE	Date.parse	28.01.85	1985-01-28
+62.0	de_DE	Date.parse	28.01.86	1986-01-28
+62.0	de_DE	Date.parse	28.01.87	1987-01-28
+62.0	de_DE	Date.parse	28.01.88	1988-01-28
+62.0	de_DE	Date.parse	28.01.89	1989-01-28
+62.0	de_DE	Date.parse	28.01.90	1990-01-28
+62.0	de_DE	Date.parse	28.01.91	1991-01-28
+62.0	de_DE	Date.parse	28.01.92	1992-01-28
+62.0	de_DE	Date.parse	28.01.93	1993-01-28
+62.0	de_DE	Date.parse	28.01.94	1994-01-28
+62.0	de_DE	Date.parse	28.01.95	1995-01-28
+62.0	de_DE	Date.parse	28.01.96	1996-01-28
+62.0	de_DE	Date.parse	28.01.97	1997-01-28
+62.0	de_DE	Date.parse	28.01.98	1998-01-28
+62.0	de_DE	Date.parse	28.01.99	1999-01-28
+62.0	de_DE	Datetime.parse	28.01.00, 15:04	2000-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.01, 15:04	2001-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.02, 15:04	2002-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.03, 15:04	2003-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.04, 15:04	2004-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.05, 15:04	2005-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.06, 15:04	2006-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.07, 15:04	2007-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.08, 15:04	2008-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.09, 15:04	2009-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.10, 15:04	2010-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.11, 15:04	2011-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.12, 15:04	2012-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.13, 15:04	2013-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.14, 15:04	2014-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.15, 15:04	2015-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.16, 15:04	2016-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.17, 15:04	2017-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.18, 15:04	2018-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.19, 15:04	2019-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.20, 15:04	2020-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.21, 15:04	2021-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.22, 15:04	2022-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.23, 15:04	2023-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.24, 15:04	2024-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.25, 15:04	2025-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.26, 15:04	2026-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.27, 15:04	2027-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.28, 15:04	2028-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.29, 15:04	2029-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.30, 15:04	2030-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.31, 15:04	2031-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.32, 15:04	2032-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.33, 15:04	2033-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.34, 15:04	2034-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.35, 15:04	2035-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.36, 15:04	2036-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.37, 15:04	2037-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.38, 15:04	2038-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.39, 15:04	2039-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.40, 15:04	2040-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.41, 15:04	2041-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.42, 15:04	2042-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.43, 15:04	2043-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.44, 15:04	2044-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.45, 15:04	2045-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.46, 15:04	2046-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.47, 15:04	2047-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.48, 15:04	2048-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.49, 15:04	2049-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.50, 15:04	2050-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.51, 15:04	2051-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.52, 15:04	2052-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.53, 15:04	2053-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.54, 15:04	2054-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.55, 15:04	2055-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.56, 15:04	2056-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.57, 15:04	2057-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.58, 15:04	2058-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.59, 15:04	2059-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.60, 15:04	1960-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.61, 15:04	1961-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.62, 15:04	1962-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.63, 15:04	1963-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.64, 15:04	1964-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.65, 15:04	1965-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.66, 15:04	1966-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.67, 15:04	1967-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.68, 15:04	1968-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.69, 15:04	1969-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.70, 15:04	1970-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.71, 15:04	1971-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.72, 15:04	1972-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.73, 15:04	1973-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.74, 15:04	1974-01-28 22:04
+62.0	de_DE	Datetime.parse	28.01.75, 15:04	1975-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.76, 15:04	1976-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.77, 15:04	1977-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.78, 15:04	1978-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.79, 15:04	1979-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.80, 15:04	1980-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.81, 15:04	1981-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.82, 15:04	1982-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.83, 15:04	1983-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.84, 15:04	1984-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.85, 15:04	1985-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.86, 15:04	1986-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.87, 15:04	1987-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.88, 15:04	1988-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.89, 15:04	1989-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.90, 15:04	1990-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.91, 15:04	1991-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.92, 15:04	1992-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.93, 15:04	1993-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.94, 15:04	1994-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.95, 15:04	1995-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.96, 15:04	1996-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.97, 15:04	1997-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.98, 15:04	1998-01-28 23:04
+62.0	de_DE	Datetime.parse	28.01.99, 15:04	1999-01-28 23:04
+62.0	de_DE	Date.parse	28.01.0	ERR:System.TypeException
+62.0	de_DE	Datetime.parse	28.01.0, 15:04	ERR:System.TypeException
+62.0	de_DE	Date.parse	28.01.5	2005-01-28
+62.0	de_DE	Datetime.parse	28.01.5, 15:04	2005-01-28 23:04
+62.0	de_DE	Date.parse	28.01.9	2009-01-28
+62.0	de_DE	Datetime.parse	28.01.9, 15:04	2009-01-28 23:04
+62.0	de_DE	Date.parse	28.01.100	ERR:System.TypeException
+62.0	de_DE	Datetime.parse	28.01.100, 15:04	ERR:System.TypeException
+62.0	de_DE	Date.parse	28.01.190	ERR:System.TypeException
+62.0	de_DE	Datetime.parse	28.01.190, 15:04	ERR:System.TypeException
+62.0	de_DE	Date.parse	28.01.090	1990-01-28
+62.0	de_DE	Datetime.parse	28.01.090, 15:04	1990-01-28 23:04
+62.0	de_DE	Date.parse	28.01.999	ERR:System.TypeException
+62.0	de_DE	Datetime.parse	28.01.999, 15:04	ERR:System.TypeException
+62.0	de_DE	Date.parse	28.01.0090	1990-01-28
+62.0	de_DE	Datetime.parse	28.01.0090, 15:04	1990-01-28 23:04
+62.0	de_DE	Date.parse	28.01.0008	2008-01-28
+62.0	de_DE	Datetime.parse	28.01.0008, 15:04	2008-01-28 23:04
+62.0	de_DE	Date.parse	28.01.2008	2008-01-28
+62.0	de_DE	Datetime.parse	28.01.2008, 15:04	2008-01-28 23:04
+62.0	de_DE	Date.parse	28.01.20088	ERR:System.TypeException
+62.0	de_DE	Datetime.parse	28.01.20088, 15:04	ERR:System.TypeException
+62.0	de_DE	Date.parse	28.01.10000	ERR:System.TypeException
+62.0	de_DE	Datetime.parse	28.01.10000, 15:04	ERR:System.TypeException
+62.0	de_DE	Datetime.parse	2008-01-28, 3:04 PM	ERR:System.TypeException
+62.0	de_DE	Datetime.parse	2008-01-28 3:04 PM	ERR:System.TypeException
+62.0	de_DE	Datetime.parse	2008-01-28, 3:04 p.m.	ERR:System.TypeException
+62.0	de_DE	Datetime.parse	2008-01-28 3:04 p.m.	ERR:System.TypeException
+62.0	de_DE	Datetime.parse	2008-01-28, 15:04	ERR:System.TypeException
+62.0	de_DE	Datetime.parse	2008-01-28 15:04	ERR:System.TypeException
+62.0	de_DE	Datetime.parse	1/28/2008, 3:04 PM	ERR:System.TypeException
+62.0	de_DE	Datetime.parse	1/28/2008 3:04 PM	ERR:System.TypeException
+62.0	de_DE	Datetime.parse	2008-1-28, 3:04 p.m.	ERR:System.TypeException
+62.0	de_DE	Datetime.parse	2008-1-28 3:04 p.m.	ERR:System.TypeException
+62.0	de_DE	Datetime.parse	28/01/2008, 15:04	ERR:System.TypeException
+62.0	de_DE	Datetime.parse	2008-01-28, 3:04 pm	ERR:System.TypeException
+62.0	de_DE	Datetime.parse	2008-01-28, 3:04 PM.	ERR:System.TypeException
+62.0	de_DE	Datetime.parse	2008-01-28, 03:04 p.m.	ERR:System.TypeException
+62.0	de_DE	Date.parse	2008-01-28	ERR:System.TypeException
+62.0	de_DE	Date.parse	2008-1-28	ERR:System.TypeException
+62.0	de_DE	Date.parse	08-01-28	ERR:System.TypeException
+62.0	de_DE	Date.parse	8-1-28	ERR:System.TypeException
+62.0	de_DE	Date.parse	1/28/2008	ERR:System.TypeException
+62.0	de_DE	Date.parse	1/28/08	ERR:System.TypeException
+62.0	de_DE	Date.parse	28/01/2008	ERR:System.TypeException
+62.0	de_DE	Date.parse	2008/01/28	ERR:System.TypeException
+62.0	de_DE	Date.parse	20080128	ERR:System.TypeException
+62.0	en_GB	Date.format	2008-01-28	28/01/2008
+62.0	en_GB	Datetime.format	2008-01-28 15:04:00 America/Los_Angeles	28/01/2008, 15:04
+62.0	en_GB	Date.parse	28/01/00	ERR:System.TypeException
+62.0	en_GB	Date.parse	28/01/01	2001-01-28
+62.0	en_GB	Date.parse	28/01/02	2002-01-28
+62.0	en_GB	Date.parse	28/01/03	2003-01-28
+62.0	en_GB	Date.parse	28/01/04	2004-01-28
+62.0	en_GB	Date.parse	28/01/05	2005-01-28
+62.0	en_GB	Date.parse	28/01/06	2006-01-28
+62.0	en_GB	Date.parse	28/01/07	2007-01-28
+62.0	en_GB	Date.parse	28/01/08	2008-01-28
+62.0	en_GB	Date.parse	28/01/09	2009-01-28
+62.0	en_GB	Date.parse	28/01/10	2010-01-28
+62.0	en_GB	Date.parse	28/01/11	2011-01-28
+62.0	en_GB	Date.parse	28/01/12	2012-01-28
+62.0	en_GB	Date.parse	28/01/13	2013-01-28
+62.0	en_GB	Date.parse	28/01/14	2014-01-28
+62.0	en_GB	Date.parse	28/01/15	2015-01-28
+62.0	en_GB	Date.parse	28/01/16	2016-01-28
+62.0	en_GB	Date.parse	28/01/17	2017-01-28
+62.0	en_GB	Date.parse	28/01/18	2018-01-28
+62.0	en_GB	Date.parse	28/01/19	2019-01-28
+62.0	en_GB	Date.parse	28/01/20	2020-01-28
+62.0	en_GB	Date.parse	28/01/21	2021-01-28
+62.0	en_GB	Date.parse	28/01/22	2022-01-28
+62.0	en_GB	Date.parse	28/01/23	2023-01-28
+62.0	en_GB	Date.parse	28/01/24	2024-01-28
+62.0	en_GB	Date.parse	28/01/25	2025-01-28
+62.0	en_GB	Date.parse	28/01/26	2026-01-28
+62.0	en_GB	Date.parse	28/01/27	2027-01-28
+62.0	en_GB	Date.parse	28/01/28	2028-01-28
+62.0	en_GB	Date.parse	28/01/29	2029-01-28
+62.0	en_GB	Date.parse	28/01/30	2030-01-28
+62.0	en_GB	Date.parse	28/01/31	2031-01-28
+62.0	en_GB	Date.parse	28/01/32	2032-01-28
+62.0	en_GB	Date.parse	28/01/33	2033-01-28
+62.0	en_GB	Date.parse	28/01/34	2034-01-28
+62.0	en_GB	Date.parse	28/01/35	2035-01-28
+62.0	en_GB	Date.parse	28/01/36	2036-01-28
+62.0	en_GB	Date.parse	28/01/37	2037-01-28
+62.0	en_GB	Date.parse	28/01/38	2038-01-28
+62.0	en_GB	Date.parse	28/01/39	2039-01-28
+62.0	en_GB	Date.parse	28/01/40	2040-01-28
+62.0	en_GB	Date.parse	28/01/41	2041-01-28
+62.0	en_GB	Date.parse	28/01/42	2042-01-28
+62.0	en_GB	Date.parse	28/01/43	2043-01-28
+62.0	en_GB	Date.parse	28/01/44	2044-01-28
+62.0	en_GB	Date.parse	28/01/45	2045-01-28
+62.0	en_GB	Date.parse	28/01/46	2046-01-28
+62.0	en_GB	Date.parse	28/01/47	2047-01-28
+62.0	en_GB	Date.parse	28/01/48	2048-01-28
+62.0	en_GB	Date.parse	28/01/49	2049-01-28
+62.0	en_GB	Date.parse	28/01/50	2050-01-28
+62.0	en_GB	Date.parse	28/01/51	2051-01-28
+62.0	en_GB	Date.parse	28/01/52	2052-01-28
+62.0	en_GB	Date.parse	28/01/53	2053-01-28
+62.0	en_GB	Date.parse	28/01/54	2054-01-28
+62.0	en_GB	Date.parse	28/01/55	2055-01-28
+62.0	en_GB	Date.parse	28/01/56	2056-01-28
+62.0	en_GB	Date.parse	28/01/57	2057-01-28
+62.0	en_GB	Date.parse	28/01/58	2058-01-28
+62.0	en_GB	Date.parse	28/01/59	2059-01-28
+62.0	en_GB	Date.parse	28/01/60	1960-01-28
+62.0	en_GB	Date.parse	28/01/61	1961-01-28
+62.0	en_GB	Date.parse	28/01/62	1962-01-28
+62.0	en_GB	Date.parse	28/01/63	1963-01-28
+62.0	en_GB	Date.parse	28/01/64	1964-01-28
+62.0	en_GB	Date.parse	28/01/65	1965-01-28
+62.0	en_GB	Date.parse	28/01/66	1966-01-28
+62.0	en_GB	Date.parse	28/01/67	1967-01-28
+62.0	en_GB	Date.parse	28/01/68	1968-01-28
+62.0	en_GB	Date.parse	28/01/69	1969-01-28
+62.0	en_GB	Date.parse	28/01/70	1970-01-28
+62.0	en_GB	Date.parse	28/01/71	1971-01-28
+62.0	en_GB	Date.parse	28/01/72	1972-01-28
+62.0	en_GB	Date.parse	28/01/73	1973-01-28
+62.0	en_GB	Date.parse	28/01/74	1974-01-28
+62.0	en_GB	Date.parse	28/01/75	1975-01-28
+62.0	en_GB	Date.parse	28/01/76	1976-01-28
+62.0	en_GB	Date.parse	28/01/77	1977-01-28
+62.0	en_GB	Date.parse	28/01/78	1978-01-28
+62.0	en_GB	Date.parse	28/01/79	1979-01-28
+62.0	en_GB	Date.parse	28/01/80	1980-01-28
+62.0	en_GB	Date.parse	28/01/81	1981-01-28
+62.0	en_GB	Date.parse	28/01/82	1982-01-28
+62.0	en_GB	Date.parse	28/01/83	1983-01-28
+62.0	en_GB	Date.parse	28/01/84	1984-01-28
+62.0	en_GB	Date.parse	28/01/85	1985-01-28
+62.0	en_GB	Date.parse	28/01/86	1986-01-28
+62.0	en_GB	Date.parse	28/01/87	1987-01-28
+62.0	en_GB	Date.parse	28/01/88	1988-01-28
+62.0	en_GB	Date.parse	28/01/89	1989-01-28
+62.0	en_GB	Date.parse	28/01/90	1990-01-28
+62.0	en_GB	Date.parse	28/01/91	1991-01-28
+62.0	en_GB	Date.parse	28/01/92	1992-01-28
+62.0	en_GB	Date.parse	28/01/93	1993-01-28
+62.0	en_GB	Date.parse	28/01/94	1994-01-28
+62.0	en_GB	Date.parse	28/01/95	1995-01-28
+62.0	en_GB	Date.parse	28/01/96	1996-01-28
+62.0	en_GB	Date.parse	28/01/97	1997-01-28
+62.0	en_GB	Date.parse	28/01/98	1998-01-28
+62.0	en_GB	Date.parse	28/01/99	1999-01-28
+62.0	en_GB	Datetime.parse	28/01/00, 15:04	ERR:System.TypeException
+62.0	en_GB	Datetime.parse	28/01/01, 15:04	2001-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/02, 15:04	2002-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/03, 15:04	2003-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/04, 15:04	2004-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/05, 15:04	2005-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/06, 15:04	2006-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/07, 15:04	2007-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/08, 15:04	2008-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/09, 15:04	2009-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/10, 15:04	2010-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/11, 15:04	2011-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/12, 15:04	2012-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/13, 15:04	2013-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/14, 15:04	2014-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/15, 15:04	2015-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/16, 15:04	2016-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/17, 15:04	2017-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/18, 15:04	2018-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/19, 15:04	2019-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/20, 15:04	2020-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/21, 15:04	2021-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/22, 15:04	2022-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/23, 15:04	2023-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/24, 15:04	2024-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/25, 15:04	2025-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/26, 15:04	2026-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/27, 15:04	2027-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/28, 15:04	2028-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/29, 15:04	2029-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/30, 15:04	2030-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/31, 15:04	2031-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/32, 15:04	2032-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/33, 15:04	2033-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/34, 15:04	2034-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/35, 15:04	2035-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/36, 15:04	2036-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/37, 15:04	2037-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/38, 15:04	2038-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/39, 15:04	2039-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/40, 15:04	2040-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/41, 15:04	2041-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/42, 15:04	2042-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/43, 15:04	2043-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/44, 15:04	2044-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/45, 15:04	2045-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/46, 15:04	2046-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/47, 15:04	2047-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/48, 15:04	2048-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/49, 15:04	2049-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/50, 15:04	2050-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/51, 15:04	2051-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/52, 15:04	2052-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/53, 15:04	2053-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/54, 15:04	2054-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/55, 15:04	2055-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/56, 15:04	2056-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/57, 15:04	2057-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/58, 15:04	2058-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/59, 15:04	2059-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/60, 15:04	1960-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/61, 15:04	1961-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/62, 15:04	1962-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/63, 15:04	1963-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/64, 15:04	1964-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/65, 15:04	1965-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/66, 15:04	1966-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/67, 15:04	1967-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/68, 15:04	1968-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/69, 15:04	1969-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/70, 15:04	1970-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/71, 15:04	1971-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/72, 15:04	1972-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/73, 15:04	1973-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/74, 15:04	1974-01-28 22:04
+62.0	en_GB	Datetime.parse	28/01/75, 15:04	1975-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/76, 15:04	1976-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/77, 15:04	1977-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/78, 15:04	1978-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/79, 15:04	1979-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/80, 15:04	1980-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/81, 15:04	1981-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/82, 15:04	1982-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/83, 15:04	1983-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/84, 15:04	1984-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/85, 15:04	1985-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/86, 15:04	1986-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/87, 15:04	1987-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/88, 15:04	1988-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/89, 15:04	1989-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/90, 15:04	1990-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/91, 15:04	1991-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/92, 15:04	1992-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/93, 15:04	1993-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/94, 15:04	1994-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/95, 15:04	1995-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/96, 15:04	1996-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/97, 15:04	1997-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/98, 15:04	1998-01-28 23:04
+62.0	en_GB	Datetime.parse	28/01/99, 15:04	1999-01-28 23:04
+62.0	en_GB	Date.parse	28/01/0	ERR:System.TypeException
+62.0	en_GB	Datetime.parse	28/01/0, 15:04	ERR:System.TypeException
+62.0	en_GB	Date.parse	28/01/5	2005-01-28
+62.0	en_GB	Datetime.parse	28/01/5, 15:04	2005-01-28 23:04
+62.0	en_GB	Date.parse	28/01/9	2009-01-28
+62.0	en_GB	Datetime.parse	28/01/9, 15:04	2009-01-28 23:04
+62.0	en_GB	Date.parse	28/01/100	ERR:System.TypeException
+62.0	en_GB	Datetime.parse	28/01/100, 15:04	ERR:System.TypeException
+62.0	en_GB	Date.parse	28/01/190	ERR:System.TypeException
+62.0	en_GB	Datetime.parse	28/01/190, 15:04	ERR:System.TypeException
+62.0	en_GB	Date.parse	28/01/090	1990-01-28
+62.0	en_GB	Datetime.parse	28/01/090, 15:04	1990-01-28 23:04
+62.0	en_GB	Date.parse	28/01/999	ERR:System.TypeException
+62.0	en_GB	Datetime.parse	28/01/999, 15:04	ERR:System.TypeException
+62.0	en_GB	Date.parse	28/01/0090	1990-01-28
+62.0	en_GB	Datetime.parse	28/01/0090, 15:04	1990-01-28 23:04
+62.0	en_GB	Date.parse	28/01/0008	2008-01-28
+62.0	en_GB	Datetime.parse	28/01/0008, 15:04	2008-01-28 23:04
+62.0	en_GB	Date.parse	28/01/2008	2008-01-28
+62.0	en_GB	Datetime.parse	28/01/2008, 15:04	2008-01-28 23:04
+62.0	en_GB	Date.parse	28/01/20088	ERR:System.TypeException
+62.0	en_GB	Datetime.parse	28/01/20088, 15:04	ERR:System.TypeException
+62.0	en_GB	Date.parse	28/01/10000	ERR:System.TypeException
+62.0	en_GB	Datetime.parse	28/01/10000, 15:04	ERR:System.TypeException
+62.0	en_GB	Datetime.parse	2008-01-28, 3:04 PM	ERR:System.TypeException
+62.0	en_GB	Datetime.parse	2008-01-28 3:04 PM	ERR:System.TypeException
+62.0	en_GB	Datetime.parse	2008-01-28, 3:04 p.m.	ERR:System.TypeException
+62.0	en_GB	Datetime.parse	2008-01-28 3:04 p.m.	ERR:System.TypeException
+62.0	en_GB	Datetime.parse	2008-01-28, 15:04	ERR:System.TypeException
+62.0	en_GB	Datetime.parse	2008-01-28 15:04	ERR:System.TypeException
+62.0	en_GB	Datetime.parse	1/28/2008, 3:04 PM	ERR:System.TypeException
+62.0	en_GB	Datetime.parse	1/28/2008 3:04 PM	ERR:System.TypeException
+62.0	en_GB	Datetime.parse	2008-1-28, 3:04 p.m.	ERR:System.TypeException
+62.0	en_GB	Datetime.parse	2008-1-28 3:04 p.m.	ERR:System.TypeException
+62.0	en_GB	Datetime.parse	28/01/2008, 15:04	2008-01-28 23:04
+62.0	en_GB	Datetime.parse	2008-01-28, 3:04 pm	ERR:System.TypeException
+62.0	en_GB	Datetime.parse	2008-01-28, 3:04 PM.	ERR:System.TypeException
+62.0	en_GB	Datetime.parse	2008-01-28, 03:04 p.m.	ERR:System.TypeException
+62.0	en_GB	Date.parse	2008-01-28	ERR:System.TypeException
+62.0	en_GB	Date.parse	2008-1-28	ERR:System.TypeException
+62.0	en_GB	Date.parse	08-01-28	ERR:System.TypeException
+62.0	en_GB	Date.parse	8-1-28	ERR:System.TypeException
+62.0	en_GB	Date.parse	1/28/2008	ERR:System.TypeException
+62.0	en_GB	Date.parse	1/28/08	ERR:System.TypeException
+62.0	en_GB	Date.parse	28/01/2008	2008-01-28
+62.0	en_GB	Date.parse	2008/01/28	ERR:System.TypeException
+62.0	en_GB	Date.parse	20080128	ERR:System.TypeException
+62.0	fr_FR	Date.format	2008-01-28	28/01/2008
+62.0	fr_FR	Datetime.format	2008-01-28 15:04:00 America/Los_Angeles	28/01/2008 15:04
+62.0	fr_FR	Date.parse	28/01/00	ERR:System.TypeException
+62.0	fr_FR	Date.parse	28/01/01	2001-01-28
+62.0	fr_FR	Date.parse	28/01/02	2002-01-28
+62.0	fr_FR	Date.parse	28/01/03	2003-01-28
+62.0	fr_FR	Date.parse	28/01/04	2004-01-28
+62.0	fr_FR	Date.parse	28/01/05	2005-01-28
+62.0	fr_FR	Date.parse	28/01/06	2006-01-28
+62.0	fr_FR	Date.parse	28/01/07	2007-01-28
+62.0	fr_FR	Date.parse	28/01/08	2008-01-28
+62.0	fr_FR	Date.parse	28/01/09	2009-01-28
+62.0	fr_FR	Date.parse	28/01/10	2010-01-28
+62.0	fr_FR	Date.parse	28/01/11	2011-01-28
+62.0	fr_FR	Date.parse	28/01/12	2012-01-28
+62.0	fr_FR	Date.parse	28/01/13	2013-01-28
+62.0	fr_FR	Date.parse	28/01/14	2014-01-28
+62.0	fr_FR	Date.parse	28/01/15	2015-01-28
+62.0	fr_FR	Date.parse	28/01/16	2016-01-28
+62.0	fr_FR	Date.parse	28/01/17	2017-01-28
+62.0	fr_FR	Date.parse	28/01/18	2018-01-28
+62.0	fr_FR	Date.parse	28/01/19	2019-01-28
+62.0	fr_FR	Date.parse	28/01/20	2020-01-28
+62.0	fr_FR	Date.parse	28/01/21	2021-01-28
+62.0	fr_FR	Date.parse	28/01/22	2022-01-28
+62.0	fr_FR	Date.parse	28/01/23	2023-01-28
+62.0	fr_FR	Date.parse	28/01/24	2024-01-28
+62.0	fr_FR	Date.parse	28/01/25	2025-01-28
+62.0	fr_FR	Date.parse	28/01/26	2026-01-28
+62.0	fr_FR	Date.parse	28/01/27	2027-01-28
+62.0	fr_FR	Date.parse	28/01/28	2028-01-28
+62.0	fr_FR	Date.parse	28/01/29	2029-01-28
+62.0	fr_FR	Date.parse	28/01/30	2030-01-28
+62.0	fr_FR	Date.parse	28/01/31	2031-01-28
+62.0	fr_FR	Date.parse	28/01/32	2032-01-28
+62.0	fr_FR	Date.parse	28/01/33	2033-01-28
+62.0	fr_FR	Date.parse	28/01/34	2034-01-28
+62.0	fr_FR	Date.parse	28/01/35	2035-01-28
+62.0	fr_FR	Date.parse	28/01/36	2036-01-28
+62.0	fr_FR	Date.parse	28/01/37	2037-01-28
+62.0	fr_FR	Date.parse	28/01/38	2038-01-28
+62.0	fr_FR	Date.parse	28/01/39	2039-01-28
+62.0	fr_FR	Date.parse	28/01/40	2040-01-28
+62.0	fr_FR	Date.parse	28/01/41	2041-01-28
+62.0	fr_FR	Date.parse	28/01/42	2042-01-28
+62.0	fr_FR	Date.parse	28/01/43	2043-01-28
+62.0	fr_FR	Date.parse	28/01/44	2044-01-28
+62.0	fr_FR	Date.parse	28/01/45	2045-01-28
+62.0	fr_FR	Date.parse	28/01/46	2046-01-28
+62.0	fr_FR	Date.parse	28/01/47	2047-01-28
+62.0	fr_FR	Date.parse	28/01/48	2048-01-28
+62.0	fr_FR	Date.parse	28/01/49	2049-01-28
+62.0	fr_FR	Date.parse	28/01/50	2050-01-28
+62.0	fr_FR	Date.parse	28/01/51	2051-01-28
+62.0	fr_FR	Date.parse	28/01/52	2052-01-28
+62.0	fr_FR	Date.parse	28/01/53	2053-01-28
+62.0	fr_FR	Date.parse	28/01/54	2054-01-28
+62.0	fr_FR	Date.parse	28/01/55	2055-01-28
+62.0	fr_FR	Date.parse	28/01/56	2056-01-28
+62.0	fr_FR	Date.parse	28/01/57	2057-01-28
+62.0	fr_FR	Date.parse	28/01/58	2058-01-28
+62.0	fr_FR	Date.parse	28/01/59	2059-01-28
+62.0	fr_FR	Date.parse	28/01/60	1960-01-28
+62.0	fr_FR	Date.parse	28/01/61	1961-01-28
+62.0	fr_FR	Date.parse	28/01/62	1962-01-28
+62.0	fr_FR	Date.parse	28/01/63	1963-01-28
+62.0	fr_FR	Date.parse	28/01/64	1964-01-28
+62.0	fr_FR	Date.parse	28/01/65	1965-01-28
+62.0	fr_FR	Date.parse	28/01/66	1966-01-28
+62.0	fr_FR	Date.parse	28/01/67	1967-01-28
+62.0	fr_FR	Date.parse	28/01/68	1968-01-28
+62.0	fr_FR	Date.parse	28/01/69	1969-01-28
+62.0	fr_FR	Date.parse	28/01/70	1970-01-28
+62.0	fr_FR	Date.parse	28/01/71	1971-01-28
+62.0	fr_FR	Date.parse	28/01/72	1972-01-28
+62.0	fr_FR	Date.parse	28/01/73	1973-01-28
+62.0	fr_FR	Date.parse	28/01/74	1974-01-28
+62.0	fr_FR	Date.parse	28/01/75	1975-01-28
+62.0	fr_FR	Date.parse	28/01/76	1976-01-28
+62.0	fr_FR	Date.parse	28/01/77	1977-01-28
+62.0	fr_FR	Date.parse	28/01/78	1978-01-28
+62.0	fr_FR	Date.parse	28/01/79	1979-01-28
+62.0	fr_FR	Date.parse	28/01/80	1980-01-28
+62.0	fr_FR	Date.parse	28/01/81	1981-01-28
+62.0	fr_FR	Date.parse	28/01/82	1982-01-28
+62.0	fr_FR	Date.parse	28/01/83	1983-01-28
+62.0	fr_FR	Date.parse	28/01/84	1984-01-28
+62.0	fr_FR	Date.parse	28/01/85	1985-01-28
+62.0	fr_FR	Date.parse	28/01/86	1986-01-28
+62.0	fr_FR	Date.parse	28/01/87	1987-01-28
+62.0	fr_FR	Date.parse	28/01/88	1988-01-28
+62.0	fr_FR	Date.parse	28/01/89	1989-01-28
+62.0	fr_FR	Date.parse	28/01/90	1990-01-28
+62.0	fr_FR	Date.parse	28/01/91	1991-01-28
+62.0	fr_FR	Date.parse	28/01/92	1992-01-28
+62.0	fr_FR	Date.parse	28/01/93	1993-01-28
+62.0	fr_FR	Date.parse	28/01/94	1994-01-28
+62.0	fr_FR	Date.parse	28/01/95	1995-01-28
+62.0	fr_FR	Date.parse	28/01/96	1996-01-28
+62.0	fr_FR	Date.parse	28/01/97	1997-01-28
+62.0	fr_FR	Date.parse	28/01/98	1998-01-28
+62.0	fr_FR	Date.parse	28/01/99	1999-01-28
+62.0	fr_FR	Datetime.parse	28/01/00 15:04	ERR:System.TypeException
+62.0	fr_FR	Datetime.parse	28/01/01 15:04	2001-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/02 15:04	2002-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/03 15:04	2003-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/04 15:04	2004-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/05 15:04	2005-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/06 15:04	2006-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/07 15:04	2007-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/08 15:04	2008-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/09 15:04	2009-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/10 15:04	2010-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/11 15:04	2011-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/12 15:04	2012-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/13 15:04	2013-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/14 15:04	2014-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/15 15:04	2015-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/16 15:04	2016-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/17 15:04	2017-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/18 15:04	2018-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/19 15:04	2019-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/20 15:04	2020-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/21 15:04	2021-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/22 15:04	2022-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/23 15:04	2023-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/24 15:04	2024-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/25 15:04	2025-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/26 15:04	2026-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/27 15:04	2027-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/28 15:04	2028-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/29 15:04	2029-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/30 15:04	2030-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/31 15:04	2031-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/32 15:04	2032-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/33 15:04	2033-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/34 15:04	2034-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/35 15:04	2035-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/36 15:04	2036-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/37 15:04	2037-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/38 15:04	2038-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/39 15:04	2039-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/40 15:04	2040-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/41 15:04	2041-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/42 15:04	2042-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/43 15:04	2043-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/44 15:04	2044-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/45 15:04	2045-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/46 15:04	2046-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/47 15:04	2047-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/48 15:04	2048-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/49 15:04	2049-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/50 15:04	2050-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/51 15:04	2051-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/52 15:04	2052-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/53 15:04	2053-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/54 15:04	2054-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/55 15:04	2055-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/56 15:04	2056-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/57 15:04	2057-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/58 15:04	2058-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/59 15:04	2059-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/60 15:04	1960-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/61 15:04	1961-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/62 15:04	1962-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/63 15:04	1963-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/64 15:04	1964-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/65 15:04	1965-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/66 15:04	1966-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/67 15:04	1967-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/68 15:04	1968-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/69 15:04	1969-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/70 15:04	1970-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/71 15:04	1971-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/72 15:04	1972-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/73 15:04	1973-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/74 15:04	1974-01-28 22:04
+62.0	fr_FR	Datetime.parse	28/01/75 15:04	1975-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/76 15:04	1976-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/77 15:04	1977-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/78 15:04	1978-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/79 15:04	1979-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/80 15:04	1980-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/81 15:04	1981-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/82 15:04	1982-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/83 15:04	1983-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/84 15:04	1984-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/85 15:04	1985-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/86 15:04	1986-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/87 15:04	1987-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/88 15:04	1988-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/89 15:04	1989-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/90 15:04	1990-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/91 15:04	1991-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/92 15:04	1992-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/93 15:04	1993-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/94 15:04	1994-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/95 15:04	1995-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/96 15:04	1996-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/97 15:04	1997-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/98 15:04	1998-01-28 23:04
+62.0	fr_FR	Datetime.parse	28/01/99 15:04	1999-01-28 23:04
+62.0	fr_FR	Date.parse	28/01/0	ERR:System.TypeException
+62.0	fr_FR	Datetime.parse	28/01/0 15:04	ERR:System.TypeException
+62.0	fr_FR	Date.parse	28/01/5	2005-01-28
+62.0	fr_FR	Datetime.parse	28/01/5 15:04	2005-01-28 23:04
+62.0	fr_FR	Date.parse	28/01/9	2009-01-28
+62.0	fr_FR	Datetime.parse	28/01/9 15:04	2009-01-28 23:04
+62.0	fr_FR	Date.parse	28/01/100	ERR:System.TypeException
+62.0	fr_FR	Datetime.parse	28/01/100 15:04	ERR:System.TypeException
+62.0	fr_FR	Date.parse	28/01/190	ERR:System.TypeException
+62.0	fr_FR	Datetime.parse	28/01/190 15:04	ERR:System.TypeException
+62.0	fr_FR	Date.parse	28/01/090	1990-01-28
+62.0	fr_FR	Datetime.parse	28/01/090 15:04	1990-01-28 23:04
+62.0	fr_FR	Date.parse	28/01/999	ERR:System.TypeException
+62.0	fr_FR	Datetime.parse	28/01/999 15:04	ERR:System.TypeException
+62.0	fr_FR	Date.parse	28/01/0090	1990-01-28
+62.0	fr_FR	Datetime.parse	28/01/0090 15:04	1990-01-28 23:04
+62.0	fr_FR	Date.parse	28/01/0008	2008-01-28
+62.0	fr_FR	Datetime.parse	28/01/0008 15:04	2008-01-28 23:04
+62.0	fr_FR	Date.parse	28/01/2008	2008-01-28
+62.0	fr_FR	Datetime.parse	28/01/2008 15:04	2008-01-28 23:04
+62.0	fr_FR	Date.parse	28/01/20088	ERR:System.TypeException
+62.0	fr_FR	Datetime.parse	28/01/20088 15:04	ERR:System.TypeException
+62.0	fr_FR	Date.parse	28/01/10000	ERR:System.TypeException
+62.0	fr_FR	Datetime.parse	28/01/10000 15:04	ERR:System.TypeException
+62.0	fr_FR	Datetime.parse	2008-01-28, 3:04 PM	ERR:System.TypeException
+62.0	fr_FR	Datetime.parse	2008-01-28 3:04 PM	ERR:System.TypeException
+62.0	fr_FR	Datetime.parse	2008-01-28, 3:04 p.m.	ERR:System.TypeException
+62.0	fr_FR	Datetime.parse	2008-01-28 3:04 p.m.	ERR:System.TypeException
+62.0	fr_FR	Datetime.parse	2008-01-28, 15:04	ERR:System.TypeException
+62.0	fr_FR	Datetime.parse	2008-01-28 15:04	ERR:System.TypeException
+62.0	fr_FR	Datetime.parse	1/28/2008, 3:04 PM	ERR:System.TypeException
+62.0	fr_FR	Datetime.parse	1/28/2008 3:04 PM	ERR:System.TypeException
+62.0	fr_FR	Datetime.parse	2008-1-28, 3:04 p.m.	ERR:System.TypeException
+62.0	fr_FR	Datetime.parse	2008-1-28 3:04 p.m.	ERR:System.TypeException
+62.0	fr_FR	Datetime.parse	28/01/2008, 15:04	ERR:System.TypeException
+62.0	fr_FR	Datetime.parse	2008-01-28, 3:04 pm	ERR:System.TypeException
+62.0	fr_FR	Datetime.parse	2008-01-28, 3:04 PM.	ERR:System.TypeException
+62.0	fr_FR	Datetime.parse	2008-01-28, 03:04 p.m.	ERR:System.TypeException
+62.0	fr_FR	Date.parse	2008-01-28	ERR:System.TypeException
+62.0	fr_FR	Date.parse	2008-1-28	ERR:System.TypeException
+62.0	fr_FR	Date.parse	08-01-28	ERR:System.TypeException
+62.0	fr_FR	Date.parse	8-1-28	ERR:System.TypeException
+62.0	fr_FR	Date.parse	1/28/2008	ERR:System.TypeException
+62.0	fr_FR	Date.parse	1/28/08	ERR:System.TypeException
+62.0	fr_FR	Date.parse	28/01/2008	2008-01-28
+62.0	fr_FR	Date.parse	2008/01/28	ERR:System.TypeException
+62.0	fr_FR	Date.parse	20080128	ERR:System.TypeException
+62.0	no	Date.format	2008-01-28	28.01.2008
+62.0	no	Datetime.format	2008-01-28 15:04:00 America/Los_Angeles	28.01.2008, 15:04
+62.0	no	Date.parse	28.01.00	ERR:System.TypeException
+62.0	no	Date.parse	28.01.01	2001-01-28
+62.0	no	Date.parse	28.01.02	2002-01-28
+62.0	no	Date.parse	28.01.03	2003-01-28
+62.0	no	Date.parse	28.01.04	2004-01-28
+62.0	no	Date.parse	28.01.05	2005-01-28
+62.0	no	Date.parse	28.01.06	2006-01-28
+62.0	no	Date.parse	28.01.07	2007-01-28
+62.0	no	Date.parse	28.01.08	2008-01-28
+62.0	no	Date.parse	28.01.09	2009-01-28
+62.0	no	Date.parse	28.01.10	2010-01-28
+62.0	no	Date.parse	28.01.11	2011-01-28
+62.0	no	Date.parse	28.01.12	2012-01-28
+62.0	no	Date.parse	28.01.13	2013-01-28
+62.0	no	Date.parse	28.01.14	2014-01-28
+62.0	no	Date.parse	28.01.15	2015-01-28
+62.0	no	Date.parse	28.01.16	2016-01-28
+62.0	no	Date.parse	28.01.17	2017-01-28
+62.0	no	Date.parse	28.01.18	2018-01-28
+62.0	no	Date.parse	28.01.19	2019-01-28
+62.0	no	Date.parse	28.01.20	2020-01-28
+62.0	no	Date.parse	28.01.21	2021-01-28
+62.0	no	Date.parse	28.01.22	2022-01-28
+62.0	no	Date.parse	28.01.23	2023-01-28
+62.0	no	Date.parse	28.01.24	2024-01-28
+62.0	no	Date.parse	28.01.25	2025-01-28
+62.0	no	Date.parse	28.01.26	2026-01-28
+62.0	no	Date.parse	28.01.27	2027-01-28
+62.0	no	Date.parse	28.01.28	2028-01-28
+62.0	no	Date.parse	28.01.29	2029-01-28
+62.0	no	Date.parse	28.01.30	2030-01-28
+62.0	no	Date.parse	28.01.31	2031-01-28
+62.0	no	Date.parse	28.01.32	2032-01-28
+62.0	no	Date.parse	28.01.33	2033-01-28
+62.0	no	Date.parse	28.01.34	2034-01-28
+62.0	no	Date.parse	28.01.35	2035-01-28
+62.0	no	Date.parse	28.01.36	2036-01-28
+62.0	no	Date.parse	28.01.37	2037-01-28
+62.0	no	Date.parse	28.01.38	2038-01-28
+62.0	no	Date.parse	28.01.39	2039-01-28
+62.0	no	Date.parse	28.01.40	2040-01-28
+62.0	no	Date.parse	28.01.41	2041-01-28
+62.0	no	Date.parse	28.01.42	2042-01-28
+62.0	no	Date.parse	28.01.43	2043-01-28
+62.0	no	Date.parse	28.01.44	2044-01-28
+62.0	no	Date.parse	28.01.45	2045-01-28
+62.0	no	Date.parse	28.01.46	2046-01-28
+62.0	no	Date.parse	28.01.47	2047-01-28
+62.0	no	Date.parse	28.01.48	2048-01-28
+62.0	no	Date.parse	28.01.49	2049-01-28
+62.0	no	Date.parse	28.01.50	2050-01-28
+62.0	no	Date.parse	28.01.51	2051-01-28
+62.0	no	Date.parse	28.01.52	2052-01-28
+62.0	no	Date.parse	28.01.53	2053-01-28
+62.0	no	Date.parse	28.01.54	2054-01-28
+62.0	no	Date.parse	28.01.55	2055-01-28
+62.0	no	Date.parse	28.01.56	2056-01-28
+62.0	no	Date.parse	28.01.57	2057-01-28
+62.0	no	Date.parse	28.01.58	2058-01-28
+62.0	no	Date.parse	28.01.59	2059-01-28
+62.0	no	Date.parse	28.01.60	1960-01-28
+62.0	no	Date.parse	28.01.61	1961-01-28
+62.0	no	Date.parse	28.01.62	1962-01-28
+62.0	no	Date.parse	28.01.63	1963-01-28
+62.0	no	Date.parse	28.01.64	1964-01-28
+62.0	no	Date.parse	28.01.65	1965-01-28
+62.0	no	Date.parse	28.01.66	1966-01-28
+62.0	no	Date.parse	28.01.67	1967-01-28
+62.0	no	Date.parse	28.01.68	1968-01-28
+62.0	no	Date.parse	28.01.69	1969-01-28
+62.0	no	Date.parse	28.01.70	1970-01-28
+62.0	no	Date.parse	28.01.71	1971-01-28
+62.0	no	Date.parse	28.01.72	1972-01-28
+62.0	no	Date.parse	28.01.73	1973-01-28
+62.0	no	Date.parse	28.01.74	1974-01-28
+62.0	no	Date.parse	28.01.75	1975-01-28
+62.0	no	Date.parse	28.01.76	1976-01-28
+62.0	no	Date.parse	28.01.77	1977-01-28
+62.0	no	Date.parse	28.01.78	1978-01-28
+62.0	no	Date.parse	28.01.79	1979-01-28
+62.0	no	Date.parse	28.01.80	1980-01-28
+62.0	no	Date.parse	28.01.81	1981-01-28
+62.0	no	Date.parse	28.01.82	1982-01-28
+62.0	no	Date.parse	28.01.83	1983-01-28
+62.0	no	Date.parse	28.01.84	1984-01-28
+62.0	no	Date.parse	28.01.85	1985-01-28
+62.0	no	Date.parse	28.01.86	1986-01-28
+62.0	no	Date.parse	28.01.87	1987-01-28
+62.0	no	Date.parse	28.01.88	1988-01-28
+62.0	no	Date.parse	28.01.89	1989-01-28
+62.0	no	Date.parse	28.01.90	1990-01-28
+62.0	no	Date.parse	28.01.91	1991-01-28
+62.0	no	Date.parse	28.01.92	1992-01-28
+62.0	no	Date.parse	28.01.93	1993-01-28
+62.0	no	Date.parse	28.01.94	1994-01-28
+62.0	no	Date.parse	28.01.95	1995-01-28
+62.0	no	Date.parse	28.01.96	1996-01-28
+62.0	no	Date.parse	28.01.97	1997-01-28
+62.0	no	Date.parse	28.01.98	1998-01-28
+62.0	no	Date.parse	28.01.99	1999-01-28
+62.0	no	Datetime.parse	28.01.00, 15:04	ERR:System.TypeException
+62.0	no	Datetime.parse	28.01.01, 15:04	2001-01-28 23:04
+62.0	no	Datetime.parse	28.01.02, 15:04	2002-01-28 23:04
+62.0	no	Datetime.parse	28.01.03, 15:04	2003-01-28 23:04
+62.0	no	Datetime.parse	28.01.04, 15:04	2004-01-28 23:04
+62.0	no	Datetime.parse	28.01.05, 15:04	2005-01-28 23:04
+62.0	no	Datetime.parse	28.01.06, 15:04	2006-01-28 23:04
+62.0	no	Datetime.parse	28.01.07, 15:04	2007-01-28 23:04
+62.0	no	Datetime.parse	28.01.08, 15:04	2008-01-28 23:04
+62.0	no	Datetime.parse	28.01.09, 15:04	2009-01-28 23:04
+62.0	no	Datetime.parse	28.01.10, 15:04	2010-01-28 23:04
+62.0	no	Datetime.parse	28.01.11, 15:04	2011-01-28 23:04
+62.0	no	Datetime.parse	28.01.12, 15:04	2012-01-28 23:04
+62.0	no	Datetime.parse	28.01.13, 15:04	2013-01-28 23:04
+62.0	no	Datetime.parse	28.01.14, 15:04	2014-01-28 23:04
+62.0	no	Datetime.parse	28.01.15, 15:04	2015-01-28 23:04
+62.0	no	Datetime.parse	28.01.16, 15:04	2016-01-28 23:04
+62.0	no	Datetime.parse	28.01.17, 15:04	2017-01-28 23:04
+62.0	no	Datetime.parse	28.01.18, 15:04	2018-01-28 23:04
+62.0	no	Datetime.parse	28.01.19, 15:04	2019-01-28 23:04
+62.0	no	Datetime.parse	28.01.20, 15:04	2020-01-28 23:04
+62.0	no	Datetime.parse	28.01.21, 15:04	2021-01-28 23:04
+62.0	no	Datetime.parse	28.01.22, 15:04	2022-01-28 23:04
+62.0	no	Datetime.parse	28.01.23, 15:04	2023-01-28 23:04
+62.0	no	Datetime.parse	28.01.24, 15:04	2024-01-28 23:04
+62.0	no	Datetime.parse	28.01.25, 15:04	2025-01-28 23:04
+62.0	no	Datetime.parse	28.01.26, 15:04	2026-01-28 23:04
+62.0	no	Datetime.parse	28.01.27, 15:04	2027-01-28 23:04
+62.0	no	Datetime.parse	28.01.28, 15:04	2028-01-28 23:04
+62.0	no	Datetime.parse	28.01.29, 15:04	2029-01-28 23:04
+62.0	no	Datetime.parse	28.01.30, 15:04	2030-01-28 23:04
+62.0	no	Datetime.parse	28.01.31, 15:04	2031-01-28 23:04
+62.0	no	Datetime.parse	28.01.32, 15:04	2032-01-28 23:04
+62.0	no	Datetime.parse	28.01.33, 15:04	2033-01-28 23:04
+62.0	no	Datetime.parse	28.01.34, 15:04	2034-01-28 23:04
+62.0	no	Datetime.parse	28.01.35, 15:04	2035-01-28 23:04
+62.0	no	Datetime.parse	28.01.36, 15:04	2036-01-28 23:04
+62.0	no	Datetime.parse	28.01.37, 15:04	2037-01-28 23:04
+62.0	no	Datetime.parse	28.01.38, 15:04	2038-01-28 23:04
+62.0	no	Datetime.parse	28.01.39, 15:04	2039-01-28 23:04
+62.0	no	Datetime.parse	28.01.40, 15:04	2040-01-28 23:04
+62.0	no	Datetime.parse	28.01.41, 15:04	2041-01-28 23:04
+62.0	no	Datetime.parse	28.01.42, 15:04	2042-01-28 23:04
+62.0	no	Datetime.parse	28.01.43, 15:04	2043-01-28 23:04
+62.0	no	Datetime.parse	28.01.44, 15:04	2044-01-28 23:04
+62.0	no	Datetime.parse	28.01.45, 15:04	2045-01-28 23:04
+62.0	no	Datetime.parse	28.01.46, 15:04	2046-01-28 23:04
+62.0	no	Datetime.parse	28.01.47, 15:04	2047-01-28 23:04
+62.0	no	Datetime.parse	28.01.48, 15:04	2048-01-28 23:04
+62.0	no	Datetime.parse	28.01.49, 15:04	2049-01-28 23:04
+62.0	no	Datetime.parse	28.01.50, 15:04	2050-01-28 23:04
+62.0	no	Datetime.parse	28.01.51, 15:04	2051-01-28 23:04
+62.0	no	Datetime.parse	28.01.52, 15:04	2052-01-28 23:04
+62.0	no	Datetime.parse	28.01.53, 15:04	2053-01-28 23:04
+62.0	no	Datetime.parse	28.01.54, 15:04	2054-01-28 23:04
+62.0	no	Datetime.parse	28.01.55, 15:04	2055-01-28 23:04
+62.0	no	Datetime.parse	28.01.56, 15:04	2056-01-28 23:04
+62.0	no	Datetime.parse	28.01.57, 15:04	2057-01-28 23:04
+62.0	no	Datetime.parse	28.01.58, 15:04	2058-01-28 23:04
+62.0	no	Datetime.parse	28.01.59, 15:04	2059-01-28 23:04
+62.0	no	Datetime.parse	28.01.60, 15:04	1960-01-28 23:04
+62.0	no	Datetime.parse	28.01.61, 15:04	1961-01-28 23:04
+62.0	no	Datetime.parse	28.01.62, 15:04	1962-01-28 23:04
+62.0	no	Datetime.parse	28.01.63, 15:04	1963-01-28 23:04
+62.0	no	Datetime.parse	28.01.64, 15:04	1964-01-28 23:04
+62.0	no	Datetime.parse	28.01.65, 15:04	1965-01-28 23:04
+62.0	no	Datetime.parse	28.01.66, 15:04	1966-01-28 23:04
+62.0	no	Datetime.parse	28.01.67, 15:04	1967-01-28 23:04
+62.0	no	Datetime.parse	28.01.68, 15:04	1968-01-28 23:04
+62.0	no	Datetime.parse	28.01.69, 15:04	1969-01-28 23:04
+62.0	no	Datetime.parse	28.01.70, 15:04	1970-01-28 23:04
+62.0	no	Datetime.parse	28.01.71, 15:04	1971-01-28 23:04
+62.0	no	Datetime.parse	28.01.72, 15:04	1972-01-28 23:04
+62.0	no	Datetime.parse	28.01.73, 15:04	1973-01-28 23:04
+62.0	no	Datetime.parse	28.01.74, 15:04	1974-01-28 22:04
+62.0	no	Datetime.parse	28.01.75, 15:04	1975-01-28 23:04
+62.0	no	Datetime.parse	28.01.76, 15:04	1976-01-28 23:04
+62.0	no	Datetime.parse	28.01.77, 15:04	1977-01-28 23:04
+62.0	no	Datetime.parse	28.01.78, 15:04	1978-01-28 23:04
+62.0	no	Datetime.parse	28.01.79, 15:04	1979-01-28 23:04
+62.0	no	Datetime.parse	28.01.80, 15:04	1980-01-28 23:04
+62.0	no	Datetime.parse	28.01.81, 15:04	1981-01-28 23:04
+62.0	no	Datetime.parse	28.01.82, 15:04	1982-01-28 23:04
+62.0	no	Datetime.parse	28.01.83, 15:04	1983-01-28 23:04
+62.0	no	Datetime.parse	28.01.84, 15:04	1984-01-28 23:04
+62.0	no	Datetime.parse	28.01.85, 15:04	1985-01-28 23:04
+62.0	no	Datetime.parse	28.01.86, 15:04	1986-01-28 23:04
+62.0	no	Datetime.parse	28.01.87, 15:04	1987-01-28 23:04
+62.0	no	Datetime.parse	28.01.88, 15:04	1988-01-28 23:04
+62.0	no	Datetime.parse	28.01.89, 15:04	1989-01-28 23:04
+62.0	no	Datetime.parse	28.01.90, 15:04	1990-01-28 23:04
+62.0	no	Datetime.parse	28.01.91, 15:04	1991-01-28 23:04
+62.0	no	Datetime.parse	28.01.92, 15:04	1992-01-28 23:04
+62.0	no	Datetime.parse	28.01.93, 15:04	1993-01-28 23:04
+62.0	no	Datetime.parse	28.01.94, 15:04	1994-01-28 23:04
+62.0	no	Datetime.parse	28.01.95, 15:04	1995-01-28 23:04
+62.0	no	Datetime.parse	28.01.96, 15:04	1996-01-28 23:04
+62.0	no	Datetime.parse	28.01.97, 15:04	1997-01-28 23:04
+62.0	no	Datetime.parse	28.01.98, 15:04	1998-01-28 23:04
+62.0	no	Datetime.parse	28.01.99, 15:04	1999-01-28 23:04
+62.0	no	Date.parse	28.01.0	ERR:System.TypeException
+62.0	no	Datetime.parse	28.01.0, 15:04	ERR:System.TypeException
+62.0	no	Date.parse	28.01.5	2005-01-28
+62.0	no	Datetime.parse	28.01.5, 15:04	2005-01-28 23:04
+62.0	no	Date.parse	28.01.9	2009-01-28
+62.0	no	Datetime.parse	28.01.9, 15:04	2009-01-28 23:04
+62.0	no	Date.parse	28.01.100	ERR:System.TypeException
+62.0	no	Datetime.parse	28.01.100, 15:04	ERR:System.TypeException
+62.0	no	Date.parse	28.01.190	ERR:System.TypeException
+62.0	no	Datetime.parse	28.01.190, 15:04	ERR:System.TypeException
+62.0	no	Date.parse	28.01.090	1990-01-28
+62.0	no	Datetime.parse	28.01.090, 15:04	1990-01-28 23:04
+62.0	no	Date.parse	28.01.999	ERR:System.TypeException
+62.0	no	Datetime.parse	28.01.999, 15:04	ERR:System.TypeException
+62.0	no	Date.parse	28.01.0090	1990-01-28
+62.0	no	Datetime.parse	28.01.0090, 15:04	1990-01-28 23:04
+62.0	no	Date.parse	28.01.0008	2008-01-28
+62.0	no	Datetime.parse	28.01.0008, 15:04	2008-01-28 23:04
+62.0	no	Date.parse	28.01.2008	2008-01-28
+62.0	no	Datetime.parse	28.01.2008, 15:04	2008-01-28 23:04
+62.0	no	Date.parse	28.01.20088	ERR:System.TypeException
+62.0	no	Datetime.parse	28.01.20088, 15:04	ERR:System.TypeException
+62.0	no	Date.parse	28.01.10000	ERR:System.TypeException
+62.0	no	Datetime.parse	28.01.10000, 15:04	ERR:System.TypeException
+62.0	no	Datetime.parse	2008-01-28, 3:04 PM	ERR:System.TypeException
+62.0	no	Datetime.parse	2008-01-28 3:04 PM	ERR:System.TypeException
+62.0	no	Datetime.parse	2008-01-28, 3:04 p.m.	ERR:System.TypeException
+62.0	no	Datetime.parse	2008-01-28 3:04 p.m.	ERR:System.TypeException
+62.0	no	Datetime.parse	2008-01-28, 15:04	ERR:System.TypeException
+62.0	no	Datetime.parse	2008-01-28 15:04	ERR:System.TypeException
+62.0	no	Datetime.parse	1/28/2008, 3:04 PM	ERR:System.TypeException
+62.0	no	Datetime.parse	1/28/2008 3:04 PM	ERR:System.TypeException
+62.0	no	Datetime.parse	2008-1-28, 3:04 p.m.	ERR:System.TypeException
+62.0	no	Datetime.parse	2008-1-28 3:04 p.m.	ERR:System.TypeException
+62.0	no	Datetime.parse	28/01/2008, 15:04	ERR:System.TypeException
+62.0	no	Datetime.parse	2008-01-28, 3:04 pm	ERR:System.TypeException
+62.0	no	Datetime.parse	2008-01-28, 3:04 PM.	ERR:System.TypeException
+62.0	no	Datetime.parse	2008-01-28, 03:04 p.m.	ERR:System.TypeException
+62.0	no	Date.parse	2008-01-28	ERR:System.TypeException
+62.0	no	Date.parse	2008-1-28	ERR:System.TypeException
+62.0	no	Date.parse	08-01-28	ERR:System.TypeException
+62.0	no	Date.parse	8-1-28	ERR:System.TypeException
+62.0	no	Date.parse	1/28/2008	ERR:System.TypeException
+62.0	no	Date.parse	1/28/08	ERR:System.TypeException
+62.0	no	Date.parse	28/01/2008	ERR:System.TypeException
+62.0	no	Date.parse	2008/01/28	ERR:System.TypeException
+62.0	no	Date.parse	20080128	ERR:System.TypeException
+62.0	no_NO	Date.format	2008-01-28	28.01.2008
+62.0	no_NO	Datetime.format	2008-01-28 15:04:00 America/Los_Angeles	28.01.2008, 15:04
+62.0	no_NO	Date.parse	28.01.00	ERR:System.TypeException
+62.0	no_NO	Date.parse	28.01.01	2001-01-28
+62.0	no_NO	Date.parse	28.01.02	2002-01-28
+62.0	no_NO	Date.parse	28.01.03	2003-01-28
+62.0	no_NO	Date.parse	28.01.04	2004-01-28
+62.0	no_NO	Date.parse	28.01.05	2005-01-28
+62.0	no_NO	Date.parse	28.01.06	2006-01-28
+62.0	no_NO	Date.parse	28.01.07	2007-01-28
+62.0	no_NO	Date.parse	28.01.08	2008-01-28
+62.0	no_NO	Date.parse	28.01.09	2009-01-28
+62.0	no_NO	Date.parse	28.01.10	2010-01-28
+62.0	no_NO	Date.parse	28.01.11	2011-01-28
+62.0	no_NO	Date.parse	28.01.12	2012-01-28
+62.0	no_NO	Date.parse	28.01.13	2013-01-28
+62.0	no_NO	Date.parse	28.01.14	2014-01-28
+62.0	no_NO	Date.parse	28.01.15	2015-01-28
+62.0	no_NO	Date.parse	28.01.16	2016-01-28
+62.0	no_NO	Date.parse	28.01.17	2017-01-28
+62.0	no_NO	Date.parse	28.01.18	2018-01-28
+62.0	no_NO	Date.parse	28.01.19	2019-01-28
+62.0	no_NO	Date.parse	28.01.20	2020-01-28
+62.0	no_NO	Date.parse	28.01.21	2021-01-28
+62.0	no_NO	Date.parse	28.01.22	2022-01-28
+62.0	no_NO	Date.parse	28.01.23	2023-01-28
+62.0	no_NO	Date.parse	28.01.24	2024-01-28
+62.0	no_NO	Date.parse	28.01.25	2025-01-28
+62.0	no_NO	Date.parse	28.01.26	2026-01-28
+62.0	no_NO	Date.parse	28.01.27	2027-01-28
+62.0	no_NO	Date.parse	28.01.28	2028-01-28
+62.0	no_NO	Date.parse	28.01.29	2029-01-28
+62.0	no_NO	Date.parse	28.01.30	2030-01-28
+62.0	no_NO	Date.parse	28.01.31	2031-01-28
+62.0	no_NO	Date.parse	28.01.32	2032-01-28
+62.0	no_NO	Date.parse	28.01.33	2033-01-28
+62.0	no_NO	Date.parse	28.01.34	2034-01-28
+62.0	no_NO	Date.parse	28.01.35	2035-01-28
+62.0	no_NO	Date.parse	28.01.36	2036-01-28
+62.0	no_NO	Date.parse	28.01.37	2037-01-28
+62.0	no_NO	Date.parse	28.01.38	2038-01-28
+62.0	no_NO	Date.parse	28.01.39	2039-01-28
+62.0	no_NO	Date.parse	28.01.40	2040-01-28
+62.0	no_NO	Date.parse	28.01.41	2041-01-28
+62.0	no_NO	Date.parse	28.01.42	2042-01-28
+62.0	no_NO	Date.parse	28.01.43	2043-01-28
+62.0	no_NO	Date.parse	28.01.44	2044-01-28
+62.0	no_NO	Date.parse	28.01.45	2045-01-28
+62.0	no_NO	Date.parse	28.01.46	2046-01-28
+62.0	no_NO	Date.parse	28.01.47	2047-01-28
+62.0	no_NO	Date.parse	28.01.48	2048-01-28
+62.0	no_NO	Date.parse	28.01.49	2049-01-28
+62.0	no_NO	Date.parse	28.01.50	2050-01-28
+62.0	no_NO	Date.parse	28.01.51	2051-01-28
+62.0	no_NO	Date.parse	28.01.52	2052-01-28
+62.0	no_NO	Date.parse	28.01.53	2053-01-28
+62.0	no_NO	Date.parse	28.01.54	2054-01-28
+62.0	no_NO	Date.parse	28.01.55	2055-01-28
+62.0	no_NO	Date.parse	28.01.56	2056-01-28
+62.0	no_NO	Date.parse	28.01.57	2057-01-28
+62.0	no_NO	Date.parse	28.01.58	2058-01-28
+62.0	no_NO	Date.parse	28.01.59	2059-01-28
+62.0	no_NO	Date.parse	28.01.60	1960-01-28
+62.0	no_NO	Date.parse	28.01.61	1961-01-28
+62.0	no_NO	Date.parse	28.01.62	1962-01-28
+62.0	no_NO	Date.parse	28.01.63	1963-01-28
+62.0	no_NO	Date.parse	28.01.64	1964-01-28
+62.0	no_NO	Date.parse	28.01.65	1965-01-28
+62.0	no_NO	Date.parse	28.01.66	1966-01-28
+62.0	no_NO	Date.parse	28.01.67	1967-01-28
+62.0	no_NO	Date.parse	28.01.68	1968-01-28
+62.0	no_NO	Date.parse	28.01.69	1969-01-28
+62.0	no_NO	Date.parse	28.01.70	1970-01-28
+62.0	no_NO	Date.parse	28.01.71	1971-01-28
+62.0	no_NO	Date.parse	28.01.72	1972-01-28
+62.0	no_NO	Date.parse	28.01.73	1973-01-28
+62.0	no_NO	Date.parse	28.01.74	1974-01-28
+62.0	no_NO	Date.parse	28.01.75	1975-01-28
+62.0	no_NO	Date.parse	28.01.76	1976-01-28
+62.0	no_NO	Date.parse	28.01.77	1977-01-28
+62.0	no_NO	Date.parse	28.01.78	1978-01-28
+62.0	no_NO	Date.parse	28.01.79	1979-01-28
+62.0	no_NO	Date.parse	28.01.80	1980-01-28
+62.0	no_NO	Date.parse	28.01.81	1981-01-28
+62.0	no_NO	Date.parse	28.01.82	1982-01-28
+62.0	no_NO	Date.parse	28.01.83	1983-01-28
+62.0	no_NO	Date.parse	28.01.84	1984-01-28
+62.0	no_NO	Date.parse	28.01.85	1985-01-28
+62.0	no_NO	Date.parse	28.01.86	1986-01-28
+62.0	no_NO	Date.parse	28.01.87	1987-01-28
+62.0	no_NO	Date.parse	28.01.88	1988-01-28
+62.0	no_NO	Date.parse	28.01.89	1989-01-28
+62.0	no_NO	Date.parse	28.01.90	1990-01-28
+62.0	no_NO	Date.parse	28.01.91	1991-01-28
+62.0	no_NO	Date.parse	28.01.92	1992-01-28
+62.0	no_NO	Date.parse	28.01.93	1993-01-28
+62.0	no_NO	Date.parse	28.01.94	1994-01-28
+62.0	no_NO	Date.parse	28.01.95	1995-01-28
+62.0	no_NO	Date.parse	28.01.96	1996-01-28
+62.0	no_NO	Date.parse	28.01.97	1997-01-28
+62.0	no_NO	Date.parse	28.01.98	1998-01-28
+62.0	no_NO	Date.parse	28.01.99	1999-01-28
+62.0	no_NO	Datetime.parse	28.01.00, 15:04	ERR:System.TypeException
+62.0	no_NO	Datetime.parse	28.01.01, 15:04	2001-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.02, 15:04	2002-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.03, 15:04	2003-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.04, 15:04	2004-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.05, 15:04	2005-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.06, 15:04	2006-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.07, 15:04	2007-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.08, 15:04	2008-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.09, 15:04	2009-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.10, 15:04	2010-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.11, 15:04	2011-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.12, 15:04	2012-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.13, 15:04	2013-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.14, 15:04	2014-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.15, 15:04	2015-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.16, 15:04	2016-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.17, 15:04	2017-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.18, 15:04	2018-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.19, 15:04	2019-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.20, 15:04	2020-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.21, 15:04	2021-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.22, 15:04	2022-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.23, 15:04	2023-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.24, 15:04	2024-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.25, 15:04	2025-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.26, 15:04	2026-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.27, 15:04	2027-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.28, 15:04	2028-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.29, 15:04	2029-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.30, 15:04	2030-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.31, 15:04	2031-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.32, 15:04	2032-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.33, 15:04	2033-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.34, 15:04	2034-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.35, 15:04	2035-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.36, 15:04	2036-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.37, 15:04	2037-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.38, 15:04	2038-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.39, 15:04	2039-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.40, 15:04	2040-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.41, 15:04	2041-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.42, 15:04	2042-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.43, 15:04	2043-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.44, 15:04	2044-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.45, 15:04	2045-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.46, 15:04	2046-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.47, 15:04	2047-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.48, 15:04	2048-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.49, 15:04	2049-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.50, 15:04	2050-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.51, 15:04	2051-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.52, 15:04	2052-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.53, 15:04	2053-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.54, 15:04	2054-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.55, 15:04	2055-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.56, 15:04	2056-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.57, 15:04	2057-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.58, 15:04	2058-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.59, 15:04	2059-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.60, 15:04	1960-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.61, 15:04	1961-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.62, 15:04	1962-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.63, 15:04	1963-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.64, 15:04	1964-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.65, 15:04	1965-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.66, 15:04	1966-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.67, 15:04	1967-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.68, 15:04	1968-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.69, 15:04	1969-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.70, 15:04	1970-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.71, 15:04	1971-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.72, 15:04	1972-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.73, 15:04	1973-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.74, 15:04	1974-01-28 22:04
+62.0	no_NO	Datetime.parse	28.01.75, 15:04	1975-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.76, 15:04	1976-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.77, 15:04	1977-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.78, 15:04	1978-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.79, 15:04	1979-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.80, 15:04	1980-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.81, 15:04	1981-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.82, 15:04	1982-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.83, 15:04	1983-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.84, 15:04	1984-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.85, 15:04	1985-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.86, 15:04	1986-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.87, 15:04	1987-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.88, 15:04	1988-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.89, 15:04	1989-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.90, 15:04	1990-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.91, 15:04	1991-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.92, 15:04	1992-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.93, 15:04	1993-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.94, 15:04	1994-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.95, 15:04	1995-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.96, 15:04	1996-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.97, 15:04	1997-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.98, 15:04	1998-01-28 23:04
+62.0	no_NO	Datetime.parse	28.01.99, 15:04	1999-01-28 23:04
+62.0	no_NO	Date.parse	28.01.0	ERR:System.TypeException
+62.0	no_NO	Datetime.parse	28.01.0, 15:04	ERR:System.TypeException
+62.0	no_NO	Date.parse	28.01.5	2005-01-28
+62.0	no_NO	Datetime.parse	28.01.5, 15:04	2005-01-28 23:04
+62.0	no_NO	Date.parse	28.01.9	2009-01-28
+62.0	no_NO	Datetime.parse	28.01.9, 15:04	2009-01-28 23:04
+62.0	no_NO	Date.parse	28.01.100	ERR:System.TypeException
+62.0	no_NO	Datetime.parse	28.01.100, 15:04	ERR:System.TypeException
+62.0	no_NO	Date.parse	28.01.190	ERR:System.TypeException
+62.0	no_NO	Datetime.parse	28.01.190, 15:04	ERR:System.TypeException
+62.0	no_NO	Date.parse	28.01.090	1990-01-28
+62.0	no_NO	Datetime.parse	28.01.090, 15:04	1990-01-28 23:04
+62.0	no_NO	Date.parse	28.01.999	ERR:System.TypeException
+62.0	no_NO	Datetime.parse	28.01.999, 15:04	ERR:System.TypeException
+62.0	no_NO	Date.parse	28.01.0090	1990-01-28
+62.0	no_NO	Datetime.parse	28.01.0090, 15:04	1990-01-28 23:04
+62.0	no_NO	Date.parse	28.01.0008	2008-01-28
+62.0	no_NO	Datetime.parse	28.01.0008, 15:04	2008-01-28 23:04
+62.0	no_NO	Date.parse	28.01.2008	2008-01-28
+62.0	no_NO	Datetime.parse	28.01.2008, 15:04	2008-01-28 23:04
+62.0	no_NO	Date.parse	28.01.20088	ERR:System.TypeException
+62.0	no_NO	Datetime.parse	28.01.20088, 15:04	ERR:System.TypeException
+62.0	no_NO	Date.parse	28.01.10000	ERR:System.TypeException
+62.0	no_NO	Datetime.parse	28.01.10000, 15:04	ERR:System.TypeException
+62.0	no_NO	Datetime.parse	2008-01-28, 3:04 PM	ERR:System.TypeException
+62.0	no_NO	Datetime.parse	2008-01-28 3:04 PM	ERR:System.TypeException
+62.0	no_NO	Datetime.parse	2008-01-28, 3:04 p.m.	ERR:System.TypeException
+62.0	no_NO	Datetime.parse	2008-01-28 3:04 p.m.	ERR:System.TypeException
+62.0	no_NO	Datetime.parse	2008-01-28, 15:04	ERR:System.TypeException
+62.0	no_NO	Datetime.parse	2008-01-28 15:04	ERR:System.TypeException
+62.0	no_NO	Datetime.parse	1/28/2008, 3:04 PM	ERR:System.TypeException
+62.0	no_NO	Datetime.parse	1/28/2008 3:04 PM	ERR:System.TypeException
+62.0	no_NO	Datetime.parse	2008-1-28, 3:04 p.m.	ERR:System.TypeException
+62.0	no_NO	Datetime.parse	2008-1-28 3:04 p.m.	ERR:System.TypeException
+62.0	no_NO	Datetime.parse	28/01/2008, 15:04	ERR:System.TypeException
+62.0	no_NO	Datetime.parse	2008-01-28, 3:04 pm	ERR:System.TypeException
+62.0	no_NO	Datetime.parse	2008-01-28, 3:04 PM.	ERR:System.TypeException
+62.0	no_NO	Datetime.parse	2008-01-28, 03:04 p.m.	ERR:System.TypeException
+62.0	no_NO	Date.parse	2008-01-28	ERR:System.TypeException
+62.0	no_NO	Date.parse	2008-1-28	ERR:System.TypeException
+62.0	no_NO	Date.parse	08-01-28	ERR:System.TypeException
+62.0	no_NO	Date.parse	8-1-28	ERR:System.TypeException
+62.0	no_NO	Date.parse	1/28/2008	ERR:System.TypeException
+62.0	no_NO	Date.parse	1/28/08	ERR:System.TypeException
+62.0	no_NO	Date.parse	28/01/2008	ERR:System.TypeException
+62.0	no_NO	Date.parse	2008/01/28	ERR:System.TypeException
+62.0	no_NO	Date.parse	20080128	ERR:System.TypeException
+67.0	de_DE	Date.format	2008-01-28	28.01.2008
+67.0	de_DE	Datetime.format	2008-01-28 15:04:00 America/Los_Angeles	28.01.2008, 15:04
+67.0	de_DE	Date.parse	28.01.00	2000-01-28
+67.0	de_DE	Date.parse	28.01.01	2001-01-28
+67.0	de_DE	Date.parse	28.01.02	2002-01-28
+67.0	de_DE	Date.parse	28.01.03	2003-01-28
+67.0	de_DE	Date.parse	28.01.04	2004-01-28
+67.0	de_DE	Date.parse	28.01.05	2005-01-28
+67.0	de_DE	Date.parse	28.01.06	2006-01-28
+67.0	de_DE	Date.parse	28.01.07	2007-01-28
+67.0	de_DE	Date.parse	28.01.08	2008-01-28
+67.0	de_DE	Date.parse	28.01.09	2009-01-28
+67.0	de_DE	Date.parse	28.01.10	2010-01-28
+67.0	de_DE	Date.parse	28.01.11	2011-01-28
+67.0	de_DE	Date.parse	28.01.12	2012-01-28
+67.0	de_DE	Date.parse	28.01.13	2013-01-28
+67.0	de_DE	Date.parse	28.01.14	2014-01-28
+67.0	de_DE	Date.parse	28.01.15	2015-01-28
+67.0	de_DE	Date.parse	28.01.16	2016-01-28
+67.0	de_DE	Date.parse	28.01.17	2017-01-28
+67.0	de_DE	Date.parse	28.01.18	2018-01-28
+67.0	de_DE	Date.parse	28.01.19	2019-01-28
+67.0	de_DE	Date.parse	28.01.20	2020-01-28
+67.0	de_DE	Date.parse	28.01.21	2021-01-28
+67.0	de_DE	Date.parse	28.01.22	2022-01-28
+67.0	de_DE	Date.parse	28.01.23	2023-01-28
+67.0	de_DE	Date.parse	28.01.24	2024-01-28
+67.0	de_DE	Date.parse	28.01.25	2025-01-28
+67.0	de_DE	Date.parse	28.01.26	2026-01-28
+67.0	de_DE	Date.parse	28.01.27	2027-01-28
+67.0	de_DE	Date.parse	28.01.28	2028-01-28
+67.0	de_DE	Date.parse	28.01.29	2029-01-28
+67.0	de_DE	Date.parse	28.01.30	2030-01-28
+67.0	de_DE	Date.parse	28.01.31	2031-01-28
+67.0	de_DE	Date.parse	28.01.32	2032-01-28
+67.0	de_DE	Date.parse	28.01.33	2033-01-28
+67.0	de_DE	Date.parse	28.01.34	2034-01-28
+67.0	de_DE	Date.parse	28.01.35	2035-01-28
+67.0	de_DE	Date.parse	28.01.36	2036-01-28
+67.0	de_DE	Date.parse	28.01.37	2037-01-28
+67.0	de_DE	Date.parse	28.01.38	2038-01-28
+67.0	de_DE	Date.parse	28.01.39	2039-01-28
+67.0	de_DE	Date.parse	28.01.40	2040-01-28
+67.0	de_DE	Date.parse	28.01.41	2041-01-28
+67.0	de_DE	Date.parse	28.01.42	2042-01-28
+67.0	de_DE	Date.parse	28.01.43	2043-01-28
+67.0	de_DE	Date.parse	28.01.44	2044-01-28
+67.0	de_DE	Date.parse	28.01.45	2045-01-28
+67.0	de_DE	Date.parse	28.01.46	2046-01-28
+67.0	de_DE	Date.parse	28.01.47	2047-01-28
+67.0	de_DE	Date.parse	28.01.48	2048-01-28
+67.0	de_DE	Date.parse	28.01.49	2049-01-28
+67.0	de_DE	Date.parse	28.01.50	2050-01-28
+67.0	de_DE	Date.parse	28.01.51	2051-01-28
+67.0	de_DE	Date.parse	28.01.52	2052-01-28
+67.0	de_DE	Date.parse	28.01.53	2053-01-28
+67.0	de_DE	Date.parse	28.01.54	2054-01-28
+67.0	de_DE	Date.parse	28.01.55	2055-01-28
+67.0	de_DE	Date.parse	28.01.56	2056-01-28
+67.0	de_DE	Date.parse	28.01.57	2057-01-28
+67.0	de_DE	Date.parse	28.01.58	2058-01-28
+67.0	de_DE	Date.parse	28.01.59	2059-01-28
+67.0	de_DE	Date.parse	28.01.60	1960-01-28
+67.0	de_DE	Date.parse	28.01.61	1961-01-28
+67.0	de_DE	Date.parse	28.01.62	1962-01-28
+67.0	de_DE	Date.parse	28.01.63	1963-01-28
+67.0	de_DE	Date.parse	28.01.64	1964-01-28
+67.0	de_DE	Date.parse	28.01.65	1965-01-28
+67.0	de_DE	Date.parse	28.01.66	1966-01-28
+67.0	de_DE	Date.parse	28.01.67	1967-01-28
+67.0	de_DE	Date.parse	28.01.68	1968-01-28
+67.0	de_DE	Date.parse	28.01.69	1969-01-28
+67.0	de_DE	Date.parse	28.01.70	1970-01-28
+67.0	de_DE	Date.parse	28.01.71	1971-01-28
+67.0	de_DE	Date.parse	28.01.72	1972-01-28
+67.0	de_DE	Date.parse	28.01.73	1973-01-28
+67.0	de_DE	Date.parse	28.01.74	1974-01-28
+67.0	de_DE	Date.parse	28.01.75	1975-01-28
+67.0	de_DE	Date.parse	28.01.76	1976-01-28
+67.0	de_DE	Date.parse	28.01.77	1977-01-28
+67.0	de_DE	Date.parse	28.01.78	1978-01-28
+67.0	de_DE	Date.parse	28.01.79	1979-01-28
+67.0	de_DE	Date.parse	28.01.80	1980-01-28
+67.0	de_DE	Date.parse	28.01.81	1981-01-28
+67.0	de_DE	Date.parse	28.01.82	1982-01-28
+67.0	de_DE	Date.parse	28.01.83	1983-01-28
+67.0	de_DE	Date.parse	28.01.84	1984-01-28
+67.0	de_DE	Date.parse	28.01.85	1985-01-28
+67.0	de_DE	Date.parse	28.01.86	1986-01-28
+67.0	de_DE	Date.parse	28.01.87	1987-01-28
+67.0	de_DE	Date.parse	28.01.88	1988-01-28
+67.0	de_DE	Date.parse	28.01.89	1989-01-28
+67.0	de_DE	Date.parse	28.01.90	1990-01-28
+67.0	de_DE	Date.parse	28.01.91	1991-01-28
+67.0	de_DE	Date.parse	28.01.92	1992-01-28
+67.0	de_DE	Date.parse	28.01.93	1993-01-28
+67.0	de_DE	Date.parse	28.01.94	1994-01-28
+67.0	de_DE	Date.parse	28.01.95	1995-01-28
+67.0	de_DE	Date.parse	28.01.96	1996-01-28
+67.0	de_DE	Date.parse	28.01.97	1997-01-28
+67.0	de_DE	Date.parse	28.01.98	1998-01-28
+67.0	de_DE	Date.parse	28.01.99	1999-01-28
+67.0	de_DE	Datetime.parse	28.01.00, 15:04	2000-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.01, 15:04	2001-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.02, 15:04	2002-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.03, 15:04	2003-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.04, 15:04	2004-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.05, 15:04	2005-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.06, 15:04	2006-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.07, 15:04	2007-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.08, 15:04	2008-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.09, 15:04	2009-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.10, 15:04	2010-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.11, 15:04	2011-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.12, 15:04	2012-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.13, 15:04	2013-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.14, 15:04	2014-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.15, 15:04	2015-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.16, 15:04	2016-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.17, 15:04	2017-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.18, 15:04	2018-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.19, 15:04	2019-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.20, 15:04	2020-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.21, 15:04	2021-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.22, 15:04	2022-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.23, 15:04	2023-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.24, 15:04	2024-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.25, 15:04	2025-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.26, 15:04	2026-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.27, 15:04	2027-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.28, 15:04	2028-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.29, 15:04	2029-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.30, 15:04	2030-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.31, 15:04	2031-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.32, 15:04	2032-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.33, 15:04	2033-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.34, 15:04	2034-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.35, 15:04	2035-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.36, 15:04	2036-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.37, 15:04	2037-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.38, 15:04	2038-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.39, 15:04	2039-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.40, 15:04	2040-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.41, 15:04	2041-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.42, 15:04	2042-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.43, 15:04	2043-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.44, 15:04	2044-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.45, 15:04	2045-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.46, 15:04	2046-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.47, 15:04	2047-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.48, 15:04	2048-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.49, 15:04	2049-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.50, 15:04	2050-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.51, 15:04	2051-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.52, 15:04	2052-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.53, 15:04	2053-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.54, 15:04	2054-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.55, 15:04	2055-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.56, 15:04	2056-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.57, 15:04	2057-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.58, 15:04	2058-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.59, 15:04	2059-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.60, 15:04	1960-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.61, 15:04	1961-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.62, 15:04	1962-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.63, 15:04	1963-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.64, 15:04	1964-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.65, 15:04	1965-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.66, 15:04	1966-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.67, 15:04	1967-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.68, 15:04	1968-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.69, 15:04	1969-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.70, 15:04	1970-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.71, 15:04	1971-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.72, 15:04	1972-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.73, 15:04	1973-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.74, 15:04	1974-01-28 22:04
+67.0	de_DE	Datetime.parse	28.01.75, 15:04	1975-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.76, 15:04	1976-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.77, 15:04	1977-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.78, 15:04	1978-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.79, 15:04	1979-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.80, 15:04	1980-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.81, 15:04	1981-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.82, 15:04	1982-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.83, 15:04	1983-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.84, 15:04	1984-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.85, 15:04	1985-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.86, 15:04	1986-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.87, 15:04	1987-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.88, 15:04	1988-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.89, 15:04	1989-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.90, 15:04	1990-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.91, 15:04	1991-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.92, 15:04	1992-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.93, 15:04	1993-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.94, 15:04	1994-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.95, 15:04	1995-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.96, 15:04	1996-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.97, 15:04	1997-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.98, 15:04	1998-01-28 23:04
+67.0	de_DE	Datetime.parse	28.01.99, 15:04	1999-01-28 23:04
+67.0	de_DE	Date.parse	28.01.0	ERR:System.TypeException
+67.0	de_DE	Datetime.parse	28.01.0, 15:04	ERR:System.TypeException
+67.0	de_DE	Date.parse	28.01.5	2005-01-28
+67.0	de_DE	Datetime.parse	28.01.5, 15:04	2005-01-28 23:04
+67.0	de_DE	Date.parse	28.01.9	2009-01-28
+67.0	de_DE	Datetime.parse	28.01.9, 15:04	2009-01-28 23:04
+67.0	de_DE	Date.parse	28.01.100	ERR:System.TypeException
+67.0	de_DE	Datetime.parse	28.01.100, 15:04	ERR:System.TypeException
+67.0	de_DE	Date.parse	28.01.190	ERR:System.TypeException
+67.0	de_DE	Datetime.parse	28.01.190, 15:04	ERR:System.TypeException
+67.0	de_DE	Date.parse	28.01.090	1990-01-28
+67.0	de_DE	Datetime.parse	28.01.090, 15:04	1990-01-28 23:04
+67.0	de_DE	Date.parse	28.01.999	ERR:System.TypeException
+67.0	de_DE	Datetime.parse	28.01.999, 15:04	ERR:System.TypeException
+67.0	de_DE	Date.parse	28.01.0090	1990-01-28
+67.0	de_DE	Datetime.parse	28.01.0090, 15:04	1990-01-28 23:04
+67.0	de_DE	Date.parse	28.01.0008	2008-01-28
+67.0	de_DE	Datetime.parse	28.01.0008, 15:04	2008-01-28 23:04
+67.0	de_DE	Date.parse	28.01.2008	2008-01-28
+67.0	de_DE	Datetime.parse	28.01.2008, 15:04	2008-01-28 23:04
+67.0	de_DE	Date.parse	28.01.20088	ERR:System.TypeException
+67.0	de_DE	Datetime.parse	28.01.20088, 15:04	ERR:System.TypeException
+67.0	de_DE	Date.parse	28.01.10000	ERR:System.TypeException
+67.0	de_DE	Datetime.parse	28.01.10000, 15:04	ERR:System.TypeException
+67.0	de_DE	Datetime.parse	2008-01-28, 3:04 PM	ERR:System.TypeException
+67.0	de_DE	Datetime.parse	2008-01-28 3:04 PM	ERR:System.TypeException
+67.0	de_DE	Datetime.parse	2008-01-28, 3:04 p.m.	ERR:System.TypeException
+67.0	de_DE	Datetime.parse	2008-01-28 3:04 p.m.	ERR:System.TypeException
+67.0	de_DE	Datetime.parse	2008-01-28, 15:04	ERR:System.TypeException
+67.0	de_DE	Datetime.parse	2008-01-28 15:04	ERR:System.TypeException
+67.0	de_DE	Datetime.parse	1/28/2008, 3:04 PM	ERR:System.TypeException
+67.0	de_DE	Datetime.parse	1/28/2008 3:04 PM	ERR:System.TypeException
+67.0	de_DE	Datetime.parse	2008-1-28, 3:04 p.m.	ERR:System.TypeException
+67.0	de_DE	Datetime.parse	2008-1-28 3:04 p.m.	ERR:System.TypeException
+67.0	de_DE	Datetime.parse	28/01/2008, 15:04	ERR:System.TypeException
+67.0	de_DE	Datetime.parse	2008-01-28, 3:04 pm	ERR:System.TypeException
+67.0	de_DE	Datetime.parse	2008-01-28, 3:04 PM.	ERR:System.TypeException
+67.0	de_DE	Datetime.parse	2008-01-28, 03:04 p.m.	ERR:System.TypeException
+67.0	de_DE	Date.parse	2008-01-28	ERR:System.TypeException
+67.0	de_DE	Date.parse	2008-1-28	ERR:System.TypeException
+67.0	de_DE	Date.parse	08-01-28	ERR:System.TypeException
+67.0	de_DE	Date.parse	8-1-28	ERR:System.TypeException
+67.0	de_DE	Date.parse	1/28/2008	ERR:System.TypeException
+67.0	de_DE	Date.parse	1/28/08	ERR:System.TypeException
+67.0	de_DE	Date.parse	28/01/2008	ERR:System.TypeException
+67.0	de_DE	Date.parse	2008/01/28	ERR:System.TypeException
+67.0	de_DE	Date.parse	20080128	ERR:System.TypeException
+67.0	en_GB	Date.format	2008-01-28	28/01/2008
+67.0	en_GB	Datetime.format	2008-01-28 15:04:00 America/Los_Angeles	28/01/2008, 15:04
+67.0	en_GB	Date.parse	28/01/00	ERR:System.TypeException
+67.0	en_GB	Date.parse	28/01/01	2001-01-28
+67.0	en_GB	Date.parse	28/01/02	2002-01-28
+67.0	en_GB	Date.parse	28/01/03	2003-01-28
+67.0	en_GB	Date.parse	28/01/04	2004-01-28
+67.0	en_GB	Date.parse	28/01/05	2005-01-28
+67.0	en_GB	Date.parse	28/01/06	2006-01-28
+67.0	en_GB	Date.parse	28/01/07	2007-01-28
+67.0	en_GB	Date.parse	28/01/08	2008-01-28
+67.0	en_GB	Date.parse	28/01/09	2009-01-28
+67.0	en_GB	Date.parse	28/01/10	2010-01-28
+67.0	en_GB	Date.parse	28/01/11	2011-01-28
+67.0	en_GB	Date.parse	28/01/12	2012-01-28
+67.0	en_GB	Date.parse	28/01/13	2013-01-28
+67.0	en_GB	Date.parse	28/01/14	2014-01-28
+67.0	en_GB	Date.parse	28/01/15	2015-01-28
+67.0	en_GB	Date.parse	28/01/16	2016-01-28
+67.0	en_GB	Date.parse	28/01/17	2017-01-28
+67.0	en_GB	Date.parse	28/01/18	2018-01-28
+67.0	en_GB	Date.parse	28/01/19	2019-01-28
+67.0	en_GB	Date.parse	28/01/20	2020-01-28
+67.0	en_GB	Date.parse	28/01/21	2021-01-28
+67.0	en_GB	Date.parse	28/01/22	2022-01-28
+67.0	en_GB	Date.parse	28/01/23	2023-01-28
+67.0	en_GB	Date.parse	28/01/24	2024-01-28
+67.0	en_GB	Date.parse	28/01/25	2025-01-28
+67.0	en_GB	Date.parse	28/01/26	2026-01-28
+67.0	en_GB	Date.parse	28/01/27	2027-01-28
+67.0	en_GB	Date.parse	28/01/28	2028-01-28
+67.0	en_GB	Date.parse	28/01/29	2029-01-28
+67.0	en_GB	Date.parse	28/01/30	2030-01-28
+67.0	en_GB	Date.parse	28/01/31	2031-01-28
+67.0	en_GB	Date.parse	28/01/32	2032-01-28
+67.0	en_GB	Date.parse	28/01/33	2033-01-28
+67.0	en_GB	Date.parse	28/01/34	2034-01-28
+67.0	en_GB	Date.parse	28/01/35	2035-01-28
+67.0	en_GB	Date.parse	28/01/36	2036-01-28
+67.0	en_GB	Date.parse	28/01/37	2037-01-28
+67.0	en_GB	Date.parse	28/01/38	2038-01-28
+67.0	en_GB	Date.parse	28/01/39	2039-01-28
+67.0	en_GB	Date.parse	28/01/40	2040-01-28
+67.0	en_GB	Date.parse	28/01/41	2041-01-28
+67.0	en_GB	Date.parse	28/01/42	2042-01-28
+67.0	en_GB	Date.parse	28/01/43	2043-01-28
+67.0	en_GB	Date.parse	28/01/44	2044-01-28
+67.0	en_GB	Date.parse	28/01/45	2045-01-28
+67.0	en_GB	Date.parse	28/01/46	2046-01-28
+67.0	en_GB	Date.parse	28/01/47	2047-01-28
+67.0	en_GB	Date.parse	28/01/48	2048-01-28
+67.0	en_GB	Date.parse	28/01/49	2049-01-28
+67.0	en_GB	Date.parse	28/01/50	2050-01-28
+67.0	en_GB	Date.parse	28/01/51	2051-01-28
+67.0	en_GB	Date.parse	28/01/52	2052-01-28
+67.0	en_GB	Date.parse	28/01/53	2053-01-28
+67.0	en_GB	Date.parse	28/01/54	2054-01-28
+67.0	en_GB	Date.parse	28/01/55	2055-01-28
+67.0	en_GB	Date.parse	28/01/56	2056-01-28
+67.0	en_GB	Date.parse	28/01/57	2057-01-28
+67.0	en_GB	Date.parse	28/01/58	2058-01-28
+67.0	en_GB	Date.parse	28/01/59	2059-01-28
+67.0	en_GB	Date.parse	28/01/60	1960-01-28
+67.0	en_GB	Date.parse	28/01/61	1961-01-28
+67.0	en_GB	Date.parse	28/01/62	1962-01-28
+67.0	en_GB	Date.parse	28/01/63	1963-01-28
+67.0	en_GB	Date.parse	28/01/64	1964-01-28
+67.0	en_GB	Date.parse	28/01/65	1965-01-28
+67.0	en_GB	Date.parse	28/01/66	1966-01-28
+67.0	en_GB	Date.parse	28/01/67	1967-01-28
+67.0	en_GB	Date.parse	28/01/68	1968-01-28
+67.0	en_GB	Date.parse	28/01/69	1969-01-28
+67.0	en_GB	Date.parse	28/01/70	1970-01-28
+67.0	en_GB	Date.parse	28/01/71	1971-01-28
+67.0	en_GB	Date.parse	28/01/72	1972-01-28
+67.0	en_GB	Date.parse	28/01/73	1973-01-28
+67.0	en_GB	Date.parse	28/01/74	1974-01-28
+67.0	en_GB	Date.parse	28/01/75	1975-01-28
+67.0	en_GB	Date.parse	28/01/76	1976-01-28
+67.0	en_GB	Date.parse	28/01/77	1977-01-28
+67.0	en_GB	Date.parse	28/01/78	1978-01-28
+67.0	en_GB	Date.parse	28/01/79	1979-01-28
+67.0	en_GB	Date.parse	28/01/80	1980-01-28
+67.0	en_GB	Date.parse	28/01/81	1981-01-28
+67.0	en_GB	Date.parse	28/01/82	1982-01-28
+67.0	en_GB	Date.parse	28/01/83	1983-01-28
+67.0	en_GB	Date.parse	28/01/84	1984-01-28
+67.0	en_GB	Date.parse	28/01/85	1985-01-28
+67.0	en_GB	Date.parse	28/01/86	1986-01-28
+67.0	en_GB	Date.parse	28/01/87	1987-01-28
+67.0	en_GB	Date.parse	28/01/88	1988-01-28
+67.0	en_GB	Date.parse	28/01/89	1989-01-28
+67.0	en_GB	Date.parse	28/01/90	1990-01-28
+67.0	en_GB	Date.parse	28/01/91	1991-01-28
+67.0	en_GB	Date.parse	28/01/92	1992-01-28
+67.0	en_GB	Date.parse	28/01/93	1993-01-28
+67.0	en_GB	Date.parse	28/01/94	1994-01-28
+67.0	en_GB	Date.parse	28/01/95	1995-01-28
+67.0	en_GB	Date.parse	28/01/96	1996-01-28
+67.0	en_GB	Date.parse	28/01/97	1997-01-28
+67.0	en_GB	Date.parse	28/01/98	1998-01-28
+67.0	en_GB	Date.parse	28/01/99	1999-01-28
+67.0	en_GB	Datetime.parse	28/01/00, 15:04	ERR:System.TypeException
+67.0	en_GB	Datetime.parse	28/01/01, 15:04	2001-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/02, 15:04	2002-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/03, 15:04	2003-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/04, 15:04	2004-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/05, 15:04	2005-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/06, 15:04	2006-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/07, 15:04	2007-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/08, 15:04	2008-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/09, 15:04	2009-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/10, 15:04	2010-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/11, 15:04	2011-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/12, 15:04	2012-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/13, 15:04	2013-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/14, 15:04	2014-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/15, 15:04	2015-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/16, 15:04	2016-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/17, 15:04	2017-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/18, 15:04	2018-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/19, 15:04	2019-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/20, 15:04	2020-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/21, 15:04	2021-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/22, 15:04	2022-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/23, 15:04	2023-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/24, 15:04	2024-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/25, 15:04	2025-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/26, 15:04	2026-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/27, 15:04	2027-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/28, 15:04	2028-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/29, 15:04	2029-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/30, 15:04	2030-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/31, 15:04	2031-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/32, 15:04	2032-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/33, 15:04	2033-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/34, 15:04	2034-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/35, 15:04	2035-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/36, 15:04	2036-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/37, 15:04	2037-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/38, 15:04	2038-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/39, 15:04	2039-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/40, 15:04	2040-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/41, 15:04	2041-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/42, 15:04	2042-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/43, 15:04	2043-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/44, 15:04	2044-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/45, 15:04	2045-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/46, 15:04	2046-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/47, 15:04	2047-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/48, 15:04	2048-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/49, 15:04	2049-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/50, 15:04	2050-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/51, 15:04	2051-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/52, 15:04	2052-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/53, 15:04	2053-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/54, 15:04	2054-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/55, 15:04	2055-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/56, 15:04	2056-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/57, 15:04	2057-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/58, 15:04	2058-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/59, 15:04	2059-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/60, 15:04	1960-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/61, 15:04	1961-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/62, 15:04	1962-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/63, 15:04	1963-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/64, 15:04	1964-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/65, 15:04	1965-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/66, 15:04	1966-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/67, 15:04	1967-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/68, 15:04	1968-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/69, 15:04	1969-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/70, 15:04	1970-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/71, 15:04	1971-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/72, 15:04	1972-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/73, 15:04	1973-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/74, 15:04	1974-01-28 22:04
+67.0	en_GB	Datetime.parse	28/01/75, 15:04	1975-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/76, 15:04	1976-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/77, 15:04	1977-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/78, 15:04	1978-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/79, 15:04	1979-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/80, 15:04	1980-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/81, 15:04	1981-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/82, 15:04	1982-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/83, 15:04	1983-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/84, 15:04	1984-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/85, 15:04	1985-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/86, 15:04	1986-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/87, 15:04	1987-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/88, 15:04	1988-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/89, 15:04	1989-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/90, 15:04	1990-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/91, 15:04	1991-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/92, 15:04	1992-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/93, 15:04	1993-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/94, 15:04	1994-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/95, 15:04	1995-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/96, 15:04	1996-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/97, 15:04	1997-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/98, 15:04	1998-01-28 23:04
+67.0	en_GB	Datetime.parse	28/01/99, 15:04	1999-01-28 23:04
+67.0	en_GB	Date.parse	28/01/0	ERR:System.TypeException
+67.0	en_GB	Datetime.parse	28/01/0, 15:04	ERR:System.TypeException
+67.0	en_GB	Date.parse	28/01/5	2005-01-28
+67.0	en_GB	Datetime.parse	28/01/5, 15:04	2005-01-28 23:04
+67.0	en_GB	Date.parse	28/01/9	2009-01-28
+67.0	en_GB	Datetime.parse	28/01/9, 15:04	2009-01-28 23:04
+67.0	en_GB	Date.parse	28/01/100	ERR:System.TypeException
+67.0	en_GB	Datetime.parse	28/01/100, 15:04	ERR:System.TypeException
+67.0	en_GB	Date.parse	28/01/190	ERR:System.TypeException
+67.0	en_GB	Datetime.parse	28/01/190, 15:04	ERR:System.TypeException
+67.0	en_GB	Date.parse	28/01/090	1990-01-28
+67.0	en_GB	Datetime.parse	28/01/090, 15:04	1990-01-28 23:04
+67.0	en_GB	Date.parse	28/01/999	ERR:System.TypeException
+67.0	en_GB	Datetime.parse	28/01/999, 15:04	ERR:System.TypeException
+67.0	en_GB	Date.parse	28/01/0090	1990-01-28
+67.0	en_GB	Datetime.parse	28/01/0090, 15:04	1990-01-28 23:04
+67.0	en_GB	Date.parse	28/01/0008	2008-01-28
+67.0	en_GB	Datetime.parse	28/01/0008, 15:04	2008-01-28 23:04
+67.0	en_GB	Date.parse	28/01/2008	2008-01-28
+67.0	en_GB	Datetime.parse	28/01/2008, 15:04	2008-01-28 23:04
+67.0	en_GB	Date.parse	28/01/20088	ERR:System.TypeException
+67.0	en_GB	Datetime.parse	28/01/20088, 15:04	ERR:System.TypeException
+67.0	en_GB	Date.parse	28/01/10000	ERR:System.TypeException
+67.0	en_GB	Datetime.parse	28/01/10000, 15:04	ERR:System.TypeException
+67.0	en_GB	Datetime.parse	2008-01-28, 3:04 PM	ERR:System.TypeException
+67.0	en_GB	Datetime.parse	2008-01-28 3:04 PM	ERR:System.TypeException
+67.0	en_GB	Datetime.parse	2008-01-28, 3:04 p.m.	ERR:System.TypeException
+67.0	en_GB	Datetime.parse	2008-01-28 3:04 p.m.	ERR:System.TypeException
+67.0	en_GB	Datetime.parse	2008-01-28, 15:04	ERR:System.TypeException
+67.0	en_GB	Datetime.parse	2008-01-28 15:04	ERR:System.TypeException
+67.0	en_GB	Datetime.parse	1/28/2008, 3:04 PM	ERR:System.TypeException
+67.0	en_GB	Datetime.parse	1/28/2008 3:04 PM	ERR:System.TypeException
+67.0	en_GB	Datetime.parse	2008-1-28, 3:04 p.m.	ERR:System.TypeException
+67.0	en_GB	Datetime.parse	2008-1-28 3:04 p.m.	ERR:System.TypeException
+67.0	en_GB	Datetime.parse	28/01/2008, 15:04	2008-01-28 23:04
+67.0	en_GB	Datetime.parse	2008-01-28, 3:04 pm	ERR:System.TypeException
+67.0	en_GB	Datetime.parse	2008-01-28, 3:04 PM.	ERR:System.TypeException
+67.0	en_GB	Datetime.parse	2008-01-28, 03:04 p.m.	ERR:System.TypeException
+67.0	en_GB	Date.parse	2008-01-28	ERR:System.TypeException
+67.0	en_GB	Date.parse	2008-1-28	ERR:System.TypeException
+67.0	en_GB	Date.parse	08-01-28	ERR:System.TypeException
+67.0	en_GB	Date.parse	8-1-28	ERR:System.TypeException
+67.0	en_GB	Date.parse	1/28/2008	ERR:System.TypeException
+67.0	en_GB	Date.parse	1/28/08	ERR:System.TypeException
+67.0	en_GB	Date.parse	28/01/2008	2008-01-28
+67.0	en_GB	Date.parse	2008/01/28	ERR:System.TypeException
+67.0	en_GB	Date.parse	20080128	ERR:System.TypeException
+67.0	fr_FR	Date.format	2008-01-28	28/01/2008
+67.0	fr_FR	Datetime.format	2008-01-28 15:04:00 America/Los_Angeles	28/01/2008 15:04
+67.0	fr_FR	Date.parse	28/01/00	ERR:System.TypeException
+67.0	fr_FR	Date.parse	28/01/01	2001-01-28
+67.0	fr_FR	Date.parse	28/01/02	2002-01-28
+67.0	fr_FR	Date.parse	28/01/03	2003-01-28
+67.0	fr_FR	Date.parse	28/01/04	2004-01-28
+67.0	fr_FR	Date.parse	28/01/05	2005-01-28
+67.0	fr_FR	Date.parse	28/01/06	2006-01-28
+67.0	fr_FR	Date.parse	28/01/07	2007-01-28
+67.0	fr_FR	Date.parse	28/01/08	2008-01-28
+67.0	fr_FR	Date.parse	28/01/09	2009-01-28
+67.0	fr_FR	Date.parse	28/01/10	2010-01-28
+67.0	fr_FR	Date.parse	28/01/11	2011-01-28
+67.0	fr_FR	Date.parse	28/01/12	2012-01-28
+67.0	fr_FR	Date.parse	28/01/13	2013-01-28
+67.0	fr_FR	Date.parse	28/01/14	2014-01-28
+67.0	fr_FR	Date.parse	28/01/15	2015-01-28
+67.0	fr_FR	Date.parse	28/01/16	2016-01-28
+67.0	fr_FR	Date.parse	28/01/17	2017-01-28
+67.0	fr_FR	Date.parse	28/01/18	2018-01-28
+67.0	fr_FR	Date.parse	28/01/19	2019-01-28
+67.0	fr_FR	Date.parse	28/01/20	2020-01-28
+67.0	fr_FR	Date.parse	28/01/21	2021-01-28
+67.0	fr_FR	Date.parse	28/01/22	2022-01-28
+67.0	fr_FR	Date.parse	28/01/23	2023-01-28
+67.0	fr_FR	Date.parse	28/01/24	2024-01-28
+67.0	fr_FR	Date.parse	28/01/25	2025-01-28
+67.0	fr_FR	Date.parse	28/01/26	2026-01-28
+67.0	fr_FR	Date.parse	28/01/27	2027-01-28
+67.0	fr_FR	Date.parse	28/01/28	2028-01-28
+67.0	fr_FR	Date.parse	28/01/29	2029-01-28
+67.0	fr_FR	Date.parse	28/01/30	2030-01-28
+67.0	fr_FR	Date.parse	28/01/31	2031-01-28
+67.0	fr_FR	Date.parse	28/01/32	2032-01-28
+67.0	fr_FR	Date.parse	28/01/33	2033-01-28
+67.0	fr_FR	Date.parse	28/01/34	2034-01-28
+67.0	fr_FR	Date.parse	28/01/35	2035-01-28
+67.0	fr_FR	Date.parse	28/01/36	2036-01-28
+67.0	fr_FR	Date.parse	28/01/37	2037-01-28
+67.0	fr_FR	Date.parse	28/01/38	2038-01-28
+67.0	fr_FR	Date.parse	28/01/39	2039-01-28
+67.0	fr_FR	Date.parse	28/01/40	2040-01-28
+67.0	fr_FR	Date.parse	28/01/41	2041-01-28
+67.0	fr_FR	Date.parse	28/01/42	2042-01-28
+67.0	fr_FR	Date.parse	28/01/43	2043-01-28
+67.0	fr_FR	Date.parse	28/01/44	2044-01-28
+67.0	fr_FR	Date.parse	28/01/45	2045-01-28
+67.0	fr_FR	Date.parse	28/01/46	2046-01-28
+67.0	fr_FR	Date.parse	28/01/47	2047-01-28
+67.0	fr_FR	Date.parse	28/01/48	2048-01-28
+67.0	fr_FR	Date.parse	28/01/49	2049-01-28
+67.0	fr_FR	Date.parse	28/01/50	2050-01-28
+67.0	fr_FR	Date.parse	28/01/51	2051-01-28
+67.0	fr_FR	Date.parse	28/01/52	2052-01-28
+67.0	fr_FR	Date.parse	28/01/53	2053-01-28
+67.0	fr_FR	Date.parse	28/01/54	2054-01-28
+67.0	fr_FR	Date.parse	28/01/55	2055-01-28
+67.0	fr_FR	Date.parse	28/01/56	2056-01-28
+67.0	fr_FR	Date.parse	28/01/57	2057-01-28
+67.0	fr_FR	Date.parse	28/01/58	2058-01-28
+67.0	fr_FR	Date.parse	28/01/59	2059-01-28
+67.0	fr_FR	Date.parse	28/01/60	1960-01-28
+67.0	fr_FR	Date.parse	28/01/61	1961-01-28
+67.0	fr_FR	Date.parse	28/01/62	1962-01-28
+67.0	fr_FR	Date.parse	28/01/63	1963-01-28
+67.0	fr_FR	Date.parse	28/01/64	1964-01-28
+67.0	fr_FR	Date.parse	28/01/65	1965-01-28
+67.0	fr_FR	Date.parse	28/01/66	1966-01-28
+67.0	fr_FR	Date.parse	28/01/67	1967-01-28
+67.0	fr_FR	Date.parse	28/01/68	1968-01-28
+67.0	fr_FR	Date.parse	28/01/69	1969-01-28
+67.0	fr_FR	Date.parse	28/01/70	1970-01-28
+67.0	fr_FR	Date.parse	28/01/71	1971-01-28
+67.0	fr_FR	Date.parse	28/01/72	1972-01-28
+67.0	fr_FR	Date.parse	28/01/73	1973-01-28
+67.0	fr_FR	Date.parse	28/01/74	1974-01-28
+67.0	fr_FR	Date.parse	28/01/75	1975-01-28
+67.0	fr_FR	Date.parse	28/01/76	1976-01-28
+67.0	fr_FR	Date.parse	28/01/77	1977-01-28
+67.0	fr_FR	Date.parse	28/01/78	1978-01-28
+67.0	fr_FR	Date.parse	28/01/79	1979-01-28
+67.0	fr_FR	Date.parse	28/01/80	1980-01-28
+67.0	fr_FR	Date.parse	28/01/81	1981-01-28
+67.0	fr_FR	Date.parse	28/01/82	1982-01-28
+67.0	fr_FR	Date.parse	28/01/83	1983-01-28
+67.0	fr_FR	Date.parse	28/01/84	1984-01-28
+67.0	fr_FR	Date.parse	28/01/85	1985-01-28
+67.0	fr_FR	Date.parse	28/01/86	1986-01-28
+67.0	fr_FR	Date.parse	28/01/87	1987-01-28
+67.0	fr_FR	Date.parse	28/01/88	1988-01-28
+67.0	fr_FR	Date.parse	28/01/89	1989-01-28
+67.0	fr_FR	Date.parse	28/01/90	1990-01-28
+67.0	fr_FR	Date.parse	28/01/91	1991-01-28
+67.0	fr_FR	Date.parse	28/01/92	1992-01-28
+67.0	fr_FR	Date.parse	28/01/93	1993-01-28
+67.0	fr_FR	Date.parse	28/01/94	1994-01-28
+67.0	fr_FR	Date.parse	28/01/95	1995-01-28
+67.0	fr_FR	Date.parse	28/01/96	1996-01-28
+67.0	fr_FR	Date.parse	28/01/97	1997-01-28
+67.0	fr_FR	Date.parse	28/01/98	1998-01-28
+67.0	fr_FR	Date.parse	28/01/99	1999-01-28
+67.0	fr_FR	Datetime.parse	28/01/00 15:04	ERR:System.TypeException
+67.0	fr_FR	Datetime.parse	28/01/01 15:04	2001-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/02 15:04	2002-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/03 15:04	2003-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/04 15:04	2004-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/05 15:04	2005-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/06 15:04	2006-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/07 15:04	2007-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/08 15:04	2008-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/09 15:04	2009-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/10 15:04	2010-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/11 15:04	2011-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/12 15:04	2012-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/13 15:04	2013-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/14 15:04	2014-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/15 15:04	2015-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/16 15:04	2016-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/17 15:04	2017-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/18 15:04	2018-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/19 15:04	2019-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/20 15:04	2020-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/21 15:04	2021-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/22 15:04	2022-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/23 15:04	2023-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/24 15:04	2024-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/25 15:04	2025-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/26 15:04	2026-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/27 15:04	2027-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/28 15:04	2028-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/29 15:04	2029-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/30 15:04	2030-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/31 15:04	2031-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/32 15:04	2032-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/33 15:04	2033-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/34 15:04	2034-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/35 15:04	2035-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/36 15:04	2036-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/37 15:04	2037-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/38 15:04	2038-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/39 15:04	2039-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/40 15:04	2040-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/41 15:04	2041-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/42 15:04	2042-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/43 15:04	2043-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/44 15:04	2044-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/45 15:04	2045-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/46 15:04	2046-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/47 15:04	2047-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/48 15:04	2048-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/49 15:04	2049-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/50 15:04	2050-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/51 15:04	2051-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/52 15:04	2052-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/53 15:04	2053-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/54 15:04	2054-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/55 15:04	2055-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/56 15:04	2056-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/57 15:04	2057-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/58 15:04	2058-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/59 15:04	2059-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/60 15:04	1960-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/61 15:04	1961-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/62 15:04	1962-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/63 15:04	1963-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/64 15:04	1964-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/65 15:04	1965-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/66 15:04	1966-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/67 15:04	1967-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/68 15:04	1968-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/69 15:04	1969-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/70 15:04	1970-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/71 15:04	1971-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/72 15:04	1972-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/73 15:04	1973-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/74 15:04	1974-01-28 22:04
+67.0	fr_FR	Datetime.parse	28/01/75 15:04	1975-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/76 15:04	1976-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/77 15:04	1977-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/78 15:04	1978-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/79 15:04	1979-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/80 15:04	1980-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/81 15:04	1981-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/82 15:04	1982-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/83 15:04	1983-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/84 15:04	1984-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/85 15:04	1985-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/86 15:04	1986-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/87 15:04	1987-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/88 15:04	1988-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/89 15:04	1989-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/90 15:04	1990-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/91 15:04	1991-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/92 15:04	1992-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/93 15:04	1993-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/94 15:04	1994-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/95 15:04	1995-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/96 15:04	1996-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/97 15:04	1997-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/98 15:04	1998-01-28 23:04
+67.0	fr_FR	Datetime.parse	28/01/99 15:04	1999-01-28 23:04
+67.0	fr_FR	Date.parse	28/01/0	ERR:System.TypeException
+67.0	fr_FR	Datetime.parse	28/01/0 15:04	ERR:System.TypeException
+67.0	fr_FR	Date.parse	28/01/5	2005-01-28
+67.0	fr_FR	Datetime.parse	28/01/5 15:04	2005-01-28 23:04
+67.0	fr_FR	Date.parse	28/01/9	2009-01-28
+67.0	fr_FR	Datetime.parse	28/01/9 15:04	2009-01-28 23:04
+67.0	fr_FR	Date.parse	28/01/100	ERR:System.TypeException
+67.0	fr_FR	Datetime.parse	28/01/100 15:04	ERR:System.TypeException
+67.0	fr_FR	Date.parse	28/01/190	ERR:System.TypeException
+67.0	fr_FR	Datetime.parse	28/01/190 15:04	ERR:System.TypeException
+67.0	fr_FR	Date.parse	28/01/090	1990-01-28
+67.0	fr_FR	Datetime.parse	28/01/090 15:04	1990-01-28 23:04
+67.0	fr_FR	Date.parse	28/01/999	ERR:System.TypeException
+67.0	fr_FR	Datetime.parse	28/01/999 15:04	ERR:System.TypeException
+67.0	fr_FR	Date.parse	28/01/0090	1990-01-28
+67.0	fr_FR	Datetime.parse	28/01/0090 15:04	1990-01-28 23:04
+67.0	fr_FR	Date.parse	28/01/0008	2008-01-28
+67.0	fr_FR	Datetime.parse	28/01/0008 15:04	2008-01-28 23:04
+67.0	fr_FR	Date.parse	28/01/2008	2008-01-28
+67.0	fr_FR	Datetime.parse	28/01/2008 15:04	2008-01-28 23:04
+67.0	fr_FR	Date.parse	28/01/20088	ERR:System.TypeException
+67.0	fr_FR	Datetime.parse	28/01/20088 15:04	ERR:System.TypeException
+67.0	fr_FR	Date.parse	28/01/10000	ERR:System.TypeException
+67.0	fr_FR	Datetime.parse	28/01/10000 15:04	ERR:System.TypeException
+67.0	fr_FR	Datetime.parse	2008-01-28, 3:04 PM	ERR:System.TypeException
+67.0	fr_FR	Datetime.parse	2008-01-28 3:04 PM	ERR:System.TypeException
+67.0	fr_FR	Datetime.parse	2008-01-28, 3:04 p.m.	ERR:System.TypeException
+67.0	fr_FR	Datetime.parse	2008-01-28 3:04 p.m.	ERR:System.TypeException
+67.0	fr_FR	Datetime.parse	2008-01-28, 15:04	ERR:System.TypeException
+67.0	fr_FR	Datetime.parse	2008-01-28 15:04	ERR:System.TypeException
+67.0	fr_FR	Datetime.parse	1/28/2008, 3:04 PM	ERR:System.TypeException
+67.0	fr_FR	Datetime.parse	1/28/2008 3:04 PM	ERR:System.TypeException
+67.0	fr_FR	Datetime.parse	2008-1-28, 3:04 p.m.	ERR:System.TypeException
+67.0	fr_FR	Datetime.parse	2008-1-28 3:04 p.m.	ERR:System.TypeException
+67.0	fr_FR	Datetime.parse	28/01/2008, 15:04	ERR:System.TypeException
+67.0	fr_FR	Datetime.parse	2008-01-28, 3:04 pm	ERR:System.TypeException
+67.0	fr_FR	Datetime.parse	2008-01-28, 3:04 PM.	ERR:System.TypeException
+67.0	fr_FR	Datetime.parse	2008-01-28, 03:04 p.m.	ERR:System.TypeException
+67.0	fr_FR	Date.parse	2008-01-28	ERR:System.TypeException
+67.0	fr_FR	Date.parse	2008-1-28	ERR:System.TypeException
+67.0	fr_FR	Date.parse	08-01-28	ERR:System.TypeException
+67.0	fr_FR	Date.parse	8-1-28	ERR:System.TypeException
+67.0	fr_FR	Date.parse	1/28/2008	ERR:System.TypeException
+67.0	fr_FR	Date.parse	1/28/08	ERR:System.TypeException
+67.0	fr_FR	Date.parse	28/01/2008	2008-01-28
+67.0	fr_FR	Date.parse	2008/01/28	ERR:System.TypeException
+67.0	fr_FR	Date.parse	20080128	ERR:System.TypeException
+67.0	no	Date.format	2008-01-28	28.01.2008
+67.0	no	Datetime.format	2008-01-28 15:04:00 America/Los_Angeles	28.01.2008, 15:04
+67.0	no	Date.parse	28.01.00	ERR:System.TypeException
+67.0	no	Date.parse	28.01.01	2001-01-28
+67.0	no	Date.parse	28.01.02	2002-01-28
+67.0	no	Date.parse	28.01.03	2003-01-28
+67.0	no	Date.parse	28.01.04	2004-01-28
+67.0	no	Date.parse	28.01.05	2005-01-28
+67.0	no	Date.parse	28.01.06	2006-01-28
+67.0	no	Date.parse	28.01.07	2007-01-28
+67.0	no	Date.parse	28.01.08	2008-01-28
+67.0	no	Date.parse	28.01.09	2009-01-28
+67.0	no	Date.parse	28.01.10	2010-01-28
+67.0	no	Date.parse	28.01.11	2011-01-28
+67.0	no	Date.parse	28.01.12	2012-01-28
+67.0	no	Date.parse	28.01.13	2013-01-28
+67.0	no	Date.parse	28.01.14	2014-01-28
+67.0	no	Date.parse	28.01.15	2015-01-28
+67.0	no	Date.parse	28.01.16	2016-01-28
+67.0	no	Date.parse	28.01.17	2017-01-28
+67.0	no	Date.parse	28.01.18	2018-01-28
+67.0	no	Date.parse	28.01.19	2019-01-28
+67.0	no	Date.parse	28.01.20	2020-01-28
+67.0	no	Date.parse	28.01.21	2021-01-28
+67.0	no	Date.parse	28.01.22	2022-01-28
+67.0	no	Date.parse	28.01.23	2023-01-28
+67.0	no	Date.parse	28.01.24	2024-01-28
+67.0	no	Date.parse	28.01.25	2025-01-28
+67.0	no	Date.parse	28.01.26	2026-01-28
+67.0	no	Date.parse	28.01.27	2027-01-28
+67.0	no	Date.parse	28.01.28	2028-01-28
+67.0	no	Date.parse	28.01.29	2029-01-28
+67.0	no	Date.parse	28.01.30	2030-01-28
+67.0	no	Date.parse	28.01.31	2031-01-28
+67.0	no	Date.parse	28.01.32	2032-01-28
+67.0	no	Date.parse	28.01.33	2033-01-28
+67.0	no	Date.parse	28.01.34	2034-01-28
+67.0	no	Date.parse	28.01.35	2035-01-28
+67.0	no	Date.parse	28.01.36	2036-01-28
+67.0	no	Date.parse	28.01.37	2037-01-28
+67.0	no	Date.parse	28.01.38	2038-01-28
+67.0	no	Date.parse	28.01.39	2039-01-28
+67.0	no	Date.parse	28.01.40	2040-01-28
+67.0	no	Date.parse	28.01.41	2041-01-28
+67.0	no	Date.parse	28.01.42	2042-01-28
+67.0	no	Date.parse	28.01.43	2043-01-28
+67.0	no	Date.parse	28.01.44	2044-01-28
+67.0	no	Date.parse	28.01.45	2045-01-28
+67.0	no	Date.parse	28.01.46	2046-01-28
+67.0	no	Date.parse	28.01.47	2047-01-28
+67.0	no	Date.parse	28.01.48	2048-01-28
+67.0	no	Date.parse	28.01.49	2049-01-28
+67.0	no	Date.parse	28.01.50	2050-01-28
+67.0	no	Date.parse	28.01.51	2051-01-28
+67.0	no	Date.parse	28.01.52	2052-01-28
+67.0	no	Date.parse	28.01.53	2053-01-28
+67.0	no	Date.parse	28.01.54	2054-01-28
+67.0	no	Date.parse	28.01.55	2055-01-28
+67.0	no	Date.parse	28.01.56	2056-01-28
+67.0	no	Date.parse	28.01.57	2057-01-28
+67.0	no	Date.parse	28.01.58	2058-01-28
+67.0	no	Date.parse	28.01.59	2059-01-28
+67.0	no	Date.parse	28.01.60	1960-01-28
+67.0	no	Date.parse	28.01.61	1961-01-28
+67.0	no	Date.parse	28.01.62	1962-01-28
+67.0	no	Date.parse	28.01.63	1963-01-28
+67.0	no	Date.parse	28.01.64	1964-01-28
+67.0	no	Date.parse	28.01.65	1965-01-28
+67.0	no	Date.parse	28.01.66	1966-01-28
+67.0	no	Date.parse	28.01.67	1967-01-28
+67.0	no	Date.parse	28.01.68	1968-01-28
+67.0	no	Date.parse	28.01.69	1969-01-28
+67.0	no	Date.parse	28.01.70	1970-01-28
+67.0	no	Date.parse	28.01.71	1971-01-28
+67.0	no	Date.parse	28.01.72	1972-01-28
+67.0	no	Date.parse	28.01.73	1973-01-28
+67.0	no	Date.parse	28.01.74	1974-01-28
+67.0	no	Date.parse	28.01.75	1975-01-28
+67.0	no	Date.parse	28.01.76	1976-01-28
+67.0	no	Date.parse	28.01.77	1977-01-28
+67.0	no	Date.parse	28.01.78	1978-01-28
+67.0	no	Date.parse	28.01.79	1979-01-28
+67.0	no	Date.parse	28.01.80	1980-01-28
+67.0	no	Date.parse	28.01.81	1981-01-28
+67.0	no	Date.parse	28.01.82	1982-01-28
+67.0	no	Date.parse	28.01.83	1983-01-28
+67.0	no	Date.parse	28.01.84	1984-01-28
+67.0	no	Date.parse	28.01.85	1985-01-28
+67.0	no	Date.parse	28.01.86	1986-01-28
+67.0	no	Date.parse	28.01.87	1987-01-28
+67.0	no	Date.parse	28.01.88	1988-01-28
+67.0	no	Date.parse	28.01.89	1989-01-28
+67.0	no	Date.parse	28.01.90	1990-01-28
+67.0	no	Date.parse	28.01.91	1991-01-28
+67.0	no	Date.parse	28.01.92	1992-01-28
+67.0	no	Date.parse	28.01.93	1993-01-28
+67.0	no	Date.parse	28.01.94	1994-01-28
+67.0	no	Date.parse	28.01.95	1995-01-28
+67.0	no	Date.parse	28.01.96	1996-01-28
+67.0	no	Date.parse	28.01.97	1997-01-28
+67.0	no	Date.parse	28.01.98	1998-01-28
+67.0	no	Date.parse	28.01.99	1999-01-28
+67.0	no	Datetime.parse	28.01.00, 15:04	ERR:System.TypeException
+67.0	no	Datetime.parse	28.01.01, 15:04	2001-01-28 23:04
+67.0	no	Datetime.parse	28.01.02, 15:04	2002-01-28 23:04
+67.0	no	Datetime.parse	28.01.03, 15:04	2003-01-28 23:04
+67.0	no	Datetime.parse	28.01.04, 15:04	2004-01-28 23:04
+67.0	no	Datetime.parse	28.01.05, 15:04	2005-01-28 23:04
+67.0	no	Datetime.parse	28.01.06, 15:04	2006-01-28 23:04
+67.0	no	Datetime.parse	28.01.07, 15:04	2007-01-28 23:04
+67.0	no	Datetime.parse	28.01.08, 15:04	2008-01-28 23:04
+67.0	no	Datetime.parse	28.01.09, 15:04	2009-01-28 23:04
+67.0	no	Datetime.parse	28.01.10, 15:04	2010-01-28 23:04
+67.0	no	Datetime.parse	28.01.11, 15:04	2011-01-28 23:04
+67.0	no	Datetime.parse	28.01.12, 15:04	2012-01-28 23:04
+67.0	no	Datetime.parse	28.01.13, 15:04	2013-01-28 23:04
+67.0	no	Datetime.parse	28.01.14, 15:04	2014-01-28 23:04
+67.0	no	Datetime.parse	28.01.15, 15:04	2015-01-28 23:04
+67.0	no	Datetime.parse	28.01.16, 15:04	2016-01-28 23:04
+67.0	no	Datetime.parse	28.01.17, 15:04	2017-01-28 23:04
+67.0	no	Datetime.parse	28.01.18, 15:04	2018-01-28 23:04
+67.0	no	Datetime.parse	28.01.19, 15:04	2019-01-28 23:04
+67.0	no	Datetime.parse	28.01.20, 15:04	2020-01-28 23:04
+67.0	no	Datetime.parse	28.01.21, 15:04	2021-01-28 23:04
+67.0	no	Datetime.parse	28.01.22, 15:04	2022-01-28 23:04
+67.0	no	Datetime.parse	28.01.23, 15:04	2023-01-28 23:04
+67.0	no	Datetime.parse	28.01.24, 15:04	2024-01-28 23:04
+67.0	no	Datetime.parse	28.01.25, 15:04	2025-01-28 23:04
+67.0	no	Datetime.parse	28.01.26, 15:04	2026-01-28 23:04
+67.0	no	Datetime.parse	28.01.27, 15:04	2027-01-28 23:04
+67.0	no	Datetime.parse	28.01.28, 15:04	2028-01-28 23:04
+67.0	no	Datetime.parse	28.01.29, 15:04	2029-01-28 23:04
+67.0	no	Datetime.parse	28.01.30, 15:04	2030-01-28 23:04
+67.0	no	Datetime.parse	28.01.31, 15:04	2031-01-28 23:04
+67.0	no	Datetime.parse	28.01.32, 15:04	2032-01-28 23:04
+67.0	no	Datetime.parse	28.01.33, 15:04	2033-01-28 23:04
+67.0	no	Datetime.parse	28.01.34, 15:04	2034-01-28 23:04
+67.0	no	Datetime.parse	28.01.35, 15:04	2035-01-28 23:04
+67.0	no	Datetime.parse	28.01.36, 15:04	2036-01-28 23:04
+67.0	no	Datetime.parse	28.01.37, 15:04	2037-01-28 23:04
+67.0	no	Datetime.parse	28.01.38, 15:04	2038-01-28 23:04
+67.0	no	Datetime.parse	28.01.39, 15:04	2039-01-28 23:04
+67.0	no	Datetime.parse	28.01.40, 15:04	2040-01-28 23:04
+67.0	no	Datetime.parse	28.01.41, 15:04	2041-01-28 23:04
+67.0	no	Datetime.parse	28.01.42, 15:04	2042-01-28 23:04
+67.0	no	Datetime.parse	28.01.43, 15:04	2043-01-28 23:04
+67.0	no	Datetime.parse	28.01.44, 15:04	2044-01-28 23:04
+67.0	no	Datetime.parse	28.01.45, 15:04	2045-01-28 23:04
+67.0	no	Datetime.parse	28.01.46, 15:04	2046-01-28 23:04
+67.0	no	Datetime.parse	28.01.47, 15:04	2047-01-28 23:04
+67.0	no	Datetime.parse	28.01.48, 15:04	2048-01-28 23:04
+67.0	no	Datetime.parse	28.01.49, 15:04	2049-01-28 23:04
+67.0	no	Datetime.parse	28.01.50, 15:04	2050-01-28 23:04
+67.0	no	Datetime.parse	28.01.51, 15:04	2051-01-28 23:04
+67.0	no	Datetime.parse	28.01.52, 15:04	2052-01-28 23:04
+67.0	no	Datetime.parse	28.01.53, 15:04	2053-01-28 23:04
+67.0	no	Datetime.parse	28.01.54, 15:04	2054-01-28 23:04
+67.0	no	Datetime.parse	28.01.55, 15:04	2055-01-28 23:04
+67.0	no	Datetime.parse	28.01.56, 15:04	2056-01-28 23:04
+67.0	no	Datetime.parse	28.01.57, 15:04	2057-01-28 23:04
+67.0	no	Datetime.parse	28.01.58, 15:04	2058-01-28 23:04
+67.0	no	Datetime.parse	28.01.59, 15:04	2059-01-28 23:04
+67.0	no	Datetime.parse	28.01.60, 15:04	1960-01-28 23:04
+67.0	no	Datetime.parse	28.01.61, 15:04	1961-01-28 23:04
+67.0	no	Datetime.parse	28.01.62, 15:04	1962-01-28 23:04
+67.0	no	Datetime.parse	28.01.63, 15:04	1963-01-28 23:04
+67.0	no	Datetime.parse	28.01.64, 15:04	1964-01-28 23:04
+67.0	no	Datetime.parse	28.01.65, 15:04	1965-01-28 23:04
+67.0	no	Datetime.parse	28.01.66, 15:04	1966-01-28 23:04
+67.0	no	Datetime.parse	28.01.67, 15:04	1967-01-28 23:04
+67.0	no	Datetime.parse	28.01.68, 15:04	1968-01-28 23:04
+67.0	no	Datetime.parse	28.01.69, 15:04	1969-01-28 23:04
+67.0	no	Datetime.parse	28.01.70, 15:04	1970-01-28 23:04
+67.0	no	Datetime.parse	28.01.71, 15:04	1971-01-28 23:04
+67.0	no	Datetime.parse	28.01.72, 15:04	1972-01-28 23:04
+67.0	no	Datetime.parse	28.01.73, 15:04	1973-01-28 23:04
+67.0	no	Datetime.parse	28.01.74, 15:04	1974-01-28 22:04
+67.0	no	Datetime.parse	28.01.75, 15:04	1975-01-28 23:04
+67.0	no	Datetime.parse	28.01.76, 15:04	1976-01-28 23:04
+67.0	no	Datetime.parse	28.01.77, 15:04	1977-01-28 23:04
+67.0	no	Datetime.parse	28.01.78, 15:04	1978-01-28 23:04
+67.0	no	Datetime.parse	28.01.79, 15:04	1979-01-28 23:04
+67.0	no	Datetime.parse	28.01.80, 15:04	1980-01-28 23:04
+67.0	no	Datetime.parse	28.01.81, 15:04	1981-01-28 23:04
+67.0	no	Datetime.parse	28.01.82, 15:04	1982-01-28 23:04
+67.0	no	Datetime.parse	28.01.83, 15:04	1983-01-28 23:04
+67.0	no	Datetime.parse	28.01.84, 15:04	1984-01-28 23:04
+67.0	no	Datetime.parse	28.01.85, 15:04	1985-01-28 23:04
+67.0	no	Datetime.parse	28.01.86, 15:04	1986-01-28 23:04
+67.0	no	Datetime.parse	28.01.87, 15:04	1987-01-28 23:04
+67.0	no	Datetime.parse	28.01.88, 15:04	1988-01-28 23:04
+67.0	no	Datetime.parse	28.01.89, 15:04	1989-01-28 23:04
+67.0	no	Datetime.parse	28.01.90, 15:04	1990-01-28 23:04
+67.0	no	Datetime.parse	28.01.91, 15:04	1991-01-28 23:04
+67.0	no	Datetime.parse	28.01.92, 15:04	1992-01-28 23:04
+67.0	no	Datetime.parse	28.01.93, 15:04	1993-01-28 23:04
+67.0	no	Datetime.parse	28.01.94, 15:04	1994-01-28 23:04
+67.0	no	Datetime.parse	28.01.95, 15:04	1995-01-28 23:04
+67.0	no	Datetime.parse	28.01.96, 15:04	1996-01-28 23:04
+67.0	no	Datetime.parse	28.01.97, 15:04	1997-01-28 23:04
+67.0	no	Datetime.parse	28.01.98, 15:04	1998-01-28 23:04
+67.0	no	Datetime.parse	28.01.99, 15:04	1999-01-28 23:04
+67.0	no	Date.parse	28.01.0	ERR:System.TypeException
+67.0	no	Datetime.parse	28.01.0, 15:04	ERR:System.TypeException
+67.0	no	Date.parse	28.01.5	2005-01-28
+67.0	no	Datetime.parse	28.01.5, 15:04	2005-01-28 23:04
+67.0	no	Date.parse	28.01.9	2009-01-28
+67.0	no	Datetime.parse	28.01.9, 15:04	2009-01-28 23:04
+67.0	no	Date.parse	28.01.100	ERR:System.TypeException
+67.0	no	Datetime.parse	28.01.100, 15:04	ERR:System.TypeException
+67.0	no	Date.parse	28.01.190	ERR:System.TypeException
+67.0	no	Datetime.parse	28.01.190, 15:04	ERR:System.TypeException
+67.0	no	Date.parse	28.01.090	1990-01-28
+67.0	no	Datetime.parse	28.01.090, 15:04	1990-01-28 23:04
+67.0	no	Date.parse	28.01.999	ERR:System.TypeException
+67.0	no	Datetime.parse	28.01.999, 15:04	ERR:System.TypeException
+67.0	no	Date.parse	28.01.0090	1990-01-28
+67.0	no	Datetime.parse	28.01.0090, 15:04	1990-01-28 23:04
+67.0	no	Date.parse	28.01.0008	2008-01-28
+67.0	no	Datetime.parse	28.01.0008, 15:04	2008-01-28 23:04
+67.0	no	Date.parse	28.01.2008	2008-01-28
+67.0	no	Datetime.parse	28.01.2008, 15:04	2008-01-28 23:04
+67.0	no	Date.parse	28.01.20088	ERR:System.TypeException
+67.0	no	Datetime.parse	28.01.20088, 15:04	ERR:System.TypeException
+67.0	no	Date.parse	28.01.10000	ERR:System.TypeException
+67.0	no	Datetime.parse	28.01.10000, 15:04	ERR:System.TypeException
+67.0	no	Datetime.parse	2008-01-28, 3:04 PM	ERR:System.TypeException
+67.0	no	Datetime.parse	2008-01-28 3:04 PM	ERR:System.TypeException
+67.0	no	Datetime.parse	2008-01-28, 3:04 p.m.	ERR:System.TypeException
+67.0	no	Datetime.parse	2008-01-28 3:04 p.m.	ERR:System.TypeException
+67.0	no	Datetime.parse	2008-01-28, 15:04	ERR:System.TypeException
+67.0	no	Datetime.parse	2008-01-28 15:04	ERR:System.TypeException
+67.0	no	Datetime.parse	1/28/2008, 3:04 PM	ERR:System.TypeException
+67.0	no	Datetime.parse	1/28/2008 3:04 PM	ERR:System.TypeException
+67.0	no	Datetime.parse	2008-1-28, 3:04 p.m.	ERR:System.TypeException
+67.0	no	Datetime.parse	2008-1-28 3:04 p.m.	ERR:System.TypeException
+67.0	no	Datetime.parse	28/01/2008, 15:04	ERR:System.TypeException
+67.0	no	Datetime.parse	2008-01-28, 3:04 pm	ERR:System.TypeException
+67.0	no	Datetime.parse	2008-01-28, 3:04 PM.	ERR:System.TypeException
+67.0	no	Datetime.parse	2008-01-28, 03:04 p.m.	ERR:System.TypeException
+67.0	no	Date.parse	2008-01-28	ERR:System.TypeException
+67.0	no	Date.parse	2008-1-28	ERR:System.TypeException
+67.0	no	Date.parse	08-01-28	ERR:System.TypeException
+67.0	no	Date.parse	8-1-28	ERR:System.TypeException
+67.0	no	Date.parse	1/28/2008	ERR:System.TypeException
+67.0	no	Date.parse	1/28/08	ERR:System.TypeException
+67.0	no	Date.parse	28/01/2008	ERR:System.TypeException
+67.0	no	Date.parse	2008/01/28	ERR:System.TypeException
+67.0	no	Date.parse	20080128	ERR:System.TypeException
+67.0	no_NO	Date.format	2008-01-28	28.01.2008
+67.0	no_NO	Datetime.format	2008-01-28 15:04:00 America/Los_Angeles	28.01.2008, 15:04
+67.0	no_NO	Date.parse	28.01.00	ERR:System.TypeException
+67.0	no_NO	Date.parse	28.01.01	2001-01-28
+67.0	no_NO	Date.parse	28.01.02	2002-01-28
+67.0	no_NO	Date.parse	28.01.03	2003-01-28
+67.0	no_NO	Date.parse	28.01.04	2004-01-28
+67.0	no_NO	Date.parse	28.01.05	2005-01-28
+67.0	no_NO	Date.parse	28.01.06	2006-01-28
+67.0	no_NO	Date.parse	28.01.07	2007-01-28
+67.0	no_NO	Date.parse	28.01.08	2008-01-28
+67.0	no_NO	Date.parse	28.01.09	2009-01-28
+67.0	no_NO	Date.parse	28.01.10	2010-01-28
+67.0	no_NO	Date.parse	28.01.11	2011-01-28
+67.0	no_NO	Date.parse	28.01.12	2012-01-28
+67.0	no_NO	Date.parse	28.01.13	2013-01-28
+67.0	no_NO	Date.parse	28.01.14	2014-01-28
+67.0	no_NO	Date.parse	28.01.15	2015-01-28
+67.0	no_NO	Date.parse	28.01.16	2016-01-28
+67.0	no_NO	Date.parse	28.01.17	2017-01-28
+67.0	no_NO	Date.parse	28.01.18	2018-01-28
+67.0	no_NO	Date.parse	28.01.19	2019-01-28
+67.0	no_NO	Date.parse	28.01.20	2020-01-28
+67.0	no_NO	Date.parse	28.01.21	2021-01-28
+67.0	no_NO	Date.parse	28.01.22	2022-01-28
+67.0	no_NO	Date.parse	28.01.23	2023-01-28
+67.0	no_NO	Date.parse	28.01.24	2024-01-28
+67.0	no_NO	Date.parse	28.01.25	2025-01-28
+67.0	no_NO	Date.parse	28.01.26	2026-01-28
+67.0	no_NO	Date.parse	28.01.27	2027-01-28
+67.0	no_NO	Date.parse	28.01.28	2028-01-28
+67.0	no_NO	Date.parse	28.01.29	2029-01-28
+67.0	no_NO	Date.parse	28.01.30	2030-01-28
+67.0	no_NO	Date.parse	28.01.31	2031-01-28
+67.0	no_NO	Date.parse	28.01.32	2032-01-28
+67.0	no_NO	Date.parse	28.01.33	2033-01-28
+67.0	no_NO	Date.parse	28.01.34	2034-01-28
+67.0	no_NO	Date.parse	28.01.35	2035-01-28
+67.0	no_NO	Date.parse	28.01.36	2036-01-28
+67.0	no_NO	Date.parse	28.01.37	2037-01-28
+67.0	no_NO	Date.parse	28.01.38	2038-01-28
+67.0	no_NO	Date.parse	28.01.39	2039-01-28
+67.0	no_NO	Date.parse	28.01.40	2040-01-28
+67.0	no_NO	Date.parse	28.01.41	2041-01-28
+67.0	no_NO	Date.parse	28.01.42	2042-01-28
+67.0	no_NO	Date.parse	28.01.43	2043-01-28
+67.0	no_NO	Date.parse	28.01.44	2044-01-28
+67.0	no_NO	Date.parse	28.01.45	2045-01-28
+67.0	no_NO	Date.parse	28.01.46	2046-01-28
+67.0	no_NO	Date.parse	28.01.47	2047-01-28
+67.0	no_NO	Date.parse	28.01.48	2048-01-28
+67.0	no_NO	Date.parse	28.01.49	2049-01-28
+67.0	no_NO	Date.parse	28.01.50	2050-01-28
+67.0	no_NO	Date.parse	28.01.51	2051-01-28
+67.0	no_NO	Date.parse	28.01.52	2052-01-28
+67.0	no_NO	Date.parse	28.01.53	2053-01-28
+67.0	no_NO	Date.parse	28.01.54	2054-01-28
+67.0	no_NO	Date.parse	28.01.55	2055-01-28
+67.0	no_NO	Date.parse	28.01.56	2056-01-28
+67.0	no_NO	Date.parse	28.01.57	2057-01-28
+67.0	no_NO	Date.parse	28.01.58	2058-01-28
+67.0	no_NO	Date.parse	28.01.59	2059-01-28
+67.0	no_NO	Date.parse	28.01.60	1960-01-28
+67.0	no_NO	Date.parse	28.01.61	1961-01-28
+67.0	no_NO	Date.parse	28.01.62	1962-01-28
+67.0	no_NO	Date.parse	28.01.63	1963-01-28
+67.0	no_NO	Date.parse	28.01.64	1964-01-28
+67.0	no_NO	Date.parse	28.01.65	1965-01-28
+67.0	no_NO	Date.parse	28.01.66	1966-01-28
+67.0	no_NO	Date.parse	28.01.67	1967-01-28
+67.0	no_NO	Date.parse	28.01.68	1968-01-28
+67.0	no_NO	Date.parse	28.01.69	1969-01-28
+67.0	no_NO	Date.parse	28.01.70	1970-01-28
+67.0	no_NO	Date.parse	28.01.71	1971-01-28
+67.0	no_NO	Date.parse	28.01.72	1972-01-28
+67.0	no_NO	Date.parse	28.01.73	1973-01-28
+67.0	no_NO	Date.parse	28.01.74	1974-01-28
+67.0	no_NO	Date.parse	28.01.75	1975-01-28
+67.0	no_NO	Date.parse	28.01.76	1976-01-28
+67.0	no_NO	Date.parse	28.01.77	1977-01-28
+67.0	no_NO	Date.parse	28.01.78	1978-01-28
+67.0	no_NO	Date.parse	28.01.79	1979-01-28
+67.0	no_NO	Date.parse	28.01.80	1980-01-28
+67.0	no_NO	Date.parse	28.01.81	1981-01-28
+67.0	no_NO	Date.parse	28.01.82	1982-01-28
+67.0	no_NO	Date.parse	28.01.83	1983-01-28
+67.0	no_NO	Date.parse	28.01.84	1984-01-28
+67.0	no_NO	Date.parse	28.01.85	1985-01-28
+67.0	no_NO	Date.parse	28.01.86	1986-01-28
+67.0	no_NO	Date.parse	28.01.87	1987-01-28
+67.0	no_NO	Date.parse	28.01.88	1988-01-28
+67.0	no_NO	Date.parse	28.01.89	1989-01-28
+67.0	no_NO	Date.parse	28.01.90	1990-01-28
+67.0	no_NO	Date.parse	28.01.91	1991-01-28
+67.0	no_NO	Date.parse	28.01.92	1992-01-28
+67.0	no_NO	Date.parse	28.01.93	1993-01-28
+67.0	no_NO	Date.parse	28.01.94	1994-01-28
+67.0	no_NO	Date.parse	28.01.95	1995-01-28
+67.0	no_NO	Date.parse	28.01.96	1996-01-28
+67.0	no_NO	Date.parse	28.01.97	1997-01-28
+67.0	no_NO	Date.parse	28.01.98	1998-01-28
+67.0	no_NO	Date.parse	28.01.99	1999-01-28
+67.0	no_NO	Datetime.parse	28.01.00, 15:04	ERR:System.TypeException
+67.0	no_NO	Datetime.parse	28.01.01, 15:04	2001-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.02, 15:04	2002-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.03, 15:04	2003-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.04, 15:04	2004-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.05, 15:04	2005-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.06, 15:04	2006-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.07, 15:04	2007-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.08, 15:04	2008-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.09, 15:04	2009-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.10, 15:04	2010-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.11, 15:04	2011-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.12, 15:04	2012-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.13, 15:04	2013-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.14, 15:04	2014-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.15, 15:04	2015-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.16, 15:04	2016-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.17, 15:04	2017-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.18, 15:04	2018-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.19, 15:04	2019-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.20, 15:04	2020-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.21, 15:04	2021-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.22, 15:04	2022-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.23, 15:04	2023-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.24, 15:04	2024-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.25, 15:04	2025-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.26, 15:04	2026-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.27, 15:04	2027-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.28, 15:04	2028-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.29, 15:04	2029-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.30, 15:04	2030-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.31, 15:04	2031-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.32, 15:04	2032-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.33, 15:04	2033-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.34, 15:04	2034-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.35, 15:04	2035-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.36, 15:04	2036-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.37, 15:04	2037-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.38, 15:04	2038-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.39, 15:04	2039-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.40, 15:04	2040-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.41, 15:04	2041-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.42, 15:04	2042-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.43, 15:04	2043-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.44, 15:04	2044-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.45, 15:04	2045-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.46, 15:04	2046-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.47, 15:04	2047-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.48, 15:04	2048-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.49, 15:04	2049-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.50, 15:04	2050-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.51, 15:04	2051-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.52, 15:04	2052-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.53, 15:04	2053-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.54, 15:04	2054-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.55, 15:04	2055-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.56, 15:04	2056-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.57, 15:04	2057-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.58, 15:04	2058-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.59, 15:04	2059-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.60, 15:04	1960-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.61, 15:04	1961-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.62, 15:04	1962-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.63, 15:04	1963-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.64, 15:04	1964-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.65, 15:04	1965-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.66, 15:04	1966-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.67, 15:04	1967-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.68, 15:04	1968-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.69, 15:04	1969-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.70, 15:04	1970-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.71, 15:04	1971-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.72, 15:04	1972-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.73, 15:04	1973-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.74, 15:04	1974-01-28 22:04
+67.0	no_NO	Datetime.parse	28.01.75, 15:04	1975-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.76, 15:04	1976-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.77, 15:04	1977-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.78, 15:04	1978-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.79, 15:04	1979-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.80, 15:04	1980-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.81, 15:04	1981-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.82, 15:04	1982-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.83, 15:04	1983-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.84, 15:04	1984-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.85, 15:04	1985-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.86, 15:04	1986-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.87, 15:04	1987-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.88, 15:04	1988-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.89, 15:04	1989-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.90, 15:04	1990-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.91, 15:04	1991-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.92, 15:04	1992-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.93, 15:04	1993-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.94, 15:04	1994-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.95, 15:04	1995-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.96, 15:04	1996-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.97, 15:04	1997-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.98, 15:04	1998-01-28 23:04
+67.0	no_NO	Datetime.parse	28.01.99, 15:04	1999-01-28 23:04
+67.0	no_NO	Date.parse	28.01.0	ERR:System.TypeException
+67.0	no_NO	Datetime.parse	28.01.0, 15:04	ERR:System.TypeException
+67.0	no_NO	Date.parse	28.01.5	2005-01-28
+67.0	no_NO	Datetime.parse	28.01.5, 15:04	2005-01-28 23:04
+67.0	no_NO	Date.parse	28.01.9	2009-01-28
+67.0	no_NO	Datetime.parse	28.01.9, 15:04	2009-01-28 23:04
+67.0	no_NO	Date.parse	28.01.100	ERR:System.TypeException
+67.0	no_NO	Datetime.parse	28.01.100, 15:04	ERR:System.TypeException
+67.0	no_NO	Date.parse	28.01.190	ERR:System.TypeException
+67.0	no_NO	Datetime.parse	28.01.190, 15:04	ERR:System.TypeException
+67.0	no_NO	Date.parse	28.01.090	1990-01-28
+67.0	no_NO	Datetime.parse	28.01.090, 15:04	1990-01-28 23:04
+67.0	no_NO	Date.parse	28.01.999	ERR:System.TypeException
+67.0	no_NO	Datetime.parse	28.01.999, 15:04	ERR:System.TypeException
+67.0	no_NO	Date.parse	28.01.0090	1990-01-28
+67.0	no_NO	Datetime.parse	28.01.0090, 15:04	1990-01-28 23:04
+67.0	no_NO	Date.parse	28.01.0008	2008-01-28
+67.0	no_NO	Datetime.parse	28.01.0008, 15:04	2008-01-28 23:04
+67.0	no_NO	Date.parse	28.01.2008	2008-01-28
+67.0	no_NO	Datetime.parse	28.01.2008, 15:04	2008-01-28 23:04
+67.0	no_NO	Date.parse	28.01.20088	ERR:System.TypeException
+67.0	no_NO	Datetime.parse	28.01.20088, 15:04	ERR:System.TypeException
+67.0	no_NO	Date.parse	28.01.10000	ERR:System.TypeException
+67.0	no_NO	Datetime.parse	28.01.10000, 15:04	ERR:System.TypeException
+67.0	no_NO	Datetime.parse	2008-01-28, 3:04 PM	ERR:System.TypeException
+67.0	no_NO	Datetime.parse	2008-01-28 3:04 PM	ERR:System.TypeException
+67.0	no_NO	Datetime.parse	2008-01-28, 3:04 p.m.	ERR:System.TypeException
+67.0	no_NO	Datetime.parse	2008-01-28 3:04 p.m.	ERR:System.TypeException
+67.0	no_NO	Datetime.parse	2008-01-28, 15:04	ERR:System.TypeException
+67.0	no_NO	Datetime.parse	2008-01-28 15:04	ERR:System.TypeException
+67.0	no_NO	Datetime.parse	1/28/2008, 3:04 PM	ERR:System.TypeException
+67.0	no_NO	Datetime.parse	1/28/2008 3:04 PM	ERR:System.TypeException
+67.0	no_NO	Datetime.parse	2008-1-28, 3:04 p.m.	ERR:System.TypeException
+67.0	no_NO	Datetime.parse	2008-1-28 3:04 p.m.	ERR:System.TypeException
+67.0	no_NO	Datetime.parse	28/01/2008, 15:04	ERR:System.TypeException
+67.0	no_NO	Datetime.parse	2008-01-28, 3:04 pm	ERR:System.TypeException
+67.0	no_NO	Datetime.parse	2008-01-28, 3:04 PM.	ERR:System.TypeException
+67.0	no_NO	Datetime.parse	2008-01-28, 03:04 p.m.	ERR:System.TypeException
+67.0	no_NO	Date.parse	2008-01-28	ERR:System.TypeException
+67.0	no_NO	Date.parse	2008-1-28	ERR:System.TypeException
+67.0	no_NO	Date.parse	08-01-28	ERR:System.TypeException
+67.0	no_NO	Date.parse	8-1-28	ERR:System.TypeException
+67.0	no_NO	Date.parse	1/28/2008	ERR:System.TypeException
+67.0	no_NO	Date.parse	1/28/08	ERR:System.TypeException
+67.0	no_NO	Date.parse	28/01/2008	ERR:System.TypeException
+67.0	no_NO	Date.parse	2008/01/28	ERR:System.TypeException
+67.0	no_NO	Date.parse	20080128	ERR:System.TypeException

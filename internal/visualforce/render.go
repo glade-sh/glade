@@ -50,6 +50,9 @@ type RenderContext struct {
 	formLifecycle             *formLifecycle
 	repeatPath                []string
 	repeatCommandScripts      map[string]bool
+	// formDepth counts the apex:form elements around the component being
+	// rendered.
+	formDepth int
 }
 
 func RenderMarkupTree(node *MarkupNode, ctx *RenderContext) (string, error) {
@@ -64,6 +67,10 @@ func RenderMarkupTree(node *MarkupNode, ctx *RenderContext) (string, error) {
 	if expression.syntax == nil {
 		expression.syntax = &expressionSyntaxCache{}
 		defer func() { expression.syntax = nil }()
+	}
+	if expression.messageChannelTokens == nil {
+		expression.messageChannelTokens = map[string]string{}
+		defer func() { expression.messageChannelTokens = nil }()
 	}
 	previousChart := ctx.presentationChartRendered
 	ctx.presentationChartRendered = false
@@ -242,7 +249,6 @@ func renderApexOutput(node *MarkupNode, ctx *RenderContext, outputField bool) (s
 			return "<span" + componentIDAttr(node, ctx) + ">" + renderFieldOutput(ctx, binding) + "</span>", nil
 		}
 	}
-	literalValue := hasValue && !strings.Contains(raw, "{!")
 	value := raw
 	if hasValue {
 		var rendered string
@@ -274,11 +280,8 @@ func renderApexOutput(node *MarkupNode, ctx *RenderContext, outputField bool) (s
 	}
 	escape := !strings.EqualFold(strings.TrimSpace(node.Attribute("escape")), "false")
 	renderedValue := EscapeVisualforceOutput(value, escape)
-	if literalValue && !escape {
-		renderedValue = html.EscapeString(value)
-	}
 	if !outputField && hasValue {
-		formatted, hasParams, err := renderOutputTextParameters(node, ctx, value, literalValue, escape)
+		formatted, hasParams, err := renderOutputTextParameters(node, ctx, value, escape)
 		if err != nil {
 			return "", err
 		}
@@ -362,7 +365,52 @@ func renderApexOutputLabel(node *MarkupNode, ctx *RenderContext) (string, error)
 			return "", err
 		}
 	}
-	return "<label" + componentIDAttr(node, ctx) + ` class="vfLabel">` + html.EscapeString(value) + "</label>", nil
+	// Native markup: <label id for style title class>, then a newline and the text.
+	// The label carries no data-rerender: a rerender finds it by its id.
+	attrs := ""
+	if id := visualforceExplicitComponentClientID(node, ctx); id != "" {
+		attrs = ` id="` + html.EscapeString(id) + `"`
+	}
+	if target := strings.TrimSpace(node.Attribute("for")); target != "" {
+		target, err = RenderExpressionTemplate(target, ctx.Expression)
+		if err != nil {
+			return "", err
+		}
+		attrs += ` for="` + html.EscapeString(labelForClientID(node, ctx, strings.TrimSpace(target))) + `"`
+	}
+	for _, attr := range []struct{ source, target string }{{"style", "style"}, {"title", "title"}, {"styleClass", "class"}} {
+		raw, ok := node.Attributes[strings.ToLower(attr.source)]
+		if !ok {
+			continue
+		}
+		text, err := RenderExpressionTemplate(raw, ctx.Expression)
+		if err != nil {
+			return "", err
+		}
+		if text != "" {
+			attrs += ` ` + attr.target + `="` + html.EscapeString(text) + `"`
+		}
+	}
+	if strings.EqualFold(strings.TrimSpace(node.Attribute("escape")), "false") {
+		return "<label" + attrs + ">\n" + value + "</label>", nil
+	}
+	return "<label" + attrs + ">\n" + html.EscapeString(value) + "</label>", nil
+}
+
+// labelForClientID resolves a label's for attribute to the client ID of the
+// component it names, or to the enclosing container's prefix when none exists.
+func labelForClientID(node *MarkupNode, ctx *RenderContext, target string) string {
+	if ctx.ComponentReferences == nil {
+		return target
+	}
+	scope := ctx.ComponentReferences.scopes[node]
+	if scope == nil || scope.container == nil {
+		return target
+	}
+	if clientID, ok := scope.resolve([]string{target}); ok {
+		return clientID
+	}
+	return joinComponentClientID(scope.container.clientID, target)
 }
 
 func renderApexContainer(node *MarkupNode, tag string, className string, ctx *RenderContext) (string, error) {
@@ -448,14 +496,11 @@ func renderInputFieldLabel(raw string, ctx *ExpressionContext) (string, error) {
 		}
 		return value.String(), nil
 	}
-	label, err := RenderExpressionTemplate(raw, ctx)
-	if err == nil && !strings.Contains(raw, "{!") {
-		// label_section_literal_runtime retains the numeric XML ampersand
-		// reference in a literal String attribute; formula captions retain
-		// their evaluated Apex text.
-		label = strings.ReplaceAll(label, "&", "&#38;")
-	}
-	return label, err
+	// label_section_literal_runtime retains the numeric XML ampersand
+	// reference in a literal String attribute; the parser already holds the
+	// attribute text that way (protectNativeEntities). Formula captions retain
+	// their evaluated Apex text.
+	return RenderExpressionTemplate(raw, ctx)
 }
 
 func isApexActionSupportNode(node *MarkupNode) bool {
@@ -494,8 +539,9 @@ func renderPresentationPanel(node *MarkupNode, tag string, ctx *RenderContext) (
 }
 
 func renderApexLink(node *MarkupNode, ctx *RenderContext) (string, error) {
-	href := node.Attribute("value")
-	if href == "" {
+	// The value keeps its leading and trailing spaces: the org encodes them (row LinkSpaceLead).
+	href := node.Attributes["value"]
+	if strings.TrimSpace(href) == "" {
 		href = "#"
 	}
 	renderedHref, err := RenderExpressionTemplate(href, ctx.Expression)
@@ -509,11 +555,48 @@ func renderApexLink(node *MarkupNode, ctx *RenderContext) (string, error) {
 	if strings.TrimSpace(child) == "" {
 		child = html.EscapeString(renderedHref)
 	}
-	return "<a" + componentIDAttr(node, ctx) + ` href="` + html.EscapeString(renderedHref) + `">` + child + "</a>", nil
+	renderedHref, err = linkParameters(node, ctx, renderedHref)
+	if err != nil {
+		return "", err
+	}
+	attrs := componentIDAttr(node, ctx)
+	if id := visualforceExplicitComponentClientID(node, ctx); id != "" {
+		attrs += ` name="` + html.EscapeString(id) + `"`
+	}
+	attrs += ` href="` + escapeURLAttribute(nativeURLText(renderedHref)) + `"`
+	for _, attr := range []struct{ source, target string }{{"style", "style"}, {"title", "title"}, {"target", "target"}, {"styleClass", "class"}} {
+		raw, ok := node.Attributes[strings.ToLower(attr.source)]
+		if !ok {
+			continue
+		}
+		text, err := RenderExpressionTemplate(raw, ctx.Expression)
+		if err != nil {
+			return "", err
+		}
+		if text != "" {
+			attrs += ` ` + attr.target + `="` + html.EscapeString(text) + `"`
+		}
+	}
+	return "<a" + attrs + ">" + child + "</a>", nil
+}
+
+var urlAttributeEscaper = strings.NewReplacer("<", "&lt;", ">", "&gt;", `"`, "&#34;")
+
+// escapeURLAttribute writes a URL attribute value the way the org does: an
+// ampersand and an apostrophe stay as typed, so a decoded entity shows as &#38;
+// or &#39; and a bare character stays itself.
+func escapeURLAttribute(value string) string {
+	return urlAttributeEscaper.Replace(value)
 }
 
 func renderApexForm(node *MarkupNode, ctx *RenderContext) (string, error) {
+	if ctx != nil {
+		ctx.formDepth++
+	}
 	children, err := renderChildren(node, ctx)
+	if ctx != nil {
+		ctx.formDepth--
+	}
 	if err != nil {
 		return "", err
 	}
@@ -581,6 +664,19 @@ func renderApexInputText(node *MarkupNode, ctx *RenderContext, inputType string)
 	if err != nil {
 		return "", err
 	}
+	if inputType == "hidden" {
+		// The org writes id, type and name in that order and no value
+		// attribute for an empty value (rows IdLInputHidden, Hid*).
+		out := `<input`
+		if clientID != "" {
+			out += ` id="` + html.EscapeString(clientID) + `"`
+		}
+		out += ` type="hidden" name="` + html.EscapeString(name) + `"`
+		if value != "" {
+			out += ` value="` + html.EscapeString(value) + `"`
+		}
+		return out + ` />`, nil
+	}
 	attrs := `<input type="` + html.EscapeString(inputType) + `" name="` + html.EscapeString(name) + `"`
 	if clientID != "" {
 		attrs += ` id="` + html.EscapeString(clientID) + `"`
@@ -589,7 +685,34 @@ func renderApexInputText(node *MarkupNode, ctx *RenderContext, inputType string)
 	if err != nil {
 		return "", err
 	}
-	return attrs + formBooleanAttrs(node, ctx) + eventAttrs + ` value="` + html.EscapeString(value) + `" />`, nil
+	presentation, err := commandPresentationAttrs(node, ctx)
+	if err != nil {
+		return "", err
+	}
+	sizing, err := inputSizingAttrs(node, ctx)
+	if err != nil {
+		return "", err
+	}
+	return attrs + sizing + formBooleanAttrs(node, ctx) + presentation + eventAttrs + ` value="` + html.EscapeString(value) + `" />`, nil
+}
+
+// inputSizingAttrs writes the maxlength and size attributes of apex:inputText.
+func inputSizingAttrs(node *MarkupNode, ctx *RenderContext) (string, error) {
+	var out strings.Builder
+	for _, name := range []string{"maxlength", "size"} {
+		raw, ok := node.Attributes[name]
+		if !ok {
+			continue
+		}
+		value, err := RenderExpressionTemplate(raw, ctx.Expression)
+		if err != nil {
+			return "", err
+		}
+		if value != "" {
+			out.WriteString(` ` + name + `="` + html.EscapeString(value) + `"`)
+		}
+	}
+	return out.String(), nil
 }
 
 func renderApexInputTextarea(node *MarkupNode, ctx *RenderContext) (string, error) {
@@ -617,7 +740,11 @@ func renderApexInputTextarea(node *MarkupNode, ctx *RenderContext) (string, erro
 			attrs.WriteString(`"`)
 		}
 	}
-	return `<textarea` + attrs.String() + formBooleanAttrs(node, ctx) + `>` + html.EscapeString(value) + `</textarea>`, nil
+	presentation, err := commandPresentationAttrs(node, ctx)
+	if err != nil {
+		return "", err
+	}
+	return `<textarea` + attrs.String() + formBooleanAttrs(node, ctx) + presentation + `>` + html.EscapeString(value) + `</textarea>`, nil
 }
 
 func renderApexInputCheckbox(node *MarkupNode, ctx *RenderContext) (string, error) {
@@ -642,8 +769,12 @@ func renderApexInputCheckbox(node *MarkupNode, ctx *RenderContext) (string, erro
 	if clientID != "" {
 		checkboxID = ` id="` + html.EscapeString(clientID) + `"`
 	}
+	presentation, err := commandPresentationAttrs(node, ctx)
+	if err != nil {
+		return "", err
+	}
 	return `<input type="hidden" name="` + escapedName + `" value="false" />` +
-		`<input type="checkbox" name="` + escapedName + `"` + checkboxID + formBooleanAttrs(node, ctx) + ` value="` + checkboxValue + `"` + checked + " />", nil
+		`<input type="checkbox" name="` + escapedName + `"` + checkboxID + formBooleanAttrs(node, ctx) + presentation + ` value="` + checkboxValue + `"` + checked + " />", nil
 }
 
 func renderApexInputField(node *MarkupNode, ctx *RenderContext) (string, error) {
@@ -863,6 +994,11 @@ func renderApexCommandButton(node *MarkupNode, ctx *RenderContext) (string, erro
 	script, marker, selectHook := repeatedCommandSubmission(node, ctx)
 	attrs += marker
 	attrs += ` value="` + html.EscapeString(label) + `" data-action="` + html.EscapeString(action) + `"`
+	presentation, err := commandPresentationAttrs(node, ctx)
+	if err != nil {
+		return "", err
+	}
+	attrs += presentation
 	if node.HasAttribute("rerender") {
 		hook, err := visualforceAjaxEventHook(node, ctx, "onclick")
 		if err != nil {
@@ -875,6 +1011,27 @@ func renderApexCommandButton(node *MarkupNode, ctx *RenderContext) (string, erro
 	return script + `<input` + attrs + ` onclick="` + html.EscapeString(hook) + `" />`, nil
 }
 
+// commandPresentationAttrs writes the title, style and styleClass attributes of
+// a command button or link. Attribute text is kept as typed after parsing, so
+// escaping it here matches the native output (value="a &amp;#38; b").
+func commandPresentationAttrs(node *MarkupNode, ctx *RenderContext) (string, error) {
+	var out strings.Builder
+	for _, attr := range []struct{ source, target string }{{"styleClass", "class"}, {"style", "style"}, {"title", "title"}} {
+		raw, ok := node.Attributes[strings.ToLower(attr.source)]
+		if !ok {
+			continue
+		}
+		value, err := RenderExpressionTemplate(raw, ctx.Expression)
+		if err != nil {
+			return "", err
+		}
+		if value != "" {
+			out.WriteString(` ` + attr.target + `="` + html.EscapeString(value) + `"`)
+		}
+	}
+	return out.String(), nil
+}
+
 func renderApexCommandLink(node *MarkupNode, ctx *RenderContext) (string, error) {
 	action := strings.TrimSpace(node.Attribute("action"))
 	label, err := RenderExpressionTemplate(firstNonEmpty(node.Attribute("value"), node.Attribute("title")), ctx.Expression)
@@ -885,20 +1042,28 @@ func renderApexCommandLink(node *MarkupNode, ctx *RenderContext) (string, error)
 		label = action
 	}
 	script, marker, selectHook := repeatedCommandSubmission(node, ctx)
+	presentation, err := commandPresentationAttrs(node, ctx)
+	if err != nil {
+		return "", err
+	}
 	if node.HasAttribute("rerender") {
 		hook, err := visualforceAjaxEventHook(node, ctx, "onclick")
 		if err != nil {
 			return "", err
 		}
 		hook = selectHook + hook
-		return script + `<a` + componentIDAttr(node, ctx) + marker + ` href="#" onclick="` + html.EscapeString(hook) + `">` + html.EscapeString(label) + `</a>`, nil
+		return script + `<a` + componentIDAttr(node, ctx) + marker + ` href="#" onclick="` + html.EscapeString(hook) + `"` + presentation + `>` + html.EscapeString(label) + `</a>`, nil
 	}
 	hook := selectHook + `var f=this.closest('form')||document.forms[0];if(f&&f.elements['` + ViewStateActionFieldName() + `']){f.elements['` + ViewStateActionFieldName() + `'].value=` + jsStringLiteral(action) + `;f.submit();}return false;`
-	return script + `<a` + componentIDAttr(node, ctx) + marker + ` href="#" onclick="` + html.EscapeString(hook) + `">` + html.EscapeString(label) + `</a>`, nil
+	return script + `<a` + componentIDAttr(node, ctx) + marker + ` href="#" onclick="` + html.EscapeString(hook) + `"` + presentation + `>` + html.EscapeString(label) + `</a>`, nil
 }
 
 func renderApexSelectList(node *MarkupNode, ctx *RenderContext) (string, error) {
+	// A list posts under its client ID, bound or not, like every input control.
 	name := fieldName(node)
+	if clientID := visualforceComponentClientID(node, ctx); clientID != "" {
+		name = clientID
+	}
 	selected, err := selectSelectedValues(node, ctx)
 	if err != nil {
 		return "", err
@@ -921,7 +1086,7 @@ func renderApexSelectList(node *MarkupNode, ctx *RenderContext) (string, error) 
 		builder.WriteString(` multiple="multiple"`)
 	}
 	builder.WriteString(formBooleanAttrs(node, ctx))
-	for _, attr := range []struct{ source, target string }{{"styleClass", "class"}, {"style", "style"}} {
+	for _, attr := range []struct{ source, target string }{{"styleClass", "class"}, {"style", "style"}, {"title", "title"}} {
 		if raw := node.Attribute(attr.source); raw != "" {
 			value, err := RenderExpressionTemplate(raw, ctx.Expression)
 			if err != nil {
@@ -1234,28 +1399,89 @@ func renderApexPageMessages(node *MarkupNode, ctx *RenderContext) (string, error
 	return builder.String(), nil
 }
 
+// renderApexPageMessage writes the org's pageMessage markup. The span and its
+// inner elements carry generated IDs: the component reference pass reserves the
+// thirteen internal components the org allocates after the span.
 func renderApexPageMessage(node *MarkupNode, ctx *RenderContext) (string, error) {
-	severity := strings.ToLower(strings.TrimSpace(node.Attribute("severity")))
-	summary, err := RenderExpressionTemplate(node.Attribute("summary"), ctx.Expression)
+	text := func(name string) (string, error) {
+		return RenderExpressionTemplate(node.Attribute(name), ctx.Expression)
+	}
+	severityText, err := text("severity")
 	if err != nil {
 		return "", err
 	}
-	detail, err := RenderExpressionTemplate(node.Attribute("detail"), ctx.Expression)
+	severity := strings.ToLower(strings.TrimSpace(severityText))
+	summary, err := text("summary")
 	if err != nil {
 		return "", err
 	}
-	if summary != "" && detail != "" {
-		summary = strings.TrimSpace(summary + " " + detail)
-	} else if detail != "" {
-		summary = detail
+	detail, err := text("detail")
+	if err != nil {
+		return "", err
 	}
-	if summary == "" {
-		summary, err = renderChildren(node, ctx)
-		if err != nil {
-			return "", err
-		}
+	title, err := text("title")
+	if err != nil {
+		return "", err
 	}
-	return `<div class="message ` + html.EscapeString(severity) + `">` + html.EscapeString(summary) + `</div>`, nil
+	strengthText, err := text("strength")
+	if err != nil {
+		return "", err
+	}
+	if raw, ok := node.Attributes["strength"]; ok && raw == "" {
+		return "", fmt.Errorf("System.VisualforceException: '' is not a valid numeric value for <apex:pageMessage strength>.")
+	}
+	strength, _ := strconv.Atoi(strings.TrimSpace(strengthText))
+	strong := strength > 3 || strength < 0
+	body, err := renderChildren(node, ctx)
+	if err != nil {
+		return "", err
+	}
+	if !strings.EqualFold(strings.TrimSpace(node.Attribute("escape")), "false") {
+		summary, detail, title = html.EscapeString(summary), html.EscapeString(detail), html.EscapeString(title)
+	}
+	// Strength 0 to 3 gives the classes M4 to M2; any other integer leaves the
+	// severity class bare (rows PageMsgStrength4 to 99 and PageMsgStrengthNeg).
+	level := 4
+	if strength >= 2 {
+		level = 5 - min(strength, 3)
+	}
+	icon := ""
+	if strength > 0 {
+		icon = "msgIcon"
+	}
+	self := visualforceComponentClientID(node, ctx)
+	base := 0
+	if ctx.ComponentReferences != nil {
+		base = ctx.ComponentReferences.messageBase[node]
+	}
+	container := self + ":j_id" + strconv.Itoa(base+1)
+	textID := container + ":j_id" + strconv.Itoa(base+3)
+	titleID := container + ":j_id" + strconv.Itoa(base+4)
+	label := html.EscapeString(severity)
+	levelClass := label + `M` + strconv.Itoa(level)
+	if strong {
+		levelClass = label
+	}
+	var out strings.Builder
+	out.WriteString(`<span id="` + html.EscapeString(self) + `">` + "\n")
+	out.WriteString(`    <div class="message ` + levelClass + `" role="alert">` + "\n")
+	out.WriteString(`        <table border="0" cellpadding="0" cellspacing="0" class="messageTable" role="presentation" style="padding:0px;margin:0px;">` + "\n")
+	out.WriteString(`            <tr valign="top">` + "\n")
+	out.WriteString(`                <td>` + "\n")
+	out.WriteString(`                    <img alt="` + label + `" class="` + icon + `" src="/s.gif" title="` + label + `" />` + "\n")
+	out.WriteString(`                </td>` + "\n")
+	out.WriteString(`                <td class="messageCell"><div id="` + html.EscapeString(textID) + `" class="messageText"><span id="` + html.EscapeString(titleID) + `">` + "\n")
+	out.WriteString(`                                <h4>` + title + `</h4></span>` + summary + `<br />` + detail + `</div>` + "\n")
+	out.WriteString(`                </td>` + "\n")
+	out.WriteString(`            </tr>` + "\n")
+	out.WriteString(`            <tr>` + "\n")
+	out.WriteString(`                <td></td>` + "\n")
+	out.WriteString(`                <td>` + body + "\n")
+	out.WriteString(`                </td>` + "\n")
+	out.WriteString(`            </tr>` + "\n")
+	out.WriteString(`        </table>` + "\n")
+	out.WriteString(`    </div></span>`)
+	return out.String(), nil
 }
 
 func renderApexMessage(node *MarkupNode, ctx *RenderContext) (string, error) {
@@ -1357,12 +1583,14 @@ func renderApexActionStatus(node *MarkupNode, ctx *RenderContext) (string, error
 		if err != nil {
 			return "", err
 		}
+		start = html.EscapeString(start)
 	}
 	if stop == "" {
 		stop, err = RenderExpressionTemplate(node.Attribute("stopText"), ctx.Expression)
 		if err != nil {
 			return "", err
 		}
+		stop = html.EscapeString(stop)
 	}
 	if start == "" && stop == "" {
 		stop, err = renderChildren(node, ctx)
@@ -1380,7 +1608,42 @@ func renderApexActionStatus(node *MarkupNode, ctx *RenderContext) (string, error
 			callbacks += ` data-vf-` + attribute + `="` + html.EscapeString(code) + `"`
 		}
 	}
-	return `<span class="actionStatus" data-status="` + html.EscapeString(statusID) + `"` + callbacks + `><span class="actionStatusStart" hidden="hidden">` + start + `</span><span class="actionStatusStop">` + stop + `</span></span>`, nil
+	startAttrs, err := actionStatusSpanAttrs(node, ctx, "startStyle", "startStyleClass", "actionStatusStart")
+	if err != nil {
+		return "", err
+	}
+	stopAttrs, err := actionStatusSpanAttrs(node, ctx, "stopStyle", "stopStyleClass", "actionStatusStop")
+	if err != nil {
+		return "", err
+	}
+	return `<span class="actionStatus" data-status="` + html.EscapeString(statusID) + `"` + callbacks + `><span` + startAttrs + ` hidden="hidden">` + start + `</span><span` + stopAttrs + `>` + stop + `</span></span>`, nil
+}
+
+// actionStatusSpanAttrs writes the class and style of one status span. The org
+// writes startStyle, startStyleClass, stopStyle and stopStyleClass on the span
+// (rows StatusSpan*); Glade keeps its marker class first for the runtime.
+func actionStatusSpanAttrs(node *MarkupNode, ctx *RenderContext, styleName, classNames, marker string) (string, error) {
+	class := marker
+	if node.HasAttribute(classNames) {
+		text, err := RenderExpressionTemplate(node.Attribute(classNames), ctx.Expression)
+		if err != nil {
+			return "", err
+		}
+		if text != "" {
+			class += " " + html.EscapeString(text)
+		}
+	}
+	attrs := ` class="` + class + `"`
+	if node.HasAttribute(styleName) {
+		text, err := RenderExpressionTemplate(node.Attribute(styleName), ctx.Expression)
+		if err != nil {
+			return "", err
+		}
+		if text != "" {
+			attrs += ` style="` + html.EscapeString(text) + `"`
+		}
+	}
+	return attrs, nil
 }
 
 func renderApexActionPoller(node *MarkupNode, ctx *RenderContext) (string, error) {
@@ -1409,6 +1672,17 @@ func renderApexVariable(node *MarkupNode, ctx *RenderContext) (string, error) {
 	if name == "" {
 		return "", nil
 	}
+	// A value that is one expression yielding a record or other object keeps
+	// that value, so {!var.Field} works (native row ShapeVariableMember).
+	// Everything else keeps the text it has always had.
+	if raw := strings.TrimSpace(node.Attribute("value")); strings.HasPrefix(raw, "{!") && findExpressionTemplateEnd(raw, 2) == len(raw)-1 {
+		if expr, err := parseExpression(strings.TrimSpace(raw[2 : len(raw)-1])); err == nil {
+			if value, err := evaluateExpressionNode(expr, ctx.Expression); err == nil && value.Kind == vm.ValueObject {
+				ctx.Scope.Set(name, value)
+				return "", nil
+			}
+		}
+	}
 	valueText, err := RenderExpressionTemplate(node.Attribute("value"), ctx.Expression)
 	if err != nil {
 		return "", err
@@ -1434,6 +1708,13 @@ func renderApexIncludeScript(node *MarkupNode, ctx *RenderContext) (string, erro
 	src, err := RenderExpressionTemplate(node.Attribute("value"), ctx.Expression)
 	if err != nil {
 		return "", err
+	}
+	// The org writes the script in the page head, not where the component
+	// stands (rows IdLIncludeScript, IncScriptNoId). loadOnReady is not
+	// captured and keeps the script in place.
+	if ctx.collectPresentationHead && !isTruthyExpression(node.Attribute("loadOnReady"), ctx) {
+		ctx.presentationHead = append(ctx.presentationHead, `<script src="`+html.EscapeString(src)+`" type="text/javascript"></script>`)
+		return "", nil
 	}
 	return `<script src="` + html.EscapeString(src) + `"></script>`, nil
 }
@@ -1526,6 +1807,11 @@ func renderHTMLAttributes(node *MarkupNode, ctx *RenderContext) (string, error) 
 		if key == "" {
 			continue
 		}
+		if key == "id" && value == "" {
+			// The org drops an empty literal id on an HTML element (row
+			// IdEmptyDiv); an id that is an expression keeps its empty result.
+			continue
+		}
 		builder.WriteString(` `)
 		builder.WriteString(key)
 		if value != "" {
@@ -1562,7 +1848,10 @@ func isVoidHTMLElement(tag string) bool {
 }
 
 func renderApexImage(node *MarkupNode, ctx *RenderContext) (string, error) {
-	src, err := RenderExpressionTemplate(firstNonEmpty(node.Attribute("value"), node.Attribute("url")), ctx.Expression)
+	// Only ASCII spaces are trimmed: a trailing U+00A0 stays and is written as
+	// %A0 (row ImageUniQueryNbsp).
+	asciiAttr := func(name string) string { return strings.Trim(node.Attributes[name], " \t\r\n\f\v") }
+	src, err := RenderExpressionTemplate(firstNonEmpty(asciiAttr("value"), asciiAttr("url")), ctx.Expression)
 	if err != nil {
 		return "", err
 	}
@@ -1574,28 +1863,69 @@ func renderApexImage(node *MarkupNode, ctx *RenderContext) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return `<img src="` + html.EscapeString(src) + `" alt="` + html.EscapeString(alt) + `"` + attrs + ` />`, nil
+	altAttr := ""
+	if node.HasAttribute("alt") {
+		altAttr = ` alt="` + html.EscapeString(alt) + `"`
+	}
+	return `<img src="` + escapeURLAttribute(nativeURLText(src)) + `"` + altAttr + attrs + ` />`, nil
 }
 
+// renderApexIframe writes the org's iframe markup (rows IdLIframe, Iframe*):
+// attributes in alphabetical order after a double space, the defaults
+// frameborder="0", height="600px", scrolling="no", title="Content" and
+// width="100%", id and name set to the component's local id (the generated
+// one without an id attribute), scrolling="true" dropped, frameborder="true"
+// written as 1. A literal & in src arrives as &#38; and is escaped again
+// (row IframeAmp: &amp;#38;).
 func renderApexIframe(node *MarkupNode, ctx *RenderContext) (string, error) {
 	src, err := RenderExpressionTemplate(firstNonEmpty(node.Attribute("src"), node.Attribute("value")), ctx.Expression)
 	if err != nil {
 		return "", err
 	}
-	attrs := strings.Builder{}
-	attrs.WriteString(` src="`)
-	attrs.WriteString(html.EscapeString(src))
-	attrs.WriteString(`"`)
-	for _, attr := range []string{"width", "height", "title", "scrolling", "frameborder"} {
-		if raw := strings.TrimSpace(node.Attribute(attr)); raw != "" {
-			attrs.WriteString(` `)
-			attrs.WriteString(strings.ToLower(attr))
-			attrs.WriteString(`="`)
-			attrs.WriteString(html.EscapeString(raw))
-			attrs.WriteString(`"`)
+	attr := func(name, fallback string) (string, error) {
+		raw, ok := node.Attributes[name]
+		if !ok {
+			return fallback, nil
 		}
+		return RenderExpressionTemplate(raw, ctx.Expression)
 	}
-	return `<iframe` + attrs.String() + `></iframe>`, nil
+	frameborder, err := attr("frameborder", "")
+	if err != nil {
+		return "", err
+	}
+	if strings.EqualFold(strings.TrimSpace(frameborder), "true") {
+		frameborder = "1"
+	} else {
+		frameborder = "0"
+	}
+	height, err := attr("height", "600px")
+	if err != nil {
+		return "", err
+	}
+	width, err := attr("width", "100%")
+	if err != nil {
+		return "", err
+	}
+	title, err := attr("title", "Content")
+	if err != nil {
+		return "", err
+	}
+	scrolling, err := attr("scrolling", "")
+	if err != nil {
+		return "", err
+	}
+	id := visualforceComponentClientID(node, ctx)
+	id = id[strings.LastIndex(id, ":")+1:]
+	var out strings.Builder
+	out.WriteString(`<iframe  allow="geolocation *; microphone *; camera *" frameborder="` + frameborder + `" height="` + html.EscapeString(height) + `"`)
+	if id != "" {
+		out.WriteString(` id="` + html.EscapeString(id) + `" name="` + html.EscapeString(id) + `"`)
+	}
+	if !strings.EqualFold(strings.TrimSpace(scrolling), "true") {
+		out.WriteString(` scrolling="no"`)
+	}
+	out.WriteString(` src="` + html.EscapeString(src) + `" title="` + html.EscapeString(title) + `" width="` + html.EscapeString(width) + `"></iframe>`)
+	return out.String(), nil
 }
 
 func renderApexComposition(node *MarkupNode, ctx *RenderContext) (string, error) {
@@ -1658,7 +1988,80 @@ func renderApexInsert(node *MarkupNode, ctx *RenderContext) (string, error) {
 	return "", nil
 }
 
+// spliceIncludedPages places the apex:page tree of each apex:include's page
+// under the include before the page is indexed, so the included page takes
+// its client IDs in the including page's sequence: the include is a naming
+// container, the included page another (its id or a generated one), and the
+// generated ids run on through it (rows Inc* of testdata/vf_render_markup:
+// j_id0:j_id2:pgc:o2, then j_id0:j_id6 after the include).
+func spliceIncludedPages(tree *MarkupNode, index *Index, seen map[string]bool) {
+	if tree == nil || index == nil {
+		return
+	}
+	var walk func(*MarkupNode, int)
+	walk = func(node *MarkupNode, depth int) {
+		if node == nil || depth > 16 {
+			return
+		}
+		if isApexStructureTag(node, "include") && len(node.Children) == 0 {
+			name := strings.TrimSpace(node.Attribute("pagename"))
+			key := strings.ToLower(name)
+			if included, ok := index.Page(name); ok && name != "" && !seen[key] {
+				if markup, err := os.ReadFile(included.File); err == nil {
+					if child, err := ParseMarkupTree(string(markup)); err == nil {
+						if page := findApexPageNode(child); page != nil {
+							seen[key] = true
+							node.Children = []*MarkupNode{page}
+							walk(page, depth+1)
+							delete(seen, key)
+						}
+					}
+				}
+			}
+			return
+		}
+		for _, child := range node.Children {
+			walk(child, depth)
+		}
+	}
+	walk(tree, 0)
+}
+
+func findApexPageNode(node *MarkupNode) *MarkupNode {
+	if node == nil {
+		return nil
+	}
+	if isApexPageNode(node) {
+		return node
+	}
+	for _, child := range node.Children {
+		if child.Type == MarkupNodeElement && isApexPageNode(child) {
+			return child
+		}
+	}
+	return nil
+}
+
 func renderApexInclude(node *MarkupNode, ctx *RenderContext) (string, error) {
+	if len(node.Children) == 1 && isApexPageNode(node.Children[0]) && ctx.VFIndex != nil {
+		// A spliced page renders its body inside a span carrying the
+		// include's client ID, without a document of its own.
+		page := node.Children[0]
+		childCtx := *ctx
+		if included, ok := ctx.VFIndex.Page(strings.TrimSpace(node.Attribute("pagename"))); ok {
+			childCtx.PageName = included.Name
+			if err := applyIncludedPageController(included, &childCtx); err != nil {
+				return "", err
+			}
+		}
+		body, err := renderChildren(page, &childCtx)
+		ctx.presentationHead = childCtx.presentationHead
+		if err != nil {
+			return "", err
+		}
+		id := visualforceComponentClientID(node, ctx)
+		return `<span id="` + html.EscapeString(id) + `">` + body + `</span>`, nil
+	}
 	pageName := strings.TrimSpace(node.Attribute("pagename"))
 	if pageName == "" {
 		pageName = strings.TrimSpace(node.Attribute("pageName"))
@@ -2121,6 +2524,15 @@ func evaluateListExpression(raw string, ctx *RenderContext) ([]vm.Value, error) 
 	expr, err := parseExpression(exprText)
 	if err != nil {
 		return nil, err
+	}
+	// Native rows (vf_corpus_shapes): iterating a map literal such as
+	// ["a"="x","b"="y"] yields its keys in the order written.
+	if literal, ok := expr.(parameterMapExpr); ok {
+		keys := make([]vm.Value, 0, len(literal.names))
+		for _, name := range literal.names {
+			keys = append(keys, vm.String(name))
+		}
+		return keys, nil
 	}
 	value, err := evaluateExpressionNode(expr, ctx.Expression)
 	if err != nil {

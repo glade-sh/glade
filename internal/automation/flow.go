@@ -1,8 +1,10 @@
 package automation
 
 import (
+	"bytes"
 	"encoding/xml"
 	"fmt"
+	"html"
 	"math"
 	"os"
 	"path/filepath"
@@ -24,6 +26,7 @@ type flowXML struct {
 	APIVersion            string                       `xml:"apiVersion"`
 	Label                 string                       `xml:"label"`
 	StartElementReference string                       `xml:"startElementReference"`
+	InterviewLabel        string                       `xml:"interviewLabel"`
 	ProcessType           string                       `xml:"processType"`
 	Status                string                       `xml:"status"`
 	TriggerOrder          int                          `xml:"triggerOrder"`
@@ -54,7 +57,7 @@ type flowXML struct {
 	Experiments           []flowNamedNodeXML           `xml:"experiments"`
 	Segment               []flowNamedNodeXML           `xml:"segment"`
 	Schedule              []flowNamedNodeXML           `xml:"schedule"`
-	Waits                 []flowNamedNodeXML           `xml:"waits"`
+	Waits                 []flowWaitXML                `xml:"waits"`
 	Variables             []flowVariableXML            `xml:"variables"`
 }
 
@@ -194,6 +197,11 @@ type flowNamedNodeXML struct {
 	Name string `xml:"name"`
 }
 
+type flowWaitXML struct {
+	Name           string `xml:"name"`
+	ElementSubtype string `xml:"elementSubtype"`
+}
+
 type flowLoopXML struct {
 	Name                       string           `xml:"name"`
 	CollectionReference        string           `xml:"collectionReference"`
@@ -212,9 +220,16 @@ type flowActionCallXML struct {
 	Connector       flowConnectorXML     `xml:"connector"`
 	FaultConnector  flowConnectorXML     `xml:"faultConnector"`
 	InputParameters []flowActionInputXML `xml:"inputParameters"`
+	// OutputParameters assign returned fields to variables.
+	OutputParameters []flowActionOutputXML `xml:"outputParameters"`
 	// StoreOutputAutomatically exposes a single-output action result under
 	// the action's own name as an elementReference.
 	StoreOutputAutomatically bool `xml:"storeOutputAutomatically"`
+}
+
+type flowActionOutputXML struct {
+	Name              string `xml:"name"`
+	AssignToReference string `xml:"assignToReference"`
 }
 
 type flowActionInputXML struct {
@@ -253,8 +268,10 @@ type flowCustomErrorXML struct {
 }
 
 type flowCustomErrorMessageXML struct {
-	Message      string `xml:"message"`
-	ErrorMessage string `xml:"errorMessage"`
+	Message        string `xml:"message"`
+	ErrorMessage   string `xml:"errorMessage"`
+	FieldSelection string `xml:"fieldSelection"`
+	IsFieldError   bool   `xml:"isFieldError"`
 }
 
 type flowApexPluginCallXML struct {
@@ -314,6 +331,7 @@ func loadFlow(path string, definitions ...map[string]storage.ObjectDefinition) (
 	if err != nil {
 		return Flow{}, nil, err
 	}
+	data, processBuilderSkip := normalizeProcessBuilderFlow(data)
 	var raw flowXML
 	if err := xml.Unmarshal(data, &raw); err != nil {
 		return Flow{}, nil, err
@@ -348,9 +366,11 @@ func loadFlow(path string, definitions ...map[string]storage.ObjectDefinition) (
 	raw.decisionFormulas = flowDecisionFormulaMap(raw, variables)
 	orderedGraph := flowNormalizeTextDecisionNegation(&raw, variables)
 	orderedGraph = orderedGraph || flowRequiresOrderedGraph(raw) || raw.decisionFormulas != nil || frameFormulas != nil
-	if strings.EqualFold(strings.TrimSpace(raw.Start.TriggerType), "PlatformEvent") {
-		// Preserve the event interview's current-user resource in record inputs.
-		// This binding map is private; globals are not declared Flow variables.
+	if triggerType := strings.TrimSpace(raw.Start.TriggerType); strings.EqualFold(triggerType, "PlatformEvent") || triggerType == "" {
+		// Preserve the event or started interview's current-user resource in
+		// record inputs (flow_tolabel_residuals: an autolaunched Create Records
+		// writes $User.Id to a User lookup, API 62.0 and 67.0). This binding
+		// map is private; globals are not declared Flow variables.
 		variables["$user"] = flowVariableXML{Name: "$User", DataType: "SObject", ObjectType: "User"}
 	}
 	if invocableFlowActionInvalidNullAssignment(raw, variables) {
@@ -370,8 +390,17 @@ func loadFlow(path string, definitions ...map[string]storage.ObjectDefinition) (
 		diagnostics = append(diagnostics, diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADEAUTO004", File: path, Message: problem})
 		return flow, diagnostics, nil
 	}
+	if len(definitions) > 0 {
+		if problem := flowBeforeSaveFormulaFieldReference(raw, definitions[0]); problem != "" {
+			diagnostics = append(diagnostics, diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADEAUTO004", File: path, Message: problem})
+			return flow, diagnostics, nil
+		}
+	}
 	constants := flowConstantMap(raw.Constants)
 	diagnostics = flowUnsupportedNodeDiagnostics(path, name, raw, formulas, variables)
+	if processBuilderSkip != "" {
+		diagnostics = append(diagnostics, flowUnsupported(path, name, "Process Builder process is not run: "+processBuilderSkip+" has no native row"))
+	}
 	if !flowProcessTypeSupported(raw.ProcessType) {
 		diagnostics = append(diagnostics, flowUnsupported(path, name, fmt.Sprintf("processType %q is not modeled as DML-triggered automation", raw.ProcessType)))
 	}
@@ -484,6 +513,9 @@ func loadFlow(path string, definitions ...map[string]storage.ObjectDefinition) (
 			for _, condition := range decision.Rules[0].Conditions {
 				field := flowRecordFieldReference(condition.LeftValueReference)
 				if field == "" {
+					field = flowSetupFieldReference(condition.LeftValueReference)
+				}
+				if field == "" {
 					if f := flowVariableRecordField(condition.LeftValueReference, variables); f != "" {
 						field = f
 					}
@@ -509,6 +541,9 @@ func loadFlow(path string, definitions ...map[string]storage.ObjectDefinition) (
 			}
 		}
 	}
+	if routedDecisions && !orderedGraph && flowRoutedDecisionNeedsGraph(raw) {
+		orderedGraph = true
+	}
 	for _, assignment := range raw.Assignments {
 		frameOrOrdinary := flowAssignmentElementFormulas(raw, formulas, assignment)
 		for _, item := range assignment.Items {
@@ -528,7 +563,7 @@ func loadFlow(path string, definitions ...map[string]storage.ObjectDefinition) (
 			if captured {
 				itemFormulas = frameOrOrdinary
 			}
-			formula := flowExpressionValue(item.Value, itemFormulas)
+			formula := flowNullTextLiteralFormula(item.Value, flowExpressionValue(item.Value, itemFormulas))
 			rule.FieldUpdates = append(rule.FieldUpdates, storage.WorkflowFieldUpdate{
 				Name:             firstNonBlank(assignment.Name, assignment.Label, field),
 				Field:            field,
@@ -600,7 +635,7 @@ func loadFlow(path string, definitions ...map[string]storage.ObjectDefinition) (
 		rule.RecordDeletes = append(rule.RecordDeletes, recordDelete)
 	}
 	for _, customError := range raw.CustomErrors {
-		ce := modeledFlowCustomError(customError, raw.Constants, flowCustomErrorFrameFormulas(raw))
+		ce := modeledFlowCustomError(customError, raw.Constants, flowCustomErrorFrameFormulas(raw), formulas)
 		if ce.Name != "" {
 			rule.CustomErrors = append(rule.CustomErrors, ce)
 		}
@@ -663,6 +698,16 @@ func loadFlow(path string, definitions ...map[string]storage.ObjectDefinition) (
 func flowFileName(path string) string {
 	name := strings.TrimSuffix(filepath.Base(path), ".flow-meta.xml")
 	return strings.TrimSuffix(name, ".flow")
+}
+
+// Preserve a hierarchy-setting field reference as a single Flow operand.
+func flowSetupFieldReference(reference string) string {
+	reference = strings.TrimSpace(reference)
+	parts := strings.Split(reference, ".")
+	if len(parts) != 3 || parts[0] != "$Setup" || strings.TrimSpace(parts[1]) == "" || strings.TrimSpace(parts[2]) == "" {
+		return ""
+	}
+	return reference
 }
 
 func flowRecordFieldReference(reference string) string {
@@ -731,6 +776,9 @@ func flowConditionGroupsNeedFormula(groups [][]int, conditions []flowConditionXM
 			if _, ok := formulas[strings.ToLower(strings.TrimSpace(conditions[idx].LeftValueReference))]; ok {
 				return true
 			}
+			if flowSetupFieldReference(conditions[idx].LeftValueReference) != "" && firstNonBlank(conditions[idx].RightValue.ElementReference, conditions[idx].RightValue.Formula, conditions[idx].RightValue.Expression) != "" {
+				return true
+			}
 		}
 	}
 	return false
@@ -770,16 +818,30 @@ func flowConditionToFormula(condition flowConditionXML, formulas map[string]stri
 		return ""
 	}
 	value := flowLiteralValue(condition.RightValue)
+	right := formulaQuote(value)
+	if flowSetupFieldReference(condition.LeftValueReference) != "" && firstNonBlank(condition.RightValue.Formula, condition.RightValue.Expression) != "" {
+		return ""
+	}
+	if flowSetupFieldReference(condition.LeftValueReference) != "" && strings.TrimSpace(condition.RightValue.ElementReference) != "" {
+		op := strings.ToLower(strings.TrimSpace(condition.Operator))
+		if op != "equalto" && op != "equals" {
+			return ""
+		}
+		right = flowRecordFieldReference(condition.RightValue.ElementReference)
+		if right == "" {
+			return ""
+		}
+	}
 	switch strings.ToLower(strings.ReplaceAll(strings.TrimSpace(condition.Operator), " ", "")) {
 	case "contains":
-		return fmt.Sprintf("CONTAINS(%s,%s)", left, formulaQuote(value))
+		return fmt.Sprintf("CONTAINS(%s,%s)", left, right)
 	case "isnull", "isblank":
 		if value == "" {
 			value = "true"
 		}
 		return fmt.Sprintf("ISBLANK(%s) = %s", left, formulaQuote(value))
 	default:
-		return fmt.Sprintf("%s %s %s", left, conditionOperatorToFormula(condition.Operator), formulaQuote(value))
+		return fmt.Sprintf("%s %s %s", left, conditionOperatorToFormula(condition.Operator), right)
 	}
 }
 
@@ -798,6 +860,9 @@ func flowConditionFormulaOperand(reference string, formulas map[string]string, v
 		return field
 	}
 	if field := flowRecordSourceFieldReference(reference); field != "" {
+		return field
+	}
+	if field := flowSetupFieldReference(reference); field != "" {
 		return field
 	}
 	return ""
@@ -1320,6 +1385,13 @@ func flowConstantFormulaLiteral(value flowValueXML) (string, bool) {
 	return "", false
 }
 
+// flowResourceFormulaFunction equals dml.FlowResourceFormulaCall: the internal
+// marker keeps a user-written GLADEFLOWRESOURCE() an unknown function
+// (TestFlowResourceFormulaFunctionName keeps them together).
+const flowResourceFormulaFunction = "\x1fGLADEFLOWRESOURCE"
+
+var flowBRCall = regexp.MustCompile(`(?i)\bBR\s*\(\s*\)`)
+
 // Expand only references to declared formula resources, before record merge
 // syntax is normalized. String literals and cyclic references remain intact.
 func expandFlowFormulaReferences(expression string, declared map[string]string, active map[string]bool) string {
@@ -1373,7 +1445,13 @@ func expandFlowFormulaReferencesBounded(expression string, declared map[string]s
 						return expression
 					}
 					*remaining -= len(expanded) + 2
-					out.WriteString("(" + expanded + ")")
+					if flowBRCall.MatchString(expanded) {
+						// The referenced resource's finished value feeds this
+						// formula; BR() is a line feed by then (flow_br_surfaces).
+						out.WriteString(flowResourceFormulaFunction + "(" + expanded + ")")
+					} else {
+						out.WriteString("(" + expanded + ")")
+					}
 					i = end + 1
 					continue
 				}
@@ -1620,6 +1698,9 @@ func flowLookupCriteriaSourceFieldValue(value flowValueXML, variables map[string
 
 func flowLookupFieldReference(reference string, lookups []flowRecordLookupXML) string {
 	reference = strings.TrimSpace(reference)
+	if relationship := flowLookupRelationshipReference(reference, lookups); relationship != "" {
+		return relationship
+	}
 	dot := strings.LastIndex(reference, ".")
 	if dot <= 0 || dot == len(reference)-1 {
 		return ""
@@ -1636,6 +1717,26 @@ func flowLookupFieldReference(reference string, lookups []flowRecordLookupXML) s
 		}
 		if strings.EqualFold(lookupName, name) {
 			return name + "." + field
+		}
+	}
+	return ""
+}
+
+// flowLookupRelationshipReference keeps a relationship path read through a
+// Get Records output (Output.Lookup.Field) as one source reference. The
+// runtime resolves the remainder against the stored parent record.
+func flowLookupRelationshipReference(reference string, lookups []flowRecordLookupXML) string {
+	name, path, dotted := strings.Cut(reference, ".")
+	if !dotted || !strings.Contains(path, ".") || strings.HasSuffix(path, ".") || strings.Contains(path, "..") {
+		return ""
+	}
+	for _, lookup := range lookups {
+		lookupName := firstNonBlank(lookup.Name, lookup.Label)
+		if lookupName == "" || !lookup.StoreOutputAutomatically || !lookup.GetFirstRecordOnly {
+			continue
+		}
+		if strings.EqualFold(name, lookupName) {
+			return lookupName + "." + path
 		}
 	}
 	return ""
@@ -1964,6 +2065,12 @@ func modeledFlowDecisionBranches(path, flowName string, raw flowXML, formulas ma
 					if field == "" {
 						field = flowRecordSourceFieldReference(condition.LeftValueReference)
 					}
+					if field == "" && (strings.EqualFold(strings.TrimSpace(condition.LeftValueReference), "$Profile.Name") || strings.EqualFold(strings.TrimSpace(condition.LeftValueReference), "$User.Id") || flowPermissionReference(condition.LeftValueReference)) {
+						field = strings.TrimSpace(condition.LeftValueReference)
+					}
+					if field == "" {
+						field = flowSetupFieldReference(condition.LeftValueReference)
+					}
 					if field == "" {
 						diagnostics = append(diagnostics, flowUnsupported(path, flowName, fmt.Sprintf("decision %q branch %q condition %q is not a $Record field or modeled flow resource", decision.Name, branch.Name, condition.LeftValueReference)))
 						modeled = false
@@ -1973,6 +2080,9 @@ func modeledFlowDecisionBranches(path, flowName string, raw flowXML, formulas ma
 						Field:     field,
 						Operation: flowOperator(strings.TrimSpace(condition.Operator)),
 						Value:     flowLiteralValue(condition.RightValue),
+					}
+					if strings.EqualFold(field, "$User.Id") {
+						item.Value = flowDecisionRightValue(condition.RightValue)
 					}
 					flowVariableEmptyOperand(&item, condition, variables)
 					branch.Criteria = append(branch.Criteria, item)
@@ -2402,12 +2512,28 @@ func flowPopulateBranchBody(branch storage.FlowBranch, target, stop string, raw 
 				continue
 			}
 			modeled = true
-			branch.Steps = append(branch.Steps, storage.FlowStep{Kind: "customError", CustomError: modeledFlowCustomError(customError, raw.Constants, flowCustomErrorFrameFormulas(raw))})
+			branch.Steps = append(branch.Steps, storage.FlowStep{Kind: "customError", CustomError: modeledFlowCustomError(customError, raw.Constants, flowCustomErrorFrameFormulas(raw), formulas)})
 			break
 		}
 		if modeled {
 			target = ""
 			continue
+		}
+		for _, wait := range raw.Waits {
+			// Only a Wait for an amount of time (WaitDuration) has a native
+			// row; other wait kinds stay unmodeled.
+			if !strings.EqualFold(target, wait.Name) || !strings.EqualFold(strings.TrimSpace(wait.ElementSubtype), "WaitDuration") {
+				continue
+			}
+			// The interview pauses here; nothing after the wait runs in this
+			// transaction (process_builder_wait waits rows). Target carries the
+			// interview label template of the paused FlowInterview.
+			modeled = true
+			branch.Steps = append(branch.Steps, storage.FlowStep{Kind: "wait", Target: strings.TrimSpace(raw.InterviewLabel), VisitKey: strings.TrimSpace(wait.Name)})
+			break
+		}
+		if modeled {
+			break
 		}
 		if !modeled {
 			diagnostics = append(diagnostics, diagnostic.Diagnostic{Message: fmt.Sprintf("routed decision target %q is not modeled", target)})
@@ -2462,9 +2588,12 @@ func flowUndeclaredCustomErrorReference(raw flowXML) string {
 var flowMergePlainDecimal = regexp.MustCompile(`^-?(0|[1-9][0-9]*)(\.[0-9]+)?$`)
 
 func modeledFlowCustomError(customError flowCustomErrorXML, constants []flowConstantXML, formulaMaps ...map[string]string) storage.FlowCustomError {
-	var formulas map[string]string
+	var formulas, resources map[string]string
 	if len(formulaMaps) > 0 {
 		formulas = formulaMaps[0]
+	}
+	if len(formulaMaps) > 1 {
+		resources = formulaMaps[1]
 	}
 	ce := storage.FlowCustomError{Name: strings.TrimSpace(customError.Name), Description: strings.TrimSpace(customError.Description)}
 	for _, msg := range customError.Messages {
@@ -2476,7 +2605,23 @@ func modeledFlowCustomError(customError flowCustomErrorXML, constants []flowCons
 				numbers[strings.ToLower(strings.TrimSpace(constant.Name))] = value
 			}
 		}
-		ce.Messages = append(ce.Messages, storage.FlowCustomErrorMessage{Message: inlineFlowConstantMergeFields(text, constants), NumberConstants: numbers, Formulas: formulas})
+		message := storage.FlowCustomErrorMessage{Message: inlineFlowConstantMergeFields(text, constants), NumberConstants: numbers, Formulas: formulas}
+		// Native rows (flow_assign_routes, API 62.0 and 67.0): a formula
+		// resource merge field finishes its value, and a field-level error
+		// names its selected field.
+		lower := strings.ToLower(message.Message)
+		for name, expression := range resources {
+			if strings.Contains(lower, "{!"+name+"}") {
+				if message.ResourceFormulas == nil {
+					message.ResourceFormulas = make(map[string]string)
+				}
+				message.ResourceFormulas[name] = expression
+			}
+		}
+		if msg.IsFieldError {
+			message.Field = trimObjectPrefix(strings.TrimSpace(msg.FieldSelection))
+		}
+		ce.Messages = append(ce.Messages, message)
 	}
 	return ce
 }
@@ -2623,7 +2768,7 @@ func modeledFlowAssignmentUpdate(assignment flowAssignmentXML, item flowAssignme
 	if field == "" {
 		return storage.WorkflowFieldUpdate{}, false
 	}
-	formula := flowExpressionValue(item.Value, formulas)
+	formula := flowNullTextLiteralFormula(item.Value, flowExpressionValue(item.Value, formulas))
 	return storage.WorkflowFieldUpdate{
 		Name:         firstNonBlank(assignment.Name, assignment.Label, field),
 		Field:        field,
@@ -2869,6 +3014,11 @@ func flowRequiresOrderedGraph(raw flowXML) bool {
 	return false
 }
 
+func flowPermissionReference(reference string) bool {
+	reference = strings.TrimSpace(reference)
+	return len(reference) > len("$Permission.") && strings.EqualFold(reference[:len("$Permission.")], "$Permission.")
+}
+
 func flowReferenceModeled(reference string, variables map[string]flowVariableXML, constants map[string]flowValueXML, lookups []flowRecordLookupXML, formulas map[string]string) bool {
 	reference = strings.TrimSpace(reference)
 	if reference == "" {
@@ -3090,6 +3240,12 @@ func modeledFlowActionCall(action flowActionCallXML, formulas map[string]string,
 			SourceField:  sourceField,
 		})
 	}
+	for _, output := range action.OutputParameters {
+		name, target := strings.TrimSpace(output.Name), strings.TrimSpace(output.AssignToReference)
+		if name != "" && target != "" {
+			out.Outputs = append(out.Outputs, storage.FlowActionOutput{Name: name, AssignTo: target})
+		}
+	}
 	return out, true
 }
 
@@ -3241,4 +3397,139 @@ func flowLookupFilterLogic(logic string, filters int) (string, bool) {
 		}
 	}
 	return connective, true
+}
+
+// processBuilderXML reads the top-level processMetadataValues of a Process
+// Builder process (processType Workflow).
+type processBuilderXML struct {
+	ProcessType string `xml:"processType"`
+	Status      string `xml:"status"`
+	Elements    []struct {
+		XMLName xml.Name
+	} `xml:",any"`
+	Decisions []struct {
+		Rules []struct {
+			Name string `xml:"name"`
+		} `xml:"rules"`
+	} `xml:"decisions"`
+	ActionCalls []struct {
+		ActionType string `xml:"actionType"`
+	} `xml:"actionCalls"`
+	Variables []struct {
+		Name string `xml:"name"`
+	} `xml:"variables"`
+	StartElementReference string `xml:"startElementReference"`
+	Start                 struct {
+		Object string `xml:"object"`
+	} `xml:"start"`
+	Metadata []struct {
+		Name  string `xml:"name"`
+		Value struct {
+			StringValue      string `xml:"stringValue"`
+			ElementReference string `xml:"elementReference"`
+		} `xml:"value"`
+	} `xml:"processMetadataValues"`
+}
+
+// normalizeProcessBuilderFlow rewrites a record-change Process Builder process
+// into the record-triggered after-save flow it runs as: the ObjectType and
+// TriggerType metadata become the start element, and the ObjectVariable and
+// OldObjectVariable references become $Record and $Record__Prior. Native
+// (process_builder_wait: a processType Workflow process at Flow API 49.0
+// deploys at API 62.0 and 67.0, runs on insert and update, and its ISCHANGED
+// decision calls an Apex action with the record). Other sources are returned
+// unchanged.
+//
+// Only the captured shape runs: an active onAllChanges process with one
+// criteria node (one decision, one rule) whose single immediate action is an
+// Apex action, and no resources besides the two object variables. Any other
+// active process (record updates, email alerts, flow or Chatter actions,
+// scheduled actions, several criteria, onCreateOnly, extra variables) is left
+// unrun, as before, and skip names the shape for an unsupported diagnostic,
+// so it never half-runs.
+func normalizeProcessBuilderFlow(data []byte) (out []byte, skip string) {
+	if !bytes.Contains(data, []byte("<processType>Workflow</processType>")) {
+		return data, ""
+	}
+	var pb processBuilderXML
+	if err := xml.Unmarshal(data, &pb); err != nil || !strings.EqualFold(strings.TrimSpace(pb.ProcessType), "Workflow") || strings.TrimSpace(pb.Start.Object) != "" || strings.TrimSpace(pb.StartElementReference) == "" {
+		return data, ""
+	}
+	if !flowActive(pb.Status) {
+		return data, ""
+	}
+	var objectType, triggerType, current, old string
+	for _, item := range pb.Metadata {
+		switch item.Name {
+		case "ObjectType":
+			objectType = strings.TrimSpace(item.Value.StringValue)
+		case "TriggerType":
+			triggerType = strings.TrimSpace(item.Value.StringValue)
+		case "ObjectVariable":
+			current = strings.TrimSpace(item.Value.ElementReference)
+		case "OldObjectVariable":
+			old = strings.TrimSpace(item.Value.ElementReference)
+		}
+	}
+	if objectType == "" || current == "" {
+		return data, ""
+	}
+	if triggerType != "onAllChanges" {
+		return data, fmt.Sprintf("TriggerType %q", triggerType)
+	}
+	recordTriggerType := "CreateAndUpdate"
+	if skip := processBuilderUncoveredShape(pb, current, old); skip != "" {
+		return data, skip
+	}
+	text := string(data)
+	replace := func(variable, record string) {
+		if variable == "" {
+			return
+		}
+		text = strings.ReplaceAll(text, "{!"+variable+".", "{!"+record+".")
+		text = strings.ReplaceAll(text, "<elementReference>"+variable+"</elementReference>", "<elementReference>"+record+"</elementReference>")
+		text = strings.ReplaceAll(text, "<elementReference>"+variable+".", "<elementReference>"+record+".")
+		text = strings.ReplaceAll(text, "<leftValueReference>"+variable+".", "<leftValueReference>"+record+".")
+		text = strings.ReplaceAll(text, "<assignToReference>"+variable+".", "<assignToReference>"+record+".")
+		text = strings.ReplaceAll(text, "<inputReference>"+variable+"</inputReference>", "<inputReference>"+record+"</inputReference>")
+		// The declaration would shadow the record resource.
+		text = strings.ReplaceAll(text, "<name>"+variable+"</name>", "<name>"+variable+"_processBuilderVariable</name>")
+	}
+	replace(current, "$Record")
+	replace(old, "$Record__Prior")
+	start := "<start><connector><targetReference>" + html.EscapeString(strings.TrimSpace(pb.StartElementReference)) + "</targetReference></connector>" +
+		"<object>" + html.EscapeString(objectType) + "</object><recordTriggerType>" + recordTriggerType + "</recordTriggerType><triggerType>RecordAfterSave</triggerType></start>"
+	closing := strings.LastIndex(text, "</Flow>")
+	if closing < 0 {
+		return data, ""
+	}
+	return []byte(text[:closing] + start + text[closing:]), ""
+}
+
+// processBuilderUncoveredShape names the first part of a process outside the
+// process_builder_wait shape, or returns "".
+func processBuilderUncoveredShape(pb processBuilderXML, current, old string) string {
+	for _, element := range pb.Elements {
+		switch element.XMLName.Local {
+		case "apiVersion", "label", "description", "interviewLabel", "processType", "status", "startElementReference",
+			"processMetadataValues", "formulas", "variables", "decisions", "actionCalls":
+		default:
+			return fmt.Sprintf("element %q", element.XMLName.Local)
+		}
+	}
+	if len(pb.Decisions) != 1 || len(pb.Decisions[0].Rules) != 1 {
+		return fmt.Sprintf("%d criteria nodes", len(pb.Decisions))
+	}
+	if len(pb.ActionCalls) != 1 {
+		return fmt.Sprintf("%d immediate actions", len(pb.ActionCalls))
+	}
+	if actionType := strings.TrimSpace(pb.ActionCalls[0].ActionType); !strings.EqualFold(actionType, "apex") {
+		return fmt.Sprintf("actionType %q", actionType)
+	}
+	for _, variable := range pb.Variables {
+		if name := strings.TrimSpace(variable.Name); name != current && name != old {
+			return fmt.Sprintf("variable %q", name)
+		}
+	}
+	return ""
 }

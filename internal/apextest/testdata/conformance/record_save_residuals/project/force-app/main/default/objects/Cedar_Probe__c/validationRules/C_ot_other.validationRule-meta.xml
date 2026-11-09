@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>C_ot_other</fullName><active>true</active><errorConditionFormula>AND(Case__c = &apos;ot_other&apos;, ISNULL($ObjectType.Account.Fields.Name))</errorConditionFormula><errorMessage>C_ot_other fired</errorMessage></ValidationRule>

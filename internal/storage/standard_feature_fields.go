@@ -60,6 +60,11 @@ func standardOptionalFieldsNeedRepair(definition ObjectDefinition, signature str
 		if exists != enabled {
 			return true
 		}
+		if exists && gate.OverrideStubType && standardFieldPolicyGateEnabledForDefinition(gate, definition, signature) {
+			if name, ok := ResolveFieldName(definition, "", gate.Field.Name); ok && standardPolicyStubFieldNeedsRepair(definition, gate, name, definition.Fields[name]) {
+				return true
+			}
+		}
 	}
 	for name := range definition.Fields {
 		if !standardOptionalFieldEnabledForDefinition(definition, name, signature) {
@@ -152,7 +157,7 @@ func StandardFeatureObjectNames(features []string) []string {
 		}
 	}
 	signature := canonicalFeatureSignature(features)
-	for _, policy := range standardFieldPolicies {
+	for _, policy := range standardFieldPolicies() {
 		for _, gate := range policy.gates {
 			if standardFieldPolicyGateEnabled(gate, signature) {
 				names[gate.Object] = true

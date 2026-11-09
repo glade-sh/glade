@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>62.0</apiVersion>
+    <formulas><name>FCalcLen</name><dataType>String</dataType><expression>TEXT(LEN({!$Record.Calc__c}))</expression></formulas>
+    <interviewLabel>BrAfter {!$Flow.CurrentDateTime}</interviewLabel><label>BrAfter</label><processType>AutoLaunchedFlow</processType>
+    <recordUpdates><name>Upd</name><label>Upd</label><locationX>0</locationX><locationY>0</locationY><inputAssignments><field>FcBr__c</field><value><elementReference>$Record.Calc__c</elementReference></value></inputAssignments><inputAssignments><field>FcLen__c</field><value><elementReference>FCalcLen</elementReference></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Upd</targetReference></connector><filterLogic>and</filterLogic><filters><field>Name</field><operator>EqualTo</operator><value><stringValue>AfterSave</stringValue></value></filters><object>Account</object><recordTriggerType>Create</recordTriggerType><triggerType>RecordAfterSave</triggerType></start>
+    <status>Active</status>
+</Flow>

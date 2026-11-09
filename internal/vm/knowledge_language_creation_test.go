@@ -49,6 +49,8 @@ System.assertEquals(false,Knowledge__kav.VersionNumber.getDescribe().isCreateabl
 				t.Fatal(err)
 			}
 			org := testDataOrg()
+			// Knowledge__ka and Knowledge__kav exist only with the captured Knowledge setting (org_knowledge_availability/org.tsv).
+			storage.ApplyOrgShape(&org, []string{"Knowledge", "KnowledgeEnabled"})
 			storage.EnsureStandardObject(&org, "Knowledge__kav")
 			m := New(nil)
 			m.SetOrg(&org)

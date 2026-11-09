@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+ <apiVersion>62.0</apiVersion><label>Q1 Scalar Flow</label><processType>AutoLaunchedFlow</processType><status>Active</status>
+ <start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Assign_Result</targetReference></connector></start>
+ <assignments><name>Assign_Result</name><label>Assign Result</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>result</assignToReference><operator>Assign</operator><value><elementReference>PermissionFormula</elementReference></value></assignmentItems></assignments>
+ <formulas><name>PermissionFormula</name><dataType>String</dataType><expression>IF($Permission.Probe_Bypass, {!suffix}, &quot;no&quot;)</expression></formulas>
+ <variables><name>suffix</name><dataType>String</dataType><isCollection>false</isCollection><isInput>true</isInput><isOutput>false</isOutput></variables>
+ <variables><name>result</name><dataType>String</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>true</isOutput></variables>
+</Flow>

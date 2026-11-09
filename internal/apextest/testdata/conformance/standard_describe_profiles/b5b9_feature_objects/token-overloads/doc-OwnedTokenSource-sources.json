@@ -1,0 +1,3 @@
+{
+  "OwnedTokenSource": "public class OwnedTokenSource {public static Schema.SObjectField field(String name){return DocumentGenerationProcess.SObjectType.getDescribe().fields.getMap().get(name);}}"
+}

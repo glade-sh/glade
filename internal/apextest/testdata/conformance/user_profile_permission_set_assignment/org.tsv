@@ -1,0 +1,5 @@
+source_api	route	observation
+62.0	anonymous	{"created":"not a test run","running":["profile:true:"]}
+62.0	isTest	{"System Administrator count":1,"System Administrator":["profile:true:"],"System Administrator json":["profile:true:"],"Minimum Access - Salesforce count":1,"Minimum Access - Salesforce":["profile:true:"],"Minimum Access - Salesforce json":["profile:true:"],"Standard User count":1,"Standard User":["profile:true:"],"Standard User json":["profile:true:"],"running":["profile:true:"]}
+67.0	anonymous	{"created":"not a test run","running":["profile:true:"]}
+67.0	isTest	{"System Administrator count":1,"System Administrator":["profile:true:"],"System Administrator json":["profile:true:"],"Minimum Access - Salesforce count":1,"Minimum Access - Salesforce":["profile:true:"],"Minimum Access - Salesforce json":["profile:true:"],"Standard User count":1,"Standard User":["profile:true:"],"Standard User json":["profile:true:"],"running":["profile:true:"]}

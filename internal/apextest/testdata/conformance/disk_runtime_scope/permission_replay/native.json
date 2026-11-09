@@ -1,0 +1,42 @@
+[
+  {
+    "source_api": "62.0",
+    "configuration": "unassigned",
+    "compiled": true,
+    "assertionCarrier": "System.AssertException: Assertion Failed: OBSERVED|{\"updateable\":false,\"createable\":false,\"readable\":false,\"groupCount\":0,\"probeAssignments\":0,\"assignmentCount\":1,\"profile\":\"System Administrator\"}",
+    "class": "DiskScopeProbe62Test",
+    "method": "lookupIsNullAfterParentDelete",
+    "outcome": "Pass",
+    "message": ""
+  },
+  {
+    "source_api": "67.0",
+    "configuration": "unassigned",
+    "compiled": true,
+    "assertionCarrier": "System.AssertException: Assertion Failed: OBSERVED|{\"updateable\":false,\"createable\":false,\"readable\":false,\"groupCount\":0,\"probeAssignments\":0,\"assignmentCount\":1,\"profile\":\"System Administrator\"}",
+    "class": "DiskScopeProbe67Test",
+    "method": "lookupIsNullAfterParentDelete",
+    "outcome": "Fail",
+    "message": "System.QueryException: No such column 'Parent__c' on entity 'LookupScopeChild__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+  },
+  {
+    "source_api": "62.0",
+    "configuration": "granted",
+    "compiled": true,
+    "assertionCarrier": "System.AssertException: Assertion Failed: OBSERVED|{\"updateable\":true,\"createable\":true,\"readable\":true,\"groupCount\":0,\"probeAssignments\":1,\"assignmentCount\":2,\"profile\":\"System Administrator\"}",
+    "class": "DiskScopeProbe62Test",
+    "method": "lookupIsNullAfterParentDelete",
+    "outcome": "Pass",
+    "message": ""
+  },
+  {
+    "source_api": "67.0",
+    "configuration": "granted",
+    "compiled": true,
+    "assertionCarrier": "System.AssertException: Assertion Failed: OBSERVED|{\"updateable\":true,\"createable\":true,\"readable\":true,\"groupCount\":0,\"probeAssignments\":1,\"assignmentCount\":2,\"profile\":\"System Administrator\"}",
+    "class": "DiskScopeProbe67Test",
+    "method": "lookupIsNullAfterParentDelete",
+    "outcome": "Pass",
+    "message": ""
+  }
+]

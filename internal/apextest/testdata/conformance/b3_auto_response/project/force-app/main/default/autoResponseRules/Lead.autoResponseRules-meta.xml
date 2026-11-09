@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AutoResponseRules xmlns="http://soap.sforce.com/2006/04/metadata"><autoResponseRule><fullName>B3Response</fullName><active>true</active><ruleEntry><criteriaItems><field>Lead.Company</field><operation>equals</operation><value>Synthetic</value></criteriaItems><senderEmail>synthetic@example.invalid</senderEmail><senderName>Synthetic</senderName><template>unfiled$public/B3Response</template></ruleEntry></autoResponseRule></AutoResponseRules>

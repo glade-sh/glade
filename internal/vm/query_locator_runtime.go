@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -226,6 +227,11 @@ func (vm *VM) databaseQueryHandle(query Value, binds Value, accessLevel Value, c
 		querySource = source
 	})
 	if err != nil {
+		if mapBinds && !cursor && strings.EqualFold(mode, "USER_MODE") && isInaccessibleColumnError(err) {
+			if scopeErr := vm.userModeLocatorScopeBindError(query.Text); scopeErr != nil {
+				return Null, scopeErr
+			}
+		}
 		return Null, err
 	}
 	records := List(values...)
@@ -551,7 +557,11 @@ func (vm *VM) databaseQueryHandlePage(handle Value, snapshots []Value) (Value, e
 	}
 	ids := make([]storage.Value, 0, len(snapshots))
 	for _, row := range snapshots {
-		if _, id, ok := objectFieldValue(row, "Id"); ok && id.Kind != ValueNull {
+		_, id, ok := objectFieldValue(row, "Id")
+		if internal, present := row.Fields[sobjectEventSubscriberStorageIDField]; present && strings.EqualFold(row.Type, "EventBusSubscriber") {
+			id, ok = internal, true
+		}
+		if ok && id.Kind != ValueNull {
 			if recordID, ok := sObjectIDFromValue(id); ok {
 				ids = append(ids, storage.IDValue(recordID))
 			}
@@ -578,12 +588,13 @@ func (vm *VM) databaseQueryHandlePage(handle Value, snapshots []Value) (Value, e
 		byID[record.ID] = record
 	}
 	page.List = nil
+	convertRecord := vm.recordConverterForOrg(querySource)
 	for _, id := range ids {
 		_, record, ok := storage.LookupRecordByID(byID, id.ID)
 		if !ok {
 			continue
 		}
-		row := vm.vmValueFromRecord(record)
+		row := convertRecord(record)
 		vm.applySOQLRecordProjection(&row, record, query)
 		vm.hydrateQueriedRecordTypeRelationships(row)
 		page.List = append(page.List, row)
@@ -635,4 +646,39 @@ func (vm *VM) callQueryLocatorIterator(receiver Value, method string, args []Val
 	}
 	value, updated, advanced, handled, err := callIteratorMember(receiver, method, args)
 	return value, updated, mutated || advanced, handled, err
+}
+
+// api67_access_defaults rows std_g5/std_trg_bind/std_trg_dyn: when a Standard
+// User's USER_MODE getQueryLocatorWithBinds query names an inaccessible field,
+// Salesforce resolves the query's binds from the Apex scope before any field
+// check and ignores the bind map. A name that is not in scope is "Variable does
+// not exist"; a scope value of the wrong type is a bind type error. Locals of
+// completed blocks stay visible (closedSOQLIntegerKey). Queries without an
+// inaccessible field use the map as usual, so this runs only on that path.
+func (vm *VM) userModeLocatorScopeBindError(raw string) error {
+	lookup := func(name string) (Value, error) {
+		value, err := vm.lookupSOQLBind(name)
+		if err == nil {
+			return value, nil
+		}
+		if departed, ok := vm.closedSOQLLocals[closedSOQLIntegerKey(name)]; ok {
+			return departed, nil
+		}
+		if departed, ok := vm.closedSOQLLocals[strings.ToLower(name)]; ok {
+			return departed, nil
+		}
+		return Null, newExceptionError("QueryException", "Variable does not exist: "+name)
+	}
+	if _, err := vm.expandSOQLBindsWith(raw, lookup, nil); err != nil {
+		return err
+	}
+	return vm.validateDynamicSOQLBindsWith(raw, lookup)
+}
+
+func isInaccessibleColumnError(err error) bool {
+	var thrown *apexThrowError
+	if !errors.As(err, &thrown) || thrown.value.Fields == nil {
+		return false
+	}
+	return strings.HasPrefix(thrown.value.Fields["message"].Text, "No such column ")
 }

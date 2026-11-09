@@ -96,7 +96,7 @@ func (vm *VM) replayDescribeDatabaseDML(op string, args []Value, result *Result)
 		// EventBus.publish does; publishing a private copy shares its result
 		// and delivery machinery without mutating the caller's field map.
 		// Standard events retain the captured named-method source policy.
-		value, err := vm.eventBusPublishWithNamedSource([]Value{cloneValue(record)}, result, standardEvent)
+		value, err := vm.eventBusPublishWithNamedSource([]Value{cloneValue(record)}, result, standardEvent, false)
 		return value, true, err
 	case "update":
 		message := "DML operation UPDATE not allowed on " + record.Type

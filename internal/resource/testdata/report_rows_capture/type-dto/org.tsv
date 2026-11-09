@@ -1,0 +1,37 @@
+api	route	case	result
+62.0	anonymous	dto-column-string	ACCOUNT.NAME~Account Name~STRING_DATA~true
+62.0	anonymous	dto-column-date	Account.B6_Date__c~B6 Date~DATE_DATA~false
+62.0	anonymous	dto-column-invalid-enum	EXC~System.JSONException~The type reports.ColumnDataType does not have an enum value BANANA at [line:1, column:2]
+62.0	anonymous	dto-category	Account General~1~ACCOUNT.NAME
+62.0	anonymous	dto-scope	user~1~All accounts~true
+62.0	anonymous	dto-duration	Day~1~TODAY~2026-11-03
+62.0	anonymous	dto-metadata	1~ACCOUNT.NAME~user
+62.0	anonymous	dto-null-column	true
+62.0	anonymous	dto-invalid-json	EXC~System.JSONException~Unexpected character ('b' (code 98)): was expecting double-quote to start field name at [line:1, column:3]
+62.0	istest	dto-column-string	ACCOUNT.NAME~Account Name~STRING_DATA~true
+62.0	istest	dto-column-date	Account.B6_Date__c~B6 Date~DATE_DATA~false
+62.0	istest	dto-column-invalid-enum	EXC~System.JSONException~The type reports.ColumnDataType does not have an enum value BANANA at [line:1, column:2]
+62.0	istest	dto-category	Account General~1~ACCOUNT.NAME
+62.0	istest	dto-scope	user~1~All accounts~true
+62.0	istest	dto-duration	Day~1~TODAY~2026-11-03
+62.0	istest	dto-metadata	1~ACCOUNT.NAME~user
+62.0	istest	dto-null-column	true
+62.0	istest	dto-invalid-json	EXC~System.JSONException~Unexpected character ('b' (code 98)): was expecting double-quote to start field name at [line:1, column:3]
+67.0	anonymous	dto-column-string	ACCOUNT.NAME~Account Name~STRING_DATA~true
+67.0	anonymous	dto-column-date	Account.B6_Date__c~B6 Date~DATE_DATA~false
+67.0	anonymous	dto-column-invalid-enum	EXC~System.JSONException~The type reports.ColumnDataType does not have an enum value BANANA at [line:1, column:2]
+67.0	anonymous	dto-category	Account General~1~ACCOUNT.NAME
+67.0	anonymous	dto-scope	user~1~All accounts~true
+67.0	anonymous	dto-duration	Day~1~TODAY~2026-11-03
+67.0	anonymous	dto-metadata	1~ACCOUNT.NAME~user
+67.0	anonymous	dto-null-column	true
+67.0	anonymous	dto-invalid-json	EXC~System.JSONException~Unexpected character ('b' (code 98)): was expecting double-quote to start field name at [line:1, column:3]
+67.0	istest	dto-column-string	ACCOUNT.NAME~Account Name~STRING_DATA~true
+67.0	istest	dto-column-date	Account.B6_Date__c~B6 Date~DATE_DATA~false
+67.0	istest	dto-column-invalid-enum	EXC~System.JSONException~The type reports.ColumnDataType does not have an enum value BANANA at [line:1, column:2]
+67.0	istest	dto-category	Account General~1~ACCOUNT.NAME
+67.0	istest	dto-scope	user~1~All accounts~true
+67.0	istest	dto-duration	Day~1~TODAY~2026-11-03
+67.0	istest	dto-metadata	1~ACCOUNT.NAME~user
+67.0	istest	dto-null-column	true
+67.0	istest	dto-invalid-json	EXC~System.JSONException~Unexpected character ('b' (code 98)): was expecting double-quote to start field name at [line:1, column:3]

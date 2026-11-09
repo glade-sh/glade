@@ -1,0 +1,10 @@
+Account parent = new Account(Name='C11 synthetic parent'); insert parent;
+insert new Contact(LastName='C11 synthetic child', AccountId=parent.Id);
+insert new Opportunity(Name='C11 synthetic opportunity', AccountId=parent.Id, StageName='Prospecting', CloseDate=Date.today());
+Account found = [SELECT Id,(SELECT Id,LastName FROM Contacts),(SELECT Id,Name FROM Opportunities) FROM Account WHERE Id=:parent.Id WITH USER_MODE];
+Map<String,Object> out = new Map<String,Object>();
+out.put('contact_parent_populated',found.Contacts[0].getPopulatedFieldsAsMap().containsKey('AccountId'));
+out.put('opportunity_parent_populated',found.Opportunities[0].getPopulatedFieldsAsMap().containsKey('AccountId'));
+out.put('contact_email_populated',found.Contacts[0].getPopulatedFieldsAsMap().containsKey('Email'));
+out.put('opportunity_description_populated',found.Opportunities[0].getPopulatedFieldsAsMap().containsKey('Description'));
+System.debug('C11CAPTURE|' + JSON.serialize(out));

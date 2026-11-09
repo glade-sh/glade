@@ -4,7 +4,6 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"io/fs"
-	"maps"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -87,48 +86,8 @@ func TestSOQLSecurityQ14C14NativeConformance(t *testing.T) {
 					if err := json.Unmarshal([]byte(row[4]), &want); err != nil {
 						t.Fatal(err)
 					}
-					switch row[2] {
-					case "directDenied":
-						g, gok := got["exception"].(map[string]any)
-						w, wok := want["exception"].(map[string]any)
-						if !gok || !wok {
-							t.Fatalf("missing exception: native=%v; Glade=%v", want, got)
-						}
-						gi, gok := g["inaccessible"].(map[string]any)
-						wi, wok := w["inaccessible"].(map[string]any)
-						if !gok || !wok || len(gi) != 0 || len(wi) == 0 {
-							t.Fatalf("inaccessible carry changed: native=%v; Glade=%v", want, got)
-						}
-						got, want = maps.Clone(got), maps.Clone(want)
-						g, w = maps.Clone(g), maps.Clone(w)
-						delete(g, "inaccessible")
-						delete(w, "inaccessible")
-						got["exception"], want["exception"] = g, w
-						if !reflect.DeepEqual(got, want) {
-							t.Fatalf("other exception fields changed: native=%v; Glade=%v", want, got)
-						}
-						t.Log("known local carry batch Dot stdlib cases Dot Dot SOQL cases and Dot async cases (fix owner pending): inaccessible field map differs")
-						case345Skip(t)
-					case "hiddenGroup", "hiddenHaving", "sum":
-						fields := []string{"exception", "rows", "status"}
-						observed := map[string]string{
-							"hiddenGroup":  `{"rows":[{"n":2}],"status":"observed"}`,
-							"hiddenHaving": `{"rows":[{"Name":"same","n":2}],"status":"observed"}`,
-							"sum":          `{"rows":[{"total":150}],"status":"observed"}`,
-						}[row[2]]
-						var expected map[string]any
-						if err := json.Unmarshal([]byte(observed), &expected); err != nil {
-							t.Fatal(err)
-						}
-						if !c14ExactCarryEqual(got, want, expected, fields) {
-							t.Fatalf("security carry changed: native=%v; Glade=%v", want, got)
-						}
-						t.Logf("known local carry batch Dot stdlib cases Dot Dot SOQL cases and Dot async cases (fix owner pending): native=%v; Glade=%v", want, got)
-						case345Skip(t)
-					default:
-						if !reflect.DeepEqual(got, want) {
-							t.Fatalf("native=%v; Glade=%v", want, got)
-						}
+					if !reflect.DeepEqual(got, want) {
+						t.Fatalf("native=%v; Glade=%v", want, got)
 					}
 				})
 			}

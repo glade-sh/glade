@@ -44,7 +44,7 @@ silently promoted into that window. A local pass does not prove deployment,
 org permissions, hosted services, or production parity.
 
 Doctor checks the project Apex source version against the runtime checked window.
-The supported target is Apex 62.0–67.0; preserving a version or passing locally
+The supported target is Apex 62.0–68.0; preserving a version or passing locally
 does not prove Salesforce parity.
 
 ## Permission-Gated Tests
@@ -337,7 +337,10 @@ from running. A trigger that references an invalid class is excluded alongside
 that class and its dependents; unrelated tests still run. Missing package
 dependencies are scoped to classes that statically reference the missing
 namespace and their dependents when Glade can attribute the diagnostic.
-Unattributed dependency errors retain the whole-project fallback.
+Unattributed dependency errors retain the whole-project fallback. In that fallback every
+selected test reports `compile_error`. The first test's `problem.message`
+lists each diagnostic once; each later test's message keeps the first
+diagnostic line and names the test that carries the full list.
 
 ## Running user and limits
 

@@ -1,0 +1,23 @@
+source_api	method	observation
+62.0	aggregateSelf	{"otherGroups":0,"otherRows":0,"recipientGroups":2,"recipientParent":"Parent"}
+62.0	hierarchy	{"parent":1,"unrelated":0}
+62.0	membershipChange	{"before":1,"removed":0,"restored":1}
+62.0	ruleRoutes	{"access":true,"dynamic":1,"recipientRemoved":0,"static":1}
+62.0	searchRelations	{"otherParent":"Searchable","otherSearch":0,"recipientParent":"Searchable","recipientSearch":1}
+62.0	sharingRule	{"other":0,"recipient":1}
+62.0	visibility	{"ownerLocator1":true,"ownerLocator2":2,"privateCount":0,"privateLocator":false,"singleton":"System.QueryException"}
+67.0	aggregateSelf	{"otherGroups":0,"otherRows":0,"recipientGroups":2,"recipientParent":"Parent"}
+67.0	hierarchy	{"parent":1,"unrelated":0}
+67.0	membershipChange	{"before":1,"removed":0,"restored":1}
+67.0	ruleRoutes	{"access":true,"dynamic":1,"recipientRemoved":0,"static":1}
+67.0	searchRelations	{"otherParent":"Searchable","otherSearch":0,"recipientParent":"Searchable","recipientSearch":1}
+67.0	sharingRule	{"other":0,"recipient":1}
+67.0	visibility	{"ownerLocator1":true,"ownerLocator2":2,"privateCount":0,"privateLocator":false,"singleton":"System.QueryException"}
+62.0	hierarchyDepth	{"ancestor":1,"parent":1,"peer":0,"unrelated":0}
+67.0	hierarchyDepth	{"ancestor":1,"parent":1,"peer":0,"unrelated":0}
+62.0	controlledDetail	{"after":1,"before":0,"locator":false,"manual":1,"other":0,"owner":1,"singleton":"System.QueryException"}
+67.0	controlledDetail	{"after":1,"before":0,"locator":false,"manual":1,"other":0,"owner":1,"singleton":"System.QueryException"}
+62.0	controlledHierarchy	{"ancestor":1,"unrelated":0}
+67.0	controlledHierarchy	{"ancestor":1,"unrelated":0}
+62.0	sharingRulesMultiple	{"firstCount":1,"firstName":"Multi First","other":0,"removed":0,"secondCount":1,"secondName":"Multi Second"}
+67.0	sharingRulesMultiple	{"firstCount":1,"firstName":"Multi First","other":0,"removed":0,"secondCount":1,"secondName":"Multi Second"}

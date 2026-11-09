@@ -620,7 +620,7 @@ try {
 } catch (JSONException e) {
 	caught = true;
 	System.assertEquals('System.JSONException', e.getTypeName());
-	System.assert(e.getMessage().contains('JSONGenerator is closed'));
+	System.assertEquals('Current context not an object but ROOT', e.getMessage());
 }
 System.assert(caught);
 System.assertEquals('{}', objectGen.getAsString());
@@ -690,7 +690,7 @@ gen.writeEndArray();
 gen.close();
 gen.writeNull();
 `,
-			want: "JSONGenerator is closed",
+			want: "System.UnexpectedException: Salesforce System Error",
 		},
 	}
 	for _, tc := range tests {
@@ -707,31 +707,24 @@ gen.writeNull();
 	}
 }
 
-func TestExecJSONGeneratorWriteAfterGetAsStringIsCatchableJSONException(t *testing.T) {
+func TestExecJSONGeneratorWriteAfterGetAsStringEscapesCatch(t *testing.T) {
 	program, err := CompileAnonymous(`
 JSONGenerator gen = JSON.createGenerator(false);
 gen.writeStartArray();
 gen.writeString('done');
 gen.writeEndArray();
 System.assertEquals('["done"]', gen.getAsString());
-System.assert(gen.isClosed());
 Boolean caught = false;
-try {
-	gen.writeNull();
-} catch (JSONException e) {
-	caught = true;
-	System.assertEquals('System.JSONException', e.getTypeName());
-	System.assert(e.getMessage().contains('JSONGenerator is closed'));
-}
-System.assert(caught);
-System.assert(gen.isClosed());
+try { gen.writeNull(); } catch (Exception e) { caught = true; }
+System.assert(false, 'native error must escape');
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
-	machine := New(nil)
-	if _, err := machine.Execute(program); err != nil {
-		t.Fatal(err)
+	result, err := New(nil).Execute(program)
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "System.UnexpectedException" || result.Vars["caught"].Bool {
+		t.Fatalf("got %v, caught=%v; want uncaught unexpected error", err, result.Vars["caught"])
 	}
 }
 
@@ -786,7 +779,7 @@ try {
 } catch (JSONException e) {
 	caught = e.getTypeName() + ':' + e.getMessage();
 }
-System.assert(caught.contains('JSONException:JSONGenerator.writeEndArray has no open array'));
+System.assert(caught.contains('JSONException:Current context not an ARRAY but ROOT'));
 endGen.writeStartArray();
 endGen.writeNull();
 endGen.writeEndArray();

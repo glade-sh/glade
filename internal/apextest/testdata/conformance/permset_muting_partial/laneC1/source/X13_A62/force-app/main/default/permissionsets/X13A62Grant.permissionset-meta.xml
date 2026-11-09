@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>X13A62Grant</label>
+    <objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>true</modifyAllRecords><object>C1XAA62__c</object><viewAllRecords>true</viewAllRecords></objectPermissions>
+</PermissionSet>

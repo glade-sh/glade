@@ -1,0 +1,23 @@
+[
+  {
+    "id": "r_v035_escaped_b",
+    "query": "query L12Owned { uiapi { query { FamilyL12Record__c(where: { and: [ { Key__c: { in: [\"L12_PARENT\", \"L12_A\", \"L12_B\", \"L12_C\", \"L12_D\"] } }, { Key__c: { like: \"L12\\\\_B\" } } ] }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { cursor node { Id Key__c { value } Name { value } } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } } } }",
+    "variables": {},
+    "operation": "snapshot",
+    "scenario": "boundary"
+  },
+  {
+    "id": "r_v035_escaped_z",
+    "query": "query L12Owned { uiapi { query { FamilyL12Record__c(where: { and: [ { Key__c: { in: [\"L12_PARENT\", \"L12_A\", \"L12_B\", \"L12_C\", \"L12_D\"] } }, { Key__c: { like: \"L12\\\\_Z\" } } ] }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { cursor node { Id Key__c { value } Name { value } } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } } } }",
+    "variables": {},
+    "operation": "snapshot",
+    "scenario": "boundary"
+  },
+  {
+    "id": "r_v035_escaped_pct",
+    "query": "query L12Owned { uiapi { query { FamilyL12Record__c(where: { and: [ { Key__c: { in: [\"L12_PARENT\", \"L12_A\", \"L12_B\", \"L12_C\", \"L12_D\"] } }, { Key__c: { like: \"L12\\\\%\" } } ] }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { cursor node { Id Key__c { value } Name { value } } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } } } }",
+    "variables": {},
+    "operation": "snapshot",
+    "scenario": "boundary"
+  }
+]

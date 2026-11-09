@@ -318,7 +318,11 @@ func ApplyProjectOrgShape(org *OrgState, features []string) {
 	org.ensureFeatureProfile()
 	previous := make([]string, 0, len(org.Features))
 	for _, feature := range org.Features {
-		if feature != project.UnspecifiedStandardFieldShape {
+		if feature != project.UnspecifiedStandardFieldShape &&
+			feature != project.StandardFieldEditionDeveloper &&
+			feature != project.StandardFieldEditionEnterprise &&
+			feature != project.StandardFieldEditionOther &&
+			feature != project.PlainDeveloperObjectShape {
 			previous = append(previous, feature)
 		}
 	}
@@ -340,6 +344,7 @@ func applyOrgShape(org *OrgState, features []string) {
 	if org == nil {
 		return
 	}
+	features = withoutStaticOnlyShapeFeatures(features)
 	org.ensureFeatureProfile()
 	org.setFeatureProfile(append(append([]string(nil), org.Features...), features...))
 	clearOrganizationFeatureFlagRecords(org)
@@ -352,7 +357,7 @@ func applyOrgShape(org *OrgState, features []string) {
 		case "Sites":
 			applySitesAndCommunities(org)
 			ensureSitesGuestProfiles(org)
-		case "Communities":
+		case "Communities", "NetworksEnabled":
 			applySitesAndCommunities(org)
 		case "StateAndCountryPicklist":
 			applyStateAndCountryPicklist(org)
@@ -433,27 +438,35 @@ func applyMultiCurrency(org *OrgState) {
 		},
 	})
 	EnsureStandardObject(org, "DatedConversionRate")
-	for name, obj := range org.Objects {
-		if !multiCurrencyObjectSupportsCurrencyISOCode(obj.Definition) {
-			continue
-		}
-		obj.Definition = obj.Definition.Clone()
-		if obj.Definition.Fields == nil {
-			obj.Definition.Fields = make(map[string]Field)
-		}
-		field := obj.Definition.Fields["CurrencyIsoCode"]
-		field.APIName = "CurrencyIsoCode"
-		if field.Label == "" {
-			field.Label = "Currency ISO Code"
-		}
-		field.Type = FieldPicklist
-		field.DisplayType = "PICKLIST"
-		field.DefaultedOnCreate = BoolFlag(true)
-		// Currency defaults depend on the execution user and DML phase. Do not
-		// store a literal default that would change ordinary SObject field reads.
-		obj.Definition.Fields["CurrencyIsoCode"] = field
-		org.Objects[name] = obj
+	for name := range org.Objects {
+		applyMultiCurrencyField(org, name)
 	}
+}
+
+// applyMultiCurrencyField gives one object the CurrencyIsoCode field shape a
+// multi-currency org carries. Lazily added catalog objects receive it on
+// materialization, as every object did when the shape was applied.
+func applyMultiCurrencyField(org *OrgState, name string) {
+	obj, ok := org.Objects[name]
+	if !ok || !multiCurrencyObjectSupportsCurrencyISOCode(obj.Definition) {
+		return
+	}
+	obj.Definition = obj.Definition.Clone()
+	if obj.Definition.Fields == nil {
+		obj.Definition.Fields = make(map[string]Field)
+	}
+	field := obj.Definition.Fields["CurrencyIsoCode"]
+	field.APIName = "CurrencyIsoCode"
+	if field.Label == "" {
+		field.Label = "Currency ISO Code"
+	}
+	field.Type = FieldPicklist
+	field.DisplayType = "PICKLIST"
+	field.DefaultedOnCreate = BoolFlag(true)
+	// Currency defaults depend on the execution user and DML phase. Do not
+	// store a literal default that would change ordinary SObject field reads.
+	obj.Definition.Fields["CurrencyIsoCode"] = field
+	org.Objects[name] = obj
 }
 
 func multiCurrencyObjectSupportsCurrencyISOCode(definition ObjectDefinition) bool {
@@ -490,7 +503,7 @@ func applySitesAndCommunities(org *OrgState) {
 		"GuestUserId":   {APIName: "GuestUserId", Type: FieldReference, ReferenceTo: []string{"User"}, RelationshipName: "GuestUser"},
 		"IsActive":      {APIName: "IsActive", Type: FieldBoolean},
 	})
-	if org.HasFeature("Communities") {
+	if org.HasFeature("NetworksEnabled") {
 		ensureObject(org, "Network", "0DB", map[string]Field{
 			"Name": {APIName: "Name", Type: FieldString, Required: true},
 			"SelfRegProfileId": {
@@ -524,7 +537,6 @@ func applyContactsToMultipleAccounts(org *OrgState) {
 	ensureObject(org, "AccountContactRelation", "07k", map[string]Field{
 		"AccountId": {APIName: "AccountId", Type: FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Account", Required: true},
 		"ContactId": {APIName: "ContactId", Type: FieldReference, ReferenceTo: []string{"Contact"}, RelationshipName: "Contact", Required: true},
-		"Roles":     {APIName: "Roles", Type: FieldString},
 		"IsActive":  {APIName: "IsActive", Type: FieldBoolean, DefaultValue: "true"},
 		"IsDirect":  {APIName: "IsDirect", Type: FieldBoolean, DefaultValue: "false"},
 	})
@@ -816,11 +828,9 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	salesforceLicenseID := ID("100000000000001")
 	chatterExternalLicenseID := ID("100000000000002")
 	chatterFreeLicenseID := ID("100000000000005")
-	roleID := ID("00E000000000001")
 	userID := ID(DefaultUserID)
 	automatedProcessUserID := existingAutomatedProcessUserID(*org)
-	permissionSetID := ID("0PS000000000001")
-	assignmentID := ID("0Pa000000000001")
+	assignmentID := seededInventoryID("0Pa", 1)
 	putSeedRecord(org, "Pricebook2", Record{
 		ID:     ID("01s000000000001"),
 		Object: "Pricebook2",
@@ -888,6 +898,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 			"UserLicenseId": IDValue(chatterFreeLicenseID),
 		},
 	})
+	applyCapturedProfilePermissions(org.Objects["Profile"].Records[chatterFreeProfileID].Fields, "Chatter Free User")
 	putSeedRecord(org, "Profile", Record{
 		ID:     profileID,
 		Object: "Profile",
@@ -933,14 +944,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		Object: "Profile",
 		Fields: profileSeedFieldsWithUserType("Customer Community Login User", chatterExternalLicenseID, "CspLitePortal"),
 	})
-	putSeedRecord(org, "UserRole", Record{
-		ID:     roleID,
-		Object: "UserRole",
-		Fields: map[string]Value{
-			"Name":          StringValue("CEO"),
-			"DeveloperName": StringValue("CEO"),
-		},
-	})
+	ensureDefaultUserRoles(org)
 	putSeedRecord(org, "User", Record{
 		ID:     userID,
 		Object: "User",
@@ -952,7 +956,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 			"Alias":             StringValue("system"),
 			"Email":             StringValue("system@example.invalid"),
 			"ProfileId":         IDValue(profileID),
-			"UserRoleId":        IDValue(roleID),
+			"UserRoleId":        NullValue(),
 			"IsActive":          BooleanValue(true),
 			"UserType":          StringValue("Standard"),
 			"LocaleSidKey":      StringValue("en_US"),
@@ -996,78 +1000,20 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 			"IsFrozen": BooleanValue(false),
 		},
 	})
-	putSeedRecord(org, "PermissionSet", Record{
-		ID:     permissionSetID,
-		Object: "PermissionSet",
-		Fields: map[string]Value{
-			"Name":             StringValue("GladeBaseline"),
-			"Label":            StringValue("GLADE Baseline"),
-			"Type":             StringValue("Regular"),
-			"IsCustom":         BooleanValue(false),
-			"IsOwnedByProfile": BooleanValue(false),
-		},
-	})
-	putSeedRecord(org, "PermissionSet", Record{
-		ID:     ID("0PS000000000002"),
-		Object: "PermissionSet",
-		Fields: map[string]Value{
-			"Name":             StringValue("Proving_With_User_Mode_Works"),
-			"Label":            StringValue("Proving With User Mode Works"),
-			"Type":             StringValue("Regular"),
-			"IsCustom":         BooleanValue(false),
-			"IsOwnedByProfile": BooleanValue(false),
-		},
-	})
-	seedProfileOwnedPermissionSet := func(id ID, name string, profileID ID) {
-		fields := map[string]Value{
-			"Name":                           StringValue("X" + string(profileID)),
-			"Label":                          StringValue(string(profileID)),
-			"Type":                           StringValue("Profile"),
-			"IsCustom":                       BooleanValue(false),
-			"IsOwnedByProfile":               BooleanValue(true),
-			"ProfileId":                      IDValue(profileID),
-			"PermissionsEditPublicTemplates": BooleanValue(false),
-			"PermissionsManageSolutions":     BooleanValue(false),
-			"PermissionsActivateContract":    BooleanValue(false),
-		}
-		if name == "System Administrator" {
-			fields["PermissionsCustomizeApplication"] = BooleanValue(true)
-			fields["PermissionsModifyAllData"] = BooleanValue(true)
-			fields["PermissionsAuthorApex"] = BooleanValue(true)
-			fields["PermissionsViewAllData"] = BooleanValue(true)
-			fields["PermissionsInstallPackaging"] = BooleanValue(true)
-		}
-		putSeedRecord(org, "PermissionSet", Record{
-			ID:     id,
-			Object: "PermissionSet",
-			Fields: fields,
-		})
-	}
-	seedProfileOwnedPermissionSet(ID("0PS000000000003"), "System Administrator", profileID)
-	seedProfileOwnedPermissionSet(ID("0PS000000000004"), "Minimum Access - Salesforce", minimumAccessProfileID)
-	seedProfileOwnedPermissionSet(ID("0PS000000000005"), "Chatter External User", chatterExternalProfileID)
-	seedProfileOwnedPermissionSet(ID("0PS000000000006"), "Standard Platform User", standardPlatformUserProfileID)
-	seedProfileOwnedPermissionSet(ID("0PS000000000007"), "Standard User", standardUserProfileID)
-	seedProfileOwnedPermissionSet(ID("0PS000000000008"), "Marketing User", marketingUserProfileID)
-	seedProfileOwnedPermissionSet(ID("0PS000000000009"), "Customer Community Guest User", guestProfileID)
-	seedProfileOwnedPermissionSet(ID("0PS000000000010"), "Customer Community Login User", customerCommunityLoginProfileID)
-	putSeedRecord(org, "PermissionSet", Record{
-		ID:     ID("0PS000000000011"),
-		Object: "PermissionSet",
-		Fields: map[string]Value{
-			"Name":             StringValue("CommerceUser"),
-			"Label":            StringValue("Shopper"),
-			"IsOwnedByProfile": BooleanValue(false),
-		},
-	})
+	profilePermissionSets := seedStandardPermissionInventory(org)
 	putSeedRecord(org, "PermissionSetAssignment", Record{
 		ID:     assignmentID,
 		Object: "PermissionSetAssignment",
 		Fields: map[string]Value{
 			"AssigneeId":      IDValue(userID),
-			"PermissionSetId": IDValue(ID("0PS000000000003")),
+			"PermissionSetId": IDValue(profilePermissionSets["System Administrator"]),
 		},
 	})
+	// Repoint persisted legacy rows before the dependent seeds run, so a
+	// migrated ObjectPermissions row is found by parent and object instead of
+	// being seeded a second time.
+	migrateLegacyPermissionInventory(org, profilePermissionSets)
+	seedStandardProfileFieldPermissions(org, profilePermissionSets)
 	putSeedRecord(org, "ObjectPermissions", Record{
 		ID:     ID("110000000000001"),
 		Object: "ObjectPermissions",
@@ -1092,24 +1038,30 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 			"PermissionsDelete": BooleanValue(false),
 		},
 	})
-	seedProfileObjectPermission := func(id ID, parentID ID, objectName string, read, create, edit, delete bool) {
+	seedProfileObjectPermission := func(id ID, parentID ID, objectName string, read, create, edit, delete, viewAll, modifyAll bool) {
+		fields := map[string]Value{
+			"ParentId": IDValue(parentID), "SobjectType": StringValue(objectName),
+			"PermissionsRead": BooleanValue(read), "PermissionsCreate": BooleanValue(create),
+			"PermissionsEdit": BooleanValue(edit), "PermissionsDelete": BooleanValue(delete),
+		}
+		if parentID == profilePermissionSets["System Administrator"] || parentID == profilePermissionSets["Standard User"] {
+			fields["PermissionsViewAllRecords"] = BooleanValue(viewAll)
+			fields["PermissionsModifyAllRecords"] = BooleanValue(modifyAll)
+		}
 		putSeedRecord(org, "ObjectPermissions", Record{
 			ID:     id,
 			Object: "ObjectPermissions",
-			Fields: map[string]Value{
-				"ParentId":          IDValue(parentID),
-				"SobjectType":       StringValue(objectName),
-				"PermissionsRead":   BooleanValue(read),
-				"PermissionsCreate": BooleanValue(create),
-				"PermissionsEdit":   BooleanValue(edit),
-				"PermissionsDelete": BooleanValue(delete),
-			},
+			Fields: fields,
 		})
 	}
-	seedProfileObjectPermission(ID("110000000000003"), ID("0PS000000000003"), "Account", true, true, true, true)
-	seedProfileObjectPermission(ID("110000000000004"), ID("0PS000000000006"), "Account", true, true, true, false)
-	seedProfileObjectPermission(ID("110000000000005"), ID("0PS000000000007"), "Account", true, true, true, false)
-	seedProfileObjectPermission(ID("110000000000006"), ID("0PS000000000008"), "Account", true, true, true, false)
+	seedProfileObjectPermission(ID("110000000000003"), profilePermissionSets["System Administrator"], "Account", true, true, true, true, true, true)
+	seedProfileObjectPermission(ID("110000000000004"), profilePermissionSets["Standard Platform User"], "Account", true, true, true, true, false, false)
+	seedProfileObjectPermission(ID("110000000000005"), profilePermissionSets["Standard User"], "Account", true, true, true, true, false, false)
+	// Native profile_account_contact_rows: Marketing User holds Account delete.
+	seedProfileObjectPermission(ID("110000000000006"), profilePermissionSets["Marketing User"], "Account", true, true, true, true, false, false)
+	seedProfileObjectPermission(ID("110000000000007"), profilePermissionSets["System Administrator"], "Contact", true, true, true, true, true, true)
+	seedProfileObjectPermission(ID("110000000000008"), profilePermissionSets["Standard User"], "Contact", true, true, true, true, false, false)
+	seedStandardProfileObjectPermissions(org, profilePermissionSets)
 	putSeedRecord(org, "FieldPermissions", Record{
 		ID:     ID("0FP000000000001"),
 		Object: "FieldPermissions",
@@ -1134,7 +1086,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		"PermissionSet":           11,
 		"PermissionSetAssignment": 1,
 		"FieldPermissions":        1,
-		"ObjectPermissions":       6,
+		"ObjectPermissions":       8,
 		"SetupEntityAccess":       1,
 		"OpportunityStage":        10,
 		"LeadStatus":              4,
@@ -1144,8 +1096,9 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 			org.IDSequences[object] = sequence
 		}
 	}
-	ensureDefaultCommunityLicense(org)
-	ensureDefaultPackageLicenses(org)
+	// seedStandardPermissionInventory already installed the default community
+	// and package licenses; a second pass costs ~10 ms per org seed and adds
+	// nothing.
 	ensureOrganizationGroups(org)
 }
 
@@ -1369,14 +1322,52 @@ func profileSeedFields(name string, licenseID ID) map[string]Value {
 }
 
 func profileSeedFieldsWithUserType(name string, licenseID ID, userType string) map[string]Value {
-	return map[string]Value{
-		"Name":                           StringValue(name),
-		"UserLicenseId":                  IDValue(licenseID),
-		"UserType":                       StringValue(userType),
-		"PermissionsModifyAllData":       BooleanValue(name == "System Administrator"),
-		"PermissionsEditPublicTemplates": BooleanValue(false),
-		"PermissionsManageSolutions":     BooleanValue(false),
-		"PermissionsActivateContract":    BooleanValue(false),
+	fields := map[string]Value{
+		"Name":          StringValue(name),
+		"UserLicenseId": IDValue(licenseID),
+		"UserType":      StringValue(userType),
+	}
+	applyCapturedProfilePermissions(fields, name)
+	if name == "System Administrator" {
+		// Fresh scratch administrator Profile, API 62.0 and 67.0.
+		fields["PermissionsManageUsers"] = BooleanValue(true)
+	}
+	return fields
+}
+
+// capturedProfilePermissions lists the flags observed as true on the standard
+// profiles in a fresh Developer scratch org (API 62.0 and 67.0 agree). The
+// profile-owned permission set carries the same values. Every other flag in
+// profilePermissionFlags is false for these profiles.
+var capturedProfilePermissions = map[string][]string{
+	"System Administrator": {"CustomizeApplication", "ModifyAllData", "AuthorApex", "ViewAllData", "EditPublicTemplates", "ManageSolutions", "ActivateContract"},
+	"Marketing User":       {"EditPublicTemplates"},
+}
+
+var profilePermissionFlags = []string{"CustomizeApplication", "ModifyAllData", "AuthorApex", "ViewAllData", "EditPublicTemplates", "ManageSolutions", "ActivateContract"}
+
+// uncapturedProfileLegacyFlags keeps the pre-capture seed for profiles that no
+// native row covers (the guest profiles). Their values are not claimed native.
+var uncapturedProfileLegacyFlags = []string{"ModifyAllData", "EditPublicTemplates", "ManageSolutions", "ActivateContract"}
+
+var capturedProfileNames = map[string]bool{
+	"System Administrator": true, "Marketing User": true, "Standard User": true,
+	"Minimum Access - Salesforce": true, "Standard Platform User": true,
+	"Chatter External User": true, "Customer Community Login User": true, "Chatter Free User": true,
+}
+
+func applyCapturedProfilePermissions(fields map[string]Value, profileName string) {
+	if !capturedProfileNames[profileName] {
+		for _, flag := range uncapturedProfileLegacyFlags {
+			fields["Permissions"+flag] = BooleanValue(false)
+		}
+		return
+	}
+	for _, flag := range profilePermissionFlags {
+		fields["Permissions"+flag] = BooleanValue(false)
+	}
+	for _, flag := range capturedProfilePermissions[profileName] {
+		fields["Permissions"+flag] = BooleanValue(true)
 	}
 }
 
@@ -1933,4 +1924,25 @@ func copySequences(in map[string]uint64) map[string]uint64 {
 		out[key] = value
 	}
 	return out
+}
+
+// withoutStaticOnlyShapeFeatures drops the static-gate markers. They describe
+// definitions the project does not name, so they never become org features.
+func withoutStaticOnlyShapeFeatures(features []string) []string {
+	var kept []string
+	for i, feature := range features {
+		if strings.HasPrefix(feature, project.StaticOnlyShapeFeaturePrefix) {
+			if kept == nil {
+				kept = append(make([]string, 0, len(features)), features[:i]...)
+			}
+			continue
+		}
+		if kept != nil {
+			kept = append(kept, feature)
+		}
+	}
+	if kept == nil {
+		return features
+	}
+	return kept
 }

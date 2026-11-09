@@ -1,0 +1,2 @@
+api	context	route	case	observation
+68.0	explicitgrant	named	ShiftAllocationRequest.RequestType.picklist	"[{""active"":true,""defaultValue"":false,""label"":""Pick Up"",""value"":""Pickup""}]"

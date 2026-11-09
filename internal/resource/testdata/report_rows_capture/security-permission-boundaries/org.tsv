@@ -1,0 +1,33 @@
+api	route	case	result
+62.0	anonymous	modifyall-admin	rows=1|describe=ok|run=ok
+62.0	anonymous	modifyall-standard	rows=1|describe=System.SecurityException~Required permissions are not enabled.|run=System.SecurityException~Required permissions are not enabled.
+62.0	anonymous	plain-admin	rows=1|describe=ok|run=ok
+62.0	anonymous	plain-standard	rows=1|describe=System.SecurityException~Required permissions are not enabled.|run=System.SecurityException~Required permissions are not enabled.
+62.0	anonymous	probe-admin	rows=1|describe=ok|run=ok
+62.0	anonymous	probe-standard	rows=1|describe=System.SecurityException~Required permissions are not enabled.|run=System.SecurityException~Required permissions are not enabled.
+62.0	anonymous	viewall-admin	rows=1|describe=ok|run=ok
+62.0	anonymous	viewall-standard	rows=1|describe=System.SecurityException~Required permissions are not enabled.|run=System.SecurityException~Required permissions are not enabled.
+62.0	seealldata	modifyall-admin	rows=1|describe=ok|run=ok
+62.0	seealldata	modifyall-standard	rows=1|describe=ok|run=ok
+62.0	seealldata	plain-admin	rows=1|describe=ok|run=ok
+62.0	seealldata	plain-standard	rows=1|describe=ok|run=ok
+62.0	seealldata	probe-admin	rows=1|describe=ok|run=ok
+62.0	seealldata	probe-standard	rows=1|describe=ok|run=ok
+62.0	seealldata	viewall-admin	rows=1|describe=ok|run=ok
+62.0	seealldata	viewall-standard	rows=1|describe=ok|run=ok
+67.0	anonymous	modifyall-admin	rows=1|describe=ok|run=ok
+67.0	anonymous	modifyall-standard	rows=1|describe=System.SecurityException~Required permissions are not enabled.|run=System.SecurityException~Required permissions are not enabled.
+67.0	anonymous	plain-admin	rows=1|describe=ok|run=ok
+67.0	anonymous	plain-standard	rows=1|describe=System.SecurityException~Required permissions are not enabled.|run=System.SecurityException~Required permissions are not enabled.
+67.0	anonymous	probe-admin	rows=1|describe=ok|run=ok
+67.0	anonymous	probe-standard	rows=1|describe=System.SecurityException~Required permissions are not enabled.|run=System.SecurityException~Required permissions are not enabled.
+67.0	anonymous	viewall-admin	rows=1|describe=ok|run=ok
+67.0	anonymous	viewall-standard	rows=1|describe=System.SecurityException~Required permissions are not enabled.|run=System.SecurityException~Required permissions are not enabled.
+67.0	seealldata	modifyall-admin	rows=1|describe=ok|run=ok
+67.0	seealldata	modifyall-standard	rows=1|describe=ok|run=ok
+67.0	seealldata	plain-admin	rows=1|describe=ok|run=ok
+67.0	seealldata	plain-standard	rows=1|describe=ok|run=ok
+67.0	seealldata	probe-admin	rows=1|describe=ok|run=ok
+67.0	seealldata	probe-standard	rows=1|describe=ok|run=ok
+67.0	seealldata	viewall-admin	rows=1|describe=ok|run=ok
+67.0	seealldata	viewall-standard	rows=1|describe=ok|run=ok

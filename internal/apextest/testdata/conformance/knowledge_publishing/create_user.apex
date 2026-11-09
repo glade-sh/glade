@@ -1,0 +1,2 @@
+User current=[SELECT ProfileId,TimeZoneSidKey,LocaleSidKey,EmailEncodingKey,LanguageLocaleKey FROM User WHERE Id=:UserInfo.getUserId()];
+String tag=String.valueOf(Datetime.now().getTime()); User u=new User(Username='b4synthetic'+tag+'@example.invalid',Email='b4synthetic@example.invalid',LastName='Synthetic',Alias='b4test',ProfileId=current.ProfileId,TimeZoneSidKey=current.TimeZoneSidKey,LocaleSidKey=current.LocaleSidKey,EmailEncodingKey=current.EmailEncodingKey,LanguageLocaleKey=current.LanguageLocaleKey);insert u;System.debug('B4:user_created:true');

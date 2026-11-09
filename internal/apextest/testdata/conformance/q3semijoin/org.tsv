@@ -1,0 +1,33 @@
+source_api	route	case	result
+62.0	anonymous	seeded_child_in_and_not_in	compiled and passed: one matching and one nonmatching contact
+67.0	anonymous	seeded_child_in_and_not_in	compiled and passed: one matching and one nonmatching contact
+62.0	istest	seeded_child_in_and_not_in	compiled and passed: one matching and one nonmatching contact
+67.0	istest	seeded_child_in_and_not_in	compiled and passed: one matching and one nonmatching contact
+62.0	anonymous	child_join_or_rejection	Semi join sub-selects are not allowed with the 'OR' operator
+67.0	anonymous	child_join_or_rejection	Semi join sub-selects are not allowed with the 'OR' operator
+62.0	class_compile	child_join_or_rejection	Semi join sub-selects are not allowed with the 'OR' operator
+67.0	class_compile	child_join_or_rejection	Semi join sub-selects are not allowed with the 'OR' operator
+62.0	istest	bundle	Comparable sort, wrapped Event.StartDateTime.getTime, lowercase page URL, and Account.Name field describe assertions passed
+67.0	istest	bundle	Comparable sort, wrapped Event.StartDateTime.getTime, lowercase page URL, and Account.Name field describe assertions passed
+62.0	anonymous	adjacent_opportunity_join	compiled and passed: one matching opportunity with two selected fields
+67.0	anonymous	adjacent_opportunity_join	compiled and passed: one matching opportunity with two selected fields
+62.0	anonymous	bundle	Comparable sort, wrapped Event.StartDateTime.getTime, lowercase page URL, and Account.Name field describe assertions passed
+67.0	anonymous	bundle	Comparable sort, wrapped Event.StartDateTime.getTime, lowercase page URL, and Account.Name field describe assertions passed
+62.0	anonymous	nested_child_rejection	Nesting of semi join sub-selects is not supported
+67.0	anonymous	nested_child_rejection	Nesting of semi join sub-selects is not supported
+62.0	class_compile	nested_child_rejection	Nesting of semi join sub-selects is not supported
+67.0	class_compile	nested_child_rejection	Nesting of semi join sub-selects is not supported
+62.0	class_compile	child_limit_rejection	Missing ')' at 'LIMIT'
+67.0	class_compile	child_limit_rejection	Missing ')' at 'LIMIT'
+62.0	anonymous	interface_sort	passed: interface-typed Comparable list sorted user objects
+67.0	anonymous	interface_sort	passed: interface-typed Comparable list sorted user objects
+62.0	istest	interface_sort	passed: interface-typed Comparable list sorted user objects
+67.0	istest	interface_sort	passed: interface-typed Comparable list sorted user objects
+62.0	anonymous	custom_wrapper_time	passed: wrapper custom Datetime field getTime returned expected milliseconds
+67.0	anonymous	custom_wrapper_time	passed: wrapper custom Datetime field getTime returned expected milliseconds
+62.0	istest	custom_wrapper_time	passed: wrapper custom Datetime field getTime returned expected milliseconds
+67.0	istest	custom_wrapper_time	passed: wrapper custom Datetime field getTime returned expected milliseconds
+62.0	anonymous	dynamic_sort	passed: dynamically instantiated Comparable objects sorted
+67.0	anonymous	dynamic_sort	passed: dynamically instantiated Comparable objects sorted
+62.0	istest	dynamic_sort	passed: dynamically instantiated Comparable objects sorted
+67.0	istest	dynamic_sort	passed: dynamically instantiated Comparable objects sorted

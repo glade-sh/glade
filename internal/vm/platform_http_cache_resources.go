@@ -390,10 +390,24 @@ func (vm *VM) callVoidMockMember(receiver Value, method string, args []Value) (V
 
 func (vm *VM) callCartExtensionMockBackedCalculator(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
 	mock, ok := receiver.Fields["mockExecutor"]
-	if !ok || mock.Kind != ValueObject || !strings.EqualFold(mock.Type, "CartExtension.CartCalculateExecutorMock") {
+	if !ok || mock.Kind != ValueObject {
 		return Null, receiver, false, false, nil
 	}
 	method = cartExtensionMockExecutorMethod(receiver.Type, method)
+	if !strings.EqualFold(mock.Type, "CartExtension.CartCalculateExecutorMock") {
+		// A project subclass of the executor mock: its overrides run in place of
+		// the platform calculators (native rows: cart_orchestrator_runtime).
+		class, found := vm.lookupClass(mock.Type)
+		if !found || class.PlatformType {
+			return Null, receiver, false, false, nil
+		}
+		target, found, _ := vm.resolveInstanceMethodForArgs(mock.Type, method, args)
+		if !found || target.ClassName == "" || strings.EqualFold(target.ClassName, "CartExtension.CartCalculateExecutorMock") {
+			return Null, receiver, false, false, nil
+		}
+		value, err := vm.callMethodWithReceiver(target, mock, args, &Result{})
+		return value, receiver, false, true, err
+	}
 	value, updatedMock, mutated, handled, err := vm.callVoidMockMember(mock, method, args)
 	if mutated {
 		receiver.Fields["mockExecutor"] = updatedMock
@@ -402,6 +416,10 @@ func (vm *VM) callCartExtensionMockBackedCalculator(receiver Value, method strin
 }
 
 func cartExtensionMockExecutorMethod(receiverType, method string) string {
+	if strings.EqualFold(method, "taxes") {
+		// CartCalculate.taxes delegates to the executor's tax callback.
+		return "tax"
+	}
 	if !strings.EqualFold(method, "calculate") {
 		return method
 	}

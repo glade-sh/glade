@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Cedar_Pick__c</fullName><label>Pick</label><type>Picklist</type><valueSet><restricted>true</restricted><valueSetDefinition><sorted>false</sorted><value><fullName>A_Val</fullName><default>false</default><label>Alpha</label></value><value><fullName>B_Val</fullName><default>false</default><label>Beta</label></value></valueSetDefinition></valueSet></CustomField>

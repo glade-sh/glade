@@ -16,8 +16,8 @@ func TestRunConfigValidateReportsUnreadScratchSettings(t *testing.T) {
 		{
 			name:       "default definition",
 			configFile: "config/project-scratch-def.json",
-			definition: `{"features":["MultiCurrency"],"settings":{"currencySettings":{"enableMultiCurrency":true,"enableUnmodeledCurrencyOption":false},"nameSettings":{"enableMiddleName":true}}}`,
-			warnings:   []string{"settings.currencySettings.enableUnmodeledCurrencyOption", "settings.nameSettings.enableMiddleName"},
+			definition: `{"features":["MultiCurrency"],"settings":{"currencySettings":{"enableMultiCurrency":true,"enableUnmodeledCurrencyOption":false},"nameSettings":{"enableNameSuffix":true}}}`,
+			warnings:   []string{"settings.currencySettings.enableUnmodeledCurrencyOption", "settings.nameSettings.enableNameSuffix"},
 		},
 		{
 			name:       "alternate definition",

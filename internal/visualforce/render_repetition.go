@@ -188,43 +188,10 @@ func repetitionColumnNode(node *MarkupNode) *MarkupNode {
 	return &copy
 }
 
-// r_generated_*_escaped retains decimal entity text in the literal portions
-// of a repeat-generated column header/outputText template. Only source literals
-// change: dynamic values and expression arguments retain their evaluation and
-// escaping. Direct columns and output outside tables keep their existing path.
+// repetitionAttributeTemplate returns the attribute text of a repeat-generated
+// column header or outputText template. Parsing already keeps the native
+// decimal entity text in attribute values (protectNativeEntities), so the
+// r_generated_*_escaped rows need no second pass over the raw source.
 func repetitionAttributeTemplate(node *MarkupNode, name string) string {
-	value := node.Attribute(name)
-	if !strings.Contains(value, "{!") {
-		return value
-	}
-	raw := ""
-	for key, source := range node.RawAttributes {
-		if strings.EqualFold(key, name) {
-			raw = source
-			break
-		}
-	}
-	if !strings.Contains(raw, "&lt;") && !strings.Contains(raw, "&gt;") && !strings.Contains(raw, "&amp;") {
-		return value
-	}
-	// Decode other source entities as before. Protect only these three native
-	// decimal strings from that one decoding pass.
-	entities := strings.NewReplacer("&lt;", "&amp;#60;", "&gt;", "&amp;#62;", "&amp;", "&amp;#38;")
-	var out strings.Builder
-	for offset := 0; offset < len(raw); {
-		next := strings.Index(raw[offset:], "{!")
-		if next < 0 {
-			out.WriteString(html.UnescapeString(entities.Replace(raw[offset:])))
-			break
-		}
-		start := offset + next
-		end := findExpressionTemplateEnd(raw, start+2)
-		if end < 0 {
-			return value
-		}
-		out.WriteString(html.UnescapeString(entities.Replace(raw[offset:start])))
-		out.WriteString(html.UnescapeString(raw[start : end+1]))
-		offset = end + 1
-	}
-	return out.String()
+	return node.Attribute(name)
 }

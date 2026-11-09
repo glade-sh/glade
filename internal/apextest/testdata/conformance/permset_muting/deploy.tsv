@@ -1,0 +1,4 @@
+case-id	deploy-status	exact-component-messages-json
+M03_ObjectEdit	Failed	["To mute Edit, first mute Delete and Modify All Records.","Cannot create Permission Set Group Components since the following permission set names are invalid: M03_ObjectEditMute"]
+M04_ObjectDelete	Failed	["To mute Delete, first mute Modify All Records.","Cannot create Permission Set Group Components since the following permission set names are invalid: M04_ObjectDeleteMute"]
+M05_ViewModifyRead	Failed	["To mute Read, first mute Create, Edit, Delete, View All Records, and Modify All Records.","Cannot create Permission Set Group Components since the following permission set names are invalid: M05_ViewModifyReadMute"]

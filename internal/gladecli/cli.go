@@ -2253,6 +2253,14 @@ func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 		renderer.Finish(cliui.Result{OK: false, Label: "check failed"})
 		return sema.Result{}, err
 	}
+	if n := len(p.ForceIgnored); n > 0 {
+		renderer.Render(cliui.Event{
+			Kind:   cliui.EventInfo,
+			Phase:  "check",
+			Label:  fmt.Sprintf("%d source files excluded by .forceignore", n),
+			Detail: "a source deploy skips them",
+		})
+	}
 	renderer.Render(cliui.Event{
 		Kind:    cliui.EventPhaseTick,
 		Phase:   "check",
@@ -2758,7 +2766,7 @@ func loadExecProject(root string, loadOrg bool) execProjectLoad {
 	p, index, err := loadProjectIndex(root)
 	load := execProjectLoad{index: index, err: err}
 	if err == nil && loadOrg {
-		load.org, load.orgErr = orgStateFromIndex(root, p, index)
+		load.org, load.orgErr = orgStateFromIndexWithSpread(root, p, index, true)
 	}
 	return load
 }
@@ -2931,13 +2939,30 @@ func runExecWithProjectLoader(ctx context.Context, args []string, w io.Writer, l
 	}
 	defer preparedAnonymous.close()
 	analysisIndex := mergeAnonymousIndex(projectIndex, preparedAnonymous.index)
+	if machine.Org != nil {
+		// Exec has no permission set assignment state, so a deployed set that
+		// grants a field counts as assigned (an assigned set makes the field
+		// visible natively: schema_reference_gate loaded rows). Anonymous Apex run
+		// as the administrator cannot name custom fields nothing grants
+		// (admin_optional_field_api_matrix).
+		machine.SetAssumeDeployedPermissionSets(true)
+		analysisIndex = sema.WithoutAnonymousHiddenFields(analysisIndex, machine.AnonymousPolicyHiddenFields(preparedAnonymous.apiVersion, preparedAnonymous.body))
+	}
 	analysis := sema.AnalyzeAnonymous(analysisIndex, preparedAnonymous.body, preparedAnonymous.apiVersion)
 	if len(analysis.Diagnostics) > 0 {
 		first := analysis.Diagnostics[0]
 		return apextest.ExplainDependencyError(analysisIndex, preparedAnonymous.body, fmt.Errorf("%s: %s", first.Code, first.Message))
 	}
 	if hasProjectRuntime {
-		if err := apextest.RegisterProjectRuntimeForRequest(machine, projectIndex); err != nil {
+		var err error
+		if dbPath == "" {
+			// The exec VM already owns its project org; preparing a test-org
+			// runtime here would materialize an unused second org.
+			err = apextest.RegisterUncachedProjectRuntimeForRequest(machine, projectIndex)
+		} else {
+			err = apextest.RegisterProjectRuntimeForRequest(machine, projectIndex)
+		}
+		if err != nil {
 			return err
 		}
 	}

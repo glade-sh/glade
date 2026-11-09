@@ -129,6 +129,7 @@ func (s *semaSources) forOccurrence(file, namespace string, remaps []namespacere
 			s.fallback[key] = semaSourceResult{}
 			return semaSourceText{}, false
 		}
+		typesys.NoteApexSource(raw)
 		normalized := project.NormalizeApexNamespaceTokens(raw, namespace)
 		if len(remaps) > 0 {
 			normalized = namespaceremap.ApplySource(remaps, normalized)
@@ -148,6 +149,7 @@ func (s *semaSources) forOccurrence(file, namespace string, remaps []namespacere
 		return semaSourceText{}, false
 	}
 	raw := string(data)
+	typesys.NoteApexSource(raw)
 	normalized := project.NormalizeApexNamespaceTokens(raw, namespace)
 	if len(remaps) > 0 {
 		normalized = namespaceremap.ApplySource(remaps, normalized)

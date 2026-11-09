@@ -1,0 +1,49 @@
+trigger GlTrg68 on Gl_Trg__c (before insert) {
+  if (GlCfg.ver != 68) return;
+  Id rec = GlCfg.stdRec; Id adm = GlCfg.admRec;
+  try { insert new Gl_Obj__c(Name='n', Secret__c='s'); GlCfg.log.add('t_dml_ins_secret=' + 'OK'); } catch (Exception e) { GlCfg.log.add('t_dml_ins_secret=' + GlFmt.ex(e)); }
+  try { insert new Gl_Obj__c(Name='n', Open__c='o'); GlCfg.log.add('t_dml_ins_open=' + 'OK'); } catch (Exception e) { GlCfg.log.add('t_dml_ins_open=' + GlFmt.ex(e)); }
+  try { update new Gl_Obj__c(Id=rec, Secret__c='z'); GlCfg.log.add('t_dml_upd_secret=' + 'OK'); } catch (Exception e) { GlCfg.log.add('t_dml_upd_secret=' + GlFmt.ex(e)); }
+  try { update new Gl_Obj__c(Id=rec, Open__c='z'); GlCfg.log.add('t_dml_upd_open=' + 'OK'); } catch (Exception e) { GlCfg.log.add('t_dml_upd_open=' + GlFmt.ex(e)); }
+  try { upsert new Gl_Obj__c(Id=rec, Secret__c='z'); GlCfg.log.add('t_dml_ups_secret=' + 'OK'); } catch (Exception e) { GlCfg.log.add('t_dml_ups_secret=' + GlFmt.ex(e)); }
+  try { insert as system new Gl_Obj__c(Name='n', Secret__c='s'); GlCfg.log.add('t_dml_ins_as_system=' + 'OK'); } catch (Exception e) { GlCfg.log.add('t_dml_ins_as_system=' + GlFmt.ex(e)); }
+  try { Database.insert(new Gl_Obj__c(Name='n', Secret__c='s')); GlCfg.log.add('t_db_ins_default=' + 'OK'); } catch (Exception e) { GlCfg.log.add('t_db_ins_default=' + GlFmt.ex(e)); }
+  try { List<Database.SaveResult> r = Database.insert(new List<Gl_Obj__c>{new Gl_Obj__c(Name='n', Secret__c='s')}, false); GlCfg.log.add('t_db_ins_partial=' + GlFmt.sr(r)); } catch (Exception e) { GlCfg.log.add('t_db_ins_partial=' + GlFmt.ex(e)); }
+  try { List<Database.SaveResult> r = Database.update(new List<Gl_Obj__c>{new Gl_Obj__c(Id=rec, Secret__c='z')}, false); GlCfg.log.add('t_db_upd_partial=' + GlFmt.sr(r)); } catch (Exception e) { GlCfg.log.add('t_db_upd_partial=' + GlFmt.ex(e)); }
+  try { List<Database.UpsertResult> r = Database.upsert(new List<Gl_Obj__c>{new Gl_Obj__c(Id=rec, Secret__c='z')}, false); GlCfg.log.add('t_db_ups_partial=' + GlFmt.ur(r)); } catch (Exception e) { GlCfg.log.add('t_db_ups_partial=' + GlFmt.ex(e)); }
+  try { Database.insert(new Gl_Obj__c(Name='n', Secret__c='s'), AccessLevel.USER_MODE); GlCfg.log.add('t_db_ins_user=' + 'OK'); } catch (Exception e) { GlCfg.log.add('t_db_ins_user=' + GlFmt.ex(e)); }
+  try { Database.insert(new Gl_Obj__c(Name='n', Secret__c='s'), AccessLevel.SYSTEM_MODE); GlCfg.log.add('t_db_ins_system=' + 'OK'); } catch (Exception e) { GlCfg.log.add('t_db_ins_system=' + GlFmt.ex(e)); }
+  try { List<Gl_Obj__c> l=[SELECT Id, Secret__c FROM Gl_Obj__c]; GlCfg.log.add('t_soql_sel_secret=' + 'n='+l.size()); } catch (Exception e) { GlCfg.log.add('t_soql_sel_secret=' + GlFmt.ex(e)); }
+  try { List<Gl_Obj__c> l=[SELECT Id, Open__c FROM Gl_Obj__c]; GlCfg.log.add('t_soql_sel_open=' + 'n='+l.size()); } catch (Exception e) { GlCfg.log.add('t_soql_sel_open=' + GlFmt.ex(e)); }
+  try { List<Gl_Obj__c> l=[SELECT Id FROM Gl_Obj__c WHERE Secret__c='x']; GlCfg.log.add('t_soql_where_secret=' + 'n='+l.size()); } catch (Exception e) { GlCfg.log.add('t_soql_where_secret=' + GlFmt.ex(e)); }
+  try { List<Gl_Obj__c> l=[SELECT Id FROM Gl_Obj__c ORDER BY Secret__c]; GlCfg.log.add('t_soql_order_secret=' + 'n='+l.size()); } catch (Exception e) { GlCfg.log.add('t_soql_order_secret=' + GlFmt.ex(e)); }
+  try { Integer n=[SELECT COUNT() FROM Gl_Obj__c WHERE Secret__c='x']; GlCfg.log.add('t_soql_count_secret=' + 'n='+n); } catch (Exception e) { GlCfg.log.add('t_soql_count_secret=' + GlFmt.ex(e)); }
+  try { List<Gl_Obj__c> l=[SELECT Id, Secret__c FROM Gl_Obj__c WITH SYSTEM_MODE]; GlCfg.log.add('t_soql_sys_secret=' + 'n='+l.size()); } catch (Exception e) { GlCfg.log.add('t_soql_sys_secret=' + GlFmt.ex(e)); }
+  try { List<Gl_Obj__c> l=[SELECT Id, Secret__c FROM Gl_Obj__c WITH USER_MODE]; GlCfg.log.add('t_soql_user_secret=' + 'n='+l.size()); } catch (Exception e) { GlCfg.log.add('t_soql_user_secret=' + GlFmt.ex(e)); }
+  try { List<List<SObject>> r=[FIND 'x*' IN ALL FIELDS RETURNING Gl_Obj__c(Id, Secret__c)]; GlCfg.log.add('t_sosl_secret=' + 'n='+r[0].size()); } catch (Exception e) { GlCfg.log.add('t_sosl_secret=' + GlFmt.ex(e)); }
+  try { List<List<SObject>> r=[FIND 'x*' IN ALL FIELDS RETURNING Gl_Obj__c(Id, Secret__c) WITH USER_MODE]; GlCfg.log.add('t_sosl_user_secret=' + 'n='+r[0].size()); } catch (Exception e) { GlCfg.log.add('t_sosl_user_secret=' + GlFmt.ex(e)); }
+  try { List<Gl_Obj__c> l=[SELECT Id FROM Gl_Obj__c WHERE Secret__c='x' WITH USER_MODE]; GlCfg.log.add('t_soql_where_user=' + 'n='+l.size()); } catch (Exception e) { GlCfg.log.add('t_soql_where_user=' + GlFmt.ex(e)); }
+  try { Integer n=Database.countQuery('SELECT COUNT() FROM Gl_Obj__c WHERE Secret__c = \'x\'', AccessLevel.USER_MODE); GlCfg.log.add('t_dyn_count_user=' + 'n='+n); } catch (Exception e) { GlCfg.log.add('t_dyn_count_user=' + GlFmt.ex(e)); }
+  try { List<SObject> l=Database.query('SELECT Id, Secret__c FROM Gl_Obj__c'); GlCfg.log.add('t_dyn_q_secret=' + 'n='+l.size()); } catch (Exception e) { GlCfg.log.add('t_dyn_q_secret=' + GlFmt.ex(e)); }
+  try { List<SObject> l=Database.query('SELECT Id FROM Gl_Obj__c WHERE Secret__c = \'x\''); GlCfg.log.add('t_dyn_q_where=' + 'n='+l.size()); } catch (Exception e) { GlCfg.log.add('t_dyn_q_where=' + GlFmt.ex(e)); }
+  try { List<SObject> l=Database.query('SELECT Id, Open__c FROM Gl_Obj__c'); GlCfg.log.add('t_dyn_q_open=' + 'n='+l.size()); } catch (Exception e) { GlCfg.log.add('t_dyn_q_open=' + GlFmt.ex(e)); }
+  try { List<SObject> l=Database.query('SELECT Id, Secret__c FROM Gl_Obj__c', AccessLevel.SYSTEM_MODE); GlCfg.log.add('t_dyn_q_sys=' + 'n='+l.size()); } catch (Exception e) { GlCfg.log.add('t_dyn_q_sys=' + GlFmt.ex(e)); }
+  try { List<SObject> l=Database.query('SELECT Id, Secret__c FROM Gl_Obj__c', AccessLevel.USER_MODE); GlCfg.log.add('t_dyn_q_user=' + 'n='+l.size()); } catch (Exception e) { GlCfg.log.add('t_dyn_q_user=' + GlFmt.ex(e)); }
+  try { Integer n=Database.countQuery('SELECT COUNT() FROM Gl_Obj__c WHERE Secret__c = \'x\''); GlCfg.log.add('t_dyn_count_where=' + 'n='+n); } catch (Exception e) { GlCfg.log.add('t_dyn_count_where=' + GlFmt.ex(e)); }
+  try { Integer n=Database.countQuery('SELECT COUNT() FROM Gl_Obj__c WHERE Secret__c = \'x\'', AccessLevel.SYSTEM_MODE); GlCfg.log.add('t_dyn_count_sys=' + 'n='+n); } catch (Exception e) { GlCfg.log.add('t_dyn_count_sys=' + GlFmt.ex(e)); }
+  try { Database.QueryLocator q=Database.getQueryLocator('SELECT Id, Secret__c FROM Gl_Obj__c'); GlCfg.log.add('t_dyn_loc_secret=' + 'OK'); } catch (Exception e) { GlCfg.log.add('t_dyn_loc_secret=' + GlFmt.ex(e)); }
+  try { Database.QueryLocator q=Database.getQueryLocator('SELECT Id, Secret__c FROM Gl_Obj__c', AccessLevel.SYSTEM_MODE); GlCfg.log.add('t_dyn_loc_sys=' + 'OK'); } catch (Exception e) { GlCfg.log.add('t_dyn_loc_sys=' + GlFmt.ex(e)); }
+  try { List<SObject> l=Database.queryWithBinds('SELECT Id, Secret__c FROM Gl_Obj__c WHERE Name = :n', new Map<String,Object>{'n'=>'std'}, AccessLevel.USER_MODE); GlCfg.log.add('t_dyn_bind_user=' + 'n='+l.size()); } catch (Exception e) { GlCfg.log.add('t_dyn_bind_user=' + GlFmt.ex(e)); }
+  try { List<SObject> l=Database.queryWithBinds('SELECT Id, Secret__c FROM Gl_Obj__c WHERE Name = :n', new Map<String,Object>{'n'=>'std'}, AccessLevel.SYSTEM_MODE); GlCfg.log.add('t_dyn_bind_sys=' + 'n='+l.size()); } catch (Exception e) { GlCfg.log.add('t_dyn_bind_sys=' + GlFmt.ex(e)); }
+  try { Integer n=Database.countQueryWithBinds('SELECT COUNT() FROM Gl_Obj__c WHERE Secret__c = :n', new Map<String,Object>{'n'=>'std'}, AccessLevel.USER_MODE); GlCfg.log.add('t_dyn_cntbind_user=' + 'n='+n); } catch (Exception e) { GlCfg.log.add('t_dyn_cntbind_user=' + GlFmt.ex(e)); }
+  try { Integer n=Database.countQueryWithBinds('SELECT COUNT() FROM Gl_Obj__c WHERE Secret__c = :n', new Map<String,Object>{'n'=>'std'}, AccessLevel.SYSTEM_MODE); GlCfg.log.add('t_dyn_cntbind_sys=' + 'n='+n); } catch (Exception e) { GlCfg.log.add('t_dyn_cntbind_sys=' + GlFmt.ex(e)); }
+  try { Database.QueryLocator q=Database.getQueryLocatorWithBinds('SELECT Id, Secret__c FROM Gl_Obj__c WHERE Name = :n', new Map<String,Object>{'n'=>'std'}, AccessLevel.USER_MODE); GlCfg.log.add('t_dyn_locbind_user=' + 'OK'); } catch (Exception e) { GlCfg.log.add('t_dyn_locbind_user=' + GlFmt.ex(e)); }
+  try { Database.QueryLocator q=Database.getQueryLocatorWithBinds('SELECT Id, Secret__c FROM Gl_Obj__c WHERE Name = :n', new Map<String,Object>{'n'=>'std'}, AccessLevel.SYSTEM_MODE); GlCfg.log.add('t_dyn_locbind_sys=' + 'OK'); } catch (Exception e) { GlCfg.log.add('t_dyn_locbind_sys=' + GlFmt.ex(e)); }
+  try { Integer k=1; GlCfg.log.add('t_late_none=' + 'OK'); } catch (Exception e) { GlCfg.log.add('t_late_none=' + GlFmt.ex(e)); }
+  try { Integer n=[SELECT COUNT() FROM Gl_Obj__c]; GlCfg.log.add('t_cnt=' + 'n='+n); } catch (Exception e) { GlCfg.log.add('t_cnt=' + GlFmt.ex(e)); }
+  try { Integer n=Database.query('SELECT Id FROM Gl_Obj__c').size(); GlCfg.log.add('t_dyncnt=' + 'n='+n); } catch (Exception e) { GlCfg.log.add('t_dyncnt=' + GlFmt.ex(e)); }
+  try { Integer n=[SELECT Id FROM Gl_Obj__c WITH SYSTEM_MODE].size(); GlCfg.log.add('t_syscnt=' + 'n='+n); } catch (Exception e) { GlCfg.log.add('t_syscnt=' + GlFmt.ex(e)); }
+  try { update new Gl_Obj__c(Id=adm, Open__c='t'); GlCfg.log.add('t_upd_adm=' + 'OK'); } catch (Exception e) { GlCfg.log.add('t_upd_adm=' + GlFmt.ex(e)); }
+  try { update as system new Gl_Obj__c(Id=adm, Open__c='t'); GlCfg.log.add('t_upd_adm_sys=' + 'OK'); } catch (Exception e) { GlCfg.log.add('t_upd_adm_sys=' + GlFmt.ex(e)); }
+  try { delete new Gl_Obj__c(Id=rec); GlCfg.log.add('t_dml_del=' + 'OK'); } catch (Exception e) { GlCfg.log.add('t_dml_del=' + GlFmt.ex(e)); }
+}

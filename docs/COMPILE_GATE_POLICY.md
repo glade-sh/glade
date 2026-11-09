@@ -228,7 +228,7 @@ and native row assertions intact unless a new native row justifies changing them
 An aggregate blocked-test count is only an upper bound on candidates. Removing a
 first missing-dependency diagnostic does not clear simultaneous semantic errors,
 prove package availability, or establish that any method passes. Count recovery
-only from an exact-candidate advisor rerun after legitimate prerequisites and the
+only from an exact-candidate rerun after legitimate prerequisites and the
 remaining diagnostics have been resolved. This proposal makes no recovery claim.
 
 ## Reproducing the relevant checks

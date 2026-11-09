@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>62.0</apiVersion>
+    <assignments><name>A_Pre</name><label>A_Pre</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>$Record.Fw1__c</assignToReference><operator>Assign</operator><value><stringValue>pre</stringValue></value></assignmentItems><connector><targetReference>D</targetReference></connector></assignments><assignments><name>A_R1</name><label>A_R1</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>$Record.Fw2__c</assignToReference><operator>Assign</operator><value><stringValue>r1</stringValue></value></assignmentItems></assignments><assignments><name>A_Def</name><label>A_Def</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>$Record.Fw2__c</assignToReference><operator>Assign</operator><value><stringValue>def</stringValue></value></assignmentItems></assignments><decisions><name>D</name><label>D</label><locationX>0</locationX><locationY>0</locationY><defaultConnector><targetReference>A_Def</targetReference></defaultConnector><defaultConnectorLabel>Default</defaultConnectorLabel><rules><name>R1</name><conditionLogic>and</conditionLogic><conditions><leftValueReference>$Record.Name</leftValueReference><operator>EqualTo</operator><rightValue><stringValue>r1</stringValue></rightValue></conditions><connector><targetReference>A_R1</targetReference></connector><label>R1</label></rules></decisions>
+    <environments>Default</environments>
+    <interviewLabel>Fasg_Pre {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Fasg_Pre</label>
+    <processMetadataValues><name>BuilderType</name><value><stringValue>LightningFlowBuilder</stringValue></value></processMetadataValues>
+    <processMetadataValues><name>CanvasMode</name><value><stringValue>AUTO_LAYOUT_CANVAS</stringValue></value></processMetadataValues>
+    <processMetadataValues><name>OriginBuilderType</name><value><stringValue>LightningFlowBuilder</stringValue></value></processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>A_Pre</targetReference></connector><filterLogic>and</filterLogic><filters><field>Kind__c</field><operator>EqualTo</operator><value><stringValue>FA</stringValue></value></filters><object>Account</object><recordTriggerType>Create</recordTriggerType><triggerType>RecordBeforeSave</triggerType></start>
+    <status>Active</status>
+</Flow>

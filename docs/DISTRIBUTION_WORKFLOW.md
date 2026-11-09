@@ -88,9 +88,9 @@ Before tagging, also read the operator checks for the same commit: the
 `Browser`, `Race` and `Security` workflows. Record a failure or a known issue
 in [RELEASE_NOTES.md](RELEASE_NOTES.md). Review the CodeQL waivers in
 [CODEQL_BUDGET.md](CODEQL_BUDGET.md#waiver-review-2026-10-22) and record the
-date. The fast CodeQL job inside `Required CI` succeeds with a warning when its
-analysis budget expires, so a green `Required CI` does not prove a complete
-scan. State an incomplete scan in the release notes.
+date. Both CodeQL profiles succeed with a warning when their analysis budget
+expires. The release workflow runs the full scan on the tagged SHA and fails
+only on findings or errors, so state an incomplete scan in the release notes.
 
 ```bash
 VERSION=vX.Y.Z

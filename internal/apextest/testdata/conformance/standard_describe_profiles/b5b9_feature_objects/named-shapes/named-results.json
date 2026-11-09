@@ -1,0 +1,74 @@
+[
+  {
+    "group": "Gift",
+    "api": "62.0",
+    "outcome": "Passed",
+    "tests": [
+      [
+        "probe",
+        "Pass",
+        ""
+      ]
+    ]
+  },
+  {
+    "group": "Gift",
+    "api": "67.0",
+    "outcome": "Passed",
+    "tests": [
+      [
+        "probe",
+        "Pass",
+        ""
+      ]
+    ]
+  },
+  {
+    "group": "Doc",
+    "api": "62.0",
+    "outcome": "Failed",
+    "tests": [
+      [
+        "probe",
+        "Fail",
+        "System.AssertException: Assertion Failed: DocumentGenerationProcess count: Expected: 24, Actual: 25"
+      ]
+    ]
+  },
+  {
+    "group": "Doc",
+    "api": "67.0",
+    "outcome": "Failed",
+    "tests": [
+      [
+        "probe",
+        "Fail",
+        "System.AssertException: Assertion Failed: DocumentGenerationProcess count: Expected: 31, Actual: 32"
+      ]
+    ]
+  },
+  {
+    "group": "Reg",
+    "api": "62.0",
+    "outcome": "Passed",
+    "tests": [
+      [
+        "probe",
+        "Pass",
+        ""
+      ]
+    ]
+  },
+  {
+    "group": "Reg",
+    "api": "67.0",
+    "outcome": "Passed",
+    "tests": [
+      [
+        "probe",
+        "Pass",
+        ""
+      ]
+    ]
+  }
+]

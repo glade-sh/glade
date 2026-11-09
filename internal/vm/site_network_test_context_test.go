@@ -55,7 +55,7 @@ System.assertEquals('` + strings.ReplaceAll(row[4], "'", "\\'") + `', observed);
 			org := storage.NewOrgState()
 			storage.EnsureDeterministicPlatformData(&org)
 			if row[0] != "networks_disabled" {
-				storage.ApplyOrgShape(&org, []string{"Sites", "Communities"})
+				storage.ApplyOrgShape(&org, []string{"Sites", "Communities", "NetworksEnabled"})
 			}
 			if row[0] == "networks_enabled" {
 				for _, name := range []string{"Site", "Network"} {
@@ -91,7 +91,7 @@ System.assertEquals('707000000000001', Network.createExternalUserAsync(new User(
 				t.Fatal(err)
 			}
 			org := storage.NewOrgState()
-			storage.ApplyOrgShape(&org, []string{"Sites", "Communities"})
+			storage.ApplyOrgShape(&org, []string{"Sites", "Communities", "NetworksEnabled"})
 			machine := New(nil)
 			machine.SetOrg(&org)
 			if _, err := machine.Execute(program); err != nil {

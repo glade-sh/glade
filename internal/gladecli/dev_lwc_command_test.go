@@ -17,6 +17,7 @@ import (
 	"github.com/glade-sh/glade/internal/lwcshell"
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/testutil"
 )
 
 func TestRunDevLWCHelpUsesLWCHelp(t *testing.T) {
@@ -617,7 +618,7 @@ func TestRunDevLWCUsesDBForLocalBuilderSearch(t *testing.T) {
 	}
 }
 
-const devLWCReadyFileTimeout = 30 * time.Second
+var devLWCReadyFileTimeout = testutil.Deadline(30 * time.Second)
 
 func waitForDevLWCReadyFile(t *testing.T, path string) devLWCReadyFile {
 	t.Helper()

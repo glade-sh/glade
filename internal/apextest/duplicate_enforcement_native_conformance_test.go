@@ -140,6 +140,12 @@ func duplicateProject(t *testing.T, data duplicateNativeData, fixture, api strin
 		}
 		writeFile(t, filepath.Join(root, name), strings.ReplaceAll(body, "62.0", api))
 	}
+	// Assignment is recorded for each capture, independently of deployment.
+	name := "StandardDuplicateFixture"
+	if fixture == "extension" {
+		name = "OracleFixture"
+	}
+	writeFile(t, filepath.Join(root, "glade.yml"), "test:\n  permissionSets: ["+name+"]\n")
 	return root
 }
 
@@ -178,8 +184,7 @@ func TestDuplicateEnforcementNativeConformanceAPIRoutes(t *testing.T) {
 					t.Fatal("empty fixture selection")
 				}
 				index := loadTestIndex(t, duplicateProject(t, data, fixture, api))
-				org := orgFromIndex(index)
-				org.APIVersion = api
+				org := capturedFixtureOrg(t, index, api)
 				runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 				// Native anonymous and named routes run the deployed triggers (DR13).
 				triggers, failures := compileProjectTriggers(index)
@@ -354,8 +359,7 @@ func TestDuplicateReportCommittedAnonymousNativeConformance(t *testing.T) {
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api, func(t *testing.T) {
 			index := loadTestIndex(t, duplicateProject(t, data, "standard", api))
-			org := orgFromIndex(index)
-			org.APIVersion = api
+			org := capturedFixtureOrg(t, index, api)
 			runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 			want := rows[api+"/committed_anonymous/CM01"]
 			for _, stage := range []string{"write", "readback"} {

@@ -95,6 +95,38 @@ omitted so it cannot override a complete native compatibility overlay. The expli
 The supplement describes one Developer org and does not establish absence in
 other feature profiles.
 
+`python3 scripts/apply-standard-reference-supplement.py` replaces the
+PrivacyRTBFRequest docs placeholders with the P0 API 67.0 describes, adds
+PrivacyPolicyDefinition, and adds PrivacyRTBFRequest to every catalog reference
+field whose P0 describe lists it at both API 62.0 and 67.0
+(`plain_global_describe` confirms the Task and Event WhatId rows). Run the pack
+and field-order generators after it. PrivacyPolicyDefinition keeps the API 67.0
+field list; IsAllocatePermset is not in the API 62.0 describe. Regenerate the
+names-only lookup with `python3 scripts/generate-standard-describe-catalog-names.py`.
+The same script adds the objects that join the plain Developer global describe
+after API 62.0 and have no P0 API 62.0 describe (DevopsEnvDeployment,
+DevopsEnvDeploymentMbr and their Feed and History objects; the PayGroup and
+PayPeriod placeholders), and adds DevopsEnvDeployment, DevopsEnvDeploymentMbr,
+PayGroup, PayPeriod and SfdcPartnerSbscrOffer to the reference fields whose P0
+API 67.0 describe lists them (`whatid_targets_tiebreak` confirms Task and Event
+WhatId: 85 targets at 62.0, 93 at 67.0). The plain Developer object lists keep
+them out of API 62.0; the scalars follow with
+`GLADE_UPDATE_DESCRIBE_SCALARS=1 go test ./internal/storage -run TestStandardDescribeCatalogV2ScalarsMatchPack`.
+
+`python3 scripts/apply-standard-restricted-supplement.py` sets the
+restrictedPicklist facet on docs-placeholder picklists that the P0 describes
+report as restricted at API 67.0 (and at 62.0 where the field exists). It
+fills an empty value list only when both APIs list the same values and every
+value is in the reviewed public allowlist. Run the pack and field-order
+generators after it. Catalog provenance keeps DML enforcement limited to the
+captured fields in `internal/storage/standard_picklist_validation.go`.
+
+The plain Developer global describe lists in
+`internal/apextest/testdata/conformance/plain_global_describe` feed
+`internal/storage/plain_developer_objects_generated.go` through
+`scripts/generate_order_management_objects.py`. A project whose declarations
+are all captured plain Developer shapes sees only those standard objects.
+
 The field-order generator writes `internal/storage/standard_field_order.tsv.gz`
 from the same authoritative catalog. The packed describe format sorts fields;
 this names-only projection preserves the original describe sequence for
@@ -115,8 +147,8 @@ behavior. Preserve the reviewed public allowlist provenance; do not promote
 org-specific picklists, custom entities, or non-master record types into the
 standard baseline.
 
-The catalog can expose shape for excluded products. DataWeave, ConnectApi,
-and Slack remain unsupported regardless of a generated object row. Local Files
+The catalog can expose shape for excluded products. DataWeave and Slack remain
+unsupported regardless of a generated object row. Local Files
 behavior includes `ContentDocumentLinks` child queries on linked records;
 relationship shape alone does not provide the hosted Files service.
 
@@ -261,6 +293,17 @@ catalog metadata. Rich field facets come from P0's granted API62 describe.
 Absence is recorded only for those enumerated candidates, never for an
 unrequested object or an arbitrary field missing from REST.
 
+The `standard_industries_schema` captures add three independently observed
+field gates to this sidecar: ContactsToMultipleAccounts exposes
+AccountContactRelation.Roles as a multi-select picklist; B2BCommerce,
+Communities, and enabled commerce expose PricebookEntry.ProductSellingModelId;
+and `nameSettings.enableMiddleName` exposes User.MiddleName. The generator
+checks isolated controls and both API endpoints against the combined-profile
+anonymous and named rows. The middle-name setting is included in the project
+feature signature, so warm overlays refresh when it changes. Captured
+multi-select type metadata overrides the matching generated scalar stub only;
+explicit project field definitions retain precedence.
+
 The gate input is the effective-membership additions for isolated P1
 (MultiCurrency), P2 (PersonAccounts) and P3 (StateAndCountryPicklist). The
 generator requires identical API62/API67 gate membership and takes rich
@@ -281,8 +324,14 @@ The generator reads API62 and API67 raw named maps, granted describes and global
 inventories for P0-P11 and PU. It checks the published differences against those
 raw captures and records every source digest. The `evidence.profiles` section
 retains field/object additions and removals separately by API, including the
-Enterprise and union controls. P4-P10 field differences remain evidence for a
+Enterprise and union controls. Other P4-P10 field differences remain evidence for a
 separate sidecar expansion; reading them does not install new runtime field gates.
+For API68, the generator applies the separately captured 67-to-68 granted REST,
+named-map and global-inventory changes to the stored API67 observations before
+comparing each profile to its captured baseline. When the resulting profile
+delta equals API67, `evidence.profile_aliases` records the observed equality
+instead of duplicating the delta. This retains the profile comparison; it does
+not itself install API68 runtime fields or establish unobserved combinations.
 Storage retains these deltas and exposes them through
 `StandardDescribeCatalogProfileDelta(profile, api)`. Profile identifiers and API
 versions are exact capture keys, such as `P10` and `67.0`; an uncaptured key
@@ -299,6 +348,22 @@ in a temporary file; `--check` compares bytes without changing the output.
 field to its native describe and checks the input digests; the native storage
 and project conformance tests independently verify membership and behavior.
 
+API68 runtime describe additions are generated separately from the owned
+`standard_describe_api68_drift` captures by the maintainer toolchain. Verify the
+shipped sidecar against the published captures with
+`go test ./internal/storage -run StandardAPI68Describe`.
+
+The sidecar records source digests, exact profile definitions, per-route field
+visibility, and new-object shapes. It selects only an observed edition and
+feature combination. API62 and API67 remain separate from the API68 projection;
+the generator checks the new-object version boundaries against both REST and
+Apex observations. Native field grants establish the two captured named-only
+field access transitions. Unobserved feature combinations do not acquire an
+inferred profile. The P0 named RequestType picklist uses the independently captured list only
+after the explicit field grant; its values must also be present in the separately
+reviewed public allowlist above. Other profiles gain a list only when their own
+native named-route capture is available.
+
 Gates apply to catalog additions. Explicitly configured fields survive every
 profile and refresh. A pre-overlay snapshot records their origin, including an
 empty snapshot for a bare catalog. Older persisted overlays without that
@@ -307,6 +372,13 @@ alone cannot prove which fields were generated. Newly generated fields continue
 to leave when their enabling profile is removed. Non-Master record-type metadata
 independently supplies `RecordTypeId`, including on objects whose bare catalog
 omits it; the Master mapping alone does not enable an absent field.
+
+API68-only object projections also use the pre-overlay field snapshot. A fresh
+catalog-only definition records an empty configured set; an explicitly configured
+field survives even if it equals an older generated field. A persisted definition
+without a snapshot retains its old fields because their origin is unknown. This
+metadata preserves local configuration; it does not infer visibility for an
+uncaptured profile.
 
 The org shape comes from the effective project: its root and all loaded source
 dependencies, managed-package sources and shims, at every dependency depth.
@@ -395,3 +467,13 @@ reuse each other's prepared overlays.
 Applying a new project shape replaces its certainty state. Adding a runtime
 capability (for example Platform Cache during a query) preserves that state;
 it cannot turn incomplete source metadata into a declared bare org.
+
+### Feature describe sidecar
+
+`scripts/generate-standard-feature-describes.py` packs the owned feature-profile
+captures into `internal/storage/standard_feature_describes.json.gz`. Run it after
+updating those captures; use `python3 scripts/generate-standard-feature-describes.py
+--check` to verify the committed sidecar without writing it. The bundle carries
+captured object facets, field version and route membership, and explicitly observed
+read-only fields. Describe create/update facets alone do not establish Apex write
+behavior.

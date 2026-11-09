@@ -53,7 +53,46 @@ func v15CartesianLayoutEqual(actual, expected any, svg bool) bool {
 }
 
 var v15SVGNumber = regexp.MustCompile(`[-+]?(?:[0-9]*\.)?[0-9]+(?:[eE][-+]?[0-9]+)?`)
-var v15CartesianPath = regexp.MustCompile(`^[MLC0-9eE+., -]+$`)
+var v15CartesianPath = regexp.MustCompile(`^[MLCAZ0-9eE+., -]+$`)
+var v15PathCommand = regexp.MustCompile(`[A-Za-z][^A-Za-z]*`)
+
+// v15HelveticaReferenceWidth is the width of the observer's probe string at
+// 12px in "Helvetica, sans-serif" on a Helvetica/Arial-metric font. Product
+// charts measure their labels with that stack, so every horizontal coordinate
+// follows the host font. macOS and metric-compatible Linux fonts (Liberation,
+// Nimbus) measure within a pixel of this value; a host with only DejaVu Sans
+// measures about 13% wider.
+const v15HelveticaReferenceWidth = 100.75
+
+// v15FallbackFont is set from the browser's probe measurement. On such hosts the
+// native rows cannot match horizontally, so horizontal coordinates get
+// v15FallbackHorizontalTolerance while every vertical coordinate, path command,
+// operand count, color, size and text stays exact.
+var v15FallbackFont bool
+
+const v15FallbackHorizontalTolerance = 4.0
+
+func v15IsFallbackFont(width float64) bool {
+	return math.Abs(width-v15HelveticaReferenceWidth) > 1
+}
+
+// v15HorizontalNumbers reports, for each number in an SVG path, whether it is an
+// x coordinate (M/L/C x,y pairs; the end-point x of an arc). Arc radii, rotation
+// and flags are never horizontal positions.
+func v15HorizontalNumbers(d string) []bool {
+	var out []bool
+	for _, command := range v15PathCommand.FindAllString(d, -1) {
+		n := len(v15SVGNumber.FindAllString(command, -1))
+		for i := 0; i < n; i++ {
+			if command[0] == 'A' || command[0] == 'a' {
+				out = append(out, i%7 == 5)
+			} else {
+				out = append(out, i%2 == 0)
+			}
+		}
+	}
+	return out
+}
 
 func v15CartesianAttributesEqual(actual, expected any) bool {
 	got, gotOK := actual.(map[string]any)
@@ -75,8 +114,10 @@ func v15CartesianAttributesEqual(actual, expected any) bool {
 			return false
 		}
 		switch key {
-		case "x":
-			if !v15WithinHorizontalPixel(a, b) {
+		case "x", "width":
+			// Widths follow label and plot-area widths, so they are font dependent
+			// only when the host font is not Helvetica-metric.
+			if key == "width" && !v15FallbackFont || !v15WithinHorizontalPixel(a, b) {
 				return false
 			}
 		case "d", "transform":
@@ -96,8 +137,12 @@ func v15CartesianAttributesEqual(actual, expected any) bool {
 			if key == "transform" && len(an) != 6 {
 				return false
 			}
+			var pathX []bool
+			if key == "d" {
+				pathX = v15HorizontalNumbers(a)
+			}
 			for i := range an {
-				horizontal := key == "d" && i%2 == 0 || key == "transform" && i == 4
+				horizontal := key == "d" && i < len(pathX) && pathX[i] || key == "transform" && i == 4
 				if horizontal && !v15WithinHorizontalPixel(an[i], bn[i]) || !horizontal && an[i] != bn[i] {
 					return false
 				}
@@ -112,10 +157,17 @@ func v15CartesianAttributesEqual(actual, expected any) bool {
 func v15WithinHorizontalPixel(actual, expected string) bool {
 	a, aErr := strconv.ParseFloat(actual, 64)
 	b, bErr := strconv.ParseFloat(expected, 64)
-	return aErr == nil && bErr == nil && math.Abs(a-b) <= 1
+	tolerance := 1.0
+	if v15FallbackFont {
+		tolerance = v15FallbackHorizontalTolerance
+	}
+	return aErr == nil && bErr == nil && math.Abs(a-b) <= tolerance
 }
 
 func TestV15CartesianLayoutTolerance(t *testing.T) {
+	// The browser probe in TestV15SalesforceConformance sets this per host; pin the Helvetica-metric default here.
+	defer func(old bool) { v15FallbackFont = old }(v15FallbackFont)
+	v15FallbackFont = false
 	chart := func(attrs map[string]any, label string) map[string]any {
 		return map[string]any{"tag": "svg", "children": []any{
 			map[string]any{"tag": "path", "attrs": attrs},
@@ -158,5 +210,57 @@ func TestV15CartesianLayoutTolerance(t *testing.T) {
 	}
 	if v15CartesianLayoutEqual(map[string]any{"attrs": map[string]any{"x": "17"}}, map[string]any{"attrs": map[string]any{"x": "17.3125"}}, false) {
 		t.Fatal("non-SVG coordinate passed the layout check")
+	}
+}
+
+func TestV15FallbackFontHorizontalTolerance(t *testing.T) {
+	defer func(old bool) { v15FallbackFont = old }(v15FallbackFont)
+	arc := func(x string) map[string]any {
+		return map[string]any{"tag": "svg", "attrs": map[string]any{"d": "M" + x + ",120L" + x + ",10A110,110,0,0,1," + x + ",224.6Z"}}
+	}
+	if !v15IsFallbackFont(114.14) || v15IsFallbackFont(100.7) || v15IsFallbackFont(101.5) {
+		t.Fatal("font probe classification")
+	}
+	v15FallbackFont = false
+	if v15CartesianLayoutEqual(arc("607.5"), arc("608"), false) != true {
+		t.Fatal("half pixel is within the default tolerance")
+	}
+	if v15CartesianLayoutEqual(arc("604"), arc("608"), false) {
+		t.Fatal("4px must fail without the fallback font")
+	}
+	v15FallbackFont = true
+	if !v15CartesianLayoutEqual(arc("604"), arc("608"), false) {
+		t.Fatal("4px must pass with the fallback font")
+	}
+	if v15CartesianLayoutEqual(arc("602"), arc("608"), false) {
+		t.Fatal("beyond the fallback tolerance")
+	}
+	wrongRadius := arc("608")
+	wrongRadius["attrs"].(map[string]any)["d"] = "M608,120L608,10A111,110,0,0,1,608,224.6Z"
+	if v15CartesianLayoutEqual(wrongRadius, arc("608"), false) {
+		t.Fatal("arc radius is not horizontal position")
+	}
+	wrongY := arc("608")
+	wrongY["attrs"].(map[string]any)["d"] = "M608,120L608,10A110,110,0,0,1,608,225.6Z"
+	if v15CartesianLayoutEqual(wrongY, arc("608"), false) {
+		t.Fatal("vertical coordinate must stay exact")
+	}
+}
+
+func TestV15FallbackFontWidthTolerance(t *testing.T) {
+	defer func(old bool) { v15FallbackFont = old }(v15FallbackFont)
+	rect := func(w string) map[string]any {
+		return map[string]any{"tag": "svg", "attrs": map[string]any{"width": w, "height": "10"}}
+	}
+	v15FallbackFont = false
+	if v15CartesianLayoutEqual(rect("502"), rect("503"), false) {
+		t.Fatal("exact width required with a Helvetica-metric font")
+	}
+	v15FallbackFont = true
+	if !v15CartesianLayoutEqual(rect("502"), rect("503"), false) {
+		t.Fatal("fallback font allows a small width difference")
+	}
+	if v15CartesianLayoutEqual(rect("490"), rect("503"), false) {
+		t.Fatal("large width difference must fail")
 	}
 }

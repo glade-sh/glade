@@ -1,0 +1,3 @@
+@IsTest(SeeAllData=true) private class B6Extended67 {
+ @IsTest static void capture(){String out='';for(Report r:[SELECT Id,DeveloperName FROM Report WHERE DeveloperName IN ('B6_Accounts','B6_Contacts') ORDER BY DeveloperName]){Reports.ReportExtendedMetadata e=Reports.ReportManager.describeReport(r.Id).getReportExtendedMetadata();String key=r.DeveloperName=='B6_Accounts'?'ACCOUNT.NAME':'LAST_NAME';out+=r.DeveloperName+'='+e.getDetailColumnInfo().get(key).getLabel()+','+e.getDetailColumnInfo().get(key).getDataType()+','+e.getAggregateColumnInfo().get('RowCount').getLabel()+';';}System.assert(false,out);}
+}
