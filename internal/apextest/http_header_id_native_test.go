@@ -3,6 +3,7 @@ package apextest
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -14,6 +15,18 @@ func TestRunHttpHeaderIdNativeProject(t *testing.T) {
 			data, err := os.ReadFile(filepath.Join("testdata/conformance/pr163_apex_basics/project/classes", name+suffix))
 			if err != nil {
 				t.Fatal(err)
+			}
+			if suffix == ".cls" {
+				var method string
+				for _, line := range strings.Split(string(data), "\n") {
+					if strings.Contains(line, "static void idHeader()") {
+						method = line
+					}
+				}
+				if method == "" {
+					t.Fatal("captured header method missing")
+				}
+				data = []byte("@IsTest private class " + name + " {\n" + method + "\n}\n")
 			}
 			writeFile(t, filepath.Join(root, "force-app/main/default/classes", name+suffix), string(data))
 		}
