@@ -614,7 +614,7 @@ func (e *Engine) personAccountCustomFieldMappings() []personContactFieldMapping 
 	contact := e.Org.Objects["Contact"].Definition
 	var mappings []personContactFieldMapping
 	for name := range account.Fields {
-		if !strings.HasSuffix(strings.ToLower(name), "__pc") {
+		if !hasSuffixFold(name, "__pc") {
 			continue
 		}
 		source, ok := storage.ResolveFieldName(contact, e.Org.Namespace, name[:len(name)-4]+"__c")
@@ -688,7 +688,7 @@ func (e *Engine) syncPersonAccountCustomFields(contact storage.Record) {
 // Business Account must not acquire a person-only field as an implicit input.
 func PersonAccountCustomFieldDefaultAllowed(org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record, field storage.Field) bool {
 	name := field.APIName
-	if org == nil || !strings.EqualFold(definition.APIName, "Account") || !strings.HasSuffix(strings.ToLower(name), "__pc") {
+	if org == nil || !strings.EqualFold(definition.APIName, "Account") || !hasSuffixFold(name, "__pc") {
 		return true
 	}
 	if _, declared := storage.ResolveFieldName(org.Objects["Contact"].Definition, org.Namespace, name[:len(name)-4]+"__c"); !declared {
