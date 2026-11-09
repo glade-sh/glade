@@ -11,3 +11,7 @@ icon_invalid_defaults	67.0	browser	rendered	slds-icon slds-icon-text-default
 button_small_border_filled	67.0	browser	rendered	slds-button slds-button_icon slds-button_icon-small slds-button_icon-border-filled
 button_invalid_defaults	67.0	browser	rendered	slds-button slds-button_icon slds-button_icon-border
 modal_small	67.0	browser	rendered	slds-modal fix-slds-modal slds-modal_small slds-fade-in-open
+modal_container	59.0	browser	rendered	slds-modal__container slds-modal__container__reflow_resize
+modal_close_svg	59.0	browser	rendered	slds-button__icon slds-button__icon_large
+modal_container	67.0	browser	rendered	slds-modal__container slds-modal__container__reflow_resize
+modal_close_svg	67.0	browser	rendered	slds-button__icon slds-button__icon_large

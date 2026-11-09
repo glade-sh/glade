@@ -1117,7 +1117,7 @@ test("native icon, button icon and modal classes", async (t) => {
   if (!requireLWCToolchain(t)) return;
   const file = path.join(repoRoot, "internal/lwcbrowser/testdata/pr163_slds/org.tsv");
   const rows = fs.readFileSync(file, "utf8").trim().split("\n").slice(1).map(line => line.split("\t"));
-  assert.equal(rows.length, 12);
+  assert.equal(rows.length, 16);
   const server = await startBaseComponentServer();
   const browser = await chromium.launch({ headless: true });
   try {
@@ -1152,9 +1152,14 @@ test("native icon, button icon and modal classes", async (t) => {
       assert.equal(result, "rendered");
       const selector = id === "modal_small"
         ? ".glade-modal-overlay section[role=dialog]"
-        : `#native-probes [data-probe="${id}"] ${id.startsWith("icon_") ? "svg" : "button"}`;
-      const actual = await page.locator(selector).getAttribute("class");
-      const actualClasses = [...new Set(actual.split(/\s+/))].sort();
+        : id === "modal_container"
+          ? ".glade-modal-overlay section[role=dialog] > .slds-modal__container"
+          : id === "modal_close_svg"
+            ? ".glade-modal-overlay section[role=dialog] .slds-modal__close svg"
+            : `#native-probes [data-probe="${id}"] ${id.startsWith("icon_") ? "svg" : "button"}`;
+      const element = page.locator(selector);
+      const actual = await element.count() ? await element.first().getAttribute("class") : "";
+      const actualClasses = actual ? [...new Set(actual.split(/\s+/))].sort() : [];
       const expectedClasses = [...new Set(expected.split(/\s+/))].sort();
       if (JSON.stringify(actualClasses) !== JSON.stringify(expectedClasses)) {
         mismatches.push({ id, api, actual: actualClasses, expected: expectedClasses });
