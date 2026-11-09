@@ -1,0 +1,11 @@
+A fresh 30-day Developer scratch org was created for this capture.
+Capture date: 2026-11-09 UTC. Route: Lightning Experience record-page browser.
+Synthetic Account and Contact records were created. At the listed component API, GenerateUrl
+preserved each supplied object name in the generated record-page path; navigating
+to those paths redirected to the actual record object URL and displayed the record.
+A nonexistent valid Account ID kept its Account path and returned a record-not-found
+message. A nonexistent valid Contact ID sent with an Account name redirected to a
+Contact path before returning record-not-found. A malformed ID sent with Record
+kept that path and displayed a record-unavailable message.
+The case column is the supplied object name and outcome is the resolved object.
+Record identifiers and organization details are omitted.
