@@ -279,6 +279,7 @@ function compileBundle(bundleDir, bundleName, namespace, outDir, apiVersion, mod
   assertCompilerPreservesAPIVersion(apiVersion);
   preflightBundleImports(bundleDir, bundleName, apiVersion, moduleAvailability, configuredProperties, salesforceImports, lightningModules, namespace);
   // GraphQL document validation is independent of the shared wire preflight.
+  let entryAST;
   walkBundleFiles(bundleDir, sourcePath => {
     if (!sourcePath.endsWith(".js")) return;
     const ast = parse(fs.readFileSync(sourcePath, "utf8"), {
@@ -286,7 +287,8 @@ function compileBundle(bundleDir, bundleName, namespace, outDir, apiVersion, mod
       plugins: [["decorators", { decoratorsBeforeExport: true }], "classProperties", "classPrivateProperties", "classPrivateMethods"],
     });
     validateGraphQLDocuments(ast, salesforceImports?.schema, walkAST);
-    // Component entries are validated by transformJavaScript below. Utility
+    if (sourcePath === jsPath) entryAST = ast;
+    // Component entries are validated after their templates. Utility
     // entries and sibling modules are emitted as source, so validate their
     // dynamic imports before copying them to the output.
     if (sourcePath !== jsPath || (!fs.existsSync(htmlPath) && !isCustomRenderComponent(jsPath))) {
@@ -326,6 +328,7 @@ function compileBundle(bundleDir, bundleName, namespace, outDir, apiVersion, mod
   }
 
   const jsSource = fs.readFileSync(jsPath, "utf8");
+  validateDynamicModuleImports(entryAST, capabilities);
   const jsResult = transformJavaScript(jsSource, jsPath, namespace, bundleName, apiVersion, capabilities);
   const jsCode = rewriteComponentShadowReads(rewriteStylesheetImports(jsResult.code, bundleName), namespace);
 
@@ -347,7 +350,7 @@ function validateDynamicModuleImports(ast, capabilities) {
   walkAST(ast, (node) => {
     const source = node.type === "ImportExpression" ? node.source :
       node.type === "CallExpression" && node.callee?.type === "Import" ? node.arguments[0] : null;
-    if (source && source.type !== "StringLiteral") {
+    if (source) {
       throw new Error("LWC1503: Dynamic imports are not allowed.");
     }
   });
