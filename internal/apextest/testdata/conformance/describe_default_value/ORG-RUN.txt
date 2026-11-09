@@ -3,3 +3,5 @@ Deployed synthetic project metadata and classes, API 62.0 and 67.0.
 Anonymous: execute anonymous at API 62.0 and 67.0; output from the versioned class is recorded in org.tsv. Invalid integer conversion was executed independently at each API; the exception message prefix is recorded without the nondeterministic object representation.
 @IsTest: deployed DefaultProbeTest62 and DefaultProbeTest67; both observe methods passed.
 The scratch org was deleted successfully; a subsequent alias lookup returned NamedOrgNotFoundError.
+A second fresh developer scratch org captured the default metadata matrix at APIs 62.0 and 67.0 with the source and fields in this fixture.
+The second scratch org was deleted successfully; a subsequent alias lookup returned NamedOrgNotFoundError.
