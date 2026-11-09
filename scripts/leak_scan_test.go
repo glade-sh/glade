@@ -75,6 +75,12 @@ func TestLeakScan(t *testing.T) {
 		{name: "clean addition", file: "docs/notes.md", content: "base\nplain documentation line\n", wantOut: "leak-scan: clean"},
 		{name: "personal path", file: "docs/notes.md", content: "base\nsee " + personal + "\n", wantFail: true, wantOut: "file 1:2: personal-path", notOut: "someone"},
 		{name: "linux home path", file: "docs/notes.md", content: "base\nsee " + linuxHome + "\n", wantFail: true, wantOut: "personal-path"},
+		{name: "uppercase home", file: "docs/notes.md", content: "/ho" + "me/Alice/private\n", env: []string{"LEAK_SCAN_DENYLIST="}, wantFail: true, wantOut: "personal-path"},
+		{name: "underscore home", file: "docs/notes.md", content: "/ho" + "me/_service/private\n", env: []string{"LEAK_SCAN_DENYLIST="}, wantFail: true, wantOut: "personal-path"},
+		{name: "numeric home", file: "docs/notes.md", content: "/ho" + "me/123/private\n", env: []string{"LEAK_SCAN_DENYLIST="}, wantFail: true, wantOut: "personal-path"},
+		{name: "runner lookalike", file: "docs/notes.md", content: "/ho" + "me/runner-other/private\n", env: []string{"LEAK_SCAN_DENYLIST="}, wantFail: true, wantOut: "personal-path"},
+		{name: "hidden mac home", file: "docs/notes.md", content: "/Us" + "ers/.hidden/private\n", env: []string{"LEAK_SCAN_DENYLIST="}, wantFail: true, wantOut: "personal-path"},
+		{name: "punctuation mac home", file: "docs/notes.md", content: "/Us" + "ers/-person/private\n", env: []string{"LEAK_SCAN_DENYLIST="}, wantFail: true, wantOut: "personal-path"},
 		{name: "runner home path is fine", file: "docs/notes.md", content: "base\nPLAYWRIGHT_BROWSERS_PATH: " + runnerHome + "\n", wantOut: "leak-scan: clean"},
 		{name: "volume path", file: "docs/notes.md", content: "base\ncopied from " + volume + "\n", wantFail: true, wantOut: "volume-path"},
 		{name: "private tmp path", file: "docs/notes.md", content: "base\nlog at " + privateTmp + "\n", wantFail: true, wantOut: "private-tmp"},
@@ -204,6 +210,48 @@ func TestLeakScanAdversarialDiffs(t *testing.T) {
 			}
 		})
 	}
+	for _, tc := range []struct{ name, attrs, content string }{
+		{"nul deletion", "", "\x00deleted"},
+		{"attribute deletion", "*.bin -diff\n", "deleted text\n"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			write(".gitattributes", tc.attrs)
+			write("remove.bin", tc.content)
+			git("add", "-A")
+			git("commit", "-qm", "prepare "+tc.name)
+			git("rm", "-q", "remove.bin")
+			git("commit", "-qm", tc.name)
+			out, err := run("--range", "HEAD~1..HEAD")
+			if err != nil || !strings.Contains(out, "leak-scan: clean") {
+				t.Fatalf("binary deletion should pass: %v: %s", err, out)
+			}
+		})
+	}
+	t.Run("binary modification", func(t *testing.T) {
+		write("modify.bin", "\x00before")
+		git("add", "-A")
+		git("commit", "-qm", "prepare modification")
+		write("modify.bin", "\x00after")
+		git("add", "-A")
+		git("commit", "-qm", "modification")
+		out, err := run("--range", "HEAD~1..HEAD")
+		if err == nil || !strings.Contains(out, "binary") {
+			t.Fatalf("binary modification must fail: %v: %s", err, out)
+		}
+	})
+	t.Run("binary delete and add", func(t *testing.T) {
+		write("a-remove.bin", "\x00before")
+		git("add", "-A")
+		git("commit", "-qm", "prepare mixed change")
+		git("rm", "-q", "a-remove.bin")
+		write("z-add.bin", "\x00different")
+		git("add", "-A")
+		git("commit", "-qm", "mixed change")
+		out, err := run("--range", "HEAD~1..HEAD")
+		if err == nil || !strings.Contains(out, "binary") {
+			t.Fatalf("binary addition must fail: %v: %s", err, out)
+		}
+	})
 	t.Run("sensitive filename", func(t *testing.T) {
 		write("synthetic-secret.txt", private+"\n")
 		git("add", "-A")
