@@ -219,9 +219,19 @@ func TestCIResourceTelemetryCoversAuthoritativeLanes(t *testing.T) {
 	if got := strings.Count(workflow, "scripts/ci-resource-run.sh"); got != 12 {
 		t.Fatalf("resource wrapper invocation count = %d, want 12", got)
 	}
-	for _, forbidden := range []string{"runs-on: ubuntu-latest-", "GOMAXPROCS: \"4\"", "GOMAXPROCS: \"8\""} {
+	// Standard hosted ubuntu-24.04 runners for public repositories have four
+	// CPUs. Using them needs no larger (paid) runner label; eight or more would.
+	for _, forbidden := range []string{"runs-on: ubuntu-latest-", "GOMAXPROCS: \"8\"", "GOMAXPROCS: \"16\""} {
 		if strings.Contains(workflow, forbidden) {
 			t.Fatalf("resource telemetry changed runner policy with %q", forbidden)
+		}
+	}
+	if got := strings.Count(workflow, "GOMAXPROCS: \"4\""); got != 2 {
+		t.Fatalf("four-CPU jobs = %d, want the Apex matrix and the shared binary build only", got)
+	}
+	for _, job := range []string{"apextest", "test-binaries"} {
+		if !strings.Contains(jobs[job], "GOMAXPROCS: \"4\"") {
+			t.Errorf("%s does not use the runner's four CPUs", job)
 		}
 	}
 }

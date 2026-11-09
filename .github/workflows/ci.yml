@@ -936,7 +936,8 @@ jobs:
       artifact-attempt: ${{ steps.bundle.outputs.attempt }}
     timeout-minutes: 30
     env:
-      GOMAXPROCS: "2"
+      # Four concurrent links on the four-CPU hosted runner.
+      GOMAXPROCS: "4"
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Validate benchmark cache pair
@@ -1429,8 +1430,13 @@ jobs:
     env:
       CGO_ENABLED: "1"
       CI_TEST_BIN_DIR: /tmp/glade-test-binaries
-      GOMAXPROCS: "2"
-      GOMEMLIMIT: "6GiB"
+      # Hosted ubuntu-24.04 runners for public repositories have four CPUs and
+      # 16 GB. Apex conformance tests run their API versions as parallel
+      # subtests capped at GOMAXPROCS; at two, those phases were 41% of each
+      # shard's wall time at 1.6x parallelism. Four lets three-version tests
+      # run together; the memory limit keeps the GC pacing below the runner.
+      GOMAXPROCS: "4"
+      GOMEMLIMIT: "12GiB"
       CI_APEXTEST_ARTIFACT_DIR: ci-artifacts/apextest-${{ matrix.shard }}
       CI_APEXTEST_SHARDS: "12"
       CI_APEXTEST_HISTORY_PATH: /tmp/glade-apextest-duration-history/apextest-duration-history.json
