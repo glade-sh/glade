@@ -3696,9 +3696,15 @@ func (e *Engine) applyFlowTransformStep(transform storage.FlowTransform, frame *
 			if !ok {
 				return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", []string{mapping.Field}, "dml: flow transform %s maps unknown field %s.%s", transform.Name, objectName, mapping.Field)
 			}
-			value, ok := e.flowFrameReferenceValueAudit(mapping.SourceField, frame, make(map[string]bool), false)
-			if !ok {
-				return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow transform %s references unknown value %s", transform.Name, mapping.SourceField)
+			var value storage.Value
+			if mapping.FlowLiteralString {
+				value = storage.StringValue(mapping.LiteralValue)
+			} else {
+				var ok bool
+				value, ok = e.flowFrameReferenceValueAudit(mapping.SourceField, frame, make(map[string]bool), false)
+				if !ok {
+					return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow transform %s references unknown value %s", transform.Name, mapping.SourceField)
+				}
 			}
 			record.Fields[field] = value
 			if value.Kind == storage.ValueNull {
