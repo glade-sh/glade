@@ -728,11 +728,31 @@ func (vm *VM) setCurrentStatement(inst ir.Instruction, source string) {
 	symbol := string(inst.Op)
 	file := ""
 	if vm.currentMethod.Name != "" {
-		symbol = vm.apexMethodFrameSymbol(vm.currentMethod)
+		symbol = vm.cachedApexMethodFrameSymbol(vm.currentMethod)
 		file = vm.currentMethod.File
 	}
 	vm.currentStatement = callFrame{Symbol: symbol, File: file, Line: line, Column: column, statement: true}
 	vm.hasStatement = true
+}
+
+// cachedApexMethodFrameSymbol memoizes apexMethodFrameSymbol per method and
+// execution namespace. The uncached form folds and concatenates class names
+// on every executed instruction; the class registry it reads is covered by
+// the access-cache reset.
+func (vm *VM) cachedApexMethodFrameSymbol(method Method) string {
+	key := frameSymbolKey{MethodName: method.Name, MethodClassName: method.ClassName, ExecutionNamespace: vm.currentExecutionNamespace()}
+	if vm.Org != nil {
+		key.OrgNamespace = vm.Org.Namespace
+	}
+	if cached, ok := vm.frameSymbolCache[key]; ok {
+		return cached
+	}
+	symbol := vm.apexMethodFrameSymbol(method)
+	if vm.frameSymbolCache == nil {
+		vm.frameSymbolCache = make(map[frameSymbolKey]string)
+	}
+	vm.frameSymbolCache[key] = symbol
+	return symbol
 }
 
 func (vm *VM) apexMethodFrameSymbol(method Method) string {
