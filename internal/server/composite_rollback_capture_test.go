@@ -112,3 +112,18 @@ func TestCompositeRollbackResponseNativeRoutes(t *testing.T) {
 		})
 	}
 }
+
+func TestCompositeDeleteStoredIDVariantsRemainDeleted(t *testing.T) {
+	org := testOrg()
+	const original = "001000000000001"
+	addAccountForTest(&org, original, "Already Deleted")
+	record := org.Objects["Account"].Records[original]
+	record.System.IsDeleted = true
+	org.Objects["Account"].Records[original] = record
+	id18 := storage.ID18(original)
+	rec := httptest.NewRecorder()
+	New(&org).ServeHTTP(rec, httptest.NewRequest(http.MethodDelete, serverTestDataPath+"/composite/sobjects?ids="+id18+"&allOrNone=false", nil))
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"statusCode":"ENTITY_IS_DELETED"`) || !strings.Contains(rec.Body.String(), `"message":"entity is deleted"`) {
+		t.Fatalf("status %d, body %s", rec.Code, rec.Body.String())
+	}
+}
