@@ -948,6 +948,21 @@ func (s *Server) handleCompositeSObjectDelete(w http.ResponseWriter, r *http.Req
 	next := s.Org.Clone()
 	engine := s.newDMLEngine(r, &next)
 	results := engine.Delete(records)
+	for i := range results {
+		if results[i].Success || results[i].StatusCode != "ENTITY_IS_DELETED" {
+			continue
+		}
+		object, ok := s.Org.Objects[records[i].Object]
+		if ok {
+			if _, exists := object.Records[records[i].ID]; exists {
+				continue
+			}
+		}
+		results[i].StatusCode = "INVALID_CROSS_REFERENCE_KEY"
+		results[i].Error = "invalid cross reference id"
+		results[i].Fields = []string{}
+		results[i].Errors = []dml.Error{{StatusCode: results[i].StatusCode, Message: results[i].Error, Fields: []string{}}}
+	}
 	s.writeCompositeMutationResults(w, next, compositeMutationDelete, allOrNone, results, nil)
 }
 
@@ -971,19 +986,15 @@ func (s *Server) writeCompositeMutationResults(w http.ResponseWriter, next stora
 	}
 	if allOrNone && hasFailure {
 		rows := compositeAllOrNoneRollbackResults(results)
-		// Insert and update answer 200 with the failed rows, and an insert's
-		// rolled-back row has no id (record_type_null_routes allornone.tsv). No
-		// row covers delete, which keeps its status.
-		status := http.StatusOK
+		// Collection mutations answer 200 with failed rows. An insert's
+		// rolled-back row has no id.
 		switch mutation {
 		case compositeMutationInsert:
 			for i := range rows {
 				rows[i].ID = ""
 			}
-		case compositeMutationDelete:
-			status = http.StatusBadRequest
 		}
-		writeJSON(w, status, compositeResults(rows, referenceIDs))
+		writeJSON(w, http.StatusOK, compositeResults(rows, referenceIDs))
 		return
 	}
 	if hasSuccess {
@@ -1107,7 +1118,7 @@ func (s *Server) handleCompositeSObjectTypedUpsert(w http.ResponseWriter, r *htt
 		}
 	}
 	if body.AllOrNone && hasFailure {
-		writeJSON(w, http.StatusBadRequest, compositeUpsertResults(compositeAllOrNoneRollbackResults(results), referenceIDs))
+		writeJSON(w, http.StatusOK, compositeUpsertResults(compositeAllOrNoneRollbackResults(results), referenceIDs))
 		return
 	}
 	if hasSuccess {

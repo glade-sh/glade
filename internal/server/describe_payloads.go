@@ -1268,16 +1268,15 @@ func compositeResultRows(results []dml.Result, referenceIDs []string, includeCre
 	for i, result := range results {
 		row := map[string]any{"id": result.ID, "success": result.Success, "errors": []map[string]any{}}
 		if includeCreated {
-			row["created"] = result.Created
+			row["created"] = result.UpsertCreated
 		}
 		if i < len(referenceIDs) && referenceIDs[i] != "" {
 			row["referenceId"] = referenceIDs[i]
 		}
 		if !result.Success {
 			row["errors"] = compositeErrorRows(result)
-			// A failed insert row has no id (record_type_null_routes rows). No
-			// row covers upsert, which keeps its shape.
-			if result.ID == "" && !includeCreated {
+			// A failed insert row has no id, including collection upsert.
+			if result.ID == "" && (!includeCreated || result.UpsertCreated) {
 				delete(row, "id")
 			}
 		}
