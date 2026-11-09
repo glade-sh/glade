@@ -27,6 +27,7 @@ MAPPING = {
     'sema': 'sema', 'sema-history': 'sema-history',
     'server-and-playground': 'server-and-playground', 'test': 'test',
     'smoke-runtime': 'smoke-runtime', 'smoke-distribution': 'smoke-distribution',
+    'leak-scan': 'leak-scan',
 }
 
 def required_jobs(source):
@@ -171,6 +172,8 @@ class Runner:
         g = 'scripts/ci-go-test.sh'
         self.command('workflow-lint', ['bash','-c', f'scripts/ci-gofmt.sh && {g} lane workflow-lint && scripts/ci-actionlint.sh'], prerequisites=[go, (bool(shutil.which('actionlint')), 'actionlint')])
         self.command('vet', [g,'local-release-lane','vet'], prerequisites=[go])
+        # LEAK_SCAN_RANGE selects the diff (default: the last commit); LEAK_SCAN_DENYLIST passes through from the environment.
+        self.command('leak-scan', ['bash','scripts/leak-scan.sh','--range', os.environ.get('LEAK_SCAN_RANGE','HEAD~1..HEAD')])
         self.command('node-integration', [g,'node-integration'], prerequisites=[go,node,lwc,candidate])
         self.command('server-and-playground', [g,'lane','server-and-playground'], prerequisites=[go,node,lwc,candidate,runtime,browser])
         self.command('test-guard', [g,'lane','repoguard'], prerequisites=[go])

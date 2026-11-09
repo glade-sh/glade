@@ -5,6 +5,7 @@ on:
     branches:
       - main
   pull_request:
+  merge_group:
   schedule:
     - cron: '17 9 * * 1'
   workflow_dispatch:
@@ -1558,6 +1559,33 @@ jobs:
           path: /tmp/glade-visualforce-duration-history/visualforce-duration-history.json
           if-no-files-found: error
 
+  leak-scan:
+    name: Leak scan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Scan added lines for private material
+        env:
+          LEAK_SCAN_DENYLIST: ${{ secrets.LEAK_SCAN_DENYLIST }}
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          MERGE_GROUP_BASE_SHA: ${{ github.event.merge_group.base_sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+        run: |
+          case "$EVENT_NAME" in
+            pull_request) git fetch -q origin "$PR_BASE_REF"; range="origin/$PR_BASE_REF...HEAD" ;;
+            merge_group) range="$MERGE_GROUP_BASE_SHA..HEAD" ;;
+            push) if [[ -z "$PUSH_BEFORE" || "$PUSH_BEFORE" =~ ^0+$ ]]; then range="HEAD~1..HEAD"; else range="$PUSH_BEFORE..HEAD"; fi ;;
+            *) range="HEAD~1..HEAD" ;;
+          esac
+          scripts/leak-scan.sh --range "$range"
+
   required-ci:
     name: Required CI
     needs:
@@ -1581,6 +1609,7 @@ jobs:
       - test
       - smoke-runtime
       - smoke-distribution
+      - leak-scan
     if: always()
     runs-on: ubuntu-24.04
     timeout-minutes: 5
