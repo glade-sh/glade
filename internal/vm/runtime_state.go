@@ -93,7 +93,7 @@ type VM struct {
 	// frameSymbolCache memoizes apexMethodFrameSymbol for setCurrentStatement,
 	// which runs once per executed instruction. The symbol depends on the
 	// method identity, the execution namespace and the class registry, so the
-	// key carries the first two and the access-cache reset covers the third.
+	// key carries the first two and the class lookup generation.
 	frameSymbolCache map[frameSymbolKey]string
 	// sourceLineTables caches newline offsets per executed program source for
 	// setCurrentStatement's line and column (see sourceLineColumnCached).
@@ -508,6 +508,7 @@ type frameSymbolKey struct {
 	MethodClassName    string
 	ExecutionNamespace string
 	OrgNamespace       string
+	Generation         uint64
 }
 
 // nestedTypeKey memoizes resolveNestedTypeInClassHierarchy. The resolution is a
