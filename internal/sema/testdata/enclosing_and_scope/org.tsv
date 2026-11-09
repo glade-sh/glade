@@ -1,0 +1,71 @@
+case	api	route	outcome
+outerstatic	62.0	metadata-deploy	Identifier name is reserved: Inner
+outerstatic	67.0	metadata-deploy	Identifier name is reserved: Inner
+outerinstance	62.0	metadata-deploy	Identifier name is reserved: Inner; Method does not exist or incorrect signature: void onlyInstance() from the type Probe.Inner
+outerinstance	67.0	metadata-deploy	Identifier name is reserved: Inner; Method does not exist or incorrect signature: void onlyInstance() from the type Probe.Inner
+outermissing	62.0	metadata-deploy	Identifier name is reserved: Inner; Method does not exist or incorrect signature: void absent() from the type Probe.Inner
+outermissing	67.0	metadata-deploy	Identifier name is reserved: Inner; Method does not exist or incorrect signature: void absent() from the type Probe.Inner
+outershadow	62.0	metadata-deploy	static can only be used on methods of a top level type; Identifier name is reserved: Inner
+outershadow	67.0	metadata-deploy	static can only be used on methods of a top level type; Identifier name is reserved: Inner
+privateoverride	45.0	metadata-deploy	accepted
+privateoverride	50.0	metadata-deploy	accepted
+privateoverride	55.0	metadata-deploy	accepted
+privateoverride	59.0	metadata-deploy	accepted
+privateoverride	60.0	metadata-deploy	accepted
+privateoverride	61.0	metadata-deploy	accepted
+privateoverride	62.0	metadata-deploy	accepted
+privateoverride	63.0	metadata-deploy	accepted
+privateoverride	64.0	metadata-deploy	accepted
+privateoverride	65.0	metadata-deploy	override methods require at least one of the following global, public, protected
+privateoverride	66.0	metadata-deploy	override methods require at least one of the following global, public, protected
+privateoverride	67.0	metadata-deploy	override methods require at least one of the following global, public, protected
+protectedoverride	62.0	metadata-deploy	accepted
+protectedoverride	67.0	metadata-deploy	accepted
+forredeclare	45.0	metadata-deploy	Duplicate variable: i
+forredeclare	50.0	metadata-deploy	Duplicate variable: i
+forredeclare	55.0	metadata-deploy	Duplicate variable: i
+forredeclare	59.0	metadata-deploy	Duplicate variable: i
+forredeclare	60.0	metadata-deploy	Duplicate variable: i
+forredeclare	61.0	metadata-deploy	Duplicate variable: i
+forredeclare	62.0	metadata-deploy	Duplicate variable: i
+forredeclare	63.0	metadata-deploy	Duplicate variable: i
+forredeclare	64.0	metadata-deploy	Duplicate variable: i
+forredeclare	65.0	metadata-deploy	Duplicate variable: i
+forredeclare	66.0	metadata-deploy	Duplicate variable: i
+forredeclare	67.0	metadata-deploy	Duplicate variable: i
+forcontrol	62.0	metadata-deploy	accepted
+forcontrol	67.0	metadata-deploy	accepted
+siblingscope	62.0	metadata-deploy	accepted
+siblingscope	67.0	metadata-deploy	accepted
+nestedreject	62.0	metadata-deploy	Illegal assignment from Integer to Map<String,Object>
+nestedreject	67.0	metadata-deploy	Illegal assignment from Integer to Map<String,Object>
+modifiers	62.0	metadata-deploy	accepted
+modifiers	67.0	metadata-deploy	accepted
+badmodifier	62.0	metadata-deploy	Missing ';' at 'Integer'; Variable does not exist: FINALS
+badmodifier	67.0	metadata-deploy	Missing ';' at 'Integer'; Variable does not exist: FINALS
+comparison	62.0	metadata-deploy	accepted
+comparison	67.0	metadata-deploy	accepted
+badcomparison	62.0	metadata-deploy	Comparison arguments must be compatible types: Integer, Boolean
+badcomparison	67.0	metadata-deploy	Comparison arguments must be compatible types: Integer, Boolean
+outerstatic_corrected	62.0	metadata-deploy	accepted
+outerstatic_corrected	67.0	metadata-deploy	accepted
+outerinstance_corrected	62.0	metadata-deploy	Method does not exist or incorrect signature: void onlyInstance() from the type Probe.Adapter
+outerinstance_corrected	67.0	metadata-deploy	Method does not exist or incorrect signature: void onlyInstance() from the type Probe.Adapter
+outermissing_corrected	62.0	metadata-deploy	Method does not exist or incorrect signature: void absent() from the type Probe.Adapter
+outermissing_corrected	67.0	metadata-deploy	Method does not exist or incorrect signature: void absent() from the type Probe.Adapter
+outeroverload_corrected	62.0	metadata-deploy	accepted
+outeroverload_corrected	67.0	metadata-deploy	accepted
+forredeclare_corrected	45.0	metadata-deploy	accepted
+forredeclare_corrected	50.0	metadata-deploy	accepted
+forredeclare_corrected	55.0	metadata-deploy	accepted
+forredeclare_corrected	59.0	metadata-deploy	accepted
+forredeclare_corrected	60.0	metadata-deploy	accepted
+forredeclare_corrected	61.0	metadata-deploy	accepted
+forredeclare_corrected	62.0	metadata-deploy	accepted
+forredeclare_corrected	63.0	metadata-deploy	accepted
+forredeclare_corrected	64.0	metadata-deploy	accepted
+forredeclare_corrected	65.0	metadata-deploy	accepted
+forredeclare_corrected	66.0	metadata-deploy	accepted
+forredeclare_corrected	67.0	metadata-deploy	accepted
+outerruntime	62.0	anonymous	passed
+outerruntime	67.0	anonymous	passed
