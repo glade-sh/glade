@@ -1,9 +1,6 @@
 package sema
 
 import (
-	"io/fs"
-	"os"
-	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -88,44 +85,18 @@ func TestTypeScopeFieldBindingsMatchFullScan(t *testing.T) {
 }
 
 // TestTypeScopeFieldBindingsMatchFullScanOnFixtures compares the compacted scan
-// with the full scan on every Apex source under the repository. Set
-// GLADE_SEMA_EQUIV_DIRS (os.PathListSeparator-separated) to add directories.
+// with the full scan on every Apex source under the repository (plus
+// GLADE_SEMA_EQUIV_DIRS).
 func TestTypeScopeFieldBindingsMatchFullScanOnFixtures(t *testing.T) {
-	roots := []string{filepath.Join("..", "..")}
-	if extra := os.Getenv("GLADE_SEMA_EQUIV_DIRS"); extra != "" {
-		roots = append(roots, strings.Split(extra, string(os.PathListSeparator))...)
-	}
 	files, types, fallbacks := 0, 0, 0
-	for _, root := range roots {
-		err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
-			if err != nil {
-				return nil
-			}
-			if entry.IsDir() {
-				if base := entry.Name(); base == "node_modules" || base == ".git" || base == "web" {
-					return filepath.SkipDir
-				}
-				return nil
-			}
-			if ext := filepath.Ext(path); ext != ".cls" && ext != ".trigger" {
-				return nil
-			}
-			data, err := os.ReadFile(path)
-			if err != nil {
-				return nil
-			}
-			files++
-			compared, kept := assertTypeScopeFieldBindingsEquivalent(t, path, string(data))
-			types += compared
-			fallbacks += kept
-			return nil
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
-	if files == 0 || types == 0 {
-		t.Fatalf("no Apex sources compared (files=%d types=%d)", files, types)
+	forEachRepositoryApexSource(t, func(path, source string) {
+		files++
+		compared, kept := assertTypeScopeFieldBindingsEquivalent(t, path, source)
+		types += compared
+		fallbacks += kept
+	})
+	if types == 0 {
+		t.Fatalf("no type bodies compared in %d files", files)
 	}
 	t.Logf("compared %d type bodies in %d files; %d bodies kept their full text", types, files, fallbacks)
 }
