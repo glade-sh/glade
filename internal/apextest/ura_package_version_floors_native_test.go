@@ -34,6 +34,7 @@ func TestURAPackageVersionFloorsNativeConformance(t *testing.T) {
 		t.Run(row[0], func(t *testing.T) {
 			root := t.TempDir()
 			writeFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"localprobe","sourceApiVersion":%q}`, row[0]))
+			writeFile(t, filepath.Join(root, "force-app/main/default/objects/Order/Order.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><sharingModel>ReadWrite</sharingModel></CustomObject>`)
 			class := "VersionProbe" + strings.TrimSuffix(row[0], ".0")
 			for _, suffix := range []string{".cls", ".cls-meta.xml"} {
 				b, err := os.ReadFile(filepath.Join(dir, "sources", class+suffix))
