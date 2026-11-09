@@ -1391,6 +1391,13 @@ func (e *Engine) applyFlowAssignmentStep(assignment storage.FlowAssignment, fram
 					frame.assigned[flowFrameKey(target)] = true
 					return nil
 				}
+				if record, found := frame.records[flowFrameKey(assignment.SourceField)]; found {
+					frame.records[flowFrameKey(target)] = record.Clone()
+					delete(frame.scalars, flowFrameKey(target))
+					delete(frame.nullRecordDefaults, flowFrameKey(target))
+					frame.assigned[flowFrameKey(target)] = true
+					return nil
+				}
 			}
 			// Collection variables are stored separately from scalar values in a
 			// Flow frame. Salesforce permits assigning one SObject collection to
