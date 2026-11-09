@@ -13,7 +13,7 @@ func TestApprovalGrantProjectRunnerAndWarm(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, api := range []string{"62.0", "67.0"} {
-		for _, state := range []string{"muted", "direct", "revoked", "expired", "global_object_muted", "global_both_muted", "global_direct", "global_revoked"} {
+		for _, state := range []string{"muted", "direct", "revoked", "expired", "global_object_muted", "global_muted", "global_both_muted", "global_direct", "global_revoked"} {
 			t.Run(api+"/"+state, func(t *testing.T) {
 				root := t.TempDir()
 				writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"name":"GrantRunner","sourceApiVersion":"`+api+`"}`)
@@ -24,7 +24,11 @@ func TestApprovalGrantProjectRunnerAndWarm(t *testing.T) {
 					if state == "global_object_muted" {
 						mute = "false"
 					}
-					body = `PermissionSet ps=new PermissionSet(Name='ApprovalGrant',Label='Approval Grant',PermissionsModifyAllData=true);insert ps;insert new ObjectPermissions(ParentId=ps.Id,SObjectType='Account',PermissionsModifyAllRecords=true);PermissionSetGroup pg=new PermissionSetGroup(DeveloperName='ApprovalGroup',MasterLabel='Approval Group');insert pg;insert new PermissionSetGroupComponent(PermissionSetGroupId=pg.Id,PermissionSetId=ps.Id);MutingPermissionSet m=new MutingPermissionSet(DeveloperName='ApprovalMute',MasterLabel='Approval Mute',PermissionsModifyAllData=` + mute + `);insert m;insert new ObjectPermissions(ParentId=m.Id,SObjectType='Account',PermissionsModifyAllRecords=true);insert new PermissionSetGroupComponent(PermissionSetGroupId=pg.Id,PermissionSetId=m.Id);`
+					body = `PermissionSet ps=new PermissionSet(Name='ApprovalGrant',Label='Approval Grant',PermissionsModifyAllData=true);insert ps;insert new ObjectPermissions(ParentId=ps.Id,SObjectType='Account',PermissionsModifyAllRecords=true);PermissionSetGroup pg=new PermissionSetGroup(DeveloperName='ApprovalGroup',MasterLabel='Approval Group');insert pg;insert new PermissionSetGroupComponent(PermissionSetGroupId=pg.Id,PermissionSetId=ps.Id);MutingPermissionSet m=new MutingPermissionSet(DeveloperName='ApprovalMute',MasterLabel='Approval Mute',PermissionsModifyAllData=` + mute + `);insert m;`
+					if state != "global_muted" {
+						body += `insert new ObjectPermissions(ParentId=m.Id,SObjectType='Account',PermissionsModifyAllRecords=true);`
+					}
+					body += `insert new PermissionSetGroupComponent(PermissionSetGroupId=pg.Id,PermissionSetId=m.Id);`
 				}
 				body += `Profile p=[SELECT Id FROM Profile WHERE Name='Approval Test User' LIMIT 1]; User u=new User(Alias='probe',Email='probe@example.invalid',EmailEncodingKey='UTF-8',LastName='Probe',LanguageLocaleKey='en_US',LocaleSidKey='en_US',ProfileId=p.Id,TimeZoneSidKey='America/Los_Angeles',Username='approval-runner@example.invalid'); insert u; PermissionSetGroup g=[SELECT Id FROM PermissionSetGroup WHERE DeveloperName='ApprovalGroup']; insert new PermissionSetAssignment(AssigneeId=u.Id,PermissionSetGroupId=g.Id);`
 				if state == "direct" || state == "revoked" || state == "expired" || state == "global_direct" || state == "global_revoked" {
@@ -38,7 +42,7 @@ func TestApprovalGrantProjectRunnerAndWarm(t *testing.T) {
 					}
 				}
 				want := "false:ENTITY_IS_LOCKED"
-				if state == "direct" || state == "global_object_muted" || state == "global_direct" {
+				if state == "direct" || state == "global_object_muted" || state == "global_muted" || state == "global_direct" {
 					want = "true:NONE"
 				}
 				body += `System.runAs(u){Account account=new Account(Name='Probe');insert account;Approval.lock(account);account.Name='Changed';Database.SaveResult result=Database.update(account,false);String value=String.valueOf(result.isSuccess())+':'+(result.isSuccess()?'NONE':String.valueOf(result.getErrors()[0].getStatusCode()));System.assertEquals('` + want + `',value);}`
