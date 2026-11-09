@@ -1123,7 +1123,7 @@ func (vm *VM) callGetter(owner string, field Field, receiver Value) (Value, erro
 	value, err := vm.callMethodWithReceiver(*field.Getter, receiver, nil, resultForLookup())
 	if err != nil {
 		var fault *RuntimeError
-		if receiver.Kind == ValueNull && field.Static && vm.activeGetters[key] > 1 &&
+		if vm.activeGetters[key] > 1 &&
 			errors.As(err, &fault) && fault.callStackLimit {
 			return Null, &RuntimeError{Type: "System.LimitException", Message: "Maximum stack depth reached: 1001", Stack: fault.Stack}
 		}
@@ -2896,7 +2896,7 @@ func (vm *VM) assignValue(name string, value Value, rebind bool) error {
 				if field.Setter != nil {
 					storageName := staticFieldStorageName(memberName, field)
 					key := owner + "." + storageName
-					if vm.activeSetters[key] > 0 && (vm.isCurrentGetter(field.Setter) || !propertyAccessorMethod(vm.currentMethod)) {
+					if vm.activeSetters[key] > 0 && vm.isCurrentGetter(field.Setter) {
 						class, _ := vm.classEntry(owner)
 						vm.writeStaticFieldValue(owner, memberName, class, field, value)
 						return nil
@@ -3058,7 +3058,7 @@ func (vm *VM) assignValue(name string, value Value, rebind bool) error {
 			if field.Setter != nil {
 				storageName := staticFieldStorageName(name, field)
 				key := owner + "." + storageName
-				if vm.activeSetters[key] > 0 && (vm.isCurrentGetter(field.Setter) || !propertyAccessorMethod(vm.currentMethod)) {
+				if vm.activeSetters[key] > 0 && vm.isCurrentGetter(field.Setter) {
 					class, _ := vm.classEntry(owner)
 					vm.writeStaticFieldValue(owner, name, class, field, value)
 					return nil
