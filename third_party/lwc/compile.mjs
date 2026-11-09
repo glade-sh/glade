@@ -262,11 +262,19 @@ function rewriteStylesheetImports(code, bundleName) {
     );
 }
 
-function compileBundle(bundleDir, bundleName, namespace, outDir, apiVersion, moduleAvailability, configuredProperties, salesforceImports, capabilities, lightningModules) {
+function compileBundle(bundleDir, bundleName, namespace, outDir, apiVersion, moduleAvailability, configuredProperties, salesforceImports, capabilities, lightningModules, localModules) {
   const jsPath = path.join(bundleDir, `${bundleName}.js`);
   const htmlPath = path.join(bundleDir, `${bundleName}.html`);
   const cssPath = path.join(bundleDir, `${bundleName}.css`);
   if (!fs.existsSync(jsPath)) {
+    if (fs.existsSync(cssPath) && !fs.existsSync(htmlPath)) {
+      assertCompilerPreservesAPIVersion(apiVersion);
+      const moduleKey = `${namespace}/${bundleName}`;
+      const entryFile = path.join(outDir, moduleKey, `${bundleName}.js`);
+      const cssResult = transformStylesheet(cssPath, namespace, bundleName, apiVersion, localModules);
+      writeCompiled(entryFile, cssResult.code);
+      return { qualified: `${namespace}:${bundleName}`, moduleKey, file: entryFile, tag: `${namespace}-${kebabCase(bundleName)}` };
+    }
     return null;
   }
   assertCompilerPreservesAPIVersion(apiVersion);
@@ -281,7 +289,7 @@ function compileBundle(bundleDir, bundleName, namespace, outDir, apiVersion, mod
     validateGraphQLDocuments(ast, salesforceImports?.schema, walkAST);
   });
   if (!fs.existsSync(htmlPath) && !isCustomRenderComponent(jsPath)) {
-    return compileUtilityModule(bundleDir, bundleName, namespace, outDir, apiVersion, capabilities);
+    return compileUtilityModule(bundleDir, bundleName, namespace, outDir, apiVersion, capabilities, localModules);
   }
 
   const moduleKey = `${namespace}/${bundleName}`;
@@ -298,7 +306,7 @@ function compileBundle(bundleDir, bundleName, namespace, outDir, apiVersion, mod
   }
 
   if (fs.existsSync(cssPath)) {
-    const cssResult = transformStylesheet(cssPath, namespace, bundleName, apiVersion);
+    const cssResult = transformStylesheet(cssPath, namespace, bundleName, apiVersion, localModules);
     writeCompiled(path.join(bundleOut, `${bundleName}.css.js`), cssResult.code);
     writeCompiled(
       path.join(bundleOut, `${bundleName}.scoped.css.js`),
@@ -319,7 +327,7 @@ function compileBundle(bundleDir, bundleName, namespace, outDir, apiVersion, mod
   const entryFile = path.join(bundleOut, `${bundleName}.js`);
   writeCompiled(entryFile, jsCode);
   compileSiblingModules(bundleDir, bundleName, bundleOut, namespace);
-  compileAdditionalTemplateModules(bundleDir, bundleName, namespace, bundleOut, apiVersion, capabilities);
+  compileAdditionalTemplateModules(bundleDir, bundleName, namespace, bundleOut, apiVersion, capabilities, localModules);
 
   return {
     qualified: `${namespace}:${bundleName}`,
@@ -329,7 +337,7 @@ function compileBundle(bundleDir, bundleName, namespace, outDir, apiVersion, mod
   };
 }
 
-function compileUtilityModule(bundleDir, bundleName, namespace, outDir, apiVersion, capabilities) {
+function compileUtilityModule(bundleDir, bundleName, namespace, outDir, apiVersion, capabilities, localModules) {
   const jsPath = path.join(bundleDir, `${bundleName}.js`);
   const moduleKey = `${namespace}/${bundleName}`;
   const bundleOut = path.join(outDir, moduleKey);
@@ -338,7 +346,7 @@ function compileUtilityModule(bundleDir, bundleName, namespace, outDir, apiVersi
   const entryFile = path.join(bundleOut, `${bundleName}.js`);
   writeCompiled(entryFile, rewriteComponentShadowReads(fs.readFileSync(jsPath, "utf8"), namespace));
   compileSiblingModules(bundleDir, bundleName, bundleOut, namespace);
-  compileAdditionalTemplateModules(bundleDir, bundleName, namespace, bundleOut, apiVersion, capabilities);
+  compileAdditionalTemplateModules(bundleDir, bundleName, namespace, bundleOut, apiVersion, capabilities, localModules);
 
   return {
     qualified: `${namespace}:${bundleName}`,
@@ -367,7 +375,7 @@ function compileSiblingModules(bundleDir, bundleName, bundleOut, namespace) {
   });
 }
 
-function compileAdditionalTemplateModules(bundleDir, bundleName, namespace, bundleOut, apiVersion, capabilities) {
+function compileAdditionalTemplateModules(bundleDir, bundleName, namespace, bundleOut, apiVersion, capabilities, localModules) {
   walkBundleFiles(bundleDir, (sourcePath) => {
     const rel = path.relative(bundleDir, sourcePath);
     if (rel === `${bundleName}.html`) {
@@ -386,7 +394,7 @@ function compileAdditionalTemplateModules(bundleDir, bundleName, namespace, bund
 
     const cssPath = sourcePath.slice(0, -".html".length) + ".css";
     if (fs.existsSync(cssPath)) {
-      compileCSSModule(cssPath, templateName, namespace, bundleDir, bundleOut, apiVersion);
+      compileCSSModule(cssPath, templateName, namespace, bundleDir, bundleOut, apiVersion, localModules);
     } else {
       writeCompiled(
         path.join(bundleOut, `${path.relative(bundleDir, cssPath)}.js`),
@@ -401,13 +409,13 @@ function compileAdditionalTemplateModules(bundleDir, bundleName, namespace, bund
   });
 }
 
-function compileCSSModule(cssPath, name, namespace, bundleDir, bundleOut, apiVersion) {
-  const cssResult = transformStylesheet(cssPath, namespace, name, apiVersion);
+function compileCSSModule(cssPath, name, namespace, bundleDir, bundleOut, apiVersion, localModules) {
+  const cssResult = transformStylesheet(cssPath, namespace, name, apiVersion, localModules);
   const rel = path.relative(bundleDir, cssPath);
   writeCompiled(path.join(bundleOut, `${rel}.js`), cssResult.code);
 }
 
-function transformStylesheet(cssPath, namespace, name, apiVersion) {
+function transformStylesheet(cssPath, namespace, name, apiVersion, localModules) {
   const source = fs.readFileSync(cssPath, "utf8");
   if (source.length === 0) {
     throw new Error(`Lightning Component Resource [lwc/${name}/${path.basename(cssPath)}] for Lightning Component Bundle ${name} cannot be empty.`);
@@ -429,6 +437,8 @@ function transformStylesheet(cssPath, namespace, name, apiVersion) {
       if (!fs.existsSync(target) || !fs.statSync(target).isFile()) {
         throw new Error(`LWC1011: Failed to resolve import "${specifier}" from "${path.basename(cssPath)}". Please add "${path.basename(specifier)}" file to the component folder.`);
       }
+    } else if (localModules && specifier.startsWith(`${namespace}/`) && !localModules.has(specifier.slice(namespace.length + 1))) {
+      throw new Error(`No MODULE named markup://${namespace}:${specifier.slice(namespace.length + 1)} found : [markup://${namespace}:${name}]`);
     } else if (specifier.includes(".") || specifier.includes(":")) {
       throw new Error(`Invalid import '${specifier}'. No '.' in module reference or start relative path with ./`);
     }
@@ -898,6 +908,10 @@ async function main() {
     }
   }
 
+  // An opt-in complete source inventory makes local-module absence meaningful.
+  const localModules = config.completeLocalModuleInventory
+    ? new Set([...lwcRoots].map((dir) => path.basename(dir))) : null;
+
   const schemaReferencesOnly = process.argv.includes("--salesforce-schema-references");
   if (schemaReferencesOnly || process.argv.includes("--salesforce-import-references")) {
     const references = new Set();
@@ -939,7 +953,7 @@ async function main() {
       if (!Number.isInteger(apiVersion)) {
         throw new Error(`missing component API version for bundle ${bundleKey}`);
       }
-      const entry = compileBundle(bundleDir, bundleName, namespace, bundleOut, apiVersion, config.lwcModuleAvailability || {}, config.lwcConfiguredProperties?.[bundleKey] || [], config.salesforceImports, config.lwcCapabilities?.[bundleKey] || [], config.lightningModules);
+      const entry = compileBundle(bundleDir, bundleName, namespace, bundleOut, apiVersion, config.lwcModuleAvailability || {}, config.lwcConfiguredProperties?.[bundleKey] || [], config.salesforceImports, config.lwcCapabilities?.[bundleKey] || [], config.lightningModules, localModules);
       // Native c_metadata_* checks capability declarations after template
       // compilation; invalid dynamic usage keeps its actual compiler error.
       const capabilityError = config.lwcCapabilityErrors?.[bundleKey];

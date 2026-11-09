@@ -63,15 +63,42 @@ func TestCompileNativeSharedStylesheet(t *testing.T) {
 				t.Fatal(err)
 			}
 			out := filepath.Join(root, "dist")
-			manifest, err := Compile(p, Options{OutDir: out, Namespace: "c", RepoRoot: repoRoot})
+			manifest, err := Compile(p, Options{OutDir: out, Namespace: "c", RepoRoot: repoRoot, CompleteLocalModuleInventory: true})
+			batch, batchErr := CompileBatch(p, Options{OutDir: filepath.Join(root, "batch"), Namespace: "c", RepoRoot: repoRoot, CompleteLocalModuleInventory: true})
+			if batchErr != nil {
+				t.Fatal(batchErr)
+			}
+			probeResult, ok := batch["force-app/main/default/lwc/probe"]
+			if !ok {
+				t.Fatal("missing batch result for probe")
+			}
 			if row[3] == "rejected" {
 				if err == nil || !strings.Contains(err.Error(), "No MODULE named") {
 					t.Fatalf("Compile error = %v; want missing module rejection", err)
+				}
+				if probeResult.Err == nil || !strings.Contains(probeResult.Err.Error(), "No MODULE named") {
+					t.Fatalf("batch probe error = %v; want missing module rejection", probeResult.Err)
+				}
+				// Without an authoritative inventory, the reference may exist in
+				// the target org, so local compilation must defer resolution.
+				_, err = Compile(p, Options{OutDir: filepath.Join(root, "partial"), Namespace: "c", RepoRoot: repoRoot})
+				if err != nil {
+					t.Fatalf("partial inventory should defer resolution: %v", err)
 				}
 				return
 			}
 			if err != nil {
 				t.Fatal(err)
+			}
+			if probeResult.Err != nil {
+				t.Fatalf("batch probe compilation: %v", probeResult.Err)
+			}
+			sharedResult, ok := batch["force-app/main/default/lwc/sharedStyles"]
+			if !ok || sharedResult.Err != nil {
+				t.Fatalf("batch shared stylesheet result = %+v", sharedResult)
+			}
+			if _, ok := sharedResult.Manifest.Modules["c:sharedStyles"]; !ok {
+				t.Fatal("batch shared stylesheet has no compiled module")
 			}
 			entry, ok := manifest.Modules["c:sharedStyles"]
 			if !ok {
