@@ -468,7 +468,11 @@ func (vm *VM) constructValueWithNamedArgOrder(typeName string, args []Value, nam
 		vm.rememberLocalOnlyObject(object)
 		// R202/X010: source-defined exceptions carry their construction
 		// location, just like exceptions constructed by the platform path.
-		object = annotateConstructedException(object, vm.rawStackFrames())
+		// Only an exception reads the frames; capturing them qualifies every
+		// frame's symbol, which every other `new` would pay for nothing.
+		if isExceptionType(typeName) {
+			object = annotateConstructedException(object, vm.rawStackFrames())
+		}
 		if !passiveDTO {
 			for field, value := range namedArgs {
 				object.Fields[field] = value
