@@ -437,6 +437,19 @@ func (vm *VM) describeSObjectFieldMap(name string, definition storage.ObjectDefi
 		field = describeFieldWithSystemOverlay(field)
 		token := vm.sObjectFieldTokenFromField(name, field)
 		vm.addSObjectFieldMapFieldEntry(&fieldsMap, name, definition, field, token)
+		if field.Type == storage.FieldLocation && strings.HasSuffix(strings.ToLower(apiName), "__c") {
+			base := apiName[:len(apiName)-len("__c")]
+			for _, suffix := range []string{"__Latitude__s", "__Longitude__s"} {
+				component, ok := storage.ResolveLocationComponentField(definition, "", base+suffix)
+				if !ok {
+					continue
+				}
+				if _, exists := fieldsMap.Map[mapKey(String(component.APIName))]; exists {
+					continue
+				}
+				vm.addSObjectFieldMapFieldEntry(&fieldsMap, name, definition, component, vm.sObjectFieldTokenFromField(name, component))
+			}
+		}
 	}
 	defaultFieldNames := []string{"Id", "CreatedDate", "CreatedById", "LastModifiedDate", "LastModifiedById", "SystemModstamp"}
 	if vm.isStandardAPI68NewObject(name) || storage.IsGeneratedHistoryObject(definition) || storage.IsChangeEventObject(definition) {
@@ -2020,6 +2033,11 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 		return cached, nil
 	}
 	field := definition.Fields[fieldName]
+	if strings.TrimSpace(field.APIName) == "" {
+		if component, ok := storage.ResolveLocationComponentField(definition, namespace, fieldName); ok {
+			field = component
+		}
+	}
 	if strings.TrimSpace(field.APIName) == "" {
 		if strings.EqualFold(fieldName, "Id") {
 			field = storage.Field{APIName: "Id", Label: "Record ID", Type: storage.FieldID}
