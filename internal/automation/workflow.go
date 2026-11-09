@@ -134,6 +134,7 @@ func LoadProject(p project.Project, metadataReaders ...func(string) ([]byte, err
 		idx.Flows = append(idx.Flows, flow)
 		idx.Diagnostics = append(idx.Diagnostics, diagnostics...)
 	}
+	flowValidateProjectTransformTargets(p, &idx)
 	if err := flowRefsValidateProjectDecisions(p, &idx); err != nil {
 		return Index{}, err
 	}
