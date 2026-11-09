@@ -1,0 +1,5 @@
+api	route	case	result
+62.0	istest	entity-sharing	"{""Account"":""ReadWrite"",""Case"":""ReadWriteTransfer"",""Order"":""ReadWrite"",""OwnedPrivate__c"":""Private"",""OwnedPublic__c"":""ReadWrite"",""OwnedRead__c"":""Read"",""User"":""Read""}"
+62.0	anonymous	entity-sharing	"{""Account"":""ReadWrite"",""Case"":""ReadWriteTransfer"",""Order"":""ReadWrite"",""OwnedPrivate__c"":""Private"",""OwnedPublic__c"":""ReadWrite"",""OwnedRead__c"":""Read"",""User"":""Read""}"
+67.0	istest	entity-sharing	"{""Account"":""ReadWrite"",""Case"":""ReadWriteTransfer"",""Order"":""ReadWrite"",""OwnedPrivate__c"":""Private"",""OwnedPublic__c"":""ReadWrite"",""OwnedRead__c"":""Read"",""User"":""Read""}"
+67.0	anonymous	entity-sharing	"{""Account"":""ReadWrite"",""Case"":""ReadWriteTransfer"",""Order"":""ReadWrite"",""OwnedPrivate__c"":""Private"",""OwnedPublic__c"":""ReadWrite"",""OwnedRead__c"":""Read"",""User"":""Read""}"
