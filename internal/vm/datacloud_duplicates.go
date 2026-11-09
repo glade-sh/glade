@@ -160,13 +160,17 @@ func databaseDuplicateErrorValue(err dml.Error) Value {
 	return value
 }
 
+// datacloudDuplicateMembers maps each Datacloud result type to its accessor
+// fields. The registered member hook runs for every platform object member
+// call, so the table is built once rather than per call.
+var datacloudDuplicateMembers = map[string]map[string]string{
+	"datacloud.duplicateresult": {"getduplicaterule": "duplicateRule", "getduplicateruleentitytype": "duplicateRuleEntityType", "geterrormessage": "errorMessage", "getmatchresults": "matchResults", "isallowsave": "allowSave"},
+	"datacloud.matchresult":     {"getentitytype": "entityType", "geterrors": "errors", "getmatchengine": "matchEngine", "getmatchrecords": "matchRecords", "getrule": "rule", "getsize": "size", "issuccess": "success"},
+	"datacloud.matchrecord":     {"getadditionalinformation": "additionalInformation", "getfielddiffs": "fieldDiffs", "getmatchconfidence": "matchConfidence", "getrecord": "record"},
+}
+
 func callDatacloudDuplicateMember(_ *VM, receiver Value, method string, args []Value, _ *Result) (Value, Value, bool, bool, error) {
-	members := map[string]map[string]string{
-		"datacloud.duplicateresult": {"getduplicaterule": "duplicateRule", "getduplicateruleentitytype": "duplicateRuleEntityType", "geterrormessage": "errorMessage", "getmatchresults": "matchResults", "isallowsave": "allowSave"},
-		"datacloud.matchresult":     {"getentitytype": "entityType", "geterrors": "errors", "getmatchengine": "matchEngine", "getmatchrecords": "matchRecords", "getrule": "rule", "getsize": "size", "issuccess": "success"},
-		"datacloud.matchrecord":     {"getadditionalinformation": "additionalInformation", "getfielddiffs": "fieldDiffs", "getmatchconfidence": "matchConfidence", "getrecord": "record"},
-	}
-	fields, ok := members[strings.ToLower(receiver.Type)]
+	fields, ok := datacloudDuplicateMembers[strings.ToLower(receiver.Type)]
 	if !ok {
 		return Null, receiver, false, false, nil
 	}
