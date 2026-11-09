@@ -2249,12 +2249,12 @@ func collectFiles(root string, p *Project, ignore *forceIgnoreSet) error {
 		case isAuraPath(lower) && isAuraSourceFile(lower):
 			p.AuraFiles = append(p.AuraFiles, path)
 		case isLWCPath(lower):
+			// Files directly under lwc are outside any component bundle.
+			if strings.EqualFold(filepath.Base(filepath.Dir(path)), "lwc") {
+				return nil
+			}
 			switch {
 			case strings.HasSuffix(lower, ".js"):
-				// Loose JavaScript under lwc is not a component source file.
-				if strings.EqualFold(filepath.Base(filepath.Dir(path)), "lwc") {
-					return nil
-				}
 				p.LWCFiles = append(p.LWCFiles, path)
 			case strings.HasSuffix(lower, ".html"):
 				p.LWCHTMLFiles = append(p.LWCHTMLFiles, path)
