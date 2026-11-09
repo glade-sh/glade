@@ -8,14 +8,17 @@ import (
 
 // Native observations: location_describe/org.tsv, API 62.0 and 67.0.
 func TestLocationDescribeNative(t *testing.T) {
-	org := testDataOrg()
-	account := org.Objects["Account"]
-	account.Definition.Fields["Probe_Point__c"] = storage.Field{APIName: "Probe_Point__c", Type: storage.FieldLocation, DisplayType: "LOCATION"}
-	account.Definition.Fields["Probe_Text__c"] = storage.Field{APIName: "Probe_Text__c", Type: storage.FieldString}
-	org.Objects["Account"] = account
-	machine := New(nil)
-	machine.SetOrg(&org)
-	program, err := CompileAnonymous(`
+	for _, api := range []string{"62.0", "67.0"} {
+		t.Run(api, func(t *testing.T) {
+			org := testDataOrg()
+			org.APIVersion = api
+			account := org.Objects["Account"]
+			account.Definition.Fields["Probe_Point__c"] = storage.Field{APIName: "Probe_Point__c", Type: storage.FieldLocation, DisplayType: "LOCATION"}
+			account.Definition.Fields["Probe_Text__c"] = storage.Field{APIName: "Probe_Text__c", Type: storage.FieldString}
+			org.Objects["Account"] = account
+			machine := New(nil)
+			machine.SetOrg(&org)
+			program, err := CompileAnonymousWithOptions(`
 Map<String, Schema.SObjectField> fields = Account.SObjectType.getDescribe().fields.getMap();
 System.assertEquals(true, fields.containsKey('Probe_Point__c'));
 System.assertEquals(true, fields.containsKey('Probe_Point__Latitude__s'));
@@ -26,11 +29,15 @@ System.assertEquals('Probe_Point__c', fields.get('probe_point__longitude__s').ge
 System.assertEquals(true, fields.containsKey('Probe_Text__c'));
 System.assertEquals(false, fields.containsKey('Probe_Text__Latitude__s'));
 System.assertEquals(false, fields.containsKey('Absent__Latitude__s'));
-`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := machine.Execute(program); err != nil {
-		t.Fatal(err)
+`, CompileOptions{APIVersion: api})
+			if err != nil {
+				t.Fatal(err)
+			}
+			for i := 0; i < 2; i++ {
+				if _, err := machine.Execute(program); err != nil {
+					t.Fatal(err)
+				}
+			}
+		})
 	}
 }
