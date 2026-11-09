@@ -6221,7 +6221,8 @@ func TestExecDescribeFieldResultStubBackedAccessors(t *testing.T) {
 	program, err := CompileAnonymous(`
 Schema.DescribeFieldResult describe = Account.SObjectType.getDescribe().fields.getMap().get('Defaulted__c').getDescribe();
 System.assertEquals('Defaulted__c', describe.getLocalName());
-System.assertEquals('Fallback', describe.getDefaultValue());
+// Native metadata default matrix: describe_default_value/org.tsv:8-9.
+System.assertEquals(null, describe.getDefaultValue());
 System.assertEquals('\'Fallback\'', describe.getDefaultValueFormula());
 System.assertEquals(true, describe.isDefaultedOnCreate());
 System.assertEquals(true, describe.isFilterable());
