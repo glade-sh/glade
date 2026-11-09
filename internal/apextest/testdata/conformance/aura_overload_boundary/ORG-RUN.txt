@@ -1,0 +1,2 @@
+Salesforce Developer scratch org; capture date 2026-11-09.
+Deployed each synthetic overloaded Apex class independently at its declared API version. API 53 and 54 succeeded; 55 and 56 failed and their deployments rolled back. Deployed four components and a Visualforce-hosted Lightning Out application, then read each displayed component result in the browser. Each component invokes the class and API version recorded in org.tsv. Initial attempts failed because the project directory had not been created; they are not native behavior observations.
