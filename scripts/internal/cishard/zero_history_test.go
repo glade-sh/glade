@@ -32,3 +32,13 @@ func TestZeroHistoryBalancesShardCounts(t *testing.T) {
 		t.Fatal("plan is not deterministic")
 	}
 }
+
+func TestZeroHistoryFloorOverflowFallsBack(t *testing.T) {
+	names := []string{"TestLarge", "TestZero"}
+	durations := map[string]int64{"TestLarge": 9223372036854775807, "TestZero": 0}
+	got, diagnostic, err := buildPlan(names, 2, validHistory(names, durations))
+	if err != nil || got.HistoryUsed || diagnostic == "" {
+		t.Fatalf("expected overflow fallback: plan=%+v diagnostic=%q error=%v", got, diagnostic, err)
+	}
+	assertValidPlan(t, got, names)
+}
