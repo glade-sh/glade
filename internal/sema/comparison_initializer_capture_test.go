@@ -126,3 +126,16 @@ func TestCapturedCommentedComparisonInitializer(t *testing.T) {
 		}
 	}
 }
+
+func TestCapturedDeclarationAfterBlockComment(t *testing.T) {
+	body := "/*\nInteger fake =\n*/\nInteger actual = 2, second = 3;"
+	found := false
+	for _, match := range findSemaLocalDeclMatches(body) {
+		if body[match[4]:match[5]] == "actual" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatal("captured declaration was skipped after block comment")
+	}
+}
