@@ -3024,16 +3024,23 @@ func (vm *VM) resolveStaticMethodForArgs(typeName, method string, args []Value) 
 			if _, ok := vm.lookupClass(enclosing); !ok {
 				break
 			}
-			target, ok, ambiguous := vm.matchRegisteredStaticMethod(enclosing+"."+method, args)
-			if ambiguous {
-				return Method{}, false, true
-			}
-			if ok {
-				if vm.methodResolveCache == nil {
-					vm.methodResolveCache = make(map[string]methodResolution)
+			for owner := enclosing; owner != ""; {
+				target, ok, ambiguous := vm.matchRegisteredStaticMethod(owner+"."+method, args)
+				if ambiguous {
+					return Method{}, false, true
 				}
-				vm.methodResolveCache[cacheKey] = methodResolution{Method: target, OK: true}
-				return target, true, false
+				if ok {
+					if vm.methodResolveCache == nil {
+						vm.methodResolveCache = make(map[string]methodResolution)
+					}
+					vm.methodResolveCache[cacheKey] = methodResolution{Method: target, OK: true}
+					return target, true, false
+				}
+				class, ok := vm.lookupClass(owner)
+				if !ok {
+					break
+				}
+				owner = vm.resolvedSuperClassName(class)
 			}
 		}
 	}
