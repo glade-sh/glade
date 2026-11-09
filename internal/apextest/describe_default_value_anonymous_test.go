@@ -21,6 +21,7 @@ func TestDescribeDefaultValueAnonymousNative(t *testing.T) {
 	defer file.Close()
 	reader := csv.NewReader(file)
 	reader.Comma = '\t'
+	reader.LazyQuotes = true
 	rows, err := reader.ReadAll()
 	if err != nil {
 		t.Fatal(err)
