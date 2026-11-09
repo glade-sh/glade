@@ -69,3 +69,53 @@ func TestCapturedNamespacedStaticFieldTypeCollision(t *testing.T) {
 		})
 	}
 }
+
+func TestCapturedStaticFieldTypeBoundary(t *testing.T) {
+	const fixture = "testdata/conformance/static_field_type_boundary"
+	project, err := os.ReadFile(filepath.Join(fixture, "project.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var config struct {
+		Namespace string `json:"namespace"`
+	}
+	if err := json.Unmarshal(project, &config); err != nil || config.Namespace == "" {
+		t.Fatalf("invalid namespace config: %v", err)
+	}
+	rows := readScopeRunnerTSV(t, filepath.Join(fixture, "org.tsv"), []string{"case", "api", "route", "outcome"})
+	if len(rows) != 6 {
+		t.Fatalf("expected six native rows, got %d", len(rows))
+	}
+	for _, row := range rows {
+		if len(row) != 4 || (row[1] != "62.0" && row[1] != "67.0") || row[2] != "metadata-validation" {
+			t.Fatalf("invalid native row: %v", row)
+		}
+		t.Run(row[0]+"/"+row[1], func(t *testing.T) {
+			data, err := os.ReadFile(filepath.Join(fixture, "cases", row[0]+".json"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			var classes map[string]string
+			if err := json.Unmarshal(data, &classes); err != nil {
+				t.Fatal(err)
+			}
+			root := t.TempDir()
+			writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"`+config.Namespace+`","sourceApiVersion":"`+row[1]+`","packageDirectories":[{"path":"force-app","default":true}]}`)
+			for name, source := range classes {
+				path := filepath.Join(root, "force-app/main/default/classes", name)
+				writeFile(t, path, source)
+				writeFile(t, path+"-meta.xml", `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>`+row[1]+`</apiVersion><status>Active</status></ApexClass>`)
+			}
+			index := loadTestIndex(t, root)
+			analysis := sema.Analyze(index)
+			rejected := index.HasErrors() || analysis.HasErrors()
+			if row[0] == "field_missing" {
+				if !strings.Contains(row[3], "Static method cannot") || !rejected {
+					t.Fatalf("native rejection %q, local diagnostics %v %v", row[3], index.Diagnostics, analysis.Diagnostics)
+				}
+			} else if row[3] != "accepted" || rejected {
+				t.Fatalf("native acceptance %v, local diagnostics %v %v", row, index.Diagnostics, analysis.Diagnostics)
+			}
+		})
+	}
+}
