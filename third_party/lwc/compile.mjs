@@ -413,6 +413,12 @@ function compileAdditionalTemplateModules(bundleDir, bundleName, namespace, bund
 function compileSharedStylesheetGraph(cssPath, entryFile, bundleDir, namespace, name, apiVersion, localModules) {
   const bundleOut = path.dirname(entryFile);
   const outputs = new Map([[path.resolve(cssPath), entryFile]]);
+  // Reserve a directory that no source within the bundle can map onto. A
+  // fixed directory name could overwrite an ordinary stylesheet output.
+  let externalDir = "__external_styles";
+  for (let suffix = 1; fs.existsSync(path.join(bundleDir, externalDir)); suffix++) {
+    externalDir = `__external_styles_${suffix}`;
+  }
   let externalCount = 0;
   function emit(sourcePath) {
     const outputPath = outputs.get(sourcePath);
@@ -427,7 +433,7 @@ function compileSharedStylesheetGraph(cssPath, entryFile, bundleDir, namespace, 
       if (!outputs.has(target)) {
         const relative = path.relative(bundleDir, target);
         const inside = relative !== ".." && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative);
-        const file = inside ? `${relative}.js` : path.join("__external_styles", `${externalCount++}.css.js`);
+        const file = inside ? `${relative}.js` : path.join(externalDir, `${externalCount++}.css.js`);
         outputs.set(target, path.join(bundleOut, file));
         emit(target);
       }
