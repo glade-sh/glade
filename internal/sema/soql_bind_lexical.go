@@ -221,6 +221,16 @@ func semaTypeScopeDeclarationText(body string, blocks [][2]int, base int) (strin
 func semaAnnotationArgumentsCrossBrace(body string) bool {
 	for i := strings.IndexByte(body, '@'); i >= 0 && i < len(body); {
 		j := i + 1
+		// The declaration regex is case-insensitive: its ASCII character
+		// classes also match Unicode simple folds. Keep the full body when an
+		// annotation name may contain one of those non-ASCII characters.
+		for j < len(body) && semaIdentifierByte(body[j]) {
+			j++
+		}
+		if j < len(body) && body[j] >= 0x80 {
+			return true
+		}
+		j = i + 1
 		if j < len(body) && semaIdentifierByte(body[j]) && !(body[j] >= '0' && body[j] <= '9') {
 			for j < len(body) && semaIdentifierByte(body[j]) {
 				j++
