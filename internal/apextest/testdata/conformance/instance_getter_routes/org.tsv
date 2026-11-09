@@ -1,0 +1,15 @@
+api	case	route	outcome
+62.0	crossInstanceCycle	IsTest	Pass
+62.0	directControl	IsTest	Pass
+62.0	finiteHelper	IsTest	Pass
+62.0	otherInstance	IsTest	Fail; System.AssertException: Assertion Failed: Expected: 1, Actual: 0
+62.0	recursiveHelper	IsTest	Fail; System.LimitException: Maximum stack depth reached: 1001
+67.0	crossInstanceCycle	IsTest	Pass
+67.0	directControl	IsTest	Pass
+67.0	finiteHelper	IsTest	Pass
+67.0	otherInstance	IsTest	Fail; System.AssertException: Assertion Failed: Expected: 1, Actual: 0
+67.0	recursiveHelper	IsTest	Fail; System.LimitException: Maximum stack depth reached: 1001
+62.0	otherInstanceBacking	IsTest	Pass
+62.0	referenceCycle	IsTest	Pass
+67.0	otherInstanceBacking	IsTest	Pass
+67.0	referenceCycle	IsTest	Pass
