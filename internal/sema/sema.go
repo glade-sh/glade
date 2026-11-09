@@ -1515,7 +1515,7 @@ func newSemaBodyExpressionScan(body string) *semaBodyExpressionScan {
 func semaAssignmentValueSpans(body string, ignored *semaIgnoredText) []semaTextSpan {
 	var spans []semaTextSpan
 	for i := 0; i < len(body); i++ {
-		if body[i] != '=' || ignored.contains(i) {
+		if body[i] != '=' || ignored.contains(i) || ignored.inParenGroup(i) {
 			continue
 		}
 		if i+1 < len(body) && (body[i+1] == '=' || body[i+1] == '>') {
