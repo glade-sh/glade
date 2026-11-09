@@ -113,6 +113,15 @@ func TestCapturedStaticFieldTypeBoundary(t *testing.T) {
 				if !strings.Contains(row[3], "Static method cannot") || !rejected {
 					t.Fatalf("native rejection %q, local diagnostics %v %v", row[3], index.Diagnostics, analysis.Diagnostics)
 				}
+				matched := false
+				for _, d := range analysis.Diagnostics {
+					if d.NativeMessage == row[3] {
+						matched = true
+					}
+				}
+				if !matched {
+					t.Fatalf("native diagnostic %q missing from %v", row[3], analysis.Diagnostics)
+				}
 			} else if row[3] != "accepted" || rejected {
 				t.Fatalf("native acceptance %v, local diagnostics %v %v", row, index.Diagnostics, analysis.Diagnostics)
 			}
