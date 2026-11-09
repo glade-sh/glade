@@ -293,10 +293,11 @@ func OrgShapeFeatures(root string) []string {
 		}
 	}
 	// Deployed settings files reach the same trigger table as scratch settings.
-	if def, ok := sourceSettingsDefinition(root); ok {
+	settingsFiles, personAccounts := orgShapeEvidenceScan(root)
+	if def, ok := sourceSettingsDefinitionFromFiles(settingsFiles); ok {
 		features = append(features, scratchDefinitionFeatures(def)...)
 	}
-	if len(personAccountRecordTypePaths(root)) > 0 {
+	if len(personAccounts) > 0 {
 		features = append(features, "PersonAccounts")
 	}
 	return dedupeStrings(features)
