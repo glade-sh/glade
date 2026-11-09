@@ -54,11 +54,11 @@ func TestCapturedClassicForScope(t *testing.T) {
 }
 
 func TestCapturedSiblingPrivateOverride(t *testing.T) {
-	for _, api := range []string{"62.0", "64.0", "65.0", "67.0"} {
+	for _, api := range []string{"45.0", "62.0", "64.0", "65.0", "67.0"} {
 		t.Run(api, func(t *testing.T) {
 			result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{"Probe.cls": capturedScopeSource(t, "privateoverride")}, api)
 			rejected := hasDiagnosticCode(result.Diagnostics, "GLADESEMA016") || hasDiagnosticCode(result.Diagnostics, "GLADESEMA032")
-			if api == "62.0" || api == "64.0" {
+			if api == "45.0" || api == "62.0" || api == "64.0" {
 				if result.HasErrors() {
 					t.Errorf("captured accepted override rejected: %#v", result.Diagnostics)
 				}
