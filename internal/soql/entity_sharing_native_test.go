@@ -60,6 +60,12 @@ func TestEntitySharingModelNativeRowsAndWarmState(t *testing.T) {
 			changed.Definition.SharingModel = want["OwnedPublic__c"]
 			view.Objects["OwnedPrivate__c"] = changed
 			check(view, "OwnedPrivate__c", want["OwnedPublic__c"])
+			// The cache must notice a change even when trimming would hide it.
+			view = VirtualSchemaView(view)
+			spaced := view.Objects["OwnedPrivate__c"]
+			spaced.Definition.SharingModel = " " + want["OwnedPublic__c"] + " "
+			view.Objects["OwnedPrivate__c"] = spaced
+			check(view, "OwnedPrivate__c", "")
 			cleared := view.Objects["OwnedPrivate__c"]
 			cleared.Definition.SharingModel = ""
 			view.Objects["OwnedPrivate__c"] = cleared
