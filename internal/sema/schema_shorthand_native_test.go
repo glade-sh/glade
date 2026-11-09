@@ -1,6 +1,7 @@
 package sema
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
@@ -55,6 +56,14 @@ func TestSchemaShorthandNative(t *testing.T) {
 				sch, err := schema.LoadProject(p)
 				if err != nil {
 					t.Fatal(err)
+				}
+				// The captured field-set map is a complete snapshot for Probe__c.
+				for i := range sch.Objects {
+					if sch.Objects[i].Name == "Probe__c" {
+						if err := json.Unmarshal([]byte(`{"fieldSetsComplete":true,"fieldSetNames":["main","mainlist"]}`), &sch.Objects[i]); err != nil {
+							t.Fatal(err)
+						}
+					}
 				}
 				result := Analyze(typesys.Build(p, sch))
 				if (len(result.Diagnostics) == 0) != tc.accepted {
