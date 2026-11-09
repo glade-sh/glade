@@ -256,7 +256,7 @@ func TestCapturedStaticFieldTypeInherited(t *testing.T) {
 					want := outcomes[name+"/"+api+"/metadata-diagnostic"]
 					matched := false
 					for _, d := range analysis.Diagnostics {
-						if d.NativeMessage == want || d.Code == "GLADESEMA008" {
+						if d.NativeMessage == want {
 							matched = true
 						}
 					}
