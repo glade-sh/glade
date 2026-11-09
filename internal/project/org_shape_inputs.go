@@ -13,6 +13,7 @@ func OrgShapeInputFiles(root string) []string {
 	}
 	paths = append(paths, scratchOrgConfigFiles(root)...)
 	paths = append(paths, extraScratchDefinitionFiles(root)...)
-	paths = append(paths, personAccountRecordTypePaths(root)...)
-	return dedupeStrings(append(paths, sourceSettingsFiles(root)...))
+	settingsFiles, personAccounts := orgShapeEvidenceScan(root)
+	paths = append(paths, personAccounts...)
+	return dedupeStrings(append(paths, settingsFiles...))
 }
