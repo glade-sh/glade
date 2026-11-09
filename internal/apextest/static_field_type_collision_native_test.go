@@ -64,7 +64,7 @@ func TestCapturedStaticFieldTypeCollision(t *testing.T) {
 				}
 				org := orgFromIndex(index)
 				org.APIVersion = api
-				if _, err := newConformanceRunner(t, index, conformanceRunnerOptions{Org: &org, LinkProject: true}).execute(program); err != nil {
+				if _, err := newConformanceRunner(t, index, conformanceRunnerOptions{Org: &org, LinkProject: true}).execute(program, func(machine *vm.VM) { machine.SetCurrentNamespace(namespace) }); err != nil {
 					t.Fatalf("native anonymous passed: %v", err)
 				}
 			})
