@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/storage"
@@ -30,5 +31,15 @@ System.assertEquals(String.valueOf(recordId), req.getHeader('X-Record'));
 				}
 			})
 		}
+	}
+}
+
+func TestHttpRequestSetHeaderRejectsIntegerValue(t *testing.T) {
+	program, err := CompileAnonymous(`HttpRequest req = new HttpRequest(); req.setHeader('X-Record', 42);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err == nil || !strings.Contains(err.Error(), "expects name and value Strings") {
+		t.Fatalf("expected integer argument rejection, got %v", err)
 	}
 }
