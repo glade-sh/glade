@@ -1,0 +1,19 @@
+api	case	compiled	success	outcome
+62.0	account_field	true	true	-
+62.0	account_id	true	true	-
+62.0	account_missing	false	false	Compilation failed at Ln 1, Col 1 with the error: |  | Variable does not exist: Account.SObjectType.NoSuchField
+62.0	custom_field	true	true	-
+62.0	fieldset_full	true	true	-
+62.0	fieldset_short	true	true	-
+62.0	fieldset_missing	false	false	Compilation failed at Ln 1, Col 32 with the error: |  | Variable does not exist: Missing
+62.0	object_missing	false	false	Compilation failed at Ln 1, Col 1 with the error: |  | Variable does not exist: SObjectType.Missing__c.FieldSets.Main
+62.0	account_fieldset	false	false	Compilation failed at Ln 1, Col 1 with the error: |  | Variable does not exist: Account.SObjectType.FieldSets.Main
+67.0	account_field	true	true	-
+67.0	account_id	true	true	-
+67.0	account_missing	false	false	Compilation failed at Ln 1, Col 1 with the error: |  | Variable does not exist: Account.SObjectType.NoSuchField
+67.0	custom_field	true	true	-
+67.0	fieldset_full	true	true	-
+67.0	fieldset_short	true	true	-
+67.0	fieldset_missing	false	false	Compilation failed at Ln 1, Col 32 with the error: |  | Variable does not exist: Missing
+67.0	object_missing	false	false	Compilation failed at Ln 1, Col 1 with the error: |  | Variable does not exist: SObjectType.Missing__c.FieldSets.Main
+67.0	account_fieldset	false	false	Compilation failed at Ln 1, Col 1 with the error: |  | Variable does not exist: Account.SObjectType.FieldSets.Main

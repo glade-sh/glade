@@ -1,0 +1,6 @@
+Fresh Developer scratch org, API 62.0 and 67.0, anonymous Apex.
+The object and field set metadata in this directory were deployed before capture.
+Each .apex file was executed separately at each API version. org.tsv records
+compile and execution outcomes; successful rows assert the field name or field
+set size. The scratch org was deleted and a subsequent lookup failed.
+Capture date: 2026-11-09.
