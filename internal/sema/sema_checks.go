@@ -3582,9 +3582,14 @@ func semaAuthProviderCallbackOverrideOptional(typ typesys.TypeSymbol, member typ
 
 func semaInheritedMethodVisible(child typesys.TypeSymbol, owner typeMembers, member typesys.MemberSymbol) bool {
 	if hasModifier(member.Modifiers, "private") {
-		return strings.EqualFold(strings.TrimSpace(child.Namespace), strings.TrimSpace(owner.namespace)) &&
-			child.IsTest &&
-			hasAnnotation(member.Annotations, "TestVisible")
+		sameNamespace := strings.EqualFold(strings.TrimSpace(child.Namespace), strings.TrimSpace(owner.namespace))
+		if sameNamespace && !child.Dependency && !owner.dependency && !owner.platform &&
+			(hasModifier(member.Modifiers, "virtual") || hasModifier(member.Modifiers, "abstract")) &&
+			apexversion.Before(child.EffectiveAPIVersion, 65) &&
+			semaTopLevelScope(semaTypeMembersName(child), child.Modifiers) == semaTopLevelScope(owner.name, owner.modifiers) {
+			return true
+		}
+		return sameNamespace && child.IsTest && hasAnnotation(member.Annotations, "TestVisible")
 	}
 	if semaDefaultAccessMethodHidden(child, owner, member) {
 		return false
