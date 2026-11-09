@@ -46,11 +46,11 @@ func ResolvePageTarget(p project.Project, ctx PageContext) (ShellPage, []Diagnos
 			if ctx.ObjectAPIName == "" {
 				ctx.ObjectAPIName = page.ObjectAPIName
 			}
-			if page.ObjectAPIName != "" && ctx.ObjectAPIName != "" && !strings.EqualFold(page.ObjectAPIName, ctx.ObjectAPIName) {
+			if page.ObjectAPIName != "" && ctx.ObjectAPIName != "" && !SameObjectInNamespace(page.ObjectAPIName, ctx.ObjectAPIName, p.Namespace) {
 				diag := Diagnostic{Code: "GLADELWC004", Message: fmt.Sprintf("record page object %q does not match %q", page.ObjectAPIName, ctx.ObjectAPIName)}
 				return ShellPage{}, []Diagnostic{diag}, errors.New(diag.Message)
 			}
-			if page.ObjectAPIName != "" {
+			if page.ObjectAPIName != "" && !strings.Contains(ctx.ObjectAPIName, "__") {
 				ctx.ObjectAPIName = page.ObjectAPIName
 			}
 		}
@@ -260,6 +260,27 @@ func findFlexiPage(p project.Project, name string) (FlexiPage, bool, error) {
 	return FlexiPage{}, false, nil
 }
 
+// SameObjectInNamespace compares object API names, treating a project
+// object's unprefixed source name and its namespaced name as the same object.
+func SameObjectInNamespace(left, right, namespace string) bool {
+	if strings.EqualFold(left, right) {
+		return true
+	}
+	namespace = strings.TrimSpace(namespace)
+	if namespace == "" {
+		return false
+	}
+	prefix := strings.ToLower(namespace) + "__"
+	strip := func(name string) string {
+		name = strings.TrimSpace(name)
+		if strings.HasPrefix(strings.ToLower(name), prefix) {
+			return name[len(prefix):]
+		}
+		return name
+	}
+	return strings.EqualFold(strip(left), strip(right))
+}
+
 func findFlexiPageForContext(p project.Project, ctx PageContext) (FlexiPage, bool, error) {
 	if strings.TrimSpace(ctx.PageName) != "" {
 		return findFlexiPage(p, ctx.PageName)
@@ -272,7 +293,7 @@ func findFlexiPageForContext(p project.Project, ctx PageContext) (FlexiPage, boo
 		if diag, ok := validatePageKind(page, ctx.Kind); !ok || diag.Code != "" {
 			continue
 		}
-		if ctx.Kind == RenderTargetRecordPage && ctx.ObjectAPIName != "" && page.ObjectAPIName != "" && !strings.EqualFold(page.ObjectAPIName, ctx.ObjectAPIName) {
+		if ctx.Kind == RenderTargetRecordPage && ctx.ObjectAPIName != "" && page.ObjectAPIName != "" && !SameObjectInNamespace(page.ObjectAPIName, ctx.ObjectAPIName, p.Namespace) {
 			continue
 		}
 		return page, true, nil

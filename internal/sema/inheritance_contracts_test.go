@@ -600,3 +600,29 @@ public class Probe implements Child {
 		t.Fatalf("expected transitive interface diagnostic, got %#v", result.Diagnostics)
 	}
 }
+
+func TestInheritanceContractsPrivateOverrideAcrossSiblingInnerClassesIsHistorical(t *testing.T) {
+	files := map[string]string{
+		"Shell.cls": `
+public class Shell {
+  public abstract class Base {
+    private abstract String name();
+    private virtual Integer size() { return 1; }
+    public String describe() { return name() + size(); }
+  }
+  public class Child extends Base {
+    public override String name() { return 'child'; }
+    private override Integer size() { return 2; }
+  }
+}
+`,
+	}
+	historical := analyzeDeclarationProjectWithAPIVersion(t, files, "45.0")
+	if hasDiagnosticCode(historical.Diagnostics, "GLADESEMA016") {
+		t.Fatalf("API 45 sibling inner class could not override a private virtual/abstract method: %#v", historical.Diagnostics)
+	}
+	checked := analyzeDeclarationProjectWithAPIVersion(t, files, "62.0")
+	if !hasDiagnosticCode(checked.Diagnostics, "GLADESEMA016") {
+		t.Fatalf("API 62 behavior changed for private override targets: %#v", checked.Diagnostics)
+	}
+}

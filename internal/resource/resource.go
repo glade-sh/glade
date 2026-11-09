@@ -927,7 +927,7 @@ func LookupLabel(registry storage.MetadataRegistry, namespace, name string) (str
 	name = strings.TrimSpace(name)
 	if namespace == "" {
 		for _, label := range registry.Labels {
-			if labelNameMatches(label.Name, name) {
+			if labelEntryUsable(label) && labelNameMatches(label.Name, name) {
 				return label.Value, true
 			}
 		}
@@ -935,7 +935,7 @@ func LookupLabel(registry storage.MetadataRegistry, namespace, name string) (str
 	}
 	for i := len(registry.Labels) - 1; i >= 0; i-- {
 		label := registry.Labels[i]
-		if !labelNameMatches(label.Name, name) {
+		if !labelEntryUsable(label) || !labelNameMatches(label.Name, name) {
 			continue
 		}
 		if namespace != "" && label.Namespace != "" && !strings.EqualFold(label.Namespace, namespace) {
@@ -944,6 +944,12 @@ func LookupLabel(registry storage.MetadataRegistry, namespace, name string) (str
 		return label.Value, true
 	}
 	return "", false
+}
+
+// A translation with no text is an untranslated placeholder; Salesforce falls
+// back to the master label value for it.
+func labelEntryUsable(label storage.LabelMetadata) bool {
+	return !label.Translation || label.Value != ""
 }
 
 type LabelLookupStatus string
@@ -1152,7 +1158,7 @@ func loadTranslations(path, namespace string) ([]storage.LabelMetadata, error) {
 		if name == "" {
 			continue
 		}
-		labels = append(labels, storage.LabelMetadata{Name: name, Namespace: namespace, Language: language, Value: strings.TrimSpace(label.Label), File: path})
+		labels = append(labels, storage.LabelMetadata{Name: name, Namespace: namespace, Language: language, Value: strings.TrimSpace(label.Label), File: path, Translation: true})
 	}
 	return labels, nil
 }

@@ -3436,6 +3436,14 @@ func (vm *VM) HasPendingAsyncWork() bool {
 	return len(vm.testContext.AsyncJobs) > 0 || len(vm.testContext.PlatformEvents) > 0 || len(vm.testContext.EventPublishes) > 0
 }
 
+// DiscardPendingLocalAsyncJobs drops queued non-test async jobs, so a failed
+// host drain cannot leak them into the next invocation on a shared VM.
+func (vm *VM) DiscardPendingLocalAsyncJobs() {
+	if vm != nil {
+		vm.localAsyncJobs = nil
+	}
+}
+
 func (vm *VM) DrainAsync(result *Result) (err error) {
 	defer recoverJSONConversionError(&err)
 	if vm.testContext != nil {

@@ -589,6 +589,10 @@ func (a *Analyzer) irStandardControllerRecordMemberDiagnostic(typ typesys.TypeSy
 		return diagnostic.Diagnostic{}, false
 	}
 	field := strings.TrimPrefix(strings.TrimPrefix(expr.Callee, "__safe_field:"), "__field:")
+	// Every SObject exposes Id, including the generic getRecord() result.
+	if strings.EqualFold(field, "Id") {
+		return diagnostic.Diagnostic{}, false
+	}
 	if _, exists := semaResolveFieldPath(model, "SObject", field); exists {
 		return diagnostic.Diagnostic{}, false
 	}

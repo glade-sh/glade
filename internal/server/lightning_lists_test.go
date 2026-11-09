@@ -276,7 +276,7 @@ func TestListViewColumnsResolveInlineSchema(t *testing.T) {
 	if err := os.WriteFile(objectPath, []byte(object), 0644); err != nil {
 		t.Fatal(err)
 	}
-	view := `<ListView xmlns="http://soap.sforce.com/2006/04/metadata"><columns>NAME</columns><columns>Weight__c</columns><filterScope>Everything</filterScope><label>Owned</label></ListView>`
+	view := `<ListView xmlns="http://soap.sforce.com/2006/04/metadata"><columns>NAME</columns><columns>FULL_NAME</columns><columns>CREATED_DATE</columns><columns>Weight__c</columns><filterScope>Everything</filterScope><label>Owned</label></ListView>`
 	if err := os.WriteFile(viewPath, []byte(view), 0644); err != nil {
 		t.Fatal(err)
 	}

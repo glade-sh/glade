@@ -15,5 +15,22 @@ export const getIconPath = (iconName) => {
   return `${spriteMap[category] || spriteMap.utility}#${name}`;
 };
 export const computeSldsClass = (iconName) => `slds-icon-${getCategory(iconName) || "utility"}-${(getName(iconName) || "placeholder").replace(/_/g, "-")}`;
+const sizes = new Set(["xx-small", "x-small", "small", "large"]);
+const textVariants = new Set(["success", "warning", "error", "light"]);
+
+// lightning-icon documents size (xx-small..large, default medium) and
+// variant (inverse, success, warning, error, light) as the SLDS svg classes
+// slds-icon_<size> and slds-icon-text-<variant>.
+export function computeSvgClass(iconName, size, variant) {
+  const classes = ["slds-icon"];
+  const normalizedVariant = typeof variant === "string" ? variant.trim().toLowerCase() : "";
+  if (iconName && getCategory(iconName) === "utility") {
+    if (textVariants.has(normalizedVariant)) classes.push("slds-icon-text-" + normalizedVariant);
+    else if (normalizedVariant !== "inverse") classes.push("slds-icon-text-default");
+  }
+  const normalizedSize = typeof size === "string" ? size.trim().toLowerCase() : "";
+  if (sizes.has(normalizedSize)) classes.push("slds-icon_" + normalizedSize);
+  return classes.join(" ");
+}
 export const getIconColor = () => null;
 export const polyfill = () => {};

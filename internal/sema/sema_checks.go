@@ -3582,7 +3582,17 @@ func semaAuthProviderCallbackOverrideOptional(typ typesys.TypeSymbol, member typ
 
 func semaInheritedMethodVisible(child typesys.TypeSymbol, owner typeMembers, member typesys.MemberSymbol) bool {
 	if hasModifier(member.Modifiers, "private") {
-		return strings.EqualFold(strings.TrimSpace(child.Namespace), strings.TrimSpace(owner.namespace)) &&
+		sameNamespace := strings.EqualFold(strings.TrimSpace(child.Namespace), strings.TrimSpace(owner.namespace))
+		// Historical source (below API 62) accepts overriding a private virtual or
+		// abstract method from another inner class of the same top-level class:
+		// private access is bounded by the top-level class. API 62+ keeps the
+		// checked native behavior below.
+		if sameNamespace && !child.Dependency && !owner.dependency && !owner.platform &&
+			apexversion.Before(child.EffectiveAPIVersion, 62) &&
+			semaTopLevelScope(semaTypeMembersName(child), child.Modifiers) == semaTopLevelScope(owner.name, owner.modifiers) {
+			return true
+		}
+		return sameNamespace &&
 			child.IsTest &&
 			hasAnnotation(member.Annotations, "TestVisible")
 	}
@@ -3916,7 +3926,9 @@ func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.M
 		targetType, ok := scopes.visibleAt(target, match[2])
 		if ok {
 			value := trimSemaArg(body, match[1], semaStatementEnd(body, match[1]))
-			valueType := semaResolveConstructedExpressionType(model, typ.Name, value.text, scopes.flatCopy())
+			// Resolve the value against the locals visible at this assignment; a
+			// same-named local declared later in a sibling block is not in scope.
+			valueType := semaResolveConstructedExpressionType(model, typ.Name, value.text, scopes.flatAtCopy(match[1]))
 			queryText := strings.TrimSpace(value.text)
 			if strings.HasPrefix(queryText, "[") && strings.HasSuffix(queryText, "]") {
 				if queryType := semaSOQLLiteralType(queryText); queryType != "" {

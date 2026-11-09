@@ -311,6 +311,9 @@ type LabelMetadata struct {
 	ShortDescription string `json:"shortDescription,omitempty"`
 	Categories       string `json:"categories,omitempty"`
 	File             string `json:"file,omitempty"`
+	// Translation marks an entry loaded from a .translation file rather than
+	// the master CustomLabels definition.
+	Translation bool `json:"translation,omitempty"`
 }
 
 // StandardValueSetTranslation is a project-authored translation of one
@@ -931,6 +934,8 @@ type FlowTransform struct {
 	TargetCollection string                `json:"targetCollection"`
 	FieldMappings    []WorkflowFieldUpdate `json:"fieldMappings,omitempty"`
 	SumField         string                `json:"sumField,omitempty"`
+	// ObjectType is the SObject a RecordMap transform builds.
+	ObjectType string `json:"objectType,omitempty"`
 }
 
 type FlowCollectionProcessor struct {

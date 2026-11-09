@@ -3678,6 +3678,32 @@ func (e *Engine) flowRecordLookupMatches(lookup storage.FlowRecordLookup, source
 func (e *Engine) applyFlowTransformStep(transform storage.FlowTransform, frame *flowFrame) error {
 	transformType := strings.ToLower(strings.TrimSpace(transform.TransformType))
 	switch transformType {
+	case "recordmap":
+		// A single-record Transform: map each referenced value onto a new
+		// record of the output object, available under the element name.
+		state, objectName, err := e.object(transform.ObjectType)
+		if err != nil {
+			return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow transform %s targets unknown object %s", transform.Name, transform.ObjectType)
+		}
+		record := storage.Record{Object: objectName, Fields: make(map[string]storage.Value)}
+		for _, mapping := range transform.FieldMappings {
+			field, ok := storage.ResolveFieldName(state.Definition, e.Org.Namespace, mapping.Field)
+			if !ok {
+				return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", []string{mapping.Field}, "dml: flow transform %s maps unknown field %s.%s", transform.Name, objectName, mapping.Field)
+			}
+			if mapping.SourceField != "" {
+				value, ok := e.flowFrameReferenceValueAudit(mapping.SourceField, frame, make(map[string]bool), false)
+				if !ok {
+					return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow transform %s references unknown value %s", transform.Name, mapping.SourceField)
+				}
+				if value.Kind != storage.ValueNull {
+					record.Fields[field] = value
+				}
+			} else if mapping.LiteralValue != "" {
+				record.Fields[field] = storage.StringValue(mapping.LiteralValue)
+			}
+		}
+		frame.records[flowFrameKey(transform.Name)] = record
 	case "count":
 		records, ok := frame.flowCollection(transform.SourceCollection)
 		if !ok {
@@ -3945,6 +3971,24 @@ func (e *Engine) evaluateFlowLookupCriteria(item storage.WorkflowCriteriaItem, t
 	}
 	field := targetDefinition.Fields[targetField]
 	switch strings.ToLower(strings.TrimSpace(item.Operation)) {
+	case "in", "notin", "not in":
+		// Get Records In / Not In compares the field with each element of a
+		// primitive collection variable. An unassigned collection holds no
+		// values, so In matches nothing and Not In matches everything.
+		if sourceValue.Kind != storage.ValueList && sourceValue.Kind != storage.ValueNull {
+			return false, false
+		}
+		found := false
+		for _, element := range sourceValue.List {
+			if flowLookupIDValuesEqual(field, targetValue, element) {
+				found = true
+				break
+			}
+		}
+		if strings.EqualFold(strings.ReplaceAll(strings.TrimSpace(item.Operation), " ", ""), "notin") {
+			return !found, true
+		}
+		return found, true
 	case "", "equals", "equal", "eq":
 		return flowLookupIDValuesEqual(field, targetValue, sourceValue), true
 	case "notequal", "not equal", "notequals", "not equals", "ne":

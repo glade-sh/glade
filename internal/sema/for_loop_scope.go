@@ -15,10 +15,11 @@ func (s semaScopeModel) forLoopScopeConflictingLocal(api, key string, start, sco
 	captured := forLoopScopeCapturedAPI(api)
 	if !captured && classicFor {
 		// Source 61 also accepts a classic-for initializer followed by an
-		// enclosing local of the same name. Other legacy binding kinds keep
-		// their existing boundary until independently observed.
+		// enclosing local of the same name; deployed API 45 source shows the
+		// same acceptance, so historical versions share it. Other legacy
+		// binding kinds keep their existing boundary until independently observed.
 		major, ok := apexversion.Major(api)
-		captured = ok && major == 61
+		captured = ok && major <= 61
 	}
 	if !captured {
 		return s.conflictingLocalKey(key, scopeStart, scopeEnd)

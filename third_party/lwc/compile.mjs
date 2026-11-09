@@ -67,6 +67,9 @@ function transformOptions(namespace, name, apiVersion, capabilities = []) {
     apiVersion,
     enableLwcOn: true,
     enableDynamicComponents: capabilities.includes("lightning__dynamicComponent"),
+    // Bundles with the lightning__dynamicComponent capability may pass a
+    // variable specifier to import(); other bundles keep the strict check.
+    ...(capabilities.includes("lightning__dynamicComponent") ? { dynamicImports: { strictSpecifier: false } } : {}),
     // Keep parsing enabled so the compiler itself enforces the API-66 gate.
     // Native c_event_call answers at 59/63/65 report LWC1210, not the older
     // flag-disabled LWC1060 diagnostic; 66/67 report LWC1208.
@@ -107,9 +110,9 @@ function transformTemplate(source, filename, namespace, name, apiVersion, capabi
   return result;
 }
 
-function transformJavaScript(source, filename, namespace, name, apiVersion) {
+function transformJavaScript(source, filename, namespace, name, apiVersion, capabilities = []) {
   try {
-    return transformSync(source, filename, transformOptions(namespace, name, apiVersion));
+    return transformSync(source, filename, transformOptions(namespace, name, apiVersion, capabilities));
   } catch (error) {
     throw wireDeploymentDiagnostic(error, source, filename, namespace, name, apiVersion);
   }
@@ -261,6 +264,11 @@ function compileBundle(bundleDir, bundleName, namespace, outDir, apiVersion, mod
   const htmlPath = path.join(bundleDir, `${bundleName}.html`);
   const cssPath = path.join(bundleDir, `${bundleName}.css`);
   if (!fs.existsSync(jsPath)) {
+    // A CSS-only bundle is a shared stylesheet module: other components pull
+    // it in with `@import 'c/name';`, which compiles to a module import.
+    if (fs.existsSync(cssPath) && !fs.existsSync(htmlPath)) {
+      return compileStylesheetModule(cssPath, bundleName, namespace, outDir, apiVersion);
+    }
     return null;
   }
   assertCompilerPreservesAPIVersion(apiVersion);
@@ -307,7 +315,7 @@ function compileBundle(bundleDir, bundleName, namespace, outDir, apiVersion, mod
   }
 
   const jsSource = fs.readFileSync(jsPath, "utf8");
-  const jsResult = transformJavaScript(jsSource, jsPath, namespace, bundleName, apiVersion);
+  const jsResult = transformJavaScript(jsSource, jsPath, namespace, bundleName, apiVersion, capabilities);
   const jsCode = rewriteComponentShadowReads(rewriteStylesheetImports(jsResult.code, bundleName), namespace);
 
   const entryFile = path.join(bundleOut, `${bundleName}.js`);
@@ -1084,3 +1092,21 @@ main().catch((error) => {
   console.error(compilationFailure(error));
   process.exit(1);
 });
+
+function compileStylesheetModule(cssPath, bundleName, namespace, outDir, apiVersion) {
+  assertCompilerPreservesAPIVersion(apiVersion);
+  const moduleKey = `${namespace}/${bundleName}`;
+  const bundleOut = path.join(outDir, moduleKey);
+  fs.mkdirSync(bundleOut, { recursive: true });
+  const cssResult = transformStylesheet(cssPath, namespace, bundleName, apiVersion);
+  const entryFile = path.join(bundleOut, `${bundleName}.js`);
+  writeCompiled(entryFile, cssResult.code);
+  return {
+    qualified: `${namespace}:${bundleName}`,
+    moduleKey,
+    file: entryFile,
+    tag: `${namespace}-${kebabCase(bundleName)}`,
+    stylesheet: true,
+  };
+}
+

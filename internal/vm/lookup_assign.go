@@ -1109,7 +1109,10 @@ func (vm *VM) callGetter(owner string, field Field, receiver Value) (Value, erro
 		!propertyAccessorMethod(vm.currentMethod) &&
 		((receiver.projectClass && collectionBase(field.Type) == "Set" && field.Setter != nil &&
 			len(field.Setter.Program.Instructions) > 0) ||
-			(receiver.Kind == ValueNull && field.Static && isMapType(field.Type) && field.HasSetter))
+			// Static lazy singletons (any type) re-run their getter when a
+			// declaring-class helper reads them during initialization, e.g. a
+			// getInstance() reached again through a dependency of the builder.
+			(receiver.Kind == ValueNull && field.Static && field.HasSetter))
 	if vm.activeGetters[key] > 0 && !allowHelperReentry {
 		if _, value, ok := objectFieldValue(receiver, storageName); ok {
 			return vm.currentGetterStoredValue(owner, field, value), nil

@@ -32,21 +32,50 @@ function headingIn(root) {
 }
 
 const ModalContent = defineOverlayComponent("lightning-modal-base", (api) => [
-  api.h("div", { key: 0, attrs: { "data-modal-content": "", style: "position:relative" },
+  api.h("div", { key: 0, attrs: { "data-modal-content": "", style: "position:relative;border-radius:0.25rem;background-color:white;color:#181818" },
     context: { lwc: { dom: "manual" } } }, []),
 ], (state, root) => state.mountContent(root));
 
+// SLDS modal blueprint: section.slds-modal > div.slds-modal__container >
+// close button + content. The size is a section modifier class.
 const ModalChrome = defineOverlayComponent("lightning-modal-container", (api, component) => {
   const state = component.state;
   return [api.h("section", {
-    key: 0, classMap: { "slds-modal": true, "slds-fade-in-open": true },
-    attrs: { role: "dialog", "aria-modal": "true", tabindex: "-1", style: state.style },
+    key: 0, className: state.sectionClass,
+    attrs: { role: "dialog", "aria-modal": "true", tabindex: "-1" },
   }, [
-    api.h("div", { key: 0, attrs: { "data-processing": "" }, props: { hidden: true } }, []),
-    api.c("lightning-modal-base", ModalContent,
-      { key: 1, props: { state }, attrs: { style: "display:block" } }, []),
+    api.h("div", { key: 2, classMap: { "slds-modal__container": true } }, [
+      api.h("div", { key: 0, attrs: { "data-processing": "" }, props: { hidden: true } }, []),
+      api.c("lightning-modal-base", ModalContent,
+        { key: 1, props: { state }, attrs: { style: "display:block" } }, []),
+    ]),
   ])];
 });
+
+const closeGlyph = "m310 254 130-131c6-6 6-15 0-21l-20-21c-6-6-15-6-21 0L268 212a10 10 0 0 1-14 0L123 80c-6-6-15-6-21 0l-21 21c-6 6-6 15 0 21l131 131c4 4 4 10 0 14L80 399c-6 6-6 15 0 21l21 21c6 6 15 6 21 0l131-131a10 10 0 0 1 14 0l131 131c6 6 15 6 21 0l21-21c6-6 6-15 0-21L310 268a10 10 0 0 1 0-14";
+
+function createCloseButton() {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "slds-button slds-button_icon slds-modal__close";
+  button.title = "Close";
+  button.setAttribute("aria-label", "Close");
+  // The dismiss wrapper positions the control above the dialog.
+  button.style.position = "static";
+  const svgNS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(svgNS, "svg");
+  svg.setAttribute("class", "slds-button__icon slds-button__icon_large");
+  svg.setAttribute("viewBox", "0 0 520 520");
+  svg.setAttribute("aria-hidden", "true");
+  const path = document.createElementNS(svgNS, "path");
+  path.setAttribute("d", closeGlyph);
+  svg.appendChild(path);
+  const text = document.createElement("span");
+  text.className = "slds-assistive-text";
+  text.textContent = "Cancel and close";
+  button.append(svg, text);
+  return button;
+}
 
 export function openModal(Component, options) {
   const values = { ...options };
@@ -54,15 +83,9 @@ export function openModal(Component, options) {
   const context = overlayRoot();
   const overlay = context.overlay;
   overlay.className = "glade-modal-overlay";
-  const widths = { small: "32rem", medium: "48rem", large: "64rem", full: "100vw" };
-  const style = "box-sizing:border-box;width:min(" + (widths[values.size] || widths.medium) + ", 100vw);" +
-    "max-height:100vh;overflow:auto;padding:1.5rem;border-radius:0.25rem;background-color:white;color:#181818";
-  const closeButton = document.createElement("button");
-  closeButton.type = "button";
-  closeButton.className = "slds-modal__close";
-  closeButton.title = "Close";
-  closeButton.setAttribute("aria-label", "Close");
-  closeButton.textContent = "Cancel and close";
+  const size = ["small", "medium", "large", "full"].includes(values.size) ? values.size : "medium";
+  const sectionClass = "slds-modal slds-fade-in-open slds-modal_" + size;
+  const closeButton = createCloseButton();
   const blocker = document.createElement("div");
   blocker.className = "slds-modal__container";
   blocker.dataset.container = "";
@@ -71,17 +94,18 @@ export function openModal(Component, options) {
   // Processing blocks the dismiss control. Body choices remain clickable and
   // close() itself keeps the promise pending while disableClose is truthy.
   const dismissControl = document.createElement("div");
-  Object.assign(dismissControl.style, { position: "relative", display: "inline-block" });
+  Object.assign(dismissControl.style, { position: "absolute", top: "-2.75rem", right: "0", display: "inline-block" });
   dismissControl.append(closeButton, blocker);
   let resolve;
   const promise = new Promise(done => { resolve = done; });
   const validLabel = values.label === undefined || typeof values.label === "string";
-  const state = { context, overlay, blocker, closeButton, element, resolve, style,
+  const state = { context, overlay, blocker, closeButton, element, resolve, sectionClass,
     values, validLabel, disabled: false, closing: false };
   state.mountContent = root => {
     if (state.mounted) return;
     state.mounted = true;
-    root.querySelector("[data-modal-content]").append(dismissControl, element);
+    state.contentRoot = root.querySelector("[data-modal-content]");
+    state.contentRoot.append(dismissControl);
   };
   const chrome = createElement("lightning-modal-container", { is: ModalChrome });
   chrome.state = state;
@@ -105,6 +129,11 @@ export function openModal(Component, options) {
   });
   window.dispatchEvent(new CustomEvent("lightning__modalopen", { detail: values }));
   document.body.appendChild(overlay);
+  // The runtime disables the native custom element lifecycle, so LWC only
+  // connects (and renders) components inserted through the DOM methods it
+  // patches. Element.append() is not one of them: the modal stayed in the DOM
+  // with an empty template. Use appendChild.
+  state.contentRoot.appendChild(element);
   const dialog = state.dialog = chrome.shadowRoot.querySelector("section");
   state.processing = chrome.shadowRoot.querySelector("[data-processing]");
   updateModalDisabled({ template: { host: element } }, element.disableClose);

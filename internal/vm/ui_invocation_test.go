@@ -665,3 +665,41 @@ func countTraceEvents(events []trace.Event, name string) int {
 	}
 	return count
 }
+
+func TestInvokeLWCMethodBindsHistoricalAuraEnabledOverloadsByParameterNames(t *testing.T) {
+	oneArg, err := CompileAnonymous(`return 'one';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	twoArgs, err := CompileAnonymous(`return 'two';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	for _, method := range []Method{
+		{Name: "WidgetController.load", ClassName: "WidgetController", ReturnType: "String", IsStatic: true, APIVersion: "45.0",
+			Modifiers: []string{"AuraEnabled"}, Params: []Param{{Name: "recordId", Type: "Id"}}, Program: oneArg},
+		{Name: "WidgetController.load", ClassName: "WidgetController", ReturnType: "String", IsStatic: true, APIVersion: "45.0",
+			Modifiers: []string{"AuraEnabled"}, Params: []Param{{Name: "recordId", Type: "Id"}, {Name: "groupId", Type: "Id"}}, Program: twoArgs},
+	} {
+		if err := machine.RegisterMethod(method); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, tc := range []struct {
+		params map[string]any
+		want   string
+	}{
+		{map[string]any{}, "one"},
+		{map[string]any{"recordId": nil}, "one"},
+		{map[string]any{"recordId": nil, "groupId": nil}, "two"},
+	} {
+		result, err := machine.InvokeLWCMethod("WidgetController", "load", tc.params)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !result.Success || result.ReturnValue != tc.want {
+			t.Fatalf("params %v: result = %#v, want %q", tc.params, result, tc.want)
+		}
+	}
+}

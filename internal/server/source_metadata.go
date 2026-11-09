@@ -410,7 +410,7 @@ func (m *SourceMetadata) loadObjectMetadata() error {
 				// Relationship selectors retain their existing traversal. Plain
 				// columns resolve through schema, including inline and managed
 				// fields; a filename or suffix does not establish existence.
-				if strings.Contains(column, ".") {
+				if strings.Contains(column, ".") || listViewStandardColumnToken(column) {
 					continue
 				}
 				if _, found := storage.ResolveFieldName(definition, m.Project.Namespace, column); !found {
@@ -855,4 +855,25 @@ func trimKnownSuffix(name, suffix string) string {
 
 func metadataComponentKey(typ, fullName string) string {
 	return strings.ToLower(strings.TrimSpace(typ)) + ":" + strings.ToLower(strings.TrimSpace(fullName))
+}
+
+// listViewStandardColumnToken reports Salesforce's legacy upper-case list view
+// column names (FULL_NAME, CREATED_DATE, ...). They name standard columns, not
+// API field names; custom fields always contain "__" and stay validated.
+func listViewStandardColumnToken(column string) bool {
+	column = strings.TrimSpace(column)
+	if column == "" || strings.Contains(column, "__") {
+		return false
+	}
+	hasUpper := false
+	for _, ch := range column {
+		switch {
+		case ch >= 'A' && ch <= 'Z':
+			hasUpper = true
+		case ch >= '0' && ch <= '9', ch == '_':
+		default:
+			return false
+		}
+	}
+	return hasUpper
 }

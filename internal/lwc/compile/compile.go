@@ -424,8 +424,15 @@ func resolveLWCSourceAPIVersion(raw string) (int, error) {
 		return 0, fmt.Errorf("unsupported LWC source API version %q; supported versions: %d.0 through %d.0", raw, minimumLWCSourceAPIVersion, maximumLWCSourceAPIVersion)
 	}
 	major, ok := apexversion.Major(resolved)
-	if !ok || major < minimumLWCSourceAPIVersion || major > maximumLWCSourceAPIVersion {
+	if !ok || major > maximumLWCSourceAPIVersion {
 		return 0, fmt.Errorf("unsupported LWC source API version %q; supported versions: %d.0 through %d.0", raw, minimumLWCSourceAPIVersion, maximumLWCSourceAPIVersion)
+	}
+	if major < minimumLWCSourceAPIVersion {
+		// Historical bundles still deploy and run on the platform. Like
+		// historical Apex source, load them rather than reject the project;
+		// they compile with the oldest supported semantics and keep no parity
+		// claim for their declared version.
+		return minimumLWCSourceAPIVersion, nil
 	}
 	return major, nil
 }

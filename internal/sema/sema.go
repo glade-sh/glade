@@ -1517,6 +1517,26 @@ func findSemaLocalDeclMatches(body string) [][]int {
 		if relative == nil {
 			break
 		}
+		// The pattern's ^ also anchors at the start of the resumed slice. When a
+		// previous declaration match ended at its '=', the slice begins inside the
+		// initializer expression, so `x = a < b && c > d;` must not read as a
+		// generic declaration of d.
+		if relative[0] == 0 && searchStart > 0 {
+			prev := searchStart - 1
+			for prev >= 0 && isWhitespace(body[prev]) && body[prev] != '\n' {
+				prev--
+			}
+			if prev >= 0 && body[prev] == '=' {
+				// Resume at the next statement boundary, which the pattern's
+				// leading group matches, instead of re-anchoring mid-expression.
+				next := strings.IndexAny(body[searchStart:], ";{}\n")
+				if next < 0 {
+					break
+				}
+				searchStart += next
+				continue
+			}
+		}
 		match := make([]int, len(relative))
 		for i, index := range relative {
 			if index >= 0 {
@@ -3681,10 +3701,10 @@ func (a *Analyzer) exportKnownTypes() map[string]TypeReference {
 var (
 	typeIdentifierPattern          = regexp.MustCompile(`[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*`)
 	typeReferencePattern           = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*$`)
-	lineLocalDeclPattern           = regexp.MustCompile(`(?m)^\s*(?:(?:final|transient)\s+)?([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:,|=|;)`)
-	wrappedLocalDeclPattern        = regexp.MustCompile(`(?m)^\s*(?:(?:final|transient)\s+)?([A-Za-z_][^\n;=(){}]+)[ \t]*\r?\n\s+([A-Za-z_][A-Za-z0-9_]*)\s*=`)
-	noSpaceGenericLocalDeclPattern = regexp.MustCompile(`(?m)(?:^|[;\n])\s*(?:(?:final|transient)\s+)?([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>|(?:\s*\[\s*\])+))([A-Za-z_][A-Za-z0-9_]*)\s*(?:,|=|;)`)
-	localDeclPattern               = regexp.MustCompile(`(?m)(?:^|[;{}\n])\s*(?:(?:final|transient)\s+)?([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:,|=|;)`)
+	lineLocalDeclPattern           = regexp.MustCompile(`(?m)^\s*(?:(?i:final|transient)\s+)?([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:,|=|;)`)
+	wrappedLocalDeclPattern        = regexp.MustCompile(`(?m)^\s*(?:(?i:final|transient)\s+)?([A-Za-z_][^\n;=(){}]+)[ \t]*\r?\n\s+([A-Za-z_][A-Za-z0-9_]*)\s*=`)
+	noSpaceGenericLocalDeclPattern = regexp.MustCompile(`(?m)(?:^|[;\n])\s*(?:(?i:final|transient)\s+)?([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>|(?:\s*\[\s*\])+))([A-Za-z_][A-Za-z0-9_]*)\s*(?:,|=|;)`)
+	localDeclPattern               = regexp.MustCompile(`(?m)(?:^|[;{}\n])\s*(?:(?i:final|transient)\s+)?([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:,|=|;)`)
 	enhancedForLocalPattern        = regexp.MustCompile(`(?im)\bfor\s*\(\s*(?:final\s+)?([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*:`)
 	forHeaderPattern               = regexp.MustCompile(`(?i)\bfor\s*\(`)
 	catchLocalPattern              = regexp.MustCompile(`(?im)\bcatch\s*\(\s*([A-Za-z_][A-Za-z0-9_.]*(?:\s*\|\s*[A-Za-z_][A-Za-z0-9_.]*)*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*\)`)
