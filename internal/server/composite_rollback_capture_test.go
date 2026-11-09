@@ -12,6 +12,7 @@ import (
 )
 
 // These cases replay synthetic Salesforce REST observations at APIs 62.0 and 67.0.
+// Native rows: testdata/conformance/composite_rollback_routes/org.tsv:2-13.
 func TestCompositeRollbackResponseNativeRoutes(t *testing.T) {
 	// The public server exposes v67.0; the native 62.0 rows matched 67.0.
 	for _, api := range []string{"67.0"} {
@@ -128,6 +129,7 @@ func TestCompositeDeleteStoredIDVariantsRemainDeleted(t *testing.T) {
 	}
 }
 
+// Native rows: testdata/conformance/composite_rollback_routes/org.tsv:18-19 and :22-23.
 func TestCompositeUpsertNewInsertRollbackNative(t *testing.T) {
 	for _, all := range []bool{true, false} {
 		t.Run(fmt.Sprint(all), func(t *testing.T) {
@@ -159,6 +161,7 @@ func TestCompositeUpsertNewInsertRollbackNative(t *testing.T) {
 	}
 }
 
+// Native rows: testdata/conformance/composite_rollback_routes/org.tsv:20-21 and :24-25.
 func TestCompositeTreeMultipleFailuresNative(t *testing.T) {
 	for _, good := range []bool{true, false} {
 		t.Run(fmt.Sprint(good), func(t *testing.T) {
