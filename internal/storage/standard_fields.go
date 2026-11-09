@@ -2266,6 +2266,7 @@ func enrichStandardField(existing *Field, field Field) {
 	}
 	if existing.DefaultValue == "" {
 		existing.DefaultValue = field.DefaultValue
+		existing.DefaultValueFromMetadata = field.DefaultValueFromMetadata
 	}
 	if existing.CompoundFieldName == "" {
 		existing.CompoundFieldName = field.CompoundFieldName

@@ -2136,6 +2136,17 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 		desc.Fields["defaultedOnCreate"] = Bool(true)
 	} else if defaultValue, ok := storage.DefaultValueForField(field); ok {
 		desc.Fields["defaultValue"] = vmValueFromStorage(defaultValue)
+		// Metadata literal defaults are formula expressions. Describe returns
+		// null for the observed text, number and currency literal forms.
+		if field.DefaultValueFromMetadata {
+			literal := strings.TrimSpace(field.DefaultValue)
+			textLiteral := field.Type == storage.FieldString && strings.EqualFold(displayType, "STRING") && len(literal) >= 2 && literal[0] == '\'' && literal[len(literal)-1] == '\''
+			_, numberErr := strconv.ParseFloat(literal, 64)
+			numberLiteral := field.Type == storage.FieldDecimal && (strings.EqualFold(displayType, "DOUBLE") || strings.EqualFold(displayType, "CURRENCY")) && numberErr == nil
+			if textLiteral || numberLiteral {
+				desc.Fields["defaultValue"] = Null
+			}
+		}
 		desc.Fields["defaultedOnCreate"] = Bool(storage.FieldFlagValue(field.DefaultedOnCreate, describeFieldDefaultedOnCreate(field)))
 	} else {
 		desc.Fields["defaultValue"] = Null

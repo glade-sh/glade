@@ -6236,7 +6236,7 @@ System.assertEquals(false, describe.isDeprecatedAndHidden());
 	machine := New(nil)
 	org := testDataOrg()
 	account := org.Objects["Account"]
-	account.Definition.Fields["Defaulted__c"] = storage.Field{APIName: "Defaulted__c", Type: storage.FieldString, DefaultValue: "'Fallback'"}
+	account.Definition.Fields["Defaulted__c"] = storage.Field{APIName: "Defaulted__c", Type: storage.FieldString, DefaultValue: "'Fallback'", DefaultValueFromMetadata: true}
 	org.Objects["Account"] = account
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {

@@ -106,6 +106,7 @@ type Field struct {
 	ChildRelationshipNameInferred bool               `json:"-"`
 	DeleteConstraint              string             `json:"deleteConstraint,omitempty"`
 	DefaultValue                  string             `json:"defaultValue,omitempty"`
+	DefaultValueFromMetadata      bool               `json:"defaultValueFromMetadata,omitempty"`
 	Required                      bool               `json:"required,omitempty"`
 	Nillable                      *bool              `json:"nillable,omitempty"`
 	DefaultedOnCreate             *bool              `json:"defaultedOnCreate,omitempty"`
@@ -1021,6 +1022,7 @@ func fieldFromXML(raw customFieldXML, fallback string) Field {
 		ChildRelationshipNameInferred: childRelationshipNameInferred,
 		DeleteConstraint:              raw.DeleteConstraint,
 		DefaultValue:                  strings.TrimSpace(raw.DefaultValue),
+		DefaultValueFromMetadata:      strings.TrimSpace(raw.DefaultValue) != "",
 		Required:                      raw.Required,
 		ExternalID:                    raw.ExternalID,
 		IDLookup:                      raw.IDLookup,
