@@ -11,7 +11,7 @@ import (
 func TestEmptyLocalLabelTranslationIgnoresManagedCollision(t *testing.T) {
 	org := storage.NewOrgState()
 	var localTranslation storage.LabelMetadata
-	if err := json.Unmarshal([]byte(`{"name":"Greeting","language":"fr","file":"fr.translation-meta.xml","translationSourceExact":true}`), &localTranslation); err != nil {
+	if err := json.Unmarshal([]byte(`{"name":"Greeting","language":"fr","file":"fr.translation-meta.xml","translationSourceRaw":""}`), &localTranslation); err != nil {
 		t.Fatal(err)
 	}
 	org.Metadata.Labels = []storage.LabelMetadata{
