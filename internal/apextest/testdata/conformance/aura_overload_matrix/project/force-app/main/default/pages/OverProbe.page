@@ -1,0 +1,1 @@
+<apex:page showHeader="false" sidebar="false"><apex:includeLightning/><div id="probe59"></div><div id="probe67"></div><script>$Lightning.use("c:overProbeApp",function() {$Lightning.createComponent("c:overProbe59", {}, "probe59");$Lightning.createComponent("c:overProbe67", {}, "probe67");});</script></apex:page>
