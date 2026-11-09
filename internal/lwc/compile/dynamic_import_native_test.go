@@ -33,7 +33,7 @@ func TestDynamicImportNativeDeploy(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	repo, err := FindRepoRoot()
+	repo, err := filepath.Abs(filepath.Join("..", "..", ".."))
 	if err != nil {
 		t.Fatal(err)
 	}
