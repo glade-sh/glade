@@ -4,7 +4,9 @@ This is the shared repository guide for coding agents, independent of provider
 or model. For Codex setup and the full validation map, read
 [docs/AI_SETUP.md](docs/AI_SETUP.md). Read linked references when the task needs
 them; start with [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for runtime work and
-[docs/README.md](docs/README.md) for other documentation.
+[docs/README.md](docs/README.md) for other documentation. For how a change moves
+from a ticket to a release (stages, roles, review rules, templates), read
+[docs/WORKFLOW.md](docs/WORKFLOW.md).
 
 ## Voice
 
@@ -24,6 +26,12 @@ Use short sentences. Let the facts carry the weight.
   suites on the same host. Keep shared evidence and campaign state single-writer.
 - Match process to the change. Use a short plan for substantial work; ordinary
   edits do not need a separate design document or an approval checkpoint.
+- Every change reaches `main` as a pull request. The hosted `Required CI`
+  check is the merge gate. The pull request body, in the repository template,
+  is the report; there is no separate status file.
+- Finish a branch before polishing it. Once a commit is under review, add
+  commits only to answer review findings or fix red CI. Never rewrite or rebase
+  history under a running check.
 
 ## Project Boundary
 
@@ -84,12 +92,51 @@ Match validation to risk.
 Use the Go version in `go.mod` and a C compiler. Real Apex declaration parsing
 requires `CGO_ENABLED=1`; a successful no-CGO build is not a working parser.
 
-Use focused tests first:
+1. Focused tests while iterating. Run only the tests you changed or wrote:
 
-```bash
-CGO_ENABLED=1 go test ./internal/<package>
-CGO_ENABLED=1 go test ./internal/gladecli ./internal/repoguard
-```
+   ```bash
+   CGO_ENABLED=1 go test ./internal/<package> -run '^(TestName|TestOther)$'
+   ```
+
+2. Package tests. Before opening the pull request, run each changed package
+   once, plus the repository guard. For `internal/apextest`, run focused tests
+   with `-run` instead; CI runs its 12 shards:
+
+   ```bash
+   CGO_ENABLED=1 go test -timeout=0 ./internal/<package>
+   CGO_ENABLED=1 go test ./internal/repoguard
+   ```
+
+3. Full suite. `Required CI` runs every package, the 12 `internal/apextest`
+   shards, the LWC and Visualforce shards and the smoke checks on each pull
+   request. Run broad lanes locally when hosted CI is unavailable. Before opening
+   or updating a release PR, run `scripts/ci-local-all` on the clean candidate
+   tree even when hosted CI is available:
+
+   ```bash
+   scripts/ci-local-all                              # mirrors Required CI
+   CGO_ENABLED=1 scripts/ci-go-test.sh local-release # the Go lanes alone
+   ```
+
+4. Distribution smoke. For release candidates, `scripts/release-check.sh`
+   runs `git diff --check`, the site release proof, `local-release`, and
+   `scripts/smoke.sh`. `scripts/smoke.sh` builds and tests a distribution; it
+   is not a quick runtime smoke.
+
+Do not repeat a full package or `local-release` run on an unchanged tree.
+Rerun a failing test on its own with `-run` first. Do not run the whole
+`internal/apextest` package locally; CI runs it in 12 shards
+(`GLADE_APEXTEST_SHARD=i/n` reproduces one shard). Use `-timeout=0` for long
+packages such as `internal/vm`, `internal/gladecli` and `internal/visualforce`
+when a slow host could hit Go's default ten-minute limit.
+
+Before a release pull request, on the exact tree proposed: `gofmt -l .` prints
+nothing, `go vet -trimpath ./...` passes, `go test -count=1 ./scripts` passes
+from a real git checkout with `jq` and Node available, and
+`go test ./internal/repoguard` passes. A new Go package needs its lane entry in
+`scripts/ci-package-lanes.json`. A new `t.Parallel` test in `internal/apextest`
+needs its inventory entries; `TestCIPackageConcurrentTestInventory` in
+`./scripts` checks them.
 
 For behavior changes, add or update the smallest meaningful regression test.
 For a bug, reproduce the failure before fixing it. For a behavior-preserving
