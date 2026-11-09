@@ -81,13 +81,19 @@ System.assertEquals(null, sets.get('CodexC163Capture'));`
 				}
 			})
 			t.Run("tooling", func(t *testing.T) {
-				body, err := json.Marshal(map[string]string{"anonymousBody": probe})
+				anonymousBody := probe
+				if api == "62.0" {
+					// The endpoint's supported version determines anonymous Apex's
+					// version. Invoke the API 62 class through the API 67 endpoint.
+					anonymousBody = `System.assertEquals('ok', FieldSetHost.observe());`
+				}
+				body, err := json.Marshal(map[string]string{"anonymousBody": anonymousBody})
 				if err != nil {
 					t.Fatal(err)
 				}
 				for pass := 0; pass < 2; pass++ {
 					rec := httptest.NewRecorder()
-					req := httptest.NewRequest(http.MethodPost, "/services/data/v"+api+"/tooling/executeAnonymous", bytes.NewReader(body))
+					req := httptest.NewRequest(http.MethodPost, "/services/data/v67.0/tooling/executeAnonymous", bytes.NewReader(body))
 					req.Header.Set("Content-Type", "application/json")
 					srv.ServeHTTP(rec, req)
 					var result struct {
@@ -215,12 +221,18 @@ System.assertEquals(1, Schema.SObjectType.Probe__c.FieldSets.MainList.getFields(
 						}
 					})
 					t.Run("tooling", func(t *testing.T) {
-						body, err := json.Marshal(map[string]string{"anonymousBody": tc.source})
+						anonymousBody := tc.source
+						if api == "62.0" {
+							// The called class retains API 62 even though the supported
+							// Tooling endpoint executes the outer anonymous Apex at 67.
+							anonymousBody = `System.assertEquals('ok', SchemaHost.` + tc.method + `());`
+						}
+						body, err := json.Marshal(map[string]string{"anonymousBody": anonymousBody})
 						if err != nil {
 							t.Fatal(err)
 						}
 						rec := httptest.NewRecorder()
-						req := httptest.NewRequest(http.MethodPost, "/services/data/v"+api+"/tooling/executeAnonymous", bytes.NewReader(body))
+						req := httptest.NewRequest(http.MethodPost, "/services/data/v67.0/tooling/executeAnonymous", bytes.NewReader(body))
 						req.Header.Set("Content-Type", "application/json")
 						srv.ServeHTTP(rec, req)
 						var got struct {
