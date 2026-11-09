@@ -1100,13 +1100,12 @@ func (vm *VM) callGetter(owner string, field Field, receiver Value) (Value, erro
 		}
 	}
 	key := getterCallKey(owner, storageName, receiver)
-	// Helper-mediated static reads re-enter the getter; direct accessor reads
-	// continue to use backing storage. Instance Set behavior stays bounded.
+	// Helper-mediated reads re-enter the getter; direct accessor reads
+	// continue to use backing storage.
 	allowHelperReentry := len(field.Getter.Program.Instructions) > 0 &&
 		((receiver.Kind == ValueNull && field.Static && !vm.isCurrentGetter(field.Getter) && !vm.isCurrentGetter(field.Setter)) ||
 			(receiver.Kind == ValueObject && propertyAccessorMethod(vm.currentMethod) && !vm.isCurrentGetter(field.Getter) && !vm.isCurrentGetter(field.Setter)) ||
-			(vm.activeGetters[key] == 1 && !propertyAccessorMethod(vm.currentMethod) && strings.EqualFold(vm.currentMethod.ClassName, field.Getter.ClassName) && receiver.projectClass && collectionBase(field.Type) == "Set" && field.Setter != nil &&
-				len(field.Setter.Program.Instructions) > 0))
+			(receiver.Kind == ValueObject && receiver.projectClass && !propertyAccessorMethod(vm.currentMethod) && strings.EqualFold(vm.currentMethod.ClassName, field.Getter.ClassName)))
 	if vm.activeGetters[key] > 0 && !allowHelperReentry {
 		if _, value, ok := objectFieldValue(receiver, storageName); ok {
 			return vm.currentGetterStoredValue(owner, field, value), nil
