@@ -183,7 +183,9 @@ run_json_with_heartbeat() {
 		set +e
 		local -a test_command=(go)
 		if [[ "${CI_LOCAL_RELEASE_METRICS:-0}" == "1" && "${label}" == "go test local-release "* ]]; then
-			test_command=(/usr/bin/time -l -o "${artifact%.json}.time.txt" go)
+			test_command=(/usr/bin/time -l)
+			if [[ -n "${testlog_append:-}" ]]; then test_command+=(-a); fi
+			test_command+=(-o "${artifact%.json}.time.txt" go)
 		fi
 		if [[ -n "${CI_TEST_BIN_DIR:-}" ]]; then
 			python3 "${script_dir}/ci-test-binary.py" test -json -vet=off -trimpath "$@"
@@ -745,6 +747,9 @@ try:
     terminal = {}
     selection_path = os.environ.get("CI_SHARD_SELECTION_FOR_SUMMARY")
     expected_terminals = 1
+    chunk_tests = []
+    chunk_seen = set()
+    chunk_index = 0
     if selection_path:
         import importlib.util
         sys.dont_write_bytecode = True
@@ -752,7 +757,8 @@ try:
         chunk_module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(chunk_module)
         with open(selection_path, encoding="utf-8") as selection:
-            expected_terminals = len(list(chunk_module.chunks(json.load(selection))))
+            chunk_tests = [set(regex[4:-2].split("|")) for regex in chunk_module.chunks(json.load(selection))]
+        expected_terminals = len(chunk_tests)
         if expected_terminals < 1 or len(expected) != 1:
             raise ValueError("invalid shard package selection")
     skipped_tests = []
@@ -769,6 +775,9 @@ try:
             action = event.get("Action")
             test = event.get("Test")
             if test not in (None, ""):
+                if (expected_terminals > 1 and package in expected and isinstance(test, str)
+                        and "/" not in test and action in ("pass", "fail", "skip")):
+                    chunk_seen.add(test)
                 # A package pass only says its process reached a terminal
                 # state. It cannot excuse a skipped top-level test or subtest.
                 identity = (package, test)
@@ -827,7 +836,14 @@ try:
                 continue
             if not isinstance(package, str) or action not in ("pass", "fail", "skip"):
                 continue
+            if expected_terminals > 1 and package in expected:
+                if chunk_index >= expected_terminals or chunk_seen != chunk_tests[chunk_index]:
+                    summary["errors"].append(f"package result does not match shard chunk {chunk_index + 1}")
+                chunk_index += 1
+                chunk_seen = set()
             terminal.setdefault(package, []).append(action)
+    if expected_terminals > 1 and chunk_seen:
+        summary["errors"].append("test results after final package result")
     missing = sorted(set(expected) - set(terminal))
     duplicates = sorted(package for package, actions in terminal.items() if len(actions) != expected_terminals)
     skipped = sorted(package for package, actions in terminal.items() if "skip" in actions and test_files.get(package) != "no-tests")
@@ -1339,6 +1355,9 @@ run_test_matrix_shard() {
 	native_rc=0
 	local chunk_rc
 	local testlog_append=1
+	if [[ "${mode}" == "local-release" && "${CI_LOCAL_RELEASE_METRICS:-0}" == "1" ]]; then
+		: >"${events%.json}.time.txt"
+	fi
 	while IFS= read -r regex; do
 		chunk_rc=0
 		run_json_with_heartbeat "go test ${label} shard ${index}" "${events}" "${test_args[@]}" -run "${regex}" "${package_arg}" || chunk_rc="$?"
