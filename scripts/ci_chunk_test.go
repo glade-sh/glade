@@ -44,7 +44,7 @@ for name in names:
  print(json.dumps({'Action':'run','Package':os.environ['FIXTURE_PACKAGE'],'Test':name}))
  print(json.dumps({'Action':'pass','Package':os.environ['FIXTURE_PACKAGE'],'Test':name,'Elapsed':0}))
 print(json.dumps({'Action':'pass','Package':os.environ['FIXTURE_PACKAGE'],'Elapsed':0}))
-sys.exit(7 if os.environ['FIXTURE_FAIL']=='true' else 0)
+sys.exit(7 if os.environ['FIXTURE_FAIL']=='true' and len(open(os.environ['FIXTURE_CALLS']).readlines()) == 1 else 0)
 `)
 			artifacts := filepath.Join(dir, "artifacts")
 			calls := filepath.Join(dir, "calls")
@@ -75,6 +75,21 @@ sys.exit(7 if os.environ['FIXTURE_FAIL']=='true' else 0)
 			}
 			if strings.Count(string(events), `"Action": "run"`) != len(names) {
 				t.Fatalf("combined events missing tests")
+			}
+			if !fail {
+				// A duplicate package result in one chunk cannot replace a missing
+				// result in another, even when the total count is unchanged.
+				terminal := fmt.Sprintf("{\"Action\": \"pass\", \"Package\": %q, \"Elapsed\": 0}\n", fixturePackage)
+				corrupt := strings.Replace(string(events), terminal, terminal+terminal, 1)
+				last := strings.LastIndex(corrupt, terminal)
+				corrupt = corrupt[:last] + corrupt[last+len(terminal):]
+				badEvents := filepath.Join(dir, "corrupt.json")
+				os.WriteFile(badEvents, []byte(corrupt), 0600)
+				check := exec.Command("bash", "ci-go-test.sh", "package-summary", "apextest", "corrupt", badEvents, filepath.Join(dir, "summary.json"), filepath.Join(artifacts, "package-test-metadata.tsv"), fixturePackage)
+				check.Env = append(os.Environ(), "CI_SHARD_SELECTION_FOR_SUMMARY="+filepath.Join(artifacts, "selected-shard.json"))
+				if output, err := check.CombinedOutput(); err == nil {
+					t.Fatalf("accepted misplaced package result: %s", output)
+				}
 			}
 		})
 	}
