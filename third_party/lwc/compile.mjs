@@ -286,6 +286,12 @@ function compileBundle(bundleDir, bundleName, namespace, outDir, apiVersion, mod
       plugins: [["decorators", { decoratorsBeforeExport: true }], "classProperties", "classPrivateProperties", "classPrivateMethods"],
     });
     validateGraphQLDocuments(ast, salesforceImports?.schema, walkAST);
+    // Component entries are validated by transformJavaScript below. Utility
+    // entries and sibling modules are emitted as source, so validate their
+    // dynamic imports before copying them to the output.
+    if (sourcePath !== jsPath || (!fs.existsSync(htmlPath) && !isCustomRenderComponent(jsPath))) {
+      validateDynamicModuleImports(ast, capabilities);
+    }
   });
   if (!fs.existsSync(htmlPath) && !isCustomRenderComponent(jsPath)) {
     return compileUtilityModule(bundleDir, bundleName, namespace, outDir, apiVersion, capabilities, localModules);
@@ -334,6 +340,17 @@ function compileBundle(bundleDir, bundleName, namespace, outDir, apiVersion, mod
     file: entryFile,
     tag: `${namespace}-${kebabCase(bundleName)}`,
   };
+}
+
+function validateDynamicModuleImports(ast, capabilities) {
+  if (capabilities.includes("lightning__dynamicComponent")) return;
+  walkAST(ast, (node) => {
+    const source = node.type === "ImportExpression" ? node.source :
+      node.type === "CallExpression" && node.callee?.type === "Import" ? node.arguments[0] : null;
+    if (source && source.type !== "StringLiteral") {
+      throw new Error("LWC1503: Dynamic imports are not allowed.");
+    }
+  });
 }
 
 function compileUtilityModule(bundleDir, bundleName, namespace, outDir, apiVersion, capabilities, localModules) {
