@@ -1,0 +1,21 @@
+@IsTest private class CodexC163Unmanaged67 {
+ @IsTest static void verify() {
+  Map<String, Schema.FieldSet> sets = Account.SObjectType.getDescribe().fieldSets.getMap();
+  System.assertEquals(1, sets.size());
+  System.assert(sets.keySet().contains('codexc163capture'));
+  System.assert(sets.containsKey('CODEXC163CAPTURE'));
+  System.assertNotEquals(null, sets.get('CodexC163Capture'));
+  System.assertEquals(false, sets.containsKey('MissingCapture'));
+System.assertEquals(null, sets.get('MissingCapture'));
+  Map<String, Schema.FieldSet> second = Account.SObjectType.getDescribe().fieldSets.getMap();
+  sets.clear();
+  System.assertEquals(0, sets.size());
+  System.assertEquals(false, sets.containsKey('CodexC163Capture'));
+  System.assertEquals(null, sets.get('CodexC163Capture'));
+  System.assertEquals(1, second.size());
+  System.assert(second.containsKey('CodexC163Capture'));
+  Map<String, Schema.FieldSet> fresh = Account.SObjectType.getDescribe().fieldSets.getMap();
+  System.assertEquals(1, fresh.size());
+  System.assert(fresh.containsKey('CodexC163Capture'));
+ }
+}

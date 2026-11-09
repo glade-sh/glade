@@ -23,3 +23,7 @@ api	case	route	outcome
 67.0	unmanaged_putAll	anonymous	compiled; System.FinalException: Collection is read-only
 62.0	unmanaged_clear_isolation	anonymous	afterSize=0; afterContains=false; afterGet=false; secondSize=1; secondContains=true; freshSize=1; freshContains=true
 67.0	unmanaged_clear_isolation	anonymous	afterSize=0; afterContains=false; afterGet=false; secondSize=1; secondContains=true; freshSize=1; freshContains=true
+62.0	namespaced_istest	IsTest	Pass
+67.0	namespaced_istest	IsTest	Pass
+62.0	unmanaged_istest	IsTest	Pass
+67.0	unmanaged_istest	IsTest	Pass
