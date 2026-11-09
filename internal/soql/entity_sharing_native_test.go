@@ -67,3 +67,26 @@ func TestEntitySharingModelNativeRowsAndWarmState(t *testing.T) {
 		})
 	}
 }
+
+// Explicitly supplied EntityDefinition records retain their own values; only
+// fields synthesized by the virtual view follow later definition changes.
+func TestEntitySharingProjectionPreservesExplicitRecords(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	account := org.Objects["Account"]
+	account.Definition.SharingModel = "ReadWrite"
+	org.Objects["Account"] = account
+	storage.EnsureStandardObject(&org, "EntityDefinition")
+	entities := org.Objects["EntityDefinition"]
+	if entities.Records == nil {
+		entities.Records = map[storage.ID]storage.Record{}
+	}
+	entities.Records[storage.ID("Account")] = storage.Record{ID: storage.ID("Account"), Object: "EntityDefinition", Fields: map[string]storage.Value{
+		"QualifiedApiName": storage.StringValue("Account"), "InternalSharingModel": storage.StringValue("Private"),
+	}}
+	org.Objects["EntityDefinition"] = entities
+	view := VirtualSchemaView(org)
+	if got := view.Objects["EntityDefinition"].Records[storage.ID("Account")].Fields["InternalSharingModel"].String; got != "Private" {
+		t.Fatalf("explicit field changed to %q", got)
+	}
+}
