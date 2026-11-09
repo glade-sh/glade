@@ -3008,40 +3008,35 @@ func (vm *VM) resolveStaticMethodForArgs(typeName, method string, args []Value) 
 			searchType = vm.resolvedSuperClassName(class)
 		}
 	}
-	// Apex resolves Outer.Inner.staticMethod() against the enclosing class when
-	// neither the inner class nor its superclasses declare the method: inner
-	// classes see their outer class's static members.
+	// Only a registered nested class has a lexical enclosing class. A dot in
+	// a namespace-qualified top-level name does not create one.
 	for _, candidateType := range candidates {
-		if _, ok := vm.lookupClass(candidateType); !ok {
+		class, ok := vm.lookupClass(candidateType)
+		if !ok || !class.Nested {
 			continue
 		}
-		for enclosing := candidateType; ; {
-			dot := strings.LastIndexByte(enclosing, '.')
-			if dot <= 0 {
+		qualified := runtimeClassName(class)
+		dot := strings.LastIndexByte(qualified, '.')
+		if dot <= 0 {
+			continue
+		}
+		for owner := qualified[:dot]; owner != ""; {
+			target, ok, ambiguous := vm.matchRegisteredStaticMethod(owner+"."+method, args)
+			if ambiguous {
+				return Method{}, false, true
+			}
+			if ok {
+				if vm.methodResolveCache == nil {
+					vm.methodResolveCache = make(map[string]methodResolution)
+				}
+				vm.methodResolveCache[cacheKey] = methodResolution{Method: target, OK: true}
+				return target, true, false
+			}
+			ownerClass, ok := vm.lookupClass(owner)
+			if !ok {
 				break
 			}
-			enclosing = enclosing[:dot]
-			if _, ok := vm.lookupClass(enclosing); !ok {
-				break
-			}
-			for owner := enclosing; owner != ""; {
-				target, ok, ambiguous := vm.matchRegisteredStaticMethod(owner+"."+method, args)
-				if ambiguous {
-					return Method{}, false, true
-				}
-				if ok {
-					if vm.methodResolveCache == nil {
-						vm.methodResolveCache = make(map[string]methodResolution)
-					}
-					vm.methodResolveCache[cacheKey] = methodResolution{Method: target, OK: true}
-					return target, true, false
-				}
-				class, ok := vm.lookupClass(owner)
-				if !ok {
-					break
-				}
-				owner = vm.resolvedSuperClassName(class)
-			}
+			owner = vm.resolvedSuperClassName(ownerClass)
 		}
 	}
 	if vm.methodResolveCache == nil {
