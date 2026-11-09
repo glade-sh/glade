@@ -808,10 +808,19 @@ func (vm *VM) cachedApexMethodFrameSymbol(method Method) string {
 	if vm.Org != nil {
 		key.OrgNamespace = vm.Org.Namespace
 	}
+	if vm.frameSymbolFirstValid && vm.frameSymbolFirstKey == key {
+		return vm.frameSymbolFirstValue
+	}
 	if cached, ok := vm.frameSymbolCache[key]; ok {
 		return cached
 	}
 	symbol := vm.apexMethodFrameSymbol(method)
+	if !vm.frameSymbolFirstValid {
+		vm.frameSymbolFirstKey = key
+		vm.frameSymbolFirstValue = symbol
+		vm.frameSymbolFirstValid = true
+		return symbol
+	}
 	if vm.frameSymbolCache == nil {
 		vm.frameSymbolCache = make(map[frameSymbolKey]string)
 	}

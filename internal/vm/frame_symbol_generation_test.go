@@ -5,6 +5,27 @@ import (
 	"testing"
 )
 
+func TestFrameSymbolFirstEntryAndReset(t *testing.T) {
+	machine := New(nil)
+	first := Method{Name: "First.run"}
+	second := Method{Name: "Second.run"}
+	for _, method := range []Method{first, first, second, first, second} {
+		if got, want := machine.cachedApexMethodFrameSymbol(method), machine.apexMethodFrameSymbol(method); got != want {
+			t.Fatalf("symbol for %s = %q, want %q", method.Name, got, want)
+		}
+	}
+	if !machine.frameSymbolFirstValid || len(machine.frameSymbolCache) != 1 {
+		t.Fatalf("expected one inline and one additional entry")
+	}
+	machine.resetClassAccessCaches()
+	if machine.frameSymbolFirstValid || machine.frameSymbolFirstKey != (frameSymbolKey{}) || machine.frameSymbolFirstValue != "" || machine.frameSymbolCache != nil {
+		t.Fatal("reset did not clear the frame symbol cache")
+	}
+	if got, want := machine.cachedApexMethodFrameSymbol(second), machine.apexMethodFrameSymbol(second); got != want {
+		t.Fatalf("symbol after reset = %q, want %q", got, want)
+	}
+}
+
 // A freeze re-ranks short-name collisions without resetting the access caches,
 // so the frame-symbol memo must answer as the uncached form after it. The
 // incremental index lets the last registration of a short name win; the frozen
