@@ -15,7 +15,7 @@ func TestCompileGateContainsFold(t *testing.T) {
 		{"public class A { Depns.Util.run(); }", "DEPNS", true},
 		{"public class A { String s = 'x'; }", "depns", false},
 		{"", "depns", false},
-		{"nps", "depns", false},
+		{"depn", "depns", false},
 		{"public class A { Kelvin__Foo__c f; }", "kelvin", true},
 		{"public class A { Kelvin__Foo__c f; }", "depns", false},
 		{"anything", "", true},
