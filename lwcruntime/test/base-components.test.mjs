@@ -1117,7 +1117,7 @@ test("native icon, button icon and modal classes", async (t) => {
   if (!requireLWCToolchain(t)) return;
   const file = path.join(repoRoot, "internal/lwcbrowser/testdata/pr163_slds/org.tsv");
   const rows = fs.readFileSync(file, "utf8").trim().split("\n").slice(1).map(line => line.split("\t"));
-  assert.equal(rows.length, 16);
+  assert.equal(rows.length, 24);
   const server = await startBaseComponentServer();
   const browser = await chromium.launch({ headless: true });
   try {
@@ -1134,6 +1134,10 @@ test("native icon, button icon and modal classes", async (t) => {
         ["icon_small_success", Icon, "lightning-icon", { iconName: "utility:check", size: "small", variant: "success", alternativeText: "Probe icon" }],
         ["icon_large_warning", Icon, "lightning-icon", { iconName: "utility:check", size: "large", variant: "warning", alternativeText: "Second icon" }],
         ["icon_invalid_defaults", Icon, "lightning-icon", { iconName: "utility:check", size: "invalid", variant: "invalid", alternativeText: "Invalid icon" }],
+        ["icon_inverse", Icon, "lightning-icon", { iconName: "utility:check", size: "x-small", variant: "inverse", alternativeText: "Inverse icon" }],
+        ["icon_tiny", Icon, "lightning-icon", { iconName: "utility:check", size: "xx-small", alternativeText: "Tiny icon" }],
+        ["icon_account", Icon, "lightning-icon", { iconName: "standard:account", size: "medium", alternativeText: "Account icon" }],
+        ["button_bare", ButtonIcon, "lightning-button-icon", { iconName: "utility:check", size: "large", variant: "bare", alternativeText: "Bare button" }],
         ["button_small_border_filled", ButtonIcon, "lightning-button-icon", { iconName: "utility:check", size: "small", variant: "border-filled", alternativeText: "Probe button" }],
         ["button_invalid_defaults", ButtonIcon, "lightning-button-icon", { iconName: "utility:check", size: "invalid", variant: "invalid", alternativeText: "Invalid button" }],
       ];

@@ -15,3 +15,11 @@ modal_container	59.0	browser	rendered	slds-modal__container slds-modal__containe
 modal_close_svg	59.0	browser	rendered	slds-button__icon slds-button__icon_large
 modal_container	67.0	browser	rendered	slds-modal__container slds-modal__container__reflow_resize
 modal_close_svg	67.0	browser	rendered	slds-button__icon slds-button__icon_large
+icon_inverse	59.0	browser	rendered	slds-icon slds-icon_x-small
+icon_tiny	59.0	browser	rendered	slds-icon slds-icon-text-default slds-icon_xx-small
+icon_account	59.0	browser	rendered	slds-icon
+button_bare	59.0	browser	rendered	slds-button slds-button_icon
+icon_inverse	67.0	browser	rendered	slds-icon slds-icon_x-small
+icon_tiny	67.0	browser	rendered	slds-icon slds-icon-text-default slds-icon_xx-small
+icon_account	67.0	browser	rendered	slds-icon
+button_bare	67.0	browser	rendered	slds-button slds-button_icon
