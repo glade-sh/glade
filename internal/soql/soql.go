@@ -711,15 +711,9 @@ func syncVirtualEntitySharingModels(org *storage.OrgState) {
 }
 
 func capturedEntitySharingModel(model string) (string, bool) {
-	switch strings.ToLower(strings.TrimSpace(model)) {
-	case "private":
-		return "Private", true
-	case "read":
-		return "Read", true
-	case "readwrite":
-		return "ReadWrite", true
-	case "readwritetransfer":
-		return "ReadWriteTransfer", true
+	switch model {
+	case "Private", "Read", "ReadWrite", "ReadWriteTransfer":
+		return model, true
 	default:
 		return "", false
 	}
