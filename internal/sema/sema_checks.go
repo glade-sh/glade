@@ -3916,7 +3916,7 @@ func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.M
 		targetType, ok := scopes.visibleAt(target, match[2])
 		if ok {
 			value := trimSemaArg(body, match[1], semaStatementEnd(body, match[1]))
-			valueType := semaResolveConstructedExpressionType(model, typ.Name, value.text, scopes.flatCopy())
+			valueType := semaResolveConstructedExpressionType(model, typ.Name, value.text, scopes.flatAtCopy(match[1]))
 			queryText := strings.TrimSpace(value.text)
 			if strings.HasPrefix(queryText, "[") && strings.HasSuffix(queryText, "]") {
 				if queryType := semaSOQLLiteralType(queryText); queryType != "" {
