@@ -30,4 +30,9 @@ func TestCurrencyOverlayLeavesUnrelatedFeatureShapeUnchanged(t *testing.T) {
 	if !reflect.DeepEqual(plain.Schema, unrelated.Schema) {
 		t.Fatal("currency import handling changed the schema for an unrelated feature")
 	}
+	currency := load(t, `["MultiCurrency"]`)
+	combined := load(t, `["MultiCurrency", "PersonAccounts"]`)
+	if !reflect.DeepEqual(currency.Schema, combined.Schema) {
+		t.Fatal("currency overlay also applied an unrelated feature")
+	}
 }

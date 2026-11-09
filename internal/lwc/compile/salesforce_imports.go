@@ -75,14 +75,41 @@ func loadSalesforceImports(p project.Project, references []string) (*salesforceI
 	if err != nil {
 		return nil, err
 	}
-	// Apply the same project feature policy used by runtime standard-field
-	// resolution before constructing the LWC import schema.
+	// Apply only the observed feature's contribution. Preserve the existing
+	// compiler schema for all other feature and edition overlays.
 	features := project.StandardFieldPolicyFeatures(p)
-	schemaEntry := func(definition storage.ObjectDefinition) salesforceSchemaObject {
-		if _, known := storage.ResolveKnownStandardObjectName(definition.APIName); known {
-			storage.EnsureStandardObjectFieldsForFeatures(&definition, features)
+	withoutCurrency := make([]string, 0, len(features))
+	multiCurrency := false
+	for _, feature := range features {
+		name, _, _ := strings.Cut(strings.TrimSpace(feature), ":")
+		if strings.EqualFold(name, "MultiCurrency") {
+			multiCurrency = true
+			continue
 		}
-		return salesforceSchemaEntry(definition)
+		withoutCurrency = append(withoutCurrency, feature)
+	}
+	schemaEntry := func(definition storage.ObjectDefinition) salesforceSchemaObject {
+		entry := salesforceSchemaEntry(definition)
+		if _, known := storage.ResolveKnownStandardObjectName(definition.APIName); !known || !multiCurrency {
+			return entry
+		}
+		without, with := definition.Clone(), definition.Clone()
+		storage.EnsureStandardObjectFieldsForFeatures(&without, withoutCurrency)
+		storage.EnsureStandardObjectFieldsForFeatures(&with, features)
+		off, on := salesforceSchemaEntry(without), salesforceSchemaEntry(with)
+		for field := range on.Fields {
+			if !off.Fields[field] {
+				entry.Fields[field] = true
+			}
+		}
+		for relationship, targets := range on.Relationships {
+			if _, exists := off.Relationships[relationship]; !exists {
+				if _, declared := entry.Relationships[relationship]; !declared {
+					entry.Relationships[relationship] = targets
+				}
+			}
+		}
+		return entry
 	}
 	// Reuse the runtime's schema overlay, including implicit custom-object
 	// fields and its custom-setting/master-detail exclusions.
