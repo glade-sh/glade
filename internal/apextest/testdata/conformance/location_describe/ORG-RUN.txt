@@ -1,0 +1,7 @@
+Fresh 30-day Developer scratch org; Salesforce CLI, 2026-11-09.
+Deployed the synthetic Account fields and granted field permissions to the scratch user.
+Executed anonymous.apex at API 62.0 and 67.0. org.tsv contains USER_DEBUG observations.
+The accompanying API-versioned test classes assert the same cases via @IsTest.
+Scratch org deletion is recorded in the campaign report.
+Both API-versioned @IsTest methods passed with the same assertions.
+The scratch org was deleted and a subsequent org lookup returned not found.
