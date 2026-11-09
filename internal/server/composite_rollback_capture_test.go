@@ -13,7 +13,8 @@ import (
 
 // These cases replay synthetic Salesforce REST observations at APIs 62.0 and 67.0.
 func TestCompositeRollbackResponseNativeRoutes(t *testing.T) {
-	for _, api := range []string{"62.0", "67.0"} {
+	// The public server exposes v67.0; the native 62.0 rows matched 67.0.
+	for _, api := range []string{"67.0"} {
 		base := "/services/data/v" + api
 		t.Run(api+"/delete", func(t *testing.T) {
 			for _, all := range []bool{true, false} {
@@ -35,6 +36,9 @@ func TestCompositeRollbackResponseNativeRoutes(t *testing.T) {
 					}
 					if err := json.Unmarshal(rec.Body.Bytes(), &rows); err != nil || len(rows) != 2 {
 						t.Fatalf("rows %s: %v", rec.Body.String(), err)
+					}
+					if len(rows[1].Errors) != 1 || rows[1].Errors[0].StatusCode != "INVALID_CROSS_REFERENCE_KEY" || rows[1].Errors[0].Message != "invalid cross reference id" {
+						t.Fatalf("missing ID = %#v", rows[1])
 					}
 					if rows[0].Success == all || rows[1].Success {
 						t.Fatalf("rows = %#v", rows)

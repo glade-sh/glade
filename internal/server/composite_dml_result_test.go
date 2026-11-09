@@ -8,10 +8,8 @@ import (
 )
 
 func TestCompositeSObjectUpsertCreationContracts(t *testing.T) {
-	// A36 R133 captures Apex isCreated=true for a failed insert. The
-	// existing REST contract is preserved:
-	// TestCompositeSObjectTypedUpsertPartialFailureCommitsSuccessfulRows
-	// requires created=false for the same failed row.
+	// Native REST observations at APIs 62.0 and 67.0 report created=true
+	// and omit the id when an attempted insert fails.
 	org := testOrg()
 	engine := dml.NewEngine(&org)
 	seed := engine.UpsertWithExternalID([]storage.Record{{
@@ -61,8 +59,13 @@ func TestCompositeSObjectUpsertCreationContracts(t *testing.T) {
 				t.Fatalf("DML creation result = %#v, want %#v", result, want)
 			}
 			row := rows[i]
-			if row["success"] != want.success || row["created"] != want.created || row["referenceId"] != want.name || row["id"] != result.ID {
+			if row["success"] != want.success || row["created"] != want.upsertCreated || row["referenceId"] != want.name || (result.ID != "" && row["id"] != result.ID) {
 				t.Fatalf("REST upsert result = %#v, want %#v", row, want)
+			}
+			if !want.success && result.ID == "" {
+				if _, ok := row["id"]; ok {
+					t.Fatalf("failed insert has id: %#v", row)
+				}
 			}
 			if !want.success {
 				if result.StatusCode != "REQUIRED_FIELD_MISSING" || len(result.Fields) != 1 || result.Fields[0] != "Name" {
