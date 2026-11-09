@@ -7,7 +7,7 @@ func TestLightningHistoricalOverloadNative(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	two, err := CompileAnonymous(`return 'two:' + recordId + ':' + groupId;`)
+	two, err := CompileAnonymous(`return 'two:' + String.valueOf(recordId) + ':' + String.valueOf(groupId);`)
 	if err != nil {
 		t.Fatal(err)
 	}
