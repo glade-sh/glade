@@ -127,6 +127,8 @@ System.assertEquals(null, fields.get('Blank__c').getDescribe().getDefaultValue()
 System.assertEquals(null, fields.get('Number__c').getDescribe().getDefaultValue());
 System.assertEquals(true, fields.get('Flag__c').getDescribe().getDefaultValue());
 System.assertEquals(false, fields.get('FlagFalse__c').getDescribe().getDefaultValue());
+System.assertEquals(null, fields.get('TextPlus__c').getDescribe().getDefaultValue());
+System.assertEquals('\'a\' + \'b\'', fields.get('TextPlus__c').getDescribe().getDefaultValueFormula());
 System.assertEquals(null, Integer.valueOf(fields.get('Blank__c').getDescribe().getDefaultValue()));`},
 		{"shorthand", `System.assertEquals('Name', Account.SObjectType.Name.getDescribe().getName());
 System.assertEquals('Id', Account.SObjectType.Id.getDescribe().getName());
@@ -170,6 +172,7 @@ System.assertEquals(1, Schema.SObjectType.Probe__c.FieldSets.MainList.getFields(
 				"Probe_Point__c": {APIName: "Probe_Point__c", Type: storage.FieldLocation, DisplayType: "LOCATION"},
 				"Probe_Text__c":  {APIName: "Probe_Text__c", Type: storage.FieldString},
 				"Blank__c":       {APIName: "Blank__c", Type: storage.FieldString},
+				"TextPlus__c":    {APIName: "TextPlus__c", Type: storage.FieldString, DisplayType: "STRING", DefaultValue: "'a' + 'b'", DefaultValueFromMetadata: true},
 				"Number__c":      {APIName: "Number__c", Type: storage.FieldDecimal, DisplayType: "DOUBLE", DefaultValue: "7", DefaultValueFromMetadata: true},
 				"Flag__c":        {APIName: "Flag__c", Type: storage.FieldBoolean, DefaultValue: "true", DefaultValueFromMetadata: true},
 				"FlagFalse__c":   {APIName: "FlagFalse__c", Type: storage.FieldBoolean, DefaultValue: "false", DefaultValueFromMetadata: true},
