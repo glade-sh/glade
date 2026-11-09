@@ -87,3 +87,10 @@ func TestCapturedEnclosingStaticLookup(t *testing.T) {
 		})
 	}
 }
+
+func TestPrivateOverrideBeforeCapturedRangeKeepsExistingVisibility(t *testing.T) {
+	result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{"Probe.cls": capturedScopeSource(t, "privateoverride")}, "44.0")
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA016") {
+		t.Fatalf("visibility changed outside the captured range: %#v", result.Diagnostics)
+	}
+}
