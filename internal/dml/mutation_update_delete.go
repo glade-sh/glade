@@ -361,6 +361,9 @@ func (e *Engine) deleteRecord(objectName string, id storage.ID, seen map[string]
 	if err := e.cascadeDeleteChildren(objectName, storedID, seen, ctx); err != nil {
 		return err
 	}
+	if objectName == "PermissionSetGroupComponent" {
+		e.markPermissionSetGroupComponentChanged(stored)
+	}
 	if e.ChangeObserver != nil {
 		e.ChangeObserver("DELETE", stored, storage.Record{})
 	}

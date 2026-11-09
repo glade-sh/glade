@@ -25,7 +25,7 @@ func (e *Engine) afterInsertSObject(objectName string, record storage.Record) er
 	case "PermissionSetGroup":
 		return e.afterInsertPermissionSetGroup(record)
 	case "PermissionSetGroupComponent":
-		e.afterInsertPermissionSetGroupComponent(record)
+		e.markPermissionSetGroupComponentChanged(record)
 	}
 	return nil
 }

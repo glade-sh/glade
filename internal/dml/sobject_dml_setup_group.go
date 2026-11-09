@@ -60,7 +60,7 @@ func (e *Engine) afterInsertPermissionSetGroup(group storage.Record) error {
 	return err
 }
 
-func (e *Engine) afterInsertPermissionSetGroupComponent(component storage.Record) {
+func (e *Engine) markPermissionSetGroupComponentChanged(component storage.Record) {
 	id := idFromStorageValue(component.Fields["PermissionSetGroupId"])
 	_, group, found := storage.LookupRecordByID(e.Org.Objects["PermissionSetGroup"].Records, id)
 	if !found || group.Fields["Status"].String != "Updated" && group.Fields["Status"].String != "Outdated" {
