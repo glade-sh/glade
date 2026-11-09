@@ -172,14 +172,23 @@ func compileGateReferencesMissingNamespace(file, source string, units compileGat
 
 // compileGateContainsFold reports whether source may contain name under the
 // walker's strings.ToLower comparison, without allocating a folded copy of the
-// source. Namespace names are ASCII identifiers; the one non-ASCII rune whose
-// lowercase form is an ASCII letter (U+212A KELVIN SIGN, to k) keeps the
-// source on the parsing path.
+// source. Two non-ASCII runes have an ASCII lowercase form (U+212A KELVIN SIGN
+// to k, U+0130 LATIN CAPITAL I WITH DOT ABOVE to i); a source holding one keeps
+// the parsing path, as does a non-ASCII name, whose case pairs can differ in
+// their bytes.
 func compileGateContainsFold(source, name string) bool {
 	if name == "" {
 		return true
 	}
+	for i := 0; i < len(name); i++ {
+		if name[i] >= 0x80 {
+			return true
+		}
+	}
 	if strings.ContainsAny(name, "kK") && strings.Contains(source, "\u212a") {
+		return true
+	}
+	if strings.ContainsAny(name, "iI") && strings.Contains(source, "\u0130") {
 		return true
 	}
 	if len(name) > len(source) {
