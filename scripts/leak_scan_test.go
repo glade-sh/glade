@@ -129,6 +129,91 @@ func TestLeakScan(t *testing.T) {
 	})
 }
 
+// TestLeakScanAdversarialDiffs covers diff content that must not control parsing or output.
+func TestLeakScanAdversarialDiffs(t *testing.T) {
+	script, err := filepath.Abs("leak-scan.sh")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir := t.TempDir()
+	git := func(args ...string) {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = dir
+		cmd.Env = append(os.Environ(), "GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@example.invalid", "GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@example.invalid")
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git: %s: %v", out, err)
+		}
+	}
+	write := func(name, content string) {
+		t.Helper()
+		path := filepath.Join(dir, name)
+		if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	run := func(args ...string) (string, error) {
+		t.Helper()
+		cmd := exec.Command("bash", append([]string{script}, args...)...)
+		cmd.Dir = dir
+		cmd.Env = append(os.Environ(), "LEAK_SCAN_DENYLIST=synthetic-token")
+		out, err := cmd.CombinedOutput()
+		return string(out), err
+	}
+	git("init", "-q")
+	write(".github/leak-scan-allow.txt", "docs/allowed\n")
+	write("base", "base\n")
+	git("add", "-A")
+	git("commit", "-qm", "base")
+	private := "/ho" + "me/person/private"
+	runner := "/ho" + "me/runner/cache"
+	for _, tc := range []struct{ name, content, class string }{
+		{"null header", "++ /dev/null\n" + private + "\n", "personal-path"},
+		{"allow header", "++ b/docs/allowed\nsynthetic-token\n", "denylist"},
+		{"secret header", "++ synthetic-secret\n" + private + "\n", "personal-path"},
+		{"runner first", runner + " " + private + "\n", "personal-path"},
+		{"runner last", private + " " + runner + "\n", "personal-path"},
+		{"multiple runners", runner + " " + runner + " " + private + "\n", "personal-path"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			write("input", tc.content)
+			git("add", "input")
+			git("commit", "-qm", tc.name)
+			out, err := run("--range", "HEAD~1..HEAD")
+			if err == nil || !strings.Contains(out, tc.class) || strings.Contains(out, "synthetic-secret") {
+				t.Fatalf("expected redacted %s finding: %v: %s", tc.class, err, out)
+			}
+		})
+	}
+	for _, tc := range []struct{ name, attrs, content string }{
+		{"nul", "", "\x00" + private},
+		{"attribute", "*.dat -diff\n", private + "\n"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			write(".gitattributes", tc.attrs)
+			write(tc.name+".dat", tc.content)
+			git("add", "-A")
+			git("commit", "-qm", tc.name)
+			out, err := run("--range", "HEAD~1..HEAD")
+			if err == nil || !strings.Contains(out, "binary") {
+				t.Fatalf("expected binary finding: %v: %s", err, out)
+			}
+		})
+	}
+	t.Run("sensitive filename", func(t *testing.T) {
+		write("synthetic-secret.txt", private+"\n")
+		git("add", "-A")
+		git("commit", "-qm", "filename")
+		out, err := run("--range", "HEAD~1..HEAD")
+		if err == nil || !strings.Contains(out, "personal-path") || strings.Contains(out, "synthetic-secret") {
+			t.Fatalf("expected redacted filename: %v: %s", err, out)
+		}
+	})
+}
+
 // TestLeakScanRequiredWorkflow keeps the leak-scan job wired into Required CI
 // with the denylist secret and a base for every event the workflow runs on.
 func TestLeakScanRequiredWorkflow(t *testing.T) {
