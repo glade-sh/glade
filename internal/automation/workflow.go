@@ -8,9 +8,11 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/storage"
 )
 
@@ -124,7 +126,8 @@ func LoadProject(p project.Project, metadataReaders ...func(string) ([]byte, err
 		idx.Workflows = append(idx.Workflows, workflow)
 		idx.Diagnostics = append(idx.Diagnostics, diagnostics...)
 	}
-	flowDefinitions := flowProjectRelationshipDefinitions(p)
+	schemaLoader := newProjectSchemaLoader(p)
+	flowDefinitions := flowProjectRelationshipDefinitions(p, schemaLoader)
 	for _, path := range p.FlowFiles {
 		flow, diagnostics, err := loadFlow(path, flowDefinitions)
 		if err != nil {
@@ -134,13 +137,13 @@ func LoadProject(p project.Project, metadataReaders ...func(string) ([]byte, err
 		idx.Flows = append(idx.Flows, flow)
 		idx.Diagnostics = append(idx.Diagnostics, diagnostics...)
 	}
-	if err := flowRefsValidateProjectDecisions(p, &idx); err != nil {
+	if err := flowRefsValidateProjectDecisions(p, &idx, schemaLoader); err != nil {
 		return Index{}, err
 	}
-	if err := flowCoreValidateProjectEntries(p, &idx); err != nil {
+	if err := flowCoreValidateProjectEntries(p, &idx, schemaLoader); err != nil {
 		return Index{}, err
 	}
-	if err := flowCoreValidateProjectConditions(p, &idx); err != nil {
+	if err := flowCoreValidateProjectConditions(p, &idx, schemaLoader); err != nil {
 		return Index{}, err
 	}
 	if err := flowCoreValidateProjectAssignments(p, &idx); err != nil {
@@ -448,4 +451,30 @@ func firstNonBlank(values ...string) string {
 		}
 	}
 	return ""
+}
+
+// loadProjectSchema is the schema loader the automation index uses; tests
+// replace it to observe how often a project load reads its schema.
+var loadProjectSchema = schema.LoadProject
+
+// projectSchemaLoader hands the same project schema to every Flow validation
+// pass of one LoadProject call. The passes each used to load the schema from
+// disk, which re-read every object and field file and re-scanned the project
+// tree for org shape evidence.
+type projectSchemaLoader struct {
+	project project.Project
+	once    sync.Once
+	schema  schema.Schema
+	err     error
+}
+
+func newProjectSchemaLoader(p project.Project) *projectSchemaLoader {
+	return &projectSchemaLoader{project: p}
+}
+
+func (l *projectSchemaLoader) load() (schema.Schema, error) {
+	l.once.Do(func() {
+		l.schema, l.err = loadProjectSchema(l.project)
+	})
+	return l.schema, l.err
 }
