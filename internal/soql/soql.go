@@ -278,12 +278,10 @@ func ExecuteWithCacheAndContext(org storage.OrgState, query Query, cache *Execut
 		org, objectName, ok = orgWithLazyChildObject(org, query.Object)
 	}
 	if !ok && shouldHydrateVirtualSchemaForQuery(query.Object) {
-		org = org.Clone()
-		hydrateVirtualSchemaObjects(&org)
+		org = virtualSchemaQueryOrg(org, cache)
 		objectName, ok = storage.ResolveObjectName(org, query.Object)
 	} else if ok && shouldHydrateVirtualSchemaForQuery(objectName) {
-		org = org.Clone()
-		hydrateVirtualSchemaObjects(&org)
+		org = virtualSchemaQueryOrg(org, cache)
 		objectName, ok = storage.ResolveObjectName(org, query.Object)
 	}
 	if !ok {
@@ -531,6 +529,79 @@ func VirtualSchemaView(org storage.OrgState) storage.OrgState {
 
 func shouldHydrateVirtualSchemaForQuery(objectName string) bool {
 	return isVirtualSchemaObjectName(objectName) || isUserAccessVirtualSchemaObjectName(objectName)
+}
+
+var virtualSchemaObjectNames = [...]string{"EntityDefinition", "EntityParticle", "FieldDefinition", "RelationshipDomain", "UserEntityAccess", "UserFieldAccess"}
+
+// sharedVirtualSchema is one runtime schema generation's hydrated virtual
+// schema objects. Their records derive only from the generation's object
+// definitions, which are frozen while the org carries its RuntimeSchemaStamp
+// (every definition writer clears it), so the six object states can be
+// shared read-only by every query of every VM on that generation.
+type sharedVirtualSchema struct {
+	runtimeStamp   string
+	hydrationStamp string
+	objects        map[string]storage.ObjectState
+}
+
+// virtualSchemaQueryOrg returns the org a virtual schema query executes
+// against: the caller's objects plus the six virtual schema objects hydrated
+// from the caller's definitions. A frozen generation hydrates once per
+// execution cache and reuses the result; an org without a runtime stamp, or
+// one that already holds records for a virtual schema object (explicit
+// records win over hydration), hydrates a private deep clone as before.
+func virtualSchemaQueryOrg(org storage.OrgState, cache *ExecutionCache) storage.OrgState {
+	runtimeStamp := strings.TrimSpace(org.RuntimeSchemaStamp)
+	if cache == nil || runtimeStamp == "" || virtualSchemaObjectsHaveRecords(org) {
+		out := org.Clone()
+		hydrateVirtualSchemaObjects(&out)
+		return out
+	}
+	hydrationStamp := virtualSchemaHydrationStamp(org)
+	shared := cache.sharedVirtualSchemaObjects(org, runtimeStamp, hydrationStamp)
+	out := org.CloneObjectsShallow(len(shared))
+	for name, object := range shared {
+		out.Objects[name] = object
+	}
+	return out
+}
+
+func virtualSchemaObjectsHaveRecords(org storage.OrgState) bool {
+	for _, name := range virtualSchemaObjectNames {
+		if object, ok := org.Objects[name]; ok && len(object.Records) > 0 {
+			return true
+		}
+	}
+	return false
+}
+
+// sharedVirtualSchemaObjects returns the generation's hydrated virtual schema
+// object states, building them from a private deep clone of org on the first
+// query of the generation. Record and index maps are marked shared so any
+// writer clones them first.
+func (c *ExecutionCache) sharedVirtualSchemaObjects(org storage.OrgState, runtimeStamp, hydrationStamp string) map[string]storage.ObjectState {
+	c.mu.RLock()
+	shared := c.virtualSchema
+	c.mu.RUnlock()
+	if shared != nil && shared.runtimeStamp == runtimeStamp && shared.hydrationStamp == hydrationStamp {
+		return shared.objects
+	}
+	hydrated := org.Clone()
+	hydrateVirtualSchemaObjects(&hydrated)
+	objects := make(map[string]storage.ObjectState, len(virtualSchemaObjectNames))
+	for _, name := range virtualSchemaObjectNames {
+		object, ok := hydrated.Objects[name]
+		if !ok {
+			continue
+		}
+		object.RecordsShared, object.IndexesShared = true, true
+		objects[name] = object
+	}
+	shared = &sharedVirtualSchema{runtimeStamp: runtimeStamp, hydrationStamp: hydrationStamp, objects: objects}
+	c.mu.Lock()
+	c.virtualSchema = shared
+	c.mu.Unlock()
+	return objects
 }
 
 func hydrateVirtualSchemaObjects(org *storage.OrgState) {

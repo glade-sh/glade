@@ -108,6 +108,7 @@ type ExecutionCache struct {
 	mu                         sync.RWMutex
 	childRelationships         map[string]childRelationshipResolution
 	childFieldQualifierMatches map[string]bool
+	virtualSchema              *sharedVirtualSchema
 }
 type childRelationshipResolution struct {
 	childObjectName string
