@@ -107,13 +107,16 @@ func sameLexicalTopLevel(a, b string) bool {
 	bTop, bNested := lexicalTopLevel(b)
 	return aNested && bNested && strings.EqualFold(aTop, bTop)
 }
+// maxAccessMemoEntries bounds the raw-key class and access-scope memos.
+const maxAccessMemoEntries = 16384
+
 func (vm *VM) sameAccessScope(left, right string) bool {
 	key := accessScopeKey{Left: left, Right: right, CurrentClass: vm.currentClass, CurrentNamespace: vm.currentNamespace}
 	if cached, ok := vm.accessScopeCache[key]; ok {
 		return cached
 	}
 	same := vm.sameAccessScopeUncached(left, right)
-	if vm.accessScopeCache == nil {
+	if vm.accessScopeCache == nil || len(vm.accessScopeCache) >= maxAccessMemoEntries {
 		vm.accessScopeCache = make(map[accessScopeKey]bool)
 	}
 	vm.accessScopeCache[key] = same
