@@ -72,6 +72,7 @@ func TestL08SalesforceConformance(t *testing.T) {
 		t.Skip("L08 requires Node, the prepared LWC compiler, Playwright and Chromium; set GLADE_LWC_BROWSER=1 (see docs/AI_SETUP.md)")
 	}
 	repo, playwright := l08BrowserEnvironment(t)
+	replayCapturedEnclosingStaticLWC(t, repo, playwright)
 	data, err := os.ReadFile("testdata/l08_salesforce.json")
 	if err != nil {
 		t.Fatal(err)
