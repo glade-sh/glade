@@ -22,14 +22,14 @@ func TestFieldSetKeyVisualforceLightningAndToolingHosts(t *testing.T) {
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api, func(t *testing.T) {
 			root := t.TempDir()
-			writeServerTestFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"namespace":"gladetest1","packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":%q}`, api))
+			writeServerTestFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"namespace":"samplepkg","packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":%q}`, api))
 			writeServerTestFile(t, filepath.Join(root, "force-app/main/default/pages/Remote.page"), `<apex:page controller="FieldSetHost"></apex:page>`)
 			writeServerTestFile(t, filepath.Join(root, "force-app/main/default/pages/Remote.page-meta.xml"), `<ApexPage xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>59.0</apiVersion><label>Field Set Host</label></ApexPage>`)
 			const probe = `Map<String, Schema.FieldSet> sets = Account.SObjectType.getDescribe().fieldSets.getMap();
 System.assertEquals(1, sets.size());
-System.assert(sets.keySet().contains('gladetest1__codexc163capture'));
-System.assert(sets.containsKey('GLADETEST1__CODEXC163CAPTURE'));
-System.assertNotEquals(null, sets.get('gladetest1__CodexC163Capture'));
+System.assert(sets.keySet().contains('samplepkg__codexc163capture'));
+System.assert(sets.containsKey('SAMPLEPKG__CODEXC163CAPTURE'));
+System.assertNotEquals(null, sets.get('samplepkg__CodexC163Capture'));
 System.assertEquals(false, sets.containsKey('CodexC163Capture'));
 System.assertEquals(null, sets.get('CodexC163Capture'));`
 			writeServerTestFile(t, filepath.Join(root, "force-app/main/default/classes/FieldSetHost.cls"), `public class FieldSetHost { @AuraEnabled @RemoteAction public static String observe() { `+probe+` return 'ok'; } }`)
@@ -48,7 +48,7 @@ System.assertEquals(null, sets.get('CodexC163Capture'));`
 			}
 			org := storage.NewOrgState()
 			org.APIVersion = api
-			org.Namespace = "gladetest1"
+			org.Namespace = "samplepkg"
 			storage.EnsureStandardObject(&org, "Account")
 			org.Metadata.FieldSets = []storage.FieldSetMetadata{{ObjectName: "Account", Name: "CodexC163Capture"}}
 			srv := newLightningTestServer(t, &org, source)

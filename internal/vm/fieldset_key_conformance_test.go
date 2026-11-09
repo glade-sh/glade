@@ -13,7 +13,7 @@ func TestExecFieldSetDescribeKeyShape(t *testing.T) {
 			name, namespace string
 			names, keys     []string
 		}{
-			{"namespaced", "gladetest1", []string{"CodexC163Capture", "CodexC163Second"}, []string{"gladetest1__codexc163capture", "gladetest1__codexc163second"}},
+			{"namespaced", "samplepkg", []string{"CodexC163Capture", "CodexC163Second"}, []string{"samplepkg__codexc163capture", "samplepkg__codexc163second"}},
 			{"unmanaged", "", []string{"CodexC163Capture"}, []string{"codexc163capture"}},
 		} {
 			t.Run(api+"/"+tc.name, func(t *testing.T) {

@@ -13,24 +13,24 @@ func TestExecFieldSetDescribeMapMutation(t *testing.T) {
 			name, body string
 			readOnly   bool
 		}{
-			{"remove", `sets.remove('GLADETEST1__CODEXC163CAPTURE');`, true},
-			{"put", `sets.put('gladetest1__Other', sets.get('gladetest1__CodexC163Capture'));`, true},
-			{"putAll", `Map<String, Schema.FieldSet> additions = new Map<String, Schema.FieldSet>{'gladetest1__Other' => sets.get('gladetest1__CodexC163Capture')}; sets.putAll(additions);`, true},
+			{"remove", `sets.remove('SAMPLEPKG__CODEXC163CAPTURE');`, true},
+			{"put", `sets.put('samplepkg__Other', sets.get('samplepkg__CodexC163Capture'));`, true},
+			{"putAll", `Map<String, Schema.FieldSet> additions = new Map<String, Schema.FieldSet>{'samplepkg__Other' => sets.get('samplepkg__CodexC163Capture')}; sets.putAll(additions);`, true},
 			{"clearIsolation", `Map<String, Schema.FieldSet> second = Account.SObjectType.getDescribe().fieldSets.getMap();
 sets.clear();
 Map<String, Schema.FieldSet> fresh = Account.SObjectType.getDescribe().fieldSets.getMap();
 System.assertEquals(0, sets.size());
-System.assertEquals(false, sets.containsKey('gladetest1__CodexC163Capture'));
-System.assertEquals(null, sets.get('gladetest1__CodexC163Capture'));
+System.assertEquals(false, sets.containsKey('samplepkg__CodexC163Capture'));
+System.assertEquals(null, sets.get('samplepkg__CodexC163Capture'));
 System.assertEquals(1, second.size());
-System.assert(second.containsKey('gladetest1__CodexC163Capture'));
+System.assert(second.containsKey('samplepkg__CodexC163Capture'));
 System.assertEquals(1, fresh.size());
-System.assert(fresh.containsKey('gladetest1__CodexC163Capture'));`, false},
+System.assert(fresh.containsKey('samplepkg__CodexC163Capture'));`, false},
 		} {
 			t.Run(api+"/"+tc.name, func(t *testing.T) {
 				org := testDataOrg()
 				org.APIVersion = api
-				org.Namespace = "gladetest1"
+				org.Namespace = "samplepkg"
 				org.Metadata.FieldSets = []storage.FieldSetMetadata{{ObjectName: "Account", Name: "CodexC163Capture"}}
 				program, err := CompileAnonymousWithOptions(`Map<String, Schema.FieldSet> sets = Account.SObjectType.getDescribe().fieldSets.getMap();`+tc.body, CompileOptions{APIVersion: api})
 				if err != nil {
