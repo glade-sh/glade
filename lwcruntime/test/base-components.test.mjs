@@ -1112,3 +1112,57 @@ test("alert promise lifetime follows isolated native Escape controls", async (t)
     await server.close();
   }
 });
+
+test("native icon, button icon and modal classes", async (t) => {
+  if (!requireLWCToolchain(t)) return;
+  const file = path.join(repoRoot, "internal/lwcbrowser/testdata/pr163_slds/org.tsv");
+  const rows = fs.readFileSync(file, "utf8").trim().split("\n").slice(1).map(line => line.split("\t"));
+  assert.equal(rows.length, 12);
+  const server = await startBaseComponentServer();
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const page = await browser.newPage();
+    await page.goto(`${server.baseURL}/base.html`, { waitUntil: "networkidle" });
+    await page.evaluate(async () => {
+      const { createElement } = await import("lwc");
+      const { default: Icon } = await import("lightning/icon");
+      const { default: ButtonIcon } = await import("lightning/buttonIcon");
+      const holder = document.createElement("div");
+      holder.id = "native-probes";
+      document.body.appendChild(holder);
+      const cases = [
+        ["icon_small_success", Icon, "lightning-icon", { iconName: "utility:check", size: "small", variant: "success", alternativeText: "Probe icon" }],
+        ["icon_large_warning", Icon, "lightning-icon", { iconName: "utility:check", size: "large", variant: "warning", alternativeText: "Second icon" }],
+        ["icon_invalid_defaults", Icon, "lightning-icon", { iconName: "utility:check", size: "invalid", variant: "invalid", alternativeText: "Invalid icon" }],
+        ["button_small_border_filled", ButtonIcon, "lightning-button-icon", { iconName: "utility:check", size: "small", variant: "border-filled", alternativeText: "Probe button" }],
+        ["button_invalid_defaults", ButtonIcon, "lightning-button-icon", { iconName: "utility:check", size: "invalid", variant: "invalid", alternativeText: "Invalid button" }],
+      ];
+      for (const [id, Ctor, tag, props] of cases) {
+        const el = createElement(tag, { is: Ctor });
+        el.dataset.probe = id;
+        Object.assign(el, props);
+        holder.appendChild(el);
+      }
+      const { default: Modal } = await import("lightning/modal");
+      window.__nativeModal = Modal.open({ label: "Probe modal", size: "small" });
+    });
+    const mismatches = [];
+    for (const [id, api, route, result, expected] of rows) {
+      assert.equal(route, "browser");
+      assert.equal(result, "rendered");
+      const selector = id === "modal_small"
+        ? ".glade-modal-overlay section[role=dialog]"
+        : `#native-probes [data-probe="${id}"] ${id.startsWith("icon_") ? "svg" : "button"}`;
+      const actual = await page.locator(selector).getAttribute("class");
+      const actualClasses = [...new Set(actual.split(/\s+/))].sort();
+      const expectedClasses = [...new Set(expected.split(/\s+/))].sort();
+      if (JSON.stringify(actualClasses) !== JSON.stringify(expectedClasses)) {
+        mismatches.push({ id, api, actual: actualClasses, expected: expectedClasses });
+      }
+    }
+    assert.deepEqual(mismatches, []);
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});

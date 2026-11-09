@@ -1,0 +1,13 @@
+case	api	route	result	outcome
+icon_small_success	59.0	browser	rendered	slds-icon slds-icon-text-success slds-icon_small
+icon_large_warning	59.0	browser	rendered	slds-icon slds-icon-text-warning slds-icon_large
+icon_invalid_defaults	59.0	browser	rendered	slds-icon slds-icon-text-default
+button_small_border_filled	59.0	browser	rendered	slds-button slds-button_icon slds-button_icon-small slds-button_icon-border-filled
+button_invalid_defaults	59.0	browser	rendered	slds-button slds-button_icon slds-button_icon-border
+modal_small	59.0	browser	rendered	slds-modal fix-slds-modal slds-modal_small slds-fade-in-open
+icon_small_success	67.0	browser	rendered	slds-icon slds-icon-text-success slds-icon_small
+icon_large_warning	67.0	browser	rendered	slds-icon slds-icon-text-warning slds-icon_large
+icon_invalid_defaults	67.0	browser	rendered	slds-icon slds-icon-text-default
+button_small_border_filled	67.0	browser	rendered	slds-button slds-button_icon slds-button_icon-small slds-button_icon-border-filled
+button_invalid_defaults	67.0	browser	rendered	slds-button slds-button_icon slds-button_icon-border
+modal_small	67.0	browser	rendered	slds-modal fix-slds-modal slds-modal_small slds-fade-in-open
