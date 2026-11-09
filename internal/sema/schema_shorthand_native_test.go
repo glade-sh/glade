@@ -44,6 +44,9 @@ func TestSchemaShorthandNative(t *testing.T) {
 					t.Fatal(err)
 				}
 				writeSemaFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"`+api+`"}`)
+				if err := os.MkdirAll(filepath.Join(root, "force-app/classes"), 0755); err != nil {
+					t.Fatal(err)
+				}
 				writeSemaFile(t, filepath.Join(root, "force-app/classes/ProbeCase.cls"), "public class ProbeCase { public static void run() {\n"+string(source)+"\n} }")
 				p, err := project.Load(root)
 				if err != nil {
