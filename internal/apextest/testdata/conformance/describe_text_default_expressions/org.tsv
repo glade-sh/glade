@@ -1,0 +1,21 @@
+api	route	case	result
+62.0	anonymous	Combined	"{""formula"":""'a' & 'b'"",""value"":null}"
+62.0	anonymous	First	"{""formula"":""'Alpha'"",""value"":null}"
+62.0	anonymous	NumericArithmetic	"{""formula"":""2 + 3"",""value"":null}"
+62.0	anonymous	NumericFunction	"{""formula"":""ABS(-4)"",""value"":null}"
+62.0	anonymous	Quoted	"{""formula"":""'O\\'Brien'"",""value"":null}"
+62.0	anonymous	Second	"{""formula"":""'Two words'"",""value"":null}"
+62.0	anonymous	TextConcat	"{""formula"":""'left' & 'right'"",""value"":null}"
+62.0	anonymous	TextFunction	"{""formula"":""UPPER('mixed')"",""value"":null}"
+62.0	anonymous	TextPlus	"{""formula"":""'a' + 'b'"",""value"":null}"
+62.0	deploy-dry-run	invalid type	Incorrect parameter type for operator '+'. Expected Text, received Number
+67.0	anonymous	Combined	"{""formula"":""'a' & 'b'"",""value"":null}"
+67.0	anonymous	First	"{""formula"":""'Alpha'"",""value"":null}"
+67.0	anonymous	NumericArithmetic	"{""formula"":""2 + 3"",""value"":null}"
+67.0	anonymous	NumericFunction	"{""formula"":""ABS(-4)"",""value"":null}"
+67.0	anonymous	Quoted	"{""formula"":""'O\\'Brien'"",""value"":null}"
+67.0	anonymous	Second	"{""formula"":""'Two words'"",""value"":null}"
+67.0	anonymous	TextConcat	"{""formula"":""'left' & 'right'"",""value"":null}"
+67.0	anonymous	TextFunction	"{""formula"":""UPPER('mixed')"",""value"":null}"
+67.0	anonymous	TextPlus	"{""formula"":""'a' + 'b'"",""value"":null}"
+67.0	deploy-dry-run	invalid type	Incorrect parameter type for operator '+'. Expected Text, received Number

@@ -6,6 +6,7 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
+// Native expression rows: describe_text_default_expressions/org.tsv:10,20.
 func TestDescribeDefaultMetadataLiteralScope(t *testing.T) {
 	org := testDataOrg()
 	account := org.Objects["Account"]
@@ -22,7 +23,7 @@ func TestDescribeDefaultMetadataLiteralScope(t *testing.T) {
 	for _, tc := range []struct {
 		name   string
 		isNull bool
-	}{{"Literal__c", true}, {"Expression__c", false}, {"Catalog__c", false}} {
+	}{{"Literal__c", true}, {"Expression__c", true}, {"Catalog__c", false}} {
 		description, err := machine.describeFieldValue("Account", tc.name)
 		if err != nil {
 			t.Fatal(err)
