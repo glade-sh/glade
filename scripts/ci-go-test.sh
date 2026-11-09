@@ -183,13 +183,15 @@ run_json_with_heartbeat() {
 		set +e
 		local -a test_command=(go)
 		if [[ "${CI_LOCAL_RELEASE_METRICS:-0}" == "1" && "${label}" == "go test local-release "* ]]; then
-			test_command=(/usr/bin/time -l -o "${artifact%.json}.time.txt" go)
+			test_command=(/usr/bin/time -l)
+			if [[ -n "${testlog_append:-}" ]]; then test_command+=(-a); fi
+			test_command+=(-o "${artifact%.json}.time.txt" go)
 		fi
 		if [[ -n "${CI_TEST_BIN_DIR:-}" ]]; then
 			python3 "${script_dir}/ci-test-binary.py" test -json -vet=off -trimpath "$@"
 		else
 			"${test_command[@]}" test -json -vet=off -trimpath "$@"
-		fi | tee "${artifact}" | run_testlog_renderer
+		fi | tee ${testlog_append:+-a} "${artifact}" | run_testlog_renderer
 		pipeline_status=("${PIPESTATUS[@]}")
 		printf '%s %s %s\n' "${pipeline_status[0]}" "${pipeline_status[1]}" "${pipeline_status[2]}" >"${status_file}"
 	) &
@@ -743,6 +745,22 @@ try:
     if metadata_missing:
         raise ValueError("package test-file metadata is missing: " + ", ".join(metadata_missing))
     terminal = {}
+    selection_path = os.environ.get("CI_SHARD_SELECTION_FOR_SUMMARY")
+    expected_terminals = 1
+    chunk_tests = []
+    chunk_seen = set()
+    chunk_index = 0
+    if selection_path:
+        import importlib.util
+        sys.dont_write_bytecode = True
+        spec = importlib.util.spec_from_file_location("shard_chunks", os.path.join(repo_root, "scripts", "ci-shard-chunks.py"))
+        chunk_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(chunk_module)
+        with open(selection_path, encoding="utf-8") as selection:
+            chunk_tests = [set(regex[4:-2].split("|")) for regex in chunk_module.chunks(json.load(selection))]
+        expected_terminals = len(chunk_tests)
+        if expected_terminals < 1 or len(expected) != 1:
+            raise ValueError("invalid shard package selection")
     skipped_tests = []
     test_output = {}
     failed_tests = []
@@ -757,6 +775,9 @@ try:
             action = event.get("Action")
             test = event.get("Test")
             if test not in (None, ""):
+                if (expected_terminals > 1 and package in expected and isinstance(test, str)
+                        and "/" not in test and action in ("pass", "fail", "skip")):
+                    chunk_seen.add(test)
                 # A package pass only says its process reached a terminal
                 # state. It cannot excuse a skipped top-level test or subtest.
                 identity = (package, test)
@@ -815,11 +836,18 @@ try:
                 continue
             if not isinstance(package, str) or action not in ("pass", "fail", "skip"):
                 continue
+            if expected_terminals > 1 and package in expected:
+                if chunk_index >= expected_terminals or chunk_seen != chunk_tests[chunk_index]:
+                    summary["errors"].append(f"package result does not match shard chunk {chunk_index + 1}")
+                chunk_index += 1
+                chunk_seen = set()
             terminal.setdefault(package, []).append(action)
+    if expected_terminals > 1 and chunk_seen:
+        summary["errors"].append("test results after final package result")
     missing = sorted(set(expected) - set(terminal))
-    duplicates = sorted(package for package, actions in terminal.items() if len(actions) != 1)
-    skipped = sorted(package for package, actions in terminal.items() if actions == ["skip"] and test_files.get(package) != "no-tests")
-    failed = sorted(package for package, actions in terminal.items() if actions == ["fail"])
+    duplicates = sorted(package for package, actions in terminal.items() if len(actions) != expected_terminals)
+    skipped = sorted(package for package, actions in terminal.items() if "skip" in actions and test_files.get(package) != "no-tests")
+    failed = sorted(package for package, actions in terminal.items() if "fail" in actions)
     extra = sorted(set(terminal) - set(expected))
     if missing:
         summary["errors"].append("missing package results: " + ", ".join(missing))
@@ -835,7 +863,7 @@ try:
         summary["errors"].append("failed test results: " + ", ".join(sorted(failed_tests)))
     if extra:
         summary["errors"].append("extra package results: " + ", ".join(extra))
-    summary["passed"] = sorted(package for package, actions in terminal.items() if actions in (["pass"], ["skip"]) and package in expected)
+    summary["passed"] = sorted(package for package, actions in terminal.items() if len(actions) == expected_terminals and (all(action == "pass" for action in actions) or actions == ["skip"]) and package in expected)
     summary["valid"] = not summary["errors"] and summary["passed"] == sorted(expected)
     if not summary["valid"] and not summary["errors"]:
         summary["errors"].append("package summary is incomplete")
@@ -1322,19 +1350,26 @@ run_test_matrix_shard() {
 	fi
 	"${planner[@]}" >"${plan}"
 	select_and_validate_shard "${discovery}" "${plan}" "${index}" "${selected}" "${package_name}" "${shard_count}"
-	regex="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["regex"])' "${selected}")"
-
-	set +e
-	run_json_with_heartbeat "go test ${label} shard ${index}" "${events}" "${test_args[@]}" -run "${regex}" "${package_arg}"
-	native_rc="$?"
-	set -e
+	local chunks_file="${artifact_dir}/chunk-regexes.txt"
+	python3 "${script_dir}/ci-shard-chunks.py" "${selected}" >"${chunks_file}"
+	native_rc=0
+	local chunk_rc
+	local testlog_append=1
+	if [[ "${mode}" == "local-release" && "${CI_LOCAL_RELEASE_METRICS:-0}" == "1" ]]; then
+		: >"${events%.json}.time.txt"
+	fi
+	while IFS= read -r regex; do
+		chunk_rc=0
+		run_json_with_heartbeat "go test ${label} shard ${index}" "${events}" "${test_args[@]}" -run "${regex}" "${package_arg}" || chunk_rc="$?"
+		if [[ "${chunk_rc}" -ne 0 && "${native_rc}" -eq 0 ]]; then native_rc="${chunk_rc}"; fi
+	done <"${chunks_file}"
 	if [[ -n "${package_summary_path}" ]]; then
 		# Successful discovery above establishes that this exact package has tests.
 		local shard_metadata="${artifact_dir}/package-test-metadata.tsv"
 		printf '%s\thas-tests\n' "${package_name}" >"${shard_metadata}"
 		local validation_lane="${lane}"
 		[[ "${mode}" == "gladecli-ci" ]] && validation_lane="gladecli-ci"
-		validate_local_release_package_summary "${validation_lane}" "${label} shard ${index}" "${events}" "${package_summary_path}" "${shard_metadata}" "${package_arg}" || validation_rc="$?"
+		CI_SHARD_SELECTION_FOR_SUMMARY="${selected}" validate_local_release_package_summary "${validation_lane}" "${label} shard ${index}" "${events}" "${package_summary_path}" "${shard_metadata}" "${package_arg}" || validation_rc="$?"
 	fi
 	validate_shard_results "${selected}" "${events}" "${summary}" "${package_name}" "${label}" "${package_summary_path}" || validation_rc="$?"
 	if [[ "${native_rc}" -ne 0 || "${validation_rc}" -ne 0 ]]; then
@@ -1587,7 +1622,7 @@ try:
                 lane = "gladecli-ci" if PACKAGE == "github.com/glade-sh/glade/internal/gladecli" else "remaining-go"
                 result = subprocess.run(["bash", SCRIPT, "package-summary", lane, "history",
                     os.path.join(shard_dir, "events.json"), checked, metadata, PACKAGE],
-                    capture_output=True, text=True)
+                    capture_output=True, text=True, env={**os.environ, "CI_SHARD_SELECTION_FOR_SUMMARY": os.path.join(shard_dir, "selected-shard.json")})
                 if result.returncode != 0:
                     reject(f"shard {index} package validation failed: {result.stderr.strip()}")
         if deferred:
@@ -1602,7 +1637,7 @@ try:
                 result = subprocess.run(["bash", "-c",
                     'source "$1"; validate_local_release_package_summary "$2" history "$3" "$4" "$5" "$6"',
                     "history", SCRIPT, lane, os.path.join(shard_dir, "events.json"), checked, metadata, PACKAGE],
-                    capture_output=True, text=True)
+                    capture_output=True, text=True, env={**os.environ, "CI_SHARD_SELECTION_FOR_SUMMARY": os.path.join(shard_dir, "selected-shard.json")})
                 if result.returncode != 0:
                     reject(f"shard {index} deferred prerequisite validation failed: {result.stderr.strip()}")
                 # The shard summary lists deferred selected top-level tests;
