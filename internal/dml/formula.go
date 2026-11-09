@@ -116,6 +116,11 @@ func evaluateRecordFormulaValue(formula string, field storage.Field, record stor
 		return storage.Value{}, false, false
 	}
 	if value.kind == formulaNull {
+		if !options.FormulaSurface && field.Type == storage.FieldCalculated &&
+			strings.EqualFold(field.DisplayType, "BOOLEAN") &&
+			strings.EqualFold(field.FormulaTreatBlanksAs, "BlankAsZero") && value.fieldType == storage.FieldBoolean {
+			return storage.BooleanValue(false), false, true
+		}
 		return storage.NullValue(), true, true
 	}
 	value = renderFormulaBR(value, false)
