@@ -109,3 +109,20 @@ func TestCapturedCommentLocalRemainsVisible(t *testing.T) {
 		t.Fatal("missing method")
 	}
 }
+
+func TestCapturedCommentedComparisonInitializer(t *testing.T) {
+	for _, api := range []string{"62.0", "67.0"} {
+		for _, name := range []string{"linecomment", "blockcomment"} {
+			t.Run(api+"/"+name, func(t *testing.T) {
+				source, err := os.ReadFile("testdata/commented_initializer/" + name + ".apex")
+				if err != nil {
+					t.Fatal(err)
+				}
+				result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{"Probe.cls": string(source)}, api)
+				if result.HasErrors() {
+					t.Fatalf("captured source rejected: %#v", result.Diagnostics)
+				}
+			})
+		}
+	}
+}
