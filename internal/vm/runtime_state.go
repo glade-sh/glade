@@ -94,7 +94,10 @@ type VM struct {
 	// which runs once per executed instruction. The symbol depends on the
 	// method identity, the execution namespace and the class registry, so the
 	// key carries the first two and the class lookup generation.
-	frameSymbolCache map[frameSymbolKey]string
+	frameSymbolFirstKey   frameSymbolKey
+	frameSymbolFirstValue string
+	frameSymbolFirstValid bool
+	frameSymbolCache      map[frameSymbolKey]string
 	// sourceLineTables caches newline offsets per executed program source for
 	// setCurrentStatement's line and column (see sourceLineColumnCached).
 	sourceLineTables         map[int][]*sourceLineTable
