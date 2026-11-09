@@ -1166,6 +1166,8 @@ test("native icon, button icon and modal classes", async (t) => {
       }
     }
     assert.deepEqual(mismatches, []);
+    await page.locator(".glade-modal-overlay .slds-modal__close").click();
+    await page.evaluate(() => window.__nativeModal);
   } finally {
     await browser.close();
     await server.close();
