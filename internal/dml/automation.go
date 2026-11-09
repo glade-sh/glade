@@ -3701,6 +3701,12 @@ func (e *Engine) applyFlowTransformStep(transform storage.FlowTransform, frame *
 				return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow transform %s references unknown value %s", transform.Name, mapping.SourceField)
 			}
 			record.Fields[field] = value
+			if value.Kind == storage.ValueNull {
+				if record.ExplicitNulls == nil {
+					record.ExplicitNulls = make(map[string]bool)
+				}
+				record.ExplicitNulls[field] = true
+			}
 		}
 		frame.records[flowFrameKey(transform.Name)] = record
 	case "count":

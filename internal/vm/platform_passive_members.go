@@ -480,7 +480,13 @@ func (vm *VM) flowInterviewOutputValue(output dml.FlowInterviewOutput) Value {
 	}
 	convertRecord := vm.recordConverterForOrg(vm.Org)
 	for name, record := range output.Records {
-		set(name, convertRecord(record))
+		value := convertRecord(record)
+		for field, explicit := range record.ExplicitNulls {
+			if explicit {
+				markExplicitSObjectField(&value, field)
+			}
+		}
+		set(name, value)
 	}
 	for name, records := range output.Collections {
 		items := make([]Value, 0, len(records))
