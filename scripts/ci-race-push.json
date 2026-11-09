@@ -702,7 +702,7 @@
     "./internal/tui": 32,
     "./internal/typesys": 35,
     "./internal/visualforce": 120,
-    "./internal/vm": 600,
+    "./internal/vm": 605,
     "./internal/watch": 131,
     "./scripts": 60
   },

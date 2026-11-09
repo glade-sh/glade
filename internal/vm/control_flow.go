@@ -800,10 +800,11 @@ func (vm *VM) setCurrentStatement(inst ir.Instruction, source string) {
 
 // cachedApexMethodFrameSymbol memoizes apexMethodFrameSymbol per method and
 // execution namespace. The uncached form folds and concatenates class names
-// on every executed instruction; the class registry it reads is covered by
-// the access-cache reset.
+// on every executed instruction. The class registry it reads through
+// lookupClass follows classLookupGeneration, which a freeze advances without
+// the access-cache reset, so the generation is part of the key.
 func (vm *VM) cachedApexMethodFrameSymbol(method Method) string {
-	key := frameSymbolKey{MethodName: method.Name, MethodClassName: method.ClassName, ExecutionNamespace: vm.currentExecutionNamespace()}
+	key := frameSymbolKey{MethodName: method.Name, MethodClassName: method.ClassName, ExecutionNamespace: vm.currentExecutionNamespace(), Generation: vm.classLookupGeneration}
 	if vm.Org != nil {
 		key.OrgNamespace = vm.Org.Namespace
 	}

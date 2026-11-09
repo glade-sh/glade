@@ -98,6 +98,6 @@
     "./internal/sema": 656,
     "./internal/server": 12,
     "./internal/testutil/toolchaininstall": 5,
-    "./internal/vm": 54
+    "./internal/vm": 55
   }
 }
