@@ -9,7 +9,7 @@ How a change moves from a ticket to a release. This is the process document.
 Three facts shape everything below:
 
 - Every change reaches `main` as a pull request. The hosted `Required CI`
-  check is the merge gate, and the merge queue re-runs it on the merged result.
+  check on the pull request is the merge gate.
 - Captured Salesforce behavior is the oracle. A behavior change is backed by a
   native row before the code changes. Nobody fixes a case from inference.
 - Each stage is one command with one printed verdict. Where a step needs
@@ -21,13 +21,13 @@ Three facts shape everything below:
 | --- | --- | --- | --- | --- |
 | 1 | Ticket | coordinator | scope, acceptance criteria, owned files, change class | a coder can start without asking a question |
 | 2 | Branch | coder | a branch from `main` in its own worktree | `git status` is clean and the base is current `main` |
-| 3 | Evidence | coder | case table and native rows (`org.tsv`, `ORG-RUN.txt`) | every changed behavior has a row at 67.0 and at the floor |
+| 3 | Evidence | coder | case table and native rows (`org.tsv`, `ORG-RUN.txt`) | every changed behavior has rows at the applicable current supported version and the floor |
 | 4 | Test first | coder | a failing test committed before the fix | the test fails at the test commit and passes at HEAD |
 | 5 | Local checks | coder | focused tests, one package run, repoguard | green, or each failure explained in the PR |
 | 6 | Pull request | coder | the PR with the template filled in | every field has content or `n/a: <reason>` |
 | 7 | CI | hosted | `Required CI` green | the check passes on the PR head |
 | 8 | Review | reviewer | one PR review | no open blocking finding, threads resolved |
-| 9 | Merge | merge queue or coordinator | a squash commit on `main` | the queue run is green |
+| 9 | Merge | coordinator | a squash commit on `main` | the PR check is green |
 | 10 | Nightly | host cron | real-project suite diff against goldens | `NEW = 0`, or one ticket per NEW |
 | 11 | Release | maintainer | tag, archives, notes | the release checklist is green |
 
@@ -78,8 +78,10 @@ and `dml` for their surfaces. A family directory holds `cases.tsv` (or
 1. Write `cases.tsv`: one row per case with `id`, `api`, `route`, the source,
    and the expected result once captured. Routes are anonymous Apex, an
    `@IsTest` class, the project test runner, the server, and the hosts
-   (Visualforce, LWC) that reach the code. APIs are 67.0 and the floor (62.0
-   Apex, 59.0 LWC and Visualforce). Give each "accepts" case a "rejects" twin
+   (Visualforce, LWC) that reach the code. Capture at the applicable current
+   supported version (68.0 for Apex, 67.0 for LWC and Visualforce) and the
+   floor (62.0 Apex, 59.0 LWC and Visualforce). Include 67.0 for Apex when
+   relevant to the change. Give each "accepts" case a "rejects" twin
    and a boundary row. Example for a rule that rejects a negative scale: one
    row that accepts scale 2, one that rejects scale -1 with the exception type
    and message, and one boundary row at scale 0.
@@ -152,7 +154,7 @@ the diff alone. A behavior change is always user-visible: add its line to
 
 ### 3.7 CI
 
-`Required CI` runs on every PR and again in the merge queue; a run takes
+`Required CI` runs on every PR; a run takes
 about 40 minutes. When it is red, read the failing job's log, fix on the
 branch, and push. Do not re-run a red job hoping for green. When the failing
 test is unrelated to your change and passes on `main`, say so in the PR and
@@ -178,12 +180,11 @@ gates them.
 
 ### 3.9 Merge
 
-Squash merge through the merge queue, or by the coordinator when the queue is
-off. The squash message is the PR title plus the `NATIVE` lines. The branch is
-deleted on merge. The coordinator moves the ticket to Done on the project
-board with the PR link. When the queue removes a PR for a conflict (no check
-is running on it then), rebase onto `main`, rerun the focused tests, push, and
-re-queue.
+The coordinator squash merges after `Required CI` passes on the PR. The squash
+message is the PR title plus the `NATIVE` lines. The branch is deleted on merge.
+The coordinator moves the ticket to Done on the project board with the PR link.
+If the branch conflicts with `main`, resolve the conflict, rerun the focused
+tests and push; do not rewrite history under a running check.
 
 ### 3.10 Nightly real-project suite
 
@@ -198,16 +199,25 @@ change.
 
 ### 3.11 Release
 
-1. The nightly is green on the candidate commit.
-2. The full real-project tier is green on the exact candidate.
-3. The performance aggregate is measured once on the candidate with identical
-   outcomes; the notes carry only measured numbers.
-4. The release notes section is written and reviewed.
-5. `scripts/release-check.sh` is green on the exact tree, and so are
-   `gofmt -l .`, `go vet -trimpath ./...`, `go test -count=1 ./scripts` (from a
-   real git checkout with `jq` and Node) and `go test ./internal/repoguard`.
-6. The diff since the last tag passes the leak scan: no third-party names,
-   personal paths, org ids or credentials.
+1. Run the nightly and full real-project tier on the exact candidate. The
+   release notes record the checks passed; failures are limited to known issues
+   listed there, per [RELEASE_POLICY.md](RELEASE_POLICY.md#release-gate).
+2. Measure the performance aggregate with matched outcomes and report the scope;
+   the notes carry only measured numbers.
+3. Write and review the release notes. Run the first project check from
+   [INSTALL.md](INSTALL.md) on a real Salesforce DX project before tagging.
+4. Before opening or updating the release PR, run `scripts/ci-local-all` on
+   the clean candidate tree. On the exact release tree, pass
+   `scripts/release-check.sh`, `gofmt -l .`, `go vet -trimpath ./...`,
+   `go test -count=1 ./scripts` (in a real checkout with `jq` and Node), and
+   `go test ./internal/repoguard`.
+5. Check the diff since the last tag for third-party names, personal paths,
+   org ids and credentials.
+6. After merge and before tagging, verify the exact candidate's main-push
+   `Required CI` and trusted `Salesforce Correctness` authorities as specified
+   in the release policy, including its limited tree-attestation alternative
+   and the bound tools commit. Check the separate
+   `Browser`, `Race` and `Security` workflows as required operator checks.
 7. Tag and publish per [DISTRIBUTION_WORKFLOW.md](DISTRIBUTION_WORKFLOW.md).
 8. Install and run `glade doctor` on one machine from the published archive.
 
@@ -225,7 +235,7 @@ Every ticket and PR names one class: `docs`, `tests`, `tooling`, `behavior`,
 | `tests` | tests or fixtures only | PR, CI; when an existing assertion is deleted or changed: a cited row per change and a review | review for pure additions |
 | `tooling` | CI, scripts, build, release tooling | PR, CI; the lane and inventory tests when lanes change | rows |
 | `behavior` | parser, sema, vm, soql, dml, storage, Visualforce, LWC, server behavior | rows, test first, route twins, review, the ABI bump below | |
-| `performance` | speed or memory with identical outcomes | identical outcomes (CI proves them) and the targeted benchmark in the PR; the release measures the aggregate | per-PR project measurement |
+| `performance` | speed or memory with identical outcomes | a matched before/after outcome comparison with its scope and the targeted benchmark in the PR; the release measures the aggregate | per-PR project measurement |
 | `generated` | generated files, including the standard-object schema ([STANDARD_OBJECT_SCHEMA.md](STANDARD_OBJECT_SCHEMA.md)) | change the input or the generator, regenerate, commit both | hand edits |
 
 ABI bumps, in the same PR and once:
@@ -257,15 +267,17 @@ Stop and ask the coordinator, in the PR or the ticket, when:
 3. a test that passes on `main` fails on your branch and an hour of work has
    not explained it;
 4. the change would alter a public support claim, a hosted boundary, or an
-   excluded area (ConnectApi, Slack, DataWeave).
+   excluded area (Slack, DataWeave, or hosted ConnectApi services). ConnectApi
+   passive shapes and documented test behavior are supported; see
+   [RELEASE_POLICY.md](RELEASE_POLICY.md#salesforce-api-versions).
 
 Everything else: decide from this document and state the decision in the PR.
 
 ## 6. For agents
 
 Each stage is one command and one verdict. Report in the PR, not in chat. Do
-not polish after the PR is open; add commits only for review findings. Never
-rewrite history under a running check. When unsure whether a rule applies,
+not polish after the PR is open; add commits only to fix review findings or red
+CI. Never rewrite history under a running check. When unsure whether a rule applies,
 apply it and say so.
 
 ## Appendix A: coder brief
@@ -290,9 +302,9 @@ Check in this order:
 1. Every behavior change has a NATIVE line citing org.tsv:<line> at a matching route and API.
 2. The test commit precedes the fix and fails on its own: check out the test commit and run the test.
 3. Route twins: a test for each route that reaches the changed code (anonymous, @IsTest, runner,
-   server, hosts; 62.0 and 67.0 where applicable).
+   server, hosts; the applicable current supported version, floor, and 67.0 for Apex where relevant).
 4. Existing tests: `go test ./internal/<touched pkg>` at HEAD and at the merge base; a pass that
-   becomes a failure is blocking.
+   becomes a failure is blocking. For apextest, run focused tests with `-run`; CI runs its 12 shards.
 5. No deleted or loosened assertion without a cited row. No third-party project names or content.
    No org ids, aliases, personal paths or credentials.
 6. For sema or typesys changes: `go test ./internal/apextest -run 'TestCorpusShape'` at HEAD.
@@ -305,7 +317,7 @@ broken. Everything else is a comment.
 ```text
 Behavior: <one sentence>
 Apex and metadata: <complete synthetic source>
-APIs: 67.0 and <floor>
+APIs: <applicable current supported version> and <floor>; 67.0 for Apex where relevant
 Routes: <anonymous | @IsTest | runner | server | Visualforce | LWC>
 Org shape: <features, settings, permission sets>
 Output: org.tsv with id, api, route, compiled, success, outcome; ORG-RUN.txt with API versions

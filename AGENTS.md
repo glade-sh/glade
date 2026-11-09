@@ -30,8 +30,8 @@ Use short sentences. Let the facts carry the weight.
   check is the merge gate. The pull request body, in the repository template,
   is the report; there is no separate status file.
 - Finish a branch before polishing it. Once a commit is under review, add
-  commits only to answer review findings. Never rewrite or rebase history
-  under a running check.
+  commits only to answer review findings or fix red CI. Never rewrite or rebase
+  history under a running check.
 
 ## Project Boundary
 
@@ -99,7 +99,8 @@ requires `CGO_ENABLED=1`; a successful no-CGO build is not a working parser.
    ```
 
 2. Package tests. Before opening the pull request, run each changed package
-   once, plus the repository guard:
+   once, plus the repository guard. For `internal/apextest`, run focused tests
+   with `-run` instead; CI runs its 12 shards:
 
    ```bash
    CGO_ENABLED=1 go test -timeout=0 ./internal/<package>
@@ -108,7 +109,9 @@ requires `CGO_ENABLED=1`; a successful no-CGO build is not a working parser.
 
 3. Full suite. `Required CI` runs every package, the 12 `internal/apextest`
    shards, the LWC and Visualforce shards and the smoke checks on each pull
-   request. Run the broad lanes locally only when hosted CI is unavailable:
+   request. Run broad lanes locally when hosted CI is unavailable. Before opening
+   or updating a release PR, run `scripts/ci-local-all` on the clean candidate
+   tree even when hosted CI is available:
 
    ```bash
    scripts/ci-local-all                              # mirrors Required CI
@@ -122,7 +125,7 @@ requires `CGO_ENABLED=1`; a successful no-CGO build is not a working parser.
 
 Do not repeat a full package or `local-release` run on an unchanged tree.
 Rerun a failing test on its own with `-run` first. Do not run the whole
-`internal/apextest` package while iterating; CI runs it in 12 shards
+`internal/apextest` package locally; CI runs it in 12 shards
 (`GLADE_APEXTEST_SHARD=i/n` reproduces one shard). Use `-timeout=0` for long
 packages such as `internal/vm`, `internal/gladecli` and `internal/visualforce`
 when a slow host could hit Go's default ten-minute limit.
