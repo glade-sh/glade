@@ -17,3 +17,9 @@ api	case	compiled	success	outcome
 67.0	fieldset_missing	false	false	Compilation failed at Ln 1, Col 32 with the error: |  | Variable does not exist: Missing
 67.0	object_missing	false	false	Compilation failed at Ln 1, Col 1 with the error: |  | Variable does not exist: SObjectType.Missing__c.FieldSets.Main
 67.0	account_fieldset	false	false	Compilation failed at Ln 1, Col 1 with the error: |  | Variable does not exist: Account.SObjectType.FieldSets.Main
+62.0	typing	true	true	-
+67.0	typing	true	true	-
+62.0	typing_bad	false	false	Variable does not exist: NoSuchList
+67.0	typing_bad	false	false	Variable does not exist: NoSuchList
+62.0	istest_typing	true	true	-
+67.0	istest_typing	true	true	-
