@@ -58,8 +58,12 @@ func TestCapturedSiblingPrivateOverride(t *testing.T) {
 		t.Run(api, func(t *testing.T) {
 			result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{"Probe.cls": capturedScopeSource(t, "privateoverride")}, api)
 			rejected := hasDiagnosticCode(result.Diagnostics, "GLADESEMA016") || hasDiagnosticCode(result.Diagnostics, "GLADESEMA032")
-			if rejected != (api == "65.0" || api == "67.0") {
-				t.Errorf("unexpected override diagnostics: %#v", result.Diagnostics)
+			if api == "62.0" || api == "64.0" {
+				if result.HasErrors() {
+					t.Errorf("captured accepted override rejected: %#v", result.Diagnostics)
+				}
+			} else if !rejected {
+				t.Errorf("captured rejection missing: %#v", result.Diagnostics)
 			}
 		})
 	}

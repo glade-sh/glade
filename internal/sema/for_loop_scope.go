@@ -18,7 +18,7 @@ func (s semaScopeModel) forLoopScopeConflictingLocal(api, key string, start, sco
 		// enclosing local of the same name. Other legacy binding kinds keep
 		// their existing boundary until independently observed.
 		major, ok := apexversion.Major(api)
-		captured = ok && major <= 61
+		captured = ok && major >= 45 && major <= 61
 	}
 	if !captured {
 		return s.conflictingLocalKey(key, scopeStart, scopeEnd)
