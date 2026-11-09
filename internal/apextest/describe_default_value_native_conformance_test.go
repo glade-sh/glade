@@ -11,7 +11,14 @@ func TestDescribeDefaultValueNativeConformance(t *testing.T) {
 		t.Run(class, func(t *testing.T) {
 			run := Run(index, Options{SelectedClasses: []string{class}, SelectedMethod: "observe", NoDiskCache: true, Parallelism: 1})
 			if summary := run.Summary(); summary.Total != 1 || summary.Passed != 1 || summary.Failed != 0 || summary.Errors != 0 {
-				t.Fatalf("native test passed; Glade: %+v, suites: %+v", summary, run.Suites)
+				for _, suite := range run.Suites {
+					for _, c := range suite.Cases {
+						if c.Problem != nil {
+							t.Logf("%s: %+v", c.MethodName, *c.Problem)
+						}
+					}
+				}
+				t.Fatalf("native test passed; Glade: %+v", summary)
 			}
 		})
 	}
