@@ -254,7 +254,8 @@ func finishRecordFormulaValue(formula string, field storage.Field, value formula
 	if value.kind == formulaNull {
 		if !options.FormulaSurface && field.Type == storage.FieldCalculated &&
 			strings.EqualFold(field.DisplayType, "BOOLEAN") &&
-			strings.EqualFold(field.FormulaTreatBlanksAs, "BlankAsZero") && value.missingRelationship && value.fieldType == storage.FieldBoolean {
+			strings.EqualFold(field.FormulaTreatBlanksAs, "BlankAsZero") && value.missingRelationship && value.fieldType == storage.FieldBoolean &&
+			formulaIsDirectReference(formula) {
 			return storage.BooleanValue(false), false, true
 		}
 		return storage.NullValue(), true, true
@@ -273,6 +274,11 @@ func finishRecordFormulaValue(formula string, field storage.Field, value formula
 		return materializedFormulaSurfaceValue(field, value)
 	}
 	return materializedFormulaFieldValue(field, value)
+}
+
+func formulaIsDirectReference(formula string) bool {
+	tokens := tokenizeFormula(html.UnescapeString(formula))
+	return len(tokens) == 2 && tokens[0].typ == formulaTokenIdent && tokens[1].typ == formulaTokenEOF
 }
 
 // formulaBRText is the value of BR() inside a formula (org capture
