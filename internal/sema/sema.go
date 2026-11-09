@@ -1510,9 +1510,32 @@ func newSemaBodyExpressionScan(body string) *semaBodyExpressionScan {
 	}
 }
 
+// semaAssignmentValueSpans identifies assignment right-hand sides without
+// confusing comparison operators or text inside comments and literals.
+func semaAssignmentValueSpans(body string, ignored *semaIgnoredText) []semaTextSpan {
+	var spans []semaTextSpan
+	for i := 0; i < len(body); i++ {
+		if body[i] != '=' || ignored.contains(i) {
+			continue
+		}
+		if i+1 < len(body) && (body[i+1] == '=' || body[i+1] == '>') {
+			continue
+		}
+		if i > 0 && strings.ContainsRune("=!<>", rune(body[i-1])) {
+			continue
+		}
+		end := semaStatementEnd(body, i+1)
+		spans = append(spans, semaTextSpan{lo: i + 1, hi: end})
+		i = end - 1
+	}
+	return spans
+}
+
 func findSemaLocalDeclMatches(body string) [][]int {
 	var matches [][]int
 	ignored := newSemaIgnoredText(body)
+	values := semaAssignmentValueSpans(body, ignored)
+	valueIndex := 0
 	for searchStart := 0; searchStart <= len(body); {
 		relative := localDeclPattern.FindStringSubmatchIndex(body[searchStart:])
 		if relative == nil {
@@ -1525,6 +1548,13 @@ func findSemaLocalDeclMatches(body string) [][]int {
 			} else {
 				match[i] = -1
 			}
+		}
+		for valueIndex < len(values) && match[2] >= values[valueIndex].hi {
+			valueIndex++
+		}
+		if valueIndex < len(values) && match[2] >= values[valueIndex].lo {
+			searchStart = values[valueIndex].hi
+			continue
 		}
 		if semaLocalDeclMatchInIgnoredText(ignored, match) {
 			// Do not let a declaration-shaped comment or literal consume a
