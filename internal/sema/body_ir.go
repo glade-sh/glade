@@ -3083,6 +3083,9 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 	if !explicitReceiver {
 		candidates = resolveImplicitMemberMethods(model, receiverType, method)
 	}
+	if len(candidates) == 0 && explicitReceiver {
+		candidates = semaEnclosingStaticMethods(model, receiverType, method, receiverMode)
+	}
 	if len(candidates) == 0 {
 		if semaCallMayBelongToMissingSuperclass(model, typ, expr.Callee, receiverMode, receiverType) {
 			return nil
