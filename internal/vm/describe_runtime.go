@@ -2011,6 +2011,24 @@ func recordTypeInfoValue(recordType storage.RecordTypeInfo) Value {
 	return value
 }
 
+// describeSingleQuotedLiteral excludes compound formulas even when they begin
+// and end with quoted strings.
+func describeSingleQuotedLiteral(value string) bool {
+	if len(value) < 2 || value[0] != '\'' {
+		return false
+	}
+	for i := 1; i < len(value); i++ {
+		if value[i] == '\\' {
+			i++
+			continue
+		}
+		if value[i] == '\'' {
+			return i == len(value)-1
+		}
+	}
+	return false
+}
+
 func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	vm.ensureMetadataCacheGeneration()
 	objectName, definition, ok := vm.describeAPI68ObjectDefinition(objectName)
@@ -2140,7 +2158,7 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 		// null for the observed text, number and currency literal forms.
 		if field.DefaultValueFromMetadata {
 			literal := strings.TrimSpace(field.DefaultValue)
-			textLiteral := field.Type == storage.FieldString && strings.EqualFold(displayType, "STRING") && len(literal) >= 2 && literal[0] == '\'' && literal[len(literal)-1] == '\''
+			textLiteral := field.Type == storage.FieldString && strings.EqualFold(displayType, "STRING") && describeSingleQuotedLiteral(literal)
 			_, numberErr := strconv.ParseFloat(literal, 64)
 			numberLiteral := field.Type == storage.FieldDecimal && (strings.EqualFold(displayType, "DOUBLE") || strings.EqualFold(displayType, "CURRENCY")) && numberErr == nil
 			if textLiteral || numberLiteral {
