@@ -234,3 +234,92 @@ func TestWhatIDTargetsDriftRows(t *testing.T) {
 		t.Fatalf("drift rows: plain %d, record type shape %d", plain, shape)
 	}
 }
+
+// Native rows: whatid_targets_fresh org.tsv (2026-11-08). Three more fresh orgs
+// repeat the tiebreak, and the REST describe gives the same lists as Apex. The
+// Developer orgs list 85 targets at 62.0 and 93 at 67.0; Glade compares whole
+// lists against them on the plain Developer shape. Enterprise lists 27 and 33,
+// so the list depends on edition: TestWhatIDTargetsFreshEnterpriseRows records it.
+func TestWhatIDTargetsFreshNativeConformance(t *testing.T) {
+	rows := whatIDFreshRows(t)
+	for _, org := range []string{"P", "R"} {
+		for _, api := range []string{"62.0", "67.0"} {
+			t.Run(org+"/"+api, func(t *testing.T) {
+				got := whatIDTiebreakObservation(t, api, "anonymous")
+				for _, probe := range []string{"task", "event"} {
+					want := rows[org+"|"+api+"|anonymous|"+probe]
+					if !reflect.DeepEqual(want, whatIDFreshSorted(rows[org+"|"+api+"|restDescribe|"+probe])) {
+						t.Errorf("%s: native Apex and REST describe differ", probe)
+					}
+					if !reflect.DeepEqual(any(want), whatIDFreshStrings(got[probe])) {
+						t.Errorf("%s: native %v; Glade %v", probe, want, got[probe])
+					}
+				}
+			})
+		}
+	}
+}
+
+func whatIDFreshStrings(value any) any {
+	items, ok := value.([]any)
+	if !ok {
+		return value
+	}
+	out := make([]string, 0, len(items))
+	for _, item := range items {
+		text, _ := item.(string)
+		out = append(out, text)
+	}
+	return out
+}
+
+func whatIDFreshSorted(list []string) []string {
+	out := append([]string(nil), list...)
+	sort.Strings(out)
+	return out
+}
+
+// whatIDFreshRows reads the target lists as org|api|route|probe -> list.
+func whatIDFreshRows(t *testing.T) map[string][]string {
+	t.Helper()
+	body, err := os.ReadFile(filepath.Join("testdata", "conformance", "whatid_targets_fresh", "org.tsv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	rows := map[string][]string{}
+	for _, line := range strings.Split(strings.TrimSpace(string(body)), "\n")[1:] {
+		cells := strings.SplitN(line, "\t", 5)
+		if cells[3] != "task" && cells[3] != "event" {
+			continue
+		}
+		var list []string
+		if err := json.Unmarshal([]byte(cells[4]), &list); err != nil {
+			t.Fatal(err)
+		}
+		rows[strings.Join(cells[:4], "|")] = list
+	}
+	if len(rows) != 24 {
+		t.Fatalf("target list rows = %d; want 24", len(rows))
+	}
+	return rows
+}
+
+// The Enterprise twin is a strict subset of the Developer lists at both APIs.
+func TestWhatIDTargetsFreshEnterpriseRows(t *testing.T) {
+	rows := whatIDFreshRows(t)
+	for api, count := range map[string]int{"62.0": 27, "67.0": 33} {
+		enterprise := rows["E|"+api+"|anonymous|task"]
+		if len(enterprise) != count {
+			t.Errorf("%s: Enterprise targets = %d; want %d", api, len(enterprise), count)
+		}
+		developer := map[string]bool{}
+		for _, name := range rows["P|"+api+"|anonymous|task"] {
+			developer[name] = true
+		}
+		for _, name := range enterprise {
+			if !developer[name] {
+				t.Errorf("%s: Enterprise target %s is not a Developer target", api, name)
+			}
+		}
+	}
+}

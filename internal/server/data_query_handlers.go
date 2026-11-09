@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -463,6 +464,8 @@ func writeExternalIDUpsertResult(w http.ResponseWriter, result dml.Result) {
 	writeJSON(w, http.StatusCreated, map[string]any{"id": result.ID, "success": true, "errors": []string{}, "created": true})
 }
 
+var restUnknownDMLField = regexp.MustCompile(`^dml: unknown field ([^ .]+)\.([^ .]+)$`)
+
 func writeDMLFailure(w http.ResponseWriter, result dml.Result) {
 	if len(result.Errors) == 0 {
 		writeSalesforceError(w, errDMLFailure, result.Error)
@@ -478,7 +481,14 @@ func writeDMLFailure(w http.ResponseWriter, result dml.Result) {
 		if message == "" {
 			message = result.Error
 		}
-		errors = append(errors, salesforceError{ErrorCode: code, Message: message, Fields: append([]string(nil), err.Fields...)})
+		fields := append([]string(nil), err.Fields...)
+		// A field the object lacks is a column error on REST
+		// (record_type_null_routes rest.post.null.* rows).
+		if match := restUnknownDMLField.FindStringSubmatch(message); match != nil {
+			code, fields = "INVALID_FIELD", nil
+			message = fmt.Sprintf("No such column '%s' on sobject of type %s", match[2], match[1])
+		}
+		errors = append(errors, salesforceError{ErrorCode: code, Message: message, Fields: fields})
 	}
 	writeJSON(w, http.StatusBadRequest, errors)
 }

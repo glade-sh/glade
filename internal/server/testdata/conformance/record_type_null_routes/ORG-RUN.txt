@@ -1,0 +1,19 @@
+Owned synthetic capture, 2026-11-08 UTC (v0.3.6): an explicit null RecordTypeId through REST and UI API routes.
+One fresh one-day Developer scratch org from a campaign Dev Hub, project/config/project-scratch-def.json. Release: max API 68.0.
+Phases, cumulative: noProfileDefault deploys project/ without profiles (V35Rt__c with active Alpha and Beta; V35NoRt__c
+without record types). profileDefault adds Admin.profile-meta.xml (Alpha visible default, Beta visible). The running user
+has the System Administrator profile. Each case ran at REST version 62.0 and 67.0.
+Requests go through sf api request rest; RecordType.DeveloperName is read back with SOQL. IDs are masked in org.tsv.
+ rest.post.*     POST sobjects/<object>, RecordTypeId unset, null or Alpha.
+ ui.post.*       POST ui-api/records, the same fields.
+ rest.patch.*    PATCH sobjects/<object>/<id>, RecordTypeId null, or another field.
+ ui.patch.null   PATCH ui-api/records/<id>, RecordTypeId null.
+ collections.*   composite/sobjects, POST with allOrNone true and false, PATCH.
+ composite.*     composite subrequest POST.
+Findings, the same at both versions:
+ With a profile default, a null insert fails with INVALID_CROSS_REFERENCE_KEY on RecordTypeId on every route, an unset
+ insert takes the default, and a null update succeeds and the record ends on the default (it was seeded on the default, so these rows alone do not show a change of type).
+ Without a profile default, a null insert succeeds with no record type, and Alpha is rejected as not valid for the user.
+ An object without record types rejects the field: REST INVALID_FIELD, UI API POST_BODY_PARSE_ERROR.
+ The REST and UI rule matches the Apex rows in record_type_id_null_insert_default.
+Cleanup: org deleted (sf org delete scratch); ScratchOrgInfo Status recorded as Deleted.
