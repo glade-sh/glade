@@ -3783,13 +3783,28 @@ func semaShadowEnumReceiverType(receiver ir.Expr, scope irSemaScope, model *sema
 // receiver's own chain lacks the method, Apex binds a static method declared on
 // an enclosing class.
 func semaEnclosingStaticMethods(model *semaTypeMemberView, receiverType, method, receiverMode string) []resolvedMember {
-	if receiverMode == "instance" || receiverMode == "implicit" || !strings.Contains(receiverType, ".") {
+	if receiverMode == "instance" || receiverMode == "implicit" {
+		return nil
+	}
+	members, ok := model.lookupName(receiverType)
+	if !ok || members.nestingDepth <= 0 {
 		return nil
 	}
 	var out []resolvedMember
-	for _, candidate := range resolveImplicitMemberMethods(model, receiverType, method) {
-		if hasModifier(candidate.member.Modifiers, "static") {
-			out = append(out, candidate)
+	seen := make(map[string]bool)
+	owner := members.name
+	for depth := 0; depth < members.nestingDepth; depth++ {
+		dot := strings.LastIndexByte(owner, '.')
+		if dot <= 0 {
+			break
+		}
+		owner = owner[:dot]
+		for _, candidate := range resolveMemberMethods(model, owner, method) {
+			key := candidate.owner + ":" + methodSignatureKey(candidate.member)
+			if hasModifier(candidate.member.Modifiers, "static") && !seen[key] {
+				seen[key] = true
+				out = append(out, candidate)
+			}
 		}
 	}
 	return out
