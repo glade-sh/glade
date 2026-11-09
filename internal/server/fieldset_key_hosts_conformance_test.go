@@ -23,8 +23,8 @@ func TestFieldSetKeyVisualforceLightningAndToolingHosts(t *testing.T) {
 		t.Run(api, func(t *testing.T) {
 			root := t.TempDir()
 			writeServerTestFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"namespace":"gladetest1","packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":%q}`, api))
-			writeServerTestFile(t, filepath.Join(root, "force-app/main/default/pages/FieldSetHost.page"), `<apex:page controller="FieldSetHost"></apex:page>`)
-			writeServerTestFile(t, filepath.Join(root, "force-app/main/default/pages/FieldSetHost.page-meta.xml"), `<ApexPage xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>59.0</apiVersion><label>Field Set Host</label></ApexPage>`)
+			writeServerTestFile(t, filepath.Join(root, "force-app/main/default/pages/Remote.page"), `<apex:page controller="FieldSetHost"></apex:page>`)
+			writeServerTestFile(t, filepath.Join(root, "force-app/main/default/pages/Remote.page-meta.xml"), `<ApexPage xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>59.0</apiVersion><label>Field Set Host</label></ApexPage>`)
 			const probe = `Map<String, Schema.FieldSet> sets = Account.SObjectType.getDescribe().fieldSets.getMap();
 System.assertEquals(1, sets.size());
 System.assert(sets.keySet().contains('gladetest1__codexc163capture'));
