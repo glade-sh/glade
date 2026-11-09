@@ -245,7 +245,8 @@ func (vm *VM) lookupClassInNamespace(namespace, className string) (Class, bool) 
 		return cached.Class, cached.OK
 	}
 	class, ok := vm.lookupClassInNamespaceUncached(namespace, className)
-	if vm.namespaceClassRawLookup == nil {
+	if vm.namespaceClassRawLookup == nil || len(vm.namespaceClassRawLookup) >= maxAccessMemoEntries {
+		// Dynamic type names can mint unbounded raw keys; drop the memo at the cap.
 		vm.namespaceClassRawLookup = make(map[namespaceClassRawKey]namespaceClassLookup)
 	}
 	vm.namespaceClassRawLookup[rawKey] = namespaceClassLookup{Class: class, OK: ok}
