@@ -2526,6 +2526,53 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 	if receiverExpr, method, ok := splitSemaMethodPath(expr.Callee); ok && strings.Contains(receiverExpr, ".") {
 		root, _, _ := strings.Cut(receiverExpr, ".")
 		_, scoped := scope.lookup(root)
+		if !scoped {
+			interfaceType, nestedReceiver := semaLocalNestedInterfaceReceiver(model, typ.Name, receiverExpr)
+			if nestedReceiver {
+				root, fieldName, _ := strings.Cut(receiverExpr, ".")
+				field, hasStaticField := semaStaticClassFieldPathMemberInContext(model, typ.Name, root, fieldName)
+				fieldReceiver := false
+				if hasStaticField {
+					fieldType := resolveNestedTypeName(model, field.owner, field.member.Type)
+					fieldMembers, known := model.lookupName(fieldType)
+					fieldReceiver = known && !fieldMembers.platform && !fieldMembers.dependency && strings.EqualFold(fieldMembers.name, interfaceType.name)
+				}
+				argTypes := irCallArgTypes(a, expr.Args, scope, model, typ.Name)
+				methods := resolveMemberMethods(model, interfaceType.name, method)
+				_, hasMethod, ambiguousMethod := bestResolvedMemberByArgTypes(methods, argTypes, model)
+				if !semaArgTypesContainUnknown(argTypes) && !hasMethod && !ambiguousMethod {
+					candidates := semaEnclosingStaticMethods(model, interfaceType.name, method, "class")
+					target, found, ambiguous := bestResolvedMemberByArgTypes(candidates, argTypes, model)
+					if found && !ambiguous && (!hasStaticField || fieldReceiver) {
+						start, end := bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee))
+						if !hasStaticField {
+							if d, blocked := checkSemaMemberAccess(typ, member, expr.Callee, target, start, end, source, model); blocked {
+								return []diagnostic.Diagnostic{d}
+							}
+							return nil
+						}
+						d := staticAccessDiagnostic(typ, member, expr.Callee, "static method called through an instance", start, end, source)
+						owner := target.owner
+						if declaringType, ok := model.lookupName(owner); ok && declaringType.namespace != "" && !strings.HasPrefix(strings.ToLower(owner), strings.ToLower(declaringType.namespace)+".") {
+							owner = declaringType.namespace + "." + owner
+						}
+						d.NativeMessage = "Static method cannot be referenced from a non static context: " + nativeLifecycleSignature(owner, target.member)
+						return []diagnostic.Diagnostic{d}
+					}
+				}
+				if fieldReceiver && len(methods) == 0 {
+					d := unknownCallDiagnostic(typ, member, expr.Callee, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source)
+					if !semaArgTypesContainUnknown(argTypes) {
+						owner := interfaceType.name
+						if interfaceType.namespace != "" && !strings.HasPrefix(strings.ToLower(owner), strings.ToLower(interfaceType.namespace)+".") {
+							owner = interfaceType.namespace + "." + owner
+						}
+						d.NativeMessage = fmt.Sprintf("Method does not exist or incorrect signature: void %s(%s) from the type %s", method, strings.Join(argTypes, ","), owner)
+					}
+					return []diagnostic.Diagnostic{d}
+				}
+			}
+		}
 		if !scoped && semaShortSObjectFieldsCall(a, receiverExpr, method, model) {
 			message := fmt.Sprintf("Method does not exist or incorrect signature: void %s(%s) from the type Schema.SObjectField", method, strings.Join(irCallArgTypes(a, expr.Args, scope, model, typ.Name), ","))
 			d := collectionCallDiagnostic(typ, member, method, len(expr.Args), bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source)

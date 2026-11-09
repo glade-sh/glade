@@ -979,6 +979,22 @@ func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.Mem
 	if receiverMode != "implicit" && semaCalleeDependencyRoot(callee, scope, model) {
 		return nil
 	}
+	if receiver, calledMethod, ok := splitSemaMethodPath(callee); ok && !semaArgTypesContainUnknown(argTypes) {
+		root, fieldName, dotted := strings.Cut(receiver, ".")
+		_, scoped := scope[normalizeName(root)]
+		if dotted && !scoped {
+			_, hasField := semaStaticClassFieldPathMemberInContext(model, typ.Name, root, fieldName)
+			if nested, known := semaLocalNestedInterfaceReceiver(model, typ.Name, receiver); known && !hasField {
+				fallback := semaEnclosingStaticMethods(model, nested.name, calledMethod, "class")
+				if target, found, ambiguous := bestResolvedMemberByArgTypes(fallback, argTypes, model); found && !ambiguous {
+					if d, blocked := checkSemaMemberAccess(typ, member, callee, target, start, end, source, model); blocked {
+						return []diagnostic.Diagnostic{d}
+					}
+					return nil
+				}
+			}
+		}
+	}
 	if receiverExpr, method, ok := splitSemaMethodPath(callee); ok && semaObjectMethodName(method) {
 		receiverType := semaTextReceiverType(receiverExpr, scope, model)
 		if sig, ok := semaPlatformMethodSignatureForMode(model, receiverType, method, receiverMode); ok {
