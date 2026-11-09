@@ -58,4 +58,12 @@ func TestSchemaImportRespectsSourceNamespaceOwnership(t *testing.T) {
 	if foreignShort.Err == nil || !strings.Contains(foreignShort.Err.Error(), "Invalid reference") {
 		t.Errorf("foreign source accepted consumer-only alias: %v", foreignShort.Err)
 	}
+	foreignDir := filepath.Join(root, "nested", "force-app", "main", "default", "lwc", "foreign")
+	single := p
+	single.LWCFiles = filesInBundle(foreignDir, p.LWCFiles)
+	single.LWCHTMLFiles = filesInBundle(foreignDir, p.LWCHTMLFiles)
+	single.LWCMetaFiles = filesInBundle(foreignDir, p.LWCMetaFiles)
+	if _, err := Compile(single, Options{OutDir: filepath.Join(root, "single-dist"), RepoRoot: repo}); err != nil {
+		t.Errorf("single foreign compilation lost prior resolution: %v", err)
+	}
 }
