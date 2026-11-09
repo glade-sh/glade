@@ -2618,6 +2618,7 @@ func (o OrgState) Clone() OrgState {
 // gets an object name cache of its own, as Clone does.
 func (o OrgState) CloneObjectsShallow(extra int) OrgState {
 	out := o
+	out.Features = slices.Clone(o.Features)
 	if o.Objects != nil || extra > 0 {
 		out.Objects = make(map[string]ObjectState, len(o.Objects)+extra)
 		for name, object := range o.Objects {
