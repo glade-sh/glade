@@ -2610,6 +2610,24 @@ func (o OrgState) Clone() OrgState {
 	return out
 }
 
+// CloneObjectsShallow returns an org copy whose Objects map is its own, with
+// room for extra entries, while every object state, record map and definition
+// is shared with the receiver. It is for read-only views that add objects of
+// their own beside the receiver's; writes to a shared object must go through
+// EnsureMutableObjectRecords or EnsureMutableObjectDefinition first. The copy
+// gets an object name cache of its own, as Clone does.
+func (o OrgState) CloneObjectsShallow(extra int) OrgState {
+	out := o
+	if o.Objects != nil || extra > 0 {
+		out.Objects = make(map[string]ObjectState, len(o.Objects)+extra)
+		for name, object := range o.Objects {
+			out.Objects[name] = object
+		}
+	}
+	out.objectNameCache = newObjectNameCacheFrom(o.objectNameCache, o.Objects, out.Objects)
+	return out
+}
+
 // CloneRuntime returns an org copy suitable for isolated test/runtime execution.
 // Records, indexes, definitions, sequences, and transaction frames are isolated
 // so parallel test setup and execution can infer runtime metadata without
