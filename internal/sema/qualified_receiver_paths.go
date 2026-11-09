@@ -217,6 +217,22 @@ func semaQualifiedCallReceiverKnown(a *Analyzer, currentType, receiver string, s
 	if semaModelHasType(model, resolveNestedTypeName(model, currentType, receiver)) || semaEnumValuePathType(model, receiver) != "" {
 		return true
 	}
+	// As with Schema.SObjectType.<object>.fields, a source-inferred
+	// placeholder alone does not establish an object for a field-set path.
+	// Unloaded dependencies remain open to their own schema names.
+	parts := strings.Split(receiver, ".")
+	root := parts[0]
+	if len(parts) > 0 && strings.EqualFold(parts[0], "Schema") {
+		parts = parts[1:]
+	}
+	if len(parts) == 4 && strings.EqualFold(parts[0], "SObjectType") && strings.EqualFold(parts[2], "fieldSets") {
+		_, scoped := scope.lookup(root)
+		objectParts := strings.Split(parts[1], "__")
+		external := a != nil && (a.hasExternalDependencyName(parts[1]) || len(objectParts) >= 3 && !strings.EqualFold(objectParts[0], a.namespace))
+		if a != nil && !scoped && !semaProjectTypeShadowsPlatform(model, root) && !external && !semaSObjectIdentityEstablished(a, parts[1], model) {
+			return false
+		}
+	}
 	if semaPageReceiverPathKnown(receiver) || semaKnownSObjectFieldTokenPath(receiver, model) ||
 		semaKnownSObjectTypeTokenPath(receiver, model) || semaKnownSObjectFieldSetPath(receiver, model) {
 		return true
@@ -236,7 +252,7 @@ func semaQualifiedCallReceiverKnown(a *Analyzer, currentType, receiver string, s
 	// A loaded dependency namespace is known; a declared but unloaded one
 	// supplies no method either. Preserve declaration-backed deferral and
 	// positively resolved receivers above.
-	root, _, _ := strings.Cut(receiver, ".")
+	root, _, _ = strings.Cut(receiver, ".")
 	if !a.hasKnown(root) && !semaIRUnresolvedDeclaredReceiver(receiver, scope, model) {
 		if _, bound := scope.lookup(root); !bound {
 			return false
