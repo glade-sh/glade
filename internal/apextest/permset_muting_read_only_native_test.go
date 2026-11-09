@@ -66,8 +66,12 @@ func TestPermsetMutingReadOnlyNativeConformance(t *testing.T) {
 						t.Fatal(err)
 					}
 					for key, expected := range want {
-						if !reflect.DeepEqual(got[key], expected) {
-							t.Errorf("%s: native=%v Glade=%v", key, expected, got[key])
+						observedKey := key
+						if key == "removedFields" {
+							observedKey = "getRemovedFields"
+						}
+						if !reflect.DeepEqual(got[observedKey], expected) {
+							t.Errorf("%s: native=%v Glade=%v", key, expected, got[observedKey])
 						}
 					}
 				})
