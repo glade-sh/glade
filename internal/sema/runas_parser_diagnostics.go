@@ -20,6 +20,7 @@ func (a *Analyzer) refineRunAsArgumentParserDiagnostics(index typesys.Index, inp
 		return input
 	}
 	seen := map[string]bool{}
+	replaced := map[string]bool{}
 	out := make([]diagnostic.Diagnostic, 0, len(input))
 	for _, item := range input {
 		if item.Severity != diagnostic.Error || item.Code != "APEXPARSE001" || item.Message != "syntax error" || item.File == "" {
@@ -27,12 +28,16 @@ func (a *Analyzer) refineRunAsArgumentParserDiagnostics(index typesys.Index, inp
 			continue
 		}
 		if seen[item.File] {
+			if !replaced[item.File] {
+				out = append(out, item)
+			}
 			continue
 		}
 		seen[item.File] = true
 		source, ok := a.sources.normalizedForType(typesys.TypeSymbol{File: item.File, SourceRoot: index.Project.Root, Namespace: index.Project.Namespace})
 		if ok {
 			if start, end, valid := semaMultipleRunAsCall(item.File, source); valid {
+				replaced[item.File] = true
 				const message = "runAs requires a single argument of type 'User' or 'Version'"
 				out = append(out, diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA023", Message: message, NativeMessage: message, File: item.File, Range: semaRange(source, start, end)})
 				continue
