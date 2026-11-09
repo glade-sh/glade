@@ -97,7 +97,14 @@ func duplicateFieldsEqual(left, right storage.Record, field string) bool {
 // standardDuplicateMatch applies only the discriminators the native rows pin
 // (ST02-ST05, ST07, ST08, ST11, DR12); builtin fuzzy scoring is not modeled.
 func standardDuplicateMatch(object string, candidate, existing storage.Record) bool {
-	switch strings.ToLower(object) {
+	return standardDuplicateMatchFolded(strings.ToLower(object), candidate, existing)
+}
+
+// standardDuplicateMatchFolded is standardDuplicateMatch for an object name
+// already folded to lower case, so a scan over every existing record folds the
+// name once.
+func standardDuplicateMatchFolded(lowerObject string, candidate, existing storage.Record) bool {
+	switch lowerObject {
 	case "account":
 		for _, field := range []string{"Name", "BillingStreet", "BillingCity", "BillingPostalCode"} {
 			if !duplicateFieldsEqual(candidate, existing, field) {
@@ -170,8 +177,10 @@ func FindDuplicateMatches(org *storage.OrgState, rule storage.DuplicateRule, rec
 			return result, false
 		}
 		match := DuplicateMatch{Object: objectName, Rule: matching.Name, Engine: exactMatchEngine}
+		lowerObject := ""
 		if standard {
 			match.Engine = storage.StandardMatchEngine
+			lowerObject = strings.ToLower(objectName)
 		}
 		for _, existing := range org.Objects[objectName].Records {
 			if existing.System.IsDeleted || (record.ID != "" && storage.IDsEqual(existing.ID, record.ID)) || (exclude != nil && exclude(existing.ID)) {
@@ -179,7 +188,7 @@ func FindDuplicateMatches(org *storage.OrgState, rule storage.DuplicateRule, rec
 			}
 			var matched bool
 			if standard {
-				matched = standardDuplicateMatch(objectName, record, existing)
+				matched = standardDuplicateMatchFolded(lowerObject, record, existing)
 			} else {
 				var supported bool
 				if matched, supported = exactDuplicateMatch(matching, record, existing); !supported {
