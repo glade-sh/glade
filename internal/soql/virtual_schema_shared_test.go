@@ -229,3 +229,51 @@ func TestVirtualSchemaSharedViewConcurrentQueries(t *testing.T) {
 		t.Fatalf("concurrent query: %v", err)
 	}
 }
+
+// Private hydration leaves the caller's own virtual object state untouched:
+// its records and its definition metadata are those it started with.
+func TestVirtualSchemaPrivateHydrationLeavesCallerStateAlone(t *testing.T) {
+	explicit := virtualSchemaSharedTestOrg(t)
+	storage.EnsureStandardObject(&explicit, "EntityDefinition")
+	state := explicit.Objects["EntityDefinition"]
+	state.Records = map[storage.ID]storage.Record{"ProbeExplicit__c": {ID: "ProbeExplicit__c", Object: "EntityDefinition", Fields: map[string]storage.Value{"QualifiedApiName": storage.StringValue("ProbeExplicit__c")}}}
+	explicit.Objects["EntityDefinition"] = state
+	before := len(explicit.Objects["EntityDefinition"].Definition.Metadata)
+	query, err := Parse("SELECT QualifiedApiName FROM EntityDefinition WHERE QualifiedApiName LIKE 'Probe%'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := ExecuteWithCache(explicit, query, NewExecutionCache())
+	if err != nil || result.Rows != 2 {
+		t.Fatalf("rows %d err %v", result.Rows, err)
+	}
+	after := explicit.Objects["EntityDefinition"]
+	if len(after.Records) != 1 || len(after.Definition.Metadata) != before {
+		t.Fatalf("caller state changed: records=%d metadata=%d (was 1, %d)", len(after.Records), len(after.Definition.Metadata), before)
+	}
+	for _, name := range []string{"FieldDefinition", "EntityParticle", "UserFieldAccess"} {
+		if _, ok := explicit.Objects[name]; ok {
+			t.Fatalf("private hydration added %s to the caller org", name)
+		}
+	}
+}
+
+func BenchmarkVirtualSchemaQueryUnstamped(b *testing.B) {
+	org := storage.NewOrgState()
+	for _, name := range []string{"Account", "Contact", "Opportunity", "Lead", "Case", "Task", "Event", "User", "Campaign", "Product2", "Pricebook2", "Order", "Contract", "Asset", "Quote"} {
+		storage.EnsureStandardObject(&org, name)
+	}
+	query, err := Parse("SELECT QualifiedApiName FROM FieldDefinition WHERE EntityDefinition.QualifiedApiName = 'Account' AND QualifiedApiName = 'Name'")
+	if err != nil {
+		b.Fatal(err)
+	}
+	cache := NewExecutionCache()
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		result, err := ExecuteWithCache(org, query, cache)
+		if err != nil || result.Rows != 1 {
+			b.Fatalf("rows %d err %v", result.Rows, err)
+		}
+	}
+}

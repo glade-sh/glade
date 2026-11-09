@@ -553,9 +553,7 @@ type sharedVirtualSchema struct {
 func virtualSchemaQueryOrg(org storage.OrgState, cache *ExecutionCache) storage.OrgState {
 	runtimeStamp := strings.TrimSpace(org.RuntimeSchemaStamp)
 	if cache == nil || runtimeStamp == "" || virtualSchemaObjectsHaveRecords(org) {
-		out := org.Clone()
-		hydrateVirtualSchemaObjects(&out)
-		return out
+		return hydratedVirtualSchemaView(org)
 	}
 	hydrationStamp := virtualSchemaHydrationStamp(org)
 	shared := cache.sharedVirtualSchemaObjects(org, runtimeStamp, hydrationStamp)
@@ -563,6 +561,22 @@ func virtualSchemaQueryOrg(org storage.OrgState, cache *ExecutionCache) storage.
 	for name, object := range shared {
 		out.Objects[name] = object
 	}
+	return out
+}
+
+// hydratedVirtualSchemaView hydrates the virtual schema objects on a private
+// view of org. Hydration reads every ordinary object and writes only the six
+// virtual object states, so the view shares the ordinary states and owns a
+// deep copy of any virtual state the caller already holds (explicit records
+// win over hydration, and the hydration stamp lands on the copy's definition).
+func hydratedVirtualSchemaView(org storage.OrgState) storage.OrgState {
+	out := org.CloneObjectsShallow(len(virtualSchemaObjectNames))
+	for _, name := range virtualSchemaObjectNames {
+		if object, ok := out.Objects[name]; ok {
+			out.Objects[name] = object.Clone()
+		}
+	}
+	hydrateVirtualSchemaObjects(&out)
 	return out
 }
 
@@ -586,8 +600,7 @@ func (c *ExecutionCache) sharedVirtualSchemaObjects(org storage.OrgState, runtim
 	if shared != nil && shared.runtimeStamp == runtimeStamp && shared.hydrationStamp == hydrationStamp {
 		return shared.objects
 	}
-	hydrated := org.Clone()
-	hydrateVirtualSchemaObjects(&hydrated)
+	hydrated := hydratedVirtualSchemaView(org)
 	objects := make(map[string]storage.ObjectState, len(virtualSchemaObjectNames))
 	for _, name := range virtualSchemaObjectNames {
 		object, ok := hydrated.Objects[name]
