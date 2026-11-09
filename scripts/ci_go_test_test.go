@@ -2166,10 +2166,6 @@ func TestCISemaShardWorkflowContract(t *testing.T) {
 		job  string
 		want []string
 	}{
-		{name: "matrix", job: sema, want: []string{
-			"GOMODCACHE: /tmp/go-mod-ci-sema-${{ matrix.shard }}",
-			"GOCACHE: /tmp/go-build-ci-sema-${{ matrix.shard }}",
-		}},
 		{name: "full", job: jobs["sema-full"], want: []string{
 			"GOMODCACHE: /tmp/go-mod-ci-sema-full",
 			"GOCACHE: /tmp/go-build-ci-sema-full",
@@ -2185,6 +2181,16 @@ func TestCISemaShardWorkflowContract(t *testing.T) {
 				}
 			}
 		})
+	}
+	// The sema shards run the shared prebuilt binary. They read the caches the
+	// remaining-go lane publishes and never own an isolated writable cache.
+	for _, forbidden := range []string{"GOMODCACHE:", "GOCACHE:", "actions/cache@", "actions/cache/save@"} {
+		if strings.Contains(sema, forbidden) {
+			t.Errorf("sema matrix owns a writable Go cache via %q", forbidden)
+		}
+	}
+	if strings.Count(sema, "actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0") != 3 {
+		t.Errorf("sema matrix cache restores = %d, want duration history plus module and build", strings.Count(sema, "actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0"))
 	}
 	if strings.Contains(jobs["required-ci"], "sema-full") || strings.Contains(jobs["required-ci"], "sema-equivalence") || strings.Contains(jobs["required-ci"], "required-scheduled-ci") {
 		t.Fatal("normal Required CI depends on a scheduled-only job")
@@ -3709,10 +3715,16 @@ func TestCIParallelDAGPreservesApexAndUsesRootCheckout(t *testing.T) {
 	for _, marker := range []string{
 		"needs: [apextest-history-input, test-binaries]", "shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]", "timeout-minutes: 100", "scripts/ci-go-test.sh apex-shard \"${{ matrix.shard }}\"",
 		"CI_APEXTEST_HISTORY_PATH", "actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0", "name: apextest-history-input",
-		"actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0", "name: apex-shard-${{ matrix.shard }}",
+		"actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0", "name: apex-shard-${{ matrix.shard }}",
 	} {
 		if !strings.Contains(apex, marker) {
 			t.Errorf("Apex matrix contract missing %q", marker)
+		}
+	}
+	// Apex shards run the shared prebuilt binary and must stay cache readers.
+	for _, forbidden := range []string{"actions/cache@", "actions/cache/save@", "GOMODCACHE:", "GOCACHE:"} {
+		if strings.Contains(apex, forbidden) {
+			t.Errorf("Apex matrix owns a writable Go cache via %q", forbidden)
 		}
 	}
 	for _, marker := range []string{
@@ -3836,9 +3848,8 @@ func TestCIGoTestLogWrapperIsWired(t *testing.T) {
 		"matrix:",
 		"shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]",
 		"cache: false",
-		"ci-apextest-${{ matrix.shard }}",
-		"go-mod-v1-1.26.10-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-apextest-${{ matrix.shard }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}",
-		"go-build-v1-1.26.10-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-apextest-${{ matrix.shard }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}",
+		"go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-apextest-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}",
+		"go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-apextest-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}",
 		"scripts/ci-go-test.sh apex-shard \"${{ matrix.shard }}\"",
 		"if: always()",
 		"actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0",
