@@ -1119,7 +1119,13 @@ func (s *Server) handleCompositeSObjectTypedUpsert(w http.ResponseWriter, r *htt
 		}
 	}
 	if body.AllOrNone && hasFailure {
-		writeJSON(w, http.StatusOK, compositeUpsertResults(compositeAllOrNoneRollbackResults(results), referenceIDs))
+		rows := compositeAllOrNoneRollbackResults(results)
+		for i := range rows {
+			if rows[i].UpsertCreated {
+				rows[i].ID = ""
+			}
+		}
+		writeJSON(w, http.StatusOK, compositeUpsertResults(rows, referenceIDs))
 		return
 	}
 	if hasSuccess {
