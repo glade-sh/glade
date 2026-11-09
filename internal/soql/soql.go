@@ -643,7 +643,7 @@ func virtualSchemaHydrationStamp(org storage.OrgState) string {
 		}
 		objectCount++
 		fieldCount += len(object.Definition.Fields)
-		if model := strings.TrimSpace(object.Definition.SharingModel); model != "" {
+		if model := object.Definition.SharingModel; model != "" {
 			sharingModels = append(sharingModels, object.Definition.APIName+"\x00"+model)
 		}
 	}
