@@ -23,3 +23,7 @@ api	case	compiled	success	outcome
 67.0	typing_bad	false	false	Variable does not exist: NoSuchList
 62.0	istest_typing	true	true	-
 67.0	istest_typing	true	true	-
+62.0	custom_object_inventory	true	true	[probe__c]
+67.0	custom_object_inventory	true	true	[probe__c]
+62.0	probe_fieldset_inventory	true	true	[main,mainlist]
+67.0	probe_fieldset_inventory	true	true	[main,mainlist]
