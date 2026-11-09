@@ -35,4 +35,27 @@ func TestRunHttpHeaderIdNativeProject(t *testing.T) {
 	if summary := run.Summary(); summary.Total != 2 || summary.Passed != 2 {
 		t.Fatalf("summary=%#v, problem=%s", summary, firstRunProblem(run))
 	}
+	index := loadTestIndex(t, root)
+	restore := EnableDiskCacheForTesting()
+	defer restore()
+	InvalidateRuntimeCaches()
+	for pass, route := range []string{"cold", "memory", "disk"} {
+		t.Run(route, func(t *testing.T) {
+			if pass == 2 {
+				InvalidateRuntimeCaches()
+			}
+			ResetPerfCounters()
+			result := Run(index, Options{SelectedClasses: []string{"Pr163ApexCapture62", "Pr163ApexCapture67"}, SelectedMethod: "idHeader", Parallelism: 1, PerfCounters: true})
+			if summary := result.Summary(); summary.Total != 2 || summary.Passed != 2 {
+				t.Fatalf("summary=%#v, problem=%s", summary, firstRunProblem(result))
+			}
+			phases := SnapshotPerfCounters().Phases
+			if pass == 1 && phases.MemoryCacheHits != 1 {
+				t.Fatal("warm runner missed memory cache")
+			}
+			if pass == 2 && phases.DiskCacheHits != 1 {
+				t.Fatal("restored runner missed disk cache")
+			}
+		})
+	}
 }
