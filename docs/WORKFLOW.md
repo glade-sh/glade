@@ -10,8 +10,10 @@ Three facts shape everything below:
 
 - Every change reaches `main` as a pull request. The hosted `Required CI`
   check on the pull request is the merge gate.
-- Captured Salesforce behavior is the oracle. A behavior change is backed by a
-  native row before the code changes. Nobody fixes a case from inference.
+- For Salesforce-observable compatibility changes, captured Salesforce
+  behavior is the oracle; native rows come before the code changes. For
+  Glade-specific behavior without a Salesforce counterpart, cite the local
+  contract and add a regression test. Do not infer Salesforce behavior.
 - Each stage is one command with one printed verdict. Where a step needs
   judgment, this document names the rule.
 
@@ -21,11 +23,11 @@ Three facts shape everything below:
 | --- | --- | --- | --- | --- |
 | 1 | Ticket | coordinator | scope, acceptance criteria, owned files, change class | a coder can start without asking a question |
 | 2 | Branch | coder | a branch from `main` in its own worktree | `git status` is clean and the base is current `main` |
-| 3 | Evidence | coder | case table and native rows (`org.tsv`, `ORG-RUN.txt`) | every changed behavior has rows at the applicable current supported version and the floor |
+| 3 | Evidence | coder | native rows or local contract, as applicable | compatibility changes have rows at the applicable current supported version and floor; Glade-specific changes cite their local contract |
 | 4 | Test first | coder | a failing test committed before the fix | the test fails at the test commit and passes at HEAD |
 | 5 | Local checks | coder | focused tests, one package run, repoguard | green, or each failure explained in the PR |
 | 6 | Pull request | coder | the PR with the template filled in | every field has content or `n/a: <reason>` |
-| 7 | CI | hosted | `Required CI` green | the check passes on the PR head |
+| 7 | CI | hosted | `Required CI` green | the check passes on the PR merge result for the current head and base |
 | 8 | Review | reviewer | one PR review | no open blocking finding, threads resolved |
 | 9 | Merge | coordinator | a squash commit on `main` | the PR check is green |
 | 10 | Nightly | host cron | real-project suite diff against goldens | `NEW = 0`, or one ticket per NEW |
@@ -69,8 +71,17 @@ review or a check is running on it; add commits instead.
 
 ### 3.3 Evidence (behavior changes only)
 
-Fixtures live at `internal/<pkg>/testdata/<family>/`, where `<pkg>` is the
-package whose test reads them: `apextest` (under `testdata/conformance/`) for
+Identify each changed behavior as Salesforce-observable compatibility behavior
+or Glade-specific behavior without a Salesforce counterpart. A change spanning
+both needs both forms of evidence. For Glade-specific behavior, cite the
+applicable documented or intended local contract in the PR and commit, and add
+a regression test that exercises it, including relevant acceptance, rejection
+and boundary cases. Follow the test-first process in section 3.4. Do not use a
+local contract to assert Salesforce compatibility.
+
+For Salesforce-observable compatibility changes, fixtures live at
+`internal/<pkg>/testdata/<family>/`, where `<pkg>` is the package whose test
+reads them: `apextest` (under `testdata/conformance/`) for
 runtime behavior, `sema` for compile-time diagnostics, `visualforce`, `lwc`
 and `dml` for their surfaces. A family directory holds `cases.tsv` (or
 `cases.json`), the synthetic Apex sources, `org.tsv` and `ORG-RUN.txt`.
@@ -101,20 +112,21 @@ and `dml` for their surfaces. A family directory holds `cases.tsv` (or
    captured at two APIs cites both rows.
 
 A row already in the repository backs a fix without a new capture when its
-route and API match the test. With no row at all, stop and ask (section 5).
+route and API match the test. If the required native row is missing and cannot
+be captured, stop and ask (section 5).
 
 ### 3.4 Test first, then fix
 
 ```bash
-# 1. Commit the evidence and the test, without the fix.
+# 1. Commit the applicable evidence and the test, without the fix.
 git add <fixture dir> <test files>
-git commit -m "test: <behavior> (NATIVE ...)"
+git commit -m "test: <behavior> (<native row or local contract>)"
 # 2. Show the test fails at that commit (the fix is absent, so this is the
 #    "fails on its parent" proof AGENTS.md asks for).
 CGO_ENABLED=1 go test ./internal/<pkg> -run '^TestName$'   # expect FAIL
 # 3. Commit the fix and show the test passes.
 git add <files>
-git commit -m "fix: <behavior> (NATIVE ...)"
+git commit -m "fix: <behavior> (<native row or local contract>)"
 CGO_ENABLED=1 go test ./internal/<pkg> -run '^TestName$'   # expect ok
 ```
 
@@ -154,9 +166,12 @@ the diff alone. A behavior change is always user-visible: add its line to
 
 ### 3.7 CI
 
-`Required CI` runs on every PR; a run takes
-about 40 minutes. When it is red, read the failing job's log, fix on the
-branch, and push. Do not re-run a red job hoping for green. When the failing
+`Required CI` runs on every PR; a run takes about 40 minutes. For a
+`pull_request` run, checkout and tests use GitHub's merge result for the PR
+head and base, not the head tree alone. The merge commit has the PR head as its
+second parent; identify both the head and tested merge tree when reporting it.
+This PR check is distinct from the release authority in section 3.11. When it
+is red, read the failing job's log, fix on the branch, and push. Do not re-run a red job hoping for green. When the failing
 test is unrelated to your change and passes on `main`, say so in the PR and
 open a ticket for it; the coordinator decides on a rerun. The runners carry
 Node, Playwright and a browser, so an "environmental" result does not exist
@@ -166,9 +181,10 @@ mirrors `Required CI` when hosted CI is unavailable.
 ### 3.8 Review
 
 One reviewer per PR, assigned by the coordinator, following appendix B.
-Blocking findings: a correctness defect; a regression (an existing test or
-behavior changes without a cited row); a behavior change without a `NATIVE`
-line; a missing route twin; a deleted or loosened assertion without a row;
+Blocking findings: a correctness defect; a regression; a Salesforce-compatible
+behavior change without a matching `NATIVE` line; a Glade-specific behavior
+change without a cited local contract and regression test; a missing applicable
+route twin; a deleted or loosened assertion without appropriate evidence;
 third-party names or content; credentials, org ids or personal paths.
 Everything else is a comment, not a block. The reviewer may fix a small
 finding with a commit on the branch and approve, saying so in the review.
@@ -181,7 +197,8 @@ gates them.
 ### 3.9 Merge
 
 The coordinator squash merges after `Required CI` passes on the PR. The squash
-message is the PR title plus the `NATIVE` lines. The branch is deleted on merge.
+message is the PR title plus applicable `NATIVE` lines or local contract
+citations. The branch is deleted on merge.
 The coordinator moves the ticket to Done on the project board with the PR link.
 If the branch conflicts with `main`, resolve the conflict, rerun the focused
 tests and push; do not rewrite history under a running check.
@@ -232,9 +249,9 @@ Every ticket and PR names one class: `docs`, `tests`, `tooling`, `behavior`,
 | Class | Covers | Needs | Does not need |
 | --- | --- | --- | --- |
 | `docs` | documentation only | PR, CI | review, rows |
-| `tests` | tests or fixtures only | PR, CI; when an existing assertion is deleted or changed: a cited row per change and a review | review for pure additions |
+| `tests` | tests or fixtures only | PR, CI; when an existing assertion is deleted or changed: applicable native row or local contract per change and a review | review for pure additions |
 | `tooling` | CI, scripts, build, release tooling | PR, CI; the lane and inventory tests when lanes change | rows |
-| `behavior` | parser, sema, vm, soql, dml, storage, Visualforce, LWC, server behavior | rows, test first, route twins, review, the ABI bump below | |
+| `behavior` | parser, sema, vm, soql, dml, storage, Visualforce, LWC, server behavior | native rows for compatibility or a local contract for Glade-specific behavior, test first, applicable route twins, review, the ABI bump below | |
 | `performance` | speed or memory with identical outcomes | a matched before/after outcome comparison with its scope and the targeted benchmark in the PR; the release measures the aggregate | per-PR project measurement |
 | `generated` | generated files, including the standard-object schema ([STANDARD_OBJECT_SCHEMA.md](STANDARD_OBJECT_SCHEMA.md)) | change the input or the generator, regenerate, commit both | hand edits |
 
@@ -261,7 +278,8 @@ per-version counter change in the same PR, with the reason in the message.
 
 Stop and ask the coordinator, in the PR or the ticket, when:
 
-1. a behavior change has no native row and you cannot capture one;
+1. a Salesforce-observable compatibility change has no native row and you
+   cannot capture one;
 2. the fix needs files outside your owned set, a generated output, or an ABI
    constant that another open PR also changes (look at the open PRs);
 3. a test that passes on `main` fails on your branch and an hour of work has
@@ -288,7 +306,7 @@ Base: origin/main at <sha>. Branch: <prefix>/<ticket>-<slug>. Worktree: <path>.
 Owned files or packages: <list>. Do not touch: <list>.
 Change class: <docs | tests | tooling | behavior | performance | generated>.
 Acceptance: <observable outcomes, one per line>.
-Evidence: <path of existing rows, or "capture needed: <cases>">.
+Evidence: <native rows or "capture needed: <cases>" for compatibility; local contract for Glade-specific behavior>.
 Done: PR open with the template complete, Required CI green, review requested.
 Rules: docs/WORKFLOW.md sections 3 to 5, and AGENTS.md.
 ```
@@ -299,13 +317,16 @@ Rules: docs/WORKFLOW.md sections 3 to 5, and AGENTS.md.
 Review pull request <url> for glade (an offline Salesforce Apex runtime in Go).
 Read-only, except that you may push one small fix commit to the branch and say so.
 Check in this order:
-1. Every behavior change has a NATIVE line citing org.tsv:<line> at a matching route and API.
+1. Each Salesforce-observable compatibility change has a NATIVE line citing org.tsv:<line> at a
+   matching route and API. Each Glade-specific change cites its local contract and regression test.
 2. The test commit precedes the fix and fails on its own: check out the test commit and run the test.
 3. Route twins: a test for each route that reaches the changed code (anonymous, @IsTest, runner,
-   server, hosts; the applicable current supported version, floor, and 67.0 for Apex where relevant).
+   server, hosts; use the applicable current supported version, floor, and 67.0 for Apex where
+   relevant to Salesforce compatibility).
 4. Existing tests: `go test ./internal/<touched pkg>` at HEAD and at the merge base; a pass that
    becomes a failure is blocking. For apextest, run focused tests with `-run`; CI runs its 12 shards.
-5. No deleted or loosened assertion without a cited row. No third-party project names or content.
+5. No deleted or loosened assertion without a matching native row or local contract.
+   No third-party project names or content.
    No org ids, aliases, personal paths or credentials.
 6. For sema or typesys changes: `go test ./internal/apextest -run 'TestCorpusShape'` at HEAD.
 Verdict: APPROVE, or REQUEST CHANGES listing only blocking findings as file:line with the rule

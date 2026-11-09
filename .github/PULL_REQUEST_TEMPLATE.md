@@ -15,7 +15,10 @@ See [docs/WORKFLOW.md](../docs/WORKFLOW.md) section 4 for what each class needs.
 NATIVE <behavior> <path>/org.tsv:<line> <route> <api>
 ```
 
-One line per behavior change. Fail-before: test commit `<sha>` fails on its own; fix commit `<sha>`.
+One line per Salesforce-observable compatibility change. For Glade-specific
+behavior without a Salesforce counterpart, cite the local contract and regression
+test instead. If both apply, provide both forms of evidence.
+Fail-before: test commit `<sha>` fails on its own; fix commit `<sha>`.
 Route twins: <routes covered, or `n/a: <reason>`>.
 
 ## Checks run
@@ -38,7 +41,7 @@ visible UI change, add sanitized desktop and mobile screenshots.
 
 - [ ] No third-party project names, paths or source; no credentials, org ids, aliases or personal paths.
 - [ ] Generated files changed through their generator or input, and both committed.
-- [ ] Every edit or deletion of an existing test cites a native row.
+- [ ] Every edit or deletion of an existing test cites the applicable native row or local contract.
 - [ ] ABI constant bumped when the change class requires it.
 - [ ] New package or new `t.Parallel` test: `scripts/ci-package-lanes.json` and the inventory tests updated.
 - [ ] User-visible change recorded in `docs/RELEASE_NOTES.md` under Unreleased.
