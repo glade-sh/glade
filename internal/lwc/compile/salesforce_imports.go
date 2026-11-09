@@ -91,9 +91,28 @@ func loadSalesforceImports(p project.Project, references []string) (*salesforceI
 		}
 		withoutCurrency = append(withoutCurrency, feature)
 	}
+	// Apply the feature once to the custom definitions already present in the
+	// project registry. Runtime shape logic determines which objects gain it.
+	describeRegistry := sobject.BuildDescribeRegistry(projectSchema)
+	customCurrencyOrg := storage.NewOrgState()
+	if multiCurrency {
+		for _, object := range describeRegistry.Objects {
+			definition := sobject.ToObjectDefinition(object)
+			if _, known := storage.ResolveKnownStandardObjectName(definition.APIName); !known {
+				customCurrencyOrg.Objects[definition.APIName] = storage.ObjectState{Definition: definition}
+			}
+		}
+		storage.ApplyOrgShape(&customCurrencyOrg, []string{"MultiCurrency"})
+	}
 	schemaEntry := func(definition storage.ObjectDefinition) salesforceSchemaObject {
 		entry := salesforceSchemaEntry(definition)
-		if _, known := storage.ResolveKnownStandardObjectName(definition.APIName); !known || !multiCurrency {
+		if !multiCurrency {
+			return entry
+		}
+		if _, known := storage.ResolveKnownStandardObjectName(definition.APIName); !known {
+			if object, ok := customCurrencyOrg.Objects[definition.APIName]; ok {
+				return salesforceSchemaEntry(object.Definition)
+			}
 			return entry
 		}
 		without, with := definition.Clone(), definition.Clone()
@@ -116,7 +135,7 @@ func loadSalesforceImports(p project.Project, references []string) (*salesforceI
 	}
 	// Reuse the runtime's schema overlay, including implicit custom-object
 	// fields and its custom-setting/master-detail exclusions.
-	for name, object := range sobject.BuildDescribeRegistry(projectSchema).Objects {
+	for name, object := range describeRegistry.Objects {
 		cfg.Schema[name] = schemaEntry(sobject.ToObjectDefinition(object))
 	}
 	cfg.OwnSchemaObjects = addOwnObjectImportAliases(cfg.Schema, p.Namespace)
