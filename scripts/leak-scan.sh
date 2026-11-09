@@ -62,11 +62,11 @@ in_hunk {
     text = substr($0, 2)
     class = ""
     homecheck = text; personalhome = 0
-    while (match(homecheck, /\/home\/[a-z][a-z0-9_-]*\//)) {
+    while (match(homecheck, /\/home\/[^\/]+\//)) {
       if (substr(homecheck, RSTART, RLENGTH) != "/home/runner/") personalhome = 1
       homecheck = substr(homecheck, RSTART + 1)
     }
-    if (text ~ /\/Users\/[A-Za-z0-9_]/) class = "personal-path"
+    if (text ~ /\/Users\/[^\/]/) class = "personal-path"
     else if (personalhome) class = "personal-path"
     else if (text ~ /\/Volumes\//) class = "volume-path"
     else if (text ~ /\/private\/tmp\//) class = "private-tmp"
@@ -81,10 +81,13 @@ in_hunk {
   if (oldleft <= 0 && newleft <= 0) in_hunk = 0
   next
 }
-/^diff --git / { fileid++; file = ""; allowed = 0; next }
+/^diff --git / { fileid++; file = ""; allowed = 0; deleted = 0; next }
+/^deleted file mode / { deleted = 1; next }
 /^Binary files .* differ$/ || /^GIT binary patch$/ {
-  findings++; files[fileid] = 1
-  printf "file %d: binary change cannot be scanned\n", fileid
+  if (!deleted) {
+    findings++; files[fileid] = 1
+    printf "file %d: binary change cannot be scanned\n", fileid
+  }
   next
 }
 /^\+\+\+ / {
