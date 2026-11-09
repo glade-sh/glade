@@ -25,6 +25,13 @@ func TestFlowRecordMapLookupHostRoutes(t *testing.T) {
         transform.start(); Contact mapped=(Contact)transform.getVariableValue('OutputRecord');
         System.assertEquals('Map sample',mapped.LastName); System.assertEquals(null,mapped.Title);
         System.assertEquals(true,mapped.getPopulatedFieldsAsMap().containsKey('Title'));
+        for(String name:new List<String>{'TransformLiteral','TransformEmpty'}) {
+            Flow.Interview literal=Flow.Interview.createInterview(name,new Map<String,Object>{'InputText'=>'Sample'});
+            literal.start(); Contact record=(Contact)literal.getVariableValue('OutputRecord');
+            System.assertEquals('Sample',record.LastName);
+            System.assertEquals(name=='TransformLiteral'?'Mapped':'',record.Title);
+            System.assertEquals(true,record.getPopulatedFieldsAsMap().containsKey('Title'));
+        }
         Account b=new Account(Name='Capture Collection Seed B'); insert b;
         Map<String,Object> populated=new Map<String,Object>{'ids'=>new List<String>{String.valueOf(b.Id)}};
         Flow.Interview excluded=Flow.Interview.createInterview('Capture_Filter_NotIn',populated);
@@ -50,6 +57,8 @@ func TestFlowRecordMapLookupHostRoutes(t *testing.T) {
 					dir := "api" + strings.TrimSuffix(api, ".0")
 					fixtures := map[string]string{
 						"TransformProbe":       filepath.Join("..", "apextest", "testdata", "conformance", "flow_transform_record_map", dir, "TransformProbe.flow-meta.xml"),
+						"TransformLiteral":     filepath.Join("..", "apextest", "testdata", "conformance", "flow_transform_literal", dir, "TransformLiteral.flow-meta.xml"),
+						"TransformEmpty":       filepath.Join("..", "apextest", "testdata", "conformance", "flow_transform_literal", dir, "TransformEmpty.flow-meta.xml"),
 						"Capture_Filter_In":    filepath.Join("..", "apextest", "testdata", "conformance", "pr163_flow_lookup_collection", dir, "Capture_Filter_In.flow-meta.xml"),
 						"Capture_Filter_NotIn": filepath.Join("..", "apextest", "testdata", "conformance", "pr163_flow_lookup_collection", dir, "Capture_Filter_NotIn.flow-meta.xml"),
 					}
