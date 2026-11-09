@@ -1214,7 +1214,7 @@ func TestSObjectCRUDValidationErrorsUseDMLStatusCodes(t *testing.T) {
 			path:       serverTestDataPath + "/sobjects/Account",
 			body:       `{"Name":"Acme","Nope__c":"bad"}`,
 			wantStatus: http.StatusBadRequest,
-			wantCode:   "INVALID_FIELD_FOR_INSERT_UPDATE",
+			wantCode:   "INVALID_FIELD",
 			wantField:  "Nope__c",
 		},
 		{
@@ -1224,7 +1224,7 @@ func TestSObjectCRUDValidationErrorsUseDMLStatusCodes(t *testing.T) {
 			body:       `{"Nope__c":"bad"}`,
 			before:     func(org *storage.OrgState) { addAccountForTest(org, "001000000000001", "Acme") },
 			wantStatus: http.StatusBadRequest,
-			wantCode:   "INVALID_FIELD_FOR_INSERT_UPDATE",
+			wantCode:   "INVALID_FIELD",
 			wantField:  "Nope__c",
 		},
 		{

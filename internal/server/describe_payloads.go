@@ -1287,7 +1287,8 @@ func compositeErrorRows(result dml.Result) []map[string]any {
 		if statusCode == "" {
 			statusCode = salesforceErrorCode(errDMLFailure)
 		}
-		return []map[string]any{{"statusCode": statusCode, "message": result.Error, "fields": result.Fields}}
+		statusCode, message, fields := restDMLFieldError(statusCode, result.Error, result.Fields)
+		return []map[string]any{{"statusCode": statusCode, "message": message, "fields": fields}}
 	}
 	errors := make([]map[string]any, 0, len(result.Errors))
 	for _, err := range result.Errors {
@@ -1295,7 +1296,8 @@ func compositeErrorRows(result dml.Result) []map[string]any {
 		if statusCode == "" {
 			statusCode = salesforceErrorCode(errDMLFailure)
 		}
-		errors = append(errors, map[string]any{"statusCode": statusCode, "message": err.Message, "fields": err.Fields})
+		statusCode, message, fields := restDMLFieldError(statusCode, err.Message, err.Fields)
+		errors = append(errors, map[string]any{"statusCode": statusCode, "message": message, "fields": fields})
 	}
 	return errors
 }

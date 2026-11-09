@@ -323,3 +323,61 @@ func TestRecordTypeNullRoutesNativeConformance(t *testing.T) {
 		})
 	}
 }
+
+// TestRESTUnknownFieldNativeConformance replays unknown_field.tsv at 67.0: the
+// 62.0 rows equal them, and the local REST window rejects v62.0 by design.
+func TestRESTUnknownFieldNativeConformance(t *testing.T) {
+	raw, err := os.ReadFile(filepath.Join(recordTypeNullRoutesFixture, "unknown_field.tsv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	lines := strings.Split(strings.TrimSpace(string(raw)), "\n")
+	if len(lines) != 11 || lines[0] != "api\tprobe\tobservation" {
+		t.Fatalf("incomplete rows: %d", len(lines))
+	}
+	byAPI := map[string]map[string]string{"62.0": {}, "67.0": {}}
+	for _, line := range lines[1:] {
+		cells := strings.SplitN(line, "\t", 3)
+		byAPI[cells[0]][cells[1]] = cells[2]
+	}
+	if !reflect.DeepEqual(byAPI["62.0"], byAPI["67.0"]) {
+		t.Fatal("the 62.0 and 67.0 rows differ; replay both")
+	}
+	for probe, observation := range byAPI["67.0"] {
+		t.Run(probe, func(t *testing.T) {
+			var want struct {
+				Status int             `json:"status"`
+				Body   json.RawMessage `json:"body"`
+			}
+			if err := json.Unmarshal([]byte(observation), &want); err != nil {
+				t.Fatal(err)
+			}
+			org := testOrg()
+			addAccountForTest(&org, "001000000000001", "Acme")
+			base, record := serverTestDataPath, "001000000000001"
+			field := `"Nope__c":"x"`
+			if probe == "rest.patch.recordTypeId" {
+				field = `"RecordTypeId":null`
+			}
+			var method, path, body string
+			switch probe {
+			case "rest.post.unknown":
+				method, path, body = http.MethodPost, base+"/sobjects/Account", `{"Name":"n",`+field+`}`
+			case "rest.patch.unknown", "rest.patch.recordTypeId":
+				method, path, body = http.MethodPatch, base+"/sobjects/Account/"+record, `{`+field+`}`
+			case "collections.post.unknown":
+				method, path, body = http.MethodPost, base+"/composite/sobjects", `{"allOrNone":false,"records":[{"attributes":{"type":"Account"},"Name":"n",`+field+`}]}`
+			case "collections.patch.unknown":
+				method, path, body = http.MethodPatch, base+"/composite/sobjects", `{"allOrNone":false,"records":[{"attributes":{"type":"Account"},"Id":"`+record+`",`+field+`}]}`
+			default:
+				t.Fatalf("unknown probe %s", probe)
+			}
+			status, got := recordTypeNullRequest(t, &org, method, path, body)
+			wantCode, wantMessage, wantFields := recordTypeNullFirstError(t, want.Body)
+			gotCode, gotMessage, gotFields := recordTypeNullFirstError(t, got)
+			if status != want.Status || gotCode != wantCode || gotMessage != wantMessage || gotFields != wantFields {
+				t.Errorf("native %d %s %q %q; Glade %d %s", want.Status, wantCode, wantMessage, wantFields, status, got)
+			}
+		})
+	}
+}

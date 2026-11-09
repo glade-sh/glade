@@ -17,3 +17,9 @@ Findings, the same at both versions:
  An object without record types rejects the field: REST INVALID_FIELD, UI API POST_BODY_PARSE_ERROR.
  The REST and UI rule matches the Apex rows in record_type_id_null_insert_default.
 Cleanup: org deleted (sf org delete scratch); ScratchOrgInfo Status recorded as Deleted.
+
+unknown_field.tsv: 2026-11-08 UTC, a second fresh one-day org from a campaign Dev Hub, {"edition":"Developer"}, nothing deployed.
+Same request method, at REST version 62.0 and 67.0, on Account: POST and PATCH of Nope__c, PATCH of RecordTypeId null, and
+composite/sobjects POST and PATCH of Nope__c with allOrNone false. Every row is INVALID_FIELD "No such column '<field>' on
+sobject of type Account" with no fields; REST answers 400 and collections 200 with success false.
+Cleanup: org deleted (sf org delete scratch); ScratchOrgInfo Status recorded as Deleted.
