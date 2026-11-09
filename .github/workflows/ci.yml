@@ -973,10 +973,20 @@ jobs:
         env:
           CGO_ENABLED: "1"
         run: |
+          # Every job in the run waits for these four binaries. Each package
+          # links into its own directory and manifest, so build them at once;
+          # the Go build cache serialises any shared compile between them.
+          pids=()
           for package in apextest sema lwc/compile visualforce; do
             slug="${package//\//-}"
-            python3 scripts/ci-test-binary.py build "/tmp/glade-test-binaries/$slug" test "./internal/$package"
+            python3 scripts/ci-test-binary.py build "/tmp/glade-test-binaries/$slug" test "./internal/$package" &
+            pids+=("$!")
           done
+          status=0
+          for pid in "${pids[@]}"; do
+            wait "$pid" || status=1
+          done
+          exit "$status"
       - name: Save Go module cache
         if: success() && github.event_name != 'pull_request'
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
