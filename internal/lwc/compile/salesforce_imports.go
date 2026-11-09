@@ -20,6 +20,8 @@ type salesforceSchemaObject struct {
 }
 
 type salesforceImportConfig struct {
+	OwnNamespace      string                            `json:"ownNamespace,omitempty"`
+	OwnSchemaObjects  map[string]bool                   `json:"ownSchemaObjects,omitempty"`
 	Schema            map[string]salesforceSchemaObject `json:"schema"`
 	Labels            map[string]bool                   `json:"labels"`
 	Resources         map[string]bool                   `json:"resources"`
@@ -54,7 +56,8 @@ func loadSalesforceImports(p project.Project, references []string) (*salesforceI
 		return nil, err
 	}
 	cfg := &salesforceImportConfig{
-		Schema: map[string]salesforceSchemaObject{}, Labels: map[string]bool{},
+		OwnNamespace: p.Namespace,
+		Schema:       map[string]salesforceSchemaObject{}, Labels: map[string]bool{},
 		Resources: map[string]bool{}, Assets: map[string]bool{}, CustomPermissions: map[string]bool{},
 	}
 	// Only declared label sections participate in compiler reference lookup.
@@ -116,6 +119,7 @@ func loadSalesforceImports(p project.Project, references []string) (*salesforceI
 	for name, object := range sobject.BuildDescribeRegistry(projectSchema).Objects {
 		cfg.Schema[name] = schemaEntry(sobject.ToObjectDefinition(object))
 	}
+	cfg.OwnSchemaObjects = addOwnObjectImportAliases(cfg.Schema, p.Namespace)
 	loadObject := func(name string) {
 		if _, loaded := cfg.Schema[name]; loaded {
 			return
@@ -159,6 +163,42 @@ func loadSalesforceImports(p project.Project, references []string) (*salesforceI
 
 // project.Load has already resolved package directories, dependency projects
 // and namespace remaps. Consume that graph without scanning for more sources.
+// addOwnObjectImportAliases supplies the unqualified names used in the
+// owning namespace for source objects and their own custom fields. A separately
+// declared unqualified object keeps priority. Other namespaces are unchanged.
+func addOwnObjectImportAliases(objects map[string]salesforceSchemaObject, namespace string) map[string]bool {
+	own := make(map[string]bool)
+	if namespace == "" {
+		return own
+	}
+	prefix := namespace + "__"
+	for name, object := range objects {
+		if !strings.HasPrefix(name, prefix) || !strings.Contains(name[len(prefix):], "__") {
+			continue
+		}
+		own[name] = true
+		short := name[len(prefix):]
+		if _, exists := objects[short]; exists {
+			continue
+		}
+		fields := make(map[string]bool, len(object.Fields))
+		for field, present := range object.Fields {
+			fields[field] = present
+		}
+		for field, present := range object.Fields {
+			if strings.HasPrefix(field, prefix) && strings.Contains(field[len(prefix):], "__") {
+				shortField := field[len(prefix):]
+				if _, exists := fields[shortField]; !exists {
+					fields[shortField] = present
+				}
+			}
+		}
+		objects[short] = salesforceSchemaObject{Fields: fields, Relationships: object.Relationships}
+		own[short] = true
+	}
+	return own
+}
+
 func loadSalesforceProjectMetadata(p project.Project, cfg *salesforceImportConfig) (schema.Schema, error) {
 	var combined schema.Schema
 	for _, dep := range p.ManagedPackageDependencies {
