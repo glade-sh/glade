@@ -1512,6 +1512,7 @@ func newSemaBodyExpressionScan(body string) *semaBodyExpressionScan {
 
 func findSemaLocalDeclMatches(body string) [][]int {
 	var matches [][]int
+	ignored := newSemaIgnoredText(body)
 	for searchStart := 0; searchStart <= len(body); {
 		relative := localDeclPattern.FindStringSubmatchIndex(body[searchStart:])
 		if relative == nil {
@@ -1524,6 +1525,16 @@ func findSemaLocalDeclMatches(body string) [][]int {
 			} else {
 				match[i] = -1
 			}
+		}
+		if semaLocalDeclMatchInIgnoredText(ignored, match) {
+			// Do not let a declaration-shaped comment or literal consume a
+			// later real statement when seeking its initializer boundary.
+			next := match[1]
+			if next <= searchStart {
+				next = searchStart + 1
+			}
+			searchStart = next
+			continue
 		}
 		matches = append(matches, match)
 		next := match[1]
