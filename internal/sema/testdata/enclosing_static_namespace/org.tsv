@@ -1,0 +1,11 @@
+case	api	route	outcome
+qualified_valid	62.0	metadata-deploy	accepted
+qualified_valid	67.0	metadata-deploy	accepted
+qualified_collision	62.0	metadata-deploy	Method does not exist or incorrect signature: void ping() from the type gladetest1.NqTarget416fa7bb
+qualified_collision	67.0	metadata-deploy	Method does not exist or incorrect signature: void ping() from the type gladetest1.NqTarget416fa7bb
+qualified_missing	62.0	metadata-deploy	Method does not exist or incorrect signature: void absent() from the type gladetest1.NqTarget416fa7bb
+qualified_missing	67.0	metadata-deploy	Method does not exist or incorrect signature: void absent() from the type gladetest1.NqTarget416fa7bb
+nested_valid	62.0	metadata-deploy	accepted
+nested_valid	67.0	metadata-deploy	accepted
+nested_instance	62.0	metadata-deploy	Method does not exist or incorrect signature: void onlyInstance() from the type gladetest1.NqOuter416fa7bb.Adapter
+nested_instance	67.0	metadata-deploy	Method does not exist or incorrect signature: void onlyInstance() from the type gladetest1.NqOuter416fa7bb.Adapter
