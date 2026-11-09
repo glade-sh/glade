@@ -1125,7 +1125,7 @@ func (vm *VM) callGetter(owner string, field Field, receiver Value) (Value, erro
 	if err != nil {
 		var fault *RuntimeError
 		if receiver.Kind == ValueNull && field.Static && vm.activeGetters[key] > 1 &&
-			errors.As(err, &fault) && fault.Type == "RuntimeError" && len(fault.Stack) >= maxApexCallDepth {
+			errors.As(err, &fault) && fault.callStackLimit {
 			return Null, &RuntimeError{Type: "System.LimitException", Message: "Maximum stack depth reached: 1001", Stack: fault.Stack}
 		}
 		return value, err
