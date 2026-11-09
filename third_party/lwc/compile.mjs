@@ -941,6 +941,15 @@ function walkBundleFiles(dir, visit) {
   }
 }
 
+// The schema registry contains aliases that are valid for the consuming
+// project's source namespace. Other source roots retain the pre-alias registry.
+function schemaImportsForBundle(imports, consumerOwned) {
+  if (consumerOwned !== false || !imports?.ownNamespace) return imports;
+  const schema = { ...imports.schema };
+  for (const name of imports.ownSchemaAliases || []) delete schema[name];
+  return { ...imports, schema, ownNamespace: "", ownSchemaObjects: {} };
+}
+
 async function main() {
   const config = await readStdin();
   const projectRoot = path.resolve(config.projectRoot || ".");
@@ -1011,7 +1020,8 @@ async function main() {
       if (!Number.isInteger(apiVersion)) {
         throw new Error(`missing component API version for bundle ${bundleKey}`);
       }
-      const entry = compileBundle(bundleDir, bundleName, namespace, bundleOut, apiVersion, config.lwcModuleAvailability || {}, config.lwcConfiguredProperties?.[bundleKey] || [], config.salesforceImports, config.lwcCapabilities?.[bundleKey] || [], config.lightningModules, localModules);
+      const imports = schemaImportsForBundle(config.salesforceImports, config.lwcConsumerOwned?.[bundleKey]);
+      const entry = compileBundle(bundleDir, bundleName, namespace, bundleOut, apiVersion, config.lwcModuleAvailability || {}, config.lwcConfiguredProperties?.[bundleKey] || [], imports, config.lwcCapabilities?.[bundleKey] || [], config.lightningModules, localModules);
       // Native c_metadata_* checks capability declarations after template
       // compilation; invalid dynamic usage keeps its actual compiler error.
       const capabilityError = config.lwcCapabilityErrors?.[bundleKey];

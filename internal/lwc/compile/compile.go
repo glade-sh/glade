@@ -67,6 +67,7 @@ type compileConfig struct {
 	LWCHTMLFiles                 []string                     `json:"lwcHtmlFiles"`
 	LWCMetaFiles                 []string                     `json:"lwcMetaFiles"`
 	LWCAPIVersions               map[string]int               `json:"lwcApiVersions"`
+	LWCConsumerOwned             map[string]bool              `json:"lwcConsumerOwned"`
 	LWCModuleAvailability        map[string]apexversion.Range `json:"lwcModuleAvailability"`
 	LWCConfiguredProperties      map[string][]string          `json:"lwcConfiguredProperties"`
 	LWCCapabilities              map[string][]string          `json:"lwcCapabilities"`
@@ -197,7 +198,7 @@ func CompileBatch(p project.Project, opts Options) (map[string]BundleResult, err
 		namespace = "c"
 	}
 	cfg := compileConfig{CompleteLocalModuleInventory: opts.CompleteLocalModuleInventory, Batch: true, ProjectRoot: projectRoot, OutDir: outDir, Namespace: namespace,
-		BundleOutDirs: map[string]string{}, LWCAPIVersions: map[string]int{},
+		BundleOutDirs: map[string]string{}, LWCAPIVersions: map[string]int{}, LWCConsumerOwned: map[string]bool{},
 		LWCCapabilities: map[string][]string{}, LWCCapabilityErrors: map[string]string{},
 		LWCConfiguredProperties: map[string][]string{}, LWCModuleAvailability: generatedLWCModuleAvailability, LightningModules: opts.LightningModules}
 	results := map[string]BundleResult{}
@@ -260,6 +261,7 @@ func CompileBatch(p project.Project, opts Options) (map[string]BundleResult, err
 			cfg.LWCFiles = append(cfg.LWCFiles, bundleConfig.LWCFiles...)
 			cfg.LWCHTMLFiles = append(cfg.LWCHTMLFiles, bundleConfig.LWCHTMLFiles...)
 			cfg.LWCAPIVersions[key] = bundleConfig.LWCAPIVersions[key]
+			cfg.LWCConsumerOwned[key] = bundleConfig.LWCConsumerOwned[key]
 			cfg.LWCConfiguredProperties[key] = bundleConfig.LWCConfiguredProperties[key]
 			cfg.LWCCapabilities[key] = bundleConfig.LWCCapabilities[key]
 			cfg.LWCCapabilityErrors[key] = bundleConfig.LWCCapabilityErrors[key]
@@ -348,6 +350,7 @@ func lwcCompilerCommand(roots compileRoots) *exec.Cmd {
 
 func buildCompileConfig(p project.Project, projectRoot, outDir, namespace string) (compileConfig, error) {
 	versions := make(map[string]int, len(p.LWCMetaFiles))
+	consumerOwned := make(map[string]bool, len(p.LWCMetaFiles))
 	properties := make(map[string][]string, len(p.LWCMetaFiles))
 	capabilities := make(map[string][]string, len(p.LWCMetaFiles))
 	capabilityErrors := make(map[string]string, len(p.LWCMetaFiles))
@@ -359,6 +362,7 @@ func buildCompileConfig(p project.Project, projectRoot, outDir, namespace string
 			return compileConfig{}, fmt.Errorf("LWC metadata escapes project root: %s", metaPath)
 		}
 		key := filepath.ToSlash(relative)
+		consumerOwned[key] = p.SourceNamespaceForFile(metaPath, p.Namespace) == p.Namespace
 		if _, exists := versions[key]; exists {
 			return compileConfig{}, fmt.Errorf("multiple LWC metadata files for bundle %s", key)
 		}
@@ -416,6 +420,7 @@ func buildCompileConfig(p project.Project, projectRoot, outDir, namespace string
 		LWCHTMLFiles:            relativize(projectRoot, p.LWCHTMLFiles),
 		LWCMetaFiles:            relativize(projectRoot, p.LWCMetaFiles),
 		LWCAPIVersions:          versions,
+		LWCConsumerOwned:        consumerOwned,
 		LWCModuleAvailability:   generatedLWCModuleAvailability,
 		LWCConfiguredProperties: properties,
 		LWCCapabilities:         capabilities,

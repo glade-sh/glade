@@ -22,6 +22,7 @@ type salesforceSchemaObject struct {
 type salesforceImportConfig struct {
 	OwnNamespace      string                            `json:"ownNamespace,omitempty"`
 	OwnSchemaObjects  map[string]bool                   `json:"ownSchemaObjects,omitempty"`
+	OwnSchemaAliases  []string                          `json:"ownSchemaAliases,omitempty"`
 	Schema            map[string]salesforceSchemaObject `json:"schema"`
 	Labels            map[string]bool                   `json:"labels"`
 	Resources         map[string]bool                   `json:"resources"`
@@ -138,7 +139,7 @@ func loadSalesforceImports(p project.Project, references []string) (*salesforceI
 	for name, object := range describeRegistry.Objects {
 		cfg.Schema[name] = schemaEntry(sobject.ToObjectDefinition(object))
 	}
-	cfg.OwnSchemaObjects = addOwnObjectImportAliases(cfg.Schema, p.Namespace)
+	cfg.OwnSchemaObjects, cfg.OwnSchemaAliases = addOwnObjectImportAliases(cfg.Schema, p.Namespace)
 	loadObject := func(name string) {
 		if _, loaded := cfg.Schema[name]; loaded {
 			return
@@ -180,15 +181,14 @@ func loadSalesforceImports(p project.Project, references []string) (*salesforceI
 	return cfg, nil
 }
 
-// project.Load has already resolved package directories, dependency projects
-// and namespace remaps. Consume that graph without scanning for more sources.
 // addOwnObjectImportAliases supplies the unqualified names used in the
 // owning namespace for source objects and their own custom fields. A separately
 // declared unqualified object keeps priority. Other namespaces are unchanged.
-func addOwnObjectImportAliases(objects map[string]salesforceSchemaObject, namespace string) map[string]bool {
+func addOwnObjectImportAliases(objects map[string]salesforceSchemaObject, namespace string) (map[string]bool, []string) {
 	own := make(map[string]bool)
+	var aliases []string
 	if namespace == "" {
-		return own
+		return own, aliases
 	}
 	prefix := namespace + "__"
 	for name, object := range objects {
@@ -214,10 +214,13 @@ func addOwnObjectImportAliases(objects map[string]salesforceSchemaObject, namesp
 		}
 		objects[short] = salesforceSchemaObject{Fields: fields, Relationships: object.Relationships}
 		own[short] = true
+		aliases = append(aliases, short)
 	}
-	return own
+	return own, aliases
 }
 
+// project.Load has already resolved package directories, dependency projects
+// and namespace remaps. Consume that graph without scanning for more sources.
 func loadSalesforceProjectMetadata(p project.Project, cfg *salesforceImportConfig) (schema.Schema, error) {
 	var combined schema.Schema
 	for _, dep := range p.ManagedPackageDependencies {
