@@ -282,7 +282,7 @@ func whatIDFreshSorted(list []string) []string {
 // whatIDFreshRows reads the target lists as org|api|route|probe -> list.
 func whatIDFreshRows(t *testing.T) map[string][]string {
 	t.Helper()
-	body, err := os.ReadFile(filepath.Join("testdata", "conformance", "whatid_targets_fresh", "org.tsv"))
+	body, err := os.ReadFile(filepath.Join("testdata", "native-capture", "whatid_targets_fresh", "org.tsv"))
 	if err != nil {
 		t.Fatal(err)
 	}
