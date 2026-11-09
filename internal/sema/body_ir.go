@@ -5738,7 +5738,24 @@ func (a *Analyzer) collectBodyScopesWithLocalDeclMatches(typ typesys.TypeSymbol,
 		declScans = append(declScans, semaLocalDeclScan{match: match, additional: true})
 	}
 	sort.SliceStable(declScans, func(i, j int) bool { return declScans[i].match[2] < declScans[j].match[2] })
+	// Line-oriented fallback patterns can match comparison expressions that
+	// continue on another line. Exclude matches within an already recognized
+	// declaration's initializer while keeping all matches at its type start.
+	type initializerRange struct{ start, end int }
+	var initializers []initializerRange
+	for _, match := range localDeclMatches {
+		if last := match[1] - 1; last >= match[0] && body[last] == '=' {
+			initializers = append(initializers, initializerRange{start: match[2], end: semaStatementEnd(body, match[1])})
+		}
+	}
+	initializer := 0
 	for _, scan := range declScans {
+		for initializer < len(initializers) && scan.match[2] >= initializers[initializer].end {
+			initializer++
+		}
+		if initializer < len(initializers) && scan.match[2] > initializers[initializer].start && scan.match[2] < initializers[initializer].end {
+			continue
+		}
 		// A line beginning after an initializer's equals sign is still part of
 		// the expression, even when its tokens resemble a generic type.
 		previous := scan.match[2] - 1
