@@ -134,3 +134,64 @@ func TestCapturedInheritedEnclosingStaticTestRunner(t *testing.T) {
 		t.Fatalf("incomplete native API matrix: %v", seen)
 	}
 }
+
+func TestCapturedLocalFormsTestRunner(t *testing.T) {
+	const fixture = "testdata/conformance/pr163_apex_basics"
+	file, err := os.Open(filepath.Join(fixture, "org.tsv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+	reader := csv.NewReader(file)
+	reader.Comma = '\t'
+	rows, err := reader.ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	seen := map[string]bool{}
+	for _, row := range rows[1:] {
+		if len(row) != 4 || (row[1] != "modifierCase" && row[1] != "comparisonInitializer") {
+			continue
+		}
+		if row[2] != "IsTest" || row[3] != "Pass" {
+			t.Fatalf("invalid native row: %v", row)
+		}
+		api, method := row[0], row[1]
+		key := api + "/" + method
+		if seen[key] {
+			t.Fatalf("duplicate native row %s", key)
+		}
+		seen[key] = true
+		t.Run(key, func(t *testing.T) {
+			root := t.TempDir()
+			writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"sourceApiVersion":"`+api+`","packageDirectories":[{"path":"force-app","default":true}]}`)
+			className := "Pr163ApexCapture" + strings.TrimSuffix(api, ".0")
+			for _, ext := range []string{".cls", ".cls-meta.xml"} {
+				body, err := os.ReadFile(filepath.Join(fixture, "project/classes", className+ext))
+				if err != nil {
+					t.Fatal(err)
+				}
+				writeFile(t, filepath.Join(root, "force-app/main/default/classes", className+ext), string(body))
+			}
+			index := loadTestIndex(t, root)
+			opts := Options{SelectedClasses: []string{className}, SelectedMethod: method, NoDiskCache: true, Parallelism: 1, PerfCounters: true}
+			for n := 0; n < 2; n++ {
+				if n == 1 {
+					ResetPerfCounters()
+				}
+				run := Run(index, opts)
+				if len(run.Suites) != 1 || len(run.Suites[0].Cases) != 1 || run.Suites[0].Cases[0].Problem != nil {
+					t.Fatalf("native test route: %+v", run.Summary())
+				}
+				if n == 1 {
+					if phases := SnapshotPerfCounters().Phases; phases.MemoryCacheHits != 1 || phases.CacheMisses != 0 {
+						t.Fatalf("warm route did not reuse runtime: %+v", phases)
+					}
+				}
+			}
+		})
+	}
+	if len(seen) != 4 {
+		t.Fatalf("incomplete native API matrix: %v", seen)
+	}
+}
