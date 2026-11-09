@@ -25,7 +25,12 @@ import (
 //     annotations name nothing. Inside SOQL and SOSL only bind expressions are
 //     Apex, at any depth (GATE2-11A, 11B).
 func compileGateReferences(path, source string, units compileGateUnits) []string {
-	file := apexast.ParseSourceAST(path, source)
+	return compileGateReferencesInAST(apexast.ParseSourceAST(path, source), source, units)
+}
+
+// compileGateReferencesInAST is compileGateReferences over an already parsed
+// source, for callers that walk the same tree more than once.
+func compileGateReferencesInAST(file apexast.ASTFile, source string, units compileGateUnits) []string {
 	walker := compileGateRefWalker{source: source, units: units, seen: make(map[string]bool)}
 	for _, node := range file.Nodes {
 		walker.walk(node)
