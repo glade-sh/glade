@@ -321,3 +321,46 @@ func sourceFactsIdentifierStart(value byte) bool {
 func sourceFactsIdentifierByte(value byte) bool {
 	return sourceFactsIdentifierStart(value) || value >= '0' && value <= '9'
 }
+
+// nestedBlocks returns the code brace blocks that open at brace depth zero
+// inside [start, end), as [open, close] offset pairs in source order. The depth
+// follows openBraces: a close brace with nothing open is ignored, and a block
+// still open at end closes at end.
+func (f *sourceFacts) nestedBlocks(start, end int) [][2]int {
+	if f == nil || end <= start {
+		return nil
+	}
+	if start < 0 {
+		start = 0
+	}
+	if end > f.length {
+		end = f.length
+	}
+	first := sort.Search(len(f.braces), func(i int) bool {
+		return f.braces[i].offset >= start
+	})
+	var blocks [][2]int
+	depth := 0
+	open := -1
+	for i := first; i < len(f.braces) && f.braces[i].offset < end; i++ {
+		brace := f.braces[i]
+		if brace.open {
+			if depth == 0 {
+				open = brace.offset
+			}
+			depth++
+			continue
+		}
+		if depth == 0 {
+			continue
+		}
+		depth--
+		if depth == 0 {
+			blocks = append(blocks, [2]int{open, brace.offset})
+		}
+	}
+	if depth > 0 {
+		blocks = append(blocks, [2]int{open, end})
+	}
+	return blocks
+}
