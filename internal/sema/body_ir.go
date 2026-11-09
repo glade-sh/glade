@@ -5742,8 +5742,19 @@ func (a *Analyzer) collectBodyScopesWithLocalDeclMatches(typ typesys.TypeSymbol,
 		// A line beginning after an initializer's equals sign is still part of
 		// the expression, even when its tokens resemble a generic type.
 		previous := scan.match[2] - 1
-		for previous >= 0 && (isWhitespace(body[previous]) || ignored.contains(previous)) {
-			previous--
+		for previous >= 0 {
+			if isWhitespace(body[previous]) || ignored.contains(previous) {
+				previous--
+				continue
+			}
+			// Ignored spans exclude the first slash and, for a block comment,
+			// the final slash. Skip those delimiters as trivia too.
+			if body[previous] == '/' && ((previous+1 < len(body) && (body[previous+1] == '/' || body[previous+1] == '*') && ignored.contains(previous+1)) ||
+				(previous > 0 && body[previous-1] == '*' && ignored.contains(previous-1))) {
+				previous--
+				continue
+			}
+			break
 		}
 		if previous >= 0 && body[previous] == '=' {
 			continue

@@ -1517,25 +1517,6 @@ func findSemaLocalDeclMatches(body string) [][]int {
 		if relative == nil {
 			break
 		}
-		// A resumed search must not treat an initializer as a new line start.
-		if relative[0] == 0 && searchStart > 0 {
-			prev := searchStart - 1
-			for prev >= 0 && isWhitespace(body[prev]) && body[prev] != '\n' {
-				prev--
-			}
-			if prev >= 0 && body[prev] == '=' {
-				next := strings.IndexAny(body[searchStart:], ";{}")
-				if next < 0 {
-					break
-				}
-				if next == 0 {
-					searchStart++
-				} else {
-					searchStart += next
-				}
-				continue
-			}
-		}
 		match := make([]int, len(relative))
 		for i, index := range relative {
 			if index >= 0 {
@@ -1546,6 +1527,11 @@ func findSemaLocalDeclMatches(body string) [][]int {
 		}
 		matches = append(matches, match)
 		next := match[1]
+		if last := match[1] - 1; last >= match[0] && body[last] == '=' {
+			// Initializers may span lines, comments, quoted text and nested
+			// expressions. Resume only at the statement boundary.
+			next = semaStatementEnd(body, match[1])
+		}
 		if last := match[1] - 1; last >= match[0] && (body[last] == ';' || body[last] == '\n') {
 			next = last
 		}
