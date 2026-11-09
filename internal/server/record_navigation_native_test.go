@@ -87,6 +87,10 @@ func TestRecordNavigationNativeObjectResolution(t *testing.T) {
 				if response.Code != http.StatusFound || response.Header().Get("Location") != expectedRedirect {
 					t.Fatalf("HTTP navigation = %d %q, want redirect %q", response.Code, response.Header().Get("Location"), expectedRedirect)
 				}
+				contextShell, contextDiagnostics, contextErr := handler.resolveLWCShellRoute(req.URL.String())
+				if contextErr != nil || contextShell.Context.ObjectAPIName != want {
+					t.Fatalf("context route object %q, error %v; diagnostics %#v", contextShell.Context.ObjectAPIName, contextErr, contextDiagnostics)
+				}
 			}
 		})
 	}
