@@ -94,35 +94,76 @@ func duplicateFieldsEqual(left, right storage.Record, field string) bool {
 	return strings.EqualFold(strings.TrimSpace(workflowValueString(l)), strings.TrimSpace(workflowValueString(r)))
 }
 
-// standardDuplicateMatchFolded applies only the discriminators the native rows
+// duplicateFieldText returns the trimmed comparison text of a discriminator,
+// or false when the field is blank for duplicate matching.
+func duplicateFieldText(record storage.Record, field string) (string, bool) {
+	value, ok := record.GetField(field)
+	if duplicateBlank(value, ok) {
+		return "", false
+	}
+	return strings.TrimSpace(workflowValueString(value)), true
+}
+
+var accountStandardDuplicateFields = [...]string{"Name", "BillingStreet", "BillingCity", "BillingPostalCode"}
+
+// standardDuplicateMatcher applies only the discriminators the native rows
 // pin (ST02-ST05, ST07, ST08, ST11, DR12); builtin fuzzy scoring is not modeled.
-// The object name is already folded to lower case, so a scan over every
-// existing record folds it once.
-func standardDuplicateMatchFolded(lowerObject string, candidate, existing storage.Record) bool {
+// The object name is already folded to lower case. The candidate's
+// discriminators are read once for the whole scan: every comparison is
+// duplicateFieldsEqual, which is false whenever the candidate side is blank,
+// so a candidate missing a required discriminator matches no existing record
+// and the matcher is nil.
+func standardDuplicateMatcher(lowerObject string, candidate storage.Record) func(existing storage.Record) bool {
 	switch lowerObject {
 	case "account":
-		for _, field := range []string{"Name", "BillingStreet", "BillingCity", "BillingPostalCode"} {
-			if !duplicateFieldsEqual(candidate, existing, field) {
-				return false
+		var keys [len(accountStandardDuplicateFields)]string
+		for i, field := range accountStandardDuplicateFields {
+			text, ok := duplicateFieldText(candidate, field)
+			if !ok {
+				return nil
 			}
+			keys[i] = text
 		}
-		return true
-	case "contact", "lead":
-		if !duplicateFieldsEqual(candidate, existing, "LastName") {
-			return false
-		}
-		first, firstOK := candidate.GetField("FirstName")
-		other, otherOK := existing.GetField("FirstName")
-		bothFirst := !duplicateBlank(first, firstOK) && !duplicateBlank(other, otherOK)
-		if bothFirst && !duplicateFieldsEqual(candidate, existing, "FirstName") {
-			return false
-		}
-		if duplicateFieldsEqual(candidate, existing, "Email") {
+		return func(existing storage.Record) bool {
+			for i, field := range accountStandardDuplicateFields {
+				text, ok := duplicateFieldText(existing, field)
+				if !ok || !strings.EqualFold(keys[i], text) {
+					return false
+				}
+			}
 			return true
 		}
-		return bothFirst && duplicateFieldsEqual(candidate, existing, "Phone")
+	case "contact", "lead":
+		last, ok := duplicateFieldText(candidate, "LastName")
+		if !ok {
+			return nil
+		}
+		first, firstOK := duplicateFieldText(candidate, "FirstName")
+		email, emailOK := duplicateFieldText(candidate, "Email")
+		phone, phoneOK := duplicateFieldText(candidate, "Phone")
+		return func(existing storage.Record) bool {
+			existingLast, ok := duplicateFieldText(existing, "LastName")
+			if !ok || !strings.EqualFold(last, existingLast) {
+				return false
+			}
+			existingFirst, existingFirstOK := duplicateFieldText(existing, "FirstName")
+			bothFirst := firstOK && existingFirstOK
+			if bothFirst && !strings.EqualFold(first, existingFirst) {
+				return false
+			}
+			if emailOK {
+				if existingEmail, ok := duplicateFieldText(existing, "Email"); ok && strings.EqualFold(email, existingEmail) {
+					return true
+				}
+			}
+			if !bothFirst || !phoneOK {
+				return false
+			}
+			existingPhone, ok := duplicateFieldText(existing, "Phone")
+			return ok && strings.EqualFold(phone, existingPhone)
+		}
 	}
-	return false
+	return nil
 }
 
 func exactDuplicateMatch(rule storage.MatchingRule, candidate, existing storage.Record) (bool, bool) {
@@ -172,18 +213,23 @@ func FindDuplicateMatches(org *storage.OrgState, rule storage.DuplicateRule, rec
 			return result, false
 		}
 		match := DuplicateMatch{Object: objectName, Rule: matching.Name, Engine: exactMatchEngine}
-		lowerObject := ""
+		var standardMatch func(existing storage.Record) bool
+		scan := true
 		if standard {
 			match.Engine = storage.StandardMatchEngine
-			lowerObject = strings.ToLower(objectName)
+			standardMatch = standardDuplicateMatcher(strings.ToLower(objectName), record)
+			scan = standardMatch != nil
 		}
 		for _, existing := range org.Objects[objectName].Records {
+			if !scan {
+				break
+			}
 			if existing.System.IsDeleted || (record.ID != "" && storage.IDsEqual(existing.ID, record.ID)) || (exclude != nil && exclude(existing.ID)) {
 				continue
 			}
 			var matched bool
 			if standard {
-				matched = standardDuplicateMatchFolded(lowerObject, record, existing)
+				matched = standardMatch(existing)
 			} else {
 				var supported bool
 				if matched, supported = exactDuplicateMatch(matching, record, existing); !supported {
