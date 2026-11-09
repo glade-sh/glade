@@ -296,10 +296,17 @@ func fieldSetMapCanonicalKeySet(value Value) (Value, bool) {
 	for _, rawKey := range orderedValueMapKeys(value) {
 		item := value.Map[rawKey]
 		name, ok := fieldSetMapCanonicalName(item)
-		if !ok || seen[strings.ToLower(name)] {
+		if !ok {
 			continue
 		}
-		seen[strings.ToLower(name)] = true
+		if namespace, ok := item.Fields["namespace"]; ok && namespace.Kind == ValueString && strings.TrimSpace(namespace.Text) != "" {
+			name = namespace.Text + "__" + name
+		}
+		name = strings.ToLower(name)
+		if seen[name] {
+			continue
+		}
+		seen[name] = true
 		out.Set = append(out.Set, String(name))
 	}
 	return out, true
