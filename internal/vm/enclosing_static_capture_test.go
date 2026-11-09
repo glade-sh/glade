@@ -23,3 +23,25 @@ func TestCapturedEnclosingStaticDispatch(t *testing.T) {
 		t.Fatal("missing method resolved")
 	}
 }
+
+func TestCapturedInheritedEnclosingStaticDispatch(t *testing.T) {
+	machine := New(nil)
+	for _, class := range []Class{{Name: "Parent"}, {Name: "Probe", SuperClass: "Parent"}, {Name: "Probe.Adapter"}} {
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	program, err := CompileAnonymous("return true;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterMethod(Method{Name: "Parent.ok", ClassName: "Parent", ReturnType: "Boolean", IsStatic: true, Program: program}); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok, ambiguous := machine.resolveStaticMethodForArgs("Probe.Adapter", "ok", nil); !ok || ambiguous {
+		t.Fatalf("captured inherited static call unresolved: ok=%t ambiguous=%t", ok, ambiguous)
+	}
+	if _, ok, _ := machine.resolveStaticMethodForArgs("Probe.Missing", "ok", nil); ok {
+		t.Fatal("unknown inner type resolved")
+	}
+}

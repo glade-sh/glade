@@ -33,3 +33,15 @@ func TestComparisonInitializerDoesNotCreateLocal(t *testing.T) {
 		t.Errorf("genuine generic declaration not found: %v", locals)
 	}
 }
+
+func TestCapturedMultilineComparisonInitializer(t *testing.T) {
+	for _, api := range []string{"62.0", "67.0"} {
+		t.Run(api, func(t *testing.T) {
+			result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{"Probe.cls": `public class Probe { public static Boolean run() { Integer a=1,b=2,c=3,d=2; Boolean x =
+  a < b && c > d; return x; } }`}, api)
+			if result.HasErrors() {
+				t.Fatalf("captured multiline initializer rejected: %#v", result.Diagnostics)
+			}
+		})
+	}
+}
