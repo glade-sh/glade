@@ -823,7 +823,13 @@ func semaTypeFieldBindings(source string, typeStart int, spans semaCodeSpans) []
 
 func semaDirectTypeFieldBindings(source string, rangeStart, rangeEnd int, spans semaCodeSpans) []semaScopedBinding {
 	var fields []semaScopedBinding
-	for _, match := range semaBindingDeclarationMatches(source[rangeStart+1 : rangeEnd]) {
+	// Only type-scope declarations survive the filter below, so the scan reads
+	// the type body with nested block interiors removed when that cannot
+	// change the matches (see semaTypeScopeDeclarationText).
+	body := source[rangeStart+1 : rangeEnd]
+	scanText, cuts := semaTypeScopeDeclarationText(body, spans.nestedBlocks(rangeStart+1, rangeEnd), rangeStart+1)
+	for _, match := range semaBindingDeclarationMatches(scanText) {
+		match = cuts.restore(match)
 		if !semaDeclarationAtTypeScope(source, rangeStart+1, rangeStart+1+match[4], spans) {
 			continue
 		}
@@ -2678,6 +2684,13 @@ func (s semaCodeSpans) matchingBrace(offset int) int {
 		return -1
 	}
 	return s.facts.matchingBrace(offset)
+}
+
+func (s semaCodeSpans) nestedBlocks(start, end int) [][2]int {
+	if s.facts == nil {
+		return nil
+	}
+	return s.facts.nestedBlocks(start, end)
 }
 
 func semaMatchingBracket(source string, start int) int {
