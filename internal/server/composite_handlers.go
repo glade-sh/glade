@@ -913,7 +913,7 @@ func (s *Server) handleCompositeSObjectInsert(w http.ResponseWriter, r *http.Req
 	next := s.Org.Clone()
 	engine := s.newDMLEngine(r, &next)
 	results := engine.Insert(body.Records)
-	s.writeCompositeMutationResults(w, next, body.AllOrNone, results, body.ReferenceIDs)
+	s.writeCompositeMutationResults(w, next, compositeMutationInsert, body.AllOrNone, results, body.ReferenceIDs)
 }
 
 func (s *Server) handleCompositeSObjectUpdate(w http.ResponseWriter, r *http.Request) {
@@ -924,7 +924,7 @@ func (s *Server) handleCompositeSObjectUpdate(w http.ResponseWriter, r *http.Req
 	next := s.Org.Clone()
 	engine := s.newDMLEngine(r, &next)
 	results := engine.Update(body.Records)
-	s.writeCompositeMutationResults(w, next, body.AllOrNone, results, body.ReferenceIDs)
+	s.writeCompositeMutationResults(w, next, compositeMutationUpdate, body.AllOrNone, results, body.ReferenceIDs)
 }
 
 func (s *Server) handleCompositeSObjectDelete(w http.ResponseWriter, r *http.Request) {
@@ -948,10 +948,18 @@ func (s *Server) handleCompositeSObjectDelete(w http.ResponseWriter, r *http.Req
 	next := s.Org.Clone()
 	engine := s.newDMLEngine(r, &next)
 	results := engine.Delete(records)
-	s.writeCompositeMutationResults(w, next, allOrNone, results, nil)
+	s.writeCompositeMutationResults(w, next, compositeMutationDelete, allOrNone, results, nil)
 }
 
-func (s *Server) writeCompositeMutationResults(w http.ResponseWriter, next storage.OrgState, allOrNone bool, results []dml.Result, referenceIDs []string) {
+type compositeMutation int
+
+const (
+	compositeMutationInsert compositeMutation = iota
+	compositeMutationUpdate
+	compositeMutationDelete
+)
+
+func (s *Server) writeCompositeMutationResults(w http.ResponseWriter, next storage.OrgState, mutation compositeMutation, allOrNone bool, results []dml.Result, referenceIDs []string) {
 	hasFailure := false
 	hasSuccess := false
 	for _, result := range results {
@@ -962,7 +970,20 @@ func (s *Server) writeCompositeMutationResults(w http.ResponseWriter, next stora
 		}
 	}
 	if allOrNone && hasFailure {
-		writeJSON(w, http.StatusBadRequest, compositeResults(compositeAllOrNoneRollbackResults(results), referenceIDs))
+		rows := compositeAllOrNoneRollbackResults(results)
+		// Insert and update answer 200 with the failed rows, and an insert's
+		// rolled-back row has no id (record_type_null_routes allornone.tsv). No
+		// row covers delete, which keeps its status.
+		status := http.StatusOK
+		switch mutation {
+		case compositeMutationInsert:
+			for i := range rows {
+				rows[i].ID = ""
+			}
+		case compositeMutationDelete:
+			status = http.StatusBadRequest
+		}
+		writeJSON(w, status, compositeResults(rows, referenceIDs))
 		return
 	}
 	if hasSuccess {

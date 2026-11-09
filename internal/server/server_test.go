@@ -5097,7 +5097,7 @@ func TestCompositeSObjectsAllOrNoneRollsBackSuccessfulRows(t *testing.T) {
     {"attributes":{"type":"Account","referenceId":"bad"}}
   ]
 }`)))
-	if composite.Code != http.StatusBadRequest {
+	if composite.Code != http.StatusOK {
 		t.Fatalf("composite status = %d body=%s", composite.Code, composite.Body.String())
 	}
 	if got := len(org.Objects["Account"].Records); got != 0 {
@@ -5173,7 +5173,7 @@ func TestCompositeSObjectsUpdateAllOrNoneRollsBack(t *testing.T) {
     {"attributes":{"type":"Missing__c","referenceId":"bad"},"Id":"001000000000999","Name":"Bad"}
   ]
 }`)))
-	if composite.Code != http.StatusBadRequest {
+	if composite.Code != http.StatusOK {
 		t.Fatalf("composite status = %d body=%s", composite.Code, composite.Body.String())
 	}
 	if got := org.Objects["Account"].Records["001000000000001"].Fields["Name"].String; got != "Before" {

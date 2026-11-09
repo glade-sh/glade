@@ -1253,10 +1253,10 @@ func compositeAllOrNoneRollbackResults(results []dml.Result) []dml.Result {
 		}
 		out[i].Success = false
 		out[i].StatusCode = "ALL_OR_NONE_OPERATION_ROLLED_BACK"
-		out[i].Error = "dml: operation rolled back because allOrNone request failed"
+		out[i].Error = "Record rolled back because not all records were valid and the request was using AllOrNone header"
 		out[i].Errors = []dml.Error{{
 			StatusCode: "ALL_OR_NONE_OPERATION_ROLLED_BACK",
-			Message:    "dml: operation rolled back because allOrNone request failed",
+			Message:    "Record rolled back because not all records were valid and the request was using AllOrNone header",
 			Fields:     []string{},
 		}}
 	}
@@ -1275,6 +1275,11 @@ func compositeResultRows(results []dml.Result, referenceIDs []string, includeCre
 		}
 		if !result.Success {
 			row["errors"] = compositeErrorRows(result)
+			// A failed insert row has no id (record_type_null_routes rows). No
+			// row covers upsert, which keeps its shape.
+			if result.ID == "" && !includeCreated {
+				delete(row, "id")
+			}
 		}
 		out = append(out, row)
 	}
