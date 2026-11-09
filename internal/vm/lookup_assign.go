@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -1099,17 +1100,14 @@ func (vm *VM) callGetter(owner string, field Field, receiver Value) (Value, erro
 		}
 	}
 	key := getterCallKey(owner, storageName, receiver)
-	// Owned observations execute finite instance Set and static Map getters
-	// again when a declaring-class helper reads them behind a recursion guard.
-	// Preserve backing-storage fallback for direct self-access and deeper
-	// recursion; only one helper-mediated reentry is observed.
-	allowHelperReentry := vm.activeGetters[key] == 1 &&
-		len(field.Getter.Program.Instructions) > 0 &&
+	// Helper-mediated static reads re-enter the getter; direct accessor reads
+	// continue to use backing storage. Instance Set behavior stays bounded.
+	allowHelperReentry := len(field.Getter.Program.Instructions) > 0 &&
 		strings.EqualFold(vm.currentMethod.ClassName, field.Getter.ClassName) &&
 		!propertyAccessorMethod(vm.currentMethod) &&
-		((receiver.projectClass && collectionBase(field.Type) == "Set" && field.Setter != nil &&
-			len(field.Setter.Program.Instructions) > 0) ||
-			(receiver.Kind == ValueNull && field.Static && isMapType(field.Type) && field.HasSetter))
+		((receiver.Kind == ValueNull && field.Static) ||
+			(vm.activeGetters[key] == 1 && receiver.projectClass && collectionBase(field.Type) == "Set" && field.Setter != nil &&
+				len(field.Setter.Program.Instructions) > 0))
 	if vm.activeGetters[key] > 0 && !allowHelperReentry {
 		if _, value, ok := objectFieldValue(receiver, storageName); ok {
 			return vm.currentGetterStoredValue(owner, field, value), nil
@@ -1125,6 +1123,11 @@ func (vm *VM) callGetter(owner string, field Field, receiver Value) (Value, erro
 	}()
 	value, err := vm.callMethodWithReceiver(*field.Getter, receiver, nil, resultForLookup())
 	if err != nil {
+		var fault *RuntimeError
+		if receiver.Kind == ValueNull && field.Static && vm.activeGetters[key] > 1 &&
+			errors.As(err, &fault) && fault.Type == "RuntimeError" && len(fault.Stack) >= maxApexCallDepth {
+			return Null, &RuntimeError{Type: "System.LimitException", Message: "Maximum stack depth reached: 1001", Stack: fault.Stack}
+		}
 		return value, err
 	}
 	fieldType := vm.resolveTypeNameInClass(owner, field.Type)
