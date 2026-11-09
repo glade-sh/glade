@@ -94,15 +94,10 @@ func duplicateFieldsEqual(left, right storage.Record, field string) bool {
 	return strings.EqualFold(strings.TrimSpace(workflowValueString(l)), strings.TrimSpace(workflowValueString(r)))
 }
 
-// standardDuplicateMatch applies only the discriminators the native rows pin
-// (ST02-ST05, ST07, ST08, ST11, DR12); builtin fuzzy scoring is not modeled.
-func standardDuplicateMatch(object string, candidate, existing storage.Record) bool {
-	return standardDuplicateMatchFolded(strings.ToLower(object), candidate, existing)
-}
-
-// standardDuplicateMatchFolded is standardDuplicateMatch for an object name
-// already folded to lower case, so a scan over every existing record folds the
-// name once.
+// standardDuplicateMatchFolded applies only the discriminators the native rows
+// pin (ST02-ST05, ST07, ST08, ST11, DR12); builtin fuzzy scoring is not modeled.
+// The object name is already folded to lower case, so a scan over every
+// existing record folds it once.
 func standardDuplicateMatchFolded(lowerObject string, candidate, existing storage.Record) bool {
 	switch lowerObject {
 	case "account":
