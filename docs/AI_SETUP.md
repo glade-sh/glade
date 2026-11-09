@@ -1,5 +1,9 @@
 # AI contributor setup
 
+The end-to-end process (stages, roles, review and release rules, templates) is
+in [WORKFLOW.md](WORKFLOW.md). This file covers client setup and the validation
+commands per surface.
+
 This guide is for developing Glade itself. To use an agent to develop Apex in
 a Salesforce DX project, use the [AI-assisted Apex guide](../site/docs-src/guide/ai-assisted-apex.md).
 

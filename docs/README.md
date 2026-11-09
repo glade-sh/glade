@@ -61,15 +61,16 @@ labels do not establish fresh release validation.
 
 ## If You Want To Contribute
 
-1. Runtime architecture: [ARCHITECTURE.md](ARCHITECTURE.md)
-2. Product boundary for AI and human contributors: [../AGENTS.md](../AGENTS.md)
-   and [AI_SETUP.md](AI_SETUP.md) for Codex setup and validation by surface.
-3. Clean-room rules: [CLEAN_ROOM.md](CLEAN_ROOM.md)
-4. Storage model and DB behavior: [storage-schema.md](storage-schema.md)
-5. Apex declaration parser: [APEX_PARSER.md](APEX_PARSER.md)
-6. Apex language compatibility:
+1. How a change moves from ticket to release: [WORKFLOW.md](WORKFLOW.md)
+2. Runtime architecture: [ARCHITECTURE.md](ARCHITECTURE.md)
+3. Product boundary for AI and human contributors: [../AGENTS.md](../AGENTS.md)
+   and [AI_SETUP.md](AI_SETUP.md) for agent setup and validation by surface.
+4. Clean-room rules: [CLEAN_ROOM.md](CLEAN_ROOM.md)
+5. Storage model and DB behavior: [storage-schema.md](storage-schema.md)
+6. Apex declaration parser: [APEX_PARSER.md](APEX_PARSER.md)
+7. Apex language compatibility:
    [APEX_LANGUAGE_COMPATIBILITY.md](APEX_LANGUAGE_COMPATIBILITY.md)
-7. CLI output contract: [CLI_OUTPUT_CONTRACT.md](CLI_OUTPUT_CONTRACT.md)
-8. Release policy: [RELEASE_POLICY.md](RELEASE_POLICY.md)
-9. Distribution workflow: [DISTRIBUTION_WORKFLOW.md](DISTRIBUTION_WORKFLOW.md)
-10. Playground container runbook: [PLAYGROUND_HOSTING.md](PLAYGROUND_HOSTING.md)
+8. CLI output contract: [CLI_OUTPUT_CONTRACT.md](CLI_OUTPUT_CONTRACT.md)
+9. Release policy: [RELEASE_POLICY.md](RELEASE_POLICY.md)
+10. Distribution workflow: [DISTRIBUTION_WORKFLOW.md](DISTRIBUTION_WORKFLOW.md)
+11. Playground container runbook: [PLAYGROUND_HOSTING.md](PLAYGROUND_HOSTING.md)

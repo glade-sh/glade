@@ -1,31 +1,47 @@
-## What changes for a user?
+## Ticket and change class
 
-Describe the problem, the smallest useful change, and the related issue when one exists.
+Write `n/a: <reason>` in any field that does not apply.
 
-## Scope and ownership
+Ticket: <id>. Change class (one): docs | tests | tooling | behavior | performance | generated.
+See [docs/WORKFLOW.md](../docs/WORKFLOW.md) section 4 for what each class needs.
 
-Name the affected files or interface. Identify overlap with other work and any generated output whose owning source must change. Do not replace unrelated local work.
+## What changes for a user
 
-## Evidence
+<one to three sentences, or "none" for an internal change>
 
-| Check | Exact command or review | Version or commit | Result |
-| --- | --- | --- | --- |
-| Focused validation | | | |
+## Evidence (behavior changes)
 
-Label evidence as source inspection, static check, local runtime, deterministic harness, or authorized Salesforce comparison. List skipped checks and why. Do not record a result as passed unless it ran against this change.
+```
+NATIVE <behavior> <path>/org.tsv:<line> <route> <api>
+```
 
-For a test-selection change, include selected and executed counts. For visible UI changes, include sanitized desktop and mobile screenshots plus the relevant loading, error, empty, focus, and recovery states.
+One line per behavior change. Fail-before: test commit `<sha>` fails on its own; fix commit `<sha>`.
+Route twins: <routes covered, or `n/a: <reason>`>.
 
-## Compatibility, privacy, and risk
+## Checks run
 
-Explain any changed local boundary, data access, network request, persisted state, command side effect, or public support claim. State whether the change can merge independently and how to revert it.
+| Check | Command | Result |
+| --- | --- | --- |
+| Focused tests | `CGO_ENABLED=1 go test ./internal/<pkg> -run '...'` | |
+| Package tests, once | `CGO_ENABLED=1 go test ./internal/<pkg>` | |
+| Repository guard | `CGO_ENABLED=1 go test ./internal/repoguard` | |
+| Format and vet | `gofmt -l .` and `go vet ./internal/<pkg>` | |
 
-## Review checklist
+List every check not run and why. Zero selected tests are not a pass. For a
+visible UI change, add sanitized desktop and mobile screenshots.
 
-- [ ] The change is focused and preserves unrelated work.
-- [ ] Commands and examples match the intended version; zero tests are not described as passing execution.
-- [ ] No credentials, private source, customer records, or unredacted logs are included.
-- [ ] Documentation and capability claims match the evidence; no unverified parity or completeness claim is introduced.
-- [ ] Dependencies, owner decisions, and unverified checks are listed above.
+## Risk and revert
 
-Security-sensitive details belong in the project's private reporting channel rather than this public pull request.
+<what could break; how to revert, normally by reverting the squash commit>
+
+## Checklist
+
+- [ ] No third-party project names, paths or source; no credentials, org ids, aliases or personal paths.
+- [ ] Generated files changed through their generator or input, and both committed.
+- [ ] Every edit or deletion of an existing test cites a native row.
+- [ ] ABI constant bumped when the change class requires it.
+- [ ] New package or new `t.Parallel` test: `scripts/ci-package-lanes.json` and the inventory tests updated.
+- [ ] User-visible change recorded in `docs/RELEASE_NOTES.md` under Unreleased.
+- [ ] The diff touches only the owned files; unrelated work is preserved.
+
+Security-sensitive details belong in the project's private reporting channel, not in this public pull request.
