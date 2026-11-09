@@ -868,15 +868,19 @@ func clearDependencyStandardSnapshotAuthority(objects []schema.Object) []schema.
 	out := objects
 	cloned := false
 	for i, object := range objects {
-		if !storage.IsKnownStandardObject(object.Name) || (!object.FieldsComplete && !object.CompleteSnapshot) {
+		standardAuthority := storage.IsKnownStandardObject(object.Name) && (object.FieldsComplete || object.CompleteSnapshot)
+		if !standardAuthority && !object.FieldSetsComplete {
 			continue
 		}
 		if !cloned {
 			out = append([]schema.Object(nil), objects...)
 			cloned = true
 		}
-		out[i].FieldsComplete = false
-		out[i].CompleteSnapshot = false
+		if standardAuthority {
+			out[i].FieldsComplete = false
+			out[i].CompleteSnapshot = false
+		}
+		out[i].FieldSetsComplete = false
 	}
 	return out
 }

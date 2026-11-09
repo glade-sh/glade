@@ -47,9 +47,13 @@ type Object struct {
 	EnableSearch           bool              `json:"enableSearch,omitempty"`
 	Triggerable            *bool             `json:"triggerable,omitempty"`
 	NameField              NameField         `json:"nameField,omitempty"`
-	Fields                 []Field           `json:"fields,omitempty"`
-	RecordTypes            []RecordType      `json:"recordTypes,omitempty"`
-	ValidationRules        []ValidationRule  `json:"validationRules,omitempty"`
+	// FieldSetsComplete is an explicit assertion about a captured inventory;
+	// ordinary source metadata and partial snapshots leave unknown names open.
+	FieldSetsComplete bool             `json:"fieldSetsComplete,omitempty"`
+	FieldSetNames     []string         `json:"fieldSetNames,omitempty"`
+	Fields            []Field          `json:"fields,omitempty"`
+	RecordTypes       []RecordType     `json:"recordTypes,omitempty"`
+	ValidationRules   []ValidationRule `json:"validationRules,omitempty"`
 
 	ExternalSharingModel string `json:"externalSharingModel,omitempty"`
 }
@@ -443,10 +447,17 @@ func LoadProject(p project.Project) (Schema, error) {
 		// The hash verifies integrity, not completeness. Only an explicit
 		// assertion on a non-partial snapshot establishes authority.
 		object.CompleteSnapshot = object.FieldsComplete && !object.Partial
+		object.FieldSetsComplete = object.FieldSetsComplete && !object.Partial
 		if existing := byName[object.Name]; existing != nil {
 			mergeObjectMetadataIndexed(existing, object, indexesFor(existing))
 			existing.FieldsComplete = existing.FieldsComplete || object.FieldsComplete
 			existing.CompleteSnapshot = existing.CompleteSnapshot || object.CompleteSnapshot
+			existing.FieldSetsComplete = existing.FieldSetsComplete || object.FieldSetsComplete
+			for _, name := range object.FieldSetNames {
+				if !stringSliceContainsFold(existing.FieldSetNames, name) {
+					existing.FieldSetNames = append(existing.FieldSetNames, name)
+				}
+			}
 		} else {
 			byName[object.Name] = &object
 		}
@@ -525,6 +536,24 @@ func LoadProject(p project.Project) (Schema, error) {
 		} else {
 			index.rules.observe(rule.Name, len(object.ValidationRules))
 			object.ValidationRules = append(object.ValidationRules, rule)
+		}
+	}
+
+	// Project field-set metadata augments a captured inventory; do not infer
+	// completeness merely because source files happen to be present.
+	for _, path := range p.FieldSetFiles {
+		dir := filepath.Dir(path)
+		if !strings.EqualFold(filepath.Base(dir), "fieldSets") {
+			continue
+		}
+		objectName := namespaceProjectObjectName(p.Namespace, remapProjectAPIName(p, filepath.Base(filepath.Dir(dir))))
+		object := byName[objectName]
+		if object == nil || !object.FieldSetsComplete {
+			continue
+		}
+		name := strings.TrimSuffix(filepath.Base(path), ".fieldSet-meta.xml")
+		if name != "" && !stringSliceContainsFold(object.FieldSetNames, name) {
+			object.FieldSetNames = append(object.FieldSetNames, name)
 		}
 	}
 

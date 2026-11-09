@@ -229,7 +229,12 @@ func semaQualifiedCallReceiverKnown(a *Analyzer, currentType, receiver string, s
 		_, scoped := scope.lookup(root)
 		objectParts := strings.Split(parts[1], "__")
 		external := a != nil && (a.hasExternalDependencyName(parts[1]) || len(objectParts) >= 3 && !strings.EqualFold(objectParts[0], a.namespace))
+		fieldSetNamespace, _, qualifiedFieldSet := strings.Cut(parts[3], "__")
+		externalFieldSet := a != nil && qualifiedFieldSet && !strings.EqualFold(fieldSetNamespace, a.namespace)
 		if a != nil && !scoped && !semaProjectTypeShadowsPlatform(model, root) && !external && !semaSObjectIdentityEstablished(a, parts[1], model) {
+			return false
+		}
+		if a != nil && !scoped && !semaProjectTypeShadowsPlatform(model, root) && !external && !externalFieldSet && semaAbsentCapturedFieldSet(a, parts[1], parts[3], model) {
 			return false
 		}
 	}
@@ -490,6 +495,30 @@ func semaKnownSObjectTypeTokenPath(receiver string, model *semaTypeMemberView) b
 	default:
 		return false
 	}
+}
+
+// Only an explicitly complete, non-partial inventory can prove a missing
+// field set. Source files alone and dependency inventories do not close it.
+func semaAbsentCapturedFieldSet(a *Analyzer, objectName, fieldSetName string, model *semaTypeMemberView) bool {
+	canonical := objectName
+	if members, ok := model.lookupName(objectName); ok && members.sobject {
+		canonical = members.name
+	}
+	for _, object := range a.queryDeclaredObjects {
+		if !strings.EqualFold(object.Name, objectName) && !strings.EqualFold(object.Name, canonical) {
+			continue
+		}
+		if object.Partial || !object.FieldSetsComplete {
+			return false
+		}
+		for _, known := range object.FieldSetNames {
+			if strings.EqualFold(known, fieldSetName) || a.namespace != "" && strings.EqualFold(storage.StripNamespaceToken(a.namespace, known), storage.StripNamespaceToken(a.namespace, fieldSetName)) {
+				return false
+			}
+		}
+		return true
+	}
+	return false
 }
 
 func semaKnownSObjectFieldSetPath(receiver string, model *semaTypeMemberView) bool {
