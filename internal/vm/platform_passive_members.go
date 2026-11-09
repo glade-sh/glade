@@ -3514,6 +3514,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			receiver.Fields["clientCertificatePasswordPresent"] = Bool(args[1].Text != "")
 			return Null, receiver, true, true, nil
 		case "setHeader":
+			if len(args) == 2 && args[0].Kind == ValueString {
+				if text, ok := typedIDValueText(args[1]); ok {
+					args = []Value{args[0], String(text)}
+				}
+			}
 			if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
 				return Null, receiver, false, true, fmt.Errorf("HttpRequest.setHeader expects name and value Strings")
 			}
