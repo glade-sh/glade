@@ -1118,7 +1118,7 @@ test("native icon, button icon and modal classes", async (t) => {
   const file = path.join(repoRoot, "internal/lwcbrowser/testdata/pr163_slds/org.tsv");
   const rows = fs.readFileSync(file, "utf8").trim().split("\n").slice(1).map(line => line.split("\t"))
     .filter(row => !["modal_default", "modal_medium", "modal_large"].includes(row[0]));
-  assert.equal(rows.length, 24);
+  assert.equal(rows.length, 32);
   const server = await startBaseComponentServer();
   const browser = await chromium.launch({ headless: true });
   try {
@@ -1136,6 +1136,10 @@ test("native icon, button icon and modal classes", async (t) => {
         ["icon_large_warning", Icon, "lightning-icon", { iconName: "utility:check", size: "large", variant: "warning", alternativeText: "Second icon" }],
         ["icon_invalid_defaults", Icon, "lightning-icon", { iconName: "utility:check", size: "invalid", variant: "invalid", alternativeText: "Invalid icon" }],
         ["icon_inverse", Icon, "lightning-icon", { iconName: "utility:check", size: "x-small", variant: "inverse", alternativeText: "Inverse icon" }],
+        ["icon_error", Icon, "lightning-icon", { iconName: "utility:check", variant: "error", alternativeText: "Error icon" }],
+        ["icon_light", Icon, "lightning-icon", { iconName: "utility:check", variant: "light", alternativeText: "Light icon" }],
+        ["icon_bare", Icon, "lightning-icon", { iconName: "utility:check", variant: "bare", alternativeText: "Bare icon" }],
+        ["icon_brand", Icon, "lightning-icon", { iconName: "utility:check", variant: "brand", alternativeText: "Brand icon" }],
         ["icon_tiny", Icon, "lightning-icon", { iconName: "utility:check", size: "xx-small", alternativeText: "Tiny icon" }],
         ["icon_account", Icon, "lightning-icon", { iconName: "standard:account", size: "medium", alternativeText: "Account icon" }],
         ["button_bare", ButtonIcon, "lightning-button-icon", { iconName: "utility:check", size: "large", variant: "bare", alternativeText: "Bare button" }],

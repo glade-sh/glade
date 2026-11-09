@@ -29,3 +29,11 @@ modal_large	59.0	browser	rendered	slds-modal fix-slds-modal slds-modal_large sld
 modal_default	67.0	browser	rendered	slds-modal fix-slds-modal slds-modal_medium slds-fade-in-open
 modal_medium	67.0	browser	rendered	slds-modal fix-slds-modal slds-modal_medium slds-fade-in-open
 modal_large	67.0	browser	rendered	slds-modal fix-slds-modal slds-modal_large slds-fade-in-open
+icon_error	59.0	browser	rendered	slds-icon slds-icon-text-error
+icon_light	59.0	browser	rendered	slds-icon slds-icon-text-default
+icon_bare	59.0	browser	rendered	slds-icon
+icon_brand	59.0	browser	rendered	slds-icon slds-icon-text-default
+icon_error	67.0	browser	rendered	slds-icon slds-icon-text-error
+icon_light	67.0	browser	rendered	slds-icon slds-icon-text-default
+icon_bare	67.0	browser	rendered	slds-icon
+icon_brand	67.0	browser	rendered	slds-icon slds-icon-text-default
