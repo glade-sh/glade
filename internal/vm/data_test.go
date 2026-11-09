@@ -12063,10 +12063,11 @@ func TestExecDescribeFieldSetsFromMetadata(t *testing.T) {
 	program, err := CompileAnonymous(`
 Object accountDescribe = Account.SObjectType.getDescribe();
 Map<String,Object> fieldSets = accountDescribe.fieldSets.getMap();
-System.assert(fieldSets.containsKey('Summary'));
+System.assertEquals(false, fieldSets.containsKey('Summary'));
 System.assert(fieldSets.containsKey('pkg__Summary'));
-System.assertEquals(fieldSets.get('Summary'), fieldSets.get('pkg__Summary'));
-Object summary = fieldSets.get('Summary');
+System.assertEquals(null, fieldSets.get('Summary'));
+Object summary = fieldSets.get('pkg__Summary');
+System.assertNotEquals(null, summary);
 System.assertEquals('Account Summary', summary.getLabel());
 System.assertEquals('Summary', summary.getName());
 System.assertEquals('pkg', summary.getNamespace());
