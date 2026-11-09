@@ -18,6 +18,7 @@ func TestFieldSetInventoryAuthorityBoundary(t *testing.T) {
 		{"absent_incomplete", `{"name":"Probe__c","fieldSetsComplete":false,"fieldSetNames":["main"]}`, "SObjectType.Probe__c.FieldSets.Missing", true},
 		{"absent_partial", `{"name":"Probe__c","partial":true,"fieldSetsComplete":true,"fieldSetNames":["main"]}`, "SObjectType.Probe__c.FieldSets.Missing", true},
 		{"opaque_dependency", `{"name":"vendor__Probe__c","fieldSetsComplete":true,"fieldSetNames":["main"]}`, "SObjectType.vendor__Probe__c.FieldSets.Missing", true},
+		{"unknown_fieldset_namespace", `{"name":"Probe__c","fieldSetsComplete":true,"fieldSetNames":["main"]}`, "SObjectType.Probe__c.FieldSets.vendor__Other", true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			var object schema.Object
