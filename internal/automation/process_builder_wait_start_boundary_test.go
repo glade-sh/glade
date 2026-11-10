@@ -53,6 +53,7 @@ func TestProcessBuilderWaitStartBoundaries(t *testing.T) {
 	}{
 		{"captured", original, true},
 		{"renamed resources", renamed, true},
+		{"invalid resource identifier", strings.ReplaceAll(original, "myVariable_waitStartTimeVariable", "invalid-name"), false},
 		{"wrong target", replace("<assignToReference>myVariable_waitStartTimeVariable</assignToReference>", "<assignToReference>myVariable_current.Stage__c</assignToReference>"), false},
 		{"wrong operator", replace("<operator>Assign</operator>", "<operator>Add</operator>"), false},
 		{"wrong assignment value", replace("<elementReference>$Flow.CurrentDateTime</elementReference>", "<elementReference>myVariable_current.Id</elementReference>"), false},
