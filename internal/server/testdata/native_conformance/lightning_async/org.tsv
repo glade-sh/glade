@@ -1,0 +1,10 @@
+api	case	route	outcome
+62.0	enqueue_runs_after_commit	anonymous	action=success;inTransactionCount=0;job=Completed;afterCount=1
+62.0	rollback_discards_job	anonymous	action=failed;newJobs=0;afterCount=0
+62.0	job_failure_isolated	anonymous	action=success;job=Failed;jobError=probe failure fail62
+67.0	enqueue_runs_after_commit	anonymous	action=success;inTransactionCount=0;job=Completed;afterCount=1
+67.0	rollback_discards_job	anonymous	action=failed;newJobs=0;afterCount=0
+67.0	job_failure_isolated	anonymous	action=success;job=Failed;jobError=probe failure fail67
+68.0	enqueue_runs_after_commit	anonymous	action=success;inTransactionCount=0;job=Completed;afterCount=1
+68.0	rollback_discards_job	anonymous	action=failed;newJobs=0;afterCount=0
+68.0	job_failure_isolated	anonymous	action=success;job=Failed;jobError=probe failure fail68
