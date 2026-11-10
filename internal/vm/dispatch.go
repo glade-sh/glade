@@ -137,7 +137,24 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 				return value, err
 			}
 		}
-		if method, ok, ambiguous := vm.resolveStaticMethodForArgs(className, methodName, args); ok {
+		method, ok, ambiguous, enclosing := vm.resolveStaticMethodForArgsWithOrigin(className, methodName, args)
+		if enclosing {
+			// A static field can share its name with a nested type. A call on
+			// that field takes precedence over the nested type's enclosing fallback.
+			if dot := strings.LastIndex(callee, "."); dot > 0 {
+				if owner, field, valid := splitDottedTypeMember(callee[:dot]); valid {
+					if _, _, found := vm.lookupStaticFieldForReceiver(owner, field, vm.currentMethod.Dependency); found {
+						if value, handled, err := vm.callDottedReceiverMember(callee, args, result); handled || err != nil {
+							return value, err
+						}
+						// The receiver is a field, so an absent instance method cannot
+						// fall through to an enclosing static method.
+						return Null, unsupportedCallError(callee)
+					}
+				}
+			}
+		}
+		if ok {
 			if err := vm.checkMemberAccess(method.ClassName, method.Access, method.Name, method.Modifiers); err != nil {
 				return Null, err
 			}

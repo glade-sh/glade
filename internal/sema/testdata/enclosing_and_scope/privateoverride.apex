@@ -1,0 +1,1 @@
+public class Probe { public virtual class Parent { private virtual Integer value() { return 1; } } public class Child extends Parent { private override Integer value() { return 2; } } }

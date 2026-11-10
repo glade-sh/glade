@@ -2526,6 +2526,53 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 	if receiverExpr, method, ok := splitSemaMethodPath(expr.Callee); ok && strings.Contains(receiverExpr, ".") {
 		root, _, _ := strings.Cut(receiverExpr, ".")
 		_, scoped := scope.lookup(root)
+		if !scoped {
+			interfaceType, nestedReceiver := semaLocalNestedInterfaceReceiver(model, typ.Name, receiverExpr)
+			if nestedReceiver {
+				root, fieldName, _ := strings.Cut(receiverExpr, ".")
+				field, hasStaticField := semaStaticClassFieldPathMemberInContext(model, typ.Name, root, fieldName)
+				fieldReceiver := false
+				if hasStaticField {
+					fieldType := resolveNestedTypeName(model, field.owner, field.member.Type)
+					fieldMembers, known := model.lookupName(fieldType)
+					fieldReceiver = known && !fieldMembers.platform && !fieldMembers.dependency && strings.EqualFold(fieldMembers.name, interfaceType.name)
+				}
+				argTypes := irCallArgTypes(a, expr.Args, scope, model, typ.Name)
+				methods := resolveMemberMethods(model, interfaceType.name, method)
+				_, hasMethod, ambiguousMethod := bestResolvedMemberByArgTypes(methods, argTypes, model)
+				if !semaArgTypesContainUnknown(argTypes) && !hasMethod && !ambiguousMethod {
+					candidates := semaEnclosingStaticMethods(model, interfaceType.name, method, "class")
+					target, found, ambiguous := bestResolvedMemberByArgTypes(candidates, argTypes, model)
+					if found && !ambiguous && (!hasStaticField || fieldReceiver) {
+						start, end := bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee))
+						if !hasStaticField {
+							if d, blocked := checkSemaMemberAccess(typ, member, expr.Callee, target, start, end, source, model); blocked {
+								return []diagnostic.Diagnostic{d}
+							}
+							return nil
+						}
+						d := staticAccessDiagnostic(typ, member, expr.Callee, "static method called through an instance", start, end, source)
+						owner := target.owner
+						if declaringType, ok := model.lookupName(owner); ok && declaringType.namespace != "" && !strings.HasPrefix(strings.ToLower(owner), strings.ToLower(declaringType.namespace)+".") {
+							owner = declaringType.namespace + "." + owner
+						}
+						d.NativeMessage = "Static method cannot be referenced from a non static context: " + nativeLifecycleSignature(owner, target.member)
+						return []diagnostic.Diagnostic{d}
+					}
+				}
+				if fieldReceiver && len(methods) == 0 {
+					d := unknownCallDiagnostic(typ, member, expr.Callee, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source)
+					if !semaArgTypesContainUnknown(argTypes) {
+						owner := interfaceType.name
+						if interfaceType.namespace != "" && !strings.HasPrefix(strings.ToLower(owner), strings.ToLower(interfaceType.namespace)+".") {
+							owner = interfaceType.namespace + "." + owner
+						}
+						d.NativeMessage = fmt.Sprintf("Method does not exist or incorrect signature: void %s(%s) from the type %s", method, strings.Join(argTypes, ","), owner)
+					}
+					return []diagnostic.Diagnostic{d}
+				}
+			}
+		}
 		if !scoped && semaShortSObjectFieldsCall(a, receiverExpr, method, model) {
 			message := fmt.Sprintf("Method does not exist or incorrect signature: void %s(%s) from the type Schema.SObjectField", method, strings.Join(irCallArgTypes(a, expr.Args, scope, model, typ.Name), ","))
 			d := collectionCallDiagnostic(typ, member, method, len(expr.Args), bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source)
@@ -3082,6 +3129,9 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 	candidates := preferResolvedMethodsByReceiverMode(resolveMemberMethods(model, receiverType, method), receiverMode)
 	if !explicitReceiver {
 		candidates = resolveImplicitMemberMethods(model, receiverType, method)
+	}
+	if len(candidates) == 0 && explicitReceiver {
+		candidates = semaEnclosingStaticMethods(model, receiverType, method, receiverMode)
 	}
 	if len(candidates) == 0 {
 		if semaCallMayBelongToMissingSuperclass(model, typ, expr.Callee, receiverMode, receiverType) {
@@ -5735,7 +5785,36 @@ func (a *Analyzer) collectBodyScopesWithLocalDeclMatches(typ typesys.TypeSymbol,
 		declScans = append(declScans, semaLocalDeclScan{match: match, additional: true})
 	}
 	sort.SliceStable(declScans, func(i, j int) bool { return declScans[i].match[2] < declScans[j].match[2] })
+	// Line-oriented fallback patterns can match a continued assignment value.
+	values := semaAssignmentValueSpans(body, ignored)
+	valueIndex := 0
 	for _, scan := range declScans {
+		for valueIndex < len(values) && scan.match[2] >= values[valueIndex].hi {
+			valueIndex++
+		}
+		if valueIndex < len(values) && scan.match[2] >= values[valueIndex].lo {
+			continue
+		}
+		// A line beginning after an initializer's equals sign is still part of
+		// the expression, even when its tokens resemble a generic type.
+		previous := scan.match[2] - 1
+		for previous >= 0 {
+			if isWhitespace(body[previous]) || ignored.contains(previous) {
+				previous--
+				continue
+			}
+			// Ignored spans exclude the first slash and, for a block comment,
+			// the final slash. Skip those delimiters as trivia too.
+			if body[previous] == '/' && ((previous+1 < len(body) && (body[previous+1] == '/' || body[previous+1] == '*') && ignored.contains(previous+1)) ||
+				(previous > 0 && body[previous-1] == '*' && ignored.contains(previous-1))) {
+				previous--
+				continue
+			}
+			break
+		}
+		if previous >= 0 && body[previous] == '=' {
+			continue
+		}
 		if semaLocalDeclMatchInIgnoredText(ignored, scan.match) {
 			continue
 		}

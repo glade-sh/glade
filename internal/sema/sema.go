@@ -1510,8 +1510,32 @@ func newSemaBodyExpressionScan(body string) *semaBodyExpressionScan {
 	}
 }
 
+// semaAssignmentValueSpans identifies assignment right-hand sides without
+// confusing comparison operators or text inside comments and literals.
+func semaAssignmentValueSpans(body string, ignored *semaIgnoredText) []semaTextSpan {
+	var spans []semaTextSpan
+	for i := 0; i < len(body); i++ {
+		if body[i] != '=' || ignored.contains(i) || ignored.inParenGroup(i) {
+			continue
+		}
+		if i+1 < len(body) && (body[i+1] == '=' || body[i+1] == '>') {
+			continue
+		}
+		if i > 0 && strings.ContainsRune("=!<>", rune(body[i-1])) {
+			continue
+		}
+		end := semaStatementEnd(body, i+1)
+		spans = append(spans, semaTextSpan{lo: i + 1, hi: end})
+		i = end - 1
+	}
+	return spans
+}
+
 func findSemaLocalDeclMatches(body string) [][]int {
 	var matches [][]int
+	ignored := newSemaIgnoredText(body)
+	values := semaAssignmentValueSpans(body, ignored)
+	valueIndex := 0
 	for searchStart := 0; searchStart <= len(body); {
 		relative := localDeclPattern.FindStringSubmatchIndex(body[searchStart:])
 		if relative == nil {
@@ -1525,8 +1549,30 @@ func findSemaLocalDeclMatches(body string) [][]int {
 				match[i] = -1
 			}
 		}
+		for valueIndex < len(values) && match[2] >= values[valueIndex].hi {
+			valueIndex++
+		}
+		if valueIndex < len(values) && match[2] >= values[valueIndex].lo {
+			searchStart = values[valueIndex].hi
+			continue
+		}
+		if semaLocalDeclMatchInIgnoredText(ignored, match) {
+			// Do not let a declaration-shaped comment or literal consume a
+			// later real statement when seeking its initializer boundary.
+			next := match[1]
+			if next <= searchStart {
+				next = searchStart + 1
+			}
+			searchStart = next
+			continue
+		}
 		matches = append(matches, match)
 		next := match[1]
+		if last := match[1] - 1; last >= match[0] && body[last] == '=' {
+			// Initializers may span lines, comments, quoted text and nested
+			// expressions. Resume only at the statement boundary.
+			next = semaStatementEnd(body, match[1])
+		}
 		if last := match[1] - 1; last >= match[0] && (body[last] == ';' || body[last] == '\n') {
 			next = last
 		}
@@ -3681,10 +3727,10 @@ func (a *Analyzer) exportKnownTypes() map[string]TypeReference {
 var (
 	typeIdentifierPattern          = regexp.MustCompile(`[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*`)
 	typeReferencePattern           = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*$`)
-	lineLocalDeclPattern           = regexp.MustCompile(`(?m)^\s*(?:(?:final|transient)\s+)?([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:,|=|;)`)
-	wrappedLocalDeclPattern        = regexp.MustCompile(`(?m)^\s*(?:(?:final|transient)\s+)?([A-Za-z_][^\n;=(){}]+)[ \t]*\r?\n\s+([A-Za-z_][A-Za-z0-9_]*)\s*=`)
-	noSpaceGenericLocalDeclPattern = regexp.MustCompile(`(?m)(?:^|[;\n])\s*(?:(?:final|transient)\s+)?([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>|(?:\s*\[\s*\])+))([A-Za-z_][A-Za-z0-9_]*)\s*(?:,|=|;)`)
-	localDeclPattern               = regexp.MustCompile(`(?m)(?:^|[;{}\n])\s*(?:(?:final|transient)\s+)?([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:,|=|;)`)
+	lineLocalDeclPattern           = regexp.MustCompile(`(?m)^\s*(?:(?i:final|transient)\s+)?([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:,|=|;)`)
+	wrappedLocalDeclPattern        = regexp.MustCompile(`(?m)^\s*(?:(?i:final|transient)\s+)?([A-Za-z_][^\n;=(){}]+)[ \t]*\r?\n\s+([A-Za-z_][A-Za-z0-9_]*)\s*=`)
+	noSpaceGenericLocalDeclPattern = regexp.MustCompile(`(?m)(?:^|[;\n])\s*(?:(?i:final|transient)\s+)?([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>|(?:\s*\[\s*\])+))([A-Za-z_][A-Za-z0-9_]*)\s*(?:,|=|;)`)
+	localDeclPattern               = regexp.MustCompile(`(?m)(?:^|[;{}\n])\s*(?:(?i:final|transient)\s+)?([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:,|=|;)`)
 	enhancedForLocalPattern        = regexp.MustCompile(`(?im)\bfor\s*\(\s*(?:final\s+)?([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*:`)
 	forHeaderPattern               = regexp.MustCompile(`(?i)\bfor\s*\(`)
 	catchLocalPattern              = regexp.MustCompile(`(?im)\bcatch\s*\(\s*([A-Za-z_][A-Za-z0-9_.]*(?:\s*\|\s*[A-Za-z_][A-Za-z0-9_.]*)*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*\)`)
