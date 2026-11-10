@@ -89,7 +89,7 @@ func TestControllerPropertyGetterCapabilityCacheRoundTrip(t *testing.T) {
 	if err != nil || entry == nil {
 		t.Fatalf("read cache: entry=%v err=%v", entry, err)
 	}
-	if entry.RuntimeABI != "apextest-runtime-v32" {
+	if entry.RuntimeABI != "apextest-runtime-v33" {
 		t.Fatalf("cache ABI = %q, want getter-capability v7", entry.RuntimeABI)
 	}
 	entry.RuntimeABI = "apextest-runtime-v6"
@@ -99,5 +99,13 @@ func TestControllerPropertyGetterCapabilityCacheRoundTrip(t *testing.T) {
 	InvalidateRuntimeCaches()
 	if _, ok := tryLoadDiskRuntimeWithSourceDigests(index, nil, key); ok {
 		t.Fatal("pre-getter-capability v6 cache was accepted")
+	}
+	entry.RuntimeABI = "apextest-runtime-v32"
+	if err := startupcache.Write(entry, startupcache.SubdirTest); err != nil {
+		t.Fatal(err)
+	}
+	InvalidateRuntimeCaches()
+	if _, ok := tryLoadDiskRuntimeWithSourceDigests(index, nil, key); ok {
+		t.Fatal("previous runtime cache ABI was accepted")
 	}
 }
