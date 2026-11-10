@@ -1,0 +1,153 @@
+source_api	probe	name	user_type	license_name	license_key
+62.0	P1	Analytics Cloud Integration User	Standard	Analytics Cloud Integration User	INSIGHTS_INTEGRATION_USER
+62.0	P1	Analytics Cloud Security User	Standard	Analytics Cloud Integration User	INSIGHTS_INTEGRATION_USER
+62.0	P1	Authenticated Website	CspLitePortal	Authenticated Website	PLATFORM_PORTAL
+62.0	P1	Authenticated Website	CspLitePortal	Authenticated Website	Platform_Portal_User
+62.0	P1	B2B Reordering Portal Buyer Profile	CspLitePortal	External Apps Login	PID_External_Apps_Login
+62.0	P1	Chatter External User	CsnOnly	Chatter External	CSN_External_User
+62.0	P1	Chatter Free User	CsnOnly	Chatter Free	CSN_User
+62.0	P1	Chatter Moderator User	CsnOnly	Chatter Free	CSN_User
+62.0	P1	Company Communities User	Standard	Company Communities	PID_COMPANY_COMMUNITIES
+62.0	P1	Contract Manager	Standard	Salesforce	SFDC
+62.0	P1	CPQ Integration User	Standard	CPQ Integration User	PID_CpqIntegration
+62.0	P1	Cross Org Data Proxy User	Standard	XOrg Proxy User	PID_XOrg_Proxy_User
+62.0	P1	Customer Community Login User	CspLitePortal	Customer Community Login	PID_Customer_Community_Login
+62.0	P1	Customer Community Plus Login User	PowerCustomerSuccess	Customer Community Plus Login	PID_Customer_Community_Plus_Login
+62.0	P1	Customer Community Plus User	PowerCustomerSuccess	Customer Community Plus	PID_Customer_Community_Plus
+62.0	P1	Customer Community User	CspLitePortal	Customer Community	PID_Customer_Community
+62.0	P1	Customer Portal Manager Custom	PowerCustomerSuccess	Customer Portal Manager Custom	PID_Customer_Portal_Standard
+62.0	P1	Customer Portal Manager Standard	PowerCustomerSuccess	Customer Portal Manager Standard	PID_Customer_Portal_Basic
+62.0	P1	External Apps Login User	CspLitePortal	External Apps Login	PID_External_Apps_Login
+62.0	P1	External Identity User	CspLitePortal	External Identity	PID_External_Identity
+62.0	P1	Force.com - App Subscription User	Standard	Force.com - App Subscription	FDC_SUB
+62.0	P1	Force.com - Free User	Standard	Force.com - Free	PID_FDC_FREE
+62.0	P1	Gold Partner User	PowerPartner	Gold Partner	PID_STRATEGIC_PRM
+62.0	P1	High Volume Customer Portal	CspLitePortal	High Volume Customer Portal	HIGH_VOLUME_PORTAL
+62.0	P1	High Volume Customer Portal User	CspLitePortal	High Volume Customer Portal	High_Volume_Customer_Portal_User
+62.0	P1	Identity User	Standard	Identity	PID_Identity_User
+62.0	P1	Marketing User	Standard	Salesforce	SFDC
+62.0	P1	Minimum Access - API Only Integrations	Standard	Salesforce Integration	SALESFORCE_INTEGRATION_USER
+62.0	P1	Minimum Access - Salesforce	Standard	Salesforce	SFDC
+62.0	P1	Partner App Subscription User	Standard	Partner App Subscription	FDC_ISV_SUB
+62.0	P1	Partner Community Login User	PowerPartner	Partner Community Login	PID_Partner_Community_Login
+62.0	P1	Partner Community User	PowerPartner	Partner Community	PID_Partner_Community
+62.0	P1	Silver Partner User	PowerPartner	Silver Partner	PID_STANDARD_PRM
+62.0	P1	Solution Manager	Standard	Salesforce	SFDC
+62.0	P1	Standard Platform User	Standard	Salesforce Platform	AUL
+62.0	P1	Standard User	Standard	Salesforce	SFDC
+62.0	P1	System Administrator	Standard	Salesforce	SFDC
+62.0	P1	Work.com Only User	Standard	Work.com Only	PID_WCUSER
+62.0	P2		Standard		
+62.0	P2		CspLitePortal		
+62.0	P2		CspLitePortal		
+62.0	P2		Standard		
+62.0	P2		Standard		
+62.0	P2		Standard		
+62.0	P2		Standard		
+62.0	P2		Standard		
+62.0	P2		Standard		
+62.0	P2		CspLitePortal		
+62.0	P2		CspLitePortal		
+62.0	P2		Standard		
+62.0	P2		PowerCustomerSuccess		
+62.0	P2		Standard		
+62.0	P2		PowerCustomerSuccess		
+62.0	P2		PowerPartner		
+62.0	P2		CspLitePortal		
+62.0	P2		PowerPartner		
+62.0	P2		PowerCustomerSuccess		
+62.0	P2		Standard		
+62.0	P2		PowerCustomerSuccess		
+62.0	P2		Standard		
+62.0	P2		CspLitePortal		
+62.0	P2		PowerPartner		
+62.0	P2		PowerPartner		
+62.0	P2		CspLitePortal		
+62.0	P2		Standard		
+62.0	P2		CsnOnly		
+62.0	P2		CsnOnly		
+62.0	P2		CsnOnly		
+62.0	P2		Standard		
+62.0	P2		Standard		
+62.0	P2		Standard		
+62.0	P2		Standard		
+62.0	P2		CspLitePortal		
+62.0	P2		Standard		
+62.0	P2		Standard		
+62.0	P2		CspLitePortal		
+67.0	P1	Analytics Cloud Integration User	Standard	Analytics Cloud Integration User	INSIGHTS_INTEGRATION_USER
+67.0	P1	Analytics Cloud Security User	Standard	Analytics Cloud Integration User	INSIGHTS_INTEGRATION_USER
+67.0	P1	Authenticated Website	CspLitePortal	Authenticated Website	PLATFORM_PORTAL
+67.0	P1	Authenticated Website	CspLitePortal	Authenticated Website	Platform_Portal_User
+67.0	P1	B2B Reordering Portal Buyer Profile	CspLitePortal	External Apps Login	PID_External_Apps_Login
+67.0	P1	Chatter External User	CsnOnly	Chatter External	CSN_External_User
+67.0	P1	Chatter Free User	CsnOnly	Chatter Free	CSN_User
+67.0	P1	Chatter Moderator User	CsnOnly	Chatter Free	CSN_User
+67.0	P1	Company Communities User	Standard	Company Communities	PID_COMPANY_COMMUNITIES
+67.0	P1	Contract Manager	Standard	Salesforce	SFDC
+67.0	P1	CPQ Integration User	Standard	CPQ Integration User	PID_CpqIntegration
+67.0	P1	Cross Org Data Proxy User	Standard	XOrg Proxy User	PID_XOrg_Proxy_User
+67.0	P1	Customer Community Login User	CspLitePortal	Customer Community Login	PID_Customer_Community_Login
+67.0	P1	Customer Community Plus Login User	PowerCustomerSuccess	Customer Community Plus Login	PID_Customer_Community_Plus_Login
+67.0	P1	Customer Community Plus User	PowerCustomerSuccess	Customer Community Plus	PID_Customer_Community_Plus
+67.0	P1	Customer Community User	CspLitePortal	Customer Community	PID_Customer_Community
+67.0	P1	Customer Portal Manager Custom	PowerCustomerSuccess	Customer Portal Manager Custom	PID_Customer_Portal_Standard
+67.0	P1	Customer Portal Manager Standard	PowerCustomerSuccess	Customer Portal Manager Standard	PID_Customer_Portal_Basic
+67.0	P1	External Apps Login User	CspLitePortal	External Apps Login	PID_External_Apps_Login
+67.0	P1	External Identity User	CspLitePortal	External Identity	PID_External_Identity
+67.0	P1	Force.com - App Subscription User	Standard	Force.com - App Subscription	FDC_SUB
+67.0	P1	Force.com - Free User	Standard	Force.com - Free	PID_FDC_FREE
+67.0	P1	Gold Partner User	PowerPartner	Gold Partner	PID_STRATEGIC_PRM
+67.0	P1	High Volume Customer Portal	CspLitePortal	High Volume Customer Portal	HIGH_VOLUME_PORTAL
+67.0	P1	High Volume Customer Portal User	CspLitePortal	High Volume Customer Portal	High_Volume_Customer_Portal_User
+67.0	P1	Identity User	Standard	Identity	PID_Identity_User
+67.0	P1	Marketing User	Standard	Salesforce	SFDC
+67.0	P1	Minimum Access - API Only Integrations	Standard	Salesforce Integration	SALESFORCE_INTEGRATION_USER
+67.0	P1	Minimum Access - Salesforce	Standard	Salesforce	SFDC
+67.0	P1	Partner App Subscription User	Standard	Partner App Subscription	FDC_ISV_SUB
+67.0	P1	Partner Community Login User	PowerPartner	Partner Community Login	PID_Partner_Community_Login
+67.0	P1	Partner Community User	PowerPartner	Partner Community	PID_Partner_Community
+67.0	P1	Silver Partner User	PowerPartner	Silver Partner	PID_STANDARD_PRM
+67.0	P1	Solution Manager	Standard	Salesforce	SFDC
+67.0	P1	Standard Platform User	Standard	Salesforce Platform	AUL
+67.0	P1	Standard User	Standard	Salesforce	SFDC
+67.0	P1	System Administrator	Standard	Salesforce	SFDC
+67.0	P1	Work.com Only User	Standard	Work.com Only	PID_WCUSER
+67.0	P2		Standard		
+67.0	P2		CspLitePortal		
+67.0	P2		CspLitePortal		
+67.0	P2		Standard		
+67.0	P2		Standard		
+67.0	P2		Standard		
+67.0	P2		Standard		
+67.0	P2		Standard		
+67.0	P2		Standard		
+67.0	P2		CspLitePortal		
+67.0	P2		CspLitePortal		
+67.0	P2		Standard		
+67.0	P2		PowerCustomerSuccess		
+67.0	P2		Standard		
+67.0	P2		PowerCustomerSuccess		
+67.0	P2		PowerPartner		
+67.0	P2		CspLitePortal		
+67.0	P2		PowerPartner		
+67.0	P2		PowerCustomerSuccess		
+67.0	P2		Standard		
+67.0	P2		PowerCustomerSuccess		
+67.0	P2		Standard		
+67.0	P2		CspLitePortal		
+67.0	P2		PowerPartner		
+67.0	P2		PowerPartner		
+67.0	P2		CspLitePortal		
+67.0	P2		Standard		
+67.0	P2		CsnOnly		
+67.0	P2		CsnOnly		
+67.0	P2		CsnOnly		
+67.0	P2		Standard		
+67.0	P2		Standard		
+67.0	P2		Standard		
+67.0	P2		Standard		
+67.0	P2		CspLitePortal		
+67.0	P2		Standard		
+67.0	P2		Standard		
+67.0	P2		CspLitePortal		

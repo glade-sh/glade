@@ -6,12 +6,16 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
-// Local compatibility controls: before the seed correction both keys used the
-// display name Chatter External and followed the same object and field fallback.
-// These assertions preserve that behavior; they are not new native observations.
+// Local compatibility controls, not native observations: before the seed
+// correction a license named Chatter External denied object and field access.
+// The seeded Customer Community Login license (it carried that name) keeps the
+// denial; a license matched only by key does not gain it.
 func TestLegacyExternalLicenseObjectAndFieldFallback(t *testing.T) {
-	for _, key := range []string{"CSN_External_User", "PID_Customer_Community_Login"} {
-		t.Run(key, func(t *testing.T) {
+	for _, tc := range []struct{ name, key, label string }{
+		{"Chatter External", "local-key", "name"},
+		{"Customer Community Login", "PID_Customer_Community_Login", "seeded pair"},
+	} {
+		t.Run(tc.label, func(t *testing.T) {
 			machine := builtinLicenseAccountActor(t)
 			profiles := machine.Org.Objects["Profile"]
 			p := profiles.Records[storage.ID("00e000000000091")]
@@ -20,12 +24,9 @@ func TestLegacyExternalLicenseObjectAndFieldFallback(t *testing.T) {
 			profiles.Records[p.ID] = p
 			licenses := machine.Org.Objects["UserLicense"]
 			row := licenses.Records[storage.ID("100000000000091")]
-			row.Fields["Name"] = storage.StringValue("Local test license")
-			row.Fields["LicenseDefinitionKey"] = storage.StringValue(key)
+			row.Fields["Name"] = storage.StringValue(tc.name)
+			row.Fields["LicenseDefinitionKey"] = storage.StringValue(tc.key)
 			licenses.Records[row.ID] = row
-			if !machine.profileHasLicenseKey(string(p.ID), key) || machine.profileHasLicense(string(p.ID), "Chatter External") {
-				t.Fatal("license lookup did not distinguish key and name")
-			}
 			for _, method := range []string{"isAccessible", "isCreateable", "isUpdateable"} {
 				if machine.currentUserObjectPermission("Contact", method) {
 					t.Errorf("legacy external fallback unexpectedly grants Contact %s", method)
@@ -50,12 +51,33 @@ System.assertEquals(true, deniedQuery);
 			if _, err := machine.Execute(program); err != nil {
 				t.Fatalf("describe and user-mode routes: %v", err)
 			}
-			row.Fields["LicenseDefinitionKey"] = storage.StringValue("local-unrelated-key")
+			row.Fields["Name"] = storage.StringValue("Local test license")
 			licenses.Records[row.ID] = row
 			if !machine.currentUserObjectPermission("Contact", "isAccessible") || !machine.currentUserFieldPermission("Contact", "Description", "isAccessible") {
 				t.Fatal("unrelated license fallback changed")
 			}
 		})
+	}
+}
+
+// A license matched only by key (Chatter External's or Community Login's key
+// under another name) keeps the pre-change behavior: no denial.
+func TestExternalLicenseKeyAloneDoesNotDeny(t *testing.T) {
+	for _, key := range []string{"CSN_External_User", "PID_Customer_Community_Login"} {
+		machine := builtinLicenseAccountActor(t)
+		profiles := machine.Org.Objects["Profile"]
+		p := profiles.Records[storage.ID("00e000000000091")]
+		p.Fields["Name"] = storage.StringValue("Local test profile")
+		p.Fields["UserType"] = storage.StringValue("Standard")
+		profiles.Records[p.ID] = p
+		licenses := machine.Org.Objects["UserLicense"]
+		row := licenses.Records[storage.ID("100000000000091")]
+		row.Fields["Name"] = storage.StringValue("Local test license")
+		row.Fields["LicenseDefinitionKey"] = storage.StringValue(key)
+		licenses.Records[row.ID] = row
+		if !machine.currentUserObjectPermission("Contact", "isAccessible") || !machine.currentUserFieldPermission("Contact", "Description", "isAccessible") {
+			t.Errorf("key %s alone changed access", key)
+		}
 	}
 }
 

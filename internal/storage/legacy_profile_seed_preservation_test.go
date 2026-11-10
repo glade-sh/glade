@@ -54,3 +54,78 @@ func TestUncapturedGuestManagePermissionFieldsKeepBaseline(t *testing.T) {
 		t.Fatalf("found %d guest profiles", seen)
 	}
 }
+
+func legacyGuestOrg(license ID) (OrgState, Record) {
+	org := NewOrgState()
+	EnsureDeterministicPlatformData(&org)
+	const guestID ID = "00e000000000007"
+	guest := Record{ID: guestID, Object: "Profile", Fields: map[string]Value{"Name": StringValue("Customer Community Guest User"), "UserType": StringValue("Guest"), "UserLicenseId": IDValue(license)}}
+	org.Objects["Profile"].Records[guestID] = guest
+	return org, guest
+}
+
+func TestLegacyGuestProfileKeepsCustomizedOrReferenced(t *testing.T) {
+	const guestID ID = "00e000000000007"
+	const seededLicense ID = "100000000000002"
+	cases := map[string]func(*OrgState){
+		"license": func(org *OrgState) {
+			g := org.Objects["Profile"].Records[guestID]
+			g.Fields["UserLicenseId"] = IDValue("100000000000091")
+			org.Objects["Profile"].Records[guestID] = g
+		},
+		"permission": func(org *OrgState) {
+			g := org.Objects["Profile"].Records[guestID]
+			g.Fields["PermissionsEditTask"] = BooleanValue(true)
+			org.Objects["Profile"].Records[guestID] = g
+		},
+		"other object": func(org *OrgState) {
+			org.Objects["Account"].Records["001000000000091"] = Record{ID: "001000000000091", Object: "Account", Fields: map[string]Value{"Ref": IDValue(guestID)}}
+		},
+	}
+	for name, customize := range cases {
+		t.Run(name, func(t *testing.T) {
+			org, _ := legacyGuestOrg(seededLicense)
+			if _, ok := org.Objects["Account"]; !ok {
+				EnsureStandardObject(&org, "Account")
+			}
+			customize(&org)
+			EnsureDeterministicPlatformData(&org)
+			if _, ok := org.Objects["Profile"].Records[guestID]; !ok {
+				t.Fatal("customized or referenced guest was deleted")
+			}
+		})
+	}
+	t.Run("untouched is removed", func(t *testing.T) {
+		org, _ := legacyGuestOrg(seededLicense)
+		EnsureDeterministicPlatformData(&org)
+		if _, ok := org.Objects["Profile"].Records[guestID]; ok {
+			t.Fatal("untouched legacy guest kept")
+		}
+	})
+}
+
+func TestInventoryLicenseIDCollisionSelectsFreeID(t *testing.T) {
+	org := NewOrgState()
+	EnsureDeterministicPlatformData(&org)
+	var key = "CSN_External_User"
+	var want ID
+	for id, l := range org.Objects["UserLicense"].Records {
+		if l.Fields["LicenseDefinitionKey"].String == key {
+			want = id
+		}
+	}
+	// Re-key the row at its inventory ID, then ask for the key again.
+	l := org.Objects["UserLicense"].Records[want]
+	l.Fields["LicenseDefinitionKey"] = StringValue("other-key")
+	org.Objects["UserLicense"].Records[want] = l
+	got := ensureInventoryUserLicense(&org, "Chatter External", key)
+	if got == want {
+		t.Fatalf("returned occupied id %s", got)
+	}
+	if org.Objects["UserLicense"].Records[got].Fields["LicenseDefinitionKey"].String != key {
+		t.Fatalf("license not installed at %s", got)
+	}
+	if org.Objects["UserLicense"].Records[want].Fields["LicenseDefinitionKey"].String != "other-key" {
+		t.Fatal("occupant changed")
+	}
+}
