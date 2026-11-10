@@ -16,9 +16,12 @@ func TestFlowLookupCapturedOperandTypes(t *testing.T) {
 			files := map[string]string{}
 			methods := map[string]string{}
 			for _, tc := range []struct{ name, body string }{
-				{"InTextDate", `Boolean caught=false; try { Flow.Interview f=Flow.Interview.createInterview('FLOWNAME',new Map<String,Object>{'values'=>new List<Date>{Date.newInstance(2001,2,3)}}); f.start(); } catch (Exception e) { caught=true; } System.assertEquals(true,caught);`},
-				{"InReferenceNumber", `Boolean caught=false; try { Flow.Interview f=Flow.Interview.createInterview('FLOWNAME',new Map<String,Object>{'values'=>new List<Decimal>{42}}); f.start(); } catch (Exception e) { caught=true; } System.assertEquals(true,caught);`},
+				{"InTextDate", `Boolean caught=false; try { Flow.Interview f=Flow.Interview.createInterview('FLOWNAME',new Map<String,Object>{'values'=>new List<Date>{Date.newInstance(2001,2,3)}}); f.start(); } catch (Exception e) { caught=true; System.assertEquals('System.FlowException',e.getTypeName()); } System.assertEquals(true,caught);`},
+				{"NotInTextDate", `Boolean caught=false; try { Flow.Interview f=Flow.Interview.createInterview('FLOWNAME',new Map<String,Object>{'values'=>new List<Date>{Date.newInstance(2001,2,3)}}); f.start(); } catch (Exception e) { caught=true; System.assertEquals('System.FlowException',e.getTypeName()); } System.assertEquals(true,caught);`},
+				{"InReferenceNumber", `Boolean caught=false; try { Flow.Interview f=Flow.Interview.createInterview('FLOWNAME',new Map<String,Object>{'values'=>new List<Decimal>{42}}); f.start(); } catch (Exception e) { caught=true; System.assertEquals('System.FlowException',e.getTypeName()); } System.assertEquals(true,caught);`},
+				{"NotInReferenceNumber", `Boolean caught=false; try { Flow.Interview f=Flow.Interview.createInterview('FLOWNAME',new Map<String,Object>{'values'=>new List<Decimal>{42}}); f.start(); } catch (Exception e) { caught=true; System.assertEquals('System.FlowException',e.getTypeName()); } System.assertEquals(true,caught);`},
 				{"InNumberNumber", `Flow.Interview f=Flow.Interview.createInterview('FLOWNAME',new Map<String,Object>{'values'=>new List<Decimal>{42}}); f.start(); System.assertEquals('Flow Type Probe B',f.getVariableValue('outcome'));`},
+				{"NotInNumberNumber", `Flow.Interview f=Flow.Interview.createInterview('FLOWNAME',new Map<String,Object>{'values'=>new List<Decimal>{42}}); f.start(); System.assertEquals('Flow Type Probe A',f.getVariableValue('outcome'));`},
 				{"InReferenceString", `Account b=[SELECT OwnerId FROM Account WHERE Name='Flow Type Probe B' LIMIT 1]; Flow.Interview f=Flow.Interview.createInterview('FLOWNAME',new Map<String,Object>{'values'=>new List<String>{String.valueOf(b.OwnerId)}}); f.start(); System.assertEquals('Flow Type Probe A',f.getVariableValue('outcome'));`},
 			} {
 				name := "F" + version + tc.name
@@ -31,6 +34,7 @@ func TestFlowLookupCapturedOperandTypes(t *testing.T) {
 				seed := `insert new List<Account>{new Account(Name='Flow Type Probe A',NumberOfEmployees=41),new Account(Name='Flow Type Probe B',NumberOfEmployees=42)};`
 				methods[tc.name] = seed + strings.ReplaceAll(tc.body, "FLOWNAME", name)
 			}
+			methods["EmptyTextDate"] = `insert new Account(Name='Flow Type Probe A'); Flow.Interview f=Flow.Interview.createInterview('F` + version + `InTextDate',new Map<String,Object>{'values'=>new List<Date>()}); f.start(); System.assertEquals(null,f.getVariableValue('outcome'));`
 			runFlowPreservationProjectRoutes(t, api, files, methods)
 		})
 	}
