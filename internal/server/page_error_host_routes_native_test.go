@@ -107,7 +107,9 @@ func TestPageErrorHostRoutesNative(t *testing.T) {
 						}
 						for _, phase := range []string{"cold", "warm"} {
 							rec := httptest.NewRecorder()
-							req := httptest.NewRequest(http.MethodPost, "/services/data/v"+api+"/tooling/executeAnonymous", strings.NewReader(string(body)))
+							// The local REST endpoint exposes v67; the invoked source class
+							// remains pinned to the captured Apex API 62 or 67.
+							req := httptest.NewRequest(http.MethodPost, "/services/data/v67.0/tooling/executeAnonymous", strings.NewReader(string(body)))
 							req.Header.Set("Content-Type", "application/json")
 							host.ServeHTTP(rec, req)
 							if got := visualforce.VMRenderEnvironmentCountForTest(); got != baselineEnvironments {
