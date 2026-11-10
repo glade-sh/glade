@@ -69,6 +69,25 @@ func TestSourceDependencyNamedTypeNative(t *testing.T) {
 			if row[3] == "COMPILE_ERROR" && !matched {
 				t.Fatalf("native error %q not found; diagnostics=%+v", want, result.Diagnostics)
 			}
+			if row[3] == "COMPILE_ERROR" {
+				modes := []string{"partial"}
+				if strings.HasSuffix(row[0], "missing_root") {
+					modes = append(modes, "opaque")
+				}
+				for _, mode := range modes {
+					control := index
+					if mode == "opaque" {
+						control.Dependencies = append(append([]typesys.DependencyInfo(nil), index.Dependencies...), typesys.DependencyInfo{Namespace: "Nsv36TypeAbsent", Status: "missing"})
+					} else {
+						control.Subset = true
+					}
+					for _, d := range Analyze(control).Diagnostics {
+						if d.Severity == diagnostic.Error && (d.Message == want || d.NativeMessage == want) {
+							t.Errorf("%s index rejected an unproven type miss: %+v", mode, d)
+						}
+					}
+				}
+			}
 		})
 	}
 }
