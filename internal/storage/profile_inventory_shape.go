@@ -2,8 +2,6 @@ package storage
 
 import (
 	"reflect"
-	"strconv"
-	"strings"
 
 	"github.com/glade-sh/glade/internal/project"
 )
@@ -32,21 +30,8 @@ func capturedProfileInventoryShape(features []string) bool {
 // An untouched bootstrap record has a reserved synthetic identity and exactly
 // the fields the seed created. A project-modified record is never migrated.
 func untouchedBootstrapProfile(id ID, record Record) bool {
-	text := string(id)
-	if len(text) != 15 || !strings.HasPrefix(text, "00e000000000") {
-		return false
-	}
-	n, err := strconv.Atoi(text[12:])
-	if err != nil || n < 1 || n > 11 {
-		return false
-	}
-	name := record.Fields["Name"]
-	license := record.Fields["UserLicenseId"]
-	userType := record.Fields["UserType"]
-	if name.Kind != ValueString || license.Kind != ValueID || userType.Kind != ValueString {
-		return false
-	}
-	return reflect.DeepEqual(record.Fields, profileSeedFieldsWithUserType(name.String, license.ID, userType.String))
+	original := bootstrapProfileSeedFields(id)
+	return original != nil && reflect.DeepEqual(record.Fields, original)
 }
 
 func pruneUncapturedBootstrapProfiles(org *OrgState) {
