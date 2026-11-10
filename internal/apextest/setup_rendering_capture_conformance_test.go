@@ -231,6 +231,12 @@ func runSetupRenderingCaptureConformance(t *testing.T, capture setupRenderingCap
 						if json.Unmarshal([]byte(row[4]), &want) != nil || json.Unmarshal([]byte(payload), &got) != nil {
 							t.Fatalf("invalid observation: native=%s; Glade=%q", row[4], payload)
 						}
+						if capture.family == "standard_profile_inventory" && assertVariableProfileObservation(t, row, rows, got) {
+							return
+						}
+						if capture.family == "email_services_metadata" && assertEmailServicesVariableObservation(t, row, want, got) {
+							return
+						}
 						if !reflect.DeepEqual(got, want) {
 							t.Fatalf("native=%s; Glade=%s", row[4], payload)
 						}
