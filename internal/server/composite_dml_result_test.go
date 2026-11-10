@@ -59,13 +59,15 @@ func TestCompositeSObjectUpsertCreationContracts(t *testing.T) {
 				t.Fatalf("DML creation result = %#v, want %#v", result, want)
 			}
 			row := rows[i]
-			if row["success"] != want.success || row["created"] != want.upsertCreated || row["referenceId"] != want.name || (result.ID != "" && row["id"] != result.ID) {
+			if row["success"] != want.success || row["created"] != want.upsertCreated || row["referenceId"] != want.name {
 				t.Fatalf("REST upsert result = %#v, want %#v", row, want)
 			}
 			if !want.success && want.upsertCreated && result.ID == "" {
 				if _, ok := row["id"]; ok {
 					t.Fatalf("failed insert has id: %#v", row)
 				}
+			} else if id, ok := row["id"]; !ok || id != result.ID {
+				t.Fatalf("REST upsert id = %#v (present=%t), want %q", id, ok, result.ID)
 			}
 			if !want.success {
 				if result.StatusCode != "REQUIRED_FIELD_MISSING" || len(result.Fields) != 1 || result.Fields[0] != "Name" {

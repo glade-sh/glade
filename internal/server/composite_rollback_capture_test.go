@@ -5,11 +5,47 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/storage"
 )
+
+// assertUpsertRows matches the captured response, normalizing only a newly
+// generated ID. The existing-record ID remains an exact assertion.
+func assertUpsertRows(t *testing.T, got, want []map[string]any, generatedID bool) {
+	t.Helper()
+	if generatedID {
+		id, ok := got[0]["id"].(string)
+		if !ok || id == "" {
+			t.Fatalf("generated ID missing: %#v", got[0])
+		}
+		got[0]["id"] = "<ID>"
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("upsert response = %#v, want %#v", got, want)
+	}
+}
+
+func nativeUpsertRows(all, newRecord bool) []map[string]any {
+	first := map[string]any{"created": newRecord, "success": !all, "errors": []any{}}
+	if all {
+		first["errors"] = []any{map[string]any{
+			"fields": []any{}, "message": "Record rolled back because not all records were valid and the request was using AllOrNone header",
+			"statusCode": "ALL_OR_NONE_OPERATION_ROLLED_BACK",
+		}}
+	}
+	if !newRecord {
+		first["id"] = "001000000000001"
+	} else if !all {
+		first["id"] = "<ID>"
+	}
+	return []map[string]any{first, {
+		"created": true, "success": false,
+		"errors": []any{map[string]any{"fields": []any{"Name"}, "message": "Required fields are missing: [Name]", "statusCode": "REQUIRED_FIELD_MISSING"}},
+	}}
+}
 
 // These cases replay synthetic Salesforce REST observations at APIs 62.0 and 67.0.
 // Native rows: testdata/conformance/composite_rollback_routes/org.tsv:2-13.
@@ -71,12 +107,8 @@ func TestCompositeRollbackResponseNativeRoutes(t *testing.T) {
 					if err := json.Unmarshal(rec.Body.Bytes(), &rows); err != nil || len(rows) != 2 {
 						t.Fatalf("rows %s: %v", rec.Body.String(), err)
 					}
-					if rows[0]["success"] != !all || rows[0]["created"] != false || rows[1]["success"] != false || rows[1]["created"] != true {
-						t.Fatalf("rows = %#v", rows)
-					}
-					if _, ok := rows[1]["id"]; ok {
-						t.Fatalf("failed insert contains id: %#v", rows[1])
-					}
+					// Native rows: org.tsv:2-3,6-7; the existing update keeps its ID.
+					assertUpsertRows(t, rows, nativeUpsertRows(all, false), false)
 					want := "Updated"
 					if all {
 						want = "Existing"
@@ -141,15 +173,8 @@ func TestCompositeUpsertNewInsertRollbackNative(t *testing.T) {
 			if err := json.Unmarshal(rec.Body.Bytes(), &rows); err != nil || rec.Code != http.StatusOK || len(rows) != 2 {
 				t.Fatalf("status %d body %s: %v", rec.Code, rec.Body.String(), err)
 			}
-			if rows[0]["success"] != !all || rows[0]["created"] != true || rows[1]["success"] != false || rows[1]["created"] != true {
-				t.Fatalf("rows = %#v", rows)
-			}
-			if id, exists := rows[0]["id"]; all && exists || !all && (!exists || id == "") {
-				t.Fatalf("first row id = %#v (present=%t), allOrNone=%t", id, exists, all)
-			}
-			if _, exists := rows[1]["id"]; exists {
-				t.Fatalf("failed insert has id: %#v", rows[1])
-			}
+			// Native rows: org.tsv:18-19,22-23; only a successful new ID is normalized.
+			assertUpsertRows(t, rows, nativeUpsertRows(all, true), !all)
 			want := 1
 			if all {
 				want = 0
