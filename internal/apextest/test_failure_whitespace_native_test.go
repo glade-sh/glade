@@ -1,7 +1,6 @@
 package apextest
 
 import (
-	"encoding/csv"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -11,17 +10,17 @@ import (
 
 func TestFailureWhitespaceNative(t *testing.T) {
 	dir := filepath.Join("testdata", "conformance", "test_failure_whitespace")
-	f, err := os.Open(filepath.Join(dir, "org.tsv"))
+	body, err := os.ReadFile(filepath.Join(dir, "org.tsv"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer f.Close()
-	reader := csv.NewReader(f)
-	reader.Comma = '\t'
-	reader.LazyQuotes = true
-	rows, err := reader.ReadAll()
-	if err != nil {
-		t.Fatal(err)
+	var rows [][]string
+	for _, line := range strings.Split(strings.TrimSuffix(string(body), "\n"), "\n") {
+		row := strings.SplitN(line, "\t", 4)
+		if len(row) != 4 {
+			t.Fatalf("invalid native row: %q", line)
+		}
+		rows = append(rows, row)
 	}
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api, func(t *testing.T) {
