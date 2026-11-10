@@ -106,3 +106,35 @@ field_rows.extend(row for row in captured_rows if row not in field_rows)
 if len(field_rows) != 224:
     raise ValueError('expected 224 native selected field rows')
 (root / 'internal/storage/seeddata/profile_field_permissions.json').write_text(json.dumps(field_rows, indent=2) + '\n')
+
+# Preserve the original profile/object seed order: IDs derive from this index.
+object_flags = ('PermissionsRead', 'PermissionsCreate', 'PermissionsEdit',
+                'PermissionsDelete', 'PermissionsViewAllRecords', 'PermissionsModifyAllRecords')
+original = json.loads((capture.parent / 'profile_account_contact_rows/objperm-62.json').read_text())['result']['records']
+object_rows = [{'profile': r['Parent']['Profile']['Name'], 'object': r['SobjectType'],
+                'flags': [r[flag] for flag in object_flags]} for r in original]
+if len(object_rows) != 56:
+    raise ValueError('expected 56 original profile object rows')
+with (capture.parent / 'profile_object_inventory/org.tsv').open() as f:
+    object_capture = list(csv.DictReader(f, delimiter='\t'))
+def object_inventory(api):
+    return sorted((r['profile'], r['object'], r['read'], r['create'], r['edit'],
+                   r['delete'], r['view_all'], r['modify_all'])
+                  for r in object_capture if r['source_api'] == api)
+if object_inventory('62.0') != object_inventory('67.0'):
+    raise ValueError('profile object inventory differs by source API')
+by_object = {(r['profile'], r['object']): r for r in object_rows}
+for profile, obj, read, create, edit, delete, view_all, modify_all in object_inventory('67.0'):
+    if read == '<no rows>':
+        continue
+    row = dict(profile=profile, object=obj,
+               flags=[v == 'true' for v in (read, create, edit, delete, view_all, modify_all)])
+    previous = by_object.get((profile, obj))
+    if previous is not None and previous != row:
+        raise ValueError(f'profile object permission differs: {profile} {obj}')
+    if previous is None:
+        object_rows.append(row)
+        by_object[(profile, obj)] = row
+if len(object_rows) != 66:
+    raise ValueError('expected 66 native profile object rows')
+(root / 'internal/storage/seeddata/profile_object_permissions.json').write_text(json.dumps(object_rows, indent=0) + '\n')
