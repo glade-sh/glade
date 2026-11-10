@@ -80,6 +80,23 @@ func TestProcessBuilderWaitStartBoundaries(t *testing.T) {
 			if got := skip == ""; got != tc.admitted {
 				t.Fatalf("admitted=%t, want %t; skip=%q", got, tc.admitted, skip)
 			}
+			if !tc.admitted {
+				path := filepath.Join(t.TempDir(), "probe.flow-meta.xml")
+				if err := os.WriteFile(path, []byte(tc.source), 0644); err != nil {
+					t.Fatal(err)
+				}
+				flow, diagnostics, err := loadFlow(path, defs)
+				if err != nil {
+					t.Fatal(err)
+				}
+				warned := false
+				for _, d := range diagnostics {
+					warned = warned || d.Code == "GLADEAUTO002" && strings.Contains(d.Message, "Process Builder process is not run")
+				}
+				if flow.ObjectName != "" || !warned {
+					t.Fatalf("uncaptured shape must be unrun with GLADEAUTO002: object=%q diagnostics=%+v", flow.ObjectName, diagnostics)
+				}
+			}
 		})
 	}
 }
