@@ -28,7 +28,7 @@ func TestFlowTypeMatrixNativeAdmission(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	snapshot := []byte(`{"objects":[{"name":"Account","fieldsComplete":true,"fields":[{"name":"Name","type":"Text"},{"name":"NumberOfEmployees","type":"Number"},{"name":"AnnualRevenue","type":"Currency"},{"name":"OwnerId","type":"Lookup","referenceTo":"User"},{"name":"Type","type":"Picklist"},{"name":"CreatedDate","type":"DateTime"}]},{"name":"Contact","fieldsComplete":true,"fields":[{"name":"LastName","type":"Text"},{"name":"Birthdate","type":"Date"},{"name":"IsEmailBounced","type":"Checkbox"}]}]}`)
+	snapshot := []byte(`{"objects":[{"name":"Account","fieldsComplete":true,"fields":[{"name":"Name","type":"Text"},{"name":"NumberOfEmployees","type":"Number"},{"name":"AnnualRevenue","type":"Currency"},{"name":"OwnerId","type":"Lookup","referenceTo":["User"]},{"name":"Type","type":"Picklist"},{"name":"CreatedDate","type":"DateTime"}]},{"name":"Contact","fieldsComplete":true,"fields":[{"name":"LastName","type":"Text"},{"name":"Birthdate","type":"Date"},{"name":"IsEmailBounced","type":"Checkbox"}]}]}`)
 	dir := t.TempDir()
 	snapshotPath := filepath.Join(dir, "schema.json")
 	if err := os.WriteFile(snapshotPath, snapshot, 0600); err != nil {
