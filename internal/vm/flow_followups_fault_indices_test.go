@@ -2,6 +2,7 @@ package vm
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/storage"
@@ -16,6 +17,8 @@ func TestFlowFollowupsActionFaultNativeIndices(t *testing.T) {
 		}{
 			{"singleton", "new Account(Name = 'throw')", 1},
 			{"bulk", "new Account(Name = 'value'), new Account(Name = 'throw'), new Account(Name = 'value')", 3},
+			{"two", "new Account(Name = 'value'), new Account(Name = 'throw')", 2},
+			{"limit", strings.Repeat("new Account(Name = 'value'), ", 100) + "new Account(Name = 'throw'), " + strings.TrimSuffix(strings.Repeat("new Account(Name = 'value'), ", 99), ", "), 200},
 		} {
 			t.Run(api+"/"+tc.name, func(t *testing.T) {
 				org := testDataOrg()
