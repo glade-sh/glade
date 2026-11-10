@@ -104,43 +104,49 @@ func TestPrivateQueueMemberDerivedQueryRoutes(t *testing.T) {
 					}
 				})
 			}
-			t.Run("parent-projection", func(t *testing.T) {
-				machine := hierarchyRecordVisibilityMachine(t)
-				queueDerivedRouteMachine(t, machine)
-				objects := machine.Org.Objects["Widget__c"]
-				parent := objects.Records["a00000000000002"]
-				parent.System.OwnerID = "00G000000000001"
-				parent.Fields["Name"] = storage.StringValue("Full")
-				objects.Records[parent.ID] = parent
-				child := objects.Records["a00000000000003"]
-				child.System.OwnerID = "005000000000002"
-				objects.Records[child.ID] = child
-				machine.Org.Objects["Widget__c"] = objects
-				machine.SetOrg(machine.Org)
-				body, err := CompileAnonymousWithOptions("return [SELECT Id,Parent__c,Parent__r.Id,Parent__r.Name FROM Widget__c WHERE Id='a00000000000003' WITH SYSTEM_MODE];", CompileOptions{APIVersion: row[1]})
-				if err != nil {
-					t.Fatal(err)
-				}
-				class := Class{Name: "SyntheticParentReader", APIVersion: row[1], Modifiers: []string{"with sharing"}}
-				if err := machine.RegisterClass(class); err != nil {
-					t.Fatal(err)
-				}
-				method := Method{Name: class.Name + ".read", ClassName: class.Name, IsStatic: true, Access: "public", APIVersion: row[1], SourceContextBound: true, SharingMode: "with sharing", Program: body}
-				if err := machine.RegisterMethod(method); err != nil {
-					t.Fatal(err)
-				}
-				value, err := machine.callMethod(machine.Methods[method.Name], nil, &Result{})
-				if err != nil {
-					t.Fatal(err)
-				}
-				if len(value.List) != 1 {
-					t.Fatalf("child rows=%d, native=1", len(value.List))
-				}
-				_, parentValue, ok := objectFieldValue(value.List[0], "Parent__r")
-				if !ok || parentValue.Kind != ValueObject || stringField(parentValue, "Name") != want["parentProjected"] {
-					t.Fatalf("parent projection=%v, native=%v", parentValue, want["parentProjected"])
-				}
-			})
+			for _, query := range []struct{ name, source string }{
+				{"native", "return [SELECT Parent__r.Name FROM Widget__c WHERE Id='a00000000000003'];"},
+				{"fixture-shape", "return [SELECT Id,Parent__c,Parent__r.Id,Parent__r.Name FROM Widget__c WHERE Id='a00000000000003' WITH SYSTEM_MODE];"},
+			} {
+				query := query
+				t.Run("parent-projection/"+query.name, func(t *testing.T) {
+					machine := hierarchyRecordVisibilityMachine(t)
+					queueDerivedRouteMachine(t, machine)
+					objects := machine.Org.Objects["Widget__c"]
+					parent := objects.Records["a00000000000002"]
+					parent.System.OwnerID = "00G000000000001"
+					parent.Fields["Name"] = storage.StringValue("Full")
+					objects.Records[parent.ID] = parent
+					child := objects.Records["a00000000000003"]
+					child.System.OwnerID = "005000000000002"
+					objects.Records[child.ID] = child
+					machine.Org.Objects["Widget__c"] = objects
+					machine.SetOrg(machine.Org)
+					body, err := CompileAnonymousWithOptions(query.source, CompileOptions{APIVersion: row[1]})
+					if err != nil {
+						t.Fatal(err)
+					}
+					class := Class{Name: "SyntheticParentReader", APIVersion: row[1], Modifiers: []string{"with sharing"}}
+					if err := machine.RegisterClass(class); err != nil {
+						t.Fatal(err)
+					}
+					method := Method{Name: class.Name + ".read", ClassName: class.Name, IsStatic: true, Access: "public", APIVersion: row[1], SourceContextBound: true, SharingMode: "with sharing", Program: body}
+					if err := machine.RegisterMethod(method); err != nil {
+						t.Fatal(err)
+					}
+					value, err := machine.callMethod(machine.Methods[method.Name], nil, &Result{})
+					if err != nil {
+						t.Fatal(err)
+					}
+					if len(value.List) != 1 {
+						t.Fatalf("child rows=%d, native=1", len(value.List))
+					}
+					_, parentValue, ok := objectFieldValue(value.List[0], "Parent__r")
+					if !ok || parentValue.Kind != ValueObject || stringField(parentValue, "Name") != want["parentProjected"] {
+						t.Fatalf("parent projection=%v, native=%v", parentValue, want["parentProjected"])
+					}
+				})
+			}
 		})
 	}
 }
