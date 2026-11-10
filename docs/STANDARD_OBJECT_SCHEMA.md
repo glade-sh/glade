@@ -123,7 +123,7 @@ captured fields in `internal/storage/standard_picklist_validation.go`.
 
 Objects whose field types come from the Apex SObject stub overlay type their
 picklists as String. `python3 scripts/generate-standard-stub-restricted-picklists.py`
-writes `internal/storage/standard_stub_restricted_picklists.json.gz` from the
+writes `internal/storage/standard_stub_restricted_picklists.json` from the
 P0 describes: every field reported as a restricted picklist at each API where
 it exists. A value list is kept only when it is non-empty, equal at both APIs,
 has no null label, no default entry and no dependent controller, and every

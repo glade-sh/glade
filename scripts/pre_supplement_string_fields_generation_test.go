@@ -32,3 +32,27 @@ func TestPreSupplementStringFieldsGenerator(t *testing.T) {
 		t.Fatalf("unexpected generated baseline: %s", got)
 	}
 }
+
+// This input is the public-base fail-before test output, with only subtest
+// headings and STRING observations retained. Regenerating it protects the
+// baseline scope used to preserve the preexisting picklist assertion.
+func TestPreSupplementStringFieldsFixtureGenerated(t *testing.T) {
+	base := "../internal/apextest/testdata/conformance/standard_describe_profiles"
+	input := filepath.Join(base, "pre_supplement_string_fields.log.txt")
+	out := filepath.Join(t.TempDir(), "baseline.json")
+	cmd := exec.Command("python3", "generate-pre-supplement-string-fields.py", input, "--output", out)
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("generate baseline fixture: %v\n%s", err, output)
+	}
+	got, err := os.ReadFile(out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want, err := os.ReadFile(filepath.Join(base, "pre_supplement_string_fields.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(got) != string(want) {
+		t.Fatal("baseline fixture differs from public-base observations")
+	}
+}
