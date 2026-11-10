@@ -33,7 +33,7 @@ func TestProfileInventoryPlainShapeNative(t *testing.T) {
 					licenseID := profile.Fields["UserLicenseId"].ID
 					license := org.Objects["UserLicense"].Records[licenseID]
 					if got := license.Fields["Name"].String; got != expected {
-						t.Errorf("%s license = %q, native %q", name, got, expected)
+						t.Errorf("%s license = %q, native %q; fields=%+v; untouched=%t", name, got, expected, profile.Fields, untouchedBootstrapProfile(profile.ID, profile))
 					}
 				}
 			}
