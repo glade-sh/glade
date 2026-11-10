@@ -1,0 +1,1 @@
+<apex:page controller="VfFieldController" showHeader="false" sidebar="false"><apex:outputText value="COLLISION_START_{!observed}_COLLISION_END"/></apex:page>
