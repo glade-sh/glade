@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 	"unicode"
 	"unicode/utf8"
@@ -278,10 +279,10 @@ func ExecuteWithCacheAndContext(org storage.OrgState, query Query, cache *Execut
 		org, objectName, ok = orgWithLazyChildObject(org, query.Object)
 	}
 	if !ok && shouldHydrateVirtualSchemaForQuery(query.Object) {
-		org = virtualSchemaQueryOrg(org, cache)
+		org = virtualSchemaQueryOrg(org, query, cache)
 		objectName, ok = storage.ResolveObjectName(org, query.Object)
 	} else if ok && shouldHydrateVirtualSchemaForQuery(objectName) {
-		org = virtualSchemaQueryOrg(org, cache)
+		org = virtualSchemaQueryOrg(org, query, cache)
 		objectName, ok = storage.ResolveObjectName(org, query.Object)
 	}
 	if !ok {
@@ -373,7 +374,7 @@ func ExecuteWithCacheAndContext(org storage.OrgState, query Query, cache *Execut
 			}
 		}
 		if matchesWithScratch(org, object.Definition, record, query.Where, context, predicateScratch) {
-			if context.WindowRecordVisible != nil && (query.HasLimit || query.HasOffset) && !queryHasAggregates(query) && !context.WindowRecordVisible(objectName, record) {
+			if context.WindowRecordVisible != nil && (query.HasLimit || query.HasOffset) && !queryHasAggregates(query) && !context.WindowRecordVisible(objectName, callbackRecord(objectName, record)) {
 				continue
 			}
 			matchedRecords = append(matchedRecords, record)
@@ -531,35 +532,64 @@ func shouldHydrateVirtualSchemaForQuery(objectName string) bool {
 	return isVirtualSchemaObjectName(objectName) || isUserAccessVirtualSchemaObjectName(objectName)
 }
 
+// callbackRecord is the record handed to an ExecutionContext callback. A
+// virtual schema row may belong to the generation's shared view, so a caller
+// gets its own copy; every other record is the caller's own org state.
+func callbackRecord(objectName string, record storage.Record) storage.Record {
+	if shouldHydrateVirtualSchemaForQuery(objectName) {
+		return record.Clone()
+	}
+	return record
+}
+
 var virtualSchemaObjectNames = [...]string{"EntityDefinition", "EntityParticle", "FieldDefinition", "RelationshipDomain", "UserEntityAccess", "UserFieldAccess"}
 
-// sharedVirtualSchema is one runtime schema generation's hydrated virtual
-// schema objects. Their records derive only from the generation's object
-// definitions, which are frozen while the org carries its RuntimeSchemaStamp
-// (every definition writer clears it), so the six object states can be
-// shared read-only by every query of every VM on that generation.
+// sharedVirtualSchema is one runtime schema generation's virtual schema
+// objects. Their rows derive only from the generation's object definitions,
+// which are frozen while the org carries its RuntimeSchemaStamp (every
+// definition writer clears it), so they can be shared read-only by every
+// query of every VM on that generation. definitions holds the six object
+// states as EnsureStandardObject prepares them, with no rows; tables holds the
+// hydrated states, built one table at a time as queries need them, so a run
+// that only reads EntityDefinition never materialises the per-field tables.
+// tables is replaced, never mutated, so a reader keeps a consistent snapshot.
 type sharedVirtualSchema struct {
 	runtimeStamp   string
 	hydrationStamp string
-	objects        map[string]storage.ObjectState
+	definitions    map[string]storage.ObjectState
+	tables         map[string]storage.ObjectState
 }
+
+// virtualSchemaBuilds counts hydrated virtual schema tables; tests read it to
+// prove that concurrent first queries build each table once.
+var virtualSchemaBuilds atomic.Int64
 
 // virtualSchemaQueryOrg returns the org a virtual schema query executes
 // against: the caller's objects plus the six virtual schema objects hydrated
-// from the caller's definitions. A frozen generation hydrates once per
-// execution cache and reuses the result; an org without a runtime stamp, or
-// one that already holds records for a virtual schema object (explicit
-// records win over hydration), hydrates a private deep clone as before.
-func virtualSchemaQueryOrg(org storage.OrgState, cache *ExecutionCache) storage.OrgState {
+// from the caller's definitions. A frozen generation hydrates each table once
+// per execution cache and reuses it; an org without a runtime stamp, or one
+// that already holds records for a virtual schema object (explicit records
+// win over hydration), hydrates a private view as before.
+func virtualSchemaQueryOrg(org storage.OrgState, query Query, cache *ExecutionCache) storage.OrgState {
 	runtimeStamp := strings.TrimSpace(org.RuntimeSchemaStamp)
 	if cache == nil || runtimeStamp == "" || virtualSchemaObjectsHaveRecords(org) {
 		return hydratedVirtualSchemaView(org)
 	}
 	hydrationStamp := virtualSchemaHydrationStamp(org)
-	shared := cache.sharedVirtualSchemaObjects(org, runtimeStamp, hydrationStamp)
-	out := org.CloneObjectsShallow(len(shared))
-	for name, object := range shared {
-		out.Objects[name] = object
+	shared := cache.sharedVirtualSchema(org, runtimeStamp, hydrationStamp)
+	base := canonicalVirtualSchemaObjectName(query.Object)
+	want := virtualSchemaTablesForQuery(org, shared.definitions[base].Definition, base, query)
+	tables := cache.hydratedVirtualSchemaTables(org, shared, want)
+	out := org.CloneObjectsShallow(len(virtualSchemaObjectNames))
+	for _, name := range virtualSchemaObjectNames {
+		if table, ok := tables[name]; ok && want[name] {
+			out.Objects[name] = table
+			continue
+		}
+		definition := shared.definitions[name]
+		definition.Records = map[storage.ID]storage.Record{}
+		definition.Indexes = map[string]storage.IndexSet{}
+		out.Objects[name] = definition
 	}
 	return out
 }
@@ -573,7 +603,9 @@ func hydratedVirtualSchemaView(org storage.OrgState) storage.OrgState {
 	out := org.CloneObjectsShallow(len(virtualSchemaObjectNames))
 	for _, name := range virtualSchemaObjectNames {
 		if object, ok := out.Objects[name]; ok {
-			out.Objects[name] = object.Clone()
+			object = object.Clone()
+			object.RecordsShared, object.IndexesShared = false, false
+			out.Objects[name] = object
 		}
 	}
 	hydrateVirtualSchemaObjects(&out)
@@ -589,34 +621,210 @@ func virtualSchemaObjectsHaveRecords(org storage.OrgState) bool {
 	return false
 }
 
-// sharedVirtualSchemaObjects returns the generation's hydrated virtual schema
-// object states, building them from a private deep clone of org on the first
-// query of the generation. Record and index maps are marked shared so any
-// writer clones them first.
-func (c *ExecutionCache) sharedVirtualSchemaObjects(org storage.OrgState, runtimeStamp, hydrationStamp string) map[string]storage.ObjectState {
+func canonicalVirtualSchemaObjectName(name string) string {
+	for _, candidate := range virtualSchemaObjectNames {
+		if strings.EqualFold(candidate, strings.TrimSpace(name)) {
+			return candidate
+		}
+	}
+	return name
+}
+
+func allVirtualSchemaTables() map[string]bool {
+	all := make(map[string]bool, len(virtualSchemaObjectNames))
+	for _, name := range virtualSchemaObjectNames {
+		all[name] = true
+	}
+	return all
+}
+
+// virtualSchemaTablesForQuery returns the virtual schema tables a query can
+// read: the queried table and the parents its one-hop relationship paths
+// reach. Anything the walk does not fully understand (child queries, TYPEOF,
+// subqueries, formula predicates, multi-hop or unresolved paths, polymorphic
+// relationships) answers every table, which is what the eager hydration gave.
+func virtualSchemaTablesForQuery(org storage.OrgState, definition storage.ObjectDefinition, base string, query Query) map[string]bool {
+	want := map[string]bool{base: true}
+	if len(query.ChildQueries) > 0 || len(query.Typeofs) > 0 || definition.APIName == "" {
+		return allVirtualSchemaTables()
+	}
+	complete := true
+	var path func(field string)
+	path = func(field string) {
+		if !complete {
+			return
+		}
+		field = strings.TrimSpace(field)
+		if field == "" {
+			return
+		}
+		if aggregate, ok, err := parseAggregateField(field); err == nil && ok {
+			field = aggregate.Field
+			if field == "" {
+				return
+			}
+		}
+		if expr, ok := parseSelectFieldExpression(field); ok {
+			for _, arg := range expr.Args {
+				path(selectFunctionFieldArg(arg))
+			}
+			return
+		}
+		if stripped, ok := stripQualifiedCurrentObjectField(org, definition, field); ok {
+			field = stripped
+		}
+		if !strings.Contains(field, ".") {
+			return
+		}
+		parts := strings.SplitN(field, ".", 2)
+		if strings.Contains(parts[1], ".") {
+			complete = false
+			return
+		}
+		relations := matchingParentRelations(org.Namespace, definition, parts[0])
+		if len(relations) == 0 {
+			complete = false
+			return
+		}
+		for _, relation := range relations {
+			if relation.Polymorphic || len(relation.ParentObjects) == 0 {
+				complete = false
+				return
+			}
+			for _, parent := range relation.ParentObjects {
+				if shouldHydrateVirtualSchemaForQuery(parent) {
+					want[canonicalVirtualSchemaObjectName(parent)] = true
+				}
+			}
+		}
+	}
+	var condition func(c *Condition)
+	condition = func(c *Condition) {
+		if c == nil || !complete {
+			return
+		}
+		if c.Subquery != nil || c.Formula != nil {
+			complete = false
+			return
+		}
+		path(c.Field)
+		for i := range c.And {
+			condition(&c.And[i])
+		}
+		for i := range c.Or {
+			condition(&c.Or[i])
+		}
+	}
+	for _, field := range query.Fields {
+		path(field)
+	}
+	for _, field := range query.GroupBy {
+		path(field)
+	}
+	path(query.OrderBy)
+	for _, order := range query.Order {
+		path(order.Field)
+	}
+	for _, list := range [][]Aggregate{query.Aggregates, query.HavingAggregates, query.orderAggregates} {
+		for _, aggregate := range list {
+			path(aggregate.Field)
+		}
+	}
+	condition(query.Where)
+	condition(query.Having)
+	if !complete {
+		return allVirtualSchemaTables()
+	}
+	return want
+}
+
+// sharedVirtualSchema returns the generation's entry, preparing the six
+// definitions (no rows) on the first query of a generation.
+func (c *ExecutionCache) sharedVirtualSchema(org storage.OrgState, runtimeStamp, hydrationStamp string) *sharedVirtualSchema {
 	c.mu.RLock()
 	shared := c.virtualSchema
 	c.mu.RUnlock()
 	if shared != nil && shared.runtimeStamp == runtimeStamp && shared.hydrationStamp == hydrationStamp {
-		return shared.objects
+		return shared
 	}
-	hydrated := hydratedVirtualSchemaView(org)
-	objects := make(map[string]storage.ObjectState, len(virtualSchemaObjectNames))
+	c.virtualSchemaBuildMu.Lock()
+	defer c.virtualSchemaBuildMu.Unlock()
+	c.mu.RLock()
+	shared = c.virtualSchema
+	c.mu.RUnlock()
+	if shared != nil && shared.runtimeStamp == runtimeStamp && shared.hydrationStamp == hydrationStamp {
+		return shared
+	}
+	view := org.CloneObjectsShallow(len(virtualSchemaObjectNames))
+	hydrateVirtualSchemaTables(&view, nil)
+	definitions := make(map[string]storage.ObjectState, len(virtualSchemaObjectNames))
 	for _, name := range virtualSchemaObjectNames {
-		object, ok := hydrated.Objects[name]
-		if !ok {
-			continue
-		}
-		object.RecordsShared, object.IndexesShared = true, true
-		objects[name] = object
+		object := view.Objects[name]
+		object.Records, object.Indexes = nil, nil
+		definitions[name] = object
 	}
-	shared = &sharedVirtualSchema{runtimeStamp: runtimeStamp, hydrationStamp: hydrationStamp, objects: objects}
+	shared = &sharedVirtualSchema{runtimeStamp: runtimeStamp, hydrationStamp: hydrationStamp, definitions: definitions, tables: map[string]storage.ObjectState{}}
 	c.mu.Lock()
 	c.virtualSchema = shared
 	c.mu.Unlock()
-	return objects
+	return shared
 }
 
+// hydratedVirtualSchemaTables returns the generation's hydrated tables after
+// building the wanted ones that are missing. One build runs at a time per
+// cache, so concurrent first queries wait for a single hydration instead of
+// each building their own. Record and index maps are marked shared so any
+// writer clones them first.
+func (c *ExecutionCache) hydratedVirtualSchemaTables(org storage.OrgState, shared *sharedVirtualSchema, want map[string]bool) map[string]storage.ObjectState {
+	c.mu.RLock()
+	tables := shared.tables
+	c.mu.RUnlock()
+	missing := virtualSchemaMissingTables(tables, want)
+	if len(missing) == 0 {
+		return tables
+	}
+	c.virtualSchemaBuildMu.Lock()
+	defer c.virtualSchemaBuildMu.Unlock()
+	c.mu.RLock()
+	tables = shared.tables
+	c.mu.RUnlock()
+	missing = virtualSchemaMissingTables(tables, want)
+	if len(missing) == 0 {
+		return tables
+	}
+	view := org.CloneObjectsShallow(len(virtualSchemaObjectNames))
+	hydrateVirtualSchemaTables(&view, missing)
+	next := make(map[string]storage.ObjectState, len(tables)+len(missing))
+	for name, table := range tables {
+		next[name] = table
+	}
+	for name := range missing {
+		object := view.Objects[name]
+		object.RecordsShared, object.IndexesShared = true, true
+		next[name] = object
+		virtualSchemaBuilds.Add(1)
+	}
+	c.mu.Lock()
+	shared.tables = next
+	c.mu.Unlock()
+	return next
+}
+
+func virtualSchemaMissingTables(tables map[string]storage.ObjectState, want map[string]bool) map[string]bool {
+	var missing map[string]bool
+	for name := range want {
+		if _, ok := tables[name]; !ok {
+			if missing == nil {
+				missing = map[string]bool{}
+			}
+			missing[name] = true
+		}
+	}
+	return missing
+}
+
+// hydrateVirtualSchemaObjects hydrates every virtual schema table on org,
+// once per hydration stamp.
 func hydrateVirtualSchemaObjects(org *storage.OrgState) {
 	if org == nil {
 		return
@@ -625,9 +833,23 @@ func hydrateVirtualSchemaObjects(org *storage.OrgState) {
 	if virtualSchemaAlreadyHydrated(*org, stamp) {
 		return
 	}
-	for _, objectName := range []string{"EntityDefinition", "EntityParticle", "FieldDefinition", "RelationshipDomain", "UserEntityAccess", "UserFieldAccess"} {
+	hydrateVirtualSchemaTables(org, allVirtualSchemaTables())
+	setVirtualSchemaHydrationStamp(org, stamp)
+}
+
+// hydrateVirtualSchemaTables prepares the six virtual schema objects on org
+// and fills the rows of the wanted tables from org's ordinary definitions.
+// Rows a table already holds are kept (explicit records win).
+func hydrateVirtualSchemaTables(org *storage.OrgState, want map[string]bool) {
+	if org == nil {
+		return
+	}
+	for _, objectName := range virtualSchemaObjectNames {
 		storage.EnsureStandardObject(org, objectName)
 		storage.EnsureMutableObjectRecords(org, objectName)
+	}
+	if len(want) == 0 {
+		return
 	}
 	entityDefinitions := org.Objects["EntityDefinition"]
 	entityParticles := org.Objects["EntityParticle"]
@@ -653,10 +875,12 @@ func hydrateVirtualSchemaObjects(org *storage.OrgState) {
 	if userFieldAccess.Records == nil {
 		userFieldAccess.Records = make(map[storage.ID]storage.Record)
 	}
+	wantEntity, wantParticle, wantField := want["EntityDefinition"], want["EntityParticle"], want["FieldDefinition"]
+	wantDomain, wantEntityAccess, wantFieldAccess := want["RelationshipDomain"], want["UserEntityAccess"], want["UserFieldAccess"]
 	// EntityDefinition describes itself even though the virtual schema objects
 	// do not participate in ordinary field and access-record hydration.
 	selfID := storage.ID(entityDefinitions.Definition.APIName)
-	if _, exists := entityDefinitions.Records[selfID]; !exists {
+	if _, exists := entityDefinitions.Records[selfID]; wantEntity && !exists {
 		entityDefinitions.Records[selfID] = virtualEntityDefinitionRecord(entityDefinitions.Definition)
 	}
 	for objectName, object := range org.Objects {
@@ -667,38 +891,42 @@ func hydrateVirtualSchemaObjects(org *storage.OrgState) {
 			continue
 		}
 		entityID := storage.ID(object.Definition.APIName)
-		if _, exists := entityDefinitions.Records[entityID]; !exists {
+		if _, exists := entityDefinitions.Records[entityID]; wantEntity && !exists {
 			entityDefinitions.Records[entityID] = virtualEntityDefinitionRecord(object.Definition)
 		}
-		if _, exists := userEntityAccess.Records[entityID]; !exists {
+		if _, exists := userEntityAccess.Records[entityID]; wantEntityAccess && !exists {
 			userEntityAccess.Records[entityID] = virtualUserEntityAccessRecord(object.Definition.APIName)
 		}
-		for fieldName, field := range object.Definition.Fields {
-			if field.APIName == "" {
-				field.APIName = fieldName
-			}
-			particleID := storage.ID(object.Definition.APIName + "." + field.APIName)
-			if _, exists := entityParticles.Records[particleID]; !exists {
-				entityParticles.Records[particleID] = virtualEntityParticleRecord(object.Definition, field)
-			}
-			if _, exists := fieldDefinitions.Records[particleID]; !exists {
-				fieldDefinitions.Records[particleID] = virtualFieldDefinitionRecord(object.Definition, field)
-			}
-			if _, exists := userFieldAccess.Records[particleID]; !exists {
-				userFieldAccess.Records[particleID] = virtualUserFieldAccessRecord(particleID, object.Definition.APIName)
+		if wantParticle || wantField || wantFieldAccess {
+			for fieldName, field := range object.Definition.Fields {
+				if field.APIName == "" {
+					field.APIName = fieldName
+				}
+				particleID := storage.ID(object.Definition.APIName + "." + field.APIName)
+				if _, exists := entityParticles.Records[particleID]; wantParticle && !exists {
+					entityParticles.Records[particleID] = virtualEntityParticleRecord(object.Definition, field)
+				}
+				if _, exists := fieldDefinitions.Records[particleID]; wantField && !exists {
+					fieldDefinitions.Records[particleID] = virtualFieldDefinitionRecord(object.Definition, field)
+				}
+				if _, exists := userFieldAccess.Records[particleID]; wantFieldAccess && !exists {
+					userFieldAccess.Records[particleID] = virtualUserFieldAccessRecord(particleID, object.Definition.APIName)
+				}
 			}
 		}
-		for _, relation := range object.Definition.Relations {
-			if relation.ChildRelationship == "" || relation.Field == "" {
-				continue
-			}
-			for _, parentName := range relation.ParentObjects {
-				if parentName == "" {
+		if wantDomain {
+			for _, relation := range object.Definition.Relations {
+				if relation.ChildRelationship == "" || relation.Field == "" {
 					continue
 				}
-				domainID := storage.ID(parentName + "." + object.Definition.APIName + "." + relation.Field)
-				if _, exists := relationshipDomains.Records[domainID]; !exists {
-					relationshipDomains.Records[domainID] = virtualRelationshipDomainRecord(domainID, parentName, object.Definition.APIName, relation)
+				for _, parentName := range relation.ParentObjects {
+					if parentName == "" {
+						continue
+					}
+					domainID := storage.ID(parentName + "." + object.Definition.APIName + "." + relation.Field)
+					if _, exists := relationshipDomains.Records[domainID]; !exists {
+						relationshipDomains.Records[domainID] = virtualRelationshipDomainRecord(domainID, parentName, object.Definition.APIName, relation)
+					}
 				}
 			}
 		}
@@ -709,7 +937,6 @@ func hydrateVirtualSchemaObjects(org *storage.OrgState) {
 	org.Objects["RelationshipDomain"] = relationshipDomains
 	org.Objects["UserEntityAccess"] = userEntityAccess
 	org.Objects["UserFieldAccess"] = userFieldAccess
-	setVirtualSchemaHydrationStamp(org, stamp)
 }
 
 func virtualSchemaHydrationStamp(org storage.OrgState) string {
@@ -2212,7 +2439,7 @@ func executeChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 			continue
 		}
 		if matchesWithScratch(org, childObject.Definition, child, query.Where, context, predicateScratch) {
-			if context.ChildRecordVisible != nil && !query.HasLimit && !query.HasOffset && !context.ChildRecordVisible(childObjectName, child) {
+			if context.ChildRecordVisible != nil && !query.HasLimit && !query.HasOffset && !context.ChildRecordVisible(childObjectName, callbackRecord(childObjectName, child)) {
 				continue
 			}
 			matched = append(matched, child)
