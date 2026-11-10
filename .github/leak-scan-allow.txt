@@ -1,0 +1,4 @@
+# leak-scan allowlist: one repository path prefix per line.
+# Files under these prefixes skip the denylist entries only; the built-in checks
+# (personal paths, host volume paths, private temp paths) still apply everywhere.
+# Keep this list to files that must name pinned public projects.

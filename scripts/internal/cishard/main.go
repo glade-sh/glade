@@ -460,7 +460,18 @@ func buildPlanForPackage(packageName string, names []string, shardCount int, his
 		var total int64
 		durations := make([]int64, 0, len(weights))
 		for _, duration := range weights {
-			total += duration // historyWeightsForPackage already checked this sum.
+			// Zero observations still need placement weight. Check the adjusted
+			// total as well as the raw history total for overflow.
+			if duration == 0 {
+				duration = 1
+			}
+			if duration > math.MaxInt64-total {
+				weights = nil
+				diagnostic = "history rejected: estimated duration total overflows int64; using deterministic fallback"
+				historyUsed = false
+				break
+			}
+			total += duration
 			durations = append(durations, duration)
 		}
 		sort.Slice(durations, func(i, j int) bool { return durations[i] < durations[j] })
@@ -468,6 +479,9 @@ func buildPlanForPackage(packageName string, names []string, shardCount int, his
 			estimate = durations[(len(durations)-1)/2]
 		}
 		missing := len(canonical) - len(weights)
+		if !historyUsed {
+			missing = 0
+		}
 		if missing > 0 && (math.MaxInt64-total)/int64(missing) < estimate {
 			estimate = (math.MaxInt64 - total) / int64(missing)
 		}
@@ -482,12 +496,14 @@ func buildPlanForPackage(packageName string, names []string, shardCount int, his
 		duration, observed := weights[name]
 		if historyUsed && !observed {
 			duration = estimate
+		} else if historyUsed && duration == 0 {
+			duration = 1
 		}
 		items = append(items, weightedTest{name: name, duration: duration, hash: sha256.Sum256([]byte(name))})
 	}
 	if historyUsed {
 		sort.Slice(items, func(i, j int) bool {
-			// Preserve placement of every observed test, including genuine zeros.
+			// Preserve placement of observed tests before missing tests.
 			_, observedI := weights[items[i].name]
 			_, observedJ := weights[items[j].name]
 			if observedI != observedJ {

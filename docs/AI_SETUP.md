@@ -1,5 +1,9 @@
 # AI contributor setup
 
+The end-to-end process (stages, roles, review and release rules, templates) is
+in [WORKFLOW.md](WORKFLOW.md). This file covers client setup and the validation
+commands per surface.
+
 This guide is for developing Glade itself. To use an agent to develop Apex in
 a Salesforce DX project, use the [AI-assisted Apex guide](../site/docs-src/guide/ai-assisted-apex.md).
 
@@ -187,7 +191,7 @@ Climb only as far as the change needs. Each step runs once per exact tree.
 | Step | Command | When |
 | --- | --- | --- |
 | Focused | `go test ./internal/<pkg> -run '^(TestA\|TestB)$'` | While iterating. Rerun a failure alone before anything broader. |
-| Package | `go test ./internal/<pkg>` for each changed package, plus `./internal/gladecli ./internal/repoguard` | Once before review. |
+| Package | `go test ./internal/<pkg>` for each changed package, plus `./internal/gladecli ./internal/repoguard`; for apextest use focused `-run` tests | Once before review; CI runs the 12 apextest shards. |
 | Full local release | `scripts/ci-go-test.sh local-release` | Changes that cross packages or touch the parser, `sema`, `vm`, `storage`, `soql` or `dml`; release candidates. |
 | Distribution smoke | `scripts/release-check.sh` (adds `git diff --check`, the site release proof and `scripts/smoke.sh`) | Release candidates, from a clean checkout. |
 | Required CI, locally | `scripts/ci-local-all` | Before opening or updating a release PR. |
@@ -214,7 +218,7 @@ pushes to `main` run these workflows:
 
 | Workflow | Triggers | What it gates |
 | --- | --- | --- |
-| `CI` (`ci.yml`) | PR, push to `main`, Monday schedule, dispatch | The `Required CI` job, the only ruleset-required check. It succeeds only when every dependency succeeds: workflow-lint, site, test-binaries, vet, the sharded apextest, vm, gladecli and sema jobs and their duration-history jobs, node-integration, nested-sources, server-and-playground, the `test` matrix (remaining Go packages plus repoguard, LWC compile and Visualforce shards), smoke-runtime and smoke-distribution. The schedule adds `Required Scheduled CI` (sema-full and sema-equivalence). |
+| `CI` (`ci.yml`) | PR, merge queue, push to `main`, Monday schedule, dispatch | The `Required CI` job, the only ruleset-required check. It succeeds only when every dependency succeeds: workflow-lint, site, test-binaries, vet, the sharded apextest, vm, gladecli and sema jobs and their duration-history jobs, node-integration, nested-sources, server-and-playground, the `test` matrix (remaining Go packages plus repoguard, LWC compile and Visualforce shards), smoke-runtime, smoke-distribution and leak-scan (`scripts/leak-scan.sh` over the added lines of the change: personal and host paths, private temp paths, and the entries of the `LEAK_SCAN_DENYLIST` repository secret, with `.github/leak-scan-allow.txt` exempting named files from the denylist). The schedule adds `Required Scheduled CI` (sema-full and sema-equivalence). |
 | `Browser` (`browser.yml`) | PR, push to `main`, daily, dispatch | LWC browser and L08 conformance. Missing or skipped browser results fail. |
 | `Race` (`race.yml`) | Successful CI workflow run for a push to `main` (`workflow_run`), Monday schedule, dispatch | The main-branch run follows CI instead of competing with it for the 20 concurrent hosted runners, and runs the concurrency selection in `scripts/ci-race-push.json`. Schedule and dispatch run the full race matrix, with apextest in three parts. Not a PR check. |
 | `Security` (`security.yml`) | PR, push to `main`, `v*` tags, Monday schedule, dispatch | govulncheck, gosec, npm audit, dependency review and OpenSSF Scorecard. The fast CodeQL profile runs on PRs and main pushes; full runs on the schedule, tags and dispatch. |
