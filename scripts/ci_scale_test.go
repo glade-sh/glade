@@ -425,6 +425,12 @@ if (( count < 3 )); then echo 'getaddrinfo ENOTFOUND'; exit 17; fi
 				})
 			}
 		}
+		if filename == "ci.yml" {
+			if count != 4 {
+				t.Errorf("%s browser install routes including PR = %d, want 4", filename, count)
+			}
+			count-- // The original full-suite count remains three.
+		}
 		want := map[string]int{"ci.yml": 3, "browser.yml": 1, "race.yml": 3}[filename]
 		if count != want {
 			t.Errorf("%s browser install routes = %d, want %d", filename, count, want)
