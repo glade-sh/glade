@@ -56,6 +56,9 @@ func TestProcessBuilderWaitStartBoundaries(t *testing.T) {
 		{"wrong target", replace("<assignToReference>myVariable_waitStartTimeVariable</assignToReference>", "<assignToReference>myVariable_current.Stage__c</assignToReference>"), false},
 		{"wrong operator", replace("<operator>Assign</operator>", "<operator>Add</operator>"), false},
 		{"wrong assignment value", replace("<elementReference>$Flow.CurrentDateTime</elementReference>", "<elementReference>myVariable_current.Id</elementReference>"), false},
+		{"assignment value with extra literal", replace("<elementReference>$Flow.CurrentDateTime</elementReference>", "<elementReference>$Flow.CurrentDateTime</elementReference><stringValue>extra</stringValue>"), false},
+		{"additional assignment item", replace("</assignmentItems>", "</assignmentItems><assignmentItems><assignToReference>myVariable_current.Stage__c</assignToReference><operator>Assign</operator><value><stringValue>x</stringValue></value></assignmentItems>"), false},
+		{"fault connector", replace("</assignments>", "<faultConnector><targetReference>myDecision</targetReference></faultConnector></assignments>"), false},
 		{"wrong connector", replace("<targetReference>myDecision</targetReference>", "<targetReference>missingDecision</targetReference>"), false},
 		{"start bypasses assignment", replace("<startElementReference>myVariable_waitStartTimeAssignment</startElementReference>", "<startElementReference>myDecision</startElementReference>"), false},
 		{"variable type", changeVariable("<dataType>DateTime</dataType>", "<dataType>String</dataType>"), false},
@@ -63,6 +66,7 @@ func TestProcessBuilderWaitStartBoundaries(t *testing.T) {
 		{"variable output", changeVariable("<isOutput>false</isOutput>", "<isOutput>true</isOutput>"), false},
 		{"variable collection", changeVariable("<isCollection>false</isCollection>", "<isCollection>true</isCollection>"), false},
 		{"variable default", changeVariable("<elementReference>$Flow.CurrentDateTime</elementReference>", "<elementReference>$Flow.CurrentDate</elementReference>"), false},
+		{"extra variable property", changeVariable("</variables>", "<scale>2</scale></variables>"), false},
 		{"variable read", replace("</Flow>", "<formulas><name>ClockRead</name><dataType>DateTime</dataType><expression>{!myVariable_waitStartTimeVariable}</expression></formulas></Flow>"), false},
 		{"unknown assignment property", replace("<assignmentItems>", "<unexpected>true</unexpected><assignmentItems>"), false},
 	}
