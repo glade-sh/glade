@@ -2803,6 +2803,25 @@ func (vm *VM) applyDeferredAutomation(engine *dml.Engine, records, oldRecords []
 				oldRecord = oldRecords[i]
 			}
 			return vm.refireAutomationUpdateTriggers(record.Object, record.ID, oldRecord, allOrNone, rollback, result)
+		}, func(outcomes []dml.AutomationResult) error {
+			var changed, before []storage.Record
+			for i, outcome := range outcomes {
+				record := records[i]
+				appendTrace(result, "apex.automation.apply", "apex.automation", map[string]any{
+					"object": record.Object,
+					"id":     string(record.ID),
+				})
+				if !outcome.WorkflowUpdated && !outcome.FlowUpdated {
+					continue
+				}
+				old := record
+				if i < len(oldRecords) {
+					old = oldRecords[i]
+				}
+				changed = append(changed, record)
+				before = append(before, old)
+			}
+			return vm.refireAutomationUpdateTriggerBatch(changed, before, allOrNone, rollback, result)
 		}); handled {
 			if err != nil && allOrNone {
 				if rollbackErr := vm.restoreDMLRollbackPoint(rollback); rollbackErr != nil {
@@ -2911,6 +2930,70 @@ func (vm *VM) refireAutomationUpdateTriggersFor(objectName string, ids []storage
 		return nil
 	}
 	triggerRecords := vm.hydrateUpdateTriggerRecords(stored, before)
+	vm.applyBeforeDMLDerivedFields(triggerRecords)
+	failures, err := vm.runTriggers(triggerTimingBefore, "update", triggerRecords, before, result)
+	if err != nil {
+		return dmlExceptionFromTriggerError("update", err)
+	}
+	if hasDMLFailures(failures) {
+		if allOrNone {
+			if rollbackErr := vm.restoreDMLRollbackPoint(rollback); rollbackErr != nil {
+				return rollbackErr
+			}
+		}
+		return fmt.Errorf("workflow update trigger failed for %s: %s", objectName, failures[0].Error)
+	}
+	if err := vm.storeTriggerRecords(objectName, triggerRecords); err != nil {
+		return err
+	}
+	if _, err := vm.runTriggers(triggerTimingAfter, "update", triggerRecords, before, result); err != nil {
+		return dmlExceptionFromTriggerError("update", err)
+	}
+	return nil
+}
+
+// The captured action-output Flow finishes all selected record writes before
+// refiring update triggers on the batch. Snapshot the stored records together
+// so nested trigger DML cannot make a later record's new image stale.
+func (vm *VM) refireAutomationUpdateTriggerBatch(records, oldRecords []storage.Record, allOrNone bool, rollback vmDMLRollbackPoint, result *Result) error {
+	if vm == nil || vm.Org == nil || len(records) == 0 {
+		return nil
+	}
+	if len(records) == 1 {
+		return vm.refireAutomationUpdateTriggers(records[0].Object, records[0].ID, oldRecords[0], allOrNone, rollback, result)
+	}
+	objectName := records[0].Object
+	if canonical, ok := vm.resolveObjectName(objectName); ok {
+		objectName = canonical
+	}
+	object, ok := vm.Org.Objects[objectName]
+	if !ok {
+		return nil
+	}
+	var current, before []storage.Record
+	for i, record := range records {
+		if record.ID == "" {
+			continue
+		}
+		_, stored, found := storage.LookupRecordByID(object.Records, record.ID)
+		if !found {
+			continue
+		}
+		stored.Object = objectName
+		old := oldRecords[i]
+		if old.Object == "" {
+			old.Object = objectName
+		}
+		if old.ID == "" {
+			old.ID = record.ID
+		}
+		current = append(current, stored.Clone())
+		before = append(before, old)
+	}
+	if len(current) == 0 {
+		return nil
+	}
+	triggerRecords := vm.hydrateUpdateTriggerRecords(current, before)
 	vm.applyBeforeDMLDerivedFields(triggerRecords)
 	failures, err := vm.runTriggers(triggerTimingBefore, "update", triggerRecords, before, result)
 	if err != nil {

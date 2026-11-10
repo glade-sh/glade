@@ -10,7 +10,7 @@ import (
 // flow_followups AO04 and AO07-AO14. Other graphs retain ordinary automation.
 // Admission is read-only: a false result has consumed no creation events and
 // has invoked neither Apex nor the completion callback.
-func (e *Engine) ApplyFlowActionBatch(records []storage.Record, after func(int, AutomationResult) error) (bool, error) {
+func (e *Engine) ApplyFlowActionBatch(records []storage.Record, after func(int, AutomationResult) error, afterBatch ...func([]AutomationResult) error) (bool, error) {
 	if e == nil || e.Org == nil || e.FlowActionBatchInvoker == nil || len(records) < 2 || len(records) > 200 || e.Options.AssignmentRule != nil {
 		return false, nil
 	}
@@ -65,10 +65,10 @@ func (e *Engine) ApplyFlowActionBatch(records []storage.Record, after func(int, 
 		previous[i] = stored.Clone()
 		previous[i].Object = objectName
 	}
-	return true, e.runFlowActionBatch(rule, action, objectName, definition, records, previous, after)
+	return true, e.runFlowActionBatch(rule, action, objectName, definition, records, previous, after, afterBatch...)
 }
 
-func (e *Engine) runFlowActionBatch(rule storage.FlowRule, action storage.FlowAction, objectName string, definition storage.ObjectDefinition, records, previous []storage.Record, after func(int, AutomationResult) error) error {
+func (e *Engine) runFlowActionBatch(rule storage.FlowRule, action storage.FlowAction, objectName string, definition storage.ObjectDefinition, records, previous []storage.Record, after func(int, AutomationResult) error, afterBatch ...func([]AutomationResult) error) error {
 	if e.flowDepth > 8 {
 		return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow field update recursion limit exceeded")
 	}
@@ -117,6 +117,14 @@ func (e *Engine) runFlowActionBatch(rule storage.FlowRule, action storage.FlowAc
 			}
 		}
 	}
+	// The native refire capture covers a successful all-admitted action whose
+	// output writes both Date and Datetime on the triggering records. Delay
+	// trigger refiring for that shape until all of those writes are stored.
+	batchedRefire := len(afterBatch) == 1 && afterBatch[0] != nil && len(requests) == len(records) && batchErr == nil && flowActionDateRefireShape(rule, definition, e.Org.Namespace)
+	var outcomes []AutomationResult
+	if batchedRefire {
+		outcomes = make([]AutomationResult, len(records))
+	}
 	for i, frame := range frames {
 		outcome := AutomationResult{}
 		if frame != nil {
@@ -149,6 +157,10 @@ func (e *Engine) runFlowActionBatch(rule storage.FlowRule, action storage.FlowAc
 			outcome.FlowUpdated = changed
 		}
 		e.Org.IDSequences = maxSequences(e.Org.IDSequences, e.IDs.Sequences)
+		if batchedRefire {
+			outcomes[i] = outcome
+			continue
+		}
 		if after != nil {
 			// The ordinary route finishes Flow before refiring Apex triggers.
 			// Nested DML in the callback therefore starts at the caller's depth.
@@ -160,7 +172,72 @@ func (e *Engine) runFlowActionBatch(rule storage.FlowRule, action storage.FlowAc
 			}
 		}
 	}
+	if batchedRefire {
+		e.flowDepth--
+		err := afterBatch[0](outcomes)
+		e.flowDepth++
+		if err != nil {
+			return err
+		}
+	}
 	return nil
+}
+
+// Only the captured direct action-output Date/Datetime write shape is batched;
+// other graphs retain the existing per-record completion callback.
+func flowActionDateRefireShape(rule storage.FlowRule, definition storage.ObjectDefinition, namespace string) bool {
+	var steps []storage.FlowStep
+	active := make(map[string]bool)
+	var flatten func([]storage.FlowStep) bool
+	flatten = func(input []storage.FlowStep) bool {
+		for _, step := range input {
+			if step.Kind != "reference" {
+				steps = append(steps, step)
+				continue
+			}
+			key := flowFrameKey(step.Target)
+			target, ok := rule.StepTargets[key]
+			if !ok || active[key] {
+				return false
+			}
+			active[key] = true
+			ok = flatten(target)
+			delete(active, key)
+			if !ok {
+				return false
+			}
+		}
+		return true
+	}
+	if !flatten(rule.Steps) || len(steps) < 2 || steps[0].Kind != "action" {
+		return false
+	}
+	action := steps[0].Action.Name
+	date, dateTime, count := false, false, 0
+	for _, step := range steps[1:] {
+		if step.Kind != "fieldUpdate" || step.FaultTarget != "" || len(step.FaultBranch) != 0 {
+			return false
+		}
+		for _, update := range step.FieldUpdates {
+			if action == "" || !strings.EqualFold(update.ActionOutput, action) {
+				return false
+			}
+			field, ok := storage.ResolveFieldName(definition, namespace, update.Field)
+			if !ok {
+				return false
+			}
+			switch definition.Fields[field].Type {
+			case storage.FieldDate:
+				date = true
+			case storage.FieldDateTime:
+				dateTime = true
+			default:
+				return false
+			}
+			count++
+		}
+	}
+	return count == 2 && date && dateTime
 }
 
 // The captured batch fault uses one direct, record-independent Custom Error.
