@@ -13915,6 +13915,9 @@ System.runAs(new User(Id = '005000000000072', ProfileId = login.Id, Username = '
 	}
 }
 
+// profile_usertype/org.tsv:8 and :84 (API 62.0; :118 and :194 at 67.0) capture the
+// Chatter External User license key as CSN_External_User; PID_Customer_Community_Login
+// belongs to Customer Community Login User (:15). Main's expectation predates the rows.
 func TestExecCreatedByProfileUserLicenseUsesCommunityLicenseKey(t *testing.T) {
 	program, err := CompileAnonymous(`
 Profile p = [SELECT Id FROM Profile WHERE Name = 'Chatter External User' LIMIT 1];
@@ -13922,7 +13925,7 @@ System.runAs(new User(Id = '005000000000071', ProfileId = p.Id, Username = 'comm
 	insert new Account(Name = 'Acme');
 }
 Account row = [SELECT CreatedBy.Profile.UserLicense.LicenseDefinitionKey FROM Account WHERE Name = 'Acme' LIMIT 1];
-System.assertEquals('PID_Customer_Community_Login', row.CreatedBy.Profile.UserLicense.LicenseDefinitionKey);
+System.assertEquals('CSN_External_User', row.CreatedBy.Profile.UserLicense.LicenseDefinitionKey);
 `)
 	if err != nil {
 		t.Fatal(err)
