@@ -1541,10 +1541,7 @@ func (vm *VM) lookupLabel(name string) (Value, bool) {
 	}
 	if vm.Org != nil {
 		registry := labelRegistryForNamespace(vm.Org.Metadata, namespace)
-		master, affected := "", false
-		if namespace == "" && vm.Org.Namespace == "" {
-			registry, master, affected = resource.LocalLabelTranslationScope(registry, label)
-		}
+		registry, master, affected := localLabelTranslationScope(registry, vm.Org.Namespace, namespace, label)
 		if language := strings.TrimSpace(vm.currentUserInfoField("LanguageLocaleKey", "")); language != "" {
 			filtered := registry
 			filtered.Labels = labelsForLanguage(filtered.Labels, language)

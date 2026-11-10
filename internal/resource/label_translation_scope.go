@@ -6,18 +6,18 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
-// LocalLabelTranslationScope derives captured unnamespaced label behavior from
+// LocalLabelTranslationScope derives captured local label behavior from
 // exact source translation text. Old registries without source text are left
 // unchanged. Generic resource lookups retain their existing Value behavior.
-func LocalLabelTranslationScope(registry storage.MetadataRegistry, name string) (storage.MetadataRegistry, string, bool) {
+func LocalLabelTranslationScope(registry storage.MetadataRegistry, namespace, name string) (storage.MetadataRegistry, string, bool) {
 	for _, translation := range registry.Labels {
-		if translation.Namespace != "" || translation.TranslationSourceRaw == nil || !labelTranslationFile(translation.File) || !strings.EqualFold(strings.TrimSpace(translation.Name), strings.TrimSpace(name)) {
+		if !strings.EqualFold(translation.Namespace, namespace) || translation.TranslationSourceRaw == nil || !labelTranslationFile(translation.File) || !strings.EqualFold(strings.TrimSpace(translation.Name), strings.TrimSpace(name)) {
 			continue
 		}
 		var master storage.LabelMetadata
 		found := false
 		for _, label := range registry.Labels {
-			if label.Namespace == "" && strings.EqualFold(label.Name, translation.Name) && labelMasterFile(label.File) {
+			if strings.EqualFold(label.Namespace, namespace) && strings.EqualFold(label.Name, translation.Name) && labelMasterFile(label.File) {
 				master = label
 				found = true
 				break
@@ -28,9 +28,9 @@ func LocalLabelTranslationScope(registry storage.MetadataRegistry, name string) 
 		}
 		affected := false
 		for _, label := range registry.Labels {
-			if label.Namespace == "" && strings.EqualFold(label.Name, translation.Name) && label.TranslationSourceRaw != nil && labelTranslationFile(label.File) {
+			if strings.EqualFold(label.Namespace, namespace) && strings.EqualFold(label.Name, translation.Name) && label.TranslationSourceRaw != nil && labelTranslationFile(label.File) {
 				value := capturedTranslationValue(*label.TranslationSourceRaw)
-				if value == "" || value != label.Value {
+				if (namespace == "" && value == "") || (value != "" && value != label.Value) {
 					affected = true
 					break
 				}
@@ -41,13 +41,17 @@ func LocalLabelTranslationScope(registry storage.MetadataRegistry, name string) 
 		}
 		labels := make([]storage.LabelMetadata, 0, len(registry.Labels))
 		for _, label := range registry.Labels {
-			if label.Namespace != "" || !strings.EqualFold(strings.TrimSpace(label.Name), strings.TrimSpace(translation.Name)) {
+			if !strings.EqualFold(label.Namespace, namespace) || !strings.EqualFold(strings.TrimSpace(label.Name), strings.TrimSpace(translation.Name)) {
 				continue
 			}
 			if strings.EqualFold(label.Name, translation.Name) && label.TranslationSourceRaw != nil && labelTranslationFile(label.File) {
-				label.Value = capturedTranslationValue(*label.TranslationSourceRaw)
-				if label.Value == "" {
-					continue
+				value := capturedTranslationValue(*label.TranslationSourceRaw)
+				if value == "" {
+					if namespace == "" {
+						continue
+					}
+				} else {
+					label.Value = value
 				}
 			}
 			labels = append(labels, label)

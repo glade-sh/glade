@@ -1153,10 +1153,8 @@ func loadTranslations(path, namespace string) ([]storage.LabelMetadata, error) {
 			continue
 		}
 		entry := storage.LabelMetadata{Name: name, Namespace: namespace, Language: language, Value: strings.TrimSpace(label.Label), File: path}
-		if namespace == "" {
-			raw := label.Label
-			entry.TranslationSourceRaw = &raw
-		}
+		raw := label.Label
+		entry.TranslationSourceRaw = &raw
 		labels = append(labels, entry)
 	}
 	return labels, nil
