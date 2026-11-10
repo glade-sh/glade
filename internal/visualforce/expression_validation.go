@@ -26,6 +26,7 @@ type expressionValidationContext struct {
 	standardController  string
 	bindings            map[string]string
 	sourceBindings      bool
+	controllerless      bool
 	formControllers     []apexast.Declaration
 	standardFormActions map[string]bool
 	ajaxAssignments     map[*MarkupNode]bool
@@ -68,6 +69,18 @@ func loadExpressionValidationSources(p project.Project) (*expressionValidationSo
 		}
 	}
 	if len(src.classes) == 0 {
+		// A page without a controller can still reference a declared custom
+		// object through $Action. Load only object definitions on this path;
+		// unrelated field and resource metadata are not prerequisites.
+		if len(p.ObjectFiles) != 0 {
+			objects, err := schema.LoadProject(project.Project{Root: p.Root, Namespace: p.Namespace, ObjectFiles: p.ObjectFiles})
+			if err != nil {
+				return nil, err
+			}
+			for _, object := range objects.Objects {
+				src.objects[strings.ToLower(object.Name)] = object
+			}
+		}
 		return src, nil
 	}
 	// Load only metadata used by expressions. Unrelated resource types must not
@@ -209,6 +222,7 @@ func (ctx *expressionValidationContext) validate(tree *MarkupNode, sourceName st
 		}
 	}
 	local.controller = root.Attribute("controller")
+	local.controllerless = local.controller == "" && root.Attribute("standardcontroller") == "" && root.Attribute("extensions") == ""
 	local.formControllers = nil
 	local.standardFormActions = nil
 	for _, name := range append(splitCSV(root.Attribute("extensions")), local.controller) {
@@ -557,7 +571,7 @@ func (ctx *expressionValidationContext) functionType(name string, args []Express
 		return "", fmt.Errorf("Incorrect number of parameters for function '%s()'. Expected %d, received %d", name, expected, len(args))
 	}
 	for i, arg := range args {
-		if name == "URLFOR" && i == 0 && len(args) == 2 && ctx.sourceBindings {
+		if name == "URLFOR" && i == 0 && len(args) == 2 && (ctx.sourceBindings || ctx.controllerless) {
 			if accepted, err := ctx.customTabURLTarget(arg, args[1]); err != nil {
 				return "", err
 			} else if accepted {
@@ -616,6 +630,11 @@ func (ctx *expressionValidationContext) identifierType(parts []string) (string, 
 		// field on a controller-less page too.
 		if root == "$user" || root == "$profile" || root == "$organization" {
 			return ctx.globalIdentifierType(root, parts, missing)
+		}
+		// Controller-less pages resolve action names against project object
+		// metadata; they have no controller source to wait for.
+		if root == "$action" && ctx.controllerless {
+			return ctx.actionReferenceType(parts, missing)
 		}
 		// LoadProject also indexes projects whose controllers and metadata are
 		// supplied later by a VM. Validate reference existence only when the
@@ -1021,7 +1040,7 @@ func (ctx *expressionValidationContext) actionReferenceType(parts []string, miss
 	} else if ctx.namespace != "" && strings.Count(parts[1], "__") == 1 {
 		_, custom = ctx.objects[strings.ToLower(ctx.namespace+"__"+parts[1])]
 	}
-	if !custom && len(ctx.objects) == 0 && strings.HasSuffix(strings.ToLower(parts[1]), "__c") {
+	if !custom && !ctx.controllerless && len(ctx.objects) == 0 && strings.HasSuffix(strings.ToLower(parts[1]), "__c") {
 		custom = true // no project schema was indexed for this page
 	}
 	if custom && actionVerbs[verb] {
