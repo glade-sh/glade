@@ -37,6 +37,7 @@ import (
 	"github.com/glade-sh/glade/internal/semanticcache"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
+	"github.com/glade-sh/glade/internal/visualforce"
 	"github.com/glade-sh/glade/internal/vm"
 )
 
@@ -2756,15 +2757,16 @@ func loadProjectIndexWithProgress(root, phase string, renderer cliui.Renderer) (
 }
 
 type execProjectLoad struct {
-	index  typesys.Index
-	org    storage.OrgState
-	orgErr error
-	err    error
+	project project.Project
+	index   typesys.Index
+	org     storage.OrgState
+	orgErr  error
+	err     error
 }
 
 func loadExecProject(root string, loadOrg bool) execProjectLoad {
 	p, index, err := loadProjectIndex(root)
-	load := execProjectLoad{index: index, err: err}
+	load := execProjectLoad{project: p, index: index, err: err}
 	if err == nil && loadOrg {
 		load.org, load.orgErr = orgStateFromIndexWithSpread(root, p, index, true)
 	}
@@ -2917,6 +2919,10 @@ func runExecWithProjectLoader(ctx context.Context, args []string, w io.Writer, l
 		}
 		projectIndex = load.index
 		hasProjectRuntime = true
+		if load.project.Root != "" {
+			visualforce.SetVMRenderEnvironment(machine, load.project)
+			defer visualforce.ClearVMRenderEnvironment(machine)
+		}
 		if dbPath == "" {
 			org := load.org
 			machine.SetOrg(&org)

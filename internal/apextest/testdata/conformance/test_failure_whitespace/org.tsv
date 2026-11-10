@@ -1,0 +1,13 @@
+source_api	route	method	message
+62.0	isTest	assertion	"System.AssertException: Assertion Failed:   assertion"
+62.0	isTest	customCaught	"System.AssertException: Assertion Failed: CAPTURE|\"  custom  \""
+62.0	isTest	customException	"ReportShapeV62.ProbeException:   custom"
+62.0	isTest	dmlCaught	"System.AssertException: Assertion Failed: CAPTURE|\"first  \""
+62.0	isTest	dmlOne	"System.DmlException: first"
+62.0	isTest	dmlTwo	"System.DmlException:   second"
+67.0	isTest	assertion	"System.AssertException: Assertion Failed:   assertion"
+67.0	isTest	customCaught	"System.AssertException: Assertion Failed: CAPTURE|\"  custom  \""
+67.0	isTest	customException	"ReportShapeV67.ProbeException:   custom"
+67.0	isTest	dmlCaught	"System.AssertException: Assertion Failed: CAPTURE|\"first  \""
+67.0	isTest	dmlOne	"System.DmlException: first"
+67.0	isTest	dmlTwo	"System.DmlException:   second"

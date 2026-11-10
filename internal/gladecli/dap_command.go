@@ -13,6 +13,7 @@ import (
 	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/dap"
 	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/visualforce"
 	"github.com/glade-sh/glade/internal/vm"
 )
 
@@ -127,7 +128,10 @@ func handleDAPLaunch(ctx context.Context, handler *dap.Handler, launch dap.Launc
 		}
 	}
 	trace.mark("register-project-runtime")
-	handler.PrepareLiveSessionInClassWithDone(machine, program, strings.TrimSpace(launch.ClassName), func(machine *vm.VM, execErr error) error {
+	handler.PrepareLiveSessionInClassWithHooks(machine, program, strings.TrimSpace(launch.ClassName), func(machine *vm.VM) {
+		visualforce.SetVMLazyRenderEnvironment(machine, projectRoot)
+	}, func(machine *vm.VM, execErr error) error {
+		defer visualforce.ClearVMRenderEnvironment(machine)
 		if dbPath == "" || execErr != nil || dryRun || testLaunch || machine.Org == nil {
 			return nil
 		}
