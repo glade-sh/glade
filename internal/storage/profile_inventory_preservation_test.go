@@ -53,6 +53,7 @@ func TestProfileInventoryPreservesEditedBootstrapFields(t *testing.T) {
 				t.Fatal("bootstrap profile missing")
 			}
 			profile.Fields[tc.field] = tc.value
+			want := profile.Clone().Fields
 			org.Objects["Profile"].Records[tc.id] = profile
 			ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape})
 			EnsureDeterministicPlatformData(&org)
@@ -60,8 +61,8 @@ func TestProfileInventoryPreservesEditedBootstrapFields(t *testing.T) {
 			if !ok {
 				t.Fatal("edited profile was removed")
 			}
-			if !reflect.DeepEqual(got.Fields[tc.field], tc.value) {
-				t.Fatalf("edited %s changed: got %+v want %+v", tc.field, got.Fields[tc.field], tc.value)
+			if !reflect.DeepEqual(got.Fields, want) {
+				t.Fatalf("edited profile fields changed: got %+v want %+v", got.Fields, want)
 			}
 		})
 	}
