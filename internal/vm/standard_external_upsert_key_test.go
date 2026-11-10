@@ -7,9 +7,10 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
-// The standard-object external-key grant rule covers the unique external IDs
-// the native rows observed; other keys keep the pre-existing path.
-func TestStandardExternalUpsertKeyRequiresUniqueExternalID(t *testing.T) {
+// The standard-object external-key grant check follows the capture
+// (standard_ext_upsert_lightning): a custom external ID key is checked whether
+// or not it is unique; non-keys and standard fields are not.
+func TestStandardExternalUpsertKeyFollowsExternalIDCapture(t *testing.T) {
 	org := storage.NewOrgState()
 	storage.EnsureStandardObject(&org, "Contact")
 	contact := org.Objects["Contact"]
@@ -19,7 +20,7 @@ func TestStandardExternalUpsertKeyRequiresUniqueExternalID(t *testing.T) {
 	org.Objects["Contact"] = contact
 	machine := New(io.Discard)
 	machine.SetOrg(&org)
-	for field, want := range map[string]bool{"Unique__c": true, "Plain__c": false, "NotKey__c": false, "Email": false} {
+	for field, want := range map[string]bool{"Unique__c": true, "Plain__c": true, "NotKey__c": false, "Email": false} {
 		if got := machine.standardExternalUpsertKey("Contact", field); got != want {
 			t.Errorf("%s: got %v want %v", field, got, want)
 		}
