@@ -79,6 +79,7 @@ func seedStandardPermissionInventory(org *OrgState) map[string]ID {
 	}
 	profileSets := map[string]ID{}
 	usedProfiles := map[ID]bool{}
+	profileRecordsChanged := false
 	for i, seed := range inventory.PermissionSets {
 		id := ID(seededInventoryID("0PS", i+1))
 		fields := map[string]Value{
@@ -115,11 +116,26 @@ func seedStandardPermissionInventory(org *OrgState) map[string]ID {
 			if profileID == "" {
 				profileID = ID(seededInventoryID("00e", i+1))
 				putSeedRecord(org, "Profile", Record{ID: profileID, Object: "Profile", Fields: map[string]Value{"Name": StringValue(seed.Profile), "UserLicenseId": IDValue(licenseIDs[seed.License])}})
+				profileRecordsChanged = true
+			} else if capturedProfileInventoryShape(org.Features) {
+				profile := profiles[profileID]
+				if untouchedBootstrapProfile(profileID, profile) && !IDsEqual(profile.Fields["UserLicenseId"].ID, licenseIDs[seed.License]) {
+					// Repair only an untouched reserved bootstrap profile. User edits
+					// and profiles outside the captured shapes keep their license.
+					mutable, _ := EnsureMutableObjectRecords(org, "Profile")
+					profile = mutable.Records[profileID].Clone()
+					profile.Fields["UserLicenseId"] = IDValue(licenseIDs[seed.License])
+					mutable.Records[profileID] = profile
+					profileRecordsChanged = true
+				}
 			}
 			// Profile.UserType from the fresh-org capture (profile_usertype).
 			// putSeedRecord fills absent fields only, so a profile seeded or
 			// imported with its own UserType keeps it.
 			if seed.UserType != "" {
+				if _, exists := org.Objects["Profile"].Records[profileID].Fields["UserType"]; !exists {
+					profileRecordsChanged = true
+				}
 				putSeedRecord(org, "Profile", Record{ID: profileID, Object: "Profile", Fields: map[string]Value{"UserType": StringValue(seed.UserType)}})
 			}
 			usedProfiles[profileID] = true
@@ -134,6 +150,10 @@ func seedStandardPermissionInventory(org *OrgState) map[string]ID {
 			profileSets[seed.Profile] = id
 		}
 		putSeedRecord(org, "PermissionSet", Record{ID: id, Object: "PermissionSet", Fields: fields})
+	}
+	pruneUncapturedBootstrapProfiles(org)
+	if profileRecordsChanged && len(org.Objects["Profile"].Definition.Indexes) != 0 {
+		RebuildObjectIndexes(org, "Profile")
 	}
 	return profileSets
 }
@@ -318,6 +338,34 @@ func legacyPermissionSetID[T any](value Value, legacy map[ID]T) (ID, bool) {
 //go:embed seeddata/profile_object_permissions.json
 var standardProfileObjectPermissionsJSON []byte
 
+//go:embed seeddata/object_permission_requirements.json
+var objectPermissionRequirementsJSON []byte
+
+type capturedObjectPermissionRequirement struct {
+	Object    string
+	Method    string
+	UserField string
+}
+
+var loadObjectPermissionRequirements = sync.OnceValue(func() []capturedObjectPermissionRequirement {
+	var rows []capturedObjectPermissionRequirement
+	if err := json.Unmarshal(objectPermissionRequirementsJSON, &rows); err != nil {
+		panic("invalid embedded object permission requirements: " + err.Error())
+	}
+	return rows
+})
+
+// ObjectPermissionUserField returns a captured user-field prerequisite for an
+// object operation, or an empty string when no prerequisite was captured.
+func ObjectPermissionUserField(object, method string) string {
+	for _, row := range loadObjectPermissionRequirements() {
+		if strings.EqualFold(row.Object, object) && strings.EqualFold(row.Method, method) {
+			return row.UserField
+		}
+	}
+	return ""
+}
+
 type capturedProfileObjectPermission struct {
 	Profile, Object string
 	// Read, Create, Edit, Delete, ViewAllRecords, ModifyAllRecords.
@@ -442,16 +490,7 @@ func ensureInventoryUserLicense(org *OrgState, name, key string) ID {
 			return id
 		}
 	}
-	id := ID("")
-	for i, license := range loadStandardPermissionInventory().Licenses {
-		if license.Kind == "UserLicense" && strings.EqualFold(license.Key, key) {
-			id = seededInventoryID("100", i+1)
-			break
-		}
-	}
-	if id == "" {
-		panic("captured permission inventory has no UserLicense " + key)
-	}
+	id := inventoryUserLicenseID(key)
 	// A persisted license with another key may occupy the inventory ID; take
 	// the next free one. The inventory pass finds the license by key.
 	for n := 1; ; n++ {
@@ -464,6 +503,17 @@ func ensureInventoryUserLicense(org *OrgState, name, key string) ID {
 		"Name": StringValue(name), "LicenseDefinitionKey": StringValue(key),
 	}})
 	return id
+}
+
+// inventoryUserLicenseID is the ID the captured inventory assigns to the
+// UserLicense with the given key.
+func inventoryUserLicenseID(key string) ID {
+	for i, license := range loadStandardPermissionInventory().Licenses {
+		if license.Kind == "UserLicense" && strings.EqualFold(license.Key, key) {
+			return seededInventoryID("100", i+1)
+		}
+	}
+	panic("captured permission inventory has no UserLicense " + key)
 }
 
 // migrateLegacyLicenseSeeds repairs orgs persisted by builds that named the

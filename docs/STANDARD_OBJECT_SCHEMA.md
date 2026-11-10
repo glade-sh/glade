@@ -121,6 +121,16 @@ value is in the reviewed public allowlist. Run the pack and field-order
 generators after it. Catalog provenance keeps DML enforcement limited to the
 captured fields in `internal/storage/standard_picklist_validation.go`.
 
+Objects whose field types come from the Apex SObject stub overlay type their
+picklists as String. `python3 scripts/generate-standard-stub-restricted-picklists.py`
+writes `internal/storage/standard_stub_restricted_picklists.json` from the
+P0 describes: every field reported as a restricted picklist at each API where
+it exists. A value list is kept only when it is non-empty, equal at both APIs,
+has no null label, no default entry and no dependent controller, and every
+value is in the reviewed public allowlist. The runtime applies an entry only
+to a field the stub overlay types String, with catalog provenance, so DML
+enforcement is unchanged.
+
 The plain Developer global describe lists in
 `internal/apextest/testdata/conformance/plain_global_describe` feed
 `internal/storage/plain_developer_objects_generated.go` through
@@ -279,7 +289,7 @@ not assert full runtime behavior unless the row is marked `behavior`.
 
 ## Captured standard field policy
 
-`internal/storage/standard_field_policy.json.gz` is a separate field-policy
+`internal/storage/standard_field_policy.json` is a separate field-policy
 sidecar. It leaves the generated schema and describe packs intact. Its version-1
 format contains baseline `objects` (`present`, rich describe `fields`, and
 explicit `absent` candidates), `gates` (object, field metadata, and an all-of

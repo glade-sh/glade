@@ -1,0 +1,21 @@
+apex_api	lwc_api	case	route	outcome
+62.0	59.0	control	LWC-LightningOut	"ok:""ok"""
+62.0	59.0	direct	LWC-LightningOut	"ok:{""value"":""direct"",""visits"":1}"
+62.0	59.0	finite	LWC-LightningOut	"ok:{""value"":""finite"",""visits"":2}"
+62.0	59.0	recursive	LWC-LightningOut	error:An internal server error has occurred\nError ID: 593443139-42628 (-1279386781)
+62.0	59.0	reject	LWC-LightningOut	error:control reject
+67.0	59.0	control	LWC-LightningOut	"ok:""ok"""
+67.0	59.0	direct	LWC-LightningOut	"ok:{""value"":""direct"",""visits"":1}"
+67.0	59.0	finite	LWC-LightningOut	"ok:{""value"":""finite"",""visits"":2}"
+67.0	59.0	recursive	LWC-LightningOut	error:An internal server error has occurred\nError ID: 1321983103-44213 (-1279386781)
+67.0	59.0	reject	LWC-LightningOut	error:control reject
+62.0	67.0	control	LWC-LightningOut	"ok:""ok"""
+62.0	67.0	direct	LWC-LightningOut	"ok:{""value"":""direct"",""visits"":1}"
+62.0	67.0	finite	LWC-LightningOut	"ok:{""value"":""finite"",""visits"":2}"
+62.0	67.0	recursive	LWC-LightningOut	error:An internal server error has occurred\nError ID: 768480812-27794 (-1279386781)
+62.0	67.0	reject	LWC-LightningOut	error:control reject
+67.0	67.0	control	LWC-LightningOut	"ok:""ok"""
+67.0	67.0	direct	LWC-LightningOut	"ok:{""value"":""direct"",""visits"":1}"
+67.0	67.0	finite	LWC-LightningOut	"ok:{""value"":""finite"",""visits"":2}"
+67.0	67.0	recursive	LWC-LightningOut	error:An internal server error has occurred\nError ID: 1990760529-57710 (-1279386781)
+67.0	67.0	reject	LWC-LightningOut	error:control reject

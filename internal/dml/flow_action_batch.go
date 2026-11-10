@@ -65,8 +65,12 @@ func (e *Engine) ApplyFlowActionBatch(records []storage.Record, after func(int, 
 		previous[i] = stored.Clone()
 		previous[i].Object = objectName
 	}
+	return true, e.runFlowActionBatch(rule, action, objectName, definition, records, previous, after)
+}
+
+func (e *Engine) runFlowActionBatch(rule storage.FlowRule, action storage.FlowAction, objectName string, definition storage.ObjectDefinition, records, previous []storage.Record, after func(int, AutomationResult) error) error {
 	if e.flowDepth > 8 {
-		return true, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow field update recursion limit exceeded")
+		return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow field update recursion limit exceeded")
 	}
 	e.flowDepth++
 	defer func() { e.flowDepth-- }()
@@ -131,7 +135,7 @@ func (e *Engine) ApplyFlowActionBatch(records []storage.Record, after func(int, 
 				return changed, nil
 			}()
 			if err != nil {
-				return true, err
+				return err
 			}
 			outcome.FlowUpdated = changed
 		}
@@ -143,11 +147,11 @@ func (e *Engine) ApplyFlowActionBatch(records []storage.Record, after func(int, 
 			err := after(i, outcome)
 			e.flowDepth++
 			if err != nil {
-				return true, err
+				return err
 			}
 		}
 	}
-	return true, nil
+	return nil
 }
 
 // Inspect both success and fault graphs. Memoized summaries count repeated

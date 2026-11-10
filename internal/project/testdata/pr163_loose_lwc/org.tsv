@@ -1,0 +1,5 @@
+case	api	route	result	outcome
+loose	59.0	deploy	accepted	deployed
+bundle_invalid	59.0	deploy	rejected	LWC1503: Parsing error
+loose	67.0	deploy	accepted	deployed
+bundle_invalid	67.0	deploy	rejected	LWC1503: Parsing error

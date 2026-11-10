@@ -1,0 +1,1 @@
+trigger FernSeqTrigger on Fern_Seq__c (before insert, after insert, before update, after update) { if (Trigger.isBefore && Trigger.isUpdate) { for (SObject r : Trigger.new) { if (r.get('Note__c') == 'P1') { r.put('Old__c', 'TRIG'); } } } FernLog.fire('Seq'); }

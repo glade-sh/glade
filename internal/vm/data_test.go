@@ -6221,7 +6221,8 @@ func TestExecDescribeFieldResultStubBackedAccessors(t *testing.T) {
 	program, err := CompileAnonymous(`
 Schema.DescribeFieldResult describe = Account.SObjectType.getDescribe().fields.getMap().get('Defaulted__c').getDescribe();
 System.assertEquals('Defaulted__c', describe.getLocalName());
-System.assertEquals('Fallback', describe.getDefaultValue());
+// Native metadata default matrix: describe_default_value/org.tsv:8-9.
+System.assertEquals(null, describe.getDefaultValue());
 System.assertEquals('\'Fallback\'', describe.getDefaultValueFormula());
 System.assertEquals(true, describe.isDefaultedOnCreate());
 System.assertEquals(true, describe.isFilterable());
@@ -6235,7 +6236,7 @@ System.assertEquals(false, describe.isDeprecatedAndHidden());
 	machine := New(nil)
 	org := testDataOrg()
 	account := org.Objects["Account"]
-	account.Definition.Fields["Defaulted__c"] = storage.Field{APIName: "Defaulted__c", Type: storage.FieldString, DefaultValue: "'Fallback'"}
+	account.Definition.Fields["Defaulted__c"] = storage.Field{APIName: "Defaulted__c", Type: storage.FieldString, DefaultValue: "'Fallback'", DefaultValueFromMetadata: true}
 	org.Objects["Account"] = account
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
@@ -12063,10 +12064,11 @@ func TestExecDescribeFieldSetsFromMetadata(t *testing.T) {
 	program, err := CompileAnonymous(`
 Object accountDescribe = Account.SObjectType.getDescribe();
 Map<String,Object> fieldSets = accountDescribe.fieldSets.getMap();
-System.assert(fieldSets.containsKey('Summary'));
+System.assertEquals(false, fieldSets.containsKey('Summary'));
 System.assert(fieldSets.containsKey('pkg__Summary'));
-System.assertEquals(fieldSets.get('Summary'), fieldSets.get('pkg__Summary'));
-Object summary = fieldSets.get('Summary');
+System.assertEquals(null, fieldSets.get('Summary'));
+Object summary = fieldSets.get('pkg__Summary');
+System.assertNotEquals(null, summary);
 System.assertEquals('Account Summary', summary.getLabel());
 System.assertEquals('Summary', summary.getName());
 System.assertEquals('pkg', summary.getNamespace());

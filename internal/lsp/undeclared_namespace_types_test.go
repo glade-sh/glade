@@ -3,15 +3,20 @@ package lsp
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
+	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
 // Synthetic: ../../testdata/conformance/undeclared_namespace_types/cases.md.
-// Glade a recorded revision published no diagnostics for these documents.
+// Glade in a previous release published no diagnostics for these documents. Ruling 49
+// reverses that deferral: undeclared namespaces are Invalid type in every
+// position (native namespace_external_positions/org.tsv), so each published
+// error names a bar or fooNs type the project does not declare.
 func TestUndeclaredNamespaceTypesLSPRoutes(t *testing.T) {
 	const fixture = "../../testdata/conformance/undeclared_namespace_types/project/force-app/main/default/classes"
 	files, err := filepath.Glob(filepath.Join(fixture, "*.cls"))
@@ -41,10 +46,19 @@ func TestUndeclaredNamespaceTypesLSPRoutes(t *testing.T) {
 				}
 				h := NewHandler(index)
 				defer h.parser.Close()
+				errors := 0
 				for _, path := range paths {
-					if ds := h.diagnosticsForDocument(uriFromPath(path)); len(ds) != 0 {
-						t.Fatalf("%s: %+v", filepath.Base(path), ds)
+					for _, d := range h.diagnosticsForDocument(uriFromPath(path)) {
+						ref, ok := strings.CutPrefix(d.NativeMessage, "Invalid type: ")
+						if d.Severity != diagnostic.Error || !ok || !strings.HasPrefix(ref, "bar.") && ref != "fooNs.Unknown" && !(namespace == "" && ref == "fooNs.LocalThing") {
+							t.Errorf("%s: unexpected %s %s %q | %q", filepath.Base(path), d.Severity, d.Code, d.NativeMessage, d.Message)
+							continue
+						}
+						errors++
 					}
+				}
+				if errors == 0 {
+					t.Fatal("undeclared namespaces accepted")
 				}
 			})
 		}

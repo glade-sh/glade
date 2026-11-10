@@ -1,0 +1,15 @@
+api	route	case	observation
+62.0	anonymous	In populated	Capture Collection Seed B
+62.0	anonymous	In empty	null
+62.0	anonymous	In unassigned	null
+62.0	anonymous	NotIn populated	Capture Collection Seed A
+62.0	anonymous	NotIn empty	Capture Collection Seed A
+62.0	anonymous	NotIn unassigned	Capture Collection Seed A
+62.0	deploy-rejection	unknown field	The field "Missing_Field__c" for the object "Account" doesn't exist.
+67.0	anonymous	In populated	Capture Collection Seed B
+67.0	anonymous	In empty	null
+67.0	anonymous	In unassigned	null
+67.0	anonymous	NotIn populated	Capture Collection Seed A
+67.0	anonymous	NotIn empty	Capture Collection Seed A
+67.0	anonymous	NotIn unassigned	Capture Collection Seed A
+67.0	deploy-rejection	unknown field	The field "Missing_Field__c" for the object "Account" doesn't exist.

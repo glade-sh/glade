@@ -184,6 +184,11 @@ func (e *Engine) ApplyAutomation(objectName string, id storage.ID, inputs ...sto
 		return result, err
 	}
 	result.WorkflowUpdated = workflowUpdated
+	if e.HasActiveProcess(objectName) {
+		if err := e.runProcessesForRecord(objectName, id); err != nil {
+			return result, err
+		}
+	}
 	flowUpdated, err := e.applyFlowFieldUpdates(objectName, id)
 	if err != nil {
 		return result, err
@@ -556,7 +561,7 @@ func (e *Engine) applyFlowFieldUpdates(objectName string, id storage.ID) (bool, 
 	}
 	for _, rule := range sortedFlowRules(object.Definition.FlowRules) {
 		triggerType := strings.TrimSpace(rule.TriggerType)
-		if !rule.Active || (triggerType != "" && !strings.EqualFold(triggerType, "RecordAfterSave")) {
+		if !rule.Active || flowRuleIsProcess(rule) || (triggerType != "" && !strings.EqualFold(triggerType, "RecordAfterSave")) {
 			continue
 		}
 		matches, ok := e.evaluateFlowRule(rule, record, object.Definition)
@@ -829,6 +834,9 @@ type flowRecordCollection struct {
 }
 
 type flowFrame struct {
+	processInterview        bool
+	processUnmodeled        bool
+	processOutcomes         map[string]bool
 	capturedFormulaBindings bool
 	capturedBeforeCreate    bool
 	pathVisited             map[string]bool
@@ -1386,6 +1394,13 @@ func (e *Engine) applyFlowAssignmentStep(assignment storage.FlowAssignment, fram
 				delete(frame.subflowInputs, flowFrameKey(target))
 				if output, found := frame.lookupOutputs[flowFrameKey(assignment.SourceField)]; found {
 					frame.records[flowFrameKey(target)] = output.record.Clone()
+					delete(frame.scalars, flowFrameKey(target))
+					delete(frame.nullRecordDefaults, flowFrameKey(target))
+					frame.assigned[flowFrameKey(target)] = true
+					return nil
+				}
+				if record, found := frame.records[flowFrameKey(assignment.SourceField)]; found {
+					frame.records[flowFrameKey(target)] = record.Clone()
 					delete(frame.scalars, flowFrameKey(target))
 					delete(frame.nullRecordDefaults, flowFrameKey(target))
 					frame.assigned[flowFrameKey(target)] = true
@@ -2220,6 +2235,17 @@ func flowRecordID(record storage.Record) (storage.ID, bool) {
 }
 
 func (e *Engine) evaluateFlowRecordUpdateCriteria(update storage.FlowRecordUpdate, candidate storage.Record, targetDefinition storage.ObjectDefinition, source storage.Record, sourceDefinition storage.ObjectDefinition, frame *flowFrame) (bool, bool) {
+	if update.CriteriaLogic != "" {
+		matches := make([]bool, len(update.Criteria))
+		for i, item := range update.Criteria {
+			value, ok := e.evaluateFlowRecordUpdateCriterion(item, candidate, targetDefinition, source, sourceDefinition, frame)
+			if !ok {
+				return false, false
+			}
+			matches[i] = value
+		}
+		return evaluateLookupFilterLogic(update.CriteriaLogic, matches)
+	}
 	for _, item := range update.Criteria {
 		matches, ok := e.evaluateFlowRecordUpdateCriterion(item, candidate, targetDefinition, source, sourceDefinition, frame)
 		if !ok || !matches {
@@ -2355,6 +2381,12 @@ func (e *Engine) flowRecordUpdateAssignmentValue(field storage.Field, source sto
 		}
 		return storage.Value{}, false, false
 	}
+	// The userclock process row writes $User.Id as its 15-character Flow
+	// string representation; other formula and non-process routes keep theirs.
+	if frame != nil && frame.processInterview && field.Type == storage.FieldString && strings.EqualFold(strings.TrimSpace(assignment.Formula), "$User.Id") {
+		value, ok := e.flowCurrentUserID()
+		return value, false, ok
+	}
 	if strings.TrimSpace(assignment.Formula) != "" && (e.InvocableFlow || flowFormulaUsesRecordVariables(assignment.Formula, frame)) {
 		value, ok := e.flowContextFormulaValue(assignment.Formula, frame)
 		return value, value.Kind == storage.ValueNull, ok
@@ -2376,6 +2408,12 @@ func (e *Engine) selectFlowStepBranch(branches []storage.FlowBranch, source stor
 		}
 		matches, ok := e.evaluateFlowFrameBranch(branch, source, definition, frame)
 		if !ok {
+			if frame.processInterview {
+				// A process with a criterion the graph cannot read stops, as a
+				// process outside the captured shapes stays unrun.
+				frame.processUnmodeled = true
+				return storage.FlowBranch{}, false, nil
+			}
 			return storage.FlowBranch{}, false, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow decision branch %s has unsupported criteria", branch.Name)
 		}
 		if matches {
@@ -2400,6 +2438,12 @@ func (e *Engine) evaluateFlowFrameBranch(branch storage.FlowBranch, source stora
 	}
 	source = e.flowRecordWithCriteriaFormulas(source, definition, branch.Criteria)
 	for _, item := range branch.Criteria {
+		if matches, supported, handled := e.processCriterion(item, source, definition, frame); handled {
+			if !supported || !matches {
+				return matches, supported
+			}
+			continue
+		}
 		if flowGlobalDecisionReference(item.Field) && (frame == nil || !frame.beforeSaveDecisions || frame.autolaunched) {
 			return false, false
 		}
@@ -2766,7 +2810,12 @@ func (e *Engine) applyFlowFieldUpdate(flowName, objectName string, record *stora
 		}
 	}
 	if !resolved {
-		value, explicitNull, resolved = workflowUpdateValue(definition.Fields[fieldName], *record, update, definition, e.Org, e.flowFormulaEvaluationOptions())
+		options := e.flowFormulaEvaluationOptions()
+		if e.capturedMixedAfterSave {
+			options.capturedAfterSavePrior = e.flowPriorRecord(record.ID)
+			update.Formula = capturedAfterSavePriorReference.ReplaceAllString(update.Formula, "PRIORVALUE($1)")
+		}
+		value, explicitNull, resolved = workflowUpdateValue(definition.Fields[fieldName], *record, update, definition, e.Org, options)
 	}
 	if !resolved {
 		return false, dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{fieldName}, "dml: flow field update %s has unsupported value expression", update.Name)
@@ -2783,6 +2832,12 @@ func (e *Engine) applyFlowFieldUpdate(flowName, objectName string, record *stora
 		}
 		record.Fields[fieldName] = value
 		delete(record.ExplicitNulls, fieldName)
+	}
+	if e.capturedCaseAfterSave && strings.EqualFold(fieldName, "OwnerId") {
+		// The captured Case assignment is saved by the following record update.
+		// Keep its system-field representation in sync before the VM converts
+		// that record back into an sObject for DML.
+		record.System.OwnerID = idFromStorageValue(value)
 	}
 	e.traceAutomation("apex.flow.field_update", map[string]any{
 		"flow":         flowName,
@@ -3418,6 +3473,9 @@ func (e *Engine) evaluateFlowRecordDeleteCriteria(del storage.FlowRecordDelete, 
 				return false, false
 			}
 			sourceValue, ok := source.Fields[fieldName]
+			if e.capturedBranchedAfterSave && strings.EqualFold(fieldName, "Id") && source.ID != "" {
+				sourceValue, ok = storage.IDValue(source.ID), true
+			}
 			if !ok {
 				sourceValue = storage.NullValue()
 			}
@@ -3478,14 +3536,25 @@ func (e *Engine) executeFlowSubflow(subflow storage.FlowSubflow, source storage.
 	return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow subflow %s references unknown flow %s", subflow.Name, flowName)
 }
 
-func (e *Engine) runSubflow(rule storage.FlowRule, def storage.ObjectDefinition, subflow storage.FlowSubflow, source storage.Record, sourceDefinition storage.ObjectDefinition, frame *flowFrame) error {
+// subflowInputFrame seeds a subflow interview's frame with its input values.
+func (e *Engine) subflowInputFrame(rule storage.FlowRule, subflow storage.FlowSubflow, source storage.Record, sourceDefinition storage.ObjectDefinition, frame *flowFrame) *flowFrame {
 	subflowFrame := newFlowFrame()
 	subflowFrame.autolaunched = frame.autolaunched
 	subflowFrame.stepTargets = rule.StepTargets
 	subflowFrame.textTemplates = cloneFlowTextTemplates(rule.TextTemplates)
 	flowCoreSeedScalarDefaults(rule.Variables, subflowFrame)
+	if frame.processInterview {
+		for name, value := range rule.ProcessStringConstants {
+			subflowFrame.scalars[flowFrameKey(name)] = storage.StringValue(value)
+		}
+	}
 	seedFlowFrame(e, &source, subflowFrame)
 	for _, input := range subflow.InputAssignments {
+		if frame.processInterview {
+			if lookup, ok := rule.CapturedProcessRelationshipIDBinding(input); ok {
+				input.SourceField = lookup
+			}
+		}
 		field := strings.TrimSpace(input.Field)
 		if field == "" {
 			field = strings.TrimSpace(input.Name)
@@ -3516,6 +3585,11 @@ func (e *Engine) runSubflow(rule storage.FlowRule, def storage.ObjectDefinition,
 		}
 		subflowFrame.scalars[flowFrameKey(field)] = value
 	}
+	return subflowFrame
+}
+
+func (e *Engine) runSubflow(rule storage.FlowRule, def storage.ObjectDefinition, subflow storage.FlowSubflow, source storage.Record, sourceDefinition storage.ObjectDefinition, frame *flowFrame) error {
+	subflowFrame := e.subflowInputFrame(rule, subflow, source, sourceDefinition, frame)
 	subflowRecord := source.Clone()
 	_, err := e.applyFlowStepsWithFrame(rule.Name, def.APIName, &subflowRecord, def, rule.Steps, subflowFrame)
 	if err != nil {
@@ -3678,6 +3752,43 @@ func (e *Engine) flowRecordLookupMatches(lookup storage.FlowRecordLookup, source
 func (e *Engine) applyFlowTransformStep(transform storage.FlowTransform, frame *flowFrame) error {
 	transformType := strings.ToLower(strings.TrimSpace(transform.TransformType))
 	switch transformType {
+	case "recordmap":
+		state, objectName, err := e.object(transform.ObjectType)
+		if err != nil {
+			return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow transform %s targets unknown object %s", transform.Name, transform.ObjectType)
+		}
+		record := storage.Record{Object: objectName, Fields: make(map[string]storage.Value)}
+		for _, mapping := range transform.FieldMappings {
+			field, ok := storage.ResolveFieldName(state.Definition, e.Org.Namespace, mapping.Field)
+			if !ok {
+				return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", []string{mapping.Field}, "dml: flow transform %s maps unknown field %s.%s", transform.Name, objectName, mapping.Field)
+			}
+			var value storage.Value
+			if mapping.FlowLiteralString {
+				value = storage.StringValue(mapping.LiteralValue)
+			} else {
+				if !flowCapturedTransformVariable(frame, mapping.SourceField) {
+					return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow transform %s references an unsupported source", transform.Name)
+				}
+				var ok bool
+				value, ok = e.flowFrameReferenceValueAudit(mapping.SourceField, frame, make(map[string]bool), false)
+				if !ok {
+					return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow transform %s references unknown value %s", transform.Name, mapping.SourceField)
+				}
+			}
+			value, ok = e.flowTransformTargetValue(state.Definition.Fields[field], value)
+			if !ok {
+				return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", []string{field}, "dml: flow transform %s has unsupported value for %s.%s", transform.Name, objectName, field)
+			}
+			record.Fields[field] = value
+			if value.Kind == storage.ValueNull {
+				if record.ExplicitNulls == nil {
+					record.ExplicitNulls = make(map[string]bool)
+				}
+				record.ExplicitNulls[field] = true
+			}
+		}
+		frame.records[flowFrameKey(transform.Name)] = record
 	case "count":
 		records, ok := frame.flowCollection(transform.SourceCollection)
 		if !ok {
@@ -3870,7 +3981,16 @@ func (e *Engine) flowRecordLookupRecords(lookup storage.FlowRecordLookup, source
 		for _, item := range lookup.Criteria {
 			match, ok := e.evaluateFlowLookupCriteria(item, candidate, target.Definition, source, sourceDefinition, frame)
 			if !ok {
-				return nil, storage.ObjectDefinition{}, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", []string{item.Field}, "dml: flow record lookup %s has unsupported criteria for %s.%s", lookup.Name, targetName, item.Field)
+				err := dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", []string{item.Field}, "dml: flow record lookup %s has unsupported criteria for %s.%s", lookup.Name, targetName, item.Field)
+				op := strings.ToLower(strings.ReplaceAll(strings.TrimSpace(item.Operation), " ", ""))
+				if op == "in" || op == "notin" {
+					field, fieldOK := storage.ResolveFieldName(target.Definition, e.Org.Namespace, item.Field)
+					value, valueOK := e.flowRecordUpdateSourceValue(item.SourceField, source, sourceDefinition, frame)
+					if fieldOK && valueOK && flowLookupCollectionHasCapturedFault(target.Definition.Fields[field], value) {
+						return nil, storage.ObjectDefinition{}, &flowLookupCollectionFault{cause: err}
+					}
+				}
+				return nil, storage.ObjectDefinition{}, err
 			}
 			if disjunction && match {
 				matches = true
@@ -3945,6 +4065,31 @@ func (e *Engine) evaluateFlowLookupCriteria(item storage.WorkflowCriteriaItem, t
 	}
 	field := targetDefinition.Fields[targetField]
 	switch strings.ToLower(strings.TrimSpace(item.Operation)) {
+	case "in", "notin", "not in":
+		if !flowCapturedVariable(frame, item.SourceField, true) {
+			return false, false
+		}
+		if sourceValue.Kind != storage.ValueList && sourceValue.Kind != storage.ValueNull {
+			return false, false
+		}
+		if !flowLookupCollectionFieldSupported(field) {
+			return false, false
+		}
+		found := false
+		for _, element := range sourceValue.List {
+			equal, supported := flowLookupCollectionValuesEqual(field, targetValue, element)
+			if !supported {
+				return false, false
+			}
+			if equal {
+				found = true
+				break
+			}
+		}
+		if strings.EqualFold(strings.ReplaceAll(strings.TrimSpace(item.Operation), " ", ""), "notin") {
+			return !found, true
+		}
+		return found, true
 	case "", "equals", "equal", "eq":
 		return flowLookupIDValuesEqual(field, targetValue, sourceValue), true
 	case "notequal", "not equal", "notequals", "not equals", "ne":
@@ -4067,6 +4212,12 @@ func (e *Engine) evaluateFlowRule(rule storage.FlowRule, record storage.Record, 
 					continue
 				}
 				matches, ok := evaluateFlowCoreEntryCriteria(rule.Criteria[index], record, definition, namespace, prior, rule, created)
+				if e.capturedMixedAfterSave {
+					matches, ok = evaluateCapturedAfterSaveChangedCriterion(rule.Criteria[index], record, definition, namespace, prior, rule, created)
+				}
+				if e.capturedCaseAfterSave {
+					matches, ok = evaluateCapturedCaseAfterSaveCriterion(rule.Criteria[index], record, definition, namespace, prior, rule, created)
+				}
 				if !ok {
 					unsupported = true
 					groupMatches = false
@@ -4085,6 +4236,12 @@ func (e *Engine) evaluateFlowRule(rule storage.FlowRule, record storage.Record, 
 	}
 	for _, item := range rule.Criteria {
 		matches, ok := evaluateFlowCoreEntryCriteria(item, record, definition, namespace, prior, rule, created)
+		if e.capturedMixedAfterSave {
+			matches, ok = evaluateCapturedAfterSaveChangedCriterion(item, record, definition, namespace, prior, rule, created)
+		}
+		if e.capturedCaseAfterSave {
+			matches, ok = evaluateCapturedCaseAfterSaveCriterion(item, record, definition, namespace, prior, rule, created)
+		}
 		if !ok || !matches {
 			return matches, ok
 		}

@@ -642,13 +642,24 @@ func RenderPageURL(machine *vm.VM, pageURL string, asPDF bool) (vm.Value, error)
 	if pageName == "" {
 		return vm.Null, vm.NewVisualforceException(fmt.Sprintf("invalid Visualforce page URL %q", pageURL))
 	}
-	env := renderEnvironmentFromVM(machine)
+	env, err := resolveVMRenderEnvironment(machine)
+	if err != nil {
+		return vm.Null, err
+	}
 	if env.Project.Root == "" {
 		return vm.Null, vm.UnsupportedFeature("PageReference.getContent local Visualforce page rendering surface")
 	}
 	idx, err := LoadProjectForRender(env.Project)
 	if err != nil {
 		return vm.Null, err
+	}
+	if _, ok := idx.Page(pageName); !ok {
+		message := fmt.Sprintf("Page %s does not exist", pageName)
+		if asPDF {
+			// Native getContentAsPDF terminates execution before an Apex catch.
+			return vm.Null, vm.NewUncatchablePlatformFault(message)
+		}
+		return vm.Null, vm.NewVisualforceException(message)
 	}
 	result, err := RenderPage(PageRenderRequest{
 		Project:  env.Project,
@@ -1811,6 +1822,7 @@ func htmlEscape(raw string) string {
 
 type renderEnvironment struct {
 	Project project.Project
+	lazy    bool
 }
 
 var (
@@ -1825,6 +1837,45 @@ func SetVMRenderEnvironment(machine *vm.VM, p project.Project) {
 	vmRenderEnvironmentMu.Lock()
 	defer vmRenderEnvironmentMu.Unlock()
 	vmRenderEnvironments[machine] = renderEnvironment{Project: p}
+}
+
+// SetVMLazyRenderEnvironment defers project loading until page rendering is
+// actually requested, keeping prepared and warm debugger launches free of
+// additional project filesystem work.
+func SetVMLazyRenderEnvironment(machine *vm.VM, root string) {
+	if machine == nil {
+		return
+	}
+	vmRenderEnvironmentMu.Lock()
+	defer vmRenderEnvironmentMu.Unlock()
+	vmRenderEnvironments[machine] = renderEnvironment{Project: project.Project{Root: root}, lazy: true}
+}
+
+func resolveVMRenderEnvironment(machine *vm.VM) (renderEnvironment, error) {
+	env := renderEnvironmentFromVM(machine)
+	if !env.lazy {
+		return env, nil
+	}
+	loaded, err := project.Load(env.Project.Root)
+	if err != nil {
+		return renderEnvironment{}, err
+	}
+	vmRenderEnvironmentMu.Lock()
+	defer vmRenderEnvironmentMu.Unlock()
+	current, ok := vmRenderEnvironments[machine]
+	if ok && current.lazy && current.Project.Root == env.Project.Root {
+		current.Project = loaded
+		current.lazy = false
+		vmRenderEnvironments[machine] = current
+		return current, nil
+	}
+	if ok {
+		return current, nil
+	}
+	// The request was cleared while loading; never restore a removed entry.
+	env.Project = loaded
+	env.lazy = false
+	return env, nil
 }
 
 // ClearVMRenderEnvironment removes the render environment associated with a VM.

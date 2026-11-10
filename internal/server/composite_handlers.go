@@ -19,6 +19,7 @@ import (
 	"github.com/glade-sh/glade/internal/sema"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
+	"github.com/glade-sh/glade/internal/visualforce"
 	"github.com/glade-sh/glade/internal/vm"
 )
 
@@ -295,6 +296,8 @@ func (s *Server) handleExecuteAnonymous(w http.ResponseWriter, r *http.Request, 
 			return
 		}
 	}
+	visualforce.SetVMRenderEnvironment(machine, s.Source.Project)
+	defer visualforce.ClearVMRenderEnvironment(machine)
 	machine.SetToolingExecuteAnonymous(true)
 	machine.SetOrg(&next)
 	machine.SetCurrentNamespace(next.Namespace)
@@ -913,7 +916,7 @@ func (s *Server) handleCompositeSObjectInsert(w http.ResponseWriter, r *http.Req
 	next := s.Org.Clone()
 	engine := s.newDMLEngine(r, &next)
 	results := engine.Insert(body.Records)
-	s.writeCompositeMutationResults(w, next, body.AllOrNone, results, body.ReferenceIDs)
+	s.writeCompositeMutationResults(w, next, compositeMutationInsert, body.AllOrNone, results, body.ReferenceIDs)
 }
 
 func (s *Server) handleCompositeSObjectUpdate(w http.ResponseWriter, r *http.Request) {
@@ -924,7 +927,7 @@ func (s *Server) handleCompositeSObjectUpdate(w http.ResponseWriter, r *http.Req
 	next := s.Org.Clone()
 	engine := s.newDMLEngine(r, &next)
 	results := engine.Update(body.Records)
-	s.writeCompositeMutationResults(w, next, body.AllOrNone, results, body.ReferenceIDs)
+	s.writeCompositeMutationResults(w, next, compositeMutationUpdate, body.AllOrNone, results, body.ReferenceIDs)
 }
 
 func (s *Server) handleCompositeSObjectDelete(w http.ResponseWriter, r *http.Request) {
@@ -948,10 +951,34 @@ func (s *Server) handleCompositeSObjectDelete(w http.ResponseWriter, r *http.Req
 	next := s.Org.Clone()
 	engine := s.newDMLEngine(r, &next)
 	results := engine.Delete(records)
-	s.writeCompositeMutationResults(w, next, allOrNone, results, nil)
+	for i := range results {
+		if results[i].Success || results[i].StatusCode != "ENTITY_IS_DELETED" {
+			continue
+		}
+		object, ok := s.Org.Objects[records[i].Object]
+		if !ok {
+			continue
+		}
+		if _, _, exists := storage.LookupRecordByID(object.Records, records[i].ID); exists {
+			continue
+		}
+		results[i].StatusCode = "INVALID_CROSS_REFERENCE_KEY"
+		results[i].Error = "invalid cross reference id"
+		results[i].Fields = []string{}
+		results[i].Errors = []dml.Error{{StatusCode: results[i].StatusCode, Message: results[i].Error, Fields: []string{}}}
+	}
+	s.writeCompositeMutationResults(w, next, compositeMutationDelete, allOrNone, results, nil)
 }
 
-func (s *Server) writeCompositeMutationResults(w http.ResponseWriter, next storage.OrgState, allOrNone bool, results []dml.Result, referenceIDs []string) {
+type compositeMutation int
+
+const (
+	compositeMutationInsert compositeMutation = iota
+	compositeMutationUpdate
+	compositeMutationDelete
+)
+
+func (s *Server) writeCompositeMutationResults(w http.ResponseWriter, next storage.OrgState, mutation compositeMutation, allOrNone bool, results []dml.Result, referenceIDs []string) {
 	hasFailure := false
 	hasSuccess := false
 	for _, result := range results {
@@ -962,7 +989,16 @@ func (s *Server) writeCompositeMutationResults(w http.ResponseWriter, next stora
 		}
 	}
 	if allOrNone && hasFailure {
-		writeJSON(w, http.StatusBadRequest, compositeResults(compositeAllOrNoneRollbackResults(results), referenceIDs))
+		rows := compositeAllOrNoneRollbackResults(results)
+		// Collection mutations answer 200 with failed rows. An insert's
+		// rolled-back row has no id.
+		switch mutation {
+		case compositeMutationInsert:
+			for i := range rows {
+				rows[i].ID = ""
+			}
+		}
+		writeJSON(w, http.StatusOK, compositeResults(rows, referenceIDs))
 		return
 	}
 	if hasSuccess {
@@ -1086,7 +1122,13 @@ func (s *Server) handleCompositeSObjectTypedUpsert(w http.ResponseWriter, r *htt
 		}
 	}
 	if body.AllOrNone && hasFailure {
-		writeJSON(w, http.StatusBadRequest, compositeUpsertResults(compositeAllOrNoneRollbackResults(results), referenceIDs))
+		rows := compositeAllOrNoneRollbackResults(results)
+		for i := range rows {
+			if rows[i].UpsertCreated {
+				rows[i].ID = ""
+			}
+		}
+		writeJSON(w, http.StatusOK, compositeUpsertResults(rows, referenceIDs))
 		return
 	}
 	if hasSuccess {

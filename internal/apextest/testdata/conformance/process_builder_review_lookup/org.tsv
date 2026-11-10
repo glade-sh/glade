@@ -1,0 +1,5 @@
+api	route	case	actual
+62.0	istest	lookupflow	api=62.0 | mixed: Con.BI3:null Con.AI3:null Con.BU2:one Con.AU2:one => a:one;b:two;c:null
+62.0	anonymous	lookupflow	api=62.0 | mixed: Con.BI3:null Con.AI3:null Con.BU2:one Con.AU2:one => a:one;b:two;c:null
+67.0	istest	lookupflow	api=67.0 | mixed: Con.BI3:null Con.AI3:null Con.BU2:one Con.AU2:one => a:one;b:two;c:null
+67.0	anonymous	lookupflow	api=67.0 | mixed: Con.BI3:null Con.AI3:null Con.BU2:one Con.AU2:one => a:one;b:two;c:null

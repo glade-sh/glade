@@ -1,0 +1,1 @@
+public class FernStringOne { @InvocableMethod public static void run(List<String> values) { FernLog.events.add('StringOne'+values.size()); } }

@@ -1,0 +1,5 @@
+{
+  "axis": "marketing",
+  "user_field": "UserPermissionsMarketingUser",
+  "method": "isCreateable"
+}

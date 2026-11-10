@@ -15,34 +15,80 @@ import (
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
-// namespaceAbsenceLocalRejections lists the fixture's local declarations of
-// unresolved namespace types. Under the v0.3.1 rule (A04 C055/N010/N011) only
-// these reject; other positions stay open. With fooNs declared, fooNs.X
-// names the project class X.
+// namespaceAbsenceLocalRejections lists the fixture's unresolved namespace
+// types. Ruling 49 reverses the v0.3.1 deferral: an undeclared external
+// namespace, and a miss under the project's own namespace, is Invalid type in
+// every type position (local, field, parameter, return, new, cast,
+// instanceof, extends, implements), as namespace_external_positions/org.tsv
+// records natively. With fooNs declared, fooNs.X names the project class X.
 func namespaceAbsenceLocalRejections(namespace string) []string {
 	want := []string{"bar.Wrapper", "bar.wrapper", "baz.Type", "fooNs.Unknown", "q.Type"}
-	if namespace != "fooNs" {
-		want = append(want, "fooNs.X")
+	switch namespace {
+	case "fooNs":
+	case "Account":
+		want = append(want, "fooNs.X", "fooNs.X.Callback", "Account.Uncatalogued")
+	default:
+		want = append(want, "fooNs.X", "fooNs.X.Callback")
 	}
 	return want
 }
 
+// namespaceAbsenceExcluded names the classes the dependency-scoped gate
+// excludes: every class with a rejected supertype or member, and the test
+// that depends on NamespacePositions.
+func namespaceAbsenceExcluded(namespace string) map[string]string {
+	excluded := map[string]string{
+		"NamespacePositions":   "",
+		"NamespaceExtends0":    "bar.Wrapper",
+		"NamespaceExtends1":    "fooNs.Unknown",
+		"NamespaceExtends2":    "baz.Type",
+		"NamespaceImplements0": "bar.Wrapper",
+		"NamespaceImplements1": "fooNs.Unknown",
+		"NamespaceImplements2": "baz.Type",
+	}
+	if namespace != "fooNs" {
+		excluded["NamespaceExtends3"] = "fooNs.X"
+		excluded["NamespaceImplements3"] = "fooNs.X.Callback"
+	}
+	return excluded
+}
+
 func assertNamespaceAbsenceLocalRejections(t *testing.T, route string, ds []diagnostic.Diagnostic, want []string) {
 	t.Helper()
-	got := map[string]bool{}
+	got := map[string]map[string]bool{}
 	for _, d := range ds {
 		if d.Severity != diagnostic.Error {
 			continue
 		}
 		ref, ok := strings.CutPrefix(d.NativeMessage, "Invalid type: ")
-		if d.Code != "GLADESEMA006" || !ok || !slices.Contains(want, ref) || filepath.Base(d.File) != "NamespacePositions.cls" && d.File != "" {
+		base := filepath.Base(d.File)
+		fixtureFile := base == "NamespacePositions.cls" || strings.HasPrefix(base, "NamespaceExtends") || strings.HasPrefix(base, "NamespaceImplements") || d.File == ""
+		if !ok || !slices.Contains(want, ref) || !fixtureFile || (d.Code != "GLADESEMA002" && d.Code != "GLADESEMA004" && d.Code != "GLADESEMA006") {
 			t.Errorf("%s: unexpected error %s %q | %q", route, d.Code, d.NativeMessage, d.Message)
 			continue
 		}
-		got[ref] = true
+		if got[ref] == nil {
+			got[ref] = map[string]bool{}
+		}
+		if d.Code != "GLADESEMA006" || d.File == "" || base == "NamespacePositions.cls" || (ref == "fooNs.X.Callback" && base == "NamespaceImplements3.cls") {
+			got[ref][d.Code] = true
+		}
 	}
-	if len(got) != len(want) {
-		t.Errorf("%s: rejected=%v, want %v", route, got, want)
+	for _, ref := range want {
+		// The original local declaration check required GLADESEMA006.
+		if !got[ref]["GLADESEMA006"] {
+			t.Errorf("%s: %s missing GLADESEMA006: %v", route, ref, got[ref])
+		}
+		// Each ordinary fixture type also appears in a field/return and
+		// parameter; retain their distinct diagnostics rather than accepting
+		// an arbitrary code or count for the reference.
+		if ref != "fooNs.X.Callback" && ref != "Account.Uncatalogued" {
+			for _, code := range []string{"GLADESEMA002", "GLADESEMA004"} {
+				if !got[ref][code] {
+					t.Errorf("%s: %s missing %s: %v", route, ref, code, got[ref])
+				}
+			}
+		}
 	}
 }
 
@@ -79,12 +125,14 @@ func TestNamespaceAbsenceProofRoutes(t *testing.T) {
 				for _, warm := range []bool{false, true} {
 					run := Run(index, Options{Parallelism: 1, SelectedClasses: []string{"NamespacePositionsTest"}})
 					summary := run.Summary()
-					if summary.Passed != 0 || summary.CompileErrors != 1 || len(run.ExcludedClasses) != 2 {
+					excluded := namespaceAbsenceExcluded(namespace)
+					if summary.Passed != 0 || summary.CompileErrors != 1 || len(run.ExcludedClasses) != len(excluded)+1 {
 						t.Fatalf("warm=%v summary=%+v excluded=%+v problem=%s", warm, summary, run.ExcludedClasses, firstRunProblem(run))
 					}
 					for _, entry := range run.ExcludedClasses {
+						supertype, owned := excluded[entry.ClassName]
 						switch {
-						case entry.ClassName == "NamespacePositions" && strings.Contains(entry.Message, "Invalid type: "):
+						case owned && strings.Contains(entry.Message, "Invalid type: "+supertype):
 						case entry.ClassName == "NamespacePositionsTest" && entry.DependsOn == "NamespacePositions":
 						default:
 							t.Fatalf("warm=%v unexpected exclusion: %+v", warm, entry)

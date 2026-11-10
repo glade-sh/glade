@@ -62,7 +62,7 @@ func (vm *VM) collectionStoreException(collectionType string, value Value) error
 
 func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value, result *Result, callerSharingOverride ...string) (Value, error) {
 	if len(vm.callStack) >= maxApexCallDepth {
-		return Null, &RuntimeError{Type: "RuntimeError", Message: "maximum Apex call stack depth exceeded", Stack: vm.stackFrames()}
+		return Null, &RuntimeError{Type: "RuntimeError", Message: "maximum Apex call stack depth exceeded", Stack: vm.stackFrames(), callStackLimit: true}
 	}
 	if len(args) != len(method.Params) {
 		return Null, fmt.Errorf("%s expects %d arguments", method.Name, len(method.Params))

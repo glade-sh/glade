@@ -295,11 +295,15 @@ func fieldSetMapCanonicalKeySet(value Value) (Value, bool) {
 	seen := map[string]bool{}
 	for _, rawKey := range orderedValueMapKeys(value) {
 		item := value.Map[rawKey]
-		name, ok := fieldSetMapCanonicalName(item)
-		if !ok || seen[strings.ToLower(name)] {
+		name, ok := fieldSetMapQualifiedName(item)
+		if !ok {
 			continue
 		}
-		seen[strings.ToLower(name)] = true
+		name = strings.ToLower(name)
+		if seen[name] {
+			continue
+		}
+		seen[name] = true
 		out.Set = append(out.Set, String(name))
 	}
 	return out, true
@@ -314,7 +318,7 @@ func fieldSetMapCanonicalValues(value Value) (Value, bool) {
 	seen := map[string]bool{}
 	for _, rawKey := range orderedValueMapKeys(value) {
 		item := value.Map[rawKey]
-		name, ok := fieldSetMapCanonicalName(item)
+		name, ok := fieldSetMapQualifiedName(item)
 		if !ok || seen[strings.ToLower(name)] {
 			continue
 		}
@@ -330,7 +334,7 @@ func fieldSetMapCanonicalSize(value Value) (int, bool) {
 	}
 	seen := map[string]bool{}
 	for _, item := range value.Map {
-		name, ok := fieldSetMapCanonicalName(item)
+		name, ok := fieldSetMapQualifiedName(item)
 		if ok {
 			seen[strings.ToLower(name)] = true
 		}
@@ -347,6 +351,17 @@ func fieldSetMapCanonicalName(value Value) (string, bool) {
 		return "", false
 	}
 	return name.Text, true
+}
+
+func fieldSetMapQualifiedName(value Value) (string, bool) {
+	name, ok := fieldSetMapCanonicalName(value)
+	if !ok {
+		return "", false
+	}
+	if namespace, ok := value.Fields["namespace"]; ok && namespace.Kind == ValueString && strings.TrimSpace(namespace.Text) != "" {
+		name = namespace.Text + "__" + name
+	}
+	return name, true
 }
 
 func sObjectFieldMapCanonicalFieldName(value Value) (string, bool) {
@@ -1000,7 +1015,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (ou
 			if isDefaultedSObjectField(receiver, field) {
 				continue
 			}
-			addField(field, value, vm.triggerCreationTimestampPopulated(receiver, field, value))
+			addField(field, value, isLoadedSObjectDefault(receiver, field) || vm.triggerCreationTimestampPopulated(receiver, field, value))
 		}
 		if selected, ok := receiver.Fields[sobjectQueriedFieldsField]; ok && selected.Kind == ValueMap {
 			out.Fields = map[string]Value{sobjectPopulatedFieldsAliasContainsField: Bool(true)}

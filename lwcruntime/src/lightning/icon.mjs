@@ -6,7 +6,7 @@ import {
   registerTemplate,
 } from "lwc";
 import PrimitiveIcon from "./displayPrimitiveIcon.mjs";
-import { computeSldsClass, getCategory, isValidName } from "./iconUtils.mjs";
+import { computeSldsClass, computeSvgClass, getCategory, isValidName } from "./iconUtils.mjs";
 
 const categories = new Set(["action", "custom", "doctype", "standard", "utility"]);
 
@@ -17,8 +17,7 @@ function renderIcon($api, $cmp) {
     key: 1,
     props: {
       iconName,
-      svgClass: iconName && getCategory(iconName) === "utility"
-        ? "slds-icon slds-icon-text-default" : "slds-icon",
+      svgClass: computeSvgClass(iconName, $cmp.size, $cmp.variant),
     },
   }, [])];
   if ($cmp.alternativeText != null && $cmp.alternativeText !== "") {
