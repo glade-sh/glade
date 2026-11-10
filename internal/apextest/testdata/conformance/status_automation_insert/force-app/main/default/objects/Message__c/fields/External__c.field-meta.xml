@@ -1,0 +1,1 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>External__c</fullName><label>External</label><defaultValue>false</defaultValue><type>Checkbox</type></CustomField>
