@@ -3018,11 +3018,19 @@ func (vm *VM) refireAutomationUpdateTriggerBatch(records, oldRecords []storage.R
 	return nil
 }
 
-// Native Flow source 62/67 captures a single record-level trigger rejection
-// during an atomic two-record action-output refire. Other error shapes retain
-// the existing workflow failure handling until captured.
+// Native Flow sources 62-67 capture a single record-level trigger rejection
+// during an atomic 2-200 record action-output refire. Other error shapes
+// retain the existing workflow failure handling until captured.
 func flowRefireCapturedTriggerFailure(failures []dml.Result, records []storage.Record, inputCount int, rule storage.FlowRule) (error, bool) {
-	if inputCount != 2 || len(records) != 2 || len(failures) != 2 || strings.TrimSpace(rule.Label) == "" || (rule.APIVersion != "62.0" && rule.APIVersion != "67.0") {
+	if inputCount < 2 || inputCount > 200 || len(records) != inputCount || len(failures) != inputCount || strings.TrimSpace(rule.Label) == "" {
+		return nil, false
+	}
+	plainMessage := false
+	switch rule.APIVersion {
+	case "62.0", "63.0", "64.0", "65.0", "66.0":
+		plainMessage = true
+	case "67.0":
+	default:
 		return nil, false
 	}
 	index := -1
@@ -3041,7 +3049,7 @@ func flowRefireCapturedTriggerFailure(failures []dml.Result, records []storage.R
 		return nil, false
 	}
 	prefix := fmt.Sprintf("We can't save this record because the “%s” process failed. Give your Salesforce admin these details. CANNOT_EXECUTE_FLOW_TRIGGER: ", rule.Label)
-	if rule.APIVersion == "62.0" {
+	if plainMessage {
 		detail.Message = prefix + "This error occurred when the flow tried to update records: " + detail.StatusCode + ": " + detail.Message + ". You can look up ExceptionCode values in the SOAP API Developer Guide."
 	} else {
 		detail.Message = prefix + "The flow tried to update these records: " + apexIDTo18(string(records[index].ID)) + ". This error occurred: " + detail.StatusCode + ": " + detail.Message + ". You can look up ExceptionCode values in the <a href='https://developer.salesforce.com/docs/atlas.en-us.api.meta/api/sforce_api_calls_concepts_core_data_objects.htm#'>SOAP API Developer Guide</a>."

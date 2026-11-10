@@ -19,7 +19,8 @@ func TestFlowRefireCapturedTriggerFailureScope(t *testing.T) {
 		t.Fatal("unobserved field-level rejection must retain its previous path")
 	}
 	failures[1].Fields = nil
-	rule.APIVersion = "66.0"
+	// Source 62-67 is now captured; keep the unobserved-version control.
+	rule.APIVersion = "61.0"
 	if _, ok := flowRefireCapturedTriggerFailure(failures, records, 2, rule); ok {
 		t.Fatal("unobserved Flow source version must retain its previous path")
 	}
