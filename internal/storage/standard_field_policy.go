@@ -41,11 +41,13 @@ type standardFieldPolicyObject struct {
 	InsertForcedValues   map[string]bool `json:"insert_forced_values"`
 	Fields               []standardDescribeField
 	Absent               []string
-	PlainDeveloperAbsent []string `json:"plain_developer_absent"`
+	PlainDeveloperAbsent []string          `json:"plain_developer_absent"`
+	ConstructorDefaults  map[string]string `json:"constructor_defaults"`
 	fields               map[string]Field
 	picklistFields       []Field
 	absent               map[string]bool
 	plainDeveloperAbsent map[string]bool
+	constructorDefaults  map[string]string
 	gates                map[string]standardFieldPolicyGate
 }
 
@@ -95,6 +97,7 @@ func loadStandardFieldPolicies() map[string]*standardFieldPolicyObject {
 		policy.fields = map[string]Field{}
 		policy.absent = map[string]bool{}
 		policy.plainDeveloperAbsent = map[string]bool{}
+		policy.constructorDefaults = map[string]string{}
 		policy.gates = map[string]standardFieldPolicyGate{}
 		for _, field := range policy.Fields {
 			captured := describeField(field)
@@ -108,6 +111,9 @@ func loadStandardFieldPolicies() map[string]*standardFieldPolicyObject {
 		}
 		for _, field := range policy.PlainDeveloperAbsent {
 			policy.plainDeveloperAbsent[strings.ToLower(field)] = true
+		}
+		for field, value := range policy.ConstructorDefaults {
+			policy.constructorDefaults[strings.ToLower(field)] = value
 		}
 		policies[strings.ToLower(object)] = policy
 	}
@@ -126,6 +132,24 @@ func loadStandardFieldPolicies() map[string]*standardFieldPolicyObject {
 func standardFieldPolicyFor(object string) *standardFieldPolicyObject {
 	policy, _ := standardPolicyLookup(standardFieldPolicies(), object)
 	return policy
+}
+
+// CapturedStandardConstructorDefault returns a native constructor-only value
+// for the declared plain Developer shape without changing describe defaults.
+func CapturedStandardConstructorDefault(definition ObjectDefinition, field Field) (Value, bool) {
+	if !featureSignatureHas(definition.Metadata[standardFieldsOverlayMarker], project.PlainDeveloperObjectShape) || strings.TrimSpace(field.DefaultValue) != "" {
+		return Value{}, false
+	}
+	policy := standardFieldPolicyFor(definition.APIName)
+	if policy == nil {
+		return Value{}, false
+	}
+	raw, ok := standardPolicyLookup(policy.constructorDefaults, field.APIName)
+	if !ok {
+		return Value{}, false
+	}
+	field.DefaultValue = raw
+	return DefaultValueForField(field)
 }
 
 func standardFieldPolicyGateEnabled(gate standardFieldPolicyGate, signature string) bool {

@@ -690,6 +690,45 @@ def build_policy(root, combinations=None):
             entry.setdefault("fields", []).append(captured[0])
             entry["fields"].sort(key=lambda item: item["name"])
 
+    # Some constructor-populated values are not describe defaults. Keep them
+    # in a separate plain-Developer constructor policy rather than rewriting
+    # the public describe facets. Require all captured profiles, flag states,
+    # APIs, and the false-overload control to agree.
+    value_rows = inputs.tsv("../load_defaults_values/org.tsv")
+    inputs.read("../load_defaults_values/ORG-RUN.txt")
+    values = {}
+    for row in value_rows:
+        key = (row["source_api"], row["profile"], row["marketing"])
+        group = values.setdefault(row["subject"], {})
+        if key in group:
+            raise ValueError("duplicate constructor value observation")
+        group[key] = dict(item.split("=", 1) for item in row["observation"].split("|"))
+    expected_values = {(api, profile, marketing) for api in APIS
+                       for profile, marketing in (("admin", "false"), ("admin", "true"), ("standard", "false"))}
+    for subject, group in sorted(values.items()):
+        if set(group) != expected_values or any(v != next(iter(group.values())) for v in group.values()):
+            raise ValueError(f"constructor values differ across controls: {subject}")
+        observed = next(iter(group.values()))
+        if (observed.get("loadedPop"), observed.get("blank"), observed.get("blankPop")) != ("true", "null", "false"):
+            raise ValueError(f"constructor value boundary differs: {subject}")
+        obj, field = subject.split(".", 1)
+        facets = []
+        for api in APIS:
+            describe = snapshots["P0"][api]["describes"].get(obj, {})
+            matches = [item for item in describe.get("fields", []) if item["name"] == field]
+            if len(matches) != 1:
+                raise ValueError(f"missing constructor field facets: {subject} {api}")
+            facets.append(matches[0])
+        if facets[0] != facets[1]:
+            raise ValueError(f"constructor field facets differ by API: {subject}")
+        if facets[0].get("defaultValue") is not None:
+            continue
+        value = json.loads(observed["loaded"])
+        if not isinstance(value, (int, float)) or isinstance(value, bool):
+            raise ValueError(f"unsupported constructor default value: {subject}")
+        entry = objects.setdefault(obj, {"present": [], "absent": [], "fields": []})
+        entry.setdefault("constructor_defaults", {})[field] = observed["loaded"]
+
     # Each isolated profile proves a positive field and controls show it absent
     # without the enabling setting. The combined profile supplies both Apex
     # routes and independently captured REST facets at both API endpoints.

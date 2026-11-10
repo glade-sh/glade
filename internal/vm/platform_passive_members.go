@@ -1711,6 +1711,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 							putVMFieldPath(record, name, vmValueFromStorage(defaultValue))
 							markLoadedSObjectDefault(&record, name)
 							rememberSchemaCheckboxEquality(&record, definition, field, defaultValue)
+						} else if defaultValue, ok := storage.CapturedStandardConstructorDefault(definition, field); ok {
+							putVMFieldPath(record, name, vmValueFromStorage(defaultValue))
+							markLoadedSObjectDefault(&record, name)
 						} else if args[0].Kind == ValueNull && field.Type == storage.FieldSummary && strings.EqualFold(strings.TrimSpace(field.SummaryOperation), "count") && strings.TrimSpace(field.DefaultValue) == "" {
 							// Native loadDefaults observations initialize COUNT before
 							// insert; ordinary constructors retain their null caller value.
