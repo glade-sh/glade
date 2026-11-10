@@ -117,7 +117,7 @@ func TestPrivateQueueMemberDerivedQueryRoutes(t *testing.T) {
 				objects.Records[child.ID] = child
 				machine.Org.Objects["Widget__c"] = objects
 				machine.SetOrg(machine.Org)
-				body, err := CompileAnonymousWithOptions("return [SELECT Parent__r.Name FROM Widget__c WHERE Id='a00000000000003'];", CompileOptions{APIVersion: row[1]})
+				body, err := CompileAnonymousWithOptions("return [SELECT Id,Parent__c,Parent__r.Id,Parent__r.Name FROM Widget__c WHERE Id='a00000000000003' WITH SYSTEM_MODE];", CompileOptions{APIVersion: row[1]})
 				if err != nil {
 					t.Fatal(err)
 				}
