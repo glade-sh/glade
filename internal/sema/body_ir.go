@@ -1772,7 +1772,7 @@ func (a *Analyzer) checkIRInstructions(typ typesys.TypeSymbol, member typesys.Me
 // qualifiedStaticFieldReceiverMiss reports a static field read whose
 // qualified receiver names no type under a closed namespace, such as
 // MissingNamespace.Thing.COUNT in an org without that package. Native:
-// namespace_external_positions A12 (Variable does not exist: <receiver>).
+// namespace_external_positions (Variable does not exist: <receiver>).
 func (a *Analyzer) qualifiedStaticFieldReceiverMiss(name string, scope irSemaScope, model *semaTypeMemberView, currentType string) (string, bool) {
 	if strings.Contains(name, "?.") || strings.ContainsAny(name, "()[]<>") {
 		return "", false
