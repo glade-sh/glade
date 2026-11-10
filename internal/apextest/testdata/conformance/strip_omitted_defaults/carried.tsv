@@ -1,5 +1,1 @@
 source_api	class	method	subject	glade_observation	reason
-55.0	StripDefaultProbe	explicitCreatableAdmin	StripProbe__c	populated=Flag__c,Name removed=	explicit custom checkbox without a field grant at API 55.0 stays for the administrator; pre-existing
-55.0	StripDefaultProbe	loadDefaultsCreatableAdmin	StripProbe__c	populated=CurrencyIsoCode,Flag__c removed=	newSObject(null,true) populated shape and field checks differ; pre-existing
-62.0	StripDefaultProbe	freshCreatableAdmin	StripProbe__c	populated=Name removed=Flag__c insert=ok	omitted custom checkbox without read access on a custom object at API 62+; pre-existing
-67.0	StripDefaultProbe	freshCreatableAdmin	StripProbe__c	populated=Name removed=Flag__c insert=ok	omitted custom checkbox without read access on a custom object at API 62+; pre-existing
