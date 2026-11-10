@@ -1,0 +1,11 @@
+{
+  "reportMetadata": {
+    "name": "Synthetic Queue",
+    "developerName": "SyntheticQueue",
+    "reportType": {
+      "type": "SyntheticWorkReport__c"
+    },
+    "scope": "organization",
+    "folderId": "<scratch-report-folder-id>"
+  }
+}
