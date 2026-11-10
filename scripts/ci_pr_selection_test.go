@@ -77,6 +77,10 @@ func TestCIPRWorkflowSelection(t *testing.T) {
 	if !strings.Contains(workflow.Jobs["pr-tests"].If, "github.event_name == 'pull_request'") {
 		t.Fatal("PR tests do not select PRs")
 	}
+	pr := string(data)
+	if !strings.Contains(pr, "TestRunDoctorReportsParser|TestRunDoctorJSON|TestRunDoctorShortFlags|TestRunDoctorReportsProjectLocalDataEnvironment") {
+		t.Error("PR CLI route must run the tests delegated by the CLI shards")
+	}
 	job := workflow.Jobs["required-ci"]
 	results := make(map[string]map[string]string)
 	var needs []string

@@ -1650,6 +1650,10 @@ jobs:
               (cd third_party/glade-apex-parser && go test -count=1 ./...)
             fi
           fi
+          # The full CLI shard route delegates these four tests to the Node lane.
+          if [[ "$SHARD" == 0 ]] && jq -e 'index("github.com/glade-sh/glade/internal/gladecli") != null' "$RUNNER_TEMP/selected.json" > /dev/null; then
+            go test -count=1 -timeout=0 -run '^(TestRunDoctorReportsParser|TestRunDoctorJSON|TestRunDoctorShortFlags|TestRunDoctorReportsProjectLocalDataEnvironment)$' ./internal/gladecli
+          fi
           # Large packages use the same discovery, planning and validation routes
           # as the full suite, spread across the three PR workers.
           for spec in apex:apextest:12 vm:vm:4 gladecli:gladecli:4 sema:sema:2; do
