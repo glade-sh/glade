@@ -117,6 +117,27 @@ func (a *Analyzer) checkMemberTypes(index typesys.Index, model *semaTypeMemberVi
 		if semaNamedApexSourceType(typ) {
 			analyzer = named
 		}
+		// namespace_external_positions ExtExtendsV035/ExtImplementsV035: a
+		// qualified supertype under a closed namespace that names no type is
+		// Invalid type, like every other type position.
+		supertypes := make([]string, 0, 1+len(typ.Interfaces))
+		supertypes = append(supertypes, typ.SuperClass)
+		supertypes = append(supertypes, typ.Interfaces...)
+		for _, supertype := range supertypes {
+			for _, ref := range extractTypeNames(supertype) {
+				if !strings.Contains(ref, ".") || !analyzer.qualifiedTypeMissRejected(typ.Name, ref, model, false) {
+					continue
+				}
+				diagnostics = append(diagnostics, diagnostic.Diagnostic{
+					Severity:      diagnostic.Error,
+					Code:          "GLADESEMA006",
+					Message:       "Invalid type: " + ref,
+					NativeMessage: "Invalid type: " + ref,
+					File:          typ.File,
+					Range:         &typ.Range,
+				})
+			}
+		}
 		for _, member := range typ.Members {
 			if member.Type == "" || member.Type == "void" {
 				continue
@@ -125,7 +146,7 @@ func (a *Analyzer) checkMemberTypes(index typesys.Index, model *semaTypeMemberVi
 				diagnostics = append(diagnostics, nestedTypeVisibilityDiagnostic(typ, message, &member.Range))
 			}
 			for _, ref := range extractTypeNames(member.Type) {
-				if semaTypeReferenceKnownAtVersion(analyzer, model, typ.Name, ref, typ.EffectiveAPIVersion) {
+				if semaTypePositionKnownAtVersion(analyzer, model, typ.Name, ref, typ.EffectiveAPIVersion) {
 					continue
 				}
 				diagnostics = append(diagnostics, diagnostic.Diagnostic{
@@ -161,7 +182,7 @@ func (a *Analyzer) checkMethodParameters(index typesys.Index, model *semaTypeMem
 					diagnostics = append(diagnostics, nestedTypeVisibilityDiagnostic(typ, message, &param.Range))
 				}
 				for _, ref := range extractTypeNames(param.Type) {
-					if semaTypeReferenceKnownAtVersion(analyzer, model, typ.Name, ref, typ.EffectiveAPIVersion) {
+					if semaTypePositionKnownAtVersion(analyzer, model, typ.Name, ref, typ.EffectiveAPIVersion) {
 						continue
 					}
 					item := diagnostic.Diagnostic{
@@ -172,7 +193,7 @@ func (a *Analyzer) checkMethodParameters(index typesys.Index, model *semaTypeMem
 						Range:    &param.Range,
 					}
 					// Captured reference-only parameter rejections (named-org.tsv).
-					crossNamespace := semaCrossNamespaceSourceMismatch(analyzer, model, typ.Name, ref)
+					crossNamespace := semaCrossNamespaceSourceMismatch(analyzer, model, typ.Name, ref) || analyzer.qualifiedTypeMissRejected(typ.Name, ref, model, false) || semaCompleteDependencyNestedMiss(analyzer, model, ref) || (!index.Subset && semaClosedSourceTypeMiss(analyzer, model, typ.Name, ref))
 					absentFromShape := analyzer.standardObjectAbsentFromDeclaredShape(model, typ.Name, ref)
 					if storage.IsReferenceOnlyStandardObject(ref) || crossNamespace || absentFromShape {
 						item.NativeMessage = "Invalid type: " + ref
@@ -3582,9 +3603,15 @@ func semaAuthProviderCallbackOverrideOptional(typ typesys.TypeSymbol, member typ
 
 func semaInheritedMethodVisible(child typesys.TypeSymbol, owner typeMembers, member typesys.MemberSymbol) bool {
 	if hasModifier(member.Modifiers, "private") {
-		return strings.EqualFold(strings.TrimSpace(child.Namespace), strings.TrimSpace(owner.namespace)) &&
-			child.IsTest &&
-			hasAnnotation(member.Annotations, "TestVisible")
+		sameNamespace := strings.EqualFold(strings.TrimSpace(child.Namespace), strings.TrimSpace(owner.namespace))
+		major, knownVersion := apexversion.Major(child.EffectiveAPIVersion)
+		if sameNamespace && !child.Dependency && !owner.dependency && !owner.platform &&
+			(hasModifier(member.Modifiers, "virtual") || hasModifier(member.Modifiers, "abstract")) &&
+			knownVersion && major >= 45 && major < 65 &&
+			semaTopLevelScope(semaTypeMembersName(child), child.Modifiers) == semaTopLevelScope(owner.name, owner.modifiers) {
+			return true
+		}
+		return sameNamespace && child.IsTest && hasAnnotation(member.Annotations, "TestVisible")
 	}
 	if semaDefaultAccessMethodHidden(child, owner, member) {
 		return false
@@ -3916,7 +3943,7 @@ func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.M
 		targetType, ok := scopes.visibleAt(target, match[2])
 		if ok {
 			value := trimSemaArg(body, match[1], semaStatementEnd(body, match[1]))
-			valueType := semaResolveConstructedExpressionType(model, typ.Name, value.text, scopes.flatCopy())
+			valueType := semaResolveConstructedExpressionType(model, typ.Name, value.text, scopes.flatAtCopy(match[1]))
 			queryText := strings.TrimSpace(value.text)
 			if strings.HasPrefix(queryText, "[") && strings.HasSuffix(queryText, "]") {
 				if queryType := semaSOQLLiteralType(queryText); queryType != "" {

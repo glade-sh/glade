@@ -4,6 +4,8 @@
 
 Planned changes are listed below.
 
+- **REST composite responses.** Missing-field errors and collection or tree rollback responses now follow the captured Salesforce status codes, error messages, and result shapes.
+
 ## v0.3.5
 
 v0.3.5 extends the supported Apex window to API 68.0, tracks the Salesforce Winter '27 release, and closes a large set of differences found by running real projects: field-level security for the default administrator, user-mode queries and DML, platform events, Flow, Visualforce markup, locale-aware strings and SOQL, and org-shape gating of standard objects. It also requires authentication on every API route of an exposed `glade server` listener. API labels list the source versions checked against captured results. The supported windows and hosted boundaries are in [release policy](RELEASE_POLICY.md#salesforce-api-versions).

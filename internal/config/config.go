@@ -36,9 +36,13 @@ type ProjectConfig struct {
 	Dependencies               []LocalPackageDependency   `json:"dependencies,omitempty"`
 	ManagedPackageDependencies []ManagedPackageDependency `json:"managedPackageDependencies,omitempty"`
 	DependencyPaths            []string                   `json:"dependencyPaths,omitempty"`
-	PackageShims               []PackageShim              `json:"packageShims,omitempty"`
-	SchemaSnapshot             string                     `json:"schemaSnapshot,omitempty"`
-	SchemaSnapshotSHA256       string                     `json:"schemaSnapshotSHA256,omitempty"`
+	// ExternalNamespaces declares installed packages whose source Glade does
+	// not have. Each namespace stays open: its types compile in every position
+	// and no dependency_missing diagnostic is reported (ruling 49(1)).
+	ExternalNamespaces   []string      `json:"externalNamespaces,omitempty"`
+	PackageShims         []PackageShim `json:"packageShims,omitempty"`
+	SchemaSnapshot       string        `json:"schemaSnapshot,omitempty"`
+	SchemaSnapshotSHA256 string        `json:"schemaSnapshotSHA256,omitempty"`
 }
 
 type ManagedPackageDependency struct {
@@ -227,6 +231,16 @@ func parseYAMLSubset(src string) (Config, error) {
 				return Config{}, fmt.Errorf("glade.yml:%d: %w", lineNo+1, err)
 			}
 			cfg.Project.DependencyPaths = values
+		case "project.externalNamespaces":
+			values, err := parseInlineList(value)
+			if err != nil {
+				return Config{}, fmt.Errorf("glade.yml:%d: project.externalNamespaces: %w", lineNo+1, err)
+			}
+			namespaces, err := parseExternalNamespaces(values)
+			if err != nil {
+				return Config{}, fmt.Errorf("glade.yml:%d: project.externalNamespaces: %w", lineNo+1, err)
+			}
+			cfg.Project.ExternalNamespaces = namespaces
 		case "project.dependencies":
 			if value != "" && value != "[]" {
 				return Config{}, fmt.Errorf("glade.yml:%d: project.dependencies must be a block list", lineNo+1)
@@ -494,6 +508,41 @@ func parseInlineList(s string) ([]string, error) {
 		out = append(out, trimScalar(part))
 	}
 	return out, nil
+}
+
+// parseExternalNamespaces validates namespace-only package declarations.
+// A namespace is an Apex identifier; duplicates differ only by case.
+func parseExternalNamespaces(values []string) ([]string, error) {
+	seen := make(map[string]bool, len(values))
+	out := make([]string, 0, len(values))
+	for _, value := range values {
+		namespace := strings.TrimSpace(value)
+		if !validExternalNamespace(namespace) {
+			return nil, fmt.Errorf("invalid namespace %q: expected an Apex identifier", value)
+		}
+		key := strings.ToLower(namespace)
+		if seen[key] {
+			return nil, fmt.Errorf("duplicate namespace %q", namespace)
+		}
+		seen[key] = true
+		out = append(out, namespace)
+	}
+	return out, nil
+}
+
+func validExternalNamespace(namespace string) bool {
+	if namespace == "" || strings.Contains(namespace, "__") || strings.HasSuffix(namespace, "_") {
+		return false
+	}
+	for i, r := range namespace {
+		switch {
+		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z':
+		case i > 0 && (r >= '0' && r <= '9' || r == '_'):
+		default:
+			return false
+		}
+	}
+	return true
 }
 
 func parseManagedPackageDependencies(values []string) ([]ManagedPackageDependency, error) {

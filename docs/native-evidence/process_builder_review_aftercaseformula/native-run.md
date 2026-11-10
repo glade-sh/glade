@@ -1,0 +1,3 @@
+# Native run
+
+A fresh 30-day Developer scratch org was used with synthetic metadata. Synthetic metadata was deployed at API 67.0; the Case field permission set was assigned. A sorted queue lookup assigns the Case owner before a triggering-record update; another after-save flow runs only on one of two status transitions, with two unused input/output collection variables. Named tests and anonymous execution at API 62.0 and 67.0 recorded the matching owner and changed-status paths, the unchanged-status boundary, and two custom-error rejection controls. Sentinel assertions return the recorded observations and roll back their transactions. The scratch org was deleted; ScratchOrgInfo was verified Deleted and no ActiveScratchOrg row remained. IDs and aliases are not recorded.

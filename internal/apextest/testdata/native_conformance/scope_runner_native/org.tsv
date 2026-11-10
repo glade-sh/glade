@@ -1,0 +1,25 @@
+case	api	route	outcome
+private_override	62.0	metadata-deploy	accepted
+private_override	62.0	istest	passed
+private_override	64.0	metadata-deploy	accepted
+private_override	64.0	istest	passed
+private_override	65.0	metadata-deploy	Dependent class is invalid and needs recompilation:  Class OverrideProbe : override methods require at least one of the following global, public, protected; override methods require at least one of the following global, public, protected
+private_override	67.0	metadata-deploy	Dependent class is invalid and needs recompilation:  Class OverrideProbe : override methods require at least one of the following global, public, protected; override methods require at least one of the following global, public, protected
+protected_override	62.0	metadata-deploy	accepted
+protected_override	62.0	istest	passed
+protected_override	65.0	metadata-deploy	accepted
+protected_override	65.0	istest	passed
+protected_override	67.0	metadata-deploy	accepted
+protected_override	67.0	istest	passed
+loop_after	62.0	metadata-deploy	accepted
+loop_after	62.0	istest	passed
+loop_after	67.0	metadata-deploy	accepted
+loop_after	67.0	istest	passed
+loop_before	62.0	metadata-deploy	Duplicate variable: i
+loop_before	67.0	metadata-deploy	Duplicate variable: i
+sibling	62.0	metadata-deploy	accepted
+sibling	62.0	istest	passed
+sibling	67.0	metadata-deploy	accepted
+sibling	67.0	istest	passed
+sibling_bad	62.0	metadata-deploy	Illegal assignment from Integer to Map<String,Object>
+sibling_bad	67.0	metadata-deploy	Illegal assignment from Integer to Map<String,Object>

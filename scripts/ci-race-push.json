@@ -694,7 +694,7 @@
     "./internal/pluginhost": 38,
     "./internal/sema": 605,
     "./internal/semanticcache": 126,
-    "./internal/server": 858,
+    "./internal/server": 874,
     "./internal/soql": 89,
     "./internal/storage": 353,
     "./internal/testdaemon": 325,
