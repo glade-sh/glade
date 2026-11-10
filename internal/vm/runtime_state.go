@@ -605,7 +605,7 @@ type RuntimeError struct {
 	Stack   []StackFrame
 	// PlatformFault marks an uncatchable platform failure whose native REST
 	// transport is UNKNOWN_EXCEPTION rather than an Apex exception.
-	PlatformFault bool
+	PlatformFault bool `json:"-"`
 	// Preserve the Apex message before adding local diagnostic context.
 	exceptionMessage *string
 	// An assertion records its Apex frames where it fails; a trigger boundary
