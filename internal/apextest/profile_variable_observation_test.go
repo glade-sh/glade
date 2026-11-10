@@ -35,7 +35,7 @@ func assertVariableProfileObservation(t *testing.T, row []string, rows [][]strin
 	if err := json.Unmarshal([]byte(row[4]), &original); err != nil {
 		t.Fatal(err)
 	}
-	variable := false
+	observations := []any{}
 	for _, recheck := range rechecks[1:] {
 		if len(recheck) != 5 || !reflect.DeepEqual(recheck[:4], row[:4]) {
 			continue
@@ -44,7 +44,7 @@ func assertVariableProfileObservation(t *testing.T, row []string, rows [][]strin
 		if err := json.Unmarshal([]byte(recheck[4]), &repeated); err != nil {
 			t.Fatal(err)
 		}
-		variable = !reflect.DeepEqual(original, repeated)
+		observations = append(observations, repeated)
 	}
 	recapture, err := os.Open(filepath.Join("testdata", "conformance", "profile_limit_recheck", "org.tsv"))
 	if err != nil {
@@ -68,12 +68,7 @@ func assertVariableProfileObservation(t *testing.T, row []string, rows [][]strin
 		if err := json.Unmarshal([]byte(repeatedRow[5]), &repeated); err != nil {
 			t.Fatal(err)
 		}
-		if !reflect.DeepEqual(original, repeated) {
-			variable = true
-		}
-	}
-	if !variable {
-		return false
+		observations = append(observations, repeated)
 	}
 	for _, inventory := range rows {
 		if inventory[0] != row[0] || inventory[1] != row[1] || inventory[2] != row[2] || inventory[3] != "inventory" {
@@ -83,6 +78,13 @@ func assertVariableProfileObservation(t *testing.T, row []string, rows [][]strin
 		if err := json.Unmarshal([]byte(inventory[4]), &eligible); err != nil {
 			t.Fatal(err)
 		}
+		variable, err := checkProfileNativeEvidence(original, observations, eligible)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !variable {
+			return false
+		}
 		if err := checkProfileLimitedMembership(got, original, eligible); err != nil {
 			t.Fatal(err)
 		}
@@ -90,6 +92,24 @@ func assertVariableProfileObservation(t *testing.T, row []string, rows [][]strin
 	}
 	t.Fatal("variable Profile observation lacks corresponding inventory")
 	return true
+}
+
+// Every observation must support the invariant before differences can prove
+// that a cell is variable.
+func checkProfileNativeEvidence(original any, observations []any, eligible any) (bool, error) {
+	if err := checkProfileLimitedMembership(original, original, eligible); err != nil {
+		return false, fmt.Errorf("original Profile observation: %w", err)
+	}
+	variable := false
+	for _, observation := range observations {
+		if err := checkProfileLimitedMembership(observation, original, eligible); err != nil {
+			return false, fmt.Errorf("repeated Profile observation: %w", err)
+		}
+		if !reflect.DeepEqual(original, observation) {
+			variable = true
+		}
+	}
+	return variable, nil
 }
 
 func checkProfileLimitedMembership(got, native, eligible any) error {
