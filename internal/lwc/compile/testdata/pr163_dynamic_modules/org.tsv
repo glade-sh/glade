@@ -1,0 +1,9 @@
+case	api	route	result	outcome
+utility_cap	59.0	deploy	accepted	deployed
+utility_nocap	59.0	deploy	rejected	LWC1503: Dynamic imports are not allowed.
+sibling_cap	59.0	deploy	accepted	deployed
+sibling_nocap	59.0	deploy	rejected	LWC1503: Dynamic imports are not allowed.
+utility_cap	67.0	deploy	accepted	deployed
+utility_nocap	67.0	deploy	rejected	LWC1503: Dynamic imports are not allowed.
+sibling_cap	67.0	deploy	accepted	deployed
+sibling_nocap	67.0	deploy	rejected	LWC1503: Dynamic imports are not allowed.

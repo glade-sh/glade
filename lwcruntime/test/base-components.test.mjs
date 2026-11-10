@@ -1112,3 +1112,109 @@ test("alert promise lifetime follows isolated native Escape controls", async (t)
     await server.close();
   }
 });
+
+test("native icon, button icon and modal classes", async (t) => {
+  if (!requireLWCToolchain(t)) return;
+  const file = path.join(repoRoot, "internal/lwcbrowser/testdata/pr163_slds/org.tsv");
+  const rows = fs.readFileSync(file, "utf8").trim().split("\n").slice(1).map(line => line.split("\t"))
+    .filter(row => !["modal_default", "modal_medium", "modal_large"].includes(row[0]));
+  assert.equal(rows.length, 32);
+  const server = await startBaseComponentServer();
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const page = await browser.newPage();
+    await page.goto(`${server.baseURL}/base.html`, { waitUntil: "networkidle" });
+    await page.evaluate(async () => {
+      const { createElement } = await import("lwc");
+      const { default: Icon } = await import("lightning/icon");
+      const { default: ButtonIcon } = await import("lightning/buttonIcon");
+      const holder = document.createElement("div");
+      holder.id = "native-probes";
+      document.body.appendChild(holder);
+      const cases = [
+        ["icon_small_success", Icon, "lightning-icon", { iconName: "utility:check", size: "small", variant: "success", alternativeText: "Probe icon" }],
+        ["icon_large_warning", Icon, "lightning-icon", { iconName: "utility:check", size: "large", variant: "warning", alternativeText: "Second icon" }],
+        ["icon_invalid_defaults", Icon, "lightning-icon", { iconName: "utility:check", size: "invalid", variant: "invalid", alternativeText: "Invalid icon" }],
+        ["icon_inverse", Icon, "lightning-icon", { iconName: "utility:check", size: "x-small", variant: "inverse", alternativeText: "Inverse icon" }],
+        ["icon_error", Icon, "lightning-icon", { iconName: "utility:check", variant: "error", alternativeText: "Error icon" }],
+        ["icon_light", Icon, "lightning-icon", { iconName: "utility:check", variant: "light", alternativeText: "Light icon" }],
+        ["icon_bare", Icon, "lightning-icon", { iconName: "utility:check", variant: "bare", alternativeText: "Bare icon" }],
+        ["icon_brand", Icon, "lightning-icon", { iconName: "utility:check", variant: "brand", alternativeText: "Brand icon" }],
+        ["icon_tiny", Icon, "lightning-icon", { iconName: "utility:check", size: "xx-small", alternativeText: "Tiny icon" }],
+        ["icon_account", Icon, "lightning-icon", { iconName: "standard:account", size: "medium", alternativeText: "Account icon" }],
+        ["button_bare", ButtonIcon, "lightning-button-icon", { iconName: "utility:check", size: "large", variant: "bare", alternativeText: "Bare button" }],
+        ["button_small_border_filled", ButtonIcon, "lightning-button-icon", { iconName: "utility:check", size: "small", variant: "border-filled", alternativeText: "Probe button" }],
+        ["button_invalid_defaults", ButtonIcon, "lightning-button-icon", { iconName: "utility:check", size: "invalid", variant: "invalid", alternativeText: "Invalid button" }],
+      ];
+      for (const [id, Ctor, tag, props] of cases) {
+        const el = createElement(tag, { is: Ctor });
+        el.dataset.probe = id;
+        Object.assign(el, props);
+        holder.appendChild(el);
+      }
+      const { default: Modal } = await import("lightning/modal");
+      window.__nativeModal = Modal.open({ label: "Probe modal", size: "small" });
+    });
+    const mismatches = [];
+    for (const [id, api, route, result, expected] of rows) {
+      assert.equal(route, "browser");
+      assert.equal(result, "rendered");
+      const selector = id === "modal_small"
+        ? ".glade-modal-overlay section[role=dialog]"
+        : id === "modal_container"
+          ? ".glade-modal-overlay section[role=dialog] > .slds-modal__container"
+          : id === "modal_close_svg"
+            ? ".glade-modal-overlay section[role=dialog] .slds-modal__close svg"
+            : `#native-probes [data-probe="${id}"] ${id.startsWith("icon_") ? "svg" : "button"}`;
+      const element = page.locator(selector);
+      const actual = await element.count() ? await element.first().getAttribute("class") : "";
+      const actualClasses = actual ? [...new Set(actual.split(/\s+/))].sort() : [];
+      const expectedClasses = [...new Set(expected.split(/\s+/))].sort();
+      if (JSON.stringify(actualClasses) !== JSON.stringify(expectedClasses)) {
+        mismatches.push({ id, api, actual: actualClasses, expected: expectedClasses });
+      }
+    }
+    assert.deepEqual(mismatches, []);
+    await page.locator(".glade-modal-overlay .slds-modal__close").click();
+    await page.evaluate(() => window.__nativeModal);
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});
+
+
+test("native modal size classes", async (t) => {
+  if (!requireLWCToolchain(t)) return;
+  const file = path.join(repoRoot, "internal/lwcbrowser/testdata/pr163_slds/org.tsv");
+  const rows = fs.readFileSync(file, "utf8").trim().split("\n").slice(1).map(line => line.split("\t"))
+    .filter(row => ["modal_default", "modal_medium", "modal_large"].includes(row[0]));
+  assert.equal(rows.length, 6);
+  const server = await startBaseComponentServer();
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const page = await browser.newPage();
+    await page.goto(`${server.baseURL}/base.html`, { waitUntil: "networkidle" });
+    const mismatches = [];
+    for (const [id, api, route, result, expected] of rows) {
+      assert.equal(route, "browser");
+      assert.equal(result, "rendered");
+      await page.evaluate(async (name) => {
+        const { default: Modal } = await import("lightning/modal");
+        const options = { label: "Probe modal" };
+        if (name !== "modal_default") options.size = name.slice("modal_".length);
+        window.__sizeModal = Modal.open(options);
+      }, id);
+      const actual = await page.locator(".glade-modal-overlay section[role=dialog]").getAttribute("class");
+      const got = [...new Set(actual.split(/\s+/))].sort();
+      const want = [...new Set(expected.split(/\s+/))].sort();
+      if (JSON.stringify(got) !== JSON.stringify(want)) mismatches.push({ id, api, got, want });
+      await page.locator(".glade-modal-overlay .slds-modal__close").click();
+      await page.evaluate(() => window.__sizeModal);
+    }
+    assert.deepEqual(mismatches, []);
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});

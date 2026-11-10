@@ -1,5 +1,6 @@
 import { createElement } from "lwc";
 import { defineOverlayComponent, overlayRoot, restoreOverlayFocus, removeOverlay } from "./overlay.mjs";
+import { getIconPath } from "../lightning/iconUtils.mjs";
 
 const modalStates = new WeakMap();
 const activeModals = new Set();
@@ -18,6 +19,7 @@ export function updateModalDisabled(component, disabled) {
     state.processing.hidden = !disabled;
   }
   state.blocker.hidden = !disabled;
+  state.blocker.style.pointerEvents = disabled ? "auto" : "none";
 }
 
 function headingIn(root) {
@@ -39,12 +41,14 @@ const ModalContent = defineOverlayComponent("lightning-modal-base", (api) => [
 const ModalChrome = defineOverlayComponent("lightning-modal-container", (api, component) => {
   const state = component.state;
   return [api.h("section", {
-    key: 0, classMap: { "slds-modal": true, "slds-fade-in-open": true },
+    key: 0, className: state.sectionClass,
     attrs: { role: "dialog", "aria-modal": "true", tabindex: "-1", style: state.style },
   }, [
-    api.h("div", { key: 0, attrs: { "data-processing": "" }, props: { hidden: true } }, []),
-    api.c("lightning-modal-base", ModalContent,
-      { key: 1, props: { state }, attrs: { style: "display:block" } }, []),
+    api.h("div", { key: 2, className: "slds-modal__container slds-modal__container__reflow_resize" }, [
+      api.h("div", { key: 0, attrs: { "data-processing": "" }, props: { hidden: true } }, []),
+      api.c("lightning-modal-base", ModalContent,
+        { key: 1, props: { state }, attrs: { style: "display:block" } }, []),
+    ]),
   ])];
 });
 
@@ -62,7 +66,18 @@ export function openModal(Component, options) {
   closeButton.className = "slds-modal__close";
   closeButton.title = "Close";
   closeButton.setAttribute("aria-label", "Close");
-  closeButton.textContent = "Cancel and close";
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("class", "slds-button__icon slds-button__icon_large");
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("viewBox", "0 0 520 520");
+  svg.setAttribute("focusable", "false");
+  const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+  use.setAttribute("href", getIconPath("utility:close"));
+  svg.appendChild(use);
+  const assistive = document.createElement("span");
+  assistive.className = "slds-assistive-text";
+  assistive.textContent = "Cancel and close";
+  closeButton.append(svg, assistive);
   const blocker = document.createElement("div");
   blocker.className = "slds-modal__container";
   blocker.dataset.container = "";
@@ -76,7 +91,10 @@ export function openModal(Component, options) {
   let resolve;
   const promise = new Promise(done => { resolve = done; });
   const validLabel = values.label === undefined || typeof values.label === "string";
-  const state = { context, overlay, blocker, closeButton, element, resolve, style,
+  const size = values.size === undefined ? "medium" : values.size;
+  const sizeClass = ["small", "medium", "large"].includes(size) ? ` slds-modal_${size}` : "";
+  const sectionClass = "slds-modal fix-slds-modal slds-fade-in-open" + sizeClass;
+  const state = { context, overlay, blocker, closeButton, element, resolve, style, sectionClass,
     values, validLabel, disabled: false, closing: false };
   state.mountContent = root => {
     if (state.mounted) return;

@@ -1,0 +1,13 @@
+case	api	route	result	outcome
+loose_cls	59.0	deploy	accepted	deployed
+inside_cls	59.0	deploy	rejected	Unexpected token 'not'.
+loose_trigger	59.0	deploy	accepted	deployed
+inside_trigger	59.0	deploy	rejected	Unexpected token 'not'.
+loose_object	59.0	deploy	accepted	deployed
+inside_object	59.0	deploy	rejected	invalid CustomObject metadata
+loose_cls	67.0	deploy	accepted	deployed
+inside_cls	67.0	deploy	rejected	Unexpected token 'not'.
+loose_trigger	67.0	deploy	accepted	deployed
+inside_trigger	67.0	deploy	rejected	Unexpected token 'not'.
+loose_object	67.0	deploy	accepted	deployed
+inside_object	67.0	deploy	rejected	invalid CustomObject metadata
