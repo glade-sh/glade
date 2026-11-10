@@ -1,47 +1,29 @@
 source_api	class	method	subject	glade_observation	reason
-55.0	StripDefaultProbe	byIdUpdatableStandard	Pricebook2	populated=Id removed=	Standard User Pricebook2 object access is not modeled; pre-existing
 55.0	StripDefaultProbe	explicitCreatableAdmin	Campaign	populated=IsActive,Name removed=	Campaign create without Marketing User is not modeled; pre-existing
 55.0	StripDefaultProbe	explicitCreatableAdmin	StripProbe__c	populated=Flag__c,Name removed=	explicit custom checkbox without a field grant at API 55.0 stays for the administrator; pre-existing
-55.0	StripDefaultProbe	explicitCreatableStandard	Pricebook2	populated=IsActive,Name removed=	Standard User Pricebook2 object access is not modeled; pre-existing
 55.0	StripDefaultProbe	freshCreatableAdmin	Campaign	populated=Name removed= insert=ok	Campaign create without Marketing User is not modeled; pre-existing
-55.0	StripDefaultProbe	freshCreatableStandard	Pricebook2	populated=Name removed= insert=ok	Standard User Pricebook2 object access is not modeled; pre-existing
-55.0	StripDefaultProbe	freshUpdatableStandard	Pricebook2	populated=Name removed=	Standard User Pricebook2 object access is not modeled; pre-existing
 55.0	StripDefaultProbe	loadDefaultsCreatableAdmin	Case	populated=CurrencyIsoCode,IsClosed,IsClosedOnCreate,IsEscalated,IsStopped,Priority,Status removed=	newSObject(null,true) populated shape and field checks differ; pre-existing
 55.0	StripDefaultProbe	loadDefaultsCreatableAdmin	Task	populated=CurrencyIsoCode,IsArchived,IsClosed,IsHighPriority,IsRecurrence,IsReminderSet,Priority,Status removed=	newSObject(null,true) populated shape and field checks differ; pre-existing
 55.0	StripDefaultProbe	loadDefaultsCreatableAdmin	Campaign	populated=CurrencyIsoCode,IsActive,Status,Type removed=	newSObject(null,true) populated shape and field checks differ; pre-existing
 55.0	StripDefaultProbe	loadDefaultsCreatableAdmin	StripProbe__c	populated=CurrencyIsoCode,Flag__c removed=	newSObject(null,true) populated shape and field checks differ; pre-existing
 55.0	StripDefaultProbe	loadDefaultsCreatableStandard	Case	populated=CurrencyIsoCode,IsClosed,IsClosedOnCreate,IsEscalated,IsStopped,Priority,Status removed=IsClosed	newSObject(null,true) populated shape and field checks differ; pre-existing
 55.0	StripDefaultProbe	loadDefaultsCreatableStandard	Task	populated=CurrencyIsoCode,IsArchived,IsClosed,IsHighPriority,IsRecurrence,IsReminderSet,Priority,Status removed=IsArchived,IsClosed,IsHighPriority	newSObject(null,true) populated shape and field checks differ; pre-existing
-55.0	StripDefaultProbe	loadDefaultsCreatableStandard	Pricebook2	populated=CurrencyIsoCode,IsActive,IsArchived,IsStandard removed=IsArchived,IsStandard	newSObject(null,true) populated shape and field checks differ; pre-existing
 55.0	StripDefaultProbe	loadDefaultsCreatableStandard	Campaign	populated=CurrencyIsoCode,IsActive,Status,Type threw=System.NoAccessException	newSObject(null,true) populated shape and field checks differ; pre-existing
-55.0	StripDefaultProbe	queriedUpdatableStandard	Pricebook2	populated=Id removed=	Standard User Pricebook2 object access is not modeled; pre-existing
-62.0	StripDefaultProbe	byIdUpdatableStandard	Pricebook2	populated=Id removed=	Standard User Pricebook2 object access is not modeled; pre-existing
 62.0	StripDefaultProbe	explicitCreatableAdmin	Campaign	populated=IsActive,Name removed=	Campaign create without Marketing User is not modeled; pre-existing
-62.0	StripDefaultProbe	explicitCreatableStandard	Pricebook2	populated=IsActive,Name removed=	Standard User Pricebook2 object access is not modeled; pre-existing
 62.0	StripDefaultProbe	freshCreatableAdmin	Campaign	populated=Name removed= insert=ok	Campaign create without Marketing User is not modeled; pre-existing
 62.0	StripDefaultProbe	freshCreatableAdmin	StripProbe__c	populated=Name removed=Flag__c insert=ok	omitted custom checkbox without read access on a custom object at API 62+; pre-existing
-62.0	StripDefaultProbe	freshCreatableStandard	Pricebook2	populated=Name removed= insert=ok	Standard User Pricebook2 object access is not modeled; pre-existing
-62.0	StripDefaultProbe	freshUpdatableStandard	Pricebook2	populated=Name removed=	Standard User Pricebook2 object access is not modeled; pre-existing
 62.0	StripDefaultProbe	loadDefaultsCreatableAdmin	Case	populated=CurrencyIsoCode,IsClosed,IsClosedOnCreate,IsEscalated,IsStopped,Priority,Status removed=	newSObject(null,true) populated shape and field checks differ; pre-existing
 62.0	StripDefaultProbe	loadDefaultsCreatableAdmin	Task	populated=CurrencyIsoCode,IsArchived,IsClosed,IsHighPriority,IsRecurrence,IsReminderSet,Priority,Status removed=	newSObject(null,true) populated shape and field checks differ; pre-existing
 62.0	StripDefaultProbe	loadDefaultsCreatableAdmin	Campaign	populated=CurrencyIsoCode,IsActive,Status,Type removed=	newSObject(null,true) populated shape and field checks differ; pre-existing
 62.0	StripDefaultProbe	loadDefaultsCreatableStandard	Case	populated=CurrencyIsoCode,IsClosed,IsClosedOnCreate,IsEscalated,IsStopped,Priority,Status removed=IsClosed	newSObject(null,true) populated shape and field checks differ; pre-existing
 62.0	StripDefaultProbe	loadDefaultsCreatableStandard	Task	populated=CurrencyIsoCode,IsArchived,IsClosed,IsHighPriority,IsRecurrence,IsReminderSet,Priority,Status removed=IsArchived,IsClosed,IsHighPriority	newSObject(null,true) populated shape and field checks differ; pre-existing
-62.0	StripDefaultProbe	loadDefaultsCreatableStandard	Pricebook2	populated=CurrencyIsoCode,IsActive,IsArchived,IsStandard removed=IsArchived,IsStandard	newSObject(null,true) populated shape and field checks differ; pre-existing
 62.0	StripDefaultProbe	loadDefaultsCreatableStandard	Campaign	populated=CurrencyIsoCode,IsActive,Status,Type threw=System.NoAccessException	newSObject(null,true) populated shape and field checks differ; pre-existing
-62.0	StripDefaultProbe	queriedUpdatableStandard	Pricebook2	populated=Id removed=	Standard User Pricebook2 object access is not modeled; pre-existing
-67.0	StripDefaultProbe	byIdUpdatableStandard	Pricebook2	populated=Id removed=	Standard User Pricebook2 object access is not modeled; pre-existing
 67.0	StripDefaultProbe	explicitCreatableAdmin	Campaign	populated=IsActive,Name removed=	Campaign create without Marketing User is not modeled; pre-existing
-67.0	StripDefaultProbe	explicitCreatableStandard	Pricebook2	populated=IsActive,Name removed=	Standard User Pricebook2 object access is not modeled; pre-existing
 67.0	StripDefaultProbe	freshCreatableAdmin	Campaign	populated=Name removed= insert=ok	Campaign create without Marketing User is not modeled; pre-existing
 67.0	StripDefaultProbe	freshCreatableAdmin	StripProbe__c	populated=Name removed=Flag__c insert=ok	omitted custom checkbox without read access on a custom object at API 62+; pre-existing
-67.0	StripDefaultProbe	freshCreatableStandard	Pricebook2	populated=Name removed= insert=ok	Standard User Pricebook2 object access is not modeled; pre-existing
-67.0	StripDefaultProbe	freshUpdatableStandard	Pricebook2	populated=Name removed=	Standard User Pricebook2 object access is not modeled; pre-existing
 67.0	StripDefaultProbe	loadDefaultsCreatableAdmin	Case	populated=CurrencyIsoCode,IsClosed,IsClosedOnCreate,IsEscalated,IsStopped,Priority,Status removed=	newSObject(null,true) populated shape and field checks differ; pre-existing
 67.0	StripDefaultProbe	loadDefaultsCreatableAdmin	Task	populated=CurrencyIsoCode,IsArchived,IsClosed,IsHighPriority,IsRecurrence,IsReminderSet,Priority,Status removed=	newSObject(null,true) populated shape and field checks differ; pre-existing
 67.0	StripDefaultProbe	loadDefaultsCreatableAdmin	Campaign	populated=CurrencyIsoCode,IsActive,Status,Type removed=	newSObject(null,true) populated shape and field checks differ; pre-existing
 67.0	StripDefaultProbe	loadDefaultsCreatableStandard	Case	populated=CurrencyIsoCode,IsClosed,IsClosedOnCreate,IsEscalated,IsStopped,Priority,Status removed=IsClosed	newSObject(null,true) populated shape and field checks differ; pre-existing
 67.0	StripDefaultProbe	loadDefaultsCreatableStandard	Task	populated=CurrencyIsoCode,IsArchived,IsClosed,IsHighPriority,IsRecurrence,IsReminderSet,Priority,Status removed=IsArchived,IsClosed,IsHighPriority	newSObject(null,true) populated shape and field checks differ; pre-existing
-67.0	StripDefaultProbe	loadDefaultsCreatableStandard	Pricebook2	populated=CurrencyIsoCode,IsActive,IsArchived,IsStandard removed=IsArchived,IsStandard	newSObject(null,true) populated shape and field checks differ; pre-existing
 67.0	StripDefaultProbe	loadDefaultsCreatableStandard	Campaign	populated=CurrencyIsoCode,IsActive,Status,Type threw=System.NoAccessException	newSObject(null,true) populated shape and field checks differ; pre-existing
-67.0	StripDefaultProbe	queriedUpdatableStandard	Pricebook2	populated=Id removed=	Standard User Pricebook2 object access is not modeled; pre-existing
