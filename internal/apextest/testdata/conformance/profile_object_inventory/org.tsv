@@ -1,0 +1,33 @@
+source_api	profile	object	read	create	edit	delete	view_all	modify_all
+62.0	Standard User	Account	true	true	true	true	false	false
+62.0	Standard User	Campaign	true	false	false	false	false	false
+62.0	Standard User	Case	true	true	true	false	false	false
+62.0	Standard User	Contact	true	true	true	true	false	false
+62.0	Standard User	Lead	true	true	true	true	false	false
+62.0	Standard User	Pricebook2	true	false	false	false	false	false
+62.0	Standard User	Product2	true	false	false	false	false	false
+62.0	System Administrator	Account	true	true	true	true	true	true
+62.0	System Administrator	Campaign	true	true	true	true	true	true
+62.0	System Administrator	Case	true	true	true	true	true	true
+62.0	System Administrator	Contact	true	true	true	true	true	true
+62.0	System Administrator	Lead	true	true	true	true	true	true
+62.0	System Administrator	Pricebook2	true	true	true	true	true	true
+62.0	System Administrator	Product2	true	true	true	true	true	true
+62.0	System Administrator	Task	<no rows>					
+62.0	Standard User	Task	<no rows>					
+67.0	Standard User	Account	true	true	true	true	false	false
+67.0	Standard User	Campaign	true	false	false	false	false	false
+67.0	Standard User	Case	true	true	true	false	false	false
+67.0	Standard User	Contact	true	true	true	true	false	false
+67.0	Standard User	Lead	true	true	true	true	false	false
+67.0	Standard User	Pricebook2	true	false	false	false	false	false
+67.0	Standard User	Product2	true	false	false	false	false	false
+67.0	System Administrator	Account	true	true	true	true	true	true
+67.0	System Administrator	Campaign	true	true	true	true	true	true
+67.0	System Administrator	Case	true	true	true	true	true	true
+67.0	System Administrator	Contact	true	true	true	true	true	true
+67.0	System Administrator	Lead	true	true	true	true	true	true
+67.0	System Administrator	Pricebook2	true	true	true	true	true	true
+67.0	System Administrator	Product2	true	true	true	true	true	true
+67.0	System Administrator	Task	<no rows>					
+67.0	Standard User	Task	<no rows>					
