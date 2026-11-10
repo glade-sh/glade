@@ -371,6 +371,7 @@ func applyOrgShape(org *OrgState, features []string) {
 	}
 	refreshOrgFeatureObjects(org)
 	refreshOrgFeatureFields(org)
+	reconcileBootstrapProfileLicenses(org)
 	pruneUncapturedBootstrapProfiles(org)
 	if _, ok := org.Objects["RecordType"]; ok {
 		ensureRecordTypeRecords(org)

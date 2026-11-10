@@ -2,6 +2,7 @@ package storage
 
 import (
 	"reflect"
+	"strings"
 
 	"github.com/glade-sh/glade/internal/project"
 )
@@ -32,6 +33,53 @@ func capturedProfileInventoryShape(features []string) bool {
 func untouchedBootstrapProfile(id ID, record Record) bool {
 	original := bootstrapProfileSeedFields(id)
 	return original != nil && reflect.DeepEqual(record.Fields, original)
+}
+
+// reconcileBootstrapProfileLicenses applies captured inventory links to an
+// already-seeded org when its project shape becomes known. A record must still
+// match its complete original seed; imported and edited profiles keep their
+// own links. Missing license data leaves the record untouched until seeding.
+func reconcileBootstrapProfileLicenses(org *OrgState) {
+	if org == nil || !capturedProfileInventoryShape(org.Features) {
+		return
+	}
+	profiles, profilesOK := org.Objects["Profile"]
+	licenses, licensesOK := org.Objects["UserLicense"]
+	if !profilesOK || !licensesOK {
+		return
+	}
+	inventory := loadStandardPermissionInventory()
+	licenseIDs := make(map[string]ID)
+	for id, record := range licenses.Records {
+		key := strings.ToLower(record.Fields["LicenseDefinitionKey"].String)
+		if key != "" {
+			if prior := licenseIDs[key]; prior == "" || id < prior {
+				licenseIDs[key] = id
+			}
+		}
+	}
+	expected := make(map[string]ID)
+	for _, seed := range inventory.PermissionSets {
+		if seed.Profile == "" || seed.License < 0 || seed.License >= len(inventory.Licenses) {
+			continue
+		}
+		license := inventory.Licenses[seed.License]
+		if license.Kind == "UserLicense" {
+			if id := licenseIDs[strings.ToLower(license.Key)]; id != "" {
+				expected[seed.Profile] = id
+			}
+		}
+	}
+	for id, profile := range profiles.Records {
+		license, ok := expected[profile.Fields["Name"].String]
+		if !ok || IDsEqual(profile.Fields["UserLicenseId"].ID, license) || !untouchedBootstrapProfile(id, profile) {
+			continue
+		}
+		mutable, _ := EnsureMutableObjectRecords(org, "Profile")
+		profile = mutable.Records[id].Clone()
+		profile.Fields["UserLicenseId"] = IDValue(license)
+		mutable.Records[id] = profile
+	}
 }
 
 func pruneUncapturedBootstrapProfiles(org *OrgState) {
