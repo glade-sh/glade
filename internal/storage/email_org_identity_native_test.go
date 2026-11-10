@@ -2,6 +2,7 @@ package storage_test
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/project"
@@ -59,5 +60,32 @@ func TestEmailServicesDomainIdentityIsOrgScoped(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// Org IDs have equivalent 15- and 18-character forms; changing only that
+// representation must not change a generated identity.
+func TestEmailServicesDomainCanonicalOrgIdentity(t *testing.T) {
+	services := []project.EmailService{{HandlerDeclared: true, ApexClass: "SyntheticHandler", FunctionName: "SyntheticFunction", Addresses: []project.EmailServiceAddress{
+		{DeveloperName: "First", LocalPart: "first", RunAsUser: "system@example.invalid"},
+		{DeveloperName: "Second", LocalPart: "second", RunAsUser: "system@example.invalid"},
+	}}}
+	var baseline map[storage.ID]string
+	for _, orgID := range []string{"", storage.DefaultOrgID, storage.ID18(storage.DefaultOrgID)} {
+		org := storage.NewOrgState()
+		org.OrgID = orgID
+		storage.EnsureDeterministicPlatformData(&org)
+		if err := storage.ApplyEmailServices(&org, services); err != nil {
+			t.Fatal(err)
+		}
+		domains := map[storage.ID]string{}
+		for id, record := range org.Objects["EmailServicesAddress"].Records {
+			domains[id] = record.Fields["EmailDomainName"].String
+		}
+		if baseline == nil {
+			baseline = domains
+		} else if !reflect.DeepEqual(baseline, domains) {
+			t.Errorf("equivalent org identity %q generated different domains", orgID)
+		}
 	}
 }
