@@ -86,3 +86,56 @@ func TestCarriedConflictIsolationCapture(t *testing.T) {
 		}
 	}
 }
+
+// runas_user/org.tsv compares the same org before and after changing the
+// configured email-service user. Domain fingerprints are reduced to equality
+// booleans before export; the complete domains and fingerprints are absent.
+func TestCarriedEmailRunAsIsolationCapture(t *testing.T) {
+	file, err := os.Open(filepath.Join("testdata", "conformance", "carried_conflict_isolation", "runas_user", "org.tsv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+	reader := csv.NewReader(file)
+	reader.Comma = '\t'
+	rows, err := reader.ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 145 || strings.Join(rows[0], ",") != "org_shape,phase,source_api,route,sharing,user_profile,repetition,observation" {
+		t.Fatalf("incomplete run-as capture: %d rows", len(rows)-1)
+	}
+	groups := map[string]map[string]bool{}
+	for _, row := range rows[1:] {
+		key := strings.Join(row[:6], "/")
+		if groups[key] == nil {
+			groups[key] = map[string]bool{}
+		}
+		if groups[key][row[6]] {
+			t.Errorf("%s: duplicate repetition %s", key, row[6])
+		}
+		groups[key][row[6]] = true
+		if strings.HasPrefix(row[1], "identity_") {
+			var equal map[string]bool
+			if err := json.Unmarshal([]byte(row[7]), &equal); err != nil {
+				t.Fatalf("%s: %v", key, err)
+			}
+			if len(equal) != 2 {
+				t.Errorf("%s: got %d address comparisons, want two", key, len(equal))
+			}
+			for _, same := range equal {
+				if !same {
+					t.Errorf("%s: domain changed with configured user", key)
+				}
+			}
+		}
+	}
+	if len(groups) != 48 {
+		t.Fatalf("got %d native route groups, want 48", len(groups))
+	}
+	for key, repetitions := range groups {
+		if len(repetitions) != 3 || !repetitions["1"] || !repetitions["2"] || !repetitions["3"] {
+			t.Errorf("%s: missing repeat: %v", key, repetitions)
+		}
+	}
+}
