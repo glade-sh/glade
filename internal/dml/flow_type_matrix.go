@@ -26,6 +26,10 @@ func flowLookupCollectionHasCapturedFault(field storage.Field, value storage.Val
 		return false
 	}
 	for _, item := range value.List {
+		if field.Type == storage.FieldString && field.Filterable != nil && !*field.Filterable &&
+			(item.Kind == storage.ValueInteger || item.Kind == storage.ValueDecimal || item.Kind == storage.ValueBoolean) {
+			return true
+		}
 		switch field.Type {
 		case storage.FieldString, storage.FieldPicklist:
 			if item.Kind == storage.ValueDate || item.Kind == storage.ValueDateTime {
@@ -47,8 +51,22 @@ func flowLookupCollectionValuesEqual(field storage.Field, target, element storag
 	switch field.Type {
 	case storage.FieldString, storage.FieldPicklist:
 		switch element.Kind {
-		case storage.ValueString, storage.ValueInteger, storage.ValueDecimal, storage.ValueBoolean:
+		case storage.ValueString:
 			return storageValuesEqual(field, target, element), true
+		case storage.ValueInteger, storage.ValueDecimal, storage.ValueBoolean:
+			if field.Type == storage.FieldString && field.Filterable != nil && !*field.Filterable {
+				return false, false
+			}
+			var text string
+			switch element.Kind {
+			case storage.ValueInteger:
+				text = strconv.FormatInt(element.Integer, 10)
+			case storage.ValueDecimal:
+				text = element.Decimal
+			case storage.ValueBoolean:
+				text = strconv.FormatBool(element.Boolean)
+			}
+			return storageValuesEqual(field, target, storage.StringValue(text)), true
 		default:
 			return false, false
 		}
