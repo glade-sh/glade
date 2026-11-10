@@ -571,7 +571,7 @@ func propagateJSONGetterLimit(err error, state *jsonSerializationState) {
 		return
 	}
 	var fault *RuntimeError
-	if errors.As(err, &fault) && strings.EqualFold(fault.Type, "System.LimitException") {
+	if errors.As(err, &fault) && fault.callStackLimit && strings.EqualFold(fault.Type, "System.LimitException") {
 		panic(jsonConversionFailure{err: err})
 	}
 }

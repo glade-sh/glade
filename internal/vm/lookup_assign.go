@@ -1124,7 +1124,7 @@ func (vm *VM) callGetter(owner string, field Field, receiver Value) (Value, erro
 		var fault *RuntimeError
 		if vm.activeGetters[key] > 1 &&
 			errors.As(err, &fault) && fault.callStackLimit {
-			return Null, &RuntimeError{Type: "System.LimitException", Message: "Maximum stack depth reached: 1001", Stack: fault.Stack}
+			return Null, &RuntimeError{Type: "System.LimitException", Message: "Maximum stack depth reached: 1001", Stack: fault.Stack, callStackLimit: true}
 		}
 		return value, err
 	}
@@ -1174,7 +1174,7 @@ func (vm *VM) activeSetterStoredValue(owner, fieldName string, field Field, rece
 func (vm *VM) staticSetterReentryError(key string, err error) error {
 	var fault *RuntimeError
 	if vm.activeSetters[key] > 1 && errors.As(err, &fault) && fault.callStackLimit {
-		return &RuntimeError{Type: "System.LimitException", Message: "Maximum stack depth reached: 1001", Stack: fault.Stack}
+		return &RuntimeError{Type: "System.LimitException", Message: "Maximum stack depth reached: 1001", Stack: fault.Stack, callStackLimit: true}
 	}
 	return err
 }

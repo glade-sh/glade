@@ -1265,7 +1265,7 @@ func (vm *VM) formulaInstanceRecord(context Value, definition storage.ObjectDefi
 			if value, handled, err := vm.formulaApexTypeGetter(current, part); handled {
 				if err != nil {
 					var fault *RuntimeError
-					if errors.As(err, &fault) && strings.EqualFold(fault.Type, "System.LimitException") {
+					if errors.As(err, &fault) && fault.callStackLimit {
 						return record, false, err
 					}
 					return record, false, nil
@@ -1281,10 +1281,6 @@ func (vm *VM) formulaInstanceRecord(context Value, definition storage.ObjectDefi
 			if ok && field.Getter != nil {
 				value, err := vm.callGetter(owner, field, current)
 				if err != nil {
-					var fault *RuntimeError
-					if errors.As(err, &fault) && strings.EqualFold(fault.Type, "System.LimitException") {
-						return record, false, err
-					}
 					return record, false, nil
 				}
 				current = value
