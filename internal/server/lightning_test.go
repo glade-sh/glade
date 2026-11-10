@@ -1116,19 +1116,23 @@ func TestLightningApexRouteCommitsOnlySuccessfulMutation(t *testing.T) {
 		t.Fatalf("failed mutation committed: saves=%d org=%#v store=%#v", store.saves, org.Objects["Account"].Records, store.last.Objects["Account"].Records)
 	}
 
+	// A Queueable runs after the action commits, in its own transaction
+	// (lightning_async/org.tsv enqueue_runs_after_commit rows). The empty job
+	// adds no Accounts.
 	queued := invoke("enqueue", "")
-	if queued.Error == nil || queued.Error.Type != "UnsupportedFeature" || !strings.Contains(queued.Error.Message, "asynchronous Apex work") {
+	if queued.Error != nil || queued.Data != "queued" {
 		t.Fatalf("queued response = %#v error=%+v", queued, queued.Error)
 	}
-	if store.saves != 1 || len(org.Objects["Account"].Records) != 1 {
-		t.Fatalf("queued mutation committed: saves=%d org=%#v", store.saves, org.Objects["Account"].Records)
+	if len(org.Objects["Account"].Records) != 1 {
+		t.Fatalf("empty queueable changed accounts: %#v", org.Objects["Account"].Records)
 	}
+	savesBeforeRejected := store.saves
 
 	swallowed := invoke("swallowConvert", "")
 	if swallowed.Error == nil || swallowed.Error.Type != "UnsupportedFeature" || !strings.Contains(swallowed.Error.Message, "asynchronous Apex work") {
 		t.Fatalf("swallowed response = %#v error=%+v", swallowed, swallowed.Error)
 	}
-	if store.saves != 1 || len(org.Objects["Account"].Records) != 1 {
+	if store.saves != savesBeforeRejected || len(org.Objects["Account"].Records) != 1 {
 		t.Fatalf("caught async mutation committed: saves=%d org=%#v", store.saves, org.Objects["Account"].Records)
 	}
 
@@ -1136,7 +1140,7 @@ func TestLightningApexRouteCommitsOnlySuccessfulMutation(t *testing.T) {
 	if asyncDML.Error == nil || asyncDML.Error.Type != "UnsupportedFeature" || !strings.Contains(asyncDML.Error.Message, "Database.insertAsync") {
 		t.Fatalf("async DML response = %#v error=%+v", asyncDML, asyncDML.Error)
 	}
-	if store.saves != 1 || len(org.Objects["Account"].Records) != 1 {
+	if store.saves != savesBeforeRejected || len(org.Objects["Account"].Records) != 1 {
 		t.Fatalf("async DML mutation committed: saves=%d org=%#v", store.saves, org.Objects["Account"].Records)
 	}
 }

@@ -1038,6 +1038,11 @@ func (vm *VM) drainAsyncJobsFrom(result *Result, jobs *[]AsyncJob, startIndex in
 			if !job.ScheduledAborted && !batchProjection {
 				vm.recordAsyncJob(job, "Failed", err.Error())
 			}
+			if vm.testContext == nil {
+				// Host drains report which job failed; test drains keep the
+				// Apex-visible error unchanged.
+				return fmt.Errorf("%s %s: %w", job.Kind, vm.asyncClassName(job), err)
+			}
 			return err
 		}
 		if batchProjection {
