@@ -155,6 +155,8 @@ type VM struct {
 	localAsyncSeq                int
 	flowAsyncSeq                 uint64
 	flowPathSavepoints           map[string]uint64
+	runningProcessRecords        map[storage.ID]int
+	processErrorSequence         int
 	localAsyncDrain              bool
 	localAsyncChain              bool
 	rejectAsyncActions           bool
@@ -2780,6 +2782,10 @@ func (vm *VM) applyDeferredAutomation(engine *dml.Engine, records, oldRecords []
 	if engine == nil {
 		return nil
 	}
+	records, oldRecords = vm.withoutRunningProcessRecords(records, oldRecords)
+	if handled, err := vm.applyProcessObjectAutomation(engine, records, oldRecords, allOrNone, rollback, result); handled {
+		return err
+	}
 	sideEffects := vm.snapshotSideEffects()
 	// The native bulk capture uses atomic inserts. Partial-save scheduling
 	// retains its existing per-record path.
@@ -2867,7 +2873,11 @@ func cloneStorageRecords(records []storage.Record) []storage.Record {
 }
 
 func (vm *VM) refireAutomationUpdateTriggers(objectName string, id storage.ID, oldRecord storage.Record, allOrNone bool, rollback vmDMLRollbackPoint, result *Result) error {
-	if vm == nil || vm.Org == nil || objectName == "" || id == "" {
+	return vm.refireAutomationUpdateTriggersFor(objectName, []storage.ID{id}, []storage.Record{oldRecord}, allOrNone, rollback, result)
+}
+
+func (vm *VM) refireAutomationUpdateTriggersFor(objectName string, ids []storage.ID, oldRecords []storage.Record, allOrNone bool, rollback vmDMLRollbackPoint, result *Result) error {
+	if vm == nil || vm.Org == nil || objectName == "" || len(ids) == 0 {
 		return nil
 	}
 	if canonical, ok := vm.resolveObjectName(objectName); ok {
@@ -2877,19 +2887,31 @@ func (vm *VM) refireAutomationUpdateTriggers(objectName string, id storage.ID, o
 	if !ok {
 		return nil
 	}
-	_, stored, ok := storage.LookupRecordByID(object.Records, id)
-	if !ok {
+	stored := make([]storage.Record, 0, len(ids))
+	before := make([]storage.Record, 0, len(ids))
+	for i, id := range ids {
+		if id == "" {
+			continue
+		}
+		_, record, ok := storage.LookupRecordByID(object.Records, id)
+		if !ok {
+			continue
+		}
+		record.Object = objectName
+		stored = append(stored, record.Clone())
+		oldRecord := oldRecords[i]
+		if oldRecord.Object == "" {
+			oldRecord.Object = objectName
+		}
+		if oldRecord.ID == "" {
+			oldRecord.ID = id
+		}
+		before = append(before, oldRecord)
+	}
+	if len(stored) == 0 {
 		return nil
 	}
-	stored.Object = objectName
-	if oldRecord.Object == "" {
-		oldRecord.Object = objectName
-	}
-	if oldRecord.ID == "" {
-		oldRecord.ID = id
-	}
-	before := []storage.Record{oldRecord}
-	triggerRecords := vm.hydrateUpdateTriggerRecords([]storage.Record{stored.Clone()}, before)
+	triggerRecords := vm.hydrateUpdateTriggerRecords(stored, before)
 	vm.applyBeforeDMLDerivedFields(triggerRecords)
 	failures, err := vm.runTriggers(triggerTimingBefore, "update", triggerRecords, before, result)
 	if err != nil {
