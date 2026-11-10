@@ -38,5 +38,15 @@ func TestEmailDomainSandboxSuffixNative(t *testing.T) {
 		if row.Fields["EmailDomainName"].String != before[id] {
 			t.Error("reapplying changed persisted domain identity")
 		}
+		row.Fields["EmailDomainName"] = storage.StringValue("persisted.invalid")
+		org.Objects["EmailServicesAddress"].Records[id] = row
+	}
+	if err := storage.ApplyEmailServices(&org, services); err != nil {
+		t.Fatal(err)
+	}
+	for _, row := range org.Objects["EmailServicesAddress"].Records {
+		if row.Fields["EmailDomainName"].String != "persisted.invalid" {
+			t.Error("reapplying replaced an existing address domain")
+		}
 	}
 }
