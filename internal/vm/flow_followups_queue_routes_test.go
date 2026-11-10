@@ -11,9 +11,14 @@ import (
 // through both with-sharing and USER_MODE queries at APIs 62 and 67.
 func TestPrivateQueueMemberQueryRoutes(t *testing.T) {
 	for _, api := range []string{"62.0", "67.0"} {
-		for _, route := range []struct{ name, sharing, suffix string }{
-			{"with-sharing", "with sharing", ""},
-			{"user-mode", "without sharing", " WITH USER_MODE"},
+		for _, route := range []struct {
+			name, sharing, suffix string
+			count                 bool
+		}{
+			{"with-sharing", "with sharing", "", false},
+			{"user-mode", "without sharing", " WITH USER_MODE", false},
+			{"with-sharing-count", "with sharing", "", true},
+			{"user-mode-count", "without sharing", " WITH USER_MODE", true},
 		} {
 			t.Run(api+"/"+route.name, func(t *testing.T) {
 				machine := recordSharingControlMachine(t, "Private")
@@ -48,7 +53,11 @@ func TestPrivateQueueMemberQueryRoutes(t *testing.T) {
 				machine.Org.Objects["Widget__c"] = objects
 				machine.SetOrg(machine.Org)
 				query := "SELECT Name FROM Widget__c" + route.suffix
-				body, err := CompileAnonymousWithOptions("return Database.query('"+query+"');", CompileOptions{APIVersion: api})
+				source := "return Database.query('" + query + "');"
+				if route.count {
+					source = "return [SELECT COUNT() FROM Widget__c" + route.suffix + "];"
+				}
+				body, err := CompileAnonymousWithOptions(source, CompileOptions{APIVersion: api})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -64,7 +73,11 @@ func TestPrivateQueueMemberQueryRoutes(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				if len(value.List) != 1 {
+				if route.count {
+					if value.Kind != ValueInt || value.Int != 1 {
+						t.Fatalf("visible count=%v, native=1", value)
+					}
+				} else if len(value.List) != 1 {
 					t.Fatalf("visible records=%d, native=1", len(value.List))
 				}
 			})
