@@ -145,20 +145,6 @@ func (vm *VM) currentUserObjectPermission(objectName, method string) bool {
 	profileID := stringField(user, "ProfileId")
 	profileName := vm.currentUserProfileName(user)
 	if profileName == "System Administrator" {
-		// A profile-owned field inventory defines the grants for permissionable
-		// fields on that object. An assigned permission set can add a grant;
-		// otherwise an absent row in the captured inventory remains denied.
-		profileSet := vm.profileOwnedPermissionSetID(profileID)
-		_, field, known := vm.sObjectFieldDefinition(objectName, fieldName)
-		if known && storage.IsKnownStandardObject(objectName) && storage.FieldFlagValue(field.Permissionable, true) && vm.parentHasFieldPermissionsForObject(profileSet, objectName) {
-			for _, source := range vm.assignedPermissionSources(stringField(user, "Id"), false) {
-				if vm.sourceFieldPermission(source, objectName, fieldName, method) {
-					return true
-				}
-			}
-			allowed, _ := vm.explicitFieldPermission(profileSet, objectName, fieldName, method)
-			return allowed
-		}
 		return true
 	}
 	profilePermissionSetID := vm.profileOwnedPermissionSetID(profileID)
@@ -401,6 +387,20 @@ func (vm *VM) currentUserFieldPermission(objectName, fieldName, method string) b
 	profileID := stringField(user, "ProfileId")
 	profileName := vm.currentUserProfileName(user)
 	if profileName == "System Administrator" {
+		// A profile-owned field inventory defines the grants for permissionable
+		// fields on that object. An assigned permission set can add a grant;
+		// otherwise an absent row in the captured inventory remains denied.
+		profileSet := vm.profileOwnedPermissionSetID(profileID)
+		_, field, known := vm.sObjectFieldDefinition(objectName, fieldName)
+		if known && storage.IsKnownStandardObject(objectName) && storage.FieldFlagValue(field.Permissionable, true) && vm.parentHasFieldPermissionsForObject(profileSet, objectName) {
+			for _, source := range vm.assignedPermissionSources(stringField(user, "Id"), false) {
+				if vm.sourceFieldPermission(source, objectName, fieldName, method) {
+					return true
+				}
+			}
+			allowed, _ := vm.explicitFieldPermission(profileSet, objectName, fieldName, method)
+			return allowed
+		}
 		// Optional custom fields on ordinary custom objects need an effective
 		// field grant even for the administrator in a freshly deployed org.
 		if adminOptionalFieldPolicyAPI(vm.currentSourceExecutionPolicy().APIVersion) && vm.ordinaryCustomPermissionObject(objectName) && isCustomSchemaName(fieldName) && !vm.customFieldHasIntrinsicAccess(objectName, fieldName) {
