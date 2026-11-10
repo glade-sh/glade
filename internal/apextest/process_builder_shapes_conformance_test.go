@@ -55,6 +55,11 @@ func TestProcessBuilderShapesNativeConformance(t *testing.T) {
 				t.Errorf("%s: want the sentinel assertion, got %+v", key, c.Problem)
 				continue
 			}
+			if c.MethodName == "asg" {
+				t.Run(api+"/asg_warm", func(t *testing.T) {
+					replayCapturedAfterSaveWarm(t, index, c.ClassName, c.MethodName, want)
+				})
+			}
 			got := strings.TrimRight(c.Problem.Message[strings.Index(c.Problem.Message, marker)+len(marker):], " \n")
 			full := native[api+"/anonymous/"+c.MethodName]
 			if cut := strings.HasPrefix(full, want) && full != want; cut && strings.HasPrefix(got, want) {

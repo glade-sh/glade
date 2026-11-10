@@ -27,6 +27,7 @@ func TestProcessBuilderReviewAdditionalHosts(t *testing.T) {
 		fixture, method string
 		parents         []string
 	}{
+		{"process_builder_shapes", "asg", nil},
 		{"process_builder_review_multiprocess", "multiprocess", nil},
 		{"process_builder_review_reverse", "multiprocess", nil},
 		{"process_builder_review_fourreverse", "fourflows", nil},
@@ -113,6 +114,9 @@ func TestProcessBuilderReviewAdditionalHosts(t *testing.T) {
 						}
 						layers := append([]string{"process_builder_review"}, scenario.parents...)
 						layers = append(layers, scenario.fixture)
+						if scenario.fixture == "process_builder_shapes" {
+							layers = nil // The captured base project was already copied.
+						}
 						for _, layer := range layers {
 							overlay := filepath.Join(base, layer, "project")
 							if err := filepath.WalkDir(overlay, func(path string, e fs.DirEntry, err error) error {
