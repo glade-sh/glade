@@ -108,11 +108,12 @@ func (e *Engine) runFlowActionBatch(rule storage.FlowRule, action storage.FlowAc
 		}
 		restore()
 	}
+	var batchErr error
 	if len(requests) > 0 {
-		err := e.FlowActionBatchInvoker(action, requests)
+		batchErr = e.FlowActionBatchInvoker(action, requests)
 		for _, frame := range frames {
 			if frame != nil {
-				frame.preparedAction.err = err
+				frame.preparedAction.err = batchErr
 			}
 		}
 	}
@@ -138,7 +139,7 @@ func (e *Engine) runFlowActionBatch(rule storage.FlowRule, action storage.FlowAc
 				// A failed batched Apex action sends every admitted interview down
 				// its fault connector. Preserve the captured all-admitted Custom
 				// Error shape for the statement DML exception envelope.
-				if len(requests) == len(records) && frame.preparedAction.err != nil {
+				if len(requests) == len(records) && batchErr != nil && flowActionBatchLiteralFault(rule) {
 					if _, ok := FlowCustomErrorFailureResult(err); ok {
 						return &flowActionBatchCustomError{cause: err, count: len(records)}
 					}
@@ -160,6 +161,20 @@ func (e *Engine) runFlowActionBatch(rule storage.FlowRule, action storage.FlowAc
 		}
 	}
 	return nil
+}
+
+// The captured batch fault uses one direct, record-independent Custom Error.
+// Dynamic messages and more complex fault graphs retain their prior envelope.
+func flowActionBatchLiteralFault(rule storage.FlowRule) bool {
+	if len(rule.Steps) == 0 || rule.Steps[0].Kind != "action" {
+		return false
+	}
+	fault := rule.Steps[0].FaultBranch
+	if len(fault) != 1 || fault[0].Kind != "customError" || len(fault[0].CustomError.Messages) != 1 {
+		return false
+	}
+	message := fault[0].CustomError.Messages[0]
+	return message.Field == "" && !strings.Contains(message.Message, "{!")
 }
 
 // Inspect both success and fault graphs. Memoized summaries count repeated
