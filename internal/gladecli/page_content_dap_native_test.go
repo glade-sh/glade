@@ -42,6 +42,18 @@ func TestDAPPageContentNative(t *testing.T) {
 				t.Fatal(err)
 			}
 			version := strings.TrimSuffix(api, ".0")
+			t.Run("abandoned-before-start", func(t *testing.T) {
+				baseline := visualforce.VMRenderEnvironmentCountForTest()
+				handler := dap.NewHandler(dap.Snapshot{})
+				source := "PageErrorHostV" + version + ".html();"
+				if err := handleDAPLaunch(context.Background(), handler, dap.LaunchRequest{ProjectRoot: root, AnonymousBody: source}, root, "", true); err != nil {
+					t.Fatal(err)
+				}
+				handler.Handle(dap.Request{Command: dap.CommandDisconnect})
+				if got := visualforce.VMRenderEnvironmentCountForTest(); got != baseline {
+					t.Fatalf("unstarted debugger leaked render context: got %d want %d", got, baseline)
+				}
+			})
 			for _, kind := range []string{"html", "pdf"} {
 				t.Run(kind, func(t *testing.T) {
 					baseline := visualforce.VMRenderEnvironmentCountForTest()
