@@ -10,7 +10,7 @@ import (
 // flow_followups AO04 and AO07-AO14. Other graphs retain ordinary automation.
 // Admission is read-only: a false result has consumed no creation events and
 // has invoked neither Apex nor the completion callback.
-func (e *Engine) ApplyFlowActionBatch(records []storage.Record, after func(int, AutomationResult) error, afterBatch ...func([]AutomationResult) error) (bool, error) {
+func (e *Engine) ApplyFlowActionBatch(records []storage.Record, after func(int, AutomationResult) error, afterBatch ...func([]AutomationResult, storage.FlowRule) error) (bool, error) {
 	if e == nil || e.Org == nil || e.FlowActionBatchInvoker == nil || len(records) < 2 || len(records) > 200 || e.Options.AssignmentRule != nil {
 		return false, nil
 	}
@@ -174,7 +174,7 @@ func (e *Engine) runFlowActionBatch(rule storage.FlowRule, action storage.FlowAc
 	}
 	if batchedRefire {
 		e.flowDepth--
-		err := afterBatch[0](outcomes)
+		err := afterBatch[0](outcomes, rule)
 		e.flowDepth++
 		if err != nil {
 			return err

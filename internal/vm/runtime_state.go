@@ -2803,7 +2803,7 @@ func (vm *VM) applyDeferredAutomation(engine *dml.Engine, records, oldRecords []
 				oldRecord = oldRecords[i]
 			}
 			return vm.refireAutomationUpdateTriggers(record.Object, record.ID, oldRecord, allOrNone, rollback, result)
-		}, func(outcomes []dml.AutomationResult) error {
+		}, func(outcomes []dml.AutomationResult, rule storage.FlowRule) error {
 			var changed, before []storage.Record
 			for i, outcome := range outcomes {
 				record := records[i]
@@ -2821,7 +2821,7 @@ func (vm *VM) applyDeferredAutomation(engine *dml.Engine, records, oldRecords []
 				changed = append(changed, record)
 				before = append(before, old)
 			}
-			return vm.refireAutomationUpdateTriggerBatch(changed, before, allOrNone, rollback, result)
+			return vm.refireAutomationUpdateTriggerBatch(changed, before, len(records), rule, allOrNone, rollback, result)
 		}); handled {
 			if err != nil && allOrNone {
 				if rollbackErr := vm.restoreDMLRollbackPoint(rollback); rollbackErr != nil {
@@ -2955,7 +2955,7 @@ func (vm *VM) refireAutomationUpdateTriggersFor(objectName string, ids []storage
 // The captured action-output Flow finishes all selected record writes before
 // refiring update triggers on the batch. Snapshot the stored records together
 // so nested trigger DML cannot make a later record's new image stale.
-func (vm *VM) refireAutomationUpdateTriggerBatch(records, oldRecords []storage.Record, allOrNone bool, rollback vmDMLRollbackPoint, result *Result) error {
+func (vm *VM) refireAutomationUpdateTriggerBatch(records, oldRecords []storage.Record, inputCount int, rule storage.FlowRule, allOrNone bool, rollback vmDMLRollbackPoint, result *Result) error {
 	if vm == nil || vm.Org == nil || len(records) == 0 {
 		return nil
 	}
@@ -3000,10 +3000,14 @@ func (vm *VM) refireAutomationUpdateTriggerBatch(records, oldRecords []storage.R
 		return dmlExceptionFromTriggerError("update", err)
 	}
 	if hasDMLFailures(failures) {
+		captured, capturedOK := flowRefireCapturedTriggerFailure(failures, current, inputCount, rule)
 		if allOrNone {
 			if rollbackErr := vm.restoreDMLRollbackPoint(rollback); rollbackErr != nil {
 				return rollbackErr
 			}
+		}
+		if capturedOK {
+			return captured
 		}
 		return fmt.Errorf("workflow update trigger failed for %s: %s", objectName, failures[0].Error)
 	}
@@ -3014,6 +3018,46 @@ func (vm *VM) refireAutomationUpdateTriggerBatch(records, oldRecords []storage.R
 		return dmlExceptionFromTriggerError("update", err)
 	}
 	return nil
+}
+
+// Native Flow source 62/67 captures a single record-level trigger rejection
+// during an atomic two-record action-output refire. Other error shapes retain
+// the existing workflow failure handling until captured.
+func flowRefireCapturedTriggerFailure(failures []dml.Result, records []storage.Record, inputCount int, rule storage.FlowRule) (error, bool) {
+	if inputCount != 2 || len(records) != 2 || len(failures) != 2 || strings.TrimSpace(rule.Label) == "" || (rule.APIVersion != "62.0" && rule.APIVersion != "67.0") {
+		return nil, false
+	}
+	index := -1
+	var detail dml.Error
+	for i, failure := range failures {
+		if failure.Success || failure.Error == "" {
+			continue
+		}
+		errors := dmlResultErrors(failure)
+		if index >= 0 || len(errors) != 1 || errors[0].StatusCode != "FIELD_CUSTOM_VALIDATION_EXCEPTION" || len(errors[0].Fields) != 0 {
+			return nil, false
+		}
+		index, detail = i, errors[0]
+	}
+	if index < 0 || records[index].ID == "" {
+		return nil, false
+	}
+	prefix := fmt.Sprintf("We can't save this record because the “%s” process failed. Give your Salesforce admin these details. CANNOT_EXECUTE_FLOW_TRIGGER: ", rule.Label)
+	if rule.APIVersion == "62.0" {
+		detail.Message = prefix + "This error occurred when the flow tried to update records: " + detail.StatusCode + ": " + detail.Message + ". You can look up ExceptionCode values in the SOAP API Developer Guide."
+	} else {
+		detail.Message = prefix + "The flow tried to update these records: " + apexIDTo18(string(records[index].ID)) + ". This error occurred: " + detail.StatusCode + ": " + detail.Message + ". You can look up ExceptionCode values in the <a href='https://developer.salesforce.com/docs/atlas.en-us.api.meta/api/sforce_api_calls_concepts_core_data_objects.htm#'>SOAP API Developer Guide</a>."
+	}
+	results := make([]dml.Result, len(failures))
+	results[index] = dml.Result{Error: detail.Message, StatusCode: detail.StatusCode, Errors: []dml.Error{detail}}
+	err := rowDMLException("insert", results, nil)
+	if thrown, ok := err.(*apexThrowError); ok {
+		values := thrown.value.Fields["__dmlErrors"]
+		if len(values.List) == 1 {
+			values.List[0].Fields["fieldTokens"] = Null
+		}
+	}
+	return err, true
 }
 
 func (vm *VM) snapshotSideEffects() sideEffectSnapshot {
