@@ -9,10 +9,10 @@ import (
 	"github.com/glade-sh/glade/internal/startupcache"
 )
 
-// A source-fresh v32 entry can contain an older, unmodeled Transform. The
+// A source-fresh v31 entry can contain an older, unmodeled Transform. The
 // version bump must reject it before rebuilding and persisting the new shape.
-func TestFlowTransformRejectV32DiskRuntime(t *testing.T) {
-	const legacyABI = "apextest-runtime-v32"
+func TestFlowTransformRejectV31DiskRuntime(t *testing.T) {
+	const legacyABI = "apextest-runtime-v31"
 	t.Setenv("GLADE_HOME", t.TempDir())
 	t.Cleanup(EnableDiskCacheForTesting())
 	t.Cleanup(InvalidateRuntimeCaches)
@@ -54,11 +54,11 @@ func TestFlowTransformRejectV32DiskRuntime(t *testing.T) {
 			}
 			legacy, err := startupcache.ReadFreshRuntimeWithValidatedInput(index.Project.Root, startupcache.SubdirTest, startupcache.Version, legacyABI, string(key), input)
 			if err != nil || legacy == nil {
-				t.Fatalf("v32 fixture is not otherwise fresh: entry=%v err=%v", legacy != nil, err)
+				t.Fatalf("v31 fixture is not otherwise fresh: entry=%v err=%v", legacy != nil, err)
 			}
 			InvalidateRuntimeCaches()
 			if _, ok := tryLoadDiskRuntimeWithSourceDigests(index, nil, key); ok {
-				t.Fatal("accepted source-fresh v32 runtime")
+				t.Fatal("accepted source-fresh v31 runtime")
 			}
 			if _, _, err := runtimeFromIndexWithSourceDigests(index, nil, newSourceCache(), true); err != nil {
 				t.Fatal(err)
