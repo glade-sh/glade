@@ -42,6 +42,26 @@ func semaCompleteDependencyNestedMiss(a *Analyzer, model *semaTypeMemberView, re
 	return false
 }
 
+// A closed, unrelated type root or a complete same-scope source declaration
+// proves this two-part type spelling absent. Opaque namespaces remain open.
+func semaClosedSourceTypeMiss(a *Analyzer, model *semaTypeMemberView, caller, reference string) bool {
+	root, member, qualified := strings.Cut(reference, ".")
+	if !qualified || root == "" || member == "" || strings.Contains(member, ".") {
+		return false
+	}
+	if a.qualifiedTypeMissRejected(caller, reference, model, false) {
+		return true
+	}
+	if semaQualifierNamesKnownNamespace(a, root) {
+		return false
+	}
+	owner, known := model.lookupName(root)
+	return known && !owner.platform && !owner.dependency &&
+		model.state.base.completeSourceNestedTypes[normalizeName(owner.name)] &&
+		semaSourceTypeInCallingScope(model, caller, owner) &&
+		!semaTypeReferenceKnownAtVersion(a, model, caller, reference, "")
+}
+
 func semaTypeReferenceKnownAtVersion(a *Analyzer, model *semaTypeMemberView, owner, reference, version string) bool {
 	if a.standardObjectAbsentFromDeclaredShape(model, owner, reference) {
 		return false

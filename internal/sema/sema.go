@@ -462,6 +462,19 @@ func downgradeSourceDependencySemanticDiagnostics(index typesys.Index, diagnosti
 			(semaCompleteDependencyNestedMiss(a, model, ref) || semaBareSameNamespaceDependencyNestedMiss(index, a, model, ref)) {
 			continue
 		}
+		if ref, ok := strings.CutPrefix(out[i].NativeMessage, "Invalid type: "); ok && !index.Subset &&
+			(out[i].Code == "GLADESEMA002" || out[i].Code == "GLADESEMA004") {
+			closed := false
+			for _, typ := range index.Types {
+				if !typ.Dependency && typ.File == out[i].File && semaClosedSourceTypeMiss(a, model, typ.Name, ref) {
+					closed = true
+					break
+				}
+			}
+			if closed {
+				continue
+			}
+		}
 		if ref, ok := strings.CutPrefix(out[i].NativeMessage, "Variable does not exist: "); ok &&
 			out[i].Code == "GLADESEMA013" && (semaCompleteDependencyNestedMiss(a, model, ref) || semaForeignDependencyReceiverMiss(index, model, out[i], ref)) {
 			continue

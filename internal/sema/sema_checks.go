@@ -193,7 +193,7 @@ func (a *Analyzer) checkMethodParameters(index typesys.Index, model *semaTypeMem
 						Range:    &param.Range,
 					}
 					// Captured reference-only parameter rejections (named-org.tsv).
-					crossNamespace := semaCrossNamespaceSourceMismatch(analyzer, model, typ.Name, ref) || analyzer.qualifiedTypeMissRejected(typ.Name, ref, model, false) || semaCompleteDependencyNestedMiss(analyzer, model, ref)
+					crossNamespace := semaCrossNamespaceSourceMismatch(analyzer, model, typ.Name, ref) || analyzer.qualifiedTypeMissRejected(typ.Name, ref, model, false) || semaCompleteDependencyNestedMiss(analyzer, model, ref) || (!index.Subset && semaClosedSourceTypeMiss(analyzer, model, typ.Name, ref))
 					absentFromShape := analyzer.standardObjectAbsentFromDeclaredShape(model, typ.Name, ref)
 					if storage.IsReferenceOnlyStandardObject(ref) || crossNamespace || absentFromShape {
 						item.NativeMessage = "Invalid type: " + ref
