@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/diagnostic"
@@ -13,7 +14,14 @@ import (
 )
 
 func TestSourceDependencyNamedStaticNative(t *testing.T) {
-	root := filepath.Join("..", "apextest", "testdata", "conformance", "namespace_source_dependency_static_named")
+	for _, name := range []string{"namespace_source_dependency_static_named", "namespace_source_dependency_static_named_qualified"} {
+		t.Run(name, func(t *testing.T) { sourceDependencyNamedStaticNative(t, name) })
+	}
+}
+
+func sourceDependencyNamedStaticNative(t *testing.T, name string) {
+	t.Helper()
+	root := filepath.Join("..", "apextest", "testdata", "conformance", name)
 	f, err := os.Open(filepath.Join(root, "org.tsv"))
 	if err != nil {
 		t.Fatal(err)
@@ -38,7 +46,7 @@ func TestSourceDependencyNamedStaticNative(t *testing.T) {
 				if e != nil {
 					t.Fatal(e)
 				}
-				return string(b)
+				return strings.ReplaceAll(string(b), "{{NAMESPACE}}", "synthetic")
 			}
 			helper := filepath.Join(dep, "Nsv36HelperProbe.cls")
 			writeSemaFile(t, helper, read("Nsv36HelperProbe"))
