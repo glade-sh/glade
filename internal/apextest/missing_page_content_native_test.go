@@ -24,6 +24,7 @@ func TestMissingPageContentNative(t *testing.T) {
 	defer f.Close()
 	reader := csv.NewReader(f)
 	reader.Comma = '\t'
+	reader.LazyQuotes = true
 	rows, err := reader.ReadAll()
 	if err != nil {
 		t.Fatal(err)
