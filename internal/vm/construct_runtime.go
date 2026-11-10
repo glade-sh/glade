@@ -2965,10 +2965,16 @@ func (vm *VM) resolveInterfaceMethodForArgsSeen(typeName, method string, args []
 }
 
 func (vm *VM) resolveStaticMethodForArgs(typeName, method string, args []Value) (Method, bool, bool) {
+	target, ok, ambiguous, _ := vm.resolveStaticMethodForArgsWithOrigin(typeName, method, args)
+	return target, ok, ambiguous
+}
+
+// resolveStaticMethodForArgsWithOrigin records whether resolution used the lexical enclosing-class fallback.
+func (vm *VM) resolveStaticMethodForArgsWithOrigin(typeName, method string, args []Value) (Method, bool, bool, bool) {
 	candidates := vm.staticTypeNameCandidates(typeName)
 	cacheKey := vm.methodResolveCacheKey("s", strings.Join(candidates, "|"), method, args)
 	if cached, ok := vm.methodResolveCache[cacheKey]; ok {
-		return cached.Method, cached.OK, false
+		return cached.Method, cached.OK, false, cached.Enclosing
 	}
 	// A project caller resolves an unqualified static call against the local
 	// (non-dependency) class chain first, so a managed dependency class of the
@@ -2985,21 +2991,21 @@ func (vm *VM) resolveStaticMethodForArgs(typeName, method string, args []Value) 
 				}
 				vm.methodResolveCache[cacheKey] = methodResolution{Method: target, OK: ok}
 			}
-			return target, ok, ambiguous
+			return target, ok, ambiguous, false
 		}
 	}
 	for _, candidateType := range candidates {
 		for searchType := candidateType; searchType != ""; {
 			target, ok, ambiguous := vm.matchRegisteredStaticMethod(searchType+"."+method, args)
 			if ambiguous {
-				return Method{}, false, true
+				return Method{}, false, true, false
 			}
 			if ok {
 				if vm.methodResolveCache == nil {
 					vm.methodResolveCache = make(map[string]methodResolution)
 				}
 				vm.methodResolveCache[cacheKey] = methodResolution{Method: target, OK: true}
-				return target, true, false
+				return target, true, false, false
 			}
 			class, ok := vm.lookupClass(searchType)
 			if !ok {
@@ -3008,11 +3014,42 @@ func (vm *VM) resolveStaticMethodForArgs(typeName, method string, args []Value) 
 			searchType = vm.resolvedSuperClassName(class)
 		}
 	}
+	// Only a registered nested class has a lexical enclosing class. A dot in
+	// a namespace-qualified top-level name does not create one.
+	for _, candidateType := range candidates {
+		class, ok := vm.lookupClass(candidateType)
+		if !ok || !class.Nested {
+			continue
+		}
+		qualified := runtimeClassName(class)
+		dot := strings.LastIndexByte(qualified, '.')
+		if dot <= 0 {
+			continue
+		}
+		for owner := qualified[:dot]; owner != ""; {
+			target, ok, ambiguous := vm.matchRegisteredStaticMethod(owner+"."+method, args)
+			if ambiguous {
+				return Method{}, false, true, true
+			}
+			if ok {
+				if vm.methodResolveCache == nil {
+					vm.methodResolveCache = make(map[string]methodResolution)
+				}
+				vm.methodResolveCache[cacheKey] = methodResolution{Method: target, OK: true, Enclosing: true}
+				return target, true, false, true
+			}
+			ownerClass, ok := vm.lookupClass(owner)
+			if !ok {
+				break
+			}
+			owner = vm.resolvedSuperClassName(ownerClass)
+		}
+	}
 	if vm.methodResolveCache == nil {
 		vm.methodResolveCache = make(map[string]methodResolution)
 	}
 	vm.methodResolveCache[cacheKey] = methodResolution{}
-	return Method{}, false, false
+	return Method{}, false, false, false
 }
 
 // resolveLocalStaticMethodForArgs walks only the local (non-dependency) class

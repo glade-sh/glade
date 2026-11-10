@@ -3582,9 +3582,15 @@ func semaAuthProviderCallbackOverrideOptional(typ typesys.TypeSymbol, member typ
 
 func semaInheritedMethodVisible(child typesys.TypeSymbol, owner typeMembers, member typesys.MemberSymbol) bool {
 	if hasModifier(member.Modifiers, "private") {
-		return strings.EqualFold(strings.TrimSpace(child.Namespace), strings.TrimSpace(owner.namespace)) &&
-			child.IsTest &&
-			hasAnnotation(member.Annotations, "TestVisible")
+		sameNamespace := strings.EqualFold(strings.TrimSpace(child.Namespace), strings.TrimSpace(owner.namespace))
+		major, knownVersion := apexversion.Major(child.EffectiveAPIVersion)
+		if sameNamespace && !child.Dependency && !owner.dependency && !owner.platform &&
+			(hasModifier(member.Modifiers, "virtual") || hasModifier(member.Modifiers, "abstract")) &&
+			knownVersion && major >= 45 && major < 65 &&
+			semaTopLevelScope(semaTypeMembersName(child), child.Modifiers) == semaTopLevelScope(owner.name, owner.modifiers) {
+			return true
+		}
+		return sameNamespace && child.IsTest && hasAnnotation(member.Annotations, "TestVisible")
 	}
 	if semaDefaultAccessMethodHidden(child, owner, member) {
 		return false
@@ -3916,7 +3922,7 @@ func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.M
 		targetType, ok := scopes.visibleAt(target, match[2])
 		if ok {
 			value := trimSemaArg(body, match[1], semaStatementEnd(body, match[1]))
-			valueType := semaResolveConstructedExpressionType(model, typ.Name, value.text, scopes.flatCopy())
+			valueType := semaResolveConstructedExpressionType(model, typ.Name, value.text, scopes.flatAtCopy(match[1]))
 			queryText := strings.TrimSpace(value.text)
 			if strings.HasPrefix(queryText, "[") && strings.HasSuffix(queryText, "]") {
 				if queryType := semaSOQLLiteralType(queryText); queryType != "" {

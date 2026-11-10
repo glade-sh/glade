@@ -1,0 +1,32 @@
+page_api	apex_api	case	route	outcome
+59.0	62.0	modifier_good	metadata-deploy	accepted
+59.0	62.0	modifier_good	vf-getContent	passed
+59.0	62.0	modifier_bad	metadata-deploy	Missing ';' at 'Integer'; Variable does not exist: FINALS
+59.0	62.0	comparison_good	metadata-deploy	accepted
+59.0	62.0	comparison_good	vf-getContent	passed
+59.0	62.0	comparison_bad	metadata-deploy	Comparison arguments must be compatible types: Integer, Boolean
+59.0	62.0	override_private	metadata-deploy	accepted
+59.0	62.0	override_private	vf-getContent	passed
+59.0	62.0	override_protected	metadata-deploy	accepted
+59.0	62.0	override_protected	vf-getContent	passed
+59.0	62.0	loop_after	metadata-deploy	accepted
+59.0	62.0	loop_after	vf-getContent	passed
+59.0	62.0	loop_before	metadata-deploy	Duplicate variable: i
+59.0	62.0	sibling_good	metadata-deploy	accepted
+59.0	62.0	sibling_good	vf-getContent	passed
+59.0	62.0	sibling_bad	metadata-deploy	Illegal assignment from Integer to Map<String,Object>
+67.0	67.0	modifier_good	metadata-deploy	accepted
+67.0	67.0	modifier_good	vf-getContent	passed
+67.0	67.0	modifier_bad	metadata-deploy	Missing ';' at 'Integer'; Variable does not exist: FINALS
+67.0	67.0	comparison_good	metadata-deploy	accepted
+67.0	67.0	comparison_good	vf-getContent	passed
+67.0	67.0	comparison_bad	metadata-deploy	Comparison arguments must be compatible types: Integer, Boolean
+67.0	67.0	override_private	metadata-deploy	override methods require at least one of the following global, public, protected
+67.0	67.0	override_protected	metadata-deploy	accepted
+67.0	67.0	override_protected	vf-getContent	passed
+67.0	67.0	loop_after	metadata-deploy	accepted
+67.0	67.0	loop_after	vf-getContent	passed
+67.0	67.0	loop_before	metadata-deploy	Duplicate variable: i
+67.0	67.0	sibling_good	metadata-deploy	accepted
+67.0	67.0	sibling_good	vf-getContent	passed
+67.0	67.0	sibling_bad	metadata-deploy	Illegal assignment from Integer to Map<String,Object>

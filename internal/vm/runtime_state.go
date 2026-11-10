@@ -509,8 +509,9 @@ type namespaceClassLookup struct {
 }
 
 type methodResolution struct {
-	Method Method
-	OK     bool
+	Method    Method
+	OK        bool
+	Enclosing bool
 }
 
 const maxTriggerDepth = 16

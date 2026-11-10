@@ -3,6 +3,7 @@ package sema
 import (
 	"strings"
 
+	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/vm"
 )
@@ -542,4 +543,34 @@ func semaMissingSObjectFieldsObject(a *Analyzer, name string, scope irSemaScope,
 		}
 	}
 	return strings.Join(parts[:4], "."), true
+}
+
+// Resolve a local nested interface only when its complete declaration is known.
+func semaLocalNestedInterfaceReceiver(model *semaTypeMemberView, currentType, receiver string) (typeMembers, bool) {
+	if len(strings.Split(receiver, ".")) != 2 {
+		return typeMembers{}, false
+	}
+	nestedType := resolveNestedTypeName(model, currentType, receiver)
+	members, ok := model.lookupName(nestedType)
+	if !ok || members.nestingDepth <= 0 || !semaCompleteLocalInterface(model, members, make(map[string]bool)) {
+		return typeMembers{}, false
+	}
+	return members, true
+}
+
+func semaCompleteLocalInterface(model *semaTypeMemberView, members typeMembers, seen map[string]bool) bool {
+	key := normalizeName(members.name)
+	if key == "" || seen[key] || members.platform || members.dependency || members.kind != apexast.DeclarationInterface || members.superClass != "" {
+		return false
+	}
+	seen[key] = true
+	defer delete(seen, key)
+	for _, parent := range members.interfaces {
+		parent = resolveNestedTypeName(model, members.name, parent)
+		parentMembers, ok := model.lookupName(parent)
+		if !ok || !semaCompleteLocalInterface(model, parentMembers, seen) {
+			return false
+		}
+	}
+	return true
 }
