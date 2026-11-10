@@ -1,0 +1,7 @@
+@IsTest private class FaultProbe62 {
+ static Map<String,Object> one(List<String> modes) {
+  List<SyntheticItem__c> items=new List<SyntheticItem__c>();for(Integer i=0;i<modes.size();i++)items.add(new SyntheticItem__c(Name='Synthetic '+i,Unit__c=modes[i],Start__c=Datetime.newInstanceGmt(2031,3,10+i,12,0,0)));
+  Map<String,Object> out=new Map<String,Object>();try{insert as system items;out.put('success',true);}catch(DmlException e){out.put('success',false);out.put('count',e.getNumDml());List<Integer> indices=new List<Integer>();List<String> statuses=new List<String>();List<Boolean> messages=new List<Boolean>();List<String> texts=new List<String>();for(Integer i=0;i<e.getNumDml();i++){indices.add(e.getDmlIndex(i));statuses.add(String.valueOf(e.getDmlStatusCode(i)));messages.add(e.getDmlMessage(i).contains('synthetic action fault'));texts.add(e.getDmlMessage(i).left(300));}out.put('indices',indices);out.put('statuses',statuses);out.put('messages',messages);out.put('texts',texts);}return out;
+ }
+ @IsTest static void probe(){Id perm=[SELECT Id FROM PermissionSet WHERE Name='SyntheticFaultAccess' LIMIT 1].Id;System.runAs(new User(Id=UserInfo.getUserId())){insert new PermissionSetAssignment(AssigneeId=UserInfo.getUserId(),PermissionSetId=perm);}Map<String,Object> obs=new Map<String,Object>{'single'=>one(new List<String>{'throw'}),'bulk'=>one(new List<String>{'value','throw','value'}),'clean'=>one(new List<String>{'value','value','value'})};System.assert(false,'CAPTURE|FlowFault|'+JSON.serialize(new Map<String,Object>{'rows'=>obs}));}
+}
