@@ -3499,6 +3499,18 @@ func inferSemaFieldAccessType(expr string, scope map[string]string, model *semaT
 		if target, ok := semaResolveFieldPath(model, receiverType, strings.Join(parts[startIndex:], ".")); ok {
 			return target.member.Type
 		}
+		// A schema field-set token has a known type before the text fallback
+		// considers a member name as a possible collection type.
+		if !firstPartScoped && !semaProjectTypeShadowsPlatform(model, parts[0]) && semaKnownSObjectFieldSetPath(expr, model) {
+			count := len(parts)
+			if strings.EqualFold(parts[0], "Schema") {
+				count--
+			}
+			if count == 4 {
+				return "Schema.FieldSet"
+			}
+			return "Schema.SObjectTypeFieldSets"
+		}
 		if fallback := semaFallbackFieldPathType(parts[len(parts)-1]); fallback != "" && !semaUnknownExternalDottedType(receiverType, model) {
 			return fallback
 		}

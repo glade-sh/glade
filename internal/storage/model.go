@@ -503,39 +503,40 @@ type Field struct {
 	MasterDetail   bool      `json:"masterDetail,omitempty"`
 	DisplayType    string    `json:"displayType,omitempty"`
 	// LongTextArea retains the declared metadata kind behind describe TEXTAREA.
-	LongTextArea         bool                `json:"longTextArea,omitempty"`
-	Length               int                 `json:"length,omitempty"`
-	Precision            int                 `json:"precision,omitempty"`
-	Digits               int                 `json:"digits,omitempty"`
-	Scale                int                 `json:"scale,omitempty"`
-	ScaleSpecified       bool                `json:"scaleSpecified,omitempty"`
-	Formula              string              `json:"formula,omitempty"`
-	FormulaTreatBlanksAs string              `json:"formulaTreatBlanksAs,omitempty"`
-	DefaultValue         string              `json:"defaultValue,omitempty"`
-	CompoundFieldName    string              `json:"compoundFieldName,omitempty"`
-	AutoNumber           bool                `json:"autoNumber,omitempty"`
-	DisplayFormat        string              `json:"displayFormat,omitempty"`
-	SummarizedField      string              `json:"summarizedField,omitempty"`
-	SummaryForeignKey    string              `json:"summaryForeignKey,omitempty"`
-	SummaryOperation     string              `json:"summaryOperation,omitempty"`
-	SummaryFilterItems   []SummaryFilterItem `json:"summaryFilterItems,omitempty"`
-	FilteredLookupInfo   FilteredLookupInfo  `json:"filteredLookupInfo,omitempty"`
-	Required             bool                `json:"required,omitempty"`
-	Nillable             *bool               `json:"nillable,omitempty"`
-	DefaultedOnCreate    *bool               `json:"defaultedOnCreate,omitempty"`
-	Accessible           *bool               `json:"accessible,omitempty"`
-	Createable           *bool               `json:"createable,omitempty"`
-	Updateable           *bool               `json:"updateable,omitempty"`
-	Filterable           *bool               `json:"filterable,omitempty"`
-	Groupable            *bool               `json:"groupable,omitempty"`
-	Sortable             *bool               `json:"sortable,omitempty"`
-	Aggregatable         *bool               `json:"aggregatable,omitempty"`
-	Permissionable       *bool               `json:"permissionable,omitempty"`
-	DeprecatedAndHidden  *bool               `json:"deprecatedAndHidden,omitempty"`
-	ExternalID           bool                `json:"externalId,omitempty"`
-	Unique               bool                `json:"unique,omitempty"`
-	Encrypted            bool                `json:"encrypted,omitempty"`
-	CaseSensitive        bool                `json:"caseSensitive,omitempty"`
+	LongTextArea             bool                `json:"longTextArea,omitempty"`
+	Length                   int                 `json:"length,omitempty"`
+	Precision                int                 `json:"precision,omitempty"`
+	Digits                   int                 `json:"digits,omitempty"`
+	Scale                    int                 `json:"scale,omitempty"`
+	ScaleSpecified           bool                `json:"scaleSpecified,omitempty"`
+	Formula                  string              `json:"formula,omitempty"`
+	FormulaTreatBlanksAs     string              `json:"formulaTreatBlanksAs,omitempty"`
+	DefaultValue             string              `json:"defaultValue,omitempty"`
+	DefaultValueFromMetadata bool                `json:"defaultValueFromMetadata,omitempty"`
+	CompoundFieldName        string              `json:"compoundFieldName,omitempty"`
+	AutoNumber               bool                `json:"autoNumber,omitempty"`
+	DisplayFormat            string              `json:"displayFormat,omitempty"`
+	SummarizedField          string              `json:"summarizedField,omitempty"`
+	SummaryForeignKey        string              `json:"summaryForeignKey,omitempty"`
+	SummaryOperation         string              `json:"summaryOperation,omitempty"`
+	SummaryFilterItems       []SummaryFilterItem `json:"summaryFilterItems,omitempty"`
+	FilteredLookupInfo       FilteredLookupInfo  `json:"filteredLookupInfo,omitempty"`
+	Required                 bool                `json:"required,omitempty"`
+	Nillable                 *bool               `json:"nillable,omitempty"`
+	DefaultedOnCreate        *bool               `json:"defaultedOnCreate,omitempty"`
+	Accessible               *bool               `json:"accessible,omitempty"`
+	Createable               *bool               `json:"createable,omitempty"`
+	Updateable               *bool               `json:"updateable,omitempty"`
+	Filterable               *bool               `json:"filterable,omitempty"`
+	Groupable                *bool               `json:"groupable,omitempty"`
+	Sortable                 *bool               `json:"sortable,omitempty"`
+	Aggregatable             *bool               `json:"aggregatable,omitempty"`
+	Permissionable           *bool               `json:"permissionable,omitempty"`
+	DeprecatedAndHidden      *bool               `json:"deprecatedAndHidden,omitempty"`
+	ExternalID               bool                `json:"externalId,omitempty"`
+	Unique                   bool                `json:"unique,omitempty"`
+	Encrypted                bool                `json:"encrypted,omitempty"`
+	CaseSensitive            bool                `json:"caseSensitive,omitempty"`
 	// Describe-only observation; storage comparison semantics stay independent.
 	DescribeCaseSensitive    *bool             `json:"describeCaseSensitive,omitempty"`
 	RestrictedPicklist       bool              `json:"restrictedPicklist,omitempty"`
