@@ -73,12 +73,18 @@ func ApplyEmailServices(org *OrgState, services []project.EmailService) error {
 			if userID == "" {
 				return fmt.Errorf("email service %s: no User named %s found", service.FunctionName, address.RunAsUser)
 			}
-			digest := sha256.Sum256([]byte(string(functionID) + "/" + address.DeveloperName))
 			suffix := "local00.salesforce.com"
 			orgID := ID(strings.TrimSpace(staged.OrgID))
 			if orgID == "" {
 				orgID = ID(DefaultOrgID)
 			}
+			orgIdentity := string(orgID)
+			if len(orgIdentity) >= 15 {
+				orgIdentity = orgIdentity[:15]
+			}
+			// Native generated domains are scoped to the org, not just to
+			// locally generated function and address identifiers.
+			digest := sha256.Sum256([]byte(orgIdentity + "/" + string(functionID) + "/" + address.DeveloperName))
 			_, organization, found := LookupRecordByID(staged.Objects["Organization"].Records, orgID)
 			if found && organization.Fields["IsSandbox"].Kind == ValueBoolean && organization.Fields["IsSandbox"].Boolean {
 				suffix = "sandbox.salesforce.com"
