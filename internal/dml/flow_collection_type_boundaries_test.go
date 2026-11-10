@@ -19,6 +19,8 @@ func TestFlowCollectionUncapturedTypeBoundaries(t *testing.T) {
 		{"nonfilterable_text", storage.Field{Type: storage.FieldString, Filterable: &no}, storage.StringValue("x")},
 		{"id_operand", storage.Field{Type: storage.FieldID}, storage.IDValue(storage.ID("001000000000001"))},
 		{"reference_id_operand", storage.Field{Type: storage.FieldReference}, storage.IDValue(storage.ID("001000000000001"))},
+		{"invalid_id_string", storage.Field{Type: storage.FieldID}, storage.StringValue("invalid")},
+		{"invalid_reference_string", storage.Field{Type: storage.FieldReference}, storage.StringValue("invalid")},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			_, supported := flowLookupCollectionValuesEqual(tc.field, storage.StringValue("x"), tc.element)
