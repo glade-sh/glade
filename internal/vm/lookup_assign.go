@@ -1095,7 +1095,10 @@ func (vm *VM) callGetter(owner string, field Field, receiver Value) (Value, erro
 		}
 	}
 	if value, ok := vm.activeSetterStoredValue(owner, fieldName, field, receiver); ok {
-		if vm.isCurrentGetter(field.Getter) || vm.isCurrentGetter(field.Setter) {
+		// Source-backed setters use the property's own storage for a direct
+		// read. Unlocated, hand-registered instance accessors retain the VM's
+		// earlier explicit-getter behavior.
+		if vm.isCurrentGetter(field.Getter) || (vm.isCurrentGetter(field.Setter) && (field.Static || field.Setter.File != "")) {
 			return value, nil
 		}
 	}
