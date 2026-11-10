@@ -534,6 +534,7 @@
       "TestWidenedListAliasNativeConformance",
       "TestXMLOrgConformance"
     ],
+    "./internal/automation": null,
     "./internal/cliui": null,
     "./internal/dap": null,
     "./internal/dml": null,
@@ -682,6 +683,7 @@
     "./internal/apexast": 40,
     "./internal/apexlang": 15,
     "./internal/apextest": 29188,
+    "./internal/automation": 40,
     "./internal/cliui": 34,
     "./internal/dap": 131,
     "./internal/dml": 102,
