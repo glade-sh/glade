@@ -72,14 +72,18 @@ func sourceDependencyNamedStaticNative(t *testing.T, name string) {
 			if row[3] == "COMPILED" && len(errors) > 0 {
 				t.Fatalf("native compiled; offline errors: %v", errors)
 			}
-			if row[3] == "COMPILE_ERROR" && !matched {
-				t.Fatalf("native error %q not found; diagnostics: %+v", row[4], result.Diagnostics)
+			if row[3] == "COMPILE_ERROR" && (!matched || len(errors) != 1) {
+				t.Fatalf("expected only native error %q; diagnostics: %+v", row[4], result.Diagnostics)
 			}
-			if row[0] == "missing_root" {
+			if row[0] == "missing_root" || row[0] == "missing_member" {
 				// These are offline completeness controls, not claims about an
-				// installed package: neither an opaque dependency nor a partial
-				// index proves the missing root absent.
-				for _, mode := range []string{"opaque", "partial"} {
+				// installed package: a partial index does not prove either miss,
+				// and an opaque dependency does not prove its root absent.
+				modes := []string{"partial"}
+				if row[0] == "missing_root" {
+					modes = append(modes, "opaque")
+				}
+				for _, mode := range modes {
 					control := index
 					if mode == "opaque" {
 						control.Dependencies = append(append([]typesys.DependencyInfo(nil), index.Dependencies...), typesys.DependencyInfo{Namespace: "Nsv36AbsentProbe", Status: "missing"})
@@ -88,7 +92,7 @@ func sourceDependencyNamedStaticNative(t *testing.T, name string) {
 					}
 					for _, d := range Analyze(control).Diagnostics {
 						if d.Severity == diagnostic.Error && (d.Message == row[4] || d.NativeMessage == row[4]) {
-							t.Errorf("%s index rejected an unproven missing root: %+v", mode, d)
+							t.Errorf("%s index rejected an unproven receiver miss: %+v", mode, d)
 						}
 					}
 				}
