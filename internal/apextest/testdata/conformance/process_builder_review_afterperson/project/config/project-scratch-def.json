@@ -1,0 +1,12 @@
+{
+  "orgName": "Fern PB Probe",
+  "edition": "Developer",
+  "features": [
+    "PersonAccounts"
+  ],
+  "settings": {
+    "flowSettings": {
+      "enableFlowDeployAsActiveEnabled": true
+    }
+  }
+}
