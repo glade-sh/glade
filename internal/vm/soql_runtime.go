@@ -4378,6 +4378,9 @@ func (vm *VM) soqlObjectHasPublicReadSharing(objectName string) bool {
 		return true
 	}
 	switch strings.ToLower(model) {
+	case "readwritetransfer":
+		// Native Lead rows cover Standard users with this explicit model.
+		return strings.EqualFold(vm.currentUserInfoField("UserType", ""), "Standard")
 	case "readwrite", "publicreadwrite", "read", "readonly", "publicreadonly", "publicread":
 		return true
 	default:
