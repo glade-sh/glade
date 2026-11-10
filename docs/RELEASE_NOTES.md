@@ -4,6 +4,8 @@
 
 Planned changes are listed below.
 
+- **Queueables from LWC actions (Apex API 62.0, 67.0, 68.0).** An `@AuraEnabled` action that calls `System.enqueueJob` no longer fails with `UnsupportedFeature`. As in Salesforce, the action commits first and the job then runs in its own transaction: its changes commit separately, a job that throws leaves the action's result and data in place, and an action that fails after enqueueing runs no job. `glade server` reports a failed job on stderr with the job's class, and no queued job carries over to the next action. Caught `Database.*Async` work and `Database.insertAsync` still report `UnsupportedFeature`. The test runtime cache moves to `apextest-runtime-v33`. Captured at 62.0, 67.0 and 68.0 (anonymous).
+
 ## v0.3.5
 
 v0.3.5 extends the supported Apex window to API 68.0, tracks the Salesforce Winter '27 release, and closes a large set of differences found by running real projects: field-level security for the default administrator, user-mode queries and DML, platform events, Flow, Visualforce markup, locale-aware strings and SOQL, and org-shape gating of standard objects. It also requires authentication on every API route of an exposed `glade server` listener. API labels list the source versions checked against captured results. The supported windows and hosted boundaries are in [release policy](RELEASE_POLICY.md#salesforce-api-versions).

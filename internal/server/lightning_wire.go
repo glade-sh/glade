@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"net/http"
 	"net/url"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -163,12 +164,7 @@ func (s *Server) invokeLightningApex(w http.ResponseWriter, r *http.Request, cla
 		})
 		return
 	}
-	if machine.HasPendingAsyncWork() {
-		writeWireJSON(w, lwcbrowser.WireResponse{
-			Error: apexWireInvocationError("", "UnsupportedFeature", className, methodName, rawParams, "asynchronous Apex work cannot be committed by the local synchronous LWC action boundary", http.StatusNotImplemented),
-		})
-		return
-	}
+	pendingAsync := machine.HasPendingAsyncWork()
 	if !orgStateEqual(workingOrg, *s.Org) {
 		if err := s.commitOrg(workingOrg); err != nil {
 			writeWireJSON(w, lwcbrowser.WireResponse{
@@ -177,7 +173,36 @@ func (s *Server) invokeLightningApex(w http.ResponseWriter, r *http.Request, cla
 			return
 		}
 	}
+	if pendingAsync {
+		s.runLightningAsyncAfterCommit(machine, className, methodName)
+	}
 	writeWireJSON(w, lwcbrowser.WireResponse{Data: result.ReturnValue})
+}
+
+// runLightningAsyncAfterCommit runs the Queueable and other local async jobs an
+// LWC action enqueued. As on Salesforce they run after the action's
+// transaction commits, in their own transaction: their changes commit
+// separately, and a failure is reported locally without failing the action.
+func (s *Server) runLightningAsyncAfterCommit(machine *vm.VM, className, methodName string) {
+	asyncOrg := s.Org.Clone()
+	machine.SetOrg(&asyncOrg)
+	machine.SetSynchronousActionBoundary(false)
+	var result vm.Result
+	if err := machine.DrainAsync(&result); err != nil {
+		fmt.Fprintf(os.Stderr, "glade: async Apex enqueued by %s.%s failed: %v\n", className, methodName, err)
+		machine.DiscardPendingLocalAsyncJobs()
+		return
+	}
+	if machine.HasPendingAsyncWork() {
+		fmt.Fprintf(os.Stderr, "glade: async Apex enqueued by %s.%s left unfinished jobs\n", className, methodName)
+		machine.DiscardPendingLocalAsyncJobs()
+		return
+	}
+	if !orgStateEqual(asyncOrg, *s.Org) {
+		if err := s.commitOrg(asyncOrg); err != nil {
+			fmt.Fprintf(os.Stderr, "glade: async Apex enqueued by %s.%s could not be stored: %v\n", className, methodName, err)
+		}
+	}
 }
 
 func (s *Server) lightningApexCacheable(className, methodName string) bool {
