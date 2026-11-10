@@ -142,6 +142,14 @@ func (vm *VM) currentUserObjectPermission(objectName, method string) bool {
 	if vm.testContext != nil && vm.testContext.CurrentUser.Kind != "" {
 		user = vm.testContext.CurrentUser
 	}
+	if vm.testContext != nil && vm.testContext.RunAsDepth > 0 {
+		if prerequisite := storage.ObjectPermissionUserField(objectName, method); prerequisite != "" {
+			_, value, present := objectFieldValue(user, prerequisite)
+			if !present || value.Kind == ValueNull || value.Kind == ValueBool && !value.Bool {
+				return false
+			}
+		}
+	}
 	profileID := stringField(user, "ProfileId")
 	profileName := vm.currentUserProfileName(user)
 	if profileName == "System Administrator" {

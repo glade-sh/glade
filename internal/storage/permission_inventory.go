@@ -318,6 +318,34 @@ func legacyPermissionSetID[T any](value Value, legacy map[ID]T) (ID, bool) {
 //go:embed seeddata/profile_object_permissions.json
 var standardProfileObjectPermissionsJSON []byte
 
+//go:embed seeddata/object_permission_requirements.json
+var objectPermissionRequirementsJSON []byte
+
+type capturedObjectPermissionRequirement struct {
+	Object    string
+	Method    string
+	UserField string
+}
+
+var loadObjectPermissionRequirements = sync.OnceValue(func() []capturedObjectPermissionRequirement {
+	var rows []capturedObjectPermissionRequirement
+	if err := json.Unmarshal(objectPermissionRequirementsJSON, &rows); err != nil {
+		panic("invalid embedded object permission requirements: " + err.Error())
+	}
+	return rows
+})
+
+// ObjectPermissionUserField returns a captured user-field prerequisite for an
+// object operation, or an empty string when no prerequisite was captured.
+func ObjectPermissionUserField(object, method string) string {
+	for _, row := range loadObjectPermissionRequirements() {
+		if strings.EqualFold(row.Object, object) && strings.EqualFold(row.Method, method) {
+			return row.UserField
+		}
+	}
+	return ""
+}
+
 type capturedProfileObjectPermission struct {
 	Profile, Object string
 	// Read, Create, Edit, Delete, ViewAllRecords, ModifyAllRecords.
