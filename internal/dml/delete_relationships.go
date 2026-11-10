@@ -15,9 +15,8 @@ func (e *Engine) validateDeleteReferences(objectName string, id storage.ID, ctx 
 	}
 	relations := e.restrictedDeleteRelations(objectName, ctx)
 	for _, relation := range relations {
-		if account && (strings.EqualFold(relation.childObject, "Contract") || strings.EqualFold(relation.childObject, "Case")) && strings.EqualFold(relation.field, "AccountId") {
-			// validateAccountDeleteChildren holds the native Contract and
-			// Case rules.
+		if account && strings.EqualFold(relation.childObject, "Case") && strings.EqualFold(relation.field, "AccountId") {
+			// validateAccountDeleteChildren holds the native Case rule.
 			continue
 		}
 		childrenByParent := e.referenceIndexForRelation(relation.childObject, relation.field, ctx)

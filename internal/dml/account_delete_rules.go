@@ -11,7 +11,8 @@ import (
 // and 67.0, anonymous and isTest).
 
 // contractStatusCodes maps the captured default Contract statuses to their
-// status category. Other statuses leave StatusCode null.
+// status category. Other statuses (a configured status list is not captured)
+// leave StatusCode as stored.
 var contractStatusCodes = map[string]string{
 	"draft":               "Draft",
 	"in approval process": "InApproval",
@@ -30,7 +31,6 @@ func (e *Engine) applyContractStatusCode(record *storage.Record) {
 		code, ok = contractStatusCodes[strings.ToLower(strings.TrimSpace(status.String))]
 	}
 	if !ok {
-		delete(record.Fields, "StatusCode")
 		return
 	}
 	if record.Fields == nil {
@@ -81,20 +81,33 @@ func (e *Engine) applyContactAccountDefault(definition storage.ObjectDefinition,
 }
 
 // accountDeleteCascades reports whether a child on a restrict-and-cascade
-// relation to Account goes with the Account: a Contract outside the Activated
-// status category (Draft and In Approval Process rows), or a Draft Order.
+// relation to Account goes with the Account: a Contract in a captured
+// non-Activated status (Draft or In Approval Process), or a Draft Order.
+// Contracts in any other status are not cascaded.
 func accountDeleteCascades(childObject, field string, child storage.Record) bool {
 	if !strings.EqualFold(field, "AccountId") {
 		return false
 	}
 	switch {
 	case strings.EqualFold(childObject, "Contract"):
-		return !contractActivated(child)
+		return contractCascades(child)
 	case strings.EqualFold(childObject, "Order"):
 		status := child.Fields["Status"]
 		return status.Kind == storage.ValueString && strings.EqualFold(strings.TrimSpace(status.String), "Draft")
 	}
 	return false
+}
+
+func contractCascades(contract storage.Record) bool {
+	if code := contract.Fields["StatusCode"]; code.Kind == storage.ValueString && code.String != "" {
+		return strings.EqualFold(code.String, "Draft") || strings.EqualFold(code.String, "InApproval")
+	}
+	status := contract.Fields["Status"]
+	if status.Kind != storage.ValueString {
+		return false
+	}
+	name := strings.ToLower(strings.TrimSpace(status.String))
+	return name == "draft" || name == "in approval process"
 }
 
 func contractActivated(contract storage.Record) bool {
@@ -113,11 +126,12 @@ func opportunityClosedWon(opportunity storage.Record) bool {
 	return stage.Kind == storage.ValueString && strings.EqualFold(strings.TrimSpace(stage.String), "Closed Won")
 }
 
-// validateAccountDeleteChildren applies the native Account blockers in a
-// fixed order: activated Contracts, Cases, then Closed Won Opportunities.
-// Each fails with DELETE_FAILED, no fields, and the native message listing
-// the blocking records. It reports handled for every Account delete, so the
-// generic restricted-relation check covers only other parents' relations.
+// validateAccountDeleteChildren applies the native Account blockers: activated
+// Contracts, Cases, and Closed Won Opportunities. One blocker type fails with
+// DELETE_FAILED, no fields, and the native message listing the blocking
+// records. The captured rows cover each type alone; with several types no
+// precedence is captured, so the delete fails with the generic message naming
+// the objects in alphabetical order.
 func (e *Engine) validateAccountDeleteChildren(id storage.ID) error {
 	account, ok := e.liveRecord("Account", id)
 	if !ok {
@@ -135,6 +149,12 @@ func (e *Engine) validateAccountDeleteChildren(id storage.ID) error {
 		{"Case", "it is associated with the following cases.", "CaseNumber", func(storage.Record) bool { return true }},
 		{"Opportunity", "some opportunities in that account were closed won. The opportunities that could not be deleted are shown below.", "Name", opportunityClosedWon},
 	}
+	type blocked struct {
+		label  string
+		items  []string
+		object string
+	}
+	var found []blocked
 	for _, check := range checks {
 		var items []string
 		for _, child := range e.liveChildren(check.object, "AccountId", id) {
@@ -151,9 +171,20 @@ func (e *Engine) validateAccountDeleteChildren(id storage.ID) error {
 			continue
 		}
 		sort.Strings(items)
-		return dmlErrorf("DELETE_FAILED", nil, "Your attempt to delete %s could not be completed because %s: %s\n", name, check.label, strings.Join(items, "\n"))
+		found = append(found, blocked{check.label, items, check.object})
 	}
-	return nil
+	switch len(found) {
+	case 0:
+		return nil
+	case 1:
+		return dmlErrorf("DELETE_FAILED", nil, "Your attempt to delete %s could not be completed because %s: %s\n", name, found[0].label, strings.Join(found[0].items, "\n"))
+	}
+	objects := make([]string, len(found))
+	for i, f := range found {
+		objects[i] = f.object
+	}
+	sort.Strings(objects)
+	return dmlErrorf("DELETE_FAILED", nil, "dml: cannot delete Account %s because %s records reference it", id, strings.Join(objects, " and "))
 }
 
 func (e *Engine) liveRecord(objectName string, id storage.ID) (storage.Record, bool) {

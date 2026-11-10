@@ -21,7 +21,8 @@ func scopeOrg() (*storage.OrgState, *Engine) {
 	for _, o := range []string{"Contract", "Case", "Opportunity", "Contact"} {
 		storage.EnsureStandardObject(&org, o)
 	}
-	e := NewEngine(&org); return &org, &e
+	e := NewEngine(&org)
+	return &org, &e
 }
 
 // Only the captured Contract statuses (Draft, In Approval Process, Activated)
