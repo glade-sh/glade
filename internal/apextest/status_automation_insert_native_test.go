@@ -15,7 +15,7 @@ import (
 // This covers the observed insert only. The capture also contains separate
 // confirmation and external-message controls, which this test does not claim.
 func TestStatusAutomationInsertNative(t *testing.T) {
-	const fixture = "testdata/conformance/status_automation_insert"
+	const fixture = "testdata/native_conformance/status_automation_insert"
 	data, err := os.ReadFile(filepath.Join(fixture, "org.tsv"))
 	if err != nil {
 		t.Fatal(err)
