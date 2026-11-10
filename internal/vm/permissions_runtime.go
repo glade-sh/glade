@@ -417,20 +417,26 @@ func (vm *VM) currentUserFieldPermission(objectName, fieldName, method string) b
 		}
 		// Optional custom fields on ordinary custom objects need an effective
 		// field grant even for the administrator in a freshly deployed org.
-		if adminOptionalFieldPolicyAPI(vm.currentSourceExecutionPolicy().APIVersion) && vm.ordinaryCustomPermissionObject(objectName) && isCustomSchemaName(fieldName) && !vm.customFieldHasIntrinsicAccess(objectName, fieldName) {
+		api := vm.currentSourceExecutionPolicy().APIVersion
+		capturedOlderTestRoute := vm.testContext != nil && vm.testContext.RunAsDepth > 0 && apexversion.AtLeast(api, 55) && !apexversion.AtLeast(api, 56)
+		if (adminOptionalFieldPolicyAPI(api) || capturedOlderTestRoute) && vm.ordinaryCustomPermissionObject(objectName) && isCustomSchemaName(fieldName) && !vm.customFieldHasIntrinsicAccess(objectName, fieldName) {
 			parents := []string{vm.profileOwnedPermissionSetID(profileID), profileID}
+			grantMethod := method
+			if method == "isCreateable" {
+				grantMethod = "isAccessible"
+			}
 			// glade exec cannot know assignment: a deployed set that grants the
 			// field counts as assigned (native admin_field_grant_sources rows).
 			if vm.assumeDeployedPermissionSets && vm.testContext == nil {
 				parents = append(parents, vm.deployedPermissionSetIDs()...)
 			}
 			for _, parent := range parents {
-				if allowed, ok := vm.explicitFieldPermission(parent, objectName, fieldName, method); ok && allowed {
+				if allowed, ok := vm.explicitFieldPermission(parent, objectName, fieldName, grantMethod); ok && allowed {
 					return true
 				}
 			}
 			for _, source := range vm.assignedPermissionSources(stringField(user, "Id"), false) {
-				if vm.sourceFieldPermission(source, objectName, fieldName, method) {
+				if vm.sourceFieldPermission(source, objectName, fieldName, grantMethod) {
 					return true
 				}
 			}
@@ -1169,12 +1175,14 @@ func (vm *VM) stripInaccessibleRecord(accessType string, record *Value, enforceR
 				continue
 			}
 		}
+		// Native runAs controls retain omitted and unloaded custom checkboxes
+		// even when field read access is absent; explicit values still strip.
 		if accessType == "CREATABLE" && scopedPermissionSetID == "" && sObjectIDFromFields(record.Fields) == "" &&
-			value.Kind == ValueBool && !value.Bool && !queriedRecord && !clonedRecord && !isTriggerSObject(*record) &&
+			(value.Kind == ValueNull || value.Kind == ValueBool && !value.Bool) && !queriedRecord && !clonedRecord && !isTriggerSObject(*record) &&
 			isDefaultedSObjectField(*record, field) && !isExplicitSObjectField(*record, field) &&
 			!isUserSetSObjectField(*record, field) && !vm.queriedSObjectFieldsIncludes(*record, field) &&
 			vm.ordinaryCustomPermissionObject(objectName) &&
-			vm.currentUserFieldPermissionWithScope(objectName, vm.resolveSObjectFieldName(objectName, field), "isAccessible", scopedPermissionSetID) {
+			(vm.testContext != nil && vm.testContext.RunAsDepth > 0 || vm.currentUserFieldPermissionWithScope(objectName, vm.resolveSObjectFieldName(objectName, field), "isAccessible", scopedPermissionSetID)) {
 			_, definition, declared := vm.sObjectFieldDefinition(objectName, field)
 			if declared && storage.FieldFlagValue(definition.Accessible, true) && definition.Type == storage.FieldBoolean &&
 				strings.EqualFold(strings.TrimSpace(definition.DefaultValue), "false") &&
