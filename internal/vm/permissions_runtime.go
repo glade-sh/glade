@@ -398,7 +398,13 @@ func (vm *VM) currentUserFieldPermission(objectName, fieldName, method string) b
 					return true
 				}
 			}
-			allowed, _ := vm.explicitFieldPermission(profileSet, objectName, fieldName, method)
+			profileMethod := method
+			if method == "isCreateable" {
+				// The native administrator can create an intrinsically writable
+				// field whose profile row grants read but not edit.
+				profileMethod = "isAccessible"
+			}
+			allowed, _ := vm.explicitFieldPermission(profileSet, objectName, fieldName, profileMethod)
 			return allowed
 		}
 		// Optional custom fields on ordinary custom objects need an effective
