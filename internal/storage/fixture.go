@@ -877,7 +877,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		Object: "UserLicense",
 		Fields: map[string]Value{
 			"Name":                 StringValue("Chatter External"),
-			"LicenseDefinitionKey": StringValue("PID_Customer_Community_Login"),
+			"LicenseDefinitionKey": StringValue("CSN_External_User"),
 		},
 	})
 	// Owned API62/64/67 observations establish this built-in profile and
