@@ -4104,6 +4104,14 @@ func labelRegistryForNamespace(registry storage.MetadataRegistry, namespace stri
 	return registry
 }
 
+// Only source-backed labels belonging to this org use the captured local scope.
+func localLabelTranslationScope(registry storage.MetadataRegistry, orgNamespace, namespace, name string) (storage.MetadataRegistry, string, bool) {
+	if namespace != "" && !strings.EqualFold(namespace, orgNamespace) {
+		return registry, "", false
+	}
+	return resource.LocalLabelTranslationScope(registry, orgNamespace, name)
+}
+
 func (vm *VM) resolveLabelMethodValue(namespace, name, language string) (string, bool) {
 	namespace = strings.TrimSpace(namespace)
 	name = strings.TrimSpace(name)
@@ -4113,6 +4121,7 @@ func (vm *VM) resolveLabelMethodValue(namespace, name, language string) (string,
 	}
 	if language != "" && vm != nil && vm.Org != nil {
 		filtered := labelRegistryForNamespace(vm.Org.Metadata, namespace)
+		filtered, _, _ = localLabelTranslationScope(filtered, vm.Org.Namespace, namespace, name)
 		filtered.Labels = labelsForLanguage(filtered.Labels, language)
 		if value, status := resource.ResolveLabel(filtered, vm.Org.Namespace, namespace, name); status != resource.LabelLookupMissing {
 			return value, true
@@ -4144,6 +4153,7 @@ func (vm *VM) labelTranslationExists(namespace, name, language string) bool {
 		language = vm.currentUserInfoField("LanguageLocaleKey", "en_US")
 	}
 	filtered := labelRegistryForNamespace(vm.Org.Metadata, namespace)
+	filtered, _, _ = localLabelTranslationScope(filtered, vm.Org.Namespace, namespace, name)
 	filtered.Labels = labelsForLanguage(filtered.Labels, language)
 	_, status := resource.ResolveLabel(filtered, vm.Org.Namespace, namespace, name)
 	return status == resource.LabelLookupResolved

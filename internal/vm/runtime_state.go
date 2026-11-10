@@ -601,9 +601,10 @@ type StackFrame struct {
 }
 
 type RuntimeError struct {
-	Type    string
-	Message string
-	Stack   []StackFrame
+	Type           string
+	Message        string
+	Stack          []StackFrame
+	callStackLimit bool
 	// Preserve the Apex message before adding local diagnostic context.
 	exceptionMessage *string
 	// An assertion records its Apex frames where it fails; a trigger boundary

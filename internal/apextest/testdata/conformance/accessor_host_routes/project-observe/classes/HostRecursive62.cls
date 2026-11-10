@@ -1,0 +1,1 @@
+global class HostRecursive62 { global String value {get {return helper();} set;} global String helper(){return value;} }

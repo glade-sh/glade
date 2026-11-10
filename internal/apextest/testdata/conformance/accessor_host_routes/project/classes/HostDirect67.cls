@@ -1,0 +1,1 @@
+global class HostDirect67 { global Integer visits=0; global String value {get {visits++; if(visits==1){String current=value;} return 'direct';} set;} }

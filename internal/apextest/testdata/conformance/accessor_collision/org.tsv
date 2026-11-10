@@ -1,0 +1,9 @@
+api	case	route	outcome
+62.0	collision	IsTest	Pass
+62.0	otherSetterRead	IsTest	Pass
+62.0	ownSetterRead	IsTest	Fail; System.AssertException: Assertion Failed: Expected: own-getter, Actual: null
+67.0	collision	IsTest	Pass
+67.0	otherSetterRead	IsTest	Pass
+67.0	ownSetterRead	IsTest	Fail; System.AssertException: Assertion Failed: Expected: own-getter, Actual: null
+62.0	backingRead	IsTest	Pass
+67.0	backingRead	IsTest	Pass
