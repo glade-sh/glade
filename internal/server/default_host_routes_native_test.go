@@ -78,6 +78,7 @@ func TestLoadedDefaultsHostRoutesNative(t *testing.T) {
 			}
 			org := storage.NewOrgState()
 			org.APIVersion = api
+			storage.ApplyProjectOrgShape(&org, project.StandardFieldPolicyFeatures(p))
 			host := newLightningTestServer(t, &org, source)
 			configureVisualforceTestPrincipal(t, host)
 			profiles := host.Org.Objects["Profile"]
