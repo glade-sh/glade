@@ -41,7 +41,9 @@ func TestPrivateQueueMemberFixedSOSLRoutes(t *testing.T) {
 				t.Run(route.name, func(t *testing.T) {
 					machine := recordSharingControlMachine(t, "Private")
 					queueDerivedRouteMachine(t, machine)
+					machine.Org.APIVersion = row[1]
 					objects := machine.Org.Objects["Widget__c"]
+					objects.Definition.EnableSearch = true
 					ids := make([]string, 0, len(objects.Records))
 					for id := range objects.Records {
 						ids = append(ids, string(id))
