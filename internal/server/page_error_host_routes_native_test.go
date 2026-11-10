@@ -124,7 +124,10 @@ func TestPageErrorHostRoutesNative(t *testing.T) {
 										if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), want) {
 											t.Fatalf("%s VF HTML HTTP %d: %s", phase, rec.Code, rec.Body.String())
 										}
-									} else if rec.Code < 400 || !strings.Contains(rec.Body.String(), "Page MissingHostPage does not exist") {
+									} else if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "Visualforce render error") || !strings.Contains(rec.Body.String(), "Page MissingHostPage does not exist") {
+										// Local VF retains its existing HTTP 200 error-page contract.
+										// Native VF status was not captured; fault text comes from
+										// the independent anonymous and REST observations.
 										t.Fatalf("%s VF PDF HTTP %d: %s", phase, rec.Code, rec.Body.String())
 									}
 									continue
