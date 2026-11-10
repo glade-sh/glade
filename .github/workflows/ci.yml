@@ -1689,11 +1689,7 @@ jobs:
           REQUIRED_RESULTS: ${{ toJSON(needs) }}
           EVENT_NAME: ${{ github.event_name }}
         run: |
-          if [[ "$EVENT_NAME" == pull_request ]]; then
-            failures="$(jq -r 'to_entries[] | select(.key == "workflow-lint" or .key == "pr-tests" or .key == "vet" or .key == "leak-scan") | select(.value.result != "success") | "\(.key)=\(.value.result)"' <<<"$REQUIRED_RESULTS")"
-          else
-            failures="$(jq -r 'to_entries[] | select(.key != "pr-tests") | select(.value.result != "success") | "\(.key)=\(.value.result)"' <<<"$REQUIRED_RESULTS")"
-          fi
+          failures="$(jq -r --arg event "$EVENT_NAME" 'to_entries[] | select(if $event == "pull_request" then (.key == "workflow-lint" or .key == "pr-tests" or .key == "vet" or .key == "leak-scan") else (.key != "pr-tests") end) | select(.value.result != "success") | "\(.key)=\(.value.result)"' <<<"$REQUIRED_RESULTS")"
           if [[ -n "$failures" ]]; then
             printf '%s\n' "$failures"
             exit 1

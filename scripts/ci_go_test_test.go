@@ -1882,11 +1882,14 @@ func benchmarkCachePairWorkflowProblem(name, workflow string) string {
 		"test", "test-binaries", "smoke-runtime", "smoke-distribution", "apextest-history-input", "apextest", "lwc-compile-history-input", "visualforce-history-input",
 	} {
 		job := jobs[jobName]
-		jobGuard := guard
 		if jobName != "vet" {
-			jobGuard = "    if: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}"
+			prGuard := "    if: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}"
+			if strings.Count(job, prGuard) != 1 {
+				return fmt.Sprintf("%s PR exclusion is not exact", jobName)
+			}
+			job = strings.Replace(job, prGuard, guard, 1)
 		}
-		if strings.Count(job, jobGuard) != 1 {
+		if strings.Count(job, guard) != 1 {
 			return fmt.Sprintf("%s cache-pair bounds guard is not exact", jobName)
 		}
 		validation := `scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"`
@@ -2077,17 +2080,15 @@ func ciRequiredAggregateProblem(workflow string) string {
 		{name: "runner", want: "    runs-on: ubuntu-24.04"},
 		{name: "timeout", want: "    timeout-minutes: 5"},
 		{name: "needs JSON environment", want: `          REQUIRED_RESULTS: ${{ toJSON(needs) }}`},
-		{name: "PR result selection", want: `select(.key == "workflow-lint" or .key == "pr-tests" or .key == "vet" or .key == "leak-scan")`},
-		{name: "full result selection", want: `select(.key != "pr-tests")`},
+		{name: "fail-closed predicate", want: `select(.value.result != "success")`},
+		{name: "PR result selection", want: `(.key == "workflow-lint" or .key == "pr-tests" or .key == "vet" or .key == "leak-scan")`},
+		{name: "full result selection", want: `(.key != "pr-tests")`},
 		{name: "failure exit", want: "            exit 1"},
 	}
 	for _, check := range checks {
 		if strings.Count(job, check.want) != 1 {
 			return fmt.Sprintf("required-ci %s marker count = %d, want 1", check.name, strings.Count(job, check.want))
 		}
-	}
-	if strings.Count(job, `select(.value.result != "success")`) != 2 {
-		return "required-ci must reject every non-success result in both event routes"
 	}
 	_, steps, found := strings.Cut(job, "    steps:\n")
 	if !found || strings.Count(steps, "      - ") != 1 {
@@ -3366,14 +3367,18 @@ func TestCINodeIntegrationWorkflowAndPurePartition(t *testing.T) {
 			t.Errorf("node-integration job missing %q", marker)
 		}
 	}
-	if strings.Count(node, "npm ci --prefix third_party/lwc") != 1 || strings.Count(workflow, "npm ci --prefix third_party/lwc") != 5 {
-		t.Errorf("third_party/lwc npm install ownership count workflow/node = %d/%d, want 5/1 (distribution smoke, node lane, two conformance lanes, and PR lane)", strings.Count(workflow, "npm ci --prefix third_party/lwc"), strings.Count(node, "npm ci --prefix third_party/lwc"))
+	if strings.Count(jobs["pr-tests"], "npm ci --prefix third_party/lwc") != 1 || strings.Count(jobs["pr-tests"], "npm ci --prefix lwcruntime") != 1 {
+		t.Error("PR browser prerequisites are incomplete")
+	}
+	workflow = strings.Replace(workflow, jobs["pr-tests"], "", 1)
+	if strings.Count(node, "npm ci --prefix third_party/lwc") != 1 || strings.Count(workflow, "npm ci --prefix third_party/lwc") != 4 {
+		t.Errorf("third_party/lwc npm install ownership count workflow/node = %d/%d, want 4/1 (distribution smoke, node lane, and two conformance lanes)", strings.Count(workflow, "npm ci --prefix third_party/lwc"), strings.Count(node, "npm ci --prefix third_party/lwc"))
 	}
 	if strings.Contains(jobs["gladecli"], "actions/setup-node") || strings.Contains(jobs["gladecli"], "npm ci") {
 		t.Error("pure gladecli job mutates Node dependencies")
 	}
-	if got := strings.Count(workflow, "npm ci --prefix lwcruntime"); got != 3 {
-		t.Errorf("browser conformance npm install count = %d, want one per conformance lane and the PR lane", got)
+	if got := strings.Count(workflow, "npm ci --prefix lwcruntime"); got != 2 {
+		t.Errorf("browser conformance npm install count = %d, want one per conformance lane", got)
 	}
 	for name, lane := range map[string]string{"server-and-playground": "server-and-playground", "test": "remaining-go"} {
 		job := jobs[name]
@@ -3559,9 +3564,10 @@ func TestCIRequiredAggregateContractRejectsWeakening(t *testing.T) {
 func TestCIParallelDAGTopology(t *testing.T) {
 	_, jobs := readCIWorkflow(t)
 	wantJobs := []string{
-		"apextest", "apextest-history", "gladecli", "leak-scan", "pr-tests", "tree-receipt", "nested-sources", "node-integration", "required-ci", "required-scheduled-ci", "sema", "sema-equivalence", "sema-full", "sema-history",
+		"apextest", "apextest-history", "gladecli", "leak-scan", "tree-receipt", "nested-sources", "node-integration", "required-ci", "required-scheduled-ci", "sema", "sema-equivalence", "sema-full", "sema-history",
 		"server-and-playground", "site", "smoke-distribution", "smoke-runtime", "test", "test-binaries", "vet", "workflow-lint",
 	}
+	wantJobs = append(wantJobs, "pr-tests")
 	wantJobs = append(wantJobs, "apextest-history-input", "lwc-compile-history-input", "lwc-compile-history", "visualforce-history-input", "visualforce-history", "gladecli-history-input", "gladecli-history", "vm-history-input", "vm", "vm-history")
 	sort.Strings(wantJobs)
 	gotJobs := make([]string, 0, len(jobs))
