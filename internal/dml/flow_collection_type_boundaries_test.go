@@ -28,3 +28,32 @@ func TestFlowCollectionUncapturedTypeBoundaries(t *testing.T) {
 		})
 	}
 }
+
+// Transform source resources outside the captured direct scalar variable and
+// string-literal shapes remain unsupported; this is a local scope boundary.
+func TestFlowTransformUncapturedSourceBoundary(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	engine := NewEngine(&org)
+	for _, tc := range []struct {
+		name, sourceType string
+		wantSupported    bool
+	}{
+		{"captured_string", "String", true},
+		{"uncaptured_currency", "Currency", false},
+		{"unknown_resource", "", false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			frame := newFlowFrame()
+			frame.scalars[flowFrameKey("Source")] = storage.StringValue("x")
+			if tc.sourceType != "" {
+				frame.variables[flowFrameKey("Source")] = storage.FlowVariable{Name: "Source", DataType: tc.sourceType}
+			}
+			transform := storage.FlowTransform{Name: "MapRecord", TransformType: "RecordMap", ObjectType: "Account", FieldMappings: []storage.WorkflowFieldUpdate{{Field: "Name", SourceField: "Source"}}}
+			err := engine.applyFlowTransformStep(transform, frame)
+			if (err == nil) != tc.wantSupported {
+				t.Fatalf("supported=%t, want %t: %v", err == nil, tc.wantSupported, err)
+			}
+		})
+	}
+}
