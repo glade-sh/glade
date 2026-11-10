@@ -53,6 +53,9 @@ func TestUndeclaredNamespaceTypesProjectRoutes(t *testing.T) {
 					writeFile(t, filepath.Join(root, "glade.yml"), variant.glade)
 				}
 				index := loadTestIndex(t, root)
+				if !declared && index.HasErrors() {
+					t.Fatal(index.Diagnostics)
+				}
 				run := Run(index, Options{NoDiskCache: true, Parallelism: 1, SelectedClasses: []string{"BarConsumerTest"}})
 				if declared {
 					// A declared dependency without source is the
