@@ -1391,7 +1391,11 @@ func (e *Engine) applyFlowAssignmentStep(assignment storage.FlowAssignment, fram
 					frame.assigned[flowFrameKey(target)] = true
 					return nil
 				}
-				if record, found := frame.records[flowFrameKey(assignment.SourceField)]; found {
+				// A record input supplied as scalar null (or defaulted null) keeps the
+				// scalar-null route below; only a present record is copied by value.
+				sourceKey := flowFrameKey(assignment.SourceField)
+				_, sourceScalar := frame.scalars[sourceKey]
+				if record, found := frame.records[sourceKey]; found && !sourceScalar && !frame.nullRecordDefaults[sourceKey] {
 					frame.records[flowFrameKey(target)] = record.Clone()
 					delete(frame.scalars, flowFrameKey(target))
 					delete(frame.nullRecordDefaults, flowFrameKey(target))
