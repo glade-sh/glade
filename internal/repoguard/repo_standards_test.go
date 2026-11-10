@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"regexp/syntax"
+	"runtime"
 	"slices"
 	"sort"
 	"strings"
@@ -75,77 +76,81 @@ func TestNoCorpusSpecificReferencesInRuntimeCode(t *testing.T) {
 
 func TestNoPrivateExamplePackageReferences(t *testing.T) {
 	root := repoRoot(t)
-	for _, rel := range repoExistingTrackedPaths(t, root) {
-		checkPrivateExamplePackageText(t, rel, rel)
-	}
-	for _, file := range repoRegularFiles(t, root) {
-		if strings.IndexByte(file.text, 0) >= 0 {
-			continue
+	for _, finding := range repoFileFindings(repoRegularFiles(t, root), func(file repoScanFile) []string {
+		var reporter repoScanReporter
+		checkPrivateExamplePackageText(&reporter, file.rel, file.rel)
+		if strings.IndexByte(file.text, 0) < 0 {
+			checkPrivateExamplePackageText(&reporter, file.rel, file.text)
 		}
-		checkPrivateExamplePackageText(t, file.rel, file.text)
+		return reporter.findings
+	}) {
+		t.Error(finding)
 	}
 }
 
 func TestNoPersonalAbsolutePathsInTrackedText(t *testing.T) {
 	root := repoRoot(t)
 	forbidden := "/Users/" + "matt"
-	for _, file := range repoRegularFiles(t, root) {
-		if strings.IndexByte(file.text, 0) >= 0 {
-			continue
+	for _, finding := range repoFileFindings(repoRegularFiles(t, root), func(file repoScanFile) []string {
+		if strings.IndexByte(file.text, 0) >= 0 || !strings.Contains(file.text, forbidden) {
+			return nil
 		}
-		if strings.Contains(file.text, forbidden) {
-			t.Errorf("%s contains a personal absolute path", file.rel)
-		}
+		return []string{fmt.Sprintf("%s contains a personal absolute path", file.rel)}
+	}) {
+		t.Error(finding)
 	}
 }
 
 func TestNoPrivateOrgAliasesInPublicDocs(t *testing.T) {
 	privateAlias := regexp.MustCompile(`(?i)\b(?:` + strings.Join([]string{"n" + "u", "n" + "c", "n" + "ams", hyphen("sf", "cred")}, "|") + `)\b`)
-	for _, file := range repoRegularFiles(t, repoRoot(t)) {
+	for _, finding := range repoFileFindings(repoRegularFiles(t, repoRoot(t)), func(file repoScanFile) []string {
 		if !isHumanFacingExampleSurface(file.rel) || strings.IndexByte(file.text, 0) >= 0 {
-			continue
+			return nil
 		}
-		if match := privateAlias.FindString(file.text); match != "" {
-			t.Errorf("%s contains private org alias %q", file.rel, match)
+		match := privateAlias.FindString(file.text)
+		if match == "" {
+			return nil
 		}
+		return []string{fmt.Sprintf("%s contains private org alias %q", file.rel, match)}
+	}) {
+		t.Error(finding)
 	}
 }
 
 func TestPublicExampleNamesAvoidGenericPlaceholders(t *testing.T) {
 	root := repoRoot(t)
-	for _, file := range repoRegularFiles(t, root) {
-		if !isHumanFacingExampleSurface(file.rel) {
-			continue
+	for _, finding := range repoFileFindings(repoRegularFiles(t, root), func(file repoScanFile) []string {
+		if !isHumanFacingExampleSurface(file.rel) || strings.IndexByte(file.text, 0) >= 0 {
+			return nil
 		}
-		if strings.IndexByte(file.text, 0) >= 0 {
-			continue
-		}
-		text := file.text
+		var findings []string
 		for _, term := range genericExampleNameTerms() {
-			if strings.Contains(text, term) {
-				t.Errorf("%s contains generic example name %q; use macrodata-apex, RefinementService, FileRow, or refinement-local instead", file.rel, term)
+			if strings.Contains(file.text, term) {
+				findings = append(findings, fmt.Sprintf("%s contains generic example name %q; use macrodata-apex, RefinementService, FileRow, or refinement-local instead", file.rel, term))
 			}
 		}
+		return findings
+	}) {
+		t.Error(finding)
 	}
 }
 
 func TestNoAgentPlanningDocsInReleaseSurface(t *testing.T) {
 	root := repoRoot(t)
-	for _, rel := range repoExistingTrackedPaths(t, root) {
-		if strings.HasPrefix(rel, "docs/superpowers/") {
-			t.Errorf("%s is an agent planning artifact; keep release docs product-facing", rel)
+	for _, finding := range repoFileFindings(repoRegularFiles(t, root), func(file repoScanFile) []string {
+		var findings []string
+		if strings.HasPrefix(file.rel, "docs/superpowers/") {
+			findings = append(findings, fmt.Sprintf("%s is an agent planning artifact; keep release docs product-facing", file.rel))
 		}
-	}
-	for _, file := range repoRegularFiles(t, root) {
 		if strings.HasPrefix(file.rel, "docs/superpowers/") || (!strings.HasPrefix(file.rel, "docs/") && !strings.HasPrefix(file.rel, "site/docs-src/")) {
-			continue
+			return findings
 		}
-		if strings.IndexByte(file.text, 0) >= 0 {
-			continue
+		if strings.IndexByte(file.text, 0) < 0 && strings.Contains(file.text, "For agentic workers") {
+			findings = append(findings, fmt.Sprintf("%s contains agent planning instructions; keep release docs product-facing", file.rel))
 		}
-		if strings.Contains(file.text, "For agentic workers") {
-			t.Errorf("%s contains agent planning instructions; keep release docs product-facing", file.rel)
-		}
+		return findings
+	}) {
+		t.Error(finding)
 	}
 }
 
@@ -520,6 +525,59 @@ func repoExistingTrackedPaths(t *testing.T, root string) []string {
 		paths = append(paths, file.rel)
 	}
 	return paths
+}
+
+// repoFileFindings runs check over files on a bounded worker pool and returns
+// the findings sorted, so tests report them deterministically from their own
+// goroutine. check must be safe to call concurrently.
+func repoFileFindings(files []repoScanFile, check func(repoScanFile) []string) []string {
+	results := make([][]string, len(files))
+	workers := min(runtime.NumCPU(), len(files))
+	var next atomic.Int64
+	var group sync.WaitGroup
+	for worker := 0; worker < workers; worker++ {
+		group.Add(1)
+		go func() {
+			defer group.Done()
+			for {
+				index := int(next.Add(1)) - 1
+				if index >= len(files) {
+					return
+				}
+				results[index] = check(files[index])
+			}
+		}()
+	}
+	group.Wait()
+	var findings []string
+	for _, result := range results {
+		findings = append(findings, result...)
+	}
+	sort.Strings(findings)
+	return findings
+}
+
+// repoScanReporter records findings in the format the shared private-name
+// checkers use, so those checks can run on scan workers.
+type repoScanReporter struct {
+	findings []string
+}
+
+func (*repoScanReporter) Helper() {}
+
+func (reporter *repoScanReporter) Errorf(format string, args ...any) {
+	reporter.findings = append(reporter.findings, fmt.Sprintf(format, args...))
+}
+
+func TestRepoFileFindingsChecksEveryFileAndSortsFindings(t *testing.T) {
+	files := []repoScanFile{{rel: "b"}, {rel: "a"}, {rel: "c"}}
+	got := repoFileFindings(files, func(file repoScanFile) []string {
+		return []string{file.rel + "-first", file.rel + "-second"}
+	})
+	want := []string{"a-first", "a-second", "b-first", "b-second", "c-first", "c-second"}
+	if !slices.Equal(got, want) {
+		t.Fatalf("findings = %#v, want %#v", got, want)
+	}
 }
 
 func repoScan(root string) (repoScanSnapshot, error) {

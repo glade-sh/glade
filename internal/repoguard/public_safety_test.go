@@ -44,19 +44,23 @@ type publicDataFinding struct {
 // Check decoded assets as well as text: embedded catalogs are part of the
 // distributed product even though a plain text search cannot inspect them.
 func TestPublicReleaseData(t *testing.T) {
-	for _, file := range repoRegularFiles(t, repoRoot(t)) {
+	for _, reported := range repoFileFindings(repoRegularFiles(t, repoRoot(t)), func(file repoScanFile) []string {
+		var findings []string
 		if privateCaptureArtifact(file.rel) {
-			t.Errorf("%s:1: private capture or preparation material (REDACTED)", file.rel)
+			findings = append(findings, fmt.Sprintf("%s:1: private capture or preparation material (REDACTED)", file.rel))
 		}
 		err := scanPublicAsset(file.rel, file.text, func(member, text string) {
 			for _, finding := range publicDataFindings(file.rel, text) {
 				// Report categories and locations, never the captured value itself.
-				t.Errorf("%s%s:%d: %s (REDACTED)", file.rel, member, finding.line, finding.kind)
+				findings = append(findings, fmt.Sprintf("%s%s:%d: %s (REDACTED)", file.rel, member, finding.line, finding.kind))
 			}
 		})
 		if err != nil {
-			t.Errorf("%s: %v", file.rel, err)
+			findings = append(findings, fmt.Sprintf("%s: %v", file.rel, err))
 		}
+		return findings
+	}) {
+		t.Error(reported)
 	}
 }
 

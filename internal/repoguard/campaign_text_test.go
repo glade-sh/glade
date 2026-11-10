@@ -1,6 +1,7 @@
 package repoguard
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -33,10 +34,14 @@ func campaignTextProblems(rel, text string) []string {
 
 func TestNoCampaignTextInSourceAndTestdata(t *testing.T) {
 	root := repoRoot(t)
-	for _, file := range repoRegularFiles(t, root) {
+	for _, finding := range repoFileFindings(repoRegularFiles(t, root), func(file repoScanFile) []string {
+		var findings []string
 		for _, problem := range campaignTextProblems(file.rel, file.text) {
-			t.Errorf("%s %s", file.rel, problem)
+			findings = append(findings, fmt.Sprintf("%s %s", file.rel, problem))
 		}
+		return findings
+	}) {
+		t.Error(finding)
 	}
 }
 

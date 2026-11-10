@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -69,22 +70,26 @@ var (
 const campaignPublicWorkspace = "glade-tools"
 
 func TestPublicCampaignData(t *testing.T) {
-	names := campaignNameMatcher(campaignNameTable)
-	for _, file := range repoRegularFiles(t, repoRoot(t)) {
+	for _, reported := range repoFileFindings(repoRegularFiles(t, repoRoot(t)), func(file repoScanFile) []string {
 		if privateCaptureArtifact(file.rel) {
-			continue // TestPublicReleaseData reports these files.
+			return nil // TestPublicReleaseData reports these files.
 		}
+		names := campaignNameMatcher(campaignNameTable)
+		var findings []string
 		for _, finding := range publicCampaignFindings(names, file.rel, file.rel) {
-			t.Errorf("%s: campaign value in path: %s (REDACTED)", file.rel, finding.kind)
+			findings = append(findings, fmt.Sprintf("%s: campaign value in path: %s (REDACTED)", file.rel, finding.kind))
 		}
 		err := scanPublicAsset(file.rel, file.text, func(member, text string) {
 			for _, finding := range publicCampaignFindings(names, file.rel, text) {
-				t.Errorf("%s%s:%d: %s (REDACTED)", file.rel, member, finding.line, finding.kind)
+				findings = append(findings, fmt.Sprintf("%s%s:%d: %s (REDACTED)", file.rel, member, finding.line, finding.kind))
 			}
 		})
 		if err != nil {
-			t.Errorf("%s: %v", file.rel, err)
+			findings = append(findings, fmt.Sprintf("%s: %v", file.rel, err))
 		}
+		return findings
+	}) {
+		t.Error(reported)
 	}
 }
 
