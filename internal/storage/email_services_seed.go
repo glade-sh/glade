@@ -89,7 +89,9 @@ func ApplyEmailServices(org *OrgState, services []project.EmailService) error {
 			if found && organization.Fields["IsSandbox"].Kind == ValueBoolean && organization.Fields["IsSandbox"].Boolean {
 				suffix = "sandbox.salesforce.com"
 			}
-			domain := fmt.Sprintf("local%x.local000000.local00.apex.%s", digest[:24], suffix)
+			// Native captures vary across orgs. Use a fixed-length digest whose
+			// first label lies within the observed native range.
+			domain := fmt.Sprintf("local%x.local000000.local00.apex.%s", digest[:23], suffix)
 			fields := map[string]Value{
 				"DeveloperName": StringValue(address.DeveloperName), "LocalPart": StringValue(address.LocalPart),
 				"EmailDomainName": StringValue(domain), "FunctionId": IDValue(functionID), "RunAsUserId": IDValue(userID),
