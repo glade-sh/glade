@@ -1121,6 +1121,19 @@ func (vm *VM) stripInaccessibleRecord(accessType string, record *Value, enforceR
 		return false, newExceptionError("NoAccessException", "No access to entity: "+objectName)
 	}
 	fieldPermission := stripInaccessibleFieldPermission(accessType)
+	// Captured original loaded records report certain inaccessible internal
+	// fields even though those fields are absent from the public describe map.
+	// Clones and queried/trigger records have independent provenance.
+	_, loaded := record.Fields[sobjectLoadedDefaultsField]
+	_, cloned := record.Fields[sobjectCloneMarkerField]
+	_, queried := record.Fields[sobjectQueriedFieldsField]
+	if accessType == "CREATABLE" && scopedPermissionSetID == "" && loaded && !cloned && !queried && !isTriggerSObject(*record) {
+		if _, definition, ok := vm.sObjectDefinitionForRead(objectName); ok {
+			for _, field := range storage.CapturedStandardConstructorHiddenRemoved(definition) {
+				addStripInaccessibleRemovedField(removedFields, objectName, field)
+			}
+		}
+	}
 	// Disabling root CRUD enforcement suppresses the exception; it does not
 	// retain readable fields of an inaccessible object. Id is handled separately.
 	readableObject := accessType != "READABLE" || vm.currentUserObjectPermissionWithScope(objectName, "isAccessible", scopedPermissionSetID)

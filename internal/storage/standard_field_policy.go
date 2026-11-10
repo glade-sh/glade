@@ -37,18 +37,19 @@ type standardFieldPolicyObject struct {
 	// CapturedFields name policy fields whose native facets replace a field
 	// that the stub overlay supplies with only a name and a type. A field that
 	// the project itself configures is never replaced.
-	CapturedFields       []string        `json:"captured_fields"`
-	InsertForcedValues   map[string]bool `json:"insert_forced_values"`
-	Fields               []standardDescribeField
-	Absent               []string
-	PlainDeveloperAbsent []string          `json:"plain_developer_absent"`
-	ConstructorDefaults  map[string]string `json:"constructor_defaults"`
-	fields               map[string]Field
-	picklistFields       []Field
-	absent               map[string]bool
-	plainDeveloperAbsent map[string]bool
-	constructorDefaults  map[string]string
-	gates                map[string]standardFieldPolicyGate
+	CapturedFields           []string        `json:"captured_fields"`
+	InsertForcedValues       map[string]bool `json:"insert_forced_values"`
+	Fields                   []standardDescribeField
+	Absent                   []string
+	PlainDeveloperAbsent     []string          `json:"plain_developer_absent"`
+	ConstructorDefaults      map[string]string `json:"constructor_defaults"`
+	ConstructorHiddenRemoved []string          `json:"constructor_hidden_removed"`
+	fields                   map[string]Field
+	picklistFields           []Field
+	absent                   map[string]bool
+	plainDeveloperAbsent     map[string]bool
+	constructorDefaults      map[string]string
+	gates                    map[string]standardFieldPolicyGate
 }
 
 type standardFieldPolicyBundle struct {
@@ -150,6 +151,18 @@ func CapturedStandardConstructorDefault(definition ObjectDefinition, field Field
 	}
 	field.DefaultValue = raw
 	return DefaultValueForField(field)
+}
+
+// CapturedStandardConstructorHiddenRemoved returns native hidden field names
+// reported by stripping an original loaded record in a plain Developer org.
+func CapturedStandardConstructorHiddenRemoved(definition ObjectDefinition) []string {
+	if !featureSignatureHas(definition.Metadata[standardFieldsOverlayMarker], project.PlainDeveloperObjectShape) {
+		return nil
+	}
+	if policy := standardFieldPolicyFor(definition.APIName); policy != nil {
+		return policy.ConstructorHiddenRemoved
+	}
+	return nil
 }
 
 func standardFieldPolicyGateEnabled(gate standardFieldPolicyGate, signature string) bool {

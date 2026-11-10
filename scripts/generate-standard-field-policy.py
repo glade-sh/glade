@@ -729,6 +729,34 @@ def build_policy(root, combinations=None):
         entry = objects.setdefault(obj, {"present": [], "absent": [], "fields": []})
         entry.setdefault("constructor_defaults", {})[field] = observed["loaded"]
 
+    # Some inaccessible internal fields are reported as removed on original
+    # loaded records even though describe does not expose them. Derive that
+    # set by subtracting clone and fresh controls from both profile routes.
+    hidden_rows = inputs.tsv("../load_defaults_hidden_routes/org.tsv")
+    inputs.read("../load_defaults_hidden_routes/ORG-RUN.txt")
+    hidden_groups = {}
+    for row in hidden_rows:
+        key = (row["source_api"], row["profile"], row["subject"], row["route"])
+        if key in hidden_groups or not row["observation"].startswith("removed="):
+            raise ValueError("invalid hidden-field route observation")
+        hidden_groups[key] = set(filter(None, row["observation"][len("removed="):].split(",")))
+    for obj in sorted({row["subject"] for row in hidden_rows}):
+        candidates = []
+        for api in APIS:
+            for profile in ("admin", "standard"):
+                routes = {route: hidden_groups[(api, profile, obj, route)]
+                          for route in ("plain", "false", "true", "changed", "cloned")}
+                hidden = routes["true"] - routes["cloned"]
+                if hidden != routes["changed"] - routes["cloned"] or hidden & (routes["plain"] | routes["false"]):
+                    raise ValueError(f"hidden-field routes disagree: {obj} {api} {profile}")
+                candidates.append(hidden)
+        if not candidates[0] or any(fields != candidates[0] for fields in candidates):
+            raise ValueError(f"hidden-field controls disagree: {obj}")
+        entry = objects.setdefault(obj, {"present": [], "absent": [], "fields": []})
+        if not candidates[0].issubset(set(entry.get("plain_developer_absent", []))):
+            raise ValueError(f"hidden fields lack describe-absence evidence: {obj}")
+        entry["constructor_hidden_removed"] = sorted(candidates[0])
+
     # Each isolated profile proves a positive field and controls show it absent
     # without the enabling setting. The combined profile supplies both Apex
     # routes and independently captured REST facets at both API endpoints.
