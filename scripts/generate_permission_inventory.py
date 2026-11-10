@@ -85,10 +85,24 @@ def field_inventory(api):
                   for r in observations if r['source_api'] == api)
 if field_inventory('62.0') != field_inventory('67.0'):
     raise ValueError('profile field inventory differs by source API')
-field_rows = [dict(profile=profile, object=obj, field=field,
-                   read=read == 'true', edit=edit == 'true')
-              for profile, obj, field, read, edit in field_inventory('67.0')
-              if field != '<no rows>']
+captured_rows = [dict(profile=profile, object=obj, field=field,
+                      read=read == 'true', edit=edit == 'true')
+                 for profile, obj, field, read, edit in field_inventory('67.0')
+                 if field != '<no rows>']
+payload = json.loads((capture.parent / 'profile_permission_rows/native-payload/s0-62-anonymous-fields.json').read_text())
+field_rows = []
+for item in payload:
+    if item['kind'] != 'permissionRow':
+        continue
+    row = item['row']
+    profile = row['Parent']['Profile']['Name']
+    if profile in ('System Administrator', 'Standard User'):
+        field_rows.append(dict(profile=profile, object=row['SobjectType'], field=row['Field'],
+                               read=row['PermissionsRead'], edit=row['PermissionsEdit']))
+if len(field_rows) != 94 or any(row not in captured_rows for row in field_rows):
+    raise ValueError('original profile field rows no longer match native inventory')
+# Existing seeded IDs derive from row position. Keep the original prefix stable.
+field_rows.extend(row for row in captured_rows if row not in field_rows)
 if len(field_rows) != 224:
     raise ValueError('expected 224 native selected field rows')
 (root / 'internal/storage/seeddata/profile_field_permissions.json').write_text(json.dumps(field_rows, indent=2) + '\n')
