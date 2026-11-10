@@ -8,6 +8,6 @@ inherited_valid	67.0	metadata-compilation	accepted
 inherited_valid	67.0	named-test	passed
 inherited_valid	67.0	coverage-warning	Test coverage of selected Apex Class is 66.667%, at least 75% test coverage is required
 inherited_missing	62.0	metadata-validation-status	Failed
-inherited_missing	62.0	metadata-diagnostic	Method does not exist or incorrect signature: void absent(String) from the type gladetest1.NqAdjacent1ea6663a.Builder
+inherited_missing	62.0	metadata-diagnostic	Method does not exist or incorrect signature: void absent(String) from the type gladetest2.NqAdjacent1ea6663a.Builder
 inherited_missing	67.0	metadata-validation-status	Failed
-inherited_missing	67.0	metadata-diagnostic	Method does not exist or incorrect signature: void absent(String) from the type gladetest1.NqAdjacent1ea6663a.Builder
+inherited_missing	67.0	metadata-diagnostic	Method does not exist or incorrect signature: void absent(String) from the type gladetest2.NqAdjacent1ea6663a.Builder

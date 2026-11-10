@@ -1,1 +1,10 @@
-{"packageDirectories": [{"path": "classes", "default": true}], "namespace": "gladetest1", "sourceApiVersion": "67.0"}
+{
+  "packageDirectories": [
+    {
+      "path": "classes",
+      "default": true
+    }
+  ],
+  "namespace": "gladetest2",
+  "sourceApiVersion": "67.0"
+}

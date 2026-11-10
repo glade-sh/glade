@@ -1,8 +1,8 @@
 case	api	route	outcome
 overload_mismatch	62.0	metadata-validation-status	Failed
-overload_mismatch	62.0	metadata-diagnostic	Static method cannot be referenced from a non static context: String gladetest1.NqAdjacent1ea6663a.choose(String)
+overload_mismatch	62.0	metadata-diagnostic	Static method cannot be referenced from a non static context: String gladetest2.NqAdjacent1ea6663a.choose(String)
 overload_mismatch	67.0	metadata-validation-status	Failed
-overload_mismatch	67.0	metadata-diagnostic	Static method cannot be referenced from a non static context: String gladetest1.NqAdjacent1ea6663a.choose(String)
+overload_mismatch	67.0	metadata-diagnostic	Static method cannot be referenced from a non static context: String gladetest2.NqAdjacent1ea6663a.choose(String)
 overload_match	62.0	metadata-validation-status	Failed
 overload_match	62.0	metadata-compilation	accepted
 overload_match	62.0	named-test	passed
