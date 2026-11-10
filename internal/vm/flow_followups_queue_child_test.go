@@ -13,7 +13,7 @@ import (
 // The native child subquery uses USER_MODE and filters Private child records
 // for a Standard direct queue member at source APIs 62 and 67.
 func TestPrivateQueueMemberChildSubquery(t *testing.T) {
-	f, err := os.Open("../apextest/testdata/conformance/flow_followups_custom_queue_child/org.tsv")
+	f, err := os.Open("../apextest/testdata/conformance/flow_followups_custom_queue_child_repeat/org.tsv")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -82,21 +82,28 @@ func TestPrivateQueueMemberChildSubquery(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			class := Class{Name: "SyntheticChildReader", APIVersion: row[1], Modifiers: []string{"without sharing"}}
-			if err := machine.RegisterClass(class); err != nil {
-				t.Fatal(err)
-			}
-			method := Method{Name: class.Name + ".read", ClassName: class.Name, IsStatic: true, Access: "public", APIVersion: row[1], SourceContextBound: true, SharingMode: "without sharing", Program: body}
-			if err := machine.RegisterMethod(method); err != nil {
-				t.Fatal(err)
-			}
-			value, err := machine.callMethod(machine.Methods[method.Name], nil, &Result{})
-			if err != nil {
-				t.Fatal(err)
-			}
-			expected, ok := want["childRowsUser"].(float64)
-			if !ok || value.Kind != ValueInt || float64(value.Int) != expected {
-				t.Fatalf("visible child count=%v, native=%v", value, want["childRowsUser"])
+			for i, sharing := range []string{"with sharing", "without sharing"} {
+				key := []string{"childRowsUser", "childRowsUserWithout"}[i]
+				expected, ok := want[key].(float64)
+				if !ok {
+					t.Fatalf("native child observation %s missing: %v", key, want)
+				}
+				name := []string{"SyntheticChildReaderWith", "SyntheticChildReaderWithout"}[i]
+				class := Class{Name: name, APIVersion: row[1], Modifiers: []string{sharing}}
+				if err := machine.RegisterClass(class); err != nil {
+					t.Fatal(err)
+				}
+				method := Method{Name: class.Name + ".read", ClassName: class.Name, IsStatic: true, Access: "public", APIVersion: row[1], SourceContextBound: true, SharingMode: sharing, Program: body}
+				if err := machine.RegisterMethod(method); err != nil {
+					t.Fatal(err)
+				}
+				value, err := machine.callMethod(machine.Methods[method.Name], nil, &Result{})
+				if err != nil {
+					t.Fatalf("%s: %v", sharing, err)
+				}
+				if value.Kind != ValueInt || float64(value.Int) != expected {
+					t.Fatalf("%s visible child count=%v, native=%v", sharing, value, want[key])
+				}
 			}
 		})
 	}

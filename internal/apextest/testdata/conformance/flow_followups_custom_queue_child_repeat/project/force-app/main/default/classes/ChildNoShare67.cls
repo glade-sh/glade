@@ -1,0 +1,1 @@
+public without sharing class ChildNoShare67 { public static Integer count(Id caseId) { List<Case> parents=[SELECT (SELECT Id FROM SyntheticWorks__r) FROM Case WHERE Id=:caseId WITH USER_MODE]; return parents[0].SyntheticWorks__r.size(); } }
