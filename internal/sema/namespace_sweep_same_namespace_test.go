@@ -14,7 +14,7 @@ import (
 )
 
 func TestNamespaceSweepSameNamespaceDependencyNative(t *testing.T) {
-	root := filepath.Join("..", "apextest", "testdata", "conformance", "namespace_sweep_same_namespace")
+	root := filepath.Join("..", "..", "testdata", "conformance", "namespace_sweep_same_namespace")
 	f, err := os.Open(filepath.Join(root, "org.tsv"))
 	if err != nil {
 		t.Fatal(err)

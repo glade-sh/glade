@@ -14,7 +14,7 @@ import (
 )
 
 func TestSourceDependencyNamedTypeNative(t *testing.T) {
-	root := filepath.Join("..", "apextest", "testdata", "conformance", "namespace_source_dependency_type_named")
+	root := filepath.Join("..", "..", "testdata", "conformance", "namespace_source_dependency_type_named")
 	f, err := os.Open(filepath.Join(root, "org.tsv"))
 	if err != nil {
 		t.Fatal(err)

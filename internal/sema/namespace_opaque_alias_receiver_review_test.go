@@ -12,7 +12,7 @@ import (
 )
 
 func TestOpaqueAliasDoesNotOpenUnknownStaticReceivers(t *testing.T) {
-	root := filepath.Join("..", "apextest", "testdata", "conformance", "namespace_unqualified_root", "anon")
+	root := filepath.Join("..", "..", "testdata", "conformance", "namespace_unqualified_root", "anon")
 	for _, api := range []string{"62.0", "67.0"} {
 		for _, name := range []string{"R03_static_field.apex", "R04_static_method.apex"} {
 			t.Run(api+"/"+name, func(t *testing.T) {

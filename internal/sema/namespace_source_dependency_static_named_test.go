@@ -21,7 +21,7 @@ func TestSourceDependencyNamedStaticNative(t *testing.T) {
 
 func sourceDependencyNamedStaticNative(t *testing.T, name string) {
 	t.Helper()
-	root := filepath.Join("..", "apextest", "testdata", "conformance", name)
+	root := filepath.Join("..", "..", "testdata", "conformance", name)
 	f, err := os.Open(filepath.Join(root, "org.tsv"))
 	if err != nil {
 		t.Fatal(err)

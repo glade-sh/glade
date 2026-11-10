@@ -13,7 +13,7 @@ import (
 )
 
 func TestUnlockedSubscriberDeclarationPositions(t *testing.T) {
-	const root = "../apextest/testdata/conformance/namespace_unlocked_subscriber/installed_positions"
+	const root = "../../testdata/conformance/namespace_unlocked_subscriber/installed_positions"
 	f, err := os.Open(filepath.Join(root, "org.tsv"))
 	if err != nil {
 		t.Fatal(err)

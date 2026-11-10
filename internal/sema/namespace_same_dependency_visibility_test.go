@@ -14,7 +14,7 @@ import (
 )
 
 func TestSameNamespaceDependencyVisibilityNative(t *testing.T) {
-	root := filepath.Join("..", "apextest", "testdata", "conformance", "namespace_same_dependency_visibility")
+	root := filepath.Join("..", "..", "testdata", "conformance", "namespace_same_dependency_visibility")
 	f, err := os.Open(filepath.Join(root, "org.tsv"))
 	if err != nil {
 		t.Fatal(err)

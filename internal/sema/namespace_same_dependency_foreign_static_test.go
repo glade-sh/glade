@@ -14,7 +14,7 @@ import (
 )
 
 func TestSameNamespaceDependencyForeignStaticNative(t *testing.T) {
-	root := filepath.Join("..", "apextest", "testdata", "conformance", "namespace_foreign_static_subscriber")
+	root := filepath.Join("..", "..", "testdata", "conformance", "namespace_foreign_static_subscriber")
 	f, err := os.Open(filepath.Join(root, "org.tsv"))
 	if err != nil {
 		t.Fatal(err)

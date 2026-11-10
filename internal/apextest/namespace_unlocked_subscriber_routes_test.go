@@ -25,7 +25,7 @@ func TestUnlockedSubscriberProjectRunnerRoutes(t *testing.T) {
 				}
 				writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"sourceApiVersion":"`+api+`","packageDirectories":[{"path":"force-app","default":true`+dependency+`}]}`)
 				if declared {
-					provider, err := os.ReadFile(filepath.Join("testdata", "conformance", "namespace_unlocked_subscriber", "provider", "package", "main", "default", "classes", "V036PkgOuter.cls"))
+					provider, err := os.ReadFile(filepath.Join("..", "..", "testdata", "conformance", "namespace_unlocked_subscriber", "provider", "package", "main", "default", "classes", "V036PkgOuter.cls"))
 					if err != nil {
 						t.Fatal(err)
 					}

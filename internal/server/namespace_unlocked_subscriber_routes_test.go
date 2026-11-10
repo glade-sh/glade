@@ -27,7 +27,7 @@ func TestUnlockedSubscriberLightningAndVisualforceRoutes(t *testing.T) {
 		t.Run(api, func(t *testing.T) {
 			root := t.TempDir()
 			writeServerTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"sourceApiVersion":"`+api+`","packageDirectories":[{"path":"force-app","default":true,"dependencies":[{"package":"v036-unlocked"}]}]}`)
-			provider, err := os.ReadFile(filepath.Join("..", "apextest", "testdata", "conformance", "namespace_unlocked_subscriber", "provider", "package", "main", "default", "classes", "V036PkgOuter.cls"))
+			provider, err := os.ReadFile(filepath.Join("..", "..", "testdata", "conformance", "namespace_unlocked_subscriber", "provider", "package", "main", "default", "classes", "V036PkgOuter.cls"))
 			if err != nil {
 				t.Fatal(err)
 			}

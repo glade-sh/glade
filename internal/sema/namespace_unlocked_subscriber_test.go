@@ -16,7 +16,7 @@ import (
 // Replay the installed provider from captured source. The unavailable alias
 // remains in the index as an independent negative control.
 func TestUnlockedSubscriberNestedTypeNativeControls(t *testing.T) {
-	const root = "../apextest/testdata/conformance/namespace_unlocked_subscriber"
+	const root = "../../testdata/conformance/namespace_unlocked_subscriber"
 	for _, state := range []string{"installed", "absent"} {
 		f, err := os.Open(filepath.Join(root, state, "org.tsv"))
 		if err != nil {

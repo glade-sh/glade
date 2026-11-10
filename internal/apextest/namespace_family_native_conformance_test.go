@@ -262,7 +262,7 @@ func TestNamespaceOwnerNestedInventoryNativeConformance(t *testing.T) {
 // through it is `Variable does not exist: <receiver>`. Anonymous and @IsTest
 // check-only routes at API 62.0 and 67.0.
 func TestNamespaceUnqualifiedRootNativeConformance(t *testing.T) {
-	const dir = "testdata/conformance/namespace_unqualified_root"
+	const dir = "../../testdata/conformance/namespace_unqualified_root"
 	rows := readNamespaceFamilyRows(t, dir)
 	if len(rows) != 36 {
 		t.Fatalf("org.tsv rows=%d, want 36", len(rows))

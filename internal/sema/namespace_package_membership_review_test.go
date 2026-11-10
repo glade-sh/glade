@@ -16,7 +16,7 @@ import (
 // Only indexed provider source establishes the member's identity offline; a
 // separate missing alias must not open every other root in the project.
 func TestNamespacePackageMembershipNativeBoundaries(t *testing.T) {
-	fixture := filepath.Join("..", "apextest", "testdata", "conformance", "namespace_unlocked_subscriber")
+	fixture := filepath.Join("..", "..", "testdata", "conformance", "namespace_unlocked_subscriber")
 	provider := filepath.Join(fixture, "provider", "package", "main", "default", "classes", "V036PkgOuter.cls")
 	providerSource, err := os.ReadFile(provider)
 	if err != nil {

@@ -14,7 +14,7 @@ import (
 )
 
 func TestNamespaceSweepShapesNative(t *testing.T) {
-	root := filepath.Join("..", "apextest", "testdata", "conformance", "namespace_sweep_shapes")
+	root := filepath.Join("..", "..", "testdata", "conformance", "namespace_sweep_shapes")
 	f, err := os.Open(filepath.Join(root, "org.tsv"))
 	if err != nil {
 		t.Fatal(err)
