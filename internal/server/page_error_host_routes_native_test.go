@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/fs"
 	"net/http"
 	"net/http/httptest"
@@ -95,6 +96,36 @@ func TestPageErrorHostRoutesNative(t *testing.T) {
 			version := strings.TrimSuffix(api, ".0")
 			for _, kind := range []string{"html", "pdf"} {
 				t.Run(kind, func(t *testing.T) {
+					t.Run("tooling-anonymous", func(t *testing.T) {
+						source, err := os.ReadFile(filepath.Join(fixture, "anon", "pagehost-anon-"+version+"-"+kind+".apex"))
+						if err != nil {
+							t.Fatal(err)
+						}
+						body, err := json.Marshal(map[string]string{"anonymousBody": string(source)})
+						if err != nil {
+							t.Fatal(err)
+						}
+						for _, phase := range []string{"cold", "warm"} {
+							rec := httptest.NewRecorder()
+							req := httptest.NewRequest(http.MethodPost, "/services/data/v"+api+"/tooling/executeAnonymous", strings.NewReader(string(body)))
+							req.Header.Set("Content-Type", "application/json")
+							host.ServeHTTP(rec, req)
+							if got := visualforce.VMRenderEnvironmentCountForTest(); got != baselineEnvironments {
+								t.Fatalf("%s leaked render environments: got %d want %d", phase, got, baselineEnvironments)
+							}
+							var got map[string]any
+							if rec.Code != http.StatusOK || json.Unmarshal(rec.Body.Bytes(), &got) != nil {
+								t.Fatalf("%s tooling HTTP %d: %s", phase, rec.Code, rec.Body.String())
+							}
+							if kind == "html" {
+								if got["success"] != true || !strings.Contains(fmt.Sprint(got["logs"]), "CAPTURE|"+expected[kind].Body.(string)) {
+									t.Fatalf("%s tooling HTML: %v", phase, got)
+								}
+							} else if got["success"] != false || !strings.Contains(fmt.Sprint(got["exceptionMessage"]), "Page MissingHostPage does not exist") {
+								t.Fatalf("%s tooling PDF: %v", phase, got)
+							}
+						}
+					})
 					title := strings.ToUpper(kind[:1]) + kind[1:]
 					routes := []struct{ name, method, path, body string }{
 						{"vf", http.MethodGet, "/apex/PageError" + title + "V" + version, ""},
