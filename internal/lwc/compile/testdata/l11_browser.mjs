@@ -5,6 +5,25 @@ import { createRequire } from "node:module";
 import { pageCount } from "./browser_pages.mjs";
 
 const config = JSON.parse(fs.readFileSync(0, "utf8"));
+// The API-version selector may come from the JSON input, the environment, or
+// positional arguments. With no selector every supplied row is observed, which
+// preserves the standalone runner's original default.
+function apiVersionValues(value) {
+  if (Array.isArray(value)) return value.flatMap(apiVersionValues);
+  if (typeof value !== "string") return [];
+  return value.split(",").map(version => version.trim()).filter(Boolean);
+}
+function selectedAPIVersions() {
+  const configured = config.apiVersions ?? config.apiVersion;
+  if (configured !== undefined) return apiVersionValues(configured);
+  if (process.env.GLADE_L11_API_VERSIONS) return apiVersionValues(process.env.GLADE_L11_API_VERSIONS);
+  if (process.argv.length > 2) return apiVersionValues(process.argv.slice(2));
+  return [];
+}
+const apiVersions = selectedAPIVersions();
+const specs = apiVersions.length
+  ? config.specs.filter(spec => apiVersions.includes(spec.api))
+  : config.specs;
 const { chromium } = createRequire(import.meta.url)(config.playwrightModule);
 const browser = await chromium.launch({
   headless: true,
@@ -15,8 +34,8 @@ try {
   const values = {}, errors = {};
   const context = await browser.newContext();
   const mutations = new Set(["createList", "updateList", "deleteList", "updateListPreferences"]);
-  const reads = config.specs.filter(spec => !mutations.has(spec.adapter));
-  const writes = config.specs.filter(spec => mutations.has(spec.adapter));
+  const reads = specs.filter(spec => !mutations.has(spec.adapter));
+  const writes = specs.filter(spec => mutations.has(spec.adapter));
   async function observe(specs) {
     const page = await context.newPage();
     const pageErrors = [];

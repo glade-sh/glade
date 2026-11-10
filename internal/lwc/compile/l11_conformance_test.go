@@ -56,20 +56,44 @@ type l11CompileResult struct {
 	Diagnostics []string
 }
 
-// TestL11SalesforceConformance replays all 285 captured rows at API 59/67/68:
+// l11APIVersions lists every captured API version replayed by the L11 suite.
+var l11APIVersions = []string{"59.0", "67.0", "68.0"}
+
+// The L11 suite replays all 285 captured rows at API 59/67/68:
 // 64 LWC compile, eight ListView metadata and 213 native DOM observations.
 // Runtime inputs retain the original API 67 null/empty related-record reads.
 // API 68 uses capture-repair's 72 compiler and 213 browser answers.
 // Fresh ctrl_metadata_child_edit and user context bind the layout/locale inputs.
 // Enumerated API 68 request IDs and release URLs are qualified separately from
 // exact matches; every other response field remains exact.
+// Each top-level test replays one API version so the CI planner can distribute
+// the suite across shards; the Node observer receives that version selector.
 // GLADE_L11_CAPTURE=1 reports mismatches without failing; GLADE_L11_REPORT
 // selects the TSV destination. CI needs only these credential-free exports.
-func TestL11SalesforceConformance(t *testing.T) {
-	t.Run("BrowserRuntime", l11SalesforceConformance)
+func TestL11SalesforceConformanceAPI59(t *testing.T) {
+	l11SalesforceConformance(t, "59.0")
 }
 
-func l11SalesforceConformance(t *testing.T) {
+func TestL11SalesforceConformanceAPI67(t *testing.T) {
+	l11SalesforceConformance(t, "67.0")
+}
+
+func TestL11SalesforceConformanceAPI68(t *testing.T) {
+	l11SalesforceConformance(t, "68.0")
+}
+
+func l11SalesforceConformance(t *testing.T, apiVersion string) {
+	t.Helper()
+	knownVersion := false
+	for _, version := range l11APIVersions {
+		if version == apiVersion {
+			knownVersion = true
+			break
+		}
+	}
+	if !knownVersion {
+		t.Fatalf("unsupported L11 API version %q", apiVersion)
+	}
 	capture := os.Getenv("GLADE_L11_CAPTURE") == "1"
 	data, err := os.ReadFile("testdata/l11_salesforce.json")
 	if err != nil {
@@ -81,19 +105,19 @@ func l11SalesforceConformance(t *testing.T) {
 	if err := decoder.Decode(&cases); err != nil {
 		t.Fatal(err)
 	}
-	versions := []string{"59.0", "67.0", "68.0"}
+	versions := []string{apiVersion}
 	context := l11ReadAPI68Context(t, cases)
 	seen, groups := map[string]bool{}, map[string]bool{}
 	var compileCases, runtimeCases []l11Case
 	metadataRows, diagnosticRows := 0, 0
 	for _, c := range cases {
-		if c.ID == "" || seen[c.ID] || c.Basis != "org" || len(c.Expected) != len(versions) || len(c.Oracle) != len(versions) {
+		if c.ID == "" || seen[c.ID] || c.Basis != "org" || len(c.Expected) != len(l11APIVersions) || len(c.Oracle) != len(l11APIVersions) {
 			t.Fatalf("invalid or duplicate L11 row %q", c.ID)
 		}
 		seen[c.ID], groups[c.Group] = true, true
 		switch c.Kind {
 		case "compile":
-			if c.JS == "" || c.Template == "" || len(c.DiagnosticExpected) != len(versions) {
+			if c.JS == "" || c.Template == "" || len(c.DiagnosticExpected) != len(l11APIVersions) {
 				t.Fatalf("missing L11 compile input or diagnostics %s", c.ID)
 			}
 			if c.FixtureXML != "" {
@@ -107,14 +131,14 @@ func l11SalesforceConformance(t *testing.T) {
 			}
 			compileCases = append(compileCases, c)
 		case "runtime":
-			if c.Adapter == "" || len(c.RuntimeSource) != len(versions) {
+			if c.Adapter == "" || len(c.RuntimeSource) != len(l11APIVersions) {
 				t.Fatalf("missing L11 DOM input %s", c.ID)
 			}
 			runtimeCases = append(runtimeCases, c)
 		default:
 			t.Fatalf("invalid L11 row kind %s: %s", c.ID, c.Kind)
 		}
-		for _, api := range versions {
+		for _, api := range l11APIVersions {
 			want, ok := c.Expected[api]
 			if !ok || c.Oracle[api] == "" || (c.Kind == "compile" && want != "COMPILE_OK" && want != "COMPILE_ERROR") ||
 				(c.Kind == "runtime" && (!strings.HasPrefix(want, "BROWSER|") || !json.Valid([]byte(strings.TrimPrefix(want, "BROWSER|"))))) {
@@ -736,7 +760,7 @@ func l11ObserveDOM(t *testing.T, api, sourceDirectory string, cases, fixtureCase
 	specs := make([]map[string]string, len(cases))
 	for index, c := range cases {
 		known[c.ID] = true
-		specs[index] = map[string]string{"id": c.ID, "adapter": c.Adapter}
+		specs[index] = map[string]string{"id": c.ID, "adapter": c.Adapter, "api": api}
 	}
 	mux := http.NewServeMux()
 	mux.Handle("/lightning/", product) // Actual product Apex, wire and module routes.
@@ -761,7 +785,7 @@ func l11ObserveDOM(t *testing.T, api, sourceDirectory string, cases, fixtureCase
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	config, err := json.Marshal(map[string]any{"url": local.URL, "specs": specs, "playwrightModule": playwright, "executablePath": os.Getenv("GLADE_LWC_BROWSER_EXECUTABLE")})
+	config, err := json.Marshal(map[string]any{"url": local.URL, "specs": specs, "apiVersions": []string{api}, "playwrightModule": playwright, "executablePath": os.Getenv("GLADE_LWC_BROWSER_EXECUTABLE")})
 	if err != nil {
 		return nil, nil, nil, err
 	}
