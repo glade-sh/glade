@@ -10,6 +10,9 @@ func (vm *VM) flowCoreStatementInsertError(op string, value Value, err error) er
 	}
 	// Native flow_followups AO11/AO12 cover an Apex action fault connector
 	// ending in Custom Error for both singleton and multi-record insert lists.
+	if failures, ok := dml.FlowActionBatchCustomErrorResults(err); ok {
+		return statementDMLException(op, failures, vm.dmlExceptionObjectTypes(value))
+	}
 	if failure, ok := dml.FlowCustomErrorFailureResult(err); ok {
 		return statementDMLException(op, []dml.Result{failure}, vm.dmlExceptionObjectTypes(value))
 	}

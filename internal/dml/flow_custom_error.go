@@ -7,6 +7,32 @@ type flowCustomErrorFailure struct {
 	capturedFormula bool
 }
 
+type flowActionBatchCustomError struct {
+	cause error
+	count int
+}
+
+func (failure *flowActionBatchCustomError) Error() string { return failure.cause.Error() }
+func (failure *flowActionBatchCustomError) Unwrap() error { return failure.cause }
+
+// FlowActionBatchCustomErrorResults identifies the captured all-admitted
+// action-fault connector, retaining one result for each input index.
+func FlowActionBatchCustomErrorResults(err error) ([]Result, bool) {
+	var failure *flowActionBatchCustomError
+	if !errors.As(err, &failure) {
+		return nil, false
+	}
+	result, ok := FlowCustomErrorFailureResult(failure.cause)
+	if !ok {
+		return nil, false
+	}
+	results := make([]Result, failure.count)
+	for i := range results {
+		results[i] = result
+	}
+	return results, true
+}
+
 func (failure *flowCustomErrorFailure) Error() string { return failure.cause.Error() }
 func (failure *flowCustomErrorFailure) Unwrap() error { return failure.cause }
 

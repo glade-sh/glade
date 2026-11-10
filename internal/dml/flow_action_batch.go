@@ -135,6 +135,14 @@ func (e *Engine) runFlowActionBatch(rule storage.FlowRule, action storage.FlowAc
 				return changed, nil
 			}()
 			if err != nil {
+				// A failed batched Apex action sends every admitted interview down
+				// its fault connector. Preserve the captured all-admitted Custom
+				// Error shape for the statement DML exception envelope.
+				if len(requests) == len(records) && frame.preparedAction.err != nil {
+					if _, ok := FlowCustomErrorFailureResult(err); ok {
+						return &flowActionBatchCustomError{cause: err, count: len(records)}
+					}
+				}
 				return err
 			}
 			outcome.FlowUpdated = changed
