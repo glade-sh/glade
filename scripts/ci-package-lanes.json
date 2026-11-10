@@ -97,6 +97,7 @@
     "./internal/pluginhost": 4,
     "./internal/sema": 656,
     "./internal/server": 11,
+    "./internal/soql": 4,
     "./internal/testutil/toolchaininstall": 5,
     "./internal/vm": 55
   }
