@@ -80,8 +80,10 @@ func TestProcessBuilderReviewAdditionalHosts(t *testing.T) {
 		{"process_builder_review_afterdatefirst", "sharepair", []string{"process_builder_review_aftercomplex", "process_builder_review_afteraccept", "process_builder_review_afteruser", "process_builder_review_afterprior", "process_builder_review_afterprior2", "process_builder_review_afterbranch", "process_builder_review_afterperson", "process_builder_review_afterreplace"}},
 		{"process_builder_review_afterarg", "priorflowinsert", []string{"process_builder_review_aftercomplex", "process_builder_review_afteraccept", "process_builder_review_afteruser", "process_builder_review_afterprior", "process_builder_review_afterprior2", "process_builder_review_afterbranch", "process_builder_review_afterperson"}},
 	}
+	pbHostTempEnv(t)
 	for _, scenario := range scenarios {
 		t.Run(scenario.fixture+"_"+scenario.method, func(t *testing.T) {
+			t.Parallel() // Scenarios share nothing: each owns its fixtures and servers.
 			base := filepath.Join("..", "apextest", "testdata", "conformance")
 			fixture := filepath.Join(base, scenario.fixture)
 			rows, err := os.ReadFile(filepath.Join(fixture, "org.tsv"))

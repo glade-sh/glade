@@ -28,6 +28,18 @@ type pbHostFixture struct {
 	runtimeErr error
 }
 
+// pbHostTempEnv points the process temp directory at a trusted per-test
+// directory once, for the whole test, so scenario subtests can run in parallel
+// (t.Setenv is not allowed in them) and still build servers the way
+// newLightningTestServer does.
+func pbHostTempEnv(t *testing.T) {
+	t.Helper()
+	tmpDir := t.TempDir()
+	for _, key := range []string{"TMPDIR", "TMP", "TEMP"} {
+		t.Setenv(key, tmpDir)
+	}
+}
+
 func newPBHostFixtures(parent *testing.T) *pbHostFixtures {
 	return &pbHostFixtures{parent: parent, byKey: map[string]*pbHostFixture{}}
 }
@@ -71,7 +83,7 @@ func (f *pbHostFixtures) server(t *testing.T, key string, prepare func(root stri
 		t.Fatal(fx.runtimeErr)
 	}
 	org := fx.org.Clone()
-	srv := newLightningTestServer(t, &org, fx.source)
+	srv := NewWithSource(&org, fx.source)
 	configureVisualforceTestPrincipal(t, srv)
 	srv.SetProjectRuntime(fx.index, fx.runtime, nil)
 	return srv
