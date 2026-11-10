@@ -7,8 +7,19 @@ import (
 )
 
 func (e *Engine) validateDeleteReferences(objectName string, id storage.ID, ctx *deleteContext) error {
+	account := strings.EqualFold(objectName, "Account")
+	if account {
+		if err := e.validateAccountDeleteChildren(id); err != nil {
+			return err
+		}
+	}
 	relations := e.restrictedDeleteRelations(objectName, ctx)
 	for _, relation := range relations {
+		if account && (strings.EqualFold(relation.childObject, "Contract") || strings.EqualFold(relation.childObject, "Case")) && strings.EqualFold(relation.field, "AccountId") {
+			// validateAccountDeleteChildren holds the native Contract and
+			// Case rules.
+			continue
+		}
 		childrenByParent := e.referenceIndexForRelation(relation.childObject, relation.field, ctx)
 		for _, childID := range childrenByParent[id] {
 			childObject := e.Org.Objects[relation.childObject]
@@ -17,6 +28,9 @@ func (e *Engine) validateDeleteReferences(objectName string, id storage.ID, ctx 
 				continue
 			}
 			value, ok := childRecord.Fields[relation.field]
+			if account && accountDeleteCascades(relation.childObject, relation.field, childRecord) {
+				continue
+			}
 			if ok && idFromStorageValue(value) == id {
 				return dmlErrorf("DELETE_FAILED", []string{relation.field}, "dml: cannot delete %s %s because %s records reference it", objectName, id, relation.childObject)
 			}
