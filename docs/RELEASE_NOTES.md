@@ -4,6 +4,8 @@
 
 Planned changes are listed below.
 
+- **Performance.** Faster test runs on large projects with identical results: SOQL equality filters no longer copy each candidate field, virtual schema queries (EntityDefinition, FieldDefinition and related) share one hydrated view per schema generation instead of cloning the org per query, dependency-error explanations parse each file once per run, and duplicate-rule and field-default work is done once per record. On measured projects, a describe-heavy library ran in 48 s instead of 158 s and a large trigger framework in 20 min instead of 42 min. Cache versions changed, so the first run after upgrading rebuilds caches.
+
 ## v0.3.5
 
 v0.3.5 extends the supported Apex window to API 68.0, tracks the Salesforce Winter '27 release, and closes a large set of differences found by running real projects: field-level security for the default administrator, user-mode queries and DML, platform events, Flow, Visualforce markup, locale-aware strings and SOQL, and org-shape gating of standard objects. It also requires authentication on every API route of an exposed `glade server` listener. API labels list the source versions checked against captured results. The supported windows and hosted boundaries are in [release policy](RELEASE_POLICY.md#salesforce-api-versions).
