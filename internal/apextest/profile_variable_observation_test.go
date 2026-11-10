@@ -46,6 +46,32 @@ func assertVariableProfileObservation(t *testing.T, row []string, rows [][]strin
 		}
 		variable = !reflect.DeepEqual(original, repeated)
 	}
+	recapture, err := os.Open(filepath.Join("testdata", "conformance", "profile_limit_recheck", "org.tsv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer recapture.Close()
+	recaptureReader := csv.NewReader(recapture)
+	recaptureReader.Comma, recaptureReader.LazyQuotes = '\t', true
+	recaptured, err := recaptureReader.ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(recaptured) == 0 || !reflect.DeepEqual(recaptured[0], []string{"source_api", "configuration", "route", "case_id", "repetition", "observation"}) {
+		t.Fatal("invalid Profile recapture header")
+	}
+	for _, repeatedRow := range recaptured[1:] {
+		if len(repeatedRow) != 6 || !reflect.DeepEqual(repeatedRow[:4], row[:4]) {
+			continue
+		}
+		var repeated any
+		if err := json.Unmarshal([]byte(repeatedRow[5]), &repeated); err != nil {
+			t.Fatal(err)
+		}
+		if !reflect.DeepEqual(original, repeated) {
+			variable = true
+		}
+	}
 	if !variable {
 		return false
 	}
@@ -134,7 +160,7 @@ func TestProfileVariableCellsRequireContradictoryCapture(t *testing.T) {
 			variables++
 		}
 	}
-	if variables != 2 {
-		t.Fatalf("variable native Profile cells = %d, want 2", variables)
+	if variables != 12 {
+		t.Fatalf("variable native Profile cells = %d, want 12", variables)
 	}
 }
