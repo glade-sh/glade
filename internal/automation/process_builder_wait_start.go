@@ -122,7 +122,17 @@ func processBuilderCapturedWaitStart(data []byte, current, old string) (string, 
 	nextName := strings.TrimSpace(next.Text)
 	decisions := 0
 	for _, c := range root.Children {
-		if c.XMLName.Local == "decisions" && c.leaf("name", nextName) {
+		if c.XMLName.Local != "decisions" {
+			continue
+		}
+		matches := false
+		for _, candidate := range c.Children {
+			matches = matches || candidate.XMLName.Local == "name" && strings.EqualFold(strings.TrimSpace(candidate.Text), nextName)
+		}
+		if matches {
+			if !c.leaf("name", nextName) {
+				return "", false
+			}
 			decisions++
 		}
 	}
@@ -131,8 +141,18 @@ func processBuilderCapturedWaitStart(data []byte, current, old string) (string, 
 	}
 	variables := 0
 	for _, v := range root.Children {
-		if v.XMLName.Local != "variables" || !v.leaf("name", target) {
+		if v.XMLName.Local != "variables" {
 			continue
+		}
+		matches := false
+		for _, candidate := range v.Children {
+			matches = matches || candidate.XMLName.Local == "name" && strings.EqualFold(strings.TrimSpace(candidate.Text), target)
+		}
+		if !matches {
+			continue
+		}
+		if !v.leaf("name", target) {
+			return "", false
 		}
 		variables++
 		if !v.only("name", "dataType", "isCollection", "isInput", "isOutput", "value") || !v.leaf("dataType", "DateTime") || !v.leaf("isCollection", "false") || !v.leaf("isInput", "false") || !v.leaf("isOutput", "false") {
