@@ -17,7 +17,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 DEFAULT_CAPTURES = REPO / "internal/apextest/testdata/conformance/standard_describe_profiles"
-DEFAULT_OUTPUT = REPO / "internal/storage/standard_field_policy.json.gz"
+DEFAULT_OUTPUT = REPO / "internal/storage/standard_field_policy.json"
 APIS = ("62.0", "67.0")
 PROFILES = tuple(f"P{i}" for i in range(12)) + ("PU",)
 CORE_FEATURES = {"P1": "MultiCurrency", "P2": "PersonAccounts", "P3": "StateAndCountryPicklist"}
@@ -160,12 +160,9 @@ def preserved_profile_constructor_fields(snapshots, obj, excluded):
 
 
 def policy_bytes(policy):
-    raw = (json.dumps(policy, sort_keys=True, separators=(",", ":")) + "\n").encode()
-    # GzipFile writes a stable OS marker as well as a zero timestamp and no name.
-    stream = io.BytesIO()
-    with gzip.GzipFile(fileobj=stream, mode="wb", filename="", mtime=0) as archive:
-        archive.write(raw)
-    return stream.getvalue()
+    # Plain JSON makes every generated policy change inspectable by diff and
+    # range-based leak scanners. Stable formatting keeps regeneration exact.
+    return (json.dumps(policy, sort_keys=True, indent=1) + "\n").encode()
 
 
 def snapshot(inputs, profile, api, objects):

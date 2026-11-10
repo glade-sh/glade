@@ -1,8 +1,6 @@
 package storage
 
 import (
-	"bytes"
-	"compress/gzip"
 	_ "embed"
 	"encoding/json"
 	"sort"
@@ -16,7 +14,7 @@ import (
 // Absence is limited to the recaptured historical candidates, rather than
 // treating a partial REST describe as a complete standard schema.
 //
-//go:embed standard_field_policy.json.gz
+//go:embed standard_field_policy.json
 var standardFieldPolicyData []byte
 
 type standardFieldPolicyGate struct {
@@ -79,13 +77,8 @@ func standardFieldPolicies() map[string]*standardFieldPolicyObject {
 }
 
 func loadStandardFieldPolicies() map[string]*standardFieldPolicyObject {
-	stream, err := gzip.NewReader(bytes.NewReader(standardFieldPolicyData))
-	if err != nil {
-		panic(err)
-	}
-	defer stream.Close()
 	var bundle standardFieldPolicyBundle
-	if err := json.NewDecoder(stream).Decode(&bundle); err != nil {
+	if err := json.Unmarshal(standardFieldPolicyData, &bundle); err != nil {
 		panic(err)
 	}
 	if bundle.Version != 1 {
