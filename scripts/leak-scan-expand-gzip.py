@@ -85,17 +85,28 @@ def main():
         diff = Path(diff_path).read_bytes()
         sections = re.split(rb"(?m)(?=^diff --git )", diff)
         for i, section in enumerate(sections):
+            try:
+                section.decode("utf-8")
+                invalid_text = False
+            except UnicodeDecodeError:
+                invalid_text = True
+            binary_marker = b"\nBinary files " in section
+            if not binary_marker and not invalid_text:
+                continue
             header = section.split(b"\n", 1)[0] + b"\n"
             match = HEADER.fullmatch(header)
-            if not match or b"\nBinary files " not in section:
-                continue
-            path = match.group(1)
-            oid = changed.get(path)
-            if oid is None:
-                continue
-            data = expanded_text(root, oid)
-            if data is not None:
-                sections[i] = scan_section(header, path, data)
+            if match:
+                path = match.group(1)
+                oid = changed.get(path)
+                data = expanded_text(root, oid) if oid is not None else None
+                if data is not None:
+                    sections[i] = scan_section(header, path, data)
+                    continue
+            if invalid_text and not binary_marker:
+                # Git can treat malformed compressed bytes as text. Keep the
+                # scan fail-closed and avoid sending invalid bytes to awk.
+                sections[i] = (b"diff --git a/unscannable b/unscannable\n"
+                               b"Binary files a/unscannable and b/unscannable differ\n")
         Path(diff_path).write_bytes(b"".join(sections))
     except (OSError, ValueError, subprocess.CalledProcessError):
         print("leak-scan: unable to inspect compressed changes", file=sys.stderr)
