@@ -107,6 +107,7 @@ func sameLexicalTopLevel(a, b string) bool {
 	bTop, bNested := lexicalTopLevel(b)
 	return aNested && bNested && strings.EqualFold(aTop, bTop)
 }
+
 // maxAccessMemoEntries bounds the raw-key class and access-scope memos.
 const maxAccessMemoEntries = 16384
 
