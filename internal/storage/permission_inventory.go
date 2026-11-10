@@ -115,6 +115,16 @@ func seedStandardPermissionInventory(org *OrgState) map[string]ID {
 			if profileID == "" {
 				profileID = ID(seededInventoryID("00e", i+1))
 				putSeedRecord(org, "Profile", Record{ID: profileID, Object: "Profile", Fields: map[string]Value{"Name": StringValue(seed.Profile), "UserLicenseId": IDValue(licenseIDs[seed.License])}})
+			} else if capturedProfileInventoryShape(org.Features) {
+				profile := profiles[profileID]
+				if untouchedBootstrapProfile(profileID, profile) && !IDsEqual(profile.Fields["UserLicenseId"].ID, licenseIDs[seed.License]) {
+					// Repair only an untouched reserved bootstrap profile. User edits
+					// and profiles outside the captured shapes keep their license.
+					mutable, _ := EnsureMutableObjectRecords(org, "Profile")
+					profile = mutable.Records[profileID].Clone()
+					profile.Fields["UserLicenseId"] = IDValue(licenseIDs[seed.License])
+					mutable.Records[profileID] = profile
+				}
 			}
 			// Profile.UserType from the fresh-org capture (profile_usertype).
 			// putSeedRecord fills absent fields only, so a profile seeded or
@@ -135,6 +145,7 @@ func seedStandardPermissionInventory(org *OrgState) map[string]ID {
 		}
 		putSeedRecord(org, "PermissionSet", Record{ID: id, Object: "PermissionSet", Fields: fields})
 	}
+	pruneUncapturedBootstrapProfiles(org)
 	return profileSets
 }
 
