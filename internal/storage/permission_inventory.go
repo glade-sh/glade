@@ -79,6 +79,7 @@ func seedStandardPermissionInventory(org *OrgState) map[string]ID {
 	}
 	profileSets := map[string]ID{}
 	usedProfiles := map[ID]bool{}
+	profileRecordsChanged := false
 	for i, seed := range inventory.PermissionSets {
 		id := ID(seededInventoryID("0PS", i+1))
 		fields := map[string]Value{
@@ -115,6 +116,7 @@ func seedStandardPermissionInventory(org *OrgState) map[string]ID {
 			if profileID == "" {
 				profileID = ID(seededInventoryID("00e", i+1))
 				putSeedRecord(org, "Profile", Record{ID: profileID, Object: "Profile", Fields: map[string]Value{"Name": StringValue(seed.Profile), "UserLicenseId": IDValue(licenseIDs[seed.License])}})
+				profileRecordsChanged = true
 			} else if capturedProfileInventoryShape(org.Features) {
 				profile := profiles[profileID]
 				if untouchedBootstrapProfile(profileID, profile) && !IDsEqual(profile.Fields["UserLicenseId"].ID, licenseIDs[seed.License]) {
@@ -124,12 +126,16 @@ func seedStandardPermissionInventory(org *OrgState) map[string]ID {
 					profile = mutable.Records[profileID].Clone()
 					profile.Fields["UserLicenseId"] = IDValue(licenseIDs[seed.License])
 					mutable.Records[profileID] = profile
+					profileRecordsChanged = true
 				}
 			}
 			// Profile.UserType from the fresh-org capture (profile_usertype).
 			// putSeedRecord fills absent fields only, so a profile seeded or
 			// imported with its own UserType keeps it.
 			if seed.UserType != "" {
+				if _, exists := org.Objects["Profile"].Records[profileID].Fields["UserType"]; !exists {
+					profileRecordsChanged = true
+				}
 				putSeedRecord(org, "Profile", Record{ID: profileID, Object: "Profile", Fields: map[string]Value{"UserType": StringValue(seed.UserType)}})
 			}
 			usedProfiles[profileID] = true
@@ -146,6 +152,9 @@ func seedStandardPermissionInventory(org *OrgState) map[string]ID {
 		putSeedRecord(org, "PermissionSet", Record{ID: id, Object: "PermissionSet", Fields: fields})
 	}
 	pruneUncapturedBootstrapProfiles(org)
+	if profileRecordsChanged && len(org.Objects["Profile"].Definition.Indexes) != 0 {
+		RebuildObjectIndexes(org, "Profile")
+	}
 	return profileSets
 }
 

@@ -70,6 +70,7 @@ func reconcileBootstrapProfileLicenses(org *OrgState) {
 			}
 		}
 	}
+	changed := false
 	for id, profile := range profiles.Records {
 		license, ok := expected[profile.Fields["Name"].String]
 		if !ok || IDsEqual(profile.Fields["UserLicenseId"].ID, license) || !untouchedBootstrapProfile(id, profile) {
@@ -79,6 +80,10 @@ func reconcileBootstrapProfileLicenses(org *OrgState) {
 		profile = mutable.Records[id].Clone()
 		profile.Fields["UserLicenseId"] = IDValue(license)
 		mutable.Records[id] = profile
+		changed = true
+	}
+	if changed && len(org.Objects["Profile"].Definition.Indexes) != 0 {
+		RebuildObjectIndexes(org, "Profile")
 	}
 }
 
@@ -96,6 +101,7 @@ func pruneUncapturedBootstrapProfiles(org *OrgState) {
 	if !ok {
 		return
 	}
+	changed := false
 	for id, profile := range state.Records {
 		if captured[profile.Fields["Name"].String] || !untouchedBootstrapProfile(id, profile) {
 			continue
@@ -120,6 +126,10 @@ func pruneUncapturedBootstrapProfiles(org *OrgState) {
 		if !referenced {
 			mutable, _ := EnsureMutableObjectRecords(org, "Profile")
 			delete(mutable.Records, id)
+			changed = true
 		}
+	}
+	if changed && len(org.Objects["Profile"].Definition.Indexes) != 0 {
+		RebuildObjectIndexes(org, "Profile")
 	}
 }
