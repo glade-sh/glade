@@ -73,6 +73,7 @@ func TestL08SalesforceConformance(t *testing.T) {
 	}
 	repo, playwright := l08BrowserEnvironment(t)
 	replayCapturedEnclosingStaticLWC(t, repo, playwright)
+	replayCapturedFieldCollisionLWC(t, repo, playwright)
 	data, err := os.ReadFile("testdata/l08_salesforce.json")
 	if err != nil {
 		t.Fatal(err)
