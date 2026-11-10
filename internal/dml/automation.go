@@ -4005,6 +4005,9 @@ func (e *Engine) evaluateFlowLookupCriteria(item storage.WorkflowCriteriaItem, t
 		if sourceValue.Kind != storage.ValueList && sourceValue.Kind != storage.ValueNull {
 			return false, false
 		}
+		if !flowLookupCollectionFieldSupported(field) {
+			return false, false
+		}
 		found := false
 		for _, element := range sourceValue.List {
 			equal, supported := flowLookupCollectionValuesEqual(field, targetValue, element)

@@ -2,6 +2,7 @@ package dml
 
 import (
 	"errors"
+	"math"
 	"math/big"
 	"strconv"
 	"strings"
@@ -66,8 +67,20 @@ func flowLookupCollectionHasCapturedFault(field storage.Field, value storage.Val
 	return false
 }
 
+// Field types whose populated and empty collection outcomes were captured at
+// API 62/67. An empty or unassigned list is only supported on these types.
+func flowLookupCollectionFieldSupported(field storage.Field) bool {
+	switch field.Type {
+	case storage.FieldString:
+		return field.Filterable == nil || *field.Filterable
+	case storage.FieldPicklist, storage.FieldID, storage.FieldReference, storage.FieldInteger,
+		storage.FieldDecimal, storage.FieldBoolean, storage.FieldDate, storage.FieldDateTime:
+		return true
+	}
+	return false
+}
+
 // The collection cases are bounded by the Flow lookup captures at API 62/67.
-// An empty or unassigned list is handled by the caller without inspecting an element.
 func flowLookupCollectionValuesEqual(field storage.Field, target, element storage.Value) (bool, bool) {
 	switch field.Type {
 	case storage.FieldString, storage.FieldPicklist:
@@ -146,10 +159,14 @@ func (e *Engine) flowTransformTargetValue(field storage.Field, value storage.Val
 		return value, true
 	}
 	switch field.Type {
-	case storage.FieldString, storage.FieldPicklist:
+	case storage.FieldString, storage.FieldPicklist, storage.FieldID, storage.FieldReference:
+		// Captured: ID and reference targets expose the text form of the source,
+		// the same as a text target.
 		switch value.Kind {
 		case storage.ValueString:
 			return value, true
+		case storage.ValueID:
+			return value, field.Type == storage.FieldID || field.Type == storage.FieldReference
 		case storage.ValueBoolean:
 			return storage.StringValue(strconv.FormatBool(value.Boolean)), true
 		case storage.ValueInteger:
@@ -187,8 +204,30 @@ func (e *Engine) flowTransformTargetValue(field storage.Field, value storage.Val
 			}
 			return storage.StringValue(parsed.In(zone).Format("1/2/2006, 3:04 PM")), true
 		}
-	case storage.FieldInteger, storage.FieldDecimal:
-		return value, value.Kind == storage.ValueInteger || value.Kind == storage.ValueDecimal
+	case storage.FieldInteger:
+		// Captured: a decimal source truncates toward zero for an integer field.
+		switch value.Kind {
+		case storage.ValueInteger:
+			return value, value.Integer >= math.MinInt32 && value.Integer <= math.MaxInt32
+		case storage.ValueDecimal:
+			r, ok := new(big.Rat).SetString(value.Decimal)
+			if !ok {
+				return storage.Value{}, false
+			}
+			q := new(big.Int).Quo(r.Num(), r.Denom())
+			if !q.IsInt64() || q.Int64() < math.MinInt32 || q.Int64() > math.MaxInt32 {
+				return storage.Value{}, false
+			}
+			return storage.IntegerValue(q.Int64()), true
+		}
+	case storage.FieldDecimal:
+		// Captured: the source keeps its digits, independent of the variable scale.
+		switch value.Kind {
+		case storage.ValueInteger:
+			return storage.DecimalValue(strconv.FormatInt(value.Integer, 10)), true
+		case storage.ValueDecimal:
+			return value, true
+		}
 	case storage.FieldBoolean:
 		return value, value.Kind == storage.ValueBoolean
 	case storage.FieldDate:
@@ -212,13 +251,6 @@ func (e *Engine) flowTransformTargetValue(field storage.Field, value storage.Val
 				return storage.Value{}, false
 			}
 			return storage.DateTimeValue(parsed.UTC().Format(time.RFC3339)), true
-		}
-	case storage.FieldID, storage.FieldReference:
-		// The captures establish non-null output for these sources, but not
-		// the precise representation of the resulting reference.
-		switch value.Kind {
-		case storage.ValueString, storage.ValueID, storage.ValueBoolean, storage.ValueInteger, storage.ValueDecimal, storage.ValueDate, storage.ValueDateTime:
-			return value, true
 		}
 	}
 	return storage.Value{}, false
