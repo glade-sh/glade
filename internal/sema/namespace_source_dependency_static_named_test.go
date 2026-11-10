@@ -75,6 +75,24 @@ func sourceDependencyNamedStaticNative(t *testing.T, name string) {
 			if row[3] == "COMPILE_ERROR" && !matched {
 				t.Fatalf("native error %q not found; diagnostics: %+v", row[4], result.Diagnostics)
 			}
+			if row[0] == "missing_root" {
+				// These are offline completeness controls, not claims about an
+				// installed package: neither an opaque dependency nor a partial
+				// index proves the missing root absent.
+				for _, mode := range []string{"opaque", "partial"} {
+					control := index
+					if mode == "opaque" {
+						control.Dependencies = append(append([]typesys.DependencyInfo(nil), index.Dependencies...), typesys.DependencyInfo{Namespace: "Nsv36AbsentProbe", Status: "missing"})
+					} else {
+						control.Subset = true
+					}
+					for _, d := range Analyze(control).Diagnostics {
+						if d.Severity == diagnostic.Error && (d.Message == row[4] || d.NativeMessage == row[4]) {
+							t.Errorf("%s index rejected an unproven missing root: %+v", mode, d)
+						}
+					}
+				}
+			}
 		})
 	}
 }
