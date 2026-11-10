@@ -49,7 +49,7 @@ func TestEmailDomainGeneratedLabelNativeBounds(t *testing.T) {
 		}
 		defer f.Close()
 		r := csv.NewReader(f)
-		r.Comma = '\t'
+		r.Comma, r.LazyQuotes = '\t', true
 		rows, err := r.ReadAll()
 		if err != nil {
 			t.Fatal(err)
