@@ -19,20 +19,25 @@ import (
 // Ruling 49: the rejection applies in every type position, not only locals.
 func assertOnlyLocalNamespaceRejections(t *testing.T, route string, ds []diagnostic.Diagnostic, want []string) {
 	t.Helper()
-	got := map[string]bool{}
+	got := map[string]map[string]bool{}
 	for _, d := range ds {
 		if d.Severity != diagnostic.Error {
 			continue
 		}
 		ref, ok := strings.CutPrefix(d.NativeMessage, "Invalid type: ")
-		if !ok || !slices.Contains(want, ref) {
+		if !ok || !slices.Contains(want, ref) || (d.Code != "GLADESEMA002" && d.Code != "GLADESEMA004" && d.Code != "GLADESEMA006") {
 			t.Errorf("%s: unexpected error %s %q | %q", route, d.Code, d.NativeMessage, d.Message)
 			continue
 		}
-		got[ref] = true
+		if got[ref] == nil {
+			got[ref] = map[string]bool{}
+		}
+		got[ref][d.Code] = true
 	}
-	if len(got) != len(want) {
-		t.Errorf("%s: rejected=%v, want %v", route, got, want)
+	for _, ref := range want {
+		if !got[ref]["GLADESEMA006"] {
+			t.Errorf("%s: %s missing GLADESEMA006: %v", route, ref, got[ref])
+		}
 	}
 }
 
