@@ -4,10 +4,31 @@ import (
 	"errors"
 	"math/big"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/glade-sh/glade/internal/storage"
 )
+
+func flowCapturedTransformVariable(frame *flowFrame, reference string) bool {
+	return flowCapturedVariable(frame, reference, false)
+}
+
+func flowCapturedVariable(frame *flowFrame, reference string, collection bool) bool {
+	if frame == nil {
+		return false
+	}
+	variable, ok := frame.variables[flowFrameKey(reference)]
+	if !ok || variable.IsCollection != collection {
+		return false
+	}
+	switch strings.ToLower(strings.TrimSpace(variable.DataType)) {
+	case "string", "number", "boolean", "date", "datetime":
+		return true
+	default:
+		return false
+	}
+}
 
 type flowLookupCollectionFault struct{ cause error }
 
@@ -50,13 +71,13 @@ func flowLookupCollectionHasCapturedFault(field storage.Field, value storage.Val
 func flowLookupCollectionValuesEqual(field storage.Field, target, element storage.Value) (bool, bool) {
 	switch field.Type {
 	case storage.FieldString, storage.FieldPicklist:
+		if field.Type == storage.FieldString && field.Filterable != nil && !*field.Filterable {
+			return false, false
+		}
 		switch element.Kind {
 		case storage.ValueString:
 			return storageValuesEqual(field, target, element), true
 		case storage.ValueInteger, storage.ValueDecimal, storage.ValueBoolean:
-			if field.Type == storage.FieldString && field.Filterable != nil && !*field.Filterable {
-				return false, false
-			}
 			var text string
 			switch element.Kind {
 			case storage.ValueInteger:
@@ -71,7 +92,7 @@ func flowLookupCollectionValuesEqual(field storage.Field, target, element storag
 			return false, false
 		}
 	case storage.FieldID, storage.FieldReference:
-		if element.Kind != storage.ValueString && element.Kind != storage.ValueID {
+		if element.Kind != storage.ValueString {
 			return false, false
 		}
 		left, right := idFromStorageValue(target), idFromStorageValue(element)

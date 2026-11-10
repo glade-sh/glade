@@ -3700,6 +3700,9 @@ func (e *Engine) applyFlowTransformStep(transform storage.FlowTransform, frame *
 			if mapping.FlowLiteralString {
 				value = storage.StringValue(mapping.LiteralValue)
 			} else {
+				if !flowCapturedTransformVariable(frame, mapping.SourceField) {
+					return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow transform %s references an unsupported source", transform.Name)
+				}
 				var ok bool
 				value, ok = e.flowFrameReferenceValueAudit(mapping.SourceField, frame, make(map[string]bool), false)
 				if !ok {
@@ -3996,6 +3999,9 @@ func (e *Engine) evaluateFlowLookupCriteria(item storage.WorkflowCriteriaItem, t
 	field := targetDefinition.Fields[targetField]
 	switch strings.ToLower(strings.TrimSpace(item.Operation)) {
 	case "in", "notin", "not in":
+		if !flowCapturedVariable(frame, item.SourceField, true) {
+			return false, false
+		}
 		if sourceValue.Kind != storage.ValueList && sourceValue.Kind != storage.ValueNull {
 			return false, false
 		}
