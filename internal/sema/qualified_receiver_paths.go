@@ -314,7 +314,7 @@ func semaQualifiedCallReceiverKnown(a *Analyzer, currentType, receiver string, s
 	// supplies no method either. Preserve declaration-backed deferral and
 	// positively resolved receivers above.
 	root, _, _ := strings.Cut(receiver, ".")
-	if !a.hasKnown(root) && !semaIRUnresolvedDeclaredReceiver(receiver, scope, model) {
+	if !a.hasKnown(root) && !semaIRUnresolvedDeclaredReceiver(a, currentType, receiver, scope, model) {
 		if _, bound := scope.lookup(root); !bound {
 			return false
 		}

@@ -2997,7 +2997,7 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 						if semaIRStaticValueReceiver(model, typ.Name, receiverExpr) {
 							return nil
 						}
-						if semaIRUnresolvedDeclaredReceiver(receiverExpr, scope, model) || semaQualifiedCallReceiverKnown(a, typ.Name, receiverExpr, scope, model, typ.EffectiveAPIVersion) {
+						if semaIRUnresolvedDeclaredReceiver(a, typ.Name, receiverExpr, scope, model) || semaQualifiedCallReceiverKnown(a, typ.Name, receiverExpr, scope, model, typ.EffectiveAPIVersion) {
 							return nil
 						}
 						d := unknownCallDiagnostic(typ, member, expr.Callee, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source)
@@ -3466,7 +3466,12 @@ func semaIRStaticValueReceiver(model *semaTypeMemberView, currentType, receiver 
 // A declaration can identify an unavailable package type without supplying its
 // members. Keep calls on that same owner unresolved for dependency handling;
 // a known suffix or the depth of an otherwise undeclared path is not evidence.
-func semaIRUnresolvedDeclaredReceiver(receiver string, scope irSemaScope, model *semaTypeMemberView) bool {
+// In a named class body, a declaration whose own type is rejected under a
+// closed namespace identifies no package: native receiver_member_opaque_package
+// C01, C02, C07-C12 (62.0, 67.0) report the call's Variable does not exist
+// beside the declaration's Invalid type. Anonymous Apex reports only its
+// first error and triggers were not captured, so both keep the deferral.
+func semaIRUnresolvedDeclaredReceiver(a *Analyzer, currentType, receiver string, scope irSemaScope, model *semaTypeMemberView) bool {
 	parts := strings.Split(receiver, ".")
 	if len(parts) < 2 {
 		return false
@@ -3478,8 +3483,8 @@ func semaIRUnresolvedDeclaredReceiver(receiver string, scope irSemaScope, model 
 	owner = normalizeName(owner)
 	for _, declared := range scope.flat() {
 		for _, ref := range extractTypeNames(declared) {
-			ref = normalizeName(ref)
-			if ref == owner || strings.HasPrefix(ref, owner+".") {
+			normalized := normalizeName(ref)
+			if (normalized == owner || strings.HasPrefix(normalized, owner+".")) && !(a.namedApexReferenceObjects && a.qualifiedTypeMissRejected(currentType, ref, model, false)) {
 				return true
 			}
 		}
