@@ -1,0 +1,75 @@
+api	route	id	observation
+62.0	anonymous	R01 put null	ok
+62.0	anonymous	R02 get	null
+62.0	anonymous	R03 fields has RecordTypeId	true
+62.0	anonymous	R03 fields has recordtypeid	true
+62.0	anonymous	R04 field describe	REFERENCE (RecordType) RecordType true true true false
+62.0	anonymous	R05 infos	LpAcct:false:false:false:true,Master:true:true:true:true
+62.0	anonymous	R06 infos by developer name	LpAcct,Master
+62.0	anonymous	R07 RecordType rows	LpAcct:LpAcct:true
+62.0	anonymous	R08 insert without RecordTypeId	ok null
+62.0	anonymous	R09 insert RecordTypeId null	DmlException INVALID_CROSS_REFERENCE_KEY (RecordTypeId) Record Type ID: this ID value isn't valid for the user:
+62.0	anonymous	R10 insert LpAcct	ok LpAcct
+62.0	anonymous	R11 dynamic SOQL	ok
+62.0	anonymous	R12 contact put	System.SObjectException Invalid field RecordTypeId for Contact
+62.0	anonymous	S1 compile	true
+62.0	anonymous	S1 static read	null
+62.0	anonymous	S2 compile	true
+62.0	anonymous	S2 static write	ok
+62.0	anonymous	S3 compile	true
+62.0	anonymous	S3 static SOQL	ok
+62.0	anonymous	S4 compile	true
+62.0	anonymous	S4 static field token	RecordTypeId
+62.0	anonymous	S5 compile	true
+62.0	anonymous	S5 static relationship	null
+62.0	anonymous	S6 compile	false Compilation failed at Ln 2, Col 10 with the error: Variable does not exist: RecordTypeId
+62.0	istest	R01 put null	ok
+62.0	istest	R02 get	null
+62.0	istest	R03 fields has RecordTypeId	true
+62.0	istest	R03 fields has recordtypeid	true
+62.0	istest	R04 field describe	REFERENCE (RecordType) RecordType true true true false
+62.0	istest	R05 infos	LpAcct:false:false:false:true,Master:true:true:true:true
+62.0	istest	R06 infos by developer name	LpAcct,Master
+62.0	istest	R07 RecordType rows	LpAcct:LpAcct:true
+62.0	istest	R08 insert without RecordTypeId	ok null
+62.0	istest	R09 insert RecordTypeId null	DmlException INVALID_CROSS_REFERENCE_KEY (RecordTypeId) Record Type ID: this ID value isn't valid for the user:
+62.0	istest	R10 insert LpAcct	ok LpAcct
+62.0	istest	R11 dynamic SOQL	ok
+62.0	istest	R12 contact put	System.SObjectException Invalid field RecordTypeId for Contact
+67.0	anonymous	R01 put null	ok
+67.0	anonymous	R02 get	null
+67.0	anonymous	R03 fields has RecordTypeId	true
+67.0	anonymous	R03 fields has recordtypeid	true
+67.0	anonymous	R04 field describe	REFERENCE (RecordType) RecordType true true true false
+67.0	anonymous	R05 infos	LpAcct:false:false:false:true,Master:true:true:true:true
+67.0	anonymous	R06 infos by developer name	LpAcct,Master
+67.0	anonymous	R07 RecordType rows	LpAcct:LpAcct:true
+67.0	anonymous	R08 insert without RecordTypeId	ok null
+67.0	anonymous	R09 insert RecordTypeId null	ok
+67.0	anonymous	R10 insert LpAcct	DmlException INVALID_CROSS_REFERENCE_KEY (RecordTypeId) Record Type ID: this ID value isn't valid for the user: <recordTypeId>
+67.0	anonymous	R11 dynamic SOQL	ok
+67.0	anonymous	R12 contact put	System.SObjectException Invalid field RecordTypeId for Contact
+67.0	anonymous	S1 compile	true
+67.0	anonymous	S1 static read	null
+67.0	anonymous	S2 compile	true
+67.0	anonymous	S2 static write	ok
+67.0	anonymous	S3 compile	true
+67.0	anonymous	S3 static SOQL	ok
+67.0	anonymous	S4 compile	true
+67.0	anonymous	S4 static field token	RecordTypeId
+67.0	anonymous	S5 compile	true
+67.0	anonymous	S5 static relationship	null
+67.0	anonymous	S6 compile	false Compilation failed at Ln 2, Col 10 with the error: Variable does not exist: RecordTypeId
+67.0	istest	R01 put null	ok
+67.0	istest	R02 get	null
+67.0	istest	R03 fields has RecordTypeId	true
+67.0	istest	R03 fields has recordtypeid	true
+67.0	istest	R04 field describe	REFERENCE (RecordType) RecordType true true true false
+67.0	istest	R05 infos	LpAcct:false:false:false:true,Master:true:true:true:true
+67.0	istest	R06 infos by developer name	LpAcct,Master
+67.0	istest	R07 RecordType rows	LpAcct:LpAcct:true
+67.0	istest	R08 insert without RecordTypeId	ok null
+67.0	istest	R09 insert RecordTypeId null	ok
+67.0	istest	R10 insert LpAcct	DmlException INVALID_CROSS_REFERENCE_KEY (RecordTypeId) Record Type ID: this ID value isn't valid for the user: <recordTypeId>
+67.0	istest	R11 dynamic SOQL	ok
+67.0	istest	R12 contact put	System.SObjectException Invalid field RecordTypeId for Contact

@@ -562,6 +562,7 @@ func LoadProject(p project.Project) (Schema, error) {
 	}
 	addCustomAddressComponentFields(byName)
 	addPersonContactAliases(byName, project.OrgShapeFeatures(p.Root))
+	addScratchDefaultRecordTypes(byName, project.ScratchObjectDefaultRecordTypes(p.Root))
 	addReferencedCustomObjects(byName)
 
 	records := make([]CustomMetadataRecord, 0, len(p.CustomMetadataFiles))
