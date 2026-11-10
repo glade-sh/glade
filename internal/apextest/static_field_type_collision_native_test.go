@@ -49,10 +49,20 @@ func TestCapturedStaticFieldTypeCollision(t *testing.T) {
 				if analysis := sema.Analyze(index); index.HasErrors() || analysis.HasErrors() {
 					t.Fatalf("captured project rejected: %v %v", index.Diagnostics, analysis.Diagnostics)
 				}
-				opts := Options{SelectedClasses: []string{"ParcelCheck"}, SelectedMethod: "verify", NoDiskCache: true, Parallelism: 1}
-				run := Run(index, opts)
-				if len(run.Suites) != 1 || len(run.Suites[0].Cases) != 1 || run.Suites[0].Cases[0].Problem != nil {
-					t.Fatalf("native test passed; local runner: %+v", run.Summary())
+				opts := Options{SelectedClasses: []string{"ParcelCheck"}, SelectedMethod: "verify", NoDiskCache: true, Parallelism: 1, PerfCounters: true}
+				for runNumber := 0; runNumber < 2; runNumber++ {
+					if runNumber == 1 {
+						ResetPerfCounters()
+					}
+					run := Run(index, opts)
+					if len(run.Suites) != 1 || len(run.Suites[0].Cases) != 1 || run.Suites[0].Cases[0].Problem != nil {
+						t.Fatalf("native test passed; local runner: %+v", run.Summary())
+					}
+					if runNumber == 1 {
+						if phases := SnapshotPerfCounters().Phases; phases.MemoryCacheHits != 1 || phases.CacheMisses != 0 {
+							t.Fatalf("warm runner did not reuse runtime: %+v", phases)
+						}
+					}
 				}
 				anon, err := os.ReadFile(filepath.Join(fixture, "anonymous.apex"))
 				if err != nil {
