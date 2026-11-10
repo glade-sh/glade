@@ -28,4 +28,17 @@ func TestFlowActionDateRefireScope(t *testing.T) {
 	if flowActionDateRefireShape(rule, definition, "") {
 		t.Fatal("a different action output must retain per-record refiring")
 	}
+	rule.Steps[1].FieldUpdates[1].ActionOutput = "GetValue"
+	rule.Criteria = []storage.WorkflowCriteriaItem{{Field: "Name", Operation: "equals", Value: "selected"}}
+	if flowActionDateRefireShape(rule, definition, "") {
+		t.Fatal("an unobserved start filter must retain per-record refiring")
+	}
+	frames := []*flowFrame{{preparedAction: &flowPreparedAction{hasOutput: true, output: storage.DateTimeValue("2031-04-11T02:15:00Z")}}}
+	if !flowActionDateRefireOutputs(frames) {
+		t.Fatal("captured populated Datetime output was excluded")
+	}
+	frames[0].preparedAction.output = storage.NullValue()
+	if flowActionDateRefireOutputs(frames) {
+		t.Fatal("an unobserved null output must retain per-record refiring")
+	}
 }

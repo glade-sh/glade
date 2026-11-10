@@ -120,7 +120,7 @@ func (e *Engine) runFlowActionBatch(rule storage.FlowRule, action storage.FlowAc
 	// The native refire capture covers a successful all-admitted action whose
 	// output writes both Date and Datetime on the triggering records. Delay
 	// trigger refiring for that shape until all of those writes are stored.
-	batchedRefire := len(afterBatch) == 1 && afterBatch[0] != nil && len(requests) == len(records) && batchErr == nil && flowActionDateRefireShape(rule, definition, e.Org.Namespace)
+	batchedRefire := len(afterBatch) == 1 && afterBatch[0] != nil && len(requests) == len(records) && batchErr == nil && flowActionDateRefireShape(rule, definition, e.Org.Namespace) && flowActionDateRefireOutputs(frames)
 	var outcomes []AutomationResult
 	if batchedRefire {
 		outcomes = make([]AutomationResult, len(records))
@@ -186,6 +186,9 @@ func (e *Engine) runFlowActionBatch(rule storage.FlowRule, action storage.FlowAc
 // Only the captured direct action-output Date/Datetime write shape is batched;
 // other graphs retain the existing per-record completion callback.
 func flowActionDateRefireShape(rule storage.FlowRule, definition storage.ObjectDefinition, namespace string) bool {
+	if len(rule.Criteria) != 0 || len(rule.CriteriaGroups) != 0 || strings.TrimSpace(rule.Formula) != "" {
+		return false
+	}
 	var steps []storage.FlowStep
 	active := make(map[string]bool)
 	var flatten func([]storage.FlowStep) bool
@@ -238,6 +241,17 @@ func flowActionDateRefireShape(rule storage.FlowRule, definition storage.ObjectD
 		}
 	}
 	return count == 2 && date && dateTime
+}
+
+// The trigger-refire rows use a populated Datetime result for every action
+// input; null or missing outputs retain the existing completion path.
+func flowActionDateRefireOutputs(frames []*flowFrame) bool {
+	for _, frame := range frames {
+		if frame == nil || frame.preparedAction == nil || !frame.preparedAction.hasOutput || frame.preparedAction.output.Kind != storage.ValueDateTime {
+			return false
+		}
+	}
+	return len(frames) != 0
 }
 
 // The captured batch fault uses one direct, record-independent Custom Error.
