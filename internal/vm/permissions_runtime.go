@@ -850,7 +850,12 @@ func (vm *VM) standardExternalUpsertKey(objectName, fieldName string) bool {
 		return false
 	}
 	_, field, ok := vm.sObjectFieldDefinition(objectName, fieldName)
-	return ok && field.ExternalID && isCustomSchemaName(field.APIName)
+	// Every standard_ext_upsert row uses a unique external ID. A non-unique key
+	// stays on the pre-existing path: its Lightning controller row
+	// (standard_ext_upsert_lightning) denies the ungranted administrator, but
+	// the host-route duplicate fixtures upsert on one without that grant, so
+	// the rule is parked until those fixtures carry the native grant.
+	return ok && field.ExternalID && field.Unique && isCustomSchemaName(field.APIName)
 }
 
 // userModeFieldPolicyPartialFailures returns, for default-mode
