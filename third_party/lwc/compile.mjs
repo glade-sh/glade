@@ -1,6 +1,8 @@
 #!/usr/bin/env node
+// glade-compiler-protocol: two-phase-v1
 import fs from "node:fs";
 import path from "node:path";
+import readline from "node:readline";
 import { format, inspect } from "node:util";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
@@ -279,23 +281,31 @@ function compileBundle(bundleDir, bundleName, namespace, outDir, apiVersion, mod
     return null;
   }
   assertCompilerPreservesAPIVersion(apiVersion);
-  preflightBundleImports(bundleDir, bundleName, apiVersion, moduleAvailability, configuredProperties, salesforceImports, lightningModules, namespace);
-  // GraphQL document validation is independent of the shared wire preflight.
-  let entryAST;
-  walkBundleFiles(bundleDir, sourcePath => {
-    if (!sourcePath.endsWith(".js")) return;
+  // Component entries are validated after their templates. Utility entries
+  // and sibling modules are emitted as source, so validate their dynamic
+  // imports before copying them to the output.
+  const checkDynamicImports = (ast, sourcePath) => {
+    if (sourcePath !== jsPath || (!fs.existsSync(htmlPath) && !isCustomRenderComponent(jsPath))) {
+      validateDynamicModuleImports(ast, capabilities, namespace);
+    }
+  };
+  const firstGraphQLFailure = preflightBundleImports(bundleDir, bundleName, apiVersion, moduleAvailability, configuredProperties, salesforceImports, lightningModules, namespace, checkDynamicImports);
+  // Recreate a rejected GraphQL or dynamic-import error in the original
+  // validation route so its public error stack retains the same shape,
+  // without retaining every AST.
+  if (firstGraphQLFailure) walkBundleFiles(bundleDir, sourcePath => {
+    if (sourcePath !== firstGraphQLFailure) return;
     const ast = parse(fs.readFileSync(sourcePath, "utf8"), {
       sourceType: "module",
       plugins: [["decorators", { decoratorsBeforeExport: true }], "classProperties", "classPrivateProperties", "classPrivateMethods"],
     });
     validateGraphQLDocuments(ast, salesforceImports?.schema, walkAST);
-    if (sourcePath === jsPath) entryAST = ast;
-    // Component entries are validated after their templates. Utility
-    // entries and sibling modules are emitted as source, so validate their
-    // dynamic imports before copying them to the output.
-    if (sourcePath !== jsPath || (!fs.existsSync(htmlPath) && !isCustomRenderComponent(jsPath))) {
-      validateDynamicModuleImports(ast, capabilities, namespace);
-    }
+    checkDynamicImports(ast, sourcePath);
+  });
+  // Only the entry AST is needed after preflight.
+  const entryAST = parse(fs.readFileSync(jsPath, "utf8"), {
+    sourceType: "module",
+    plugins: [["decorators", { decoratorsBeforeExport: true }], "classProperties", "classPrivateProperties", "classPrivateMethods"],
   });
   if (!fs.existsSync(htmlPath) && !isCustomRenderComponent(jsPath)) {
     return compileUtilityModule(bundleDir, bundleName, namespace, outDir, apiVersion, capabilities, localModules);
@@ -560,7 +570,8 @@ function stylesheetDeploymentError(error, source, filename, namespace, name, api
   return error;
 }
 
-function preflightBundleImports(bundleDir, bundleName, apiVersion, availability, configuredProperties, salesforceImports, lightningModules, namespace) {
+function preflightBundleImports(bundleDir, bundleName, apiVersion, availability, configuredProperties, salesforceImports, lightningModules, namespace, extraCheck) {
+  let firstGraphQLFailure;
   walkBundleFiles(bundleDir, (sourcePath) => {
     if (!sourcePath.endsWith(".js")) {
       return;
@@ -648,7 +659,18 @@ function preflightBundleImports(bundleDir, bundleName, apiVersion, availability,
         throw new Error(`LWC module "${specifier}" is unavailable at API version ${apiVersion}.0`);
       }
     });
+    // A later preflight error must retain precedence over an earlier GraphQL
+    // diagnostic. Remember only the first failing source and finish preflight.
+    if (!firstGraphQLFailure) {
+      try {
+        validateGraphQLDocuments(ast, salesforceImports?.schema, walkAST);
+        extraCheck?.(ast, sourcePath);
+      } catch (_) {
+        firstGraphQLFailure = sourcePath;
+      }
+    }
   });
+  return firstGraphQLFailure;
 }
 
 function deploymentDiagnostic(message, location) {
@@ -982,7 +1004,10 @@ function schemaImportsForBundle(imports, consumerOwned) {
 }
 
 async function main() {
-  const config = await readStdin();
+  const twoPhase = process.argv.includes("--two-phase");
+  const input = twoPhase ? readline.createInterface({ input: process.stdin, crlfDelay: Infinity }) : null;
+  const lines = input?.[Symbol.asyncIterator]();
+  const config = twoPhase ? JSON.parse((await lines.next()).value) : await readStdin();
   const projectRoot = path.resolve(config.projectRoot || ".");
   const outDir = path.resolve(config.outDir);
   const namespace = (config.namespace || "c").trim() || "c";
@@ -1020,7 +1045,7 @@ async function main() {
   }
 
   const schemaReferencesOnly = process.argv.includes("--salesforce-schema-references");
-  if (schemaReferencesOnly || process.argv.includes("--salesforce-import-references")) {
+  if (twoPhase || schemaReferencesOnly || process.argv.includes("--salesforce-import-references")) {
     const references = new Set();
     for (const bundleDir of lwcRoots) {
       walkBundleFiles(bundleDir, (sourcePath) => {
@@ -1043,8 +1068,12 @@ async function main() {
         });
       });
     }
-    process.stdout.write(JSON.stringify([...references].sort()));
-    return;
+    process.stdout.write(JSON.stringify([...references].sort()) + (twoPhase ? "\n" : ""));
+    if (!twoPhase) return;
+    const metadata = await lines.next();
+    if (metadata.done) return;
+    config.salesforceImports = JSON.parse(metadata.value);
+    input.close();
   }
 
   // Outside the per-bundle try: a missing toolchain stays a process failure.
