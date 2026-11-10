@@ -1709,6 +1709,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 						}
 						if defaultValue, ok := vm.defaultValueForNewSObjectField(definition, record, field); ok {
 							putVMFieldPath(record, name, vmValueFromStorage(defaultValue))
+							markLoadedSObjectDefault(&record, name)
 							rememberSchemaCheckboxEquality(&record, definition, field, defaultValue)
 						} else if args[0].Kind == ValueNull && field.Type == storage.FieldSummary && strings.EqualFold(strings.TrimSpace(field.SummaryOperation), "count") && strings.TrimSpace(field.DefaultValue) == "" {
 							// Native loadDefaults observations initialize COUNT before
@@ -1727,6 +1728,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 								if strings.EqualFold(target, "User") {
 									if userID := vm.currentUserID(); userID != "" {
 										putVMFieldPath(record, name, platformScalar("Id", userID))
+										markLoadedSObjectDefault(&record, name)
 									}
 									break
 								}

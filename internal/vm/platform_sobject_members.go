@@ -445,6 +445,7 @@ const (
 	sobjectSetFieldsField                    = "__glade_set_fields"
 	sobjectUserSetFieldsField                = "__glade_user_set_fields"
 	sobjectDefaultedFieldsField              = "__glade_defaulted_fields"
+	sobjectLoadedDefaultsField               = "__glade_loaded_defaults"
 	sobjectDMLOptionsField                   = "__glade_dml_options"
 	sobjectDMLAccessibleField                = "__glade_dml_accessible"
 	sobjectTriggerField                      = "__glade_trigger_record"
@@ -461,7 +462,26 @@ func isInternalSObjectField(field string) bool {
 	if field == sobjectEventSubscriberStorageIDField || field == sobjectPublishedEventIDField || field == jsonCapturedOwnerProjectionField || field == jsonSObjectQueryProjectionField || field == databaseAsyncLocatorField || isLexicalInstanceFieldStorage(field) {
 		return true
 	}
-	return field == sobjectLoadedReferencesField || field == sobjectErrorsField || field == sobjectReadOnlyField || field == sobjectQueriedFieldsField || field == sobjectModifiedSinceQueryField || field == sobjectSubqueryProjectionField || field == sobjectExplicitFieldsField || field == sobjectSetFieldsField || field == sobjectUserSetFieldsField || field == sobjectDefaultedFieldsField || field == sobjectDMLOptionsField || field == sobjectDMLAccessibleField || field == sobjectTriggerField || field == sobjectParentProjectionField || field == sobjectStrippedChildRelationshipsField || field == sobjectCloneMarkerField || field == sobjectCloneSourceIDField || field == sobjectEventOperationIDField
+	return field == sobjectLoadedReferencesField || field == sobjectErrorsField || field == sobjectReadOnlyField || field == sobjectQueriedFieldsField || field == sobjectModifiedSinceQueryField || field == sobjectSubqueryProjectionField || field == sobjectExplicitFieldsField || field == sobjectSetFieldsField || field == sobjectUserSetFieldsField || field == sobjectDefaultedFieldsField || field == sobjectLoadedDefaultsField || field == sobjectDMLOptionsField || field == sobjectDMLAccessibleField || field == sobjectTriggerField || field == sobjectParentProjectionField || field == sobjectStrippedChildRelationshipsField || field == sobjectCloneMarkerField || field == sobjectCloneSourceIDField || field == sobjectEventOperationIDField
+}
+
+func markLoadedSObjectDefault(value *Value, field string) {
+	selected, ok := value.Fields[sobjectLoadedDefaultsField]
+	if !ok || selected.Kind != ValueMap {
+		selected = Map()
+	}
+	key := String(strings.ToLower(field))
+	selected.Map[mapKey(key)] = Bool(true)
+	value.Fields[sobjectLoadedDefaultsField] = selected
+}
+
+func isLoadedSObjectDefault(value Value, field string) bool {
+	selected, ok := value.Fields[sobjectLoadedDefaultsField]
+	if !ok || selected.Kind != ValueMap {
+		return false
+	}
+	flag, ok := selected.Map[mapKey(String(strings.ToLower(field)))]
+	return ok && flag.Kind == ValueBool && flag.Bool
 }
 
 func vmImplicitDMLField(field storage.Field) bool {
