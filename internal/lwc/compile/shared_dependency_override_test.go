@@ -12,7 +12,7 @@ import (
 // An explicitly selected shared dependency directory is independent of the
 // trusted compiler script root. The default continues to use the managed root.
 func TestLWCCompilerSharedDependencyOverride(t *testing.T) {
-	base := t.TempDir()
+	base := resolvedTempDir(t)
 	bin := filepath.Join(base, "bin")
 	managed := filepath.Join(base, "managed", "third_party", "lwc")
 	shared := filepath.Join(base, "shared")
@@ -57,7 +57,7 @@ func TestLWCCompilerSharedDependencyOverride(t *testing.T) {
 // Both compiler invocations, including the import-reference pass, must use
 // the selected dependency directory; their script continues to come from roots.
 func TestLWCCompilerSharedDependencyOverrideBothPasses(t *testing.T) {
-	base := t.TempDir()
+	base := resolvedTempDir(t)
 	bin, shared := filepath.Join(base, "bin"), filepath.Join(base, "shared")
 	for _, dir := range []string{bin, shared} {
 		if err := os.MkdirAll(dir, 0755); err != nil {
@@ -119,7 +119,7 @@ func TestLWCSharedDependencyOverrideSourceRoot(t *testing.T) {
 
 // Installed compiler scripts from earlier releases still use two invocations.
 func TestLWCCompilerLegacyScriptProtocol(t *testing.T) {
-	base := t.TempDir()
+	base := resolvedTempDir(t)
 	bin := filepath.Join(base, "bin")
 	scriptRoot := filepath.Join(base, "scripts")
 	script := filepath.Join(scriptRoot, "third_party", "lwc", "compile.mjs")
@@ -162,7 +162,7 @@ func TestLWCCompilerProtocolFailures(t *testing.T) {
 		{"compile failure", "IFS= read -r cfg; printf '[]\\n'; IFS= read -r metadata; printf 'compile failure\\n' >&2; exit 12", "compile failure"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			base := t.TempDir()
+			base := resolvedTempDir(t)
 			bin, root := filepath.Join(base, "bin"), filepath.Join(base, "script")
 			marker := filepath.Join(root, "third_party", "lwc", "compile.mjs")
 			if err := os.MkdirAll(filepath.Dir(marker), 0755); err != nil {
@@ -185,4 +185,15 @@ func TestLWCCompilerProtocolFailures(t *testing.T) {
 			}
 		})
 	}
+}
+
+// resolvedTempDir returns a temporary directory with symlinks resolved, so
+// path comparisons hold where the temporary root is itself a symlink.
+func resolvedTempDir(t *testing.T) string {
+	t.Helper()
+	dir, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	return dir
 }
