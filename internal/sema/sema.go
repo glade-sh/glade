@@ -466,11 +466,49 @@ func downgradeSourceDependencySemanticDiagnostics(index typesys.Index, diagnosti
 			out[i].Code == "GLADESEMA013" && (semaCompleteDependencyNestedMiss(a, model, ref) || semaForeignDependencyReceiverMiss(index, model, out[i], ref)) {
 			continue
 		}
+		// A loaded source dependency does not make unrelated, closed static
+		// receiver inventories incomplete. Named native controls reject both a
+		// missing outer and a missing member in this context at APIs 62 and 67.
+		if ref, ok := strings.CutPrefix(out[i].NativeMessage, "Variable does not exist: "); ok &&
+			semaClosedSourceStaticReceiverMiss(index, a, model, out[i], ref) {
+			continue
+		}
 		if strings.HasPrefix(out[i].Code, "GLADESEMA") || strings.HasPrefix(out[i].Code, "dependency_") {
 			out[i].Severity = diagnostic.Warning
 		}
 	}
 	return out
+}
+
+func semaClosedSourceStaticReceiverMiss(index typesys.Index, a *Analyzer, model *semaTypeMemberView, d diagnostic.Diagnostic, reference string) bool {
+	if index.Subset || (d.Code != "GLADESEMA013" && d.Code != "GLADESEMA021") {
+		return false
+	}
+	root, member, qualified := strings.Cut(reference, ".")
+	if !qualified || root == "" || member == "" || strings.Contains(member, ".") {
+		return false
+	}
+	for _, typ := range index.Types {
+		if typ.Dependency || typ.File != d.File {
+			continue
+		}
+		if d.Code == "GLADESEMA013" && a.qualifiedTypeMissRejected(typ.Name, reference, model, false) {
+			return true
+		}
+		if d.Code != "GLADESEMA021" || d.NativeMessage == d.Message {
+			continue
+		}
+		owner, known := model.lookupName(root)
+		if !known || owner.platform || owner.dependency || !model.state.base.completeSourceNestedTypes[normalizeName(owner.name)] || !semaSourceTypeInCallingScope(model, typ.Name, owner) {
+			continue
+		}
+		_, nested := model.lookupName(reference)
+		_, field := semaResolveFieldPath(model, owner.name, member)
+		if !nested && !field {
+			return true
+		}
+	}
+	return false
 }
 
 func semaForeignDependencyReceiverMiss(index typesys.Index, model *semaTypeMemberView, d diagnostic.Diagnostic, reference string) bool {
