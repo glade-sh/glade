@@ -1104,7 +1104,7 @@ func (vm *VM) stripInaccessibleRecord(accessType string, record *Value, enforceR
 		// Schema defaults expose OwnerId to callers just like an explicit
 		// assignment. Its read permission still applies when root CRUD is disabled.
 		readableOwner := accessType == "READABLE" && strings.EqualFold(field, "OwnerId")
-		if isInternalSObjectField(field) || isSObjectSystemField(field) && !isExplicitSObjectField(*record, field) && !readableOwner {
+		if isInternalSObjectField(field) || isSObjectSystemField(field) && !isExplicitSObjectField(*record, field) && !isLoadedSObjectDefault(*record, field) && !readableOwner {
 			continue
 		}
 		// Pending native rows cover only a fresh ordinary custom record's
@@ -1187,7 +1187,7 @@ func (vm *VM) stripInaccessibleRecord(accessType string, record *Value, enforceR
 		if scopedPermissionSetID == "" {
 			fieldAllowed = fieldAllowed || vm.stripInaccessibleKeepsBaselineWritableField(accessType, objectName, canonicalField, true)
 		}
-		if isExplicitSObjectField(*record, field) || vm.queriedSObjectFieldsIncludes(*record, field) {
+		if isExplicitSObjectField(*record, field) || isLoadedSObjectDefault(*record, field) || vm.queriedSObjectFieldsIncludes(*record, field) {
 			fieldAllowed = fieldAllowed && vm.stripInaccessibleIntrinsicFieldPermission(objectName, canonicalField, fieldPermission)
 		}
 		if fieldPermission == "" || fieldAllowed {
