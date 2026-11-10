@@ -72,9 +72,11 @@ func TestUnresolvedDeclaredNamespaceReceiverNamedAndTestRoutes(t *testing.T) {
 				if route == "istest" {
 					source = "@IsTest private class DeclaredDependencyProbe { static missingns.Parcel.Options options; @IsTest static void observe() { missingns.Parcel.Instance.save(); } }"
 				}
+				// missingns is not declared, so its field type is Invalid type
+				// (ruling 49); the receiver chain adds no other error.
 				result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{"DeclaredDependencyProbe.cls": source}, api)
-				if result.HasErrors() {
-					t.Fatalf("declared dependency received a false local error: %v", result.Diagnostics)
+				if !onlyUndeclaredParcelOptions(result.Diagnostics) {
+					t.Fatalf("undeclared dependency: %v", result.Diagnostics)
 				}
 			})
 		}

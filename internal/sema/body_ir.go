@@ -51,9 +51,9 @@ func (a *Analyzer) checkBodyText(typ typesys.TypeSymbol, member typesys.MemberSy
 	diagnostics = append(diagnostics, irDiagnostics...)
 	for _, ctor := range constructorTypes(body) {
 		for _, ref := range extractTypeNames(ctor.text) {
-			if !semaTypeReferenceKnownAtVersion(a, model, typ.Name, ref, typ.EffectiveAPIVersion) {
+			if !semaTypePositionKnownAtVersion(a, model, typ.Name, ref, typ.EffectiveAPIVersion) {
 				message := fmt.Sprintf("%s %q constructs unknown type %q", member.Kind, member.Name, ref)
-				if semaCrossNamespaceSourceMismatch(a, model, typ.Name, ref) || a.standardObjectAbsentFromDeclaredShape(model, typ.Name, ref) {
+				if semaCrossNamespaceSourceMismatch(a, model, typ.Name, ref) || a.standardObjectAbsentFromDeclaredShape(model, typ.Name, ref) || a.qualifiedTypeMissRejected(typ.Name, ref, model, false) {
 					message = "Invalid type: " + ref
 				}
 				diagnostics = append(diagnostics, diagnostic.Diagnostic{
@@ -1769,15 +1769,99 @@ func (a *Analyzer) checkIRInstructions(typ typesys.TypeSymbol, member typesys.Me
 	return diagnostics
 }
 
+// qualifiedStaticFieldReceiverMiss reports a static field read whose
+// qualified receiver names no type under a closed namespace, such as
+// MissingNamespace.Thing.COUNT in an org without that package. Native:
+// namespace_external_positions (Variable does not exist: <receiver>).
+func (a *Analyzer) qualifiedStaticFieldReceiverMiss(name string, scope irSemaScope, model *semaTypeMemberView, currentType string) (string, bool) {
+	if strings.Contains(name, "?.") || strings.ContainsAny(name, "()[]<>") {
+		return "", false
+	}
+	end := strings.LastIndexByte(name, '.')
+	if end <= 0 || strings.EqualFold(name[end+1:], "class") {
+		return "", false
+	}
+	receiver := name[:end]
+	root, _, qualified := strings.Cut(receiver, ".")
+	if !qualified || scope.hasNonFieldBinding(root) || strings.EqualFold(root, "this") || strings.EqualFold(root, "super") {
+		return "", false
+	}
+	for _, part := range strings.Split(name, ".")[1:] {
+		switch strings.ToLower(part) {
+		case "fields", "sobjecttype", "fieldsets":
+			return "", false // schema token paths, checked by the SObject rules
+		}
+	}
+	if _, scoped := scope.lookup(root); scoped {
+		return "", false
+	}
+	if _, field := semaResolveFieldPath(model, currentType, root); field {
+		return "", false
+	}
+	return receiver, a.qualifiedTypeMissRejected(currentType, receiver, model, false)
+}
+
+// anonymousUnknownRootMemberRead reports Root.Member, read in anonymous Apex,
+// whose root names nothing: no variable, no type, no namespace the project
+// owns or declares. Native: namespace_unqualified_root R10 (`RootV035.COUNT`
+// is Variable does not exist: RootV035 at 62.0 and 67.0). A capitalized member
+// no longer passes as an unconfigured managed-package type (ruling 49).
+func (a *Analyzer) anonymousUnknownRootMemberRead(root, member string, scope irSemaScope, model *semaTypeMemberView) bool {
+	if root == "" || member == "" || strings.Contains(member, ".") || strings.Contains(root, "__") || strings.EqualFold(member, "class") {
+		return false
+	}
+	if _, scoped := scope.lookup(root); scoped {
+		return false
+	}
+	if _, known := model.lookupName(root); known {
+		return false
+	}
+	normalized := normalizeName(root)
+	if a.hasKnown(root) || a.deps[normalized] || semaQualifierNamesProjectSource(a, root) || strings.EqualFold(root, a.namespace) {
+		return false
+	}
+	return true
+}
+
 // R201/C055/C056 and N005-N008/N010-N011, including named controls: a qualified local
 // type retains captured local-spelling and inheritance restrictions when
 // its owner is a complete project declaration. Built-in value/collection types
 // captured as String, Integer and List cannot be qualified with System here;
 // qualified call receivers still can. Other built-ins retain their current rules.
 func (a *Analyzer) qualifiedLifecycleLocalTypeRejected(currentType, spelling string, model *semaTypeMemberView) bool {
+	return a.qualifiedTypeMissRejected(currentType, spelling, model, true)
+}
+
+// qualifiedTypeMissRejected reports a qualified type spelling that names no
+// type under a namespace whose inventory Glade holds: the project's own (or a
+// loaded sub-project's) namespace, or an undeclared external namespace, which
+// the modelled deployment does not have. Native rows reject both in every
+// type position (namespace_external_positions, namespace_owner_nested_inventory,
+// ruling 49). localDeclaration adds the captured local-only spelling rules.
+func (a *Analyzer) qualifiedTypeMissRejected(currentType, spelling string, model *semaTypeMemberView, localDeclaration bool) bool {
+	if a == nil || model == nil {
+		return false
+	}
 	root, localName, qualified := strings.Cut(spelling, ".")
 	if !qualified {
 		return false
+	}
+	if members, known := model.lookupName(spelling); known && members.dependency && members.receiverDependencySource &&
+		strings.EqualFold(root, members.namespace) && strings.EqualFold(root, a.namespace) &&
+		semaDependencyAliasVisible(model, currentType, localName, members) {
+		return false
+	}
+	// Outside local declarations the closure covers a namespace qualifier
+	// only. A root that names an indexed type (a project class whose nested
+	// or inherited inventory is checked elsewhere, an SObject) or an object
+	// API name keeps the existing rules.
+	if !localDeclaration && !semaQualifierNamesProjectSource(a, root) {
+		if strings.Contains(root, "__") {
+			return false
+		}
+		if _, known := model.lookupName(root); known {
+			return false
+		}
 	}
 	if members, known := model.lookupName(spelling); known && !members.platform && !members.dependency {
 		if semaQualifierNamesProjectSource(a, root) {
@@ -1788,7 +1872,7 @@ func (a *Analyzer) qualifiedLifecycleLocalTypeRejected(currentType, spelling str
 			return false
 		}
 	}
-	if strings.EqualFold(root, "System") && (strings.EqualFold(localName, "String") || strings.EqualFold(localName, "Integer") || strings.EqualFold(localName, "List")) {
+	if localDeclaration && strings.EqualFold(root, "System") && (strings.EqualFold(localName, "String") || strings.EqualFold(localName, "Integer") || strings.EqualFold(localName, "List")) {
 		return true
 	}
 	// A declared dependency namespace is open when its source is opaque
@@ -1820,7 +1904,7 @@ func (a *Analyzer) qualifiedLifecycleLocalTypeRejected(currentType, spelling str
 	}
 	// Inner types inherited into an unqualified scope cannot be named
 	// through the subclass as though declared there.
-	if end := strings.LastIndexByte(spelling, '.'); end >= 0 {
+	if end := strings.LastIndexByte(spelling, '.'); localDeclaration && end >= 0 {
 		owner, name := spelling[:end], spelling[end+1:]
 		if members, known := model.lookupName(owner); known && semaSourceTypeInCallingScope(model, currentType, members) {
 			if inherited := resolveNestedTypeNameFromSuperclasses(model, owner, name); inherited != "" {
@@ -1835,9 +1919,9 @@ func (a *Analyzer) qualifiedLifecycleLocalTypeRejected(currentType, spelling str
 	if semaFormulaEvalQualifiedType(spelling) {
 		return false
 	}
-	// R201/C055/N010/N011: a qualified local type under a namespace that is
-	// neither project source, a declared dependency, nor platform is invalid.
-	// Other positions keep v0.3.1's open managed-package rule.
+	// R201/C055/N010/N011 and namespace_external_positions: a qualified type
+	// under a namespace that is neither project source, a declared
+	// dependency, nor platform is invalid.
 	return semaUnknownExternalType(model, resolveNestedTypeReference(model, currentType, spelling))
 }
 
@@ -2216,6 +2300,9 @@ func (a *Analyzer) checkIRExprVariables(typ typesys.TypeSymbol, member typesys.M
 		}
 		if diag, ok := a.irVariableDiagnostic(typ, member, expr.Name, *scope, model, bodyOffset+pos, source, true); ok {
 			diagnostics = append(diagnostics, diag)
+		} else if receiver, missing := a.qualifiedStaticFieldReceiverMiss(expr.Name, *scope, model, typ.Name); missing {
+			message := "Variable does not exist: " + receiver
+			diagnostics = append(diagnostics, diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA013", Message: message, NativeMessage: message, File: typ.File, Range: semaRange(source, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Name)))})
 		} else if !a.irVariableKnown(expr.Name, *scope, model, typ.Name) && (scope.anonymous || !strings.Contains(expr.Name, ".") || !isLikelyTypeReference(expr.Name)) {
 			message := fmt.Sprintf("%s %q reads unknown variable %q", member.Kind, member.Name, expr.Name)
 			if scope.anonymous {
@@ -2511,6 +2598,13 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 	receiverPath, _, _ := splitSemaMethodPath(expr.Callee)
 	if expr.Left != nil && expr.Left.Kind == ir.ExprVariable {
 		receiverPath = expr.Left.Name
+	}
+	root, _, _ := strings.Cut(receiverPath, ".")
+	if _, scoped := scope.lookup(root); !scoped {
+		if members, known := model.lookupName(root); known && !semaDependencyAliasVisible(model, typ.Name, receiverPath, members) {
+			message := "Variable does not exist: " + receiverPath
+			return []diagnostic.Diagnostic{{Severity: diagnostic.Error, Code: "GLADESEMA013", Message: message, NativeMessage: message, File: typ.File, Range: semaRange(source, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)))}}
+		}
 	}
 	if strings.Contains(receiverPath, ".") {
 		root, _, _ := strings.Cut(receiverPath, ".")
@@ -2950,7 +3044,7 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 						if semaIRStaticValueReceiver(model, typ.Name, receiverExpr) {
 							return nil
 						}
-						if semaIRUnresolvedDeclaredReceiver(receiverExpr, scope, model) || semaQualifiedCallReceiverKnown(a, typ.Name, receiverExpr, scope, model, typ.EffectiveAPIVersion) {
+						if semaIRUnresolvedDeclaredReceiver(a, typ.Name, receiverExpr, scope, model) || semaQualifiedCallReceiverKnown(a, typ.Name, receiverExpr, scope, model, typ.EffectiveAPIVersion) {
 							return nil
 						}
 						d := unknownCallDiagnostic(typ, member, expr.Callee, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source)
@@ -3422,7 +3516,12 @@ func semaIRStaticValueReceiver(model *semaTypeMemberView, currentType, receiver 
 // A declaration can identify an unavailable package type without supplying its
 // members. Keep calls on that same owner unresolved for dependency handling;
 // a known suffix or the depth of an otherwise undeclared path is not evidence.
-func semaIRUnresolvedDeclaredReceiver(receiver string, scope irSemaScope, model *semaTypeMemberView) bool {
+// In a named class body, a declaration whose own type is rejected under a
+// closed namespace identifies no package: native receiver_member_opaque_package
+// C01, C02, C07-C12 (62.0, 67.0) report the call's Variable does not exist
+// beside the declaration's Invalid type. Anonymous Apex reports only its
+// first error and triggers were not captured, so both keep the deferral.
+func semaIRUnresolvedDeclaredReceiver(a *Analyzer, currentType, receiver string, scope irSemaScope, model *semaTypeMemberView) bool {
 	parts := strings.Split(receiver, ".")
 	if len(parts) < 2 {
 		return false
@@ -3434,8 +3533,8 @@ func semaIRUnresolvedDeclaredReceiver(receiver string, scope irSemaScope, model 
 	owner = normalizeName(owner)
 	for _, declared := range scope.flat() {
 		for _, ref := range extractTypeNames(declared) {
-			ref = normalizeName(ref)
-			if ref == owner || strings.HasPrefix(ref, owner+".") {
+			normalized := normalizeName(ref)
+			if (normalized == owner || strings.HasPrefix(normalized, owner+".")) && !(a.namedApexReferenceObjects && a.qualifiedTypeMissRejected(currentType, ref, model, false)) {
 				return true
 			}
 		}
@@ -3895,9 +3994,9 @@ func (a *Analyzer) checkIRConstructorCall(typ typesys.TypeSymbol, member typesys
 		return []diagnostic.Diagnostic{nestedTypeVisibilityDiagnostic(typ, message, semaRange(source, bodyOffset+pos, bodyOffset+pos+max(1, len(typeName))))}
 	}
 	for _, ref := range extractTypeNames(typeName) {
-		if !semaTypeReferenceKnownAtVersion(a, model, typ.Name, ref, typ.EffectiveAPIVersion) {
+		if !semaTypePositionKnownAtVersion(a, model, typ.Name, ref, typ.EffectiveAPIVersion) {
 			message := fmt.Sprintf("%s %q constructs unknown type %q", member.Kind, member.Name, ref)
-			if semaCrossNamespaceSourceMismatch(a, model, typ.Name, ref) || a.standardObjectAbsentFromDeclaredShape(model, typ.Name, ref) {
+			if semaCrossNamespaceSourceMismatch(a, model, typ.Name, ref) || a.standardObjectAbsentFromDeclaredShape(model, typ.Name, ref) || a.qualifiedTypeMissRejected(typ.Name, ref, model, false) {
 				message = "Invalid type: " + ref
 			}
 			return []diagnostic.Diagnostic{{
@@ -5278,6 +5377,16 @@ func (a *Analyzer) irVariableDiagnostic(typ typesys.TypeSymbol, member typesys.M
 	if !hasMember {
 		return diagnostic.Diagnostic{}, false
 	}
+	if _, scoped := scope.lookup(root); !scoped {
+		if members, known := model.lookupName(root); known && !semaDependencyAliasVisible(model, typ.Name, name, members) {
+			missing := root
+			if first, _, more := strings.Cut(field, "."); more {
+				missing += "." + first
+			}
+			message := "Variable does not exist: " + missing
+			return diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA013", Message: message, NativeMessage: message, File: typ.File, Range: semaRange(source, start, start+max(1, len(name)))}, true
+		}
+	}
 	recordType := root
 	if scoped, ok := scope.lookup(root); ok {
 		recordType = scoped
@@ -5360,7 +5469,7 @@ func (a *Analyzer) irVariableDiagnostic(typ typesys.TypeSymbol, member typesys.M
 		}
 	}
 	if receiverType == "" {
-		if !a.irVariableKnown(name, scope, model, typ.Name) && !strings.HasSuffix(normalizeName(name), ".class") {
+		if !a.irVariableKnown(name, scope, model, typ.Name) && !strings.HasSuffix(normalizeName(name), ".class") || scope.anonymous && a.anonymousUnknownRootMemberRead(root, field, scope, model) {
 			message := "Variable does not exist: " + root
 			return diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA013", Message: message, NativeMessage: message, File: typ.File, Range: semaRange(source, start, start+max(1, len(root)))}, true
 		}
@@ -5444,6 +5553,28 @@ func (a *Analyzer) irVariableDiagnostic(typ typesys.TypeSymbol, member typesys.M
 		return semaFieldAccessDiagnostic(typ, member, name, "Variable does not exist: "+field, start, start+max(1, len(name)), source), true
 	}
 	if semaDependencyType(model, receiverType) {
+		// The loaded local-namespace source inventory can prove that a nested
+		// static receiver is absent; opaque dependency members remain open.
+		if !valueReceiver && strings.Contains(field, ".") {
+			parts := strings.Split(field, ".")
+			parent := receiverType
+			for i := 0; i < len(parts)-1; i++ {
+				parentMembers, known := model.lookupName(parent)
+				if !known || !parentMembers.dependency || !model.state.base.completeDependencyNestedTypes[normalizeName(parentMembers.name)] {
+					break
+				}
+				next := parent + "." + parts[i]
+				if _, nested := model.lookupName(next); nested {
+					parent = next
+					continue
+				}
+				if _, fieldKnown := semaResolveFieldPath(model, parent, parts[i]); !fieldKnown {
+					message := "Variable does not exist: " + root + "." + strings.Join(parts[:i+1], ".")
+					return diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA013", Message: message, NativeMessage: message, File: typ.File, Range: semaRange(source, start, start+max(1, len(name)))}, true
+				}
+				break
+			}
+		}
 		return diagnostic.Diagnostic{}, false
 	}
 	if semaFieldPathEntersDependencyType(model, receiverType, field) {
@@ -5458,13 +5589,26 @@ func (a *Analyzer) irVariableDiagnostic(typ typesys.TypeSymbol, member typesys.M
 	if members, ok := model.lookup(normalizeName(receiverType)); ok && members.kind == apexast.DeclarationEnum && !members.platform {
 		return semaFieldAccessDiagnostic(typ, member, name, "Variable does not exist: "+field, start, start+max(1, len(name)), source), true
 	}
-	return diagnostic.Diagnostic{
+	item := diagnostic.Diagnostic{
 		Severity: diagnostic.Error,
 		Code:     "GLADESEMA021",
 		Message:  fmt.Sprintf("%s %q references unknown field %q on %s", member.Kind, member.Name, field, receiverType),
 		File:     typ.File,
 		Range:    semaRange(source, start, start+max(1, len(name))),
-	}, true
+	}
+	// A source class with a complete nested inventory cannot provide the
+	// missing first segment of a static member chain. Native points at that
+	// segment rather than at the entire chain (namespace_sweep_shapes 6-7).
+	if !valueReceiver && strings.Contains(field, ".") && !semaQualifierNamesKnownNamespace(a, root) &&
+		model.state.base.completeSourceNestedTypes[normalizeName(receiverType)] {
+		owner, ownerKnown := model.lookupName(receiverType)
+		_, nested := model.lookupName(receiverType + "." + firstField)
+		_, fieldKnown := semaResolveFieldPath(model, receiverType, firstField)
+		if ownerKnown && semaSourceTypeInCallingScope(model, typ.Name, owner) && !nested && !fieldKnown {
+			item.NativeMessage = "Variable does not exist: " + root + "." + firstField
+		}
+	}
+	return item, true
 }
 
 func semaDynamicFlowInterviewType(typeName string) bool {
