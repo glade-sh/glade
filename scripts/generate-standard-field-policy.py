@@ -40,15 +40,24 @@ class Inputs:
         return data
 
     def provenance(self, directory, *, required=False):
-        # Public baseline captures predate portable provenance files. New
-        # captures require native-run.md; older public captures may instead
-        # retain RUN-FACTS.txt, or only their native data and case files.
-        names = ("native-run.md",) if required else ("native-run.md", "RUN-FACTS.txt")
-        for name in names:
-            candidate = Path(directory) / name
-            if (self.root / candidate).is_file():
-                self.read(candidate)
+        # Public conformance fixtures exclude process documents. New capture
+        # provenance lives in the parallel documentation tree, while older
+        # public captures may retain RUN-FACTS.txt or only their data files.
+        capture_dir = (self.root / directory).resolve()
+        conformance = (REPO / "internal/apextest/testdata/conformance").resolve()
+        try:
+            relative = capture_dir.relative_to(conformance)
+        except ValueError:
+            relative = None
+        if relative is not None:
+            portable = REPO / "docs/native-captures" / relative / "native-run.md"
+            if portable.is_file():
+                self.read(portable)
                 return
+        legacy = Path(directory) / "RUN-FACTS.txt"
+        if not required and (self.root / legacy).is_file():
+            self.read(legacy)
+            return
         if required:
             raise FileNotFoundError(f"missing native provenance: {directory}/native-run.md")
 
