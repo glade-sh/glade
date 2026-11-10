@@ -82,11 +82,18 @@ func TestFlowTypeMatrixNativeAdmission(t *testing.T) {
 // known shape must not cause an inference about this different shape.
 func TestFlowTypeMatrixUnknownSchemaAndSource(t *testing.T) {
 	root := "../apextest/testdata/native-capture/flow_type_matrix"
+	snapshot := []byte(`{"objects":[{"name":"Account","fieldsComplete":true,"fields":[{"name":"Name","type":"Text"},{"name":"NumberOfEmployees","type":"Number"}]}]}`)
+	snapshotPath := filepath.Join(t.TempDir(), "schema.json")
+	if err := os.WriteFile(snapshotPath, snapshot, 0600); err != nil {
+		t.Fatal(err)
+	}
+	sum := sha256.Sum256(snapshot)
 	for _, tc := range []struct {
 		name, file, before, after string
 	}{
 		{"unknown_lookup_object", "F62InNumberString", "<object>Account</object>", "<object>Missing_Synthetic__c</object>"},
 		{"unknown_transform_object", "T62NumberString", "<objectType>Account</objectType>", "<objectType>Missing_Synthetic__c</objectType>"},
+		{"unknown_lookup_source", "F62InNumberString", "<elementReference>values</elementReference>", "<elementReference>MissingInput</elementReference>"},
 		{"unknown_transform_source", "T62NumberString", "<elementReference>inputValue</elementReference>", "<elementReference>MissingInput</elementReference>"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -101,7 +108,7 @@ func TestFlowTypeMatrixUnknownSchemaAndSource(t *testing.T) {
 			if err := os.WriteFile(flow, []byte(strings.Replace(string(data), tc.before, tc.after, 1)), 0600); err != nil {
 				t.Fatal(err)
 			}
-			idx, err := LoadProject(project.Project{FlowFiles: []string{flow}})
+			idx, err := LoadProject(project.Project{FlowFiles: []string{flow}, SchemaSnapshot: snapshotPath, SchemaSnapshotSHA256: fmt.Sprintf("%x", sum)})
 			if err != nil {
 				t.Fatal(err)
 			}
