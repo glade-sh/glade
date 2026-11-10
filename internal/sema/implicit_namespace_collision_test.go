@@ -11,18 +11,18 @@ import (
 // ExtFieldOnlyV035). The local CartLike class adds nothing.
 func assertOnlyUndeclaredFieldRejection(t *testing.T, label string, result Result) {
 	t.Helper()
-	found := false
+	count := 0
 	for _, d := range result.Diagnostics {
 		if d.Severity != diagnostic.Error {
 			continue
 		}
-		if d.NativeMessage != "Invalid type: missingns.CartLike.SubmitOptions" {
+		if d.Code != "GLADESEMA002" || d.NativeMessage != "Invalid type: missingns.CartLike.SubmitOptions" {
 			t.Fatalf("%s: %#v", label, result.Diagnostics)
 		}
-		found = true
+		count++
 	}
-	if !found {
-		t.Fatalf("%s: undeclared field type accepted", label)
+	if count != 1 {
+		t.Fatalf("%s: want one field-type rejection, got %d: %#v", label, count, result.Diagnostics)
 	}
 }
 

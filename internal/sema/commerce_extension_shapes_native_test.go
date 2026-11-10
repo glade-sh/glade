@@ -127,13 +127,17 @@ func TestCommerceExtensionContractVisibilityPreservesOtherTypes(t *testing.T) {
                     syntheticpackage.UncataloguedShape partialPackage;
                 }`,
 			}, api)
+			errors := 0
 			for _, d := range result.Diagnostics {
-				if d.Severity == diagnostic.Error && d.NativeMessage != "Invalid type: syntheticpackage.UncataloguedShape" {
-					t.Fatalf("unrelated type references changed: %+v", result.Diagnostics)
+				if d.Severity == diagnostic.Error {
+					if d.Code != "GLADESEMA002" || d.NativeMessage != "Invalid type: syntheticpackage.UncataloguedShape" {
+						t.Fatalf("unrelated type references changed: %+v", result.Diagnostics)
+					}
+					errors++
 				}
 			}
-			if !result.HasErrors() {
-				t.Fatal("undeclared package namespace accepted")
+			if errors != 1 {
+				t.Fatalf("want one undeclared field-type rejection, got %d: %+v", errors, result.Diagnostics)
 			}
 			result = analyzeDeclarationProjectWithAPIVersion(t, map[string]string{
 				"commercestorepricing.cls": `public class commercestorepricing {

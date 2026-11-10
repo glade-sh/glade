@@ -132,11 +132,11 @@ func TestReceiverMemberLSPOpaquePackageNamedIsTestRoutes(t *testing.T) {
 					handler := NewHandler(index)
 					defer handler.parser.Close()
 					ds := handler.diagnosticsForDocument(uriFromPath(path))
-					if len(ds) == 0 {
-						t.Fatal("undeclared field type accepted")
+					if len(ds) != 1 {
+						t.Fatalf("want one undeclared field-type rejection: %+v", ds)
 					}
 					for _, d := range ds {
-						if d.NativeMessage != "Invalid type: missingns.Parcel.Options" {
+						if d.Code != "GLADESEMA002" || d.NativeMessage != "Invalid type: missingns.Parcel.Options" {
 							t.Fatal(ds)
 						}
 					}

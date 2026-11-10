@@ -124,17 +124,17 @@ func TestReceiverMemberOpaquePackageNamedIsTestRoutes(t *testing.T) {
 
 // onlyUndeclaredParcelOptions reports whether every error is the native
 // field-type rejection of the undeclared missingns.Parcel.Options (ruling 49;
-// namespace_external_positions ExtFieldOnlyV035), and at least one exists.
+// namespace_external_positions ExtFieldOnlyV035), exactly once.
 func onlyUndeclaredParcelOptions(ds []diagnostic.Diagnostic) bool {
-	found := false
+	count := 0
 	for _, d := range ds {
 		if d.Severity != diagnostic.Error {
 			continue
 		}
-		if d.NativeMessage != "Invalid type: missingns.Parcel.Options" {
+		if d.Code != "GLADESEMA002" || d.NativeMessage != "Invalid type: missingns.Parcel.Options" {
 			return false
 		}
-		found = true
+		count++
 	}
-	return found
+	return count == 1
 }
