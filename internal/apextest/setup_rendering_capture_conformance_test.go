@@ -11,7 +11,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/sema"
+	"github.com/glade-sh/glade/internal/visualforce"
 	"github.com/glade-sh/glade/internal/vm"
 )
 
@@ -196,7 +198,18 @@ func runSetupRenderingCaptureConformance(t *testing.T, capture setupRenderingCap
 							org := orgFromIndex(index)
 							org.APIVersion = api
 							runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
-							result, err := runner.execute(program)
+							var configure []func(*vm.VM)
+							if capture.family == "pdf_rendering" {
+								pageProject, err := project.Load(root)
+								if err != nil {
+									t.Fatal(err)
+								}
+										configure = append(configure, func(machine *vm.VM) {
+									visualforce.SetVMRenderEnvironment(machine, pageProject)
+									t.Cleanup(func() { visualforce.ClearVMRenderEnvironment(machine) })
+								})
+							}
+							result, err := runner.execute(program, configure...)
 							if err != nil {
 								var runtimeErr *vm.RuntimeError
 								if !errors.As(err, &runtimeErr) {
