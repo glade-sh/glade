@@ -455,6 +455,16 @@ func (vm *VM) jsonFromValueForSerializeWithState(value Value, suppressObjectNull
 		base := orderedJSONObject{}
 		seen := map[string]bool{}
 		getterNames := vm.jsonSerializableGetterNameSet(value.Type)
+		// JSON.serialize reflects getter mutations in ordinary scalar fields,
+		// even when those fields precede the getter in output order. Defer
+		// reading those fields until this object's getters have run.
+		type deferredScalarField struct {
+			index int
+			name  string
+		}
+		var deferredScalars []deferredScalarField
+		deferScalars := state.rejectUnsupportedTypes && value.classInstance && value.projectClass &&
+			!suppressObjectNulls && len(getterNames) > 0
 		for _, fieldName := range vm.jsonSerializableFieldNames(value.Type) {
 			fieldKey := strings.ToLower(fieldName)
 			field, owner, fieldOK := vm.lookupField(value.Type, fieldName)
@@ -466,6 +476,7 @@ func (vm *VM) jsonFromValueForSerializeWithState(value Value, suppressObjectNull
 				}
 				if field.Getter != nil && !field.Static {
 					getterValue, err := vm.callGetter(vm.getterOwner(owner, field), field, value)
+					propagateJSONGetterLimit(err, state)
 					if err == nil && !(suppressObjectNulls && getterValue.Kind == ValueNull) {
 						base = append(base, orderedJSONField{name: field.Name, value: vm.jsonFromValueForSerializeWithState(getterValue, suppressObjectNulls, state)})
 						seen[fieldKey] = true
@@ -483,7 +494,12 @@ func (vm *VM) jsonFromValueForSerializeWithState(value Value, suppressObjectNull
 			if isInternalSObjectField(actualName) || (suppressObjectNulls && item.Kind == ValueNull) {
 				continue
 			}
-			base = append(base, orderedJSONField{name: actualName, value: vm.jsonFromValueForSerializeWithState(item, suppressObjectNulls, state)})
+			if deferScalars && jsonScalarFieldValue(item) {
+				deferredScalars = append(deferredScalars, deferredScalarField{index: len(base), name: actualName})
+				base = append(base, orderedJSONField{name: actualName})
+			} else {
+				base = append(base, orderedJSONField{name: actualName, value: vm.jsonFromValueForSerializeWithState(item, suppressObjectNulls, state)})
+			}
 			seen[strings.ToLower(actualName)] = true
 		}
 		var extras []string
@@ -515,11 +531,18 @@ func (vm *VM) jsonFromValueForSerializeWithState(value Value, suppressObjectNull
 				continue
 			}
 			getterValue, err := vm.callGetter(vm.getterOwner(value.Type, field), field, value)
+			propagateJSONGetterLimit(err, state)
 			if err != nil || (suppressObjectNulls && getterValue.Kind == ValueNull) {
 				continue
 			}
 			base = append(base, orderedJSONField{name: name, value: vm.jsonFromValueForSerializeWithState(getterValue, suppressObjectNulls, state)})
 			seen[strings.ToLower(name)] = true
+		}
+		for _, deferred := range deferredScalars {
+			_, item, ok := objectFieldValue(value, deferred.name)
+			if ok {
+				base[deferred.index].value = vm.jsonFromValueForSerializeWithState(item, suppressObjectNulls, state)
+			}
 		}
 		if !seen["urls"] {
 			if urls, ok := vm.describeJSONURLs(value); ok {
@@ -529,6 +552,27 @@ func (vm *VM) jsonFromValueForSerializeWithState(value Value, suppressObjectNull
 		return base
 	default:
 		return jsonFromValue(value, suppressObjectNulls)
+	}
+}
+
+// jsonScalarFieldValue excludes composites, whose serialization may itself
+// invoke getters and therefore has its own ordering behavior.
+func jsonScalarFieldValue(value Value) bool {
+	switch value.Kind {
+	case ValueList, ValueSet, ValueMap, ValueObject:
+		return false
+	default:
+		return true
+	}
+}
+
+func propagateJSONGetterLimit(err error, state *jsonSerializationState) {
+	if err == nil || !state.rejectUnsupportedTypes {
+		return
+	}
+	var fault *RuntimeError
+	if errors.As(err, &fault) && strings.EqualFold(fault.Type, "System.LimitException") {
+		panic(jsonConversionFailure{err: err})
 	}
 }
 
