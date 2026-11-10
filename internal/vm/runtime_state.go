@@ -3001,11 +3001,9 @@ func (vm *VM) refireAutomationUpdateTriggerBatch(records, oldRecords []storage.R
 	}
 	if hasDMLFailures(failures) {
 		captured, capturedOK := flowRefireCapturedTriggerFailure(failures, current, inputCount, rule)
-		if allOrNone {
-			if rollbackErr := vm.restoreDMLRollbackPoint(rollback); rollbackErr != nil {
-				return rollbackErr
-			}
-		}
+		// The caller owns rollback for an error from the batch callback. A
+		// second restore of a temporary journal would replace the org with the
+		// unused snapshot and lose metadata for the next DML statement.
 		if capturedOK {
 			return captured
 		}
