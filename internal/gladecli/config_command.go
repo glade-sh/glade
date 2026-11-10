@@ -30,6 +30,7 @@ type configShowInfo struct {
 	Dependencies               []config.LocalPackageDependency   `json:"dependencies,omitempty"`
 	ManagedPackageDependencies []config.ManagedPackageDependency `json:"managedPackageDependencies,omitempty"`
 	DependencyPaths            []string                          `json:"dependencyPaths,omitempty"`
+	ExternalNamespaces         []string                          `json:"externalNamespaces,omitempty"`
 	PackageShims               []config.PackageShim              `json:"packageShims,omitempty"`
 }
 
@@ -110,6 +111,9 @@ func runConfigShow(args []string, w io.Writer) error {
 	}
 	if len(info.DependencyPaths) > 0 {
 		fmt.Fprintf(w, "dependencyPaths: %s\n", strings.Join(info.DependencyPaths, ", "))
+	}
+	if len(info.ExternalNamespaces) > 0 {
+		fmt.Fprintf(w, "externalNamespaces: %s\n", strings.Join(info.ExternalNamespaces, ", "))
 	}
 	if len(info.PackageShims) > 0 {
 		fmt.Fprintf(w, "packageShims: %d\n", len(info.PackageShims))
@@ -247,6 +251,7 @@ func loadConfigShowInfo(root string) (configShowInfo, error) {
 		info.Dependencies = cfg.Project.Dependencies
 		info.ManagedPackageDependencies = cfg.Project.ManagedPackageDependencies
 		info.DependencyPaths = cfg.Project.DependencyPaths
+		info.ExternalNamespaces = cfg.Project.ExternalNamespaces
 		info.PackageShims = cfg.Project.PackageShims
 	} else if !errors.Is(err, config.ErrNotFound) {
 		return configShowInfo{}, err

@@ -11464,6 +11464,10 @@ public class ProductRoute extends RestRoute {
 	assertNoDiagnosticContaining(t, result, "GLADESEMA010", "resourceId")
 }
 
+// Ruling 49 (native namespace_external_positions ExtParamOnlyV035,
+// ExtReturnOnlyV035): an undeclared lowercase namespace is Invalid type with
+// the spelling as written. Declaring it as a dependency without source keeps
+// it open (the test name predates ruling 49 and stays for the shard table).
 func TestAnalyzeAcceptsLowercaseExternalManagedPackageApexNamespace(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
@@ -11482,6 +11486,17 @@ public class UsesVendor {
 	}, schema.Schema{})
 
 	result := Analyze(index)
+	got := map[string]bool{}
+	for _, d := range result.Diagnostics {
+		if d.Severity == diagnostic.Error {
+			got[d.NativeMessage] = true
+		}
+	}
+	if len(got) != 2 || !got["Invalid type: vendor.PaymentGatewayResponse"] || !got["Invalid type: vendor.PaymentGatewayRequest"] {
+		t.Fatalf("undeclared lowercase namespace: %#v", result.Diagnostics)
+	}
+	index.Dependencies = []typesys.DependencyInfo{{Namespace: "vendor", Status: "missing"}}
+	result = Analyze(index)
 	assertNoDiagnosticContaining(t, result, "GLADESEMA002", "vendor.PaymentGatewayResponse")
 	assertNoDiagnosticContaining(t, result, "GLADESEMA004", "vendor.PaymentGatewayRequest")
 }

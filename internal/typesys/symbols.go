@@ -226,6 +226,12 @@ func buildWithWorkspaceSources(p project.Project, s schema.Schema, sources *Work
 		})
 	}
 	for _, dep := range p.ManagedPackageDependencies {
+		if dep.Status == project.DependencyStatusDeclared {
+			// A namespace-only declaration (project.externalNamespaces) is an
+			// installed package without source: open, with no diagnostic.
+			idx.Dependencies = append(idx.Dependencies, DependencyInfo{Namespace: dep.Namespace, Status: dep.Status})
+			continue
+		}
 		if dep.Status != "loaded" || dep.Project == nil {
 			if dep.Status == "loaded" && dep.ArtifactPath != "" {
 				appendArtifactDependency(&idx, dep)

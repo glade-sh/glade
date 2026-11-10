@@ -73,3 +73,24 @@ func TestSemanticPlatformABIIsVersioned(t *testing.T) {
 		t.Fatal("semantic platform ABI must not be empty")
 	}
 }
+
+func TestIdentityForBuildDistinguishesPartialIndex(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "IdentityPartial.cls")
+	if err := os.WriteFile(path, []byte(`public class IdentityPartial {}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	index, artifacts := typesys.BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{path}}, schema.Schema{})
+	complete, err := IdentityForBuild(index, &artifacts, sema.AnalyzeOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	index.Subset = true
+	partial, err := IdentityForBuild(index, &artifacts, sema.AnalyzeOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if complete.ProjectContentSHA256 == partial.ProjectContentSHA256 {
+		t.Fatal("partial index retained complete index identity")
+	}
+}
