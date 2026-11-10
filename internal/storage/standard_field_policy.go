@@ -37,14 +37,16 @@ type standardFieldPolicyObject struct {
 	// CapturedFields name policy fields whose native facets replace a field
 	// that the stub overlay supplies with only a name and a type. A field that
 	// the project itself configures is never replaced.
-	CapturedFields     []string        `json:"captured_fields"`
-	InsertForcedValues map[string]bool `json:"insert_forced_values"`
-	Fields             []standardDescribeField
-	Absent             []string
-	fields             map[string]Field
-	picklistFields     []Field
-	absent             map[string]bool
-	gates              map[string]standardFieldPolicyGate
+	CapturedFields       []string        `json:"captured_fields"`
+	InsertForcedValues   map[string]bool `json:"insert_forced_values"`
+	Fields               []standardDescribeField
+	Absent               []string
+	PlainDeveloperAbsent []string `json:"plain_developer_absent"`
+	fields               map[string]Field
+	picklistFields       []Field
+	absent               map[string]bool
+	plainDeveloperAbsent map[string]bool
+	gates                map[string]standardFieldPolicyGate
 }
 
 type standardFieldPolicyBundle struct {
@@ -92,6 +94,7 @@ func loadStandardFieldPolicies() map[string]*standardFieldPolicyObject {
 	for object, policy := range bundle.Objects {
 		policy.fields = map[string]Field{}
 		policy.absent = map[string]bool{}
+		policy.plainDeveloperAbsent = map[string]bool{}
 		policy.gates = map[string]standardFieldPolicyGate{}
 		for _, field := range policy.Fields {
 			captured := describeField(field)
@@ -102,6 +105,9 @@ func loadStandardFieldPolicies() map[string]*standardFieldPolicyObject {
 		}
 		for _, field := range policy.Absent {
 			policy.absent[strings.ToLower(field)] = true
+		}
+		for _, field := range policy.PlainDeveloperAbsent {
+			policy.plainDeveloperAbsent[strings.ToLower(field)] = true
 		}
 		policies[strings.ToLower(object)] = policy
 	}
@@ -151,6 +157,9 @@ func standardOptionalFieldEnabledForDefinition(definition ObjectDefinition, fiel
 		return true
 	}
 	if policy := standardFieldPolicyFor(definition.APIName); policy != nil {
+		if absent, _ := standardPolicyLookup(policy.plainDeveloperAbsent, field); absent && featureSignatureHas(signature, project.PlainDeveloperObjectShape) {
+			return standardFieldPolicyPreservesConfiguredField(definition, field)
+		}
 		if gate, ok := standardPolicyLookup(policy.gates, field); ok {
 			return (!gate.Legacy && featureSignatureHas(signature, project.UnspecifiedStandardFieldShape)) || standardFieldPolicyPreservesConfiguredField(definition, field) || standardFieldPolicyGateEnabledForDefinition(gate, definition, signature)
 		}
@@ -295,6 +304,9 @@ func applyStandardFieldPolicy(definition *ObjectDefinition, signature string) {
 		}
 	}
 	for name := range policy.absent {
+		removeGenerated(name)
+	}
+	for name := range policy.plainDeveloperAbsent {
 		removeGenerated(name)
 	}
 	for name := range policy.gates {
@@ -468,7 +480,8 @@ func standardConfiguredOptionalField(definition ObjectDefinition, field string) 
 	}
 	_, gated := standardPolicyLookup(policy.gates, field)
 	absent, _ := standardPolicyLookup(policy.absent, field)
-	return gated || absent
+	plainAbsent, _ := standardPolicyLookup(policy.plainDeveloperAbsent, field)
+	return gated || absent || plainAbsent
 }
 
 // StandardObjectInsertInputFieldAllowed reports captured insertion inputs that
