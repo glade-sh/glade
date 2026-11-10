@@ -11,11 +11,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"github.com/glade-sh/glade/internal/apextest"
-	"github.com/glade-sh/glade/internal/project"
-	gladeschema "github.com/glade-sh/glade/internal/schema"
-	"github.com/glade-sh/glade/internal/typesys"
 )
 
 // The native shared-target rows are process_builder_review/org.tsv:6,14.
@@ -37,66 +32,45 @@ func TestProcessBuilderFourAfterSaveHosts(t *testing.T) {
 			native[f[0]] = f[3]
 		}
 	}
+	hosts := newPBHostFixtures(t)
 	for _, api := range []string{"62.0", "67.0"} {
 		for _, route := range []string{"vf", "lwc", "server"} {
 			if api == "62.0" && route == "server" {
 				continue
 			} // Tooling endpoint starts at API 65.
 			t.Run(api+"/"+route, func(t *testing.T) {
-				root := t.TempDir()
-				if err := os.CopyFS(root, os.DirFS(filepath.Join(base, "process_builder_shapes", "project"))); err != nil {
-					t.Fatal(err)
-				}
-				overlay := filepath.Join(fixture, "project")
-				if err := filepath.WalkDir(overlay, func(path string, e fs.DirEntry, err error) error {
-					if err != nil {
-						return err
-					}
-					if e.IsDir() {
-						return nil
-					}
-					rel, err := filepath.Rel(overlay, path)
-					if err != nil {
-						return err
-					}
-					data, err := os.ReadFile(path)
-					if err != nil {
-						return err
-					}
-					if err := os.MkdirAll(filepath.Dir(filepath.Join(root, rel)), 0755); err != nil {
-						return err
-					}
-					return os.WriteFile(filepath.Join(root, rel), data, 0644)
-				}); err != nil {
-					t.Fatal(err)
-				}
 				class := "FernCases" + strings.TrimSuffix(api, ".0")
-				writeServerTestFile(t, filepath.Join(root, "force-app/main/default/classes/PBHost.cls"), fmt.Sprintf("public class PBHost { @AuraEnabled @RemoteAction public static String observe() { return %s.fourflows(); } }", class))
-				writeServerTestFile(t, filepath.Join(root, "force-app/main/default/classes/PBHost.cls-meta.xml"), `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>`+api+`</apiVersion><status>Active</status></ApexClass>`)
-				writeServerTestFile(t, filepath.Join(root, "force-app/main/default/pages/Remote.page"), `<apex:page controller="PBHost"></apex:page>`)
-				p, err := project.Load(root)
-				if err != nil {
-					t.Fatal(err)
-				}
-				source, err := NewSourceMetadataFromProject(p)
-				if err != nil {
-					t.Fatal(err)
-				}
-				schema, err := gladeschema.LoadProject(p)
-				if err != nil {
-					t.Fatal(err)
-				}
-				index := typesys.Build(p, schema)
-				org, err := apextest.OrgFromIndexWithConfiguredPermissions(index)
-				if err != nil {
-					t.Fatal(err)
-				}
-				srv := newLightningTestServer(t, &org, source)
-				configureVisualforceTestPrincipal(t, srv)
-				srv.SetProjectIndex(index)
-				if srv.runtimeErr != nil {
-					t.Fatal(srv.runtimeErr)
-				}
+				srv := hosts.server(t, api, func(root string) {
+					if err := os.CopyFS(root, os.DirFS(filepath.Join(base, "process_builder_shapes", "project"))); err != nil {
+						t.Fatal(err)
+					}
+					overlay := filepath.Join(fixture, "project")
+					if err := filepath.WalkDir(overlay, func(path string, e fs.DirEntry, err error) error {
+						if err != nil {
+							return err
+						}
+						if e.IsDir() {
+							return nil
+						}
+						rel, err := filepath.Rel(overlay, path)
+						if err != nil {
+							return err
+						}
+						data, err := os.ReadFile(path)
+						if err != nil {
+							return err
+						}
+						if err := os.MkdirAll(filepath.Dir(filepath.Join(root, rel)), 0755); err != nil {
+							return err
+						}
+						return os.WriteFile(filepath.Join(root, rel), data, 0644)
+					}); err != nil {
+						t.Fatal(err)
+					}
+					writeServerTestFile(t, filepath.Join(root, "force-app/main/default/classes/PBHost.cls"), fmt.Sprintf("public class PBHost { @AuraEnabled @RemoteAction public static String observe() { return %s.fourflows(); } }", class))
+					writeServerTestFile(t, filepath.Join(root, "force-app/main/default/classes/PBHost.cls-meta.xml"), `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>`+api+`</apiVersion><status>Active</status></ApexClass>`)
+					writeServerTestFile(t, filepath.Join(root, "force-app/main/default/pages/Remote.page"), `<apex:page controller="PBHost"></apex:page>`)
+				}, nil)
 				want := native[api]
 				if want == "" {
 					t.Fatal("missing native row")
