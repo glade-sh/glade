@@ -96,10 +96,10 @@ func flowLookupCollectionValuesEqual(field storage.Field, target, element storag
 			return false, false
 		}
 		left, right := idFromStorageValue(target), idFromStorageValue(element)
-		if storage.ValidateID(left) == nil && storage.ValidateID(right) == nil {
-			return storage.IDsEqual(left, right), true
+		if storage.ValidateID(left) != nil || storage.ValidateID(right) != nil {
+			return false, false
 		}
-		return storageValuesEqual(field, target, element), true
+		return storage.IDsEqual(left, right), true
 	case storage.FieldInteger, storage.FieldDecimal:
 		if element.Kind != storage.ValueInteger && element.Kind != storage.ValueDecimal {
 			return false, false
