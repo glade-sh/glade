@@ -1,0 +1,1 @@
+trigger FernContactTrigger on Contact (before insert, after insert, before update, after update) { String phase=(Trigger.isBefore?'B':'A')+(Trigger.isInsert?'I':'U'); FernLog.events.add('Con.'+phase+Trigger.size+':'+Trigger.new[0].Fern_Result__c);  if(Trigger.isBefore && Trigger.isUpdate) for(Contact c:Trigger.new) if(c.Fern_Result__c=='deny') c.addError('Synthetic blocked'); }
