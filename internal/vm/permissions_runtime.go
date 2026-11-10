@@ -400,7 +400,11 @@ func (vm *VM) currentUserFieldPermission(objectName, fieldName, method string) b
 		// otherwise an absent row in the captured inventory remains denied.
 		profileSet := vm.profileOwnedPermissionSetID(profileID)
 		_, field, known := vm.sObjectFieldDefinition(objectName, fieldName)
-		if known && storage.IsKnownStandardObject(objectName) && storage.FieldFlagValue(field.Permissionable, true) && vm.parentHasFieldPermissionsForObject(profileSet, objectName) {
+		// The captured inventory covers neither custom fields nor the Account
+		// fields of an org with Person Accounts; those keep the administrator's
+		// unrestricted grant.
+		personAccountInventory := strings.EqualFold(objectName, "Account") && vm.accountPersonAccountsEnabled()
+		if known && !isCustomSchemaName(fieldName) && !personAccountInventory && storage.IsKnownStandardObject(objectName) && storage.FieldFlagValue(field.Permissionable, true) && vm.parentHasFieldPermissionsForObject(profileSet, objectName) {
 			for _, source := range vm.assignedPermissionSources(stringField(user, "Id"), false) {
 				if vm.sourceFieldPermission(source, objectName, fieldName, method) {
 					return true
