@@ -57,3 +57,32 @@ func TestFlowTransformUncapturedSourceBoundary(t *testing.T) {
 		})
 	}
 }
+
+// Collection values with an unobserved or unknown declared Flow type remain
+// outside the native matrix even when their elements have a familiar kind.
+func TestFlowLookupUncapturedSourceBoundary(t *testing.T) {
+	org := storage.NewOrgState()
+	engine := NewEngine(&org)
+	definition := storage.ObjectDefinition{APIName: "Sample__c", Fields: map[string]storage.Field{"Label__c": {APIName: "Label__c", Type: storage.FieldString}}}
+	target := storage.Record{Object: definition.APIName, Fields: map[string]storage.Value{"Label__c": storage.StringValue("42")}}
+	for _, tc := range []struct {
+		name, sourceType string
+		wantSupported    bool
+	}{
+		{"captured_string", "String", true},
+		{"uncaptured_currency", "Currency", false},
+		{"unknown_resource", "", false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			frame := newFlowFrame()
+			frame.scalars[flowFrameKey("Source")] = storage.ListValue(storage.StringValue("42"))
+			if tc.sourceType != "" {
+				frame.variables[flowFrameKey("Source")] = storage.FlowVariable{Name: "Source", DataType: tc.sourceType, IsCollection: true}
+			}
+			_, supported := engine.evaluateFlowLookupCriteria(storage.WorkflowCriteriaItem{Field: "Label__c", Operation: "In", SourceField: "Source"}, target, definition, storage.Record{}, storage.ObjectDefinition{}, frame)
+			if supported != tc.wantSupported {
+				t.Fatalf("supported=%t, want %t", supported, tc.wantSupported)
+			}
+		})
+	}
+}
