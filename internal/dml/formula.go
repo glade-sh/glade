@@ -251,6 +251,11 @@ func parseRecordFormulaValue(formula string, field storage.Field, org *storage.O
 
 func finishRecordFormulaValue(formula string, field storage.Field, value formulaValue, options FormulaEvaluationOptions) (storage.Value, bool, bool) {
 	if value.kind == formulaNull {
+		// A Checkbox field has no null state: a blank formula checkbox (for
+		// example a parent field through an empty lookup) is false.
+		if calculatedCheckboxFormula(field) {
+			return storage.BooleanValue(false), false, true
+		}
 		return storage.NullValue(), true, true
 	}
 	if options.TriggerRecord && isTextCalculatedField(field) && value.kind == formulaString {
@@ -2613,6 +2618,11 @@ func materializedFormulaFieldValue(field storage.Field, value formulaValue) (sto
 		return storage.StringValue(value.text), false, true
 	}
 	return workflowLiteralValue(field, value.asString())
+}
+
+func calculatedCheckboxFormula(field storage.Field) bool {
+	return field.Type == storage.FieldCalculated && strings.TrimSpace(field.Formula) != "" &&
+		strings.EqualFold(strings.TrimSpace(field.DisplayType), "BOOLEAN")
 }
 
 // Only an explicitly declared Currency formula policy changes typed numeric

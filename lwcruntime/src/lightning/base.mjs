@@ -1126,7 +1126,7 @@ export function renderButtonStateful($api, $cmp) {
   const selected = Boolean($cmp.selected || $cmp.checked);
   const label = $cmp.label || (selected ? $cmp.labelWhenOn : $cmp.labelWhenOff) || $cmp.labelWhenHover || "";
   return [h("button", {
-    classMap: { ...buttonClassMap($cmp.variant), "slds-button_stateful": true, "slds-is-selected": selected, "slds-not-selected": !selected },
+    className: Object.entries({ ...buttonClassMap($cmp.variant), "slds-button_stateful": true, "slds-is-selected": selected, "slds-not-selected": !selected }).filter(([, on]) => on).map(([name]) => name).join(" "),
     attrs: { type: "button", "aria-pressed": String(selected) },
     props: { disabled: Boolean($cmp.disabled) },
     key: 0,
@@ -1140,7 +1140,7 @@ export function renderButtonIcon($api, $cmp) {
     children.push(h("span", { classMap: { "slds-assistive-text": true }, key: 1 }, [t($cmp.alternativeText)]));
   }
   return [h("button", {
-    classMap: buttonIconClassMap($cmp.variant, $cmp.size),
+    className: Object.entries(buttonIconClassMap($cmp.variant, $cmp.size)).filter(([, on]) => on).map(([name]) => name).join(" "),
     attrs: {
       type: normalizedButtonType($cmp.type),
       name: $cmp.name || undefined,

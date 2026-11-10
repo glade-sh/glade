@@ -346,7 +346,12 @@ func fieldSetMapCanonicalName(value Value) (string, bool) {
 	if !ok || name.Kind != ValueString || strings.TrimSpace(name.Text) == "" {
 		return "", false
 	}
-	return name.Text, true
+	// Describe map keys are lowercase and carry the field set's namespace
+	// prefix, e.g. "acme__widgetfields".
+	if ns, ok := value.Fields["namespace"]; ok && ns.Kind == ValueString && strings.TrimSpace(ns.Text) != "" {
+		return strings.ToLower(ns.Text + "__" + name.Text), true
+	}
+	return strings.ToLower(name.Text), true
 }
 
 func sObjectFieldMapCanonicalFieldName(value Value) (string, bool) {

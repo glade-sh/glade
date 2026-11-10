@@ -294,6 +294,21 @@ type flowTransformXML struct {
 	SumField         string                   `xml:"sumField"`
 	Connector        flowConnectorXML         `xml:"connector"`
 	FaultConnector   flowConnectorXML         `xml:"faultConnector"`
+	// Salesforce Transform element metadata.
+	DataType        string                   `xml:"dataType"`
+	IsCollection    string                   `xml:"isCollection"`
+	ObjectType      string                   `xml:"objectType"`
+	TransformValues []flowTransformValuesXML `xml:"transformValues"`
+}
+
+type flowTransformValuesXML struct {
+	Actions []flowTransformValueActionXML `xml:"transformValueActions"`
+}
+
+type flowTransformValueActionXML struct {
+	OutputFieldAPIName string       `xml:"outputFieldApiName"`
+	TransformType      string       `xml:"transformType"`
+	Value              flowValueXML `xml:"value"`
 }
 
 type flowCollectionProcessorXML struct {
@@ -1959,6 +1974,9 @@ func modeledFlowSubflow(subflow flowSubflowXML, formulas map[string]string, vari
 func modeledFlowTransform(transform flowTransformXML, variables map[string]flowVariableXML, lookups []flowRecordLookupXML) (storage.FlowTransform, bool) {
 	name := firstNonBlank(transform.Name, transform.Label)
 	transformType := strings.TrimSpace(transform.TransformType)
+	if name != "" && transformType == "" && len(transform.TransformValues) > 0 {
+		return modeledFlowRecordTransform(name, transform)
+	}
 	if name == "" || transformType == "" {
 		return storage.FlowTransform{}, false
 	}
@@ -1982,6 +2000,34 @@ func modeledFlowTransform(transform flowTransformXML, variables map[string]flowV
 		})
 	}
 	return out, true
+}
+
+// modeledFlowRecordTransform models a Salesforce Transform element that
+// builds one SObject record from Map actions. Collection outputs, joins and
+// other action types stay unmodeled and keep their diagnostic.
+func modeledFlowRecordTransform(name string, transform flowTransformXML) (storage.FlowTransform, bool) {
+	objectType := strings.TrimSpace(transform.ObjectType)
+	if objectType == "" || !strings.EqualFold(strings.TrimSpace(transform.DataType), "SObject") ||
+		strings.EqualFold(strings.TrimSpace(transform.IsCollection), "true") || len(transform.TransformValues) != 1 {
+		return storage.FlowTransform{}, false
+	}
+	out := storage.FlowTransform{Name: name, TransformType: "RecordMap", ObjectType: objectType, TargetCollection: name}
+	for _, action := range transform.TransformValues[0].Actions {
+		field := strings.TrimSpace(action.OutputFieldAPIName)
+		if field == "" || !strings.EqualFold(strings.TrimSpace(action.TransformType), "Map") {
+			return storage.FlowTransform{}, false
+		}
+		reference := strings.TrimSpace(action.Value.ElementReference)
+		literal := ""
+		if reference == "" {
+			literal = flowLiteralValue(action.Value)
+			if literal == "" {
+				return storage.FlowTransform{}, false
+			}
+		}
+		out.FieldMappings = append(out.FieldMappings, storage.WorkflowFieldUpdate{Name: field, Field: field, SourceField: reference, LiteralValue: literal})
+	}
+	return out, len(out.FieldMappings) > 0
 }
 
 func modeledFlowCollectionProcessor(proc flowCollectionProcessorXML, variables map[string]flowVariableXML) (storage.FlowCollectionProcessor, bool) {

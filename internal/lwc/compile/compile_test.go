@@ -35,7 +35,9 @@ func TestBuildCompileConfigAPIVersionMatrix(t *testing.T) {
 		{projectVersion: "67.0", bundleVersion: "66.0", want: 66},
 		{projectVersion: "67.0", bundleVersion: "67.0", want: 67},
 		{projectVersion: "66.0", bundleVersion: "67.0", want: 67},
-		{projectVersion: "67.0", bundleVersion: "58.0", wantError: "unsupported LWC source API version"},
+		// Historical bundles load with the oldest supported compiler semantics.
+		{projectVersion: "67.0", bundleVersion: "58.0", want: 59},
+		{projectVersion: "64.0", bundleVersion: "45.0", want: 59},
 		{projectVersion: "65.0", bundleVersion: "68.0", want: 68},
 		{projectVersion: "67.0", bundleVersion: "68.0", want: 68},
 		{projectVersion: "68.0", bundleVersion: "68.0", want: 68},

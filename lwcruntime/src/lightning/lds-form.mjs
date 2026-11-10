@@ -752,7 +752,7 @@ function renderInputField($api, $cmp) {
   const date = metadataType === "date";
   const displayValue = date ? $cmp.__dateText ?? displayFieldDate($cmp.value) : $cmp.value;
   const controls = [labelNode, h(multiline ? "textarea" : "input", {
-    classMap: { "slds-input": !multiline, "slds-textarea": multiline },
+    className: multiline ? "slds-textarea" : "slds-input",
     attrs: { type: multiline ? undefined : type, "data-field-name": normalizeFieldName($cmp.fieldName) || undefined,
       "aria-invalid": $cmp.__fieldError ? "true" : !date && type !== "checkbox" && $cmp.value !== false && $cmp.value !== null && $cmp.value !== undefined && $cmp.value !== "" ? "false" : undefined },
     props: {

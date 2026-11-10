@@ -3,7 +3,9 @@ package compile
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/namespaceremap"
@@ -77,15 +79,26 @@ func loadSalesforceImports(p project.Project, references []string) (*salesforceI
 	}
 	// Reuse the runtime's schema overlay, including implicit custom-object
 	// fields and its custom-setting/master-detail exclusions.
-	for name, object := range sobject.BuildDescribeRegistry(projectSchema).Objects {
-		cfg.Schema[name] = salesforceSchemaEntry(sobject.ToObjectDefinition(object))
+	multiCurrency := orgShapeHasFeature(project.EffectiveOrgShapeFeatures(p), "MultiCurrency")
+	schemaEntry := func(definition storage.ObjectDefinition) salesforceSchemaObject {
+		entry := salesforceSchemaEntry(definition)
+		// A MultiCurrency org adds CurrencyIsoCode with the same object rules
+		// the runtime org shape applies.
+		if multiCurrency && storage.ObjectGetsMultiCurrencyISOCode(definition) {
+			entry.Fields["CurrencyIsoCode"] = true
+		}
+		return entry
 	}
+	for name, object := range sobject.BuildDescribeRegistry(projectSchema).Objects {
+		cfg.Schema[name] = schemaEntry(sobject.ToObjectDefinition(object))
+	}
+	addOwnNamespaceSchemaAliases(cfg.Schema, p.Namespace)
 	loadObject := func(name string) {
 		if _, loaded := cfg.Schema[name]; loaded {
 			return
 		}
 		if definition, ok := storage.StandardObjectDefinition(name); ok && definition.APIName == name {
-			cfg.Schema[name] = salesforceSchemaEntry(definition)
+			cfg.Schema[name] = schemaEntry(definition)
 		}
 	}
 	for _, reference := range references {
@@ -150,6 +163,67 @@ func loadSalesforceProjectMetadata(p project.Project, cfg *salesforceImportConfi
 		}
 	}
 	return combined, nil
+}
+
+func orgShapeHasFeature(features []string, feature string) bool {
+	for _, candidate := range features {
+		name, _, _ := strings.Cut(strings.TrimSpace(candidate), ":")
+		if strings.EqualFold(name, feature) {
+			return true
+		}
+	}
+	return false
+}
+
+// addOwnNamespaceSchemaAliases lets source inside a namespaced project import
+// its own schema without the namespace prefix, as the platform does:
+// @salesforce/schema/Widget__c.Name__c resolves to acme__Widget__c.acme__Name__c
+// in namespace acme. Names that are already declared unprefixed win.
+func addOwnNamespaceSchemaAliases(objects map[string]salesforceSchemaObject, namespace string) {
+	if namespace == "" {
+		return
+	}
+	prefix := namespace + "__"
+	strip := func(name string) (string, bool) {
+		if len(name) > len(prefix) && strings.EqualFold(name[:len(prefix)], prefix) && strings.Contains(name[len(prefix):], "__") {
+			return name[len(prefix):], true
+		}
+		return name, false
+	}
+	names := make([]string, 0, len(objects))
+	for name := range objects {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		entry := objects[name]
+		for field := range maps.Clone(entry.Fields) {
+			if short, ok := strip(field); ok {
+				entry.Fields[short] = true
+			}
+		}
+		for relationship, targets := range maps.Clone(entry.Relationships) {
+			aliased := append([]string(nil), targets...)
+			for _, target := range targets {
+				if short, ok := strip(target); ok {
+					aliased = append(aliased, short)
+				}
+			}
+			entry.Relationships[relationship] = aliased
+			if short, ok := strip(relationship); ok {
+				if _, declared := entry.Relationships[short]; !declared {
+					entry.Relationships[short] = aliased
+				}
+			}
+		}
+	}
+	for _, name := range names {
+		if short, ok := strip(name); ok {
+			if _, declared := objects[short]; !declared {
+				objects[short] = objects[name]
+			}
+		}
+	}
 }
 
 func salesforceSchemaEntry(definition storage.ObjectDefinition) salesforceSchemaObject {

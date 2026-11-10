@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/glade-sh/glade/internal/apexversion"
 	"sort"
 	"strings"
 
@@ -352,6 +353,7 @@ func (vm *VM) resolveUIAction(className, methodName string, params map[string]an
 	var matchedArgs []Value
 	matched := 0
 	matchedSignatures := map[string]bool{}
+	var overloads []uiOverloadCandidate
 	var parameterErr error
 	for _, method := range candidates {
 		if !method.IsStatic || !methodHasAuraEnabled(method.Modifiers) || (!lwc && len(method.Params) != len(params)) {
@@ -393,15 +395,25 @@ func (vm *VM) resolveUIAction(className, methodName string, params map[string]an
 			}
 			matchedSignatures[signature] = true
 			matched++
-			if matched > 1 {
-				return Method{}, nil, &UIActionDiagnosticError{
-					Code:    "GLADELWC013",
-					Type:    "UnsupportedFeature",
-					Message: "overloaded AuraEnabled method unsupported",
-				}
-			}
+			overloads = append(overloads, uiOverloadCandidate{method: method, args: args})
 			matchedMethod = method
 			matchedArgs = args
+		}
+	}
+	if matched > 1 {
+		// Before API 55, overloaded @AuraEnabled methods deploy (the checker gates
+		// GLADESEMA032 the same way) and are bound by the named parameters the
+		// client sends: prefer the overload whose parameter names equal the sent
+		// keys, then the narrowest overload covering them.
+		if uiOverloadsHistorical(overloads) {
+			if best, ok := selectUIOverload(overloads, params); ok {
+				return best.method, best.args, nil
+			}
+		}
+		return Method{}, nil, &UIActionDiagnosticError{
+			Code:    "GLADELWC013",
+			Type:    "UnsupportedFeature",
+			Message: "overloaded AuraEnabled method unsupported",
 		}
 	}
 	if matched == 1 {
@@ -660,4 +672,61 @@ func tracePageReference(value Value) map[string]any {
 
 func (r UIInvocationResult) JSON() ([]byte, error) {
 	return json.Marshal(r)
+}
+
+type uiOverloadCandidate struct {
+	method Method
+	args   []Value
+}
+
+func selectUIOverload(candidates []uiOverloadCandidate, params map[string]any) (uiOverloadCandidate, bool) {
+	sent := make(map[string]bool, len(params))
+	for key := range params {
+		sent[strings.ToLower(key)] = true
+	}
+	covers := func(c uiOverloadCandidate) (exact, coversSent bool) {
+		names := make(map[string]bool, len(c.method.Params))
+		for _, param := range c.method.Params {
+			names[strings.ToLower(param.Name)] = true
+		}
+		for key := range sent {
+			if !names[key] {
+				return false, false
+			}
+		}
+		return len(names) == len(sent), true
+	}
+	var exact []uiOverloadCandidate
+	best, bestParams, found, tie := uiOverloadCandidate{}, 0, false, false
+	for _, c := range candidates {
+		isExact, ok := covers(c)
+		if !ok {
+			continue
+		}
+		if isExact {
+			exact = append(exact, c)
+		}
+		switch {
+		case !found || len(c.method.Params) < bestParams:
+			best, bestParams, found, tie = c, len(c.method.Params), true, false
+		case len(c.method.Params) == bestParams:
+			tie = true
+		}
+	}
+	if len(exact) == 1 {
+		return exact[0], true
+	}
+	if found && !tie {
+		return best, true
+	}
+	return uiOverloadCandidate{}, false
+}
+
+func uiOverloadsHistorical(candidates []uiOverloadCandidate) bool {
+	for _, c := range candidates {
+		if !apexversion.Before(c.method.APIVersion, 55) {
+			return false
+		}
+	}
+	return len(candidates) > 0
 }

@@ -429,6 +429,9 @@ func semaKnownSObjectFieldTokenPath(receiver string, model *semaTypeMemberView) 
 		objectName, fieldName = parts[0], parts[2]
 	case len(parts) == 4 && strings.EqualFold(parts[1], "SObjectType") && strings.EqualFold(parts[2], "fields"):
 		objectName, fieldName = parts[0], parts[3]
+	case len(parts) == 3 && strings.EqualFold(parts[1], "SObjectType") && !strings.EqualFold(parts[2], "fields") && !strings.EqualFold(parts[2], "fieldSets"):
+		// Account.SObjectType.Name: a field token straight off the SObjectType token.
+		objectName, fieldName = parts[0], parts[2]
 	case len(parts) == 3 && strings.EqualFold(parts[0], "SObjectType") && strings.EqualFold(parts[2], "fields"):
 		objectName = parts[1]
 	case len(parts) == 4 && strings.EqualFold(parts[0], "SObjectType") && strings.EqualFold(parts[2], "fields"):

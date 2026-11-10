@@ -876,6 +876,9 @@ func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.Mem
 				if resolved := resolveMemberMethods(model, receiverType, method); len(resolved) != 0 {
 					return a.diagnoseMethodCall(typ, member, callee, resolved, args, haveArgs, receiverMode, start, end, source, scope, model)
 				}
+				if resolved := semaEnclosingStaticMethods(model, receiverType, method, receiverMode); len(resolved) != 0 {
+					return a.diagnoseMethodCall(typ, member, callee, resolved, args, haveArgs, receiverMode, start, end, source, scope, model)
+				}
 				if sig, ok := semaPlatformMethodSignatureFor(model, receiverType, method); ok {
 					argTypes := make([]string, len(args))
 					for i, arg := range args {
@@ -904,6 +907,16 @@ func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.Mem
 		}
 		if receiverMode != "implicit" && semaCalleeDependencyRoot(callee, scope, model) {
 			return nil
+		}
+		if receiverExpr, calledMethod, ok := splitSemaMethodPath(callee); ok && strings.Contains(receiverExpr, ".") {
+			if _, scoped := scope[normalizeName(strings.Split(receiverExpr, ".")[0])]; !scoped {
+				classType := resolveNestedTypeName(model, typ.Name, receiverExpr)
+				if _, known := model.lookupName(classType); known {
+					if resolved := semaEnclosingStaticMethods(model, classType, calledMethod, "class"); len(resolved) != 0 {
+						return a.diagnoseMethodCall(typ, member, callee, resolved, args, haveArgs, "class", start, end, source, scope, model)
+					}
+				}
+			}
 		}
 		return []diagnostic.Diagnostic{unknownCallDiagnostic(typ, member, callee, start, end, source)}
 	}
@@ -3499,6 +3512,14 @@ func inferSemaFieldAccessType(expr string, scope map[string]string, model *semaT
 		if target, ok := semaResolveFieldPath(model, receiverType, strings.Join(parts[startIndex:], ".")); ok {
 			return target.member.Type
 		}
+		// SObjectType.Widget__c.fieldSets.MainList names a field set; do not let
+		// the name-suffix fallback below guess List<Object> from "...List".
+		if semaKnownSObjectFieldSetPath(expr, model) {
+			if len(strings.Split(strings.TrimPrefix(strings.TrimSpace(expr), "Schema."), ".")) == 4 {
+				return "Schema.FieldSet"
+			}
+			return "Schema.SObjectTypeFieldSets"
+		}
 		if fallback := semaFallbackFieldPathType(parts[len(parts)-1]); fallback != "" && !semaUnknownExternalDottedType(receiverType, model) {
 			return fallback
 		}
@@ -3764,4 +3785,20 @@ func semaShadowEnumReceiverType(receiver ir.Expr, scope irSemaScope, model *sema
 		return ""
 	}
 	return display
+}
+
+// semaEnclosingStaticMethods resolves Outer.Inner.staticMethod(): when a class
+// receiver's own chain lacks the method, Apex binds a static method declared on
+// an enclosing class.
+func semaEnclosingStaticMethods(model *semaTypeMemberView, receiverType, method, receiverMode string) []resolvedMember {
+	if receiverMode == "instance" || receiverMode == "implicit" || !strings.Contains(receiverType, ".") {
+		return nil
+	}
+	var out []resolvedMember
+	for _, candidate := range resolveImplicitMemberMethods(model, receiverType, method) {
+		if hasModifier(candidate.member.Modifiers, "static") {
+			out = append(out, candidate)
+		}
+	}
+	return out
 }

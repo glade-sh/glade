@@ -2249,6 +2249,12 @@ func collectFiles(root string, p *Project, ignore *forceIgnoreSet) error {
 		case isAuraPath(lower) && isAuraSourceFile(lower):
 			p.AuraFiles = append(p.AuraFiles, path)
 		case isLWCPath(lower):
+			// Files directly under an lwc/ folder (jsconfig.json, typedef.js,
+			// lint configs) belong to no component bundle; Salesforce source
+			// deployment only reads files inside lwc/<bundle>/.
+			if strings.EqualFold(filepath.Base(filepath.Dir(path)), "lwc") {
+				return nil
+			}
 			switch {
 			case strings.HasSuffix(lower, ".js"):
 				p.LWCFiles = append(p.LWCFiles, path)

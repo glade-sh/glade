@@ -644,6 +644,12 @@ func looksLikeSemaGenericOpen(arg string, pos int) bool {
 			if depth == 1 {
 				return false
 			}
+		case '&', '|', '!', '+', '-', '*', '/', '?', ':', ')':
+			// Type arguments never contain operators: `a < b && c > d` is a
+			// comparison chain, not Type<b && c>.
+			if depth >= 1 {
+				return false
+			}
 		}
 	}
 	return false

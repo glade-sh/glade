@@ -9,6 +9,8 @@ import (
 	"math/big"
 	"net/http"
 	"net/url"
+	"os"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -119,7 +121,10 @@ func (s *Server) invokeLightningApex(w http.ResponseWriter, r *http.Request, cla
 	// isolated org and publish it only after the action succeeds and the
 	// backing store accepts the result. Using s.Org directly would leak DML
 	// from a later Apex exception and make persistence failures irreversible.
-	workingOrg := s.Org.Clone()
+	// The copy-on-write snapshot shares record and index maps until the VM
+	// first writes an object (the same isolation rollback savepoints use), so
+	// a large org is not deep-copied for every action.
+	workingOrg := storage.SnapshotRuntimeOrg(s.Org)
 	machine.SetOrg(&workingOrg)
 	machine.SetSynchronousActionBoundary(true)
 	machine.SetCurrentUser(s.currentUser(r, ""))
@@ -163,12 +168,7 @@ func (s *Server) invokeLightningApex(w http.ResponseWriter, r *http.Request, cla
 		})
 		return
 	}
-	if machine.HasPendingAsyncWork() {
-		writeWireJSON(w, lwcbrowser.WireResponse{
-			Error: apexWireInvocationError("", "UnsupportedFeature", className, methodName, rawParams, "asynchronous Apex work cannot be committed by the local synchronous LWC action boundary", http.StatusNotImplemented),
-		})
-		return
-	}
+	pendingAsync := machine.HasPendingAsyncWork()
 	if !orgStateEqual(workingOrg, *s.Org) {
 		if err := s.commitOrg(workingOrg); err != nil {
 			writeWireJSON(w, lwcbrowser.WireResponse{
@@ -177,7 +177,36 @@ func (s *Server) invokeLightningApex(w http.ResponseWriter, r *http.Request, cla
 			return
 		}
 	}
+	if pendingAsync {
+		s.runLightningAsyncAfterCommit(machine, className, methodName)
+	}
 	writeWireJSON(w, lwcbrowser.WireResponse{Data: result.ReturnValue})
+}
+
+// runLightningAsyncAfterCommit runs the Queueable and other local async jobs an
+// LWC action enqueued. As on Salesforce they run after the action's
+// transaction commits, in their own transaction: their changes commit
+// separately, and a failure is reported locally without failing the action.
+func (s *Server) runLightningAsyncAfterCommit(machine *vm.VM, className, methodName string) {
+	asyncOrg := storage.SnapshotRuntimeOrg(s.Org)
+	machine.SetOrg(&asyncOrg)
+	machine.SetSynchronousActionBoundary(false)
+	var result vm.Result
+	if err := machine.DrainAsync(&result); err != nil {
+		fmt.Fprintf(os.Stderr, "glade: async Apex enqueued by %s.%s failed: %v\n", className, methodName, err)
+		machine.DiscardPendingLocalAsyncJobs()
+		return
+	}
+	if machine.HasPendingAsyncWork() {
+		fmt.Fprintf(os.Stderr, "glade: async Apex enqueued by %s.%s left unfinished jobs\n", className, methodName)
+		machine.DiscardPendingLocalAsyncJobs()
+		return
+	}
+	if !orgStateEqual(asyncOrg, *s.Org) {
+		if err := s.commitOrg(asyncOrg); err != nil {
+			fmt.Fprintf(os.Stderr, "glade: async Apex enqueued by %s.%s could not be stored: %v\n", className, methodName, err)
+		}
+	}
 }
 
 func (s *Server) lightningApexCacheable(className, methodName string) bool {
@@ -233,12 +262,40 @@ func apexWireActionError(action *vm.UIActionError, className, methodName string,
 }
 
 func orgStateEqual(left, right storage.OrgState) bool {
+	// Objects whose record and index maps are still shared by both copy-on-write
+	// snapshots were not written, so only their definitions need comparing.
+	// Everything else keeps the full JSON comparison.
+	if len(left.Objects) != len(right.Objects) {
+		return false
+	}
+	leftObjects := make(map[string]storage.ObjectState, len(left.Objects))
+	rightObjects := make(map[string]storage.ObjectState, len(right.Objects))
+	for name, leftObject := range left.Objects {
+		rightObject, ok := right.Objects[name]
+		if !ok {
+			return false
+		}
+		if sameMapStorage(leftObject.Records, rightObject.Records) && sameMapStorage(leftObject.Indexes, rightObject.Indexes) {
+			leftObject.Records, leftObject.Indexes = nil, nil
+			rightObject.Records, rightObject.Indexes = nil, nil
+		}
+		leftObjects[name] = leftObject
+		rightObjects[name] = rightObject
+	}
+	left.Objects, right.Objects = leftObjects, rightObjects
 	leftBytes, leftErr := json.Marshal(left)
 	rightBytes, rightErr := json.Marshal(right)
 	if leftErr != nil || rightErr != nil {
 		return false
 	}
 	return bytes.Equal(leftBytes, rightBytes)
+}
+
+func sameMapStorage[K comparable, V any](left, right map[K]V) bool {
+	if left == nil || right == nil {
+		return left == nil && right == nil
+	}
+	return reflect.ValueOf(left).UnsafePointer() == reflect.ValueOf(right).UnsafePointer()
 }
 
 func lightningLocalContextPageURL(r *http.Request) string {
@@ -687,7 +744,7 @@ func getRecordWireDataInLocation(org *storage.OrgState, recordID string, fields 
 		if !qualified || name == "" {
 			continue
 		}
-		if !strings.EqualFold(requestedObject, objectName) {
+		if !ldsSameObjectName(org, requestedObject, objectName) {
 			return nil, &lwcbrowser.WireError{Type: "INVALID_INPUT", Status: http.StatusBadRequest, RecordErrorID: "945406546", Message: fmt.Sprintf(`The "fields" query string parameter contained object api names that do not correspond to the api names of any of the requested record ids. The requested object api names were: [%s], while the requested records had object types: [%s]`, requestedObject, objectName)}
 		}
 		if name != "" {
@@ -695,7 +752,7 @@ func getRecordWireDataInLocation(org *storage.OrgState, recordID string, fields 
 		}
 	}
 	for _, ref := range optionalFields {
-		if requestedObject, name, qualified := strings.Cut(ref, "."); qualified && strings.EqualFold(requestedObject, objectName) && name != "" {
+		if requestedObject, name, qualified := strings.Cut(ref, "."); qualified && ldsSameObjectName(org, requestedObject, objectName) && name != "" {
 			fieldNames = append(fieldNames, name)
 			optionalByName[strings.ToLower(name)] = true
 		}
@@ -2006,6 +2063,19 @@ func storageValueFromAny(raw any) storage.Value {
 	}
 }
 
+// ldsSameObjectName reports whether a requested object API name names the
+// stored object, accepting the unprefixed form inside the org namespace.
+func ldsSameObjectName(org *storage.OrgState, requested, objectName string) bool {
+	if strings.EqualFold(requested, objectName) {
+		return true
+	}
+	if org == nil {
+		return false
+	}
+	resolved, ok := storage.ResolveObjectName(*org, strings.TrimSpace(requested))
+	return ok && strings.EqualFold(resolved, objectName)
+}
+
 func findOrgObject(org *storage.OrgState, objectAPIName string) (objectName string, object storage.ObjectState, ok bool) {
 	if org == nil {
 		return "", storage.ObjectState{}, false
@@ -2021,6 +2091,13 @@ func findOrgObject(org *storage.OrgState, objectAPIName string) (objectName stri
 	for name, candidate := range org.Objects {
 		if strings.EqualFold(name, objectAPIName) || strings.EqualFold(candidate.Definition.APIName, objectAPIName) {
 			return name, candidate, true
+		}
+	}
+	// Components inside a namespaced package reference their own objects
+	// without the prefix; resolve them the way Apex does.
+	if resolved, ok := storage.ResolveObjectName(*org, objectAPIName); ok {
+		if candidate, exists := org.Objects[resolved]; exists {
+			return resolved, candidate, true
 		}
 	}
 	return "", storage.ObjectState{}, false

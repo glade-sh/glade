@@ -50,7 +50,7 @@ function dateFormatExample() { return dateText("2024-12-31"); }
 function tmpl($api, $cmp) {
   const { h: element, t: text, b: bind, f: flatten } = $api;
   const checkbox = $cmp.isCheckbox;
-  const children = [element("span", { classMap: { "slds-form-element__label": true }, key: 1 }, [text($cmp.label || "")])];
+  const children = [element("span", { className: $cmp.variant === "label-hidden" ? "slds-form-element__label slds-assistive-text" : "slds-form-element__label", key: 1 }, [text($cmp.label || "")])];
   {
     const attrs = {
       name: $cmp.name,
@@ -77,7 +77,7 @@ function tmpl($api, $cmp) {
     };
     if (!isTextarea) props.checked = $cmp.checked;
     children.push(element(isTextarea ? "textarea" : "input", {
-      classMap: { "slds-input": !isTextarea, "slds-textarea": isTextarea },
+      className: isTextarea ? "slds-textarea" : "slds-input",
       attrs, props, key: 2,
       on: { input: bind($cmp.handleInput), change: bind($cmp.handleChange), focus: bind($cmp.handleFocus), blur: bind($cmp.handleBlur), invalid: bind($cmp.handleInvalid) }
     }));
@@ -104,7 +104,7 @@ function tmpl($api, $cmp) {
     }
     children.push(element("div", { classMap: { "slds-form-element__help": true }, attrs: { role: "alert" }, key: 3 }, help));
   }
-  return [element("label", { classMap: { "slds-form-element": true, "slds-has-error": Boolean($cmp._message) }, key: 0 }, flatten(children))];
+  return [element("label", { className: $cmp._message ? "slds-form-element slds-has-error" : "slds-form-element", key: 0 }, flatten(children))];
 }
 tmpl.stylesheets = [];
 const template = registerTemplate(tmpl);

@@ -3008,6 +3008,32 @@ func (vm *VM) resolveStaticMethodForArgs(typeName, method string, args []Value) 
 			searchType = vm.resolvedSuperClassName(class)
 		}
 	}
+	// Apex resolves Outer.Inner.staticMethod() against the enclosing class when
+	// neither the inner class nor its superclasses declare the method: inner
+	// classes see their outer class's static members.
+	for _, candidateType := range candidates {
+		for enclosing := candidateType; ; {
+			dot := strings.LastIndexByte(enclosing, '.')
+			if dot <= 0 {
+				break
+			}
+			enclosing = enclosing[:dot]
+			if _, ok := vm.lookupClass(enclosing); !ok {
+				break
+			}
+			target, ok, ambiguous := vm.matchRegisteredStaticMethod(enclosing+"."+method, args)
+			if ambiguous {
+				return Method{}, false, true
+			}
+			if ok {
+				if vm.methodResolveCache == nil {
+					vm.methodResolveCache = make(map[string]methodResolution)
+				}
+				vm.methodResolveCache[cacheKey] = methodResolution{Method: target, OK: true}
+				return target, true, false
+			}
+		}
+	}
 	if vm.methodResolveCache == nil {
 		vm.methodResolveCache = make(map[string]methodResolution)
 	}
