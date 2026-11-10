@@ -4,6 +4,8 @@
 
 Planned changes are listed below.
 
+- **LWC record pages in namespaced projects.** The local record page shell matches a FlexiPage and a component's supported objects that name a project object without its namespace prefix (`Widget__c`) to the namespaced object from navigation (`acme__Widget__c`), and keeps the namespaced name in the record context. Navigation without `objectApiName` (the `Record` placeholder) takes the object from the record Id. Another namespace's object still reports `GLADELWC004`. (local contract, no native capture)
+
 ## v0.3.5
 
 v0.3.5 extends the supported Apex window to API 68.0, tracks the Salesforce Winter '27 release, and closes a large set of differences found by running real projects: field-level security for the default administrator, user-mode queries and DML, platform events, Flow, Visualforce markup, locale-aware strings and SOQL, and org-shape gating of standard objects. It also requires authentication on every API route of an exposed `glade server` listener. API labels list the source versions checked against captured results. The supported windows and hosted boundaries are in [release policy](RELEASE_POLICY.md#salesforce-api-versions).
