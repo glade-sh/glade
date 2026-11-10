@@ -3960,7 +3960,7 @@
    "durationMillis": 0
   },
   {
-   "name": "TestExecCreatedByProfileUserLicenseUsesCommunityLicenseKey",
+   "name": "TestExecCreatedByProfileUserLicenseUsesChatterExternalLicenseKey",
    "durationMillis": 50
   },
   {
