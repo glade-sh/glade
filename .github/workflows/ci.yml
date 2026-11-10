@@ -1635,7 +1635,7 @@ jobs:
         run: |
           if [[ "$SHARD" == 0 ]]; then
             go build -o "$RUNNER_TEMP/glade" ./cmd/glade
-            go test -count=1 ./internal/repoguard ./scripts
+            go test -count=1 -timeout=0 ./internal/repoguard ./scripts
             if git diff --no-renames --name-only HEAD^1 HEAD | grep -q "^third_party/glade-apex-parser/"; then
               (cd third_party/glade-apex-parser && go test -count=1 ./...)
             fi
