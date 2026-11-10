@@ -3995,7 +3995,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			engine := vm.newDMLEngine(result)
 			output, err := engine.RunAutolaunchedFlowWithOutput(rule, input)
 			if err != nil {
-				if _, inputFailure := dml.FlowActionInputFailureResult(err); inputFailure || dml.IsFlowRecordUpdateMissingID(err) {
+				if _, inputFailure := dml.FlowActionInputFailureResult(err); inputFailure || dml.IsFlowRecordUpdateMissingID(err) || dml.IsFlowLookupCollectionFault(err) {
 					return Null, receiver, false, true, newExceptionError("System.FlowException", err.Error())
 				}
 				return Null, receiver, false, true, err

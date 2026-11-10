@@ -3706,6 +3706,10 @@ func (e *Engine) applyFlowTransformStep(transform storage.FlowTransform, frame *
 					return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow transform %s references unknown value %s", transform.Name, mapping.SourceField)
 				}
 			}
+			value, ok = e.flowTransformTargetValue(state.Definition.Fields[field], value)
+			if !ok {
+				return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", []string{field}, "dml: flow transform %s has unsupported value for %s.%s", transform.Name, objectName, field)
+			}
 			record.Fields[field] = value
 			if value.Kind == storage.ValueNull {
 				if record.ExplicitNulls == nil {
@@ -3907,7 +3911,16 @@ func (e *Engine) flowRecordLookupRecords(lookup storage.FlowRecordLookup, source
 		for _, item := range lookup.Criteria {
 			match, ok := e.evaluateFlowLookupCriteria(item, candidate, target.Definition, source, sourceDefinition, frame)
 			if !ok {
-				return nil, storage.ObjectDefinition{}, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", []string{item.Field}, "dml: flow record lookup %s has unsupported criteria for %s.%s", lookup.Name, targetName, item.Field)
+				err := dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", []string{item.Field}, "dml: flow record lookup %s has unsupported criteria for %s.%s", lookup.Name, targetName, item.Field)
+				op := strings.ToLower(strings.ReplaceAll(strings.TrimSpace(item.Operation), " ", ""))
+				if op == "in" || op == "notin" {
+					field, fieldOK := storage.ResolveFieldName(target.Definition, e.Org.Namespace, item.Field)
+					value, valueOK := e.flowRecordUpdateSourceValue(item.SourceField, source, sourceDefinition, frame)
+					if fieldOK && valueOK && flowLookupCollectionHasCapturedFault(target.Definition.Fields[field], value) {
+						return nil, storage.ObjectDefinition{}, &flowLookupCollectionFault{cause: err}
+					}
+				}
+				return nil, storage.ObjectDefinition{}, err
 			}
 			if disjunction && match {
 				matches = true
@@ -3988,7 +4001,11 @@ func (e *Engine) evaluateFlowLookupCriteria(item storage.WorkflowCriteriaItem, t
 		}
 		found := false
 		for _, element := range sourceValue.List {
-			if flowLookupIDValuesEqual(field, targetValue, element) {
+			equal, supported := flowLookupCollectionValuesEqual(field, targetValue, element)
+			if !supported {
+				return false, false
+			}
+			if equal {
 				found = true
 				break
 			}
