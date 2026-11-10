@@ -546,7 +546,9 @@ func TestNamespaceAbsenceProofPartialFormulaCatalog(t *testing.T) {
 			})
 			// The shared fixture's undeclared bar/fooNs references reject
 			// (ruling 49); only FormulaCatalogConsumer is under test here.
-			for _, d := range Analyze(index).Diagnostics {
+			diagnostics := Analyze(index).Diagnostics
+			assertUndeclaredSharedFixtureDiagnostics(t, diagnostics, "FormulaCatalogConsumer.cls", "")
+			for _, d := range diagnostics {
 				if d.Severity == diagnostic.Error && filepath.Base(d.File) == "FormulaCatalogConsumer.cls" {
 					t.Errorf("partial FormulaEval catalog proved absence: %+v", d)
 				}

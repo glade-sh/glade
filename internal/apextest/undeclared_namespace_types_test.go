@@ -76,7 +76,7 @@ func TestUndeclaredNamespaceTypesProjectRoutes(t *testing.T) {
 							t.Errorf("declared run excluded %s for %q", entry.ClassName, entry.Message)
 						}
 					}
-					if s := run.Summary(); s.Passed != 0 || s.CompileErrors != 1 || len(run.ExcludedClasses) == 0 {
+					if s := run.Summary(); s.Total != 1 || s.Passed != 0 || s.CompileErrors != 1 || len(run.ExcludedClasses) == 0 {
 						t.Fatalf("declared summary=%+v excluded=%+v problem=%s", s, run.ExcludedClasses, firstRunProblem(run))
 					}
 					return
@@ -100,7 +100,7 @@ func TestUndeclaredNamespaceTypesProjectRoutes(t *testing.T) {
 				}
 				undeclaredErrors("project", sema.Analyze(index).Diagnostics)
 				undeclaredErrors("anonymous", sema.AnalyzeAnonymous(index, string(anonymous), api).Diagnostics)
-				if s := run.Summary(); s.Passed != 0 || s.CompileErrors != 1 {
+				if s := run.Summary(); s.Total != 1 || s.Passed != 0 || s.CompileErrors != 1 {
 					t.Fatalf("undeclared summary=%+v excluded=%+v problem=%s", s, run.ExcludedClasses, firstRunProblem(run))
 				}
 			})
