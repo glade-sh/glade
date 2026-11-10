@@ -145,6 +145,20 @@ func (vm *VM) currentUserObjectPermission(objectName, method string) bool {
 	profileID := stringField(user, "ProfileId")
 	profileName := vm.currentUserProfileName(user)
 	if profileName == "System Administrator" {
+		// A profile-owned field inventory defines the grants for permissionable
+		// fields on that object. An assigned permission set can add a grant;
+		// otherwise an absent row in the captured inventory remains denied.
+		profileSet := vm.profileOwnedPermissionSetID(profileID)
+		_, field, known := vm.sObjectFieldDefinition(objectName, fieldName)
+		if known && storage.IsKnownStandardObject(objectName) && storage.FieldFlagValue(field.Permissionable, true) && vm.parentHasFieldPermissionsForObject(profileSet, objectName) {
+			for _, source := range vm.assignedPermissionSources(stringField(user, "Id"), false) {
+				if vm.sourceFieldPermission(source, objectName, fieldName, method) {
+					return true
+				}
+			}
+			allowed, _ := vm.explicitFieldPermission(profileSet, objectName, fieldName, method)
+			return allowed
+		}
 		return true
 	}
 	profilePermissionSetID := vm.profileOwnedPermissionSetID(profileID)
@@ -1184,7 +1198,7 @@ func (vm *VM) stripInaccessibleRecord(accessType string, record *Value, enforceR
 			continue
 		}
 		fieldAllowed := readableObject && vm.currentUserFieldPermissionWithScope(objectName, canonicalField, fieldPermission, scopedPermissionSetID)
-		if scopedPermissionSetID == "" {
+		if scopedPermissionSetID == "" && !isLoadedSObjectDefault(*record, field) {
 			fieldAllowed = fieldAllowed || vm.stripInaccessibleKeepsBaselineWritableField(accessType, objectName, canonicalField, true)
 		}
 		if isExplicitSObjectField(*record, field) || isLoadedSObjectDefault(*record, field) || vm.queriedSObjectFieldsIncludes(*record, field) {

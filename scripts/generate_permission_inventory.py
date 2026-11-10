@@ -78,17 +78,17 @@ for r in rows:
 out = {'licenses': licenses, 'permissionSets': sets}
 (root / 'internal/storage/seeddata/permission_inventory.json').write_text(json.dumps(out, indent=2, ensure_ascii=False) + '\n')
 
-payload = json.loads((capture.parent / 'profile_permission_rows/native-payload/s0-62-anonymous-fields.json').read_text())
-field_rows = []
-for item in payload:
-    if item['kind'] != 'permissionRow':
-        continue
-    row = item['row']
-    profile = row['Parent']['Profile']['Name']
-    if profile not in ('System Administrator', 'Standard User'):
-        continue
-    field_rows.append({'profile': profile, 'object': row['SobjectType'], 'field': row['Field'],
-                       'read': row['PermissionsRead'], 'edit': row['PermissionsEdit']})
-if len(field_rows) != 94:
-    raise ValueError('expected 94 native selected field rows')
+with (capture.parent / 'profile_field_inventory' / 'org.tsv').open() as f:
+    observations = list(csv.DictReader(f, delimiter='\t'))
+def field_inventory(api):
+    return sorted((r['profile'], r['object'], r['field'], r['read'], r['edit'])
+                  for r in observations if r['source_api'] == api)
+if field_inventory('62.0') != field_inventory('67.0'):
+    raise ValueError('profile field inventory differs by source API')
+field_rows = [dict(profile=profile, object=obj, field=field,
+                   read=read == 'true', edit=edit == 'true')
+              for profile, obj, field, read, edit in field_inventory('67.0')
+              if field != '<no rows>']
+if len(field_rows) != 224:
+    raise ValueError('expected 224 native selected field rows')
 (root / 'internal/storage/seeddata/profile_field_permissions.json').write_text(json.dumps(field_rows, indent=2) + '\n')
