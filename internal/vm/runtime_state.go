@@ -2805,6 +2805,7 @@ func (vm *VM) applyDeferredAutomation(engine *dml.Engine, records, oldRecords []
 			return vm.refireAutomationUpdateTriggers(record.Object, record.ID, oldRecord, allOrNone, rollback, result)
 		}, func(outcomes []dml.AutomationResult, rule storage.FlowRule) error {
 			var changed, before []storage.Record
+			var positions []int
 			for i, outcome := range outcomes {
 				record := records[i]
 				appendTrace(result, "apex.automation.apply", "apex.automation", map[string]any{
@@ -2820,8 +2821,9 @@ func (vm *VM) applyDeferredAutomation(engine *dml.Engine, records, oldRecords []
 				}
 				changed = append(changed, record)
 				before = append(before, old)
+				positions = append(positions, i)
 			}
-			return vm.refireAutomationUpdateTriggerBatch(changed, before, len(records), rule, allOrNone, rollback, result)
+			return vm.refireAutomationUpdateTriggerBatch(changed, before, positions, len(records), rule, allOrNone, rollback, result)
 		}); handled {
 			if err != nil && allOrNone {
 				if rollbackErr := vm.restoreDMLRollbackPoint(rollback); rollbackErr != nil {
@@ -2955,7 +2957,7 @@ func (vm *VM) refireAutomationUpdateTriggersFor(objectName string, ids []storage
 // The captured action-output Flow finishes all selected record writes before
 // refiring update triggers on the batch. Snapshot the stored records together
 // so nested trigger DML cannot make a later record's new image stale.
-func (vm *VM) refireAutomationUpdateTriggerBatch(records, oldRecords []storage.Record, inputCount int, rule storage.FlowRule, allOrNone bool, rollback vmDMLRollbackPoint, result *Result) error {
+func (vm *VM) refireAutomationUpdateTriggerBatch(records, oldRecords []storage.Record, positions []int, inputCount int, rule storage.FlowRule, allOrNone bool, rollback vmDMLRollbackPoint, result *Result) error {
 	if vm == nil || vm.Org == nil || len(records) == 0 {
 		return nil
 	}
@@ -2971,6 +2973,7 @@ func (vm *VM) refireAutomationUpdateTriggerBatch(records, oldRecords []storage.R
 		return nil
 	}
 	var current, before []storage.Record
+	var currentPositions []int
 	for i, record := range records {
 		if record.ID == "" {
 			continue
@@ -2989,6 +2992,7 @@ func (vm *VM) refireAutomationUpdateTriggerBatch(records, oldRecords []storage.R
 		}
 		current = append(current, stored.Clone())
 		before = append(before, old)
+		currentPositions = append(currentPositions, positions[i])
 	}
 	if len(current) == 0 {
 		return nil
@@ -3000,7 +3004,7 @@ func (vm *VM) refireAutomationUpdateTriggerBatch(records, oldRecords []storage.R
 		return dmlExceptionFromTriggerError("update", err)
 	}
 	if hasDMLFailures(failures) {
-		captured, capturedOK := flowRefireCapturedTriggerFailure(failures, current, inputCount, rule)
+		captured, capturedOK := flowRefireCapturedTriggerFailure(failures, current, currentPositions, inputCount, rule)
 		// The caller owns rollback for an error from the batch callback. A
 		// second restore of a temporary journal would replace the org with the
 		// unused snapshot and lose metadata for the next DML statement.
@@ -3021,9 +3025,14 @@ func (vm *VM) refireAutomationUpdateTriggerBatch(records, oldRecords []storage.R
 // Native Flow sources 62-67 capture a single record-level trigger rejection
 // during an atomic 2-200 record action-output refire. Other error shapes
 // retain the existing workflow failure handling until captured.
-func flowRefireCapturedTriggerFailure(failures []dml.Result, records []storage.Record, inputCount int, rule storage.FlowRule) (error, bool) {
-	if inputCount < 2 || inputCount > 200 || len(records) != inputCount || len(failures) != inputCount || strings.TrimSpace(rule.Label) == "" {
+func flowRefireCapturedTriggerFailure(failures []dml.Result, records []storage.Record, positions []int, inputCount int, rule storage.FlowRule) (error, bool) {
+	if inputCount < 2 || inputCount > 200 || len(records) < 2 || len(failures) != len(records) || len(positions) != len(records) || strings.TrimSpace(rule.Label) == "" {
 		return nil, false
+	}
+	for i, position := range positions {
+		if position < 0 || position >= inputCount || (i > 0 && positions[i-1] >= position) {
+			return nil, false
+		}
 	}
 	plainMessage := false
 	switch rule.APIVersion {
@@ -3054,8 +3063,8 @@ func flowRefireCapturedTriggerFailure(failures []dml.Result, records []storage.R
 	} else {
 		detail.Message = prefix + "The flow tried to update these records: " + apexIDTo18(string(records[index].ID)) + ". This error occurred: " + detail.StatusCode + ": " + detail.Message + ". You can look up ExceptionCode values in the <a href='https://developer.salesforce.com/docs/atlas.en-us.api.meta/api/sforce_api_calls_concepts_core_data_objects.htm#'>SOAP API Developer Guide</a>."
 	}
-	results := make([]dml.Result, len(failures))
-	results[index] = dml.Result{Error: detail.Message, StatusCode: detail.StatusCode, Errors: []dml.Error{detail}}
+	results := make([]dml.Result, inputCount)
+	results[positions[index]] = dml.Result{Error: detail.Message, StatusCode: detail.StatusCode, Errors: []dml.Error{detail}}
 	err := rowDMLException("insert", results, nil)
 	if thrown, ok := err.(*apexThrowError); ok {
 		values := thrown.value.Fields["__dmlErrors"]

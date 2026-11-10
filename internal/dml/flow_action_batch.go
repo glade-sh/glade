@@ -117,10 +117,10 @@ func (e *Engine) runFlowActionBatch(rule storage.FlowRule, action storage.FlowAc
 			}
 		}
 	}
-	// The native refire capture covers a successful all-admitted action whose
-	// output writes both Date and Datetime on the triggering records. Delay
+	// The native refire captures cover successful action inputs selected by an
+	// unfiltered or String-prefix start, with Date and Datetime outputs. Delay
 	// trigger refiring for that shape until all of those writes are stored.
-	batchedRefire := len(afterBatch) == 1 && afterBatch[0] != nil && len(requests) == len(records) && batchErr == nil && flowActionDateRefireShape(rule, definition, e.Org.Namespace) && flowActionDateRefireOutputs(frames)
+	batchedRefire := len(afterBatch) == 1 && afterBatch[0] != nil && len(requests) >= 2 && batchErr == nil && flowActionDateRefireShape(rule, definition, e.Org.Namespace) && flowActionDateRefireOutputs(frames)
 	var outcomes []AutomationResult
 	if batchedRefire {
 		outcomes = make([]AutomationResult, len(records))
@@ -186,8 +186,15 @@ func (e *Engine) runFlowActionBatch(rule storage.FlowRule, action storage.FlowAc
 // Only the captured direct action-output Date/Datetime write shape is batched;
 // other graphs retain the existing per-record completion callback.
 func flowActionDateRefireShape(rule storage.FlowRule, definition storage.ObjectDefinition, namespace string) bool {
-	if len(rule.Criteria) != 0 || len(rule.CriteriaGroups) != 0 || strings.TrimSpace(rule.Formula) != "" {
+	if len(rule.CriteriaGroups) != 0 || strings.TrimSpace(rule.Formula) != "" || len(rule.Criteria) > 1 {
 		return false
+	}
+	if len(rule.Criteria) == 1 {
+		criterion := rule.Criteria[0]
+		field, ok := storage.ResolveFieldName(definition, namespace, criterion.Field)
+		if !ok || definition.Fields[field].Type != storage.FieldString || !strings.EqualFold(criterion.Operation, "startsWith") || criterion.Value == "" || criterion.SourceField != "" {
+			return false
+		}
 	}
 	var steps []storage.FlowStep
 	active := make(map[string]bool)
@@ -246,12 +253,17 @@ func flowActionDateRefireShape(rule storage.FlowRule, definition storage.ObjectD
 // The trigger-refire rows use a populated Datetime result for every action
 // input; null or missing outputs retain the existing completion path.
 func flowActionDateRefireOutputs(frames []*flowFrame) bool {
+	count := 0
 	for _, frame := range frames {
-		if frame == nil || frame.preparedAction == nil || !frame.preparedAction.hasOutput || frame.preparedAction.output.Kind != storage.ValueDateTime {
+		if frame == nil {
+			continue
+		}
+		if frame.preparedAction == nil || !frame.preparedAction.hasOutput || frame.preparedAction.output.Kind != storage.ValueDateTime {
 			return false
 		}
+		count++
 	}
-	return len(frames) != 0
+	return count >= 2
 }
 
 // The captured batch fault uses one direct, record-independent Custom Error.
