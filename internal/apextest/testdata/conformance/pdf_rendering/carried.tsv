@@ -1,5 +1,3 @@
 source_api	configuration	route	case_id	reason
 62.0	plain	anonymous	missingPage	Page reference rendering: missing-page validation and test-method rejection differ locally.
-62.0	plain	isTest	missingPage	Page reference rendering: missing-page validation and test-method rejection differ locally.
 67.0	plain	anonymous	missingPage	Page reference rendering: missing-page validation and test-method rejection differ locally.
-67.0	plain	isTest	missingPage	Page reference rendering: missing-page validation and test-method rejection differ locally.
