@@ -17,6 +17,7 @@ import (
 	"github.com/glade-sh/glade/internal/sema"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
+	"github.com/glade-sh/glade/internal/visualforce"
 )
 
 // Native anonymous, named-test and REST controls for missing page content
@@ -90,6 +91,7 @@ func TestPageErrorHostRoutesNative(t *testing.T) {
 			host := newLightningTestServer(t, &org, source)
 			host.VisualforceHTMLUserID = storage.DefaultUserID
 			host.SetProjectIndex(idx)
+			baselineEnvironments := visualforce.VMRenderEnvironmentCountForTest()
 			version := strings.TrimSuffix(api, ".0")
 			for _, kind := range []string{"html", "pdf"} {
 				t.Run(kind, func(t *testing.T) {
@@ -107,6 +109,9 @@ func TestPageErrorHostRoutesNative(t *testing.T) {
 								req := httptest.NewRequest(route.method, route.path, strings.NewReader(route.body))
 								req.Header.Set("Content-Type", "application/json")
 								host.ServeHTTP(rec, req)
+								if got := visualforce.VMRenderEnvironmentCountForTest(); got != baselineEnvironments {
+									t.Fatalf("%s leaked render environments: got %d want %d", phase, got, baselineEnvironments)
+								}
 								if route.name == "rest" {
 									var got any
 									if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {

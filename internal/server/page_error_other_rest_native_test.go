@@ -16,6 +16,7 @@ import (
 	"github.com/glade-sh/glade/internal/sema"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
+	"github.com/glade-sh/glade/internal/visualforce"
 )
 
 func TestOtherMissingPDFRestNative(t *testing.T) {
@@ -83,10 +84,14 @@ func TestOtherMissingPDFRestNative(t *testing.T) {
 			storage.EnsureDeterministicPlatformData(&org)
 			host := newLightningTestServer(t, &org, source)
 			host.SetProjectIndex(idx)
+			baselineEnvironments := visualforce.VMRenderEnvironmentCountForTest()
 			version := strings.TrimSuffix(api, ".0")
 			for _, phase := range []string{"cold", "warm"} {
 				rec := httptest.NewRecorder()
 				host.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/apexrest/page-control-other-"+version+"/", nil))
+				if got := visualforce.VMRenderEnvironmentCountForTest(); got != baselineEnvironments {
+					t.Fatalf("%s leaked render environments: got %d want %d", phase, got, baselineEnvironments)
+				}
 				var got any
 				if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
 					t.Fatalf("%s: %v body=%s", phase, err, rec.Body.String())
