@@ -276,7 +276,9 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 			want = 31
 		}
 		if objectName == "ObjectPermissions" {
-			want = 58
+			// Native profile_object_inventory rows add 10 captured
+			// Standard User/Campaign,Case,Lead,Pricebook2,Product2 grants.
+			want = 68
 		}
 		if objectName == "UserRole" {
 			want = 18
@@ -366,7 +368,9 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 	if license, ok := org.Objects["UserLicense"].Records["100000000000001"]; !ok || license.Fields["LicenseDefinitionKey"].String != "SFDC" {
 		t.Fatalf("salesforce license = %#v, %v", license, ok)
 	}
-	if license, ok := org.Objects["UserLicense"].Records["100000000000002"]; !ok || license.Fields["LicenseDefinitionKey"].String != "PID_Customer_Community_Login" {
+	// profile_usertype/org.tsv:84 (API 62.0; :194 at 67.0): Chatter External
+	// is CSN_External_User; main's expectation predates the rows.
+	if license, ok := org.Objects["UserLicense"].Records["100000000000002"]; !ok || license.Fields["LicenseDefinitionKey"].String != "CSN_External_User" {
 		t.Fatalf("community license = %#v, %v", license, ok)
 	}
 	if _, ok := org.Objects["Network"]; ok {
