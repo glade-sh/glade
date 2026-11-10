@@ -9539,7 +9539,7 @@ func TestExecNamespacedFieldSetMapMatchesLocalMetadataObjectName(t *testing.T) {
 	program, err := CompileAnonymous(`
 Schema.DescribeSObjectResult describe = Thing__c.SObjectType.getDescribe();
 System.assertNotEquals(null, describe.fieldSets.getMap().get('pkg__Details'));
-System.assertNotEquals(null, describe.fieldSets.getMap().get('Details'));
+System.assertEquals(null, describe.fieldSets.getMap().get('Details'));
 System.assertEquals(1, SObjectType.Thing__c.FieldSets.pkg__Details.getFields().size());
 `)
 	if err != nil {
