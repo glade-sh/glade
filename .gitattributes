@@ -3,3 +3,6 @@ lwcruntime/src/slds/design-system-2/** -whitespace
 
 # A trailing tab represents an empty captured accepted-prefix set.
 internal/apextest/testdata/conformance/capi2_argument_prefixes/org.tsv -whitespace
+
+# These native observations include a final space in the captured value.
+internal/apextest/testdata/conformance/process_builder_shapes/org.tsv -whitespace
