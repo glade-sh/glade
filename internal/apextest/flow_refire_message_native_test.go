@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -88,6 +89,17 @@ func TestFlowRefireMessageNativeProject(t *testing.T) {
 			}
 			if err := json.NewDecoder(strings.NewReader(problem.Message[pos+len(marker):])).Decode(&got); err != nil {
 				t.Fatal(err)
+			}
+			// Salesforce and Glade allocate different synthetic custom-object
+			// prefixes. Normalize the volatile ID in the same message position
+			// that the native source replaces before comparing the full text.
+			id := regexp.MustCompile(`(The flow tried to update these records: )a[A-Za-z0-9]{14}(?:[A-Za-z0-9]{3})?(\. This error occurred:)`)
+			for _, key := range []string{"rejectFirst", "rejectSecond"} {
+				if row, ok := got.Rows[key].(map[string]any); ok {
+					if message, ok := row["normalizedMessage"].(string); ok {
+						row["normalizedMessage"] = id.ReplaceAllString(message, `${1}[record]${2}`)
+					}
+				}
 			}
 			var want map[string]any
 			if err := json.Unmarshal([]byte(row[2]), &want); err != nil {
