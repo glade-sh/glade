@@ -61,20 +61,23 @@ func flowValidateProjectTransformTargets(p project.Project, idx *Index) {
 			flow.Rules = nil
 		}
 		for _, lookup := range raw.RecordLookups {
-			loadSchema()
-			objectName, found := storage.ResolveObjectName(org, lookup.Object)
-			if !found {
-				continue
-			}
-			definition := org.Objects[objectName].Definition
 			for _, filter := range lookup.Filters {
 				operator := strings.ToLower(strings.ReplaceAll(strings.TrimSpace(filter.Operator), " ", ""))
 				if operator != "in" && operator != "notin" {
 					continue
 				}
-				field, found := storage.ResolveFieldName(definition, org.Namespace, strings.TrimSpace(filter.Field))
 				variable, declared := variables[strings.ToLower(strings.TrimSpace(filter.Value.ElementReference))]
-				if found && declared && variable.IsCollection && flowTypeDirectReference(filter.Value) && flowCapturedTypeMismatch(definition.Fields[field].Type, variable.DataType) {
+				if !declared || !variable.IsCollection || !flowTypeDirectReference(filter.Value) {
+					continue
+				}
+				loadSchema()
+				objectName, found := storage.ResolveObjectName(org, lookup.Object)
+				if !found {
+					continue
+				}
+				definition := org.Objects[objectName].Definition
+				field, found := storage.ResolveFieldName(definition, org.Namespace, strings.TrimSpace(filter.Field))
+				if found && flowCapturedTypeMismatch(definition.Fields[field].Type, variable.DataType) {
 					rejectType(lookup.Name, field)
 					break
 				}
