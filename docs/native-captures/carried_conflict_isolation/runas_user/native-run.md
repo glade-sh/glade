@@ -1,5 +1,7 @@
 Native rows: `internal/apextest/testdata/conformance/carried_conflict_isolation/runas_user/org.tsv`
 
+Relative paths in this record refer to `internal/apextest/testdata/conformance/carried_conflict_isolation/runas_user/` unless stated otherwise.
+
 Captured 2026-11-09 in a fourth freshly created non-namespaced 30-day plain Developer scratch org from a campaign Dev Hub. The project is the retained parent carried_conflict_isolation/project. A synthetic Standard User was created in that org. The two original synthetic email service definitions were deployed first with the org administrator as runAsUser, then with the new Standard User, then reverted to the administrator. Only runAsUser changed between these phases. The org user placeholders were substituted in temporary deployment files; the retained metadata contains no usernames.
 
 Every phase was deployed with all Apex class metadata pinned to source API 62.0 and 67.0. Each API was observed three times anonymously and three times through @IsTest. In the full metadata observations, each repetition contains explicit with-sharing and without-sharing wrappers, and administrator and synthetic-standard-user test routes. Their configured_admin, configured_standard and configured_admin_revert phases retain native metadata, label-length vectors and current-user booleans, without generated domains or IDs.

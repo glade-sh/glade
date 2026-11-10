@@ -1,5 +1,7 @@
 Native rows: `internal/apextest/testdata/conformance/carried_conflict_isolation/org.tsv`
 
+Relative paths in this record refer to `internal/apextest/testdata/conformance/carried_conflict_isolation/` unless stated otherwise.
+
 Captured 2026-11-09 using three newly created non-namespaced Developer scratch orgs, each with 30-day duration, from campaign Dev Hubs. Two orgs use the identical plain Developer scratch definition; the third uses the retained Communities feature plus enableNetworksEnabled definition from standard_profile_inventory/configurations/communities_feature/project-scratch-def.json. All three orgs were deleted, and each ScratchOrgInfo.Status was subsequently queried through its Dev Hub and returned Deleted.
 
 The retained project is synthetic and repeats the original standard_profile_inventory and email_services_metadata queries. Before deployment only, the runAsUser placeholder in the email metadata was replaced with the owned scratch user's username. All class metadata was pinned to the indicated source_api before each deployment; each query was then run three times anonymously and as a deliberately failing @IsTest transport. The named tests separately exercise the administrator and a synthetic Standard User via System.runAs, and both explicit with-sharing and without-sharing wrappers. Anonymous execution uses the scratch administrator. The probe emits only profile names/license labels, synthetic email metadata, generated domain label lengths, lowercase and suffix; no generated domain, user name or ID is retained.
