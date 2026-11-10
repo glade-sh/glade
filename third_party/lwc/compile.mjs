@@ -289,7 +289,7 @@ function compileBundle(bundleDir, bundleName, namespace, outDir, apiVersion, mod
       validateDynamicModuleImports(ast, capabilities, namespace);
     }
   };
-  const firstGraphQLFailure = preflightBundleImports(bundleDir, bundleName, apiVersion, moduleAvailability, configuredProperties, salesforceImports, lightningModules, namespace, checkDynamicImports);
+  const { firstGraphQLFailure, entryAST } = preflightBundleImports(bundleDir, bundleName, apiVersion, moduleAvailability, configuredProperties, salesforceImports, lightningModules, namespace, checkDynamicImports);
   // Recreate a rejected GraphQL or dynamic-import error in the original
   // validation route so its public error stack retains the same shape,
   // without retaining every AST.
@@ -301,11 +301,6 @@ function compileBundle(bundleDir, bundleName, namespace, outDir, apiVersion, mod
     });
     validateGraphQLDocuments(ast, salesforceImports?.schema, walkAST);
     checkDynamicImports(ast, sourcePath);
-  });
-  // Only the entry AST is needed after preflight.
-  const entryAST = parse(fs.readFileSync(jsPath, "utf8"), {
-    sourceType: "module",
-    plugins: [["decorators", { decoratorsBeforeExport: true }], "classProperties", "classPrivateProperties", "classPrivateMethods"],
   });
   if (!fs.existsSync(htmlPath) && !isCustomRenderComponent(jsPath)) {
     return compileUtilityModule(bundleDir, bundleName, namespace, outDir, apiVersion, capabilities, localModules);
@@ -572,6 +567,9 @@ function stylesheetDeploymentError(error, source, filename, namespace, name, api
 
 function preflightBundleImports(bundleDir, bundleName, apiVersion, availability, configuredProperties, salesforceImports, lightningModules, namespace, extraCheck) {
   let firstGraphQLFailure;
+  // Retain only the entry AST for the template-side dynamic import check.
+  let entryAST;
+  const entryPath = path.join(bundleDir, `${bundleName}.js`);
   walkBundleFiles(bundleDir, (sourcePath) => {
     if (!sourcePath.endsWith(".js")) {
       return;
@@ -661,6 +659,7 @@ function preflightBundleImports(bundleDir, bundleName, apiVersion, availability,
     });
     // A later preflight error must retain precedence over an earlier GraphQL
     // diagnostic. Remember only the first failing source and finish preflight.
+    if (sourcePath === entryPath) entryAST = ast;
     if (!firstGraphQLFailure) {
       try {
         validateGraphQLDocuments(ast, salesforceImports?.schema, walkAST);
@@ -670,7 +669,7 @@ function preflightBundleImports(bundleDir, bundleName, apiVersion, availability,
       }
     }
   });
-  return firstGraphQLFailure;
+  return { firstGraphQLFailure, entryAST };
 }
 
 function deploymentDiagnostic(message, location) {
