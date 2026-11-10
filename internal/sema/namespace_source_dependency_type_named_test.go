@@ -61,6 +61,9 @@ func TestSourceDependencyNamedTypeNative(t *testing.T) {
 				if d.Severity == diagnostic.Error {
 					errors = append(errors, d.Message+" | "+d.NativeMessage)
 					matched = matched || d.Message == want || d.NativeMessage == want
+					if row[3] == "COMPILE_ERROR" && d.Message != want && d.NativeMessage != want {
+						t.Errorf("unexpected error in native rejection: %+v", d)
+					}
 				}
 			}
 			if row[3] == "COMPILED" && len(errors) > 0 {
@@ -82,7 +85,8 @@ func TestSourceDependencyNamedTypeNative(t *testing.T) {
 						control.Subset = true
 					}
 					for _, d := range Analyze(control).Diagnostics {
-						if d.Severity == diagnostic.Error && (d.Message == want || d.NativeMessage == want) {
+						ref := strings.TrimPrefix(want, "Invalid type: ")
+						if d.Severity == diagnostic.Error && (d.Code == "GLADESEMA002" || d.Code == "GLADESEMA004") && (strings.Contains(d.Message, ref) || strings.Contains(d.NativeMessage, ref)) {
 							t.Errorf("%s index rejected an unproven type miss: %+v", mode, d)
 						}
 					}
