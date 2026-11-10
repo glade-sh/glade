@@ -2,6 +2,7 @@ package sema
 
 import (
 	"encoding/csv"
+	"maps"
 	"os"
 	"path/filepath"
 	"strings"
@@ -122,19 +123,22 @@ func TestReceiverMemberOpaquePackageNamedIsTestRoutes(t *testing.T) {
 	}
 }
 
-// onlyUndeclaredParcelOptions reports whether every error is the native
-// field-type rejection of the undeclared missingns.Parcel.Options (ruling 49;
-// namespace_external_positions ExtFieldOnlyV035), exactly once.
+// onlyUndeclaredParcelOptions reports whether the errors are exactly the
+// native rejections of the undeclared missingns references, once each: the
+// field type (ruling 49; namespace_external_positions ExtFieldOnlyV035) and
+// the static member call. Native receiver_member_opaque_package/org.tsv C01,
+// C02 (named) and C07, C08 (@IsTest static field) at APIs 62.0 and 67.0
+// report both, with or without a local Parcel class.
 func onlyUndeclaredParcelOptions(ds []diagnostic.Diagnostic) bool {
-	count := 0
-	for _, d := range ds {
-		if d.Severity != diagnostic.Error {
-			continue
-		}
-		if d.Code != "GLADESEMA002" || d.NativeMessage != "Invalid type: missingns.Parcel.Options" {
-			return false
-		}
-		count++
+	want := map[string]int{
+		"GLADESEMA002|Invalid type: missingns.Parcel.Options":             1,
+		"GLADESEMA008|Variable does not exist: missingns.Parcel.Instance": 1,
 	}
-	return count == 1
+	got := map[string]int{}
+	for _, d := range ds {
+		if d.Severity == diagnostic.Error {
+			got[d.Code+"|"+d.NativeMessage]++
+		}
+	}
+	return maps.Equal(got, want)
 }

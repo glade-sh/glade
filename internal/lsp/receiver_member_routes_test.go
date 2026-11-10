@@ -127,18 +127,25 @@ func TestReceiverMemberLSPOpaquePackageNamedIsTestRoutes(t *testing.T) {
 					}
 					// Undeclared, missingns is Invalid type in the field position
 					// (ruling 49; native namespace_external_positions
-					// ExtFieldOnlyV035). Declared without source, it stays open.
+					// ExtFieldOnlyV035) and the static call is Variable does not
+					// exist (native receiver_member_opaque_package C01, C02, C07,
+					// C08 at 62.0 and 67.0). Declared without source, it stays open.
 					index := typesys.Build(project.Project{Root: root, SourceAPIVersion: api, ApexFiles: paths}, schema.Schema{})
 					handler := NewHandler(index)
 					defer handler.parser.Close()
 					ds := handler.diagnosticsForDocument(uriFromPath(path))
-					if len(ds) != 1 {
-						t.Fatalf("want one undeclared field-type rejection: %+v", ds)
+					if len(ds) != 2 {
+						t.Fatalf("want the undeclared field-type and static-call rejections: %+v", ds)
+					}
+					want := map[string]bool{
+						"GLADESEMA002|Invalid type: missingns.Parcel.Options":             true,
+						"GLADESEMA008|Variable does not exist: missingns.Parcel.Instance": true,
 					}
 					for _, d := range ds {
-						if d.Code != "GLADESEMA002" || d.NativeMessage != "Invalid type: missingns.Parcel.Options" {
+						if !want[d.Code+"|"+d.NativeMessage] {
 							t.Fatal(ds)
 						}
+						delete(want, d.Code+"|"+d.NativeMessage)
 					}
 					index.Dependencies = []typesys.DependencyInfo{{Namespace: "missingns", Status: "missing"}}
 					declared := NewHandler(index)

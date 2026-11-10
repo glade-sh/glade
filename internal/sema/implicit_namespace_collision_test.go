@@ -1,28 +1,32 @@
 package sema
 
 import (
+	"maps"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/diagnostic"
 )
 
-// assertOnlyUndeclaredFieldRejection allows only the native rejection of the
-// undeclared missingns field type (ruling 49; namespace_external_positions
-// ExtFieldOnlyV035). The local CartLike class adds nothing.
+// assertOnlyUndeclaredFieldRejection allows only the native rejections of the
+// undeclared missingns references, once each: the field type (ruling 49;
+// namespace_external_positions ExtFieldOnlyV035) and the static member call
+// (receiver_member_opaque_package C01, C02 at 62.0 and 67.0, which report
+// both, with or without a same-spelled local class). The local CartLike
+// class adds nothing.
 func assertOnlyUndeclaredFieldRejection(t *testing.T, label string, result Result) {
 	t.Helper()
-	count := 0
-	for _, d := range result.Diagnostics {
-		if d.Severity != diagnostic.Error {
-			continue
-		}
-		if d.Code != "GLADESEMA002" || d.NativeMessage != "Invalid type: missingns.CartLike.SubmitOptions" {
-			t.Fatalf("%s: %#v", label, result.Diagnostics)
-		}
-		count++
+	want := map[string]int{
+		"GLADESEMA002|Invalid type: missingns.CartLike.SubmitOptions":       1,
+		"GLADESEMA008|Variable does not exist: missingns.CartLike.Instance": 1,
 	}
-	if count != 1 {
-		t.Fatalf("%s: want one field-type rejection, got %d: %#v", label, count, result.Diagnostics)
+	got := map[string]int{}
+	for _, d := range result.Diagnostics {
+		if d.Severity == diagnostic.Error {
+			got[d.Code+"|"+d.NativeMessage]++
+		}
+	}
+	if !maps.Equal(got, want) {
+		t.Fatalf("%s: errors %v, want %v: %#v", label, got, want, result.Diagnostics)
 	}
 }
 
