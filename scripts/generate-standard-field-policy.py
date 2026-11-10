@@ -663,6 +663,33 @@ def build_policy(root, combinations=None):
         elif observation != "exists=true":
             raise ValueError(f"invalid native field membership: {subject}")
 
+    # A populated, defaulted field also needs its captured schema facets. Use
+    # the separately captured granted P0 describes, and require the full facet
+    # record to agree at both API endpoints before enriching the policy.
+    for row in shape_rows:
+        if row["source_api"] != "62.0" or row["profile"] != "admin" or row["marketing"] != "false" or "." not in row["subject"]:
+            continue
+        facets = dict(item.split("=", 1) for item in row["observation"].split("|"))
+        if facets.get("exists") != "true" or facets.get("default") != "true" or facets.get("pop") != "true":
+            continue
+        obj, field = row["subject"].split(".", 1)
+        captured = []
+        for api in APIS:
+            describe = snapshots["P0"][api]["describes"].get(obj, {})
+            matches = [item for item in describe.get("fields", []) if item["name"] == field]
+            if len(matches) != 1:
+                raise ValueError(f"missing plain Developer default facets: {obj}.{field} {api}")
+            captured.append(matches[0])
+        if captured[0] != captured[1] or not captured[0].get("defaultedOnCreate"):
+            raise ValueError(f"plain Developer default facets differ: {obj}.{field}")
+        entry = objects.setdefault(obj, {"present": [], "absent": [], "fields": []})
+        if field not in entry.get("present", []):
+            entry.setdefault("present", []).append(field)
+            entry["present"].sort()
+        if not any(item["name"] == field for item in entry.get("fields", [])):
+            entry.setdefault("fields", []).append(captured[0])
+            entry["fields"].sort(key=lambda item: item["name"])
+
     # Each isolated profile proves a positive field and controls show it absent
     # without the enabling setting. The combined profile supplies both Apex
     # routes and independently captured REST facets at both API endpoints.
