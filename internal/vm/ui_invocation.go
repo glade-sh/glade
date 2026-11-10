@@ -526,7 +526,7 @@ func (vm *VM) lwcJSONFromValue(value Value) any {
 			if value.classInstance && value.projectClass {
 				for _, name := range names {
 					field, _, ok := vm.lookupField(value.Type, name)
-					if ok && !field.Static && field.Getter != nil && methodHasAuraEnabled(field.Modifiers) {
+					if ok && !field.Static && field.Getter != nil && field.Getter.File != "" && methodHasAuraEnabled(field.Modifiers) {
 						deferScalars = true
 						break
 					}
@@ -543,7 +543,7 @@ func (vm *VM) lwcJSONFromValue(value Value) any {
 					getterValue, err := vm.callGetter(vm.getterOwner(owner, field), field, value)
 					if err != nil {
 						var fault *RuntimeError
-						if deferScalars && errors.As(err, &fault) && fault.callStackLimit && strings.EqualFold(fault.Type, "System.LimitException") {
+						if deferScalars && field.Getter.File != "" && errors.As(err, &fault) && fault.callStackLimit && strings.EqualFold(fault.Type, "System.LimitException") {
 							panic(lwcGetterStackFailure{err: err})
 						}
 						continue
