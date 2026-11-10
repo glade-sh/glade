@@ -88,7 +88,7 @@ func TestProcessBuilderOnlyCapturedShapeRuns(t *testing.T) {
 	emailAction := strings.Replace(strings.Replace(action, "<actionType>apex</actionType>", "<actionType>emailAlert</actionType>", 1), "CedarDeleteMembers", "Cedar_Member__c.Cedar_Alert", 1)
 	chatterAction := strings.Replace(strings.Replace(action, "<actionType>apex</actionType>", "<actionType>chatterPost</actionType>", 1), "CedarDeleteMembers", "chatterPost", 1)
 	const waitStart = `<assignments><name>myVariable_waitStartTimeAssignment</name><label>S</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>myVariable_waitStartTimeVariable</assignToReference><operator>Assign</operator><value><elementReference>$Flow.CurrentDateTime</elementReference></value></assignmentItems><connector><targetReference>myDecision</targetReference></connector></assignments>`
-	const waitStartVariable = `<variables><name>myVariable_waitStartTimeVariable</name><dataType>DateTime</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>false</isOutput></variables>`
+	const waitStartVariable = `<variables><name>myVariable_waitStartTimeVariable</name><dataType>DateTime</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>false</isOutput><value><elementReference>$Flow.CurrentDateTime</elementReference></value></variables>`
 	secondDecision := strings.NewReplacer("myDecision", "myDecision2", "myRule_1", "myRule_2").Replace(decision)
 	extraVariable := `<variables><name>RecursiveCountVariable</name><dataType>Number</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>false</isOutput><scale>2</scale></variables>`
 	for _, tc := range []struct {
@@ -124,7 +124,11 @@ func TestProcessBuilderOnlyCapturedShapeRuns(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			path := filepath.Join(t.TempDir(), "Cedar_Member_Update.flow-meta.xml")
-			if err := os.WriteFile(path, []byte(build(tc.status, tc.trigger, tc.body)), 0o644); err != nil {
+			source := build(tc.status, tc.trigger, tc.body)
+			if tc.name == "wait_start" {
+				source = strings.Replace(source, "<startElementReference>myDecision</startElementReference>", "<startElementReference>myVariable_waitStartTimeAssignment</startElementReference>", 1)
+			}
+			if err := os.WriteFile(path, []byte(source), 0o644); err != nil {
 				t.Fatal(err)
 			}
 			definitions := map[string]storage.ObjectDefinition{"Cedar_Member__c": {Fields: map[string]storage.Field{"Active__c": {APIName: "Active__c", Type: storage.FieldBoolean}}}}

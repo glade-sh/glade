@@ -3552,13 +3552,6 @@ func flowLookupFilterLogic(logic string, filters int) (string, bool) {
 	return connective, true
 }
 
-// A process with scheduled actions, and some without, stamps its start time
-// before the first decision. The variable has no reader once waits are absent.
-const (
-	processBuilderWaitStartAssignment = "myVariable_waitStartTimeAssignment"
-	processBuilderWaitStartVariable   = "myVariable_waitStartTimeVariable"
-)
-
 // processBuilderXML reads the top-level processMetadataValues of a Process
 // Builder process (processType Workflow).
 type processBuilderXML struct {
@@ -3685,7 +3678,7 @@ func normalizeProcessBuilderFlow(data []byte, definitions ...map[string]storage.
 	default:
 		return data, fmt.Sprintf("TriggerType %q", triggerType)
 	}
-	if skip := processBuilderUncoveredShape(pb, current, old, definitions...); skip != "" {
+	if skip := processBuilderUncoveredShape(pb, data, current, old, definitions...); skip != "" {
 		return data, skip
 	}
 	text := string(data)
@@ -3716,8 +3709,8 @@ func normalizeProcessBuilderFlow(data []byte, definitions ...map[string]storage.
 
 // processBuilderUncoveredShape names the first part of a process outside the
 // captured shapes, or returns "".
-func processBuilderUncoveredShape(pb processBuilderXML, current, old string, definitions ...map[string]storage.ObjectDefinition) string {
-	hasStartAssignment := len(pb.Assignments) > 0
+func processBuilderUncoveredShape(pb processBuilderXML, data []byte, current, old string, definitions ...map[string]storage.ObjectDefinition) string {
+	var startVariable string
 	for _, element := range pb.Elements {
 		switch element.XMLName.Local {
 		case "apiVersion", "label", "description", "interviewLabel", "processType", "status", "startElementReference",
@@ -3726,9 +3719,11 @@ func processBuilderUncoveredShape(pb processBuilderXML, current, old string, def
 			return fmt.Sprintf("element %q", element.XMLName.Local)
 		}
 	}
-	for _, assignment := range pb.Assignments {
-		if name := strings.TrimSpace(assignment.Name); name != processBuilderWaitStartAssignment {
-			return fmt.Sprintf("assignment %q", name)
+	if len(pb.Assignments) > 0 {
+		var ok bool
+		startVariable, ok = processBuilderCapturedWaitStart(data, current, old)
+		if !ok {
+			return fmt.Sprintf("assignment %q with uncaptured start shape", strings.TrimSpace(pb.Assignments[0].Name))
 		}
 	}
 	for _, action := range pb.ActionCalls {
@@ -3740,7 +3735,7 @@ func processBuilderUncoveredShape(pb processBuilderXML, current, old string, def
 	}
 	for _, variable := range pb.Variables {
 		name := strings.TrimSpace(variable.Name)
-		if name == current || name == old || (hasStartAssignment && name == processBuilderWaitStartVariable) {
+		if name == current || name == old || (startVariable != "" && strings.EqualFold(name, startVariable)) {
 			continue
 		}
 		return fmt.Sprintf("variable %q", name)
