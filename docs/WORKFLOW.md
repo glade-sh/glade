@@ -166,7 +166,12 @@ the diff alone. A behavior change is always user-visible: add its line to
 
 ### 3.7 CI
 
-`Required CI` runs on every PR; a run takes about 40 minutes. For a
+`Required CI` runs a fast lane on every PR, including drafts. It builds with CGO,
+checks formatting, vet, repository guard, workflow lint, leak scan and scripts
+tests, and tests changed Go packages and their direct importers. The merge queue
+runs the full suite under the same required check; a failure ejects the PR from
+the queue. Pushes to main, scheduled and manually dispatched runs also use the
+full suite. Superseded PR runs are cancelled. For a
 `pull_request` run, checkout and tests use GitHub's merge result for the PR
 head and base, not the head tree alone. The merge commit has the PR head as its
 second parent; identify both the head and tested merge tree when reporting it.
@@ -176,7 +181,7 @@ test is unrelated to your change and passes on `main`, say so in the PR and
 open a ticket for it; the coordinator decides on a rerun. The runners carry
 Node, Playwright and a browser, so an "environmental" result does not exist
 in CI. Locally such a test is "not run", never "passed". `scripts/ci-local-all`
-mirrors `Required CI` when hosted CI is unavailable.
+mirrors the full suite when hosted CI is unavailable.
 
 ### 3.8 Review
 
