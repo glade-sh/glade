@@ -132,7 +132,7 @@ func TestStandardFieldPolicyNativeSidecarProvenance(t *testing.T) {
 	if err := json.Unmarshal(standardFieldPolicyData, &policy); err != nil {
 		t.Fatal(err)
 	}
-	if policy.Version != 1 || len(policy.Sources) != 180 || len(policy.Gates) != 164 {
+	if policy.Version != 1 || len(policy.Sources) != 186 || len(policy.Gates) != 164 {
 		t.Fatal("incomplete native field policy")
 	}
 	for _, name := range []string{"definition.json", "org.tsv", "observations.json"} {
