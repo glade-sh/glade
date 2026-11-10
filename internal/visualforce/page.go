@@ -654,7 +654,7 @@ func RenderPageURL(machine *vm.VM, pageURL string, asPDF bool) (vm.Value, error)
 		message := fmt.Sprintf("Page %s does not exist", pageName)
 		if asPDF {
 			// Native getContentAsPDF terminates execution before an Apex catch.
-			return vm.Null, &vm.RuntimeError{Type: "RuntimeError", Message: message}
+			return vm.Null, vm.NewUncatchablePlatformFault(message)
 		}
 		return vm.Null, vm.NewVisualforceException(message)
 	}
