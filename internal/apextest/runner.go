@@ -7903,8 +7903,10 @@ func problemFromError(err error, testCase TestCase) *testreport.Problem {
 			kind = "RuntimeError"
 		}
 		return &testreport.Problem{
-			Type:    kind,
-			Message: runtimeErr.Message,
+			Type: kind,
+			// Native named-test results omit trailing spaces while the Apex
+			// exception's getMessage() retains them (test_failure_whitespace).
+			Message: strings.TrimRight(runtimeErr.Message, " "),
 			Stack:   stack,
 		}
 	}
