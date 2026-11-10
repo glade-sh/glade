@@ -35,7 +35,37 @@ func (vm *VM) userModeRecordVisible(objectName string, record storage.Record, us
 	if allowed, applicable := vm.junctionParentsReadable(objectName, record, userID); applicable {
 		return allowed
 	}
-	return vm.controlledParentHasSupportedReadSharing(objectName, record, userID) || record.System.OwnerID == "" || storage.IDsEqual(record.System.OwnerID, storage.ID(userID)) || vm.currentUserCanSeeSharedRecord(objectName, record, userID) || vm.leadCreatorReadsFromEmptyQueue(objectName, record, userID)
+	return vm.controlledParentHasSupportedReadSharing(objectName, record, userID) || record.System.OwnerID == "" || storage.IDsEqual(record.System.OwnerID, storage.ID(userID)) || vm.currentUserCanSeeSharedRecord(objectName, record, userID) || vm.currentUserCanReadDirectQueueMember(objectName, record, userID) || vm.leadCreatorReadsFromEmptyQueue(objectName, record, userID)
+}
+
+// Captured Private Lead and custom-object rows give a Standard user read
+// access to a queue-owned record when that user is a direct queue member.
+func (vm *VM) currentUserCanReadDirectQueueMember(objectName string, record storage.Record, userID string) bool {
+	if vm == nil || vm.Org == nil || userID == "" || record.System.OwnerID == "" ||
+		!storage.IDsEqual(storage.ID(userID), storage.ID(vm.currentUserID())) ||
+		!strings.EqualFold(vm.currentUserInfoField("UserType", ""), "Standard") {
+		return false
+	}
+	canonical, ok := vm.resolveObjectName(objectName)
+	if !ok || !strings.EqualFold(strings.TrimSpace(vm.Org.Objects[canonical].Definition.SharingModel), "Private") {
+		return false
+	}
+	_, queue, ok := storage.LookupRecordByID(vm.Org.Objects["Group"].Records, record.System.OwnerID)
+	if !ok || queue.System.IsDeleted || !strings.EqualFold(queue.Fields["Type"].String, "Queue") {
+		return false
+	}
+	for _, member := range vm.Org.Objects["GroupMember"].Records {
+		if member.System.IsDeleted {
+			continue
+		}
+		groupID, groupOK := member.GetField("GroupId")
+		memberID, memberOK := member.GetField("UserOrGroupId")
+		if groupOK && memberOK && storage.IDsEqual(storage.ID(storageValueIDText(groupID)), queue.ID) &&
+			storage.IDsEqual(storage.ID(storageValueIDText(memberID)), storage.ID(userID)) {
+			return true
+		}
+	}
+	return false
 }
 
 // flow_followups/org.tsv:63,125 observe one read: a Standard User who created
