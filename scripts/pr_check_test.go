@@ -158,7 +158,7 @@ func TestPRCheck(t *testing.T) {
 	write("scripts/tool.sh", "#!/bin/sh\necho body\n")
 	commit("tooling: body")
 	write("body-bad.md", "Ticket: <id>. Class: tooling.\n\n| Check | Command | Result |\n| --- | --- | --- |\n| Focused | `go test` | |\n")
-	write("body-ok.md", "Ticket: ROAD-1. Class: tooling.\n\n| Check | Command | Result |\n| --- | --- | --- |\n| Focused | `go test` | ok |\n\n- [x] done\n")
+	write("body-ok.md", "Ticket: ABC-1. Class: tooling.\n\n| Check | Command | Result |\n| --- | --- | --- |\n| Focused | `go test` | ok |\n\n- [x] done\n")
 	out, code = run("--body", "body-bad.md")
 	expect(out, code, 1, "FAIL pr-body: placeholders 1, empty result cells 1")
 	out, code = run("--body", "body-ok.md")

@@ -84,7 +84,7 @@ For Salesforce-observable compatibility changes, fixtures live at
 reads them: `apextest` (under `testdata/conformance/`) for
 runtime behavior, `sema` for compile-time diagnostics, `visualforce`, `lwc`
 and `dml` for their surfaces. A family directory holds `cases.tsv` (or
-`cases.json`), the synthetic Apex sources, `org.tsv` and `ORG-RUN.txt`.
+`cases.json`), the synthetic Apex sources, `org.tsv` and `native-run.md`.
 
 1. Write `cases.tsv`: one row per case with `id`, `api`, `route`, the source,
    and the expected result once captured. Routes are anonymous Apex, an
@@ -99,11 +99,11 @@ and `dml` for their surfaces. A family directory holds `cases.tsv` (or
 2. Capture against a fresh scratch org. The ticket names the org
    authorization; the private operations guide carries the setup for internal
    agents. With no org access, go to section 5 item 1 before writing any
-   code. Write `org.tsv` and `ORG-RUN.txt` into the family directory. Scrub
+   code. Write `org.tsv` and `native-run.md` into the family directory. Scrub
    org ids, aliases and personal paths. Delete the org afterwards.
 3. Encode the rows in one data-driven Go test in that package, copying the
    pattern of an existing `*_conformance_test.go` there. The fixture,
-   `org.tsv`, `ORG-RUN.txt` and the test go into the test commit of section
+   `org.tsv`, `native-run.md` and the test go into the test commit of section
    3.4. The test is the oracle from then on, and CI runs it without
    credentials.
 4. Fix only rows the test proves wrong. Cite every row you rely on, one line
@@ -163,6 +163,13 @@ report. Title: `<area>: <what changes>`, for example `vm: reject a negative
 Decimal scale`. A reviewer must be able to judge the change from the body and
 the diff alone. A behavior change is always user-visible: add its line to
 `docs/RELEASE_NOTES.md` under Unreleased in the same PR.
+
+Before asking for review, run `bash scripts/pr-check.sh` (add `--repoguard
+--vet` for the full local gate) on the finished branch. It applies the
+machine-checkable rules from sections 3.4 to 3.6 and 4, including gofmt, ABI
+bumps, test-first order, leak, org-id and personal-path scans, the lane
+manifest, and an optional `--body FILE` check. Fix every FAIL before asking for
+review; a WARN needs its reason in the PR.
 
 ### 3.7 CI
 
@@ -341,14 +348,14 @@ Apex and metadata: <complete synthetic source>
 APIs: <applicable current supported version> and <floor>; 67.0 for Apex where relevant
 Routes: <anonymous | @IsTest | runner | server | Visualforce | LWC>
 Org shape: <features, settings, permission sets>
-Output: org.tsv with id, api, route, compiled, success, outcome; ORG-RUN.txt with API versions
+Output: org.tsv with id, api, route, compiled, success, outcome; native-run.md with API versions
 and timestamps and no org ids
 ```
 
 ## Appendix D: glossary
 
 - Native row: one observed Salesforce result (a line of `org.tsv`) with its
-  provenance in `ORG-RUN.txt`.
+  provenance in `native-run.md`.
 - Route: the path by which code reaches the runtime: anonymous Apex, an
   `@IsTest` class, the project test runner, the server API, a Visualforce or
   LWC host.
