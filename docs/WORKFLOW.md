@@ -168,7 +168,11 @@ the diff alone. A behavior change is always user-visible: add its line to
 
 `Required CI` runs a fast lane on every PR, including drafts. It builds with CGO,
 checks formatting, vet, repository guard, workflow lint, leak scan and scripts
-tests, and tests changed Go packages and their direct importers. The merge queue
+tests, and tests changed Go packages and their direct importers. A changed path outside
+every Go package (for example `lwcruntime/**`, `third_party/lwc/**`, root
+`testdata/**`, workflows or root files) selects the full package set; only
+`docs/**` and Markdown files outside `testdata` are docs-only and select
+nothing. The merge queue
 runs the full suite under the same required check; a failure ejects the PR from
 the queue. Pushes to main, scheduled and manually dispatched runs also use the
 full suite. Superseded PR runs are cancelled. For a

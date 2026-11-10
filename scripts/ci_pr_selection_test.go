@@ -22,6 +22,7 @@ func TestCIPRPackageSelection(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+	all := []string{"example/a", "example/b", "example/c", "example/d"}
 	cases := []struct {
 		name, paths string
 		want        []string
@@ -29,6 +30,15 @@ func TestCIPRPackageSelection(t *testing.T) {
 		{"direct and test importers", "a/a.go\n", []string{"example/a", "example/b", "example/c"}},
 		{"non go fixture", "a/testdata/input.cls\n", []string{"example/a", "example/b", "example/c"}},
 		{"unrelated docs", "docs/readme.md\n", []string{}},
+		{"docs tree non markdown", "docs/img/diagram.png\n", []string{}},
+		{"root markdown", "README.md\n", []string{}},
+		{"lwcruntime input", "lwcruntime/src/shell/workspace-service.mjs\n", all},
+		{"third party lwc", "third_party/lwc/package.json\n", all},
+		{"root testdata", "testdata/conformance/x/org.tsv\n", all},
+		{"root testdata markdown", "testdata/conformance/x/native-run.md\n", all},
+		{"root file", "glade.yml\n", all},
+		{"workflow", ".github/workflows/ci.yml\n", all},
+		{"docs plus unmapped", "docs/a.md\nlwcruntime/x.mjs\n", all},
 		{"multiple", "a/a.go\nd/d.go\n", []string{"example/a", "example/b", "example/c", "example/d"}},
 		{"nested parser", "third_party/glade-apex-parser/parser/file.go\n", []string{"example/b"}},
 	}
