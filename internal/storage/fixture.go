@@ -1318,7 +1318,7 @@ func bootstrapProfileSeedFields(id ID) map[string]Value {
 	const salesforce ID = "100000000000001"
 	const external ID = "100000000000002"
 	switch id {
-	case "00e000000000001":
+	case ID(DefaultProfileID):
 		return profileSeedFields("System Administrator", salesforce)
 	case "00e000000000002":
 		return profileSeedFields("Minimum Access - Salesforce", salesforce)
