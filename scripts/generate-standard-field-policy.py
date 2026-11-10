@@ -39,6 +39,19 @@ class Inputs:
         self.sources[os.path.relpath(path, self.root)] = hashlib.sha256(data).hexdigest()
         return data
 
+    def provenance(self, directory, *, required=False):
+        # Public baseline captures predate portable provenance files. New
+        # captures require native-run.md; older public captures may instead
+        # retain RUN-FACTS.txt, or only their native data and case files.
+        names = ("native-run.md",) if required else ("native-run.md", "RUN-FACTS.txt")
+        for name in names:
+            candidate = Path(directory) / name
+            if (self.root / candidate).is_file():
+                self.read(candidate)
+                return
+        if required:
+            raise FileNotFoundError(f"missing native provenance: {directory}/native-run.md")
+
     def json(self, path):
         data = self.read(path)
         return json.loads(gzip.decompress(data) if str(path).endswith(".gz") else data)
@@ -190,7 +203,7 @@ def api68_profile_evidence(inputs, snapshots, objects):
         named = {(obj, field) for obj, fields in before["named"].items() for field in fields}
         global_names = set(before["global"])
         for suffix in ("granted-rest", "routes", "global"):
-            inputs.read(f"{prefix}/{profile}-{suffix}/ORG-RUN.txt")
+            inputs.provenance(f"{prefix}/{profile}-{suffix}")
         for row in inputs.tsv(f"{prefix}/{profile}-granted-rest/org.tsv"):
             if row["object"] not in objects:
                 continue
@@ -259,7 +272,7 @@ def case_source_gate(inputs, snapshots):
             or definition.get("settings") != {"liveAgentSettings": {"enableLiveAgent": True}}):
         raise ValueError("Case source profile no longer isolates enabled LiveAgent")
     rows = inputs.tsv(f"{prefix}/org.tsv")
-    inputs.read(f"{prefix}/ORG-RUN.txt")
+    inputs.provenance(f"{prefix}")
     inputs.json(f"{prefix}/observations.json")
     require_rows(rows, "membership")
     expected = {"SourceId": True, "Subject": True, "OwnedMissing__c": False,
@@ -294,7 +307,7 @@ def qualified_constructor_objects(inputs):
     plan = inputs.json(f"{prefix}/cases.json")
     rows = inputs.tsv(f"{prefix}/org.tsv")
     observations = inputs.json(f"{prefix}/observations.json")
-    inputs.read(f"{prefix}/ORG-RUN.txt")
+    inputs.provenance(f"{prefix}")
     if (sorted(plan["constructor_complete_objects"]) != sorted(COMPLETE_CONSTRUCTOR_OBJECTS)
             or plan["apis"] != list(APIS)
             or plan["routes"] != ["anonymous", "named", "test-runner"]):
@@ -379,7 +392,7 @@ def enhanced_order_gates(inputs):
             or definitions["capitalized-settings"].get("features") is not None
             or definitions["capitalized-settings"].get("settings") != {"OrderSettings": settings["orderSettings"]}):
         raise ValueError("enhanced order captures no longer isolate the setting")
-    inputs.read(f"{prefix}/ORG-RUN.txt")
+    inputs.provenance(f"{prefix}")
     inputs.read(f"{prefix}/ungranted-runtime.tsv")
     members = {}
     for row in inputs.tsv(f"{prefix}/named-fields.tsv"):
@@ -441,7 +454,7 @@ def webstore_option_fields(inputs, profile_definition):
     for key in ("edition", "features", "settings"):
         if definition.get(key) != profile_definition.get(key):
             raise ValueError("WebStore option capture no longer uses the P10 definition")
-    inputs.read(f"{prefix}/ORG-RUN.txt")
+    inputs.provenance(f"{prefix}")
     rows = inputs.tsv(f"{prefix}/org.tsv")
     fields = None
     for api in APIS:
@@ -510,7 +523,7 @@ def build_policy(root, combinations=None):
     combinations = Path(combinations) if combinations else inputs.root.parent / "standard_field_policy_combinations"
     combination_prefix = os.path.relpath(combinations, inputs.root)
     combination_rows = inputs.tsv(f"{combination_prefix}/org.tsv")
-    inputs.read(f"{combination_prefix}/ORG-RUN.txt")
+    inputs.provenance(f"{combination_prefix}")
     validate_person_address_rows(combination_rows)
     for path in sorted(combinations.glob("*-definition.json")):
         inputs.json(os.path.relpath(path, inputs.root))
@@ -525,7 +538,7 @@ def build_policy(root, combinations=None):
     definitions = {}
     for profile in PROFILES:
         definitions[profile] = inputs.json(f"profiles/{profile}.json")
-        inputs.read(f"{profile}/ORG-RUN.txt")
+        inputs.provenance(f"{profile}")
         snapshots[profile] = {api: snapshot(inputs, profile, api, set(plan["objects"])) for api in APIS}
     verify_profile_evidence(snapshots, evidence)
     api68 = api68_profile_evidence(inputs, snapshots, set(plan["objects"]))
@@ -558,7 +571,7 @@ def build_policy(root, combinations=None):
     for family in ("standard_recordtype_field_policy", "standard_constructor_virtual_fields",
                    "standard_emailmessage_input_fields"):
         rows = inputs.tsv(f"../{family}/org.tsv")
-        inputs.read(f"../{family}/ORG-RUN.txt")
+        inputs.provenance(f"../{family}")
         if family == "standard_recordtype_field_policy":
             require_rows(rows, None, profile="baseline", observation="MISSING")
             require_rows(rows, None, profile="recordtype", observation="REFERENCE|")
@@ -636,7 +649,7 @@ def build_policy(root, combinations=None):
     # unknown. Require the same checked subjects and absences on both APIs and
     # both profiles, with and without the marketing-user flag.
     shape_rows = inputs.tsv("../load_defaults_shape/org.tsv")
-    inputs.read("../load_defaults_shape/ORG-RUN.txt")
+    inputs.provenance("../load_defaults_shape", required=True)
     shape_groups = {}
     for row in shape_rows:
         if "." not in row["subject"]:
@@ -695,7 +708,7 @@ def build_policy(root, combinations=None):
     # the public describe facets. Require all captured profiles, flag states,
     # APIs, and the false-overload control to agree.
     value_rows = inputs.tsv("../load_defaults_values/org.tsv")
-    inputs.read("../load_defaults_values/ORG-RUN.txt")
+    inputs.provenance("../load_defaults_values", required=True)
     values = {}
     for row in value_rows:
         key = (row["source_api"], row["profile"], row["marketing"])
@@ -733,7 +746,7 @@ def build_policy(root, combinations=None):
     # loaded records even though describe does not expose them. Derive that
     # set by subtracting clone and fresh controls from both profile routes.
     hidden_rows = inputs.tsv("../load_defaults_hidden_routes/org.tsv")
-    inputs.read("../load_defaults_hidden_routes/ORG-RUN.txt")
+    inputs.provenance("../load_defaults_hidden_routes", required=True)
     hidden_groups = {}
     for row in hidden_rows:
         key = (row["source_api"], row["profile"], row["subject"], row["route"])
@@ -763,7 +776,7 @@ def build_policy(root, combinations=None):
     family = "../standard_industries_schema"
     industries_rows = inputs.tsv(f"{family}/org.tsv")
     boundary_rows = inputs.tsv(f"{family}/boundary.tsv")
-    inputs.read(f"{family}/ORG-RUN.txt")
+    inputs.provenance(f"{family}")
     inputs.read(f"{family}/SchemaNativeTest.cls")
     license_profile = inputs.json(f"{family}/license-profile.json")
     community_profile = inputs.json(f"{family}/communities-profile.json")
