@@ -13,6 +13,18 @@ function apiVersionValues(value) {
   if (typeof value !== "string") return [];
   return value.split(",").map(version => version.trim()).filter(Boolean);
 }
+// A versioned row belongs only to its own API. An unversioned row cannot be
+// assigned when several APIs are selected, so reject that input instead of
+// silently dropping or duplicating it.
+function selectL11Specs(specs, versions) {
+  if (versions.length === 0) return specs;
+  const selected = new Set(versions);
+  const isUnversioned = spec => spec.api === undefined || spec.api === null || spec.api === "";
+  if (selected.size > 1 && specs.some(isUnversioned)) {
+    throw new Error("unversioned L11 spec is ambiguous across " + [...selected].join(","));
+  }
+  return specs.filter(spec => isUnversioned(spec) || selected.has(spec.api));
+}
 function selectedAPIVersions() {
   const configured = config.apiVersions ?? config.apiVersion;
   if (configured !== undefined) return apiVersionValues(configured);
@@ -21,9 +33,13 @@ function selectedAPIVersions() {
   return [];
 }
 const apiVersions = selectedAPIVersions();
-const specs = apiVersions.length
-  ? config.specs.filter(spec => apiVersions.includes(spec.api))
-  : config.specs;
+const specs = selectL11Specs(config.specs, apiVersions);
+// The selection regression calls the real runner without Playwright and
+// without adding any observation path to the browser flow.
+if (config.selectOnly) {
+  fs.writeSync(1, JSON.stringify({ ids: specs.map(spec => spec.id) }));
+  process.exit(0);
+}
 const { chromium } = createRequire(import.meta.url)(config.playwrightModule);
 const browser = await chromium.launch({
   headless: true,

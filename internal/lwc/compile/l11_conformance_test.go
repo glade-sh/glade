@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -16,6 +17,7 @@ import (
 	"reflect"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -59,6 +61,25 @@ type l11CompileResult struct {
 // l11APIVersions lists every captured API version replayed by the L11 suite.
 var l11APIVersions = []string{"59.0", "67.0", "68.0"}
 
+const (
+	l11ReportArtifactVersion = "2"
+	l11ReportHeader          = "api\tid\tkind\tstatus\tactual\texpected\treason\tdiagnostic_status\tdiagnostic_actual\tdiagnostic_expected\tdiagnostic_reason\toracle"
+)
+
+// Each top-level API test writes its own artifact and replaces the combined
+// report only when every captured API artifact comes from the same input.
+var l11ReportFooterKeys = []string{
+	"TOTAL",
+	"COMPILE_TOTAL",
+	"METADATA_TOTAL",
+	"DOM_TOTAL",
+	"DIAGNOSTIC_TOTAL",
+	"LOCAL_DOM_ROWS",
+	"QUALIFIED_TOTAL",
+	"QUALIFIED_ERROR_ID_PATHS",
+	"QUALIFIED_RELEASE_URL_PATHS",
+}
+
 // The L11 suite replays all 285 captured rows at API 59/67/68:
 // 64 LWC compile, eight ListView metadata and 213 native DOM observations.
 // Runtime inputs retain the original API 67 null/empty related-record reads.
@@ -69,7 +90,9 @@ var l11APIVersions = []string{"59.0", "67.0", "68.0"}
 // Each top-level test replays one API version so the CI planner can distribute
 // the suite across shards; the Node observer receives that version selector.
 // GLADE_L11_CAPTURE=1 reports mismatches without failing; GLADE_L11_REPORT
-// selects the TSV destination. CI needs only these credential-free exports.
+// selects the TSV destination. Each API writes its own <destination>.<api>.tsv;
+// the combined <destination> is replaced only after all three artifacts exist
+// with the same input digest. CI needs only these credential-free exports.
 func TestL11SalesforceConformanceAPI59(t *testing.T) {
 	l11SalesforceConformance(t, "59.0")
 }
@@ -99,6 +122,7 @@ func l11SalesforceConformance(t *testing.T, apiVersion string) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	reportDigest := l11ReportDigest(data)
 	var cases []l11Case
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.DisallowUnknownFields()
@@ -181,7 +205,7 @@ func l11SalesforceConformance(t *testing.T, apiVersion string) {
 	}
 
 	var report strings.Builder
-	fmt.Fprintln(&report, "api\tid\tkind\tstatus\tactual\texpected\treason\tdiagnostic_status\tdiagnostic_actual\tdiagnostic_expected\tdiagnostic_reason\toracle")
+	fmt.Fprintln(&report, l11ReportHeader)
 	matches, compileMatches, metadataMatches, domMatches, localDOMRows, diagnosticMatches := 0, 0, 0, 0, 0, 0
 	qualifiedRows, qualifiedIDs, qualifiedURLs := 0, 0, 0
 	// The original first compile initializes any missing shared toolchain before
@@ -356,7 +380,7 @@ func l11SalesforceConformance(t *testing.T, apiVersion string) {
 	fmt.Fprintf(&report, "QUALIFIED_TOTAL\t%d\nQUALIFIED_ERROR_ID_PATHS\t%d\nQUALIFIED_RELEASE_URL_PATHS\t%d\n", qualifiedRows, qualifiedIDs, qualifiedURLs)
 	t.Logf("L11 qualified %d rows separately from exact matches; request-ID paths %d; release URL paths %d", qualifiedRows, qualifiedIDs, qualifiedURLs)
 	if path := os.Getenv("GLADE_L11_REPORT"); path != "" {
-		l07Write(t, path, []byte(report.String()))
+		l11WriteReportArtifact(t, path, apiVersion, reportDigest, []byte(report.String()))
 	}
 }
 
@@ -1174,4 +1198,386 @@ func l11SetUpNativeFixture(runtime *vm.VM, org *storage.OrgState, root, api stri
 		return fmt.Errorf("L11 native fixture setup async: %w", err)
 	}
 	return nil
+}
+
+// l11ReportDigest identifies the captured input that produced an artifact.
+// Artifacts from different inputs are never combined.
+func l11ReportDigest(data []byte) string {
+	return fmt.Sprintf("%x", sha256.Sum256(data))
+}
+
+func l11ReportArtifactPath(base, api string) string {
+	return base + "." + api + ".tsv"
+}
+
+// l11WriteReportArtifact writes one API's artifact atomically. The combined
+// report is replaced only when every captured API artifact is present and all
+// artifacts share one input digest, so sharded runs cannot truncate evidence.
+func l11WriteReportArtifact(t *testing.T, base, api, digest string, report []byte) {
+	t.Helper()
+	artifact := make([]byte, 0, len(report)+96)
+	artifact = fmt.Appendf(artifact, "# glade-l11-report\t%s\t%s\n", l11ReportArtifactVersion, digest)
+	artifact = append(artifact, report...)
+	if _, err := l11ParseReportArtifact(api, artifact); err != nil {
+		t.Fatal(err)
+	}
+	l11WriteFileAtomic(t, l11ReportArtifactPath(base, api), artifact)
+	combined, ok, err := l11CombineReportArtifacts(base)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ok {
+		l11WriteFileAtomic(t, base, combined)
+	}
+}
+
+func l11WriteFileAtomic(t *testing.T, path string, data []byte) {
+	t.Helper()
+	directory := filepath.Dir(path)
+	if err := os.MkdirAll(directory, 0755); err != nil {
+		t.Fatal(err)
+	}
+	file, err := os.CreateTemp(directory, "."+filepath.Base(path)+".tmp-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	name := file.Name()
+	defer os.Remove(name)
+	if _, err := file.Write(data); err != nil {
+		file.Close()
+		t.Fatal(err)
+	}
+	if err := file.Chmod(0600); err != nil {
+		file.Close()
+		t.Fatal(err)
+	}
+	if err := file.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Rename(name, path); err != nil {
+		t.Fatal(err)
+	}
+}
+
+type l11ReportArtifact struct {
+	digest string
+	body   string
+	footer map[string]string
+}
+
+func l11ParseReportArtifact(api string, data []byte) (l11ReportArtifact, error) {
+	lines := strings.Split(strings.TrimSuffix(string(data), "\n"), "\n")
+	if len(lines) < 2 {
+		return l11ReportArtifact{}, fmt.Errorf("L11 report artifact API %s is incomplete", api)
+	}
+	identity := strings.Split(lines[0], "\t")
+	if len(identity) != 3 || identity[0] != "# glade-l11-report" || identity[1] != l11ReportArtifactVersion || !l11ReportDigestText(identity[2]) {
+		return l11ReportArtifact{}, fmt.Errorf("L11 report artifact API %s has an invalid identity", api)
+	}
+	if lines[1] != l11ReportHeader {
+		return l11ReportArtifact{}, fmt.Errorf("L11 report artifact API %s has an invalid header", api)
+	}
+	artifact := l11ReportArtifact{digest: identity[2], footer: map[string]string{}}
+	seen := map[string]bool{}
+	var body strings.Builder
+	for _, line := range lines[2:] {
+		fields := strings.Split(line, "\t")
+		switch {
+		case len(fields) == 12:
+			if fields[0] != api {
+				return l11ReportArtifact{}, fmt.Errorf("L11 report artifact API %s contains API %s row %s", api, fields[0], fields[1])
+			}
+			body.WriteString(line)
+			body.WriteByte('\n')
+		case len(fields) == 3 && (fields[0] == "API_TOTAL" || fields[0] == "API_QUALIFIED" || fields[0] == "LOCAL_DOM_ROWS"):
+			if fields[1] != api || seen[fields[0]] {
+				return l11ReportArtifact{}, fmt.Errorf("L11 report artifact API %s has an invalid %s line", api, fields[0])
+			}
+			seen[fields[0]] = true
+			body.WriteString(line)
+			body.WriteByte('\n')
+		case len(fields) == 2 && l11ReportFooterKey(fields[0]):
+			if _, ok := artifact.footer[fields[0]]; ok {
+				return l11ReportArtifact{}, fmt.Errorf("L11 report artifact API %s repeats %s", api, fields[0])
+			}
+			artifact.footer[fields[0]] = fields[1]
+		default:
+			return l11ReportArtifact{}, fmt.Errorf("L11 report artifact API %s has an invalid line %q", api, line)
+		}
+	}
+	for _, key := range []string{"API_TOTAL", "API_QUALIFIED", "LOCAL_DOM_ROWS"} {
+		if !seen[key] {
+			return l11ReportArtifact{}, fmt.Errorf("L11 report artifact API %s is missing %s", api, key)
+		}
+	}
+	for _, key := range l11ReportFooterKeys {
+		if artifact.footer[key] == "" {
+			return l11ReportArtifact{}, fmt.Errorf("L11 report artifact API %s is missing %s", api, key)
+		}
+	}
+	artifact.body = body.String()
+	return artifact, nil
+}
+
+func l11ReportDigestText(value string) bool {
+	if len(value) != sha256.Size*2 {
+		return false
+	}
+	_, err := hex.DecodeString(value)
+	return err == nil
+}
+
+func l11ReportFooterKey(key string) bool {
+	for _, candidate := range l11ReportFooterKeys {
+		if candidate == key {
+			return true
+		}
+	}
+	return false
+}
+
+func l11CombineReportArtifacts(base string) ([]byte, bool, error) {
+	artifacts := make([]l11ReportArtifact, 0, len(l11APIVersions))
+	digest := ""
+	for _, api := range l11APIVersions {
+		data, err := os.ReadFile(l11ReportArtifactPath(base, api))
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil, false, nil
+		}
+		if err != nil {
+			return nil, false, err
+		}
+		artifact, err := l11ParseReportArtifact(api, data)
+		if err != nil {
+			return nil, false, err
+		}
+		if digest == "" {
+			digest = artifact.digest
+		} else if artifact.digest != digest {
+			return nil, false, nil
+		}
+		artifacts = append(artifacts, artifact)
+	}
+	totals := map[string]int{}
+	var combined strings.Builder
+	combined.WriteString(l11ReportHeader)
+	combined.WriteByte('\n')
+	for _, artifact := range artifacts {
+		combined.WriteString(artifact.body)
+		for _, key := range []string{"TOTAL", "COMPILE_TOTAL", "METADATA_TOTAL", "DOM_TOTAL", "DIAGNOSTIC_TOTAL", "LOCAL_DOM_ROWS"} {
+			matches, total, err := l11ParseReportFraction(artifact.footer[key])
+			if err != nil {
+				return nil, false, fmt.Errorf("%s: %w", key, err)
+			}
+			totals[key+"/matches"] += matches
+			totals[key+"/total"] += total
+		}
+		for _, key := range []string{"QUALIFIED_TOTAL", "QUALIFIED_ERROR_ID_PATHS", "QUALIFIED_RELEASE_URL_PATHS"} {
+			value, err := strconv.Atoi(artifact.footer[key])
+			if err != nil || value < 0 {
+				return nil, false, fmt.Errorf("%s: invalid count %q", key, artifact.footer[key])
+			}
+			totals[key] += value
+		}
+	}
+	fmt.Fprintf(&combined, "TOTAL\t%d/%d\n", totals["TOTAL/matches"], totals["TOTAL/total"])
+	fmt.Fprintf(&combined, "COMPILE_TOTAL\t%d/%d\n", totals["COMPILE_TOTAL/matches"], totals["COMPILE_TOTAL/total"])
+	fmt.Fprintf(&combined, "METADATA_TOTAL\t%d/%d\n", totals["METADATA_TOTAL/matches"], totals["METADATA_TOTAL/total"])
+	fmt.Fprintf(&combined, "DOM_TOTAL\t%d/%d\n", totals["DOM_TOTAL/matches"], totals["DOM_TOTAL/total"])
+	fmt.Fprintf(&combined, "DIAGNOSTIC_TOTAL\t%d/%d\n", totals["DIAGNOSTIC_TOTAL/matches"], totals["DIAGNOSTIC_TOTAL/total"])
+	fmt.Fprintf(&combined, "LOCAL_DOM_ROWS\t%d/%d\n", totals["LOCAL_DOM_ROWS/matches"], totals["LOCAL_DOM_ROWS/total"])
+	fmt.Fprintf(&combined, "QUALIFIED_TOTAL\t%d\n", totals["QUALIFIED_TOTAL"])
+	fmt.Fprintf(&combined, "QUALIFIED_ERROR_ID_PATHS\t%d\n", totals["QUALIFIED_ERROR_ID_PATHS"])
+	fmt.Fprintf(&combined, "QUALIFIED_RELEASE_URL_PATHS\t%d\n", totals["QUALIFIED_RELEASE_URL_PATHS"])
+	return []byte(combined.String()), true, nil
+}
+
+func l11ParseReportFraction(value string) (int, int, error) {
+	matchesText, totalText, ok := strings.Cut(value, "/")
+	if !ok {
+		return 0, 0, fmt.Errorf("invalid count %q", value)
+	}
+	matches, err := strconv.Atoi(matchesText)
+	if err != nil || matches < 0 {
+		return 0, 0, fmt.Errorf("invalid count %q", value)
+	}
+	total, err := strconv.Atoi(totalText)
+	if err != nil || total < 0 {
+		return 0, 0, fmt.Errorf("invalid count %q", value)
+	}
+	return matches, total, nil
+}
+
+func l11TestReport(api string, compile, metadata, runtime, diagnostic, qualified, errorIDs, releaseURLs int) string {
+	var report strings.Builder
+	fmt.Fprintln(&report, l11ReportHeader)
+	for index := 0; index < compile; index++ {
+		diagnosticStatus, diagnosticActual, diagnosticExpected := "", "", ""
+		if index < diagnostic {
+			diagnosticStatus, diagnosticActual, diagnosticExpected = "MATCH", "[]", "[]"
+		}
+		fmt.Fprintf(&report, "%s\t%s\tcompile\tMATCH\tCOMPILE_OK\tCOMPILE_OK\t%s\t%s\t%s\t%s\t%s\t%s\n",
+			api, fmt.Sprintf("c%d", index), "", diagnosticStatus, diagnosticActual, diagnosticExpected, "", "oracle")
+	}
+	for index := 0; index < runtime; index++ {
+		fmt.Fprintf(&report, "%s\t%s\truntime\tMATCH\tBROWSER|{}\tBROWSER|{}\t%s\t%s\t%s\t%s\t%s\t%s\n",
+			api, fmt.Sprintf("r%d", index), "", "", "", "", "", "oracle")
+	}
+	total := compile + runtime
+	fmt.Fprintf(&report, "API_TOTAL\t%s\t%d/%d\nAPI_QUALIFIED\t%s\t%d\nLOCAL_DOM_ROWS\t%s\t%d/%d\n", api, total, total, api, qualified, api, runtime, runtime)
+	fmt.Fprintf(&report, "TOTAL\t%d/%d\nCOMPILE_TOTAL\t%d/%d\nMETADATA_TOTAL\t%d/%d\nDOM_TOTAL\t%d/%d\nDIAGNOSTIC_TOTAL\t%d/%d\nLOCAL_DOM_ROWS\t%d/%d\n",
+		total, total, compile, compile, metadata, metadata, runtime, runtime, diagnostic, diagnostic, runtime, runtime)
+	fmt.Fprintf(&report, "QUALIFIED_TOTAL\t%d\nQUALIFIED_ERROR_ID_PATHS\t%d\nQUALIFIED_RELEASE_URL_PATHS\t%d\n", qualified, errorIDs, releaseURLs)
+	return report.String()
+}
+
+func TestL11ReportArtifactsPreserveEveryAPIAndTotal(t *testing.T) {
+	base := filepath.Join(t.TempDir(), "l11.tsv")
+	digest := l11ReportDigest([]byte("fixture"))
+	l11WriteReportArtifact(t, base, "59.0", digest, []byte(l11TestReport("59.0", 2, 1, 1, 1, 1, 2, 3)))
+	l11WriteReportArtifact(t, base, "67.0", digest, []byte(l11TestReport("67.0", 1, 0, 2, 0, 0, 0, 0)))
+	l11WriteReportArtifact(t, base, "68.0", digest, []byte(l11TestReport("68.0", 1, 1, 1, 1, 2, 1, 4)))
+	for _, api := range l11APIVersions {
+		if _, err := os.Stat(l11ReportArtifactPath(base, api)); err != nil {
+			t.Fatalf("missing L11 report artifact %s: %v", api, err)
+		}
+	}
+	data, err := os.ReadFile(base)
+	if err != nil {
+		t.Fatal(err)
+	}
+	combined := string(data)
+	if strings.Count(combined, l11ReportHeader+"\n") != 1 || strings.Contains(combined, "# glade-l11-report") {
+		t.Fatalf("combined L11 report identity is not singular:\n%s", combined)
+	}
+	last := -1
+	for _, api := range l11APIVersions {
+		index := strings.Index(combined, "\n"+api+"\t")
+		if index <= last {
+			t.Fatalf("combined L11 report omitted or reordered API %s:\n%s", api, combined)
+		}
+		last = index
+	}
+	for _, want := range []string{
+		"API_TOTAL\t59.0\t3/3", "API_TOTAL\t67.0\t3/3", "API_TOTAL\t68.0\t2/2",
+		"API_QUALIFIED\t59.0\t1", "API_QUALIFIED\t67.0\t0", "API_QUALIFIED\t68.0\t2",
+		"LOCAL_DOM_ROWS\t59.0\t1/1", "LOCAL_DOM_ROWS\t67.0\t2/2", "LOCAL_DOM_ROWS\t68.0\t1/1",
+		"\nTOTAL\t8/8\n", "\nCOMPILE_TOTAL\t4/4\n", "\nMETADATA_TOTAL\t2/2\n", "\nDOM_TOTAL\t4/4\n",
+		"\nDIAGNOSTIC_TOTAL\t2/2\n", "\nLOCAL_DOM_ROWS\t4/4\n", "\nQUALIFIED_TOTAL\t3\n",
+		"\nQUALIFIED_ERROR_ID_PATHS\t3\n", "\nQUALIFIED_RELEASE_URL_PATHS\t7\n",
+	} {
+		if !strings.Contains(combined, want) {
+			t.Fatalf("combined L11 report is missing %q:\n%s", want, combined)
+		}
+	}
+}
+
+func TestL11ReportArtifactSetRejectsPartialOrMixedInputs(t *testing.T) {
+	t.Run("partial", func(t *testing.T) {
+		base := filepath.Join(t.TempDir(), "l11.tsv")
+		digest := l11ReportDigest([]byte("fixture"))
+		l11WriteReportArtifact(t, base, "59.0", digest, []byte(l11TestReport("59.0", 1, 0, 1, 0, 0, 0, 0)))
+		l11WriteReportArtifact(t, base, "67.0", digest, []byte(l11TestReport("67.0", 1, 0, 1, 0, 0, 0, 0)))
+		if _, err := os.Stat(base); !errors.Is(err, fs.ErrNotExist) {
+			t.Fatalf("partial L11 artifact set wrote a combined report: %v", err)
+		}
+	})
+	t.Run("mixed-inputs", func(t *testing.T) {
+		base := filepath.Join(t.TempDir(), "l11.tsv")
+		first, second := strings.Repeat("a", sha256.Size*2), strings.Repeat("b", sha256.Size*2)
+		l11WriteReportArtifact(t, base, "59.0", first, []byte(l11TestReport("59.0", 1, 0, 1, 0, 0, 0, 0)))
+		l11WriteReportArtifact(t, base, "67.0", second, []byte(l11TestReport("67.0", 1, 0, 1, 0, 0, 0, 0)))
+		l11WriteReportArtifact(t, base, "68.0", first, []byte(l11TestReport("68.0", 1, 0, 1, 0, 0, 0, 0)))
+		if _, err := os.Stat(base); !errors.Is(err, fs.ErrNotExist) {
+			t.Fatalf("mixed L11 artifact inputs wrote a combined report: %v", err)
+		}
+		l11WriteReportArtifact(t, base, "67.0", first, []byte(l11TestReport("67.0", 1, 0, 1, 0, 0, 0, 0)))
+		data, err := os.ReadFile(base)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(string(data), "\nTOTAL\t6/6\n") {
+			t.Fatalf("matching L11 artifact set did not write the combined totals:\n%s", data)
+		}
+	})
+}
+
+func TestL11BrowserSelectionObservesEveryInputOnce(t *testing.T) {
+	if _, err := exec.LookPath("node"); err != nil {
+		t.Skip("node unavailable")
+	}
+	observer, err := filepath.Abs("testdata/l11_browser.mjs")
+	if err != nil {
+		t.Fatal(err)
+	}
+	run := func(t *testing.T, config map[string]any) ([]string, error, string) {
+		t.Helper()
+		payload, err := json.Marshal(config)
+		if err != nil {
+			t.Fatal(err)
+		}
+		cmd := exec.Command("node", observer)
+		cmd.Stdin = bytes.NewReader(payload)
+		var stderr bytes.Buffer
+		cmd.Stderr = &stderr
+		output, err := cmd.Output()
+		if err != nil {
+			return nil, err, stderr.String()
+		}
+		var selection struct {
+			IDs []string `json:"ids"`
+		}
+		if err := json.Unmarshal(output, &selection); err != nil {
+			t.Fatal(err)
+		}
+		return selection.IDs, nil, ""
+	}
+	legacy := []map[string]string{
+		{"id": "legacy", "adapter": "apex"},
+		{"id": "second", "adapter": "lds"},
+	}
+	t.Run("legacy-input", func(t *testing.T) {
+		ids, err, stderr := run(t, map[string]any{"specs": legacy, "selectOnly": true})
+		if err != nil || !reflect.DeepEqual(ids, []string{"legacy", "second"}) {
+			t.Fatalf("legacy L11 selection = %v, %v: %s", ids, err, stderr)
+		}
+	})
+	t.Run("single-api-assigns-unversioned", func(t *testing.T) {
+		specs := []map[string]string{
+			{"id": "legacy", "adapter": "apex"},
+			{"id": "r59", "adapter": "apex", "api": "59.0"},
+			{"id": "r67", "adapter": "lds", "api": "67.0"},
+		}
+		ids, err, stderr := run(t, map[string]any{"specs": specs, "apiVersions": []string{"59.0"}, "selectOnly": true})
+		if err != nil || !reflect.DeepEqual(ids, []string{"legacy", "r59"}) {
+			t.Fatalf("single-API L11 selection = %v, %v: %s", ids, err, stderr)
+		}
+	})
+	t.Run("versioned-partition", func(t *testing.T) {
+		specs := []map[string]string{
+			{"id": "r59", "adapter": "apex", "api": "59.0"},
+			{"id": "r67", "adapter": "lds", "api": "67.0"},
+			{"id": "r68", "adapter": "apex", "api": "68.0"},
+		}
+		var observed []string
+		for _, api := range l11APIVersions {
+			ids, err, stderr := run(t, map[string]any{"specs": specs, "apiVersions": []string{api}, "selectOnly": true})
+			if err != nil {
+				t.Fatalf("L11 API %s selection: %v: %s", api, err, stderr)
+			}
+			observed = append(observed, ids...)
+		}
+		if !reflect.DeepEqual(observed, []string{"r59", "r67", "r68"}) {
+			t.Fatalf("versioned L11 inputs were not observed exactly once: %v", observed)
+		}
+	})
+	t.Run("ambiguous-unversioned", func(t *testing.T) {
+		specs := append(append([]map[string]string{}, legacy[:1]...),
+			map[string]string{"id": "r59", "adapter": "apex", "api": "59.0"},
+			map[string]string{"id": "r67", "adapter": "lds", "api": "67.0"})
+		_, err, stderr := run(t, map[string]any{"specs": specs, "apiVersions": []string{"59.0", "67.0"}, "selectOnly": true})
+		if err == nil || !strings.Contains(stderr, "unversioned L11 spec is ambiguous") {
+			t.Fatalf("ambiguous L11 selection was not rejected: %v: %s", err, stderr)
+		}
+	})
 }
