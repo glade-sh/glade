@@ -71,6 +71,8 @@ func TestProcessBuilderWaitStartBoundaries(t *testing.T) {
 		{"variable read", replace("</Flow>", "<formulas><name>ClockRead</name><dataType>DateTime</dataType><expression>{!myVariable_waitStartTimeVariable}</expression></formulas></Flow>"), false},
 		{"variable used by update", replace("<stringValue>A</stringValue>", "<elementReference>myVariable_waitStartTimeVariable</elementReference>"), false},
 		{"duplicate variable", replace("</Flow>", "<variables><name>myVariable_waitStartTimeVariable</name><dataType>DateTime</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>false</isOutput><value><elementReference>$Flow.CurrentDateTime</elementReference></value></variables></Flow>"), false},
+		{"case variant variable collision", replace("</Flow>", "<variables><name>MYVARIABLE_WAITSTARTTIMEVARIABLE</name><dataType>DateTime</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>false</isOutput><value><elementReference>$Flow.CurrentDateTime</elementReference></value></variables></Flow>"), false},
+		{"case variant decision collision", replace("</Flow>", "<decisions><name>MYDECISION</name><defaultConnectorLabel>default</defaultConnectorLabel></decisions></Flow>"), false},
 		{"unknown assignment property", replace("<assignmentItems>", "<unexpected>true</unexpected><assignmentItems>"), false},
 	}
 	defs := flowProjectRelationshipDefinitions(p)
