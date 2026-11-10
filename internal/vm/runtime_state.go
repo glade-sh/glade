@@ -160,6 +160,8 @@ type VM struct {
 	localAsyncDrain              bool
 	localAsyncChain              bool
 	rejectAsyncActions           bool
+	isolateAsyncJobFailures      bool
+	actionAsyncSavepoints        map[string]int
 	asyncActionViolation         bool
 	executionUser                Value
 	// Captured once from the runner's initial org, before test setup inserts.
@@ -1020,6 +1022,7 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 	clone.traceOutputLimit = vm.traceOutputLimit
 	clone.toolingExecuteAnonymous = vm.toolingExecuteAnonymous
 	clone.rejectAsyncActions = vm.rejectAsyncActions
+	clone.isolateAsyncJobFailures = vm.isolateAsyncJobFailures
 	clone.asyncActionViolation = vm.asyncActionViolation
 	clone.staticInitState = nil
 	clone.pageReferences = copyStringMap(vm.pageReferences)
@@ -3415,12 +3418,16 @@ func (vm *VM) AdvanceDeterministicTime(delta time.Duration) {
 	vm.fakeNow = vm.fakeNow.Add(delta)
 }
 
-// SetSynchronousActionBoundary makes framework actions fail closed when they
-// attempt to cross an asynchronous delivery boundary that the caller cannot
-// drain and commit as part of the same request.
+// SetSynchronousActionBoundary configures a Lightning action transaction.
+// Queueable, future and platform-event work enqueued by the action is drained
+// by DrainAsync after the action succeeds, and each drained job is its own
+// transaction: a failing job rolls back only its own changes and does not
+// change the action's result (lightning_action_async_drain captures).
+// Database.*Async DML has no capture for this boundary and still fails closed.
 func (vm *VM) SetSynchronousActionBoundary(enabled bool) {
 	if vm != nil {
 		vm.rejectAsyncActions = enabled
+		vm.isolateAsyncJobFailures = enabled
 		if !enabled {
 			vm.asyncActionViolation = false
 		}

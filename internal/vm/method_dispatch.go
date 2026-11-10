@@ -68,9 +68,6 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		return Null, fmt.Errorf("%s expects %d arguments", method.Name, len(method.Params))
 	}
 	if methodHasModifier(method.Modifiers, "future") {
-		if vm.rejectAsyncActions {
-			return Null, vm.rejectSynchronousAsyncAction(fmt.Sprintf("%s cannot cross the synchronous LWC action boundary", method.Name))
-		}
 		// async_stack_depth future_2/future_3 (API 62 and 67): a future called
 		// from a future body throws a catchable AsyncException.
 		// async_lifecycle_c14 Y1 (API 62/67): batch start and execute reject

@@ -1029,7 +1029,27 @@ func (vm *VM) drainAsyncJobsFrom(result *Result, jobs *[]AsyncJob, startIndex in
 			"jobId": job.ID,
 		})
 		batchProjection := false
+		var isolationMark storage.IsolationMark
+		isolated := false
+		if vm.isolateAsyncJobFailures {
+			isolationMark, isolated = vm.beginBatchChunkTransaction()
+		}
 		err := vm.runAsyncJob(job, result, &batchProjection)
+		if err != nil && isolated {
+			// Each drained job is its own transaction: undo what the failed job
+			// wrote, record it as Failed and keep draining the others.
+			if rollbackErr := vm.rollbackBatchChunkTransaction(isolationMark); rollbackErr != nil {
+				return rollbackErr
+			}
+			if asyncStaticSnapshot != nil {
+				vm.restoreStaticFieldSnapshot(asyncStaticSnapshot)
+				vm.staticInitState = copyStaticInitStateMap(asyncStaticInitSnapshot)
+			}
+			if !job.ScheduledAborted && !batchProjection {
+				vm.recordAsyncJob(job, "Failed", err.Error())
+			}
+			continue
+		}
 		if asyncStaticSnapshot != nil {
 			vm.restoreStaticFieldSnapshot(asyncStaticSnapshot)
 			vm.staticInitState = copyStaticInitStateMap(asyncStaticInitSnapshot)
