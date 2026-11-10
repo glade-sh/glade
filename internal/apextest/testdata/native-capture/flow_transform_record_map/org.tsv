@@ -1,0 +1,7 @@
+api	route	case	result
+62.0	anonymous	map_and_null	{"populated":{"LastName":"Map sample","Title":null},"title":null,"lastName":"Map sample"}
+67.0	anonymous	map_and_null	{"populated":{"LastName":"Map sample","Title":null},"title":null,"lastName":"Map sample"}
+62.0	isTest	map_and_null	pass
+67.0	isTest	map_and_null	pass
+62.0	metadata_deploy	unknown_target	rejected: field integrity exception
+67.0	metadata_deploy	unknown_target	rejected: field integrity exception

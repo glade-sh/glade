@@ -5,6 +5,7 @@
 Planned changes are listed below.
 
 - **REST composite responses.** Missing-field errors and collection or tree rollback responses now follow the captured Salesforce status codes, error messages, and result shapes.
+- **Flow record mapping and collection filters (62.0 and 67.0).** Autolaunched flows can map references and string literals into single records, retain mapped nulls in returned records, and use In and Not In filters with collection inputs in Get Records.
 
 ## v0.3.5
 

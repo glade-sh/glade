@@ -701,7 +701,9 @@ type WorkflowFieldUpdate struct {
 	Name         string `json:"name"`
 	Field        string `json:"field"`
 	LiteralValue string `json:"literalValue,omitempty"`
-	Formula      string `json:"formula,omitempty"`
+	// FlowLiteralString marks a present string literal, including an empty one.
+	FlowLiteralString bool   `json:"flowLiteralString,omitempty"`
+	Formula           string `json:"formula,omitempty"`
 	// FlowFrameFormula marks an individually selected record-triggered Flow formula.
 	FlowFrameFormula bool   `json:"flowFrameFormula,omitempty"`
 	SourceField      string `json:"sourceField,omitempty"`
@@ -1120,6 +1122,7 @@ type FlowTransform struct {
 	TargetCollection string                `json:"targetCollection"`
 	FieldMappings    []WorkflowFieldUpdate `json:"fieldMappings,omitempty"`
 	SumField         string                `json:"sumField,omitempty"`
+	ObjectType       string                `json:"objectType,omitempty"`
 }
 
 type FlowCollectionProcessor struct {
