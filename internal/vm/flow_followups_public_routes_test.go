@@ -18,7 +18,16 @@ func TestPublicTransferCaseQueryRoutes(t *testing.T) {
 				t.Run(api+"/"+route.name+"/"+string(owner), func(t *testing.T) {
 					machine := recordSharingControlMachine(t, "Private")
 					machine.testContext.CurrentUser.Fields["UserType"] = String("Standard")
-					storage.EnsureStandardObject(machine.Org, "Case")
+					for _, name := range []string{"Case", "Group", "GroupMember"} {
+						storage.EnsureStandardObject(machine.Org, name)
+					}
+					queue := storage.ID("00G000000000001")
+					groups := machine.Org.Objects["Group"]
+					groups.Records = map[storage.ID]storage.Record{queue: {ID: queue, Object: "Group", Fields: map[string]storage.Value{"Type": storage.StringValue("Queue")}}}
+					machine.Org.Objects["Group"] = groups
+					members := machine.Org.Objects["GroupMember"]
+					members.Records = map[storage.ID]storage.Record{}
+					machine.Org.Objects["GroupMember"] = members
 					cases := machine.Org.Objects["Case"]
 					cases.Definition.SharingModel = "ReadWriteTransfer"
 					id := storage.ID("500000000000001")
