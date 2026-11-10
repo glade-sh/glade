@@ -125,10 +125,25 @@ func TestReceiverMemberLSPOpaquePackageNamedIsTestRoutes(t *testing.T) {
 						writeReceiverMemberFile(t, other, "public class Parcel { public String local() { return 'local'; } }")
 						paths = append(paths, other)
 					}
+					// Undeclared, missingns is Invalid type in the field position
+					// (ruling 49; native namespace_external_positions
+					// ExtFieldOnlyV035). Declared without source, it stays open.
 					index := typesys.Build(project.Project{Root: root, SourceAPIVersion: api, ApexFiles: paths}, schema.Schema{})
 					handler := NewHandler(index)
 					defer handler.parser.Close()
-					if ds := handler.diagnosticsForDocument(uriFromPath(path)); len(ds) != 0 {
+					ds := handler.diagnosticsForDocument(uriFromPath(path))
+					if len(ds) == 0 {
+						t.Fatal("undeclared field type accepted")
+					}
+					for _, d := range ds {
+						if d.NativeMessage != "Invalid type: missingns.Parcel.Options" {
+							t.Fatal(ds)
+						}
+					}
+					index.Dependencies = []typesys.DependencyInfo{{Namespace: "missingns", Status: "missing"}}
+					declared := NewHandler(index)
+					defer declared.parser.Close()
+					if ds := declared.diagnosticsForDocument(uriFromPath(path)); len(ds) != 0 {
 						t.Fatal(ds)
 					}
 				})

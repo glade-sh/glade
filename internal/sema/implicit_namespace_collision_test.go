@@ -1,6 +1,30 @@
 package sema
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/glade-sh/glade/internal/diagnostic"
+)
+
+// assertOnlyUndeclaredFieldRejection allows only the native rejection of the
+// undeclared missingns field type (ruling 49; namespace_external_positions
+// ExtFieldOnlyV035). The local CartLike class adds nothing.
+func assertOnlyUndeclaredFieldRejection(t *testing.T, label string, result Result) {
+	t.Helper()
+	found := false
+	for _, d := range result.Diagnostics {
+		if d.Severity != diagnostic.Error {
+			continue
+		}
+		if d.NativeMessage != "Invalid type: missingns.CartLike.SubmitOptions" {
+			t.Fatalf("%s: %#v", label, result.Diagnostics)
+		}
+		found = true
+	}
+	if !found {
+		t.Fatalf("%s: undeclared field type accepted", label)
+	}
+}
 
 func TestAnalyzeImplicitNamespaceCollisionLocalMember(t *testing.T) {
 	result := analyzeDeclarationProject(t, map[string]string{
@@ -16,9 +40,7 @@ func TestAnalyzeImplicitNamespaceCollisionLocalMember(t *testing.T) {
   @IsTest static void localCall() { System.assertEquals(null, new CartLike().a()); }
 }`,
 	})
-	if result.HasErrors() {
-		t.Fatalf("local member plus qualified missing package: %#v", result.Diagnostics)
-	}
+	assertOnlyUndeclaredFieldRejection(t, "local member plus qualified missing package", result)
 }
 
 func TestAnalyzeImplicitNamespaceCollisionMissingOnly(t *testing.T) {
@@ -28,9 +50,7 @@ func TestAnalyzeImplicitNamespaceCollisionMissingOnly(t *testing.T) {
   public void save() { missingns.CartLike.Instance.save(); }
 }`,
 	})
-	if result.HasErrors() {
-		t.Fatalf("qualified missing-package twin: %#v", result.Diagnostics)
-	}
+	assertOnlyUndeclaredFieldRejection(t, "qualified missing-package twin", result)
 }
 
 func TestAnalyzeImplicitNamespaceCollisionRejectsUnknownLocalMember(t *testing.T) {

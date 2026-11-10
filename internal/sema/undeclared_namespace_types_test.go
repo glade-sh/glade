@@ -14,9 +14,10 @@ import (
 )
 
 // Synthetic: ../../testdata/conformance/undeclared_namespace_types/cases.md.
-// Offline analysis cannot see installed packages or the deploying org's
-// namespace, so a qualifier the project does not declare cannot prove a type
-// absent. Glade a recorded revision accepted every case in cases.tsv marked accepted.
+// Glade in a previous release accepted every case in cases.tsv marked accepted. Ruling 49
+// reverses that deferral: an org without the package rejects an undeclared
+// namespace in every position (namespace_external_positions/org.tsv), and a
+// dependency declared without source keeps the namespace open.
 const undeclaredNamespaceFixture = "../../testdata/conformance/undeclared_namespace_types"
 
 func undeclaredNamespaceIndex(t *testing.T, api, namespace string, extra map[string]string) typesys.Index {
@@ -85,8 +86,30 @@ func TestUndeclaredNamespaceCaseTableNamesFixtureReferences(t *testing.T) {
 	}
 }
 
+// undeclaredNamespaceErrorsInFile requires every error in file (all files when
+// file is empty) to be Invalid type for an undeclared bar or fooNs type, and at
+// least one.
+func undeclaredNamespaceErrorsInFile(t *testing.T, route, namespace, file string, ds []diagnostic.Diagnostic) {
+	t.Helper()
+	count := 0
+	for _, d := range ds {
+		if d.Severity != diagnostic.Error || file != "" && filepath.Base(d.File) != file {
+			continue
+		}
+		count++
+		ref, ok := strings.CutPrefix(d.NativeMessage, "Invalid type: ")
+		if !ok || !strings.HasPrefix(ref, "bar.") && ref != "fooNs.Unknown" && !(namespace == "" && ref == "fooNs.LocalThing") {
+			t.Errorf("%s: unexpected error %s %q | %q", route, d.Code, d.NativeMessage, d.Message)
+		}
+	}
+	if count == 0 {
+		t.Errorf("%s: undeclared namespaces accepted", route)
+	}
+}
+
 // own_type_qualified, absent_type_qualified and the managed_* rows: a project
 // with "namespace": "" (and the same source under its own declared namespace).
+// Undeclared, they reject; declared without source, they compile.
 func TestUndeclaredNamespaceTypesDeferredInProjectAndAnonymous(t *testing.T) {
 	anonymous, err := os.ReadFile(filepath.Join(undeclaredNamespaceFixture, "anonymous.apex"))
 	if err != nil {
@@ -96,11 +119,17 @@ func TestUndeclaredNamespaceTypesDeferredInProjectAndAnonymous(t *testing.T) {
 		for _, namespace := range []string{"", "fooNs"} {
 			t.Run(api+"/namespace="+namespace, func(t *testing.T) {
 				index := undeclaredNamespaceIndex(t, api, namespace, nil)
+				undeclaredNamespaceErrorsInFile(t, "project", namespace, "", Analyze(index).Diagnostics)
+				undeclaredNamespaceErrorsInFile(t, "anonymous", namespace, "", AnalyzeAnonymous(index, string(anonymous), api).Diagnostics)
+				if namespace != "" {
+					return
+				}
+				index.Dependencies = []typesys.DependencyInfo{{Namespace: "bar", Status: "missing"}, {Namespace: "fooNs", Status: "missing"}}
 				if result := Analyze(index); result.HasErrors() {
-					t.Fatalf("project check: %+v", result.Diagnostics)
+					t.Fatalf("declared project check: %+v", result.Diagnostics)
 				}
 				if result := AnalyzeAnonymous(index, string(anonymous), api); result.HasErrors() {
-					t.Fatalf("anonymous: %+v", result.Diagnostics)
+					t.Fatalf("declared anonymous: %+v", result.Diagnostics)
 				}
 			})
 		}
@@ -120,7 +149,9 @@ func TestDeclaredProjectNamespaceQualifiedTypeResolvesToProjectClass(t *testing.
 			})
 			var got []string
 			for _, d := range Analyze(index).Diagnostics {
-				got = append(got, d.Message)
+				if filepath.Base(d.File) == "OwnedProbe.cls" {
+					got = append(got, d.Message)
+				}
 			}
 			want := `method "mismatch" initializes String local "s" with Integer`
 			if len(got) != 1 || got[0] != want {
@@ -145,7 +176,7 @@ func TestUndeclaredNamespaceBaseBoundaryDeferred(t *testing.T) {
 			index := undeclaredNamespaceIndex(t, api, "", map[string]string{"BarLocals": string(source)})
 			var errors []string
 			for _, d := range Analyze(index).Diagnostics {
-				if d.Severity == diagnostic.Error {
+				if d.Severity == diagnostic.Error && filepath.Base(d.File) == "BarLocals.cls" {
 					errors = append(errors, d.Code+" "+d.Message+" | "+d.NativeMessage)
 				}
 			}

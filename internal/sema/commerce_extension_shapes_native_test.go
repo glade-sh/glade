@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
@@ -115,8 +116,10 @@ func TestCommerceExtensionContractVisibilityPreservesOtherTypes(t *testing.T) {
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api, func(t *testing.T) {
 			// The initial enabled-Commerce capture accepts PricingService at
-			// both APIs. The uncatalogued names only protect the existing open
-			// namespace behavior; they are not native acceptance observations.
+			// both APIs. The uncatalogued platform name only protects the
+			// partial platform catalog; it is not a native acceptance
+			// observation. An undeclared package namespace is Invalid type
+			// (ruling 49; namespace_external_positions ExtFieldOnlyV035).
 			result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{
 				"Probe.cls": `public class Probe {
                     commercestorepricing.PricingService pricing;
@@ -124,8 +127,13 @@ func TestCommerceExtensionContractVisibilityPreservesOtherTypes(t *testing.T) {
                     syntheticpackage.UncataloguedShape partialPackage;
                 }`,
 			}, api)
-			if result.HasErrors() {
-				t.Fatalf("unrelated type references changed: %+v", result.Diagnostics)
+			for _, d := range result.Diagnostics {
+				if d.Severity == diagnostic.Error && d.NativeMessage != "Invalid type: syntheticpackage.UncataloguedShape" {
+					t.Fatalf("unrelated type references changed: %+v", result.Diagnostics)
+				}
+			}
+			if !result.HasErrors() {
+				t.Fatal("undeclared package namespace accepted")
 			}
 			result = analyzeDeclarationProjectWithAPIVersion(t, map[string]string{
 				"commercestorepricing.cls": `public class commercestorepricing {

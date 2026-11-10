@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/typesys"
@@ -112,11 +113,28 @@ func TestReceiverMemberOpaquePackageNamedIsTestRoutes(t *testing.T) {
 						files["Parcel.cls"] = "public class Parcel { public String local() { return 'local'; } }"
 					}
 					result := analyzeDeclarationProjectWithAPIVersion(t, files, api)
-					if result.HasErrors() {
+					if !onlyUndeclaredParcelOptions(result.Diagnostics) {
 						t.Fatal(result.Diagnostics)
 					}
 				})
 			}
 		}
 	}
+}
+
+// onlyUndeclaredParcelOptions reports whether every error is the native
+// field-type rejection of the undeclared missingns.Parcel.Options (ruling 49;
+// namespace_external_positions ExtFieldOnlyV035), and at least one exists.
+func onlyUndeclaredParcelOptions(ds []diagnostic.Diagnostic) bool {
+	found := false
+	for _, d := range ds {
+		if d.Severity != diagnostic.Error {
+			continue
+		}
+		if d.NativeMessage != "Invalid type: missingns.Parcel.Options" {
+			return false
+		}
+		found = true
+	}
+	return found
 }

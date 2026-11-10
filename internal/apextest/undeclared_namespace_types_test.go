@@ -1,18 +1,24 @@
 package apextest
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/sema"
 )
 
 // Synthetic: ../../testdata/conformance/undeclared_namespace_types/cases.md.
-// A namespace-less project references an installed managed namespace (bar)
-// and an undeclared qualifier (fooNs) that it never declares. Glade a recorded revision
-// compiled and ran BarConsumerTest; the project route must still do so.
+// A namespace-less project references a managed namespace (bar) and an
+// undeclared qualifier (fooNs) that it never declares. Ruling 49 reverses the
+// v0.3.1 deferral that compiled BarConsumerTest: an undeclared namespace is
+// Invalid type in every position, as an org without the package rejects it
+// (namespace_external_positions/org.tsv). Declaring both namespaces as
+// dependencies with no source keeps them open (no Invalid type); the missing
+// source is then the dependency_missing environment error.
 func TestUndeclaredNamespaceTypesProjectRoutes(t *testing.T) {
 	const fixture = "../../testdata/conformance/undeclared_namespace_types"
 	anonymous, err := os.ReadFile(filepath.Join(fixture, "anonymous.apex"))
@@ -20,8 +26,13 @@ func TestUndeclaredNamespaceTypesProjectRoutes(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, api := range []string{"62.0", "67.0"} {
-		for _, namespace := range []string{"", "fooNs"} {
-			t.Run(api+"/namespace="+namespace, func(t *testing.T) {
+		for _, variant := range []struct{ namespace, glade string }{
+			{"", ""},
+			{"fooNs", ""},
+			{"", "project:\n  managedPackageDependencies: [\"bar:../absent-bar:1.0\", \"fooNs:../absent-fooNs:1.0\"]\n"},
+		} {
+			declared := variant.glade != ""
+			t.Run(fmt.Sprintf("%s/namespace=%s/declared=%v", api, variant.namespace, declared), func(t *testing.T) {
 				root := t.TempDir()
 				if err := os.CopyFS(root, os.DirFS(filepath.Join(fixture, "project"))); err != nil {
 					t.Fatal(err)
@@ -37,20 +48,57 @@ func TestUndeclaredNamespaceTypesProjectRoutes(t *testing.T) {
 					}
 					writeFile(t, meta, strings.Replace(string(data), "<apiVersion>67.0</apiVersion>", "<apiVersion>"+api+"</apiVersion>", 1))
 				}
-				writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace": "`+namespace+`", "packageDirectories": [{"path": "force-app", "default": true}], "sourceApiVersion": "`+api+`"}`)
+				writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace": "`+variant.namespace+`", "packageDirectories": [{"path": "force-app", "default": true}], "sourceApiVersion": "`+api+`"}`)
+				if declared {
+					writeFile(t, filepath.Join(root, "glade.yml"), variant.glade)
+				}
 				index := loadTestIndex(t, root)
-				if index.HasErrors() {
-					t.Fatal(index.Diagnostics)
-				}
-				if r := sema.Analyze(index); r.HasErrors() {
-					t.Fatalf("project check: %+v", r.Diagnostics)
-				}
-				if r := sema.AnalyzeAnonymous(index, string(anonymous), api); r.HasErrors() {
-					t.Fatalf("anonymous: %+v", r.Diagnostics)
-				}
 				run := Run(index, Options{NoDiskCache: true, Parallelism: 1, SelectedClasses: []string{"BarConsumerTest"}})
-				if s := run.Summary(); s.Total != 1 || s.Passed != 1 || s.CompileErrors != 0 || len(run.ExcludedClasses) != 0 {
-					t.Fatalf("summary=%+v excluded=%+v problem=%s", s, run.ExcludedClasses, firstRunProblem(run))
+				if declared {
+					// A declared dependency without source is the
+					// dependency_missing environment error (missing source =
+					// ENV), and its namespace stays open: no Invalid type.
+					for route, ds := range map[string][]diagnostic.Diagnostic{
+						"project":   sema.Analyze(index).Diagnostics,
+						"anonymous": sema.AnalyzeAnonymous(index, string(anonymous), api).Diagnostics,
+					} {
+						for _, d := range ds {
+							if d.Severity == diagnostic.Error && d.Code != "dependency_missing" {
+								t.Errorf("declared %s: unexpected error %s %q", route, d.Code, nativeDiagnosticText(d))
+							}
+						}
+					}
+					for _, entry := range run.ExcludedClasses {
+						if strings.Contains(entry.Message, "Invalid type") {
+							t.Errorf("declared run excluded %s for %q", entry.ClassName, entry.Message)
+						}
+					}
+					if s := run.Summary(); s.Passed != 0 || s.CompileErrors != 1 || len(run.ExcludedClasses) == 0 {
+						t.Fatalf("declared summary=%+v excluded=%+v problem=%s", s, run.ExcludedClasses, firstRunProblem(run))
+					}
+					return
+				}
+				undeclaredErrors := func(route string, ds []diagnostic.Diagnostic) {
+					t.Helper()
+					count := 0
+					for _, d := range ds {
+						if d.Severity != diagnostic.Error {
+							continue
+						}
+						count++
+						ref, ok := strings.CutPrefix(nativeDiagnosticText(d), "Invalid type: ")
+						if !ok || !strings.HasPrefix(ref, "bar.") && ref != "fooNs.Unknown" && !(variant.namespace == "" && ref == "fooNs.LocalThing") {
+							t.Errorf("%s: unexpected error %s %q", route, d.Code, nativeDiagnosticText(d))
+						}
+					}
+					if count == 0 {
+						t.Errorf("%s: undeclared namespaces accepted", route)
+					}
+				}
+				undeclaredErrors("project", sema.Analyze(index).Diagnostics)
+				undeclaredErrors("anonymous", sema.AnalyzeAnonymous(index, string(anonymous), api).Diagnostics)
+				if s := run.Summary(); s.Passed != 0 || s.CompileErrors != 1 {
+					t.Fatalf("undeclared summary=%+v excluded=%+v problem=%s", s, run.ExcludedClasses, firstRunProblem(run))
 				}
 			})
 		}
@@ -58,7 +106,9 @@ func TestUndeclaredNamespaceTypesProjectRoutes(t *testing.T) {
 }
 
 // Proven absence stays red in the runner: System's inventory is closed
-// (native invalid_system, testdata/conformance/platform_type_references/org.tsv).
+// (native invalid_system, testdata/conformance/platform_type_references/org.tsv),
+// and so is an undeclared namespace (ruling 49; native
+// namespace_external_positions A02_new). Each class is excluded on its own.
 func TestUndeclaredNamespaceRunnerKeepsSystemAbsence(t *testing.T) {
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api, func(t *testing.T) {
@@ -67,14 +117,12 @@ func TestUndeclaredNamespaceRunnerKeepsSystemAbsence(t *testing.T) {
 				"SystemAbsentTest":    "@IsTest private class SystemAbsentTest { @IsTest static void observe() { Object value = new System.NotAType(); } }",
 			}, nil)
 			run := Run(index, Options{NoDiskCache: true, Parallelism: 1})
-			rejected := false
+			systemRejected, managedRejected := false, false
 			for _, entry := range run.ExcludedClasses {
-				if entry.ClassName == "ManagedDeferredTest" {
-					t.Fatalf("managed construction excluded: %+v", entry)
-				}
-				rejected = rejected || entry.ClassName == "SystemAbsentTest" && strings.Contains(entry.Message, "System.NotAType")
+				managedRejected = managedRejected || entry.ClassName == "ManagedDeferredTest" && strings.Contains(entry.Message, "Invalid type: bar.Wrapper")
+				systemRejected = systemRejected || entry.ClassName == "SystemAbsentTest" && strings.Contains(entry.Message, "System.NotAType")
 			}
-			if !rejected || run.Summary().Passed != 1 {
+			if !systemRejected || !managedRejected || len(run.ExcludedClasses) != 2 || run.Summary().Passed != 0 {
 				t.Fatalf("excluded=%+v summary=%+v problem=%s", run.ExcludedClasses, run.Summary(), firstRunProblem(run))
 			}
 		})
