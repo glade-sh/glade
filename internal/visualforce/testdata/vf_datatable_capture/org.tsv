@@ -1,0 +1,7 @@
+api	case	table
+59.0	EmptyOne	"<table id=""j_id0:probe"" border=""0"" cellpadding=""0"" cellspacing=""0""><colgroup span=""1""></colgroup><tbody id=""j_id0:probe:tb""></tbody></table>"
+59.0	EmptyTwo	"<table id=""j_id0:probe"" border=""0"" cellpadding=""0"" cellspacing=""0""><colgroup span=""2""></colgroup><tbody id=""j_id0:probe:tb""></tbody></table>"
+59.0	PopOne	"<table id=""j_id0:probe"" border=""0"" cellpadding=""0"" cellspacing=""0""><colgroup span=""1""></colgroup><tbody id=""j_id0:probe:tb""><tr><td id=""j_id0:probe:0:j_id1"" colspan=""1"">alpha</td></tr><tr><td id=""j_id0:probe:1:j_id1"" colspan=""1"">beta</td></tr></tbody></table>"
+67.0	EmptyOne	"<table id=""j_id0:probe"" border=""0"" cellpadding=""0"" cellspacing=""0""><colgroup span=""1""></colgroup><tbody id=""j_id0:probe:tb""></tbody></table>"
+67.0	EmptyTwo	"<table id=""j_id0:probe"" border=""0"" cellpadding=""0"" cellspacing=""0""><colgroup span=""2""></colgroup><tbody id=""j_id0:probe:tb""></tbody></table>"
+67.0	PopOne	"<table id=""j_id0:probe"" border=""0"" cellpadding=""0"" cellspacing=""0""><colgroup span=""1""></colgroup><tbody id=""j_id0:probe:tb""><tr><td id=""j_id0:probe:0:j_id1"" colspan=""1"">alpha</td></tr><tr><td id=""j_id0:probe:1:j_id1"" colspan=""1"">beta</td></tr></tbody></table>"

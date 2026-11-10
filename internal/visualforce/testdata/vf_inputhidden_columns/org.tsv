@@ -1,0 +1,11 @@
+api	case	outcome	value
+59.0	HiddenPlain	reject	Attribute value in <apex:inputHidden> must contain only a formula expression that resolves to a single controller variable or method in HiddenPlain at line 2 column 53
+59.0	HiddenOne	reject	Attribute value in <apex:inputHidden> must contain only a formula expression that resolves to a single controller variable or method in HiddenOne at line 2 column 61
+59.0	HiddenTwo	reject	Attribute value in <apex:inputHidden> must contain only a formula expression that resolves to a single controller variable or method in HiddenTwo at line 2 column 71
+59.0	HiddenPrefix	reject	Attribute value in <apex:inputHidden> must contain only a formula expression that resolves to a single controller variable or method in HiddenPrefix at line 2 column 91
+59.0	HiddenPriorLine	reject	Attribute value in <apex:inputHidden> must contain only a formula expression that resolves to a single controller variable or method in HiddenPriorLine at line 3 column 42
+67.0	HiddenPlain	reject	Attribute value in <apex:inputHidden> must contain only a formula expression that resolves to a single controller variable or method in HiddenPlain at line 2 column 53
+67.0	HiddenOne	reject	Attribute value in <apex:inputHidden> must contain only a formula expression that resolves to a single controller variable or method in HiddenOne at line 2 column 61
+67.0	HiddenTwo	reject	Attribute value in <apex:inputHidden> must contain only a formula expression that resolves to a single controller variable or method in HiddenTwo at line 2 column 71
+67.0	HiddenPrefix	reject	Attribute value in <apex:inputHidden> must contain only a formula expression that resolves to a single controller variable or method in HiddenPrefix at line 2 column 91
+67.0	HiddenPriorLine	reject	Attribute value in <apex:inputHidden> must contain only a formula expression that resolves to a single controller variable or method in HiddenPriorLine at line 3 column 42

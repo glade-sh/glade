@@ -26,26 +26,7 @@ func TestVisualforceRenderMarkupNativeRows(t *testing.T) {
 // posRenderMarkupKnownDifferences names the captured rows this test does not
 // assert, each with the difference that keeps it out. The native values stay in
 // org.tsv.
-var posRenderMarkupKnownDifferences = map[string]bool{
-	// A commandButton and an actionFunction with a literal id: Glade's own
-	// postback markup (data-action, onclick, its submit script) stands where
-	// the org writes jsfcljs and the SfdcApp form scripts.
-	"IdLCommandButton": true, "IdLActionFunction": true,
-	// A dataTable: Glade writes a reduced table (class, thead, no colgroup or
-	// tbody id); the dataTable markup has no capture beyond this empty table.
-	"IdLDataTable": true,
-	// A supplementary character in a static resource path: the org writes "&"
-	// and drops the rest of the path; one sample gives no rule.
-	"LinkUniResourceEmoji": true,
-	// An inputCheckbox bound to a Contact checkbox field (DoNotCall,
-	// HasOptedOutOfEmail) inside apex:repeat: the org writes no control at all;
-	// Glade writes the checkbox. The cause is not isolated.
-	"RepConCheck": true, "RepConCheckId": true, "RepConAll": true, "RepConCheckEmail": true, "RepConCheckEmailId": true,
-	// The diagnostic column counts each & of the line as five characters
-	// (column 108 where the tag ends at 100); one sample does not say whether
-	// the count runs over the tag or the line.
-	"IdLInputHiddenQuote": true,
-}
+var posRenderMarkupKnownDifferences = map[string]bool{}
 
 // posRenderMarkupExceptionRows are the "exception" rows this family asserts:
 // pages that compile and fail when they render. Both routes must raise the
@@ -102,12 +83,7 @@ func TestVisualforceRenderMarkupNativeExceptions(t *testing.T) {
 var posViewControlName = regexp.MustCompile(`<(input|textarea|select)\b([^>]*)>`)
 
 // posPostbackKnownDifferences are postback rows this test does not assert.
-var posPostbackKnownDifferences = map[string]string{
-	"RepConCheck": posNoCheckboxControl, "RepConCheckId": posNoCheckboxControl, "RepConAll": posNoCheckboxControl,
-	"RepConCheckEmail": posNoCheckboxControl, "RepConCheckEmailId": posNoCheckboxControl,
-}
-
-const posNoCheckboxControl = "the org writes no control for an inputCheckbox bound to a Contact checkbox field inside apex:repeat; Glade writes one"
+var posPostbackKnownDifferences = map[string]string{}
 
 // TestVisualforceRenderMarkupNativePostback posts the control names the org
 // rendered (postback.tsv: every control set, the Save button pressed, the
