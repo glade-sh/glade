@@ -333,6 +333,7 @@ func (vm *VM) invokeUIAction(framework, className, methodName string, params map
 	}
 	out.Success = true
 	if lwc {
+		defer recoverLWCGetterStackFailure(&out, &err)
 		out.ReturnValue = vm.lwcJSONFromValue(value)
 	} else {
 		out.ReturnValue = plainUIJSON(jsonFromValue(value, false))
@@ -520,7 +521,19 @@ func (vm *VM) lwcJSONFromValue(value Value) any {
 		}
 		out := make(map[string]any)
 		if _, ok := vm.lookupClass(value.Type); ok {
-			for _, name := range vm.jsonSerializableFieldNames(value.Type) {
+			names := vm.jsonSerializableFieldNames(value.Type)
+			deferScalars := false
+			if value.classInstance && value.projectClass {
+				for _, name := range names {
+					field, _, ok := vm.lookupField(value.Type, name)
+					if ok && !field.Static && field.Getter != nil && methodHasAuraEnabled(field.Modifiers) {
+						deferScalars = true
+						break
+					}
+				}
+			}
+			var deferred []string
+			for _, name := range names {
 				field, owner, ok := vm.lookupField(value.Type, name)
 				if !ok || field.Static || !methodHasAuraEnabled(field.Modifiers) {
 					continue
@@ -529,10 +542,23 @@ func (vm *VM) lwcJSONFromValue(value Value) any {
 				if field.Getter != nil {
 					getterValue, err := vm.callGetter(vm.getterOwner(owner, field), field, value)
 					if err != nil {
+						var fault *RuntimeError
+						if deferScalars && errors.As(err, &fault) && fault.callStackLimit && strings.EqualFold(fault.Type, "System.LimitException") {
+							panic(lwcGetterStackFailure{err: err})
+						}
 						continue
 					}
 					item, present = getterValue, true
+				} else if deferScalars && present && item.Kind != ValueNull && jsonScalarFieldValue(item) {
+					deferred = append(deferred, name)
+					continue
 				}
+				if present && item.Kind != ValueNull {
+					out[name] = vm.lwcJSONFromValue(item)
+				}
+			}
+			for _, name := range deferred {
+				_, item, present := objectFieldValue(value, name)
 				if present && item.Kind != ValueNull {
 					out[name] = vm.lwcJSONFromValue(item)
 				}
@@ -555,6 +581,24 @@ func (vm *VM) lwcJSONFromValue(value Value) any {
 		return out
 	default:
 		return jsonFromValue(value, false)
+	}
+}
+
+// The action transport exposes a stable generic message for captured getter
+// stack exhaustion. Salesforce's accompanying error identifier varies.
+type lwcGetterStackFailure struct{ err error }
+
+func recoverLWCGetterStackFailure(out *UIInvocationResult, err *error) {
+	if recovered := recover(); recovered != nil {
+		failure, ok := recovered.(lwcGetterStackFailure)
+		if !ok {
+			panic(recovered)
+		}
+		out.Success = false
+		out.ReturnValue = nil
+		out.Error = uiInvocationError(failure.err)
+		out.Error.Message = "An internal server error has occurred"
+		*err = nil
 	}
 }
 
