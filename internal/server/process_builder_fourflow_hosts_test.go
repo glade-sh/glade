@@ -32,6 +32,7 @@ func TestProcessBuilderFourAfterSaveHosts(t *testing.T) {
 			native[f[0]] = f[3]
 		}
 	}
+	pbHostTempEnv(t)
 	hosts := newPBHostFixtures(t)
 	for _, api := range []string{"62.0", "67.0"} {
 		for _, route := range []string{"vf", "lwc", "server"} {
