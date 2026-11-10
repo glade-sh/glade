@@ -666,6 +666,13 @@ func load(root string, stack map[string]bool, dependency bool, requestedPackages
 		dependencyPaths = dependencyCfg.Project.DependencyPaths
 	}
 	p.ManagedPackageDependencies, p.DependencyDiagnostics = loadLocalSFDXPackageDependencies(absRoot, cfg, p, stack, dependencyCfg, dependencyCfgOK, loadManagedDependenciesFromConfig, dependencyPaths)
+	var externalNamespaces []string
+	if cfgErr == nil {
+		externalNamespaces = gladeCfg.Project.ExternalNamespaces
+	} else if dependencyCfgOK {
+		externalNamespaces = dependencyCfg.Project.ExternalNamespaces
+	}
+	p.ManagedPackageDependencies = appendDeclaredExternalNamespaces(p.ManagedPackageDependencies, externalNamespaces)
 
 	includeConventionalRoots := !dependency && !cfg.HasManifest
 	ignore := newForceIgnoreSet()
@@ -957,6 +964,34 @@ func dependencyPackageDirectories(dirs []PackageDirectory, requestedPackages ...
 		return defaults
 	}
 	return dirs
+}
+
+// DependencyStatusDeclared marks a namespace-only declaration from glade.yml
+// project.externalNamespaces: an installed package without source. It is
+// open like a dependency whose source is missing, without a diagnostic.
+const DependencyStatusDeclared = "declared"
+
+// appendDeclaredExternalNamespaces adds each declared external namespace that
+// no other dependency entry already names; a configured source or artifact
+// for the same namespace wins.
+func appendDeclaredExternalNamespaces(deps []ManagedPackageDependency, namespaces []string) []ManagedPackageDependency {
+	if len(namespaces) == 0 {
+		return deps
+	}
+	seen := make(map[string]bool, len(deps)+len(namespaces))
+	for _, dep := range deps {
+		seen[strings.ToLower(strings.TrimSpace(dep.Namespace))] = true
+	}
+	for _, namespace := range namespaces {
+		namespace = strings.TrimSpace(namespace)
+		key := strings.ToLower(namespace)
+		if namespace == "" || seen[key] {
+			continue
+		}
+		seen[key] = true
+		deps = append(deps, ManagedPackageDependency{Namespace: namespace, Status: DependencyStatusDeclared})
+	}
+	return deps
 }
 
 func loadManagedPackageDependencies(configured []config.ManagedPackageDependency, remaps []namespaceremap.Rule, stack map[string]bool) ([]ManagedPackageDependency, []DependencyDiagnostic) {

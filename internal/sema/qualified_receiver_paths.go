@@ -7,11 +7,51 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
+// An unqualified alias of a loaded namespaced source dependency belongs only
+// to callers in that namespace, including within aggregate project indexes.
+func semaDependencyAliasVisible(model *semaTypeMemberView, owner, spelling string, members typeMembers) bool {
+	if !members.dependency || !members.receiverDependencySource || members.namespace == "" {
+		return true
+	}
+	if root, _, qualified := strings.Cut(spelling, "."); qualified && strings.EqualFold(root, members.namespace) {
+		return true
+	}
+	callerNamespace := model.state.base.defaultSourceScope.namespace
+	if owner != "" {
+		if current, known := model.lookupName(owner); known {
+			callerNamespace = normalizeName(current.namespace)
+		}
+	}
+	return strings.EqualFold(callerNamespace, members.namespace)
+}
+
+func semaCompleteDependencyNestedMiss(a *Analyzer, model *semaTypeMemberView, reference string) bool {
+	if _, known := model.lookupName(reference); known {
+		return false
+	}
+	parts := strings.Split(reference, ".")
+	for end := len(parts) - 1; end > 0; end-- {
+		members, known := model.lookupName(strings.Join(parts[:end], "."))
+		if known {
+			if !members.dependency || !model.state.base.completeDependencyNestedTypes[normalizeName(members.name)] {
+				return false
+			}
+			return strings.EqualFold(parts[0], members.namespace) || !semaTypeReferenceKnownAtVersion(a, model, "", reference, "")
+		}
+	}
+	return false
+}
+
 func semaTypeReferenceKnownAtVersion(a *Analyzer, model *semaTypeMemberView, owner, reference, version string) bool {
 	if a.standardObjectAbsentFromDeclaredShape(model, owner, reference) {
 		return false
 	}
 	if !strings.Contains(reference, ".") {
+		// A same-namespace subclass may use its provider's nested type by
+		// bare name. Do not make that name global to unrelated callers.
+		if members, found := a.scopedNestedType(model, owner, reference); found && members.dependency {
+			return a.hasKnownAtVersion(members.name, version)
+		}
 		return a.hasKnownAtVersion(reference, version)
 	}
 	// Project source resolves first. A namespace declared by the project or
@@ -50,7 +90,10 @@ func semaTypeReferenceKnownAtVersion(a *Analyzer, model *semaTypeMemberView, own
 		return true
 	}
 	resolved := resolveNestedTypeReference(model, owner, reference)
-	if _, known := model.lookupName(resolved); known {
+	if members, known := model.lookupName(resolved); known {
+		if !semaDependencyAliasVisible(model, owner, reference, members) {
+			return false
+		}
 		return a.hasKnownAtVersion(resolved, version)
 	}
 	canonical := semaCanonicalPlatformAlias(reference)
@@ -94,7 +137,9 @@ func semaTypeReferenceKnownAtVersion(a *Analyzer, model *semaTypeMemberView, own
 			continue
 		}
 		if members.dependency {
-			return true
+			// A complete, unambiguous source inventory for an unnamespaced or same-namespace
+			// dependency proves that its remaining nested member is absent.
+			return !model.state.base.completeDependencyNestedTypes[normalizeName(members.name)]
 		}
 		if members.sobject {
 			// An SObject's short name can also qualify an undeclared installed
@@ -162,6 +207,18 @@ func semaTypeReferenceKnownAtVersion(a *Analyzer, model *semaTypeMemberView, own
 	// but never interpret a catalog miss as proof of absence.
 	return !semaAPI67RejectedPlatformType(reference) && !semaCapturedFormulaTypeAbsent(reference) &&
 		!semaPlatformTypeUnavailable(version, reference)
+}
+
+// semaTypePositionKnownAtVersion is semaTypeReferenceKnownAtVersion for a
+// type position (field, parameter, return, new, cast, instanceof): a
+// qualified miss under the project's own namespace or an undeclared
+// external namespace is Invalid type there, as it is for a local
+// declaration (ruling 49; namespace_external_positions,
+// namespace_owner_nested_inventory). Receiver and assignment checks keep
+// semaTypeReferenceKnownAtVersion, so a value of a rejected type does not
+// cascade into further diagnostics.
+func semaTypePositionKnownAtVersion(a *Analyzer, model *semaTypeMemberView, owner, reference, version string) bool {
+	return semaTypeReferenceKnownAtVersion(a, model, owner, reference, version) && !a.qualifiedTypeMissRejected(owner, reference, model, false)
 }
 
 func semaCapturedFormulaTypeAbsent(reference string) bool {
