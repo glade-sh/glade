@@ -1502,6 +1502,43 @@ func TestL11ReportArtifactSetRejectsPartialOrMixedInputs(t *testing.T) {
 	})
 }
 
+func TestL11ReportsAreIndependent(t *testing.T) {
+	base := filepath.Join(t.TempDir(), "reports", "l11.tsv")
+	digest := l11ReportDigest([]byte("fixture"))
+	reports := map[string]string{}
+	for _, api := range l11APIVersions {
+		reports[api] = l11TestReport(api, 1, 0, 1, 0, 0, 0, 0)
+		l11WriteReportArtifact(t, base, api, digest, []byte(reports[api]))
+	}
+	for _, api := range l11APIVersions {
+		data, err := os.ReadFile(l11ReportArtifactPath(base, api))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(data) != reports[api] {
+			t.Errorf("API %s report differs from its own output: %q", api, data)
+		}
+	}
+	if _, err := os.Stat(base); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("unexpected combined report: %v", err)
+	}
+	// A new observation must not read or change stale reports from other APIs.
+	stale := l11ReportArtifactPath(base, "67.0")
+	if err := os.WriteFile(stale, []byte("stale"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	updated := l11TestReport("59.0", 2, 0, 1, 0, 0, 0, 0)
+	l11WriteReportArtifact(t, base, "59.0", digest, []byte(updated))
+	data, err := os.ReadFile(l11ReportArtifactPath(base, "59.0"))
+	if err != nil || string(data) != updated {
+		t.Errorf("updated report = %q, %v", data, err)
+	}
+	data, err = os.ReadFile(stale)
+	if err != nil || string(data) != "stale" {
+		t.Errorf("other report = %q, %v", data, err)
+	}
+}
+
 func TestL11BrowserSelectionObservesEveryInputOnce(t *testing.T) {
 	if _, err := exec.LookPath("node"); err != nil {
 		t.Skip("node unavailable")
