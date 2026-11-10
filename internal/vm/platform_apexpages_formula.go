@@ -1073,7 +1073,10 @@ func formulaRecalcFieldError(fieldName, message string) Value {
 func (vm *VM) evaluateFormulaInstanceValue(instance Value, context Value, formula string) (Value, bool, error) {
 	definition := vm.formulaContextDefinition(context.Type, make(map[string]bool))
 	referenced := dml.FormulaReferencedFields(formula, instance.Fields["templateMode"].Bool)
-	record, ok := vm.formulaInstanceRecord(context, definition, referenced)
+	record, ok, err := vm.formulaInstanceRecord(context, definition, referenced)
+	if err != nil {
+		return Null, false, err
+	}
 	if !ok {
 		return Null, false, nil
 	}
@@ -1237,16 +1240,16 @@ func (vm *VM) formulaContextDefinition(typeName string, active map[string]bool) 
 	return definition
 }
 
-func (vm *VM) formulaInstanceRecord(context Value, definition storage.ObjectDefinition, referenced []string) (storage.Record, bool) {
+func (vm *VM) formulaInstanceRecord(context Value, definition storage.ObjectDefinition, referenced []string) (storage.Record, bool, error) {
 	if context.Kind != ValueObject {
-		return storage.Record{}, false
+		return storage.Record{}, false, nil
 	}
 	record := storage.Record{Object: context.Type, Fields: map[string]storage.Value{}, ExplicitNulls: map[string]bool{}}
 	if vm.isSObjectLikeType(context.Type) {
 		var ok bool
 		record, ok = vm.formulaRecordFromSObject(context)
 		if !ok {
-			return record, false
+			return record, false, nil
 		}
 	}
 	for _, name := range referenced {
@@ -1261,7 +1264,11 @@ func (vm *VM) formulaInstanceRecord(context Value, definition storage.ObjectDefi
 			}
 			if value, handled, err := vm.formulaApexTypeGetter(current, part); handled {
 				if err != nil {
-					return record, false
+					var fault *RuntimeError
+					if errors.As(err, &fault) && strings.EqualFold(fault.Type, "System.LimitException") {
+						return record, false, err
+					}
+					return record, false, nil
 				}
 				current = value
 				continue
@@ -1274,7 +1281,11 @@ func (vm *VM) formulaInstanceRecord(context Value, definition storage.ObjectDefi
 			if ok && field.Getter != nil {
 				value, err := vm.callGetter(owner, field, current)
 				if err != nil {
-					return record, false
+					var fault *RuntimeError
+					if errors.As(err, &fault) && strings.EqualFold(fault.Type, "System.LimitException") {
+						return record, false, err
+					}
+					return record, false, nil
 				}
 				current = value
 			} else {
@@ -1299,7 +1310,7 @@ func (vm *VM) formulaInstanceRecord(context Value, definition storage.ObjectDefi
 		record.Fields[name] = value
 		delete(record.ExplicitNulls, name)
 	}
-	return record, true
+	return record, true, nil
 }
 
 func formulaReferencedFields(formula string) []string {
