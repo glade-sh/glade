@@ -1,5 +1,9 @@
 # AI contributor setup
 
+The end-to-end process (stages, roles, review and release rules, templates) is
+in [WORKFLOW.md](WORKFLOW.md). This file covers client setup and the validation
+commands per surface.
+
 This guide is for developing Glade itself. To use an agent to develop Apex in
 a Salesforce DX project, use the [AI-assisted Apex guide](../site/docs-src/guide/ai-assisted-apex.md).
 
@@ -187,7 +191,7 @@ Climb only as far as the change needs. Each step runs once per exact tree.
 | Step | Command | When |
 | --- | --- | --- |
 | Focused | `go test ./internal/<pkg> -run '^(TestA\|TestB)$'` | While iterating. Rerun a failure alone before anything broader. |
-| Package | `go test ./internal/<pkg>` for each changed package, plus `./internal/gladecli ./internal/repoguard` | Once before review. |
+| Package | `go test ./internal/<pkg>` for each changed package, plus `./internal/gladecli ./internal/repoguard`; for apextest use focused `-run` tests | Once before review; CI runs the 12 apextest shards. |
 | Full local release | `scripts/ci-go-test.sh local-release` | Changes that cross packages or touch the parser, `sema`, `vm`, `storage`, `soql` or `dml`; release candidates. |
 | Distribution smoke | `scripts/release-check.sh` (adds `git diff --check`, the site release proof and `scripts/smoke.sh`) | Release candidates, from a clean checkout. |
 | Required CI, locally | `scripts/ci-local-all` | Before opening or updating a release PR. |
