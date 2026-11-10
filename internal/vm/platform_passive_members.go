@@ -1648,10 +1648,10 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 					for name, field := range definition.Fields {
 						if field.Type == storage.FieldBoolean {
 							record.Fields[name] = typedNull("Boolean")
-							if args[0].Kind == ValueNull && (storage.IsCustomMetadataDefinition(definition) ||
+							if args[0].Kind == ValueNull && (storage.IsKnownStandardObject(objectName) || storage.IsCustomMetadataDefinition(definition) ||
 								!storage.IsCustomSettingDefinition(definition) && hasSuffixFold(definition.APIName, "__c")) {
-								// The raw null is readable, but an unloaded custom
-								// Checkbox has no populated/serialized presence.
+								// The raw null is readable, but an unloaded checkbox
+								// has no populated/serialized presence.
 								markDefaultedSObjectField(&record, name)
 							}
 						}
