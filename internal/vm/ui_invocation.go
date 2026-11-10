@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/trace"
 )
 
@@ -348,6 +349,9 @@ func (vm *VM) resolveUIAction(className, methodName string, params map[string]an
 		candidates = append(candidates, vm.registeredFolded(strings.ToLower(className+"."+methodName))...)
 	}
 	sort.SliceStable(candidates, func(i, j int) bool { return uiMethodSignature(candidates[i]) < uiMethodSignature(candidates[j]) })
+	if lwc {
+		candidates = historicalLightningCandidates(candidates)
+	}
 	var matchedMethod Method
 	var matchedArgs []Value
 	matched := 0
@@ -411,6 +415,41 @@ func (vm *VM) resolveUIAction(className, methodName string, params map[string]an
 		return Method{}, nil, parameterErr
 	}
 	return Method{}, nil, fmt.Errorf("no static @AuraEnabled method %s.%s accepts parameters %s", className, methodName, sortedParamNames(params))
+}
+
+// Historical Lightning actions select a unique highest-arity overload before
+// binding parameters. Unknown or mixed source versions retain normal handling.
+func historicalLightningCandidates(candidates []Method) []Method {
+	version := ""
+	maxArity := -1
+	maxSignature := ""
+	maxIndex := -1
+	uniqueMax := false
+	signatures := make(map[string]bool)
+	for i, method := range candidates {
+		if !method.IsStatic || !methodHasAuraEnabled(method.Modifiers) {
+			continue
+		}
+		if strings.TrimSpace(method.APIVersion) == "" {
+			return candidates
+		}
+		current, err := apexversion.PreserveSource(method.APIVersion)
+		if err != nil || !apexversion.Before(current, 55) || (version != "" && current != version) {
+			return candidates
+		}
+		version = current
+		signature := uiMethodSignature(method)
+		signatures[signature] = true
+		if len(method.Params) > maxArity {
+			maxArity, maxSignature, maxIndex, uniqueMax = len(method.Params), signature, i, true
+		} else if len(method.Params) == maxArity && signature != maxSignature {
+			uniqueMax = false
+		}
+	}
+	if len(signatures) < 2 || !uniqueMax {
+		return candidates
+	}
+	return []Method{candidates[maxIndex]}
 }
 
 func (vm *VM) lwcParameterValue(typeName string, raw any) (Value, error) {
