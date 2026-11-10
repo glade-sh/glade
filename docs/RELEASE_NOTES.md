@@ -4,6 +4,8 @@
 
 Planned changes are listed below.
 
+- **Imported record identity (Apex API 62.0, 67.0, 68.0).** Records imported with their source-org Ids (`glade db import sf`, fixtures with explicit `id`) keep resolving to their own object: a custom object whose local key prefix differs from its imported records' prefix adopts that prefix, so `Id.getSObjectType()` and describe `getKeyPrefix()` agree with the Id, as in Salesforce. A prefix shared by records of two objects is left alone. A fixture `orgId` replaces the seeded Organization row instead of adding a second one, so `[SELECT Id FROM Organization]` returns one row whose Id is `UserInfo.getOrganizationId()`. `glade db` schema refresh keeps the adopted prefixes. The test runtime cache moves to `apextest-runtime-v33`. Captured at 62.0, 67.0 and 68.0.
+
 ## v0.3.5
 
 v0.3.5 extends the supported Apex window to API 68.0, tracks the Salesforce Winter '27 release, and closes a large set of differences found by running real projects: field-level security for the default administrator, user-mode queries and DML, platform events, Flow, Visualforce markup, locale-aware strings and SOQL, and org-shape gating of standard objects. It also requires authentication on every API route of an exposed `glade server` listener. API labels list the source versions checked against captured results. The supported windows and hosted boundaries are in [release policy](RELEASE_POLICY.md#salesforce-api-versions).

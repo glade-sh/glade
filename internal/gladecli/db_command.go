@@ -1139,6 +1139,9 @@ func refreshDBProjectSchema(store *storage.SQLiteStore, dbPath, root string, cur
 			refreshed.IDSequences[objectName] = sequence
 		}
 	}
+	// Source schema regenerates local key prefixes; keep the ones the stored
+	// records' IDs require.
+	storage.AdoptRecordKeyPrefixes(&refreshed)
 	storage.EnsureDeterministicPlatformData(&refreshed)
 	storage.RebuildIndexes(&refreshed)
 	if err := store.Save(refreshed); err != nil {
