@@ -1235,7 +1235,7 @@ func flowFrameFormulaMap(raw flowXML, variables map[string]flowVariableXML) map[
 			selectElement(names)
 		}
 	}
-	if strings.EqualFold(strings.TrimSpace(raw.Start.TriggerType), "RecordBeforeSave") {
+	if strings.EqualFold(strings.TrimSpace(raw.Start.TriggerType), "RecordBeforeSave") || strings.EqualFold(strings.TrimSpace(raw.Start.TriggerType), "RecordAfterSave") {
 		for _, customError := range raw.CustomErrors {
 			for _, message := range customError.Messages {
 				text := strings.ToLower(firstNonBlank(message.ErrorMessage, message.Message))
@@ -1256,7 +1256,7 @@ func flowFrameFormulaMap(raw flowXML, variables map[string]flowVariableXML) map[
 }
 
 func flowCustomErrorFrameFormulas(raw flowXML) map[string]string {
-	if !strings.EqualFold(strings.TrimSpace(raw.Start.TriggerType), "RecordBeforeSave") {
+	if !strings.EqualFold(strings.TrimSpace(raw.Start.TriggerType), "RecordBeforeSave") && !strings.EqualFold(strings.TrimSpace(raw.Start.TriggerType), "RecordAfterSave") {
 		return nil
 	}
 	return raw.frameFormulas
