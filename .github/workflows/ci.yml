@@ -1618,6 +1618,9 @@ jobs:
           go run ./scripts/internal/cishard --package-manifest scripts/ci-package-lanes.json --packages "$RUNNER_TEMP/packages.txt" > /dev/null
           git diff --no-renames --name-only HEAD^1 HEAD | python3 scripts/ci-pr-select.py --root "$GITHUB_WORKSPACE" --graph "$RUNNER_TEMP/graph.json" --manifest scripts/ci-package-lanes.json > "$RUNNER_TEMP/selected.json"
           cat "$RUNNER_TEMP/selected.json"
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: "22"
       - name: Install selected browser and LWC test dependencies
         run: |
           if jq -e 'any(.[]; test("/internal/(server|playground|visualforce|lwc|lwcbrowser|lwcruntime)(/|$)"))' "$RUNNER_TEMP/selected.json" > /dev/null; then
