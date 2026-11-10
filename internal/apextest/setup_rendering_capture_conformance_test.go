@@ -204,7 +204,7 @@ func runSetupRenderingCaptureConformance(t *testing.T, capture setupRenderingCap
 								if err != nil {
 									t.Fatal(err)
 								}
-										configure = append(configure, func(machine *vm.VM) {
+								configure = append(configure, func(machine *vm.VM) {
 									visualforce.SetVMRenderEnvironment(machine, pageProject)
 									t.Cleanup(func() { visualforce.ClearVMRenderEnvironment(machine) })
 								})
