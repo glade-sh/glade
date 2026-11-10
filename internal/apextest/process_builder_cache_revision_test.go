@@ -11,7 +11,7 @@ import (
 // project org containing compiled FlowRules; then the current runtime rebuilds it.
 func TestProcessBuilderRejectsPriorDiskRuntimeCache(t *testing.T) {
 	for _, tc := range []struct{ abi, suffix string }{
-		{"apextest-runtime-v31", ""}, {"apextest-runtime-v32", "|stale"}, {"apextest-runtime-v33", ""},
+		{"apextest-runtime-v31", ""}, {"apextest-runtime-v32", ""}, {"apextest-runtime-v32", "|stale"},
 		{"apextest-runtime-v33", "|process-builder-v036"},
 		{"apextest-runtime-v33", "|process-builder-v036-case1"},
 		{"apextest-runtime-v33", "|process-builder-v036-branched1"},
