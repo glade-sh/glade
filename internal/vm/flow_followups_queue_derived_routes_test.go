@@ -112,6 +112,9 @@ func TestPrivateQueueMemberDerivedQueryRoutes(t *testing.T) {
 				t.Run("parent-projection/"+query.name, func(t *testing.T) {
 					machine := hierarchyRecordVisibilityMachine(t)
 					queueDerivedRouteMachine(t, machine)
+					permissions := machine.Org.Objects["FieldPermissions"]
+					permissions.Records["0FP000000000004"] = storage.Record{ID: "0FP000000000004", Object: "FieldPermissions", Fields: map[string]storage.Value{"ParentId": storage.IDValue("00e000000000002"), "SObjectType": storage.StringValue("Widget__c"), "Field": storage.StringValue("Widget__c.Parent__c"), "PermissionsRead": storage.BooleanValue(true), "PermissionsEdit": storage.BooleanValue(true)}}
+					machine.Org.Objects["FieldPermissions"] = permissions
 					objects := machine.Org.Objects["Widget__c"]
 					parent := objects.Records["a00000000000002"]
 					parent.System.OwnerID = "00G000000000001"
