@@ -19,7 +19,6 @@ import (
 	"github.com/glade-sh/glade/internal/sema"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
-	"github.com/glade-sh/glade/internal/visualforce"
 	"github.com/glade-sh/glade/internal/vm"
 )
 
@@ -296,8 +295,6 @@ func (s *Server) handleExecuteAnonymous(w http.ResponseWriter, r *http.Request, 
 			return
 		}
 	}
-	visualforce.SetVMRenderEnvironment(machine, s.Source.Project)
-	defer visualforce.ClearVMRenderEnvironment(machine)
 	machine.SetToolingExecuteAnonymous(true)
 	machine.SetOrg(&next)
 	machine.SetCurrentNamespace(next.Namespace)

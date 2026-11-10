@@ -1,1 +1,0 @@
-@RestResource(urlMapping='/page-error-html-62/*') global with sharing class PageErrorRestHtmlV62 { @HttpGet global static String get() { return PageErrorHostV62.html(); } }

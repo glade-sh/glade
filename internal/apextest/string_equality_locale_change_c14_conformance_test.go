@@ -92,17 +92,6 @@ func TestStringEqualityLocaleChangeC14NativeConformance(t *testing.T) {
 					marker := "CAP|n6." + probe + "|"
 					at := strings.Index(result.Problem.Message, marker)
 					if at < 0 {
-						if native := byProbe[probe]; len(native) == 1 && native[0][3] == "method_failed" {
-							gotType := result.Problem.Type
-							if !strings.Contains(gotType, ".") {
-								gotType = "System." + gotType
-							}
-							got := gotType + ": " + result.Problem.Message
-							if got != native[0][5] {
-								t.Fatalf("native=%s; Glade=%s", native[0][5], got)
-							}
-							return
-						}
 						// The method threw before emitting. p3, p3b and p4 update the runAs
 						// user's own User record as a Standard User: native allows it (p3/p4
 						// at 62.0, p3b at both APIs) and rejects the full-object update at

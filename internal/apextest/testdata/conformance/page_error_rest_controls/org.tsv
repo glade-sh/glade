@@ -1,7 +1,0 @@
-source_api	route	case_id	observation
-62.0	rest	null	{"body":[{"errorCode":"APEX_ERROR","message":"System.NullPointerException: Attempt to de-reference a null object\n\nClass.PageErrorControlNullV62.get: line 1, column 1"}],"http":500}
-62.0	rest	assert	{"body":[{"errorCode":"APEX_ERROR","message":"System.AssertException: Assertion Failed: synthetic failure\n\nClass.PageErrorControlAssertV62.get: line 1, column 1"}],"http":500}
-62.0	rest	other	{"body":[{"errorCode":"UNKNOWN_EXCEPTION","message":"Page OtherMissingPage does not exist"}],"http":500}
-67.0	rest	null	{"body":[{"errorCode":"APEX_ERROR","message":"System.NullPointerException: Attempt to de-reference a null object\n\nClass.PageErrorControlNullV67.get: line 1, column 1"}],"http":500}
-67.0	rest	assert	{"body":[{"errorCode":"APEX_ERROR","message":"System.AssertException: Assertion Failed: synthetic failure\n\nClass.PageErrorControlAssertV67.get: line 1, column 1"}],"http":500}
-67.0	rest	other	{"body":[{"errorCode":"UNKNOWN_EXCEPTION","message":"Page OtherMissingPage does not exist"}],"http":500}

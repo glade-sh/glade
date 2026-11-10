@@ -189,27 +189,27 @@ var scratchFeatureRegistry = []ScratchFeatureDescriptor{
 	{
 		Name: "B2BCommerce",
 		Consumers: []FeatureConsumer{
-			{"storage-policy-data", "internal/storage/standard_field_policy.json"},
+			{"storage-policy-data", "internal/storage/standard_field_policy.json.gz"},
 		},
 	},
 	{
 		Name: "CommerceEnabled",
 		Consumers: []FeatureConsumer{
-			{"storage-policy-data", "internal/storage/standard_field_policy.json"},
+			{"storage-policy-data", "internal/storage/standard_field_policy.json.gz"},
 			{"project", "internal/project/project.go"},
 		},
 	},
 	{
 		Name: "MiddleNameEnabled",
 		Consumers: []FeatureConsumer{
-			{"storage-policy-data", "internal/storage/standard_field_policy.json"},
+			{"storage-policy-data", "internal/storage/standard_field_policy.json.gz"},
 			{"project", "internal/project/project.go"},
 		},
 	},
 	{
 		Name: "EnhancedCommerceOrders",
 		Consumers: []FeatureConsumer{
-			{"storage-policy-data", "internal/storage/standard_field_policy.json"},
+			{"storage-policy-data", "internal/storage/standard_field_policy.json.gz"},
 			{"project", "internal/project/project.go"},
 		},
 	},
@@ -235,13 +235,13 @@ var scratchFeatureRegistry = []ScratchFeatureDescriptor{
 	{
 		Name: "LiveAgent",
 		Consumers: []FeatureConsumer{
-			{"storage-policy-data", "internal/storage/standard_field_policy.json"},
+			{"storage-policy-data", "internal/storage/standard_field_policy.json.gz"},
 		},
 	},
 	{
 		Name: "LiveAgentEnabled",
 		Consumers: []FeatureConsumer{
-			{"storage-policy-data", "internal/storage/standard_field_policy.json"},
+			{"storage-policy-data", "internal/storage/standard_field_policy.json.gz"},
 			{"project", "internal/project/project.go"},
 		},
 	},

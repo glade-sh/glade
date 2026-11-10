@@ -97,8 +97,7 @@ func readStripOmittedDefaultsTSV(t *testing.T, path, header string) [][]string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(rows) == 0 || strings.Join(rows[0], ",") != header ||
-		(header == "source_api,class,method,subject,observation" && len(rows) < 2) {
+	if len(rows) < 2 || strings.Join(rows[0], ",") != header {
 		t.Fatalf("incomplete rows in %s", path)
 	}
 	return rows[1:]

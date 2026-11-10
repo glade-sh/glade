@@ -1,1 +1,0 @@
-@IsTest private class DefaultHostTestV67 { @IsTest static void probe() { System.assert(false,'CAPTURE|'+DefaultHostV67.observe()); } }

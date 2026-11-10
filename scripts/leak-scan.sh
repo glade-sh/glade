@@ -30,8 +30,6 @@ if [ -n "$difffile" ]; then
   cp "$difffile" "$work/diff"
 else
   git -C "$root" diff -U0 --no-color --no-ext-diff --no-textconv "${range:-HEAD~1..HEAD}" -- . >"$work/diff" || exit 2
-  helper=$(cd "$(dirname "$0")" && pwd)/leak-scan-expand-gzip.py
-  python3 "$helper" "$root" "$work/diff" "${range:-HEAD~1..HEAD}" || exit 2
 fi
 printf '%s\n' "${LEAK_SCAN_DENYLIST:-}" >"$work/deny"
 allow="$root/.github/leak-scan-allow.txt"

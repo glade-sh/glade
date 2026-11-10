@@ -1,1 +1,0 @@
-@RestResource(urlMapping='/page-control-other-62/*') global with sharing class PageErrorOtherRestV62 { @HttpGet global static String get() { Blob b=new PageReference('/apex/OtherMissingPage').getContentAsPDF(); return 'rendered'; } }

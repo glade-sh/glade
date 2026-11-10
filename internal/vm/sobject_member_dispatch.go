@@ -1015,7 +1015,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (ou
 			if isDefaultedSObjectField(receiver, field) {
 				continue
 			}
-			addField(field, value, isLoadedSObjectDefault(receiver, field) || vm.triggerCreationTimestampPopulated(receiver, field, value))
+			addField(field, value, vm.triggerCreationTimestampPopulated(receiver, field, value))
 		}
 		if selected, ok := receiver.Fields[sobjectQueriedFieldsField]; ok && selected.Kind == ValueMap {
 			out.Fields = map[string]Value{sobjectPopulatedFieldsAliasContainsField: Bool(true)}

@@ -289,7 +289,7 @@ not assert full runtime behavior unless the row is marked `behavior`.
 
 ## Captured standard field policy
 
-`internal/storage/standard_field_policy.json` is a separate field-policy
+`internal/storage/standard_field_policy.json.gz` is a separate field-policy
 sidecar. It leaves the generated schema and describe packs intact. Its version-1
 format contains baseline `objects` (`present`, rich describe `fields`, and
 explicit `absent` candidates), `gates` (object, field metadata, and an all-of

@@ -11,7 +11,6 @@ import (
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/typesys"
-	"github.com/glade-sh/glade/internal/visualforce"
 	"github.com/glade-sh/glade/internal/vm"
 )
 
@@ -112,8 +111,6 @@ func (s *Server) handleApexRest(w http.ResponseWriter, r *http.Request) {
 	if s.runtime != nil {
 		machine = s.runtime.CloneRuntime(nil)
 	}
-	visualforce.SetVMRenderEnvironment(machine, s.Source.Project)
-	defer visualforce.ClearVMRenderEnvironment(machine)
 	machine.SetOrg(s.Org)
 	if s.LimitMode != "" {
 		machine.SetLimitMode(s.LimitMode)
@@ -145,11 +142,6 @@ func (s *Server) handleApexRest(w http.ResponseWriter, r *http.Request) {
 	}
 	returnValue, err := machine.CallStatic(route.ClassName+"."+route.Method.Name, nil)
 	if err != nil {
-		var fault *vm.RuntimeError
-		if errors.As(err, &fault) && fault.PlatformFault {
-			writeJSON(w, http.StatusInternalServerError, []salesforceError{{ErrorCode: "UNKNOWN_EXCEPTION", Message: fault.ExceptionMessage()}})
-			return
-		}
 		writeSalesforceError(w, errUnsupportedFeature, apexRestExecutionError(route, err))
 		return
 	}

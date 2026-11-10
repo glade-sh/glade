@@ -371,8 +371,6 @@ func applyOrgShape(org *OrgState, features []string) {
 	}
 	refreshOrgFeatureObjects(org)
 	refreshOrgFeatureFields(org)
-	reconcileBootstrapProfileLicenses(org)
-	pruneUncapturedBootstrapProfiles(org)
 	if _, ok := org.Objects["RecordType"]; ok {
 		ensureRecordTypeRecords(org)
 	}
@@ -878,7 +876,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		Object: "UserLicense",
 		Fields: map[string]Value{
 			"Name":                 StringValue("Chatter External"),
-			"LicenseDefinitionKey": StringValue("CSN_External_User"),
+			"LicenseDefinitionKey": StringValue("PID_Customer_Community_Login"),
 		},
 	})
 	// Owned API62/64/67 observations establish this built-in profile and
@@ -904,32 +902,32 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	putSeedRecord(org, "Profile", Record{
 		ID:     profileID,
 		Object: "Profile",
-		Fields: bootstrapProfileSeedFields(profileID),
+		Fields: profileSeedFields("System Administrator", salesforceLicenseID),
 	})
 	putSeedRecord(org, "Profile", Record{
 		ID:     minimumAccessProfileID,
 		Object: "Profile",
-		Fields: bootstrapProfileSeedFields(minimumAccessProfileID),
+		Fields: profileSeedFields("Minimum Access - Salesforce", salesforceLicenseID),
 	})
 	putSeedRecord(org, "Profile", Record{
 		ID:     chatterExternalProfileID,
 		Object: "Profile",
-		Fields: bootstrapProfileSeedFields(chatterExternalProfileID),
+		Fields: profileSeedFields("Chatter External User", chatterExternalLicenseID),
 	})
 	putSeedRecord(org, "Profile", Record{
 		ID:     guestProfileID,
 		Object: "Profile",
-		Fields: bootstrapProfileSeedFields(guestProfileID),
+		Fields: profileSeedFields("Customer Community Guest User", chatterExternalLicenseID),
 	})
 	putSeedRecord(org, "Profile", Record{
 		ID:     standardPlatformUserProfileID,
 		Object: "Profile",
-		Fields: bootstrapProfileSeedFields(standardPlatformUserProfileID),
+		Fields: profileSeedFields("Standard Platform User", salesforceLicenseID),
 	})
 	putSeedRecord(org, "Profile", Record{
 		ID:     standardUserProfileID,
 		Object: "Profile",
-		Fields: bootstrapProfileSeedFields(standardUserProfileID),
+		Fields: profileSeedFields("Standard User", salesforceLicenseID),
 	})
 	for _, name := range []string{"Contract Manager", "Solution Manager"} {
 		putDefaultSetupRecord(org, "Profile", "Name", 13, map[string]Value{
@@ -939,12 +937,12 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	putSeedRecord(org, "Profile", Record{
 		ID:     marketingUserProfileID,
 		Object: "Profile",
-		Fields: bootstrapProfileSeedFields(marketingUserProfileID),
+		Fields: profileSeedFields("Marketing User", salesforceLicenseID),
 	})
 	putSeedRecord(org, "Profile", Record{
 		ID:     customerCommunityLoginProfileID,
 		Object: "Profile",
-		Fields: bootstrapProfileSeedFields(customerCommunityLoginProfileID),
+		Fields: profileSeedFieldsWithUserType("Customer Community Login User", chatterExternalLicenseID, "CspLitePortal"),
 	})
 	ensureDefaultUserRoles(org)
 	putSeedRecord(org, "User", Record{
@@ -1309,34 +1307,6 @@ func ensureOpportunityStageData(org *OrgState) {
 				"SortOrder":            IntegerValue(int64(i + 1)),
 			},
 		})
-	}
-}
-
-// bootstrapProfileSeedFields is the single source for the reserved fixture
-// records and their original fields. Shape migration compares against these
-// originals so a changed seed field is never mistaken for untouched data.
-func bootstrapProfileSeedFields(id ID) map[string]Value {
-	const salesforce ID = "100000000000001"
-	const external ID = "100000000000002"
-	switch id {
-	case ID(DefaultProfileID):
-		return profileSeedFields("System Administrator", salesforce)
-	case "00e000000000002":
-		return profileSeedFields("Minimum Access - Salesforce", salesforce)
-	case "00e000000000003":
-		return profileSeedFields("Chatter External User", external)
-	case "00e000000000004":
-		return profileSeedFields("Standard Platform User", salesforce)
-	case "00e000000000005":
-		return profileSeedFields("Standard User", salesforce)
-	case "00e000000000006":
-		return profileSeedFields("Marketing User", salesforce)
-	case "00e000000000007":
-		return profileSeedFields("Customer Community Guest User", external)
-	case "00e000000000008":
-		return profileSeedFieldsWithUserType("Customer Community Login User", external, "CspLitePortal")
-	default:
-		return nil
 	}
 }
 

@@ -1,1 +1,0 @@
-@IsTest private class InventoryHostTestV67 { @IsTest static void probe() { System.assert(false,'CAPTURE|'+InventoryHostV67.observe()); } }

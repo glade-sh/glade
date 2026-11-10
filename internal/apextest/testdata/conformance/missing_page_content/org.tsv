@@ -1,7 +1,0 @@
-source_api	route	case_id	observation
-62.0	anonymous	MissingAlpha	{"message":"Page MissingAlpha does not exist","outcome":"uncaught-runtime"}
-62.0	anonymous	MissingBeta	{"message":"Page MissingBeta does not exist","outcome":"uncaught-runtime"}
-62.0	anonymous	MissingGamma	{"message":"Page MissingGamma does not exist","outcome":"caught","type":"System.VisualforceException"}
-67.0	anonymous	MissingAlpha	{"message":"Page MissingAlpha does not exist","outcome":"uncaught-runtime"}
-67.0	anonymous	MissingBeta	{"message":"Page MissingBeta does not exist","outcome":"uncaught-runtime"}
-67.0	anonymous	MissingGamma	{"message":"Page MissingGamma does not exist","outcome":"caught","type":"System.VisualforceException"}

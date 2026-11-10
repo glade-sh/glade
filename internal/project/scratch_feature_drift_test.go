@@ -15,7 +15,7 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
-const policyDataFile = "internal/storage/standard_field_policy.json"
+const policyDataFile = "internal/storage/standard_field_policy.json.gz"
 
 // consumerDirs hold the code that reads org features at runtime.
 var consumerDirs = []string{"internal/storage", "internal/vm", "internal/resource", "internal/project"}

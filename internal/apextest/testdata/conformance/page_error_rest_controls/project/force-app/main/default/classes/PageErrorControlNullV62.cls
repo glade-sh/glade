@@ -1,1 +1,0 @@
-@RestResource(urlMapping='/page-control-null-62/*') global with sharing class PageErrorControlNullV62 { @HttpGet global static String get() { String value=null; return value.toLowerCase(); } }

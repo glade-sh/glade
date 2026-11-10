@@ -1,7 +1,0 @@
-[
-  {
-    "object": "Campaign",
-    "method": "isCreateable",
-    "userField": "UserPermissionsMarketingUser"
-  }
-]

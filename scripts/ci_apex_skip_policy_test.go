@@ -140,19 +140,13 @@ func TestCIApexSkipSitesMatchResultPolicy(t *testing.T) {
 					metadata := filepath.Join(dir, "metadata.tsv")
 					output := filepath.Join(dir, "summary.json")
 					testIdentity := fn.Name.Name
-					expectRejected := false
 					if reason == "captured native observation has a known local gap" {
 						if fn.Name.Name != "case345Skip" {
 							t.Fatal("native gap skip must use exact-identity guard")
 						}
-						if len(gapNames) == 0 {
-							testIdentity = "TestSynthetic/62.0/unregistered"
-							expectRejected = true
-						} else {
-							testIdentity = gapNames[0]
-							if testIdentity == "" {
-								t.Fatal("native gap has an empty leaf")
-							}
+						testIdentity = gapNames[0]
+						if testIdentity == "" {
+							t.Fatal("native gap has no registered leaf")
 						}
 					}
 					var body strings.Builder
@@ -178,12 +172,7 @@ func TestCIApexSkipSitesMatchResultPolicy(t *testing.T) {
 							cmd.Env = append(cmd.Env, entry)
 						}
 					}
-					result, err := cmd.CombinedOutput()
-					if expectRejected {
-						if err == nil {
-							t.Fatalf("%s: empty gap ledger accepted an unregistered skip", position)
-						}
-					} else if err != nil {
+					if result, err := cmd.CombinedOutput(); err != nil {
 						t.Fatalf("%s: skip is rejected by Apex result validation: %v\n%s", position, err, result)
 					}
 				})

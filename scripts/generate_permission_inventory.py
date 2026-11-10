@@ -78,17 +78,6 @@ for r in rows:
 out = {'licenses': licenses, 'permissionSets': sets}
 (root / 'internal/storage/seeddata/permission_inventory.json').write_text(json.dumps(out, indent=2, ensure_ascii=False) + '\n')
 
-with (capture.parent / 'profile_field_inventory' / 'org.tsv').open() as f:
-    observations = list(csv.DictReader(f, delimiter='\t'))
-def field_inventory(api):
-    return sorted((r['profile'], r['object'], r['field'], r['read'], r['edit'])
-                  for r in observations if r['source_api'] == api)
-if field_inventory('62.0') != field_inventory('67.0'):
-    raise ValueError('profile field inventory differs by source API')
-captured_rows = [dict(profile=profile, object=obj, field=field,
-                      read=read == 'true', edit=edit == 'true')
-                 for profile, obj, field, read, edit in field_inventory('67.0')
-                 if field != '<no rows>']
 payload = json.loads((capture.parent / 'profile_permission_rows/native-payload/s0-62-anonymous-fields.json').read_text())
 field_rows = []
 for item in payload:
@@ -96,77 +85,10 @@ for item in payload:
         continue
     row = item['row']
     profile = row['Parent']['Profile']['Name']
-    if profile in ('System Administrator', 'Standard User'):
-        field_rows.append(dict(profile=profile, object=row['SobjectType'], field=row['Field'],
-                               read=row['PermissionsRead'], edit=row['PermissionsEdit']))
-if len(field_rows) != 94 or any(row not in captured_rows for row in field_rows):
-    raise ValueError('original profile field rows no longer match native inventory')
-# Existing seeded IDs derive from row position. Keep the original prefix stable.
-field_rows.extend(row for row in captured_rows if row not in field_rows)
-if len(field_rows) != 224:
-    raise ValueError('expected 224 native selected field rows')
-(root / 'internal/storage/seeddata/profile_field_permissions.json').write_text(json.dumps(field_rows, indent=2) + '\n')
-
-# Preserve the original profile/object seed order: IDs derive from this index.
-object_flags = ('PermissionsRead', 'PermissionsCreate', 'PermissionsEdit',
-                'PermissionsDelete', 'PermissionsViewAllRecords', 'PermissionsModifyAllRecords')
-original = json.loads((capture.parent / 'profile_account_contact_rows/objperm-62.json').read_text())['result']['records']
-object_rows = [{'profile': r['Parent']['Profile']['Name'], 'object': r['SobjectType'],
-                'flags': [r[flag] for flag in object_flags]} for r in original]
-if len(object_rows) != 56:
-    raise ValueError('expected 56 original profile object rows')
-with (capture.parent / 'profile_object_inventory/org.tsv').open() as f:
-    object_capture = list(csv.DictReader(f, delimiter='\t'))
-def object_inventory(api):
-    return sorted((r['profile'], r['object'], r['read'], r['create'], r['edit'],
-                   r['delete'], r['view_all'], r['modify_all'])
-                  for r in object_capture if r['source_api'] == api)
-if object_inventory('62.0') != object_inventory('67.0'):
-    raise ValueError('profile object inventory differs by source API')
-by_object = {(r['profile'], r['object']): r for r in object_rows}
-for profile, obj, read, create, edit, delete, view_all, modify_all in object_inventory('67.0'):
-    if read == '<no rows>':
+    if profile not in ('System Administrator', 'Standard User'):
         continue
-    row = dict(profile=profile, object=obj,
-               flags=[v == 'true' for v in (read, create, edit, delete, view_all, modify_all)])
-    previous = by_object.get((profile, obj))
-    if previous is not None and previous != row:
-        raise ValueError(f'profile object permission differs: {profile} {obj}')
-    if previous is None:
-        object_rows.append(row)
-        by_object[(profile, obj)] = row
-if len(object_rows) != 66:
-    raise ValueError('expected 66 native profile object rows')
-(root / 'internal/storage/seeddata/profile_object_permissions.json').write_text(json.dumps(object_rows, indent=0) + '\n')
-
-# A captured user-field axis can constrain an object operation independently
-# of its profile's object grant. Derive affected objects from the paired native
-# observations instead of listing object names in the runtime.
-shape = capture.parent / 'load_defaults_shape'
-axis = json.loads((shape / 'axis.json').read_text())
-with (shape / 'org.tsv').open() as f:
-    observations = list(csv.DictReader(f, delimiter='\t'))
-by_shape = {(r['source_api'], r['profile'], r[axis['axis']], r['subject']): r['observation']
-            for r in observations if '.' not in r['subject']}
-subjects = sorted({key[3] for key in by_shape})
-requirements = []
-for obj in subjects:
-    controls = []
-    for api in ('62.0', '67.0'):
-        for profile in ('admin', 'standard'):
-            before = by_shape[(api, profile, 'false', obj)]
-            after = by_shape[(api, profile, 'true', obj)]
-            if before not in ('create=true', 'create=false') or after not in ('create=true', 'create=false'):
-                raise ValueError(f'invalid object create observation: {obj}')
-            controls.append((profile, before, after))
-    admin_changes = [(before, after) for profile, before, after in controls if profile == 'admin']
-    standard_changes = [(before, after) for profile, before, after in controls if profile == 'standard']
-    if len(set(admin_changes)) != 1 or len(set(standard_changes)) != 1:
-        raise ValueError(f'object create observations differ by API: {obj}')
-    if admin_changes[0] == ('create=false', 'create=true'):
-        if standard_changes[0][0] != standard_changes[0][1]:
-            raise ValueError(f'unsupported object permission interaction: {obj}')
-        requirements.append(dict(object=obj, method=axis['method'], userField=axis['user_field']))
-    elif any(before != after for _, before, after in controls):
-        raise ValueError(f'unsupported object permission axis change: {obj}')
-(root / 'internal/storage/seeddata/object_permission_requirements.json').write_text(json.dumps(requirements, indent=2) + '\n')
+    field_rows.append({'profile': profile, 'object': row['SobjectType'], 'field': row['Field'],
+                       'read': row['PermissionsRead'], 'edit': row['PermissionsEdit']})
+if len(field_rows) != 94:
+    raise ValueError('expected 94 native selected field rows')
+(root / 'internal/storage/seeddata/profile_field_permissions.json').write_text(json.dumps(field_rows, indent=2) + '\n')

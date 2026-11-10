@@ -1,1 +1,0 @@
-@IsTest private class EmailShapeTestV62 { @IsTest static void probe() { System.assert(false,'CAPTURE|'+JSON.serialize(EmailShapeV62.observe())); } }

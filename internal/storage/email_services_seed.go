@@ -73,25 +73,8 @@ func ApplyEmailServices(org *OrgState, services []project.EmailService) error {
 			if userID == "" {
 				return fmt.Errorf("email service %s: no User named %s found", service.FunctionName, address.RunAsUser)
 			}
-			suffix := "local00.salesforce.com"
-			orgID := ID(strings.TrimSpace(staged.OrgID))
-			if orgID == "" {
-				orgID = ID(DefaultOrgID)
-			}
-			orgIdentity := string(orgID)
-			if len(orgIdentity) >= 15 {
-				orgIdentity = orgIdentity[:15]
-			}
-			// Native generated domains are scoped to the org, not just to
-			// locally generated function and address identifiers.
-			digest := sha256.Sum256([]byte(orgIdentity + "/" + string(functionID) + "/" + address.DeveloperName))
-			_, organization, found := LookupRecordByID(staged.Objects["Organization"].Records, orgID)
-			if found && organization.Fields["IsSandbox"].Kind == ValueBoolean && organization.Fields["IsSandbox"].Boolean {
-				suffix = "sandbox.salesforce.com"
-			}
-			// Native captures vary across orgs. Use a fixed-length digest whose
-			// first label lies within the observed native range.
-			domain := fmt.Sprintf("local%x.local000000.local00.apex.%s", digest[:23], suffix)
+			digest := sha256.Sum256([]byte(string(functionID) + "/" + address.DeveloperName))
+			domain := fmt.Sprintf("local%x.local000000.local00.apex.local00.salesforce.com", digest[:24])
 			fields := map[string]Value{
 				"DeveloperName": StringValue(address.DeveloperName), "LocalPart": StringValue(address.LocalPart),
 				"EmailDomainName": StringValue(domain), "FunctionId": IDValue(functionID), "RunAsUserId": IDValue(userID),
@@ -164,11 +147,6 @@ func upsertEmailServiceRecord(org *OrgState, generator *IDGenerator, object, key
 		record.Fields = make(map[string]Value)
 	}
 	for name, value := range fields {
-		if object == "EmailServicesAddress" && name == "EmailDomainName" {
-			if prior, exists := record.Fields[name]; exists && prior.Kind == ValueString && prior.String != "" {
-				continue
-			}
-		}
 		record.Fields[name] = value
 	}
 	record.Fields["Id"] = IDValue(id)

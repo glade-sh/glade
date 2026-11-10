@@ -142,14 +142,6 @@ func (vm *VM) currentUserObjectPermission(objectName, method string) bool {
 	if vm.testContext != nil && vm.testContext.CurrentUser.Kind != "" {
 		user = vm.testContext.CurrentUser
 	}
-	if vm.testContext != nil && vm.testContext.RunAsDepth > 0 {
-		if prerequisite := storage.ObjectPermissionUserField(objectName, method); prerequisite != "" {
-			_, value, present := objectFieldValue(user, prerequisite)
-			if !present || value.Kind == ValueNull || value.Kind == ValueBool && !value.Bool {
-				return false
-			}
-		}
-	}
 	profileID := stringField(user, "ProfileId")
 	profileName := vm.currentUserProfileName(user)
 	if profileName == "System Administrator" {
@@ -395,48 +387,22 @@ func (vm *VM) currentUserFieldPermission(objectName, fieldName, method string) b
 	profileID := stringField(user, "ProfileId")
 	profileName := vm.currentUserProfileName(user)
 	if profileName == "System Administrator" {
-		// A profile-owned field inventory defines the grants for permissionable
-		// fields on that object. An assigned permission set can add a grant;
-		// otherwise an absent row in the captured inventory remains denied.
-		profileSet := vm.profileOwnedPermissionSetID(profileID)
-		_, field, known := vm.sObjectFieldDefinition(objectName, fieldName)
-		if known && storage.IsKnownStandardObject(objectName) && storage.FieldFlagValue(field.Permissionable, true) && vm.parentHasFieldPermissionsForObject(profileSet, objectName) {
-			for _, source := range vm.assignedPermissionSources(stringField(user, "Id"), false) {
-				if vm.sourceFieldPermission(source, objectName, fieldName, method) {
-					return true
-				}
-			}
-			profileMethod := method
-			if method == "isCreateable" {
-				// The native administrator can create an intrinsically writable
-				// field whose profile row grants read but not edit.
-				profileMethod = "isAccessible"
-			}
-			allowed, _ := vm.explicitFieldPermission(profileSet, objectName, fieldName, profileMethod)
-			return allowed
-		}
 		// Optional custom fields on ordinary custom objects need an effective
 		// field grant even for the administrator in a freshly deployed org.
-		api := vm.currentSourceExecutionPolicy().APIVersion
-		capturedOlderTestRoute := vm.testContext != nil && vm.testContext.RunAsDepth > 0 && apexversion.AtLeast(api, 55) && !apexversion.AtLeast(api, 56)
-		if (adminOptionalFieldPolicyAPI(api) || capturedOlderTestRoute) && vm.ordinaryCustomPermissionObject(objectName) && isCustomSchemaName(fieldName) && !vm.customFieldHasIntrinsicAccess(objectName, fieldName) {
+		if adminOptionalFieldPolicyAPI(vm.currentSourceExecutionPolicy().APIVersion) && vm.ordinaryCustomPermissionObject(objectName) && isCustomSchemaName(fieldName) && !vm.customFieldHasIntrinsicAccess(objectName, fieldName) {
 			parents := []string{vm.profileOwnedPermissionSetID(profileID), profileID}
-			grantMethod := method
-			if method == "isCreateable" {
-				grantMethod = "isAccessible"
-			}
 			// glade exec cannot know assignment: a deployed set that grants the
 			// field counts as assigned (native admin_field_grant_sources rows).
 			if vm.assumeDeployedPermissionSets && vm.testContext == nil {
 				parents = append(parents, vm.deployedPermissionSetIDs()...)
 			}
 			for _, parent := range parents {
-				if allowed, ok := vm.explicitFieldPermission(parent, objectName, fieldName, grantMethod); ok && allowed {
+				if allowed, ok := vm.explicitFieldPermission(parent, objectName, fieldName, method); ok && allowed {
 					return true
 				}
 			}
 			for _, source := range vm.assignedPermissionSources(stringField(user, "Id"), false) {
-				if vm.sourceFieldPermission(source, objectName, fieldName, grantMethod) {
+				if vm.sourceFieldPermission(source, objectName, fieldName, method) {
 					return true
 				}
 			}
@@ -1127,19 +1093,6 @@ func (vm *VM) stripInaccessibleRecord(accessType string, record *Value, enforceR
 		return false, newExceptionError("NoAccessException", "No access to entity: "+objectName)
 	}
 	fieldPermission := stripInaccessibleFieldPermission(accessType)
-	// Captured original loaded records report certain inaccessible internal
-	// fields even though those fields are absent from the public describe map.
-	// Clones and queried/trigger records have independent provenance.
-	_, loaded := record.Fields[sobjectLoadedDefaultsField]
-	_, cloned := record.Fields[sobjectCloneMarkerField]
-	_, queried := record.Fields[sobjectQueriedFieldsField]
-	if accessType == "CREATABLE" && scopedPermissionSetID == "" && loaded && !cloned && !queried && !isTriggerSObject(*record) {
-		if _, definition, ok := vm.sObjectDefinitionForRead(objectName); ok {
-			for _, field := range storage.CapturedStandardConstructorHiddenRemoved(definition) {
-				addStripInaccessibleRemovedField(removedFields, objectName, field)
-			}
-		}
-	}
 	// Disabling root CRUD enforcement suppresses the exception; it does not
 	// retain readable fields of an inaccessible object. Id is handled separately.
 	readableObject := accessType != "READABLE" || vm.currentUserObjectPermissionWithScope(objectName, "isAccessible", scopedPermissionSetID)
@@ -1151,7 +1104,7 @@ func (vm *VM) stripInaccessibleRecord(accessType string, record *Value, enforceR
 		// Schema defaults expose OwnerId to callers just like an explicit
 		// assignment. Its read permission still applies when root CRUD is disabled.
 		readableOwner := accessType == "READABLE" && strings.EqualFold(field, "OwnerId")
-		if isInternalSObjectField(field) || isSObjectSystemField(field) && !isExplicitSObjectField(*record, field) && !isLoadedSObjectDefault(*record, field) && !readableOwner {
+		if isInternalSObjectField(field) || isSObjectSystemField(field) && !isExplicitSObjectField(*record, field) && !readableOwner {
 			continue
 		}
 		// Pending native rows cover only a fresh ordinary custom record's
@@ -1175,14 +1128,12 @@ func (vm *VM) stripInaccessibleRecord(accessType string, record *Value, enforceR
 				continue
 			}
 		}
-		// Native runAs controls retain omitted and unloaded custom checkboxes
-		// even when field read access is absent; explicit values still strip.
 		if accessType == "CREATABLE" && scopedPermissionSetID == "" && sObjectIDFromFields(record.Fields) == "" &&
-			(value.Kind == ValueNull || value.Kind == ValueBool && !value.Bool) && !queriedRecord && !clonedRecord && !isTriggerSObject(*record) &&
+			value.Kind == ValueBool && !value.Bool && !queriedRecord && !clonedRecord && !isTriggerSObject(*record) &&
 			isDefaultedSObjectField(*record, field) && !isExplicitSObjectField(*record, field) &&
 			!isUserSetSObjectField(*record, field) && !vm.queriedSObjectFieldsIncludes(*record, field) &&
 			vm.ordinaryCustomPermissionObject(objectName) &&
-			(vm.testContext != nil && vm.testContext.RunAsDepth > 0 || vm.currentUserFieldPermissionWithScope(objectName, vm.resolveSObjectFieldName(objectName, field), "isAccessible", scopedPermissionSetID)) {
+			vm.currentUserFieldPermissionWithScope(objectName, vm.resolveSObjectFieldName(objectName, field), "isAccessible", scopedPermissionSetID) {
 			_, definition, declared := vm.sObjectFieldDefinition(objectName, field)
 			if declared && storage.FieldFlagValue(definition.Accessible, true) && definition.Type == storage.FieldBoolean &&
 				strings.EqualFold(strings.TrimSpace(definition.DefaultValue), "false") &&
@@ -1233,10 +1184,10 @@ func (vm *VM) stripInaccessibleRecord(accessType string, record *Value, enforceR
 			continue
 		}
 		fieldAllowed := readableObject && vm.currentUserFieldPermissionWithScope(objectName, canonicalField, fieldPermission, scopedPermissionSetID)
-		if scopedPermissionSetID == "" && !isLoadedSObjectDefault(*record, field) {
+		if scopedPermissionSetID == "" {
 			fieldAllowed = fieldAllowed || vm.stripInaccessibleKeepsBaselineWritableField(accessType, objectName, canonicalField, true)
 		}
-		if isExplicitSObjectField(*record, field) || isLoadedSObjectDefault(*record, field) || vm.queriedSObjectFieldsIncludes(*record, field) {
+		if isExplicitSObjectField(*record, field) || vm.queriedSObjectFieldsIncludes(*record, field) {
 			fieldAllowed = fieldAllowed && vm.stripInaccessibleIntrinsicFieldPermission(objectName, canonicalField, fieldPermission)
 		}
 		if fieldPermission == "" || fieldAllowed {
