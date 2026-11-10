@@ -12,7 +12,7 @@ import (
 )
 
 func TestCapturedInheritedEnclosingStaticAnonymous(t *testing.T) {
-	const fixture = "testdata/conformance/enclosing_static_capture"
+	const fixture = "testdata/native_conformance/enclosing_static_capture"
 	file, err := os.Open(filepath.Join(fixture, "org.tsv"))
 	if err != nil {
 		t.Fatal(err)
@@ -78,7 +78,7 @@ func TestCapturedInheritedEnclosingStaticAnonymous(t *testing.T) {
 }
 
 func TestCapturedInheritedEnclosingStaticTestRunner(t *testing.T) {
-	const fixture = "testdata/conformance/enclosing_static_istest"
+	const fixture = "testdata/native_conformance/enclosing_static_istest"
 	file, err := os.Open(filepath.Join(fixture, "org.tsv"))
 	if err != nil {
 		t.Fatal(err)
@@ -136,7 +136,7 @@ func TestCapturedInheritedEnclosingStaticTestRunner(t *testing.T) {
 }
 
 func TestCapturedLocalFormsTestRunner(t *testing.T) {
-	const fixture = "testdata/conformance/pr163_apex_basics"
+	const fixture = "testdata/native_conformance/pr163_apex_basics"
 	file, err := os.Open(filepath.Join(fixture, "org.tsv"))
 	if err != nil {
 		t.Fatal(err)

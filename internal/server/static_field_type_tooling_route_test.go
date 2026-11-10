@@ -20,7 +20,7 @@ import (
 // Captured anonymous execution replayed through the local Tooling API.
 // Source classes use APIs 62 and 67; the local endpoint uses API 67.
 func TestCapturedStaticFieldTypeToolingAnonymousRoute(t *testing.T) {
-	const fixture = "../apextest/testdata/conformance/static_field_type_collision"
+	const fixture = "../apextest/testdata/native_conformance/static_field_type_collision"
 	file, err := os.Open(filepath.Join(fixture, "org.tsv"))
 	if err != nil {
 		t.Fatal(err)

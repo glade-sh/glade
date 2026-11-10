@@ -10,7 +10,7 @@ import (
 )
 
 func TestCapturedStaticFieldTypeCollision(t *testing.T) {
-	const fixture = "testdata/conformance/static_field_type_collision"
+	const fixture = "testdata/native_conformance/static_field_type_collision"
 	rows := readScopeRunnerTSV(t, filepath.Join(fixture, "org.tsv"), []string{"case", "api", "route", "outcome"})
 	captured := map[string]string{}
 	for _, row := range rows {

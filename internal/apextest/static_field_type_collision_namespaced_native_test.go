@@ -11,7 +11,7 @@ import (
 )
 
 func TestCapturedNamespacedStaticFieldTypeCollision(t *testing.T) {
-	const fixture = "testdata/conformance/static_field_type_collision_namespaced"
+	const fixture = "testdata/native_conformance/static_field_type_collision_namespaced"
 	project, err := os.ReadFile(filepath.Join(fixture, "project.json"))
 	if err != nil {
 		t.Fatal(err)
@@ -71,7 +71,7 @@ func TestCapturedNamespacedStaticFieldTypeCollision(t *testing.T) {
 }
 
 func TestCapturedStaticFieldTypeBoundary(t *testing.T) {
-	const fixture = "testdata/conformance/static_field_type_boundary"
+	const fixture = "testdata/native_conformance/static_field_type_boundary"
 	project, err := os.ReadFile(filepath.Join(fixture, "project.json"))
 	if err != nil {
 		t.Fatal(err)
@@ -130,7 +130,7 @@ func TestCapturedStaticFieldTypeBoundary(t *testing.T) {
 }
 
 func TestCapturedStaticFieldTypeOverloads(t *testing.T) {
-	const fixture = "testdata/conformance/static_field_type_overload"
+	const fixture = "testdata/native_conformance/static_field_type_overload"
 	project, err := os.ReadFile(filepath.Join(fixture, "project.json"))
 	if err != nil {
 		t.Fatal(err)
@@ -204,7 +204,7 @@ func TestCapturedStaticFieldTypeOverloads(t *testing.T) {
 }
 
 func TestCapturedStaticFieldTypeInherited(t *testing.T) {
-	const fixture = "testdata/conformance/static_field_type_inherited"
+	const fixture = "testdata/native_conformance/static_field_type_inherited"
 	project, err := os.ReadFile(filepath.Join(fixture, "project.json"))
 	if err != nil {
 		t.Fatal(err)

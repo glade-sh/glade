@@ -38,7 +38,7 @@ func readScopeRunnerTSV(t *testing.T, path string, header []string) [][]string {
 // execution. Project runner and memory-cache checks below replay those sources
 // locally; they are not separate native project-runner observations.
 func TestCapturedScopeFamiliesTestRunner(t *testing.T) {
-	const fixture = "testdata/conformance/scope_runner_native"
+	const fixture = "testdata/native_conformance/scope_runner_native"
 	cases := map[string]capturedScopeRunnerCase{}
 	for _, row := range readScopeRunnerTSV(t, filepath.Join(fixture, "cases.tsv"), []string{"case", "class", "test_class", "api_versions"}) {
 		if len(row) != 4 || row[0] == "" || row[1] == "" || cases[row[0]].class != "" {

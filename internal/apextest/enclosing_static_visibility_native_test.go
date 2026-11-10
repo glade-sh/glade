@@ -12,7 +12,7 @@ import (
 )
 
 func TestCapturedEnclosingStaticVisibilityAnonymous(t *testing.T) {
-	const fixture = "testdata/conformance/enclosing_static_visibility"
+	const fixture = "testdata/native_conformance/enclosing_static_visibility"
 	file, err := os.Open(filepath.Join(fixture, "org.tsv"))
 	if err != nil {
 		t.Fatal(err)
