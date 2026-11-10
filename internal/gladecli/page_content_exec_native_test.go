@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/glade-sh/glade/internal/visualforce"
 )
 
 // page_error_host_routes/org.tsv:2,4,8,10 records the anonymous HTML and PDF
@@ -38,6 +40,12 @@ func TestExecPageContentNative(t *testing.T) {
 				t.Fatal(err)
 			}
 			version := strings.TrimSuffix(api, ".0")
+			baselineEnvironments := visualforce.VMRenderEnvironmentCountForTest()
+			t.Cleanup(func() {
+				if got := visualforce.VMRenderEnvironmentCountForTest(); got != baselineEnvironments {
+					t.Errorf("exec leaked render environments: got %d want %d", got, baselineEnvironments)
+				}
+			})
 			var stdout, stderr bytes.Buffer
 			source := "System.assertEquals('caught|System.VisualforceException|Page MissingHostPage does not exist', PageErrorHostV" + version + ".html());"
 			if code := Run(context.Background(), []string{"exec", "--project", root, source}, &stdout, &stderr); code != 0 {
