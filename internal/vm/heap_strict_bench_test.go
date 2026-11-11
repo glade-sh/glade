@@ -22,6 +22,7 @@ func strictHeapBenchMachine(b *testing.B, classes, statics int) *VM {
 }
 
 func BenchmarkStrictHeapLoop(b *testing.B) {
+	heapVerifyAgainstFullWalk = false
 	program, err := CompileAnonymous(`Integer total = 0; List<Integer> items = new List<Integer>(); for (Integer i = 0; i < 300; i++) { total += i; items.add(i); }`)
 	if err != nil {
 		b.Fatal(err)

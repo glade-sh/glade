@@ -32,7 +32,8 @@ HeapStaticHolder.label += 'klmnopqrst';
 Integer before = Limits.getHeapSize();
 HeapStaticHolder.label = 'z';
 Integer after = Limits.getHeapSize();
-System.assert(before - after == 19, 'before ' + before + ' after ' + after);
+// before declares one Integer local the after read also counts: 19 chars - (6 + 8).
+System.assert(before - after == 5, 'before ' + before + ' after ' + after);
 `
 	program, err := CompileAnonymous(source)
 	if err != nil {
