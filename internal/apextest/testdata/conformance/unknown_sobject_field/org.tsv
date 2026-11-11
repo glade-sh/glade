@@ -2992,7 +2992,7 @@ source_api	org	route	case_id	observation
 62.0	case-user-surface	named	D_case_asgn	{"column":26,"compileProblem":"Variable does not exist: Zed","compiled":false,"exceptionMessage":null,"line":3,"problemCount":1,"success":false}
 62.0	case-user-surface	named	D_case_cmp	{"column":26,"compileProblem":"Variable does not exist: Zed","compiled":false,"exceptionMessage":null,"line":3,"problemCount":2,"success":false}
 62.0	case-user-surface	named	D_case_cmpmul	{"column":26,"compileProblem":"Variable does not exist: Zed","compiled":false,"exceptionMessage":null,"line":3,"problemCount":2,"success":false}
-62.0	case-user-surface	named	D_case_ctor2	{"column":12,"compileProblem":"Field does not exist: Zed on Case","compiled":false,"exceptionMessage":null,"line":3,"problemCount":2,"success":false}
+62.0	case-user-surface	named	D_case_ctor2	{"column":12,"compileProblem":"Field does not exist: Zed on Case","compiled":false,"exceptionMessage":null,"line":3,"problemCount":1,"success":false}
 62.0	case-user-surface	named	D_case_dec	{"column":26,"compileProblem":"Variable does not exist: Zed","compiled":false,"exceptionMessage":null,"line":3,"problemCount":1,"success":false}
 62.0	case-user-surface	named	D_case_inc	{"column":26,"compileProblem":"Variable does not exist: Zed","compiled":false,"exceptionMessage":null,"line":3,"problemCount":1,"success":false}
 62.0	case-user-surface	named	D_case_preinc	{"column":28,"compileProblem":"Variable does not exist: Zed","compiled":false,"exceptionMessage":null,"line":3,"problemCount":1,"success":false}
@@ -3002,7 +3002,7 @@ source_api	org	route	case_id	observation
 67.0	case-user-surface	named	D_case_asgn	{"column":26,"compileProblem":"Variable does not exist: Zed","compiled":false,"exceptionMessage":null,"line":3,"problemCount":1,"success":false}
 67.0	case-user-surface	named	D_case_cmp	{"column":26,"compileProblem":"Variable does not exist: Zed","compiled":false,"exceptionMessage":null,"line":3,"problemCount":2,"success":false}
 67.0	case-user-surface	named	D_case_cmpmul	{"column":26,"compileProblem":"Variable does not exist: Zed","compiled":false,"exceptionMessage":null,"line":3,"problemCount":2,"success":false}
-67.0	case-user-surface	named	D_case_ctor2	{"column":12,"compileProblem":"Field does not exist: Zed on Case","compiled":false,"exceptionMessage":null,"line":3,"problemCount":2,"success":false}
+67.0	case-user-surface	named	D_case_ctor2	{"column":12,"compileProblem":"Field does not exist: Zed on Case","compiled":false,"exceptionMessage":null,"line":3,"problemCount":1,"success":false}
 67.0	case-user-surface	named	D_case_dec	{"column":26,"compileProblem":"Variable does not exist: Zed","compiled":false,"exceptionMessage":null,"line":3,"problemCount":1,"success":false}
 67.0	case-user-surface	named	D_case_inc	{"column":26,"compileProblem":"Variable does not exist: Zed","compiled":false,"exceptionMessage":null,"line":3,"problemCount":1,"success":false}
 67.0	case-user-surface	named	D_case_preinc	{"column":28,"compileProblem":"Variable does not exist: Zed","compiled":false,"exceptionMessage":null,"line":3,"problemCount":1,"success":false}

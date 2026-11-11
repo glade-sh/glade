@@ -19,6 +19,14 @@ import (
 //go:embed standard_field_policy.json.gz
 var standardFieldPolicyData []byte
 
+// standardFieldSurfaceData extends the sidecar with closed constructor
+// surfaces captured after it was built (Case, User) and with captured fields
+// that the sidecar's surface lacks (WebStore.SupportedCurrencies). It is a
+// separate file so a regenerated sidecar keeps them.
+//
+//go:embed standard_field_surfaces.json
+var standardFieldSurfaceData []byte
+
 type standardFieldPolicyGate struct {
 	RecordTypes      bool `json:"record_types"`
 	OverrideStubType bool `json:"override_stub_type"`
@@ -114,7 +122,50 @@ func loadStandardFieldPolicies() map[string]*standardFieldPolicyObject {
 		}
 		policy.gates[strings.ToLower(gate.Field.Name)] = gate
 	}
+	applyStandardFieldSurfaces(policies)
 	return policies
+}
+
+func applyStandardFieldSurfaces(policies map[string]*standardFieldPolicyObject) {
+	var bundle struct {
+		Version int
+		Objects map[string]struct {
+			ConstructorFields    []string `json:"constructor_fields"`
+			AddConstructorFields []string `json:"add_constructor_fields"`
+		}
+	}
+	if err := json.Unmarshal(standardFieldSurfaceData, &bundle); err != nil {
+		panic(err)
+	}
+	if bundle.Version != 1 {
+		panic("unsupported standard field surface version")
+	}
+	for object, surface := range bundle.Objects {
+		key := strings.ToLower(object)
+		policy := policies[key]
+		if policy == nil {
+			policy = &standardFieldPolicyObject{fields: map[string]Field{}, absent: map[string]bool{}, gates: map[string]standardFieldPolicyGate{}}
+			policies[key] = policy
+		}
+		if len(surface.ConstructorFields) > 0 && len(policy.ConstructorFields) == 0 {
+			policy.ConstructorFields = append([]string(nil), surface.ConstructorFields...)
+		}
+		for _, name := range surface.AddConstructorFields {
+			if len(policy.ConstructorFields) == 0 {
+				continue
+			}
+			present := false
+			for _, existing := range policy.ConstructorFields {
+				if stringsEqualFold(existing, name) {
+					present = true
+					break
+				}
+			}
+			if !present {
+				policy.ConstructorFields = append(policy.ConstructorFields, name)
+			}
+		}
+	}
 }
 
 func standardFieldPolicyFor(object string) *standardFieldPolicyObject {

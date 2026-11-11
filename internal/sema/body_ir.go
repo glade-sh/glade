@@ -1625,8 +1625,17 @@ func (a *Analyzer) checkIRInstructions(typ typesys.TypeSymbol, member typesys.Me
 			diagnostics = append(diagnostics, a.checkIRInstructions(typ, member, inst.Then, scope, bodyOffset, source, model, constructability)...)
 			scope.incrementHeader = header
 		case ir.OpAssign:
-			diagnostics = append(diagnostics, a.checkIRExprVariables(typ, member, inst.Expr, scope, inst.Pos, bodyOffset, source, model, constructability)...)
-			diagnostics = append(diagnostics, a.checkIRAssignmentTarget(typ, member, inst.Name, *scope, inst.Pos, bodyOffset, source, model)...)
+			readDiagnostics := a.checkIRExprVariables(typ, member, inst.Expr, scope, inst.Pos, bodyOffset, source, model, constructability)
+			targetDiagnostics := a.checkIRAssignmentTarget(typ, member, inst.Name, *scope, inst.Pos, bodyOffset, source, model)
+			if semaIncrementStatementSpelling(inst, bodyOffset+inst.Pos, source) {
+				// ++ and -- lower to an assignment of Name + 1. Natively the
+				// operand is one reference, so one unknown-field error
+				// (unknown_sobject_field/org.tsv D_* rows); += and an
+				// explicit read still report the read and the target.
+				readDiagnostics = semaWithoutDuplicateDiagnostics(readDiagnostics, targetDiagnostics)
+			}
+			diagnostics = append(diagnostics, readDiagnostics...)
+			diagnostics = append(diagnostics, targetDiagnostics...)
 			if targetType, ok := irAssignmentTargetType(inst.Name, *scope, model, typ.Name); ok {
 				diagnostics = append(diagnostics, a.checkIRAssignmentType(typ, member, targetType, inst.Name, inst.Expr, scope, inst.Pos, bodyOffset, source, model, "assigns")...)
 			}
@@ -6184,4 +6193,46 @@ func (s semaScopeModel) localKey(local semaLocal) string {
 		return local.key
 	}
 	return s.canonicalName(local.name)
+}
+
+// semaIncrementStatementSpelling reports whether the statement at start is
+// Name++, Name--, ++Name or --Name, which the statement lowering turns into an
+// assignment that no longer carries the operator.
+func semaIncrementStatementSpelling(inst ir.Instruction, start int, source string) bool {
+	if inst.Op != ir.OpAssign || inst.Expr.Kind != ir.ExprBinary || (inst.Expr.Operator != "+" && inst.Expr.Operator != "-") || start < 0 || start >= len(source) {
+		return false
+	}
+	end := strings.IndexByte(source[start:], ';')
+	if end < 0 {
+		return false
+	}
+	spelling := strings.Join(strings.Fields(sourceSyntaxCodeText(source[start:start+end])), "")
+	for _, operator := range []string{"++", "--"} {
+		if strings.EqualFold(spelling, inst.Name+operator) || strings.EqualFold(spelling, operator+inst.Name) {
+			return true
+		}
+	}
+	return false
+}
+
+// semaWithoutDuplicateDiagnostics drops the diagnostics of read that target
+// already reports with the same code, message and range.
+func semaWithoutDuplicateDiagnostics(read, target []diagnostic.Diagnostic) []diagnostic.Diagnostic {
+	if len(read) == 0 || len(target) == 0 {
+		return read
+	}
+	var kept []diagnostic.Diagnostic
+	for _, item := range read {
+		duplicate := false
+		for _, other := range target {
+			if item.Code == other.Code && item.Message == other.Message && item.NativeMessage == other.NativeMessage && item.File == other.File && ((item.Range == nil && other.Range == nil) || (item.Range != nil && other.Range != nil && *item.Range == *other.Range)) {
+				duplicate = true
+				break
+			}
+		}
+		if !duplicate {
+			kept = append(kept, item)
+		}
+	}
+	return kept
 }
