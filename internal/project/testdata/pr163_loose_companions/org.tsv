@@ -1,0 +1,13 @@
+case	api	route	result	outcome
+html_loose	59.0	deploy	accepted	deployed
+html_bundle_invalid	59.0	deploy	rejected	LWC1058
+css_loose	59.0	deploy	accepted	deployed
+css_bundle_invalid	59.0	deploy	rejected	LWC1709
+js-meta.xml_loose	59.0	deploy	accepted	deployed
+js-meta.xml_bundle_invalid	59.0	deploy	rejected	metadata XML parsing error
+html_loose	67.0	deploy	accepted	deployed
+html_bundle_invalid	67.0	deploy	rejected	LWC1058
+css_loose	67.0	deploy	accepted	deployed
+css_bundle_invalid	67.0	deploy	rejected	LWC1709
+js-meta.xml_loose	67.0	deploy	accepted	deployed
+js-meta.xml_bundle_invalid	67.0	deploy	rejected	metadata XML parsing error
