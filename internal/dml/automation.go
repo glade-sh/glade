@@ -288,7 +288,7 @@ func (e *Engine) applyTriggeredFlows(objectName string, record *storage.Record, 
 			branchLookups := append([]storage.FlowRecordLookup(nil), rule.RecordLookups...)
 			branchLookups = append(branchLookups, branch.RecordLookups...)
 			if _, err := e.applyFlowEffects(rule.Name, objectName, record, object.Definition, branch.Steps, branch.FieldUpdates, nil, branchLookups, nil, rule.TextTemplates, rule.Variables); err != nil {
-				return err
+				return flowBeforeSaveFault(rule, err)
 			}
 			continue
 		}
@@ -296,7 +296,7 @@ func (e *Engine) applyTriggeredFlows(objectName string, record *storage.Record, 
 			return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: %s flow %s contains unsupported side-effect steps", label, rule.Name)
 		}
 		if _, err := e.applyFlowEffects(rule.Name, objectName, record, object.Definition, rule.Steps, rule.FieldUpdates, nil, rule.RecordLookups, nil, rule.TextTemplates, rule.Variables); err != nil {
-			return err
+			return flowBeforeSaveFault(rule, err)
 		}
 	}
 	return nil
@@ -1319,7 +1319,11 @@ func (e *Engine) applyFlowStep(flowName, objectName string, record *storage.Reco
 			}
 		}
 		capturedFormula := flowCapturedCustomErrorFormula(msg, formulas, frame)
-		msg = e.renderFlowCustomErrorMessage(msg, frame, numberConstants, formulas, resources)
+		var rendered, fault = e.renderFlowCustomErrorMessageForAPI(msg, frame, numberConstants, formulas, resources, step.CustomError.APIVersion)
+		if fault {
+			return false, flowMergeUnhandledFault{}
+		}
+		msg = rendered
 		return false, &flowCustomErrorFailure{cause: dmlErrorf("FIELD_CUSTOM_VALIDATION_EXCEPTION", fields, "%s", msg), capturedFormula: capturedFormula}
 	case "transform":
 		if err := e.applyFlowTransformStep(step.Transform, frame); err != nil {
@@ -1394,6 +1398,17 @@ func (e *Engine) applyFlowAssignmentStep(assignment storage.FlowAssignment, fram
 				delete(frame.subflowInputs, flowFrameKey(target))
 				if output, found := frame.lookupOutputs[flowFrameKey(assignment.SourceField)]; found {
 					frame.records[flowFrameKey(target)] = output.record.Clone()
+					delete(frame.scalars, flowFrameKey(target))
+					delete(frame.nullRecordDefaults, flowFrameKey(target))
+					frame.assigned[flowFrameKey(target)] = true
+					return nil
+				}
+				// A record input supplied as scalar null (or defaulted null) keeps the
+				// scalar-null route below; only a present record is copied by value.
+				sourceKey := flowFrameKey(assignment.SourceField)
+				_, sourceScalar := frame.scalars[sourceKey]
+				if record, found := frame.records[sourceKey]; found && !sourceScalar && !frame.nullRecordDefaults[sourceKey] {
+					frame.records[flowFrameKey(target)] = record.Clone()
 					delete(frame.scalars, flowFrameKey(target))
 					delete(frame.nullRecordDefaults, flowFrameKey(target))
 					frame.assigned[flowFrameKey(target)] = true
@@ -3745,6 +3760,43 @@ func (e *Engine) flowRecordLookupMatches(lookup storage.FlowRecordLookup, source
 func (e *Engine) applyFlowTransformStep(transform storage.FlowTransform, frame *flowFrame) error {
 	transformType := strings.ToLower(strings.TrimSpace(transform.TransformType))
 	switch transformType {
+	case "recordmap":
+		state, objectName, err := e.object(transform.ObjectType)
+		if err != nil {
+			return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow transform %s targets unknown object %s", transform.Name, transform.ObjectType)
+		}
+		record := storage.Record{Object: objectName, Fields: make(map[string]storage.Value)}
+		for _, mapping := range transform.FieldMappings {
+			field, ok := storage.ResolveFieldName(state.Definition, e.Org.Namespace, mapping.Field)
+			if !ok {
+				return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", []string{mapping.Field}, "dml: flow transform %s maps unknown field %s.%s", transform.Name, objectName, mapping.Field)
+			}
+			var value storage.Value
+			if mapping.FlowLiteralString {
+				value = storage.StringValue(mapping.LiteralValue)
+			} else {
+				if !flowCapturedTransformVariable(frame, mapping.SourceField) {
+					return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow transform %s references an unsupported source", transform.Name)
+				}
+				var ok bool
+				value, ok = e.flowFrameReferenceValueAudit(mapping.SourceField, frame, make(map[string]bool), false)
+				if !ok {
+					return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow transform %s references unknown value %s", transform.Name, mapping.SourceField)
+				}
+			}
+			value, ok = e.flowTransformTargetValue(state.Definition.Fields[field], value)
+			if !ok {
+				return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", []string{field}, "dml: flow transform %s has unsupported value for %s.%s", transform.Name, objectName, field)
+			}
+			record.Fields[field] = value
+			if value.Kind == storage.ValueNull {
+				if record.ExplicitNulls == nil {
+					record.ExplicitNulls = make(map[string]bool)
+				}
+				record.ExplicitNulls[field] = true
+			}
+		}
+		frame.records[flowFrameKey(transform.Name)] = record
 	case "count":
 		records, ok := frame.flowCollection(transform.SourceCollection)
 		if !ok {
@@ -3937,7 +3989,16 @@ func (e *Engine) flowRecordLookupRecords(lookup storage.FlowRecordLookup, source
 		for _, item := range lookup.Criteria {
 			match, ok := e.evaluateFlowLookupCriteria(item, candidate, target.Definition, source, sourceDefinition, frame)
 			if !ok {
-				return nil, storage.ObjectDefinition{}, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", []string{item.Field}, "dml: flow record lookup %s has unsupported criteria for %s.%s", lookup.Name, targetName, item.Field)
+				err := dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", []string{item.Field}, "dml: flow record lookup %s has unsupported criteria for %s.%s", lookup.Name, targetName, item.Field)
+				op := strings.ToLower(strings.ReplaceAll(strings.TrimSpace(item.Operation), " ", ""))
+				if op == "in" || op == "notin" {
+					field, fieldOK := storage.ResolveFieldName(target.Definition, e.Org.Namespace, item.Field)
+					value, valueOK := e.flowRecordUpdateSourceValue(item.SourceField, source, sourceDefinition, frame)
+					if fieldOK && valueOK && flowLookupCollectionHasCapturedFault(target.Definition.Fields[field], value) {
+						return nil, storage.ObjectDefinition{}, &flowLookupCollectionFault{cause: err}
+					}
+				}
+				return nil, storage.ObjectDefinition{}, err
 			}
 			if disjunction && match {
 				matches = true
@@ -4012,6 +4073,31 @@ func (e *Engine) evaluateFlowLookupCriteria(item storage.WorkflowCriteriaItem, t
 	}
 	field := targetDefinition.Fields[targetField]
 	switch strings.ToLower(strings.TrimSpace(item.Operation)) {
+	case "in", "notin", "not in":
+		if !flowCapturedVariable(frame, item.SourceField, true) {
+			return false, false
+		}
+		if sourceValue.Kind != storage.ValueList && sourceValue.Kind != storage.ValueNull {
+			return false, false
+		}
+		if !flowLookupCollectionFieldSupported(field) {
+			return false, false
+		}
+		found := false
+		for _, element := range sourceValue.List {
+			equal, supported := flowLookupCollectionValuesEqual(field, targetValue, element)
+			if !supported {
+				return false, false
+			}
+			if equal {
+				found = true
+				break
+			}
+		}
+		if strings.EqualFold(strings.ReplaceAll(strings.TrimSpace(item.Operation), " ", ""), "notin") {
+			return !found, true
+		}
+		return found, true
 	case "", "equals", "equal", "eq":
 		return flowLookupIDValuesEqual(field, targetValue, sourceValue), true
 	case "notequal", "not equal", "notequals", "not equals", "ne":
@@ -4647,4 +4733,13 @@ func (e *Engine) pauseFlowInterview(flowName string, step storage.FlowStep, fram
 	object.Records[id] = record
 	e.Org.Objects["FlowInterview"] = object
 	return nil
+}
+
+// flowBeforeSaveFault reports a merge-field fault as a row error the way an
+// explicit Custom Error does.
+func flowBeforeSaveFault(rule storage.FlowRule, err error) error {
+	if fault, ok := flowMergeFaultError(rule, err); ok {
+		return &flowCustomErrorFailure{cause: fault}
+	}
+	return err
 }

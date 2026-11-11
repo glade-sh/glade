@@ -1,0 +1,1 @@
+@IsTest private class CaptureRecursion67 { static String value { get { return helper(); } set; } static String helper() { return value; } @IsTest static void genuineRecursion() { String resultValue=value; } }

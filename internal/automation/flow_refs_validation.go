@@ -8,18 +8,17 @@ import (
 
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/project"
-	"github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/sobject"
 	"github.com/glade-sh/glade/internal/storage"
 )
 
 // Validation uses supplied object metadata. Schema-free Flow projections keep
 // their existing diagnostics; absence of a definition is not native rejection.
-func flowRefsValidateProjectDecisions(p project.Project, idx *Index) error {
+func flowRefsValidateProjectDecisions(p project.Project, idx *Index, schemas *projectSchemaLoader) error {
 	if len(p.FlowFiles) == 0 || len(p.ObjectFiles) == 0 && len(p.FieldFiles) == 0 {
 		return nil
 	}
-	s, err := schema.LoadProject(p)
+	s, err := schemas.load()
 	if err != nil {
 		// Schema problems are reported by the schema load; decision checks
 		// need a schema and are skipped without failing the project load.

@@ -9,6 +9,8 @@ import (
 	"os/exec"
 	"testing"
 	"time"
+
+	"github.com/glade-sh/glade/internal/testutil"
 )
 
 func TestCase355PlaygroundListenerAuthority(t *testing.T) {
@@ -52,7 +54,7 @@ func TestCase355PlaygroundListenerAuthority(t *testing.T) {
 		resp.Body.Close()
 		return resp.StatusCode, nil
 	}
-	deadline := time.Now().Add(20 * time.Second)
+	deadline := time.Now().Add(testutil.Deadline(20 * time.Second))
 	for {
 		status, err := request(address, "")
 		if err == nil {

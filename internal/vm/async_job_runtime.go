@@ -283,6 +283,10 @@ func (vm *VM) enqueueJob(args []Value, result *Result) (Value, error) {
 	return id, nil
 }
 func (vm *VM) executeBatch(args []Value, result *Result) (Value, error) {
+	if vm.rejectAsyncActions {
+		// No native row for this kind from a Lightning action: fail closed.
+		return Null, vm.rejectSynchronousAsyncAction("Database.executeBatch cannot cross the synchronous LWC action boundary")
+	}
 	if len(args) < 1 || len(args) > 2 {
 		return Null, fmt.Errorf("Database.executeBatch expects batch instance[, scopeSize]")
 	}
@@ -375,6 +379,10 @@ func batchableInterfaceName(name string) bool {
 }
 
 func (vm *VM) scheduleJob(args []Value, result *Result) (Value, error) {
+	if vm.rejectAsyncActions {
+		// No native row for this kind from a Lightning action: fail closed.
+		return Null, vm.rejectSynchronousAsyncAction("System.schedule cannot cross the synchronous LWC action boundary")
+	}
 	if len(args) == 3 {
 		if args[2].Kind == ValueNull {
 			return Null, newExceptionError("System.NullPointerException", "schedulable object cannot be null")
@@ -420,6 +428,10 @@ func (vm *VM) scheduleJob(args []Value, result *Result) (Value, error) {
 	return String(cronTriggerID(job.ID)), nil
 }
 func (vm *VM) scheduleBatch(args []Value, result *Result) (Value, error) {
+	if vm.rejectAsyncActions {
+		// No native row for this kind from a Lightning action: fail closed.
+		return Null, vm.rejectSynchronousAsyncAction("System.scheduleBatch cannot cross the synchronous LWC action boundary")
+	}
 	if len(args) != 3 && len(args) != 4 {
 		return Null, fmt.Errorf("System.scheduleBatch expects batch instance, name, minutesFromNow[, scopeSize]")
 	}
@@ -1029,7 +1041,27 @@ func (vm *VM) drainAsyncJobsFrom(result *Result, jobs *[]AsyncJob, startIndex in
 			"jobId": job.ID,
 		})
 		batchProjection := false
+		var isolationMark storage.IsolationMark
+		isolated := false
+		if vm.isolateAsyncJobFailures {
+			isolationMark, isolated = vm.beginBatchChunkTransaction()
+		}
 		err := vm.runAsyncJob(job, result, &batchProjection)
+		if err != nil && isolated {
+			// Each drained job is its own transaction: undo what the failed job
+			// wrote, record it as Failed and keep draining the others.
+			if rollbackErr := vm.rollbackBatchChunkTransaction(isolationMark); rollbackErr != nil {
+				return rollbackErr
+			}
+			if asyncStaticSnapshot != nil {
+				vm.restoreStaticFieldSnapshot(asyncStaticSnapshot)
+				vm.staticInitState = copyStaticInitStateMap(asyncStaticInitSnapshot)
+			}
+			if !job.ScheduledAborted && !batchProjection {
+				vm.recordAsyncJob(job, "Failed", err.Error())
+			}
+			continue
+		}
 		if asyncStaticSnapshot != nil {
 			vm.restoreStaticFieldSnapshot(asyncStaticSnapshot)
 			vm.staticInitState = copyStaticInitStateMap(asyncStaticInitSnapshot)

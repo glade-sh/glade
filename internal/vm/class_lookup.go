@@ -240,6 +240,19 @@ func (vm *VM) classForAccess(className string) (Class, bool) {
 	return store(class, ok)
 }
 func (vm *VM) lookupClassInNamespace(namespace, className string) (Class, bool) {
+	rawKey := namespaceClassRawKey{Namespace: namespace, ClassName: className}
+	if cached, ok := vm.namespaceClassRawLookup[rawKey]; ok {
+		return cached.Class, cached.OK
+	}
+	class, ok := vm.lookupClassInNamespaceUncached(namespace, className)
+	if vm.namespaceClassRawLookup == nil || len(vm.namespaceClassRawLookup) >= maxAccessMemoEntries {
+		// Dynamic type names can mint unbounded raw keys; drop the memo at the cap.
+		vm.namespaceClassRawLookup = make(map[namespaceClassRawKey]namespaceClassLookup)
+	}
+	vm.namespaceClassRawLookup[rawKey] = namespaceClassLookup{Class: class, OK: ok}
+	return class, ok
+}
+func (vm *VM) lookupClassInNamespaceUncached(namespace, className string) (Class, bool) {
 	if vm.namespaceClassLookup == nil {
 		vm.namespaceClassLookup = make(map[string]map[string]namespaceClassLookup)
 	}
@@ -1332,6 +1345,7 @@ func (vm *VM) writeRegisteredClass(overlay *classLookupOverlay, alias string, cl
 	// Frozen clones can already have a static index before registration.
 	// Replacing or adding static fields makes that index stale.
 	previous, previousExists := vm.Classes[alias]
+	vm.heapStaticFlatOK = false
 	vm.noteClassStaticRootsWrite(previous, previousExists, class)
 	if len(previous.StaticFields) != 0 || len(class.StaticFields) != 0 {
 		vm.invalidateStaticValueRefs()
@@ -1402,6 +1416,7 @@ func (vm *VM) storeClassValue(class Class) {
 // writeClassValue writes a class value outside registration, keeping the
 // pending overlay's view of the values its lookups were taken from.
 func (vm *VM) writeClassValue(alias string, class Class) {
+	vm.heapStaticFlatOK = false
 	if vm.heapStaticRootsOK {
 		previous, exists := vm.Classes[alias]
 		vm.noteClassStaticRootsWrite(previous, exists, class)
@@ -1541,8 +1556,14 @@ func (vm *VM) rebuildClassLookup() {
 }
 func (vm *VM) resetClassAccessCaches() {
 	vm.namespaceClassLookup = make(map[string]map[string]namespaceClassLookup)
+	vm.namespaceClassRawLookup = nil
 	vm.classNamespaceCache = make(map[string]string)
 	vm.classForAccessCache = make(map[classForAccessKey]classForAccessLookup)
+	vm.accessScopeCache = nil
+	vm.frameSymbolFirstKey = frameSymbolKey{}
+	vm.frameSymbolFirstValue = ""
+	vm.frameSymbolFirstValid = false
+	vm.frameSymbolCache = nil
 	vm.resetClassLookupNameCache()
 	vm.nestedTypeHierarchyCache = nil
 	vm.topLevelTypeCache = nil

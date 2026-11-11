@@ -62,15 +62,12 @@ func (vm *VM) collectionStoreException(collectionType string, value Value) error
 
 func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value, result *Result, callerSharingOverride ...string) (Value, error) {
 	if len(vm.callStack) >= maxApexCallDepth {
-		return Null, &RuntimeError{Type: "RuntimeError", Message: "maximum Apex call stack depth exceeded", Stack: vm.stackFrames()}
+		return Null, &RuntimeError{Type: "RuntimeError", Message: "maximum Apex call stack depth exceeded", Stack: vm.stackFrames(), callStackLimit: true}
 	}
 	if len(args) != len(method.Params) {
 		return Null, fmt.Errorf("%s expects %d arguments", method.Name, len(method.Params))
 	}
 	if methodHasModifier(method.Modifiers, "future") {
-		if vm.rejectAsyncActions {
-			return Null, vm.rejectSynchronousAsyncAction(fmt.Sprintf("%s cannot cross the synchronous LWC action boundary", method.Name))
-		}
 		// async_stack_depth future_2/future_3 (API 62 and 67): a future called
 		// from a future body throws a catchable AsyncException.
 		// async_lifecycle_c14 Y1 (API 62/67): batch start and execute reject

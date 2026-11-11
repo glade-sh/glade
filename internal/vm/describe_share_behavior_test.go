@@ -135,9 +135,12 @@ System.debug('T4:' + d.getSObjectType() + ':' + Widget__c.SObjectType.getDescrib
 rts.put('zz', null);
 System.debug('P10a:' + rts.containsKey('zz') + ':' + Widget__c.SObjectType.getDescribe().getRecordTypeInfosByName().containsKey('zz'));
 Map<String, Schema.FieldSet> fs = Schema.SObjectType.Widget__c.fieldSets.getMap();
-fs.put('zz', null);
-System.debug('P10b:' + fs.containsKey('zz') + ':' + Schema.SObjectType.Widget__c.fieldSets.getMap().containsKey('zz'));`,
-			debug: "P10a:true:false | P10b:true:false",
+// Native pr163_fieldset_keys/org.tsv:12-13,20-21: put on a field set map
+			// is read-only at 62.0 and 67.0; clear() only empties the caller's copy
+			// (org.tsv:16-17,24-25).
+fs.clear();
+System.debug('P10b:' + fs.size() + ':' + Schema.SObjectType.Widget__c.fieldSets.getMap().size());`,
+			debug: "P10a:true:false | P10b:0:1",
 		},
 		{
 			// Set text shows ten elements, then "..." (record_type_shape list_forms

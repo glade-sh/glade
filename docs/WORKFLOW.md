@@ -28,8 +28,8 @@ Three facts shape everything below:
 | 5 | Local checks | coder | focused tests, one package run, repoguard | green, or each failure explained in the PR |
 | 6 | Pull request | coder | the PR with the template filled in | every field has content or `n/a: <reason>` |
 | 7 | CI | hosted | `Required CI` green | the check passes on the PR merge result for the current head and base |
-| 8 | Review | reviewer | one PR review | no open blocking finding, threads resolved |
-| 9 | Merge | coordinator | a squash commit on `main` | the PR check is green |
+| 8 | Review | reviewer | one PR review, after CI is green | no open blocking finding, threads resolved |
+| 9 | Merge | coordinator | a squash commit on `main` | the PR check is green and the branch is up to date with `main` |
 | 10 | Nightly | host cron | real-project suite diff against goldens | `NEW = 0`, or one ticket per NEW |
 | 11 | Release | maintainer | tag, archives, notes | the release checklist is green |
 
@@ -84,7 +84,7 @@ For Salesforce-observable compatibility changes, fixtures live at
 reads them: `apextest` (under `testdata/conformance/`) for
 runtime behavior, `sema` for compile-time diagnostics, `visualforce`, `lwc`
 and `dml` for their surfaces. A family directory holds `cases.tsv` (or
-`cases.json`), the synthetic Apex sources, `org.tsv` and `ORG-RUN.txt`.
+`cases.json`), the synthetic Apex sources, `org.tsv` and `native-run.md`.
 
 1. Write `cases.tsv`: one row per case with `id`, `api`, `route`, the source,
    and the expected result once captured. Routes are anonymous Apex, an
@@ -99,11 +99,11 @@ and `dml` for their surfaces. A family directory holds `cases.tsv` (or
 2. Capture against a fresh scratch org. The ticket names the org
    authorization; the private operations guide carries the setup for internal
    agents. With no org access, go to section 5 item 1 before writing any
-   code. Write `org.tsv` and `ORG-RUN.txt` into the family directory. Scrub
+   code. Write `org.tsv` and `native-run.md` into the family directory. Scrub
    org ids, aliases and personal paths. Delete the org afterwards.
 3. Encode the rows in one data-driven Go test in that package, copying the
    pattern of an existing `*_conformance_test.go` there. The fixture,
-   `org.tsv`, `ORG-RUN.txt` and the test go into the test commit of section
+   `org.tsv`, `native-run.md` and the test go into the test commit of section
    3.4. The test is the oracle from then on, and CI runs it without
    credentials.
 4. Fix only rows the test proves wrong. Cite every row you rely on, one line
@@ -164,9 +164,27 @@ Decimal scale`. A reviewer must be able to judge the change from the body and
 the diff alone. A behavior change is always user-visible: add its line to
 `docs/RELEASE_NOTES.md` under Unreleased in the same PR.
 
+Before asking for review, run `bash scripts/pr-check.sh` (add `--repoguard
+--vet` for the full local gate) on the finished branch. It applies the
+machine-checkable rules from sections 3.4 to 3.6 and 4, including gofmt, ABI
+bumps, test-first order, leak, org-id and personal-path scans, the lane
+manifest, and an optional `--body FILE` check. Fix every FAIL before asking for
+review; a WARN needs its reason in the PR.
+
 ### 3.7 CI
 
-`Required CI` runs on every PR; a run takes about 40 minutes. For a
+`Required CI` runs a fast lane on every PR, including drafts. It builds with CGO,
+checks formatting, vet, repository guard, workflow lint, leak scan and scripts
+tests, and tests changed Go packages and their direct importers (the fast PR lane, below). A changed path outside
+every Go package (for example `lwcruntime/**`, `third_party/lwc/**`, root
+`testdata/**`, workflows or root files) selects the full package set; only
+`docs/**` and Markdown files outside `testdata` are docs-only and select
+nothing. Pushes to `main`, scheduled and manually dispatched runs use the
+full suite. A pull request, including an integration train (section 3.12),
+runs only the fast lane over the union of its changed packages, so a train PR
+also needs a dispatched full run before it merges (section 3.12). Superseded PR runs
+are cancelled, so push once and let the run finish; do not close and reopen a
+PR to retrigger CI, which cancels the run in flight. For a
 `pull_request` run, checkout and tests use GitHub's merge result for the PR
 head and base, not the head tree alone. The merge commit has the PR head as its
 second parent; identify both the head and tested merge tree when reporting it.
@@ -176,7 +194,7 @@ test is unrelated to your change and passes on `main`, say so in the PR and
 open a ticket for it; the coordinator decides on a rerun. The runners carry
 Node, Playwright and a browser, so an "environmental" result does not exist
 in CI. Locally such a test is "not run", never "passed". `scripts/ci-local-all`
-mirrors `Required CI` when hosted CI is unavailable.
+mirrors the full suite when hosted CI is unavailable.
 
 ### 3.8 Review
 
@@ -196,12 +214,19 @@ gates them.
 
 ### 3.9 Merge
 
-The coordinator squash merges after `Required CI` passes on the PR. The squash
+The coordinator squash merges after `Required CI` passes on the PR and review
+is done. `main` requires branches to be up to date and there is no merge queue,
+so a PR that fell behind `main` is updated and must pass `Required CI` again
+before it merges. A train PR also merges only after the full CI run dispatched
+on the train branch is green on the exact head (section 3.12). Prefer an integration train (section 3.12) when several PRs
+are ready together. The squash
 message is the PR title plus applicable `NATIVE` lines or local contract
 citations. The branch is deleted on merge.
 The coordinator moves the ticket to Done on the project board with the PR link.
 If the branch conflicts with `main`, resolve the conflict, rerun the focused
-tests and push; do not rewrite history under a running check.
+tests and push; do not rewrite history under a running check. Do not merge a
+train or `main` into a component PR branch to refresh it; that discards its
+green CI result.
 
 ### 3.10 Nightly real-project suite
 
@@ -241,6 +266,34 @@ change.
 No step repeats on an unchanged tree. A gap found while qualifying a release
 is fixed before the tag unless the maintainer decides otherwise.
 
+### 3.12 Integration trains and component branches
+
+Component branches are small, one ticket each. The coder validates a component
+branch with build, vet and the focused tests for the change, then pushes it.
+The full suite is not run per component. A train's pull request runs the fast
+lane over the union of its components. Every train PR also gets a full CI run
+before it merges: dispatch the CI workflow on the train branch with
+`gh workflow run ci.yml --ref <train branch>`. The train merges only when that
+dispatched run is green on the exact head and the train review approves. The
+full run on the push to `main` is then confirmation, not the first full test.
+New commits on the train restart the dispatched run.
+
+- Train: the coordinator combines several approved PRs into one branch built
+  from their heads and opens one PR. It gets one `Required CI` run and one
+  review of the merge resolutions only; the component diffs were already
+  reviewed.
+- CI before review: a reviewer starts on a head only after `Required CI` is
+  green on that exact head. A PR enters a train on its own green head. New
+  commits restart both.
+- Version constants: `SemanticABI`, `PlatformABI` and `testRuntimeCacheABI` are
+  not bumped on component branches or in trains. One bump per release is made
+  at the cut, in the release PR. Component PRs state which bump class they need.
+- Corpus and real-project runs from section 3.10 and 3.11 are reused when the
+  product tree is identical to the one already measured.
+
+The fast PR lane (section 3.7) is the only CI a component PR needs before
+review.
+
 ## 4. Change classes
 
 Every ticket and PR names one class: `docs`, `tests`, `tooling`, `behavior`,
@@ -255,7 +308,8 @@ Every ticket and PR names one class: `docs`, `tests`, `tooling`, `behavior`,
 | `performance` | speed or memory with identical outcomes | a matched before/after outcome comparison with its scope and the targeted benchmark in the PR; the release measures the aggregate | per-PR project measurement |
 | `generated` | generated files, including the standard-object schema ([STANDARD_OBJECT_SCHEMA.md](STANDARD_OBJECT_SCHEMA.md)) | change the input or the generator, regenerate, commit both | hand edits |
 
-ABI bumps, in the same PR and once:
+ABI bumps, once per release at the cut (section 3.12); a component PR names
+the bump class it needs instead of changing the constant:
 
 - `SemanticABI` in `internal/sema/sema.go`: any non-test change under
   `internal/sema`, `typesys`, `apexast`, `apexlang`, `ir`, `project`, `schema`,
@@ -270,9 +324,9 @@ ABI bumps, in the same PR and once:
 - `dapCacheVersion` in `internal/gladecli/dap_cache.go`: only when the debug
   adapter cache layout changes.
 
-Raise the number by one. When `main` moved and bumped the same constant,
-rebase and take the higher value plus one. Tests that pin a version or a
-per-version counter change in the same PR, with the reason in the message.
+Raise the number by one at the cut. Tests that pin a version or a
+per-version counter change in the same release PR, with the reason in the
+message.
 
 ## 5. Stop and ask
 
@@ -341,14 +395,14 @@ Apex and metadata: <complete synthetic source>
 APIs: <applicable current supported version> and <floor>; 67.0 for Apex where relevant
 Routes: <anonymous | @IsTest | runner | server | Visualforce | LWC>
 Org shape: <features, settings, permission sets>
-Output: org.tsv with id, api, route, compiled, success, outcome; ORG-RUN.txt with API versions
+Output: org.tsv with id, api, route, compiled, success, outcome; native-run.md with API versions
 and timestamps and no org ids
 ```
 
 ## Appendix D: glossary
 
 - Native row: one observed Salesforce result (a line of `org.tsv`) with its
-  provenance in `ORG-RUN.txt`.
+  provenance in `native-run.md`.
 - Route: the path by which code reaches the runtime: anonymous Apex, an
   `@IsTest` class, the project test runner, the server API, a Visualforce or
   LWC host.

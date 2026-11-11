@@ -1,0 +1,1 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Grouped__c</fullName><label>Grouped</label><type>Checkbox</type><formula>(Holder__r.Flag__c)</formula><formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs></CustomField>

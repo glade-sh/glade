@@ -5,8 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
+	"time"
 
+	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/trace"
 )
 
@@ -332,6 +335,7 @@ func (vm *VM) invokeUIAction(framework, className, methodName string, params map
 	}
 	out.Success = true
 	if lwc {
+		defer recoverLWCGetterStackFailure(&out, &err)
 		out.ReturnValue = vm.lwcJSONFromValue(value)
 	} else {
 		out.ReturnValue = plainUIJSON(jsonFromValue(value, false))
@@ -348,6 +352,10 @@ func (vm *VM) resolveUIAction(className, methodName string, params map[string]an
 		candidates = append(candidates, vm.registeredFolded(strings.ToLower(className+"."+methodName))...)
 	}
 	sort.SliceStable(candidates, func(i, j int) bool { return uiMethodSignature(candidates[i]) < uiMethodSignature(candidates[j]) })
+	if lwc {
+		candidates = historicalLightningCandidates(candidates)
+		candidates = historicalLightningRankedCandidates(candidates)
+	}
 	var matchedMethod Method
 	var matchedArgs []Value
 	matched := 0
@@ -413,26 +421,164 @@ func (vm *VM) resolveUIAction(className, methodName string, params map[string]an
 	return Method{}, nil, fmt.Errorf("no static @AuraEnabled method %s.%s accepts parameters %s", className, methodName, sortedParamNames(params))
 }
 
+// Historical Lightning actions select a unique highest-arity overload before
+// binding parameters. Unknown or mixed source versions retain normal handling.
+func historicalLightningCandidates(candidates []Method) []Method {
+	version := ""
+	maxArity := -1
+	maxSignature := ""
+	maxIndex := -1
+	uniqueMax := false
+	signatures := make(map[string]bool)
+	for i, method := range candidates {
+		if !method.IsStatic || !methodHasAuraEnabled(method.Modifiers) {
+			continue
+		}
+		if strings.TrimSpace(method.APIVersion) == "" {
+			return candidates
+		}
+		current, err := apexversion.PreserveSource(method.APIVersion)
+		if err != nil || !apexversion.Before(current, 55) || (version != "" && current != version) {
+			return candidates
+		}
+		version = current
+		signature := uiMethodSignature(method)
+		signatures[signature] = true
+		if len(method.Params) > maxArity {
+			maxArity, maxSignature, maxIndex, uniqueMax = len(method.Params), signature, i, true
+		} else if len(method.Params) == maxArity && signature != maxSignature {
+			uniqueMax = false
+		}
+	}
+	if len(signatures) < 2 || !uniqueMax {
+		return candidates
+	}
+	return []Method{candidates[maxIndex]}
+}
+
 func (vm *VM) lwcParameterValue(typeName string, raw any) (Value, error) {
 	// Native null List<String> parameters arrive as an empty collection; the
 	// captured null List<Account> and Map<String,String> parameters stay null.
 	if raw == nil && strings.EqualFold(strings.Join(strings.Fields(typeName), ""), "List<String>") {
 		return typedList(typeName), nil
 	}
+	if value, handled, err := vm.lwcCoercedParameter(typeName, raw); handled {
+		return value, err
+	}
 	if strings.EqualFold(typeName, "Datetime") {
-		if text, ok := raw.(string); ok && !strings.HasSuffix(text, "Z") {
+		if text, ok := raw.(string); ok && !strings.HasSuffix(text, "Z") && !lwcDateOnlyText(text) {
 			return Null, fmt.Errorf("LWC Datetime parameter requires UTC JSON")
 		}
 	}
 	if fields, ok := raw.(map[string]any); ok && vm.isSObjectLikeType(typeName) && !strings.EqualFold(typeName, "SObject") {
-		if actual, ok := fields["sobjectType"].(string); ok && !strings.EqualFold(typeName, actual) {
-			// Preserve the entity mismatch as an explicit local boundary. The
-			// native U# identifiers in r_serial_account_wrong_type are hosted
-			// identities, not local schema identifiers.
-			return Null, &UIActionDiagnosticError{Type: "InvalidActionParameter", Message: fmt.Sprintf("Mismatched entity type. Expected %s but received %s", typeName, actual)}
+		if actual, ok := fields["sobjectType"].(string); ok {
+			if !strings.EqualFold(typeName, actual) {
+				// Preserve the entity mismatch as an explicit local boundary. The
+				// native U# identifiers in r_serial_account_wrong_type are hosted
+				// identities, not local schema identifiers.
+				return Null, &UIActionDiagnosticError{Type: "InvalidActionParameter", Message: fmt.Sprintf("Mismatched entity type. Expected %s but received %s", typeName, actual)}
+			}
+			// The entity marker names the type; it is not a record field
+			// (lwc_param_conversion Account/obj_sobj).
+			raw = lwcWithoutSObjectType(fields)
 		}
 	}
 	return vm.typedValueFromJSON(typeName, raw, false)
+}
+
+// lwcCoercedParameter applies the conversions Lightning makes before an
+// @AuraEnabled method runs, where they differ from JSON.deserialize
+// (lwc_param_conversion/org.tsv). Types and argument shapes the rows do not
+// cover are not handled here and keep the JSON mapping.
+func (vm *VM) lwcCoercedParameter(typeName string, raw any) (Value, bool, error) {
+	compact := strings.ToLower(strings.Join(strings.Fields(typeName), ""))
+	switch compact {
+	case "boolean":
+		// Every string converts; only "true" in any case is true.
+		if text, ok := raw.(string); ok {
+			return Bool(strings.EqualFold(text, "true")), true, nil
+		}
+	case "integer":
+		// A string that parses but does not fit 32 bits is rejected.
+		if text, ok := raw.(string); ok {
+			if parsed, err := strconv.ParseInt(strings.TrimSpace(text), 10, 64); err == nil && (parsed < -2147483648 || parsed > 2147483647) {
+				return Null, true, fmt.Errorf("LWC Integer parameter out of range")
+			}
+		}
+	case "decimal", "double":
+		if text, ok := raw.(string); ok && text == "" {
+			return Null, true, fmt.Errorf("LWC %s parameter requires a number", typeName)
+		}
+	case "list<string>":
+		switch typed := raw.(type) {
+		case string:
+			// A JSON array text is that array; any other string is one element.
+			if strings.HasPrefix(typed, "[") {
+				var items []any
+				if err := json.Unmarshal([]byte(typed), &items); err != nil {
+					return Null, false, nil
+				}
+				value, err := vm.typedValueFromJSON(typeName, items, false)
+				return value, true, err
+			}
+			value, err := vm.typedValueFromJSON(typeName, []any{typed}, false)
+			return value, true, err
+		case float64, json.Number, bool, map[string]any:
+			return typedList(typeName), true, nil
+		}
+	case "object":
+		switch typed := raw.(type) {
+		case float64:
+			return Decimal(typed), true, nil
+		case json.Number:
+			value, err := decimalFromText(typed.String())
+			return value, err == nil, err
+		case []any:
+			value := valueFromJSON(typed)
+			value.Type = "List<Object>"
+			return value, true, nil
+		}
+	case "sobject":
+		if fields, ok := raw.(map[string]any); ok {
+			actual, _ := fields["sobjectType"].(string)
+			if strings.TrimSpace(actual) == "" {
+				// A record that names its type through attributes is not covered
+				// by the rows and keeps the JSON mapping.
+				if _, hasAttributes := fields["attributes"]; hasAttributes {
+					return Null, false, nil
+				}
+				return Null, true, &UIActionDiagnosticError{Type: "InvalidActionParameter", Message: "Unable to read SObject"}
+			}
+			record := lwcWithoutSObjectType(fields)
+			record["attributes"] = map[string]any{"type": actual}
+			value, err := vm.sObjectValueFromJSON(record, false)
+			return value, true, err
+		}
+	default:
+		// An empty string is a null record for a concrete SObject parameter.
+		if text, ok := raw.(string); ok && text == "" && vm.isSObjectLikeType(typeName) {
+			return Null, true, nil
+		}
+	}
+	return Null, false, nil
+}
+
+func lwcWithoutSObjectType(fields map[string]any) map[string]any {
+	out := make(map[string]any, len(fields))
+	for key, item := range fields {
+		if key != "sobjectType" {
+			out[key] = item
+		}
+	}
+	return out
+}
+
+func lwcDateOnlyText(text string) bool {
+	if len(text) != len("2006-01-02") {
+		return false
+	}
+	_, err := time.Parse("2006-01-02", text)
+	return err == nil
 }
 
 // The Apex action transport has its own serializer. JSON.serialize and the
@@ -481,7 +627,19 @@ func (vm *VM) lwcJSONFromValue(value Value) any {
 		}
 		out := make(map[string]any)
 		if _, ok := vm.lookupClass(value.Type); ok {
-			for _, name := range vm.jsonSerializableFieldNames(value.Type) {
+			names := vm.jsonSerializableFieldNames(value.Type)
+			deferScalars := false
+			if value.classInstance && value.projectClass {
+				for _, name := range names {
+					field, _, ok := vm.lookupField(value.Type, name)
+					if ok && !field.Static && field.Getter != nil && field.Getter.File != "" && methodHasAuraEnabled(field.Modifiers) {
+						deferScalars = true
+						break
+					}
+				}
+			}
+			var deferred []string
+			for _, name := range names {
 				field, owner, ok := vm.lookupField(value.Type, name)
 				if !ok || field.Static || !methodHasAuraEnabled(field.Modifiers) {
 					continue
@@ -490,10 +648,23 @@ func (vm *VM) lwcJSONFromValue(value Value) any {
 				if field.Getter != nil {
 					getterValue, err := vm.callGetter(vm.getterOwner(owner, field), field, value)
 					if err != nil {
+						var fault *RuntimeError
+						if deferScalars && field.Getter.File != "" && errors.As(err, &fault) && fault.callStackLimit && strings.EqualFold(fault.Type, "System.LimitException") {
+							panic(lwcGetterStackFailure{err: err})
+						}
 						continue
 					}
 					item, present = getterValue, true
+				} else if deferScalars && present && item.Kind != ValueNull && jsonScalarFieldValue(item) {
+					deferred = append(deferred, name)
+					continue
 				}
+				if present && item.Kind != ValueNull {
+					out[name] = vm.lwcJSONFromValue(item)
+				}
+			}
+			for _, name := range deferred {
+				_, item, present := objectFieldValue(value, name)
 				if present && item.Kind != ValueNull {
 					out[name] = vm.lwcJSONFromValue(item)
 				}
@@ -516,6 +687,24 @@ func (vm *VM) lwcJSONFromValue(value Value) any {
 		return out
 	default:
 		return jsonFromValue(value, false)
+	}
+}
+
+// The action transport exposes a stable generic message for captured getter
+// stack exhaustion. Salesforce's accompanying error identifier varies.
+type lwcGetterStackFailure struct{ err error }
+
+func recoverLWCGetterStackFailure(out *UIInvocationResult, err *error) {
+	if recovered := recover(); recovered != nil {
+		failure, ok := recovered.(lwcGetterStackFailure)
+		if !ok {
+			panic(recovered)
+		}
+		out.Success = false
+		out.ReturnValue = nil
+		out.Error = uiInvocationError(failure.err)
+		out.Error.Message = "An internal server error has occurred"
+		*err = nil
 	}
 }
 

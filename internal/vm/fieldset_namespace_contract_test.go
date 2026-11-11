@@ -13,17 +13,18 @@ import (
 // Defining-org origin is this controlled local construction/specification:
 // each case creates fresh testDataOrg state and authors its one FieldSet record.
 // No installed/package metadata or native provenance is inferred from names.
-// Preserve both packet Apex bodies exactly, pkg control before empty focal.
+// The namespaced lookup follows the captured qualified-key result; the
+// unmanaged control retains the local-key result.
 // Native API67 unmanaged Account.FamilyBaseline.getNamespace() is null;
 // retained capture /tmp/glade-baseline-schema-controls-org.json, row S01.
-// The package namespace control remains unchanged.
 func TestExecFieldSetNamespaceAPI67(t *testing.T) {
 	cases := []struct {
 		name         string
 		orgNamespace string
 		source       string
 	}{
-		{name: "orgOwnedNamespacedControl", orgNamespace: "pkg", source: `Schema.FieldSet fs = Schema.SObjectType.Account.fieldSets.getMap().get('Summary');
+		{name: "orgOwnedNamespacedControl", orgNamespace: "pkg", source: `System.assertEquals(null, Schema.SObjectType.Account.fieldSets.getMap().get('Summary'));
+Schema.FieldSet fs = Schema.SObjectType.Account.fieldSets.getMap().get('pkg__Summary');
 System.assert(fs != null);
 String namespaceValue = fs.getNamespace();
 System.assert(namespaceValue != null);

@@ -170,31 +170,34 @@ func (vm *VM) defaultObjectDisplayString(value Value) string {
 	if text, ok := automationDTOString(value, make(map[uint64]bool)); ok {
 		return text
 	}
-	text := value.String()
 	if value.Kind != ValueObject || vm == nil {
-		return text
+		return value.String()
 	}
 	if _, ok := vm.classEntry(value.Type); !ok {
-		return text
+		return value.String()
 	}
 	// Ordinary classes expose declared fields in
 	// brackets, even when a field has a platform scalar's value/message name.
 	// Synthetic objects with undeclared payload fields retain their scalar path.
-	if vm.hasDeclaredOrdinaryClassFields(value) {
-		if vm.typeMatches(value.Type, "StubProvider", make(map[string]bool)) {
-			text = vm.stubProviderDisplayString(value, make(map[uint64]bool))
-		} else {
-			fields := make([]string, 0, len(value.Fields))
-			for name := range value.Fields {
-				fields = append(fields, name)
-			}
-			sort.Strings(fields)
-			parts := make([]string, 0, len(fields))
-			for _, name := range fields {
-				parts = append(parts, name+"="+valueStringWithSeen(value.Fields[name], map[uint64]bool{value.Ref: true}))
-			}
-			text = value.Type + ":[" + strings.Join(parts, ", ") + "]"
+	// The declared-field text replaces the generic object text, so the generic
+	// walk over the same field graph runs only when it is the result.
+	var text string
+	switch {
+	case !vm.hasDeclaredOrdinaryClassFields(value):
+		text = value.String()
+	case vm.typeMatches(value.Type, "StubProvider", make(map[string]bool)):
+		text = vm.stubProviderDisplayString(value, make(map[uint64]bool))
+	default:
+		fields := make([]string, 0, len(value.Fields))
+		for name := range value.Fields {
+			fields = append(fields, name)
 		}
+		sort.Strings(fields)
+		parts := make([]string, 0, len(fields))
+		for _, name := range fields {
+			parts = append(parts, name+"="+valueStringWithSeen(value.Fields[name], map[uint64]bool{value.Ref: true}))
+		}
+		text = value.Type + ":[" + strings.Join(parts, ", ") + "]"
 	}
 	if !strings.Contains(value.Type, ".") {
 		return text

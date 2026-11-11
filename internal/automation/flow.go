@@ -294,6 +294,20 @@ type flowTransformXML struct {
 	SumField         string                   `xml:"sumField"`
 	Connector        flowConnectorXML         `xml:"connector"`
 	FaultConnector   flowConnectorXML         `xml:"faultConnector"`
+	DataType         string                   `xml:"dataType"`
+	IsCollection     string                   `xml:"isCollection"`
+	ObjectType       string                   `xml:"objectType"`
+	TransformValues  []flowTransformValuesXML `xml:"transformValues"`
+}
+
+type flowTransformValuesXML struct {
+	Actions []flowTransformValueActionXML `xml:"transformValueActions"`
+}
+
+type flowTransformValueActionXML struct {
+	OutputFieldAPIName string       `xml:"outputFieldApiName"`
+	TransformType      string       `xml:"transformType"`
+	Value              flowValueXML `xml:"value"`
 }
 
 type flowCollectionProcessorXML struct {
@@ -761,6 +775,7 @@ func compileFlowSource(path string, data []byte, processBuilderSkip string, defi
 	}
 	for _, customError := range raw.CustomErrors {
 		ce := modeledFlowCustomError(customError, raw.Constants, flowCustomErrorFrameFormulas(raw), formulas)
+		ce.APIVersion = strings.TrimSpace(raw.APIVersion)
 		if ce.Name != "" {
 			rule.CustomErrors = append(rule.CustomErrors, ce)
 		}
@@ -2084,6 +2099,9 @@ func modeledFlowSubflow(subflow flowSubflowXML, formulas map[string]string, vari
 func modeledFlowTransform(transform flowTransformXML, variables map[string]flowVariableXML, lookups []flowRecordLookupXML) (storage.FlowTransform, bool) {
 	name := firstNonBlank(transform.Name, transform.Label)
 	transformType := strings.TrimSpace(transform.TransformType)
+	if name != "" && transformType == "" && len(transform.TransformValues) > 0 {
+		return modeledFlowRecordTransform(name, transform)
+	}
 	if name == "" || transformType == "" {
 		return storage.FlowTransform{}, false
 	}
@@ -2107,6 +2125,28 @@ func modeledFlowTransform(transform flowTransformXML, variables map[string]flowV
 		})
 	}
 	return out, true
+}
+
+func modeledFlowRecordTransform(name string, transform flowTransformXML) (storage.FlowTransform, bool) {
+	objectType := strings.TrimSpace(transform.ObjectType)
+	if objectType == "" || !strings.EqualFold(strings.TrimSpace(transform.DataType), "SObject") ||
+		strings.EqualFold(strings.TrimSpace(transform.IsCollection), "true") || len(transform.TransformValues) != 1 {
+		return storage.FlowTransform{}, false
+	}
+	out := storage.FlowTransform{Name: name, TransformType: "RecordMap", ObjectType: objectType}
+	seen := make(map[string]bool)
+	for _, action := range transform.TransformValues[0].Actions {
+		field := strings.TrimSpace(action.OutputFieldAPIName)
+		reference := strings.TrimSpace(action.Value.ElementReference)
+		literalString := action.Value.StringValue != "" || action.Value.EmptyStringValue
+		key := strings.ToLower(field)
+		if field == "" || seen[key] || (reference == "" && !literalString) || (reference != "" && literalString) || !strings.EqualFold(strings.TrimSpace(action.TransformType), "Map") {
+			return storage.FlowTransform{}, false
+		}
+		seen[key] = true
+		out.FieldMappings = append(out.FieldMappings, storage.WorkflowFieldUpdate{Field: field, SourceField: reference, LiteralValue: action.Value.StringValue, FlowLiteralString: literalString})
+	}
+	return out, len(out.FieldMappings) > 0
 }
 
 func modeledFlowCollectionProcessor(proc flowCollectionProcessorXML, variables map[string]flowVariableXML) (storage.FlowCollectionProcessor, bool) {
@@ -2637,7 +2677,9 @@ func flowPopulateBranchBody(branch storage.FlowBranch, target, stop string, raw 
 				continue
 			}
 			modeled = true
-			branch.Steps = append(branch.Steps, storage.FlowStep{Kind: "customError", CustomError: modeledFlowCustomError(customError, raw.Constants, flowCustomErrorFrameFormulas(raw), formulas)})
+			branchError := modeledFlowCustomError(customError, raw.Constants, flowCustomErrorFrameFormulas(raw), formulas)
+			branchError.APIVersion = strings.TrimSpace(raw.APIVersion)
+			branch.Steps = append(branch.Steps, storage.FlowStep{Kind: "customError", CustomError: branchError})
 			break
 		}
 		if modeled {

@@ -821,12 +821,13 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	standardPlatformUserProfileID := ID("00e000000000004")
 	standardUserProfileID := ID("00e000000000005")
 	marketingUserProfileID := ID("00e000000000006")
-	guestProfileID := ID("00e000000000007")
 	customerCommunityLoginProfileID := ID("00e000000000008")
 	automatedProcessProfileID := ID("00e000000000009")
 	chatterFreeProfileID := ID("00e000000000011")
 	salesforceLicenseID := ID("100000000000001")
-	chatterExternalLicenseID := ID("100000000000002")
+	// License 100000000000002 keeps its identity; native names the
+	// PID_Customer_Community_Login license "Customer Community Login".
+	customerCommunityLoginLicenseID := ID("100000000000002")
 	chatterFreeLicenseID := ID("100000000000005")
 	userID := ID(DefaultUserID)
 	automatedProcessUserID := existingAutomatedProcessUserID(*org)
@@ -872,13 +873,18 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		},
 	})
 	putSeedRecord(org, "UserLicense", Record{
-		ID:     chatterExternalLicenseID,
+		ID:     customerCommunityLoginLicenseID,
 		Object: "UserLicense",
 		Fields: map[string]Value{
-			"Name":                 StringValue("Chatter External"),
+			"Name":                 StringValue("Customer Community Login"),
 			"LicenseDefinitionKey": StringValue("PID_Customer_Community_Login"),
 		},
 	})
+	// profile_usertype P1 (API 62.0 and 67.0) links Chatter External User to
+	// Chatter External/CSN_External_User and Standard Platform User to
+	// Salesforce Platform/AUL.
+	chatterExternalLicenseID := ensureInventoryUserLicense(org, "Chatter External", "CSN_External_User")
+	salesforcePlatformLicenseID := ensureInventoryUserLicense(org, "Salesforce Platform", "AUL")
 	// Owned API62/64/67 observations establish this built-in profile and
 	// linked license. Their permission records were not captured.
 	putSeedRecord(org, "UserLicense", Record{
@@ -915,14 +921,9 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		Fields: profileSeedFields("Chatter External User", chatterExternalLicenseID),
 	})
 	putSeedRecord(org, "Profile", Record{
-		ID:     guestProfileID,
-		Object: "Profile",
-		Fields: profileSeedFields("Customer Community Guest User", chatterExternalLicenseID),
-	})
-	putSeedRecord(org, "Profile", Record{
 		ID:     standardPlatformUserProfileID,
 		Object: "Profile",
-		Fields: profileSeedFields("Standard Platform User", salesforceLicenseID),
+		Fields: profileSeedFields("Standard Platform User", salesforcePlatformLicenseID),
 	})
 	putSeedRecord(org, "Profile", Record{
 		ID:     standardUserProfileID,
@@ -942,8 +943,9 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	putSeedRecord(org, "Profile", Record{
 		ID:     customerCommunityLoginProfileID,
 		Object: "Profile",
-		Fields: profileSeedFieldsWithUserType("Customer Community Login User", chatterExternalLicenseID, "CspLitePortal"),
+		Fields: profileSeedFieldsWithUserType("Customer Community Login User", customerCommunityLoginLicenseID, "CspLitePortal"),
 	})
+	migrateLegacyLicenseSeeds(org, salesforceLicenseID, customerCommunityLoginLicenseID, chatterExternalLicenseID, salesforcePlatformLicenseID)
 	ensureDefaultUserRoles(org)
 	putSeedRecord(org, "User", Record{
 		ID:     userID,
@@ -1315,8 +1317,6 @@ func profileSeedFields(name string, licenseID ID) map[string]Value {
 	switch name {
 	case "Chatter External User":
 		userType = "CsnOnly"
-	case "Customer Community Guest User":
-		userType = "Guest"
 	}
 	return profileSeedFieldsWithUserType(name, licenseID, userType)
 }
@@ -1328,10 +1328,6 @@ func profileSeedFieldsWithUserType(name string, licenseID ID, userType string) m
 		"UserType":      StringValue(userType),
 	}
 	applyCapturedProfilePermissions(fields, name)
-	if name == "System Administrator" {
-		// Fresh scratch administrator Profile, API 62.0 and 67.0.
-		fields["PermissionsManageUsers"] = BooleanValue(true)
-	}
 	return fields
 }
 
@@ -1369,6 +1365,12 @@ func applyCapturedProfilePermissions(fields map[string]Value, profileName string
 	for _, flag := range capturedProfilePermissions[profileName] {
 		fields["Permissions"+flag] = BooleanValue(true)
 	}
+	// Direct Profile and profile-owned PermissionSet queries in
+	// user_manage_users/permission_values/org.tsv record both fields at API
+	// 62.0 and 67.0: true for the administrator, false for the other seven.
+	isAdministrator := profileName == "System Administrator"
+	fields["PermissionsManageUsers"] = BooleanValue(isAdministrator)
+	fields["PermissionsManageInternalUsers"] = BooleanValue(isAdministrator)
 }
 
 // SF193 establishes the default BusinessHours record used by a fresh org.

@@ -106,6 +106,14 @@ snapshot. Omitted or false assertions leave unknown fields open. An object with
 this assertion when the snapshot includes the whole field surface needed by the
 project, including installed and org-specific fields.
 
+Field-set inventories have a separate completeness assertion. For an object
+whose captured field-set map is complete, set `"fieldSetsComplete": true` and
+list its names in `"fieldSetNames"` in the pinned snapshot. Source field-set
+metadata adds names to that inventory. Omitted assertions and partial snapshots
+leave unknown field sets open; dependency snapshots do not close the host org's
+inventory. Only assert completeness for the represented org and its installed
+packages.
+
 ### Test user and clock
 
 Set the default running test user and deterministic clock in `glade.yml`:

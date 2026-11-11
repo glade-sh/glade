@@ -9539,7 +9539,7 @@ func TestExecNamespacedFieldSetMapMatchesLocalMetadataObjectName(t *testing.T) {
 	program, err := CompileAnonymous(`
 Schema.DescribeSObjectResult describe = Thing__c.SObjectType.getDescribe();
 System.assertNotEquals(null, describe.fieldSets.getMap().get('pkg__Details'));
-System.assertNotEquals(null, describe.fieldSets.getMap().get('Details'));
+System.assertEquals(null, describe.fieldSets.getMap().get('Details'));
 System.assertEquals(1, SObjectType.Thing__c.FieldSets.pkg__Details.getFields().size());
 `)
 	if err != nil {
@@ -13915,14 +13915,15 @@ System.runAs(new User(Id = '005000000000072', ProfileId = login.Id, Username = '
 	}
 }
 
-func TestExecCreatedByProfileUserLicenseUsesCommunityLicenseKey(t *testing.T) {
+// profile_usertype P1: Chatter External User links to Chatter External/CSN_External_User.
+func TestExecCreatedByProfileUserLicenseUsesChatterExternalLicenseKey(t *testing.T) {
 	program, err := CompileAnonymous(`
 Profile p = [SELECT Id FROM Profile WHERE Name = 'Chatter External User' LIMIT 1];
 System.runAs(new User(Id = '005000000000071', ProfileId = p.Id, Username = 'community@example.test')) {
 	insert new Account(Name = 'Acme');
 }
 Account row = [SELECT CreatedBy.Profile.UserLicense.LicenseDefinitionKey FROM Account WHERE Name = 'Acme' LIMIT 1];
-System.assertEquals('PID_Customer_Community_Login', row.CreatedBy.Profile.UserLicense.LicenseDefinitionKey);
+System.assertEquals('CSN_External_User', row.CreatedBy.Profile.UserLicense.LicenseDefinitionKey);
 `)
 	if err != nil {
 		t.Fatal(err)

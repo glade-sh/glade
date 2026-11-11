@@ -1,19 +1,10 @@
 name: Race
 
 on:
-  # Main-branch race runs start when the CI workflow for the same push has
-  # completed successfully. The concurrency-only race matrix is about 60 jobs;
-  # starting it on the push itself made it compete with the CI workflow for
-  # the account's 20 concurrent hosted runners (v0.3.3 main push: 20 jobs
-  # running for 65 minutes straight; the CI workflow took 78 min against
-  # 38 min for the same tree as a pull request). Race is not a release
-  # authority, so it can follow the CI workflow instead of racing it.
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
-    branches: [main]
   schedule:
-    - cron: '43 10 * * 1'
+    # Race is not a release authority and is red by design on main pushes;
+    # it runs nightly only.
+    - cron: '43 10 * * *'
   workflow_dispatch:
 
 permissions:
@@ -28,9 +19,6 @@ concurrency:
 
 jobs:
   plan:
-    # A red or cancelled CI run gets no race run; its rerun completes the CI
-    # workflow again and triggers Race then.
-    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
@@ -60,7 +48,7 @@ jobs:
         id: classify
         run: |
           case "${{ github.event_name }}" in
-            push|workflow_run)
+            push)
               mode=concurrency
               packages="$(scripts/ci-race-packages.sh full)"
               ;;

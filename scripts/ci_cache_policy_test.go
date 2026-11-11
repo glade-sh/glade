@@ -21,7 +21,7 @@ func TestCIGoCachesAreReadOnlyOnPullRequests(t *testing.T) {
 		sharedKey = "-ci-test-${{ hashFiles('go.sum') }}-"
 	)
 	writers := map[string]string{
-		"vet": "", "node-integration": "", "server-and-playground": "", "test-binaries": "",
+		"vet": "", "node-integration": "", "server-and-playground": "", "test-binaries": "", "test-binaries-apextest": "",
 		"smoke-runtime": "", "smoke-distribution": "",
 		"gladecli": "matrix.shard == 0", "vm": "matrix.shard == 0",
 		"test": "matrix.lane == 'remaining-go'",

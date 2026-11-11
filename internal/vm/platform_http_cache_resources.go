@@ -1541,12 +1541,16 @@ func (vm *VM) lookupLabel(name string) (Value, bool) {
 	}
 	if vm.Org != nil {
 		registry := labelRegistryForNamespace(vm.Org.Metadata, namespace)
+		registry, master, affected := localLabelTranslationScope(registry, vm.Org.Namespace, namespace, label)
 		if language := strings.TrimSpace(vm.currentUserInfoField("LanguageLocaleKey", "")); language != "" {
 			filtered := registry
 			filtered.Labels = labelsForLanguage(filtered.Labels, language)
 			if value, status := resource.ResolveLabel(filtered, vm.Org.Namespace, namespace, label); status != resource.LabelLookupMissing {
 				return String(value), true
 			}
+		}
+		if affected {
+			return String(master), true
 		}
 		if value, status := resource.ResolveLabel(registry, vm.Org.Namespace, namespace, label); status != resource.LabelLookupMissing {
 			return String(value), true

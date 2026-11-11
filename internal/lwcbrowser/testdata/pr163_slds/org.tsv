@@ -1,0 +1,39 @@
+case	api	route	result	outcome
+icon_small_success	59.0	browser	rendered	slds-icon slds-icon-text-success slds-icon_small
+icon_large_warning	59.0	browser	rendered	slds-icon slds-icon-text-warning slds-icon_large
+icon_invalid_defaults	59.0	browser	rendered	slds-icon slds-icon-text-default
+button_small_border_filled	59.0	browser	rendered	slds-button slds-button_icon slds-button_icon-small slds-button_icon-border-filled
+button_invalid_defaults	59.0	browser	rendered	slds-button slds-button_icon slds-button_icon-border
+modal_small	59.0	browser	rendered	slds-modal fix-slds-modal slds-modal_small slds-fade-in-open
+icon_small_success	67.0	browser	rendered	slds-icon slds-icon-text-success slds-icon_small
+icon_large_warning	67.0	browser	rendered	slds-icon slds-icon-text-warning slds-icon_large
+icon_invalid_defaults	67.0	browser	rendered	slds-icon slds-icon-text-default
+button_small_border_filled	67.0	browser	rendered	slds-button slds-button_icon slds-button_icon-small slds-button_icon-border-filled
+button_invalid_defaults	67.0	browser	rendered	slds-button slds-button_icon slds-button_icon-border
+modal_small	67.0	browser	rendered	slds-modal fix-slds-modal slds-modal_small slds-fade-in-open
+modal_container	59.0	browser	rendered	slds-modal__container slds-modal__container__reflow_resize
+modal_close_svg	59.0	browser	rendered	slds-button__icon slds-button__icon_large
+modal_container	67.0	browser	rendered	slds-modal__container slds-modal__container__reflow_resize
+modal_close_svg	67.0	browser	rendered	slds-button__icon slds-button__icon_large
+icon_inverse	59.0	browser	rendered	slds-icon slds-icon_x-small
+icon_tiny	59.0	browser	rendered	slds-icon slds-icon-text-default slds-icon_xx-small
+icon_account	59.0	browser	rendered	slds-icon
+button_bare	59.0	browser	rendered	slds-button slds-button_icon
+icon_inverse	67.0	browser	rendered	slds-icon slds-icon_x-small
+icon_tiny	67.0	browser	rendered	slds-icon slds-icon-text-default slds-icon_xx-small
+icon_account	67.0	browser	rendered	slds-icon
+button_bare	67.0	browser	rendered	slds-button slds-button_icon
+modal_default	59.0	browser	rendered	slds-modal fix-slds-modal slds-modal_medium slds-fade-in-open
+modal_medium	59.0	browser	rendered	slds-modal fix-slds-modal slds-modal_medium slds-fade-in-open
+modal_large	59.0	browser	rendered	slds-modal fix-slds-modal slds-modal_large slds-fade-in-open
+modal_default	67.0	browser	rendered	slds-modal fix-slds-modal slds-modal_medium slds-fade-in-open
+modal_medium	67.0	browser	rendered	slds-modal fix-slds-modal slds-modal_medium slds-fade-in-open
+modal_large	67.0	browser	rendered	slds-modal fix-slds-modal slds-modal_large slds-fade-in-open
+icon_error	59.0	browser	rendered	slds-icon slds-icon-text-error
+icon_light	59.0	browser	rendered	slds-icon slds-icon-text-default
+icon_bare	59.0	browser	rendered	slds-icon
+icon_brand	59.0	browser	rendered	slds-icon slds-icon-text-default
+icon_error	67.0	browser	rendered	slds-icon slds-icon-text-error
+icon_light	67.0	browser	rendered	slds-icon slds-icon-text-default
+icon_bare	67.0	browser	rendered	slds-icon
+icon_brand	67.0	browser	rendered	slds-icon slds-icon-text-default

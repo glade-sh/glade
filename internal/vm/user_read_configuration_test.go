@@ -35,14 +35,29 @@ func TestConfiguredUserReadPermissionScope(t *testing.T) {
 			t.Fatal("User read configuration granted Case access")
 		}
 	})
-	for _, shape := range []string{"guest", "external", "missing-user-type", "other-license", "missing-license"} {
+	// A Guest-type profile is no longer an unobserved actor: native rows give
+	// it User read, create and update (testdata/guest_user_contract/org.tsv,
+	// API 62.0 and 67.0), asserted in TestGuestUserContractNativeConformance.
+	t.Run("guest-observed", func(t *testing.T) {
+		machine := configuredUserReadMachine(t)
+		profiles := machine.Org.Objects["Profile"]
+		profile := profiles.Records["00e000000000002"]
+		profile.Fields["UserType"] = storage.StringValue("Guest")
+		profiles.Records[profile.ID] = profile
+		machine.Org.Objects["Profile"] = profiles
+		if !machine.currentUserObjectPermission("User", "isAccessible") {
+			t.Fatal("Guest-type profile lost the native User read")
+		}
+		if machine.currentUserObjectPermission("User", "isDeletable") || machine.currentUserObjectPermission("Case", "isAccessible") {
+			t.Fatal("Guest-type profile gained access beyond the native User rows")
+		}
+	})
+	for _, shape := range []string{"external", "missing-user-type", "other-license", "missing-license"} {
 		t.Run(shape, func(t *testing.T) {
 			machine := configuredUserReadMachine(t)
 			profiles := machine.Org.Objects["Profile"]
 			profile := profiles.Records["00e000000000002"]
 			switch shape {
-			case "guest":
-				profile.Fields["UserType"] = storage.StringValue("Guest")
 			case "external":
 				profile.Fields["UserType"] = storage.StringValue("CspLitePortal")
 			case "missing-user-type":

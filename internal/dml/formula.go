@@ -26,13 +26,14 @@ const (
 )
 
 type formulaValue struct {
-	kind       formulaKind
-	bool       bool
-	text       string
-	number     float64
-	numberText string
-	fieldType  storage.FieldType
-	display    string
+	kind                formulaKind
+	bool                bool
+	text                string
+	number              float64
+	numberText          string
+	fieldType           storage.FieldType
+	display             string
+	missingRelationship bool
 }
 
 func evaluateRecordFormula(formula string, record storage.Record) (bool, bool) {
@@ -255,6 +256,12 @@ func parseRecordFormulaValue(formula string, field storage.Field, org *storage.O
 
 func finishRecordFormulaValue(formula string, field storage.Field, value formulaValue, options FormulaEvaluationOptions) (storage.Value, bool, bool) {
 	if value.kind == formulaNull {
+		if !options.FormulaSurface && field.Type == storage.FieldCalculated &&
+			strings.EqualFold(field.DisplayType, "BOOLEAN") &&
+			strings.EqualFold(field.FormulaTreatBlanksAs, "BlankAsZero") && value.missingRelationship && value.fieldType == storage.FieldBoolean &&
+			formulaIsDirectReference(formula) {
+			return storage.BooleanValue(false), false, true
+		}
 		return storage.NullValue(), true, true
 	}
 	if options.TriggerRecord && isTextCalculatedField(field) && value.kind == formulaString {
@@ -271,6 +278,16 @@ func finishRecordFormulaValue(formula string, field storage.Field, value formula
 		return materializedFormulaSurfaceValue(field, value)
 	}
 	return materializedFormulaFieldValue(field, value)
+}
+
+func formulaIsDirectReference(formula string) bool {
+	tokens := tokenizeFormula(html.UnescapeString(formula))
+	start, end := 0, len(tokens)-1
+	for end-start >= 3 && tokens[start].text == "(" && tokens[end-1].text == ")" {
+		start++
+		end--
+	}
+	return end-start == 1 && tokens[start].typ == formulaTokenIdent && tokens[len(tokens)-1].typ == formulaTokenEOF
 }
 
 // formulaBRText is the value of BR() inside a formula (org capture
@@ -1988,7 +2005,9 @@ func formulaMissingRelationshipValue(org storage.OrgState, lookup storage.Field,
 				return value
 			}
 		}
-		return formulaFieldValueForDefinition(storage.Record{}, name, field)
+		value := formulaFieldValueForDefinition(storage.Record{}, name, field)
+		value.missingRelationship = true
+		return value
 	}
 	return formulaValue{kind: formulaNull}
 }

@@ -391,10 +391,18 @@ func (m *SourceMetadata) addSourceComponents(objectName, prefix string, paths []
 
 func (m *SourceMetadata) loadObjectMetadata() error {
 	definitions := map[string]storage.ObjectDefinition{}
+	customTextShapes := map[string]bool{}
 	if len(m.Project.ListViewFiles) > 0 {
 		loaded, err := schema.LoadProject(m.Project)
 		if err != nil {
 			return err
+		}
+		// Two independent native deployments captured this ordinary custom
+		// object shape. Other custom shapes retain the existing field lookup.
+		for _, object := range loaded.Objects {
+			if strings.HasSuffix(object.Name, "__c") && object.CustomSettingsType == "" && strings.EqualFold(object.NameField.Type, "Text") && object.NameField.Length == 0 && object.NameField.DisplayFormat == "" && strings.EqualFold(object.SharingModel, "ReadWrite") && !object.EnableActivities && !object.EnableHistory && !object.EnableSharing && len(object.Fields) == 0 && len(object.RecordTypes) == 0 {
+				customTextShapes[object.Name] = true
+			}
 		}
 		for name, descriptor := range sobject.BuildDescribeRegistry(loaded).Objects {
 			definitions[name] = sobject.ToObjectDefinition(descriptor)
@@ -405,8 +413,19 @@ func (m *SourceMetadata) loadObjectMetadata() error {
 		if err != nil {
 			return err
 		}
-		if definition, ok := definitions[view.ObjectName]; ok {
-			for _, column := range view.Columns {
+		definition, hasDefinition := definitions[view.ObjectName]
+		for _, column := range view.Columns {
+			object := view.ObjectName
+			if customTextShapes[object] {
+				object = ""
+			}
+			if accepted, known := listViewColumnNativeCatalog[listViewColumnCatalogKey{m.Project.SourceAPIVersion, object, column}]; known {
+				if !accepted {
+					return fmt.Errorf("In field: columns - no CustomField named %s.%s found", view.ObjectName, column)
+				}
+				continue
+			}
+			if hasDefinition {
 				// Relationship selectors retain their existing traversal. Plain
 				// columns resolve through schema, including inline and managed
 				// fields; a filename or suffix does not establish existence.

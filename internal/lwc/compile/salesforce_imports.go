@@ -20,6 +20,9 @@ type salesforceSchemaObject struct {
 }
 
 type salesforceImportConfig struct {
+	OwnNamespace      string                            `json:"ownNamespace,omitempty"`
+	OwnSchemaObjects  map[string]bool                   `json:"ownSchemaObjects,omitempty"`
+	OwnSchemaAliases  []string                          `json:"ownSchemaAliases,omitempty"`
 	Schema            map[string]salesforceSchemaObject `json:"schema"`
 	Labels            map[string]bool                   `json:"labels"`
 	Resources         map[string]bool                   `json:"resources"`
@@ -54,7 +57,8 @@ func loadSalesforceImports(p project.Project, references []string) (*salesforceI
 		return nil, err
 	}
 	cfg := &salesforceImportConfig{
-		Schema: map[string]salesforceSchemaObject{}, Labels: map[string]bool{},
+		OwnNamespace: p.Namespace,
+		Schema:       map[string]salesforceSchemaObject{}, Labels: map[string]bool{},
 		Resources: map[string]bool{}, Assets: map[string]bool{}, CustomPermissions: map[string]bool{},
 	}
 	// Only declared label sections participate in compiler reference lookup.
@@ -75,17 +79,73 @@ func loadSalesforceImports(p project.Project, references []string) (*salesforceI
 	if err != nil {
 		return nil, err
 	}
+	// Apply only the observed feature's contribution. Preserve the existing
+	// compiler schema for all other feature and edition overlays.
+	features := project.StandardFieldPolicyFeatures(p)
+	withoutCurrency := make([]string, 0, len(features))
+	multiCurrency := false
+	for _, feature := range features {
+		name, _, _ := strings.Cut(strings.TrimSpace(feature), ":")
+		if strings.EqualFold(name, "MultiCurrency") {
+			multiCurrency = true
+			continue
+		}
+		withoutCurrency = append(withoutCurrency, feature)
+	}
+	// Apply the feature once to the custom definitions already present in the
+	// project registry. Runtime shape logic determines which objects gain it.
+	describeRegistry := sobject.BuildDescribeRegistry(projectSchema)
+	customCurrencyOrg := storage.NewOrgState()
+	if multiCurrency {
+		for _, object := range describeRegistry.Objects {
+			definition := sobject.ToObjectDefinition(object)
+			if _, known := storage.ResolveKnownStandardObjectName(definition.APIName); !known {
+				customCurrencyOrg.Objects[definition.APIName] = storage.ObjectState{Definition: definition}
+			}
+		}
+		storage.ApplyOrgShape(&customCurrencyOrg, []string{"MultiCurrency"})
+	}
+	schemaEntry := func(definition storage.ObjectDefinition) salesforceSchemaObject {
+		entry := salesforceSchemaEntry(definition)
+		if !multiCurrency {
+			return entry
+		}
+		if _, known := storage.ResolveKnownStandardObjectName(definition.APIName); !known {
+			if object, ok := customCurrencyOrg.Objects[definition.APIName]; ok {
+				return salesforceSchemaEntry(object.Definition)
+			}
+			return entry
+		}
+		without, with := definition.Clone(), definition.Clone()
+		storage.EnsureStandardObjectFieldsForFeatures(&without, withoutCurrency)
+		storage.EnsureStandardObjectFieldsForFeatures(&with, features)
+		off, on := salesforceSchemaEntry(without), salesforceSchemaEntry(with)
+		for field := range on.Fields {
+			if !off.Fields[field] {
+				entry.Fields[field] = true
+			}
+		}
+		for relationship, targets := range on.Relationships {
+			if _, exists := off.Relationships[relationship]; !exists {
+				if _, declared := entry.Relationships[relationship]; !declared {
+					entry.Relationships[relationship] = targets
+				}
+			}
+		}
+		return entry
+	}
 	// Reuse the runtime's schema overlay, including implicit custom-object
 	// fields and its custom-setting/master-detail exclusions.
-	for name, object := range sobject.BuildDescribeRegistry(projectSchema).Objects {
-		cfg.Schema[name] = salesforceSchemaEntry(sobject.ToObjectDefinition(object))
+	for name, object := range describeRegistry.Objects {
+		cfg.Schema[name] = schemaEntry(sobject.ToObjectDefinition(object))
 	}
+	cfg.OwnSchemaObjects, cfg.OwnSchemaAliases = addOwnObjectImportAliases(cfg.Schema, p.Namespace)
 	loadObject := func(name string) {
 		if _, loaded := cfg.Schema[name]; loaded {
 			return
 		}
 		if definition, ok := storage.StandardObjectDefinition(name); ok && definition.APIName == name {
-			cfg.Schema[name] = salesforceSchemaEntry(definition)
+			cfg.Schema[name] = schemaEntry(definition)
 		}
 	}
 	for _, reference := range references {
@@ -119,6 +179,44 @@ func loadSalesforceImports(p project.Project, references []string) (*salesforceI
 		}
 	}
 	return cfg, nil
+}
+
+// addOwnObjectImportAliases supplies the unqualified names used in the
+// owning namespace for source objects and their own custom fields. A separately
+// declared unqualified object keeps priority. Other namespaces are unchanged.
+func addOwnObjectImportAliases(objects map[string]salesforceSchemaObject, namespace string) (map[string]bool, []string) {
+	own := make(map[string]bool)
+	var aliases []string
+	if namespace == "" {
+		return own, aliases
+	}
+	prefix := namespace + "__"
+	for name, object := range objects {
+		if !strings.HasPrefix(name, prefix) || !strings.Contains(name[len(prefix):], "__") {
+			continue
+		}
+		own[name] = true
+		short := name[len(prefix):]
+		if _, exists := objects[short]; exists {
+			continue
+		}
+		fields := make(map[string]bool, len(object.Fields))
+		for field, present := range object.Fields {
+			fields[field] = present
+		}
+		for field, present := range object.Fields {
+			if strings.HasPrefix(field, prefix) && strings.Contains(field[len(prefix):], "__") {
+				shortField := field[len(prefix):]
+				if _, exists := fields[shortField]; !exists {
+					fields[shortField] = present
+				}
+			}
+		}
+		objects[short] = salesforceSchemaObject{Fields: fields, Relationships: object.Relationships}
+		own[short] = true
+		aliases = append(aliases, short)
+	}
+	return own, aliases
 }
 
 // project.Load has already resolved package directories, dependency projects

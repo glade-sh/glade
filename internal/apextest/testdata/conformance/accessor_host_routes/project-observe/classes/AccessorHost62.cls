@@ -1,0 +1,12 @@
+@IsTest private class AccessorHost62 {
+ public class FiniteProbe { public Integer visits=0; public String value {get {visits++; if(visits==1) {String current=helper();} return 'value';} set;} public String helper(){return value;} }
+ public class RecursiveProbe { public String value {get {return helper();} set;} public String helper(){return value;} }
+ public class DirectProbe { public Integer visits=0; public String value {get {visits++; if(visits==1){String current=value;} return 'direct';} set;} }
+ @IsTest static void jsonFinite() {FiniteProbe p=new FiniteProbe();String s=JSON.serialize(p);System.assertEquals('OBS',s+'|visits='+p.visits);}
+ @IsTest static void jsonRecursive() {RecursiveProbe p=new RecursiveProbe();String s=JSON.serialize(p);System.assertEquals('OBS',s);}
+ @IsTest static void jsonDirect() {DirectProbe p=new DirectProbe();String s=JSON.serialize(p);System.assertEquals('OBS',s+'|visits='+p.visits);}
+ @IsTest static void formulaFinite() {HostFinite62 p=new HostFinite62();String result;try {FormulaEval.FormulaInstance f=Formula.builder().withType(HostFinite62.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('value').build();Object v=f.evaluate(p);result='value='+v+'|visits='+p.visits;}catch(Exception ex){result='error='+ex.getTypeName()+'|'+ex.getMessage();}System.assertEquals('OBS',result);}
+ @IsTest static void formulaRecursive() {HostRecursive62 p=new HostRecursive62();String result;try {FormulaEval.FormulaInstance f=Formula.builder().withType(HostRecursive62.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('value').build();Object v=f.evaluate(p);result='value='+v;}catch(Exception ex){result='error='+ex.getTypeName()+'|'+ex.getMessage();}System.assertEquals('OBS',result);}
+ @IsTest static void formulaDirect() {HostDirect62 p=new HostDirect62();String result;try {FormulaEval.FormulaInstance f=Formula.builder().withType(HostDirect62.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('value').build();Object v=f.evaluate(p);result='value='+v+'|visits='+p.visits;}catch(Exception ex){result='error='+ex.getTypeName()+'|'+ex.getMessage();}System.assertEquals('OBS',result);}
+ @IsTest static void formulaReject() {String result;try {Formula.builder().withType(HostFinite62.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('missing').build();result='accepted';}catch(Exception ex){result='error='+ex.getTypeName()+'|'+ex.getMessage();}System.assertEquals('OBS',result);}
+}

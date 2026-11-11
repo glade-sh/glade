@@ -1,0 +1,1 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>TextFormula__c</fullName><label>Text Formula</label><type>Text</type><formula>Holder__r.Name</formula><formulaTreatBlanksAs>BlankAsBlank</formulaTreatBlanksAs></CustomField>

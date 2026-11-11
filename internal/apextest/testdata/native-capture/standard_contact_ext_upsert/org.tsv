@@ -1,0 +1,97 @@
+source_api	case	observation
+62.0	stmt_upd	ok id=base
+62.0	stmt_upd.state	n=1 name=changed text=y | newExt n=0
+62.0	dbDefault_upd	ok created=false id=base
+62.0	dbDefault_upd.state	n=1 name=changed text=y | newExt n=0
+62.0	dbFalse_upd	ok created=false id=base
+62.0	dbFalse_upd.state	n=1 name=changed text=y | newExt n=0
+62.0	dbUser_upd	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context
+62.0	dbUser_upd.state	n=1 name=base text=null | newExt n=0
+62.0	dbFalseUser_upd	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context
+62.0	dbFalseUser_upd.state	n=1 name=base text=null | newExt n=0
+62.0	stmtUser_upd	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context
+62.0	stmtUser_upd.state	n=1 name=base text=null | newExt n=0
+62.0	stmt_ins	ok id=new
+62.0	stmt_ins.state	n=1 name=base text=null | newExt n=1 name=fresh text=y
+62.0	dbDefault_ins	ok created=true id=new
+62.0	dbDefault_ins.state	n=1 name=base text=null | newExt n=1 name=fresh text=y
+62.0	dbFalse_ins	ok created=true id=new
+62.0	dbFalse_ins.state	n=1 name=base text=null | newExt n=1 name=fresh text=y
+62.0	dbUser_ins	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context
+62.0	dbUser_ins.state	n=1 name=base text=null | newExt n=0
+62.0	dbFalseUser_ins	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context
+62.0	dbFalseUser_ins.state	n=1 name=base text=null | newExt n=0
+62.0	stmtUser_ins	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context
+62.0	stmtUser_ins.state	n=1 name=base text=null | newExt n=0
+62.0	stmt_ctl	ok id=base
+62.0	stmt_ctl.state	n=1 name=changed text=null | newExt n=0
+62.0	dbDefault_ctl	ok created=false id=base
+62.0	dbDefault_ctl.state	n=1 name=changed text=null | newExt n=0
+62.0	dbFalse_ctl	ok created=false id=base
+62.0	dbFalse_ctl.state	n=1 name=changed text=null | newExt n=0
+62.0	dbUser_ctl	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context
+62.0	dbUser_ctl.state	n=1 name=base text=null | newExt n=0
+62.0	dbFalseUser_ctl	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context
+62.0	dbFalseUser_ctl.state	n=1 name=base text=null | newExt n=0
+62.0	stmtUser_ctl	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context
+62.0	stmtUser_ctl.state	n=1 name=base text=null | newExt n=0
+62.0	stmt_updId	ok id=base
+62.0	stmt_updId.state	n=1 name=changed text=y | newExt n=0
+62.0	dbDefault_updId	ok created=false id=base
+62.0	dbDefault_updId.state	n=1 name=changed text=y | newExt n=0
+62.0	dbFalse_updId	ok created=false id=base
+62.0	dbFalse_updId.state	n=1 name=changed text=y | newExt n=0
+62.0	dbUser_updId	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context
+62.0	dbUser_updId.state	n=1 name=base text=null | newExt n=0
+62.0	dbFalseUser_updId	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context
+62.0	dbFalseUser_updId.state	n=1 name=base text=null | newExt n=0
+62.0	stmtUser_updId	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context
+62.0	stmtUser_updId.state	n=1 name=base text=null | newExt n=0
+67.0	stmt_upd	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context
+67.0	stmt_upd.state	n=1 name=base text=null | newExt n=0
+67.0	dbDefault_upd	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context
+67.0	dbDefault_upd.state	n=1 name=base text=null | newExt n=0
+67.0	dbFalse_upd	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context
+67.0	dbFalse_upd.state	n=1 name=base text=null | newExt n=0
+67.0	dbUser_upd	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context
+67.0	dbUser_upd.state	n=1 name=base text=null | newExt n=0
+67.0	dbFalseUser_upd	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context
+67.0	dbFalseUser_upd.state	n=1 name=base text=null | newExt n=0
+67.0	stmtUser_upd	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context
+67.0	stmtUser_upd.state	n=1 name=base text=null | newExt n=0
+67.0	stmt_ins	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context
+67.0	stmt_ins.state	n=1 name=base text=null | newExt n=0
+67.0	dbDefault_ins	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context
+67.0	dbDefault_ins.state	n=1 name=base text=null | newExt n=0
+67.0	dbFalse_ins	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context
+67.0	dbFalse_ins.state	n=1 name=base text=null | newExt n=0
+67.0	dbUser_ins	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context
+67.0	dbUser_ins.state	n=1 name=base text=null | newExt n=0
+67.0	dbFalseUser_ins	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context
+67.0	dbFalseUser_ins.state	n=1 name=base text=null | newExt n=0
+67.0	stmtUser_ins	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context
+67.0	stmtUser_ins.state	n=1 name=base text=null | newExt n=0
+67.0	stmt_ctl	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context
+67.0	stmt_ctl.state	n=1 name=base text=null | newExt n=0
+67.0	dbDefault_ctl	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context
+67.0	dbDefault_ctl.state	n=1 name=base text=null | newExt n=0
+67.0	dbFalse_ctl	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context
+67.0	dbFalse_ctl.state	n=1 name=base text=null | newExt n=0
+67.0	dbUser_ctl	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context
+67.0	dbUser_ctl.state	n=1 name=base text=null | newExt n=0
+67.0	dbFalseUser_ctl	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context
+67.0	dbFalseUser_ctl.state	n=1 name=base text=null | newExt n=0
+67.0	stmtUser_ctl	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context
+67.0	stmtUser_ctl.state	n=1 name=base text=null | newExt n=0
+67.0	stmt_updId	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context
+67.0	stmt_updId.state	n=1 name=base text=null | newExt n=0
+67.0	dbDefault_updId	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context
+67.0	dbDefault_updId.state	n=1 name=base text=null | newExt n=0
+67.0	dbFalse_updId	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context
+67.0	dbFalse_updId.state	n=1 name=base text=null | newExt n=0
+67.0	dbUser_updId	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context
+67.0	dbUser_updId.state	n=1 name=base text=null | newExt n=0
+67.0	dbFalseUser_updId	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context
+67.0	dbFalseUser_updId.state	n=1 name=base text=null | newExt n=0
+67.0	stmtUser_updId	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context
+67.0	stmtUser_updId.state	n=1 name=base text=null | newExt n=0

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomLabels xmlns="http://soap.sforce.com/2006/04/metadata">
+<labels><fullName>EmptyLabel</fullName><language>en_US</language><protected>false</protected><shortDescription>Empty label</shortDescription><value>Master empty</value></labels>
+<labels><fullName>MissingLabel</fullName><language>en_US</language><protected>false</protected><shortDescription>Missing label</shortDescription><value>Master missing</value></labels>
+<labels><fullName>FilledLabel</fullName><language>en_US</language><protected>false</protected><shortDescription>Filled label</shortDescription><value>Master filled</value></labels>
+</CustomLabels>

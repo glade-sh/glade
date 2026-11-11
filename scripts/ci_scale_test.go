@@ -425,7 +425,13 @@ if (( count < 3 )); then echo 'getaddrinfo ENOTFOUND'; exit 17; fi
 				})
 			}
 		}
-		want := map[string]int{"ci.yml": 3, "browser.yml": 1, "race.yml": 3}[filename]
+		if filename == "ci.yml" {
+			if count != 5 {
+				t.Errorf("%s browser install routes including PR = %d, want 5", filename, count)
+			}
+			count-- // The original full-suite count remains four: remaining Go packages, LWC and Visualforce shards, and two others.
+		}
+		want := map[string]int{"ci.yml": 4, "browser.yml": 1, "race.yml": 3}[filename]
 		if count != want {
 			t.Errorf("%s browser install routes = %d, want %d", filename, count, want)
 		}
