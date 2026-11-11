@@ -55,6 +55,9 @@ func TestCase349NativeConformance(t *testing.T) {
 			}
 			writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/fields/Balance__c.field-meta.xml"), readFixtureFile(t, "../../testdata/conformance/case349_unqueried/force-app/main/default/objects/ReadProbe__c/fields/Balance__c.field-meta.xml"))
 			writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/fields/ProbeKey__c.field-meta.xml"), readFixtureFile(t, "../../testdata/conformance/case349_external/force-app/main/default/objects/Account/fields/ProbeKey__c.field-meta.xml"))
+			// The upserts run in default mode; an ungranted custom key is not visible to the
+			// administrator (standard_ext_upsert rows), so the profile grants it.
+			writeFile(t, filepath.Join(root, "force-app/main/default/profiles/Admin.profile-meta.xml"), `<?xml version="1.0" encoding="UTF-8"?><Profile xmlns="http://soap.sforce.com/2006/04/metadata"><custom>false</custom><fieldPermissions><editable>true</editable><field>Account.ProbeKey__c</field><readable>true</readable></fieldPermissions></Profile>`)
 			writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/fields/PersonMemo__c.field-meta.xml"), readFixtureFile(t, "../../testdata/conformance/case349_mixed/force-app/main/default/objects/Account/fields/PersonMemo__c.field-meta.xml"))
 			source := `
 EqualityProbe__c a = new EqualityProbe__c(Key__c=1.25); insert a;

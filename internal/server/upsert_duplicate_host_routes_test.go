@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -147,11 +148,33 @@ func upsertHostServer(t *testing.T, api string) *Server {
 	}
 	srv := newLightningTestServer(t, &org, source)
 	configureVisualforceTestPrincipal(t, srv)
+	grantUpsertHostRouteKey(srv)
 	srv.SetProjectIndex(typesys.Build(p, schema))
 	if srv.runtimeErr != nil {
 		t.Fatalf("compile: %v", srv.runtimeErr)
 	}
 	return srv
+}
+
+// grantUpsertHostRouteKey assigns the principal a permission set granting
+// Contact.RouteKey__c, matching the native twin's setup: the
+// standard_ext_upsert_lightning rows (permset grant) succeed at 67.0, while
+// the ungranted administrator is denied on the external key.
+func grantUpsertHostRouteKey(srv *Server) {
+	const set = storage.ID("0PS000000000179")
+	for _, object := range []string{"PermissionSet", "PermissionSetAssignment", "FieldPermissions"} {
+		storage.EnsureStandardObject(srv.Org, object)
+	}
+	srv.Org.Objects["PermissionSet"].Records[set] = storage.Record{ID: set, Object: "PermissionSet", Fields: map[string]storage.Value{}}
+	// Lightning routes run as the org's default user, Visualforce as the test
+	// principal; the native twin assigns the set to the running admin.
+	n := 0
+	for id := range srv.Org.Objects["User"].Records {
+		n++
+		aid := storage.ID(fmt.Sprintf("0Pa00000000%04d", n))
+		srv.Org.Objects["PermissionSetAssignment"].Records[aid] = storage.Record{ID: aid, Object: "PermissionSetAssignment", Fields: map[string]storage.Value{"AssigneeId": storage.IDValue(id), "PermissionSetId": storage.IDValue(set)}}
+	}
+	srv.Org.Objects["FieldPermissions"].Records["0FP000000000179"] = storage.Record{ID: "0FP000000000179", Object: "FieldPermissions", Fields: map[string]storage.Value{"ParentId": storage.IDValue(set), "SObjectType": storage.StringValue("Contact"), "Field": storage.StringValue("Contact.RouteKey__c"), "PermissionsRead": storage.BooleanValue(true), "PermissionsEdit": storage.BooleanValue(true)}}
 }
 
 func upsertHostNativeExpected(t *testing.T, api, label, shape string) string {
