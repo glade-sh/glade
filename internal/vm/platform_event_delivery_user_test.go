@@ -104,8 +104,11 @@ func testPlatformEventSubscriberUserRoutes(t *testing.T, withFlow bool) {
 					}
 					// An Apex trigger exception is consumed by deliver() and
 					// stopTest (batch_event_async throw_* rows); a direct
-					// subscriber call and flow errors still return it.
-					if throws && (withFlow || route == "anonymous") {
+					// subscriber call still returns it. A Flow interview's
+					// unhandled fault is consumed on every route and rolls the
+					// interview back (platform_event_flow_elements/extended
+					// PE06C and PE06F, APIs 62.0 and 67.0).
+					if throws && !withFlow && route == "anonymous" {
 						if err == nil || !strings.Contains(err.Error(), "owned subscriber error") {
 							t.Fatalf("subscriber error: %v", err)
 						}
