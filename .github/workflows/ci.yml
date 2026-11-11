@@ -993,6 +993,76 @@ jobs:
           path: ci-artifacts/visualforce-history-input/
           if-no-files-found: error
 
+  test-binaries-apextest:
+    if: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
+    runs-on: ubuntu-24.04
+    outputs:
+      artifact-attempt: ${{ steps.bundle.outputs.attempt }}
+    timeout-minutes: 30
+    env:
+      GOMAXPROCS: "4"
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Validate benchmark cache pair
+        if: github.event_name == 'workflow_dispatch'
+        run: scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: "1.26.10"
+          cache: false
+      - name: Restore Go module cache
+        id: restore-go-mod-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-binaries-apextest-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-binaries-apextest-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+      - name: Restore Go build cache
+        id: restore-go-build-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: ~/.cache/go-build
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-binaries-apextest-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-binaries-apextest-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+      - name: Bind binary artifact attempt
+        id: bundle
+        run: echo "attempt=$GITHUB_RUN_ATTEMPT" >>"$GITHUB_OUTPUT"
+      - name: Build shared test binaries
+        env:
+          CGO_ENABLED: "1"
+        run: |
+          # The apextest shards wait only on this binary, so it builds apart
+          # from the other three and starts them sooner.
+          python3 scripts/ci-test-binary.py build /tmp/glade-test-binaries/apextest test ./internal/apextest
+      - name: Save Go module cache
+        if: success() && github.event_name != 'pull_request'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ steps.restore-go-mod-cache.outputs.cache-primary-key }}
+      - name: Save Go build cache
+        if: success() && github.event_name != 'pull_request'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: ~/.cache/go-build
+          key: ${{ steps.restore-go-build-cache.outputs.cache-primary-key }}
+      - name: Upload apextest test binary
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: test-binaries-apextest-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /tmp/glade-test-binaries/apextest/
+          compression-level: 1
+          retention-days: 1
+          if-no-files-found: error
+
   test-binaries:
     if: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
     runs-on: ubuntu-24.04
@@ -1000,7 +1070,7 @@ jobs:
       artifact-attempt: ${{ steps.bundle.outputs.attempt }}
     timeout-minutes: 30
     env:
-      # Four concurrent links on the four-CPU hosted runner.
+      # Three concurrent links on the four-CPU hosted runner.
       GOMAXPROCS: "4"
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -1038,11 +1108,12 @@ jobs:
         env:
           CGO_ENABLED: "1"
         run: |
-          # Every job in the run waits for these four binaries. Each package
+          # The sema, LWC compile and Visualforce jobs wait for these three
+          # binaries; the apextest binary has its own producer. Each package
           # links into its own directory and manifest, so build them at once;
           # the Go build cache serialises any shared compile between them.
           pids=()
-          for package in apextest sema lwc/compile visualforce; do
+          for package in sema lwc/compile visualforce; do
             slug="${package//\//-}"
             python3 scripts/ci-test-binary.py build "/tmp/glade-test-binaries/$slug" test "./internal/$package" &
             pids+=("$!")
@@ -1066,14 +1137,6 @@ jobs:
         with:
           path: ~/.cache/go-build
           key: ${{ steps.restore-go-build-cache.outputs.cache-primary-key }}
-      - name: Upload apextest test binary
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        with:
-          name: test-binaries-apextest-${{ github.run_id }}-${{ github.run_attempt }}
-          path: /tmp/glade-test-binaries/apextest/
-          compression-level: 1
-          retention-days: 1
-          if-no-files-found: error
       - name: Upload sema test binary
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
@@ -1102,7 +1165,6 @@ jobs:
   test:
     name: ${{ matrix.name }}
     if: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
-    needs: [lwc-compile-history-input, visualforce-history-input, test-binaries]
     runs-on: ubuntu-24.04
     timeout-minutes: 100
     strategy:
@@ -1111,6 +1173,134 @@ jobs:
         include:
           - lane: remaining-go
             name: test
+    env:
+      GLADE_ROOT: ${{ github.workspace }}
+      CGO_ENABLED: "1"
+      GOMAXPROCS: "2"
+      CI_LWC_COMPILE_HISTORY_PATH: /tmp/glade-lwc-compile-duration-history/lwc-compile-duration-history.json
+      CI_VISUALFORCE_HISTORY_PATH: /tmp/glade-visualforce-duration-history/visualforce-duration-history.json
+      # CI enables colored Babel code frames; native diagnostic fixtures are plain text.
+      NO_COLOR: "1"
+      GLADE_LWC_PLAYWRIGHT_MODULE: ${{ github.workspace }}/lwcruntime/node_modules/playwright
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Validate benchmark cache pair
+        if: github.event_name == 'workflow_dispatch'
+        run: scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: "1.26.10"
+          cache: false
+      - name: Restore Go module cache
+        id: restore-go-mod-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.lane }}
+          restore-keys: |
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+      - name: Report Go module cache restore
+        env:
+          MATCHED_KEY: ${{ steps.restore-go-mod-cache.outputs.cache-matched-key }}
+        run: |
+          if [[ -n "$MATCHED_KEY" ]]; then
+            echo "[cache] module restored-key=$MATCHED_KEY"
+          else
+            echo "[cache] module miss"
+          fi
+          bytes=0
+          if [[ -d "$HOME/go/pkg/mod" ]]; then
+            bytes="$(du -sb "$HOME/go/pkg/mod" 2>/dev/null | awk '{print $1}')" || bytes=0
+          fi
+          echo "[cache] module bytes=$bytes"
+      - name: Restore Go build cache
+        id: restore-go-build-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: ~/.cache/go-build
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.lane }}
+          restore-keys: |
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+      - name: Report Go build cache restore
+        env:
+          MATCHED_KEY: ${{ steps.restore-go-build-cache.outputs.cache-matched-key }}
+        run: |
+          if [[ -n "$MATCHED_KEY" ]]; then
+            echo "[cache] build restored-key=$MATCHED_KEY"
+          else
+            echo "[cache] build miss"
+          fi
+          bytes=0
+          if [[ -d "$HOME/.cache/go-build" ]]; then
+            bytes="$(du -sb "$HOME/.cache/go-build" 2>/dev/null | awk '{print $1}')" || bytes=0
+          fi
+          echo "[cache] build bytes=$bytes"
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: "22"
+      - name: Install LWC conformance dependencies
+        run: npm ci --prefix third_party/lwc
+      - name: Install browser conformance dependencies
+        run: npm ci --prefix lwcruntime
+      - name: Install conformance Chromium
+        run: scripts/ci-install-playwright.sh ./lwcruntime/node_modules/.bin/playwright install --with-deps chromium
+      - name: Run repository guards and remaining Go packages
+        if: matrix.lane == 'remaining-go'
+        run: |
+          # The repository guards scan the whole tree on one CPU for about
+          # fifteen minutes. Run them beside the remaining-go packages instead
+          # of ahead of them; each lane keeps its own events and resource files.
+          mkdir -p ci-artifacts/go-test
+          scripts/ci-resource-run.sh ci-artifacts/go-test/resource-repoguard.json repoguard -- scripts/ci-go-test.sh lane repoguard >ci-artifacts/go-test/repoguard.log 2>&1 &
+          guard_pid=$!
+          remaining_rc=0
+          scripts/ci-resource-run.sh ci-artifacts/go-test/resource-remaining-go.json remaining-go -- scripts/ci-go-test.sh lane remaining-go || remaining_rc=$?
+          guard_rc=0
+          wait "$guard_pid" || guard_rc=$?
+          echo "::group::repository guard lane (exit $guard_rc)"
+          cat ci-artifacts/go-test/repoguard.log
+          echo "::endgroup::"
+          if [[ "$remaining_rc" -ne 0 ]]; then
+            exit "$remaining_rc"
+          fi
+          exit "$guard_rc"
+      - name: Save Go module cache
+        if: success() && matrix.lane == 'remaining-go' && github.event_name != 'pull_request'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ steps.restore-go-mod-cache.outputs.cache-primary-key }}
+      - name: Save Go build cache
+        if: success() && matrix.lane == 'remaining-go' && github.event_name != 'pull_request'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: ~/.cache/go-build
+          key: ${{ steps.restore-go-build-cache.outputs.cache-primary-key }}
+      - name: Upload raw Go test events
+        if: always() && matrix.lane == 'remaining-go'
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: go-test-remaining-go
+          path: |
+            ci-artifacts/go-test/test-repoguard.json
+            ci-artifacts/go-test/test-remaining-go.json
+            ci-artifacts/go-test/resource-repoguard.json
+            ci-artifacts/go-test/resource-remaining-go.json
+          if-no-files-found: error
+  lwc-vf:
+    name: ${{ matrix.name }}
+    if: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
+    needs: [lwc-compile-history-input, visualforce-history-input, test-binaries]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 100
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
           - lane: lwc-compile-0
             name: LWC compile (0)
             shard: 0
@@ -1150,7 +1340,7 @@ jobs:
     env:
       GLADE_ROOT: ${{ github.workspace }}
       CGO_ENABLED: "1"
-      CI_TEST_BIN_DIR: ${{ matrix.lane != 'remaining-go' && '/tmp/glade-test-binaries' || '' }}
+      CI_TEST_BIN_DIR: /tmp/glade-test-binaries
       GOMAXPROCS: "2"
       CI_LWC_COMPILE_HISTORY_PATH: /tmp/glade-lwc-compile-duration-history/lwc-compile-duration-history.json
       CI_VISUALFORCE_HISTORY_PATH: /tmp/glade-visualforce-duration-history/visualforce-duration-history.json
@@ -1160,7 +1350,6 @@ jobs:
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Download shared test binaries
-        if: matrix.lane != 'remaining-go'
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: test-binaries-${{ startsWith(matrix.lane, 'lwc-compile-') && 'lwc-compile' || 'visualforce' }}-${{ github.run_id }}-${{ needs.test-binaries.outputs.artifact-attempt }}
@@ -1239,57 +1428,12 @@ jobs:
         run: npm ci --prefix lwcruntime
       - name: Install conformance Chromium
         run: scripts/ci-install-playwright.sh ./lwcruntime/node_modules/.bin/playwright install --with-deps chromium
-      - name: Run repository guards and remaining Go packages
-        if: matrix.lane == 'remaining-go'
-        run: |
-          # The repository guards scan the whole tree on one CPU for about
-          # fifteen minutes. Run them beside the remaining-go packages instead
-          # of ahead of them; each lane keeps its own events and resource files.
-          mkdir -p ci-artifacts/go-test
-          scripts/ci-resource-run.sh ci-artifacts/go-test/resource-repoguard.json repoguard -- scripts/ci-go-test.sh lane repoguard >ci-artifacts/go-test/repoguard.log 2>&1 &
-          guard_pid=$!
-          remaining_rc=0
-          scripts/ci-resource-run.sh ci-artifacts/go-test/resource-remaining-go.json remaining-go -- scripts/ci-go-test.sh lane remaining-go || remaining_rc=$?
-          guard_rc=0
-          wait "$guard_pid" || guard_rc=$?
-          echo "::group::repository guard lane (exit $guard_rc)"
-          cat ci-artifacts/go-test/repoguard.log
-          echo "::endgroup::"
-          if [[ "$remaining_rc" -ne 0 ]]; then
-            exit "$remaining_rc"
-          fi
-          exit "$guard_rc"
       - name: Test LWC compile shard
         if: startsWith(matrix.lane, 'lwc-compile-')
         run: scripts/ci-resource-run.sh ci-artifacts/lwc-compile-${{ matrix.shard }}/resource-usage.json lwc-compile-${{ matrix.shard }} -- scripts/ci-go-test.sh lwc-compile-shard "${{ matrix.shard }}"
       - name: Test Visualforce shard
         if: startsWith(matrix.lane, 'visualforce-')
         run: scripts/ci-resource-run.sh ci-artifacts/visualforce-${{ matrix.shard }}/resource-usage.json visualforce-${{ matrix.shard }} -- scripts/ci-go-test.sh visualforce-shard "${{ matrix.shard }}"
-      - name: Save Go module cache
-        if: success() && matrix.lane == 'remaining-go' && github.event_name != 'pull_request'
-        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        continue-on-error: true
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ steps.restore-go-mod-cache.outputs.cache-primary-key }}
-      - name: Save Go build cache
-        if: success() && matrix.lane == 'remaining-go' && github.event_name != 'pull_request'
-        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        continue-on-error: true
-        with:
-          path: ~/.cache/go-build
-          key: ${{ steps.restore-go-build-cache.outputs.cache-primary-key }}
-      - name: Upload raw Go test events
-        if: always() && matrix.lane == 'remaining-go'
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        with:
-          name: go-test-remaining-go
-          path: |
-            ci-artifacts/go-test/test-repoguard.json
-            ci-artifacts/go-test/test-remaining-go.json
-            ci-artifacts/go-test/resource-repoguard.json
-            ci-artifacts/go-test/resource-remaining-go.json
-          if-no-files-found: error
       - name: Upload LWC compile shard events
         if: always() && startsWith(matrix.lane, 'lwc-compile-')
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
@@ -1484,7 +1628,7 @@ jobs:
 
   apextest:
     if: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
-    needs: [apextest-history-input, test-binaries]
+    needs: [apextest-history-input, test-binaries-apextest]
     runs-on: ubuntu-24.04
     timeout-minutes: 100
     strategy:
@@ -1509,7 +1653,7 @@ jobs:
       - name: Download shared test binaries
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
-          name: test-binaries-apextest-${{ github.run_id }}-${{ needs.test-binaries.outputs.artifact-attempt }}
+          name: test-binaries-apextest-${{ github.run_id }}-${{ needs.test-binaries-apextest.outputs.artifact-attempt }}
           path: /tmp/glade-test-binaries
       - name: Validate benchmark cache pair
         if: github.event_name == 'workflow_dispatch'
@@ -1607,7 +1751,7 @@ jobs:
           if-no-files-found: error
 
   lwc-compile-history:
-    needs: test
+    needs: lwc-vf
     if: ${{ success() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -1634,7 +1778,7 @@ jobs:
           if-no-files-found: error
 
   visualforce-history:
-    needs: test
+    needs: lwc-vf
     if: ${{ success() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -1787,6 +1931,7 @@ jobs:
       - pr-tests
       - site
       - test-binaries
+      - test-binaries-apextest
       - vet
       - apextest
       - apextest-history
@@ -1803,6 +1948,7 @@ jobs:
       - server-and-playground
       - server-process-builder
       - test
+      - lwc-vf
       - smoke-runtime
       - smoke-distribution
       - leak-scan
