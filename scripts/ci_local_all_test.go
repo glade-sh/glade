@@ -124,6 +124,8 @@ func TestCILocalAllShardInventory(t *testing.T) {
 		}
 	}
 	delete(lanes, "remaining-go")
+	delete(lanes, "remaining-go-2")
+	delete(lanes, "repoguard")
 	if len(lanes) != 0 {
 		t.Errorf("unmapped matrix lanes: %v", lanes)
 	}

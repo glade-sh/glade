@@ -204,7 +204,7 @@ func TestCIResourceTelemetryCoversAuthoritativeLanes(t *testing.T) {
 		"sema-full":              {"resource-usage.json", "scripts/ci-go-test.sh sema-full"},
 		"server-and-playground":  {"resource-server-and-playground.json", "scripts/ci-go-test.sh lane server-and-playground"},
 		"server-process-builder": {"resource-server-process-builder.json", "scripts/ci-go-test.sh lane server-process-builder"},
-		"test":                   {"resource-repoguard.json", "resource-remaining-go.json", "scripts/ci-go-test.sh lane repoguard", "scripts/ci-go-test.sh lane remaining-go", "scripts/ci-go-test.sh visualforce-shard"},
+		"test":                   {"resource-repoguard.json", "resource-remaining-go.json", "resource-remaining-go-2.json", "scripts/ci-go-test.sh lane repoguard", "scripts/ci-go-test.sh lane remaining-go-1", "scripts/ci-go-test.sh lane remaining-go-2", "scripts/ci-go-test.sh visualforce-shard"},
 		"apextest":               {"resource-usage.json", "scripts/ci-go-test.sh apex-shard"},
 	}
 	for job, markers := range want {
@@ -217,8 +217,8 @@ func TestCIResourceTelemetryCoversAuthoritativeLanes(t *testing.T) {
 			t.Errorf("%s does not use resource wrapper", job)
 		}
 	}
-	if got := strings.Count(workflow, "scripts/ci-resource-run.sh"); got != 13 {
-		t.Fatalf("resource wrapper invocation count = %d, want 13", got)
+	if got := strings.Count(workflow, "scripts/ci-resource-run.sh"); got != 14 {
+		t.Fatalf("resource wrapper invocation count = %d, want 14", got)
 	}
 	// Standard hosted ubuntu-24.04 runners for public repositories have four
 	// CPUs. Using them needs no larger (paid) runner label; eight or more would.

@@ -19,7 +19,7 @@ func TestCIShardCountsBalanceOnCheckedInDurations(t *testing.T) {
 		pkg    string
 		shards int
 	}{
-		{"apextest", 12},
+		{"apextest", 24},
 		{"vm", 4},
 		{"gladecli", 4},
 		{"sema", 2},

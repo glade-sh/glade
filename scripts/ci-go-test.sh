@@ -265,6 +265,23 @@ package_lane_packages() {
 	awk -F '\t' -v lane="${lane}" '$1 == lane { print $2 }' <<<"${package_lane_rows}"
 }
 
+# CI splits the remaining-go lane across two jobs. Part 2 owns the packages
+# below (the two longest by measured seconds); part 1 owns every other package
+# in the lane, so a package added to the manifest runs exactly once without
+# editing this list.
+remaining_go_part_2_packages=(
+	./scripts
+	./internal/testutil/toolchaininstall
+)
+
+remaining_go_in_part_2() {
+	local candidate="$1" entry
+	for entry in "${remaining_go_part_2_packages[@]}"; do
+		[[ "${entry}" == "${candidate}" ]] && return 0
+	done
+	return 1
+}
+
 run_package_lane() {
 	local lane="$1"
 	# Full server validation requires L08. Ordinary CI explicitly routes it to
@@ -276,6 +293,11 @@ run_package_lane() {
 	local timeout="$3"
 	local skip_regex="${4:-}"
 	local routing="${5:-all}"
+	local part="${6:-}"
+	local artifact_lane="${lane}"
+	if [[ "${part}" == "2" ]]; then
+		artifact_lane="${lane}-2"
+	fi
 	local -a packages=()
 	local -a visualforce_packages=()
 	local -a args=()
@@ -285,7 +307,11 @@ run_package_lane() {
 		args+=(-p=1)
 	fi
 	while IFS= read -r pkg; do
-		if [[ "${routing}" == "ci-remaining" && ( "${pkg}" == "./internal/lwc/compile" || "${pkg}" == "./internal/visualforce" || "${pkg}" == "./internal/vm" ) ]]; then
+		if [[ "${part}" == "1" ]] && remaining_go_in_part_2 "${pkg}"; then
+			continue
+		elif [[ "${part}" == "2" ]] && ! remaining_go_in_part_2 "${pkg}"; then
+			continue
+		elif [[ "${routing}" == "ci-remaining" && ( "${pkg}" == "./internal/lwc/compile" || "${pkg}" == "./internal/visualforce" || "${pkg}" == "./internal/vm" ) ]]; then
 			continue
 		elif [[ "${lane}" == "remaining-go" && "${kind}" == "test" && "${pkg}" == "./internal/visualforce" ]]; then
 			visualforce_packages+=("${pkg}")
@@ -306,12 +332,12 @@ run_package_lane() {
 	fi
 	local lane_rc=0 visualforce_rc=0
 	if [[ "${#packages[@]}" -gt 0 ]]; then
-		run_json_with_heartbeat "go test ${lane}" "$(testlog_artifact "${kind}" "${lane}")" "${args[@]}" "${packages[@]}" || lane_rc="$?"
+		run_json_with_heartbeat "go test ${lane}" "$(testlog_artifact "${kind}" "${artifact_lane}")" "${args[@]}" "${packages[@]}" || lane_rc="$?"
 	fi
 	if [[ "${#visualforce_packages[@]}" -gt 0 ]]; then
 		# Browser conformance makes Visualforce longer than the other packages.
 		# Keep its local-release budget without extending every package's timeout.
-		run_json_with_heartbeat "go test ${lane} Visualforce" "$(testlog_artifact "${kind}" "${lane}-visualforce")" -timeout=70m "${visualforce_packages[@]}" || visualforce_rc="$?"
+		run_json_with_heartbeat "go test ${lane} Visualforce" "$(testlog_artifact "${kind}" "${artifact_lane}-visualforce")" -timeout=70m "${visualforce_packages[@]}" || visualforce_rc="$?"
 	fi
 	if [[ "${lane_rc}" -ne 0 ]]; then
 		return "${lane_rc}"
@@ -563,8 +589,10 @@ run_ci_package_lane() {
 			# server-and-playground lane skips the same pattern.
 			run_json_with_heartbeat "go test server-process-builder" "$(testlog_artifact test server-process-builder)" -timeout=45m -run '^TestProcessBuilder.*Hosts$' ./internal/server
 			;;
-		remaining-go)
-			run_package_lane "${lane}" test 30m '^(?:TestBuildCompileConfigAPIVersionMatrix|TestLWCModuleAvailabilityFollowsBundleAPIVersion|TestComplexTemplateExpressionsFollowBundleAPIVersion|TestHTMLDetailsNameFollowsBundleAPIVersion|TestCompilePreservesDeclaredAPI67|TestCompileProjectLWCBundles|TestCompileRewritesTemplateStylesheetImports|TestCompileEmitsSiblingJSModules|TestCompileEmitsUtilityOnlyLWCModules|TestCompileEmitsAdditionalHTMLTemplateModules|TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate|TestCompileEnablesLwcOnDirective|TestSetupBundleIncludesLabelsSibling|TestSetupImportMapIncludesLocalComponents|TestValidateRootFindsRepoCheckout|TestInstallFromCWDSkipsGlobalShareAsSource|TestInstallFromCopiesToolchain|TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare|TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser|TestLWCAPI67RegistrationRunsInBrowser)$' ci-remaining
+		remaining-go|remaining-go-1|remaining-go-2)
+			local part="${lane#remaining-go-}"
+			[[ "${part}" == "${lane}" ]] && part=""
+			run_package_lane "remaining-go" test 30m '^(?:TestBuildCompileConfigAPIVersionMatrix|TestLWCModuleAvailabilityFollowsBundleAPIVersion|TestComplexTemplateExpressionsFollowBundleAPIVersion|TestHTMLDetailsNameFollowsBundleAPIVersion|TestCompilePreservesDeclaredAPI67|TestCompileProjectLWCBundles|TestCompileRewritesTemplateStylesheetImports|TestCompileEmitsSiblingJSModules|TestCompileEmitsUtilityOnlyLWCModules|TestCompileEmitsAdditionalHTMLTemplateModules|TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate|TestCompileEnablesLwcOnDirective|TestSetupBundleIncludesLabelsSibling|TestSetupImportMapIncludesLocalComponents|TestValidateRootFindsRepoCheckout|TestInstallFromCWDSkipsGlobalShareAsSource|TestInstallFromCopiesToolchain|TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare|TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser|TestLWCAPI67RegistrationRunsInBrowser)$' ci-remaining "${part}"
 			;;
 		sema|repoguard)
 			run_named_package_lane "${lane}"
@@ -1251,7 +1279,10 @@ run_test_matrix_shard() {
 	fi
 	if [[ "${mode}" == "apex-ci" ]]; then
 		test_args=(-count=1 -timeout=90m)
-		if [[ "${shard_count}" == "12" ]]; then
+		if [[ "${shard_count}" == "24" ]]; then
+			index_pattern='^([0-9]|1[0-9]|2[0-3])$'
+			index_description='between 0 and 23'
+		elif [[ "${shard_count}" == "12" ]]; then
 			index_pattern='^([0-9]|1[01])$'
 			index_description='between 0 and 11'
 		else
@@ -1261,8 +1292,8 @@ run_test_matrix_shard() {
 	fi
 	if [[ "${mode}" == "lwc-compile" ]]; then
 		test_args=(-count=1 -timeout=90m)
-		index_pattern='^[0-7]$'
-		index_description='between 0 and 7'
+		index_pattern='^([0-9]|1[01])$'
+		index_description='between 0 and 11'
 	fi
 	if [[ "${mode}" == "visualforce" ]]; then
 		test_args=(-count=1 -timeout=70m)
@@ -1396,15 +1427,17 @@ run_apextest_matrix_shard() {
 		label="local-release Apex"
 		shard_count="2"
 		index_pattern='^[01]$'
-	elif [[ "${shard_count}" == "6" || "${shard_count}" == "12" ]]; then
+	elif [[ "${shard_count}" == "6" || "${shard_count}" == "12" || "${shard_count}" == "24" ]]; then
 		mode="apex-ci"
-		if [[ "${shard_count}" == "12" ]]; then
+		if [[ "${shard_count}" == "24" ]]; then
+			index_pattern='^([0-9]|1[0-9]|2[0-3])$'
+		elif [[ "${shard_count}" == "12" ]]; then
 			index_pattern='^([0-9]|1[01])$'
 		else
 			index_pattern='^[0-5]$'
 		fi
 	elif [[ "${shard_count}" != "2" ]]; then
-		echo "CI_APEXTEST_SHARDS must be 2, 6, or 12" >&2
+		echo "CI_APEXTEST_SHARDS must be 2, 6, 12, or 24" >&2
 		return 2
 	fi
 	local artifact_suffix="invalid"
@@ -1417,7 +1450,7 @@ run_apextest_matrix_shard() {
 	# go test -vet=off -trimpath -list '^Test' "${apex_package}"
 	# planner+=(--history "${CI_APEXTEST_HISTORY_PATH}")
 	# run_json_with_heartbeat "go test Apex shard ${index}" "${events}" -timeout=90m -trimpath -run "${regex}" "${apex_package}"
-	# CI opts into six or twelve shards; local helpers default to two shards.
+	# CI opts into six, twelve or twenty-four shards; local helpers default to two shards.
 	# About 280 measured-plan Apex minutes plus 25% test growth
 	# estimates 58 minutes per CI shard, or 87 with a 1.5x margin.
 	# Allow 90 minutes for cold history and runner variance.
@@ -1435,8 +1468,8 @@ run_sema_matrix_shard() {
 run_lwc_compile_matrix_shard() {
 	local index="${1:-}"
 	local artifact_suffix="invalid"
-	[[ "${index}" =~ ^[0-7]$ ]] && artifact_suffix="${index}"
-	run_test_matrix_shard "${index}" "github.com/glade-sh/glade/internal/lwc/compile" "./internal/lwc/compile" "remaining-go" "LWC compile" "${CI_LWC_COMPILE_ARTIFACT_DIR:-ci-artifacts/lwc-compile-${artifact_suffix}}" "${CI_LWC_COMPILE_HISTORY_PATH:-}" "1" "lwc-compile" "8"
+	[[ "${index}" =~ ^([0-9]|1[01])$ ]] && artifact_suffix="${index}"
+	run_test_matrix_shard "${index}" "github.com/glade-sh/glade/internal/lwc/compile" "./internal/lwc/compile" "remaining-go" "LWC compile" "${CI_LWC_COMPILE_ARTIFACT_DIR:-ci-artifacts/lwc-compile-${artifact_suffix}}" "${CI_LWC_COMPILE_HISTORY_PATH:-}" "1" "lwc-compile" "12"
 }
 
 run_visualforce_matrix_shard() {
@@ -1792,11 +1825,13 @@ refresh_apextest_history() {
 	# Keep the two-shard local train interface; CI supplies output then all dirs.
 	if [[ "$#" -eq 3 ]]; then
 		refresh_test_history "github.com/glade-sh/glade/internal/apextest" "Apex" "apextest" "0" "2" "$3" "$1" "$2"
-	elif [[ "$#" -eq 7 || "$#" -eq 13 ]]; then
+	elif [[ "$#" -eq 7 || "$#" -eq 13 || "$#" -eq 25 ]]; then
 		local output="$1"
 		local shard_count="6"
 		if [[ "$#" -eq 13 ]]; then
 			shard_count="12"
+		elif [[ "$#" -eq 25 ]]; then
+			shard_count="24"
 		fi
 		shift
 		refresh_test_history "github.com/glade-sh/glade/internal/apextest" "Apex" "apextest" "0" "${shard_count}" "${output}" "$@"
@@ -2024,7 +2059,7 @@ main() {
 			;;
 		lane)
 			if [[ "$#" -ne 2 ]]; then
-				echo "usage: scripts/ci-go-test.sh lane {workflow-lint|gladecli|sema|server-and-playground|server-process-builder|repoguard|remaining-go}" >&2
+				echo "usage: scripts/ci-go-test.sh lane {workflow-lint|gladecli|sema|server-and-playground|server-process-builder|repoguard|remaining-go|remaining-go-1|remaining-go-2}" >&2
 				return 2
 			fi
 			run_ci_package_lane "$2"
@@ -2045,13 +2080,14 @@ main() {
 			run_sema_matrix_shard "${2:-}"
 			;;
 		lwc-compile-shard)
-			if [[ "$#" -ne 2 ]]; then echo "usage: scripts/ci-go-test.sh lwc-compile-shard INDEX (0-7)" >&2; return 2; fi
+			if [[ "$#" -ne 2 ]]; then echo "usage: scripts/ci-go-test.sh lwc-compile-shard INDEX (0-11)" >&2; return 2; fi
 			run_lwc_compile_matrix_shard "${2:-}"
 			;;
 		lwc-compile-history-refresh)
-			if [[ "$#" -ne 10 ]]; then echo "usage: scripts/ci-go-test.sh lwc-compile-history-refresh OUTPUT SHARD_0_DIR ... SHARD_7_DIR" >&2; return 2; fi
+			# CI publishes twelve shards; the eight-shard predecessor layout stays accepted so history bootstraps across the change.
+			if [[ "$#" -ne 14 && "$#" -ne 10 ]]; then echo "usage: scripts/ci-go-test.sh lwc-compile-history-refresh OUTPUT SHARD_0_DIR ... SHARD_11_DIR (or SHARD_7_DIR)" >&2; return 2; fi
 			shift
-			refresh_test_history "github.com/glade-sh/glade/internal/lwc/compile" "LWC compile" "lwc-compile" "0" "8" "$@"
+			refresh_test_history "github.com/glade-sh/glade/internal/lwc/compile" "LWC compile" "lwc-compile" "0" "$(( $# - 1 ))" "$@"
 			;;
 		visualforce-shard)
 			if [[ "$#" -ne 2 ]]; then echo "usage: scripts/ci-go-test.sh visualforce-shard INDEX (0-3)" >&2; return 2; fi
@@ -2102,7 +2138,7 @@ main() {
 			validate_sema_equivalence "${2:-}" "${3:-}" "${4:-}" "${5:-}"
 			;;
 		*)
-			echo "usage: scripts/ci-go-test.sh [core|test|race|local-release|local-release-lane NAME|lane NAME|node-integration|apex-shard 0-11|apex-history-refresh OUTPUT SHARD_0_DIR ... SHARD_N_DIR (or SHARD_0_DIR SHARD_1_DIR OUTPUT)|sema-shard 0|1|lwc-compile-shard 0-7|lwc-compile-history-refresh OUTPUT SHARD_0_DIR ... SHARD_7_DIR|visualforce-shard 0-3|visualforce-history-refresh OUTPUT SHARD_0_DIR ... SHARD_3_DIR|vm-shard 0-3|vm-history-refresh OUTPUT SHARD_0_DIR ... SHARD_3_DIR|gladecli-shard 0-3|gladecli-history-refresh OUTPUT SHARD_0_DIR ... SHARD_3_DIR|visualforce-history-bootstrap OUTPUT EVENTS|package-summary LANE LABEL EVENTS SUMMARY METADATA PACKAGE...|sema-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT|sema-full|sema-equivalence SHARD_0_DIR SHARD_1_DIR FULL_DIR OUTPUT]" >&2
+			echo "usage: scripts/ci-go-test.sh [core|test|race|local-release|local-release-lane NAME|lane NAME|node-integration|apex-shard 0-23|apex-history-refresh OUTPUT SHARD_0_DIR ... SHARD_N_DIR (or SHARD_0_DIR SHARD_1_DIR OUTPUT)|sema-shard 0|1|lwc-compile-shard 0-11|lwc-compile-history-refresh OUTPUT SHARD_0_DIR ... SHARD_11_DIR|visualforce-shard 0-3|visualforce-history-refresh OUTPUT SHARD_0_DIR ... SHARD_3_DIR|vm-shard 0-3|vm-history-refresh OUTPUT SHARD_0_DIR ... SHARD_3_DIR|gladecli-shard 0-3|gladecli-history-refresh OUTPUT SHARD_0_DIR ... SHARD_3_DIR|visualforce-history-bootstrap OUTPUT EVENTS|package-summary LANE LABEL EVENTS SUMMARY METADATA PACKAGE...|sema-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT|sema-full|sema-equivalence SHARD_0_DIR SHARD_1_DIR FULL_DIR OUTPUT]" >&2
 			return 2
 			;;
 	esac

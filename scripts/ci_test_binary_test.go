@@ -204,7 +204,7 @@ func TestCISharedBinaryWorkflowWiring(t *testing.T) {
 func TestCISharedBinaryRemainingLaneKeepsOrdinaryGoExecution(t *testing.T) {
 	_, jobs := readCIWorkflow(t)
 	// This lane executes many packages and downloads no package binary artifact.
-	if !strings.Contains(jobs["test"], `CI_TEST_BIN_DIR: ${{ matrix.lane != 'remaining-go' && '/tmp/glade-test-binaries' || '' }}`) {
+	if !strings.Contains(jobs["test"], `CI_TEST_BIN_DIR: ${{ (startsWith(matrix.lane, 'lwc-compile-') || startsWith(matrix.lane, 'visualforce-')) && '/tmp/glade-test-binaries' || '' }}`) {
 		t.Fatal("remaining-go has no shared artifact and must keep the ordinary multi-package Go runner")
 	}
 }

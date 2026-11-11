@@ -138,7 +138,7 @@ const lwcCompileFixturePackage = "github.com/glade-sh/glade/internal/lwc/compile
 
 func lwcCompileFixtureDiscovery() string {
 	names := append([]string{}, nodeIntegrationTests[lwcCompileFixturePackage]...)
-	for index := range 8 {
+	for index := range 12 {
 		names = append(names, fmt.Sprintf("TestFamily%d", index))
 	}
 	sort.Strings(names)
@@ -148,7 +148,7 @@ func lwcCompileFixtureDiscovery() string {
 func lwcCompileFixturePlan(t *testing.T) string {
 	t.Helper()
 	var shards []map[string]any
-	for index := range 8 {
+	for index := range 12 {
 		name := fmt.Sprintf("TestFamily%d", index)
 		shards = append(shards, map[string]any{"index": index, "tests": []string{name}, "estimatedDurationMillis": 0, "regex": "^(?:" + name + ")$"})
 	}
@@ -196,7 +196,7 @@ cat "$FIXTURE_ROOT/plan"
 
 func TestLWCCompileShardsPartitionDiscoveryAndNodeAuthority(t *testing.T) {
 	var union []string
-	for index := range 8 {
+	for index := range 12 {
 		name := fmt.Sprintf("TestFamily%d", index)
 		out, err, artifacts := runLWCCompileShardFixture(t, strconv.Itoa(index), lwcCompileFixtureDiscovery(), lwcCompileFixturePlan(t), lwcCompilePassEvent(name), 0)
 		if err != nil {
@@ -215,12 +215,12 @@ func TestLWCCompileShardsPartitionDiscoveryAndNodeAuthority(t *testing.T) {
 		if calls != wantCall {
 			t.Errorf("shard %d native call = %q, want %q", index, calls, wantCall)
 		}
-		if args := read("../planner-args"); !strings.Contains(args, "--package "+lwcCompileFixturePackage+" --shards 8 --tests "+filepath.Join(artifacts, "discovery.txt")) {
+		if args := read("../planner-args"); !strings.Contains(args, "--package "+lwcCompileFixturePackage+" --shards 12 --tests "+filepath.Join(artifacts, "discovery.txt")) {
 			t.Errorf("planner args = %q", args)
 		}
 		full, filtered := strings.Fields(read("discovery-full.txt")), strings.Fields(read("discovery.txt"))
-		if len(full) != 20 || len(filtered) != 8 {
-			t.Fatalf("full/filtered counts = %d/%d, want 20/8", len(full), len(filtered))
+		if len(full) != 24 || len(filtered) != 12 {
+			t.Fatalf("full/filtered counts = %d/%d, want 24/12", len(full), len(filtered))
 		}
 		for _, authority := range nodeIntegrationTests[lwcCompileFixturePackage] {
 			if !strings.Contains(read("node-integration-expected.tsv"), lwcCompileFixturePackage+"\t"+authority+"\n") {
@@ -252,7 +252,7 @@ func TestLWCCompileShardsPartitionDiscoveryAndNodeAuthority(t *testing.T) {
 		}
 	}
 	var want []string
-	for index := range 8 {
+	for index := range 12 {
 		want = append(want, fmt.Sprintf("TestFamily%d", index))
 	}
 	if !reflect.DeepEqual(union, want) {
@@ -295,7 +295,7 @@ func TestLWCCompileShardRejectsIncompleteCoverageAndPreservesNativeFailure(t *te
 			}
 		})
 	}
-	for _, index := range []string{"", "8", "-1", "01"} {
+	for _, index := range []string{"", "12", "-1", "01"} {
 		out, err, artifacts := runLWCCompileShardFixture(t, index, discovery, plan, events, 0)
 		exitErr, ok := err.(*exec.ExitError)
 		if !ok || exitErr.ExitCode() != 2 {
@@ -946,8 +946,8 @@ func TestCIApexDurationHistoryWorkflowOwnership(t *testing.T) {
 	if strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0") != 27 {
 		t.Errorf("cache save count = %d, want existing DAG and history writers plus the Apex retry profile writer", strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0"))
 	}
-	if strings.Count(workflow, "shard: [0, 1]") != 1 || strings.Count(workflow, "shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]") != 1 {
-		t.Error("workflow must contain the twelve-shard Apex and two-shard sema matrices")
+	if strings.Count(workflow, "shard: [0, 1]") != 1 || strings.Count(workflow, "shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]") != 1 {
+		t.Error("workflow must contain the twenty-four-shard Apex and two-shard sema matrices")
 	}
 	if matches, _ := filepath.Glob(filepath.Join("..", "**", "*duration-history*.json")); len(matches) != 0 {
 		t.Fatalf("tracked duration history candidates: %v", matches)
@@ -3373,7 +3373,7 @@ func TestCINodeIntegrationWorkflowAndPurePartition(t *testing.T) {
 	if got := strings.Count(workflow, "npm ci --prefix lwcruntime"); got != 2 {
 		t.Errorf("browser conformance npm install count = %d, want one per conformance lane", got)
 	}
-	for name, lane := range map[string]string{"server-and-playground": "server-and-playground", "test": "remaining-go"} {
+	for name, lane := range map[string]string{"server-and-playground": "server-and-playground", "test": "remaining-go-1"} {
 		job := jobs[name]
 		previous := -1
 		for _, marker := range []string{
@@ -3407,10 +3407,10 @@ func TestCILWCCompileMatrixRoutesAllShardsAndPreservesFailureEvidence(t *testing
 	if !strings.Contains(job, "      NO_COLOR: \"1\"") {
 		t.Error("conformance diagnostics must stay plain text when CI enables terminal colors")
 	}
-	if strings.Count(job, "          - lane:") != 13 || !strings.Contains(job, "          - lane: remaining-go\n            name: test\n") {
-		t.Error("test matrix must contain one remaining-go row, eight compile shards and four Visualforce shards")
+	if strings.Count(job, "          - lane:") != 19 || !strings.Contains(job, "          - lane: remaining-go\n            name: test\n          - lane: remaining-go-2\n            name: test (2)\n          - lane: repoguard\n            name: Repo guard\n") {
+		t.Error("test matrix must contain two remaining-go rows, one repoguard row, twelve compile shards and four Visualforce shards")
 	}
-	for index := range 8 {
+	for index := range 12 {
 		row := fmt.Sprintf("          - lane: lwc-compile-%d\n            name: LWC compile (%d)\n            shard: %d\n", index, index, index)
 		if strings.Count(job, row) != 1 {
 			t.Errorf("matrix must contain shard %d exactly once", index)
@@ -3422,13 +3422,14 @@ func TestCILWCCompileMatrixRoutesAllShardsAndPreservesFailureEvidence(t *testing
 			t.Errorf("compile step missing %q", marker)
 		}
 	}
-	guards := workflowStepBlockText(job, "      - name: Run repository guards and remaining Go packages")
-	if !strings.Contains(guards, "if: matrix.lane == 'remaining-go'") {
-		t.Error("repoguard and remaining-go must only run in the remaining-go matrix row")
-	}
-	for _, lane := range []string{"repoguard", "remaining-go"} {
-		if !strings.Contains(guards, "scripts/ci-resource-run.sh ci-artifacts/go-test/resource-"+lane+".json "+lane+" -- scripts/ci-go-test.sh lane "+lane) {
-			t.Errorf("%s lane command missing from the remaining-go step", lane)
+	for _, row := range []struct{ step, lane, command string }{
+		{"Run repository guards", "repoguard", "scripts/ci-resource-run.sh ci-artifacts/go-test/resource-repoguard.json repoguard -- scripts/ci-go-test.sh lane repoguard"},
+		{"Run remaining Go packages (part 1)", "remaining-go", "scripts/ci-resource-run.sh ci-artifacts/go-test/resource-remaining-go.json remaining-go -- scripts/ci-go-test.sh lane remaining-go-1"},
+		{"Run remaining Go packages (part 2)", "remaining-go-2", "scripts/ci-resource-run.sh ci-artifacts/go-test/resource-remaining-go-2.json remaining-go-2 -- scripts/ci-go-test.sh lane remaining-go-2"},
+	} {
+		step := workflowStepBlockText(job, "      - name: "+row.step)
+		if !strings.Contains(step, "if: matrix.lane == '"+row.lane+"'") || !strings.Contains(step, row.command) {
+			t.Errorf("%s must run only in the %s row with %q", row.step, row.lane, row.command)
 		}
 	}
 	upload := workflowStepBlockText(job, "      - name: Upload LWC compile shard events")
@@ -3616,7 +3617,7 @@ func TestCIParallelDAGLaneCommandsAndArtifacts(t *testing.T) {
 		"node-integration":       {"scripts/ci-go-test.sh node-integration"},
 		"server-and-playground":  {"scripts/ci-go-test.sh lane server-and-playground"},
 		"server-process-builder": {"scripts/ci-go-test.sh lane server-process-builder"},
-		"test":                   {"scripts/ci-go-test.sh lane repoguard", "scripts/ci-go-test.sh lane remaining-go"},
+		"test":                   {"scripts/ci-go-test.sh lane repoguard", "scripts/ci-go-test.sh lane remaining-go-1", "scripts/ci-go-test.sh lane remaining-go-2"},
 	}
 	for jobName, commands := range wantLaneCommands {
 		for _, command := range commands {
@@ -3635,7 +3636,7 @@ func TestCIParallelDAGLaneCommandsAndArtifacts(t *testing.T) {
 		"node-integration":       "go-test-node-integration",
 		"server-and-playground":  "go-test-server-and-playground",
 		"server-process-builder": "go-test-server-process-builder",
-		"test":                   "go-test-remaining-go",
+		"test":                   "go-test-${{ matrix.lane }}",
 	}
 	for jobName, artifact := range wantArtifacts {
 		job := jobs[jobName]
@@ -3650,8 +3651,7 @@ func TestCIParallelDAGLaneCommandsAndArtifacts(t *testing.T) {
 		"ci-artifacts/go-test-node-integration/test-node-integration.json",
 		"ci-artifacts/go-test/test-server-and-playground.json",
 		"ci-artifacts/go-test/test-server-process-builder.json",
-		"ci-artifacts/go-test/test-repoguard.json",
-		"ci-artifacts/go-test/test-remaining-go.json",
+		"ci-artifacts/go-test/test-${{ matrix.lane }}.json",
 	} {
 		if count := strings.Count(workflow, path); count != 1 {
 			t.Errorf("raw event path %q count = %d, want 1", path, count)
@@ -3724,7 +3724,7 @@ func TestCIParallelDAGPreservesApexAndUsesRootCheckout(t *testing.T) {
 	input := jobs["apextest-history-input"]
 	history := jobs["apextest-history"]
 	for _, marker := range []string{
-		"needs: [apextest-history-input, test-binaries]", "shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]", "timeout-minutes: 100", "scripts/ci-go-test.sh apex-shard \"${{ matrix.shard }}\"",
+		"needs: [apextest-history-input, test-binaries]", "shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]", "timeout-minutes: 100", "scripts/ci-go-test.sh apex-shard \"${{ matrix.shard }}\"",
 		"CI_APEXTEST_HISTORY_PATH", "actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0", "name: apextest-history-input",
 		"actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0", "name: apex-shard-${{ matrix.shard }}",
 	} {
@@ -3758,7 +3758,7 @@ func TestCIParallelDAGPreservesApexAndUsesRootCheckout(t *testing.T) {
 	testJob := jobs["test"]
 	for _, marker := range []string{
 		"actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3", "hashFiles('go.sum')",
-		"ci-artifacts/go-test/test-repoguard.json", "ci-artifacts/go-test/test-remaining-go.json",
+		"ci-artifacts/go-test/test-${{ matrix.lane }}.json", "ci-artifacts/go-test/resource-${{ matrix.lane }}.json",
 	} {
 		if !strings.Contains(testJob, marker) {
 			t.Errorf("root test checkout contract missing %q", marker)
@@ -3854,10 +3854,10 @@ func TestCIGoTestLogWrapperIsWired(t *testing.T) {
 		"actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3",
 		"actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0",
 		"actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0",
-		"scripts/ci-go-test.sh lane remaining-go",
+		"scripts/ci-go-test.sh lane remaining-go-1",
 		"apextest:",
 		"matrix:",
-		"shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]",
+		"shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]",
 		"cache: false",
 		"go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-apextest-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}",
 		"go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-apextest-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}",
@@ -3883,7 +3883,7 @@ func TestCIGoTestLogWrapperIsWired(t *testing.T) {
 	if strings.Count(workflowText, "go test -json") != 0 {
 		t.Fatal("ci.yml must delegate the native Apex run to the tested wrapper")
 	}
-	if strings.Count(workflowText, "shard: [0, 1]") != 1 || strings.Count(workflowText, "shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]") != 1 {
+	if strings.Count(workflowText, "shard: [0, 1]") != 1 || strings.Count(workflowText, "shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]") != 1 {
 		t.Fatal("ci.yml must define twelve Apex cells and two sema cells")
 	}
 	if strings.Contains(workflowText, ".ci-artifacts") || strings.Contains(scriptText, ".ci-artifacts") {

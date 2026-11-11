@@ -880,7 +880,8 @@ jobs:
       - name: Bootstrap validated LWC duration history
         if: steps.predecessor.outputs.run_id != ''
         run: |
-          if ! scripts/ci-go-test.sh lwc-compile-history-refresh "$CI_LWC_COMPILE_HISTORY_PATH" /tmp/lwc-compile-predecessor/go-test-lwc-compile-shard-{0..7}; then
+          # The predecessor may predate the twelve-shard layout; accept either.
+          if ! scripts/ci-go-test.sh lwc-compile-history-refresh "$CI_LWC_COMPILE_HISTORY_PATH" /tmp/lwc-compile-predecessor/go-test-lwc-compile-shard-{0..11} && ! scripts/ci-go-test.sh lwc-compile-history-refresh "$CI_LWC_COMPILE_HISTORY_PATH" /tmp/lwc-compile-predecessor/go-test-lwc-compile-shard-{0..7}; then
             rm -f "$CI_LWC_COMPILE_HISTORY_PATH"
             echo "::warning::Predecessor LWC timing evidence unavailable or invalid; using deterministic scheduling fallback"
           fi
@@ -1111,6 +1112,10 @@ jobs:
         include:
           - lane: remaining-go
             name: test
+          - lane: remaining-go-2
+            name: test (2)
+          - lane: repoguard
+            name: Repo guard
           - lane: lwc-compile-0
             name: LWC compile (0)
             shard: 0
@@ -1135,6 +1140,18 @@ jobs:
           - lane: lwc-compile-7
             name: LWC compile (7)
             shard: 7
+          - lane: lwc-compile-8
+            name: LWC compile (8)
+            shard: 8
+          - lane: lwc-compile-9
+            name: LWC compile (9)
+            shard: 9
+          - lane: lwc-compile-10
+            name: LWC compile (10)
+            shard: 10
+          - lane: lwc-compile-11
+            name: LWC compile (11)
+            shard: 11
           - lane: visualforce-0
             name: Visualforce (0)
             shard: 0
@@ -1150,7 +1167,7 @@ jobs:
     env:
       GLADE_ROOT: ${{ github.workspace }}
       CGO_ENABLED: "1"
-      CI_TEST_BIN_DIR: ${{ matrix.lane != 'remaining-go' && '/tmp/glade-test-binaries' || '' }}
+      CI_TEST_BIN_DIR: ${{ (startsWith(matrix.lane, 'lwc-compile-') || startsWith(matrix.lane, 'visualforce-')) && '/tmp/glade-test-binaries' || '' }}
       GOMAXPROCS: "2"
       CI_LWC_COMPILE_HISTORY_PATH: /tmp/glade-lwc-compile-duration-history/lwc-compile-duration-history.json
       CI_VISUALFORCE_HISTORY_PATH: /tmp/glade-visualforce-duration-history/visualforce-duration-history.json
@@ -1160,7 +1177,7 @@ jobs:
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Download shared test binaries
-        if: matrix.lane != 'remaining-go'
+        if: startsWith(matrix.lane, 'lwc-compile-') || startsWith(matrix.lane, 'visualforce-')
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: test-binaries-${{ startsWith(matrix.lane, 'lwc-compile-') && 'lwc-compile' || 'visualforce' }}-${{ github.run_id }}-${{ needs.test-binaries.outputs.artifact-attempt }}
@@ -1239,26 +1256,21 @@ jobs:
         run: npm ci --prefix lwcruntime
       - name: Install conformance Chromium
         run: scripts/ci-install-playwright.sh ./lwcruntime/node_modules/.bin/playwright install --with-deps chromium
-      - name: Run repository guards and remaining Go packages
+      - name: Run repository guards
+        if: matrix.lane == 'repoguard'
+        run: |
+          mkdir -p ci-artifacts/go-test
+          scripts/ci-resource-run.sh ci-artifacts/go-test/resource-repoguard.json repoguard -- scripts/ci-go-test.sh lane repoguard
+      - name: Run remaining Go packages (part 1)
         if: matrix.lane == 'remaining-go'
         run: |
-          # The repository guards scan the whole tree on one CPU for about
-          # fifteen minutes. Run them beside the remaining-go packages instead
-          # of ahead of them; each lane keeps its own events and resource files.
           mkdir -p ci-artifacts/go-test
-          scripts/ci-resource-run.sh ci-artifacts/go-test/resource-repoguard.json repoguard -- scripts/ci-go-test.sh lane repoguard >ci-artifacts/go-test/repoguard.log 2>&1 &
-          guard_pid=$!
-          remaining_rc=0
-          scripts/ci-resource-run.sh ci-artifacts/go-test/resource-remaining-go.json remaining-go -- scripts/ci-go-test.sh lane remaining-go || remaining_rc=$?
-          guard_rc=0
-          wait "$guard_pid" || guard_rc=$?
-          echo "::group::repository guard lane (exit $guard_rc)"
-          cat ci-artifacts/go-test/repoguard.log
-          echo "::endgroup::"
-          if [[ "$remaining_rc" -ne 0 ]]; then
-            exit "$remaining_rc"
-          fi
-          exit "$guard_rc"
+          scripts/ci-resource-run.sh ci-artifacts/go-test/resource-remaining-go.json remaining-go -- scripts/ci-go-test.sh lane remaining-go-1
+      - name: Run remaining Go packages (part 2)
+        if: matrix.lane == 'remaining-go-2'
+        run: |
+          mkdir -p ci-artifacts/go-test
+          scripts/ci-resource-run.sh ci-artifacts/go-test/resource-remaining-go-2.json remaining-go-2 -- scripts/ci-go-test.sh lane remaining-go-2
       - name: Test LWC compile shard
         if: startsWith(matrix.lane, 'lwc-compile-')
         run: scripts/ci-resource-run.sh ci-artifacts/lwc-compile-${{ matrix.shard }}/resource-usage.json lwc-compile-${{ matrix.shard }} -- scripts/ci-go-test.sh lwc-compile-shard "${{ matrix.shard }}"
@@ -1280,15 +1292,13 @@ jobs:
           path: ~/.cache/go-build
           key: ${{ steps.restore-go-build-cache.outputs.cache-primary-key }}
       - name: Upload raw Go test events
-        if: always() && matrix.lane == 'remaining-go'
+        if: always() && (matrix.lane == 'remaining-go' || matrix.lane == 'remaining-go-2' || matrix.lane == 'repoguard')
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: go-test-remaining-go
+          name: go-test-${{ matrix.lane }}
           path: |
-            ci-artifacts/go-test/test-repoguard.json
-            ci-artifacts/go-test/test-remaining-go.json
-            ci-artifacts/go-test/resource-repoguard.json
-            ci-artifacts/go-test/resource-remaining-go.json
+            ci-artifacts/go-test/test-${{ matrix.lane }}.json
+            ci-artifacts/go-test/resource-${{ matrix.lane }}.json
           if-no-files-found: error
       - name: Upload LWC compile shard events
         if: always() && startsWith(matrix.lane, 'lwc-compile-')
@@ -1490,7 +1500,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
     env:
       CGO_ENABLED: "1"
       CI_TEST_BIN_DIR: /tmp/glade-test-binaries
@@ -1502,7 +1512,7 @@ jobs:
       GOMAXPROCS: "4"
       GOMEMLIMIT: "12GiB"
       CI_APEXTEST_ARTIFACT_DIR: ci-artifacts/apextest-${{ matrix.shard }}
-      CI_APEXTEST_SHARDS: "12"
+      CI_APEXTEST_SHARDS: "24"
       CI_APEXTEST_HISTORY_PATH: /tmp/glade-apextest-duration-history/apextest-duration-history.json
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -1578,7 +1588,7 @@ jobs:
           path: /tmp/apextest-history-input
       - name: Refresh and guard Apex duration history
         id: refresh
-        run: scripts/ci-go-test.sh apex-history-refresh /tmp/glade-apextest-duration-history/apextest-duration-history.json /tmp/apextest-history-input/apex-shard-0 /tmp/apextest-history-input/apex-shard-1 /tmp/apextest-history-input/apex-shard-2 /tmp/apextest-history-input/apex-shard-3 /tmp/apextest-history-input/apex-shard-4 /tmp/apextest-history-input/apex-shard-5 /tmp/apextest-history-input/apex-shard-6 /tmp/apextest-history-input/apex-shard-7 /tmp/apextest-history-input/apex-shard-8 /tmp/apextest-history-input/apex-shard-9 /tmp/apextest-history-input/apex-shard-10 /tmp/apextest-history-input/apex-shard-11
+        run: scripts/ci-go-test.sh apex-history-refresh /tmp/glade-apextest-duration-history/apextest-duration-history.json /tmp/apextest-history-input/apex-shard-0 /tmp/apextest-history-input/apex-shard-1 /tmp/apextest-history-input/apex-shard-2 /tmp/apextest-history-input/apex-shard-3 /tmp/apextest-history-input/apex-shard-4 /tmp/apextest-history-input/apex-shard-5 /tmp/apextest-history-input/apex-shard-6 /tmp/apextest-history-input/apex-shard-7 /tmp/apextest-history-input/apex-shard-8 /tmp/apextest-history-input/apex-shard-9 /tmp/apextest-history-input/apex-shard-10 /tmp/apextest-history-input/apex-shard-11 /tmp/apextest-history-input/apex-shard-12 /tmp/apextest-history-input/apex-shard-13 /tmp/apextest-history-input/apex-shard-14 /tmp/apextest-history-input/apex-shard-15 /tmp/apextest-history-input/apex-shard-16 /tmp/apextest-history-input/apex-shard-17 /tmp/apextest-history-input/apex-shard-18 /tmp/apextest-history-input/apex-shard-19 /tmp/apextest-history-input/apex-shard-20 /tmp/apextest-history-input/apex-shard-21 /tmp/apextest-history-input/apex-shard-22 /tmp/apextest-history-input/apex-shard-23
       - name: Cache Apex scheduling profile after balance failure
         if: ${{ failure() && steps.refresh.outcome == 'failure' && (github.event_name != 'workflow_dispatch' || inputs.benchmark_cache_pair == 0) }}
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
@@ -1619,7 +1629,7 @@ jobs:
           pattern: go-test-lwc-compile-shard-*
           path: /tmp/lwc-compile-history-input
       - name: Refresh and guard LWC compile duration history
-        run: scripts/ci-go-test.sh lwc-compile-history-refresh /tmp/glade-lwc-compile-duration-history/lwc-compile-duration-history.json /tmp/lwc-compile-history-input/go-test-lwc-compile-shard-{0..7}
+        run: scripts/ci-go-test.sh lwc-compile-history-refresh /tmp/glade-lwc-compile-duration-history/lwc-compile-duration-history.json /tmp/lwc-compile-history-input/go-test-lwc-compile-shard-{0..11}
       - name: Save LWC compile duration history
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         continue-on-error: true

@@ -15,7 +15,7 @@ import threading
 import time
 
 ROOT = Path(__file__).resolve().parent.parent
-SHARDS = {'apextest': 12, 'sema': 2, 'lwc-compile': 8, 'visualforce': 4, 'gladecli': 4, 'vm': 4}
+SHARDS = {'apextest': 24, 'sema': 2, 'lwc-compile': 12, 'visualforce': 4, 'gladecli': 4, 'vm': 4}
 # CodeQL runs from Security, not Required CI; the local codeql step below stays as an extra check.
 MAPPING = {
     'workflow-lint': 'workflow-lint', 'site': 'site',
@@ -178,7 +178,8 @@ class Runner:
         self.command('server-and-playground', [g,'lane','server-and-playground'], prerequisites=[go,node,lwc,candidate,runtime,browser])
         self.command('server-process-builder', [g,'lane','server-process-builder'], prerequisites=[go])
         self.command('test-guard', [g,'lane','repoguard'], prerequisites=[go])
-        self.command('test-remaining-go', [g,'lane','remaining-go'], prerequisites=[go,node,lwc,candidate,runtime,browser])
+        self.command('test-remaining-go', [g,'lane','remaining-go-1'], prerequisites=[go,node,lwc,candidate,runtime,browser])
+        self.command('test-remaining-go-2', [g,'lane','remaining-go-2'], prerequisites=[go,node,lwc,candidate,runtime,browser])
         self.shell('nested-sources', '(cd third_party/glade-apex-parser && go test -trimpath ./... && CGO_ENABLED=0 go test -trimpath ./...); npm test --prefix internal/playground/web; npm run build --prefix internal/playground/web; test -z "$(git status --porcelain --untracked-files=all -- internal/playground/static)"', prerequisites=[go,node,npm_dep('playground')])
         self.shell('smoke-runtime', 'go build -o "$CI_LOCAL_LOG_ROOT/glade" ./cmd/glade; scripts/smoke-runtime.sh "$CI_LOCAL_LOG_ROOT/glade"', env={'CI_LOCAL_LOG_ROOT':str(self.root)}, prerequisites=[go])
         self.command('smoke-distribution', ['scripts/smoke-distribution.sh'], prerequisites=[go,node,lwc,candidate])

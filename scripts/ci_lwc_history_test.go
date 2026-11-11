@@ -183,12 +183,12 @@ func TestCILWCHistoryWorkflowSharesInputAndRequiresUnion(t *testing.T) {
 	if strings.Contains(matrix, "lwc-compile-duration-history-v1") {
 		t.Error("workers must not independently restore mutable timing inputs")
 	}
-	for _, marker := range []string{"actions: read", "-f head_sha=\"$CI_DURATION_HISTORY_CACHE_REF\"", "-f status=success", "run-id: ${{ steps.predecessor.outputs.run_id }}", "go-test-lwc-compile-shard-{0..7}", "using deterministic scheduling fallback"} {
+	for _, marker := range []string{"actions: read", "-f head_sha=\"$CI_DURATION_HISTORY_CACHE_REF\"", "-f status=success", "run-id: ${{ steps.predecessor.outputs.run_id }}", "go-test-lwc-compile-shard-{0..11}", "go-test-lwc-compile-shard-{0..7}", "using deterministic scheduling fallback"} {
 		if !strings.Contains(input, marker) {
 			t.Errorf("validated predecessor bootstrap missing %q", marker)
 		}
 	}
-	for _, marker := range []string{"needs: test", "if: ${{ success() }}", "pattern: go-test-lwc-compile-shard-*", "lwc-compile-history-refresh", "go-test-lwc-compile-shard-{0..7}", "actions/cache/save@"} {
+	for _, marker := range []string{"needs: test", "if: ${{ success() }}", "pattern: go-test-lwc-compile-shard-*", "lwc-compile-history-refresh", "go-test-lwc-compile-shard-{0..11}", "actions/cache/save@"} {
 		if !strings.Contains(refresh, marker) {
 			t.Errorf("validated eight-shard publisher missing %q", marker)
 		}

@@ -84,7 +84,7 @@ class LocalAllTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             calls = self.capture_plan(pathlib.Path(directory))
         workflow = (ROOT / '.github/workflows/ci.yml').read_text()
-        for job, workflow_job, lane in [('server-and-playground', 'server-and-playground', 'server-and-playground'), ('test-guard', 'test', 'repoguard'), ('test-remaining-go', 'test', 'remaining-go')]:
+        for job, workflow_job, lane in [('server-and-playground', 'server-and-playground', 'server-and-playground'), ('test-guard', 'test', 'repoguard'), ('test-remaining-go', 'test', 'remaining-go-1'), ('test-remaining-go-2', 'test', 'remaining-go-2')]:
             match = re.search(r'(?ms)^  ' + re.escape(workflow_job) + r':\n(.*?)(?=^  [a-z0-9-]+:|\Z)', workflow)
             self.assertIsNotNone(match, workflow_job)
             self.assertIn('scripts/ci-go-test.sh lane ' + lane, match.group(1))
@@ -328,11 +328,11 @@ except KeyboardInterrupt:
             calls = self.capture_plan(root)
             env = calls['apextest-dispatch'][1]['env']
             self.assertEqual(env.get('CI_APEXTEST_HISTORY_COMPLETE'), '1')
-            self.assertEqual(env['CI_APEXTEST_SHARDS'], '12')
+            self.assertEqual(env['CI_APEXTEST_SHARDS'], '24')
 
     def test_apex_ci_history_collects_deferred_union(self):
         package = 'github.com/glade-sh/glade/internal/apextest'
-        names = ['TestA%02d' % i for i in range(11)] + ['TestRunDataWeaveTypedAdmitted']
+        names = ['TestA%02d' % i for i in range(23)] + ['TestRunDataWeaveTypedAdmitted']
         shards = [dict(index=i, tests=[name], estimatedDurationMillis=0, regex='^(?:' + name + ')$') for i, name in enumerate(names)]
         plan = dict(version=1, package=package, historyUsed=False, shards=shards)
         with tempfile.TemporaryDirectory() as directory:
@@ -345,7 +345,7 @@ except KeyboardInterrupt:
                 (fixture / 'discovery.txt').write_text('\n'.join(names) + '\n')
                 (fixture / 'plan.json').write_text(json.dumps(plan))
                 (fixture / 'selected-shard.json').write_text(json.dumps(shards[i]))
-                deferred = i == 11
+                deferred = i == 23
                 (fixture / 'validation-summary.json').write_text(json.dumps(dict(valid=True, expected=[name], passed=[] if deferred else [name], errors=[], deferred=[name] if deferred else [])))
                 events = []
                 if deferred:
@@ -473,7 +473,7 @@ except KeyboardInterrupt:
                 self.assertFalse(r.browser_available('lwcruntime'))
 
     def test_shard_inventory_matches_workflow(self):
-        self.assertEqual(runner.SHARDS, {'apextest': 12, 'sema': 2, 'lwc-compile': 8, 'visualforce': 4, 'gladecli': 4, 'vm': 4})
+        self.assertEqual(runner.SHARDS, {'apextest': 24, 'sema': 2, 'lwc-compile': 12, 'visualforce': 4, 'gladecli': 4, 'vm': 4})
 
 
 if __name__ == '__main__':
