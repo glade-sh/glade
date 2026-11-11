@@ -679,6 +679,7 @@ func (vm *VM) runTriggersByObject(timing, op string, records, oldRecords []stora
 	return nil, updated, nil
 }
 func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, result *Result) ([]dml.Result, error) {
+	vm.work.triggerRuns++
 	appendTraceLazy(result, "apex.trigger."+trigger.Name, "apex.trigger", func() map[string]any {
 		return vm.traceTriggerArgs(trigger, len(records))
 	})

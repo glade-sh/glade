@@ -20,6 +20,9 @@ type Engine struct {
 	UserHasCustomPermission func(string) bool
 	Options                 Options
 	FlowActionInvoker       func(storage.FlowAction, storage.Record) error
+	// FlowMatchObserver is called once each time a flow rule matches a record.
+	// It is advisory and must not change execution.
+	FlowMatchObserver func()
 	// FlowPathEnqueuer submits matched deferred paths to the host transaction.
 	FlowPathEnqueuer func(string, storage.FlowRule, storage.FlowPath, storage.ID)
 	// SystemTimestampObserver reports generated audit timestamps to the host

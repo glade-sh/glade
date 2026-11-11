@@ -74,6 +74,7 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (_ execOutcome,
 		}()
 	}
 	for seq, inst := range program.Instructions {
+		vm.work.instructions++
 		if err := vm.incrementCPUBudget(1); err != nil {
 			return execOutcome{}, err
 		}
@@ -983,6 +984,7 @@ func (vm *VM) executeWhile(source string, inst ir.Instruction, result *Result) (
 		if err := vm.ctx.Err(); err != nil {
 			return execOutcome{}, err
 		}
+		vm.work.loopIterations++
 		if err := vm.incrementCPUBudget(1); err != nil {
 			return execOutcome{}, err
 		}
@@ -1278,6 +1280,7 @@ func (vm *VM) chargeLoopIteration(kind string, iteration int) error {
 	if iteration >= maxLoopIterations && (vm.limitMode != LimitModeStrict || vm.limitCaps.CPUTimeMS < 0) {
 		return fmt.Errorf("%s loop exceeded %d iterations", kind, maxLoopIterations)
 	}
+	vm.work.loopIterations++
 	return vm.incrementCPUBudget(1)
 }
 

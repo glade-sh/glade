@@ -212,6 +212,7 @@ type VM struct {
 	limitMode       LimitMode
 	limitViolations []LimitViolation
 	cpuBudgetUsed   int
+	work            workState
 	fakeNow         time.Time
 	lastNow         time.Time
 	hasLastNow      bool
@@ -2328,6 +2329,9 @@ func (vm *VM) newDMLEngine(result *Result) dml.Engine {
 	vm.ensureMetadataCacheGeneration()
 	engine := dml.NewEngine(vm.Org)
 	engine.UserHasCustomPermission = vm.currentUserHasDirectPermission
+	if vm.work.tracking {
+		engine.FlowMatchObserver = func() { vm.work.flowRuns++ }
+	}
 	engine.PermissionUserFields = vm.currentUserPermissionFields()
 	if vm.dmlSummaryByChild == nil {
 		vm.dmlSummaryByChild = dml.NewSummaryRelationCache()
