@@ -4,7 +4,7 @@
 
 Planned changes are listed below.
 
-- **Lightning action async work (Apex API 62.0 and 67.0).** Queueable, `@future` and platform-event work enqueued by an `@AuraEnabled` method called from an LWC or Aura component now runs after the action commits, sees the action's changes, and is discarded if the action throws or rolls back to an earlier savepoint. A failing job rolls back only itself and does not change the action's result. Under strict limit mode the 50-job caps apply to the action. This replaces the previous `UnsupportedFeature` rejection. `Database.*Async` DML in an action is still rejected. Captured at 62.0 and 67.0.
+- **Lightning action async work (Apex API 62.0 and 67.0).** Queueable, `@future` and platform-event work enqueued by an `@AuraEnabled` method called from an LWC or Aura component now runs after the action commits, sees the action's changes, and is discarded if the action throws or rolls back to an earlier savepoint. A failing job rolls back only itself and does not change the action's result. Under strict limit mode the 50-job caps apply to the action. This replaces the previous `UnsupportedFeature` rejection. `Database.*Async` DML, `Database.executeBatch` and `System.schedule` in an action are still rejected. Captured at 62.0 and 67.0.
 - **REST composite responses.** Missing-field errors and collection or tree rollback responses now follow the captured Salesforce status codes, error messages, and result shapes.
 
 ## v0.3.5

@@ -57,3 +57,6 @@ nothing is committed or run.
 - `Database.insertAsync` and other async DML from an action.
 - Futures and events enqueued before a savepoint that the action then rolls
   back to.
+- `Database.executeBatch`, `System.schedule` and `System.scheduleBatch` from
+  an action. No rows: they stay rejected as UnsupportedFeature (also when a
+  drained Queueable calls them), and nothing from the action is committed.
