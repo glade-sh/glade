@@ -2099,7 +2099,7 @@ main() {
 			run_gladecli_matrix_shard "${2:-}"
 			;;
 		gladecli-history-refresh)
-			if [[ "$#" -ne 6 && "$#" -ne 3 ]]; then echo "usage: scripts/ci-go-test.sh gladecli-history-refresh OUTPUT SHARD_0_DIR SHARD_1_DIR (or ... SHARD_3_DIR)" >&2; return 2; fi
+			if [[ "$#" -ne 6 && "$#" -ne 4 ]]; then echo "usage: scripts/ci-go-test.sh gladecli-history-refresh OUTPUT SHARD_0_DIR SHARD_1_DIR (or ... SHARD_3_DIR)" >&2; return 2; fi
 			shift
 			refresh_gladecli_history "$@"
 			;;
