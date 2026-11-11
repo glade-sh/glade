@@ -1,7 +1,9 @@
 import { createElement } from "lwc";
 import { defineOverlayComponent, overlayRoot, restoreOverlayFocus, removeOverlay } from "./overlay.mjs";
-import { getIconPath } from "../lightning/iconUtils.mjs";
 
+// Hosts serve this module with only its shell siblings, so the utility close
+// sprite path is kept here rather than imported from the lightning shims.
+const closeIconHref = "/assets/icons/utility-sprite/svg/symbols.svg#close";
 const modalStates = new WeakMap();
 const activeModals = new Set();
 let nextHeading = 1;
@@ -72,7 +74,7 @@ export function openModal(Component, options) {
   svg.setAttribute("viewBox", "0 0 520 520");
   svg.setAttribute("focusable", "false");
   const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
-  use.setAttribute("href", getIconPath("utility:close"));
+  use.setAttribute("href", closeIconHref);
   svg.appendChild(use);
   const assistive = document.createElement("span");
   assistive.className = "slds-assistive-text";
