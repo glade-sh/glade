@@ -94,7 +94,7 @@
     "./internal/gladecli": 92,
     "./internal/gladehome": 8,
     "./internal/playground": 4,
-    "./internal/pluginhost": 4,
+    "./internal/pluginhost": 5,
     "./internal/sema": 656,
     "./internal/server": 12,
     "./internal/soql": 4,
