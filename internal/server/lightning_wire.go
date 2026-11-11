@@ -181,6 +181,14 @@ func (s *Server) invokeLightningApex(w http.ResponseWriter, r *http.Request, cla
 			})
 			return
 		}
+		// A drained job may itself try an uncaptured kind (executeBatch,
+		// System.schedule). Nothing is committed yet, so reject the action.
+		if machine.HasRejectedAsyncAction() {
+			writeWireJSON(w, lwcbrowser.WireResponse{
+				Error: apexWireInvocationError("", "UnsupportedFeature", className, methodName, rawParams, "asynchronous Apex work cannot be committed by the local synchronous LWC action boundary", http.StatusNotImplemented),
+			})
+			return
+		}
 	}
 	if !orgStateEqual(workingOrg, *s.Org) {
 		if err := s.commitOrg(workingOrg); err != nil {

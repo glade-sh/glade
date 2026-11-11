@@ -283,6 +283,10 @@ func (vm *VM) enqueueJob(args []Value, result *Result) (Value, error) {
 	return id, nil
 }
 func (vm *VM) executeBatch(args []Value, result *Result) (Value, error) {
+	if vm.rejectAsyncActions {
+		// No native row for this kind from a Lightning action: fail closed.
+		return Null, vm.rejectSynchronousAsyncAction("Database.executeBatch cannot cross the synchronous LWC action boundary")
+	}
 	if len(args) < 1 || len(args) > 2 {
 		return Null, fmt.Errorf("Database.executeBatch expects batch instance[, scopeSize]")
 	}
@@ -375,6 +379,10 @@ func batchableInterfaceName(name string) bool {
 }
 
 func (vm *VM) scheduleJob(args []Value, result *Result) (Value, error) {
+	if vm.rejectAsyncActions {
+		// No native row for this kind from a Lightning action: fail closed.
+		return Null, vm.rejectSynchronousAsyncAction("System.schedule cannot cross the synchronous LWC action boundary")
+	}
 	if len(args) == 3 {
 		if args[2].Kind == ValueNull {
 			return Null, newExceptionError("System.NullPointerException", "schedulable object cannot be null")
@@ -420,6 +428,10 @@ func (vm *VM) scheduleJob(args []Value, result *Result) (Value, error) {
 	return String(cronTriggerID(job.ID)), nil
 }
 func (vm *VM) scheduleBatch(args []Value, result *Result) (Value, error) {
+	if vm.rejectAsyncActions {
+		// No native row for this kind from a Lightning action: fail closed.
+		return Null, vm.rejectSynchronousAsyncAction("System.scheduleBatch cannot cross the synchronous LWC action boundary")
+	}
 	if len(args) != 3 && len(args) != 4 {
 		return Null, fmt.Errorf("System.scheduleBatch expects batch instance, name, minutesFromNow[, scopeSize]")
 	}
