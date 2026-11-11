@@ -212,13 +212,13 @@ v038-dup-fuzzy at 240912244, which reported confidence 100 for every match).
 |---|---|---|---|
 | City | in-sample | 319/363 (87.9%), 14, 1.28 | 363/363 (100%), 0, 0.00 |
 | City | held-out | 78/80 (97.5%), 14, 1.77 | 80/80 (100%), 0, 0.00 |
-| Street | in-sample | 972/1754 (55.4%), 78, 10.36 | 1698/1754 (96.8%), 50, 0.20 |
-| Street | held-out | 108/164 (65.9%), 0, 7.28 | 158/164 (96.3%), 0, 0.33 |
-| Company | in-sample | 640/1196 (53.5%), 0, 0.06 | 1158/1196 (96.8%), 16, 0.08 |
+| Street | in-sample | 972/1754 (55.4%), 78, 10.36 | 1676/1754 (95.6%), 0, 0.15 |
+| Street | held-out | 108/164 (65.9%), 0, 7.28 | 148/164 (90.2%), 0, 0.77 |
+| Company | in-sample | 640/1196 (53.5%), 0, 0.06 | 1138/1196 (95.2%), 0, 0.03 |
 | Company | held-out | 72/118 (61.0%), 0, 0.00 | 114/118 (96.6%), 0, 0.02 |
 | First Name | in-sample | 506/950 (53.3%), 10, 0.13 | 936/950 (98.5%), 0, 0.00 |
 | First Name | held-out | 78/170 (45.9%), 6, 0.26 | 164/170 (96.5%), 0, 0.00 |
-| Last Name | in-sample | 620/752 (82.4%), 58, 0.12 | 704/752 (93.6%), 8, 0.05 |
+| Last Name | in-sample | 620/752 (82.4%), 58, 0.12 | 700/752 (93.1%), 0, 0.05 |
 | Last Name | held-out | 154/170 (90.6%), 12, 0.08 | 166/170 (97.6%), 0, 0.13 |
 | Title | in-sample | 942/942 (100%), 63, 7.01 | 939/942 (99.7%), 0, 0.25 |
 | Title | held-out | 286/286 (100%), 0, 6.57 | 286/286 (100%), 0, 0.04 |
@@ -228,12 +228,16 @@ v038-dup-fuzzy at 240912244, which reported confidence 100 for every match).
 The held-out First Name row scored 136/170 with 20 extra before its own
 variant and blocked pairs were added to the tables (the extras were
 dictionary pairs such as `Nicholas`/`Nicolas` and `Matthew`/`Matt`); the
-figures above are the shipped tables, which include every proven pair. The
-in-sample extras that remain are synthetic probe values the approximations
-cannot separate (Street: `Oak Ct`/`Oak Court`-style unknown suffix pairs and
-`Unit 3`/`Suite B` suite letters; Company: one-direction native matches such as
-`Nordstrom`/`Nordstroms` and `Initech`/`Initechs`, `Goldman Sachss`; Last Name:
-`Campbrll`).
+figures above are the shipped tables, which include every proven pair. Every
+captured row, held-out rows included, has zero extra pairs. Where the
+approximation could not separate a pair that native accepts in one direction
+only (`Nordstrom`/`Nordstroms`, `Initech`/`Initechs`, `Starbuck`/`Starbucks`)
+or rejects without a visible cause (`Campbell`/`Campbrll`, `Oak Court`/
+`Oak Crt`, `Hewlett-Packard` against its acronym), Glade does not match the
+pair, so those are misses and not extras. Street suites parse a trailing
+letter or a number with letters as a suite, a designator word outside the
+proven list (`Fl`, `Floor`) stays in the name, and a separated number letter
+(`100 B`) does not equal an attached one (`100B`).
 
 ## Gaps
 
@@ -241,7 +245,7 @@ cannot separate (Street: `Oak Ct`/`Oak Court`-style unknown suffix pairs and
   approximated by the row-fitted rules above. Native scores some same-key
   company pairs in one direction only (`Initec`/`Initech` 93, `Salesforce`/
   `Salesforcecom` 90, `Nordstrom`/`Nordstroms` 100) and Glade is symmetric.
-  `Starbucks`/`Starbuck` (93), `Starbux` (95), `Lockheed`/`Lockhead` (100),
+  `Starbucks`/`Starbuck` (93), `Nordstrom`/`Nordstroms` and `Initech`/`Initechs` (one direction), `Starbux` (95), `Lockheed`/`Lockhead` (100),
   `Hughes`/`Huse` (100) and `Nguyen`/`Nugyen` (97) are misses.
 - The Name Variant and Acronym dictionaries are unpublished; Glade carries
   the proven pairs only. Two unseen dictionary names that Jaro-Winkler brings
@@ -250,8 +254,7 @@ cannot separate (Street: `Oak Ct`/`Oak Court`-style unknown suffix pairs and
   natively (`123 Main St`/`123 Main Str` 60 one way, 78 the other) and Glade
   does not match them; `8 Oak`/`8 Oak Crt` (78) and `200 Park Ave`/
   `200 Park Av` (81) are misses; `Friedrichstrasse 43`/`Friedrichstraße 43`
-  (79, no street number) is a miss. Suite letters (`Unit 3` against
-  `Suite B`) match in Glade and not natively.
+  (79, no street number) is a miss.
 - Title: the (k, n) table covers up to five words; the one-direction match of
   a single word against a five-word title is not modeled.
 - Not captured: standard Account, Contact and Lead rules (their fuzzy

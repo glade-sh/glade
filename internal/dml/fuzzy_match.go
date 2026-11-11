@@ -422,7 +422,26 @@ func fuzzyLastName(a, b string, _ bool) (bool, float64) {
 		return true, 100
 	}
 	score := keyboardSimilarity(x, y)
+	if stripAccents(x) != stripAccents(y) && (vowelGroups(x) < 2 || vowelGroups(y) < 2) {
+		// The rows match a keyboard substitution only between names with two
+		// or more vowel groups ("Campbell" does not match "Campbrll"); an
+		// accent difference alone always matches.
+		return false, averageWith100(score)
+	}
 	return score >= 90, averageWith100(score)
+}
+
+// vowelGroups counts the runs of vowels in a folded name.
+func vowelGroups(s string) int {
+	groups, prev := 0, false
+	for _, r := range stripAccents(s) {
+		vowel := strings.ContainsRune("aeiouy", r)
+		if vowel && !prev {
+			groups++
+		}
+		prev = vowel
+	}
+	return groups
 }
 
 // ---- Phone: weighted sections; threshold 80 ----
@@ -533,6 +552,21 @@ var streetOrdinals = map[string]string{"first": "1st", "second": "2nd", "third":
 
 var digitsOnly = regexp.MustCompile(`^[0-9]+$`)
 
+// streetSuiteDesignators are the words the rows drop before a suite value.
+var streetSuiteDesignators = map[string]bool{"suite": true, "ste": true, "apt": true, "unit": true, "rm": true, "bldg": true}
+
+// streetSuiteToken reports a trailing token that is a suite value: a number,
+// a number with letters ("2B") or a single letter that is not a direction.
+func streetSuiteToken(w string) bool {
+	if digitsOnly.MatchString(w) {
+		return true
+	}
+	if strings.IndexFunc(w, unicode.IsDigit) >= 0 && len(w) <= 4 {
+		return true
+	}
+	return len(w) == 1 && isAlphaWord(w) && !streetDirections[w]
+}
+
 type streetParts struct{ number, name, suffix, suite string }
 
 // streetClean lower-cases the address, removes dots and number signs, turns
@@ -572,7 +606,7 @@ func parseStreet(s string) streetParts {
 		p.number, words = words[0], words[1:]
 		if len(words) > 1 && len(words[0]) == 1 && isAlphaWord(words[0]) {
 			if words[0] != "e" {
-				p.number += words[0]
+				p.number += " " + words[0]
 			}
 			words = words[1:]
 		}
@@ -594,12 +628,18 @@ func parseStreet(s string) streetParts {
 		if len(rest) > 0 && streetDirections[rest[0]] {
 			rest = rest[1:]
 		}
-		if len(rest) >= 2 && isAlphaWord(rest[0]) {
-			rest = rest[1:]
+		switch {
+		case len(rest) >= 2 && streetSuiteDesignators[rest[0]]:
+			p.suite = strings.Join(rest[1:], "")
+		case len(rest) == 1 || (len(rest) >= 2 && !isAlphaWord(rest[0])):
+			p.suite = strings.Join(rest, "")
+		default:
+			// Any other word ("Fl", "Floor") is not a suite: the rows never
+			// match such an address to one without it.
+			words = append(words, rest...)
 		}
-		p.suite = strings.Join(rest, "")
 	default:
-		if len(words) > 1 && digitsOnly.MatchString(words[len(words)-1]) {
+		if len(words) > 1 && streetSuiteToken(words[len(words)-1]) {
 			p.suite, words = words[len(words)-1], words[:len(words)-1]
 		}
 		if len(words) > 1 && streetDirections[words[len(words)-1]] {
@@ -658,6 +698,26 @@ func streetSections(pa, pb streetParts, matchBlanks bool) float64 {
 	return 100 * num / den
 }
 
+// streetNameNear rejects two different street names that are not alike
+// enough (78 percent edit similarity) unless one is a word-prefix of the other
+// or, with a street number, they share their first two words. The rows never
+// match `Oak Court` to `Oak Crt` (78) or, with no street number, `Calle 8 No`
+// to `Calle 8 Numero` (71); they do match `Wallaby Way` to `Wallaby Way Ste`
+// (73) and `Wallaby Way Front` to `Wallaby Way Rear` (71).
+func streetNameNear(pa, pb streetParts) bool {
+	x, y := pa.name, pb.name
+	if x == y || strings.HasPrefix(x+" ", y+" ") || strings.HasPrefix(y+" ", x+" ") {
+		return true
+	}
+	if pa.number != "" && pb.number != "" {
+		wx, wy := strings.Fields(x), strings.Fields(y)
+		if len(wx) >= 3 && len(wy) >= 3 && wx[0] == wy[0] && wx[1] == wy[1] {
+			return true
+		}
+	}
+	return editSimilarity(x, y) >= 78
+}
+
 // fuzzyStreet: the match key is the street number plus the first five
 // characters of the name. The weighted section score decides at 80; the rule
 // confidence averages that score with the edit similarity of the cleaned
@@ -671,6 +731,9 @@ func fuzzyStreet(a, b string, matchBlanks bool) (bool, float64) {
 	sections := streetSections(pa, pb, matchBlanks)
 	confidence := (sections + editSimilarity(x, y)) / 2
 	if streetKey(pa) != streetKey(pb) {
+		return false, confidence
+	}
+	if !streetNameNear(pa, pb) {
 		return false, confidence
 	}
 	return sections >= 80, confidence
@@ -735,26 +798,34 @@ func companyKey(words []string) string {
 }
 
 // companyNormWord folds the spellings the rows score as identical: doubled
-// letters, a plural "s" on words of seven letters or more, a trailing "e" and
-// a trailing "y" spelled "i".
-func companyNormWord(w string) string {
+// letters inside a word, a plural "s" on words of seven letters or more
+// (multi-word names only: single-word names score the singular against the
+// plural in one direction only), a trailing "e" and a trailing "y" spelled
+// "i". The second result marks a removed "e" ("!") or a converted "y" ("?"):
+// a word that changed one way does not match a word that changed the other
+// ("Stanly" does not match "Stanlie").
+func companyNormWord(w string, plural bool) (string, string) {
 	var out []rune
-	for _, r := range w {
-		if len(out) > 0 && out[len(out)-1] == r {
+	r := []rune(w)
+	for i, c := range r {
+		if len(out) > 0 && out[len(out)-1] == c && i < len(r)-1 {
 			continue
 		}
-		out = append(out, r)
+		out = append(out, c)
 	}
-	if len(out) > 6 && out[len(out)-1] == 's' {
+	if plural && len(out) > 6 && out[len(out)-1] == 's' {
 		out = out[:len(out)-1]
 	}
+	mark := ""
 	if len(out) > 3 && out[len(out)-1] == 'e' {
 		out = out[:len(out)-1]
+		mark = "!"
 	}
 	if len(out) > 3 && out[len(out)-1] == 'y' {
 		out[len(out)-1] = 'i'
+		mark = "?"
 	}
-	return string(out)
+	return string(out), mark
 }
 
 // companySkeleton returns the consonant skeleton and the first letter of each
@@ -805,6 +876,12 @@ func fuzzyCompany(a, b string, _ bool) (bool, float64) {
 		return false, 0
 	}
 	ja, jb := strings.Join(wa, " "), strings.Join(wb, " ")
+	if strings.Contains(a, "-") != strings.Contains(b, "-") {
+		// A hyphenated name matches only the same words spelled with a space;
+		// the rows score it 97 or 100 by direction and match neither its
+		// acronym nor the same words plus one.
+		return ja == jb, 97
+	}
 	if companyAcronyms[ja] == jb || companyAcronyms[jb] == ja {
 		return true, 100
 	}
@@ -812,11 +889,18 @@ func fuzzyCompany(a, b string, _ bool) (bool, float64) {
 		return false, 0
 	}
 	na, nb := make([]string, len(wa)), make([]string, len(wb))
+	plural := len(wa) > 1 && len(wb) > 1
+	ma, mb := make([]string, len(wa)), make([]string, len(wb))
 	for i, w := range wa {
-		na[i] = companyNormWord(w)
+		na[i], ma[i] = companyNormWord(w, plural)
 	}
 	for i, w := range wb {
-		nb[i] = companyNormWord(w)
+		nb[i], mb[i] = companyNormWord(w, plural)
+	}
+	for i := 0; i < min(len(ma), len(mb)); i++ {
+		if ma[i] != mb[i] && ma[i] != "" && mb[i] != "" {
+			return false, 0
+		}
 	}
 	if strings.Join(na, " ") == strings.Join(nb, " ") {
 		return true, 100
