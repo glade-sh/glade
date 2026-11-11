@@ -1088,9 +1088,12 @@ type FlowSubflow struct {
 }
 
 type FlowCustomError struct {
-	Name        string                   `json:"name"`
-	Description string                   `json:"description,omitempty"`
-	Messages    []FlowCustomErrorMessage `json:"messages,omitempty"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	// APIVersion is the flow's source API version; DateTime and Time merge
+	// fields render per version (flow_record_merge).
+	APIVersion string                   `json:"apiVersion,omitempty"`
+	Messages   []FlowCustomErrorMessage `json:"messages,omitempty"`
 }
 
 type FlowCustomErrorMessage struct {

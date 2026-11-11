@@ -34,6 +34,10 @@ func flowCoreDeleteCriteriaShape(del storage.FlowRecordDelete, definition storag
 }
 
 func flowCoreRecordTriggerError(rule storage.FlowRule, err error) error {
+	var mergeFault flowMergeUnhandledFault
+	if errors.As(err, &mergeFault) {
+		return &flowCoreSubflowOutputFailure{cause: dmlErrorf("CANNOT_EXECUTE_FLOW_TRIGGER", nil, "We can't save this record because the “%s” process failed. Give your Salesforce admin these details. <b>An unhandled fault has occurred in this flow</b><br>An unhandled fault has occurred while processing the flow.  Please contact your system administrator for more information.", processFlowLabel(rule))}
+	}
 	var noMatch *flowCoreDeleteCriteriaError
 	if !strings.EqualFold(rule.TriggerType, "RecordAfterSave") {
 		return err

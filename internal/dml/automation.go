@@ -1319,7 +1319,11 @@ func (e *Engine) applyFlowStep(flowName, objectName string, record *storage.Reco
 			}
 		}
 		capturedFormula := flowCapturedCustomErrorFormula(msg, formulas, frame)
-		msg = e.renderFlowCustomErrorMessage(msg, frame, numberConstants, formulas, resources)
+		var rendered, fault = e.renderFlowCustomErrorMessageForAPI(msg, frame, numberConstants, formulas, resources, step.CustomError.APIVersion)
+		if fault {
+			return false, flowMergeUnhandledFault{}
+		}
+		msg = rendered
 		return false, &flowCustomErrorFailure{cause: dmlErrorf("FIELD_CUSTOM_VALIDATION_EXCEPTION", fields, "%s", msg), capturedFormula: capturedFormula}
 	case "transform":
 		if err := e.applyFlowTransformStep(step.Transform, frame); err != nil {
