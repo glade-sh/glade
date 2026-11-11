@@ -204,10 +204,10 @@ behavior change without a matching `NATIVE` line; a Glade-specific behavior
 change without a cited local contract and regression test; a missing applicable
 route twin; a deleted or loosened assertion without appropriate evidence;
 third-party names or content; credentials, org ids or personal paths.
-Everything else is a comment, not a block. The reviewer may fix a small
-finding with a commit on the branch and approve, saying so in the review.
-After "changes requested", the coder fixes on the branch without rebasing, and
-the reviewer re-reviews only the new commits.
+Everything else is a comment, not a block. The reviewer is read-only: it does
+not edit, commit or push, and reports every finding in one pass. After
+"changes requested", the coder fixes on the branch without rebasing, and the
+reviewer re-reviews only the new commits.
 
 Docs-only PRs, and test or fixture PRs that only add, need no review. CI still
 gates them.
@@ -369,7 +369,7 @@ Rules: docs/WORKFLOW.md sections 3 to 5, and AGENTS.md.
 
 ```text
 Review pull request <url> for glade (an offline Salesforce Apex runtime in Go).
-Read-only, except that you may push one small fix commit to the branch and say so.
+Read-only: do not edit, commit, push or merge. Report every finding in one pass.
 Check in this order:
 1. Each Salesforce-observable compatibility change has a NATIVE line citing org.tsv:<line> at a
    matching route and API. Each Glade-specific change cites its local contract and regression test.
@@ -383,8 +383,8 @@ Check in this order:
    No third-party project names or content.
    No org ids, aliases, personal paths or credentials.
 6. For sema or typesys changes: `go test ./internal/apextest -run 'TestCorpusShape'` at HEAD.
-Verdict: APPROVE, or REQUEST CHANGES listing only blocking findings as file:line with the rule
-broken. Everything else is a comment.
+First line: `APPROVE <head sha>` or `CHANGES <head sha>: <one line>`. Then list only blocking
+findings as file:line with the rule broken. Everything else is a comment.
 ```
 
 ## Appendix C: capture request

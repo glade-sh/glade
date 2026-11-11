@@ -87,7 +87,7 @@ the release evidence.
 Before tagging, also read the operator checks for the same commit: the
 `Browser`, `Race` and `Security` workflows. Record a failure or a known issue
 in [RELEASE_NOTES.md](RELEASE_NOTES.md). Review the CodeQL waivers in
-[CODEQL_BUDGET.md](CODEQL_BUDGET.md#waiver-review-2026-10-22) and record the
+[CODEQL.md](CODEQL.md#waiver-review-2026-10-22) and record the
 date. Both CodeQL profiles succeed with a warning when their analysis budget
 expires. The release workflow runs the full scan on the tagged SHA and fails
 only on findings or errors, so state an incomplete scan in the release notes.
