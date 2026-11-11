@@ -74,7 +74,7 @@ func (e *Engine) renderFlowCustomErrorMessageForAPI(message string, frame *flowF
 			return storage.Value{}, false
 		}
 		value, found := e.flowFrameReferenceValue(reference, frame)
-		if recordField, kind := e.flowRecordMergeField(reference, frame); recordField && found {
+		if recordField, kind := e.flowRecordMergeField(reference, frame); recordField && found && (apiVersion == "62.0" || apiVersion == "67.0") {
 			switch kind {
 			case storage.FieldDecimal:
 				if value.Kind == storage.ValueDecimal || value.Kind == storage.ValueInteger {
@@ -93,7 +93,6 @@ func (e *Engine) renderFlowCustomErrorMessageForAPI(message string, frame *flowF
 						return storage.StringValue(text), true
 					}
 				}
-				return storage.Value{}, false
 			}
 		}
 		if expression, formula := formulas[flowFrameKey(reference)]; formula && capturedFormula && flowCoreFormulaUsesScalars(expression, frame, true) {
