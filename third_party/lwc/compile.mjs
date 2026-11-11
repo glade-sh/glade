@@ -67,7 +67,6 @@ function transformOptions(namespace, name, apiVersion, capabilities = []) {
     apiVersion,
     enableLwcOn: true,
     enableDynamicComponents: capabilities.includes("lightning__dynamicComponent"),
-    ...(capabilities.includes("lightning__dynamicComponent") ? { dynamicImports: { strictSpecifier: false } } : {}),
     // Keep parsing enabled so the compiler itself enforces the API-66 gate.
     // Native c_event_call answers at 59/63/65 report LWC1210, not the older
     // flag-disabled LWC1060 diagnostic; 66/67 report LWC1208.
@@ -110,7 +109,10 @@ function transformTemplate(source, filename, namespace, name, apiVersion, capabi
 
 function transformJavaScript(source, filename, namespace, name, apiVersion, capabilities = []) {
   try {
-    return transformSync(source, filename, transformOptions(namespace, name, apiVersion, capabilities));
+    const options = transformOptions(namespace, name, apiVersion, capabilities);
+    // Only the script transform accepts this option; templates reject it.
+    if (capabilities.includes("lightning__dynamicComponent")) options.dynamicImports = { strictSpecifier: false };
+    return transformSync(source, filename, options);
   } catch (error) {
     // The captured nonliteral-import control reports the deployment diagnostic
     // when the bundle has not declared dynamic-component capability.
@@ -292,7 +294,7 @@ function compileBundle(bundleDir, bundleName, namespace, outDir, apiVersion, mod
     // entries and sibling modules are emitted as source, so validate their
     // dynamic imports before copying them to the output.
     if (sourcePath !== jsPath || (!fs.existsSync(htmlPath) && !isCustomRenderComponent(jsPath))) {
-      validateDynamicModuleImports(ast, capabilities);
+      validateDynamicModuleImports(ast, capabilities, namespace);
     }
   });
   if (!fs.existsSync(htmlPath) && !isCustomRenderComponent(jsPath)) {
@@ -328,7 +330,7 @@ function compileBundle(bundleDir, bundleName, namespace, outDir, apiVersion, mod
   }
 
   const jsSource = fs.readFileSync(jsPath, "utf8");
-  validateDynamicModuleImports(entryAST, capabilities);
+  validateDynamicModuleImports(entryAST, capabilities, namespace);
   const jsResult = transformJavaScript(jsSource, jsPath, namespace, bundleName, apiVersion, capabilities);
   const jsCode = rewriteComponentShadowReads(rewriteStylesheetImports(jsResult.code, bundleName), namespace);
 
@@ -345,14 +347,20 @@ function compileBundle(bundleDir, bundleName, namespace, outDir, apiVersion, mod
   };
 }
 
-function validateDynamicModuleImports(ast, capabilities) {
+// Native rows reject a nonliteral dynamic import and a literal naming a local
+// module when the bundle lacks lightning__dynamicComponent. A literal naming a
+// platform module has no captured row, so it keeps the earlier behavior.
+function validateDynamicModuleImports(ast, capabilities, namespace) {
   if (capabilities.includes("lightning__dynamicComponent")) return;
+  const isLocal = (specifier) => specifier.startsWith("c/") || specifier.startsWith(`${namespace}/`);
   walkAST(ast, (node) => {
     const source = node.type === "ImportExpression" ? node.source :
       node.type === "CallExpression" && node.callee?.type === "Import" ? node.arguments[0] : null;
-    if (source) {
-      throw new Error("LWC1503: Dynamic imports are not allowed.");
-    }
+    if (!source) return;
+    const literal = source.type === "StringLiteral" || source.type === "Literal" ? source.value :
+      source.type === "TemplateLiteral" && source.expressions.length === 0 ? source.quasis[0].value.cooked : null;
+    if (typeof literal === "string" && !isLocal(literal)) return;
+    throw new Error("LWC1503: Dynamic imports are not allowed.");
   });
 }
 
