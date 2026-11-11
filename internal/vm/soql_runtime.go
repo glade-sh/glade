@@ -246,8 +246,14 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 		}
 		return nil, newExceptionError("QueryException", soql.MissingObjectMessage(objectName))
 	}
-	if err := vm.enforceSOQLSecurity(query, permissionSetID); err != nil {
-		return nil, err
+	// Native case_standard_field_fls: default-mode named queries at 67.0 deny the
+	// ungranted administrator these standard fields.
+	savedFLSRoute := vm.adminStandardFLSRoute
+	vm.adminStandardFLSRoute = savedFLSRoute || defaultMode
+	securityErr := vm.enforceSOQLSecurity(query, permissionSetID)
+	vm.adminStandardFLSRoute = savedFLSRoute
+	if securityErr != nil {
+		return nil, securityErr
 	}
 	if err := vm.enforceOrgShapeObjectAvailability(query); err != nil {
 		return nil, err

@@ -52,6 +52,9 @@ const (
 // markers below flag the start of a contiguous group. When adding state,
 // place it in the matching group and update New.
 type VM struct {
+	// adminStandardFLSRoute marks the routes where the default administrator's
+	// standard-field grant rule applies (anonymous_field_policy.go).
+	adminStandardFLSRoute  bool
 	knowledgeIssuedParents map[storage.ID]bool
 	case174WarmOrderAccess map[string]bool
 	case174PermissionStamp map[string]string
