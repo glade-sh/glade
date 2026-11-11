@@ -9,6 +9,9 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
+// This marker is local to automation compilation; it is not a persisted schema field.
+const processBuilderPersonAccountsFeature = "__glade_process_person_accounts"
+
 // A related-record update can name a triggering-record relationship without
 // repeating its target object. Resolve standard relationships from describe
 // metadata before lowering the update; relationship names need not be object
@@ -59,8 +62,22 @@ func flowProjectRelationshipDefinitions(p project.Project) map[string]storage.Ob
 		return nil
 	}
 	definitions := make(map[string]storage.ObjectDefinition)
+	personAccounts := false
+	for _, feature := range project.EffectiveOrgShapeFeatures(p) {
+		if strings.EqualFold(feature, "PersonAccounts") {
+			personAccounts = true
+			break
+		}
+	}
 	for name, describe := range sobject.BuildDescribeRegistry(s).Objects {
-		definitions[name] = sobject.ToObjectDefinition(describe)
+		definition := sobject.ToObjectDefinition(describe)
+		if personAccounts && strings.EqualFold(name, "Account") {
+			if definition.Metadata == nil {
+				definition.Metadata = make(map[string]string)
+			}
+			definition.Metadata[processBuilderPersonAccountsFeature] = "true"
+		}
+		definitions[name] = definition
 	}
 	return definitions
 }

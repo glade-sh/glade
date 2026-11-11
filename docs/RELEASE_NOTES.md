@@ -2,7 +2,35 @@
 
 ## Unreleased
 
-Planned changes are listed below.
+No changes yet.
+
+## v0.3.6
+
+v0.3.6 fixes more differences from Salesforce found with captured org behavior, and makes pull request CI faster.
+
+### Upgrade notes
+
+- **Caches.** The semantic, platform and test-runtime caches carry new versions (`sema-v84`, `salesforce-platform-v65`, `apextest-runtime-v33`). The first run after upgrading rebuilds them.
+
+### Apex
+
+- **Declarations and scope.** Declaration parsing, local variable scope and nested static member lookup follow captured Salesforce behavior.
+- **Namespace diagnostics.** A type or static receiver reference to a namespace that the source shows is invalid now gets the matching diagnostic.
+- **Describe and namespace controls.** Describe results and namespace handling follow captured behavior.
+
+### Flow and Process Builder
+
+- **Process Builder.** Record updates, related records, dates and metadata-backed rules run with the captured shapes.
+- **Automation insert status.** Records inserted by automation report the captured status.
+- **Flow relationship loops.** Flow loops over related records follow captured behavior.
+
+### REST and server
+
+- **Composite responses.** Collection and tree rollback return the captured status codes, error messages and result shapes.
+
+### CLI and CI
+
+- **Faster pull request CI.** Pull requests reuse the build caches saved from the main branch, and the LWC conformance test is split by API version (59, 67 and 68). No test or budget was removed.
 
 ## v0.3.5
 

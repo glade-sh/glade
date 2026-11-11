@@ -556,7 +556,12 @@ run_ci_package_lane() {
 			run_package_lane "${lane}" test 30m '^(?:TestRunDoctorReportsParser|TestRunDoctorJSON|TestRunDoctorShortFlags|TestRunDoctorReportsProjectLocalDataEnvironment)$'
 			;;
 		server-and-playground)
-			run_package_lane "${lane}" test 30m '^(?:TestVFPageBootstrapsLightningOut|TestVFPageBootstrapsMultiWidgetLightningOut|TestLightningModulesServesCompiledJS|TestLightningModulesServesSiblingModuleWithoutJSExtension|TestLWCShellComponentRouteServesHTML|TestLWCShellRootRendersHomeWithFormalTabsAndBuilderLink|TestLWCShellBuilderRouteRendersBuilderNavigationLayoutAndSampleRecord|TestLWCShellTabRouteIncludesPreviewRouteCatalog|TestServerRootRendersLWCHomeWhenProjectHasLWCs|TestLWCShellRendersApplicationNavAndConsoleMode|TestLWCShellAppRouteFallsBackToApplicationDefaultTab|TestLWCShellUnsupportedCustomTabReturnsDiagnostic|TestLWCShellMixedPageDiagnosticsStillRendersValidComponents|TestL08SalesforceConformance)$'
+			run_package_lane "${lane}" test 30m '^(?:TestVFPageBootstrapsLightningOut|TestVFPageBootstrapsMultiWidgetLightningOut|TestLightningModulesServesCompiledJS|TestLightningModulesServesSiblingModuleWithoutJSExtension|TestLWCShellComponentRouteServesHTML|TestLWCShellRootRendersHomeWithFormalTabsAndBuilderLink|TestLWCShellBuilderRouteRendersBuilderNavigationLayoutAndSampleRecord|TestLWCShellTabRouteIncludesPreviewRouteCatalog|TestServerRootRendersLWCHomeWhenProjectHasLWCs|TestLWCShellRendersApplicationNavAndConsoleMode|TestLWCShellAppRouteFallsBackToApplicationDefaultTab|TestLWCShellUnsupportedCustomTabReturnsDiagnostic|TestLWCShellMixedPageDiagnosticsStillRendersValidComponents|TestL08SalesforceConformance|TestProcessBuilder.*Hosts)$'
+			;;
+		server-process-builder)
+			# Large Process Builder host-route tests run in their own job; the
+			# server-and-playground lane skips the same pattern.
+			run_json_with_heartbeat "go test server-process-builder" "$(testlog_artifact test server-process-builder)" -timeout=45m -run '^TestProcessBuilder.*Hosts$' ./internal/server
 			;;
 		remaining-go)
 			run_package_lane "${lane}" test 30m '^(?:TestBuildCompileConfigAPIVersionMatrix|TestLWCModuleAvailabilityFollowsBundleAPIVersion|TestComplexTemplateExpressionsFollowBundleAPIVersion|TestHTMLDetailsNameFollowsBundleAPIVersion|TestCompilePreservesDeclaredAPI67|TestCompileProjectLWCBundles|TestCompileRewritesTemplateStylesheetImports|TestCompileEmitsSiblingJSModules|TestCompileEmitsUtilityOnlyLWCModules|TestCompileEmitsAdditionalHTMLTemplateModules|TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate|TestCompileEnablesLwcOnDirective|TestSetupBundleIncludesLabelsSibling|TestSetupImportMapIncludesLocalComponents|TestValidateRootFindsRepoCheckout|TestInstallFromCWDSkipsGlobalShareAsSource|TestInstallFromCopiesToolchain|TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare|TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser|TestLWCAPI67RegistrationRunsInBrowser)$' ci-remaining
@@ -2019,7 +2024,7 @@ main() {
 			;;
 		lane)
 			if [[ "$#" -ne 2 ]]; then
-				echo "usage: scripts/ci-go-test.sh lane {workflow-lint|gladecli|sema|server-and-playground|repoguard|remaining-go}" >&2
+				echo "usage: scripts/ci-go-test.sh lane {workflow-lint|gladecli|sema|server-and-playground|server-process-builder|repoguard|remaining-go}" >&2
 				return 2
 			fi
 			run_ci_package_lane "$2"

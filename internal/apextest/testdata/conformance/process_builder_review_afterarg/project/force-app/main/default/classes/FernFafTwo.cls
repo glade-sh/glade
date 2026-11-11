@@ -1,0 +1,1 @@
+public class FernFafTwo { @InvocableMethod public static void run(List<Fern_Faf__c> items) { FernLog.mark('FafTwo',items); } }

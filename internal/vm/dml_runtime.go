@@ -2768,7 +2768,23 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 		}()
 	}
 	if op == "upsert" {
-		return vm.applyUpsertDML(records, targets, allOrNone, externalIDField, options, result)
+		upsertInput := Null
+		if !allOrNone && value.Kind == ValueList && vm.hasAutomationForDML(records) {
+			upsertInput = vm.snapshotTriggerDMLInput(value, targets)
+		}
+		upserted, err := vm.applyUpsertDML(records, targets, allOrNone, externalIDField, options, result)
+		var retry *processUpsertRetry
+		if errors.As(err, &retry) && upsertInput.Kind == ValueList {
+			attempt := 0
+			if len(triggerRetries) > 0 {
+				attempt = triggerRetries[0]
+			}
+			return vm.retryProcessUpsert(upsertInput, retry.results, externalIDField, options, result, checkRecordAccess, checkApexIdentity, resolvedMode, attempt)
+		}
+		if errors.As(err, &retry) {
+			return retry.results, nil
+		}
+		return upserted, err
 	}
 	assignmentUpdateTriggers := (op == "insert" || op == "update") && vm.hasAssignmentRuleUpdateTriggers(records, targets, options)
 	if len(records) > 200 && (op == "insert" || op == "update") && recordsShareSingleObject(records) && !hasSuffixFold(records[0].Object, "__e") &&
@@ -3225,6 +3241,17 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 				}
 				vm.clearDMLResultFieldsForFailures(targets, failures, []string{op})
 				return failures, nil
+			}
+			if failures, ok := processFailureDMLResults(op, results, afterRecords, err); ok {
+				if allOrNone {
+					vm.clearDMLResultFieldsForFailures(targets, failures, []string{op})
+					return failures, nil
+				}
+				attempt := 0
+				if len(triggerRetries) > 0 {
+					attempt = triggerRetries[0]
+				}
+				return vm.retryPartialTriggerDML(op, triggerInput, externalIDField, options, result, checkRecordAccess, checkApexIdentity, resolvedMode, failures, rollback, attempt)
 			}
 			return nil, err
 		}
@@ -3899,6 +3926,17 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 					if rollbackErr := restoreRollback(); rollbackErr != nil {
 						return nil, rollbackErr
 					}
+				}
+				vm.clearDMLResultFieldsForFailures(targets, failures, kinds)
+				return failures, nil
+			}
+			if failures, ok := processFailureDMLResults("upsert", results, afterRecords, err); ok {
+				if !allOrNone {
+					if rollbackErr := restoreRollback(); rollbackErr != nil {
+						return nil, rollbackErr
+					}
+					vm.clearDMLResultFieldsForFailures(targets, failures, kinds)
+					return nil, &processUpsertRetry{results: failures}
 				}
 				vm.clearDMLResultFieldsForFailures(targets, failures, kinds)
 				return failures, nil

@@ -61,6 +61,7 @@ Use `--force` to replace an existing file.
 | `test.clock.start` | RFC3339 string | `2026-05-13T12:00:00Z` | Use Z or an explicit UTC offset. |
 | `project.managedPackageDependencies` | dependency list | no configured dependencies | Use a source path or the documented artifact syntax. |
 | `project.dependencyPaths` | path list | normal local workspace discovery | Relative paths resolve from `glade.yml`; each entry adds a directory and its immediate child projects. |
+| `project.externalNamespaces` | namespace list | none: an undeclared namespace is `Invalid type` | Installed managed packages without local source; each stays open. |
 | `project.packageShims` | string list | no local method bodies from shims | A captured artifact still owns the contract. |
 | `project.schemaSnapshot` | path string | no imported describe snapshot | Requires `schemaSnapshotSHA256`. |
 | `project.schemaSnapshotSHA256` | string | no snapshot digest | Requires a snapshot and 64 hexadecimal characters matching its exact bytes. |
@@ -102,6 +103,7 @@ test:
 | `project.dependencies` | Declared package names or SFDX aliases mapped to local source paths. |
 | `project.managedPackageDependencies` | Managed package source or artifact references. |
 | `project.dependencyPaths` | Extra local directories searched for declared SFDX package dependencies. |
+| `project.externalNamespaces` | Installed managed-package namespaces with no local source. |
 | `project.packageShims` | Local source roots that provide test/runtime bodies for captured package artifacts. |
 | `project.schemaSnapshot` | Imported describe schema used by local `check` and `test`. Relative paths resolve from `glade.yml`. |
 | `project.schemaSnapshotSHA256` | Required SHA-256 of the exact snapshot file bytes. |
@@ -287,6 +289,32 @@ Glade reads supported org-shape settings from CumulusCI files, but it does not
 run CumulusCI flows, import their dataset files, or invoke managed-package
 post-install scripts. Put records needed by local Apex tests in test-owned setup
 code, such as an `@TestSetup` method.
+
+## External namespaces
+
+Salesforce rejects a type from a namespace the org does not have, in every
+position: a local, field, parameter, return, generic argument, `new`, cast,
+`instanceof`, `extends` and `implements` give `Invalid type: <name>`, and a
+static field read through it gives `Variable does not exist: <name>`. Glade
+gives the same answers for a namespace the project never declares.
+
+When the org has a managed package installed but Glade has no source for it,
+declare its namespace:
+
+```yaml
+project:
+  externalNamespaces: [ccpkg, vendorns]
+```
+
+Each entry is an Apex namespace identifier; names compare without case, and a
+duplicate is a configuration error. A declared namespace stays open: its types
+compile in every position, and Glade reports no `dependency_missing`
+diagnostic for it. Glade still has no package bodies, so a static method call
+into the package (`vendorns.Logger.log(...)`) makes the calling class a compile
+exclusion, as for any source-less dependency; tests in other classes still run.
+A `managedPackageDependencies` entry for the same namespace takes precedence.
+Declare only packages the target org has; Glade never infers one from a name.
+
 ## Dependency paths
 
 For a dependency declared in `packageDirectories[].dependencies`, add a checkout

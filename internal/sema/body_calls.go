@@ -876,6 +876,9 @@ func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.Mem
 				if resolved := resolveMemberMethods(model, receiverType, method); len(resolved) != 0 {
 					return a.diagnoseMethodCall(typ, member, callee, resolved, args, haveArgs, receiverMode, start, end, source, scope, model)
 				}
+				if resolved := semaEnclosingStaticMethods(model, receiverType, method, receiverMode); len(resolved) != 0 {
+					return a.diagnoseMethodCall(typ, member, callee, resolved, args, haveArgs, receiverMode, start, end, source, scope, model)
+				}
 				if sig, ok := semaPlatformMethodSignatureFor(model, receiverType, method); ok {
 					argTypes := make([]string, len(args))
 					for i, arg := range args {
@@ -904,6 +907,16 @@ func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.Mem
 		}
 		if receiverMode != "implicit" && semaCalleeDependencyRoot(callee, scope, model) {
 			return nil
+		}
+		if receiverExpr, calledMethod, ok := splitSemaMethodPath(callee); ok && strings.Contains(receiverExpr, ".") {
+			if _, scoped := scope[normalizeName(strings.Split(receiverExpr, ".")[0])]; !scoped {
+				classType := resolveNestedTypeName(model, typ.Name, receiverExpr)
+				if _, known := model.lookupName(classType); known {
+					if resolved := semaEnclosingStaticMethods(model, classType, calledMethod, "class"); len(resolved) != 0 {
+						return a.diagnoseMethodCall(typ, member, callee, resolved, args, haveArgs, "class", start, end, source, scope, model)
+					}
+				}
+			}
 		}
 		return []diagnostic.Diagnostic{unknownCallDiagnostic(typ, member, callee, start, end, source)}
 	}
@@ -965,6 +978,22 @@ func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.Mem
 	}
 	if receiverMode != "implicit" && semaCalleeDependencyRoot(callee, scope, model) {
 		return nil
+	}
+	if receiver, calledMethod, ok := splitSemaMethodPath(callee); ok && !semaArgTypesContainUnknown(argTypes) {
+		root, fieldName, dotted := strings.Cut(receiver, ".")
+		_, scoped := scope[normalizeName(root)]
+		if dotted && !scoped {
+			_, hasField := semaStaticClassFieldPathMemberInContext(model, typ.Name, root, fieldName)
+			if nested, known := semaLocalNestedInterfaceReceiver(model, typ.Name, receiver); known && !hasField {
+				fallback := semaEnclosingStaticMethods(model, nested.name, calledMethod, "class")
+				if target, found, ambiguous := bestResolvedMemberByArgTypes(fallback, argTypes, model); found && !ambiguous {
+					if d, blocked := checkSemaMemberAccess(typ, member, callee, target, start, end, source, model); blocked {
+						return []diagnostic.Diagnostic{d}
+					}
+					return nil
+				}
+			}
+		}
 	}
 	if receiverExpr, method, ok := splitSemaMethodPath(callee); ok && semaObjectMethodName(method) {
 		receiverType := semaTextReceiverType(receiverExpr, scope, model)
@@ -3764,4 +3793,35 @@ func semaShadowEnumReceiverType(receiver ir.Expr, scope irSemaScope, model *sema
 		return ""
 	}
 	return display
+}
+
+// semaEnclosingStaticMethods resolves Outer.Inner.staticMethod(): when a class
+// receiver's own chain lacks the method, Apex binds a static method declared on
+// an enclosing class.
+func semaEnclosingStaticMethods(model *semaTypeMemberView, receiverType, method, receiverMode string) []resolvedMember {
+	if receiverMode == "instance" || receiverMode == "implicit" {
+		return nil
+	}
+	members, ok := model.lookupName(receiverType)
+	if !ok || members.nestingDepth <= 0 {
+		return nil
+	}
+	var out []resolvedMember
+	seen := make(map[string]bool)
+	owner := members.name
+	for depth := 0; depth < members.nestingDepth; depth++ {
+		dot := strings.LastIndexByte(owner, '.')
+		if dot <= 0 {
+			break
+		}
+		owner = owner[:dot]
+		for _, candidate := range resolveMemberMethods(model, owner, method) {
+			key := candidate.owner + ":" + methodSignatureKey(candidate.member)
+			if hasModifier(candidate.member.Modifiers, "static") && !seen[key] {
+				seen[key] = true
+				out = append(out, candidate)
+			}
+		}
+	}
+	return out
 }

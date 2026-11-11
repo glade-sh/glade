@@ -1,0 +1,5 @@
+api	route	case	actual
+62.0	istest	personprior	api=62.0 | mixed:Acc.BU3:null Acc.AU3:null Acc.BU2:hit Acc.AU2:hit | a:A:hit | b:A:null | c:B:hit
+62.0	anonymous	personprior	api=62.0 | mixed:Acc.BU3:null Acc.AU3:null Acc.BU2:hit Acc.AU2:hit | a:A:hit | b:A:null | c:B:hit
+67.0	istest	personprior	api=67.0 | mixed:Acc.BU3:null Acc.AU3:null Acc.BU2:hit Acc.AU2:hit | a:A:hit | b:A:null | c:B:hit
+67.0	anonymous	personprior	api=67.0 | mixed:Acc.BU3:null Acc.AU3:null Acc.BU2:hit Acc.AU2:hit | a:A:hit | b:A:null | c:B:hit
