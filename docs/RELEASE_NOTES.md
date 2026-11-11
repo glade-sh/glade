@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- Messaging session campaign fields now follow the captured API version and package-qualified field routes in describe, compile, query and REST describe.
 
 ## v0.3.6
 
