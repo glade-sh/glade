@@ -73,3 +73,35 @@ func TestMessagingCampaignFieldVersionNativeRoutes(t *testing.T) {
 		})
 	}
 }
+
+func TestMessagingCampaignFieldNativeFacets(t *testing.T) {
+	const dir = "testdata/conformance/messaging_campaign_presence"
+	f, err := os.Open(filepath.Join(dir, "facets.tsv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	reader := csv.NewReader(f)
+	reader.Comma = '\t'
+	rows, err := reader.ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 3 {
+		t.Fatalf("native rows=%d", len(rows)-1)
+	}
+	cfg, err := os.ReadFile(filepath.Join(dir, "scratch-def.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, row := range rows[1:] {
+		row := row
+		t.Run(row[0], func(t *testing.T) {
+			root := t.TempDir()
+			writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"sourceApiVersion":"`+row[0]+`","packageDirectories":[{"path":"force-app","default":true}]}`)
+			writeFile(t, filepath.Join(root, "config/project-scratch-def.json"), string(cfg))
+			body := `Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('MessagingSession').getDescribe().fields.getMap().get('CampaignId').getDescribe(); System.assertEquals('CampaignId',d.getName()); System.assertEquals('Campaign ID',d.getLabel()); System.assertEquals('REFERENCE',String.valueOf(d.getType())); System.assertEquals(18,d.getLength()); System.assertEquals(true,d.isNillable()); System.assertEquals(true,d.isCreateable()); System.assertEquals(true,d.isUpdateable()); System.assertEquals(true,d.isFilterable()); System.assertEquals(true,d.isSortable()); System.assertEquals(true,d.isGroupable()); System.assertEquals(true,d.isAggregatable()); System.assertEquals(true,d.isPermissionable()); System.assertEquals('Campaign',d.getRelationshipName()); System.assertEquals(false,d.isCascadeDelete()); System.assertEquals(false,d.isRestrictedDelete());`
+			runStandardFieldEvidenceRoutes(t, root, row[0], body)
+		})
+	}
+}
