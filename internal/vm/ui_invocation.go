@@ -465,7 +465,7 @@ func (vm *VM) lwcCoercedParameter(typeName string, raw any) (Value, bool, error)
 			}
 		}
 	case "decimal", "double":
-		if text, ok := raw.(string); ok && strings.TrimSpace(text) == "" {
+		if text, ok := raw.(string); ok && text == "" {
 			return Null, true, fmt.Errorf("LWC %s parameter requires a number", typeName)
 		}
 	case "list<string>":
