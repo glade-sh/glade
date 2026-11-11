@@ -863,11 +863,18 @@ jobs:
         id: predecessor
         env:
           GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           if [[ -s "$CI_LWC_COMPILE_HISTORY_PATH" ]]; then exit 0; fi
           if ! run_id="$(gh api --method GET "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs" -f head_sha="$CI_DURATION_HISTORY_CACHE_REF" -f status=success -f per_page=1 --jq '.workflow_runs[0].id // empty')"; then
             echo "::warning::Predecessor timing lookup unavailable; using deterministic scheduling fallback"
             exit 0
+          fi
+          if [[ -z "$run_id" && -n "${DEFAULT_BRANCH:-}" ]]; then
+            if ! run_id="$(gh api --method GET "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs" -f branch="$DEFAULT_BRANCH" -f event=push -f status=success -f per_page=1 --jq '.workflow_runs[0].id // empty')"; then
+              echo "::warning::Default-branch timing lookup unavailable; using deterministic scheduling fallback"
+              run_id=""
+            fi
           fi
           echo "run_id=$run_id" >>"$GITHUB_OUTPUT"
       - name: Download predecessor LWC shard evidence
@@ -926,11 +933,18 @@ jobs:
         id: predecessor
         env:
           GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           if [[ -s "$CI_VISUALFORCE_HISTORY_PATH" ]]; then exit 0; fi
           if ! run_id="$(gh api --method GET "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs" -f head_sha="$CI_DURATION_HISTORY_CACHE_REF" -f status=success -f per_page=1 --jq '.workflow_runs[0].id // empty')"; then
             echo "::warning::Predecessor timing lookup unavailable; using deterministic scheduling fallback"
             exit 0
+          fi
+          if [[ -z "$run_id" && -n "${DEFAULT_BRANCH:-}" ]]; then
+            if ! run_id="$(gh api --method GET "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs" -f branch="$DEFAULT_BRANCH" -f event=push -f status=success -f per_page=1 --jq '.workflow_runs[0].id // empty')"; then
+              echo "::warning::Default-branch timing lookup unavailable; using deterministic scheduling fallback"
+              run_id=""
+            fi
           fi
           if [[ -z "$run_id" ]]; then exit 0; fi
           if ! artifacts="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/artifacts?per_page=100" --jq '.artifacts[] | select(.expired == false) | .name')"; then
@@ -1618,6 +1632,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           CI_APEXTEST_BENCHMARK_PAIR: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair || 0 }}
+          CI_DURATION_HISTORY_FALLBACK_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           mkdir -p ci-artifacts/apextest-history-input
           scripts/ci-apex-history-input.sh
