@@ -2249,6 +2249,9 @@ func (a *Analyzer) checkIRExprVariables(typ typesys.TypeSymbol, member typesys.M
 		if message, rejected := semaChangeEventHeaderPathField(expr.Name, *scope, model); rejected {
 			return []diagnostic.Diagnostic{typeContractNativeDiagnostic(typ, message, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Name)), source)}
 		}
+		if hidden, rejected := semaObjectPermissionsHiddenFieldPath(typ.EffectiveAPIVersion, expr.Name, false, *scope, model); rejected {
+			return []diagnostic.Diagnostic{typeContractNativeDiagnostic(typ, "Variable does not exist: "+hidden, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Name)), source)}
+		}
 		fieldReceiver := expr.Name
 		fieldPath := expr.Name
 		fieldMember := ""
@@ -2319,6 +2322,13 @@ func (a *Analyzer) checkIRExprVariables(typ typesys.TypeSymbol, member typesys.M
 	case ir.ExprCall:
 		if item, rejected := a.queryBindMapVariableDiagnostic(typ, expr, *scope, model, bodyOffset+pos, source); rejected {
 			return []diagnostic.Diagnostic{item}
+		}
+		if expr.Left == nil && expr.Callee != "" && !strings.HasPrefix(expr.Callee, "new:") {
+			if dot := strings.LastIndexByte(expr.Callee, '.'); dot > 0 {
+				if hidden, rejected := semaObjectPermissionsHiddenFieldPath(typ.EffectiveAPIVersion, expr.Callee[:dot], true, *scope, model); rejected {
+					return []diagnostic.Diagnostic{typeContractNativeDiagnostic(typ, "Variable does not exist: "+hidden, bodyOffset+pos, bodyOffset+pos+max(1, dot), source)}
+				}
+			}
 		}
 		if expr.Left != nil {
 			diagnostics = append(diagnostics, a.checkIRHTTPReceiverCalls(typ, member, *expr.Left, *scope, pos, bodyOffset, source, model, constructability)...)
