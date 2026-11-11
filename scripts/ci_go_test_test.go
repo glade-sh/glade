@@ -943,7 +943,7 @@ func TestCIApexDurationHistoryWorkflowOwnership(t *testing.T) {
 			t.Errorf("single-writer refresh job missing %q", want)
 		}
 	}
-	if strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0") != 25 {
+	if strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0") != 27 {
 		t.Errorf("cache save count = %d, want existing DAG and history writers plus the Apex retry profile writer", strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0"))
 	}
 	if strings.Count(workflow, "shard: [0, 1]") != 1 || strings.Count(workflow, "shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]") != 1 {
@@ -2031,6 +2031,7 @@ func ciRequiredAggregateProblem(workflow string) string {
       - sema
       - sema-history
       - server-and-playground
+      - server-process-builder
       - test
       - smoke-runtime
       - smoke-distribution
@@ -3480,7 +3481,7 @@ func TestCINestedSourcesWorkflowContract(t *testing.T) {
 func TestCINodeIntegrationPureLaneSkipSelectors(t *testing.T) {
 	wantSkip := map[string]string{
 		"gladecli":              "^(?:TestRunDoctorReportsParser|TestRunDoctorJSON|TestRunDoctorShortFlags|TestRunDoctorReportsProjectLocalDataEnvironment)$",
-		"server-and-playground": "^(?:TestVFPageBootstrapsLightningOut|TestVFPageBootstrapsMultiWidgetLightningOut|TestLightningModulesServesCompiledJS|TestLightningModulesServesSiblingModuleWithoutJSExtension|TestLWCShellComponentRouteServesHTML|TestLWCShellRootRendersHomeWithFormalTabsAndBuilderLink|TestLWCShellBuilderRouteRendersBuilderNavigationLayoutAndSampleRecord|TestLWCShellTabRouteIncludesPreviewRouteCatalog|TestServerRootRendersLWCHomeWhenProjectHasLWCs|TestLWCShellRendersApplicationNavAndConsoleMode|TestLWCShellAppRouteFallsBackToApplicationDefaultTab|TestLWCShellUnsupportedCustomTabReturnsDiagnostic|TestLWCShellMixedPageDiagnosticsStillRendersValidComponents|TestL08SalesforceConformance)$",
+		"server-and-playground": "^(?:TestVFPageBootstrapsLightningOut|TestVFPageBootstrapsMultiWidgetLightningOut|TestLightningModulesServesCompiledJS|TestLightningModulesServesSiblingModuleWithoutJSExtension|TestLWCShellComponentRouteServesHTML|TestLWCShellRootRendersHomeWithFormalTabsAndBuilderLink|TestLWCShellBuilderRouteRendersBuilderNavigationLayoutAndSampleRecord|TestLWCShellTabRouteIncludesPreviewRouteCatalog|TestServerRootRendersLWCHomeWhenProjectHasLWCs|TestLWCShellRendersApplicationNavAndConsoleMode|TestLWCShellAppRouteFallsBackToApplicationDefaultTab|TestLWCShellUnsupportedCustomTabReturnsDiagnostic|TestLWCShellMixedPageDiagnosticsStillRendersValidComponents|TestL08SalesforceConformance|TestProcessBuilder.*Hosts)$",
 		"repoguard":             "",
 		"remaining-go":          "^(?:TestBuildCompileConfigAPIVersionMatrix|TestLWCModuleAvailabilityFollowsBundleAPIVersion|TestComplexTemplateExpressionsFollowBundleAPIVersion|TestHTMLDetailsNameFollowsBundleAPIVersion|TestCompilePreservesDeclaredAPI67|TestCompileProjectLWCBundles|TestCompileRewritesTemplateStylesheetImports|TestCompileEmitsSiblingJSModules|TestCompileEmitsUtilityOnlyLWCModules|TestCompileEmitsAdditionalHTMLTemplateModules|TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate|TestCompileEnablesLwcOnDirective|TestSetupBundleIncludesLabelsSibling|TestSetupImportMapIncludesLocalComponents|TestValidateRootFindsRepoCheckout|TestInstallFromCWDSkipsGlobalShareAsSource|TestInstallFromCopiesToolchain|TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare|TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser|TestLWCAPI67RegistrationRunsInBrowser)$",
 	}
@@ -3560,7 +3561,7 @@ func TestCIParallelDAGTopology(t *testing.T) {
 	_, jobs := readCIWorkflow(t)
 	wantJobs := []string{
 		"apextest", "apextest-history", "gladecli", "leak-scan", "tree-receipt", "nested-sources", "node-integration", "required-ci", "required-scheduled-ci", "sema", "sema-equivalence", "sema-full", "sema-history",
-		"server-and-playground", "site", "smoke-distribution", "smoke-runtime", "test", "test-binaries", "vet", "workflow-lint",
+		"server-and-playground", "server-process-builder", "site", "smoke-distribution", "smoke-runtime", "test", "test-binaries", "vet", "workflow-lint",
 	}
 	wantJobs = append(wantJobs, "apextest-history-input", "lwc-compile-history-input", "lwc-compile-history", "visualforce-history-input", "visualforce-history", "gladecli-history-input", "gladecli-history", "vm-history-input", "vm", "vm-history")
 	sort.Strings(wantJobs)
@@ -3587,8 +3588,11 @@ func TestCIParallelDAGTopology(t *testing.T) {
 			t.Errorf("root job %s must not be serialized with needs", name)
 		}
 	}
-	for _, name := range []string{"site", "vet", "gladecli", "node-integration", "nested-sources", "sema", "sema-full", "server-and-playground", "test", "smoke-runtime", "smoke-distribution"} {
+	for _, name := range []string{"site", "vet", "gladecli", "node-integration", "nested-sources", "sema", "sema-full", "server-and-playground", "server-process-builder", "test", "smoke-runtime", "smoke-distribution"} {
 		timeout := "30"
+		if name == "server-process-builder" {
+			timeout = "45" // ~20-27 min on a loaded 8-core host; hosted runners have 2-4 cores.
+		}
 		if name == "gladecli" {
 			timeout = "40"
 		}
@@ -3607,11 +3611,12 @@ func TestCIParallelDAGTopology(t *testing.T) {
 func TestCIParallelDAGLaneCommandsAndArtifacts(t *testing.T) {
 	workflow, jobs := readCIWorkflow(t)
 	wantLaneCommands := map[string][]string{
-		"workflow-lint":         {"scripts/ci-go-test.sh lane workflow-lint"},
-		"gladecli":              {"scripts/ci-go-test.sh gladecli-shard"},
-		"node-integration":      {"scripts/ci-go-test.sh node-integration"},
-		"server-and-playground": {"scripts/ci-go-test.sh lane server-and-playground"},
-		"test":                  {"scripts/ci-go-test.sh lane repoguard", "scripts/ci-go-test.sh lane remaining-go"},
+		"workflow-lint":          {"scripts/ci-go-test.sh lane workflow-lint"},
+		"gladecli":               {"scripts/ci-go-test.sh gladecli-shard"},
+		"node-integration":       {"scripts/ci-go-test.sh node-integration"},
+		"server-and-playground":  {"scripts/ci-go-test.sh lane server-and-playground"},
+		"server-process-builder": {"scripts/ci-go-test.sh lane server-process-builder"},
+		"test":                   {"scripts/ci-go-test.sh lane repoguard", "scripts/ci-go-test.sh lane remaining-go"},
 	}
 	for jobName, commands := range wantLaneCommands {
 		for _, command := range commands {
@@ -3625,11 +3630,12 @@ func TestCIParallelDAGLaneCommandsAndArtifacts(t *testing.T) {
 	}
 
 	wantArtifacts := map[string]string{
-		"workflow-lint":         "go-test-workflow-lint",
-		"gladecli":              "gladecli-shard-${{ matrix.shard }}",
-		"node-integration":      "go-test-node-integration",
-		"server-and-playground": "go-test-server-and-playground",
-		"test":                  "go-test-remaining-go",
+		"workflow-lint":          "go-test-workflow-lint",
+		"gladecli":               "gladecli-shard-${{ matrix.shard }}",
+		"node-integration":       "go-test-node-integration",
+		"server-and-playground":  "go-test-server-and-playground",
+		"server-process-builder": "go-test-server-process-builder",
+		"test":                   "go-test-remaining-go",
 	}
 	for jobName, artifact := range wantArtifacts {
 		job := jobs[jobName]
@@ -3643,6 +3649,7 @@ func TestCIParallelDAGLaneCommandsAndArtifacts(t *testing.T) {
 		"ci-artifacts/go-test/test-workflow-lint.json",
 		"ci-artifacts/go-test-node-integration/test-node-integration.json",
 		"ci-artifacts/go-test/test-server-and-playground.json",
+		"ci-artifacts/go-test/test-server-process-builder.json",
 		"ci-artifacts/go-test/test-repoguard.json",
 		"ci-artifacts/go-test/test-remaining-go.json",
 	} {
@@ -3673,7 +3680,7 @@ func TestCIParallelDAGCacheOwnership(t *testing.T) {
 	owners := map[string]string{
 		"vet": "ci-vet", "gladecli": "ci-gladecli",
 		"node-integration":      "ci-node-integration",
-		"server-and-playground": "ci-server-playground", "test": "ci-test",
+		"server-and-playground": "ci-server-playground", "server-process-builder": "ci-server-process-builder", "test": "ci-test",
 		"smoke-runtime": "ci-smoke-runtime", "smoke-distribution": "ci-smoke-distribution",
 	}
 	primaryKeys := make(map[string]string)
@@ -3706,7 +3713,7 @@ func TestCIParallelDAGCacheOwnership(t *testing.T) {
 			t.Errorf("%s lacks the ci-test digest seed fallback", jobName)
 		}
 	}
-	if strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0") != 25 {
+	if strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0") != 27 {
 		t.Errorf("cache save count = %d, want existing DAG, shared binary producer, four history writers, and the Apex retry profile writer", strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0"))
 	}
 }
