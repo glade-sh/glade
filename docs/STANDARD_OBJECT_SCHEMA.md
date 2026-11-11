@@ -112,6 +112,9 @@ API 67.0 describe lists them (`whatid_targets_tiebreak` confirms Task and Event
 WhatId: 85 targets at 62.0, 93 at 67.0). The plain Developer object lists keep
 them out of API 62.0; the scalars follow with
 `GLADE_UPDATE_DESCRIBE_SCALARS=1 go test ./internal/storage -run TestStandardDescribeCatalogV2ScalarsMatchPack`.
+A pack or stub overlay change that moves a child relationship also regenerates
+sema's table with
+`GLADE_UPDATE_CHILD_RELATIONSHIPS=1 go test ./internal/storage -run TestStandardChildRelationshipsMatchCatalog`.
 
 `python3 scripts/apply-standard-restricted-supplement.py` sets the
 restrictedPicklist facet on docs-placeholder picklists that the P0 describes

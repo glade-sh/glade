@@ -358,7 +358,7 @@ func (vm *VM) executeDatabaseDMLWithOptions(op string, args []Value, result *Res
 		}
 		// Other partial calls (explicit USER_MODE, upsert) defer the policy
 		// fields to the engine, which fails only the denied rows.
-		if err := vm.enforceUserModeDMLAccessDeferring(permissionOp, args[0], accessLevel, !allOrNone); err != nil {
+		if err := vm.enforceUserModeDMLAccessDeferring(permissionOp, args[0], accessLevel, !allOrNone, externalIDField); err != nil {
 			return Null, err
 		}
 	}
@@ -2557,7 +2557,7 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 	// Partial user-mode DML fails only the rows whose fields are denied; the
 	// all-or-none routes raised the statement exception before this point.
 	if resolvedMode == "USER_MODE" && !allOrNone && len(targets) == len(records) && (op == "insert" || op == "update" || op == "upsert") {
-		if failures := vm.userModeDMLFieldFailures(op, targets); hasDMLFailures(failures) {
+		if failures := vm.userModeDMLFieldFailures(op, targets, externalIDField); hasDMLFailures(failures) {
 			records, _, targets = filterDMLInputs(records, nil, targets, failures)
 			if len(records) == 0 {
 				return failures, nil
@@ -3549,8 +3549,13 @@ func (vm *VM) defaultValueForRecordField(definition storage.ObjectDefinition, re
 	if !dml.PersonAccountCustomFieldDefaultAllowed(vm.Org, definition, record, field) {
 		return storage.Value{}, false
 	}
-	if value, ok := storage.CurrencyDefaultForField(vm.Org, storage.ID(vm.currentUserID()), field); ok {
-		return value, true
+	// Only the currency default reads the running user. Resolving the user id
+	// walks the user object's fields, and this runs for every field of every
+	// DML row without a value.
+	if strings.EqualFold(field.APIName, "CurrencyIsoCode") {
+		if value, ok := storage.CurrencyDefaultForField(vm.Org, storage.ID(vm.currentUserID()), field); ok {
+			return value, true
+		}
 	}
 	rawDefault := strings.TrimSpace(field.DefaultValue)
 	// This runs for every field of every DML row without a value. Resolve the
@@ -6883,7 +6888,7 @@ func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, mode i
 				permissionOp = ""
 			}
 		}
-		if err := vm.enforceUserModeDMLAccess(permissionOp, value, Value{}); err != nil {
+		if err := vm.enforceUserModeDMLAccess(permissionOp, value, Value{}, externalIDField); err != nil {
 			return err
 		}
 	}

@@ -115,3 +115,29 @@ func restoreZeroFieldFlags(org *storage.OrgState, flags []zeroFieldFlags) {
 		}
 	}
 }
+
+// gob also decodes a pointer to an empty string as nil. Custom label
+// translation sources keep that distinction (nil: no provenance; empty: the
+// translation file held an empty label), so the payload records the indexes of
+// Metadata.Labels whose TranslationSourceRaw points at "" and restores them.
+func captureEmptyLabelSources(org storage.OrgState) []int {
+	var indexes []int
+	for i := range org.Metadata.Labels {
+		if raw := org.Metadata.Labels[i].TranslationSourceRaw; raw != nil && *raw == "" {
+			indexes = append(indexes, i)
+		}
+	}
+	return indexes
+}
+
+func restoreEmptyLabelSources(org *storage.OrgState, indexes []int) {
+	if org == nil || len(indexes) == 0 {
+		return
+	}
+	empties := make([]string, len(indexes))
+	for n, i := range indexes {
+		if i >= 0 && i < len(org.Metadata.Labels) {
+			org.Metadata.Labels[i].TranslationSourceRaw = &empties[n]
+		}
+	}
+}

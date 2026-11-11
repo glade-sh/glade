@@ -311,6 +311,9 @@ type LabelMetadata struct {
 	ShortDescription string `json:"shortDescription,omitempty"`
 	Categories       string `json:"categories,omitempty"`
 	File             string `json:"file,omitempty"`
+	// TranslationSourceRaw retains source text that the legacy Value field
+	// normalizes. Older and pathless registries do not have this provenance.
+	TranslationSourceRaw *string `json:"translationSourceRaw,omitempty"`
 }
 
 // StandardValueSetTranslation is a project-authored translation of one
@@ -2604,6 +2607,28 @@ func (o OrgState) Clone() OrgState {
 			out.Transactions[i] = transaction.Clone()
 		}
 	}
+	return out
+}
+
+// CloneObjectsShallow returns an org copy whose Objects map is its own, with
+// room for extra entries, while every object state, record map and definition
+// is shared with the receiver. It is for read-only views that add objects of
+// their own beside the receiver's. Every copied state is marked
+// RecordsShared and IndexesShared, so a writer that goes through
+// EnsureMutableObjectRecords clones the maps first; definitions must go
+// through EnsureMutableObjectDefinition. The copy gets an object name cache of
+// its own, as Clone does.
+func (o OrgState) CloneObjectsShallow(extra int) OrgState {
+	out := o
+	out.Features = slices.Clone(o.Features)
+	if o.Objects != nil || extra > 0 {
+		out.Objects = make(map[string]ObjectState, len(o.Objects)+extra)
+		for name, object := range o.Objects {
+			object.RecordsShared, object.IndexesShared = true, true
+			out.Objects[name] = object
+		}
+	}
+	out.objectNameCache = newObjectNameCacheFrom(o.objectNameCache, o.Objects, out.Objects)
 	return out
 }
 

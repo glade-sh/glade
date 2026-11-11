@@ -43,10 +43,88 @@ func missingDependencyNames(index typesys.Index) []string {
 // An explicit source is the anonymous body; named routes use captured file
 // identities from the error stack and reject changed source generations.
 func ExplainDependencyError(index typesys.Index, source string, err error) error {
+	return newDependencyExplainer(index).explain(source, err)
+}
+
+// dependencyExplainer answers ExplainDependencyError for one index. A test run
+// asks the same question for every excluded class and failing case, and those
+// share files: the compile-gate units of the index are built once, and whether
+// a file's text binds an unresolved root is remembered per (file, root) with
+// the text it was answered for. Sources are still read and digest-checked per
+// question through a fresh source cache.
+type dependencyExplainer struct {
+	index typesys.Index
+	names []string
+	units *compileGateUnits
+	known map[string]bool
+	refs  map[dependencyReferenceKey]dependencyReferenceAnswer
+}
+
+// typeKnown is dependencyTypeKnown remembered per reference: it scans the
+// index and the platform symbol view, and a run asks it for the same few
+// references many times.
+func (e *dependencyExplainer) typeKnown(reference string) bool {
+	if known, ok := e.known[reference]; ok {
+		return known
+	}
+	known := dependencyTypeKnown(e.index, reference)
+	if e.known == nil {
+		e.known = make(map[string]bool)
+	}
+	e.known[reference] = known
+	return known
+}
+
+type dependencyReferenceKey struct {
+	file string
+	root string
+}
+
+type dependencyReferenceAnswer struct {
+	text       string
+	referenced bool
+	mentioned  bool
+}
+
+func newDependencyExplainer(index typesys.Index) *dependencyExplainer {
+	return &dependencyExplainer{index: index, names: missingDependencyNames(index)}
+}
+
+func (e *dependencyExplainer) compileGateUnits() compileGateUnits {
+	if e.units == nil {
+		units := newCompileGateUnits(e.index)
+		e.units = &units
+	}
+	return *e.units
+}
+
+// referenceAnswer reports whether text, read for file, binds root as a static
+// Apex reference and, when it does not, whether it mentions root at all.
+// compileGateReferences and compileGateMentions are deterministic in (file,
+// text, targets), so an answer is reused only for identical text.
+func (e *dependencyExplainer) referenceAnswer(file, text, root string, targets compileGateUnits) dependencyReferenceAnswer {
+	key := dependencyReferenceKey{file: file, root: root}
+	if answer, ok := e.refs[key]; ok && answer.text == text {
+		return answer
+	}
+	answer := dependencyReferenceAnswer{text: text}
+	answer.referenced = len(compileGateReferences(file, text, targets)) > 0
+	if !answer.referenced {
+		answer.mentioned = compileGateMentions(text, targets.fileOf)[strings.ToLower(root)]
+	}
+	if e.refs == nil {
+		e.refs = make(map[dependencyReferenceKey]dependencyReferenceAnswer)
+	}
+	e.refs[key] = answer
+	return answer
+}
+
+func (e *dependencyExplainer) explain(source string, err error) error {
 	if err == nil || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 		return err
 	}
-	names := missingDependencyNames(index)
+	index := e.index
+	names := e.names
 	if len(names) == 0 {
 		return err
 	}
@@ -60,7 +138,7 @@ func ExplainDependencyError(index typesys.Index, source string, err error) error
 	}
 	message := err.Error()
 	reference := dependencyErrorReference(message)
-	if reference == "" || dependencyTypeKnown(index, reference) {
+	if reference == "" || e.typeKnown(reference) {
 		return err
 	}
 	root, _, _ := strings.Cut(reference, ".")
@@ -87,7 +165,7 @@ func ExplainDependencyError(index typesys.Index, source string, err error) error
 			}
 		}
 	}
-	units := newCompileGateUnits(index)
+	units := e.compileGateUnits()
 	targets := compileGateUnits{fileOf: map[string]string{strings.ToLower(root): root}, types: units.types, namespace: units.namespace}
 	explained := func() error {
 		return &vm.RuntimeError{Type: "dependency_missing", Message: fmt.Sprintf("unresolved Apex reference %q; unloaded declared dependencies: %s; %s", reference, strings.Join(names, ", "), message), Stack: append([]vm.StackFrame(nil), stack...)}
@@ -100,10 +178,11 @@ func ExplainDependencyError(index typesys.Index, source string, err error) error
 	}
 	shadowed := false
 	for file, text := range sources {
-		if len(compileGateReferences(file, text, targets)) > 0 {
+		answer := e.referenceAnswer(file, text, root, targets)
+		if answer.referenced {
 			return explained()
 		}
-		if compileGateMentions(text, targets.fileOf)[strings.ToLower(root)] {
+		if answer.mentioned {
 			shadowed = true
 		}
 	}
@@ -115,7 +194,7 @@ func ExplainDependencyError(index typesys.Index, source string, err error) error
 			if _, known := index.SourceDigest(trigger.File); !known {
 				continue
 			}
-			if text, readErr := cache.read(trigger.File); readErr == nil && len(compileGateReferences(trigger.File, text, targets)) > 0 {
+			if text, readErr := cache.read(trigger.File); readErr == nil && e.referenceAnswer(trigger.File, text, root, targets).referenced {
 				return explained()
 			}
 		}
@@ -199,7 +278,8 @@ func dependencyTypeKnown(index typesys.Index, name string) bool {
 }
 
 func explainDependencyRun(index typesys.Index, run *testreport.Run) {
-	if len(missingDependencyNames(index)) == 0 {
+	explainer := newDependencyExplainer(index)
+	if len(explainer.names) == 0 {
 		return
 	}
 	excluded := map[string]testreport.CompileExclusion{}
@@ -223,7 +303,7 @@ func explainDependencyRun(index typesys.Index, run *testreport.Run) {
 			}
 		}
 		var explained *vm.RuntimeError
-		if err := ExplainDependencyError(index, "", original); err != original && errors.As(err, &explained) && explained.Type == "dependency_missing" {
+		if err := explainer.explain("", original); err != original && errors.As(err, &explained) && explained.Type == "dependency_missing" {
 			if problem.Detail == "" {
 				problem.Detail = problem.Type + ": " + problem.Message
 			}

@@ -2564,7 +2564,7 @@ func canonicalFeatureName(feature string) string {
 		return "AddCustomApps"
 	case stringsEqualFold(feature, "AnalyticsAdminPerms"):
 		return "AnalyticsAdminPerms"
-	case strings.HasPrefix(strings.ToLower(feature), "healthcloud"):
+	case hasPrefixFoldASCII(feature, "healthcloud"):
 		return "HealthCloud"
 	case stringsEqualFold(feature, "LightningExperience"):
 		return "LightningExperience"
@@ -2581,6 +2581,14 @@ func canonicalFeatureName(feature string) string {
 	default:
 		return feature
 	}
+}
+
+// hasPrefixFoldASCII reports whether value starts with the ASCII prefix under
+// ASCII case folding, without lower-casing the whole value. No rune outside
+// ASCII lower-cases to a letter of the prefixes used here, so the answer
+// matches strings.HasPrefix(strings.ToLower(value), prefix).
+func hasPrefixFoldASCII(value, prefix string) bool {
+	return len(value) >= len(prefix) && stringsEqualFold(value[:len(prefix)], prefix)
 }
 
 func hasCanonicalFeature(features []string, want string) bool {

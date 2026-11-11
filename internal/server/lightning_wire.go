@@ -122,6 +122,12 @@ func (s *Server) invokeLightningApex(w http.ResponseWriter, r *http.Request, cla
 	workingOrg := s.Org.Clone()
 	machine.SetOrg(&workingOrg)
 	machine.SetSynchronousActionBoundary(true)
+	if s.LimitMode != "" {
+		machine.SetLimitMode(s.LimitMode)
+	}
+	if s.LimitCaps != (vm.LimitCaps{}) {
+		machine.SetLimitCaps(s.LimitCaps)
+	}
 	machine.SetCurrentUser(s.currentUser(r, ""))
 	if pageURL := lightningLocalContextPageURL(r); pageURL != "" {
 		machine.SetCurrentPageURL(pageURL)
@@ -163,11 +169,26 @@ func (s *Server) invokeLightningApex(w http.ResponseWriter, r *http.Request, cla
 		})
 		return
 	}
+	// Async work enqueued by the action runs after the action's transaction
+	// commits (native rows: lightning_action_async_drain). It reuses the shared
+	// async drain; a failing job rolls back only itself, so the caller still
+	// sees the action's own result.
 	if machine.HasPendingAsyncWork() {
-		writeWireJSON(w, lwcbrowser.WireResponse{
-			Error: apexWireInvocationError("", "UnsupportedFeature", className, methodName, rawParams, "asynchronous Apex work cannot be committed by the local synchronous LWC action boundary", http.StatusNotImplemented),
-		})
-		return
+		var drained vm.Result
+		if err := machine.DrainAsync(&drained); err != nil {
+			writeWireJSON(w, lwcbrowser.WireResponse{
+				Error: apexWireInvocationError("", "RuntimeError", className, methodName, rawParams, err.Error(), http.StatusInternalServerError),
+			})
+			return
+		}
+		// A drained job may itself try an uncaptured kind (executeBatch,
+		// System.schedule). Nothing is committed yet, so reject the action.
+		if machine.HasRejectedAsyncAction() {
+			writeWireJSON(w, lwcbrowser.WireResponse{
+				Error: apexWireInvocationError("", "UnsupportedFeature", className, methodName, rawParams, "asynchronous Apex work cannot be committed by the local synchronous LWC action boundary", http.StatusNotImplemented),
+			})
+			return
+		}
 	}
 	if !orgStateEqual(workingOrg, *s.Org) {
 		if err := s.commitOrg(workingOrg); err != nil {

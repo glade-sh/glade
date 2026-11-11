@@ -144,6 +144,26 @@ func readFrontendRecord(r io.Reader, value any, budget *frontendDecodeBudget) er
 
 const maxFrontendElements = 16 << 10
 
+// frontendDecodeBudgetMinimum bounds the decoded graph of small snapshots.
+const frontendDecodeBudgetMinimum = 256 << 20
+
+// frontendDecodeBudgetPerEncodedByte scales the bound with the authenticated
+// stream. The charge model below bills 21 to 27 bytes per encoded byte on
+// real project snapshots (2048 per object, 64 plus three per byte per
+// string), so a fixed 256 MiB budget rejected every snapshot above roughly
+// 10 MiB, and projects of about 500 classes or more rebuilt their frontend on
+// every warm run. The decoded graph stays proportional to the file the caller
+// already capped, and small snapshots keep the former fixed bound.
+const frontendDecodeBudgetPerEncodedByte = 64
+
+func frontendDecodeBudgetFor(encoded int) int64 {
+	scaled := int64(encoded) * frontendDecodeBudgetPerEncodedByte
+	if scaled < frontendDecodeBudgetMinimum {
+		return frontendDecodeBudgetMinimum
+	}
+	return scaled
+}
+
 // Bound aggregate decoded structure before json.Unmarshal allocates graphs.
 // The conservative charges cover struct/slice/map growth as well as strings;
 // unknown JSON fields consume the same budget. Counts alone are insufficient
@@ -387,7 +407,7 @@ func readFrontendRecords(payload []byte) (frontendPayload, error) {
 	if err := binary.Read(reader, binary.LittleEndian, &version); err != nil || version != FrontendSnapshotVersion {
 		return wire, errors.New("invalid frontend snapshot version")
 	}
-	budget := &frontendDecodeBudget{remaining: 256 << 20}
+	budget := &frontendDecodeBudget{remaining: frontendDecodeBudgetFor(len(payload))}
 	var header frontendStreamHeader
 	if err := readFrontendRecord(reader, &header, budget); err != nil {
 		return wire, err

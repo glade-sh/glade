@@ -1,0 +1,1 @@
+global class HostFinite62 { global Integer visits=0; global String value {get {visits++; if(visits==1){String current=helper();} return 'value';} set;} global String helper(){return value;} }
