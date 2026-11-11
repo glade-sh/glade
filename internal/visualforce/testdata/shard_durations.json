@@ -941,31 +941,31 @@
   },
   {
    "name": "TestV09SalesforceConformancePart1of4",
-   "durationMillis": 52000
+   "durationMillis": 31000
   },
   {
    "name": "TestV09SalesforceConformancePart2of4",
-   "durationMillis": 51000
+   "durationMillis": 25500
   },
   {
    "name": "TestV09SalesforceConformancePart3of4",
-   "durationMillis": 42000
+   "durationMillis": 33000
   },
   {
    "name": "TestV09SalesforceConformancePart4of4",
-   "durationMillis": 42000
+   "durationMillis": 37500
   },
   {
    "name": "TestV09SalesforceControlsDenied",
-   "durationMillis": 123000
+   "durationMillis": 86500
   },
   {
    "name": "TestV09SalesforceControlsReview",
-   "durationMillis": 123000
+   "durationMillis": 176500
   },
   {
    "name": "TestV09SalesforceControlsWidget",
-   "durationMillis": 123000
+   "durationMillis": 63000
   },
   {
    "name": "TestV10SalesforceConformance",
