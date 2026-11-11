@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- Permission set group status, group permission calculation and read-only field muting now match captured Salesforce results.
 
 ## v0.3.6
 
