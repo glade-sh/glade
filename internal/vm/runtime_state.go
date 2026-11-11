@@ -131,6 +131,13 @@ type VM struct {
 	heapStaticRoots    []map[string]Field
 	heapStaticRootsLen int
 	heapStaticRootsOK  bool
+	// heapStaticScalarTotal and heapStaticContainers split those roots' static
+	// fields: scalar-valued fields are summed once, container-valued ones are
+	// listed for the per-check walk. Every class store clears heapStaticFlatOK.
+	heapStaticScalarTotal int
+	heapStaticContainers  []heapStaticContainerRef
+	heapStaticFlatOK      bool
+	heapSeen              map[approxVisitKey]bool
 	// classOverlay holds registrations made on top of a frozen generation
 	// until the next FreezeClassLookup (see class_lookup_overlay.go).
 	classOverlay *classLookupOverlay
@@ -1175,6 +1182,7 @@ func (vm *VM) classMapCopy() map[string]Class {
 // map shared with another VM is not written; the value goes to this VM's
 // overlay, so a first static write no longer copies every class entry.
 func (vm *VM) writeExistingClassEntry(name string, class Class) {
+	vm.heapStaticFlatOK = false
 	if vm.heapStaticRootsOK {
 		previous, exists := vm.classEntry(name)
 		vm.noteClassStaticRootsWrite(previous, exists, class)
