@@ -1296,8 +1296,10 @@ fi
 	if err := <-errCh; !errors.Is(err, context.Canceled) {
 		t.Fatalf("error = %v, want context canceled", err)
 	}
-	if elapsed := time.Since(started); elapsed >= time.Second {
-		t.Fatalf("plugin list cancellation took %s, want <1s", elapsed)
+	if elapsed := time.Since(started); elapsed >= testutil.Deadline(5*time.Second) {
+		// The descendant sleeps 30s; any bound far below that proves the
+		// cleanup did not wait for it. The slack absorbs loaded runners.
+		t.Fatalf("plugin list cancellation took %s, want <%s", elapsed, testutil.Deadline(5*time.Second))
 	}
 	waitForCLIProcessAbsent(t, pid, time.Second)
 	cleanupNeeded = false
