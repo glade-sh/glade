@@ -282,6 +282,13 @@ func (vm *VM) releaseReplacedLazy(previous Class, existed bool, next Class) {
 	}
 }
 
+// ClassHeaderEntries ranges over the class entries without building lazy
+// shells: a shell carries the name, namespace and flags of its class and no
+// members. Call BuiltClass on an entry to get its members.
+func (vm *VM) ClassHeaderEntries() iter.Seq2[string, Class] {
+	return vm.classEntriesRaw()
+}
+
 // classEntriesRaw ranges over the class entries, with shells left unbuilt. Use
 // it only where a loop reads names, namespaces and flags.
 func (vm *VM) classEntriesRaw() iter.Seq2[string, Class] {
