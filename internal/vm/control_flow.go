@@ -1100,7 +1100,7 @@ func (vm *VM) executeFor(source string, inst ir.Instruction, result *Result) (ex
 	// could shadow in the loop condition or update, so body locals can stay
 	// bound between iterations and be removed once when the loop exits.
 	var kept *[]string
-	if vm.currentClass == "" && !vm.currentTrigger {
+	if vm.currentClass == "" && !vm.currentTrigger && vm.forBodyBindingsReusable(inst) {
 		kept = new([]string)
 		defer func() {
 			for _, name := range *kept {
@@ -1871,4 +1871,128 @@ func dynamicSOQLForLoopError(expr ir.Expr, err error) error {
 type heapStaticContainerRef struct {
 	fields map[string]Field
 	name   string
+}
+
+// forBodyBindingsReusable reports whether the body locals of a for loop can
+// stay bound between iterations. A stale local would be visible to name
+// resolution that is case-insensitive (a type or class named like the local),
+// so every spelling of each body-declared name in the loop must be the
+// declaration's own spelling. The answer depends only on the loop's IR.
+func (vm *VM) forBodyBindingsReusable(inst ir.Instruction) bool {
+	if len(inst.Then) == 0 {
+		return false
+	}
+	key := &inst.Then[0]
+	if cached, ok := vm.forBodyReusable[key]; ok {
+		return cached
+	}
+	declared := make(map[string]string)
+	var collect func([]ir.Instruction)
+	collect = func(list []ir.Instruction) {
+		for _, child := range list {
+			switch child.Op {
+			case ir.OpDeclare:
+				if child.Name != "" {
+					declared[child.Name] = child.Name
+				}
+			case ir.OpDeclGroup:
+				collect(child.Then)
+			}
+		}
+	}
+	collect(inst.Then)
+	spellings := make(map[string]map[string]bool)
+	scan := func(text string) {
+		for i := 0; i < len(text); {
+			c := text[i]
+			if !(c == '_' || c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z') {
+				i++
+				continue
+			}
+			start := i
+			for i < len(text) && (text[i] == '_' || text[i] >= '0' && text[i] <= '9' || text[i] >= 'a' && text[i] <= 'z' || text[i] >= 'A' && text[i] <= 'Z') {
+				i++
+			}
+			word := text[start:i]
+			lower := strings.ToLower(word)
+			if spellings[lower] == nil {
+				spellings[lower] = make(map[string]bool)
+			}
+			spellings[lower][word] = true
+		}
+	}
+	var scanExpr func(ir.Expr)
+	scanExpr = func(e ir.Expr) {
+		scan(e.Value)
+		scan(e.Name)
+		scan(e.Callee)
+		for _, arg := range e.Args {
+			scanExpr(arg)
+		}
+		for _, named := range e.NamedArgs {
+			scan(named.Name)
+			scanExpr(named.Expr)
+		}
+		if e.Left != nil {
+			scanExpr(*e.Left)
+		}
+		if e.Right != nil {
+			scanExpr(*e.Right)
+		}
+	}
+	var scanList func([]ir.Instruction)
+	var scanInst func(ir.Instruction)
+	scanList = func(list []ir.Instruction) {
+		for _, child := range list {
+			scanInst(child)
+		}
+	}
+	scanInst = func(in ir.Instruction) {
+		scan(in.Type)
+		scan(in.Name)
+		scan(in.Field)
+		for _, t := range in.CatchTypes {
+			scan(t)
+		}
+		scanExpr(in.Expr)
+		if in.Init != nil {
+			scanInst(*in.Init)
+		}
+		scanList(in.Inits)
+		if in.Update != nil {
+			scanInst(*in.Update)
+		}
+		scanList(in.Updates)
+		scanList(in.Then)
+		scanList(in.Else)
+		scanList(in.Catch)
+		for _, c := range in.Catches {
+			for _, t := range c.Types {
+				scan(t)
+			}
+			scan(c.Name)
+			scanList(c.Body)
+		}
+		scanList(in.Finally)
+		for _, c := range in.Cases {
+			for _, e := range c.Exprs {
+				scanExpr(e)
+			}
+			scanList(c.Body)
+		}
+	}
+	scanInst(inst)
+	reusable := true
+	for name := range declared {
+		forms := spellings[strings.ToLower(name)]
+		if len(forms) != 1 || !forms[name] {
+			reusable = false
+			break
+		}
+	}
+	if vm.forBodyReusable == nil {
+		vm.forBodyReusable = make(map[*ir.Instruction]bool)
+	}
+	vm.forBodyReusable[key] = reusable
+	return reusable
 }
