@@ -68,7 +68,7 @@ func (e *Engine) ApplyFlowActionBatch(records []storage.Record, after func(int, 
 	return true, e.runFlowActionBatch(rule, action, objectName, definition, records, previous, after, afterBatch...)
 }
 
-func (e *Engine) runFlowActionBatch(rule storage.FlowRule, action storage.FlowAction, objectName string, definition storage.ObjectDefinition, records, previous []storage.Record, after func(int, AutomationResult) error, afterBatch ...func([]AutomationResult) error) error {
+func (e *Engine) runFlowActionBatch(rule storage.FlowRule, action storage.FlowAction, objectName string, definition storage.ObjectDefinition, records, previous []storage.Record, after func(int, AutomationResult) error, afterBatch ...func([]AutomationResult, storage.FlowRule) error) error {
 	if e.flowDepth > 8 {
 		return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow field update recursion limit exceeded")
 	}
