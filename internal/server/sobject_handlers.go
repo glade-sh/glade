@@ -58,6 +58,19 @@ func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, version st
 			return
 		}
 		payload := describePayload(object.Definition, s.Org)
+		if strings.EqualFold(objectName, "MessagingSession") {
+			visible, captured := storage.StandardFeatureFieldVersion(objectName, "CampaignId", strings.TrimPrefix(version, "v"))
+			if captured && !visible {
+				fields := payload["fields"].([]map[string]any)
+				filtered := make([]map[string]any, 0, len(fields))
+				for _, field := range fields {
+					if !strings.EqualFold(fmt.Sprint(field["name"]), "CampaignId") {
+						filtered = append(filtered, field)
+					}
+				}
+				payload["fields"] = filtered
+			}
+		}
 		original := payload["childRelationships"].([]map[string]any)
 		relationships := make([]map[string]any, 0, len(original))
 		for _, relationship := range original {
