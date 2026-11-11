@@ -38,8 +38,9 @@ func TestCase340DefaultDaemonRejectsUntrustedStartAncestry(t *testing.T) {
 			cache := t.TempDir()
 			t.Setenv("HOME", cache)
 			t.Setenv("XDG_CACHE_HOME", cache)
-			if moved := ServeSocketPath(root); strings.HasPrefix(moved, root+string(filepath.Separator)) {
-				t.Fatalf("unsafe %s kept the local socket: %s", kind, moved)
+			userCache, _ := os.UserCacheDir()
+			if moved := ServeSocketPath(root); !strings.HasPrefix(moved, filepath.Join(userCache, "glade")+string(filepath.Separator)) {
+				t.Fatalf("unsafe %s did not fall back to the user cache directory: %s", kind, moved)
 			}
 			srv, err := NewServer(ServerConfig{Root: root})
 			if srv != nil {

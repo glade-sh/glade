@@ -31,6 +31,10 @@ func TestCase340OptionalDiscoverySkipsUntrustedDirectory(t *testing.T) {
 	if err := os.Chmod(dir, 0777); err != nil {
 		t.Fatal(err)
 	}
+	userCache, _ := os.UserCacheDir()
+	if moved := testdaemon.ServeSocketPath(root); !strings.HasPrefix(moved, filepath.Join(userCache, "glade")+string(filepath.Separator)) {
+		t.Fatalf("discovery did not fall back to the user cache directory: %s", moved)
+	}
 	_, connected, err := tryTestServerRequest(context.Background(), root, false, testdaemon.RunRequestV1{})
 	if err != nil || connected {
 		t.Fatalf("optional discovery should use local fallback: connected=%v err=%v", connected, err)

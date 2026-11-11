@@ -52,9 +52,10 @@ func servePaths(projectRoot string) (socket string, pid string) {
 // privateServeDir picks the daemon discovery directory. The project-local
 // directory is used when its path is short enough for a unix socket and every
 // existing component is owned by the user (or root) and not group or world
-// writable. Otherwise the daemon uses a hashed directory under the temp root,
-// and when the temp root fails the same check, under the per-user cache
-// directory. A rejected location prints one warning per process.
+// writable. Otherwise the daemon uses a hashed directory under the per-user
+// cache directory (0700, checked the same way), and the temp root only when
+// the cache directory cannot be determined or fails its check. A rejected
+// location prints one warning per process.
 func privateServeDir(projectRoot string) (base, relative string) {
 	projectRoot = absoluteIfClimbing(projectRoot)
 	localDir := filepath.Join(projectRoot, serveDir)
@@ -67,19 +68,15 @@ func privateServeDir(projectRoot string) (base, relative string) {
 	}
 	sum := sha256.Sum256([]byte(filepath.Clean(projectRoot)))
 	name := "glade-test-serve-" + hex.EncodeToString(sum[:8])
-	tmp := os.TempDir()
-	if discoveryLocationTrusted(filepath.Join(tmp, name)) {
-		return tmp, name
-	}
-	warnUntrustedDiscovery(filepath.Join(tmp, name))
 	if cache, err := os.UserCacheDir(); err == nil && cache != "" {
-		if abs, err := filepath.Abs(cache); err == nil {
-			if err := os.MkdirAll(abs, 0o700); err == nil {
+		if abs, err := filepath.Abs(cache); err == nil && os.MkdirAll(abs, 0o700) == nil {
+			if discoveryLocationTrusted(filepath.Join(abs, "glade", name)) {
 				return abs, filepath.Join("glade", name)
 			}
+			warnUntrustedDiscovery(filepath.Join(abs, "glade", name))
 		}
 	}
-	return tmp, name
+	return os.TempDir(), name
 }
 
 var (

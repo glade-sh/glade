@@ -4,6 +4,10 @@
 
 Seeded profiles now link to the user licenses and management permissions seen in captured Salesforce rows. Customized profiles from older saved orgs are preserved, license ID collisions are resolved, and the external license fallback only applies to key-only external licenses.
 
+### Test daemon
+
+- **Unsafe daemon directories.** `glade test serve` and the commands that find it now check owner and mode of the daemon directory on every use. A directory that is not yours or is group- or world-writable (for example a group-writable volume root) is refused with one warning line, and Glade uses the per-user cache directory instead.
+
 ### Lightning
 
 - **Historical overloaded Apex actions.** A Lightning web component call to an `@AuraEnabled` method whose single-parameter overloads still compile (Apex API before 55) now runs the overload Salesforce selects, instead of reporting the overload as unsupported. Other overload shapes keep the unsupported result.

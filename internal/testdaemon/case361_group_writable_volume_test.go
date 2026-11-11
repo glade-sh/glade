@@ -15,14 +15,17 @@ import (
 // project-local discovery directory. The daemon falls back to the per-user
 // cache directory, created 0700, with one warning.
 func TestCase361GroupWritableVolumeRootFallsBackToUserCache(t *testing.T) {
-	volume := t.TempDir()
+	volume, err := os.MkdirTemp("/tmp", "r361")
+	if err != nil {
+		t.Skip("no short temp directory")
+	}
+	defer os.RemoveAll(volume)
 	if err := os.Chmod(volume, 0o775); err != nil {
 		t.Fatal(err)
 	}
 	cache := t.TempDir()
 	t.Setenv("XDG_CACHE_HOME", cache)
 	t.Setenv("HOME", cache)
-	t.Setenv("TMPDIR", volume) // temp root is also the group-writable volume
 	var warn bytes.Buffer
 	oldWriter := discoveryWarnWriter
 	discoveryWarnWriter = &warn
@@ -38,7 +41,7 @@ func TestCase361GroupWritableVolumeRootFallsBackToUserCache(t *testing.T) {
 		t.Fatalf("socket %s stayed on the group-writable volume", socket)
 	}
 	userCache, err := os.UserCacheDir()
-	if err != nil || !strings.HasPrefix(socket, userCache) {
+	if err != nil || !strings.HasPrefix(socket, filepath.Join(userCache, "glade")+string(filepath.Separator)) {
 		t.Fatalf("socket %s is not under the user cache %s (%v)", socket, userCache, err)
 	}
 	if strings.Count(warn.String(), "\n") != 1 {

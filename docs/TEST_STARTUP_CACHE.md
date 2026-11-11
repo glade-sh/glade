@@ -48,8 +48,9 @@ this check.
 
 When the check fails, or the socket path would be too long, Glade refuses that
 location, prints one warning line, and uses a `glade-test-serve-<hash>`
-directory under the temp root. If the temp root also fails the check, it uses
-`glade/` under the per-user cache directory. Glade creates the directory with mode
+directory under `glade/` in the per-user cache directory. If the cache directory
+cannot be determined or fails the same check, it uses the temp root. Glade creates
+the directory with mode
 0700. It never reads a PID file or socket from a refused location.
 
 `glade dap` uses a **separate** cache at `.glade/dap/startup.json`. Clearing or

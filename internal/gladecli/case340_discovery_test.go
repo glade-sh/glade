@@ -41,8 +41,9 @@ func TestCase340DiscoveryCallersRejectReplaceableDirectory(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			// ROAD-361: the replaceable directory is refused and never
 			// consulted; discovery moves to the per-user cache directory.
-			if moved := testdaemon.ServeSocketPath(root); strings.HasPrefix(moved, root+string(filepath.Separator)) {
-				t.Fatalf("discovery stayed in the replaceable directory: %s", moved)
+			userCache, _ := os.UserCacheDir()
+			if moved := testdaemon.ServeSocketPath(root); !strings.HasPrefix(moved, filepath.Join(userCache, "glade")+string(filepath.Separator)) {
+				t.Fatalf("discovery did not fall back to the user cache directory: %s", moved)
 			}
 			if err := call(); err != nil {
 				t.Fatalf("error = %v", err)
