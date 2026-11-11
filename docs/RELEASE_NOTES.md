@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+Seeded profiles now link to the user licenses and management permissions seen in captured Salesforce rows. Customized profiles from older saved orgs are preserved, license ID collisions are resolved, and the external license fallback only applies to key-only external licenses.
 
 ## v0.3.6
 
@@ -31,6 +31,8 @@ v0.3.6 fixes more differences from Salesforce found with captured org behavior, 
 ### CLI and CI
 
 - **Faster pull request CI.** Pull requests reuse the build caches saved from the main branch, and the LWC conformance test is split by API version (59, 67 and 68). No test or budget was removed.
+
+- **Flow record mapping and collection filters (62.0 and 67.0).** Autolaunched flows can map references and string literals into single records, retain mapped nulls in returned records, and use In and Not In filters with collection inputs in Get Records.
 
 ## v0.3.5
 

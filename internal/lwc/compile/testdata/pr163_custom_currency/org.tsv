@@ -1,0 +1,9 @@
+case	api	route	result	outcome
+single_currency	59.0	deploy	rejected	Invalid reference Shape__c.CurrencyIsoCode
+single_invalid	59.0	deploy	rejected	Invalid reference Shape__c.NotARealField__c
+multi_currency	59.0	deploy	accepted	deployed
+multi_invalid	59.0	deploy	rejected	Invalid reference Shape__c.NotARealField__c
+single_currency	67.0	deploy	rejected	Invalid reference Shape__c.CurrencyIsoCode
+single_invalid	67.0	deploy	rejected	Invalid reference Shape__c.NotARealField__c
+multi_currency	67.0	deploy	accepted	deployed
+multi_invalid	67.0	deploy	rejected	Invalid reference Shape__c.NotARealField__c
