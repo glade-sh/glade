@@ -385,3 +385,17 @@ func TestMessagingAdjacentCustomFieldNativeCompileRoutes(t *testing.T) {
 		})
 	}
 }
+
+// Package-qualified fields can belong to an unavailable dependency. The
+// custom-field native rows do not cover that case, so preserve local deferral.
+func TestMessagingCustomFieldMissingPackageRemainsDeferred(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"sourceApiVersion":"67.0","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/DeferredCheck.cls"), `public class DeferredCheck { public static void check(){ MessagingSession x=new MessagingSession(); x.remote__Value__c=null; } }`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/DeferredCheck.cls-meta.xml"), `<ApexClass><apiVersion>67.0</apiVersion></ApexClass>`)
+	idx := loadTestIndex(t, root)
+	analysis := sema.Analyze(idx)
+	if idx.HasErrors() || analysis.HasErrors() {
+		t.Fatalf("package-qualified partial field no longer defers: %v %v", idx.Diagnostics, analysis.Diagnostics)
+	}
+}
