@@ -3749,7 +3749,7 @@ func TestCIParallelDAGPreservesApexAndUsesRootCheckout(t *testing.T) {
 	input := jobs["apextest-history-input"]
 	history := jobs["apextest-history"]
 	for _, marker := range []string{
-		"needs: [apextest-history-input, test-binaries-apextest]", "shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]", "timeout-minutes: 100", "scripts/ci-go-test.sh apex-shard \"${{ matrix.shard }}\"",
+		"needs: [apextest-history-input, test-binaries-apextest]", "shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]", "timeout-minutes: 100", "scripts/ci-go-test.sh apex-shard \"${{ matrix.shard }}\"",
 		"CI_APEXTEST_HISTORY_PATH", "actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0", "name: apextest-history-input",
 		"actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0", "name: apex-shard-${{ matrix.shard }}",
 	} {
@@ -3882,7 +3882,7 @@ func TestCIGoTestLogWrapperIsWired(t *testing.T) {
 		"scripts/ci-go-test.sh lane remaining-go",
 		"apextest:",
 		"matrix:",
-		"shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]",
+		"shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]",
 		"cache: false",
 		"go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-apextest-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}",
 		"go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-apextest-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}",
@@ -3908,8 +3908,8 @@ func TestCIGoTestLogWrapperIsWired(t *testing.T) {
 	if strings.Count(workflowText, "go test -json") != 0 {
 		t.Fatal("ci.yml must delegate the native Apex run to the tested wrapper")
 	}
-	if strings.Count(workflowText, "shard: [0, 1]") != 1 || strings.Count(workflowText, "shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]") != 1 {
-		t.Fatal("ci.yml must define twelve Apex cells and two sema cells")
+	if strings.Count(workflowText, "shard: [0, 1]\n") != 2 || strings.Count(workflowText, "shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]") != 1 {
+		t.Fatal("ci.yml must define fourteen Apex cells, two sema cells and two gladecli cells")
 	}
 	if strings.Contains(workflowText, ".ci-artifacts") || strings.Contains(scriptText, ".ci-artifacts") {
 		t.Fatal("Apex evidence must use a non-hidden path so upload-artifact includes it by default")
