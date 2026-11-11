@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"syscall"
 	"testing"
 	"time"
 
@@ -47,11 +46,6 @@ func TestBaseHeapReport(t *testing.T) {
 	runtime.GC()
 	var stats runtime.MemStats
 	runtime.ReadMemStats(&stats)
-	var usage syscall.Rusage
-	_ = syscall.Getrusage(syscall.RUSAGE_SELF, &usage)
-	maxRSS := float64(usage.Maxrss)
-	if runtime.GOOS != "darwin" {
-		maxRSS *= 1024 // Linux reports kilobytes; darwin reports bytes.
-	}
+	maxRSS := float64(peakRSSBytes())
 	t.Logf("HEAPREPORT heap_inuse_mib=%.1f heap_alloc_mib=%.1f sys_mib=%.1f peak_rss_mib=%.1f", float64(stats.HeapInuse)/(1<<20), float64(stats.HeapAlloc)/(1<<20), float64(stats.Sys)/(1<<20), maxRSS/(1<<20))
 }

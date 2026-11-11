@@ -1483,6 +1483,7 @@ func sameClassValue(a, b Class) bool {
 		a.IsTest == b.IsTest &&
 		a.Nested == b.Nested &&
 		a.Dependency == b.Dependency &&
+		a.lazy == b.lazy &&
 		sameMap(a.Fields, b.Fields) &&
 		sameMap(a.StaticFields, b.StaticFields) &&
 		sameMap(a.Methods, b.Methods) &&
