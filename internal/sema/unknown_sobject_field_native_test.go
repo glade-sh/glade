@@ -29,6 +29,7 @@ type unknownFieldRow struct {
 	api, org, route, id string
 	compiled            bool
 	problem             string
+	problemCount        int
 }
 
 // unknownFieldParkedReason names the rows whose native answer Glade cannot
@@ -42,10 +43,12 @@ func unknownFieldParkedReason(row unknownFieldRow) string {
 		return "a name in another namespace stays open: an installed package supplies it and the project may not declare it"
 	case strings.Contains(id, "_c_ctor") || strings.Contains(id, "_unk_own_ctor") || strings.Contains(id, "_unk_u_ctor"):
 		return "an SObject literal infers its own named fields onto the object (schema_inference.go)"
-	case strings.HasPrefix(id, "U_case_s_") || id == "K_case_Language_read" || id == "K_case_SourceId_read":
-		return "Case has no closed standard field surface; the baseline cannot tell an absent field from an omitted one"
-	case id == "R13_case_owner_unk_read" || id == "R15_acct_owner_unk_read":
-		return "fields of the polymorphic Owner parent and of User have no closed surface"
+	case id == "K_case_Language_read" || id == "K_case_SourceId_read":
+		return "feature-gated Case fields: absent from the plain org, present in the captured portal and social configurations (case_user_surface_gated), so they stay accepted"
+	case strings.HasSuffix(id, "_case_SourceId_read") || strings.HasSuffix(id, "_case_SourceId_lower") || strings.HasSuffix(id, "_case_SourceId_upper"):
+		return "Case.SourceId visibility follows the case_source_evidence rows, not the field list"
+	case id == "R13_case_owner_unk_read":
+		return "fields of the polymorphic Owner parent (User or Group) have no single closed surface"
 	case !row.compiled && (strings.HasSuffix(row.problem, "__c") || strings.HasSuffix(row.problem, "__r")) &&
 		!strings.Contains(id, "wid") && !strings.HasPrefix(id, "F_"):
 		return "a custom field name on a standard object stays open: project field files are not the org's complete list unless a snapshot asserts it (standard_field_access)"
@@ -82,11 +85,12 @@ func readUnknownFieldRows(t *testing.T) ([]unknownFieldRow, map[string]string) {
 		var obs struct {
 			Compiled       bool    `json:"compiled"`
 			CompileProblem *string `json:"compileProblem"`
+			ProblemCount   int     `json:"problemCount"`
 		}
 		if err := json.Unmarshal([]byte(cols[4]), &obs); err != nil {
 			t.Fatal(err)
 		}
-		row := unknownFieldRow{api: cols[0], org: cols[1], route: cols[2], id: cols[3], compiled: obs.Compiled}
+		row := unknownFieldRow{api: cols[0], org: cols[1], route: cols[2], id: cols[3], compiled: obs.Compiled, problemCount: obs.ProblemCount}
 		if obs.CompileProblem != nil {
 			row.problem = *obs.CompileProblem
 		}
@@ -126,6 +130,9 @@ func unknownFieldIndex(t *testing.T, projectDir string, extra map[string]string)
 	}
 	for name, contents := range extra {
 		dest := filepath.Join(root, "force-app", "main", "default", filepath.FromSlash(name))
+		if strings.HasPrefix(name, "/") {
+			dest = filepath.Join(root, filepath.FromSlash(strings.TrimPrefix(name, "/")))
+		}
 		if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
 			t.Fatal(err)
 		}
@@ -172,6 +179,19 @@ func unknownFieldSources(row unknownFieldRow, body string) map[string]string {
 		"classes/" + name + ".cls":          "public class " + name + " {\n  public static void run() {\n    " + body + "\n  }\n}\n",
 		"classes/" + name + ".cls-meta.xml": meta("ApexClass"),
 	}
+}
+
+// unknownFieldOrgShape is the feature set of the capture org, as the project
+// would declare it. The surface orgs had MultiCurrency, so CurrencyIsoCode
+// compiled there; a project without the feature does not have the field.
+func unknownFieldOrgShape(org string) string {
+	switch org {
+	case "case-user-surface":
+		return "org:\n  features: [MultiCurrency, Entitlements, PersonAccounts, StateAndCountryPicklist]\n"
+	case "webstore-surface":
+		return "org:\n  features: [MultiCurrency, Entitlements, PersonAccounts, StateAndCountryPicklist, OrderManagement]\n"
+	}
+	return ""
 }
 
 func unknownFieldErrors(diagnostics []diagnostic.Diagnostic) []diagnostic.Diagnostic {
@@ -254,7 +274,11 @@ func TestUnknownSObjectFieldNativeRows(t *testing.T) {
 				t.Run(row.id, func(t *testing.T) {
 					var got []diagnostic.Diagnostic
 					if key.route != "anonymous" {
-						index := unknownFieldIndex(t, projectDir, unknownFieldSources(row, bodies[row.id]))
+						sources := unknownFieldSources(row, bodies[row.id])
+						if shape := unknownFieldOrgShape(key.org); shape != "" {
+							sources["/glade.yml"] = shape
+						}
+						index := unknownFieldIndex(t, projectDir, sources)
 						got = unknownFieldErrors(Analyze(index).Diagnostics)
 					} else {
 						got = unknownFieldErrors(AnalyzeAnonymous(anonymousIndex, bodies[row.id], key.api).Diagnostics)
@@ -265,10 +289,17 @@ func TestUnknownSObjectFieldNativeRows(t *testing.T) {
 						}
 						return
 					}
+					matched := 0
 					for _, d := range got {
 						if d.NativeMessage == row.problem || d.Message == row.problem {
-							return
+							matched++
 						}
+					}
+					if matched > 0 && (row.problemCount == 0 || matched == row.problemCount) {
+						return
+					}
+					if matched > 0 {
+						t.Fatalf("native reported %q %d times; glade %d times: %v", row.problem, row.problemCount, matched, unknownFieldMessages(got))
 					}
 					t.Fatalf("native rejected with %q; glade diagnostics: %v", row.problem, unknownFieldMessages(got))
 				})
