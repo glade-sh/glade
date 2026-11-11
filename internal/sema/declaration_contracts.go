@@ -75,7 +75,7 @@ func declarationModifierDiagnostics(typ typesys.TypeSymbol) []diagnostic.Diagnos
 			}
 			d := declarationContractDiagnostic(typ, typ.Range, message)
 			if typ.Kind == apexast.DeclarationClass && !hasAnyAccessModifier(mods) {
-				// Native source_boundary/road131 default-access twins, API 62/67.
+				// Native source_boundary/case131 default-access twins, API 62/67.
 				d.NativeMessage = "Top-level type must have public or global visibility"
 			}
 			diagnostics = append(diagnostics, d)

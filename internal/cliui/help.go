@@ -346,6 +346,8 @@ var commandReferences = []CommandHelp{
 			{Name: "--mem-profile", Value: "<path>", Description: "Write a heap profile on local command exit; incompatible with --connect."},
 			{Name: "--perf-json", Value: "<path>", Description: "Write performance counters for a local one-shot run."},
 			{Name: "--impact-json", Value: "<path>", Description: "Write per-test dependencies for a local one-shot run."},
+			{Name: "--cpu-risk", Description: "Print an advisory Salesforce CPU risk estimate to stderr; never changes results."},
+			{Name: "--cpu-risk-json", Value: "<path>", Description: "Write the advisory CPU risk report as JSON."},
 			{Name: "--runtime-rest-api-version", Value: "<version>", Description: "Test org REST context; does not change source API versions."},
 			{Name: "--trace", Value: "<path>", Description: "Write a Chrome trace JSON document for this run."},
 			{Name: "--services", Value: "<path>", Description: "Validate a services.yml virtualization config."},
@@ -1195,6 +1197,8 @@ Common flags:
                            CPU/heap profiles are incompatible with explicit --connect.
   --perf-json <path>        Write opt-in performance counters for this local one-shot run.
   --impact-json <path>      Write per-test execution dependencies and shared inputs (local one-shot).
+  --cpu-risk                Print an advisory Salesforce CPU risk estimate to stderr (local one-shot).
+  --cpu-risk-json <path>    Write the advisory CPU risk report as JSON.
   --trace <path>            Write a Chrome trace JSON document for this run.
   --services <path>         Validate a services.yml virtualization config.
   --progress                Show progress on stderr; uses a progress bar on TTY and line output when redirected.

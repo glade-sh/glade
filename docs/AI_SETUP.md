@@ -205,7 +205,7 @@ under `ci-artifacts/local-release/`. Avoid running it alongside another broad
 suite on the same host.
 
 `scripts/ci-local-all` runs the jobs behind `Required CI` without GitHub
-Actions, with the same shard counts: apextest 12, vm 4, gladecli 4, sema 2,
+Actions, with the same shard counts: apextest 14, vm 3, gladecli 2, sema 2,
 LWC compile 8 and Visualforce 4. It needs Go with CGO, Node 22, actionlint,
 the CodeQL CLI and Go query packs, and Playwright Chromium. A missing tool is
 `SKIP-ENV`, which exits nonzero. Shards run serially unless `--jobs N` is set.

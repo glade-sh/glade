@@ -1,0 +1,7 @@
+Native rows: `internal/apextest/testdata/conformance/load_defaults_hidden_routes/org.tsv`
+
+Relative paths in this record refer to `internal/apextest/testdata/conformance/load_defaults_hidden_routes/` unless stated otherwise.
+
+Captured 2026-11-09 in a fresh 30-day plain Developer scratch org from a campaign Dev Hub. No namespace, feature flags, or permissions metadata were added. Synthetic classes in project/ were deployed with Metadata API 67.0 and their metadata pins source APIs 62.0 and 67.0.
+Four test methods deliberately fail to transport observations for administrator and standard-user profiles. Each exercises an ordinary constructor, newSObject with false and true, a modified loaded record, and a clone. org.tsv contains each removed-field observation. Clones and the unloaded controls omit the hidden removed-field entries seen for loaded and modified records.
+The scratch org was deleted; its ScratchOrgInfo status was verified as Deleted on the Dev Hub.

@@ -57,11 +57,14 @@ type Options struct {
 	TraceBlocked          bool
 	TraceAll              bool
 	SlowTestThresholdMS   int64
-	TimeoutMS             int64
-	TimeoutSource         string // CLI flag, environment, or default; empty preserves direct-runner messages.
-	Parallelism           int
-	ParallelMethods       bool
-	NoDiskCache           bool
+	// WorkSink, when set, receives each test's counted work after it runs.
+	// It is advisory and never changes a test outcome.
+	WorkSink        func(class, method string, total vm.WorkCounts, methods []vm.MethodWork)
+	TimeoutMS       int64
+	TimeoutSource   string // CLI flag, environment, or default; empty preserves direct-runner messages.
+	Parallelism     int
+	ParallelMethods bool
+	NoDiskCache     bool
 	// RestoredRuntimeMultiWorker is an internal, default-off experiment that
 	// permits disk-restored runtimes with parallel method workers. Product
 	// configuration and CLI surfaces intentionally do not expose it.
@@ -3268,7 +3271,13 @@ func runCase(ctx context.Context, testCase TestCase, testMethod vm.Method, testR
 	if len(setupLimits) > 0 {
 		machine.RestoreTestSetupLimits(setupLimits[0])
 	}
+	if opts.WorkSink != nil {
+		machine.SetWorkTracking(true)
+	}
 	result, err := machine.ExecuteTestInClass(invokeProgram, testCase.ClassName)
+	if opts.WorkSink != nil {
+		opts.WorkSink(testCase.ClassName, testCase.MethodName, machine.WorkCounts(), machine.MethodWork())
+	}
 	err = testContextError(ctx, err)
 	if err != nil {
 		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {

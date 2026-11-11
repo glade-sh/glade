@@ -1251,7 +1251,10 @@ run_test_matrix_shard() {
 	fi
 	if [[ "${mode}" == "apex-ci" ]]; then
 		test_args=(-count=1 -timeout=90m)
-		if [[ "${shard_count}" == "12" ]]; then
+		if [[ "${shard_count}" == "14" ]]; then
+			index_pattern='^([0-9]|1[0-3])$'
+			index_description='between 0 and 13'
+		elif [[ "${shard_count}" == "12" ]]; then
 			index_pattern='^([0-9]|1[01])$'
 			index_description='between 0 and 11'
 		else
@@ -1271,8 +1274,12 @@ run_test_matrix_shard() {
 	fi
 	if [[ "${mode}" == "vm-ci" || "${mode}" == "gladecli-ci" ]]; then
 		test_args=(-count=1 -timeout=30m)
-		index_pattern='^[0-3]$'
-		index_description='between 0 and 3'
+		# PR workers keep four shards; the push matrix passes a smaller count.
+		case "${shard_count}" in
+			2) index_pattern='^[01]$'; index_description='0 or 1' ;;
+			3) index_pattern='^[0-2]$'; index_description='between 0 and 2' ;;
+			*) index_pattern='^[0-3]$'; index_description='between 0 and 3' ;;
+		esac
 	fi
 	if [[ "${mode}" == "local-release" || "${mode}" == "lwc-compile" || "${mode}" == "visualforce" || "${mode}" == "vm-ci" || "${mode}" == "gladecli-ci" || "${lane}" == "apextest" ]]; then
 		package_summary_path="${artifact_dir}/package-summary.json"
@@ -1396,15 +1403,17 @@ run_apextest_matrix_shard() {
 		label="local-release Apex"
 		shard_count="2"
 		index_pattern='^[01]$'
-	elif [[ "${shard_count}" == "6" || "${shard_count}" == "12" ]]; then
+	elif [[ "${shard_count}" == "6" || "${shard_count}" == "12" || "${shard_count}" == "14" ]]; then
 		mode="apex-ci"
-		if [[ "${shard_count}" == "12" ]]; then
+		if [[ "${shard_count}" == "14" ]]; then
+			index_pattern='^([0-9]|1[0-3])$'
+		elif [[ "${shard_count}" == "12" ]]; then
 			index_pattern='^([0-9]|1[01])$'
 		else
 			index_pattern='^[0-5]$'
 		fi
 	elif [[ "${shard_count}" != "2" ]]; then
-		echo "CI_APEXTEST_SHARDS must be 2, 6, or 12" >&2
+		echo "CI_APEXTEST_SHARDS must be 2, 6, 12, or 14" >&2
 		return 2
 	fi
 	local artifact_suffix="invalid"
@@ -1417,7 +1426,7 @@ run_apextest_matrix_shard() {
 	# go test -vet=off -trimpath -list '^Test' "${apex_package}"
 	# planner+=(--history "${CI_APEXTEST_HISTORY_PATH}")
 	# run_json_with_heartbeat "go test Apex shard ${index}" "${events}" -timeout=90m -trimpath -run "${regex}" "${apex_package}"
-	# CI opts into six or twelve shards; local helpers default to two shards.
+	# CI opts into six, twelve or fourteen shards; local helpers default to two shards.
 	# About 280 measured-plan Apex minutes plus 25% test growth
 	# estimates 58 minutes per CI shard, or 87 with a 1.5x margin.
 	# Allow 90 minutes for cold history and runner variance.
@@ -1449,15 +1458,25 @@ run_visualforce_matrix_shard() {
 run_vm_matrix_shard() {
 	local index="${1:-}"
 	local artifact_suffix="invalid"
-	[[ "${index}" =~ ^[0-3]$ ]] && artifact_suffix="${index}"
-	run_test_matrix_shard "${index}" "github.com/glade-sh/glade/internal/vm" "./internal/vm" "remaining-go" "VM" "${CI_VM_ARTIFACT_DIR:-ci-artifacts/vm-${artifact_suffix}}" "${CI_VM_HISTORY_PATH:-}" "1" "vm-ci" "4"
+	local shard_count="${CI_VM_SHARDS:-4}"
+	if [[ "${shard_count}" != "3" && "${shard_count}" != "4" ]]; then
+		echo "CI_VM_SHARDS must be 3 or 4" >&2
+		return 2
+	fi
+	[[ "${index}" =~ ^[0-3]$ && "${index}" -lt "${shard_count}" ]] && artifact_suffix="${index}"
+	run_test_matrix_shard "${index}" "github.com/glade-sh/glade/internal/vm" "./internal/vm" "remaining-go" "VM" "${CI_VM_ARTIFACT_DIR:-ci-artifacts/vm-${artifact_suffix}}" "${CI_VM_HISTORY_PATH:-}" "1" "vm-ci" "${shard_count}"
 }
 
 run_gladecli_matrix_shard() {
 	local index="${1:-}"
 	local artifact_suffix="invalid"
-	[[ "${index}" =~ ^[0-3]$ ]] && artifact_suffix="${index}"
-	run_test_matrix_shard "${index}" "github.com/glade-sh/glade/internal/gladecli" "./internal/gladecli" "gladecli" "gladecli" "${CI_GLADECLI_ARTIFACT_DIR:-ci-artifacts/gladecli-${artifact_suffix}}" "${CI_GLADECLI_HISTORY_PATH:-}" "1" "gladecli-ci" "4"
+	local shard_count="${CI_GLADECLI_SHARDS:-4}"
+	if [[ "${shard_count}" != "2" && "${shard_count}" != "4" ]]; then
+		echo "CI_GLADECLI_SHARDS must be 2 or 4" >&2
+		return 2
+	fi
+	[[ "${index}" =~ ^[0-3]$ && "${index}" -lt "${shard_count}" ]] && artifact_suffix="${index}"
+	run_test_matrix_shard "${index}" "github.com/glade-sh/glade/internal/gladecli" "./internal/gladecli" "gladecli" "gladecli" "${CI_GLADECLI_ARTIFACT_DIR:-ci-artifacts/gladecli-${artifact_suffix}}" "${CI_GLADECLI_HISTORY_PATH:-}" "1" "gladecli-ci" "${shard_count}"
 }
 
 refresh_test_history() {
@@ -1792,11 +1811,13 @@ refresh_apextest_history() {
 	# Keep the two-shard local train interface; CI supplies output then all dirs.
 	if [[ "$#" -eq 3 ]]; then
 		refresh_test_history "github.com/glade-sh/glade/internal/apextest" "Apex" "apextest" "0" "2" "$3" "$1" "$2"
-	elif [[ "$#" -eq 7 || "$#" -eq 13 ]]; then
+	elif [[ "$#" -eq 7 || "$#" -eq 13 || "$#" -eq 15 ]]; then
 		local output="$1"
 		local shard_count="6"
 		if [[ "$#" -eq 13 ]]; then
 			shard_count="12"
+		elif [[ "$#" -eq 15 ]]; then
+			shard_count="14"
 		fi
 		shift
 		refresh_test_history "github.com/glade-sh/glade/internal/apextest" "Apex" "apextest" "0" "${shard_count}" "${output}" "$@"
@@ -1811,11 +1832,13 @@ refresh_sema_history() {
 }
 
 refresh_vm_history() {
-	refresh_test_history "github.com/glade-sh/glade/internal/vm" "VM" "vm" "0" "4" "$@"
+	# $@ is OUTPUT then one directory per shard (3 on push, 4 on the PR layout).
+	refresh_test_history "github.com/glade-sh/glade/internal/vm" "VM" "vm" "0" "$(( $# - 1 ))" "$@"
 }
 
 refresh_gladecli_history() {
-	refresh_test_history "github.com/glade-sh/glade/internal/gladecli" "gladecli" "gladecli" "0" "4" "$@"
+	# $@ is OUTPUT then one directory per shard (2 on push, 4 on the PR layout).
+	refresh_test_history "github.com/glade-sh/glade/internal/gladecli" "gladecli" "gladecli" "0" "$(( $# - 1 ))" "$@"
 }
 
 bootstrap_visualforce_history() {
@@ -2063,20 +2086,20 @@ main() {
 			refresh_test_history "github.com/glade-sh/glade/internal/visualforce" "Visualforce" "visualforce" "0" "4" "$@"
 			;;
 		vm-shard)
-			if [[ "$#" -ne 2 ]]; then echo "usage: scripts/ci-go-test.sh vm-shard INDEX (0-3)" >&2; return 2; fi
+			if [[ "$#" -ne 2 ]]; then echo "usage: scripts/ci-go-test.sh vm-shard INDEX (0-3; CI_VM_SHARDS 3 limits to 0-2)" >&2; return 2; fi
 			run_vm_matrix_shard "${2:-}"
 			;;
 		vm-history-refresh)
-			if [[ "$#" -ne 6 ]]; then echo "usage: scripts/ci-go-test.sh vm-history-refresh OUTPUT SHARD_0_DIR ... SHARD_3_DIR" >&2; return 2; fi
+			if [[ "$#" -ne 6 && "$#" -ne 5 ]]; then echo "usage: scripts/ci-go-test.sh vm-history-refresh OUTPUT SHARD_0_DIR ... SHARD_2_DIR (or SHARD_3_DIR)" >&2; return 2; fi
 			shift
 			refresh_vm_history "$@"
 			;;
 		gladecli-shard)
-			if [[ "$#" -ne 2 ]]; then echo "usage: scripts/ci-go-test.sh gladecli-shard INDEX (0-3)" >&2; return 2; fi
+			if [[ "$#" -ne 2 ]]; then echo "usage: scripts/ci-go-test.sh gladecli-shard INDEX (0-3; CI_GLADECLI_SHARDS 2 limits to 0-1)" >&2; return 2; fi
 			run_gladecli_matrix_shard "${2:-}"
 			;;
 		gladecli-history-refresh)
-			if [[ "$#" -ne 6 ]]; then echo "usage: scripts/ci-go-test.sh gladecli-history-refresh OUTPUT SHARD_0_DIR ... SHARD_3_DIR" >&2; return 2; fi
+			if [[ "$#" -ne 6 && "$#" -ne 4 ]]; then echo "usage: scripts/ci-go-test.sh gladecli-history-refresh OUTPUT SHARD_0_DIR SHARD_1_DIR (or ... SHARD_3_DIR)" >&2; return 2; fi
 			shift
 			refresh_gladecli_history "$@"
 			;;
@@ -2102,7 +2125,7 @@ main() {
 			validate_sema_equivalence "${2:-}" "${3:-}" "${4:-}" "${5:-}"
 			;;
 		*)
-			echo "usage: scripts/ci-go-test.sh [core|test|race|local-release|local-release-lane NAME|lane NAME|node-integration|apex-shard 0-11|apex-history-refresh OUTPUT SHARD_0_DIR ... SHARD_N_DIR (or SHARD_0_DIR SHARD_1_DIR OUTPUT)|sema-shard 0|1|lwc-compile-shard 0-7|lwc-compile-history-refresh OUTPUT SHARD_0_DIR ... SHARD_7_DIR|visualforce-shard 0-3|visualforce-history-refresh OUTPUT SHARD_0_DIR ... SHARD_3_DIR|vm-shard 0-3|vm-history-refresh OUTPUT SHARD_0_DIR ... SHARD_3_DIR|gladecli-shard 0-3|gladecli-history-refresh OUTPUT SHARD_0_DIR ... SHARD_3_DIR|visualforce-history-bootstrap OUTPUT EVENTS|package-summary LANE LABEL EVENTS SUMMARY METADATA PACKAGE...|sema-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT|sema-full|sema-equivalence SHARD_0_DIR SHARD_1_DIR FULL_DIR OUTPUT]" >&2
+			echo "usage: scripts/ci-go-test.sh [core|test|race|local-release|local-release-lane NAME|lane NAME|node-integration|apex-shard 0-13|apex-history-refresh OUTPUT SHARD_0_DIR ... SHARD_N_DIR (or SHARD_0_DIR SHARD_1_DIR OUTPUT)|sema-shard 0|1|lwc-compile-shard 0-7|lwc-compile-history-refresh OUTPUT SHARD_0_DIR ... SHARD_7_DIR|visualforce-shard 0-3|visualforce-history-refresh OUTPUT SHARD_0_DIR ... SHARD_3_DIR|vm-shard 0-3|vm-history-refresh OUTPUT SHARD_0_DIR ... SHARD_2_DIR (or SHARD_3_DIR)|gladecli-shard 0-3|gladecli-history-refresh OUTPUT SHARD_0_DIR SHARD_1_DIR (or ... SHARD_3_DIR)|visualforce-history-bootstrap OUTPUT EVENTS|package-summary LANE LABEL EVENTS SUMMARY METADATA PACKAGE...|sema-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT|sema-full|sema-equivalence SHARD_0_DIR SHARD_1_DIR FULL_DIR OUTPUT]" >&2
 			return 2
 			;;
 	esac

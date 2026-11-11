@@ -18,6 +18,7 @@
       "github.com/glade-sh/glade/internal/cliui",
       "github.com/glade-sh/glade/internal/codeintel",
       "github.com/glade-sh/glade/internal/config",
+      "github.com/glade-sh/glade/internal/cpurisk",
       "github.com/glade-sh/glade/internal/dap",
       "github.com/glade-sh/glade/internal/dataweave",
       "github.com/glade-sh/glade/internal/dbmanager",
@@ -91,7 +92,7 @@
   "concurrentTestCounts": {
     "./internal/watch": 1,
     "./internal/apextest": 528,
-    "./internal/gladecli": 92,
+    "./internal/gladecli": 93,
     "./internal/gladehome": 8,
     "./internal/playground": 4,
     "./internal/pluginhost": 5,

@@ -2,17 +2,58 @@
 
 ## Unreleased
 
-Seeded profiles now link to the user licenses and management permissions seen in captured Salesforce rows. Customized profiles from older saved orgs are preserved, license ID collisions are resolved, and the external license fallback only applies to key-only external licenses.
+No changes yet.
 
-### Lightning
+## v0.3.7
 
-- **Historical overloaded Apex actions.** A Lightning web component call to an `@AuraEnabled` method whose single-parameter overloads still compile (Apex API before 55) now runs the overload Salesforce selects, instead of reporting the overload as unsupported. Other overload shapes keep the unsupported result.
+v0.3.7 fixes more differences from Salesforce found with captured org behavior, runs Lightning action async work, and shortens test and CI time.
+
+### Upgrade notes
+
+- **Caches.** The semantic, platform and test-runtime caches carry new versions (`sema-v85`, `salesforce-platform-v66`, `apextest-runtime-v34`). The first run after upgrading rebuilds them.
 
 ### Apex
 
+- **Advisory CPU risk report.** `glade test --cpu-risk` prints, and `--cpu-risk-json <path>` writes, an estimate of how close each test and Apex method comes to the 10 s synchronous and 60 s async CPU limits. It counts DML rows, SOQL rows, loop iterations, triggers, flows and callouts and weights them with approximate Salesforce costs (only the row weights come from captured rows). Glade does not emulate Salesforce CPU time; the report never changes a test result and is off by default.
+- **Account deletion and restricted picklists.** Deleting an account with child records and writing restricted picklist values follow captured behavior at API 62.0 and 67.0.
+- **Schema describe and field sets.** Schema shorthand, describe default values and field set lookups follow captured behavior. Field sets with the same name in different namespaces no longer collide.
+- **External ID upsert.** Upserts by external ID on standard objects, and their access checks, follow captured behavior at API 62.0 and 67.0.
+- **Seeded profiles and licenses.** Seeded profiles link to the user licenses and management permissions seen in captured rows. Customized profiles from older saved orgs are preserved, and license ID collisions are resolved.
+- **Accessors and labels.** Property getters and setters, including recursive and cyclic ones, run as Salesforce runs them. Custom label translation, whitespace and missing translations match captured results.
+- **Formula and checkbox fields.** Checkbox fields in formulas, grouped queries, inserts and updates follow captured behavior.
+- **Standard controllers.** Standard controller and record page ID handling follows captured behavior.
 - **`ObjectPermissions.PermissionsViewAllFields` at API 62.0.** The field is rejected at compile time when it is named through `Schema.ObjectPermissions`, through a chained `getDescribe()` or `getSObjectField()`, or through an `SObjectType.fields` member, as for the plain token. API 63.0 and later still accept it.
+- **Guest user access.** Guest-type profiles read, create and update `User` records as captured at API 62.0 and 67.0.
+- **Describe names and standard-field access.** Licensed describe names, namespaced custom fields on standard objects in SOQL, and field-level security for Case entitlement fields follow captured behavior.
 
+### Flow and Process Builder
+
+- **Flow record mapping and collection filters.** Autolaunched flows can map references and string literals into single records, keep mapped nulls in returned records, and use In and Not In filters with collection inputs in Get Records. This is captured at API 62.0 and 67.0.
+- **Custom Error merge fields.** Merge fields for `$Record` Number, Currency, Percent, DateTime and Time values in Flow Custom Error messages follow captured formatting at API 62.0 and 67.0.
+
+### LWC and Lightning
+
+- **Lightning action async work (API 62.0 and 67.0).** Queueable, `@future` and platform-event work enqueued by an `@AuraEnabled` method called from an LWC or Aura component now runs after the action commits and sees its changes. The work is discarded if the action throws or rolls back to an earlier savepoint. A failing job rolls back only itself and does not change the action's result. Under strict limit mode the 50-job caps apply to the action. This replaces the previous unsupported-feature rejection. `Database.*Async` DML in an action is still rejected.
+- **Historical overloaded Apex actions.** A component call to an `@AuraEnabled` method whose single-parameter overloads still compile (Apex API before 55) now runs the overload Salesforce selects, instead of reporting the overload as unsupported. Other overload shapes keep the unsupported result.
+- **Action overloads and arity.** Lightning method selection by argument count and type follows captured behavior.
 - **Action argument conversion.** Arguments of `@AuraEnabled` calls from Lightning web components convert as Salesforce does for Boolean (any string), `List<String>` (a string becomes one element or the parsed JSON array; numbers, booleans and objects become an empty list), Decimal, Double, Integer, Datetime, Object, Account and SObject parameters. A `Date` parameter that receives a UTC Datetime string is still rejected.
+- **Component imports and styles.** Currency, dynamic and namespaced imports, and shared and cyclic stylesheets follow captured platform behavior.
+- **Components and navigation.** Navigation, list views, modals, buttons and icons render as captured.
+
+### Performance
+
+- **Faster loops in anonymous Apex.** `for` loops in anonymous code keep loop-body variables bound between iterations instead of re-creating them, which cut instructions about 7% and peak memory about 11% on a loop benchmark. Results are identical.
+- **Faster test runs on large projects.** Results are identical. A describe-heavy library ran in 48 s instead of 158 s, and a large trigger framework in 20 min instead of 42 min. The gains come from fewer repeated lookups, shared schema views, cheaper SOQL filters and one dependency-error parse per run. Strict-mode heap accounting also sums static fields once per check.
+
+### CLI and CI
+
+- **Faster Process Builder host tests.** The tests share one project load per API version, and review scenarios run in parallel. Test time is about half.
+- **Pull request lane.** Pull requests run a fast lane that includes the delegated CLI tests. The full suite runs in the merge queue.
+- **LWC conformance test split.** The L07 LWC conformance test runs once per API version, plus a prerequisites test. Each writes its own report.
+- **Wider Apex shards.** Main-branch CI runs Apex tests in 14 shards, within a 58-job budget that a test enforces.
+- **Public corpus check in CI.** Required CI runs a tier of pinned public Salesforce projects and compares the results with stored expectations.
+- **Shorter CI graph.** The apextest binary is built in its own job and the Go test matrix is split so shards start sooner. Every test still runs once.
+- **Test robustness.** Timing-sensitive test bounds scale with the test deadline, and the race workflow runs nightly.
 
 ## v0.3.6
 

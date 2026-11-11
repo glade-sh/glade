@@ -5288,31 +5288,31 @@
       "durationMillis": 272
     },
     {
-      "name": "TestRoad174RecordAccessHostRoutes",
+      "name": "TestCase174RecordAccessHostRoutes",
       "durationMillis": 6940
     },
     {
-      "name": "TestRoad174RecordAccessHostValues",
+      "name": "TestCase174RecordAccessHostValues",
       "durationMillis": 10530
     },
     {
-      "name": "TestRoad174RecordAccessNativeConformance",
+      "name": "TestCase174RecordAccessNativeConformance",
       "durationMillis": 16240
     },
     {
-      "name": "TestRoad174RecordAccessProject",
+      "name": "TestCase174RecordAccessProject",
       "durationMillis": 600
     },
     {
-      "name": "TestRoad174ReviewStaticProject",
+      "name": "TestCase174ReviewStaticProject",
       "durationMillis": 1200
     },
     {
-      "name": "TestRoad2701MetadataFixtureTransitions",
+      "name": "TestCase2701MetadataFixtureTransitions",
       "durationMillis": 3060
     },
     {
-      "name": "TestRoad2713DateRouteNativeConformance",
+      "name": "TestCase2713DateRouteNativeConformance",
       "durationMillis": 3170
     },
     {

@@ -12,7 +12,7 @@ import (
 // DataWeave only since 2026-11-07: the d45_connectapi_* rules were dropped from the corpus tooling
 // after v0.3.4, so ConnectApi failures are ordinary failures and need no expected-failure shape.
 // The ConnectApi control below stays as a plain regression pin of the captured native rows.
-// Metadata (repo_metadata_missing) is covered by TestRoad2701MetadataFixtureTransitions, missing
+// Metadata (repo_metadata_missing) is covered by TestCase2701MetadataFixtureTransitions, missing
 // dependencies by TestDependencyGateMissingDependencyPolicy, and uninstalled namespaces behind
 // Type.forName by TestMissingTypeReflectionNullNativeConformance.
 

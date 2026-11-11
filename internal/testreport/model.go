@@ -2,6 +2,7 @@ package testreport
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/glade-sh/glade/internal/profile"
 	"github.com/glade-sh/glade/internal/trace"
@@ -93,6 +94,17 @@ type Problem struct {
 	Message string       `json:"message"`
 	Detail  string       `json:"detail,omitempty"`
 	Stack   []StackFrame `json:"stack,omitempty"`
+}
+
+// ResultMessage is the test-result message a report shows. Native named
+// test results omit the exception message's trailing spaces and keep its
+// leading ones (apextest test_failure_whitespace); Message keeps the raw
+// exception text that Apex getMessage() returns.
+func (p *Problem) ResultMessage() string {
+	if p == nil {
+		return ""
+	}
+	return strings.TrimRight(p.Message, " ")
 }
 
 type StackFrame struct {
@@ -237,6 +249,12 @@ func (c Case) MarshalJSON() ([]byte, error) {
 		Trace              []trace.Event   `json:"trace,omitempty"`
 		Profile            *profile.Report `json:"profile,omitempty"`
 	}
+	problem := c.Problem
+	if problem != nil {
+		reported := *problem
+		reported.Message = problem.ResultMessage()
+		problem = &reported
+	}
 	return json.Marshal(jsonCase{
 		Name:               c.Name,
 		ClassName:          c.ClassName,
@@ -246,7 +264,7 @@ func (c Case) MarshalJSON() ([]byte, error) {
 		Status:             normalizeStatus(c.Status),
 		Reason:             c.Reason,
 		DurationMS:         c.DurationMS,
-		Problem:            c.Problem,
+		Problem:            problem,
 		Trace:              c.Trace,
 		Profile:            c.Profile,
 	})

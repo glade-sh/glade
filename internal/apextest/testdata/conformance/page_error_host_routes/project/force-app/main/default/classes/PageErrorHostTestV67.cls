@@ -1,0 +1,1 @@
+@IsTest private class PageErrorHostTestV67 { @IsTest static void html() { System.assert(false,'CAPTURE|'+PageErrorHostV67.html()); } @IsTest static void pdf() { System.assert(false,'CAPTURE|'+PageErrorHostV67.pdf()); } }

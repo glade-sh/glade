@@ -17,7 +17,7 @@ import (
 //
 //   dependency_missing (per-reference form): unloaded_dependency conformance matrix and
 //     TestDependencyGateMissingDependencyPolicy; the signature below pins the message layout.
-//   repo_metadata_missing / undefined_metadata: TestRoad2701MetadataFixtureTransitions plus the absent/present
+//   repo_metadata_missing / undefined_metadata: TestCase2701MetadataFixtureTransitions plus the absent/present
 //     field control here.
 //   repo_defect: compile_defects.tsv rows (native rejects the same source with the same text).
 //   locale: date_parse_locale.tsv rows (the user's locale decides Date.parse).

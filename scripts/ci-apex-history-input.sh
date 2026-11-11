@@ -78,7 +78,9 @@ if [[ "$pair" == 0 && ! -s "$CI_APEXTEST_HISTORY_PATH" ]]; then
     shards="$tmp/shards-$run_id"
     gh run download "$run_id" --pattern 'apex-shard-*' --dir "$shards" || continue
     profile="$tmp/predecessor-profile-$run_id.json"
-    if GITHUB_EVENT_NAME=push CI_APEXTEST_HISTORY_COMPLETE=1 CI_APEXTEST_SCHEDULING_PROFILE="$profile" bash "$script_dir/ci-go-test.sh" apex-history-refresh "$CI_APEXTEST_HISTORY_PATH" "$shards"/apex-shard-{0..11}; then
+    # The predecessor may predate the 14-shard layout; accept either.
+    if GITHUB_EVENT_NAME=push CI_APEXTEST_HISTORY_COMPLETE=1 CI_APEXTEST_SCHEDULING_PROFILE="$profile" bash "$script_dir/ci-go-test.sh" apex-history-refresh "$CI_APEXTEST_HISTORY_PATH" "$shards"/apex-shard-{0..13} ||
+      GITHUB_EVENT_NAME=push CI_APEXTEST_HISTORY_COMPLETE=1 CI_APEXTEST_SCHEDULING_PROFILE="$profile" bash "$script_dir/ci-go-test.sh" apex-history-refresh "$CI_APEXTEST_HISTORY_PATH" "$shards"/apex-shard-{0..11}; then
       break
     fi
     rm -f "$CI_APEXTEST_HISTORY_PATH"

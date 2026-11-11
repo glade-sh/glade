@@ -38,6 +38,7 @@ type pendingLiveSession struct {
 	machine   *vm.VM
 	program   ir.Program
 	className string
+	start     func(*vm.VM)
 	done      LiveSessionDoneHook
 }
 
@@ -138,9 +139,15 @@ func (h *Handler) PrepareLiveSessionWithDone(machine *vm.VM, program ir.Program,
 }
 
 func (h *Handler) PrepareLiveSessionInClassWithDone(machine *vm.VM, program ir.Program, className string, done LiveSessionDoneHook) {
+	h.PrepareLiveSessionInClassWithHooks(machine, program, className, nil, done)
+}
+
+// PrepareLiveSessionInClassWithHooks installs request-local resources only when
+// execution actually starts, so an abandoned pending launch retains none.
+func (h *Handler) PrepareLiveSessionInClassWithHooks(machine *vm.VM, program ir.Program, className string, start func(*vm.VM), done LiveSessionDoneHook) {
 	h.stateMu.Lock()
 	defer h.stateMu.Unlock()
-	h.pending = &pendingLiveSession{machine: machine, program: program, className: className, done: done}
+	h.pending = &pendingLiveSession{machine: machine, program: program, className: className, start: start, done: done}
 }
 
 func (h *Handler) handleEvaluate(request Request) Response {
@@ -515,6 +522,9 @@ func (h *Handler) startPendingLiveSession() {
 	h.stateMu.Unlock()
 	if pending == nil {
 		return
+	}
+	if pending.start != nil {
+		pending.start(pending.machine)
 	}
 	h.StartLiveSessionInClassWithDone(pending.machine, pending.program, pending.className, pending.done)
 }

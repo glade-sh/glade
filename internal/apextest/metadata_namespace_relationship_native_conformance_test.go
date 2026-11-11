@@ -83,10 +83,10 @@ func testMetadataNamespaceRelationshipRoutes(t *testing.T, foreign bool) {
 					t.Fatal(err)
 				}
 				classDir := filepath.Join(root, "force-app/main/default/classes")
-				writeFile(t, filepath.Join(classDir, "Road215NamespaceProbe.cls"), string(probe))
-				writeFile(t, filepath.Join(classDir, "Road215NamespaceProbe.cls-meta.xml"), fmt.Sprintf("<ApexClass><apiVersion>%s</apiVersion><status>Active</status></ApexClass>", api))
+				writeFile(t, filepath.Join(classDir, "Case215NamespaceProbe.cls"), string(probe))
+				writeFile(t, filepath.Join(classDir, "Case215NamespaceProbe.cls-meta.xml"), fmt.Sprintf("<ApexClass><apiVersion>%s</apiVersion><status>Active</status></ApexClass>", api))
 				var assertions strings.Builder
-				assertions.WriteString("Map<String,Object> got = Road215NamespaceProbe.observe();\n")
+				assertions.WriteString("Map<String,Object> got = Case215NamespaceProbe.observe();\n")
 				for _, id := range []string{"objectDescribe", "fieldDescribe", "fieldRelationship", "objectRelationship", "standardFieldRelationship", "matchingGroups", "missing"} {
 					want, ok := expected[api+"/"+route+"/"+id]
 					if !ok {

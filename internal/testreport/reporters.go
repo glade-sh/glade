@@ -251,9 +251,9 @@ func writeStyledConsoleProblem(out *strings.Builder, suiteName string, testCase 
 	name := testCase.displayName(suiteName)
 	fmt.Fprintf(out, "  %s\n", name)
 	if testCase.Problem.Type != "" {
-		fmt.Fprintf(out, "  %s: %s\n", testCase.Problem.Type, testCase.Problem.Message)
+		fmt.Fprintf(out, "  %s: %s\n", testCase.Problem.Type, testCase.Problem.ResultMessage())
 	} else if testCase.Problem.Message != "" {
-		fmt.Fprintf(out, "  %s\n", testCase.Problem.Message)
+		fmt.Fprintf(out, "  %s\n", testCase.Problem.ResultMessage())
 	}
 	if testCase.Problem.Detail != "" {
 		for _, line := range strings.Split(testCase.Problem.Detail, "\n") {
@@ -423,7 +423,7 @@ func makeJUnitProblem(testCase Case, fallbackType string) *junitProblem {
 	return &junitProblem{
 		Type:    problemType,
 		Reason:  testCase.Reason,
-		Message: problem.Message,
+		Message: problem.ResultMessage(),
 		Text:    text,
 	}
 }

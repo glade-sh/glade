@@ -181,6 +181,7 @@ func (vm *VM) ResetLimits() {
 	vm.limits = Limits{}
 	vm.limitViolations = nil
 	vm.cpuBudgetUsed = 0
+	vm.work.reset()
 }
 
 func (vm *VM) incrementLimit(name string, delta int) error {

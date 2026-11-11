@@ -13,7 +13,7 @@ import (
 // The source-unit oracle is a check-only deployment. Partial execution of an
 // unrelated test is Glade's policy; it does not claim a failed deploy can run.
 func TestTriggerDependencyNativeConformance(t *testing.T) {
-	rows := sourceBoundaryRows(t, "road131")
+	rows := sourceBoundaryRows(t, "case131")
 	if len(rows) != 12 {
 		t.Fatalf("native rows=%d, want 12", len(rows))
 	}

@@ -209,9 +209,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 1, 2, 3]
+        shard: [0, 1]
     env:
       GOMAXPROCS: "2"
+      CI_GLADECLI_SHARDS: "2"
       CI_GLADECLI_HISTORY_PATH: /tmp/glade-gladecli-duration-history/gladecli-duration-history.json
       CI_GLADECLI_ARTIFACT_DIR: ci-artifacts/gladecli-${{ matrix.shard }}
     steps:
@@ -284,7 +285,7 @@ jobs:
           pattern: gladecli-shard-*
           path: /tmp/gladecli-history-input
       - name: Refresh and guard gladecli duration history
-        run: scripts/ci-go-test.sh gladecli-history-refresh /tmp/glade-gladecli-duration-history/gladecli-duration-history.json /tmp/gladecli-history-input/gladecli-shard-0 /tmp/gladecli-history-input/gladecli-shard-1 /tmp/gladecli-history-input/gladecli-shard-2 /tmp/gladecli-history-input/gladecli-shard-3
+        run: scripts/ci-go-test.sh gladecli-history-refresh /tmp/glade-gladecli-duration-history/gladecli-duration-history.json /tmp/gladecli-history-input/gladecli-shard-0 /tmp/gladecli-history-input/gladecli-shard-1
       - name: Save gladecli duration history
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         continue-on-error: true
@@ -338,9 +339,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 1, 2, 3]
+        shard: [0, 1, 2]
     env:
       GOMAXPROCS: "2"
+      CI_VM_SHARDS: "3"
       CI_VM_HISTORY_PATH: /tmp/glade-vm-duration-history/vm-duration-history.json
       CI_VM_ARTIFACT_DIR: ci-artifacts/vm-${{ matrix.shard }}
     steps:
@@ -415,7 +417,7 @@ jobs:
           pattern: vm-shard-*
           path: /tmp/vm-history-input
       - name: Refresh and guard vm duration history
-        run: scripts/ci-go-test.sh vm-history-refresh /tmp/glade-vm-duration-history/vm-duration-history.json /tmp/vm-history-input/vm-shard-0 /tmp/vm-history-input/vm-shard-1 /tmp/vm-history-input/vm-shard-2 /tmp/vm-history-input/vm-shard-3
+        run: scripts/ci-go-test.sh vm-history-refresh /tmp/glade-vm-duration-history/vm-duration-history.json /tmp/vm-history-input/vm-shard-0 /tmp/vm-history-input/vm-shard-1 /tmp/vm-history-input/vm-shard-2
       - name: Save vm duration history
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         continue-on-error: true
@@ -1634,7 +1636,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
     env:
       CGO_ENABLED: "1"
       CI_TEST_BIN_DIR: /tmp/glade-test-binaries
@@ -1646,7 +1648,7 @@ jobs:
       GOMAXPROCS: "4"
       GOMEMLIMIT: "12GiB"
       CI_APEXTEST_ARTIFACT_DIR: ci-artifacts/apextest-${{ matrix.shard }}
-      CI_APEXTEST_SHARDS: "12"
+      CI_APEXTEST_SHARDS: "14"
       CI_APEXTEST_HISTORY_PATH: /tmp/glade-apextest-duration-history/apextest-duration-history.json
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -1722,7 +1724,7 @@ jobs:
           path: /tmp/apextest-history-input
       - name: Refresh and guard Apex duration history
         id: refresh
-        run: scripts/ci-go-test.sh apex-history-refresh /tmp/glade-apextest-duration-history/apextest-duration-history.json /tmp/apextest-history-input/apex-shard-0 /tmp/apextest-history-input/apex-shard-1 /tmp/apextest-history-input/apex-shard-2 /tmp/apextest-history-input/apex-shard-3 /tmp/apextest-history-input/apex-shard-4 /tmp/apextest-history-input/apex-shard-5 /tmp/apextest-history-input/apex-shard-6 /tmp/apextest-history-input/apex-shard-7 /tmp/apextest-history-input/apex-shard-8 /tmp/apextest-history-input/apex-shard-9 /tmp/apextest-history-input/apex-shard-10 /tmp/apextest-history-input/apex-shard-11
+        run: scripts/ci-go-test.sh apex-history-refresh /tmp/glade-apextest-duration-history/apextest-duration-history.json /tmp/apextest-history-input/apex-shard-0 /tmp/apextest-history-input/apex-shard-1 /tmp/apextest-history-input/apex-shard-2 /tmp/apextest-history-input/apex-shard-3 /tmp/apextest-history-input/apex-shard-4 /tmp/apextest-history-input/apex-shard-5 /tmp/apextest-history-input/apex-shard-6 /tmp/apextest-history-input/apex-shard-7 /tmp/apextest-history-input/apex-shard-8 /tmp/apextest-history-input/apex-shard-9 /tmp/apextest-history-input/apex-shard-10 /tmp/apextest-history-input/apex-shard-11 /tmp/apextest-history-input/apex-shard-12 /tmp/apextest-history-input/apex-shard-13
       - name: Cache Apex scheduling profile after balance failure
         if: ${{ failure() && steps.refresh.outcome == 'failure' && (github.event_name != 'workflow_dispatch' || inputs.benchmark_cache_pair == 0) }}
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0

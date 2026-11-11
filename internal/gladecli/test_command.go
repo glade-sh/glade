@@ -1,6 +1,7 @@
 package gladecli
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -20,6 +21,7 @@ import (
 
 	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/cliui"
+	"github.com/glade-sh/glade/internal/cpurisk"
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/enterprise"
 	"github.com/glade-sh/glade/internal/flagparse"
@@ -163,6 +165,8 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	memProfilePath := ""
 	perfJSONPath := ""
 	impactJSONPath := ""
+	cpuRisk := false
+	cpuRiskJSONPath := ""
 	tracePath := ""
 	servicesPath := ""
 	debounce := watch.DefaultDebounce
@@ -196,6 +200,8 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		String("mem-profile", "").
 		String("perf-json", "").
 		String("impact-json", "").
+		Bool("cpu-risk", "").
+		String("cpu-risk-json", "").
 		String("trace", "").
 		String("services", "").
 		String("junit", "").
@@ -335,6 +341,8 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	memProfilePath = parsed.String("mem-profile")
 	perfJSONPath = parsed.String("perf-json")
 	impactJSONPath = strings.TrimSpace(parsed.String("impact-json"))
+	cpuRisk = parsed.Bool("cpu-risk")
+	cpuRiskJSONPath = strings.TrimSpace(parsed.String("cpu-risk-json"))
 	tracePath = strings.TrimSpace(parsed.String("trace"))
 	servicesPath = strings.TrimSpace(parsed.String("services"))
 	junitPath = parsed.String("junit")
@@ -481,6 +489,24 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 			}
 		}
 		noServe = true
+	}
+	var riskCollector *cpurisk.Collector
+	if cpuRisk || cpuRiskJSONPath != "" {
+		for _, mode := range []struct {
+			enabled bool
+			name    string
+		}{
+			{connectMode, "--connect"}, {daemonMode, "--daemon"},
+			{watchOnce, "--watch-once"}, {watchMode, "--watch"},
+			{wizard, "--wizard"}, {debug, "--debug"},
+			{lastFailed, "--last-failed"}, {writeClassShardsDir != "", "--write-class-shards"},
+		} {
+			if mode.enabled {
+				return testreport.Run{}, fmt.Errorf("--cpu-risk cannot be combined with %s", mode.name)
+			}
+		}
+		noServe = true
+		riskCollector = cpurisk.NewCollector()
 	}
 	perfEnabled := strings.TrimSpace(perfJSONPath) != ""
 	if perfEnabled {
@@ -635,6 +661,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		TraceBlocked:          traceBlocked,
 		TraceAll:              tracePath != "",
 		SlowTestThresholdMS:   slowTestThresholdMS,
+		WorkSink:              riskWorkSink(riskCollector),
 		ParallelMethods:       parallelMethods,
 		TimeoutMS:             timeoutOpts.TimeoutMS,
 		TimeoutSource:         timeoutOpts.TimeoutSource,
@@ -957,6 +984,11 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 			impactReport = apextest.ImpactReport{Version: 1, SharedInputs: []string{}, Tests: []apextest.TestImpact{}}
 		}
 		if err := writeTestImpactJSON(impactJSONPath, impactReport); err != nil {
+			return result, err
+		}
+	}
+	if riskCollector != nil {
+		if err := writeCPURisk(riskCollector.Report(), cpuRisk, cpuRiskJSONPath, progressW); err != nil {
 			return result, err
 		}
 	}
@@ -2471,6 +2503,35 @@ func applyTestMemoryLimits(aggressive bool) {
 // declare. The failure messages for missing setup are often indirect (for
 // example a required-field error), so the hint is tied to source evidence,
 // not to message text. It stays on stderr so structured stdout is unchanged.
+func riskWorkSink(c *cpurisk.Collector) func(string, string, vm.WorkCounts, []vm.MethodWork) {
+	if c == nil {
+		return nil
+	}
+	return c.Record
+}
+
+// writeCPURisk prints the advisory report to stderr and optionally writes JSON.
+// It never affects the test result.
+func writeCPURisk(report cpurisk.Report, text bool, jsonPath string, errW io.Writer) error {
+	if text && errW != nil {
+		fmt.Fprintln(errW)
+		if err := cpurisk.WriteText(errW, report, 10); err != nil {
+			return err
+		}
+	}
+	if jsonPath == "" {
+		return nil
+	}
+	if err := os.MkdirAll(filepath.Dir(jsonPath), 0o700); err != nil {
+		return err
+	}
+	var buf bytes.Buffer
+	if err := cpurisk.WriteJSON(&buf, report); err != nil {
+		return err
+	}
+	return os.WriteFile(jsonPath, buf.Bytes(), 0o600)
+}
+
 func writeTestOrgSetupHint(w io.Writer, args []string, result testreport.Run) {
 	if result.Summary().OK() {
 		return
