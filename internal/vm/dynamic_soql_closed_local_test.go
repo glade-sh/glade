@@ -100,7 +100,9 @@ func TestExecDynamicSOQLClosedLocalCandidateBoundaries(t *testing.T) {
 insert new Account(Name='Bound');
 String wanted='Bound';
 if(true){String wanted='Other';}
-System.assertEquals(1,Database.query('SELECT Id FROM Account WHERE Name=:wanted').size());
+// Native rows p02/p13 (loop_scope_dynamic_binds): the ended block's local
+// outranks the same-named top-level local, so the bind is 'Other'.
+System.assertEquals(0,Database.query('SELECT Id FROM Account WHERE Name=:wanted').size());
 if(true){String departed='Bound';}
 Boolean mapCaught=false;
 try{Database.queryWithBinds('SELECT Id FROM Account WHERE Name=:departed',new Map<String,Object>(),AccessLevel.USER_MODE);}catch(QueryException expected){mapCaught=true;}
@@ -115,11 +117,11 @@ System.assert(mapCaught);
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
-	// The candidate does not extend the unprobed type, bare-block or
-	// inline-SOQL boundaries.
+	// The candidate does not extend the unprobed type or inline-SOQL
+	// boundaries. Bare blocks are covered by the loop_scope_dynamic_binds
+	// rows (d04, p01), which show the local still binds.
 	for _, source := range []string{
 		"if(true){Integer wanted=17;}Database.query('SELECT Id FROM Account WHERE NumberOfEmployees=:wanted');",
-		"{String wanted='Bound';}Database.query('SELECT Id FROM Account WHERE Name=:wanted');",
 		"if(true){String wanted='Bound';}List<Account> rows=[SELECT Id FROM Account WHERE Name=:wanted];",
 	} {
 		runtime := New(nil)

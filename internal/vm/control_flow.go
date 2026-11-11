@@ -117,6 +117,9 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (_ execOutcome,
 			value.Static = inst.Type
 			vm.Globals[inst.Name] = value
 			vm.VarTypes[inst.Name] = inst.Type
+			if vm.bindFrame.declWatch != nil {
+				vm.bindFrame.noteDeclared(inst.Name)
+			}
 			if inst.Final {
 				if vm.finalLocals == nil {
 					vm.finalLocals = make(map[string]bool)
@@ -692,6 +695,9 @@ func (vm *VM) executeBlockScope(program ir.Program, inst ir.Instruction, result 
 		name, typ        string
 		existed, hadType bool
 		final, hadFinal  bool
+		// site is the declaration's Pos. declStart counts earlier runs of a
+		// declaration of a name that was already live (anonymous shadowing).
+		site, declStart int
 	}
 	// Most blocks declare only a handful of names. Keep their snapshots in a
 	// bounded local buffer, growing only for larger scopes.
@@ -733,7 +739,10 @@ func (vm *VM) executeBlockScope(program ir.Program, inst ir.Instruction, result 
 					value, existed := vm.Globals[name]
 					typ, hadType := vm.VarTypes[name]
 					final, hadFinal := vm.finalLocals[name]
-					binding := outerBinding{name: name, value: value, typ: typ, existed: existed, hadType: hadType, final: final, hadFinal: hadFinal}
+					binding := outerBinding{name: name, value: value, typ: typ, existed: existed, hadType: hadType, final: final, hadFinal: hadFinal, site: child.Pos}
+					if existed {
+						binding.declStart = vm.bindFrame.watchDecl(name)
+					}
 					if useMap {
 						large[name] = binding
 					} else {
@@ -746,14 +755,32 @@ func (vm *VM) executeBlockScope(program ir.Program, inst ir.Instruction, result 
 		}
 	}
 	collect(inst.Then)
+	if len(vm.bindFrame.slots) != 0 {
+		vm.enterBindBlock(inst.Then, func(visit func(string, bool)) {
+			if large != nil {
+				for name, binding := range large {
+					visit(name, binding.existed)
+				}
+				return
+			}
+			for _, binding := range outer {
+				visit(binding.name, binding.existed)
+			}
+		})
+	}
 	completed := false
 	defer func() {
 		restore := func(name string, binding outerBinding) {
-			// Closed for-body String binds remain available to dynamic SOQL
-			// without keeping the declaration in lexical lookup.
-			closedStringLoop := inst.Op == ir.OpFor && strings.EqualFold(canonicalRuntimePlatformType(vm.VarTypes[name]), "String")
-			if completed && (inst.Op == ir.OpIf || closedStringLoop) && !binding.existed {
-				if value, ok := vm.Globals[name]; ok {
+			// A String local of a block that ended stays visible to dynamic
+			// SOQL (see soql_bind_scope.go) without staying in lexical lookup.
+			// A name that was already live counts only if this block's own
+			// declaration ran.
+			if value, ok := vm.Globals[name]; ok {
+				if isStringBindType(vm.VarTypes[name]) {
+					if !binding.existed || vm.bindFrame.declaredSince(name, binding.declStart) {
+						vm.rememberDepartedString(name, binding.site, value)
+					}
+				} else if completed && inst.Op == ir.OpIf && !binding.existed {
 					vm.rememberClosedSOQLLocal(name, vm.VarTypes[name], value)
 				}
 			}
@@ -997,7 +1024,8 @@ func (vm *VM) executeWhile(source string, inst ir.Instruction, result *Result) (
 		if !conditionValue {
 			return execOutcome{}, nil
 		}
-		out, err := vm.executeProgram(ir.Program{Instructions: inst.Then, Source: source}, result)
+		// The body is its own scope: its locals end with each pass.
+		out, err := vm.executeBlockScope(ir.Program{Source: source}, inst, result)
 		if err != nil {
 			return execOutcome{}, err
 		}
@@ -1018,7 +1046,7 @@ func (vm *VM) executeDoWhile(source string, inst ir.Instruction, result *Result)
 		if err := vm.chargeLoopIteration("do/while", iteration); err != nil {
 			return execOutcome{}, err
 		}
-		out, err := vm.executeProgram(ir.Program{Instructions: inst.Then, Source: source}, result)
+		out, err := vm.executeBlockScope(ir.Program{Source: source}, inst, result)
 		if err != nil {
 			return execOutcome{}, err
 		}
@@ -1054,10 +1082,20 @@ func (vm *VM) executeFor(source string, inst ir.Instruction, result *Result) (ex
 		if initializer.Op != ir.OpDeclare {
 			continue
 		}
-		name := initializer.Name
+		name, site := initializer.Name, initializer.Pos
 		previous, existed := vm.Globals[name]
 		previousType, hadType := vm.VarTypes[name]
+		declStart := 0
+		if existed {
+			declStart = vm.bindFrame.watchDecl(name)
+		}
 		defer func() {
+			// The loop variable of a finished for statement still binds in
+			// dynamic SOQL (see soql_bind_scope.go).
+			if value, ok := vm.Globals[name]; ok && isStringBindType(vm.VarTypes[name]) &&
+				(!existed || vm.bindFrame.declaredSince(name, declStart)) {
+				vm.rememberDepartedString(name, site, value)
+			}
 			if existed {
 				vm.Globals[name] = previous
 			} else {
@@ -1226,7 +1264,13 @@ func (vm *VM) executeForEach(source string, inst ir.Instruction, result *Result)
 	_, existed := vm.Globals[inst.Name]
 	previous := vm.Globals[inst.Name]
 	previousType, hadType := vm.VarTypes[inst.Name]
+	iterated := false
 	defer func() {
+		// After the loop a String loop variable binds in dynamic SOQL as
+		// null (see soql_bind_scope.go).
+		if iterated && isStringBindType(inst.Type) {
+			vm.rememberDepartedString(inst.Name, inst.Pos, Null)
+		}
 		if existed {
 			vm.Globals[inst.Name] = previous
 		} else {
@@ -1251,6 +1295,7 @@ func (vm *VM) executeForEach(source string, inst ir.Instruction, result *Result)
 		}
 		vm.Globals[inst.Name] = coerced
 		vm.VarTypes[inst.Name] = inst.Type
+		iterated = true
 		out, err := vm.executeBlockScope(ir.Program{Source: source}, inst, result)
 		if err != nil {
 			return execOutcome{}, err
