@@ -56,6 +56,26 @@ const asyncDrainController = `public with sharing class AsyncCtrl {
     @AuraEnabled public static String futMany(String tag, Integer n) { act(tag); for (Integer i = 0; i < n; i++) { fut(tag + '-' + i); } return 'ret'; }
     @AuraEnabled(cacheable=true) public static String enqCacheable(String tag) { System.enqueueJob(new Q(tag, false, false)); return 'ret'; }
     @AuraEnabled public static String noAsync(String tag) { act(tag); return 'ret'; }
+    // Not captured: batch and schedule from an action stay fail-closed.
+    public class B implements Database.Batchable<SObject> {
+        String tag;
+        public B(String t) { tag = t; }
+        public Database.QueryLocator start(Database.BatchableContext bc) { return Database.getQueryLocator('SELECT Id FROM Account'); }
+        public void execute(Database.BatchableContext bc, List<SObject> scope) { insert new Account(Name = 'B-' + tag); }
+        public void finish(Database.BatchableContext bc) {}
+    }
+    public class S implements Schedulable {
+        public void execute(SchedulableContext sc) {}
+    }
+    public class QB implements Queueable {
+        String tag;
+        public QB(String t) { tag = t; }
+        public void execute(QueueableContext qc) { Database.executeBatch(new B(tag)); }
+    }
+    @AuraEnabled public static String execBatch(String tag) { act(tag); Database.executeBatch(new B(tag)); return 'ret'; }
+    @AuraEnabled public static String execBatchCatch(String tag) { act(tag); try { Database.executeBatch(new B(tag)); } catch (Exception e) {} return 'caught'; }
+    @AuraEnabled public static String schedJob(String tag) { act(tag); System.schedule('s-' + tag, '0 0 0 1 1 ? 2099', new S()); return 'ret'; }
+    @AuraEnabled public static String queueableBatch(String tag) { act(tag); System.enqueueJob(new QB(tag)); return 'ret'; }
 }`
 
 const asyncDrainTrigger = `trigger AsyncEvtTrg on AsyncEvt__e (after insert) {
@@ -223,6 +243,28 @@ func TestLightningActionAsyncLimitsFailTheWholeAction(t *testing.T) {
 					t.Fatalf("51 async jobs committed %v", got)
 				}
 			})
+		}
+	}
+}
+
+// Database.executeBatch and System.schedule have no native row from an action:
+// they keep failing closed as UnsupportedFeature, with nothing committed, even
+// when Apex catches the rejection or a drained Queueable is the caller.
+func TestLightningActionBatchAndScheduleStayUnsupported(t *testing.T) {
+	for _, api := range []string{"62.0", "67.0"} {
+		for _, route := range []string{"lightning", "wire"} {
+			for _, method := range []string{"execBatch", "execBatchCatch", "schedJob", "queueableBatch"} {
+				t.Run(api+"/"+route+"/"+method, func(t *testing.T) {
+					host := newAsyncDrainHost(t, api)
+					out := host.call(t, route, method, map[string]any{"tag": "t"}, false)
+					if out.Error == nil || !strings.Contains(fmt.Sprintf("%+v", out.Error), "UnsupportedFeature") {
+						t.Fatalf("response = %#v error = %+v, want UnsupportedFeature", out, out.Error)
+					}
+					if got := host.accounts(); len(got) != 0 {
+						t.Fatalf("rejected action committed %v", got)
+					}
+				})
+			}
 		}
 	}
 }
