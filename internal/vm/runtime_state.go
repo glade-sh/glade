@@ -158,6 +158,7 @@ type VM struct {
 	closedSOQLLocals      map[string]Value
 	dynamicSOQLBindRoute  string
 	currentClass          string
+	forBodyReusable       map[*ir.Instruction]bool
 	// anonymousLocal is the running anonymous block's method table and its
 	// top-level frame (anonymous_local_methods_c4), nil outside such a block.
 	anonymousLocal   *anonymousLocalScope
