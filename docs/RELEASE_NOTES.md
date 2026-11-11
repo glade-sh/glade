@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-No changes yet.
+### Lightning
+
+- **Historical overloaded Apex actions.** A Lightning web component call to an `@AuraEnabled` method whose single-parameter overloads still compile (Apex API before 55) now runs the overload Salesforce selects, instead of reporting the overload as unsupported. Other overload shapes keep the unsupported result.
 
 ## v0.3.6
 
