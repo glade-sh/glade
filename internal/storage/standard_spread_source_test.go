@@ -77,6 +77,8 @@ func TestStandardSpreadSourceMatchesEagerAfterCompletion(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			eager := sourceSpreadEagerOrg(features)
 			lazy := sourceSpreadLazyOrg(features)
+			EnsureUniqueKeyPrefixes(&eager)
+			EnsureUniqueKeyPrefixes(&lazy)
 			if len(lazy.Objects) >= len(eager.Objects)/4 {
 				t.Fatalf("lazy org starts with %d objects, eager has %d", len(lazy.Objects), len(eager.Objects))
 			}
@@ -107,6 +109,8 @@ func TestStandardSpreadSourceObjectByObject(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			eager := sourceSpreadEagerOrg(features)
 			lazy := sourceSpreadLazyOrg(features)
+			EnsureUniqueKeyPrefixes(&eager)
+			EnsureUniqueKeyPrefixes(&lazy)
 			for _, objectName := range sortedObjectNames(eager) {
 				if _, ok := ResolveObjectName(lazy, objectName); !ok {
 					t.Errorf("%s: not resolved on the lazy org", objectName)
@@ -128,4 +132,28 @@ func TestStandardSpreadSourceObjectByObject(t *testing.T) {
 			}
 		})
 	}
+}
+
+// The prefix assignment depends on the objects outside the catalog too: a
+// custom object takes the next free prefix in name order. A lazy org that has
+// custom objects must assign what the eager org assigns.
+func TestStandardSpreadSourceKeyPrefixesWithCustomObjects(t *testing.T) {
+	addCustom := func(org *OrgState) {
+		for _, name := range []string{"Alpha__c", "Zeta__c", "Mid__mdt"} {
+			org.Objects[name] = ObjectState{Definition: ObjectDefinition{APIName: name, Label: name, KeyPrefix: "a00"}, Records: map[ID]Record{}}
+		}
+	}
+	eager := sourceSpreadEagerOrg(nil)
+	lazy := sourceSpreadLazyOrg(nil)
+	addCustom(&eager)
+	addCustom(&lazy)
+	EnsureUniqueKeyPrefixes(&eager)
+	EnsureUniqueKeyPrefixes(&lazy)
+	for _, name := range []string{"CaseOwnerSharingRule", "Entitlement"} {
+		if _, ok := ResolveObjectName(lazy, name); !ok {
+			t.Fatalf("%s did not resolve", name)
+		}
+	}
+	MaterializeStandardObjectSpread(&lazy)
+	compareCompleteOrgs(t, eager, lazy)
 }

@@ -103,6 +103,7 @@ type OrgState struct {
 	objectNameCache                 *sync.Map
 	keyPrefixesValidated            bool
 	lazyStandardSpread              bool
+	spreadPrefixSeed                map[string]string
 	keyPrefixesValidatedObjectCount int
 	keyPrefixesValidatedPrefixes    []keyPrefixSnapshotEntry
 	keyPrefixesValidatedGeneration  uint64

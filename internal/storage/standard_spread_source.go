@@ -1,7 +1,11 @@
 package storage
 
 import (
+	"reflect"
 	"slices"
+	"sort"
+	"strconv"
+	"strings"
 	"sync"
 )
 
@@ -145,7 +149,15 @@ func installSpreadObject(org *OrgState, name string) (string, bool) {
 	if !ok {
 		return "", false
 	}
-	org.Objects[canonical] = template.CloneRuntimeFrozenDefinition()
+	installed := template.CloneRuntimeFrozenDefinition()
+	if org.keyPrefixesValidated {
+		// The org's prefixes are already unique; the object arrives with the
+		// prefix the full assignment gives it.
+		if prefix, ok := spreadKeyPrefixPlan(org)[canonical]; ok {
+			installed.Definition.KeyPrefix = prefix
+		}
+	}
+	org.Objects[canonical] = installed
 	return canonical, true
 }
 
@@ -170,4 +182,93 @@ func materializeSpreadSource(org *OrgState) bool {
 	}
 	org.StandardSpread = ""
 	return true
+}
+
+// Key prefixes
+//
+// EnsureUniqueKeyPrefixes gives every object whose prefix conflicts the next
+// free custom prefix in name order, so an object's final prefix depends on the
+// whole name set. A lazy org computes that assignment over the names it holds
+// plus the names it owes, using each owed object's catalog prefix, and applies
+// it to what it installs. The result is memoized by what can change it: the
+// feature shape and the objects outside the catalog.
+var spreadPrefixPlans sync.Map // string -> map[string]string
+
+func spreadCatalogName(name string) bool {
+	canonical, ok := ResolveKnownStandardObjectName(name)
+	return ok && canonical == name && standardSpreadIncludes(name)
+}
+
+func spreadKeyPrefixPlan(org *OrgState) map[string]string {
+	var key strings.Builder
+	key.WriteString(org.StandardSpread)
+	key.WriteByte(0)
+	key.WriteString(canonicalFeatureSignature(org.Features))
+	key.WriteByte(0)
+	key.WriteString(strconv.FormatUint(uint64(reflect.ValueOf(org.spreadPrefixSeed).Pointer()), 16))
+	others := make([]string, 0, 16)
+	for name, state := range org.Objects {
+		if spreadCatalogName(name) {
+			continue
+		}
+		others = append(others, name+"\x00"+state.Definition.KeyPrefix+"\x00"+strconv.FormatBool(IsCustomSettingDefinition(state.Definition)))
+	}
+	sort.Strings(others)
+	for _, entry := range others {
+		key.WriteByte(1)
+		key.WriteString(entry)
+	}
+	cacheKey := key.String()
+	if cached, ok := spreadPrefixPlans.Load(cacheKey); ok {
+		return cached.(map[string]string)
+	}
+	entries := make([]keyPrefixEntry, 0, len(org.Objects)+len(KnownStandardObjectNames()))
+	seen := make(map[string]bool, len(org.Objects))
+	for name, state := range org.Objects {
+		seen[name] = true
+		if spreadCatalogName(name) {
+			entries = append(entries, keyPrefixEntry{name: name, prefix: state.Definition.KeyPrefix})
+			continue
+		}
+		entries = append(entries, keyPrefixEntry{name: name, prefix: state.Definition.KeyPrefix, customSetting: IsCustomSettingDefinition(state.Definition)})
+	}
+	for _, name := range KnownStandardObjectNames() {
+		if seen[name] {
+			continue
+		}
+		if _, owed := spreadObjectOwed(org, name); owed {
+			prefix, assignedBefore := org.spreadPrefixSeed[name]
+			if !assignedBefore {
+				prefix = StandardKeyPrefix(name)
+			}
+			entries = append(entries, keyPrefixEntry{name: name, prefix: prefix})
+		}
+	}
+	sort.Slice(entries, func(i, j int) bool { return entries[i].name < entries[j].name })
+	assigned := assignUniqueKeyPrefixes(entries)
+	plan := make(map[string]string, len(entries))
+	for i, entry := range entries {
+		plan[entry.name] = assigned[i]
+	}
+	actual, _ := spreadPrefixPlans.LoadOrStore(cacheKey, plan)
+	return actual.(map[string]string)
+}
+
+// applySpreadKeyPrefixPlan is EnsureUniqueKeyPrefixes for a lazy org.
+func applySpreadKeyPrefixPlan(org *OrgState) {
+	plan := spreadKeyPrefixPlan(org)
+	org.spreadPrefixSeed = plan
+	changed := false
+	for name, state := range org.Objects {
+		prefix, ok := plan[name]
+		if !ok || state.Definition.KeyPrefix == prefix {
+			continue
+		}
+		state.Definition.KeyPrefix = prefix
+		org.Objects[name] = state
+		changed = true
+	}
+	if changed {
+		org.ClearRuntimeSchemaStamp()
+	}
 }
