@@ -352,6 +352,7 @@ func (vm *VM) resolveUIAction(className, methodName string, params map[string]an
 	sort.SliceStable(candidates, func(i, j int) bool { return uiMethodSignature(candidates[i]) < uiMethodSignature(candidates[j]) })
 	if lwc {
 		candidates = historicalLightningCandidates(candidates)
+		candidates = historicalLightningRankedCandidates(candidates)
 	}
 	var matchedMethod Method
 	var matchedArgs []Value

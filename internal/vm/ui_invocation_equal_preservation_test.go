@@ -2,8 +2,11 @@ package vm
 
 import "testing"
 
-// Equal-arity overloads retain the local resolver contract; these assertions
-// do not specify Salesforce's nondeterministic overload selection.
+// Equal-arity String/Integer overloads before API 55: the String overload is
+// selected in every declaration order (native rows in
+// internal/apextest/testdata/conformance/aura_overload_determinism_scalar/org.tsv,
+// PR #209). This replaces the interim "unsupported" expectation from #175, which
+// predated those rows.
 func TestHistoricalLightningEqualArityPreservesMain(t *testing.T) {
 	text, err := CompileAnonymous(`return 'text:' + String.valueOf(value);`)
 	if err != nil {
@@ -51,8 +54,13 @@ func TestHistoricalLightningEqualArityPreservesMain(t *testing.T) {
 								t.Fatal(err)
 							}
 							if tc.unsupported {
-								if got.Success || got.Error == nil || got.Error.Code != "GLADELWC013" || got.Error.Type != "UnsupportedFeature" || got.Error.Message != "overloaded AuraEnabled method unsupported" {
-									t.Fatalf("expected existing unsupported result, got %#v", got)
+								// String overload selected: it either returns its text or rejects the
+								// argument; it never falls back to the Integer overload or reports the
+								// overload as unsupported.
+								stringChosen := (got.Success && len(got.ReturnValue.(string)) >= 5 && got.ReturnValue.(string)[:5] == "text:") ||
+									(got.Error != nil && got.Error.Code != "GLADELWC013")
+								if !stringChosen {
+									t.Fatalf("expected the String overload, got %#v", got)
 								}
 							} else if !got.Success || got.ReturnValue != tc.want {
 								t.Fatalf("result=%#v want=%q", got, tc.want)
