@@ -1,13 +1,15 @@
 package vm
 
 import (
+	"os"
 	"strings"
 	"testing"
 )
 
 func init() {
 	// Every strict heap check in this package's tests must equal the full walk.
-	heapVerifyAgainstFullWalk = true
+	// GLADE_VM_HEAP_NO_VERIFY=1 times the tests without that comparison.
+	heapVerifyAgainstFullWalk = os.Getenv("GLADE_VM_HEAP_NO_VERIFY") == ""
 }
 
 // Static scalars are summed once and only rewritten fields change that sum:
