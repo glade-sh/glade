@@ -398,6 +398,10 @@ type VM struct {
 	mapKeySetBackings           map[uint64]mapKeySetSourceRef
 	mapKeySetBinds              uint64
 	aliasContainmentMutationSeq uint64
+	aliasContainmentLog         [aliasContainmentMutationLogSize]aliasContainmentMutation
+	// disableAliasMissCarry turns off carrying cached misses across logged
+	// List bumps. Tests use it to compare results with the carry on and off.
+	disableAliasMissCarry       bool
 	aliasContainmentCache       map[aliasContainmentCacheKey]uint64
 	mapPutParentContainment     *mapPutParentContainmentCache
 	perfRecorder                *PerfRecorder

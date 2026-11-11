@@ -912,7 +912,15 @@ func (vm *VM) setExplicitSObjectFieldValue(object *Value, name string, value Val
 		vm.markCollectionRefsEscaped(value)
 		vm.registerSObjectAliasField(*object, name, value)
 	}
-	vm.advanceAliasContainmentMutation()
+	// Storing a reference-free scalar can only remove containment, never add
+	// it, so cached containment misses stay valid. Only the receiver cache is
+	// cleared.
+	if value.Ref == 0 && (value.Kind == ValueNull || value.Kind == ValueInt || value.Kind == ValueDecimal ||
+		value.Kind == ValueBool || value.Kind == ValueString) {
+		vm.clearNestedReceiverCache()
+	} else {
+		vm.advanceAliasContainmentMutation()
+	}
 	setExplicitSObjectField(object, name, value)
 }
 
