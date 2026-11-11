@@ -22,6 +22,29 @@ func TestAuthFlowDefaultFieldPresenceNativeRoutes(t *testing.T) {
 	if len(rows) != 13 {
 		t.Fatalf("native observations=%d, want 12", len(rows)-1)
 	}
+	anon, err := os.Open(filepath.Join("testdata/conformance/auth_flow_default_presence", "anonymous.tsv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer anon.Close()
+	ar := csv.NewReader(anon)
+	ar.Comma = '\t'
+	anonymous, err := ar.ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(anonymous) != len(rows) {
+		t.Fatalf("anonymous observations=%d, want %d", len(anonymous)-1, len(rows)-1)
+	}
+	observed := make(map[string]string, len(anonymous)-1)
+	for _, row := range anonymous[1:] {
+		observed[row[0]+"/"+row[2]] = row[3]
+	}
+	for _, row := range rows[1:] {
+		if got := observed[row[0]+"/"+row[2]]; got != row[3] {
+			t.Fatalf("anonymous %s/%s=%q, named test=%q", row[0], row[2], got, row[3])
+		}
+	}
 	for i := 1; i < len(rows); i += 2 {
 		a, b := rows[i], rows[i+1]
 		if a[0] != b[0] || a[3] != b[3] {
