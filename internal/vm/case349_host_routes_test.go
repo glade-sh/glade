@@ -100,7 +100,6 @@ try { Decimal ignored=partial.Balance__c; } catch(SObjectException ex) { hidden=
 			// standard_ext_upsert rows deny an ungranted custom key to the
 			// administrator, so the assigned set also grants the key.
 			grantedSet := strings.Replace(string(permissionSet), "</PermissionSet>", "<fieldPermissions><editable>true</editable><field>Account.ProbeKey__c</field><readable>true</readable></fieldPermissions></PermissionSet>", 1)
-			files["force-app/main/default/permissionsets/Case349Access.permissionset-meta.xml"] = string(permissionSet)
 			files["force-app/main/default/permissionsets/Case349Access.permissionset-meta.xml"] = grantedSet
 			files["glade.yml"] = "test:\n  permissionSets: [Case349Access]\n"
 			recordType, err := os.ReadFile("../../testdata/conformance/person_account_followups/force-app/main/default/objects/Account/recordTypes/Business_Default.recordType-meta.xml")
