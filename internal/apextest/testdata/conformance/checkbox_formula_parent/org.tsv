@@ -1,0 +1,21 @@
+api	route	parent	checkbox	text	outcome
+62.0	after-insert	missing	false	null	Pass
+62.0	after-insert	false	false	off	Pass
+62.0	after-insert	true	true	on	Pass
+62.0	after-update	missing	false	null	Pass
+62.0	after-update	false	false	off	Pass
+62.0	after-update	true	true	on	Pass
+62.0	query	missing	false	null	Pass
+62.0	query	false	false	off	Pass
+62.0	query	true	true	on	Pass
+67.0	after-insert	missing	false	null	Pass
+67.0	after-insert	false	false	off	Pass
+67.0	after-insert	true	true	on	Pass
+67.0	after-update	missing	false	null	Pass
+67.0	after-update	false	false	off	Pass
+67.0	after-update	true	true	on	Pass
+67.0	query	missing	false	null	Pass
+67.0	query	false	false	off	Pass
+67.0	query	true	true	on	Pass
+62.0	metadata-deploy	boolean-integer-comparison	-	-	Comparison arguments must be compatible types: Boolean, Integer
+67.0	metadata-deploy	boolean-integer-comparison	-	-	Comparison arguments must be compatible types: Boolean, Integer

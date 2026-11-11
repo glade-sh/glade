@@ -311,6 +311,9 @@ type LabelMetadata struct {
 	ShortDescription string `json:"shortDescription,omitempty"`
 	Categories       string `json:"categories,omitempty"`
 	File             string `json:"file,omitempty"`
+	// TranslationSourceRaw retains source text that the legacy Value field
+	// normalizes. Older and pathless registries do not have this provenance.
+	TranslationSourceRaw *string `json:"translationSourceRaw,omitempty"`
 }
 
 // StandardValueSetTranslation is a project-authored translation of one

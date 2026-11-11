@@ -1,0 +1,1 @@
+<apex:page showHeader="false" sidebar="false"><apex:includeLightning/><div id="probe59"></div><div id="probe67"></div><script>$Lightning.use("c:convertApp",function() {$Lightning.createComponent("c:convertProbe59", {}, "probe59");$Lightning.createComponent("c:convertProbe67", {}, "probe67");});</script></apex:page>

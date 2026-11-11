@@ -51,6 +51,8 @@ type testCachePayload struct {
 	Runtime CompiledRuntime  `json:"runtime"`
 	// ZeroFieldFlags restores field pointer flags that gob drops; see zero_flags.go.
 	ZeroFieldFlags []zeroFieldFlags `json:"zeroFieldFlags,omitempty"`
+	// EmptyLabelSources restores empty label translation sources; see zero_flags.go.
+	EmptyLabelSources []int `json:"emptyLabelSources,omitempty"`
 }
 
 func Clear(projectRoot, subdir string) error {
@@ -394,7 +396,9 @@ func readTestCachePayload(cacheRoot *os.Root, name, wantHash string, wantSize in
 		return testCachePayload{}, fmt.Errorf("payload hash mismatch")
 	}
 	restoreZeroFieldFlags(&payload.Org, payload.ZeroFieldFlags)
+	restoreEmptyLabelSources(&payload.Org, payload.EmptyLabelSources)
 	payload.ZeroFieldFlags = nil
+	payload.EmptyLabelSources = nil
 	return payload, nil
 }
 
@@ -461,7 +465,7 @@ func writeSplitTestCacheWithStatsAfterRootOpened(entry *Entry, subdir string, af
 			return stats, err
 		}
 	}
-	payload := testCachePayload{Org: entry.Org, Runtime: entry.Runtime, ZeroFieldFlags: captureZeroFieldFlags(entry.Org)}
+	payload := testCachePayload{Org: entry.Org, Runtime: entry.Runtime, ZeroFieldFlags: captureZeroFieldFlags(entry.Org), EmptyLabelSources: captureEmptyLabelSources(entry.Org)}
 	tmp, tmpName, err := createTestCacheTemp(cacheRoot, "startup-payload-", ".gob")
 	if err != nil {
 		return stats, err
