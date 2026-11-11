@@ -2733,32 +2733,6 @@ func (vm *VM) aliasContainmentMissCurrent(key aliasContainmentCacheKey, stamped 
 	return true
 }
 
-// advanceAliasContainmentFieldWrite advances the containment epoch for a field
-// store. Storing a reference-free scalar can only remove containment, never add
-// it, so cached misses stay valid and only the receiver cache is cleared.
-func (vm *VM) advanceAliasContainmentFieldWrite(value Value) {
-	if vm == nil {
-		return
-	}
-	if scalarFieldValueCannotAddContainment(value) {
-		vm.clearNestedReceiverCache()
-		return
-	}
-	vm.advanceAliasContainmentMutation()
-}
-
-func scalarFieldValueCannotAddContainment(value Value) bool {
-	if value.Ref != 0 {
-		return false
-	}
-	switch value.Kind {
-	case ValueNull, ValueInt, ValueDecimal, ValueBool, ValueString:
-		return true
-	default:
-		return false
-	}
-}
-
 func (vm *VM) recordCollectionMutation(ref uint64, updated ...Value) {
 	if vm == nil {
 		return
