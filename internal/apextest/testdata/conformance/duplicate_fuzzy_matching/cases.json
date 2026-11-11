@@ -274,6 +274,166 @@
    "min_recall": 0.994,
    "max_extra": 0,
    "max_conf_mae": 0.401
+  },
+  "67/Holdout3.Account.BillingCity.City.NullNotAllowed.1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.001
+  },
+  "67/Holdout3.Account.BillingCity.City.NullNotAllowed.2": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.001
+  },
+  "67/Holdout3.Account.BillingPostalCode.Zip.NullNotAllowed.1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.001
+  },
+  "67/Holdout3.Account.BillingStreet.Street.NullNotAllowed.1": {
+   "min_recall": 0.8447,
+   "max_extra": 0,
+   "max_conf_mae": 0.736
+  },
+  "67/Holdout3.Account.BillingStreet.Street.NullNotAllowed.2": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.001
+  },
+  "67/Holdout3.Account.Name.CompanyName.NullNotAllowed.1": {
+   "min_recall": 0.8332,
+   "max_extra": 0,
+   "max_conf_mae": 0.739
+  },
+  "67/Holdout3.Account.Name.CompanyName.NullNotAllowed.2": {
+   "min_recall": 0.7777,
+   "max_extra": 0,
+   "max_conf_mae": 0.001
+  },
+  "67/Holdout3.Contact.FirstName.FirstName.NullNotAllowed.1": {
+   "min_recall": 0.9788,
+   "max_extra": 3,
+   "max_conf_mae": 0.689
+  },
+  "67/Holdout3.Contact.FirstName.FirstName.NullNotAllowed.2": {
+   "min_recall": 0.8094,
+   "max_extra": 2,
+   "max_conf_mae": 0.119
+  },
+  "67/Holdout3.Contact.LastName.LastName.NullNotAllowed.1": {
+   "min_recall": 0.9758,
+   "max_extra": 0,
+   "max_conf_mae": 0.001
+  },
+  "67/Holdout3.Contact.LastName.LastName.NullNotAllowed.2": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.001
+  },
+  "67/Holdout3.Contact.Phone.Phone.NullNotAllowed.1": {
+   "min_recall": 0.8199,
+   "max_extra": 0,
+   "max_conf_mae": 0.001
+  },
+  "67/Holdout3.Contact.Title.Title.NullNotAllowed.1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.15
+  },
+  "67/Holdout3.Contact.Title.Title.NullNotAllowed.2": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.001
+  },
+  "67/Probe3.Account.BillingCity.City.NullNotAllowed.1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.001
+  },
+  "67/Probe3.Account.BillingPostalCode.Zip.NullNotAllowed.1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.001
+  },
+  "67/Probe3.Account.BillingStreet.Street.NullNotAllowed.1": {
+   "min_recall": 0.4937,
+   "max_extra": 0,
+   "max_conf_mae": 0.551
+  },
+  "67/Probe3.Account.Name.CompanyName.NullNotAllowed.1": {
+   "min_recall": 0.9877,
+   "max_extra": 0,
+   "max_conf_mae": 0.174
+  },
+  "67/Probe3.Account.Name.CompanyName.NullNotAllowed.2": {
+   "min_recall": 0.6666,
+   "max_extra": 0,
+   "max_conf_mae": 0.501
+  },
+  "67/Probe3.Contact.FirstName.FirstName.NullNotAllowed.1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.018
+  },
+  "67/Probe3.Contact.FirstName.FirstName.NullNotAllowed.2": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.001
+  },
+  "67/Probe3.Contact.LastName.LastName.NullNotAllowed.1": {
+   "min_recall": 0.9749,
+   "max_extra": 0,
+   "max_conf_mae": 0.001
+  },
+  "67/Probe3.Contact.Phone.Phone.NullNotAllowed.1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.001
+  },
+  "67/Probe3.Contact.Title.Title.NullNotAllowed.1": {
+   "min_recall": 0.9822,
+   "max_extra": 0,
+   "max_conf_mae": 0.524
+  },
+  "62/Probe3.Account.BillingCity.City.NullNotAllowed.1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.001
+  },
+  "62/Probe3.Account.BillingPostalCode.Zip.NullNotAllowed.1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.001
+  },
+  "62/Probe3.Account.BillingStreet.Street.NullNotAllowed.1": {
+   "min_recall": 0.4937,
+   "max_extra": 0,
+   "max_conf_mae": 0.551
+  },
+  "62/Probe3.Account.Name.CompanyName.NullNotAllowed.1": {
+   "min_recall": 0.9877,
+   "max_extra": 0,
+   "max_conf_mae": 0.174
+  },
+  "62/Probe3.Contact.FirstName.FirstName.NullNotAllowed.1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.018
+  },
+  "62/Probe3.Contact.LastName.LastName.NullNotAllowed.1": {
+   "min_recall": 0.9749,
+   "max_extra": 0,
+   "max_conf_mae": 0.001
+  },
+  "62/Probe3.Contact.Phone.Phone.NullNotAllowed.1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.001
+  },
+  "62/Probe3.Contact.Title.Title.NullNotAllowed.1": {
+   "min_recall": 0.9822,
+   "max_extra": 0,
+   "max_conf_mae": 0.524
   }
  }
 }
