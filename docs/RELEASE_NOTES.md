@@ -8,6 +8,10 @@ Seeded profiles now link to the user licenses and management permissions seen in
 
 - **Historical overloaded Apex actions.** A Lightning web component call to an `@AuraEnabled` method whose single-parameter overloads still compile (Apex API before 55) now runs the overload Salesforce selects, instead of reporting the overload as unsupported. Other overload shapes keep the unsupported result.
 
+### Apex
+
+- **`ObjectPermissions.PermissionsViewAllFields` at API 62.0.** The field is rejected at compile time when it is named through `Schema.ObjectPermissions`, through a chained `getDescribe()` or `getSObjectField()`, or through an `SObjectType.fields` member, as for the plain token. API 63.0 and later still accept it.
+
 ## v0.3.6
 
 v0.3.6 fixes more differences from Salesforce found with captured org behavior, and makes pull request CI faster.
