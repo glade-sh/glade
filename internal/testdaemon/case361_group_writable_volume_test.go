@@ -140,3 +140,61 @@ func TestCase361AllLocationsUntrustedRefuses(t *testing.T) {
 		}
 	}
 }
+
+func untrustedFixture(t *testing.T) (home, tmp, project string) {
+	t.Helper()
+	volume, err := os.MkdirTemp("/tmp", "r361")
+	if err != nil {
+		t.Skip("no short temp directory")
+	}
+	t.Cleanup(func() { os.RemoveAll(volume) })
+	mk := func(name string) string {
+		dir := filepath.Join(volume, name)
+		if err := os.Mkdir(dir, 0o775); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Chmod(dir, 0o775); err != nil {
+			t.Fatal(err)
+		}
+		return dir
+	}
+	return mk("h"), mk("t"), mk("p")
+}
+
+// A custom socket must not make NewServer create the PID directory in an
+// untrusted temp root, and its own directory is checked.
+func TestCase361CustomSocketAllUntrustedCreatesNothing(t *testing.T) {
+	home, tmp, project := untrustedFixture(t)
+	t.Setenv("HOME", home)
+	t.Setenv("XDG_CACHE_HOME", home)
+	t.Setenv("TMPDIR", tmp)
+	custom := filepath.Join(project, "custom", "d.sock")
+	srv, err := NewServer(ServerConfig{Root: project, Socket: custom})
+	if srv != nil {
+		_ = srv.Close()
+	}
+	if !errors.Is(err, ErrUntrustedDiscovery) {
+		t.Fatalf("NewServer: %v", err)
+	}
+	for _, dir := range []string{filepath.Join(project, "custom"), filepath.Join(project, ".glade")} {
+		if _, err := os.Lstat(dir); err == nil {
+			t.Fatalf("created %s", dir)
+		}
+	}
+	entries, _ := os.ReadDir(tmp)
+	if len(entries) != 0 {
+		t.Fatalf("created %d entries in the untrusted temp root", len(entries))
+	}
+}
+
+// A group-writable parent of the user cache directory gets no new directory.
+func TestCase361CacheBaseNotCreatedUnderWritableParent(t *testing.T) {
+	home, _, _ := untrustedFixture(t)
+	target := filepath.Join(home, "cache", "deeper")
+	if ensureTrustedCacheBase(target) {
+		t.Fatal("cache base accepted under a group-writable parent")
+	}
+	if _, err := os.Lstat(filepath.Join(home, "cache")); err == nil {
+		t.Fatal("created a directory under a group-writable parent")
+	}
+}

@@ -69,7 +69,7 @@ func privateServeDir(projectRoot string) (base, relative string) {
 	sum := sha256.Sum256([]byte(filepath.Clean(projectRoot)))
 	name := "glade-test-serve-" + hex.EncodeToString(sum[:8])
 	if cache, err := os.UserCacheDir(); err == nil && cache != "" {
-		if abs, err := filepath.Abs(cache); err == nil && os.MkdirAll(abs, 0o700) == nil {
+		if abs, err := filepath.Abs(cache); err == nil && ensureTrustedCacheBase(abs) {
 			if discoveryLocationTrusted(filepath.Join(abs, "glade", name)) {
 				return abs, filepath.Join("glade", name)
 			}
@@ -116,4 +116,16 @@ func discoveryLocationTrusted(dir string) bool {
 			return false
 		}
 	}
+}
+
+// ensureTrustedCacheBase checks the existing ancestors of dir before creating
+// anything, creates dir with mode 0700, then checks it again.
+func ensureTrustedCacheBase(dir string) bool {
+	if !discoveryLocationTrusted(dir) {
+		return false
+	}
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return false
+	}
+	return discoveryLocationTrusted(dir)
 }
