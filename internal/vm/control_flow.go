@@ -1924,8 +1924,15 @@ func (vm *VM) forBodyBindingsReusable(inst ir.Instruction) bool {
 			spellings[lower][word] = true
 		}
 	}
+	// Dynamic SOQL, SOSL and cursor APIs resolve bind names from a query
+	// string built at run time, which can name a body local before this
+	// iteration declares it. Loops that reach them keep per-iteration scopes.
+	runtimeBinds := false
 	var scanExpr func(ir.Expr)
 	scanExpr = func(e ir.Expr) {
+		if callee := strings.ToLower(e.Callee + " " + e.Name); strings.Contains(callee, "query") || strings.Contains(callee, "search") || strings.Contains(callee, "cursor") || strings.Contains(callee, "locator") {
+			runtimeBinds = true
+		}
 		scan(e.Value)
 		scan(e.Name)
 		scan(e.Callee)
@@ -1985,7 +1992,7 @@ func (vm *VM) forBodyBindingsReusable(inst ir.Instruction) bool {
 		}
 	}
 	scanInst(inst)
-	reusable := true
+	reusable := !runtimeBinds
 	for name := range declared {
 		forms := spellings[strings.ToLower(name)]
 		if len(forms) != 1 || !forms[name] {
