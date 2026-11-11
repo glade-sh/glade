@@ -26,8 +26,9 @@ type Handler struct {
 	readyOnce sync.Once
 	loadErr   error
 
-	parserMu sync.Mutex
-	parser   *apexast.Parser
+	parserMu     sync.Mutex
+	parser       *apexast.Parser
+	parserClosed bool
 
 	analysisOnce sync.Once
 	analysis     sema.Result
@@ -228,10 +229,12 @@ func (h *Handler) currentDiagnostics(uri DocumentURI) []Notification {
 }
 
 func (h *Handler) documentDiagnostics(doc openDocument) []Notification {
+	var diagnostics []diagnostic.Diagnostic
 	h.parserMu.Lock()
-	file := h.parser.ParseSource(doc.Path, doc.Text)
+	if !h.parserClosed {
+		diagnostics = h.parser.ParseSource(doc.Path, doc.Text).Diagnostics
+	}
 	h.parserMu.Unlock()
-	diagnostics := file.Diagnostics
 	if len(diagnostics) == 0 {
 		diagnostics = h.diagnosticsForDocument(doc.URI)
 	}

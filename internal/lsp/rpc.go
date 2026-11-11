@@ -112,6 +112,7 @@ func (h *Handler) handleContext(ctx context.Context, method string, params json.
 	case "shutdown":
 		h.shutdown.Store(true)
 		h.parserMu.Lock()
+		h.parserClosed = true
 		h.parser.Close()
 		h.parserMu.Unlock()
 		return nil, nil

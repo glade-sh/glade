@@ -96,7 +96,13 @@ func (s *server) dispatch(data []byte) {
 		return
 	}
 	switch req.Method {
-	case "initialize", "shutdown":
+	case "initialize":
+		s.write(s.h.HandleRequest(req))
+		return
+	case "shutdown":
+		// Stop in-flight diagnostics and requests before the handler closes
+		// the native parser.
+		s.shutdownNow()
 		s.write(s.h.HandleRequest(req))
 		return
 	}

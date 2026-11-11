@@ -113,6 +113,38 @@ func TestServeDisconnectEndsSlowLaunch(t *testing.T) {
 	}
 }
 
+func TestCancelBeforeLaunchStartsFailsQueuedLaunch(t *testing.T) {
+	handler := NewHandler(Snapshot{})
+	releaseFirst := make(chan struct{})
+	started := make(chan struct{})
+	handler.SetLaunchHandlerContext(func(ctx context.Context, request LaunchRequest) error {
+		if request.Program == "first" {
+			close(started)
+			<-releaseFirst
+			return nil
+		}
+		return ctx.Err()
+	})
+	inW, messages, _ := startCancelServe(t, handler)
+
+	writeRequest(t, inW, request(1, CommandLaunch, map[string]any{"program": "first"}))
+	<-started
+	// Seq 2 waits behind seq 1 in the queue; the cancel is read before it starts.
+	writeRequest(t, inW, request(2, CommandLaunch, map[string]any{"program": "second"}))
+	writeRequest(t, inW, request(3, CommandCancel, map[string]any{"requestId": 2}))
+	time.Sleep(100 * time.Millisecond)
+	close(releaseFirst)
+
+	first := waitForResponse(t, messages, CommandLaunch)
+	if first["success"] != true {
+		t.Fatalf("first launch = %v", first)
+	}
+	second := waitForResponse(t, messages, CommandLaunch)
+	if second["success"] != false || second["message"] != "cancelled" {
+		t.Fatalf("queued launch should be cancelled, got %v", second)
+	}
+}
+
 func TestCancelRequestForOtherRequestLeavesLaunchRunning(t *testing.T) {
 	handler := NewHandler(Snapshot{})
 	release := make(chan struct{})

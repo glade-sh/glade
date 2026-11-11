@@ -38,6 +38,10 @@ type Handler struct {
 	inflightMu  sync.Mutex
 	inflightSeq int
 	inflight    context.CancelFunc
+	// cancelled holds request ids cancelled before they started. disconnected
+	// is set once the client has asked to disconnect.
+	cancelled    map[int]bool
+	disconnected bool
 }
 
 type pendingLiveSession struct {
@@ -431,6 +435,10 @@ func (h *Handler) handleLaunch(request Request) []any {
 	ctx, cancel := context.WithCancel(context.Background())
 	h.inflightMu.Lock()
 	h.inflightSeq, h.inflight = request.Seq, cancel
+	if h.disconnected || h.cancelled[request.Seq] {
+		cancel()
+	}
+	delete(h.cancelled, request.Seq)
 	h.inflightMu.Unlock()
 	var err error
 	if launchCtx != nil {
@@ -476,10 +484,17 @@ func (h *Handler) Interrupt(request Request) {
 		h.inflightMu.Lock()
 		if h.inflight != nil && (args.RequestID == 0 || args.RequestID == h.inflightSeq) {
 			h.inflight()
+		} else if args.RequestID > 0 {
+			// The request may be queued behind another or not started yet.
+			if h.cancelled == nil {
+				h.cancelled = make(map[int]bool)
+			}
+			h.cancelled[args.RequestID] = true
 		}
 		h.inflightMu.Unlock()
 	case CommandDisconnect, CommandTerminate:
 		h.inflightMu.Lock()
+		h.disconnected = true
 		if h.inflight != nil {
 			h.inflight()
 		}

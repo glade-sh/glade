@@ -9,8 +9,49 @@ import (
 	"testing"
 	"time"
 
+	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/typesys"
 )
+
+func TestShutdownDoesNotParseAfterParserClose(t *testing.T) {
+	var parses atomic.Int64
+	previous := apexast.SetSourceObserver(func(string) { parses.Add(1) })
+	t.Cleanup(func() { apexast.SetSourceObserver(previous) })
+
+	handler := NewHandler(sampleIndex(t))
+	if _, rpcErr := handler.handle("shutdown", nil); rpcErr != nil {
+		t.Fatal(rpcErr)
+	}
+	before := parses.Load()
+	uri := uriFromPath(filepath.Join(t.TempDir(), "Draft.cls"))
+	handler.DidOpen(DidOpenTextDocumentParams{TextDocument: TextDocumentItem{URI: uri, Text: "public class Draft {\n"}})
+	if got := parses.Load(); got != before {
+		t.Fatalf("parser used after Close: %d parse calls", got-before)
+	}
+}
+
+func TestServeShutdownStopsPendingDiagnosticsBeforeClose(t *testing.T) {
+	var parses atomic.Int64
+	previous := apexast.SetSourceObserver(func(string) { parses.Add(1) })
+	t.Cleanup(func() { apexast.SetSourceObserver(previous) })
+
+	handler := NewHandler(sampleIndex(t))
+	handler.SetDiagnosticsDebounce(time.Hour)
+	c := startServe(t, handler)
+	uri := uriFromPath(filepath.Join(t.TempDir(), "Draft.cls"))
+	c.send(openMessage(uri, "public class Draft {}\n"))
+	c.mustNext(2 * time.Second)
+	c.send(changeMessage(uri, 2, "public class Draft {\n"))
+	c.send(map[string]any{"id": 9, "method": "shutdown"})
+	if err := <-c.served; err != nil {
+		t.Fatal(err)
+	}
+	settled := parses.Load()
+	time.Sleep(50 * time.Millisecond)
+	if parses.Load() != settled {
+		t.Fatal("diagnostics ran after Serve returned")
+	}
+}
 
 type serveClient struct {
 	t      *testing.T
