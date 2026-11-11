@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"bytes"
 	"compress/gzip"
 	"crypto/sha256"
 	"encoding/csv"
@@ -129,16 +128,11 @@ func TestStandardFieldPolicyNativePersistedRefreshRoutes(t *testing.T) {
 // runtime merge. Legacy gates preserve existing behavior and add no new facets.
 func TestStandardFieldPolicyNativeSidecarProvenance(t *testing.T) {
 	const dir = "../apextest/testdata/conformance/standard_describe_profiles"
-	stream, err := gzip.NewReader(bytes.NewReader(standardFieldPolicyData))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer stream.Close()
 	var policy standardFieldPolicyBundle
-	if err := json.NewDecoder(stream).Decode(&policy); err != nil {
+	if err := json.Unmarshal(standardFieldPolicyData, &policy); err != nil {
 		t.Fatal(err)
 	}
-	if policy.Version != 1 || len(policy.Sources) != 180 || len(policy.Gates) != 164 {
+	if policy.Version != 1 || len(policy.Sources) != 186 || len(policy.Gates) != 164 {
 		t.Fatal("incomplete native field policy")
 	}
 	for _, name := range []string{"definition.json", "org.tsv", "observations.json"} {

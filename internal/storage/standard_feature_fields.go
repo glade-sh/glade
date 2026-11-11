@@ -12,6 +12,9 @@ func standardOptionalFieldEnabled(object, field, signature string) bool {
 	if policy == nil {
 		return true
 	}
+	if absent, _ := standardPolicyLookup(policy.plainDeveloperAbsent, field); absent && featureSignatureHas(signature, project.PlainDeveloperObjectShape) {
+		return false
+	}
 	if gate, ok := standardPolicyLookup(policy.gates, field); ok {
 		return standardFieldPolicyGateEnabled(gate, signature)
 	}

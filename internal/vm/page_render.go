@@ -31,6 +31,12 @@ func NewExecutionException(message string) error {
 	return newExceptionError("ExecutionException", message)
 }
 
+// NewUncatchablePlatformFault preserves an opaque native platform failure
+// through host transports without turning it into a catchable Apex exception.
+func NewUncatchablePlatformFault(message string) error {
+	return &RuntimeError{Type: "RuntimeError", Message: message, PlatformFault: true}
+}
+
 func (vm *VM) ConstructController(className string) (_ Value, err error) {
 	defer vm.BeginReportTransaction()()
 	defer recoverJSONConversionError(&err)

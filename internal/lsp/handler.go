@@ -174,7 +174,7 @@ func TestDiagnostics(run testreport.Run) []diagnostic.Diagnostic {
 			if frame.File == "" {
 				continue
 			}
-			message := testCase.Problem.Message
+			message := testCase.Problem.ResultMessage()
 			if message == "" {
 				message = string(testCase.Status)
 			}
