@@ -390,7 +390,7 @@ func (vm *VM) propagateCollectionMutationFromSnapshotWithStaticIndexDelta(previo
 	vm.collectionMutationSeq++
 	seqBefore := vm.aliasContainmentMutationSeq
 	vm.recordCollectionMutation(updated.Ref, updated)
-	vm.noteListMutationEpoch(updated, seqBefore)
+	vm.noteListMutationEpoch(previous, updated, seqBefore)
 	vm.finishMapPutParentContainment(delta)
 	vm.propagateTopLevelCollectionAliases(vm.Globals, updated)
 	localOnly := vm.localOnlyAlias(previous)
@@ -2692,8 +2692,10 @@ type aliasContainmentMutation struct {
 // a bump when V provably does not reach the mutated List either, because the
 // mutation then cannot change V. An epoch bump that is not logged here keeps
 // the global invalidation.
-func (vm *VM) noteListMutationEpoch(updated Value, seqBefore uint64) {
-	if vm == nil || updated.Ref == 0 || updated.Kind != ValueList || vm.aliasContainmentMutationSeq != seqBefore+1 {
+func (vm *VM) noteListMutationEpoch(previous aliasSnapshot, updated Value, seqBefore uint64) {
+	// A mutation that changes the List's identity is not logged: the bump
+	// keeps the global invalidation.
+	if vm == nil || updated.Ref == 0 || updated.Kind != ValueList || updated.Ref != previous.ref || vm.aliasContainmentMutationSeq != seqBefore+1 {
 		return
 	}
 	seq := vm.aliasContainmentMutationSeq
@@ -2711,7 +2713,7 @@ func (vm *VM) aliasContainmentMissCurrent(key aliasContainmentCacheKey, stamped 
 	if stamped == current {
 		return true
 	}
-	if stamped > current || current-stamped > aliasContainmentMutationLogSize {
+	if vm.disableAliasMissCarry || stamped > current || current-stamped > aliasContainmentMutationLogSize {
 		return false
 	}
 	for seq := stamped + 1; seq <= current; seq++ {

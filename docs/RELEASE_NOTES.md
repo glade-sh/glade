@@ -14,6 +14,10 @@ Seeded profiles now link to the user licenses and management permissions seen in
 
 - **Action argument conversion.** Arguments of `@AuraEnabled` calls from Lightning web components convert as Salesforce does for Boolean (any string), `List<String>` (a string becomes one element or the parsed JSON array; numbers, booleans and objects become an empty list), Decimal, Double, Integer, Datetime, Object, Account and SObject parameters. A `Date` parameter that receives a UTC Datetime string is still rejected.
 
+### Performance
+
+- **Collection mutation in rollup loops.** `List.add` no longer rescans every unchanged list and map in scope after each add. A rollup loop over 400 SObjects that groups records into a `Map<String, List<SObject>>` runs about 35% faster in the vm benchmark. Results are unchanged.
+
 ## v0.3.6
 
 v0.3.6 fixes more differences from Salesforce found with captured org behavior, and makes pull request CI faster.
