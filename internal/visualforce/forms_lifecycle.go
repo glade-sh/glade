@@ -192,6 +192,14 @@ func prepareFormLifecycle(tree *MarkupNode, req *PageRenderRequest, machine *vm.
 		if form != nil && (isApexStructureTag(node, "commandButton") || isApexStructureTag(node, "commandLink")) && strings.TrimSpace(node.Attribute("rerender")) != "" {
 			hasPartialCommand = true
 		}
+		// Plain native submit controls identify their action by the posted client ID.
+		if form != nil && len(rowVars) == 0 && strings.TrimSpace(req.Action) == "" && nativePlainCommandShape(node, "commandbutton") && !isTruthyExpression(node.Attribute("disabled"), ctx) {
+			id := refs.clientIDs[node]
+			formID := req.FormValues["__vf_form"]
+			if _, submitted := req.FormValues[id]; submitted && nativeFormClientID(id) && (formID == "" || formID == refs.clientIDs[form]) {
+				req.Action = strings.TrimSpace(node.Attribute("action"))
+			}
+		}
 		// API59/67 AJAX captures submit typed inputs through the same phases
 		// as command controls, including region and immediate boundaries.
 		if form != nil && isFormActionComponent(node) &&
