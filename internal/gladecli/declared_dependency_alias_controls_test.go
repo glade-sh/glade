@@ -12,6 +12,7 @@ import (
 // Native anonymous controls: ../apextest/testdata/conformance/
 // declared_dependency_alias_capture/api{62,67}/org.tsv:2,6.
 func TestDeclaredDependencyAliasAvailabilityAnonymous(t *testing.T) {
+	t.Setenv("GLADE_SIBLING_DEPENDENCIES", "1")
 	for _, api := range []string{"62.0", "67.0"} {
 		for _, alias := range []bool{false, true} {
 			for _, present := range []bool{false, true} {
