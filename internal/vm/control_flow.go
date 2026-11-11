@@ -268,7 +268,98 @@ func (vm *VM) updateHeapLimit() error {
 }
 
 func (vm *VM) currentHeapSize() int {
-	return vm.heapSizeOver(vm.heapStaticRootMaps())
+	seen := vm.heapSeenScratch()
+	total := 0
+	for name, value := range vm.Globals {
+		total += len(name) + approxValueSizeSeen(value, seen)
+	}
+	statics, ok := vm.staticHeapSize(seen)
+	vm.releaseHeapSeen(seen)
+	if !ok {
+		return vm.heapSizeOver(vm.heapStaticRootMaps())
+	}
+	total += statics
+	if heapVerifyAgainstFullWalk {
+		if want := vm.currentHeapSizeFullWalk(); want != total {
+			panic(fmt.Sprintf("incremental heap size %d != full walk %d", total, want))
+		}
+	}
+	return total
+}
+
+// heapVerifyAgainstFullWalk makes every currentHeapSize compare itself with the
+// uncached walk. Tests turn it on.
+var heapVerifyAgainstFullWalk bool
+
+// heapSeenScratch returns the empty visited set the heap walk reuses, so the
+// per-statement strict check does not allocate one. A set that grew large is
+// dropped rather than cleared, since clearing costs its capacity.
+func (vm *VM) heapSeenScratch() map[approxVisitKey]bool {
+	if vm.heapSeen == nil {
+		vm.heapSeen = make(map[approxVisitKey]bool)
+	}
+	seen := vm.heapSeen
+	vm.heapSeen = nil
+	return seen
+}
+
+func (vm *VM) releaseHeapSeen(seen map[approxVisitKey]bool) {
+	if len(seen) > 256 {
+		return
+	}
+	clear(seen)
+	vm.heapSeen = seen
+}
+
+// heapContainerKind reports the value kinds whose size can change without the
+// field being rewritten: their backing storage is shared and mutated in place.
+func heapContainerKind(kind ValueKind) bool {
+	switch kind {
+	case ValueList, ValueSet, ValueMap, ValueObject:
+		return true
+	}
+	return false
+}
+
+// staticHeapSize is the static-field part of the heap. A field holding a
+// scalar changes size only when its map entry is rewritten, and every class
+// static write ends in a class store that clears heapStaticFlatOK. The scalar
+// total is therefore cached; container-valued statics are still walked, in the
+// same shared visited set as the frame. It returns false when the cached field
+// list no longer matches the live maps, and the caller recomputes in full.
+func (vm *VM) staticHeapSize(seen map[approxVisitKey]bool) (int, bool) {
+	if !vm.heapStaticFlatOK || !vm.heapStaticRootsOK || vm.heapStaticRootsLen != len(vm.Classes) {
+		vm.buildStaticHeapFlat()
+	}
+	total := vm.heapStaticScalarTotal
+	for _, ref := range vm.heapStaticContainers {
+		field, ok := ref.fields[ref.name]
+		if !ok || !field.Static || !heapContainerKind(field.Value.Kind) {
+			vm.heapStaticFlatOK = false
+			return 0, false
+		}
+		total += len(ref.name) + approxValueSizeSeen(field.Value, seen)
+	}
+	return total, true
+}
+
+func (vm *VM) buildStaticHeapFlat() {
+	roots := vm.heapStaticRootMaps()
+	vm.heapStaticScalarTotal = 0
+	vm.heapStaticContainers = vm.heapStaticContainers[:0]
+	for _, statics := range roots {
+		for fieldName, field := range statics {
+			if !field.Static {
+				continue
+			}
+			if heapContainerKind(field.Value.Kind) {
+				vm.heapStaticContainers = append(vm.heapStaticContainers, heapStaticContainerRef{fields: statics, name: fieldName})
+				continue
+			}
+			vm.heapStaticScalarTotal += len(fieldName) + approxValueSizeSeen(field.Value, nil)
+		}
+	}
+	vm.heapStaticFlatOK = true
 }
 
 // currentHeapSizeFullWalk is the uncached reference for currentHeapSize. It
@@ -300,6 +391,7 @@ func (vm *VM) heapStaticRootMaps() []map[string]Field {
 	vm.heapStaticRoots = vm.buildHeapStaticRootMaps()
 	vm.heapStaticRootsLen = len(vm.Classes)
 	vm.heapStaticRootsOK = true
+	vm.heapStaticFlatOK = false
 	return vm.heapStaticRoots
 }
 
@@ -1647,4 +1739,9 @@ func dynamicSOQLForLoopError(expr ir.Expr, err error) error {
 		return err
 	}
 	return newExceptionError("QueryException", runtimeErr.Message)
+}
+
+type heapStaticContainerRef struct {
+	fields map[string]Field
+	name   string
 }

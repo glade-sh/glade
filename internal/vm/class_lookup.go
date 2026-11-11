@@ -1332,6 +1332,7 @@ func (vm *VM) writeRegisteredClass(overlay *classLookupOverlay, alias string, cl
 	// Frozen clones can already have a static index before registration.
 	// Replacing or adding static fields makes that index stale.
 	previous, previousExists := vm.Classes[alias]
+	vm.heapStaticFlatOK = false
 	vm.noteClassStaticRootsWrite(previous, previousExists, class)
 	if len(previous.StaticFields) != 0 || len(class.StaticFields) != 0 {
 		vm.invalidateStaticValueRefs()
@@ -1402,6 +1403,7 @@ func (vm *VM) storeClassValue(class Class) {
 // writeClassValue writes a class value outside registration, keeping the
 // pending overlay's view of the values its lookups were taken from.
 func (vm *VM) writeClassValue(alias string, class Class) {
+	vm.heapStaticFlatOK = false
 	if vm.heapStaticRootsOK {
 		previous, exists := vm.Classes[alias]
 		vm.noteClassStaticRootsWrite(previous, exists, class)
