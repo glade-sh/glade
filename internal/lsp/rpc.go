@@ -1,7 +1,9 @@
 package lsp
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 )
 
 type Request struct {
@@ -24,10 +26,12 @@ type ResponseError struct {
 }
 
 const (
-	errorCodeParseError     = -32700
-	errorCodeInvalidRequest = -32600
-	errorCodeMethodNotFound = -32601
-	errorCodeInvalidParams  = -32602
+	errorCodeParseError       = -32700
+	errorCodeInvalidRequest   = -32600
+	errorCodeMethodNotFound   = -32601
+	errorCodeInvalidParams    = -32602
+	errorCodeInternalError    = -32603
+	errorCodeRequestCancelled = -32800
 )
 
 func (h *Handler) HandleJSON(data []byte) ([]byte, error) {
@@ -63,6 +67,41 @@ func (h *Handler) HandleRequest(req Request) Response {
 }
 
 func (h *Handler) handle(method string, params json.RawMessage) (any, *ResponseError) {
+	return h.handleContext(context.Background(), method, params)
+}
+
+// indexed runs fn once the project index is ready. It returns early with a
+// cancellation error if ctx ends first, whether while waiting for the index or
+// while fn runs. An abandoned fn finishes in the background and its result is
+// dropped.
+func (h *Handler) indexed(ctx context.Context, fn func() any) (any, *ResponseError) {
+	if err := h.waitReady(ctx); err != nil {
+		return nil, indexError(err)
+	}
+	if ctx.Done() == nil {
+		return fn(), nil
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, indexError(err)
+	}
+	done := make(chan any, 1)
+	go func() { done <- fn() }()
+	select {
+	case result := <-done:
+		return result, nil
+	case <-ctx.Done():
+		return nil, indexError(ctx.Err())
+	}
+}
+
+func indexError(err error) *ResponseError {
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return &ResponseError{Code: errorCodeRequestCancelled, Message: "request cancelled"}
+	}
+	return &ResponseError{Code: errorCodeInternalError, Message: "project index unavailable: " + err.Error()}
+}
+
+func (h *Handler) handleContext(ctx context.Context, method string, params json.RawMessage) (any, *ResponseError) {
 	switch method {
 	case "initialize":
 		var p InitializeParams
@@ -71,8 +110,10 @@ func (h *Handler) handle(method string, params json.RawMessage) (any, *ResponseE
 		}
 		return h.Initialize(p), nil
 	case "shutdown":
-		h.shutdown = true
+		h.shutdown.Store(true)
+		h.parserMu.Lock()
 		h.parser.Close()
+		h.parserMu.Unlock()
 		return nil, nil
 	case "textDocument/didOpen":
 		var p DidOpenTextDocumentParams
@@ -101,55 +142,55 @@ func (h *Handler) handle(method string, params json.RawMessage) (any, *ResponseE
 		if err := decodeParams(params, &p); err != nil {
 			return nil, invalidParams(err)
 		}
-		return h.DocumentSymbols(p.TextDocument.URI), nil
+		return h.indexed(ctx, func() any { return h.DocumentSymbols(p.TextDocument.URI) })
 	case "workspace/symbol":
 		var p WorkspaceSymbolParams
 		if err := decodeParams(params, &p); err != nil {
 			return nil, invalidParams(err)
 		}
-		return h.WorkspaceSymbols(p.Query), nil
+		return h.indexed(ctx, func() any { return h.WorkspaceSymbols(p.Query) })
 	case "textDocument/hover":
 		var p HoverParams
 		if err := decodeParams(params, &p); err != nil {
 			return nil, invalidParams(err)
 		}
-		return h.Hover(p), nil
+		return h.indexed(ctx, func() any { return h.Hover(p) })
 	case "textDocument/completion":
 		var p CompletionParams
 		if err := decodeParams(params, &p); err != nil {
 			return nil, invalidParams(err)
 		}
-		return h.Completion(p), nil
+		return h.indexed(ctx, func() any { return h.Completion(p) })
 	case "textDocument/definition":
 		var p DefinitionParams
 		if err := decodeParams(params, &p); err != nil {
 			return nil, invalidParams(err)
 		}
-		return h.Definition(p), nil
+		return h.indexed(ctx, func() any { return h.Definition(p) })
 	case "textDocument/references":
 		var p ReferenceParams
 		if err := decodeParams(params, &p); err != nil {
 			return nil, invalidParams(err)
 		}
-		return h.References(p), nil
+		return h.indexed(ctx, func() any { return h.References(p) })
 	case "textDocument/prepareRename":
 		var p RenameParams
 		if err := decodeParams(params, &p); err != nil {
 			return nil, invalidParams(err)
 		}
-		return h.PrepareRename(p), nil
+		return h.indexed(ctx, func() any { return h.PrepareRename(p) })
 	case "textDocument/rename":
 		var p RenameParams
 		if err := decodeParams(params, &p); err != nil {
 			return nil, invalidParams(err)
 		}
-		return h.Rename(p), nil
+		return h.indexed(ctx, func() any { return h.Rename(p) })
 	case "textDocument/semanticTokens/full":
 		var p SemanticTokensParams
 		if err := decodeParams(params, &p); err != nil {
 			return nil, invalidParams(err)
 		}
-		return h.SemanticTokensFull(p), nil
+		return h.indexed(ctx, func() any { return h.SemanticTokensFull(p) })
 	default:
 		return nil, &ResponseError{Code: errorCodeMethodNotFound, Message: "method not found"}
 	}
