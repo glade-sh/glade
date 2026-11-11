@@ -21,7 +21,7 @@ MAPPING = {
     # PR selection is covered by the full suite and scripts tests locally.
     'pr-tests': 'full-suite',
     'workflow-lint': 'workflow-lint', 'site': 'site',
-    'test-binaries': 'test-binaries', 'vet': 'vet', 'apextest': 'apextest',
+    'test-binaries': 'test-binaries', 'test-binaries-apextest': 'test-binaries', 'lwc-vf': 'lwc-compile and visualforce shards', 'vet': 'vet', 'apextest': 'apextest',
     'apextest-history': 'apextest-history', 'lwc-compile-history': 'lwc-compile-history',
     'visualforce-history': 'visualforce-history', 'gladecli': 'gladecli',
     'gladecli-history': 'gladecli-history', 'vm': 'vm', 'vm-history': 'vm-history',

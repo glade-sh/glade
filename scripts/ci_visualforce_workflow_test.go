@@ -8,7 +8,7 @@ import (
 
 func TestCIVisualforceWorkflowSharesInputAndRequiresUnion(t *testing.T) {
 	_, jobs := readCIWorkflow(t)
-	input, matrix, refresh := jobs["visualforce-history-input"], jobs["test"], jobs["visualforce-history"]
+	input, matrix, refresh := jobs["visualforce-history-input"], jobs["lwc-vf"], jobs["visualforce-history"]
 	for _, marker := range []string{
 		"actions: read", `-f head_sha="$CI_DURATION_HISTORY_CACHE_REF" -f status=success`,
 		"select(.expired == false)", `for index in {0..3}`, "format=shards", "format=serial",
@@ -57,7 +57,7 @@ func TestCIVisualforceWorkflowSharesInputAndRequiresUnion(t *testing.T) {
 		t.Error("workers must consume the same immutable history input")
 	}
 	for _, marker := range []string{
-		"needs: test", "if: ${{ success() }}", "pattern: go-test-visualforce-shard-*",
+		"needs: lwc-vf", "if: ${{ success() }}", "pattern: go-test-visualforce-shard-*",
 		"scripts/ci-go-test.sh visualforce-history-refresh", "go-test-visualforce-shard-{0..3}",
 		"actions/cache/save@", "visualforce-duration-history-v1", "github.sha",
 	} {

@@ -174,7 +174,7 @@ func TestCILWCHistoryRechecksNestedResults(t *testing.T) {
 
 func TestCILWCHistoryWorkflowSharesInputAndRequiresUnion(t *testing.T) {
 	_, jobs := readCIWorkflow(t)
-	input, matrix, refresh := jobs["lwc-compile-history-input"], jobs["test"], jobs["lwc-compile-history"]
+	input, matrix, refresh := jobs["lwc-compile-history-input"], jobs["lwc-vf"], jobs["lwc-compile-history"]
 	for _, marker := range []string{"needs: [lwc-compile-history-input, visualforce-history-input, test-binaries]", "name: lwc-compile-history-input", "CI_LWC_COMPILE_HISTORY_PATH", "name: Download shared LWC duration history"} {
 		if !strings.Contains(matrix, marker) {
 			t.Errorf("matrix does not consume shared input: missing %q", marker)
@@ -188,7 +188,7 @@ func TestCILWCHistoryWorkflowSharesInputAndRequiresUnion(t *testing.T) {
 			t.Errorf("validated predecessor bootstrap missing %q", marker)
 		}
 	}
-	for _, marker := range []string{"needs: test", "if: ${{ success() }}", "pattern: go-test-lwc-compile-shard-*", "lwc-compile-history-refresh", "go-test-lwc-compile-shard-{0..7}", "actions/cache/save@"} {
+	for _, marker := range []string{"needs: lwc-vf", "if: ${{ success() }}", "pattern: go-test-lwc-compile-shard-*", "lwc-compile-history-refresh", "go-test-lwc-compile-shard-{0..7}", "actions/cache/save@"} {
 		if !strings.Contains(refresh, marker) {
 			t.Errorf("validated eight-shard publisher missing %q", marker)
 		}
