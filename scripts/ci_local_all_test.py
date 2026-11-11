@@ -100,8 +100,8 @@ class LocalAllTest(unittest.TestCase):
             ('sema-0', 'sema', 'sema-shard'),
             ('gladecli-0', 'gladecli', 'gladecli-shard'),
             ('vm-0', 'vm', 'vm-shard'),
-            ('lwc-compile-0', 'test', 'lwc-compile-shard'),
-            ('visualforce-0', 'test', 'visualforce-shard'),
+            ('lwc-compile-0', 'lwc-vf', 'lwc-compile-shard'),
+            ('visualforce-0', 'lwc-vf', 'visualforce-shard'),
         ]:
             block = re.search(r'(?ms)^  ' + re.escape(job) + r':\n(.*?)(?=^  [a-z0-9-]+:|\Z)', workflow)
             self.assertIsNotNone(block, job)

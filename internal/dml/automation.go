@@ -288,7 +288,7 @@ func (e *Engine) applyTriggeredFlows(objectName string, record *storage.Record, 
 			branchLookups := append([]storage.FlowRecordLookup(nil), rule.RecordLookups...)
 			branchLookups = append(branchLookups, branch.RecordLookups...)
 			if _, err := e.applyFlowEffects(rule.Name, objectName, record, object.Definition, branch.Steps, branch.FieldUpdates, nil, branchLookups, nil, rule.TextTemplates, rule.Variables); err != nil {
-				return err
+				return flowBeforeSaveFault(rule, err)
 			}
 			continue
 		}
@@ -296,7 +296,7 @@ func (e *Engine) applyTriggeredFlows(objectName string, record *storage.Record, 
 			return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: %s flow %s contains unsupported side-effect steps", label, rule.Name)
 		}
 		if _, err := e.applyFlowEffects(rule.Name, objectName, record, object.Definition, rule.Steps, rule.FieldUpdates, nil, rule.RecordLookups, nil, rule.TextTemplates, rule.Variables); err != nil {
-			return err
+			return flowBeforeSaveFault(rule, err)
 		}
 	}
 	return nil
@@ -1319,7 +1319,11 @@ func (e *Engine) applyFlowStep(flowName, objectName string, record *storage.Reco
 			}
 		}
 		capturedFormula := flowCapturedCustomErrorFormula(msg, formulas, frame)
-		msg = e.renderFlowCustomErrorMessage(msg, frame, numberConstants, formulas, resources)
+		var rendered, fault = e.renderFlowCustomErrorMessageForAPI(msg, frame, numberConstants, formulas, resources, step.CustomError.APIVersion)
+		if fault {
+			return false, flowMergeUnhandledFault{}
+		}
+		msg = rendered
 		return false, &flowCustomErrorFailure{cause: dmlErrorf("FIELD_CUSTOM_VALIDATION_EXCEPTION", fields, "%s", msg), capturedFormula: capturedFormula}
 	case "transform":
 		if err := e.applyFlowTransformStep(step.Transform, frame); err != nil {
@@ -4729,4 +4733,13 @@ func (e *Engine) pauseFlowInterview(flowName string, step storage.FlowStep, fram
 	object.Records[id] = record
 	e.Org.Objects["FlowInterview"] = object
 	return nil
+}
+
+// flowBeforeSaveFault reports a merge-field fault as a row error the way an
+// explicit Custom Error does.
+func flowBeforeSaveFault(rule storage.FlowRule, err error) error {
+	if fault, ok := flowMergeFaultError(rule, err); ok {
+		return &flowCustomErrorFailure{cause: fault}
+	}
+	return err
 }

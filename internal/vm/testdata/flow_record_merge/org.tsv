@@ -1,0 +1,77 @@
+api	route	case	observation
+62.0	anonymous	M1	N=-1,234.568|C=-1,234.5|P=-12.5|I=-7|DT=|D=|T=|
+62.0	anonymous	M2	N=1,234,567.891|C=0.5|P=50|I=1,000,000|DT=|D=|T=|
+62.0	anonymous	M3	N=0|C=0|P=0|I=0|DT=|D=|T=|
+62.0	anonymous	M4	We can't save this record because the “Mf Err 62” process failed. Give your Salesforce admin these details. <b>An unhandled fault has occurred in this flow</b><br>An unhandled fault has occurred while processing the flow.  Please contact your system administrator for more information.
+62.0	anonymous	M5	N=-0.5|C=-0.01|P=-0.5|I=|DT=|D=December 31, 1999|T=|
+62.0	anonymous	M6	N=100,000,000,000,000|C=1,234,567,890,123,456.78|P=|I=-999,999,999,999,999,999|DT=|D=|T=|
+62.0	anonymous	M7	We can't save this record because the “Mf Err 62” process failed. Give your Salesforce admin these details. <b>An unhandled fault has occurred in this flow</b><br>An unhandled fault has occurred while processing the flow.  Please contact your system administrator for more information.
+62.0	anonymous	M8	We can't save this record because the “Mf Err 62” process failed. Give your Salesforce admin these details. <b>An unhandled fault has occurred in this flow</b><br>An unhandled fault has occurred while processing the flow.  Please contact your system administrator for more information.
+62.0	anonymous	R1	N=0|C=|P=|I=|DT=|D=|T=|
+62.0	anonymous	R10	N=2|C=|P=|I=5|DT=|D=|T=|
+62.0	anonymous	R2	N=0.002|C=|P=|I=|DT=|D=|T=|
+62.0	anonymous	R3	N=0.002|C=|P=|I=|DT=|D=|T=|
+62.0	anonymous	R4	N=1.234|C=|P=|I=|DT=|D=|T=|
+62.0	anonymous	R5	N=-0|C=|P=|I=|DT=|D=|T=|
+62.0	anonymous	R6	N=-0.002|C=|P=|I=|DT=|D=|T=|
+62.0	anonymous	R7	N=1|C=|P=|I=|DT=|D=|T=|
+62.0	anonymous	R8	N=1,234.568|C=|P=|I=|DT=|D=|T=|
+62.0	anonymous	R9	N=|C=0.005|P=0.005|I=|DT=|D=|T=|
+62.0	anonymous	V1	V=0.0025|W=-1,234.5678|K=0.0025|KD=1.2345|F=0.0025|
+62.0	istest	M1	N=-1,234.568|C=-1,234.5|P=-12.5|I=-7|DT=|D=|T=|
+62.0	istest	M2	N=1,234,567.891|C=0.5|P=50|I=1,000,000|DT=|D=|T=|
+62.0	istest	M3	N=0|C=0|P=0|I=0|DT=|D=|T=|
+62.0	istest	M4	We can't save this record because the “Mf Err 62” process failed. Give your Salesforce admin these details. <b>An unhandled fault has occurred in this flow</b><br>An unhandled fault has occurred while processing the flow.  Please contact your system administrator for more information.
+62.0	istest	M5	N=-0.5|C=-0.01|P=-0.5|I=|DT=|D=December 31, 1999|T=|
+62.0	istest	M6	N=100,000,000,000,000|C=1,234,567,890,123,456.78|P=|I=-999,999,999,999,999,999|DT=|D=|T=|
+62.0	istest	M7	We can't save this record because the “Mf Err 62” process failed. Give your Salesforce admin these details. <b>An unhandled fault has occurred in this flow</b><br>An unhandled fault has occurred while processing the flow.  Please contact your system administrator for more information.
+62.0	istest	M8	We can't save this record because the “Mf Err 62” process failed. Give your Salesforce admin these details. <b>An unhandled fault has occurred in this flow</b><br>An unhandled fault has occurred while processing the flow.  Please contact your system administrator for more information.
+62.0	istest	R1	N=0|C=|P=|I=|DT=|D=|T=|
+62.0	istest	R10	N=2|C=|P=|I=5|DT=|D=|T=|
+62.0	istest	R2	N=0.002|C=|P=|I=|DT=|D=|T=|
+62.0	istest	R3	N=0.002|C=|P=|I=|DT=|D=|T=|
+62.0	istest	R4	N=1.234|C=|P=|I=|DT=|D=|T=|
+62.0	istest	R5	N=-0|C=|P=|I=|DT=|D=|T=|
+62.0	istest	R6	N=-0.002|C=|P=|I=|DT=|D=|T=|
+62.0	istest	R7	N=1|C=|P=|I=|DT=|D=|T=|
+62.0	istest	R8	N=1,234.568|C=|P=|I=|DT=|D=|T=|
+62.0	istest	R9	N=|C=0.005|P=0.005|I=|DT=|D=|T=|
+62.0	istest	V1	V=0.0025|W=-1,234.5678|K=0.0025|KD=1.2345|F=0.0025|
+67.0	anonymous	M1	N=-1,234.568|C=-1,234.5|P=-12.5|I=-7|DT=|D=|T=|
+67.0	anonymous	M2	N=1,234,567.891|C=0.5|P=50|I=1,000,000|DT=|D=|T=|
+67.0	anonymous	M3	N=0|C=0|P=0|I=0|DT=|D=|T=|
+67.0	anonymous	M4	N=|C=|P=|I=|DT=3/9/2031, 8:04 AM|D=March 9, 2031|T=3:04 PM|
+67.0	anonymous	M5	N=-0.5|C=-0.01|P=-0.5|I=|DT=|D=December 31, 1999|T=|
+67.0	anonymous	M6	N=100,000,000,000,000|C=1,234,567,890,123,456.78|P=|I=-999,999,999,999,999,999|DT=|D=|T=|
+67.0	anonymous	M7	N=|C=|P=|I=|DT=12/30/2031, 4:00 PM|D=|T=12:00 AM|
+67.0	anonymous	M8	N=|C=|P=|I=|DT=1/1/2031, 3:59 PM|D=|T=11:59 PM|
+67.0	anonymous	R1	N=0|C=|P=|I=|DT=|D=|T=|
+67.0	anonymous	R10	N=2|C=|P=|I=5|DT=|D=|T=|
+67.0	anonymous	R2	N=0.002|C=|P=|I=|DT=|D=|T=|
+67.0	anonymous	R3	N=0.002|C=|P=|I=|DT=|D=|T=|
+67.0	anonymous	R4	N=1.234|C=|P=|I=|DT=|D=|T=|
+67.0	anonymous	R5	N=-0|C=|P=|I=|DT=|D=|T=|
+67.0	anonymous	R6	N=-0.002|C=|P=|I=|DT=|D=|T=|
+67.0	anonymous	R7	N=1|C=|P=|I=|DT=|D=|T=|
+67.0	anonymous	R8	N=1,234.568|C=|P=|I=|DT=|D=|T=|
+67.0	anonymous	R9	N=|C=0.005|P=0.005|I=|DT=|D=|T=|
+67.0	anonymous	V1	V=0.0025|W=-1,234.5678|K=0.0025|KD=1.2345|F=0.0025|
+67.0	istest	M1	N=-1,234.568|C=-1,234.5|P=-12.5|I=-7|DT=|D=|T=|
+67.0	istest	M2	N=1,234,567.891|C=0.5|P=50|I=1,000,000|DT=|D=|T=|
+67.0	istest	M3	N=0|C=0|P=0|I=0|DT=|D=|T=|
+67.0	istest	M4	N=|C=|P=|I=|DT=3/9/2031, 8:04 AM|D=March 9, 2031|T=3:04 PM|
+67.0	istest	M5	N=-0.5|C=-0.01|P=-0.5|I=|DT=|D=December 31, 1999|T=|
+67.0	istest	M6	N=100,000,000,000,000|C=1,234,567,890,123,456.78|P=|I=-999,999,999,999,999,999|DT=|D=|T=|
+67.0	istest	M7	N=|C=|P=|I=|DT=12/30/2031, 4:00 PM|D=|T=12:00 AM|
+67.0	istest	M8	N=|C=|P=|I=|DT=1/1/2031, 3:59 PM|D=|T=11:59 PM|
+67.0	istest	R1	N=0|C=|P=|I=|DT=|D=|T=|
+67.0	istest	R10	N=2|C=|P=|I=5|DT=|D=|T=|
+67.0	istest	R2	N=0.002|C=|P=|I=|DT=|D=|T=|
+67.0	istest	R3	N=0.002|C=|P=|I=|DT=|D=|T=|
+67.0	istest	R4	N=1.234|C=|P=|I=|DT=|D=|T=|
+67.0	istest	R5	N=-0|C=|P=|I=|DT=|D=|T=|
+67.0	istest	R6	N=-0.002|C=|P=|I=|DT=|D=|T=|
+67.0	istest	R7	N=1|C=|P=|I=|DT=|D=|T=|
+67.0	istest	R8	N=1,234.568|C=|P=|I=|DT=|D=|T=|
+67.0	istest	R9	N=|C=0.005|P=0.005|I=|DT=|D=|T=|
+67.0	istest	V1	V=0.0025|W=-1,234.5678|K=0.0025|KD=1.2345|F=0.0025|

@@ -12,6 +12,8 @@ Seeded profiles now link to the user licenses and management permissions seen in
 
 - **`ObjectPermissions.PermissionsViewAllFields` at API 62.0.** The field is rejected at compile time when it is named through `Schema.ObjectPermissions`, through a chained `getDescribe()` or `getSObjectField()`, or through an `SObjectType.fields` member, as for the plain token. API 63.0 and later still accept it.
 
+- **Action argument conversion.** Arguments of `@AuraEnabled` calls from Lightning web components convert as Salesforce does for Boolean (any string), `List<String>` (a string becomes one element or the parsed JSON array; numbers, booleans and objects become an empty list), Decimal, Double, Integer, Datetime, Object, Account and SObject parameters. A `Date` parameter that receives a UTC Datetime string is still rejected.
+
 ## v0.3.6
 
 v0.3.6 fixes more differences from Salesforce found with captured org behavior, and makes pull request CI faster.

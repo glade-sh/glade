@@ -181,8 +181,16 @@ func TestFailure(t *testing.T) { if os.Getenv("FIXTURE_FAIL")=="1" {t.Fatal("own
 
 func TestCISharedBinaryWorkflowWiring(t *testing.T) {
 	_, jobs := readCIWorkflow(t)
-	if !strings.Contains(jobs["test-binaries"], "ci-test-binary.py build") {
-		t.Fatal("CI must build shared test binaries once")
+	for _, producer := range []string{"test-binaries", "test-binaries-apextest"} {
+		if !strings.Contains(jobs[producer], "ci-test-binary.py build") {
+			t.Fatalf("%s must build its shared test binaries once", producer)
+		}
+	}
+	// Each package binary has exactly one producer, and each consumer waits only on its own.
+	if strings.Contains(jobs["test-binaries"], "./internal/apextest") || strings.Contains(jobs["test-binaries"], "for package in apextest") ||
+		!strings.Contains(jobs["test-binaries"], "for package in sema lwc/compile visualforce; do") ||
+		!strings.Contains(jobs["test-binaries-apextest"], "ci-test-binary.py build /tmp/glade-test-binaries/apextest test ./internal/apextest") {
+		t.Fatal("apextest binary must have its own producer apart from sema, lwc/compile and visualforce")
 	}
 	helper, err := os.ReadFile("ci-test-binary.py")
 	if err != nil {
@@ -191,20 +199,27 @@ func TestCISharedBinaryWorkflowWiring(t *testing.T) {
 	if !strings.Contains(string(helper), `command = [GO, "test", "-trimpath", "-vet=off", "-c"`) {
 		t.Fatal("shared test binaries must be built with -trimpath")
 	}
-	for _, name := range []string{"test", "sema", "apextest"} {
-		if !strings.Contains(jobs[name], "test-binaries") || !strings.Contains(jobs[name], "CI_TEST_BIN_DIR") {
-			t.Errorf("%s does not consume the shared binaries", name)
+	for name, producer := range map[string]string{"lwc-vf": "needs: [lwc-compile-history-input, visualforce-history-input, test-binaries]", "sema": "needs: test-binaries", "apextest": "needs: [apextest-history-input, test-binaries-apextest]"} {
+		if !strings.Contains(jobs[name], producer) || !strings.Contains(jobs[name], "CI_TEST_BIN_DIR") {
+			t.Errorf("%s does not consume only its shared binaries", name)
 		}
 	}
-	if !strings.Contains(jobs["required-ci"], "      - test-binaries\n") {
-		t.Fatal("shared build must remain required")
+	for _, name := range []string{"test"} {
+		if strings.Contains(jobs[name], "needs:") {
+			t.Errorf("%s uses no shared binary or history input and must not wait on one", name)
+		}
+	}
+	for _, producer := range []string{"test-binaries", "test-binaries-apextest"} {
+		if !strings.Contains(jobs["required-ci"], "      - "+producer+"\n") {
+			t.Fatalf("shared build %s must remain required", producer)
+		}
 	}
 }
 
 func TestCISharedBinaryRemainingLaneKeepsOrdinaryGoExecution(t *testing.T) {
 	_, jobs := readCIWorkflow(t)
 	// This lane executes many packages and downloads no package binary artifact.
-	if !strings.Contains(jobs["test"], `CI_TEST_BIN_DIR: ${{ matrix.lane != 'remaining-go' && '/tmp/glade-test-binaries' || '' }}`) {
+	if strings.Contains(jobs["test"], "CI_TEST_BIN_DIR") || strings.Contains(jobs["test"], "download-artifact") {
 		t.Fatal("remaining-go has no shared artifact and must keep the ordinary multi-package Go runner")
 	}
 }
