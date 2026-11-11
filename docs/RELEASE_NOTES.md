@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-No changes yet.
+### Performance
+
+- **Id lookups.** `SObjectType.newSObject(id)`, `Id.getSObjectType()`, delete by Id and other lookups from an Id to its object no longer sort every object name on each call. On the standard object set one lookup takes about a sixth of the time and allocates nothing. Results are unchanged.
 
 ## v0.3.7
 
