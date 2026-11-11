@@ -118,7 +118,10 @@ jobs:
 
   vet:
     if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
-    runs-on: ubuntu-24.04
+    # Self-hosted pool (runner group glade-main-only, ci.yml on main only): only
+    # push or workflow_dispatch on main, and only while repo variable
+    # GLADE_SELFHOSTED is 1. Pull requests always use the hosted runner.
+    runs-on: ${{ ((github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && vars.GLADE_SELFHOSTED == '1') && fromJSON('["self-hosted","glade-bmo"]') || 'ubuntu-24.04' }}
     timeout-minutes: 30
     env:
       GOMAXPROCS: "2"
