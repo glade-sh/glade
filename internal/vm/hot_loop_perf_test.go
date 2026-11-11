@@ -361,3 +361,32 @@ func TestStatementTraceCapBoundaryEnabledAndDisabledRoutes(t *testing.T) {
 		}
 	}
 }
+
+// TestHotLoopProfileLoopBindings runs loops whose bodies declare locals in
+// enhanced for loops and class methods, the shapes that reuse bindings across
+// iterations. The checksum pins the outcome.
+func TestHotLoopProfileLoopBindings(t *testing.T) {
+	machine := New(nil)
+	machine.SetTraceEnabled(false)
+	body, err := CompileAnonymous(`Integer sum=0; List<Integer> xs=new List<Integer>(); for(Integer q=0;q<20000;q++){xs.add(q);} for(Integer x : xs){Integer a=x&3; Integer b=a+1; Integer c=b*2; sum=sum+c;} for(Integer i=0;i<20000;i++){Integer a=i&3; Integer b=a+1; Integer c=b*2; sum=sum+c;} return String.valueOf(sum);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "HotHost"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterMethod(Method{Name: "HotHost.run", ClassName: "HotHost", IsStatic: true, ReturnType: "String", Program: body}); err != nil {
+		t.Fatal(err)
+	}
+	entry, err := CompileAnonymous(`String s = '';  for(Integer r=0;r<10;r++){ s = HotHost.run(); } System.debug('ROW LB ' + s);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := machine.Execute(entry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Debug) != 1 || result.Debug[0] != "ROW LB 200000" {
+		t.Fatalf("debug %v", result.Debug)
+	}
+}

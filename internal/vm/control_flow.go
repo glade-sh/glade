@@ -1098,20 +1098,11 @@ func (vm *VM) executeFor(source string, inst ir.Instruction, result *Result) (ex
 			return out, err
 		}
 	}
-	// Anonymous code has no fields or trigger globals a stale body binding
-	// could shadow in the loop condition or update, so body locals can stay
-	// bound between iterations and be removed once when the loop exits.
-	var kept *[]string
-	if vm.currentClass == "" && !vm.currentTrigger && vm.forBodyBindingsReusable(inst) {
-		kept = new([]string)
-		defer func() {
-			for _, name := range *kept {
-				delete(vm.Globals, name)
-				delete(vm.VarTypes, name)
-				delete(vm.finalLocals, name)
-			}
-		}()
-	}
+	// Body locals stay bound between iterations when no read can see a stale
+	// one (see forBodyBindingsReusable), and are removed once when the loop
+	// exits.
+	kept, release := vm.keepLoopBodyBindings(inst)
+	defer release()
 	for iteration := 0; ; iteration++ {
 		if err := vm.chargeLoopIteration("for", iteration); err != nil {
 			return execOutcome{}, err
@@ -1147,6 +1138,23 @@ func (vm *VM) executeFor(source string, inst ir.Instruction, result *Result) (ex
 			if err != nil || out.signal == signalReturn || out.signal == signalThrow {
 				return out, err
 			}
+		}
+	}
+}
+
+// keepLoopBodyBindings returns the kept-binding list for a loop whose body
+// locals may stay bound across iterations (nil otherwise) and the function
+// that removes those bindings when the loop exits.
+func (vm *VM) keepLoopBodyBindings(inst ir.Instruction) (*[]string, func()) {
+	if !vm.forBodyBindingsReusable(inst) {
+		return nil, func() {}
+	}
+	kept := new([]string)
+	return kept, func() {
+		for _, name := range *kept {
+			delete(vm.Globals, name)
+			delete(vm.VarTypes, name)
+			delete(vm.finalLocals, name)
 		}
 	}
 }
@@ -1274,6 +1282,8 @@ func (vm *VM) executeForEach(source string, inst ir.Instruction, result *Result)
 			delete(vm.VarTypes, inst.Name)
 		}
 	}()
+	kept, release := vm.keepLoopBodyBindings(inst)
+	defer release()
 	for iteration, value := range values {
 		if err := vm.collectionTraversalMutationError(iterable, removalEpoch); err != nil {
 			return execOutcome{}, err
@@ -1287,7 +1297,7 @@ func (vm *VM) executeForEach(source string, inst ir.Instruction, result *Result)
 		}
 		vm.Globals[inst.Name] = coerced
 		vm.VarTypes[inst.Name] = inst.Type
-		out, err := vm.executeBlockScope(ir.Program{Source: source}, inst, result)
+		out, err := vm.executeBlockScopeKeeping(ir.Program{Source: source}, inst, result, kept)
 		if err != nil {
 			return execOutcome{}, err
 		}
@@ -1876,11 +1886,26 @@ type heapStaticContainerRef struct {
 	name   string
 }
 
-// forBodyBindingsReusable reports whether the body locals of a for loop can
-// stay bound between iterations. A stale local would be visible to name
-// resolution that is case-insensitive (a type or class named like the local),
-// so every spelling of each body-declared name in the loop must be the
-// declaration's own spelling. The answer depends only on the loop's IR.
+// forBodyBindingsReusable reports whether the body locals of a loop can stay
+// bound between iterations. The answer depends only on the loop's IR, so it
+// holds in anonymous code, class methods and triggers alike.
+//
+// A stale binding from the previous iteration is visible only where the loop
+// reads a name before the body declares it again: the loop header, statements
+// ahead of the declaration, and dynamic code that builds a name at runtime.
+// Local lookup comes first and is case-insensitive, so a stale binding would
+// shadow a field, static, type or trigger variable of the same name there.
+// The loop qualifies only when, for every local declared directly in the body:
+//   - no identifier with that name (any case) occurs in the loop header or in
+//     the body before the declaration, including the declaration's own type
+//     and initializer and nested blocks and loops;
+//   - no two body declarations share a name; and
+//   - the loop calls no query, search, cursor or locator API, whose bind names
+//     are read at runtime.
+//
+// Every read that remains follows the declaration in the same iteration, which
+// rebinds the name with a fresh value, type and final flag, so it sees the same
+// binding whether or not the previous one was removed.
 func (vm *VM) forBodyBindingsReusable(inst ir.Instruction) bool {
 	if len(inst.Then) == 0 {
 		return false
@@ -1889,24 +1914,43 @@ func (vm *VM) forBodyBindingsReusable(inst ir.Instruction) bool {
 	if cached, ok := vm.forBodyReusable[key]; ok {
 		return cached
 	}
-	declared := make(map[string]string)
+	reusable := loopBodyBindingsReusable(inst)
+	if vm.forBodyReusable == nil {
+		vm.forBodyReusable = make(map[*ir.Instruction]bool)
+	}
+	vm.forBodyReusable[key] = reusable
+	return reusable
+}
+
+func loopBodyBindingsReusable(inst ir.Instruction) bool {
+	// declared maps each body-declared name (lower case) to whether its
+	// declaration has been passed in the walk below.
+	declared := make(map[string]bool)
+	reusable := true
 	var collect func([]ir.Instruction)
 	collect = func(list []ir.Instruction) {
 		for _, child := range list {
 			switch child.Op {
 			case ir.OpDeclare:
-				if child.Name != "" {
-					declared[child.Name] = child.Name
+				if child.Name == "" {
+					continue
 				}
+				lower := strings.ToLower(child.Name)
+				if _, dup := declared[lower]; dup {
+					reusable = false
+				}
+				declared[lower] = false
 			case ir.OpDeclGroup:
 				collect(child.Then)
 			}
 		}
 	}
 	collect(inst.Then)
-	spellings := make(map[string]map[string]bool)
+	if !reusable {
+		return false
+	}
 	scan := func(text string) {
-		for i := 0; i < len(text); {
+		for i := 0; i < len(text) && reusable; {
 			c := text[i]
 			if !(c == '_' || c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z') {
 				i++
@@ -1916,26 +1960,22 @@ func (vm *VM) forBodyBindingsReusable(inst ir.Instruction) bool {
 			for i < len(text) && (text[i] == '_' || text[i] >= '0' && text[i] <= '9' || text[i] >= 'a' && text[i] <= 'z' || text[i] >= 'A' && text[i] <= 'Z') {
 				i++
 			}
-			word := text[start:i]
-			lower := strings.ToLower(word)
-			if spellings[lower] == nil {
-				spellings[lower] = make(map[string]bool)
+			if live, isDeclared := declared[strings.ToLower(text[start:i])]; isDeclared && !live {
+				reusable = false
 			}
-			spellings[lower][word] = true
 		}
 	}
-	// Dynamic SOQL, SOSL and cursor APIs resolve bind names from a query
-	// string built at run time, which can name a body local before this
-	// iteration declares it. Loops that reach them keep per-iteration scopes.
-	runtimeBinds := false
 	var scanExpr func(ir.Expr)
 	scanExpr = func(e ir.Expr) {
-		if callee := strings.ToLower(e.Callee + " " + e.Name); strings.Contains(callee, "query") || strings.Contains(callee, "search") || strings.Contains(callee, "cursor") || strings.Contains(callee, "locator") {
-			runtimeBinds = true
-		}
 		scan(e.Value)
 		scan(e.Name)
 		scan(e.Callee)
+		// Dynamic SOQL, SOSL and cursor APIs resolve bind names from a query
+		// string built at run time, which can name a body local before this
+		// iteration declares it.
+		if lower := strings.ToLower(e.Callee + " " + e.Name); strings.Contains(lower, "query") || strings.Contains(lower, "search") || strings.Contains(lower, "cursor") || strings.Contains(lower, "locator") {
+			reusable = false
+		}
 		for _, arg := range e.Args {
 			scanExpr(arg)
 		}
@@ -1991,18 +2031,41 @@ func (vm *VM) forBodyBindingsReusable(inst ir.Instruction) bool {
 			scanList(c.Body)
 		}
 	}
-	scanInst(inst)
-	reusable := !runtimeBinds
-	for name := range declared {
-		forms := spellings[strings.ToLower(name)]
-		if len(forms) != 1 || !forms[name] {
-			reusable = false
-			break
+	// Loop header: the condition, initializers, updates and, for an enhanced
+	// for, the loop variable and iterable. None may name a body local.
+	scan(inst.Type)
+	scan(inst.Name)
+	scanExpr(inst.Expr)
+	if inst.Init != nil {
+		scanInst(*inst.Init)
+	}
+	scanList(inst.Inits)
+	if inst.Update != nil {
+		scanInst(*inst.Update)
+	}
+	scanList(inst.Updates)
+	// Body in execution order: a top-level declaration scans its type and
+	// initializer first and only then makes its name live.
+	var walkBody func([]ir.Instruction)
+	walkBody = func(list []ir.Instruction) {
+		for _, child := range list {
+			switch child.Op {
+			case ir.OpDeclare:
+				scan(child.Type)
+				scanExpr(child.Expr)
+				if child.Init != nil {
+					scanInst(*child.Init)
+				}
+				if child.Name != "" {
+					declared[strings.ToLower(child.Name)] = true
+				}
+			case ir.OpDeclGroup:
+				walkBody(child.Then)
+			default:
+				scanInst(child)
+			}
 		}
 	}
-	if vm.forBodyReusable == nil {
-		vm.forBodyReusable = make(map[*ir.Instruction]bool)
-	}
-	vm.forBodyReusable[key] = reusable
+	walkBody(inst.Then)
 	return reusable
 }
