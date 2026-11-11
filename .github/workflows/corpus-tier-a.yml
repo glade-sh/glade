@@ -48,9 +48,9 @@ jobs:
           path: |
             ~/go/pkg/mod
             ~/.cache/go-build
-          key: corpus-a-go-${{ runner.os }}-${{ runner.arch }}-1.26.10-${{ hashFiles('glade/go.sum', 'glade-tools/go.sum') }}-${{ github.sha }}
+          key: corpus-a-go-${{ runner.os }}-${{ runner.arch }}-1.26.10-${{ hashFiles('glade/go.sum') }}-tools63eea064-${{ github.sha }}
           restore-keys: |
-            corpus-a-go-${{ runner.os }}-${{ runner.arch }}-1.26.10-${{ hashFiles('glade/go.sum', 'glade-tools/go.sum') }}-
+            corpus-a-go-${{ runner.os }}-${{ runner.arch }}-1.26.10-${{ hashFiles('glade/go.sum') }}-tools63eea064-
             go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-
       - name: Check manifest preparation
         working-directory: glade
