@@ -28,8 +28,8 @@ Three facts shape everything below:
 | 5 | Local checks | coder | focused tests, one package run, repoguard | green, or each failure explained in the PR |
 | 6 | Pull request | coder | the PR with the template filled in | every field has content or `n/a: <reason>` |
 | 7 | CI | hosted | `Required CI` green | the check passes on the PR merge result for the current head and base |
-| 8 | Review | reviewer | one PR review | no open blocking finding, threads resolved |
-| 9 | Merge | coordinator | a squash commit on `main` | the PR check is green |
+| 8 | Review | reviewer | one PR review, after CI is green | no open blocking finding, threads resolved |
+| 9 | Merge | coordinator | a squash commit on `main` | the PR check is green and the branch is up to date with `main` |
 | 10 | Nightly | host cron | real-project suite diff against goldens | `NEW = 0`, or one ticket per NEW |
 | 11 | Release | maintainer | tag, archives, notes | the release checklist is green |
 
@@ -175,14 +175,16 @@ review; a WARN needs its reason in the PR.
 
 `Required CI` runs a fast lane on every PR, including drafts. It builds with CGO,
 checks formatting, vet, repository guard, workflow lint, leak scan and scripts
-tests, and tests changed Go packages and their direct importers. A changed path outside
+tests, and tests changed Go packages and their direct importers (the fast PR lane, below). A changed path outside
 every Go package (for example `lwcruntime/**`, `third_party/lwc/**`, root
 `testdata/**`, workflows or root files) selects the full package set; only
 `docs/**` and Markdown files outside `testdata` are docs-only and select
-nothing. The merge queue
-runs the full suite under the same required check; a failure ejects the PR from
-the queue. Pushes to main, scheduled and manually dispatched runs also use the
-full suite. Superseded PR runs are cancelled. For a
+nothing. Pushes to `main`, scheduled and manually dispatched runs use the
+full suite. A pull request, including an integration train (section 3.12),
+runs only the fast lane over the union of its changed packages, so a train PR
+also needs a dispatched full run before it merges (section 3.12). Superseded PR runs
+are cancelled, so push once and let the run finish; do not close and reopen a
+PR to retrigger CI, which cancels the run in flight. For a
 `pull_request` run, checkout and tests use GitHub's merge result for the PR
 head and base, not the head tree alone. The merge commit has the PR head as its
 second parent; identify both the head and tested merge tree when reporting it.
@@ -212,12 +214,19 @@ gates them.
 
 ### 3.9 Merge
 
-The coordinator squash merges after `Required CI` passes on the PR. The squash
+The coordinator squash merges after `Required CI` passes on the PR and review
+is done. `main` requires branches to be up to date and there is no merge queue,
+so a PR that fell behind `main` is updated and must pass `Required CI` again
+before it merges. A train PR also merges only after the full CI run dispatched
+on the train branch is green on the exact head (section 3.12). Prefer an integration train (section 3.12) when several PRs
+are ready together. The squash
 message is the PR title plus applicable `NATIVE` lines or local contract
 citations. The branch is deleted on merge.
 The coordinator moves the ticket to Done on the project board with the PR link.
 If the branch conflicts with `main`, resolve the conflict, rerun the focused
-tests and push; do not rewrite history under a running check.
+tests and push; do not rewrite history under a running check. Do not merge a
+train or `main` into a component PR branch to refresh it; that discards its
+green CI result.
 
 ### 3.10 Nightly real-project suite
 
@@ -257,6 +266,34 @@ change.
 No step repeats on an unchanged tree. A gap found while qualifying a release
 is fixed before the tag unless the maintainer decides otherwise.
 
+### 3.12 Integration trains and component branches
+
+Component branches are small, one ticket each. The coder validates a component
+branch with build, vet and the focused tests for the change, then pushes it.
+The full suite is not run per component. A train's pull request runs the fast
+lane over the union of its components. Every train PR also gets a full CI run
+before it merges: dispatch the CI workflow on the train branch with
+`gh workflow run ci.yml --ref <train branch>`. The train merges only when that
+dispatched run is green on the exact head and the train review approves. The
+full run on the push to `main` is then confirmation, not the first full test.
+New commits on the train restart the dispatched run.
+
+- Train: the coordinator combines several approved PRs into one branch built
+  from their heads and opens one PR. It gets one `Required CI` run and one
+  review of the merge resolutions only; the component diffs were already
+  reviewed.
+- CI before review: a reviewer starts on a head only after `Required CI` is
+  green on that exact head. A PR enters a train on its own green head. New
+  commits restart both.
+- Version constants: `SemanticABI`, `PlatformABI` and `testRuntimeCacheABI` are
+  not bumped on component branches or in trains. One bump per release is made
+  at the cut, in the release PR. Component PRs state which bump class they need.
+- Corpus and real-project runs from section 3.10 and 3.11 are reused when the
+  product tree is identical to the one already measured.
+
+The fast PR lane (section 3.7) is the only CI a component PR needs before
+review.
+
 ## 4. Change classes
 
 Every ticket and PR names one class: `docs`, `tests`, `tooling`, `behavior`,
@@ -271,7 +308,8 @@ Every ticket and PR names one class: `docs`, `tests`, `tooling`, `behavior`,
 | `performance` | speed or memory with identical outcomes | a matched before/after outcome comparison with its scope and the targeted benchmark in the PR; the release measures the aggregate | per-PR project measurement |
 | `generated` | generated files, including the standard-object schema ([STANDARD_OBJECT_SCHEMA.md](STANDARD_OBJECT_SCHEMA.md)) | change the input or the generator, regenerate, commit both | hand edits |
 
-ABI bumps, in the same PR and once:
+ABI bumps, once per release at the cut (section 3.12); a component PR names
+the bump class it needs instead of changing the constant:
 
 - `SemanticABI` in `internal/sema/sema.go`: any non-test change under
   `internal/sema`, `typesys`, `apexast`, `apexlang`, `ir`, `project`, `schema`,
@@ -286,9 +324,9 @@ ABI bumps, in the same PR and once:
 - `dapCacheVersion` in `internal/gladecli/dap_cache.go`: only when the debug
   adapter cache layout changes.
 
-Raise the number by one. When `main` moved and bumped the same constant,
-rebase and take the higher value plus one. Tests that pin a version or a
-per-version counter change in the same PR, with the reason in the message.
+Raise the number by one at the cut. Tests that pin a version or a
+per-version counter change in the same release PR, with the reason in the
+message.
 
 ## 5. Stop and ask
 
