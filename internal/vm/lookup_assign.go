@@ -250,6 +250,22 @@ func (vm *VM) lookup(name string) (Value, error) {
 		if token, ok := vm.lookupSObjectTypeToken(parts); ok {
 			return token, nil
 		}
+		// A field directly after <Object>.SObjectType is a field token,
+		// even when its name is also an object-describe property. Keep the
+		// captured SObjectType-field collision and reserved holders intact.
+		if len(parts) == 3 && strings.EqualFold(parts[1], "SObjectType") && !strings.EqualFold(parts[2], "fields") && !strings.EqualFold(parts[2], "fieldSets") {
+			if _, fieldCollision := vm.sObjectTypeFieldToken(parts[:2]); !fieldCollision {
+				if objectName, definition, ok := vm.describeObjectDefinition(parts[0]); ok {
+					namespace := ""
+					if vm.Org != nil {
+						namespace = vm.Org.Namespace
+					}
+					if field, found := vm.resolveDeclaredSObjectTokenField(objectName, definition, namespace, parts[2]); found {
+						return vm.sObjectFieldTokenFromField(objectName, field), nil
+					}
+				}
+			}
+		}
 		if len(parts) > 2 {
 			if token, ok := vm.lookupSObjectTypeToken(parts[:2]); ok {
 				return vm.lookupPath(token, parts[2:])
@@ -1732,9 +1748,10 @@ func (vm *VM) lookupSObjectSharingReasonToken(parts []string) (Value, bool) {
 	if !ok {
 		return Null, false
 	}
-	if field.Type != storage.FieldPicklist && field.Type != storage.FieldMultiPicklist {
-		// Standard share field stubs expose RowCause as String even when the
-		// describe catalog carries the platform's sharing reason values.
+	if (field.Type != storage.FieldPicklist && field.Type != storage.FieldMultiPicklist) || len(field.PicklistValues) == 0 {
+		// Standard share field stubs expose RowCause as String, or as a
+		// picklist without values (restricted-picklist stub typing), even when
+		// the describe catalog carries the platform's sharing reason values.
 		if storage.CapturedStandardSharingReasonObject(definition.APIName) {
 			if reason, found := storage.StandardPicklistValue(definition.APIName, fieldName, reasonName); found {
 				return String(reason), true

@@ -2120,10 +2120,10 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getDefaultValue expects 0 arguments")
 			}
-			if value, ok := receiver.Fields["defaultValue"]; ok {
+			if value, ok := receiver.Fields["defaultValue"]; ok && value.Kind != ValueNull {
 				return value, receiver, false, true, nil
 			}
-			return Null, receiver, false, true, nil
+			return typedNull("Object"), receiver, false, true, nil
 		case "getDefaultValueFormula":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getDefaultValueFormula expects 0 arguments")

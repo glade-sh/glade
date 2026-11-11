@@ -193,6 +193,7 @@ type DescribeFieldResult struct {
 	ChildRelationshipName    string                      `json:"childRelationshipName,omitempty"`
 	DeleteConstraint         string                      `json:"deleteConstraint,omitempty"`
 	DefaultValue             string                      `json:"defaultValue,omitempty"`
+	DefaultValueFromMetadata bool                        `json:"defaultValueFromMetadata,omitempty"`
 	Required                 bool                        `json:"required,omitempty"`
 	ExternalID               bool                        `json:"externalId,omitempty"`
 	Unique                   bool                        `json:"unique,omitempty"`
@@ -399,6 +400,7 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 				ChildRelationshipName:    childRelationshipName,
 				DeleteConstraint:         field.DeleteConstraint,
 				DefaultValue:             field.DefaultValue,
+				DefaultValueFromMetadata: field.DefaultValueFromMetadata,
 				Required:                 field.Required || strings.EqualFold(field.Type, "MasterDetail"),
 				ExternalID:               field.ExternalID,
 				Unique:                   field.Unique,
@@ -852,6 +854,7 @@ func ToObjectDefinition(describe DescribeSObjectResult) storage.ObjectDefinition
 			FormulaTreatBlanksAs:     field.FormulaTreatBlanksAs,
 			CompoundFieldName:        field.CompoundFieldName,
 			DefaultValue:             field.DefaultValue,
+			DefaultValueFromMetadata: field.DefaultValueFromMetadata,
 			AutoNumber:               field.AutoNumber,
 			DisplayFormat:            field.DisplayFormat,
 			SummarizedField:          field.SummarizedField,
@@ -977,6 +980,7 @@ func FromObjectDefinition(definition storage.ObjectDefinition) DescribeSObjectRe
 			WriteRequiresMasterRead:  field.WriteRequiresMasterRead,
 			ChildRelationshipName:    field.ChildRelationshipName,
 			DefaultValue:             field.DefaultValue,
+			DefaultValueFromMetadata: field.DefaultValueFromMetadata,
 			Required:                 field.Required,
 			ExternalID:               field.ExternalID,
 			Unique:                   field.Unique,

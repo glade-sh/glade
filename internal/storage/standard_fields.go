@@ -1389,6 +1389,7 @@ func mergeStandardSObjectStubFields(definition *ObjectDefinition, features []str
 	// Preserve explicit field overrides while filling captured calculated and
 	// currency facets, repairing scalar Time references, and filling write flags.
 	enrichStandardStubWriteFlagsFromV2Describe(definition)
+	applyStandardStubRestrictedPicklists(definition)
 	applyStandardSObjectStubReadOnlyFields(definition)
 }
 
@@ -2126,6 +2127,7 @@ func ensureFieldDefault(definition *ObjectDefinition, fieldName string, defaultV
 	field := definition.Fields[resolved]
 	if field.DefaultValue == "" {
 		field.DefaultValue = defaultValue
+		field.DefaultValueFromMetadata = false
 		definition.Fields[resolved] = field
 	}
 }
@@ -2137,6 +2139,7 @@ func setFieldDefault(definition *ObjectDefinition, fieldName string, defaultValu
 	}
 	field := definition.Fields[resolved]
 	field.DefaultValue = defaultValue
+	field.DefaultValueFromMetadata = false
 	definition.Fields[resolved] = field
 }
 
@@ -2266,6 +2269,7 @@ func enrichStandardField(existing *Field, field Field) {
 	}
 	if existing.DefaultValue == "" {
 		existing.DefaultValue = field.DefaultValue
+		existing.DefaultValueFromMetadata = field.DefaultValueFromMetadata
 	}
 	if existing.CompoundFieldName == "" {
 		existing.CompoundFieldName = field.CompoundFieldName

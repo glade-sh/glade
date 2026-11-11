@@ -1,0 +1,9 @@
+{
+  "OBJECTS": [
+    "probe__c"
+  ],
+  "FIELDSETS": [
+    "main",
+    "mainlist"
+  ]
+}

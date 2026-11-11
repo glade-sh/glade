@@ -295,6 +295,27 @@ func semaQualifiedCallReceiverKnown(a *Analyzer, currentType, receiver string, s
 	if semaModelHasType(model, resolveNestedTypeName(model, currentType, receiver)) || semaEnumValuePathType(model, receiver) != "" {
 		return true
 	}
+	// As with Schema.SObjectType.<object>.fields, a source-inferred
+	// placeholder alone does not establish an object for a field-set path.
+	// Unloaded dependencies remain open to their own schema names.
+	parts := strings.Split(receiver, ".")
+	root := parts[0]
+	if len(parts) > 0 && strings.EqualFold(parts[0], "Schema") {
+		parts = parts[1:]
+	}
+	if len(parts) == 4 && strings.EqualFold(parts[0], "SObjectType") && strings.EqualFold(parts[2], "fieldSets") {
+		_, scoped := scope.lookup(root)
+		objectParts := strings.Split(parts[1], "__")
+		external := a != nil && (a.hasExternalDependencyName(parts[1]) || len(objectParts) >= 3 && !strings.EqualFold(objectParts[0], a.namespace))
+		fieldSetNamespace, _, qualifiedFieldSet := strings.Cut(parts[3], "__")
+		externalFieldSet := a != nil && qualifiedFieldSet && !strings.EqualFold(fieldSetNamespace, a.namespace)
+		if a != nil && !scoped && !semaProjectTypeShadowsPlatform(model, root) && !external && !semaSObjectIdentityEstablished(a, parts[1], model) {
+			return false
+		}
+		if a != nil && !scoped && !semaProjectTypeShadowsPlatform(model, root) && !external && !externalFieldSet && semaAbsentCapturedFieldSet(a, parts[1], parts[3], model) {
+			return false
+		}
+	}
 	if semaPageReceiverPathKnown(receiver) || semaKnownSObjectFieldTokenPath(receiver, model) ||
 		semaKnownSObjectTypeTokenPath(receiver, model) || semaKnownSObjectFieldSetPath(receiver, model) {
 		return true
@@ -314,7 +335,7 @@ func semaQualifiedCallReceiverKnown(a *Analyzer, currentType, receiver string, s
 	// A loaded dependency namespace is known; a declared but unloaded one
 	// supplies no method either. Preserve declaration-backed deferral and
 	// positively resolved receivers above.
-	root, _, _ := strings.Cut(receiver, ".")
+	root, _, _ = strings.Cut(receiver, ".")
 	if !a.hasKnown(root) && !semaIRUnresolvedDeclaredReceiver(a, currentType, receiver, scope, model) {
 		if _, bound := scope.lookup(root); !bound {
 			return false
@@ -505,6 +526,8 @@ func semaKnownSObjectFieldTokenPath(receiver string, model *semaTypeMemberView) 
 		objectName, fieldName = parts[0], parts[1]
 	case len(parts) == 3 && strings.EqualFold(parts[1], "fields"):
 		objectName, fieldName = parts[0], parts[2]
+	case len(parts) == 3 && strings.EqualFold(parts[1], "SObjectType") && !strings.EqualFold(parts[2], "fields") && !strings.EqualFold(parts[2], "fieldSets"):
+		objectName, fieldName = parts[0], parts[2]
 	case len(parts) == 4 && strings.EqualFold(parts[1], "SObjectType") && strings.EqualFold(parts[2], "fields"):
 		objectName, fieldName = parts[0], parts[3]
 	case len(parts) == 3 && strings.EqualFold(parts[0], "SObjectType") && strings.EqualFold(parts[2], "fields"):
@@ -550,6 +573,30 @@ func semaKnownSObjectTypeTokenPath(receiver string, model *semaTypeMemberView) b
 	default:
 		return false
 	}
+}
+
+// Only an explicitly complete, non-partial inventory can prove a missing
+// field set. Source files alone and dependency inventories do not close it.
+func semaAbsentCapturedFieldSet(a *Analyzer, objectName, fieldSetName string, model *semaTypeMemberView) bool {
+	canonical := objectName
+	if members, ok := model.lookupName(objectName); ok && members.sobject {
+		canonical = members.name
+	}
+	for _, object := range a.queryDeclaredObjects {
+		if !strings.EqualFold(object.Name, objectName) && !strings.EqualFold(object.Name, canonical) {
+			continue
+		}
+		if object.Partial || !object.FieldSetsComplete {
+			return false
+		}
+		for _, known := range object.FieldSetNames {
+			if strings.EqualFold(known, fieldSetName) || a.namespace != "" && strings.EqualFold(storage.StripNamespaceToken(a.namespace, known), storage.StripNamespaceToken(a.namespace, fieldSetName)) {
+				return false
+			}
+		}
+		return true
+	}
+	return false
 }
 
 func semaKnownSObjectFieldSetPath(receiver string, model *semaTypeMemberView) bool {

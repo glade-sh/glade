@@ -41,6 +41,11 @@ func legacyStandardFieldsOverlayNeedsRefresh(definition ObjectDefinition, featur
 	if legacyStandardStubCurrencyFieldsNeedRepair(definition) {
 		return true
 	}
+	for name := range standardStubRestrictedPicklistFields(definition.APIName) {
+		if existing, exists := ResolveFieldName(definition, "", name); exists && standardStubStringPicklist(definition.Fields[existing]) {
+			return true
+		}
+	}
 	entry, ok := standardObjectCatalogEntryForName(definition.APIName)
 	if !ok {
 		return false

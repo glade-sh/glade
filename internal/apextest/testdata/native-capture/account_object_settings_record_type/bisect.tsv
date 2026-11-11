@@ -1,0 +1,9 @@
+class_api	id	observation
+63.0	R09 insert RecordTypeId null	DmlException INVALID_CROSS_REFERENCE_KEY (RecordTypeId) Record Type ID: this ID value isn't valid for the user:
+63.0	R10 insert LpAcct	ok LpAcct
+64.0	R09 insert RecordTypeId null	DmlException INVALID_CROSS_REFERENCE_KEY (RecordTypeId) Record Type ID: this ID value isn't valid for the user:
+64.0	R10 insert LpAcct	ok LpAcct
+65.0	R09 insert RecordTypeId null	DmlException INVALID_CROSS_REFERENCE_KEY (RecordTypeId) Record Type ID: this ID value isn't valid for the user:
+65.0	R10 insert LpAcct	ok LpAcct
+66.0	R09 insert RecordTypeId null	DmlException INVALID_CROSS_REFERENCE_KEY (RecordTypeId) Record Type ID: this ID value isn't valid for the user:
+66.0	R10 insert LpAcct	ok LpAcct

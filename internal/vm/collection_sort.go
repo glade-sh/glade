@@ -167,7 +167,7 @@ func (vm *VM) mapLookupKey(receiver Value, key Value) string {
 func (vm *VM) mapEntryKey(receiver Value, key Value) (string, error) {
 	// Native request control header_case_replace replaces a differently cased
 	// header key. Ordinary Apex maps retain their existing key rules.
-	if receiver.Runtime == "pagereference-headers" {
+	if receiver.Runtime == "pagereference-headers" || isFieldSetMapValue(receiver) {
 		if stored, ok := caseInsensitiveStringMapStoredKey(receiver, key); ok {
 			return stored, nil
 		}
