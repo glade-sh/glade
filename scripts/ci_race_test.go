@@ -335,7 +335,7 @@ func TestCIRaceWorkflowContract(t *testing.T) {
 		t.Fatal("race workflow must set the shared CI Go memory limit for all jobs")
 	}
 	for _, marker := range []string{
-		"name: Race", "branches: [main]", "schedule:", "workflow_dispatch:",
+		"name: Race", "schedule:", "cron: '43 10 * * *'", "workflow_dispatch:",
 		"fetch-depth: 0", "scripts/ci-race-packages.sh", "fromJSON(needs.plan.outputs.packages)",
 		"fail-fast: false", "max-parallel: 6", "GOMAXPROCS: \"2\"", "go-version: \"1.26.10\"",
 		`scripts/ci-race-test.sh "$PACKAGE" "$SLUG"`, "if: always()",
@@ -351,7 +351,7 @@ func TestCIRaceWorkflowContract(t *testing.T) {
 			t.Errorf("race workflow missing %q", marker)
 		}
 	}
-	for _, forbidden := range []string{"pull_request:", "pull_request_target:", "runs-on: ubuntu-latest-", "go test -race ./..."} {
+	for _, forbidden := range []string{"workflow_run:", "pull_request:", "pull_request_target:", "runs-on: ubuntu-latest-", "go test -race ./..."} {
 		if strings.Contains(workflow, forbidden) {
 			t.Errorf("race workflow contains forbidden %q", forbidden)
 		}
