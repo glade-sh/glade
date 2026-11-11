@@ -2818,6 +2818,16 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 				return []diagnostic.Diagnostic{item}
 			}
 		}
+		// A member access on an index, cast or call result: the rule of
+		// semaUnknownSObjectFieldPath (unknown_sobject_field/org.tsv).
+		if members, _, known := semaLookupTypeMembers(model, receiverType); known && members.sobject && a.semaStandardSObjectLacksField(model, members, field) {
+			if _, resolved := semaResolveField(model, receiverType, field, make(map[string]bool)); !resolved {
+				message := "Variable does not exist: " + field
+				item := semaFieldAccessDiagnostic(typ, member, field, message, bodyOffset+pos, bodyOffset+pos+max(1, len(field)), source)
+				item.NativeMessage = message
+				return []diagnostic.Diagnostic{item}
+			}
+		}
 		return nil
 	}
 	if strings.HasPrefix(expr.Callee, "__field:") ||
@@ -5455,6 +5465,9 @@ func (a *Analyzer) irVariableDiagnostic(typ typesys.TypeSymbol, member typesys.M
 		message := "Variable does not exist: " + missing
 		return diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA021", Message: message, NativeMessage: message, File: typ.File, Range: semaRange(source, start, start+max(1, len(name)))}, true
 	}
+	if missing, owner, ok := a.semaUnknownSObjectFieldPath(root, field, scope, model, typ.Name); ok {
+		return diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA021", Message: fmt.Sprintf("%s %q references unknown field %q on %s", member.Kind, member.Name, missing, owner), NativeMessage: "Variable does not exist: " + missing, File: typ.File, Range: semaRange(source, start, start+max(1, len(name)))}, true
+	}
 	receiverType := ""
 	valueReceiver := false
 	switch {
@@ -5605,6 +5618,13 @@ func (a *Analyzer) irVariableDiagnostic(typ typesys.TypeSymbol, member typesys.M
 		Message:  fmt.Sprintf("%s %q references unknown field %q on %s", member.Kind, member.Name, field, receiverType),
 		File:     typ.File,
 		Range:    semaRange(source, start, start+max(1, len(name))),
+	}
+	// A custom object without the field is "Variable does not exist: <field>"
+	// on both routes (unknown_sobject_field/org.tsv, Widget__c rows).
+	if valueReceiver && !strings.Contains(field, ".") {
+		if members, _, known := semaLookupTypeMembers(model, receiverType); known && members.sobject && semaHasAPISuffixFold(members.name, "__c") {
+			item.NativeMessage = "Variable does not exist: " + strings.TrimSpace(field)
+		}
 	}
 	// A source class with a complete nested inventory cannot provide the
 	// missing first segment of a static member chain. Native points at that
