@@ -53,7 +53,11 @@ func hasAdminFLSStandardFields(objectName string) bool {
 // field on an ordinary custom object, or one of adminFLSStandardFields.
 func (vm *VM) adminFieldNeedsExplicitGrant(objectName, fieldName string) bool {
 	if adminFLSStandardField(objectName, fieldName) {
-		return true
+		// Only the routes the native rows prove apply the standard field rule:
+		// anonymous visibility and default-mode queries (adminStandardFLSRoute).
+		// Describe flags, stripInaccessible, explicit USER_MODE and user-mode DML
+		// keep their earlier behavior (no rows; parked).
+		return vm.adminStandardFLSRoute
 	}
 	return vm.ordinaryCustomPermissionObject(objectName) && isCustomSchemaName(fieldName) && !vm.customFieldHasIntrinsicAccess(objectName, fieldName)
 }
@@ -63,6 +67,9 @@ func (vm *VM) adminFieldNeedsExplicitGrant(objectName, fieldName string) bool {
 // standard field in adminFLSStandardFields.
 func (vm *VM) policyHiddenField(objectName, fieldName string) bool {
 	if adminFLSStandardField(objectName, fieldName) {
+		saved := vm.adminStandardFLSRoute
+		vm.adminStandardFLSRoute = true
+		defer func() { vm.adminStandardFLSRoute = saved }()
 		return !vm.currentUserFieldPermission(objectName, fieldName, "isAccessible")
 	}
 	if !vm.ordinaryCustomPermissionObject(objectName) {
