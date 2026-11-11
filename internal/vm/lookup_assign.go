@@ -1106,7 +1106,7 @@ func (vm *VM) callGetter(owner string, field Field, receiver Value) (Value, erro
 	// Helper-mediated reads re-enter the getter; direct accessor reads
 	// continue to use backing storage.
 	allowHelperReentry := len(field.Getter.Program.Instructions) > 0 &&
-		((receiver.Kind == ValueNull && field.Static && !vm.isCurrentGetter(field.Getter) && !vm.isCurrentGetter(field.Setter)) ||
+		((receiver.Kind == ValueNull && field.Static && !vm.currentMethod.IsConstructor && !vm.isCurrentGetter(field.Getter) && !vm.isCurrentGetter(field.Setter)) ||
 			(receiver.Kind == ValueObject && propertyAccessorMethod(vm.currentMethod) && !vm.isCurrentGetter(field.Getter) && !vm.isCurrentGetter(field.Setter)) ||
 			(receiver.Kind == ValueObject && receiver.projectClass && !propertyAccessorMethod(vm.currentMethod) && strings.EqualFold(vm.currentMethod.ClassName, field.Getter.ClassName)))
 	if vm.activeGetters[key] > 0 && !allowHelperReentry {
