@@ -2357,10 +2357,6 @@ func (vm *VM) featureNamedSource(objectName string) bool {
 }
 
 func (vm *VM) featureFieldHiddenForAccess(objectName, field string) bool {
-	if vm.omitAuthFlowDefaultDescribeFields(objectName) &&
-		(strings.EqualFold(field, "FlowDefaultAccountId") || strings.EqualFold(field, "FlowDefaultProfileId")) {
-		return true
-	}
 	if storage.StandardFeatureNamedOnlyField(objectName, field) {
 		return !vm.featureNamedSource(objectName)
 	}
