@@ -76,11 +76,13 @@ type v09Case struct {
 // The table is split into v09PartCount contiguous, half-open row ranges, one
 // top-level test per range, so the package shard planner (see main_test.go) can
 // place the parts on different CI shards. The parts cover every row exactly
-// once per API, and a plain go test runs all of them. The first part also runs
-// the API 67 control suites.
+// once per API, and a plain go test runs all of them. The API 67 widget,
+// review and denied control suites, which take most of the time, are three more
+// top-level tests (TestV09SalesforceControls*).
 // GLADE_V09_ROW_RANGE selects a zero-based, half-open row range, start:end.
 // Each part then runs the intersection of its own range and the selection, and
-// skips when that is empty; the part holding row zero still runs the controls.
+// skips when that is empty; the control tests run when the selection starts at
+// row zero, as the unsplit test did.
 var v09APIVersions = []string{"59.0", "67.0"}
 
 const v09PartCount = 4
@@ -133,6 +135,71 @@ func TestV09SalesforceConformancePart1of4(t *testing.T) { v09RunConformance(t, 0
 func TestV09SalesforceConformancePart2of4(t *testing.T) { v09RunConformance(t, 1) }
 func TestV09SalesforceConformancePart3of4(t *testing.T) { v09RunConformance(t, 2) }
 func TestV09SalesforceConformancePart4of4(t *testing.T) { v09RunConformance(t, 3) }
+
+func TestV09SalesforceControlsWidget(t *testing.T) { v09RunControls(t, "widget") }
+func TestV09SalesforceControlsReview(t *testing.T) { v09RunControls(t, "review") }
+func TestV09SalesforceControlsDenied(t *testing.T) { v09RunControls(t, "denied") }
+
+// v09RunControls runs one API 67 control suite. Its report goes to
+// GLADE_V09_REPORT with ".<kind>" inserted before the extension.
+func v09RunControls(t *testing.T, kind string) {
+	selectionStart, _, err := v09RowRange(os.Getenv("GLADE_V09_ROW_RANGE"), 1<<30)
+	if err != nil {
+		t.Fatalf("invalid GLADE_V09_ROW_RANGE: %v", err)
+	}
+	if selectionStart != 0 {
+		t.Skip("GLADE_V09_ROW_RANGE does not start at row 0")
+	}
+	capture := os.Getenv("GLADE_V09_CAPTURE") != ""
+	const memoryLimit = 1536 << 20
+	if previous := debug.SetMemoryLimit(-1); previous > memoryLimit {
+		debug.SetMemoryLimit(memoryLimit)
+		defer debug.SetMemoryLimit(previous)
+	}
+	restoreDiskCache := apextest.DisableDiskCacheForTesting()
+	defer restoreDiskCache()
+	v09ReleaseRowState(t)
+	defer v09ReleaseRowState(t)
+	var report io.Writer = io.Discard
+	if path := os.Getenv("GLADE_V09_REPORT"); path != "" {
+		extension := filepath.Ext(path)
+		path = strings.TrimSuffix(path, extension) + "." + kind + extension
+		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		file, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o600)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func() {
+			if err := file.Close(); err != nil {
+				t.Error(err)
+			}
+		}()
+		report = file
+	}
+	tsv := csv.NewWriter(report)
+	tsv.Comma = '\t'
+	write := func(fields ...string) {
+		if err := tsv.Write(fields); err != nil {
+			t.Fatal(err)
+		}
+		tsv.Flush()
+		if err := tsv.Error(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	switch kind {
+	case "widget":
+		v09RunWidgetControls(t, v09LoadWidgetControls(t), capture, write)
+	case "review":
+		v09RunReviewControls(t, capture, write)
+	case "denied":
+		v09RunDeniedControls(t, capture, write)
+	default:
+		t.Fatalf("unknown V09 control suite %q", kind)
+	}
+}
 
 func v09RunConformance(t *testing.T, part int) {
 	capture := os.Getenv("GLADE_V09_CAPTURE") != ""
@@ -417,12 +484,6 @@ func v09RunConformance(t *testing.T, part int) {
 			acceptanceMatches += apiAcceptanceMatches
 			diagnosticMatches += apiDiagnosticMatches
 			domMatches += apiDOMMatches
-			if api == "67.0" && start == 0 {
-				write := func(fields ...string) { writeRow(t, fields...) }
-				v09RunWidgetControls(t, controls, capture, write)
-				v09RunReviewControls(t, capture, write)
-				v09RunDeniedControls(t, capture, write)
-			}
 		})
 	}
 	writeRow(t, "COMPILE_TOTAL", fmt.Sprintf("%d/%d", compileMatches, apiPasses*compileCount))

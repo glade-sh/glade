@@ -15,7 +15,7 @@ import (
 
 // V09 is one top-level test per row range so the Visualforce shard planner can
 // spread its rows over several shards. This pins the part list, the duration
-// table entries, and that the real planner puts every part on its own shard
+// table entries, and that the real planner puts each control suite on its own shard
 // and drops no test.
 func TestCIVisualforceV09PartsAreListedAndSpreadAcrossShards(t *testing.T) {
 	source, err := os.ReadFile("../internal/visualforce/v09_conformance_test.go")
@@ -23,13 +23,14 @@ func TestCIVisualforceV09PartsAreListedAndSpreadAcrossShards(t *testing.T) {
 		t.Fatal(err)
 	}
 	var parts []string
-	for _, match := range regexp.MustCompile(`(?m)^func (TestV09SalesforceConformance\w*)\(t \*testing\.T\)`).FindAllStringSubmatch(string(source), -1) {
+	for _, match := range regexp.MustCompile(`(?m)^func (TestV09Salesforce(?:Conformance|Controls)\w*)\(t \*testing\.T\)`).FindAllStringSubmatch(string(source), -1) {
 		parts = append(parts, match[1])
 	}
 	var want []string
 	for part := 1; part <= 4; part++ {
 		want = append(want, fmt.Sprintf("TestV09SalesforceConformancePart%dof4", part))
 	}
+	want = append(want, "TestV09SalesforceControlsWidget", "TestV09SalesforceControlsReview", "TestV09SalesforceControlsDenied")
 	if !reflect.DeepEqual(parts, want) {
 		t.Fatalf("V09 parts = %v, want %v", parts, want)
 	}
@@ -100,7 +101,7 @@ func TestCIVisualforceV09PartsAreListedAndSpreadAcrossShards(t *testing.T) {
 	for index, shard := range plan.Shards {
 		union = append(union, shard.Tests...)
 		for _, name := range shard.Tests {
-			if strings.HasPrefix(name, "TestV09SalesforceConformancePart") {
+			if strings.HasPrefix(name, "TestV09SalesforceControls") {
 				if other, shared := partShard[index]; shared {
 					t.Fatalf("shard %d holds both %s and %s", index, other, name)
 				}
@@ -112,7 +113,7 @@ func TestCIVisualforceV09PartsAreListedAndSpreadAcrossShards(t *testing.T) {
 	if !reflect.DeepEqual(union, names) {
 		t.Fatalf("four-shard union dropped or added tests")
 	}
-	if len(partShard) != 4 {
-		t.Fatalf("V09 parts occupy %d shards, want 4: %v", len(partShard), partShard)
+	if len(partShard) != 3 {
+		t.Fatalf("V09 tests control suites occupy %d shards, want 3: %v", len(partShard), partShard)
 	}
 }
