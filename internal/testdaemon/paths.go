@@ -76,7 +76,15 @@ func privateServeDir(projectRoot string) (base, relative string) {
 			warnUntrustedDiscovery(filepath.Join(abs, "glade", name))
 		}
 	}
-	return os.TempDir(), name
+	tmp := os.TempDir()
+	if !discoveryLocationTrusted(filepath.Join(tmp, name)) {
+		// All three locations failed. Return the temp path anyway: it is
+		// untrusted, so ValidateDiscoverySocket and NewServer refuse it with
+		// ErrUntrustedDiscovery before any socket or PID file is read,
+		// created or removed, and callers fall back to in-process runs.
+		warnUntrustedDiscovery(filepath.Join(tmp, name))
+	}
+	return tmp, name
 }
 
 var (

@@ -90,6 +90,10 @@ func NewServer(cfg ServerConfig) (*Server, error) {
 	}
 	pidPath := ServePIDPath(root)
 
+	if socket == ServeSocketPath(root) && !discoveryLocationTrusted(filepath.Dir(socket)) {
+		// Refuse before openPrivateDaemonDir creates anything in an untrusted base.
+		return nil, fmt.Errorf("%w: %s", ErrUntrustedDiscovery, filepath.Dir(socket))
+	}
 	privateBase, privateRelative := privateServeDir(root)
 	pidRoot, err := openPrivateDaemonDir(privateBase, privateRelative)
 	if err != nil {

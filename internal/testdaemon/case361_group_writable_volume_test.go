@@ -4,6 +4,7 @@ package testdaemon
 
 import (
 	"bytes"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -86,5 +87,56 @@ func TestCase361PrivateRootKeepsLocalDiscovery(t *testing.T) {
 	socket := ServeSocketPath(filepath.Join(volume, "p"))
 	if !strings.HasPrefix(socket, volume) {
 		t.Fatalf("socket %s left a private root", socket)
+	}
+}
+
+// When the project directory, the user cache directory and the temp root all
+// fail the owner and mode check, discovery is refused: nothing is created,
+// ValidateDiscoverySocket and NewServer return ErrUntrustedDiscovery, and the
+// warning is printed once.
+func TestCase361AllLocationsUntrustedRefuses(t *testing.T) {
+	volume, err := os.MkdirTemp("/tmp", "r361")
+	if err != nil {
+		t.Skip("no short temp directory")
+	}
+	defer os.RemoveAll(volume)
+	mk := func(name string) string {
+		dir := filepath.Join(volume, name)
+		if err := os.Mkdir(dir, 0o775); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Chmod(dir, 0o775); err != nil {
+			t.Fatal(err)
+		}
+		return dir
+	}
+	home, tmp, project := mk("h"), mk("t"), mk("p")
+	t.Setenv("HOME", home)
+	t.Setenv("XDG_CACHE_HOME", home)
+	t.Setenv("TMPDIR", tmp)
+	var warn bytes.Buffer
+	oldWriter := discoveryWarnWriter
+	discoveryWarnWriter = &warn
+	discoveryWarnOnce = sync.Once{}
+	defer func() { discoveryWarnWriter = oldWriter; discoveryWarnOnce = sync.Once{} }()
+
+	socket := ServeSocketPath(project)
+	if err := ValidateDiscoverySocket(socket); !errors.Is(err, ErrUntrustedDiscovery) {
+		t.Fatalf("ValidateDiscoverySocket: %v", err)
+	}
+	srv, err := NewServer(ServerConfig{Root: project})
+	if srv != nil {
+		_ = srv.Close()
+	}
+	if !errors.Is(err, ErrUntrustedDiscovery) {
+		t.Fatalf("NewServer: %v", err)
+	}
+	if strings.Count(warn.String(), "\n") != 1 {
+		t.Fatalf("want one warning line, got %q", warn.String())
+	}
+	for _, dir := range []string{filepath.Dir(socket), filepath.Join(project, ".glade")} {
+		if _, err := os.Lstat(dir); err == nil {
+			t.Fatalf("created %s in an untrusted location", dir)
+		}
 	}
 }
