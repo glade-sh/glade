@@ -437,6 +437,19 @@ func (vm *VM) describeSObjectFieldMap(name string, definition storage.ObjectDefi
 		field = describeFieldWithSystemOverlay(field)
 		token := vm.sObjectFieldTokenFromField(name, field)
 		vm.addSObjectFieldMapFieldEntry(&fieldsMap, name, definition, field, token)
+		if field.Type == storage.FieldLocation && strings.HasSuffix(strings.ToLower(apiName), "__c") {
+			base := apiName[:len(apiName)-len("__c")]
+			for _, suffix := range []string{"__Latitude__s", "__Longitude__s"} {
+				component, ok := storage.ResolveLocationComponentField(definition, "", base+suffix)
+				if !ok {
+					continue
+				}
+				if _, exists := fieldsMap.Map[mapKey(String(component.APIName))]; exists {
+					continue
+				}
+				vm.addSObjectFieldMapFieldEntry(&fieldsMap, name, definition, component, vm.sObjectFieldTokenFromField(name, component))
+			}
+		}
 	}
 	defaultFieldNames := []string{"Id", "CreatedDate", "CreatedById", "LastModifiedDate", "LastModifiedById", "SystemModstamp"}
 	if vm.isStandardAPI68NewObject(name) || storage.IsGeneratedHistoryObject(definition) || storage.IsChangeEventObject(definition) {
@@ -1400,8 +1413,26 @@ func privateDescribeFieldSet(value Value) Value {
 
 func privateDescribeFieldSetMap(value Value) Value {
 	out := privateDescribeCollection(value)
+	out.Fields = make(map[string]Value, len(value.Fields)+1)
+	for name, field := range value.Fields {
+		out.Fields[name] = field
+	}
+	out.Fields["__caseInsensitiveStringKeys"] = Bool(true)
+	out.Fields["__collection_readonly"] = Bool(true)
 	byRef := map[uint64]Value{}
 	for key, fieldSet := range out.Map {
+		name, ok := fieldSetMapQualifiedName(fieldSet)
+		if !ok {
+			delete(out.Map, key)
+			delete(out.MapKeys, key)
+			continue
+		}
+		storedKey := mapStoredKey(out, key)
+		if storedKey.Kind != ValueString || !strings.EqualFold(storedKey.Text, name) {
+			delete(out.Map, key)
+			delete(out.MapKeys, key)
+			continue
+		}
 		private, ok := byRef[fieldSet.Ref]
 		if !ok {
 			private = privateDescribeFieldSet(fieldSet)
@@ -2021,6 +2052,11 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	}
 	field := definition.Fields[fieldName]
 	if strings.TrimSpace(field.APIName) == "" {
+		if component, ok := storage.ResolveLocationComponentField(definition, namespace, fieldName); ok {
+			field = component
+		}
+	}
+	if strings.TrimSpace(field.APIName) == "" {
 		if strings.EqualFold(fieldName, "Id") {
 			field = storage.Field{APIName: "Id", Label: "Record ID", Type: storage.FieldID}
 		} else if strings.TrimSpace(requestedFieldName) != "" {
@@ -2097,6 +2133,15 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 		desc.Fields["defaultedOnCreate"] = Bool(true)
 	} else if defaultValue, ok := storage.DefaultValueForField(field); ok {
 		desc.Fields["defaultValue"] = vmValueFromStorage(defaultValue)
+		// Describe returns null for observed text, number and currency metadata
+		// default formulas, while preserving their formula text separately.
+		if field.DefaultValueFromMetadata {
+			textDefault := field.Type == storage.FieldString && strings.EqualFold(displayType, "STRING")
+			numberDefault := field.Type == storage.FieldDecimal && (strings.EqualFold(displayType, "DOUBLE") || strings.EqualFold(displayType, "CURRENCY"))
+			if textDefault || numberDefault {
+				desc.Fields["defaultValue"] = Null
+			}
+		}
 		desc.Fields["defaultedOnCreate"] = Bool(storage.FieldFlagValue(field.DefaultedOnCreate, describeFieldDefaultedOnCreate(field)))
 	} else {
 		desc.Fields["defaultValue"] = Null
