@@ -1,0 +1,1 @@
+Fresh 30-day Developer scratch org from a campaign Dev Hub with the LiveAgent and LiveMessage feature settings in scratch-def.json. Anonymous describe at API 62.0 and 67.0 reports whether MessagingSession.CampaignId is present. The org was deleted; a unique description matched exactly one Dev Hub ScratchOrgInfo record with Status Deleted.
