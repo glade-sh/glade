@@ -26,14 +26,16 @@ func (vm *VM) parseSOQLAt(queryText string) (soql.Query, error) {
 	if err == nil {
 		err = soql.ValidateFormulaVersion(query, vm.currentSourceExecutionPolicy().APIVersion)
 	}
-	if err == nil && (vm.omitPermissionViewAllFields(query.Object) || storage.StandardFeatureHasVersionedFields(query.Object) || storage.StandardFeatureHasNamedOnlyFields(query.Object)) {
+	if err == nil && (vm.omitPermissionViewAllFields(query.Object) || vm.omitAuthFlowDefaultDescribeFields(query.Object) || storage.StandardFeatureHasVersionedFields(query.Object) || storage.StandardFeatureHasNamedOnlyFields(query.Object)) {
 		fields := append([]string(nil), query.Fields...)
 		fields = append(fields, soqlConditionFields(query.Where)...)
 		for _, order := range query.Order {
 			fields = append(fields, order.Field)
 		}
 		for _, field := range fields {
-			if vm.permissionViewAllFieldsHidden(query.Object, field) || vm.featureFieldHiddenForQuery(query.Object, field) {
+			authFlowDefaultHidden := vm.omitAuthFlowDefaultDescribeFields(query.Object) &&
+				(strings.EqualFold(field, "FlowDefaultAccountId") || strings.EqualFold(field, "FlowDefaultProfileId"))
+			if authFlowDefaultHidden || vm.permissionViewAllFieldsHidden(query.Object, field) || vm.featureFieldHiddenForQuery(query.Object, field) {
 				return query, &soql.QueryError{Message: soql.MissingColumnMessage(field, query.Object)}
 			}
 		}

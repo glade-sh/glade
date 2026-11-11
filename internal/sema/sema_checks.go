@@ -1907,10 +1907,16 @@ func (c querySemanticsChecker) field(objectName, fieldName string) (schema.Field
 }
 
 func (c querySemanticsChecker) featureFieldUnavailable(objectName, fieldName string) bool {
-	if !storage.StandardFeatureHasVersionedFields(objectName) && !storage.StandardFeatureHasNamedOnlyFields(objectName) {
+	authFlowDefaultUnavailable := (c.apiVersion == 62 || c.apiVersion == 63) &&
+		strings.EqualFold(objectName, "AuthProvider") &&
+		(strings.EqualFold(fieldName, "FlowDefaultAccountId") || strings.EqualFold(fieldName, "FlowDefaultProfileId"))
+	if !authFlowDefaultUnavailable && !storage.StandardFeatureHasVersionedFields(objectName) && !storage.StandardFeatureHasNamedOnlyFields(objectName) {
 		return false
 	}
 	visible, captured := storage.StandardFeatureFieldVersion(objectName, fieldName, strconv.Itoa(c.apiVersion)+".0")
+	if authFlowDefaultUnavailable {
+		visible, captured = false, true
+	}
 	if !(captured && !visible) && (c.namedApexReferenceObjects || !storage.StandardFeatureNamedOnlyField(objectName, fieldName)) {
 		return false
 	}
