@@ -216,3 +216,57 @@ func TestLWCParameterConversionNative(t *testing.T) {
 		}
 	}
 }
+
+// The Aura entry point does not call lwcParameterValue; it keeps the JSON
+// mapping. Native Aura components answered every cell like the LWC route, so
+// Glade's Aura conversion still differs for string, number and object
+// arguments that do not already have the parameter's type (parked). This test
+// pins the accepted own-type controls: they convert the same on both routes.
+func TestAuraActionOwnTypeControlsMatchNativeRows(t *testing.T) {
+	controls := []struct{ typeName, argName string }{
+		{"String", "str_x"}, {"Integer", "num_42"}, {"Long", "num_42"}, {"Decimal", "num_frac"}, {"Double", "num_frac"},
+		{"Boolean", "bool_true"}, {"Date", "str_date"}, {"Datetime", "str_datetime_z"}, {"Id", "str_id18"},
+		{"List<String>", "arr_str"}, {"Object", "str_x"}, {"Account", "obj_name"},
+	}
+	cells := map[string]*lwcParamCell{}
+	for _, cell := range lwcParamConversionCells(t) {
+		cells[cell.typeName+"/"+cell.argName] = cell
+	}
+	for _, control := range controls {
+		cell := cells[control.typeName+"/"+control.argName]
+		if cell == nil {
+			t.Fatalf("no native cell %s/%s", control.typeName, control.argName)
+		}
+		want, exact, mustFail, skip := lwcParamConversionExpectation(cell)
+		if skip || !exact || mustFail {
+			t.Fatalf("%s/%s is not an accepted control: %v", control.typeName, control.argName, cell.outcomes)
+		}
+		args, _ := lwcParamConversionArgs(t, control.argName)
+		for _, route := range []string{"aura", "lwc"} {
+			t.Run(route+"/"+control.typeName, func(t *testing.T) {
+				machine := lwcParamConversionMachine(t, control.typeName, "67.0")
+				var got UIInvocationResult
+				var err error
+				if route == "aura" {
+					got, err = machine.InvokeAuraAction("Convert", "run", args)
+				} else {
+					got, err = machine.InvokeLWCMethod("Convert", "run", args)
+				}
+				if err != nil || !got.Success || got.ReturnValue != strings.TrimPrefix(want, "ok:") {
+					t.Fatalf("result = %#v error = %v, want %s", got.ReturnValue, err, strings.TrimPrefix(want, "ok:"))
+				}
+			})
+		}
+	}
+}
+
+// The rows cover an SObject parameter whose object names its type with
+// sobjectType. A record that names it through attributes keeps converting as
+// it did before.
+func TestLWCSObjectParameterWithAttributesKeepsJSONMapping(t *testing.T) {
+	machine := lwcParamConversionMachine(t, "SObject", "67.0")
+	got, err := machine.InvokeLWCMethod("Convert", "run", map[string]any{"value": map[string]any{"attributes": map[string]any{"type": "Account"}, "Name": "n"}})
+	if err != nil || !got.Success || got.ReturnValue != "SObject:Account:{Name=n}" {
+		t.Fatalf("result = %#v error = %v %#v", got.ReturnValue, err, got.Error)
+	}
+}
