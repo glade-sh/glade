@@ -39,7 +39,7 @@ func TestCase340DiscoveryCallersRejectReplaceableDirectory(t *testing.T) {
 		"wizard": func() error { return writeTestWizard(context.Background(), root, io.Discard) },
 	} {
 		t.Run(name, func(t *testing.T) {
-			// ROAD-361: the replaceable directory is refused and never
+			// The replaceable directory is refused and never
 			// consulted; discovery moves to the per-user cache directory.
 			userCache, _ := os.UserCacheDir()
 			if moved := testdaemon.ServeSocketPath(root); !strings.HasPrefix(moved, filepath.Join(userCache, "glade")+string(filepath.Separator)) {

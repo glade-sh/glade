@@ -33,7 +33,7 @@ func TestCase340DefaultDaemonRejectsUntrustedStartAncestry(t *testing.T) {
 			if err := os.Chmod(unsafe, 0777); err != nil {
 				t.Fatal(err)
 			}
-			// ROAD-361: an unsafe location is refused and discovery moves to
+			// An unsafe location is refused and discovery moves to
 			// the per-user cache directory instead of failing.
 			cache := t.TempDir()
 			t.Setenv("HOME", cache)
