@@ -53,12 +53,12 @@ const (
 // place it in the matching group and update New.
 type VM struct {
 	knowledgeIssuedParents map[storage.ID]bool
-	road174WarmOrderAccess map[string]bool
-	road174PermissionStamp map[string]string
-	// road174WarmDirectAccess holds actor:record keys whose direct
+	case174WarmOrderAccess map[string]bool
+	case174PermissionStamp map[string]string
+	// case174WarmDirectAccess holds actor:record keys whose direct
 	// UserRecordAccess row was warmed by a system-mode relationship query
 	// (ura_direct_carry). It lives for one System.runAs block.
-	road174WarmDirectAccess map[string]bool
+	case174WarmDirectAccess map[string]bool
 	stringASCII             []stringASCIIEntry
 	stringASCIIBytes        int
 	// --- Class/method/type registries and lookup caches ---
@@ -3380,16 +3380,16 @@ func (vm *VM) execute(program ir.Program, className string) (result Result, err 
 	// a DML update of the user's own LocaleSidKey before the first comparison
 	// must not move it (string_equality_locale_change_c14).
 	vm.snapshotLocaleCase()
-	previousRoad174WarmOrderAccess := vm.road174WarmOrderAccess
-	previousRoad174PermissionStamp := vm.road174PermissionStamp
-	previousRoad174WarmDirectAccess := vm.road174WarmDirectAccess
-	vm.road174WarmOrderAccess = nil
-	vm.road174PermissionStamp = nil
-	vm.road174WarmDirectAccess = nil
+	previousCase174WarmOrderAccess := vm.case174WarmOrderAccess
+	previousCase174PermissionStamp := vm.case174PermissionStamp
+	previousCase174WarmDirectAccess := vm.case174WarmDirectAccess
+	vm.case174WarmOrderAccess = nil
+	vm.case174PermissionStamp = nil
+	vm.case174WarmDirectAccess = nil
 	defer func() {
-		vm.road174WarmOrderAccess = previousRoad174WarmOrderAccess
-		vm.road174PermissionStamp = previousRoad174PermissionStamp
-		vm.road174WarmDirectAccess = previousRoad174WarmDirectAccess
+		vm.case174WarmOrderAccess = previousCase174WarmOrderAccess
+		vm.case174PermissionStamp = previousCase174PermissionStamp
+		vm.case174WarmDirectAccess = previousCase174WarmDirectAccess
 	}()
 	vm.ensureMetadataCacheGeneration()
 	if vm.testContext == nil {

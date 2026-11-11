@@ -303,7 +303,7 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 	accessProjection := strings.TrimSpace(permissionSetID) == "" && vm.capturedOrderAccessProjection(query)
 	actorKey := canonicalIDMapKey(vm.currentUserID())
 	if accessProjection {
-		vm.prepareRoad174PermissionState(actorKey)
+		vm.prepareCase174PermissionState(actorKey)
 	}
 	var childVisible func(string, storage.Record) bool
 	var childFieldReadable func(string, string) bool
@@ -331,7 +331,7 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 		accessSequence := 0
 		if accessProjection {
 			key := actorKey + ":" + canonicalIDMapKey(string(record.ID))
-			if vm.road174WarmOrderAccess[key] {
+			if vm.case174WarmOrderAccess[key] {
 				accessSequence = 2
 			} else if strings.EqualFold(explicitMode, "USER_MODE") {
 				accessSequence = 1
@@ -419,22 +419,22 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 		},
 	)
 	if accounting == soqlOrdinaryAccounting && strings.TrimSpace(permissionSetID) == "" && len(result.Records) != 0 && vm.warmsDirectUserRecordAccess(query, explicitSystemMode, defaultMode) {
-		if vm.road174WarmDirectAccess == nil {
-			vm.road174WarmDirectAccess = make(map[string]bool)
+		if vm.case174WarmDirectAccess == nil {
+			vm.case174WarmDirectAccess = make(map[string]bool)
 		}
 		for _, record := range result.Records {
 			if record.ID != "" {
-				vm.road174WarmDirectAccess[actorKey+":"+canonicalIDMapKey(string(record.ID))] = true
+				vm.case174WarmDirectAccess[actorKey+":"+canonicalIDMapKey(string(record.ID))] = true
 			}
 		}
 	}
 	if accessProjection && strings.EqualFold(explicitMode, "USER_MODE") && len(result.Records) != 0 {
-		if vm.road174WarmOrderAccess == nil {
-			vm.road174WarmOrderAccess = make(map[string]bool)
+		if vm.case174WarmOrderAccess == nil {
+			vm.case174WarmOrderAccess = make(map[string]bool)
 		}
 		for _, record := range result.Records {
 			if record.ID != "" {
-				vm.road174WarmOrderAccess[actorKey+":"+canonicalIDMapKey(string(record.ID))] = true
+				vm.case174WarmOrderAccess[actorKey+":"+canonicalIDMapKey(string(record.ID))] = true
 			}
 		}
 	}
@@ -1350,7 +1350,7 @@ func (vm *VM) recordsHaveNoOwner(objectName string) bool {
 }
 
 // capturedStandardAccess applies the captured direct UserRecordAccess rows of
-// Asset, Contract, Order and Pricebook2 (road174_access_matrix and
+// Asset, Contract, Order and Pricebook2 (case174_access_matrix and
 // ura_direct_carry, surface `direct`, named test route unless noted):
 //   - All is never granted to an owner or administrator of Asset (under a
 //     Public Read/Write sharing model), Contract or Pricebook2, and Transfer
@@ -1375,7 +1375,7 @@ func (vm *VM) capturedStandardAccess(name string, live, read, edit, remove, tran
 	named := vm.testContext != nil
 	admin := vm.currentUserBypassesRecordSharingForWrite() || vm.currentUserObjectRecordGrant(objectName, "PermissionsModifyAllRecords")
 	secure := apexversion.Enabled(vm.currentSourceExecutionPolicy().APIVersion, apexversion.SecureDefaults)
-	if named && !admin && (name == "contract" || name == "order") && vm.road174WarmDirectAccess[canonicalIDMapKey(vm.currentUserID())+":"+canonicalIDMapKey(string(recordID))] {
+	if named && !admin && (name == "contract" || name == "order") && vm.case174WarmDirectAccess[canonicalIDMapKey(vm.currentUserID())+":"+canonicalIDMapKey(string(recordID))] {
 		remove = edit && vm.currentUserObjectPermission(objectName, "isDeletable")
 		transfer = live && edit
 	}
@@ -1608,7 +1608,7 @@ func (vm *VM) capturedOrderAccessProjection(query soql.Query) bool {
 
 // A permission change invalidates observations for the actor, including a
 // removed and reinserted assignment. State remains local to one execution.
-func (vm *VM) prepareRoad174PermissionState(actorKey string) {
+func (vm *VM) prepareCase174PermissionState(actorKey string) {
 	if vm.Org == nil || actorKey == "" {
 		return
 	}
@@ -1660,17 +1660,17 @@ func (vm *VM) prepareRoad174PermissionState(actorKey string) {
 	}
 	sort.Strings(parts)
 	stamp := strings.Join(parts, "|")
-	if vm.road174PermissionStamp == nil {
-		vm.road174PermissionStamp = make(map[string]string)
+	if vm.case174PermissionStamp == nil {
+		vm.case174PermissionStamp = make(map[string]string)
 	}
-	if previous, ok := vm.road174PermissionStamp[actorKey]; ok && previous != stamp {
-		for key := range vm.road174WarmOrderAccess {
+	if previous, ok := vm.case174PermissionStamp[actorKey]; ok && previous != stamp {
+		for key := range vm.case174WarmOrderAccess {
 			if strings.HasPrefix(key, actorKey+":") {
-				delete(vm.road174WarmOrderAccess, key)
+				delete(vm.case174WarmOrderAccess, key)
 			}
 		}
 	}
-	vm.road174PermissionStamp[actorKey] = stamp
+	vm.case174PermissionStamp[actorKey] = stamp
 }
 
 // userRecordAccessForRelationship applies the captured relationship-only access

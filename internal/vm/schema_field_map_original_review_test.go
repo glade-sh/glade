@@ -70,7 +70,7 @@ func TestSchemaFieldMapOriginalMutationConformance(t *testing.T) {
 		if e != nil {
 			t.Fatal(e)
 		}
-		re := regexp.MustCompile(`System\.debug\('ROAD123\|(C[0-9]+)\|'\+(.+)\);`)
+		re := regexp.MustCompile(`System\.debug\('CASE123\|(C[0-9]+)\|'\+(.+)\);`)
 		source := re.ReplaceAllStringFunc(string(raw), func(line string) string {
 			p := re.FindStringSubmatch(line)
 			if expected[api+"/anonymous/"+p[1]] != "true" || expected[api+"/isTest/"+p[1]] != "true" {
