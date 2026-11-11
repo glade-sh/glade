@@ -166,6 +166,9 @@ func standardObjectFieldsNeedWrite(definition ObjectDefinition, featureSignature
 	if generatedStandardIDLabelRepair(definition) != "" {
 		return true
 	}
+	if messagingCampaignFieldNeedsRepair(definition) {
+		return true
+	}
 	if accountTeamReferencesNeedRepair(definition) || organizationFeatureFlagsNeedRepair(definition) || standardOptionalFieldsNeedRepair(definition, featureSignature) || userLicenseStatusDescribeNeedsRepair(definition) || permissionSetCheckboxSchemaNeedsRepair(definition) || objectPermissionCheckboxSchemaNeedsRepair(definition) || knowledgeLanguageCreationNeedsRepair(definition) || knowledgeCategorySelectionCreationNeedsRepair(definition) || apexClassLengthNillabilityNeedsRepair(definition) || platformChildEdgeFieldsNeedRepair(definition) {
 		return true
 	}
@@ -228,7 +231,18 @@ func standardFieldsOverlayNeedsRefresh(definition ObjectDefinition, featureSigna
 	if generatedStandardIDLabelRepair(definition) != "" {
 		return true
 	}
+	if messagingCampaignFieldNeedsRepair(definition) {
+		return true
+	}
 	return accountTeamReferencesNeedRepair(definition) || organizationFeatureFlagsNeedRepair(definition) || standardOptionalFieldsNeedRepair(definition, featureSignature) || userLicenseStatusDescribeNeedsRepair(definition) || permissionSetCheckboxSchemaNeedsRepair(definition) || objectPermissionCheckboxSchemaNeedsRepair(definition) || knowledgeLanguageCreationNeedsRepair(definition) || knowledgeCategorySelectionCreationNeedsRepair(definition) || apexClassLengthNillabilityNeedsRepair(definition) || platformChildEdgeFieldsNeedRepair(definition) || standardOverlayCheckPlanFor(definition.APIName).needsRefresh(definition, featureSignature)
+}
+
+func messagingCampaignFieldNeedsRepair(definition ObjectDefinition) bool {
+	if !stringsEqualFold(definition.APIName, "MessagingSession") {
+		return false
+	}
+	_, found := ResolveFieldName(definition, "", "CampaignId")
+	return !found
 }
 
 func apexClassLengthNillabilityNeedsRepair(definition ObjectDefinition) bool {
