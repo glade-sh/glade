@@ -26,6 +26,7 @@ type describeCacheKey struct {
 	PermissionSets              string
 	TaskFieldOrder              bool
 	OmitPermissionViewAllFields bool
+	OmitAuthFlowDefaultFields   bool
 	FeatureAPIVersion           string
 	FeatureNamedSource          bool
 	API68CapturedShape          bool
@@ -406,6 +407,7 @@ func (vm *VM) describeSObjectFieldMap(name string, definition storage.ObjectDefi
 	}
 	vm.sortDescribeFieldNames(name, definition, fieldNames)
 	omitViewAllFields := vm.omitPermissionViewAllFields(name)
+	omitAuthFlowDefaults := vm.omitAuthFlowDefaultDescribeFields(name)
 	featureVersion := vm.featureDescribeVersion(name)
 	namedOnly := storage.StandardFeatureHasNamedOnlyFields(name)
 	namedSource := vm.featureNamedSource(name)
@@ -426,6 +428,9 @@ func (vm *VM) describeSObjectFieldMap(name string, definition storage.ObjectDefi
 			if visible, captured := storage.StandardFeatureFieldVersion(name, apiName, featureVersion); captured && !visible {
 				continue
 			}
+		}
+		if omitAuthFlowDefaults && (strings.EqualFold(apiName, "FlowDefaultAccountId") || strings.EqualFold(apiName, "FlowDefaultProfileId")) {
+			continue
 		}
 		if omitViewAllFields && strings.EqualFold(apiName, "PermissionsViewAllFields") {
 			continue
@@ -2317,6 +2322,7 @@ func (vm *VM) describeSObjectCacheKey(objectName string) describeCacheKey {
 	key := vm.describePermissionCacheKey(strings.ToLower(strings.TrimSpace(objectName)), "")
 	key.TaskFieldOrder = vm.usesCapturedTaskDescribeFieldOrder(objectName)
 	key.OmitPermissionViewAllFields = vm.omitPermissionViewAllFields(objectName)
+	key.OmitAuthFlowDefaultFields = vm.omitAuthFlowDefaultDescribeFields(objectName)
 	key.FeatureAPIVersion = vm.featureDescribeVersion(objectName)
 	key.FeatureNamedSource = vm.featureNamedSource(objectName)
 	_, major, named, known := vm.standardAPI68Context()
@@ -2369,6 +2375,20 @@ func (vm *VM) featureFieldHiddenForQuery(objectName, field string) bool {
 		return captured && !allowed
 	}
 	return vm.featureFieldHiddenForAccess(objectName, field)
+}
+
+// The captured AuthProvider field maps omit both flow defaults at source API
+// 62 and 63 and expose them at 64–67. Other access routes are not constrained
+// by this describe-only observation.
+func (vm *VM) omitAuthFlowDefaultDescribeFields(objectName string) bool {
+	if vm == nil || !strings.EqualFold(objectName, "AuthProvider") {
+		return false
+	}
+	version := vm.currentMethod.APIVersion
+	if version == "" && vm.Org != nil {
+		version = vm.Org.APIVersion
+	}
+	return apexversion.AtLeast(version, 62) && !apexversion.AtLeast(version, 64)
 }
 
 // The captured field map omits this member at API 62 and exposes it at 63/67.
