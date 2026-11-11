@@ -1593,7 +1593,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 1, 2]
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
     env:
       CGO_ENABLED: "1"
       GOMAXPROCS: "2"
@@ -1607,7 +1607,7 @@ jobs:
           go-version: "1.26.10"
           cache: false
       - name: Install actionlint for scripts tests
-        if: ${{ matrix.shard == 0 }}
+        if: ${{ matrix.shard == 22 }}
         run: |
           scripts/install-actionlint.sh "$RUNNER_TEMP/actionlint"
           echo "$RUNNER_TEMP/actionlint" >> "$GITHUB_PATH"
@@ -1643,7 +1643,7 @@ jobs:
         env:
           SHARD: ${{ matrix.shard }}
         run: |
-          if [[ "$SHARD" == 0 ]]; then
+          if [[ "$SHARD" == 22 ]]; then
             go build -o "$RUNNER_TEMP/glade" ./cmd/glade
             go test -count=1 -timeout=0 ./internal/repoguard ./scripts
             if git diff --no-renames --name-only HEAD^1 HEAD | grep -q "^third_party/glade-apex-parser/"; then
@@ -1651,20 +1651,21 @@ jobs:
             fi
           fi
           # The full CLI shard route delegates these four tests to the Node lane.
-          if [[ "$SHARD" == 0 ]] && jq -e 'index("github.com/glade-sh/glade/internal/gladecli") != null' "$RUNNER_TEMP/selected.json" > /dev/null; then
+          if [[ "$SHARD" == 22 ]] && jq -e 'index("github.com/glade-sh/glade/internal/gladecli") != null' "$RUNNER_TEMP/selected.json" > /dev/null; then
             go test -count=1 -timeout=0 -run '^(TestRunDoctorReportsParser|TestRunDoctorJSON|TestRunDoctorShortFlags|TestRunDoctorReportsProjectLocalDataEnvironment)$' ./internal/gladecli
           fi
           # Large packages use the same discovery, planning and validation routes
-          # as the full suite, spread across the three PR workers.
-          for spec in apex:apextest:12 vm:vm:4 gladecli:gladecli:4 sema:sema:2; do
-            IFS=: read -r route package count <<< "$spec"
-            if jq -e --arg pkg "github.com/glade-sh/glade/internal/$package" 'index($pkg) != null' "$RUNNER_TEMP/selected.json" > /dev/null; then
-              for ((i=SHARD; i<count; i+=3)); do
-                scripts/ci-go-test.sh "$route-shard" "$i"
-              done
+          # as the full suite, one shard per worker: 0-11 Apex, 12-15 VM,
+          # 16-19 CLI, 20-21 sema. Workers 12-23 also run the remaining packages.
+          export CI_APEXTEST_SHARDS=12
+          for spec in apex:apextest:0:12 vm:vm:12:4 gladecli:gladecli:16:4 sema:sema:20:2; do
+            IFS=: read -r route package base count <<< "$spec"
+            if (( SHARD >= base && SHARD < base + count )) && jq -e --arg pkg "github.com/glade-sh/glade/internal/$package" 'index($pkg) != null' "$RUNNER_TEMP/selected.json" > /dev/null; then
+              scripts/ci-go-test.sh "$route-shard" "$((SHARD - base))"
             fi
           done
-          mapfile -t packages < <(jq -r --argjson shard "$SHARD" 'to_entries[] | select(.key % 3 == $shard) | .value | select(. != "github.com/glade-sh/glade/scripts" and . != "github.com/glade-sh/glade/internal/repoguard" and . != "github.com/glade-sh/glade/internal/apextest" and . != "github.com/glade-sh/glade/internal/vm" and . != "github.com/glade-sh/glade/internal/gladecli" and . != "github.com/glade-sh/glade/internal/sema")' "$RUNNER_TEMP/selected.json")
+          packages=()
+          if (( SHARD >= 12 )); then mapfile -t packages < <(jq -r --argjson shard "$SHARD" 'to_entries[] | select(.key % 12 == ($shard - 12)) | .value | select(. != "github.com/glade-sh/glade/scripts" and . != "github.com/glade-sh/glade/internal/repoguard" and . != "github.com/glade-sh/glade/internal/apextest" and . != "github.com/glade-sh/glade/internal/vm" and . != "github.com/glade-sh/glade/internal/gladecli" and . != "github.com/glade-sh/glade/internal/sema")' "$RUNNER_TEMP/selected.json"); fi
           if (( ${#packages[@]} )); then
             go test -count=1 -timeout=0 "${packages[@]}"
           fi

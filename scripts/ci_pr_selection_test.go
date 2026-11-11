@@ -124,3 +124,30 @@ func TestCIPRWorkflowSelection(t *testing.T) {
 	run("pull_request", false)
 	run("merge_group", false)
 }
+
+// The PR lane runs each large-package shard on its own worker with the full
+// suite's 12-way Apex split; a 2-way default would time out and reject index 2+.
+func TestCIPRWorkflowShardRoutes(t *testing.T) {
+	data, err := os.ReadFile("../.github/workflows/ci.yml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var workflow struct {
+		Jobs map[string]struct {
+			Strategy struct {
+				Matrix struct {
+					Shard []int `yaml:"shard"`
+				} `yaml:"matrix"`
+			} `yaml:"strategy"`
+		} `yaml:"jobs"`
+	}
+	if err := yaml.Unmarshal(data, &workflow); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(workflow.Jobs["pr-tests"].Strategy.Matrix.Shard); got != 24 {
+		t.Fatalf("pr-tests matrix has %d workers, want 24 (12 Apex, 4 VM, 4 CLI, 2 sema, remaining packages)", got)
+	}
+	if !strings.Contains(string(data), "export CI_APEXTEST_SHARDS=12") {
+		t.Fatal("PR lane must select the 12-way Apex shard route")
+	}
+}
