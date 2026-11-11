@@ -1,112 +1,279 @@
 {
  "bounds": {
-  "62/Contact.FirstName.FirstName.NullNotAllowed": {
-   "min_recall": 0.9487,
-   "max_extra": 0
-  },
-  "62/Contact.LastName.LastName.NullNotAllowed": {
-   "min_recall": 0.9662,
-   "max_extra": 0
-  },
-  "62/Contact.Phone.Phone.NullNotAllowed": {
-   "min_recall": 1.0,
-   "max_extra": 0
-  },
-  "62/Account.Name.CompanyName.NullNotAllowed": {
-   "min_recall": 0.9815,
-   "max_extra": 0
-  },
-  "62/Account.BillingStreet.Street.NullNotAllowed": {
-   "min_recall": 1.0,
-   "max_extra": 0
+  "62/Account.BillingCity.City.MatchBlanks": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
   },
   "62/Account.BillingCity.City.NullNotAllowed": {
-   "min_recall": 0.9411,
-   "max_extra": 0
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
   },
   "62/Account.BillingPostalCode.Zip.NullNotAllowed": {
-   "min_recall": 1.0,
-   "max_extra": 0
-  },
-  "62/Account.Name.CompanyName.MatchBlanks": {
-   "min_recall": 0.9815,
-   "max_extra": 0
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
   },
   "62/Account.BillingStreet.Street.MatchBlanks": {
-   "min_recall": 0.9719,
-   "max_extra": 0
+   "min_recall": 0.9345,
+   "max_extra": 0,
+   "max_conf_mae": 0.11
   },
-  "62/Account.BillingCity.City.MatchBlanks": {
-   "min_recall": 0.9444,
-   "max_extra": 0
+  "62/Account.BillingStreet.Street.NullNotAllowed": {
+   "min_recall": 0.9323,
+   "max_extra": 0,
+   "max_conf_mae": 0.351
+  },
+  "62/Account.Name.CompanyName.MatchBlanks": {
+   "min_recall": 0.9938,
+   "max_extra": 0,
+   "max_conf_mae": 0.143
+  },
+  "62/Account.Name.CompanyName.NullNotAllowed": {
+   "min_recall": 0.9938,
+   "max_extra": 0,
+   "max_conf_mae": 0.143
   },
   "62/Account.Phone.Phone.NullNotAllowed": {
-   "min_recall": 1.0,
-   "max_extra": 0
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
   },
-  "67/Contact.FirstName.FirstName.NullNotAllowed": {
-   "min_recall": 0.9487,
-   "max_extra": 0
+  "62/Contact.FirstName.FirstName.NullNotAllowed": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
   },
-  "67/Contact.LastName.LastName.NullNotAllowed": {
-   "min_recall": 0.9662,
-   "max_extra": 0
+  "62/Contact.LastName.LastName.NullNotAllowed": {
+   "min_recall": 0.9212,
+   "max_extra": 0,
+   "max_conf_mae": 0.099
   },
-  "67/Contact.Phone.Phone.NullNotAllowed": {
-   "min_recall": 1.0,
-   "max_extra": 0
+  "62/Contact.Phone.Phone.NullNotAllowed": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
   },
-  "67/Contact.Title.Title.NullNotAllowed": {
-   "min_recall": 1.0,
-   "max_extra": 0
+  "62/Probe.Account.BillingCity.City.NullNotAllowed.Position": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
   },
-  "67/Account.Name.CompanyName.NullNotAllowed": {
-   "min_recall": 0.9815,
-   "max_extra": 0
+  "62/Probe.Account.BillingStreet.Street.NullNotAllowed.Unit": {
+   "min_recall": 0.9889,
+   "max_extra": 36,
+   "max_conf_mae": 0.156
   },
-  "67/Account.BillingStreet.Street.NullNotAllowed": {
-   "min_recall": 1.0,
-   "max_extra": 0
+  "62/Probe.Account.Name.CompanyName.NullNotAllowed.Syllable": {
+   "min_recall": 0.8388,
+   "max_extra": 8,
+   "max_conf_mae": 0.314
   },
-  "67/Account.BillingCity.City.NullNotAllowed": {
-   "min_recall": 0.9411,
-   "max_extra": 0
+  "62/Probe.Contact.FirstName.FirstName.NullNotAllowed.Jaro": {
+   "min_recall": 0.9488,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
   },
-  "67/Account.BillingPostalCode.Zip.NullNotAllowed": {
-   "min_recall": 1.0,
-   "max_extra": 0
+  "62/Probe.Contact.LastName.LastName.NullNotAllowed.Keyboard": {
+   "min_recall": 0.9999,
+   "max_extra": 8,
+   "max_conf_mae": 0.072
   },
-  "67/Account.Name.CompanyName.MatchBlanks": {
-   "min_recall": 0.9815,
-   "max_extra": 0
-  },
-  "67/Account.BillingStreet.Street.MatchBlanks": {
-   "min_recall": 0.9719,
-   "max_extra": 0
+  "62/Probe.Contact.Title.Title.NullNotAllowed.Words": {
+   "min_recall": 0.994,
+   "max_extra": 0,
+   "max_conf_mae": 0.45
   },
   "67/Account.BillingCity.City.MatchBlanks": {
-   "min_recall": 0.9444,
-   "max_extra": 0
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Account.BillingCity.City.NullNotAllowed": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Account.BillingPostalCode.Zip.NullNotAllowed": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Account.BillingStreet.Street.MatchBlanks": {
+   "min_recall": 0.9345,
+   "max_extra": 0,
+   "max_conf_mae": 0.11
+  },
+  "67/Account.BillingStreet.Street.NullNotAllowed": {
+   "min_recall": 0.9323,
+   "max_extra": 0,
+   "max_conf_mae": 0.351
+  },
+  "67/Account.Name.CompanyName.MatchBlanks": {
+   "min_recall": 0.9938,
+   "max_extra": 0,
+   "max_conf_mae": 0.143
+  },
+  "67/Account.Name.CompanyName.NullNotAllowed": {
+   "min_recall": 0.9938,
+   "max_extra": 0,
+   "max_conf_mae": 0.143
   },
   "67/Account.Phone.Phone.NullNotAllowed": {
-   "min_recall": 1.0,
-   "max_extra": 0
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
   },
-  "67/Holdout.Account.Name.CompanyName.MatchBlanks": {
-   "min_recall": 0.9506,
-   "max_extra": 0
+  "67/Contact.FirstName.FirstName.NullNotAllowed": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
   },
-  "67/Holdout.Account.BillingStreet.Street.MatchBlanks": {
-   "min_recall": 0.9183,
-   "max_extra": 0
+  "67/Contact.LastName.LastName.NullNotAllowed": {
+   "min_recall": 0.9212,
+   "max_extra": 0,
+   "max_conf_mae": 0.099
+  },
+  "67/Contact.Phone.Phone.NullNotAllowed": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Contact.Title.Title.NullNotAllowed": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.119
   },
   "67/Holdout.Account.BillingCity.City.MatchBlanks": {
-   "min_recall": 0.9417,
-   "max_extra": 0
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Holdout.Account.BillingStreet.Street.MatchBlanks": {
+   "min_recall": 0.9863,
+   "max_extra": 12,
+   "max_conf_mae": 0.629
+  },
+  "67/Holdout.Account.Name.CompanyName.MatchBlanks": {
+   "min_recall": 0.9999,
+   "max_extra": 4,
+   "max_conf_mae": 0.087
   },
   "67/Holdout.Account.Phone.Phone.NullNotAllowed": {
-   "min_recall": 1.0,
-   "max_extra": 0
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Holdout2.Account.BillingCity.City.NullNotAllowed": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Holdout2.Account.BillingStreet.Street.NullNotAllowed": {
+   "min_recall": 0.9633,
+   "max_extra": 0,
+   "max_conf_mae": 0.379
+  },
+  "67/Holdout2.Account.Name.CompanyName.NullNotAllowed": {
+   "min_recall": 0.966,
+   "max_extra": 0,
+   "max_conf_mae": 0.068
+  },
+  "67/Holdout2.Contact.FirstName.FirstName.NullNotAllowed": {
+   "min_recall": 0.9646,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Holdout2.Contact.LastName.LastName.NullNotAllowed": {
+   "min_recall": 0.9764,
+   "max_extra": 0,
+   "max_conf_mae": 0.183
+  },
+  "67/Holdout2.Contact.Title.Title.NullNotAllowed": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.095
+  },
+  "67/Probe.Account.BillingCity.City.NullNotAllowed.Position": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Probe.Account.BillingStreet.Street.NullNotAllowed.Name": {
+   "min_recall": 0.9818,
+   "max_extra": 0,
+   "max_conf_mae": 0.096
+  },
+  "67/Probe.Account.BillingStreet.Street.NullNotAllowed.Suffix": {
+   "min_recall": 0.9418,
+   "max_extra": 2,
+   "max_conf_mae": 0.455
+  },
+  "67/Probe.Account.BillingStreet.Street.NullNotAllowed.Unit": {
+   "min_recall": 0.9889,
+   "max_extra": 36,
+   "max_conf_mae": 0.156
+  },
+  "67/Probe.Account.Name.CompanyName.NullNotAllowed.Designator": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Probe.Account.Name.CompanyName.NullNotAllowed.Syllable": {
+   "min_recall": 0.8388,
+   "max_extra": 8,
+   "max_conf_mae": 0.314
+  },
+  "67/Probe.Account.Name.CompanyName.NullNotAllowed.Syllable2": {
+   "min_recall": 0.8937,
+   "max_extra": 4,
+   "max_conf_mae": 0.268
+  },
+  "67/Probe.Contact.FirstName.FirstName.NullNotAllowed.Jaro": {
+   "min_recall": 0.9488,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Probe.Contact.FirstName.FirstName.NullNotAllowed.Variant": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Probe.Contact.FirstName.FirstName.NullNotAllowed.Variant2": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Probe.Contact.FirstName.FirstName.NullNotAllowed.Variant3": {
+   "min_recall": 0.9824,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Probe.Contact.FirstName.FirstName.NullNotAllowed.Variant4": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Probe.Contact.LastName.LastName.NullNotAllowed.Keyboard": {
+   "min_recall": 0.9999,
+   "max_extra": 8,
+   "max_conf_mae": 0.072
+  },
+  "67/Probe.Contact.LastName.LastName.NullNotAllowed.Phonetic": {
+   "min_recall": 0.9314,
+   "max_extra": 0,
+   "max_conf_mae": 0.153
+  },
+  "67/Probe.Contact.LastName.LastName.NullNotAllowed.Phonetic2": {
+   "min_recall": 0.8461,
+   "max_extra": 0,
+   "max_conf_mae": 0.08
+  },
+  "67/Probe.Contact.Title.Title.NullNotAllowed.Words": {
+   "min_recall": 0.994,
+   "max_extra": 0,
+   "max_conf_mae": 0.45
   }
  }
 }
