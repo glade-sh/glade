@@ -1,0 +1,73 @@
+api	route	case	result
+62.0	deploy	F62InBooleanBoolean	accepted
+62.0	deploy	F62InDescriptionBoolean	accepted
+62.0	deploy	F62InDescriptionNumber	accepted
+62.0	deploy	F62InPicklistBoolean	accepted
+62.0	deploy	F62InPicklistNumber	accepted
+62.0	deploy	F62NotInBooleanBoolean	accepted
+62.0	deploy	F62NotInDescriptionBoolean	accepted
+62.0	deploy	F62NotInDescriptionNumber	accepted
+62.0	deploy	F62NotInPicklistBoolean	accepted
+62.0	deploy	F62NotInPicklistNumber	accepted
+62.0	deploy	T62TextDate	accepted
+62.0	deploy	T62TextDateTime	accepted
+62.0	anonymous	format profile	locale=en_US, timezone=America/Los_Angeles
+62.0	anonymous	F62NotInPicklistBoolean	Flow Type Match A
+62.0	anonymous	F62InPicklistNumber	Flow Type Match A
+62.0	anonymous	F62InDescriptionBoolean	ERROR:System.FlowException
+62.0	anonymous	F62InBooleanBoolean	Flow Type Match A
+62.0	anonymous	F62NotInDescriptionBoolean	ERROR:System.FlowException
+62.0	anonymous	F62InDescriptionNumber	ERROR:System.FlowException
+62.0	anonymous	F62NotInPicklistNumber	Flow Type Match B
+62.0	anonymous	F62InPicklistBoolean	Flow Type Match B
+62.0	anonymous	F62NotInBooleanBoolean	null
+62.0	anonymous	F62NotInDescriptionNumber	ERROR:System.FlowException
+62.0	anonymous	T62TextDate	February 3, 2001
+62.0	anonymous	T62TextDateTime	2/2/2001, 8:05 PM
+62.0	deploy	F62InAccountNumberBoolean	accepted
+62.0	deploy	F62InAccountNumberNumber	accepted
+62.0	deploy	F62NotInAccountNumberBoolean	accepted
+62.0	deploy	F62NotInAccountNumberNumber	accepted
+62.0	anonymous	F62InAccountNumberNumber	Flow Numeric Match A
+62.0	anonymous	F62InAccountNumberBoolean	Flow Numeric Match B
+62.0	anonymous	F62NotInAccountNumberNumber	Flow Numeric Match B
+62.0	anonymous	F62NotInAccountNumberBoolean	Flow Numeric Match A
+62.0	describe	Type	type=picklist, filterable=true
+62.0	describe	AccountNumber	type=string, filterable=true
+62.0	describe	Description	type=textarea, filterable=false
+67.0	deploy	F67InBooleanBoolean	accepted
+67.0	deploy	F67InDescriptionBoolean	accepted
+67.0	deploy	F67InDescriptionNumber	accepted
+67.0	deploy	F67InPicklistBoolean	accepted
+67.0	deploy	F67InPicklistNumber	accepted
+67.0	deploy	F67NotInBooleanBoolean	accepted
+67.0	deploy	F67NotInDescriptionBoolean	accepted
+67.0	deploy	F67NotInDescriptionNumber	accepted
+67.0	deploy	F67NotInPicklistBoolean	accepted
+67.0	deploy	F67NotInPicklistNumber	accepted
+67.0	deploy	T67TextDate	accepted
+67.0	deploy	T67TextDateTime	accepted
+67.0	anonymous	format profile	locale=en_US, timezone=America/Los_Angeles
+67.0	anonymous	F67InPicklistBoolean	Flow Type Match B
+67.0	anonymous	F67NotInPicklistNumber	Flow Type Match B
+67.0	anonymous	F67InDescriptionNumber	ERROR:System.FlowException
+67.0	anonymous	F67NotInBooleanBoolean	null
+67.0	anonymous	F67NotInDescriptionNumber	ERROR:System.FlowException
+67.0	anonymous	F67NotInDescriptionBoolean	ERROR:System.FlowException
+67.0	anonymous	F67NotInPicklistBoolean	Flow Type Match A
+67.0	anonymous	F67InBooleanBoolean	Flow Type Match A
+67.0	anonymous	F67InPicklistNumber	Flow Type Match A
+67.0	anonymous	F67InDescriptionBoolean	ERROR:System.FlowException
+67.0	anonymous	T67TextDate	February 3, 2001
+67.0	anonymous	T67TextDateTime	2/2/2001, 8:05 PM
+67.0	deploy	F67InAccountNumberBoolean	accepted
+67.0	deploy	F67InAccountNumberNumber	accepted
+67.0	deploy	F67NotInAccountNumberBoolean	accepted
+67.0	deploy	F67NotInAccountNumberNumber	accepted
+67.0	anonymous	F67InAccountNumberNumber	Flow Numeric Match A
+67.0	anonymous	F67InAccountNumberBoolean	Flow Numeric Match B
+67.0	anonymous	F67NotInAccountNumberNumber	Flow Numeric Match B
+67.0	anonymous	F67NotInAccountNumberBoolean	Flow Numeric Match A
+67.0	describe	Type	type=picklist, filterable=true
+67.0	describe	AccountNumber	type=string, filterable=true
+67.0	describe	Description	type=textarea, filterable=false

@@ -479,13 +479,22 @@ func (vm *VM) flowInterviewOutputValue(output dml.FlowInterviewOutput) Value {
 		set(name, vmValueFromStorage(value))
 	}
 	convertRecord := vm.recordConverterForOrg(vm.Org)
+	convertOutputRecord := func(record storage.Record) Value {
+		value := convertRecord(record)
+		for field, explicit := range record.ExplicitNulls {
+			if explicit {
+				markExplicitSObjectField(&value, field)
+			}
+		}
+		return value
+	}
 	for name, record := range output.Records {
-		set(name, convertRecord(record))
+		set(name, convertOutputRecord(record))
 	}
 	for name, records := range output.Collections {
 		items := make([]Value, 0, len(records))
 		for _, record := range records {
-			items = append(items, convertRecord(record))
+			items = append(items, convertOutputRecord(record))
 		}
 		set(name, List(items...))
 	}
@@ -3986,7 +3995,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			engine := vm.newDMLEngine(result)
 			output, err := engine.RunAutolaunchedFlowWithOutput(rule, input)
 			if err != nil {
-				if _, inputFailure := dml.FlowActionInputFailureResult(err); inputFailure || dml.IsFlowRecordUpdateMissingID(err) {
+				if _, inputFailure := dml.FlowActionInputFailureResult(err); inputFailure || dml.IsFlowRecordUpdateMissingID(err) || dml.IsFlowLookupCollectionFault(err) {
 					return Null, receiver, false, true, newExceptionError("System.FlowException", err.Error())
 				}
 				return Null, receiver, false, true, err

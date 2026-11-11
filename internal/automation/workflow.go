@@ -137,6 +137,7 @@ func LoadProject(p project.Project, metadataReaders ...func(string) ([]byte, err
 		flowPaths = append(flowPaths, path)
 		idx.Diagnostics = append(idx.Diagnostics, diagnostics...)
 	}
+	flowValidateProjectTransformTargets(p, &idx)
 	if err := leaveUncoveredProcessesUnrun(&idx, flowPaths, flowDefinitions, project.EffectiveOrgShapeFeatures(p)); err != nil {
 		return Index{}, err
 	}
