@@ -4377,7 +4377,9 @@ func (vm *VM) soqlObjectHasPublicReadSharing(objectName string) bool {
 		return true
 	}
 	switch strings.ToLower(model) {
-	case "readwrite", "publicreadwrite", "read", "readonly", "publicreadonly", "publicread":
+	// lead_sharing/org.tsv: a ReadWriteTransfer Lead (the scratch default) is read
+	// by non-owner, non-creator Standard users at both source APIs.
+	case "readwrite", "publicreadwrite", "readwritetransfer", "read", "readonly", "publicreadonly", "publicread":
 		return true
 	default:
 		return false

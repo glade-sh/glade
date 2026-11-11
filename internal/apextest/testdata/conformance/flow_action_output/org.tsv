@@ -1,0 +1,7 @@
+source_api	route	id	observation
+62.0	istest	dates	[{"date":"2031-03-12","datetime":"2031-03-12T00:30:00.000Z","name":"first"},{"date":null,"datetime":null,"name":"null"}]
+62.0	istest	errors	[{"containsFault":true,"index":0,"status":"FIELD_CUSTOM_VALIDATION_EXCEPTION"},{"containsFault":true,"index":1,"status":"FIELD_CUSTOM_VALIDATION_EXCEPTION"},{"containsFault":true,"index":2,"status":"FIELD_CUSTOM_VALIDATION_EXCEPTION"}]
+62.0	istest	numDml	3
+67.0	istest	dates	[{"date":"2031-03-12","datetime":"2031-03-12T00:30:00.000Z","name":"first"},{"date":null,"datetime":null,"name":"null"}]
+67.0	istest	errors	[{"containsFault":true,"index":0,"status":"FIELD_CUSTOM_VALIDATION_EXCEPTION"},{"containsFault":true,"index":1,"status":"FIELD_CUSTOM_VALIDATION_EXCEPTION"},{"containsFault":true,"index":2,"status":"FIELD_CUSTOM_VALIDATION_EXCEPTION"}]
+67.0	istest	numDml	3

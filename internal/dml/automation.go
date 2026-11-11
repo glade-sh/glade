@@ -865,8 +865,10 @@ type flowFrame struct {
 	autolaunched            bool
 	outputAssignmentLookups map[string]bool
 	// Automatic single-output Apex results belong to this interview.
-	actionOutputs  map[string]storage.Value
-	preparedAction *flowPreparedAction
+	actionOutputs         map[string]storage.Value
+	preparedAction        *flowPreparedAction
+	batchUpdatedFields    map[string]bool
+	batchLaterFieldUpdate bool
 }
 
 // A prepared result is consumed once by the original action node. Nested
@@ -1081,6 +1083,9 @@ func (e *Engine) applyFlowStep(flowName, objectName string, record *storage.Reco
 		defer delete(frame.activeTargets, key)
 		return e.applyFlowStepsWithFrame(flowName, objectName, record, definition, target, frame)
 	case "fieldUpdate":
+		if len(frame.batchUpdatedFields) > 0 {
+			frame.batchLaterFieldUpdate = true
+		}
 		changed := false
 		for _, update := range step.FieldUpdates {
 			stepChanged, err := e.applyFlowFieldUpdate(flowName, objectName, record, definition, update, frame)
@@ -2107,6 +2112,7 @@ func (e *Engine) executeFlowRecordUpdate(update storage.FlowRecordUpdate, source
 			if err := e.updateInvocableFlowRecord(record); err != nil {
 				return i, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record update %s failed: %v", update.Name, err)
 			}
+			frame.recordBatchUpdateFields(source, record)
 		}
 		return len(updates), nil
 	}
@@ -2132,6 +2138,7 @@ func (e *Engine) executeFlowRecordUpdate(update storage.FlowRecordUpdate, source
 		if err := e.updateInvocableFlowRecord(record); err != nil {
 			return i, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record update %s failed: %v", update.Name, err)
 		}
+		frame.recordBatchUpdateFields(source, record)
 	}
 	return len(updates), nil
 }
