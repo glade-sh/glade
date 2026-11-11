@@ -8,9 +8,17 @@ import (
 
 func TestCIRelease2PackageShardWorkflow(t *testing.T) {
 	_, jobs := readCIWorkflow(t)
+	// Push CI runs three VM and two CLI shards to stay inside the job budget;
+	// PR workers keep the four-shard layout and select it by leaving the count unset.
+	counts := map[string]int{"vm": 3, "gladecli": 2}
 	for _, pkg := range []string{"vm", "gladecli"} {
 		job := jobs[pkg]
-		for _, marker := range []string{"shard: [0, 1, 2, 3]", "scripts/ci-go-test.sh " + pkg + "-shard", pkg + "-history-input", "name: " + pkg + "-shard-${{ matrix.shard }}", "${{ github.run_attempt }}-${{ matrix.shard }}"} {
+		matrix := "shard: [0, 1, 2]"
+		if counts[pkg] == 2 {
+			matrix = "shard: [0, 1]"
+		}
+		countEnv := fmt.Sprintf("CI_%s_SHARDS: \"%d\"", strings.ToUpper(pkg), counts[pkg])
+		for _, marker := range []string{matrix, countEnv, "scripts/ci-go-test.sh " + pkg + "-shard", pkg + "-history-input", "name: " + pkg + "-shard-${{ matrix.shard }}", "${{ github.run_attempt }}-${{ matrix.shard }}"} {
 			if !strings.Contains(job, marker) {
 				t.Errorf("%s shard job missing %q", pkg, marker)
 			}
@@ -30,10 +38,13 @@ func TestCIRelease2PackageShardWorkflow(t *testing.T) {
 		if !strings.Contains(history, "scripts/ci-go-test.sh "+pkg+"-history-refresh") {
 			t.Errorf("%s history collector is missing", pkg)
 		}
-		for i := 0; i < 4; i++ {
+		for i := 0; i < counts[pkg]; i++ {
 			if !strings.Contains(history, fmt.Sprintf("%s-shard-%d", pkg, i)) {
 				t.Errorf("%s history omits shard %d", pkg, i)
 			}
+		}
+		if strings.Contains(history, fmt.Sprintf("%s-shard-%d", pkg, counts[pkg])) {
+			t.Errorf("%s history names a shard beyond the matrix", pkg)
 		}
 		for _, name := range []string{pkg, pkg + "-history"} {
 			if !strings.Contains(jobs["required-ci"], "      - "+name+"\n") {

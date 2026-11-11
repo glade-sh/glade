@@ -17,6 +17,10 @@ func TestCILocalAllApexHelperTwelveShards(t *testing.T) {
 	testCILocalAllApexHelper(t, 12)
 }
 
+func TestCILocalAllApexHelperFourteenShards(t *testing.T) {
+	testCILocalAllApexHelper(t, 14)
+}
+
 func testCILocalAllApexHelper(t *testing.T, count int) {
 	t.Helper()
 	root := t.TempDir()

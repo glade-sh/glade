@@ -41,7 +41,7 @@ trap 'trap - INT TERM; cleanup; exit 130' INT
 trap 'trap - INT TERM; cleanup; exit 143' TERM
 
 shard_count="${CI_APEXTEST_SHARDS:-2}"
-case "${shard_count}" in 2|6|12) ;; *) echo "CI_APEXTEST_SHARDS must be 2, 6, or 12" >&2; exit 2;; esac
+case "${shard_count}" in 2|6|12|14) ;; *) echo "CI_APEXTEST_SHARDS must be 2, 6, 12, or 14" >&2; exit 2;; esac
 jobs="${GLADE_APEXTEST_SHARD_JOBS:-2}"
 if [[ ! "${jobs}" =~ ^[0-9]+$ ]] || [[ "${jobs}" -lt 1 ]]; then
     echo "GLADE_APEXTEST_SHARD_JOBS must be positive" >&2
