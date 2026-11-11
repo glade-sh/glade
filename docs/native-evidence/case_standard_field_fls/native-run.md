@@ -1,11 +1,11 @@
-# Native run: Case entitlement fields in a plain Developer org (ROAD-246)
+# Native run: Case entitlement fields in a plain Developer org
 
 Question: the v0.3.1 audit saw Glade expose Case.EntitlementId in a plain
 Developer shape while native describes did not. The conformance packet
 org_feature_surfaces records `Case.EntitlementId` as present. Which is right?
 
 Orgs (fresh 30-day Developer-edition scratch orgs; no ids or usernames kept):
-- `plain` and `plain2`: default settings (two Dev Hubs).
+- `plain` and `plain2`: default settings (two separate orgs).
 - `shape` and `shape2`: feature StateAndCountryPicklist and the Lightning
   Experience setting (the org_feature_surfaces `currency_off` shape).
 - `entitle`: the entitlementSettings.enableEntitlements setting from the
