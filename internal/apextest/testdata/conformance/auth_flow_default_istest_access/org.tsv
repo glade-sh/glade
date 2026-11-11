@@ -1,0 +1,25 @@
+api	route	field	clause	result	observation
+62.0	istest	FlowDefaultAccountId	read	rejected	"[""Variable does not exist: FlowDefaultAccountId""]"
+62.0	istest	FlowDefaultAccountId	write	rejected	"[""Variable does not exist: FlowDefaultAccountId""]"
+62.0	istest	FlowDefaultProfileId	read	rejected	"[""Variable does not exist: FlowDefaultProfileId""]"
+62.0	istest	FlowDefaultProfileId	write	rejected	"[""Variable does not exist: FlowDefaultProfileId""]"
+63.0	istest	FlowDefaultAccountId	read	rejected	"[""Variable does not exist: FlowDefaultAccountId""]"
+63.0	istest	FlowDefaultAccountId	write	rejected	"[""Variable does not exist: FlowDefaultAccountId""]"
+63.0	istest	FlowDefaultProfileId	read	rejected	"[""Variable does not exist: FlowDefaultProfileId""]"
+63.0	istest	FlowDefaultProfileId	write	rejected	"[""Variable does not exist: FlowDefaultProfileId""]"
+64.0	istest	FlowDefaultAccountId	read	accepted	[]
+64.0	istest	FlowDefaultAccountId	write	accepted	[]
+64.0	istest	FlowDefaultProfileId	read	accepted	[]
+64.0	istest	FlowDefaultProfileId	write	accepted	[]
+65.0	istest	FlowDefaultAccountId	read	accepted	[]
+65.0	istest	FlowDefaultAccountId	write	accepted	[]
+65.0	istest	FlowDefaultProfileId	read	accepted	[]
+65.0	istest	FlowDefaultProfileId	write	accepted	[]
+66.0	istest	FlowDefaultAccountId	read	accepted	[]
+66.0	istest	FlowDefaultAccountId	write	accepted	[]
+66.0	istest	FlowDefaultProfileId	read	accepted	[]
+66.0	istest	FlowDefaultProfileId	write	accepted	[]
+67.0	istest	FlowDefaultAccountId	read	accepted	[]
+67.0	istest	FlowDefaultAccountId	write	accepted	[]
+67.0	istest	FlowDefaultProfileId	read	accepted	[]
+67.0	istest	FlowDefaultProfileId	write	accepted	[]
