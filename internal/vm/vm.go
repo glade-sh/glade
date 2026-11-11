@@ -954,15 +954,8 @@ func apexClassNamespaceValue(namespace string) storage.Value {
 
 func (vm *VM) sObjectNameForIDPrefix(prefix string) (string, bool) {
 	if vm.Org != nil {
-		names := make([]string, 0, len(vm.Org.Objects))
-		for name := range vm.Org.Objects {
-			names = append(names, name)
-		}
-		sort.Strings(names)
-		for _, name := range names {
-			if vm.Org.Objects[name].Definition.KeyPrefix == prefix {
-				return name, true
-			}
+		if name, ok := vm.orgObjectNameForKeyPrefix(prefix); ok {
+			return name, true
 		}
 		if owner := storage.StandardKeyPrefixOwner(prefix); owner != "" {
 			if name, ok := vm.lazyStandardObject(owner); ok {
@@ -974,25 +967,50 @@ func (vm *VM) sObjectNameForIDPrefix(prefix string) (string, bool) {
 	return name, ok
 }
 
+// orgObjectNameForKeyPrefix returns the first object in name order whose key
+// prefix is prefix. It is the test seam for the sorted scan it must match.
+func (vm *VM) orgObjectNameForKeyPrefix(prefix string) (string, bool) {
+	names := make([]string, 0, len(vm.Org.Objects))
+	for name := range vm.Org.Objects {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		if vm.Org.Objects[name].Definition.KeyPrefix == prefix {
+			return name, true
+		}
+	}
+	return "", false
+}
+
 func (vm *VM) sObjectNameForID(idText string) (string, bool) {
 	if len(idText) < 3 {
 		return "", false
 	}
 	if vm.Org != nil {
-		names := make([]string, 0, len(vm.Org.Objects))
-		for name := range vm.Org.Objects {
-			names = append(names, name)
-		}
-		sort.Strings(names)
-		id := storage.ID(idText)
-		for _, name := range names {
-			object := vm.Org.Objects[name]
-			if _, _, ok := storage.LookupRecordByID(object.Records, id); ok {
-				return name, true
-			}
+		if name, ok := vm.orgObjectNameHoldingID(storage.ID(idText)); ok {
+			return name, true
 		}
 	}
 	return vm.sObjectNameForIDPrefix(idText[:3])
+}
+
+// orgObjectNameHoldingID returns the first object in name order that stores
+// id, in its 15 or 18 character form. It is the test seam for the sorted scan
+// it must match.
+func (vm *VM) orgObjectNameHoldingID(id storage.ID) (string, bool) {
+	names := make([]string, 0, len(vm.Org.Objects))
+	for name := range vm.Org.Objects {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		object := vm.Org.Objects[name]
+		if _, _, ok := storage.LookupRecordByID(object.Records, id); ok {
+			return name, true
+		}
+	}
+	return "", false
 }
 
 func idTextFromValue(value Value) (string, bool) {
