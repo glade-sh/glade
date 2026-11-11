@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- Sharing behavior now matches captured Salesforce results for entity sharing models, Lead and Case public sharing, private queue member access, and without-sharing direct record access.
 
 ## v0.3.6
 
