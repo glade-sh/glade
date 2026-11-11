@@ -29,6 +29,9 @@ func (vm *VM) userModeUnrestrictedObject(objectName, userID string) bool {
 }
 
 func (vm *VM) userModeRecordVisible(objectName string, record storage.Record, userID string) bool {
+	if vm.guestUserReadsOnlySelf(objectName) {
+		return storage.IDsEqual(record.ID, storage.ID(userID))
+	}
 	if vm.userModeUnrestrictedObject(objectName, userID) {
 		return true
 	}
