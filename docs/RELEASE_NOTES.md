@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-No changes yet.
+### Apex
+
+- **`ObjectPermissions.PermissionsViewAllFields` at API 62.0.** The field is rejected at compile time when it is named through `Schema.ObjectPermissions`, through a chained `getDescribe()` or `getSObjectField()`, or through an `SObjectType.fields` member, as for the plain token. API 63.0 and later still accept it.
 
 ## v0.3.6
 
