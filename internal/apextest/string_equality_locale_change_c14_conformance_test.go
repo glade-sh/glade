@@ -97,7 +97,8 @@ func TestStringEqualityLocaleChangeC14NativeConformance(t *testing.T) {
 							if !strings.Contains(gotType, ".") {
 								gotType = "System." + gotType
 							}
-							got := gotType + ": " + result.Problem.Message
+							// The native row is the test-result message.
+							got := gotType + ": " + result.Problem.ResultMessage()
 							if got != native[0][5] {
 								t.Fatalf("native=%s; Glade=%s", native[0][5], got)
 							}

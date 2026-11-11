@@ -41,7 +41,9 @@ func TestFailureWhitespaceNative(t *testing.T) {
 				if !strings.Contains(name, ".") {
 					name = "System." + name
 				}
-				found[strings.ToLower(result.MethodName)] = name + ": " + result.Problem.Message
+				// The native rows are test-result messages; Problem.Message keeps
+				// the raw exception text.
+				found[strings.ToLower(result.MethodName)] = name + ": " + result.Problem.ResultMessage()
 			}
 			n := 0
 			for _, row := range rows[1:] {
