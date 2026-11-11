@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-No changes yet.
+### Lightning web components
+
+- **Action argument conversion.** Arguments of `@AuraEnabled` calls from Lightning web components convert as Salesforce does for Boolean (any string), `List<String>` (a string becomes one element or the parsed JSON array; numbers, booleans and objects become an empty list), Decimal, Double, Integer, Datetime, Object, Account and SObject parameters. A `Date` parameter that receives a UTC Datetime string is still rejected.
 
 ## v0.3.6
 
