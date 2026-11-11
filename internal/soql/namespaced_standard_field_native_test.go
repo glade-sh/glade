@@ -16,10 +16,10 @@ const namespacedStandardFieldDir = "../apextest/testdata/conformance/namespaced_
 
 var namespacedStandardFieldQuery = regexp.MustCompile(`(?i)SELECT .*?(?:LIMIT 1)`)
 
-// ROAD-353. Native rows: namespaced_standard_field_soql/org.tsv, anonymous
+// Native rows: namespaced_standard_field_soql/org.tsv, anonymous
 // route, source API 62.0 and 67.0, two orgs:
 //   - package-installed: the managed package that owns
-//     gladetest1__ParentRouteValue__c on Contact is installed. The field
+//     pkgone__ParentRouteValue__c on Contact is installed. The field
 //     resolves; a same-namespace name that the package lacks, an unknown
 //     namespace and a bare package field name are all rejected.
 //   - plain-no-package: every one of those names is rejected.
@@ -99,7 +99,7 @@ func TestNamespacedStandardFieldQueriesMatchNativeRows(t *testing.T) {
 			}
 			definition.Fields = copyFields(definition.Fields)
 			if label == "package-installed" {
-				definition.Fields["gladetest1__ParentRouteValue__c"] = storage.Field{APIName: "gladetest1__ParentRouteValue__c", Type: storage.FieldString}
+				definition.Fields["pkgone__ParentRouteValue__c"] = storage.Field{APIName: "pkgone__ParentRouteValue__c", Type: storage.FieldString}
 			}
 			org.Objects["Contact"] = storage.ObjectState{Definition: definition, Records: map[storage.ID]storage.Record{
 				"003000000000001": {ID: "003000000000001", Object: "Contact", Fields: map[string]storage.Value{"LastName": storage.StringValue("x")}},
