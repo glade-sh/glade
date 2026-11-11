@@ -2847,7 +2847,11 @@ func (vm *VM) applyDeferredAutomation(engine *dml.Engine, records, oldRecords []
 	// The native bulk capture uses atomic inserts. Partial-save scheduling
 	// retains its existing per-record path.
 	if allOrNone {
-		if handled, err := engine.ApplyFlowActionBatch(records, func(i int, outcome dml.AutomationResult) error {
+		// flow_batch_refire/org.tsv: every interview's Flow writes finish before
+		// the after-update triggers run, and the triggers see one batch.
+		var refireIDs []storage.ID
+		var refireOld []storage.Record
+		handled, err := engine.ApplyFlowActionBatch(records, func(i int, outcome dml.AutomationResult) error {
 			record := records[i]
 			appendTrace(result, "apex.automation.apply", "apex.automation", map[string]any{
 				"object": record.Object,
@@ -2860,8 +2864,14 @@ func (vm *VM) applyDeferredAutomation(engine *dml.Engine, records, oldRecords []
 			if i < len(oldRecords) {
 				oldRecord = oldRecords[i]
 			}
-			return vm.refireAutomationUpdateTriggers(record.Object, record.ID, oldRecord, allOrNone, rollback, result)
-		}); handled {
+			refireIDs = append(refireIDs, record.ID)
+			refireOld = append(refireOld, oldRecord)
+			return nil
+		})
+		if handled && err == nil && len(refireIDs) > 0 {
+			err = vm.refireAutomationUpdateTriggersFor(records[0].Object, refireIDs, refireOld, allOrNone, rollback, result)
+		}
+		if handled {
 			if err != nil && allOrNone {
 				if rollbackErr := vm.restoreDMLRollbackPoint(rollback); rollbackErr != nil {
 					return rollbackErr
