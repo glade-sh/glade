@@ -96,11 +96,20 @@ func (vm *VM) boundLocatorSystemModeCapturedShape(raw string) bool {
 	if err != nil || len(query.Fields) != 1 || query.SecurityMode != "" || len(query.ChildQueries) != 0 ||
 		len(query.Typeofs) != 0 || (!query.Count && len(query.Aggregates) != 0) || len(query.GroupBy) != 0 ||
 		query.Having != nil || len(query.Order) != 0 || query.HasOffset || query.ForUpdate || query.ForView ||
-		query.ForReference || query.AllRows || query.UsingScope != "" || (query.HasLimit && query.Limit != 1) {
+		query.ForReference || query.AllRows || query.UsingScope != "" || query.DataCategoryGroup != "" ||
+		query.DataCategoryOperator != "" || query.DataCategoryName != "" || (query.HasLimit && query.Limit != 1) {
 		return false
 	}
 	if query.Count && !strings.EqualFold(query.Fields[0], "COUNT()") {
 		return false
+	}
+	if !query.Count {
+		field := query.Fields[0]
+		if field == "" || strings.IndexFunc(field, func(r rune) bool {
+			return !(r >= 'A' && r <= 'Z' || r >= 'a' && r <= 'z' || r >= '0' && r <= '9' || r == '_')
+		}) >= 0 {
+			return false
+		}
 	}
 	if query.Where == nil {
 		return true
