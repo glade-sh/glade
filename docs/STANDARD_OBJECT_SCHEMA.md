@@ -112,6 +112,9 @@ API 67.0 describe lists them (`whatid_targets_tiebreak` confirms Task and Event
 WhatId: 85 targets at 62.0, 93 at 67.0). The plain Developer object lists keep
 them out of API 62.0; the scalars follow with
 `GLADE_UPDATE_DESCRIBE_SCALARS=1 go test ./internal/storage -run TestStandardDescribeCatalogV2ScalarsMatchPack`.
+A pack or stub overlay change that moves a child relationship also regenerates
+sema's table with
+`GLADE_UPDATE_CHILD_RELATIONSHIPS=1 go test ./internal/storage -run TestStandardChildRelationshipsMatchCatalog`.
 
 `python3 scripts/apply-standard-restricted-supplement.py` sets the
 restrictedPicklist facet on docs-placeholder picklists that the P0 describes
@@ -120,6 +123,16 @@ fills an empty value list only when both APIs list the same values and every
 value is in the reviewed public allowlist. Run the pack and field-order
 generators after it. Catalog provenance keeps DML enforcement limited to the
 captured fields in `internal/storage/standard_picklist_validation.go`.
+
+Objects whose field types come from the Apex SObject stub overlay type their
+picklists as String. `python3 scripts/generate-standard-stub-restricted-picklists.py`
+writes `internal/storage/standard_stub_restricted_picklists.json` from the
+P0 describes: every field reported as a restricted picklist at each API where
+it exists. A value list is kept only when it is non-empty, equal at both APIs,
+has no null label, no default entry and no dependent controller, and every
+value is in the reviewed public allowlist. The runtime applies an entry only
+to a field the stub overlay types String, with catalog provenance, so DML
+enforcement is unchanged.
 
 The plain Developer global describe lists in
 `internal/apextest/testdata/conformance/plain_global_describe` feed

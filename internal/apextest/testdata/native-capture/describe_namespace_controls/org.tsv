@@ -1,0 +1,9 @@
+case	source_api	route	result
+describe	62.0	anonymous	all assertions passed
+describe_reject	62.0	anonymous	Field does not exist: key on ObjectPermissions
+qualified	62.0	istest-deploy-check	Succeeded
+unqualified	62.0	istest-deploy-check	Invalid type: V035Provider.GlobalInner; Variable does not exist: value
+describe	67.0	anonymous	all assertions passed
+describe_reject	67.0	anonymous	Field does not exist: key on ObjectPermissions
+qualified	67.0	istest-deploy-check	Succeeded
+unqualified	67.0	istest-deploy-check	Invalid type: V035Provider.GlobalInner; Variable does not exist: value

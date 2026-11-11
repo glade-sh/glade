@@ -1,0 +1,25 @@
+case	api	route	result	outcome
+component_literal_nocap	59.0	deploy	rejected	LWC1503: Dynamic imports are not allowed.
+component_literal_cap	59.0	deploy	accepted	deployed
+component_template_nocap	59.0	deploy	rejected	LWC1503: Dynamic imports are not allowed.
+component_template_cap	59.0	deploy	accepted	deployed
+utility_literal_nocap	59.0	deploy	rejected	LWC1503: Dynamic imports are not allowed.
+utility_literal_cap	59.0	deploy	accepted	deployed
+utility_template_nocap	59.0	deploy	rejected	LWC1503: Dynamic imports are not allowed.
+utility_template_cap	59.0	deploy	accepted	deployed
+sibling_literal_nocap	59.0	deploy	rejected	LWC1503: Dynamic imports are not allowed.
+sibling_literal_cap	59.0	deploy	accepted	deployed
+sibling_template_nocap	59.0	deploy	rejected	LWC1503: Dynamic imports are not allowed.
+sibling_template_cap	59.0	deploy	accepted	deployed
+component_literal_nocap	67.0	deploy	rejected	LWC1503: Dynamic imports are not allowed.
+component_literal_cap	67.0	deploy	accepted	deployed
+component_template_nocap	67.0	deploy	rejected	LWC1503: Dynamic imports are not allowed.
+component_template_cap	67.0	deploy	accepted	deployed
+utility_literal_nocap	67.0	deploy	rejected	LWC1503: Dynamic imports are not allowed.
+utility_literal_cap	67.0	deploy	accepted	deployed
+utility_template_nocap	67.0	deploy	rejected	LWC1503: Dynamic imports are not allowed.
+utility_template_cap	67.0	deploy	accepted	deployed
+sibling_literal_nocap	67.0	deploy	rejected	LWC1503: Dynamic imports are not allowed.
+sibling_literal_cap	67.0	deploy	accepted	deployed
+sibling_template_nocap	67.0	deploy	rejected	LWC1503: Dynamic imports are not allowed.
+sibling_template_cap	67.0	deploy	accepted	deployed

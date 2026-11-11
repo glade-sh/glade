@@ -178,11 +178,13 @@ func (vm *VM) currentUserObjectPermission(objectName, method string) bool {
 	if vm.profileHasCapturedAccountLicenseRestriction(profileID, objectName) {
 		return false
 	}
-	if vm.profileHasLicense(profileID, "Chatter External") && !isSetupObject(objectName) {
+	if vm.profileHasExternalCollaborationLicense(profileID) && !isSetupObject(objectName) {
 		return false
 	}
 	if vm.currentProfileHasUserType(profileID, "Guest") {
-		return false
+		// A Guest-type profile reads, creates and updates User natively and
+		// holds no other object access (guest_user_contract, API 62.0 and 67.0).
+		return strings.EqualFold(objectName, "User")
 	}
 	if method == "isAccessible" && vm.configuredUserDirectoryReadable(objectName, profileID) {
 		return true
@@ -394,6 +396,12 @@ func (vm *VM) currentUserFieldPermission(objectName, fieldName, method string) b
 	user := vm.fieldPermissionPrincipal()
 	profileID := stringField(user, "ProfileId")
 	profileName := vm.currentUserProfileName(user)
+	// A Guest-type profile has the Standard User flags on every User field
+	// except guestHiddenUserField (guest_user_contract, API 62.0 and 67.0).
+	guestUser := strings.EqualFold(objectName, "User") && vm.currentProfileHasUserType(profileID, "Guest")
+	if guestUser {
+		profileName = "Standard User"
+	}
 	if profileName == "System Administrator" {
 		// A profile-owned field inventory defines the grants for permissionable
 		// fields on that object. An assigned permission set can add a grant;
@@ -424,27 +432,7 @@ func (vm *VM) currentUserFieldPermission(objectName, fieldName, method string) b
 		api := vm.currentSourceExecutionPolicy().APIVersion
 		capturedOlderTestRoute := vm.testContext != nil && vm.testContext.RunAsDepth > 0 && apexversion.AtLeast(api, 55) && !apexversion.AtLeast(api, 56)
 		if (adminOptionalFieldPolicyAPI(api) || capturedOlderTestRoute) && vm.ordinaryCustomPermissionObject(objectName) && isCustomSchemaName(fieldName) && !vm.customFieldHasIntrinsicAccess(objectName, fieldName) {
-			parents := []string{vm.profileOwnedPermissionSetID(profileID), profileID}
-			grantMethod := method
-			if method == "isCreateable" {
-				grantMethod = "isAccessible"
-			}
-			// glade exec cannot know assignment: a deployed set that grants the
-			// field counts as assigned (native admin_field_grant_sources rows).
-			if vm.assumeDeployedPermissionSets && vm.testContext == nil {
-				parents = append(parents, vm.deployedPermissionSetIDs()...)
-			}
-			for _, parent := range parents {
-				if allowed, ok := vm.explicitFieldPermission(parent, objectName, fieldName, grantMethod); ok && allowed {
-					return true
-				}
-			}
-			for _, source := range vm.assignedPermissionSources(stringField(user, "Id"), false) {
-				if vm.sourceFieldPermission(source, objectName, fieldName, grantMethod) {
-					return true
-				}
-			}
-			return false
+			return vm.adminExplicitFieldGrant(user, profileID, objectName, fieldName, method)
 		}
 		return true
 	}
@@ -480,6 +468,9 @@ func (vm *VM) currentUserFieldPermission(objectName, fieldName, method string) b
 	}
 	if allowed, ok := vm.explicitFieldPermission(profileID, objectName, fieldName, method); ok {
 		return allowed
+	}
+	if guestUser && guestHiddenUserField(fieldName) {
+		return false
 	}
 	if (profileName == "Standard User" || profileName == "Standard Platform User") &&
 		standardProfileHiddenOptOutField(objectName, fieldName) {
@@ -555,10 +546,46 @@ func (vm *VM) currentUserFieldPermission(objectName, fieldName, method string) b
 	case "Read Only":
 		return method == "isAccessible"
 	}
-	if vm.profileHasLicense(profileID, "Chatter External") && !isSetupObject(objectName) {
+	if vm.profileHasExternalCollaborationLicense(profileID) && !isSetupObject(objectName) {
 		return false
 	}
 	return true
+}
+
+// adminExplicitFieldGrant resolves the profile and assigned permission-set grants
+// used for an administrator's optional custom field access.
+func (vm *VM) adminExplicitFieldGrant(user Value, profileID, objectName, fieldName, method string) bool {
+	if method == "isCreateable" {
+		method = "isAccessible"
+	}
+	parents := []string{vm.profileOwnedPermissionSetID(profileID), profileID}
+	if vm.assumeDeployedPermissionSets && vm.testContext == nil {
+		parents = append(parents, vm.deployedPermissionSetIDs()...)
+	}
+	for _, parent := range parents {
+		if allowed, ok := vm.explicitFieldPermission(parent, objectName, fieldName, method); ok && allowed {
+			return true
+		}
+	}
+	for _, source := range vm.assignedPermissionSources(stringField(user, "Id"), false) {
+		if vm.sourceFieldPermission(source, objectName, fieldName, method) {
+			return true
+		}
+	}
+	return false
+}
+
+// guestHiddenUserField lists the User fields a Guest-type profile cannot read,
+// create or update although a Standard User can (guest_user_contract).
+func guestHiddenUserField(fieldName string) bool {
+	switch strings.ToLower(fieldName) {
+	case "accountid", "callcenterid", "contactid", "individualid", "profileid", "userroleid",
+		"userpreferencesapexpagesdevelopermode", "userpreferencesnewlightningreportrunpageenabled",
+		"userpreferencesreceivenonotificationsasapprover", "userpreferencesreceivenotificationsasdelegatedapprover",
+		"userpreferencesreverseopenactivitiesview":
+		return true
+	}
+	return false
 }
 
 func isBaselineSystemFieldReadableWithoutObjectAccess(fieldName string) bool {
@@ -636,8 +663,8 @@ func (vm *VM) stripInaccessibleRecords(accessType string, records Value, enforce
 	}
 	return out, removedFields, modifiedIndexes, nil
 }
-func (vm *VM) enforceUserModeDMLAccess(op string, value Value, accessLevel Value) error {
-	return vm.enforceUserModeDMLAccessDeferring(op, value, accessLevel, false)
+func (vm *VM) enforceUserModeDMLAccess(op string, value Value, accessLevel Value, externalKey ...string) error {
+	return vm.enforceUserModeDMLAccessDeferring(op, value, accessLevel, false, externalKey...)
 }
 
 // userModeFieldDMLException builds the statement-level exception for denied
@@ -677,7 +704,7 @@ func userModeFieldDMLRowFailure(op, objectName string, record Value, fields []st
 
 // userModeDMLFieldFailures evaluates the captured field denial for each target
 // of a partial-DML call. Rows without a denial keep their position and run.
-func (vm *VM) userModeDMLFieldFailures(op string, targets []*Value) []dml.Result {
+func (vm *VM) userModeDMLFieldFailures(op string, targets []*Value, externalKey ...string) []dml.Result {
 	objectPermission, fieldPermission := userModeDMLPermissions(op)
 	if fieldPermission == "" {
 		return nil
@@ -689,7 +716,7 @@ func (vm *VM) userModeDMLFieldFailures(op string, targets []*Value) []dml.Result
 		}
 		// The statement check already ran CRUD and the SecurityException
 		// fields; only policy-denied fields are left here.
-		denied, _ := vm.userModeDMLRecordAccess(op, *target, objectPermission, fieldPermission, "")
+		denied, _ := vm.userModeDMLRecordAccess(op, *target, objectPermission, fieldPermission, "", externalKey...)
 		if len(denied) == 0 {
 			continue
 		}
@@ -704,7 +731,7 @@ func (vm *VM) userModeDMLFieldFailures(op string, targets []*Value) []dml.Result
 // enforceUserModeDMLAccessDeferring checks CRUD and FLS for user-mode DML.
 // With deferFieldRows, captured-shape field denials are left for the partial
 // DML engine, which fails only the denied rows.
-func (vm *VM) enforceUserModeDMLAccessDeferring(op string, value Value, accessLevel Value, deferFieldRows bool) error {
+func (vm *VM) enforceUserModeDMLAccessDeferring(op string, value Value, accessLevel Value, deferFieldRows bool, externalKey ...string) error {
 	objectPermission, fieldPermission := userModeDMLPermissions(op)
 	if objectPermission == "" {
 		return nil
@@ -713,7 +740,7 @@ func (vm *VM) enforceUserModeDMLAccessDeferring(op string, value Value, accessLe
 	records := dmlAccessRecords(value)
 	defer vm.beginPermissionCheckMemo()()
 	for index, record := range records {
-		fields, err := vm.userModeDMLRecordAccess(op, record, objectPermission, fieldPermission, scopedPermissionSetID)
+		fields, err := vm.userModeDMLRecordAccess(op, record, objectPermission, fieldPermission, scopedPermissionSetID, externalKey...)
 		if err != nil {
 			return err
 		}
@@ -732,7 +759,7 @@ func (vm *VM) enforceUserModeDMLAccessDeferring(op string, value Value, accessLe
 // other denials fail with a SecurityException. Upsert follows insert and
 // update with or without an Id (native shapemisc_capture upsertInsertPath_text
 // and api67_access_defaults dml_ups_secret rows).
-func (vm *VM) userModeDMLRecordAccess(op string, record Value, objectPermission, fieldPermission, scopedPermissionSetID string) ([]string, error) {
+func (vm *VM) userModeDMLRecordAccess(op string, record Value, objectPermission, fieldPermission, scopedPermissionSetID string, externalKey ...string) ([]string, error) {
 	if record.Kind != ValueObject {
 		return nil, nil
 	}
@@ -768,7 +795,11 @@ func (vm *VM) userModeDMLRecordAccess(op string, record Value, objectPermission,
 			// API 62.0, 67.0, 68.0): a denied standard field on a standard object
 			// raises the same statement DmlException, with the field name.
 			standardFieldDenial := !vm.ordinaryCustomPermissionObject(objectName) && !isCustomSchemaName(canonicalField)
-			if (op == "insert" || op == "update" || op == "upsert") && adminOptionalFieldPolicyAPI(vm.currentSourceExecutionPolicy().APIVersion) && (vm.ordinaryCustomPermissionObject(objectName) && isCustomSchemaName(canonicalField) || standardFieldDenial) {
+			// A standard-object external-key upsert with a granted key and a
+			// denied custom field returns DML field failures (standard user,
+			// standard_ext_upsert_standard_user rows at API 62 and 67).
+			standardExternalUpsert := op == "upsert" && len(externalKey) > 0 && vm.standardExternalUpsertKey(objectName, externalKey[0]) && isCustomSchemaName(canonicalField)
+			if (op == "insert" || op == "update" || op == "upsert") && adminOptionalFieldPolicyAPI(vm.currentSourceExecutionPolicy().APIVersion) && (vm.ordinaryCustomPermissionObject(objectName) && isCustomSchemaName(canonicalField) || standardFieldDenial || standardExternalUpsert) {
 				policyFields = append(policyFields, canonicalField)
 				continue
 			}
@@ -842,13 +873,45 @@ func (vm *VM) userModeUpsertKeyFieldDenial(op string, value Value, externalIDFie
 		objectName = resolved
 	}
 	canonical := vm.resolveSObjectFieldName(objectName, externalIDField)
-	if !vm.ordinaryCustomPermissionObject(objectName) || !isCustomSchemaName(canonical) {
+	if !isCustomSchemaName(canonical) {
+		return nil
+	}
+	// The standard_ext_upsert rows show that an ungranted custom key on a
+	// standard object is also inaccessible to the default administrator.
+	if storage.IsKnownStandardObject(objectName) && !vm.customFieldHasIntrinsicAccess(objectName, canonical) {
+		// Leave invalid selectors and other key shapes on their existing paths.
+		if !vm.standardExternalUpsertKey(objectName, canonical) {
+			return nil
+		}
+		user := vm.fieldPermissionPrincipal()
+		profileID := stringField(user, "ProfileId")
+		if vm.currentUserProfileName(user) == "System Administrator" {
+			if vm.adminExplicitFieldGrant(user, profileID, objectName, canonical, "isAccessible") {
+				return nil
+			}
+			if allowed, ok := vm.explicitFieldPermission(vm.canonicalPermissionSetKey(scopedPermissionSetID), objectName, canonical, "isAccessible"); scopedPermissionSetID != "" && ok && allowed {
+				return nil
+			}
+			return newExceptionError("SObjectException", "Field "+objectName+"."+canonical+" is inaccessible in this context")
+		}
+	} else if !vm.ordinaryCustomPermissionObject(objectName) {
 		return nil
 	}
 	if vm.currentUserFieldPermissionWithScope(objectName, canonical, "isAccessible", scopedPermissionSetID) {
 		return nil
 	}
 	return newExceptionError("SObjectException", "Field "+objectName+"."+canonical+" is inaccessible in this context")
+}
+
+// standardExternalUpsertKey recognizes the defined external-ID selector shape
+// captured for standard-object upserts; invalid and non-external selectors do
+// not acquire this policy.
+func (vm *VM) standardExternalUpsertKey(objectName, fieldName string) bool {
+	if fieldName == "" || !storage.IsKnownStandardObject(objectName) {
+		return false
+	}
+	_, field, ok := vm.sObjectFieldDefinition(objectName, fieldName)
+	return ok && field.ExternalID && isCustomSchemaName(field.APIName)
 }
 
 // userModeFieldPolicyPartialFailures returns, for default-mode
@@ -1848,7 +1911,27 @@ func (vm *VM) isBaselineWritableField(objectName, fieldName string) bool {
 	field := definition.Fields[fieldName]
 	return field.Required || isNameFieldDescribe(field)
 }
+
+// profileHasExternalCollaborationLicense keeps the former fallback: a license
+// named Chatter External. The seed once gave that name to the
+// PID_Customer_Community_Login license; it now carries the native name, so the
+// seeded pair of that name and key keeps the access its profile had. No other
+// license row is matched by key (profile_usertype links profiles to licenses
+// but does not capture this access rule).
+func (vm *VM) profileHasExternalCollaborationLicense(profileID string) bool {
+	return vm.profileHasLicense(profileID, "Chatter External") ||
+		(vm.profileHasLicense(profileID, "Customer Community Login") && vm.profileHasLicenseKey(profileID, "PID_Customer_Community_Login"))
+}
+
+func (vm *VM) profileHasLicenseKey(profileID, licenseKey string) bool {
+	return vm.profileLicenseFieldEquals(profileID, "LicenseDefinitionKey", licenseKey)
+}
+
 func (vm *VM) profileHasLicense(profileID, licenseName string) bool {
+	return vm.profileLicenseFieldEquals(profileID, "Name", licenseName)
+}
+
+func (vm *VM) profileLicenseFieldEquals(profileID, field, want string) bool {
 	if profileID == "" || vm.Org == nil {
 		return false
 	}
@@ -1872,7 +1955,7 @@ func (vm *VM) profileHasLicense(profileID, licenseName string) bool {
 	if !ok {
 		return false
 	}
-	return storageStringValueEquals(license.Fields["Name"], licenseName)
+	return storageStringValueEquals(license.Fields[field], want)
 }
 
 // deployedPermissionSetIDs lists the stored keys of every permission set that

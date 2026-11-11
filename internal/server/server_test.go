@@ -1214,7 +1214,7 @@ func TestSObjectCRUDValidationErrorsUseDMLStatusCodes(t *testing.T) {
 			path:       serverTestDataPath + "/sobjects/Account",
 			body:       `{"Name":"Acme","Nope__c":"bad"}`,
 			wantStatus: http.StatusBadRequest,
-			wantCode:   "INVALID_FIELD_FOR_INSERT_UPDATE",
+			wantCode:   "INVALID_FIELD",
 			wantField:  "Nope__c",
 		},
 		{
@@ -1224,7 +1224,7 @@ func TestSObjectCRUDValidationErrorsUseDMLStatusCodes(t *testing.T) {
 			body:       `{"Nope__c":"bad"}`,
 			before:     func(org *storage.OrgState) { addAccountForTest(org, "001000000000001", "Acme") },
 			wantStatus: http.StatusBadRequest,
-			wantCode:   "INVALID_FIELD_FOR_INSERT_UPDATE",
+			wantCode:   "INVALID_FIELD",
 			wantField:  "Nope__c",
 		},
 		{
@@ -2323,7 +2323,8 @@ func TestCompositeTreeAllOrNoneRollsBackWithErrorArrays(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
 		t.Fatal(err)
 	}
-	if !body.HasErrors || len(body.Results) != 2 || body.Results[0].Success || body.Results[1].Success || len(body.Results[0].Errors) == 0 || len(body.Results[1].Errors) == 0 {
+	// Native nested tree observations at APIs 62.0 and 67.0 report only the failing child.
+	if !body.HasErrors || len(body.Results) != 1 || body.Results[0].ReferenceID != "ContactRef" || body.Results[0].Success || len(body.Results[0].Errors) == 0 {
 		t.Fatalf("rollback body = %#v raw=%s", body, rec.Body.String())
 	}
 	if got := len(org.Objects["Account"].Records); got != 0 {
@@ -4434,14 +4435,14 @@ func TestGLADEResetScopesPreserveAndClearExpectedState(t *testing.T) {
 		wantProfiles int
 		wantNoOps    string
 	}{
-		// 39 profiles: the 14 setup profiles plus the 25 profile-owned sets
+		// 38 profiles (profile_usertype): the 13 setup profiles plus the 25 profile-owned sets
 		// of the permission_set_inventory capture (API 62.0 and 67.0) that
 		// name no setup profile.
-		{name: "data", scope: "data", wantAccounts: 0, wantUsers: 2, wantProfiles: 39},
-		{name: "users", scope: "users", wantAccounts: 1, wantUsers: 1, wantProfiles: 39},
-		{name: "platform", scope: "platform", wantAccounts: 1, wantUsers: 1, wantProfiles: 39},
-		{name: "all", scope: "all", wantAccounts: 0, wantUsers: 1, wantProfiles: 39},
-		{name: "limits async", scope: "limits,async", wantAccounts: 1, wantUsers: 2, wantProfiles: 39, wantNoOps: "limits,async"},
+		{name: "data", scope: "data", wantAccounts: 0, wantUsers: 2, wantProfiles: 38},
+		{name: "users", scope: "users", wantAccounts: 1, wantUsers: 1, wantProfiles: 38},
+		{name: "platform", scope: "platform", wantAccounts: 1, wantUsers: 1, wantProfiles: 38},
+		{name: "all", scope: "all", wantAccounts: 0, wantUsers: 1, wantProfiles: 38},
+		{name: "limits async", scope: "limits,async", wantAccounts: 1, wantUsers: 2, wantProfiles: 38, wantNoOps: "limits,async"},
 	}
 	for _, api := range storage.SupportedRESTAPIVersions {
 		t.Run(api, func(t *testing.T) {
@@ -5097,7 +5098,7 @@ func TestCompositeSObjectsAllOrNoneRollsBackSuccessfulRows(t *testing.T) {
     {"attributes":{"type":"Account","referenceId":"bad"}}
   ]
 }`)))
-	if composite.Code != http.StatusBadRequest {
+	if composite.Code != http.StatusOK {
 		t.Fatalf("composite status = %d body=%s", composite.Code, composite.Body.String())
 	}
 	if got := len(org.Objects["Account"].Records); got != 0 {
@@ -5173,7 +5174,7 @@ func TestCompositeSObjectsUpdateAllOrNoneRollsBack(t *testing.T) {
     {"attributes":{"type":"Missing__c","referenceId":"bad"},"Id":"001000000000999","Name":"Bad"}
   ]
 }`)))
-	if composite.Code != http.StatusBadRequest {
+	if composite.Code != http.StatusOK {
 		t.Fatalf("composite status = %d body=%s", composite.Code, composite.Body.String())
 	}
 	if got := org.Objects["Account"].Records["001000000000001"].Fields["Name"].String; got != "Before" {
@@ -5242,13 +5243,14 @@ func TestCompositeSObjectsDeleteAllOrNoneRollsBackMissingRecord(t *testing.T) {
 
 	composite := httptest.NewRecorder()
 	handler.ServeHTTP(composite, httptest.NewRequest(http.MethodDelete, serverTestDataPath+"/composite/sobjects?ids=001000000000001,001000000000999&allOrNone=true", nil))
-	if composite.Code != http.StatusBadRequest {
+	// Native mixed collection delete at APIs 62.0 and 67.0 returns 200.
+	if composite.Code != http.StatusOK {
 		t.Fatalf("composite status = %d body=%s", composite.Code, composite.Body.String())
 	}
 	if org.Objects["Account"].Records["001000000000001"].System.IsDeleted || org.Objects["Account"].Records["001000000000002"].System.IsDeleted {
 		t.Fatalf("allOrNone rollback soft deleted records: %#v", org.Objects["Account"].Records)
 	}
-	if !bytes.Contains(composite.Body.Bytes(), []byte(`"id":"001000000000999"`)) || !bytes.Contains(composite.Body.Bytes(), []byte(`ENTITY_IS_DELETED`)) {
+	if !bytes.Contains(composite.Body.Bytes(), []byte(`"id":"001000000000999"`)) || !bytes.Contains(composite.Body.Bytes(), []byte(`INVALID_CROSS_REFERENCE_KEY`)) {
 		t.Fatalf("missing delete result shape = %s", composite.Body.String())
 	}
 	if !bytes.Contains(composite.Body.Bytes(), []byte(`ALL_OR_NONE_OPERATION_ROLLED_BACK`)) {
@@ -5488,7 +5490,8 @@ func TestCompositeSObjectTypedUpsertAllOrNoneRollsBack(t *testing.T) {
     {"attributes":{"referenceId":"bad"},"External_Id__c":"bad-1"}
   ]
 }`)))
-	if rec.Code != http.StatusBadRequest {
+	// Native mixed collection upsert at APIs 62.0 and 67.0 returns 200.
+	if rec.Code != http.StatusOK {
 		t.Fatalf("upsert status = %d body=%s", rec.Code, rec.Body.String())
 	}
 	if got := len(org.Objects["Account"].Records); got != 0 {
@@ -5544,7 +5547,7 @@ func TestCompositeSObjectTypedUpsertPartialFailureCommitsSuccessfulRows(t *testi
 	if err := json.Unmarshal(rec.Body.Bytes(), &rows); err != nil {
 		t.Fatal(err)
 	}
-	if len(rows) != 2 || rows[0]["success"] != true || rows[1]["success"] != false || rows[0]["created"] != true || rows[1]["created"] != false {
+	if len(rows) != 2 || rows[0]["success"] != true || rows[1]["success"] != false || rows[0]["created"] != true || rows[1]["created"] != true {
 		t.Fatalf("partial upsert rows = %#v", rows)
 	}
 }

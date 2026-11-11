@@ -9539,7 +9539,7 @@ func TestExecNamespacedFieldSetMapMatchesLocalMetadataObjectName(t *testing.T) {
 	program, err := CompileAnonymous(`
 Schema.DescribeSObjectResult describe = Thing__c.SObjectType.getDescribe();
 System.assertNotEquals(null, describe.fieldSets.getMap().get('pkg__Details'));
-System.assertNotEquals(null, describe.fieldSets.getMap().get('Details'));
+System.assertEquals(null, describe.fieldSets.getMap().get('Details'));
 System.assertEquals(1, SObjectType.Thing__c.FieldSets.pkg__Details.getFields().size());
 `)
 	if err != nil {
@@ -13915,10 +13915,8 @@ System.runAs(new User(Id = '005000000000072', ProfileId = login.Id, Username = '
 	}
 }
 
-// profile_usertype/org.tsv:8 and :84 (API 62.0; :118 and :194 at 67.0) capture the
-// Chatter External User license key as CSN_External_User; PID_Customer_Community_Login
-// belongs to Customer Community Login User (:15). Main's expectation predates the rows.
-func TestExecCreatedByProfileUserLicenseUsesCommunityLicenseKey(t *testing.T) {
+// profile_usertype P1: Chatter External User links to Chatter External/CSN_External_User.
+func TestExecCreatedByProfileUserLicenseUsesChatterExternalLicenseKey(t *testing.T) {
 	program, err := CompileAnonymous(`
 Profile p = [SELECT Id FROM Profile WHERE Name = 'Chatter External User' LIMIT 1];
 System.runAs(new User(Id = '005000000000071', ProfileId = p.Id, Username = 'community@example.test')) {

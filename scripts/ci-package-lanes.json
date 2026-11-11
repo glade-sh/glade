@@ -94,10 +94,11 @@
     "./internal/gladecli": 93,
     "./internal/gladehome": 8,
     "./internal/playground": 4,
-    "./internal/pluginhost": 4,
+    "./internal/pluginhost": 5,
     "./internal/sema": 656,
-    "./internal/server": 11,
+    "./internal/server": 12,
+    "./internal/soql": 4,
     "./internal/testutil/toolchaininstall": 5,
-    "./internal/vm": 54
+    "./internal/vm": 55
   }
 }

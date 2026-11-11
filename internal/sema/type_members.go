@@ -66,13 +66,14 @@ type semaTypeMemberModel struct {
 	// nested SFDX project and source tree. Aggregate corpus roots can contain
 	// many independent projects, and a project can retain both force-app and
 	// mdapi representations with the same Apex names.
-	sourceMembersByUnit       map[string]map[string]typeMembers
-	sourceUnitsWithDuplicates map[string]bool
-	sourceUnitByFile          map[string]string
-	completeSourceNestedTypes map[string]bool
-	sourceScopeByAlias        map[string]semaSourceScope
-	sourceProjectByUnit       map[string]string
-	defaultSourceScope        semaSourceScope
+	sourceMembersByUnit           map[string]map[string]typeMembers
+	sourceUnitsWithDuplicates     map[string]bool
+	sourceUnitByFile              map[string]string
+	completeSourceNestedTypes     map[string]bool
+	completeDependencyNestedTypes map[string]bool
+	sourceScopeByAlias            map[string]semaSourceScope
+	sourceProjectByUnit           map[string]string
+	defaultSourceScope            semaSourceScope
 }
 
 type semaLazyPlatformTypeMemberModel struct {
@@ -1271,15 +1272,16 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 			case apexast.DeclarationEnum:
 				nestedName := typ.Name + "." + member.Name
 				enumMembers := typeMembers{
-					name:        semaQualifiedDependencyTypeName(typ.Namespace, nestedName, typ.Dependency, typ.Artifact, typ.SourceRoot),
-					shortKey:    semaShortTypeKey(nestedName),
-					namespace:   typ.Namespace,
-					dependency:  typ.Dependency,
-					kind:        apexast.DeclarationEnum,
-					modifiers:   append([]string(nil), member.Modifiers...),
-					testVisible: hasAnnotation(member.Annotations, "TestVisible"),
-					methods:     make(map[string][]typesys.MemberSymbol),
-					fields:      make(map[string]typesys.MemberSymbol),
+					name:                     semaQualifiedDependencyTypeName(typ.Namespace, nestedName, typ.Dependency, typ.Artifact, typ.SourceRoot),
+					shortKey:                 semaShortTypeKey(nestedName),
+					namespace:                typ.Namespace,
+					dependency:               typ.Dependency,
+					receiverDependencySource: typ.HasSourceSnapshot() && typ.SourceRoot != "" && !typ.Artifact,
+					kind:                     apexast.DeclarationEnum,
+					modifiers:                append([]string(nil), member.Modifiers...),
+					testVisible:              hasAnnotation(member.Annotations, "TestVisible"),
+					methods:                  make(map[string][]typesys.MemberSymbol),
+					fields:                   make(map[string]typesys.MemberSymbol),
 				}
 				enumType := typesys.TypeSymbol{
 					Kind:  apexast.DeclarationEnum,
@@ -1300,12 +1302,14 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 						Modifiers: []string{"public", "static"},
 					}
 				}
-				if !semaRequiresQualifiedDependencyName(typ) {
+				if !semaRequiresQualifiedDependencyName(typ) || semaSameNamespaceSourceDependency(index, typ) {
 					key := normalizeName(nestedName)
 					if semaShouldStoreTypeMembers(out[key], typ) {
 						out[key] = enumMembers
 					}
-					shortAliases[normalizeName(member.Name)] = append(shortAliases[normalizeName(member.Name)], nestedName)
+					if !semaSameNamespaceSourceDependency(index, typ) {
+						shortAliases[normalizeName(member.Name)] = append(shortAliases[normalizeName(member.Name)], nestedName)
+					}
 				}
 				if typ.Namespace != "" {
 					out[normalizeName(typ.Namespace+"."+nestedName)] = enumMembers
@@ -1332,7 +1336,7 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 				sourceMembersByUnit[unit][normalizeName(typ.Namespace+"."+members.name)] = members
 			}
 		}
-		if !semaRequiresQualifiedDependencyName(typ) {
+		if !semaRequiresQualifiedDependencyName(typ) || semaSameNamespaceSourceDependency(index, typ) {
 			key := normalizeName(typ.Name)
 			if semaShouldStoreTypeMembers(out[key], typ) {
 				out[key] = members
@@ -1520,20 +1524,21 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 	for _, name := range index.CustomLabelNames {
 		customLabelNames[normalizeName(name)] = true
 	}
-	complete, scopes, projects, defaultScope := semaCompleteSourceNestedInventories(index, sourceUnitByFile)
+	complete, completeDeps, scopes, projects, defaultScope := semaCompleteSourceNestedInventories(index, sourceUnitByFile)
 	model := &semaTypeMemberModel{
-		orgShapeFeatures:          append([]string(nil), index.OrgShapeFeatures...),
-		customLabelNames:          customLabelNames,
-		customLabelsKnown:         index.CustomLabelsKnown,
-		members:                   out,
-		sourceTypesByFile:         sourceTypesByFile,
-		sourceMembersByUnit:       sourceMembersByUnit,
-		sourceUnitsWithDuplicates: sourceUnitsWithDuplicates,
-		sourceUnitByFile:          sourceUnitByFile,
-		completeSourceNestedTypes: complete,
-		sourceScopeByAlias:        scopes,
-		sourceProjectByUnit:       projects,
-		defaultSourceScope:        defaultScope,
+		orgShapeFeatures:              append([]string(nil), index.OrgShapeFeatures...),
+		customLabelNames:              customLabelNames,
+		customLabelsKnown:             index.CustomLabelsKnown,
+		members:                       out,
+		sourceTypesByFile:             sourceTypesByFile,
+		sourceMembersByUnit:           sourceMembersByUnit,
+		sourceUnitsWithDuplicates:     sourceUnitsWithDuplicates,
+		sourceUnitByFile:              sourceUnitByFile,
+		completeSourceNestedTypes:     complete,
+		completeDependencyNestedTypes: completeDeps,
+		sourceScopeByAlias:            scopes,
+		sourceProjectByUnit:           projects,
+		defaultSourceScope:            defaultScope,
 	}
 	for _, feature := range index.OrgShapeFeatures {
 		if strings.EqualFold(feature, "Knowledge") {
@@ -1563,7 +1568,7 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 // Only actual, unambiguous source declarations without an inherited inventory
 // close their nested names. Count lookup aliases as well as namespace-qualified
 // identities: independent packaging namespaces can share an unqualified name.
-func semaCompleteSourceNestedInventories(index typesys.Index, units map[string]string) (map[string]bool, map[string]semaSourceScope, map[string]string, semaSourceScope) {
+func semaCompleteSourceNestedInventories(index typesys.Index, units map[string]string) (map[string]bool, map[string]bool, map[string]semaSourceScope, map[string]string, semaSourceScope) {
 	nearestProject := func(dir, sourceRoot string) string {
 		project := ""
 		semaSourceUnitMarkerWalk(dir, sourceRoot, func(marker string) bool {
@@ -1599,7 +1604,7 @@ func semaCompleteSourceNestedInventories(index typesys.Index, units map[string]s
 		}
 		name := semaTypeMembersName(typ)
 		add(name)
-		if !semaRequiresQualifiedDependencyName(typ) {
+		if !semaRequiresQualifiedDependencyName(typ) || semaSameNamespaceSourceDependency(index, typ) {
 			add(typ.Name)
 		}
 		if typ.Namespace != "" {
@@ -1613,7 +1618,19 @@ func semaCompleteSourceNestedInventories(index typesys.Index, units map[string]s
 		counts[normalizeName(trigger.Name)]++
 	}
 	complete := make(map[string]bool)
+	completeDeps := make(map[string]bool)
 	for i, typ := range index.Types {
+		if typ.Dependency && !index.Subset && !typ.Artifact && (typ.Namespace == "" || semaSameNamespaceSourceDependency(index, typ)) && typ.SourceRoot != "" && typ.File != "" && typ.HasSourceSnapshot() && typ.SuperClass == "" && len(typ.Interfaces) == 0 {
+			unambiguous := true
+			for _, key := range aliases[i] {
+				unambiguous = unambiguous && counts[key] == 1
+			}
+			if unambiguous {
+				for _, key := range aliases[i] {
+					completeDeps[key] = true
+				}
+			}
+		}
 		if typ.Dependency || typ.Artifact || typ.File == "" || !typ.HasSourceSnapshot() {
 			continue
 		}
@@ -1658,7 +1675,7 @@ func semaCompleteSourceNestedInventories(index typesys.Index, units map[string]s
 		}
 		scopes[key] = semaSourceScope{project: project, namespace: namespace}
 	}
-	return complete, scopes, projects, defaultScope
+	return complete, completeDeps, scopes, projects, defaultScope
 }
 
 func buildSemaTypeMemberView(index typesys.Index) *semaTypeMemberView {
@@ -1667,6 +1684,13 @@ func buildSemaTypeMemberView(index typesys.Index) *semaTypeMemberView {
 
 func semaRequiresQualifiedDependencyName(typ typesys.TypeSymbol) bool {
 	return semaRequiresQualifiedDependencyNameValues(typ.Namespace, typ.Dependency, typ.Artifact, typ.SourceRoot)
+}
+
+// Source in the project's own namespace participates in unqualified lookup.
+// A foreign namespace, an artifact, or an unavailable source proves no such alias.
+func semaSameNamespaceSourceDependency(index typesys.Index, typ typesys.TypeSymbol) bool {
+	return typ.Dependency && !typ.Artifact && typ.SourceRoot != "" && typ.HasSourceSnapshot() &&
+		index.Project.Namespace != "" && strings.EqualFold(index.Project.Namespace, typ.Namespace)
 }
 
 func semaGeneratedFlowInterviewType(typ typesys.TypeSymbol) bool {
@@ -1774,14 +1798,14 @@ func semaTypeMemberCandidateKeys(index typesys.Index) []string {
 				continue
 			}
 			nestedName := typ.Name + "." + member.Name
-			if !semaRequiresQualifiedDependencyName(typ) {
+			if !semaRequiresQualifiedDependencyName(typ) || semaSameNamespaceSourceDependency(index, typ) {
 				keys = append(keys, normalizeName(nestedName))
 			}
 			if typ.Namespace != "" {
 				keys = append(keys, normalizeName(typ.Namespace+"."+nestedName))
 			}
 		}
-		if !semaRequiresQualifiedDependencyName(typ) {
+		if !semaRequiresQualifiedDependencyName(typ) || semaSameNamespaceSourceDependency(index, typ) {
 			keys = append(keys, normalizeName(typ.Name))
 		}
 		if typ.Namespace != "" {
@@ -2128,36 +2152,32 @@ func ensureSemaStandardChildRelationshipMembers() {
 	semaStandardChildRelationshipCache.once.Do(func() {
 		byParent := make(map[string][]semaStandardChildRelationshipMember)
 		seen := make(map[string]bool)
-		for _, childObject := range storage.KnownStandardObjectNames() {
-			childName := childObject
-			if canonical, ok := storage.ResolveKnownStandardObjectName(childObject); ok {
-				childName = canonical
+		// The generated table is the catalog walk over every known standard
+		// object (storage.TestStandardChildRelationshipsMatchCatalog pins it);
+		// reading it keeps the first child-relationship lookup from decoding
+		// every catalog member.
+		for _, relationship := range storage.StandardChildRelationships() {
+			childName := relationship.Child
+			for _, parent := range relationship.Parents {
+				parentName := parent
+				if canonical, ok := storage.ResolveKnownStandardObjectName(parent); ok {
+					parentName = canonical
+				}
+				parentKey := normalizeName(parentName)
+				if parentKey == "" {
+					continue
+				}
+				member := semaStandardChildRelationshipMember{
+					name: relationship.Name,
+					typ:  "List<" + childName + ">",
+				}
+				dedupeKey := parentKey + "\x00" + normalizeName(member.name) + "\x00" + normalizeName(member.typ)
+				if seen[dedupeKey] {
+					continue
+				}
+				seen[dedupeKey] = true
+				byParent[parentKey] = append(byParent[parentKey], member)
 			}
-			storage.VisitStandardObjectRelationships(childName, nil, func(relationship storage.Relationship) {
-				if relationship.ChildRelationship == "" {
-					return
-				}
-				for _, parent := range relationship.ParentObjects {
-					parentName := parent
-					if canonical, ok := storage.ResolveKnownStandardObjectName(parent); ok {
-						parentName = canonical
-					}
-					parentKey := normalizeName(parentName)
-					if parentKey == "" {
-						continue
-					}
-					member := semaStandardChildRelationshipMember{
-						name: relationship.ChildRelationship,
-						typ:  "List<" + childName + ">",
-					}
-					dedupeKey := parentKey + "\x00" + normalizeName(member.name) + "\x00" + normalizeName(member.typ)
-					if seen[dedupeKey] {
-						continue
-					}
-					seen[dedupeKey] = true
-					byParent[parentKey] = append(byParent[parentKey], member)
-				}
-			})
 		}
 		semaStandardChildRelationshipCache.byParent = byParent
 	})

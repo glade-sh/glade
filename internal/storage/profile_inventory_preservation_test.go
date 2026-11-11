@@ -41,7 +41,9 @@ func TestProfileInventoryPreservesEditedBootstrapFields(t *testing.T) {
 		field string
 		value Value
 	}{
-		{"renamed unreferenced", ID("00e000000000007"), "Name", StringValue("Project Guest")},
+		// 00e000000000007 (Customer Community Guest User) is no longer seeded;
+		// profile_usertype shows a fresh org has no such profile.
+		{"renamed unreferenced", ID("00e000000000006"), "Name", StringValue("Project Marketing")},
 		{"changed license", ID("00e000000000004"), "UserLicenseId", IDValue(ID("100000000000002"))},
 		{"changed user type", ID("00e000000000004"), "UserType", StringValue("ProjectType")},
 	} {

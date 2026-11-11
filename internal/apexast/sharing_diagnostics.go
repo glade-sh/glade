@@ -2,6 +2,7 @@ package apexast
 
 import (
 	"regexp"
+	"strings"
 
 	"github.com/glade-sh/glade/internal/diagnostic"
 )
@@ -15,6 +16,9 @@ var sharingDeclarationPattern = regexp.MustCompile(`'(?:\\.|[^'\\])*(?:'|$)|//[^
 // anonymous body compiler, which otherwise lowers declarations differently.
 func SharingDeclarationDiagnostics(path, source string) []diagnostic.Diagnostic {
 	var out []diagnostic.Diagnostic
+	if !sharingDeclarationCandidate(source) {
+		return out
+	}
 	lines := NewLineMap(source)
 	for _, match := range sharingDeclarationPattern.FindAllStringSubmatchIndex(source, -1) {
 		message := ""
@@ -55,4 +59,84 @@ func withSharingDeclarationDiagnostics(file File, source string) File {
 		}
 	}
 	return file
+}
+
+// sharingDeclarationCandidate reports whether sharingDeclarationPattern's
+// capturing alternatives can match anywhere in source. Each needs the word
+// sharing preceded by whitespace and with, without or inherited; the two
+// doubled-sharing forms need that twice, and the class-first form needs
+// "class", an identifier and whitespace before the modifier. The scan is
+// case-sensitive like the pattern, so an ordinary "with sharing class"
+// header is rejected without running the pattern over the source.
+func sharingDeclarationCandidate(source string) bool {
+	qualifying := 0
+	for from := 0; ; {
+		at := strings.Index(source[from:], "sharing")
+		if at < 0 {
+			break
+		}
+		at += from
+		from = at + len("sharing")
+		i := at
+		for i > 0 && sharingDeclarationSpace(source[i-1]) {
+			i--
+		}
+		if i == at {
+			continue
+		}
+		modifier := source[:i]
+		switch {
+		case strings.HasSuffix(modifier, "with"), strings.HasSuffix(modifier, "without"), strings.HasSuffix(modifier, "inherited"):
+		default:
+			continue
+		}
+		qualifying++
+		if qualifying > 1 {
+			return true
+		}
+		if sharingDeclarationClassBefore(modifier) {
+			return true
+		}
+	}
+	return false
+}
+
+// sharingDeclarationClassBefore reports whether text ends with a sharing
+// modifier that "class", whitespace, an identifier and whitespace precede.
+func sharingDeclarationClassBefore(text string) bool {
+	i := len(text)
+	for i > 0 && sharingDeclarationIdentifierByte(text[i-1]) {
+		i--
+	}
+	wordStart := i
+	for i > 0 && sharingDeclarationSpace(text[i-1]) {
+		i--
+	}
+	if i == wordStart {
+		return false
+	}
+	identifierEnd := i
+	for i > 0 && sharingDeclarationIdentifierByte(text[i-1]) {
+		i--
+	}
+	if i == identifierEnd {
+		return false
+	}
+	spaceEnd := i
+	for i > 0 && sharingDeclarationSpace(text[i-1]) {
+		i--
+	}
+	if i == spaceEnd {
+		return false
+	}
+	return strings.HasSuffix(text[:i], "class")
+}
+
+// sharingDeclarationSpace matches the pattern's \s class: RE2 Perl whitespace.
+func sharingDeclarationSpace(value byte) bool {
+	return value == ' ' || value == '\t' || value == '\n' || value == '\f' || value == '\r'
+}
+
+func sharingDeclarationIdentifierByte(value byte) bool {
+	return value == '_' || value >= 'a' && value <= 'z' || value >= 'A' && value <= 'Z' || value >= '0' && value <= '9'
 }

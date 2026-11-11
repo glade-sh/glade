@@ -265,12 +265,12 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 	EnsureDeterministicPlatformData(&org)
 	for _, objectName := range []string{"Organization", "UserRole", "User", "UserLogin", "Profile", "UserLicense", "Network", "PermissionSet", "PermissionSetAssignment", "ObjectPermissions", "RecordType"} {
 		want := 1
-		// permission_set_inventory (API 62.0/67.0): 88 sets, 39 profiles
-		// (14 setup profiles plus 25 inventory-only ones), 31 user licenses.
+		// permission_set_inventory (API 62.0/67.0): 88 sets; profile_usertype: 38 profiles
+		// (13 setup profiles plus 25 inventory-only ones), 31 user licenses.
 		// profile_account_contact_rows: 56 Account/Contact rows, two of which
 		// merge into the fixed-ID seed rows; the seed adds 4 more rows.
 		if objectName == "Profile" {
-			want = 39
+			want = 38
 		}
 		if objectName == "UserLicense" {
 			want = 31
@@ -324,11 +324,12 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 			t.Fatalf("describe-only Master was seeded as a record for %s", objectName)
 		}
 	}
-	if len(org.Objects["User"].Records) != 2 || len(org.Objects["UserLogin"].Records) != 2 || len(org.Objects["Profile"].Records) != 39 || len(org.Objects["UserLicense"].Records) != 31 {
+	if len(org.Objects["User"].Records) != 2 || len(org.Objects["UserLogin"].Records) != 2 || len(org.Objects["Profile"].Records) != 38 || len(org.Objects["UserLicense"].Records) != 31 {
 		t.Fatalf("platform records = %#v", InspectOrg("", org))
 	}
-	if _, ok := findRecordByStringField(org.Objects["Profile"].Records, "Name", "Customer Community Guest User"); !ok {
-		t.Fatalf("missing guest profile: %#v", org.Objects["Profile"].Records)
+	// profile_usertype: the fresh org has no Customer Community Guest User.
+	if profile, ok := findRecordByStringField(org.Objects["Profile"].Records, "Name", "Customer Community Guest User"); ok {
+		t.Fatalf("unexpected guest profile: %#v", profile)
 	}
 	if profile, ok := findRecordByStringField(org.Objects["Profile"].Records, "Name", "Customer Community Login User"); !ok || profile.Fields["UserType"].String != "CspLitePortal" {
 		t.Fatalf("community login profile = %#v, %v", profile, ok)
@@ -368,9 +369,7 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 	if license, ok := org.Objects["UserLicense"].Records["100000000000001"]; !ok || license.Fields["LicenseDefinitionKey"].String != "SFDC" {
 		t.Fatalf("salesforce license = %#v, %v", license, ok)
 	}
-	// profile_usertype/org.tsv:84 (API 62.0; :194 at 67.0): Chatter External
-	// is CSN_External_User; main's expectation predates the rows.
-	if license, ok := org.Objects["UserLicense"].Records["100000000000002"]; !ok || license.Fields["LicenseDefinitionKey"].String != "CSN_External_User" {
+	if license, ok := org.Objects["UserLicense"].Records["100000000000002"]; !ok || license.Fields["LicenseDefinitionKey"].String != "PID_Customer_Community_Login" || license.Fields["Name"].String != "Customer Community Login" {
 		t.Fatalf("community license = %#v, %v", license, ok)
 	}
 	if _, ok := org.Objects["Network"]; ok {

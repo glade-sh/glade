@@ -1428,6 +1428,12 @@ func (e selectFieldExpression) outputName() string {
 	return e.Raw
 }
 func parseSelectFieldExpression(field string) (selectFieldExpression, bool) {
+	// A function expression carries its argument list in parentheses. A plain
+	// field path cannot parse as one, so answer it before splitting the text:
+	// the executor asks this per candidate record.
+	if !strings.Contains(field, "(") {
+		return selectFieldExpression{}, false
+	}
 	parts := strings.Fields(field)
 	if len(parts) == 0 || len(parts) > 2 {
 		return selectFieldExpression{}, false

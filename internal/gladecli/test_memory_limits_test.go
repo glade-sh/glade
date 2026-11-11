@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/glade-sh/glade/internal/testdaemon"
+	"github.com/glade-sh/glade/internal/testutil"
 )
 
 func TestApplyTestMemoryLimitsRoutes(t *testing.T) {
@@ -99,7 +100,7 @@ func TestRunTestMemoryLimitsProjectRoutes(t *testing.T) {
 								cancel()
 								select {
 								case <-done:
-								case <-time.After(5 * time.Second):
+								case <-time.After(testutil.Deadline(5 * time.Second)):
 									t.Error("test server did not stop")
 								}
 							})

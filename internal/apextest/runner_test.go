@@ -1807,8 +1807,8 @@ func TestRuntimeKeyIncludesSemanticMetadata(t *testing.T) {
 }
 
 func TestRunWithSourceDigestsPersistsExactV7RuntimeKey(t *testing.T) {
-	if testRuntimeCacheABI != "apextest-runtime-v32" {
-		t.Fatalf("test runtime ABI = %q, want apextest-runtime-v32", testRuntimeCacheABI)
+	if testRuntimeCacheABI != "apextest-runtime-v34" {
+		t.Fatalf("test runtime ABI = %q, want apextest-runtime-v34", testRuntimeCacheABI)
 	}
 	wasDisabled := disableDiskCache.Load()
 	disableDiskCache.Store(false)
@@ -11867,7 +11867,7 @@ func TestOrgFromIndexIncludesProjectProfiles(t *testing.T) {
 	org := orgFromIndex(loadTestIndex(t, root))
 	profiles := org.Objects["Profile"].Records
 	foundProfile := false
-	foundGuestProfile := false
+	foundSeededProfile := false
 	foundCustomerCommunityProfile := false
 	foundCommunityLoginProfile := false
 	communityLicenseID, ok := recordFieldID(org.Objects["UserLicense"], "LicenseDefinitionKey", "PID_Customer_Community_Login")
@@ -11879,8 +11879,8 @@ func TestOrgFromIndexIncludesProjectProfiles(t *testing.T) {
 		if record.Fields["Name"].String == "Managed App Standard" {
 			foundProfile = true
 		}
-		if record.Fields["Name"].String == "Customer Community Guest User" {
-			foundGuestProfile = true
+		if record.Fields["Name"].String == "Chatter External User" {
+			foundSeededProfile = true
 		}
 		if record.Fields["Name"].String == "Customer Community User" {
 			foundCustomerCommunityProfile = true
@@ -11896,8 +11896,8 @@ func TestOrgFromIndexIncludesProjectProfiles(t *testing.T) {
 	if !foundProfile {
 		t.Fatalf("project profile row was not created; records=%#v", profiles)
 	}
-	if !foundGuestProfile {
-		t.Fatalf("guest profile row was overwritten; records=%#v", profiles)
+	if !foundSeededProfile {
+		t.Fatalf("seeded profile row was overwritten; records=%#v", profiles)
 	}
 	if !foundCustomerCommunityProfile {
 		t.Fatalf("customer community profile row was not created; records=%#v", profiles)

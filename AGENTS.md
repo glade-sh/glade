@@ -23,7 +23,7 @@ Use short sentences. Let the facts carry the weight.
 - Parallelize independent investigation and review when agents are available.
   Give each writer explicit file ownership; use isolated worktrees when edits
   would overlap. Coordinate expensive test runs instead of stacking broad Go
-  suites on the same host. Keep shared evidence and campaign state single-writer.
+  suites on the same host. Keep shared evidence single-writer.
 - Match process to the change. Use a short plan for substantial work; ordinary
   edits do not need a separate design document or an approval checkpoint.
 - Every change reaches `main` as a pull request. The hosted `Required CI`

@@ -161,9 +161,22 @@ func (s *Server) resolveLWCShellRequest(r *http.Request, parts []string) (lwcshe
 		ctx.ObjectAPIName = parts[1]
 		ctx.RecordID = parts[2]
 		ctx.PageName = r.URL.Query().Get("page")
+		redirect := ""
+		// A record-page destination follows the ID's object even when the
+		// supplied object name differs or the record is no longer present.
+		// Keep unknown and ambiguous IDs on the existing resolution path.
+		if s.Org != nil && storage.ValidateID(storage.ID(ctx.RecordID)) == nil {
+			if objectName := s.objectNameForRecordID(storage.ID(ctx.RecordID)); objectName != "" && !strings.EqualFold(ctx.ObjectAPIName, objectName) {
+				ctx.ObjectAPIName = objectName
+				redirect = "/lwc/preview/record/" + url.PathEscape(objectName) + "/" + url.PathEscape(ctx.RecordID)
+				if r.URL.RawQuery != "" {
+					redirect += "?" + r.URL.RawQuery
+				}
+			}
+		}
 		shell, diagnostics, err := lwcshell.ResolvePageTarget(s.Source.Project, ctx)
 		shell, diagnostics, err = s.validateLWCShellPage(shell, diagnostics, err)
-		return shell, "", diagnostics, err
+		return shell, redirect, diagnostics, err
 	case "action":
 		switch {
 		case len(parts) == 3 && strings.EqualFold(parts[1], "global"):

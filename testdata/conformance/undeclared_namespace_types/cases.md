@@ -23,3 +23,5 @@ unit stays a compile exclusion and independent tests still run.
 No Salesforce capture backs these rows. Native rejection of an absent
 namespace in an org without the package is recorded separately in
 `internal/sema/testdata/qualified_receiver_shapes/org.tsv`.
+
+Ruling 49 (v0.3.5 namespace family) reverses the deferral above: an undeclared namespace is Invalid type in every position, as an org without the package rejects it (internal/apextest/testdata/conformance/namespace_external_positions/org.tsv). TestUndeclaredNamespaceTypesProjectRoutes asserts the rejection, and that declaring the namespaces as source-less dependencies reopens them (the missing source is then dependency_missing).

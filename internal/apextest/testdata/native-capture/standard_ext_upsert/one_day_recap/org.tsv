@@ -1,0 +1,457 @@
+fixture	source_api	set	case	observation	comparison
+standard_contact_ext_upsert	62.0	-	dbDefault_ctl	ok created=false id=base	match
+standard_contact_ext_upsert	62.0	-	dbDefault_ctl.state	n=1 name=changed text=null | newExt n=0	match
+standard_contact_ext_upsert	62.0	-	dbDefault_ins	ok created=true id=new	match
+standard_contact_ext_upsert	62.0	-	dbDefault_ins.state	n=1 name=base text=null | newExt n=1 name=fresh text=y	match
+standard_contact_ext_upsert	62.0	-	dbDefault_upd	ok created=false id=base	match
+standard_contact_ext_upsert	62.0	-	dbDefault_upd.state	n=1 name=changed text=y | newExt n=0	match
+standard_contact_ext_upsert	62.0	-	dbDefault_updId	ok created=false id=base	match
+standard_contact_ext_upsert	62.0	-	dbDefault_updId.state	n=1 name=changed text=y | newExt n=0	match
+standard_contact_ext_upsert	62.0	-	dbFalseUser_ctl	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context	match
+standard_contact_ext_upsert	62.0	-	dbFalseUser_ctl.state	n=1 name=base text=null | newExt n=0	match
+standard_contact_ext_upsert	62.0	-	dbFalseUser_ins	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context	match
+standard_contact_ext_upsert	62.0	-	dbFalseUser_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_contact_ext_upsert	62.0	-	dbFalseUser_upd	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context	match
+standard_contact_ext_upsert	62.0	-	dbFalseUser_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_contact_ext_upsert	62.0	-	dbFalseUser_updId	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context	match
+standard_contact_ext_upsert	62.0	-	dbFalseUser_updId.state	n=1 name=base text=null | newExt n=0	match
+standard_contact_ext_upsert	62.0	-	dbFalse_ctl	ok created=false id=base	match
+standard_contact_ext_upsert	62.0	-	dbFalse_ctl.state	n=1 name=changed text=null | newExt n=0	match
+standard_contact_ext_upsert	62.0	-	dbFalse_ins	ok created=true id=new	match
+standard_contact_ext_upsert	62.0	-	dbFalse_ins.state	n=1 name=base text=null | newExt n=1 name=fresh text=y	match
+standard_contact_ext_upsert	62.0	-	dbFalse_upd	ok created=false id=base	match
+standard_contact_ext_upsert	62.0	-	dbFalse_upd.state	n=1 name=changed text=y | newExt n=0	match
+standard_contact_ext_upsert	62.0	-	dbFalse_updId	ok created=false id=base	match
+standard_contact_ext_upsert	62.0	-	dbFalse_updId.state	n=1 name=changed text=y | newExt n=0	match
+standard_contact_ext_upsert	62.0	-	dbUser_ctl	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context	match
+standard_contact_ext_upsert	62.0	-	dbUser_ctl.state	n=1 name=base text=null | newExt n=0	match
+standard_contact_ext_upsert	62.0	-	dbUser_ins	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context	match
+standard_contact_ext_upsert	62.0	-	dbUser_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_contact_ext_upsert	62.0	-	dbUser_upd	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context	match
+standard_contact_ext_upsert	62.0	-	dbUser_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_contact_ext_upsert	62.0	-	dbUser_updId	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context	match
+standard_contact_ext_upsert	62.0	-	dbUser_updId.state	n=1 name=base text=null | newExt n=0	match
+standard_contact_ext_upsert	62.0	-	stmtUser_ctl	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context	match
+standard_contact_ext_upsert	62.0	-	stmtUser_ctl.state	n=1 name=base text=null | newExt n=0	match
+standard_contact_ext_upsert	62.0	-	stmtUser_ins	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context	match
+standard_contact_ext_upsert	62.0	-	stmtUser_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_contact_ext_upsert	62.0	-	stmtUser_upd	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context	match
+standard_contact_ext_upsert	62.0	-	stmtUser_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_contact_ext_upsert	62.0	-	stmtUser_updId	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context	match
+standard_contact_ext_upsert	62.0	-	stmtUser_updId.state	n=1 name=base text=null | newExt n=0	match
+standard_contact_ext_upsert	62.0	-	stmt_ctl	ok id=base	match
+standard_contact_ext_upsert	62.0	-	stmt_ctl.state	n=1 name=changed text=null | newExt n=0	match
+standard_contact_ext_upsert	62.0	-	stmt_ins	ok id=new	match
+standard_contact_ext_upsert	62.0	-	stmt_ins.state	n=1 name=base text=null | newExt n=1 name=fresh text=y	match
+standard_contact_ext_upsert	62.0	-	stmt_upd	ok id=base	match
+standard_contact_ext_upsert	62.0	-	stmt_upd.state	n=1 name=changed text=y | newExt n=0	match
+standard_contact_ext_upsert	62.0	-	stmt_updId	ok id=base	match
+standard_contact_ext_upsert	62.0	-	stmt_updId.state	n=1 name=changed text=y | newExt n=0	match
+standard_contact_ext_upsert	67.0	-	dbDefault_ctl	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context	match
+standard_contact_ext_upsert	67.0	-	dbDefault_ctl.state	n=1 name=base text=null | newExt n=0	match
+standard_contact_ext_upsert	67.0	-	dbDefault_ins	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context	match
+standard_contact_ext_upsert	67.0	-	dbDefault_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_contact_ext_upsert	67.0	-	dbDefault_upd	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context	match
+standard_contact_ext_upsert	67.0	-	dbDefault_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_contact_ext_upsert	67.0	-	dbDefault_updId	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context	match
+standard_contact_ext_upsert	67.0	-	dbDefault_updId.state	n=1 name=base text=null | newExt n=0	match
+standard_contact_ext_upsert	67.0	-	dbFalseUser_ctl	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context	match
+standard_contact_ext_upsert	67.0	-	dbFalseUser_ctl.state	n=1 name=base text=null | newExt n=0	match
+standard_contact_ext_upsert	67.0	-	dbFalseUser_ins	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context	match
+standard_contact_ext_upsert	67.0	-	dbFalseUser_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_contact_ext_upsert	67.0	-	dbFalseUser_upd	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context	match
+standard_contact_ext_upsert	67.0	-	dbFalseUser_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_contact_ext_upsert	67.0	-	dbFalseUser_updId	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context	match
+standard_contact_ext_upsert	67.0	-	dbFalseUser_updId.state	n=1 name=base text=null | newExt n=0	match
+standard_contact_ext_upsert	67.0	-	dbFalse_ctl	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context	match
+standard_contact_ext_upsert	67.0	-	dbFalse_ctl.state	n=1 name=base text=null | newExt n=0	match
+standard_contact_ext_upsert	67.0	-	dbFalse_ins	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context	match
+standard_contact_ext_upsert	67.0	-	dbFalse_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_contact_ext_upsert	67.0	-	dbFalse_upd	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context	match
+standard_contact_ext_upsert	67.0	-	dbFalse_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_contact_ext_upsert	67.0	-	dbFalse_updId	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context	match
+standard_contact_ext_upsert	67.0	-	dbFalse_updId.state	n=1 name=base text=null | newExt n=0	match
+standard_contact_ext_upsert	67.0	-	dbUser_ctl	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context	match
+standard_contact_ext_upsert	67.0	-	dbUser_ctl.state	n=1 name=base text=null | newExt n=0	match
+standard_contact_ext_upsert	67.0	-	dbUser_ins	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context	match
+standard_contact_ext_upsert	67.0	-	dbUser_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_contact_ext_upsert	67.0	-	dbUser_upd	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context	match
+standard_contact_ext_upsert	67.0	-	dbUser_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_contact_ext_upsert	67.0	-	dbUser_updId	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context	match
+standard_contact_ext_upsert	67.0	-	dbUser_updId.state	n=1 name=base text=null | newExt n=0	match
+standard_contact_ext_upsert	67.0	-	stmtUser_ctl	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context	match
+standard_contact_ext_upsert	67.0	-	stmtUser_ctl.state	n=1 name=base text=null | newExt n=0	match
+standard_contact_ext_upsert	67.0	-	stmtUser_ins	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context	match
+standard_contact_ext_upsert	67.0	-	stmtUser_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_contact_ext_upsert	67.0	-	stmtUser_upd	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context	match
+standard_contact_ext_upsert	67.0	-	stmtUser_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_contact_ext_upsert	67.0	-	stmtUser_updId	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context	match
+standard_contact_ext_upsert	67.0	-	stmtUser_updId.state	n=1 name=base text=null | newExt n=0	match
+standard_contact_ext_upsert	67.0	-	stmt_ctl	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context	match
+standard_contact_ext_upsert	67.0	-	stmt_ctl.state	n=1 name=base text=null | newExt n=0	match
+standard_contact_ext_upsert	67.0	-	stmt_ins	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context	match
+standard_contact_ext_upsert	67.0	-	stmt_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_contact_ext_upsert	67.0	-	stmt_upd	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context	match
+standard_contact_ext_upsert	67.0	-	stmt_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_contact_ext_upsert	67.0	-	stmt_updId	EX System.SObjectException|Field Contact.Ext__c is inaccessible in this context	match
+standard_contact_ext_upsert	67.0	-	stmt_updId.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert	62.0	-	dbDefault_ctl	ok created=false id=base	match
+standard_ext_upsert	62.0	-	dbDefault_ctl.state	n=1 name=changed text=null | newExt n=0	match
+standard_ext_upsert	62.0	-	dbDefault_ins	ok created=true id=new	match
+standard_ext_upsert	62.0	-	dbDefault_ins.state	n=1 name=base text=null | newExt n=1 name=fresh text=y	match
+standard_ext_upsert	62.0	-	dbDefault_upd	ok created=false id=base	match
+standard_ext_upsert	62.0	-	dbDefault_upd.state	n=1 name=changed text=y | newExt n=0	match
+standard_ext_upsert	62.0	-	dbDefault_updId	ok created=false id=base	match
+standard_ext_upsert	62.0	-	dbDefault_updId.state	n=1 name=changed text=y | newExt n=0	match
+standard_ext_upsert	62.0	-	dbFalseUser_ctl	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert	62.0	-	dbFalseUser_ctl.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert	62.0	-	dbFalseUser_ins	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert	62.0	-	dbFalseUser_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert	62.0	-	dbFalseUser_upd	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert	62.0	-	dbFalseUser_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert	62.0	-	dbFalseUser_updId	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert	62.0	-	dbFalseUser_updId.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert	62.0	-	dbFalse_ctl	ok created=false id=base	match
+standard_ext_upsert	62.0	-	dbFalse_ctl.state	n=1 name=changed text=null | newExt n=0	match
+standard_ext_upsert	62.0	-	dbFalse_ins	ok created=true id=new	match
+standard_ext_upsert	62.0	-	dbFalse_ins.state	n=1 name=base text=null | newExt n=1 name=fresh text=y	match
+standard_ext_upsert	62.0	-	dbFalse_upd	ok created=false id=base	match
+standard_ext_upsert	62.0	-	dbFalse_upd.state	n=1 name=changed text=y | newExt n=0	match
+standard_ext_upsert	62.0	-	dbFalse_updId	ok created=false id=base	match
+standard_ext_upsert	62.0	-	dbFalse_updId.state	n=1 name=changed text=y | newExt n=0	match
+standard_ext_upsert	62.0	-	dbUser_ctl	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert	62.0	-	dbUser_ctl.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert	62.0	-	dbUser_ins	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert	62.0	-	dbUser_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert	62.0	-	dbUser_upd	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert	62.0	-	dbUser_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert	62.0	-	dbUser_updId	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert	62.0	-	dbUser_updId.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert	62.0	-	stmtUser_ctl	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert	62.0	-	stmtUser_ctl.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert	62.0	-	stmtUser_ins	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert	62.0	-	stmtUser_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert	62.0	-	stmtUser_upd	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert	62.0	-	stmtUser_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert	62.0	-	stmtUser_updId	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert	62.0	-	stmtUser_updId.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert	62.0	-	stmt_ctl	ok id=base	match
+standard_ext_upsert	62.0	-	stmt_ctl.state	n=1 name=changed text=null | newExt n=0	match
+standard_ext_upsert	62.0	-	stmt_ins	ok id=new	match
+standard_ext_upsert	62.0	-	stmt_ins.state	n=1 name=base text=null | newExt n=1 name=fresh text=y	match
+standard_ext_upsert	62.0	-	stmt_upd	ok id=base	match
+standard_ext_upsert	62.0	-	stmt_upd.state	n=1 name=changed text=y | newExt n=0	match
+standard_ext_upsert	62.0	-	stmt_updId	ok id=base	match
+standard_ext_upsert	62.0	-	stmt_updId.state	n=1 name=changed text=y | newExt n=0	match
+standard_ext_upsert	67.0	-	dbDefault_ctl	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert	67.0	-	dbDefault_ctl.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert	67.0	-	dbDefault_ins	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert	67.0	-	dbDefault_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert	67.0	-	dbDefault_upd	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert	67.0	-	dbDefault_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert	67.0	-	dbDefault_updId	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert	67.0	-	dbDefault_updId.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert	67.0	-	dbFalseUser_ctl	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert	67.0	-	dbFalseUser_ctl.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert	67.0	-	dbFalseUser_ins	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert	67.0	-	dbFalseUser_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert	67.0	-	dbFalseUser_upd	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert	67.0	-	dbFalseUser_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert	67.0	-	dbFalseUser_updId	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert	67.0	-	dbFalseUser_updId.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert	67.0	-	dbFalse_ctl	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert	67.0	-	dbFalse_ctl.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert	67.0	-	dbFalse_ins	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert	67.0	-	dbFalse_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert	67.0	-	dbFalse_upd	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert	67.0	-	dbFalse_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert	67.0	-	dbFalse_updId	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert	67.0	-	dbFalse_updId.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert	67.0	-	dbUser_ctl	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert	67.0	-	dbUser_ctl.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert	67.0	-	dbUser_ins	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert	67.0	-	dbUser_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert	67.0	-	dbUser_upd	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert	67.0	-	dbUser_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert	67.0	-	dbUser_updId	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert	67.0	-	dbUser_updId.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert	67.0	-	stmtUser_ctl	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert	67.0	-	stmtUser_ctl.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert	67.0	-	stmtUser_ins	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert	67.0	-	stmtUser_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert	67.0	-	stmtUser_upd	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert	67.0	-	stmtUser_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert	67.0	-	stmtUser_updId	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert	67.0	-	stmtUser_updId.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert	67.0	-	stmt_ctl	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert	67.0	-	stmt_ctl.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert	67.0	-	stmt_ins	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert	67.0	-	stmt_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert	67.0	-	stmt_upd	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert	67.0	-	stmt_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert	67.0	-	stmt_updId	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert	67.0	-	stmt_updId.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_anonymous	62.0	-	dbDefault_ctl	ok created=false id=base	match
+standard_ext_upsert_anonymous	62.0	-	dbDefault_ctl.state	n=1 name=changed text=null | newExt n=0	match
+standard_ext_upsert_anonymous	62.0	-	dbDefault_ins	ok created=true id=new	match
+standard_ext_upsert_anonymous	62.0	-	dbDefault_ins.state	n=1 name=base text=null | newExt n=1 name=fresh text=y	match
+standard_ext_upsert_anonymous	62.0	-	dbDefault_upd	ok created=false id=base	match
+standard_ext_upsert_anonymous	62.0	-	dbDefault_upd.state	n=1 name=changed text=y | newExt n=0	match
+standard_ext_upsert_anonymous	62.0	-	dbDefault_updId	ok created=false id=base	match
+standard_ext_upsert_anonymous	62.0	-	dbDefault_updId.state	n=1 name=changed text=y | newExt n=0	match
+standard_ext_upsert_anonymous	62.0	-	dbFalseUser_ctl	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_anonymous	62.0	-	dbFalseUser_ctl.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_anonymous	62.0	-	dbFalseUser_ins	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_anonymous	62.0	-	dbFalseUser_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_anonymous	62.0	-	dbFalseUser_upd	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_anonymous	62.0	-	dbFalseUser_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_anonymous	62.0	-	dbFalseUser_updId	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_anonymous	62.0	-	dbFalseUser_updId.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_anonymous	62.0	-	dbFalse_ctl	ok created=false id=base	match
+standard_ext_upsert_anonymous	62.0	-	dbFalse_ctl.state	n=1 name=changed text=null | newExt n=0	match
+standard_ext_upsert_anonymous	62.0	-	dbFalse_ins	ok created=true id=new	match
+standard_ext_upsert_anonymous	62.0	-	dbFalse_ins.state	n=1 name=base text=null | newExt n=1 name=fresh text=y	match
+standard_ext_upsert_anonymous	62.0	-	dbFalse_upd	ok created=false id=base	match
+standard_ext_upsert_anonymous	62.0	-	dbFalse_upd.state	n=1 name=changed text=y | newExt n=0	match
+standard_ext_upsert_anonymous	62.0	-	dbFalse_updId	ok created=false id=base	match
+standard_ext_upsert_anonymous	62.0	-	dbFalse_updId.state	n=1 name=changed text=y | newExt n=0	match
+standard_ext_upsert_anonymous	62.0	-	dbUser_ctl	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_anonymous	62.0	-	dbUser_ctl.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_anonymous	62.0	-	dbUser_ins	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_anonymous	62.0	-	dbUser_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_anonymous	62.0	-	dbUser_upd	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_anonymous	62.0	-	dbUser_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_anonymous	62.0	-	dbUser_updId	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_anonymous	62.0	-	dbUser_updId.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_anonymous	62.0	-	stmtUser_ctl	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_anonymous	62.0	-	stmtUser_ctl.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_anonymous	62.0	-	stmtUser_ins	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_anonymous	62.0	-	stmtUser_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_anonymous	62.0	-	stmtUser_upd	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_anonymous	62.0	-	stmtUser_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_anonymous	62.0	-	stmtUser_updId	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_anonymous	62.0	-	stmtUser_updId.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_anonymous	62.0	-	stmt_ctl	ok id=base	match
+standard_ext_upsert_anonymous	62.0	-	stmt_ctl.state	n=1 name=changed text=null | newExt n=0	match
+standard_ext_upsert_anonymous	62.0	-	stmt_ins	ok id=new	match
+standard_ext_upsert_anonymous	62.0	-	stmt_ins.state	n=1 name=base text=null | newExt n=1 name=fresh text=y	match
+standard_ext_upsert_anonymous	62.0	-	stmt_upd	ok id=base	match
+standard_ext_upsert_anonymous	62.0	-	stmt_upd.state	n=1 name=changed text=y | newExt n=0	match
+standard_ext_upsert_anonymous	62.0	-	stmt_updId	ok id=base	match
+standard_ext_upsert_anonymous	62.0	-	stmt_updId.state	n=1 name=changed text=y | newExt n=0	match
+standard_ext_upsert_anonymous	67.0	-	dbDefault_ctl	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_anonymous	67.0	-	dbDefault_ctl.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_anonymous	67.0	-	dbDefault_ins	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_anonymous	67.0	-	dbDefault_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_anonymous	67.0	-	dbDefault_upd	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_anonymous	67.0	-	dbDefault_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_anonymous	67.0	-	dbDefault_updId	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_anonymous	67.0	-	dbDefault_updId.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_anonymous	67.0	-	dbFalseUser_ctl	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_anonymous	67.0	-	dbFalseUser_ctl.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_anonymous	67.0	-	dbFalseUser_ins	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_anonymous	67.0	-	dbFalseUser_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_anonymous	67.0	-	dbFalseUser_upd	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_anonymous	67.0	-	dbFalseUser_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_anonymous	67.0	-	dbFalseUser_updId	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_anonymous	67.0	-	dbFalseUser_updId.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_anonymous	67.0	-	dbFalse_ctl	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_anonymous	67.0	-	dbFalse_ctl.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_anonymous	67.0	-	dbFalse_ins	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_anonymous	67.0	-	dbFalse_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_anonymous	67.0	-	dbFalse_upd	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_anonymous	67.0	-	dbFalse_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_anonymous	67.0	-	dbFalse_updId	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_anonymous	67.0	-	dbFalse_updId.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_anonymous	67.0	-	dbUser_ctl	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_anonymous	67.0	-	dbUser_ctl.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_anonymous	67.0	-	dbUser_ins	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_anonymous	67.0	-	dbUser_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_anonymous	67.0	-	dbUser_upd	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_anonymous	67.0	-	dbUser_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_anonymous	67.0	-	dbUser_updId	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_anonymous	67.0	-	dbUser_updId.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_anonymous	67.0	-	stmtUser_ctl	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_anonymous	67.0	-	stmtUser_ctl.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_anonymous	67.0	-	stmtUser_ins	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_anonymous	67.0	-	stmtUser_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_anonymous	67.0	-	stmtUser_upd	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_anonymous	67.0	-	stmtUser_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_anonymous	67.0	-	stmtUser_updId	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_anonymous	67.0	-	stmtUser_updId.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_anonymous	67.0	-	stmt_ctl	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_anonymous	67.0	-	stmt_ctl.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_anonymous	67.0	-	stmt_ins	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_anonymous	67.0	-	stmt_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_anonymous	67.0	-	stmt_upd	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_anonymous	67.0	-	stmt_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_anonymous	67.0	-	stmt_updId	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_anonymous	67.0	-	stmt_updId.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_granted	62.0	-	dbDefault_ctl	ok created=false id=base	match
+standard_ext_upsert_granted	62.0	-	dbDefault_ctl.state	n=1 name=changed text=null | newExt n=0	match
+standard_ext_upsert_granted	62.0	-	dbFalseUser_ctl	ok created=false id=base	match
+standard_ext_upsert_granted	62.0	-	dbFalseUser_ctl.state	n=1 name=changed text=null | newExt n=0	match
+standard_ext_upsert_granted	62.0	-	dbFalse_ctl	ok created=false id=base	match
+standard_ext_upsert_granted	62.0	-	dbFalse_ctl.state	n=1 name=changed text=null | newExt n=0	match
+standard_ext_upsert_granted	62.0	-	dbUser_ctl	ok created=false id=base	match
+standard_ext_upsert_granted	62.0	-	dbUser_ctl.state	n=1 name=changed text=null | newExt n=0	match
+standard_ext_upsert_granted	62.0	-	stmtUser_ctl	ok id=base	match
+standard_ext_upsert_granted	62.0	-	stmtUser_ctl.state	n=1 name=changed text=null | newExt n=0	match
+standard_ext_upsert_granted	62.0	-	stmt_ctl	ok id=base	match
+standard_ext_upsert_granted	62.0	-	stmt_ctl.state	n=1 name=changed text=null | newExt n=0	match
+standard_ext_upsert_granted	67.0	-	dbDefault_ctl	ok created=false id=base	match
+standard_ext_upsert_granted	67.0	-	dbDefault_ctl.state	n=1 name=changed text=null | newExt n=0	match
+standard_ext_upsert_granted	67.0	-	dbFalseUser_ctl	ok created=false id=base	match
+standard_ext_upsert_granted	67.0	-	dbFalseUser_ctl.state	n=1 name=changed text=null | newExt n=0	match
+standard_ext_upsert_granted	67.0	-	dbFalse_ctl	ok created=false id=base	match
+standard_ext_upsert_granted	67.0	-	dbFalse_ctl.state	n=1 name=changed text=null | newExt n=0	match
+standard_ext_upsert_granted	67.0	-	dbUser_ctl	ok created=false id=base	match
+standard_ext_upsert_granted	67.0	-	dbUser_ctl.state	n=1 name=changed text=null | newExt n=0	match
+standard_ext_upsert_granted	67.0	-	stmtUser_ctl	ok id=base	match
+standard_ext_upsert_granted	67.0	-	stmtUser_ctl.state	n=1 name=changed text=null | newExt n=0	match
+standard_ext_upsert_granted	67.0	-	stmt_ctl	ok id=base	match
+standard_ext_upsert_granted	67.0	-	stmt_ctl.state	n=1 name=changed text=null | newExt n=0	match
+standard_ext_upsert_standard_user	62.0	granted	dbDefault_ctl	ok created=false id=base	match
+standard_ext_upsert_standard_user	62.0	granted	dbDefault_ctl.state	n=1 name=changed text=null | newExt n=0	match
+standard_ext_upsert_standard_user	62.0	granted	dbDefault_ins	ok created=true id=new	match
+standard_ext_upsert_standard_user	62.0	granted	dbDefault_ins.state	n=1 name=base text=null | newExt n=1 name=fresh text=y	match
+standard_ext_upsert_standard_user	62.0	granted	dbDefault_upd	ok created=false id=base	match
+standard_ext_upsert_standard_user	62.0	granted	dbDefault_upd.state	n=1 name=changed text=y | newExt n=0	match
+standard_ext_upsert_standard_user	62.0	granted	dbFalseUser_ctl	ok created=false id=base	match
+standard_ext_upsert_standard_user	62.0	granted	dbFalseUser_ctl.state	n=1 name=changed text=null | newExt n=0	match
+standard_ext_upsert_standard_user	62.0	granted	dbFalseUser_ins	rowErr CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY|Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!  fieldNames: Text__c|(Text__c)	match
+standard_ext_upsert_standard_user	62.0	granted	dbFalseUser_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	62.0	granted	dbFalseUser_upd	rowErr CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY|Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!  fieldNames: Text__c|(Text__c)	match
+standard_ext_upsert_standard_user	62.0	granted	dbFalseUser_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	62.0	granted	dbFalse_ctl	ok created=false id=base	match
+standard_ext_upsert_standard_user	62.0	granted	dbFalse_ctl.state	n=1 name=changed text=null | newExt n=0	match
+standard_ext_upsert_standard_user	62.0	granted	dbFalse_ins	ok created=true id=new	match
+standard_ext_upsert_standard_user	62.0	granted	dbFalse_ins.state	n=1 name=base text=null | newExt n=1 name=fresh text=y	match
+standard_ext_upsert_standard_user	62.0	granted	dbFalse_upd	ok created=false id=base	match
+standard_ext_upsert_standard_user	62.0	granted	dbFalse_upd.state	n=1 name=changed text=y | newExt n=0	match
+standard_ext_upsert_standard_user	62.0	granted	dbUser_ctl	ok created=false id=base	match
+standard_ext_upsert_standard_user	62.0	granted	dbUser_ctl.state	n=1 name=changed text=null | newExt n=0	match
+standard_ext_upsert_standard_user	62.0	granted	dbUser_ins	EX System.DmlException|Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result! 	match
+standard_ext_upsert_standard_user	62.0	granted	dbUser_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	62.0	granted	dbUser_upd	EX System.DmlException|Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result! 	match
+standard_ext_upsert_standard_user	62.0	granted	dbUser_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	62.0	granted	stmtUser_ctl	ok id=base	match
+standard_ext_upsert_standard_user	62.0	granted	stmtUser_ctl.state	n=1 name=changed text=null | newExt n=0	match
+standard_ext_upsert_standard_user	62.0	granted	stmtUser_ins	EX System.DmlException|Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result! 	match
+standard_ext_upsert_standard_user	62.0	granted	stmtUser_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	62.0	granted	stmtUser_upd	EX System.DmlException|Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result! 	match
+standard_ext_upsert_standard_user	62.0	granted	stmtUser_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	62.0	granted	stmt_ctl	ok id=base	match
+standard_ext_upsert_standard_user	62.0	granted	stmt_ctl.state	n=1 name=changed text=null | newExt n=0	match
+standard_ext_upsert_standard_user	62.0	granted	stmt_ins	ok id=new	match
+standard_ext_upsert_standard_user	62.0	granted	stmt_ins.state	n=1 name=base text=null | newExt n=1 name=fresh text=y	match
+standard_ext_upsert_standard_user	62.0	granted	stmt_upd	ok id=base	match
+standard_ext_upsert_standard_user	62.0	granted	stmt_upd.state	n=1 name=changed text=y | newExt n=0	match
+standard_ext_upsert_standard_user	62.0	ungranted	dbDefault_ctl	ok created=false id=base	match
+standard_ext_upsert_standard_user	62.0	ungranted	dbDefault_ctl.state	n=1 name=changed text=null | newExt n=0	match
+standard_ext_upsert_standard_user	62.0	ungranted	dbDefault_ins	ok created=true id=new	match
+standard_ext_upsert_standard_user	62.0	ungranted	dbDefault_ins.state	n=1 name=base text=null | newExt n=1 name=fresh text=y	match
+standard_ext_upsert_standard_user	62.0	ungranted	dbDefault_upd	ok created=false id=base	match
+standard_ext_upsert_standard_user	62.0	ungranted	dbDefault_upd.state	n=1 name=changed text=y | newExt n=0	match
+standard_ext_upsert_standard_user	62.0	ungranted	dbFalseUser_ctl	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_standard_user	62.0	ungranted	dbFalseUser_ctl.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	62.0	ungranted	dbFalseUser_ins	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_standard_user	62.0	ungranted	dbFalseUser_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	62.0	ungranted	dbFalseUser_upd	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_standard_user	62.0	ungranted	dbFalseUser_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	62.0	ungranted	dbFalse_ctl	ok created=false id=base	match
+standard_ext_upsert_standard_user	62.0	ungranted	dbFalse_ctl.state	n=1 name=changed text=null | newExt n=0	match
+standard_ext_upsert_standard_user	62.0	ungranted	dbFalse_ins	ok created=true id=new	match
+standard_ext_upsert_standard_user	62.0	ungranted	dbFalse_ins.state	n=1 name=base text=null | newExt n=1 name=fresh text=y	match
+standard_ext_upsert_standard_user	62.0	ungranted	dbFalse_upd	ok created=false id=base	match
+standard_ext_upsert_standard_user	62.0	ungranted	dbFalse_upd.state	n=1 name=changed text=y | newExt n=0	match
+standard_ext_upsert_standard_user	62.0	ungranted	dbUser_ctl	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_standard_user	62.0	ungranted	dbUser_ctl.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	62.0	ungranted	dbUser_ins	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_standard_user	62.0	ungranted	dbUser_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	62.0	ungranted	dbUser_upd	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_standard_user	62.0	ungranted	dbUser_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	62.0	ungranted	stmtUser_ctl	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_standard_user	62.0	ungranted	stmtUser_ctl.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	62.0	ungranted	stmtUser_ins	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_standard_user	62.0	ungranted	stmtUser_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	62.0	ungranted	stmtUser_upd	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_standard_user	62.0	ungranted	stmtUser_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	62.0	ungranted	stmt_ctl	ok id=base	match
+standard_ext_upsert_standard_user	62.0	ungranted	stmt_ctl.state	n=1 name=changed text=null | newExt n=0	match
+standard_ext_upsert_standard_user	62.0	ungranted	stmt_ins	ok id=new	match
+standard_ext_upsert_standard_user	62.0	ungranted	stmt_ins.state	n=1 name=base text=null | newExt n=1 name=fresh text=y	match
+standard_ext_upsert_standard_user	62.0	ungranted	stmt_upd	ok id=base	match
+standard_ext_upsert_standard_user	62.0	ungranted	stmt_upd.state	n=1 name=changed text=y | newExt n=0	match
+standard_ext_upsert_standard_user	67.0	granted	dbDefault_ctl	ok created=false id=base	match
+standard_ext_upsert_standard_user	67.0	granted	dbDefault_ctl.state	n=1 name=changed text=null | newExt n=0	match
+standard_ext_upsert_standard_user	67.0	granted	dbDefault_ins	EX System.DmlException|Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result! 	match
+standard_ext_upsert_standard_user	67.0	granted	dbDefault_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	67.0	granted	dbDefault_upd	EX System.DmlException|Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result! 	match
+standard_ext_upsert_standard_user	67.0	granted	dbDefault_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	67.0	granted	dbFalseUser_ctl	ok created=false id=base	match
+standard_ext_upsert_standard_user	67.0	granted	dbFalseUser_ctl.state	n=1 name=changed text=null | newExt n=0	match
+standard_ext_upsert_standard_user	67.0	granted	dbFalseUser_ins	rowErr CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY|Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!  fieldNames: Text__c|(Text__c)	match
+standard_ext_upsert_standard_user	67.0	granted	dbFalseUser_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	67.0	granted	dbFalseUser_upd	rowErr CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY|Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!  fieldNames: Text__c|(Text__c)	match
+standard_ext_upsert_standard_user	67.0	granted	dbFalseUser_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	67.0	granted	dbFalse_ctl	ok created=false id=base	match
+standard_ext_upsert_standard_user	67.0	granted	dbFalse_ctl.state	n=1 name=changed text=null | newExt n=0	match
+standard_ext_upsert_standard_user	67.0	granted	dbFalse_ins	rowErr CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY|Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!  fieldNames: Text__c|(Text__c)	match
+standard_ext_upsert_standard_user	67.0	granted	dbFalse_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	67.0	granted	dbFalse_upd	rowErr CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY|Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!  fieldNames: Text__c|(Text__c)	match
+standard_ext_upsert_standard_user	67.0	granted	dbFalse_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	67.0	granted	dbUser_ctl	ok created=false id=base	match
+standard_ext_upsert_standard_user	67.0	granted	dbUser_ctl.state	n=1 name=changed text=null | newExt n=0	match
+standard_ext_upsert_standard_user	67.0	granted	dbUser_ins	EX System.DmlException|Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result! 	match
+standard_ext_upsert_standard_user	67.0	granted	dbUser_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	67.0	granted	dbUser_upd	EX System.DmlException|Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result! 	match
+standard_ext_upsert_standard_user	67.0	granted	dbUser_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	67.0	granted	stmtUser_ctl	ok id=base	match
+standard_ext_upsert_standard_user	67.0	granted	stmtUser_ctl.state	n=1 name=changed text=null | newExt n=0	match
+standard_ext_upsert_standard_user	67.0	granted	stmtUser_ins	EX System.DmlException|Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result! 	match
+standard_ext_upsert_standard_user	67.0	granted	stmtUser_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	67.0	granted	stmtUser_upd	EX System.DmlException|Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result! 	match
+standard_ext_upsert_standard_user	67.0	granted	stmtUser_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	67.0	granted	stmt_ctl	ok id=base	match
+standard_ext_upsert_standard_user	67.0	granted	stmt_ctl.state	n=1 name=changed text=null | newExt n=0	match
+standard_ext_upsert_standard_user	67.0	granted	stmt_ins	EX System.DmlException|Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result! 	match
+standard_ext_upsert_standard_user	67.0	granted	stmt_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	67.0	granted	stmt_upd	EX System.DmlException|Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result! 	match
+standard_ext_upsert_standard_user	67.0	granted	stmt_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	67.0	ungranted	dbDefault_ctl	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_standard_user	67.0	ungranted	dbDefault_ctl.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	67.0	ungranted	dbDefault_ins	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_standard_user	67.0	ungranted	dbDefault_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	67.0	ungranted	dbDefault_upd	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_standard_user	67.0	ungranted	dbDefault_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	67.0	ungranted	dbFalseUser_ctl	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_standard_user	67.0	ungranted	dbFalseUser_ctl.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	67.0	ungranted	dbFalseUser_ins	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_standard_user	67.0	ungranted	dbFalseUser_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	67.0	ungranted	dbFalseUser_upd	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_standard_user	67.0	ungranted	dbFalseUser_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	67.0	ungranted	dbFalse_ctl	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_standard_user	67.0	ungranted	dbFalse_ctl.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	67.0	ungranted	dbFalse_ins	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_standard_user	67.0	ungranted	dbFalse_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	67.0	ungranted	dbFalse_upd	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_standard_user	67.0	ungranted	dbFalse_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	67.0	ungranted	dbUser_ctl	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_standard_user	67.0	ungranted	dbUser_ctl.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	67.0	ungranted	dbUser_ins	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_standard_user	67.0	ungranted	dbUser_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	67.0	ungranted	dbUser_upd	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_standard_user	67.0	ungranted	dbUser_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	67.0	ungranted	stmtUser_ctl	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_standard_user	67.0	ungranted	stmtUser_ctl.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	67.0	ungranted	stmtUser_ins	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_standard_user	67.0	ungranted	stmtUser_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	67.0	ungranted	stmtUser_upd	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_standard_user	67.0	ungranted	stmtUser_upd.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	67.0	ungranted	stmt_ctl	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_standard_user	67.0	ungranted	stmt_ctl.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	67.0	ungranted	stmt_ins	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_standard_user	67.0	ungranted	stmt_ins.state	n=1 name=base text=null | newExt n=0	match
+standard_ext_upsert_standard_user	67.0	ungranted	stmt_upd	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context	match
+standard_ext_upsert_standard_user	67.0	ungranted	stmt_upd.state	n=1 name=base text=null | newExt n=0	match

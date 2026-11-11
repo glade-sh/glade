@@ -28,6 +28,9 @@ type standardOverlayCheckPlan struct {
 	stubTimeFields      []string
 	stubReferenceFields []Field
 	stubCurrencyFields  []Field
+	// stubRestrictedPicklists are stub String fields P0 describes as
+	// restricted picklists.
+	stubRestrictedPicklists []string
 	// shallowFields are catalog fields with a concrete type. A definition
 	// field that lacks a type, or lacks display metadata the catalog has,
 	// needs a refresh.
@@ -113,6 +116,9 @@ func buildStandardOverlayCheckPlan(objectName string) *standardOverlayCheckPlan 
 	if plan.hasStubFields {
 		plan.stubReferenceFields = standardStubReferenceFieldsFromV2Describe(objectName)
 		plan.stubCurrencyFields = standardStubCurrencyCatalogFields(objectName)
+		for name := range standardStubRestrictedPicklistFields(objectName) {
+			plan.stubRestrictedPicklists = append(plan.stubRestrictedPicklists, name)
+		}
 	}
 	entry, ok := standardObjectCatalogEntryForName(objectName)
 	if !ok {
@@ -235,6 +241,9 @@ func (plan *standardOverlayCheckPlan) needsRefresh(definition ObjectDefinition, 
 		return true
 	}
 	if plan.stubReferenceFieldsNeedRepair(definition, featureSignature) {
+		return true
+	}
+	if standardStubRestrictedPicklistsNeedRepair(definition, plan.stubRestrictedPicklists) {
 		return true
 	}
 	for _, stub := range plan.stubCurrencyFields {

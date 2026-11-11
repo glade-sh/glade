@@ -48,103 +48,46 @@ type l07Carry struct {
 	Reason string `json:"reason"`
 }
 
-// TestL07SalesforceConformance compares every exported org.tsv row exactly.
+// The L07 suite compares every exported org.tsv row exactly.
 // Native API 59/67/68 answers and runtime sources come from the owned wire
 // capture (204 rows per API).
+// Each top-level test replays one API version so the CI planner can distribute
+// the suite across shards; the prerequisite test runs the version-independent
+// checks once.
 // GLADE_L07_CAPTURE=1 records differences without failing them;
-// GLADE_L07_REPORT selects the per-row TSV. CI needs no Salesforce or capture tools.
-func TestL07SalesforceConformance(t *testing.T) {
-	// The explicit browser selector lets guarded queues supply their prepared
-	// Playwright executable when this conformance job moves between hosts.
-	t.Run("BrowserRuntime", l07SalesforceConformance)
+// GLADE_L07_REPORT selects the per-row TSV prefix; each test writes its own
+// file (<prefix>.prerequisites, <prefix>.59.0, ...) so tests never share a file.
+// CI needs no Salesforce or capture tools.
+func l07ReportPath(name string) string {
+	path := os.Getenv("GLADE_L07_REPORT")
+	if path == "" {
+		return ""
+	}
+	return path + "." + name
 }
 
-func l07SalesforceConformance(t *testing.T) {
+var l07APIVersions = []string{"59.0", "67.0", "68.0"}
+
+func TestL07SalesforceConformanceAPI59(t *testing.T) {
+	l07SalesforceConformance(t, "59.0")
+}
+
+func TestL07SalesforceConformanceAPI67(t *testing.T) {
+	l07SalesforceConformance(t, "67.0")
+}
+
+func TestL07SalesforceConformanceAPI68(t *testing.T) {
+	l07SalesforceConformance(t, "68.0")
+}
+
+// TestL07SalesforceConformancePrerequisites runs the version-independent checks
+// once: the owned row contract (including carry provenance), the runtime build,
+// the wire adapter contract and the fixed-source review compiler.
+func TestL07SalesforceConformancePrerequisites(t *testing.T) {
 	capture := os.Getenv("GLADE_L07_CAPTURE") == "1"
-	data, err := os.ReadFile("testdata/l07_salesforce.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	var cases []l07Case
-	if err := json.Unmarshal(data, &cases); err != nil {
-		t.Fatal(err)
-	}
-	versions := []string{"59.0", "67.0", "68.0"}
-	seen, groups := map[string]bool{}, map[string]bool{}
-	var compileCases, runtimeCases []l07Case
-	diagnosticRows := 0
-	for _, c := range cases {
-		if c.ID == "" || seen[c.ID] || c.Basis != "org" {
-			t.Fatalf("invalid or duplicate L07 row %q", c.ID)
-		}
-		seen[c.ID], groups[c.Group] = true, true
-		if len(c.DiagnosticExpected) != 0 {
-			diagnosticRows++
-		}
-		for _, carry := range []*l07Carry{c.Carry, c.DiagnosticCarry} {
-			if carry != nil && (carry.Owner == "" || strings.HasPrefix(carry.Owner, "L07") || carry.Reason == "" ||
-				strings.ContainsAny(carry.Owner+carry.Reason, "\r\n\t")) {
-				t.Fatalf("invalid L07 carry %s", c.ID)
-			}
-		}
-		if (c.Carry != nil && c.Kind != "runtime") || (c.DiagnosticCarry != nil && len(c.DiagnosticExpected) == 0) {
-			t.Fatalf("invalid L07 carry kind %s", c.ID)
-		}
-		switch c.Kind {
-		case "compile":
-			if c.JS == "" || c.Template == "" {
-				t.Fatalf("missing L07 compile input %s", c.ID)
-			}
-			compileCases = append(compileCases, c)
-		case "runtime":
-			if c.Adapter != "apex" && c.Adapter != "lds" {
-				t.Fatalf("invalid L07 adapter %s: %s", c.ID, c.Adapter)
-			}
-			runtimeCases = append(runtimeCases, c)
-		default:
-			t.Fatalf("invalid L07 row kind %s: %s", c.ID, c.Kind)
-		}
-		for _, api := range versions {
-			want, ok := c.Expected[api]
-			if !ok || (c.Kind == "compile" && want != "COMPILE_OK" && want != "COMPILE_ERROR") ||
-				(c.Kind == "runtime" && (!strings.HasPrefix(want, "BROWSER|") || !json.Valid([]byte(strings.TrimPrefix(want, "BROWSER|"))))) {
-				t.Fatalf("missing or invalid native L07 row %s API %s", c.ID, api)
-			}
-			if len(c.DiagnosticExpected) != 0 && (c.Kind != "compile" || want != "COMPILE_ERROR" || c.DiagnosticExpected[api] == "") {
-				t.Fatalf("missing or invalid native L07 diagnostic %s API %s", c.ID, api)
-			}
-			if want == "COMPILE_ERROR" && c.DiagnosticExpected[api] == "" {
-				t.Fatalf("missing captured rejection diagnostic %s API %s", c.ID, api)
-			}
-		}
-	}
-	if len(cases) != 204 || len(compileCases) != 94 || len(runtimeCases) != 110 {
-		t.Fatalf("L07 requires 94 compile and 110 DOM rows, got %d/%d", len(compileCases), len(runtimeCases))
-	}
-	if diagnosticRows != 17 {
-		t.Fatalf("L07 requires all 17 captured rejection diagnostics, got %d", diagnosticRows)
-	}
-	for _, group := range []string{"consumer-forms", "reactive-config", "suppression", "immutability", "reconnect-stale"} {
-		if !groups[group] {
-			t.Fatalf("missing L07 group %s", group)
-		}
-	}
-	dependencyRoot, err := gladehome.Root()
-	if err != nil {
-		t.Fatal(err)
-	}
-	toolchain, err := gladehome.LWCToolchainDir()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := exec.LookPath("node"); err != nil {
-		t.Fatal(err)
-	}
-	for _, rel := range []string{"@lwc/compiler/package.json", "@lwc/engine-dom/dist/index.js", "@lwc/synthetic-shadow/dist/index.js"} {
-		if _, err := os.Stat(filepath.Join(toolchain, "node_modules", filepath.FromSlash(rel))); err != nil {
-			t.Fatal(err) // An absent toolchain must never count as a native rejection.
-		}
-	}
+	cases := l07ReadCases(t)
+	l07ValidateCases(t, cases)
+	l07RequireToolchain(t)
 	if !t.Run("RuntimeBuild", l07CheckRuntimeBuild) {
 		t.FailNow()
 	}
@@ -169,10 +112,160 @@ func l07SalesforceConformance(t *testing.T) {
 	}) {
 		t.FailNow()
 	}
+	if path := l07ReportPath("prerequisites"); path != "" {
+		var report strings.Builder
+		fmt.Fprintln(&report, "api\tid\tkind\tstatus\tactual\texpected\treason\tdiagnostic_status\tdiagnostic_actual\tdiagnostic_expected\tdiagnostic_reason")
+		report.WriteString(reviewReport)
+		if err := os.WriteFile(path, []byte(report.String()), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
 
+func l07ReadCases(t *testing.T) []l07Case {
+	t.Helper()
+	data, err := os.ReadFile("testdata/l07_salesforce.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var cases []l07Case
+	if err := json.Unmarshal(data, &cases); err != nil {
+		t.Fatal(err)
+	}
+	return cases
+}
+
+// l07ValidateCases checks the version-independent row contract.
+func l07ValidateCases(t *testing.T, cases []l07Case) {
+	t.Helper()
+	seen, groups := map[string]bool{}, map[string]bool{}
+	compileCases, runtimeCases := 0, 0
+	diagnosticRows := 0
+	for _, c := range cases {
+		if c.ID == "" || seen[c.ID] || c.Basis != "org" {
+			t.Fatalf("invalid or duplicate L07 row %q", c.ID)
+		}
+		seen[c.ID], groups[c.Group] = true, true
+		if len(c.DiagnosticExpected) != 0 {
+			diagnosticRows++
+		}
+		for _, carry := range []*l07Carry{c.Carry, c.DiagnosticCarry} {
+			if carry != nil && (carry.Owner == "" || strings.HasPrefix(carry.Owner, "L07") || carry.Reason == "" ||
+				strings.ContainsAny(carry.Owner+carry.Reason, "\r\n\t")) {
+				t.Fatalf("invalid L07 carry %s", c.ID)
+			}
+		}
+		if (c.Carry != nil && c.Kind != "runtime") || (c.DiagnosticCarry != nil && len(c.DiagnosticExpected) == 0) {
+			t.Fatalf("invalid L07 carry kind %s", c.ID)
+		}
+		switch c.Kind {
+		case "compile":
+			compileCases++
+		case "runtime":
+			runtimeCases++
+		default:
+			t.Fatalf("invalid L07 row kind %s: %s", c.ID, c.Kind)
+		}
+		for _, api := range l07APIVersions {
+			l07ValidateCaseAPI(t, c, api)
+		}
+	}
+	if len(cases) != 204 || compileCases != 94 || runtimeCases != 110 {
+		t.Fatalf("L07 requires 94 compile and 110 DOM rows, got %d/%d", compileCases, runtimeCases)
+	}
+	if diagnosticRows != 17 {
+		t.Fatalf("L07 requires all 17 captured rejection diagnostics, got %d", diagnosticRows)
+	}
+	for _, group := range []string{"consumer-forms", "reactive-config", "suppression", "immutability", "reconnect-stale"} {
+		if !groups[group] {
+			t.Fatalf("missing L07 group %s", group)
+		}
+	}
+}
+
+// l07ValidateCaseAPI checks the row inputs and this API's native answer before
+// the API test replays it.
+func l07ValidateCaseAPI(t *testing.T, c l07Case, api string) {
+	t.Helper()
+	switch c.Kind {
+	case "compile":
+		if c.JS == "" || c.Template == "" {
+			t.Fatalf("missing L07 compile input %s", c.ID)
+		}
+	case "runtime":
+		if c.Adapter != "apex" && c.Adapter != "lds" {
+			t.Fatalf("invalid L07 adapter %s: %s", c.ID, c.Adapter)
+		}
+	default:
+		t.Fatalf("invalid L07 row kind %s: %s", c.ID, c.Kind)
+	}
+	want, ok := c.Expected[api]
+	if !ok || (c.Kind == "compile" && want != "COMPILE_OK" && want != "COMPILE_ERROR") ||
+		(c.Kind == "runtime" && (!strings.HasPrefix(want, "BROWSER|") || !json.Valid([]byte(strings.TrimPrefix(want, "BROWSER|"))))) {
+		t.Fatalf("missing or invalid native L07 row %s API %s", c.ID, api)
+	}
+	if len(c.DiagnosticExpected) != 0 && (c.Kind != "compile" || want != "COMPILE_ERROR" || c.DiagnosticExpected[api] == "") {
+		t.Fatalf("missing or invalid native L07 diagnostic %s API %s", c.ID, api)
+	}
+	if want == "COMPILE_ERROR" && c.DiagnosticExpected[api] == "" {
+		t.Fatalf("missing captured rejection diagnostic %s API %s", c.ID, api)
+	}
+}
+
+func l07CasesByKind(cases []l07Case) (compileCases, runtimeCases []l07Case) {
+	for _, c := range cases {
+		switch c.Kind {
+		case "compile":
+			compileCases = append(compileCases, c)
+		case "runtime":
+			runtimeCases = append(runtimeCases, c)
+		}
+	}
+	return compileCases, runtimeCases
+}
+
+func l07RequireToolchain(t *testing.T) {
+	t.Helper()
+	toolchain, err := gladehome.LWCToolchainDir()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := exec.LookPath("node"); err != nil {
+		t.Fatal(err)
+	}
+	for _, rel := range []string{"@lwc/compiler/package.json", "@lwc/engine-dom/dist/index.js", "@lwc/synthetic-shadow/dist/index.js"} {
+		if _, err := os.Stat(filepath.Join(toolchain, "node_modules", filepath.FromSlash(rel))); err != nil {
+			t.Fatal(err) // An absent toolchain must never count as a native rejection.
+		}
+	}
+}
+
+func l07SalesforceConformance(t *testing.T, apiVersion string) {
+	t.Helper()
+	knownVersion := false
+	for _, version := range l07APIVersions {
+		if version == apiVersion {
+			knownVersion = true
+			break
+		}
+	}
+	if !knownVersion {
+		t.Fatalf("unsupported L07 API version %q", apiVersion)
+	}
+	capture := os.Getenv("GLADE_L07_CAPTURE") == "1"
+	cases := l07ReadCases(t)
+	for _, c := range cases {
+		l07ValidateCaseAPI(t, c, apiVersion)
+	}
+	compileCases, runtimeCases := l07CasesByKind(cases)
+	dependencyRoot, err := gladehome.Root()
+	if err != nil {
+		t.Fatal(err)
+	}
+	l07RequireToolchain(t)
+	versions := []string{apiVersion}
 	var report strings.Builder
 	fmt.Fprintln(&report, "api\tid\tkind\tstatus\tactual\texpected\treason\tdiagnostic_status\tdiagnostic_actual\tdiagnostic_expected\tdiagnostic_reason")
-	report.WriteString(reviewReport)
 	matches, total, compileMatches, domMatches, localDOMRows := 0, 0, 0, 0, 0
 	carriedRows, diagnosticMatches, diagnosticTotal, diagnosticCarries := 0, 0, 0, 0
 	compiledByAPI := make(map[string]map[string]compile.BundleResult, len(versions))
@@ -298,7 +391,7 @@ func l07SalesforceConformance(t *testing.T) {
 	fmt.Fprintf(&report, "CARRIED_ROWS\t%d\nDIAGNOSTIC_TOTAL\t%d/%d\nCARRIED_DIAGNOSTICS\t%d\n", carriedRows, diagnosticMatches, diagnosticTotal, diagnosticCarries)
 	t.Logf("L07 matches %d/%d; compile %d/%d; DOM %d/%d; observed local DOM %d/%d", matches, total, compileMatches, len(compileCases)*len(versions), domMatches, len(runtimeCases)*len(versions), localDOMRows, len(runtimeCases)*len(versions))
 	t.Logf("L07 carries %d DOM rows; diagnostics %d/%d with %d carries", carriedRows, diagnosticMatches, diagnosticTotal, diagnosticCarries)
-	if path := os.Getenv("GLADE_L07_REPORT"); path != "" {
+	if path := l07ReportPath(apiVersion); path != "" {
 		if err := os.WriteFile(path, []byte(report.String()), 0600); err != nil {
 			t.Fatal(err)
 		}

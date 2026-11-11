@@ -358,7 +358,7 @@ func (vm *VM) executeDatabaseDMLWithOptions(op string, args []Value, result *Res
 		}
 		// Other partial calls (explicit USER_MODE, upsert) defer the policy
 		// fields to the engine, which fails only the denied rows.
-		if err := vm.enforceUserModeDMLAccessDeferring(permissionOp, args[0], accessLevel, !allOrNone); err != nil {
+		if err := vm.enforceUserModeDMLAccessDeferring(permissionOp, args[0], accessLevel, !allOrNone, externalIDField); err != nil {
 			return Null, err
 		}
 	}
@@ -2557,7 +2557,7 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 	// Partial user-mode DML fails only the rows whose fields are denied; the
 	// all-or-none routes raised the statement exception before this point.
 	if resolvedMode == "USER_MODE" && !allOrNone && len(targets) == len(records) && (op == "insert" || op == "update" || op == "upsert") {
-		if failures := vm.userModeDMLFieldFailures(op, targets); hasDMLFailures(failures) {
+		if failures := vm.userModeDMLFieldFailures(op, targets, externalIDField); hasDMLFailures(failures) {
 			records, _, targets = filterDMLInputs(records, nil, targets, failures)
 			if len(records) == 0 {
 				return failures, nil
@@ -2768,7 +2768,23 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 		}()
 	}
 	if op == "upsert" {
-		return vm.applyUpsertDML(records, targets, allOrNone, externalIDField, options, result)
+		upsertInput := Null
+		if !allOrNone && value.Kind == ValueList && vm.hasAutomationForDML(records) {
+			upsertInput = vm.snapshotTriggerDMLInput(value, targets)
+		}
+		upserted, err := vm.applyUpsertDML(records, targets, allOrNone, externalIDField, options, result)
+		var retry *processUpsertRetry
+		if errors.As(err, &retry) && upsertInput.Kind == ValueList {
+			attempt := 0
+			if len(triggerRetries) > 0 {
+				attempt = triggerRetries[0]
+			}
+			return vm.retryProcessUpsert(upsertInput, retry.results, externalIDField, options, result, checkRecordAccess, checkApexIdentity, resolvedMode, attempt)
+		}
+		if errors.As(err, &retry) {
+			return retry.results, nil
+		}
+		return upserted, err
 	}
 	assignmentUpdateTriggers := (op == "insert" || op == "update") && vm.hasAssignmentRuleUpdateTriggers(records, targets, options)
 	if len(records) > 200 && (op == "insert" || op == "update") && recordsShareSingleObject(records) && !hasSuffixFold(records[0].Object, "__e") &&
@@ -3226,6 +3242,17 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 				vm.clearDMLResultFieldsForFailures(targets, failures, []string{op})
 				return failures, nil
 			}
+			if failures, ok := processFailureDMLResults(op, results, afterRecords, err); ok {
+				if allOrNone {
+					vm.clearDMLResultFieldsForFailures(targets, failures, []string{op})
+					return failures, nil
+				}
+				attempt := 0
+				if len(triggerRetries) > 0 {
+					attempt = triggerRetries[0]
+				}
+				return vm.retryPartialTriggerDML(op, triggerInput, externalIDField, options, result, checkRecordAccess, checkApexIdentity, resolvedMode, failures, rollback, attempt)
+			}
 			return nil, err
 		}
 	}
@@ -3522,8 +3549,13 @@ func (vm *VM) defaultValueForRecordField(definition storage.ObjectDefinition, re
 	if !dml.PersonAccountCustomFieldDefaultAllowed(vm.Org, definition, record, field) {
 		return storage.Value{}, false
 	}
-	if value, ok := storage.CurrencyDefaultForField(vm.Org, storage.ID(vm.currentUserID()), field); ok {
-		return value, true
+	// Only the currency default reads the running user. Resolving the user id
+	// walks the user object's fields, and this runs for every field of every
+	// DML row without a value.
+	if strings.EqualFold(field.APIName, "CurrencyIsoCode") {
+		if value, ok := storage.CurrencyDefaultForField(vm.Org, storage.ID(vm.currentUserID()), field); ok {
+			return value, true
+		}
 	}
 	rawDefault := strings.TrimSpace(field.DefaultValue)
 	// This runs for every field of every DML row without a value. Resolve the
@@ -3899,6 +3931,17 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 					if rollbackErr := restoreRollback(); rollbackErr != nil {
 						return nil, rollbackErr
 					}
+				}
+				vm.clearDMLResultFieldsForFailures(targets, failures, kinds)
+				return failures, nil
+			}
+			if failures, ok := processFailureDMLResults("upsert", results, afterRecords, err); ok {
+				if !allOrNone {
+					if rollbackErr := restoreRollback(); rollbackErr != nil {
+						return nil, rollbackErr
+					}
+					vm.clearDMLResultFieldsForFailures(targets, failures, kinds)
+					return nil, &processUpsertRetry{results: failures}
 				}
 				vm.clearDMLResultFieldsForFailures(targets, failures, kinds)
 				return failures, nil
@@ -6845,7 +6888,7 @@ func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, mode i
 				permissionOp = ""
 			}
 		}
-		if err := vm.enforceUserModeDMLAccess(permissionOp, value, Value{}); err != nil {
+		if err := vm.enforceUserModeDMLAccess(permissionOp, value, Value{}, externalIDField); err != nil {
 			return err
 		}
 	}

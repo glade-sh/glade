@@ -1,0 +1,65 @@
+@IsTest private class FernCases62Test {
+    @IsTest static void upd() { System.assertEquals('SENTINEL', FernCases62.upd()); }
+    @IsTest static void two() { System.assertEquals('SENTINEL', FernCases62.two()); }
+    @IsTest static void twoorder() { System.assertEquals('SENTINEL', FernCases62.twoorder()); }
+    @IsTest static void evalbulk() { System.assertEquals('SENTINEL', FernCases62.evalbulk()); }
+    @IsTest static void seq() { System.assertEquals('SENTINEL', FernCases62.seq()); }
+    @IsTest static void ordbulk() { System.assertEquals('SENTINEL', FernCases62.ordbulk()); }
+    @IsTest static void bmp() { System.assertEquals('SENTINEL', FernCases62.bmp()); }
+    @IsTest static void sib() { System.assertEquals('SENTINEL', FernCases62.sib()); }
+    @IsTest static void evalnext() { System.assertEquals('SENTINEL', FernCases62.evalnext()); }
+    @IsTest static void grp() { System.assertEquals('SENTINEL', FernCases62.grp()); }
+    @IsTest static void asg() { System.assertEquals('SENTINEL', FernCases62.asg()); }
+    @IsTest static void chg() { System.assertEquals('SENTINEL', FernCases62.chg()); }
+    @IsTest static void met() { System.assertEquals('SENTINEL', FernCases62.met()); }
+    @IsTest static void rel() { System.assertEquals('SENTINEL', FernCases62.rel()); }
+    @IsTest static void ord() { System.assertEquals('SENTINEL', FernCases62.ord()); }
+    @IsTest static void created() { System.assertEquals('SENTINEL', FernCases62.created()); }
+    @IsTest static void pri() { System.assertEquals('SENTINEL', FernCases62.pri()); }
+    @IsTest static void rec() { System.assertEquals('SENTINEL', FernCases62.rec()); }
+    @IsTest static void err() { System.assertEquals('SENTINEL', FernCases62.err()); }
+    @IsTest static void flowact() { System.assertEquals('SENTINEL', FernCases62.flowact()); }
+    @IsTest static void thr() { System.assertEquals('SENTINEL', FernCases62.thr()); }
+    @IsTest static void cgl() { System.assertEquals('SENTINEL', FernCases62.cgl()); }
+    @IsTest static void fan() { System.assertEquals('SENTINEL', FernCases62.fan()); }
+    @IsTest static void thrbulk() { System.assertEquals('SENTINEL', FernCases62.thrbulk()); }
+    @IsTest static void mergep() { System.assertEquals('SENTINEL', FernCases62.mergep()); }
+    @IsTest static void sibmerge() { System.assertEquals('SENTINEL', FernCases62.sibmerge()); }
+    @IsTest static void flow2() { System.assertEquals('SENTINEL', FernCases62.flow2()); }
+    @IsTest static void asn() { System.assertEquals('SENTINEL', FernCases62.asn()); }
+    @IsTest static void asu() { System.assertEquals('SENTINEL', FernCases62.asu()); }
+    @IsTest static void errups() { System.assertEquals('SENTINEL', FernCases62.errups()); }
+    @IsTest static void fanmulti() { System.assertEquals('SENTINEL', FernCases62.fanmulti()); }
+    @IsTest static void asubulk() { System.assertEquals('SENTINEL', FernCases62.asubulk()); }
+    @IsTest static void ordsaves() { System.assertEquals('SENTINEL', FernCases62.ordsaves()); }
+    @IsTest static void flow2fail() { System.assertEquals('SENTINEL', FernCases62.flow2fail()); }
+    @IsTest static void tpl() { System.assertEquals('SENTINEL', FernCases62.tpl()); }
+    @IsTest static void eml() { System.assertEquals('SENTINEL', FernCases62.eml()); }
+    @IsTest static void multiflow() { System.assertEquals('SENTINEL', FernCases62.multiflow()); }
+    @IsTest static void globalcontrol() { System.assertEquals('SENTINEL', FernCases62.globalcontrol()); }
+    @IsTest static void branchedflow() { System.assertEquals('SENTINEL', FernCases62.branchedflow()); }
+    @IsTest static void routedcontrol() { System.assertEquals('SENTINEL', FernCases62.routedcontrol()); }
+    @IsTest static void routedsame() { System.assertEquals('SENTINEL', FernCases62.routedsame()); }
+    @IsTest static void userclock() { System.assertEquals('SENTINEL', FernCases62.userclock()); }
+    @IsTest static void booleanconstant() { System.assertEquals('SENTINEL', FernCases62.booleanconstant()); }
+    @IsTest static void pickchanged() { System.assertEquals('SENTINEL', FernCases62.pickchanged()); }
+    @IsTest static void userlookup() { System.assertEquals('SENTINEL', FernCases62.userlookup()); }
+    @IsTest static void twoactions() { System.assertEquals('SENTINEL', FernCases62.twoactions()); }
+    @IsTest static void twolookups() { System.assertEquals('SENTINEL', FernCases62.twolookups()); }
+    @IsTest static void fourflows() { System.assertEquals('SENTINEL', FernCases62.fourflows()); }
+    @IsTest static void fourcomplex() { System.assertEquals('SENTINEL', FernCases62.fourcomplex()); }
+    @IsTest static void fourcomplexalt() { System.assertEquals('SENTINEL', FernCases62.fourcomplexalt()); }
+    @IsTest static void priorflow() { System.assertEquals('SENTINEL', FernCases62.priorflow()); }
+    @IsTest static void priorflowinsert() { System.assertEquals('SENTINEL', FernCases62.priorflowinsert()); }
+    @IsTest static void branchprobe() { System.assertEquals('SENTINEL', FernCases62.branchprobe()); }
+    @IsTest static void branchdates() { System.assertEquals('SENTINEL', FernCases62.branchdates()); }
+    @IsTest static void branchreject() { System.assertEquals('SENTINEL', FernCases62.branchreject()); }
+
+    @TestSetup static void setupSyntheticUser() {
+        if ([SELECT COUNT() FROM User WHERE Alias='pbfake'] == 0) {
+            User u=new User(Alias='pbfake',Email='synthetic@example.invalid',EmailEncodingKey='UTF-8',LastName='Synthetic',LanguageLocaleKey='en_US',LocaleSidKey='en_US',ProfileId=UserInfo.getProfileId(),TimeZoneSidKey='America/Los_Angeles',UserName='synthetic.runner@example.invalid'); insert u;
+        }
+    }
+    @IsTest static void sharepair() { System.assertEquals('SENTINEL', FernCases62.sharepair()); }
+    @IsTest static void sharereverse() { System.assertEquals('SENTINEL', FernCases62.sharereverse()); }
+}

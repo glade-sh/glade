@@ -1116,27 +1116,30 @@ func TestLightningApexRouteCommitsOnlySuccessfulMutation(t *testing.T) {
 		t.Fatalf("failed mutation committed: saves=%d org=%#v store=%#v", store.saves, org.Objects["Account"].Records, store.last.Objects["Account"].Records)
 	}
 
+	// Queueable and future work enqueued by an action drains after the action
+	// commits (lightning_action_async_drain captures); the caller sees the
+	// action's own return value.
 	queued := invoke("enqueue", "")
-	if queued.Error == nil || queued.Error.Type != "UnsupportedFeature" || !strings.Contains(queued.Error.Message, "asynchronous Apex work") {
+	if queued.Error != nil || queued.Data != "queued" {
 		t.Fatalf("queued response = %#v error=%+v", queued, queued.Error)
 	}
-	if store.saves != 1 || len(org.Objects["Account"].Records) != 1 {
-		t.Fatalf("queued mutation committed: saves=%d org=%#v", store.saves, org.Objects["Account"].Records)
+	if len(org.Objects["Account"].Records) != 1 {
+		t.Fatalf("queued action changed accounts: %#v", org.Objects["Account"].Records)
 	}
 
 	swallowed := invoke("swallowConvert", "")
-	if swallowed.Error == nil || swallowed.Error.Type != "UnsupportedFeature" || !strings.Contains(swallowed.Error.Message, "asynchronous Apex work") {
+	if swallowed.Error != nil || swallowed.Data != "swallowed" {
 		t.Fatalf("swallowed response = %#v error=%+v", swallowed, swallowed.Error)
 	}
-	if store.saves != 1 || len(org.Objects["Account"].Records) != 1 {
-		t.Fatalf("caught async mutation committed: saves=%d org=%#v", store.saves, org.Objects["Account"].Records)
+	if len(org.Objects["Account"].Records) != 3 {
+		t.Fatalf("swallowed action did not commit its marker: saves=%d n=%d", store.saves, len(org.Objects["Account"].Records))
 	}
 
 	asyncDML := invoke("asyncDML", "Must not run async DML")
 	if asyncDML.Error == nil || asyncDML.Error.Type != "UnsupportedFeature" || !strings.Contains(asyncDML.Error.Message, "Database.insertAsync") {
 		t.Fatalf("async DML response = %#v error=%+v", asyncDML, asyncDML.Error)
 	}
-	if store.saves != 1 || len(org.Objects["Account"].Records) != 1 {
+	if len(org.Objects["Account"].Records) != 3 {
 		t.Fatalf("async DML mutation committed: saves=%d org=%#v", store.saves, org.Objects["Account"].Records)
 	}
 }

@@ -1,0 +1,7 @@
+api	case	route	outcome
+62.0	directSetter	IsTest	Pass
+62.0	nestedSameName	IsTest	Pass
+62.0	otherSetter	IsTest	Pass
+67.0	directSetter	IsTest	Pass
+67.0	nestedSameName	IsTest	Pass
+67.0	otherSetter	IsTest	Pass

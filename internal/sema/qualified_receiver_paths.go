@@ -3,15 +3,76 @@ package sema
 import (
 	"strings"
 
+	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/vm"
 )
+
+// An unqualified alias of a loaded namespaced source dependency belongs only
+// to callers in that namespace, including within aggregate project indexes.
+func semaDependencyAliasVisible(model *semaTypeMemberView, owner, spelling string, members typeMembers) bool {
+	if !members.dependency || !members.receiverDependencySource || members.namespace == "" {
+		return true
+	}
+	if root, _, qualified := strings.Cut(spelling, "."); qualified && strings.EqualFold(root, members.namespace) {
+		return true
+	}
+	callerNamespace := model.state.base.defaultSourceScope.namespace
+	if owner != "" {
+		if current, known := model.lookupName(owner); known {
+			callerNamespace = normalizeName(current.namespace)
+		}
+	}
+	return strings.EqualFold(callerNamespace, members.namespace)
+}
+
+func semaCompleteDependencyNestedMiss(a *Analyzer, model *semaTypeMemberView, reference string) bool {
+	if _, known := model.lookupName(reference); known {
+		return false
+	}
+	parts := strings.Split(reference, ".")
+	for end := len(parts) - 1; end > 0; end-- {
+		members, known := model.lookupName(strings.Join(parts[:end], "."))
+		if known {
+			if !members.dependency || !model.state.base.completeDependencyNestedTypes[normalizeName(members.name)] {
+				return false
+			}
+			return strings.EqualFold(parts[0], members.namespace) || !semaTypeReferenceKnownAtVersion(a, model, "", reference, "")
+		}
+	}
+	return false
+}
+
+// A closed, unrelated type root or a complete same-scope source declaration
+// proves this two-part type spelling absent. Opaque namespaces remain open.
+func semaClosedSourceTypeMiss(a *Analyzer, model *semaTypeMemberView, caller, reference string) bool {
+	root, member, qualified := strings.Cut(reference, ".")
+	if !qualified || root == "" || member == "" || strings.Contains(member, ".") {
+		return false
+	}
+	if a.qualifiedTypeMissRejected(caller, reference, model, false) {
+		return true
+	}
+	if semaQualifierNamesKnownNamespace(a, root) {
+		return false
+	}
+	owner, known := model.lookupName(root)
+	return known && !owner.platform && !owner.dependency &&
+		model.state.base.completeSourceNestedTypes[normalizeName(owner.name)] &&
+		semaSourceTypeInCallingScope(model, caller, owner) &&
+		!semaTypeReferenceKnownAtVersion(a, model, caller, reference, "")
+}
 
 func semaTypeReferenceKnownAtVersion(a *Analyzer, model *semaTypeMemberView, owner, reference, version string) bool {
 	if a.standardObjectAbsentFromDeclaredShape(model, owner, reference) {
 		return false
 	}
 	if !strings.Contains(reference, ".") {
+		// A same-namespace subclass may use its provider's nested type by
+		// bare name. Do not make that name global to unrelated callers.
+		if members, found := a.scopedNestedType(model, owner, reference); found && members.dependency {
+			return a.hasKnownAtVersion(members.name, version)
+		}
 		return a.hasKnownAtVersion(reference, version)
 	}
 	// Project source resolves first. A namespace declared by the project or
@@ -50,7 +111,10 @@ func semaTypeReferenceKnownAtVersion(a *Analyzer, model *semaTypeMemberView, own
 		return true
 	}
 	resolved := resolveNestedTypeReference(model, owner, reference)
-	if _, known := model.lookupName(resolved); known {
+	if members, known := model.lookupName(resolved); known {
+		if !semaDependencyAliasVisible(model, owner, reference, members) {
+			return false
+		}
 		return a.hasKnownAtVersion(resolved, version)
 	}
 	canonical := semaCanonicalPlatformAlias(reference)
@@ -94,7 +158,9 @@ func semaTypeReferenceKnownAtVersion(a *Analyzer, model *semaTypeMemberView, own
 			continue
 		}
 		if members.dependency {
-			return true
+			// A complete, unambiguous source inventory for an unnamespaced or same-namespace
+			// dependency proves that its remaining nested member is absent.
+			return !model.state.base.completeDependencyNestedTypes[normalizeName(members.name)]
 		}
 		if members.sobject {
 			// An SObject's short name can also qualify an undeclared installed
@@ -164,6 +230,18 @@ func semaTypeReferenceKnownAtVersion(a *Analyzer, model *semaTypeMemberView, own
 		!semaPlatformTypeUnavailable(version, reference)
 }
 
+// semaTypePositionKnownAtVersion is semaTypeReferenceKnownAtVersion for a
+// type position (field, parameter, return, new, cast, instanceof): a
+// qualified miss under the project's own namespace or an undeclared
+// external namespace is Invalid type there, as it is for a local
+// declaration (ruling 49; namespace_external_positions,
+// namespace_owner_nested_inventory). Receiver and assignment checks keep
+// semaTypeReferenceKnownAtVersion, so a value of a rejected type does not
+// cascade into further diagnostics.
+func semaTypePositionKnownAtVersion(a *Analyzer, model *semaTypeMemberView, owner, reference, version string) bool {
+	return semaTypeReferenceKnownAtVersion(a, model, owner, reference, version) && !a.qualifiedTypeMissRejected(owner, reference, model, false)
+}
+
 func semaCapturedFormulaTypeAbsent(reference string) bool {
 	// formula_evaluation C016/C017 prove only these spellings absent, not the
 	// rest of FormulaEval's partial namespace inventory.
@@ -217,6 +295,27 @@ func semaQualifiedCallReceiverKnown(a *Analyzer, currentType, receiver string, s
 	if semaModelHasType(model, resolveNestedTypeName(model, currentType, receiver)) || semaEnumValuePathType(model, receiver) != "" {
 		return true
 	}
+	// As with Schema.SObjectType.<object>.fields, a source-inferred
+	// placeholder alone does not establish an object for a field-set path.
+	// Unloaded dependencies remain open to their own schema names.
+	parts := strings.Split(receiver, ".")
+	root := parts[0]
+	if len(parts) > 0 && strings.EqualFold(parts[0], "Schema") {
+		parts = parts[1:]
+	}
+	if len(parts) == 4 && strings.EqualFold(parts[0], "SObjectType") && strings.EqualFold(parts[2], "fieldSets") {
+		_, scoped := scope.lookup(root)
+		objectParts := strings.Split(parts[1], "__")
+		external := a != nil && (a.hasExternalDependencyName(parts[1]) || len(objectParts) >= 3 && !strings.EqualFold(objectParts[0], a.namespace))
+		fieldSetNamespace, _, qualifiedFieldSet := strings.Cut(parts[3], "__")
+		externalFieldSet := a != nil && qualifiedFieldSet && !strings.EqualFold(fieldSetNamespace, a.namespace)
+		if a != nil && !scoped && !semaProjectTypeShadowsPlatform(model, root) && !external && !semaSObjectIdentityEstablished(a, parts[1], model) {
+			return false
+		}
+		if a != nil && !scoped && !semaProjectTypeShadowsPlatform(model, root) && !external && !externalFieldSet && semaAbsentCapturedFieldSet(a, parts[1], parts[3], model) {
+			return false
+		}
+	}
 	if semaPageReceiverPathKnown(receiver) || semaKnownSObjectFieldTokenPath(receiver, model) ||
 		semaKnownSObjectTypeTokenPath(receiver, model) || semaKnownSObjectFieldSetPath(receiver, model) {
 		return true
@@ -236,8 +335,8 @@ func semaQualifiedCallReceiverKnown(a *Analyzer, currentType, receiver string, s
 	// A loaded dependency namespace is known; a declared but unloaded one
 	// supplies no method either. Preserve declaration-backed deferral and
 	// positively resolved receivers above.
-	root, _, _ := strings.Cut(receiver, ".")
-	if !a.hasKnown(root) && !semaIRUnresolvedDeclaredReceiver(receiver, scope, model) {
+	root, _, _ = strings.Cut(receiver, ".")
+	if !a.hasKnown(root) && !semaIRUnresolvedDeclaredReceiver(a, currentType, receiver, scope, model) {
 		if _, bound := scope.lookup(root); !bound {
 			return false
 		}
@@ -427,6 +526,8 @@ func semaKnownSObjectFieldTokenPath(receiver string, model *semaTypeMemberView) 
 		objectName, fieldName = parts[0], parts[1]
 	case len(parts) == 3 && strings.EqualFold(parts[1], "fields"):
 		objectName, fieldName = parts[0], parts[2]
+	case len(parts) == 3 && strings.EqualFold(parts[1], "SObjectType") && !strings.EqualFold(parts[2], "fields") && !strings.EqualFold(parts[2], "fieldSets"):
+		objectName, fieldName = parts[0], parts[2]
 	case len(parts) == 4 && strings.EqualFold(parts[1], "SObjectType") && strings.EqualFold(parts[2], "fields"):
 		objectName, fieldName = parts[0], parts[3]
 	case len(parts) == 3 && strings.EqualFold(parts[0], "SObjectType") && strings.EqualFold(parts[2], "fields"):
@@ -472,6 +573,30 @@ func semaKnownSObjectTypeTokenPath(receiver string, model *semaTypeMemberView) b
 	default:
 		return false
 	}
+}
+
+// Only an explicitly complete, non-partial inventory can prove a missing
+// field set. Source files alone and dependency inventories do not close it.
+func semaAbsentCapturedFieldSet(a *Analyzer, objectName, fieldSetName string, model *semaTypeMemberView) bool {
+	canonical := objectName
+	if members, ok := model.lookupName(objectName); ok && members.sobject {
+		canonical = members.name
+	}
+	for _, object := range a.queryDeclaredObjects {
+		if !strings.EqualFold(object.Name, objectName) && !strings.EqualFold(object.Name, canonical) {
+			continue
+		}
+		if object.Partial || !object.FieldSetsComplete {
+			return false
+		}
+		for _, known := range object.FieldSetNames {
+			if strings.EqualFold(known, fieldSetName) || a.namespace != "" && strings.EqualFold(storage.StripNamespaceToken(a.namespace, known), storage.StripNamespaceToken(a.namespace, fieldSetName)) {
+				return false
+			}
+		}
+		return true
+	}
+	return false
 }
 
 func semaKnownSObjectFieldSetPath(receiver string, model *semaTypeMemberView) bool {
@@ -542,4 +667,34 @@ func semaMissingSObjectFieldsObject(a *Analyzer, name string, scope irSemaScope,
 		}
 	}
 	return strings.Join(parts[:4], "."), true
+}
+
+// Resolve a local nested interface only when its complete declaration is known.
+func semaLocalNestedInterfaceReceiver(model *semaTypeMemberView, currentType, receiver string) (typeMembers, bool) {
+	if len(strings.Split(receiver, ".")) != 2 {
+		return typeMembers{}, false
+	}
+	nestedType := resolveNestedTypeName(model, currentType, receiver)
+	members, ok := model.lookupName(nestedType)
+	if !ok || members.nestingDepth <= 0 || !semaCompleteLocalInterface(model, members, make(map[string]bool)) {
+		return typeMembers{}, false
+	}
+	return members, true
+}
+
+func semaCompleteLocalInterface(model *semaTypeMemberView, members typeMembers, seen map[string]bool) bool {
+	key := normalizeName(members.name)
+	if key == "" || seen[key] || members.platform || members.dependency || members.kind != apexast.DeclarationInterface || members.superClass != "" {
+		return false
+	}
+	seen[key] = true
+	defer delete(seen, key)
+	for _, parent := range members.interfaces {
+		parent = resolveNestedTypeName(model, members.name, parent)
+		parentMembers, ok := model.lookupName(parent)
+		if !ok || !semaCompleteLocalInterface(model, parentMembers, seen) {
+			return false
+		}
+	}
+	return true
 }

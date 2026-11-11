@@ -672,29 +672,28 @@ func openDBStore(path, root string) (*storage.SQLiteStore, storage.OrgState, err
 			if org.Metadata.ProjectFlowOwnershipVersion == 0 {
 				_ = store.Close()
 				return nil, storage.OrgState{}, flowProjectIdentityError(path)
-			} else {
-				// A missing directory must not be treated as an empty project.
-				// When it is available, always refresh so new Flows are found
-				// even after the previous last project Flow was removed.
-				info, statErr := os.Stat(storedBinding.ProjectRoot)
-				if statErr != nil || !info.IsDir() {
-					if legacyOrgHasFileBackedFlow(org, true) {
-						_ = store.Close()
-						return nil, storage.OrgState{}, fmt.Errorf("cannot load bound project to refresh Flow metadata")
-					}
-				} else {
-					root = storedBinding.ProjectRoot
-					projectOrg, binding, hasBinding, err = projectOrgAndDBBinding(root)
-					if err != nil || !hasBinding {
-						_ = store.Close()
-						return nil, storage.OrgState{}, fmt.Errorf("cannot load bound project to refresh Flow metadata")
-					}
-					if !boundProjectIdentityMatches(binding.ProjectRoot, org) {
-						_ = store.Close()
-						return nil, storage.OrgState{}, flowProjectIdentityError(path)
-					}
-					markProjectFlowSources(&projectOrg)
+			}
+			// A missing directory must not be treated as an empty project.
+			// When it is available, always refresh so new Flows are found
+			// even after the previous last project Flow was removed.
+			info, statErr := os.Stat(storedBinding.ProjectRoot)
+			if statErr != nil || !info.IsDir() {
+				if legacyOrgHasFileBackedFlow(org, true) {
+					_ = store.Close()
+					return nil, storage.OrgState{}, fmt.Errorf("cannot load bound project to refresh Flow metadata")
 				}
+			} else {
+				root = storedBinding.ProjectRoot
+				projectOrg, binding, hasBinding, err = projectOrgAndDBBinding(root)
+				if err != nil || !hasBinding {
+					_ = store.Close()
+					return nil, storage.OrgState{}, fmt.Errorf("cannot load bound project to refresh Flow metadata")
+				}
+				if !boundProjectIdentityMatches(binding.ProjectRoot, org) {
+					_ = store.Close()
+					return nil, storage.OrgState{}, flowProjectIdentityError(path)
+				}
+				markProjectFlowSources(&projectOrg)
 			}
 		}
 	}

@@ -1,0 +1,31 @@
+{
+  "masterLanguage": "fr",
+  "labels": [
+    {
+      "case": "PaddedText",
+      "name": "GladeProbePaddedTextacad01b428b7",
+      "masterValue": "MasterPaddedText",
+      "protected": false
+    },
+    {
+      "case": "PaddedNbsp",
+      "name": "GladeProbePaddedNbspacad01b428b7",
+      "masterValue": "MasterPaddedNbsp",
+      "protected": false
+    }
+  ],
+  "localizations": [
+    {
+      "case": "PaddedText",
+      "language": "en_US",
+      "attemptedValue": "  English Padded  ",
+      "storedValue": "English Padded"
+    },
+    {
+      "case": "PaddedNbsp",
+      "language": "en_US",
+      "attemptedValue": "  \u00a0  ",
+      "storedValue": "\u00a0"
+    }
+  ]
+}

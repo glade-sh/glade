@@ -35,7 +35,7 @@ func TestCustomPermissionAPI63Proof(t *testing.T) {
 	writeFile(t, filepath.Join(root, "force-app/main/default/customPermissions/GladeCustomPermission63Owned.customPermission-meta.xml"), `<?xml version="1.0" encoding="UTF-8" ?>
 <CustomPermission xmlns="http://soap.sforce.com/2006/04/metadata">
     <isLicensed>false</isLicensed>
-    <label>ApexKit Example</label>
+    <label>Example</label>
 </CustomPermission>
 `)
 	run := Run(loadTestIndex(t, root), Options{NoDiskCache: true})

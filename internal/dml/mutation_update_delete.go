@@ -123,6 +123,7 @@ func (e *Engine) updateOne(record storage.Record) error {
 	}
 	e.applyTaskPriorityFlag(&finalRecord)
 	e.applyActivityAccountFromWhat(&finalRecord)
+	e.applyContractStatusCode(&finalRecord)
 	e.applyOrderItemDerivedFields(&finalRecord)
 	e.applyRegulatoryCodeActive(&finalRecord)
 	e.applyOpportunityLineItemDerivedFields(&finalRecord, record, existing)
@@ -172,6 +173,7 @@ func (e *Engine) updateOne(record storage.Record) error {
 	}
 	e.applyTaskPriorityFlag(&existing)
 	e.applyActivityAccountFromWhat(&existing)
+	e.applyContractStatusCode(&existing)
 	stripStoredCalculatedFields(object.Definition, &existing)
 	e.applyOrderItemDerivedFields(&existing)
 	e.applyOpportunityLineItemDerivedFields(&existing, record, oldRecord)

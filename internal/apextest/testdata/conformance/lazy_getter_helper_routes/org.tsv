@@ -1,0 +1,9 @@
+api	case	route	outcome
+62.0	assignOnly	IsTest	Fail; System.LimitException: Maximum stack depth reached: 1001
+62.0	full	IsTest	Fail; System.LimitException: Maximum stack depth reached: 1001
+62.0	guardOnly	IsTest	Fail; System.LimitException: Maximum stack depth reached: 1001
+62.0	plain	IsTest	Fail; System.LimitException: Maximum stack depth reached: 1001
+67.0	assignOnly	IsTest	Fail; System.LimitException: Maximum stack depth reached: 1001
+67.0	full	IsTest	Fail; System.LimitException: Maximum stack depth reached: 1001
+67.0	guardOnly	IsTest	Fail; System.LimitException: Maximum stack depth reached: 1001
+67.0	plain	IsTest	Fail; System.LimitException: Maximum stack depth reached: 1001

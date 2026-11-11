@@ -18,6 +18,8 @@ ROOT = Path(__file__).resolve().parent.parent
 SHARDS = {'apextest': 12, 'sema': 2, 'lwc-compile': 8, 'visualforce': 4, 'gladecli': 4, 'vm': 4}
 # CodeQL runs from Security, not Required CI; the local codeql step below stays as an extra check.
 MAPPING = {
+    # PR selection is covered by the full suite and scripts tests locally.
+    'pr-tests': 'full-suite',
     'workflow-lint': 'workflow-lint', 'site': 'site',
     'test-binaries': 'test-binaries', 'vet': 'vet', 'apextest': 'apextest',
     'apextest-history': 'apextest-history', 'lwc-compile-history': 'lwc-compile-history',
@@ -25,7 +27,7 @@ MAPPING = {
     'gladecli-history': 'gladecli-history', 'vm': 'vm', 'vm-history': 'vm-history',
     'node-integration': 'node-integration', 'nested-sources': 'nested-sources',
     'sema': 'sema', 'sema-history': 'sema-history',
-    'server-and-playground': 'server-and-playground', 'test': 'test',
+    'server-and-playground': 'server-and-playground', 'server-process-builder': 'server-process-builder', 'test': 'test',
     'smoke-runtime': 'smoke-runtime', 'smoke-distribution': 'smoke-distribution',
     'leak-scan': 'leak-scan',
 }
@@ -176,6 +178,7 @@ class Runner:
         self.command('leak-scan', ['bash','scripts/leak-scan.sh','--range', os.environ.get('LEAK_SCAN_RANGE','HEAD~1..HEAD')])
         self.command('node-integration', [g,'node-integration'], prerequisites=[go,node,lwc,candidate])
         self.command('server-and-playground', [g,'lane','server-and-playground'], prerequisites=[go,node,lwc,candidate,runtime,browser])
+        self.command('server-process-builder', [g,'lane','server-process-builder'], prerequisites=[go])
         self.command('test-guard', [g,'lane','repoguard'], prerequisites=[go])
         self.command('test-remaining-go', [g,'lane','remaining-go'], prerequisites=[go,node,lwc,candidate,runtime,browser])
         self.shell('nested-sources', '(cd third_party/glade-apex-parser && go test -trimpath ./... && CGO_ENABLED=0 go test -trimpath ./...); npm test --prefix internal/playground/web; npm run build --prefix internal/playground/web; test -z "$(git status --porcelain --untracked-files=all -- internal/playground/static)"', prerequisites=[go,node,npm_dep('playground')])

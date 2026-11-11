@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/dlclark/regexp2"
+
+	"github.com/glade-sh/glade/internal/testutil"
 )
 
 var errPrematureTimeout = errors.New("match timeout after 2s on input `0.0.0.0`")
@@ -190,19 +192,23 @@ func TestRegexRetryRealCPUBudget(t *testing.T) {
 	}
 	regexCPUSampleCache.Store(nil)
 	calls := 0
-	watchdog := time.Now().Add(20 * time.Second)
+	watchdog := time.Now().Add(testutil.Deadline(20 * time.Second))
 	_, err := retryPrematureRegexTimeout(200*time.Millisecond, func() (*regexp2.Match, error) {
 		calls++
 		start, available := regexProcessCPUTime()
 		if !available {
 			t.Fatal("process CPU time became unavailable")
 		}
+		// Burn until both clocks pass 150ms: process CPU alone can outrun the
+		// wall clock when other goroutines in the test binary are running, which
+		// would end the search before budget/2 and take the stale-clock rerun.
+		wallStart := time.Now()
 		for {
 			cpu, available := regexProcessCPUTime()
 			if !available {
 				t.Fatal("process CPU time became unavailable")
 			}
-			if cpu-start >= 150*time.Millisecond {
+			if cpu-start >= 150*time.Millisecond && time.Since(wallStart) >= 150*time.Millisecond {
 				break
 			}
 			if time.Now().After(watchdog) {

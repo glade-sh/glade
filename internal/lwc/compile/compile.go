@@ -22,6 +22,9 @@ type Options struct {
 	// LightningModules is the host module registry. Nil leaves external module
 	// resolution to callers that do not supply a browser host.
 	LightningModules map[string]string
+	// CompleteLocalModuleInventory declares that the project source includes all
+	// local modules in the target org. Without it, external resolution is deferred.
+	CompleteLocalModuleInventory bool
 }
 
 type ModuleEntry struct {
@@ -54,21 +57,23 @@ type BundleResult struct {
 }
 
 type compileConfig struct {
-	Batch                   bool                         `json:"batch,omitempty"`
-	BundleOutDirs           map[string]string            `json:"bundleOutDirs,omitempty"`
-	ProjectRoot             string                       `json:"projectRoot"`
-	OutDir                  string                       `json:"outDir"`
-	Namespace               string                       `json:"namespace"`
-	LWCFiles                []string                     `json:"lwcFiles"`
-	LWCHTMLFiles            []string                     `json:"lwcHtmlFiles"`
-	LWCMetaFiles            []string                     `json:"lwcMetaFiles"`
-	LWCAPIVersions          map[string]int               `json:"lwcApiVersions"`
-	LWCModuleAvailability   map[string]apexversion.Range `json:"lwcModuleAvailability"`
-	LWCConfiguredProperties map[string][]string          `json:"lwcConfiguredProperties"`
-	LWCCapabilities         map[string][]string          `json:"lwcCapabilities"`
-	LWCCapabilityErrors     map[string]string            `json:"lwcCapabilityErrors"`
-	LightningModules        map[string]string            `json:"lightningModules"`
-	SalesforceImports       *salesforceImportConfig      `json:"salesforceImports,omitempty"`
+	CompleteLocalModuleInventory bool                         `json:"completeLocalModuleInventory,omitempty"`
+	Batch                        bool                         `json:"batch,omitempty"`
+	BundleOutDirs                map[string]string            `json:"bundleOutDirs,omitempty"`
+	ProjectRoot                  string                       `json:"projectRoot"`
+	OutDir                       string                       `json:"outDir"`
+	Namespace                    string                       `json:"namespace"`
+	LWCFiles                     []string                     `json:"lwcFiles"`
+	LWCHTMLFiles                 []string                     `json:"lwcHtmlFiles"`
+	LWCMetaFiles                 []string                     `json:"lwcMetaFiles"`
+	LWCAPIVersions               map[string]int               `json:"lwcApiVersions"`
+	LWCConsumerOwned             map[string]bool              `json:"lwcConsumerOwned"`
+	LWCModuleAvailability        map[string]apexversion.Range `json:"lwcModuleAvailability"`
+	LWCConfiguredProperties      map[string][]string          `json:"lwcConfiguredProperties"`
+	LWCCapabilities              map[string][]string          `json:"lwcCapabilities"`
+	LWCCapabilityErrors          map[string]string            `json:"lwcCapabilityErrors"`
+	LightningModules             map[string]string            `json:"lightningModules"`
+	SalesforceImports            *salesforceImportConfig      `json:"salesforceImports,omitempty"`
 }
 
 type bundleCompileResult struct {
@@ -140,6 +145,7 @@ func Compile(p project.Project, opts Options) (Manifest, error) {
 		return Manifest{}, err
 	}
 	cfg.LightningModules = opts.LightningModules
+	cfg.CompleteLocalModuleInventory = opts.CompleteLocalModuleInventory
 	result, err := runCompiler(p, cfg, roots)
 	if err != nil {
 		return Manifest{}, err
@@ -191,8 +197,8 @@ func CompileBatch(p project.Project, opts Options) (map[string]BundleResult, err
 	if namespace == "" {
 		namespace = "c"
 	}
-	cfg := compileConfig{Batch: true, ProjectRoot: projectRoot, OutDir: outDir, Namespace: namespace,
-		BundleOutDirs: map[string]string{}, LWCAPIVersions: map[string]int{},
+	cfg := compileConfig{CompleteLocalModuleInventory: opts.CompleteLocalModuleInventory, Batch: true, ProjectRoot: projectRoot, OutDir: outDir, Namespace: namespace,
+		BundleOutDirs: map[string]string{}, LWCAPIVersions: map[string]int{}, LWCConsumerOwned: map[string]bool{},
 		LWCCapabilities: map[string][]string{}, LWCCapabilityErrors: map[string]string{},
 		LWCConfiguredProperties: map[string][]string{}, LWCModuleAvailability: generatedLWCModuleAvailability, LightningModules: opts.LightningModules}
 	results := map[string]BundleResult{}
@@ -255,6 +261,7 @@ func CompileBatch(p project.Project, opts Options) (map[string]BundleResult, err
 			cfg.LWCFiles = append(cfg.LWCFiles, bundleConfig.LWCFiles...)
 			cfg.LWCHTMLFiles = append(cfg.LWCHTMLFiles, bundleConfig.LWCHTMLFiles...)
 			cfg.LWCAPIVersions[key] = bundleConfig.LWCAPIVersions[key]
+			cfg.LWCConsumerOwned[key] = bundleConfig.LWCConsumerOwned[key]
 			cfg.LWCConfiguredProperties[key] = bundleConfig.LWCConfiguredProperties[key]
 			cfg.LWCCapabilities[key] = bundleConfig.LWCCapabilities[key]
 			cfg.LWCCapabilityErrors[key] = bundleConfig.LWCCapabilityErrors[key]
@@ -343,6 +350,7 @@ func lwcCompilerCommand(roots compileRoots) *exec.Cmd {
 
 func buildCompileConfig(p project.Project, projectRoot, outDir, namespace string) (compileConfig, error) {
 	versions := make(map[string]int, len(p.LWCMetaFiles))
+	consumerOwned := make(map[string]bool, len(p.LWCMetaFiles))
 	properties := make(map[string][]string, len(p.LWCMetaFiles))
 	capabilities := make(map[string][]string, len(p.LWCMetaFiles))
 	capabilityErrors := make(map[string]string, len(p.LWCMetaFiles))
@@ -354,6 +362,7 @@ func buildCompileConfig(p project.Project, projectRoot, outDir, namespace string
 			return compileConfig{}, fmt.Errorf("LWC metadata escapes project root: %s", metaPath)
 		}
 		key := filepath.ToSlash(relative)
+		consumerOwned[key] = p.SourceNamespaceForFile(metaPath, p.Namespace) == p.Namespace
 		if _, exists := versions[key]; exists {
 			return compileConfig{}, fmt.Errorf("multiple LWC metadata files for bundle %s", key)
 		}
@@ -411,6 +420,7 @@ func buildCompileConfig(p project.Project, projectRoot, outDir, namespace string
 		LWCHTMLFiles:            relativize(projectRoot, p.LWCHTMLFiles),
 		LWCMetaFiles:            relativize(projectRoot, p.LWCMetaFiles),
 		LWCAPIVersions:          versions,
+		LWCConsumerOwned:        consumerOwned,
 		LWCModuleAvailability:   generatedLWCModuleAvailability,
 		LWCConfiguredProperties: properties,
 		LWCCapabilities:         capabilities,

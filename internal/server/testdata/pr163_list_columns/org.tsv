@@ -1,0 +1,21 @@
+column	api	route	result	outcome
+NAME	59.0	deploy	rejected	Could not resolve list view column
+FULL_NAME	59.0	deploy	rejected	Could not resolve list view column
+CREATED_DATE	59.0	deploy	accepted	deployed
+NOT_A_REAL_COLUMN	59.0	deploy	rejected	Could not resolve list view column
+NAME	67.0	deploy	rejected	Could not resolve list view column
+FULL_NAME	67.0	deploy	rejected	Could not resolve list view column
+CREATED_DATE	67.0	deploy	accepted	deployed
+NOT_A_REAL_COLUMN	67.0	deploy	rejected	Could not resolve list view column
+LAST_MODIFIED_DATE	59.0	deploy	rejected	Could not resolve list view column
+CREATED_BY	59.0	deploy	rejected	Could not resolve list view column
+LAST_MODIFIED_BY	59.0	deploy	rejected	Could not resolve list view column
+SYSTEM_MODSTAMP	59.0	deploy	rejected	Could not resolve list view column
+ACCOUNT_NAME	59.0	deploy	rejected	Could not resolve list view column
+ACCOUNT.NAME	59.0	deploy	accepted	deployed
+LAST_MODIFIED_DATE	67.0	deploy	rejected	Could not resolve list view column
+CREATED_BY	67.0	deploy	rejected	Could not resolve list view column
+LAST_MODIFIED_BY	67.0	deploy	rejected	Could not resolve list view column
+SYSTEM_MODSTAMP	67.0	deploy	rejected	Could not resolve list view column
+ACCOUNT_NAME	67.0	deploy	rejected	Could not resolve list view column
+ACCOUNT.NAME	67.0	deploy	accepted	deployed

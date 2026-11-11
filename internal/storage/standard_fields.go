@@ -1389,6 +1389,7 @@ func mergeStandardSObjectStubFields(definition *ObjectDefinition, features []str
 	// Preserve explicit field overrides while filling captured calculated and
 	// currency facets, repairing scalar Time references, and filling write flags.
 	enrichStandardStubWriteFlagsFromV2Describe(definition)
+	applyStandardStubRestrictedPicklists(definition)
 	applyStandardSObjectStubReadOnlyFields(definition)
 }
 
@@ -2126,6 +2127,7 @@ func ensureFieldDefault(definition *ObjectDefinition, fieldName string, defaultV
 	field := definition.Fields[resolved]
 	if field.DefaultValue == "" {
 		field.DefaultValue = defaultValue
+		field.DefaultValueFromMetadata = false
 		definition.Fields[resolved] = field
 	}
 }
@@ -2137,6 +2139,7 @@ func setFieldDefault(definition *ObjectDefinition, fieldName string, defaultValu
 	}
 	field := definition.Fields[resolved]
 	field.DefaultValue = defaultValue
+	field.DefaultValueFromMetadata = false
 	definition.Fields[resolved] = field
 }
 
@@ -2266,6 +2269,7 @@ func enrichStandardField(existing *Field, field Field) {
 	}
 	if existing.DefaultValue == "" {
 		existing.DefaultValue = field.DefaultValue
+		existing.DefaultValueFromMetadata = field.DefaultValueFromMetadata
 	}
 	if existing.CompoundFieldName == "" {
 		existing.CompoundFieldName = field.CompoundFieldName
@@ -2560,7 +2564,7 @@ func canonicalFeatureName(feature string) string {
 		return "AddCustomApps"
 	case stringsEqualFold(feature, "AnalyticsAdminPerms"):
 		return "AnalyticsAdminPerms"
-	case strings.HasPrefix(strings.ToLower(feature), "healthcloud"):
+	case hasPrefixFoldASCII(feature, "healthcloud"):
 		return "HealthCloud"
 	case stringsEqualFold(feature, "LightningExperience"):
 		return "LightningExperience"
@@ -2577,6 +2581,14 @@ func canonicalFeatureName(feature string) string {
 	default:
 		return feature
 	}
+}
+
+// hasPrefixFoldASCII reports whether value starts with the ASCII prefix under
+// ASCII case folding, without lower-casing the whole value. No rune outside
+// ASCII lower-cases to a letter of the prefixes used here, so the answer
+// matches strings.HasPrefix(strings.ToLower(value), prefix).
+func hasPrefixFoldASCII(value, prefix string) bool {
+	return len(value) >= len(prefix) && stringsEqualFold(value[:len(prefix)], prefix)
 }
 
 func hasCanonicalFeature(features []string, want string) bool {

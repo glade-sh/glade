@@ -1,0 +1,5 @@
+case	api	route	result	outcome
+dynamic_cap	59.0	deploy	accepted	deployed
+dynamic_no_cap	59.0	deploy	rejected	LWC1503: Dynamic imports are not allowed.
+dynamic_cap	67.0	deploy	accepted	deployed
+dynamic_no_cap	67.0	deploy	rejected	LWC1503: Dynamic imports are not allowed.

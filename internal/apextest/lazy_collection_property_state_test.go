@@ -3,6 +3,7 @@ package apextest
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/project"
@@ -13,11 +14,18 @@ import (
 func TestLazyCollectionPropertyAcrossSourceUnits(t *testing.T) {
 	for _, api := range []string{"62.0", "67.0"} {
 		for _, units := range []int{1, 2} {
-			for _, access := range []struct{ name, self, result string }{
-				{"implicit", "", "entries"},
-				{"explicit", "this.", "this.entries"},
-				{"alias", "alias.", "alias.entries"},
-				{"helper", "this.", "this.readBacking()"},
+			for _, access := range []struct {
+				name, self, result string
+				recurses           bool
+			}{
+				{"implicit", "", "entries", false},
+				{"explicit", "this.", "this.entries", false},
+				{"alias", "alias.", "alias.entries", false},
+				// Native: conformance/lazy_getter_helper_routes/org.tsv (all four
+				// cases, 62.0 and 67.0): a getter that returns a helper reading the
+				// same property recurses to the stack limit, even after a lazy
+				// null check and assignment in the getter.
+				{"helper", "this.", "this.readBacking()", true},
 			} {
 				t.Run(fmt.Sprintf("%s/units-%d/self-%s", api, units, access.name), func(t *testing.T) {
 					root := t.TempDir()
@@ -79,6 +87,13 @@ func TestLazyCollectionPropertyAcrossSourceUnits(t *testing.T) {
 					}
 					index := typesys.Build(project.Project{Root: root, SourceAPIVersion: api, ApexFiles: paths}, schema.Schema{})
 					run := Run(index, Options{NoDiskCache: true, Parallelism: 1})
+					if access.recurses {
+						got := run.Summary()
+						if got.Total != units || got.Passed != 0 || !strings.Contains(firstRunProblem(run), "Maximum stack depth reached: 1001") {
+							t.Fatalf("summary=%+v, problem=%s", got, firstRunProblem(run))
+						}
+						return
+					}
 					if got := run.Summary(); got.Total != units || got.Passed != units {
 						t.Fatalf("summary=%+v, problem=%s", got, firstRunProblem(run))
 					}
