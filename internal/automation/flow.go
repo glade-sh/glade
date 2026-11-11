@@ -760,7 +760,7 @@ func compileFlowSource(path string, data []byte, processBuilderSkip string, defi
 		rule.RecordDeletes = append(rule.RecordDeletes, recordDelete)
 	}
 	for _, customError := range raw.CustomErrors {
-		ce := modeledFlowCustomError(customError, raw.Constants, flowCustomErrorFrameFormulas(raw), formulas)
+		ce := modeledFlowCustomError(customError, raw.Constants, flowCustomErrorElementFrameFormulas(raw, customError), formulas)
 		if ce.Name != "" {
 			rule.CustomErrors = append(rule.CustomErrors, ce)
 		}
@@ -1235,8 +1235,11 @@ func flowFrameFormulaMap(raw flowXML, variables map[string]flowVariableXML) map[
 			selectElement(names)
 		}
 	}
-	if strings.EqualFold(strings.TrimSpace(raw.Start.TriggerType), "RecordBeforeSave") {
+	if strings.EqualFold(strings.TrimSpace(raw.Start.TriggerType), "RecordBeforeSave") || strings.EqualFold(strings.TrimSpace(raw.Start.TriggerType), "RecordAfterSave") {
 		for _, customError := range raw.CustomErrors {
+			if strings.EqualFold(strings.TrimSpace(raw.Start.TriggerType), "RecordAfterSave") && (strings.TrimSpace(customError.Name) == "" || !strings.EqualFold(strings.TrimSpace(raw.Start.Connector.TargetReference), strings.TrimSpace(customError.Name))) {
+				continue
+			}
 			for _, message := range customError.Messages {
 				text := strings.ToLower(firstNonBlank(message.ErrorMessage, message.Message))
 				var names []string
@@ -1260,6 +1263,16 @@ func flowCustomErrorFrameFormulas(raw flowXML) map[string]string {
 		return nil
 	}
 	return raw.frameFormulas
+}
+
+func flowCustomErrorElementFrameFormulas(raw flowXML, customError flowCustomErrorXML) map[string]string {
+	if strings.EqualFold(strings.TrimSpace(raw.Start.TriggerType), "RecordAfterSave") {
+		if strings.TrimSpace(customError.Name) == "" || !strings.EqualFold(strings.TrimSpace(raw.Start.Connector.TargetReference), strings.TrimSpace(customError.Name)) {
+			return nil
+		}
+		return raw.frameFormulas
+	}
+	return flowCustomErrorFrameFormulas(raw)
 }
 
 func flowFormulaValueNames(value flowValueXML) []string {
@@ -2637,7 +2650,7 @@ func flowPopulateBranchBody(branch storage.FlowBranch, target, stop string, raw 
 				continue
 			}
 			modeled = true
-			branch.Steps = append(branch.Steps, storage.FlowStep{Kind: "customError", CustomError: modeledFlowCustomError(customError, raw.Constants, flowCustomErrorFrameFormulas(raw), formulas)})
+			branch.Steps = append(branch.Steps, storage.FlowStep{Kind: "customError", CustomError: modeledFlowCustomError(customError, raw.Constants, flowCustomErrorElementFrameFormulas(raw, customError), formulas)})
 			break
 		}
 		if modeled {

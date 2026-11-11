@@ -819,6 +819,7 @@ func (e *Engine) newFlowStepFrame(flowName string, record *storage.Record, defin
 			if rule.Name == flowName && strings.EqualFold(rule.RecordTriggerType, "Create") && flowRuleHasSaveDecisions(rule) {
 				frame.capturedFormulaBindings = true
 				frame.capturedBeforeCreate = strings.EqualFold(rule.TriggerType, "RecordBeforeSave")
+				frame.capturedAfterCreate = strings.EqualFold(rule.TriggerType, "RecordAfterSave")
 				break
 			}
 		}
@@ -839,6 +840,7 @@ type flowFrame struct {
 	processOutcomes         map[string]bool
 	capturedFormulaBindings bool
 	capturedBeforeCreate    bool
+	capturedAfterCreate     bool
 	pathVisited             map[string]bool
 	stepTargets             map[string][]storage.FlowStep
 	activeTargets           map[string]bool

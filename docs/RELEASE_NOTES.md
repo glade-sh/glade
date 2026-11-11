@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-No changes yet.
+### Flow
+
+- **Batched Apex action faults and refires.** Record-triggered Flows that call an Apex action over a batch report the captured fault row indices, formula precedence and update-trigger refire behavior.
 
 ## v0.3.6
 

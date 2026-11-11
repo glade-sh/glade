@@ -1,0 +1,1 @@
+public class SyntheticGuard { public static Boolean busy=false; public static String targetName; public static List<Integer> beforeBatches=new List<Integer>(); public static List<Integer> batches=new List<Integer>(); public static List<String> events=new List<String>(); public static List<String> outcomes=new List<String>(); }
