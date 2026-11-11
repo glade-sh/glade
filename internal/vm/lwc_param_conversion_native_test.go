@@ -170,6 +170,17 @@ func lwcParamConversionExpectation(cell *lwcParamCell) (want string, exact bool,
 }
 
 func TestLWCParameterConversionNative(t *testing.T) {
+	testParameterConversionNative(t, "lwc")
+}
+
+// Native Aura components answered every captured cell like the LWC route.
+// A missing parameter is an arity rule, not a conversion answer, so the
+// missing case is not asserted on Aura.
+func TestAuraParameterConversionNative(t *testing.T) {
+	testParameterConversionNative(t, "aura")
+}
+
+func testParameterConversionNative(t *testing.T, route string) {
 	cells := lwcParamConversionCells(t)
 	if len(cells) < 450 {
 		t.Fatalf("expected at least 450 native cells, got %d", len(cells))
@@ -182,12 +193,18 @@ func TestLWCParameterConversionNative(t *testing.T) {
 				t.Fatalf("no argument for case %q", cell.argName)
 			}
 			want, exact, mustFail, skip := lwcParamConversionExpectation(cell)
-			if skip || lwcParamConversionParked[cell.typeName+"/"+cell.argName] {
+			if skip || lwcParamConversionParked[cell.typeName+"/"+cell.argName] || (route == "aura" && cell.argName == "missing") {
 				continue
 			}
 			t.Run(fmt.Sprintf("%s/%s/%s", apiVersion, cell.typeName, cell.argName), func(t *testing.T) {
 				machine := lwcParamConversionMachine(t, cell.typeName, apiVersion)
-				got, err := machine.InvokeLWCMethod("Convert", "run", args)
+				var got UIInvocationResult
+				var err error
+				if route == "aura" {
+					got, err = machine.InvokeAuraAction("Convert", "run", args)
+				} else {
+					got, err = machine.InvokeLWCMethod("Convert", "run", args)
+				}
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -217,11 +234,7 @@ func TestLWCParameterConversionNative(t *testing.T) {
 	}
 }
 
-// The Aura entry point does not call lwcParameterValue; it keeps the JSON
-// mapping. Native Aura components answered every cell like the LWC route, so
-// Glade's Aura conversion still differs for string, number and object
-// arguments that do not already have the parameter's type (parked). This test
-// pins the accepted own-type controls: they convert the same on both routes.
+// Accepted own-type controls convert the same on both routes.
 func TestAuraActionOwnTypeControlsMatchNativeRows(t *testing.T) {
 	controls := []struct{ typeName, argName string }{
 		{"String", "str_x"}, {"Integer", "num_42"}, {"Long", "num_42"}, {"Decimal", "num_frac"}, {"Double", "num_frac"},
