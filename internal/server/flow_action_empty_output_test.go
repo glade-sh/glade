@@ -79,7 +79,7 @@ func TestFlowActionEmptyOutputSOAPRoute(t *testing.T) {
 			if result["compiled"] != "true" {
 				t.Fatalf("compile: %v", result)
 			}
-			_, payload, ok := strings.Cut(result["exceptionMessage"], "ROAD195_RESULT|")
+			_, payload, ok := strings.Cut(result["exceptionMessage"], "CASE195_RESULT|")
 			if !ok {
 				t.Fatalf("missing observation: %v", result)
 			}
@@ -120,7 +120,7 @@ func TestFlowActionEmptyOutputHostRoutes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	operation := strings.Replace(string(body), "System.assert(false,'ROAD195_RESULT|'+JSON.serialize(out));", "return JSON.serialize(out);", 1)
+	operation := strings.Replace(string(body), "System.assert(false,'CASE195_RESULT|'+JSON.serialize(out));", "return JSON.serialize(out);", 1)
 	if operation == string(body) {
 		t.Fatal("capture marker missing")
 	}

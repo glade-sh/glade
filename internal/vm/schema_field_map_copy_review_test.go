@@ -36,7 +36,7 @@ func TestSchemaFieldMapCopyReviewConformance(t *testing.T) {
 	for _, row := range rows[1:] {
 		observed[row[0]+"/"+row[1]+"/"+row[2]] = row[3]
 	}
-	debug := regexp.MustCompile(`System\.debug\('ROAD123\|(C[0-9]+)\|'\+(.+)\);`)
+	debug := regexp.MustCompile(`System\.debug\('CASE123\|(C[0-9]+)\|'\+(.+)\);`)
 	for _, api := range []string{"62.0", "67.0"} {
 		var named strings.Builder
 		named.WriteString("@IsTest private class FieldMapCopyReview {\n")

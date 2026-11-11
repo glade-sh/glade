@@ -1677,10 +1677,10 @@ func (vm *VM) executeRunAs(source string, inst ir.Instruction, result *Result) (
 	// A direct UserRecordAccess row warmed inside a runAs block does not
 	// survive the block, and an outer warm row does not reach into it
 	// (ura_direct_carry e10).
-	previousWarmDirectAccess := vm.road174WarmDirectAccess
-	vm.road174WarmDirectAccess = nil
+	previousWarmDirectAccess := vm.case174WarmDirectAccess
+	vm.case174WarmDirectAccess = nil
 	defer func() {
-		vm.road174WarmDirectAccess = previousWarmDirectAccess
+		vm.case174WarmDirectAccess = previousWarmDirectAccess
 		if packageVersion.Kind != "" {
 			vm.testContext.PackageRunAsDepth--
 			vm.testContext.CurrentPackageVersion = previousPackageVersion

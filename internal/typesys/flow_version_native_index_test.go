@@ -14,7 +14,7 @@ import (
 // The native rows establish flow invocation behavior. This test covers only
 // the index shape: versions of one flow contribute a single generated type.
 func TestNativeFlowVersionIndexShape(t *testing.T) {
-	root := filepath.Join("testdata", "road255_flow")
+	root := filepath.Join("testdata", "case255_flow")
 	f, err := os.Open(filepath.Join(root, "org.tsv"))
 	if err != nil {
 		t.Fatal(err)
