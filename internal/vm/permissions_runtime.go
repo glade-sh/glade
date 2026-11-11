@@ -170,7 +170,7 @@ func (vm *VM) currentUserObjectPermission(objectName, method string) bool {
 	if vm.profileHasCapturedAccountLicenseRestriction(profileID, objectName) {
 		return false
 	}
-	if vm.profileHasLicense(profileID, "Chatter External") && !isSetupObject(objectName) {
+	if vm.profileHasExternalCollaborationLicense(profileID) && !isSetupObject(objectName) {
 		return false
 	}
 	if vm.currentProfileHasUserType(profileID, "Guest") {
@@ -517,7 +517,7 @@ func (vm *VM) currentUserFieldPermission(objectName, fieldName, method string) b
 	case "Read Only":
 		return method == "isAccessible"
 	}
-	if vm.profileHasLicense(profileID, "Chatter External") && !isSetupObject(objectName) {
+	if vm.profileHasExternalCollaborationLicense(profileID) && !isSetupObject(objectName) {
 		return false
 	}
 	return true
@@ -1795,7 +1795,27 @@ func (vm *VM) isBaselineWritableField(objectName, fieldName string) bool {
 	field := definition.Fields[fieldName]
 	return field.Required || isNameFieldDescribe(field)
 }
+
+// profileHasExternalCollaborationLicense keeps the former fallback: a license
+// named Chatter External. The seed once gave that name to the
+// PID_Customer_Community_Login license; it now carries the native name, so the
+// seeded pair of that name and key keeps the access its profile had. No other
+// license row is matched by key (profile_usertype links profiles to licenses
+// but does not capture this access rule).
+func (vm *VM) profileHasExternalCollaborationLicense(profileID string) bool {
+	return vm.profileHasLicense(profileID, "Chatter External") ||
+		(vm.profileHasLicense(profileID, "Customer Community Login") && vm.profileHasLicenseKey(profileID, "PID_Customer_Community_Login"))
+}
+
+func (vm *VM) profileHasLicenseKey(profileID, licenseKey string) bool {
+	return vm.profileLicenseFieldEquals(profileID, "LicenseDefinitionKey", licenseKey)
+}
+
 func (vm *VM) profileHasLicense(profileID, licenseName string) bool {
+	return vm.profileLicenseFieldEquals(profileID, "Name", licenseName)
+}
+
+func (vm *VM) profileLicenseFieldEquals(profileID, field, want string) bool {
 	if profileID == "" || vm.Org == nil {
 		return false
 	}
@@ -1819,7 +1839,7 @@ func (vm *VM) profileHasLicense(profileID, licenseName string) bool {
 	if !ok {
 		return false
 	}
-	return storageStringValueEquals(license.Fields["Name"], licenseName)
+	return storageStringValueEquals(license.Fields[field], want)
 }
 
 // deployedPermissionSetIDs lists the stored keys of every permission set that
