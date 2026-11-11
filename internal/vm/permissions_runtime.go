@@ -397,7 +397,7 @@ func (vm *VM) currentUserFieldPermission(objectName, fieldName, method string) b
 	if profileName == "System Administrator" {
 		// Optional custom fields on ordinary custom objects need an effective
 		// field grant even for the administrator in a freshly deployed org.
-		if adminOptionalFieldPolicyAPI(vm.currentSourceExecutionPolicy().APIVersion) && vm.ordinaryCustomPermissionObject(objectName) && isCustomSchemaName(fieldName) && !vm.customFieldHasIntrinsicAccess(objectName, fieldName) {
+		if adminOptionalFieldPolicyAPI(vm.currentSourceExecutionPolicy().APIVersion) && vm.adminFieldNeedsExplicitGrant(objectName, fieldName) {
 			return vm.adminExplicitFieldGrant(user, profileID, objectName, fieldName, method)
 		}
 		return true
