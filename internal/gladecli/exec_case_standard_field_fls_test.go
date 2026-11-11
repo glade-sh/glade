@@ -107,29 +107,27 @@ func TestExecCaseStandardFieldFLSNamedClassRoutes(t *testing.T) {
 	}
 }
 
-// Callers of the shared field-permission function: stripInaccessible, user-mode
-// DML and user-mode SOQL in a deployed class follow the same grant (Glade
-// routes; the native rows cover describe and queries only).
-func TestExecCaseStandardFieldFLSSecurityRoutes(t *testing.T) {
+// No row covers describe access flags, stripInaccessible, explicit USER_MODE
+// SOQL or user-mode DML for these fields, so those routes keep the behavior they
+// had before the rule: the administrator is not denied (parked).
+func TestExecCaseStandardFieldFLSUnprovenRoutesUnchanged(t *testing.T) {
 	t.Setenv("GLADE_HOME", t.TempDir())
 	t.Setenv("GLADE_ROOT", "")
-	for _, granted := range []bool{false, true} {
-		root := caseFLSProject(t, "67.0", granted, false)
-		writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/CaseFlsSec.cls"), `public class CaseFlsSec {
+	root := caseFLSProject(t, "67.0", false, false)
+	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/CaseFlsSec.cls"), `public class CaseFlsSec {
   public static String strip() { Case c = new Case(Subject='a'); c.put('IsStopped', false); return String.valueOf(Security.stripInaccessible(AccessType.CREATABLE, new List<Case>{c}).getRemovedFields()); }
   public static void dml() { insert as user new Case(Subject='a', ProductId=null); }
   public static Integer soql() { return [SELECT Id, IsStopped FROM Case WITH USER_MODE].size(); }
+  public static void flags() { Schema.DescribeFieldResult d = Schema.SObjectType.Case.fields.IsStopped.getDescribe(); if (!d.isAccessible() || !d.isCreateable() || !d.isUpdateable()) { throw new DmlException('flags'); } }
 }`)
-		writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/CaseFlsSec.cls-meta.xml"), `<?xml version="1.0" encoding="UTF-8"?><ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>`)
-		ok, output := caseFLSExec(root, `System.debug(CaseFlsSec.strip());`)
-		if !ok || strings.Contains(output, "IsStopped") == granted {
-			t.Errorf("granted=%v strip: ok=%v %s", granted, ok, output)
-		}
-		for _, call := range []string{"dml();", "soql();"} {
-			ok, output := caseFLSExec(root, `CaseFlsSec.`+call)
-			if ok != granted {
-				t.Errorf("granted=%v %s ok=%v %s", granted, call, ok, output)
-			}
+	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/CaseFlsSec.cls-meta.xml"), `<?xml version="1.0" encoding="UTF-8"?><ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>`)
+	ok, output := caseFLSExec(root, `System.debug(CaseFlsSec.strip());`)
+	if !ok || strings.Contains(output, "IsStopped") {
+		t.Errorf("strip: ok=%v %s", ok, output)
+	}
+	for _, call := range []string{"dml();", "soql();", "flags();"} {
+		if ok, output := caseFLSExec(root, `CaseFlsSec.`+call); !ok {
+			t.Errorf("%s ok=%v %s", call, ok, output)
 		}
 	}
 }
