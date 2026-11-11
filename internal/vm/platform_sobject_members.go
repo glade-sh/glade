@@ -173,7 +173,7 @@ func (vm *VM) defaultObjectDisplayString(value Value) string {
 	if value.Kind != ValueObject || vm == nil {
 		return value.String()
 	}
-	if _, ok := vm.classEntry(value.Type); !ok {
+	if _, ok := vm.classEntryRaw(value.Type); !ok {
 		return value.String()
 	}
 	// Ordinary classes expose declared fields in
@@ -357,7 +357,7 @@ func (vm *VM) hasDeclaredOrdinaryClassFields(value Value) bool {
 	if value.Kind != ValueObject || vm == nil {
 		return false
 	}
-	if _, ok := vm.classEntry(value.Type); !ok || generatedPlatformTypeName(value.Type) || sObjectValueType(value.Type) {
+	if _, ok := vm.classEntryRaw(value.Type); !ok || generatedPlatformTypeName(value.Type) || sObjectValueType(value.Type) {
 		return false
 	}
 	for name := range value.Fields {

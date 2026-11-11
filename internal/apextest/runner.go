@@ -4289,16 +4289,33 @@ func passiveStandardRuntimeClasses(indexTypes []typesys.TypeSymbol, existing []v
 		if seen[template.key] {
 			continue
 		}
-		out = append(out, clonePassiveRuntimeClass(template.class))
+		out = append(out, template.registrable())
 	}
 	return out
 }
 
 // passiveStandardRuntimeClassTemplate is one passive platform class built from
 // the immutable standard symbol view. key is its lower-cased runtime name.
+//
+// A class with no static members is a lazy shell: it carries only its name,
+// namespace and flags, and its fields, methods and constructors are built when
+// a lookup first needs them. The shell and its build state are shared by every
+// runtime that registers it. A class with static members keeps its full
+// declaration, because a runtime writes static values into the class it owns.
 type passiveStandardRuntimeClassTemplate struct {
 	key   string
 	class vm.Class
+	lazy  bool
+}
+
+// registrable returns the value to register: the shared shell of a lazy class,
+// or a private copy of an eager one, since RegisterClass writes the maps and
+// slices it is given.
+func (template passiveStandardRuntimeClassTemplate) registrable() vm.Class {
+	if template.lazy {
+		return template.class
+	}
+	return clonePassiveRuntimeClass(template.class)
 }
 
 var passiveStandardRuntimeClassCache struct {
@@ -4308,8 +4325,7 @@ var passiveStandardRuntimeClassCache struct {
 
 // passiveStandardRuntimeClassTemplates builds the passive platform classes once
 // per symbol view, in symbol-view order with the first spelling of each runtime
-// name. Callers filter by project names and clone; RegisterClass writes the maps
-// and slices it is given, so templates are never handed out directly.
+// name. Callers filter by project names and register through registrable.
 func passiveStandardRuntimeClassTemplates() []passiveStandardRuntimeClassTemplate {
 	return passiveStandardRuntimeClassCache.templates.Get(func(view []typesys.TypeSymbol) []passiveStandardRuntimeClassTemplate {
 		passiveStandardRuntimeClassCache.builds++
@@ -4319,8 +4335,9 @@ func passiveStandardRuntimeClassTemplates() []passiveStandardRuntimeClassTemplat
 
 func buildPassiveStandardRuntimeClassTemplates(view []typesys.TypeSymbol) []passiveStandardRuntimeClassTemplate {
 	seen := make(map[string]bool)
+	set := vm.NewLazyClassSet(len(view))
 	var out []passiveStandardRuntimeClassTemplate
-	for _, typ := range view {
+	for i, typ := range view {
 		if typ.Kind != apexast.DeclarationClass && typ.Kind != apexast.DeclarationInterface && typ.Kind != apexast.DeclarationEnum {
 			continue
 		}
@@ -4329,10 +4346,36 @@ func buildPassiveStandardRuntimeClassTemplates(view []typesys.TypeSymbol) []pass
 		if name == "" || seen[key] || (typ.Kind != apexast.DeclarationEnum && !isPassiveStandardRuntimeType(name)) {
 			continue
 		}
-		out = append(out, passiveStandardRuntimeClassTemplate{key: key, class: passiveRuntimeClassFromTypeSymbol(typ, name)})
 		seen[key] = true
+		if passiveLazyEligible(typ) {
+			index := i
+			if shell, ok := set.Add(passiveRuntimeClassHeader(typ, name), func() vm.Class {
+				return passiveRuntimeClassFromTypeSymbol(view[index], name)
+			}); ok {
+				out = append(out, passiveStandardRuntimeClassTemplate{key: key, class: shell, lazy: true})
+				continue
+			}
+		}
+		out = append(out, passiveStandardRuntimeClassTemplate{key: key, class: passiveRuntimeClassFromTypeSymbol(typ, name)})
 	}
 	return out
+}
+
+// passiveLazyEligible reports whether a passive class can be registered as a
+// lazy shell: it is a class or interface with no static field or property.
+func passiveLazyEligible(typ typesys.TypeSymbol) bool {
+	if typ.Kind != apexast.DeclarationClass && typ.Kind != apexast.DeclarationInterface {
+		return false
+	}
+	for _, member := range typ.Members {
+		switch member.Kind {
+		case apexast.DeclarationField, apexast.DeclarationProperty:
+			if hasModifier(member.Modifiers, "static") {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 // clonePassiveRuntimeClass copies every map and slice a passive class owns, so
@@ -4419,8 +4462,10 @@ func isPassiveStandardRuntimeType(name string) bool {
 	}
 }
 
-func passiveRuntimeClassFromTypeSymbol(typ typesys.TypeSymbol, name string) vm.Class {
-	class := vm.Class{
+// passiveRuntimeClassHeader is a passive class's name, namespace and flags, with
+// no members.
+func passiveRuntimeClassHeader(typ typesys.TypeSymbol, name string) vm.Class {
+	return vm.Class{
 		PlatformType: typ.File == "<standard-platform>",
 		Name:         name,
 		Namespace:    typ.Namespace,
@@ -4431,10 +4476,14 @@ func passiveRuntimeClassFromTypeSymbol(typ typesys.TypeSymbol, name string) vm.C
 		Modifiers:    append([]string(nil), typ.Modifiers...),
 		IsAbstract:   hasModifier(typ.Modifiers, "abstract"),
 		IsInterface:  typ.Kind == apexast.DeclarationInterface,
-		Fields:       make(map[string]vm.Field),
-		StaticFields: make(map[string]vm.Field),
-		Methods:      make(map[string]vm.Method),
 	}
+}
+
+func passiveRuntimeClassFromTypeSymbol(typ typesys.TypeSymbol, name string) vm.Class {
+	class := passiveRuntimeClassHeader(typ, name)
+	class.Fields = make(map[string]vm.Field)
+	class.StaticFields = make(map[string]vm.Field)
+	class.Methods = make(map[string]vm.Method)
 	for _, member := range typ.Members {
 		switch member.Kind {
 		case apexast.DeclarationField, apexast.DeclarationProperty:

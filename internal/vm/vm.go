@@ -548,7 +548,7 @@ func (vm *VM) hasExactRuntimeClass(name string) bool {
 	if vm == nil || strings.TrimSpace(name) == "" {
 		return false
 	}
-	if _, ok := vm.classEntry(name); ok {
+	if _, ok := vm.classEntryRaw(name); ok {
 		return true
 	}
 	if _, ok := lookupGeneratedPlatformType(strings.ToLower(name)); ok {
@@ -4523,7 +4523,7 @@ func (vm *VM) classNameSearchEntries() []classNameSearchEntry {
 		return vm.classNameSearchCache
 	}
 	classNames := make([]string, 0, len(vm.Classes))
-	for name := range vm.ClassEntries() {
+	for name := range vm.classEntriesRaw() {
 		classNames = append(classNames, name)
 	}
 	sort.Strings(classNames)
@@ -4671,7 +4671,7 @@ func (vm *VM) resolveEnumClass(typeName string) (Class, bool) {
 
 func (vm *VM) rebuildEnumSuffixLookup() {
 	vm.enumSuffixLookup = make(map[string]enumClassLookup)
-	for _, class := range vm.ClassEntries() {
+	for _, class := range vm.classEntriesNoLazy() {
 		if len(class.EnumValues) == 0 {
 			continue
 		}

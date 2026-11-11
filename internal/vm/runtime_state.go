@@ -403,6 +403,9 @@ type VM struct {
 	scopeAliasTraversalObserver scopeAliasTraversalObserver
 	runtimeArtifactsShared      atomic.Bool
 	methodOverlay               *methodTableOverlay
+	// lazySet is the set whose shells this VM's Classes hold, shared by every
+	// clone; see LazyClassSet.
+	lazySet *LazyClassSet
 	// String == support: the Turkish-dotting decision for the running user and
 	// the full case transformers, created once per machine.
 	localeCase localeCaseCache
@@ -947,6 +950,7 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 	// via ensureRuntimeArtifactsOwned, so the source VM (and any cached runtime
 	// template) is never corrupted. The shared maps stay read-only across
 	// parallel workers, which is safe for concurrent map reads.
+	clone.lazySet = vm.lazySet
 	clone.Methods = vm.Methods
 	clone.MethodOverloads = vm.MethodOverloads
 	clone.MethodFolded = vm.MethodFolded
@@ -1098,7 +1102,7 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 		// their types against the source schema during this private scan;
 		// callers still install their own org on the returned runtime.
 		clone.Org = vm.Org
-		for _, class := range clone.ClassEntries() {
+		for _, class := range clone.classEntriesNoLazy() {
 			for _, field := range class.StaticFields {
 				clone.registerSObjectAliasRecord(field.Value)
 				clone.registerSObjectAliasRecord(field.InitialValue)
@@ -1183,6 +1187,9 @@ func (vm *VM) classMapCopy() map[string]Class {
 // overlay, so a first static write no longer copies every class entry.
 func (vm *VM) writeExistingClassEntry(name string, class Class) {
 	vm.heapStaticFlatOK = false
+	if previous, exists := vm.classEntryRaw(name); exists && previous.lazy != nil {
+		vm.releaseReplacedLazy(previous, exists, class)
+	}
 	if vm.heapStaticRootsOK {
 		previous, exists := vm.classEntry(name)
 		vm.noteClassStaticRootsWrite(previous, exists, class)
@@ -1198,8 +1205,20 @@ func (vm *VM) writeExistingClassEntry(name string, class Class) {
 }
 
 // classEntry reads one vm.Classes key: the value this VM wrote while sharing
-// the map, else the map's value. Read Classes entries through it.
+// the map, else the map's value. Read Classes entries through it. A lazy shell
+// is returned with its members built; classEntryRaw leaves it unbuilt.
 func (vm *VM) classEntry(name string) (class Class, ok bool) {
+	class, ok = vm.classEntryRaw(name)
+	if ok && class.lazy != nil {
+		class = class.lazy.materialized()
+	}
+	return class, ok
+}
+
+// classEntryRaw is classEntry without building a lazy shell. A shell holds
+// the name, namespace and flags of its class and nothing else, so callers that
+// read only those may use it.
+func (vm *VM) classEntryRaw(name string) (class Class, ok bool) {
 	if vm.classValueOverlay != nil {
 		if class, ok = vm.classValueOverlay[name]; ok {
 			return class, ok
@@ -1214,28 +1233,9 @@ func (vm *VM) classEntry(name string) (class Class, ok bool) {
 // that map is shared, values the loop body writes are not seen, as when a first
 // write copied the map. A range that starts with overlay values reads each
 // key's current value when the loop reaches it, as a range over a private map
-// does.
+// does. Lazy shells are built as the loop reaches them.
 func (vm *VM) ClassEntries() iter.Seq2[string, Class] {
-	return func(yield func(string, Class) bool) {
-		classes := vm.Classes
-		if vm.classValueOverlay == nil {
-			for name, class := range classes {
-				if !yield(name, class) {
-					return
-				}
-			}
-			return
-		}
-		for name := range classes {
-			class, ok := vm.classEntry(name)
-			if !ok {
-				continue
-			}
-			if !yield(name, class) {
-				return
-			}
-		}
-	}
+	return vm.rangeClassEntries(true, false)
 }
 
 func (vm *VM) SetIsolationJournal(journal *storage.IsolationJournal) {
@@ -1858,7 +1858,7 @@ func (vm *VM) SetOrg(org *storage.OrgState) {
 	for _, value := range vm.Globals {
 		vm.registerSObjectAliasRecord(value)
 	}
-	for _, class := range vm.ClassEntries() {
+	for _, class := range vm.classEntriesNoLazy() {
 		for _, field := range class.StaticFields {
 			vm.registerSObjectAliasRecord(field.Value)
 			vm.registerSObjectAliasRecord(field.InitialValue)
@@ -2809,7 +2809,7 @@ func (vm *VM) resolveFlowInvocableMethod(action storage.FlowAction) (Method, boo
 // own-namespace invocable resolves as both gladens004__Q3Act and Q3Act at APIs
 // 62.0 and 67.0 (flow_action_namespace rows).
 func (vm *VM) flowActionClassKey(className string) string {
-	if _, ok := vm.classEntry(className); ok {
+	if _, ok := vm.classEntryRaw(className); ok {
 		return className
 	}
 	idx := strings.Index(className, "__")
@@ -2817,11 +2817,11 @@ func (vm *VM) flowActionClassKey(className string) string {
 		return className
 	}
 	namespace, local := className[:idx], className[idx+2:]
-	if _, ok := vm.classEntry(namespace + "." + local); ok {
+	if _, ok := vm.classEntryRaw(namespace + "." + local); ok {
 		return namespace + "." + local
 	}
 	if vm.Org != nil && strings.EqualFold(strings.TrimSpace(vm.Org.Namespace), namespace) {
-		if _, ok := vm.classEntry(local); ok {
+		if _, ok := vm.classEntryRaw(local); ok {
 			return local
 		}
 	}
@@ -3223,7 +3223,7 @@ func (vm *VM) defaultOrgUserRecord() (storage.Record, bool) {
 }
 
 func (vm *VM) ResetStatics() error {
-	for className, class := range vm.ClassEntries() {
+	for className, class := range vm.classEntriesNoLazy() {
 		if len(class.StaticFields) == 0 {
 			continue
 		}
@@ -3242,7 +3242,7 @@ func (vm *VM) ResetStatics() error {
 
 func (vm *VM) ResetTestAsyncStaticCollections() error {
 	resetClasses := make(map[string]Class)
-	for className, class := range vm.ClassEntries() {
+	for className, class := range vm.classEntriesNoLazy() {
 		if len(class.StaticFields) == 0 {
 			continue
 		}

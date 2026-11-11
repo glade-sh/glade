@@ -94,6 +94,7 @@ func (vm *VM) RangeRegisteredMethods(visit func(Method)) {
 			visit(method)
 		}
 	}
+	vm.rangeLazyMethods(visit)
 }
 
 // registeredMethod reads vm.Methods through the clone overlay.
@@ -103,8 +104,10 @@ func (vm *VM) registeredMethod(name string) (Method, bool) {
 			return method, true
 		}
 	}
-	method, ok := vm.Methods[name]
-	return method, ok
+	if method, ok := vm.Methods[name]; ok {
+		return method, true
+	}
+	return vm.lazyRegisteredMethod(name)
 }
 
 // registeredOverloads reads vm.MethodOverloads through the clone overlay.
@@ -114,7 +117,10 @@ func (vm *VM) registeredOverloads(name string) []Method {
 			return methods
 		}
 	}
-	return vm.MethodOverloads[name]
+	if methods, ok := vm.MethodOverloads[name]; ok {
+		return methods
+	}
+	return vm.lazyRegisteredOverloads(name)
 }
 
 // registeredFolded reads vm.MethodFolded through the clone overlay. The name
@@ -125,5 +131,8 @@ func (vm *VM) registeredFolded(foldedName string) []Method {
 			return methods
 		}
 	}
-	return vm.MethodFolded[foldedName]
+	if methods, ok := vm.MethodFolded[foldedName]; ok {
+		return methods
+	}
+	return vm.lazyRegisteredFolded(foldedName)
 }

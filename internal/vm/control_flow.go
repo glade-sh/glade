@@ -401,7 +401,7 @@ func (vm *VM) heapStaticRootMaps() []map[string]Field {
 func (vm *VM) buildHeapStaticRootMaps() []map[string]Field {
 	var roots []map[string]Field
 	seenClasses := make(map[string]bool)
-	for name, class := range vm.ClassEntries() {
+	for name, class := range vm.classEntriesNoLazy() {
 		if class.PlatformType {
 			continue
 		}

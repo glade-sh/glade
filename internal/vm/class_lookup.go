@@ -76,10 +76,10 @@ func (vm *VM) classNamespace(className string) string {
 			return namespace
 		}
 	}
-	class, ok := vm.lookupClass(className)
+	class, ok := vm.lookupClassRaw(className)
 	if !ok {
 		if resolved, found := vm.resolveClassName(className); found {
-			class, ok = vm.lookupClass(resolved)
+			class, ok = vm.lookupClassRaw(resolved)
 		}
 	}
 	if !ok {
@@ -239,7 +239,15 @@ func (vm *VM) classForAccess(className string) (Class, bool) {
 	}
 	return store(class, ok)
 }
+
+// lookupClassInNamespace returns the class with its members built;
+// lookupClassInNamespaceRaw leaves a lazy shell unbuilt.
 func (vm *VM) lookupClassInNamespace(namespace, className string) (Class, bool) {
+	class, ok := vm.lookupClassInNamespaceRaw(namespace, className)
+	return resolveLazy(class), ok
+}
+
+func (vm *VM) lookupClassInNamespaceRaw(namespace, className string) (Class, bool) {
 	rawKey := namespaceClassRawKey{Namespace: namespace, ClassName: className}
 	if cached, ok := vm.namespaceClassRawLookup[rawKey]; ok {
 		return cached.Class, cached.OK
@@ -279,7 +287,7 @@ func (vm *VM) lookupClassInNamespaceUncached(namespace, className string) (Class
 	}
 	classesByShort := make(map[string]namespaceClassLookup)
 	for _, entry := range vm.classNameSearchEntries() {
-		class, ok := vm.lookupClass(entry.Name)
+		class, ok := vm.lookupClassRaw(entry.Name)
 		if !ok {
 			continue
 		}
@@ -341,7 +349,7 @@ func (vm *VM) frozenNamespaceClassLookup(nsKey string) (map[string]namespaceClas
 			classesByShort[key] = namespaceClassLookup{}
 			continue
 		}
-		class, exists := vm.classEntry(entry.Alias)
+		class, exists := vm.classEntryRaw(entry.Alias)
 		if !exists {
 			return nil, false
 		}
@@ -364,7 +372,7 @@ func (vm *VM) buildFrozenNamespaceClassAliases(frozen *frozenClassLookup, nsKey 
 		if !ok {
 			continue
 		}
-		class, ok := vm.classEntry(alias)
+		class, ok := vm.classEntryRaw(alias)
 		if !ok {
 			continue
 		}
@@ -402,7 +410,7 @@ func (vm *VM) isSubclass(child, parent string) bool {
 			return false
 		}
 		seen[key] = true
-		class, ok := vm.lookupClass(child)
+		class, ok := vm.lookupClassRaw(child)
 		if !ok {
 			return false
 		}
@@ -466,7 +474,7 @@ func (vm *VM) typeTokenName(name string) string {
 		}
 		return base + "<" + strings.Join(args, ",") + ">"
 	}
-	if _, class := vm.lookupClass(name); class {
+	if _, class := vm.lookupClassRaw(name); class {
 		return name
 	}
 	if record, ok := vm.resolveObjectName(name); ok {
@@ -534,7 +542,7 @@ func (vm *VM) typeForName(namespace, name string, explicitNamespace bool) Value 
 		strings.EqualFold(name, "CampaignInfluence") && !vm.Org.AllowsStandardObject(name) {
 		// Preserve user-class lookup; the captured setting controls the schema
 		// alias even when the unlicensed object is not queryable.
-		if class, ok := vm.lookupClass(name); !ok || class.PlatformType {
+		if class, ok := vm.lookupClassRaw(name); !ok || class.PlatformType {
 			if vm.Org.HasFeature("CampaignInfluence2Enabled") {
 				return vm.reflectionTypeToken("Schema.CampaignInfluence")
 			}
@@ -559,7 +567,7 @@ func (vm *VM) typeForName(namespace, name string, explicitNamespace bool) Value 
 		return Null
 	}
 	if namespace == "" && strings.EqualFold(name, "UserInfo") {
-		if class, ok := vm.lookupClass(name); !ok || class.PlatformType {
+		if class, ok := vm.lookupClassRaw(name); !ok || class.PlatformType {
 			return vm.reflectionTypeToken("System.UserInfo")
 		}
 	}
@@ -612,7 +620,7 @@ func (vm *VM) typeForName(namespace, name string, explicitNamespace bool) Value 
 			return vm.reflectionTypeToken("System." + exceptionTypeName(name))
 		}
 		for _, candidate := range namespaceTypeNameCandidates(namespace, name) {
-			if class, ok := vm.lookupClass(candidate); ok && !methodHasModifier(class.Modifiers, AnonymousClassModifier) {
+			if class, ok := vm.lookupClassRaw(candidate); ok && !methodHasModifier(class.Modifiers, AnonymousClassModifier) {
 				classNamespace := class.Namespace
 				if classNamespace == "" && vm.Org != nil {
 					classNamespace = vm.Org.Namespace
@@ -642,7 +650,7 @@ func (vm *VM) typeForName(namespace, name string, explicitNamespace bool) Value 
 		return Null
 	}
 	if resolved, ok := vm.resolveClassName(name); ok {
-		if class, ok := vm.lookupClass(resolved); ok && !methodHasModifier(class.Modifiers, AnonymousClassModifier) {
+		if class, ok := vm.lookupClassRaw(resolved); ok && !methodHasModifier(class.Modifiers, AnonymousClassModifier) {
 			// A single-name lookup of a schema alias is global, unlike a
 			// lexical class literal. API 62/67 keep the platform type visible
 			// even when the caller declares a same-named nested source class.
@@ -669,7 +677,7 @@ func (vm *VM) typeForName(namespace, name string, explicitNamespace bool) Value 
 			}
 			return vm.reflectionTypeToken(vm.classTypeToken(class))
 		}
-		if _, class := vm.lookupClass(resolved); !class {
+		if _, class := vm.lookupClassRaw(resolved); !class {
 			if record, known := storage.ResolveKnownStandardObjectName(strings.TrimPrefix(resolved, "Schema.")); known && !strings.EqualFold(record, "Network") && vm.Org != nil && !vm.Org.AllowsStandardObject(record) {
 				return Null
 			}
@@ -690,7 +698,7 @@ func (vm *VM) typeForName(namespace, name string, explicitNamespace bool) Value 
 		return Null
 	}
 	if resolved, ok := vm.resolveTypeNameToken(name); ok {
-		if class, exists := vm.lookupClass(resolved); exists && methodHasModifier(class.Modifiers, AnonymousClassModifier) {
+		if class, exists := vm.lookupClassRaw(resolved); exists && methodHasModifier(class.Modifiers, AnonymousClassModifier) {
 			return Null
 		}
 		if record, known := storage.ResolveKnownStandardObjectName(strings.TrimPrefix(resolved, "Schema.")); known && !strings.EqualFold(record, "Network") && vm.Org != nil && !vm.Org.AllowsStandardObject(record) {
@@ -1005,28 +1013,28 @@ func (vm *VM) resolveClassName(typeName string) (string, bool) {
 	if !strings.Contains(typeName, ".") && vm.currentClass != "" {
 		if resolved, ok := vm.resolveNestedTypeInClassHierarchy(vm.currentClass, typeName); ok {
 			if namespace := strings.TrimSpace(vm.currentExecutionNamespace()); namespace != "" {
-				if class, found := vm.lookupClassInNamespace(namespace, typeName); found && strings.EqualFold(resolved, class.Name) {
+				if class, found := vm.lookupClassInNamespaceRaw(namespace, typeName); found && strings.EqualFold(resolved, class.Name) {
 					return runtimeClassName(class), true
 				}
 			}
 			return resolved, true
 		}
 		if namespace := strings.TrimSpace(vm.currentExecutionNamespace()); namespace != "" {
-			if class, ok := vm.lookupClassInNamespace(namespace, typeName); ok {
+			if class, ok := vm.lookupClassInNamespaceRaw(namespace, typeName); ok {
 				return runtimeClassName(class), true
 			}
 		}
 	}
 	if strings.Contains(typeName, ".") && vm.currentClass != "" {
 		if namespace := strings.TrimSpace(vm.currentExecutionNamespace()); namespace != "" {
-			if class, ok := vm.lookupClass(namespace + "." + typeName); ok {
+			if class, ok := vm.lookupClassRaw(namespace + "." + typeName); ok {
 				return runtimeClassName(class), true
 			}
 		}
 	}
-	if class, ok := vm.lookupClass(typeName); ok {
+	if class, ok := vm.lookupClassRaw(typeName); ok {
 		if vm.cacheUnrelatedPlatformRootAlias(typeName, class) {
-			if platform, found := vm.lookupClass("System." + typeName); found && platform.PlatformType {
+			if platform, found := vm.lookupClassRaw("System." + typeName); found && platform.PlatformType {
 				return runtimeClassName(platform), true
 			}
 			return "", false
@@ -1038,7 +1046,19 @@ func (vm *VM) resolveClassName(typeName string) (string, bool) {
 	}
 	return "", false
 }
+
+// lookupClass returns the class registered under typeName with its members
+// built. lookupClassRaw leaves a lazy shell unbuilt, for callers that read only
+// its name, namespace and flags.
 func (vm *VM) lookupClass(typeName string) (Class, bool) {
+	class, ok := vm.lookupClassRaw(typeName)
+	if ok && class.lazy != nil {
+		class = class.lazy.materialized()
+	}
+	return class, ok
+}
+
+func (vm *VM) lookupClassRaw(typeName string) (Class, bool) {
 	typeName = strings.TrimSpace(typeName)
 	if typeName == "" {
 		return Class{}, false
@@ -1115,7 +1135,7 @@ func (vm *VM) lookupClass(typeName string) (Class, bool) {
 
 func (vm *VM) liveClassAlias(class Class) string {
 	for _, alias := range []string{runtimeClassName(class), class.Name} {
-		candidate, ok := vm.classEntry(alias)
+		candidate, ok := vm.classEntryRaw(alias)
 		if !ok {
 			continue
 		}
@@ -1345,6 +1365,7 @@ func (vm *VM) writeRegisteredClass(overlay *classLookupOverlay, alias string, cl
 	// Frozen clones can already have a static index before registration.
 	// Replacing or adding static fields makes that index stale.
 	previous, previousExists := vm.Classes[alias]
+	vm.releaseReplacedLazy(previous, previousExists, class)
 	vm.heapStaticFlatOK = false
 	vm.noteClassStaticRootsWrite(previous, previousExists, class)
 	if len(previous.StaticFields) != 0 || len(class.StaticFields) != 0 {
@@ -1416,6 +1437,9 @@ func (vm *VM) storeClassValue(class Class) {
 // writeClassValue writes a class value outside registration, keeping the
 // pending overlay's view of the values its lookups were taken from.
 func (vm *VM) writeClassValue(alias string, class Class) {
+	if previous, exists := vm.Classes[alias]; exists && previous.lazy != nil {
+		vm.releaseReplacedLazy(previous, exists, class)
+	}
 	vm.heapStaticFlatOK = false
 	if vm.heapStaticRootsOK {
 		previous, exists := vm.Classes[alias]
@@ -1436,19 +1460,19 @@ func (vm *VM) updateExistingClassValue(class Class) bool {
 	if vm.Classes == nil {
 		return false
 	}
-	existing, exists := vm.classEntry(class.Name)
+	existing, exists := vm.classEntryRaw(class.Name)
 	if !exists {
 		return false
 	}
 	runtimeName := runtimeClassName(class)
-	if _, ok := vm.classEntry(runtimeName); !ok {
+	if _, ok := vm.classEntryRaw(runtimeName); !ok {
 		return false
 	}
 	hasNamespaceAlias := class.Namespace != "" && !strings.Contains(class.Name, ".")
 	namespaceAlias := ""
 	if hasNamespaceAlias {
 		namespaceAlias = class.Namespace + "." + class.Name
-		if _, ok := vm.classEntry(namespaceAlias); !ok {
+		if _, ok := vm.classEntryRaw(namespaceAlias); !ok {
 			return false
 		}
 	}
@@ -1497,7 +1521,7 @@ func (vm *VM) topLevelClassLookupIndex() map[string]topLevelClassLookup {
 
 func (vm *VM) rebuildTopLevelClassLookup() map[string]topLevelClassLookup {
 	index := make(map[string]topLevelClassLookup)
-	for _, class := range vm.ClassEntries() {
+	for _, class := range vm.classEntriesRaw() {
 		name := strings.TrimSpace(class.Name)
 		if name == "" || strings.Contains(name, ".") {
 			continue
@@ -1546,7 +1570,7 @@ func (vm *VM) rebuildClassLookup() {
 		ranks[key] = rank
 		nss[key] = class.Namespace
 	}
-	for alias, class := range vm.ClassEntries() {
+	for alias, class := range vm.classEntriesRaw() {
 		put(alias, class, true)
 		put(class.Name, class, false)
 		if class.Namespace != "" {
