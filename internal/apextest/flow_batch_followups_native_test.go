@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-// TestFlowBatchFollowupsNative replays the ROAD-290 bulk-interview captures
+// TestFlowBatchFollowupsNative replays the bulk-interview captures
 // that follow an action-first after-save Flow: a fault connector that runs a
 // filtered record update, and an after-update trigger that edits a later
 // record of the same batch. Rows are native org.tsv observations.
