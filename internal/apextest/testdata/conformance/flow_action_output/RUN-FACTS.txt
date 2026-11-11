@@ -34,3 +34,4 @@ source_sha256:67.0:force-app/main/default/objects/FlowCoreAORecord__c/fields/Sta
 source_sha256:67.0:force-app/main/default/objects/FlowCoreAORecord__c/fields/Unit__c.field-meta.xml=6219be06afcbb88beee7f8359756efa029ca8d44612f97410521d3ce228534b5
 source_sha256:67.0:force-app/main/default/permissionsets/FlowCoreAOCaptureAccess.permissionset-meta.xml=466fce5cbce4f4dbb21e02f5245b218aa04812c13b4f39484f913fe7879d499c
 source_sha256:67.0:sfdx-project.json=3c6a78ac0412a18cd5d7040a888ff0123ab24d7ca38b52b11c14f2af1bbab37c
+naming=Apex class, trigger and assertion-marker names were renamed after capture to behavior names; logic is unchanged. Any source_sha256 line refers to the original names.

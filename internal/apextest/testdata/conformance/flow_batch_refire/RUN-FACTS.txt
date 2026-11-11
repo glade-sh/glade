@@ -6,3 +6,4 @@ observations=Intentional assertion envelope FLOWREFIRE; transactions roll back. 
 access=FlowCoreAOCaptureAccess permission set granted to the probe user inside the test.
 project=project (apiVersion 62.0; the 67.0 capture deployed the same sources with every apiVersion and sourceApiVersion set to 67.0)
 org_delete=scratch org deleted after the capture session
+naming=Apex class, trigger and assertion-marker names were renamed after capture to behavior names; logic is unchanged. Any source_sha256 line refers to the original names.
