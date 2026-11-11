@@ -61,3 +61,50 @@ func TestMessagingCampaignRESTDescribeNativeRows(t *testing.T) {
 		t.Fatalf("native routes=%d", checked)
 	}
 }
+
+func TestMessagingCampaignRESTSupportedVersionsNativeRows(t *testing.T) {
+	f, err := os.Open("../apextest/testdata/conformance/messaging_campaign_presence/rest-versions.tsv")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	reader := csv.NewReader(f)
+	reader.Comma = '\t'
+	rows, err := reader.ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 6 {
+		t.Fatalf("native rows=%d", len(rows)-1)
+	}
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "MessagingSession")
+	handler := New(&org)
+	for _, row := range rows[1:] {
+		row := row
+		t.Run(row[0], func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data/v"+row[0]+"/sobjects/MessagingSession/describe", nil))
+			if rec.Code != http.StatusOK {
+				t.Fatalf("status=%d", rec.Code)
+			}
+			var payload struct {
+				Fields []struct {
+					Name string `json:"name"`
+				} `json:"fields"`
+			}
+			if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+				t.Fatal(err)
+			}
+			found := false
+			for _, field := range payload.Fields {
+				if field.Name == "CampaignId" {
+					found = true
+				}
+			}
+			if found != (row[1] == "present") {
+				t.Fatalf("present=%t native=%s", found, row[1])
+			}
+		})
+	}
+}
