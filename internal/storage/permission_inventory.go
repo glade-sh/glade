@@ -475,6 +475,17 @@ func SeededProfilePermissions(profileName string) (ProfilePermissionSeed, bool) 
 	return seed, true
 }
 
+// inventoryUserLicenseSeedID is the ID ensureInventoryUserLicense gives the
+// captured UserLicense with this key when no persisted record occupies it.
+func inventoryUserLicenseSeedID(key string) ID {
+	for i, license := range loadStandardPermissionInventory().Licenses {
+		if license.Kind == "UserLicense" && strings.EqualFold(license.Key, key) {
+			return seededInventoryID("100", i+1)
+		}
+	}
+	panic("captured permission inventory has no UserLicense " + key)
+}
+
 // ensureInventoryUserLicense returns the UserLicense with the given key,
 // seeding it at the ID the captured inventory assigns to that key, so the
 // inventory pass reuses the same row.
@@ -490,16 +501,7 @@ func ensureInventoryUserLicense(org *OrgState, name, key string) ID {
 			return id
 		}
 	}
-	id := ID("")
-	for i, license := range loadStandardPermissionInventory().Licenses {
-		if license.Kind == "UserLicense" && strings.EqualFold(license.Key, key) {
-			id = seededInventoryID("100", i+1)
-			break
-		}
-	}
-	if id == "" {
-		panic("captured permission inventory has no UserLicense " + key)
-	}
+	id := inventoryUserLicenseSeedID(key)
 	// A persisted license with another key may occupy the inventory ID; take
 	// the next free one. The inventory pass finds the license by key.
 	for n := 1; ; n++ {

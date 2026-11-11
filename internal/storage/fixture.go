@@ -885,8 +885,8 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	// profile_usertype P1 (API 62.0 and 67.0) links Chatter External User to
 	// Chatter External/CSN_External_User and Standard Platform User to
 	// Salesforce Platform/AUL.
-	chatterExternalLicenseID := ensureInventoryUserLicense(org, "Chatter External", "CSN_External_User")
-	salesforcePlatformLicenseID := ensureInventoryUserLicense(org, "Salesforce Platform", "AUL")
+	chatterExternalLicenseID := ensureInventoryUserLicense(org, "Chatter External", chatterExternalLicenseKey)
+	salesforcePlatformLicenseID := ensureInventoryUserLicense(org, "Salesforce Platform", salesforcePlatformLicenseKey)
 	// Owned API62/64/67 observations establish this built-in profile and
 	// linked license. Their permission records were not captured.
 	putSeedRecord(org, "UserLicense", Record{
@@ -945,7 +945,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	putSeedRecord(org, "Profile", Record{
 		ID:     customerCommunityLoginProfileID,
 		Object: "Profile",
-		Fields: profileSeedFieldsWithUserType("Customer Community Login User", customerCommunityLoginLicenseID, "CspLitePortal"),
+		Fields: bootstrapProfileSeedFields(customerCommunityLoginProfileID),
 	})
 	migrateLegacyLicenseSeeds(org, salesforceLicenseID, customerCommunityLoginLicenseID, chatterExternalLicenseID, salesforcePlatformLicenseID)
 	ensureDefaultUserRoles(org)
@@ -1314,29 +1314,36 @@ func ensureOpportunityStageData(org *OrgState) {
 	}
 }
 
-// bootstrapProfileSeedFields is the single source for the reserved fixture
-// records and their original fields. Shape migration compares against these
-// originals so a changed seed field is never mistaken for untouched data.
+// License definition keys of the inventory licenses linked to the seeded
+// Chatter External User and Standard Platform User profiles.
+const (
+	chatterExternalLicenseKey    = "CSN_External_User"
+	salesforcePlatformLicenseKey = "AUL"
+)
+
+// bootstrapProfileSeedFields records the original fields of the reserved
+// fixture profiles. Shape migration compares against these originals so a
+// changed seed field is never mistaken for untouched data. Chatter External
+// User and Standard Platform User use the inventory license ID the seeder gives
+// a fresh org; a profile seeded with another license is treated as changed.
 func bootstrapProfileSeedFields(id ID) map[string]Value {
 	const salesforce ID = "100000000000001"
-	const external ID = "100000000000002"
+	const communityLogin ID = "100000000000002"
 	switch id {
 	case ID(DefaultProfileID):
 		return profileSeedFields("System Administrator", salesforce)
 	case "00e000000000002":
 		return profileSeedFields("Minimum Access - Salesforce", salesforce)
 	case "00e000000000003":
-		return profileSeedFields("Chatter External User", external)
+		return profileSeedFields("Chatter External User", inventoryUserLicenseSeedID(chatterExternalLicenseKey))
 	case "00e000000000004":
-		return profileSeedFields("Standard Platform User", salesforce)
+		return profileSeedFields("Standard Platform User", inventoryUserLicenseSeedID(salesforcePlatformLicenseKey))
 	case "00e000000000005":
 		return profileSeedFields("Standard User", salesforce)
 	case "00e000000000006":
 		return profileSeedFields("Marketing User", salesforce)
-	case "00e000000000007":
-		return profileSeedFields("Customer Community Guest User", external)
 	case "00e000000000008":
-		return profileSeedFieldsWithUserType("Customer Community Login User", external, "CspLitePortal")
+		return profileSeedFieldsWithUserType("Customer Community Login User", communityLogin, "CspLitePortal")
 	default:
 		return nil
 	}
