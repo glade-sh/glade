@@ -126,6 +126,17 @@ func (vm *VM) publishFlowEvents(records []storage.Record, result *Result) error 
 	return vm.deliverPublishedPlatformEventSubscribers(records, result)
 }
 
+// publishFlowCreatedEvents publishes the events that a record-triggered or
+// autolaunched Flow created, the way Apex EventBus.publish does: a test queues
+// them for its next delivery, any other run delivers them after the publisher.
+func (vm *VM) publishFlowCreatedEvents(records []storage.Record, result *Result) error {
+	if vm.testContext != nil && (!vm.testContext.Stopped || vm.testContext.StopDraining) {
+		vm.testContext.PlatformEvents = append(vm.testContext.PlatformEvents, records...)
+		return nil
+	}
+	return vm.deliverPublishedPlatformEventSubscribers(records, result)
+}
+
 func (vm *VM) runPlatformEventTriggers(records []storage.Record, result *Result) error {
 	// Event subscribers run in their own transaction. Setup DML earlier in the
 	// publisher's test must not trip mixed-DML checks on subscriber DML (native

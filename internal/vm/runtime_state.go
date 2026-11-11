@@ -2374,9 +2374,13 @@ func (vm *VM) newDMLEngine(result *Result) dml.Engine {
 		return vm.invokeFlowAction(action, record, result)
 	}
 	engine.FlowFaultDetail = vm.flowApexFaultDetail
+	engine.FlowFaultInTest = func() bool { return vm.testContext != nil }
 	engine.BeginPlatformEventInterview = vm.beginPlatformEventInterview
 	engine.PlatformEventPublisher = func(records []storage.Record) error {
 		return vm.publishFlowEvents(records, result)
+	}
+	engine.PlatformEventDirectPublisher = func(records []storage.Record) error {
+		return vm.publishFlowCreatedEvents(records, result)
 	}
 	engine.FlowActionInvokerWithContext = func(action storage.FlowAction, record storage.Record, context dml.FlowActionContext) error {
 		return vm.invokeFlowActionWithContext(action, record, context, result)
