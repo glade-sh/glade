@@ -227,7 +227,7 @@ Browser and Security. Test both cache states, artifact transfer, failed-job reru
 and exact discovered/per-row terminal unions. Compare
 `TestL10SalesforceConformance`, `TestL11SalesforceConformance`,
 `TestL19SalesforceConformance`, `TestL21SalesforceConformance`,
-`TestV04SalesforceConformance`, `TestV09SalesforceConformance`,
+`TestV04SalesforceConformance`, `TestV09SalesforceConformancePart1of4` to `Part4of4`,
 `TestV11SalesforceConformance`, `TestV13SalesforceConformance`,
 `TestV14SalesforceConformance`, `TestRunAsDefaultSecurityConformance` and
 `TestSOQLBindParenOrgConformance`. No `glade-sh/glade-tools` source changed and

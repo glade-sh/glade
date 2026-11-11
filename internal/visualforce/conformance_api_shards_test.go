@@ -2,6 +2,7 @@ package visualforce_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -51,7 +52,19 @@ func TestConformanceAPIShardManifest(t *testing.T) {
 			}
 			return false
 		})
-		parent := "TestV" + family[1:] + "SalesforceConformance"
+		// The family's parent tests, and the function that holds the API loop.
+		// V09 is split by row range into top-level parts that share one runner.
+		parents, runner := []string{"TestV" + family[1:] + "SalesforceConformance"}, ""
+		if family == "v09" {
+			parents, runner = nil, "v09RunConformance"
+			for part := 1; part <= 4; part++ {
+				parents = append(parents, fmt.Sprintf("TestV09SalesforceConformancePart%dof4", part))
+			}
+		}
+		parent := runner
+		if runner == "" {
+			parent = parents[0]
+		}
 		if len(apis) == 0 {
 			t.Fatalf("%s has no API declaration", parent)
 		}
@@ -92,7 +105,31 @@ func TestConformanceAPIShardManifest(t *testing.T) {
 		if !sharded {
 			t.Fatalf("%s must run each declared API with t.Run(api)", parent)
 		}
-		want[parent] = apis
+		for _, name := range parents {
+			want[name] = apis
+		}
+		if runner != "" {
+			for _, name := range parents {
+				calls := false
+				for _, declaration := range file.Decls {
+					function, ok := declaration.(*ast.FuncDecl)
+					if !ok || function.Name.Name != name {
+						continue
+					}
+					ast.Inspect(function.Body, func(n ast.Node) bool {
+						if call, ok := n.(*ast.CallExpr); ok {
+							if identifier, ok := call.Fun.(*ast.Ident); ok && identifier.Name == runner {
+								calls = true
+							}
+						}
+						return true
+					})
+				}
+				if !calls {
+					t.Fatalf("%s must run %s", name, runner)
+				}
+			}
+		}
 	}
 	if !reflect.DeepEqual(manifest, want) {
 		t.Fatalf("API shard manifest = %v, want %v", manifest, want)

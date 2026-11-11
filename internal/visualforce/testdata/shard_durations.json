@@ -940,8 +940,20 @@
    "durationMillis": 116460
   },
   {
-   "name": "TestV09SalesforceConformance",
-   "durationMillis": 828500
+   "name": "TestV09SalesforceConformancePart1of4",
+   "durationMillis": 207125
+  },
+  {
+   "name": "TestV09SalesforceConformancePart2of4",
+   "durationMillis": 207125
+  },
+  {
+   "name": "TestV09SalesforceConformancePart3of4",
+   "durationMillis": 207125
+  },
+  {
+   "name": "TestV09SalesforceConformancePart4of4",
+   "durationMillis": 207125
   },
   {
    "name": "TestV10SalesforceConformance",
