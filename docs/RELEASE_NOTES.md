@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+Seeded profiles now link to the user licenses and management permissions seen in captured Salesforce rows. Customized profiles from older saved orgs are preserved, license ID collisions are resolved, and the external license fallback only applies to key-only external licenses.
 
 ## v0.3.6
 
