@@ -1,0 +1,18 @@
+{
+ "N01_soql_installed_field": "List<Contact> r=[SELECT gladetest1__ParentRouteValue__c FROM Contact LIMIT 1];",
+ "N02_soql_bogus_same_ns": "List<Contact> r=[SELECT gladetest1__NoSuchField__c FROM Contact LIMIT 1];",
+ "N03_soql_unknown_ns": "List<Contact> r=[SELECT gladetest9__ParentRouteValue__c FROM Contact LIMIT 1];",
+ "N04_soql_unnamespaced_pkgname": "List<Contact> r=[SELECT ParentRouteValue__c FROM Contact LIMIT 1];",
+ "N05_where_installed_field": "List<Contact> r=[SELECT Id FROM Contact WHERE gladetest1__ParentRouteValue__c = null LIMIT 1];",
+ "N06_where_bogus_same_ns": "List<Contact> r=[SELECT Id FROM Contact WHERE gladetest1__NoSuchField__c = null LIMIT 1];",
+ "N07_order_bogus_same_ns": "List<Contact> r=[SELECT Id FROM Contact ORDER BY gladetest1__NoSuchField__c LIMIT 1];",
+ "N08_dynamic_installed_field": "List<Contact> r=Database.query('SELECT gladetest1__ParentRouteValue__c FROM Contact LIMIT 1');",
+ "N09_dynamic_bogus_same_ns": "List<Contact> r=Database.query('SELECT gladetest1__NoSuchField__c FROM Contact LIMIT 1');",
+ "N10_dynamic_unknown_ns": "List<Contact> r=Database.query('SELECT gladetest9__Whatever__c FROM Contact LIMIT 1');",
+ "N11_describe_map_installed": "throw new DmlException('OBS|'+Schema.SObjectType.Contact.fields.getMap().containsKey('gladetest1__ParentRouteValue__c')+'|'+Schema.SObjectType.Contact.fields.getMap().containsKey('gladetest1__NoSuchField__c'));",
+ "N12_put_installed": "Contact c=new Contact(LastName='x'); c.put('gladetest1__ParentRouteValue__c','v');",
+ "N13_put_bogus_same_ns": "Contact c=new Contact(LastName='x'); c.put('gladetest1__NoSuchField__c','v');",
+ "N14_account_bogus_same_ns": "List<Account> r=[SELECT gladetest1__NoSuchField__c FROM Account LIMIT 1];",
+ "N15_soql_installed_field_rel": "List<Contact> r=[SELECT Id FROM Contact WHERE Account.gladetest1__NoSuchField__c = null LIMIT 1];",
+ "N16_soql_two_underscores_nonns_custom": "List<Contact> r=[SELECT Foo__Bar__c FROM Contact LIMIT 1];"
+}
