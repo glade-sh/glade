@@ -1,6 +1,6 @@
 # Native run: AssessmentStagedData, DocGenerationBatchProcess, RecordAccessEvent__e
 
-Question: do these three names resolve in any org Glade can reach (ROAD-273)?
+Question: do these three names resolve in any org Glade can reach?
 An earlier packet (internal/storage/testdata/standard_licensed_describe_case273)
 recorded NOT_FOUND describes for an Enterprise trial and a scratch org. This run
 adds a scratch org with the DocGen feature, repeats the trial and plain scratch
