@@ -296,3 +296,29 @@ func TestMessagingCustomFieldNativeCompileRoutes(t *testing.T) {
 		})
 	}
 }
+
+func TestMessagingCampaignFieldAPI68NativeRoutes(t *testing.T) {
+	const dir = "testdata/conformance/messaging_campaign_presence"
+	f, err := os.Open(filepath.Join(dir, "api68.tsv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	reader := csv.NewReader(f)
+	reader.Comma = '\t'
+	rows, err := reader.ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 3 || rows[1][2] != "true" || rows[2][2] != "true" {
+		t.Fatalf("native rows=%v", rows)
+	}
+	cfg, err := os.ReadFile(filepath.Join(dir, "scratch-def.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"sourceApiVersion":"68.0","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "config/project-scratch-def.json"), string(cfg))
+	runStandardFieldEvidenceRoutes(t, root, "68.0", `System.assertEquals(true,Schema.getGlobalDescribe().get('MessagingSession').getDescribe().fields.getMap().containsKey('CampaignId'));`)
+}
