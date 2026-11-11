@@ -2447,6 +2447,11 @@ func (a *Analyzer) messagingCustomFieldUnavailable(objectName, fieldName string,
 	if !strings.EqualFold(objectName, "MessagingSession") || !strings.HasSuffix(strings.ToLower(fieldName), "__c") || semaProjectTypeShadowsPlatform(model, objectName) {
 		return false
 	}
+	// Package-qualified custom fields were not captured and can belong to an
+	// unavailable dependency; retain their existing partial-schema handling.
+	if strings.Contains(strings.TrimSuffix(strings.ToLower(fieldName), "__c"), "__") {
+		return false
+	}
 	if anonymous {
 		return true
 	}
