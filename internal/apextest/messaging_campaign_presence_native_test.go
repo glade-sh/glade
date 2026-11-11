@@ -184,3 +184,61 @@ func TestMessagingCampaignFieldNativeCompileAndQueryRoutes(t *testing.T) {
 		})
 	}
 }
+
+func TestMessagingCampaignNativeQueryVersionRoutes(t *testing.T) {
+	const dir = "testdata/conformance/messaging_campaign_presence"
+	f, err := os.Open(filepath.Join(dir, "query-versions.tsv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	reader := csv.NewReader(f)
+	reader.Comma = '\t'
+	rows, err := reader.ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 13 {
+		t.Fatalf("native rows=%d", len(rows)-1)
+	}
+	cfg, err := os.ReadFile(filepath.Join(dir, "scratch-def.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, row := range rows[1:] {
+		row := row
+		t.Run(row[0]+"/"+row[1], func(t *testing.T) {
+			root := t.TempDir()
+			writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"sourceApiVersion":"`+row[0]+`","packageDirectories":[{"path":"force-app","default":true}]}`)
+			writeFile(t, filepath.Join(root, "config/project-scratch-def.json"), string(cfg))
+			if row[1] == "static-query" {
+				name := "MsgStaticQuery" + strings.TrimSuffix(row[0], ".0")
+				for _, s := range []string{".cls", ".cls-meta.xml"} {
+					rel := filepath.Join("force-app/main/default/classes", name+s)
+					b, err := os.ReadFile(filepath.Join(dir, "query-project", rel))
+					if err != nil {
+						t.Fatal(err)
+					}
+					writeFile(t, filepath.Join(root, rel), string(b))
+				}
+				idx := loadTestIndex(t, root)
+				analysis := sema.Analyze(idx)
+				got := !idx.HasErrors() && !analysis.HasErrors()
+				if got != (row[2] == "accept") {
+					t.Fatalf("static query accepted=%t native=%s diagnostics=%v %v", got, row[2], idx.Diagnostics, analysis.Diagnostics)
+				}
+				return
+			}
+			idx := loadTestIndex(t, root)
+			program, err := vm.CompileAnonymousWithOptions(`Database.query('SELECT CampaignId FROM MessagingSession LIMIT 1');`, vm.CompileOptions{APIVersion: row[0]})
+			if err != nil {
+				t.Fatal(err)
+			}
+			org := orgFromIndex(idx)
+			runner := newConformanceRunner(t, idx, conformanceRunnerOptions{LinkProject: true, Org: &org})
+			if _, err = runner.execute(program); err != nil {
+				t.Fatalf("native dynamic query succeeded: %v", err)
+			}
+		})
+	}
+}
