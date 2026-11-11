@@ -790,11 +790,14 @@ func (vm *VM) executeBlockScope(program ir.Program, inst ir.Instruction, result 
 			// A name that was already live counts only if this block's own
 			// declaration ran.
 			if value, ok := vm.Globals[name]; ok {
-				if isStringBindType(vm.VarTypes[name]) {
-					if !binding.existed || vm.bindFrame.declaredSince(name, binding.declStart) {
-						vm.rememberDepartedString(name, binding.site, value)
-					}
-				} else if completed && inst.Op == ir.OpIf && !binding.existed {
+				isString := isStringBindType(vm.VarTypes[name])
+				if isString && (!binding.existed || vm.bindFrame.declaredSince(name, binding.declStart)) {
+					vm.rememberDepartedString(name, binding.site, value)
+				}
+				// The other dynamic routes keep the earlier rule: completed
+				// if-blocks and for bodies only.
+				closedStringLoop := inst.Op == ir.OpFor && isString
+				if completed && (inst.Op == ir.OpIf || closedStringLoop) && !binding.existed {
 					vm.rememberClosedSOQLLocal(name, vm.VarTypes[name], value)
 				}
 			}

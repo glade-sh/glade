@@ -151,3 +151,25 @@ System.assertEquals('Use query() for non-count queries',failureMessage);
 		t.Fatal(err)
 	}
 }
+
+// Only Database.query follows the loop_scope_dynamic_binds rows. These ended
+// String locals still throw for countQuery, as before those rows.
+func TestExecDynamicSOQLCountQueryKeepsClosedLocalBoundaries(t *testing.T) {
+	org := testDataOrg()
+	for _, source := range []string{
+		"for(String wanted : new List<String>{'Bound'}){}Database.countQuery('SELECT count() FROM Account WHERE Name=:wanted');",
+		"{String wanted='Bound';}Database.countQuery('SELECT count() FROM Account WHERE Name=:wanted');",
+		"try{String wanted='Bound';}catch(Exception e){}Database.countQuery('SELECT count() FROM Account WHERE Name=:wanted');",
+		"for(Integer i=0;i<1;i++){String wanted='Bound';break;}Database.countQuery('SELECT count() FROM Account WHERE Name=:wanted');",
+	} {
+		runtime := New(nil)
+		runtime.SetOrg(&org)
+		program, err := CompileAnonymous(source)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := runtime.Execute(program); err == nil || !strings.Contains(err.Error(), "Variable does not exist: wanted") {
+			t.Fatalf("countQuery boundary changed for %s: %v", source, err)
+		}
+	}
+}

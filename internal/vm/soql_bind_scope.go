@@ -71,8 +71,8 @@ func (f *bindFrameState) declaredSince(name string, start int) bool {
 }
 
 // rememberDepartedString records the last value of a String local whose block
-// ended. It also keeps closedSOQLLocals, which the other dynamic routes read,
-// in step.
+// ended, for Database.query only. closedSOQLLocals, which the other dynamic
+// routes read, is not touched.
 func (vm *VM) rememberDepartedString(name string, site int, value Value) {
 	if value.Kind != ValueString && value.Kind != ValueNull {
 		return
@@ -90,10 +90,6 @@ func (vm *VM) rememberDepartedString(name string, site int, value Value) {
 		}
 	}
 	f.slots[key] = append(slots, bindSlot{value: value, site: site})
-	if vm.closedSOQLLocals == nil {
-		vm.closedSOQLLocals = make(map[string]Value)
-	}
-	vm.closedSOQLLocals[key] = value
 }
 
 // enterBindBlock runs when a block body starts. It drops the ended locals the
@@ -116,10 +112,8 @@ func (vm *VM) enterBindBlock(body []ir.Instruction, declared func(func(name stri
 		case len(kept) == len(slots):
 		case len(kept) == 0:
 			delete(f.slots, key)
-			vm.dropClosedString(key)
 		default:
 			f.slots[key] = kept
-			vm.closedSOQLLocals[key] = kept[len(kept)-1].value
 		}
 	}
 	if len(f.slots) == 0 {
@@ -134,12 +128,6 @@ func (vm *VM) enterBindBlock(body []ir.Instruction, declared func(func(name stri
 			slots[i].liveShadow = true
 		}
 	})
-}
-
-func (vm *VM) dropClosedString(key string) {
-	if value, ok := vm.closedSOQLLocals[key]; ok && (value.Kind == ValueString || value.Kind == ValueNull) {
-		delete(vm.closedSOQLLocals, key)
-	}
 }
 
 // departedBind is the Database.query lookup for a name that has ended slots.
