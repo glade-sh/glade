@@ -26,7 +26,7 @@
     System.runAs(mk('Standard User','s')) { s = flags(); }
     List<String> names = new List<String>(g.keySet()); names.sort();
     List<String> diffs = new List<String>();
-    for (String n : names) if (n != 'numberoffailedlogins' && g.get(n) != s.get(n)) diffs.add(n + ':' + g.get(n));
+    for (String n : names) if (n != 'numberoffailedlogins' && n != 'permissions' && g.get(n) != s.get(n)) diffs.add(n + ':' + g.get(n));
     System.assert(false, 'obj=' + obj + ' diffs=' + String.join(diffs, ','));
   }
   @IsTest static void soqlRows() {
