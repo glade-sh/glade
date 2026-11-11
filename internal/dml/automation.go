@@ -4163,6 +4163,14 @@ func evaluateWorkflowRuleWithUser(rule storage.WorkflowRule, record storage.Reco
 }
 
 func (e *Engine) evaluateFlowRule(rule storage.FlowRule, record storage.Record, definition storage.ObjectDefinition) (bool, bool) {
+	matches, ok := e.evaluateFlowRuleMatch(rule, record, definition)
+	if matches && ok && e.FlowMatchObserver != nil {
+		e.FlowMatchObserver()
+	}
+	return matches, ok
+}
+
+func (e *Engine) evaluateFlowRuleMatch(rule storage.FlowRule, record storage.Record, definition storage.ObjectDefinition) (bool, bool) {
 	if !e.flowRefsLifecycleMatches(rule, record) {
 		return false, true
 	}

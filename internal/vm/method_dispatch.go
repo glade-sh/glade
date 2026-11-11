@@ -475,6 +475,10 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		}
 	}
 	vm.callStack = append(vm.callStack, entryFrame)
+	if vm.work.tracking {
+		methodWorkStart := vm.WorkCounts()
+		defer func() { vm.work.recordMethod(method.Name, methodWorkStart, vm.WorkCounts()) }()
+	}
 	if traceIsEnabled(result) {
 		traceStart, traceStartedAt := traceSpanStart(result)
 		appendTrace(result, "apex.method."+method.Name, "apex.method", vm.traceMethodArgs(method))
