@@ -968,19 +968,20 @@ func (vm *VM) sObjectNameForIDPrefix(prefix string) (string, bool) {
 }
 
 // orgObjectNameForKeyPrefix returns the first object in name order whose key
-// prefix is prefix. It is the test seam for the sorted scan it must match.
+// prefix is prefix. One pass keeps the smallest matching name, which is the
+// object a scan of the sorted names would reach first.
 func (vm *VM) orgObjectNameForKeyPrefix(prefix string) (string, bool) {
-	names := make([]string, 0, len(vm.Org.Objects))
-	for name := range vm.Org.Objects {
-		names = append(names, name)
-	}
-	sort.Strings(names)
-	for _, name := range names {
-		if vm.Org.Objects[name].Definition.KeyPrefix == prefix {
-			return name, true
+	objects := vm.Org.Objects
+	name, found := "", false
+	for candidate := range objects {
+		if found && candidate >= name {
+			continue
+		}
+		if objects[candidate].Definition.KeyPrefix == prefix {
+			name, found = candidate, true
 		}
 	}
-	return "", false
+	return name, found
 }
 
 func (vm *VM) sObjectNameForID(idText string) (string, bool) {
@@ -996,21 +997,38 @@ func (vm *VM) sObjectNameForID(idText string) (string, bool) {
 }
 
 // orgObjectNameHoldingID returns the first object in name order that stores
-// id, in its 15 or 18 character form. It is the test seam for the sorted scan
-// it must match.
+// id, in its 15 or 18 character form: the object a scan of the sorted names
+// would reach first.
 func (vm *VM) orgObjectNameHoldingID(id storage.ID) (string, bool) {
-	names := make([]string, 0, len(vm.Org.Objects))
-	for name := range vm.Org.Objects {
-		names = append(names, name)
+	if id == "" {
+		return "", false
 	}
-	sort.Strings(names)
-	for _, name := range names {
-		object := vm.Org.Objects[name]
-		if _, _, ok := storage.LookupRecordByID(object.Records, id); ok {
-			return name, true
+	objects := vm.Org.Objects
+	name, found := "", false
+	// An exact key is a map lookup. Find the smallest name that holds one.
+	for candidate := range objects {
+		if found && candidate >= name {
+			continue
+		}
+		if _, ok := objects[candidate].Records[id]; ok {
+			name, found = candidate, true
 		}
 	}
-	return "", false
+	// The other form of the Id needs a walk of an object's records. Only an
+	// object that sorts before the exact holder can still win.
+	for candidate := range objects {
+		if found && candidate >= name {
+			continue
+		}
+		records := objects[candidate].Records
+		if len(records) == 0 {
+			continue
+		}
+		if _, _, ok := storage.LookupRecordByID(records, id); ok {
+			name, found = candidate, true
+		}
+	}
+	return name, found
 }
 
 func idTextFromValue(value Value) (string, bool) {
