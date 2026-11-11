@@ -12,3 +12,4 @@ source_sha256=e55b19093d226161c8c3c1192ae7e5455577b875d9c9089d41c6233c291ba291
 versioning=deploy class metadata at each source api; project contains the 62.0 version and the 67.0 version differs only in apiVersion
 org_delete_command=success
 org_deletion_verification=inconclusive; first Dev Hub query omitted all-rows and returned no rows; a later all-rows query showed a Deleted record at the expected creation time but identity was not retained for an exact match
+scratch_default_model=ReadWriteTransfer (EntityDefinition.InternalSharingModel for Lead queried 2026-11-11 in a fresh Developer scratch org, Winter '27 release; ExternalSharingModel Private). The scratch_default rows above are therefore ReadWriteTransfer rows; the rows differ from Private only by that model.
