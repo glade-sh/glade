@@ -166,7 +166,11 @@ func standardDuplicateMatcher(lowerObject string, candidate storage.Record) func
 	return nil
 }
 
-func exactDuplicateMatch(rule storage.MatchingRule, candidate, existing storage.Record) (bool, bool) {
+// customDuplicateMatch evaluates a custom matching rule's items. Exact items
+// compare text without letter case (DR10); fuzzy items score the pair with the
+// field-specific method. Blank handling is shared: MatchBlanks pairs two blank
+// values, NullNotAllowed never does, and one blank side never matches.
+func customDuplicateMatch(rule storage.MatchingRule, candidate, existing storage.Record) (bool, bool) {
 	matches := make([]bool, len(rule.Items))
 	for i, item := range rule.Items {
 		left, lok := candidate.GetField(item.Field)
@@ -176,6 +180,8 @@ func exactDuplicateMatch(rule storage.MatchingRule, candidate, existing storage.
 		case leftBlank || rightBlank:
 			// DR09: MatchBlanks pairs two blank keys; NullNotAllowed never does.
 			matches[i] = leftBlank && rightBlank && strings.EqualFold(item.BlankBehavior, "MatchBlanks")
+		case !strings.EqualFold(item.Method, "Exact"):
+			matches[i] = FuzzyMatch(item.Method, workflowValueString(left), workflowValueString(right))
 		default:
 			// DR10: Exact compares text without letter case.
 			matches[i] = strings.EqualFold(strings.TrimSpace(workflowValueString(left)), strings.TrimSpace(workflowValueString(right)))
@@ -186,7 +192,7 @@ func exactDuplicateMatch(rule storage.MatchingRule, candidate, existing storage.
 
 // FindDuplicateMatches evaluates one duplicate rule for the record. supported
 // is false when the rule needs matching semantics outside the captured rows:
-// cross-object, fuzzy or unresolved matching rules. Callers then leave the
+// cross-object, unsupported fuzzy methods or unresolved matching rules. Callers then leave the
 // rule unenforced, as before duplicate enforcement existed.
 func FindDuplicateMatches(org *storage.OrgState, rule storage.DuplicateRule, record storage.Record, exclude func(storage.ID) bool) (DuplicateResult, bool) {
 	result := DuplicateResult{Rule: rule.Name, RuleID: rule.ID, Object: rule.Object}
@@ -198,13 +204,17 @@ func FindDuplicateMatches(org *storage.OrgState, rule storage.DuplicateRule, rec
 			return result, false
 		}
 		standard := storage.IsStandardMatchingRule(matching.Object, matching.Name) && len(matching.Items) == 0
+		fuzzy := false
 		if !standard {
 			if !strings.EqualFold(matching.Status, "Active") || len(matching.Items) == 0 {
 				return result, false
 			}
 			for _, item := range matching.Items {
-				if !strings.EqualFold(item.Method, "Exact") {
+				if !strings.EqualFold(item.Method, "Exact") && !FuzzyMethodSupported(item.Method) {
 					return result, false
+				}
+				if !strings.EqualFold(item.Method, "Exact") {
+					fuzzy = true
 				}
 			}
 		}
@@ -213,6 +223,10 @@ func FindDuplicateMatches(org *storage.OrgState, rule storage.DuplicateRule, rec
 			return result, false
 		}
 		match := DuplicateMatch{Object: objectName, Rule: matching.Name, Engine: exactMatchEngine}
+		if fuzzy {
+			// Native custom rules with a fuzzy item report the fuzzy engine.
+			match.Engine = storage.StandardMatchEngine
+		}
 		var standardMatch func(existing storage.Record) bool
 		scan := true
 		if standard {
@@ -232,7 +246,7 @@ func FindDuplicateMatches(org *storage.OrgState, rule storage.DuplicateRule, rec
 				matched = standardMatch(existing)
 			} else {
 				var supported bool
-				if matched, supported = exactDuplicateMatch(matching, record, existing); !supported {
+				if matched, supported = customDuplicateMatch(matching, record, existing); !supported {
 					return result, false
 				}
 			}

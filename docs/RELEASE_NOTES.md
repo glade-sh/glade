@@ -14,6 +14,8 @@ Seeded profiles now link to the user licenses and management permissions seen in
 
 - **Action argument conversion.** Arguments of `@AuraEnabled` calls from Lightning web components convert as Salesforce does for Boolean (any string), `List<String>` (a string becomes one element or the parsed JSON array; numbers, booleans and objects become an empty list), Decimal, Double, Integer, Datetime, Object, Account and SObject parameters. A `Date` parameter that receives a UTC Datetime string is still rejected.
 
+- **Duplicate rules with fuzzy matching items.** A custom matching rule whose items use the fuzzy methods for first name, last name, company name, phone, city, street, ZIP or title is now enforced by duplicate rules on insert and update, and returned by `Datacloud.FindDuplicates`. The scorers follow captured Salesforce verdicts for those methods; the name-variant and acronym dictionaries are limited to the pairs the captures prove, `matchConfidence` stays at 100, and standard-rule fuzzy equations, cross-object rules and Person Account rules are still not enforced.
+
 ## v0.3.6
 
 v0.3.6 fixes more differences from Salesforce found with captured org behavior, and makes pull request CI faster.
