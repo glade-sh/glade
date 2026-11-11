@@ -1,0 +1,3 @@
+api	object	field	observation
+62.0	EmailServicesFunction	ApexClassId	"{""controlOne"":{""error"":"""",""success"":true},""controlTwo"":{""error"":"""",""success"":true},""null"":{""error"":""An Apex Class must be specified when creating an Email Service.: Class ID"",""success"":false}}"
+67.0	EmailServicesFunction	ApexClassId	"{""controlOne"":{""error"":"""",""success"":true},""controlTwo"":{""error"":"""",""success"":true},""null"":{""error"":""An Apex Class must be specified when creating an Email Service.: Class ID"",""success"":false}}"

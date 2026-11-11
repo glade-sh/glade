@@ -1,0 +1,3 @@
+# Native capture: outbound target lookup ordering
+
+A fresh 30-day Developer scratch org with B2C Loyalty Management was created from a campaign Dev Hub. The scratch user was assigned LoyaltyAdmin, ManageLoyaltyPrograms and LoyaltyProgramConfigurationUser. API 62 reports the lookup absent. At API 67 a SeeAllData test selected a default template view and created two future-dated synthetic Promotions and three synthetic outbound resource records, with the lookup null once and set to two distinct Promotion IDs. It queried saved values and default and explicit NULLS ordering. The test transaction rolled back; no outbound operation was invoked. The scratch org was deleted and ScratchOrgInfo status verified as Deleted.

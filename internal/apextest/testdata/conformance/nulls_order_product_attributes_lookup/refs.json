@@ -1,0 +1,1 @@
+[{"obj": "AttributeDefinition", "field": "PicklistId", "createable": true, "nillable": true, "sortable": true}, {"obj": "ProductWarrantyTerm", "field": "CoveredProductId", "createable": true, "nillable": true, "sortable": true}]

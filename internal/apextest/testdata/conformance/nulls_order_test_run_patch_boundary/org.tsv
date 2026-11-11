@@ -1,0 +1,5 @@
+api	field	observation
+62.0	AsyncApexJobId	"{""count"":3,""distinct"":3,""nullCount"":0,""patch"":""rejected: INVALID_FIELD_FOR_INSERT_UPDATE: The ID value for AsyncApexJob is invalid.""}"
+62.0	UserId	"{""count"":3,""distinct"":1,""nullCount"":0,""patch"":""rejected: INVALID_FIELD_FOR_INSERT_UPDATE: The ID value for User is invalid.""}"
+67.0	AsyncApexJobId	"{""count"":3,""distinct"":3,""nullCount"":0,""patch"":""rejected: INVALID_FIELD_FOR_INSERT_UPDATE: The ID value for AsyncApexJob is invalid.""}"
+67.0	UserId	"{""count"":3,""distinct"":1,""nullCount"":0,""patch"":""rejected: INVALID_FIELD_FOR_INSERT_UPDATE: The ID value for User is invalid.""}"

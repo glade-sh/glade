@@ -1,0 +1,1 @@
+Deploy the synthetic no-callout adapters in a fresh scratch org. At API 62.0 and 67.0, create a PaymentGatewayProvider through the data API, comparing omission of ApexAdapterId with a valid control supplying a distinct synthetic adapter class. This captures a creation boundary rather than ordering.

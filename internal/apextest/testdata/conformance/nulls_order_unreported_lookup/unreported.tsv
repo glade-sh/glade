@@ -1,0 +1,15 @@
+api	object	field	result
+62.0	ContentFolder	ParentContentFolderId	not reported by probe
+62.0	FeedComment	RelatedRecordId	not reported by probe
+62.0	FeedComment	ThreadParentId	not reported by probe
+62.0	FlowOrchestrationWorkItem	RelatedRecordId	not reported by probe
+62.0	OutgoingEmailRelation	RelationId	not reported by probe
+62.0	WorkCapacityAvailability	ServiceTerritoryId	not reported by probe
+62.0	WorkCapacityLimit	ServiceTerritoryId	not reported by probe
+67.0	ContentFolder	ParentContentFolderId	not reported by probe
+67.0	FeedComment	RelatedRecordId	not reported by probe
+67.0	FeedComment	ThreadParentId	not reported by probe
+67.0	FlowOrchestrationWorkItem	RelatedRecordId	not reported by probe
+67.0	OutgoingEmailRelation	RelationId	not reported by probe
+67.0	WorkCapacityAvailability	ServiceTerritoryId	not reported by probe
+67.0	WorkCapacityLimit	ServiceTerritoryId	not reported by probe

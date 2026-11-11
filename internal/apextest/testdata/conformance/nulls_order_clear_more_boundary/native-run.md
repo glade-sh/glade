@@ -1,0 +1,3 @@
+# Native capture: additional lookup clear boundaries
+
+A fresh 30-day Developer scratch org was created from a campaign Dev Hub. At API 62 and 67 independent synthetic tests attempted populated records then cleared the first lookup where updateable. Seller.PartyId rejected clearing; four fields described non-updateable. For the other five fields the synthetic parents or populated records were unavailable or rejected before the clear. The email service control was explicitly inactive; no email, authentication, or provisioning action occurred. No ordering result was inferred. Tests rolled back; the scratch org was deleted and ScratchOrgInfo status verified as Deleted.

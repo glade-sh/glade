@@ -1,0 +1,3 @@
+# Native capture: service report layout setup boundary
+
+A fresh 30-day Developer scratch org was created from a campaign Dev Hub. At API 62 and 67, the Metadata API enabled-type listing was filtered for service-report, privacy-policy and CustomSite names, and a data query counted up to three ServiceReportLayout records. The output contains only type names, statuses and counts; no record IDs are retained. The data-object describe separately reports ServiceReportLayout as not directly createable. This is a setup boundary, not a NULLS ordering result or a claim that every possible creation route is unavailable. The scratch org was deleted and ScratchOrgInfo status verified as Deleted.

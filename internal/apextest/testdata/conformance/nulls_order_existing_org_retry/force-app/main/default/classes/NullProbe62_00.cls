@@ -1,0 +1,22 @@
+@IsTest(SeeAllData=true) private class NullProbe62_00 {
+ @IsTest static void m00(){ System.assert(false,'CAPTURE|AccountPartner|'+JSON.serialize(new Map<String,Object>{'OpportunityId'=>NullExisting62.observe('AccountPartner','OpportunityId')})); }
+ @IsTest static void m01(){ System.assert(false,'CAPTURE|AdditionalNumber|'+JSON.serialize(new Map<String,Object>{'CallCenterId'=>NullExisting62.observe('AdditionalNumber','CallCenterId')})); }
+ @IsTest static void m02(){ System.assert(false,'CAPTURE|AlternativePaymentMethod|'+JSON.serialize(new Map<String,Object>{'PaymentGatewayId'=>NullExisting62.observe('AlternativePaymentMethod','PaymentGatewayId')})); }
+ @IsTest static void m03(){ System.assert(false,'CAPTURE|ApexEmailNotification|'+JSON.serialize(new Map<String,Object>{'UserId'=>NullExisting62.observe('ApexEmailNotification','UserId')})); }
+ @IsTest static void m04(){ System.assert(false,'CAPTURE|ApexTestQueueItem|'+JSON.serialize(new Map<String,Object>{'ApexClassId'=>NullExisting62.observe('ApexTestQueueItem','ApexClassId')})); }
+ @IsTest static void m05(){ System.assert(false,'CAPTURE|ApexTestResult|'+JSON.serialize(new Map<String,Object>{'ApexClassId'=>NullExisting62.observe('ApexTestResult','ApexClassId')})); }
+ @IsTest static void m06(){ System.assert(false,'CAPTURE|ApexTestResult|'+JSON.serialize(new Map<String,Object>{'ApexLogId'=>NullExisting62.observe('ApexTestResult','ApexLogId')})); }
+ @IsTest static void m07(){ System.assert(false,'CAPTURE|ApexTestResult|'+JSON.serialize(new Map<String,Object>{'ApexTestRunResultId'=>NullExisting62.observe('ApexTestResult','ApexTestRunResultId')})); }
+ @IsTest static void m08(){ System.assert(false,'CAPTURE|ApexTestResult|'+JSON.serialize(new Map<String,Object>{'AsyncApexJobId'=>NullExisting62.observe('ApexTestResult','AsyncApexJobId')})); }
+ @IsTest static void m09(){ System.assert(false,'CAPTURE|ApexTestResult|'+JSON.serialize(new Map<String,Object>{'QueueItemId'=>NullExisting62.observe('ApexTestResult','QueueItemId')})); }
+ @IsTest static void m10(){ System.assert(false,'CAPTURE|ApexTestRunResult|'+JSON.serialize(new Map<String,Object>{'AsyncApexJobId'=>NullExisting62.observe('ApexTestRunResult','AsyncApexJobId')})); }
+ @IsTest static void m11(){ System.assert(false,'CAPTURE|ApexTestRunResult|'+JSON.serialize(new Map<String,Object>{'UserId'=>NullExisting62.observe('ApexTestRunResult','UserId')})); }
+ @IsTest static void m12(){ System.assert(false,'CAPTURE|AppointmentTopicTimeSlot|'+JSON.serialize(new Map<String,Object>{'WorkTypeGroupId'=>NullExisting62.observe('AppointmentTopicTimeSlot','WorkTypeGroupId')})); }
+ @IsTest static void m13(){ System.assert(false,'CAPTURE|AppointmentTopicTimeSlot|'+JSON.serialize(new Map<String,Object>{'WorkTypeId'=>NullExisting62.observe('AppointmentTopicTimeSlot','WorkTypeId')})); }
+ @IsTest static void m14(){ System.assert(false,'CAPTURE|ApptBundleAggrPolicy|'+JSON.serialize(new Map<String,Object>{'FilterCriteriaId'=>NullExisting62.observe('ApptBundleAggrPolicy','FilterCriteriaId')})); }
+ @IsTest static void m15(){ System.assert(false,'CAPTURE|ApptBundleConfig|'+JSON.serialize(new Map<String,Object>{'CriteriaForAutoUnbundlingId'=>NullExisting62.observe('ApptBundleConfig','CriteriaForAutoUnbundlingId')})); }
+ @IsTest static void m16(){ System.assert(false,'CAPTURE|ApptBundlePolicy|'+JSON.serialize(new Map<String,Object>{'FilterCriteriaId'=>NullExisting62.observe('ApptBundlePolicy','FilterCriteriaId')})); }
+ @IsTest static void m17(){ System.assert(false,'CAPTURE|AssetAttribute|'+JSON.serialize(new Map<String,Object>{'AttributePicklistValueId'=>NullExisting62.observe('AssetAttribute','AttributePicklistValueId')})); }
+ @IsTest static void m18(){ System.assert(false,'CAPTURE|AttributeDefinition|'+JSON.serialize(new Map<String,Object>{'PicklistId'=>NullExisting62.observe('AttributeDefinition','PicklistId')})); }
+ @IsTest static void m19(){ System.assert(false,'CAPTURE|AttributeDefinition|'+JSON.serialize(new Map<String,Object>{'UnitOfMeasureId'=>NullExisting62.observe('AttributeDefinition','UnitOfMeasureId')})); }
+}

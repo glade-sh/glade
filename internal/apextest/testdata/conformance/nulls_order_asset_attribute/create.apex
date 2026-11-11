@@ -1,0 +1,1 @@
+String result=NullCore62.probeObject('AssetAttribute',new List<String>{'AttributePicklistValueId'});System.assert(!result.contains('skip'),'setup rejected');

@@ -1,0 +1,15 @@
+{
+"OpportunityLineItem": [
+"PricebookEntryId",
+"Product2Id"
+],
+"OrderItem": [
+"Product2Id"
+],
+"ProductConsumed": [
+"PricebookEntryId"
+],
+"WorkOrderLineItem": [
+"Product2Id"
+]
+}

@@ -1,0 +1,1 @@
+[{"obj": "EmailMessage", "field": "EmailTemplateId", "createable": true, "nillable": true, "sortable": true}, {"obj": "Image", "field": "ContentDocumentId", "createable": true, "nillable": true, "sortable": true}]

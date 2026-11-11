@@ -1,0 +1,18 @@
+api	case	result
+67.0	deploy Null	accepted
+67.0	deploy Name	accepted
+67.0	deploy SiteId	accepted
+62.0	saved shape	Synthetic Name=populated,Synthetic Null=null,Synthetic SiteId=populated
+62.0	ASC	NP
+62.0	DESC	NP
+62.0	ASC NULLS FIRST	NP
+62.0	ASC NULLS LAST	PN
+62.0	DESC NULLS FIRST	NP
+62.0	DESC NULLS LAST	PN
+67.0	saved shape	Synthetic Name=populated,Synthetic Null=null,Synthetic SiteId=populated
+67.0	ASC	NP
+67.0	DESC	NP
+67.0	ASC NULLS FIRST	NP
+67.0	ASC NULLS LAST	PN
+67.0	DESC NULLS FIRST	NP
+67.0	DESC NULLS LAST	PN

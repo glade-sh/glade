@@ -1,0 +1,3 @@
+# Native capture: content version external data source null placement
+
+A fresh 30-day Developer scratch org was created from a campaign Dev Hub. One synthetic anonymous no-authentication Apex data source was deployed; its provider performs no callouts. At API 62 and 67 synthetic tests created one internal ContentVersion with null ExternalDataSourceId and one external ContentVersion with the source, a synthetic external-document identifier, Chatter origin, and an invalid-domain URL. Saved values and default and explicit NULLS order were queried; Salesforce ignored the explicit NULLS direction. The URL was not accessed and no message was posted. Tests rolled back and the scratch org was deleted, with ScratchOrgInfo status verified as Deleted.

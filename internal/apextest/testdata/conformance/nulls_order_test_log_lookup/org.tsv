@@ -1,0 +1,5 @@
+api	object	field	observation
+62.0	ApexTestResult	ApexClassId	"{""skip"":""synthetic result creation rejected""}"
+62.0	ApexTestResult	ApexLogId	"{""ASC"":""NLH"",""DESC"":""HLN"",""DESC NULLS LAST"":""HLN"",""NULLS FIRST"":""NLH"",""NULLS LAST"":""NLH""}"
+67.0	ApexTestResult	ApexClassId	"{""skip"":""synthetic result creation rejected""}"
+67.0	ApexTestResult	ApexLogId	"{""ASC"":""NLH"",""DESC"":""HLN"",""DESC NULLS LAST"":""HLN"",""NULLS FIRST"":""NLH"",""NULLS LAST"":""NLH""}"

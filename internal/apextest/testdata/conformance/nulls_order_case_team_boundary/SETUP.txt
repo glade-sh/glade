@@ -1,0 +1,1 @@
+Create two synthetic case team roles and teams, and distinct synthetic users. Through the data API at 62.0 and 67.0, create CaseTeamTemplateMember records with a valid team and member, comparing omission of TeamRoleId against a control supplying a valid synthetic role. This captures a creation boundary rather than ordering.

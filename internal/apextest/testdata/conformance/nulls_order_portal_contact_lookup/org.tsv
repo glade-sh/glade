@@ -1,0 +1,3 @@
+api	object	field	observation
+62.0	User	ContactId	"{""ASC"":""NLH"",""DESC"":""HLN"",""DESC NULLS LAST"":""HLN"",""NULLS FIRST"":""NLH"",""NULLS LAST"":""NLH""}"
+67.0	User	ContactId	"{""ASC"":""NLH"",""DESC"":""HLN"",""DESC NULLS LAST"":""HLN"",""NULLS FIRST"":""NLH"",""NULLS LAST"":""NLH""}"

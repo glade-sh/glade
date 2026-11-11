@@ -1,0 +1,3 @@
+# Native capture: prompt metadata experience context
+
+A fresh 30-day Developer scratch org was created from a campaign Dev Hub. Synthetic inactive site and landing-page metadata were deployed, followed by three unpublished synthetic prompts: no experience context, the synthetic site developer name, and the freshly created Site ID. The temporary ID is represented by a placeholder. The deployments at API 67 were accepted, but API 62 and 67 queries observed null ExperienceContextId for all three. This is a setup observation, not an ordering result. Neither the site nor the prompts were activated or accessed. The scratch org was deleted and ScratchOrgInfo status verified as Deleted.

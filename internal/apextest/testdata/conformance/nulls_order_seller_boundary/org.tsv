@@ -1,0 +1,3 @@
+api	object	field	observation
+62.0	Seller	PartyId	"{""controlErrors"":[],""controlSuccess"":true,""nullErrors"":[{""fields"":[],""message"":""The seller must have either an account or party field, but not both."",""statusCode"":""INVALID_INPUT""}],""nullSuccess"":false}"
+67.0	Seller	PartyId	"{""controlErrors"":[],""controlSuccess"":true,""nullErrors"":[{""fields"":[],""message"":""The seller must have either an account or party field, but not both."",""statusCode"":""INVALID_INPUT""}],""nullSuccess"":false}"

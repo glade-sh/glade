@@ -1,0 +1,1 @@
+@IsTest private class ClearProbe62_01 { @IsTest static void probe() { System.assert(false,'CAPTURE|CaseTeamTemplateMember|TeamRoleId|'+JSON.serialize(NullCore62.probeField('CaseTeamTemplateMember','TeamRoleId'))); } }

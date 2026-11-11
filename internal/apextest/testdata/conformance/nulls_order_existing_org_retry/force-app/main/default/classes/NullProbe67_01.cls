@@ -1,0 +1,22 @@
+@IsTest(SeeAllData=true) private class NullProbe67_01 {
+ @IsTest static void m00(){ System.assert(false,'CAPTURE|AuthProvParamFwdAllowlist|'+JSON.serialize(new Map<String,Object>{'AuthProviderId'=>NullExisting67.observe('AuthProvParamFwdAllowlist','AuthProviderId')})); }
+ @IsTest static void m01(){ System.assert(false,'CAPTURE|AuthProvider|'+JSON.serialize(new Map<String,Object>{'ExecutionUserId'=>NullExisting67.observe('AuthProvider','ExecutionUserId')})); }
+ @IsTest static void m02(){ System.assert(false,'CAPTURE|AuthProvider|'+JSON.serialize(new Map<String,Object>{'FlowDefaultAccountId'=>NullExisting67.observe('AuthProvider','FlowDefaultAccountId')})); }
+ @IsTest static void m03(){ System.assert(false,'CAPTURE|AuthProvider|'+JSON.serialize(new Map<String,Object>{'FlowDefaultProfileId'=>NullExisting67.observe('AuthProvider','FlowDefaultProfileId')})); }
+ @IsTest static void m04(){ System.assert(false,'CAPTURE|AuthProvider|'+JSON.serialize(new Map<String,Object>{'PluginId'=>NullExisting67.observe('AuthProvider','PluginId')})); }
+ @IsTest static void m05(){ System.assert(false,'CAPTURE|AuthProvider|'+JSON.serialize(new Map<String,Object>{'RegistrationHandlerId'=>NullExisting67.observe('AuthProvider','RegistrationHandlerId')})); }
+ @IsTest static void m06(){ System.assert(false,'CAPTURE|AuthorizationFormConsent|'+JSON.serialize(new Map<String,Object>{'AuthorizationFormTextId'=>NullExisting67.observe('AuthorizationFormConsent','AuthorizationFormTextId')})); }
+ @IsTest static void m07(){ System.assert(false,'CAPTURE|AuthorizationFormConsent|'+JSON.serialize(new Map<String,Object>{'DocumentVersionId'=>NullExisting67.observe('AuthorizationFormConsent','DocumentVersionId')})); }
+ @IsTest static void m08(){ System.assert(false,'CAPTURE|AuthorizationFormConsent|'+JSON.serialize(new Map<String,Object>{'RelatedRecordId'=>NullExisting67.observe('AuthorizationFormConsent','RelatedRecordId')})); }
+ @IsTest static void m09(){ System.assert(false,'CAPTURE|CalendarView|'+JSON.serialize(new Map<String,Object>{'ListViewFilterId'=>NullExisting67.observe('CalendarView','ListViewFilterId')})); }
+ @IsTest static void m10(){ System.assert(false,'CAPTURE|CalendarView|'+JSON.serialize(new Map<String,Object>{'PublisherId'=>NullExisting67.observe('CalendarView','PublisherId')})); }
+ @IsTest static void m11(){ System.assert(false,'CAPTURE|Campaign|'+JSON.serialize(new Map<String,Object>{'CampaignMemberRecordTypeId'=>NullExisting67.observe('Campaign','CampaignMemberRecordTypeId')})); }
+ @IsTest static void m12(){ System.assert(false,'CAPTURE|CardPaymentMethod|'+JSON.serialize(new Map<String,Object>{'PaymentGatewayId'=>NullExisting67.observe('CardPaymentMethod','PaymentGatewayId')})); }
+ @IsTest static void m13(){ System.assert(false,'CAPTURE|CaseTeamTemplateMember|'+JSON.serialize(new Map<String,Object>{'TeamRoleId'=>NullExisting67.observe('CaseTeamTemplateMember','TeamRoleId')})); }
+ @IsTest static void m14(){ System.assert(false,'CAPTURE|CategoryNode|'+JSON.serialize(new Map<String,Object>{'ParentId'=>NullExisting67.observe('CategoryNode','ParentId')})); }
+ @IsTest static void m15(){ System.assert(false,'CAPTURE|ChatterExtension|'+JSON.serialize(new Map<String,Object>{'IconId'=>NullExisting67.observe('ChatterExtension','IconId')})); }
+ @IsTest static void m16(){ System.assert(false,'CAPTURE|ChatterExtensionConfig|'+JSON.serialize(new Map<String,Object>{'ChatterExtensionId'=>NullExisting67.observe('ChatterExtensionConfig','ChatterExtensionId')})); }
+ @IsTest static void m17(){ System.assert(false,'CAPTURE|CollaborationGroup|'+JSON.serialize(new Map<String,Object>{'AnnouncementId'=>NullExisting67.observe('CollaborationGroup','AnnouncementId')})); }
+ @IsTest static void m18(){ System.assert(false,'CAPTURE|CommSubscriptionChannelType|'+JSON.serialize(new Map<String,Object>{'MessagingChannelUsageId'=>NullExisting67.observe('CommSubscriptionChannelType','MessagingChannelUsageId')})); }
+ @IsTest static void m19(){ System.assert(false,'CAPTURE|ContentFolder|'+JSON.serialize(new Map<String,Object>{'ParentContentFolderId'=>NullExisting67.observe('ContentFolder','ParentContentFolderId')})); }
+}

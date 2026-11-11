@@ -1,0 +1,3 @@
+# Native capture: PromptVersion experience context null ordering
+
+A fresh 30-day Developer scratch org was created from a campaign Dev Hub. Two inactive synthetic Visualforce sites and three unpublished synthetic prompts were deployed at API 67. One prompt had null ExperienceContextId and the others referenced two distinct Site IDs; temporary IDs are represented by placeholders. API 62 and 67 SOQL each queried the three saved rows, classifying parent IDs by ascending value, with default and explicit NULLS directions. No site or prompt was activated or accessed. The scratch org was deleted and ScratchOrgInfo status verified as Deleted.

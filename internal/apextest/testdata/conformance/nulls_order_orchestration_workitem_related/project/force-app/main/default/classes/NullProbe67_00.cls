@@ -1,0 +1,1 @@
+@IsTest(SeeAllData=true) private class NullProbe67_00 { @IsTest static void m00(){System.assert(false,'CAPTURE|FlowOrchestrationWorkItem|'+NullCore67.probeObject('FlowOrchestrationWorkItem',new List<String>{'RelatedRecordId','StepInstanceId'}));} }

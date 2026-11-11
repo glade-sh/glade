@@ -1,0 +1,3 @@
+api	object	field	observation
+67.0	AuthProvider	FlowDefaultAccountId	"{""distinctNonNullCount"":0,""nullCount"":3,""skip"":""expected one saved null and two distinct parents""}"
+67.0	AuthProvider	FlowDefaultProfileId	"{""ASC"":""NLH"",""DESC"":""HLN"",""DESC NULLS LAST"":""HLN"",""NULLS FIRST"":""NLH"",""NULLS LAST"":""NLH""}"

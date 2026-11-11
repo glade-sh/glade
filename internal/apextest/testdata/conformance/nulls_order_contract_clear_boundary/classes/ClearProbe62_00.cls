@@ -1,0 +1,1 @@
+@IsTest private class ClearProbe62_00 { @IsTest static void probe() { System.assert(false,'CAPTURE|ContractLineOutcome|RecordsetFilterCriteriaId|'+JSON.serialize(NullCore62.probeField('ContractLineOutcome','RecordsetFilterCriteriaId'))); } }

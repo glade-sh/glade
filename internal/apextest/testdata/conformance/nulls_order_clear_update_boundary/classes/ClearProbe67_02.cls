@@ -1,0 +1,1 @@
+@IsTest private class ClearProbe67_02 { @IsTest static void probe() { System.assert(false,'CAPTURE|ContentWorkspaceMember|ContentWorkspacePermissionId|'+JSON.serialize(NullCore67.probeField('ContentWorkspaceMember','ContentWorkspacePermissionId'))); } }

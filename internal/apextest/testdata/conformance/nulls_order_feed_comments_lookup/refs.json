@@ -1,0 +1,1 @@
+[{"obj": "FeedComment", "field": "RelatedRecordId", "createable": true, "nillable": true, "sortable": true}, {"obj": "FeedComment", "field": "ThreadParentId", "createable": true, "nillable": true, "sortable": true}]

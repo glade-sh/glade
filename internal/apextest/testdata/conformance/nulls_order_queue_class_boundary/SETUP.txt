@@ -1,0 +1,1 @@
+Deploy both synthetic test classes. At API versions 62.0 and 67.0 create ApexTestQueueItem records with ShouldSkipCodeCoverage=true through the data API. At each version compare omission of ApexClassId with a control supplying the ID of a distinct synthetic test class. This captures a creation boundary rather than ordering.

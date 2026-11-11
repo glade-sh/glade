@@ -1,0 +1,23 @@
+{
+  "Status": [
+    "active",
+    "inactive"
+  ],
+  "Type": [
+    "datamanagement",
+    "herokumigration",
+    "datamask",
+    "rtbf",
+    "archive",
+    "datamanagementondatacloud",
+    "globalconsentstore"
+  ],
+  "RunFrequency": [
+    "none",
+    "once",
+    "daily",
+    "weekly",
+    "monthly",
+    "yearly"
+  ]
+}

@@ -1,0 +1,3 @@
+# Native capture: WorkPlan work order lookup ordering
+
+A fresh 30-day Developer scratch org with LiveAgent and LiveMessage features was created from a campaign Dev Hub. At API 62 and 67 synthetic tests created one MessagingSession, two WorkOrders and three WorkPlans: the first used the MessagingSession as ParentRecordId, and the others used distinct WorkOrders. Saved WorkOrderId was null for the first and distinct populated values for the others. Queries exercised default and explicit NULLS directions. Tests rolled back; no message was sent. The scratch org was deleted and ScratchOrgInfo status verified as Deleted.
