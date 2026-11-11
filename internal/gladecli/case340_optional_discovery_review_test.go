@@ -13,6 +13,9 @@ import (
 )
 
 func TestCase340OptionalDiscoverySkipsUntrustedDirectory(t *testing.T) {
+	cache := t.TempDir()
+	t.Setenv("HOME", cache)
+	t.Setenv("XDG_CACHE_HOME", cache)
 	root, err := os.MkdirTemp(os.TempDir(), "r340-")
 	if err != nil {
 		t.Fatal(err)
@@ -33,7 +36,7 @@ func TestCase340OptionalDiscoverySkipsUntrustedDirectory(t *testing.T) {
 		t.Fatalf("optional discovery should use local fallback: connected=%v err=%v", connected, err)
 	}
 	_, connected, err = tryTestServerRequest(context.Background(), root, true, testdaemon.RunRequestV1{})
-	if err == nil || !connected {
-		t.Fatalf("required discovery should reject: connected=%v err=%v", connected, err)
+	if err == nil || connected || strings.Contains(err.Error(), "insecure") {
+		t.Fatalf("required discovery should report no server in the cache location: connected=%v err=%v", connected, err)
 	}
 }

@@ -3,9 +3,12 @@ package testdaemon
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 )
 
 const serveDir = ".glade/test"
@@ -41,23 +44,71 @@ func absoluteIfClimbing(projectRoot string) string {
 }
 
 func servePaths(projectRoot string) (socket string, pid string) {
-	projectRoot = absoluteIfClimbing(projectRoot)
-	localSocket := filepath.Join(projectRoot, serveDir, "serve.sock")
-	localPID := filepath.Join(projectRoot, serveDir, "serve.pid")
-	if len(localSocket) <= maxUnixSocketPathLen {
-		return localSocket, localPID
-	}
 	base, relative := privateServeDir(projectRoot)
 	runtimeDir := filepath.Join(base, relative)
 	return filepath.Join(runtimeDir, "serve.sock"), filepath.Join(runtimeDir, "serve.pid")
 }
 
+// privateServeDir picks the daemon discovery directory. The project-local
+// directory is used when its path is short enough for a unix socket and every
+// existing component is owned by the user (or root) and not group or world
+// writable. Otherwise the daemon uses a hashed directory under the temp root,
+// and when the temp root fails the same check, under the per-user cache
+// directory. A rejected location prints one warning per process.
 func privateServeDir(projectRoot string) (base, relative string) {
 	projectRoot = absoluteIfClimbing(projectRoot)
-	localSocket := filepath.Join(projectRoot, serveDir, "serve.sock")
+	localDir := filepath.Join(projectRoot, serveDir)
+	localSocket := filepath.Join(localDir, "serve.sock")
 	if len(localSocket) <= maxUnixSocketPathLen {
-		return projectRoot, filepath.FromSlash(serveDir)
+		if discoveryLocationTrusted(localDir) {
+			return projectRoot, filepath.FromSlash(serveDir)
+		}
+		warnUntrustedDiscovery(localDir)
 	}
 	sum := sha256.Sum256([]byte(filepath.Clean(projectRoot)))
-	return os.TempDir(), "glade-test-serve-" + hex.EncodeToString(sum[:8])
+	name := "glade-test-serve-" + hex.EncodeToString(sum[:8])
+	tmp := os.TempDir()
+	if discoveryLocationTrusted(filepath.Join(tmp, name)) {
+		return tmp, name
+	}
+	warnUntrustedDiscovery(filepath.Join(tmp, name))
+	if cache, err := os.UserCacheDir(); err == nil && cache != "" {
+		if abs, err := filepath.Abs(cache); err == nil {
+			if err := os.MkdirAll(abs, 0o700); err == nil {
+				return abs, filepath.Join("glade", name)
+			}
+		}
+	}
+	return tmp, name
+}
+
+var (
+	discoveryWarnOnce   sync.Once
+	discoveryWarnWriter io.Writer = os.Stderr
+)
+
+func warnUntrustedDiscovery(dir string) {
+	discoveryWarnOnce.Do(func() {
+		fmt.Fprintf(discoveryWarnWriter, "glade: refusing daemon directory %s (not owned by you or writable by others); using the per-user cache directory\n", dir)
+	})
+}
+
+// discoveryLocationTrusted reports whether dir, or the nearest existing
+// ancestor when dir is absent, passes the owner and mode checks. Each call
+// re-checks the filesystem.
+func discoveryLocationTrusted(dir string) bool {
+	if !discoveryOwnerChecks {
+		return true
+	}
+	for candidate := dir; ; candidate = filepath.Dir(candidate) {
+		if _, err := os.Lstat(candidate); err == nil {
+			if candidate == dir {
+				return secureDiscoveryPath(candidate)
+			}
+			return secureDiscoveryParentPath(candidate)
+		}
+		if filepath.Dir(candidate) == candidate {
+			return false
+		}
+	}
 }

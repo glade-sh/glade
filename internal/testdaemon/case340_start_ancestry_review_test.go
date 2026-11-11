@@ -33,12 +33,20 @@ func TestCase340DefaultDaemonRejectsUntrustedStartAncestry(t *testing.T) {
 			if err := os.Chmod(unsafe, 0777); err != nil {
 				t.Fatal(err)
 			}
+			// ROAD-361: an unsafe location is refused and discovery moves to
+			// the per-user cache directory instead of failing.
+			cache := t.TempDir()
+			t.Setenv("HOME", cache)
+			t.Setenv("XDG_CACHE_HOME", cache)
+			if moved := ServeSocketPath(root); strings.HasPrefix(moved, root+string(filepath.Separator)) {
+				t.Fatalf("unsafe %s kept the local socket: %s", kind, moved)
+			}
 			srv, err := NewServer(ServerConfig{Root: root})
 			if srv != nil {
 				_ = srv.Close()
 			}
-			if err == nil || !strings.Contains(err.Error(), "insecure") {
-				t.Fatalf("default daemon start accepted %s: %v", kind, err)
+			if err != nil {
+				t.Fatalf("default daemon start did not fall back for %s: %v", kind, err)
 			}
 			if _, err := os.Lstat(socket); !os.IsNotExist(err) {
 				t.Fatalf("socket created before rejecting unsafe ancestry: %v", err)

@@ -125,6 +125,9 @@ Glade can write:
 - `glade.yml` project config.
 - `.glade/` run artifacts and project state, including private local caches
   under `.glade/test/` and `.glade/semantic/`.
+  The test daemon directory must be owned by you and not group- or
+  world-writable; otherwise Glade falls back to the per-user cache directory
+  (see `docs/TEST_STARTUP_CACHE.md`).
 - SQLite files named by `--db`.
 - User-level plugin, editor, and LWC toolchain data under the OS user data
   directory.
