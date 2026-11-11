@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -687,6 +688,16 @@ func childProgram(parent ir.Program, instructions []ir.Instruction) ir.Program {
 // source syntax and version rules F03/F04 also capture if-block shadowing and restoration at API62/68.
 // Try bodies use the same lexical cleanup for their final-local bindings.
 func (vm *VM) executeBlockScope(program ir.Program, inst ir.Instruction, result *Result) (execOutcome, error) {
+	return vm.executeBlockScopeKeeping(program, inst, result, nil)
+}
+
+// executeBlockScopeKeeping is executeBlockScope for a loop body. When kept is
+// non-nil, body bindings that did not exist outside the block stay in the
+// binding maps after the block and are recorded in kept; the loop removes them
+// once it exits. Re-inserting a deleted Globals key allocates a new Value
+// (the map stores 312-byte elements indirectly), so this avoids that per
+// iteration.
+func (vm *VM) executeBlockScopeKeeping(program ir.Program, inst ir.Instruction, result *Result, kept *[]string) (execOutcome, error) {
 	type outerBinding struct {
 		value            Value
 		name, typ        string
@@ -733,6 +744,9 @@ func (vm *VM) executeBlockScope(program ir.Program, inst ir.Instruction, result 
 					value, existed := vm.Globals[name]
 					typ, hadType := vm.VarTypes[name]
 					final, hadFinal := vm.finalLocals[name]
+					if kept != nil && slices.Contains(*kept, name) {
+						value, existed, typ, hadType, final, hadFinal = Value{}, false, "", false, false, false
+					}
 					binding := outerBinding{name: name, value: value, typ: typ, existed: existed, hadType: hadType, final: final, hadFinal: hadFinal}
 					if useMap {
 						large[name] = binding
@@ -761,6 +775,12 @@ func (vm *VM) executeBlockScope(program ir.Program, inst ir.Instruction, result 
 				if value, ok := vm.Globals[name]; ok && value.Kind == ValueInt && strings.EqualFold(canonicalRuntimePlatformType(vm.VarTypes[name]), "Integer") {
 					vm.rememberClosedSOQLInteger(name, value)
 				}
+			}
+			if kept != nil && !binding.existed && !binding.hadType && !binding.hadFinal {
+				if !slices.Contains(*kept, name) {
+					*kept = append(*kept, name)
+				}
+				return
 			}
 			if binding.existed {
 				vm.Globals[name] = binding.value
@@ -1076,6 +1096,20 @@ func (vm *VM) executeFor(source string, inst ir.Instruction, result *Result) (ex
 			return out, err
 		}
 	}
+	// Anonymous code has no fields or trigger globals a stale body binding
+	// could shadow in the loop condition or update, so body locals can stay
+	// bound between iterations and be removed once when the loop exits.
+	var kept *[]string
+	if vm.currentClass == "" && !vm.currentTrigger {
+		kept = new([]string)
+		defer func() {
+			for _, name := range *kept {
+				delete(vm.Globals, name)
+				delete(vm.VarTypes, name)
+				delete(vm.finalLocals, name)
+			}
+		}()
+	}
 	for iteration := 0; ; iteration++ {
 		if err := vm.chargeLoopIteration("for", iteration); err != nil {
 			return execOutcome{}, err
@@ -1091,7 +1125,7 @@ func (vm *VM) executeFor(source string, inst ir.Instruction, result *Result) (ex
 		if !conditionValue {
 			return execOutcome{}, nil
 		}
-		out, err := vm.executeBlockScope(ir.Program{Source: source}, inst, result)
+		out, err := vm.executeBlockScopeKeeping(ir.Program{Source: source}, inst, result, kept)
 		if err != nil {
 			return execOutcome{}, err
 		}
