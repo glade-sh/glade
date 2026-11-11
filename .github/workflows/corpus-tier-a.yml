@@ -31,13 +31,12 @@ jobs:
         with:
           path: glade
           persist-credentials: false
-      - name: Check out the shared corpus runner
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-        with:
-          repository: glade-sh/glade-tools
-          ref: 63eea064136a8735f3dda790d6800c34996f1388
-          path: glade-tools
-          persist-credentials: false
+      - name: Fetch the shared corpus runner at a fixed revision
+        run: |
+          git init -q glade-tools
+          git -C glade-tools fetch -q --no-tags --depth=1 https://github.com/glade-sh/glade-tools.git 63eea064136a8735f3dda790d6800c34996f1388
+          git -C glade-tools checkout -q --detach FETCH_HEAD
+          test "$(git -C glade-tools rev-parse HEAD)" = 63eea064136a8735f3dda790d6800c34996f1388
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version-file: glade/go.mod
@@ -49,9 +48,9 @@ jobs:
           path: |
             ~/go/pkg/mod
             ~/.cache/go-build
-          key: corpus-a-go-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('glade/go.sum', 'glade-tools/go.sum') }}-${{ github.sha }}
+          key: corpus-a-go-${{ runner.os }}-${{ runner.arch }}-1.26.10-${{ hashFiles('glade/go.sum', 'glade-tools/go.sum') }}-${{ github.sha }}
           restore-keys: |
-            corpus-a-go-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('glade/go.sum', 'glade-tools/go.sum') }}-
+            corpus-a-go-${{ runner.os }}-${{ runner.arch }}-1.26.10-${{ hashFiles('glade/go.sum', 'glade-tools/go.sum') }}-
             go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-
       - name: Check manifest preparation
         working-directory: glade
