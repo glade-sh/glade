@@ -690,6 +690,20 @@ func childProgram(parent ir.Program, instructions []ir.Instruction) ir.Program {
 // source syntax and version rules F03/F04 also capture if-block shadowing and restoration at API62/68.
 // Try bodies use the same lexical cleanup for their final-local bindings.
 func (vm *VM) executeBlockScope(program ir.Program, inst ir.Instruction, result *Result) (execOutcome, error) {
+	declares := false
+	for i := range inst.Then {
+		if op := inst.Then[i].Op; op == ir.OpDeclare || op == ir.OpDeclGroup {
+			declares = true
+			break
+		}
+	}
+	if !declares {
+		// No local of its own to snapshot or restore.
+		if len(vm.bindFrame.slots) != 0 {
+			vm.enterBindBlock(inst.Then, func(func(string, bool)) {})
+		}
+		return vm.executeProgram(childProgram(program, inst.Then), result)
+	}
 	type outerBinding struct {
 		value            Value
 		name, typ        string
