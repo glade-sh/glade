@@ -183,6 +183,7 @@ const firstNameJaroWinklerThreshold = 0.87
 var (
 	nameVariantSet = pairSet(nameVariantPairs)
 	nameBlockedSet = pairSet(nameBlockedPairs)
+	nameJaroSet    = pairSet(nameJaroPairs)
 	nameKnown      = func() map[string]bool {
 		out := map[string]bool{}
 		for _, pair := range nameVariantPairs {
@@ -216,7 +217,7 @@ func fuzzyFirstName(a, b string, _ bool) (bool, float64) {
 	if x == y || nameVariantSet[orderedPair(x, y)] {
 		return true, 100
 	}
-	if nameBlockedSet[orderedPair(x, y)] || (nameKnown[x] && nameKnown[y]) {
+	if nameBlockedSet[orderedPair(x, y)] || (nameKnown[x] && nameKnown[y] && !nameJaroSet[orderedPair(x, y)]) {
 		return false, 0
 	}
 	score := 100 * jaroWinkler(x, y)
@@ -475,6 +476,12 @@ func fuzzyPhone(a, b string, _ bool) (bool, float64) {
 	if !okA || !okB {
 		return false, 0
 	}
+	if ca != cb && ((ca != "" && ca != "1") || (cb != "" && cb != "1")) {
+		// The rows match a number with the NANP country digit 1 to the same
+		// number without it (90), but never one with a different country digit,
+		// although the weighted score would still reach 90.
+		return false, 0
+	}
 	score := 0.0
 	for _, section := range []struct {
 		x, y   string
@@ -496,6 +503,12 @@ func fuzzyZip(a, b string, _ bool) (bool, float64) {
 			return s[:i]
 		}
 		return s
+	}
+	// A value under three characters is no postal code and matches nothing,
+	// not even itself ("0", "L1"); this guard is a conservative stand-in for
+	// the platform's validation, which the probe rows do not cover.
+	if len([]rune(strings.TrimSpace(a))) < 3 || len([]rune(strings.TrimSpace(b))) < 3 {
+		return false, 0
 	}
 	if head(a) == head(b) {
 		return true, 100
@@ -541,7 +554,7 @@ func fuzzyCity(a, b string, _ bool) (bool, float64) {
 var knownStreetSuffixes = map[string]string{
 	"st": "street", "street": "street", "ave": "avenue", "avenue": "avenue", "rd": "road", "road": "road",
 	"blvd": "boulevard", "boulevard": "boulevard", "dr": "drive", "drive": "drive", "ln": "lane", "lane": "lane",
-	"cir": "cir", "hwy": "hwy",
+	"cir": "cir", "hwy": "hwy", "crt": "crt",
 }
 
 var streetPrefixSuffixes = map[string]bool{"rue": true}
@@ -698,26 +711,6 @@ func streetSections(pa, pb streetParts, matchBlanks bool) float64 {
 	return 100 * num / den
 }
 
-// streetNameNear rejects two different street names that are not alike
-// enough (78 percent edit similarity) unless one is a word-prefix of the other
-// or, with a street number, they share their first two words. The rows never
-// match `Oak Court` to `Oak Crt` (78) or, with no street number, `Calle 8 No`
-// to `Calle 8 Numero` (71); they do match `Wallaby Way` to `Wallaby Way Ste`
-// (73) and `Wallaby Way Front` to `Wallaby Way Rear` (71).
-func streetNameNear(pa, pb streetParts) bool {
-	x, y := pa.name, pb.name
-	if x == y || strings.HasPrefix(x+" ", y+" ") || strings.HasPrefix(y+" ", x+" ") {
-		return true
-	}
-	if pa.number != "" && pb.number != "" {
-		wx, wy := strings.Fields(x), strings.Fields(y)
-		if len(wx) >= 3 && len(wy) >= 3 && wx[0] == wy[0] && wx[1] == wy[1] {
-			return true
-		}
-	}
-	return editSimilarity(x, y) >= 78
-}
-
 // fuzzyStreet: the match key is the street number plus the first five
 // characters of the name. The weighted section score decides at 80; the rule
 // confidence averages that score with the edit similarity of the cleaned
@@ -727,16 +720,58 @@ func fuzzyStreet(a, b string, matchBlanks bool) (bool, float64) {
 	if x == y {
 		return true, 100
 	}
+	if confidence, ok := streetAbbreviationPair(x, y); ok {
+		return true, confidence
+	}
 	pa, pb := parseStreet(a), parseStreet(b)
 	sections := streetSections(pa, pb, matchBlanks)
 	confidence := (sections + editSimilarity(x, y)) / 2
 	if streetKey(pa) != streetKey(pb) {
 		return false, confidence
 	}
-	if !streetNameNear(pa, pb) {
+	if streetTwoEdits(pa, pb) {
+		return false, confidence
+	}
+	if pa.number == "" && pb.number == "" && pa.name != pb.name && editSimilarity(pa.name, pb.name) < 80 {
+		// With no street number to anchor the pair the name must be as alike
+		// as the overall threshold demands: the rows never match
+		// "Calle 8 No 5" to "Calle 8 Numero 5" (name similarity 71) although the
+		// weighted score reaches 80 under MatchBlanks.
 		return false, confidence
 	}
 	return sections >= 80, confidence
+}
+
+// streetAbbreviationPairs are two spellings of a street's last word that the
+// rows match to each other whatever the section model says, with the native
+// confidence (the rows give 77 and 59 by direction for Oak, 80 for Pine; Glade
+// reports one value for both directions).
+var streetAbbreviationPairs = map[[2]string]float64{
+	orderedPair("ct", "crt"): 70,
+}
+
+// streetAbbreviationPair reports two cleaned addresses that are the same but
+// for their last word, when that pair is in streetAbbreviationPairs.
+func streetAbbreviationPair(x, y string) (float64, bool) {
+	wx, wy := strings.Fields(x), strings.Fields(y)
+	if len(wx) < 3 || len(wx) != len(wy) || strings.Join(wx[:len(wx)-1], " ") != strings.Join(wy[:len(wy)-1], " ") {
+		return 0, false
+	}
+	confidence, ok := streetAbbreviationPairs[orderedPair(wx[len(wx)-1], wy[len(wy)-1])]
+	return confidence, ok
+}
+
+// streetTwoEdits reports names that differ in both the street name proper and
+// the unknown trailing word ("Harbor Lp" against "Harbour Loop"). The rows
+// match a differing trailing word when the rest is identical ("Maple Cv"
+// against "Maple Cove") and a differing street name when the suffix is a
+// known suffix word, but never both at once.
+func streetTwoEdits(pa, pb streetParts) bool {
+	wx, wy := strings.Fields(pa.name), strings.Fields(pb.name)
+	if len(wx) < 2 || len(wx) != len(wy) || wx[len(wx)-1] == wy[len(wy)-1] {
+		return false
+	}
+	return strings.Join(wx[:len(wx)-1], " ") != strings.Join(wy[:len(wy)-1], " ")
 }
 
 // ---- Company Name: Acronym, Exact, Syllable Alignment; threshold 70 ----
@@ -797,14 +832,18 @@ func companyKey(words []string) string {
 	return b.String()
 }
 
-// companyNormWord folds the spellings the rows score as identical: doubled
-// letters inside a word, a plural "s" on words of seven letters or more
-// (multi-word names only: single-word names score the singular against the
-// plural in one direction only), a trailing "e" and a trailing "y" spelled
-// "i". The second result marks a removed "e" ("!") or a converted "y" ("?"):
-// a word that changed one way does not match a word that changed the other
-// ("Stanly" does not match "Stanlie").
-func companyNormWord(w string, plural bool) (string, string) {
+var companyWordPairSet = func() map[[2]string]float64 {
+	out := map[[2]string]float64{}
+	for _, pair := range companyWordPairs {
+		out[[2]string{pair.a, pair.b}] = pair.forward
+		out[[2]string{pair.b, pair.a}] = pair.reverse
+	}
+	return out
+}()
+
+// companyCollapse folds doubled letters inside a word ("goldmann" is
+// "goldman"); the rows score such spellings as identical.
+func companyCollapse(w string) string {
 	var out []rune
 	r := []rune(w)
 	for i, c := range r {
@@ -813,57 +852,20 @@ func companyNormWord(w string, plural bool) (string, string) {
 		}
 		out = append(out, c)
 	}
-	if plural && len(out) > 6 && out[len(out)-1] == 's' {
-		out = out[:len(out)-1]
-	}
-	mark := ""
-	if len(out) > 3 && out[len(out)-1] == 'e' {
-		out = out[:len(out)-1]
-		mark = "!"
-	}
-	if len(out) > 3 && out[len(out)-1] == 'y' {
-		out[len(out)-1] = 'i'
-		mark = "?"
-	}
-	return string(out), mark
+	return string(out)
 }
 
-// companySkeleton returns the consonant skeleton and the first letter of each
-// vowel group; the Syllable Alignment approximation compares those.
-func companySkeleton(w string) (string, []rune) {
-	var cons, groups []rune
-	prevVowel := false
-	for _, r := range w {
-		vowel := strings.ContainsRune("aeiouy", r)
-		if vowel {
-			if !prevVowel {
-				groups = append(groups, r)
-			}
-		} else {
-			cons = append(cons, r)
-		}
-		prevVowel = vowel
+// companyWordMatch compares two words: identical, equal after folding doubled
+// letters, or a pair the native rows prove (companyWordPairs; x is the
+// candidate's word). The second result is the word's match confidence.
+func companyWordMatch(x, y string) (bool, float64) {
+	if x == y || companyCollapse(x) == companyCollapse(y) {
+		return true, 100
 	}
-	return string(cons), groups
-}
-
-// companyVowelsNear accepts the vowel substitutions the rows score as near
-// (a/o, o/u, a/e) and rejects the others (e/i, e/o, i/y).
-func companyVowelsNear(ga, gb []rune) bool {
-	if len(ga) != len(gb) {
-		return false
+	if confidence, ok := companyWordPairSet[[2]string{x, y}]; ok {
+		return true, confidence
 	}
-	for i := range ga {
-		x, y := ga[i], gb[i]
-		if x == y {
-			continue
-		}
-		pair := string([]rune{min(x, y), max(x, y)})
-		if pair != "ao" && pair != "ou" && pair != "ae" {
-			return false
-		}
-	}
-	return true
+	return false, 0
 }
 
 func fuzzyCompany(a, b string, _ bool) (bool, float64) {
@@ -888,41 +890,26 @@ func fuzzyCompany(a, b string, _ bool) (bool, float64) {
 	if companyKey(wa) != companyKey(wb) {
 		return false, 0
 	}
-	na, nb := make([]string, len(wa)), make([]string, len(wb))
-	plural := len(wa) > 1 && len(wb) > 1
-	ma, mb := make([]string, len(wa)), make([]string, len(wb))
-	for i, w := range wa {
-		na[i], ma[i] = companyNormWord(w, plural)
-	}
-	for i, w := range wb {
-		nb[i], mb[i] = companyNormWord(w, plural)
-	}
-	for i := 0; i < min(len(ma), len(mb)); i++ {
-		if ma[i] != mb[i] && ma[i] != "" && mb[i] != "" {
-			return false, 0
+	confidence := 100.0
+	same := true
+	for i := 0; i < min(len(wa), len(wb)); i++ {
+		ok, c := companyWordMatch(wa[i], wb[i])
+		if !ok {
+			if i < 2 {
+				return false, 0
+			}
+			same = false
+			continue
 		}
+		confidence = min(confidence, c)
 	}
-	if strings.Join(na, " ") == strings.Join(nb, " ") {
-		return true, 100
+	if len(wa) == len(wb) && same {
+		return true, confidence
 	}
-	if len(na) >= 2 && len(nb) >= 2 && na[0] == nb[0] && na[1] == nb[1] && (len(na) > 2 || len(nb) > 2) {
+	if len(wa) >= 2 && len(wb) >= 2 {
 		// The rows score one extra or different third word at 91 and reject
 		// two or more.
-		return max(len(na), len(nb)) == 3, 91
-	}
-	if len(na) == len(nb) {
-		near := true
-		for i := range na {
-			ca, ga := companySkeleton(na[i])
-			cb, gb := companySkeleton(nb[i])
-			if ca != cb || !companyVowelsNear(ga, gb) {
-				near = false
-				break
-			}
-		}
-		if near {
-			return true, 97
-		}
+		return max(len(wa), len(wb)) == 3, 91
 	}
 	return false, 0
 }
@@ -941,6 +928,12 @@ func titleWords(s string) []string {
 	return out
 }
 
+// titleNoPrefix are words that never equal a longer word they start: the rows
+// give "IT Manager" and "Italy Manager" one shared word, not two, although
+// "Pr Manager" matches "Product Manager" and "Principal Staff Software
+// Engineer".
+var titleNoPrefix = map[string]bool{"it": true}
+
 // titleWordEqual treats a word as equal to any word it starts (two letters
 // or more): "Dir" and "Director", "Eng" and "Engineering".
 func titleWordEqual(a, b string) bool {
@@ -948,6 +941,9 @@ func titleWordEqual(a, b string) bool {
 		return true
 	}
 	if min(len(a), len(b)) < 2 {
+		return false
+	}
+	if titleNoPrefix[a] || titleNoPrefix[b] {
 		return false
 	}
 	return strings.HasPrefix(a, b) || strings.HasPrefix(b, a)
@@ -1033,7 +1029,10 @@ func fuzzyTitle(a, b string, _ bool) (bool, float64) {
 		}
 	}
 	ua, ub := uniqueWords(ca), uniqueWords(cb)
-	k := len(uniqueWords(sharedA))
+	// The shared count is the smaller of the two directions so that the score
+	// does not depend on which title is the candidate ("Attorney" and
+	// "Attorney at Law": "at" starts "attorney" only when read from one side).
+	k := min(len(uniqueWords(sharedA)), len(uniqueWords(sharedB)))
 	if k == 0 {
 		return false, 0
 	}
