@@ -74,6 +74,7 @@ Supported keys:
 | `project.dependencies` | Declared package names or SFDX aliases mapped to local source paths. |
 | `project.managedPackageDependencies` | Managed package source or artifact references. |
 | `project.dependencyPaths` | Inline list of local directories to search for declared SFDX package dependencies, relative to the supplying `glade.yml`. |
+| `project.siblingDependencyScan` | `true` lets Glade also look for declared SFDX package dependencies in directories beside the project. Default `false`. The `--sibling-dependencies` flag or `GLADE_SIBLING_DEPENDENCIES=1` turns it on for one run. |
 | `project.externalNamespaces` | Inline list of installed managed-package namespaces with no local source. Each stays open; see [External namespaces](#external-namespaces). |
 | `project.schemaSnapshot` | Schema snapshot path, relative to `glade.yml`; requires `schemaSnapshotSHA256`. |
 | `project.schemaSnapshotSHA256` | Paired 64-character hexadecimal SHA-256 digest for `schemaSnapshot`. |
@@ -226,14 +227,21 @@ Lookup steps:
 1. A matching explicit `project.dependencies` mapping.
 2. A matching `project.managedPackageDependencies` entry that loads; this skips
    local lookup.
-3. The parent and grandparent directories themselves, plus `<base>/<name>` and
-   `<base>/packages/<name>` for package-name variants, and sibling project
-   directories directly under the parent that contain an
-   `sfdx-project.json`.
+3. Sibling scan only (off by default): the parent and grandparent directories
+   themselves, plus `<base>/<name>` and `<base>/packages/<name>` for
+   package-name variants, and sibling project directories directly under the
+   parent that contain an `sfdx-project.json`.
 4. Each `dependencyPaths` entry, in the order listed.
-5. If the consumer manifest's `packageAliases` object has a key matching the
-   dependency name, immediate child directories under each immediate directory
-   beneath the project root's grandparent.
+5. Sibling scan only, and only if the consumer manifest's `packageAliases`
+   object has a key matching the dependency name: immediate child directories
+   under each immediate directory beneath the project root's grandparent.
+
+Resolution is deterministic by default. Steps 3 and 5 and the namespace-based
+sibling pickup run only when you opt in with `project.siblingDependencyScan:
+true` in `glade.yml`, the `--sibling-dependencies` flag on any command, or
+`GLADE_SIBLING_DEPENDENCIES=1`. Without it, a project resolves the same
+standalone and beside other checkouts, and a dependency that only a neighbor
+would supply reports `dependency_missing`.
 
 Local candidates from all applicable locations count together. A candidate
 matches only when one of its package directories declares the

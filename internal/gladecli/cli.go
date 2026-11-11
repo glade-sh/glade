@@ -207,8 +207,32 @@ func diagnosticTry(code string) []string {
 	}
 }
 
+// siblingDependenciesFlag opts in to resolving declared SFDX package
+// dependencies from sibling project directories (off by default).
+const siblingDependenciesFlag = "--sibling-dependencies"
+
+// applySiblingDependenciesFlag removes the global --sibling-dependencies flag
+// (anywhere before a "--" terminator) and records the choice in the environment
+// so every project load in this process and its children sees it.
+func applySiblingDependenciesFlag(args []string) []string {
+	out := args[:0:0]
+	for i, arg := range args {
+		if arg == "--" {
+			out = append(out, args[i:]...)
+			break
+		}
+		if arg == siblingDependenciesFlag {
+			_ = os.Setenv(project.SiblingDependencyScanEnvVar, "1")
+			continue
+		}
+		out = append(out, arg)
+	}
+	return out
+}
+
 // Run executes the glade CLI and returns a process exit code.
 func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
+	args = applySiblingDependenciesFlag(args)
 	if len(args) == 0 {
 		_ = cliui.WriteHelp(stdout)
 		return 0

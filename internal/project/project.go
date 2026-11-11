@@ -1129,6 +1129,7 @@ func loadLocalSFDXPackageDependencies(root string, cfg sfdxProject, p Project, s
 			diagnostics = append(diagnostics, configDiagnostics...)
 		}
 	}
+	siblingScan := SiblingDependencyScanEnabled(dependencyCfg, dependencyCfgOK)
 	for _, packageName := range packageNames {
 		if explicitNames[normalizeSFDXPackageName(packageName)] {
 			continue
@@ -1136,14 +1137,12 @@ func loadLocalSFDXPackageDependencies(root string, cfg sfdxProject, p Project, s
 		if managedPackageDependencyNamespaceLoaded(deps, packageName) {
 			continue
 		}
-		// A sibling project in the same source workspace is an unambiguous local
-		// dependency when its manifest declares the requested package.  This is
-		// the normal SFDX monorepo layout (for example, a plugin next to its
-		// package source), and does not broaden discovery to unrelated
-		// grandchildren or arbitrary filesystem paths.  Ancestor glade.yml
-		// configuration remains the escape hatch for dependencies outside the
-		// workspace.
-		depRoots := findLocalSFDXPackageDependencyRoots(root, packageName, true, sfdxProjectHasPackageAlias(cfg, packageName), dependencyPaths)
+		// Resolution is deterministic by default: only project.dependencies,
+		// project.managedPackageDependencies and project.dependencyPaths supply
+		// a dependency. Looking in the directories beside the project is an
+		// opt-in (project.siblingDependencyScan or --sibling-dependencies),
+		// because it makes the result depend on what else is on disk.
+		depRoots := findLocalSFDXPackageDependencyRoots(root, packageName, siblingScan, siblingScan && sfdxProjectHasPackageAlias(cfg, packageName), dependencyPaths)
 		if len(depRoots) == 0 {
 			diagnostics = append(diagnostics, DependencyDiagnostic{
 				Namespace: packageName,
@@ -1152,7 +1151,9 @@ func loadLocalSFDXPackageDependencies(root string, cfg sfdxProject, p Project, s
 				Message: fmt.Sprintf("declared SFDX package dependency %q has no configured source or artifact; "+
 					"add the directory that holds its sfdx-project.json (or a parent of it) to glade.yml, "+
 					"for example project.dependencyPaths: [\"../path/to/%s\"], "+
-					"or project.managedPackageDependencies for a namespaced package", packageName, packageName),
+					"or project.managedPackageDependencies for a namespaced package; "+
+					"sibling directories are searched only with project.siblingDependencyScan: true "+
+					"or --sibling-dependencies", packageName, packageName),
 			})
 			continue
 		}
@@ -1193,7 +1194,7 @@ func loadLocalSFDXPackageDependencies(root string, cfg sfdxProject, p Project, s
 			Status:     "loaded",
 		})
 	}
-	for _, depRoot := range findReferencedNamespaceSiblingSFDXPackageDependencyRoots(root, packageNames, p, true) {
+	for _, depRoot := range findReferencedNamespaceSiblingSFDXPackageDependencyRoots(root, packageNames, p, siblingScan) {
 		if sameFilePath(depRoot, root) || managedPackageDependencySourceLoaded(deps, depRoot) {
 			continue
 		}
@@ -1434,6 +1435,26 @@ func sfdxPackageDependencyNames(cfg sfdxProject) []string {
 	return names
 }
 
+// SiblingDependencyScanEnvVar turns on sibling-directory dependency lookup for
+// the process. The CLI sets it for --sibling-dependencies so child processes
+// such as the test daemon see the same choice.
+const SiblingDependencyScanEnvVar = "GLADE_SIBLING_DEPENDENCIES"
+
+// SiblingDependencyScanEnabled reports whether declared SFDX package
+// dependencies may be resolved from sibling project directories. It is off
+// unless the project's glade.yml sets project.siblingDependencyScan: true or the
+// process opted in with --sibling-dependencies.
+func SiblingDependencyScanEnabled(cfg config.Config, cfgOK bool) bool {
+	if cfgOK && cfg.Project.SiblingDependencyScan {
+		return true
+	}
+	switch strings.ToLower(strings.TrimSpace(os.Getenv(SiblingDependencyScanEnvVar))) {
+	case "1", "true", "yes", "on":
+		return true
+	}
+	return false
+}
+
 func findLocalSFDXPackageDependencyRoots(root, packageName string, allowSiblingScan, allowWorkspaceScan bool, dependencyPaths []string) []string {
 	wanted := normalizeSFDXPackageName(packageName)
 	if wanted == "" {
@@ -1528,20 +1549,20 @@ func localSFDXPackageDependencyCandidates(root, packageName string, allowSibling
 	}
 	parent := filepath.Dir(filepath.Clean(root))
 	grandparent := filepath.Dir(parent)
-	for _, base := range []string{parent, grandparent} {
-		if base == "" || base == "." {
-			continue
-		}
-		add(base)
-		for _, name := range localSFDXPackageDependencyDirNames(packageName) {
-			if name == "" {
+	if allowSiblingScan {
+		for _, base := range []string{parent, grandparent} {
+			if base == "" || base == "." {
 				continue
 			}
-			add(filepath.Join(base, name))
-			add(filepath.Join(base, "packages", name))
+			add(base)
+			for _, name := range localSFDXPackageDependencyDirNames(packageName) {
+				if name == "" {
+					continue
+				}
+				add(filepath.Join(base, name))
+				add(filepath.Join(base, "packages", name))
+			}
 		}
-	}
-	if allowSiblingScan {
 		for _, candidate := range localSFDXSiblingProjectCandidates(parent) {
 			add(candidate)
 		}
